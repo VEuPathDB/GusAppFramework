@@ -75,13 +75,19 @@ PLUGIN_NOTES
     [
      integerArg({name  => 'project_id',
 		 descr => 'project_id',
-		 reqd  => 1,
+		 reqd  => 0,
 		 constraintFunc=> undef,
 		 isList=> 0,
 		}),
+     stringArg({name  => 'na_sequence_id_list',
+		descr => 'comma-separated list of na_sequence_ids',
+		reqd  => 0,
+		constraintFunc=> undef,
+		isList=> 0,
+		}),
      integerArg({name  => 'taxon_id',
 		 descr => 'taxon_id',
-		 reqd  => 1,
+		 reqd  => 0,
 		 constraintFunc=> undef,
 		 isList=> 0,
 		}),
@@ -151,8 +157,17 @@ sub run {
     $self->prepareQuery($self->getArg('max_distance'));
   }
 
-  $self->processSequencesByProjectId($self->getArg('project_id'),
-				     $self->getArg('taxon_id'));
+  my $projectId = $self->getArg('project_id');
+  my $taxonId = $self->getArg('taxon_id');
+  my $naSequenceIdList = $self->getArg('na_sequence_id_list');
+
+  if ($projectId && $taxonId) {
+    $self->processSequencesByProjectId($projectId, $taxonId);
+  } elsif ($naSequenceIdList) {
+    $self->processSequencesBySequenceIdList($naSequenceIdList);
+  } else {
+    die "Must specify either na_sequence_id_list or project_id and taxon_id";
+  }
 
   my $logString = "LoadGenomicSageData finished.";
   if ($self->getArg('find_tags')) {
@@ -180,6 +195,33 @@ sub processSequencesByProjectId {
       and pl.table_id = $table_id
       and pl.id = ens.na_sequence_id
       and ens.taxon_id = $taxon_id
+SQL
+
+  $self->logVerbose($sql);
+
+  my $dbh = $self->getQueryHandle();
+  $self->logVerbose("preparingAndExecuting sequenceId query");
+  my $stmt = $dbh->prepareAndExecute($sql);
+  $self->logVerbose("finished prepareAndExecute()");
+
+  while (my ($na_sequence_id) = $stmt->fetchrow_array()) {
+    $self->processSequence($na_sequence_id);
+  }
+}
+
+# ----------------------------------------------------------------------
+# Given a string containing a comma-separated list of na_sequence_ids,
+# process the listed ExternalNaSequences.
+
+sub processSequencesBySequenceIdList {
+  my ($self, $sequenceIdList) = @_;
+
+  my $table_id = getTableId('DoTS', 'ExternalNASequence');
+
+  my $sql = <<SQL;
+    select na_sequence_id
+    from DoTS.ExternalNaSequence ens
+    where na_sequence_id in ($sequenceIdList)
 SQL
 
   $self->logVerbose($sql);
