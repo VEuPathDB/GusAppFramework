@@ -303,4 +303,48 @@ sub makeAssociationHash{
     return $assocHash;
 }
 
+# resultSet:
+# GusGoID AssociationId ReviewStatus IsNot InstanceId Instance_LOE_id InstanceReviewStatus Instance.IsNot
+# tableId: the id of the table to which this association is made
+# rowId: the row in that table to which this association is made
+#NOTE: the input must not include any non-primary instances.
+sub makeGUSAssociationObjects {
+
+    my ($resultSet, $tableId, $rowId) = @_;
+    my $assocHash;
+    foreach my $assocRow(@$assocQuery){
+	my ($gusGoId, $associationId, $assocReviewStatusId,
+	    $assocIsNot, $instanceId, $instanceLOEId,
+	    $instanceReviewStatusId, $isPrimary, $instanceIsNot) = @$assocRow;
+
+	my $association = $assocHash->{$gusGoId};
+	if (!$association){
+	    $association = GUS::Model::DoTS::GOAssociation->new();
+	    $association->setGoAssociationId($associationId);
+	    $association->setTableId($tableId);
+	    $association->setRowId($rowId);
+	    $association->setGoTermId($gusGoId);
+	    $association->setReviewStatusId($assocReviewStatusId);
+	    $association->setIsNot($assocIsNot);
+#	    $association->setDefining();
+#	    $association->setGoAssociationDate();
+	    $assocHash->{$gusGoId} = $association;
+
+	}
+	my $instance =  GUS::Model::DoTS::GOAssociationInstance->new();
+	$instance->setGoAssociationInstanceId($instanceId);
+	$instance->setGoAssociationId($associationId);
+	$instance->setGoAssocInstLoeId($instanceLOEId);
+	$instance->setReviewStatusId($instanceReviewStatusId);
+	$instance->setIsPrimary(1);
+	$instance->setIsNot($instanceIsNot);
+#	$instance->setDefining();
+#	$instance->setExternalDatabaseReleaseId();
+#	$instance->setSourceId();
+#	$instance->setPValueRatio();
+
+    }
+    return $assocHash;
+}
+
 1;
