@@ -2,7 +2,6 @@
 package GUS::Model::DoTS::AAFeature;              # table name
 use strict;
 use GUS::Model::DoTS::AAFeature_Row;
-use CBIL::Bio::SequenceUtils;
 
 
 use vars qw (@ISA);
