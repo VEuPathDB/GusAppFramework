@@ -617,10 +617,10 @@ sub createTREMBLAssocHash{
     my ($downloadSubDir) = @_;
     my $assocData;
 
-    my $fh = FileHandle->new("<$downloadSubDir/gene_association.goa_sptr");
+    my $fh = FileHandle->new("<$downloadSubDir/gene_association.goa_uniprot");
 
     if (!($fh)){
-	die "Cannot find gene_association.goa_sptr for swissprot/trembl!";
+	die "Cannot find gene_association.goa_uniprot for swissprot/trembl!";
     }
     my $excludeIea = $propertySet->getProp('globalExcludeIea');
     my $counter = 0;
@@ -941,7 +941,7 @@ sub insertSpTrGoAssoc{
 	$excludeIea .= "--exclude_iea";
     }
     
-    my $flatFile = "gene_association.goa_sptr";
+    my $flatFile = "gene_association.goa_uniprot";
     my $orgArgs = "--org_external_db_release_list $spDb,$trDb $excludeIea";
     my $doIt = "insertSpTrGoAssoc";
 
