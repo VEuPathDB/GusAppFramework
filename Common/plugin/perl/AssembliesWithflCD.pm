@@ -180,52 +180,51 @@ print STDERR scalar(@diffArray)";
 
     $self->undefPointerCache();
 
-  }
+}
 
 
 
-
+}
 
 #check to see if all previous evidence still valid
-     foreach my $target_id(@DTSasEvidenceTarget)  {
+  #   foreach my $target_id(@DTSasEvidenceTarget)  {
 
-       foreach my $DT(@DTs)   {
+   #    foreach my $DT(@DTs)   {
 
-      if ($target_id == $DT){ { next;}  }
+    #  if ($target_id == $DT){ { next;}  }
 
-        if ($target_id != $DT)  {
+     #   if ($target_id != $DT)  {
 
-          my $dbh = $self->getQueryHandle();
+      #    my $dbh = $self->getQueryHandle();
 
-          my $rows = $dbh->do("delete from dots.evidence where target_id = $target_id and attribute_name = 'full_length_CDS'");
+      #   my $rows = $dbh->do("delete from dots.evidence where target_id = $target_id and attribute_name = 'full_length_CDS'");
 
-          print "DT.$target_id Evidence deleted\n";
+      #   print "DT.$target_id Evidence deleted\n";
 
-      }
+   #   }
 
-     }
+   #  }
 
-     }
+  #   }
 
 
 #  for those assemblies that no longer contain a refSeq
-    foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
+ #   foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
- print STDERR "DT.$DTnotFLength does not have a RefSeq any longer\n";
+# print STDERR "DT.$DTnotFLength does not have a RefSeq any longer\n";
 
- my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
+# my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
 
-      $assembly->retrieveFromDB();
-      $assembly->setFullLengthCds(0);
-      $assembly->submit();
+ #     $assembly->retrieveFromDB();
+  #   $assembly->setFullLengthCds(0);
+   #   $assembly->submit();
 
-      $self->undefPointerCache();
-
-
-}
+   #   $self->undefPointerCache();
 
 
-}
+#}
+
+
 
 
 #use RefSeq source_id as evidence for marking assembly as full length CDS containing
