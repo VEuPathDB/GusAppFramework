@@ -92,14 +92,21 @@
     <copy todir="${build.home}/webapp/WEB-INF/lib">
     	<fileset dir="../WebDevKit/lib/java" 
     		includes="commons-digester-1.5.jar,
-    			oracle-classes12.jar,
+    			ojdbc14.jar,
     			commons-beanutils.jar,
     			commons-cli-1.0.jar
     			jstl.jar,
+    		    pager-taglib.jar,
     			standard.jar,
          		jing-20030619.jar" />
     </copy>
 
+    
+  <copy todir="${build.home}/webapp/WEB-INF/lib">
+  	<fileset dir="${basedir}/lib/java" 
+  		includes="pager-taglib.jar" />
+  </copy>
+  	
   	<copy todir="${build.home}/webapp/WEB-INF/lib" 
   		  file="../WebDevKit/ant-build/GUS-WebDevKit.jar"/>
   	
@@ -108,10 +115,12 @@
   	</copy>
   	
   	<mkdir dir="${build.home}/webapp/WEB-INF/wdk-config" />
-  	<copy tofile="${build.home}/webapp/WEB-INF/wdk-config/model.xml" 
-  		  file="${basedir}/lib/xml/PSUSampleModel.xml"/>
-    <copy tofile="${build.home}/webapp/WEB-INF/wdk-config/login.xml" 
-	      file="/nfs/team81/art/gus/gus_home/lib/xml/modelConfig.xml"/>
+  	<copy tofile="${build.home}/webapp/WEB-INF/wdk-config/toyModel.xml" 
+  		  file="${basedir}/lib/xml/toyModel.xml"/>
+  	<copy tofile="${build.home}/webapp/WEB-INF/wdk-config/sampleModel.prop" 
+  		  file="${basedir}/lib/macro.props"/>
+    <copy tofile="${build.home}/webapp/WEB-INF/wdk-config/modelConfig.xml" 
+		  file="${basedir}/lib/login.xml.d1pat"/>
     <copy tofile="${build.home}/webapp/WEB-INF/wdk-config/wdkModel.rng" 
 	      file="../WebDevKit/lib/rng/wdkModel.rng"/>
   	<mkdir dir="${webapp.dir}"/>
