@@ -298,6 +298,8 @@ sub getTableAndViewNames {
 sub getTableChildRelations {
   my($self,$className) = @_;
 
+  $className = $self->getFullTableClassName($className);
+
   my $owner = $self->getTable($className)->getSchemaNameUpper();
   if (!exists $self->{'allChildRelations'}->{$owner}) {
     my $sql = "select acon.owner,acc1.owner,acc1.table_name,acc1.column_name ,

@@ -13,8 +13,8 @@ sub new {
   $self->{tableName} = $tableName;
   $self->{fullName} = "GUS::Model::${schemaName}::$tableName";
 
-  $self->{realTable} =
-    $generator->getTable($self->{generator}->getRealTableName($self->{fullName},1));
+  my $realTableName = $self->{generator}->getRealTableName($self->{fullName});
+  $self->{realTable} = $generator->getTable($realTableName ,1);
   $self->{table} = $generator->getTable($self->{fullName}, 1);
 
   return $self;
@@ -203,7 +203,7 @@ sub _getRelations {
   my @list;
   foreach my $rel (@{$relations}) {
     my ($tn, $fk, $pk) = ($rel->[0], $rel->[1], $rel->[2]);
-    print STDERR "rels: $tn\n";
+
     next if($tn =~ /dropme/i || $tn =~ /tmp$/i);
 
     if ($tn =~ /Imp$/) {

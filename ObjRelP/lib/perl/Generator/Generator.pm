@@ -168,7 +168,9 @@ sub getRealTableName {
       $self->{realTableName}->{$tFull} = $vFull;
     }
   }
-  return $self->{realTableName}->{$className};
+
+  return $self->{realTableName}->{$className} ?
+   $self->{realTableName}->{$className} : $className ;
 }
 
 sub getParentTable {

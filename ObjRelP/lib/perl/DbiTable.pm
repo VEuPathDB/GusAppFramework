@@ -480,12 +480,13 @@ sub getChildRelations {
       $sth->finish();
     } elsif ($self->getDatabase()->getDSN() =~ /oracle/i) {
       my $table = $self->getRealTableName();
-      $self->{'children'} = $self->getDatabase()->getTableChildRelations($table);
+      $self->{'children'} = $self->getDatabase()->getTableChildRelations($table) if $table;
     } else {
       die "DbiTable: getParentRelations not implemented yet for ".$self->getDatabase()->getDSN().".\n";
     }
   }
   #  print STDERR $self->getTableName,": Children = (",join(', ', keys%{$self->{'children'}}),")\n";
+
   return $self->{'children'};
 }
 
