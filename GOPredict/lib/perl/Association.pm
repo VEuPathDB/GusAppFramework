@@ -44,7 +44,7 @@ my $cbilPredictLOE = 3;
 my $manuallyReviewedLOE = 4;
 my $obsoleteLOE = 5;
 my $scrubberLOE = 6;
-
+my $badMotifLOE = 26;
 
 ############################################################################################
 #################################  Constructors ############################################
@@ -106,7 +106,7 @@ sub newFromGusAssociation{
 
 sub newFromPrediction{
 
-    my ($class, $goTerm, $gusRuleObject, $gusSimObject) = @_;
+    my ($class, $goTerm, $gusRuleObject, $gusSimObject, $ratio) = @_;
     
     my $self = {};
     bless $self, $class;
@@ -118,6 +118,7 @@ sub newFromPrediction{
     my $instance = GUS::GOPredict::Instance->new();
     $instance->setIsPrimary(1);
     $instance->setLOEId($cbilPredictLOE);
+    $instance->setRatio($ratio);
 
     my $simEvidence = GUS::GOPredict::Evidence->new($gusSimObject); 
     $instance->addEvidence($simEvidence);
@@ -166,19 +167,6 @@ sub getIsNot{
     return $self->{IsNot};
 }
 
-#this accessor is true if the Association can reach the root of an AssociationGraph
-#through a path of Associations that are all 'is' (i.e., no Associations on the path
-#are set to 'is not'
-sub setOnIsPath{
-    my ($self, $onIsPath) = @_;
-    $self->{OnIsPath} = $onIsPath;
-}
-
-sub isOnIsPath{
-    my ($self) = @_;
-    return $self->{OnIsPath};
-}
-
 sub getReviewStatusId{
     my ($self) = @_;
     return $self->{ReviewStatusId};
@@ -220,6 +208,21 @@ sub initializeDataStructures{
     $self->{Children} = [];
     $self->{Parents} = [];
     $self->{Instances} = [];
+}
+
+#if I have no instances at all, create a new non-primary one with a review status of unreviewed
+sub createNonPrimaryInstance{
+
+    my ($self, $loeId) = @_;
+    if (scalar(@{$self->{Instances}}) == 0){
+	my $instance = GUS::GOPredict::Instance->new();
+	$instance->setIsNot($self->getIsNot());
+	$instance->setIsPrimary(0);
+	$instance->setLOEId($loeId);
+	$instance->setDeprecated(0);
+	$instance->setReviewStatusId($unreviewedId);
+	$self->addInstance($instance);
+    }
 }
 
 
@@ -298,19 +301,123 @@ sub killFamily{
 sub killReferences{
     
     my ($self) = @_;
-    
+
     $self->killFamily();
     my $goTerm;
+
     $self->{Instances} = [];
-    $self->setGusAssociationObject(undef);
+#    $self->setGusAssociationObject(undef);
     
-    $self->{GoTerm} = $goTerm;
+    #$self->{GoTerm} = $goTerm;
+
+}
+
+############################################################################################
+##############################  Validation methods #########################################
+############################################################################################
+
+#recursive method that checks to make sure if I am set to is_not, then all of my descendants are too.
+sub validateIsNot{
+
+    my ($self, $proteinId, $parentIsNot) = @_;
+    
+    if ($parentIsNot && !$self->getIsNot()){
+	print STDERR "Invalid data for protein $proteinId: " . $self->getGoTerm()->getRealId() . " is set to 'is' and has an ancestor set to 'is not'\n";
+    }
+    
+    my $isNot = $self->getIsNot();
+    $isNot = 0 if (!$self->getIsNot()); #account for unset variable
+    $isNot = 1 if ($parentIsNot); #ancestor overrides self
+   
+    my $children = $self->getChildren();
+    foreach my $child(@$children){
+	$child->validateIsNot($proteinId, $isNot);
+    }
 }
 
 
 ############################################################################################
 ################################  Utility Methods ##########################################
 ############################################################################################
+
+
+#given a map of all motifs that were used to create rules to predict me, and a list
+#of motifs that have been rejected, determine if I have evidence that came from a motif
+#that wasn't rejected.
+sub hasGoodEvidence{
+
+    my ($self, $evidenceMap, $allRejectedMotifs) = @_;
+    
+    my $realGoId = $self->getGoTerm()->getRealId();
+    my $motifVersions = $evidenceMap->{$realGoId};
+    
+    #motifs are grouped by database; check each database in the map
+    foreach my $motifVersion (keys %$motifVersions){
+	my $sourceIds = $motifVersions->{$motifVersion};
+	
+	#check each source id of the motif used to predict me
+	foreach my $sourceId (keys %$sourceIds){
+	    if (!$allRejectedMotifs->{$motifVersion}->{$sourceId}){  #non-rejected motif
+		return 1;
+	    }
+	}
+    }
+    
+    #if we have gotten this far, we have no non-rejected motifs
+    return 0;
+}
+
+#add this association to $processedAssocMap if it hasn't been added already
+#(works by adding the GO ID of this Association's GO term to the keys of 
+#$processedAssocMap).  Recursively adds this Associations ancestors to the map
+#as well
+sub markAncestorsGoodEvidence{
+    
+    my ($self, $processedAssocMap) = @_;
+    
+    my $realGoId = $self->getGoTerm()->getRealId();
+
+    if (!$processedAssocMap->{$realGoId}){ #ie return if already processed
+#	print STDERR "Association.markAncestorsGood: marking " . $realGoId . " as having good evidence from parent\n";
+	$processedAssocMap->{$realGoId} = 1;
+	my $assocParents = $self->getParents();
+	foreach my $parent (@$assocParents){
+	    $processedAssocMap = $parent->markAncestorsGoodEvidence($processedAssocMap);
+	}
+    }
+    return $processedAssocMap;
+}
+
+sub processRejectedMotif{
+
+    my ($self, $processedAssocMap, $rejectedMotifVersion, $rejectedMotifId, $gusMotifObject) = @_;
+    
+    my $realGoId = $self->getGoTerm()->getRealId();
+#    print STDERR "AssociationGraph.processRejectedMotif: testing $realGoId\n";
+    if (!$processedAssocMap->{$realGoId}){ #ie, return if already processed
+
+	$processedAssocMap->{$realGoId} = 1;
+	$self->setIsNot(1);
+#	print STDERR "AssociationGraph.processRejectedMotif: found bad assoc $realGoId, setting is not\n";
+	my $newInstance = GUS::GOPredict::Instance->new();
+	$newInstance->setIsNot(1);
+	$newInstance->setIsPrimary(1);
+	$newInstance->setLOEId($badMotifLOE); 
+	$newInstance->setReviewStatusId(1); 
+	$newInstance->setDeprecated(0);
+	
+	my $motifEvidence = GUS::GOPredict::Evidence->new($gusMotifObject);
+	$newInstance->addEvidence($motifEvidence);
+	$self->addInstance($newInstance);
+	
+	my $assocParents = $self->getParents();
+	foreach my $parent (@$assocParents){
+	    $processedAssocMap = $parent->processRejectedMotif($processedAssocMap, $rejectedMotifVersion, $rejectedMotifId,
+							       $gusMotifObject);
+	}
+    }
+    return $processedAssocMap;
+}
 
 #sends the state of the Association (that is, the bits determining if the Association
 #is Defining, Deprecated, 'is not', etc.) to the contained GUS Association Object.
@@ -321,9 +428,9 @@ sub updateGusObject{
     
     my ($self) = @_;
     my $gusAssociation = $self->getGusAssociationObject();
- 
-    $self->createGusInstancesForAssociation();
- 
+
+    $self->processGusInstancesForAssociation();
+
     $gusAssociation->setGoTermId($self->getGoTerm()->getGusId());
     $gusAssociation->setIsNot($self->getIsNot()); 
     $gusAssociation->setDefining($self->getDefining()); 
@@ -333,6 +440,9 @@ sub updateGusObject{
     #if the scrubber is not run, the Association will never be defining--might want
     #to change that.
 
+    if (!$self->getIsNot()){
+	$gusAssociation->setIsNot(0);
+    }
     if (!$self->getDefining()){  #non-nullable column in db, account for undef here
 	$gusAssociation->setDefining(0);
     }
@@ -463,14 +573,16 @@ sub inheritStrength{
 	if (scalar @obsoleteAssociations){
 
 	    #take care that obsolete descendants are not on the list more than once
-	    #(Note:  This might be overkill but it's working correctly).
 	    my $obsAssocHash = $self->getAssocHashFromAssocList(@obsoleteAssociations);
 	    my @distinctObsAssocList = values %$obsAssocHash;
 	    
 	    while (my $association = shift(@distinctObsAssocList)){  
-
+		
 		next if ($self->_isInheritedObsoleteId($association->getGoTerm()->getRealId()));
 		$self->_addInheritedObsoleteId($association->getGoTerm()->getRealId());		
+		#dtb: previous two lines necessary in case this association is hit more than once
+		#in the recursive traversal 
+
 		$self->setReviewStatusId($needsReviewId); 
 		
 		my $instance = GUS::GOPredict::Instance->new();
@@ -520,7 +632,7 @@ sub getAssocHashFromAssocList{
     return $assocHash;
 }
 
-#Deprecate this Association if it has not Instances that are not deprecated
+#Deprecate this Association if it has no Instances that are not deprecated
 sub deprecateIfInstancesDeprecated{
 
     my ($self) = @_;
@@ -532,6 +644,10 @@ sub deprecateIfInstancesDeprecated{
 	}
     }
     $deprecate = 0 if ($self->getGoTerm->getRealId() eq $rootObsoleteGoId);
+    if ((scalar @{$self->getInstances()}) == 0){
+#	print STDERR "Association.deprecateIfInstancesDeprecated: not deprecating the association since it has no instances at all\n";
+	$deprecate = 0;
+    }
     $self->setDeprecated(1) if $deprecate;
 }
 
@@ -544,23 +660,63 @@ sub deprecatePredictedInstances{
 
     my $instances = $self->getInstances();
     foreach my $instance (@$instances){
+	
 	$instance->setDeprecated(1) if $instance->getLOEId == $cbilPredictLOE;  
     }
 }
 
-#recursive function that determines and sets the 'onIsPath' private data for this Association
-#and its children.
-sub initializeOnIsPath{
+sub initializeOnIsNotPath{
     my ($self) = @_;
-
-    if (!$self->getIsNot()){
-	$self->setOnIsPath(1);
-
+    if ($self->getIsNot()){
+	$self->_setOnIsNotPath();  #recursively sets for children too
+    }
+    else {
 	foreach my $child (@{$self->getChildren()}){
-	    $child->initializeOnIsPath();
+	    $child->initializeOnIsNotPath();
 	}
     }
-}   
+}
+
+sub _setOnIsNotPath{
+    my ($self) = @_;
+    $self->{onIsNotPath} = 1;
+    foreach my $child (@{$self->getChildren()}){
+	$child->_setOnIsNotPath();
+    }
+}
+ 
+sub setIsNotFromPath{
+    
+    my ($self, $doNotCreateInstances) = @_; 
+
+    if ($self->{onIsNotPath}){
+	if (!$self->getIsNot() && !$self->isDeprecated()){
+	    
+	    my $instance = GUS::GOPredict::Instance->new();
+	    $instance->setIsPrimary(1);  
+	    $instance->setIsNot(1);
+	    $instance->setLOEId($scrubberLOE);
+	    
+	    my $gusIsNotComment = GUS::Model::DoTS::Comments->new();
+	    $gusIsNotComment->setCommentString("Association rejected due to an Ancestor Association being rejected.");
+	    $gusIsNotComment->setReviewStatusId($unreviewedId);
+	    $instance->addEvidence(GUS::GOPredict::Evidence->new($gusIsNotComment));
+	    
+	    if ( !$self->getReviewStatusId()== $unreviewedId){  #manually reviewed and not already is not
+		$self->setReviewStatusId($needsReviewId); 
+		$instance->setReviewStatusId($needsReviewId);
+	    }
+	    else{  
+		$instance->setReviewStatusId($unreviewedId);
+	    }
+	    
+	    $self->setIsNot(1);
+	    $self->addInstance($instance) unless $doNotCreateInstances;
+	}
+    }
+}
+
+  
 
 #a good example of a method name that gives an indication of what the method does.
 sub countPrimaryInstances{
@@ -574,71 +730,48 @@ sub countPrimaryInstances{
     return $counter;
 }
 
-#sets the Association to be 'is not' if it is not on the 'is path' determined from $self->initializeOnIsPath.
-#If the Association was previously reviewed to be 'is' and has moved to a place where it is no longer
-#on the is path, then it gets a new instance indicating it needs to be re-reviewed.
-sub setIsNotFromIsPath{
-    my ($self) = @_;
-    
-    if (!$self->isOnIsPath()){   #is not unless has no instances/is primary
-	if ($self->isPrimary() && !$self->getIsNot() && $self->getReviewStatusId()){
-	    
-	    my $instance = GUS::GOPredict::Instance->new();
-	    $instance->setIsPrimary(1);  
-	    $instance->setIsNot(1);
-	    $instance->setLOEId($scrubberLOE);
-
-	    my $gusIsNotComment = GUS::Model::DoTS::Comments->new();
-	    $gusIsNotComment->setCommentString("is_not set because path to root only goes through associations that are also is_not");
-	    $gusIsNotComment->setReviewStatusId($unreviewedId);
-	    $instance->addEvidence(GUS::GOPredict::Evidence->new($gusIsNotComment));
-
-	    if ( !$self->getReviewStatusId()== $unreviewedId){  #manually reviewed and not already is not
-		$self->setReviewStatusId($needsReviewId); 
-		$instance->setReviewStatusId($needsReviewId);
-	    }
-	    else{  
-		$instance->setReviewStatusId($unreviewedId);
-	    }
-	    
-	    $self->setIsNot(1);
-	    $self->addInstance($instance);
-	}
-    }
+#updates the GoAssociationId of this Association's contained object.
+#right now only being used to modify associations that are deprecated
+#in the database but created anew by the GoManager (might be a better
+#way to do this).
+sub updateGusAssociationId{
+    my ($self, $gusAssocId) = @_;
+    $self->getGusAssociationObject()->setGoAssociationId($gusAssocId);
 }
 
+
 #creates a new GUS Association object with all of the data set from this Association.
+#does not handle instances
 sub createGusAssociation{
 
     my ($self, $tableId, $rowId) = @_;
     my $gusAssociation = GUS::Model::DoTS::GOAssociation->new();
     $gusAssociation->setTableId($tableId);
     $gusAssociation->setRowId($rowId);
-    $gusAssociation->setGoTermId($self->getGoTerm()->getGusId());
-    $gusAssociation->setIsNot($self->getIsNot());
-    $gusAssociation->setDefining($self->getDefining());
-    $gusAssociation->setReviewStatusId($self->getReviewStatusId());
-    $gusAssociation->setIsDeprecated($self->isDeprecated());
-    $gusAssociation->setIsDeprecated(0) if !$self->isDeprecated(); #account for non-nullable column in db
-	
-    #evidence stuff
     $self->setGusAssociationObject($gusAssociation);    
-    $self->createGusInstancesForAssociation();
+
+    $self->updateGusObject();
+    #evidence stuff
+
+
 }
 
 #creates GUS AssociationInstanceObjects and adds them as children of (having foreign keys to) 
-#the GUS Association Object
-sub createGusInstancesForAssociation{
+#the GUS Association Object.  If the instance object already exists, simply updates its values.
+sub processGusInstancesForAssociation{
     
     my ($self) = @_;
     my $gusAssociation = $self->getGusAssociationObject();
     &confess ("don't have gus association object set for this association!") if !$gusAssociation;
     foreach my $instance (@{$self->getInstances()}){  
 	my $gusInstance = $instance->getGusInstanceObject();
-	
 	if (!$gusInstance){
-	    $gusInstance = $instance->createGusInstance();
+	    $instance->createGusInstance();
+	    $gusInstance = $instance->getGusInstanceObject();
 	    $gusAssociation->addChild($gusInstance);
+	}
+	else {
+	    $instance->updateGusInstance();
 	}
     }
 }
@@ -686,19 +819,20 @@ sub stripIsNotInstances{
 sub propogateInstances{
     my ($self, $instanceInfoHash) = @_;
 
-    if (!$self->getIsNot()){  #if I am is not then I get no Instances regardless (already have one saying 'is not')
-	foreach my $descendantId (keys %$instanceInfoHash){
-	    my $descendantInstances = $instanceInfoHash->{$descendantId};
-	    my $instancesToCache;
-	    if ($self->hasNoIsDescendants()){  #cache is not instances if have no other 'is' descendents
-		$instancesToCache = $descendantInstances;
-		$self->setIsNot(1);
-	    }
-	    else{
-		$instancesToCache = $self->stripIsNotInstances($descendantInstances); #do not cache is not instances
-	    }
-	    $self->{CachedInstances}->{$descendantId} = $instancesToCache;
+   # if (!$self->getIsNot()){  #if I am is not then I get no Instances regardless (already have one saying 'is not')
+    foreach my $descendantId (keys %$instanceInfoHash){
+	my $descendantInstances = $instanceInfoHash->{$descendantId};
+	my $instancesToCache;
+	
+	if ($self->hasNoIsDescendants() && !$self->isPrimary()){  #cache is not instances if have no other 'is' descendents
+	    $instancesToCache = $descendantInstances;
+	    $self->setIsNot(1);
 	}
+	else{
+	    $instancesToCache = $self->stripIsNotInstances($descendantInstances); #do not cache is not instances
+	}
+	$self->{CachedInstances}->{$descendantId} = $instancesToCache;
+#	}
 	foreach my $parent (@{$self->getParents()}){
 	    $parent->propogateInstances($instanceInfoHash);
 	}
@@ -736,7 +870,7 @@ sub determineAndSetDefining{
     
     return 1 if $haveDefiningChildren;
 
-    #if we got here no child is on defining, check if self is defining
+    #if we got here no child is defining (or have no children), check if self is defining
     &confess ("couldn't get go term") if !$self->getGoTerm();
     if ($self->isDeprecated() || $self->getGoTerm()->isObsolete() || $self->getIsNot() || !$self->isPrimary()){
 	return 0;
@@ -766,7 +900,6 @@ sub makeAssociationHashFromGusObjects{
 #used when grafting a primary association into a graph and finding
 #an existing association (myself) that is only in the graph because
 #it was made by a primary child
- 
 sub absorbStateFromAssociation{
 
     my ($self, $association) = @_;
@@ -780,90 +913,5 @@ sub absorbStateFromAssociation{
 }
 
 
-#not used anywhere--but I want to make sure before I take it out.
-#assocQuery:
-#RealGoId  GusGoID AssociationId ReviewStatus IsNot InstanceId Instance_LOE_id InstanceReviewStatus Instance.IsPrimaryInstance IsNot (#figure out what exactly we need to use here) 
-
-sub makeAssociationHashFromResultSet{
-    
-    my ($assocQuery, $goGraph) = @_;
-    my $assocHash;
-    foreach my $assocRow(@$assocQuery){
-	my ($gusGoId, $associationId, $assocReviewStatusId, $assocIsNot, $instanceId, $instanceLOEId,
-	    $instanceReviewStatusId, $instanceIsNot) = @$assocRow;
-	my $goTerm = $goGraph->getGoTermFromGusGoId($gusGoId);
-	
-	my $association = $assocHash->{$goTerm};
-	if (!$association){
-	    
-	    $association = GUS::GOPredict::Association->new($goTerm); #pass in go term?
-
-	    $association->setReviewStatusId($assocReviewStatusId);
-	    $association->setIsNot($assocIsNot);
-	    $assocHash->{$goTerm} = $association;
-	    
-	}
-	if ($instanceLOEId){
-
-	    my $instance = GUS::GOPredict::Instance->new();
-	    $instance->setReviewStatusId($instanceReviewStatusId);
-	    $instance->setIsPrimary(1);
-	    $instance->setIsNot($instanceIsNot);
-	    $instance->setLOEId($instanceLOEId);
-	    $association->addInstance($instance);
-	}
-    }
-    
-    return $assocHash;
-}
-
-
-#not used anywhere
-# resultSet:
-# GusGoID AssociationId ReviewStatus IsNot InstanceId Instance_LOE_id InstanceReviewStatus Instance.IsNot
-# tableId: the id of the table to which this association is made
-# rowId: the row in that table to which this association is made
-#NOTE: the input must not include any non-primary instances.
-sub makeGUSAssociationObjectsFromResultSet {
-
-    my ($resultSet, $tableId, $rowId) = @_;
-    my $assocHash;
-    foreach my $assocRow(@$resultSet){
-	my ($gusGoId, $associationId, $assocReviewStatusId,
-	    $assocIsNot, $instanceId, $instanceLOEId,
-	    $instanceReviewStatusId, $instanceIsNot) = @$assocRow;
-
-	my $association = $assocHash->{$gusGoId};
-	if (!$association){
-	    $association = GUS::Model::DoTS::GOAssociation->new();
-	    $association->setGoAssociationId($associationId);
-	    $association->setTableId($tableId);
-	    $association->setRowId($rowId);
-	    $association->setGoTermId($gusGoId);
-	    $association->setReviewStatusId($assocReviewStatusId);
-	    $association->setIsNot($assocIsNot);
-#	    $association->setDefining();
-#	    $association->setGoAssociationDate();
-	    $assocHash->{$gusGoId} = $association;
-
-	}
-	if ($instanceId){
-	    my $instance =  GUS::Model::DoTS::GOAssociationInstance->new();
-	    $instance->setGoAssociationInstanceId($instanceId);
-	    $instance->setGoAssociationId($associationId);
-	    $instance->setGoAssocInstLoeId($instanceLOEId);
-	    $instance->setReviewStatusId($instanceReviewStatusId);
-	    $instance->setDefining(1);  #NEEDS CHANGE WHEN SCHEMA CHANGES
-	    $instance->setIsNot($instanceIsNot);
-#	$instance->setDefining();
-#	$instance->setExternalDatabaseReleaseId();
-#	$instance->setSourceId();
-#	$instance->setPValueRatio();
-	    $association->addChild($instance);
-	}
-    }
-    my @assocArray = values %$assocHash;
-    return \@assocArray;
-}
 
 1;

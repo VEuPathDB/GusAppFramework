@@ -3,9 +3,14 @@ package GUS::GOPredict::DatabaseAdapter;
 use GUS::GOPredict::Association;
 use GUS::Model::DoTS::AAMotifGOTermRule;
 use GUS::Model::DoTS::Similarity;
+use GUS::Model::DoTS::MotifAASequence;
 
 use strict;
 use Carp;
+
+#################################### DatabaseAdapter.pm ######################################
+
+#################################### Constructor #############################################
 
 sub new{
 
@@ -19,144 +24,80 @@ sub new{
     return $self;
 }
 
-#called by plugin.  Will have to be altered if not doing dots
-sub initializeTranslations{
+#################################### Statement Handle Accessors ##############################
 
-    my ($self, $taxonId, $filePath, $createNewFile) = @_;
+#These methods return statement handles that can be subsequently iterated through by the 
+#calling method.  
 
-    if ($filePath){
-	if (!$createNewFile){
-	    $self->_setTranslationsFromFile($filePath);
-	    return;
-	}
 
-    }
-    my $idSql;
-    $idSql = "and p.protein_id in (" . $self->getTestProteinIds() . ")" if $self->getTestProteinIds();
-    
-    my $sql = "select am.na_sequence_id, p.protein_id
-               from dots.protein p, dots.rnainstance rnai, 
-               dots.rnafeature rnaf, dots.assembly am
-               where p.rna_id = rnai.rna_id
-               and rnai.na_feature_id = rnaf.na_feature_id
-               and rnaf.na_sequence_id = am.na_sequence_id
-               $idSql";
-    
-    
-    $sql .= " and am.taxon_id = $taxonId" if $taxonId;
-    
-    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
-    
-    if ($createNewFile){
-
-	while (my ($assemblyId, $proteinId) = $sth->fetchrow_array()){
-	    
-	    open (TRANSLATIONS, ">>" . $filePath);
-	    print TRANSLATIONS $assemblyId . " " . $proteinId . "\n";
-	}
-	$self->_setTranslationsFromFile($filePath);
-    }
-    else{
-	while (my ($assemblyId, $proteinId) = $sth->fetchrow_array()){
-	    $self->{dotsToProtein}->{$assemblyId} = $proteinId;
-	    $self->{proteinToDots}->{$proteinId} = $assemblyId;
-	}
-    }
-    
-}
-
+#Retrieves all Protein IDs from the DoTS.Protein table that have GOAssociations
+#with GO Terms from a particular GO Term release.
+#
+#param $taxonId:           If set, will only return protein IDs for a particular organisim
+#                          specified by this ID.
+#param $excludeAlgIdList:  If set, will ignore Protein IDs that have any GOAssociations
+#                          that were processed in previous Plugin runs specified by this
+#                          list.  Note that Protein IDs that were previously processed by
+#                          these plugins, but had no GOAssociations that were created or
+#                          modified at that time, will be processed again (generally, these
+#                          Protein IDs take much less time to re-process, however).
 sub getGusProteinIdResultSet{
 
-    my ($self, $proteinTableId, $goVersion) = @_;
-    
-    my $idSql;
+    my ($self, $proteinTableId, $goVersion, $taxonId, $excludeAlgIdList) = @_;
+
+    my $testIdSql ="";
     my $testProteinIds = $self->getTestProteinIds();
-    $idSql = "and ga.row_id in (" . $testProteinIds . ")" if $testProteinIds;
+    my $excludeAlgIdsSql ="";
 
+    if ($testProteinIds){
+	$testIdSql = "and ga.row_id in (" . $testProteinIds . ")";
+    }
+
+    if ($excludeAlgIdList){
+	$excludeAlgIdsSql = " and ga.row_id not in (select distinct ga.row_id from dots.goassociation ga 
+                                 where row_alg_invocation_id in (" . join(",", @{$excludeAlgIdList}) . ")";
+    }
+    
     my $sql = "select distinct(p.protein_id) 
-               from   DoTS.Protein p, DoTS.GOAssociation ga, SRes.GoTerm gt
-               where ga.table_id =  $proteinTableId
-               and ga.row_id = p.protein_id
-               and ga.is_deprecated != 1
-               and gt.go_term_id = ga.go_term_id
-               and gt.external_database_release_id = $goVersion
-               $idSql 
-";    
+               from DoTS.Protein p, DoTS.GOAssociation ga, SRes.GoTerm gt,
+                    dots.rnainstance rnai, dots.rnafeature rnaf, dots.assembly am
+	       where ga.table_id = $proteinTableId
+                    and ga.row_id = p.protein_id
+                    and ga.is_deprecated != 1
+                    and gt.go_term_id = ga.go_term_id
+                    and gt.external_database_release_id = $goVersion 
+                    and p.rna_id = rnai.rna_id and rnai.na_feature_id = rnaf.na_feature_id
+                    and rnaf.na_sequence_id = am.na_sequence_id and am.taxon_id = $taxonId
+               $excludeAlgIdsSql
+               $testIdSql";
 
-#gets associations for deleted proteins
-#    my $sql = "select distinct(row_id) 
-#               from  DoTS.GOAssociation ga, SRes.GoTerm
-#               where ga.table_id =  $proteinTableId
-#               and ga.is_deprecated != 1
-#               and gt.go_term_id = ga.go_term_id
-#               and gt.external_database_release_id = $goVersion
-#               $idSql 
-#";    
-  
+
+    print STDERR "DatabaseAdapter: executing \n $sql \n to get proteins to process\n";
+
     my $sth = $self->getDbHandle()->prepareAndExecute($sql);
     return $sth;
 }
-
-sub submitGusObject{
-
-    my ($self, $gusObject) = @_;
-    $gusObject->submit();
-}
-
-sub _setTranslationsFromFile{
-
-    my ($self, $filePath) = @_;
-    open (TRANSLATIONS, "<" . $filePath);
-    while (<TRANSLATIONS>){
-	my $line = $_;
-	if ($line =~ /(\d+)\s(\d+)/){
-	    my $assemblyId = $1;
-	    my $proteinId = $2;
-
-	    $self->{dotsToProtein}->{$assemblyId} = $proteinId;
-	    $self->{proteinToDots}->{$proteinId} = $assemblyId;
-	}
-    }
-}
-
-sub _getSimSthFromFile{
-
-    my ($self, $filePath) = @_;
-
-    my $testSth = GUS::GOPredict::TestSth->new();
-    open (SIMS, "<" . $filePath);
-    while (<SIMS>){
-	my $line = $_;
-	if ($line =~ /(\d+)\s(\d+)\s(\d+)/){
-	    my @simArray = ($1, $2, $3);
-	    $testSth->addRow(\@simArray);
-	}
-    }
-    return $testSth;
-}
-
 
 #param cla: hash of bulky command line arguments for running queries
 #includes queryTableId, queryTablePkAtt, subjectDbList,
 #queryDbList, queryTaxonId, proteinTableId
 sub runProteinSimQuery{
    
-    my ($self, $cla, $filePath, $createNewFile) = @_;
+    my ($self, $cla, $filePath, $createNewFile, $excludeInvocationIdList) = @_;
     if ($filePath){
 	if (!$createNewFile){
 	    my $testSth = $self->_getSimSthFromFile($filePath);
-	    
 	    return $testSth;
 	}
     }
     my $motifTableId = $self->getGusTableId("DoTS", "MotifAASequence");
-    
+    my $excludeInvocationIdString;
     my $testSqlString;
     my $queryDbString;
-    my $queryTaxonString;
     $queryDbString = "and q.external_database_release_id in (" . $cla->{queryDbList} . ")" 
 	if $cla->{queryDbList};
-    $queryTaxonString = "and q.taxon_id = " . $cla->{queryTaxonId} if $cla->{queryTaxonId};
+    $excludeInvocationIdString = $self->_makeExcludeInvocationIdString($excludeInvocationIdList, $cla->{queryTablePkAtt},
+								       $cla->{queryTable}) if $excludeInvocationIdList;
     $testSqlString = $self->_getTestProteinSimSql();
     
     my $sql = "select  sim.query_id, sim.subject_id, sim.similarity_id 
@@ -169,11 +110,10 @@ sub runProteinSimQuery{
 	             and sim.query_id               = q." . $cla->{queryTablePkAtt} .
 			 " and sim.subject_id             = s.aa_sequence_id
 		     and s.external_database_release_id in (" . $cla->{subjectDbList} . ") 
-                     $testSqlString
-                     $queryDbString
-                     $queryTaxonString
-                order by sim.query_id";
+                     and q.taxon_id = " . $cla->{queryTaxonId} . "
+                     $testSqlString  $queryDbString $excludeInvocationIdString  order by sim.query_id";
     
+    print STDERR "DatabaseAdapter:  executing \n $sql \n to get proteins for apply rules\n";
     my $sth = $self->getDbHandle()->prepareAndExecute($sql);
     if ($createNewFile){
 	open (SIMQUERY, ">>" . $filePath);
@@ -185,35 +125,19 @@ sub runProteinSimQuery{
     return $sth;
 }
 
-    
 
-
-sub _getTestProteinSimSql{
-    my ($self) = @_;
-    my $idSql;
-    if ($self->getTestProteinIds()){
-	my @testQueryIds;
-	my @testProteinIds = split /,/, $self->getTestProteinIds();
-	while (my $proteinId = shift @testProteinIds){
-	    push (@testQueryIds, $self->{proteinToDots}->{$proteinId});
-	}
-	$idSql = "and sim.query_id in (" . join(',', @testQueryIds) . ")";
-    }
-    return $idSql;
-}
-
-
+#Retrieves all IDs for all non-deprecated GO Associations 
+#of a given Protein that are not deprecated.
 sub getGusAssocIdResultSet{
 
-    my ($self, $proteinId, $proteinTableId, $goVersion) = @_;
-    #will need to include go version if go assoc's for previous
-    #go versions have not been deprecated
+    my ($self, $proteinId, $proteinTableId) = @_;
+
     my $sql = "select distinct ga.go_association_id
                from dots.goassociation ga
                where  ga.table_id = $proteinTableId
                      and ga.row_id = $proteinId
                      and ga.is_deprecated != 1";
-    #include go version if necessary
+
     my $sth = $self->getDbHandle()->prepareAndExecute($sql);
     return $sth;
     
@@ -230,56 +154,34 @@ sub getGoResultSet{
      and term.name != 'Gene_Ontology'
      and term.go_term_id = hier.parent_term_id (+) 
 ";
-    my $stmt = $self->getQueryHandle()->prepareAndExecute($sql);
-        
-}
-
-sub makeGoSynMap{
-
-    my ($self, $goVersion, $oldGoRootId, $newGoRootId) = @_;
-
-   
-    my $goSynMap;
-    my $sql = "select gt.go_id, gs.source_id
-               from sres.goterm gt, sres.gosynonym gs
-               where gt.go_term_id = gs.go_term_id
-               and gs.source_id like 'GO%'
-               and gt.external_database_release_id = $goVersion";
-
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
-
-    while (my ($realGoId, $synonymId) = $sth->fetchrow_array()){
-	$goSynMap->{$synonymId} = $realGoId;
-	
-    }
-    $goSynMap->{$oldGoRootId} = $newGoRootId; #not sure if we need to have this after 
-                                                 #root id = 'GO:-00001' problem has been fixed
-    
-    print STDERR "adapter: makegorealIdmap: entry for $newGoRootId is " . $goSynMap->{$newGoRootId} . "\n";
-    return $goSynMap;
+    return $sth;
 }
-    
+
 sub getProteinsToDeprecate{
 
-    my ($self, $raidList, $proteinTableId) = @_;
-    
+    my ($self, $raidList, $proteinTableId, $taxonId) = @_;
+
     my $sql = "select distinct p.protein_id
-               from dots.protein p, dots.goassociation ga
+               from dots.protein p, dots.goassociation ga,
+                    dots.rnainstance rnai, dots.rnafeature rnaf, 
+                    dots.assembly am 
                where ga.is_deprecated != 1 and ga.table_id = $proteinTableId
-               and ga.row_id = p.protein_id
-               and p.protein_id not in 
+                    and ga.row_id = p.protein_id and p.rna_id = rnai.rna_id 
+                    and rnai.na_feature_id = rnaf.na_feature_id
+                    and rnaf.na_sequence_id = am.na_sequence_id and am.taxon_id = $taxonId
+                    and p.protein_id not in 
                (select distinct p.protein_id
                from dots.protein p, dots.goassociation ga
                where ga.row_id = p.protein_id
-               and ga.row_alg_invocation_id in ($raidList))";
+                    and ga.row_alg_invocation_id in ($raidList))";
     
+    print STDERR "DatabaseAdapter.getProteinsToDeprecate: returning \n $sql\n";
+
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
     
     return $sth;
-
-
 }
-
 
 sub getGoRuleResultSet{
 
@@ -304,13 +206,323 @@ sub getGoRuleResultSet{
 
 }
 
+
+#################################### Mapping Initializers ##############################
+
+#These methods execute a query and do all the processing immediately, returning a result
+#(usually a map) to the calling class or setting it here.
+
+#given a protein, create an AssociationGraph representing all GO Terms associated with the protein
+#param goGraph:         goGraph required to create the AssociationGraph (see AssociationGraph.pm)
+#param proteinId:       id of protein for which we are creating the AssociationGraph
+#param proteinTableId:  ID in GUS of the DoTS.Protein table (could be extended to handle Associations to 
+#                       other things than proteins.
+#param goVersion:       external database release id of the GO Function terms which will be retrieved
+#param extent:          extent that will give GUS GoAssociation objects when asked (see GoExtent.pm)
+
+sub getAssociationGraph{
+
+    my ($self, $goGraph, $proteinId, $proteinTableId, $goVersion, $extent) = @_;
+    
+    my $gusAssocIdResultSet = $self->getGusAssocIdResultSet($proteinId, $proteinTableId, $goVersion);
+
+    my $gusAssocObjectList;
+
+    while (my ($assocId) = $gusAssocIdResultSet->fetchrow_array()){
+	my $gusAssocObject = $extent->getGusAssociationFromId($assocId);
+
+	push (@$gusAssocObjectList, $gusAssocObject);
+    }
+    
+    my $associationGraph;
+    if ($gusAssocObjectList){   # why would there not be an assoc list?
+	if (scalar @$gusAssocObjectList > 0){
+	    $associationGraph = GUS::GOPredict::AssociationGraph->newFromGusObjects($gusAssocObjectList, $goGraph);
+	}
+    }
+
+    $gusAssocIdResultSet->finish();
+    return $associationGraph;
+}
+
+
+#method that adds evidence objects to an Association Graph to be displayed in the toString() method of the graph.
+#currently will cause GoAssociationInstance objects to resubmit their evidence, so should not be called in commit()
+#mode until this issue is addressed.
+sub addEvidenceToGraph{
+
+    my ($self, $associationGraph) = @_;
+    my $allAssoc = $associationGraph->getAsList();
+    foreach my $association (@$allAssoc){
+	my $instances = $association->getInstances();
+	foreach my $instance(@$instances){
+	    my $gusId = $instance->getGusInstanceObject()->getGoAssociationInstanceId();
+	    my $sql = "select ruleset.aa_sequence_id_1
+                       from dots.aamotifgotermruleset ruleset, 
+                            dots.aamotifgotermrule rule, dots.evidence e 
+                            where e.fact_table_id = 330 and e.target_table_id = 3177 and e.target_id = $gusId
+                                  and e.fact_id = rule.aa_motif_go_term_rule_id
+                                  and rule.aa_motif_go_term_rule_set_id = ruleset.aa_motif_go_term_rule_set_id";
+                                  
+ 	    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+	     while (my ($motifId) = $sth->fetchrow_array()){
+		 my $motifObject = GUS::Model::DoTS::MotifAASequence->new();
+		 $motifObject->setAaSequenceId($motifId);
+		 $motifObject->retrieveFromDB();
+		 my $evidence = GUS::GOPredict::Evidence->new($motifObject);
+		 $instance->addEvidence($evidence);
+	     }
+	} 
+    } 
+} 
+
+
+#called by plugin.  Will have to be altered if not doing dots
+sub initializeTranslations{
+
+    my ($self, $taxonId, $filePath, $createNewFile) = @_;
+
+    if ($filePath && !$createNewFile){
+	print STDERR "reading translations in from pre-existing file $filePath\n";
+	$self->_setTranslationsFromFile($filePath);
+	return;
+    }
+    
+    my $sql = "select am.na_sequence_id, p.protein_id
+               from dots.protein p, dots.rnainstance rnai, 
+               dots.rnafeature rnaf, dots.assembly am
+               where p.rna_id = rnai.rna_id
+               and rnai.na_feature_id = rnaf.na_feature_id
+               and rnaf.na_sequence_id = am.na_sequence_id";
+    
+    $sql .= " and p.protein_id in (" . $self->getTestProteinIds() . ")" if $self->getTestProteinIds();
+    $sql .= " and am.taxon_id = $taxonId" if $taxonId;
+    
+    print STDERR "DatabaseAdapter: executing\n $sql \n to get translations from assemblies to proteins\n";
+
+    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+    
+    if ($createNewFile){
+
+	open (TRANSLATIONS, ">>" . $filePath);
+	while (my ($assemblyId, $proteinId) = $sth->fetchrow_array()){
+	 	 
+	    print TRANSLATIONS $assemblyId . " " . $proteinId . "\n";
+	}
+	$self->_setTranslationsFromFile($filePath);
+    }
+    else{
+	while (my ($assemblyId, $proteinId) = $sth->fetchrow_array()){
+	    $self->{dotsToProtein}->{$assemblyId} = $proteinId;
+	    $self->{proteinToDots}->{$proteinId} = $assemblyId;
+	}
+    }
+}
+
 sub getTranslatedProteinId{
 
     my ($self, $queryId) = @_;
     my $proteinId = $self->{dotsToProtein}->{$queryId};
     &confess("no translated protein for assembly $queryId") if !$proteinId;
-    #decide if we want to keep this or just skip if can't find translation
     return $proteinId;
+}
+
+#makes a hash where the keys are Synonyms to GO Terms in the current release,
+#and the values are the GO Terms to which they are synonyms.
+sub makeGoSynMap{
+
+    my ($self, $goVersion) = @_;
+   
+    my $goSynMap;
+    my $sql = "select gt.go_id, gs.source_id
+               from sres.goterm gt, sres.gosynonym gs
+               where gt.go_term_id = gs.go_term_id
+               and gs.source_id like 'GO%'
+               and gt.external_database_release_id = $goVersion";
+
+    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+
+    while (my ($realGoId, $synonymId) = $sth->fetchrow_array()){
+	$goSynMap->{$synonymId} = $realGoId;
+	
+    }
+    return $goSynMap;
+}
+
+#returns a map of the form
+#proteinId->{GoId}->{AssocId}
+#                 ->{goVersion}
+#Each entry of AssocId is a deprecated Association between the protein and Go Term
+#If there are multiple Associations between a protein and a GO ID because of multiple
+#releases of the GO ID, then the Association to the latest version is returned and stored
+#in {goVersion}
+sub getDeprecatedAssociations{
+    my ($self, $taxonId, $proteinTableId, $filePath, $createNewFile) = @_;
+    my $deprecatedAssociations;
+    my $from = "";
+    my $where = "";
+    
+    if ($filePath && !$createNewFile){
+	print STDERR "reading deprecated associatoins in from pre existing file $filePath\n";
+	$deprecatedAssociations = $self->_getDeprecatedFromFile($filePath);
+	return $deprecatedAssociations;
+    }
+
+    if ($taxonId){
+	$from = ", dots.rnainstance rnai, dots.rnafeature rnaf, dots.assembly am ";
+	$where = " and p.rna_id = rnai.rna_id and rnai.na_feature_id = rnaf.na_feature_id
+                  and rnaf.na_sequence_id = am.na_sequence_id and am.taxon_id = $taxonId";
+    }
+    
+    my $sql = "select ga.row_id, gt.go_id, gt.external_database_release_id, ga.go_association_id 
+               from dots.goassociation ga, dots.protein p, sres.goterm gt " .  $from . " where 
+               p.protein_id = ga.row_id and ga.table_id = $proteinTableId
+               and gt.go_term_id = ga.go_term_id
+               and ga.is_deprecated = 1 "
+               . $where; 
+    
+    print STDERR "DatabaseAdapter: executing\n $sql \n to get deprecated associations\n";
+    
+    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+    if ($createNewFile){
+	open (DEPRECATED, ">>" . $filePath);
+	
+	while (my ($proteinId, $goId, $goVersion, $goAssociationId) = $sth->fetchrow_array()){
+
+	    print DEPRECATED "$proteinId $goId $goVersion $goAssociationId\n";
+	}
+	$deprecatedAssociations = $self->_getDeprecatedFromFile($filePath);
+    }
+    
+    else{
+	while (my ($proteinId, $goId, $goVersion, $goAssociationId) = $sth->fetchrow_array()){
+	    my $existingGoVersion = $deprecatedAssociations->{$proteinId}->{$goId}->{goVersion};
+	    
+	    if (!$existingGoVersion || $goVersion > $existingGoVersion){
+		
+		$deprecatedAssociations->{$proteinId}->{$goId}->{assocId} = $goAssociationId;
+		$deprecatedAssociations->{$proteinId}->{$goId}->{goVersion} = $goVersion;
+	    }
+	}
+    }
+    return $deprecatedAssociations;
+}
+
+#################################### Utility Methods ##############################
+
+#These methods complement methods above to add extra SQL or provide other functionality.
+sub _setTranslationsFromFile{
+
+    my ($self, $filePath) = @_;
+    open (TRANSLATIONS, "<" . $filePath);
+    while (<TRANSLATIONS>){
+	my $line = $_;
+	if ($line =~ /(\d+)\s(\d+)/){
+	    my $assemblyId = $1;
+	    my $proteinId = $2;
+
+	    $self->{dotsToProtein}->{$assemblyId} = $proteinId;
+	    $self->{proteinToDots}->{$proteinId} = $assemblyId;
+	}
+    }
+}
+
+sub _getDeprecatedFromFile{
+
+    my ($self, $filePath) = @_;
+    my $deprecatedAssociations;
+    open (DEPRECATED, "<" . $filePath);
+
+    while (<DEPRECATED>){
+	my $line = $_;
+	    if ($line =~ /(\S+)\s(\S+)\s(\S+)\s(\S+)/){
+		my $proteinId = $1;
+		my $goId = $2;
+		my $goVersion = $3;
+		my $goAssociationId = $4;
+		my $existingGoVersion = $deprecatedAssociations->{$proteinId}->{$goId}->{goVersion};
+		
+		if (!$existingGoVersion || $goVersion > $existingGoVersion){
+		    
+		    $deprecatedAssociations->{$proteinId}->{$goId}->{assocId} = $goAssociationId;
+		    $deprecatedAssociations->{$proteinId}->{$goId}->{goVersion} = $goVersion;
+		}
+	    }
+    }
+    return $deprecatedAssociations;
+}
+	
+
+sub _getSimSthFromFile{
+
+    my ($self, $filePath) = @_;
+
+    my $testSth = GUS::GOPredict::TestSth->new();
+    open (SIMS, "<" . $filePath);
+    while (<SIMS>){
+	my $line = $_;
+	if ($line =~ /(\d+)\s(\d+)\s(\d+)/){
+	    my @simArray = ($1, $2, $3);
+	    $testSth->addRow(\@simArray);
+	}
+    }
+    return $testSth;
+}
+
+
+#only works for dots.assembly right now
+sub _makeExcludeInvocationIdString{
+    my ($self, $excludeInvocationIdList, $queryTablePkAtt, $queryTable) = @_;
+    my $sql = " and q.na_sequence_id not in (
+                select am.na_sequence_id
+                from dots.assembly am, dots.rnainstance rnai,
+                dots.rnafeature rnaf, dots.protein p,
+                dots.goassociation ga
+                where ga.row_id = p.protein_id
+                and ga.row_alg_invocation_id in (" . join(",", @{$excludeInvocationIdList}) . ")
+                and p.rna_id = rnai.rna_id and rnai.na_feature_id = rnaf.na_feature_id
+                and rnaf.na_sequence_id = am.na_sequence_id) ";
+
+    return $sql;
+}
+
+sub _getTestProteinSimSql{
+    my ($self) = @_;
+    my $idSql;
+    if ($self->getTestProteinIds()){
+	my @testQueryIds;
+	my @testProteinIds = split /,/, $self->getTestProteinIds();
+	while (my $proteinId = shift @testProteinIds){
+	    push (@testQueryIds, $self->{proteinToDots}->{$proteinId});
+	}
+	$idSql = "and sim.query_id in (" . join(',', @testQueryIds) . ")";
+    }
+    return $idSql;
+}
+
+
+#########################################  Object Layer Functionality ##################################
+
+#These methods provide various forms of interaction with GUS Objects
+
+sub undefPointerCache{
+
+    my ($self) = @_;
+    $self->getDb()->undefPointerCache();
+
+}
+
+sub submitGusObject{
+
+    my ($self, $gusObject) = @_;
+
+
+    my $children = $gusObject->{'children'};
+    foreach my $classname (keys %$children){
+
+	my $ch = $gusObject->{'children'}->{$classname};
+    }
+    $gusObject->submit();
 }
 
 sub getRuleObjectFromId{
@@ -333,7 +545,7 @@ sub getGusAssociationFromId{
     $gusAssocObject->retrieveFromDB();
     $gusAssocObject->retrieveAllChildrenFromDB(0);
 
-    my @children = $gusAssocObject->getChildren("DoTS::GOAssociationInstance");
+ 
 
     return $gusAssocObject;
 }
@@ -349,6 +561,8 @@ sub getSimObjectFromId{
     return $gusSimObject;
 }
 
+######################################### Miscellaneous #######################################
+
 sub getGusTableId {
     my ($self, $owner, $table) = @_;
     my $queryHandle = $self->getQueryHandle();
@@ -363,38 +577,9 @@ sub getGusTableId {
     return $tableId;
 }
 
-sub deleteCachedInstances{
-    
-    my ($self, $proteinTableId, $goVersion) = @_;
-#    my $sql = "delete 
-#               from DoTS.GOAssociationInstance gai
-#               where gai.go_association_instance_id in 
-#               (select gait.go_association_instance_id
-#                from DoTS.GOAssociationInstance gait,
-#               DoTS.GOAssociation ga
-#               where gait.go_association_id = ga.go_association_id
-#               and ga.table_id = $proteinTableId
-#               and gait.is_primary = 0)
-#               ";
-    
-    my $sql = "delete 
-               from DoTS.GOAssociationInstance gai
-               where gai.go_association_instance_id in 
-               (select gait.go_association_instance_id
-               from DoTS.GOAssociationInstance gait, SRes.GoTerm gt,
-               DoTS.GOAssociation ga
-               where gait.go_association_id = ga.go_association_id
-               and ga.go_term_id = gt.go_term_id
-               and gt.external_database_release_id = $goVersion
-               and ga.is_deprecated != 1
-               and ga.table_id = $proteinTableId
-               and gait.is_primary = 0)
-               ";
-    
 
-    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
-    
-}
+
+######################################## Accessor Methods ########################################
 
 sub setQueryHandle{
     my ($self, $queryHandle) = @_;
@@ -426,13 +611,6 @@ sub getDb{
     return $self->{Db};
 }
 
-sub undefPointerCache{
-
-    my ($self) = @_;
-    $self->getDb()->undefPointerCache();
-
-}
-
 #testing
 
 sub setTestAssemblyIds{
@@ -455,6 +633,21 @@ sub setTestProteinIds{
 sub getTestProteinIds{
     my ($self) = @_;
     return $self->{TestProteinIds};
+}
+
+
+sub loadProteinsToSkip{
+
+    my ($self) = @_;
+    my $skipped;
+    open (SKIP, "</home/dbarkan/projects/GUS/GOPredict/plugin/perl/skip.txt");
+    while (<SKIP>){
+	chomp;
+	my $line = $_;
+#	print STDERR "DB adapter: adding $line to skipped\n";
+	$skipped->{$line} = 1;
+    }
+    return $skipped;
 }
 
      

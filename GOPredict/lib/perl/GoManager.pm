@@ -8,7 +8,7 @@ use GUS::GOPredict::GoExtent;
 
 use strict;
 use Carp;
-
+use FileHandle;
 
 ##################################### GoManager.pm #######################################
 
@@ -43,6 +43,8 @@ my $veryVerboseLevel = 2;
 my $noVerboseLevel = 0;
 
 
+my $curatorLOEId = 4;
+
 ############################################################################################
 #################################  Constructor #############################################
 ############################################################################################
@@ -65,41 +67,54 @@ sub new{
 #upgrade all associations for all proteins to the new release of the GO Hierarchy
 sub evolveGoHierarchy{
 
-    my ($self, $oldGoVersion, $newGoVersion, $deleteCache, $recache, $proteinTableId, $doNotScrub) = @_;
+    my ($self, $oldGoVersion, $newGoVersion, $deleteInstances, $recache, $proteinTableId, 
+	$doNotScrub, $testNumber, $taxonId, $excludeAlgIds, $validate) = @_;
     
-    my $goSynMap = $self->getAdapter()->makeGoSynMap($newGoVersion, $self->getOldFunctionRootGoId(), 
-							   $self->getNewFunctionRootGoId());
+    my $goSynMap = $self->getAdapter()->makeGoSynMap($newGoVersion);
+
     $self->initializeOldGoGraph($oldGoVersion, $goSynMap);
     $self->initializeNewGoGraph($newGoVersion);
     $self->setOldGoVersion($oldGoVersion);
     $self->setNewGoVersion($newGoVersion);
 
-    $self->_deleteCachedInstances($proteinTableId, $oldGoVersion) if $deleteCache;
-
     my $goTermMap = GUS::GOPredict::GoGraph::makeGoTermMap($self->getOldGoGraph(),
 							   $self->getNewGoGraph());
 
-    $self->log("Evolve Go Hierarchy: getting proteins to work with");
+    $self->log("Evolve Go Hierarchy: getting proteins to process");
 
-    my $gusProteinIdResultSet = $self->getAdapter()->getGusProteinIdResultSet($proteinTableId, $oldGoVersion);
+    my $gusProteinIdResultSet = $self->getAdapter()->getGusProteinIdResultSet($proteinTableId, $oldGoVersion, 
+									      $taxonId, $excludeAlgIds);
     my $proteinCounter = 0;
+    
     while (my ($proteinId) = $gusProteinIdResultSet->fetchrow_array()){
+	last if ($testNumber && $proteinCounter > $testNumber);
 
-	$self->logVerbose("evolveGoHierarchy: processing protein $proteinId");
 	$proteinCounter++;
+	$self->_logProtein("evolveGoHierarchy", $proteinId, $proteinCounter);
 
 	my $extent = GUS::GOPredict::GoExtent->new($self->getAdapter());
 
-	my $originalAssociationGraph = $self->_getExistingAssociations($proteinId, $oldGoVersion, $extent, $proteinTableId);
+	my $originalAssociationGraph = $self->_getExistingAssociations($proteinId, $oldGoVersion, $extent, 
+								       $proteinTableId);
+	
+	$self->_deleteCachedInstances($originalAssociationGraph) if $deleteInstances;
 
 	my $newAssociationGraph = $originalAssociationGraph->evolveGoHierarchy($goTermMap,
 									       $self->getNewGoGraph(),
 									       $self->getOldGoGraph()->getGoSynMap());
-	$self->_scrubGraph($newAssociationGraph, $recache) unless $doNotScrub;
 	
-	$self->_prepareAndSubmitGusObjects($newAssociationGraph, $extent, $proteinTableId, $proteinId, $goTermMap);
-       
+	if ($newAssociationGraph){
+	    $self->_scrubGraph($newAssociationGraph, $recache) unless $doNotScrub;
+
+	    $newAssociationGraph->validateEvolution($self->getNewGoGraph(), $proteinId) if $validate;
+	    $self->validateGusData($newAssociationGraph, $proteinId) if $validate;
+	    $self->_prepareAndSubmitGusObjects($newAssociationGraph, $extent, $proteinTableId, $proteinId, $goTermMap, $goSynMap);
+	}
+	else {
+	    $self->log("GoManager.evolveGoHiearchy:  did not create new Association Graph for protein $proteinId");
+	}
     }
+
     return $proteinCounter;
 }
 
@@ -111,36 +126,45 @@ sub evolveGoHierarchy{
 #            queryDbList, queryTaxonId, proteinTableId
 sub applyRules{
 
-    my ($self, $goVersion, $cla, $doNotScrub, $simsFilePath, $createNewSimsFile) = @_;
+    my ($self, $goVersion, $cla, $doNotScrub, $simsFilePath, $createNewSimsFile, $excludeInvocationIdList, 
+	$testNumber, $validate) = @_;
+    
+    $self->log("beginning applyRules");
 
     my $counter = 0;
+    my $doneAssems;
+
+    
     my ($currentQueryId, $firstMotifId, $firstSimId, 
 	$currentProteinId, $proteinId, $currentProteinInfoList);
     $self->initializeGoRuleEngine($goVersion, $cla);
     $self->initializeNewGoGraph($goVersion);
     $self->setNewGoVersion($goVersion);
-
-    $self->_deleteCachedInstances($cla->{proteinTableId}, $goVersion);
     
-    $self->log("running query to get similarities between proteins and motifs");
-    my $proteinSth = $self->getAdapter()->runProteinSimQuery($cla, $simsFilePath, $createNewSimsFile);
 
+    my $proteinSth = $self->getAdapter()->runProteinSimQuery($cla, $simsFilePath, $createNewSimsFile, 
+							     $excludeInvocationIdList);
+    $self->logVerbose("protein sim query done; processing first protein id");
     while (!$currentProteinId){  #get first query for which there is a translation
 	($currentQueryId, $firstMotifId, $firstSimId) = $proteinSth->fetchrow_array();
 	$currentProteinId = $self->getAdapter()->getTranslatedProteinId($currentQueryId);
     }
     push (@$currentProteinInfoList, ($firstMotifId, $firstSimId));
-
+    
     while (my ($queryId, $motifId, $simId) = $proteinSth->fetchrow_array()){   #process the rest
-	
+	if ($testNumber && $counter == $testNumber){
+	    last;
+	}
 	$proteinId = $self->getAdapter()->getTranslatedProteinId($queryId);
 	$self->logVeryVerbose("applyRules: retrieved from result set query $queryId, with similarity $simId to motif $motifId; translation is $proteinId");
-	
+		       
 	next if !$proteinId; #no translation for this query
 	if ($proteinId != $currentProteinId){   #we are done getting info for currentProtein
 	    
 	    $self->_processProteinAndRules($currentProteinId, $cla, $currentProteinInfoList, $goVersion, $doNotScrub);
-	    
+	    if ($counter % 1000 == 0){
+		$self->log("applyRules: processing $currentProteinId; total processed: $counter");
+	    }
 	    $counter++;
 	    $currentProteinId = $proteinId;
 	    my $nextProteinInfoList;
@@ -148,12 +172,12 @@ sub applyRules{
 	    $currentProteinInfoList = $nextProteinInfoList;
 	}
 	else{          #keep getting info for current protein
-
+	    
 	    push (@$currentProteinInfoList, ($motifId, $simId));
 	}
     }
     #process the last one
-    $self->_processProteinAndRules($proteinId, $cla, $currentProteinInfoList, $goVersion, $doNotScrub);
+    $self->_processProteinAndRules($proteinId, $cla, $currentProteinInfoList, $goVersion, $doNotScrub, $validate);
     return $counter;
 }
 
@@ -162,16 +186,18 @@ sub applyRules{
 #updated to deprecate Associations that were not resubmitted after evolving the GO Hierarchy.
 sub deprecateAssociations{
 
-    my ($self, $raidList, $proteinTableId, $goVersion) = @_;
+    my ($self, $raidList, $proteinTableId, $goVersion, $taxonId, $validate) = @_;
     $self->initializeNewGoGraph($goVersion);
     my $goGraph = $self->getNewGoGraph();
     my $counter = 0;
-    my $proteinsToDeprecate = $self->getAdapter()->getProteinsToDeprecate($raidList, $proteinTableId);
+    my $proteinsToSkip = $self->getAdapter()->loadProteinsToSkip();
+    my $proteinsToDeprecate = $self->getAdapter()->getProteinsToDeprecate($raidList, $proteinTableId, $taxonId);
     while (my ($proteinId) = $proteinsToDeprecate->fetchrow_array()){
-	
+	$self->logVerbose("deprecateAssociations: processing protein $proteinId");
 	my $gusAssocIdResultSet = $self->getAdapter()->getGusAssocIdResultSet($proteinId,
 									      $proteinTableId,
 									      $goVersion);
+	next if ($proteinsToSkip->{$proteinId});
 	$counter++;
 	while (my ($gusAssocId) = $gusAssocIdResultSet->fetchrow_array()){
 	    my $gusAssoc = $self->getAdapter()->getGusAssociationFromId($gusAssocId);
@@ -194,72 +220,68 @@ sub deprecateAssociations{
 #situation which should rarely happen.
 sub scrubProteinsOnly{
 
-    my ($self, $newGoVersion, $proteinTableId, $deleteInstances, $recacheInstances) = @_;
+    my ($self, $newGoVersion, $proteinTableId, $taxonId, $deleteInstances, $recacheInstances, $validate) = @_;
     $self->initializeNewGoGraph($newGoVersion);
 
     $self->setNewGoVersion($newGoVersion);
-    $self->logVerbose("deleting cached instances with goVersion = $newGoVersion");
-    $self->_deleteCachedInstances($proteinTableId, $newGoVersion) if $deleteInstances;
-
+  
     my $counter = 0;
 
-    my $gusProteinIdResultSet = $self->getAdapter()->getGusProteinIdResultSet($proteinTableId, $newGoVersion);
+    my $gusProteinIdResultSet = $self->getAdapter()->getGusProteinIdResultSet($proteinTableId, $newGoVersion, $taxonId);
     my $extent = GUS::GOPredict::GoExtent->new($self->getAdapter());
   
     while (my ($proteinId) = $gusProteinIdResultSet->fetchrow_array()){
 	$self->logVerbose("scrubProteinsOnly: processing protein id $proteinId");
-	
+	$self->getAdapter()->undefPointerCache();
 	my $associationGraph = $self->_getExistingAssociations($proteinId, $newGoVersion, $extent, $proteinTableId);
-	
+	$self->logVeryVerbose("AssociationgGraph for protein $proteinId before scrubbing:\n" . $associationGraph->toString());
+	$self->_deleteCachedInstances($associationGraph) if ($deleteInstances && $associationGraph);
 	$self->_scrubGraph($associationGraph, $recacheInstances);
-	
+	$self->logVeryVerbose("AssociationgGraph for protein $proteinId after scrubbing:\n" . $associationGraph->toString());
+	$associationGraph->validateScrub($proteinId) if $validate;
 	$self->_prepareAndSubmitGusObjects($associationGraph, $extent, $proteinTableId, $proteinId, undef);
+	$extent->empty();
 	$counter++;
+	
     }
     return $counter;
 }
-
 
 ############################################################################################
 ############################  Private General Utility Methods ##############################
 ############################################################################################
 
-
-#gets existing associations for the given protein and returns them as an AssociationGraph. Retrieves
+#Gets existing associations for the given protein and returns them as an AssociationGraph. Retrieves
 #only non-deprecated associations, but does not restrict associations by their GO release (the assumption
 #being that any associations other than those to the current GO release have been deprecated).
 sub _getExistingAssociations{
 
     my ($self, $proteinId, $goVersion, $extent, $proteinTableId) = @_;
-
     #returns a list of gus associations for given protein
     my $gusAssocIdResultSet = $self->getAdapter()->getGusAssocIdResultSet($proteinId, $proteinTableId, $goVersion);
     my $gusAssocIdList;
-
     while (my ($id) = $gusAssocIdResultSet->fetchrow_array()){
 	$self->logVeryVerbose("getExistingAssociations: found association ID $id for protein $proteinId");
 	push (@$gusAssocIdList, $id);
     }
-
     my $gusAssocObjectList;
 
     foreach my $assocId (@$gusAssocIdList){
 	my $gusAssocObject = $extent->getGusAssociationFromId($assocId);
 	push (@$gusAssocObjectList, $gusAssocObject);
     }
-    
+
     my $goGraphToUse;
 
-    #since this is a generic method, use the goGraph corresponding to the version passed in
+    #HACK: since this is a generic method, use the goGraph corresponding to the version passed in
     if ($goVersion == $self->getOldGoVersion()){
 	$goGraphToUse = $self->getOldGoGraph();
     }
     else{
 	$goGraphToUse = $self->getNewGoGraph();
     }
-
     my $associationGraph;
-    if ($gusAssocObjectList){
+    if ($gusAssocObjectList){   #when applying rules, a protein might not have had any predictions made yet
 	if (scalar @$gusAssocObjectList > 0){
 	    $associationGraph = GUS::GOPredict::AssociationGraph->newFromGusObjects($gusAssocObjectList, $goGraphToUse);
 	}
@@ -277,50 +299,52 @@ sub _getExistingAssociations{
 #them as deprecated.  Also manages memory for AssociationGraphs and GUS objects.
 
 #param $goTermMap:  undefined unless calling from evolveGoHierarchy
+#param $goSynMap:   undefined unless calling from evolveGoHierarchy
 sub _prepareAndSubmitGusObjects{
 
-    my ($self, $associationGraph, $extent, $tableId, $proteinId, $goTermMap) = @_;
+    my ($self, $associationGraph, $extent, $tableId, $proteinId, $goTermMap, $goSynMap) = @_;
 
     foreach my $association (@{$associationGraph->getAsList()}){
 	
 	my $gusAssociation = $association->getGusAssociationObject();
+	
 	if (!$gusAssociation){   #newly created primary assoc or newly created parent assoc 
                                  #that may have gus assoc object in extent
-
+	
 	    my $goTerm = $self->_getGoTermForExtent($association, $goTermMap);
-	    
+	
 	    $gusAssociation = $extent->getGusAssociationFromGusGoId($goTerm->getGusId());
-	    
 	    if (!$gusAssociation){ #newly created primary assoc
-
-		$association->createGusAssociation($tableId, $proteinId);
-	    }
+		
+		$self->_createGusAssociation($association, $tableId, $proteinId);
+					    }
 	    else{    #old parent assoc
-
 		$association->setGusAssociationObject($gusAssociation);
 	    }
 	}
-			
-	$association->updateGusObject();
-	
-	$association->submitGusObject($self->getAdapter());
-	
-    }
-    my $synonymAssociations = $associationGraph->getSynonymAssociations();
-    if ($synonymAssociations){
-	foreach my $synonymAssociation (@$synonymAssociations){
-	    if ($synonymAssociation){
 
-		$synonymAssociation->updateGusObject();
-		$synonymAssociation->submitGusObject($self->getAdapter());
+	$association->updateGusObject();
+	$association->submitGusObject($self->getAdapter());
+    }
+    my $unevolvedAssociations = $associationGraph->getUnevolvedAssociations();
+    #get all unevolved associations, which have been marked deprecated, update gus objects, and submit
+    if ($unevolvedAssociations){
+	foreach my $unevolvedAssociation (@$unevolvedAssociations){
+	    if ($unevolvedAssociation){
+		$self->log("searching for association in extent for gus go id " . $unevolvedAssociation->getGoTerm()->getGusId());
+		my $unevolvedGoTerm = $self->_getGoTermForExtent($unevolvedAssociation, $goTermMap);
+		my $unevolvedGusObject = $extent->getGusAssociationFromGusGoId($unevolvedGoTerm->getGusId());
+		if ($unevolvedGusObject){
+		    $unevolvedAssociation->updateGusObject();
+		    $unevolvedAssociation->submitGusObject($self->getAdapter());
+		}
 	    }
 	}
     }
+
     $self->logVeryVerbose("PrepareAndSubmitGusObjects: Association Graph right after submitting: " . $associationGraph->toString() . "\n");
-    
     $self->getAdapter()->undefPointerCache();
     $associationGraph->killReferences();
-
 }
 
 #given an Association, gets its GO Term.  If the GO Term has evolved, gets the old GO Term
@@ -349,25 +373,76 @@ sub _getGoTermForExtent{
 sub _scrubGraph{
     
     my ($self, $associationGraph, $recache) = @_;
-    
-    $associationGraph->adjustIsNots();
-    
-    $associationGraph->setDefiningLeaves();
-    
+
+    #dtb: switched this order to cache and deprecated before doing is not and defining
     $associationGraph->cachePrimaryInstances() if $recache; 
     
     $associationGraph->deprecateAssociations();
+
+    $associationGraph->adjustIsNots();
+
+    $associationGraph->setDefiningLeaves();
+
 }
 
-#makes a direct call to the database to delete all non-primary instances.  This method should
-#be used with care, as instances will not be recached if their proteins are not processed from
-#whatever method is calling this, and the results of the delete query cannot be rolled back even
-#if running in non-commit mode.
+#Given an AssociationGraph, mark all non-primary instances as deleted.
 sub _deleteCachedInstances{
 
-    my ($self, $proteinTableId, $goVersion) = @_;
-    $self->getAdapter()->deleteCachedInstances($proteinTableId, $goVersion);
+    my ($self, $associationGraph) = @_;
+   
+    my $associations = $associationGraph->getAsList();
+    foreach my $association (@$associations){
+
+	my $instances = $association->getInstances();
+	foreach my $instance (@$instances){
+	    if (!$instance->getIsPrimary()){
+		if ($instance->getGusInstanceObject()){ 
+		    $instance->getGusInstanceObject()->markDeleted(0);
+		}
+	    }
+	}
+    }
 }
+
+sub _createGusAssociation{
+    my ($self, $association, $tableId, $proteinId) = @_;
+    my $existingGusAssocObject = $self->_checkIfDeprecated($association, $proteinId);
+    if (!$existingGusAssocObject){
+	$association->createGusAssociation($tableId, $proteinId);
+    }
+}
+
+sub _checkIfDeprecated{
+    
+    my ($self, $association, $proteinId) = @_;
+    my $deprecatedAssociations = $self->getDeprecatedAssociations();
+    my $existingAssocObject;
+    if ($deprecatedAssociations){
+        $self->logVeryVerbose("GoManager.CheckIfDeprecated: checking if $proteinId and " . $association->getGoTerm()->getRealId() . " is in our list");
+	my $gusAssocId = $deprecatedAssociations->{$proteinId}->{$association->getGoTerm()->getRealId()}->{assocId};   
+	
+	if ($gusAssocId){
+
+	    $association->setDeprecated(0);
+	    $self->logVeryVerbose("found deprecated association for go term " . $association->getGoTerm()->getRealId() . ", assoc id = $gusAssocId");
+	    $existingAssocObject = $self->getAdapter()->getGusAssociationFromId($gusAssocId);
+	    $association->setGusAssociationObject($existingAssocObject);
+	    $association->updateGusObject();
+	}
+    }
+    return $existingAssocObject;
+}
+
+sub _logProtein{
+    my ($self, $methodName, $proteinId, $currentProteinCounter) = @_;
+
+    $self->logVerbose("$methodName: processing protein $proteinId");
+	
+    if ($currentProteinCounter % 1000 == 0){
+	$self->log("evolveGoHierarchy: processing $proteinId; total processed: $currentProteinCounter");
+    }
+}
+
 
 ############################################################################################
 ########################  Private Methods for Applying Rules ###############################
@@ -379,19 +454,28 @@ sub _deleteCachedInstances{
 #Associations to the AssociationGraph in preparation for submitting.
 sub _processProteinAndRules{
     
-    my ($self, $currentProteinId, $cla, $currentProteinInfoList, $goVersion, $doNotScrub) = @_;
+    my ($self, $currentProteinId, $cla, $currentProteinInfoList, $goVersion, $doNotScrub, $validate) = @_;
     
     my $extent = GUS::GOPredict::GoExtent->new($self->getAdapter());
     
     $self->logVerbose("processProteinAndRules: processing protein $currentProteinId");
-
-    my $associationGraph = $self->_getExistingAssociations($currentProteinId, $goVersion, $extent, $cla->{proteinTableId});
+    
+    my $associationGraph = $self->_getExistingAssociations($currentProteinId, $goVersion, $extent, 
+							   $cla->{proteinTableId});
+    
     if ($associationGraph){
+	$self->_scrubGraph($associationGraph, 1);
+	$self->_deleteCachedInstances($associationGraph);
 	$associationGraph->deprecateAllPredictedInstances();
     }
 
     my $newPredictedAssociationList = $self->_getNewAssociationsFromRules($currentProteinId, 
 									  $currentProteinInfoList);
+    foreach my $newAssoc (@$newPredictedAssociationList){
+	$self->logVeryVerbose("found prediction for Association with GO Term " 
+			      . $newAssoc->getGoTerm()->getRealId()) . "\n";
+    }
+
     if ($associationGraph){
 	$associationGraph->_addAssociations($newPredictedAssociationList, $self->getNewGoGraph());
     }
@@ -401,8 +485,9 @@ sub _processProteinAndRules{
 									       $self->getNewGoGraph());
     }
     if ($associationGraph){
-	
+
 	if ($doNotScrub){   #always deprecate and recache
+	    
 	    $associationGraph->cachePrimaryInstances();
 	    $associationGraph->deprecateAssociations();
 	}
@@ -410,13 +495,18 @@ sub _processProteinAndRules{
 	    $self->logVeryVerbose("processProteinAndRules: AssociationGraph after rules applied, before scrubbing: " .
 				  $associationGraph->toString() . "\n");
 	    $self->_scrubGraph($associationGraph, 1);
+	    $associationGraph->validateScrub($currentProteinId);
+	    
 	}
+
 	$self->_prepareAndSubmitGusObjects($associationGraph, $extent, $cla->{proteinTableId},
 					   $currentProteinId, undef);
+	$self->_validateApply($associationGraph, $currentProteinId) if $validate;
     }
     else {
 	$self->logVerbose("no existing associations or new predictions for $currentProteinId");
     }
+    $self->getAdapter()->undefPointerCache();
 }
 
 #Middle-man function that feeds information to the GO Rule Engine and returns a list of new predicted
@@ -438,14 +528,15 @@ sub _getNewAssociationsFromRules{
 
 	    my $ruleId = $returnedRuleInfo->{ruleId};
 	    my $gusGoId = $returnedRuleInfo->{gusGoId};
+	    my $ratio = $returnedRuleInfo->{ratio};
 	    my $gusRuleObject = $self->getAdapter()->getRuleObjectFromId($ruleId);
 
 	    my $goTerm = $self->getNewGoGraph()->getGoTermFromGusGoId($gusGoId);
 
 	    &confess ("no go term for $gusGoId") if !$goTerm;
 
-	    my $association = GUS::GOPredict::Association->newFromPrediction($goTerm, $gusRuleObject, $gusSimObject);
-	    $self->logVerbose("predicted new association, go term: " . $association->getGoTerm()->getRealId() . ", sim object: $gusSimObject");	    
+	    my $association = GUS::GOPredict::Association->newFromPrediction($goTerm, $gusRuleObject, $gusSimObject, $ratio);
+	    $self->logVeryVerbose("predicted new association, go term: " . $association->getGoTerm()->getRealId() . ", sim object: $gusSimObject");	    
 	    push(@$newAssocList, $association);
 	}
     }
@@ -480,8 +571,7 @@ sub initializeOldGoGraph{
 	my $goResultSet = $self->getAdapter()->getGoResultSet($goVersion); 
 	
 	my $oldGoGraph = GUS::GOPredict::GoGraph->newFromResultSet($goVersion, $goResultSet,
-								       $self->getNewFunctionRootGoId(), $goSynMap);
-	#dtb: change to call 'getOldFunctionRootGoId' next time, right now it's just HACK because old is incorrect (GO:-000001)
+								   $self->getFunctionRootGoId(), $goSynMap);
 	$self->setOldGoGraph($oldGoGraph);
     }
 }
@@ -494,7 +584,7 @@ sub initializeNewGoGraph{
 	my $goResultSet = $self->getAdapter()->getGoResultSet($goVersion); 
 
 	my $newGoGraph = GUS::GOPredict::GoGraph->newFromResultSet($goVersion, $goResultSet, 
-								   $self->getNewFunctionRootGoId());
+								   $self->getFunctionRootGoId());
 	$self->setNewGoGraph($newGoGraph);
     }
 }
@@ -553,24 +643,14 @@ sub getNewGoVersion{
     return $self->{NewGoVersion};
 }
 
-sub setOldFunctionRootGoId{
-    my ($self, $oldRootId) = @_;
-    $self->{OldFunctionRootId} = $oldRootId;
-}
-
-sub getOldFunctionRootGoId{
-    my ($self) = @_;
-    return $self->{OldFunctionRootId};
-}
-
-sub setNewFunctionRootGoId{
+sub setFunctionRootGoId{
     my ($self, $newRootId) = @_;
-    $self->{NewFunctionRootId} = $newRootId;
+    $self->{FunctionRootId} = $newRootId;
 }
 
-sub getNewFunctionRootGoId{
+sub getFunctionRootGoId{
     my ($self) = @_;
-    return $self->{NewFunctionRootId};
+    return $self->{FunctionRootId};
 }
 
 sub setGoRuleEngine{
@@ -583,6 +663,16 @@ sub getGoRuleEngine{
     return $self->{GoRuleEngine};
 }
 
+sub setDeprecatedAssociations{
+    my ($self, $deprecatedAssociations) = @_;
+    $self->{DeprecatedAssociations} = $deprecatedAssociations;
+}
+
+sub getDeprecatedAssociations{
+    my ($self) = @_;
+    return $self->{DeprecatedAssociations};
+}
+
 sub setVerbosityLevel{
     my ($self, $verbosityLevel) = @_;
     $self->{VerbosityLevel} = $verbosityLevel;
@@ -592,6 +682,36 @@ sub getVerbosityLevel{
     my ($self) = @_;
     return $self->{VerbosityLevel};
 }
+
+############################################################################################
+############################  Validation Methods   #########################################
+############################################################################################
+
+
+sub validateGusData {
+    my ($self, $associationGraph, $proteinId) = @_;
+    
+    foreach my $association (@{$associationGraph->getAsList()}){
+	foreach my $instance (@{$association->getInstances()}){
+	    if (!$instance->getGusInstanceObject() && $instance->getIsPrimary()){ #only checking newly created instances
+		if (scalar @{$instance->getEvidence()} == 0){
+		    print STDERR "Error: $proteinId association with GO Term " . $association->getGoTerm()->getRealId() . " has instance (LOE " . $instance->getLOEId() . ") with no evidence!\n";
+		}
+	    }		
+	}
+    }
+}
+
+
+#this goes as a function of GOManager because the Association Graph itself doesn't
+#necessarily know what 'apply rules' is.
+sub _validateApply{
+    
+    my ($self, $associationGraph, $proteinId) = @_;
+    $associationGraph->validateInstanceManagement($proteinId);
+    $self->validateGusData($associationGraph, $proteinId);
+}
+
 
 ############################################################################################
 ############################  Logging Functionality  #######################################
@@ -631,5 +751,9 @@ sub logVeryVerbose{
 	print STDERR "$finalMsg\n";
     }
 }
+
+
+
+
 
 1;

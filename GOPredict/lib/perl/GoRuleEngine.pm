@@ -34,17 +34,20 @@ sub getRuleSetAsListFromMotif{
     my $ruleSets = $self->{RulesHash}->{$motifId};  #get hash where keys are pvalue, values are lists
         
     foreach my $ruleThreshold (keys %$ruleSets){
+	
+	my ($isGoodSimScore, $ratio) = $self->_isGoodSimScore($motifProteinSimScore, $ruleThreshold);    
 
-	if ($self->_isGoodSimScore($motifProteinSimScore, $ruleThreshold)){    
+	if ($isGoodSimScore){
 	    my $ruleThresholdRuleSet = $ruleSets->{$ruleThreshold};
-
+	    
 	    foreach my $ruleInfo (@$ruleThresholdRuleSet){
 		my $ruleId = $ruleInfo->{ruleId};
 		my $gusGoId = $ruleInfo->{gusGoId};
-
+		
 		my $returnedRuleInfo;
 		$returnedRuleInfo->{ruleId} = $ruleId;
 		$returnedRuleInfo->{gusGoId} = $gusGoId;
+		$returnedRuleInfo->{ratio} = $ratio;
 		push (@$returnedRuleList, $returnedRuleInfo);
 	    }
 	}
@@ -72,8 +75,8 @@ sub _isGoodSimScore{
     $goodAbsolute = 1 if !$absoluteCutoff; #if only specifying one criteria
 
     my $goodTotalScore = ($goodRatio && $goodAbsolute);
-
-    return $goodTotalScore;
+    
+    return ($goodTotalScore, $ratio);
 }
 
 sub log10 { 

@@ -59,17 +59,6 @@ sub makeGoTerm{
  
     my $goTerm = $self->getGoTermFromGusGoId($gusId);
     
-    $realId = 'GO:0003674' if $realId eq 'GO:-0000001'; #super hack to fix incorrect root id
-
-    next if ($gusId == 18508); ### || $realId eq 'GO:0005509'); #super hack because this is the one
-    #go term that moved branches
-      
-#    my $realId = $self->getRealIdFromGoSynMap($tempRealId);
-
-    #next: figure out different situations that syn stuff can occur in
-    #account for all of them.  Might want syn map to be on gus id instead of real id
-    #or maybe even go term map (actual go term objects).  
-
     if ($goTerm){
 	if(!$goTerm->getRealId() && $realId){   #previously added child with no real id set yet
             	                             #still might not be there because GO Term 
@@ -84,7 +73,7 @@ sub makeGoTerm{
 	$self->addGoTerm($goTerm);
 
 	if ($realId eq $functionRootGoId){
-
+	    print STDERR "GoGraph: Setting root term with go id $functionRootGoId\n";
 	    $self->setRootTerm($goTerm);
 	}
      }

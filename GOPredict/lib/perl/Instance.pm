@@ -28,6 +28,7 @@ sub newFromGusInstance{
     $self->setDeprecated($gusInstance->getIsDeprecated());
     $self->setReviewStatusId($gusInstance->getReviewStatusId());
     $self->setGusInstanceObject($gusInstance);
+    $self->setRatio($gusInstance->getPValueRatio());
     return $self;
     #evidence?
 }
@@ -42,25 +43,26 @@ sub getGusInstanceObject{
     return $self->{GusInstanceObject};
 }
 
-sub createGusInstance{
-    
-    my ($self) = @_;
-  
-    my $gusInstance = GUS::Model::DoTS::GOAssociationInstance->new();
-    $gusInstance->setGoAssocInstLoeId($self->getLOEId());
+sub updateGusInstance{
 
+    my ($self) = @_;
+    my $gusInstance = $self->getGusInstanceObject();
+    $gusInstance->setGoAssocInstLoeId($self->getLOEId());
     $gusInstance->setIsNot($self->getIsNot());
+    $gusInstance->setPValueRatio($self->getRatio());
+
     $gusInstance->setIsPrimary($self->getIsPrimary());
     if (!$self->getIsPrimary()){
 	$gusInstance->setIsPrimary(0);
     }
-    #update when schema changes
     $gusInstance->setReviewStatusId($self->getReviewStatusId());
     if (!$self->getReviewStatusId()){
 	$gusInstance->setReviewStatusId(0);
     }
-    $gusInstance->setPValueRatio(); #??
-    $gusInstance->setIsDeprecated(0);
+    $gusInstance->setIsDeprecated($self->isDeprecated());
+    if (!$self->isDeprecated()){
+	$gusInstance->setIsDeprecated(0);
+    }
 
     my $evidenceList = $self->getEvidence();
     if ($evidenceList){
@@ -68,18 +70,23 @@ sub createGusInstance{
 	foreach my $evidence (@$evidenceList){
 
 	    $gusInstance->addEvidence($evidence->getGusEvidenceObject());
-
 	}
-	##maybe add as similarity evidence
     }
-    $self->setGusInstanceObject($gusInstance);
+}
 
+
+sub createGusInstance{
+    
+    my ($self) = @_;
+  
+    my $gusInstance = GUS::Model::DoTS::GOAssociationInstance->new();
+    $self->setGusInstanceObject($gusInstance);
+    $self->updateGusInstance();
 }
 
 
 sub addEvidence{
     my ($self, $evidence) = @_;
-   
     push (@{$self->{Evidence} }, $evidence);
 }
 
@@ -133,7 +140,7 @@ sub clone{
     $newInstance->setIsPrimary($self->getIsPrimary());
     $newInstance->setIsNot($self->getIsNot());
     $newInstance->setLOEId($self->getLOEId());
-
+    $newInstance->setRatio($self->getRatio());
     my $evidenceList = $self->getEvidence();
     if ($evidenceList){
 	foreach my $evidence (@$evidenceList){
@@ -151,10 +158,12 @@ sub clone{
 
 sub cloneNotPrimary{
     my ($self) = @_;
-    
+
     my $newInstance = $self->clone();
+
     $newInstance->setIsPrimary(0);
     $newInstance->removeAllEvidence();
+
     return $newInstance;
 }
 
@@ -177,6 +186,15 @@ sub isDeprecated{
     return $self->{Deprecated};
 }
 
+sub setRatio{
+    my ($self, $ratio) = @_;
+    $self->{Ratio} = $ratio;
+}
+sub getRatio{
+    my ($self) = @_;
+    return $self->{Ratio};
+}
+
 
 sub getIsNot{
     my ($self) = @_;
@@ -196,11 +214,20 @@ sub toString{
     my $evidenceList = $self->getEvidence();
     if ($evidenceList){
 	foreach my $evidence (@$evidenceList){
-	    $evidenceString .= $evidence->toString() . "$tab \n"; 
+	    $evidenceString .= $evidence->getGusEvidenceObject() .  "$tab"; 
+	    #$evidenceString .= $evidence->toString() . "$tab"; 
 	}
     }
     my $gusInstance = $self->getGusInstanceObject();
     $gusId = $gusInstance->getGoAssociationInstanceId() if $gusInstance;
+    #so far evidence codes are specific to Associations for external sequences, but this 
+    #won't break if the association doesn't have any codes.
+    if ($gusInstance){
+	my @evidCodes = $gusInstance->getChildren("DoTS::GOAssocInstEvidCode");
+	foreach my $evidCode (@evidCodes){
+	    $evidenceString .= "\n" . $tab . "\t Evidence code: evidenceId = " . $evidCode->getGoEvidenceCodeId();
+	}
+    }
     
 #    return
 #"$tab INSTANCE gusId: $gusId self: $self
@@ -213,7 +240,7 @@ sub toString{
 # $tab  GusObjectId:    $gusInstance";
 
     return
-" $tab INSTANCE gusId: $gusId LOE Id: $self->{LOEId} isnot: $self->{IsNot} Pri: $self->{IsPrimary}  RS: $self->{ReviewStatusId} Dep: $self->{Deprecated} Ev: $evidenceString  ";
+" $tab INSTANCE gusId: $gusId LOE Id: $self->{LOEId} isnot: $self->{IsNot} Pri: $self->{IsPrimary}  RS: $self->{ReviewStatusId} Dep: $self->{Deprecated} Ratio: $self->{Ratio} Ev: $evidenceString  ";
 }
 
 1;

@@ -7,11 +7,6 @@ use GUS::GOPredict::Association;
 use strict;
 use Carp;
 
-my $proteinTableId = 70;
-my $firstProteinRowId = 5555;
-my $oldGoVersion = 1;
-my $newGoVersion = 2;
-
 sub new{
 
     my ($class, $adapter) = @_;
@@ -56,11 +51,11 @@ sub getGusAssociationFromId{
     my $gusAssociation = $self->{AssocIdHash}->{$assocId};
     if (!$gusAssociation){
 	$gusAssociation = $self->getAdapter()->getGusAssociationFromId($assocId);
+       
 	$self->_setAssociation($gusAssociation);
     }
     
     return $gusAssociation;
-    
 }
 
 sub empty{
