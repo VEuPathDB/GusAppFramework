@@ -92,7 +92,7 @@ use the words 'null' as the value):
   - All_Assay_Descriptions_Same** = requires a yes/no answer; if yes, then allAssayDescriptions 
     will be read, else individualAssayDescriptions will be read
   - All_Assay_Descriptions** = description of the assay
-  - Individual_Assay_Descriptions** = assayName|description; assayName|description; assayName|description
+  - Individual_Assay_Descriptions** = assayName|description;assayName|description;assayName|description;
 
  HYBRIDIZATION SECTION
 
@@ -101,7 +101,7 @@ use the words 'null' as the value):
   - All_Hyb_Dates_Same = requires a yes/no answer; if yes, then allHybDates will be read, 
     else individual_HybDates will be read
   - All_Hyb_Dates = yyyy-mm-dd
-  - Individual_Hyb_Dates = assayName|yyyy-mm-dd; assayName|yyyy-mm-dd; assayName|yyyy-mm-dd
+  - Individual_Hyb_Dates = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;
 
  ACQUISITION SECTION
 
@@ -110,7 +110,7 @@ use the words 'null' as the value):
   - All_Scan_Dates_Same = requires a yes/no answer; if yes, then allScanDates will be read, 
     else individual_Scan_Dates will be read
   - All_Scan_Dates = yyyy-mm-dd
-  - Individual_Scan_Dates = assayName|yyyy-mm-dd; assayName|yyyy-mm-dd; assayName|yyyy-mm-dd
+  - Individual_Scan_Dates = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;
 
  QUANTIFICATION SECTION
 
