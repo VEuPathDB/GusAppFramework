@@ -126,6 +126,23 @@ use the words 'null' as the value):
 Each of these keywords should be on a separate line. The values for these keywords should be separated by an '=' sign. A sample
 file is maintained in \$PROJECT_HOME/GUS/RAD/config/sample_GenePixStudyModuleILoader.cfg (the sample config file also contains instructions).
 
+
+=head2 F<Database requirements>
+
+This plugin assumes that the following entries exist in your instance of the database:
+
+ 1.  The study in RAD3.Study
+ 2.  The appropriate GenePix array in RAD3.Array
+ 3.  The hybridization protocol, the acquisition protocol, the quantification protocol in RAD3.Protocol
+ 4.  Quantification parameters for quantification in RAD3.ProtocolParam
+
+If any of the above is missing, the plugin will report an error.
+
+=head2 F<Warning (for non-CBIL instances)>
+
+For local installations of RAD which differ from the CBIL database, some lines of this plugin will need to be modified, to accomodate
+hard-coded information. You might need to modify any piece of code labelled as 'HARD-CODED' in the comments below.
+
 =head1 EXAMPLES
 
 ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject
