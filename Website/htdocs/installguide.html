@@ -218,21 +218,21 @@ Here is the build process with the work around. Note that three calls to
 <tt>build.xml</tt> are currently required.
 <ol>
 <li># remove <i>GUS object generation</i> from <tt>$PROJECT_HOME/GUS/build.xml</tt>
-<li><b>gus_prompt></b> <tt>build GUS install -append</tt>
-<li><b>gus_prompt></b> <tt>cp $GUS_HOME/config/schema.prop.sample $GUS_HOME/config/schema.prop</tt>
+<li><b>shell></b> <tt>build GUS install -append</tt>
+<li><b>shell></b> <tt>cp $GUS_HOME/config/schema.prop.sample $GUS_HOME/config/schema.prop</tt>
 <li># edit properties in <tt>schema.prop</tt> such as the SID and passwords for namespaces
-<li><b>gus_prompt></b> <tt>build GUS install -append</tt>
-<li><b>gus_prompt></b> <tt>cd $GUS_HOME/schema/oracle; create-db.sh |& tee create-db.sh.out</tt>
+<li><b>shell></b> <tt>build GUS install -append</tt>
+<li><b>shell></b> <tt>cd $GUS_HOME/schema/oracle; create-db.sh |& tee create-db.sh.out</tt>
 <li># restore <i>GUS object generation</i> in <tt>$PROJECT_HOME/GUS/build.xml</tt>
-<li><b>gus_prompt></b> <tt>build GUS install -append</tt>
+<li><b>shell></b> <tt>build GUS install -append</tt>
 </ol>
-where <b>gus_prompt></b>  is the shell command line prompt, and lines beginning
-with "#" describe a procedure to occur there.
+where <b>shell></b>  is the shell command line prompt, and lines beginning
+with "#" describe a procedure to occur at that step.
 
 
 
 <a name="gusinitial">
-<h3>2.4 Initializing GUS Database Contents</h3>
+<h3>2.5 Initializing GUS Database Contents</h3>
 </a>
 The process of moving data into and out of GUS uses <i>plugins</i>.
 Plugins are Perl modules registered with the GUS database 
@@ -243,7 +243,7 @@ However, before
 <tt>ga</tt> can be registered and GUS populated, there are several tables
 that require values. 
 
-<h3>2.5 Registering GUS namespace users</h3>
+<h3>2.6 Registering GUS namespace users</h3>
 The <tt>.gus.properties</tt> file defines for GUS <tt>username</tt>, <tt>group</tt> and 
 <tt>project</tt> entries. Whatever the definition of these entries in the properties
 file, they must be in the <tt>Core.UserInfo</tt>, <tt>Core.GroupInfo</tt>, and 
@@ -267,7 +267,7 @@ to directly access the tables in the database. The latter is to be avoided
 if possible since plugins conform to protocols for registering algorithms that modify 
 GUS database tables. 
 
-<h3>2.6 Populating the Machine Table</h3>
+<h3>2.7 Populating the Machine Table</h3>
 The <tt>Core.Machine</tt> table requires an entry that describes the machine where
 GUS is running. The following line inserted into the <tt>Core.Machine</tt> table will
 do the trick:
@@ -278,7 +278,7 @@ The attributes corresponding to the values for <tt>Core.Machine</tt> can be
 gleaned from the GUS schema browser.
 
 <a name="garegister">
-<h3>2.7 Registering <tt>ga</tt></h3>
+<h3>2.8 Registering <tt>ga</tt></h3>
 </a>
 <p>
 The first step is to establish the plugin manager's property file.
@@ -287,14 +287,14 @@ This file just contains the location of <tt>md5sum</tt>
 The following will establish this:
 
 <ol>
-<li><b>gus_prompt></b>  <tt>cp $GUS_HOME/config/GUS-PluginMgr.prop.sample $GUS_HOME/config/GUS-PluginMgr.prop</tt>
-<li><b>gus_prompt></b>  # edit file to point to location of md5sum
+<li><b>shell></b>  <tt>cp $GUS_HOME/config/GUS-PluginMgr.prop.sample $GUS_HOME/config/GUS-PluginMgr.prop</tt>
+<li><b>shell></b>  # edit file to point to location of md5sum
 </ol>
 <tt>ga</tt> can now be registered with the command <tt><b>ga +meta --commit</b></tt>.
 
 
 <a name="submitregister">
-<h3>2.8 Registering the <tt>SubmitRow</tt> plugin</h3>
+<h3>2.9 Registering the <tt>SubmitRow</tt> plugin</h3>
 </a>
 <p>
 Now that GUS is initialized, we will perform a partial check of the database by
