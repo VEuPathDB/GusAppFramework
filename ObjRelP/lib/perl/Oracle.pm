@@ -146,6 +146,18 @@ sub nextValSql{
 }
 
 ############################################################
+# nextValVar
+#
+# Returns the variable for the next value in a sequence,
+# to be used directly in a statement, such as an insert.
+############################################################
+sub nextValVar{
+	my($self,$table)=@_;
+	return "${table}_SQ.NEXTVAL";
+}
+
+
+############################################################
 # dateFormatSql
 #
 # Tell the database engine in what format you will be 
