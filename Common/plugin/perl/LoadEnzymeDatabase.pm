@@ -305,7 +305,7 @@ sub _getExtDbRelCache {
                                $db_ver, $db_lcn, $db
                               )
                       );
-            $ok = 0 unless $db ne 'Enzyme';
+            $ok = 0 if $db eq 'Enzyme';
          }
 
       } else {
@@ -314,7 +314,7 @@ sub _getExtDbRelCache {
                             $db_lcn, $db
                            )
                    );
-         $ok = 0 unless $db eq 'Enzyme';
+         $ok = 0 if $db eq 'Enzyme';
       }
    }
 
@@ -491,8 +491,7 @@ sub _process_dbrefs {
             $db_g->removeChildrenInClass('DoTS::ExternalAASequence');
             $db_g->retrieveChildrenFromDB('DoTS::ExternalAASequence',
                                           0,
-                                          {
-                                           source_id => $dbref->getPrimaryId },
+                                          { source_id => $dbref->getPrimaryId },
                                          );
             my @eas_g = $db_g->getChildren('DoTS::ExternalAASequence');
             #$Self->{C}->{self_inv}->setDebuggingOff;
@@ -534,10 +533,11 @@ sub _return_message {
    my $Self = shift;
 
    return sprintf(join(', ',
-                       'Made %d EnzymeClass entries',
+                       '%s %d EnzymeClass entries',
                        '%d EnzymeClassAttribute entries',
                        '%d AASequenceEnzymeClass entries',
                       ),
+									$Self->getArgs()->{Survey} ? 'Pretended to make' : 'Made',
                   $Self->_getEnzymeClass,
                   $Self->_getEnzymeClassAttribute,
                   $Self->_getAASequenceEnzymeClass,
