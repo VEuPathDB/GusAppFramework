@@ -95,7 +95,9 @@
     			commons-beanutils.jar,
     			commons-cli-1.0.jar
     			jstl.jar,
-    			standard.jar" />
+    			standard.jar,
+         		isorelax-20030108.jar,
+         		jing-20030619.jar" />
     </copy>
 
   	<copy todir="${build.home}/webapp/WEB-INF/lib" 
