@@ -113,11 +113,6 @@ sub _getProteinGoMapFromFile{
 	$proteinGoMap->{$_} = 1;
     }
 
-    foreach my $protein (keys %$proteinGoMap){
-	print STDERR "$protein\n";
-    }
-    print STDERR "total: " . scalar (keys %$proteinGoMap) . "\n";
-
     return $proteinGoMap;
 }
 
@@ -159,6 +154,8 @@ sub _findMissingProteins{
 		    
 		$self->_makeGoAssociation($proteinId, $goTermId, $gusGoMap->{$goTermId});
 	    }
+	    else {
+		$self->logVerbose 
 	}
     }
 
