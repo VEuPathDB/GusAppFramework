@@ -64,12 +64,12 @@ sub run {
           chomp;
           my ($SOid, $Term, $definition) = split (/\t/, $_);
 
-     #   print STDERR "$SOid, $Term, $definition\n";
+      print STDERR "$SOid, $Term, $definition\n";
 
         $self->Insert($SOid,$Term,$definition);
         }
 
-#       $Input->close;
+         $Input->close;
 
         return "LoadedSOontologyFromFile";
 }
