@@ -236,7 +236,7 @@ sub getTaxon{
     my $self   = shift;
     my ($tax_id) = @_;
     my $taxon_id;
-    my $dbh = $self->getDBHandle();
+    my $dbh = $self->getDbHandle();
     my $st = $dbh->prepare("select t.taxon_id from sres.taxon t where t.ncbi_tax_id = ?");
     $st->execute($tax_id);
     $taxon_id = $st->fetchrow_array();
@@ -282,7 +282,7 @@ sub deleteTaxonName {
   my $self   = shift;
   my ($TaxonNameIdHash,$TaxonIdHash) = @_;
   my $num = 0;
-  my $dbh = $self->getDBHandle();
+  my $dbh = $self->getDbHandle();
   my $st = $dbh->prepareAndExecute("select taxon_name_id, taxon_id, name_class from sres.taxonname");
   while (my ($taxon_name_id,$taxon_id,$name_class) = $st->fetchrow_array()) {
     if ($TaxonNameIdHash->{$taxon_name_id}==1) {
