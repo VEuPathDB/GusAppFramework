@@ -102,7 +102,6 @@ my @DTSasEvidenceTarget = ();
 my @RemoveAsMarkedFL = ();
 my @DTs = ();
 
-undef(@naSequenceIds);
 
 while(my($na_seq, $source_id) = $stmt1->fetchrow_array( ))  {
 
@@ -156,6 +155,8 @@ print STDERR "$id,DT.$na_seq\n";
 
      if ($id == $na_seq) {
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
+     next;
+
    }
 
     if ($id != $na_seq) {
