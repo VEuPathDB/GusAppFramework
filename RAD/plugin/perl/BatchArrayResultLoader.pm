@@ -7,7 +7,7 @@
 # Created: Nov-21-2003
 # Elisabetta Manduchi and Hongxian He
 #
-# $Revision$Date: 2004/08/30 17:32:35 $ Author: Elisabetta, Hongxian
+# $Revision$Date: 2004/08/30 18:36:20 $ Author: Elisabetta, Hongxian
 # ----------------------------------------------------------
 package GUS::RAD::Plugin::BatchArrayResultLoader;
 @ISA = qw( GUS::PluginMgr::Plugin );
@@ -32,7 +32,7 @@ sub new {
   my $purposeBrief = 'Loads into the appropriate view of RAD3.(Composite)ElementResultImp quantification data from a collection of files all having the same format.';
   
   my $purpose = <<PURPOSE;
-This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) an xml configuration file, and (iii) a quantification protocol or software (one of: I<MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, and MOID>). The plugin then uploads into the appropriate view of RAD3.(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. <BIf any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded>.
+This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) an xml configuration file, and (iii) a quantification protocol or software (one of: I<MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, and MOID>). The plugin then uploads into the appropriate view of RAD3.(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. <b> If any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded</b>.
 PURPOSE
   
   my $tablesAffected = [['RAD3::ElementResultImp', 'Enters the quantification results here, if the protocol is GenePix or ArrayVision'], ['RAD3::CompositeElementResultImp', 'Enters the quantification results here, if the protocol is MAS4.0, MAS5.0, RMAExpress, or MOID'], ['RAD3::RelatedQuantification', 'Inserts entries in this table for the quantifications at stake, if missing']];
