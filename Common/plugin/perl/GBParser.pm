@@ -857,29 +857,29 @@ sub getFeatureViewName {
 ###################################################################
 
 sub setWholeTableCache{
-	my $dbh = $ctx->{'self_inv'}->getQueryHandle();
-	
+  my $dbh = $ctx->{'self_inv'}->getQueryHandle();
+  
   ##setup global hash for ExternalDatabaseRelease
   my $st = $dbh->prepare("select e.lowercase_name, r.external_database_release_id 
                           from sres.ExternalDatabase e, sres.ExternalDatabaseRelease r 
-                          where r.version = 'unknown'");
+                          where r.external_database_id = e.external_database_id and r.version = 'unknown'");
   $st->execute() || die $st->errstr;
   
   while (my ($lowercase_name, $external_db_rel_id) = $st->fetchrow_array()) {
     $lowercase_name = lc $lowercase_name; ##just in case not real lowercase ;-))
     $ExternalDatabaseRelHash{"$lowercase_name"} = $external_db_rel_id;
   }
-	
+  
   ##setup global hash for SequenceType
   $st = $dbh->prepare("select name, sequence_type_id from dots.SequenceType");
   $st->execute() || die $st->errstr;
   while (my ($name, $sequence_type_id) = $st->fetchrow_array()) {
     $SequenceTypeHash{"$name"} = $sequence_type_id;
   }
-
-	### Organelle 
-	$st = $dbh->prepare("select name || plasmid_name, organelle_id  from dots.Organelle");
-	$st->execute() || die $st->errstr;
+  
+  ### Organelle 
+  $st = $dbh->prepare("select name || plasmid_name, organelle_id  from dots.Organelle");
+  $st->execute() || die $st->errstr;
   while (my ($name, $sequence_type_id) = $st->fetchrow_array()) {
     $OrganelleCache{"$name"} = $sequence_type_id;
   }
