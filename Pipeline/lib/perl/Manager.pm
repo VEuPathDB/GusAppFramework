@@ -220,6 +220,24 @@ sub waitForLiniac {
     exit(0);
 }     
 
+sub manualTask {
+  my ($self, $task, $signal) = @_;
+
+  my $s = "Complete the following task:'$task'";
+
+  return if $self->startStep($s, $signal);
+
+  my $msg = 
+    "EXITING.... PLEASE DO THE FOLLOWING:
+     - $s
+     - Resume when complete by re-runnning '$self->{program} $self->{propertiesFile}'";
+  print STDERR $msg;
+  $self->log($msg);
+  $self->endStep($signal);
+  unlink "$self->{pipelineDir}/signals/running";
+  exit(0);
+}
+
 # exit pipeline 
 sub goodbye {
     my ($self, $msg) = @_;
