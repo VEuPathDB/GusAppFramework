@@ -314,13 +314,16 @@ sub preProcess {
     my $idSub = sub {
 	my($defline) = @_;
 
-	if ($defline =~ /(DT\.\d+|THC\d+)/) {
+	if ($defline =~ /^>(DT\.\d+|THC\d+)/) {
 	    return $1;
 	} elsif ($defline =~ /^>(\d+)\s+/) {
 	    return $1;
 	} elsif ($defline =~ /^>Pfa3D7\|(\d+)\|/) {
 	    return $1;
 	}
+        # TODO: make this id regex a config item (below is for mchr5p celera genes)
+        elsif ($defline =~ /^>(\S+)/) { return $1; }
+
 	print "Unable to parse $defline\n";	print "returning $1\n";
     };
 
@@ -460,12 +463,11 @@ sub loadAlignment {
 	}
     }
 
-    # Convert 'DT.blah' to 'blah' 
-    # HACK: convert THC\d+ to na_sequence_id to get around foreign key constraint on BlatAlignment table
+    # Convert external na seq source id to seq id, convert 'DT.blah' to 'blah' 
     #
     my $origQueryId = $query_id;
     # HACK
-    $query_id = &getNaSequenceId4TC($dbh, $query_id) if $queryExtDbRelId == 5495;
+    $query_id = &getQueryNaSeqId($dbh, $query_id) if $queryTableId == 89;
     $query_id =~ s/[^0-9]//g;
 
     # Check to see whether this alignment has already been loaded
@@ -544,10 +546,10 @@ sub loadAlignment {
 
 # Return the na_sequence_id for of a TIGR TC.
 #
-sub getNaSequenceId4TC {
-    my($dbh, $tcid) = @_;
+sub getQueryNaSeqId {
+    my ($dbh, $qid) = @_;
 
-    my $sth = $dbh->prepareAndExecute("select na_sequence_id from $TPREF.externalnasequence where source_id = '$tcid'");
+    my $sth = $dbh->prepareAndExecute("select na_sequence_id from $TPREF.externalnasequence where source_id = '$qid'");
     my($sid) =  $sth->fetchrow_array();
     $sth->finish();
     return $sid;
