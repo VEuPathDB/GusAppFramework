@@ -22,14 +22,19 @@ sub new {
         [{o => 'inputFile',
           t => 'string',
           h => 'name of the file',
-          { h => 'so_version',
+          },
+
+          { h => 'SOversion',
           t => 'int',
           o => 'so_version',
+
           },
-          { h => 'so_cvs_version',
+
+          { h => 'SOcvsVersion',
           t => 'int',
           o => 'so_cvs_version',
-         },
+          },
+
          }];
 
      $self->initialize({requiredDbVersion => {Core => '3'},
@@ -84,11 +89,11 @@ sub Insert {
 
    my $dbh = $self->getQueryHandle();
 
-   print STDERR "$SOid,$ontology_name, $so_version, $so_cvs_version, $Term, $definition\n";
+ #  print STDERR "$SOid,$ontology_name, $so_version, $so_cvs_version, $Term, $definition\n";
 
   $dbh->do("INSERT into sres.SequenceOntology (so_id, ontology_name, so_version, so_cvs_version, term_name, definition) values ('$SOid', '$ontology_name', '$so_version', '$so_cvs_version', '$Term', '$definition')");
 
-
+ print STDERR "$SOid,$ontology_name, $so_version, $so_cvs_version, $Term, $definition\n";
 
 }
 
