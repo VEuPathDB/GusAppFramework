@@ -131,7 +131,7 @@ sub process {
 		$stmt->execute();
 		if (my($id) = $stmt->fetchrow_array()){
 		  #parse row to compare html
-		  while (@ary = $sth->fetchrow_array() ){
+		  while (my @ary = $sth->fetchrow_array() ){
 		    chomp;
 		    my $tb_id = $ary[0]; #queried table id
 		    my $att_name = $ary[1]; #queried attribute name
