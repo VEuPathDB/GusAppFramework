@@ -147,7 +147,7 @@ sub copyToLiniac {
     $self->error("$fromDir/$fromFile doesn't exist\n") unless -e $fromFile;
 
     # workaround scp problems
-    $self->runCmd("tar cf - $fromFile | gzip -c | ssh $server 'cd $toDir; gunzip -c | tar xf -'");
+    $self->runCmd("tar cf - $fromFile | gzip -c | ssh -2 $server 'cd $toDir; gunzip -c | tar xf -'");
 
    # $self->runCmd("tar cf - $fromFile | ssh $server 'cd $toDir; tar xf -'");
 }
@@ -160,7 +160,7 @@ sub copyFromLiniac {
     # workaround scp problems
     chdir $toDir || $self->error("Can't chdir $toDir\n");
 
-    $self->runCmd("ssh $server 'cd $fromDir; tar cf - $fromFile | gzip -c' | gunzip -c | tar xf -");
+    $self->runCmd("ssh -2 $server 'cd $fromDir; tar cf - $fromFile | gzip -c' | gunzip -c | tar xf -");
 
 #    $self->runCmd("ssh $server 'cd $fromDir; tar cf - $fromFile' | tar xf -");
     $self->error("$toDir/$fromFile wasn't successfully copied from liniac\n") unless -e $fromFile;
