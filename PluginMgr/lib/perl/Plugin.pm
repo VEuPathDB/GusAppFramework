@@ -185,7 +185,7 @@ sub logData {
 
   my $time_stamp_s = localtime;
 
-  my $msg = join("\t", $T, $time_stamp_s, @_);
+  my $msg = join("\t", $time_stamp_s, $T, @_);
 
   print "$msg\n";
 
@@ -432,7 +432,7 @@ sub _log {
 
   my $time_stamp_s = localtime;
 
-  my $msg = join("\t", $T, $time_stamp_s, @_);
+  my $msg = join("\t", $time_stamp_s, $T, @_);
 
   print STDERR "$msg\n";
 
