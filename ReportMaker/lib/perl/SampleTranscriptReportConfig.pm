@@ -75,15 +75,15 @@ sub createReport {
 					 "Names of Gene Ontology (GO) consortium terms assigned to the transcript");
   push(@columns, $goNameCol);
 
-  my $promoterSeqCol =
-    GUS::ReportMaker::DefaultColumn->new("PromoterSeq",
-					 "Promoter region sequence, ie, -300 to 1200 bp upstream from this DT's highest confidence BLAT alignment");
-  push(@columns, $promoterSeqCol);
-
   my $promoterLocCol =
     GUS::ReportMaker::DefaultColumn->new("PromoterLoc",
 					 "Promoter region location, ie, -300 to 1200 bp upstream from this DT's highest confidence BLAT alignment");
   push(@columns, $promoterLocCol);
+
+  my $promoterSeqCol =
+    GUS::ReportMaker::DefaultColumn->new("PromoterSeq",
+					 "Promoter region sequence, ie, -300 to 1200 bp upstream from this DT's highest confidence BLAT alignment");
+  push(@columns, $promoterSeqCol);
 
   my $motifsCol =
     GUS::ReportMaker::DefaultColumn->new("Motifs",
@@ -212,8 +212,8 @@ where pr.na_sequence_id =  tmp.$primaryKeyName
 ";
   my $promoterSeqQuery = 
     GUS::ReportMaker::Query->new($promoterSeqSql,
-				 [$promoterSeqCol,
-				  $promoterLocCol,
+				 [$promoterLocCol,
+				  $promoterSeqCol,
 				 ]);
 
   my $motifsSql = 
