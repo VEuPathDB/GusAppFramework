@@ -67,9 +67,9 @@ $self->logCommit();
 
 #move out external_database_release_id put as cla external_database_release_id = $self->getArgs->{'external_database_release_id'} 
 
-#NOTE FOR TESTING taxon set to human only FOR THIS Query
+#NOTE FOR TESTING taxon set to human only FOR THIS Query and rownum
 
-my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8");
+my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8 and rownum < 10");
 
 #update considerations for DTs
 #those which still contain a RefSeq
@@ -121,27 +121,24 @@ foreach my $A(@na_sourceids)    {
 
    $ct++;
 
-    last if $self->getArgs->{testnumber} && $ct > $self->getArgs->{testnumber};
+    last if $self->getArgs->{testnumber} && $ct >= $self->getArgs->{testnumber};
 
 
     foreach my $id(@naSequenceIds)  {
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
 
      if ($id == $na_seq ) {next;
-
-
-print STDERR "AlreadyMarkedFLDT.$na_seq\n";
-
+     print STDERR "AlreadyMarkedFLDT.$na_seq\n";
 
 }
 
-     elsif($id != $na_seq) {
+     if($id != $na_seq) {
 
 print STDERR "NextFLDT.$na_seq\n";
 
      my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
-      $assembly->retrieveFromDB();    
+      $assembly->retrieveFromDB();
 
       $assembly->setFullLengthCds(1);
       $self->toAddEvidenceSourceID($source_id, $assembly);
