@@ -43,29 +43,6 @@
     <ant target="defaultProjectInstall"/>
   </target>
 
-  <!-- oooooooooooooooooo  Installation Postprocess  ooooooooooooooooooooo -->
-
-  <target name="GUS-Installation-postprocess">
-    <echo message="Postprocessing the GUS installation"/>
-
-    <property name="rFile" value="${targetDir}/config/replacements.GUS.prop"/>
-
-    <available file="${rFile}" property="replacementFileExists"/>
-
-    <fail unless="replacementFileExists">
-      Error: You must configure a replacement file for ${project}.  The file will be ${rFile}.  To create it, copy ${rFile}.sample to ${rFile} and edit ${rFile}, giving it the proper values for your installation. 
-    </fail>
-
-    <replace dir="${targetDir}/bin" propertyFile="${rFile}" > 
-      <include name="**/*" />
-      <replacefilter token="@perl@" property="@perl@"/>
-    </replace> 
-
-  </target>
-
-
-  <!-- ooooooooooooooooooooooo  Install Components  ooooooooooooooooooooooo -->
-
   <target name="GUS/Common-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
       <property name="component" value="GUS/Common"/>
@@ -88,7 +65,6 @@
                                                  checkObjects,
                                                  generatedModel,
                                                  manuallyEditedModel,
-                                                 modelReplacementFile,
                                                  schema">
     <ant target="defaultComponentInstall">
       <property name="component" value="GUS/Model"/>
@@ -158,27 +134,26 @@
   </target>
  
 
-  <target name="modelReplacementFile">
-    <property name="gusReplFile" value="${targetDir}/config/replacements.Model.prop"/>
-    <copy file="${projectsDir}/GUS/Model/config/replacements.Model.prop.sample"
-          toDir="${targetDir}/config"/>
+  <target name="schemaConfigFile">
+    <ant target="configFile">
+      <property name="cFileName" value="schema.prop"/>
+      <property name="cFileSrcDir" value="${projectsDir}/GUS/Model/config"/>
+    </ant>
+  </target>
 
-    <available file="${gusReplFile}" property="gusReplFileExists"/>
-
-    <fail unless="gusReplFileExists">
-      Error: You must configure a replacements file.  The file is ${gusReplFile}.  To create it, copy ${gusReplFile}.sample to ${gusReplFile} and edit ${gusReplFile}, giving it the proper values for your installation. 
-    </fail>
-  </target>  
-
-  <target name="schema">
+  <target name="schema" depends="schemaConfigFile">
     <mkdir dir="${targetDir}/schema"/>
+    <dependset>
+       <srcfilelist dir="${targetDir}/config" files="schema.prop"/>
+       <targetfileset dir="${targetDir}/schema" includes="**/*"/>
+    </dependset>
     <copy todir="${targetDir}/schema">
       <fileset dir="${projectsDir}/GUS/Model/schema" >
         <include name="**"/>
         <exclude name="**/CVS/*" />
       </fileset>
       <filterset>
-        <filtersfile file="${gusReplFile}"/>
+        <filtersfile file="${targetDir}/config/schema.prop"/>
       </filterset>
     </copy>
   </target>  
