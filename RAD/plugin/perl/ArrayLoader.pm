@@ -1215,7 +1215,7 @@ sub loadData{
 sub getTable_Id{
     my $M = shift;
     my ($table_name)=@_;
-    $M->setOk(1);
+#    $M->setOk(1);
     my $query="select t.table_id from core.tableinfo t where t.name='$table_name'";
     my $dbh = $M->getSelfInv->getQueryHandle();
     my $sth = $dbh->prepare($query);
@@ -1229,7 +1229,7 @@ sub getTable_Id{
 	$cfg_rv->{warnings} = "Cann't retrieve table_id for subclass view $table_name";
 	$M->logData('Error', $cfg_rv->{warnings});
 	if($M->getCla->{'commit'}){print STDERR "Error: Cann't retrieve table_id for subclass view $table_name\n";}
-	$M->setOk(0);
+#	$M->setOk(0);
     }
 }
 
