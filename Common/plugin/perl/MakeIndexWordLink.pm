@@ -1,82 +1,61 @@
-############################################################
-## Change Package name....
-############################################################
-package MakeIndexWordLink;
+package GUS::Common::Plugin::MakeIndexWordLink;
 
-use strict;
+use GUS::Model::DoTS::IndexWord;
+use GUS::Model::DoTS::IndexWordLink;
 use DBI;
 
-############################################################
-# Add any specific objects (GUSdev::) here
-############################################################
-use GUS::Model::::IndexWord;
-use GUS::Model::::IndexWordLink;
+@ISA = qw(GUS::PluginMgr::Plugin);
 
-
-my $Cfg;                        ##global configuration object....passed into constructor as second arg
-
+use strict;
 
 sub new {
-  my $Class = shift;
-  $Cfg = shift;                 ##configuration object...
+  my ($class) = @_;
+  my $self = {};
+  bless($self,$class);
 
-  return bless {}, $Class;
-}
+  my $usage = 'Create entries in IndexWord(Link) tables for indexing specific attributes';
+  my $easycsp =
+    [{o => 'testnumber',
+      t => 'int',
+      h => 'number of iterations for testing',
+     },
+     {o => 'minLength',
+      t => 'int',
+      h => 'Minimun length words to keep',
+      d => '3',
+     },
+     {o => 'table',
+      t => 'string',
+      h => 'Table name to index (in schema::table format)',
+     },
+     {o => 'attribute',
+      t => 'string',
+      h => 'attribute to index',
+      d => 'description',
+     },
+     { o => 'noDigits',
+      t => 'boolean',
+      h => 'Do not keep words that are numbers',
+      d => '1',
+     },
+     {o => 'restart',
+      t => 'boolean',
+      h => 'For restarting...ignores entries from IndexWordLink from table',
+     },
+     {o => 'idSQL',
+      t => 'string',
+      h => 'sql query that returns primary_key,attribute_to_index from --table',
+     },];
 
-sub Usage {
-  my $M   = shift;
-  return 'Creates entries in IndexWord(Link) tables for indexing specific attributes';
-}
-
-############################################################
-# put the options in this method....
-############################################################
-sub CBIL::Util::EasyCspOptions {
-  my $M   = shift;
-  {
-
-    #		test_opt1 => {
-    #									o => 'opt1=s',
-    #									h => 'option 1 for test application',
-    #									d => 4,
-    #									l => 1,	ld => ':',
-    #									e => [ qw( 1 2 3 4 ) ],
-    #								 },
-
-    testnumber        => {
-                          o => 'testnumber=i',
-                          h => 'number of iterations for testing',
-                         },
-                           minLength         => {
-                                                 o => 'minLength=i',
-                                                 h => 'Minimun length words to keep',
-                                                 d => '3',
-                                                },
-                                                  table             => {
-                                                                        o => 'table=s',
-                                                                        h => 'Table name to index',
-                                                                       },
-                                                                         attribute         => {
-                                                                                               o => 'attribute=s',
-                                                                                               h => 'attribute to index',
-                                                                                               d => 'description',
-                                                                                              },
-                                                                                                noDigits          => {
-                                                                                                                      o => 'noDigits!',
-                                                                                                                      h => 'Do not keep words that are numbers',
-                                                                                                                      d => '1',
-                                                                                                                     },
-                                                                                                                       restart           => {
-                                                                                                                                             o => 'restart!',
-                                                                                                                                             h => 'For restarting...ignores entries from IndexWordLink from table',
-                                                                                                                                            },
-
-                                                                                                                                              idSQL             => {
-                                                                                                                                                                    o => 'idSQL',
-                                                                                                                                                                    t => 'string',
-                                                                                                                                                                    h => 'sql query that returns primary_key,attribute_to_index from --table',
-                                                                                                                                                                   },
-                                                                                                                                                                 }
+  $self->initialize({requiredDbVersion => {},
+		     cvsRevision => '$Revision$', # cvs fills this in!
+		     cvsTag => '$Name$', # cvs fills this in!
+		     name => ref($self),
+		     revisionNotes => 'make consistent with GUS 3.0',
+		     easyCspOptions => $easycsp,
+		     usage => $usage
+		    });
+  return $self;
 }
 
 my $ctx;
@@ -88,7 +67,7 @@ my $ctNewWords = 0;
 my $totalLinks = 0;
 my %taxon;                      ##genus and species
 
-sub Run {
+sub run {
   my $M   = shift;
   $ctx = shift;
 
@@ -103,7 +82,7 @@ sub Run {
   $primary_key = $ctx->{self_inv}->getTablePKFromTableId($target_table_id);
 
   ##first need to get the current list of words from IndexWord
-  my $wdStmt = $dbh->prepare("select index_word_id,word from IndexWord");
+  my $wdStmt = $dbh->prepare("select index_word_id,word from dots.IndexWord");
   $wdStmt->execute();
   while (my($i,$w) = $wdStmt->fetchrow_array()) {
     $words{$w} = $i;
@@ -112,7 +91,7 @@ sub Run {
   print STDERR "Fetched ".scalar(keys%words)." IndexWords from db\n";
 
   ##next need to get genus and species so can not index these!!
-  my $taxStmt = $dbh->prepare("select genus,species from Taxon");
+  my $taxStmt = $dbh->prepare("select genus,species from sres.Taxon");
   $taxStmt->execute();
   while (my($gen,$sp) = $taxStmt->fetchrow_array()) {
     $taxon{$gen} = 1;
@@ -124,7 +103,7 @@ sub Run {
   ##need to also be able to restart....
   my %restart;
   if ($ctx->{cla}->{restart}) {
-    my $resStmt = $dbh->prepare("select target_id from IndexWordLink where target_table_id = $target_table_id");
+    my $resStmt = $dbh->prepare("select target_id from dots.IndexWordLink where target_table_id = $target_table_id");
     $resStmt->execute() || die $DBI::errstr;
     while (my($i) = $resStmt->fetchrow_array()) {
       $restart{$i} = 1;
@@ -132,8 +111,9 @@ sub Run {
     print STDERR "restarting, ignoring ".scalar(keys%restart)." target_ids\n";
     $resStmt->finish();
   }
-	
-  my $query = "select $primary_key,$ctx->{cla}->{attribute} from $ctx->{cla}->{table} where $ctx->{cla}->{attribute} is not null";
+
+  my ($sch, $tbl) = split(/::/, $ctx->{cla}->{table});
+  my $query = "select $primary_key,$ctx->{cla}->{attribute} from $sch.$tbl where $ctx->{cla}->{attribute} is not null";
   print STDERR "Query: ",($ctx->{cla}->{idSQL} ? "$ctx->{cla}->{idSQL}\n" : "$query\n") if $debug;
   my $stmt = $dbh->prepare($ctx->{cla}->{idSQL} ? $ctx->{cla}->{idSQL} : $query);
 
@@ -215,10 +195,11 @@ sub createIWL {
   return if $word =~ /^(dna|with|singleton|identity|unnamed|unknown|similarities|null|for)$/;
   return if exists $taxon{$word}; ##orgnanism name
   print STDERR "$word\n" if $debug;
-  my $wl = IndexWordLink->new({'target_table_id' => $target_table_id,
-                               'target_id' => $id,
-                               'index_word_id' => &getWordId($word,$id),
-                              });
+  my $wl = GUS::Model::DoTS::IndexWordLink->
+    new({'target_table_id' => $target_table_id,
+	 'target_id' => $id,
+	 'index_word_id' => &getWordId($word,$id),
+	});
   $wl->submit();
   $totalLinks++;
 }
@@ -228,7 +209,7 @@ sub getWordId {
   if (!exists $words{$word}) {  ##is new word
     #		print STDERR "New Word $id: '$word'\n";
     $ctNewWords++;
-    my $iw = IndexWord->new({'word' => $word});
+    my $iw = GUS::Model::DoTS::IndexWord->new({'word' => $word});
     $iw->submit();
     $words{$word} = $iw->getId();
   }
