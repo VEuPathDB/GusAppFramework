@@ -26,7 +26,13 @@ import org.gusdb.objrelj.*;
 public class NASequence extends NASequence_Row {
 
     // Constructor
-    public NASequence () {}
+	public NASequence(){};
+
+    public NASequence (ServerI server, String sessionId) {
+	super(server, sessionId);
+	}
+
+
 
     /**
      * Retrieve entire sequence as a BioJava SymbolList.  Will fail if the
