@@ -63,43 +63,43 @@ sub new {
 
 sub Run {
 
-    my $M   = shift;
+    my $self   = shift;
 
     my $count = 0;
 
-    $dbh = $M->getQueryHandle();
-    if (!$M->getCla{'names'} || !$M->getCla{'nodes'} || !$M->getCla{'gencode'}) {
-	$M->log ("Provide the names of the names.dmp, nodes.dmp, and gencode.dmp files on the command line\n");
+    $dbh = $self->getQueryHandle();
+    if (!$self->getCla{'names'} || !$self->getCla{'nodes'} || !$self->getCla{'gencode'}) {
+	$self->log ("Provide the names of the names.dmp, nodes.dmp, and gencode.dmp files on the command line\n");
     }
     
-    $M->log ($M->getCla{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n");
-    $M->log ("Testing on $M->getCla{'testnumber'}\n" if $M->getCla{'testnumber'});
+    $self->log ($self->getCla{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n");
+    $self->log ("Testing on $self->getCla{'testnumber'}\n" if $self->getCla{'testnumber'});
 
-    my $genCodes = &makeGeneticCode();
+    my $genCodes = $self->makeGeneticCode();
     
-    my $namesDmp = &getNames(); 
+    my $namesDmp = $self->getNames(); 
     
-    my $nodesHash = &makeNodesHash();
+    my $nodesHash = $self->makeNodesHash();
     
-    my $rootAttArray = &getRootAttArray($genCodes);
+    my $rootAttArray = $self->getRootAttArray($genCodes);
 
-    &makeTaxonEntry($rootAttArray, \$count = 0;);
+    $self->makeTaxonEntry($rootAttArray, \$count = 0;);
     
-    if ($M->getCla{'restart'}) {
-	&getTaxonAtt($M->getCla{'restart'},$nodesHash,\$count);
+    if ($self->getCla{'restart'}) {
+	$self->getTaxonAtt($self->getCla{'restart'},$nodesHash,\$count);
     }
     else {
-	&getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 
+	$self->getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 
     }
-    &makeTaxonName($namesDmp);
+    $self->makeTaxonName($namesDmp);
     
 }
 
 sub makeGeneticCode {
 
-    my $M   = shift;
+    my $self   = shift;
     my %genCodes;  #$genCodes{ncbi_gencode_id}=GUS genetic_code_id
-    open (GENCODE,$M->getCla{'gencode'}) || die "Can't open gencode file\n";
+    open (GENCODE,$self->getCla{'gencode'}) || die "Can't open gencode file\n";
     while (<GENCODE>) {
 	chomp;
 	my @nodeArray = split(/\s*\|\s*/, $_);
@@ -130,16 +130,16 @@ sub makeGeneticCode {
 	}
 	$newGeneticCode->submit();
 	$genCodes{$ncbi_gencode_id} = $newGeneticCode->get('genetic_code_id');
-	$M->undefPointerCache();
+	$self->undefPointerCache();
     }
     return \%genCodes;
 }
 
 sub getNames {
 
-    my $M   = shift;
+    my $self   = shift;
     my %namesDmp;
-    open (NAMES,$M->getCla{'names'}) || die "Can't open names file\n";                   
+    open (NAMES,$self->getCla{'names'}) || die "Can't open names file\n";                   
     while (<NAMES>) {
 	chomp;
 	my @nameArray = split(/\s*\|\s*/, $_);
@@ -150,9 +150,9 @@ sub getNames {
 
 sub makeNodesHash {
 
-    my $M   = shift;
+    my $self   = shift;
     my %nodesHash; #nodesHash{parent ncbi tax_id}->{child ncbi tax_id}=(rank,genetic_code_id,mitochondrial_genetic_code_id) 
-    open (NODES,$M->getCla{'nodes'}) || die "Can't open nodes file\n";
+    open (NODES,$self->getCla{'nodes'}) || die "Can't open nodes file\n";
     while (<NODES>) {
 	chomp;
 	my @nodeArray = split(/\s*\|\s*/, $_);
@@ -174,7 +174,7 @@ sub makeNodesHash {
 
 sub getRootAttArray {
 
-    my $M   = shift;
+    my $self   = shift;
     my ($genCodes) = @_;
     my $tax_id=1;
     my $rank='no rank';
@@ -187,7 +187,7 @@ sub getRootAttArray {
 
 sub makeTaxonEntry {
 
-    my $M   = shift;
+    my $self   = shift;
     my ($attArray, $count) = @_;
     my $tax_id = $attArray->[0];
     my $rank = $attArray->[1];
@@ -213,36 +213,36 @@ sub makeTaxonEntry {
     
     
     $newTaxon->submit();
-    $M->undefPointerCache();
-    $M->log ("processed ncbi_tax_id : $tax_id\n");
+    $self->undefPointerCache();
+    $self->log ("processed ncbi_tax_id : $tax_id\n");
     $$count++;
     if ($$count % 100 == 0) {
-	$M->log ("Number processed: $count");
+	$self->log ("Number processed: $count");
     }
 }
 
 
 sub getTaxonAtt {
     
-    my $M   = shift;
+    my $self   = shift;
     my ($parent_tax_id,$nodesHash,$count) = @_;
     foreach my $tax_id (keys %{$nodesHash->{$parent_tax_id}}) {
-	my $parent_taxon_id = &getTaxon($parent_tax_id);
+	my $parent_taxon_id = $self->getTaxon($parent_tax_id);
 	my $rank = $nodesHash{$parent_tax_id}->{$tax_id}[0];
 	my $gen_code = $nodesHash{$parent_tax_id}->{$tax_id}[1];
 	my $mit_code = $nodesHash{$parent_tax_id}->{$tax_id}[2];
 	my @attArr=($tax_id,$rank,$parent_taxon_id,$gen_code,$mit_code);
-	&makeTaxonEntry(\@attArr,$count);
-	&getTaxonAtt($tax_id,$nodesHash,$count);
+	$self->makeTaxonEntry(\@attArr,$count);
+	$self->getTaxonAtt($tax_id,$nodesHash,$count);
     }
 }
 
 sub getTaxon{
     
-    my $M   = shift;
+    my $self   = shift;
     my ($tax_id) = @_;
     my $taxon_id;
-    my $dbh = $M->getQueryHandle();
+    my $dbh = $self->getQueryHandle();
     my $st = $dbh->prepare("select t.taxon_id from sres.taxon t where t.ncbi_tax_id = ?");
     $st->execute($tax_id);
     $taxon_id = $st->fetchrow_array();
@@ -252,11 +252,11 @@ sub getTaxon{
 
 sub makeTaxonName {
 
-    my $M   = shift;
+    my $self   = shift;
     my ($namesDmp) = @_; 
     my $num = 0;
     foreach my $tax_id (keys %$namesDmp) {
-	my $taxon_id = &getTaxon($tax_id);;
+	my $taxon_id = $self->getTaxon($tax_id);;
 	foreach my $name (keys %{$namesDmp->{$tax_id}}) {
 	    foreach my $name_class (keys %{$namesDmp->{$tax_id}->{$name}}) {
 		foreach my $unique_name_variant (keys %{$namesDmp->{$tax_id}->{$name}->{$name_class}}) {
@@ -272,13 +272,13 @@ sub makeTaxonName {
 			$newTaxonName->set('name_class',$name_class);
 		    }
 		    $newTaxonName->submit();
-		    $M->undefPointerCache();
+		    $self->undefPointerCache();
 		    $num++;
 		}
 	    }
 	}
     }
-    $M->log ("$num taxon names processed\n");
+    $self->log ("$num taxon names processed\n");
 }
 
 
