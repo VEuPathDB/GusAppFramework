@@ -1,0 +1,9 @@
+#!/usr/bin/perl
+
+use strict;
+
+use GUS::PluginMgr::GusApplication;
+
+my $ga = GUS::PluginMgr::GusApplication->new();
+
+$ga->parseAndRun(\@ARGV);

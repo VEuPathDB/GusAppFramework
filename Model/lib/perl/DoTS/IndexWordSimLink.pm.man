@@ -1,0 +1,30 @@
+
+package GUS::Model::DoTS::IndexWordSimLink; # table name
+use strict;
+use GUS::Model::DoTS::IndexWordSimLinkRow;
+
+
+use vars qw (@ISA);
+@ISA = qw (GUS::Model::DoTS::IndexWordSimLinkRow);
+
+
+sub setBestPValue {
+  my($self,$pval) = @_;
+  my($mant,$exp);
+  if($pval =~ /^(\S+)e(\S+)$/){
+    $mant = $1;
+    $exp = $2;
+  }else{
+    $mant = $pval == 0 ? 0 : $pval;
+    $exp = $pval == 0 ? -999999 : 0;
+  }
+  $self->setBestPValueMant($mant);
+  $self->setBestPValueExp($exp);
+}
+
+sub getBestPValue {
+  my($self) = @_;
+  return $self->getBestPValueMant() . (($self->getBestPValueExp() != -999999 && $self->getBestPValueExp() != 0) ? "e" . $self->getBestPValueExp() : "");
+}
+
+1;

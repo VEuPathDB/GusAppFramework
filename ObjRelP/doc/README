@@ -1,0 +1,59 @@
+Dependencies of the objects on specific implementations:
+NOTE: Currently will work with Oracle (DBI must be installed) and
+      likely Sybase although has not been tested since adding the
+      Oracle bits.  Other dbms will need to be checked for...the sticker
+      is getting meta information as each dbms seems to differ.
+
+1.  Must have a TableInfo table.
+
+2.  Must have all the "default" attributes in every table (modification_date to end).
+    a.  these get set on submit 
+    b.  read/write bits checked when retrieving or updating rows.
+
+3.  Must have Project, Group, UserInfo, and Algorthm et. al. tables
+    due to #2 above.
+
+4.  RelationalRow->hasSequence specific to the implementation (which
+    table_ids are Imp tables containing sequence).
+
+5.  Evidence table will be needed in order to use the evidence methods.
+
+6.  There may be others....
+
+
+Generating Objects:
+
+The command syntax is summarized in CreateObject.cmd.  The special cases
+file is important for cases where there are multiple foreign key references
+to the same table (in our case it always involves implementation tables
+only specific views of which have valid attributes).  This enables the 
+code generator to unambigously determine how to create the relationships.
+
+
+Dependencies for GusApplication (ga)
+
+1.  should have a .GUS_cfg file (name of which is in GUS_CFG environment variable)
+    This sets the defaults for database and user so they don't have to be put onto
+    the command line which in the case of the password is something that should not
+    be done depending on level of security desired.
+
+#Example file for GUSdev
+
+gus/database            GUSdev
+gus/login               <db_login>
+gus/password            <db_pasword>
+gus/user                brunkb
+gus/group               CBIL
+gus/project             GUS
+
+
+ga command syntax:
+
+ga pops the name of the plugin off the end of the argument list, thus all 
+commandline options go before the plugin name which must be last. eg:
+
+ga --help UpdateGusFromXML
+
+ga --commit --filename <file.xml> UpdateGusFromXML
+
+

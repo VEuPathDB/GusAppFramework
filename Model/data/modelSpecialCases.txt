@@ -1,0 +1,7 @@
+>rel Child Parent childs_key parents_key
+rel DoTS::AssemblySequence DoTS::Assembly assembly_na_sequence_id na_sequence_id
+rel DoTS::AssemblySequence DoTS::ExternalNASequence na_sequence_id na_sequence_id
+rel DoTS::SequencePiece DoTS::VirtualSequence virtual_na_sequence_id na_sequence_id
+rel DoTS::SequencePiece DoTS::NASequence piece_na_sequence_id na_sequence_id
+rel DoTS::RNAFeatureExon DoTS::RNAFeature rna_feature_id na_feature_id
+rel DoTS::RNAFeatureExon DoTS::ExonFeature exon_feature_id na_feature_id

@@ -1,0 +1,18 @@
+
+package GUS::Model::DoTS::SplicedNASequence; # table name
+use strict;
+use GUS::Model::DoTS::SplicedNASequenceRow;
+
+
+use vars qw (@ISA);
+@ISA = qw (GUS::Model::DoTS::SplicedNASequenceRow);
+
+sub getSequence {
+	my $self = shift;
+	if($self->get('sequence')) {
+    return $self->get('sequence');
+  }
+  return $self->getChild('RNAFeature',1)->getFeatureSequence();
+}
+
+1;

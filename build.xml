@@ -1,0 +1,178 @@
+<project name="GUS" default="Installation" basedir=".">
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo  Dependencies  oooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="CBIL-Installation">
+    <ant antfile="../CBIL/build.xml" target="CBIL-Installation">
+      <property name="project" value="CBIL"/>
+      <property name="version" value="2.1.2"/>
+    </ant>
+  </target>  
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo  Distributable  ooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="GUS-Distributable" depends="ProjectTree ">
+
+    <copy todir="${targetDir}">
+      <fileset dir="${projectsDir}" >
+        <exclude name="**/CVS/*" />
+      </fileset>
+    </copy>  
+  </target>  
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo  Installation  oooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+ 
+  <target name="GUS-Installation" depends="CBIL-Installation,
+                                           GUS/Common-Installation, 
+                                           GUS/DBAdmin-Installation, 
+                                           GUS/GOPredict-Installation, 
+                                           GUS/Model-Installation, 
+                                           GUS/ObjRelP-Installation, 
+                                           GUS/Pipeline-Installation, 
+                                           GUS/PluginMgr-Installation, 
+                                           GUS/SchemaBrowser-Installation"> 
+    <echo message="gus project: ${project}"/>
+    <ant target="defaultProjectInstall"/>
+
+  </target>
+
+  <target name="GUS-Installation-old" depends="GUS/Common-Installation, 
+                                           GUS/DBAdmin-Installation, 
+                                           GUS/Model-Installation, 
+                                           GUS/ObjRelJ-Installation, 
+                                           GUS/ObjRelP-Installation, 
+                                           GUS/Pipeline-Installation, 
+                                           GUS/PluginMgr-Installation, 
+                                           GUS/SchemaBrowser-Installation, 
+                                           GUS/WebDevKit-Installation ">
+
+    <echo message="gus project: ${project}"/>
+    <ant target="defaultProjectInstall"/>
+
+  </target>
+
+  <target name="GUS/Common-Installation" depends="ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="component" value="GUS/Common"/>
+    </ant>
+  </target>  
+
+  <target name="GUS/DBAdmin-Installation" depends="ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="component" value="GUS/DBAdmin"/>
+    </ant>
+  </target>  
+
+  <target name="GUS/GOPredict-Installation" depends="ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="component" value="GUS/GOPredict"/>
+    </ant>
+  </target>  
+
+  <target name="GUS/Model-Installation" depends="ProjectTree, 
+                                                 checkObjects,
+                                                 generatedModel">
+    <ant target="defaultComponentInstall">
+      <property name="component" value="GUS/Model"/>
+    </ant>
+  </target>  
+
+   <target name="generatedModel" unless="objectsAlreadyGenerated" 
+                                 depends="ProjectTree,
+                                          GUS/ObjRelP-Installation">
+     <exec executable="generateGusPerlObjects"/>
+   </target>  
+
+  <target name="checkObjects">
+    <uptodate property="objectsAlreadyGenerated" 
+              targetfile="${projectsDir}/GUS/Model/lib/perl/GUS/Model/generated"             srcfile="${projectsDir}/GUS/Model/lib/sql/definition.sql" />
+  </target>
+ 
+
+  <target name="GUS/ObjRelJ-Installation" depends="ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="component" value="GUS/ObjRelJ"/>
+    </ant>
+  </target>  
+
+  <target name="GUS/ObjRelP-Installation" depends="ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="component" value="GUS/ObjRelP"/>
+    </ant>
+  </target>  
+
+
+  <target name="GUS/Pipeline-Installation" depends="ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="component" value="GUS/Pipeline"/>
+    </ant>
+  </target>  
+
+  <target name="GUS/PluginMgr-Installation" depends="GUS/ObjRelP-Installation,
+                                                     ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="component" value="GUS/PluginMgr"/>
+    </ant>
+  </target>
+  
+  <target name="GUS/SchemaBrowser-Installation" depends="ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="component" value="GUS/SchemaBrowser"/>
+    </ant>
+  </target>  
+
+  <target name="GUS/WebDevKit-Installation" depends="ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="component" value="GUS/WebDevKit"/>
+    </ant>
+  </target>  
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooo  Web Installation  oooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="GUS-WebInstallation" depends="GUS/DBAdmin-WebInstallation, 
+                                              GUS/SchemaBrowser-WebInstallation, 
+                                              GUS/WebDevKit-WebInstallation "/>
+
+
+  <target name="GUS/DBAdmin-WebInstallation" depends="ProjectTree">
+    <ant target="defaultWebComponentInstall">
+      <property name="component" value="GUS/DBAdmin"/>
+    </ant>
+  </target>  
+
+  <target name="GUS/SchemaBrowser-WebInstallation" depends="ProjectTree">
+    <ant target="defaultWebComponentInstall">
+      <property name="component" value="GUS/SchemaBrowser"/>
+    </ant>
+  </target>  
+
+  <target name="GUS/WebDevKit-WebInstallation" depends="ProjectTree">
+    <ant target="defaultWebComponentInstall">
+      <property name="component" value="GUS/WebDevKit"/>
+    </ant>
+  </target>  
+
+
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooo  ProjectTree  ooooooooooooooooooooooooooo -->
+  <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
+
+  <target name="ProjectTree" if="${checkout}">
+    <ant target="projectCheckOut"/>
+  </target>  
+
+</project>
+
+

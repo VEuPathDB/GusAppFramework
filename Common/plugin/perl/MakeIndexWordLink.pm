@@ -1,0 +1,239 @@
+############################################################
+## Change Package name....
+############################################################
+package MakeIndexWordLink;
+
+use strict;
+use DBI;
+
+############################################################
+# Add any specific objects (GUSdev::) here
+############################################################
+use GUS::Model::::IndexWord;
+use GUS::Model::::IndexWordLink;
+
+
+my $Cfg;                        ##global configuration object....passed into constructor as second arg
+
+
+sub new {
+  my $Class = shift;
+  $Cfg = shift;                 ##configuration object...
+
+  return bless {}, $Class;
+}
+
+sub Usage {
+  my $M   = shift;
+  return 'Creates entries in IndexWord(Link) tables for indexing specific attributes';
+}
+
+############################################################
+# put the options in this method....
+############################################################
+sub CBIL::Util::EasyCspOptions {
+  my $M   = shift;
+  {
+
+    #		test_opt1 => {
+    #									o => 'opt1=s',
+    #									h => 'option 1 for test application',
+    #									d => 4,
+    #									l => 1,	ld => ':',
+    #									e => [ qw( 1 2 3 4 ) ],
+    #								 },
+
+    testnumber        => {
+                          o => 'testnumber=i',
+                          h => 'number of iterations for testing',
+                         },
+                           minLength         => {
+                                                 o => 'minLength=i',
+                                                 h => 'Minimun length words to keep',
+                                                 d => '3',
+                                                },
+                                                  table             => {
+                                                                        o => 'table=s',
+                                                                        h => 'Table name to index',
+                                                                       },
+                                                                         attribute         => {
+                                                                                               o => 'attribute=s',
+                                                                                               h => 'attribute to index',
+                                                                                               d => 'description',
+                                                                                              },
+                                                                                                noDigits          => {
+                                                                                                                      o => 'noDigits!',
+                                                                                                                      h => 'Do not keep words that are numbers',
+                                                                                                                      d => '1',
+                                                                                                                     },
+                                                                                                                       restart           => {
+                                                                                                                                             o => 'restart!',
+                                                                                                                                             h => 'For restarting...ignores entries from IndexWordLink from table',
+                                                                                                                                            },
+
+                                                                                                                                              idSQL             => {
+                                                                                                                                                                    o => 'idSQL',
+                                                                                                                                                                    t => 'string',
+                                                                                                                                                                    h => 'sql query that returns primary_key,attribute_to_index from --table',
+                                                                                                                                                                   },
+                                                                                                                                                                 }
+}
+
+my $ctx;
+my $debug = 0;
+my $target_table_id; 
+my $primary_key; 
+my %words;                      ##hash to hold word => index_word_id
+my $ctNewWords = 0;
+my $totalLinks = 0;
+my %taxon;                      ##genus and species
+
+sub Run {
+  my $M   = shift;
+  $ctx = shift;
+
+  print STDERR $ctx->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
+  print STDERR "Testing on $ctx->{'testnumber'}\n" if $ctx->{'testnumber'};
+
+  die "--table and (--attribute or --idSQL) are required arguments\n" unless $ctx->{cla}->{table} && ($ctx->{cla}->{table} || $ctx->{cla}->{table});
+
+  my $dbh = $ctx->{self_inv}->getQueryHandle();
+
+  $target_table_id = $ctx->{self_inv}->getTableIdFromTableName($ctx->{cla}->{table});
+  $primary_key = $ctx->{self_inv}->getTablePKFromTableId($target_table_id);
+
+  ##first need to get the current list of words from IndexWord
+  my $wdStmt = $dbh->prepare("select index_word_id,word from IndexWord");
+  $wdStmt->execute();
+  while (my($i,$w) = $wdStmt->fetchrow_array()) {
+    $words{$w} = $i;
+  }
+  $wdStmt->finish();
+  print STDERR "Fetched ".scalar(keys%words)." IndexWords from db\n";
+
+  ##next need to get genus and species so can not index these!!
+  my $taxStmt = $dbh->prepare("select genus,species from Taxon");
+  $taxStmt->execute();
+  while (my($gen,$sp) = $taxStmt->fetchrow_array()) {
+    $taxon{$gen} = 1;
+    $taxon{$sp} = 1;
+  }
+  $taxStmt->finish();
+  print STDERR "Ignoring ".scalar(keys%taxon)." organism names\n";
+
+  ##need to also be able to restart....
+  my %restart;
+  if ($ctx->{cla}->{restart}) {
+    my $resStmt = $dbh->prepare("select target_id from IndexWordLink where target_table_id = $target_table_id");
+    $resStmt->execute() || die $DBI::errstr;
+    while (my($i) = $resStmt->fetchrow_array()) {
+      $restart{$i} = 1;
+    }
+    print STDERR "restarting, ignoring ".scalar(keys%restart)." target_ids\n";
+    $resStmt->finish();
+  }
+	
+  my $query = "select $primary_key,$ctx->{cla}->{attribute} from $ctx->{cla}->{table} where $ctx->{cla}->{attribute} is not null";
+  print STDERR "Query: ",($ctx->{cla}->{idSQL} ? "$ctx->{cla}->{idSQL}\n" : "$query\n") if $debug;
+  my $stmt = $dbh->prepare($ctx->{cla}->{idSQL} ? $ctx->{cla}->{idSQL} : $query);
+
+  $stmt->execute() || die $DBI::errstr;
+	
+  my $ct = 0;
+  while (my($id,$desc) = $stmt->fetchrow_array()) {
+    next if exists $restart{$id};
+    if ($ctx->{cla}->{testnumber} && $ct >= $ctx->{cla}->{testnumber}) {
+      $stmt->finish();
+      last;
+    }
+    $ct++;
+    print STDERR "Processing $ct: ".`date` if $ct % 1000 == 0;
+    print STDERR "$id: $desc\n" if $debug;
+
+    ##need to do something about genus/species things.....think about this!!
+    ##could get all from taxon table and then ignore!!!YES...only 55k entries!!
+    
+    ##need to remove dups...
+    my %words;
+    foreach my $wd (split(' +',$desc)) {
+      $words{$wd} = 1;
+    }
+    foreach my $wd (keys%words){
+      &processWord($id,$wd);
+    }
+    $ctx->{self_inv}->undefPointerCache();
+  }
+  $dbh->disconnect();           ##close database connection
+
+  ############################################################
+  # return status
+  # replace word "done" with meaningful return value/summary
+  ############################################################
+  return "created index words for $ct $ctx->{cla}->{table}.$ctx->{cla}->{attribute} rows, $ctNewWords new words and $totalLinks words indexed";
+}
+
+##subs
+sub processWord {
+  my($id,$word) = @_;
+  $word =~ tr/A-Z/a-z/;
+  $word =~ s/-/Z/g;
+  $word =~ s/\W//g;
+  $word =~ s/Z/-/g;
+
+  ##if following removal of "-" I have only digits then return...
+  my $tmp = $word;
+  $tmp =~ s/-//g;
+  return if $tmp =~ /^\d+$/;
+
+  ##need to deal with those "-" appropriately!!
+  ## remove "-" from beginning...
+  $word =~ s/^-+//;
+  ##get rid  of ones from end...
+  while ($word =~ /-$/) {
+    chop $word;
+  }
+
+  ##create link obj and submit..
+  &createIWL($id,$word);
+
+  ##want to submit things with "-" as individual words
+  my @split = split('-',$word);
+  if (scalar(@split) > 1) {
+    foreach my $w (@split) {
+      &createIWL($id,$w);
+    }
+  }
+}
+
+sub createIWL {
+  my($id,$word) = @_;
+  ##apply filters..
+  return if length($word) < $ctx->{cla}->{minLength};
+  return if $ctx->{cla}->{noDigits} && $word =~ /^\d+$/;
+  return if $word =~ /^\w{1,2}\d+$/; ##looks like an accession from nrdb...
+  return if $word =~ /^(protein|the|from|gene|type|region|product|putative|factor|peptide|and)$/;
+  return if $word =~ /^(dna|with|singleton|identity|unnamed|unknown|similarities|null|for)$/;
+  return if exists $taxon{$word}; ##orgnanism name
+  print STDERR "$word\n" if $debug;
+  my $wl = IndexWordLink->new({'target_table_id' => $target_table_id,
+                               'target_id' => $id,
+                               'index_word_id' => &getWordId($word,$id),
+                              });
+  $wl->submit();
+  $totalLinks++;
+}
+
+sub getWordId {
+  my($word,$id) = @_;
+  if (!exists $words{$word}) {  ##is new word
+    #		print STDERR "New Word $id: '$word'\n";
+    $ctNewWords++;
+    my $iw = IndexWord->new({'word' => $word});
+    $iw->submit();
+    $words{$word} = $iw->getId();
+  }
+  return $words{$word};
+}
+
+1;
+

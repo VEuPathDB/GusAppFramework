@@ -1,0 +1,4 @@
+/usr/bin/rm -r publicJavadocs
+mkdir publicJavadocs
+/usr/local/pkg/lang/java/jdk1.2.2/bin/javadoc -d publicJavadocs -public -classpath "../..:/usr/local/pkg/lang/java/1.1.8-reference/lib/classes.zip:/usr/local/lib/java1.1/PerlTools:/usr/local/lib/java1.1/JConnect" cbil.gus.model cbil.gus.model.gen cbil.gus.objrel 
+

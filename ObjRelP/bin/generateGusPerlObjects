@@ -1,0 +1,65 @@
+#!/usr/bin/perl
+
+use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
+use GUS::ObjRelP::DbiDatabase;
+use GUS::ObjRelP::Generator::Generator;
+use GUS::Common::GusConfig;
+use Getopt::Long;
+
+my($tables, $login, $database, $type, $newOnly, $core, $schemas, $verbose,
+  $passwd, $gusconfigfile, $help);
+
+# defaults
+$database="GUS30";
+$type=2;
+$core="Core";
+
+&GetOptions('core=s' => \$core,
+            'tables=s' => \$tables,
+            'type=i' => \$type,
+            'newOnly!' => \$newOnly,
+            'verbose!' => \$verbose,
+            'help!' => \$help,
+            'schemas=s' => \$schemas,
+            'gusconfigfile=s' => \$gusconfigfile,
+           );
+
+
+die '$PROJECT_HOME is not defined.' unless $ENV{PROJECT_HOME};
+
+my $targetDir = "$ENV{PROJECT_HOME}/GUS/Model/lib/perl/GUS/Model";
+my $superclassesLibDir = "$ENV{PROJECT_HOME}/GUS/ObjRelP/lib/perl/GUS/ObjRelP";
+my $specialCasesFile = "$ENV{PROJECT_HOME}/GUS/Model/data/modelSpecialCases.txt";
+
+if ($help) {
+  print "usage: generateGusPerlObjects --gusconfigfile <\$GUS_CONFIG_FILE> --type (0=working, 1=_gen, 2=both(default)) --newOnly (does only tables that have no objects) --core [Core] --schemas 'comma, separated, [all]' --tables 'comma, separated, list, of, tables, [all]'\n";
+  exit 1;
+}
+
+my $gusconfig = GUS::Common::GusConfig->new($gusconfigfile);
+
+
+my @tables = split(/,\s*/, $tables) if $tables;
+my @schemas = split(/,\s*/, $schemas) if $schemas;
+
+my $db = GUS::ObjRelP::DbiDatabase->new(undef,
+					$gusconfig->getReadOnlyLogin(),
+					$gusconfig->getReadOnlyPassword,
+					$verbose,0,1,
+					$gusconfig->getReadOnlyDatabase,
+					$core);
+$db->setUseDbiTableOnly(1);
+
+my $generator = GUS::ObjRelP::Generator::Generator->new($db,
+							$targetDir,
+							$specialCasesFile,
+							$superclassesLibDir,
+							\@schemas, \@tables);
+
+$generator->generate($newOnly);
+
+my $date = `date`;
+open(F, ">$ENV{PROJECT_HOME}/GUS/Model/lib/perl/GUS/Model/generated");
+print F "$date\n";
+close(F);

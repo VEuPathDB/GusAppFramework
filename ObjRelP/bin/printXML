@@ -1,0 +1,50 @@
+#!/usr/bin/perl
+
+## Prints simple XML for tuples in the database.
+## --recursive recursively retrieves all foreign key relationships
+## and also prints those....should be used with care.
+
+## Brian Brunk 12/12/99
+
+use strict;
+
+use Getopt::Long;
+use GUS30::dbiperl_utils::DbiDatabase;
+
+my ($table,$id,$deep,$verbose,$debug,$attHash,$login,$password,$database,$group,$user);
+&GetOptions("table=s" => \$table,"id=i"=> \$id, 'recursive!' => \$deep,
+            "verbose!" => \$verbose, "debug!" => \$debug, "attHash=s" => \$attHash,
+            "login=s" => \$login, "password=s" => \$password, "database=s" => \$database,
+            'group=i' => \$group,'user=i' => \$user );
+
+$| = 1;
+
+if((!$id && !$attHash) || !$table){ die "usage: printXML --table <tablename> --id <identifier> --attHash '{\"att1\" => val}' --login --password --database --recursive (if you want to retrieve all children from the db)\n\teg: printXML --table Gene --id 10 --recursive --user <user_id> --group <group_id>\n"; }
+
+##defaults to gusdevreadonly..
+$login = $login ? $login : "GUSdevreadonly";
+$password = $password ? $password : "s7fp4erv";
+$database = $database ? $database : "GUS30";
+my $dbi_dsn = $ENV{DBI_DSN} ? $ENV{DBI_DSN} : 'dbi:Oracle:host=erebus.pcbi.upenn.edu;sid=gusdev';
+
+my  $db = new DbiDatabase( $dbi_dsn, $login, $password, $verbose, 0, 1, $database ,'GUSdev');
+
+eval("require GUS30::$table");
+my $obj;
+if($attHash){
+  $obj = $table->new(eval($attHash));
+}else{
+  $obj = $table->new();
+}
+$obj->setDebuggingOn() if $debug;
+$obj->setDefaultUserId($user) if $user;
+$obj->setDefaultGroupId($group) if defined $group;
+my $pk = $obj->getTable()->getPrimaryKey();
+if($id){ $obj->set($pk,$id);}
+  
+if($obj->retrieveFromDB()){
+  $obj->retrieveAllChildrenFromDB(1) if $deep;
+  print $obj->toXML(0,1);
+}else{
+  print "Unable to retrieve $table object from database $database\n",$obj->toXML(2,1);
+}
