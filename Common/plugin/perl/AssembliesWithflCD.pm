@@ -127,9 +127,9 @@ foreach my $A(@na_sourceids)    {
     foreach my $id(@naSequenceIds)  {
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
 
-     if ($id == $na_seq ) {next;
+     if ($id == $na_seq ) {
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
-
+     next;
 }
 
      if($id != $na_seq) {
@@ -156,13 +156,6 @@ print STDERR "NextFLDT.$na_seq\n";
 }
 
 
-#query for marking as full length based on DIANA ATG and translations
-#select naf.na_sequence_id, taf.aa_sequence_id from dots.assembly asm, dots.NAFeatureImp naf, dots.TranslatedAAFeature taf
-#where asm.na_sequence_id = naf.na_sequence_id and naf.na_feature_id = taf.na_feature_id and taf.translation_start = taf.diana_atg_position + 2
-#and taf.diana_atg_score > 0.5 and taf.p_value < 0.5
-
-
-
 #use RefSeq source_id as evidence for marking assembly as full length CDS containing
 
   sub toAddEvidenceSourceID {
@@ -184,11 +177,27 @@ print STDERR "NextFLDT.$na_seq\n";
   }
 
 
+#These subroutines are necessary since Refseqs can be removed from an assembly during the update process
+
+#sub UnMarkDTasFL
+
+#sub RemoveEvidenceSourceID
+
+
+
+
+
+
 
 
 #want to exclude those which have already been marked using refSeq source id or include and use DIANA and framefinder attributes as additonal evidence
 #since framefinder or diana may not find the refSeq ATG it maybe best to keep them separate and if meet this additional criteria
 #looks as if in table framefinder translation start is +2 greater than DIANA ATG
+
+#query for marking as full length based on DIANA ATG and translations
+#select naf.na_sequence_id, taf.aa_sequence_id from dots.assembly asm, dots.NAFeatureImp naf, dots.TranslatedAAFeature taf
+#where asm.na_sequence_id = naf.na_sequence_id and naf.na_feature_id = taf.na_feature_id and taf.translation_start = taf.diana_atg_position + 2
+#and taf.diana_atg_score > 0.5 and taf.p_value < 0.5
 
 
 
