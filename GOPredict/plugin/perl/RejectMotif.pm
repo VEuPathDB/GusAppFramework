@@ -168,7 +168,7 @@ sub getProcessedMotifs{
 
 
     my $fh = FileHandle->new("</home/dbarkan/projects/GUS/GOPredict/plugin/perl/finished.txt");
-    die ("could not open file!") unless $fh;
+    die ("error: could not open file!") unless $fh;
     my $doneMotifs;
     $self->log("getting processed motifs");
     while (<$fh>){
