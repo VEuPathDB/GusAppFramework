@@ -46,12 +46,14 @@
 	      Please note that we are still in the process of debugging and streamlining the installation
 	      procedure; check the 
 	      <a href='http://sourceforge.net/mailarchive/forum.php?forum_id=9903'>gusdev-gusdev e-mail archive</a>
-	      for known problems and workarounds.  Roughly, the steps to install GUS are as follows:
+	      for known problems and workarounds.  
+              <p>We are working on PostgreSQL compatibility and expect it to be in the first half of 2004.  For now, GUS requires Oracle.
+              <p>Roughly, the steps to install GUS are as follows:
 	      </P>
               <OL>
-                <LI>Install Oracle (PostgreSQL compatibility coming mid 2004), Java SDKs and Perl Modules.
+                <LI>Install Oracle (the only RDBMS currenty supported), Java SDKs and Perl Modules.
                 <LI><a href='documentation/install-setup.html'>Download and install the GUS Build System</a>. 
-		<LI><a href='documentation/schema-setup.html'>Install the GUS schema</A> (currently requires Oracle 8i/9i; PostgreSQL port is underway).  
+		<LI><a href='documentation/schema-setup.html'>Install the GUS schema</A> (currently requires Oracle 8i/9i).  
                 <LI>Populate GUS with required initial data. 
 		<LI>Load application data into the system using the GUS plugins.
               </OL>
