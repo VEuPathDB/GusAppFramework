@@ -15,6 +15,7 @@ use GUS::Model::DoTS::EST;
 use GUS::Model::DoTS::Clone;
 use GUS::Model::DoTS::Library;
 use GUS::Model::DoTS::ExternalNASequence;
+use GUS::Model::DoTS::SequenceType;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::Anatomy;
