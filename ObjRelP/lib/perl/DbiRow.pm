@@ -754,7 +754,7 @@ sub checkAttribute {
   if ($self->getTable()->isValidAttribute($att)) {
     return  1;
   } else {
-    die "ERROR: invalid attribute $att passed to table $self->{'table_name'}\n\n";
+    die "ERROR: attempting to access attribute '$att' of table $self->{'table_name'}, but that table does not have such an attribute\n\n";
   }
 }
 # SJD PRIVATE check the attributes as a hash.
