@@ -50,7 +50,7 @@ sub _genHeader {
 use strict;
 ";
   if ($self->_getParentTable()) {
-    $temp .= "use GUS::Model::".$self->_getParentTable().";\n";
+    $temp .= $self->_getParentTable().";\n";
   } else {
     $temp .= "use GUS::Model::GusRow;\n";
   }
