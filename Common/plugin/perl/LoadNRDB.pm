@@ -146,7 +146,7 @@ sub getDB {
   my ($self) = @_;
   my $dbh = $self->getQueryHandle();
 
-  my %dbNameHash
+  my %dbNameHash;
   my @DBs = split(/,/, $self->getCla()->{'sourceDB'});
 
   foreach my $db (@DBs) {
@@ -277,7 +277,7 @@ sub makeTempTable {
 		    my $sequence_version;
 		    my $db_rel_id = $EntryHash{$gid}{$source_id}[0];
 		    #extension for pdb is not a version number,rather, part of its source_id
-		    if ($source_id =~ /(\S*?)\.(\S*)/ && $db_rel_id != $dbHash{pdb}){ 
+		    if ($source_id =~ /(\S*?)\.(\S*)/ && $db_rel_id != $dbHash->{pdb}){ 
 			$source_id = $1;
 			$sequence_version = $2;
 		    }
@@ -289,7 +289,7 @@ sub makeTempTable {
 	    if ($set_num%1000 == 0) {
 		$dbh->commit();
 		print STDERR ("$set_num sets have been processed 
-                               and put in the nrdbtemp table\n");
+                               and put in the NRDBTemp table\n");
 		$dbh->commit();
 	    }
 	}
@@ -310,7 +310,7 @@ sub makeNRDBAndExternalAASequence {
                      load NRDBEntry and ExternalAASequence\n";
 
     my $dbh = $self->getQueryHandle();
-    my $st = $dbh->prepareAndExecute("select max(set_num) from $temp_login".".nrdbtemp");
+    my $st = $dbh->prepareAndExecute("select max(set_num) from $temp_login".".NRDBTemp");
     my ($max_set_num) = $st->fetchrow_array;
     $st->finish();
 
@@ -356,7 +356,7 @@ sub makeNRDBAndExternalAASequence {
 		#get the preferred gi and source_id and get any one aa_sequence_id corresponding to a member of the set
 		unless ($self->getCla->{'restart'} && $count <= $self->getCla->{'restart'}) {
 		    if (scalar (keys %EntryHash) != 0) {
-			my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id);
+			my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id,$dbHash);
 			$newExtAASeq->submit();
 			$num_submit++;
 			print STDOUT ("Submitted set number:$num_submit\n");
@@ -379,7 +379,7 @@ sub makeNRDBAndExternalAASequence {
 	    $seq .= $_;
 	}
     }
-    my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id);
+    my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id,$dbHash);
     $newExtAASeq->submit();
     $num_submit++;
     my $entryresult = ("Number of entries to NRDB/ExternalAASequence : 
@@ -437,7 +437,7 @@ sub parseLine {
 }
 
 sub processHash {
-    my ($EntryHash,$seq,$st,$external_database_release_id) = @_;
+    my ($EntryHash,$seq,$st,$external_database_release_id,$dbHash) = @_;
     my $newExtAASeq;
     my $pref_gi;
     my $pref_source;
@@ -447,18 +447,17 @@ sub processHash {
     my $pir_source;
     my $default_gi;
     my $default_source;
-
     my $max_length = 0;
     foreach my $gid (keys %$EntryHash){
 	foreach my $source_id (keys %{$$EntryHash{$gid}}){
 	    my $db_rel_id = $$EntryHash{$gid}->{$source_id}[0];
 	    
 	    my $description = $$EntryHash{$gid}->{$source_id}[1];
-	    if ($db_id==7) {   #$db_rel_id = 
+	    if ($db_rel_id==$dbHash->{sp}) {  
 		$sp_gi=$gid;
 		$sp_source=$source_id;
 	    }
-	    if ($db_id==5) {#$db_rel_id 
+	    if ($db_rel_id==$dbHash->{pir}) {
 		$pir_gi=$gid;
 		$pir_source=$source_id;
 	    }
@@ -468,13 +467,13 @@ sub processHash {
 	    }
 	    if (!$newExtAASeq) {
 		my $source;
-		if ($source_id =~ /(\S*?)\.(\S*)/ && $db_id != 8) { #$db_rel_id 
+		if ($source_id =~ /(\S*?)\.(\S*)/ && $db_rel_id != $dbHash->{pdb}) { 
 		    $source = $1;
 		}
 		else{
 		    $source=$source_id;
 		}
-		$st->execute($source,$db_id);#$db_rel_id 
+		$st->execute($source,$db_rel_id);
 		if (my ($aa_seq_id) = $st->fetchrow_array) {
 		    $st->finish;
 		    my $preExtAASeq =GUS::Model::DoTS::ExternalAASequence->new ({'aa_sequence_id'=>$aa_seq_id});
@@ -578,8 +577,8 @@ sub deleteFromNRDB {
     my $num_delete = 0;
 
     my $dbh = $self->getQueryHandle();
-
-    my $st = $dbh->prepareAndExecute("select nrdb_entry_id from dots.nrdbentry where source_id not in (select /** RULE */ n.source_id from dots.nrdbentry n, pinney.nrdbtemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_database_release_id)");
+    my $login = $self->getCla()->{temp_login};
+    my $st = $dbh->prepareAndExecute("select nrdb_entry_id from dots.nrdbentry where source_id not in (select /** RULE */ n.source_id from dots.nrdbentry n, $login" . ".NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_database_release_id)");
     while (my ($nrdb_entry_id) = $st->fetchrow_array) {
 	$num_delete++;
 	my $newNRDBEntry = GUS::Model::DoTS::NRDBEntry->new ({'nrdb_entry_id'=>$nrdb_entry_id});
@@ -596,8 +595,8 @@ sub deleteFromExtAASeq {
   my $num_delete = 0;
   
   my $dbh = $self->getQueryHandle();
-  
-  my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_database_release_id = 4194 and aa_sequence_id not in (select /** RULE */ distinct aa_sequence_id from dots.nrdbentry n)");
+  my $ext_db_rel_id = $self->getCla()->{extDbRelId};
+  my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_database_release_id = $ext_db_rel_id and aa_sequence_id not in (select /** RULE */ distinct aa_sequence_id from dots.nrdbentry n)");
   while (my ($aa_sequence_id) = $st->fetchrow_array) {
     $num_delete++;
     my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new ({'aa_sequence_id'=>$aa_sequence_id});
