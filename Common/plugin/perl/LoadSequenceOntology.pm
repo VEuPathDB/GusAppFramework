@@ -66,9 +66,10 @@ sub run {
 
        my ($SOid, $Term, $definition) = split (/\t/, $_);
 
-      print STDERR "$SOid, $Term, $definition\n";
 
         $self->Insert($SOid,$Term,$definition);
+
+
         }
 
      $Input->close;
