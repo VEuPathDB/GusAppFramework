@@ -33,7 +33,7 @@ use CBIL::Util::Utils;
 
 sub makeRMDir {
     my ($datasetName, $pipelineName, $localPath, $serverPath, $nodePath, 
-	$taskSize, $rmOptions, $rmPath) = @_;
+	$taskSize, $rmOptions, $rmPath,$dangleMax) = @_;
     
     my $localBase = "$localPath/$pipelineName/repeatmask/$datasetName";
     my $serverBase = "$serverPath/$pipelineName/repeatmask/$datasetName"; 
@@ -116,6 +116,7 @@ sub makeRMTaskPropFile {
 inputFilePath=$seqFileBasename
 trimDangling=y
 rmOptions=$rmOptions
+dangleMax=$dangleMax
 ";
     close(F);
 }
