@@ -86,12 +86,13 @@
 
     <attribute>
       <description></description>
-      <name>query</name>
+      <name>queryInstance</name>
       <required>true</required>
-      <type>org.gusdb.gus.wdk.model.query.QueryI</type>
+      <type>org.gusdb.gus.wdk.model.query.SimpleQueryInstanceI</type>
       <rtexprvalue>true</rtexprvalue>
     </attribute>
   </tag>
+
 
   <tag>
     <description>
