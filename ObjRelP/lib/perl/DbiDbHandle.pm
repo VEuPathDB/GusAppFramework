@@ -76,9 +76,10 @@ sub sqlexec {
   my ($dbh, $sql_cmd) = @_; ## $dbh is $self
   if (!$dbh) { die "\n NO DBH for $sql_cmd \n"; }
   if ($verbose) { print STDERR"\n\nsqlexec: $sql_cmd \n"; }
-	 if(!($dbh->do($sql_cmd))){ 
-           if ($exitOnFailure) { $dbh->rollback; exit(1); } else {$dbh->setRollBack(1); return 0;}
-	}
+  if(!$dbh->do($sql_cmd)) {
+    &death($dbh, "Failed doing $sql_cmd");
+    return 0;
+  }
   return 1; # succeeded!
 }
 
@@ -98,14 +99,15 @@ sub sqlexecIns {
     if($stmt->execute(@$longValues)){
       $row_count = 1;  ##not true but will throw error if not successful and objects only do one row!!
     }else{
-      print STDERR "\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n longValues (",join(', ', @$longValues),")\n";
-      if ($exitOnFailure) { $dbh->rollback; exit(1); } else {$dbh->setRollBack(1); return 0;}
+      my $msg =  "\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n longValues (",join(', ', @$longValues),")\n";
+      &death($dbh, $msg);
+      return 0;
     }
 
   }else{
     if(!($row_count = $dbh->do($sql_cmd))){
-      print STDERR "\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n";
-      if ($exitOnFailure) { $dbh->rollback; exit(1); } else {$dbh->setRollBack(1); return 0;}
+      &death("\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n");
+      return 0;
     }
   }
 	if ($verbose) {print STDERR "rowcount:" . $row_count ."\n";}
@@ -134,8 +136,8 @@ sub sqlExec {
   if($stmt->execute(@$values)){
     if ($verbose) { print STDERR " DbiHandle:sqlExec:insert succeeded 1 row(s)\n";}
   }else{
-    print STDERR "\n DbiDbHandle:sqlExec: SQL ERROR!! involving\n $stmt->{Statement}\n bindValues (",join(', ', @$values),")\n";
-    if ($exitOnFailure) { $dbh->rollback; exit(1); } else {$dbh->setRollBack(1); return 0;}
+    &death("\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n");
+    return 0;
   }
 
   if ($noInsert) {
@@ -164,6 +166,17 @@ $dbh->do("COMMIT TRAN");
 sub rollback_tran { 
 my ($dbh) = @_; 
 $dbh->do("ROLLBACK TRAN");
+}
+
+sub death {
+  my ($dbh, $msg) = @_; 
+  if ($exitOnFailure) {
+    $dbh->rollback();
+    die "$msg";
+  } else {
+    print STDERR "$msg\n\nRolling back and continuing\n";
+    $dbh->setRollBack(1);
+  }
 }
 
 sub free{
