@@ -47,10 +47,10 @@ sub getNoEmptyStrings {return $NO_EMPTY_STRINGS;}
 
 sub setRollBack { 
   my($self,$rb) = @_;
-  $rollback = $rb;
+  $rollBack = $rb;
 }
 sub getRollBack {
-  return $rollback;
+  return $rollBack;
 }
 
 sub getTransactionStatus {
