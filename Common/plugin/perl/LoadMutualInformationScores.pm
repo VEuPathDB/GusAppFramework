@@ -7,6 +7,7 @@ use strict;
 use GUS::PluginMgr::Plugin;
 use GUS::Model::DoTS::PhylogeneticProfile;
 use GUS::Model::DoTS::PhylogeneticProfileMember;
+use GUS::Model::DoTS::MutualInformationScore;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 use FileHandle;
@@ -107,27 +108,25 @@ sub loadMutualInformationFile {
 
     my ($primarySourceId, $secondarySourceId, $score) = (split(/\|/, $_));
 
-    my $primaryNaFeatureId =
-      self->getProfileIdForSourceId($primarySourceId,
+    my $primaryProfileId =
+      $self->getProfileIdForSourceId($primarySourceId,
 				    $phylogeneticProfileSetId);
-    next if (!$primaryNaFeatureId);
+    exit if (!$primaryProfileId);
 
-    my $secondaryNaFeatureId =
-      self->getProfileIdForSourceId($secondarySourceId,
+    my $secondaryProfileId =
+      $self->getProfileIdForSourceId($secondarySourceId,
 				    $phylogeneticProfileSetId);
-    next if (!$secondaryNaFeatureId);
+    exit if (!$secondaryProfileId);
 
     my $mi = GUS::Model::DoTS::MutualInformationScore->new
       ( {
-	 phylogenetic_profile_set_id => $phylogeneticProfileSetId,
-	 primary_na_feature_id => $primaryNaFeatureId,
-	 secondary_na_feature_id => $primaryNaFeatureId,
-	 mutual_information_score => ($score * 10000),
+	 primary_profile_id => $primaryProfileId,
+	 secondary_profile_id => $primaryProfileId,
 	} );
 
-    $mi>submit();
-# for now
-exit;
+    $mi->retrieveFromDB();
+    $mi->setMutualInformationScore($score * 10000);
+    $mi->submit();
   }
 
   $fh->close();
@@ -149,6 +148,7 @@ SQL
 
     if (!$phylogeneticProfileId) {
       print STDERR "Error: can't get phylogenetic_profile_id for source_id $sourceId\n";
-      next;
     }
+
+  return $phylogeneticProfileId;
 }
