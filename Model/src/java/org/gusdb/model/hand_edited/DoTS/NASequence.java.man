@@ -24,83 +24,38 @@ import org.gusdb.objrelj.*;
  * @version $Revision$ $Date$ $Author$
  */
 public class NASequence extends NASequence_Row {
-    
-    /**
-     * Start coordinate of the cached sequence region.
-     */
-    protected Long startSequence = null;
-
-    /**
-     * End coordinate of the cached sequence region.
-     */
-    protected Long endSequence = null;
 
     // Constructor
     public NASequence () {}
-    
-    public void setBounds(Long start, Long end){
-	startSequence = start;
-	endSequence = end;
+
+    /**
+     * Retrieve entire sequence as a BioJava SymbolList.  Will fail if the
+     * the entire sequence is not cached locally.
+     */
+    public SymbolList getSequenceAsSymbolList() {
+	return this.getSequenceAsSymbolList(0, this.getSequenceLobLength().longValue() - 1);
     }
 
-    // JC: Temporarily commented out
-    /*
-    public void getSubSequence(RemoteGUSServer gi, String session, String pswd){
-	Long pk = getNaSequenceId();
-	SymbolList subSeq = null;
+    /**
+     * Retrieve the requested subsequence as a BioJava SymbolList.  Will fail if the
+     * the requested subsequence is not cached locally.
+     */
+    public SymbolList getSequenceAsSymbolList(long start, long end) {
+	SymbolList result = null;
 
-	try {
-	    subSeq = gi.retrieveSubSequence(session,  startSequence, endSequence, pk);
-	    setInitial("sequence", subSeq);
+	FiniteAlphabet dnaAlphabet = DNATools.getDNA();
+	char seqData[] = this.getSequence(start, end);
 
+	if (seqData != null) {
+	    try {
+		result = DNATools.createDNA(new String(seqData));
+	    } 
+	    catch(IllegalSymbolException ise) {
+		ise.printStackTrace(System.err);
+	    }
 	}
-	catch (Exception e){
-	    System.out.println(e.getMessage());
-	    e.printStackTrace();
-	}
-    }
-    */
 
-    public Long getStart(){
-	return startSequence;
-    }
-
-    public Long getEnd(){
-	return endSequence;
-    }
-
-    public void setCache (Clob sequence){
-
-	//for now get whole string from clob and put into symbol list
-	//later will want to get it one section at a time so the whole string isn't 
-	//loaded into memory--problem is it's a bit difficult to add a symbol-list to 
-	//the end of another without creating a new symbol-list (which will eventually
-	//allocate as much memory as loading the whole string).
-	
-	//also will eventually implement PackedSymbolList
-	try {
-	    
-	    //throw exception if start or end is null
-
-	    FiniteAlphabet dnaAlphabet = DNATools.getDNA();
-	    long start = startSequence.longValue();
-	    int len = (int)(endSequence.longValue() - start + 1);
-	       
-	    String dnaStr = sequence.getSubString(start, len);
-	    SymbolList dna =  DNATools.createDNA(dnaStr);
-	 
-	    SymbolTokenization dnaToke = dnaAlphabet.getTokenization("token");
-	 
-	    String seqString2 = dnaToke.tokenizeSymbolList(dna);
-	    System.out.println ("sequence for this assembly: " + seqString2);
-	 
-	    // When I update this note that the length of the sequence may be too large for that int
-	    setInitial("sequence", dna);
-	}
-	catch (Exception e){
-	    System.out.println(e.getMessage());
-	    e.printStackTrace();
-	}
+	return result;
     } 
 
 } // NASequence
