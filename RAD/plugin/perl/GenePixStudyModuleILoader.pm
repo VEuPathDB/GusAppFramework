@@ -63,15 +63,18 @@ sub new {
 =head2 F<General Description>
 
 Plugin reads a config file with information about full paths of directories where files of interest (.gpr & .tif)
-are maintained.  Data from the '.gpr' files is then parsed and entered into a database. 
+are maintained.  Data from the '.gpr' files are then parsed and entered into a database. 
 
-Since assay, acquisition and quantification parameters are not readily available through the '.gpr' files,
+Since assay, acquisition and most quantification parameters are not readily available through the '.gpr' files,
 they cannot be added to the database through this plugin. They have to be added to the tables separately, 
-either directly or through a suite of web-based data-entry forms.
+either directly or through the following forms in the RAD StudyAnnotator: Hybridization Parameters, Acquisition
+Parameters and Quantification Parameters.
 
-Certain portions in the PERL code are hard-coded for use by RAD at CBIL. These are indicated accordingly, and 
-should be changed based on data maintained in the local instance of RAD.
+Certain portions in the PERL code are hard-coded for use by RAD at CBIL. These are indicated with the comment 'HARD-CODED', 
+and should be changed based on data maintained in the local instance of RAD.
 
+The plugin also assumes the following parameters to be the same for all assays: Array ID, Batch ID, Hybridization
+Protocol ID, Hybridization Operator ID, Acquisition Protocol ID and Quantification Protocol ID.
 
 =head2 F<Config File [ required ]>
 
@@ -253,9 +256,9 @@ sub createGUSAssaysFromFiles {
   my @skipAssayList = @{$self->getArgs->{skip}};
 
   my $assayNames              = $self->findAssayNames($gprFilePath);
-  my $assayDescriptionHashRef = $self->parseMultipleDescriptions("allAssayDescriptionsSame","allAssayDescriptions","individualAssayDescriptions");
-  my $hybDateHashRef          = $self->parseMultipleDescriptions("allHybDatesSame","allHybDates","individualHybDates");
-  my $scanDateHashRef         = $self->parseMultipleDescriptions("allScanDatesSame","allScanDates","individualScanDates");
+  my $assayDescriptionHashRef = $self->parseMultipleDescriptions($assayNames,"allAssayDescriptionsSame","allAssayDescriptions","individualAssayDescriptions");
+  my $hybDateHashRef          = $self->parseMultipleDescriptions($assayNames,"allHybDatesSame","allHybDates","individualHybDates");
+  my $scanDateHashRef         = $self->parseMultipleDescriptions($assayNames,"allScanDatesSame","allScanDates","individualScanDates");
   my $imageFilesRef           = $self->getImageFileNames($tiffFilePath); 
 
   my $skipAssayCnt  = scalar @skipAssayList;
@@ -289,7 +292,8 @@ sub submitGusAssays {
   my $studyId = $self->{propertySet}->getProp("Study_ID");
 
   my $gusStudy = GUS::Model::RAD3::Study->new({study_id => $studyId});
-  $self->checkDatabaseEntry("GUS::Model::RAD3::Study", "study_id", $studyId);
+  $self->error("Create object failed: RAD3.Study, ID $studyId")
+   unless ($gusStudy->retrieveFromDB);
 
   my $gusInsertedAssayCnt = 0;
   foreach my $gusAssay (@$gusAssays) {
@@ -304,17 +308,6 @@ sub submitGusAssays {
   }
 
   return $gusInsertedAssayCnt;
-}
-
-###############################
-
-sub checkDatabaseEntry {
-  my ($self, $tableName, $paramName, $valueToCheck) = @_;
-
-  my $checker = $tableName->new({"$paramName" => $valueToCheck});
-
-  $self->error("Value $valueToCheck for param $paramName does not exist in $tableName")
-   unless ($checker->retrieveFromDB);
 }
 
 ###############################
@@ -338,9 +331,10 @@ sub populateRelatedTables {
 
   foreach my $assayId (@assayIds) {
 
-    my $tempAssayName = GUS::Model::RAD3::Assay->new({assay_id => $assayId});
-    $self->checkDatabaseEntry("GUS::Model::RAD3::Assay", "assay_id", $assayId);
-    my $assayName = $tempAssayName->getName();
+    my $assayObject = GUS::Model::RAD3::Assay->new({assay_id => $assayId});
+    $self->error("Create object failed: RAD3.Assay, ID $assayId") 
+     unless ($assayObject->retrieveFromDB);
+    my $assayName = $assayObject->getName();
 
     my ($acquisitionIdsRef, $acquisitionChannelsRef) = $self->populateRelatedAcquisition($assayName, $assayId);
     $self->populateRelatedQuantification($assayName, $assayId, $acquisitionIdsRef, $acquisitionChannelsRef);
@@ -366,16 +360,17 @@ sub populateRelatedAcquisition {
   while (my @row = $sth->fetchrow_array) {
     push (@acquisitionIds, $row[0]);
 
-    my $tempChannelName = GUS::Model::RAD3::Channel->new({channel_id => $row[1]});
-    $self->checkDatabaseEntry("GUS::Model::RAD3::Channel", "channel_id", $row[1]);
-    my $channelName = $tempChannelName->getName();
+    my $channelObject = GUS::Model::RAD3::Channel->new({channel_id => $row[1]});
+    $self->error("Create object failed: RAD3.Channel, ID $row[1]") 
+     unless ($channelObject->retrieveFromDB);
+    my $channelName = $channelObject->getName();
 
     push (@acquisitionChannels, $channelName);
   }
 
   $sth->finish;
-  $self->error("Id $assayId does not exist in the table RAD3.Acquistion") if (scalar @acquisitionIds eq 0); 
-  $self->error("More/less than two entries found for assay id $assayId in RAD3.Acquistion") if (scalar @acquisitionIds ne 2); 
+  $self->error("Assay Id $assayId does not exist in the table RAD3.Acquisition") if (scalar @acquisitionIds eq 0); 
+  $self->error("More/less than two entries found for assay id $assayId in RAD3.Acquisition") if (scalar @acquisitionIds ne 2); 
     
   my $acquistionAssociationOne = GUS::Model::RAD3::RelatedAcquisition->new({
     acquisition_id            => $acquisitionIds[0],
@@ -396,6 +391,7 @@ sub populateRelatedAcquisition {
   $acquistionAssociationOne->submit() if ($self->getArgs->{commit});
   $acquistionAssociationTwo->submit() if ($self->getArgs->{commit});
 
+  #$self->log("STATUS","OK Inserted 2 rows in table RAD3.RelatedAcquisition for Cy5 and Cy3 acquisitions");
   return (\@acquisitionIds, \@acquisitionChannels);
 }
 
@@ -407,9 +403,10 @@ sub populateRelatedQuantification {
   my @quantificationIds;
   foreach my $acquisitionId (@$acquisitionIdsRef) {
 
-    my $tempQuantId = GUS::Model::RAD3::Quantification->new({acquisition_id => $acquisitionId});
-    $self->checkDatabaseEntry("GUS::Model::RAD3::Quantification", "acquisition_id", $acquisitionId);
-    my $quantificationId = $tempQuantId->getQuantificationId();
+    my $quantificationObject = GUS::Model::RAD3::Quantification->new({acquisition_id => $acquisitionId});
+    $self->error("Create object failed: RAD3.Quantification, ID $acquisitionId") 
+     unless ($quantificationObject->retrieveFromDB);
+    my $quantificationId = $quantificationObject->getQuantificationId();
 
     push (@quantificationIds, $quantificationId);
   }
@@ -434,6 +431,8 @@ sub populateRelatedQuantification {
   });
   $quantificationAssociationOne->submit() if ($self->getArgs->{commit});
   $quantificationAssociationTwo->submit() if ($self->getArgs->{commit});
+
+  #$self->log("STATUS","OK Inserted 2 rows in table RAD3.RelatedQuantification for Cy5 and Cy3 quantifications");
 }
 
 ###############################
@@ -483,7 +482,7 @@ sub parseMultipleDescriptions {
   } else {
     foreach my $assayName (@$assayNames) {
       $infoHashRef->{$assayName} = $self->{propertySet}->getProp($allValues) if ($allValuesContent eq "yes");
-      $infoHashRef->{$assayName} = "" if ($allValuesContent eq "NOVALUEPROVIDED");
+      $infoHashRef->{$assayName} = "" if ($allValuesContent eq "null");
     }
   }
 
@@ -697,6 +696,17 @@ sub createGusAssay {
 
 ###############################
 
+sub checkDatabaseEntry {
+  my ($self, $tableName, $paramName, $valueToCheck) = @_;
+
+  my $checkerObject = $tableName->new({"$paramName" => $valueToCheck});
+
+  $self->error("Value $valueToCheck for param $paramName does not exist in $tableName")
+   unless ($checkerObject->retrieveFromDB);
+}
+
+###############################
+
 # gusAssayParams (or hyb params) are to be input via the Study Annotator website
 
 ###############################
@@ -707,29 +717,30 @@ sub createGusAcquisition {
   my $acqProtocolId = $self->{propertySet}->getProp("Acq_Protocol_ID");
 
   my $acqDate = $scanDateHashRef->{$assayName};
-
   my $channelDefs = {
     'Cy5' => "",   # HARD-CODED: select channel def from rad3.channel from your own instance
     'Cy3' => ""    # HARD-CODED: select channel def from rad3.channel from your own instance
   };
-  my $channelParams = $channelDefs;
 
-  my $protocol = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
-  $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $acqProtocolId);
-  my $tempAcqName = $protocol->getName();
+  my $protocolObject = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
+  $self->error("Create object failed: RAD3.Protocol, ID $acqProtocolId") 
+   unless ($protocolObject->retrieveFromDB);
+  my $protocolName = $protocolObject->getName();
 
   my $acqParametersCommon = {
     acquisition_date => $acqDate,
     protocol_id      => $acqProtocolId
   };
 
-  my $acquisitionCnt;
+  my $acquisitionCnt = 0;
   foreach my $channel (keys %$channelDefs) {
-    my $channelName = GUS::Model::RAD3::Channel->new({ name => $channel});
-    $self->checkDatabaseEntry("GUS::Model::RAD3::Channel", "name", $channel);
-    $channelDefs->{$channel} = $channelName->getChannelId();
 
-    my $acqName = "$channel $assayName".$protocol;
+    my $channelObject = GUS::Model::RAD3::Channel->new({ name => $channel});
+    $self->error("Create object failed: RAD3.Channel, ID $channel") 
+     unless ($channelObject->retrieveFromDB);
+    $channelDefs->{$channel} = $channelObject->getChannelId();
+
+    my $acqName = "$assayName-$channel-".$protocolName;
     my $acqParameters = $acqParametersCommon;
     $acqParameters = {
       name       => $acqName,
@@ -737,15 +748,16 @@ sub createGusAcquisition {
       uri        => $imageFilesRef->{$assayName."_$channel"}
     };
 
-    $channelParams->{$channel} = $acqParameters;
+    $channelDefs->{$channel} = $acqParameters;
     $acquisitionCnt++;
   }
 
-  my $acquisitionCy5 = GUS::Model::RAD3::Acquisition->new($channelParams->{"Cy5"});
-  my $acquisitionCy3 = GUS::Model::RAD3::Acquisition->new($channelParams->{"Cy3"});
+  my $acquisitionCy5 = GUS::Model::RAD3::Acquisition->new($channelDefs->{"Cy5"});
+  my $acquisitionCy3 = GUS::Model::RAD3::Acquisition->new($channelDefs->{"Cy3"}); 
 
-  $self->log("STATUS","OK Inserted $acquisitionCnt x 2 rows in table RAD3.Acquisition for Cy5 and Cy3 acquisitions");
-  return ($acquisitionCy5, $acquisitionCy3);
+  $self->log("STATUS","OK Inserted $acquisitionCnt rows in table RAD3.Acquisition for Cy5 and Cy3 acquisitions");
+ 
+ return ($acquisitionCy5, $acquisitionCy3);
 }
 
 ###############################
@@ -764,9 +776,10 @@ sub createGusQuantification {
   my $quantOperatorId = $self->{propertySet}->getProp("Quant_Operator_ID");
   my $quantProtocolId = $self->{propertySet}->getProp("Quant_Protocol_ID");
 
-  my $protocol = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
-  $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $acqProtocolId);
-  my $tempAcqName = $protocol->getName();
+  my $protocolObject = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
+  $self->error("Create object failed: RAD3.Protocol, ID $acqProtocolId") 
+   unless ($protocolObject->retrieveFromDB);
+  my $tempAcqName = $protocolObject->getName();
 
   my $gprQuantParameters = {
     protocol_id => $quantProtocolId,
@@ -775,17 +788,17 @@ sub createGusQuantification {
 
   $gprQuantParameters->{operator_id} = $quantOperatorId if (defined $quantOperatorId);
 
-  my $acqNameCy5                 = "Cy5 $assayName $tempAcqName";
+  my $acqNameCy5                 = "$assayName-Cy5-$tempAcqName-quantification";
   my $gprQuantParametersCy5      = $gprQuantParameters;
   $gprQuantParametersCy5->{name} = $acqNameCy5;
   my $gprQuantificationCy5       = GUS::Model::RAD3::Quantification->new($gprQuantParametersCy5);
 
-  my $acqNameCy3                 = "Cy3 $assayName $tempAcqName";
+  my $acqNameCy3                 = "$assayName-Cy3-$tempAcqName-quantification";
   my $gprQuantParametersCy3      = $gprQuantParameters;
   $gprQuantParametersCy3->{name} = $acqNameCy3;
   my $gprQuantificationCy3       = GUS::Model::RAD3::Quantification->new($gprQuantParametersCy3);
 
-  $self->log("STATUS","OK Inserted 2 x 2 rows in table RAD3.Quantification for Cy5 & Cy3 quantifications");
+  $self->log("STATUS","OK Inserted 2 rows in table RAD3.Quantification for Cy5 & Cy3 quantifications");
 
   return ($gprQuantificationCy5, $gprQuantificationCy3);
 }
@@ -809,13 +822,13 @@ sub createGusQuantParams {
 
   foreach my $param (keys %$params) {
 
-    my $protocolParam = GUS::Model::RAD3::ProtocolParam->new({
+    my $protocolParamObject = GUS::Model::RAD3::ProtocolParam->new({
         protocol_id => $quantProtocolId,
         name        => $param
     });
 
-    $self->error("Create object failed, name $param absent in table RAD3.ProtocolParam")
-      unless ($protocolParam->retrieveFromDB);
+    $self->error("Create object failed: RAD3.ProtocolParam, Name $param")
+      unless ($protocolParamObject->retrieveFromDB);
 
     my $quantParameters = GUS::Model::RAD3::QuantificationParam->new({
      name  => $param,
@@ -823,17 +836,18 @@ sub createGusQuantParams {
      });
 
     my $quantParametersCy5 = $quantParameters;
-    $quantParametersCy5->setParent($protocolParam); # protocolParam in only needed here, so set parent here
+    $quantParametersCy5->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
     push(@gusQuantParamsCy5, $quantParametersCy5);
+    $quantParamKeywordCnt++;
 
     my $quantParametersCy3 = $quantParameters;
-    $quantParametersCy3->setParent($protocolParam); # protocolParam in only needed here, so set parent here
+    $quantParametersCy3->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
     push(@gusQuantParamsCy3, $quantParametersCy3);
-    
     $quantParamKeywordCnt++;
   }
 
-  $self->log("STATUS","OK Inserted $quantParamKeywordCnt x 2 rows in table RAD3.QuantificationParam for Cy5 and Cy3 quantification parameters");
+  $self->log("STATUS","OK Inserted $quantParamKeywordCnt rows in table RAD3.QuantificationParam for Cy5 and Cy3 quantification parameters");
+
   return (\@gusQuantParamsCy5, \@gusQuantParamsCy3);
 }
 
