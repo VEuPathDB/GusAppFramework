@@ -239,6 +239,9 @@ sub run {
 	$self->log("scrubbing proteins");
 	$goManager->scrubProteins($newGoVersion, $proteinTableId);
     }
+    elsif ($self->getCla->{deprecate_associations}){
+	$goManager->deprecateAssociations($newGoVersion, $proteinTableId);
+    }
     else{
 
 	if ($self->getCla->{evolve_go_hierarchy}){
