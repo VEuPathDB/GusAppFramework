@@ -246,7 +246,7 @@ sub MarkFLUsingFFfeatures  {
    my $self = shift;
    my ($NaSeqStop) = @_;
 
-   foreach my $B(@$NASeqStop) {
+   foreach my $B(@$NaSeqStop) {
 
     my($naSeq, $tStop) = @{$B};
 
