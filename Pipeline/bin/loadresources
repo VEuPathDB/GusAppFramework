@@ -3,6 +3,8 @@ use strict;
 
 use lib "$ENV{GUS_HOME}/lib/perl";
 use GUS::Pipeline::Manager;
+use GUS::Pipeline::NfsCluster;
+use GUS::Pipeline::SshCluster;
 use GUS::Pipeline::ExternalResources::Loader;
 use CBIL::Util::PropertySet;
 
@@ -18,15 +20,26 @@ my $propertiesFile = $ARGV[1];
 
 # [name, default (or null if reqd), comment]
 my @properties = (
+ ["clusterServer",      "none",  "full name of cluster server"],
  ["pipelineDir", "", ""],
  ["stopBefore",   "none",  "the step to stop before.  uses the signal name"],
+ ["testNextPlugin", "false", "'true' to run in no-commit mode the first plugin not yet done and then exit"],
 ); 
 
 my $propertySet  = CBIL::Util::PropertySet->new($propertiesFile, \@properties, 1);
 
+my $cluster;
+if ($propertySet->getProp('clusterServer') ne "none") {
+  $cluster = GUS::Pipeline::SshCluster->new($propertySet->getProp('clusterServer'),
+					  $propertySet->getProp('clusterUser') );
+} else {
+  $cluster = GUS::Pipeline::NfsCluster->new();
+}
+
 my $mgr = GUS::Pipeline::Manager->new($propertySet->getProp('pipelineDir'),
-				      $propertySet,
-				      $propertiesFile);
+				      $propertySet, 
+				      $propertiesFile, $cluster, 
+				      $propertySet->getProp('testNextPlugin'));
 
 my $downloadDir = $propertySet->getProp('downloadDir');
 if (! -d $downloadDir) {

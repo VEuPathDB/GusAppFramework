@@ -56,19 +56,21 @@ sub run {
 sub _handleDatabaseInfo {
   my ($self, $mgr, $signalBase, $resource, $version) = @_;
 
-    my $dbPluginArgs = "--name \'$self->{extDbName}\' $self->{dbCommit}";
+  return unless $self->{extDbName};
 
-    $mgr->runPluginNoCommit("createDb_${signalBase}", 
-			    "GUS::Common::Plugin::InsertNewExternalDatabase",
-			    $dbPluginArgs, 
-			    "Inserting/checking external database info for $self->{extDbName}");
+  my $dbPluginArgs = "--name \'$self->{extDbName}\' $self->{dbCommit}";
 
-    my $releasePluginArgs = "--database_name \'$self->{extDbName}\' --database_version \'$self->{extDbRlsVer}\' --description \'$self->{extDbRlsDescrip}\' $self->{dbCommit}";
-
-    $mgr->runPluginNoCommit("createRelease_${signalBase}",
-			    "GUS::Common::Plugin::InsertNewExtDbRelease",
-			    $releasePluginArgs,
-			    "Inserting/checking external database release for $self->{extDbName} $self->{extDbRlsVer}");
+  $mgr->runPluginNoCommit("createDb_${signalBase}", 
+			  "GUS::Common::Plugin::InsertNewExternalDatabase",
+			  $dbPluginArgs, 
+			  "Inserting/checking external database info for $self->{extDbName}");
+  
+  my $releasePluginArgs = "--database_name \'$self->{extDbName}\' --database_version \'$self->{extDbRlsVer}\' --description \'$self->{extDbRlsDescrip}\' $self->{dbCommit}";
+  
+  $mgr->runPluginNoCommit("createRelease_${signalBase}",
+			  "GUS::Common::Plugin::InsertNewExtDbRelease",
+			  $releasePluginArgs,
+			  "Inserting/checking external database release for $self->{extDbName} $self->{extDbRlsVer}");
 }
 
 

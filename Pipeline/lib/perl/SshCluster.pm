@@ -69,3 +69,4 @@ sub runCmdOnCluster {
   $self->{mgr}->runCmd("ssh -2 $ssh_target '$cmd'");
 }
 
+1;
