@@ -212,7 +212,7 @@ sub createIWL {
 	 'target_id' => $id,
 	 'index_word_id' => &getWordId($word,$id),
 	});
-  $wl->submit(0,0);
+  $wl->submit(0,1);
   $totalLinks++;
 }
 
@@ -222,7 +222,7 @@ sub getWordId {
     #		print STDERR "New Word $id: '$word'\n";
     $ctNewWords++;
     my $iw = GUS::Model::DoTS::IndexWord->new({'word' => $word});
-    $iw->submit(0,0);
+    $iw->submit(0,1);
     $words{$word} = $iw->getId();
   }
   return $words{$word};
