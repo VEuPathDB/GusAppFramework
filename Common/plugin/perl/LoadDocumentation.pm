@@ -123,7 +123,7 @@ sub process {
 
 	if ($db->checkTableExists($table_nm)){ # if table exists
 
-	    if ($db->getTable($table_nm)->checkAttribute($attribute_nm)){ # if column exists
+	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm)); #getTableId($table_nm)???
 #	        $doc->setTableId($doc->getTableId($table_nm));
 	        $self->logVerbose("Set table ID\n\n");
