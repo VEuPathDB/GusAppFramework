@@ -6,12 +6,8 @@ package GUS::Common::Plugin::AssembliesWithflCD;
 use strict;
 use GUS::Model::DoTS::Assembly;
 use GUS::ObjRelP::DbiDatabase;
-
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::Evidence;
-
-
-
 use GUS::Model::Core::AlgorithmInvocation;
 
 
@@ -19,7 +15,7 @@ use GUS::Model::Core::AlgorithmInvocation;
 
 $| = 1;
 
-#JM This plugin is only in testing phase 11/18/03
+#JM This plugin is only in testing phase 12/11/03
 # ----------------------------------------------------------------------
 # create and initialize new plugin instance.
 
@@ -62,46 +58,21 @@ sub new {
 
 sub run {
   my $self   = shift;
-
-
   print "Testing on Assembly $self->getArgs->{'testnumber'}\n" if $self->getArgs->{'testnumber'};
 
-  $self->logCommit();
+  #can add new log ability  $self->logCommit();
+  #move out external_database_release_id put as cla external_database_release_id = $self->getArgs->{'external_database_release_id'}
+  #NOTE FOR TESTING taxon set to human only FOR THIS Query
 
 
-  #get the assembly ids that contain RefSeqs
-  #add evidence that assembly has RefSeq; also this will have to have delete or update attribute so when updates are done assemblies will be marked as full length that contain RefSeqs
-  #will also mark those assemblies which have good DIANA ATG prediction which equals the framefinder and also has framefinder stop codon, could also use a length greater than 50 amino acids
-
-
-  #move out external_database_release_id put as cla external_database_release_id = $self->getArgs->{'external_database_release_id'} 
-
-  #NOTE FOR TESTING taxon set to human only FOR THIS Query and rownum
-
-  my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8 and rownum < 15");
-
-  #update considerations for DTs
-  #those which still contain a RefSeq these are updated
-  #those which no longer contain a RefSeq (removed by assembly process) but are still marked as fullLengthCDS
-  #those which now contain a RefSeq (from new build)
-  #DT no longer exists but this case no entry in assembly table assume that RefSeq in new assembly
-
-
-  #query to get DT, RefSeq ids for assemblies currently in db marked as FullLengthCds = 1
-
-  # to check for na_sequence_id in result set from query 2 before marking as full length from query 1
+  my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8");
 
   my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
 
-
   my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
 
-
-  #combine queries to get those assemblies which no longer have a refSeq associated with them these can go into an array and then $assembly->setFullLengthCds(0);
-  #must get rid of past evidence too
-
-
   my $stmt4 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.assembly a where a.full_length_CDS = 1 and a.taxon_id = 8 minus select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
+
 
 
 
@@ -129,25 +100,16 @@ sub run {
    push (@RemoveAsMarkedFL,$DTnotFLength);
   }
 
-
-  #push (@naSequenceIds, 0);
-  #print STDERR "scalar(@naSequenceIds)\n";
-
    my $ct = 0;
 
-  foreach my $A (@na_sourceids) {
+   foreach my $A (@na_sourceids) {
 
     my($na_seq, $source_id) = @{$A};
 
-
     print STDERR "ConsideringForFLDT.$na_seq\n";
-
-
     last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
-
     $ct++;
-
     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
     $assembly->retrieveFromDB();
@@ -155,34 +117,23 @@ sub run {
     $self->toAddEvidenceSourceID($source_id, $assembly);
     $assembly->submit();
     $self->undefPointerCache();
-
-
   }
 
-#really need to send ref of arrays
-# call deleting and updating subroutines
    $self->DeleteEvidence(\@DTs,\@DTSasEvidenceTarget);
    $self->UnmarkFullLength(\@RemoveAsMarkedFL);
 
 
-#need this return to finish run of plugin adds result set attribute
-  return "marked as full length";
+
+#need this return to finish run of plugin adds result set attribute to algorithm invoc.
+  return "$ct marked as full length";
+
 }
 
 
-
-
-
-
- #check to see if all previous evidence still valid
- #use array of target ids and compare to array of DTs
-
-
+ # check to see if all previous evidence still valid using array of target ids and compare to array of DTs
 sub  DeleteEvidence   {
 
   my $self = shift;
-
-
   my ($DTs,$DTSasEvidenceTarget) = @_;
 
 
@@ -194,7 +145,7 @@ sub  DeleteEvidence   {
     $seen{$dt} = 1;
   }
   foreach $dt(@$DTSasEvidenceTarget) {
-    unless ($seen{$dt}) {   #add to new array
+    unless ($seen{$dt}) { 
      push (@diffArray, $dt);
     }
   }
@@ -209,10 +160,10 @@ sub  DeleteEvidence   {
     if ($Evidence->retrieveFromDB()) {
         $Evidence->markDeleted(1);
         $Evidence->submit();
+
       print STDERR  "DT.$target_id Evidence deleted\n"; 
     } else {
       print STDERR  "Cannot delete DT.$target_id Evidence; not retrieved\n";
-
     }
 
     $self->undefPointerCache();
@@ -224,8 +175,6 @@ sub  DeleteEvidence   {
 
 
 #  those assemblies that no longer contain a refSeq
-
-
 sub UnmarkFullLength {
 
   my $self = shift;
@@ -248,21 +197,12 @@ sub UnmarkFullLength {
 
 
 
-
-
-
-
 #use RefSeq source_id as evidence for marking assembly as full length CDS containing
-
   sub toAddEvidenceSourceID {
-
   my $self = shift;
-
   my ($source_id,$assembly) = @_;
 
   print STDERR "Evidence$source_id\n";
-
-#could also use best_evidence attribute in Evidence table for those containing refSeq
 
   my $fact = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $source_id });
 
@@ -279,16 +219,16 @@ sub UnmarkFullLength {
 
 
 
-
-
+#Notes
+#could also use best_evidence attribute in Evidence table for those containing refSeq
 #want to exclude those which have already been marked using refSeq source id or include and use DIANA and framefinder attributes as additonal evidence
 #since framefinder or diana may not find the refSeq ATG it maybe best to keep them separate and if meet this additional criteria
 #looks as if in table framefinder translation start is +2 greater than DIANA ATG
-
 #query for marking as full length based on DIANA ATG and translations
 #select naf.na_sequence_id, taf.aa_sequence_id from dots.assembly asm, dots.NAFeatureImp naf, dots.TranslatedAAFeature taf
 #where asm.na_sequence_id = naf.na_sequence_id and naf.na_feature_id = taf.na_feature_id and taf.translation_start = taf.diana_atg_position + 2
 #and taf.diana_atg_score > 0.5 and taf.p_value < 0.5
+#will also mark those assemblies which have good DIANA ATG prediction which equals the framefinder and also has framefinder stop codon, could also use a length greater than 50 amino acids
 
 
 
