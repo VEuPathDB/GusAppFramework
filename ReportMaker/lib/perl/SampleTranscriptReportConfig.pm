@@ -205,7 +205,7 @@ and             g.gene_id  = r.gene_id
 
   my $promoterSeqSql = 
 "select tmp.$primaryKeyName, 
-'chr:' || chromosome || ':' || strand || ':' || region_start || '-' ||  region_end as promoterLoc, 
+'chr:' || chromosome || ':' || substr(strand,1,3) || ':' || region_start || '-' ||  region_end as promoterLoc, 
 sequence as promoterSeq
 from allgenes_70.promoterRegion pr, $tempTable tmp 
 where pr.na_sequence_id =  tmp.$primaryKeyName
