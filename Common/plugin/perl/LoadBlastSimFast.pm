@@ -1,9 +1,8 @@
-package GUS::Common::Plugin::LoadBlastSimilaritiesPK;
+package GUS::Common::Plugin::LoadBlastSimFast;
 
 @ISA = qw(GUS::PluginMgr::Plugin); 
 use strict;
 
-use GUS::Common::BulkSimilarity;
 use FileHandle;
 
 sub new {
@@ -18,6 +17,11 @@ sub new {
       t => 'string',
       h => 'subjects are taken from this table (schema::table format).',
      },
+     {o => 'batch_size',
+      t => 'int',
+      h => 'Number of spans to write in one transaction',
+      d => 1000,
+     },
      {o => 'log_frequency',
       t => 'int',
       h => 'Write line to log file once every this many entries',
@@ -27,7 +31,7 @@ sub new {
       t => 'string',
       h => 'queries are taken from this table (schema::table format). ',
      },
-     {o => 'files',
+     {o => 'file',
       t => 'string',
       h => 'read condensed results from this file',
       l => 1,
@@ -46,10 +50,6 @@ sub new {
      {o => 'restart',
       t => 'string',
       h => 'restarts from last entry in Similarity.... takes list of row_alg_invocation_ids "234, 235"!',
-     },
-     {o => 'update',
-      t => 'boolean',
-      h => 'if true then updates existing Similarities rather than making new',
      },
      {o => 'limit_sub',
       t => 'int',
@@ -97,7 +97,7 @@ sub new {
 		     cvsRevision => '$Revision$', # cvs fills this in!
 		     cvsTag => '$Name$', # cvs fills this in!
 		     name => ref($self),
-		     revisionNotes => 'make consistent with GUS 3.0',
+		     revisionNotes => 'initial writing',
 		     easyCspOptions => $easycsp,
 		     usage => $usage
 		    });
@@ -107,6 +107,8 @@ sub new {
 $| = 1;
 
 sub run {
+  my ($self) = @_;
+  
 
   my $args = $self->getArgs();
   my $algInv = $self->getAlgInv();
@@ -119,9 +121,9 @@ sub run {
 
   $self->logCommit();
 
-  print "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{cla}->{'testnumber'};
+  print "Testing on $args->{'testnumber'}\n" if $args->{'testnumber'};
 
-  my %ignore = &handleRestart($args->{restart});
+  my %ignore = &handleRestart($args->{restart}, $dbh);
 
   my $fh  = $args->{file} =~ /\.gz$|\.Z$/ ?
     FileHandle->new("zcat $args->{file}|") : FileHandle->new("$args->{file}");
@@ -129,13 +131,15 @@ sub run {
   die "Can't open file $args->{file}" unless $fh;
 
   while(1) {
-    my @subjects = &parseQueries($fh, $batchSize, \%ignore, \%filter);
+    my @subjects = &parseQueries($fh, $args->{batch_size}, \%ignore, \%filter);
     last unless @subjects;
-    &insertSubjects($dbh, \@subjects, $query_tbl_id, $subj_tbl_id);
+    $self->insertSubjects($dbh, \@subjects, $query_tbl_id, $subj_tbl_id);
   }
 }
 
 sub setupFilters {
+  my ($args) = @_;
+
   my $filter_ns;
   $filter_ns->{min} = $args->{ns_mi} if defined $args->{ns_mi};
   $filter_ns->{max} = $args->{ns_ma} if defined $args->{ns_ma};
@@ -157,19 +161,20 @@ sub setupFilters {
 }
 
 sub handleRestart {
-  if ($ctx->{cla}->{'restart'}) {
-    my $query = "select distinct query_id from dots.Similarity where row_alg_invocation_id in ($ctx->{cla}->{'restart'})";
-    print "Restarting: Querying for the ids to ignore\n$query\n";
-    my  my $subjSql = &getInsertSubjectSql()
+  my ($restart, $dbh) = @_;
 
- $stmt = $dbh->prepare($query);
+  my %ignore;
+  if ($restart) {
+    my $query = "select distinct query_id from dots.Similarity where row_alg_invocation_id in ($restart})";
+    print "Restarting: Querying for the ids to ignore\n$query\n";
+    my $stmt = $dbh->prepare($query);
     $stmt->execute();
     while ( my($id) = $stmt->fetchrow_array()) {
       $ignore{$id} = 1;
     }
     print "Ignoring ".scalar(keys%ignore)." entries\n";
   }
-
+  return %ignore;
 }
 
 sub parseQueries {
@@ -191,7 +196,7 @@ sub parseQuery {
   my ($fh) = @_;
 
   my @subjects;
-  my $spanCount
+  my $spanCount;
 
   my $queryLine = <$fh>;
 
@@ -223,7 +228,7 @@ sub parseSubject {
   my %subj;
   $subj{subject_id} = $vals[1];
   $subj{score} = $vals[2];
-  my ($subj{pvalue_mant}, $subj{pvalue_exp}) = split(/e/, $vals[3]);
+  ($subj{pvalue_mant}, $subj{pvalue_exp}) = split(/e/, $vals[3]);
   $subj{min_subject_start} = $vals[4];
   $subj{max_subject_end} = $vals[5];
   $subj{min_query_start} = $vals[6];
@@ -237,11 +242,12 @@ sub parseSubject {
   $subj{reading_frame} =~ s/\D//g;   # get rid of (+-)
 
   my $c = 0;
+  my @subjSpans;
   while ($c++ < $subj{number_of_matches}) {
     my $span = &parseSpan($fh);
-    push($subj{spans}, $span);
+    push(@subjSpans, $span);
   }
-
+  $subj{spans} = \@subjSpans;
 
   return ($subj{number_of_matches}, %subj);
 }
@@ -258,7 +264,7 @@ sub parseSpan {
   $span{number_positive} = $vals[3];
   $span{match_length} = $vals[4];
   $span{score} = $vals[5];
-  my ($span{pvalue_mant}, $span{pvalue_exp}) = split(/e/, $vals[6]);
+  ($span{pvalue_mant}, $span{pvalue_exp}) = split(/e/, $vals[6]);
   $span{subject_start} = $vals[7];
   $span{subject_end} = $vals[8];
   $span{query_start} = $vals[9];
@@ -272,7 +278,7 @@ sub parseSpan {
 
 # insert a batch of subjects (with their spans)
 sub insertSubjects {
-  my ($dbh, $subjects, $query_table_id, $subj_table_id) = @_;
+  my ($self, $dbh, $subjects, $query_table_id, $subj_table_id) = @_;
 
   my $simStmt = $self->getInsertSubjStmt($dbh, $query_table_id,$subj_table_id);
 
@@ -303,11 +309,10 @@ sub insertSubjects {
 			 $span->{is_reversed}, $span->{reading_frame});
     }
 
-    $count++;
-
+#    $count++;
   }
 
-  if ($commit) {
+  if ($self->getArgs()->{commit}) {
     $dbh->commit();
   } else {
     $dbh->rollback();
@@ -316,7 +321,7 @@ sub insertSubjects {
 }
 
 sub getInsertSubjStmt {
-  my ($self, $dbh, $query_table_id, $subj_table_id) = @_;
+  my ($self, $dbh, $query_tbl_id, $subj_tbl_id) = @_;
 
   my $algId = $self->getAlgorithm()->getId();
   my $algInvId = $self->getAlgInvocation()->getId();
@@ -326,14 +331,14 @@ sub getInsertSubjStmt {
 
   my $sql = 
 "insert into dots.Similarity Values " .
-"(?, $subject_tbl_id, ?, $query_tbl_id, ?, " .
+"(?, $subj_tbl_id, ?, $query_tbl_id, ?, " .
 #score, bit_score_summary, pvalue_mant, pvalue_exp, min_subject_start,
 "?,     ?,                 ?,           ?,          ?, " .
 #min_subject_end, min_query_start, min_query_end, number_of_matches
 "?,               ?,               ?,             ?, " .
 #total_match_length, number_identical, number_positive, is_reversed, reading_fr
 "?,                  ?,                ?,               ?,           ?, ".
-"$algId, SYSDATE, 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectID, $algInvId)";
+"$algId, SYSDATE, 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
 
   return $dbh->prepare($sql);
 }
@@ -357,129 +362,10 @@ sub getInsertSpanStmt {
 "?,             ?,           ?,           ?, " .
 #is_reversed, reading_frame
 "?,           ?, ".
-"$algId, SYSDATE, 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectID, $algInvId";
+"$algId, SYSDATE, 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId";
 
   return $dbh->prepare($sql);
 }
-
-sub getNextSimId {
-  my ($stmt) = @_;
-
-  $stmt->execute();
-  my $result = $stmt->fetchrow_array();
-  $stmt->finish();
-  return $result;
-}
-
-  # open dbi database connection
-  ##note that the login and password are coming from the gus_cfg file..
-  my $dbh = $ctx->{'self_inv'}->getDbHandle();
-
-  ## want to be able to ignore entries already done!!
-
-  ##filters to pass into the Bulkloader module...
-  # work through files in the list
- FILE_SCAN_LOOP:
-  foreach my $file ( @{ $ctx->{cla}->{ files } } ) {
-
-    $n_files++;
-
-    # get an object to manage the file.
-    my $bs = new GUS::Common::BulkSimilarity( new CBIL::Util::A {
-      file    => GetFileClever( $file ),
-	query   => \&GetQueryObject,
-	  subject => \&GetSubjectTableAndSeqId,
-	    types   => $ctx->{cla}->{ output },
-	  } )
-      ;
-
-    #CBIL::Util::Disp::Display( $bs->{ parameters } );
-
-    # parse into objects and submit to db
-  SECTION_SCAN_LOOP:
-    while ( my $o = $bs->getSectionObjects($filter_ns, $filter_su, $filter_sp, $filter_limit) ) {
-      $n_queries++;
-      #CBIL::Util::Disp::Display( $o );
-
-      $o->submit();
-
-      if ($n_queries % ($ctx->{cla}->{'log_frequency'} * 10) == 0) {
-	print join( "\t", $queriesProcessed, "$n_queries entered", $o->getId(), scalar $o->getSimilarityFacts,`date`);
-      } elsif ($n_queries % $ctx->{cla}->{'log_frequency'} == 0) {
-	print join( "\t", $queriesProcessed, "$n_queries entered", $o->getId(), scalar $o->getSimilarityFacts)."\n";
-      }
-
-      $o->undefPointerCache();
-
-      last FILE_SCAN_LOOP if $n_queries >= $ctx->{cla}->{ nqueries };
-
-    }				# eo similarities in file
-  }				# eo filenames
-
-  my $result = "Processed $queriesProcessed and loaded similarities for $n_queries from $n_files files";
-  print "\n$result\n";
-  return $result;
-}
-
-# given a source_id we return the query object..
-## NOTE: using primary key so just create object and return it!!
-sub GetQueryObject{
-  my $Line = shift;
-  my $queryClassName = "GUS::Model::".$ctx->{cla}->{'query_table'};
-
-  $queriesProcessed++;
-  # extract the query id from the defline
-  $Line =~ /^\>*(\S+)\s\((\d+)/;
-  return undef if $2 == 0;	##there are no subjects for this one so don't bother retrieving from DB.
-  my $id = $1;
-
-  ##want to ignore things that already have done!!
-  if ($ctx->{cla}->{'restart'}) {
-    if (exists $ignore{$id}) {
-      $countIgnored++;
-      return undef;
-    }
-  }
-
-  # get the query object 
-  my $qObj = $queryClassName->new( { $query_table_pk => $id } );
-
-  if ($qObj->retrieveFromDB()) { ##have object..
-    $qObj->retrieveSimilarityFactsFromDB($ctx->{cla}->{subject_table}) if $ctx->{cla}->{update};
-    return $qObj;
-  }
-	
-  return undef;
-}
-
-##NOTE: we have the primary key already so just return expected....
-sub GetSubjectTableAndSeqId {
-  my $Id = shift;
-  return undef unless $Id;
-  return ( $subject_table_id, $Id );
-}
-
-# ----------------------------------------------------------------------
-
-sub GetFileClever {
-  my $F = shift;
-
-  my $f;
-
-  if ( $F =~ /\.gz$/ ) {
-    $f = "gunzip -c $F|";
-  } elsif ( $F =~ /\.Z$/ ) {
-    $f = "zcat $F|";
-  } elsif ( -f $F ) {
-    $f = "<$F";
-  } else {
-    $f = GetFileClever( $F. '.gz' ) || GetFileClever( $F. '.gz' );
-  }
-
-  return $f;
-}
-
-
 
 
 1;
