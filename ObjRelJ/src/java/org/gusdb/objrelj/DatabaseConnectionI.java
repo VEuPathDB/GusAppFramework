@@ -51,10 +51,11 @@ public interface DatabaseConnectionI {
      * @param tname    The object's table.
      * @param pk       Primary key value for the row of interest.
      * @param clobAtt  The name of the CLOB-containing attribute.
-     * @param start    Start coordinate of the CLOB range to retrieve and cache.  If null 
-     *                 and clobAtt != null then the value 0 will be used instead.
-     * @param end      End coordinate of the CLOB range to retrieve and cache.  If null
-     *                 and clobAtt != null then clobAtt.length() will be used instead.
+     * @param start    Start coordinate of the CLOB range to retrieve and cache in 1-based 
+     *                 coordinates.  If null and clobAtt != null then the value 1 will be used instead.
+     * @param end      End coordinate of the CLOB range to retrieve and cache in 1-based 
+     *                 coordinates.  If null and clobAtt != null then the value clobAtt.length() 
+     *                 will be used instead.
      */
     public GUSRow retrieveObject(String owner, String tname, long pk, String clobAtt, Long start, Long end)
 	throws RemoteException, GUSObjectNotUniqueException;
