@@ -33,7 +33,7 @@ sub new {
     
     my $notes = "Although currently SRes.ExternalDatabaseRelease contains attributes named blast_file and blast_file_md5, they are unpopulated in CBIL's instance and it is unclear what they are used for, so the ability to load data into them is not provided here.";
 
-    my $failureCases = "Neither the name of the database nor the database ID is required as input; however, if neither is provided, the plugin will fail.  Also, If there is already an entry in SRes.ExternalDatabaseRelease that has the same version number as the entry to be created, then no new row is submitted.  This is not a failure case per se, but will result in no change to the database where one might have been expected";
+    my $failureCases = "Neither the name of the database nor the database ID is required as input; however, if neither is provided, the plugin will fail.  Also, If there is already an entry in SRes.ExternalDatabaseRelease that has the same version number as the entry to be created, then no new row is submitted.  This is not a failure case per se, but will result in no change to the database where one might have been expected.  Finally, if including --release_date in the command line, the format of the date must be the same as that expected by the DATE datatype in your database instance";
 
     my $documentation = { purpose=>$purpose,
 			  purposeBrief=>$purposeBrief,
@@ -59,6 +59,13 @@ sub new {
 		      constraintFunc => undef,
 		      isList => 0,
 		  }),
+	 
+	 stringArg ({name=> 'release_date',
+		     descr => 'release date; format must conform to DATE format in your database instance',
+		     reqd => 0,
+		     constraintFunc => undef,
+		     isList =>0,
+		 }),
 	 
 	 floatArg ({name => 'database_version',
 		    descr => 'New version of external database for which we are creating a new release',
@@ -142,7 +149,7 @@ sub run {
     my $dbId = $self->getCla->{database_id};
 
     if (!$dbName && !$dbId){
-	&confess ("Please provide one of either --database_name (as it appears in SRes.ExternalDatabase) or --database_id as an argument to this plugin");
+	$self->userError("Please provide one of either --database_name (as it appears in SRes.ExternalDatabase) or --database_id as an argument to this plugin");
     }
 
     my $msg;
