@@ -5,6 +5,11 @@ use strict;
 use FileHandle;
 use CBIL::Util::Disp;
 
+# axk
+use GUS::Model::DoTS::Protein;
+use GUS::Model::DoTS::ExternalAASequence;
+use GUS::Model::DoTS::ExternalNASequence;
+
 sub new {
   my ($class) = @_;
   my $self = {};
@@ -94,7 +99,9 @@ sub new {
 		     name => ref($self),
 		     revisionNotes => 'initial writing',
 		     easyCspOptions => $easycsp,
-		     usage => $usage
+		     usage => $usage,
+		     queryTable   => undef,
+		     subjectTable => undef,
 		    });
   return $self;
 }
@@ -108,6 +115,10 @@ sub run {
   my $algInv = $self->getAlgInvocation();
   my $dbh = $self->getDb()->getDbHandle();
 
+  # axk
+  $self->{queryTable}   = $args->{queryTable};
+  $self->{subjectTable} = $args->{subjectTable};
+  
   my $query_tbl_id = $algInv->getTableIdFromTableName($args->{queryTable});
   my $subj_tbl_id = $algInv->getTableIdFromTableName($args->{subjectTable});
 
@@ -195,7 +206,7 @@ sub parseQuery {
   my $matchLengthF = $filter->{subjectMatchLength};
 
   my $queryLine = <$fh>;
-  while ($queryLine && $queryLine =~ /^\s+$/) {   # skip empty query lines (eg at file end)
+  while ($queryLine && (not $queryLine =~ /^\>/)) {
     $queryLine = <$fh>;
   }
 
@@ -254,6 +265,7 @@ sub parseSubject {
   my %subj;
   $subj{query_id} = $queryPK;
   $subj{subject_id} = $vals[1];
+  
   $subj{score} = $vals[2];
   $subj{pvalue} = $vals[3];
   ($subj{pvalue_mant}, $subj{pvalue_exp}) = split(/e/, $subj{pvalue});
@@ -356,6 +368,48 @@ sub insertSubjects {
 
     next if (scalar @{$s->{spans}} == 0);
 
+    # Get query & subject objects GUS PK if necessary
+
+    my $queryTable   = $self->{queryTable};
+    my $subjectTable = $self->{subjectTable};
+    
+    my $query_id = $s->{query_id};
+    
+    # Get rid of the spaces
+    $query_id =~ s/\s//g;
+    
+    if (not $query_id =~ /^\d+$/) {
+      # must be the sequence entry identifier, get the GUS PK then
+      my $queryobj = $queryTable->new ({'name' => $query_id});
+      my $is_in = $queryobj->retrieveFromDB;
+      
+      if (! $is_in) {
+	die "can't get the GUS entry for query, $query_id!\n";
+      }
+      else {
+	$s->{query_id} = $queryobj->getId;
+      }
+	
+    }
+    
+    my $subject_id = $s->{subject_id};
+    
+    # Get rid of the spaces
+    $subject_id =~ s/\s//g;
+    
+    if (not $subject_id =~ /^\d+$/) {
+      # must be the sequence entry identifier, get the GUS PK then
+      my $subjectobj = $subjectTable->new ({'name' => $subject_id});
+      my $is_in = $subjectobj->retrieveFromDB;
+      
+      if (! $is_in) {
+	die "can't get the GUS entry for subject, $subject_id!\n";
+      }
+      else {
+	$s->{subject_id} = $subjectobj->getId;
+      }
+    }
+    
     my @simVals = ($simPK, $s->{subject_id}, $s->{query_id},
 		   $s->{score}, undef,
 		   $s->{pvalue_mant}, $s->{pvalue_exp},
@@ -364,6 +418,7 @@ sub insertSubjects {
 		   $s->{number_of_matches}, $s->{total_match_length},
 		   $s->{number_identical}, $s->{number_positive},
 		   $s->{is_reversed}, $s->{reading_frame});
+
     $simStmt->execute(@simVals) || die $simStmt->errstr;
     $self->log("Inserting Similarity: ", @simVals) if $verbose;
 
@@ -418,6 +473,9 @@ sub getInsertSubjStmt {
 #total_match_length, number_identical, number_positive, is_reversed, reading_fr
 "?,                  ?,                ?,               ?,           ?, ".
 " null, SYSDATE, 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
+
+  # axk
+  print STDERR "sql: $sql\n";
 
   return $dbh->prepare($sql);
 }
