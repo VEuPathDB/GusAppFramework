@@ -2,6 +2,8 @@ package GUS::Pipeline::ExternalResources::RepositoryEntry;
 
 use strict;
 use GUS::Pipeline::ExternalResources::RepositoryWget;
+use GUS::Pipeline::ExternalResources::FileSysManager;
+#use GUS::Pipeline::ExternalResources::FtpManager;
 
 
 # This class represents an entry in an External Data Files Repository.
@@ -30,67 +32,55 @@ use GUS::Pipeline::ExternalResources::RepositoryWget;
 #  - If the arg is a flag, the key is of the form "--name" and the value is "".
 #  - If the arg is value, the key is of the form "--name=" and the value is the value.
 sub new {
-  my ($class, $repositoryDir, $resource, $version, $sourceUrl, $wgetArgs) = @_;
+  my ($class, $repositoryLocation, $resource, $version, $sourceUrl, $wgetArgs,
+      $logFile) = @_;
 
   my $self = {};
   bless $self, $class;
 
-  $self->{repositoryDir} = $repositoryDir;
+  $self->{storageManager} = _makeStorageManager($repositoryLocation);
   $self->{resource} = $resource;
-  $self->{resourceDir} = "$self->{repositoryDir}/$self->{resource}";
-  $self->{version} = _findVersion($version, $self->{resourceDir});
+  $self->{resourceDir} = $self->{resource};
+  $self->{version} = $self->_findVersion($version, $self->{resourceDir});
   $self->{versionDir} = "$self->{resourceDir}/$self->{version}";
-
-  -d $repositoryDir || die "Repository directory '$repositoryDir' does not exist\n";
+  $self->{logFile} = $logFile;
 
   $self->{wget} = GUS::Pipeline::ExternalResources::RepositoryWget->new($sourceUrl, $wgetArgs);
 
   return $self;
 }
 
-sub getAnswerFile {
-  my ($self) = @_;
-
-  return $self->_fileBaseName() . ".tar.gz";
-}
-
 sub fetch {
   my ($self, $targetDir) = @_;
 
-  die "Target dir '$targetDir' does not exist\n" unless -d $targetDir;
 
-  if (!-d $self->{resourceDir}) {
-    mkdir($self->{resourceDir}) || die "Can't 'mkdir $self->{resourceDir}'\n";
+  -d $targetDir || die "Target dir '$targetDir' does not exist\n";
+
+  if (!$self->{storageManager}->dirExists($self->{resourceDir})) {
+    $self->{storageManager}->makeDir($self->{resourceDir})
+      || die "Can't 'mkdir $self->{resourceDir}'\n";
   }
 
-  my $answerFile = $self->getAnswerFile();
+  my $answerFile = $self->_getAnswerFile();
+
+  $self->_log("");
 
   # if versionDir exists, then we have previously acquired this version.
   # make sure it is ok
-  if (-d $self->{versionDir}) {
-    $self->_log("Found existing $self->{resource} $self->{version}");
-
-    $self->_waitForUnlock();
-
-    -e $answerFile || die "Previously attempted fetch did not produce expected file '$answerFile'\n";
-
-    my ($prevSourceUrl, $prevWgetArgs) = $self->_parseWgetArgs();
-    my $errMsg = $self->{wget}->argsMatch($prevSourceUrl, $prevWgetArgs);
-    die("wget args disagree with those from previous fetch request:\n  $errMsg\n") if $errMsg;
+  if ($self->{storageManager}->dirExists($self->{versionDir})) {
+    $self->_checkPrev($answerFile, $targetDir);
   }
 
   # otherwise, acquire it
   else {
+    $self->{storageManager}->makeDir($self->{versionDir})
+      || die "Can't 'mkdir $self->{versionDir}'\n";
 
-    mkdir($self->{versionDir}) || die "Can't 'mkdir $self->{versionDir}'\n";
-
-    $self->_acquire();
-
+    $self->_acquire($targetDir);
   }
 
   # in either case, copy it to the requested target
   $self->_copyTo($targetDir);
-  return $answerFile;
 }
 
 sub getResource {
@@ -123,11 +113,30 @@ sub parseWgetArg {
 #          Private Methods
 ########################################################################
 
+sub _getAnswerFile {
+  my ($self) = @_;
+
+  return $self->_fileBaseName() . ".tar.gz";
+}
+
+# static method
+sub _makeStorageManager {
+  my ($storageLocation) = @_;
+
+  if ($storageLocation =~ /^ftp:/) {
+  } elsif ($storageLocation =~ /^\//) {
+    return GUS::Pipeline::ExternalResources::FileSysManager->new($storageLocation);
+  } else {
+    die "Illegal repository location '$storageLocation'";
+  }
+
+}
+
 sub _waitForUnlock {
   my ($self) = @_;
 
   my $count = 0;
-  while (-e $self->_fileBaseName() . "lock") {
+  while ($self->{storageManager}->fileExists($self->_fileBaseName() . "lock")) {
     if ($count++ % 120) { $self->_log("Waiting for unlock"); }
     sleep(1);
   }
@@ -138,10 +147,29 @@ sub _fileBaseName {
   return "$self->{versionDir}/$self->{resource}-$self->{version}";
 }
 
-sub _parseWgetArgs {
-  my ($self) = @_;
+sub _checkPrev {
+  my ($self, $answerFile, $targetDir) = @_;
+    $self->_log("Found existing $self->{resource} $self->{version}");
 
-  my $wgetFile = "$self->{versionDir}/wget.args";
+    $self->_waitForUnlock();
+
+    $self->{storageManager}->fileExists($answerFile)
+      || die "Previously attempted fetch did not produce expected file '$answerFile'\n";
+
+    my ($prevSourceUrl, $prevWgetArgs) = $self->_parseWgetArgs($targetDir);
+    my $errMsg = $self->{wget}->argsMatch($prevSourceUrl, $prevWgetArgs);
+    die("wget args disagree with those from previous fetch request:\n  $errMsg\n") if $errMsg;
+
+}
+
+sub _parseWgetArgs {
+  my ($self, $targetDir) = @_;
+
+  # get file into local tmp file
+  my $time = time;
+  my $wgetFile = "$targetDir/tmp-$time-wget.args";
+  $self->{storageManager}->copyOut("$self->{versionDir}/wget.args", $wgetFile);
+
   open(WGET, $wgetFile) || die("Can't open $wgetFile\n");
 
   my $url;
@@ -157,38 +185,47 @@ sub _parseWgetArgs {
   }
 
   close(WGET);
+  unlink($wgetFile) || die "Couldn't remove temp file '$wgetFile'\n";
   return ($url, \%args);
 }
 
 sub _acquire {
-  my ($self) = @_;
-
-  my $tmpDir = "$self->{versionDir}/tmp";
-  my $baseName = $self->_fileBaseName();
-  my $tarCmd = "tar -cf ${baseName}.tar .";
-  my $gzipCmd = "gzip $baseName.tar";
+  my ($self, $targetDir) = @_;
 
   $self->_lock();
 
   eval {
+    my $tmpDir = "$targetDir/tmp-" . time();
     -e $tmpDir && die "Temp dir '$tmpDir' already exists.  Please remove it.\n";
     mkdir $tmpDir || die "Could not make temp dir '$tmpDir'\n";
-    chdir $tmpDir || die "Could not cd to temp dir '$tmpDir'\n";
 
-    $self->_writeWgetArgs();
+    my $wgetDir = "$tmpDir/wget";
+
+    mkdir $wgetDir || die "Could not make temp dir '$wgetDir'\n";
+    chdir $wgetDir || die "Could not cd to temp dir '$wgetDir/'\n";
+
+    $self->_writeWgetArgs($targetDir);
 
     $self->_log("Calling wget");
-    $self->{wget}->execute($tmpDir,
-			   "$self->{versionDir}/wget.log",
-			   "$self->{versionDir}/wget.cmd");
+    $self->{wget}->execute($wgetDir,
+			   "$tmpDir/wget.log",
+			   "$tmpDir/wget.cmd");
 
     $self->_log("Calling tar");
+    my $baseName = "$self->{resource}-$self->{version}";
+    my $tarCmd = "tar -cf $tmpDir/$baseName.tar .";
     $self->_runCmd($tarCmd);
-    $self->_runCmd("rm -rf $tmpDir");
 
     $self->_log("Calling gzip");
+    my $gzipCmd = "gzip $tmpDir/$baseName.tar";
     $self->_runCmd($gzipCmd);
 
+    $self->{storageManager}->copyIn("$tmpDir/wget.log", $self->{versionDir});
+    $self->{storageManager}->copyIn("$tmpDir/wget.cmd", $self->{versionDir});
+    $self->{storageManager}->copyIn("$tmpDir/$baseName.tar.gz", $self->{versionDir});
+
+    chdir $targetDir || die "Could not cd to '$targetDir/'\n";
+    $self->_runCmd("rm -rf $tmpDir");
   };
 
   my $err = $@;
@@ -204,20 +241,22 @@ sub _lock {
   my ($self) = @_;
 
   my $lockFile = "$self->{versionDir}/lock";
-  $self->_runCmd("touch $lockFile");
+  $self->{storageManager}->touchFile($lockFile);
 }
 
 sub _unlock {
   my ($self) = @_;
 
   my $lockFile = "$self->{versionDir}/lock";
-  unlink($lockFile);
+  $self->{storageManager}->deleteFile($lockFile)
+    || die("Couldn't delete '$lockFile'\n");
 }
 
 sub _writeWgetArgs {
-  my ($self) = @_;
+  my ($self, $targetDir) = @_;
 
-  my $wgetArgsFile = "$self->{versionDir}/wget.args";
+  my $time = time;
+  my $wgetArgsFile = "$targetDir/tmp-$time-wget.args";
   open(WGET, ">$wgetArgsFile") || die("Can't open $wgetArgsFile for writing\n");
   print WGET $self->{wget}->getUrl() . "\n";
   my $wgetArgs = $self->{wget}->getArgs();
@@ -225,19 +264,21 @@ sub _writeWgetArgs {
     print WGET "${arg}$wgetArgs->{$arg}\n";
   }
   close(WGET);
+  $self->{storageManager}->copyIn($wgetArgsFile, "$self->{versionDir}/wget.args");
+  unlink($wgetArgsFile) || die "Couldn't remove temp file '$wgetArgsFile'\n";
 }
 
 sub _copyTo {
   my ($self, $targetDir) = @_;
 
-  my $fileNm = $self->getAnswerFile();
+  my $fileNm = $self->_getAnswerFile();
 
   $self->_log("Copying $self->{resource}-$self->{version}.tar.gz to $targetDir");
-  my $cmd = "cp $fileNm $targetDir";
-  $self->_runCmd($cmd);
+  $self->{storageManager}->copyOut($fileNm, $targetDir);
 
   $self->_log("Unzipping and untarring $self->{resource}-$self->{version}.tar.gz");
-  my $cmd = "tar -C $targetDir -zxf $targetDir/$self->{resource}-$self->{version}.tar.gz";
+
+  my $cmd = "tar -C $targetDir/ -zxf $targetDir/$self->{resource}-$self->{version}.tar.gz";
   $self->_runCmd($cmd);
 
   $self->_log("Deleting $self->{resource}-$self->{version}.tar.gz");
@@ -256,11 +297,18 @@ sub _runCmd {
 sub _log {
   my($self, $msg) = @_;
 
-  print "$msg\n";
+  if ($self->{logFile}) { 
+    open(LOG, ">>$self->{logFile}") 
+      || die "Couldn't open repository log file '$self->{logFile}'\n";
+    print LOG "$msg\n";
+    close(LOG);
+  } else {
+    print "$msg\n";
+  }
 }
 
 sub _findVersion {
-  my ($requestedVersion, $resourceDir) = @_;
+  my ($self, $requestedVersion, $resourceDir) = @_;
 
   my $version = $requestedVersion;
 
@@ -275,9 +323,7 @@ sub _findVersion {
     my $todayDay = $today[3] + 1;
     my $today = "${todayYear}-${todayMonth}-$todayDay";
 
-    opendir(RDIR, $resourceDir) || die "Couldn't open repository directory '$resourceDir'\n";
-    my @files = grep !/^\./, readdir RDIR;    # lose . and ..
-    close(RDIR);
+    my @files = $self->{storageManager}->listDir($resourceDir);
     my $found;
     foreach my $file (sort @files) {
       if ($file =~ /(\d\d\d\d)-(\d\d)-(\d\d)/){
