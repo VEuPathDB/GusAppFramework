@@ -19,7 +19,8 @@
 
 #
 # build GUS install -append ; ga GUS::Common::Plugin::GenericParser2Gus --filetype=embl --filepath=/nfs/team81/pjm/temp/c212_0 -sequencetype=ds-DNA |& less
-# 
+# the only filetype used so far is ds-DNA
+#
 # cp -f Common/plugin/perl/GenericParser2Gus.pm ~pjm/GUS/lib/perl/GUS/Common/Plugin/GenericParser2Gus.pm ; cp -f Common/lib/perl/Bioperl2Gus.pm ~pjm/GUS/lib/perl/GUS/Common/Bioperl2Gus.pm ; ga GUS::Common::Plugin::GenericParser2Gus --filetype=embl --filepath=/nfs/team81/pjm/temp/FAKE7.embl -sequencetype=ds-DNA | & less
 
 #
@@ -188,8 +189,11 @@ sub run {
     my $fileType      = $self->getArgs->{filetype};
     my $sequenceType  = $self->getArgs->{sequencetype};
     my $strand        = $self->getArgs->{strand};
-    my $review_status = $self->getArgs->{reviewstatus} || 5;
+    my $review_status = $self->getArgs->{reviewstatus} || 5; #TW-change default from 5
     my $log           = FileHandle->new( '>'. $self->getArgs->{log} );
+    my $projId        = $self->getArgs->{project};
+    print STDERR "GPG-PRJID:$projId\n";
+
 
     print STDERR "Dumping log: " . Dumper ($self->getArgs->{log}) . "\n";
 
@@ -206,7 +210,8 @@ sub run {
         GUS::Common::Bioperl2Gus->new (sequenceType          => $sequenceType,
                                        debug                 => $debug,
                                        default_review_status => $review_status,
-                                       );
+                                       projId                => $projId,  
+				       );
 
     my @bioperl_seqs = $self->parseSequenceFiles ($path, $fileType);
 
@@ -218,33 +223,41 @@ sub run {
 
         # Check if sequence is already in the database
         #
-        my ($gus_sequence, $source) = $bioperl2Gus->getGusSequenceFromDB($bioperl_sequence);
+	
+	print STDERR "hello1\n";
+
+	my ($gus_sequence, $source) = $bioperl2Gus->getGusSequenceFromDB($bioperl_sequence);
+	print STDERR "hello2\n";
 
         if (not defined ($gus_sequence)) {
             print STDERR "GUS Sequence creation failed!!! Going to next sequence.\n";
+	    $self->log("GUS Sequence creation failed for $gus_sequence!!! Going to next sequence");
             next;
         }
+       
         else {
             # Has seq changed? IDs used in EMBL files are not probably not temp. only
             #
             print STDERR "GUS Sequence already in the database. Checking to see if sequence has changed...\n";
+	    $self->log("GUS Sequence already in the database. Checking to see if sequence has changed...");
 
-            if ($bioperl_sequence->seq() ne $gus_sequence->getSequence()) {
-
-                print STDERR "\n*** The sequence has changed ***\n\n";
-
+            #if ($bioperl_sequence->seq() ne $gus_sequence->getSequence()) {
+		
+		print STDERR "\n*** The sequence has changed ***\n\n";
+		print STDERR "Loading Sequence\n";
+		
                 my ($the_same_gus_seq, $new_source) = $bioperl2Gus->buildNASequence($gus_sequence);
-                $the_same_gus_seq->submit(); # Versioning - *** use update *** if sequence too big to version
-                $new_source->submit();
-            }
-            else {
-                print STDERR "The sequence has not changed.\n";
-
-                $source = $bioperl2Gus->get_source($gus_sequence);
-                $source->submit;
-
-                print STDERR "source submitted.\n";
-            }
+	        $bioperl2Gus->submitWithProjectLink($the_same_gus_seq); # Versioning - *** use update *** if sequence too big to version
+		$new_source->submit();
+	    #}
+            
+	    #else {
+	    #	print STDERR "The sequence has not changed.\n";
+	    #	$source = $bioperl2Gus->get_source($gus_sequence);
+	    #	print STDERR "SOURCE:$source\n\n";
+	    #	$source->submit;
+	    #	print STDERR "Source submitted.\n";
+            #}
         }
 
         print STDERR "Getting all features for the sequence.\n";
@@ -391,15 +404,14 @@ sub check_names {
 }
 
 
-################################################################################
-#
+#########################################################################
 # Builds object heirarchy to represent a CDS.
 # We submit all objects before creating and submitting GO objects.
 #
 # DoTS.Attribution needs the row ID of GeneFeature too.
 #
 # @returns number of object created. Not sure if this is helpful or not...
-#
+####
 sub process{
     my ($self, $log, $bioperl_feature, $bioperl2Gus, $systematic_id, $gene_type) = @_;
 
@@ -429,11 +441,13 @@ sub process{
         }
     }
 
+    ##############################################################################
     # commit the GUS objects associated with the CDS bioperl feature object
     # The submit allows all children to be submitted (no parameter $notDeep set).
     # Further submits on child objects won't do anything so this loop is not that
     # useful...
-    #
+    ########################
+
     foreach my $object (@gus_objects) {
         print STDERR "Object type is '", ref($object), "', \$object = $object\n";
                 
@@ -451,7 +465,7 @@ sub process{
         }
 
 	      
-        ##
+        ###############################################################3
         # FIXME ???????? Probably but this won't hurt for now;
         # NOTE: We are submitting deep, hence we may try and submit everything 2+ times!
         #       Add '1' as the argument to submit() to make it a non-deep submit!!!
@@ -706,7 +720,8 @@ sub buildFeatureObjects {
     # one will be retieved.
     ##
 
-    my ($aa_feature_translated, $aa_feature_protein) = $bioperl2Gus->buildProteinFeature ($rnaf); #, $aa_seq);
+    my ($aa_feature_translated, $aa_feature_protein) = $bioperl2Gus->buildProteinFeature ($rnaf); #, $aa_seq); 
+    #TW my ($aa_feature_translated) = $bioperl2Gus->buildProteinFeature ($rnaf); #, $aa_seq);
     push (@gus_objects, $aa_feature_protein);
     push (@gus_objects, $aa_feature_translated);
 
@@ -723,10 +738,14 @@ sub buildFeatureObjects {
     my @aafs = $bioperl2Gus->buildAAFeatures ($aa_seq, $gf->getName);
     push (@gus_objects, @aafs);
 
+
+    #TWmy @gus_CentralDogma_objects =
+        #$self->buildCentralDogmaObjects ($bioperl2Gus, $gf, $rnaf,
+         #                                $aa_feature_protein, $aa_seq,
+         #                                $gene_type);
     my @gus_CentralDogma_objects =
         $self->buildCentralDogmaObjects ($bioperl2Gus, $gf, $rnaf,
-                                         $aa_feature_protein, $aa_seq,
-                                         $gene_type);
+                                         $aa_seq, $gene_type);
     push (@gus_objects, @gus_CentralDogma_objects);
   
     return @gus_objects;
@@ -737,6 +756,8 @@ sub buildFeatureObjects {
 #
 sub buildCentralDogmaObjects {
     my ($self, $bioperl2Gus, $gf, $rnaf, $aa_feature_protein, $aa_seq, $gene_type) = @_;
+
+    #my ($self, $bioperl2Gus, $gf, $rnaf, $aa_seq, $gene_type) = @_;  #TW
 
     my @central_dogma_objects = ();
 
@@ -749,9 +770,11 @@ sub buildCentralDogmaObjects {
     push (@central_dogma_objects, @gene_synonyms);
 
     # GeneInstance Object, links Gene to GeneFeature
-    my $geneSequence = $bioperl2Gus->buildGeneInstance ($gene_object, $gf);
-    push (@central_dogma_objects, $geneSequence);
- 
+    #START---
+    #TW-GeneInstance is not used by PlasmoDB
+    #my $geneSequence = $bioperl2Gus->buildGeneInstance ($gene_object, $gf);
+    #push (@central_dogma_objects, $geneSequence);
+    #END----
     if ($gene_type =~ /pseudogene/i) {
         return @central_dogma_objects;
     }
@@ -764,8 +787,11 @@ sub buildCentralDogmaObjects {
     my $rna_object = $bioperl2Gus->buildRNA ($gene_object);
     push (@central_dogma_objects, $rna_object);
 
-    my $rnaSequence = $bioperl2Gus->buildRNAInstance ($rna_object, $rnaf, $gene_type);
-    push (@central_dogma_objects, $rnaSequence);
+    #START---
+    #TW-RNAInstance not used by PlasmoDB
+    #my $rnaSequence = $bioperl2Gus->buildRNAInstance ($rna_object, $rnaf, $gene_type);
+    #push (@central_dogma_objects, $rnaSequence);
+    #END---
 
     if ($gene_type =~ /RNA/) {
         return @central_dogma_objects;
