@@ -119,7 +119,8 @@ sub checkForRelation {
   my($self,$type) = @_;
   die "Similarity->checkForRelation: ERROR: invalid type '$type'\n" unless $type eq 'query' || $type eq 'subject';
   my($table_name,$pk) = $self->getTableNameAndPK($self->get($type."_table_id"));
-  my $stmt = $self->getDbHandle()->prepareAndExecute("select $pk from $table_name where $pk = ".$self->get($type."_id"));  
+  my $oracleName = &className2oracleName($table_name);
+  my $stmt = $self->getDbHandle()->prepareAndExecute("select $pk from $oracleName where $pk = ".$self->get($type."_id"));  
   while(my($id) = $stmt->fetchrow_array()){
     $stmt->finish();
     return 1;

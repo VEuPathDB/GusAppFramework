@@ -377,9 +377,15 @@ sub getChildList{
 }
 
 sub isValidChild{
-  my($self,$c) = @_;
-  return $self->getTable()->isValidChild($c);
-  
+  my($self,$childObject) = @_;
+  return $self->getTable()->isValidChild($childObject);
+}
+
+sub checkChild {
+  my($self,$childObject) = @_;
+
+  die "Error:  attempting to access a child '". $childObject->getClassName() . "' of table '" . $self->getClassName() . "' , but that table does not have a child of that type."
+    unless $self->isValidChild($childObject);
 }
 
 sub isOnChildList{
@@ -417,6 +423,13 @@ sub isValidParent{
   return $self->getTable()->isValidParent($p);
 }
 
+sub checkParent {
+  my($self,$parentObject) = @_;
+
+  die "Error:  attempting to access a parent '". $parentObject->getClassName() . "' of table '" . $self->getClassName() . "' , but that table does not have a parent of that type."
+    unless $self->isValidParent($parentObject);
+}
+
 sub isOnParentList{
   my($self,$className) = @_;
   return $self->getTable()->isOnParentList($className);
@@ -447,6 +460,10 @@ sub getChildren {
   my($self,$className,$retrieveIfNoChildren,$getDeletedToo,$where,$doNotRetAtts) = @_;
   $className = $self->getTable()->getFullClassName($className);
 
+  if ($self->isOnChildList($className) == 0) {
+    die "ERROR: ",$self->getClassName(),"->retrieveChildrenFromDB($className) - Invalid child class\n";
+  }
+
   print STDERR $self->getClassName().":getChildren($className,$retrieveIfNoChildren,$getDeletedToo,$doNotRetAtts)\n" if $debug;
 
   ##if $retrieveIfNoChildren is true retrieve from db if don't have any children and have not 
@@ -473,7 +490,6 @@ sub getChildren {
     print STDERR $self->getClassName(), "::getChildren - retrieving children from DB\n" if $debug == 1;
     $self->retrieveChildrenFromDB($className,undef,$where,$doNotRetAtts);
   }
-		
 
   if ($self->isImpClass($className) && !$self->{'retrievingSuperClassChildren'}) {
     print STDERR "retrieving superclass $className children\n" if $debug;
@@ -486,20 +502,20 @@ sub getChildren {
     } else {
       @sort = keys%{$ch};
     }
-		
+
     foreach my $c (@sort) {
       #		print STDERR "getChildren:$className\n",$ch->{$c}->toString() if $debug == 1;
       my $hc = $self->getFromPointerCache("$c");
       if ( !$getDeletedToo && $hc->isMarkedDeleted() ) {
         next;
       }
-			
+
       next if ($where && !$hc->testAttributeValues($where));
-			
+
       print STDERR "$self: Getting child: ",$hc->getId(), " delete state = '",$hc->isMarkedDeleted(),"'\n" if $debug; # && $ch->{$c}->getClassName() ne 'AssemblySequence';
       push(@tmp,$hc) if $hc;
     }
-		
+
     return @tmp;
   }
 }
@@ -560,13 +576,13 @@ one-to-one relationships as all current children of this class will be removed.
 
 sub setChild{
   my($self,$c) = @_;
+
+  $self->checkChild($c);
+
   if (!$c) {
     return undef;
   }
-  if ($self->isValidChild($c) == 0) { ##check to make certain is correct type
-    print STDERR "ERROR: ",$self->getClassName(),"::setChild - invalid class:\n",$c->toString(); ## if $debug == 1;
-    return undef;
-  }
+
   my $prevP = $c->getParent($self->getClassName());
   if ( $prevP eq $self) {       ##breaks loop!!!am finished
     return 1;
@@ -591,8 +607,7 @@ sub retrieveChildrenFromDB{
   $className = $self->getTable()->getFullClassName($className);
 
   if ($self->isOnChildList($className) == 0) {
-    print STDERR "ERROR: ",$self->getClassName(),"->retrieveChildrenFromDB($className) - Invalid child class\n";
-    return;
+    die "ERROR: ",$self->getClassName(),"->retrieveChildrenFromDB($className) - Invalid child class\n";
   }
 
   ##note that need to not retrieve unless $self has a primary key assigned as there are no children in this case.
@@ -762,11 +777,8 @@ a valid id it is not tracked and is added to list.
 
 sub addChild {
   my($self,$c,$resetIfHave) = @_;
-  if (! $self->isValidChild($c)) { ##check to make certain is correct type
-    print STDERR "ERROR: ",$self->getClassName(),"::addChild - invalid class:\n",$c->toString(); # if $debug == 1;
-    return undef;
-  }
 
+  $self->checkChild($c);
 
   ##following breaks loop!!
   if (exists $self->{'children'}->{$c->getClassName()}->{$c}) {
@@ -972,40 +984,38 @@ sub haveAllPrimaryKeyValues {
 ##also call set child in parent;
 sub setParent{
   my($self,$p) = @_;
+
+  $self->checkParent($p);
+
   if (!$p) {
     return undef;
   }
   print STDERR "Setting parent for $self:",$self->getId(),", Parent: $p:",$p->getId(),"\n" if $debug == 1;
-  if ($self->isValidParent($p)) {
 
-    ##in the instance where the pointer cache has been undef'ed and the user still has
-    ##an object in scope such as an AlgorithmInvocation that object should be put back on
-    ##the pointer cache if it is being assigned as a parent or child...
-    if (! $self->getFromPointerCache("$self")) {
-      $self->undefAllRelations();
-      $self->addToPointerCache($self);
-    }
-
-    my $prevP= $self->getParent($p->getClassName());
-    if ($prevP eq $p) {         ##then is same parent already have and am finished...
-      return 1;
-    } elsif (defined $prevP) {
-      print STDERR "removing self from previous parent: ",$prevP->getClassName()," - ",$prevP->getId(),"\n" if $debug == 1;
-      $prevP->removeChild($self);
-    }
-
-    ##set the parent......
-    $self->{'parents'}->{$p->getClassName()} = "$p";
-
-    ##set pointer in parent to self 
-    print STDERR "setParent: setting childs pointer to self\n" if $debug == 1;
-    $p->addChild($self); 
-
-    return 1;
-  } else {
-    print STDERR "ERROR: ",$self->getClassName(),"::setParent - Invalid Parent Class: ",$p->getClassName(),"\n";
-    return 0;
+  ##in the instance where the pointer cache has been undef'ed and the user still has
+  ##an object in scope such as an AlgorithmInvocation that object should be put back on
+  ##the pointer cache if it is being assigned as a parent or child...
+  if (! $self->getFromPointerCache("$self")) {
+    $self->undefAllRelations();
+    $self->addToPointerCache($self);
   }
+
+  my $prevP= $self->getParent($p->getClassName());
+  if ($prevP eq $p) {		##then is same parent already have and am finished...
+    return 1;
+  } elsif (defined $prevP) {
+    print STDERR "removing self from previous parent: ",$prevP->getClassName()," - ",$prevP->getId(),"\n" if $debug == 1;
+    $prevP->removeChild($self);
+  }
+
+  ##set the parent......
+  $self->{'parents'}->{$p->getClassName()} = "$p";
+
+  ##set pointer in parent to self 
+  print STDERR "setParent: setting childs pointer to self\n" if $debug == 1;
+  $p->addChild($self); 
+
+  return 1;
 }
 
 
@@ -1014,6 +1024,11 @@ sub getParent {
   my($self,$className,$retrieveIfNoParent,$doNotRetAtts) = @_;
   ##retrieve from db if don't have any parents and have not retrieved parents already..
   $className = $self->getTable()->getFullClassName($className);
+
+  if (!$self->isOnParentList($className)) {
+    die "Error: trying to get invalid parent $className from $self->getClassName";
+  }
+
   print STDERR $self->getClassName()."->getparent($className,$retrieveIfNoParent)\n" if $debug;
   if (!exists $self->{'parents'}->{$className} && $retrieveIfNoParent && !$self->{'retrievedParents'}->{$className}) { ## && !exists $self->{'parentRet'}->{$className}){
     if ($self->isImpClass($className)) {
@@ -1109,8 +1124,8 @@ sub retrieveParentFromDB{
     return 1;
     ##set the flag that have retrieved the parent of this class
   } else {
-    print STDERR "ERROR: ",$self->getClassName(),"::retrieveParentFromDB - Invalid Parent Class: $className\n";
-  }	
+    die "ERROR: ",$self->getClassName(),"::retrieveParentFromDB - Invalid Parent Class: $className\n";
+  }
 }
 
 sub retrieveAllParentsFromDB{
