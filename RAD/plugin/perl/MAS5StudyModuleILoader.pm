@@ -770,7 +770,7 @@ sub getQuantificationDate {
   my $finalTime;
 
   if ($time2.$time1 eq "PM") {
-    if ($hourMinArray[0] <= 11) } {
+    if ($hourMinArray[0] <= 11) {
       $finalTime = $hourMinArray[0] + 12;
       $finalTime .= ":$hourMinArray[1]:00";
     }
