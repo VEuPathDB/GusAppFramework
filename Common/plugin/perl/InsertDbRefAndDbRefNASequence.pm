@@ -68,7 +68,7 @@ sub Run {
   print STDERR "Testing on $ctx->{'cla'}->{'testnumber'}\n" 
                 if $ctx->{'cla'}->{'testnumber'};
 
-  my $dbh = $ctx->{self_inv}->getDbHandle();
+  my $dbh = $ctx->{self_inv}->getQueryHandle();
 
   my ($sourceIdHash, $mapHash) = &getSourceIdsAndMap();  
 
