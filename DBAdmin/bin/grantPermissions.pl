@@ -98,6 +98,7 @@ my $ntg = &runGrants($dbh, $tables, \@grantees, \@perms, {'select' => 1,
 							  'insert' => 1,
 							  'delete' => 1,
 							  'references' => 1,
+							  'alter' => 1
 						      });
 
 my $nvg = &runGrants($dbh, $views, \@grantees, \@perms, {'select' => 1,
