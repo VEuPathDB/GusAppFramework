@@ -264,7 +264,7 @@ sub _createJavaTALine {
 sub _createJavaSetTAInfo{
     my($self, $allInfo) = @_;
     my $line;
-j`    $line .= "\n\nHashtable TableAtts = new Hashtable(); \n
+    $line .= "\n\nHashtable TableAtts = new Hashtable(); \n
       try {
      $allInfo
          }
