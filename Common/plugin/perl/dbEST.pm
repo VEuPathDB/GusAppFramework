@@ -286,14 +286,14 @@ sub updateEntry {
   ## update the first older entry encountered.
   #####################################################################
 
-  foreach my $oe (@{$e->{old}}) { 
-    my $est = GUS::Model::DoTS::EST->new({'dbest_id_est' => $e->{id_est}});
-    
-    if ($est->retrieveFromDB()) {
-      # Entry present in the DB; UPDATE
-      return  $M->insertEntry($e->{e},$est);
-    }
-  }
+#  foreach my $oe (@{$e->{old}}) { 
+# 	  my $est = GUS::Model::DoTS::EST->new({'dbest_id_est' => $e->{id_est}});
+# 	  
+# 	  if ($est->retrieveFromDB()) {
+# 		# Entry present in the DB; UPDATE
+# 		return  $M->insertEntry($e->{e},$est);
+# 	  }
+#  }
   ## No historical entries; INSERT if not already present
   return $M->insertEntry($e->{e});
 }
