@@ -50,7 +50,7 @@ sub _parseXmlFile {
   my ($self) = @_;
 
   my $commit = $self->{manager}->{propertySet}->getProp('commit');
-  my $dbCommit = $self->{manager}->{propertySet}->getProp('commit');
+  my $dbCommit = $self->{manager}->{propertySet}->getProp('dbcommit');
   my $xmlString = $self->_substituteMacros();
   my $xml = new XML::Simple;
   my $data = $xml->XMLin($xmlString);
