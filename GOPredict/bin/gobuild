@@ -547,6 +547,12 @@ sub downloadTREMBL {
 
 sub findTREMBLWithAssociations {
 
+    #private methods called here need to be updated with 
+    #correct filenames and data directories
+    my $assocData = &createTREMBLAssocHash();
+    &writeTREMBLSubset($assocData);
+    
+
 }
 
 sub insertTREMBLSubset {
@@ -612,7 +618,6 @@ sub insertWorm {
 	 	    "GUS::Common::Plugin::InsertNewExternalSequences", $args,
 		    "Inserting Worm", 'downloadGOStuff');
 
-
 }
 
 sub downloadYeast {
@@ -632,19 +637,13 @@ sub downloadYeast {
     
     $mgr->runCmd("mkdir -p $downloadSubDir");
     
+    my $ftpsite = "ftp://genome-ftp.stanford.edu/pub/yeast/data_download/sequence/genomic_sequence/orf_protein/orf_trans.fasta.gz";
+ 
+    my $cmd = "wget -t5 -o $logfile -b -m -np -nd -nH --cut-dirs=6 -P $downloadSubDir  $ftpsite";
 
-    my $ftpsite1 = "ftp://genome-ftp.stanford.edu/pub/yeast/data_download/sequence/genomic_sequence/orf_protein/orf_trans.fasta.gz";
-
-    my $ftpsite2 = "ftp://genome-ftp.stanford.edu/pub/yeast/data_download/chromosomal_feature/chromosomal_feature.tab";
-    #note: these paths are updated from previous release; make sure still getting the same data
-    my $cmd = "wget -t5 -o $logfile -b -m -np -nd -nH --cut-dirs=6 -P $downloadSubDir  $ftpsite1";
-    my $cmd2 = "wget -t5 -o $logfile -b -m -np -nd -nH --cut-dirs=4 -P $downloadSubDir  $ftpsite2";
-        
     $mgr->runCmd($cmd);
-#    $mgr->runCmd($cmd2); //don't think we need this anymore dtb 1/23/03
 
     $mgr->runCmd("gunzip $downloadSubDir/orf_trans.fasta.gz");
-
 
     $mgr->endStep($signal);
 }
@@ -717,6 +716,7 @@ sub insertGOAssoc{
     # LoadGoOntology.pm
     # mapping from mgi to swissprot (ask sharon)
 }
+
 
 sub extractArabidopsis {
 
@@ -847,8 +847,8 @@ sub downloadMGIInfo {
     
     $mgr->runCmd("mkdir -p $downloadSubDir");
 
-
-    my $cmd = "wget -t5 -o $logfile -b -m -np -nd -nH --cut-dirs=3 -A \"MRK_List2.sql.rpt\"  -P $downloadSubDir  ftp://www.informatics.jax.org/pub/informatics/reports/";
+    my $ftpsite = "ftp://ftp.informatics.jax.org/pub/reports/MRK_SwissProt.rpt";
+    my $cmd = "wget -t5 -o $logfile -b -m -np -nd -nH --cut-dirs=2 -P $downloadSubDir $ftpsite";
 
 #I think this ftp site needs to be updated to
 # ftp://www.informatics.jax.org/pub/reports/ --dtb 1/13/3
@@ -1012,6 +1012,47 @@ sub makeProjectLink {
     my $cmd = "makeProjectLink.pl $args";
 
     $mgr->runCmd($cmd);
+}
+
+sub createTREMBLAssocHash{
+#change to data directory
+    my  $fh = FileHandle->new("<gene_association.goa_sptr");
+    my $assocData;
+
+    while (<$fh>){
+	chomp;
+	my @columns = split(/\t/, $_);
+	$assocData -> {$columns[1]} = 1;
+    }
+    return $assocData;
+}
+sub writeTREMBLSubset{
+    my ($assocData) = @_;
+    
+    open (OUTPUT, ">>foundSubsetsLog");
+    #change these files to correct data directory and name
+   my  $fh = FileHandle->new("<trembl.fas");
+    my $subsetSeq = 0;
+    while (<$fh>){
+	#chomp;
+	if (/^\>/) {  #defline
+	    my $line = $_;
+	    my ($idOne) = $line =~ /(\w+)\s/;
+	    if ($assocData->{$idOne}){
+		print OUTPUT "$line";
+		$subsetSeq = 1;
+	    }
+	    else {
+		$subsetSeq = 0;
+	    }
+	}
+	else { #sequence
+	    my $line = $_;
+	    if ($subsetSeq == 1){
+		print OUTPUT $line;
+	    }
+	}
+    }
 }
 
 sub makeBuildName {

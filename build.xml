@@ -11,7 +11,6 @@
     </ant>
   </target>  
 
-
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  Distributable  ooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
@@ -24,7 +23,6 @@
       </fileset>
     </copy>  
   </target>  
-
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  Installation  oooooooooooooooooooooooooo -->
@@ -45,36 +43,104 @@
 
   <target name="GUS/Common-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="component" value="GUS/Common"/>
+      <property name="project" value="GUS"/>
+      <property name="component" value="Common"/>
     </ant>
   </target>  
 
   <target name="GUS/DBAdmin-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="component" value="GUS/DBAdmin"/>
+      <property name="project" value="GUS"/>
+      <property name="component" value="DBAdmin"/>
+      
     </ant>
   </target>  
+
 
   <target name="GUS/GOPredict-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="component" value="GUS/GOPredict"/>
+      <property name="project" value="GUS"/>
+      <property name="component" value="GOPredict"/>
     </ant>
-  </target>  
+  </target>
+  
+  
 
   <target name="GUS/Model-Installation" depends="ProjectTree, 
-                                                 checkObjects,
-                                                 generatedModel,
-                                                 manuallyEditedModel,
+                                                 PerlModel,
+                                                 JavaModel,
                                                  schema">
     <ant target="defaultComponentInstall">
-      <property name="component" value="GUS/Model"/>
+      <property name="project" value="GUS"/>
+      <property name="component" value="Model"/>
+      <property name="skipJava" value="true"/>
     </ant>
 
   </target>  
 
-  <target name="generatedModel" unless="objectsAlreadyGenerated" 
-                                 depends="ProjectTree,
-                                          GUS/ObjRelP-Installation">
+  <target name="JavaModel" depends = "checkJavaObjects,
+                                     javaGeneratedModel,
+	                             javaManuallyEditedModel">
+    <echo message="Starting target: JavaModel"/>
+  </target>
+
+
+  <target name="PerlModel" depends = "checkPerlObjects,
+                                      perlGeneratedModel,
+                                      perlManuallyEditedModel"/>
+                                     
+  <target name="javaGeneratedModel" unless="javaObjectsAlreadyGenerated"
+                                    depends="ProjectTree, GUS/ObjRelJ-Installation">
+     <echo message="starting target: javaGeneratedModel"/>
+     
+     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core"/>
+     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS"/>
+     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/RAD3"/>
+     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes"/>
+     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS"/>
+     
+      <delete>
+        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core" includes="*.java, *.class"/>
+        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS" includes="*.java, *.class"/>
+        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/RAD3" includes="*.java, *.class"/>
+        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes" includes="*.java, *.class"/>
+        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS" includes="*.java, *.class"/>
+      </delete>
+      <echo message="generating java objects"/>
+
+      <exec executable="generateGusObjects" 
+            output="${projectsDir}/GUS/Model/doc/javaGenLog">
+        <arg value="--javaOrPerl=java"/>
+      </exec>
+
+   </target>
+
+  <target name="javaManuallyEditedModel" depends="ProjectTree">
+        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS" overwrite="true">
+           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/DoTS"/>
+           <mapper type="glob" from="*.java.man" to="*.java"/>
+        </copy>
+        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes" overwrite="true">
+           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/SRes"/>
+           <mapper type="glob" from="*.java.man" to="*.java"/>
+        </copy>
+        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core" overwrite="true">
+           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/Core"/>
+           <mapper type="glob" from="*.java.man" to="*.java"/>
+        </copy>
+        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS" overwrite="true">
+           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/TESS"/>
+           <mapper type="glob" from="*.java.man" to="*.java"/>
+        </copy>
+        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/RAD3" overwrite="true">
+           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/RAD3"/>
+           <mapper type="glob" from="*.java.man" to="*.java"/>
+        </copy>
+  </target>
+	                                 
+  <target name="perlGeneratedModel" unless="perlObjectsAlreadyGenerated" 
+                                    depends="ProjectTree,
+                                    GUS/ObjRelP-Installation">
 
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Core"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/DoTS"/>
@@ -100,10 +166,16 @@
        <fileset dir="${targetDir}/lib/perl/GUS/Model/SRes" includes="*.pm"/>
        <fileset dir="${targetDir}/lib/perl/GUS/Model/TESS" includes="*.pm"/>
      </delete>
-     <exec executable="generateGusPerlObjects"/>
+     <echo message="generating Perl Objects"/>
+
+     <exec executable="generateGusObjects" 
+            output="${projectsDir}/GUS/Model/doc/javaGenLog">
+
+       <arg value="--javaOrPerl=perl"/>
+     </exec>
    </target>  
 
-   <target name="manuallyEditedModel" depends="ProjectTree,
+   <target name="perlManuallyEditedModel" depends="ProjectTree,
                                       GUS/ObjRelP-Installation">
 
      <copy todir="${projectsDir}/GUS/Model/lib/perl/Core">
@@ -133,8 +205,20 @@
 
    </target>  
 
-  <target name="checkObjects">
-    <uptodate property="objectsAlreadyGenerated" 
+  <target name="checkJavaObjects">
+ 
+    <condition property="javaObjectsAlreadyGenerated">
+           
+         <uptodate srcfile="${projectsDir}/GUS/Model/lib/sql/definition.sql"
+                  targetfile="${projectsDir}/GUS/Model/src/java/org/gusdb/model/generated"/>
+    
+    </condition>
+   <echo message="checkJavaObjects: are objects generated ? ${javaObjectsAlreadyGenerated}"/>
+  </target>
+
+
+  <target name="checkPerlObjects">
+    <uptodate property="perlObjectsAlreadyGenerated" 
               targetfile="${projectsDir}/GUS/Model/lib/perl/generated" 
               srcfile="${projectsDir}/GUS/Model/schema/VERSION" />
   </target>
@@ -164,41 +248,51 @@
     </copy>
   </target>  
 
-  <target name="GUS/ObjRelJ-Installation" depends="ProjectTree">
+   <target name="GUS/ObjRelP-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="component" value="GUS/ObjRelJ"/>
+      <property name="project" value="GUS"/>
+      <property name="component" value="ObjRelP"/>
     </ant>
   </target>  
 
-  <target name="GUS/ObjRelP-Installation" depends="ProjectTree">
+
+  <target name="GUS/ObjRelJ-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="component" value="GUS/ObjRelP"/>
+      <property name="project" value="GUS"/>
+      <property name="component" value="ObjRelJ"/>
+      <property name="skipJava" value="true"/>
     </ant>
-  </target>  
+    
+  </target>
+
 
 
   <target name="GUS/Pipeline-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="component" value="GUS/Pipeline"/>
+      <property name="project" value="GUS"/>
+      <property name="component" value="Pipeline"/>
     </ant>
   </target>  
 
   <target name="GUS/PluginMgr-Installation" depends="GUS/ObjRelP-Installation,
                                                      ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="component" value="GUS/PluginMgr"/>
+      <property name="project" value="GUS"/>
+      <property name="component" value="PluginMgr"/>
     </ant>
   </target>
   
   <target name="GUS/SchemaBrowser-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="component" value="GUS/SchemaBrowser"/>
+      <property name="project" value="GUS"/>
+      <property name="component" value="SchemaBrowser"/>
     </ant>
   </target>  
 
   <target name="GUS/WebDevKit-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
-      <property name="component" value="GUS/WebDevKit"/>
+      <property name="project" value="GUS"/>
+      <property name="component" value="WebDevKit"/>
     </ant>
   </target>  
 
