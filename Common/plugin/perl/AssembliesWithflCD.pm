@@ -157,7 +157,7 @@ my $id;
 
 #add to new array
 
-push (@diffArray; $id);  }
+push (@diffArray, $id);  }
 
   }
 
