@@ -41,6 +41,10 @@ sub new {
      {o => 'pattern2',
       t => 'string',
       h => 'identifier pattern for the na_sequence_id stored in the DbRefNASequence table, with parenthesis, e.g. \s+DT.(\d+)',
+     },
+     {o => 'delete',
+      t => 'boolean',
+      h => 'option to delete entries in dbref that are not in the current mapping',
      }
     ];
 
@@ -83,7 +87,7 @@ sub run {
 
   $self->insertDBRefNASeq($sourceIdDbrefHash,$mapHash); 
 
-  $self->deleteDbRef($dbRefHash);
+  $self->deleteDbRef($dbRefHash) if $self->getArgs()->{'delete'};
 }
 
 sub getSourceIdsAndMap {
