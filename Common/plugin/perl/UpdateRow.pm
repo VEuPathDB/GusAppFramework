@@ -2,6 +2,7 @@ package GUS::Common::Plugin::UpdateRow;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;
+use CBIL::Util::Disp;
 
 sub new {
   my ($class) = @_;
@@ -43,16 +44,17 @@ sub new {
 }
 
 sub run {
-  my $self = (@_);;
+  my ($self) = @_;
   $self->logAlgInvocationId;
-  $self->logArgs;
   $self->logCommit;
 
-  my $self->{attrHash} = $self->makeAttrHash();
+  $self->checkArgs();
+
+  $self->{attrHash} = $self->makeAttrHash();
 
   my $tableName = $self->getArgs->{'tablename'};
   my ($db, $tbl) = split(/::/, $tableName);
-  my $className = "GUS::Model::$db::$tbl";
+  my $className = "GUS::Model::${db}::${tbl}";
   eval "require $className";
 
   my $row;
@@ -60,37 +62,38 @@ sub run {
     $row = $self->refreshedRow($className);
 
   } else {
-    $row = $className->new($self->{attrHash});
+   $self->logDebug(CBIL::Util::Disp::Display($self->{attrHash}));
+   $row = $className->new($self->{attrHash});
   }
   $row->submit();
 }
 
 sub makeAttrHash {
-  $self = (@_);
+  my ($self) = @_;
 
   my @attrList = split(/,/, $self->getArgs->{attrlist});
   my @valueList = split(/\^\^\^/, $self->getArgs->{valuelist});
 
-  $self->userError("attrlist and valuelist must have the same number of elements") if (scalar(@$attrList) != scalar(@$valueList));
+  $self->userError("attrlist and valuelist must have the same number of elements") if (scalar(@attrList) != scalar(@valueList));
 
   my %attrHash;
   for (my $i=0; $i<@attrList; $i++) {
     $valueList[$i]=~ s/^\s+|\s+$//g;
     $attrHash{$attrList[$i]} = $valueList[$i];
   }
-  return %attrHash;
+  return \%attrHash;
 }
 
 sub refreshedRow {
   my ($self, $className) = @_;
 
   my ($pkName, $pkValue) = $self->getPrimaryKey($className);
-  $row = $className->new({$pkName => $pkValue});
+  my $row = $className->new({$pkName => $pkValue});
   my $exclude = ['modification_date','row_alg_invocation_id'];
   if (!$row->retrieveFromDB($exclude)){
     $self->error("no row found with primary key $pkName=$pkValue");
   }
-  foreach my $attr (keys $self->{attrHash}) {
+  foreach my $attr (keys %{$self->{attrHash}}) {
     next if $attr eq $pkName;
     my $value = $self->{attrHash}->{$attr};
     $value=~ s/^\s+|\s+$//g;
@@ -115,6 +118,14 @@ sub getPrimaryKey {
   return ($pkName, $self->{attrHash}->{$pkName});
 }
 
+sub checkArgs {
+  my ($self) = @_;
+
+  my $tableName = $self->getArgs->{'tablename'};
+
+  $self->userError("--tablename must be in the form: 'schema::table'") unless $tableName =~ /\w+::\w+/;
+
+}
 
 1;
 
