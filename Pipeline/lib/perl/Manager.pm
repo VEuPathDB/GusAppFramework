@@ -9,15 +9,16 @@ use CBIL::Util::Utils;
 #############################################################################
 
 sub new {
-    my ($class, $pipelineDir, $propertySet, $propertiesFile, $testNextPlugin) = @_;
+    my ($class, $pipelineDir, $propertySet, $propertiesFile, $cluster, $testNextPlugin) = @_;
 
     my $self = {};
-    bless $self;
-    
+    bless $self, $class;
     $self->{pipelineDir} = $pipelineDir;
     $self->{propertySet} = $propertySet;
     $self->{propertiesFile} = $propertiesFile;
     $self->{program} = basename($0);
+    $self->{cluster} = $cluster;
+    $cluster->setManager($self);
     $self->{testNextPlugin} = $testNextPlugin;
     $self->_createPipelineDir();
 
@@ -27,7 +28,7 @@ sub new {
 
     $self->_setSignal("running");
 
-    if ($testNextPlugin){
+    if ($testNextPlugin eq "true"){
 	my $msg = "***Running pipeline " . $self->{program} . "; will only run until reaching a step containing a plugin which hasn't been run.\n";
 	$msg .= "***That plugin will be tested, the results will not be committed, and the pipeline will exit\n\n";
 	print STDOUT $msg;
@@ -108,7 +109,7 @@ sub log {
 sub runPlugin {
     my ($self, $signal, $plugin, $args, $msg, $doitProperty) = @_;
     my $commit = $args;
-    if (!$self->{testNextPlugin}){
+    if ($self->{testNextPlugin} ne "true"){
 	$commit .= " --commit";
     }
 
@@ -162,36 +163,6 @@ sub exitWithMessage {
 }    
 
 
-#  param fromDir  - the directory in which fromFile resides
-#  param fromFile - the basename of the file or directory to copy
-sub copyToLiniac {
-    my ($self, $fromDir, $fromFile, $server, $toDir, $user) = @_;
-
-    chdir $fromDir || $self->error("Can't chdir $fromDir\n");
-    $self->error("$fromDir/$fromFile doesn't exist\n") unless -e $fromFile;
-
-    my $ssh_to = ($user ? $user . '@' . $server : $server);
-    # workaround scp problems
-    $self->runCmd("tar cf - $fromFile | gzip -c | ssh -2 $ssh_to 'cd $toDir; gunzip -c | tar xf -'");
-
-   # $self->runCmd("tar cf - $fromFile | ssh $server 'cd $toDir; tar xf -'");
-}
-
-#  param fromDir  - the directory in which fromFile resides
-#  param fromFile - the basename of the file or directory to copy
-sub copyFromLiniac {
-    my ($self, $server, $fromDir, $fromFile, $toDir, $user) = @_;
-
-    # workaround scp problems
-    chdir $toDir || $self->error("Can't chdir $toDir\n");
-
-    my $ssh_fro = ($user ? $user . '@' . $server : $server);
-    $self->runCmd("ssh -2 $ssh_fro 'cd $fromDir; tar cf - $fromFile | gzip -c' | gunzip -c | tar xf -");
-
-#    $self->runCmd("ssh $server 'cd $fromDir; tar cf - $fromFile' | tar xf -");
-    $self->error("$toDir/$fromFile wasn't successfully copied from liniac\n") unless -e "$toDir/$fromFile";
-}
-
 sub runCmdOnLiniac {
     my ($self, $server, $cmd, $user) = @_;
 
@@ -199,17 +170,14 @@ sub runCmdOnLiniac {
     $self->runCmd("ssh -2 $ssh_fro '$cmd'");
 }
 
-# Write out a message telling user what to start up on liniac, then exit
-sub exitToLiniac {
+# Write out a message telling user what to start up on cluster, then exit
+sub exitToCluster {
     my ($self, $cmdMsg, $logMsg, $immed) = @_;
-
-    my $liniacServer = $self->{propertySet}->getProp('liniacServer');
-    $liniacServer =~ /^(\w+)\./;
 
     my $when = $immed? "immediately" : "when it completes";
     my $msg =
 "EXITING.... PLEASE DO THE FOLLOWING:
- 1. on $1:
+ 1. on the cluster server:
     - $cmdMsg
     - $logMsg
  2. resume $when by re-runnning '$self->{program} $self->{propertiesFile}'
@@ -222,11 +190,11 @@ sub exitToLiniac {
     exit(0);
 }    
 
-# Write out a message telling user what to wait for on liniac, then exit
-sub waitForLiniac {
+# Write out a message telling user what to wait for on cluster, then exit
+sub waitForCluster {
     my ($self, $task, $signal) = @_;
 
-    my $s = "Wait for '$task' to complete on Liniac";
+    my $s = "Wait for '$task' to complete on Cluster";
 
     return if $self->startStep($s, $signal);
 
@@ -297,7 +265,7 @@ sub _runPlugin {
     chdir "$self->{pipelineDir}/plugins/$signal";
 
     $self->runCmd($cmd);
-    if ($self->{testNextPlugin}){
+    if ($self->{testNextPlugin} eq "true"){
 	print STDERR "Tested next plugin.  Check $self->{pipelineDir}/logs/$signal" . ".err and $signal" . ".out for results\n\n";
 	exit(0);
     }
