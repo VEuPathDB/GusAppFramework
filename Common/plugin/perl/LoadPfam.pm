@@ -384,14 +384,10 @@ sub createReferences {
                                       $secondaryId,
                                       $remark);
 
-    print STDERR "  createReferences() \$dbRefId = '$dbRefId' creatd for DbRelease '$ExtDbRelId'\n";
-
     if (defined($dbRefId)) {
         my $link =
           GUS::Model::DoTS::DbRefPfamEntry->new({'pfam_entry_id' => $pfamEntryId,
                                                  'db_ref_id'     => $dbRefId});
-
-        print STDERR "  createReferences() \$link = $link\n";
 
         if (not(defined($links->{$dbRefId}))) {
             $link->submit() if (!$self->getCla->{'parse_only'});
