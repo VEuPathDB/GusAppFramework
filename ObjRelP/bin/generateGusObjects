@@ -52,7 +52,9 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$gusconfig->getReadOnlyDatabaseLogin(),
 					$gusconfig->getReadOnlyDatabasePassword,
 					$verbose,0,1,
-					$gusconfig->getCoreSchemaName);
+					$gusconfig->getCoreSchemaName,
+					$gusconfig->getOracleDefaultRollbackSegment());
+
 $db->setUseDbiTableOnly(1);
 
 my $generator = GUS::ObjRelP::Generator::Generator->new($db,

@@ -1010,17 +1010,19 @@ sub connect_to_database {
   my $M = shift;
   my $P = shift;		# active plugins
 
-  my $config = $M->getConfig();
+  my $config      = $M->getConfig();
 
-  my $login    = $M->getConfig->getDatabaseLogin();
-  my $password = $M->getConfig->getDatabasePassword();
-  my $core     = $M->getConfig->getCoreSchemaName();
-  my $dbiDsn   = $M->getConfig->getDbiDsn();
+  my $login       = $M->getConfig->getDatabaseLogin();
+  my $password    = $M->getConfig->getDatabasePassword();
+  my $core        = $M->getConfig->getCoreSchemaName();
+  my $dbiDsn      = $M->getConfig->getDbiDsn();
+  my $oraDfltRbs  = $M->getConfig->getOracleDefaultRollbackSegment();
 
   $P->initDb(new GUS::ObjRelP::DbiDatabase($dbiDsn,
                                            $login,$password,
                                            $P->getArgs->{verbose},0,1,
-                                           $core));
+                                           $core,
+					   $oraDfltRbs));
   # return self.
   $M
 }
