@@ -71,7 +71,7 @@ sub generate {
     my $cnt = scalar(@{$self->{tables}});
     print "Generating objects for $cnt $self->{javaOrPerl} tables and views\n";
     
-    foreach my $table (@{$self->{tables}}) {
+    foreach my $table (sort @{$self->{tables}}) {
 	
 	# parse schema::tablename format
 	$table =~ /(GUS::Model::)?(\w+)::(\w+)/ || die "ERROR: table '$table' not in schema::tablename format\n";
