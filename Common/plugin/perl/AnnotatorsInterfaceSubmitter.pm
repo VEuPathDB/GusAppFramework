@@ -240,6 +240,10 @@ print STDERR "Test:$del_gene";
 
  print STDERR "Test:$del_gene";
 
+
+print STDERR "test:", $merge_split->getClassName(),"n";
+
+
   $self->getSelfInv->addChild( $merge_split );
 
  print STDERR "Test: ", $curr_gene->getClassName(), "\n";
