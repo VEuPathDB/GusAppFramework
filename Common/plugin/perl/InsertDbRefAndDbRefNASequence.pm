@@ -283,19 +283,17 @@ sub deleteDbRef {
 
   my $dbh = $self->getQueryHandle();
   my $db_rel_id = $self->getArgs()->{db_rel_id};
-  my $sql = "select db_ref_id from sres.dbref where external_database_release_id = $db_rel_id";
+  my $sql = "select db_ref_id from sres.dbref where external_database_release_id = $db_rel_id and db_ref_id is not in (select db_ref_id from dots.dbrefnasequence)";
   my $num;
   my $stmt = $dbh->prepareAndExecute($sql);
   while (my $db_ref_id  = $stmt->fetchrow_array()) {
-    if ($dbRefHash->{$db_ref_id} != 1) {
-      my $newDbRef = GUS::Model::SRes::DbRef -> new({'db_ref_id'=>$db_ref_id});
-      $newDbRef->retrieveFromDB();
-      $newDbRef->retrieveAllChildrenFromDB(1);
-      $newDbRef->markDeleted(1);
-      $newDbRef->submit();
-      $newDbRef->undefPointerCache();
-      $num++;
-    }
+    my $newDbRef = GUS::Model::SRes::DbRef -> new({'db_ref_id'=>$db_ref_id});
+    $newDbRef->retrieveFromDB();
+    $newDbRef->retrieveAllChildrenFromDB(1);
+    $newDbRef->markDeleted(1);
+    $newDbRef->submit();
+    $newDbRef->undefPointerCache();
+    $num++;
   }
   print STDERR "$num DbRef entries and its children were deleted\n";
 }
