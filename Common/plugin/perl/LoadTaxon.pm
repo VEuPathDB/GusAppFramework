@@ -57,12 +57,12 @@ sub run {
 
     my $dbh = $self->getQueryHandle();
     if (!$self->getCla->{'names'} || !$self->getCla->{'nodes'} || !$self->getCla->{'gencode'}) {
-	$self->log ("Provide the names of the names.dmp, nodes.dmp, and gencode.dmp files on the command line\n");
+	print STDOUT ("Provide the names of the names.dmp, nodes.dmp, and gencode.dmp files on the command line\n");
     }
     
-    $self->log ($self->getCla->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n");
+    print STDOUT ($self->getCla->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n");
     my $testnum = $self->getCla->{'testnumber'} if $self->getCla->{'testnumber'};
-    $self->log ("Testing on " . $self->getCla->{'testnumber'} . "\n") if $self->getCla->{'testnumber'};
+    print STDOUT ("Testing on " . $self->getCla->{'testnumber'} . "\n") if $self->getCla->{'testnumber'};
 
     my $genCodes = $self->makeGeneticCode();
     
@@ -205,10 +205,10 @@ sub makeTaxonEntry {
     
     $newTaxon->submit();
     $self->undefPointerCache();
-    $self->log ("processed ncbi_tax_id : $tax_id\n");
+    print STDOUT ("processed ncbi_tax_id : $tax_id\n");
     $$count++;
     if ($$count % 100 == 0) {
-	$self->log ("Number processed: $count");
+	print STDOUT ("Number processed: $count");
     }
 }
 
@@ -271,7 +271,7 @@ sub makeTaxonName {
 	    }
 	}
     }
-    $self->log ("$num taxon names processed\n");
+    print STDOUT ("$num taxon names processed\n");
 }
 
 
