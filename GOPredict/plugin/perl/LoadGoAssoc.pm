@@ -555,8 +555,8 @@ sub __getSeqGusId{
     my $dbList = '( ' . join (',', @{$self->getCla()->{org_external_db_release_list} }) . ') ';
     my $sql = "select eas.aa_sequence_id
                from dots.externalAASequence eas
-               where $dbIdCol " . = '$sourceId'
-               and eas.external_database_release_id in ($dbList)";
+               where $dbIdCol = '$sourceId'
+	       and eas.external_database_release_id in ($dbList)";
 
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
     my ($seqGusId) = $sth->fetchrow_array();
