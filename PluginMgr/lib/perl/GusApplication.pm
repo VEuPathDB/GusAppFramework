@@ -26,15 +26,15 @@ my @properties =
 );
 
 sub new {
-   my $C = shift;
-   my $A = shift;
+   my $Class = shift;
+   my $Args = shift;
 
-   my $m = bless {}, $C;
+   my $self = bless {}, $Class;
 
    $m->initialize({requiredDbVersion => { Core => '3' },
                    cvsRevision       => '$Revision$',
                    cvsTag            => '$Name$',
-                   name              => ref($m),
+                   name              => ref($self),
                    revisionNotes     => 'update for GUS 3.0',
                    easyCspOptions    => {},
                    usage             => ""
@@ -42,14 +42,14 @@ sub new {
 
    my $configFile = "$ENV{GUS_HOME}/config/GUS-PluginMgr.prop";
 
-   $m->userError("Config file $configFile does not exist.  Please copy $configFile.sample to $configFile and edit to reflect your configuration") unless -e $configFile;
+   $self->userError("Config file $configFile does not exist.  Please copy $configFile.sample to $configFile and edit to reflect your configuration") unless -e $configFile;
 
-   $m->{propertySet}= CBIL::Util::PropertySet->new($configFile, \@properties);
+   $self->{propertySet}= CBIL::Util::PropertySet->new($configFile, \@properties);
 
-   $m->initName(ref $m);
-   $m->initMd5Executable($m->{propertySet}->getProp('md5sum'));
+   $self->initName(ref $self);
+   $self->initMd5Executable($self->{propertySet}->getProp('md5sum'));
 
-   return $m
+   return $self
 }
 
 # ----------------------------------------------------------------------
@@ -150,30 +150,36 @@ SQL
 
 sub parseAndRun {
    my $Self = shift;
-   my $A = shift;
+   my $Args = shift;
 
    my $ga_mode_str;
    my $plugin_class_str;
 
    # no arguments; we can't do anything.
-   if (scalar @$A == 0) {
+   if (scalar @$Args == 0) {
       ;
    }
 
+   # first argument is a reporter
+   elsif ($Args->[0] =~ /::Plugin::Report::/) {
+      $ga_mode_str = 'report';
+      $plugin_class_str = shift @$Args;
+   }
+
    # first argument begins with a '+'; this is new mode.
-   elsif ($A->[0] =~ /^\+(.+)/) {
+   elsif ($Args->[0] =~ /^\+(.+)/) {
 
       # save the matched mode name and toss the cla
       $ga_mode_str      = $1;
-      shift @$A;
+      shift @$Args;
 
       # grab the plugin class name
-      $plugin_class_str = shift @$A unless $A->[0] =~ /^-/;
+      $plugin_class_str = shift @$Args unless $Args->[0] =~ /^-/;
    }
 
 
    # first argument begins with a '-'; this the old mode, show help
-   elsif ($A->[0] =~ /^-/) {
+   elsif ($Args->[0] =~ /^-/) {
       ;
    }
 
@@ -184,7 +190,7 @@ sub parseAndRun {
       $ga_mode_str = 'run';
 
       # get plugin class name from the end of the cla list
-      $plugin_class_str = shift @$A;
+      $plugin_class_str = shift @$Args;
    }
 
    if (defined $ga_mode_str) {
@@ -240,14 +246,14 @@ USAGE
 
 sub newFromPluginName {
    my $Self = shift;
-   my $C = shift;               # plugin-class name
+   my $PluginClass = shift;               # plugin-class name
 
-   my $require_p = "{require $C; $C->new }";
+   my $require_p = "{require $PluginClass; $PluginClass->new }";
    my $plugin = eval $require_p;
 
    $Self->error($@) if $@;
 
-   $plugin->initName($C);
+   $plugin->initName($PluginClass);
    $plugin->initMd5Executable($Self->{propertySet}->getProp('md5sum'));
    return $plugin;
 }
@@ -273,7 +279,7 @@ sub doMajorMode {
    my $Self = shift;
    my @A = @_;
 
-   my @modes    = qw( meta create update history run );
+   my @modes    = qw( meta create update history run report );
    my $modes_rx = '^('. join('|',@modes). ')$'; # ' this quote is for emacs highlighting
 
    if ($Self->getMode =~ /$modes_rx/) {
@@ -371,18 +377,35 @@ sub doMajorMode_Meta {
 # ----------------------------------------------------------------------
 
 sub doMajorMode_Run {
-   my $Self = shift;
-   my $C = shift;
+   my $Self        = shift;
+   my $PluginClass = shift;
 
-   my $pu = $Self->newFromPluginName($C);
+   $Self->doMajorMode_RunOrReport($PluginClass, 1);
+}
+
+sub doMajorMode_Report {
+   my $Self        = shift;
+   my $PluginClass = shift;
+
+   $Self->doMajorMode_RunOrReport($PluginClass, 0);
+}
+
+sub doMajorMode_RunOrReport {
+   my $Self        = shift;
+   my $PluginClass = shift;
+   my $Run         = shift;
+
+   my $pu = $Self->newFromPluginName($PluginClass);
 
    my $argsHash;
    if ($pu->getArgsDeclaration) {
       my $argDecl = [@{$pu->getArgsDeclaration()},
                      @{$Self->getStandardArgsDeclaration()}
                     ];
-      my ($argList, $help) = 
-	GUS::PluginMgr::Args::ArgList->new($argDecl, 'ga ' . ref($pu), $pu);
+
+      my ($argList, $help) = GUS::PluginMgr::Args::ArgList->new
+      ($argDecl, 'ga ' . ref($pu), $pu);
+
       if ($help eq 'text') {
          $pu->printDocumentationText($argList->formatConcisePod(),
                                      $argList->formatLongPod());
@@ -416,13 +439,13 @@ sub doMajorMode_Run {
    $pu->setOracleDateFormat('YYYY-MM-DD HH24:MI:SS');
 
    # get the algorithm
-   $Self->findAlgorithm($pu);
+   $Run && $Self->findAlgorithm($pu);
 
    # get PI's version to find the AlgorithmImplementation.
-   $Self->findImplementation($pu);
+   $Run && $Self->findImplementation($pu);
 
    # the application context
-   $Self->openInvocation($pu);
+   $Run && $Self->openInvocation($pu);
 
    eval {
       my $resultDescrip;
@@ -439,7 +462,7 @@ sub doMajorMode_Run {
    my $err = $@;
 
    # clean up.
-   $Self->closeInvocation($pu, $err);
+   $Run && $Self->closeInvocation($pu, $err);
 
    $Self->disconnect_from_database($Self);
 
@@ -451,9 +474,9 @@ sub doMajorMode_Run {
 #! GA
 sub doMajorMode_Create {
    my $Self = shift;
-   my $C = shift;
+   my $PluginClass = shift;
 
-   $Self->create_or_update_implementation(0,$C)
+   $Self->create_or_update_implementation(0,$PluginClass)
 }
 
 # ----------------------------------------------------------------------
@@ -461,19 +484,19 @@ sub doMajorMode_Create {
 #! GA
 sub doMajorMode_Update {
    my $Self = shift;
-   my $C = shift;
+   my $PluginClass = shift;
 
-   $Self->create_or_update_implementation(1,$C)
+   $Self->create_or_update_implementation(1,$PluginClass)
 }
 
 # ----------------------------------------------------------------------
 
 #! GA
 sub doMajorMode_History {
-   my $Self = shift;
-   my $C = shift;
+   my $Self        = shift;
+   my $PluginClass = shift;
 
-   my $p = $Self->newFromPluginName($C);
+   my $p = $Self->newFromPluginName($PluginClass);
    my $plugin_name_s = $p->getName;
 
    # command line arguments
@@ -633,7 +656,7 @@ SQL
 sub create_or_update_implementation {
    my $Self = shift;
    my $U = shift;               # allow update?
-   my $C = shift;               # plugin class name
+   my $PluginClass = shift;               # plugin class name
 
    # verbs of various forms for what we are doing
    my $what = $U ? 'updates' : 'creates';
@@ -661,7 +684,7 @@ sub create_or_update_implementation {
    $Self->findImplementation($Self);
 
    # create plugin
-   my $pu = $Self->newFromPluginName($C);
+   my $pu = $Self->newFromPluginName($PluginClass);
    $pu->initArgs($cla);
 
    # what versions does the plugin want?
@@ -725,7 +748,7 @@ sub create_or_update_implementation {
                            "$plugin_name_s is already registered.",
                            "Use '+update' if you need to register a new version."
                           ), "\n";
-         #      $Self->doMajorMode_History($C);
+         #      $Self->doMajorMode_History($PluginClass);
          exit 0;
       }
 
@@ -957,7 +980,7 @@ sub openInvocation {
    foreach my $param_name (sort keys %$cla) {
 
       # skip CBIL::Util::EasyCsp options which we do not record.
-      next if$param_name =~ /(debug|verbose|veryVerbose|sqlVerbose|usage|help|helpHTML)/;
+      next if $param_name =~ /(debug|verbose|veryVerbose|sqlVerbose|usage|help|helpHTML)/;
 
       # get the Core.AlgorithmParamKey object
       my $apk_go      = $key_to_obj{$param_name};
