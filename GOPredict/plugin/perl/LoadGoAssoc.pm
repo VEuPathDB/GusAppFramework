@@ -371,11 +371,13 @@ sub __addEvidenceCodes{
 
     my ($self, $assocGraph, $entries) = @_;
     foreach my $entry (@$entries){
-	my $entryGoId = $entry->getGOId();
-	my $assoc = $assocGraph->find($entryGoId);
-	if ($assoc) {     #some go ids not in assoc graph because they are in a different branch
-	    my $goEvidenceCodeInst = $self->__makeGoEvidenceCodeInst($entry);
-	    $self->__addEvidenceCodeAux($assoc, $goEvidenceCodeInst);
+	if ($entry->getEvidence()){ #some entries in worm file have no evidence!
+	    my $entryGoId = $entry->getGOId();
+	    my $assoc = $assocGraph->find($entryGoId);
+	    if ($assoc) {     #some go ids not in assoc graph because they are in a different branch
+		my $goEvidenceCodeInst = $self->__makeGoEvidenceCodeInst($entry);
+		$self->__addEvidenceCodeAux($assoc, $goEvidenceCodeInst);
+	    }
 	}
     }
 }
