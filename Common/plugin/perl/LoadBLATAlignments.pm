@@ -34,7 +34,11 @@ sub new {
   my $usage = "Load a set of BLAT alignments into GUS.  Assumes that the query sequences are identified with GUS na_sequence_ids.  The subject (genomic) sequences may use either na_sequence_ids or source_ids (if the corresponding external_db_id is given)";
 
   my $easycsp =
-      [{  o => 'blat_dir',
+      [{  o => 'action',
+	  h => 'one of: strip, get rid of extra psl headers; load, get alignments into db; setbest: set best alignment status, maybe delete unwanted alignments. Do all above if not set',
+	  t => 'string',
+       },
+       {  o => 'blat_dir',
 	  h => 'dir with files containing BLAT results in .psl format',
 	  t => 'string', 
       },
@@ -67,12 +71,6 @@ sub new {
 	   o => 'previous_runs',
 	   h => 'Comma-separated list of algorithm_invocation_ids of previous runs; any duplicate results from these runs are ignored.',
 	   t => 'string',
-       },
-       {
-	   o => 'skip_loading',
-	   h => 'skip the loading of alignments altogether, just do postprocessing to keep best alignments',
-	   t => 'int',
-	   d => 0,
        },
        {
 	   o => 'report_interval',
@@ -205,21 +203,34 @@ sub run {
     my $queryFile = $cla->{'query_file'};
     my $queryTableId = $cla->{'query_table_id'};
     my $targetTableId = $cla->{'target_table_id'};
-    my $skipLoading = $cla->{'skip_loading'};
+    my $action = $cla->{'action'};
+
+    die "LoadBLATAlignments: query_file not defined" unless $queryFile;
+    die "LoadBLATAlignments: unrecognized query_table_id" if (!($queryTableId =~ /^56|57|89|245|339$/));
+    die "LoadBLATAlignments: unrecognized target_table_id" if (!($targetTableId =~ /^56|57|89|245|339$/));
 
     my $summary;
-    if (!$skipLoading) {
-	print "Preprocessing: arg checking, result file listing, query file indexing...\n";
-	my $qIndex = undef;
-	($blatFiles, $qIndex) = &preProcess($blatDir, $blatFiles, $fileList, $queryFile,
-					    $queryTableId, $targetTableId, $cla->{'commit'});
 
-	print "Processing: load alignments from raw BLAT output files...\n";
+    my @blatFiles = &getBlatFiles($blatDir, $blatFiles, $fileList) unless $action eq 'setbest';
+
+    if (!$action || $action eq 'strip') {
+	foreach (@blatFiles) {
+	    $self->log("stripping extra headers in $_");
+	    &CBIL::Bio::BLAT::PSLDir::strip($_);
+	}
+    }
+
+    if (!$action || $action eq 'load') {
+	my $blatFiles = join(',', @blatFiles);
+	$self->log("Load alignments from raw BLAT output files $blatFiles ...");
+	my $qIndex = &maybeIndexQueryFile($queryFile);
 	$summary = $self->loadAlignments($blatFiles, $qIndex);
     }
 
-    print "Postprocessing: set best alignment status, maybe remove unwanted entries...\n";
-    $summary .= $self->keepBestAlignments;
+    if (!$action || $action eq 'setbest') {
+	$self->log("setting best alignment status, maybe remove unwanted entries...");
+	$summary .= $self->keepBestAlignments;
+    }
 
     return $summary;
 }
@@ -326,7 +337,10 @@ sub loadAlignments {
 	}
 
 	$dbh->commit();
-	print "LoadBLATAlignments: loaded $nAlignsLoaded/$nAligns BLAT alignments from $blatFile.\n";
+
+	my $srcId = $1 if $blatFile =~ /(chr\S+?)\./;
+	my $target_id = $targetIdHash->{$srcId};
+	print "LoadBLATAlignments: loaded $nAlignsLoaded/$nAligns BLAT alignments for $srcId ($target_id) from $blatFile.\n";
     }
 
     my $summary = "Loaded $nTotalAlignsLoaded/$nTotalAligns BLAT alignments from $nFiles file(s).\n";
@@ -447,30 +461,10 @@ sub keepBestAlignments {
 # Subroutines
 #-------------------------------------------------
 
-# preprocessing by the Run subroutine to do sanity checking and maybe index query sequence file
+# maybe index query sequence file
 #
-sub preProcess {
-    my ($blatDir, $blatFiles, $fileList, $queryFile, $queryTableId, $targetTableId, $commit) = @_;
-    die "LoadBLATAlignments: blat files not defined" unless $blatDir || $blatFiles || $fileList;
-    die "LoadBLATAlignments: query_file not defined" unless $queryFile;
-    die "LoadBLATAlignments: unrecognized query_table_id" if (!($queryTableId =~ /^56|57|89|245|339$/));
-    die "LoadBLATAlignments: unrecognized target_table_id" if (!($targetTableId =~ /^56|57|89|245|339$/));
-    print "LoadBLATAlignments: COMMIT ", $commit ? "****ON****" : "OFF", "\n";
-
-    # Read list of files if need be
-    #
-    if ($fileList && !$blatFiles) {
-	my $fl = `cat $fileList`;
-	my @files = split(/[\s\n]+/,$fl);
-	$blatFiles = join(",", @files);
-    }
-    if ($blatDir && !$blatFiles) {
-	my $bd = CBIL::Bio::BLAT::PSLDir->new($blatDir);
-	$bd->stripExtraHeaders;
-	my @bfs = $bd->getPSLFiles;
-	$blatFiles = join(",", @bfs);
-    }
-
+sub maybeIndexQueryFile {
+    my ($queryFile) = @_;
     # Make sure that query_file is indexed
     #
     my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
@@ -496,7 +490,29 @@ sub preProcess {
 	$qIndex = undef;
 	$qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
     }
-    ($blatFiles, $qIndex);
+    $qIndex;
+}
+
+sub getBlatFiles {
+    my ($blatDir, $blatFiles, $fileList) = @_;
+    die "LoadBLATAlignments: blat files not defined" unless $blatDir || $blatFiles || $fileList;
+
+    return split(/,/, $blatFiles) if $blatFiles;
+
+    # Read list of files if need be
+    #
+    my @files;
+    if ($fileList && !$blatFiles) {
+	my $fl = `cat $fileList`;
+	@files = split(/[\s\n]+/,$fl);
+    }
+
+    if ($blatDir && !$blatFiles) {
+	my $bd = CBIL::Bio::BLAT::PSLDir->new($blatDir);
+	@files = $bd->getPSLFiles;
+    }
+
+    @files;
 }
 
 # Print a progress message if appropriate
