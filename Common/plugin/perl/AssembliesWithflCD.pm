@@ -157,13 +157,13 @@ print STDERR "MarkedDT.$id,DT.$na_seq\n";
 
     print STDERR "AlreadyMarkedFLDT.$na_seq\n";
 
-
+   last;
    }
 
 
 
-#    if ($id != $na_seq) {
-    else {
+   if ($id != $na_seq) {
+
        print STDERR "NextFLDT.$na_seq\n";
 
 
@@ -178,7 +178,7 @@ print STDERR "MarkedDT.$id,DT.$na_seq\n";
       $self->undefPointerCache();
 
 
- }
+     }
 
 
   }
