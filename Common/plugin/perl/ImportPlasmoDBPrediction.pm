@@ -170,7 +170,7 @@ sub run {
 	      'Phat'       => '83',
 	      'FullPhat'   => '83',
 	      'GlimmerM'   => '47',
-	      'Genefinder' => '84'
+	      'GeneFinder' => '84'
 	     );
   my ($genename,$contig,$method,$type,$start,$stop,$strand,$phase,$numexons,$key,$transfer,$is_initial);
   my ($is_final,$haveExons,$order_number,$score,$exon);
