@@ -93,6 +93,17 @@ public interface ServerI {
     public Vector retrieveObjectsFromQuery(String session, String owner, String tname, String query)
 	throws GUSNoConnectionException;
 
+    /**
+     * Run an SQL query and return the results as a Vector of Hashtables.
+     * Each Hashtable maps from column name to data value.  This method is 
+     * an escape to SQL and its use should be limited.
+     *
+     * @param session  A session identifier returned by <code>openConnection</code>
+     * @param sql      An arbitrary SQL query.
+     * @return A Vector of Hashtables corresponding to the rows selected.
+     */
+    public Vector runSqlQuery(String session, String sql) throws GUSNoConnectionException;
+
     // ------------------------------------------------------------------
     // RETRIEVE FROM DATABASE OR CACHE - OBJECTS WITH CLOB VALUES
     // ------------------------------------------------------------------

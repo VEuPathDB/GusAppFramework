@@ -71,6 +71,12 @@ public class RemoteDatabaseConnection extends UnicastRemoteObject implements Rem
     {
 	return localConn.retrieveObjectsFromQuery(owner, tname, query);
     }
+
+    public Vector runSqlQuery(String query)
+	throws RemoteException
+    {
+	return localConn.runSqlQuery(query);
+    }
     
     public SubmitResult submitObject(GUSRow obj)
 	throws RemoteException

@@ -1,6 +1,7 @@
 package org.gusdb.objrelj;
 
 import java.util.*;
+import java.util.logging.*;
 import java.lang.*;
 import java.rmi.*;
 import java.sql.*;
@@ -41,10 +42,6 @@ public class GUSServer implements ServerI {
      * Stores all the active sessions; maps from sessionId to Session.
      */
     protected Hashtable sessions = new Hashtable();
-    
-    // JC: replace this with system-wide debugging/logging mechanism
-    //
-    protected boolean debug = true;
 
     // ------------------------------------------------------------------
     // Session inner class
@@ -100,6 +97,11 @@ public class GUSServer implements ServerI {
 	 * for newly-created objects.
 	 */ 
 	Hashtable defaults;
+    
+	/**
+	 * Logger from java.util.logging package.
+	 */
+	protected Logger logger; 
 	
 	/**
 	 * Constructor
@@ -111,6 +113,11 @@ public class GUSServer implements ServerI {
 	 */
         Session(DatabaseConnectionI conn, String user, String password, String session) 
         {
+	    this.logger = Logger.getLogger("org.gusdb.objrelj.GUSServer.Session");
+	    this.logger.setLevel(Level.INFO);
+	    StreamHandler logHandler = new StreamHandler(System.out, new SimpleFormatter());
+	    this.logger.addHandler(logHandler);
+
             this.user = user;
             this.password = password;
             this.session = session;
@@ -130,9 +137,7 @@ public class GUSServer implements ServerI {
 	    String newItem = nowStr + ": " + item;
 	    history.add(newItem);
 	    this.lastUsed = now;
-
-	    // Print full history on each add() in debug mode
-	    if (debug) System.err.println(newItem);
+	    logger.fine(newItem);
 	}
 
 	// JC: Need to consider synchronization issues here?
@@ -346,6 +351,18 @@ public class GUSServer implements ServerI {
         return objs;
     }
 
+    public Vector runSqlQuery(String session, String sql) 
+	throws GUSNoConnectionException 
+    {
+        Session s = getSession(session);
+        Vector objs = null;
+	try {
+	    objs = s.conn.runSqlQuery(sql);
+	} catch (RemoteException re) {}
+
+	return objs;
+    }
+
     public GUSRow retrieveObject(String session, String owner, String tname, long pk, String clobAtt, Long start, Long end) 
         throws GUSNoConnectionException, GUSObjectNotUniqueException
     {
@@ -435,6 +452,8 @@ public class GUSServer implements ServerI {
 
 	s.addToHistory("retrieveParent: retrieved parent row " + parent + " for child row " + row);
 
+	// TO DO: make sure this works even if the parent-child relationship has already
+	// been established.
 	row.addParent(parent);
 	parent.addChild(row);
         return parent;
@@ -499,6 +518,8 @@ public class GUSServer implements ServerI {
 
 	s.addToHistory("retrieveChild: retrieved child " + child + " for parent " + row + ", childAtt=" + childAtt);
 
+	// TO DO: make sure this works even if the parent-child relationship has already
+	// been established.
 	row.addChild(child);
 	child.addParent(row);
         return child;
