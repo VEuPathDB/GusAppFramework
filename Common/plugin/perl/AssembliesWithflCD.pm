@@ -174,9 +174,13 @@ print STDERR "$id,DT.$na_seq\n";
 
 
      }
-}
+next;
 
 }
+next;
+
+}
+
 
 
 #check to see if all previous evidence still valid
