@@ -256,11 +256,13 @@ sub createGUSAssaysFromFiles {
   my $testNumber    = $self->getArgs->{testnumber};
   my @skipAssayList = @{$self->getArgs->{skip}};
 
-  my $assayNames              = $self->findAssayNames($gprFilePath);
+  my ($assayNames, $modifiedAssayFileURIRef) = $self->findAssayNames($gprFilePath);
+
+  my ($imageFilesRef, $modifiedImageFileURIRef) = $self->getImageFileNames($tiffFilePath); 
+
   my $assayDescriptionHashRef = $self->parseMultipleDescriptions($assayNames,"allAssayDescriptionsSame","allAssayDescriptions","individualAssayDescriptions");
   my $hybDateHashRef          = $self->parseMultipleDescriptions($assayNames,"allHybDatesSame","allHybDates","individualHybDates");
   my $scanDateHashRef         = $self->parseMultipleDescriptions($assayNames,"allScanDatesSame","allScanDates","individualScanDates");
-  my $imageFilesRef           = $self->getImageFileNames($tiffFilePath); 
 
   my $skipAssayCnt  = scalar @skipAssayList;
   my $totalAssayCnt = scalar @$assayNames;
@@ -273,7 +275,7 @@ sub createGUSAssaysFromFiles {
     next if (($assayCnt > ($testNumber - 1)) && (defined $testNumber));
     next if (grep { $assayName =~ /^$_/ } @skipAssayList);
 
-    my $gusAssay = $self->createSingleGUSAssay($assayName, $hybDateHashRef, $scanDateHashRef, $assayDescriptionHashRef, $imageFilesRef);
+    my $gusAssay = $self->createSingleGUSAssay($assayName, $modifiedAssayFileURIRef, $hybDateHashRef, $scanDateHashRef, $assayDescriptionHashRef, $imageFilesRef, $modifiedImageFileURIRef);
 
     push(@gusAssays, $gusAssay);
     $assayCnt++;
@@ -440,7 +442,10 @@ sub findAssayNames {
   my ($self,$assayNameFilesDir) = @_;
 
   my @assayNames;
+  my $modifiedAssayFileURIs;
+
   my $requiredExtension = "gpr";  # filenames correspond to assay names
+  my ($localFilePath, $specificPath) = split "RAD/", $assayNameFilesDir;
 
   opendir (DIR,$assayNameFilesDir) || $self->userError("Cannot open dir $assayNameFilesDir");
   my @assayDir = readdir DIR; 
@@ -457,9 +462,11 @@ sub findAssayNames {
     next unless ($2);                   # skip files with no extension
     next if ($2 ne $requiredExtension); # skip files with diff extension
     push (@assayNames,$1);
+
+    $modifiedAssayFileURIs->{$1} = "$specificPath/$1.$2";
   }
  
-  return \@assayNames;
+  return (\@assayNames, $modifiedAssayFileURIs);
 }
 
 ###############################
@@ -492,35 +499,44 @@ sub parseMultipleDescriptions {
 sub getImageFileNames {
   my ($self, $imageFilesDir) = @_;
 
-  my $imageFilesRef;
+  my ($imageFilesRef, $modifiedImageFileURI);
 
   opendir (DIR,$imageFilesDir) || $self->userError("Cannot open dir $imageFilesDir");
   my @imageFiles = readdir DIR; 
   close (DIR);
 
+  my ($localPath, $specificPath) = split "RAD_images/", $imageFilesDir;
+
   foreach my $imageFile (@imageFiles) { 
 
     next if ($imageFile eq '.' || $imageFile eq '..'); # skip '.' and '..' files
-    
+
     my ($fileName, $extention) = $imageFile =~ /(.+)\.(\w+$)/;
     my ($assay, $type) = $fileName =~ /(.+)\_(.+)/;
 
+    #print "$imageFilesDir/$imageFile, $specificPath/$imageFile \n";
+
     if ($type eq "Cy5Cy3" || $type eq "Cy3Cy5") {
-      $imageFilesRef->{$assay."_Cy5"} = $imageFilesDir."/".$imageFile;
-      $imageFilesRef->{$assay."_Cy3"} = $imageFilesDir."/".$imageFile;
+
+      $imageFilesRef->{$assay."_Cy5"} = "$imageFilesDir/$imageFile";
+      $imageFilesRef->{$assay."_Cy3"} = "$imageFilesDir/$imageFile";
+
+      $modifiedImageFileURI->{$assay."_Cy5"} = "$specificPath/$imageFile";
+      $modifiedImageFileURI->{$assay."_Cy3"} = "$specificPath/$imageFile";
 
     } else {
-      $imageFilesRef->{$assay."_$type"} = $imageFilesDir."/".$imageFile;
+      $imageFilesRef->{$assay."_$type"} = "$imageFilesDir/$imageFile";
+      $modifiedImageFileURI->{$assay."_$type"} = "$specificPath/$imageFile";
     }
   }
 
-  return $imageFilesRef;
+  return ($imageFilesRef, $modifiedImageFileURI);
 }
 
 ###############################
 
 sub createSingleGUSAssay {
-  my ($self, $assayName, $hybDateHashRef, $scanDateHashRef, $assayDescriptionHashRef, $imageFilesRef) = @_;
+  my ($self, $assayName, $modifiedAssayFileURIRef, $hybDateHashRef, $scanDateHashRef, $assayDescriptionHashRef, $imageFilesRef, $modifiedImageFileURIRef) = @_;
 
   $self->log("STATUS","----- Assay $assayName -----");
 
@@ -530,26 +546,17 @@ sub createSingleGUSAssay {
 
   my $gusAssay = $self->createGusAssay($assayName, $hybDateHashRef, $assayDescriptionHashRef);
 
-  my ($gusAcquisitionCy5, $gusAcquisitionCy3) = $self->createGusAcquisition($assayName, $imageFilesRef, $scanDateHashRef);
+  my ($gusAcquisitionCy5, $gusAcquisitionCy3) = $self->createGusAcquisition($assayName, $modifiedImageFileURIRef, $scanDateHashRef);
 
   $gusAcquisitionCy5->setParent($gusAssay);
   $gusAcquisitionCy3->setParent($gusAssay);
 
-  my ($gusQuantificationCy5, $gusQuantificationCy3) = $self->createGusQuantification($assayName, $GPRinfo);
+  my ($gusQuantificationCy5, $gusQuantificationCy3) = $self->createGusQuantification($assayName, $modifiedAssayFileURIRef, $GPRinfo);
   $gusQuantificationCy5->setParent($gusAcquisitionCy5);
   $gusQuantificationCy3->setParent($gusAcquisitionCy3);
 
   my ($gusQuantParamsCy5Ref, $gusQuantParamsCy3Ref) = $self->createGusQuantParams($GPRinfo);
-  #my ($gusQuantParamsRef) = $self->createGusQuantParams($GPRinfo);
-  #foreach my $gusQuantParams (@$gusQuantParamsRef) {
-  #  my $gusQuantParamsCy5 = $gusQuantParams;
-  #  my $gusQuantParamsCy3 = $gusQuantParams;
-  #  print "$gusQuantParamsCy5, $gusQuantParamsCy3\n";
-  #  $gusQuantParamsCy5->setParent($gusQuantificationCy5);
-  #  $gusQuantParamsCy3->setParent($gusQuantificationCy3);
-  #}
 
-  #print "$gusQuantParamsCy5Ref, $gusQuantParamsCy3Ref\n";
   foreach my $gusQuantParamsCy5 (@$gusQuantParamsCy5Ref) {
     $gusQuantParamsCy5->setParent($gusQuantificationCy5);
   }
@@ -726,7 +733,7 @@ sub checkDatabaseEntry {
 ###############################
 
 sub createGusAcquisition {
-  my ($self, $assayName, $imageFilesRef, $scanDateHashRef) = @_;
+  my ($self, $assayName, $modifiedImageFileURIRef, $scanDateHashRef) = @_;
 
   my $acqProtocolId = $self->{propertySet}->getProp("Acq_Protocol_ID");
 
@@ -755,7 +762,7 @@ sub createGusAcquisition {
       channel_id       => $channelDefs->{$channel},
       protocol_id      => $acqProtocolId,
       acquisition_date => $acqDate,
-      uri              => $imageFilesRef->{$assayName."_$channel"}
+      uri              => $modifiedImageFileURIRef->{$assayName."_$channel"}
     };
 
     $channelDefs->{$channel} = $acqParameters;
@@ -777,16 +784,16 @@ sub createGusAcquisition {
 ###############################
 
 sub createGusQuantification {
-  my ($self, $assayName, $GPRinfo) = @_;
+  my ($self, $assayName, $modifiedAssayFileURIRef, $GPRinfo) = @_;
 
   my (@gusQuantificationsCy5, @gusQuantificationsCy3);
 
-  my $gprURI          = $self->{propertySet}->getProp("GPRFilePath");
   my $acqProtocolId   = $self->{propertySet}->getProp("Acq_Protocol_ID");
   my $quantOperatorId = $self->{propertySet}->getProp("Quant_Operator_ID");
   my $quantProtocolId = $self->{propertySet}->getProp("Quant_Protocol_ID");
 
-  my $quantDate       = $GPRinfo->{"DateTime"};
+  my $quantDate = $GPRinfo->{"DateTime"};
+  my $gprURI = $modifiedAssayFileURIRef->{$assayName};
 
   my $protocolObject = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
   $self->error("Create object failed: Table RAD3.Protocol, protocol_id $acqProtocolId") 
@@ -824,7 +831,6 @@ sub createGusQuantParams {
   $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $quantProtocolId);
 
   my (@gusQuantParamsCy5, @gusQuantParamsCy3);
-  #my (@gusQuantParams);
   my $quantParamKeywordCnt = 0;
 
   my $params = {
@@ -860,29 +866,10 @@ sub createGusQuantParams {
     push(@gusQuantParamsCy3, $quantParametersCy3);
     $quantParamKeywordCnt++;
 
-
-
-    #my $quantParametersCy5 = $quantParameters;
-    #$quantParametersCy5->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
-    #push(@gusQuantParamsCy5, $quantParametersCy5);
-    #$quantParamKeywordCnt++;
-
-    #my $quantParametersCy3 = $quantParameters;
-    #$quantParametersCy3->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
-    #push(@gusQuantParamsCy3, $quantParametersCy3);
-    #$quantParamKeywordCnt++;
-
-    #$quantParameters->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
-    #push(@gusQuantParams, $quantParameters);
-    #$quantParamKeywordCnt++;
-
-
   }
 
   $self->log("STATUS","OK Inserted $quantParamKeywordCnt x 2 rows in table RAD3.QuantificationParam for Cy5 and Cy3 quantification parameters");
 
-  #print "@gusQuantParamsCy5, @gusQuantParamsCy3\n";
   return (\@gusQuantParamsCy5, \@gusQuantParamsCy3);
-  #return (\@gusQuantParams);
 }
 
