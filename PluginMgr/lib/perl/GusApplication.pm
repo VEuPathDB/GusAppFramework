@@ -704,7 +704,7 @@ sub create_or_update_implementation {
       exit 0;
     }
 
-    # gather the attributes we need and make sure everything checks out first
+    # gather the attributes we need and make sure everything checks out first 
     else {
 
       my $description = $pu->getUsage;
