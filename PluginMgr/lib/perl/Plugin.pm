@@ -102,7 +102,7 @@ The name of the plugin.  This value for this key I<must> be specified like this:
 
 The documentation for this plugin (excluding the documentation for command line arguments which is covered by C<argsDeclaration>).  
 
-The hashref may include only the following standard keys.  All string values (e.g., C<purpose>, C<notes>) may include embedded POD formatting directives.  Precede and follow all command (e.g., C<=item>) with C<\\n\\n>.
+The hashref may include only the following standard keys.  All string values (e.g., C<purpose>, C<notes>) may include embedded POD formatting directives.  If you use Perl's << operator to define your POD string, then you can use POD commands as you ordinarily would. Otherwise, precede and follow all commands (e.g., C<=item>) with C<\\n\\n>.
 
 =over 4
 
