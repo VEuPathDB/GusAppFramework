@@ -15,7 +15,7 @@ use strict;
 
 use GUS::ObjRelP::DbiDbHandle;
 use GUS::ObjRelP::DbiTable;
-
+use Carp;
 
 ############################################################
 #                      Constructor
@@ -101,7 +101,7 @@ sub get {
     if ($self->{'didNotRetrieve'}->{$att}) {
       my $err = "ERROR: ".$self->getTableName().".".$self->getId().": Did not retrieve value from DB for $att!\n";
       if ($self->getDatabase()->getExitIfAttNotRetrieved()) {
-        die $err;
+        &confess($err);
       } elsif ($self->getDatabase()->getPrintErrIfAttNotRetrieved()) {
         print STDERR $err;
       }
@@ -298,7 +298,7 @@ sub getId {                     ## Returns id if not a composite key
   my ($self) = @_; 
   my $idHash = $self->getPrimaryKey();
   if (!$idHash) { 
-    die "GUS::ObjRelP::DbiRow->getId failed:  Unknown primary key for ".$self->getTableName()." \n";
+    &confess("GUS::ObjRelP::DbiRow->getId failed:  Unknown primary key for ".$self->getTableName()." \n");
   }
   my @key_list = values(%{$idHash});
   if (scalar @key_list > 1) { 
@@ -315,7 +315,7 @@ sub hasSinglePrimaryKey {       ## Returns id if not a composite key
   my ($self) = @_; 
   my $idHash = $self->getPrimaryKey();
   if (!$idHash) { 
-    die "GUS::ObjRelP::DbiRow->hasSinglePrimaryKey failed:  Unknown primary key for ".$self->getTableName()." \n";
+    &confess("GUS::ObjRelP::DbiRow->hasSinglePrimaryKey failed:  Unknown primary key for ".$self->getTableName()." \n");
   }
   return scalar(keys%{$idHash}) == 1 ? 1 : 0;
 }
@@ -339,8 +339,8 @@ sub getPrimaryKey {
   my ($self) = @_;   my $keys;
   my $pkAtts = $self->getTable()->getPrimaryKeyAttributes();
   if (!$pkAtts) { 
-    die "Unknown primary key attributes for ".$self->getTableName()
-      ."\n\tGUS::ObjRelP::DbiRow->getPrimaryKey failed\n";
+    &confess("Unknown primary key attributes for ".$self->getTableName()
+      ."\n\tGUS::ObjRelP::DbiRow->getPrimaryKey failed\n");
   }
   foreach my $key (@$pkAtts) {
     $keys->{$key} = $self->get($key);
@@ -606,7 +606,7 @@ sub update {
     return;
   }                             # if none updated return
   if (! $self->getPrimaryKey()) { 
-    die "No primary key defined for update ".$self->toString()."\n";
+    &confess("No primary key defined for update ".$self->toString()."\n");
   }
   my $dbh = $self->getDbHandle();
   my $numRows = $self->quote_and_update($self->getTable()->getClassName(),$self->getChangedAttributes(),
@@ -659,7 +659,7 @@ sub quote_and_insert {
   ##binding all values except date....dbi will do quoting..
   while ( ($key, $value) = each(%$insert) ) {
     #    if ( !defined $value ) {
-    #      die "\n No value($value) for attribute $key for table insertion. \n";
+    #      &confess("\n No value($value) for attribute $key for table insertion. \n");
     #    }
     $insert_clause .= " $key,";
     if ($value =~ /^\s*(sysdate|getdate).{0,2}\s*$/i) {
@@ -707,7 +707,7 @@ sub quote_and_update {
   ## binding all values except date
   while ( my ($key, $value) = each(%$set) ) {
     #    if (!defined $value || ( $dbh->getNoEmptyStrings() && $value =~ /^\s*$|^"\s*"$/ ) ) { ## NULL CHECK
-    #      die "\n$key is empty string($value) for set clause of $table update. \n";
+    #      &confess("\n$key is empty string($value) for set clause of $table update. \n");
     #    }
     if ($value =~ /^\s*(sysdate|getdate).{0,2}\s*$/i) {
       $set_clause .= "\n\t$key = $value,";
@@ -754,7 +754,7 @@ sub checkAttribute {
   if ($self->getTable()->isValidAttribute($att)) {
     return  1;
   } else {
-    die "ERROR: attempting to access attribute '$att' of table $self->{'table_name'}, but that table does not have such an attribute\n\n";
+    &confess("ERROR: attempting to access attribute '$att' of table $self->{'table_name'}, but that table does not have such an attribute\n\n");
   }
 }
 # SJD PRIVATE check the attributes as a hash.

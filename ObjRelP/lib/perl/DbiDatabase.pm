@@ -15,6 +15,7 @@ package GUS::ObjRelP::DbiDatabase;
 use strict;
 use GUS::ObjRelP::DbiDbHandle;
 use GUS::ObjRelP::DbiTable;
+use Carp;
 
 ############################################################
 # Global variable for default DbiDatabase..
@@ -32,10 +33,10 @@ sub new {
   bless $self, $class;
   $self->setDSN($dsn);
 
-  die "You must supply a DbiDsn to the constructor of DbiDatabase" unless $dsn;
+  &confess("You must supply a DbiDsn to the constructor of DbiDatabase") unless $dsn;
 
   if (scalar(@_) != 8) {
-    die "Invalid number of args for the DbiDatabase constructor";
+    &confess("Invalid number of args for the DbiDatabase constructor");
   }
 
   $self->{coreName} = $coreName;
@@ -479,7 +480,7 @@ sub manageTransaction {
       return 0;                 ##will cause the return value of submit to be 0
     }
   } else {
-    die "ERROR: ".$self->getClassName()."->manageTransaction() - invalid task '$task'...options (begin|commit)\n"; 
+    &confess("ERROR: ".$self->getClassName()."->manageTransaction() - invalid task '$task'...options (begin|commit)\n"); 
   }
   return 1;
 }
@@ -682,7 +683,7 @@ sub getFullTableClassName {
     $className = $1;
   }
 
-  die "Illegal className '$className' (not in schema::table form)"
+  &confess("Illegal className '$className' (not in schema::table form)")
     unless ($className =~ /\w+::\w+/);
 
   $className =~ tr/a-z/A-Z/;
@@ -693,7 +694,7 @@ sub className2oracleName {
   my ($className) = @_;
 
   $className =~ s/GUS::Model:://;
-  die "Illegal className $className (not in schema::table format)"
+  &confess("Illegal className $className (not in schema::table format)")
     unless $className =~ /\w+::\w+/;
   $className =~ s/::/./;
   return $className;
