@@ -352,7 +352,7 @@ sub makeNRDBAndExternalAASequence {
 	    $seq .= $_;
 	}
     }
-    $st->finish();s
+    $st->finish();
     my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id,$dbHash);
     $newExtAASeq->submit();
     $num_submit++;
