@@ -6,6 +6,8 @@ use strict;
 use FileHandle;
 use GUS::ObjRelP::DbiDatabase;
 
+use GUS::Model::SRes::SequenceOntology;
+
 $| = 1;
 
 #on command line need input file, so version, so cvs version
@@ -81,19 +83,29 @@ sub Insert {
 
    my ($SOid, $Term, $definition) = @_;
 
-   my $ontology_name = 'sequence';
-
    my $so_version =  $self->getArgs->{'so_version'};
    my $so_cvs_version = $self->getArgs->{'so_cvs_version'};
 
-   my $dbh = $self->getQueryHandle();
 
-  #print STDERR "$SOid,$ontology_name, $so_version, $so_cvs_version, $Term, $definition\n";
+   my $SOTerm = GUS::Model::SRes::SequenceOntology->new({'so_id' => $SOid,
+                                                         'ontology_name' => 'sequence',
+                                                         'so_version' => $so_version,
+                                                         'so_cvs_version' => $so_cvs_version,
+                                                         'term_name' => $Term,
+                                                         'definition' => $definition });
 
-  $dbh->do("INSERT into sres.SequenceOntology (so_id, ontology_name, so_version, so_cvs_version, term_name, definition) values ('$SOid', '$ontology_name', '$so_version', '$so_cvs_version', '$Term', '$definition')");
 
+   $SOterm->submit();
 
 }
+
+  # my $dbh = $self->getQueryHandle();
+
+  #print STDERR "$SOid,$ontology_name, $so_version, $so_cvs_version, $Term, $definition\n"
+ 
+# $dbh->do("INSERT into sres.SequenceOntology (so_id, ontology_name, so_version, so_cvs_version, term_name, definition) values ('$SOid', '$ontology_name', '$so_version', '$so_cvs_version', '$Term', '$definition')");
+
+
 
 
 
