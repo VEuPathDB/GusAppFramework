@@ -271,7 +271,7 @@ sub deleteDbRef {
 
   my $dbh = $self->getQueryHandle();
   my $db_rel_id = $self->getArgs()->{db_rel_id};
-  my $sql = 'select db_ref_id from sres.dbref where external_database_release_id = $db_rel_id';
+  my $sql = "select db_ref_id from sres.dbref where external_database_release_id = $db_rel_id";
   my $num;
   my $stmt = $dbh->prepareAndExecute($sql);
   while (my $db_ref_id  = $stmt->fetchrow_array()) {
