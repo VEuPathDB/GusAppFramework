@@ -114,11 +114,11 @@ sub runSimilarity {
     print "\nRunning blastsimilarity on $name\n";
 
     my $resultFile = 
-	"$pipelineDir/similarity/$subjectname/master/mainresult/blastSimilarity.out";
+	"$pipelineDir/similarity/$name/master/mainresult/blastSimilarity.out";
     my $inputFile = 
 	"$pipelineDir/seqfiles/$queryname.fsa";
     my $valid = 0;
-	my $propfile = "$pipelineDir/similarity/$subjectname/input/controller.prop";
+	my $propfile = "$pipelineDir/similarity/$name/input/controller.prop";
 
     if (-e $resultFile) {
 	print "  previous result found\n";
