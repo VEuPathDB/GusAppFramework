@@ -114,8 +114,8 @@ sub _genAccessors {
 	return undef;
     }
     foreach my $att ( @final_att_list ) {
-	
 	my $sub_name = $self->_capAttName( $att );
+
 	if ($sub_name eq "Class") {
 	    $sub_name = "myClass";
 	}
@@ -126,13 +126,44 @@ sub _genAccessors {
 	
 	# convert attribute oracle type to Java type
 	my $javaType = $self->_oracleTypeConverter( $attInfo, $att );
+
+	# add line to setAttributesFromResultSet_aux
+	$setAllAtts .= "	    ";                    # JC: these lines are in a 'try' block
+	$setAllAtts .= $self->_createJavaRSLine($att, $set, $javaType, $primaryKeys);
+
+	## print the set, setInitial, and get methods
+	$output .= "    // $att\n";
 	
-	if (!(($javaType eq "Clob")||($javaType eq "Blob"))){
-	    $setAllAtts .= "	    ";  # JC: these lines are in a 'try' block
-	    $setAllAtts .= $self->_createJavaRSLine($att, $set, $javaType, $primaryKeys);
-	
-	    ## print the set and gets 
-	    $output .= "    // $att\n";
+	# CLOB/BLOB columns
+	if (($javaType eq "Clob") || ($javaType eq "Blob")) {
+	    
+	    # This attribute tracks what part of the CLOB/BLOB has actually been retrieved.
+	    # If null then the whole CLOB/BLOB (if present) has been retrieved.
+	    #
+	    $output .= "    protected CacheRange ${att}_cached = null;\n\n";
+
+	    # The SQL Clob and Blob types are only valid for the duration of the
+	    # transaction in which they were created, so we'll only use them for 
+	    # the setAttributesFromResultSet_aux method (above); for the standard
+	    # get and set methods we'll use char[] and byte[] instead and these will
+	    # be the datatypes used internally.
+
+	    my $newJavaType = ($javaType =~ /clob/i) ? "char[]" : "byte[]";
+
+	    # As with a regular attribute, the set method is assumed to set the
+	    # *entire* value of the CLOB.
+	    #
+	    $output .= $self->_createJavaSetClobOrBlob($att, $set, $newJavaType, $primaryKeys);
+	    
+	    # Regular get() method should throw an exception if the entire CLOB/BLOB
+	    # is not available in memory.
+	    #
+	    $output .= $self->_createJavaGetClobOrBlob($att, $get, $newJavaType);
+	    $output .= $self->_createJavaSetClobOrBlobInitial($att, $set, $javaType, $newJavaType, $primaryKeys);
+	} 
+
+	# all other column types
+	else {
 	    $output .= $self->_createJavaSet($att, $set, $javaType, $primaryKeys);
 	    $output .= $self->_createJavaGet($att, $get, $javaType);
 	    $output .= $self->_createJavaSetInitial($att, $set, $javaType, $primaryKeys);
@@ -140,6 +171,7 @@ sub _genAccessors {
     }
     
     my $parent = $self->_getParentTable( );
+
     if ($parent){
 	$setAllSuperAtts .= $self->_addSuperSets();
     } 
@@ -225,17 +257,34 @@ sub _createJavaRSLine {
     my $line =  "$RSset" . "Initial(";
     
     if ($RSJavaType eq "Boolean" || $RSJavaType eq "Short" || $RSJavaType eq "Long" ||
-	$RSJavaType eq "Float" || $RSJavaType eq "Double"){
-	$line .= "new $RSJavaType(rs.get" . "$RSJavaType(\"$RSatt\")));\n";}
-    elsif ($RSJavaType eq "Integer") {
-	$line .= "new Integer(rs.getInt(\"$RSatt\")));\n";}
+	$RSJavaType eq "Float" || $RSJavaType eq "Double") 
+    {
+	$line .= "new $RSJavaType(rs.get" . "$RSJavaType(\"$RSatt\")));\n";
+    }
+    elsif ($RSJavaType eq "Integer") 
+    {
+	$line .= "new Integer(rs.getInt(\"$RSatt\")));\n";
+    }
+    # For Clob/Blob columns, must also pass along the "specialCases" Hashtable
+    #
+    elsif (($RSJavaType eq "Clob") || ($RSJavaType eq "Blob")) 
+    {
+	$line .= "rs.get" . "$RSJavaType(\"$RSatt\"), specialCases);\n";
+    }
     elsif ($RSJavaType eq "BigDecimal" || $RSJavaType eq "Blob" || $RSJavaType eq "Clob" ||
 	   $RSJavaType eq "Date" || $RSJavaType eq "Time" || $RSJavaType eq "TimeStamp" ||
-	   $RSJavaType eq "String"){
-	$line .= "rs.get" . "$RSJavaType(\"$RSatt\"));\n";}
-    elsif ($RSJavaType eq "byte{}"){	
-	$line .= "new byte[](rs.getBytes(\"$RSatt\")));\n";}
-    else {	$line .= "new $RSatt(rs.get" .  $RSatt . "(\"$RSatt\")));\n";}
+	   $RSJavaType eq "String") 
+    {
+	$line .= "rs.get" . "$RSJavaType(\"$RSatt\"));\n";
+    }
+    elsif ($RSJavaType eq "byte{}") 
+    {	
+	$line .= "new byte[](rs.getBytes(\"$RSatt\")));\n";
+    }
+    else 
+    {	
+	$line .= "new $RSatt(rs.get" .  $RSatt . "(\"$RSatt\")));\n";
+    }
     
 #	die "Error in method createJavaRSLine:  Java type \"$RSJavaType\" not found!\n";
 
@@ -267,7 +316,7 @@ sub _createJavaSetPrimKey {
 }
 
 #creates java method to set a GUSRow attribute
-sub _createJavaSet{
+sub _createJavaSet {
     my ( $self, $Satt, $Sset, $SjavaType, $keys)= @_;
     my $primKeySet = $self->_createJavaSetPrimKey($Satt, $Sset, $SjavaType, $keys);
 
@@ -276,6 +325,23 @@ sub _createJavaSet{
         throws ClassNotFoundException,InstantiationException, IllegalAccessException, SQLException
     {
         attTypeCheck("$Satt", value);   
+        set("$Satt", value);
+    }
+END_SET1
+
+      return $line;
+}
+
+#special-purpose version of _createJavaSet for CLOB and BLOB values
+sub _createJavaSetClobOrBlob {
+    my ( $self, $Satt, $Sset, $SjavaType, $keys)= @_;
+
+    my $line = <<END_SET1;
+    public void $Sset ($SjavaType value)
+        throws ClassNotFoundException,InstantiationException, IllegalAccessException, SQLException
+    {
+	// indicates that the entire CLOB/BLOB is now stored locally
+	this.${Satt}_cached = null;
         set("$Satt", value);
     }
 END_SET1
@@ -305,6 +371,21 @@ END_SET_INIT
     return $line;
 }
 
+#method: createJavaSetClobOrBlobInitial
+#special-purpose version of _createJavaSetInitial for CLOB and BLOB values
+sub _createJavaSetClobOrBlobInitial {
+    my ( $self, $ISatt, $ISset, $ISjavaType, $ISnewJavaType, $keys) = @_;
+    my $lob = ($ISnewJavaType =~ /char/i) ? "Clob" : "Blob";
+
+    my $line = <<END_SET_INIT;
+    public void ${ISset}Initial ($ISjavaType value, Hashtable specialCases) { 
+	${ISatt}_cached = this.set${lob}Initial("$ISatt", value, specialCases);
+    }
+END_SET_INIT
+
+    return $line;
+}
+
 #method:  createJavaGet
 #creates java method to retrieve a GUSRow attribute
 sub _createJavaGet{
@@ -316,12 +397,66 @@ END_GET
     return $line;
 }
 
+#special-purpose version of _createJavaGet for CLOB and BLOB values;
+#there are actually several variants of this method.
+sub _createJavaGetClobOrBlob {
+    my ($self, $Gatt, $Gget, $GjavaType)= @_;
+    my $baseType = $GjavaType;
+    $baseType =~ s/[\s\[\]]//g;
+    my $lob = ($GjavaType =~ /char/i) ? "Clob" : "Blob";
+
+    my $line;
+    $line .= <<END_GET;
+    // Retrieve the specified CLOB/BLOB value, throwing an Exception if only
+    // part of the value has been cached locally.
+    //
+    public $GjavaType $Gget () { 
+	if (${Gatt}_cached == null) {
+	    return ($GjavaType)get("$Gatt"); 
+	} else {
+	    // Full CLOB/BLOB value not available without accessing db.
+	    throw new IllegalArgumentException("CLOB/BLOB column $Gatt not retrieved from db.");
+	}
+    }
+
+    // Return the full length of the underlying CLOB/BLOB value.
+    //
+    public Long ${Gget}LobLength () { 
+	if (${Gatt}_cached == null) {
+            $GjavaType value = ${Gget}();
+	    return new Long((value == null) ? 0 : value.length);
+	} else {
+	    return new Long(${Gatt}_cached.length.longValue());
+	}
+    }
+
+    // Return the CacheRange describing how much of the CLOB/BLOB is cached, 
+    // or null if it is all cached.
+    //
+    public CacheRange ${Gget}LobCached () {
+	if (${Gatt}_cached == null) {
+	    return null;
+        } else {
+	    return new CacheRange(new Long(${Gatt}_cached.start.longValue()), 
+	                          new Long(${Gatt}_cached.end.longValue()), 
+                                  new Long(${Gatt}_cached.length.longValue()));
+        }
+    }
+
+    public $GjavaType $Gget (long start, long end) {
+	return this.get${lob}Value("$Gatt", ${Gatt}_cached, start, end);
+    }
+
+END_GET
+    return $line;
+}
+
 #creates the header + footer for java method to set all GUSRow attributes from the 
 #JDBC result set object
 sub _createJavaSetAttsFromRS{
     my ($self, $allAtts, $allSuperAtts) = @_;
     my $line = <<END_SET_ALL;
-    protected void setAttributesFromResultSet_aux(ResultSet rs) 
+    protected void setAttributesFromResultSet_aux(ResultSet rs, Hashtable specialCases) 
     {
 	try { 
 ${allAtts}${allSuperAtts}
@@ -373,15 +508,15 @@ sub _addSuperSets{
     }
 
     foreach my $parentAtt ( @parentAtts){
-	
 	my $sub_name = $self->_capAttName( $parentAtt );
 	my $set = "set" . $sub_name;
 	my $attInfo = $attHash->{$parentAtt};
 	my $javaType = $self->_oracleTypeConverter ($attInfo, $parentAtt);
-	if (!(($javaType eq "Clob")||($javaType eq "Blob"))){
+
+#	if (!(($javaType eq "Clob") || ($javaType eq "Blob"))) {
 	    $output .= "	    ";  # JC: these lines are in a 'try' block
 	    $output .= "super." . $self->_createJavaRSLine($parentAtt, $set, $javaType, $primaryKeys);
-	}	    
+#	}	    
     }
 
     return $output;

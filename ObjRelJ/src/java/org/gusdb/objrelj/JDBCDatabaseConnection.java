@@ -142,6 +142,12 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	String pkName = table.getPrimaryKeyName();
 	GUSRow obj = null;
 	int numReturned = 0;
+	Hashtable specialCases = null;
+	if (clobAtt != null) {
+	    specialCases = new Hashtable();
+	    specialCases.put(clobAtt, new CacheRange(start, end, null));
+	    //	    System.err.println("retrieveObject: adding " + clobAtt + " start=" + start + " end=" + end + " to specialCases");
+	}
 	
 	try {
 
@@ -152,13 +158,16 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    // the column completely from the select statement.
 	    //
 	    Statement stmt = conn.createStatement();
-	    String sql = "select * from " + owner + "." + table  + " where " + pkName + " = " + pk;
+	    String sql = "select * from " + table.getOwnerName() + "." + table.getTableName()  + 
+		" where " + pkName + " = " + pk;
+	    if (DEBUG) System.err.println("JDBCDatabaseConnection: retrieveObject, sql = '" + sql + "'");
+
 	    ResultSet res = stmt.executeQuery(sql);
 
 	    while (res.next()) {
 		++numReturned;
 		obj = GUSRow.createObject(owner, tname);
-		obj.setAttributesFromResultSet(res);
+		obj.setAttributesFromResultSet(res, specialCases);
 	    }
 	    
 	    res.close();
@@ -172,16 +181,6 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    throw new GUSObjectNotUniqueException("Found " + numReturned + " rows in " + owner + "." + 
 						  tname + " with id=" + pk);
 	}
-
-	// Store cached CLOB value in the object
-	//
-	if (clobAtt != null) {
-	    String clobSubSeq = getSubStringFromClob(owner, tname, pk, clobAtt, start, end);
-
-	    // JC: need generic CLOB caching functionality in the GUSRow subclasses
-	    
-	}
-	
         return obj;
     }
 
@@ -195,7 +194,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
 	    while(res.next()) {
 		GUSRow obj = GUSRow.createObject(owner, tname);
-		obj.setAttributesFromResultSet(res);
+		obj.setAttributesFromResultSet(res, null);
 		objs.add(obj);
 	    }
 	    res.close();
@@ -643,11 +642,13 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	try {
 	    Statement stmt = conn.createStatement();
 	    String sql = "select " + clobAtt + " from " + owner + "." + tname + " where " + pkName + " = " + pk;
+	    if (DEBUG) System.err.println("JDBCDatabaseConnection: getSubStringFromClob, sql = '" + sql + "'");
 	    ResultSet res = stmt.executeQuery(sql);
 
 	    while (res.next()) {
 		++numRows;
 		Clob clobval = res.getClob(clobAtt);
+		if (DEBUG) System.err.println("JDBCDatabaseConnection: getSubStringFromClob, clob = " + clobval);
 
 		if (clobval != null) {
 		    long clobLen = clobval.length();
