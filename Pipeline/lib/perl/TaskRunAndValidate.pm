@@ -55,14 +55,14 @@ sub runRepeatMask {
     my $valid = 0;
     if (-e $resultFile || -e $errFile) {
 	print "  previous result found\n";
-	$valid = &validateRM($inputFile, "${resultFile}.gz", $errFile);
+	$valid = &validateRM($inputFile, $resultFile, $errFile);
 	if (!$valid) {
 	    print "  trying again...\n";
 	}
     }
     if (!$valid) {
 	&runAndZip($propFile, "$pipelineDir/logs/$name.mask.log", $resultFile);
-	$valid = &validateRM($inputFile, "${resultFile}.gz", $errFile);
+	$valid = &validateRM($inputFile, $resultFile, $errFile);
 	if  (!$valid) {
 	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
 	}
@@ -82,22 +82,10 @@ sub runMatrix {
     my $inputFile = 
 	"$pipelineDir/repeatmask/$queryname/master/mainresult/blocked.seq";
     my $propFile = "$pipelineDir/matrix/$name/input/controller.prop";
+    my $logFile = "$pipelineDir/logs/$name.matrix.log";
 
-    my $valid = 0;
-    if (-e $resultFile) {
-	print "  previous result found\n";
-	$valid = &validateBM($inputFile, "${resultFile}.gz");
-	if (!$valid) {
-	    print "  trying again...\n";
-	}
-    }
-    if (!$valid) {
-	&runAndZip($propFile, "$pipelineDir/logs/$name.matrix.log", $resultFile);
-	my $valid = &validateBM($inputFile, "${resultFile}.gz");
-	if  (!$valid) {
-	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
-	}
-    }
+    my $valid = 
+      &runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile);
 
     return $valid;
 }
@@ -113,26 +101,46 @@ sub runSimilarity {
     my $inputFile = 
 	"$pipelineDir/seqfiles/$queryname.fsa";
     my $propFile = "$pipelineDir/similarity/$name/input/controller.prop";
+    my $logFile = "$pipelineDir/logs/$name.sim.log";
+
+    my $valid = 
+      &runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile);
+
+    return $valid;
+}
+
+sub runMatrixOrSimilarity {
+  my ($resultFile, $inputFile, $propFile, $logFile) = @_;
 
     my $valid = 0;
     if (-e $resultFile) {
-	print "  previous result found\n";
-	$valid = &validateBM($inputFile, "${resultFile}.gz");
+	print "  previous (unzipped) result found\n";
+	$valid = &validateBM($inputFile, $resultFile);
 	if (!$valid) {
 	    print "  trying again...\n";
 	}
-	&runAndZip($propFile, "$pipelineDir/logs/$name.sim.log", $resultFile);
-	my $valid = &validateBM($inputFile, "${resultFile}.gz);
+    }
+
+    if (-e "${resultFile}.gz") {
+	print "  previous (zipped) result found\n";
+	$valid = &validateBM($inputFile, "${resultFile}.gz");
+	if (!$valid) {
+	  print "  trying again...\n";
+	  print "  unzipping ${resultFile}.gz\n";
+	  my $cmd = "gunzip ${resultFile}.gz";
+	  $status = system($cmd);
+	  die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
+	}
     }
 
     if (!$valid) {
+	&runAndZip($propFile, "$pipelineDir/logs/$name.matrix.log", $resultFile);
+	my $valid = &validateBM($inputFile, "${resultFile}.gz");
 	if  (!$valid) {
 	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
 	}
-    
     }
 
-    return $valid;
 }
 
 sub validateRM {
