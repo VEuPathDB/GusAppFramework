@@ -80,7 +80,7 @@ sub run {
 	$fact_hash = $self->parseFactObjects($self->getCla->{'specialfile'}, $self->{self_inv});
 	my $has_evidence = 0;
 	my $remove = 0;
-	$self->{self_inv}->parseXML(\@xml);
+	#$self->getSelfInv->parseXML(\@xml);
 
 	my @children = $self->getSelfInv->getAllChildren();
 	my $curr_gene;
