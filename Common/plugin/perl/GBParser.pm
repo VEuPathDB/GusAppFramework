@@ -98,17 +98,13 @@ sub new {
       t => 'string',
       h => 'OPTIONAL: If given, entries will be filtered on DIV. (Ex: div="PRI")',
      },
-    ];
-    
-     {o => 'failDir',
-      t => 'string',
-      h => 'directory to write failed entries and their error messages',
-     },
      {o => 'failTolerance',
       t => 'int',
       h => 'number of entries that can fail before aborting',
       d => '100'
      }
+    ];
+    
   $self->initialize({requiredDbVersion => {},
 		     cvsRevision => '$Revision$',	# cvs fills this in!
 		     cvsTag => '$Name$', # cvs fills this in!
@@ -145,10 +141,10 @@ sub run {
     die "--file is a required argument. See --help option\n";
   }
   $ctx->{cla}->{failTolerance} = 100;
-  if (!$ctx->{cla}->{failDir}) {
-    die "--failDir is a required argument. See --help option\n";
-  }
-  mkdir $ctx->{cla}->{failDir} || die "Can't mkdir $ctx->{cla}->{failDir} (--failDir)";
+
+  $M->{failDir} = "gbparserFailures";
+
+  mkdir $M->{failDir} || die "Can't mkdir $M->{failDir} (to hold failures)";
 
   $M->logCommit();
   $M->logAlert("", "Testing on $ctx->{cla}->{'testnumber'}") if $ctx->{ cla }->{'testnumber'};
@@ -190,8 +186,12 @@ sub run {
   ## Close DBI handle
   $ctx->{'self_inv'}->closeQueryHandle();
 
-  print STDERR "Genbank entries inserted= $M->{insertCnt};  updated= $M->{updateCnt}; total #(inserted::updated::deleted)=" . $ctx->{self_inv}->getTotalInserts() . "::" . $ctx->{self_inv}->getTotalUpdates() . "::" . $ctx->{self_inv}->getTotalDeletes() .  "\n";
-  return "Genbank entries inserted= $M->{insertCnt};  updated= $M->{updateCnt}";
+
+  $M->log("Genbank entries inserted= $M->{insertCnt};  updated= $M->{updateCnt}; total #(inserted::updated::deleted)=" . $ctx->{self_inv}->getTotalInserts() . "::" . $ctx->{self_inv}->getTotalUpdates() . "::" . $ctx->{self_inv}->getTotalDeletes() .  "\n");
+
+  $M->log("FAILURES", "Unable to process $M->{failCnt} entries. See $M->{failDir}/") if $M->{failCnt};
+
+  return "Genbank entries inserted= $M->{insertCnt};  updated= $M->{updateCnt};  failed= $M->{failCnt}";
 }
 
 sub processEntry {
@@ -1273,17 +1273,17 @@ sub getEntryLines {
 sub handleFailure {
   my ($self, $entryLines, $cla, $errMsg) = @_;
 
-  my $failureDir = $cla->{failDir};
   my $failTol = $cla->{failTolerance};
 
   die "More than $failTol entries failed.  Aborting."
-    if ($self->{failCount}++ > $failTol);
-  my $failFile = "$failureDir/$self->{entryCnt}.gb";
+    if ($self->{failCnt}++ > $failTol);
+
+  my $failFile = "$self->{failDir}/$self->{entryCnt}.gb";
   open(F, ">$failFile") || die "Can't open failure file $failFile";
   print F join("", @$entryLines);
   close(F);
 
-  my $errFile = "$failureDir/errors";
+  my $errFile = "$self->{failDir}/errors";
   open(F, ">>$errFile") || die "Can't open error file $errFile";
   print F " ------------------ entry number $self->{entryCnt} -----------------\n";
   print F "$errMsg\n\n\n";
