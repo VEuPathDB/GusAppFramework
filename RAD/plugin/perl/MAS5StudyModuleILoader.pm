@@ -261,6 +261,7 @@ sub submitGUSAssays {
     $gusAssay->submit() if ($self->getArgs->{commit});
 
     $gusInsertedAssayCnt++;
+    $self->undefPointerCache();
   }
 
   return $gusInsertedAssayCnt;
