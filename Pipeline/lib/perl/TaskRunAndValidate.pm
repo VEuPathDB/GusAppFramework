@@ -196,15 +196,12 @@ sub runMatrixOrSimilarity {
     my ($resultFile, $inputFile, $propFile, $logFile) = @_;
     
     my $valid = 0;
-    
-    my $propfile = "$pipelineDir/similarity/$name/input/controller.prop";
-    
-  if (-e $resultFile) {
-	print "  previous (unzipped) result found\n";
-	$valid = &validateBM($inputFile, $resultFile);
-	if (!$valid) {
-	    print "  trying again...\n";
-	}
+    if (-e $resultFile) {
+      print "  previous (unzipped) result found\n";
+      $valid = &validateBM($inputFile, $resultFile);
+      if (!$valid) {
+	print "  trying again...\n";
+      }
     }
 
     if (-e "${resultFile}.gz") {
