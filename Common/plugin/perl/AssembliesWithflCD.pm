@@ -81,7 +81,7 @@ sub run {
 
 #Note that this query is restricted to human
 
-  my $stmt5 = $self->getQueryHandle()->prepareAndExecute("select asm.na_sequence_id, taf.translation_stop from dots.assembly asm, dots.NAFeatureImp naf, dots.TranslatedAAFeature taf, dots.TranslatedAAsequence ts where asm.na_sequence_id = naf.na_sequence_id and naf.na_feature_id = taf.na_feature_id and taf.translation_start = taf.diana_atg_position + 2 and taf.diana_atg_score > 0.5 and taf.p_value < 0.5 and asm.taxon_id = 8 and taf.aa_sequence_id = ts.aa_sequence_id and ts.length > 100");
+  my $stmt5 = $self->getQueryHandle()->prepareAndExecute("select asm.na_sequence_id, taf.translation_stop, taf.aa_feature_id from dots.assembly asm, dots.NAFeatureImp naf, dots.TranslatedAAFeature taf, dots.TranslatedAAsequence ts where asm.na_sequence_id = naf.na_sequence_id and naf.na_feature_id = taf.na_feature_id and taf.translation_start = taf.diana_atg_position + 2 and taf.diana_atg_score > 0.5 and taf.p_value < 0.5 and asm.taxon_id = 8 and taf.aa_sequence_id = ts.aa_sequence_id and ts.length > 100");
 
 
 
@@ -112,8 +112,8 @@ sub run {
   }
 
 
-    while (my($naSeq, $tStop) = $stmt5->fetchrow_array( )) {
-    push(@NaSeqStop, [$naSeq, $tStop]); 
+    while (my($naSeq,$tStop,$featureId) = $stmt5->fetchrow_array( )) {
+    push(@NaSeqStop, [$naSeq, $tStop,$featureId]); 
   }
 
 
@@ -144,7 +144,8 @@ sub run {
 
 #first call delete then new assemblies marked fl using translatedAAfeatures
 #if marked full length using framefinderStop As evidence or DIANA ATG delete
-#   $self->DeleteFrameFinderFL(   );
+#   $self->UnMarkAssembliesAsFrameFinderFL(   );
+#   $self->DeleteFrameFinderEvidence( );
 
     $self->MarkFLUsingFFfeatures(\@NaSeqStop);
 
@@ -249,11 +250,6 @@ sub UnmarkFullLength {
 
 
 
-1;
-
-
-
-
 sub MarkFLUsingFFfeatures  {
 
    my $self = shift;
@@ -264,7 +260,7 @@ sub MarkFLUsingFFfeatures  {
 
    foreach my $B(@$NaSeqStop) {
 
-    my($naSeq, $tStop) = @{$B};
+    my($naSeq, $tStop,$featureId) = @{$B};
 
     print STDERR "ConsideringForFLDT.$naSeq using Features\n";
 
@@ -284,13 +280,12 @@ sub MarkFLUsingFFfeatures  {
 
     print STDERR "$naSeq,$sequence\n";
 
+        $self->AddEvidenceTranslatedFeature($assembly,$featureId);
         $assembly->setFullLengthCds(1);
         $assembly->submit();
         $self->undefPointerCache();
 
      print STDERR "$naSeq marked full length by features\n";
-
-#  $self->AddEvidenceTranslatedFeature($assembly,$tStop);
 
       }
     }
@@ -300,9 +295,47 @@ sub MarkFLUsingFFfeatures  {
 
 
 
+sub AddEvidenceTranslatedFeature  {
+ 
+
+  my $self = shift;
+  my ($assembly, $featureId) = @_;
+
+
+ if (!($assembly->getFullLengthCds(1)))  {
+
+
+#whole row in translatedAAfeature by aa_feature_id as Evidence
+
+   my $fact = GUS::Model::DoTS::TranslatedAAFeature->new({'aa_feature_id' => $featureId });
+
+	if($fact->retrieveFromDB()){
+     	$assembly->addEvidence($fact,1,"full_length_CDS");
+
+   print STDERR "EvidenceAddedFeatureRow$featureId\n";
+
+      }else 
+        {   print STDERR "Can not add FeatureEvidence\n";
+        }
+
+
+}
+
+}
+
+#delete all assemblies which have used features to mark them full length
+#sub 
 
 
 
+
+
+
+
+
+
+
+1;
 
 
 #Notes
