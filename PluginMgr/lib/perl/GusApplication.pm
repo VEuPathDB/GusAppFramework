@@ -697,7 +697,7 @@ sub create_or_update_implementation {
     # algorithm already exists; tell user about it.
     if ($alg_gus) {
       print STDERR join("\n",
-			"A GUS::Model::Core::Algorithm called $plugin_name_s is already registered.",
+			"$plugin_name_s is already registered.",
 			"Use '+update' instead if this is the plugin you want."
 		       ), "\n";
 #      $M->doMajorMode_History($C);
