@@ -15,7 +15,7 @@ sub new {
   my $user;
   ($user, $self->{host}, $self->{root}) = &parseLocation($location);
 
-  die "invalid sftp location '$location'\n" unless ($user && $self->{host} && $self->{root});
+  die "invalid sftp location '$location'.  Check to make sure repository location is of format user\@hostname:path\n" unless ($user && $self->{host} && $self->{root});
 
   if ($self->{root} !~ /\/$/) {
     $self->{root} .= "/";

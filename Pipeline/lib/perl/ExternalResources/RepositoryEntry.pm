@@ -124,8 +124,8 @@ sub _makeStorageManager {
   my ($storageLocation) = @_;
 
   # if host:path
-  if (GUS::Pipeline::ExternalResources::Sftp::parseLocation($storageLocation)) {
-    return GUS::Pipeline::ExternalResources::Sftp->new($storageLocation);
+  if (GUS::Pipeline::ExternalResources::SftpManager::parseLocation($storageLocation)) {
+    return GUS::Pipeline::ExternalResources::SftpManager->new($storageLocation);
   }
 
   # if path
@@ -328,7 +328,10 @@ sub _findVersion {
     my @today = localtime(time);
     my $todayYear = $today[5] + 1900;
     my $todayMonth = $today[4] + 1;
-    my $todayDay = $today[3] + 1;
+    if ($todayMonth =~ /^\d$/){ #single digit; append 0
+	$todayMonth = "0" . $todayMonth;
+    }
+    my $todayDay = $today[3];
     my $today = "${todayYear}-${todayMonth}-$todayDay";
 
     

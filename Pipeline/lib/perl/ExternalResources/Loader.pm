@@ -71,7 +71,6 @@ sub _parseXmlFile {
 							$wgetArgs,
 							$repositoryLogFile
 						       );
-    print STDERR "Loader: release description : " . $resource->{releaseDescription} . "\n";
 
     push(@{$self->{steps}}, $loaderStep);
   }
