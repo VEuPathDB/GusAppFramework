@@ -253,7 +253,8 @@ sub getConfig {
   my ($self) = @_;
 
   if (!$self->{config}) {
-    $self->{config} = GUS::Common::GusConfig->new();
+    my $cla = $self->getCla();
+    $self->{config} = GUS::Common::GusConfig->new($cla->{gusconfigfile});
   }
 
   $self->{config};

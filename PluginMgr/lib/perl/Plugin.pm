@@ -52,6 +52,15 @@ sub initialize {
 }
 
 # ----------------------------------------------------------------------
+# Public Utilities
+# ----------------------------------------------------------------------
+
+sub className2oracleName {
+  my ($className) = @_;
+  return GUS::ObjRelP::DbiDatabase::className2oracleName($className);
+}
+
+# ----------------------------------------------------------------------
 # Public Setters
 # ----------------------------------------------------------------------
 
@@ -362,7 +371,6 @@ sub _failinit {
   print STDERR "Plugin initialization failed: invalid argument '$argname'\n";
   exit 1;
 }
-
 
 
 1;
