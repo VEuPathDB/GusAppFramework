@@ -10,7 +10,7 @@ use GUS::Model::DoTS::ExternalNASequence;
 
 $| = 1;
 
-#JM This plugin is only in testing phase 7/17/03
+#JM This plugin is only in testing phase 11/18/03
 # ----------------------------------------------------------------------
 # create and initialize new plugin instance.
 
@@ -136,7 +136,7 @@ foreach my $A(@na_sourceids)    {
 
 
 #check to see if all previous evidence still valid
-
+ my $array_ref = \@DTs;
 
 $self->RemoveEvidenceSourceID(\@DTs);
 
@@ -228,8 +228,9 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
     my $DTarray_ref = @_;
 
+  print "arrayref$DTarray_ref";
 
-    my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
+  my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
 
     my @DTSasEvidenceTarget;
 
@@ -241,7 +242,7 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
    }
 
-    print "ArrayDTs@{$DTarray_ref}\n";
+   print "array DTs@{$DTarray_ref}";
 
 #both if these arrays can be empty if no evidence needs to be deleted for an assembly
     foreach my $target_id(@DTSasEvidenceTarget)  {
