@@ -871,8 +871,6 @@ sub setTableCaches {
     $taxon_id_list = join(',', @taxon_id_array);
   }
 
-  die "taxon_id_list = $taxon_id_list\n";
-
   $M->{taxon_id_list} = $taxon_id_list;
 
   $q = "select name, taxon_id  from sres.TaxonName where taxon_id in ($taxon_id_list)";
