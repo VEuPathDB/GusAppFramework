@@ -38,6 +38,7 @@ package GUS::Common::Plugin::LoadDocumentation;
 
 use strict;
 
+use FileHandle;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 use GUS::Model::Core::DatabaseDocumentation;
