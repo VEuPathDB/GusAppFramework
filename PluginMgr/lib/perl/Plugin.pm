@@ -301,7 +301,35 @@ sub sql_get_as_hash_refs {
   }
 
   # collect results
+  # while (my $row = $sh->fetchrow_hashref('NAME_lc')) {
   while (my $row = $sh->fetchrow_hashref) {
+    push(@RV,$row);
+  }
+  $sh->finish;
+
+  # RETURN
+  \@RV
+}
+
+sub sql_get_as_hash_refs_lc {
+  my $M = shift;
+  my $Q = shift;
+  my $H = shift;
+  my $B = shift;
+
+  my @RV;
+
+  # get a statement handle.
+  my $sh;
+  if (defined $Q) {
+    $sh = $M->getQueryHandle->prepareAndExecute($Q);
+  } else {
+    $sh = $H;
+    $sh->execute(@$B);
+  }
+
+  # collect results
+  while (my $row = $sh->fetchrow_hashref('NAME_lc')) {
     push(@RV,$row);
   }
   $sh->finish;
