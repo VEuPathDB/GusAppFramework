@@ -91,6 +91,29 @@ sub new {
     return $self;
 }
 
+# Hash for mapping Pfam name to GUS name for a DB
+#
+sub setupNameHash {
+    my ($self) = @_;
+
+    $self->{'nameForDB'} = {'EXPERT'          => 'Pfam expert',
+                            'MIM'             => 'mim',
+                            'PFAMB'           => 'Pfam-B',
+                            'PRINTS'          => 'PRINTS',
+                            'PROSITE'         => 'prosite',
+                            'PROSITE_PROFILE' => 'prosite',
+                            'SCOP'            => 'SCOP',
+                            'PDB'             => 'pdb',
+                            'SMART'           => 'SMART',
+                            'URL'             => 'URL',
+                            'INTERPRO'        => 'INTERPRO',
+                            'MEROPS'          => 'MEROPS',
+                            'HOMSTRAD'        => 'HOMSTRAD',
+                            'CAZY'            => 'CAZy',
+                            'LOAD'            => 'LOAD',
+                        };
+}
+
 # Check command line args and open the flat_file for parsing, which can be in
 # .gz format. Create PfamEntrys and link to the correct DbRef (create as need
 # be) by adding DbRefPfamEntry for each.
@@ -118,6 +141,10 @@ sub run {
     my $openCmd =
         ($flatFile =~ /\.(gz|Z)$/) ? "gunzip -c $flatFile |" : $flatFile;
 
+    # Setup hash mapping 
+    #
+    $self->setupNameHash();
+
     # Read ExternalDatabase table into memory
     # 
     my $dbh    = $self->getQueryHandle;
@@ -128,6 +155,7 @@ sub run {
     my $dbrefSth = $dbh->prepare("select db_ref_id from SRes.DbRef " .
 				 "where  external_database_release_id = ? ".
                                  "and    lowercase_primary_identifier = ?");
+    $self->{'dbrefSth'} = $dbrefSth;
 
     my $entry    = {};
     my $lastCode = undef;
@@ -194,6 +222,8 @@ sub run {
 	    elsif ($code eq 'SQ') {
 		$entry->{'SQ'} = $value;  # number of sequences
 
+                #
+                # 
 		while(<PFAM>) {
 		    
 		    # End of entry
@@ -235,7 +265,7 @@ sub run {
 
 			$pe->submit() if (!$parseOnly);
 			my $entryId = $pe->get('pfam_entry_id');
-			my $links   = {};
+			my $links   = {}; # store flag for each $links->{$dbRefId} to say DbRefPfamEntry has had a submit()
 
 			# MEDLINE references
 			#
@@ -244,21 +274,11 @@ sub run {
 
 			foreach my $mref (@$mrefs) {
 			    my($muid) = ($mref =~ (/^(\d+)$/));
-			    
-			    my $dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, $mlDbId, $muid);
 
-			    my $link =
-                              GUS::Model::DoTS::DbRefPfamEntry->new({'pfam_entry_id' => $entryId,
-                                                                     'db_ref_id'     => $dbRefId});
-
-			    if (not(defined($links->{$dbRefId}))) {
-				$link->submit() if (!$parseOnly);
-				++$numRefs;
-				$links->{$dbRefId} = 1;
-			    } elsif (!$parseOnly) {
-				print STDERR "Duplicate reference to db_ref_id $dbRefId from pfam_entry_id $entryId\n";
-			    }
-			}
+                            if( $self->createReferences($links, $entryId, $mlDbId, $muid) ){
+                                ++$numRefs;
+                            }
+                        }
 
 			# Other database references
 			#
@@ -273,72 +293,18 @@ sub run {
 			#        DR   PDB; 2nad A; 123; 332;
 			#        DR   SMART; CBS;
 			#        DR   URL; http://www.gcrdb.uthscsa.edu/;
-
+                        #
 			my $dbrefs = $entry->{'DR'};
+
 			foreach my $dbref (@$dbrefs) {
 			    my($db, $id, $rest) = ($dbref =~ /^([^;]+);\s*([^;]+);(.*)$/);
 			    die "Unable to parse $dbref" if (not defined($id));
-			    my $dbRefId;
+                            
+                            my $dbId = &getExtDbRelId($extDbs, $self->{'nameForDB'}->{$db});
 
-			    if ($db eq 'EXPERT') {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'Pfam expert'), $id);
-			    }
-			    elsif ($db eq 'MIM') {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'mim'), $id);
-			    }
-			    elsif ($db eq 'PFAMB') {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'Pfam-B'), $id);
-			    }
-			    elsif ($db eq 'PRINTS') {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'PRINTS'), $id);
-			    }
-			    elsif (($db eq 'PROSITE') || ($db eq 'PROSITE_PROFILE')) {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'prosite'), $id);
-			    }
-			    elsif ($db eq 'SCOP') {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'SCOP'), $id, undef, $rest);
-			    }
-			    elsif ($db eq 'PDB') {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'pdb'), $id, undef, $rest);
-			    }
-			    elsif ($db eq 'SMART') {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'SMART'), $id);
-			    }
-			    elsif ($db eq 'URL') {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'URL'), $id);
-			    }
-			    elsif ($db eq 'INTERPRO') {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'INTERPRO'), $id);
-			    }
-			    elsif ($db eq 'MEROPS') {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'MEROPS'), $id);
-			    }
-			    elsif ($db eq 'HOMSTRAD') {
-				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'HOMSTRAD'), $id);
-			    }
-			    elsif ($db eq 'CAZY') {
-                                $dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'CAZy'), $id);
-			    }
-			    elsif ($db eq 'LOAD') {
-                                $dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'LOAD'), $id);
-			    }
-			    else {
-				print STDERR "WARNING - unrecognized database in external dbref: $db\n";
-			    }
-
-			    if (defined($dbRefId)) {
-                                my $link =
-                                    GUS::Model::DoTS::DbRefPfamEntry->new({'pfam_entry_id' => $entryId,
-                                                                           'db_ref_id'     => $dbRefId});
-
-				if (not(defined($links->{$dbRefId}))) {
-				    $link->submit() if (!$parseOnly);
-				    ++$numRefs;
-				    $links->{$dbRefId} = 1;
-				} else {
-				    print STDERR "Duplicate reference to db_ref_id $dbRefId from pfam_entry_id $entryId\n";
-				}
-			    }
+                            if( $self->createReferences($links, $entryId, $dbId, $id) ){
+                                ++$numRefs;
+                            }
 			}
 			
 			# Reset for next entry.
@@ -405,6 +371,39 @@ sub readExternalDbReleases() {
     return $dbHash;
 }
 
+# Create DbRef and DbRefPfamEntry and return
+# Returns 1 on sucess, 0 if DbRefPfamEntry could not be created
+#
+sub createReferences {
+    my ($self, $links, $pfamEntryId, $ExtDbRelId, $id, $secondaryId, $remark) = @_;
+
+    my $parseOnly = $self->getCla->{'parse_only'};
+    my $dbRefId   = $self->getDbRefId($ExtDbRelId,
+                                      $id,
+                                      $secondaryId,
+                                      $remark);
+
+    print STDERR "  createReferences() \$dbRefId = '$dbRefId' creatd for DbRelease '$ExtDbRelId'\n";
+
+    if (defined($dbRefId)) {
+        my $link =
+          GUS::Model::DoTS::DbRefPfamEntry->new({'pfam_entry_id' => $pfamEntryId,
+                                                 'db_ref_id'     => $dbRefId});
+
+        print STDERR "  createReferences() \$link = $link\n";
+
+        if (not(defined($links->{$dbRefId}))) {
+            $link->submit() if (!$parseOnly);
+            $links->{$dbRefId} = 1;
+            return 1;
+        } elsif (!$parseOnly) {
+            print STDERR "Duplicate reference to db_ref_id $dbRefId from pfam_entry_id $pfamEntryId\n";
+            return 0;
+        }
+    }
+}
+
+
 # Return the external_db_id of an ExternalDatabase given its name.
 #
 sub getExtDbRelId {
@@ -424,15 +423,22 @@ sub getExtDbRelId {
 # generated ID.
 #
 sub getDbRefId {
-    my($self, $dbrefSth, $parseOnly, $extDbRelId, $primaryId, $secondaryId, $remark) = @_;
+    my($self, $extDbRelId, $primaryId, $secondaryId, $remark) = @_;
 
     my $verbose     = $self->getCla->{'verbose'};
+    my $parseOnly   = $self->getCla->{'parse_only'};
     my $lcPrimaryId = $primaryId;
     $lcPrimaryId    =~ tr/A-Z/a-z/;
     
-    my $ids = [];
+    my $ids      = [];
+    my $dbrefSth = $self->{'dbrefSth'};
+
     $dbrefSth->execute($extDbRelId, $lcPrimaryId);
-    while (my($id) = $dbrefSth->fetchrow_array()) { push(@$ids, $id); }
+
+    while (my($id) = $dbrefSth->fetchrow_array()) {
+        push(@$ids, $id);
+    }
+
     my $idCount = scalar(@$ids);
 
     # Not in the database; create and add a new entry
@@ -444,14 +450,14 @@ sub getDbRefId {
 	    'lowercase_primary_identifier' => $lcPrimaryId,
 	});
 	
-	if (defined($secondaryId)) {
+	if (defined($secondaryId) && $secondaryId) {
 	    my $lcSecondaryId = $secondaryId;
 	    $lcSecondaryId    =~ tr/A-Z/a-z/;
 	    $dbRef->set('secondary_identifier',   $secondaryId);
 	    $dbRef->set('lowercase_secondary_id', $lcSecondaryId);
 	}
 
-	$dbRef->set('remark', $remark) if (defined($remark));
+	$dbRef->set('remark', $remark) if (defined($remark) && $remark);
 
 	if ($parseOnly) {
 	    return 1; 
