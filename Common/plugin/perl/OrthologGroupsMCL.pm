@@ -164,25 +164,25 @@ sub run {
 	    $minl = 100000;
 	    for(my $i=0;$i<scalar(@mem)-1;$i++) {
 		for(my $j=$i+1;$j<scalar(@mem);$j++) {
-		    $sth->execute($mem[$i], $mem[$j]);
+		    $sth->execute($id{$mem[$i]}, $id{$mem[$j]});
 		    if(my($s,$pm,$pe,$pi) = $sth->fetchrow_array()) {
 			 if($pm.'e'.$pe > $maxpv) { $maxpv = $pm.'e'.$pe;}
 			 if($pm.'e'.$pe < $minpv) { $minpv = $pm.'e'.$pe;}
 			 if($pi> $maxpi) { $maxpi = $pi; }
 			 if($pi< $minpi) { $minpi = $pi; }
-			 my @lens = &simspan($dbh, $s,$mem[$i],$mem[$j]);
+			 my @lens = &simspan($dbh, $s,$id{$mem[$i]},$id{$mem[$j]});
 			 foreach my $len (@lens) {
 			     if($len > $maxl) { $maxl = $len; }
 			     if($len < $minl) { $minl = $len; }
 			 }
 		     }
-		    $sth->execute($mem[$j], $mem[$i]);
+		    $sth->execute($id{$mem[$j]}, $id{$mem[$i]});
 		    if(my($s,$pm,$pe,$pi) = $sth->fetchrow_array()) {
 			if($pm.'e'.$pe > $maxpv) { $maxpv = $pm.'e'.$pe;}
 			if($pm.'e'.$pe < $minpv) { $minpv = $pm.'e'.$pe;}
 			if($pi> $maxpi) { $maxpi = $pi; }
 			if($pi< $minpi) { $minpi = $pi; }
-			my @lens = &simspan($dbh,$s,$mem[$j],$mem[$i]);
+			my @lens = &simspan($dbh,$s,$id{$mem[$j]},$id{$mem[$i]});
 			foreach my $len (@lens) {
 			    if($len > $maxl) { $maxl = $len; }
 			    if($len < $minl) { $minl = $len; }
