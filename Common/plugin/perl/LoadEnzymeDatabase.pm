@@ -42,6 +42,12 @@ These are:
 
 =back
 
+=head3 GUS::Model::DoTS::AASequenceEnzymeClass
+
+This plugin also attempts to make links to DoTS.ExternalAASequences
+that are refered to in the EC release.  This is done via a
+DoTS.AASequenceEnzymeClass row.
+
 =head2 External Database Release Specification
 
 Several of the options of this plugin are specifications of a row in
@@ -52,19 +58,22 @@ SRes.ExternalDatabase.lowercase_name and
 SRes.ExternalDatabaseRelease.version, e.g., 'swissprot,5.4'.
 
 The --Enzyme option must be used to set the
-SRes.ExternalDatabaseRelease for the SRes.EnzymeClass entries.
+SRes.ExternalDatabaseRelease for the SRes.EnzymeClass entries.  B<Make
+sure you have entries for your release of Enzyme in
+SRes.ExternalDatabase and SRes.ExternalDatabaseRelease.>
 
 =head2 Linking to Other Databases
 
-The --Prosite, --SwissProt, and --OMIM options let the user indicate
-which SRes.ExternalDatabaseRelease to link PROSITE, SWISSPROT, and
-OMIM references to.
+The ideal: The --Prosite, --SwissProt, and --Omim options let the user
+indicate which SRes.ExternalDatabaseRelease to link PROSITE,
+SWISSPROT, and OMIM references to.
 
-=head3 GUS::Model::DoTS::AASequenceEnzymeClass
+The actual: At the moment the --Omim flag is not used and all OMIM
+references are stored in SRes.EnzymeClassAttribute.
 
-This plugin also attempts to make links to DoTS.ExternalAASequences
-that are refered to in the EC release.  This is done via a
-DoTS.AASequenceEnzymeClass row.
+Warnings will be issued for missing Prosite, SwissProt and Omim
+specifications, but they can be ignored.  Only the Enzyme link is
+required.
 
 =cut
 
@@ -153,21 +162,21 @@ sub new {
 										 isList  => 1,
 										 constraintFunc => sub { CfIsAnything(@_); },
 									 }),
-				stringArg ({ name    => 'Prosite',
-										 descr   => 'lowercase_name,version of Prosite database',
-										 reqd    => 1,
+				stringArg ({ name    => 'SwissProt',
+										 descr   => 'lowercase_name,version of SwissProt database',
+										 reqd    => 0,
 										 isList  => 1,
 										 constraintFunc => sub { CfIsAnything(@_); },
 									 }),
-				stringArg ({ name    => 'SwissProt',
-										 descr   => 'lowercase_name,version of SwissProt database',
-										 reqd    => 1,
+				stringArg ({ name    => 'Prosite',
+										 descr   => 'lowercase_name,version of Prosite database',
+										 reqd    => 0,
 										 isList  => 1,
 										 constraintFunc => sub { CfIsAnything(@_); },
 									 }),
 				stringArg ({ name    => 'Omim',
 										 descr   => 'lowercase_name,version of Omim database',
-										 reqd    => 1,
+										 reqd    => 0,
 										 isList  => 1,
 										 constraintFunc => sub { CfIsAnything(@_); },
 									 }),
@@ -296,7 +305,7 @@ sub _getExtDbRelCache {
                                $db_ver, $db_lcn, $db
                               )
                       );
-            $ok = 0 unless $db eq 'Omim' || $db eq 'Prosite';
+            $ok = 0 unless $db ne 'Enzyme';
          }
 
       } else {
@@ -305,7 +314,7 @@ sub _getExtDbRelCache {
                             $db_lcn, $db
                            )
                    );
-         $ok = 0 unless $db eq 'Omim' || $db eq 'Prosite';
+         $ok = 0 unless $db eq 'Enzyme';
       }
    }
 
@@ -470,11 +479,10 @@ sub _process_dbrefs {
       # string : database name
       my $db_c = $dbref->getDatabase;
 
-      # ExternalDatabase : by name
-      my $db_g = $Self->_getDbCache->{$db_c};
-      if ($db_g) {
+			my $save_as_attribute = 1;
 
-         my $save_as_attribute = 1;
+      # ExternalDatabase : by name
+      if (my $db_g = $Self->_getDbCache->{$db_c}) {
 
          # sequence things
          if ($db_c eq 'PROSITE' || $db_c eq 'SWISSPROT' ) {
@@ -503,21 +511,21 @@ sub _process_dbrefs {
                $save_as_attribute = 0;
             }
          }
+			} # eo able to find a db object
 
-         if ($save_as_attribute) {
-            my $eca_h = { attribute_name  => 'DatabaseReference',
-                          attribute_value => sprintf('%s:%s:%s',
-                                                     $dbref->getDatabase,
-                                                     $dbref->getPrimaryId,
-                                                     $dbref->getSecondaryId,
-                                                    ),
-                        };
-            my $eca_g = GUS::Model::SRes::EnzymeClassAttribute->new($eca_h);
-            $Self->_incEnzymeClassAttribute;
-            $eca_g->setParent($GusZyme);
-         }
-      }                         # eo able to find a db object
-   }                            # eo dbref list
+			if ($save_as_attribute) {
+				 my $eca_h = { attribute_name  => 'DatabaseReference',
+											 attribute_value => sprintf('%s:%s:%s',
+																									$dbref->getDatabase,
+																									$dbref->getPrimaryId,
+																									$dbref->getSecondaryId,
+																								 ),
+										 };
+				 my $eca_g = GUS::Model::SRes::EnzymeClassAttribute->new($eca_h);
+				 $Self->_incEnzymeClassAttribute;
+				 $eca_g->setParent($GusZyme);
+			}
+   } # eo dbref list
 }
 
 # ----------------------------------------------------------------------
