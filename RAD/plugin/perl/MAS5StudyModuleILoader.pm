@@ -3,8 +3,11 @@ package GUS::RAD::Plugin::MAS5StudyModuleILoader;
 
 use strict 'vars';
 
+# CBIL utilities
 use CBIL::Util::Disp;
 use CBIL::Util::PropertySet;
+
+# GUS utilities
 use GUS::PluginMgr::Plugin;
 use GUS::Model::RAD3::Study;
 use GUS::Model::RAD3::Assay;
@@ -61,7 +64,9 @@ Plugin reads a config file with information about full paths of directories wher
 are maintained.  Data from these files are then parsed and entered into a database. The plugin can handle multiple files,
 hence works in a batch mode.
 
-read config file -> follow file paths -> parse files and gather data -> input data in database
+This plugin requires two utilities, Disp and PropertySet, which are currently available from the CBIL cvs ( 
+http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/). These may be available via the GUS cvs repository at the
+Sanger center in the near future.
 
 =head2 F<Config File [ Mandatory ]>
 
@@ -87,7 +92,7 @@ The following keywords and their values are required:
 (without the single quotes) if no values exist.
 
 Each of these keywords should be on a separate line. The values for these keywords should be seperated by '='. A sample
-file is maintained in \$GUS_HOME/config/sample_MAS5StudyModuleILoader.cfg
+file is maintained in \$PROJECT_HOME/GUS/RAD/config/sample_MAS5StudyModuleILoader.cfg
 
 For the 'Extensions' keyword, multiple values can be input in the following form:
  EXPFile|EXP;RPTFile|RPT;CELFile|CEL;DATFile|DAT;MetricsFile|txt;
