@@ -4,7 +4,7 @@ package GUS::RAD::Plugin::GenePixStudyModuleILoader;
 
 use strict 'vars';
 #use IO::File;
-use Date::Manip;
+#use Date::Manip;
 
 use CBIL::Util::Disp;
 use CBIL::Util::PropertySet;
@@ -156,14 +156,12 @@ NOTES
 my @properties =
 (
     ["GPRFilePath", "",""],
-    ["DATFilePath", "NOVALUEPROVIDED",""],
+    ["tiffFilePath", "NOVALUEPROVIDED",""],
     ["Hyb_Protocol_ID", "",""],
     ["Acq_Protocol_ID", "",""],
-    ["Cel_Protocol_ID", "",""],
-    ["Chp_Protocol_ID", "",""],
+    ["Quant_Protocol_ID", "",""],
     ["Hyb_Operator_ID", "",""],
-    ["Cel_Quant_Operator_ID", "",""],
-    ["Chp_Quant_Operator_ID", "",""],
+    ["Quant_Operator_ID", "",""],
     ["Study_ID", "",""],
     ["arrayId", "",""],
     ["batchId", "",""],
@@ -216,7 +214,7 @@ sub createGUSAssaysFromFiles {
     #split /\|/;
     #print "hybdates: $1,$2 \n";
     my ($assayName,$date) = split /\|/,$hybDate;
-    print "hybdates: $assayName,$date \n";
+    #print "hybdates: $assayName,$date \n";
     $hybDateHashRef->{$assayName} = $date;
   }
 
@@ -279,24 +277,34 @@ sub createSingleGUSAssay {
 
   my $GPRinfo = $self->parseTabFile('GPR', $assayName);
 
-
-  foreach my $some (keys %$GPRinfo) {
-    my $value = $GPRinfo->{$some};
-    print "$assayName: $some, $value \n";
-  }
+  #foreach my $some (keys %$GPRinfo) {
+  #  my $value = $GPRinfo->{$some};
+  #  print "$assayName: $some, $value \n";
+  #}
 
   my $gusAssay = $self->createGusAssay($assayName, $GPRinfo, $hybDateHashRef);
 
+  my ($gusAcquisitionCy5, $gusAcquisitionCy3) = $self->createGusAcquisition($assayName);
 
-  my $gusCy5Acquisition = $self->createGusCy5Acquisition($assayName);
-  print "gusCy5Acquisition $gusCy5Acquisition \n";
-  $gusCy5Acquisition->setParent($gusAssay);
+  $gusAcquisitionCy5->setParent($gusAssay); # correct
+  $gusAcquisitionCy3->setParent($gusAssay);
 
-  my $gusCy3Acquisition = $self->createGusCy5Acquisition($assayName);
-  print "gusCy5Acquisition $gusCy3Acquisition \n";
-  $gusCy3Acquisition->setParent($gusAssay);
+  my ($gusQuantificationCy5, $gusQuantificationCy3) = $self->createGusQuantification($assayName);
+
+  my ($gusQuantParamsCy5Ref, $gusQuantParamsCy3Ref) = $self->createGusQuantParams($GPRinfo);
+
+  $gusQuantificationCy5->setParent($gusAcquisitionCy5);
+  foreach my $gusQuantParamsCy5 (@$gusQuantParamsCy5Ref) {
+    $gusQuantParamsCy5->setParent($gusQuantificationCy5);
+  }
+
+  $gusQuantificationCy3->setParent($gusAcquisitionCy3);
+  foreach my $gusQuantParamsCy3 (@$gusQuantParamsCy3Ref) {
+    $gusQuantParamsCy3->setParent($gusQuantificationCy3);
+  }
 
 
+  return $gusAssay;
 }
 
 ###############################
@@ -341,6 +349,7 @@ sub parseTabFile {
     my @keyValue = split /\=/,$_;
     my $key = $keyValue[0];
 
+
     if (defined $keyValue[1]) {
       $value = $keyValue[1]; 
 
@@ -348,8 +357,9 @@ sub parseTabFile {
       $value = "N/A"; 
     }
 
-    $info->{$key} = $value;
-
+    my ($modifiedKeyCy5, $modifiedValueCy5, $modifiedKeyCy3, $modifiedValueCy3) = $self->modifyKeyValuePairs($key, $value);
+    $info->{$modifiedKeyCy5} = $modifiedValueCy5;
+    $info->{$modifiedKeyCy3} = $modifiedValueCy3;
   }
 
   close (FILE);
@@ -359,25 +369,86 @@ sub parseTabFile {
 
 ###############################
 
+sub modifyKeyValuePairs {
+
+  my ($self, $key, $value) = @_;
+  #print "found: $key, $value\n";
+
+  my ($modifiedKeyCy5, $modifiedValueCy5, $modifiedKeyCy3, $modifiedValueCy3);
+
+  if ($key eq "Creator") {
+   # print "found creator, $key, $value\n";
+    my @softwareVersionInfo = split " ",$value;
+    my $softwareVersion;
+    foreach my $word (@softwareVersionInfo) {
+      $softwareVersion = $word if (/[0-9]/);
+    }
+    $modifiedKeyCy5 = "software version-Cy5"; 
+    $modifiedValueCy5 = $softwareVersion;
+
+    $modifiedKeyCy3 = "software version-Cy3";
+    $modifiedValueCy3 = $softwareVersion;
+
+  } elsif ($key eq "Wavelengths") {
+      #print "found Wavelengths, $key, $value\n";
+      my ($valueCy5, $valueCy3) = split /\t/, $value;
+      
+      $modifiedKeyCy5 = "background constant: wavelength $valueCy5"; 
+      $modifiedValueCy5 = "";
+
+      $modifiedKeyCy3 = "background constant: wavelength $valueCy3"; 
+      $modifiedValueCy3 = "";
+
+  } elsif ($key eq "RatioFormulations") {
+      $value = s/[\(|\)]/\-/g;
+      my @tempValueArray = split /\-/, $value;
+      my ($valueCy5, $valueCy3) = split /\//, pop @tempValueArray;
+      my $newValue = "$valueCy5.nm/$valueCy3.nm";
+      
+      $modifiedKeyCy5 = "ratio formulations-Cy5"; 
+      $modifiedValueCy5 = $valueCy5;
+
+      $modifiedKeyCy3 = "ratio formulations-Cy3"; 
+      $modifiedValueCy3 = $valueCy3;
+
+  } elsif ($key eq "BackgroundSubstraction") {
+      $modifiedKeyCy5 = "background density measure-Cy5"; 
+      $modifiedValueCy5 = $value;
+
+      $modifiedKeyCy3 = "background density measure-Cy3";
+      $modifiedValueCy3 = $value;
+
+  } elsif ($key eq "StdDev") {
+      $modifiedKeyCy5 = "standard deviation-Cy5"; 
+      $modifiedValueCy5 = $value;
+
+      $modifiedKeyCy3 = "standard deviation-Cy3";
+      $modifiedValueCy3 = $value;
+
+  } else {
+      $modifiedKeyCy5 = "$key-Cy5";
+      $modifiedValueCy5 = $value;
+      $modifiedKeyCy3 = "$key-Cy3";
+      $modifiedValueCy3 = $value;
+  }
+
+  #print "now: cy5: $modifiedKeyCy5, $modifiedValueCy5  cy3: $modifiedKeyCy3, $modifiedValueCy3\n";
+  return ($modifiedKeyCy5, $modifiedValueCy5, $modifiedKeyCy3, $modifiedValueCy3);
+}
+
+
 sub createGusAssay {
   my ($self, $assayName, $GPRinfo, $hybDateHashRef) = @_;
 
-
-  #my $hybDate = $GPRinfo->{"DateTime"}; # hyb date comes from config file (see notes)
-  #"DateTime"}; #  quantification date
-  # $arrayId = config
-
-  my $arrayId = $self->{propertySet}->getProp("arrayId");
-  my $batchId = $self->{propertySet}->getProp("batchId");
-  my $description = $self->{propertySet}->getProp("description");
-
-  my $hybProtocolId = $self->{propertySet}->getProp("Hyb_Protocol_ID");
-  my $hybOperatorId = $self->{propertySet}->getProp("Hyb_Operator_ID");
+  my $arrayId =        $self->{propertySet}->getProp("arrayId");
+  my $batchId =        $self->{propertySet}->getProp("batchId");
+  my $description =    $self->{propertySet}->getProp("description");
+  my $hybProtocolId =  $self->{propertySet}->getProp("Hyb_Protocol_ID");
+  my $hybOperatorId =  $self->{propertySet}->getProp("Hyb_Operator_ID");
 
   my $hybDate = $hybDateHashRef->{$assayName};
 
-
-  print "params: $arrayId, $batchId, $hybDate, $description, $hybProtocolId, $hybOperatorId\n";
+  #print "params: $arrayId, $batchId, $hybDate, $description, $hybProtocolId, $hybOperatorId\n";
 
   my $params = {
     array_id => $arrayId,
@@ -392,161 +463,151 @@ sub createGusAssay {
   my $assay = GUS::Model::RAD3::Assay->new($params);
 
   $self->log("STATUS","OK Inserted 1 row in table RAD3.Assay for assay $assayName");
-  return $assay;
 
+  return $assay;
 }
 
+###############################
 
 # gusAssayParams (or hyb params) are to be input via the Study Annotator website
 
 ###############################
 
-sub createGusCy5Acquisition {
+sub createGusAcquisition {
   my ($self, $assayName) = @_;
 
-  my $datURI =          $self->{propertySet}->getProp("DATFilePath")."/$assayName".".DAT";
+  my $tiffURICy5 =      $self->{propertySet}->getProp("tiffFilePath")."/$assayName".".tiff";
+  my $tiffURICy3 =      $self->{propertySet}->getProp("tiffFilePath")."/$assayName".".tiff";
   my $acqProtocolId =   $self->{propertySet}->getProp("Acq_Protocol_ID");
-  my $acqDate =        $self->{propertySet}->getProp("scanDate");
+  my $acqDate =         $self->{propertySet}->getProp("scanDate");
 
-  my $protocol = GUS::Model::RAD3::Protocol->new({
-    protocol_id => $acqProtocolId
-  });
-
+  my $protocol = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
   $self->error("Create object failed, protocol ID $acqProtocolId absent in table RAD3::Protocol")
     unless ($protocol->retrieveFromDB);
 
   my $tempAcqName = $protocol->getName();
-  my $acqName = "Cy5 $assayName".$protocol;
 
   my $acqParameters = {
-    name => $acqName,
     acquisition_date => $acqDate,
-    protocol_id => $acqProtocolId,
-    channel_id => 3,
-    uri => $datURI
+    protocol_id => $acqProtocolId
   };
 
+  my $acqNameCy5 = "Cy5 $assayName".$protocol;
+  my $acqParametersCy5 = $acqParameters;
+  $acqParametersCy5 = {
+    name => $acqNameCy5,
+    channel_id => 3,
+    uri => $tiffURICy5
+  };
+  my $acquisitionCy5 = GUS::Model::RAD3::Acquisition->new($acqParametersCy5);
 
-  my $Cy5Acquisition = GUS::Model::RAD3::Acquisition->new($acqParameters);
+  my $acqNameCy3 = "Cy3 $assayName".$protocol;
+  my $acqParametersCy3 = $acqParameters;
+  $acqParametersCy3 = {
+    name => $acqNameCy3,
+    channel_id => 4,
+    uri => $tiffURICy3
+  };
+  my $acquisitionCy3 = GUS::Model::RAD3::Acquisition->new($acqParametersCy3);
 
-  $self->log("STATUS","OK Inserted 1 row in table RAD3.Acquisition for assay $assayName channel Cy5");
-  return $Cy5Acquisition;
+  $self->log("STATUS","OK Inserted 2 row in table RAD3.Acquisition for assay $assayName channel Cy5");
+  return ($acquisitionCy5, $acquisitionCy3);
 }
 
 ###############################
-
-sub createGusCy3Acquisition {
-  my ($self, $assayName) = @_;
-
-  my $datURI =          $self->{propertySet}->getProp("DATFilePath")."/$assayName".".DAT";
-  my $acqProtocolId =   $self->{propertySet}->getProp("Acq_Protocol_ID");
-  my $acqDate =        $self->{propertySet}->getProp("scanDate");
-
-  my $protocol = GUS::Model::RAD3::Protocol->new({
-    protocol_id => $acqProtocolId
-  });
-
-  $self->error("Create object failed, protocol ID $acqProtocolId absent in table RAD3::Protocol")
-    unless ($protocol->retrieveFromDB);
-
-  my $tempAcqName = $protocol->getName();
-  my $acqName = "Cy3 $assayName".$protocol;
-
-  my $acqParameters = {
-    name => $acqName,
-    acquisition_date => $acqDate,
-    protocol_id => $acqProtocolId,
-    channel_id => 4,
-    uri => $datURI
-  };
-
-
-  my $Cy3Acquisition = GUS::Model::RAD3::Acquisition->new($acqParameters);
-
-  $self->log("STATUS","OK Inserted 1 row in table RAD3.Acquisition for assay $assayName channel Cy3");
-  return $Cy3Acquisition;
-}
 
 # acquisitionParams are to be input via the Study Annotator website
 
 ###############################
 
-sub createGUSQuantification {
+sub createGusQuantification {
   my ($self, $assayName) = @_;
 
-  # questions:
-  # - only one quantification or one for cy5 and one for cy3
-  # - acqname varies in db
-  # based on MAS5, what is needed?
+  my (@gusQuantificationsCy5, @gusQuantificationsCy3);
 
-
-  my @gusQuantifications;
-
-  my $acqProtocolId = $self->{propertySet}->getProp("Acq_Protocol_ID");
+  my $gprURI =           $self->{propertySet}->getProp("GPRFilePath");
+  my $acqProtocolId =    $self->{propertySet}->getProp("Acq_Protocol_ID");
+  my $quantOperatorId =  $self->{propertySet}->getProp("Quant_Operator_ID");
+  my $quantProtocolId =  $self->{propertySet}->getProp("Quant_Protocol_ID");
 
   my $protocol = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
   $self->error("Create object failed, $acqProtocolId absent in table RAD3::Protocol")
     unless ($protocol->retrieveFromDB);
 
   my $tempAcqName = $protocol->getName();
-  my $acqName = "Cy5 $assayName $tempAcqName";
 
-  #my $celQuantParameters = {
-  #  protocol_id => $celProtocolId,
-  #  name => $acqName."-Affymetrix Probe Cell Analysis",
-  #  uri => $celURI
-  #};
+  my $gprQuantParameters = {
+    protocol_id => $quantProtocolId,
+    uri => $gprURI
+  };
 
-  #$celQuantParameters->{operator_id} = $celQuantOperatorId if (defined $celQuantOperatorId);
+  $gprQuantParameters->{operator_id} = $quantOperatorId if (defined $quantOperatorId);
 
-  #my $celQuantification = GUS::Model::RAD3::Quantification->new($celQuantParameters);
-  #push (@gusQuantifications);
+  my $acqNameCy5 = "Cy5 $assayName $tempAcqName";
+  my $gprQuantParametersCy5 = $gprQuantParameters;
+  $gprQuantParametersCy5->{name} = $acqNameCy5;
+  my $gprQuantificationCy5 = GUS::Model::RAD3::Quantification->new($gprQuantParametersCy5);
+  #push (@gusQuantificationsCy5, $gprQuantificationCy5);
 
-  $self->log("STATUS","OK Inserted 1 rows in table RAD3.Quantification for Cy5 quantification");
-  return \@gusQuantifications;
+  my $acqNameCy3 = "Cy3 $assayName $tempAcqName";
+  my $gprQuantParametersCy3 = $gprQuantParameters;
+  $gprQuantParametersCy3->{name} = $acqNameCy3;
+  my $gprQuantificationCy3 = GUS::Model::RAD3::Quantification->new($gprQuantParametersCy3);
+  #push (@gusQuantificationsCy3, $gprQuantificationCy3);
+
+  $self->log("STATUS","OK Inserted 2 rows in table RAD3.Quantification for Cy5 & Cy3 quantifications");
+
+  #return (\@gusQuantificationsCy5, \@gusQuantificationsCy3);
+  return ($gprQuantificationCy5, $gprQuantificationCy3);
 }
 
 ###############################
 
-# put in quantificationParams through website too?
-
-sub createGUSQuantParams {
+sub createGusQuantParams {
   my ($self, $GPRinfo) = @_;
 
+  my $quantProtocolId =  $self->{propertySet}->getProp("Quant_Protocol_ID");
+
+  my (@gusQuantParamsCy5, @gusQuantParamsCy3);
+  my $quantParamKeywordCnt = 0;
+
   my $params = {
-    'RatioFormulations'=>1, 
-    'Wavelengths'=>1,
-    'StdDev'=>1,
-    'BackgroundSubtraction'=>1,
-    ''=>1,
-    ''=>1,
-    'Creator'=>1 # software version or use ArrayerSoftwareVersion?
+    'ratio formulations'=>1, 
+    'background constant: wavelength 532'=>1,
+    'standard deviation'=>1,
+    'background density measure'=>1,
+    'software version'=>1 # software version or use ArrayerSoftwareVersion?
   };
 
-  my @gusQuantParams;
-  my $quantParamKeywordCnt = 0;
-  
-  my $chpProtocolId = $self->{propertySet}->getProp("Chp_Protocol_ID"); #???
   foreach my $param (keys %$params) {
 
     my $protocolParam = GUS::Model::RAD3::ProtocolParam->new({
-        protocol_id => $chpProtocolId, #???
+        protocol_id => $quantProtocolId,
         name => $param
     });
 
     $self->error("Create object failed, name $param absent in table RAD3::ProtocolParam")
       unless ($protocolParam->retrieveFromDB);
 
-    my $quantParameters = GUS::Model::RAD3::QuantificationParam->new({name => $param});
+    my $quantParametersCy5 = GUS::Model::RAD3::QuantificationParam->new({
+     name => $param,
+     value => $GPRinfo->{"$param-Cy5"}
+     });
 
-    $quantParameters->{value} = $GPRinfo->{$param};
-    $quantParameters->setParent($protocolParam); # protocolParam in only needed here, so set parent here
+    my $quantParametersCy3 = GUS::Model::RAD3::QuantificationParam->new({
+     name => $param,
+     value => $GPRinfo->{"$param-Cy3"}
+     });
+
+    $quantParametersCy5->setParent($protocolParam); # protocolParam in only needed here, so set parent here
+    $quantParametersCy3->setParent($protocolParam); # protocolParam in only needed here, so set parent here
     
     $quantParamKeywordCnt++;
-    push(@gusQuantParams,$quantParameters);
+    push(@gusQuantParamsCy5, $quantParametersCy5);
+    push(@gusQuantParamsCy3, $quantParametersCy3);
   }
 
-  $self->log("STATUS","OK Inserted $quantParamKeywordCnt rows in table RAD3.QuantificationParam");
-  return \@gusQuantParams;
+  $self->log("STATUS","OK Inserted $quantParamKeywordCnt rows in table RAD3.QuantificationParam for Cy5 and Cy3");
+  return (\@gusQuantParamsCy5, \@gusQuantParamsCy3);
 }
-  
+
