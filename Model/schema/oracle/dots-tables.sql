@@ -2236,7 +2236,7 @@ CREATE TABLE @oracle_dots@.NAFEATUREIMP (
     STRING7                            VARCHAR2(255)                                 NULL,
     STRING8                            VARCHAR2(255)                                 NULL,
     STRING9                            VARCHAR2(1000)                                NULL,
-    STRING10                           VARCHAR2(255)                                 NULL,
+    STRING10                           VARCHAR2(1024)                                 NULL,
     STRING11                           VARCHAR2(255)                                 NULL,
     STRING12                           VARCHAR2(255)                                 NULL,
     STRING13                           VARCHAR2(1000)                                NULL,
