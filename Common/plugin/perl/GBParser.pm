@@ -70,7 +70,7 @@ sub new {
     
   my $easycsp =
     [{o => 'gbRel',
-      t => 'int',
+      t => 'string',
       h => 'GenBank release',
      },
      {o => 'updateAll',
