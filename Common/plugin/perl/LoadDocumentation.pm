@@ -118,7 +118,7 @@ sub process {
 
 #	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
 
-	  if ($self->getTable()->isValidAttribute($attribute_nm)){
+	  if ($db->getTable()->isValidAttribute($attribute_nm)){
 
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
 	        $self->logVerbose("Set table ID");
