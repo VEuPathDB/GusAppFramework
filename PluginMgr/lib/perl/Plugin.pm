@@ -1,5 +1,9 @@
 package GUS::PluginMgr::Plugin;
 
+require Exporter;
+@ISA = qw(Exporter);
+@EXPORT = qw(stringArg booleanArg fileArg integerArg floatArg tableNameArg);
+
 use strict 'vars';
 
 use Carp;
@@ -9,7 +13,14 @@ use CBIL::Util::Utils;
 
 use GUS::ObjRelP::DbiDatabase;
 use GUS::Common::GusConfig;
-
+use GUS::PluginMgr::Args::StringArg;
+use GUS::PluginMgr::Args::BooleanArg;
+use GUS::PluginMgr::Args::FileArg;
+use GUS::PluginMgr::Args::IntegerArg;
+use GUS::PluginMgr::Args::TableNameArg;
+use GUS::PluginMgr::Args::FloatArg;
+use GUS::PluginMgr::Args::Arg;
+use GUS::PluginMgr::Args::Arg;
 =head1 Name
 
 C<GUS::PluginMgr::Plugin>
@@ -87,45 +98,80 @@ The CVS tag (ie, the software release it is from) of the plugin.  The value for 
 
 The name of the plugin.  This value for this key I<must> be specified like this: C<ref($self)>.
 
-=item * usage (string)
+=item * C<documentation> (I<hashref>)
 
-An explanation of the usage of the plugin.  The value for this key is used for two purposes:  to inform the user of the plugins usage when the user supplies the --usage argument; and, it is written into the description field of the Core.Algorithm table when the plugin is first registered in the database (by using ga +create).
+The documentation for this plugin (excluding the documentation for command line arguments which is covered by C<argsDeclaration>).  
+
+The hashref may include only the following standard keys.  All string values (e.g., C<purpose>, C<notes>) may include embedded POD formatting directives.  Precede and follow all command (e.g., C<=item>) with C<\\n\\n>.
+
+=over 4
+
+=item * purpose (string)
+
+The purpose of the plugin.  This should be as thorough as possible.
+
+=item * purposeBrief (string)
+
+A one sentence summary of the plugin's purpose.  This is displayed on the first line of the help page.  It is also written into the Core::Algorithm table as a description of the plugin.
+
+=item * tablesAffected (listref of listrefs)
+
+A list of tables the plugin writes to (excluding the standard overhead tables).  
+For example:
+
+C<my $tablesAffected = [
+   ['DoTS::Assembly', 'Writes the finished assemblies here'],
+   ['DoTS::Similarity', 'Writes its similarity here'],
+];
+
+=item * tablesDependedOn (listref of listrefs)
+
+A list of tables the plugin depends on (excluding the standard overhead tables).  This should include all controlled vocabulary tables that the data the plugin is generating depends upon.
+
+The format is the same as that for C<tablesAffected>
+
+=item * howToRestart (string)
+
+The details of how to restart the plugin.
+
+=item * failureCases (string)
+
+Known types of failure cases and what to do about them.
+
+=item * notes (string)
+
+Additional notes.  This should include the details of:
+
+=over 4
+
+=item * file formats used as input, and how they are produced
+
+=item * file formats used as output.
+
+=item * other plugins that must be run first.
+
+
+=back
+
+=back
+
+=item
+
+=item * argsDeclaration (listref of C<GUS::PluginMgr::Args::Arg> subclasses)
+
+A declaration of the command line arguments expected by the plugin.  Each element of the list is an object which is a subclass of C<GUS::PluginMgr::Args::Arg>.  See the Argument Declaration Constructors (e.g. C<stringArg()>, C<fileArg>, etc).  These are methods which construct and return these objects.  
 
 =item * revisionNotes (string)
 
 An explanation of what is new in this revision of the plugin.  This value is written into the description field of the Core.AlgorithmImplementation table when the plugin's registration is updated (by using ga +update).
 
-=item * easyCspOptions (reference to an array of hash refs)
+=item * easyCspOptions 
 
-A specification of the command line arguments for the plugin.  Each hash ref in the array specifies a single command line argument.  The keys in the array are:
+This has been B<deprecated>.  It is replaced by C<argsDeclaration>
 
-=over 4
+=item * usage
 
-=item o
-
-Required.  Specifies the argument's name (o for option). This must be a single word.  The user will use it on the command line this this:  --arg_name.
-
-=item h
-
-Required.  A helpful description for the argument (h for help).
-
-=item d
-
-Optional.  The default value, if there is one.  
-
-=item r
-
-Optional.  True (=1) if the argument is required.
-
-=item t
-
-Required.  Specifies the data type of the argument.  Allowed types are: id, float, int, date, string, boolean, table_id.
-
-=back
-
-=back
-
-B<Return type:> none
+This has been B<deprecated>.  It is replaced by C<documentation>
 
 =cut
 
@@ -133,19 +179,36 @@ sub initialize {
   my ($self, $argsHashRef) = @_;
 
   my @args = ('requiredDbVersion', 'cvsRevision', 'cvsTag', 'name',
-	      'revisionNotes', 'usage', 'easyCspOptions');
+	      'revisionNotes');
 
   foreach my $arg (@args) {
     $self->_failinit($arg) unless exists $argsHashRef->{$arg};
     $self->{$arg} = $argsHashRef->{$arg};
   }
 
-  $self->_initEasyCspOptions($self->{easyCspOptions});
+  if (exists $argsHashRef->{usage}) {
+    $self->{usage} = $argsHashRef->{usage};
+  } elsif (exists $argsHashRef->{documentation}) {
+    $self->{documentation} = $argsHashRef->{documentation};
+    $self->checkDocumentation();
+  } else {
+    $self->_failinit('documentation');
+  }
+
+  if ($argsHashRef->{easyCspOptions}) {
+    $self->{easyCspOptions} = $argsHashRef->{easyCspOptions};
+    $self->_initEasyCspOptions($self->{easyCspOptions});
+    $self->_failinit('easyCspOptions')
+      unless (ref($self->{easyCspOptions}) eq "HASH");
+  } elsif ($argsHashRef->{argsDeclaration}) {
+    $self->{argsDeclaration} = $argsHashRef->{argsDeclaration};
+  } else {
+    $self->_failinit('argsDeclaration');
+  }
+
 
   $self->_failinit('requiredDbVersion')
     unless (ref($self->{requiredDbVersion}) eq "HASH");
-  $self->_failinit('easyCspOptions')
-    unless (ref($self->{easyCspOptions}) eq "HASH");
 
   $self->setOk(1); #assume all is well to start
 }
@@ -201,6 +264,15 @@ B<Return type:> C<string>
 
 =cut
 sub getUsage             { $_[0]->{usage} }
+
+=item C<getDocumentation()>
+
+Get a hashref holding the plugin's documentation.  This value is set by the C<initialize> method.
+
+B<Return type:> C<string>
+
+=cut
+sub getDocumentation { $_[0]->{documentation} }
 
 =item C<getRequiredDbVersion()>
 
@@ -263,6 +335,15 @@ sub getRevisionNotes       { $_[0]->{revisionNotes} }
 Get the plugin's EasyCsp options.  This value is set by the C<initialize> method.
 
 B<Return type:> C<string>
+
+=cut
+sub getArgsDeclaration    { $_[0]->{argsDeclaration} }
+
+=item C<getArgsDeclaration()>
+
+Get the plugin's argument declaration.  This value is set by the C<initialize> method.
+
+B<Return type:> C<ref_to_list_of_Args>
 
 =cut
 sub getEasyCspOptions    { $_[0]->{easyCspOptions} }
@@ -365,6 +446,154 @@ B<Return type:> C<GUS::Model::Core::AlgorithmImplementation>
 sub getImplementation  { $_[0]->{__gus__plugin__implementation} }
 
 # ----------------------------------------------------------------------
+# Argument Declaration Constructors
+# ----------------------------------------------------------------------
+
+=head2 Argument Declaration Constructors
+
+The Argument Declaration Constructors return Argument Declaration objects, as expected by the initialize() method in its C<argDeclaration> parameter.  Each arg declaration object specifies the details of a command line argument expected by the plugin.  The different constructors below are used to declare arguments of different types, such as string, int, file, etc.
+
+The argument declaration constructor methods each take a hashref as their sole parameter.  This hashref must include the required set of keys.
+
+The following keys are standard and required for all the argument declaration constructors. (Additional non-standard keys are indicated below for each method as applicable.)
+
+=over 4
+
+=item * name (string)
+
+The name of the argument (e.g., 'length' will expect a --length argument on the command line)
+
+=item * descr (string)
+
+A description of the argument and what kinds of values are allowed.
+
+=item * reqd (0 or 1)
+
+Whether the user is required to provide this argument on the command line
+
+=item * default
+
+The default value to use if the user doesn't supply one (or undef if none)
+
+=item * constraintFunc (method ref)
+
+The method to call to check the validity of the value the user has supplied (undef if none).  The method is called with the value as an arugment.  The method returns a string describing the problem witht the value if there is one, or undef if there is no problem.
+
+=item * isList (0 or 1)
+
+True if the argument expects a comma delimited list of values instead of a single value.
+
+=back
+
+=back
+
+=item C<stringArg($argDescriptorHashRef)>
+
+Construct a string argument declaration.
+
+B<Parameters>
+
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above.
+
+B<Return type:> C<GUS::PluginMgr::Args::StringArg>
+
+=cut
+sub stringArg {
+  my ($paramsHashRef) = @_;
+  return GUS::PluginMgr::Args::StringArg->new($paramsHashRef);
+}
+
+=item C<integerArg($argDescriptorHashRef)>
+
+Construct a integer argument declaration.
+
+B<Parameters>
+
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above.
+
+B<Return type:> C<GUS::PluginMgr::Args::IntegerArg>
+
+=cut
+sub integerArg {
+  my ($paramsHashRef) = @_;
+  return GUS::PluginMgr::Args::IntegerArg->new($paramsHashRef);
+}
+
+=item C<booleanArg($argDescriptorHashRef)>
+
+Construct a boolean argument declaration.
+
+B<Parameters>
+
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above with the exception of 'isList' and 'constraintFunc', which are not applicable.
+
+B<Return type:> C<GUS::PluginMgr::Args::BooleanArg>
+
+=cut
+sub booleanArg {
+  my ($paramsHashRef) = @_;
+  return GUS::PluginMgr::Args::BooleanArg->new($paramsHashRef);
+}
+
+=item C<tableNameArg($argDescriptorHashRef)>
+
+Construct a tableName argument declaration.
+
+B<Parameters>
+
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above.
+
+B<Return type:> C<GUS::PluginMgr::Args::TableNameArg>
+
+=cut
+sub tableNameArg {
+  my ($paramsHashRef) = @_;
+  return GUS::PluginMgr::Args::TableNameArg->new($paramsHashRef);
+}
+
+=item C<floatArg($argDescriptorHashRef)>
+
+Construct a float argument declaration.
+
+B<Parameters>
+
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above.
+
+B<Return type:> C<GUS::PluginMgr::Args::FloatArg>
+
+=cut
+sub floatArg {
+  my ($paramsHashRef) = @_;
+  return GUS::PluginMgr::Args::FloatArg->new($paramsHashRef);
+}
+
+=item C<fileArg($argDescriptorHashRef)>
+
+Construct a file argument declaration.
+
+B<Parameters>
+
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also
+
+over 4
+
+=item * mustExist (0 or 1)
+
+Whether the file must exist
+
+=item * format (string)
+
+The a description of the file's format
+
+B<Return type:> C<GUS::PluginMgr::Args::FileArg>
+
+=cut
+sub fileArg {
+  my ($paramsHashRef) = @_;
+  return GUS::PluginMgr::Args::FileArg->new($paramsHashRef);
+}
+
+# ----------------------------------------------------------------------
 # Public Utilities
 # ----------------------------------------------------------------------
 
@@ -397,6 +626,126 @@ sub undefPointerCache {	$_[0]->getAlgInvocation->undefPointerCache }
 
 
 # ----------------------------------------------------------------------
+# Documentation
+# ----------------------------------------------------------------------
+
+=head2 Documentation
+
+=over 4
+
+=item C<printDocumentationText($synopsis, $argDetails)>
+
+Print documentation for this plugin in text format.  The documentation includes a synopsis, description, and argument details
+
+B<Parameters>
+
+- $synopsis (string):  text providing a synopsis.
+- $argDetails (string):  text providing details of the arguments.
+
+=cut
+sub printDocumentationText {
+  my ($self, $synopsis, $argDetails) = @_;
+  print "\n";
+  open(POD, "| pod2text") || die "couldn't open pod2text";
+  print POD $self->_formatDocumentationPod($synopsis, $argDetails);
+}
+
+=item C<printDocumentationHTML($synopsis, $argDetails)>
+
+Print documentation for this plugin in HTML format.  The documentation includes a synopsis, description, and argument details
+
+B<Parameters>
+
+- $synopsis (string):  text providing a synopsis.
+- $argDetails (string):  text providing details of the arguments.
+
+=cut
+sub printDocumentationHTML {
+  my ($self, $synopsis, $argDetails) = @_;
+  print "\n";
+  open(POD, "| pod2html") || die "couldn't open pod2html";
+  print POD $self->_formatDocumentationPod($synopsis, $argDetails);
+}
+
+sub _formatDocumentationPod {
+  my ($self, $synopsis, $argDetails) = @_;
+
+  my $doc = $self->getDocumentation();
+
+  my $s .= "\n=head1 NAME\n\n";
+  $s .= "C<$self->{name}> -  $doc->{purposeBrief} \n\n";
+  $s .= "=head1 SYNOPSIS\n\n";
+  $s .= "$synopsis\n\n";
+  $s .= "=head1 DESCRIPTION\n\n";
+  $s .= "$doc->{purpose}\n";
+  $s .= "=head1 TABLES AFFECTED\n\n";
+  my $tablesAffected = $self->_getTablesAffected();
+  foreach my $tbl (@$tablesAffected) {
+    my ($tblName, $descrip) = @$tbl;
+    $s .= "=item B<$tblName>\n\n=over 4\n\n$descrip\n\n=back\n\n";
+  }
+  $s .= "\n";
+  $s .= "=head1 TABLES DEPENDED ON\n\n";
+  my $tablesDependedOn = $self->_getTablesDependedOn();
+  foreach my $tbl (@$tablesDependedOn) {
+    my ($tblName, $descrip) = @$tbl;
+    $s .= "=item B<$tblName>\n\n=over 4\n\n$descrip\n\n=back\n\n";
+  }
+  $s .= "\n";
+  if ($doc->{failureCases}) {
+    $s .= "=head1 FAILURE CASES\n\n";
+    $s .= "$doc->{failureCases}\n";
+  }
+  if ($doc->{howToRestart}) {
+    $s .= "=head1 RESTARTING\n\n";
+    $s .= "$doc->{howToRestart}\n";
+  }
+  $s .= "=head1 ARGUMENTS IN DETAIL\n";
+  $s .= "$argDetails\n";
+  if ($doc->{notes}) {
+    $s .= "=head1 NOTES\n\n";
+    $s .= "$doc->{notes}\n";
+  }
+
+  return $s;
+}
+
+sub checkDocumentation {
+  my ($self) = @_;
+
+  my $doc = $self->getDocumentation();
+
+  my @fields = ('purposeBrief', 'purpose', 'tablesAffected', 'tablesDependedOn',
+		'howToRestart', 'failureCases', 'notes');
+
+  foreach my $field (@fields) {
+    if (!exists $doc->{$field}) {
+      print STDERR "Plugin initialization failed: documentation field '$field' not provided\n";
+      exit(1);
+    }
+  }
+}
+
+sub _getTablesAffected {
+  my ($self) = @_;
+
+  return [@{$self->{documentation}->{tablesAffected}},
+	  ['Core::AlgorithmInvocation', "The plugin manager (ga) inserts a row into this table describing the plugin and the parameter values used"],
+	 ];
+}
+
+sub _getTablesDependedOn {
+  my ($self) = @_;
+
+  return [@{$self->{documentation}->{tablesDependedOn}},
+	  ['Core::Algorithm', "The algorithm (ie, this plugin) responsible for the update"],
+	  ['Core::AlgorithmImplementation', "The specific implementation of it"],
+	  ['Core::AlgorithmParamKey', "The keys for the plugin's command line parameters"],
+	  ['Core::AlgorithmParamKeyType', "The data types of the parameters"],
+	 ];
+}
+
+# ----------------------------------------------------------------------
 # Error Handling
 # ----------------------------------------------------------------------
 
@@ -404,7 +753,7 @@ sub undefPointerCache {	$_[0]->getAlgInvocation->undefPointerCache }
 
 =over 4
 
-=item C<error()>
+=item C<error($msg)>
 
 Handle a fatal error in a plugin.  This method terminates the plugin gracefully, writing the provided message to STDERR.  It also writes a stack trace showing where the error occurred.
 

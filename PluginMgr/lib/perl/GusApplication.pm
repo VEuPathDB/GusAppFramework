@@ -7,6 +7,7 @@ use strict;
 use CBIL::Util::EasyCsp;
 
 use GUS::PluginMgr::Plugin;
+use GUS::PluginMgr::Args::ArgList;
 
 use GUS::Model::Core::Algorithm;
 use GUS::Model::Core::AlgorithmImplementation;
@@ -377,14 +378,34 @@ sub doMajorMode_Run {
 
   my $pu = $M->newFromPluginName($C);
 
-  # get command line arguments from combined CBIL::Util::EasyCsp options structure
-  my $ecd = {
-	     %{$M->getGlobalEasyCspOptions},
-	     %{$pu->getEasyCspOptions},
-	    };
-  my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage) || die "\n";
-  $pu->initArgs($cla);
-  $M->initArgs($cla);
+  my $argsHash;
+  if ($pu->getEasyCspOptions) {
+    # get command line arguments from combined CBIL::Util::EasyCsp options structure
+    my $ecd = {
+	       %{$M->getGlobalEasyCspOptions},
+	       %{$pu->getEasyCspOptions},
+	      };
+    $argsHash = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage) || die "\n";
+  } else {
+    my $argDecl = [@{$pu->getArgsDeclaration()},
+		   @{$M->getStandardArgsDeclaration()}
+		  ];
+    my ($argList, $help) = GUS::PluginMgr::Args::ArgList->new($argDecl, 
+							      'ga ' . ref($pu));
+    if ($help eq 'text') {
+      $pu->printDocumentationText($argList->formatConcisePod(),
+				  $argList->formatLongPod());
+      exit(0);
+    }
+    if ($help eq 'html') {
+      $pu->printDocumentationHTML($argList->formatConcisePod(),
+				  $argList->formatLongPod());
+      exit(0);
+    }
+    $argsHash = $argList->getArgsValueHash();
+  }
+  $pu->initArgs($argsHash);
+  $M->initArgs($argsHash);
 
   # what versions does the plugin want?
   $M->connect_to_database($M);
@@ -936,7 +957,7 @@ sub openInvocation {
   foreach my $param_name (sort keys %$cla) {
 
     # skip CBIL::Util::EasyCsp options which we do not record.
-    next if$param_name =~ /(debug|verbose|veryVerbose|usage)/;
+    next if$param_name =~ /(debug|verbose|veryVerbose|usage|help|helpHTML)/;
 
     # get the Core.AlgorithmParamKey object
     my $apk_go      = $key_to_obj{$param_name};
@@ -1070,6 +1091,61 @@ sub _check_schema_version_requirements {
     }
     $M->error($errMsg);
   }
+}
+
+sub getStandardArgsDeclaration {
+  [
+   booleanArg({name  => 'commit',
+	      descr => 'Actualy commit changes to the database',
+	      reqd  => 0,
+	      default=> 0,
+	     }),
+   stringArg({name  => 'user',
+	      descr => 'Set the user name in new or changed rows with this GUS user name (from Core.UserInfo table) [default is value in gus config file]',
+	      reqd  => 0,
+	      default=> undef,
+	      constraintFunc=>undef,
+	      isList=>0,
+	     }),
+   stringArg({name  => 'group',
+	      descr => 'Set the group name in new or changed rows with this GUS group name (from Core.GroupInfo table) [default is value in gus config file]',
+	      reqd  => 0,
+	      default=> undef,
+	      constraintFunc=>undef,
+	      isList=>0,
+	     }),
+   stringArg({name  => 'project',
+	      descr => 'set the project name in new or changed rows with this GUS project name (from Core.Project table) [default is value in gus config file]',
+	      reqd  => 0,
+	      default=> undef,
+	      constraintFunc=>undef,
+	      isList=>0,
+	     }),
+   stringArg({name  => 'comment',
+	      descr => 'Set Core.AlgorithmInvocation.comment with this comment',
+	      reqd  => 0,
+	      default=> undef,
+	      constraintFunc=>undef,
+	      isList=>0,
+	     }),
+   integerArg({name  => 'algoinvo',
+	       descr => 'Use this algorithm invocation id in the event that a new algorithm invocation id cannot be generated automatically',
+	       reqd  => 0,
+	       default=> 1,
+	       constraintFunc=>undef,
+	       isList=>0,
+	     }),
+   fileArg({name  => 'gusconfigfile',
+	    descr => 'The gus config file to use [default is $GUS_CONFIG_FILE]',
+	    reqd  => 0,
+	    default=> "$ENV{GUS_CONFIG_FILE}",
+	    constraintFunc=> undef,
+	    isList=>0,
+	    mustExist=> 1,
+	    format => 'GUS config file format',
+	   }),
+
+  ];
 }
 
 sub getGlobalEasyCspOptions {
