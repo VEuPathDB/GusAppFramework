@@ -378,7 +378,7 @@ sub __makeNewGoRelationship{
     my $goRelationship;
 
     if (!$processedEntries->{Relationship}->{$childGoId}->{$parentGoId}){
-	my $goRelationship = GUS::Model::SRes::GORelationship->new({
+	$goRelationship = GUS::Model::SRes::GORelationship->new({
 	    parent_term_id => $go2gus-> {$parentGoId},
 	    child_term_id => $go2gus-> {$childGoId},
 	    go_relationship_type_id => $typeId,
