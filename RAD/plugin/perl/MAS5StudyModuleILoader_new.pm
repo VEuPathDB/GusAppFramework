@@ -3,7 +3,7 @@ package GUS::RAD::Plugin::MAS5StudyModuleILoader_new;
 
 use strict 'vars';
 #use IO::File;
-use Date::Manip;
+#use Date::Manip;
 
 use CBIL::Util::Disp;
 use CBIL::Util::PropertySet;
@@ -445,8 +445,10 @@ sub createGusAssay {
     array_batch_identifier => $batchId, 
     description => $description
   };
+  
 
   $params->{assay_date} = $self->modifyDate($hybDate) if ($hybDate);
+
     
   my $assay = GUS::Model::RAD3::Assay->new($params);
 
@@ -667,23 +669,41 @@ sub createGUSQuantParams {
 ###############################
 
 sub modifyDate {
-
   my ($self, $inputDate) = @_;
 
-  my @dateArray = split " ", $inputDate;
+  my @dateArray = split " ", $inputDate;  # eg: Hybridize Date  Apr 23 2004 10:58AM
 
   my $arrayLen = scalar @dateArray;
-  if ($arrayLen eq 0) { 
-    $self->error("Missing date, cannot continue"); 
+  $self->error("Missing date, cannot continue") if ($arrayLen eq 0);
+
+  my %monthHash = (
+    Jan => '01', Feb => '02', Mar => '03', Apr => '04', May => '05', Jun => '06',	
+    Jul => '07', Aug => '08', Sep => '09', Oct => '10', Nov => '11', Dec => '12'
+  );
+
+  shift @dateArray; # remove word Hybridize
+  shift @dateArray; # remove word Date
+
+  my $tempTime = pop @dateArray;    #get time 
+  my $time1 = chop $tempTime;       #get AM/PM
+  my $time2 = chop $tempTime;       #get AM/PM
+
+  my @hourMinArray = split /\:/,$tempTime;
+
+  my $finalTime;
+  if ($time2.$time1 eq "PM") {
+    $finalTime = $hourMinArray[0] + 12;
+    $finalTime .= ":$hourMinArray[1]:00";
+
+  } else {
+
+    $finalTime = "$tempTime:00";
   }
 
-  my $somedate = ParseDate(\@dateArray);
-  my $year = substr($somedate,0,4);
-  my $month = substr($somedate,4,2);
-  my $day = substr($somedate,6,2);
-  my $time = substr($somedate,8,8);
-  my $correctedDateTime = "$year"."-"."$month"."-"."$day"." "."$time";
+  my $monthNum = $monthHash{$dateArray[0]};
+  my $finalDateTime = "$dateArray[2]-$monthNum-$dateArray[1]". " $finalTime";
 
-  return $correctedDateTime;
+  print "Final date time: $finalDateTime\n";
+  return $finalDateTime;
+
 }
-
