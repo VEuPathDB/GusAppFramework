@@ -215,14 +215,17 @@ print "scalar(@diffArray2)\n";
 
   foreach my $target_id(@diffArray2)  {
 
-    my $tid = $target_id;
 
-      my $dbh = $self->getQueryHandle();
+    my $dbh = $self->getQueryHandle();
+
+    my $tid = $target_id;
 
         my $rows = $dbh->do("delete from dots.evidence where target_id = $tid and attribute_name = 'full_length_CDS'");
 
 
    print STDERR  "DT.$target_id Evidence deleted\n";
+
+    last;
   }
 
 
