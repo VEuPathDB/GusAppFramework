@@ -65,17 +65,12 @@ sub findImplementation {
   my $implementation = $M->findSomeImplementation($P);
   $P->initImplementation($implementation) if $implementation;
 
-  $P->logVerbose('DEBUG', ref $implementation, $M->getOk) if FLAG_DEBUG;
-
-  # RETURN
-  $P->getOk
+  $P->logVerbose('DEBUG', ref $implementation) if FLAG_DEBUG;
 }
 
 sub findSomeImplementation {
   my $M = shift;
   my $P = shift;
-
-  my $RV;
 
   my $e = $P->getName;
   my $cvsRevision = $P->getCVSRevision;
@@ -94,57 +89,45 @@ SQL
   if (scalar @$imps == 0) {
     $sql = "select * from core.algorithmimplementation where executable = '$e'";
     my $imps_again = $P->sql_get_as_hash_refs($sql);
-    
+
     if (scalar @$imps_again == 0) {
-      $M->initStatus("No Core.AlgorithmImplementation found for $e");
-      $P->logFatal('ERROR-IMP', $M->getStatus);
-      $P->logFatal('ERROR-IMP', "Please use 'ga +create $e --commit'");
+      $M->userError("No Core.AlgorithmImplementation found for $e.\nPlease use 'ga +create $e --commit'");
     } else {
-      $M->initStatus("No Core.AlgorithmImplementation found for $e cvs revision $cvsRevision");
-      $P->logFatal('ERROR-IMP', $M->getStatus);
-      $P->logFatal('ERROR-IMP', "Please use 'ga +update $e --commit'");
+      $M->userError("No Core.AlgorithmImplementation found for $e cvs revision $cvsRevision. \nPlease use 'ga +update $e --commit'");
     }
-    $P->setOk(0);
   }
 
   # too many found
   elsif ( scalar @$imps > 1 ) {
-    $M->initStatus("Found more than one Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision");
-    $P->logFatal('ERROR-IMP', $M->getStatus);
+    my $err = "Found more than one Core.AlgorithmImplementation for exe=$e cvsRev=$cvsRevision:\n";
     foreach (@$imps) {
-      $P->logFatal('ERROR-IMP', "algimp_id:$_->{ALGORITHM_IMPLEMENTATION_ID}", 
-	      "md5:$_->{EXECUTABLE_MD5}",
-	      "rev:$_->{CVS_REVISION}", "tag:$_->{CVS_TAG}");
+      $err .= "  algimp_id:$_->{ALGORITHM_IMPLEMENTATION_ID}  md5:$_->{EXECUTABLE_MD5}  rev:$_->{CVS_REVISION}  tag:$_->{CVS_TAG}\n";
     }
-    $P->setOk(0);
+    $M->userErr($err);
   }
 
-  elsif ($M->getCla->{commit} &&
+  elsif ($M->getArgs->{commit} &&
 	 $imps->[0]->{EXECUTABLE_MD5} ne $P->getCheckSum()) {
-    $M->initStatus("The md5 checksum of $e's executable file (cvs revision $cvsRevision) doesn't match the md5 checksum in the database for that plugin and revision. IE, the plugin has been changed but not commited and updated.  Please:
+    my $run = "ga +update $e";
+    $run = "ga +meta" if $e =~ /GusApplication/;
+    $M->userError("The md5 checksum of ${e}'s executable file (cvs revision $cvsRevision) doesn't match the md5 checksum in the database for that plugin and revision. IE, the plugin has been changed but not commited and updated.  Please:
                    - cvs commit the plugin file
                    - use the build system to install it
-                   - run 'ga +update $e --commit'");
-    $P->logFatal('ERROR-IMP', $M->getStatus);
-    $P->setOk(0);
+                   - run '$run --commit'\nAborting");
   }
 
   # just right
   else {
-    $RV = GUS::Model::Core::AlgorithmImplementation
+    my $imp = GUS::Model::Core::AlgorithmImplementation
       ->new({
 	     algorithm_implementation_id => $imps->[0]->{ALGORITHM_IMPLEMENTATION_ID}
 	    });
-    if (!$RV->retrieveFromDB) {
-      $P->logFatal('findSomeImplementation',
-	      'expected to retrieve but it did not work'
-	     );
+    if (!$imp->retrieveFromDB) {
       CBIL::Util::Disp::Display($imps->[0]);
+      $M->error("findSomeImplementation failed retrieving from db");
     }
+    return $imp;
   }
-
-  # RETURN
-  return $RV
 }
 
 
@@ -240,21 +223,16 @@ USAGE
 # ----------------------------------------------------------------------
 
 sub newFromPluginName {
+  my $M = shift;
   my $C = shift;		# plugin-class name
 
   my $require_p = "{require $C; $C->new }";
   my $plugin = eval $require_p;
 
-  if ($@) {
-    print STDERR "Had some trouble require-ing or creating the plugin $C\n";
-    print STDERR $@;
-    $plugin = undef;
-  } else {
-    $plugin->initName($C);
-  }
+  $M->error($@) if $@;
 
-  # RETURN
-  $plugin
+  $plugin->initName($C);
+  return $plugin;
 }
 
 # Reads parameter key/value pairs from a file.  Tries a bunch of
@@ -263,7 +241,7 @@ sub getConfig {
   my ($self) = @_;
 
   if (!$self->{config}) {
-    my $cla = $self->getCla();
+    my $cla = $self->getArgs();
     $self->{config} = GUS::Common::GusConfig->new($cla->{gusconfigfile});
   }
 
@@ -278,8 +256,6 @@ sub doMajorMode {
   my $M = shift;
   my @A = @_;
 
-  my $RV;
-
   my @modes    = qw( meta create update history run );
   my $modes_rx = '^('. join('|',@modes). ')$';
 
@@ -287,22 +263,14 @@ sub doMajorMode {
 
     # make method name and run
     my $method = 'doMajorMode_'. ucfirst lc $M->getMode;
-    $RV = $M->$method(@A);
+    $M->$method(@A);
   }
 
   # bad mode or mood
   else {
-    $M->setOk(0);
-    $M->logFatal('BAD-MODE',
-	    sprintf('%s is not a supported mode; should be one of %s',
-		    $M->getMode,
-		    join(', ', @modes)
-		   )
-	   );
+    $M->userError($M->getMode() . " is not a supported mode; should be one of" . join(', ', @modes));
   }
 
-  # RETURN
-  $RV
 }
 
 # ----------------------------------------------------------------------
@@ -313,20 +281,16 @@ sub doMajorMode {
 sub doMajorMode_Meta {
   my $M = shift;
 
-  $M->setOk(1);
   my $ecd = { %{$M->getGlobalEasyCspOptions} };
-  my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$M->getUsage);
-  if ($cla) {
-    $M->initCla($cla);
-  } else {
-    return $M->getOk
-  }
+  my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$M->getUsage) || die;
+
+  $M->initArgs($cla);
 
   # connect to the database
   $M->connect_to_database($M);
 
   # what versions does the plugin want?
-  return $M->getOk unless $M->_check_schema_version_requirements($M);
+  $M->_check_schema_version_requirements($M);
 
   # create/find a Core.Algorithm, Core.AlgorithmImplementation, and Core.AlgorithmInvocation
   my $alg_go = GUS::Model::Core::Algorithm
@@ -366,8 +330,6 @@ sub doMajorMode_Meta {
   $alg_go->setGlobalNoVersion(1);
   $alg_go->submit;
 
-  # RETURN
-  $M->getOk
 }
 
 
@@ -379,60 +341,43 @@ sub doMajorMode_Run {
   my $M = shift;
   my $C = shift;
 
-  # assume things will work out.
-  $M->setOk(1);
-
-  my $pu = newFromPluginName($C);
-  unless ($pu) {
-    return $M->setOk(0)->getOk
-  }
-
-  # assume things will work out.
-  $pu->setOk(1);
+  my $pu = $M->newFromPluginName($C);
 
   # get command line arguments from combined CBIL::Util::EasyCsp options structure
   my $ecd = {
 	     %{$M->getGlobalEasyCspOptions},
 	     %{$pu->getEasyCspOptions},
 	    };
-  my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage);
-
-  if ($cla) {
-    $pu->initCla($cla);
-    $M->initCla($cla);
-  } else {
-    return $pu->getOk;
-  }
+  my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage) || die;
+  $pu->initArgs($cla);
+  $M->initArgs($cla);
 
   # what versions does the plugin want?
   $M->connect_to_database($M);
 
-  return $pu->getOk unless $M->_check_schema_version_requirements($pu);
+  $M->_check_schema_version_requirements($pu);
 
   # connect to the database
   $M->connect_to_database($pu);
 
   # get PI's version to find the AlgorithmImplementation.
-  return $pu->getOk unless $M->findImplementation($pu);
+  $M->findImplementation($pu);
 
   # the application context
-  if ($M->openInvocation($pu)) {
-
-    # run
-    $pu->initStatus($pu->run({ cla      => $pu->getCla,
-			      self_inv => $pu->getSelfInv,
-			    }));
-    $pu->logAlert('RESULT', $pu->getStatus);
-
-  }
+  eval {
+    $M->openInvocation($pu);
+    my $resultDescrip;
+    $resultDescrip = $pu->run();
+    if ($resultDescrip) { $pu->setResultDescr($resultDescrip); }
+    $M->logAlert("RESULT", $pu->getResultDescr());
+  };
 
   # clean up.
-  $M->closeInvocation($pu);
+  $M->closeInvocation($pu, $@);
 
   $M->disconnect_from_database($M);
 
-  # was ok?
-  $pu->getOk
+  die "$@" if $@;
 }
 
 # ----------------------------------------------------------------------
@@ -462,7 +407,7 @@ sub doMajorMode_History {
   my $M = shift;
   my $C = shift;
 
-  my $p = newFromPluginName($C);
+  my $p = $M->newFromPluginName($C);
   my $plugin_name_s = $p->getName;
 
   # command line arguments
@@ -477,7 +422,7 @@ sub doMajorMode_History {
 	     %{$M->getGlobalEasyCspOptions}
 	    );
   my $cla = CBIL::Util::EasyCsp::DoItAll(\%ecd,$usg) || exit 0;
-  $M->initCla($cla);
+  $M->initArgs($cla);
 
   # do preps
   $M->connect_to_database($M);
@@ -624,8 +569,6 @@ sub create_or_update_implementation {
   my $U = shift;		# allow update?
   my $C = shift;		# plugin class name
 
-  $M->setOk(1);
-
   # verbs of various forms for what we are doing
   my $what = $U ? 'updates' : 'creates';
   my $What = ucfirst $what;
@@ -644,20 +587,19 @@ sub create_or_update_implementation {
 	       ) )
 	    );
   CBIL::Util::Disp::Display(\%ecd) if FLAG_DEBUG;
-  my $cla = CBIL::Util::EasyCsp::DoItAll(\%ecd,$usg) || exit 0;
-  $M->initCla($cla);
+  my $cla = CBIL::Util::EasyCsp::DoItAll(\%ecd,$usg) || die;
+  $M->initArgs($cla);
 
   # do preps
   $M->connect_to_database($M);
   $M->findImplementation($M);
 
   # create plugin
-  my $pu = newFromPluginName($C);
-  $pu->setOk(1);
-  $pu->initCla($cla);
+  my $pu = $M->newFromPluginName($C);
+  $pu->initArgs($cla);
 
   # what versions does the plugin want?
-  return $M->setOk(0)->getOk unless $M->_check_schema_version_requirements($pu);
+  $M->_check_schema_version_requirements($pu);
 
   # make an algorithminvocation for self
   # ......................................................................
@@ -672,7 +614,7 @@ sub create_or_update_implementation {
 	    result                      => 'pending',
 	    comment_string              => substr($cla->{comment},0,255),
 	  });
-  $M->initSelfInv($alg_inv_gus);
+  $M->initAlgInvocation($alg_inv_gus);
   $M->set_defaults($alg_inv_gus);
 
   # things we might need.
@@ -801,7 +743,7 @@ sub create_or_update_implementation {
     $alg_gus->submit;
     $M->logData('INFO', "Plugin $plugin_name_s registered with cvs revision '$cvsRevision' and cvs tag '$cvsTag'");
     $M->logData('INFO', "...Just kidding: you didn't --commit")
-      unless ($M->getCla->{commit});
+      unless ($M->getArgs->{commit});
   }
 }
 
@@ -812,7 +754,7 @@ sub set_defaults {
   my $M = shift;
   my $O = shift;
 
-  my $cla = $M->getCla;
+  my $cla = $M->getArgs;
 
   CBIL::Util::Disp::Display($cla, 'cla:'.  ref$M) if FLAG_DEBUG;
 
@@ -839,7 +781,7 @@ sub set_defaults {
 sub getUser {
   my $M = shift;
 
-  my $cla = $M->getCla;
+  my $cla = $M->getArgs;
   $cla->{user}? $cla->{user} : $M->getConfig()->getUserName();
 
 }
@@ -847,7 +789,7 @@ sub getUser {
 sub getGroup {
   my $M = shift;
 
-  my $cla = $M->getCla;
+  my $cla = $M->getArgs;
   $cla->{group}? $cla->{group} : $M->getConfig()->getGroup();
 
 }
@@ -855,7 +797,7 @@ sub getGroup {
 sub getProject {
   my $M = shift;
 
-  my $cla = $M->getCla;
+  my $cla = $M->getArgs;
   $cla->{project}? $cla->{project} : $M->getConfig()->getProject();
 
 }
@@ -893,11 +835,12 @@ sub load_AlgorithmParamKeyType_cache {
 # ----------------------------------------------------------------------
 # Opens invocation structure.
 
+# SOON: when alg inv. gets new 'status' attribute, this will set it to 'running'
 sub openInvocation {
   my $M = shift;
   my $P = shift;		# the plugin
 
-  my $cla = $P->getCla;
+  my $cla = $P->getArgs;
 
   # get implementation pointer for self.
   # ........................................
@@ -982,51 +925,39 @@ sub openInvocation {
 		       string_value            => $values[$v_i],
 		       $typed_value_key        => $values[$v_i],
 		       order_num               => $v_i,
-		       algorithm_invocation_id => $P->getSelfInv->getId,
+		       algorithm_invocation_id => $P->getAlgInvocation->getId,
 		       is_default              => 0,
 		     };
 	  my $ap_go = GUS::Model::Core::AlgorithmParam->new($ap_h);
 	  $ap_go->submit;
 	}
       } else {
-	push(@any_bad, $param_name);
-	$P->logAlert('UDPKT',
-		'A Core.AlgorithmParamKeyType was not found for this param.',
-		$param_name,
-	       );
+	$P->error("A Core.AlgorithmParamKeyType was not found for this param $param_name");
       }
     }
 
     # an unexpected parameter, let the user know.
     else {
-      push(@any_bad, $param_name);
-      $P->logAlert('UDPK',
-	      'A Core.AlgorithmParamKey was not found for this param.',
-	      $param_name
-	     );
-    }
+	$P->error("A Core.AlgorithmParamKey was not found for this param $param_name");
+      }
   }
-
-  # we won't run in this case.
-  if (scalar @any_bad > 0) {
-    $P->initStatus('Could not record parameter values for '. join(', ',@any_bad));
-    $P->setOk(0);
-  }
-
-  # RETURN
-  $M->getOk
 }
 
 # ----------------------------------------------------------------------
 
+# SOON: when alg inv. gets new 'status' attribute, this will set it to 
+# 'succeeded' or 'failed' based on $failmsg;
 sub closeInvocation {
   my $M = shift;
   my $P = shift;
+  my $failmsg;
 
-  $P->getSelfInv->setGlobalNoVersion(1);
-  $P->getSelfInv->setResult($P->getStatus);
-  $P->getSelfInv->setEndTime($P->getSelfInv->getDatabase()->getDateFunction());
-  $P->getSelfInv->submit(1);
+  $P->setResultDescr($failmsg) if $failmsg;  # until we add an errmsg attribute
+
+  $P->getAlgInvocation->setGlobalNoVersion(1);
+  $P->getAlgInvocation->setResult($P->getResultDescr);
+  $P->getAlgInvocation->setEndTime($P->getAlgInvocation->getDatabase()->getDateFunction());
+  $P->getAlgInvocation->submit(1);
 
   ##logout
   $M->disconnect_from_database($P);
@@ -1051,7 +982,7 @@ sub connect_to_database {
 
   $P->initDb(new GUS::ObjRelP::DbiDatabase($dbiDsn,
 					   $login,$password,
-					   $P->getCla->{verbose},0,1,
+					   $P->getArgs->{verbose},0,1,
 					   $core));
 
   # return self.
@@ -1075,16 +1006,6 @@ sub _check_schema_version_requirements {
   my $P = shift;		# the plugin
 
   my $ver_h = $P->getRequiredDbVersion;
-  unless ( ref $ver_h eq 'HASH') {
-    $M->logFatal('ERROR',
-	    'getRequiredDbVersion did not return { schema => version, ... } hash ref',
-	   );
-    $M->logFatal('HINT',
-	    'did you call setRequiredDbVersion in '. $M->getName. '::new?',
-	   );
-    $M->setOk(0)->getOk;
-  }
-
   my $sql = "select count(database_id) from Core.DatabaseInfo where name = ? and version = ?";
   my $sh  = $M->getQueryHandle->prepare($sql);
 
@@ -1101,26 +1022,16 @@ sub _check_schema_version_requirements {
 
   # let the user know what went wrong.
   if (scalar @bad_ones) {
-    $M->logFatal('ERROR',
-	    'Actual version does not match required version for these schemas:',
-	    @bad_ones
-	   );
+    my $errMsg = 'Actual version does not match required version for these schemas:' . join (" ", @bad_ones) . "\n";
 
     # report actual and requested versions
     my $vers = $M->sql_get_as_hash_refs('select name, version, from Core.DatabaseInfo order by name');
-    $M->logFatal('VERSION','#NAME', '#DB-VER', '#RQ-VER');
+    $errMsg .= "\t#NAME\t#DB-VER\t#RQ-VER\n";
     foreach my $schema (@$vers) {
-      $M->logFatal('VERSION', 
-	      $schema->{NAME},
-	      $schema->{VERSION},
-	      $ver_h->{$schema->{NAME}}
-	     );
+      $errMsg .= "\t$schema->{NAME}\t$schema->{VERSION}\t$ver_h->{$schema->{NAME}}\n";
     }
-    $M->setOk(0);
+    $M->error($errMsg);
   }
-
-  # return
-  $M->getOk
 }
 
 sub getGlobalEasyCspOptions {
