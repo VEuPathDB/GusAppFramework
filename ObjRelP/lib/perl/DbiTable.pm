@@ -545,7 +545,7 @@ sub getNextID {
   my $owner = $self->getSchemaNameUpper();
   my $query;
   if (!exists $self->{nextidstmt}) {
-    $query=$self->getDatabase->getDbPlatform->nextValSql($self->{oracle_table_name});
+    $query=$self->getDatabase->getDbPlatform->nextValSelect($self->{oracle_table_name});
     $self->{nextidstmt} = $self->getDbHandle()->prepare($query)
       || &confess("Failed preparing sql '$query' with error: " . $self->getDbHandle()->errstr());
   }  
@@ -555,6 +555,7 @@ sub getNextID {
 
   ($result) = $self->{nextidstmt}->fetchrow_array();
   $self->{nextidstmt}->finish();
+  
   return $result;
 }
 
