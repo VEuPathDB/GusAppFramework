@@ -1182,7 +1182,8 @@ sub loadData{
 	 if($view eq 'ShortOligo' || $view eq 'Spot'){
 	     $row_id=$cfg_rv->{'CompositeElement_Id'};
 	 }
-	 if ( defined $pos->{$mapping->{control_type_id}} && $arr[$pos->{$mapping->{control_type_id}}] ne ""){
+
+	 if ( defined $pos->{$mapping->{'Control.control_type_id'}} && $arr[$pos->{$mapping->{'Control.control_type_id'}}] ne ""){
 	     $M->updateControl($table_id, $row_id, @arr);
 	 }
      }
