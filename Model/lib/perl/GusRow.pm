@@ -1848,7 +1848,7 @@ sub toXML {
     }
     if (length($self->get($att)) > 50) {
       if ($att eq 'sequence') {
-        $xml .= substr($space,0,$indent) . "<sequence>\n" . CBIL::Bio::CBIL::Bio::SequenceUtils::breakSequence($self->getSequence(),80 - $indent - 2,substr($space,0,$indent + 2)) . substr($space,0,$indent) . "</sequence>\n";
+        $xml .= substr($space,0,$indent) . "<sequence>\n" . CBIL::Bio::SequenceUtils::breakSequence($self->getSequence(),80 - $indent - 2,substr($space,0,$indent + 2)) . substr($space,0,$indent) . "</sequence>\n";
       } else {
         $xml .= substr($space,0,$indent) . "<$att>\n" . substr($space,0,$indent + 2) .
           $self->get($att) . "\n" . substr($space,0,$indent) . "</$att>\n";
