@@ -135,6 +135,7 @@ sub run {
       
       my $releaseId = $self->queryForReleaseId($self->getCla()->{external_database_name},
 					       $self->getCla()->{version});
+
       if ($releaseId){
 	  $self->{external_database_release_id} = $releaseId;
       }
@@ -145,6 +146,7 @@ sub run {
   else {
       $self->{external_database_release_id} = $ctx->{cla}->{external_database_release_id};
   }
+  print STDERR "loading sequences with external database release id " . $self->{external_database_release_id} . "\n";
   if (!$ctx->{cla}->{sequencefile}){
       die "you must provide valid fasta sequence file on the command line";
   }
@@ -202,7 +204,7 @@ sub run {
 
       next if ($ctx->{cla}->{startAt} && $count < $ctx->{cla}->{startAt});
 
-      &process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq) if ($source_id);
+      $self->process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq) if ($source_id);
 
       print STDERR "$source_id, $secondary_id, $name, $description,  $count, \n $seq\ninserted ".($ctx->{self_inv}->getTotalInserts() - 1)." and updated ".$ctx->{self_inv}->getTotalUpdates() ." " . ($count % ($ctx->{cla}->{log_frequency} * 10) == 0 ? `date` : "\n") if $count % $ctx->{cla}->{log_frequency} == 0;
 
@@ -386,6 +388,22 @@ sub setProjId {
 
 sub getProjId {
   return (&setProjId);
+}
+
+sub queryForReleaseId{
+    my ($self, $dbName, $version) = @_;
+    my $sql = "select ex.external_database_release_id
+               from sres.externaldatabaserelease ex, sres.externaldatabase e
+               where e.external_database_id = ex.external_database_id
+               and ex.version = '$version'
+               and e.name = '$dbName'";
+    
+    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+    
+    my ($releaseId) = $sth->fetchrow_array();
+    
+    return $releaseId;
+
 }
 
 1;
