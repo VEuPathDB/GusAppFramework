@@ -130,7 +130,7 @@ while(my($target_id) = $stmt3->fetchrow_array( ))  {
 
 my $number = 1;
 
- push(@naSequenceId, $number);
+ push(@naSequenceIds, $number);
 
  print STDERR "scalar(@naSequenceIds)\n";
 
