@@ -43,11 +43,13 @@ sub new {
 
 
  my $easycsp = [
-            { o => 'xmlfile=s',
-	      h => 'file containing xml to be parsed',
+            {
+              h => 'file containing xml to be parsed',
+              o => 'xmlfile',
              },
-	    { o => 'specialfile=s',
+	    {
               h => 'file containing formatted text describing special cases',
+              o => 'specialfile',
 	     },
              ];
 
