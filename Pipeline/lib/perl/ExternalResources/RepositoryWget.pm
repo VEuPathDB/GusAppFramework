@@ -64,7 +64,7 @@ sub execute {
 
   $cmd .= " $self->{sourceUrl}";
 
-  open(CMD, ">$cmdFile") || die "";
+  open(CMD, ">$cmdFile") || die "Cannot open wget command file '$cmdFile' for writing\n";
   print CMD "$cmd\n";
   close(CMD);
 

@@ -5,7 +5,7 @@ use GUS::Pipeline::ExternalResources::RepositoryEntry;
 
 sub new {
   my ($class, $repositoryDir, $resource, $version, $targetDir, $url, $plugin,
-     $pluginArgs, $wgetArgs) = @_;
+     $pluginArgs, $commit, $wgetArgs, $repositoryLogFile) = @_;
 
   my $self = {};
   $self->{repositoryEntry} = 
@@ -13,15 +13,12 @@ sub new {
 							   $resource,
 							   $version,
 							   $url,
-							   $wgetArgs);
-
-  die "Target dir '$targetDir' already exists.  Please remove it\n"
-    if -e $targetDir;
-
-  mkdir($targetDir) || die "Cannot make target dir '$targetDir'\n";
+							   $wgetArgs,
+							   $repositoryLogFile);
 
   $self->{targetDir} = $targetDir;
   $self->{plugin} = $plugin;
+  $self->{commit} = $commit;
   $self->{pluginArgs} = $pluginArgs;
   bless $self, $class;
 
@@ -44,12 +41,20 @@ sub run {
   if (!$mgr->startStep("Acquiring $resource $version",
 		       "${signalBase}_acquire")) {
 
+    die "Target dir '$self->{targetDir}' already exists.  Please remove it\n"
+      if -e $self->{targetDir};
+
+    mkdir($self->{targetDir}) 
+      || die "Cannot make target dir '$self->{targetDir}'\n";
+
     $self->{repositoryEntry}->fetch($self->{targetDir});
     $mgr->endStep("${signalBase}_acquire");
   }
 
-#  $mgr->runPlugin("${signalBase}_load", $self->{plugin}, $self->{pluginArgs},
-#		  "Loading $resource $version");
+  ## handle commit ourselves
+  $mgr->runPluginNoCommit("${signalBase}_load", $self->{plugin}, 
+			  "$self->{pluginArgs} $self->{commit}",
+			  "Loading $resource $version");
 }
 
 1;

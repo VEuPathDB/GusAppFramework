@@ -13,20 +13,47 @@ sub new {
   $self->{manager} = $manager;
   $self->{xmlFile} = $xmlFile;
   bless $self, $class;
-  $self->parseXmlFile();
+  $self->_parseXmlFile();
   return $self;
 }
 
-sub parseXmlFile {
+sub run {
   my ($self) = @_;
 
-  my $xmlString = $self->substituteMacros();
+  my $hadErr;
+  foreach my $step (@{$self->{steps}}) {
+    eval {
+      $step->run($self->{manager});
+    };
+
+    my $err = $@;
+    if ($err) {
+      print STDERR $err if $err;
+      $hadErr = 1;
+    }
+  }
+  if ($hadErr) {
+    $self->{manager}->goodbye("Pipeline had failures.  NOT complete!\n");
+  } else {
+    $self->{manager}->goodbye("Pipeline complete!\n");
+  }
+}
+
+##########################################################################
+#    private methods
+##########################################################################
+
+sub _parseXmlFile {
+  my ($self) = @_;
+
+  my $commit = $self->{manager}->{propertySet}->getProp('commit');
+  my $xmlString = $self->_substituteMacros();
   my $xml = new XML::Simple;
   my $data = $xml->XMLin($xmlString);
-
+  my $repositoryLogFile = "$self->{manager}->{pipelineDir}/logs/repository.log";
   foreach my $resource (@{$data->{resource}}) {
     my $targetDir = "$data->{downloadDir}/$resource->{resource}";
-    my $wgetArgs = &parseWgetArgs($resource->{wgetArgs});
+    my $wgetArgs = &_parseWgetArgs($resource->{wgetArgs});
     my $loaderStep =
       GUS::Pipeline::ExternalResources::LoaderStep->new($data->{repository},
 							$resource->{resource},
@@ -35,14 +62,16 @@ sub parseXmlFile {
 							$resource->{url},
 							$resource->{plugin},
 							$resource->{pluginArgs},
+							$commit,
 							$wgetArgs,
+							$repositoryLogFile
 						       );
 
     push(@{$self->{steps}}, $loaderStep);
   }
 }
 
-sub parseWgetArgs {
+sub _parseWgetArgs {
   my ($wgetArgsString) = @_;
 
   my @wgetArgs = split(/\s+/, $wgetArgsString);
@@ -55,7 +84,7 @@ sub parseWgetArgs {
   return \%wgetArgs;
 }
 
-sub substituteMacros {
+sub _substituteMacros {
   my ($self) = @_;
 
   my $propertySet = $self->{manager}->{propertySet};
@@ -73,19 +102,6 @@ sub substituteMacros {
     $xmlString .= $line;
   }
   return $xmlString;
-}
-
-sub run {
-  my ($self) = @_;
-
-  foreach my $step (@{$self->{steps}}) {
-    eval {
-      $step->run($self->{manager});
-    };
-
-    my $err = $@;
-    print STDERR $err if $err;
-  }
 }
 
 1;
