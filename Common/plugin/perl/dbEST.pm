@@ -685,12 +685,18 @@ Returns HASHREF{ new => newest entry,
 
 sub getMostRecentEntry {
   my ($M,$e,$R) = @_;
-  push @{$R->{old}}, $e;
   my $re = $M->sql_get_as_hash_refs_lc("select * from EST\@dbest where id_est = $e->{replaced_by}")->[0];
-  if ($re->{replaced_by} ) {
-    $R = $M->getMostRecentEntry($re,$R);
-  } else {
+  # angel:2/20/2003 Found that sometimes replaced_by points to non-exsistent id_est
+  # Account forthis by inserting the most recent & *valid* entry and
+  # log the id_est of the entry that eventually needs an update
+  if ($re) {
     $R->{new} = $re;
+    push @{$R->{old}}, $e;
+    if ($re->{replaced_by} ) {
+      $R = $M->getMostRecentEntry($re,$R);
+    }
+  }else {
+    $M->getCla->{log_fh}->print($M->logAlert("ERR:BOGUS REPLACED BY","ID_EST", $e->{id_est}, "REPLACED_BY=$e->{replaced_by}","\n"));
   }
   return $R;
 }
@@ -988,7 +994,7 @@ sub checkExtNASeq {
                    't_count' => (scalar($e->{sequence} =~ s/T/T/g)) || 0,
                    'c_count' => (scalar($e->{sequence} =~ s/C/C/g)) || 0,
                    'g_count' => (scalar($e->{sequence} =~ s/G/G/g)) || 0,
-                   'description' => substr($e->{comment},0,1999)
+                   'description' => substr($e->{comment},0,1999);
                    );
   foreach my $a (keys %seq_vals) {
     if ( $seq->isValidAttribute($a)) {
