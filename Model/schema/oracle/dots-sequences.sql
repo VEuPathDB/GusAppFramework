@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-sequences.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:41 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:10:24 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -19,6 +19,7 @@ CREATE SEQUENCE @oracle_dots@.AAMOTIFGOTERMRULESET_SQ START WITH 1;
 CREATE SEQUENCE @oracle_dots@.AAMOTIFGOTERMRULE_SQ START WITH 1;
 CREATE SEQUENCE @oracle_dots@.AASEQGROUPEXPERIMENTIMP_SQ START WITH 1;
 CREATE SEQUENCE @oracle_dots@.AASEQUENCEDBREF_SQ START WITH 1;
+CREATE SEQUENCE @oracle_dots@.AASEQUENCEENZYMECLASS_SQ START WITH 1;
 CREATE SEQUENCE @oracle_dots@.AASEQUENCEFAMILY_SQ START WITH 1;
 CREATE SEQUENCE @oracle_dots@.AASEQUENCEGROUPFAMILY_SQ START WITH 1;
 CREATE SEQUENCE @oracle_dots@.AASEQUENCEGROUPIMP_SQ START WITH 1;
@@ -168,7 +169,7 @@ CREATE SEQUENCE @oracle_dots@.SIMILARITYSPAN_SQ START WITH 1;
 CREATE SEQUENCE @oracle_dots@.SIMILARITY_SQ START WITH 1;
 CREATE SEQUENCE @oracle_dots@.TRANSLATEDAAFEATSEG_SQ START WITH 1;
 
-/* 159 sequences(s) */
+/* 160 sequences(s) */
 
 SPOOL OFF
 SET ECHO OFF

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* rad3ver-indexes.sql                                                                        */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 13:30:40 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:09:43 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -14,28 +14,28 @@ SPOOL rad3ver-indexes.log
 /* ACQUISITIONVER */
 
 
-/* ANALYSISIMPLEMENTATIONPARAMVER */
-
-
-/* ANALYSISIMPLEMENTATIONVER */
-
-
 /* ANALYSISINPUTVER */
 
 
-/* ANALYSISINVOCATIONPARAMVER */
+/* ANALYSISPARAMVER */
 
 
-/* ANALYSISINVOCATIONVER */
+/* ANALYSISQCPARAMVER */
 
 
-/* ANALYSISOUTPUTVER */
+/* ANALYSISRESULTIMPVER */
 
 
 /* ANALYSISVER */
 
 
 /* ARRAYANNOTATIONVER */
+
+
+/* ARRAYGROUPLINKVER */
+
+
+/* ARRAYGROUPVER */
 
 
 /* ARRAYVER */
@@ -89,7 +89,19 @@ SPOOL rad3ver-indexes.log
 /* ELEMENTRESULTIMPVER */
 
 
+/* INTEGRITYSTATINPUTVER */
+
+
+/* INTEGRITYSTATISTICVER */
+
+
 /* LABELMETHODVER */
+
+
+/* LOGICALGROUPLINKVER */
+
+
+/* LOGICALGROUPVER */
 
 
 /* MAGEDOCUMENTATIONVER */
@@ -131,6 +143,9 @@ SPOOL rad3ver-indexes.log
 /* PROTOCOLPARAMVER */
 
 
+/* PROTOCOLQCPARAMVER */
+
+
 /* PROTOCOLVER */
 
 
@@ -147,6 +162,9 @@ SPOOL rad3ver-indexes.log
 
 
 /* STUDYASSAYVER */
+
+
+/* STUDYBIOMATERIALVER */
 
 
 /* STUDYDESIGNASSAYVER */

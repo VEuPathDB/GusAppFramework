@@ -4,7 +4,7 @@
 /*                                                                                            */
 /* Populate Core.DatabaseInfo, which lists each of the GUS namespaces (i.e. schemas/users).   */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 23:57:12 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:08:08 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -20,14 +20,15 @@ INSERT INTO @oracle_core@.DatabaseInfo VALUES(5,'3','@oracle_dots@','Tables for 
 INSERT INTO @oracle_core@.DatabaseInfo VALUES(6,'3','@oracle_dotsver@','Version tables for DoTS','2002-04-16 12:49:03',1,1,1,1,1,0,1, 1, 1, 1);
 INSERT INTO @oracle_core@.DatabaseInfo VALUES(8,'1.0','@oracle_tessver@','Version tables for Tess.','2002-04-23 10:16:48',1,1,1,1,1,0,1, 1, 1, 1);
 INSERT INTO @oracle_core@.DatabaseInfo VALUES(9,'1.0','@oracle_tess@','Data relating to transcriptional regulation.','2002-04-23 10:16:48',1,1,1,1,1,0,1, 1, 1, 1);
-INSERT INTO @oracle_core@.DatabaseInfo VALUES(10,'3','@oracle_rad3@','RNA Abundance Database. Stores high-throughput gene expression experimental data and annotations.','2002-05-16 15:14:06',1,1,1,1,1,0,1, 1, 1, 1);
-INSERT INTO @oracle_core@.DatabaseInfo VALUES(11,'3','@oracle_rad3ver@','Version tables for RAD3','2003-02-12 20:50:31',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.DatabaseInfo VALUES(10,'3','@oracle_rad@','RNA Abundance Database. Stores high-throughput gene expression experimental data and annotations.','2002-05-16 15:14:06',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.DatabaseInfo VALUES(11,'3','@oracle_radver@','Version tables for RAD3','2003-02-12 20:50:31',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.DatabaseInfo VALUES(31,'1.0','@oracle_app@','Table space for use by various applications that access the GUS database. Differs from SRes in that no tables/objects in the other modules should depend on anything in the App schema space.','2003-06-02 12:43:19',1,1,1,1,1,0,1, 1, 1, 1);
 
-/* 10 row(s) */
+/* 11 row(s) */
 
 
 DROP SEQUENCE @oracle_core@.DatabaseInfo_SQ;
-CREATE SEQUENCE @oracle_core@.DatabaseInfo_SQ START WITH 12;
+CREATE SEQUENCE @oracle_core@.DatabaseInfo_SQ START WITH 32;
 
 COMMIT;
 SPOOL OFF

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-constraints.sql                                                                       */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:45:58 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:12:06 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -60,6 +60,10 @@ alter table @oracle_dots@.AAMOTIFGOTERMRULESET add constraint AAMOTIFGOTERMRULES
 /* AASEQUENCEDBREF */
 alter table @oracle_dots@.AASEQUENCEDBREF add constraint AASEQUENCEDBREF_FK04 foreign key (DB_REF_ID) references @oracle_sres@.DBREF (DB_REF_ID);
 alter table @oracle_dots@.AASEQUENCEDBREF add constraint AASEQUENCEDBREF_FK05 foreign key (AA_SEQUENCE_ID) references @oracle_dots@.AASEQUENCEIMP (AA_SEQUENCE_ID);
+
+/* AASEQUENCEENZYMECLASS */
+alter table @oracle_dots@.AASEQUENCEENZYMECLASS add constraint AASEQUENCEENZYMECLASS_EC foreign key (ENZYME_CLASS_ID) references @oracle_sres@.ENZYMECLASS (ENZYME_CLASS_ID);
+alter table @oracle_dots@.AASEQUENCEENZYMECLASS add constraint AASEQUENCEENZYMECLASS_RS foreign key (REVIEW_STATUS_ID) references @oracle_sres@.REVIEWSTATUS (REVIEW_STATUS_ID);
 
 /* AASEQUENCEFAMILY */
 alter table @oracle_dots@.AASEQUENCEFAMILY add constraint AASEQUENCEFAMILY_FK01 foreign key (AA_FAMILY_EXPERIMENT_ID) references @oracle_dots@.AAFAMILYEXPERIMENT (AA_FAMILY_EXPERIMENT_ID);
@@ -201,7 +205,6 @@ alter table @oracle_dots@.COMPLEXCOMPONENT add constraint COMPLEXCOMPONENT_FK02 
 /* COMPLEXTYPE */
 
 /* CONSISTENTALIGNMENT */
-alter table @oracle_dots@.CONSISTENTALIGNMENT add constraint CONSISTENTALIGNMENT_FK04 foreign key (SIMILARITY_ID) references @oracle_dots@.SIMILARITY (SIMILARITY_ID);
 alter table @oracle_dots@.CONSISTENTALIGNMENT add constraint CONSISTENTALIGNMENT_FK05 foreign key (GENOMIC_NA_SEQUENCE_ID) references @oracle_dots@.NASEQUENCEIMP (NA_SEQUENCE_ID);
 alter table @oracle_dots@.CONSISTENTALIGNMENT add constraint CONSISTENTALIGNMENT_FK06 foreign key (TRANSCRIPT_NA_SEQUENCE_ID) references @oracle_dots@.NASEQUENCEIMP (NA_SEQUENCE_ID);
 
@@ -229,8 +232,6 @@ alter table @oracle_dots@.ENDSEQUENCEPAIRMAP add constraint ENDSEQUENCEPAIRMAP_F
 /* EPCR */
 alter table @oracle_dots@.EPCR add constraint EPCR_FK01 foreign key (MAP_TABLE_ID) references @oracle_core@.TABLEINFO (TABLE_ID);
 alter table @oracle_dots@.EPCR add constraint EPCR_FK02 foreign key (NA_SEQUENCE_ID) references @oracle_dots@.NASEQUENCEIMP (NA_SEQUENCE_ID);
-alter table @oracle_dots@.EPCR add constraint EPCR_FK03 foreign key (SIMILARITY_ID_1) references @oracle_dots@.SIMILARITY (SIMILARITY_ID);
-alter table @oracle_dots@.EPCR add constraint EPCR_FK04 foreign key (SIMILARITY_ID_2) references @oracle_dots@.SIMILARITY (SIMILARITY_ID);
 
 /* EST */
 alter table @oracle_dots@.EST add constraint EST_FK01 foreign key (CLONE_ID) references @oracle_dots@.CLONE (CLONE_ID);
@@ -306,7 +307,6 @@ alter table @oracle_dots@.GENEFEATURESEQOVERLAP add constraint GENEFEATURESEQOVE
 alter table @oracle_dots@.GENEFEATURESEQOVERLAP add constraint GENEFEATURESEQOVERLAP_FK03 foreign key (SEQ_NA_SEQUENCE_ID) references @oracle_dots@.NASEQUENCEIMP (NA_SEQUENCE_ID);
 alter table @oracle_dots@.GENEFEATURESEQOVERLAP add constraint GENEFEATURESEQOVERLAP_FK04 foreign key (END_SEQUENCE_PAIR_MAP_ID) references @oracle_dots@.ENDSEQUENCEPAIRMAP (END_SEQUENCE_PAIR_MAP_ID);
 alter table @oracle_dots@.GENEFEATURESEQOVERLAP add constraint GENEFEATURESEQOVERLAP_FK05 foreign key (EPCR_ID) references @oracle_dots@.EPCR (EPCR_ID);
-alter table @oracle_dots@.GENEFEATURESEQOVERLAP add constraint GENEFEATURESEQOVERLAP_FK06 foreign key (SIMILARITY_ID) references @oracle_dots@.SIMILARITY (SIMILARITY_ID);
 alter table @oracle_dots@.GENEFEATURESEQOVERLAP add constraint GENEFEATURESEQOVERLAP_FK07 foreign key (BLAT_ALIGNMENT_ID) references @oracle_dots@.BLATALIGNMENT (BLAT_ALIGNMENT_ID);
 
 /* GENEINSTANCE */
@@ -333,9 +333,9 @@ alter table @oracle_dots@.GENETRAPASSEMBLY add constraint GENETRAPASSEMBLY_FK02 
 
 /* GOASSOCIATION */
 alter table @oracle_dots@.GOASSOCIATION add constraint GOASSOCIATION_FK03 foreign key (REVIEW_STATUS_ID) references @oracle_sres@.REVIEWSTATUS (REVIEW_STATUS_ID);
-alter table @oracle_dots@.GOASSOCIATION add unique (TABLE_ID,ROW_ID,GO_TERM_ID);
 alter table @oracle_dots@.GOASSOCIATION add constraint GOSSOCIATION_FK01 foreign key (TABLE_ID) references @oracle_core@.TABLEINFO (TABLE_ID);
 alter table @oracle_dots@.GOASSOCIATION add constraint GOSSOCIATION_FK02 foreign key (GO_TERM_ID) references @oracle_sres@.GOTERM (GO_TERM_ID);
+alter table @oracle_dots@.GOASSOCIATION add unique (TABLE_ID,ROW_ID,GO_TERM_ID);
 
 /* GOASSOCIATIONINSTANCE */
 alter table @oracle_dots@.GOASSOCIATIONINSTANCE add constraint GOASSOCIATIONINSTANCE_FK01 foreign key (GO_ASSOCIATION_ID) references @oracle_dots@.GOASSOCIATION (GO_ASSOCIATION_ID);
@@ -360,7 +360,6 @@ alter table @oracle_dots@.INDEXWORDLINK add constraint INDEXWORDLINK_FK05 foreig
 alter table @oracle_dots@.INDEXWORDSIMLINK add constraint INDEXWORDSIMLINK_FK04 foreign key (TARGET_TABLE_ID) references @oracle_core@.TABLEINFO (TABLE_ID);
 alter table @oracle_dots@.INDEXWORDSIMLINK add constraint INDEXWORDSIMLINK_FK05 foreign key (INDEX_WORD_ID) references @oracle_dots@.INDEXWORD (INDEX_WORD_ID);
 alter table @oracle_dots@.INDEXWORDSIMLINK add constraint INDEXWORDSIMLINK_FK06 foreign key (SIMILARITY_TABLE_ID) references @oracle_core@.TABLEINFO (TABLE_ID);
-alter table @oracle_dots@.INDEXWORDSIMLINK add constraint INDEXWORDSIMLINK_FK07 foreign key (BEST_SIMILARITY_ID) references @oracle_dots@.SIMILARITY (SIMILARITY_ID);
 
 /* INTERACTION */
 alter table @oracle_dots@.INTERACTION add constraint INTERACTION_FK01 foreign key (INTERACTION_TYPE_ID) references @oracle_dots@.INTERACTIONTYPE (INTERACTION_TYPE_ID);
@@ -634,19 +633,16 @@ alter table @oracle_dots@.SEQUENCESEQUENCEGROUP add constraint SEQUENCESEQUENCEG
 alter table @oracle_dots@.SEQUENCETYPE add constraint SEQUENCETYPE_FK foreign key (PARENT_SEQUENCE_TYPE_ID) references @oracle_dots@.SEQUENCETYPE (SEQUENCE_TYPE_ID);
 
 /* SIMILARITY */
-alter table @oracle_dots@.SIMILARITY add constraint SIMILARITY_FK01 foreign key (ALGORITHM_ID) references @oracle_core@.ALGORITHM (ALGORITHM_ID);
-alter table @oracle_dots@.SIMILARITY add constraint SIMILARITY_FK04 foreign key (QUERY_TABLE_ID) references @oracle_core@.TABLEINFO (TABLE_ID);
-alter table @oracle_dots@.SIMILARITY add constraint SIMILARITY_FK05 foreign key (SUBJECT_TABLE_ID) references @oracle_core@.TABLEINFO (TABLE_ID);
 
 /* SIMILARITYSPAN */
-alter table @oracle_dots@.SIMILARITYSPAN add constraint SIMILARITYSPAN_FK03 foreign key (SIMILARITY_ID) references @oracle_dots@.SIMILARITY (SIMILARITY_ID);
+alter table @oracle_dots@.SIMILARITYSPAN add constraint SIMILARITYSPAN_FK01 foreign key (SIMILARITY_ID) references @oracle_dots@.SIMILARITY (SIMILARITY_ID);
 
 /* TRANSLATEDAAFEATSEG */
 alter table @oracle_dots@.TRANSLATEDAAFEATSEG add constraint TRANSLATEDAAFEATSEG_FK01 foreign key (AA_FEATURE_ID) references @oracle_dots@.AAFEATUREIMP (AA_FEATURE_ID);
 
 
 
-/* 316 non-primary key constraint(s) */
+/* 310 non-primary key constraint(s) */
 
 SPOOL OFF
 SET ECHO OFF

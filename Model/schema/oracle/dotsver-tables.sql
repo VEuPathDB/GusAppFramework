@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dotsver-tables.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Fri Feb 21 01:48:50 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:12:06 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -310,6 +310,29 @@ CREATE TABLE @oracle_dotsver@.AASEQUENCEDBREFVER (
  TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
+CREATE TABLE @oracle_dotsver@.AASEQUENCEENZYMECLASSVER (
+    AA_SEQUENCE_ENZYME_CLASS_ID        NUMBER(12)                                    NOT NULL,
+    AA_SEQUENCE_ID                     NUMBER(12)                                    NOT NULL,
+    ENZYME_CLASS_ID                    NUMBER(12)                                    NOT NULL,
+    EVIDENCE_CODE                      VARCHAR2(255)                                 NOT NULL,
+    REVIEW_STATUS_ID                   NUMBER(12)                                    NOT NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL,
+    VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
+    VERSION_DATE                       DATE                                          NULL,
+    VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
+ TABLESPACE @oracle_dotsverTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
 CREATE TABLE @oracle_dotsver@.AASEQUENCEFAMILYVER (
     AA_SEQUENCE_FAMILY_ID              NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(500)                                 NOT NULL,
@@ -389,7 +412,7 @@ CREATE TABLE @oracle_dotsver@.AASEQUENCEGROUPIMPVER (
 
 CREATE TABLE @oracle_dotsver@.AASEQUENCEIMPVER (
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
-    SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1     NULL,
+    SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1         NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
     MOLECULAR_WEIGHT                   NUMBER(12)                                    NULL,
     SEQUENCE                           CLOB                                          NULL,
@@ -1306,7 +1329,7 @@ CREATE TABLE @oracle_dotsver@.EVIDENCEVER (
     FACT_ID                            NUMBER(10)                                    NOT NULL,
     ATTRIBUTE_NAME                     VARCHAR2(30)                                  NULL,
     EVIDENCE_GROUP_ID                  NUMBER(12)                                    NOT NULL,
-    BEST_EVIDENCE                      NUMBER(1)                                     DEFAULT 0  NOT NULL,
+    BEST_EVIDENCE                      NUMBER(1)                                     DEFAULT 0      NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
@@ -1914,7 +1937,8 @@ CREATE TABLE @oracle_dotsver@.GOASSOCIATIONINSTANCEVER (
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NULL,
     SOURCE_ID                          VARCHAR2(32)                                  NULL,
     IS_NOT                             NUMBER(1)                                     NULL,
-    DEFINING                           NUMBER(1)                                     NOT NULL,
+    IS_PRIMARY                         NUMBER(1)                                     NOT NULL,
+    IS_DEPRECATED                      NUMBER(1)                                     NOT NULL,
     REVIEW_STATUS_ID                   NUMBER(10)                                    NOT NULL,
     P_VALUE_RATIO                      FLOAT(126)                                    NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
@@ -1939,7 +1963,8 @@ CREATE TABLE @oracle_dotsver@.GOASSOCIATIONVER (
     TABLE_ID                           NUMBER(10)                                    NOT NULL,
     ROW_ID                             NUMBER(10)                                    NOT NULL,
     GO_TERM_ID                         NUMBER(10)                                    NOT NULL,
-    IS_NOT                             NUMBER(1)                                     NULL,
+    IS_NOT                             NUMBER(1)                                     NOT NULL,
+    IS_DEPRECATED                      NUMBER(1)                                     NOT NULL,
     DEFINING                           NUMBER(1)                                     NOT NULL,
     GO_ASSOCIATION_DATE                DATE                                          NULL,
     REVIEW_STATUS_ID                   NUMBER(10)                                    NOT NULL,
@@ -2683,7 +2708,7 @@ CREATE TABLE @oracle_dotsver@.NASEQCYTOLOCATIONVER (
 
 CREATE TABLE @oracle_dotsver@.NASEQUENCEIMPVER (
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
-    SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1     NOT NULL,
+    SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1         NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
     SEQUENCE_TYPE_ID                   NUMBER(4)                                     NOT NULL,
     TAXON_ID                           NUMBER(12)                                    NULL,
@@ -2995,7 +3020,7 @@ CREATE TABLE @oracle_dotsver@.PFAMENTRYVER (
     PFAM_ENTRY_ID                      NUMBER(10)                                    NOT NULL,
     RELEASE                            VARCHAR2(5)                                   NOT NULL,
     ACCESSION                          VARCHAR2(10)                                  NOT NULL,
-    IDENTIFIER                         VARCHAR2(16)                                  NOT NULL,
+    IDENTIFIER                         VARCHAR2(32)                                  NOT NULL,
     DEFINITION                         VARCHAR2(80)                                  NOT NULL,
     AUTHOR                             VARCHAR2(255)                                 NULL,
     ALIGNMENT_METHOD                   VARCHAR2(100)                                 NULL,
@@ -3955,7 +3980,7 @@ CREATE TABLE @oracle_dotsver@.TRANSLATEDAAFEATSEGVER (
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
-/* 157 table(s) */
+/* 158 table(s) */
 
 SPOOL OFF
 SET ECHO OFF

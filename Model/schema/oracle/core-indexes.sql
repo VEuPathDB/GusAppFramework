@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* core-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 23:18:29 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:08:22 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -100,9 +100,9 @@ create index @oracle_core@.WORKFLOWNODEIMP_IND01 on @oracle_core@.WORKFLOWNODEIM
 create index @oracle_core@.WORKFLOWNODEIMP_IND02 on @oracle_core@.WORKFLOWNODEIMP (ALGORITHM_INVOCATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
 
 /* WORKFLOWSTATUS */
+create index @oracle_core@.WORKFLOWSTATUS_IND03 on @oracle_core@.WORKFLOWSTATUS (ITEM_INVOCATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
 create index @oracle_core@.WORKFLOWSTATUS_IND01 on @oracle_core@.WORKFLOWSTATUS (WORKFLOW_ALG_INVOCATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
 create index @oracle_core@.WORKFLOWSTATUS_IND02 on @oracle_core@.WORKFLOWSTATUS (WORKFLOW_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWSTATUS_IND03 on @oracle_core@.WORKFLOWSTATUS (ITEM_INVOCATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
 
 
 

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dotsver-indexes.sql                                                                        */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:47:56 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:13:36 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -39,6 +39,9 @@ SPOOL dotsver-indexes.log
 
 
 /* AASEQUENCEDBREFVER */
+
+
+/* AASEQUENCEENZYMECLASSVER */
 
 
 /* AASEQUENCEFAMILYVER */
@@ -327,7 +330,7 @@ SPOOL dotsver-indexes.log
 
 
 /* NASEQUENCEIMPVER */
-
+create index @oracle_dotsver@.MPS_TEMP on @oracle_dotsver@.NASEQUENCEIMPVER (NA_SEQUENCE_ID,MODIFICATION_DATE)  TABLESPACE @oracle_dotsverIndexTablespace@;
 
 /* NASEQUENCEKEYWORDVER */
 
@@ -481,7 +484,7 @@ SPOOL dotsver-indexes.log
 
 
 
-/* 0 index(es) */
+/* 1 index(es) */
 
 SPOOL OFF
 SET ECHO OFF

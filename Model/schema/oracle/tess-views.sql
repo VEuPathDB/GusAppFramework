@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* tess-views.sql                                                                             */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 13:28:15 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:13:57 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -82,6 +82,107 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id 
   FROM TESS.ActivityImp WHERE subclass_view = 'ActivityProteinDnaBinding' WITH CHECK OPTION;
+
+CREATE VIEW @oracle_tess@.MODEL
+( MODEL_ID,
+  SUBCLASS_VIEW,
+  NAME,
+  EXTERNAL_DATABASE_RELEASE_ID,
+  SOURCE_ID,
+  VERSION_STRING,
+  VERSION_DESCRIPTION,
+  SECONDARY_ID,
+  BEST_PRACTICE_PARAM_GROUP_ID,
+  REVIEW_STATUS_ID,
+  MODIFICATION_DATE,
+  USER_READ,
+  USER_WRITE,
+  GROUP_READ,
+  GROUP_WRITE,
+  OTHER_READ,
+  OTHER_WRITE,
+  ROW_USER_ID,
+  ROW_GROUP_ID,
+  ROW_PROJECT_ID,
+  ROW_ALG_INVOCATION_ID )
+AS SElECT
+  model_id,
+  subclass_view,
+  name,
+  external_database_release_id,
+  source_id,
+  version_string,
+  version_description,
+  secondary_id,
+  best_practice_param_group_id,
+  review_status_id,
+  /* gus overhead */
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id
+from TESS.ModelImp;
+
+CREATE VIEW @oracle_tess@.MODELMARKOVCHAIN
+AS SELECT
+  model_id,
+  subclass_view,
+  name,
+  external_database_release_id,
+  source_id,
+  version_string,
+  version_description,
+  secondary_id,
+  best_practice_param_group_id,
+  review_status_id,
+  bool1 AS is_variable_order,
+  int1 AS maximum_order,
+  /* gus overhead */
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+from TESS.ModelImp where subclass_view = 'ModelMarkovChain' with check option;
+
+CREATE VIEW @oracle_tess@.MODELSBCGGRAMMAR
+AS SELECT
+  model_id,
+  subclass_view,
+  name,
+  external_database_release_id,
+  source_id,
+  version_string,
+  version_description,
+  secondary_id,
+  best_practice_param_group_id,
+  review_status_id,
+  /* gus overhead */
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+from TESS.ModelImp where subclass_view = 'ModelSbcgGrammar' with check option;
 
 CREATE VIEW @oracle_tess@.MOIETY
 AS SELECT
@@ -209,7 +310,7 @@ CREATE VIEW @oracle_tess@.SBCGRECOGCONSENSUSSTRING
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
-  sbcg_grammar_id,
+  model_id,
   string1 AS value,
   int1 AS mismatches_allowed,
   /* gus overhead */
@@ -230,7 +331,7 @@ CREATE VIEW @oracle_tess@.SBCGRECOGGAP
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
-  sbcg_grammar_id,
+  model_id,
   /* gus overhead */
   modification_date,
   user_read,
@@ -248,7 +349,7 @@ from TESS.SbcgRecognitionImp where subclass_view = 'SbcgRecogGap' with check opt
 CREATE VIEW @oracle_tess@.SBCGRECOGNITION
 ( SBCG_RECOGNITION_ID,
   SUBCLASS_VIEW,
-  SBCG_GRAMMAR_ID,
+  MODEL_ID,
   MODIFICATION_DATE,
   USER_READ,
   USER_WRITE,
@@ -263,7 +364,7 @@ CREATE VIEW @oracle_tess@.SBCGRECOGNITION
 AS select
   sbcg_recognition_id,
   subclass_view,
-  sbcg_grammar_id
+  model_id
   ,
     /* GUS overhead */
         modification_date,
@@ -283,7 +384,7 @@ CREATE VIEW @oracle_tess@.SBCGRECOGPATHEXPRESSION
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
-  sbcg_grammar_id,
+  model_id,
   int1 AS length,
   boolean1 AS anchor_point_begin,
   boolean2 AS anchor_point_center,
@@ -306,7 +407,7 @@ CREATE VIEW @oracle_tess@.SBCGRECOGPOSITION
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
-  sbcg_grammar_id,
+  model_id,
   boolean1 AS is_relative,
   int1 AS value,
   /* gus overhead */
@@ -327,7 +428,7 @@ CREATE VIEW @oracle_tess@.SBCGRECOGSTRING
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
-  sbcg_grammar_id,
+  model_id,
   string1 AS value,
   int1 AS mismatches_allowed,
   /* gus overhead */
@@ -348,7 +449,7 @@ CREATE VIEW @oracle_tess@.SBCGRECOGWEIGHTMATRIX
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
-  sbcg_grammar_id,
+  model_id,
   int1 AS length,
   int1 AS width,
   float1 AS total_information,
@@ -370,7 +471,7 @@ AS SELECT
 from TESS.SbcgRecognitionImp where subclass_view = 'SbcgRecogWeightMatrix' with check option;
 
 
-/* 15 view(s) */
+/* 18 view(s) */
 
 SPOOL OFF
 SET ECHO OFF

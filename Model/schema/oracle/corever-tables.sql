@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* corever-tables.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Feb 25 10:26:59 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:08:22 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -87,7 +87,7 @@ CREATE TABLE @oracle_corever@.ALGORITHMPARAMKEYVER (
     ALGORITHM_PARAM_KEY                VARCHAR2(60)                                  NOT NULL,
     ALGORITHM_PARAM_KEY_TYPE_ID        NUMBER(3)                                     NOT NULL,
     IS_LIST_VALUED                     NUMBER(1)                                     NOT NULL,
-    DESCRIPTION                        VARCHAR2(512)                                 NULL,
+    DESCRIPTION                        VARCHAR2(1024)                                NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
@@ -584,7 +584,7 @@ CREATE TABLE @oracle_corever@.WORKFLOWSTATUSVER (
     ITEM_TYPE                          VARCHAR2(30)                                  NOT NULL,
     ITEM_ID                            NUMBER(12)                                    NOT NULL,
     ITEM_INVOCATION_ID                 NUMBER(12)                                    NOT NULL,
-    RELOAD_WORKFLOW                    NUMBER(1)                                     DEFAULT 0   NOT NULL,
+    RELOAD_WORKFLOW                    NUMBER(1)                                     DEFAULT 0       NOT NULL,
     STATUS                             CHAR(1)                                       NOT NULL,
     START_TIME                         DATE                                          NOT NULL,
     END_TIME                           DATE                                          NULL,

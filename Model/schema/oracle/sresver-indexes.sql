@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* sresver-indexes.sql                                                                        */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:41 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:10:24 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -42,6 +42,12 @@ SPOOL sresver-indexes.log
 
 
 /* DISEASEVER */
+
+
+/* ECPATHWAYENZYMECLASSVER */
+
+
+/* ECPATHWAYVER */
 
 
 /* ENZYMECLASSATTRIBUTEVER */
@@ -96,6 +102,9 @@ SPOOL sresver-indexes.log
 
 
 /* ONTOLOGYRELATIONSHIPTYPEVER */
+
+
+/* ONTOLOGYTERMTYPEVER */
 
 
 /* PATOATTRIBUTEVER */

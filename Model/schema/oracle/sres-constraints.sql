@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* sres-constraints.sql                                                                       */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:22 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:10:04 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -50,6 +50,13 @@ alter table @oracle_sres@.DEVELOPMENTALSTAGE add constraint DEVELOPMENTALSTAGE_F
 /* DISEASE */
 alter table @oracle_sres@.DISEASE add constraint DISEASE_FK01 foreign key (PARENT_ID) references @oracle_sres@.DISEASE (DISEASE_ID);
 
+/* ECPATHWAY */
+alter table @oracle_sres@.ECPATHWAY add constraint ECPATHWAY_FK_EXTDB foreign key (EXTERNAL_DATABASE_RELEASE_ID) references @oracle_sres@.EXTERNALDATABASERELEASE (EXTERNAL_DATABASE_RELEASE_ID);
+
+/* ECPATHWAYENZYMECLASS */
+alter table @oracle_sres@.ECPATHWAYENZYMECLASS add constraint ECPATHWAYENZYMECLASS_FK_EC foreign key (ENZYME_CLASS_ID) references @oracle_sres@.ENZYMECLASS (ENZYME_CLASS_ID);
+alter table @oracle_sres@.ECPATHWAYENZYMECLASS add constraint ECPATHWAYENZYMECLASS_FK_ECP foreign key (EC_PATHWAY_ID) references @oracle_sres@.ECPATHWAY (EC_PATHWAY_ID);
+
 /* ENZYMECLASS */
 alter table @oracle_sres@.ENZYMECLASS add constraint ENZYMECLASS_FK01 foreign key (PARENT_ID) references @oracle_sres@.ENZYMECLASS (ENZYME_CLASS_ID);
 alter table @oracle_sres@.ENZYMECLASS add constraint ENZYMECLASS_FK02 foreign key (EXTERNAL_DATABASE_RELEASE_ID) references @oracle_sres@.EXTERNALDATABASERELEASE (EXTERNAL_DATABASE_RELEASE_ID);
@@ -96,8 +103,9 @@ alter table @oracle_sres@.GOTERM add constraint GOTERM_FK02 foreign key (ANCESTO
 /* LINEAGE */
 
 /* MGEDONTOLOGYRELATIONSHIP */
-alter table @oracle_sres@.MGEDONTOLOGYRELATIONSHIP add constraint FK_MGEDOEREL_MGEDONTOTERM_C foreign key (CHILD_TERM_ID) references @oracle_sres@.MGEDONTOLOGYTERM (MGED_ONTOLOGY_TERM_ID);
-alter table @oracle_sres@.MGEDONTOLOGYRELATIONSHIP add constraint FK_MGEDOEREL_MGEDONTOTERM_P foreign key (PARENT_TERM_ID) references @oracle_sres@.MGEDONTOLOGYTERM (MGED_ONTOLOGY_TERM_ID);
+alter table @oracle_sres@.MGEDONTOLOGYRELATIONSHIP add constraint FK_MGEDOEREL_MGEDONTOTERM_O foreign key (OBJECT_TERM_ID) references @oracle_sres@.MGEDONTOLOGYTERM (MGED_ONTOLOGY_TERM_ID);
+alter table @oracle_sres@.MGEDONTOLOGYRELATIONSHIP add constraint FK_MGEDOEREL_MGEDONTOTERM_P foreign key (PREDICATE_TERM_ID) references @oracle_sres@.MGEDONTOLOGYTERM (MGED_ONTOLOGY_TERM_ID);
+alter table @oracle_sres@.MGEDONTOLOGYRELATIONSHIP add constraint FK_MGEDOEREL_MGEDONTOTERM_S foreign key (SUBJECT_TERM_ID) references @oracle_sres@.MGEDONTOLOGYTERM (MGED_ONTOLOGY_TERM_ID);
 alter table @oracle_sres@.MGEDONTOLOGYRELATIONSHIP add constraint FK_MGEDOEREL_ONTORELTYPE foreign key (ONTOLOGY_RELATIONSHIP_TYPE_ID) references @oracle_sres@.ONTOLOGYRELATIONSHIPTYPE (ONTOLOGY_RELATIONSHIP_TYPE_ID);
 
 /* MGEDONTOLOGYTERM */
@@ -106,6 +114,8 @@ alter table @oracle_sres@.MGEDONTOLOGYTERM add constraint FK_MGEDOETERM_EXTDBREL
 /* MUTAGEN */
 
 /* ONTOLOGYRELATIONSHIPTYPE */
+
+/* ONTOLOGYTERMTYPE */
 
 /* PATOATTRIBUTE */
 
@@ -138,7 +148,7 @@ alter table @oracle_sres@.TAXONNAME add constraint TAXONNAME_FK01 foreign key (T
 
 
 
-/* 48 non-primary key constraint(s) */
+/* 52 non-primary key constraint(s) */
 
 SPOOL OFF
 SET ECHO OFF

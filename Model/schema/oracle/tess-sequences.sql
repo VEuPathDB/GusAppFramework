@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* tess-sequences.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:47:56 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:13:36 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -11,11 +11,13 @@ SPOOL tess-sequences.log
 CREATE SEQUENCE @oracle_tess@.ACTIVITYCONDITIONS_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.ACTIVITYIMP_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.ACTIVITYINFERENCESOURCE_SQ START WITH 1;
+CREATE SEQUENCE @oracle_tess@.ACTIVITYMODEL_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.ANALYSIS_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.FOOTPRINTMETHODPROTOCOL_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.FOOTPRINT_SQ START WITH 1;
+CREATE SEQUENCE @oracle_tess@.MARKOVCHAINOBS_SQ START WITH 1;
+CREATE SEQUENCE @oracle_tess@.MODELIMP_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.MODELRESULT_SQ START WITH 1;
-CREATE SEQUENCE @oracle_tess@.MODEL_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.MOIETYIMP_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.MOIETYINSTANCE_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.MOIETYMEMBER_SQ START WITH 1;
@@ -37,7 +39,6 @@ CREATE SEQUENCE @oracle_tess@.SBCGANNOTATIONFILTERTERM_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.SBCGANNOTATIONFILTER_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.SBCGANNOTATIONGUIDE_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.SBCGCOMPARISONTYPE_SQ START WITH 1;
-CREATE SEQUENCE @oracle_tess@.SBCGGRAMMAR_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.SBCGNONTERMINAL_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.SBCGPATHTERMRELATIONTYPE_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.SBCGPRODUCTIONTYPE_SQ START WITH 1;
@@ -49,7 +50,7 @@ CREATE SEQUENCE @oracle_tess@.SBCGSTREAM_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.TRAININGSETMEMBER_SQ START WITH 1;
 CREATE SEQUENCE @oracle_tess@.TRAININGSET_SQ START WITH 1;
 
-/* 40 sequences(s) */
+/* 41 sequences(s) */
 
 SPOOL OFF
 SET ECHO OFF

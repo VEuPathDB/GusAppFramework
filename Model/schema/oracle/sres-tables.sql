@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* sres-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:01 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:09:44 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -291,6 +291,43 @@ CREATE TABLE @oracle_sres@.DISEASE (
  TABLESPACE @oracle_sresTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
+CREATE TABLE @oracle_sres@.ECPATHWAY (
+    EC_PATHWAY_ID                      NUMBER(12)                                    NOT NULL,
+    SOURCE_ID                          VARCHAR2(40)                                  NOT NULL,
+    EXTERNAL_DATABASE_RELEASE_ID       NUMBER(12)                                    NOT NULL,
+    DESCRIPTION                        VARCHAR2(400)                                 NOT NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_sresTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+CREATE TABLE @oracle_sres@.ECPATHWAYENZYMECLASS (
+    EC_PATHWAY_ENZYME_CLASS_ID         NUMBER(12)                                    NOT NULL,
+    EC_PATHWAY_ID                      NUMBER(12)                                    NOT NULL,
+    ENZYME_CLASS_ID                    NUMBER(12)                                    NOT NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_sresTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
 CREATE TABLE @oracle_sres@.ENZYMECLASS (
     ENZYME_CLASS_ID                    NUMBER(12)                                    NOT NULL,
     DEPTH                              NUMBER(1)                                     NOT NULL,
@@ -549,7 +586,7 @@ CREATE TABLE @oracle_sres@.GOTERM (
     MINIMUM_LEVEL                      NUMBER                                        NOT NULL,
     MAXIMUM_LEVEL                      NUMBER                                        NOT NULL,
     NUMBER_OF_LEVELS                   NUMBER                                        NOT NULL,
-    ANCESTOR_GO_TERM_ID                NUMBER(10)                                    NOT NULL,
+    ANCESTOR_GO_TERM_ID                NUMBER(10)                                    NULL,
     IS_OBSOLETE                        NUMBER(1)                                     NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
@@ -585,8 +622,9 @@ CREATE TABLE @oracle_sres@.LINEAGE (
 
 CREATE TABLE @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (
     MGED_ONTOLOGY_RELATIONSHIP_ID      NUMBER(10)                                    NOT NULL,
-    PARENT_TERM_ID                     NUMBER(10)                                    NOT NULL,
-    CHILD_TERM_ID                      NUMBER(10)                                    NOT NULL,
+    SUBJECT_TERM_ID                    NUMBER(10)                                    NOT NULL,
+    PREDICATE_TERM_ID                  NUMBER(10)                                    NULL,
+    OBJECT_TERM_ID                     NUMBER(10)                                    NOT NULL,
     ONTOLOGY_RELATIONSHIP_TYPE_ID      NUMBER(4)                                     NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
@@ -604,6 +642,7 @@ CREATE TABLE @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (
 
 CREATE TABLE @oracle_sres@.MGEDONTOLOGYTERM (
     MGED_ONTOLOGY_TERM_ID              NUMBER(10)                                    NOT NULL,
+    ONTOLOGY_TERM_TYPE_ID              NUMBER(5)                                     NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(255)                                 NOT NULL,
     URI                                VARCHAR2(500)                                 NULL,
@@ -645,6 +684,24 @@ CREATE TABLE @oracle_sres@.ONTOLOGYRELATIONSHIPTYPE (
     ONTOLOGY_RELATIONSHIP_TYPE_ID      NUMBER(4)                                     NOT NULL,
     IS_NATIVE                          NUMBER(1)                                     NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_sresTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+CREATE TABLE @oracle_sres@.ONTOLOGYTERMTYPE (
+    ONTOLOGY_TERM_TYPE_ID              NUMBER(5)                                     NOT NULL,
+    NAME                               VARCHAR2(50)                                  NOT NULL,
+    DESCRIPTION                        VARCHAR2(100)                                 NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
@@ -850,7 +907,7 @@ CREATE TABLE @oracle_sres@.TAXONNAME (
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
-/* 39 table(s) */
+/* 42 table(s) */
 
 SPOOL OFF
 SET ECHO OFF

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Fri Feb 21 01:45:27 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:10:25 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -277,6 +277,26 @@ CREATE TABLE @oracle_dots@.AASEQUENCEDBREF (
  TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
+CREATE TABLE @oracle_dots@.AASEQUENCEENZYMECLASS (
+    AA_SEQUENCE_ENZYME_CLASS_ID        NUMBER(12)                                    NOT NULL,
+    AA_SEQUENCE_ID                     NUMBER(12)                                    NOT NULL,
+    ENZYME_CLASS_ID                    NUMBER(12)                                    NOT NULL,
+    EVIDENCE_CODE                      VARCHAR2(255)                                 NOT NULL,
+    REVIEW_STATUS_ID                   NUMBER(12)                                    NOT NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_dotsTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
 CREATE TABLE @oracle_dots@.AASEQUENCEFAMILY (
     AA_SEQUENCE_FAMILY_ID              NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(500)                                 NOT NULL,
@@ -347,7 +367,7 @@ CREATE TABLE @oracle_dots@.AASEQUENCEGROUPIMP (
 
 CREATE TABLE @oracle_dots@.AASEQUENCEIMP (
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
-    SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1     NULL,
+    SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1         NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
     MOLECULAR_WEIGHT                   NUMBER(12)                                    NULL,
     SEQUENCE                           CLOB                                          NULL,
@@ -784,7 +804,7 @@ CREATE TABLE @oracle_dots@.BLATALIGNMENT (
     REPEAT_BASES_ALIGNED               NUMBER(12)                                    NOT NULL,
     NUM_NS                             NUMBER(12)                                    NOT NULL,
     SCORE                              FLOAT(126)                                    NOT NULL,
-    IS_BEST_ALIGNMENT                  NUMBER(1)                                     DEFAULT 0       NOT NULL,
+    IS_BEST_ALIGNMENT                  NUMBER(1)                                     DEFAULT 0           NOT NULL,
     BLAT_ALIGNMENT_QUALITY_ID          NUMBER(5)                                     NOT NULL,
     BLOCKSIZES                         VARCHAR2(4000)                                NOT NULL,
     QSTARTS                            VARCHAR2(4000)                                NOT NULL,
@@ -1221,7 +1241,7 @@ CREATE TABLE @oracle_dots@.EVIDENCE (
     FACT_ID                            NUMBER(10)                                    NOT NULL,
     ATTRIBUTE_NAME                     VARCHAR2(30)                                  NULL,
     EVIDENCE_GROUP_ID                  NUMBER(12)                                    NOT NULL,
-    BEST_EVIDENCE                      NUMBER(1)                                     DEFAULT 0  NOT NULL,
+    BEST_EVIDENCE                      NUMBER(1)                                     DEFAULT 0      NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
@@ -1731,7 +1751,8 @@ CREATE TABLE @oracle_dots@.GOASSOCIATION (
     TABLE_ID                           NUMBER(10)                                    NOT NULL,
     ROW_ID                             NUMBER(10)                                    NOT NULL,
     GO_TERM_ID                         NUMBER(10)                                    NOT NULL,
-    IS_NOT                             NUMBER(1)                                     NULL,
+    IS_NOT                             NUMBER(1)                                     NOT NULL,
+    IS_DEPRECATED                      NUMBER(1)                                     NOT NULL,
     DEFINING                           NUMBER(1)                                     NOT NULL,
     GO_ASSOCIATION_DATE                DATE                                          NULL,
     REVIEW_STATUS_ID                   NUMBER(10)                                    NOT NULL,
@@ -1756,7 +1777,8 @@ CREATE TABLE @oracle_dots@.GOASSOCIATIONINSTANCE (
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NULL,
     SOURCE_ID                          VARCHAR2(32)                                  NULL,
     IS_NOT                             NUMBER(1)                                     NULL,
-    DEFINING                           NUMBER(1)                                     NOT NULL,
+    IS_PRIMARY                         NUMBER(1)                                     NOT NULL,
+    IS_DEPRECATED                      NUMBER(1)                                     NOT NULL,
     REVIEW_STATUS_ID                   NUMBER(10)                                    NOT NULL,
     P_VALUE_RATIO                      FLOAT(126)                                    NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
@@ -2433,7 +2455,7 @@ CREATE TABLE @oracle_dots@.NASEQCYTOLOCATION (
 
 CREATE TABLE @oracle_dots@.NASEQUENCEIMP (
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
-    SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1     NOT NULL,
+    SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1         NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
     SEQUENCE_TYPE_ID                   NUMBER(4)                                     NOT NULL,
     TAXON_ID                           NUMBER(12)                                    NULL,
@@ -2709,7 +2731,7 @@ CREATE TABLE @oracle_dots@.PFAMENTRY (
     PFAM_ENTRY_ID                      NUMBER(10)                                    NOT NULL,
     RELEASE                            VARCHAR2(5)                                   NOT NULL,
     ACCESSION                          VARCHAR2(10)                                  NOT NULL,
-    IDENTIFIER                         VARCHAR2(16)                                  NOT NULL,
+    IDENTIFIER                         VARCHAR2(32)                                  NOT NULL,
     DEFINITION                         VARCHAR2(80)                                  NOT NULL,
     AUTHOR                             VARCHAR2(255)                                 NULL,
     ALIGNMENT_METHOD                   VARCHAR2(100)                                 NULL,
@@ -3552,7 +3574,7 @@ CREATE TABLE @oracle_dots@.TRANSLATEDAAFEATSEG (
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
-/* 159 table(s) */
+/* 160 table(s) */
 
 SPOOL OFF
 SET ECHO OFF
