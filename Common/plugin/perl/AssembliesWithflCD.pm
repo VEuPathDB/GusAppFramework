@@ -188,7 +188,7 @@ print STDERR "@diffArray\n";
 
 
 my %seen2 = ();
-my @diffArray2 = undef;
+my @diffArray2 = ();
 
 my $dt;
 
@@ -206,8 +206,9 @@ push (@diffArray2, $dt);  }
 #print STDERR "@diffArray\n";
 #print STDERR scalar"(@diffArray)";
 
-print "Arrayids@diffArray2\n";
-print "scalar(@diffArray2)\n";
+print STDERR "Arrayids@diffArray2\n";
+my $ids = scalar(@diffArray2);
+print STDERR "$ids\n";
 
 
 my $dbh = $self->getQueryHandle();
