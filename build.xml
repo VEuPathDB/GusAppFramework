@@ -62,6 +62,7 @@
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="GOPredict"/>
+      <property name ="skipJava" value="true"/>
     </ant>
   </target>
 
