@@ -767,7 +767,7 @@ sub __getDbIdColForOrg{
 	    $dbIdCol = 'source_id';
 	}
 	elsif ($orgName eq 'tair'){
-	    $dbIdCol = 'upper(source_idg)';
+	    $dbIdCol = 'upper(source_id)';
 	}
 	else {
 	    $self->userError("Did not get proper organism name; \'$orgName\' does not match one of the expected types.");
