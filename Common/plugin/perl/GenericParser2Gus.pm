@@ -710,6 +710,12 @@ sub buildFeatureObjects {
     }
 
  
+    my ($aa_seq, @properties) =
+        #$bioperl2Gus->buildTranslatedAASequence ($gf, $aa_feature_translated, $systematic_id);
+	$bioperl2Gus->buildTranslatedAASequence ($gf, $systematic_id);
+    push (@gus_objects, $aa_seq);
+    push (@gus_objects, @properties);
+
     ##
     # The Protein Feature object as both a TranslatedAAFeature and a ProteinFeature
     # ProteinFeature stores the EC number
@@ -720,15 +726,11 @@ sub buildFeatureObjects {
     # one will be retieved.
     ##
 
-    my ($aa_feature_translated, $aa_feature_protein) = $bioperl2Gus->buildProteinFeature ($rnaf); #, $aa_seq); 
+    my ($aa_feature_translated) = $bioperl2Gus->buildTranslatedAAFeature ($rnaf, $aa_seq);
     #TW my ($aa_feature_translated) = $bioperl2Gus->buildProteinFeature ($rnaf); #, $aa_seq);
-    push (@gus_objects, $aa_feature_protein);
+#    push (@gus_objects, $aa_feature_protein);
     push (@gus_objects, $aa_feature_translated);
 
-    my ($aa_seq, @properties) =
-        $bioperl2Gus->buildTranslatedAASequence ($gf, $aa_feature_translated, $systematic_id);
-    push (@gus_objects, $aa_seq);
-    push (@gus_objects, @properties);
 
 
     ##
