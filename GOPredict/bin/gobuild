@@ -351,12 +351,12 @@ sub downloadGOAssoc{
     $mgr->runCmd("mkdir -p $downloadSubDir");
 
     my $ftpsite = "ftp://ftp.geneontology.org/pub/go/gene-associations/";
-    my $flyFile = $propertySet->getProp(flyAssocFile);
-    my $wormFile = $propertySet->getProp(wormAssocFile);
-    my $yeastFile = $propertySet->getProp(yeastAssocFile);
-    my $mgiFile = $propertySet->getProp(mgiAssocFile);
-    my $tairFile = $propertySet->getProp(tairAssocFile);
-    my $sptrFile = $propertySet->getProp(sptrAssocFile);
+    my $flyFile = $propertySet->getProp('flyAssocFile');
+    my $wormFile = $propertySet->getProp('wormAssocFile');
+    my $yeastFile = $propertySet->getProp('yeastAssocFile');
+    my $mgiFile = $propertySet->getProp('mgiAssocFile');
+    my $tairFile = $propertySet->getProp('tairAssocFile');
+    my $sptrFile = $propertySet->getProp('sptrAssocFile');
 
 
     my $cmd = "wget -t5 -o $logfile -m -np -nd -nH --cut-dirs=3 -A \"$flyFile, $wormFile, $yeastFile, $mgiFile, $tairFile, $sptrFile\" -P $downloadSubDir $ftpsite";
@@ -1167,13 +1167,11 @@ sub substituteCDDPKs {
 sub insertAllExternalProteinSimilarities {
 
     my @domainNames = ("prodom", "cdd");
-    
     my @subjectNames = ("fly", "worm", "yeast", "arabidopsis", "swissprot", "trembl"); 
 
 
     foreach my $domain (@domainNames){
 	foreach my $subjectName (@subjectNames) {
-	    
 	    my $fullName = "$subjectName-$domain";
 	    &insertExternalProteinSimilarities ($fullName, "DoTS.ExternalAASequence");
 	    #dtb: check if need owner in parameter
@@ -1189,10 +1187,10 @@ sub insertExternalProteinSimilarities {
 
     my $restart = $propertySet->getProp('iPSRestart');
 
-    my $args = "--files $file --verbose --restart $restart --query_table ExternalAASequence --subject_table $subjectTable --log_frequency 10 --limit_sub 50 --limit_hsp 10";
+    my $args = "--files $file --verbose --restartAlgInvs $restart --query_table ExternalAASequence --subject_table $subjectTable --log_frequency 10 --subjectsLimit 50 --hspsLimit 10";
 
     $mgr->runPlugin("loadSims_$name", 
-		    "GUS::Common::Plugin::LoadBlastSimilaritiesPK", $args,
+		    "GUS::Common::Plugin::LoadBlastSimFast", $args,
 		    "Loading $name similarities");
 }
 
