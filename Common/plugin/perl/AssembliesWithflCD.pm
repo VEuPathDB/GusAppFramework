@@ -125,7 +125,7 @@ while(my($na_sequence_id) = $stmt2->fetchrow_array( ))  {
 
 
 my @DTs;
-my $DTarray_ref = \@DTs;
+
 my $ct = 0;
 
 foreach my $A(@na_sourceids)    {
@@ -137,6 +137,7 @@ foreach my $A(@na_sourceids)    {
 
 #check to see if all previous evidence still valid
 
+my $DTarray_ref = \@DTs;
 
 $self->RemoveEvidenceSourceID($DTarray_ref);
 
@@ -241,14 +242,16 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
    }
 
+    print "@{$DTarray_ref}\n";
+
     foreach my $target_id(@DTSasEvidenceTarget)  {
 
-      foreach (@{$DTarray_ref})  {
+      foreach my $DT(@{$DTarray_ref})  {
 
 
-       if ($target_id == $_){  next;  }
+       if ($target_id == $DT){  next;  }
 
-        if ($target_id != $_)  {
+        if ($target_id != $DT)  {
 
           my $dbh = $self->getQueryHandle();
 
