@@ -12,7 +12,7 @@ package GUS::Common::Plugin::LoadGeneFeaturesFromXML;
 
 use strict;
 use DBI;
-use Disp;
+use CBIL::Util::Disp;
 use XML::Simple;
 
 
@@ -195,7 +195,7 @@ sub parseFile{
 					 'GO_ID', 'GO_EVIDENCE',
 					 'EC_NUM',
 					 'TU']);
-  Disp::Display($tree) if $ctx->{cla}->{verbose};
+  CBIL::Util::Disp::Display($tree) if $ctx->{cla}->{verbose};
 
   return $tree;
 }
@@ -957,7 +957,7 @@ sub TASK_EcAnnotation {
     $self->log("Count " .
 	       $gene_xml->{GENE_INFO}->{PUB_LOCUS},
 	       $ec_annot_n);
-    Disp::Display($ec_xml) if $ctx->{cla}->{Display};
+    CBIL::Util::Disp::Display($ec_xml) if $ctx->{cla}->{Display};
 
     # count the number of associations given
     $assoc_given_n += $ec_annot_n;
@@ -1108,7 +1108,7 @@ sub TASK_GoAnnotation {
     my $go_xml = $gene_xml->{GENE_INFO}->{GENE_ONTOLOGY}->{GO_ID};
     my $go_annot_n = defined $go_xml ? scalar @$go_xml : 0;
     $self->log("GOANON" . $gene_xml->{GENE_INFO}->{PUB_LOCUS}, $go_annot_n);
-    Disp::Display($go_xml) if $ctx->{cla}->{Display};
+    CBIL::Util::Disp::Display($go_xml) if $ctx->{cla}->{Display};
 
     # count the number of associations given
     $assoc_given_n += $go_annot_n;
