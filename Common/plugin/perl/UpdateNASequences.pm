@@ -13,15 +13,15 @@
 # *only* function correctly if the CLOB in question has already been
 # initialized):
 #
-# CREATE OR REPLACE PROCEDURE append_naseq (seqid NUMBER, seq VARCHAR2) IS
+# CREATE OR REPLACE PROCEDURE append_dots_naseq (seqid NUMBER, seq VARCHAR2) IS
 #	clob_loc CLOB;
 #   BEGIN
 #	SELECT sequence INTO clob_loc
 #	FROM DoTS.NASequenceImp where na_sequence_id = seqid
 #	FOR UPDATE;
 #	DBMS_LOB.WRITEAPPEND(clob_loc, length(seq), seq);
-#   END append_naseq;
-#
+#   END append_dots_naseq;
+# /
 # Created: Wed Oct 30 13:57:56 EST 2002
 #
 # Jonathan Crabtree
@@ -84,8 +84,6 @@ sub new {
   return $self;
 }
 
-my $TPREF = 'DoTS';
-
 sub run {
     my $self = shift;
     
@@ -116,7 +114,7 @@ sub run {
 
     my $seqLookup = $dbh->prepare($SEQ_SQL);
     my $seqUpdate = $dbh->prepare("update DoTS.NASequenceImp set sequence = ? where na_sequence_id = ?");
-    my $seqAppend = $dbh->prepare("BEGIN append_naseq(?, ?); END;");
+    my $seqAppend = $dbh->prepare("BEGIN append_dots_naseq(?, ?); END;");
 
     my $defline = undef;
     my $srcId = undef;
@@ -126,8 +124,7 @@ sub run {
     my $charsWritten = undef;
     my $line = undef;
 
-    # FASTA file expected on STDIN
-    #
+    &createStoredProcedure($dbh);
     my $tot_files = scalar(@fastaFiles);
     my $tally = 1;
     foreach my $fastaFile (@fastaFiles) {
@@ -192,6 +189,7 @@ sub run {
 	}
 	close FA;
     }
+    $dbh->do("drop procedure append_dots_naseq");
     $dbh->disconnect();
 }
 
@@ -282,6 +280,22 @@ sub appendToNASeq {
     }
     print STDERR "$naSeqId: $$charsWritten bp\n";
     $dbh->commit();
+}
+
+sub createStoredProcedure {
+  my $dbh = shift;
+
+  my $sp =<<SP;
+CREATE OR REPLACE PROCEDURE append_dots_naseq (seqid NUMBER, seq VARCHAR2) IS
+	clob_loc CLOB;
+   BEGIN
+	SELECT sequence INTO clob_loc
+	FROM DoTS.NASequenceImp where na_sequence_id = seqid
+	FOR UPDATE;
+	DBMS_LOB.WRITEAPPEND(clob_loc, length(seq), seq);
+   END append_dots_naseq;
+SP
+  $dbh->do($sp);
 }
 
 sub showNASeq {
