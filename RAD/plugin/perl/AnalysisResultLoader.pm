@@ -478,7 +478,7 @@ sub readDataFile {
   my %header;
   my %position;
   my $line = "";
-  $self->log("Checking the data file header".);
+  $self->log("Checking the data file header.");
   while ($line =~ /^\s*$/) {
     last unless $line = <$fh>;
   }
