@@ -1,3 +1,5 @@
+- some of the hand edited objects refer to hard-coded primary keys (eg GeneFeature.pm uses a sequence_type_id of 13)
+
 - table objects should provide documentation that is stored in db (for use by schema browser)
 
 - object classes should have pod documentation so we can make a web doc.
