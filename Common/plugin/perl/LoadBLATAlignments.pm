@@ -69,6 +69,12 @@ sub new {
 	   t => 'string',
        },
        {
+	   o => 'skip_loading',
+	   h => 'skip the loading of alignments altogether, just do postprocessing to keep best alignments',
+	   t => 'int',
+	   d => 0,
+       },
+       {
 	   o => 'report_interval',
 	   h => 'Print a progress message every report_interval entries processed',
 	   t => 'int',
@@ -190,16 +196,40 @@ my $TPREF = 'DoTS';
 
 sub run {
     my $self = shift;
-    
     $| = 1;
-    
-    my $dbh = $self->getQueryHandle();
-    my $cla = $self->getCla();
 
+    my $cla = $self->getCla();
     my $blatDir = $cla->{'blat_dir'};
     my $blatFiles = $cla->{'blat_files'};
     my $fileList =  $cla->{'file_list'};
     my $queryFile = $cla->{'query_file'};
+    my $queryTableId = $cla->{'query_table_id'};
+    my $targetTableId = $cla->{'target_table_id'};
+    my $skipLoading = $cla->{'skip_loading'};
+
+    my $summary;
+    if (!$skipLoading) {
+	print "Preprocessing: arg checking, result file listing, query file indexing...";
+	my $qIndex = undef;
+	($blatFiles, $qIndex) = &preProcess($blatDir, $blatFiles, $fileList, $queryFile,
+					    $queryTableId, $targetTableId, $cla->{'commit'});
+
+	print "Processing: load alignments from raw BLAT output files...";
+	$summary = $self->loadAlignments($blatFiles, $qIndex);
+    }
+
+    print "Postprocessing: set best alignment status, maybe remove unwanted entries...";
+    $summary .= $self->keepBestAlignments;
+
+    return $summary;
+}
+
+sub loadAlignments {
+    my ($self, $blatFiles, $qIndex) = @_;
+    
+    my $dbh = $self->getQueryHandle();
+    my $cla = $self->getCla();
+
     my $reportInterval = $cla->{'report_interval'};
     my $commitInterval = $cla->{'commit_interval'};
     my $prevRuns = $cla->{'previous_runs'};
@@ -228,8 +258,6 @@ sub run {
     };
 
     my @prevAlgInvIds = defined($prevRuns) ? split(/,|\s+/, $prevRuns): ();
-    my $qIndex = undef;
-    ($blatFiles, $qIndex) = &preProcess($blatDir, $blatFiles, $fileList, $queryFile, $queryTableId, $targetTableId, $cla->{'commit'});
 
     # 1. Read target source ids if requested
     #
@@ -300,12 +328,9 @@ sub run {
 
     my $summary = "Loaded $nTotalAlignsLoaded/$nTotalAligns BLAT alignments from $nFiles file(s).\n";
     print "LoadBLATAlignments: ", $summary, "\n";
-
-    print "Postprocessing: set best alignment status, maybe remove unwanted entries...";
-    $self->keepBestAlignments;
-
     return $summary;
 }
+
 
 sub getAlignmentGroups {
     my ($self) = @_;
@@ -325,7 +350,7 @@ sub getAlignmentGroups {
 	. "from DoTS.BlatAlignment "
         . "where query_table_id = $queryTableId "
 	. "and query_taxon_id = $queryTaxonId "
-	. "and query_external_db_release_id = $queryExtDbRelId "
+	. ($queryExtDbRelId ? "and query_external_db_release_id = $queryExtDbRelId " : "")
 	. "and target_table_id = $targetTableId "
         . "and target_taxon_id = $targetTaxonId "
         . "and target_external_db_release_id = $targetExtDbRelId";
@@ -388,7 +413,8 @@ sub keepBestAlignments {
 	}
     }
 
-    print "$tot_sq DoTS with $tot_al ($tot_bs) alignments (that are bests)\n";
+    my $summary = "$tot_sq DoTS with $tot_al ($tot_bs) alignments (that are bests)\n";
+    print $summary;
 
     if ($keepBest == 1) {
 	print "# TODO: keep only one alignment per query\n";
@@ -402,7 +428,10 @@ sub keepBestAlignments {
             . "and target_external_db_release_id = $targetExtDbRelId "
             . "and (is_best_alignment is null or is_best_alignment = 0)";
 	$dbh->do($sql) or die "could not run $sql:!\n";
+	$summary .= "(non-best alignments deleted from db)\n";
     }
+
+    return $summary;
 }
 
 #-------------------------------------------------
