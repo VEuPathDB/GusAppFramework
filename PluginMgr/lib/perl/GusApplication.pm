@@ -31,14 +31,14 @@ sub new {
 
    my $self = bless {}, $Class;
 
-   $m->initialize({requiredDbVersion => { Core => '3' },
-                   cvsRevision       => '$Revision$',
-                   cvsTag            => '$Name$',
-                   name              => ref($self),
-                   revisionNotes     => 'update for GUS 3.0',
-                   easyCspOptions    => {},
-                   usage             => ""
-                  });
+   $self->initialize({requiredDbVersion => { Core => '3' },
+                      cvsRevision       => '$Revision$',
+                      cvsTag            => '$Name$',
+                      name              => ref($self),
+                      revisionNotes     => 'update for GUS 3.0',
+                      easyCspOptions    => {},
+                      usage             => ""
+                     });
 
    my $configFile = "$ENV{GUS_HOME}/config/GUS-PluginMgr.prop";
 
