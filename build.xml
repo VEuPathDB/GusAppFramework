@@ -351,14 +351,6 @@
     </ant>
   </target>
 
-  <target name="GUS/RAD-Installation" depends="GUS/PluginMgr-Installation,
-                                                     ProjectTree">
-    <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="RAD"/>
-    </ant>
-  </target>
-  
   <target name="GUS/ReportMaker-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
