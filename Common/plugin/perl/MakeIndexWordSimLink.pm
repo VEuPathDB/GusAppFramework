@@ -23,7 +23,7 @@ sub new {
       t => 'boolean',
       h => 'Restarts ignoring sequences already in IndexWordSimLink from target_table and similarity_table',
      },
-     {o => 'target_table',
+     {o => 'query_table',
       t => 'string',
       h => 'table that am creating entries for.... (schema::table format)',
      },
@@ -38,7 +38,16 @@ sub new {
      },
      {o => 'idSQL',
       t => 'string',
-      h => 'sql query that returns primary keys for the target_table for indexing',
+      h => 'sql query that returns query_id from the Similarity table for indexing, e.g. select distinct na_sequence_id from dots.similarity where s.query_table_id = 56 and s.subject_table_id = 277',
+     },
+     {o => 'idQuerySQL',
+      t => 'string',
+      h => 'sql query that returns primary keys from the query table, e.g. select na_sequence_id from dots.assembly where taxon_id = 8',
+     },
+     {o => 'range',
+      t => 'int',
+      h => 'number of primary keys returned per iteration',
+      d => 1000,
      },
      {o => 'ignoreAlgInv',
       t => 'string',
@@ -65,103 +74,211 @@ sub new {
   return $self;
 }
 
-my $ctx;
-my $debug = 0;
+
 $| = 1;
 
 sub run {
-  my $M   = shift;
-  $ctx = shift;
+  my ($self)   = shift;
 
-  print $ctx->{cla}->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
-  print "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{cla}->{'testnumber'};
+  print $self->getArgs()->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
+  print "Testing on $self->getArgs()->{'testnumber'}\n" if $self->getArgs()>{'testnumber'};
 
-  die "You must provide  --target_table, --similarity_table and --idSQL on command line\n" unless $ctx->{cla}->{target_table} && $ctx->{cla}->{similarity_table} && $ctx->{cla}->{idSQL};
-  my $target_table_id = $ctx->{self_inv}->getTableIdFromTableName($ctx->{cla}->{target_table});
-  #	my $target_table_pk = $ctx->{self_inv}->getTablePKFromTableId($target_table_id);
-  my $similarity_table_id = $ctx->{self_inv}->getTableIdFromTableName($ctx->{cla}->{similarity_table});
+  die "You must provide  --query_table, --idQuerySQL, --range, --similarity_table and --idSQL on command line\n" unless $self->getArgs()->{query_table} && $self->getArgs()->{similarity_table} && $self->getArgs()->{idSQL} && $self->getArgs()->{idQuerySQL};
 
-  my $dbh =  $ctx->{self_inv}->getQueryHandle();
-	
+  my $ignore = $self->restart() if $self->getArgs()->{restart};
+
+  my $primArr = $self->getPrimaryArr();
+
+  my ($ctDeletes,$ctInserts,$ct) = $self->makeLoop($ignore,$primArr);
+
+  my $result = "Processed $ct". $self->getArgs()->{target_table}.": Inserted $ctInserts and deleted $ctDeletes rows in IndexWordSimLink";
+  print STDERR "$result\n";
+  return $result;
+}
+
+sub restart {
+
+  my ($self) = @_;
+
+  my $algoInvo = $self->getAlgInvocation();
+
+  my $dbh = $self->getQueryHandle();
+
+  my $query_table_id = $algoInvo->getTableIdFromTableName($self->getArgs()->{query_table});
+
+  my $similarity_table_id = $algoInvo->getTableIdFromTableName($$self->getArgs()->{similarity_table});
+
   my %ignore;
-  if ($ctx->{cla}->{restart}) {
-    print STDERR "Restarting....\n";
-    my $resStmt = $dbh->prepare("select target_id from Dots.IndexWordSimLink where target_table_id = $target_table_id and similarity_table_id = $similarity_table_id");
-    $resStmt->execute();
-    my $ct = 0;
-    while (my($rs_id) = $resStmt->fetchrow_array()) {
-      $ct++;
-      print STDERR "Reading in $ct rows from RNAIndexWord\n" if $ct % 10000 == 0;
-      $ignore{$rs_id} = 1;
+
+  $self->log ("Restarting....\n");
+  
+  my $resStmt = $dbh->prepare("select target_id from Dots.IndexWordSimLink where target_table_id = $query_table_id and similarity_table_id = $similarity_table_id");
+    
+  $resStmt->execute();
+    
+  my $ct = 0;
+    
+  while (my($rs_id) = $resStmt->fetchrow_array()) {
+    $ct++;
+    $self->log ("Reading in $ct rows from RNAIndexWord\n") if $ct % 10000 == 0;
+    $ignore{$rs_id} = 1;
+  }
+  
+  $resStmt->finish();
+
+  $self->log ("Ignoring ".scalar(keys%ignore)." entries already processed\n");
+
+  return \%ignore;
+}
+
+sub getPrimaryArr {
+
+  my ($self) = @_;
+
+  my $dbh = $self->getQueryHandle();
+
+  my $stmt = $dbh->prepareAndExecute($self->getArgs()->{idQuerySQL});
+
+  my $refArr = $stmt->fetchall_arrayref();
+
+  my @arr;
+
+  foreach my $row (@$refArr) {
+    push (@arr, @$row);
+  }
+    
+
+  my @primArr = sort {$a <=> $b} @arr;
+
+  return \@primArr;
+}
+
+sub makeLoop {
+
+  my ($self,$ignore,$primArr) = @_;
+
+  my $range = $self->getArgs()->{range};
+
+  my $start = 0;
+
+  my $end = ($range - 1);
+
+  my $arrLength = @$primArr;
+
+  my ($ctDeletes,$ctInserts,$ct);
+
+  while ($start < $arrLength) {
+
+    my ($Deletes,$Inserts,$count) = $self->getQueryIds($ignore,$start,$end,$primArr);
+
+    $ctDeletes += $Deletes;
+
+    $ctInserts += $Inserts;
+
+    $ct += $count;
+
+    $start += $range;
+
+    if ($start > ($arrLength - 1)) {
+      last;
     }
-    $resStmt->finish();
-    print STDERR "Ignoring ".scalar(keys%ignore)." entries already processed\n";
+    $end = $end < $arrLength  ? ($end + $range) : ($arrLength - 1);
+
   }
 
+  return ($ctDeletes,$ctInserts,$ct);
+}
 
-  my $loopStmt = $dbh->prepare($ctx->{cla}->{idSQL});
+sub getQueryIds {
 
-  ##and s.pValue <= $ctx->{cla}->{max_p_value}
-  my $bestSQL =  
-"select wl.index_word_id,s.similarity_id,s.pvalue_mant,pvalue_exp,s.score
+  my ($self,$ignore,$start,$end,$primArr) = @_;
+
+  my $dbh = $self->getQueryHandle();
+
+  my $idSQL = $self->getArgs()->{idSQL}." and query_id in (". join(' , ',@{$primArr}[$start..$end]).")";
+
+  my $stmt = $dbh->prepare($idSQL);
+
+  $stmt->execute();
+
+  my %data;
+
+  my $ct = 0;
+
+  while (my($rs) = $stmt->fetchrow_array()) {
+
+    next if exists $ignore->{$rs};
+
+    $ct++;
+
+    $data{$rs} = 1;
+
+  }
+
+  $stmt->finish();
+
+  my ($ctDeletes,$ctInserts) = $self->processData(\%data);
+
+  return ($ctDeletes,$ctInserts,$ct);
+
+}
+
+sub processData {
+
+  my ($self,$data) = @_;
+
+  my $algoInvo = $self->getAlgInvocation();
+
+  my $query_table_id = $algoInvo->getTableIdFromTableName($self->getArgs()->{query_table});
+
+  my $similarity_table_id = $algoInvo->getTableIdFromTableName($$self->getArgs()->{similarity_table});
+
+  my $dbh = $self->getQueryHandle();
+
+  my $bestSQL = "select wl.index_word_id,s.similarity_id,s.pvalue_mant,pvalue_exp,s.score
   from dots.Similarity s,  dots.IndexWordLink wl
   where s.query_id = ?
-  and s.query_table_id = $target_table_id 
+  and s.query_table_id = $query_table_id 
   and wl.target_table_id = $similarity_table_id
   and wl.target_id = s.subject_id";
   
   ##now  if want to ignore specific algorithminvocations of similarities
-  $bestSQL .= " and s.row_alg_invocation_id not in ($ctx->{cla}->{ignoreAlgInv})" if $ctx->{cla}->{ignoreAlgInv};
-
+  $bestSQL .= " and s.row_alg_invocation_id not in ($self->getArgs()->{ignoreAlgInv})" if $self->getArgs()->{ignoreAlgInv};
+  
   $bestSQL .= " order by wl.index_word_id,s.pvalue_exp,s.pvalue_mant";
-
+  
   my $bestStmt = $dbh->prepare($bestSQL);
 
   my $delStmt;
-  my $sql = 
-"select * from dots.IndexWordSimLink 
-where target_table_id = $target_table_id 
-and target_id = ? 
-and similarity_table_id = $similarity_table_id";
-  $delStmt = $dbh->prepare($sql) if $ctx->{cla}->{update};
-	
+  my $sql = "select * from dots.IndexWordSimLink 
+  where target_table_id = $query_table_id 
+  and target_id = ? 
+  and similarity_table_id = $similarity_table_id";
 
-  $loopStmt->execute();
-  ##note perhaps should put into datastructure so don't tie up sybase resources
-  my %data;
+  $delStmt = $dbh->prepare($sql) if $self->getArgs()->{update};
+
+  $self->log ("Inserting IndexWordNeighbor for ".scalar (keys %{$data})." $self->getArgs()->{target_table} rows\n");
+  
   my $ct = 0;
-  while (my($rs) = $loopStmt->fetchrow_array()) {
-    next if exists $ignore{$rs}; ##already have processed this one!!
-    $ct++;
-    print STDERR "Retrieving $ct\n" if $ct % 10000 == 0;
-    $data{$rs} = 1;
-    #		push(@data, $rs);
-    ##implement testnumber....
-    last if($ctx->{cla}->{testnumber} && scalar(keys%data) >= $ctx->{cla}->{testnumber});
-  }
-  $loopStmt->finish();
-  undef %ignore;                ##free this memory
-  print STDERR "Inserting IndexWordNeighbor for ".scalar(keys%data)." $ctx->{cla}->{target_table} rows\n";
-  $ct = 0;
   my $ctInserts = 0;
   my $ctDeletes = 0;
   my @submit;
-  foreach my $id (keys%data) {
+  foreach my $id (keys %$data) {
     $ct++;
-    print STDERR "$ctx->{cla}->{target_table}.$id: Processing $ct " . ($ct % ($ctx->{cla}->{log_frequency} * 10) == 0 ? `date` : "\n") if $ct % $ctx->{cla}->{log_frequency} == 0;
-
+    $self->log ($self->getArgs()->{query_table}."$id: Processing $ct " . ($ct % ($self->getArgs()->{log_frequency} * 10) == 0 ? `date` : "\n")) if $ct % $self->getArgs()->{log_frequency} == 0;
+    
     ##implement updating...need to just delete rows for this target_id before proceeding...
-    if ($ctx->{cla}->{update}) {
+    if ($self->getArgs()->{update}) {
       $delStmt->execute($id);
       while (my ($del_id) = $delStmt->fetchrow_array()) {
-        my $del = IndexWordNeighbor->new({'index_word_sim_link_id' => $del_id});
+        my $del = GUS::Model::DoTS::IndexWordSimLink->new({'index_word_sim_link_id' => $del_id});
         $del->setVersionable(0); ##don't version this as is derived...
         $del->markDeleted();
         push(@submit,$del);
         $ctDeletes++;
       }
     }
-
+  
     $bestStmt->execute($id);
     my %have;
     while (my($iw_id,$sim_id,$pMant,$pExp,$score) = $bestStmt->fetchrow_array()) {
@@ -170,45 +287,36 @@ and similarity_table_id = $similarity_table_id";
       #			print STDERR  "Processing index_word $iw_id\n";
       ##first create Similarity Object as that gives the pValue
       my $sim = GUS::Model::DoTS::Similarity->new({'similarity_id' => $sim_id,
-                                 'pvalue_mant' => $pMant,
-                                 'pvalue_exp' => $pExp });
-      next if $sim->getPValue() > $ctx->{cla}->{max_p_value};
+						   'pvalue_mant' => $pMant,
+						   'pvalue_exp' => $pExp });
+      next if $sim->getPValue() > $self->getArgs()->{max_p_value};
       my $rwl = GUS::Model::DoTS::IndexWordSimLink->new({'target_id' => $id,
-                                       'target_table_id' => $target_table_id,
-                                       'similarity_table_id' => $similarity_table_id,
-                                       'index_word_id' => $iw_id,
-                                       'best_similarity_id' => $sim_id,
-                                       'best_p_value_mant' => $pMant,
-                                       'best_p_value_exp' => $pExp,
-                                       'best_score' => $score });
+							 'target_table_id' => $query_table_id,
+							 'similarity_table_id' => $similarity_table_id,
+							 'index_word_id' => $iw_id,
+							 'best_similarity_id' => $sim_id,
+							 'best_p_value_mant' => $pMant,
+							 'best_p_value_exp' => $pExp,
+							 'best_score' => $score });
       push(@submit,$rwl);
       $ctInserts++;
     }
     ##submit the sucker!!
-    $ctx->{self_inv}->manageTransaction(undef,'begin');
+    my $algoInvo = $self->getAlgInvocation();
+    $algoInvo->manageTransaction(undef,'begin');
     foreach my $iwn (@submit) {
       $iwn->submit(undef,1);
     }
-    $ctx->{self_inv}->manageTransaction(undef,'commit');
-		
+    $algoInvo->manageTransaction(undef,'commit');
+    
     ##reset for the next one...
     undef @submit;
-    $ctx->{self_inv}->undefPointerCache();
+    $algoInvo->undefPointerCache();
+    return ($ctDeletes,$ctInserts);
   }
-	
-	
-  $dbh->disconnect();           ##close database connection
-
-  ############################################################
-  # return status
-  # replace word "done" with meaningful return value/summary
-  ############################################################
-  my $result = "Processed ".scalar(keys%data). " $ctx->{cla}->{target_table}: Inserted $ctInserts and deleted $ctDeletes rows in IndexWordSimLink";
-  print STDERR "$result\n";
-  return $result;
 }
+  1;
 
-1;
 
 __END__
 
