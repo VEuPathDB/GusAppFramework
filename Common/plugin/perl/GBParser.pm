@@ -842,6 +842,7 @@ sub getFeatureViewName {
 				 "prim_transcript" => "GUS::Model::DoTS::Transcript",
 				 "primer_bind" => "GUS::Model::DoTS::DNAStructure",
 				 "promoter" => "GUS::Model::DoTS::DNARegulatory",
+				 "proprotein" => "GUS::Model::DoTS::ProteinFeature",
 				 "protein_bind" => "GUS::Model::DoTS::Miscellaneous",
 				 "RBS" => "GUS::Model::DoTS::RNAStructure",
 				 "repeat_region" => "GUS::Model::DoTS::Repeats",
