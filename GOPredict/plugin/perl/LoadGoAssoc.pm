@@ -26,7 +26,7 @@ sub new {
     # initialize--for now do not override initialize in plugin.pm just set methods
     my $usage = 'loads associations of external sequences to GO terms into GUS';
 
-    
+    #good go id: 6532
     my $easycsp =
 	[
 	 {o=> 'go_ext_db_rel_id',
@@ -63,7 +63,7 @@ sub new {
 	  h => 'External database release id for yeast sequences',
 	  t => 'int',
       },
-	 {o => 'fly_db_rls_id',
+	 {o => 'fb_db_rls_id',
 	  h => 'External database release id for fly sequences',
 	  t => 'int',
       },
@@ -674,10 +674,19 @@ sub __adjustIsNots{
 
 sub __checkDatabaseRelease{
     my ($self, $organism) = @_;
-    my $dbs = $self->{orgInfo}->{$organism}->{db_id};
+    my $orgVar = $organism . "_db_rls_id";
+    print STDERR "checking database release for $organism\n";
+    my $dbs = $self->getCla->{$orgVar};
+    #my $dbNumber = scalar (@$dbs);
     if (!($dbs)){
+	print STDERR "didn't find db's\n";
 	$self->userError("Please supply an external database release id for sequences in file gene_association.$organism");
     }
+    else{
+	$self->{ orgInfo }->{$organism}->{db_id} = $dbs;
+    }
+    
+    print STDERR "apparently found dbs:  $dbs\n";
 }
 
 sub __loadMgiMapIfMouse{
@@ -729,55 +738,87 @@ sub __checkIfSeqsLoaded{
     return 0;
 }
 
+sub loadOrgDbs{
+    my ($self) = @_;
+    print STDERR "loading org dbs\n";
+    #maybe make this more dynamic later, but for now, HACK
+
+
+    $self->{orgInfo}->{sgd}->{db_id} = ($self->getCla->{yeast_db_rls_id}) 
+	if $self->getCla->{yeast_db_rls_id};
+
+
+
+    $self->{orgInfo}->{fb}->{db_id} = ($self->getCla->{fb_db_rls_id}) 
+	if $self->getCla->{fb_db_rls_id};
+
+
+
+    $self->{orgInfo}->{wb}->{db_id} = ($self->getCla->{worm_db_rls_id}) 
+	if $self->getCla->{worm_db_rls_id};
+
+    $self->{orgInfo}->{goa_sptr}->{db_id} = ($self->getCla->{sp_db_rls_id}, $self->getCla->{tr_db_rls_id}) 
+	if $self->getCla->{sp_db_rls_id};
+
+    $self->{orgInfo}->{mgi}->{db_id} = ($self->getCla->{sp_db_rls_id}, $self->getCla->{tr_db_rls_id})
+	if $self->getCla->{sp_db_rls_id};
+
+    $self->{orgInfo}->{tair}->{db_id} = ($self->getCla->{tair_db_rls_id}) 
+	if $self->getCla->{tair_db_rls_id};
+}
+
 sub loadOrgInfo{
     
     my ($self) = @_;
 
   #set private configuration data for this plugin
-     
+    my $flyDb = $self->getCla->{fb_db_rls_id};
+
     $self->{ orgInfo } = {
 	sgd => { id_col   => 'secondary_identifier', 
 		 id_tbl   => 'Dots.ExternalAASequence',
-		 db_id    => [ $self->getCla->{yeast_db_rls_id} ],
+	#	 db_id    => [ $self->getCla->{yeast_db_rls_id} ],
 		 clean_id => sub { [ $_[ 0 ] ] },
 		 assoc_meth    => 'getDBObjectId',
 	     },
 
 	fb  => { id_col   => 'source_id',
 		 id_tbl   => 'Dots.ExternalAASequence',
-		 db_id    => [ $self->getCla->{fly_db_rls_id} ], 
+	#	 db_id    => [ $flyDb ], 
 		 clean_id => sub { [ $_[ 0 ] ] },
 		 assoc_meth    => 'getDBObjectId',
 	     },
 
 	wb  => { id_col   => 'source_id',
 		 id_tbl   => 'Dots.ExternalAASequence',
-		 db_id    => [  $self->getCla->{wb_db_rls_id} ], 
-		 clean_id => sub { [ $_[ 0 ] ] },
+		 db_id    => [  $self->getCla->{worm_db_rls_id} ], 
+	#	 clean_id => sub { [ $_[ 0 ] ] },
 		 assoc_meth    => 'getDBObjectSymbol',
 	     },
 	
 	tair => { id_col   => 'source_id',
 		  id_tbl   => 'Dots.ExternalAASequence',
-		  db_id    => [  $self->getCla->{tair_db_rls_id} ],
+	#	  db_id    => [  $self->getCla->{tair_db_rls_id} ],
 		  clean_id => sub { [ $_[ 0 ] ] }, 
 		  assoc_meth    => 'getDBObjectSymbol',
 	      },
 
 	mgi => { id_col   => 'source_id',
 		 id_tbl   => 'Dots.ExternalAASequence',
-		 db_id    => [  $self->getCla->{sp_db_rls_id},  $self->getCla->{tr_db_rls_id} ], 
+	#	 db_id    => [  $self->getCla->{sp_db_rls_id},  $self->getCla->{tr_db_rls_id} ], 
 		 clean_id => sub { $self->{ maps }->{ mgi }->{ $_[ 0 ] } },
 		 assoc_meth    => 'getDBObjectId',
 	     },
 
 	goa_sptr => { id_col => 'source_id',
 		      id_tbl => 'Dots.ExternalAASequence',
-		      db_id => [$self->getCla->{sp_db_rls_id},  $self->getCla->{tr_db_rls_id}],
+	#	      db_id => [$self->getCla->{sp_db_rls_id},  $self->getCla->{tr_db_rls_id}],
 		      clean_id => sub { [ $_[ 0 ] ] },
 		      assoc_meth => 'getDBObjectId',
 		  },
     };
+
+  #  $self->loadOrgDbs();
 }
 
 
