@@ -372,7 +372,7 @@ CREATE TABLE @oracle_dots@.AASEQUENCEIMP (
     MOLECULAR_WEIGHT                   NUMBER(12)                                    NULL,
     SEQUENCE                           CLOB                                          NULL,
     LENGTH                             NUMBER(12)                                    NULL,
-    DESCRIPTION                        VARCHAR2(255)                                 NULL,
+    DESCRIPTION                        VARCHAR2(1024)                                NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NULL,
     SOURCE_ID                          VARCHAR2(32)                                  NULL,
     SOURCE_AA_SEQUENCE_ID              NUMBER(10)                                    NULL,
