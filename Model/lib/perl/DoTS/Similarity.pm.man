@@ -108,7 +108,7 @@ sub getTableNameAndPK {
   my($self,$table_id) = @_;
   if(!exists $tablesAndPks->{$table_id}){
     my $tableName = $self->getTableNameFromTableId($table_id);
-    eval("require GUS30::".$self->getDatabase()->getDbName()."::$tableName");
+    eval("require $tableName");
     my $pk = $self->getTablePKFromTableId($table_id);
     $tablesAndPks->{$table_id} = [$tableName,$pk];
   }

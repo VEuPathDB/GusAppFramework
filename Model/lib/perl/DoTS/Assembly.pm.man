@@ -5,6 +5,13 @@ use GUS::Model::DoTS::AssemblyRow;
 use GUS::Model::DoTS::AssemblySequence;
 use GUS::Model::DoTS::AssemblySNP;
 use GUS::Model::DoTS::AssemblySequenceSNP;
+use GUS::Model::DoTS::RNAFeature;
+use GUS::Model::DoTS::TranslatedAAFeature;
+use GUS::Model::DoTS::TranslatedAASequence;
+use GUS::Model::DoTS::RNAFeature;
+use GUS::Model::DoTS::RNAInstance;
+use GUS::Model::DoTS::RNA;
+use GUS::Model::DoTS::Protein;
 
 
 use vars qw (@ISA);
@@ -116,27 +123,23 @@ sub retrieveAllChildrenExceptAssSeqsFromDB {
 ##method to create empty objects for features down to TranslateedAASequence
 sub createFeaturesAndAASequence {
   my $self = shift;
-  eval("require ".$self->getDatabase()->getDbName()."::".$self->getTable()->getSchemaName()."::RNAFeature");
-  eval("require ".$self->getDatabase()->getDbName()."::".$self->getTable()->getSchemaName()."::TranslatedAAFeature");
-  eval("require ".$self->getDatabase()->getDbName()."::".$self->getTable()->getSchemaName()."::TranslatedAASequence");
 
   ##first the NAFeature...
-  my $rnafName = $self->getSchemaName().'::RNAFeature';
-  my $rnaf = $rnafName->new({'name' => 'assembly' });
+  my $rnaf = GUS::Model::DoTS::RNAFeature->new({'name' => 'assembly' });
   $rnaf->setParent($self); 
 
   ##next the TranslatedAAFeature...
   my $taafName = $self->getSchemaName().'::TranslatedAAFeature';
-  my $aaf = $taafName->new({'subclass_view' => 'TranslatedAAFeature',
-                                      'is_simple' => 1,
-                                      'review_staus_id' => 1,
-                                      'is_predicted' => 1
+  my $aaf = GUS::Model::DoTS::TranslatedAAFeature->
+	new({'subclass_view' => 'TranslatedAAFeature',
+		                              'is_simple' => 1,
+			                      'review_staus_id' => 1,
+				              'is_predicted' => 1
                                      });
   $aaf->setParent($rnaf);
 
   ##the TranslatedAASequence
-  my $aasName = $self->getSchemaName().'::TranslatedAASequence';
-  my $aas = $aasName->new({'subclass_view' => 'TranslatedAASequence',
+  my $aas = GUS::Model::DoTS::TranslatedAASequence->new({'subclass_view' => 'TranslatedAASequence',
                                        'sequence_version' => 1,
                                        'is_simple' => 0 });
   $aas->addChild($aaf);
@@ -146,32 +149,23 @@ sub createFeaturesAndAASequence {
 sub createNewRNAToSelf {
   my($self) = @_;
 
-  eval("require ".$self->getDatabase()->getDbName()."::".$self->getTable()->getSchemaName()."::RNAFeature");
-  eval("require ".$self->getDatabase()->getDbName()."::".$self->getTable()->getSchemaName()."::RNAInstance");
-  eval("require ".$self->getDatabase()->getDbName()."::".$self->getTable()->getSchemaName()."::RNA");
-  eval("require ".$self->getDatabase()->getDbName()."::".$self->getTable()->getSchemaName()."::Protein");
-
   ##first the NAFeature...
-  my $rnafName = $self->getSchemaName().'::RNAFeature';
-  my $naf = $rnafName->new({'name' => 'assembly' });
+  my $naf = GUS::Model::DoTS::RNAFeature->new({'name' => 'assembly' });
 
   $naf->setParent($self); 
   ##now the RNAInstance
-  my $rsName =  $self->getSchemaName().'::RNAInstance';
-  my $rs = $rsName->new({'review_status_id' => 1,
+  my $rs = GUS::Model::DoTS::RNAInstance->new({'review_status_id' => 1,
                          'is_reference' => 0,
                          'rna_instance_category_id' => 0 });
 
   $naf->addChild($rs);
   ##last the RNA
-  my $rnaName =  $self->getSchemaName().'::RNA';
-  my $rna = $rnaName->new({'review_status_id' => 1,
+  my $rna = GUS::Model::DoTS::RNA->new({'review_status_id' => 1,
                            'name' => ($self->get('number_of_contained_sequences') == 1 ? 'Singleton EST' : 'DOTS assembly')});
   $rna->addChild($rs);
 
   ##need to also create a protein entry so can do GOFunction predictions..
-  my $protName =  $self->getSchemaName().'::Protein';
-  my $prot = $protName->new({ 'review_status_id' => 1 });
+  my $prot = GUS::Model::DoTS::Protein->new({ 'review_status_id' => 1 });
   $rna->addChild($prot);
 
   return $rna;
