@@ -39,6 +39,7 @@ my(
    $gusVersion,
    $dbSid,
    $dbHost,
+   $dbPort,
    $login,
    $schemaList,
    $targetSchemaList,
@@ -61,6 +62,7 @@ my(
 &GetOptions("gus-version=s" => \$gusVersion,
 	    "db-sid=s" => \$dbSid,
 	    "db-host=s" => \$dbHost,
+	    "db-port=s" => \$dbPort,
 	    "login=s" => \$login,
 	    "tableinfo-schema=s" => \$tableinfoSchema,
 	    "schema-list=s" => \$schemaList,
@@ -86,6 +88,7 @@ Usage: dumpSchema.pl options
   --gus-version=ver                            # GUS schema version
   --db-sid=SID                                 # SID of the Oracle server
   --db-host=hostname                           # Hostname of the Oracle server
+  --db-port=portnum                            # Port on which the Oracle server will accept connections
   --login=login                                # Oracle login (required)
   --tableinfo-schema=owner                     # schema that contains the TableInfo table (required if --tables not given)
   --schema-list=s1,s2,...                      # comma-delimited list of schemas to dump (required)
@@ -165,7 +168,7 @@ if ($tables =~ /\S/) {
 # -----------------------------------------------------------------------
 # Establish database login
 
-my $db = GUS::DBAdmin::Database->new({sid => $dbSid, host => $dbHost});
+my $db = GUS::DBAdmin::Database->new({sid => $dbSid, host => $dbHost, port => $dbPort});
 if ($login =~ /^sys$/i) { $DBI_ATTS->{ora_session_mode} = 2; }
 my $dbh = &GUS::DBAdmin::Util::establishLogin($login, $db->getDbiStr(), $DBI_ATTS);
 
@@ -282,6 +285,7 @@ if ($doAll || $usersOnly) {
 #
 my $tablesToDump = ($gusVersion >= 3.0) ? 
     [
+     ['core', 'AlgorithmParamKeyType', 'algorithm_param_key_type_id', 'Populate Core.AlgorithmParamKeyType, which is a controlled vocabulary of plugin parameter types (e.g., int, float, etc.)'],
      ['core', 'DatabaseInfo', 'database_id', 'Populate Core.DatabaseInfo, which lists each of the GUS namespaces (i.e. schemas/users).'],
      ['core', 'TableInfo', 'table_id', 'Populate Core.TableInfo, which lists each of the GUS tables.'],
 
