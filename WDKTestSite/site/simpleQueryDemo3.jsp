@@ -14,6 +14,7 @@
                   initQuery="RNAByGoTerm"
                   var="q">
 
+  <input type="hidden" name="fromPage" value="/simpleQueryDemo3.jsp">
 
   <tr><td><wdkq:displayQuery queryInstance="${q}" /></td></tr>
   <c:forEach var="p" 

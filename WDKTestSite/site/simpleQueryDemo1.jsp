@@ -14,6 +14,7 @@ specified so you should get a list of possible queries.
                   querySet="RNASimpleQueries"
                   var="q">
 
+  <input type="hidden" name="fromPage" value="/simpleQueryDemo1.jsp">
 
   <tr><td><wdkq:displayQuery queryInstance="${q}" /></td></tr>
   <c:forEach var="p" 
