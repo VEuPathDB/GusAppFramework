@@ -1645,7 +1645,7 @@ sub submit {
 
     } else {                    ##INSERT
       ## set the subclass_view if it is a valid att and not set
-      $self->set('subclass_view',$self->getClassName()) if($self->isValidAttribute('subclass_view') && !$self->getSubclassView());
+      $self->set('subclass_view',$self->getTableName()) if($self->isValidAttribute('subclass_view') && !$self->getSubclassView());
       ##    do insert and call submit on all children
       $self->setDefaultAttributes();
       print STDERR "Inserting:\n", $self->toString() if $debug == 1;

@@ -272,8 +272,8 @@ sub buildObjectsFromImpTable {
   }
   my $superClass = $self->getTableName();
   $superClass =~ s/Imp$//;
-  my $class = ($row->{'subclass_view'} && $row->{'subclass_view'} !~ /null/i) ? $row->{'subclass_view'} : $superClass;
-  eval($class);
+  my $table = ($row->{'subclass_view'} && $row->{'subclass_view'} !~ /null/i) ? $row->{'subclass_view'} : $superClass;
+  eval("require " . $self->getFullClassName($self->getSchemaName(). "::$table"));
   #	print STDERR "Building object for $superClass: $class\n";
   my %map = $self->getDatabase->getTable($class)->getViewMapping();
   my $ob = $class->new(undef,$self->getDatabase());
