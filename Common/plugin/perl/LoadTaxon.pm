@@ -97,12 +97,12 @@ sub mergeTaxons {
   my %mergedHsh;
   while(<MERGED>) {
     chomp;
-    my @merged = split(/\t/, $_);
-    $mergedHsh{$merged[0]} = $merged[1]; 
+    my @merged = split(/\s*\|\s*/, $_);
+    $mergedHsh{$merged[0]} = $merged[1];
   }
-  my ($taxonToTaxId,$oldTaxonToNewTaxon) = &getUpdateHashes(\%mergedHsh);
-  $self->updateTaxonTable($taxonToTaxId);
-  $self->updateTaxonAndChildTables($oldTaxonToNewTaxon);
+  my ($taxonToTaxId,$oldTaxonToNewTaxon) = $self->getUpdateHashes(\%mergedHsh);
+  $self->updateTaxonRows($taxonToTaxId);
+  $self->updateTaxonAndChildRows($oldTaxonToNewTaxon);
 }
 
 sub getUpdateHashes {
@@ -131,12 +131,12 @@ sub getUpdateHashes {
   return (\%taxonToTaxId,\%oldTaxonToNewTaxon);
 }
 
-sub updateTaxonTable {
+sub updateTaxonRows {
   my ($self,$taxonToTaxId) = @_;
   foreach my $oldTaxonId (keys %$taxonToTaxId) {
     my $newTaxon  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxonId});
     $newTaxon ->retrieveFromDB();
-    if ($newTaxon->get('ncbi_tax_id') ne $taxonToTaxId->{$oldTaxonId}) {
+    if ($newTaxon->get('ncbi_tax_id') != $taxonToTaxId->{$oldTaxonId}) {
       $newTaxon->set('ncbi_tax_id',$taxonToTaxId->{$oldTaxonId});
     }
     $newTaxon->submit();
@@ -144,11 +144,13 @@ sub updateTaxonTable {
   }
 }
 
-sub updateTaxonAndChildTables {
+sub updateTaxonAndChildRows {
   my ($self,$oldTaxonToNewTaxon)= @_;
   foreach my $oldTaxonId (keys %$oldTaxonToNewTaxon) {
     my $newTaxon = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxonToNewTaxon->{$oldTaxonId}});
+    $newTaxon ->retrieveFromDB();
     my $oldTaxon  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxonId});
+    $oldTaxon ->retrieveFromDB();
     my @children = $oldTaxon->getAllChildren(1);
     foreach my $child (@children) {
       $child->removeParent($oldTaxon);
