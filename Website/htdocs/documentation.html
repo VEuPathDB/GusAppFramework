@@ -28,29 +28,32 @@
                 <LI>Overview (coming soon)
                 <LI>Use our schema browser to browse the <a href='http://www.cbil.upenn.edu/cgi-bin/GUS30/schemaBrowser.pl?db=GUS30'>GUS 3.0 schema</a>
                 <LI>We have a mailing list focused on GUS development. <a href='http://lists.sourceforge.net/lists/listinfo/gusdev-gusdev'>Subscribe</a> in order to get and post mail, or just <a href='http://sourceforge.net/mailarchive/forum.php?forum_id=9903'>read the archive</a>
+                <LI><a href='http://www.cbil.upenn.edu/downloads/GUS/documentation'>Informal notes and presentations</a>
                 </UL>
              </td>
            </tr>
              <td class=two>
                <font>
-                 <b>Installing GUS</b>
+                 <b>Downloading and Installing GUS</b>
                </font>
              </td>
            </tr>
             <td class=four>
-             <P> We are working towards the first public release of GUS.  In the meantime, the following docs will help you install the development version of GUS.
-</P>
-
-            </td>
-           <tr>
-
-            <td class=four>
-              <UL>
-              <LI><a href='http://www.gusdb.org/documentation/install-setup.html'>Installing the GUS Build System</a> describes getting a copy of GUS (from CVS) and installing the GUS Build System (installs GUS). 
-              <LI>Installing and Configuring the GUS software (coming soon)
-              <LI>Installing the GUS Schema (coming soon)
-             </UL>
-
+              <P>
+	      With the upcoming GUS 3.1 release we plan on offering GUS in a ready-to-use package.  
+	      Until then, the 3.0 version of the system must be downloaded and installed from the public CVS repository.
+	      Please note that we are still in the process of debugging and streamlining the installation
+	      procedure; check the 
+	      <a href='http://sourceforge.net/mailarchive/forum.php?forum_id=9903'>gusdev-gusdev e-mail archive</a>
+	      for known problems and workarounds.  Roughly, the steps to install GUS are as follows:
+	      </P>
+              <OL>
+                <LI><a href='documentation/install-setup.html'>Download and install the GUS Build System</a></LI>
+		<LI><a href='documentation/schema-setup.html'>Install the GUS schema</A> (currently requires Oracle 8i/9i)</LI>
+		<LI>Install the rest of the GUS system (generating the Perl and Java objects requires the schema to be installed first)</LI>
+		<LI>Load data into the system using the GUS plugins</LI>
+              </OL>
+	      </td></tr>
            <tr>
              <td class=two>
                <font>
@@ -61,10 +64,11 @@
            <tr>
               <td class=four>
                <UL>
-                 <LI> A start at the plugin API: the<a href='http://www.gusdb.org/documentation/GUS-PluginMgr-Plugin.html'> GUS::PluginMgr::Plugin</a> superclass.
+                 <LI> A start at the <a href='http://www.gusdb.org/documentation/GUS-PluginMgr-Plugin.html'>Plugin API - the GUS::PluginMgr::Plugin</a> superclass.
                  <LI> Writing plugins (coming soon)
                  <LI> Upgrading plugins for GUS 3.0 compliance (coming soon)
                  <LI> Using <tt>guswrite</tt> (aka <tt>ga</tt>).  (coming soon)
+                 <LI> Help for <a href='documentation/plugins'>individual plugins</a>
                </UL>
              </td>
            </tr>
