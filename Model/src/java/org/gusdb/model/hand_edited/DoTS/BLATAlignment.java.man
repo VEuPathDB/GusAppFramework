@@ -26,7 +26,9 @@ import org.gusdb.objrelj.*;
 public class BLATAlignment extends BLATAlignment_Row {
 
     // Constructor
-    public BLATAlignment () {}
+    public BLATAlignment (ServerI server, String sessionId) {
+	super(server, sessionId);
+	}
     
     public Vector getQstartsVector(){
 	String starts = getQstarts();

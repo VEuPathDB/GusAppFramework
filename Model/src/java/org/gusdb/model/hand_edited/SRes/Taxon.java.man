@@ -1,7 +1,7 @@
 package org.gusdb.model.SRes;
 
 import java.util.*;
-
+import java.sql.*;
 import org.gusdb.objrelj.*;
 
 /** 
@@ -14,9 +14,15 @@ import org.gusdb.objrelj.*;
 */
 
 public class Taxon extends Taxon_Row {
+    
+	public Taxon(){};
+    
+    // Constructor that creates a new GUSRow that is not in the database but can be submitted there.
+    public Taxon(ServerI server, String sessionId){
+	super(server, sessionId);
+    }
 
-    // Constructor
-    public Taxon () {}
+
 
     /**
      * Retrieve the TaxonName entry with the specified name_class (e.g. "scientific name")
@@ -45,18 +51,14 @@ public class Taxon extends Taxon_Row {
 	// TO DO - there should be a method in GUSRow that returns only the children
 	// of a specified class.
 	//
-	Vector kids = this.getAllChildren();
+	Vector kids = this.getChildren("taxon_name");
 
 	int nk = kids.size();
 	
 	for (int i = 0;i < nk;++i) {
-	    GUSRow gr = (GUSRow)(kids.elementAt(i));
-
-	    if (gr instanceof TaxonName) {
-		TaxonName tn = (TaxonName)gr;
-		if (tn.getNameClass().equals(name_class)) {
-		    return tn.getName();
-		}
+	    TaxonName tn = (TaxonName)(kids.elementAt(i));
+	    if (tn.getNameClass().equals(name_class)) {
+		return tn.getName();
 	    }
 	}
 	return null;
