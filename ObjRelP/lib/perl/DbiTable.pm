@@ -845,37 +845,37 @@ sub setChildList{
 }
 
 sub addToChildList{
-  my($self,@list) = @_;
-  foreach my $i (@list) {
-    my $childFullName = $self->getFullClassName($i->[0]);
-    @{$self->{'childList'}->{$childFullName}} = ($i->[1],$i->[2]);
-  }
+    my($self,@list) = @_;
+    foreach my $i (@list) {
+	my $childFullName = $self->getFullClassName($i->[0]);
+	@{$self->{'childList'}->{$childFullName}} = ($i->[1],$i->[2]);
+    }
 }
 
 sub getChildList{
-  my $self = shift;
-  return keys %{$self->{'childList'}};
+    my $self = shift;
+    return keys %{$self->{'childList'}};
 }
 
 sub getChildListWithAtts {
-  my $self = shift;
-  return $self->{childList};
+    my $self = shift;
+    return $self->{childList};
 }
 
 sub isValidChild{
-  my($self,$c) = @_;
-  if (exists $self->{'childList'}->{$c->getClassName()}) {
-    return 1;
-  }
-  return 0;
+    my($self,$c) = @_;
+    if (exists $self->{'childList'}->{$c->getClassName()}) {
+	return 1;
+    }
+    return 0;
 }
 
 sub isOnChildList{
-  my($self,$className) = @_;
-  $className = $self->getFullClassName($className);
-  if (exists $self->{'childList'}->{$className}) {
-    return 1;
-  }
+    my($self,$className) = @_;
+    $className = $self->getFullClassName($className);
+    if (exists $self->{'childList'}->{$className}) {
+	return 1;
+    }
   return 0;
 }
 

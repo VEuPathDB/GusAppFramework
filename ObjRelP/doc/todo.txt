@@ -1,3 +1,5 @@
+- handle case where Objects need to be regenerated because generator has been updated
+
 - factor the RelationalRow stuff out of Model/GusRow.pm.
 
 - generate should take an option to remove all non-manually edited files first
@@ -11,6 +13,7 @@
 - setSubclassView can be generated and include xform into proper table name syntax
 
 - avoid name collisions between subs in GusRow, etc, and generated class. (use a convention like underscore to delineate these)
+
 
 
 
