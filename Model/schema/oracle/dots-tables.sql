@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:42 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Fri Feb 21 01:45:27 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -825,8 +825,8 @@ CREATE TABLE @oracle_dots@.CLONE (
     CLONE_ID                           NUMBER(10)                                    NOT NULL,
     LIBRARY_ID                         NUMBER(5)                                     NOT NULL,
     IMAGE_ID                           NUMBER(12)                                    NULL,
-    DBEST_CLONE_UID                    VARCHAR2(35)                                  NULL,
-    WASHU_NAME                         VARCHAR2(12)                                  NULL,
+    DBEST_CLONE_UID                    VARCHAR2(64)                                  NULL,
+    WASHU_NAME                         VARCHAR2(64)                                  NULL,
     GDB_ID                             NUMBER(12)                                    NULL,
     MGI_ID                             NUMBER(12)                                    NULL,
     DBEST_LENGTH                       NUMBER(12)                                    NULL,
@@ -1188,7 +1188,7 @@ CREATE TABLE @oracle_dots@.EST (
     LIBRARY_ID                         NUMBER(5)                                     NOT NULL,
     CONTACT_ID                         NUMBER(12)                                    NOT NULL,
     DBEST_ID_EST                       NUMBER(12)                                    NULL,
-    WASHU_ID                           CHAR(15)                                      NULL,
+    WASHU_ID                           VARCHAR2(67)                                  NULL,
     ACCESSION                          VARCHAR2(20)                                  NULL,
     P_END                              CHAR(1)                                       NULL,
     QUALITY_START                      NUMBER(12)                                    NOT NULL,
@@ -1198,7 +1198,7 @@ CREATE TABLE @oracle_dots@.EST (
     POSSIBLY_REVERSED                  NUMBER(1)                                     NOT NULL,
     PUTATIVE_FULL_LENGTH_READ          NUMBER(1)                                     NOT NULL,
     TRACE_POOR_QUALITY                 NUMBER(1)                                     NOT NULL,
-    POLYA_SIGNAL                       NUMBER(1)                                     NOT NULL,
+    POLYA_SIGNAL                       NUMBER(1)                                     NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
@@ -2009,10 +2009,10 @@ CREATE TABLE @oracle_dots@.LIBRARY (
     STAGE                              VARCHAR2(100)                                 NULL,
     SEX                                CHAR(1)                                       NULL,
     CELL_TYPE                          VARCHAR2(70)                                  NULL,
-    CELL_LINE                          VARCHAR2(70)                                  NULL,
+    CELL_LINE                          VARCHAR2(156)                                 NULL,
     NORMALIZED                         CHAR(1)                                       NULL,
     VECTOR                             VARCHAR2(70)                                  NULL,
-    VECTOR_TYPE                        VARCHAR2(35)                                  NULL,
+    VECTOR_TYPE                        VARCHAR2(64)                                  NULL,
     HOST                               VARCHAR2(80)                                  NULL,
     RE_1                               VARCHAR2(35)                                  NULL,
     RE_2                               VARCHAR2(35)                                  NULL,
@@ -2444,7 +2444,7 @@ CREATE TABLE @oracle_dots@.NASEQUENCEIMP (
     G_COUNT                            NUMBER(12)                                    NULL,
     T_COUNT                            NUMBER(12)                                    NULL,
     OTHER_COUNT                        NUMBER(12)                                    NULL,
-    DESCRIPTION                        VARCHAR2(1000)                                NULL,
+    DESCRIPTION                        VARCHAR2(2000)                                NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NULL,
     SOURCE_NA_SEQUENCE_ID              NUMBER(10)                                    NULL,
     SEQUENCE_PIECE_ID                  NUMBER(10)                                    NULL,

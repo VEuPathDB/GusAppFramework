@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* core-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 22:13:47 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 25 10:26:37 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -106,7 +106,7 @@ CREATE TABLE @oracle_core@.ALGORITHMPARAMKEY (
     ALGORITHM_PARAM_KEY                VARCHAR2(60)                                  NOT NULL,
     ALGORITHM_PARAM_KEY_TYPE_ID        NUMBER(3)                                     NOT NULL,
     IS_LIST_VALUED                     NUMBER(1)                                     NOT NULL,
-    DESCRIPTION                        VARCHAR2(255)                                 NULL,
+    DESCRIPTION                        VARCHAR2(512)                                 NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,

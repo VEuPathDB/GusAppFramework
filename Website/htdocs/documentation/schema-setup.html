@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+ <head>
+  <link rel="StyleSheet" href="style.css" type="text/css" media="screen">
+  <title>GUS Schema - installation</title>
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+ </head>
+
+ <body>
+
+  <table width="100%" cellpadding="4">
+   <tbody>
+    <tr>
+     <td class="one">
+      <font><br>
+       <b>GUS Schema - installation</b><br>
+      </font>
+     </td>
+    </tr>
+
+    <tr>
+     <td class="two">
+      <font>
+       <b>Introduction</b>
+      </font>
+     </td>
+    </tr>
+
+    <tr>
+     <td class="four">
+      <table cellpadding="2" cellspacing="0" border="0" align="left" width="90%">
+       <tbody>
+        <tr><td>
+
+ 	 <p>
+	  The GUS relational database schema is a central component of the GUS 
+	  system, and it must be installed in order to use of most of the software 
+	  provided with GUS.  The schema is currently distributed as a 
+	  set of files that contain Oracle DDL commands (such as <tt>CREATE TABLE</tt> and
+	  <tt>CREATE VIEW</tt>, for example); when run on a suitable Oracle database 
+	  server, these commands will recreate the users, tables, views, constraints, 
+	  sequences, and indexes that make up the GUS relational schema.  (You can 
+          <A HREF="http://cvsweb.sanger.ac.uk/cgi-bin/cvsweb.cgi/GUS/Model/schema/oracle/?cvsroot=GUS&f=h">browse 
+	  through these files</A> on the public CVS server.)  Note that the GUS system
+	  currently works only with Oracle (either 8i or 9i), but we hope to release 
+	  a version that will add support for either MySQL or PostgreSQL.  Installing 
+	  the schema is typically a task that will be performed by a database 
+	  administrator, and since many users can share a single GUS instance, the
+	  installation may only need to be done once or twice per site, depending on
+	  the local requirements.
+	 </p>
+	 <br>
+        </td></tr>
+       </tbody>
+      </table>
+     </td>
+    </tr>
+
+    <tr>
+     <td class="two">
+      <font>
+       <b>Installing the GUS schema</b>
+      </font>
+     </td>
+    </tr>
+
+    <tr>
+     <td class="four">
+<br>
+<table cellpadding="2" cellspacing="0" border="0" align="left" width="90%">
+ <tbody>
+  <tr>
+   <td class="list-one">1.</td>
+   <td>
+   <p>Set up the GUS build system <A HREF="install-setup.html">as described here</A>.  
+    During the initial installation the build system should halt and instruct 
+    you to create the properties file <tt>$GUS_HOME/config/schema.prop</tt>.  
+    This file should be edited in order to customize the GUS schema installation
+    scripts to your site and database server.  (For example, this file specifies
+    the passwords for the Oracle user accounts that will be created to hold the
+    tables and views in GUS.)
+   </p>
+   <p>
+    <B>Note:</B> One of the properties in this file is the Oracle SYS password.
+    If you don't want to place the Oracle SYS password in this file, you can 
+    instead choose to run the schema creation scripts manually, since only one 
+    of the scripts (<tt>users.sql</tt>) must be run with SYS/DBA privileges.  
+   </p>
+   <br>
+   </td>
+  </tr>
+
+  <tr>
+   <td class="list-one">2.</td>
+   <td>Once the install is complete, change into the directory <tt><b>$GUS_HOME/schema/oracle</b></tt>:
+   <blockquote>   
+    <tt>% cd $GUS_HOME/schema/oracle</tt>
+   </blockquote>
+<br>
+   </td>
+  </tr>
+
+  <tr>
+   <td class="list-one">3.</td>
+   <td>Make sure that the Oracle <tt><b>sqlplus</b></tt> utility is executable and in your default PATH:
+   <blockquote>
+    <pre>
+% sqlplus -h
+
+SQL*Plus: Release 9.0.1.0.0 - Production
+
+Usage: SQLPLUS [ [<option>] [<logon>] [<start>] ]
+where <option> ::= -H | -V | [ [-M <o>] [-R <n>] [-S] ]
+      <logon>  ::= <username>[/<password>][@<connect_string>] | / | /NOLOG
+      <start>  ::= @<filename>[.<ext>] [<parameter> ...]
+        "-H" displays the SQL*Plus version banner and usage syntax
+        "-V" displays the SQL*Plus version banner
+        "-M <o>" uses HTML markup options <o>
+        "-R <n>" uses restricted mode <n>
+        "-S" uses silent mode
+    </pre>
+    </blockquote>
+   </td>
+  </tr>
+
+  <tr>
+   <td class="list-one">4.</td>
+   <td>Make sure that the <tt><b>grantPermissions.pl</b></tt> script is executable and in your default PATH 
+(the script should be in <tt><b>$GUS_HOME/bin</b></tt> after installing the GUS project)::
+   <blockquote>
+    <pre>
+% grantPermissions.pl
+Usage: grantPermissions.pl options
+   --db-sid=SID                # SID of the Oracle server
+   --db-host=hostname          # Hostname of the Oracle server
+   --db-port=portnum           # Port on which the Oracle server will accept connections
+   --login=login               # Oracle login with grant/revoke permissions on the objects owned by --owner
+   --permissions=p1,p2,..      # list of permissions to grant/revoke
+   --grantees=u1,u2,...        # List of users or roles to grant permissions to
+   --revoke                    # Revoke listed permissions instead of granting them
+   --owner=owner               # Grant/revoke --permissions to all objects owned by this schema
+   --verbose
+Invalid arguments at /home/crabtree/projects/GUS/gus_home/bin/grantPermissions.pl line 66.
+    </pre>
+   </blockquote>
+   <br>
+   </td>
+  </tr>
+
+  <tr>
+   <td class="list-one">5.</td>
+   <td><p>Review the script <tt><b>$GUS_HOME/schema/oracle/create-db.sh</b></tt> to make 
+   sure that you approve of the changes that it will make to your database server.
+</p>
+<br>
+   </td>
+  </tr>
+
+  <tr>
+   <td class="list-one">6.</td>
+   <td>Run <tt><b>create-db.sh</b></tt> from the directory <tt><b>$GUS_HOME/schema/oracle</b></tt>:
+   <blockquote>
+    <pre>
+% ./create-db.sh
+    </pre>
+   </blockquote>
+   </td>
+  </tr>
+
+  <tr>
+   <td class="list-one">7.</td>
+   <td><p>Check the .log files created by the script to make sure that all of the DDL statements
+   were execute successfully.  Correct any errors reported in these files.
+   </p>
+   <p>
+   <b>Note:</b> the process of checking the log files for errors will be automated in a 
+future release of the system.
+   </p>
+<br>
+   </td>
+  </tr>
+
+ </tbody>
+</table>
+<br>
+<br>
+     </td>
+    </tr>
+
+    <tr>
+     <td class="one">
+       <br><br>
+     </td>
+    </tr>
+
+    <tr>
+     <td class="five">
+     <table border=0 cellpadding=0 cellspacing=0 width="100%">
+      <tbody>     
+      <tr><td class="five" align="left">$Revision$ $Date$ $Author$</td><td class="five" align="right">Contact: webmaster@gusdb.org</td></tr>
+      </tbody>
+     </table>
+     </td>
+    </tr>
+
+ </tbody>
+</table>
+
+</body>
+</html>
