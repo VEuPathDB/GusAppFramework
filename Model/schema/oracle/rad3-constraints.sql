@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* rad3-constraints.sql                                                                       */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:46:47 EST 2004     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 12:47:09 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -69,8 +69,6 @@ alter table @oracle_rad@.ASSAYBIOMATERIAL add constraint FK_ASSAYBIOSOURCE13 for
 alter table @oracle_rad@.ASSAYCONTROL add constraint FK_ASSAYCONTROL_ASSAY foreign key (ASSAY_ID) references @oracle_rad@.ASSAY (ASSAY_ID);
 alter table @oracle_rad@.ASSAYCONTROL add constraint FK_ASSAYCONTROL_CONTROL foreign key (CONTROL_ID) references @oracle_rad@.CONTROL (CONTROL_ID);
 alter table @oracle_rad@.ASSAYCONTROL add constraint FK_ASSAYCONTROL_ONTO01 foreign key (UNIT_TYPE_ID) references @oracle_rad@.ONTOLOGYENTRY (ONTOLOGY_ENTRY_ID);
-
-/* ASSAYGROUP */
 
 /* ASSAYLABELEDEXTRACT */
 alter table @oracle_rad@.ASSAYLABELEDEXTRACT add constraint FK_ASSAYLAB_ASSAY foreign key (ASSAY_ID) references @oracle_rad@.ASSAY (ASSAY_ID);
