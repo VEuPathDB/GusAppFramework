@@ -30,6 +30,38 @@
   </tag>
 
 
+  <tag>
+    <description>
+    	Rename the key an attribute is stored under in a given scope 
+    </description>
+    <name>RenameAttributeKey</name>
+    <tag-class>org.gusdb.gus.wdk.view.taglibs.misc.RenameAttributeKey</tag-class>
+    <body-content>empty</body-content>
+
+    <attribute>
+      <description>The current name for the attribute</description>
+      <name>from</name>
+      <required>true</required>
+      <type>java.lang.String</type>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    <attribute>
+      <description>The new name for the attribute</description>
+      <name>to</name>
+      <required>true</required>
+      <type>java.lang.String</type>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    <attribute>
+      <description>The new name for the attribute</description>
+      <name>remove</name>
+      <required>false</required>
+      <type>java.lang.String</type>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
+    
+  </tag>
+
 <!--
   <tag>
     <description>
