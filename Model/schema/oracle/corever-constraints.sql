@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* corever-constraints.sql                                                                    */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:22:55 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:01 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON

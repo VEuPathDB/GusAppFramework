@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* corever-views.sql                                                                          */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:22:54 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:00 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL corever-views.log
 
-CREATE VIEW CoretestVer.WORKFLOWCONDITIONALNODEVER
+CREATE VIEW @oracle_corever@.WORKFLOWCONDITIONALNODEVER
 AS SELECT
   workflow_node_id,
   workflow_id,
@@ -36,7 +36,7 @@ AS SELECT
  WHERE subclass_view = 'WorkflowConditionalNode'
  WITH CHECK OPTION;
 
-CREATE VIEW CoretestVer.WORKFLOWNOOPNODEVER
+CREATE VIEW @oracle_corever@.WORKFLOWNOOPNODEVER
 AS SELECT
   workflow_node_id,
   workflow_id,
@@ -63,7 +63,7 @@ AS SELECT
  WHERE subclass_view = 'WorkflowNoOpNode'
  WITH CHECK OPTION;
 
-CREATE VIEW CoretestVer.WORKFLOWPLUGINNODEVER
+CREATE VIEW @oracle_corever@.WORKFLOWPLUGINNODEVER
 AS SELECT
   workflow_node_id,
   workflow_id,
@@ -91,7 +91,7 @@ AS SELECT
  WHERE subclass_view = 'WorkflowPluginNode'
  WITH CHECK OPTION;
 
-CREATE VIEW CoretestVer.WORKFLOWSYSTEMNODEVER
+CREATE VIEW @oracle_corever@.WORKFLOWSYSTEMNODEVER
 AS SELECT
   workflow_node_id,
   workflow_id,

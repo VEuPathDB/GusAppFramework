@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* tessver-views.sql                                                                          */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:29:22 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:48:46 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL tessver-views.log
 
-CREATE VIEW TESStestVer.ACTIVITYGENEREGULATIONVER
+CREATE VIEW @oracle_tessver@.ACTIVITYGENEREGULATIONVER
 AS SELECT
   activity_id,
   subclass_view,
@@ -37,7 +37,7 @@ AS SELECT
   version_transaction_id 
   from TESSVer.ActivityImpVer WHERE subclass_view = 'ActivityGeneRegulation' WITH CHECK OPTION;
 
-CREATE VIEW TESStestVer.ACTIVITYPROTEINDNABINDINGVER
+CREATE VIEW @oracle_tessver@.ACTIVITYPROTEINDNABINDINGVER
 AS SELECT
   activity_id,
   subclass_view,
@@ -66,7 +66,7 @@ AS SELECT
   version_transaction_id 
   from TESSVer.ActivityImpVer WHERE subclass_view = 'ActivityProteinDnaBinding' WITH CHECK OPTION;
 
-CREATE VIEW TESStestVer.ACTIVITYVER
+CREATE VIEW @oracle_tessver@.ACTIVITYVER
 AS SELECT
   activity_id,
   subclass_view,
@@ -95,7 +95,7 @@ AS SELECT
   version_transaction_id 
   from TESSVer.ActivityImpVer with check option;
 
-CREATE VIEW TESStestVer.MOIETYCOMPLEXVER
+CREATE VIEW @oracle_tessver@.MOIETYCOMPLEXVER
 AS SELECT
   moiety_id,
   subclass_view,
@@ -124,7 +124,7 @@ AS SELECT
   version_transaction_id 
 from TESSVer.MoietyImpVer where subclass_view = 'TESS::MoietyComplex' with check option;
 
-CREATE VIEW TESStestVer.MOIETYHETERODIMERVER
+CREATE VIEW @oracle_tessver@.MOIETYHETERODIMERVER
 AS SELECT
   moiety_id,
   subclass_view,
@@ -152,7 +152,7 @@ AS SELECT
   version_transaction_id 
 from TESSVer.MoietyImpVer where subclass_view = 'TESS::MoietyHeteroDimer' with check option;
 
-CREATE VIEW TESStestVer.MOIETYMONOMERVER
+CREATE VIEW @oracle_tessver@.MOIETYMONOMERVER
 AS SELECT
   moiety_id,
   subclass_view,
@@ -180,7 +180,7 @@ AS SELECT
   version_transaction_id 
 from TESSVer.MoietyImpVer where subclass_view = 'TESS::MoietyMonomer' with check option;
 
-CREATE VIEW TESStestVer.MOIETYMULTIMERVER
+CREATE VIEW @oracle_tessver@.MOIETYMULTIMERVER
 AS SELECT
   moiety_id,
   subclass_view,
@@ -209,7 +209,7 @@ AS SELECT
   version_transaction_id 
 from TESSVer.MoietyImpVer where subclass_view = 'TESS::MoietyMultimer' with check option;
 
-CREATE VIEW TESStestVer.MOIETYVER
+CREATE VIEW @oracle_tessver@.MOIETYVER
 AS SELECT
   moiety_id,
   subclass_view,
@@ -237,7 +237,7 @@ AS SELECT
   version_transaction_id 
 from TESSVer.MoietyImpVer where subclass_view = 'TESS::Moiety' with check option;
 
-CREATE VIEW TESStestVer.SBCGRECOGCONSENSUSSTRINGVER
+CREATE VIEW @oracle_tessver@.SBCGRECOGCONSENSUSSTRINGVER
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
@@ -262,7 +262,7 @@ AS SELECT
   version_transaction_id 
 from TESSVer.SbcgRecognitionImpVer where subclass_view = 'SbcgRecogConsensusString' with check option;
 
-CREATE VIEW TESStestVer.SBCGRECOGGAPVER
+CREATE VIEW @oracle_tessver@.SBCGRECOGGAPVER
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
@@ -285,7 +285,7 @@ AS SELECT
   version_transaction_id 
 from TESSVer.SbcgRecognitionImpVer where subclass_view = 'SbcgRecogGap' with check option;
 
-CREATE VIEW TESStestVer.SBCGRECOGNITIONVER
+CREATE VIEW @oracle_tessver@.SBCGRECOGNITIONVER
 ( SBCG_RECOGNITION_ID,
   SUBCLASS_VIEW,
   SBCG_GRAMMAR_ID,
@@ -327,7 +327,7 @@ AS select
         version_transaction_id
 from TESSVer.SbcgRecognitionImpVer;
 
-CREATE VIEW TESStestVer.SBCGRECOGPATHEXPRESSIONVER
+CREATE VIEW @oracle_tessver@.SBCGRECOGPATHEXPRESSIONVER
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
@@ -354,7 +354,7 @@ AS SELECT
   version_transaction_id 
 from TESSVer.SbcgRecognitionImpVer where subclass_view = 'SbcgRecogPathExpression' with check option;
 
-CREATE VIEW TESStestVer.SBCGRECOGPOSITIONVER
+CREATE VIEW @oracle_tessver@.SBCGRECOGPOSITIONVER
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
@@ -379,7 +379,7 @@ AS SELECT
   version_transaction_id 
 from TESSVer.SbcgRecognitionImpVer where subclass_view = 'SbcgRecogPosition' with check option;
 
-CREATE VIEW TESStestVer.SBCGRECOGSTRINGVER
+CREATE VIEW @oracle_tessver@.SBCGRECOGSTRINGVER
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
@@ -404,7 +404,7 @@ AS SELECT
   version_transaction_id 
 from TESSVer.SbcgRecognitionImpVer where subclass_view = 'SbcgRecogString' with check option;
 
-CREATE VIEW TESStestVer.SBCGRECOGWEIGHTMATRIXVER
+CREATE VIEW @oracle_tessver@.SBCGRECOGWEIGHTMATRIXVER
 AS SELECT
   sbcg_recognition_id,
   subclass_view,

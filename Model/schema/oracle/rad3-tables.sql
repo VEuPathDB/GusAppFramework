@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* rad3-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:29:24 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:48:48 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL rad3-tables.log
 
-CREATE TABLE RAD3test.ACQUISITION (
+CREATE TABLE @oracle_rad3@.ACQUISITION (
     ACQUISITION_ID                     NUMBER(8)                                     NOT NULL,
     ASSAY_ID                           NUMBER(8)                                     NOT NULL,
     PROTOCOL_ID                        NUMBER(10)                                    NULL,
@@ -27,10 +27,10 @@ CREATE TABLE RAD3test.ACQUISITION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ACQUISITIONPARAM (
+CREATE TABLE @oracle_rad3@.ACQUISITIONPARAM (
     ACQUISITION_PARAM_ID               NUMBER(5)                                     NOT NULL,
     ACQUISITION_ID                     NUMBER(8)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -46,10 +46,10 @@ CREATE TABLE RAD3test.ACQUISITIONPARAM (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ANALYSIS (
+CREATE TABLE @oracle_rad3@.ANALYSIS (
     ANALYSIS_ID                        NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(500)                                 NULL,
@@ -64,10 +64,10 @@ CREATE TABLE RAD3test.ANALYSIS (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ANALYSISIMPLEMENTATION (
+CREATE TABLE @oracle_rad3@.ANALYSISIMPLEMENTATION (
     ANALYSIS_IMPLEMENTATION_ID         NUMBER(5)                                     NOT NULL,
     ANALYSIS_ID                        NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -83,10 +83,10 @@ CREATE TABLE RAD3test.ANALYSISIMPLEMENTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ANALYSISIMPLEMENTATIONPARAM (
+CREATE TABLE @oracle_rad3@.ANALYSISIMPLEMENTATIONPARAM (
     ANALYSIS_IMP_PARAM_ID              NUMBER(5)                                     NOT NULL,
     ANALYSIS_IMPLEMENTATION_ID         NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -102,10 +102,10 @@ CREATE TABLE RAD3test.ANALYSISIMPLEMENTATIONPARAM (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ANALYSISINPUT (
+CREATE TABLE @oracle_rad3@.ANALYSISINPUT (
     ANALYSIS_INPUT_ID                  NUMBER(5)                                     NOT NULL,
     ANALYSIS_INVOCATION_ID             NUMBER(5)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NULL,
@@ -122,10 +122,10 @@ CREATE TABLE RAD3test.ANALYSISINPUT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ANALYSISINVOCATION (
+CREATE TABLE @oracle_rad3@.ANALYSISINVOCATION (
     ANALYSIS_INVOCATION_ID             NUMBER(5)                                     NOT NULL,
     ANALYSIS_IMPLEMENTATION_ID         NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -141,10 +141,10 @@ CREATE TABLE RAD3test.ANALYSISINVOCATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ANALYSISINVOCATIONPARAM (
+CREATE TABLE @oracle_rad3@.ANALYSISINVOCATIONPARAM (
     ANALYSIS_INVOCATION_PARAM_ID       NUMBER(5)                                     NOT NULL,
     ANALYSIS_INVOCATION_ID             NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -160,10 +160,10 @@ CREATE TABLE RAD3test.ANALYSISINVOCATIONPARAM (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ANALYSISOUTPUT (
+CREATE TABLE @oracle_rad3@.ANALYSISOUTPUT (
     ANALYSIS_OUTPUT_ID                 NUMBER(10)                                    NOT NULL,
     ANALYSIS_INVOCATION_ID             NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -180,10 +180,10 @@ CREATE TABLE RAD3test.ANALYSISOUTPUT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ARRAY (
+CREATE TABLE @oracle_rad3@.ARRAY (
     ARRAY_ID                           NUMBER(4)                                     NOT NULL,
     MANUFACTURER_ID                    NUMBER(12)                                    NOT NULL,
     PLATFORM_TYPE_ID                   NUMBER(8)                                     NOT NULL,
@@ -214,10 +214,10 @@ CREATE TABLE RAD3test.ARRAY (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ARRAYANNOTATION (
+CREATE TABLE @oracle_rad3@.ARRAYANNOTATION (
     ARRAY_ANNOTATION_ID                NUMBER(5)                                     NOT NULL,
     ARRAY_ID                           NUMBER(4)                                     NOT NULL,
     NAME                               VARCHAR2(500)                                 NOT NULL,
@@ -233,10 +233,10 @@ CREATE TABLE RAD3test.ARRAYANNOTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ASSAY (
+CREATE TABLE @oracle_rad3@.ASSAY (
     ASSAY_ID                           NUMBER(8)                                     NOT NULL,
     ARRAY_ID                           NUMBER(4)                                     NOT NULL,
     PROTOCOL_ID                        NUMBER(10)                                    NULL,
@@ -259,10 +259,10 @@ CREATE TABLE RAD3test.ASSAY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ASSAYBIOMATERIAL (
+CREATE TABLE @oracle_rad3@.ASSAYBIOMATERIAL (
     ASSAY_BIO_MATERIAL_ID              NUMBER(5)                                     NOT NULL,
     ASSAY_ID                           NUMBER(8)                                     NOT NULL,
     BIO_MATERIAL_ID                    NUMBER(5)                                     NOT NULL,
@@ -277,10 +277,10 @@ CREATE TABLE RAD3test.ASSAYBIOMATERIAL (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ASSAYLABELEDEXTRACT (
+CREATE TABLE @oracle_rad3@.ASSAYLABELEDEXTRACT (
     ASSAY_LABELED_EXTRACT_ID           NUMBER(8)                                     NOT NULL,
     ASSAY_ID                           NUMBER(8)                                     NOT NULL,
     LABELED_EXTRACT_ID                 NUMBER(8)                                     NOT NULL,
@@ -296,10 +296,10 @@ CREATE TABLE RAD3test.ASSAYLABELEDEXTRACT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ASSAYPARAM (
+CREATE TABLE @oracle_rad3@.ASSAYPARAM (
     ASSAY_PARAM_ID                     NUMBER(10)                                    NOT NULL,
     ASSAY_ID                           NUMBER(8)                                     NOT NULL,
     PROTOCOL_PARAM_ID                  NUMBER(5)                                     NOT NULL,
@@ -315,10 +315,10 @@ CREATE TABLE RAD3test.ASSAYPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.BIOMATERIALCHARACTERISTIC (
+CREATE TABLE @oracle_rad3@.BIOMATERIALCHARACTERISTIC (
     BIO_MATERIAL_CHARACTERISTIC_ID     NUMBER(5)                                     NOT NULL,
     BIO_MATERIAL_ID                    NUMBER(5)                                     NOT NULL,
     ONTOLOGY_ENTRY_ID                  NUMBER(5)                                     NOT NULL,
@@ -334,10 +334,10 @@ CREATE TABLE RAD3test.BIOMATERIALCHARACTERISTIC (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.BIOMATERIALIMP (
+CREATE TABLE @oracle_rad3@.BIOMATERIALIMP (
     BIO_MATERIAL_ID                    NUMBER(8)                                     NOT NULL,
     LABEL_METHOD_ID                    NUMBER(4)                                     NULL,
     TAXON_ID                           NUMBER(10)                                    NULL,
@@ -359,10 +359,10 @@ CREATE TABLE RAD3test.BIOMATERIALIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.BIOMATERIALMEASUREMENT (
+CREATE TABLE @oracle_rad3@.BIOMATERIALMEASUREMENT (
     BIO_MATERIAL_MEASUREMENT_ID        NUMBER(10)                                    NOT NULL,
     TREATMENT_ID                       NUMBER(10)                                    NOT NULL,
     BIO_MATERIAL_ID                    NUMBER(5)                                     NOT NULL,
@@ -379,10 +379,10 @@ CREATE TABLE RAD3test.BIOMATERIALMEASUREMENT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.CHANNEL (
+CREATE TABLE @oracle_rad3@.CHANNEL (
     CHANNEL_ID                         NUMBER(4)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     DEFINITION                         VARCHAR2(500)                                 NOT NULL,
@@ -397,10 +397,10 @@ CREATE TABLE RAD3test.CHANNEL (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.COMPOSITEELEMENTANNOTATION (
+CREATE TABLE @oracle_rad3@.COMPOSITEELEMENTANNOTATION (
     COMPOSITE_ELEMENT_ANNOT_ID         NUMBER(12)                                    NOT NULL,
     COMPOSITE_ELEMENT_ID               NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(500)                                 NOT NULL,
@@ -416,10 +416,10 @@ CREATE TABLE RAD3test.COMPOSITEELEMENTANNOTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.COMPOSITEELEMENTGUS (
+CREATE TABLE @oracle_rad3@.COMPOSITEELEMENTGUS (
     COMPOSITE_ELEMENT_GUS_ID           NUMBER(12)                                    NOT NULL,
     COMPOSITE_ELEMENT_ID               NUMBER(12)                                    NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -435,10 +435,10 @@ CREATE TABLE RAD3test.COMPOSITEELEMENTGUS (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.COMPOSITEELEMENTIMP (
+CREATE TABLE @oracle_rad3@.COMPOSITEELEMENTIMP (
     COMPOSITE_ELEMENT_ID               NUMBER(10)                                    NOT NULL,
     PARENT_ID                          NUMBER(10)                                    NULL,
     ARRAY_ID                           NUMBER(4)                                     NOT NULL,
@@ -467,10 +467,10 @@ CREATE TABLE RAD3test.COMPOSITEELEMENTIMP (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.COMPOSITEELEMENTRESULTIMP (
+CREATE TABLE @oracle_rad3@.COMPOSITEELEMENTRESULTIMP (
     COMPOSITE_ELEMENT_RESULT_ID        NUMBER(10)                                    NOT NULL,
     COMPOSITE_ELEMENT_ID               NUMBER(10)                                    NOT NULL,
     QUANTIFICATION_ID                  NUMBER(8)                                     NOT NULL,
@@ -502,10 +502,10 @@ CREATE TABLE RAD3test.COMPOSITEELEMENTRESULTIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.CONTROL (
+CREATE TABLE @oracle_rad3@.CONTROL (
     CONTROL_ID                         NUMBER(5)                                     NOT NULL,
     CONTROL_TYPE_ID                    NUMBER(5)                                     NOT NULL,
     ASSAY_ID                           NUMBER(8)                                     NOT NULL,
@@ -524,10 +524,10 @@ CREATE TABLE RAD3test.CONTROL (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ELEMENTANNOTATION (
+CREATE TABLE @oracle_rad3@.ELEMENTANNOTATION (
     ELEMENT_ANNOTATION_ID              NUMBER(10)                                    NOT NULL,
     ELEMENT_ID                         NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -543,10 +543,10 @@ CREATE TABLE RAD3test.ELEMENTANNOTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ELEMENTIMP (
+CREATE TABLE @oracle_rad3@.ELEMENTIMP (
     ELEMENT_ID                         NUMBER(10)                                    NOT NULL,
     COMPOSITE_ELEMENT_ID               NUMBER(10)                                    NULL,
     ARRAY_ID                           NUMBER(4)                                     NOT NULL,
@@ -580,10 +580,10 @@ CREATE TABLE RAD3test.ELEMENTIMP (
     ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ELEMENTRESULTIMP (
+CREATE TABLE @oracle_rad3@.ELEMENTRESULTIMP (
     ELEMENT_RESULT_ID                  NUMBER(10)                                    NOT NULL,
     ELEMENT_ID                         NUMBER(10)                                    NOT NULL,
     COMPOSITE_ELEMENT_RESULT_ID        NUMBER(10)                                    NULL,
@@ -650,10 +650,10 @@ CREATE TABLE RAD3test.ELEMENTRESULTIMP (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.LABELMETHOD (
+CREATE TABLE @oracle_rad3@.LABELMETHOD (
     LABEL_METHOD_ID                    NUMBER(4)                                     NOT NULL,
     PROTOCOL_ID                        NUMBER(10)                                    NOT NULL,
     CHANNEL_ID                         NUMBER(4)                                     NOT NULL,
@@ -670,10 +670,10 @@ CREATE TABLE RAD3test.LABELMETHOD (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.MAGEDOCUMENTATION (
+CREATE TABLE @oracle_rad3@.MAGEDOCUMENTATION (
     MAGE_DOCUMENTATION_ID              NUMBER(5)                                     NOT NULL,
     MAGE_ML_ID                         NUMBER(8)                                     NOT NULL,
     TABLE_ID                           NUMBER(10)                                    NOT NULL,
@@ -690,10 +690,10 @@ CREATE TABLE RAD3test.MAGEDOCUMENTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.MAGE_ML (
+CREATE TABLE @oracle_rad3@.MAGE_ML (
     MAGE_ML_ID                         NUMBER(8)                                     NOT NULL,
     MAGE_PACKAGE                       VARCHAR2(100)                                 NOT NULL,
     MAGE_ML                            CLOB                                          NOT NULL,
@@ -708,10 +708,10 @@ CREATE TABLE RAD3test.MAGE_ML (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.ONTOLOGYENTRY (
+CREATE TABLE @oracle_rad3@.ONTOLOGYENTRY (
     ONTOLOGY_ENTRY_ID                  NUMBER(10)                                    NOT NULL,
     PARENT_ID                          NUMBER(10)                                    NULL,
     TABLE_ID                           NUMBER(8)                                     NULL,
@@ -734,10 +734,10 @@ CREATE TABLE RAD3test.ONTOLOGYENTRY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.PROCESSIMPLEMENTATION (
+CREATE TABLE @oracle_rad3@.PROCESSIMPLEMENTATION (
     PROCESS_IMPLEMENTATION_ID          NUMBER(5)                                     NOT NULL,
     PROCESS_TYPE_ID                    NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NULL,
@@ -752,10 +752,10 @@ CREATE TABLE RAD3test.PROCESSIMPLEMENTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.PROCESSIMPLEMENTATIONPARAM (
+CREATE TABLE @oracle_rad3@.PROCESSIMPLEMENTATIONPARAM (
     PROCESS_IMPLEMETATION_PARAM_ID     NUMBER(5)                                     NOT NULL,
     PROCESS_IMPLEMENTATION_ID          NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -771,10 +771,10 @@ CREATE TABLE RAD3test.PROCESSIMPLEMENTATIONPARAM (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.PROCESSINVOCATION (
+CREATE TABLE @oracle_rad3@.PROCESSINVOCATION (
     PROCESS_INVOCATION_ID              NUMBER(5)                                     NOT NULL,
     PROCESS_IMPLEMENTATION_ID          NUMBER(5)                                     NOT NULL,
     PROCESS_INVOCATION_DATE            DATE                                          NOT NULL,
@@ -790,10 +790,10 @@ CREATE TABLE RAD3test.PROCESSINVOCATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.PROCESSINVOCATIONPARAM (
+CREATE TABLE @oracle_rad3@.PROCESSINVOCATIONPARAM (
     PROCESS_INVOCATION_PARAM_ID        NUMBER(8)                                     NOT NULL,
     PROCESS_INVOCATION_ID              NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -809,10 +809,10 @@ CREATE TABLE RAD3test.PROCESSINVOCATIONPARAM (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.PROCESSINVQUANTIFICATION (
+CREATE TABLE @oracle_rad3@.PROCESSINVQUANTIFICATION (
     PROCESS_INV_QUANTIFICATION_ID      NUMBER(8)                                     NOT NULL,
     PROCESS_INVOCATION_ID              NUMBER(5)                                     NOT NULL,
     QUANTIFICATION_ID                  NUMBER(5)                                     NOT NULL,
@@ -827,10 +827,10 @@ CREATE TABLE RAD3test.PROCESSINVQUANTIFICATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.PROCESSIO (
+CREATE TABLE @oracle_rad3@.PROCESSIO (
     PROCESS_IO_ID                      NUMBER(12)                                    NOT NULL,
     PROCESS_INVOCATION_ID              NUMBER(5)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -848,10 +848,10 @@ CREATE TABLE RAD3test.PROCESSIO (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.PROCESSIOELEMENT (
+CREATE TABLE @oracle_rad3@.PROCESSIOELEMENT (
     PROCESS_IO_ELEMENT_ID              NUMBER(10)                                    NOT NULL,
     PROCESS_IO_ID                      NUMBER(10)                                    NOT NULL,
     ELEMENT_ID                         NUMBER(8)                                     NOT NULL,
@@ -866,10 +866,10 @@ CREATE TABLE RAD3test.PROCESSIOELEMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.PROCESSRESULT (
+CREATE TABLE @oracle_rad3@.PROCESSRESULT (
     PROCESS_RESULT_ID                  NUMBER(12)                                    NOT NULL,
     VALUE                              FLOAT(126)                                    NOT NULL,
     UNIT_TYPE_ID                       NUMBER(5)                                     NULL,
@@ -884,10 +884,10 @@ CREATE TABLE RAD3test.PROCESSRESULT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.PROJECTLINK (
+CREATE TABLE @oracle_rad3@.PROJECTLINK (
     PROJECT_LINK_ID                    NUMBER(10)                                    NOT NULL,
     PROJECT_ID                         NUMBER(3)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -904,10 +904,10 @@ CREATE TABLE RAD3test.PROJECTLINK (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.PROTOCOL (
+CREATE TABLE @oracle_rad3@.PROTOCOL (
     PROTOCOL_ID                        NUMBER(10)                                    NOT NULL,
     PROTOCOL_TYPE_ID                   NUMBER(5)                                     NOT NULL,
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NULL,
@@ -929,10 +929,10 @@ CREATE TABLE RAD3test.PROTOCOL (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.PROTOCOLPARAM (
+CREATE TABLE @oracle_rad3@.PROTOCOLPARAM (
     PROTOCOL_PARAM_ID                  NUMBER(5)                                     NOT NULL,
     PROTOCOL_ID                        NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -950,10 +950,10 @@ CREATE TABLE RAD3test.PROTOCOLPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.QUANTIFICATION (
+CREATE TABLE @oracle_rad3@.QUANTIFICATION (
     QUANTIFICATION_ID                  NUMBER(8)                                     NOT NULL,
     ACQUISITION_ID                     NUMBER(8)                                     NOT NULL,
     OPERATOR_ID                        NUMBER(10)                                    NULL,
@@ -973,10 +973,10 @@ CREATE TABLE RAD3test.QUANTIFICATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.QUANTIFICATIONPARAM (
+CREATE TABLE @oracle_rad3@.QUANTIFICATIONPARAM (
     QUANTIFICATION_PARAM_ID            NUMBER(5)                                     NOT NULL,
     QUANTIFICATION_ID                  NUMBER(4)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -992,10 +992,10 @@ CREATE TABLE RAD3test.QUANTIFICATIONPARAM (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.RELATEDACQUISITION (
+CREATE TABLE @oracle_rad3@.RELATEDACQUISITION (
     RELATED_ACQUISITION_ID             NUMBER(4)                                     NOT NULL,
     ACQUISITION_ID                     NUMBER(8)                                     NOT NULL,
     ASSOCIATED_ACQUISITION_ID          NUMBER(8)                                     NOT NULL,
@@ -1013,10 +1013,10 @@ CREATE TABLE RAD3test.RELATEDACQUISITION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.RELATEDQUANTIFICATION (
+CREATE TABLE @oracle_rad3@.RELATEDQUANTIFICATION (
     RELATED_QUANTIFICATION_ID          NUMBER(4)                                     NOT NULL,
     QUANTIFICATION_ID                  NUMBER(8)                                     NOT NULL,
     ASSOCIATED_QUANTIFICATION_ID       NUMBER(8)                                     NOT NULL,
@@ -1034,10 +1034,10 @@ CREATE TABLE RAD3test.RELATEDQUANTIFICATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.STUDY (
+CREATE TABLE @oracle_rad3@.STUDY (
     STUDY_ID                           NUMBER(4)                                     NOT NULL,
     CONTACT_ID                         NUMBER(12)                                    NOT NULL,
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NULL,
@@ -1056,10 +1056,10 @@ CREATE TABLE RAD3test.STUDY (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.STUDYASSAY (
+CREATE TABLE @oracle_rad3@.STUDYASSAY (
     STUDY_ASSAY_ID                     NUMBER(8)                                     NOT NULL,
     STUDY_ID                           NUMBER(5)                                     NOT NULL,
     ASSAY_ID                           NUMBER(8)                                     NOT NULL,
@@ -1074,10 +1074,10 @@ CREATE TABLE RAD3test.STUDYASSAY (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.STUDYDESIGN (
+CREATE TABLE @oracle_rad3@.STUDYDESIGN (
     STUDY_DESIGN_ID                    NUMBER(5)                                     NOT NULL,
     STUDY_ID                           NUMBER(5)                                     NOT NULL,
     DESCRIPTION                        VARCHAR2(4000)                                NULL,
@@ -1092,10 +1092,10 @@ CREATE TABLE RAD3test.STUDYDESIGN (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.STUDYDESIGNASSAY (
+CREATE TABLE @oracle_rad3@.STUDYDESIGNASSAY (
     STUDY_DESIGN_ASSAY_ID              NUMBER(8)                                     NOT NULL,
     STUDY_DESIGN_ID                    NUMBER(5)                                     NOT NULL,
     ASSAY_ID                           NUMBER(8)                                     NOT NULL,
@@ -1110,10 +1110,10 @@ CREATE TABLE RAD3test.STUDYDESIGNASSAY (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.STUDYDESIGNDESCRIPTION (
+CREATE TABLE @oracle_rad3@.STUDYDESIGNDESCRIPTION (
     STUDY_DESIGN_DESCRIPTION_ID        NUMBER(5)                                     NOT NULL,
     STUDY_DESIGN_ID                    NUMBER(5)                                     NOT NULL,
     DESCRIPTION_TYPE                   VARCHAR2(100)                                 NOT NULL,
@@ -1129,10 +1129,10 @@ CREATE TABLE RAD3test.STUDYDESIGNDESCRIPTION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.STUDYDESIGNTYPE (
+CREATE TABLE @oracle_rad3@.STUDYDESIGNTYPE (
     STUDY_DESIGN_TYPE_ID               NUMBER(6)                                     NOT NULL,
     STUDY_DESIGN_ID                    NUMBER(5)                                     NOT NULL,
     ONTOLOGY_ENTRY_ID                  NUMBER(8)                                     NOT NULL,
@@ -1147,10 +1147,10 @@ CREATE TABLE RAD3test.STUDYDESIGNTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.STUDYFACTOR (
+CREATE TABLE @oracle_rad3@.STUDYFACTOR (
     STUDY_FACTOR_ID                    NUMBER(5)                                     NOT NULL,
     STUDY_DESIGN_ID                    NUMBER(5)                                     NOT NULL,
     STUDY_FACTOR_TYPE_ID               NUMBER(8)                                     NULL,
@@ -1167,10 +1167,10 @@ CREATE TABLE RAD3test.STUDYFACTOR (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.STUDYFACTORVALUE (
+CREATE TABLE @oracle_rad3@.STUDYFACTORVALUE (
     STUDY_FACTOR_VALUE_ID              NUMBER(8)                                     NOT NULL,
     STUDY_FACTOR_ID                    NUMBER(5)                                     NOT NULL,
     ASSAY_ID                           NUMBER(8)                                     NOT NULL,
@@ -1187,10 +1187,10 @@ CREATE TABLE RAD3test.STUDYFACTORVALUE (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.TREATMENT (
+CREATE TABLE @oracle_rad3@.TREATMENT (
     TREATMENT_ID                       NUMBER(10)                                    NOT NULL,
     ORDER_NUM                          NUMBER(3)                                     NOT NULL,
     BIO_MATERIAL_ID                    NUMBER(5)                                     NOT NULL,
@@ -1208,10 +1208,10 @@ CREATE TABLE RAD3test.TREATMENT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE RAD3test.TREATMENTPARAM (
+CREATE TABLE @oracle_rad3@.TREATMENTPARAM (
     TREATMENT_PARAM_ID                 NUMBER(10)                                    NOT NULL,
     TREATMENT_ID                       NUMBER(8)                                     NOT NULL,
     PROTOCOL_PARAM_ID                  NUMBER(5)                                     NOT NULL,
@@ -1227,7 +1227,7 @@ CREATE TABLE RAD3test.TREATMENTPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_rad3Tablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 

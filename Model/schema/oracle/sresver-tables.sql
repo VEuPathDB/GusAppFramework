@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* sresver-tables.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:23:17 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:22 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL sresver-tables.log
 
-CREATE TABLE SRestestVer.ABSTRACTVER (
+CREATE TABLE @oracle_sresver@.ABSTRACTVER (
     ABSTRACT_ID                        NUMBER(10)                                    NOT NULL,
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NOT NULL,
     ABSTRACT                           CLOB                                          NOT NULL,
@@ -26,10 +26,10 @@ CREATE TABLE SRestestVer.ABSTRACTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.ANATOMYLINEAGEVER (
+CREATE TABLE @oracle_sresver@.ANATOMYLINEAGEVER (
     ANATOMY_LINEAGE_ID                 NUMBER(10)                                    NOT NULL,
     LINEAGE_ID                         NUMBER(2)                                     NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
@@ -47,10 +47,10 @@ CREATE TABLE SRestestVer.ANATOMYLINEAGEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.ANATOMYVER (
+CREATE TABLE @oracle_sresver@.ANATOMYVER (
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     HIER_LEVEL                         NUMBER(3)                                     NULL,
@@ -85,10 +85,10 @@ CREATE TABLE SRestestVer.ANATOMYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.AUTHORVER (
+CREATE TABLE @oracle_sresver@.AUTHORVER (
     AUTHOR_ID                          NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(200)                                 NOT NULL,
     FIRST                              VARCHAR2(100)                                 NULL,
@@ -108,10 +108,10 @@ CREATE TABLE SRestestVer.AUTHORVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.BIBLIOGRAPHICREFERENCEVER (
+CREATE TABLE @oracle_sresver@.BIBLIOGRAPHICREFERENCEVER (
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NOT NULL,
     BIB_REF_TYPE_ID                    NUMBER(10)                                    NOT NULL,
     TITLE                              VARCHAR2(255)                                 NOT NULL,
@@ -140,10 +140,10 @@ CREATE TABLE SRestestVer.BIBLIOGRAPHICREFERENCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.BIBREFANNOTATIONVER (
+CREATE TABLE @oracle_sresver@.BIBREFANNOTATIONVER (
     BIB_REF_ANNOTATION_ID              NUMBER(10)                                    NOT NULL,
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NOT NULL,
     ANNOTATION                         VARCHAR2(50)                                  NOT NULL,
@@ -161,10 +161,10 @@ CREATE TABLE SRestestVer.BIBREFANNOTATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.BIBREFAUTHORVER (
+CREATE TABLE @oracle_sresver@.BIBREFAUTHORVER (
     BIB_REF_AUTHOR_ID                  NUMBER(10)                                    NOT NULL,
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NOT NULL,
     AUTHOR_ID                          NUMBER(10)                                    NOT NULL,
@@ -183,10 +183,10 @@ CREATE TABLE SRestestVer.BIBREFAUTHORVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.BIBREFTYPEVER (
+CREATE TABLE @oracle_sresver@.BIBREFTYPEVER (
     BIB_REF_TYPE_ID                    NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(500)                                 NULL,
@@ -207,10 +207,10 @@ CREATE TABLE SRestestVer.BIBREFTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.CONTACTVER (
+CREATE TABLE @oracle_sresver@.CONTACTVER (
     CONTACT_ID                         NUMBER(12)                                    NOT NULL,
     AFFILIATION_ID                     NUMBER(12)                                    NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NULL,
@@ -241,10 +241,10 @@ CREATE TABLE SRestestVer.CONTACTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.DBREFVER (
+CREATE TABLE @oracle_sresver@.DBREFVER (
     DB_REF_ID                          NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NOT NULL,
     PRIMARY_IDENTIFIER                 VARCHAR2(100)                                 NULL,
@@ -269,10 +269,10 @@ CREATE TABLE SRestestVer.DBREFVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.DEVELOPMENTALSTAGEVER (
+CREATE TABLE @oracle_sresver@.DEVELOPMENTALSTAGEVER (
     DEVELOPMENTAL_STAGE_ID             NUMBER(4)                                     NOT NULL,
     PARENT_ID                          NUMBER(4)                                     NULL,
     TAXON_ID                           NUMBER(12)                                    NULL,
@@ -296,10 +296,10 @@ CREATE TABLE SRestestVer.DEVELOPMENTALSTAGEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.DISEASEVER (
+CREATE TABLE @oracle_sresver@.DISEASEVER (
     DISEASE_ID                         NUMBER(4)                                     NOT NULL,
     PARENT_ID                          NUMBER(4)                                     NULL,
     SOURCE                             VARCHAR2(255)                                 NULL,
@@ -324,10 +324,10 @@ CREATE TABLE SRestestVer.DISEASEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.ENZYMECLASSATTRIBUTEVER (
+CREATE TABLE @oracle_sresver@.ENZYMECLASSATTRIBUTEVER (
     ENZYME_CLASS_ATTRIBUTE_ID          NUMBER(12)                                    NOT NULL,
     ENZYME_CLASS_ID                    NUMBER(12)                                    NULL,
     ATTRIBUTE_NAME                     VARCHAR2(32)                                  NOT NULL,
@@ -346,10 +346,10 @@ CREATE TABLE SRestestVer.ENZYMECLASSATTRIBUTEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.ENZYMECLASSVER (
+CREATE TABLE @oracle_sresver@.ENZYMECLASSVER (
     ENZYME_CLASS_ID                    NUMBER(12)                                    NOT NULL,
     DEPTH                              NUMBER(1)                                     NOT NULL,
     EC_NUMBER                          VARCHAR2(16)                                  NOT NULL,
@@ -374,10 +374,10 @@ CREATE TABLE SRestestVer.ENZYMECLASSVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.EXTERNALDATABASEENTRYVER (
+CREATE TABLE @oracle_sresver@.EXTERNALDATABASEENTRYVER (
     EXTERNAL_DATABASE_ENTRY_ID         NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     EXTERNAL_PRIMARY_IDENTIFIER        VARCHAR2(255)                                 NULL,
@@ -399,10 +399,10 @@ CREATE TABLE SRestestVer.EXTERNALDATABASEENTRYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.EXTERNALDATABASEKEYWORDVER (
+CREATE TABLE @oracle_sresver@.EXTERNALDATABASEKEYWORDVER (
     EXTERNAL_DATABASE_KEYWORD_ID       NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     KEYWORD_ID                         NUMBER(6)                                     NOT NULL,
@@ -421,10 +421,10 @@ CREATE TABLE SRestestVer.EXTERNALDATABASEKEYWORDVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.EXTERNALDATABASELINKVER (
+CREATE TABLE @oracle_sresver@.EXTERNALDATABASELINKVER (
     EXTERNAL_DATABASE_LINK_ID          NUMBER(10)                                    NOT NULL,
     LINK_TABLE_ID                      NUMBER(5)                                     NOT NULL,
     LINK_PRIMARY_ID                    NUMBER(10)                                    NOT NULL,
@@ -444,10 +444,10 @@ CREATE TABLE SRestestVer.EXTERNALDATABASELINKVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.EXTERNALDATABASERELEASEVER (
+CREATE TABLE @oracle_sresver@.EXTERNALDATABASERELEASEVER (
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_ID               NUMBER(10)                                    NOT NULL,
     RELEASE_DATE                       DATE                                          NULL,
@@ -476,10 +476,10 @@ CREATE TABLE SRestestVer.EXTERNALDATABASERELEASEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.EXTERNALDATABASEVER (
+CREATE TABLE @oracle_sresver@.EXTERNALDATABASEVER (
     EXTERNAL_DATABASE_ID               NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     LOWERCASE_NAME                     VARCHAR2(80)                                  NOT NULL,
@@ -497,10 +497,10 @@ CREATE TABLE SRestestVer.EXTERNALDATABASEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.GENETICCODEVER (
+CREATE TABLE @oracle_sresver@.GENETICCODEVER (
     GENETIC_CODE_ID                    NUMBER(10)                                    NOT NULL,
     NCBI_GENETIC_CODE_ID               NUMBER(10)                                    NOT NULL,
     ABBREVIATION                       VARCHAR2(255)                                 NULL,
@@ -521,10 +521,10 @@ CREATE TABLE SRestestVer.GENETICCODEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.GOEVIDENCECODEVER (
+CREATE TABLE @oracle_sresver@.GOEVIDENCECODEVER (
     GO_EVIDENCE_CODE_ID                NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(3)                                   NOT NULL,
     DESCRIPTION                        VARCHAR2(1000)                                NULL,
@@ -542,10 +542,10 @@ CREATE TABLE SRestestVer.GOEVIDENCECODEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.GORELATIONSHIPTYPEVER (
+CREATE TABLE @oracle_sresver@.GORELATIONSHIPTYPEVER (
     GO_RELATIONSHIP_TYPE_ID            NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
@@ -562,10 +562,10 @@ CREATE TABLE SRestestVer.GORELATIONSHIPTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.GORELATIONSHIPVER (
+CREATE TABLE @oracle_sresver@.GORELATIONSHIPVER (
     GO_RELATIONSHIP_ID                 NUMBER(10)                                    NOT NULL,
     PARENT_TERM_ID                     NUMBER(10)                                    NOT NULL,
     CHILD_TERM_ID                      NUMBER(10)                                    NOT NULL,
@@ -584,10 +584,10 @@ CREATE TABLE SRestestVer.GORELATIONSHIPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.GOSYNONYMVER (
+CREATE TABLE @oracle_sresver@.GOSYNONYMVER (
     GO_SYNONYM_ID                      NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(32)                                  NULL,
@@ -607,10 +607,10 @@ CREATE TABLE SRestestVer.GOSYNONYMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.GOTERMVER (
+CREATE TABLE @oracle_sresver@.GOTERMVER (
     GO_TERM_ID                         NUMBER(10)                                    NOT NULL,
     GO_ID                              VARCHAR2(32)                                  NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
@@ -637,10 +637,10 @@ CREATE TABLE SRestestVer.GOTERMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.LINEAGEVER (
+CREATE TABLE @oracle_sresver@.LINEAGEVER (
     LINEAGE_ID                         NUMBER(2)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -658,10 +658,10 @@ CREATE TABLE SRestestVer.LINEAGEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.MGEDONTOLOGYRELATIONSHIPVER (
+CREATE TABLE @oracle_sresver@.MGEDONTOLOGYRELATIONSHIPVER (
     MGED_ONTOLOGY_RELATIONSHIP_ID      NUMBER(10)                                    NOT NULL,
     PARENT_TERM_ID                     NUMBER(10)                                    NOT NULL,
     CHILD_TERM_ID                      NUMBER(10)                                    NOT NULL,
@@ -680,10 +680,10 @@ CREATE TABLE SRestestVer.MGEDONTOLOGYRELATIONSHIPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.MGEDONTOLOGYTERMVER (
+CREATE TABLE @oracle_sresver@.MGEDONTOLOGYTERMVER (
     MGED_ONTOLOGY_TERM_ID              NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(255)                                 NOT NULL,
@@ -704,10 +704,10 @@ CREATE TABLE SRestestVer.MGEDONTOLOGYTERMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.MUTAGENVER (
+CREATE TABLE @oracle_sresver@.MUTAGENVER (
     MUTAGEN_ID                         NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(1000)                                NULL,
@@ -725,10 +725,10 @@ CREATE TABLE SRestestVer.MUTAGENVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.ONTOLOGYRELATIONSHIPTYPEVER (
+CREATE TABLE @oracle_sresver@.ONTOLOGYRELATIONSHIPTYPEVER (
     ONTOLOGY_RELATIONSHIP_TYPE_ID      NUMBER(4)                                     NOT NULL,
     IS_NATIVE                          NUMBER(1)                                     NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
@@ -746,10 +746,10 @@ CREATE TABLE SRestestVer.ONTOLOGYRELATIONSHIPTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.PATOATTRIBUTEVER (
+CREATE TABLE @oracle_sresver@.PATOATTRIBUTEVER (
     PATO_ATTRIBUTE_ID                  NUMBER(8)                                     NOT NULL,
     SOURCE                             VARCHAR2(255)                                 NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -774,10 +774,10 @@ CREATE TABLE SRestestVer.PATOATTRIBUTEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.PHENOTYPECLASSVER (
+CREATE TABLE @oracle_sresver@.PHENOTYPECLASSVER (
     PHENOTYPE_CLASS_ID                 NUMBER(10)                                    NOT NULL,
     CLASS                              VARCHAR2(100)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(1000)                                NULL,
@@ -795,10 +795,10 @@ CREATE TABLE SRestestVer.PHENOTYPECLASSVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.PHENOTYPEVER (
+CREATE TABLE @oracle_sresver@.PHENOTYPEVER (
     PHENOTYPE_ID                       NUMBER(8)                                     NOT NULL,
     PARENT_ID                          NUMBER(8)                                     NULL,
     PATO_ATTRIBUTE_ID                  NUMBER(8)                                     NULL,
@@ -820,10 +820,10 @@ CREATE TABLE SRestestVer.PHENOTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.REFERENCEVER (
+CREATE TABLE @oracle_sresver@.REFERENCEVER (
     REFERENCE_ID                       NUMBER(10)                                    NOT NULL,
     DB_REF_ID                          NUMBER(10)                                    NULL,
     POSITION                           VARCHAR2(100)                                 NULL,
@@ -848,10 +848,10 @@ CREATE TABLE SRestestVer.REFERENCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.REVIEWSTATUSVER (
+CREATE TABLE @oracle_sresver@.REVIEWSTATUSVER (
     REVIEW_STATUS_ID                   NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -869,10 +869,10 @@ CREATE TABLE SRestestVer.REVIEWSTATUSVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.SEQUENCEONTOLOGYVER (
+CREATE TABLE @oracle_sresver@.SEQUENCEONTOLOGYVER (
     SEQUENCE_ONTOLOGY_ID               NUMBER(10)                                    NOT NULL,
     SO_ID                              NUMBER(10)                                    NOT NULL,
     ONTOLOGY_NAME                      VARCHAR2(30)                                  NOT NULL,
@@ -894,10 +894,10 @@ CREATE TABLE SRestestVer.SEQUENCEONTOLOGYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.SEQUENCEREFERENCEVER (
+CREATE TABLE @oracle_sresver@.SEQUENCEREFERENCEVER (
     SEQUENCE_REFERENCE_ID              NUMBER(10)                                    NOT NULL,
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NOT NULL,
     POSITION                           VARCHAR2(100)                                 NULL,
@@ -916,10 +916,10 @@ CREATE TABLE SRestestVer.SEQUENCEREFERENCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.TAXONNAMEVER (
+CREATE TABLE @oracle_sresver@.TAXONNAMEVER (
     TAXON_NAME_ID                      NUMBER(10)                                    NOT NULL,
     TAXON_ID                           NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
@@ -939,10 +939,10 @@ CREATE TABLE SRestestVer.TAXONNAMEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE SRestestVer.TAXONVER (
+CREATE TABLE @oracle_sresver@.TAXONVER (
     TAXON_ID                           NUMBER(10)                                    NOT NULL,
     NCBI_TAX_ID                        NUMBER(10)                                    NULL,
     PARENT_ID                          NUMBER(10)                                    NULL,
@@ -963,7 +963,7 @@ CREATE TABLE SRestestVer.TAXONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_sresverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 

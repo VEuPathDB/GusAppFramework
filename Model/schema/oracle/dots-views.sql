@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* dots-views.sql                                                                             */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:25:59 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:45:49 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL dots-views.log
 
-CREATE VIEW DoTStest.AAFEATURE
+CREATE VIEW @oracle_dots@.AAFEATURE
 AS SELECT
   aa_feature_id,
   aa_sequence_id,
@@ -30,7 +30,7 @@ AS SELECT
  FROM AAFeatureImp
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.AAORTHOLOGEXPERIMENT
+CREATE VIEW @oracle_dots@.AAORTHOLOGEXPERIMENT
 AS SELECT
   aa_seq_group_experiment_id,
   subclass_view,
@@ -55,7 +55,7 @@ FROM AASeqGroupExperimentImp
 WHERE subclass_view = 'AAOrthologExperiment'
 WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.AAORTHOLOGGROUP
+CREATE VIEW @oracle_dots@.AAORTHOLOGGROUP
 AS SELECT
   aa_sequence_group_id,
   subclass_view,
@@ -88,7 +88,7 @@ FROM AASequenceGroupImp
 WHERE subclass_view = 'AAOrthologGroup'
 WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.AAPARALOGEXPERIMENT
+CREATE VIEW @oracle_dots@.AAPARALOGEXPERIMENT
 AS SELECT
   aa_seq_group_experiment_id,
   subclass_view,
@@ -113,7 +113,7 @@ FROM AASeqGroupExperimentImp
 WHERE subclass_view = 'AAParalogExperiment'
 WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.AAPARALOGGROUP
+CREATE VIEW @oracle_dots@.AAPARALOGGROUP
 AS SELECT
   aa_sequence_group_id,
   subclass_view,
@@ -146,7 +146,7 @@ FROM AASequenceGroupImp
 WHERE subclass_view = 'AAParalogGroup'
 WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.AASEQGROUPEXPERIMENT
+CREATE VIEW @oracle_dots@.AASEQGROUPEXPERIMENT
 AS SELECT
   aa_seq_group_experiment_id,
   description,
@@ -169,7 +169,7 @@ AS SELECT
 FROM AASeqGroupExperimentImp
 WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.AASEQUENCE
+CREATE VIEW @oracle_dots@.AASEQUENCE
 AS SELECT
   aa_sequence_id,
   sequence_version,
@@ -192,7 +192,7 @@ AS SELECT
  FROM AASequenceImp
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.AASEQUENCEGROUP
+CREATE VIEW @oracle_dots@.AASEQUENCEGROUP
 AS SELECT
   aa_sequence_group_id,
   name,
@@ -223,7 +223,7 @@ AS SELECT
 FROM AASequenceGroupImp
 WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.ALLELEFEATURE
+CREATE VIEW @oracle_dots@.ALLELEFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -248,7 +248,7 @@ AS SELECT
  WHERE subclass_view = 'AlleleFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.ASSEMBLY
+CREATE VIEW @oracle_dots@.ASSEMBLY
 AS SELECT
   na_sequence_id,
   sequence_version,
@@ -285,7 +285,7 @@ AS SELECT
  WHERE subclass_view = 'Assembly'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.BINDINGSITEFEATURE
+CREATE VIEW @oracle_dots@.BINDINGSITEFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -318,7 +318,7 @@ AS SELECT
  WHERE subclass_view = 'BindingSiteFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.CHROMOSOMEELEMENTFEATURE
+CREATE VIEW @oracle_dots@.CHROMOSOMEELEMENTFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -349,7 +349,7 @@ AS SELECT
  WHERE subclass_view = 'ChromosomeElementFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.COLLECTIONNAFEATURE
+CREATE VIEW @oracle_dots@.COLLECTIONNAFEATURE
 AS SELECT
   na_feature_id,
   subclass_view,
@@ -376,7 +376,7 @@ AS SELECT
   WHERE subclass_view = 'CollectionNaFeature'
   WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.DNAREGULATORY
+CREATE VIEW @oracle_dots@.DNAREGULATORY
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -410,7 +410,7 @@ AS SELECT
  WHERE subclass_view = 'DNARegulatory'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.DNASTRUCTURE
+CREATE VIEW @oracle_dots@.DNASTRUCTURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -445,7 +445,7 @@ AS SELECT
  WHERE subclass_view = 'DNAStructure'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.DOMAINFEATURE
+CREATE VIEW @oracle_dots@.DOMAINFEATURE
 AS SELECT
   aa_feature_id,
   aa_sequence_id,
@@ -480,7 +480,7 @@ AS SELECT
  WHERE subclass_view = 'DomainFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.EXONFEATURE
+CREATE VIEW @oracle_dots@.EXONFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -520,7 +520,7 @@ AS SELECT
  WHERE subclass_view = 'ExonFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.EXTERNALAASEQUENCE
+CREATE VIEW @oracle_dots@.EXTERNALAASEQUENCE
 AS SELECT
   aa_sequence_id,
   subclass_view,
@@ -549,7 +549,7 @@ AS SELECT
  WHERE subclass_view = 'ExternalAASequence'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.EXTERNALNASEQUENCE
+CREATE VIEW @oracle_dots@.EXTERNALNASEQUENCE
 AS SELECT
   na_sequence_id,
   sequence_version,
@@ -585,7 +585,7 @@ AS SELECT
  WHERE subclass_view = 'ExternalNASequence'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.GENEFEATURE
+CREATE VIEW @oracle_dots@.GENEFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -634,7 +634,7 @@ AS SELECT
  WHERE subclass_view = 'GeneFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.GENOMICSEQUENCE
+CREATE VIEW @oracle_dots@.GENOMICSEQUENCE
 AS SELECT
   na_sequence_id,
   sequence_version,
@@ -670,7 +670,7 @@ AS SELECT
  WHERE subclass_view = 'GenomicSequence'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.HEXAMERFEATURE
+CREATE VIEW @oracle_dots@.HEXAMERFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -693,7 +693,7 @@ AS SELECT
  WHERE subclass_view = 'HexamerFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.IMMUNOGLOBULIN
+CREATE VIEW @oracle_dots@.IMMUNOGLOBULIN
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -733,7 +733,7 @@ AS SELECT
  WHERE subclass_view = 'Immunoglobulin'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.INFLECTIONPOINTFEATURE
+CREATE VIEW @oracle_dots@.INFLECTIONPOINTFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -759,7 +759,7 @@ AS SELECT
  WHERE subclass_view = 'InflectionPointFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.INPARALOGEXPERIMENT
+CREATE VIEW @oracle_dots@.INPARALOGEXPERIMENT
 AS SELECT
   seq_group_experiment_id,
   subclass_view,
@@ -785,7 +785,7 @@ AS SELECT
        WHERE   subclass_view='InParalogExperiment'
        WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.INPARALOGGROUP
+CREATE VIEW @oracle_dots@.INPARALOGGROUP
 AS SELECT
   sequence_group_id,
   name,
@@ -817,7 +817,7 @@ AS SELECT
       WHERE    subclass_view = 'InParalogGroup'
       with check OPTION;
 
-CREATE VIEW DoTStest.INTRONFEATURE
+CREATE VIEW @oracle_dots@.INTRONFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -847,7 +847,7 @@ FROM NAFeatureImp
 WHERE subclass_view = 'IntronFeature'
 WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.MISCELLANEOUS
+CREATE VIEW @oracle_dots@.MISCELLANEOUS
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -887,7 +887,7 @@ AS SELECT
  WHERE subclass_view = 'Miscellaneous'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.MOTIFAASEQUENCE
+CREATE VIEW @oracle_dots@.MOTIFAASEQUENCE
 AS SELECT
   aa_sequence_id,
   sequence_version,
@@ -918,7 +918,7 @@ AS SELECT
  WHERE subclass_view = 'MotifAASequence'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.NAFEATURE
+CREATE VIEW @oracle_dots@.NAFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -940,7 +940,7 @@ AS SELECT
  FROM NAFeatureImp
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.NASEQUENCE
+CREATE VIEW @oracle_dots@.NASEQUENCE
 AS SELECT
   na_sequence_id,
   sequence_version,
@@ -969,7 +969,7 @@ AS SELECT
  FROM NASequenceImp
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.ORTHOLOGEXPERIMENT
+CREATE VIEW @oracle_dots@.ORTHOLOGEXPERIMENT
 AS SELECT
   seq_group_experiment_id,
   subclass_view,
@@ -995,7 +995,7 @@ AS SELECT
        WHERE   subclass_view='OrthologExperiment'
        WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.ORTHOLOGGROUP
+CREATE VIEW @oracle_dots@.ORTHOLOGGROUP
 AS SELECT
   sequence_group_id,
   subclass_view,
@@ -1029,7 +1029,7 @@ AS SELECT
       WHERE    subclass_view = 'OrthologGroup'
       with CHECK OPTION;
 
-CREATE VIEW DoTStest.OUTPARALOGEXPERIMENT
+CREATE VIEW @oracle_dots@.OUTPARALOGEXPERIMENT
 AS SELECT
   seq_group_experiment_id,
   subclass_view,
@@ -1055,7 +1055,7 @@ AS SELECT
        WHERE   subclass_view='OutParalogExperiment'
        WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.OUTPARALOGGROUP
+CREATE VIEW @oracle_dots@.OUTPARALOGGROUP
 AS SELECT
   sequence_group_id,
   name,
@@ -1087,7 +1087,7 @@ AS SELECT
  WHERE subclass_view = 'OutParalogGroup'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.POLYAFEATURE
+CREATE VIEW @oracle_dots@.POLYAFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1116,7 +1116,7 @@ AS SELECT
  WHERE subclass_view = 'PolyAFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.POSTTRANSLATIONALMODFEATURE
+CREATE VIEW @oracle_dots@.POSTTRANSLATIONALMODFEATURE
 AS SELECT
   aa_feature_id,
   aa_sequence_id,
@@ -1144,7 +1144,7 @@ AS SELECT
  WHERE subclass_view = 'PostTranslationalModFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.PREDICTEDAAFEATURE
+CREATE VIEW @oracle_dots@.PREDICTEDAAFEATURE
 AS SELECT
   aa_feature_id,
   aa_sequence_id,
@@ -1175,7 +1175,7 @@ AS SELECT
  WHERE subclass_view = 'PredictedAAFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.PROMOTERFEATURE
+CREATE VIEW @oracle_dots@.PROMOTERFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1204,7 +1204,7 @@ AS SELECT
  WHERE subclass_view = 'PromoterFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.PROTEINFEATURE
+CREATE VIEW @oracle_dots@.PROTEINFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1243,7 +1243,7 @@ AS SELECT
  WHERE subclass_view = 'ProteinFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.REPEATREGIONAAFEATURE
+CREATE VIEW @oracle_dots@.REPEATREGIONAAFEATURE
 AS SELECT
   aa_feature_id,
   aa_sequence_id,
@@ -1275,7 +1275,7 @@ AS SELECT
  WHERE subclass_view = 'RepeatRegionAAFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.REPEATS
+CREATE VIEW @oracle_dots@.REPEATS
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1311,7 +1311,7 @@ AS SELECT
  WHERE subclass_view = 'Repeats'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.REPLICATIONORIGINFEATURE
+CREATE VIEW @oracle_dots@.REPLICATIONORIGINFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1337,7 +1337,7 @@ AS SELECT
  WHERE subclass_view = 'ReplicationOriginFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.RESTRICTIONFRAGMENTFEATURE
+CREATE VIEW @oracle_dots@.RESTRICTIONFRAGMENTFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1361,7 +1361,7 @@ AS SELECT
  WHERE subclass_view = 'RestrictionFragmentFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.RNAFEATURE
+CREATE VIEW @oracle_dots@.RNAFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1392,7 +1392,7 @@ AS SELECT
  WHERE subclass_view = 'RNAFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.RNAREGULATORYFEATURE
+CREATE VIEW @oracle_dots@.RNAREGULATORYFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1422,7 +1422,7 @@ AS SELECT
  WHERE subclass_view = 'RNARegulatoryFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.RNASECONDARYSTRUCTURE
+CREATE VIEW @oracle_dots@.RNASECONDARYSTRUCTURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1451,7 +1451,7 @@ AS SELECT
  WHERE subclass_view = 'RNASecondaryStructureFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.RNASTRUCTURE
+CREATE VIEW @oracle_dots@.RNASTRUCTURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1485,7 +1485,7 @@ AS SELECT
  WHERE subclass_view = 'RNAStructure'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.RNATYPE
+CREATE VIEW @oracle_dots@.RNATYPE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1523,7 +1523,7 @@ AS SELECT
  WHERE subclass_view = 'RNAType'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.SAGETAGFEATURE
+CREATE VIEW @oracle_dots@.SAGETAGFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1555,7 +1555,7 @@ FROM NAFeatureImp
 WHERE subclass_view = 'SAGETagFeature'
 WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.SECONDARYSTRUCTUREAAFEATURE
+CREATE VIEW @oracle_dots@.SECONDARYSTRUCTUREAAFEATURE
 AS SELECT
   aa_feature_id,
   aa_sequence_id,
@@ -1583,7 +1583,7 @@ AS SELECT
  WHERE subclass_view = 'SecondaryStructureAAFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.SEQGROUPEXPERIMENT
+CREATE VIEW @oracle_dots@.SEQGROUPEXPERIMENT
 AS SELECT
   seq_group_experiment_id,
   algorithm_id,
@@ -1607,7 +1607,7 @@ AS SELECT
         FROM    SeqGroupExperimentImp
        WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.SEQUENCEGROUP
+CREATE VIEW @oracle_dots@.SEQUENCEGROUP
 AS SELECT
   sequence_group_id,
   name,
@@ -1639,7 +1639,7 @@ AS SELECT
 FROM    SequenceGroupImp
 WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.SEQVARIATION
+CREATE VIEW @oracle_dots@.SEQVARIATION
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1681,7 +1681,7 @@ AS SELECT
  WHERE subclass_view = 'SeqVariation'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.SIGNALPEPTIDEFEATURE
+CREATE VIEW @oracle_dots@.SIGNALPEPTIDEFEATURE
 AS SELECT
   aa_feature_id,
   aa_sequence_id,
@@ -1719,7 +1719,7 @@ AS SELECT
  WHERE subclass_view = 'SignalPeptideFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.SOURCE
+CREATE VIEW @oracle_dots@.SOURCE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1785,7 +1785,7 @@ AS SELECT
  WHERE subclass_view = 'Source'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.SPLICEDNASEQUENCE
+CREATE VIEW @oracle_dots@.SPLICEDNASEQUENCE
 AS SELECT
   na_sequence_id,
   sequence_version,
@@ -1819,7 +1819,7 @@ AS SELECT
  WHERE subclass_view = 'SplicedNASequence'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.SPLICESITEFEATURE
+CREATE VIEW @oracle_dots@.SPLICESITEFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1847,7 +1847,7 @@ AS SELECT
  WHERE subclass_view = 'SpliceSiteFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.STS
+CREATE VIEW @oracle_dots@.STS
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1879,7 +1879,7 @@ AS SELECT
  WHERE subclass_view = 'STS'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.TANDEMREPEATFEATURE
+CREATE VIEW @oracle_dots@.TANDEMREPEATFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1913,7 +1913,7 @@ AS SELECT
  WHERE subclass_view = 'TandemRepeatFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.TERTIARYSTRUCTUREAAFEATURE
+CREATE VIEW @oracle_dots@.TERTIARYSTRUCTUREAAFEATURE
 AS SELECT
   aa_feature_id,
   aa_sequence_id,
@@ -1942,7 +1942,7 @@ AS SELECT
  WHERE subclass_view = 'TertiaryStructureAAFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.TRANSCRIPT
+CREATE VIEW @oracle_dots@.TRANSCRIPT
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -1988,7 +1988,7 @@ AS SELECT
  WHERE subclass_view = 'Transcript'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.TRANSLATEDAAFEATURE
+CREATE VIEW @oracle_dots@.TRANSLATEDAAFEATURE
 AS SELECT
   aa_feature_id,
   aa_sequence_id,
@@ -2026,7 +2026,7 @@ AS SELECT
  WHERE subclass_view = 'TranslatedAAFeature'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.TRANSLATEDAASEQUENCE
+CREATE VIEW @oracle_dots@.TRANSLATEDAASEQUENCE
 AS SELECT
   aa_sequence_id,
   sequence_version,
@@ -2055,7 +2055,7 @@ AS SELECT
  WHERE subclass_view = 'TranslatedAASequence'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.TRANSPOSABLEELEMENT
+CREATE VIEW @oracle_dots@.TRANSPOSABLEELEMENT
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -2083,7 +2083,7 @@ AS SELECT
  WHERE subclass_view = 'TransposableElement'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.TRIVIALTRANSLATION
+CREATE VIEW @oracle_dots@.TRIVIALTRANSLATION
 AS SELECT
   aa_sequence_id,
   sequence_version,
@@ -2111,7 +2111,7 @@ AS SELECT
  WHERE subclass_view = 'TrivialTranslation'
  WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.UTRFEATURE
+CREATE VIEW @oracle_dots@.UTRFEATURE
 AS SELECT
   na_feature_id,
   na_sequence_id,
@@ -2139,7 +2139,7 @@ FROM NAFeatureImp
 WHERE subclass_view = 'UTRFeature'
 WITH CHECK OPTION;
 
-CREATE VIEW DoTStest.VIRTUALSEQUENCE
+CREATE VIEW @oracle_dots@.VIRTUALSEQUENCE
 AS SELECT
   na_sequence_id,
   sequence_version,

@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* dotsver-tables.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:26:08 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:45:59 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL dotsver-tables.log
 
-CREATE TABLE DoTStestVer.AACOMMENTVER (
+CREATE TABLE @oracle_dotsver@.AACOMMENTVER (
     AA_COMMENT_ID                      NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     COMMENT_NAME_ID                    NUMBER(4)                                     NULL,
@@ -27,10 +27,10 @@ CREATE TABLE DoTStestVer.AACOMMENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AAENTRYVER (
+CREATE TABLE @oracle_dotsver@.AAENTRYVER (
     AA_ENTRY_ID                        NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(15)                                  NOT NULL,
@@ -55,10 +55,10 @@ CREATE TABLE DoTStestVer.AAENTRYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AAFAMILYEXPERIMENTVER (
+CREATE TABLE @oracle_dotsver@.AAFAMILYEXPERIMENTVER (
     AA_FAMILY_EXPERIMENT_ID            NUMBER(12)                                    NOT NULL,
     DESCRIPTION                        VARCHAR2(2000)                                NULL,
     AA_ORTHOLOG_EXPERIMENT_ID          NUMBER(12)                                    NULL,
@@ -77,10 +77,10 @@ CREATE TABLE DoTStestVer.AAFAMILYEXPERIMENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AAFEATUREIMPVER (
+CREATE TABLE @oracle_dotsver@.AAFEATUREIMPVER (
     AA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     FEATURE_NAME_ID                    NUMBER(10)                                    NULL,
@@ -139,10 +139,10 @@ CREATE TABLE DoTStestVer.AAFEATUREIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AAGENESYNONYMVER (
+CREATE TABLE @oracle_dotsver@.AAGENESYNONYMVER (
     AA_GENE_SYNONYM_ID                 NUMBER(10)                                    NOT NULL,
     AA_GENE_ID                         NUMBER(10)                                    NOT NULL,
     SYNONYM_NAME                       VARCHAR2(50)                                  NOT NULL,
@@ -160,10 +160,10 @@ CREATE TABLE DoTStestVer.AAGENESYNONYMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AAGENEVER (
+CREATE TABLE @oracle_dotsver@.AAGENEVER (
     AA_GENE_ID                         NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(50)                                  NOT NULL,
@@ -182,10 +182,10 @@ CREATE TABLE DoTStestVer.AAGENEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AALOCATIONVER (
+CREATE TABLE @oracle_dotsver@.AALOCATIONVER (
     AA_LOCATION_ID                     NUMBER(10)                                    NOT NULL,
     AA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     START_MIN                          NUMBER(12)                                    NULL,
@@ -206,10 +206,10 @@ CREATE TABLE DoTStestVer.AALOCATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AAMOTIFGOTERMRULESETVER (
+CREATE TABLE @oracle_dotsver@.AAMOTIFGOTERMRULESETVER (
     AA_MOTIF_GO_TERM_RULE_SET_ID       NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID_1                   NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID_2                   NUMBER(10)                                    NULL,
@@ -234,10 +234,10 @@ CREATE TABLE DoTStestVer.AAMOTIFGOTERMRULESETVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AAMOTIFGOTERMRULEVER (
+CREATE TABLE @oracle_dotsver@.AAMOTIFGOTERMRULEVER (
     AA_MOTIF_GO_TERM_RULE_ID           NUMBER(10)                                    NOT NULL,
     AA_MOTIF_GO_TERM_RULE_SET_ID       NUMBER(10)                                    NOT NULL,
     GO_TERM_ID                         NUMBER(10)                                    NOT NULL,
@@ -260,10 +260,10 @@ CREATE TABLE DoTStestVer.AAMOTIFGOTERMRULEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AASEQGROUPEXPERIMENTIMPVER (
+CREATE TABLE @oracle_dotsver@.AASEQGROUPEXPERIMENTIMPVER (
     AA_SEQ_GROUP_EXPERIMENT_ID         NUMBER(12)                                    NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(2000)                                NULL,
@@ -286,10 +286,10 @@ CREATE TABLE DoTStestVer.AASEQGROUPEXPERIMENTIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AASEQUENCEDBREFVER (
+CREATE TABLE @oracle_dotsver@.AASEQUENCEDBREFVER (
     AA_SEQUENCE_DB_REF_ID              NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     DB_REF_ID                          NUMBER(10)                                    NOT NULL,
@@ -307,10 +307,10 @@ CREATE TABLE DoTStestVer.AASEQUENCEDBREFVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AASEQUENCEFAMILYVER (
+CREATE TABLE @oracle_dotsver@.AASEQUENCEFAMILYVER (
     AA_SEQUENCE_FAMILY_ID              NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(500)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(2000)                                NULL,
@@ -329,10 +329,10 @@ CREATE TABLE DoTStestVer.AASEQUENCEFAMILYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AASEQUENCEGROUPFAMILYVER (
+CREATE TABLE @oracle_dotsver@.AASEQUENCEGROUPFAMILYVER (
     AA_SEQUENCE_GROUP_FAMILY_ID        NUMBER(12)                                    NOT NULL,
     AA_SEQUENCE_FAMILY_ID              NUMBER(12)                                    NULL,
     AA_SEQUENCE_GROUP_ID               NUMBER(12)                                    NULL,
@@ -350,10 +350,10 @@ CREATE TABLE DoTStestVer.AASEQUENCEGROUPFAMILYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AASEQUENCEGROUPIMPVER (
+CREATE TABLE @oracle_dotsver@.AASEQUENCEGROUPIMPVER (
     AA_SEQUENCE_GROUP_ID               NUMBER(12)                                    NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
     NAME                               VARCHAR2(500)                                 NULL,
@@ -384,10 +384,10 @@ CREATE TABLE DoTStestVer.AASEQUENCEGROUPIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AASEQUENCEIMPVER (
+CREATE TABLE @oracle_dotsver@.AASEQUENCEIMPVER (
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1     NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
@@ -419,10 +419,10 @@ CREATE TABLE DoTStestVer.AASEQUENCEIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AASEQUENCEKEYWORDVER (
+CREATE TABLE @oracle_dotsver@.AASEQUENCEKEYWORDVER (
     AA_SEQUENCE_KEYWORD_ID             NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     KEYWORD_ID                         NUMBER(6)                                     NOT NULL,
@@ -440,10 +440,10 @@ CREATE TABLE DoTStestVer.AASEQUENCEKEYWORDVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AASEQUENCEORGANELLEVER (
+CREATE TABLE @oracle_dotsver@.AASEQUENCEORGANELLEVER (
     AA_SEQUENCE_ORGANELLE_ID           NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     ORGANELLE_ID                       NUMBER(10)                                    NOT NULL,
@@ -461,10 +461,10 @@ CREATE TABLE DoTStestVer.AASEQUENCEORGANELLEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AASEQUENCEREFVER (
+CREATE TABLE @oracle_dotsver@.AASEQUENCEREFVER (
     AA_SEQUENCE_REF_ID                 NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     REFERENCE_ID                       NUMBER(10)                                    NOT NULL,
@@ -482,10 +482,10 @@ CREATE TABLE DoTStestVer.AASEQUENCEREFVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AASEQUENCESEQUENCEGROUPVER (
+CREATE TABLE @oracle_dotsver@.AASEQUENCESEQUENCEGROUPVER (
     AA_SEQUENCE_SEQUENCE_GROUP_ID      NUMBER(12)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(12)                                    NOT NULL,
     AA_SEQUENCE_GROUP_ID               NUMBER(12)                                    NOT NULL,
@@ -503,10 +503,10 @@ CREATE TABLE DoTStestVer.AASEQUENCESEQUENCEGROUPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.AASEQUENCETAXONVER (
+CREATE TABLE @oracle_dotsver@.AASEQUENCETAXONVER (
     AA_SEQUENCE_TAXON_ID               NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     TAXON_ID                           NUMBER(12)                                    NOT NULL,
@@ -524,10 +524,10 @@ CREATE TABLE DoTStestVer.AASEQUENCETAXONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ALLELECOMPLEMENTATIONVER (
+CREATE TABLE @oracle_dotsver@.ALLELECOMPLEMENTATIONVER (
     ALLELE_COMPLEMENTATION_ID          NUMBER(10)                                    NOT NULL,
     ALLELE_ID                          NUMBER(10)                                    NOT NULL,
     COMPLEMENTATION_ID                 NUMBER(10)                                    NOT NULL,
@@ -547,10 +547,10 @@ CREATE TABLE DoTStestVer.ALLELECOMPLEMENTATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ALLELEINSTANCEVER (
+CREATE TABLE @oracle_dotsver@.ALLELEINSTANCEVER (
     ALLELE_INSTANCE_ID                 NUMBER(10)                                    NOT NULL,
     ALLELE_ID                          NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
@@ -570,10 +570,10 @@ CREATE TABLE DoTStestVer.ALLELEINSTANCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ALLELEPHENOTYPECLASSVER (
+CREATE TABLE @oracle_dotsver@.ALLELEPHENOTYPECLASSVER (
     ALLELE_PHENOTYPE_CLASS_ID          NUMBER(10)                                    NOT NULL,
     ALLELE_ID                          NUMBER(10)                                    NOT NULL,
     PHENOTYPE_CLASS_ID                 NUMBER(10)                                    NOT NULL,
@@ -592,10 +592,10 @@ CREATE TABLE DoTStestVer.ALLELEPHENOTYPECLASSVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ALLELEPHENOTYPEVER (
+CREATE TABLE @oracle_dotsver@.ALLELEPHENOTYPEVER (
     ALLELE_PHENOTYPE_ID                NUMBER(10)                                    NOT NULL,
     ALLELE_ID                          NUMBER(10)                                    NOT NULL,
     PHENOTYPE_ID                       NUMBER(10)                                    NOT NULL,
@@ -614,10 +614,10 @@ CREATE TABLE DoTStestVer.ALLELEPHENOTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ALLELEVER (
+CREATE TABLE @oracle_dotsver@.ALLELEVER (
     ALLELE_ID                          NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
@@ -639,10 +639,10 @@ CREATE TABLE DoTStestVer.ALLELEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ANATOMYLIBRARYVER (
+CREATE TABLE @oracle_dotsver@.ANATOMYLIBRARYVER (
     ANATOMY_LIBRARY_ID                 NUMBER(10)                                    NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
     DBEST_LIBRARY_ID                   NUMBER(12)                                    NOT NULL,
@@ -660,10 +660,10 @@ CREATE TABLE DoTStestVer.ANATOMYLIBRARYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ANATOMYLOEVER (
+CREATE TABLE @oracle_dotsver@.ANATOMYLOEVER (
     ANATOMY_LOE_ID                     NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(500)                                 NULL,
@@ -681,10 +681,10 @@ CREATE TABLE DoTStestVer.ANATOMYLOEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ASSEMBLYANATOMYPERCENTVER (
+CREATE TABLE @oracle_dotsver@.ASSEMBLYANATOMYPERCENTVER (
     ASSEMBLY_ANATOMY_PERCENT_ID        NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     TAXON_ID                           NUMBER(12)                                    NULL,
@@ -706,10 +706,10 @@ CREATE TABLE DoTStestVer.ASSEMBLYANATOMYPERCENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ASSEMBLYSEQUENCESNPVER (
+CREATE TABLE @oracle_dotsver@.ASSEMBLYSEQUENCESNPVER (
     ASSEMBLY_SEQUENCE_SNP_ID           NUMBER(10)                                    NOT NULL,
     ASSEMBLY_SEQUENCE_ID               NUMBER(10)                                    NOT NULL,
     ASSEMBLY_SNP_ID                    NUMBER(10)                                    NOT NULL,
@@ -730,10 +730,10 @@ CREATE TABLE DoTStestVer.ASSEMBLYSEQUENCESNPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ASSEMBLYSEQUENCEVER (
+CREATE TABLE @oracle_dotsver@.ASSEMBLYSEQUENCEVER (
     ASSEMBLY_SEQUENCE_ID               NUMBER(10)                                    NOT NULL,
     ASSEMBLY_NA_SEQUENCE_ID            NUMBER(10)                                    NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
@@ -760,10 +760,10 @@ CREATE TABLE DoTStestVer.ASSEMBLYSEQUENCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ASSEMBLYSNPVER (
+CREATE TABLE @oracle_dotsver@.ASSEMBLYSNPVER (
     ASSEMBLY_SNP_ID                    NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     NUM_A                              NUMBER(8)                                     NOT NULL,
@@ -798,10 +798,10 @@ CREATE TABLE DoTStestVer.ASSEMBLYSNPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ATTRIBUTIONVER (
+CREATE TABLE @oracle_dotsver@.ATTRIBUTIONVER (
     ATTRIBUTION_ID                     NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(10)                                    NOT NULL,
     ROW_ID                             NUMBER(10)                                    NOT NULL,
@@ -820,10 +820,10 @@ CREATE TABLE DoTStestVer.ATTRIBUTIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.BESTSIMILARITYPAIRVER (
+CREATE TABLE @oracle_dotsver@.BESTSIMILARITYPAIRVER (
     BEST_SIMILARITY_PAIR_ID            NUMBER                                        NOT NULL,
     SEQUENCE_ID                        NUMBER                                        NOT NULL,
     PAIRED_SEQUENCE_ID                 NUMBER                                        NOT NULL,
@@ -849,10 +849,10 @@ CREATE TABLE DoTStestVer.BESTSIMILARITYPAIRVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.CLONEINSETVER (
+CREATE TABLE @oracle_dotsver@.CLONEINSETVER (
     CLONE_IN_SET_ID                    NUMBER(10)                                    NOT NULL,
     CLONE_ID                           NUMBER(10)                                    NOT NULL,
     CLONE_SET_ID                       NUMBER(12)                                    NOT NULL,
@@ -870,10 +870,10 @@ CREATE TABLE DoTStestVer.CLONEINSETVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.CLONESETVER (
+CREATE TABLE @oracle_dotsver@.CLONESETVER (
     CLONE_SET_ID                       NUMBER(12)                                    NOT NULL,
     CONTACT_ID                         NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(20)                                  NOT NULL,
@@ -895,10 +895,10 @@ CREATE TABLE DoTStestVer.CLONESETVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.CLONEVER (
+CREATE TABLE @oracle_dotsver@.CLONEVER (
     CLONE_ID                           NUMBER(10)                                    NOT NULL,
     LIBRARY_ID                         NUMBER(5)                                     NOT NULL,
     IMAGE_ID                           NUMBER(12)                                    NULL,
@@ -922,10 +922,10 @@ CREATE TABLE DoTStestVer.CLONEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.COMMENTNAMEVER (
+CREATE TABLE @oracle_dotsver@.COMMENTNAMEVER (
     COMMENT_NAME_ID                    NUMBER(4)                                     NOT NULL,
     NAME                               VARCHAR2(20)                                  NOT NULL,
     C_CATEGORY                         VARCHAR2(20)                                  NULL,
@@ -943,10 +943,10 @@ CREATE TABLE DoTStestVer.COMMENTNAMEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.COMMENTSVER (
+CREATE TABLE @oracle_dotsver@.COMMENTSVER (
     COMMENTS_ID                        NUMBER(10)                                    NOT NULL,
     COMMENT_STRING                     CLOB                                          NOT NULL,
     REVIEW_STATUS_ID                   NUMBER(10)                                    NOT NULL,
@@ -964,10 +964,10 @@ CREATE TABLE DoTStestVer.COMMENTSVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.COMPLEMENTATIONVER (
+CREATE TABLE @oracle_dotsver@.COMPLEMENTATIONVER (
     COMPLEMENTATION_ID                 NUMBER(10)                                    NOT NULL,
     IS_EXTERNAL_REFERENCE              NUMBER(1)                                     NOT NULL,
     ENTITY_NAME                        VARCHAR2(100)                                 NOT NULL,
@@ -990,10 +990,10 @@ CREATE TABLE DoTStestVer.COMPLEMENTATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.COMPLEXANATOMYVER (
+CREATE TABLE @oracle_dotsver@.COMPLEXANATOMYVER (
     COMPLEX_ANATOMY_ID                 NUMBER(10)                                    NOT NULL,
     COMPLEX_ID                         NUMBER(10)                                    NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
@@ -1012,10 +1012,10 @@ CREATE TABLE DoTStestVer.COMPLEXANATOMYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.COMPLEXCOMPONENTVER (
+CREATE TABLE @oracle_dotsver@.COMPLEXCOMPONENTVER (
     COMPLEX_COMPONENT_ID               NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
     ROW_ID                             NUMBER(10)                                    NOT NULL,
@@ -1034,10 +1034,10 @@ CREATE TABLE DoTStestVer.COMPLEXCOMPONENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.COMPLEXTYPEVER (
+CREATE TABLE @oracle_dotsver@.COMPLEXTYPEVER (
     COMPLEX_TYPE_ID                    NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1055,10 +1055,10 @@ CREATE TABLE DoTStestVer.COMPLEXTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.COMPLEXVER (
+CREATE TABLE @oracle_dotsver@.COMPLEXVER (
     COMPLEX_ID                         NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1080,10 +1080,10 @@ CREATE TABLE DoTStestVer.COMPLEXVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.CONSISTENTALIGNMENTVER (
+CREATE TABLE @oracle_dotsver@.CONSISTENTALIGNMENTVER (
     CONSISTENT_ALIGNMENT_ID            NUMBER(10)                                    NOT NULL,
     SIMILARITY_ID                      NUMBER(10)                                    NOT NULL,
     GENOMIC_NA_SEQUENCE_ID             NUMBER(10)                                    NOT NULL,
@@ -1116,10 +1116,10 @@ CREATE TABLE DoTStestVer.CONSISTENTALIGNMENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.DBREFNAFEATUREVER (
+CREATE TABLE @oracle_dotsver@.DBREFNAFEATUREVER (
     DB_REF_NA_FEATURE_ID               NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     DB_REF_ID                          NUMBER(10)                                    NOT NULL,
@@ -1137,10 +1137,10 @@ CREATE TABLE DoTStestVer.DBREFNAFEATUREVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.DBREFNASEQUENCEVER (
+CREATE TABLE @oracle_dotsver@.DBREFNASEQUENCEVER (
     DB_REF_NA_SEQUENCE_ID              NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     DB_REF_ID                          NUMBER(10)                                    NOT NULL,
@@ -1158,10 +1158,10 @@ CREATE TABLE DoTStestVer.DBREFNASEQUENCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.DBREFPFAMENTRYVER (
+CREATE TABLE @oracle_dotsver@.DBREFPFAMENTRYVER (
     DB_REF_PFAM_ENTRY_ID               NUMBER(10)                                    NOT NULL,
     PFAM_ENTRY_ID                      NUMBER(10)                                    NOT NULL,
     DB_REF_ID                          NUMBER(10)                                    NOT NULL,
@@ -1179,10 +1179,10 @@ CREATE TABLE DoTStestVer.DBREFPFAMENTRYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.EFFECTORACTIONTYPEVER (
+CREATE TABLE @oracle_dotsver@.EFFECTORACTIONTYPEVER (
     EFFECTOR_ACTION_TYPE_ID            NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1202,10 +1202,10 @@ CREATE TABLE DoTStestVer.EFFECTORACTIONTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ENDSEQUENCEPAIRMAPVER (
+CREATE TABLE @oracle_dotsver@.ENDSEQUENCEPAIRMAPVER (
     END_SEQUENCE_PAIR_MAP_ID           NUMBER(12)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NOT NULL,
     SOURCE_ID                          VARCHAR2(16)                                  NOT NULL,
@@ -1230,10 +1230,10 @@ CREATE TABLE DoTStestVer.ENDSEQUENCEPAIRMAPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.EPCRVER (
+CREATE TABLE @oracle_dotsver@.EPCRVER (
     EPCR_ID                            NUMBER(12)                                    NOT NULL,
     MAP_TABLE_ID                       NUMBER(5)                                     NOT NULL,
     MAP_ID                             NUMBER(12)                                    NOT NULL,
@@ -1260,10 +1260,10 @@ CREATE TABLE DoTStestVer.EPCRVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ESTVER (
+CREATE TABLE @oracle_dotsver@.ESTVER (
     EST_ID                             NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     CLONE_ID                           NUMBER(10)                                    NULL,
@@ -1295,10 +1295,10 @@ CREATE TABLE DoTStestVer.ESTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.EVIDENCEVER (
+CREATE TABLE @oracle_dotsver@.EVIDENCEVER (
     EVIDENCE_ID                        NUMBER(10)                                    NOT NULL,
     TARGET_TABLE_ID                    NUMBER(5)                                     NOT NULL,
     TARGET_ID                          NUMBER(10)                                    NOT NULL,
@@ -1321,10 +1321,10 @@ CREATE TABLE DoTStestVer.EVIDENCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.EXONLOCATIONVER (
+CREATE TABLE @oracle_dotsver@.EXONLOCATIONVER (
     EXON_LOCATION_ID                   NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NULL,
     START_MIN                          NUMBER(12)                                    NULL,
@@ -1346,10 +1346,10 @@ CREATE TABLE DoTStestVer.EXONLOCATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.FAMILYGENEVER (
+CREATE TABLE @oracle_dotsver@.FAMILYGENEVER (
     FAMILY_GENE_ID                     NUMBER(10)                                    NOT NULL,
     FAMILY_ID                          NUMBER(10)                                    NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
@@ -1367,10 +1367,10 @@ CREATE TABLE DoTStestVer.FAMILYGENEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.FAMILYPROTEINVER (
+CREATE TABLE @oracle_dotsver@.FAMILYPROTEINVER (
     FAMILY_PROTEIN_ID                  NUMBER(10)                                    NOT NULL,
     PROTEIN_ID                         NUMBER(10)                                    NOT NULL,
     FAMILY_ID                          NUMBER(10)                                    NOT NULL,
@@ -1388,10 +1388,10 @@ CREATE TABLE DoTStestVer.FAMILYPROTEINVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.FAMILYVER (
+CREATE TABLE @oracle_dotsver@.FAMILYVER (
     FAMILY_ID                          NUMBER(10)                                    NOT NULL,
     PARENT_FAMILY_ID                   NUMBER(10)                                    NOT NULL,
     HIERARCHY                          NUMBER(5)                                     NOT NULL,
@@ -1412,10 +1412,10 @@ CREATE TABLE DoTStestVer.FAMILYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.FEATURENAMEVER (
+CREATE TABLE @oracle_dotsver@.FEATURENAMEVER (
     FEATURE_NAME_ID                    NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(30)                                  NOT NULL,
     FEATURE_CATEGORY                   VARCHAR2(30)                                  NULL,
@@ -1433,10 +1433,10 @@ CREATE TABLE DoTStestVer.FEATURENAMEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.FINGERPRINTCLONECONTIGVER (
+CREATE TABLE @oracle_dotsver@.FINGERPRINTCLONECONTIGVER (
     FINGERPRINT_CLONE_CONTIG_ID        NUMBER(12)                                    NOT NULL,
     FINGERPRINT_CLONE_ID               NUMBER(12)                                    NOT NULL,
     FINGERPRINT_CONTIG_ID              NUMBER(12)                                    NOT NULL,
@@ -1455,10 +1455,10 @@ CREATE TABLE DoTStestVer.FINGERPRINTCLONECONTIGVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.FINGERPRINTCLONEMARKERVER (
+CREATE TABLE @oracle_dotsver@.FINGERPRINTCLONEMARKERVER (
     FINGERPRINT_CLONE_MARKER_ID        NUMBER(12)                                    NOT NULL,
     FINGERPRINT_MAP_ID                 NUMBER(12)                                    NOT NULL,
     FINGERPRINT_CLONE_ID               NUMBER(12)                                    NOT NULL,
@@ -1479,10 +1479,10 @@ CREATE TABLE DoTStestVer.FINGERPRINTCLONEMARKERVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.FINGERPRINTCLONEVER (
+CREATE TABLE @oracle_dotsver@.FINGERPRINTCLONEVER (
     FINGERPRINT_CLONE_ID               NUMBER(12)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(30)                                  NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NOT NULL,
@@ -1501,10 +1501,10 @@ CREATE TABLE DoTStestVer.FINGERPRINTCLONEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.FINGERPRINTCONTIGVER (
+CREATE TABLE @oracle_dotsver@.FINGERPRINTCONTIGVER (
     FINGERPRINT_CONTIG_ID              NUMBER(12)                                    NOT NULL,
     FINGERPRINT_MAP_ID                 NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(30)                                  NOT NULL,
@@ -1523,10 +1523,10 @@ CREATE TABLE DoTStestVer.FINGERPRINTCONTIGVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.FINGERPRINTMAPVER (
+CREATE TABLE @oracle_dotsver@.FINGERPRINTMAPVER (
     FINGERPRINT_MAP_ID                 NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     MAP_VERSION                        VARCHAR2(30)                                  NOT NULL,
@@ -1548,10 +1548,10 @@ CREATE TABLE DoTStestVer.FINGERPRINTMAPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENEALIASVER (
+CREATE TABLE @oracle_dotsver@.GENEALIASVER (
     GENE_ALIAS_ID                      NUMBER(10)                                    NOT NULL,
     GENE_ID                            NUMBER(10)                                    NULL,
     GENE_ALIAS_NAME                    VARCHAR2(255)                                 NULL,
@@ -1570,10 +1570,10 @@ CREATE TABLE DoTStestVer.GENEALIASVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENECATEGORYVER (
+CREATE TABLE @oracle_dotsver@.GENECATEGORYVER (
     GENE_CATEGORY_ID                   NUMBER(10)                                    NOT NULL,
     TERM                               VARCHAR2(80)                                  NOT NULL,
     DEFINITION                         VARCHAR2(255)                                 NULL,
@@ -1591,10 +1591,10 @@ CREATE TABLE DoTStestVer.GENECATEGORYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENECHROMOSOMALLOCATIONVER (
+CREATE TABLE @oracle_dotsver@.GENECHROMOSOMALLOCATIONVER (
     GENE_CHROMOSOMAL_LOCATION_ID       NUMBER(10)                                    NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
     CHROMOSOME                         NUMBER(5)                                     NOT NULL,
@@ -1614,10 +1614,10 @@ CREATE TABLE DoTStestVer.GENECHROMOSOMALLOCATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENEFAMILYRELATIONVER (
+CREATE TABLE @oracle_dotsver@.GENEFAMILYRELATIONVER (
     GENE_FAMILY_RELATION_ID            NUMBER(10)                                    NOT NULL,
     GENE_FAMILY_ID                     NUMBER(10)                                    NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
@@ -1636,10 +1636,10 @@ CREATE TABLE DoTStestVer.GENEFAMILYRELATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENEFAMILYVER (
+CREATE TABLE @oracle_dotsver@.GENEFAMILYVER (
     GENE_FAMILY_ID                     NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(40)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1657,10 +1657,10 @@ CREATE TABLE DoTStestVer.GENEFAMILYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENEFEATURESAGETAGLINKVER (
+CREATE TABLE @oracle_dotsver@.GENEFEATURESAGETAGLINKVER (
     GENE_FEATURE_SAGE_TAG_LINK_ID      NUMBER(12)                                    NOT NULL,
     GENOMIC_NA_SEQUENCE_ID             NUMBER(12)                                    NOT NULL,
     GENE_NA_FEATURE_ID                 NUMBER(12)                                    NOT NULL,
@@ -1683,10 +1683,10 @@ CREATE TABLE DoTStestVer.GENEFEATURESAGETAGLINKVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENEFEATURESEQOVERLAPVER (
+CREATE TABLE @oracle_dotsver@.GENEFEATURESEQOVERLAPVER (
     GENE_FEATURE_SEQ_OVERLAP_ID        NUMBER(12)                                    NOT NULL,
     GENE_NA_FEATURE_ID                 NUMBER(12)                                    NOT NULL,
     GENOMIC_NA_SEQUENCE_ID             NUMBER(12)                                    NOT NULL,
@@ -1719,10 +1719,10 @@ CREATE TABLE DoTStestVer.GENEFEATURESEQOVERLAPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENEINSTANCECATEGORYVER (
+CREATE TABLE @oracle_dotsver@.GENEINSTANCECATEGORYVER (
     GENE_INSTANCE_CATEGORY_ID          NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(40)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1740,10 +1740,10 @@ CREATE TABLE DoTStestVer.GENEINSTANCECATEGORYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENEINSTANCEVER (
+CREATE TABLE @oracle_dotsver@.GENEINSTANCEVER (
     GENE_INSTANCE_ID                   NUMBER(10)                                    NOT NULL,
     GENE_INSTANCE_CATEGORY_ID          NUMBER(3)                                     NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
@@ -1766,10 +1766,10 @@ CREATE TABLE DoTStestVer.GENEINSTANCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENESUPERFAMILYRELATIONVER (
+CREATE TABLE @oracle_dotsver@.GENESUPERFAMILYRELATIONVER (
     GENE_SUPERFAMILY_RELATION_ID       NUMBER(10)                                    NOT NULL,
     GENE_SUPER_FAMILY_ID               NUMBER(10)                                    NOT NULL,
     GENE_FAMILY_ID                     NUMBER(10)                                    NOT NULL,
@@ -1788,10 +1788,10 @@ CREATE TABLE DoTStestVer.GENESUPERFAMILYRELATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENESUPERFAMILYVER (
+CREATE TABLE @oracle_dotsver@.GENESUPERFAMILYVER (
     GENE_SUPER_FAMILY_ID               NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(40)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1809,10 +1809,10 @@ CREATE TABLE DoTStestVer.GENESUPERFAMILYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENESYNONYMVER (
+CREATE TABLE @oracle_dotsver@.GENESYNONYMVER (
     GENE_SYNONYM_ID                    NUMBER(10)                                    NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
     SYNONYM_NAME                       VARCHAR2(30)                                  NOT NULL,
@@ -1832,10 +1832,10 @@ CREATE TABLE DoTStestVer.GENESYNONYMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENETRAPASSEMBLYVER (
+CREATE TABLE @oracle_dotsver@.GENETRAPASSEMBLYVER (
     GENE_TRAP_ASSEMBLY_ID              NUMBER(10)                                    NOT NULL,
     TAG_NA_SEQUENCE_ID                 NUMBER(10)                                    NOT NULL,
     ASSEMBLY_NA_SEQUENCE_ID            NUMBER(10)                                    NOT NULL,
@@ -1858,10 +1858,10 @@ CREATE TABLE DoTStestVer.GENETRAPASSEMBLYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GENEVER (
+CREATE TABLE @oracle_dotsver@.GENEVER (
     GENE_ID                            NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NULL,
     GENE_SYMBOL                        VARCHAR2(50)                                  NULL,
@@ -1883,10 +1883,10 @@ CREATE TABLE DoTStestVer.GENEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GOASSOCIATIONINSTANCELOEVER (
+CREATE TABLE @oracle_dotsver@.GOASSOCIATIONINSTANCELOEVER (
     GO_ASSOC_INST_LOE_ID               NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1904,10 +1904,10 @@ CREATE TABLE DoTStestVer.GOASSOCIATIONINSTANCELOEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GOASSOCIATIONINSTANCEVER (
+CREATE TABLE @oracle_dotsver@.GOASSOCIATIONINSTANCEVER (
     GO_ASSOCIATION_INSTANCE_ID         NUMBER(10)                                    NOT NULL,
     GO_ASSOCIATION_ID                  NUMBER(10)                                    NOT NULL,
     GO_ASSOC_INST_LOE_ID               NUMBER(5)                                     NOT NULL,
@@ -1931,10 +1931,10 @@ CREATE TABLE DoTStestVer.GOASSOCIATIONINSTANCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GOASSOCIATIONVER (
+CREATE TABLE @oracle_dotsver@.GOASSOCIATIONVER (
     GO_ASSOCIATION_ID                  NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(10)                                    NOT NULL,
     ROW_ID                             NUMBER(10)                                    NOT NULL,
@@ -1957,10 +1957,10 @@ CREATE TABLE DoTStestVer.GOASSOCIATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.GOASSOCINSTEVIDCODEVER (
+CREATE TABLE @oracle_dotsver@.GOASSOCINSTEVIDCODEVER (
     GO_ASSOC_INST_EVID_CODE_ID         NUMBER(10)                                    NOT NULL,
     GO_EVIDENCE_CODE_ID                NUMBER(3)                                     NOT NULL,
     GO_ASSOCIATION_INSTANCE_ID         NUMBER(10)                                    NOT NULL,
@@ -1979,10 +1979,10 @@ CREATE TABLE DoTStestVer.GOASSOCINSTEVIDCODEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.INDEXWORDLINKVER (
+CREATE TABLE @oracle_dotsver@.INDEXWORDLINKVER (
     INDEX_WORD_LINK_ID                 NUMBER(10)                                    NOT NULL,
     INDEX_WORD_ID                      NUMBER(10)                                    NOT NULL,
     TARGET_TABLE_ID                    NUMBER(5)                                     NOT NULL,
@@ -2001,10 +2001,10 @@ CREATE TABLE DoTStestVer.INDEXWORDLINKVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.INDEXWORDSIMLINKVER (
+CREATE TABLE @oracle_dotsver@.INDEXWORDSIMLINKVER (
     INDEX_WORD_SIM_LINK_ID             NUMBER(10)                                    NOT NULL,
     TARGET_TABLE_ID                    NUMBER(5)                                     NOT NULL,
     TARGET_ID                          NUMBER(10)                                    NOT NULL,
@@ -2028,10 +2028,10 @@ CREATE TABLE DoTStestVer.INDEXWORDSIMLINKVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.INDEXWORDVER (
+CREATE TABLE @oracle_dotsver@.INDEXWORDVER (
     INDEX_WORD_ID                      NUMBER(10)                                    NOT NULL,
     WORD                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -2049,10 +2049,10 @@ CREATE TABLE DoTStestVer.INDEXWORDVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.INTERACTIONINTERACTIONLOEVER (
+CREATE TABLE @oracle_dotsver@.INTERACTIONINTERACTIONLOEVER (
     INTERACTION_INTERACTION_LOE_ID     NUMBER(10)                                    NOT NULL,
     INTERACTION_ID                     NUMBER(10)                                    NOT NULL,
     INTERACTION_LOE_ID                 NUMBER(10)                                    NOT NULL,
@@ -2070,10 +2070,10 @@ CREATE TABLE DoTStestVer.INTERACTIONINTERACTIONLOEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.INTERACTIONLOEVER (
+CREATE TABLE @oracle_dotsver@.INTERACTIONLOEVER (
     INTERACTION_LOE_ID                 NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -2091,10 +2091,10 @@ CREATE TABLE DoTStestVer.INTERACTIONLOEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.INTERACTIONTYPEVER (
+CREATE TABLE @oracle_dotsver@.INTERACTIONTYPEVER (
     INTERACTION_TYPE_ID                NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -2114,10 +2114,10 @@ CREATE TABLE DoTStestVer.INTERACTIONTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.INTERACTIONVER (
+CREATE TABLE @oracle_dotsver@.INTERACTIONVER (
     INTERACTION_ID                     NUMBER(10)                                    NOT NULL,
     INTERACTION_TYPE_ID                NUMBER(5)                                     NOT NULL,
     EFFECTOR_ACTION_TYPE_ID            NUMBER(5)                                     NOT NULL,
@@ -2142,10 +2142,10 @@ CREATE TABLE DoTStestVer.INTERACTIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ISEXPRESSEDVER (
+CREATE TABLE @oracle_dotsver@.ISEXPRESSEDVER (
     IS_EXPRESSED_ID                    NUMBER(10)                                    NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -2165,10 +2165,10 @@ CREATE TABLE DoTStestVer.ISEXPRESSEDVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.KEYWORDVER (
+CREATE TABLE @oracle_dotsver@.KEYWORDVER (
     KEYWORD_ID                         NUMBER(6)                                     NOT NULL,
     KEYWORD                            VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -2187,10 +2187,10 @@ CREATE TABLE DoTStestVer.KEYWORDVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.LIBRARYVER (
+CREATE TABLE @oracle_dotsver@.LIBRARYVER (
     LIBRARY_ID                         NUMBER(5)                                     NOT NULL,
     TAXON_ID                           NUMBER(12)                                    NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NULL,
@@ -2232,10 +2232,10 @@ CREATE TABLE DoTStestVer.LIBRARYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.MERGESPLITVER (
+CREATE TABLE @oracle_dotsver@.MERGESPLITVER (
     MERGE_SPLIT_ID                     NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
     OLD_ID                             NUMBER(10)                                    NOT NULL,
@@ -2256,10 +2256,10 @@ CREATE TABLE DoTStestVer.MERGESPLITVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.MOTIFVER (
+CREATE TABLE @oracle_dotsver@.MOTIFVER (
     MOTIF_ID                           NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NULL,
     SOURCE_ID                          VARCHAR2(15)                                  NOT NULL,
@@ -2281,10 +2281,10 @@ CREATE TABLE DoTStestVer.MOTIFVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NACOMMENTVER (
+CREATE TABLE @oracle_dotsver@.NACOMMENTVER (
     NA_COMMENT_ID                      NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     COMMENT_STRING                     CLOB                                          NOT NULL,
@@ -2302,10 +2302,10 @@ CREATE TABLE DoTStestVer.NACOMMENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NAENTRYVER (
+CREATE TABLE @oracle_dotsver@.NAENTRYVER (
     NA_ENTRY_ID                        NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(15)                                  NOT NULL,
@@ -2331,10 +2331,10 @@ CREATE TABLE DoTStestVer.NAENTRYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NAFEATRELATIONSHIPTYPEVER (
+CREATE TABLE @oracle_dotsver@.NAFEATRELATIONSHIPTYPEVER (
     NA_FEAT_RELATIONSHIP_TYPE_ID       NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        CLOB                                          NOT NULL,
@@ -2352,10 +2352,10 @@ CREATE TABLE DoTStestVer.NAFEATRELATIONSHIPTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NAFEATURECOMMENTVER (
+CREATE TABLE @oracle_dotsver@.NAFEATURECOMMENTVER (
     NA_FEATURE_COMMENT_ID              NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     COMMENT_STRING                     CLOB                                          NOT NULL,
@@ -2373,10 +2373,10 @@ CREATE TABLE DoTStestVer.NAFEATURECOMMENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NAFEATUREIMPVER (
+CREATE TABLE @oracle_dotsver@.NAFEATUREIMPVER (
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NULL,
@@ -2471,10 +2471,10 @@ CREATE TABLE DoTStestVer.NAFEATUREIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NAFEATURENAGENEVER (
+CREATE TABLE @oracle_dotsver@.NAFEATURENAGENEVER (
     NA_FEATURE_NA_GENE_ID              NUMBER(10)                                    NOT NULL,
     NA_GENE_ID                         NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
@@ -2492,10 +2492,10 @@ CREATE TABLE DoTStestVer.NAFEATURENAGENEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NAFEATURENAPROTEINVER (
+CREATE TABLE @oracle_dotsver@.NAFEATURENAPROTEINVER (
     NA_FEATURE_NA_PROTEIN_ID           NUMBER(10)                                    NOT NULL,
     NA_PROTEIN_ID                      NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
@@ -2513,10 +2513,10 @@ CREATE TABLE DoTStestVer.NAFEATURENAPROTEINVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NAFEATURENAPTVER (
+CREATE TABLE @oracle_dotsver@.NAFEATURENAPTVER (
     NA_FEATURE_NA_PT_ID                NUMBER(10)                                    NOT NULL,
     NA_PRIMARY_TRANSCRIPT_ID           NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
@@ -2534,10 +2534,10 @@ CREATE TABLE DoTStestVer.NAFEATURENAPTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NAFEATURERELATIONSHIPVER (
+CREATE TABLE @oracle_dotsver@.NAFEATURERELATIONSHIPVER (
     NA_FEATURE_RELATIONSHIP_ID         NUMBER(10)                                    NOT NULL,
     PARENT_NA_FEATURE_ID               NUMBER(10)                                    NOT NULL,
     CHILD_NA_FEATURE_ID                NUMBER(10)                                    NOT NULL,
@@ -2557,10 +2557,10 @@ CREATE TABLE DoTStestVer.NAFEATURERELATIONSHIPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NAGENEVER (
+CREATE TABLE @oracle_dotsver@.NAGENEVER (
     NA_GENE_ID                         NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(300)                                 NULL,
     IS_VERIFIED                        NUMBER(1)                                     NOT NULL,
@@ -2578,10 +2578,10 @@ CREATE TABLE DoTStestVer.NAGENEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NALOCATIONVER (
+CREATE TABLE @oracle_dotsver@.NALOCATIONVER (
     NA_LOCATION_ID                     NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     START_MIN                          NUMBER(12)                                    NULL,
@@ -2611,10 +2611,10 @@ CREATE TABLE DoTStestVer.NALOCATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NAPRIMARYTRANSCRIPTVER (
+CREATE TABLE @oracle_dotsver@.NAPRIMARYTRANSCRIPTVER (
     NA_PRIMARY_TRANSCRIPT_ID           NUMBER(10)                                    NOT NULL,
     NA_GENE_ID                         NUMBER(10)                                    NULL,
     IS_VERIFIED                        NUMBER(1)                                     NOT NULL,
@@ -2632,10 +2632,10 @@ CREATE TABLE DoTStestVer.NAPRIMARYTRANSCRIPTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NAPROTEINVER (
+CREATE TABLE @oracle_dotsver@.NAPROTEINVER (
     NA_PROTEIN_ID                      NUMBER(10)                                    NOT NULL,
     NA_PRIMARY_TRANSCRIPT_ID           NUMBER(10)                                    NULL,
     NAME                               VARCHAR2(300)                                 NULL,
@@ -2654,10 +2654,10 @@ CREATE TABLE DoTStestVer.NAPROTEINVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NASEQCYTOLOCATIONVER (
+CREATE TABLE @oracle_dotsver@.NASEQCYTOLOCATIONVER (
     NA_SEQ_CYTO_LOCATION_ID            NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     CHROMOSOME                         CHAR(2)                                       NOT NULL,
@@ -2678,10 +2678,10 @@ CREATE TABLE DoTStestVer.NASEQCYTOLOCATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NASEQUENCEIMPVER (
+CREATE TABLE @oracle_dotsver@.NASEQUENCEIMPVER (
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1     NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
@@ -2694,7 +2694,7 @@ CREATE TABLE DoTStestVer.NASEQUENCEIMPVER (
     G_COUNT                            NUMBER(12)                                    NULL,
     T_COUNT                            NUMBER(12)                                    NULL,
     OTHER_COUNT                        NUMBER(12)                                    NULL,
-    DESCRIPTION                        VARCHAR2(500)                                 NULL,
+    DESCRIPTION                        VARCHAR2(1000)                                NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NULL,
     SOURCE_NA_SEQUENCE_ID              NUMBER(10)                                    NULL,
     SEQUENCE_PIECE_ID                  NUMBER(10)                                    NULL,
@@ -2731,10 +2731,10 @@ CREATE TABLE DoTStestVer.NASEQUENCEIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NASEQUENCEKEYWORDVER (
+CREATE TABLE @oracle_dotsver@.NASEQUENCEKEYWORDVER (
     NA_SEQUENCE_KEYWORD_ID             NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     KEYWORD_ID                         NUMBER(6)                                     NOT NULL,
@@ -2752,10 +2752,10 @@ CREATE TABLE DoTStestVer.NASEQUENCEKEYWORDVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NASEQUENCEORGANELLEVER (
+CREATE TABLE @oracle_dotsver@.NASEQUENCEORGANELLEVER (
     NA_SEQUENCE_ORGANELLE_ID           NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     ORGANELLE_ID                       NUMBER(10)                                    NOT NULL,
@@ -2773,10 +2773,10 @@ CREATE TABLE DoTStestVer.NASEQUENCEORGANELLEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NASEQUENCEREFVER (
+CREATE TABLE @oracle_dotsver@.NASEQUENCEREFVER (
     NA_SEQUENCE_REF_ID                 NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     REFERENCE_ID                       NUMBER(10)                                    NOT NULL,
@@ -2794,10 +2794,10 @@ CREATE TABLE DoTStestVer.NASEQUENCEREFVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.NRDBENTRYVER (
+CREATE TABLE @oracle_dotsver@.NRDBENTRYVER (
     NRDB_ENTRY_ID                      NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     GID                                VARCHAR2(255)                                 NULL,
@@ -2821,10 +2821,10 @@ CREATE TABLE DoTStestVer.NRDBENTRYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.OPTICALMAPALIGNMENTSPANVER (
+CREATE TABLE @oracle_dotsver@.OPTICALMAPALIGNMENTSPANVER (
     OPTICAL_MAP_ALIGNMENT_SPAN_ID      NUMBER(12)                                    NOT NULL,
     OPTICAL_MAP_ALIGNMENT_ID           NUMBER(12)                                    NOT NULL,
     OPTICAL_MAP_FRAGMENT_ID            NUMBER(12)                                    NULL,
@@ -2848,10 +2848,10 @@ CREATE TABLE DoTStestVer.OPTICALMAPALIGNMENTSPANVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.OPTICALMAPALIGNMENTVER (
+CREATE TABLE @oracle_dotsver@.OPTICALMAPALIGNMENTVER (
     OPTICAL_MAP_ALIGNMENT_ID           NUMBER(12)                                    NOT NULL,
     OPTICAL_MAP_ID                     NUMBER(12)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(12)                                    NOT NULL,
@@ -2874,10 +2874,10 @@ CREATE TABLE DoTStestVer.OPTICALMAPALIGNMENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.OPTICALMAPFRAGMENTVER (
+CREATE TABLE @oracle_dotsver@.OPTICALMAPFRAGMENTVER (
     OPTICAL_MAP_FRAGMENT_ID            NUMBER(12)                                    NOT NULL,
     OPTICAL_MAP_ID                     NUMBER(12)                                    NOT NULL,
     FRAGMENT_LENGTH_KB                 FLOAT(22)                                     NOT NULL,
@@ -2897,10 +2897,10 @@ CREATE TABLE DoTStestVer.OPTICALMAPFRAGMENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.OPTICALMAPVER (
+CREATE TABLE @oracle_dotsver@.OPTICALMAPVER (
     OPTICAL_MAP_ID                     NUMBER(12)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NULL,
     SOURCE_ID                          VARCHAR2(32)                                  NULL,
@@ -2923,10 +2923,10 @@ CREATE TABLE DoTStestVer.OPTICALMAPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ORGANELLEVER (
+CREATE TABLE @oracle_dotsver@.ORGANELLEVER (
     ORGANELLE_ID                       NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(300)                                 NULL,
     PLASMID_NAME                       VARCHAR2(300)                                 NULL,
@@ -2944,10 +2944,10 @@ CREATE TABLE DoTStestVer.ORGANELLEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PATHWAYINTERACTIONVER (
+CREATE TABLE @oracle_dotsver@.PATHWAYINTERACTIONVER (
     PATHWAY_INTERACTION_ID             NUMBER(10)                                    NOT NULL,
     PATHWAY_ID                         NUMBER(10)                                    NOT NULL,
     INTERACTION_ID                     NUMBER(10)                                    NOT NULL,
@@ -2965,10 +2965,10 @@ CREATE TABLE DoTStestVer.PATHWAYINTERACTIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PATHWAYVER (
+CREATE TABLE @oracle_dotsver@.PATHWAYVER (
     PATHWAY_ID                         NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -2988,10 +2988,10 @@ CREATE TABLE DoTStestVer.PATHWAYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PFAMENTRYVER (
+CREATE TABLE @oracle_dotsver@.PFAMENTRYVER (
     PFAM_ENTRY_ID                      NUMBER(10)                                    NOT NULL,
     RELEASE                            VARCHAR2(5)                                   NOT NULL,
     ACCESSION                          VARCHAR2(10)                                  NOT NULL,
@@ -3015,10 +3015,10 @@ CREATE TABLE DoTStestVer.PFAMENTRYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PLASMOMAPVER (
+CREATE TABLE @oracle_dotsver@.PLASMOMAPVER (
     PLASMOMAP_ID                       NUMBER(12)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NULL,
     SOURCE_ID                          VARCHAR2(15)                                  NOT NULL,
@@ -3047,10 +3047,10 @@ CREATE TABLE DoTStestVer.PLASMOMAPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PROJECTLINKVER (
+CREATE TABLE @oracle_dotsver@.PROJECTLINKVER (
     PROJECT_LINK_ID                    NUMBER(10)                                    NOT NULL,
     PROJECT_ID                         NUMBER(3)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -3070,10 +3070,10 @@ CREATE TABLE DoTStestVer.PROJECTLINKVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PROTEINCATEGORYVER (
+CREATE TABLE @oracle_dotsver@.PROTEINCATEGORYVER (
     PROTEIN_CATEGORY_ID                NUMBER(10)                                    NOT NULL,
     TERM                               VARCHAR2(80)                                  NOT NULL,
     DEFINITION                         VARCHAR2(255)                                 NULL,
@@ -3091,10 +3091,10 @@ CREATE TABLE DoTStestVer.PROTEINCATEGORYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PROTEININSTANCECATEGORYVER (
+CREATE TABLE @oracle_dotsver@.PROTEININSTANCECATEGORYVER (
     PROTEIN_INSTANCE_CATEGORY_ID       NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(40)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -3112,10 +3112,10 @@ CREATE TABLE DoTStestVer.PROTEININSTANCECATEGORYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PROTEININSTANCEVER (
+CREATE TABLE @oracle_dotsver@.PROTEININSTANCEVER (
     PROTEIN_INSTANCE_ID                NUMBER(10)                                    NOT NULL,
     PROTEIN_INSTANCE_CATEGORY_ID       NUMBER(3)                                     NOT NULL,
     PROTEIN_ID                         NUMBER(10)                                    NOT NULL,
@@ -3137,10 +3137,10 @@ CREATE TABLE DoTStestVer.PROTEININSTANCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PROTEINPROPERTYTYPEVER (
+CREATE TABLE @oracle_dotsver@.PROTEINPROPERTYTYPEVER (
     PROTEIN_PROPERTY_TYPE_ID           NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NOT NULL,
@@ -3158,10 +3158,10 @@ CREATE TABLE DoTStestVer.PROTEINPROPERTYTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PROTEINPROPERTYVER (
+CREATE TABLE @oracle_dotsver@.PROTEINPROPERTYVER (
     PROTEIN_PROPERTY_ID                NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     PROTEIN_PROPERTY_TYPE_ID           NUMBER(10)                                    NOT NULL,
@@ -3186,10 +3186,10 @@ CREATE TABLE DoTStestVer.PROTEINPROPERTYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PROTEINPROTEINCATEGORYVER (
+CREATE TABLE @oracle_dotsver@.PROTEINPROTEINCATEGORYVER (
     PROTEIN_PROTEIN_CATEGORY_ID        NUMBER(10)                                    NOT NULL,
     PROTEIN_ID                         NUMBER(10)                                    NOT NULL,
     PROTEIN_CATEGORY_ID                NUMBER(10)                                    NOT NULL,
@@ -3207,10 +3207,10 @@ CREATE TABLE DoTStestVer.PROTEINPROTEINCATEGORYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PROTEINSYNONYMVER (
+CREATE TABLE @oracle_dotsver@.PROTEINSYNONYMVER (
     PROTEIN_SYNONYM_ID                 NUMBER(18)                                    NOT NULL,
     PROTEIN_ID                         NUMBER(10)                                    NOT NULL,
     SYNONYM_NAME                       VARCHAR2(50)                                  NOT NULL,
@@ -3229,10 +3229,10 @@ CREATE TABLE DoTStestVer.PROTEINSYNONYMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.PROTEINVER (
+CREATE TABLE @oracle_dotsver@.PROTEINVER (
     PROTEIN_ID                         NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NULL,
     RNA_ID                             NUMBER(10)                                    NOT NULL,
@@ -3253,10 +3253,10 @@ CREATE TABLE DoTStestVer.PROTEINVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.REPEATTYPEVER (
+CREATE TABLE @oracle_dotsver@.REPEATTYPEVER (
     REPEAT_TYPE_ID                     NUMBER(10)                                    NOT NULL,
     PARENT_ID                          NUMBER(10)                                    NOT NULL,
     HIERARCHY                          NUMBER(3)                                     NOT NULL,
@@ -3279,10 +3279,10 @@ CREATE TABLE DoTStestVer.REPEATTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RHMAPMARKERVER (
+CREATE TABLE @oracle_dotsver@.RHMAPMARKERVER (
     RH_MAP_MARKER_ID                   NUMBER(12)                                    NOT NULL,
     RH_MARKER_ID                       NUMBER(12)                                    NOT NULL,
     RH_MAP_ID                          NUMBER(12)                                    NOT NULL,
@@ -3309,10 +3309,10 @@ CREATE TABLE DoTStestVer.RHMAPMARKERVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RHMAPVER (
+CREATE TABLE @oracle_dotsver@.RHMAPVER (
     RH_MAP_ID                          NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     TAXON_ID                           NUMBER(12)                                    NOT NULL,
@@ -3334,10 +3334,10 @@ CREATE TABLE DoTStestVer.RHMAPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RHMARKERVER (
+CREATE TABLE @oracle_dotsver@.RHMARKERVER (
     RH_MARKER_ID                       NUMBER(12)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(12)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(30)                                  NULL,
@@ -3365,10 +3365,10 @@ CREATE TABLE DoTStestVer.RHMARKERVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RNAANATOMYLOEVER (
+CREATE TABLE @oracle_dotsver@.RNAANATOMYLOEVER (
     RNA_ANATOMY_LOE_ID                 NUMBER(10)                                    NOT NULL,
     RNA_ANATOMY_ID                     NUMBER(10)                                    NOT NULL,
     ANATOMY_LOE_ID                     NUMBER(5)                                     NOT NULL,
@@ -3386,10 +3386,10 @@ CREATE TABLE DoTStestVer.RNAANATOMYLOEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RNAANATOMYVER (
+CREATE TABLE @oracle_dotsver@.RNAANATOMYVER (
     RNA_ANATOMY_ID                     NUMBER(10)                                    NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
     RNA_ID                             NUMBER(10)                                    NOT NULL,
@@ -3410,10 +3410,10 @@ CREATE TABLE DoTStestVer.RNAANATOMYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RNACATEGORYVER (
+CREATE TABLE @oracle_dotsver@.RNACATEGORYVER (
     RNA_CATEGORY_ID                    NUMBER(10)                                    NOT NULL,
     TERM                               VARCHAR2(80)                                  NOT NULL,
     DEFINITION                         VARCHAR2(255)                                 NULL,
@@ -3431,10 +3431,10 @@ CREATE TABLE DoTStestVer.RNACATEGORYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RNAFEATUREEXONVER (
+CREATE TABLE @oracle_dotsver@.RNAFEATUREEXONVER (
     RNA_FEATURE_EXON_ID                NUMBER(10)                                    NOT NULL,
     RNA_FEATURE_ID                     NUMBER(10)                                    NOT NULL,
     EXON_FEATURE_ID                    NUMBER(10)                                    NOT NULL,
@@ -3452,10 +3452,10 @@ CREATE TABLE DoTStestVer.RNAFEATUREEXONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RNAICONSTRUCTVER (
+CREATE TABLE @oracle_dotsver@.RNAICONSTRUCTVER (
     RNAI_CONSTRUCT_ID                  NUMBER(10)                                    NOT NULL,
     RNA_ID                             NUMBER(10)                                    NOT NULL,
     DESCRIPTION                        VARCHAR2(1000)                                NULL,
@@ -3475,10 +3475,10 @@ CREATE TABLE DoTStestVer.RNAICONSTRUCTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RNAINSTANCECATEGORYVER (
+CREATE TABLE @oracle_dotsver@.RNAINSTANCECATEGORYVER (
     RNA_INSTANCE_CATEGORY_ID           NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -3496,10 +3496,10 @@ CREATE TABLE DoTStestVer.RNAINSTANCECATEGORYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RNAINSTANCEVER (
+CREATE TABLE @oracle_dotsver@.RNAINSTANCEVER (
     RNA_INSTANCE_ID                    NUMBER(10)                                    NOT NULL,
     RNA_ID                             NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
@@ -3521,10 +3521,10 @@ CREATE TABLE DoTStestVer.RNAINSTANCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RNAIPHENOTYPEVER (
+CREATE TABLE @oracle_dotsver@.RNAIPHENOTYPEVER (
     RNAI_PHENOTYPE_ID                  NUMBER(10)                                    NOT NULL,
     RNAI_CONSTRUCT_ID                  NUMBER(10)                                    NOT NULL,
     PHENOTYPE_ID                       NUMBER(10)                                    NOT NULL,
@@ -3543,10 +3543,10 @@ CREATE TABLE DoTStestVer.RNAIPHENOTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RNARNACATEGORYVER (
+CREATE TABLE @oracle_dotsver@.RNARNACATEGORYVER (
     RNA_RNA_CATEGORY_ID                NUMBER(10)                                    NOT NULL,
     RNA_ID                             NUMBER(10)                                    NOT NULL,
     RNA_CATEGORY_ID                    NUMBER(10)                                    NOT NULL,
@@ -3564,10 +3564,10 @@ CREATE TABLE DoTStestVer.RNARNACATEGORYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.RNAVER (
+CREATE TABLE @oracle_dotsver@.RNAVER (
     RNA_ID                             NUMBER(10)                                    NOT NULL,
     DESCRIPTION                        VARCHAR2(500)                                 NULL,
     REVIEW_STATUS_ID                   NUMBER(1)                                     NOT NULL,
@@ -3587,10 +3587,10 @@ CREATE TABLE DoTStestVer.RNAVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ROWSETMEMBERVER (
+CREATE TABLE @oracle_dotsver@.ROWSETMEMBERVER (
     ROW_SET_MEMBER_ID                  NUMBER(10)                                    NOT NULL,
     ROW_SET_ID                         NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -3609,10 +3609,10 @@ CREATE TABLE DoTStestVer.ROWSETMEMBERVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.ROWSETVER (
+CREATE TABLE @oracle_dotsver@.ROWSETVER (
     ROW_SET_ID                         NUMBER(10)                                    NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
@@ -3628,10 +3628,10 @@ CREATE TABLE DoTStestVer.ROWSETVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.SECONDARYACCSVER (
+CREATE TABLE @oracle_dotsver@.SECONDARYACCSVER (
     SECONDARY_ACCS_ID                  NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NULL,
     AA_ENTRY_ID                        NUMBER(10)                                    NULL,
@@ -3652,10 +3652,10 @@ CREATE TABLE DoTStestVer.SECONDARYACCSVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.SEQGROUPEXPERIMENTIMPVER (
+CREATE TABLE @oracle_dotsver@.SEQGROUPEXPERIMENTIMPVER (
     SEQ_GROUP_EXPERIMENT_ID            NUMBER                                        NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
     ALGORITHM_ID                       NUMBER                                        NULL,
@@ -3679,10 +3679,10 @@ CREATE TABLE DoTStestVer.SEQGROUPEXPERIMENTIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.SEQUENCEFAMILYEXPERIMENTVER (
+CREATE TABLE @oracle_dotsver@.SEQUENCEFAMILYEXPERIMENTVER (
     SEQUENCE_FAMILY_EXPERIMENT_ID      NUMBER                                        NOT NULL,
     DESCRIPTION                        VARCHAR2(2000)                                NULL,
     ORTHOLOG_EXPERIMENT_ID             NUMBER                                        NULL,
@@ -3702,10 +3702,10 @@ CREATE TABLE DoTStestVer.SEQUENCEFAMILYEXPERIMENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.SEQUENCEFAMILYVER (
+CREATE TABLE @oracle_dotsver@.SEQUENCEFAMILYVER (
     SEQUENCE_FAMILY_ID                 NUMBER                                        NOT NULL,
     NAME                               VARCHAR2(500)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(2000)                                NULL,
@@ -3724,10 +3724,10 @@ CREATE TABLE DoTStestVer.SEQUENCEFAMILYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.SEQUENCEGROUPFAMILYVER (
+CREATE TABLE @oracle_dotsver@.SEQUENCEGROUPFAMILYVER (
     SEQUENCE_GROUP_FAMILY_ID           NUMBER                                        NOT NULL,
     SEQUENCE_FAMILY_ID                 NUMBER                                        NULL,
     SEQUENCE_GROUP_ID                  NUMBER                                        NULL,
@@ -3745,10 +3745,10 @@ CREATE TABLE DoTStestVer.SEQUENCEGROUPFAMILYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.SEQUENCEGROUPIMPVER (
+CREATE TABLE @oracle_dotsver@.SEQUENCEGROUPIMPVER (
     SEQUENCE_GROUP_ID                  NUMBER                                        NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(100)                                 NOT NULL,
     NAME                               VARCHAR2(500)                                 NULL,
@@ -3780,10 +3780,10 @@ CREATE TABLE DoTStestVer.SEQUENCEGROUPIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.SEQUENCEPIECEVER (
+CREATE TABLE @oracle_dotsver@.SEQUENCEPIECEVER (
     SEQUENCE_PIECE_ID                  NUMBER(10)                                    NOT NULL,
     VIRTUAL_NA_SEQUENCE_ID             NUMBER(10)                                    NOT NULL,
     PIECE_NA_SEQUENCE_ID               NUMBER(10)                                    NOT NULL,
@@ -3805,10 +3805,10 @@ CREATE TABLE DoTStestVer.SEQUENCEPIECEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.SEQUENCESEQUENCEGROUPVER (
+CREATE TABLE @oracle_dotsver@.SEQUENCESEQUENCEGROUPVER (
     SEQUENCE_SEQUENCE_GROUP_ID         NUMBER                                        NOT NULL,
     SEQUENCE_ID                        NUMBER                                        NOT NULL,
     SOURCE_TABLE_ID                    NUMBER                                        NULL,
@@ -3827,10 +3827,10 @@ CREATE TABLE DoTStestVer.SEQUENCESEQUENCEGROUPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.SEQUENCETYPEVER (
+CREATE TABLE @oracle_dotsver@.SEQUENCETYPEVER (
     SEQUENCE_TYPE_ID                   NUMBER(4)                                     NOT NULL,
     NUCLEOTIDE_TYPE                    CHAR(7)                                       NOT NULL,
     SUB_TYPE                           VARCHAR2(20)                                  NULL,
@@ -3853,10 +3853,10 @@ CREATE TABLE DoTStestVer.SEQUENCETYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.SIMILARITYSPANVER (
+CREATE TABLE @oracle_dotsver@.SIMILARITYSPANVER (
     SIMILARITY_SPAN_ID                 NUMBER(10)                                    NOT NULL,
     SIMILARITY_ID                      NUMBER(10)                                    NOT NULL,
     MATCH_LENGTH                       NUMBER(12)                                    NOT NULL,
@@ -3886,10 +3886,10 @@ CREATE TABLE DoTStestVer.SIMILARITYSPANVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.SIMILARITYVER (
+CREATE TABLE @oracle_dotsver@.SIMILARITYVER (
     SIMILARITY_ID                      NUMBER(10)                                    NOT NULL,
     SUBJECT_TABLE_ID                   NUMBER(5)                                     NOT NULL,
     SUBJECT_ID                         NUMBER(10)                                    NOT NULL,
@@ -3924,10 +3924,10 @@ CREATE TABLE DoTStestVer.SIMILARITYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStestVer.TRANSLATEDAAFEATSEGVER (
+CREATE TABLE @oracle_dotsver@.TRANSLATEDAAFEATSEGVER (
     TRANSLATED_AA_FEAT_SEG_ID          NUMBER(10)                                    NOT NULL,
     AA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     TRANSLATION_SCORE                  FLOAT(126)                                    NOT NULL,
@@ -3951,7 +3951,7 @@ CREATE TABLE DoTStestVer.TRANSLATEDAAFEATSEGVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
