@@ -92,8 +92,9 @@ sub run {
 								 $!) unless $doc_fh;
 
 	while (<$doc_fh>){ # read in line of documentation and parse from tab-delimited file
-		my ($table_name, $attribute_name, $html_doc) = split (/\t/, $_);
-		$self->process($table_name, $attribute_name, $html_doc);
+	  chomp;
+	  my ($table_name, $attribute_name, $html_doc) = split (/\t/, $_);
+	  $self->process($table_name, $attribute_name, $html_doc);
 	}
 	$doc_fh->close;
 
@@ -106,8 +107,6 @@ sub process {
 	my $self = shift;
 	my ($table_nm, $attribute_nm, $html_dc) = @_;
 	$self->logData("\tTable: $table_nm\tAttribute: $attribute_nm\tDocumentation: $html_dc");
-
-	$self->logAlert("This documentation is identical to what is already stored for attribute: $attribute_nm in table: $table_nm. Not inserted."); #remove
 
 	my $verbose = $self->getCla->{verbose};
 	my $db = $self->getDb;
