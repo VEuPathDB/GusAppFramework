@@ -61,6 +61,7 @@ sub makeGenomeDir {
     &makeGenomeTaskPropFile($inputDir, $serverInputDir, $seqFileName, $gaOptions, $gaBinPath,
 			    $localGDir, $serverGDir);
     &makeGenomeParamsPropFile($inputDir . '/params.prop', $serverGDir . '/11.ooc');
+    &makeTargetListFile(($inputDir . 'target.lst', $serverGDir);
 }
 
 sub makeMatrixDir {
@@ -179,6 +180,23 @@ sub makeGenomeParamsPropFile {
 ooc=$oocFile
 ";
     close(F);
+}
+
+sub makeTargetListFile {
+  my ($targetListFile,$genomeDir) = @_;
+
+  my @genome;
+
+  open (F, ">$targetListFile") || die "Can't open $targetListFile for writing";
+
+  opendir (DIR, $genomeDir) || die "Can't open $genomeDir to get file names";
+
+  while (defined (my $file = readdir DIR)) {
+    print F "$file\n" if ($file =~ /\.fa/);
+  }
+
+  closedir (DIR);
+  close(F);
 }
 
 sub makeBMTaskPropFile {
