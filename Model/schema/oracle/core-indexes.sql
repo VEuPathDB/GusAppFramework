@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* core-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:42:47 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 23:18:29 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -64,14 +64,12 @@ create index @oracle_core@.USERDATABASE_IND01 on @oracle_core@.USERDATABASE (USE
 create index @oracle_core@.USERDATABASE_IND02 on @oracle_core@.USERDATABASE (DATABASE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
 
 /* USERGROUP */
-create unique index @oracle_core@.SYS_C00173306 on @oracle_core@.USERGROUP (USER_ID,GROUP_ID)  TABLESPACE @oracle_coreIndexTablespace@;
 create index @oracle_core@.USERGROUP_IND01 on @oracle_core@.USERGROUP (GROUP_ID)  TABLESPACE @oracle_coreIndexTablespace@;
 
 /* USERINFO */
 create index @oracle_core@.USERINFO_IND01 on @oracle_core@.USERINFO (CONTACT_ID)  TABLESPACE @oracle_coreIndexTablespace@;
 
 /* USERPROJECT */
-create unique index @oracle_core@.SYS_C00173307 on @oracle_core@.USERPROJECT (USER_ID,PROJECT_ID)  TABLESPACE @oracle_coreIndexTablespace@;
 create index @oracle_core@.USERPROJECT_IND01 on @oracle_core@.USERPROJECT (PROJECT_ID)  TABLESPACE @oracle_coreIndexTablespace@;
 
 /* WORKFLOW */
@@ -108,7 +106,7 @@ create index @oracle_core@.WORKFLOWSTATUS_IND03 on @oracle_core@.WORKFLOWSTATUS 
 
 
 
-/* 38 index(es) */
+/* 36 index(es) */
 
 SPOOL OFF
 SET ECHO OFF

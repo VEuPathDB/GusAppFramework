@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* corever-tables.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:42:47 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 22:14:01 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -39,7 +39,7 @@ CREATE TABLE @oracle_corever@.ALGORITHMINVOCATIONVER (
     ALGORITHM_IMPLEMENTATION_ID        NUMBER(5)                                     NOT NULL,
     START_TIME                         DATE                                          NOT NULL,
     END_TIME                           DATE                                          NOT NULL,
-    MACHINE_ID                         NUMBER(5)                                     NOT NULL,
+    MACHINE_ID                         NUMBER(5)                                     NULL,
     CPUS_USED                          NUMBER(5)                                     NULL,
     CPU_TIME                           FLOAT(126)                                    NULL,
     RESULT                             VARCHAR2(255)                                 NOT NULL,
