@@ -505,7 +505,7 @@ sub isOrientationConsistent {
   if ($exnaseq->get('sequence_type_id') == 7 || $exnaseq->get('sequence_type_id') == 2) { ##check this number
     return $self->get('assembly_strand') ? 2 : -2; ##will be either 2 if correct or -2 if not...
   } else {
-    my $query = "select p_end from DoTS.LENSSequence e " .
+    my $query = "select p_end from DoTS.EST e " .
       "where e.na_sequence_id = " . $exnaseq->getNaSequenceId();
     print STDERR "Query: $query\n" if $debug;
     my $dbh = $self->getDbHandle();

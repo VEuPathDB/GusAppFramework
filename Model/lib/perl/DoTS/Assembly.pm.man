@@ -750,7 +750,7 @@ sub assignIdentifier {
   print STDERR "Ass Ident sorted..best = ",$best->get('number_of_contained_sequences')," Next = ",$sort[0]->get('number_of_contained_sequences'),"\n" if $sort[0] && $debug;
   ##note...need to transfer self to $best rather than other way around
   ##then return $best and array of ones to delete...
-  $best->removeChildrenInClass('AssemblySequence');
+  $best->removeChildrenInClass('DoTS::AssemblySequence');
   $best->addChildren($self->getChildren('DoTS::AssemblySequence'));
   $best->deleteGappedValues();  ##reset all gapped values...
   ##note that here $self should have all the proper values...don't recompute..
