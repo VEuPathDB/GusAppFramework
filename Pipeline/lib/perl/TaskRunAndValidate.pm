@@ -39,6 +39,7 @@ require Exporter;
 @EXPORT = qw(runRepeatMask runMatrix runSimilarity); 
 
 use strict;
+use Carp;
 
 sub runRepeatMask {
     my ($pipelineDir, $name) = @_;
@@ -128,13 +129,13 @@ sub runMatrixOrSimilarity {
 	  print "  trying again...\n";
 	  print "  unzipping ${resultFile}.gz\n";
 	  my $cmd = "gunzip ${resultFile}.gz";
-	  $status = system($cmd);
+	  my $status = system($cmd);
 	  die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
 	}
     }
 
     if (!$valid) {
-	&runAndZip($propFile, $logFile, $resultFile);
+	&runAndZip($propFile,$logFile, $resultFile);
 	my $valid = &validateBM($inputFile, "${resultFile}.gz");
 	if  (!$valid) {
 	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
@@ -199,10 +200,10 @@ sub runAndZip {
 
   $cmd = "liniacjob $propFile >& $logFile";
   $status = system($cmd);
-  die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
+  &confess ("failed running '$cmd' with stderr:\n $!") if ($status >> 8);
 
   print "  zipping $resultFile...\n";
-
+  
   $cmd = "gzip $resultFile";
   $status = system($cmd);
   die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
@@ -216,6 +217,7 @@ sub run {
   $cmd = "liniacjob $propFile >& $logFile";
   $status = system($cmd);
   die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
+
 }
 
 sub countSeqs {
