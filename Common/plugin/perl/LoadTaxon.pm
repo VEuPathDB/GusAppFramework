@@ -61,7 +61,7 @@ sub run {
     my $count = 0;
 
     if (!$self->getCla->{'names'} || !$self->getCla->{'nodes'} || !$self->getCla->{'gencode'} || $self->getCla->{'merged'}) {
-	die "Provide the names of the names.dmp, nodes.dmp, and gencode.dmp , merged.dmp files on the command line: !\n";
+	die "ERROR: The names of the names.dmp, nodes.dmp, gencode.dmp and merged.dmp files must be provided on the command line.\n";
     }
     
     print STDERR ($self->getCla->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n");
