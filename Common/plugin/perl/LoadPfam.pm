@@ -124,7 +124,6 @@ sub run {
     my $self      = shift;
     my $flatFile  = $self->getCla->{'flat_file'};
     my $release   = $self->getCla->{'release'};
-    my $parseOnly = $self->getCla->{'parse_only'};
 
     die "No release specified"   if (not defined($release));
     die "No flat file specified" if (not defined($flatFile));
@@ -222,91 +221,13 @@ sub run {
 	    elsif ($code eq 'SQ') {
 		$entry->{'SQ'} = $value;  # number of sequences
 
-                #
+                # Skip lines until end of Pfam Entry: '//'
+                # then add records to DB
                 # 
 		while(<PFAM>) {
-		    
-		    # End of entry
-		    #
 		    if (/^\/\/$/) {
-			
-			print STDERR "$numEntries: ", $entry->{'AC'}, "\n";
+			$self->addRecords($entry, $extDbs, \$numEntries, \$numRefs);
 
-			# Write Pfam entry to the database
-			#
-			my $pe = GUS::Model::DoTS::PfamEntry->new();
-
-			# Mandatory attributes
-			#
-			$pe->set('release', $release);
-			$pe->set('accession', $entry->{'AC'});
-
-			# escape single quotes
-			#
-			$entry->{'ID'} =~ s/'/''/g;
-			$entry->{'DE'} =~ s/'/''/g;
-
-			$pe->set('identifier', $entry->{'ID'});
-			$pe->set('definition', $entry->{'DE'});
-			$pe->set('number_of_seqs', $entry->{'SQ'});
-
-			# Optional attributes
-			#
-			$pe->set('author', $entry->{'AU'}) if (defined($entry->{'AU'}));
-			$pe->set('alignment_method', $entry->{'AL'}) if (defined($entry->{'AL'}));
-
-			if (defined($entry->{'CC'})) {
-
-			    # escape single quotes
-			    #
-			    $entry->{'CC'} =~ s/'/''/g;          # ' <- for syntax highlighter
-			    $pe->set('comment_string', $entry->{'CC'});
-			} 
-
-			$pe->submit() if (!$parseOnly);
-			my $entryId = $pe->get('pfam_entry_id');
-			my $links   = {}; # store flag for each $links->{$dbRefId} to say DbRefPfamEntry has had a submit()
-
-			# MEDLINE references
-			#
-			my $mrefs  = $entry->{'RM'};
-			my $mlDbId = &getExtDbRelId($extDbs, 'medline');
-
-			foreach my $mref (@$mrefs) {
-			    my($muid) = ($mref =~ (/^(\d+)$/));
-
-                            if( $self->createReferences($links, $entryId, $mlDbId, $muid) ){
-                                ++$numRefs;
-                            }
-                        }
-
-			# Other database references
-			#
-			#        DR   EXPERT; jeisen@leland.stanford.edu;
-			#        DR   MIM; 236200;
-			#        DR   PFAMB; PB000001;
-			#        DR   PRINTS; PR00012;
-			#        DR   PROSITE; PDOC00017;
-			#        DR   PROSITE_PROFILE; PS50225;
-			#        DR   SCOP; 7rxn; sf;
-			#        DR   SCOP; 1pii; fa;
-			#        DR   PDB; 2nad A; 123; 332;
-			#        DR   SMART; CBS;
-			#        DR   URL; http://www.gcrdb.uthscsa.edu/;
-                        #
-			my $dbrefs = $entry->{'DR'};
-
-			foreach my $dbref (@$dbrefs) {
-			    my($db, $id, $rest) = ($dbref =~ /^([^;]+);\s*([^;]+);(.*)$/);
-			    die "Unable to parse $dbref" if (not defined($id));
-                            
-                            my $dbId = &getExtDbRelId($extDbs, $self->{'nameForDB'}->{$db});
-
-                            if( $self->createReferences($links, $entryId, $dbId, $id) ){
-                                ++$numRefs;
-                            }
-			}
-			
 			# Reset for next entry.
 			#
 			$entry = {};
@@ -323,7 +244,7 @@ sub run {
 
     my $summary = undef;
 
-    if ($parseOnly) {
+    if ($self->getCla->{'parse_only'}) {
 	$summary = "Parsed $numEntries entries and $numRefs new database references from Pfam release $release.";
     } else {
 	$summary = "Loaded $numEntries entries and $numRefs database references from Pfam release $release.";
@@ -371,13 +292,93 @@ sub readExternalDbReleases() {
     return $dbHash;
 }
 
+# Creates PfamEntry directly, calls other routines to create
+# DbRef and DbRefPfamEntry.
+#
+sub addRecords {
+    my ($self, $entry, $extDbs, $numEntries, $numRefs) = @_;
+
+    print STDERR "$$numEntries: ", $entry->{'AC'}, "\n";
+
+    # Write Pfam entry to the database
+    #
+    my $pe = GUS::Model::DoTS::PfamEntry->new();
+
+    # Mandatory attributes
+    #
+    $pe->set('release',   $self->getCla->{'release'});
+    $pe->set('accession', $entry->{'AC'});
+
+    # escape single quotes
+    #
+    $entry->{'ID'} =~ s/'/''/g; #' This is for emacs only
+    $entry->{'DE'} =~ s/'/''/g; #'
+
+    $pe->set('identifier',     $entry->{'ID'});
+    $pe->set('definition',     $entry->{'DE'});
+    $pe->set('number_of_seqs', $entry->{'SQ'});
+
+    # Optional attributes
+    #
+    $pe->set('author', $entry->{'AU'}) if (defined($entry->{'AU'}));
+    $pe->set('alignment_method', $entry->{'AL'}) if (defined($entry->{'AL'}));
+
+    if (defined($entry->{'CC'})) {
+        # escape single quotes
+        #
+        $entry->{'CC'} =~ s/'/''/g;          # ' <- for emacs syntax highlighter
+        $pe->set('comment_string', $entry->{'CC'});
+    } 
+
+    $pe->submit() if (!$self->getCla->{'parse_only'});
+    my $entryId = $pe->get('pfam_entry_id');
+    my $links   = {}; # store flag for each $links->{$dbRefId} to say DbRefPfamEntry has had a submit()
+
+    # MEDLINE references
+    #
+    my $mrefs  = $entry->{'RM'};
+    my $mlDbId = &getExtDbRelId($extDbs, 'medline');
+
+    foreach my $mref (@$mrefs) {
+        my($muid) = ($mref =~ (/^(\d+)$/));
+
+        if( $self->createReferences($links, $entryId, $mlDbId, $muid) ){
+            ++$$numRefs;
+        }
+    }
+
+    # Other database references
+    #        DR   EXPERT; jeisen@leland.stanford.edu;
+    #        DR   MIM; 236200;
+    #        DR   PFAMB; PB000001;
+    #        DR   PRINTS; PR00012;
+    #        DR   PROSITE; PDOC00017;
+    #        DR   PROSITE_PROFILE; PS50225;
+    #        DR   SCOP; 7rxn; sf;
+    #        DR   PDB; 2nad A; 123; 332;
+    #        DR   SMART; CBS;
+    #        DR   URL; http://www.gcrdb.uthscsa.edu/;
+    #
+    my $dbrefs = $entry->{'DR'};
+
+    foreach my $dbref (@$dbrefs) {
+        my($db, $id, $rest) = ($dbref =~ /^([^;]+);\s*([^;]+);(.*)$/);
+        die "Unable to parse $dbref" if (not defined($id));
+                            
+        my $dbId = &getExtDbRelId($extDbs, $self->{'nameForDB'}->{$db});
+
+        if( $self->createReferences($links, $entryId, $dbId, $id) ){
+            ++$$numRefs;
+        }
+    }
+}
+
 # Create DbRef and DbRefPfamEntry and return
 # Returns 1 on sucess, 0 if DbRefPfamEntry could not be created
 #
 sub createReferences {
     my ($self, $links, $pfamEntryId, $ExtDbRelId, $id, $secondaryId, $remark) = @_;
 
-    my $parseOnly = $self->getCla->{'parse_only'};
     my $dbRefId   = $self->getDbRefId($ExtDbRelId,
                                       $id,
                                       $secondaryId,
@@ -393,10 +394,10 @@ sub createReferences {
         print STDERR "  createReferences() \$link = $link\n";
 
         if (not(defined($links->{$dbRefId}))) {
-            $link->submit() if (!$parseOnly);
+            $link->submit() if (!$self->getCla->{'parse_only'});
             $links->{$dbRefId} = 1;
             return 1;
-        } elsif (!$parseOnly) {
+        } elsif (!$self->getCla->{'parse_only'}) {
             print STDERR "Duplicate reference to db_ref_id $dbRefId from pfam_entry_id $pfamEntryId\n";
             return 0;
         }
