@@ -91,11 +91,6 @@ sub getVersionTableSQL {
 # $verTable  -  Whether to generate the SQL required to create the version database
 #               view that would correspond to this object.
 #
-# NOTE: The $verTable option currently has two known bugs -
-#        1. The name of the implementation table needs to have "Ver" appended.
-#        2. The extra version columns are not being added to the view.
-#           (version_alg_invocation_id, version_date, version_transaction_id)
-#
 sub getViewSQL {
     my($self, $dbh, $newOwner, $verTable) = @_;
     my $owner = $self->{owner};
@@ -174,6 +169,34 @@ sub getViewSQL {
 	    $s = "CREATE VIEW ${newOwner}.${name}\nAS $viewSql;\n";
 	}
     }
+
+    my ($fromTable) = ($s =~ /^\s*from (\S+)/mi);
+
+    # If $verTable, try to append "Ver" to the name of the table being selected from
+    # and add the extra columns required in a version table.
+    #
+    if ($verTable && $fromTable =~ /\S/) {
+	$s =~ s/^(\s*from )(\S+)/$1$2Ver/mi;
+
+	my $extraCols = "  version_alg_invocation_id,\n  version_date,\n  version_transaction_id";
+	$s =~ s/(....)$(\s*from )(\S+)/$1,\n$extraCols$2$3/mi;
+    }
+
+    # HACK - This is special-purpose code aimed at simplifying the syntax of the RAD3 views.
+    #
+    if ($fromTable =~ /\S/) {
+	my $fsub = sub {
+	    my($spaces, $n1, $n2) = @_;
+	    if (lc($n1) eq lc($n2)) {
+		return "  $n2";
+	    } else {
+		return "  $n1 as $n2";
+	    }
+	};
+	$s =~ s/^(\s*)$fromTable\./$1/mgi;
+	$s =~ s/^(\s*)(\S+) as ([^,\s]+)/&$fsub($1,$2,$3)/mgie;
+    }
+
     return $s;
 }
 
