@@ -121,8 +121,7 @@ sub run {
   $self->logAlert('COMMIT', $self->getCla->{commit} ? 'ON' : 'OFF' );
 
   my $snpObjectType = $self->getCla->{assemblySnpOnly} ? 1 : 2;
-  $snpObjectType = 0;
-
+  
   ##DBI handle to be used for queries outside the objects...
   my $dbh = $self->getQueryHandle();
 
@@ -196,7 +195,7 @@ sub run {
     }
     ##now find the snps...
     my $snps = $a->findSNPs($self->getCla->{minDepth}, undef, $self->getCla->{maxBestPercent}, $self->getCla->{minDepthLessBest}, $snpObjectType);
-    print STDERR "\nSNPs:\n$snps\n\n";
+    print STDERR "\n$id:\n$snps\n\n";
     print STDERR $a->getCap2Alignment();
     my $cts = scalar($a->getChildren('DoTS::AssemblySNP'));
     $ctSNPs += $cts;
@@ -205,7 +204,7 @@ sub run {
     print LOG "$id: $cts snps ",($ctSeqs % 100 == 0 ? "$ctSeqs processed..".($total - $ctSeqs)." remaining ".`date` : "\n");
   }
   close LOG;
-  my $ret = "Processed $ctSeqs sequences, found $ctSNPs SNPs using depth=$self->getCla->{minDepth}, maxBestPercent=$self->getCla->{maxBestPercent}, minDepthLessBest=$self->getCla->{minDepthLessBest}";
+  my $ret = "Processed $ctSeqs sequences, found $ctSNPs SNPs using depth=".$self->getCla->{minDepth}.", maxBestPercent=".$self->getCla->{maxBestPercent}.", minDepthLessBest=".$self->getCla->{minDepthLessBest};
   print "\n$ret\n\n";
   return $ret;
 }
