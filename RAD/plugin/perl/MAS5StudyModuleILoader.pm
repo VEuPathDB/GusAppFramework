@@ -776,13 +776,12 @@ sub modifyDate {
   my $finalTime;
 
   if ($time2.$time1 eq "PM") {
-      $finalTime = $hourMinArray[0] + 12 if ($hourMinArray[0] <= 11);
-      $finalTime = $hourMinArray[0] if ($hourMinArray[0] eq 12);
-      $finalTime .= ":$hourMinArray[1]:00";
-  } 
-  else {
-    $finalTime = "$tempTime:00";
+
+    $finalTime = ($hourMinArray[0] + 12).":$hourMinArray[1]:00" if ($hourMinArray[0] <= 11);
+    $finalTime = $hourMinArray[0].":$hourMinArray[1]:00" if ($hourMinArray[0] > 11);
   }
+
+  $finalTime = "$tempTime:00" if ($time2.$time1 eq "AM");
 
   my $monthNum = $monthHash{$dateArray[0]};
   my $finalDateTime = "$dateArray[2]-$monthNum-$dateArray[1]". " $finalTime";
@@ -807,13 +806,12 @@ sub getQuantificationDate {
   my $finalTime;
 
   if ($time2.$time1 eq "PM") {
-    $finalTime = $hourMinArray[0] + 12 if ($hourMinArray[0] <= 11);
-    $finalTime = $hourMinArray[0] if ($hourMinArray[0] eq 12);
-    $finalTime = ":$hourMinArray[1]:00"; 
 
-  } else {
-    $finalTime = "$tempTime:00";
-  }
+    $finalTime = ($hourMinArray[0] + 12).":$hourMinArray[1]:00" if ($hourMinArray[0] <= 11);
+    $finalTime = $hourMinArray[0].":$hourMinArray[1]:00" if ($hourMinArray[0] > 11);
+  } 
+
+  $finalTime = "$tempTime:00" if ($time2.$time1 eq "AM");
 
   my @dateArray = split /\//, $tempDate;
   my $finalDate = "$dateArray[2]-$dateArray[0]-$dateArray[1]";
