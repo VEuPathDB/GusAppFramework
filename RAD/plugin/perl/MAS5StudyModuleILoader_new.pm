@@ -2,13 +2,10 @@ package GUS::RAD::Plugin::MAS5StudyModuleILoader_new;
 @ISA = qw( GUS::PluginMgr::Plugin);
 
 use strict 'vars';
-#use IO::File;
-#use Date::Manip;
 
 use CBIL::Util::Disp;
 use CBIL::Util::PropertySet;
 use GUS::PluginMgr::Plugin;
-
 use GUS::Model::RAD3::Study;
 use GUS::Model::RAD3::Assay;
 use GUS::Model::RAD3::AssayParam;
@@ -21,6 +18,7 @@ use GUS::Model::RAD3::Array;
 use GUS::Model::RAD3::Protocol;
 use GUS::Model::RAD3::ProtocolParam;
 use GUS::Model::SRes::Contact;
+use GUS::Model::RAD3::Channel;
 
 
 sub new {
@@ -196,14 +194,16 @@ sub run {
   $self->logCommit();
   $self->logArgs();
 
+  my $startTime = `date`;
+  $self->log("STATUS","Time now: $startTime");
+
   $self->{propertySet} = CBIL::Util::PropertySet->new($self->getArg('cfg_file'), \@properties);
 
-  my ($gusAssays, $skipAssayCnt, $totalAssayCnt) = $self->createGUSAssaysFromFiles();
-
-  my $gusInsertedAssayCnt = $self->submitGUSAssays($gusAssays);
-
+  my ($gusAssays, $skippedAssayCnt, $totalAssayCnt)  = $self->createGUSAssaysFromFiles();
+  my $gusInsertedAssayCnt                            = $self->submitGUSAssays($gusAssays);
+  
   $self->setResultDescr(
-   "Of total $totalAssayCnt assays, inserted $gusInsertedAssayCnt assay/s in db, skipped $skipAssayCnt assay/s"
+   "Total assays: $totalAssayCnt; Assay/s inserted in DB: $gusInsertedAssayCnt; Skipped assay/s: $skippedAssayCnt"
   );
 }
 
@@ -212,20 +212,22 @@ sub run {
 sub createGUSAssaysFromFiles {
   my ($self) = @_;
 
-  my $testNumber = $self->getArgs->{testnumber};
+  my $assayNames =    $self->findAssayNames($self->{propertySet}->getProp("EXPFilePath"));
+  my $testNumber =    $self->getArgs->{testnumber};
   my @skipAssayList = @{$self->getArgs->{skip}};
-  my $skipAssayCnt = scalar @skipAssayList;
 
-  my $assayNames = $self->findAssayNames($self->{propertySet}->getProp("EXPFilePath"));
+  my $skipAssayCnt = scalar @skipAssayList;
   my $totalAssayCnt = scalar @$assayNames;
+
   $self->log("STATUS","Found $totalAssayCnt assays");
 
-  my (@gusAssays);
+  my @gusAssays;
   my $assayCnt = 0;
 
   $self->log("STATUS","Skipping assay/s @skipAssayList") if (scalar @skipAssayList > 0);
 
   foreach my $assayName (@$assayNames) {
+
     next if (($assayCnt > ($testNumber - 1)) && (defined $testNumber));
     next if (grep { $assayName =~ /^$_/ } @skipAssayList);
     my $gusAssay = $self->createSingleGUSAssay($assayName);
@@ -234,7 +236,7 @@ sub createGUSAssaysFromFiles {
   }
 
   $self->log("STATUS","-------- End Assay Descriptions --------");
-  $self->log("STATUS","OK Created $assayCnt assay/s");
+  $self->log("STATUS","OK   Created $assayCnt assay/s");
 
   return (\@gusAssays, $skipAssayCnt, $totalAssayCnt);
 }
@@ -255,10 +257,11 @@ sub submitGUSAssays {
   foreach my $gusAssay (@$gusAssays) {
 
     my $studyAssay = GUS::Model::RAD3::StudyAssay->new(); # links RAD3.Study & RAD3.Assay
+
     $studyAssay->setParent($gusAssay);
     $studyAssay->setParent($gusStudy);
  
-     $gusAssay->submit() if ($self->getArgs->{commit});
+    $gusAssay->submit() if ($self->getArgs->{commit});
 
     $gusInsertedAssayCnt++;
   }
@@ -271,11 +274,11 @@ sub submitGUSAssays {
 sub findAssayNames {
   my ($self,$assayNameFilesDir) = @_;
 
-  my @assayNames;
-  my $requiredExtension = "EXP";  # thes filenames correspond to assay names
+  my (@assayNames, @assayDir);
+  my $requiredExtension = "EXP";                          # EXP filenames correspond to assay names
 
   opendir (DIR,$assayNameFilesDir) || $self->userError("Cannot open dir $assayNameFilesDir");
-  my @assayDir = readdir DIR; 
+  @assayDir = readdir DIR; 
   close (DIR);
 
   $self->userError("Cannot create assays, directory $assayNameFilesDir is empty!") 
@@ -283,12 +286,11 @@ sub findAssayNames {
 
   foreach my $file (@assayDir) { 
 
-    next if ($file eq '.' || $file eq '..'); # skip '.' and '..' files
+    next if ($file eq '.' || $file eq '..');              # skip '.' and '..' files
 
-    $file =~ /(.+)\.(\w+)/; # 
-
-    next unless ($2); # skip files with no extension
-    next if ($2 ne $requiredExtension); # skip files with diff extension
+    my ($fileName, $extension) = $file =~ /(.+)\.(\w+)/;
+    next unless ($extension);                             # skip files with no extension
+    next if ($extension ne $requiredExtension);           # skip files with diff extension
 
     push (@assayNames,$1);
   }
@@ -326,9 +328,10 @@ sub createSingleGUSAssay {
   foreach my $gusQuantification (@$gusQuantificationsRef) { 
 
     $gusQuantification->setParent($gusAcquisition); 
-    next if ($gusQuantification == $gusQuantificationsRef->[0]); #cel quantification
+    next if ($gusQuantification == $gusQuantificationsRef->[0]); # skip cel quantification (not req.)
     my $gusQuantParamsRef = $self->createGUSQuantParams($RPTinfo);
     foreach my $gusQuantParam (@$gusQuantParamsRef) { 
+
         $gusQuantParam->setParent($gusQuantification); 
      }
   }
@@ -341,25 +344,23 @@ sub createSingleGUSAssay {
 sub checkRequiredFilesExist {
   my ($self, $assayName) = @_;
 
-  my $expFile = $self->{propertySet}->getProp("EXPFilePath")."/$assayName.EXP";
-  my $rptFile = $self->{propertySet}->getProp("RPTFilePath")."/$assayName.RPT";
-  my $celFile = $self->{propertySet}->getProp("CELFilePath")."/$assayName.CEL";
-  my $datFile = $self->{propertySet}->getProp("DATFilePath")."/$assayName.DAT";
+  my $expFile =     $self->{propertySet}->getProp("EXPFilePath")."/$assayName.EXP";
+  my $rptFile =     $self->{propertySet}->getProp("RPTFilePath")."/$assayName.RPT";
+  my $celFile =     $self->{propertySet}->getProp("CELFilePath")."/$assayName.CEL";
+  my $datFile =     $self->{propertySet}->getProp("DATFilePath")."/$assayName.DAT";
   my $metricsFile = $self->{propertySet}->getProp("MetricsFilePath")."/$assayName"."_Metrics.txt";
 
-  $self->userError("Missing file: $rptFile") if (! -e $rptFile); 
-  $self->userError("Missing file: $celFile") if (! -e $celFile);
+  $self->userError("Missing file: $rptFile") if ( ! -e $rptFile ); 
+  $self->userError("Missing file: $celFile") if ( ! -e $celFile );
 
-  if ((! -e $datFile) && ($self->{propertySet}->getProp("DATFilePath") ne "NOVALUEPROVIDED")) {
-    $self->userError("Missing file: $datFile for assay $assayName");
-  }
+  $self->userError("Missing file: $datFile for assay $assayName") 
+   if (( ! -e $datFile ) && ($self->{propertySet}->getProp("DATFilePath") ne "NOVALUEPROVIDED"));
 
-  $self->userError("Missing file: $metricsFile") if (! -e $metricsFile);
+  $self->userError("Missing file: $metricsFile") if ( ! -e $metricsFile );
+  $self->userError("Empty file: $expFile") if ( -z $expFile ); 
+  $self->userError("Empty file: $rptFile") if ( -z $rptFile ); 
 
-  $self->userError("Empty file: $expFile") if ( -z $expFile); 
-  $self->userError("Empty file: $rptFile") if ( -z $rptFile); 
-
-  $self->log("STATUS","OK All required files exist for assay $assayName, and none are empty");
+  $self->log("STATUS","OK   All required files exist for assay $assayName, and none are empty");
 }
 
 ###############################
@@ -370,14 +371,13 @@ sub parseTabFile {
   my ($info, $fluidicsInfo, $flag);
 
   my $filePath = $self->{propertySet}->getProp("${prefix}FilePath");
-  my $file = "$filePath/$assayName.$prefix";
 
+  my $file = "$filePath/$assayName.$prefix";
   open (FILE, $file) || $self->userError("Can't open $file: $!");
-  my %info;
   while (<FILE>) {
     next if ( /Affymetrix GeneChip Experiment Information/ || /Sample Info/ || /^\s+$/ );
     chomp $_;
-    s/^r$//; # remove ^M at the end
+    s/\r$//; # remove ^M at the end
 
     my @keyValue = split /\t+/,$_ || $self->userError("Formatting error: line '$_' in $file is not tab-delimited");
     my $key = $keyValue[0];
@@ -410,32 +410,25 @@ sub createGusAssay {
   my $hybProtocolId =   $self->{propertySet}->getProp("Hyb_Protocol_ID");
   my $hybOperatorId =    $self->{propertySet}->getProp("Hyb_Operator_ID");
   
-  my $arrayId;
-  my $dbh = $self->getQueryHandle();
-  my $sth;
+  my $arrayIdParams;
 
-  # for example: MG_U74Av2
-  # _BEGIN HARD-CODED. 
-  # Define '$arrayName' properly, according to your entries in RAD3.Array.name
-
-  if ($arrayName =~ /^(\S+)(v\d)$/) { # get array id for assay
-    $sth = $dbh->prepare("select array_id from rad3.array where name = ? and version = ?");
-    $sth->execute("Affymetrix $1", $2);
+  if ($arrayName =~ /^(\S+)(v\d)$/) {  # eg: MG_U74Av2, where version may/may-not be included
+    $arrayIdParams = GUS::Model::RAD3::Array->new({
+      name => "Affymetrix $1",
+      version => $2
+    });
 
   } else {
-    $sth = $dbh->prepare("select array_id from rad3.array where name = ? and version is null");
-    $sth->execute("Affymetrix $arrayName");
-  }
-  # _END HARD-CODED
-
-  if (my @row = $sth->fetchrow_array) {
-    $arrayId = $row[0];
-  } 
-  else {
-    $self->error("ArrayName $arrayName does not exist in table RAD3::Array"); 
+    $arrayIdParams = GUS::Model::RAD3::Array->new({
+      name => "Affymetrix $arrayName",
+      version => "null"
+    });
   }
 
-  $sth->finish;
+  $self->error("Create object failed, array name $arrayName absent in table RAD3::Array") 
+    unless ($arrayIdParams->retrieveFromDB);
+
+  my $arrayId = $arrayIdParams->getArrayId();
 
   my $params = {
     array_id => $arrayId, 
@@ -446,13 +439,11 @@ sub createGusAssay {
     description => $description
   };
   
-
   $params->{assay_date} = $self->modifyDate($hybDate) if ($hybDate);
 
-    
   my $assay = GUS::Model::RAD3::Assay->new($params);
 
-  $self->log("STATUS","OK Inserted 1 row in table RAD3.Assay for assay $assayName");
+  $self->log("STATUS","OK   Inserted 1 row in table RAD3.Assay");
   return $assay;
 }
 
@@ -468,7 +459,7 @@ sub createGusAssayParams {
 
   foreach my $keyword (keys %$EXPfluidicsInfo) {
 
-    my $key = "Fluidics_$keyword";               # HARD-CODED. Define '$key' as the corresponding RAD3.ProtocolParam.name in your instance
+    my $key = "Fluidics_$keyword"; # HARD-CODED. Define '$key' as the corresponding RAD3.ProtocolParam.name in your instance
     my $value = $EXPfluidicsInfo->{$keyword};
       
     next unless ($value =~ /\S+/); # skip if no value 
@@ -491,7 +482,7 @@ sub createGusAssayParams {
     push (@gusAssayParams, $assayParam);
   }
 
-  $self->log("STATUS","OK Inserted $fluidicsKeywordCnt rows in table RAD3.AssayParam");
+  $self->log("STATUS","OK   Inserted $fluidicsKeywordCnt rows in table RAD3.AssayParam");
   return \@gusAssayParams;
 }
 
@@ -504,19 +495,23 @@ sub createGusAcquisition {
   my $acqProtocolId =   $self->{propertySet}->getProp("Acq_Protocol_ID");
   my $scanDate =        $EXPinfo->{"Scan Date"};
 
-  my $protocol = GUS::Model::RAD3::Protocol->new({
-    protocol_id => $acqProtocolId
-  });
+  my $channelDef =      "biotin";  # HARD-CODED: select channel def from rad3.channel from your own instance
 
+  my $protocolId = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
   $self->error("Create object failed, protocol ID $acqProtocolId absent in table RAD3::Protocol") 
-    unless ($protocol->retrieveFromDB);
-    
-  my $acqName = "$assayName-Biotin-".$protocol->getName();
+    unless ($protocolId->retrieveFromDB);
+  my $protocolName = $protocolId->getName();
+  my $acqName = "$assayName-$channelDef-".$protocolName;
+
+  my $channelName = GUS::Model::RAD3::Channel->new({ name => $channelDef});
+  $self->error("Create object failed, parameter name 'biotin' absent in table RAD3::Channel") 
+    unless ($channelName->retrieveFromDB);
+  my $channelId = $channelName->getChannelId();
 
   my $acqParameters = { 
     name => $acqName, 
     protocol_id => $acqProtocolId, 
-    channel_id => 6,
+    channel_id => $channelId,
     uri => $datURI
   };
     
@@ -524,7 +519,7 @@ sub createGusAcquisition {
 
   my $acquisition = GUS::Model::RAD3::Acquisition->new($acqParameters);
 
-  $self->log("STATUS","OK Inserted 1 row in table RAD3.Acquisition for assay $assayName");
+  $self->log("STATUS","OK   Inserted 1 row in table RAD3.Acquisition");
   return $acquisition;
 }
 
@@ -565,7 +560,7 @@ sub createGusAcquisitionParams {
     push (@gusAcquisitionParams,$acquisitionParam);
   }
 
-  $self->log("STATUS","OK Inserted $acqParamKeywordCnt rows in table RAD3.AcquisitionParam");
+  $self->log("STATUS","OK   Inserted $acqParamKeywordCnt rows in table RAD3.AcquisitionParam");
   return \@gusAcquisitionParams;
 }
 
@@ -585,6 +580,7 @@ sub createGUSQuantification {
   my $chpQuantOperatorId = $self->{propertySet}->getProp("Chp_Quant_Operator_ID");
 
   my $protocol = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
+
   $self->error("Create object failed, $acqProtocolId absent in table RAD3::Protocol") 
     unless ($protocol->retrieveFromDB);
 
@@ -603,14 +599,15 @@ sub createGUSQuantification {
     uri => $chpURI
   };
 
-  $celQuantParameters->{operator_id} = $celQuantOperatorId if (defined $celQuantOperatorId);
-  $chpQuantParameters->{operator_id} = $chpQuantOperatorId if (defined $chpQuantOperatorId);
+  $celQuantParameters->{operator_id} = $celQuantOperatorId if ( defined $celQuantOperatorId );
+  $chpQuantParameters->{operator_id} = $chpQuantOperatorId if ( defined $chpQuantOperatorId );
 
   my $celQuantification = GUS::Model::RAD3::Quantification->new($celQuantParameters);
   my $chpQuantification = GUS::Model::RAD3::Quantification->new($chpQuantParameters);
+
   push (@gusQuantifications, $celQuantification, $chpQuantification);
 
-  $self->log("STATUS","OK Inserted 2 rows in table RAD3.Quantification for CEL & CHP quantification");
+  $self->log("STATUS","OK   Inserted 2 rows in table RAD3.Quantification for CEL & CHP quantification");
   return \@gusQuantifications;
 }
 
@@ -627,6 +624,10 @@ sub createGUSQuantParams {
     'SF'=>1       # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
   };
 
+  # Note: 
+  # 'TGT' in RAD is represented as 'TGT Value' in .RPT files.
+  # 'SF' in RAD is represented as 'Scale Factor (SF)' in .RPT files. 
+
   my $chpProtocolId = $self->{propertySet}->getProp("Chp_Protocol_ID");
 
   my @gusQuantParams;
@@ -635,8 +636,8 @@ sub createGUSQuantParams {
   foreach my $param (keys %$params) {
 
     my $protocolParam = GUS::Model::RAD3::ProtocolParam->new({
-        protocol_id => $chpProtocolId, 
-        name => $param
+      protocol_id => $chpProtocolId, 
+      name => $param
     });
 
     $self->error("Create object failed, name $param absent in table RAD3::ProtocolParam")
@@ -645,24 +646,20 @@ sub createGUSQuantParams {
     my $quantParameters = GUS::Model::RAD3::QuantificationParam->new({name => $param});
 
     if ($param eq "TGT") {   # HARD-CODED. Replace 'TGT' by your RAD3.ProtocolParam.name for 'TGT Value'.
-        $quantParameters->{value} = $RPTinfo->{"TGT Value"}; # keyword in file is different than in db
-        #next;
+      $quantParameters->{value} = $RPTinfo->{"TGT Value"}; 
+    } elsif ($param eq "SF") {    # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
+      $quantParameters->{value} = $RPTinfo->{"Scale Factor (SF)"}; 
+    } else {
+      $quantParameters->{value} = $RPTinfo->{$param};
     }
-    elsif ($param eq "SF") {   # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
-        $quantParameters->{value} = $RPTinfo->{"Scale Factor (SF)"}; # keyword in file is different than in db
-        #next;
-    }
-	else {
-    	$quantParameters->{value} = $RPTinfo->{$param};
-	}
     
-    $quantParameters->setParent($protocolParam); # protocolParam in only needed here, so set parent here
+    $quantParameters->setParent($protocolParam);  # protocolParam in only needed here, so set parent here
 
     $quantParamKeywordCnt++;
     push(@gusQuantParams,$quantParameters);
   }
 
-  $self->log("STATUS","OK Inserted $quantParamKeywordCnt rows in table RAD3.QuantificationParam");
+  $self->log("STATUS","OK   Inserted $quantParamKeywordCnt rows in table RAD3.QuantificationParam");
   return \@gusQuantParams;
 }
 
@@ -671,18 +668,16 @@ sub createGUSQuantParams {
 sub modifyDate {
   my ($self, $inputDate) = @_;
 
-  my @dateArray = split " ", $inputDate;  # eg: Hybridize Date  Apr 23 2004 10:58AM
+  # eg: Hybridize Date  Apr 23 2004 10:58AM
+  my @dateArray = split " ", $inputDate;  
 
   my $arrayLen = scalar @dateArray;
   $self->error("Missing date, cannot continue") if ($arrayLen eq 0);
 
   my %monthHash = (
-    Jan => '01', Feb => '02', Mar => '03', Apr => '04', May => '05', Jun => '06',	
+    Jan => '01', Feb => '02', Mar => '03', Apr => '04', May => '05', Jun => '06',
     Jul => '07', Aug => '08', Sep => '09', Oct => '10', Nov => '11', Dec => '12'
   );
-
-  shift @dateArray; # remove word Hybridize
-  shift @dateArray; # remove word Date
 
   my $tempTime = pop @dateArray;    #get time 
   my $time1 = chop $tempTime;       #get AM/PM
@@ -691,19 +686,17 @@ sub modifyDate {
   my @hourMinArray = split /\:/,$tempTime;
 
   my $finalTime;
+
   if ($time2.$time1 eq "PM") {
     $finalTime = $hourMinArray[0] + 12;
     $finalTime .= ":$hourMinArray[1]:00";
 
   } else {
-
     $finalTime = "$tempTime:00";
   }
 
   my $monthNum = $monthHash{$dateArray[0]};
   my $finalDateTime = "$dateArray[2]-$monthNum-$dateArray[1]". " $finalTime";
 
-  print "Final date time: $finalDateTime\n";
   return $finalDateTime;
-
 }
