@@ -48,8 +48,9 @@
 #      using eval("require $table") statement. --hx, Jun-10-2003
 #    - change the plug-in name, in order to move it to cvs at Sanger center. --hx, Jun-10-2003
 #    - updated documentation. --hx, Oct-22-2003
+#    -- also query databaseInfo when querying table_id for a given table name in InsertedProcessedResult(). --hx, Jan-10-2005
 #
-# Last modified Oct-22-2003
+# Last modified Jan-10-2005
 #
 # ----------------------------------------------------------
 package GUS::RAD::Plugin::ProcessedResultLoader;
@@ -229,15 +230,18 @@ sub readCfgFile(){
     }
 	    
     ## check that the given table_id is valid
+    my $dbInfo = GUS::Model::Core::DatabaseInfo->new( { name => 'RAD3' } );
     foreach my $i (@{$cfg_rv->{'table_index'}}) {
-	my $table = GUS::Model::Core::TableInfo->new({ 'table_id' => $cfg_rv->{'table_id'.$i} });
-	if (!$table->retrieveFromDB) {
+	my $tableInfo = GUS::Model::Core::TableInfo->new({ 'table_id' => $cfg_rv->{'table_id'.$i} });
+        $tableInfo->setParent($dbInfo);
+
+	if (!$tableInfo->retrieveFromDB) {
 	    $RV = "Invalid table_id for table_id$i: $cfg_rv->{'table_id'.$i} in cfg_file.";
 	    $M->userError($RV);
 	}
         ## store the table name for checking the valie input_result_id later
-	$cfg_rv->{'table_name'.$i} = $table->getName();
-	$cfg_rv->{'view_on_table_id'.$i} = $table->getViewOnTableId();
+	$cfg_rv->{'table_name'.$i} = $tableInfo->getName();
+	$cfg_rv->{'view_on_table_id'.$i} = $tableInfo->getViewOnTableId();
         my $tableName = "GUS::Model::RAD3::".$cfg_rv->{'table_name'.$i};
         eval("require $tableName");
     }
