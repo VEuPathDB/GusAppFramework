@@ -17,8 +17,8 @@ specified so you should get a list of possible queries.
   <input type="hidden" name="fromPage" value="/simpleQueryDemo1.jsp">
 
   <tr><td><wdkq:displayQuery queryInstance="${q}"></td></tr>
-  <c:forEach var="p" 
-             items="${q.query.params}">
+    <c:forEach var="p" 
+               items="${q.query.params}">
 	     
        <tr>
 	     <td><b>${p.prompt}</b></td>
@@ -26,7 +26,7 @@ specified so you should get a list of possible queries.
 	     <td>${p.help}</td>
        </tr>
   
-  </c:forEach>
+    </c:forEach>
   </wdkq:displayQuery>
 
   <tr>
