@@ -326,8 +326,9 @@ sub createSingleGUSAssay {
   foreach my $gusQuantification (@$gusQuantificationsRef) { 
 
     $gusQuantification->setParent($gusAcquisition); 
+    next if ($gusQuantification == $gusQuantificationsRef->[0]); #cel quantification
     my $gusQuantParamsRef = $self->createGUSQuantParams($RPTinfo);
-    foreach my $gusQuantParam (@$gusQuantParamsRef) { # for each channel, red and green
+    foreach my $gusQuantParam (@$gusQuantParamsRef) { 
         $gusQuantParam->setParent($gusQuantification); 
      }
   }
