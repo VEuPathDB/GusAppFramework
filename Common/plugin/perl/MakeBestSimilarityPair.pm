@@ -177,7 +177,7 @@ sub run {
 		    my $match_lengthq = &matchlen(\%query_start,\%query_length);   
 		    $stmtLen->execute($qid);
 		    my ($lengthq) = $stmtLen -> fetchrow_array();
-		    $percent_matchq = $match_lengthq/$lengthq; 
+		    $percentMatch = $match_lengthq/$lengthq; 
 		}
 		
 		my $bmp = GUS::Model::DoTS::BestSimilarityPair->new();
@@ -187,7 +187,7 @@ sub run {
 		$bmp -> set('pvalue_mant',$sim{$qid}->[1]);
 #		$bmp -> set('score',$values{$query.' '.$subject}->[5]);
 		$bmp -> set('percent_identity',$sim{$qid}->[3]);
-		$bmp -> set('percent_match', $percent_matchq);
+		$bmp -> set('percent_match', $percentMatch);
 		$bmp -> set('source_table_id',$sim{$qid}->[5]);
 		$bmp -> set('paired_source_table_id', $sim{$qid}->[6]);
 
