@@ -57,16 +57,14 @@ PLUGIN_NOTES
 
   my $argsDeclaration =
     [
-# should be SQL
      integerArg({name  => 'phylogenetic_profile_set_id',
-		 descr => 'phylogenetic_profile_set_id',  # talk about what SQL does
+		 descr => 'phylogenetic_profile_set_id',
 		 reqd  => 1,
 		 constraintFunc=> undef,
 		 isList=> 0,
 		}),
-# should be fileArg -- use the "format" field to descript file format
      stringArg({name  => 'datafile',
-		 descr => 'datafile',    # <- more descriptive
+		 descr => 'datafile',
 		 reqd  => 1,
 		 constraintFunc=> undef,
 		 isList=> 0,
@@ -114,14 +112,14 @@ sub loadMutualInformationFile {
   while (<$fh>) {
     chomp;
 
-    my ($primarySourceId, $secondarySourceId, $score) = (split(/\|/, $_));
+    my ($primaryNaFeatureId, $secondaryNaFeatureId, $score) = (split(/\|/, $_));
 
-    my $primaryProfileId = $profileIdHash{$primarySourceId};
-    die("Can't find profile_id for source_id $primarySourceId")
+    my $primaryProfileId = $profileIdHash{$primaryNaFeatureId};
+    die("Can't find profile_id for na_feature_id $primaryNaFeatureId")
       if (!$primaryProfileId);
 
-    my $secondaryProfileId = $profileIdHash{$secondarySourceId};
-    die("Can't find profile_id for source_id $secondarySourceId")
+    my $secondaryProfileId = $profileIdHash{$secondaryNaFeatureId};
+    die("Can't find profile_id for na_feature_id $secondaryNaFeatureId")
       if (!$secondaryProfileId);
 
     my $mi = GUS::Model::DoTS::MutualInformationScore->new
@@ -148,16 +146,15 @@ sub getProfileIdHash {
   my %profileIdHash;
 
   my $sql = <<SQL;
-    SELECT phylogenetic_profile_id, source_id
-    FROM plasmodb_42.plasmodb_genes gf, DoTS.PhylogeneticProfile pp
-    WHERE gf.na_feature_id = pp.na_feature_id
-      AND pp.phylogenetic_profile_set_id=$phylogeneticProfileSetId
+    SELECT phylogenetic_profile_id, na_feature_id
+    FROM DoTS.PhylogeneticProfile pp
+    WHERE pp.phylogenetic_profile_set_id=$phylogeneticProfileSetId
 SQL
 
   my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
 
-  while (my ($profileId, $sourceId) = $sth->fetchrow_array()) {
-    $profileIdHash{$sourceId} = $profileId;
+  while (my ($profileId, $naFeatureId) = $sth->fetchrow_array()) {
+    $profileIdHash{$naFeatureId} = $profileId;
   }
 
   return %profileIdHash;
