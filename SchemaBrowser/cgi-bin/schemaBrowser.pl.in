@@ -12,6 +12,7 @@
 
 use strict;
 require 'cgi_lib.perl';
+use lib "@GUS_HOME@/lib/perl";
 use GUS::ObjRelP::DbiDatabase;
 require GUS::SchemaBrowser::SchemaBrowser;
 
@@ -71,44 +72,6 @@ my $logins = {
      description => 'RNA Abundance Database (RAD) production database (Oracle 8i).',
      },
 
-    # Old Sybase databases
-    #
-    'GUSdev (Sybase)' => 
-    {login => 'GUSro', 
-     password => '5hwwpd43', 
-     dbi_str => 'dbi:Sybase:server=CBILSQL',
-     tableinfo => 1, 
-     documentation => 1,
-     description => 'The "Genomics Unified Schema" development database (Sybase 11.9.2).',
-     disabled => 1,
-     },
-    'rad (Sybase)' => 
-    {login => 'readonly', 
-     password => 'slyst0ne', 
-     dbi_str => 'dbi:Sybase:server=CBILSQL',
-     tableinfo => 0,
-     documentation => 0,
-     description => "CBIL's RNA Abundance Database, version 1.0 (Sybase 11.9.2).",
-     disabled => 1,
-     },
-    'rad2 (Sybase)' => 
-    {login => 'readonly', 
-     password => 'slyst0ne', 
-     dbi_str => 'dbi:Sybase:server=CBILSQL',
-     tableinfo => 0,
-     documentation => 0,
-     description => "CBIL's RNA Abundance Database, version 2.0 (Sybase 11.9.2).",
-     disabled => 1,
-     },
-    'image (Sybase)' => 
-    {login => 'readonly',
-     password => 'slyst0ne', 
-     dbi_str => 'dbi:Sybase:server=CBILSQL',
-     tableinfo => 0,
-     documentation => 0,
-     description => "The Linking and EST Namespace Database (Sybase 11.9.2).",
-     disabled => 1
-     },
 };
 
 # Order in which to display databases for browsing.
@@ -137,11 +100,11 @@ my $hasTableInfo;
 my $hasDocumentation;
 
 if ($rq{'db'} ne '*') {
-    $db = new GUS::ObjRelP::DbiDatabase($$login{'dbi_str'}, $$login{'login'}, $$login{'password'}, 0, 1, 1, $rq{'db'}, undef);
+    $db = new GUS::ObjRelP::DbiDatabase($$login{'dbi_str'}, $$login{'login'}, $$login{'password'}, 0, 1, undef, 'core');
     $hasTableInfo = $$login{'tableinfo'};
 }
 
-my $browser = SchemaBrowser->new($url, \&pageHeader, \&pageFooter, $db, $hasTableInfo);
+my $browser = GUS::SchemaBrowser::SchemaBrowser->new($url, \&pageHeader, \&pageFooter, $db, $hasTableInfo);
 
 $browser->generatePage({db => $rq{'db'}, 
 			table => $rq{'table'}, 
@@ -172,11 +135,11 @@ sub pageHeader {
 sub pageFooter {
     print '<TABLE cellpadding="0" width="100%" border="0" cellspacing="0">';
     print '<TR BGCOLOR="#986666"><TD COLSPAN="2">';
-    print '<IMG SRC="http://www.allgenes.org/images/dred1.gif" WIDTH="1" HEIGHT="2"></TD></TR>';
+    print '<IMG SRC="@HTDOCS_URL@/images/dred1.gif" WIDTH="1" HEIGHT="2"></TD></TR>';
     print '<TR BGCOLOR="#ffffff"><TD COLSPAN="2">';
-    print '<IMG SRC="http://www.allgenes.org/images/white1.gif" WIDTH="1" HEIGHT="2"></TD></TR>';
+    print '<IMG SRC="@HTDOCS_URL@/images/white1.gif" WIDTH="1" HEIGHT="2"></TD></TR>';
     print "<TR>";
-    print '<TD><IMG SRC="http://www.allgenes.org/images/copyright.gif"></TD>';
+    print '<TD><IMG SRC="@HTDOCS_URL@/images/copyright.gif"></TD>';
     print '<TD ALIGN="right"><FONT SIZE="-1"><A HREF="mailto:webmaster@allgenes.org">';
     print 'webmaster@allgenes.org</A></FONT></TD>';
     print '</TR></TABLE><BR>';
