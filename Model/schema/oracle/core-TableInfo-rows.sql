@@ -4,7 +4,7 @@
 /*                                                                                            */
 /* Populate Core.TableInfo, which lists each of the GUS tables.                               */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:42:27 EST 2004     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 12:43:14 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -928,12 +928,13 @@ INSERT INTO @oracle_core@.TableInfo VALUES(3847,'GNFAffymetrixResult','standard'
 INSERT INTO @oracle_core@.TableInfo VALUES(3848,'GNFAffymetrixResultVer','version',NULL,11,0,1,3487,3523,1,'2004-01-27 12:10:06',1,1,1,1,1,0,1, 1, 1, 1);
 INSERT INTO @oracle_core@.TableInfo VALUES(3866,'WorkflowNode','standard','worklow_node_id',1,1,1,447,NULL,1,'2004-02-16 13:28:26',1,1,1,1,1,0,1, 1, 1, 1);
 INSERT INTO @oracle_core@.TableInfo VALUES(3867,'WorkflowNodeVer','version',NULL,2,0,1,451,NULL,1,'2004-02-16 13:29:49',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3886,'AssayControlVer','standard','assay_control_id',11,0,0,NULL,NULL,0,'2004-02-17 12:40:10',1,1,1,1,1,0,1, 1, 1, 1);
 
-/* 916 row(s) */
+/* 917 row(s) */
 
 
 DROP SEQUENCE @oracle_core@.TableInfo_SQ;
-CREATE SEQUENCE @oracle_core@.TableInfo_SQ START WITH 3868;
+CREATE SEQUENCE @oracle_core@.TableInfo_SQ START WITH 3887;
 
 COMMIT;
 SPOOL OFF
