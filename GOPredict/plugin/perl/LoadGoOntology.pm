@@ -43,6 +43,20 @@ sub new {
 	  h => 'Set this to automatically create an external database release id for this GO Term version',
 	  t => 'boolean',
       },	
+	 
+	 {o => 'function_db_id',
+	  h => 'External database Id in GUS of the molecular function GO branch',
+	  t => 'int',
+      },
+	 {o => 'process_db_id',
+	  h => 'External database Id in GUS of the biological process GO branch',
+	  t => 'int',
+      },
+	 {o => 'component_db_id',
+	  h => 'External database Id in GUS of the cellular component GO branch',
+	  t => 'int',
+      },	
+	 
 	 {o => 'function_ext_db_rel',
 	  h => 'External database release id in GUS of the molecular function GO branch',
 	  t => 'int',
@@ -190,7 +204,7 @@ sub __load_ontology {
 
 	#make entry in SRes.GOTerm for each entry in the go file
 	foreach my $entryId(keys %$entries){
-	    
+	    next;
 	    next if (($entryId eq $store->getBranchRoot())||($entryId eq $store->getRoot()));
 	    
 	    if ($self->__checkIfLoaded("Term", $entryId, $processedEntries)){
@@ -348,6 +362,9 @@ sub __getExtDbRelId{
 	
 	my $dbId = $self->{branchInfo}->{$branch}->{db_id};
 	
+	if (!$dbId){
+	    $self->userError("Could not find external database id for ontology branch go $branch");
+	}
 	my $sql = "select external_database_release_id 
                from sres.externalDatabaseRelease
                where version = \'$version\' and external_database_id = $dbId";
@@ -608,11 +625,12 @@ sub __loadExtDbId{
     my ($self, $branch, $name) = @_;
 
     my $queryHandle = $self->getQueryHandle();
-
-    my $sth = $queryHandle->prepare("Select external_database_id from sres.externaldatabase where name = ?");
+    my $sql = "Select external_database_id from sres.externaldatabase where name = ?";
+    my $sth = $queryHandle->prepare($sql);
     
     my $db_id = $branch . "_db_id";
     if (!($self->getCla->{$db_id})){
+	print STDERR "executing $sql $name\n";
 	$sth->execute($name);
 	my ($id) = $sth->fetchrow_array();
 	$self->{branchInfo}->{$branch}->{db_id} = $id;
