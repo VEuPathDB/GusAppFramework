@@ -415,6 +415,9 @@ sub doMajorMode_Run {
 
    $pu->setOracleDateFormat('YYYY-MM-DD HH24:MI:SS');
 
+   # get the algorithm
+   $Self->findAlgorithm($pu);
+
    # get PI's version to find the AlgorithmImplementation.
    $Self->findImplementation($pu);
 
