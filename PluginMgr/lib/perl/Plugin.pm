@@ -169,12 +169,14 @@ sub logAlert {
 sub logVerbose {
   my $M = shift;
 
+  return unless $M->getCla()->{verbose};
   $M->_log(@_);
 }
 
 sub logVeryVerbose {
   my $M = shift;
 
+  return unless $M->getCla()->{veryVerbose};
   $M->_log(@_);
 }
 
