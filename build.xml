@@ -115,6 +115,13 @@
    </target>
 
   <target name="javaManuallyEditedModel" depends="ProjectTree">
+
+        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/Core"/>
+        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/DoTS"/>
+        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/SRes"/>
+        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/TESS"/>
+        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/RAD3"/>
+
         <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS" overwrite="true">
            <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/DoTS"/>
            <mapper type="glob" from="*.java.man" to="*.java"/>
