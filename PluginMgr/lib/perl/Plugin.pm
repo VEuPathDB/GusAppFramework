@@ -646,6 +646,35 @@ sub className2oracleName {
   return GUS::ObjRelP::DbiDatabase::className2oracleName($className);
 }
 
+=item C<getExtDbRlsId($dbName, $dbVersion)>
+
+Retrieve an external database release id from SRes::ExternalDatabaseRelease given the name of a database and the version corresponding to the release
+
+B<Parameters:>
+
+    - dbName (string): Name of the database; must match an entry in SRes::ExternalDatabase
+    - dbVersion (string): Version of the database; matched against the version attribute in SRes::ExternalDatabaseRelease
+
+B<Return type:> C<integer>
+
+=cut
+sub getExtDbRlsId {
+    my ($self, $dbName, $dbVersion) = @_;
+    my $sql = "select ex.external_database_release_id
+               from sres.externaldatabaserelease ex, sres.externaldatabase e
+               where e.external_database_id = ex.external_database_id
+               and ex.version = '$dbVersion'
+               and e.name = '$dbName'";
+
+    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+    
+    my ($releaseId) = $sth->fetchrow_array();
+    
+    return $releaseId;
+}
+
+
+
 =item C<className2tableId($className)>
 
 Convert a perl style class name for a database object to a numerical table id suitable for comparison to one of GUS's many table_id columns.  For example, convert Core::Algorithm to something like 34.
