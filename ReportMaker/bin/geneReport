@@ -1,0 +1,77 @@
+#!@perl@
+
+use strict;
+
+use lib "$ENV{GUS_HOME}/lib/perl";
+
+use Getopt::Long;
+use GUS::ObjRelP::DbiDatabase;
+use GUS::Common::GusConfig;
+
+use GUS::ReportMaker::SampleConfig;
+
+my ($verbose, $sql);
+
+&GetOptions("verbose!"=> \$verbose,"sql" => \$sql);
+
+my $sql =
+"select distinct gene_id
+from DoTS.gene
+where gene.gene_symbol is not null
+union
+select distinct gene_id
+from DoTS.genesynonym
+";
+
+my $gusconfig = GUS::Common::GusConfig->new();
+
+my $login = 'sfischer';
+
+my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
+					$login,
+					'sofiaheather',
+					$verbose,0,1,
+					$gusconfig->getCoreSchemaName());
+
+my $tempTableName = "$login.geneReport";
+
+eval {
+#  &makeGeneTempTable($tempTableName, $db, $sql);
+
+  my $report = 
+    &GUS::ReportMaker::SampleConfig::createDoTSGeneReport($tempTableName);
+
+  $report->print(['gene_symbol', 'synonym_name'], $tempTableName, $db);
+};
+
+#&dropTempTable($tempTableName, $db);
+
+die "$@\n" if $@;
+
+
+########################### subroutines ###################################
+
+sub makeGeneTempTable {
+    my ($tempTableName, $db, $sql) = @_;
+
+    my $dbh = $db->getDbHandle();
+
+    my $createTableSql = 
+"create table $tempTableName (
+  gene_id number not null,
+  mapped_to varchar(255)
+)
+";
+    $dbh->do($createTableSql);
+    $dbh->do("insert into $tempTableName (gene_id) $sql");
+    $dbh->commit();
+}
+
+sub dropTempTable {
+    my ($tempTableName, $db) = @_;
+
+    my $dbh = $db->getDbHandle();
+    my $stmt  = $dbh->do("drop table $tempTableName");
+    $dbh->commit();
+    $db->logout();
+}
