@@ -113,7 +113,7 @@ public class GUSTable implements java.io.Serializable {
      * @param owner    Owner of the table.
      * @param tname    Name of the table as it appears in core.TableInfo.name
      */
-    public GUSTable( String owner, String tname) {
+    public GUSTable (String owner, String tname) {
 	this.ownerName = owner;
 	this.tableName = tname;
         this.childRelations = new Hashtable();
