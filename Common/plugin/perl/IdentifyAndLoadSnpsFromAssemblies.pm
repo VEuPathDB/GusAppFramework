@@ -123,7 +123,7 @@ sub run {
   $self->logAlert('COMMIT', $self->getCla->{commit} ? 'ON' : 'OFF' );
 
   my $snpObjectType = $self->getCla->{assemblySnpOnly} ? 1 : 2;
-  $snpObjectType = 0 if $debug;
+  $snpObjectType = 0;
 
   ##DBI handle to be used for queries outside the objects...
   my $dbh = $self->getQueryHandle();
@@ -198,8 +198,8 @@ sub run {
     }
     ##now find the snps...
     my $snps = $a->findSNPs($self->getCla->{minDepth}, undef, $self->getCla->{maxBestPercent}, $self->getCla->{minDepthLessBest}, $snpObjectType);
-    print STDERR "\nSNPs:\n$snps\n\n" if $debug;
-    print STDERR $a->getCap2Alignment() if $debug;
+    print STDERR "\nSNPs:\n$snps\n\n";
+    print STDERR $a->getCap2Alignment();
     my $cts = scalar($a->getChildren('AssemblySNP'));
     $ctSNPs += $cts;
     $a->submit();
