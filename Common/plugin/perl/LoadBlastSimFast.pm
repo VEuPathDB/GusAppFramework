@@ -313,7 +313,7 @@ sub parseSpan {
 
   my @vals = split(/:/, $spanLine);
   die "invalid HSP line: '$spanLine'\n" unless $vals[0] =~ /HSP/;
-  die "invalid HSP line (wrong number of columns):  '$sumLine'\n" unless scalar @vals == 13;
+  die "invalid HSP line (wrong number of columns):  '$spanLine'\n" unless scalar @vals == 13;
 
   my %span;
   $span{number_identical} = $vals[2];
