@@ -63,12 +63,22 @@ oracle_tessverPassword=password4
 oracle_tessverTablespace=tablespace4
 oracle_tessverIndexTablespace=tablespace4
 
-oracle_rad3=RAD3
-oracle_rad3Password=password5
-oracle_rad3Tablespace=tablespace5
-oracle_rad3IndexTablespace=tablespace5
+oracle_rad=RAD
+oracle_radPassword=password5
+oracle_radTablespace=tablespace5
+oracle_radIndexTablespace=tablespace5
 
-oracle_rad3ver=RAD3Ver
-oracle_rad3verPassword=password5
-oracle_rad3verTablespace=tablespace5
-oracle_rad3verIndexTablespace=tablespace5
+oracle_radver=RADVer
+oracle_radverPassword=password5
+oracle_radverTablespace=tablespace5
+oracle_radverIndexTablespace=tablespace5
+
+oracle_app=App
+oracle_appPassword=password6
+oracle_appTablespace=tablespace6
+oracle_appIndexTablespace=tablespace6
+
+oracle_appver=AppVer
+oracle_appverPassword=password6
+oracle_appverTablespace=tablespace6
+oracle_appverIndexTablespace=tablespace6
