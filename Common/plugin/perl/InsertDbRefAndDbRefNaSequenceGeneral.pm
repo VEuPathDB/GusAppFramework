@@ -1,7 +1,7 @@
 package GUS::Common::Plugin::InsertDbRefAndDbRefNaSequenceGeneral;
 
 @ISA = qw(GUS::PluginMgr::Plugin);
- 
+
 use strict;
 
 use GUS::Model::SRes::DbRef;
@@ -176,7 +176,7 @@ sub  insertDBRefNASeq {
 
   foreach my $id (keys %$mapHash) {
 
-    foreach my $naSeqId ( @$mapHash->{$id}) {
+    foreach my $naSeqId ( @{$mapHash->{$id}}) {
       my $dbRefId = $dbRefHash->{$id};
 
       my $newDbRefNASeq = GUS::Model::DoTS::DbRefNASequence->new ({'db_ref_id'=>$dbRefId, 'na_sequence_id'=>$naSeqId});
