@@ -697,7 +697,7 @@ sub create_or_update_implementation {
 #      $M->doMajorMode_History($C);
       exit 0;
     }
-  else {
+  } else {
 
     # algorithm already exists; tell user about it.
     if ($alg_gus) {
