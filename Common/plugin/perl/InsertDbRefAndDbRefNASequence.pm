@@ -45,6 +45,10 @@ sub new {
      {o => 'delete',
       t => 'boolean',
       h => 'option to delete entries in dbref that are not in the current mapping',
+     },
+     {o => 'mapToCurrentAssembly',
+      t => 'boolean',
+      h => 'option to map assembly a current assembly',
      }
     ];
 
@@ -81,7 +85,7 @@ sub run {
 
   my $dbRefHash = $self->insertDbRef($sourceIdHash); 
 
-  $self->getCurrentAssemblyId($mapHash); 
+  $self->getCurrentAssemblyId($mapHash) if $self->getArgs()->{'mapToCurrentAssembly'}; 
 
   my ($sourceIdDbrefHash) = $self->readDBRefs(); 
 
