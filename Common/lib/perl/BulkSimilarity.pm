@@ -4,7 +4,7 @@ package GUS::Common::BulkSimilarity;
 
 use strict;
 use vars qw( @ISA );
-@ISA = qw( A );
+@ISA = qw( CBIL::Util::A );
 
 use FileHandle;
 
