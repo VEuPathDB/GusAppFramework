@@ -17,8 +17,8 @@ use strict;
 use DBI;
 use DBD::Oracle;
 
-use Table;
-use Util;
+use GUS::DBAdmin::Table;
+use GUS::DBAdmin::Util;
 
 # -----------------------------------------------------------------------
 # Configuration
@@ -47,9 +47,9 @@ die "Must specify source table name as owner.table" if (!defined($srcTName));
 
 if ($login =~ /^sys$/i) { $DBI_ATTS->{ora_session_mode} = 2; }
 
-my $dbh = &Util::establishLogin($login, $DBI_STR, $DBI_ATTS);
+my $dbh = &GUS::DBAdmin::Util::establishLogin($login, $DBI_STR, $DBI_ATTS);
 
-my $srcTable = new Table({owner => $srcOwner, name => $srcTName});
+my $srcTable = new GUS::DBAdmin::Table({owner => $srcOwner, name => $srcTName});
 
 my($dropCons, $createCons) = $srcTable->getConstraintsSql($dbh);
 my($dropInds, $createInds) = $srcTable->getIndexesSql($dbh);

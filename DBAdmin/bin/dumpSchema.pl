@@ -21,10 +21,12 @@
 # -----------------------------------------------------------------------
 
 use strict;
-use Database;
-use Schema;
-use Table;
-use Sequence;
+
+use GUS::DBAdmin::Database;
+use GUS::DBAdmin::Schema;
+use GUS::DBAdmin::Table;
+use GUS::DBAdmin::Sequence;
+use GUS::DBAdmin::Util;
 
 use Getopt::Long;
 
@@ -125,28 +127,11 @@ my $doAll = (!$usersOnly && !$tablesOnly && !$viewsOnly && !$indexesOnly && !$co
 my @schemas = split(/\s*,\s*/, $schemaList);
 my @targetSchemas;
 
-# Default target schemas obtained by prefixing input schema names with "&&" 
-# (to force the user to enter the schema names when the scripts are run)
+# Get target schema and tablespace names
 #
-if (defined($targetSchemaList)) {
-    @targetSchemas = split(/\s*,\s*/, $targetSchemaList);
-} else {
-    foreach my $s (@schemas) {
-	push(@targetSchemas, "&&" . $s);
-    }
-}
-
-# Same thing for target tablespaces
-#
-if (defined($targetTablespaceList)) {
-    @targetTablespaces = split(/\s*,\s*/, $targetSchemaList);
-} else {
-    foreach my $s (@schemas) {
-	push(@targetTablespaces, '&&' . $s . "Tablespace");
-    }
-}
-
-
+my @targetSchemas = &getTargetObjectNames('oracle_', '', $targetSchemaList, \@schemas);
+my @targetTablespaces = &getTargetObjectNames('oracle_', 'Tablespace', $targetTablespaceList, \@schemas);
+my @targetIndexTablespaces = &getTargetObjectNames('oracle_', 'IndexTablespace', $targetTablespaceList, \@schemas);
 
 my $numSchemas = scalar(@schemas);
 if ($numSchemas != scalar(@targetSchemas)) {
@@ -184,9 +169,9 @@ if ($tables =~ /\S/) {
 # -----------------------------------------------------------------------
 # Establish database login
 
-my $db = Database->new({sid => $dbSid, host => $dbHost});
+my $db = GUS::DBAdmin::Database->new({sid => $dbSid, host => $dbHost});
 if ($login =~ /^sys$/i) { $DBI_ATTS->{ora_session_mode} = 2; }
-my $dbh = &Util::establishLogin($login, $db->getDbiStr(), $DBI_ATTS);
+my $dbh = &GUS::DBAdmin::Util::establishLogin($login, $db->getDbiStr(), $DBI_ATTS);
 
 # -----------------------------------------------------------------------
 # Read metadata if available
@@ -211,7 +196,7 @@ if (!defined($tableList)) {
     # DatabaseInfo
     #
     if ($gusVersion >= 3) {
-	$di = Table->new({owner => $tableinfoSchema, name => 'DatabaseInfo'});
+	$di = GUS::DBAdmin::Table->new({owner => $tableinfoSchema, name => 'DatabaseInfo'});
 	$diRows = $di->getContents($dbh, "order by database_id", 'hash');
 	foreach my $dir (@$diRows) {
 	    my $did = $dir->{'database_id'};
@@ -223,7 +208,7 @@ if (!defined($tableList)) {
 
     # TableInfo
     #
-    $ti = Table->new({owner => $tableinfoSchema, name => 'TableInfo'});
+    $ti = GUS::DBAdmin::Table->new({owner => $tableinfoSchema, name => 'TableInfo'});
     $tiRows = $tables ? [] : $ti->getContents($dbh, "order by table_id", 'hash');
 
     foreach my $tir (@$tiRows) {
@@ -263,6 +248,8 @@ if ($doAll || $usersOnly) {
     for (my $i = 0;$i < $numSchemas;++$i) {
 	my $schema= $schemas[$i];
 	my $targetSchema = $targetSchemas[$i];
+	my $targetTablespace = $targetTablespaces[$i];
+	my $targetIndexTablespace = $targetIndexTablespaces[$i];
 
 	print $fh "/* ----------------------------------------------------------------------- */\n";
 	print $fh "/* New schema = $targetSchema (original name = $schema) */\n";
@@ -270,13 +257,14 @@ if ($doAll || $usersOnly) {
 	print $fh "DROP USER $targetSchema CASCADE;\n";
 	print $fh "\n";
 
-	my $targetPassword = ($targetSchema =~ /^&&/) ? "${targetSchema}Password" : "&&${targetSchema}Password";
+	
+	my $targetPassword = &getTargetPassword($targetSchema);
 
 	print $fh "CREATE USER $targetSchema IDENTIFIED BY $targetPassword \n";
-	print $fh "  TEMPORARY TABLESPACE &&tempTablespace\n";
+	print $fh "  TEMPORARY TABLESPACE \@oracle_tempTablespace\@\n";
 	print $fh "  DEFAULT TABLESPACE $targetTablespace\n";
-	print $fh "  QUOTA &&tempQuota ON &&tempTablespace\n";
-	print $fh "  QUOTA &&defaultQuota ON $targetTablespace;\n";
+	print $fh "  QUOTA \@oracle_tempQuota\@ ON \@oracle_tempTablespace\@\n";
+	print $fh "  QUOTA \@oracle_defaultQuota\@ ON $targetTablespace;\n";
 	print $fh "\n";
 	print $fh "GRANT CONNECT TO $targetSchema;\n";
 	print $fh "GRANT RESOURCE TO $targetSchema;\n";
@@ -298,7 +286,7 @@ if ($doAll || $usersOnly) {
 #
 my $tablesToDump = ($gusVersion >= 3.0) ? 
     [
-     ['core', 'DatabaseInfo', 'database_id', 'Populate Core.DatabaseInfo, which lists each of the GUS namespaces (i.e. Oracle schemas/users).'],
+     ['core', 'DatabaseInfo', 'database_id', 'Populate Core.DatabaseInfo, which lists each of the GUS namespaces (i.e. schemas/users).'],
      ['core', 'TableInfo', 'table_id', 'Populate Core.TableInfo, which lists each of the GUS tables.'],
      ['sres', 'BibRefType', 'bib_ref_type_id', 'Populate sres.BibRefType, a controlled vocabulary of bibliographic reference types.'],
      ] 
@@ -381,7 +369,7 @@ if ($doAll && !defined($tableList)) {
 	$srcSchema = $tableinfoSchema if (!defined($srcSchema));
 	my $targetSchema = &getTargetSchema($srcSchema, \@schemas, \@targetSchemas);
 
-	my $table = Table->new({owner => $srcSchema, name => $tname});
+	my $table = GUS::DBAdmin::Table->new({owner => $srcSchema, name => $tname});
 	my $sql = $table->getContentsSQL($dbh, "order by $primKeyCol", $targetSchema, $primKeyCol, 1), "\n";
 
 	# Override what's in the table for user, project, group & algorithm_invocation (last 4 cols)
@@ -393,7 +381,7 @@ if ($doAll && !defined($tableList)) {
 	# the @targetSchemas
 	#
 	if ($tname =~ /databaseinfo/i) {
-	    $sql =~ s#VALUES\(\d+,'[\d\.]+,'(\S+)'#$schemaMapping->{lc($1)}#;
+	    $sql =~ s#(VALUES\(\s*\d+,'[\d\.]+',)'([^']+)'#$1'$schemaMapping->{lc($2)}'#g;
 	}
 
 	print $fh $sql;
@@ -411,7 +399,9 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
     for (my $i = 0;$i < $numSchemas;++$i) {
 	my $schema = $schemas[$i];
 	my $targetSchema = $targetSchemas[$i];
-	my $s = Schema->new({name => $schema});
+	my $targetTablespace = $targetTablespaces[$i];
+	my $targetIndexTablespace = $targetIndexTablespaces[$i];
+	my $s = GUS::DBAdmin::Schema->new({name => $schema});
 
 	# Save text for constraints and indexes to dump later
 	#
@@ -429,7 +419,7 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 	    my $sequences = $s->getSequences($dbh);
 	    my $nseqs = 0;
 	    foreach my $seqname (@$sequences) {
-		my $seq = Sequence->new({owner => $targetSchema, name => $seqname});
+		my $seq = GUS::DBAdmin::Sequence->new({owner => $targetSchema, name => $seqname});
 		print $fh $seq->getSQL($dbh, 1), "\n";
 		print ".";
 		++$nseqs;
@@ -470,7 +460,7 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 		my $inTableInfo = defined($tiTablesHash->{$fullName});
 		next if (!$inTableInfo && $tiTablesOnly && !defined($tableList));
 
-		my $tbl = Table->new({owner => $schema, name => $tname});
+		my $tbl = GUS::DBAdmin::Table->new({owner => $schema, name => $tname});
 		my($dropCons, $createCons) = $tbl->getSelfConstraintsSql($dbh, $targetSchema, $rename_sys_ids);
 		my($dropInds, $createInds) = $tbl->getIndexesSql($dbh, "$targetSchema.$tname", $rename_sys_ids, $targetSchema, $targetIndexTablespace, 0);
 	
@@ -490,6 +480,12 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 			$primKeyConstraintTxt .= "$con\n";
 			++$nPrimKeyConstraints;
 		    } else {
+
+			# HACK - need to make sure that the schema of the table being 
+			# referenced is one of the new targetSchemas
+			#
+			$con =~ s/(references)\s+([^\.]+)\.(\S+)/$1 $schemaMapping->{lc($2)}.$3/i;
+
 			$constraintTxt .= "$con\n";
 			++$nOtherConstraints;
 		    }
@@ -532,7 +528,7 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 		$fullName =~ tr/a-z/A-Z/;
 		my $inTableInfo = $tiViewsHash->{$fullName};
 		next if (!$inTableInfo && $tiTablesOnly);
-		my $tbl = Table->new({owner => $schema, name => $vname});
+		my $tbl = GUS::DBAdmin::Table->new({owner => $schema, name => $vname});
 		if (!$inTableInfo && !defined($tableList)) {
 		    print $fh "/* WARNING - $vname does not appear in ${tableinfoSchema}.TableInfo */\n\n";
 		}
@@ -603,18 +599,18 @@ $dbh->disconnect();
 
 if ($doAll || $masterOnly) {
     my $nf = 0;
-    my $masterFile = "${file}run.sh";
+    my $masterFile = "${file}create-db.sh";
     print "writing $masterFile...";
     $fh->open("> $masterFile");
     
     print $fh "#!/bin/sh\n\n";
 
-    print $fh "# NOTE: Insert the correct passwords into this file before running it.\n";
+    print $fh "# Running this file will create a new GUS instance \n";
     print $fh "\n";
 
     # create new users
     print $fh "# create new users (as sys/sysdba) \n";
-    print $fh "sqlplus sys/&&sys_password \@${file}-users.sql\n";
+    print $fh "sqlplus 'sys/\@oracle_systemPassword\@\@\@oracle_SID\@ as sysdba' \@${file}users.sql\n";
     print $fh "\n";
     ++$nf;
 
@@ -630,17 +626,17 @@ if ($doAll || $masterOnly) {
     for (my $i = 0;$i < $numSchemas;++$i) {
 	my $schema = $schemas[$i];
 	my $targetSchema = $targetSchemas[$i];
-	my $targetPassword = ($targetSchema =~ /^&&/) ? "${targetSchema}_password" : "&&${targetSchema}_password";
+	my $targetPassword = &getTargetPassword($targetSchema);
 
 	if (!($schema =~ /ver$/i)) {
-	    $sequenceTxt .= "sqlplus ${targetSchema}/${targetPassword} \@${file}-${schema}-sequences.sql\n";
+	    $sequenceTxt .= "sqlplus ${targetSchema}/${targetPassword}\@\@oracle_SID\@ \@${file}${schema}-sequences.sql\n";
 	}
 
-	$tableTxt .= "sqlplus ${targetSchema}/${targetPassword} \@${file}-${schema}-tables.sql\n";
-	$viewTxt .= "sqlplus ${targetSchema}/${targetPassword} \@${file}-${schema}-views.sql\n";
-	$primKeyTxt .= "sqlplus ${targetSchema}/${targetPassword} \@${file}-${schema}-pkey-constraints.sql\n";
-	$nonPrimKeyTxt .= "sqlplus ${targetSchema}/${targetPassword} \@${file}-${schema}-constraints.sql\n";
-	$indexTxt .= "sqlplus ${targetSchema}/${targetPassword} \@${file}-${schema}-indexes.sql\n";
+	$tableTxt .= "sqlplus ${targetSchema}/${targetPassword}\@\@oracle_SID\@ \@${file}${schema}-tables.sql\n";
+	$viewTxt .= "sqlplus ${targetSchema}/${targetPassword}\@\@oracle_SID\@ \@${file}${schema}-views.sql\n";
+	$primKeyTxt .= "sqlplus ${targetSchema}/${targetPassword}\@\@oracle_SID\@ \@${file}${schema}-pkey-constraints.sql\n";
+	$nonPrimKeyTxt .= "sqlplus ${targetSchema}/${targetPassword}\@\@oracle_SID\@ \@${file}${schema}-constraints.sql\n";
+	$indexTxt .= "sqlplus ${targetSchema}/${targetPassword}\@\@oracle_SID\@ \@${file}${schema}-indexes.sql\n";
     }
 
     if ($doAll || $masterOnly) {
@@ -674,12 +670,13 @@ if ($doAll || $masterOnly) {
     if (($doAll && !defined($tableList)) || ($masterOnly)) {
 	print $fh "# insert bootstrap rows, reset relevant sequences\n";
 	my $targetSchema = ($gusVersion >= 3.0) ?  &getTargetSchema('Core', \@schemas, \@targetSchemas) : $targetSchemas[0];
-	my $targetPassword = ($targetSchema =~ /^&&/) ? "${targetSchema}_password" : "&&${targetSchema}_password";
-	print $fh "sqlplus ${targetSchema}/${targetPassword} \@${file}-bootstrap-rows.sql\n";
+	my $targetPassword = &getTargetPassword($targetSchema);
+
+	print $fh "sqlplus ${targetSchema}/${targetPassword}\@\@oracle_SID\@ \@${file}bootstrap-rows.sql\n";
 	print $fh "\n";
 	++$nf;
 
-	print $fh "# insert any other data\n";
+	print $fh "# insert any other shared data/controlled vocabularies\n";
 
 	foreach my $td (@$tablesToDump) {
 	    my($srcSchema, $tname, $primKeyCol) = @$td;
@@ -687,9 +684,8 @@ if ($doAll || $masterOnly) {
 	    my $fullTName = ($srcSchema) ? "${srcSchema}.$tname" : $tname;
 	    $srcSchema = $tableinfoSchema if (!defined($srcSchema));
 	    my $targetSchema = &getTargetSchema($srcSchema, \@schemas, \@targetSchemas);
-	    my $targetPassword = ($targetSchema =~ /^&&/) ? "${targetSchema}_password" : "&&${targetSchema}_password";
-	    
-	    print $fh "sqlplus ${targetSchema}/${targetPassword} \@$dfile\n";
+	    my $targetPassword = &getTargetPassword($targetSchema);
+	    print $fh "sqlplus ${targetSchema}/${targetPassword}\@\@oracle_SID\@ \@$dfile\n";
 	    ++$nf;
 	}
 
@@ -712,11 +708,41 @@ if ($doAll || $masterOnly) {
 # Subroutines
 # -----------------------------------------------------------------------
 
+# Get a default password for the specified schema.  Returns a '@style@' 
+# parameter so we can use Ant to replace it with the actual value when
+# the files are installed.
+#
+sub getTargetPassword {
+    my($targetSchema) = @_;
+
+    my $tp;
+
+    if ($targetSchema =~ /^\@(.*)\@$/) {
+	$tp = '@' . $1 . "Password" . '@';
+    } else {
+	$tp = '@' . $targetSchema . "Password" . '@';
+    }
+    return $tp;
+}
+
 # Get target names for a set of objects, either by parsing user input
-# or by generating names from the target schema names.  
+# or by generating names from the target schema names.  In the latter
+# case the names will be of the form (@like_so@) that Ant recognizes.
 #
 sub getTargetObjectNames {
-    my($objType, $userInput, ) = @_;
+    my($objPrefix, $objSuffix, $userInput, $names) = @_;
+    my @result;
+
+    if ($userInput =~ /\S/) {
+	@result = split(/\s*,\s*/, $userInput);
+    } 
+    else {
+	foreach my $n (@$names) {
+	    push(@result, '@' . $objPrefix . $n . $objSuffix . '@');
+	}
+    }
+
+    return @result;
 }
 
 # Get the target schema for a given source schema
@@ -751,8 +777,10 @@ sub printSqlFileHeader {
     print $fh sprintf("/* %-90s */\n", '');
     print $fh sprintf("/* %-90s */\n", $filename);
     print $fh sprintf("/* %-90s */\n", '');
-    print $fh sprintf("/* %-90s */\n", $descr);
-    print $fh sprintf("/* %-90s */\n", '');
+    if ($descr =~ /\S/) {
+	print $fh sprintf("/* %-90s */\n", $descr);
+	print $fh sprintf("/* %-90s */\n", '');
+    }
     print $fh sprintf("/* %-90s */\n", "This file was generated automatically by dumpSchema.pl on $date");
     print $fh sprintf("/* %-90s */\n", '');
     print $fh "\n";
