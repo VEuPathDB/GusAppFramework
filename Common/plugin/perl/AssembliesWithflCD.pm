@@ -188,30 +188,30 @@ print STDERR "NextFLDT.$na_seq\n";
 
           print "DT.$target_id Evidence deleted\n";
 
-        }
+      }
 
      }
 
      }
 
-#for those assemblies that no longer contain a refSeq
-foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
+#  for those assemblies that no longer contain a refSeq
+    foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
- my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
+ print "DT.$DTnotFLength does not have a RefSeq any longer\n";
+
+ my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $target_id});
 
       $assembly->retrieveFromDB();
-
       $assembly->setFullLengthCds(0);
       $assembly->submit();
-
 
       $self->undefPointerCache();
 
 
         }
 
-}
+     }
 
 #use RefSeq source_id as evidence for marking assembly as full length CDS containing
 
