@@ -56,9 +56,8 @@ sub new {
                    o => 'update_file',
                    r => 0,
                  },
-                 { h => 'Signifies that the sequences in ExternalNASequence should NOT be updated, 
-                         regardless of discrepencies in dbEST. An error message is output when there 
-                         is a conflict, used when reassembly is not going to occur.',
+                 { h => 'Signifies that sequences in ExternalNASequence should NOT be updated, 
+                         regardless of discrepencies in dbEST-Used when reassembly is not going to occur.',
                    t => 'boolean',
                    o => 'no_sequence_update',
                    r => 0,
