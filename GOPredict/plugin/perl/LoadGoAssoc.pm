@@ -415,7 +415,11 @@ sub __adjustDefiningAncestors{
     my ($self, $organism, $assocData, $goGraph) = @_;
     
     my $goDb = $self->getCla->{go_ext_db_rel_id};
-   
+    my $rowCount = 0;
+    my $parentCount = 0;
+    my $changeCount = 0;
+    my $noChangeCount = 0;
+    
     my $dbList = '( '. join( ', ', @{ $self->{orgInfo}->{$organism}->{ db_id } } ). ' )'; 
     my $idCol = $self->{orgInfo}->{$organism}->{id_col};
 
@@ -424,55 +428,54 @@ sub __adjustDefiningAncestors{
 
     open (LASTLOG, ">>logs/definingLog") || die "pluginLog could not be opened";
 
-    my $sql = "select ga.go_association_id, eas.$idCol 
+    my $sql = "select gai.go_association_instance_id, ga.go_term_id 
                from DoTS.GOAssociation ga, DoTS.ExternalAASequence eas,
                DoTS.GOAssociationInstance gai
                where ga.table_id = 83 and ga.row_id = eas.aa_sequence_id
                and gai.go_association_id = ga.go_association_id
-               and eas.external_database_release_id in $dbList 
-               and gai.external_database_release_id = $goDb"; 
+               and eas.external_database_release_id in $dbList
+               and gai.external_database_release_id = $goDb
+               and eas.$idCol = ?"; 
 
     my $queryHandle = $self->getQueryHandle();
-    my $sth = $queryHandle->prepareAndExecute($sql);
-    my $rowCount = 0;
-    my $parentCount = 0;
-    my $changeCount = 0;
-    my $noChangeCount = 0;
-    while (my ($assocId, $extId) = $sth->fetchrow_array()){
-	$rowCount++;
-	my $assocObject = 
-	  GUS::Model::DoTS::GOAssociation->new( {go_association_id=>$assocId,});
+    my $sth = $queryHandle->prepare($sql);
+ 
+    foreach my $assocExtId (keys %$assocData){
+
+	$sth->execute($assocExtId);
+	while (my ($assocInstanceId, $gusGoId) = $sth->fetchrow_array()){
+	    $rowCount++;
+	    my $goId = $goGraph->{gusToGo}->{$gusGoId};
+	    if ($assocData->{$assocExtId}->{goTerms}->{$goId}){  #found one that is explicitly set
 	
-	#retrieve row and children.  Has one go term associated with it
-	$assocObject->retrieveFromDB();
-	$assocObject->retrieveAllChildrenFromDB(0);    
-	my $assocObjectInst = $assocObject->getChild("DoTS::GOAssociationInstance");
-	
-	&confess ("couldn't get instance for " . $assocObject->getGOAssociationId()) if !$assocObjectInst;
-	
-	my $submit = 0;
-	#print LASTLOG "couldn't find an entry for $extId\n" if !$assocData->{$extId};
-	my $dbGoTermGusId = $assocObject->getGoTermId(); 
-	my $dbGoTermGoId = $goGraph->{gusToGo}->{$dbGoTermGusId};
-	if ($assocData->{$extId}->{goTerms}->{$dbGoTermGoId}){  #found one that is explicitly set
-	 #   print LASTLOG "found matching association $extId - $dbGoTermGoId in file; ";
-	    if (!$assocObjectInst->getIsPrimary()){
-		$submit = 1;
-		$changeCount++;
-		#print LASTLOG " it's one that needs to be corrected\n";
-		$assocObjectInst->setIsPrimary(1);
-	    }
-	    else{
-		$noChangeCount++;
-		#print LASTLOG " this GO Term is a leaf and was already set to defining\n";
+		my $assocInstanceObject = 
+		  GUS::Model::DoTS::GOAssociationInstance->new( {go_association_instance_id=>$assocInstanceId,});
+		
+		#retrieve row and children.  Has one go term associated with it
+		$assocInstanceObject->retrieveFromDB();
+		
+		&confess ("couldn't get instance for " . $assocInstanceId) if !$assocInstanceObject;
+		
+		my $submit = 0;
+		#print LASTLOG "couldn't find an entry for $extId\n" if !$assocData->{$extId};
+		if (!$assocInstanceObject->getIsPrimary()){
+		    $submit = 1;
+		    $changeCount++;
+		    #print LASTLOG " it's one that needs to be corrected\n";
+		    $assocInstanceObject->setIsPrimary(1);
+		}
+		else{
+		    $noChangeCount++;
+		    #print LASTLOG " this GO Term is a leaf and was already set to defining\n";
+		}
+		
+		$assocInstanceObject->submit();
+		$self->undefPointerCache();
 	    }
 	}
-	else { $parentCount++};
-	$assocObjectInst->submit() if $submit;
-	$self->undefPointerCache();
     }
     print STDERR "total: $rowCount changed: $changeCount stayed the same: $noChangeCount parents: $parentCount\n";
-
+    
 }
 
 
