@@ -108,7 +108,7 @@ sub makeAttrHash {
   my ($self) = @_;
 
   my $attrList = $self->getArg('attrlist');
-  my @valueList = split(/\^\^\^/, $self->getArg('valuelist');
+  my @valueList = split(/\^\^\^/, $self->getArg('valuelist'));
 
   $self->userError("attrlist and valuelist must have the same number of elements") if (scalar(@$attrList) != scalar(@valueList));
 
