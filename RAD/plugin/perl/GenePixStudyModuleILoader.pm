@@ -38,8 +38,8 @@ sub new {
     ['RAD3::Study',                 'One row for the given study is entered'],
     ['RAD3::Assay',                 'One row for each distinct assay is entered'],
     ['RAD3::StudyAssay',            'One row linking the given study to each assay is entered'],
-    ['RAD3::Acquisition',           'Two rows, two for each channel (Cy5 and Cy3), corresponding to one assay, are entered'],
-    ['RAD3::Quantification',        'Two rows, two for each channel (Cy5 and Cy3), corresponding to one acquisition, are entered'],
+    ['RAD3::Acquisition',           'Two rows, one for each channel (Cy5 and Cy3), corresponding to one assay, are entered'],
+    ['RAD3::Quantification',        'Two rows, one for each channel (Cy5 and Cy3), corresponding to one acquisition, are entered'],
     ['RAD3::QuantificationParam',   'Eight rows, four for each channel (Cy5 and Cy3), corresponding to four parameters per quantification, are entered'],
     ['RAD3::RelatedAcquisition',    'Two rows, associating two channels (Cy5 and Cy3) with each other, are entered'],
     ['RAD3::RelatedQuantification', 'Two rows, associating two channels (Cy5 and Cy3) with each other, are entered']
