@@ -129,8 +129,8 @@ sub process {
 		    my $t_id = $doc->getTableIdFromTableName($table_nm); #get table_id from table name
 		    my $query = "SELECT table_id, attribute_name, html_documentation " . 
 		                "FROM Core.DatabaseDocumentation " .
-			        "WHERE table_id=$t_id " .
-			        "AND attribute_name='$attribute_nm'";
+			        "WHERE table_id = $t_id " .
+			        "AND attribute_name = '$attribute_nm'";
 		    $self->logVerbose("Querying Core.DatabaseDocumentation for duplicate attribute documentation");
 		    my $stmt = $dbh->prepare($query);
 		    $stmt->execute();
@@ -143,14 +143,17 @@ sub process {
 			$html = $ary[2]; #queried html documentation
 
 			## SKIP if documentation is identical to what is already in db
-			if (($att_name eq $attribute_nm) && ($html eq $html_dc)){ 
-			    $self->logAlert("ALREADY EXISTS! Documentation for $table_nm" .
+
+			if (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # not valid attribute
+			    $self->logAlert("NOT INSERTED! $attribute_nm is not a valid attribute for $table_nm");
+			    return; # SKIP
+			}
+			elsif (($att_name eq $attribute_nm) && ($html eq $html_dc)){ 
+			    $self->logAlert("ALREADY EXISTS! Documentation for column $table_nm" .
 					"." ."$attribute_nm NOT OVERWRITTEN!");
 			    return; # SKIP
 			} # end if same doc
-			else { ## SUBMIT if valid attribute
-#			if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){
-
+			else { ## SUBMIT if new documentation
 			    ## bind table id to DatabaseDocumentation object
 			    $doc->setTableId($doc->getTableIdFromTableName($table_nm));
 			    $self->logVerbose("Set table ID");
@@ -219,9 +222,9 @@ sub process {
 		} # end elsif table documentation
 	    } # end if valid attribute
 	    ## attribute is not valid for this table - DON'T SUBMIT
-	    elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # not valid attribute
-		$self->logAlert("NOT INSERTED! $attribute_nm is not a valid attribute for $table_nm");
-	    }
+#	    elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # not valid attribute
+#		$self->logAlert("NOT INSERTED! $attribute_nm is not a valid attribute for $table_nm");
+#	    }
 	} # end if table exists
 
 	else { ## no table name in db
