@@ -112,6 +112,13 @@ sub new {
        h => 'if testing, comma separated list of proteins to perform algorithms on',
    },
 
+     
+     { o => 'test_number',
+       t => 'int',
+       h => 'if testing, limit the number of proteins to test to this number',
+   },
+     
+
      { o => 'protein_table_id',
        h => 'id in Core.TableInfo for the DoTS.Protein Table',
        t => 'string',
@@ -150,7 +157,6 @@ sub new {
        h => 'name of primary key column for query sequence table ',
        t => 'string',
    },
-
 
      { o => 'query_taxon_id',
        h => 'taxon id for query sequences ',
@@ -305,18 +311,20 @@ sub run {
 	}
 
 	if ($self->getCla->{apply_rules}){
-	    
+	    $goManager->setDeprecatedAssociations($databaseAdapter->getDeprecatedAssociations($self->getCla->{query_taxon_id}));
 	    my $cla = $self->_makeClaHashForRules();
 	    my $proteinsAffected = $goManager->applyRules($newGoVersion, $cla, $doNotScrub, 
 							  $self->getCla()->{similarities_file_path},
-							  $self->getCla()->{create_new_similarities_file}); 
+							  $self->getCla()->{create_new_similarities_file},
+							  $self->getCla()->{test_number}); 
 	    
 	    $msg .= "Applied rules to $proteinsAffected proteins.  ";
 	}
 
 	if ($self->getCla->{deprecate_associations}){
 	    my $raidList = $self->getCla()->{apply_rules_raid_list};
-	    my $proteinsAffected = $goManager->deprecateAssociations($raidList, $proteinTableId, $newGoVersion);
+	    my $proteinsAffected = $goManager->deprecateAssociations($raidList, $proteinTableId,
+								     $newGoVersion, $self->getCla->{query_taxon_id});
 	    $msg .= "Processed $proteinsAffected proteins for deprecating.  ";
 	}
 
