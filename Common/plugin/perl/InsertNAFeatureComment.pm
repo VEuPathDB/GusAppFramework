@@ -20,7 +20,6 @@ sub new {
     [
      { h => 'name of file containing gene name [tab] comments',
        t => 'string',
-       d => '-',
        o => 'filename',
      },
     ];
