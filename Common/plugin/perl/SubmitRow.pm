@@ -47,7 +47,7 @@ PLUGIN_NOTES
   my $argsDeclaration =
   [
    tableNameArg({name  => 'tablename',
-		 descr => 'Name of table or view to submit to',
+		 descr => 'Name of table or view to submit to, eg, Core::UserInfo',
 		 reqd  => 1,
 		 constraintFunc=> undef,
 		 isList=>0,
