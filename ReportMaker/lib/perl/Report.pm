@@ -29,6 +29,25 @@ sub new {
   return $self;
 }
 
+sub listColumns {
+  my ($self) = @_;
+
+  my $columns = $self->{columns};
+  print "\nColumnName\tDescription\n";
+  foreach my $column (values %$columns) {
+    print $column->getName() . "\t" . $column->getDescription() . "\n";
+  }
+}
+
+sub validateColumnsRequest {
+  my ($self, $requestedColumnNames) = @_;
+
+  foreach my $columnName (@$requestedColumnNames) {
+    die "\nError: $columnName is not a supported column\n" unless $self->{columns}->{$columnName};
+  }
+  
+}
+
 # requesteColumnNames: list of names for requested columns
 # resultTableName: name of db table containing result
 # dbiDb: GUS::ObjRelP::DbiDatabase

@@ -40,7 +40,7 @@ sub run {
   $sql =~ s/_RESULT_TABLE_NAME_/$resultTableName/;
 
   my $q = substr($self->{sql}, 0, 60);
-  print STDERR "running query: ${q}...\n";
+  print STDERR "\nrunning query: \n${q}...\n";
 
   my $stmt  = $dbh->prepare($sql);
   $stmt->execute();

@@ -1,53 +1,3 @@
-package GUS::ReportMaker::SampleConfig;
-
-use strict;
-use GUS::ReportMaker::DefaultColumn;
-use GUS::ReportMaker::Query;
-use GUS::ReportMaker::Report;
-
-sub createDoTSGeneReport {
-  my ($geneTempTable) = @_;
-
-  my @columns;
-
-  my $symbolCol =
-    GUS::ReportMaker::DefaultColumn->new("gene_symbol",
-					 "Gene Symbol");
-  push(@columns, $symbolCol);
-
-  my $synonymCol =
-    GUS::ReportMaker::DefaultColumn->new("synonym_name",
-					 "Gene Synonym");
-  push(@columns, $synonymCol);
-
-
-  my $symbolSql = 
-"select distinct tmp.gene_id, g.gene_symbol
-from DoTS.gene g, $geneTempTable tmp
-where g.gene_id = tmp.gene_id
-";
-  my $symbolQuery = 
-    GUS::ReportMaker::Query->new($symbolSql,
-				 [$symbolCol,
-				 ]);
-
-  my $synonymSql =
-"select distinct tmp.gene_id, gs.synonym_name
-from DoTS.genesynonym gs, $geneTempTable tmp
-where gs.gene_id = tmp.gene_id
-";
-
-  my $synonymQuery = 
-    GUS::ReportMaker::Query->new($synonymSql,
-				 [$synonymCol,
-				 ]);
-
-
-  return GUS::ReportMaker::Report->new("DoTS_Gene", 'gene_id',
-				      [$synonymQuery, $symbolQuery],
-				      \@columns);
-}
-
 sub createDoTSTranscriptReport {
   my ($rnaTempTable) = @_;
 
@@ -237,6 +187,5 @@ where s.query_id = tmp.na_sequence_id
 				      [$assemQuery],
 				      \@columns);
 }
-
 
 1;
