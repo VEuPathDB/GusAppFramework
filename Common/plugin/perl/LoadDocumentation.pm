@@ -150,7 +150,7 @@ sub process {
 		my $t_id2 = $doc->getTableIdFromTableName($table_nm); #get table_id from table name
 		my $query2 = "SELECT table_id, html_documentation " .
 		             "FROM Core.DatabaseDocumentation " .
-                             "WHERE table_id=$t_id " .
+                             "WHERE table_id=$t_id2 " .
 			     "AND attribute_name IS NULL";
 		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate table documentation");
 		my $stmt2 = $dbh->prepare($query2);
