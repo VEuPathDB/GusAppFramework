@@ -177,7 +177,7 @@ sub makeGenomeTargetListFile {
 
     opendir(DB, $dbPath);
     my @files = readdir(DB);
-    my @fa_files = grep(/\.(fa|fasta)/i, @files);
+    my @fa_files = grep(/\.(fa|fasta)$/i, @files);
     closedir(DB);
 
     open(F, ">$targetListFile") || die "Can't open $targetListFile for writing";
