@@ -126,19 +126,17 @@ sub process {
 		## want to skip identical documentation - query to see if already stored
 		my $dbh = $ctx->{'self_inv'}->getDbHandle();
 		my $t_id = $doc->getTableIdFromTableName($table_nm); #get table_id from table name
-		
-		print "tid: $t_id\n\n";
 
 		my $query = "SELECT table_id, attribute_name, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$t_id AND attribute_name='$attribute_nm'";
 		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
 		my $stmt = $dbh->prepare($query);
 		$stmt->execute();
+
 		while (my @ary = $stmt->fetchrow_array() ){
 		  chomp;
 		  my $tb_id = $ary[0]; #queried table id
 		  my $att_name = $ary[1]; #queried attribute name
 		  my $html = $ary[2]; #queried html documentation
-
 		  $self->logVerbose("Query results: table_id: $tb_id\tattribute_name: $att_name\thtml_documentation: $html");
 
 		  if ($html eq $html_dc){ #documentation is identical to what is already in db - SKIP
