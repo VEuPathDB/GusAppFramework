@@ -12,11 +12,11 @@ use GUS::Common::GusConfig;
 
 $| = 1;
 
-my ($verbose,$idSQL,$table,$userId,$tablePK,$logfile);
+my ($verbose,$idSQL,$table,$userId,$tablePK,$logfile,$gusConfigFile);
 &GetOptions("verbose!"=> \$verbose,
 	    "idSQL=s" => \$idSQL, 
 	    "table=s" => \$table,
-	    "gusConfigFile=s" => \$gusConfigFile
+	    "gusConfigFile=s" => \$gusConfigFile,
 	    "userId=i" => \$userId,
 	    "tablePK=s" => \$tablePK,
 	    "logfile=s" => \$logfile);
@@ -53,7 +53,7 @@ print STDERR "$ct ids were obtained from the query\n$ctVer rows were versioned\n
 
 sub usage {
 
-    print STDERR "usage: deleteEntries.pl --idSQL 'sql query returns primary keys of table' --table <tablename to version in schema.table format> --userId <user_id from UserInfo> --tablePK <table primary_key> --logfile <logfile needed for restarts> --gusConfigFile <$GUS_CONFIG_FILE>\n";
+    print STDERR "usage: deleteEntries.pl --idSQL 'sql query returns primary keys of table' --table <tablename to version in schema.table format> --userId <user_id from UserInfo> --tablePK <table primary_key> --logfile <logfile needed for restarts> --gusConfigFile <\$GUS_CONFIG_FILE>\n";
 
     exit;
 }
@@ -89,7 +89,7 @@ sub versionRows {
 
     for(my $i=0;$i<scalar(@ids);$i++){ 
 	my $stm = "insert into $tablever (select *,$userId,SYSDATE,1 from $table where $tablePK=$ids[$i])";
-	print STDERR "Versioning row with $tablePK:\t$id[$i]\n";
+	print STDERR "Versioning row with $tablePK:\t$ids[$i]\n";
 	$ctVer += $dbh->do($stm) if ($versioned{$ids[$i]} != 1);
 	$dbh->commit();
 	print STDERR "$ctVer rows versioned",`date` if $ctVer%100==0;
