@@ -157,9 +157,9 @@ sub run {
 
 #Mark FL using features; first call unmark then delete; this has to done first since the features may change from build to build
 
-    $self->UnMarkAssembliesAsFrameFinderFL(\@DTsMarkedUsingFeature);
+    $self->UnMarkAssembliesAsFrameFinderFL(\@DTsMarkedUsingFeatures);
 
-    $self->DeleteFrameFinderEvidence(\@DTsMarkedUsingFeature);
+    $self->DeleteFrameFinderEvidence(\@DTsMarkedUsingFeatures);
 
     $self->MarkFLUsingFFfeatures(\@NaSeqStop);
 
@@ -366,10 +366,10 @@ sub DeleteFrameFinderEvidence {
 
 
   my $self = shift;
-  my ($DTsMarkedUsingFeature) = @_;
+  my ($DTsMarkedUsingFeatures) = @_;
 
 
-  foreach my $target_id(@$DTsMarkedUsingFeature) {
+  foreach my $target_id(@$DTsMarkedUsingFeatures) {
     my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
                                                     'attribute_name' =>"full_length_CDS",
                                                     'fact_table_id' => 338 });
