@@ -595,7 +595,7 @@ sub insertAnalysis {
       while (my ($assay_id)= $sth1->fetchrow_array()) {
 	if (!$assay_counted{$assay_id}) {
 	  push (@assay_ids, $assay_id);
-	  $assay_counted{$assay_id) = 1;
+	  $assay_counted{$assay_id} = 1;
 	}
       }
       my $sth2 = $dbh->prepare("select distinct a.assay_id from RAD3.Acquisition a, RAD3.LogicalGroupLink l where l.table_id=$acquisition_table_id and l.logical_group_id= $cfg_info->{'logical_group_id'}->[$i] and l.row_id=a.acquisition_id");
@@ -603,7 +603,7 @@ sub insertAnalysis {
       while (my ($assay_id)= $sth2->fetchrow_array()) {
 	if (!$assay_counted{$assay_id}) {
 	  push (@assay_ids, $assay_id);
-	  $assay_counted{$assay_id) = 1;
+	  $assay_counted{$assay_id} = 1;
 	}
       }
 
@@ -612,7 +612,7 @@ sub insertAnalysis {
       while (my ($assay_id)= $sth3->fetchrow_array()) {
 	if (!$assay_counted{$assay_id}) {
 	  push (@assay_ids, $assay_id);
-	  $assay_counted{$assay_id) = 1;
+	  $assay_counted{$assay_id} = 1;
 	}
       }
 
