@@ -3,7 +3,6 @@ package GUS::Common::Plugin::OrthologGroupsMCL;
 @ISA = qw(GUS::PluginMgr::Plugin);
 use strict;
 use DBI;
-use Objects::dbiperl_utils::DbiDatabase;
 use FileHandle; 
 use GUS::Model::DoTS::AAOrthologExperiment;
 use GUS::Model::DoTS::AAOrthologGroup;
