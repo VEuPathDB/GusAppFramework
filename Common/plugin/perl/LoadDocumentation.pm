@@ -1,3 +1,14 @@
+package GUS::Common::Plugin::LoadDocumentation;
+@ISA = qw(GUS::PluginMgr::Plugin); #defines what is inherited
+
+use strict;
+
+use FileHandle;
+use GUS::Model::Core::DatabaseInfo;
+use GUS::Model::Core::TableInfo;
+use GUS::Model::Core::DatabaseDocumentation;
+
+############################################################
 ###########################################################
 ### LoadDocumentation.pm
 ###
@@ -36,18 +47,7 @@
 ### usage: ga LoadDocumentation --inputFile [file]
 ###   run from inside directory containing file to upload 
 ############################################################
-############################################################
-package GUS::Common::Plugin::LoadDocumentation;
-@ISA = qw(GUS::PluginMgr::Plugin); #defines what is inherited
 
-use strict;
-
-use FileHandle;
-use GUS::Model::Core::DatabaseInfo;
-use GUS::Model::Core::TableInfo;
-use GUS::Model::Core::DatabaseDocumentation;
-
-############################################################
 ############################################################
 sub new {
     my ($class) = @_;
