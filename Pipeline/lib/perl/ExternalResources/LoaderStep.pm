@@ -101,8 +101,8 @@ sub _loadData {
 
     $self->_validatePluginDbArgs();
 
-    $self->{pluginArgs} =~ s/$DBNAME_MACRO/$self->{extDbName}/;
-    $self->{pluginArgs} =~ s/$DBVERSION_MACRO/$self->{extDbRlsVer}/;
+    $self->{pluginArgs} =~ s/$DBNAME_MACRO/\"$self->{extDbName}\"/;
+    $self->{pluginArgs} =~ s/$DBVERSION_MACRO/\"$self->{extDbRlsVer}\"/;
 
     ## handle commit ourselves
     $mgr->runPluginNoCommit("load_${signalBase}", $self->{plugin}, 
