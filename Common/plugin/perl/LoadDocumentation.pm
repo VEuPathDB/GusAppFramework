@@ -119,7 +119,7 @@ sub process {
 			$doc->setHtmlDocumentation($html_dc);
 			$doc->submit();
 			$countInserts++;
-			$self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
+			$self->logVerbose("Updated table documentation for: $table_nm\t$html_dc");
 			return();
 		    }
 		    elsif ($doc->setHtmlDocumentation($html_dc) eq $html_dc) {
@@ -128,19 +128,13 @@ sub process {
 		    }
 		} # end while ary
 
-#		$doc->setAttributeName("");
-#		$doc->setHtmlDocumentation($html_dc);
-#		$doc->retrieveFromDB();
-#		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) {
-#		    $doc->submit();
-#		    $countInserts++;
-#		    $self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
-#		    return();
-#		}
-#		elsif ($doc->setHtmlDocumentation($html_dc) eq $html_dc) {
-#		    $self->logAlert("Documentation already exists: $table_nm.$attribute_nm\t$html_dc\n");
-#		    return();
-#		}	
+		### new table documentation
+		$doc->setHtmlDocumentation($html_dc);
+		$doc->submit();
+		$countInserts++;
+		$self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
+		return();
+
 	    } # end if table documentation
 	    elsif ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if valid attribute
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
