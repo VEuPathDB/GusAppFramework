@@ -338,7 +338,7 @@ public abstract class GUSRow implements java.io.Serializable {
      * @return A Vector containing of the parent GUSRow objects that have been
      * added to this object so far.   Does not query the database.
      */
-    public Vector getAllParents(){
+    public Vector getAllParents() {
 	Vector c = parents.getAll();
 	return c;
     }

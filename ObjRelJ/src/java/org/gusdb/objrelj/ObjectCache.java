@@ -133,6 +133,7 @@ public class ObjectCache implements java.io.Serializable {
      * @return The requested object, if in the cache, null otherwise.
      */
     public GUSRow get(GUSRow obj) {
+	if (obj == null) return null;
 	String obj_key = getKey(obj);
 	return (GUSRow)objects.get(obj_key);
     }
@@ -226,7 +227,7 @@ public class ObjectCache implements java.io.Serializable {
 	GUSTable t = obj.getTable();
 	return getKey(t.getOwnerName(), t.getTableName(), obj.getPrimaryKeyValue());
     }
-    
+
 } //ObjectCache
 
 

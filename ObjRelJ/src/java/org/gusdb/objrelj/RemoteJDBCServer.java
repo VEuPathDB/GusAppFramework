@@ -39,7 +39,6 @@ public class RemoteJDBCServer extends UnicastRemoteObject implements RemoteDatab
      * @param driver  driver for this new RemoteJDBCServer
      */
     public RemoteJDBCServer(DatabaseDriverI driver) throws RemoteException {
-	
 	super();
  	this.driver = driver;
     } 
@@ -122,8 +121,8 @@ public class RemoteJDBCServer extends UnicastRemoteObject implements RemoteDatab
 	} 
 	catch ( Exception e ) {
 	    System.err.println(e);
-	    System.err.println("Usage: java [-Dremotejdbcservername=<name>] " +
-			       "org.gusdb.objrelj.RemoteJDBCServer jdbcURL jdbcLogin jdbcPassword");
+	    System.err.println("Usage: java " +
+			       "org.gusdb.objrelj.RemoteJDBCServer propertiesFilePath");
 	    System.exit(1); //force an exit because there may be hanging RMI threads.
 	}
     }

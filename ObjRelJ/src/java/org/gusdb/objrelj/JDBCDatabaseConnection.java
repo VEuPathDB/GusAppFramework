@@ -28,7 +28,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
     // JC: temporary
     //
-    protected static boolean DEBUG = false;
+    protected static boolean DEBUG = true;
 
     // ------------------------------------------------------------------
     // Instance variables
@@ -196,6 +196,60 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 		GUSRow obj = GUSRow.createObject(owner, tname);
 		obj.setAttributesFromResultSet(res, null);
 		objs.add(obj);
+	    }
+	    res.close();
+	    stmt.close();
+	}
+	catch (Exception e) {
+	    System.err.println(e.getMessage());
+	    e.printStackTrace(); 
+	}
+        return objs;
+    }
+
+    public Vector runSqlQuery(String query) {
+	Vector objs = new Vector();
+
+	try {
+	    Statement stmt = conn.createStatement();
+	    ResultSet res = stmt.executeQuery(query);
+	    ResultSetMetaData rsmd = res.getMetaData();
+	    int numCols = rsmd.getColumnCount();
+	    String colNames[] = new String[numCols];
+	    boolean colIsClob[] = new boolean[numCols];
+
+	    for(int i = 0;i < numCols;++i) {
+		colNames[i] = rsmd.getColumnLabel(i+1);
+		colIsClob[i] = (rsmd.getColumnType(i+1) == Types.CLOB);
+	    }
+
+	    // Returns everything as a String.  CLOB values require special handling.
+	    //
+	    while(res.next()) {
+		Hashtable h = new Hashtable();
+
+		for(int i = 0;i < numCols;++i) {
+
+		    // Clob value
+		    if (colIsClob[i]) {
+			Clob clobval = res.getClob(i+1);
+			if (clobval != null) {
+			    long clobLen = clobval.length();
+			    String sval = clobval.getSubString(1, (int)clobLen);
+			    h.put(colNames[i], sval);
+			}
+		    } 
+
+		    // All others returned as String
+		    else {
+			String sval = res.getString(i+1);
+			
+			if (sval != null) {
+			    h.put(colNames[i], sval);
+			}
+		    }
+		}
+		objs.add(h);
 	    }
 	    res.close();
 	    stmt.close();
@@ -716,6 +770,3 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     //  dna = DNATools.createDNA(sequence.getSubString((long)1, (int)sequence.length()));
     
 } //JDBCDatabaseConnection
-
-
-
