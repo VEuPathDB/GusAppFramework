@@ -116,9 +116,7 @@ sub process {
 	
 	if ($db->checkTableExists($table_nm)){ # if table exists
 
-#	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
-
-	  if ($db->getTable()->isValidAttribute($attribute_nm)){
+	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
 
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
 	        $self->logVerbose("Set table ID");
@@ -144,7 +142,7 @@ sub process {
 		$self->undefPointerCache();
 	        $self->logVerbose("UndefPointerCache()");
 	    }
-	    elsif ($attribute_nm == "NULL"){ #attribute name is null
+	    elsif ($attribute_nm == "NULL" || $attribute_nm == "null"  || $attribute_nm == ""){ #attribute name is null
 	      	$doc->setTableId($doc->getTableIdFromTableName($table_nm));
 	        $self->logVerbose("Set table ID");
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
