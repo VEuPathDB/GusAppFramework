@@ -157,12 +157,12 @@ print STDERR "MarkedDT.$id,DT.$na_seq\n";
 
     print STDERR "AlreadyMarkedFLDT.$na_seq\n";
 
-   last;
+   next;
    }
 
+else {
 
-
-   if ($id != $na_seq) {
+ #  if ($id != $na_seq) {
 
        print STDERR "NextFLDT.$na_seq\n";
 
