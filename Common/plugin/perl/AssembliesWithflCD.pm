@@ -91,7 +91,7 @@ foreach my $A(@na_sourceids)    {
 
       $assembly->setFullLengthCds(1);
       
-      $self->toAddEvidenceSourceID($source_id);
+      $self->toAddEvidenceSourceID($source_id, $assembly);
 
       $assembly->submit();
 
@@ -108,7 +108,7 @@ foreach my $A(@na_sourceids)    {
 
   my $self = shift;
 
-  my ($source_id) = @_;
+  my ($source_id,$assembly) = @_;
 
   my $fact = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $source_id });
  
