@@ -226,6 +226,8 @@ sub run {
 ## NOTE: using primary key so just create object and return it!!
 sub GetQueryObject{
   my $Line = shift;
+  my $queryClassName = "GUS::Model::".$ctx->{cla}->{'query_table'};
+
   $queriesProcessed++;
   # extract the query id from the defline
   $Line =~ /^\>*(\S+)\s\((\d+)/;
