@@ -83,6 +83,13 @@ sub run {
 
   my $stmt5 = $self->getQueryHandle()->prepareAndExecute("select asm.na_sequence_id, taf.translation_stop, taf.aa_feature_id from dots.assembly asm, dots.NAFeatureImp naf, dots.TranslatedAAFeature taf, dots.TranslatedAAsequence ts where asm.na_sequence_id = naf.na_sequence_id and naf.na_feature_id = taf.na_feature_id and taf.translation_start = taf.diana_atg_position + 2 and taf.diana_atg_score > 0.5 and taf.p_value < 0.5 and asm.taxon_id = 8 and taf.aa_sequence_id = ts.aa_sequence_id and ts.length > 100");
 
+#fact_table_id = 338 is translatedAAsequence
+
+  my $stmt6 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS' and fact_table_id = 338"));
+
+
+
+
 
 
   my @na_sourceids = ();
@@ -91,8 +98,9 @@ sub run {
   my @RemoveAsMarkedFL = ();
   my @DTs = ();
 
-
   my @NaSeqStop = ();
+  my @DTsMarkedUsingFeatures = ();
+
 
   while (my($na_seq, $source_id) = $stmt1->fetchrow_array( )) {
     push(@na_sourceids, [$na_seq, $source_id]);
@@ -111,9 +119,12 @@ sub run {
    push (@RemoveAsMarkedFL,$DTnotFLength);
   }
 
-
     while (my($naSeq,$tStop,$featureId) = $stmt5->fetchrow_array( )) {
     push(@NaSeqStop, [$naSeq, $tStop,$featureId]); 
+  }
+
+    while (my($target_Id) = $stmt6->fetchrow_array( )) {
+    push(@DTsMarkedUsingFeatures);
   }
 
 
@@ -139,13 +150,16 @@ sub run {
     $self->undefPointerCache();
   }
 
+
+
    $self->DeleteEvidence(\@DTs,\@DTSasEvidenceTarget);
    $self->UnmarkFullLength(\@RemoveAsMarkedFL);
 
-#first call delete then new assemblies marked fl using translatedAAfeatures
-#if marked full length using framefinderStop As evidence or DIANA ATG delete
-#   $self->UnMarkAssembliesAsFrameFinderFL(   );
-#   $self->DeleteFrameFinderEvidence( );
+#Mark FL using features; first call unmark then delete; this has to done first since the features may change from build to build
+
+    $self->UnMarkAssembliesAsFrameFinderFL(\@DTsMarkedUsingFeature);
+
+    $self->DeleteFrameFinderEvidence(\@DTsMarkedUsingFeature);
 
     $self->MarkFLUsingFFfeatures(\@NaSeqStop);
 
@@ -323,17 +337,56 @@ sub AddEvidenceTranslatedFeature  {
 
 }
 
-#delete all assemblies which have used features to mark them full length
-#sub 
+#UnMark all assemblies which have used features to mark them full length
+sub  UnMarkAssembliesAsFrameFinderFL  {
+
+  my $self = shift;
+  my ($DTsMarkedUsingFeatures ) = @_;
+
+  foreach my $targetId(@$DTsMarkedUsingFeatures)  {
+
+  print STDERR "DT.$targetId\n";
+
+  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $targetId});
+
+      $assembly->retrieveFromDB();
+      $assembly->setFullLengthCds(0);
+      $assembly->submit();
+
+      $self->undefPointerCache();
+   }
+
+}
 
 
 
+#delete feature evidence from the evidence table
+
+sub DeleteFrameFinderEvidence {
+
+
+  my $self = shift;
+  my ($DTsMarkedUsingFeature) = @_;
+
+
+  foreach my $target_id(@$DTsMarkedUsingFeature) {
+    my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
+                                                    'attribute_name' =>"full_length_CDS",
+                                                    'fact_table_id' => 338 });
+    if ($Evidence->retrieveFromDB()) {
+        $Evidence->markDeleted(1);
+        $Evidence->submit();
+
+      print STDERR  "DT.$target_id FeatureEvidence deleted\n"; 
+    } else {
+      print STDERR  "Cannot delete DT.$target_id FeatureEvidence; not retrieved\n";
+    }
 
 
 
+  }
 
-
-
+}
 
 1;
 
