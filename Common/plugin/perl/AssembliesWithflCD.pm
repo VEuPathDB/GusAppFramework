@@ -134,6 +134,8 @@ foreach my $A(@na_sourceids)    {
 
   my($na_seq, $source_id) = @{$A};
 
+ print STDERR "@na_sourceids\n";
+
 
   print STDERR "ConsideringForFLDT.$na_seq\n";
 
@@ -141,26 +143,28 @@ foreach my $A(@na_sourceids)    {
 
    last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
+  print STDERR "@naSequenceIds\n";
+
 
    foreach my $id(@naSequenceIds)  {
 
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
 
-print "$id,DT.$na_seq\n";
+print STDERR "$id,DT.$na_seq\n";
+
 
      if ($id == $na_seq ) {
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
      next;
    }
 
-     if($id != $na_seq) {
+     if($id != $na_seq )
 
-print STDERR "NextFLDT.$na_seq\n";
+       print STDERR "NextFLDT.$na_seq\n";
 
      my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
       $assembly->retrieveFromDB();
-
       $assembly->setFullLengthCds(1);
       $self->toAddEvidenceSourceID($source_id, $assembly);
       $assembly->submit();
@@ -168,8 +172,9 @@ print STDERR "NextFLDT.$na_seq\n";
 
       $self->undefPointerCache();
 
+
 }
-   }
+}
 
 }
 
@@ -199,7 +204,7 @@ print STDERR "NextFLDT.$na_seq\n";
 #  for those assemblies that no longer contain a refSeq
     foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
- print "DT.$DTnotFLength does not have a RefSeq any longer\n";
+ print STDERR "DT.$DTnotFLength does not have a RefSeq any longer\n";
 
  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
 
