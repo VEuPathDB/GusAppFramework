@@ -47,7 +47,7 @@ use GUS::PluginMgr::Plugin;
  use GUS::Model::DoTS::SecondaryAccs;
  use GUS::Model::DoTS::NALocation; #NEED TO IMPLEMENT THIS FOR EACH FEATURE!!!!!!!!!!!!!!!!!!!!!
  #tables for checking your parameters
- #tables called by special cases
+ etables called by special cases
   use GUS::Model::DoTS::NAGene;
   use GUS::Model::DoTS::NAProtein;
   use GUS::Model::DoTS::NAPrimaryTranscript;
@@ -99,8 +99,7 @@ sub new {
   my $args = getArguments();
 
   $self->initialize({requiredDbVersion => {RAD3 => '3', Core => '3'},
-             #cvsRevision => '$Revision$',
-             cvsRevision => 'Revision: 1.5 ',
+             cvsRevision => '$Revision$',
              cvsTag => '$Name$',
              name => ref($self),
              revisionNotes => '',
