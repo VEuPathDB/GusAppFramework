@@ -109,7 +109,7 @@ sub run {
 sub process {
 	my $self = shift;
 	my ($table_nm, $attribute_nm, $html_dc) = @_;
-	$self->logData("Table: $table_name\nAttribute: $attribute_name\nDocumentation: $html_doc\n");
+	$self->logData("Table: $table_nm\nAttribute: $attribute_nm\nDocumentation: $html_dc\n");
 
 	my $verbose = $self->getCla->{verbose};
 
