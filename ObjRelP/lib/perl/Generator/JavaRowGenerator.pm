@@ -261,16 +261,17 @@ sub _createChildAccessors{
 
     my ($self) = @_;
     my $output = "//Child Objects\n";
-   
-    my $table = $self->{generator}->getTable($self->{fullName} ,1);
-    my $childRelations = $table->getChildRelations();
+    
+    my $childRelations = $self->_getChildRelations();
+    
     my $childHash = $self->_createChildHash($childRelations);
     my $duplicateChildren = $self->_findDuplicateChildren($childHash);
     
-    foreach my $childFkCol (keys %$childHash){
-	my $fullChildTable = $childHash->{$childFkCol};
+    foreach my $childKey (keys %$childHash){
+	my ($childFkCol) = $childKey =~ /(\S+)\.\.\S+/;
+	my $fullChildTable = $childHash->{$childKey};
 	my ($childSchema, $childTable) = $self->_cutFullQualifiedName($fullChildTable);
-
+	next if $childSchema eq "TESS";
 	my $instanceName = $self->_createChildInstanceVar($childFkCol, $fullChildTable, $duplicateChildren);
 	my $accessorName = $self->_createChildAccessorName($childFkCol, $fullChildTable, $duplicateChildren);
 
@@ -286,6 +287,33 @@ sub _createChildAccessors{
     }
     return $output;
 }
+
+
+#gets child relations for this table, except if this table is a superclass view, in which
+#case it gets the child relations for the real Imp table which it is a view on.
+sub _getChildRelations{
+    my ($self) = @_;
+    my $childRelations;
+    my $table = $self->{generator}->getTable($self->{fullName} ,1);
+    if ($table->isView()){
+
+	my $fullRealTableName = $table->getRealTableName();
+	my ($realTableSchema, $realTableName) = $self->_cutFullQualifiedName($fullRealTableName);
+
+	my ($superClassViewName) = $realTableName =~ /(\S+)Imp$/;
+
+	if ($superClassViewName eq $self->{tableName} && !$self->{generator}->{makeImpTables}){
+
+	    my $realTable = $self->{generator}->getTable($fullRealTableName, 1);
+	    $childRelations = $realTable->getChildRelations();
+	}
+	else {
+	    $childRelations = $table->getChildRelations();
+	}
+    }
+    return $childRelations;
+}
+
 
 sub _createChildInstanceVar{
 
@@ -318,9 +346,9 @@ sub _handleDuplicateChild{
 }
 
 
-#returns a hash whose keys are the foreign key attributes from
-#a child table to this table and whose values are the child tablenames
-#themselves (in GUS::Model::Schema::Table  format)
+#returns a hash whose keys are a concatenation of the name of a child table and 
+#the foreign key attributes from the child table to this table (separated by "..."),
+#and whose values are the child tablenames (in GUS::Model::Schema::Table format)
 sub _createChildHash{
     my ($self, $childRelations) = @_;
     my $childHash;
@@ -331,7 +359,9 @@ sub _createChildHash{
 	if ($fullChildTable =~ /(\S+)Imp$/ && !$self->{generator}->{makeImpTables}){
 	    $fullChildTable = $1;
 	}
-	$childHash->{$selfPkCol} = $fullChildTable;
+	#dtb: need unique key for each child while still preserving the child's fk column
+	$childHash->{$selfPkCol . ".." . $fullChildTable} = $fullChildTable;
+
     }
     return $childHash;
 }
