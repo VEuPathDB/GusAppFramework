@@ -143,19 +143,25 @@ sub run {
   }
 
  if($M->getCla->{c_subclass_view} eq 'SAGETag' ){
-	@positionList = ('tag');
-	eval "require GUS::Model::RAD3::SAGETag";
+     @positionList = ('tag');
+     eval "require GUS::Model::RAD3::SAGETag";
+ }
+
+  if($M->getCla->{c_subclass_view} eq 'SpotFamily'){
+      eval "require GUS::Model::RAD3::SpotFamily";
   }
+
+
 # set the global array $positionList and require the view for ElementImp at running time
   if($M->getCla->{e_subclass_view} eq 'ShortOligo' ){
-	@positionList = ('x_position', 'y_position');
-	eval "require GUS::Model::RAD3::ShortOligo";
+      @positionList = ('x_position', 'y_position');
+      eval "require GUS::Model::RAD3::ShortOligo";
   }
   
   if($M->getCla->{e_subclass_view} eq 'Spot'){
-	@positionList = ('array_row','array_column','grid_row','grid_column','sub_row','sub_column');
+      @positionList = ('array_row','array_column','grid_row','grid_column','sub_row','sub_column');
 #      @positionList = ('grid_row','grid_column','sub_row','sub_column');
-	eval "require GUS::Model::RAD3::Spot";
+      eval "require GUS::Model::RAD3::Spot";
   }
   
   if($M->getCla->{e_subclass_view} eq 'SAGETagMapping' ){
@@ -169,7 +175,8 @@ sub run {
   my $fh=new IO::File;
   my $fileName=$M->getCla->{'data_file'};
     unless ($fh->open("<$fileName")) {
-	$M->logData('Result', "Cannot open data file $fileName for reading.");
+	$M->logData('ERROR', "Cannot open data file $fileName for reading.");
+	if($M->getCla->{'commit'}){print STDERR "ERROR: Cannot open data file $fileName for reading.\n";}
 	return;
   }
   $M->parseHeader($fh);
@@ -200,7 +207,7 @@ sub checkArgs {
 
 # one of the e_subclass_view or c_subclass_view must be provided
     if(!defined $M->getCla->{e_subclass_view} && !defined $M->getCla->{c_subclass_view}){
-	$RV = join(' ','a --e_subclass_view <view name for ElementImp>', $M->getCla->{e_subclass_view},'or --c_subclass_view <view name for CompositeElementImp> must be on the commandline', $M->getCla->{c_subclass_view});
+	$RV = join(' ','a --e_subclass_view <view name for ElementImp>', $M->getCla->{e_subclass_view},'or --c_subclass_view <view name for CompositeElementImp> must be provided at the commandline', $M->getCla->{c_subclass_view});
 	$M->setOk(0);
 	$M->logData('ERROR', $RV);
 	if($M->getCla->{'commit'}){print STDERR "ERROR: $RV\n";}
@@ -247,6 +254,26 @@ sub checkArgs {
 
     $M->logData('RESULT', 'finished checking command line arguments');
     if($M->getCla->{'commit'}){print STDERR "RESULT: finished checking command line arguments\n";}
+}
+
+
+sub checkId{
+    my $M = shift;
+    my $RV;
+    $M->setOk(1);
+    my ($database, $tablename, $pkname, $id, $claname)=@_;
+
+    my $object=lc($tablename);
+    my $Object=join('::', 'GUS', 'Model', $database, $tablename);
+
+    my $object = $Object->new({$pkname=>$id});
+    if (!$object->retrieveFromDB()) {
+	$RV = join(' ','a VALID --', $claname, 'must be on the commandline', $claname, '=',$M->getCla->{$claname});
+	$M->logData('ERROR', $RV);
+	if($M->getCla->{'commit'}){print STDERR "ERROR: $RV\n";}
+	$M->setOk(0);
+    }
+    return $RV;
 }
 
 # get the attribute list for a given table
@@ -377,19 +404,17 @@ sub parseHeader{
   }
 
   my @arr = split (/\t/, $line);
-#    print "@arr\n$line\n";
+
   for (my $i=0; $i<@arr; $i++) {
   
     $arr[$i] =~ s/^\s+|\s+$//g;
     $arr[$i] =~ s/\"|\'//g;
     if ($headers{$arr[$i]}) {
-#	print "$arr[$i]\n";
 	$fh->close();
-      
-      die "No two columns can have the same name in the data file header.\n";
+	die "No two columns can have the same name in the data file header.\n";
     }
     else {
-      $headers{$arr[$i]} = 1;
+	$headers{$arr[$i]} = 1;
     }
     $cfg_rv->{'position'}->{$arr[$i]} = $i;
   }
@@ -402,14 +427,41 @@ sub parseHeader{
 sub checkHeader{
     my $M=shift; 
     $M ->setOk(1);
-    my $RV;
-    foreach my $arr (@positionList){
-	if (! defined $cfg_rv->{'position'}->{$arr}){
-	    $RV = "Missing header $arr in the data file which is required to define one element or composite element";
+    my $RV; 
+    my $e_table;
+    my $c_table;
+    if(defined $M->getCla->{e_subclass_view}){
+	$e_table=$M->getCla->{e_subclass_view};
+    }
+    if(defined $M->getCla->{c_subclass_view}){
+	$c_table=$M->getCla->{c_subclass_view};
+    }
+    if($M->getCla->{c_subclass_view} eq 'SpotFamily'){
+	$M ->setOk(0);
+	my @spotfam_attr=$M->getAttrArray("GUS::Model::RAD3::SpotFamily");
+	my @common_attr=('composite_element_id', 'subclass_view', 'parent_id', 'array_id', 'modification_date', 'user_read', 'user_write', 'group_read', 'group_write', 'other_read', 'other_write', 'row_user_id','row_group_id', 'row_project_id', 'row_alg_invocation_id');
+	foreach my $att(@spotfam_attr){
+	    next if( (grep(/^$att$/, @common_attr)) );
+	    if(defined $cfg_rv->{'position'}->{$att}){
+		$M ->setOk(1);
+		last;
+	    }
+	}
+	if(! $M->getOk){
+	    $RV = "Missing header in the data file which is required to define the spotfamily";
 	    $M ->logData("ERROR", $RV);
-	    $M ->setOk(0);
 	    if($M->getCla->{'commit'}){print STDERR "ERROR: $RV\n";}
-	    return;
+	}
+    }
+    else{
+	foreach my $arr (@positionList){
+	    if (! defined $cfg_rv->{'position'}->{$arr}){
+		$RV = "Missing header $arr in the data file which is required to define one element or composite element";
+		$M ->logData("ERROR", $RV);
+		$M ->setOk(0);
+		if($M->getCla->{'commit'}){print STDERR "ERROR: $RV\n";}
+		return;
+	    }
 	}
     }
     $M->logData('Result', 'finish checking the headers of array data file');
@@ -420,7 +472,7 @@ sub loadData{
    my ($fh)=@_;
    $M->setOk(1);
    my $RV;
-#   my @common_attr=('modification_date', 'user_read', 'user_write', 'group_read', 'group_write', 'other_read', 'other_write', 'row_user_id','row_group_id', 'row_project_id', 'row_alg_invocation_id');
+
    $M->setOk(1);
    $cfg_rv->{num_inserts} = 0; # holds current number of rows inserted into control table
    $cfg_rv->{warnings} = "";  
@@ -444,7 +496,7 @@ sub loadData{
    while ($line = <$fh>) {
      $cfg_rv->{n}++;
      if (($cfg_rv->{n})%200==0) {
-	 $RV="Read $cfg_rv->{n} datalines including empty line";
+	 $RV="Read $cfg_rv->{n} datalines including empty lines";
 	 $M->logData('Result', $RV);
 	 if($M->getCla->{'commit'}){
 	     $RV = "Processed $cfg_rv->{n} dataline including empty line, Inserted $cfg_rv->{num_inserts} rows into control table "; 
@@ -495,14 +547,14 @@ sub loadData{
      my ($spot_id, $spot_family_id);
 
 # get the element_id for the row
-     $cfg_rv->{row_id}=getRow_Id(@arr);
+     $cfg_rv->{row_id}=getRow_Id($subclass_view, @arr);
      if($cfg_rv->{skip_line}){
 	 next; # skip this row
      }
 # insert a row into control table
      my $row_id=$cfg_rv->{row_id};
      my $table_id=$cfg_rv->{table_id};
-     $M->updateSpotResult($tabe_id, $row_id, @arr);
+     $M->updateControl($tabe_id, $row_id, @arr);
  
      my $numOfLine=$cfg_rv->{n};
 
@@ -512,27 +564,19 @@ sub loadData{
  }#end of while loop
 
 #   $dbh->disconnect();
-   $RV="Total datalines read (after header): $cfg_rv->{n}.";
+   $RV="Total datalines read (after header) including empty lines: $cfg_rv->{n}.";
    if($M->getCla->{'commit'}){print STDERR "RESULT: $RV\n";}
    
    $M->logData('Result', $RV);
    my $total_insert;
-   if($cfg_rv->{num_inserts}==0){
-       $total_insert=$cfg_rv->{num_spot_family};
-   }
-   else{
-       $total_insert=$cfg_rv->{num_inserts};
-   }
-
-   $RV="Number of lines which have been inserted into database (after header): $total_insert.";
+  
+   $total_insert=$cfg_rv->{num_inserts};
+  
+   $RV="Number of lines which have been inserted into control table in database (after header): $total_insert.";
    $M->logData('Result', $RV);
    if($M->getCla->{'commit'}){print STDERR "RESULT: $RV\n";}
-   
-   $RV="Number of records which have been inserted into CompositeElementImp table (after header): $cfg_rv->{num_spot_family}.";
-   $M->logData('Result', $RV);
-   if($M->getCla->{'commit'}){print STDERR "RESULT: $RV\n";}
-   
-   $RV = "Processed $cfg_rv->{n} dataline, Inserted $cfg_rv->{num_inserts} ElementResults and $cfg_rv->{num_spot_family} CompositeElementResults."; 
+     
+   $RV = "Processed $cfg_rv->{n} dataline, Inserted $cfg_rv->{num_inserts} entries in control table."; 
    return $RV;
    
 }
@@ -559,8 +603,8 @@ sub getTable_Id{
 
 sub getRow_Id{
  my $M = shift;
- my (@arr)=@_;
- my ($subclass_view);
+ my ($subclass_view, @arr)=@_;
+
  my @attributesToNotRetrieve = ('modification_date', 'row_alg_invocation_id');     
   
 # for querying ElementImp or CompositeElementImp table to set the element_id or composite_element_id
@@ -590,17 +634,29 @@ sub getRow_Id{
  if(defined $subclass_view){
      my $sub_hash;
      my $sub_class;
-     $sub_hash->{'array_id'} = $array_id;
-     foreach my $item(@positionList){
-	 if(defined $arr[$pos->{$item}]){
-	     $sub_hash->{$item} = $arr[$pos->{$item}]; 
+     $sub_hash->{'array_id'} = $M->getCla->{array_id};
+     if($subclass_view=~ /^SpotFamily$/){
+	 my @spotfam_attr=$M->getAttrArray("GUS::Model::RAD3::SpotFamily");
+	 my @common_attr=('composite_element_id', 'subclass_view', 'parent_id', 'array_id', 'modification_date', 'user_read', 'user_write', 'group_read', 'group_write', 'other_read', 'other_write', 'row_user_id','row_group_id', 'row_project_id', 'row_alg_invocation_id');
+	 foreach my $att(@spotfam_attr){
+	     next if( (grep(/^$att$/, @common_attr)) );
+	     if(defined $arr[$pos->{$att}] ){
+		 $sub_hash->{$att} = $arr[$pos->{$att}]; 
+	     }
 	 }
-	 else{
-	     $cfg_rv->{warnings} = "Data file line $cfg_rv->{n} is missing attribute ElementImp.$item, which is mandatory.\nData from this data line were not loaded.\nHere $cfg_rv->{n} is the number of lines (including empty ones) after the header.\n\n";
-	     $M->logData('Warning', $cfg_rv->{warnings});
-	     if($M->getCla->{'commit'}){print STDERR "Warning: $RV\n";}
-	     $cfg_rv->{skip_line} = 1;
-	     last; # exit the foreach loop
+     }
+     else{
+	 foreach my $item(@positionList){
+	     if(defined $arr[$pos->{$item}]){
+		 $sub_hash->{$item} = $arr[$pos->{$item}]; 
+	     }
+	     else{
+		 $cfg_rv->{warnings} = "Data file line $cfg_rv->{n} is missing attribute ElementImp.$item, which is mandatory.\nData from this data line were not loaded.\nHere $cfg_rv->{n} is the number of lines (including empty ones) after the header.\n\n";
+		 $M->logData('Warning', $cfg_rv->{warnings});
+		 if($M->getCla->{'commit'}){print STDERR "Warning: $RV\n";}
+		 $cfg_rv->{skip_line} = 1;
+		 last; # exit the foreach loop
+	     }
 	 }
      }
 
@@ -638,7 +694,7 @@ sub updateControl{
     for (my $i=0; $i<@control_attr; $i++) {
 	my $attr;
 	
-	$attr=$control_attr[$i];
+	$attr="control.$control_attr[$i]";
 	
 	if ( defined $pos->{$attr} && $arr[$pos->{$attr}] ne "") {
 	    $control_hash->{$control_attr[$i]} = $arr[$pos->{$attr}];
@@ -672,6 +728,9 @@ sub updateControl{
 	     $RV="Data line no. $cfg_rv->{n}\t cann't be inserted into Control table\tSkip this one";
 	     $M->logData('Warning', $RV);
 	     if($M->getCla->{'commit'}){print STDERR "Warning: $RV\n";}
+	 }
+	 else{
+	     $cfg_rv->{num_inserts}++;
 	 }
      }
 }
