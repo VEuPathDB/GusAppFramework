@@ -159,7 +159,7 @@ NOTES
 my @properties =
 (
     ["GPRFilePath", "",""],
-    ["tiffFilePath", "NOVALUEPROVIDED",""],
+    ["tiffFilePath", "",""],
     ["Hyb_Protocol_ID", "",""],
     ["Acq_Protocol_ID", "",""],
     ["Quant_Protocol_ID", "",""],
@@ -171,7 +171,7 @@ my @properties =
     ["hybDates", "",""],
     ["allHybDatesSame", "",""],
     ["allHybDates", "",""],
-    ["description", "",""],
+    ["description", "NONE",""],
     ["scanDate", "",""]
  ); 
 
@@ -288,8 +288,7 @@ sub populateRelatedTables {
 
   my $dbh = $self->getQueryHandle();
   my $sth = $dbh->prepare("select assay_id from rad3.studyassay where study_id = ?");
-  $sth->execute("3");
-  #$sth->execute("$studyId");
+  $sth->execute("$studyId");
 
   my @assayIds = ();
   while (my @row = $sth->fetchrow_array) {
@@ -610,7 +609,7 @@ sub createGusAssay {
 
   my $arrayId       = $self->{propertySet}->getProp("arrayId");
   my $batchId       = $self->{propertySet}->getProp("batchId");
-  my $description   = $self->{propertySet}->getProp("description");
+#  my $description   = $self->{propertySet}->getProp("description");
   my $hybProtocolId = $self->{propertySet}->getProp("Hyb_Protocol_ID");
   my $hybOperatorId = $self->{propertySet}->getProp("Hyb_Operator_ID");
 
@@ -623,7 +622,7 @@ sub createGusAssay {
     operator_id            => $hybOperatorId,
     name                   => $assayName,
     array_batch_identifier => $batchId,
-    description            => $description
+ #   description            => $description
   };
 
   my $assay = GUS::Model::RAD3::Assay->new($params);
