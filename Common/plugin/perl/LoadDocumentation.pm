@@ -235,7 +235,7 @@ sub process {
 
 	else { ## no table name in db
 	  $self->logAlert("NOT INSERTED! Table $table_nm does not exist");
-	  return;
+#	  return;
         }
 	$db->setGlobalNoVersion(0);
 	
