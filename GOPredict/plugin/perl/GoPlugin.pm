@@ -337,7 +337,7 @@ sub new {
 										      $proteinTableId,
 										      $self->getCla()->{deprecated_file}, 
 										      $self->getCla()->{create_new_deprecated_file}
-					  ));
+					  )) unless $self->getCla()->{deprecate_associations};
     
     my $returnString = "GoPlugin ran successfully.  ";
         
