@@ -155,25 +155,25 @@ sub setUseDbiTableOnly { my($self,$val) = @_; $self->{useDbiTableOnly} = $val; }
 sub getUseDbiTableOnly { my($self) = @_; return $self->{useDbiTableOnly}; }
 
 sub getTable {
-  my ($self,$tableClassName,$dbitable) = @_;
+  my ($self,$className,$dbitable) = @_;
 
-  
+  $className = $self->getFullTableClassName($className);
 
-  if ( ! $self->{'tables'}->{$tableClassName} ) {
+  if ( ! $self->{'tables'}->{$className} ) {
     my ($sc,$tb);
     if($dbitable || $self->getUseDbiTableOnly()){
-      $self->{'tables'}->{$tableClassName} =
-	GUS::ObjRelP::DbiTable->new($tableClassName,$self);
+      $self->{'tables'}->{$className} =
+	GUS::ObjRelP::DbiTable->new($className,$self);
     }else{
-      my $tableName = $tableClassName . "_Table";
+      my $tableName = $className . "_Table";
       my $evalstmt = "require $tableName";
       print STDERR "$evalstmt\n" if $debug;
       eval($evalstmt);
-      $self->{'tables'}->{$tableClassName} = 
-	$tableName->new($tableClassName,$self);
+      $self->{'tables'}->{$className} = 
+	$tableName->new($className,$self);
     }
   }
-  return $self->{'tables'}->{$tableClassName};
+  return $self->{'tables'}->{$className};
 }
 
 sub getDateFunction {
