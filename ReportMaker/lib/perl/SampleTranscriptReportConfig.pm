@@ -13,6 +13,11 @@ sub createReport {
 
   my @columns;
 
+  my $mappedToCol =
+    GUS::ReportMaker::DefaultColumn->new("$mappedToName",
+					 "Mapped To");
+  push(@columns, $mappedToCol);
+
   my $lengthCol =
     GUS::ReportMaker::DefaultColumn->new("Length",
 					 "Sequence Length");
@@ -75,6 +80,16 @@ sub createReport {
     GUS::ReportMaker::DefaultColumn->new("MGI",
 					 "MGI ID");
   push(@columns, $mgiCol);
+
+
+  my $mappedToSql = 
+"select distinct tmp.$primaryKeyName, tmp.$mappedToName
+from $tempTable tmp
+";
+  my $mappedToQuery = 
+    GUS::ReportMaker::Query->new($mappedToSql,
+				 [$mappedToCol,
+				 ]);
 
   my $assemSql = 
 "select distinct tmp.$primaryKeyName, description, tn.name, length,
@@ -187,6 +202,7 @@ where s.query_id = tmp.$primaryKeyName
 				       $genecardsQuery,
 				       $mgiQuery,
 				       $geneQuery,
+				       $mappedToQuery,
 				       $motifsQuery],
 				      \@columns);
 }
