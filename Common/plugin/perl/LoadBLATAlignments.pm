@@ -357,7 +357,7 @@ sub keepBestAlignments {
 	$prev_seq_id = $sid;
 	$prev_blat_group{$bid} = { score=>$score, pct_id=>$pct_id, pct_al=>$pct_al };
     }
-    my ($al, $bs) = &precessOneGroup($dbh, $prev_seq_id, $prev_best_score, \%prev_blat_group);
+    my ($al, $bs) = &processOneGroup($dbh, $prev_seq_id, $prev_best_score, \%prev_blat_group);
     $tot_sq++; $tot_al += $al; $tot_bs_sq++ if $bs; $tot_bs += $bs;
     $sth->finish;
 
@@ -389,8 +389,8 @@ sub preProcess {
     my ($blatDir, $blatFiles, $fileList, $queryFile, $queryTableId, $targetTableId, $commit) = @_;
     die "LoadBLATAlignments: blat files not defined" unless $blatDir || $blatFiles || $fileList;
     die "LoadBLATAlignments: query_file not defined" unless $queryFile;
-    die "LoadBLATAlignments: unrecognized query_table_id" if (!($queryTableId =~ /^56|89|245|339$/));
-    die "LoadBLATAlignments: unrecognized target_table_id" if (!($targetTableId =~ /^56|89|245$/));
+    die "LoadBLATAlignments: unrecognized query_table_id" if (!($queryTableId =~ /^56|57|89|245|339$/));
+    die "LoadBLATAlignments: unrecognized target_table_id" if (!($targetTableId =~ /^56|57|89|245|339$/));
     print "LoadBLATAlignments: COMMIT ", $commit ? "****ON****" : "OFF", "\n";
 
     # Read list of files if need be
@@ -567,7 +567,7 @@ sub loadAlignment {
     #
     my $origQueryId = $query_id;
     # HACK
-    $query_id = &getQueryNaSeqId($dbh, $query_id) if $queryTableId == 89 && $queryExtDbRelId != 2;
+    $query_id = &getQueryNaSeqId($dbh, $query_id, $queryTableId);
     $query_id =~ s/[^0-9]//g;
 
     # Check to see whether this alignment has already been loaded
@@ -647,9 +647,18 @@ sub loadAlignment {
 # Return the na_sequence_id for of a TIGR TC.
 #
 sub getQueryNaSeqId {
-    my ($dbh, $qid) = @_;
+    my ($dbh, $qid, $queryTableId) = @_;
 
-    my $sth = $dbh->prepareAndExecute("select na_sequence_id from $TPREF.externalnasequence where source_id = '$qid'");
+    return $qid if $queryTableId =~ /^56|339$/;
+
+    my $sql;
+    if ($queryTableId == 89) {
+	$sql = "select na_sequence_id from $TPREF.externalnasequence where source_id = '$qid'";
+    } elsif ($queryTableId == 57) {
+	$sql = "select na_sequence_id from $TPREF.assemblysequence where assembly_sequence_id = $qid";
+    }
+    
+    my $sth = $dbh->prepareAndExecute($sql);
     my($sid) =  $sth->fetchrow_array();
     $sth->finish();
     return $sid;
