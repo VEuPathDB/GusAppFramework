@@ -1,9 +1,9 @@
-#!/usr/bin/perl
+#!@perl@
 
 # -----------------------------------------------------------------------
 # Database.pm
 #
-# An Oracle database.
+# Perl object that represents an Oracle database (instance).
 #
 # Created: Sat Feb 24 11:27:39 EST 2001
 #
@@ -88,7 +88,7 @@ sub backupArchivedRedoLogs {
     my $testOnly = $args->{testOnly};
 
     # A hack to prevent trying to put too many files on one
-    # tape; specifies a maximum.
+    # tape; allows a maximum to be specified.
     #
     my $maxFiles = $args->{maxFiles};
 
@@ -198,7 +198,7 @@ sub backupArchivedRedoLogs {
 	    }
 	}
 
-	# Put all log files from a single directory in the same tar file
+	# Rename files once they've been backed up
 	#
 	&$backupFn($filesToTar) if (scalar(@$filesToTar) > 0);
 	foreach my $lf (@$filesToZip) {

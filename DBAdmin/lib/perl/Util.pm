@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!@perl@
 
 # -----------------------------------------------------------------------
 # Util.pm
@@ -16,17 +16,6 @@ package Util;
 
 use DBI;
 use DBD::Oracle;
-
-# enumerate objects of a given type owned by a specified schema
-# along with all aliases
-
-# create a new table based on an old one
-
-# remove constraints and indexes from an old table
-
-# add constraints and indexes to a new table
-
-# copy data from an old table to a new table
 
 # -----------------------------------------------------------------------
 # Configuration
@@ -63,7 +52,7 @@ sub establishLogin {
     return $dbh;
 }
 
-# $returnMode  array - arrayref of arrayrefs
+# $returnMode  'array' - arrayref of arrayrefs
 #              'hash' - arrayref of hashrefs
 #              'scalar' - arrayref of scalar values, only if 1 column
 #

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!@perl@
 
 # -----------------------------------------------------------------------
 # Schema.pm
@@ -38,7 +38,7 @@ sub new {
 sub toString {
     my($self) = @_;
     return $self->{name};
-gettables}
+}
 
 # Return an arrayref of all the tables owned by this schema.
 #
