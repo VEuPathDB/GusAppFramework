@@ -137,7 +137,7 @@ sub run {
     my $subjects;
     ($subjects, $eof) = $self->parseQueries($fh, $args->{batchSize}, \%ignore, $args,
 					    $args->{testnumber});
-    $self->insertSubjects($dbh, $subjects, $query_tbl_id, $subj_tbl_id);
+    $self->insertSubjects($self->getDb(), $subjects, $query_tbl_id, $subj_tbl_id);
   }
 }
 
@@ -337,13 +337,15 @@ sub parseSpan {
 
 # insert a batch of subjects (with their spans)
 sub insertSubjects {
-  my ($self, $dbh, $subjects, $query_table_id, $subj_table_id) = @_;
+  my ($self, $db, $subjects, $query_table_id, $subj_table_id) = @_;
 
-  my $simStmt = $self->getInsertSubjStmt($dbh, $query_table_id,$subj_table_id);
+  my $simStmt = $self->getInsertSubjStmt($db->getDbHandle(), $query_table_id,$subj_table_id);
 
-  my $spanStmt = $self->getInsertSpanStmt($dbh);
- 
-  my $nextIdStmt = $dbh->prepare("select dots.similarity_SQ.NEXTVAL from DUAL");
+  my $spanStmt = $self->getInsertSpanStmt($db);
+
+  my $nextvalSql = $db->getDbPlatform()->getNextValSql("dots.similarity");
+
+  my $nextIdStmt = $db->getDbHandle()->prepare("select $nextvalSql from DUAL");
 
   my $verbose = $self->getArgs()->{verbose};
   my $noHSPs = $self->getArgs()->{noHSPs};
@@ -391,9 +393,9 @@ sub insertSubjects {
 
   if ($self->getArgs()->{commit}) {
     print STDERR "Committing\n";
-    $dbh->commit();
+    $db->getDbHandle()->commit();
   } else {
-    $dbh->rollback();
+    $db->getDbHandle()->rollback();
     print STDERR "Rolling back\n";
   }
 }
@@ -421,17 +423,19 @@ sub getInsertSubjStmt {
 }
 
 sub getInsertSpanStmt {
-  my ($self, $dbh) = @_;
+  my ($self, $db) = @_;
 
   my $algInvId = $self->getAlgInvocation()->getId();
   my $rowUserId = $self->getAlgInvocation()->getRowUserId();
   my $rowGroupId = $self->getAlgInvocation()->getRowGroupId();
   my $rowProjectId = $self->getAlgInvocation()->getRowProjectId();
 
+  my $nextvalSql = $db->getDbPlatform()->getNextValSql("dots.SimilaritySpan");
+
   my $sql = 
 "insert into dots.SimilaritySpan Values " .
 #similarity_span_id, similarity_id, match_length, number_identical,
-"(dots.similarityspan_SQ.nextval,                  ?,             ?,            ?, ".
+"($nextvalSql,                  ?,             ?,            ?, ".
 #number_positive, score, bit_score, pvalue_mant, pvalue_exp,
 "?,               ?,     ?,         ?,           ?,".
 #subject_start, subject_end, query_start, query_end,
@@ -439,7 +443,7 @@ sub getInsertSpanStmt {
 #is_reversed, reading_frame
 "?,           ?, ".
 "SYSDATE, 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
-  return $dbh->prepare($sql);
+  return $db->getDbHandle()->prepare($sql);
 }
 
 sub getNextId {
