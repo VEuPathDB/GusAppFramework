@@ -75,7 +75,7 @@ PLUGIN_NOTES
 		 reqd  => 1,
 		 constraintFunc=> undef,
 		 isList=>0,
-		}),
+		}), 
      integerArg({name  => 'taxon_id',
 		 descr => 'taxon_id',
 		 reqd  => 1,
