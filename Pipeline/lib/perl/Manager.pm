@@ -168,6 +168,13 @@ sub copyFromLiniac {
     $self->error("$toDir/$fromFile wasn't successfully copied from liniac\n") unless -e "$toDir/$fromFile";
 }
 
+sub runCmdOnLiniac {
+    my ($self, $server, $cmd, $user) = @_;
+
+    my $ssh_fro = ($user ? $user . '@' . $server : $server);
+    $self->runCmd("ssh -2 $ssh_fro '$cmd'");
+}
+
 # Write out a message telling user what to start up on liniac, then exit
 sub exitToLiniac {
     my ($self, $cmdMsg, $logMsg, $immed) = @_;
