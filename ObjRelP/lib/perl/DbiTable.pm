@@ -444,10 +444,10 @@ sub getParentRelations {
         push(@{$self->{'parents'}},[$pktable, $selfcol, $pkcol]);
       }
       ##now do the four generic tables AlgorithmInvocation,UserInfo,GroupInfo,Project
-      push(@{$self->{'parents'}},['Core::AlgorithmInvocation','row_alg_invocation_id','algorithm_invocation_id']);
-      push(@{$self->{'parents'}},['Core::GroupInfo','row_group_id','group_id']);
-      push(@{$self->{'parents'}},['Core::UserInfo','row_user_id','user_id']);
-      push(@{$self->{'parents'}},['Core::ProjectInfo','row_project_id','project_id']);
+      push(@{$self->{'parents'}},['GUS::Model::Core::AlgorithmInvocation','row_alg_invocation_id','algorithm_invocation_id']);
+      push(@{$self->{'parents'}},['GUS::Model::Core::GroupInfo','row_group_id','group_id']);
+      push(@{$self->{'parents'}},['GUS::Model::Core::UserInfo','row_user_id','user_id']);
+      push(@{$self->{'parents'}},['GUS::Model::Core::ProjectInfo','row_project_id','project_id']);
     } else {
       die "DbiTable: getParentRelations not implemented yet for ".$self->getDatabase()->getDSN().".\n";
     }

@@ -1,7 +1,8 @@
 #!/usr/bin/perl
 
 use strict;
-use lib "/usr/lib/perl5/site_perl/5.6.0/";
+#use lib "/usr/lib/perl5/site_perl/5.6.0/";
+use lib "/home/jschug/Src/";
 use lib "$ENV{GUS_HOME}/lib/perl";
 use CBIL::Util::Disp;
 use GUS::ObjRelP::DbiDatabase;
@@ -72,6 +73,22 @@ sub printFile {
 sub printList {
   my ($name, $list) = @_;
 
+  if (ref($list) EQ "ARRAY") {
+    my @sorted;
+    if (ref($list->[0]) EQ "ARRAY") {
+      @sorted = sort {$a->[0] cmp $b->[0]
+			||$a->[1] cmp $b->[1]
+			  ||$a->[2] cmp $b->[2]
+			    ||$a->[3] cmp $b->[3]
+			      ||$a->[4] cmp $b->[4]
+				|| $a->[5] cmp $b->[5]} @$list ;
+    } elsif (ref($list->[0]) EQ "HASH") {
+      @sorted = sort {$a->{col} cmp $b->{col} } @$list ;
+    } else {
+      @sorted = sort @$list ;
+    }
+    $list = \@sorted;
+  }
   print OUT "\n\n============== $name ======\n";
   CBIL::Util::Disp::Display($list, '', *OUT);
 }

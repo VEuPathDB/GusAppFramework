@@ -70,6 +70,7 @@ sub _genDefaultParams {
   $s .= '  $self->setIsView('.$self->{table}->isView().");\n\n";
   $s .= '  $self->setParentRelations('.$self->_genParentRelationsData().");\n\n";
   $s .= '  $self->setChildRelations('.$self->_genChildRelationsData().");\n\n";
+  $s .= $self->_genSpecialRelatives();
   $s .= '  $self->setHasSequence('.($self->{table}->hasSequence() ? 1 : 0).");\n\n";
   $s .= '  $self->setHasPKSequence('.($self->{table}->hasPKSequence() ? 1 : 0).");\n\n";
   my $pkeys = $self->{table}->getPrimaryKeyAttributes();
