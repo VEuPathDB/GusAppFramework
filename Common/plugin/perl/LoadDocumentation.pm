@@ -160,6 +160,12 @@ sub process {
 
 	  ## documentation for the table (attribute name is NULL) - SUBMIT
 	  elsif ($attribute_nm eq "NULL" || $attribute_nm eq "null"  || $attribute_nm eq ""){
+	    ## SKIP if documentation is identical to what is already in db
+	    if ($html eq $html_dc){ 
+	      $self->logAlert("ALREADY EXISTS! Documentation for $table_nm NOT OVERWRITTEN!");
+	      return; # SKIP
+	    }
+
 	    $self->logVerbose("Documentation for table (no attribute supplied)");
 
 	    ## bind table id to DatabaseDocumentation object
@@ -180,14 +186,14 @@ sub process {
 
 	  ## attribute is not valid for this table - DON'T SUBMIT
 	  elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){
-	    $self->logAlert("NOT INSERTED! $attribute_nm is not a valid attribute for table: $table_nm");
+	    $self->logAlert("NOT INSERTED! $attribute_nm is not a valid attribute for $table_nm");
 	  }
 
 	}#end if table exists
 
 	## no table name in db
 	else {
-	  $self->logAlert("NOT INSERTED! Table $table_nm does not exist");
+	  $self->logAlert("NOT INSERTED! $table_nm does not exist");
 	  return;
         }
 	$db->setGlobalNoVersion(0);
