@@ -689,6 +689,15 @@ sub getFullTableClassName {
   return $self->{'fullClassNames'}->{$className};
 }
 
+sub className2oracleName {
+  my ($className) = @_;
+
+  $className =~ s/GUS::Model:://;
+  die "Illegal className $className (not in schema::table format)"
+    unless $className =~ /\w+::\w+/;
+  $className =~ s/::/./;
+  return $className;
+}
 
 1;
 

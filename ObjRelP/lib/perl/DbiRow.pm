@@ -80,12 +80,13 @@ sub getTable {
 #-----------------------------------------------------------
 
 sub set {
-  my ($self,$att,$value) = @_; 
+  my ($self,$att,$value) = @_;
+  $self->checkAttribute($att);
+
   if (! defined $value) {
     return;
   }
-  $self->checkAttribute($att);
-  $self->{'attributes'}->{$att} = $value; 
+  $self->{'attributes'}->{$att} = $value;
   push (@{$self->{'attributes_set'}},$att);
 }
 
@@ -95,6 +96,7 @@ sub set {
 
 sub get {
   my ($self,$att) = @_; 
+  $self->checkAttribute($att);
   if (! exists $self->{'attributes'}->{$att}) { 
     if ($self->{'didNotRetrieve'}->{$att}) {
       my $err = "ERROR: ".$self->getTableName().".".$self->getId().": Did not retrieve value from DB for $att!\n";
@@ -761,6 +763,11 @@ sub checkAttributeHash {
   foreach my $att (keys %$newAttributeHash) {
     $self->checkAttribute($att);
   }
+}
+
+sub className2oracleName {
+  my ($className) = @_;
+  return GUS::ObjRelP::DbiTable::className2oracleName($className);
 }
 
 1;

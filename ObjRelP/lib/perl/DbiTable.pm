@@ -985,6 +985,11 @@ sub getFullClassName {
   return $self->getDatabase()->getFullTableClassName($className);
 }
 
+sub className2oracleName {
+  my ($className) = @_;
+  return GUS::ObjRelP::DbiDatabase::className2oracleName($className);
+}
+
 1;
 
 
