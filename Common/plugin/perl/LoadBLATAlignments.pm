@@ -444,7 +444,11 @@ sub loadAlignment {
     my $target_id = $align->get('t_name');
     #HACK: the gap tables are now only in gus, not gusdev
     my $gapTable = undef;
-    $gapTable = "mm2.${target_id}_gap\@gus.pcbi.upenn.edu" if $targetExtDbId == 5093;
+    if ($targetTaxonId == 8) {
+	$gapTable = "ygan.${target_id}_gap";
+    } elsif($targetTaxonId == 14) {
+	$gapTable = "mm2.${target_id}_gap\@gus.pcbi.upenn.edu";
+    }
 
     # Map target query name -> na_sequence_id if required
     #
@@ -494,7 +498,7 @@ sub loadAlignment {
 
     # Retrieve sequence and compute quality
     #
-    my $querySeq = $qIndex->getSequence(TO->new({accno => $origQueryId, strip => 1}));
+    my $querySeq = $qIndex->getSequence(CBIL::Util::TO->new({accno => $origQueryId, strip => 1}));
     my @a = $align->checkQuality($querySeq->{'seq'}, $qualityParams, $gapTable, $dbh);
 
     # determine BLAT alignment quality id (as specified in BlatAlignmentQuality table)
