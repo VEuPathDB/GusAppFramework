@@ -35,7 +35,6 @@ my $DBI_ATTS = {
     RaiseError => 0, 
     AutoCommit => 0, 
     LongReadLen => 10000000,
-    ora_session_mode => 2     # connect as SYSDBA
 };
 my $TEST_ONLY = 0;
 my $OLD_SUFFIX = "_dm";

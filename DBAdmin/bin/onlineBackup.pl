@@ -31,7 +31,6 @@ my $DB_HOST = "erebus";
 my $DBI_ATTS = { 
     RaiseError => 0, 
     LongReadLen => 10000000,
-    ora_session_mode => 2     # connect as SYSDBA
     };
 
 # -----------------------------------------------------------------------

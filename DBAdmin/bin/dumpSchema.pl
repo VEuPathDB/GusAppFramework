@@ -169,7 +169,6 @@ if ($tables =~ /\S/) {
 # Establish database login
 
 my $db = GUS::DBAdmin::Database->new({sid => $dbSid, host => $dbHost, port => $dbPort});
-if ($login =~ /^sys$/i) { $DBI_ATTS->{ora_session_mode} = 2; }
 my $dbh = &GUS::DBAdmin::Util::establishLogin($login, $db->getDbiStr(), $DBI_ATTS);
 
 # -----------------------------------------------------------------------
