@@ -63,6 +63,14 @@ sub new {
                      default        => 1,
                    }),
 
+        booleanArg({ name           => 'Overhead',
+                     descr          => 'when true DTD will include overhead columns',
+                     reqd           => 0,
+                     isList         => 0,
+                     constraintFunc => sub { CfIsAnything(@_) },
+                     default        => 1,
+                   }),
+
         integerArg({ name           => 'Depth',
                      descr          => 'follow child tables to this depth',
                      reqd           => 0,
@@ -158,6 +166,8 @@ sub _doTable {
       my $isAtt_b = $Self->getArgs()->{Attributes};
 
       $overhead_b = 1 if $att->{col} eq 'modification_date';
+
+      last if ($overhead_b && !$Self->getArgs()->{Overhead});
 
       $isAtt_b = 0 if ($att->{type} eq 'CLOB');
       $isAtt_b = 0 if ($att->{type} eq 'VARCHAR2' && $att->{length} >= $Self->getArgs()->{LongStrings});
