@@ -227,7 +227,7 @@ sub loadHspsInPlasmoGroups{
 		$counter = 0;
 		@spansToSubmit = ();
 	    }
-	    if ($globalCounter >= $testNumber){
+	    if ($testNumber && $globalCounter >= $testNumber){
 		$self->log ("done testing; test number is $testNumber");
 		
 		$self->submitAndCommit(@spansToSubmit);
