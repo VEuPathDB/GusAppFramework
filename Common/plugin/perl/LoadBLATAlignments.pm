@@ -435,6 +435,8 @@ sub keepBestAlignments {
 	    }
 	}
     }
+    $dbh->commit();
+    $alnGrps = undef;
 
     my $summary = "$tot_sq DoTS with $tot_al ($tot_bs) alignments (that are bests)\n";
     print $summary;
@@ -451,6 +453,7 @@ sub keepBestAlignments {
             . "and target_external_db_release_id = $targetExtDbRelId "
             . "and (is_best_alignment is null or is_best_alignment = 0)";
 	$dbh->do($sql) or die "could not run $sql:!\n";
+	$dbh->commit();
 	$summary .= "(non-best alignments deleted from db)\n";
     }
 
