@@ -1,0 +1,284 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>GUS::RAD::Plugin::BatchArrayResultLoader -  Loads into the appropriate view of RAD3.ElementResultImp quantification data from a collection of files all having the same format.</title>
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#tables_affected">TABLES AFFECTED</a></li>
+	<li><a href="#tables_depended_on">TABLES DEPENDED ON</a></li>
+	<li><a href="#arguments_in_detail">ARGUMENTS IN DETAIL</a></li>
+	<li><a href="#notes">NOTES</a></li>
+	<ul>
+
+		<li><a href="#assay_id_file"><em>assay_id_file</em></a></li>
+		<li><a href="#cfg_file"><em>cfg_file</em></a></li>
+		<li><a href="#warning_(for_noncbil_instances)"><em>Warning (for non-CBIL Instances)</em></a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>GUS::RAD::Plugin::BatchArrayResultLoader -  Loads into the appropriate view of RAD3.(Composite)ElementResultImp quantification data from a collection of files all having the same format.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>ga GUS::RAD::Plugin::BatchArrayResultLoader --help</p>
+<p>ga GUS::RAD::Plugin::BatchArrayResultLoader --helpHTML</p>
+<p>ga GUS::RAD::Plugin::BatchArrayResultLoader [--study_id integer] [--assay_id_file file] --cfg_file file --software string --log_path string [--test_num_line integer] [--test_num_assay integer] [--skip string-list] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) an xml configuration file, and (iii) a quantification protocol or software (one of: <em>MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, and MOID</em>). The plugin then uploads into the appropriate view of RAD3.(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. &lt;BIf any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded&gt;.</p>
+<p>
+</p>
+<hr />
+<h1><a name="tables_affected">TABLES AFFECTED</a></h1>
+<dl>
+<dt><strong><a name="item_rad3%3a%3aelementresultimp"><strong>RAD3::ElementResultImp</strong></a></strong><br />
+</dt>
+<p>Enters the quantification results here, if the protocol is GenePix or ArrayVision</p>
+<dt><strong><a name="item_rad3%3a%3acompositeelementresultimp"><strong>RAD3::CompositeElementResultImp</strong></a></strong><br />
+</dt>
+<p>Enters the quantification results here, if the protocol is MAS4.0, MAS5.0, RMAExpress, or MOID</p>
+<dt><strong><a name="item_rad3%3a%3arelatedquantification"><strong>RAD3::RelatedQuantification</strong></a></strong><br />
+</dt>
+<p>Inserts entries in this table for the quantifications at stake, if missing</p>
+<dt><strong><a name="item_core%3a%3aalgorithminvocation"><strong>Core::AlgorithmInvocation</strong></a></strong><br />
+</dt>
+<p>The plugin manager (ga) inserts a row into this table describing the plugin and the parameter values used</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="tables_depended_on">TABLES DEPENDED ON</a></h1>
+<dl>
+<dt><strong><a name="item_rad3%3a%3astudy"><strong>RAD3::Study</strong></a></strong><br />
+</dt>
+<p>The study, if study_id is passed in</p>
+<dt><strong><a name="item_rad3%3a%3astudyassay"><strong>RAD3::StudyAssay</strong></a></strong><br />
+</dt>
+<p>The table linking the assays to the study, if study_id is passed in</p>
+<dt><strong><a name="item_rad3%3a%3aassay"><strong>RAD3::Assay</strong></a></strong><br />
+</dt>
+<p>The assays passed in</p>
+<dt><strong><a name="item_sres%3a%3aexternaldatabaserelease"><strong>SRes::ExternalDatabaseRelease</strong></a></strong><br />
+</dt>
+<p>The external database relase for the assays passed in</p>
+<dt><strong><a name="item_rad3%3a%3aarray"><strong>RAD3::Array</strong></a></strong><br />
+</dt>
+<p>The <code>array(s)</code> used in the assays passed in</p>
+<dt><strong><a name="item_rad3%3a%3aontologyentry"><strong>RAD3::OntologyEntry</strong></a></strong><br />
+</dt>
+<p>The platform and substrate information for the arrays involved</p>
+<dt><strong><a name="item_rad3%3a%3aacquisition"><strong>RAD3::Acquisition</strong></a></strong><br />
+</dt>
+<p>The acquisitions for the assays passed in</p>
+<dt><strong><a name="item_rad3%3a%3aquantification"><strong>RAD3::Quantification</strong></a></strong><br />
+</dt>
+<p>The quantifications for the assays passed in</p>
+<dt><strong><a name="item_rad3%3a%3arelatedacquisition"><strong>RAD3::RelatedAcquisition</strong></a></strong><br />
+</dt>
+<p>The associations between the acquisitions for the assays passed in</p>
+<dt><strong><strong>RAD3::RelatedQuantification</strong></strong><br />
+</dt>
+<p>The associations between the quantifications for the assays passed in</p>
+<dt><strong><a name="item_rad3%3a%3achannel"><strong>RAD3::Channel</strong></a></strong><br />
+</dt>
+<p>The channels for the acquisitions relative to the assays passed in</p>
+<dt><strong><a name="item_rad3%3a%3aprotocol"><strong>RAD3::Protocol</strong></a></strong><br />
+</dt>
+<p>The quantification protocol of interest</p>
+<dt><strong><a name="item_core%3a%3aalgorithm"><strong>Core::Algorithm</strong></a></strong><br />
+</dt>
+<p>The algorithm (ie, this plugin) responsible for the update</p>
+<dt><strong><a name="item_core%3a%3aalgorithmimplementation"><strong>Core::AlgorithmImplementation</strong></a></strong><br />
+</dt>
+<p>The specific implementation of it</p>
+<dt><strong><a name="item_core%3a%3aalgorithmparamkey"><strong>Core::AlgorithmParamKey</strong></a></strong><br />
+</dt>
+<p>The keys for the plugin's command line parameters</p>
+<dt><strong><a name="item_core%3a%3aalgorithmparamkeytype"><strong>Core::AlgorithmParamKeyType</strong></a></strong><br />
+</dt>
+<p>The data types of the parameters</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="arguments_in_detail">ARGUMENTS IN DETAIL</a></h1>
+<dl>
+<dt><strong><a name="item_%2d%2dstudy_id_integer">--study_id <em>integer</em></a></strong><br />
+</dt>
+<p>The study whose quantification results (obtained with the specified protocol) should be loaded, if one desires to load results for all such quantifications in a study.</p>
+<dt><strong><a name="item_%2d%2dassay_id_file_file">--assay_id_file <em>file</em></a></strong><br />
+</dt>
+<p>The (full path of the) file containing the list of assay_ids for all the assays whose quantification results (obtained with the specified protocol) should be loaded.</p>
+<dl>
+<dt><strong><a name="item_format%3a_see_the_notes_for_the_format_of_this_fil">format: See the NOTES for the format of this file</a></strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_file">--cfg_file <em>file</em> (Required)</a></strong><br />
+</dt>
+<p>The full path of the cfg_file.</p>
+<dl>
+<dt><strong>format: See the NOTES for the format of this file</strong><br />
+</dt>
+<dl>
+<dt><strong><a name="item_mustexist%3a_1">mustExist: 1</a></strong><br />
+</dt>
+</dl>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_string">--software <em>string</em> (Required)</a></strong><br />
+</dt>
+<p>The quantification protocol for the quantifications that should be loaded. Should be one of 'mas4', 'mas5', 'genepix', 'arrayvision', 'rmaexpress', 'moid'.</p>
+<dt><strong>--log_path <em>string</em> (Required)</strong><br />
+</dt>
+<p>The absolute path of the directory where the log files and the data files will be created. The user should have write permission to that directory. This is also where the parsed data files go.</p>
+<dt><strong><a name="item_%2d%2dtest_num_line_integer">--test_num_line <em>integer</em></a></strong><br />
+</dt>
+<p>The number of lines in the data file for the first retrieved assay to be tested for loading.</p>
+<dt><strong><a name="item_%2d%2dtest_num_assay_integer">--test_num_assay <em>integer</em></a></strong><br />
+</dt>
+<p>The number of assays to be tested for loading.</p>
+<dt><strong><a name="item_list">--skip <em>string-list</em> (comma delimited)</a></strong><br />
+</dt>
+<p>The list of assay_ids within the specified study which will be skipped for loading.</p>
+<dt><strong><a name="item_%2d%2dcommit">--commit <em></em></a></strong><br />
+</dt>
+<p>Actualy commit changes to the database</p>
+<dl>
+<dt><strong><a name="item_default%3a_0">default: 0</a></strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2ddebug">--debug <em></em></a></strong><br />
+</dt>
+<p>output extra debugging information to verify correct operation</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dsqlverbose">--sqlVerbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to switch on a log of SQL statements executed by Perl object layer.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dverbose">--verbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to enable output of logVerbose messages from the plugin.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dveryverbose">--veryVerbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to enable output of logVeryVerbose and logVerbose messages from the plugin.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2duser_string">--user <em>string</em></a></strong><br />
+</dt>
+<p>Set the user name in new or changed rows with this GUS user name (from Core.UserInfo table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dgroup_string">--group <em>string</em></a></strong><br />
+</dt>
+<p>Set the group name in new or changed rows with this GUS group name (from Core.GroupInfo table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dproject_string">--project <em>string</em></a></strong><br />
+</dt>
+<p>set the project name in new or changed rows with this GUS project name (from Core.Project table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dcomment_string">--comment <em>string</em></a></strong><br />
+</dt>
+<p>Set Core.AlgorithmInvocation.comment with this comment</p>
+<dt><strong><a name="item_%2d%2dalgoinvo_integer">--algoinvo <em>integer</em></a></strong><br />
+</dt>
+<p>Use this algorithm invocation id in the event that a new algorithm invocation id cannot be generated automatically</p>
+<dl>
+<dt><strong><a name="item_default%3a_1">default: 1</a></strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dgusconfigfile_file">--gusconfigfile <em>file</em></a></strong><br />
+</dt>
+<p>The gus config file to use [note: the default is your $GUS_CONFIG_FILE]</p>
+<dl>
+<dt><strong><a name="item_default%3a_%2fhome%2fhongxian%2f%2egus%2epropertie">default: /home/hongxian/.gus.properties</a></strong><br />
+</dt>
+<dl>
+<dt><strong><a name="item_format%3a_gus_config_file_format">format: GUS config file format</a></strong><br />
+</dt>
+</dl>
+<dl>
+<dt><strong>mustExist: 1</strong><br />
+</dt>
+</dl>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dhelp">--help <em></em></a></strong><br />
+</dt>
+<p>Request long help</p>
+<dt><strong><a name="item_%2d%2dhelphtml">--helpHTML <em></em></a></strong><br />
+</dt>
+<p>Request help in HTML</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="notes">NOTES</a></h1>
+<p><strong>Only one of study_id or assay_id_file should be specified in the argument line.</strong></p>
+<p>
+</p>
+<h2><a name="assay_id_file"><em>assay_id_file</em></a></h2>
+<p>To be used when either not all assays in a study should be considered or when assays from different studies should be considered. Their assay_ids should be provided through this text file. One assay_id per line, empty lines are ignored.</p>
+<p>
+</p>
+<h2><a name="cfg_file"><em>cfg_file</em></a></h2>
+<p>This should be an xml file whose format should be that specified in GUS/RAD/config/ResultFileParserCfg.dtd.
+This is used to map headers in the software output files to attributes of the appropriate RAD view of (Composite)ElementResultImp as well as to RAD coordinates.</p>
+<p>
+</p>
+<h2><a name="warning_(for_noncbil_instances)"><em>Warning (for non-CBIL Instances)</em></a></h2>
+<p>For local installations of RAD which differ from the CBIL database,
+some lines of this plugin will need to be modified, to accomodate
+hard-coded information. You might need to modify any piece of code
+labelled as 'HARD-CODED' in the comments below.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>The following individuals have collaborated in the design and coding of this plugin and the Utils called by it: Hongxian He, Junmin Liu, Elisabetta Manduchi, Angel Pizarro, Trish Whetzel.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright CBIL, Trustees of University of Pennsylvania 2003.</p>
+
+</body>
+
+</html>
