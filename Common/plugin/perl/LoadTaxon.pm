@@ -299,7 +299,6 @@ sub deleteTaxonName {
     }
   }
   print STDERR ("$num TaxonName entries deleted\n");
-  $dbh->do("analyze table sres.TaxonName compute statistics");
 }
 1;
 
