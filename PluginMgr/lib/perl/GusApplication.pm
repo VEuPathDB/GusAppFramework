@@ -65,7 +65,7 @@ sub findImplementation {
   my $implementation = $M->findSomeImplementation($P);
   $P->initImplementation($implementation) if $implementation;
 
-  $P->log('DEBUG', ref $implementation, $M->getOk) if FLAG_DEBUG;
+  $P->logVerbose('DEBUG', ref $implementation, $M->getOk) if FLAG_DEBUG;
 
   # RETURN
   $P->getOk
@@ -97,12 +97,12 @@ SQL
     
     if (scalar @$imps_again == 0) {
       $M->initStatus("No Core.AlgorithmImplementation found for $e");
-      $P->log('ERROR-IMP', $M->getStatus);
-      $P->log('ERROR-IMP', "Please use 'ga +create $e --commit'");
+      $P->logFatal('ERROR-IMP', $M->getStatus);
+      $P->logFatal('ERROR-IMP', "Please use 'ga +create $e --commit'");
     } else {
       $M->initStatus("No Core.AlgorithmImplementation found for $e cvs revision $cvsRevision");
-      $P->log('ERROR-IMP', $M->getStatus);
-      $P->log('ERROR-IMP', "Please use 'ga +update $e --commit'");
+      $P->logFatal('ERROR-IMP', $M->getStatus);
+      $P->logFatal('ERROR-IMP', "Please use 'ga +update $e --commit'");
     }
     $P->setOk(0);
   }
@@ -110,9 +110,9 @@ SQL
   # too many found
   elsif ( scalar @$imps > 1 ) {
     $M->initStatus("Found more than one Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision");
-    $P->log('ERROR-IMP', $M->getStatus);
+    $P->logFatal('ERROR-IMP', $M->getStatus);
     foreach (@$imps) {
-      $P->log('ERROR-IMP', "algimp_id:$_->{ALGORITHM_IMPLEMENTATION_ID}", 
+      $P->logFatal('ERROR-IMP', "algimp_id:$_->{ALGORITHM_IMPLEMENTATION_ID}", 
 	      "md5:$_->{EXECUTABLE_MD5}",
 	      "rev:$_->{CVS_REVISION}", "tag:$_->{CVS_TAG}");
     }
@@ -125,7 +125,7 @@ SQL
                    - cvs commit the plugin file
                    - use the build system to install it
                    - run 'ga +update $e --commit'");
-    $P->log('ERROR-IMP', $M->getStatus);
+    $P->logFatal('ERROR-IMP', $M->getStatus);
     $P->setOk(0);
   }
 
@@ -136,7 +136,7 @@ SQL
 	     algorithm_implementation_id => $imps->[0]->{ALGORITHM_IMPLEMENTATION_ID}
 	    });
     if (!$RV->retrieveFromDB) {
-      $P->log('findSomeImplementation',
+      $P->logFatal('findSomeImplementation',
 	      'expected to retrieve but it did not work'
 	     );
       CBIL::Util::Disp::Display($imps->[0]);
@@ -293,7 +293,7 @@ sub doMajorMode {
   # bad mode or mood
   else {
     $M->setOk(0);
-    $M->log('BAD-MODE',
+    $M->logFatal('BAD-MODE',
 	    sprintf('%s is not a supported mode; should be one of %s',
 		    $M->getMode,
 		    join(', ', @modes)
@@ -422,7 +422,7 @@ sub doMajorMode_Run {
     $pu->initStatus($pu->run({ cla      => $pu->getCla,
 			      self_inv => $pu->getSelfInv,
 			    }));
-    $pu->log('RESULT', $pu->getStatus);
+    $pu->logAlert('RESULT', $pu->getStatus);
 
   }
 
@@ -545,7 +545,7 @@ SQL
     $algs_n++;
 
     # show columns for this algorithm
-    $M->log('ALG',
+    $M->logData('ALG',
 	    ( map { $alg_h->{$_} } qw(ALGORITHM_ID NAME DESCRIPTION) ),
 	   );
 
@@ -559,7 +559,7 @@ SQL
       $inv_n_sh->finish;
 
       # show columns for this implementation
-      $M->log('IMP',
+      $M->logData('IMP',
 	      #$alg_h->{ALGORITHM_ID},
 	      ( map {$imp_h->{$_}} qw(ALGORITHM_IMPLEMENTATION_ID CVS_REVISION, CVS_TAG)),
 	      $inv_n,
@@ -570,7 +570,7 @@ SQL
       $par_sh->execute($imp_h->{ALGORITHM_IMPLEMENTATION_ID});
       while (my $par_h = $par_sh->fetchrow_hashref) {
 	$par_h->{IS_LIST_VALUED} = $par_h->{IS_LIST_VALUED} ? 'list  ' : 'scalar';
-	$M->log('PRMKEY',
+	$M->logData('PRMKEY',
 		#$alg_h->{ALGORITHM_ID},
 		#( map {$imp_h->{$_}} qw(ALGORITHM_IMPLEMENTATION_ID VERSION)),
 		sprintf('%8.8s %s : %-24.24s %s',
@@ -584,7 +584,7 @@ SQL
       # details of invocations
       $inv_sh->execute($imp_h->{ALGORITHM_IMPLEMENTATION_ID});
       while (my $inv_h = $inv_sh->fetchrow_hashref) {
-	$M->log('INV',
+	$M->logData('INV',
 		#$alg_h->{ALGORITHM_ID},
 		#$imp_h->{ALGORITHM_IMPLEMENTATION_ID},
 		( map {$inv_h->{$_}} qw(ALGORITHM_INVOCATION_ID START_TIME END_TIME RESULT COMMENT_STRING)),
@@ -593,7 +593,7 @@ SQL
 				# values of parameters
 	$val_sh->execute($inv_h->{ALGORITHM_INVOCATION_ID});
 	while (my $val_h = $val_sh->fetchrow_hashref) {
-	  $M->log('PARVAL',
+	  $M->logData('PARVAL',
 		  ( map {$val_h->{$_}} qw(ALGORITHM_PARAM_KEY ORDER_NUM STRING_VALUE))
 		 );
 	}
@@ -610,7 +610,7 @@ SQL
 
   # say something if we found no Algorithms
   if ($algs_n <= 0) {
-    $M->log('INFO', 'No Core.Algorithms were found for this plugin');
+    $M->logData('INFO', 'No Core.Algorithms were found for this plugin');
   }
 }
 
@@ -784,8 +784,8 @@ sub create_or_update_implementation {
       $apk_gus->setParent($alg_imp_gus);
     }
     $alg_gus->submit;
-    $M->log('INFO', "Plugin $plugin_name_s registered with cvs revision '$cvsRevision' and cvs tag '$cvsTag'");
-    $M->log('INFO', "...Just kidding: you didn't --commit")
+    $M->logData('INFO', "Plugin $plugin_name_s registered with cvs revision '$cvsRevision' and cvs tag '$cvsTag'");
+    $M->logData('INFO', "...Just kidding: you didn't --commit")
       unless ($M->getCla->{commit});
   }
 }
@@ -975,7 +975,7 @@ sub openInvocation {
 	}
       } else {
 	push(@any_bad, $param_name);
-	$P->log('UDPKT',
+	$P->logAlert('UDPKT',
 		'A Core.AlgorithmParamKeyType was not found for this param.',
 		$param_name,
 	       );
@@ -985,7 +985,7 @@ sub openInvocation {
     # an unexpected parameter, let the user know.
     else {
       push(@any_bad, $param_name);
-      $P->log('UDPK',
+      $P->logAlert('UDPK',
 	      'A Core.AlgorithmParamKey was not found for this param.',
 	      $param_name
 	     );
@@ -1061,10 +1061,10 @@ sub _check_schema_version_requirements {
 
   my $ver_h = $P->getRequiredDbVersion;
   unless ( ref $ver_h eq 'HASH') {
-    $M->log('ERROR',
+    $M->logFatal('ERROR',
 	    'getRequiredDbVersion did not return { schema => version, ... } hash ref',
 	   );
-    $M->log('HINT',
+    $M->logFatal('HINT',
 	    'did you call setRequiredDbVersion in '. $M->getName. '::new?',
 	   );
     $M->setOk(0)->getOk;
@@ -1086,16 +1086,16 @@ sub _check_schema_version_requirements {
 
   # let the user know what went wrong.
   if (scalar @bad_ones) {
-    $M->log('ERROR',
+    $M->logFatal('ERROR',
 	    'Actual version does not match required version for these schemas:',
 	    @bad_ones
 	   );
 
     # report actual and requested versions
     my $vers = $M->sql_get_as_hash_refs('select name, version, from Core.DatabaseInfo order by name');
-    $M->log('VERSION','#NAME', '#DB-VER', '#RQ-VER');
+    $M->logFatal('VERSION','#NAME', '#DB-VER', '#RQ-VER');
     foreach my $schema (@$vers) {
-      $M->log('VERSION', 
+      $M->logFatal('VERSION', 
 	      $schema->{NAME},
 	      $schema->{VERSION},
 	      $ver_h->{$schema->{NAME}}
