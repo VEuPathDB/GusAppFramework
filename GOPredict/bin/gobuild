@@ -351,12 +351,12 @@ sub downloadGOAssoc{
     $mgr->runCmd("mkdir -p $downloadSubDir");
 
     my $ftpsite = "ftp://ftp.geneontology.org/pub/go/gene-associations/";
-    my $flyFile = $propertySet->getProp($flyAssocFile);
-    my $wormFile = $propertySet->getProp($wormAssocFile);
-    my $yeastFile = $propertySet->getProp($yeastAssocFile);
-    my $mgiFile = $propertySet->getProp($mgiAssocFile);
-    my $tairFile = $propertySet->getProp($tairAssocFile);
-    my $sptrFile = $propertySet->getProp($sptrAssocFile);
+    my $flyFile = $propertySet->getProp(flyAssocFile);
+    my $wormFile = $propertySet->getProp(wormAssocFile);
+    my $yeastFile = $propertySet->getProp(yeastAssocFile);
+    my $mgiFile = $propertySet->getProp(mgiAssocFile);
+    my $tairFile = $propertySet->getProp(tairAssocFile);
+    my $sptrFile = $propertySet->getProp(sptrAssocFile);
 
 
     my $cmd = "wget -t5 -o $logfile -m -np -nd -nH --cut-dirs=3 -A \"$flyFile, $wormFile, $yeastFile, $mgiFile, $tairFile, $sptrFile\" -P $downloadSubDir $ftpsite";
