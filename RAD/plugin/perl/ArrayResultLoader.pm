@@ -43,7 +43,7 @@ sub new {
 
   my @erSubclassViewList=[qw (ArrayVisionElementResult GenePixElementResult SpotElementResult ScanAlyzeElementResult AffymetrixCEL GEMToolsElementResult)];
 # modify the following line to add a new view for CompositeElementResultImp table
-  my @crSubclassViewList=[qw (AffymetrixMAS4 AffymetrixMAS5 SAGETagResult MOIDResult)];
+  my @crSubclassViewList=[qw (AffymetrixMAS4 AffymetrixMAS5 SAGETagResult MOIDResult RMAExpress)];
 # modify the following line to add a new view for ElementImp table
   my @eSubclassViewList=[qw (ShortOligo Spot SAGETagMapping)];  
   my @cSubclassViewList=[qw (ShortOligoFamily SpotFamily SAGETag)];  
