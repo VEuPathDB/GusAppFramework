@@ -190,7 +190,7 @@ sub getViewSQL {
 	    if (lc($n1) eq lc($n2)) {
 		return "  $n2";
 	    } else {
-		return "  $n1 as $n2";
+		return "  $n1 AS $n2";
 	    }
 	};
 	$s =~ s/^(\s*)$fromTable\./$1/mgi;
