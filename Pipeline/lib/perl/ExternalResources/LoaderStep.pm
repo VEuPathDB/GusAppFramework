@@ -8,8 +8,7 @@ my $DBVERSION_MACRO = "\%EXT_DB_RLS_VER\%";
 
 sub new {
   my ($class, $repositoryDir, $resource, $version, $targetDir, $unpackers,
-      $url, $plugin, $pluginArgs, $extDbName, $extDbRlsDescrip, 
-      $extDbRlsVer, $commit, 
+      $url, $plugin, $pluginArgs, $extDbName, $extDbRlsVer, $extDbRlsDescrip, $commit, 
       $dbCommit, $wgetArgs, $repositoryLogFile) = @_;
 
   my $self = {};
@@ -119,7 +118,7 @@ sub _validatePluginDbArgs {
     my $resource = $self->{repositoryEntry}->getResource();
     if ($self->{extDbName}
 	&& ($pluginArgs !~ /$DBNAME_MACRO/ || $pluginArgs !~ /$DBVERSION_MACRO/)){
-      die ("error in resource $resource: attribute extDbName specified, but database name and version macros not found in plugin args");
+	die ("error in resource $resource: attribute extDbName specified, but database name and version macros not found in plugin args");
     }
 }
 
