@@ -659,7 +659,8 @@ sub writeTREMBLSubset{
     my $currentTremblIn = $propertySet->getProp('currentTrembl');
     
     if ($currentTremblIn =~ /(\S+).gz/){
-	$currentTremblIn = $1;
+      $mgr->runCmd("gunzip $downloadSubDir/$currentTremblIn");
+      $currentTremblIn = $1;
     }
     
     my $currentTremblOut = $propertySet->getProp('currentTremblSubset');
