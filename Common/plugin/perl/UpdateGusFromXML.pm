@@ -55,13 +55,16 @@ sub run {
 
   my $RV;
 
+  my $overheadInsertCount = $self->getSelfInv->getTotalInserts();
+
+   ##testing exitOnFailure...
+  $self->getDb()->setExitOnSQLFailure(0);
+
   my $fh = FileHandle->new('<'.$self->getCla->{'filename'});
   if ($fh) {
 
     $self->logAlert('COMMIT', $self->getCla->{commit} ? 'ON' : 'OFF' );
 
-    ##testing exitOnFailure...
-    $self->getDb()->setExitOnSQLFailure(0);
 
     # process XML file.
     my @xml;
@@ -75,6 +78,10 @@ sub run {
     }
     $self->process(\@xml) if scalar(@xml) > 1; ##must be at least 3 actually to be valid...
     $fh->close;
+
+    # write the parsable output (don't change this!!)
+    $self->logData("INSERTED (non-overhead)", $self->getSelfInv->getTotalInserts() - $overheadInsertCount);
+    $self->logData("UPDATED (non-overhead)",  $self->getSelfInv->getTotalUpdates() || 0);   
 
     # create, log, and return result string.
     $RV = join(' ',
@@ -93,7 +100,7 @@ sub run {
 	       $!);
   }
 
-  $self->logAlert('RESULT', $RV);
+#  $self->logAlert('RESULT', $RV);
   return $RV;
 }
 
