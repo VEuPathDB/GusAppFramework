@@ -603,7 +603,7 @@ sub __loadProcessedSequences {
 	    $loadedSeqs->{$oldId} = 1;
 	}
 	foreach my $loadedSeq (keys %$loadedSeqs){
-	    print $writeFh $loadedSeq . "\n";
+	    print $writeFh uc($loadedSeq) . "\n";
 	}
 	$writeFh->close();
     }	
