@@ -1184,7 +1184,7 @@ sub insertExternalProteinSimilarities {
     my ($name, $subjectTable) = @_;
     if ($name =~ /prodom/) {
       my $prodomFile = "$pipelineDir/similarity/$name/blastSimilarity.out.gz";
-      $mgr->runCmd("gunzip $file");
+      $mgr->runCmd("gunzip $prodomFile");
     }
     my $file = "$pipelineDir/similarity/$name/blastSimilarity.out";
     $file .= ".correctPK" if ($name eq "cdd");
