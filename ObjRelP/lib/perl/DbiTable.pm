@@ -273,10 +273,11 @@ sub buildObjectsFromImpTable {
   my $superClass = $self->getTableName();
   $superClass =~ s/Imp$//;
   my $table = ($row->{'subclass_view'} && $row->{'subclass_view'} !~ /null/i) ? $row->{'subclass_view'} : $superClass;
-  eval("require " . $self->getFullClassName($self->getSchemaName(). "::$table"));
+  my $className = $self->getFullClassName($self->getSchemaName(). "::$table");
+  eval("require $className");
   #	print STDERR "Building object for $superClass: $class\n";
-  my %map = $self->getDatabase->getTable($class)->getViewMapping();
-  my $ob = $class->new(undef,$self->getDatabase());
+  my %map = $self->getDatabase->getTable($className)->getViewMapping();
+  my $ob = $className->new(undef,$self->getDatabase());
   #	print STDERR "setting values for $ob\n";
   foreach my $col (keys %map) {
     #		print STDERR "$col --> $map{$col}\n";
