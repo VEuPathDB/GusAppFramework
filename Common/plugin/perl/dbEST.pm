@@ -138,7 +138,7 @@ sub run {
       for (my $i = 0; $i < $M->getCla->{span}; $i++) {
         my $l = $fh->getline();
         my ($eid) = split /\t/, $l;
-        my $ests = $M->sql_get-as_hash_refs("select * from est\@dbest where id_est = $eid");
+        my $ests = $M->sql_get_as_hash_refs("select * from est\@dbest where id_est = $eid");
         foreach my $est ( @{$ests}) {
           $e->{$est->{id_est}}->{e} = $est;
         }
@@ -161,7 +161,7 @@ sub run {
       last if ($M->getCla->{test_number} && $count > $M->getCla->{test_number});
 
       ## Main loop
-      my $ests = $M->sql_get-as_hash_refs("select * from est\@dbest where id_est >= $min and id_est < $max");
+      my $ests = $M->sql_get_as_hash_refs("select * from est\@dbest where id_est >= $min and id_est < $max");
       my ($e);
       foreach my $est ( @{$ests}) {
         $e->{$est->{id_est}}->{e} = $est;
@@ -227,7 +227,7 @@ sub processEntries {
   
   # get the sequences only for most current entry
   my $ids = join "," , keys %$e;
-  my $A = $M->sql_get-as_hash_refs("select * from SEQUENCE\@dbest where id_est in ($ids) order by id_est, local_id");
+  my $A = $M->sql_get_as_hash_refs("select * from SEQUENCE\@dbest where id_est in ($ids) order by id_est, local_id");
   if ($A) {
     foreach my $s (@{$A}){
       $e->{$s->{id_est}}->{e}->{sequence} .= $s->{data};
@@ -236,7 +236,7 @@ sub processEntries {
 
   # get the comments, if any
   $ids = join "," , keys %$e;
-  $A = $M->sql_get-as_hash_refs("select * from CMNT\@dbest where id_est in ($ids) order by id_est, local_id");
+  $A = $M->sql_get_as_hash_refs("select * from CMNT\@dbest where id_est in ($ids) order by id_est, local_id");
   if ($A) {
     foreach my $c (@{$A}){
       $e->{$c->{id_est}}->{e}->{comment} .= $c->{data};
@@ -625,7 +625,7 @@ Returns HASHREF{ new => newest entry,
 sub getMostRecentEntry {
   my ($M,$e,$R) = @_;
   push @{$R->{old}}, $e;
-  my $re = $M->sql_get-as_hash_refs("select * from EST\@dbest where id_est = $e->{replaced_by}")->[0];
+  my $re = $M->sql_get_as_hash_refs("select * from EST\@dbest where id_est = $e->{replaced_by}")->[0];
   if ($re->{replaced_by} ) {
     $R = $M->getMostRecentEntry($re,$R);
   } else {
@@ -759,7 +759,7 @@ Populates the attributes for a new DoTS.Library entry from dbEST.
 
 sub newLibrary {
   my ($M,$e,$l) = @_;
-  my $dbest_lib = $M->sql_get-as_hash_refs("select * from library\@dbest where id_lib = $e->{id_lib}")->[0];
+  my $dbest_lib = $M->sql_get_as_hash_refs("select * from library\@dbest where id_lib = $e->{id_lib}")->[0];
   my $atthash = {'id_lib' => 'dbest_id',
                  'name' => 'dbest_name',
                  'organism' => 'dbest_organism',
@@ -863,7 +863,7 @@ sub newContact {
   my $q = qq[select * 
              from contact\@dbest 
              where id_contact = $e->{id_contact}];
-  my $C = $M->sql_get-as_hash_refs($q)->[0];
+  my $C = $M->sql_get_as_hash_refs($q)->[0];
   $C->{lab} = "$C->{lab}; $C->{institution}";
   my %atthash = ('id_conact' => 'source_id',
                  'name' => 'name',
