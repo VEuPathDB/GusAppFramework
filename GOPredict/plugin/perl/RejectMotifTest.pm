@@ -1,4 +1,4 @@
-package GUS::GOPredict::Plugin::RejectMotif;
+package GUS::GOPredict::Plugin::RejectMotifTest;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use lib "$ENV{GUS_HOME}/lib/perl";
@@ -31,18 +31,10 @@ sub new {
   my $self = {};
   bless($self,$class);
   print STDERR "self: $self";
-  my $purposeBrief = "TEST Plugin to investigate memory leaks for RejectMotif.pm.  Do not use in commit mode!.";
+  my $usage = "TEST Plugin to investigate memory leaks for RejectMotif.pm.  Do not use in commit mode!.";
   
   
 
-  my $documentation = { purpose=>$purpose,
-                        purposeBrief=>$purposeBrief,
-                        tablesAffected=>$tablesAffected,
-                        tablesDependedOn=>$tablesDependedOn,
-                        howToRestart=>$howToRestart,
-                        failureCases=>$failureCases,
-                        notes=>$notes
-                      };
 
   my $easycsp = 
   [
@@ -68,6 +60,7 @@ sub new {
      r => 1,
  },
    
+   
    { o => 'motif_rejection_reason_id',
      t => 'int',
      h => 'reason',
@@ -81,6 +74,11 @@ sub new {
    { o => 'restart_file',
      t => 'string',
      h => 'restart file',
+ },
+
+   { o  => 'function_root_go_id',
+     t => 'string',
+     h => 'root go id',
  },
    
    
