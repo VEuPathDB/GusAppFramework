@@ -28,8 +28,10 @@
 ###    - November-10-2003
 ###         - fixed so that an additional check is done to see if 
 ###              table documentation already exists
+###    - December-09-2003
+###         - fixed bug in table doc fetchrow
 ###
-### Last modified November-10-2003
+### Last modified December-09-2003
 ###
 ### usage: ga LoadDocumentation --inputFile [file]
 ###   run from inside directory containing file to upload 
@@ -148,7 +150,7 @@ sub process {
 	  $stmt2->execute();
 	  my ($tb_id2, $html2);
 
-	  while (my @ary = $stmt->fetchrow_array() ){
+	  while (my @ary = $stmt2->fetchrow_array() ){
 	    chomp;
 	    $tb_id = $ary[0]; #queried table id
 	    $html = $ary[1]; #queried html documentation
