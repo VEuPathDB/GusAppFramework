@@ -47,7 +47,7 @@ sub makeRMDir {
 }
 
 sub makeGenomeDir {
-    my ($queryName, $targetName, $pipelineName, $localPath, $serverPath,
+    my ($queryName, $targetName, $pipelineName, $localPath, $serverPath,$liniacServer,
 	$nodePath, $taskSize, $gaOptions, $gaBinPath, $localGDir, $serverGDir) = @_;
     my $localBase = "$localPath/$pipelineName/genome/$queryName-$targetName";
     my $serverBase = "$serverPath/$pipelineName/genome/$queryName-$targetName";
@@ -61,7 +61,7 @@ sub makeGenomeDir {
     &makeGenomeTaskPropFile($inputDir, $serverInputDir, $seqFileName, $gaOptions, $gaBinPath,
 			    $localGDir, $serverGDir);
     &makeGenomeParamsPropFile($inputDir . '/params.prop', $serverGDir . '/11.ooc');
-    &makeTargetListFile($inputDir . '/target.lst', $serverGDir);
+    &makeTargetListFile($inputDir . '/target.lst', $serverGDir,$liniacServer);
 }
 
 sub makeMatrixDir {
@@ -183,20 +183,26 @@ ooc=$oocFile
 }
 
 sub makeTargetListFile {
-  my ($targetListFile,$genomeDir) = @_;
+  my ($targetListFile,$genomeDir,$liniacServer,) = @_;
 
   my @genome;
 
-  open (F, ">$targetListFile") || die "Can't open $targetListFile for writing";
+  #open (F, ">$targetListFile") || die "Can't open $targetListFile for writing";
 
-  opendir (DIR, $genomeDir) || die "Can't open $genomeDir to get file names";
+  my $cmd = "ssh -2 $liniacServer 'ls ${genomeDir}/*\.fa' > $targetListFile";
 
-  while (defined (my $file = readdir DIR)) {
-    print F "$file\n" if ($file =~ /\.fa/);
-  }
+  `$cmd`;
 
-  closedir (DIR);
-  close(F);
+  my $status = $? >> 8;
+  $self->error("Failed with status $status running '$cmd'") if ($status);
+  #opendir (DIR, $genomeDir) || die "Can't open $genomeDir to get file names";
+
+  #while (defined (my $file = readdir DIR)) {
+  #  print F "$file\n" if ($file =~ /\.fa/);
+  #}
+
+  #closedir (DIR);
+  #close(F);
 }
 
 sub makeBMTaskPropFile {
