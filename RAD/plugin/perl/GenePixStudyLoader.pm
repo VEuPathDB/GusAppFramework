@@ -1,4 +1,4 @@
-package RAD::DataLoad::Plugin::GenePixStudyLoader
+package GUS::RAD::Plugin::GenePixStudyLoader
 
 @ISA = qw( GUS::PluginMgr::Plugin);
 
