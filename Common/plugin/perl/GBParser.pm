@@ -1,137 +1,123 @@
-#####################################################
-# GBParser.pm -- Module used to parse GenBank flat file 
-#                records into the DB
-#
-# Author: Angel Pizarro
-# Created: Fri Mar  2 11:47:21 EST 2001
-#####################################################
-#####################################################
-package GBParser;
+package GUS::Common::Plugin::GBParser;
+
+@ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;
 use FileHandle;
 use DBI;
 
-use GenBank::Entry;
-use GenBank::IoStream;
+use CBIL::Bio::GenBank::Entry;
+use CBIL::Bio::GenBank::IoStream;
 
 ## Standard tables
-use Objects::GUSdev::NASequence; ## View -> NASequenceImp
-use Objects::GUSdev::ExternalNASequence; ## View -> NASequenceImp
-use Objects::GUSdev::NAComment;
-use Objects::GUSdev::NAEntry;
-use Objects::GUSdev::NALocation;
-use Objects::GUSdev::NAGene;
-use Objects::GUSdev::NAProtein;
-use Objects::GUSdev::NAPrimaryTranscript;
-use Objects::GUSdev::DbRef;
-use Objects::GUSdev::ExternalDatabase;
-use Objects::GUSdev::Keyword;
-use Objects::GUSdev::Organelle;
-use Objects::GUSdev::Reference;
-use Objects::GUSdev::SecondaryAccs;
-use Objects::GUSdev::SequenceType;
-use Objects::GUSdev::Taxon;
-use Objects::GUSdev::Note;
+use GUS::Model::DoTS::NASequence; ## View -> NASequenceImp
+use GUS::Model::DoTS::ExternalNASequence; ## View -> NASequenceImp
+use GUS::Model::DoTS::NAComment;
+use GUS::Model::DoTS::NAEntry;
+use GUS::Model::DoTS::NALocation;
+use GUS::Model::DoTS::NAGene;
+use GUS::Model::DoTS::NAProtein;
+use GUS::Model::DoTS::NAPrimaryTranscript;
+use GUS::Model::SRes::DbRef;
+use GUS::Model::SRes::ExternalDatabase;
+use GUS::Model::SRes::ExternalDatabaseRelease;
+use GUS::Model::DoTS::Keyword;
+use GUS::Model::DoTS::Organelle;
+use GUS::Model::SRes::Reference;
+use GUS::Model::DoTS::SecondaryAccs;
+use GUS::Model::DoTS::SequenceType;
+use GUS::Model::SRes::Taxon;
+use GUS::Model::DoTS::Note;
 
 ## many-to-many
-use Objects::GUSdev::NASequenceRef;
-use Objects::GUSdev::NASequenceOrganelle;
-use Objects::GUSdev::NASequenceKeyword; 
-use Objects::GUSdev::NAFeatureNAGene;
-use Objects::GUSdev::NAFeatureNAPT;
-use Objects::GUSdev::NAFeatureNAProtein;
-use Objects::GUSdev::DbRefNAFeature; 
-use Objects::GUSdev::DbRefNASequence; 
-use Objects::GUSdev::ExternalDatabaseKeyword; 
+use GUS::Model::DoTS::NASequenceRef;
+use GUS::Model::DoTS::NASequenceOrganelle;
+use GUS::Model::DoTS::NASequenceKeyword; 
+use GUS::Model::DoTS::NAFeatureNAGene;
+use GUS::Model::DoTS::NAFeatureNAPT;
+use GUS::Model::DoTS::NAFeatureNAProtein;
+use GUS::Model::DoTS::DbRefNAFeature; 
+use GUS::Model::DoTS::DbRefNASequence; 
+use GUS::Model::SRes::ExternalDatabaseKeyword; 
 
 ## NAFeature and assoc. views
-use Objects::GUSdev::NAFeatureImp;
-use Objects::GUSdev::NAFeature;
-use Objects::GUSdev::DNARegulatory;
-use Objects::GUSdev::DNAStructure;
-use Objects::GUSdev::STS;
-use Objects::GUSdev::GeneFeature;
-use Objects::GUSdev::RNAType;
-use Objects::GUSdev::Repeats;
-use Objects::GUSdev::Miscellaneous;
-use Objects::GUSdev::Immunoglobulin;
-use Objects::GUSdev::ProteinFeature;
-use Objects::GUSdev::SeqVariation;
-use Objects::GUSdev::RNAStructure;
-use Objects::GUSdev::Source;
-use Objects::GUSdev::Transcript;
-use Objects::GUSdev::ExonFeature;
+use GUS::Model::DoTS::NAFeatureImp;
+use GUS::Model::DoTS::NAFeature;
+use GUS::Model::DoTS::DNARegulatory;
+use GUS::Model::DoTS::DNAStructure;
+use GUS::Model::DoTS::STS;
+use GUS::Model::DoTS::GeneFeature;
+use GUS::Model::DoTS::RNAType;
+use GUS::Model::DoTS::Repeats;
+use GUS::Model::DoTS::Miscellaneous;
+use GUS::Model::DoTS::Immunoglobulin;
+use GUS::Model::DoTS::ProteinFeature;
+use GUS::Model::DoTS::SeqVariation;
+use GUS::Model::DoTS::RNAStructure;
+use GUS::Model::DoTS::Source;
+use GUS::Model::DoTS::Transcript;
+use GUS::Model::DoTS::ExonFeature;
 
 my $Cfg;  ##global configuration object....passed into constructor as second arg
-
 sub new {
-	my $Class = shift;
-	$Cfg = shift;  ##configuration object...
-
-	return bless {}, $Class;
-}
-
-sub Usage {
-	my $M   = shift;
-	return 'Module used to parse GenBank records into the DB';
-}
-
-############################################################
-# put the options in this method....
-############################################################
-sub EasyCspOptions {
-	my $M   = shift;
-	{
-		gbRel => {
-			o => 'gbRel',
-			t => 'int',
-			h => 'GenBank release',
-		},
-		updateAll => {
-			o => 'updateAll',
-			t => 'boolean',
-			h => 'Update ALL entries, regardless of release date',
-		},
-		file => { 
-			o => 'file',
-			t => 'string',
-			h => 'GenBank formatted file to read',
-		},
-		db_id => { 
-			o => 'db_id',
-			t => 'int',
-			h => 'GUS ExternalDatabase id.',
-			d => 22,
-		},
-		log => {
-			o => 'log',
-			t => 'string',
-			h => 'Path to log file.',
-			d => "GBParser.pid$$.log",
-		},
-		start => {
-			o => 'start',
-			t => 'int',
-			h => 'Entry number in specified file to start at.',
-		},
-		testnumber        => {
-			o => 'testnumber',
-			t => 'int',
-			h => 'number of iterations for testing',
-		},
-		div => {
-			o => 'div',
-			t => 'string',
-			h => 'OPTIONAL: If given, entries will be filtered on DIV. (Ex: div="PRI")',
-		},
-		failfile => {       #added by DP 2/14/02
-		        o => 'failfile',
-			t => 'string',
-			h => 'file to write accession numbers for entries that fail upon submission',
-			d => 'failfile',
-		},
-	}
+    my ($class) = @_;
+    
+    my $self = {};
+    bless($self,$class);
+    
+    my $usage = 'Module used to parse GenBank records into the DB';
+    
+    my $easycsp =
+	[{o => 'gbRel',
+	  t => 'int',
+	  h => 'GenBank release',
+	 },
+	 {o => 'updateAll',
+	  t => 'boolean',
+	  h => 'Update ALL entries, regardless of release date',
+         },
+	 {o => 'file',
+	  t => 'string',
+	  h => 'GenBank formatted file to read',
+         },
+	 {o => 'db_rel_id',
+	  t => 'int',
+	  h => 'GUS ExternalDatabaseRelease id.',
+         },
+	 {o => 'log',
+	  t => 'string',
+	  h => 'Path to log file.',
+	  d => "GBParser.pid$$.log",
+         },
+	 {o => 'start',
+	  t => 'int',
+	  h => 'Entry number in specified file to start at.',
+         },
+	 {o => 'testnumber',
+	  t => 'int',
+	  h => 'number of iterations for testing',
+         },
+	 {o => 'div',
+	  t => 'string',
+	  h => 'OPTIONAL: If given, entries will be filtered on DIV. (Ex: div="PRI")',
+         },
+	 {o => 'failfile',
+	  t => 'string',
+	  h => 'file to write accession numbers for entries that fail upon submission',
+	  d => 'failfile',
+         }
+	 ];
+    
+    $self->initialize({requiredDbVersion => {},
+		       cvsRevision => '$Revision$',  # cvs fills this in!
+		     cvsTag => '$Name$', # cvs fills this in!
+		       name => ref($self),
+		       revisionNotes => 'make consistent with GUS 3.0',
+		       easyCspOptions => $easycsp,
+		       usage => $usage
+		       });
+    
+    return $self;
 }
 
 my $ctx;
@@ -142,7 +128,7 @@ my $debug = 0;
 # Setup global hashes to cache the tables for controlled vocabulatory
 #---------------------------------------------------------
 #whole table caching
-my (%OrganelleCache, %ExternalDatabaseHash, %KeywordHash, %SequenceTypeHash); 
+my (%OrganelleCache, %ExternalDatabaseRelHash, %KeywordHash, %SequenceTypeHash); 
  #on-demand caching
 my ( %KeywordCache, $NaGeneCache, %TaxonHash, %MedlineCache,%DbRefCache,%featureCache, %NAGeneCache, %NaProteinCache);
 
@@ -178,12 +164,12 @@ sub Run {
 	    $log->print("START: $ctx->{ cla }->{ start }\n");
 	}
 	
-	my $ios = GenBank::IoStream->new( { fh => $fh } );
+	my $ios = CBIL::Bio::GenBank::IoStream->new( { fh => $fh } );
 	my $n   = 0; my $update_count = 0; my $insert_count = 0;
 	while ( ! $ios->eof() ) {
 	    $n++;
 	    
-	    my $e = GenBank::Entry->new( { ios => $ios } );
+	    my $e = CBIL::Bio::GenBank::Entry->new( { ios => $ios } );
 	    
 	    # js
 	    print join("\t", 'VLD', $e->getValidity()), "\n";
@@ -207,7 +193,7 @@ sub Run {
 	    next if ($ctx->{ cla }->{ start } && $n < $ctx->{ cla }->{ start }) ;
 	    
 	    ## Check NAEntry for update
-	    my $naentry = NAEntry->new({'source_id' => $e->{'ACCESSION'}->[0]->getAccession(),
+	    my $naentry = GUS::Model::DoTS::NAEntry->new({'source_id' => $e->{'ACCESSION'}->[0]->getAccession(),
 					#'version' => $e->{VERSION}->[0]->getSeqVersion()
 				    });
 	    
@@ -247,7 +233,7 @@ sub Run {
 	    # $seqobj->addChild(&buildDbRef($e));		
 	    
 	    if ($chkdif) { 
-		my $dbSeq = $naentry->getParent('ExternalNASequence',1);
+		my $dbSeq = $naentry->getParent('GUS::Model::DoTS::ExternalNASequence',1);
 		## First check if sequence object needs update
 		# print $dbSeq->toXML();
 		# print $seqobj->toXML();
@@ -305,7 +291,7 @@ sub buildNASeq {
 		}
 	}
 	my $h = {'source_id'=> $e->{ACCESSION}->[0]->getAccession(), 
-					 'external_db_id' => $ctx->{ cla }->{ db_id },
+					 'external_database_release_id' => $ctx->{ cla }->{ db_rel_id },
 					 'sequence_type_id' => $seqtype,
 					 'taxon_id' => $taxon,
 					 'name' => $e->{LOCUS}->[0]->getId(),
@@ -318,7 +304,7 @@ sub buildNASeq {
 					 't_count' => $e->{'BASE COUNT'}->[0]->{CNT}->{t},
 					 'length' => $e->{LOCUS}->[0]->getLength()    };
 	
-	my $seq = ExternalNASequence->new($h);
+	my $seq = GUS::Model::DoTS::ExternalNASequence->new($h);
 	## Set other_count only if present
 	if ($e->{"BASE COUNT"}->[0]->{other}) { 
 		$seq->setOtherCount($e->{'BASE COUNT'}->[0]->{other});
@@ -349,7 +335,7 @@ sub buildNAEntry {
 		$h{'created_date'} = $date;
 		$h{'created_rel_ver'}  =  $ctx->{cla}->{gbRel};
 	}		
-	my $o = NAEntry->new(\%h);
+	my $o = GUS::Model::DoTS::NAEntry->new(\%h);
 
 	if ($e->{ACCESSION}->[0]->getSecondaryAccession()) {
 		$o->addChild(&buildSecondaryAccs($e->{ACCESSION}->[0]));
@@ -359,11 +345,11 @@ sub buildNAEntry {
 
 sub buildSecondaryAccs {
 	my $a = shift;
-	my $h = {'external_db_id' => $ctx->{ cla }->{ db_id },
+	my $h = {'external_database_release_id' => $ctx->{ cla }->{ db_rel_id },
 					 'source_id' => $a->getAccession(),
 					 'secondary_accs' => $a->getSecondaryAccession() };
 					 
-	return SecondaryAccs->new($h);
+	return GUS::Model::DoTS::SecondaryAccs->new($h);
 }
 
 sub buildKeyword {
@@ -373,9 +359,9 @@ sub buildKeyword {
 	
 	foreach my $k (@$A){
 		my $kid = &getKeywordId($k);
-		my $nk = NASequenceKeyword->new({'keyword_id' => $kid});
+		my $nk = GUS::Model::DoTS:NASequenceKeyword->new({'keyword_id' => $kid});
 		$nk->retrieveFromDB();
-		my $ek = ExternalDatabaseKeyword->new({'keyword_id' => $kid, 'external_db_id' => $ctx->{ cla }->{db_id}});
+		my $ek = GUS::Model::SRes:ExternalDatabaseKeyword->new({'keyword_id' => $kid, 'external_database_release_id' => $ctx->{ cla }->{db_rel_id}});
 		if (!$ek->retrieveFromDB()) {
 			$nk->addToSubmitList($ek);
 		}
@@ -398,7 +384,7 @@ sub buildOrganelle {
 	}	
 	my $organelle = &getOrganelleId($on, $pn)		;
 	if 	($organelle) {
-		my $seqorg = NASequenceOrganelle->new();
+		my $seqorg = GUS::Model::DoTS::NASequenceOrganelle->new();
 		$seqorg->setOrganelleId($organelle);
 		return $seqorg;
 	}
@@ -411,7 +397,7 @@ sub getOrganelleId {
 		my %h; 
 		($on) ? $h{'name'} = $on: 0;
 		($pn) ? $h{'plasmid_name'} = $pn: 0;
-		my $o = Organelle->new(\%h);
+		my $o = GUS::Model::DoTS::Organelle->new(\%h);
 		$o->submit();
 		$OrganelleCache{ "$on$pn" } = $o->getId();
 	}
@@ -438,15 +424,15 @@ sub buildReference {
 			if ($y > -4713 && $y < 9999) {$h{'year'} = $y;}
 		}
 		
-		my $ref = Reference->new(\%h);
+		my $ref = GUS::Model::SRes::Reference->new(\%h);
 
 		## Take care of external refs
 		if ($r->getPubMed()) { 
-			my $o = DbRef->new({'external_db_id' => &getDbId('PubMed'), 'primary_identifier' => $r->getPubMed()});
+			my $o = GUS::Model::SRes::DbRef->new({'external_db_id' => &getDbId('PubMed'), 'primary_identifier' => $r->getPubMed()});
 			$o->retrieveFromDB();
 			$o->addChild($ref);
 		} elsif ($r->getMEDLINE()) { 
-			my $o = DbRef->new({'external_db_id' => &getDbId('MEDLINE'), 'primary_identifier' => $r->getMEDLINE()});
+			my $o = GUS::Model::SRes::DbRef->new({'external_db_id' => &getDbId('MEDLINE'), 'primary_identifier' => $r->getMEDLINE()});
 			$o->retrieveFromDB();
 			$o->addChild($ref);
 		}
@@ -464,7 +450,7 @@ sub buildComment {
 	if ((length $c->getString()) >=  255) {
 		$h->{'more_comment'} = substr($c->getString(), 255); 
 	}
-	return NAComment->new($h);
+	return GUS::Model::DoTS::NAComment->new($h);
 }
 
 sub buildFeatures {
@@ -632,7 +618,7 @@ sub buildLoc {
 	## account for literal sequences
 	($lit_seq) ? ($h->{literal_sequence} = $lit_seq) : 0;
 
-	return NALocation->new($h);
+	return GUS::Model::DoTS::NALocation->new($h);
 }
 
 sub buildPointLoc {
@@ -659,7 +645,7 @@ sub buildPointLoc {
 	($order) ? ($h{ 'loc_order' } = $order) : 0 ;
 	($lit_seq) ? ($h{'literal_sequence'} = $lit_seq):0;
 	
-	return NALocation->new(\%h);
+	return GUS::Model::DoTS::NALocation->new(\%h);
 }
 
 sub getStartPos {
@@ -704,7 +690,7 @@ sub getEndPos {
 sub buildGene {
 	my $q = shift;
 	my $g = &getNAGeneId( $q->getValue());
-	my $o = NAFeatureNAGene->new();
+	my $o = GUS::Model::DoTS::NAFeatureNAGene->new();
 	$o->setNaGeneId($g);
 	return $o;
 }
@@ -713,7 +699,7 @@ sub getNAGeneId { ## On-demand caching
 	my $t = shift;
 	my $n = substr($t,0,300);
 	if (!$NAGeneCache{$n}) {
-		my $g = NAGene->new({'name' => $n});										
+		my $g = GUS::Model::DoTS::NAGene->new({'name' => $n});										
 		unless ($g->retrieveFromDB()){
 			$g->set('is_verified', 0);
 			$g->submit();
@@ -728,7 +714,7 @@ sub buildProtein {
 	my $q = shift ;
 	my $n = substr($q->getValue(),0,300);
 	my $p = &getNaProteinId($n);
-	my $o = NAFeatureNAProtein->new();
+	my $o = GUS::Model::DoTS::NAFeatureNAProtein->new();
 	$o->setNaProteinId($p);
 	return $o;
 }
@@ -736,7 +722,7 @@ sub buildProtein {
 sub getNaProteinId {
 	my $n = shift;
 	if (!$NaProteinCache{$n}) {
-		my $p = NAProtein->new({'name' => $n});	
+		my $p = GUS::Model::DoTS::NAProtein->new({'name' => $n});	
 		unless ($p->retrieveFromDB()){
 			$p->set('is_verified', 0);
 			$p->submit();
@@ -747,8 +733,8 @@ sub getNaProteinId {
 }
 
 sub buildPrimaryTranscript {
-	my $p = NAPrimaryTranscript->new({'is_verified' => 0});
-	my $o = NAFeatureNAPT->new();
+	my $p = GUS::Model::DoTS::NAPrimaryTranscript->new({'is_verified' => 0});
+	my $o = GUS::Model::DoTS::NAFeatureNAPT->new();
 	$o->setParent($p);
 	return $o;
 }
@@ -759,19 +745,19 @@ sub buildNote {
 	if (substr($q->getValue(), 255)) {
 		$h{'more_remark'} = substr($q->getValue(), 255);
 	}
-	return Note->new(\%h);
+	return GUS::Model::DoTS::Note->new(\%h);
 }
 
 sub buildDbXRef {
 	my $q = shift;
 	my $seq = shift;
-	my $o = DbRefNAFeature->new();
+	my $o = GUS::Model::DoTS::DbRefNAFeature->new();
 	my $v = $q->getValue();
 	my $id = &getDbXRefId($v);
 	$o->setDbRefId($id);
 	## If DbRef is outside of Genbank, then link directly to sequence
 	if (!($v =~ /taxon|GI|pseudo|dbSTS|dbEST/i)) {
-		my $o2 = DbRefNASequence->new();
+		my $o2 = GUS::Model::DoTS::DbRefNASequence->new();
 		$o2->setDbRefId($id);
 		$seq->addChild($o2);
 	}
@@ -782,7 +768,7 @@ sub getDbXRefId {
 	my $k = shift;
 	if (!$DbRefCache{$k}) {
 		my ($db,$id,$sid)= split /\:/, $k;
-		my $dbref = DbRef->new({'external_db_id' => &getDbId($db),
+		my $dbref = GUS::Model::SRes::DbRef->new({'external_db_id' => &getDbId($db),
 														'primary_identifier' => $id});
 		if ($sid) { $dbref->set('secondary_identifier',$sid); }
 		unless ($dbref->retrieveFromDB()) { $dbref->submit() };
@@ -874,24 +860,26 @@ sub getFeatureViewName {
 sub setWholeTableCache{
 	my $dbh = $ctx->{'self_inv'}->getQueryHandle();
 	
-  ##setup global hash for ExternalDatabase
-  my $st = $dbh->prepare("select lowercase_name, external_db_id from ExternalDatabase");
+  ##setup global hash for ExternalDatabaseRelease
+  my $st = $dbh->prepare("select e.lowercase_name, r.external_database_release_id 
+                          from sres.ExternalDatabase e, sres.ExternalDatabaseRelease r 
+                          where r.version = 'unknown'");
   $st->execute() || die $st->errstr;
   
-  while (my ($lowercase_name, $external_db_id) = $st->fetchrow_array()) {
+  while (my ($lowercase_name, $external_db_rel_id) = $st->fetchrow_array()) {
     $lowercase_name = lc $lowercase_name; ##just in case not real lowercase ;-))
-    $ExternalDatabaseHash{"$lowercase_name"} = $external_db_id;
+    $ExternalDatabaseRelHash{"$lowercase_name"} = $external_db_rel_id;
   }
 	
   ##setup global hash for SequenceType
-  $st = $dbh->prepare("select name, sequence_type_id from SequenceType");
+  $st = $dbh->prepare("select name, sequence_type_id from dots.SequenceType");
   $st->execute() || die $st->errstr;
   while (my ($name, $sequence_type_id) = $st->fetchrow_array()) {
     $SequenceTypeHash{"$name"} = $sequence_type_id;
   }
 
 	### Organelle 
-	$st = $dbh->prepare("select name || plasmid_name, organelle_id  from Organelle");
+	$st = $dbh->prepare("select name || plasmid_name, organelle_id  from dots.Organelle");
 	$st->execute() || die $st->errstr;
   while (my ($name, $sequence_type_id) = $st->fetchrow_array()) {
     $OrganelleCache{"$name"} = $sequence_type_id;
@@ -899,35 +887,48 @@ sub setWholeTableCache{
   # $dbh->disconnect();
 }
 
-sub getDbId 
+sub getDbRelId 
 {
   my $name = shift;
   my $lcname = lc $name;
   
-  my $external_db_id;
-  if ($ExternalDatabaseHash{"$lcname"}) {
-    $external_db_id = $ExternalDatabaseHash{"$lcname"};
-  } else {
-    my $externalDatabaseRow = ExternalDatabase->new({"name" => $name,
-                                                     "lowercase_name" => $lcname});
-    $externalDatabaseRow->submit();
-    $external_db_id = $externalDatabaseRow->getId();
-    $ExternalDatabaseHash{"$lcname"} = $external_db_id;
+  my $external_db_rel_id;
+
+  if ($ExternalDatabaseRelHash{"$lcname"}) {
+      $external_db_rel_id = $ExternalDatabaseRelHash{"$lcname"};
+  } 
+  else {
+      my $externalDatabaseRow = GUS::Model::SRes::ExternalDatabase->new({"name" => $name,
+						       "lowercase_name" => $lcname});
+      $externalDatabaseRow->retrieveFromDatabase();
+      if (!$external_db_id = $externalDatabaseRow->getId()){
+	  $externalDatabaseRow->submit();
+      }
+
+      $external_db_id = $externalDatabaseRow->getId();
+      
+      my $version = 'unknown';
+      
+      my $externalDatabaseRelRow = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'version'=>$version});
+      $externalDatabaseRelRow->submit();
+      my $external_db_rel_id = $externalDatabaseRelRow->getId();
+      
+      $ExternalDatabaseRelHash{"$lcname"} = $external_db_rel_id;
   }
-  return $external_db_id;
+  return $external_db_rel_id;
 }
 
 sub getTaxonId #this is on-demand caching
 {
   my $sci_name = shift;
-  
+  my $name_class = 'scientific name';
   my $taxon_id;
   if ($TaxonHash{"$sci_name"}) {
     $taxon_id = $TaxonHash{"$sci_name"};
   }else{
-    my $taxonRow = Taxon->new({"scientific_name" => $sci_name});
+    my $taxonRow = GUS::Model::SRes::TaxonName->new({"name" => $sci_name, "name_class" => $name_class});
     if ($taxonRow->retrieveFromDB()){
-      $taxon_id = $taxonRow->getId();
+      $taxon_id = $taxonRow->getTaxonId();
       $TaxonHash{"$sci_name"} = $taxon_id;
     }else {
       $taxon_id = 0;
@@ -935,6 +936,7 @@ sub getTaxonId #this is on-demand caching
   }
   return $taxon_id;
 }
+
 sub getKeywordId
 {
   my $keyword = shift;
@@ -942,7 +944,7 @@ sub getKeywordId
   if ($KeywordHash{"$keyword"}) {
     $keyword_id = $KeywordHash{"$keyword"};
   } else {
-    my $keywordRow = Keyword->new({"keyword" => "$keyword" });
+    my $keywordRow = GUS::Model::DoTS::Keyword->new({"keyword" => "$keyword" });
     $keywordRow->submit();
     $keyword_id = $keywordRow->getId();
     $KeywordHash{"$keyword"} = $keyword_id;
@@ -957,7 +959,7 @@ sub getKeywordId
   if ($KeywordHash{"$keyword"}) {
     $keyword_id = $KeywordHash{"$keyword"};
   } else {
-    my $keywordRow = Keyword->new({"keyword" => "$keyword" });
+    my $keywordRow = GUS::Model::DoTS::Keyword->new({"keyword" => "$keyword" });
     $keywordRow->submit();
     $keyword_id = $keywordRow->getId();
     $KeywordHash{"$keyword"} = $keyword_id;
@@ -1013,7 +1015,7 @@ sub getSequenceTypeId #this is on-demand caching
   my $name = shift;
   my $sequence_type_id;
   if (!exists $SequenceTypeHash{"$name"}) {
-    my $sequenceTypeRow = SequenceType->new({"name" => $name});
+    my $sequenceTypeRow = GUS::Model::DoTS:SequenceType->new({"name" => $name});
     if ($sequenceTypeRow->retrieveFromDB()){
       $sequence_type_id= $sequenceTypeRow->getId();
       $SequenceTypeHash{"$name"} = $sequence_type_id;
@@ -1176,7 +1178,7 @@ sub getManyToManyParent {
 					 'NAFeatureNAProtein' => 'NAProtein',
 					 'DbRefNAFeature' => 'DbRef', 
 					 'DbRefNASequence' => 'DbRef', 
-					 'ExternalDatabaseKeyword' => 'ExternalDatabase', 
+					 'ExternalDatabaseKeyword' => 'ExternalDatabaseRelease', 
 					 );
 	return $h{$class_name} ? $h{$class_name} : undef;
 }
