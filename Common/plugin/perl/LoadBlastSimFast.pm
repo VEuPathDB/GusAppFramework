@@ -343,9 +343,9 @@ sub insertSubjects {
 
   my $spanStmt = $self->getInsertSpanStmt($db);
 
-  my $nextvalSql = $db->getDbPlatform()->nextValSql("dots.similarity");
+  my $nextvalSql = $db->getDbPlatform()->nextValSelect("dots.similarity");
 
-  my $nextIdStmt = $db->getDbHandle()->prepare("select $nextvalSql from DUAL");
+  my $nextIdStmt = $db->getDbHandle()->prepare($nextvalSql);
 
   my $verbose = $self->getArgs()->{verbose};
   my $noHSPs = $self->getArgs()->{noHSPs};
