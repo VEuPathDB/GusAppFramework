@@ -4,7 +4,7 @@
 /*                                                                                            */
 /* Populate Core.DatabaseInfo, which lists each of the GUS namespaces (i.e. schemas/users).   */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:42:29 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 23:57:12 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -21,12 +21,13 @@ INSERT INTO @oracle_core@.DatabaseInfo VALUES(6,'3','@oracle_dotsver@','Version 
 INSERT INTO @oracle_core@.DatabaseInfo VALUES(8,'1.0','@oracle_tessver@','Version tables for Tess.','2002-04-23 10:16:48',1,1,1,1,1,0,1, 1, 1, 1);
 INSERT INTO @oracle_core@.DatabaseInfo VALUES(9,'1.0','@oracle_tess@','Data relating to transcriptional regulation.','2002-04-23 10:16:48',1,1,1,1,1,0,1, 1, 1, 1);
 INSERT INTO @oracle_core@.DatabaseInfo VALUES(10,'3','@oracle_rad3@','RNA Abundance Database. Stores high-throughput gene expression experimental data and annotations.','2002-05-16 15:14:06',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.DatabaseInfo VALUES(11,'3','@oracle_rad3ver@','Version tables for RAD3','2003-02-12 20:50:31',1,1,1,1,1,0,1, 1, 1, 1);
 
-/* 9 row(s) */
+/* 10 row(s) */
 
 
 DROP SEQUENCE @oracle_core@.DatabaseInfo_SQ;
-CREATE SEQUENCE @oracle_core@.DatabaseInfo_SQ START WITH 11;
+CREATE SEQUENCE @oracle_core@.DatabaseInfo_SQ START WITH 12;
 
 COMMIT;
 SPOOL OFF

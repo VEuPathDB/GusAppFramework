@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* corever-views.sql                                                                          */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:00 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 13:21:30 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON

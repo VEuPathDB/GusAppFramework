@@ -22,6 +22,7 @@ sqlplus @oracle_dotsver@/@oracle_dotsverPassword@@@oracle_SID@ @dotsver-tables.s
 sqlplus @oracle_tess@/@oracle_tessPassword@@@oracle_SID@ @tess-tables.sql
 sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-tables.sql
 sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-tables.sql
+sqlplus @oracle_rad3ver@/@oracle_rad3verPassword@@@oracle_SID@ @rad3ver-tables.sql
 
 # create all views
 sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-views.sql
@@ -33,6 +34,16 @@ sqlplus @oracle_dotsver@/@oracle_dotsverPassword@@@oracle_SID@ @dotsver-views.sq
 sqlplus @oracle_tess@/@oracle_tessPassword@@@oracle_SID@ @tess-views.sql
 sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-views.sql
 sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-views.sql
+sqlplus @oracle_rad3ver@/@oracle_rad3verPassword@@@oracle_SID@ @rad3ver-views.sql
+
+# Grant permission to reference tables in @oracle_core@ to all other schemas
+grantPermissions.pl --login=@oracle_core@ --owner=@oracle_core@ --permissions=REFERENCES --grantees=@oracle_corever@,@oracle_sres@,@oracle_sresver@,@oracle_dots@,@oracle_dotsver@,@oracle_tess@,@oracle_tessver@,@oracle_rad3@,@oracle_rad3ver@ --password=@oracle_corePassword@
+
+# Grant permission to reference tables in @oracle_sres@ to all other schemas except @oracle_core@
+grantPermissions.pl --login=@oracle_sres@ --owner=@oracle_sres@ --permissions=REFERENCES --grantees=@oracle_corever@,@oracle_sresver@,@oracle_dots@,@oracle_dotsver@,@oracle_tess@,@oracle_tessver@,@oracle_rad3@,@oracle_rad3ver@ --password=@oracle_sresPassword@
+
+# Grant permission to reference tables in @oracle_dots@ to all other schemas except @oracle_core@
+grantPermissions.pl --login=@oracle_dots@ --owner=@oracle_dots@ --permissions=REFERENCES --grantees=@oracle_corever@,@oracle_sres@,@oracle_sresver@,@oracle_dots@,@oracle_dotsver@,@oracle_tess@,@oracle_tessver@,@oracle_rad3@,@oracle_rad3ver@ --password=@oracle_dotsPassword@
 
 # create all primary key constraints
 sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-pkey-constraints.sql
@@ -44,6 +55,7 @@ sqlplus @oracle_dotsver@/@oracle_dotsverPassword@@@oracle_SID@ @dotsver-pkey-con
 sqlplus @oracle_tess@/@oracle_tessPassword@@@oracle_SID@ @tess-pkey-constraints.sql
 sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-pkey-constraints.sql
 sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-pkey-constraints.sql
+sqlplus @oracle_rad3ver@/@oracle_rad3verPassword@@@oracle_SID@ @rad3ver-pkey-constraints.sql
 
 # create all non-primary key constraints
 sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-constraints.sql
@@ -55,6 +67,7 @@ sqlplus @oracle_dotsver@/@oracle_dotsverPassword@@@oracle_SID@ @dotsver-constrai
 sqlplus @oracle_tess@/@oracle_tessPassword@@@oracle_SID@ @tess-constraints.sql
 sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-constraints.sql
 sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-constraints.sql
+sqlplus @oracle_rad3ver@/@oracle_rad3verPassword@@@oracle_SID@ @rad3ver-constraints.sql
 
 # insert bootstrap rows, reset relevant sequences
 sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @bootstrap-rows.sql
@@ -74,6 +87,7 @@ sqlplus @oracle_dotsver@/@oracle_dotsverPassword@@@oracle_SID@ @dotsver-indexes.
 sqlplus @oracle_tess@/@oracle_tessPassword@@@oracle_SID@ @tess-indexes.sql
 sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-indexes.sql
 sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-indexes.sql
+sqlplus @oracle_rad3ver@/@oracle_rad3verPassword@@@oracle_SID@ @rad3ver-indexes.sql
 
-# Issued sqlplus commands for 59 SQL files
+# Issued sqlplus commands for 65 SQL files
 

@@ -4,7 +4,7 @@
 /*                                                                                            */
 /* Populate Core.TableInfo, which lists each of the GUS tables.                               */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:42:30 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 13:17:32 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -790,12 +790,92 @@ INSERT INTO @oracle_core@.TableInfo VALUES(3444,'AssayParam','standard','assay_p
 INSERT INTO @oracle_core@.TableInfo VALUES(3445,'TreatmentParam','standard','treatment_param_id',10,1,0,NULL,NULL,1,'2003-02-10 23:45:43',1,1,1,1,1,0,1, 1, 1, 1);
 INSERT INTO @oracle_core@.TableInfo VALUES(3463,'MAGE_ML','standard','mage_ml_id',10,1,0,NULL,NULL,1,'2003-02-11 10:32:59',1,1,1,1,1,0,1, 1, 1, 1);
 INSERT INTO @oracle_core@.TableInfo VALUES(3464,'StudyDesignType','standard','study_design_type_id',10,1,0,NULL,NULL,1,'2003-02-11 10:32:59',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3465,'AcquisitionVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3466,'AcquisitionParamVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3467,'AnalysisVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3468,'AnalysisImplementationVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3469,'AnalysisImplementationParamVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3470,'AnalysisInputVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3471,'AnalysisInvocationVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3472,'AnalysisInvocationParamVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3473,'AnalysisOutputVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3474,'ArrayVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3475,'ArrayAnnotationVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3476,'AssayVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3477,'AssayBioMaterialVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3478,'AssayLabeledExtractVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3479,'AssayParamVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3480,'BioMaterialCharacteristicVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3481,'BioMaterialImpVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3482,'BioMaterialMeasurementVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3483,'ChannelVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3484,'CompositeElementAnnotationVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3485,'CompositeElementGusVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3486,'CompositeElementImpVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3487,'CompositeElementResultImpVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3488,'ControlVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3489,'ElementAnnotationVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3490,'ElementImpVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3491,'ElementResultImpVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3492,'LabelMethodVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3493,'MAGEDocumentationVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3494,'MAGE_MLVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3495,'OntologyEntryVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3496,'ProcessIOVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3497,'ProcessIOElementVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3498,'ProcessImplementationVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3499,'ProcessImplementationParamVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3500,'ProcessInvQuantificationVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3501,'ProcessInvocationVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3502,'ProcessInvocationParamVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3503,'ProcessResultVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3504,'ProjectLinkVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3505,'ProtocolVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3506,'ProtocolParamVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3507,'QuantificationVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3508,'QuantificationParamVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3509,'RelatedAcquisitionVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3510,'RelatedQuantificationVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3511,'StudyVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3512,'StudyAssayVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3513,'StudyDesignVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3514,'StudyDesignAssayVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3515,'StudyDesignDescriptionVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3516,'StudyDesignTypeVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3517,'StudyFactorVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3518,'StudyFactorValueVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3519,'TreatmentVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3520,'TreatmentParamVer','version',NULL,11,0,0,NULL,NULL,1,'2003-02-13 12:44:45',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3521,'BioMaterialVer','version',NULL,11,0,1,3481,NULL,1,'2003-02-13 12:48:13',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3522,'CompositeElementVer','version',NULL,11,0,1,3486,NULL,1,'2003-02-13 12:48:18',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3523,'CompositeElementResultVer','version',NULL,11,0,1,3487,NULL,1,'2003-02-13 12:48:18',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3524,'ElementVer','version',NULL,11,0,1,3490,NULL,1,'2003-02-13 12:48:18',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3525,'ElementResultVer','version',NULL,11,0,1,3491,NULL,1,'2003-02-13 12:48:18',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3526,'AffymetrixCELVer','version',NULL,11,0,1,3491,3525,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3527,'AffymetrixMAS4Ver','version',NULL,11,0,1,3487,3523,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3528,'AffymetrixMAS5Ver','version',NULL,11,0,1,3487,3523,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3529,'ArrayVisionElementResultVer','version',NULL,11,0,1,3491,3525,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3530,'BioSampleVer','version',NULL,11,0,1,3481,3521,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3531,'BioSourceVer','version',NULL,11,0,1,3481,3521,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3532,'GEMToolsElementResultVer','version',NULL,11,0,1,3491,3525,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3533,'GenePixElementResultVer','version',NULL,11,0,1,3491,3525,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3534,'LabeledExtractVer','version',NULL,11,0,1,3481,3521,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3535,'MOIDResultVer','version',NULL,11,0,1,3487,3523,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3536,'SAGETagVer','version',NULL,11,0,1,3486,3522,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3537,'SAGETagMappingVer','version',NULL,11,0,1,3490,3524,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3538,'SAGETagResultVer','version',NULL,11,0,1,3487,3523,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3539,'ScanAlyzeElementResultVer','version',NULL,11,0,1,3491,3525,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3540,'ShortOligoVer','version',NULL,11,0,1,3490,3524,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3541,'ShortOligoFamilyVer','version',NULL,11,0,1,3486,3522,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3542,'SpotVer','version',NULL,11,0,1,3490,3524,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3543,'SpotElementResultVer','version',NULL,11,0,1,3491,3525,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3544,'SpotFamilyVer','version',NULL,11,0,1,3486,3522,1,'2003-02-13 12:49:24',1,1,1,1,1,0,1, 1, 1, 1);
 
-/* 778 row(s) */
+/* 858 row(s) */
 
 
 DROP SEQUENCE @oracle_core@.TableInfo_SQ;
-CREATE SEQUENCE @oracle_core@.TableInfo_SQ START WITH 3465;
+CREATE SEQUENCE @oracle_core@.TableInfo_SQ START WITH 3545;
 
 COMMIT;
 SPOOL OFF
