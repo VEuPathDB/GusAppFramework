@@ -823,6 +823,9 @@ sub buildGeneFeature {
 
     push (@gus_note_objects, @gus_notes);
 
+    $gf->submit();  ## ##BG submit here?? YES, else, na_feature_id not found
+    print STDERR "CHECK buildGeneFeature - id=" . $gf->getId() ."\n";
+
     return ($gf, $gus_naLocation_gf, @gus_note_objects, @child_refs);
 }
 
@@ -966,6 +969,8 @@ sub buildRNAFeature {
     my $review_status_id  = $REVIEW_STATUS_ID;
     #'my $na_sequence_id    = $gus_sequence->getNaSequenceId (); # This is the UNSPLICED na_sequence!!!
     my $source_id         = $gus_sequence->getSourceId();
+    my $parent_id         = $gf->getId();  ## ## BG
+    print STDERR "CHECK buildRNAFeature - parent_id=" . $parent_id . "\n";
 
     my $h = {
         'is_predicted'      => $is_predicted,
@@ -1014,10 +1019,13 @@ sub buildRNAFeature {
         }
     }
 
+    print STDERR "CHECK: rna_feat_id=" . $rnaf->getId . "\n"; ## ##BG
     ##
     # New NALocation object
     ##
     my $gus_naLocation_rf = $self->buildNALocation($rnaf, $bioperl_geneLocation);
+    $rnaf->submit();  ## ##BG submit here?? YES, else, na_feature_id not found
+    print STDERR "CHECK buildRNAFeature - id=" . $rnaf->getId() ."\n";
 
     return $rnaf, $gus_naLocation_rf;
 }
@@ -1085,7 +1093,8 @@ sub buildSplicedNASequence {
             $snas->set($att, $h->{$att});
         }
     }
-
+    $snas->submit();## ##BG submit here else no ID
+    print STDERR "CHECK buildSplicedNASequence - id=" . $snas->getId() . "\n";
     return $snas;
 }
 
@@ -1191,6 +1200,179 @@ sub buildRNAFeatureExon {
 #############
 
 sub buildTranslatedAASequence {
+    ###  my ($self, $gf, $aa_feature_translated, $systematic_id) = @_;
+    my ($self, $gf, $systematic_id) = @_;
+    
+    my $debug            = $self->{debug};
+    my $bioperl_feature  = $self->{bioperlFeature};
+    my $bioperl_sequence = $self->{bioperlSequence};
+    my $datasource       = $self->{datasource};
+    
+    # Get the external_database_release_id associated with it
+    print STDERR "LOOKING FOR EXTDB_REL-ID\n";
+    my $ext_db = GUS::Model::SRes::ExternalDatabase->new ({"name" => $datasource});
+    my $exist  = $ext_db->retrieveFromDB();
+    my $ext_db_id;
+    print STDERR "TAAF-EXTDB_REL-ID:$ext_db\n\n";  #TW
+    my $ext_db_release_id;
+    if ($exist) {
+	$ext_db_id = $ext_db->getId();
+	my $ext_db_release = GUS::Model::SRes::ExternalDatabaseRelease->new ({"external_database_id" => $ext_db_id});
+	#TW-$exist = $ext_db_release->retrieveFromDB();
+	$exist = $ext_db_release_id = 9914;  #TW - hard-coded
+	if ($exist) {
+	    #$ext_db_release_id = $ext_db_release->getId();
+	    print STDERR "EXTDB_REL-ID:$ext_db_release_id\n\n";
+	}
+	else {
+	    print STDERR "ERROR-ExtDbRelId - can't get the External Database Release ID associated with this datasource, $datasource!\n";
+	    exit 1;
+	}
+    }
+    else {
+	print STDERR "ERROR-ExtDbId - can't get the External Database ID associated with this datasource, $datasource!\n";
+	exit 1;
+    }
+    
+    print STDERR "In buildTranslatedAASequence()\n";
+
+    my $subclass_view = "TranslatedAASequence"; # Why???
+    #my $name          = $gf->get ('standard_name'); # This was only used in debug output
+
+
+    # Description is now the concatenation of the set of product qualifiers
+    #
+    my $aa_seq_descr = "";
+
+    if ($bioperl_feature->has_tag ('product')) {
+        my @bioperl_products = $bioperl_feature->each_tag_value ('product');
+
+        foreach my $bioperl_product (@bioperl_products) {
+            $aa_seq_descr .= $bioperl_product . "; ";
+        }
+    }
+    $aa_seq_descr =~ s/\s$//; # Remove last space put on above via "; "
+
+    my $seq_version  = 1;
+  
+    ##############################
+    # Get the translated sequence
+    # using bioperl
+    ##
+
+    my $spliced_seq = $bioperl_feature->spliced_seq();
+    # process the frame and the is_partial
+  
+    # partial gene information
+
+    my $is_partial   = $gf->get ('is_partial');
+    my $is_complete  = 0;
+    $is_complete     = 1 unless $is_partial;
+
+    ##
+    # Frame information
+    my $frame = 0;
+
+    if ($bioperl_feature->has_tag ('codon_start')) {
+        my @start_codons = $bioperl_feature->each_tag_value ('codon_start');
+        my $start_codon  = $start_codons[0];
+        $frame = $start_codon - 1;
+    }
+
+    ##
+    # translation table to use
+    my $transl_table = 1;
+
+    if ($bioperl_feature->has_tag ('transl_table')) {
+        my @transl_tables = $bioperl_feature->each_tag_value ('transl_table');
+
+        if ($transl_tables[0] != -1) {
+            $transl_table  = $transl_tables[0];
+
+            print "\n################################################################################\n";
+            print "WARNING: buildTranslatedAASequence(): using \$transl_table = '$transl_table'\n";
+            print "         This bit needs to be fully checked.\n";
+            print "################################################################################\n\n";
+        }
+
+    }
+
+    # For args to translate(), see http://doc.bioperl.org/releases/bioperl-1.4/Bio/PrimarySeqI.html#POD10
+    # 1. character for terminator (optional) defaults to '*'
+    # 2. character for unknown amino acid (optional) defaults to 'X'
+    # 3. frame (optional) valid values 0, 1, 2, defaults to 0
+    # 4. codon table id (optional) defaults to 1
+    # 5. complete coding sequence expected, defaults to 0 (false)
+
+    #my $prot_seq = $spliced_seq->translate(undef,undef,$frame,$is_complete,0);
+    my $prot_seq = $spliced_seq->translate(undef, undef, $frame, $transl_table, $is_complete);
+  
+    if ($debug) {
+        print STDERR "translated protein sequence for gene, $systematic_id:\n";
+        #TW-print STDERR $prot_seq->seq() . "\n";
+    }
+
+    my $h = {
+	     'subclass_view'    => $subclass_view,
+	     'sequence_version' => $seq_version,
+	     'description'      => $aa_seq_descr,
+	     'sequence'         => $prot_seq->seq(),
+	     'external_database_release_id' => $ext_db_release_id,
+	    };
+
+    my $aa_seq  = GUS::Model::DoTS::TranslatedAASequence->new($h); ###BG
+
+    # need source ?????
+    #$aa_seq->setSourceId ($source_feature->getNaFeatureId());
+
+    ###
+    # Molecular Weight
+    #
+    if ($bioperl_feature->has_tag ('molecular_weight')) {
+        my @tmp        = $bioperl_feature->each_tag_value('molecular_weight');
+        my $mol_weight = $tmp[0];
+        $mol_weight    =~ s/\s*da//i;
+        print STDERR "mol weight    : $mol_weight\n";
+
+	if (! ($mol_weight =~ /^\d+$/)) {
+	  print STDERR "molecular weight, $mol_weight, not a number !!!\n";
+	}
+	else {
+	    if ($aa_seq->get('molecular_weight') != $mol_weight) {
+		$aa_seq->set ('molecular_weight', $mol_weight);
+	    print STDERR "NO molecular weight\n";
+	  }
+	}
+    }
+
+    ###
+    # Peptide Length
+    #
+    if ($bioperl_feature->has_tag('peptide_length')) {
+        my @tmp    = $bioperl_feature->each_tag_value('peptide_length');
+        my $length = $tmp[0];
+        print STDERR "peptide length: $length\n";
+
+        if ($aa_seq->get('length') != $length) {
+            $aa_seq->set('length', $length);
+        }
+    }
+
+    # We may have got the "old" TranslatedAASequence from $aa_feature_translated
+    # in the first place.
+    #
+#    unless ($aa_feature_translated->getParent($aa_seq->getClassName())) {
+#        $aa_feature_translated->setParent($aa_seq);
+#    }
+
+    my (@properties) = $self->buildProteinProperties($aa_seq);
+
+    return ($aa_seq, @properties);;
+}
+
+
+##BG 
+sub buildTranslatedAASequenceBAK {
     my ($self, $gf, $aa_feature_translated, $systematic_id) = @_;
     
     my $debug            = $self->{debug};
@@ -1227,7 +1409,7 @@ sub buildTranslatedAASequence {
     print STDERR "In buildTranslatedAASequence()\n";
     
     my $aa_seq = $aa_feature_translated->getParent("GUS::Model::DoTS::TranslatedAASequence", 1);
-    
+
     #my $aa_seq_from_db = $self->getTranslatedAASequence($systematic_id);
     #print "\nbuildTranslatedAASequence() got a '$aa_seq_from_db' back !!\n\n";
     
@@ -1493,7 +1675,7 @@ sub buildProteinProperties {
 # The ProteinFeature object stores the EC_number
 ####
 
-sub buildProteinFeature {
+sub buildProteinFeature {  ## ##BG
     my ($self, $rnaf)    = @_;
     my $gus_sequence     = $self->{gusSequence};
     my $bioperl_feature  = $self->{bioperlFeature};
@@ -1501,7 +1683,7 @@ sub buildProteinFeature {
     my $aaf = $rnaf->getChild('DoTS::TranslatedAAFeature', 1);
 
     print STDERR "buildProteinFeature(): getChild(TranslatedAAFeature) returned '$aaf'\n";
-
+    print STDERR " CHECK - buildProteinFeature - rnafeature_id=" . $rnaf->getId() . "\n";
     ##
     # TranslatedAAFeature
     ##
@@ -1543,7 +1725,11 @@ sub buildProteinFeature {
         }
     }
 
-    
+#    $aaf->submit(); ## ##BG    
+    print STDERR "CHECK - buildProteinFeature(): 1 getChild(TranslatedAAFeature) returned" . $aaf . "  ID=" .$aaf->getId() ."  parent_id= " . $aaf->getNaFeatureId()  . "\n";
+
+
+
     ###
     # ProteinFeature
     ###
@@ -1609,9 +1795,10 @@ sub buildProteinFeature {
     # EnzymeClass and process parents as well
     while ($ec_gus) {
 	$aaSequenceEnzymeClass =
-					GUS::Model::DoTS::AASequenceEnzymeClass->new({ evidence_code        => 'UNK',
-										       review_status_id=> 1,
-										   });
+	    GUS::Model::DoTS::AASequenceEnzymeClass->new({ 
+		evidence_code        => 'UNK',
+		review_status_id=> 1,
+	    });
 	# note that these are done on the  attributes so that 
 	# we can check for prexisting annotations.
 	$aaSequenceEnzymeClass->setAaSequenceId($aaf->getId);
@@ -1628,18 +1815,24 @@ sub buildProteinFeature {
 	    print "-ADDED EC->GENEASSOC\n";
 	}
 	 print STDERR "NEW_OLD: $new_or_old" . 
-		   #$gene_xml->{GENE_INFO}->{PUB_LOCUS} || $gene_xml->{GENE_INFO}->{LOCUS},
-		   #$gene_xml->{GENE_INFO}->{COM_NAME}, 
-		   $aaf, 
-		   $ec_gus->getEcNumber . "\n";
+	     #$gene_xml->{GENE_INFO}->{PUB_LOCUS} || $gene_xml->{GENE_INFO}->{LOCUS},
+	     #$gene_xml->{GENE_INFO}->{COM_NAME}, 
+	     $aaf->getId, ##BG $aaf, 
+	     $ec_gus->getEcNumber . "\n";
 	
 	# get parent.
+	##BG more than one parent found; need to put in a release_id perhaps?
+	 print STDERR "OLD: extdbid=" . $ec_gus->getExternalDatabaseReleaseId .
+	     " and ecnum=" . $ec_gus->getEcNumber .
+	     " and aaseqid=" . $aaSequenceEnzymeClass->setAaSequenceId($aaf->getId) .
+	     "\n";	     ;   ## ##BG
+	###BG   $ec_gus = GUS::Model::SRes::EnzymeClass->new({ ec_number => $ec_num, external_database_release_id=>7199 }); ##
 	my $ec_parent_gus = $ec_gus->getParent('SRes::EnzymeClass',1);
 	print STDERR "Looking for EC parent\n";
 	if (!$ec_parent_gus) {
 	    print STDERR "WARN: " . 'No parent found',$ec_gus->getEcNumber;
-		       #$gene_xml->{GENE_INFO}->{PUB_LOCUS} || $gene_xml->{GENE_INFO}->{LOCUS},
-		       #$gene_xml->{GENE_INFO}->{COM_NAME}, );
+	    #$gene_xml->{GENE_INFO}->{PUB_LOCUS} || $gene_xml->{GENE_INFO}->{LOCUS},
+	    #$gene_xml->{GENE_INFO}->{COM_NAME}, );
 				   
 	    last;
 	}
@@ -1675,6 +1868,74 @@ sub buildProteinFeature {
     #END --------------------------------------------
     return ($aaf, $aaSequenceEnzymeClass);
 }
+
+sub buildTranslatedAAFeature {
+    my ($self, $rnaf, $aa_seq)    = @_;
+    my $gus_sequence     = $self->{gusSequence};
+    my $bioperl_feature  = $self->{bioperlFeature};
+
+    my $aaf = $rnaf->getChild('DoTS::TranslatedAAFeature', 1);
+
+    print STDERR "buildTranslatedAAFeature(): getChild(TranslatedAAFeature) returned '$aaf'\n";
+    print STDERR " CHECK - buildTranslatedAAFeature - rnafeature_id=" . $rnaf->getId() . "\n";
+    ##
+    # TranslatedAAFeature
+    ##
+
+    #my $subclass_view   = "TranslatedAAFeature";
+    my $is_predicted     = 1;
+    my $review_status_id = $REVIEW_STATUS_ID;
+    # codon_table, is_simple, tr_start, tr_stop ????
+
+    my $description      = "";
+
+    if ($bioperl_feature->has_tag ('product')) {
+        my @bioperl_products = $bioperl_feature->each_tag_value ('product');
+
+        foreach my $bioperl_product (@bioperl_products) {
+            $description .= $bioperl_product . "; ";
+        }
+    }
+
+    $description =~ s/\s$//; # Remove trailing space from above "; "
+
+    my $h = {
+        #'subclass_view'    => $subclass_view,
+        'is_predicted'     => $is_predicted,
+        'review_status_id' => $review_status_id,
+        'description'      => $description,
+    };
+
+    unless ($aaf) {
+        $aaf = GUS::Model::DoTS::TranslatedAAFeature->new ($h);
+        $aaf->setParent($rnaf);
+        $aaf->setParent($aa_seq);
+    }
+
+    foreach my $att (keys %{$h}) {
+        if ($aaf->get($att) ne $h->{$att}) {
+            print STDERR "buildTranslatedAAFeature(): $att has changed for DoTS::TranslatedAAFeature ",$rnaf->getName(),": Object == '",$aaf->get($att), "' lastest value == '", $h->{$att},"'\n";
+            $aaf->set($att, $h->{$att});
+        }
+    }
+
+#    $aaf->submit(); ## ##BG    
+    print STDERR "CHECK - buildTranslatedAAFeature(): 1 getChild(TranslatedAAFeature) returned" . $aaf . "  ID=" .$aaf->getId() ."  parent_id= " . $aaf->getNaFeatureId()  . "\n";
+
+
+
+    ###
+    # ProteinFeature
+    ###
+
+    #my $pf = $rnaf->getChild('GUS::Model::DoTS::ProteinFeature', 1);  #TW
+    #print STDERR "buildTranslatedAAFeature(): getChild(ProteinFeature) returned '$pf'\n";
+
+    my $name       = $rnaf->getName;
+ 
+    return ($aaf);
+}
+
 
 ################################################################################
 #
