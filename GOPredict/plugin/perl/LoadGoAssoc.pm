@@ -2,6 +2,8 @@ package GUS::GOPredict::Plugin::LoadGoAssoc;
 @ISA = qw( GUS::PluginMgr::Plugin);
 use CBIL::Bio::GeneAssocParser::Parser;
 
+use Carp;
+
 use lib "$ENV{GUS_HOME}/lib/perl";
 
 use strict 'vars';
@@ -265,9 +267,10 @@ sub loadAssociations {
 		
 	#convert file store into hash to be used by algorithm
 	my $assocData = $self->__createAssocData($allEntries, $allGusIds, $assocMethod, $organism);
-	
+       
+	$self->__adjustDefiningAncestors($organism, $assocData, $goGraph);
 #	$self->__adjustIsNots($assocData, $allGoAncestors, $goGraph, $organism);
-
+	next;
 	#for each external sequence
 	foreach my $extSeq (keys %$assocData){
 
@@ -319,7 +322,8 @@ sub loadAssociations {
 		    $self->logVerbose("skipped $extSeq association with go id $goId because evidence is NULL");
 		    next;
 		}
-		
+
+		#dtb note: take this out and deal with new logic that taking it out might induce
 		if ($self->__hasDefiningDescendant($goIds, $allGoAncestors, $goId, $goGraph)){
 		    my $desMsg = "\t\t skipping this defining assignment as another descendant will be making it\n";
 #		    print BIGLOG $desMsg . "\n";
@@ -405,6 +409,76 @@ sub loadAssociations {
 }
 
 # ......................................................................
+#one-time (hopefully) method to clean up associations that didn't get set to defining in previous run
+sub __adjustDefiningAncestors{
+
+    my ($self, $organism, $assocData, $goGraph) = @_;
+    
+    my $goDb = $self->getCla->{go_ext_db_rel_id};
+   
+    my $dbList = '( '. join( ', ', @{ $self->{orgInfo}->{$organism}->{ db_id } } ). ' )'; 
+    my $idCol = $self->{orgInfo}->{$organism}->{id_col};
+
+    my $msg;
+    my $counter = 0;
+
+    open (LASTLOG, ">>logs/definingLog") || die "pluginLog could not be opened";
+
+    my $sql = "select ga.go_association_id, eas.$idCol 
+               from DoTS.GOAssociation ga, DoTS.ExternalAASequence eas,
+               DoTS.GOAssociationInstance gai
+               where ga.table_id = 83 and ga.row_id = eas.aa_sequence_id
+               and gai.go_association_id = ga.go_association_id
+               and eas.external_database_release_id in $dbList 
+               and gai.external_database_release_id = $goDb"; 
+
+    my $queryHandle = $self->getQueryHandle();
+    my $sth = $queryHandle->prepareAndExecute($sql);
+    my $rowCount = 0;
+    my $parentCount = 0;
+    my $changeCount = 0;
+    my $noChangeCount = 0;
+    while (my ($assocId, $extId) = $sth->fetchrow_array()){
+	$rowCount++;
+	my $assocObject = 
+	  GUS::Model::DoTS::GOAssociation->new( {go_association_id=>$assocId,});
+	
+	#retrieve row and children.  Has one go term associated with it
+	$assocObject->retrieveFromDB();
+	$assocObject->retrieveAllChildrenFromDB(0);    
+	my $assocObjectInst = $assocObject->getChild("DoTS::GOAssociationInstance");
+	
+	&confess ("couldn't get instance for " . $assocObject->getGOAssociationId()) if !$assocObjectInst;
+	
+	my $submit = 0;
+	#print LASTLOG "couldn't find an entry for $extId\n" if !$assocData->{$extId};
+	my $dbGoTermGusId = $assocObject->getGoTermId(); 
+	my $dbGoTermGoId = $goGraph->{gusToGo}->{$dbGoTermGusId};
+	if ($assocData->{$extId}->{goTerms}->{$dbGoTermGoId}){  #found one that is explicitly set
+	 #   print LASTLOG "found matching association $extId - $dbGoTermGoId in file; ";
+	    if (!$assocObjectInst->getDefining()){
+		$submit = 1;
+		$changeCount++;
+		#print LASTLOG " it's one that needs to be corrected\n";
+		$assocObjectInst->setDefining(1);
+	    }
+	    else{
+		$noChangeCount++;
+		#print LASTLOG " this GO Term is a leaf and was already set to defining\n";
+	    }
+	}
+	else { $parentCount++};
+	$assocObjectInst->submit() if $submit;
+	$self->undefPointerCache();
+    }
+    print LASTLOG "total: $rowCount changed: $changeCount stayed the same: $noChangeCount parents: $parentCount\n";
+
+}
+
+
+
+# ......................................................................
+
 
 
 sub deleteAssociations{
@@ -1071,7 +1145,7 @@ sub __loadOrgInfo{
 		 assoc_meth    => 'getDBObjectId',
 	     },
 
-	fb  => { id_col   => 'secondary_identifier',  #FBgn style CHANGE BACK
+	fb  => { id_col   => 'secondary_identifier',  
 		 id_tbl   => 'Dots.ExternalAASequence',
 		 clean_id => sub { [ $_[ 0 ] ] },
 		 assoc_meth    => 'getDBObjectId',
