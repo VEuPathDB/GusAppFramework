@@ -121,6 +121,7 @@ SQL
 
   elsif ($M->getArgs->{commit} &&
 	 $imps->[0]->{EXECUTABLE_MD5} ne $P->getCheckSum()) {
+
     my $run = "ga +update $e";
     $run = "ga +meta" if $e =~ /GusApplication/;
     $M->userError("The md5 checksum of ${e}'s executable file (cvs revision $cvsRevision) doesn't match the md5 checksum in the database for that plugin and revision. IE, the plugin has been changed but not commited and updated.  Please:
@@ -271,7 +272,7 @@ sub doMajorMode {
   my @A = @_;
 
   my @modes    = qw( meta create update history run );
-  my $modes_rx = '^('. join('|',@modes). ')$';
+  my $modes_rx = '^('. join('|',@modes). ')$'; # ' this quote is for emacs highlighting
 
   if ($M->getMode =~ /$modes_rx/) {
 
@@ -992,10 +993,9 @@ sub connect_to_database {
   my $dbiDsn   = $M->getConfig->getDbiDsn();
 
   $P->initDb(new GUS::ObjRelP::DbiDatabase($dbiDsn,
-					   $login,$password,
-					   $P->getArgs->{verbose},0,1,
-					   $core));
-
+                                           $login,$password,
+                                           $P->getArgs->{verbose},0,1,
+                                           $core));
   # return self.
   $M
 }
