@@ -137,9 +137,8 @@ foreach my $A(@na_sourceids)    {
 
 #check to see if all previous evidence still valid
 
-my $DTarray_ref = \@DTs;
 
-$self->RemoveEvidenceSourceID($DTarray_ref);
+$self->RemoveEvidenceSourceID(\@DTs);
 
    print STDERR "ConsideringForFLDT.$na_seq\n";
 
@@ -242,16 +241,17 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
    }
 
-    print "@{$DTarray_ref}\n";
+    print "ArrayDTs@{$DTarray_ref}\n";
 
+#both if these arrays can be empty if no evidence needs to be deleted for an assembly
     foreach my $target_id(@DTSasEvidenceTarget)  {
 
-      foreach my $DT(@{$DTarray_ref})  {
+      foreach (@{$DTarray_ref})  {
 
 
-       if ($target_id == $DT){  next;  }
+       if ($target_id == $_){  next;  }
 
-        if ($target_id != $DT)  {
+        if ($target_id != $_)  {
 
           my $dbh = $self->getQueryHandle();
 
