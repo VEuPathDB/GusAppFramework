@@ -222,7 +222,7 @@ sub run {
    return $@ if $@;
 
    # make sure we can hold everything.
-   $Self->getSelfInv()->setMaximumNumberOfObjects(100000);
+   $Self->getSelfInv()->setMaximumNumberOfObjects(500_000);
 
    if ($Self->getCla()->{Update}) {
       my $enzymes = $ezp->getFileCache('enzymes')->getEntries();
