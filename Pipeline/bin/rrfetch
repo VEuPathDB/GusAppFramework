@@ -1,0 +1,50 @@
+#!@perl@
+
+use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
+use GUS::Pipeline::RepositoryEntry;
+
+usage() unless scalar @ARGV > 6;
+
+my $repositoryDir=shift;
+my $resource = shift;
+my $version = shift;
+my $targetDir = shift;
+my $sourceUrl = shift;
+
+my %wgetArgs;
+foreach my $arg (@ARGV) {
+  my ($k, $v) = &GUS::Pipeline::RepositoryEntry::parseWgetArg($arg);
+  $wgetArgs{$k} = $v;
+}
+
+my $repositoryEntry = 
+  GUS::Pipeline::RepositoryEntry->new($repositoryDir, $resource, $version,
+				      $sourceUrl, \%wgetArgs);
+
+$repositoryEntry->fetch($targetDir);
+
+sub usage {
+  print "
+
+Fetch a file from an external resources repository.
+
+usage:  rrfetch repositoryDir resourceName version targetDir sourceUrl wgetArgs
+
+where:
+  repositoryDir - the directory holding the repository
+  resourceName  - eg NRDB, Genbank
+  version       - eg 1.1.2
+  targetDir     - the location to put the fetched file
+  sourceUrl     - the URL to provide to wget
+  wgetArgs      - is a list of the form --flagArg or --valueArg=value
+
+exclude the following wget args (sfetch handles them):
+  --directory-prefix
+  --output-file
+
+
+";
+
+exit(1);
+}
