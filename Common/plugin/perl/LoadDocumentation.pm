@@ -125,14 +125,23 @@ sub process {
 
 		## want to skip identical documentation - query to see if already stored
 		my $dbh = $ctx->{'self_inv'}->getDbHandle();
-		my $query = "SELECT database_documentation_id FROM Core.DatabaseDocumentation WHERE table_id=$doc->getTableIdFromTableName($table_nm) AND attribute_name=$attribute_nm AND html_documentation=$html_dc";
+		my $query = "SELECT table_id, attribute_name, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$doc->getTableIdFromTableName($table_nm) AND attribute_name='$attribute_nm'";
 		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
 		my $stmt = $dbh->prepare($query);
 		$stmt->execute();
-		if ( my($id) = $stmt->fetchrow_array()) {
-		  $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
-		  return;
-		}
+		if (my($id) = $stmt->fetchrow_array()){
+		  #parse row to compare html
+		  while (@ary = $sth->fetchrow_array() ){
+		    chomp;
+		    my $tb_id = $ary[0]; #queried table id
+		    my $att_name = $ary[1]; #queried attribute name
+		    my $html = $ary[2]; #queried html documentation
+
+		    if ($html eq $html_dc){ #documentation is identical to what is already in db - SKIP
+		      $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
+		      return;
+		    }
+		  }
 		
 		my $test_dc = $doc->getHtmlDocumentation();
 		print "\nhtml: $test_dc\n\n";
