@@ -93,79 +93,74 @@ sub run {
 
 sub mergeTaxons {
   my $self   = shift;
+  print STDERR "Merging taxons\n";
   open (MERGED,$self->getCla->{'merged'}) || die "Can't open merged file: !\n";
-  my %mergedHsh;
   while(<MERGED>) {
     chomp;
     my @merged = split(/\s*\|\s*/, $_);
-    $mergedHsh{$merged[0]} = $merged[1];
-  }
-  my ($taxonToTaxId,$oldTaxonToNewTaxon) = $self->getUpdateHashes(\%mergedHsh);
-  $self->updateTaxonRows($taxonToTaxId);
-  $self->updateTaxonAndChildRows($oldTaxonToNewTaxon);
-}
-
-sub getUpdateHashes {
-  my ($self,$mergedHsh) = @_;
-  my (%taxonToTaxId,%oldTaxonToNewTaxon);
-  my $dbh = $self->getDb()->getDbHandle();
-  my $st = $dbh->prepare("select t.taxon_id from sres.taxon t where t.ncbi_tax_id = ?");
-  foreach my $oldTaxId (keys %$mergedHsh) {
-    my ($oldTaxonId,$newTaxonId);
-    $st->execute($oldTaxId);
-    if (! ($oldTaxonId = $st->fetchrow_array())) {
-      $st->finish();
+    my $oldTax = $merged[0];
+    my $newTax = $merged[1];
+    my $oldTaxon = $self->getTaxon($oldTax);
+    if (! $oldTaxon) {
+      print STDERR "$oldTax not in database, skipping\n";
       next;
     }
-    else {
-      $st->execute($mergedHsh->{$oldTaxId});
-      if (! ($newTaxonId = $st->fetchrow_array()) ) {
-	$taxonToTaxId{$oldTaxonId} = $mergedHsh->{$oldTaxId};
-      }
-      else {
-	$oldTaxonToNewTaxon{$oldTaxonId} = $newTaxonId;
-      }
-    }
-    $st->finish();
+    my $newTaxon = $self->getTaxon($newTax);
+    $self->updateTaxonRow($oldTaxon,$newTax) if (! $newTaxon);
+    $self->updateTaxonAndChildRows ($oldTaxon,$newTaxon) if ($newTaxon);
   }
-  return (\%taxonToTaxId,\%oldTaxonToNewTaxon);
 }
 
-sub updateTaxonRows {
-  my ($self,$taxonToTaxId) = @_;
-  foreach my $oldTaxonId (keys %$taxonToTaxId) {
-    my $newTaxon  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxonId});
-    $newTaxon ->retrieveFromDB();
-    if ($newTaxon->get('ncbi_tax_id') != $taxonToTaxId->{$oldTaxonId}) {
-      $newTaxon->set('ncbi_tax_id',$taxonToTaxId->{$oldTaxonId});
-    }
-    $newTaxon->submit();
-    $self->undefPointerCache();
+sub updateTaxonRow {
+  my ($self,$oldTaxon,$newTax) = @_;
+  my $taxonRow  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxon});
+  $taxonRow ->retrieveFromDB();
+  if ($taxonRow->get('ncbi_tax_id') != $newTax) {
+    $taxonRow->set('ncbi_tax_id',$newTax);
   }
+  my $submit = $taxonRow->submit();
+  if ($submit == 1) {
+    print STDERR "Taxon_id = $oldTaxon updated to ncbi_tax_id = $newTax\n";
+  }
+  else {
+    print STDERR "Taxon_id = $oldTaxon FAILED to update to ncbi_tax_id = $newTax\n";
+  }
+  $self->undefPointerCache();
 }
 
 sub updateTaxonAndChildRows {
-  my ($self,$oldTaxonToNewTaxon)= @_;
-  foreach my $oldTaxonId (keys %$oldTaxonToNewTaxon) {
-    my $newTaxon = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxonToNewTaxon->{$oldTaxonId}});
-    $newTaxon ->retrieveFromDB();
-    my $oldTaxon  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxonId});
-    $oldTaxon ->retrieveFromDB();
-    my @children = $oldTaxon->getAllChildren(1);
-    foreach my $child (@children) {
-      $child->removeParent($oldTaxon);
-      $child->setParent($newTaxon);
-    }
-    $newTaxon->submit();
-    $oldTaxon->markDeleted(); 
-    $oldTaxon->submit();
-    $self->undefPointerCache();
+  my ($self,$oldTaxon,$newTaxon)= @_;
+  my $newTaxon = GUS::Model::SRes::Taxon->new({'taxon_id'=>$newTaxon});
+  $newTaxon ->retrieveFromDB();
+  my $oldTaxon  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxon});
+  $oldTaxon ->retrieveFromDB();
+  my @children = $oldTaxon->getAllChildren(1);
+  foreach my $child (@children) {
+    $child->removeParent($oldTaxon);
+    $child->setParent($newTaxon);
   }
+  my $submit = $newTaxon->submit();
+  if ($submit == 1) {
+    print STDERR "Taxon_id = $oldTaxon merged with Taxon_id = $newTaxon\n";
+  }
+  else {
+    print STDERR "Taxon_id = $oldTaxon FAILED to merge with Taxon_id = $newTaxon\n";
+  }
+  $oldTaxon->markDeleted(); 
+  my $delete = $oldTaxon->submit();
+  if ($delete == 1) {
+    print STDERR "Taxon_id = $oldTaxon deleted\n";
+  }
+  else {
+    print STDERR "Taxon_id = $oldTaxon FAILED to delete\n";
+  }
+  $self->undefPointerCache();
 }
 
 sub makeGeneticCode {
 
     my $self   = shift;
+    print STDERR "Updating and inserting SRes.GeneticCode\n";
     my %genCodes;  ##$genCodes{ncbi_gencode_id}=GUS genetic_code_id
     open (GENCODE,$self->getCla->{'gencode'}) || die "Can't open gencode file: !\n";
     while (<GENCODE>) {
@@ -284,11 +279,11 @@ sub makeTaxonEntry {
 
     
     $newTaxon->submit();
-    $self->undefPointerCache();
-    print STDOUT ("processed ncbi_tax_id : $tax_id\n");
+    my $submit = $self->undefPointerCache();
+    print STDERR ("Processed ncbi_tax_id : $tax_id\n") if ($submit ==1);
     $$count++;
-    if ($$count % 100 == 0) {
-	print STDERR ("Number processed: $$count");
+    if ($$count % 1000 == 0) {
+	print STDERR ("Number processed: $$count\n");
     }
 }
 
@@ -314,11 +309,9 @@ sub getTaxon{
     
     my $self   = shift;
     my ($tax_id) = @_;
-    my $taxon_id;
     my $dbh = $self->getDb()->getDbHandle();
-    my $st = $dbh->prepare("select t.taxon_id from sres.taxon t where t.ncbi_tax_id = ?");
-    $st->execute($tax_id);
-    $taxon_id = $st->fetchrow_array();
+    my $st = $dbh->prepareAndExecute("select t.taxon_id from sres.taxon t where t.ncbi_tax_id = $tax_id");
+    my $taxon_id = $st->fetchrow_array();
     $st->finish();
     return $taxon_id;
 }
@@ -327,6 +320,7 @@ sub makeTaxonName {
 
   my $self   = shift;
   my $namesDmp = shift;
+  print STDERR "Inserting and updating TaxonName\n";
   my %TaxonNameIdHash;
   my %TaxonIdHash;
   my $num = 0;
@@ -339,8 +333,7 @@ sub makeTaxonName {
 	  my $newTaxonName = GUS::Model::SRes::TaxonName->new(\%attHash);
 
 	  if (!$newTaxonName->retrieveFromDB()) {
-	    $newTaxonName->submit();
-	    $num++;
+	    $num += $newTaxonName->submit();
 	  }
 
 	  my $taxon_name_id = $newTaxonName->getTaxonNameId();
@@ -353,13 +346,14 @@ sub makeTaxonName {
       }
     }
   }
-  print STDERR ("$num taxon names processed\n");
+  print STDERR ("$num taxon names inserted\n");
   return (\%TaxonNameIdHash,\%TaxonIdHash);
 }
 
 sub deleteTaxonName {
   my $self   = shift;
   my ($TaxonNameIdHash,$TaxonIdHash) = @_;
+  print STDERR "Deleting TaxonNames when redundant\n";
   my $num = 0;
   my $dbh = $self->getDb()->getDbHandle();
   my $st = $dbh->prepareAndExecute("select taxon_name_id, taxon_id, name_class from sres.taxonname");
@@ -371,10 +365,9 @@ sub deleteTaxonName {
       my $newTaxonName = GUS::Model::SRes::TaxonName->new({'taxon_name_id'=>$taxon_name_id});
       $newTaxonName->retrieveFromDB();
       $newTaxonName->markDeleted();
-      $newTaxonName->submit();
+      $num += $newTaxonName->submit();
       $newTaxonName->undefPointerCache();
-      $num++;
-    }
+     }
   }
   print STDERR ("$num TaxonName entries deleted\n");
 }
