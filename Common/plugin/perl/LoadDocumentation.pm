@@ -141,7 +141,7 @@ sub process {
 			$tb_id = $ary[0]; #queried table id
 			$att_name = $ary[1]; #queried attribute name
 			$html = $ary[2]; #queried html documentation
-			if (($att_name eq $attribute_nm) && ($html eq $html_dc)){ 
+			if ($html eq $html_dc){ 
 			    $self->logAlert("ALREADY EXISTS! Documentation for column $table_nm" .
 					    "." ."$attribute_nm NOT OVERWRITTEN!");
 			    return; # SKIP
