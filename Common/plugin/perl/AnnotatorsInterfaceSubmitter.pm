@@ -22,6 +22,8 @@ use GUS::Model::DoTS::RNA;
 use GUS::Model::DoTS::RNARNACategory;
 
 use GUS::Model::DoTS::Assembly;
+use GUS::Model::DoTS::Similarity;
+use GUS::Model::DoTS::Comments;
 #need to add GO tables that will be used here
 
 use GUS::Model::DoTS::Protein;
@@ -148,9 +150,7 @@ sub run {
                           # All objects except DoTS::Assembly and DoTS::RNARNACategory have 
                           # a review_status_id that should be set to 1 (= manually reviewed)
                           #
-                          if ($child->getClassName() ne "GUS::Model::DoTS::RNARNACategory") {
-
-                      #(!($child->getClassName =~ /^GUS::Model::DoTS::(Assembly|RNARNACategory)/))
+                          if  (!($child->getClassName =~ /^GUS::Model::DoTS::(Assembly|RNARNACategory)/)) {
 
                            $child->setReviewStatusId(1);
                          }
@@ -199,7 +199,7 @@ sub run {
   my $added_rnas = $self->getAddedRNAObjects( $self->getCla->{'specialfile'});
 	if ( $added_rnas ) {
 
-print STDERR "Trying to add these RNAs to gene_id:$added_rnas\n";
+      print STDERR "Trying to add these RNAs to gene_id:$added_rnas\n";
 		foreach my $rna ( @$added_rnas ) {
 
 
