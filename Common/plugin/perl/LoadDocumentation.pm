@@ -129,19 +129,19 @@ sub process {
 		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
 		my $stmt = $dbh->prepare($query);
 		$stmt->execute();
-		if (my($id) = $stmt->fetchrow_array()){
-		  #parse row to compare html
-		  while (my @ary = $sth->fetchrow_array() ){
-		    chomp;
-		    my $tb_id = $ary[0]; #queried table id
-		    my $att_name = $ary[1]; #queried attribute name
-		    my $html = $ary[2]; #queried html documentation
+		while (my @ary = $stmp->fetchrow_array() ){
+		  chomp;
+		  my $tb_id = $ary[0]; #queried table id
+		  my $att_name = $ary[1]; #queried attribute name
+		  my $html = $ary[2]; #queried html documentation
 
-		    if ($html eq $html_dc){ #documentation is identical to what is already in db - SKIP
-		      $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
-		      return;
-		    }
+		  print "tb_id: $tb_id\tatt_name: $att_name\thtml: $html\n";
+
+		  if ($html eq $html_dc){ #documentation is identical to what is already in db - SKIP
+		    $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
+		    return;
 		  }
+		}
 		
 		my $test_dc = $doc->getHtmlDocumentation();
 		print "\nhtml: $test_dc\n\n";
