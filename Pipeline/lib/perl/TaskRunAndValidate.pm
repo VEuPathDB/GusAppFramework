@@ -43,31 +43,28 @@ use strict;
 sub runRepeatMask {
     my ($pipelineDir, $name) = @_;
     
-    my $blockedFile = 
+    print "\nRunning repeatmask on $name\n";
+
+    my $resultFile = 
 	"$pipelineDir/repeatmask/$name/master/mainresult/blocked.seq";
     my $errFile = 
 	"$pipelineDir/repeatmask/$name/master/mainresult/blocked.err";
     my $inputFile = "$pipelineDir/seqfiles/$name.fsa";
-
-    print "\nRunning repeatmask on $name\n";
+    my $propFile = "$pipelineDir/repeatmask/$name/input/controller.prop";
 
     my $valid = 0;
-    my $propfile = "$pipelineDir/repeatmask/$name/input/controller.prop";
-
-    if (-e $blockedFile || -e $errFile) {
+    if (-e $resultFile || -e $errFile) {
 	print "  previous result found\n";
-	$valid = &validateRM($inputFile, $blockedFile, $errFile);
+	$valid = &validateRM($inputFile, "${resultFile}.gz", $errFile);
 	if (!$valid) {
 	    print "  trying again...\n";
 	}
     }
     if (!$valid) {
-	my $cmd = "liniacjob $propfile >& $pipelineDir/logs/$name.mask.log";
-	system($cmd);
-	die "failed running '$cmd' with stderr:\n $!" if ($? >> 8);
-	$valid = &validateRM($inputFile, $blockedFile, $errFile);
+	&runAndZip($propFile, "$pipelineDir/logs/$name.mask.log", $resultFile);
+	$valid = &validateRM($inputFile, "${resultFile}.gz", $errFile);
 	if  (!$valid) {
-	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propfile\n";
+	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
 	}
     }
 
@@ -84,23 +81,21 @@ sub runMatrix {
 	"$pipelineDir/matrix/$name/master/mainresult/blastMatrix.out";
     my $inputFile = 
 	"$pipelineDir/repeatmask/$queryname/master/mainresult/blocked.seq";
-    my $valid = 0;
-	my $propfile = "$pipelineDir/matrix/$name/input/controller.prop";
+    my $propFile = "$pipelineDir/matrix/$name/input/controller.prop";
 
+    my $valid = 0;
     if (-e $resultFile) {
 	print "  previous result found\n";
-	$valid = &validateBM($inputFile, $resultFile);
+	$valid = &validateBM($inputFile, "${resultFile}.gz");
 	if (!$valid) {
 	    print "  trying again...\n";
 	}
     }
     if (!$valid) {
-	my $cmd = "liniacjob $propfile >& $pipelineDir/logs/$name.matrix.log";
-	system($cmd);
-	die "failed running '$cmd' with stderr:\n $!" if ($? >> 8);
-	my $valid = &validateBM($inputFile, $resultFile);
+	&runAndZip($propFile, "$pipelineDir/logs/$name.matrix.log", $resultFile);
+	my $valid = &validateBM($inputFile, "${resultFile}.gz");
 	if  (!$valid) {
-	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propfile\n";
+	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
 	}
     }
 
@@ -117,25 +112,22 @@ sub runSimilarity {
 	"$pipelineDir/similarity/$name/master/mainresult/blastSimilarity.out";
     my $inputFile = 
 	"$pipelineDir/seqfiles/$queryname.fsa";
-    my $valid = 0;
-	my $propfile = "$pipelineDir/similarity/$name/input/controller.prop";
+    my $propFile = "$pipelineDir/similarity/$name/input/controller.prop";
 
+    my $valid = 0;
     if (-e $resultFile) {
 	print "  previous result found\n";
-	$valid = &validateBM($inputFile, $resultFile);
+	$valid = &validateBM($inputFile, "${resultFile}.gz");
 	if (!$valid) {
 	    print "  trying again...\n";
 	}
+	&runAndZip($propFile, "$pipelineDir/logs/$name.sim.log", $resultFile);
+	my $valid = &validateBM($inputFile, "${resultFile}.gz);
     }
 
     if (!$valid) {
-	my $cmd = "liniacjob $propfile >& $pipelineDir/logs/$name.sim.log";
-	system($cmd);
-	die "failed running '$cmd' with stderr:\n $!" if ($? >> 8);
-
-	my $valid = &validateBM($inputFile, $resultFile);
 	if  (!$valid) {
-	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propfile\n";
+	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
 	}
     
     }
@@ -192,10 +184,28 @@ sub validateBM {
     return 1;
 }
 
+sub runAndZip {
+  my ($propFile, $logFile, $resultFile) = @_;
+
+  my ($cmd, $status);
+
+  $cmd = "liniacjob $propFile >& $logFile";
+  $status = system($cmd);
+  die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
+
+  $cmd = "gzip $resultFile";
+  $status = system($cmd);
+  die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
+}
+
 sub countSeqs {
     my ($file) = @_;
 
-    open(F, $file) || die "Couldn't open file $file";
+    if ($file =~ /.gz/) {
+      open(F, "zcat $file |") || die "Couldn't open file $file";
+    } else {
+      open(F, $file) || die "Couldn't open file $file";
+    }
     my $c =0;
     while(<F>) {
 	$c++ if /\>/;
