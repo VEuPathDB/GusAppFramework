@@ -64,22 +64,22 @@ sub run {
     my $testnum = $self->getCla->{'testnumber'} if $self->getCla->{'testnumber'};
     print STDERR ("Testing on " . $self->getCla->{'testnumber'} . "\n") if $self->getCla->{'testnumber'};
 
-    my $genCodes = $self->makeGeneticCode();
+    #my $genCodes = $self->makeGeneticCode();
     
     my $namesDmp = $self->getNames(); 
     
-    my $nodesHash = $self->makeNodesHash($genCodes);
+    #my $nodesHash = $self->makeNodesHash($genCodes);
     
-    my $rootAttArray = $self->getRootAttArray($genCodes);
+    #my $rootAttArray = $self->getRootAttArray($genCodes);
 
-    $self->makeTaxonEntry($rootAttArray, \$count);
+    #$self->makeTaxonEntry($rootAttArray, \$count);
     
-    if ($self->getCla->{'restart'} && $self->getCla->{'restart'} > 1) {
-	$self->getTaxonAtt($self->getCla->{'restart'},$nodesHash,\$count);
-    }
-    else {
-	$self->getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 
-    }
+    #if ($self->getCla->{'restart'} && $self->getCla->{'restart'} > 1) {
+	#$self->getTaxonAtt($self->getCla->{'restart'},$nodesHash,\$count);
+    #}
+    #else {
+	#$self->getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 
+    #}
     my ($TaxonNameIdHash,$TaxonIdHash) = $self->makeTaxonName($namesDmp);
     $self->deleteTaxonName($TaxonNameIdHash,$TaxonIdHash);
     
@@ -290,7 +290,7 @@ sub deleteTaxonName {
     if ($TaxonNameIdHash->{$taxon_name_id}==1) {
       next();
     }
-    elsif ($TaxonIdHash->{$taxon_id}==$name_class) {
+    elsif ($TaxonIdHash->{$taxon_id} eq $name_class) {
       my $newTaxonName = GUS::Model::SRes::TaxonName->new({'taxon_name_id'=>$taxon_name_id});
       $newTaxonName->retrieveFromDB();
       $newTaxonName->markDeleted();
