@@ -513,7 +513,7 @@ sub _get_quant_id{
 
       # currently, there is an error with the object invovling table AgilentElementResult, 
       # we need to avoid to retrieve column p_val_feat_eq_bg. --hongxian, Aug-11-2004
-      my @attributeNotToRetrieve;
+      my @attributesNotToRetrieve;
       if ($cfg_rv->{'table_name'.$i} eq 'AgilentElementResult') {
 	@attributesNotToRetrieve = qw(p_val_feat_eq_bg);
       } else {
@@ -610,11 +610,11 @@ sub _parseHeader{
 
 sub _checkValidInput() {
     my  $M=shift;
-    my ($input_result_id, $j) = @_;
+    my ($input_result_id, $i) = @_;
     
-    my $table = "GUS::Model::RAD3::".$cfg_rv->{'table_name'.$j};
+    my $table = "GUS::Model::RAD3::".$cfg_rv->{'table_name'.$i};
       
-    my $view_id = $cfg_rv->{'view_on_table_id'.$j};
+    my $view_id = $cfg_rv->{'view_on_table_id'.$i};
     my $inputResult;
 
     if ($view_id && $view_id==2953) {
@@ -622,7 +622,7 @@ sub _checkValidInput() {
 
       # currently, there is an error with the object invovling table AgilentElementResult, 
       # we need to avoid to retrieve column p_val_feat_eq_bg. --hongxian, Aug-11-2004
-      my @attributeNotToRetrieve;
+      my @attributesNotToRetrieve;
       if ($cfg_rv->{'table_name'.$i} eq 'AgilentElementResult') {
 	@attributesNotToRetrieve = qw(p_val_feat_eq_bg);
       } else {
