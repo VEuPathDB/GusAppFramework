@@ -29,7 +29,6 @@ sub generate {
     close(F);
 }
 
-
 sub _genHeader{
     my ($self) = @_;
     my $modelPackagePrefix = $self->{modelPackagePrefix};
@@ -105,7 +104,6 @@ sub _createSetChildRelations{
     my $children = $self->_getChildren();
     
     $output .= "        // Child relationships (tables and views that reference this one) \n";
-    $output .= "        this.childRelations = new Hashtable(); \n";
     $output .= "        try {\n";
 
     foreach my $child (@$children) {
@@ -113,7 +111,8 @@ sub _createSetChildRelations{
 	my ($fktab,$selfcol,$fkcol) = @{$child}; 
 	($childSchema, $childTable) = $self->_cutFullQualifiedName($fktab);
 	$output .=  "	    ";
-	$output .= "this.childRelations.put(\"$childTable\", new GUSTableRelation(\"$schemaName\", \"$tableName\",\"$selfcol\",\"$childSchema\",\"$childTable\",\"$fkcol\"));\n";
+	$output .= "addChildRelation(new GUSTableRelation(\"$schemaName\",\"$tableName\",\"$selfcol\",\"$childSchema\",\"$childTable\",\"$fkcol\"), ";
+	$output .= "\"$childSchema\", \"$childTable\", \"$fkcol\");\n";
     }
     $output .= "        }\n";
     $output .= "        catch (Exception e) {}\n";
@@ -132,7 +131,6 @@ sub _createSetParentRelations{
     my $parents = $self->_getParents();
     
     $output .= "        // Parent relationships (tables and views referenced by this one) \n";
-    $output .= "        this.parentRelations = new Hashtable(); \n";
     $output .= "        try { \n";
 
     foreach my $parent (@$parents) {
@@ -140,7 +138,9 @@ sub _createSetParentRelations{
 	my ($pktable, $selfcol, $pkcol) = @{$parent};
 	($parentSchema, $parentTable) = $self->_cutFullQualifiedName($pktable);
 	$output .=  "	    ";
-	$output .=  "this.parentRelations.put(\"$parentTable\", new GUSTableRelation(\"$parentSchema\",\"$parentTable\",\"$pkcol\",\"$schema\",\"$tableName\",\"$selfcol\"));\n";
+	$output .= "addParentRelation(new GUSTableRelation(\"$parentSchema\",\"$parentTable\",\"$pkcol\",\"$schema\",\"$tableName\",\"$selfcol\"), ";
+	$output .= "\"$parentSchema\", \"$parentTable\", \"$selfcol\");\n";
+
 	#print STDERR "fk table is " . $fktab . " selfcol is " . $selfcol . "fkcol is " . $fkcol . "\n";
     }
     $output .= "        }\n";

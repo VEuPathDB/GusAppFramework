@@ -369,8 +369,10 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
 	Long parentPk = (Long)child.get(childAtt);
 	
+	System.err.println("owner = " + owner + " tname = " + tname + " parentPk = " + parentPk);
+
 	if (parentPk != null) {
-	    parent = this.retrieveObject(owner, tname, parentPk.longValue(), null, null, null);
+	    parent = this.retrieveObject(rel.getParentTableOwner(), rel.getParentTable(), parentPk.longValue(), null, null, null);
 	}
 
 	return parent;
@@ -537,7 +539,6 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
 	int nChildren = children.size();
-
 	GUSRow parents[] = new GUSRow[nChildren];
 
 	for (int i = 0;i < nChildren;++i) {
