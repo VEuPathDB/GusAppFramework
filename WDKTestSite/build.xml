@@ -62,11 +62,15 @@
   	<ant antfile="../WebDevKit/build.xml" inheritAll="false" />
   	
     <!-- Copy application resources -->
-    <copy todir="${build.home}/site">
-      <fileset dir="${basedir}/site" />
+    <copy todir="${build.home}/webapp/WEB-INF">
+      <fileset dir="${basedir}/webinf/*" />
     </copy>
 
-    <copy todir="${build.home}/site/WEB-INF/lib">
+    <copy todir="${build.home}/webapp/">
+      <fileset dir="${basedir}/docroot/*" />
+    </copy>
+      
+    <copy todir="${build.home}/webapp/WEB-INF/lib">
     	<fileset dir="../WebDevKit/lib/java" 
     		includes="commons-digester-1.5.jar,
     			oracle-classes1.2.jar,
@@ -76,7 +80,7 @@
     			standard.jar" />
     </copy>
 
-  	<copy todir="${build.home}/site/WEB-INF/lib" 
+  	<copy todir="${build.home}/webapp/WEB-INF/lib" 
   		  file="../WebDevKit/ant-build/GUS-WebDevKit.jar"/>
   	
     <copy todir="${gus.home}/lib/xml"> 
@@ -85,7 +89,7 @@
   	
   	<mkdir dir="${webapp.dir}"/>
     <copy todir="${webapp.dir}">
-      <fileset dir="${basedir}/ant-build/site" />
+      <fileset dir="${basedir}/ant-build/webapp" />
     </copy>
   </target>
 
