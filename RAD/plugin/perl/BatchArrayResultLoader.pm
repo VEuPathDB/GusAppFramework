@@ -7,7 +7,7 @@
 # Created: Nov-21-2003
 # Elisabetta Manduchi and Hongxian He
 #
-# $Revision$Date: $ Author: Elisabetta, Hongxian
+# $Revision$Date: 2004/08/30 17:32:35 $ Author: Elisabetta, Hongxian
 # ----------------------------------------------------------
 package GUS::RAD::Plugin::BatchArrayResultLoader;
 @ISA = qw( GUS::PluginMgr::Plugin );
@@ -54,7 +54,7 @@ To be used when either not all assays in a study should be considered or when as
 
 =head2 F<cfg_file>
 
-This should be an xml file whose format should be that specified in GUS/RAD/config/ResultFileParserCfg.dtd.
+This should be an xml file whose format should be that specified in GUS/RAD/config/FileTranslatorCfg.dtd.
 This is used to map headers in the software output files to attributes of the appropriate RAD view of (Composite)ElementResultImp as well as to RAD coordinates.
 
 =head2 F<Warning (for non-CBIL Instances)>
