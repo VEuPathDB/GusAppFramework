@@ -164,8 +164,6 @@ last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
     $self->undefPointerCache();
 
 
-last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
-
 }
 
 
@@ -236,7 +234,8 @@ my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
 
            }
 
-         $self->undefPointerCache();
+           $self->undefPointerCache();
+           last;
 }
 
 
