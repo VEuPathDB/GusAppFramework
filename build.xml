@@ -82,6 +82,12 @@
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/SRes"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/TESS"/>
 
+     <mkdir dir="${targetDir}/lib/perl/GUS/Model/Core"/>
+     <mkdir dir="${targetDir}/lib/perl/GUS/Model/DoTS"/>
+     <mkdir dir="${targetDir}/lib/perl/GUS/Model/RAD3"/>
+     <mkdir dir="${targetDir}/lib/perl/GUS/Model/SRes"/>
+     <mkdir dir="${targetDir}/lib/perl/GUS/Model/TESS"/>
+
      <delete>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/Core" includes="*.pm"/>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/DoTS" includes="*.pm"/>
