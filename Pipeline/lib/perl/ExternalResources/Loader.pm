@@ -28,6 +28,9 @@ sub run {
 
     my $err = $@;
     if ($err) {
+      my $date = `date`;
+      chomp $date;
+      $self->{manager}->log("[$date]  FAILED\n\n");
       print STDERR $err if $err;
       $hadErr = 1;
     }

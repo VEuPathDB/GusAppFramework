@@ -39,7 +39,7 @@ sub run {
   my $signalBase = "${resource}_${version}";
 
   if (!$mgr->startStep("Acquiring $resource $version",
-		       "${signalBase}_acquire")) {
+		       "acquire_${signalBase}")) {
 
     die "Target dir '$self->{targetDir}' already exists.  Please remove it\n"
       if -e $self->{targetDir};
@@ -48,11 +48,11 @@ sub run {
       || die "Cannot make target dir '$self->{targetDir}'\n";
 
     $self->{repositoryEntry}->fetch($self->{targetDir});
-    $mgr->endStep("${signalBase}_acquire");
+    $mgr->endStep("acquire_${signalBase}");
   }
 
   ## handle commit ourselves
-  $mgr->runPluginNoCommit("${signalBase}_load", $self->{plugin}, 
+  $mgr->runPluginNoCommit("load_${signalBase}", $self->{plugin}, 
 			  "$self->{pluginArgs} $self->{commit}",
 			  "Loading $resource $version");
 }
