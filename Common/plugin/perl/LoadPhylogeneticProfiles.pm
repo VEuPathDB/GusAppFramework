@@ -113,18 +113,20 @@ sub loadPhyloProfileFile {
     chomp;
 
     my ($geneDoc, $valueString) = split(/	/, $_);
-    my $sourceId = (split(/\|/, $geneDoc))[3];
+#    my $sourceId = (split(/\|/, $geneDoc))[3];
+    my $naFeatureId = (split(/\|/, $geneDoc))[1];
 
-    my $sql = <<SQL;
-       SELECT na_feature_id
-       FROM plasmodb_42.plasmodb_genes
-       WHERE source_id='$sourceId'
-SQL
-    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
-    my ($naFeatureId) = $sth->fetchrow_array();
+#    my $sql = <<SQL;
+#       SELECT na_feature_id
+#       FROM plasmodb_42.plasmodb_genes
+#       WHERE source_id='$sourceId'
+#SQL
+#    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+#    my ($naFeatureId) = $sth->fetchrow_array();
 
     if (!$naFeatureId) {
-      print STDERR "Error: can't get na_feature_id for source_id $sourceId\n";
+#      print STDERR "Error: can't get na_feature_id for source_id $sourceId\n";
+      print STDERR "Error: can't get na_feature_id from geneDoc \"$geneDoc\"\n";
       next;
     }
 
