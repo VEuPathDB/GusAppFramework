@@ -646,17 +646,16 @@ sub buildFeatureObjects {
 
     print STDERR "*** Gene was not a pseudogene, it is a $gene_type, creating RNA related objects\n"; # DEBUG
 
-
-
-
+    ###################
     # RNAFeature - set $snas (SplicedNASequence) and $gf (GeneFeature) to be the parent
     #
     # *** Question: how is this object different to the NALocation for the GeneFeature above???
     #
-    my $snas = $bioperl2Gus->buildSplicedNASequence($gf);
+    #############
+    my $snas = $bioperl2Gus->buildSplicedNASequence($gf, $systematic_id);  #TW 
+    
     my ($rnaf, $gus_naLocation_rf) =
         $bioperl2Gus->buildRNAFeature ($gf, $snas, $number_of_exons, $bioperl_geneLocation, $systematic_id);
-
     push (@gus_objects, $rnaf);
     push (@gus_objects, $gus_naLocation_rf);
 
@@ -667,8 +666,9 @@ sub buildFeatureObjects {
         print STDERR "spliced sequence object not defined !!!! - not added !!!\n";
     }
 
+    #############
     # ExonFeatures, link each to RNAFeature via RNAFeatureExon
-    #
+    ############
     my $i = 1;
 
     # Bioperl represents sequence going right to left if reverse strand. Change it so more like EMBL,
