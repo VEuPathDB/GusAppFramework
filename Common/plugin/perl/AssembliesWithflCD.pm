@@ -137,8 +137,6 @@ foreach my $A(@na_sourceids)    {
 
   my($na_seq, $source_id) = @{$A};
 
- print STDERR "scalar(@na_sourceids)\n";
-
 
   print STDERR "ConsideringForFLDT.$na_seq\n";
 
@@ -158,7 +156,7 @@ print STDERR "MarkedDT.$id,DT.$na_seq\n";
      if ($id == $na_seq) {
 
     print STDERR "AlreadyMarkedFLDT.$na_seq\n";
-    next;
+
 
    }
 
@@ -182,7 +180,7 @@ print STDERR "MarkedDT.$id,DT.$na_seq\n";
 
  }
 
-next;
+
   }
 
 }
