@@ -137,8 +137,7 @@ sub primaryKeySql{
 sub nextValSql{
 	my($self,$table)=@_;
 	$table=~tr/A-Z/a-z/;
-	my $seqname=$table."_sq";
-	return "select nextval('$seqname')";
+	return "select nextval('${table}_sq')";
 }
 
 ############################################################
