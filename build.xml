@@ -378,7 +378,7 @@
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="WebDevKit"/>
-<!--      <property name="skipJava" value="false"/>   -->
+    <property name="skipJava" value="true"/>
     </ant>
   </target>  
 
