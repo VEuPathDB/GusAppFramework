@@ -228,16 +228,16 @@ my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
 
        $Evidence->markDeleted(1);
        $Evidence->submit();
-     print STDERR  "DT.$target_id Evidence deleted\n";  
-      $self->undefPointerCache();
+       print STDERR  "DT.$target_id Evidence deleted\n"; 
      }
+
+
+       else { print STDERR  "Cannot delete DT.$target_id Evidence; not retrieved\n";
+
+           }
+
+         $self->undefPointerCache();
 }
-
-
-
-
-
-
 
 
 
