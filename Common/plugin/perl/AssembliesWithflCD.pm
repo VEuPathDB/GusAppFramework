@@ -157,7 +157,7 @@ print STDERR "MarkedDT.$id,DT.$na_seq\n";
 
     print STDERR "AlreadyMarkedFLDT.$na_seq\n";
 
-   next;
+   last;
    }
 
 
@@ -179,8 +179,8 @@ print STDERR "MarkedDT.$id,DT.$na_seq\n";
 
 
      }
-
 last;
+
   }
 
 }
@@ -192,7 +192,7 @@ last;
 
        foreach my $DT(@DTs)   {
 
-       if ($target_id == $DT){  next;  }
+      if ($target_id == $DT){  next;  }
 
         if ($target_id != $DT)  {
 
