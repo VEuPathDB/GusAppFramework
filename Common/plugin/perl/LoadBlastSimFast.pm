@@ -146,7 +146,7 @@ sub handleRestart {
 
   my %ignore;
   if ($restartAlgInvs) {
-    my $query = "select distinct query_id from dots.Similarity where row_alg_invocation_id in ($restartAlgInvs})";
+    my $query = "select distinct query_id from dots.Similarity where row_alg_invocation_id in ($restartAlgInvs)";
     print "Restarting: Querying for the ids to ignore\n$query\n";
     my $stmt = $dbh->prepare($query);
     $stmt->execute()|| die $stmt->errstr;
