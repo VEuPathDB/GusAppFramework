@@ -119,6 +119,7 @@ sub process {
 	my $db = $self->getDb;
         $db->setGlobalNoVersion(1);
 	my $doc = GUS::Model::Core::DatabaseDocumentation->new();
+
 	$self->logVerbose("Created new DatabaseDocumentation object");
 
 	if ($db->checkTableExists($table_nm)){ # if table exists
@@ -131,6 +132,11 @@ sub process {
 			        "FROM Core.DatabaseDocumentation " .
 			        "WHERE table_id = $t_id " .
 			        "AND attribute_name = '$attribute_nm'";
+
+		    
+		    $self->logAlert("valid attribute query: $query\n"); ###TEST###
+
+
 		    $self->logVerbose("Querying Core.DatabaseDocumentation for duplicate attribute documentation");
 		    my $stmt = $dbh->prepare($query);
 		    $stmt->execute();
@@ -193,6 +199,10 @@ sub process {
 	                     "FROM Core.DatabaseDocumentation " .
                              "WHERE table_id = $t_id2 " .
        		             "AND attribute_name IS NULL";
+
+
+		    $self->logAlert("table query: $query2\n"); ###TEST###
+
 		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate table documentation");
 		my $stmt2 = $dbh2->prepare($query2);
 		$stmt2->execute();
