@@ -136,6 +136,21 @@ public class LocalTest {
 		System.out.println("  " + (GUSRow)(kids.elementAt(k)));
 	    }
 
+	    GUSRow alignment = (GUSRow)(aligns.elementAt(0));
+	    Vector alignP = alignment.getAllParents();
+	    System.out.println("Parents of alignment " + alignment + ":");
+	    for (int a = 0;a < alignP.size();++a) {
+		System.out.println("  " + (GUSRow)(alignP.elementAt(a)));
+	    }
+	    
+	    // Try to retrieve a *specific* parent
+	    //
+	    GUSRow alignPP = alignment.getParent("DoTS", "BLATAlignmentQuality", 4);
+	    System.out.println("BLATAlignmentQuality parent of " + alignment + " = " + alignPP);
+
+	    GUSRow alignment2 = alignPP.getChild("DoTS", "BLATAlignment", 14711554);
+	    System.out.println("BLATAlignment child of " + alignPP + " = " + alignment2);
+
 	} catch (Throwable t) {
 	    t.printStackTrace(System.err);
 	}

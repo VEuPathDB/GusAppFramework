@@ -606,7 +606,8 @@ public abstract class GUSRow implements java.io.Serializable {
 		long end = (cacheEnd == null) ? length - 1: cacheEnd.longValue();
 		boolean isEntireLob = ((start == 0) && (end == (length - 1)));
 		
-		char[] data = new char[(int)length];
+		long cachedLength = end - start + 1;
+		char[] data = new char[(int)cachedLength];
 		java.io.Reader r = value.getCharacterStream();
 		long offset = 0;
 
