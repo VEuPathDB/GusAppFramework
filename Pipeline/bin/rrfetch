@@ -31,14 +31,14 @@ $repositoryEntry->fetch($targetDir);
 sub usage {
   print "
 
-Fetch a file from an external resources repository.
+Fetch a file from an external-resources repository.
 
 usage:  rrfetch repositoryLoc resourceName version targetDir sourceUrl wgetArgs
 
 where:
   repositoryLoc - either a local dir that holds the repository or an ftp site that holds the repository
   resourceName  - eg NRDB, Genbank
-  version       - eg 1.1.2
+  version       - eg 1.1.2 or 2004-10-23
   targetDir     - the location to put the fetched file
   sourceUrl     - the URL to provide to wget
   wgetArgs      - is a list of the form --flagArg or --valueArg=value
@@ -47,6 +47,10 @@ exclude the following wget args (sfetch handles them):
   --directory-prefix
   --output-file
 
+Note on date versions:
+  - the format for date versions is yyyy-mm-dd.
+  - if the repository already contains a version for on or after that date, rrfetch will return it (the earliest found).
+  - if none is found, rrfetch will acquire the files from the resource, package them in a version using today's date, and return that version.
 
 ";
 
