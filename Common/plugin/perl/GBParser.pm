@@ -852,6 +852,7 @@ sub getFeatureViewName {
 				 "satellite" => "GUS::Model::DoTS::Repeats",
 				 "scRNA" => "GUS::Model::DoTS::RNAType",
 				 "sig_peptide" => "GUS::Model::DoTS::ProteinFeature",
+				 "pro_peptide" => "GUS::Model::DoTS::ProteinFeature",
 				 "snRNA" => "GUS::Model::DoTS::RNAType",
 				 "snoRNA" => "GUS::Model::DoTS::RNAType",
 				 "source" => "GUS::Model::DoTS::Source",
