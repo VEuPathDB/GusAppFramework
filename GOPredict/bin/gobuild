@@ -1121,7 +1121,7 @@ sub copySimsFromLiniac{
 	    
 	    $mgr->copyFromLiniac($liniacServer, 
 				 "$serverPath/$buildName/similarity/$fullName/master/mainresult", 
-				 "blastSimilarity.out", 
+				 "blastSimilarity.out.gz", 
 				 "$pipelineDir/similarity/$fullName");
 	}
     }
