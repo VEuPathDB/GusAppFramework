@@ -4,8 +4,9 @@ package GUS::PluginMgr::PluginUtilities::ConstraintFunction;
 @ISA = qw( Exporter );
 
 @EXPORT = qw( &CfIsAnything &CfIsDirectory &CfIsXdbSpec
-              &CfIsPositive &CfIsHashKey &CfIsOneOfThese
-              &CfIsAlphaNumeric
+              &CfIsPositive &CfIsNonnegative
+              &CfIsHashKey &CfIsOneOfThese
+              &CfIsAlphaNumeric &CfMatchesRx
             );
 
 # ======================================================================
@@ -17,9 +18,12 @@ use strict;
 sub evaluate {
    my $Message = shift;
    my $Test    = shift;
-   my $Values  = shift;
+   my $Plugin  = shift;
+   my $Value   = shift;
 
-   my $Rv;
+   my $Rv = $Test->($Value) ? sprintf($Message, $Value) : undef;
+
+   return $Rv;
 
    my %errors;
 
@@ -69,22 +73,39 @@ sub CfIsDirectory {
 
 =head1 CfIsXdbSpec
 
-Ensres
-
 =cut
 
 sub CfIsXdbSpec {
-   evaluate('%s are not in _database_name_::_version_ format, e.g., "DoTS::V6"',
-            sub { return $_[0] !~ /^.+::.+$/; },
+   evaluate('%s is not in <database_name>/<version> or +<id> format, e.g., "DoTS/V6" or "+123"',
+            sub { return ParseXdbSpec($_[0],1) ? 0 : 1},
             @_
            );
+}
+
+sub ParseXdbSpec {
+   my $String   = shift;
+   my $Immortal = shift;
+
+   my $Rv;
+
+   if ($String =~ /^(.+)\/(.+)$/) {
+      $Rv = [ $1, $2 ];
+   }
+   elsif ($String =~ /^\+(\d+)$/) {
+      $Rv = $1;
+   }
+   elsif (!$Immortal) {
+      die "Invalid XdbSpec '$String'; should be name/version or +external_database_release_id";
+   }
+
+   return $Rv
 }
 
 sub CfMatchesRx {
 	 my $UserRx = shift;
 	 my $RealRx = shift;
 
-	 evaluate("'%s' does not match regular expression, $UserRx",
+	 evaluate("'%s' does not match regular expression, $UserRx ($RealRx)",
 						sub { return $_[0] !~ /$RealRx/; },
 						@_
 					 );
@@ -93,6 +114,13 @@ sub CfMatchesRx {
 sub CfIsAlphaNumeric {
    evaluate('%s is not alphanumeric word; must contain only a-z, A-Z, 0-9, _, or -',
             sub { return $_[0] !~ /^[a-zA-z0-9-_]+$/; },
+            @_
+           );
+}
+
+sub CfIsNonnegative {
+   evaluate('%s is not > =0',
+            sub { return $_[0] < 0 },
             @_
            );
 }
