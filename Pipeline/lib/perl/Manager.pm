@@ -31,9 +31,6 @@ sub new {
 
     return $self if $self->startStep("Initializing", $signal);
 
-    $self->log("Reading GUS config file from \$GUS_CFG.  Contents follows...\n");
-    $self->log(`cat $ENV{GUS_CFG}` . "\n");
-
     $self->endStep($signal);
     return $self;
 }
@@ -317,6 +314,7 @@ sub _createPipelineDir {
 
     $self->runCmd("mkdir -p $self->{pipelineDir}/logs");
     $self->runCmd("mkdir -p $self->{pipelineDir}/signals");
+    $self->runCmd("mkdir -p $self->{pipelineDir}/skip");
     $self->runCmd("mkdir -p $self->{pipelineDir}/plugins");
 }
 
