@@ -1,0 +1,3 @@
+- factor the RelationalRow stuff out of Model/GusRow.pm.
+
+- generate should take an option to remove all non-manually edited files first
