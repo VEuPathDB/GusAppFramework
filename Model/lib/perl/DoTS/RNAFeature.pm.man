@@ -41,13 +41,13 @@ sub getFeatureSequence {
 }
 
 sub getExons {
-	my $self = shift;
-	my @exons;
-	foreach my $r ($self->getChildren('DoTS::RNAFeatureExon',1)) {
-    print STDERR "Retrieving exon: na_feature_id '".$r->getExonFeatureId()."'\n" if $debug;
-		push(@exons,$r->getParent('DoTS::ExonFeature',1));
-	}
-	return @exons;
+    my $self = shift;
+    my @exons;
+    foreach my $r ($self->getChildren('DoTS::RNAFeatureExon',1)) {
+	print STDERR "Retrieving exon: na_feature_id '".$r->getExonFeatureId()."'\n" if $debug;
+	push(@exons,$r->getParent('DoTS::ExonFeature',1));
+    }
+    return @exons;
 }
 
 sub getFeatureLength {

@@ -1,9 +1,11 @@
 
 package GUS::Model::DoTS::TranslatedAAFeature; # table name
+
 use strict;
 use GUS::Model::DoTS::TranslatedAAFeature_Row;
 use CBIL::Bio::SequenceUtils;
 
+my $debug = 0;
 
 use vars qw (@ISA);
 @ISA = qw (GUS::Model::DoTS::TranslatedAAFeature_Row);
@@ -41,19 +43,22 @@ sub getFeatureSequence {
 
 sub getFeatureNASequence {
   my $self = shift;
-  if(!$self->{featureNASequence}){
+  if(!$self->{featureNASequence}) {
     my @segs = sort { $a->getAaStartPos() <=> $b->getAaStartPos() } $self->getChildren('DoTS::TranslatedAAFeatSeg',1);
-    if(scalar(@segs) > 0 ){
-      foreach my $s (@segs){
+    if(scalar(@segs) > 0 ) {
+      foreach my $s (@segs) {
         $self->{featureNASequence} .= $s->getNASequenceSegment();
       }
-    }else{
+    } else {
       my $start = $self->getTranslationStart();
       my $stop = $self->getTranslationStop();
       my $rna = $self->getParent('DoTS::RNAFeature',1);
       if(!$start || !$stop){
         ($start,$stop) = $rna->getTranslationStartStop();
       }
+
+      print STDERR "TranslatedAAFeature->getFeatureNASequence: \$rna->getFeatureSequence()=", $rna->getFeatureSequence(), "\n" if $debug;
+
       $self->{'featureNASequence'} = $self->getIsReversed() ?  CBIL::Bio::SequenceUtils::->reverseComplementSequence(substr($rna->getFeatureSequence(),$start-1,$stop-$start + 1)) : substr($rna->getFeatureSequence(),$start-1,$stop-$start + 1);
     }
   }

@@ -9,7 +9,7 @@ use vars qw (@ISA);
 
 sub getSequence {
   my $self = shift;
-  if(!$self->get('sequence')){
+  if(!$self->get('sequence')) {
     my $tf = $self->getChild('DoTS::TranslatedAAFeature',1);
     if(!$tf){
       print STDERR "No TranslatedAAFeature for TranslatedAASequence.",$self->getId(),"\n";
