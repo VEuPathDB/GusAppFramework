@@ -20,6 +20,7 @@ package GUS::ObjRelP::DbiTable;
 use strict;
 use GUS::ObjRelP::DbiDatabase;
 use GUS::ObjRelP::DbiRow;
+use Carp;
 
 ############################################################
 # Constructor - note tableSth is used to hold all the 
@@ -269,7 +270,7 @@ sub getViewMapping {
     } elsif ($self->getDatabase->getDSN() =~ /oracle/i) {
       foreach my $att (split(', *',$sql)) {
         #			print STDERR "$att\n";
-        my($v,$i) = split(' as ',$att);
+        my($i,$v) = split(' as ',$att);
         $i =~ s/^.*?\.(\w+)$/$1/;
         $v = $v ? $v : $i;
         #			print STDERR "'$i' => '$v'\n";
@@ -543,9 +544,9 @@ sub getNextID {
   my $result = 1;
 
   my $owner = $self->getSchemaNameUpper();
-  my $query;
+  my $query = $self->getDatabase->getDbPlatform->nextValSql($self->{oracle_table_name});
   if (!exists $self->{nextidstmt}) {
-    $query=$self->getDatabase->getDbPlatform->nextValSelect($self->{oracle_table_name});
+
     $self->{nextidstmt} = $self->getDbHandle()->prepare($query)
       || &confess("Failed preparing sql '$query' with error: " . $self->getDbHandle()->errstr());
   }  
@@ -704,6 +705,7 @@ sub addToChildList{
     my($self,@list) = @_;
     foreach my $i (@list) {
 	my $childFullName = $self->getFullClassName($i->[0]);
+	&confess("Invalid child name: '$i->[0]'") unless $childFullName;
 	@{$self->{'childList'}->{$childFullName}} = ($i->[1],$i->[2]);
     }
 		}
