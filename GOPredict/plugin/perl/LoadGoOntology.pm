@@ -40,6 +40,11 @@ sub new {
 	  t => 'string',
 	  r => 1,
       },
+	
+	 {o => 'update',
+	  h => 'set this to reload a version of the GO Ontology that has been previously loaded',
+	  t => 'string',
+      },
 	 
 	 {o=> 'file_path',
 	  h=> 'location of .ontology files to read',
@@ -311,13 +316,15 @@ sub __getExtDbRelId{
     my $sth = $queryHandle->prepareAndExecute($sql);
     my $extDbRelId;
     while ( ($extDbRelId) = $sth->fetchrow_array()) {} #should only be one entry
-    
+    if (($extDbRelId) && !($self->getCla->{ update })){
+	die "This version of GO already exists in SRes.ExternalDatabaseRelease.\n  If you want to load the terms for this version again, please set the --update flag in the command line\n";
+    }
     unless ($extDbRelId) {   #this release doesn't exist and needs to be insertd
 	my $extDbRelEntry = GUS::Model::SRes::ExternalDatabaseRelease->new({
 	    external_database_id => $dbId,
 	    version => $version,
 	});
-	# $extDbRelEntry->submit();
+ 	$extDbRelEntry->submit();
 	$extDbRelId = $extDbRelEntry->getId();
 	$extDbRelId = $dbId;
 	#print LOG $extDbRelEntry->toString();
