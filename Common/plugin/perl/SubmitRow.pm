@@ -13,7 +13,7 @@ sub new {
   my $purposeBrief = 'Update a row with values supplied as command line arguments.';
 
   my $purpose = <<PLUGIN_PURPOSE;
-This plugin either inserts or updates a row in the database, depending upon whether the you provide a primary key as one of the attributes.  If you do, that row will be read, updated with the attribute values you supply, and written.  Otherwise, a new row will be inserted.\n\n=item first hello\n\n=item second bye\n\n
+This plugin either inserts or updates a row in the database, depending upon whether the you provide a primary key as one of the attributes.  If you do, that row will be read, updated with the attribute values you supply, and written.  Otherwise, a new row will be inserted.
 PLUGIN_PURPOSE
 
   my $tablesAffected = 
@@ -30,10 +30,6 @@ PLUGIN_RESTART
 
   my $failureCases = <<PLUGIN_FAILURE_CASES;
 PLUGIN_FAILURE_CASES
-
-my $resourceUsage = <<PLUGIN_RESOURCE_USAGE;
-This is a nice quick and simple plugin.
-PLUGIN_RESOURCE_USAGE
 
 my $notes = <<PLUGIN_NOTES;
 This plugin replaces C<GUS::Common::Plugin::UpdateGusFromCla>
