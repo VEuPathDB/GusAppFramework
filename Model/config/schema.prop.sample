@@ -1,1 +1,65 @@
-oracle=my_oracle
+
+# Password for the Oracle 'SYS' user; this is used only to 
+# create the new Oracle users that will own the GUS tables.
+#
+oracle_systemPassword=12345
+
+# SID for the Oracle server on which to install GUS.
+#
+oracle_SID=gusdb1
+
+# Default tablespace and quotas for the new users.
+#
+oracle_tempTablespace=TEMP
+oracle_tempQuota=UNLIMITED
+oracle_defaultQuota=UNLIMITED
+
+# The names, passwords, and tablespaces for the new users.
+# It is recommended that you do NOT change the default usernames
+# as this feature has not been fully tested (the username is the
+# first parameter in each group of four.)
+#
+oracle_core=Core
+oracle_corePassword=password1
+oracle_coreTablespace=tablespace1
+oracle_coreIndexTablespace=indextablespace1
+
+oracle_corever=CoreVer
+oracle_coreverPassword=password1
+oracle_coreverTablespace=tablespace1
+oracle_coreverIndexTablespace=indextablespace1
+
+oracle_sres=SRes
+oracle_sresPassword=password2
+oracle_sresTablespace=tablespace2
+oracle_sresIndexTablespace=indextablespace2
+
+oracle_sresver=SResVer
+oracle_sresverPassword=password2
+oracle_sresverTablespace=tablespace2
+oracle_sresverIndexTablespace=indextablespace2
+
+oracle_dots=DoTS
+oracle_dotsPassword=password3
+oracle_dotsTablespace=tablespace3
+oracle_dotsIndexTablespace=indextablespace3
+
+oracle_dotsver=DoTSVer
+oracle_dotsverPassword=password3
+oracle_dotsverTablespace=tablespace3
+oracle_dotsverIndexTablespace=indextablespace3
+
+oracle_tess=TESS
+oracle_tessPassword=password4
+oracle_tessTablespace=tablespace4
+oracle_tessIndexTablespace=tablespace4
+
+oracle_tessver=TESSVer
+oracle_tessverPassword=password4
+oracle_tessverTablespace=tablespace4
+oracle_tessverIndexTablespace=tablespace4
+
+oracle_rad3=RAD3
+oracle_rad3Password=password5
+oracle_rad3Tablespace=tablespace5
+oracle_rad3IndexTablespace=tablespace5
