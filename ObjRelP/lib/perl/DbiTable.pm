@@ -28,13 +28,13 @@ sub new {
   my ($class,$className,$dbiDbObj) = @_;
   my $self = {};
   bless $self, $class;
+  $self->{'database'} = $dbiDbObj;
   $className = $class unless $className;
   $className = $self->getFullClassName($className);
   $self->{'perl_table_name'} = $className;
   $className =~ /GUS::Model::(\w+)::(\w+)/;
   ($self->{schema}, $self->{table_name}) = ($1,$2);
   $self->{'oracle_table_name'} = "$self->{schema}.$self->{table_name}";
-  $self->{'database'} = $dbiDbObj;
   $self->setDefaultParams() unless $class eq 'GUS::ObjRelP::DbiTable';
   return $self;
 }

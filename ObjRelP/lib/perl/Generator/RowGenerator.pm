@@ -47,7 +47,7 @@ use strict;
   if ($self->_getParentTable()) {
     $temp .= "use GUS::Model::".$self->_getParentTable().";\n";
   } else {
-    $temp .= "use GUS::ObjRelP::RelationalRow;\n";
+    $temp .= "use GUS::Model::GusRow;\n";
   }
 
   $temp .= $self->_genISA();
