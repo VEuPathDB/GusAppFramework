@@ -328,6 +328,7 @@ sub updateEntry {
   #####################################################################
 
   foreach my $oe (@{$e->{old}}) { 
+    next unless ($e->{id_est});
     my $est = GUS::Model::DoTS::EST->new({'dbest_id_est' => $e->{id_est}});
     
     if ($est->retrieveFromDB()) {
