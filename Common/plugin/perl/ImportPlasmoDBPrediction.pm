@@ -1,4 +1,5 @@
 package GUS::Common::Plugin::ImportPlasmoDBPrediction;
+
 # $Id$ 
 
 # Martin Fraunholz
@@ -25,6 +26,7 @@ sub new {
 
   my $easycsp =
     [
+     # JC: Is this parameter used?  Should probably be used in place of project_id.
      { h => 'project name',
        t => 'string',
        o => 'Project',
@@ -78,6 +80,7 @@ sub new {
       h => 'Experimental : parsing out the AA sequences to set them in the DB, default: OFF',
       d => 0
      },
+     # JC: Isn't --commit provided by default?
      {
       t => 'boolean',
       o => 'commit',
@@ -181,6 +184,7 @@ sub run {
   while (<FILE>){
     if (/^\>\>/){
       my $gene = $_;
+      chomp($gene);
       ($genename,$contig,$method,$type,$start,$stop,$strand,$phase,$numexons) = (split /\t/,$gene);
       $self->log("II GENE $genename $contig,$method,$type,$start,$stop,$strand,$phase,$numexons");
       if ($genename eq ""){
@@ -388,6 +392,7 @@ sub run {
 	  
 	  my $exon = GUS::Model::DoTS::ExonFeature->new({
 						      'name'              => 'ExonFeature',
+						      'na_sequence_id'    => $naseq->getNaSequenceId(),
 						      'is_predicted'      => 1,
 						      'review_status_id'  => 0,
 						      'is_initial_exon'   => $is_initial,
@@ -400,7 +405,7 @@ sub run {
 	  $exon->setScore($score) if $score;
 	  $exon->setCodingEnd($estop-$estart+1);  
 	  $exon->setParent($naseq);
-	  
+
 	  my $naloc = &makeNALocation($estart,$estop,$eorder,$isrev);
 	  $exon->addChild($naloc) if $naloc;
 	  $gf->addChild($exon) if $exon;
@@ -434,7 +439,6 @@ sub run {
 
 
 	my $tas = $gf->getChild('DoTS::RNAFeature')->getChild('DoTS::TranslatedAAFeature')->getParent('DoTS::TranslatedAASequence');
-	$tas->setSequence($tas->getSequence());
 	$tas->setDescription("predicted gene");	
 	$self->log("AASEQ: ". $tas->getSequence()) if $debug;
 
@@ -511,23 +515,3 @@ XML
 
 
 __END__
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
