@@ -7,9 +7,11 @@
 <p>This is the intro page.
 
 <h2>Queries</h2>
-<a href="/simpleQueryDemo1.jsp">A form with no query initially selected</a>
-<a href="/simpleQueryDemo2.jsp">A form with a text box parameter</a>
-<a href="/simpleQueryDemo3.jsp">A form with a SqlEnumParam parameter</a>
+<ul>
+<li><a href="/simpleQueryDemo1.jsp">A form with no query initially selected</a>
+<li><a href="/simpleQueryDemo2.jsp">A form with a text box parameter</a>
+<li><a href="/simpleQueryDemo3.jsp">A form with a SqlEnumParam parameter</a>
+</ul>
 
 <h2>ResultSet</h2>
 No test pages available yet
