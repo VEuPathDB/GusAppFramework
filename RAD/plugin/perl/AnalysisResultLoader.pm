@@ -114,7 +114,7 @@ The other fields should have B<lower case> names spelled B<exactly> as the field
 
 The fields I<subclass_view>, I<analysis_id>, and I<table_id> do not have to be specified in the F<data_file>, as this plugin derives their values from its arguments (including the F<cfg_file>).
 
-Missing values in a field different from row_id can be left empty or set to na or NA or n/a or N/A. If all values for a row_id are missing, that row is not entered.
+Missing values in a field can be left empty or set to na or NA or n/a or N/A. If all (non row_id) values for a row are missing, that row is not entered.
 
 =head1 AUTHOR
 
@@ -194,7 +194,7 @@ sub run {
   my $sv = $self->getArgs->{'subclass_view'};
   my $view = "GUS::Model::$sv";
   eval "require $view";
-  my ($data, $line_count) = $self->readDataFile($view, $cfg_info->{'row_id'}, $cfg_info->{'table'});
+  my ($data, $line_count) = $self->readDataFile($view, $cfg_info->{'pk'}, $cfg_info->{'table'});
   $self->logData("There are $line_count lines in data_file after the header, counting empty lines.");
 
   my $analysis_id;
@@ -289,7 +289,7 @@ sub readCfgFile {
 	    }		
 	    else {
 	      $cfg_info->{'table_id'} = $table->getId();
-	      $cfg_info->{'row_id'} = $table->get('primary_key_column');
+	      $cfg_info->{'pk'} = $table->get('primary_key_column');
 	      $cfg_info->{'table'} = $value;
 	      $table_given = 1;
 	    }
@@ -491,12 +491,14 @@ sub readDataFile {
 	$arr[$i] = "";
       }
     }
-    $data->[$line_num]->{'row_id'} = $arr[$position{'row_id'}];
-    my $row_id = $data->[$line_num]->{'row_id'};
-    my $sth = $dbh->prepare("select $pk from $table where $pk=$row_id");
-    $sth->execute();
-    if (!$sth->fetchrow_array()) {
-      $self->userError("The row_id on line $line_num is not a valid $pk for $table.");
+    if ($arr[$position{'row_id'}] ne "") {
+      $data->[$line_num]->{'row_id'} = $arr[$position{'row_id'}];
+      my $row_id = $data->[$line_num]->{'row_id'};
+      my $sth = $dbh->prepare("select $pk from $table where $pk=$row_id");
+      $sth->execute();
+      if (!$sth->fetchrow_array()) {
+	$self->userError("The row_id on line $line_num is not a valid $pk for $table.");
+      }
     }
     $data->[$line_num]->{'discard'} = 0;
     my $num_missing = 0;
@@ -572,7 +574,10 @@ sub insertAnalysisResults {
     }
     if (defined $data->[$i] && $data->[$i]->{'discard'} == 0) {
       $num_results++;
-      my $analysis_result = $view->new({subclass_view => $subclass_view, analysis_id => $analysis_id, table_id => $table_id, row_id => $data->[$i]->{'row_id'}});
+      my $analysis_result = $view->new({subclass_view => $subclass_view, analysis_id => $analysis_id});
+      if (defined($data->[$i]->{'row_id'})) {
+	$analysis_result->set('table_id', $table_id);
+      }
       foreach my $key (keys %{$data->[$i]}) {
 	if ($key ne "discard") {
 	  $analysis_result->set($key, $data->[$i]->{$key});
