@@ -230,6 +230,14 @@ sub manualTask {
   exit(0);
 }
 
+sub setGusConfigFile {
+  my ($self, $gusConfigFile) = @_;
+
+  -e $gusConfigFile || $self->error("Can't find gus config file '$gusConfigFile'");
+
+  $self->{gusConfigFile} = $gusConfigFile;
+}
+
 # exit pipeline 
 sub goodbye {
     my ($self, $msg) = @_;
@@ -258,6 +266,10 @@ sub _runPlugin {
 
     my $comment = $args;
     $comment =~ s/"/\\"/g;
+
+    if ($self->{gusConfigFile}) {
+      $args .= " --gusconfigfile $self->{gusConfigFile}";
+    }
 
     my $cmd = "ga $plugin $args --comment \"$comment\"  >> $out 2>> $err";
 
