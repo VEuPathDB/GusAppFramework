@@ -105,6 +105,14 @@ sub new {
        d => '01/01/1900',
    },
 	
+     { o => 'query_table',
+       h => 'name of table (in schema.table format) from which to select query sequences',
+       t => 'string',
+   },
+
+
+     
+
      { o => 'query_table_id',
        h => 'Id of table from which to select query sequences',
        t => 'int',
@@ -120,7 +128,7 @@ sub new {
        h => 'taxon id for query sequences ',
        t => 'string',
    },
-
+#duplicate CLA!
      { o => 'query_xdbr',
        h => 'External database release of query sequences if they have one (used for applying rules to external sequences) ',
        t => 'string',
@@ -203,10 +211,9 @@ sub run {
     my ($self) = @_;
     
     my $queryHandle = $self->getQueryHandle();
-    my $databaseAdapter = GUS::GOPredict::DatabaseAdapter->new($queryHandle);
+    my $db = $self->getDb(); #for undef pointer cache
+    my $databaseAdapter = GUS::GOPredict::DatabaseAdapter->new($queryHandle, $db);
     
-#    $databaseAdapter->initializeTranslations($self->getCla->{query_taxon_id});
-
     my $proteinTableId = $self->getCla->{protein_table_id};
     my $newGoVersion = $self->getCla->{new_go_release_id};
     my $testProteinIds = $self->getCla->{test_protein_id_list};
@@ -214,6 +221,8 @@ sub run {
     my $newGoRootId = $self->getCla->{new_function_root_go_id};
 
     $databaseAdapter->setTestProteinIds($testProteinIds) if $testProteinIds;
+
+    $databaseAdapter->initializeTranslations($self->getCla->{query_taxon_id});
 
     my $goManager = GUS::GOPredict::GoManager->new($databaseAdapter);
     $goManager->setOldFunctionRootGoId($oldGoRootId) if $oldGoRootId;
@@ -263,6 +272,7 @@ sub _makeClaHashForRules{
 
     my ($self) = @_;
     
+    my $queryTable = $self->getCla->{query_table};
     my $proteinTableId = $self->getCla->{protein_table_id};
     my $queryTableId = $self->getCla->{query_table_id};
     my $queryTablePkAtt = $self->getCla->{query_primary_attribute};
@@ -277,7 +287,7 @@ sub _makeClaHashForRules{
     $errMsg .= "--query_primary_attribute, --subject_db_release_list";
 
     $self->userError($errMsg) if !($queryTableId && $queryTablePkAtt && $subjectDbList
-				   && $proteinTableId);
+				   && $proteinTableId && $queryTable);
 
     my $cla;
     $cla->{queryDbList} = $queryDbList;
@@ -288,6 +298,6 @@ sub _makeClaHashForRules{
     $cla->{queryTaxonId} = $queryTaxonId;
     $cla->{ratioCutoff} = $ratioCutoff;
     $cla->{absoluteCutoff} = $absoluteCutoff;
-
+    $cla->{queryTable} = $queryTable;
     return $cla;
 }
