@@ -548,7 +548,7 @@ sub deleteFromNRDB {
     my $rel_list = join(',', values %{$dbHash});
     my $dbh = $self->getQueryHandle();
     my $login = $self->getArgs()->{temp_login};
-    my $st = $dbh->prepareAndExecute("select nrdb_entry_id from dots.nrdbentry where external_database_release_id in ($rel_list) and source_id not in (select n.source_id from dots.nrdbentry n, $login" . ".NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_db_rel_id)");
+    my $st = $dbh->prepareAndExecute("select nrdb_entry_id from dots.nrdbentry where external_database_release_id in ($rel_list) minus (select n.nrdb_entry_id from dots.nrdbentry n, $login" . ".NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_db_rel_id)");
     while (my ($nrdb_entry_id) = $st->fetchrow_array) {
 	$num_delete++;
 	my $newNRDBEntry = GUS::Model::DoTS::NRDBEntry->new ({'nrdb_entry_id'=>$nrdb_entry_id});
@@ -566,7 +566,7 @@ sub deleteFromExtAASeq {
   my $rel_list = join (',', values %{$dbHash});
   my $dbh = $self->getQueryHandle();
   my $ext_db_rel_id = $self->getArgs()->{extDbRelId};
-  my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_database_release_id = $ext_db_rel_id and aa_sequence_id not in (select distinct aa_sequence_id from dots.nrdbentry n where external_database_release_id in ($rel_list))");
+  my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_database_release_id = $ext_db_rel_id and aa_sequence_id not in (select aa_sequence_id from dots.nrdbentry)");
   while (my ($aa_sequence_id) = $st->fetchrow_array) {
     $num_delete++;
     my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new ({'aa_sequence_id'=>$aa_sequence_id});
