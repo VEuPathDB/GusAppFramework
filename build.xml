@@ -36,7 +36,8 @@
                                            GUS/ObjRelP-Installation, 
                                            GUS/Pipeline-Installation, 
                                            GUS/PluginMgr-Installation, 
-                                           GUS/SchemaBrowser-Installation"> 
+                                           GUS/SchemaBrowser-Installation,
+					   GUS/WebDevKit-Installation"> 
     <ant target="defaultProjectInstall"/>
   </target>
 
