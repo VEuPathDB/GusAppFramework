@@ -14,33 +14,42 @@ import java.math.*;
 import java.util.Date;
 import org.gusdb.objrelj.*;
 
-import org.gusdb.model.DoTS.NASequence_Row;
+/**
+ * NASequence.java.man
+ *
+ * Wrapper class that contains methods specific for manipulating
+ * DNA and protein sequences.
+ *
+ * @author Dave Barkan
+ * @version $Revision$ $Date$ $Author$
+ */
+public class NASequence extends NASequence_Row {
+    
+    /**
+     * Start coordinate of the cached sequence region.
+     */
+    protected Long startSequence = null;
 
-public class NASequence extends NASequence_Row implements java.io.Serializable{
+    /**
+     * End coordinate of the cached sequence region.
+     */
+    protected Long endSequence = null;
 
-    private Long startSequence = null;
-    private Long endSequence = null;
-
-    public NASequence (){}
- 
-    public NASequence (String owner, String name){
-	super (owner, name);
-    }
+    // Constructor
+    public NASequence () {}
     
     public void setBounds(Long start, Long end){
-	System.out.println ("calling setbOUNDS with : " + start.longValue() 
-			    + ", " + end.longValue()); 
 	startSequence = start;
 	endSequence = end;
     }
 
-
+    // JC: Temporarily commented out
+    /*
     public void getSubSequence(RemoteGUSServer gi, String session, String pswd){
 	Long pk = getNaSequenceId();
 	SymbolList subSeq = null;
-	
 
-	try{
+	try {
 	    subSeq = gi.retrieveSubSequence(session,  startSequence, endSequence, pk);
 	    setInitial("sequence", subSeq);
 
@@ -49,8 +58,8 @@ public class NASequence extends NASequence_Row implements java.io.Serializable{
 	    System.out.println(e.getMessage());
 	    e.printStackTrace();
 	}
-	
     }
+    */
 
     public Long getStart(){
 	return startSequence;
@@ -60,11 +69,7 @@ public class NASequence extends NASequence_Row implements java.io.Serializable{
 	return endSequence;
     }
 
-
-
     public void setCache (Clob sequence){
-	
-
 
 	//for now get whole string from clob and put into symbol list
 	//later will want to get it one section at a time so the whole string isn't 
@@ -76,7 +81,6 @@ public class NASequence extends NASequence_Row implements java.io.Serializable{
 	try {
 	    
 	    //throw exception if start or end is null
-		
 
 	    FiniteAlphabet dnaAlphabet = DNATools.getDNA();
 	    long start = startSequence.longValue();
@@ -84,15 +88,13 @@ public class NASequence extends NASequence_Row implements java.io.Serializable{
 	       
 	    String dnaStr = sequence.getSubString(start, len);
 	    SymbolList dna =  DNATools.createDNA(dnaStr);
-	     
-	   
 	 
 	    SymbolTokenization dnaToke = dnaAlphabet.getTokenization("token");
 	 
 	    String seqString2 = dnaToke.tokenizeSymbolList(dna);
 	    System.out.println ("sequence for this assembly: " + seqString2);
 	 
-	    //when I update this note that the length of the sequence may be too large for that int
+	    // When I update this note that the length of the sequence may be too large for that int
 	    setInitial("sequence", dna);
 	}
 	catch (Exception e){
@@ -101,4 +103,4 @@ public class NASequence extends NASequence_Row implements java.io.Serializable{
 	}
     } 
 
-}
+} // NASequence
