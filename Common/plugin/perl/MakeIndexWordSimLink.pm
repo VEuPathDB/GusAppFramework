@@ -40,6 +40,14 @@ sub new {
       t => 'string',
       h => 'sql query that returns primary keys for the target_table for indexing',
      },
+     {o => 'idRangeSQL',
+      t => 'string',
+      h => 'sql query that returns target_table primary keys for use in range added to idSQL, e.g. select na_sequence_id from dots.assembly where taxon_id = 8',
+     },
+     {o => 'range',
+      t => 'int',
+      h => 'number of primary keys returned per iteration, e.g. 10000',
+     },
      {o => 'ignoreAlgInv',
       t => 'string',
       h => 'includes " and s.row_alg_invocation_id not in (ignoreAlgInv)" in similarity query',
@@ -76,9 +84,9 @@ sub run {
   print $ctx->{cla}->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
   print "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{cla}->{'testnumber'};
 
-  die "You must provide  --target_table, --similarity_table and --idSQL on command line\n" unless $ctx->{cla}->{target_table} && $ctx->{cla}->{similarity_table} && $ctx->{cla}->{idSQL};
+  die "You must provide  --target_table, --idRangeSQL, --range, --similarity_table and --idSQL on command line\n" unless $ctx->{cla}->{target_table} && $ctx->{cla}->{similarity_table} && $ctx->{cla}->{idSQL} && $ctx->{cla}->{idRangeSQL}&& $ctx->{cla}->{range};
   my $target_table_id = $ctx->{self_inv}->getTableIdFromTableName($ctx->{cla}->{target_table});
-  #	my $target_table_pk = $ctx->{self_inv}->getTablePKFromTableId($target_table_id);
+  my $target_table_pk = $ctx->{self_inv}->getTablePKFromTableId($target_table_id);
   my $similarity_table_id = $ctx->{self_inv}->getTableIdFromTableName($ctx->{cla}->{similarity_table});
 
   my $dbh =  $ctx->{self_inv}->getQueryHandle();
@@ -98,8 +106,23 @@ sub run {
     print STDERR "Ignoring ".scalar(keys%ignore)." entries already processed\n";
   }
 
+  my $rangeStmt = $dbh->prepareAndExecute($ctx->{cla}->{idRangeSQL});
 
-  my $loopStmt = $dbh->prepare($ctx->{cla}->{idSQL});
+  my $arr = $rangeStmt->fetchrow_arrayref();
+
+  my @rangeArr = sort {$a <=> $b} @$arr;
+
+  my $rangeArrLength = @rangeArr;
+
+  my $range = $ctx->{cla}->{range};
+
+  my $start = 0;
+
+  my $end = ($range - 1);
+
+  my $idSQL = $ctx->{cla}->{idSQL}." and $target_table_pk >= $rangeArr[$start] and $target_table_pk <= $rangeArr[$end]";
+
+  my $loopStmt = $dbh->prepare($idSQL);
 
   ##and s.pValue <= $ctx->{cla}->{max_p_value}
   my $bestSQL =  
@@ -135,9 +158,16 @@ and similarity_table_id = $similarity_table_id";
     $ct++;
     print STDERR "Retrieving $ct\n" if $ct % 10000 == 0;
     $data{$rs} = 1;
-    #		push(@data, $rs);
+
     ##implement testnumber....
     last if($ctx->{cla}->{testnumber} && scalar(keys%data) >= $ctx->{cla}->{testnumber});
+    $loopStmt->finish() if $ct % $range ==0;
+    
+    $start = $start > ($rangeArrLength - 1) ? last : ($start + $range);
+    $end = $end < $rangeArrLength  ? ($end + $range) : ($rangeArrLength - 1);
+
+    $loopStmt->execute();
+    
   }
   $loopStmt->finish();
   undef %ignore;                ##free this memory
