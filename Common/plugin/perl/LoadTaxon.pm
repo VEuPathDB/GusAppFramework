@@ -103,7 +103,7 @@ sub mergeTaxons {
     my $newTax = $merged[1];
     my $oldTaxon = $self->getTaxon($oldTax);
     if (! $oldTaxon) {
-      print STDERR "$oldTax not in database, skipping\n";
+      $self->logVerbose("Merged NCBI tax_id '$oldTax' not in database, skipping");
       next;
     }
     my $newTaxon = $self->getTaxon($newTax);
