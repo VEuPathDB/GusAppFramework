@@ -19,6 +19,40 @@
 #
 # build GUS install -append ; ga GUS::Common::Plugin::GenericParser2Gus --filetype=embl --filepath=/nfs/team81/pjm/temp/c212_0 -sequencetype=ds-DNA |& less
 # 
+# cp -f Common/plugin/perl/GenericParser2Gus.pm ~pjm/GUS/lib/perl/GUS/Common/Plugin/GenericParser2Gus.pm ; cp -f Common/lib/perl/Bioperl2Gus.pm ~pjm/GUS/lib/perl/GUS/Common/Bioperl2Gus.pm ; ga GUS::Common::Plugin::GenericParser2Gus --filetype=embl --filepath=/nfs/team81/pjm/temp/FAKE7.embl -sequencetype=ds-DNA | & less
+
+#
+# TODO LIST
+#
+# 0. What about stuff that needs to be deleted? I.e. A gene feature just "disappears".... Do we need a clean up
+#    operation????????
+#
+#    CleanUp is probably another library like BioPerl2Gus.
+#    Loop over every feature and remove any no longer in the EMBL file that are attached to this sequence.
+#
+#    What happens when the sequence ID changes, will need "OLD_SEQUENCE_ID" in source?????????
+#
+#    SignalP, TMHMMs are *deleted* each time a data load takes place. A prediction is not an update of
+#    an old prediction. Dunno if this will need to change?
+
+#
+# 1. name or standard_name??????????
+# 2. Sequence update procedure: The gus sequence is retrieved by name - the name to start with could be quite unstable.
+# 3. Previous gene names need to be looked up to find the corrrect gene in the DB.
+# 4. ?
+#
+# *** Tracking features/objects via their name ***
+#
+# This was taken from the WIKI on 20 Jan and summerized;
+#
+#   /systematic_id           - final systematic name 
+#   /temporary_systematic_id - for temporary systematic name used during projects where sequence is unfinished
+#   /previous_systematic_id  - for systematic names no longer in use. 
+#   /synonym                 - used for other gene names still in use and to be displayed on the gene page 
+#   /obsolete_name           - redundant gene names
+#   /primary_name            - for published or agreed unique user friendly gene name
+#   /reserved_name           - pre-publication names that will, presumably, become the primary_name 
+#
 
 package GUS::Common::Plugin::GenericParser2Gus;
 @ISA = qw(GUS::PluginMgr::Plugin);
@@ -42,7 +76,7 @@ use Bio::SeqIO;
 use Bio::PSU::IO::BufferFH;
 use IO::File;
 
-my $logdir = "/nfs/pathdb/logs/upload"; # HARD CODING IS BAD - FIXME
+my $logdir = "/tmp/"; # Not sure how useful this log is...
 
 # OUTPUT_AUTOFLUSH forced
 $| = 1;
@@ -106,7 +140,12 @@ sub new {
         h => 'activate process messages display',
         d => 0,
     },
-   ];
+    {
+        o => 'parserDebug',
+        t => 'boolean',
+        h => 'Display helpful debug messages',
+        d => 0,
+    },   ];
 
   $self->initialize({requiredDbVersion => {},
                      cvsRevision    => '$Revision$', # cvs fills this in!',
@@ -124,430 +163,386 @@ sub new {
 # run
 #
 sub run {
-  my $self = shift;
-  my $t1   = Benchmark->new ();
+    my $self = shift;
+    my $t1   = Benchmark->new ();
   
-  print $self->getArgs->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
-  print "Testing on ",$self->getArgs->{'testnumber'},"\n"
-      if $self->getArgs->{'testnumber'};
+    print $self->getArgs->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
+    print "Testing on ",$self->getArgs->{'testnumber'},"\n" if $self->getArgs->{'testnumber'};
 
-  if ($self->getCla->{'debug'}) {
-      $debug = 1;
-      print "***DEBUGGING ON***\n";
-  }
-
-  # Is this line still needed???
-  #eval("require Objects::GUSdev::".$self->getArgs->{seq_table_name});
-
-  my $path         = $self->getArgs->{filepath};
-  my $fileType     = $self->getArgs->{filetype};
-  my $sequenceType = $self->getArgs->{sequencetype};
-  #my $db           = $self->getArgs->{ db }; # These 2 never used?
-  #my $dbh          = $db->getDbHandle();
-  
-  my $log          = FileHandle->new( '>'. $self->getArgs->{log} );
-
-  print STDERR "Dumping log: " . Dumper ($self->getArgs->{log}) . "\n";
-
-  $log->print("FILE: ", $self->getArgs->{ filepath }, "\n");
-
-  my $verbose      = $self->getArgs->{'verbose'};
-  my $n            = 0;
-  my $update_count = 0;
-  my $insert_count = 0;
-  
-  # Load the Bioperl2Gusdev converter
-  
-  my $bioperl2Gus =
-    GUS::Common::Bioperl2Gus->new (
-                                   sequenceType => $sequenceType,
-                                   debug        => $debug,
-                                   );
-  # parsing the file(s)
-  
-  my @bioperl_seqs = $self->parseSequenceFiles ($path, $fileType);
-
-  # process the bioperl sequence objects
-
-  foreach my $bioperl_sequence (@bioperl_seqs) {
-    print "processing bioperl sequence, " . $bioperl_sequence->display_id . "...\n";
-    $bioperl2Gus->setBioperlSequence ($bioperl_sequence);
-
-    # Check if sequence is already in the database
-
-    my $gus_sequence = $bioperl2Gus->getGusSequenceFromDB ($bioperl_sequence);
-
-    if (not defined ($gus_sequence)) {
-
-      print STDERR "sequence not in GUS yet\n";
-
-      $gus_sequence = $bioperl2Gus->buildNASequence;
-      
-      if (defined $gus_sequence) {
-	print STDERR "GUS Sequence creation done\n";
-	
-	if ($verbose) {
-	  print $gus_sequence->toXML();
-	}
-	
-	$gus_sequence->submit();
-	$log->print( "INSERTED: ", $gus_sequence->getName(), ";\n");
-	$insert_count++;
-      }
-      else {
-	print STDERR "GUS Sequence creation failed!!\n";
-	next;
-      }
+    if ($self->getCla->{'parserDebug'}) {
+        $debug = 1;
+        print "***DEBUGGING ON***\n";
     }
-    else {
-      print STDERR "GUS Sequence already in the database!\n";
-    }
-    
-    my @bioperl_features = $bioperl_sequence->all_SeqFeatures;
-    foreach my $bioperl_feature (@bioperl_features) {
-      print "processing " . $bioperl_feature->primary_tag . " bioperl feature...\n";
-      $bioperl2Gus->setBioperlFeature ($bioperl_feature);
-      my @gus_objects = ();
+
+    # Is this line still needed???
+    #eval("require Objects::GUSdev::".$self->getArgs->{seq_table_name});
+
+    my $path         = $self->getArgs->{filepath};
+    my $fileType     = $self->getArgs->{filetype};
+    my $sequenceType = $self->getArgs->{sequencetype};
+    #my $db           = $self->getArgs->{ db }; # These 2 never used?
+    #my $dbh          = $db->getDbHandle();
+  
+    my $log          = FileHandle->new( '>'. $self->getArgs->{log} );
+
+    print STDERR "Dumping log: " . Dumper ($self->getArgs->{log}) . "\n";
+
+    $log->print("FILE: ", $self->getArgs->{ filepath }, "\n");
+
+    my $verbose      = $self->getArgs->{'verbose'};
+    my $n            = 0;
+    my $update_count = 0;
+    my $insert_count = 0;
+
+    # Load the Bioperl2Gusdev converter
+  
+    my $bioperl2Gus =
+      GUS::Common::Bioperl2Gus->new (sequenceType => $sequenceType,
+                                     debug        => $debug,
+                                     );
+    # parsing the file(s)
+
+    my @bioperl_seqs = $self->parseSequenceFiles ($path, $fileType);
+
+    # process the bioperl sequence objects
+    #
+    foreach my $bioperl_sequence (@bioperl_seqs) {
+        print "processing bioperl sequence, " . $bioperl_sequence->display_id . "...\n";
+        $bioperl2Gus->setBioperlSequence ($bioperl_sequence);
+
+        # Check if sequence is already in the database
+        #
+        my $gus_sequence = $bioperl2Gus->getGusSequenceFromDB ($bioperl_sequence);
+
+        if (not defined ($gus_sequence)) {
+            print STDERR "GUS Sequence creation failed!!! Going to next sequence.\n";
+            next;
+        }
+        else {
+            # Has seq changed? IDs used in EMBL files are not probably not temp. only
+            #
+            print STDERR "GUS Sequence already in the database. Checking to see if sequence has changed...\n";
+
+            if ($bioperl_sequence->seq() ne $gus_sequence->getSequence()) {
+
+                print STDERR "\n*** The sequence has changed ***\n\n";
+
+                my $the_same_gus_seq = $bioperl2Gus->buildNASequence($gus_sequence);
+                $the_same_gus_seq->submit(); # Versioning - *** use update *** if sequence too big to version
+            }
+            else {
+                print STDERR "The sequence has not changed.\n";
+            }
+        }
+
+        my @bioperl_features = $bioperl_sequence->all_SeqFeatures;
+
+        foreach my $bioperl_feature (@bioperl_features) {
+            $bioperl2Gus->setBioperlFeature ($bioperl_feature);
+            my $primary_tag  = $bioperl_feature->primary_tag;
+
+            print "\n-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n";
+            print "Processing '$primary_tag' bioperl feature...\n";
+
+
+            ##############################
+            # Get /systematic_id qualifier (or equivalent) for features that a @need_id
+
+            my $systematic_id = undef;
+            my @need_id       = ('CDS', 'tRNA', 'rRNA', 'mRNA');
+
+            if (grep(/$primary_tag/, @need_id) > 0) {
+                if ($bioperl_feature->has_tag ('systematic_id')) {
+                    my @values      = $bioperl_feature->each_tag_value ('systematic_id');	  
+                    $systematic_id  = $values[0];
+
+                    print STDERR "/systematic_id(s) found : '" . join (', ', @values) . "'. First used.\n";
+                }
+                elsif ($bioperl_feature->has_tag ('temporary_systematic_id')) {
+                    my @systematic_ids = $bioperl_feature->each_tag_value ('temporary_systematic_id');
+                    $systematic_id     = $systematic_ids[0];
+                }
+                else {
+                    print STDERR "\n\n*** ERROR: can't find any (temporary) systematic id tag for current '".
+                        $bioperl_feature->primary_tag."' bioperl feature ***\n\n\n";
+                    next;
+                }
+
+                if (!defined $systematic_id || $systematic_id eq '') {
+                    print STDERR "ERROR: variable \$systematic_id has not been defined. ".
+                        "Is there an empty qualifier for the name of this feature?\n";
+                    next; 
+                }
+            }
+
+            ##################
+            # CDS
+            if ($bioperl_feature->primary_tag =~ /CDS/) {
+                $self->processCDS($log, $bioperl_feature, $bioperl2Gus, $systematic_id);
+            }
       
-      ##################
-      # process a CDS
-      ##
+            ##################
+            # tRNAs
+            elsif ($bioperl_feature->primary_tag =~ /tRNA/) {
+                $self->processtRNA($log, $bioperl_feature, $bioperl2Gus, $systematic_id);
+            }
 
-      if ($bioperl_feature->primary_tag =~ /CDS/) {
-	# checking if the gene is already in the database
+            #################################
+            # rRNA
+            elsif ($bioperl_feature->primary_tag =~ /rRNA/) {
+                $self->processrRNA($log, $bioperl_feature, $bioperl2Gus, $systematic_id);
+            }
 
-	#########################
-	# NEW NAMING CONVENTION
-	#########################
-	
-	my $systematic_id = undef;
-	if ($bioperl_feature->has_tag ('systematic_id')) {
-	  my @values = $bioperl_feature->each_tag_value ('systematic_id');
-	  
-	  print STDERR "check if unique name always the first one !! - " . join (', ', @values) . "\n";
-	  
-	  $systematic_id  = $values[0];
-	}
-	elsif ($bioperl_feature->has_tag ('temporary_systematic_id')) {
-	  my @systematic_ids = $bioperl_feature->each_tag_value ('temporary_systematic_id');
-	  $systematic_id = $systematic_ids[0];
-	}
-	else {
-	  print STDERR "ERROR - no systematic or temporary systematic id set up!!!\n";
-	}
-
-	if (defined $systematic_id) {
-	  
-	  my $gf    = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
-	  my $is_in = $gf->retrieveFromDB();
-	  my $gene_type = "protein coding";
-	  
-	  if ($bioperl_feature->has_tag ('pseudo')) {
-	    $gene_type = "pseudogene";
-	    print STDERR "parsing a pseudogene ...!\n";
-	  }
-	  else {
-	    print STDERR "parsing a protein coding gene ...!\n";
-	  }
-	  
-	  if ($is_in) {
-	    $log->print("File, $path, not processed, as the gene, $systematic_id, is already in the database\n");
-	    print STDERR "\nGene '$systematic_id' already in the database\n";    
-	  }
-	  else {
-	    print STDERR "\nGene '$systematic_id' is being added into the database...\n";
-	    
-	    my @gus_objects = $self->processGene ($bioperl2Gus, $gene_type);
-	    print STDERR "gus objects done\n";
-	    
-	    # commit the GUS objects associated with the CDS bioperl feature object
-	    
-	    foreach my $object (@gus_objects) {
-              #print STDERR "Object type is '", ref($object), "', \$object = $object\n";
-
-              unless (defined $object) {
-                  print STDERR "\n*** WARNING: undef value returned for an object;\n\n";
-                  next;
-              }
-              elsif (ref($object) eq 'HASH') {
-                print STDERR "\n*** ERROR: this is not a class;\n", Dumper($object), "\n";
-                next;
-              }
-
-	      if ($verbose) {
-		print $object->toXML();
-	      }
-	      
-	      $object->submit();
-              $log->print( "object INSERTED (", ref($object),")\n");
-
-	      $insert_count++;
-
-              # Can only link GOAssociation to a Protein when it has a row_id, hence been submitted
-              #
-              if (ref($object) eq 'GUS::Model::DoTS::Protein') {
-                  print STDERR"Attempting to insert GO objects\n";
-                  $insert_count += $self->buildAndSubmitGO_Objects($log, $bioperl2Gus, $object);
-              }
-
-	    } # end commiting GUS gene objects
-	  }
-	}
-	else {
-	  print STDERR "ERROR - can't find any (temporary) systematic id tag for current bioperl feature!!!\n";
-	  print STDERR "feature not processed!\n";
-	}
-      } # end processing CDS bioperl feature
-      
-      ##################
-      # Process tRNAs
-      ##################
-      
-      elsif ($bioperl_feature->primary_tag =~ /tRNA/) {
-	# checking if the gene is already in the database
-	
-	#########################
-	# NEW NAMING CONVENTION
-	#########################
-	
-	my $systematic_id = undef;
-	if ($bioperl_feature->has_tag ('systematic_id')) {
-	  my @values = $bioperl_feature->each_tag_value ('systematic_id');
-	  
-	  print STDERR "check if unique name always the first one !! - " . join (', ', @values) . "\n";
-	  
-	  $systematic_id  = $values[0];
-	}
-	elsif ($bioperl_feature->has_tag ('temporary_systematic_id')) {
-	  my @systematic_ids = $bioperl_feature->each_tag_value ('temporary_systematic_id');
-	  $systematic_id = $systematic_ids[0];
-	}
-	else {
-	  print STDERR "ERROR - no systematic or temporary systematic id set up!!!\n";
-	}
-
-	if (defined $systematic_id) {
-	  
-	  my $gf    = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
-	  my $is_in = $gf->retrieveFromDB();
-	  my $gene_type = "tRNA";
-	  
-	  if ($bioperl_feature->has_tag ('pseudo')) {
-	    $gene_type = "pseudogene";
-	    print STDERR "parsing a pseudogene ...!\n";
-	  }
-	  else {
-	    print STDERR "parsing a tRNA gene ...!\n";
-	  }
-	  
-	  if ($is_in) {
-	    $log->print("File, $path, not processed, as the gene, $systematic_id, is already in the database\n");
-	    print STDERR "gene, $systematic_id, already in the database\n";    
-	  }
-	  else {
-	    print STDERR "gene, $systematic_id, is being added into the database...\n";  	    
-	    print STDERR "gus objects generation ...\n";
-	    
-	    my @gus_objects = $self->process_tRNA ($bioperl2Gus, $gene_type);
-	    print STDERR "gus objects done\n";
-	    
-	    # commit the GUS objects associated with the CDS bioperl feature object
-	    
-	    foreach my $object (@gus_objects) {
-	      if ($verbose) {
-		print $object->toXML();
-	      }
-	      
-	      $object->submit();
-              $log->print( "object INSERTED (", ref($object),")\n");
+            #################################
+            # mRNA feature i.e. ESTs
+            elsif ($bioperl_feature->primary_tag =~ /mRNA/) {
+                $self->processmRNA($log, $bioperl_feature, $bioperl2Gus, $systematic_id);
+            }
 
 
-	      $insert_count++;
-	      
-	    } # end commit GUS tRNA gene objects
-	  }
-	}
-	else {
-	  print STDERR "ERROR - can't find any (temporary) systematic_id tag for current bioperl feature!!!\n";
-	  print STDERR "feature not processed!\n";
-	}
-      } # end processing tRNAs feature
+            # Uncaching stuff here for the current sequence and attached features
+            # Uncaching the gus sequence object, does it also uncache the attached
+            # features???
+            $self->undefPointerCache;
 
-      #################################
-      # elsif rRNA feature ...
-      ###
-      
-      elsif ($bioperl_feature->primary_tag =~ /rRNA/) {
-	# checking if the gene is already in the database
-	
-	#########################
-	# NEW NAMING CONVENTION
-	#########################
-	
-	my $systematic_id = undef;
-	if ($bioperl_feature->has_tag ('systematic_id')) {
-	  my @values = $bioperl_feature->each_tag_value ('systematic_id');
-	  
-	  print STDERR "check if unique name always the first one !! - " . join (', ', @values) . "\n";
-	  
-	  $systematic_id  = $values[0];
-	}
-	elsif ($bioperl_feature->has_tag ('temporary_systematic_id')) {
-	  my @systematic_ids = $bioperl_feature->each_tag_value ('temporary_systematic_id');
-	  $systematic_id = $systematic_ids[0];
-	}
-	else {
-	  print STDERR "ERROR - no systematic or temporary systematic id set up!!!\n";
-	}
-	
-	if (defined $systematic_id) {
-	  
-	  my $gf    = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
-	  my $is_in = $gf->retrieveFromDB();
-	  my $gene_type = "rRNA";
-	  
-	  if ($bioperl_feature->has_tag ('pseudo')) {
-	    $gene_type = "pseudogene";
-	    print STDERR "parsing a pseudogene ...!\n";
-	  }
-	  else {
-	    print STDERR "parsing a rRNA gene ...!\n";
-	  }
+        } # next bioperl feature object process
 
-	  if ($is_in) {
-	    $log->print("File, $path, not processed, as the gene, $systematic_id, is already in the database\n");
-	    print STDERR "gene, $systematic_id, already in the database\n";    
-	  }
-	  else {
-	    print STDERR "gene, $systematic_id, is being added into the database...\n";  	    
-	    print STDERR "gus objects generation ...\n";
-	    
-	    my @gus_objects = $self->process_rRNA ($bioperl2Gus, $gene_type);
-	    print STDERR "gus objects done\n";
-	    
-	    # commit the GUS objects associated with the CDS bioperl feature object
-	    
-	    foreach my $object (@gus_objects) {
-	      if ($verbose) {
-		print $object->toXML();
-	      }
-	      
-	      $object->submit();
-              $log->print( "object INSERTED (", ref($object),")\n");
+    } # next bioperl sequence object process
 
-	      $insert_count++;
-	      
-	    } # end commit GUS rRNA gene objects
-	  }
-	}
-	else {
-	  print STDERR "ERROR - can't find any (temporary) systematic_id tag for current bioperl feature!!\n";
-	  print STDERR "feature not processed!!!\n";
-	}
-      }
+    ## Close DBI handle
+    #$self->getQueryHandle()->closeQueryHandle();
+    #$self->{'self_inv'}->closeQueryHandle();
 
-      #################################
-      # elsif mRNA feature ...
-      # ie ESTs
-      ###
-      
-      elsif ($bioperl_feature->primary_tag =~ /mRNA/) {
-	# checking if the gene is already in the database
-	
-	#########################
-	# NEW NAMING CONVENTION
-	#########################
-	
-	my $systematic_id = undef;
-	if ($bioperl_feature->has_tag ('systematic_id')) {
-	  my @values = $bioperl_feature->each_tag_value ('systematic_id');
-	  
-	  print STDERR "check if unique name always the first one !! - " . join (', ', @values) . "\n";
-	  
-	  $systematic_id  = $values[0];
-	}
-	elsif ($bioperl_feature->has_tag ('temporary_systematic_id')) {
-	  my @systematic_ids = $bioperl_feature->each_tag_value ('temporary_systematic_id');
-	  $systematic_id = $systematic_ids[0];
-	}
-	else {
-	  print STDERR "ERROR - no systematic or temporary systematic id set up!!!\n";
-	}
-	
-	if (defined $systematic_id) {
-	  
-	  my $gf    = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
-	  my $is_in = $gf->retrieveFromDB();
-	  my $gene_type = "protein coding";
-	  
-	  if ($bioperl_feature->has_tag ('pseudo')) {
-	    $gene_type = "pseudogene";
-	    print STDERR "parsing a pseudogene ...!\n";
-	  }
-	  else {
-	    print STDERR "parsing a protein coding gene - attached to a mRNA sequence ...!\n";
-	  }
+    my $t2 = Benchmark->new ();
+    print  STDERR "\nTotal: ", timestr (timediff ($t2, $t1)), "\n";
+    $log->print( "Total: timestr (timediff ($t2, $t1)\n");
 
-	  if ($is_in) {
-	    $log->print("File, $path, not processed, as the gene, $systematic_id, is already in the database\n");
-	    print STDERR "gene, $systematic_id, already in the database\n";    
-	  }
-	  else {
-	    print STDERR "gene, $systematic_id, is being added into the database...\n";  	    
-	    print STDERR "gus objects generation ...\n";
-	    
-	    my @gus_objects = $self->process_mRNA ($bioperl2Gus, $gene_type);
-	    print STDERR "gus objects done\n";
-	    
-	    # commit the GUS objects associated with the CDS bioperl feature object
-	    
-	    foreach my $object (@gus_objects) {
-	      if ($verbose) {
-		print $object->toXML();
-	      }
-	      
-	      $object->submit();
-	      $log->print( "object INSERTED (", ref($object),")\n");
-
-	      $insert_count++;
-	      
-	    } # end commit GUS mRNA gene objects
-	  }
-	}
-	else {
-	  print STDERR "ERROR - can't find any (temporary) systematic_id tag for current bioperl feature!!\n";
-	  print STDERR "feature not processed!!!\n";
-	}
-
-
-      }
-      #################################
-      # elsif feature is of type ...
-      # ...
-      ###
-
-      # Uncaching stuff here for the current sequence and attached features
-      # Uncaching the gus sequence object, does it also uncache the attached
-      #features
-      $self->undefPointerCache
-
-    } # next bioperl feature object process
-
-  } # next bioperl sequence object process
-
-  ## Close DBI handle
-  #$self->getQueryHandle()->closeQueryHandle();
-  #$self->{'self_inv'}->closeQueryHandle();
-
-  my $t2 = Benchmark->new ();
-  print  STDERR "\nTotal: ", timestr (timediff ($t2, $t1)), "\n";
-  $log->print( "Total: timestr (timediff ($t2, $t1)\n");
-
-  return "Objects inserted= $insert_count;  updated= $update_count; total #(inserted::updated::deleted)=" . $self->getSelfInv->getTotalInserts() . "::" . $self->getSelfInv->getTotalUpdates() . "::" . $self->getSelfInv->getTotalDeletes() .  "\n";
+    return "Objects inserted= $insert_count;  updated= $update_count; total #(inserted::updated::deleted)=" . $self->getSelfInv->getTotalInserts() . "::" . $self->getSelfInv->getTotalUpdates() . "::" . $self->getSelfInv->getTotalDeletes() .  "\n";
 
 }
 
+################################################################################
+#
+# Builds object heirarchy to represent a CDS.
+# We submit all objects before creating and submitting GO objects.
+#
+# @returns number of object created. Not sure if this is helpful or not...
+#
+sub processCDS{
+    my ($self, $log, $bioperl_feature, $bioperl2Gus, $systematic_id) = @_;
 
+    my $insert_count  = 0;    # return value in here
+    #my $gf            = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
+    #my $gf            = $bioperl2Gus->getFeatureFromDB('DoTS::GeneFeature');
+    #my $is_in         = $gf->retrieveFromDB(); # Returns 1 ONLY IF one entry, 0 or 2+ returns zero.
+    my $gene_type     = "protein coding";
+
+    if ($bioperl_feature->has_tag ('pseudo')) {
+        $gene_type = "pseudogene";
+        print STDERR "parsing a pseudogene ...!\n";
+    }
+    else {
+        print STDERR "parsing a protein coding gene ...!\n";
+    }
+
+
+
+    # Create/update/leave alone DoTS::GeneFeature and all child objects
+    #
+    my @gus_objects = $self->processGene ($bioperl2Gus, $gene_type, $systematic_id);
+
+
+    #
+    # DEBUG TO SEE WHATS IN THE ARRAY SO FAR
+    #
+    #
+    if ($debug) {
+        print "\n*** processCDS(): All child objects about to be submitted (not GO, yet) ***\n";
+        print "\n*** ------------------------------------------------------------------- ***\n";
+
+        foreach my $obj (@gus_objects){
+            print "*** \$obj = $obj ***\n";
+        }
+    }
+
+
+
+    # commit the GUS objects associated with the CDS bioperl feature object
+    # The submit allows all children to be submitted (no parameter $notDeep set).
+    # Further submits on child objects won't do anything so this loop is not that
+    # useful...
+    #
+    foreach my $object (@gus_objects) {
+        print STDERR "Object type is '", ref($object), "', \$object = $object\n";
+                
+        unless (defined $object) {
+            print STDERR "\n*** WARNING: undef value returned for an object;\n\n";
+            next;
+        }
+        elsif (ref($object) eq 'HASH') {
+            print STDERR "\n*** ERROR: this is not a class;\n", Dumper($object), "\n";
+            next;
+        }
+
+        if ($self->getArgs->{'verbose'}) {
+            print $object->toXML();
+        }
+
+	      
+
+        ##
+        # FIXME ???????? Probably but this won't hurt for now;
+        # NOTE: We are submitting deep, hence we may try and submit everything 2+ times!
+        #       Add '1' as the argument to submit() to make it a non-deep submit!!!
+        ##
+
+        $object->submit(); # Will version the object *if* it has changed
+
+
+        $log->print( "object INSERTED (", ref($object),")\n");
+
+        $insert_count++;
+
+        # Can only link GOAssociation to a Protein when it has a row_id, hence been submitted
+        #
+        if (ref($object) eq 'GUS::Model::DoTS::Protein') {
+            print STDERR"Attempting to insert GO objects\n";
+            $insert_count += $self->buildAndSubmitGO_Objects($log, $bioperl2Gus, $object);
+        }
+    }
+
+    return $insert_count;
+}
+
+################################################################################
+#
+# @returns number of object created. Not sure if this is helpful or not...
+#
+sub processtRNA {
+    my ($self, $log, $bioperl_feature, $bioperl2Gus, $systematic_id) = @_;
+
+    my $insert_count  = 0;
+    #my $gf            = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
+    #my $is_in         = 0; # $gf->retrieveFromDB(); # TEST
+    my $gene_type     = "tRNA";
+	  
+    if ($bioperl_feature->has_tag ('pseudo')) {
+        $gene_type = "pseudogene";
+        print STDERR "parsing a pseudogene ...!\n";
+    }
+    else {
+        print STDERR "parsing a tRNA gene ...!\n";
+    }
+	  
+
+    print STDERR "tRNA, '$systematic_id', is being processed...\n";  	    
+
+    my @gus_objects = $self->process_tRNA ($bioperl2Gus, $gene_type, $systematic_id);
+    print STDERR "gus objects done\n";
+
+    # commit the GUS objects associated with the tRNA bioperl feature object
+    #
+    foreach my $object (@gus_objects) {
+        if ($self->getArgs->{'verbose'}) {
+            print $object->toXML();
+        }
+
+        $object->submit();
+        $log->print( "object INSERTED (", ref($object),")\n");
+
+        $insert_count++;
+    } # end commit GUS tRNA gene objects
+
+    return $insert_count;
+}
+
+################################################################################
+#
+# @returns number of object created. Not sure if this is helpful or not...
+#
+sub processrRNA {
+    my ($self, $log, $bioperl_feature, $bioperl2Gus, $systematic_id) = @_;
+
+    my $insert_count  = 0;    # return value in here
+    #my $gf            = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
+    #my $is_in         = 0; # $gf->retrieveFromDB(); # TEST
+    my $gene_type     = "rRNA";
+	  
+    if ($bioperl_feature->has_tag ('pseudo')) {
+        $gene_type = "pseudogene";
+        print STDERR "parsing a pseudogene ...!\n";
+    }
+    else {
+        print STDERR "parsing a rRNA gene ...!\n";
+    }
+
+
+    print STDERR "rRNA, $systematic_id, is being processed...\n";  	    
+
+    my @gus_objects = $self->process_rRNA ($bioperl2Gus, $gene_type);
+    print STDERR "gus objects done\n";
+	    
+    # commit the GUS objects associated with the CDS bioperl feature object
+
+    foreach my $object (@gus_objects) {
+        if ($self->getArgs->{'verbose'}) {
+            print $object->toXML();
+        }
+
+        $object->submit();
+        $log->print( "object INSERTED (", ref($object),")\n");
+
+        $insert_count++;
+    } # end commit GUS rRNA gene objects
+    
+    return $insert_count;
+}
+
+################################################################################
+#
+# @returns number of object created. Not sure if this is helpful or not...
+#
+sub processmRNA {
+    my ($self, $log, $bioperl_feature, $bioperl2Gus, $systematic_id) = @_;
+
+    my $insert_count  = 0;    # return value in here
+    #my $gf            = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
+    #my $is_in         = 0;    # $gf->retrieveFromDB(); # TEST
+    my $gene_type     = "protein coding";
+
+    if ($bioperl_feature->has_tag ('pseudo')) {
+        $gene_type = "pseudogene";
+        print STDERR "parsing a pseudogene ...!\n";
+    }
+    else {
+        print STDERR "parsing a protein coding gene - attached to a mRNA sequence ...!\n";
+    }
+
+    print STDERR "mRNA, $systematic_id, is being processed...\n";  	    
+
+    my @gus_objects = $self->process_mRNA ($bioperl2Gus, $gene_type, $systematic_id);
+    print STDERR "gus objects done\n";
+	    
+    # commit the GUS objects associated with the CDS bioperl feature object
+	    
+    foreach my $object (@gus_objects) {
+        if ($self->getArgs->{'verbose'}) {
+            print $object->toXML();
+        }
+
+        $object->submit();
+        $log->print( "object INSERTED (", ref($object),")\n");
+        
+        $insert_count++;
+    } # end commit GUS mRNA gene objects
+
+    return $insert_count;
+}
+
+################################################################################
+#
+#
+#
 sub parseSequenceFiles {
   my ($self, $path, $fileType) = @_;
   my @bioperl_seqs = ();
@@ -579,7 +574,9 @@ sub parseSequenceFiles {
   return @bioperl_seqs;
 }
 
-
+################################################################################
+#
+#
 sub parseOneSequenceFile {
   my ($self, $fileName, $fileType) = @_;
   
@@ -706,254 +703,258 @@ sub parseOneSequenceFile {
   }
 }
 
+################################################################################
 # @param a Bioperl2Gusdev converter object
 # @return a set of GUS feature objects
-
+#
 sub processGene {
-  my ($self, $bioperl2Gus, $gene_type) = @_;
+  my ($self, $bioperl2Gus, $gene_type, $systematic_id) = @_;
 
-  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type);  
+  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id);  
   return @gus_objects;
 }
 
+################################################################################
+#
+#
 sub process_tRNA {
-  my ($self, $bioperl2Gus, $gene_type) = @_;
+  my ($self, $bioperl2Gus, $gene_type, $systematic_id) = @_;
 
-  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type);
+  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id);
   return @gus_objects;
 }
 
+################################################################################
+#
+#
 sub process_rRNA {
-  my ($self, $bioperl2Gus, $gene_type) = @_;
+  my ($self, $bioperl2Gus, $gene_type, $systematic_id, $is_in) = @_;
 
-  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type);
+  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id);
   return @gus_objects;
 }
 
+################################################################################
+#
+#
 sub process_mRNA {
-  my ($self, $bioperl2Gus, $gene_type) = @_;
+  my ($self, $bioperl2Gus, $gene_type, $systematic_id, $is_in) = @_;
 
-  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type);
+  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id);
   return @gus_objects;
 }
 
+################################################################################
+#
+# Called to create features for CDS, tRNA, rRNA and mRNA
+#
+#
 sub buildFeatureObjects {
-  my ($self, $bioperl2Gus, $gene_type) = @_;
-  my @gus_objects = ();
+    my ($self, $bioperl2Gus, $gene_type, $systematic_id) = @_;
+    my @gus_objects = ();
 
-  my $bioperl_feature   = $bioperl2Gus->getBioperlFeature;
+    my $bioperl_feature   = $bioperl2Gus->getBioperlFeature;
 
-  my $bioperl_locations = $bioperl_feature->location;
+    my $bioperl_locations = $bioperl_feature->location;
 
-  # print STDERR "Dumping bioperl locations object: " . Dumper ($bioperl_locations) . "\n";
+    # print STDERR "Dumping bioperl locations object: " . Dumper ($bioperl_locations) . "\n";
 
-  my @bioperl_locations = ();
+    my @bioperl_locations = ();
 
-  my $partial = 0;
+    my $partial = 0;
 
-  if (ref ($bioperl_locations) =~ /Split/) {
-    @bioperl_locations = $bioperl_locations->sub_Location();
-  }
-  elsif (ref ($bioperl_locations) =~ /Simple/) {
-    push (@bioperl_locations, $bioperl_locations);
-  }
-  elsif (ref ($bioperl_locations) =~ /Fuzzy/) {
-    push (@bioperl_locations, $bioperl_locations);
-    # partial CDS
-    $partial = 1;
-  }
-  else {
-    print STDERR  "bioperl_locations object type unknown, " . ref ($bioperl_locations) . " !!!\n";
-  }
+    if (ref ($bioperl_locations) =~ /Split/) {
+        @bioperl_locations = $bioperl_locations->sub_Location();
+    }
+    elsif (ref ($bioperl_locations) =~ /Simple/) {
+        push (@bioperl_locations, $bioperl_locations);
+    }
+    elsif (ref ($bioperl_locations) =~ /Fuzzy/) {
+        push (@bioperl_locations, $bioperl_locations);
+        # partial CDS
+        $partial = 1;
+    }
+    else {
+        print STDERR  "bioperl_locations object type unknown, " . ref ($bioperl_locations) . " !!!\n";
+    }
 
-  my $number_of_exons = @bioperl_locations;
+    ##
+    # GeneFeature object
+    # buildGeneFeature returns the GeneFeature plus child objects (plus NALocation, possibly Note objects)
+    ##
+    my $bioperl_geneLocation  = $self->getGeneLocation (@bioperl_locations);
+    my $number_of_exons       = scalar(@bioperl_locations);
+    my ($gf, @gus_gf_objects) =
+        $bioperl2Gus->buildGeneFeature ($number_of_exons, $bioperl_geneLocation, $gene_type, $partial, $systematic_id);
 
-  # GeneFeature object
-  #
-  my ($gf, @gus_gf_notes_objects) = $bioperl2Gus->buildGeneFeature ($number_of_exons, $gene_type, $partial);
-  push (@gus_objects, @gus_gf_notes_objects);
+    push (@gus_objects, $gf);              # @gus_objects gets returned
+    push (@gus_objects, @gus_gf_objects);
 
-  # print STDERR @bioperl_locations . " exons for gene, " . $gf->getStandardName . "\n";
-  # print STDERR "Dumping bioperl locations array: " . Dumper (@bioperl_locations) . "\n";
+    # print STDERR @bioperl_locations . " exons for gene, " . $gf->getStandardName . "\n";
+    # print STDERR "Dumping bioperl locations array: " . Dumper (@bioperl_locations) . "\n";
 
-  # NALocation object related to the Gene
+
+
+    ###############################################################
+    # If it's a pseudogene, generate only the gene feature object
+    #
+    # *** QUESTION: what about the gene in the Central Dogma? ***
+    #
+    ###############################################################
+
+    if ($gene_type =~ /pseudogene/i) {
+        return @gus_objects;
+    }
+
+
+    print STDERR "*** Gene was not a pseudogene, it is a $gene_type, creating RNA related objects\n"; # DEBUG
+
+
+
+
+    # RNAFeature - set $snas (SplicedNASequence) and $gf (GeneFeature) to be the parent
+    #
+    # *** Question: how is this object different to the NALocation for the GeneFeature above???
+    #
+    my $snas = $bioperl2Gus->buildSplicedNASequence($gf);
+    my ($rnaf, $gus_naLocation_rf) =
+        $bioperl2Gus->buildRNAFeature ($gf, $snas, $number_of_exons, $bioperl_geneLocation, $systematic_id);
+
+    push (@gus_objects, $rnaf);
+    push (@gus_objects, $gus_naLocation_rf);
+
+    if (defined $snas) { # IS THIS IF STATEMENT REALLY NEEDED???
+        push (@gus_objects, $snas);
+    }
+    else {
+        print STDERR "spliced sequence object not defined !!!! - not added !!!\n";
+    }
+
+    # ExonFeatures, link each to RNAFeature via RNAFeatureExon
+    #
+    my $i  = 1;
+
+    foreach my $bioperl_location (@bioperl_locations) {
+        print STDERR "Creating ExonFeature $i\n";
+
+        my $is_initial_exon = 0;
+        my $is_final_exon   = 0;
+
+        if ($i == 1) {
+            $is_initial_exon = 1;
+        }
+        if ($i == $number_of_exons) {
+            $is_final_exon = 1;
+        }
+
+        my $ef = $bioperl2Gus->buildExonFeature ($gf, $is_initial_exon, $is_final_exon, $i);
+        push (@gus_objects, $ef);
+
+        my $gus_naLocation_ef = $bioperl2Gus->buildNALocation ($ef, $bioperl_location);    
+        push (@gus_objects, $gus_naLocation_ef);
+    
+        my $rfe = $bioperl2Gus->buildRNAFeatureExon ($ef, $rnaf);
+        push (@gus_objects, $rfe);
+
+        $i++;
+    }
+
+    ###
+    # if it's not a protein coding gene, don't generate any protein feature
+    ##
+
+    if ($gene_type =~ /RNA/) {
+        return @gus_objects;
+    }
 
  
-  my $bioperl_geneLocation = $self->getGeneLocation (@bioperl_locations);
-  my $gus_naLocation_gf = $bioperl2Gus->buildNALocation ($gf, $bioperl_geneLocation);
-  push (@gus_objects, $gus_naLocation_gf);
+    ##
+    # The Protein Feature object as both a TranslatedAAFeature and a ProteinFeature
+    # ProteinFeature stores the EC number
 
-  ###############################################################
-  # If it's a pseudogene, generate only the gene feature object
-  ###############################################################
+    # to do : build NALocation objects attached to the ProteinFeature object
+    #
+    # If $aa_feature_translated (TranslatedAAFeature) has a parent of TranslatedAASequence the old
+    # one will be retieved.
+    ##
 
-  if ($gene_type =~ /pseudogene/i) {
+    my ($aa_feature_translated, $aa_feature_protein) = $bioperl2Gus->buildProteinFeature ($rnaf); #, $aa_seq);
+    push (@gus_objects, $aa_feature_protein);
+    push (@gus_objects, $aa_feature_translated);
+
+    my $aa_seq = $bioperl2Gus->buildTranslatedAASequence ($gf, $aa_feature_translated, $systematic_id);
+    push (@gus_objects, $aa_seq);
+
+
+    ##
+    # AAFeatures and their location objects
+    # e.g. SignalP, PredictedAAFeatures (TMHMM & Pfam)
+    ##
+    my @aafs = $bioperl2Gus->buildAAFeatures ($aa_seq, $gf->getName);
+    push (@gus_objects, @aafs);
+
+    my @gus_CentralDogma_objects =
+        $self->buildCentralDogmaObjects ($bioperl2Gus, $gf, $rnaf,
+                                         $aa_feature_protein, $aa_seq,
+                                         $gene_type);
+    push (@gus_objects, @gus_CentralDogma_objects);
+  
     return @gus_objects;
-  }
-
-  print STDERR "*** Gene was not a pseudogene, it is a $gene_type\n"; # DEBUG
-
-  # SplicedNASequence associated with the RNAFeature
-
-  if ($debug) {
-    print STDERR "adding spliced na sequence for gene, " . $gf->getName() . "...\n";
-  }
-
-  my $snas = $bioperl2Gus->buildSplicedNASequence ();
-
-  if (defined $snas) {
-    push (@gus_objects, $snas);
-  }
-  else {
-    print STDERR "spliced sequence object not defined !!!! - not added !!!\n";
-  }
-
-  # RNAFeature - set $snas (SplicedNASequence) to be the parent
-  #
-  my $rnaf = $bioperl2Gus->buildRNAFeature ($gf, $snas, $number_of_exons);
-  push (@gus_objects, $rnaf);
-
-  # NALocation object related to the RNA
-
-  my $gus_naLocation_rf = $bioperl2Gus->buildNALocation ($rnaf, $bioperl_geneLocation);
-  push (@gus_objects, $gus_naLocation_rf);
-
-  # ExonFeatures
-
-  # useful ????
-  # my $coding_start   = 0;
-  # my $coding_end     = 0;
-
-  my $i  = 1;
-
-  foreach my $bioperl_location (@bioperl_locations) {
-    my $is_initial_exon = 0;
-    my $is_final_exon   = 0;
-
-    if ($i == 1) {
-      $is_initial_exon = 1;
-    }
-    if ($i == $number_of_exons) {
-      $is_final_exon = 1;
-    }
-
-    my $ef = $bioperl2Gus->buildExonFeature ($gf, $is_initial_exon, $is_final_exon, $i);
-    push (@gus_objects, $ef);
-
-    my $gus_naLocation_ef = $bioperl2Gus->buildNALocation ($ef, $bioperl_location);    
-    push (@gus_objects, $gus_naLocation_ef);
-    
-    # RNAFeatureExon foreach ExonFeature
-    
-    my $rfe = $bioperl2Gus->buildRNAFeatureExon ($ef, $rnaf);
-    push (@gus_objects, $rfe);
-
-    $i++;
-  }
-
-  ###
-  # if it's not a protein coding gene, don't generate any protein feature
-  ##
-
-  if ($gene_type =~ /RNA/) {
-    return @gus_objects;
-  }
-  
-  # TranslatedAASequence
-  
-  # HOW TO GET THE TRANSLATION ????????????????
-  
-  my $aa_seq = $bioperl2Gus->buildTranslatedAASequence ($gf);
-  push (@gus_objects, $aa_seq);
-  
-  # The Protein Feature object as both a TranslatedAAFeature and a ProteinFeature
-  # ProteinFeature stores the EC number
-
-  # to do : build NALocation objects attached to the ProteinFeature object
-
-  my ($aa_feature_protein, $aa_feature_translated) = $bioperl2Gus->buildProteinFeature ($rnaf, $aa_seq);
-  push (@gus_objects, $aa_feature_protein);
-  push (@gus_objects, $aa_feature_translated);
-
-  my $start  = 1;
-  my $end    = length ($aa_seq->getSequence());
-  # no aa sequence => end = 1
-  $end = 1;
-
-  my $bioperl_aaLocation = Bio::Location::Simple->new (
-						       -start  => $start,
-						       -end    => $end,
-						       -strand => 1,
-						      );
-
-  my $gus_aaLocation = $bioperl2Gus->buildAALocation ($aa_feature_protein, $bioperl_aaLocation);
-  push (@gus_objects, $gus_aaLocation);
-
-  # AAFeatures and their location object
-  # e.g. SignalP ...
-
-  my $gene_name = $gf->getName;
-  my @aafs = $bioperl2Gus->buildAAFeatures ($aa_seq, $gene_name);
-  push (@gus_objects, @aafs);
-
-  my @gus_CentralDogma_objects =
-      $self->buildCentralDogmaObjects ($bioperl2Gus, $gf, $rnaf,
-                                       $aa_feature_protein, $aa_seq,
-                                       $gene_type);
-  push (@gus_objects, @gus_CentralDogma_objects);
-  
-  return @gus_objects;
 }
 
-
+################################################################################
+#
+#
 sub buildCentralDogmaObjects {
-  my ($self, $bioperl2Gus, $gf, $rnaf, $aa_feature_protein, $aa_seq, $gene_type) = @_;
+    my ($self, $bioperl2Gus, $gf, $rnaf, $aa_feature_protein, $aa_seq, $gene_type) = @_;
 
-  my @central_dogma_objects = ();
+    my @central_dogma_objects = ();
 
-  # Gene object
-  #
+    ##
+    # Gene object
+    ##
 
-  my ($gene_object, @gene_synonyms) = $bioperl2Gus->buildGene ($gf);
-  push (@central_dogma_objects, $gene_object);
-  push (@central_dogma_objects, @gene_synonyms);
+    my ($gene_object, @gene_synonyms) = $bioperl2Gus->buildGene ($gf);
+    push (@central_dogma_objects, $gene_object);
+    push (@central_dogma_objects, @gene_synonyms);
 
-  # GeneInstance Object, links Gene to GeneFeature
-  my $geneSequence = $bioperl2Gus->buildGeneInstance ($gene_object, $gf);
-  push (@central_dogma_objects, $geneSequence);
+    # GeneInstance Object, links Gene to GeneFeature
+    my $geneSequence = $bioperl2Gus->buildGeneInstance ($gene_object, $gf);
+    push (@central_dogma_objects, $geneSequence);
  
-  if ($gene_type =~ /pseudogene/i) {
+    if ($gene_type =~ /pseudogene/i) {
+        return @central_dogma_objects;
+    }
+
+
+    ##
+    # build RNA object
+    ##
+
+    my $rna_object = $bioperl2Gus->buildRNA ($gene_object);
+    push (@central_dogma_objects, $rna_object);
+
+    my $rnaSequence = $bioperl2Gus->buildRNAInstance ($rna_object, $rnaf, $gene_type);
+    push (@central_dogma_objects, $rnaSequence);
+
+    if ($gene_type =~ /RNA/) {
+        return @central_dogma_objects;
+    }
+
+    ##
+    # build protein object
+    #
+    # ProteinFeature is on top of NASequenceImp so it can not be linked to ProteinInstance
+    # This is why it buildProteinInstance() is commented out.
+    ##
+
+    my $protein_object = $bioperl2Gus->buildProtein ($rna_object, $aa_seq, $gf);
+    push (@central_dogma_objects, $protein_object);
+
+    #my $proteinSequence = $bioperl2Gus->buildProteinInstance ($protein_object, $aa_feature_protein);
+    #push (@central_dogma_objects, $proteinSequence);
+
     return @central_dogma_objects;
-  }
-
-  # build RNA object
-  #
-
-  my $rna_object = $bioperl2Gus->buildRNA ($gene_object);
-  push (@central_dogma_objects, $rna_object);
-
-  my $rnaSequence = $bioperl2Gus->buildRNAInstance ($rna_object, $rnaf, $gene_type);
-  push (@central_dogma_objects, $rnaSequence);
-
-  if ($gene_type =~ /RNA/) {
-    return @central_dogma_objects;
-  }
-
-  # build protein object
-  #
-
-  my $protein_object = $bioperl2Gus->buildProtein ($rna_object, $aa_seq, $gf);
-  push (@central_dogma_objects, $protein_object);
-  
-  my $proteinSequence = $bioperl2Gus->buildProteinInstance ($protein_object, $aa_feature_protein);
-  push (@central_dogma_objects, $proteinSequence);
-
-  # GO Functional Classification Objects
-
-  #my @GO_Objects = $self->buildGO_Objects ($bioperl2Gus, $protein_object, $rna_object);
-  #push (@central_dogma_objects, @GO_Objects);
-
-  return @central_dogma_objects;
 }
 
 ################################################################################
@@ -1041,4 +1042,5 @@ sub getGeneLocation {
   }
 }
 
-1;
+
+1; # END OF MODULE #
