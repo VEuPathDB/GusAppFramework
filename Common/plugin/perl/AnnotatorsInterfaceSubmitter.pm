@@ -65,8 +65,6 @@ sub new {
                      usage =>$usage                });
 
         return  $self;
-
-
 }
 
 
@@ -81,7 +79,7 @@ print STDERR "@xml\n";
 
 	close F;
 	my $fact_hash= {};
-	$fact_hash =&parseFactObjects($self->getCla->{'specialfile'}, $self->getSelfInv);
+	$fact_hash =$self->parseFactObjects($self->getCla->{'specialfile'}, $self->getSelfInv);
 	my $has_evidence = 0;
 	my $remove = 0;
 
@@ -541,7 +539,7 @@ sub getGeneSynonymDeleteObjects {
 # returns a hash ref with fact object as value and primary_key as key.
 sub parseFactObjects {
 
- # my $self = shift;
+     my $self = shift;
 
      my ($file, $ai) = @_;
 
