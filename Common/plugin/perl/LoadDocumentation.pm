@@ -29,7 +29,7 @@
 ###
 ### Last modified May-15-2003
 ###
-### usage: ga GUS30Doc --InputFile doc_file --verbose
+### usage: ga LoadDocumentation --inputFile [file]
 ###   run from inside directory containing file to upload 
 ############################################################
 ############################################################
@@ -122,7 +122,8 @@ sub process {
 	if ($db->checkTableExists($table_nm)){ # if table exists
 
 	    if ($db->getTable($table_nm)->checkAttribute($attribute_nm)){ # if column exists
-		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
+#		$doc->setTableId($doc->getTableIdFromTableName($table_nm)); #getTableId($table_nm)???
+	        $doc->setTableId($doc->getTableId($table_nm));
 	        $self->logVerbose("Set table ID\n\n");
 
 		$doc->setAttributeName ($attribute_nm) unless $table_nm eq $attribute_nm;
