@@ -15,7 +15,7 @@
    a. Copy new from template:
 
 sub new {
-  my $Class = shift;
+  my ($class) = @_;
   my $self = {};
   bless($self,$class);
   my $usage = 'Extract unprocessed AssembySequences........';
@@ -28,7 +28,7 @@ sub new {
   $self->initialize({requiredDbVersion => {},
 		  cvsRevision => '$Revision$', # cvs fills this in!
 		  cvsTag => '$Name$', # cvs fills this in!
-		  name => ref($m),
+		  name => ref($self),
 		  revisionNotes => 'make consistent with GUS 3.0',
 		  easyCspOptions => $easycsp,
 		  usage => $usage
@@ -75,6 +75,8 @@ sub new {
    e.g. CBIL::Bio::SequenceUtils::breakSequence($sequence)
 
 20. methods that refer to GUS objects must have fully qualified paths 
-    e.g. getChildren(GUS::Model::DoTS::MergeSplit) 
+    e.g. getChildren(GUS::Model::DoTS::MergeSplit)
+         getParent
+    ... so, search for getChild and getParent
 
 Note:WHY DOESN'T GA automatically log the command line args.-this information can now be obtained from the algorithmparam tables and is automatically inserted 

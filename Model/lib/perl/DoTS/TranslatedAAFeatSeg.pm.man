@@ -1,11 +1,11 @@
 
-package GUS::Model::DoTS::TranslatedAAFeatureSegment; # table name
+package GUS::Model::DoTS::TranslatedAAFeatSeg; # table name
 use strict;
-use GUS::Model::DoTS::TranslatedAAFeatureSegment_Row;
+use GUS::Model::DoTS::TranslatedAAFeatSeg_Row;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::TranslatedAAFeatureSegment_Row);
+@ISA = qw (GUS::Model::DoTS::TranslatedAAFeatSeg_Row);
 
 sub getAASequenceSegmentFromTranslatedAASequence {
   my($self) = shift;
@@ -25,7 +25,7 @@ sub getNASequenceSegment {
     my $length = $aStop - $aStart;
     $self->{naSeqSeg} = $isrev ? CBIL::Bio::SequenceUtils::reverseComplementSequence(substr($self->getParent('DoTS::TranslatedAAFeature',1)->getParent('DoTS::RNAFeature',1)->getFeatureSequence(),$aStart,$length)) : substr($self->getParent('DoTS::TranslatedAAFeature',1)->getParent('DoTS::RNAFeature',1)->getFeatureSequence(),$aStart,$length);
     if(length($self->{naSeqSeg}) != $length){
-      print STDERR "ERROR TranslatedAAFeatureSegment->getNASequenceSegment(): Length of the sequence ",length($self->{naSeqSeg})," is not equal to the length computed from the start_pos and end_pos\n",$self->toXML(0,1);
+      print STDERR "ERROR TranslatedAAFeatSeg->getNASequenceSegment(): Length of the sequence ",length($self->{naSeqSeg})," is not equal to the length computed from the start_pos and end_pos\n",$self->toXML(0,1);
     }
   }
 
