@@ -116,6 +116,7 @@ public class GUSServer implements ServerI {
             this.session = session;
             this.conn = conn;
 	    this.initDefaultValues();
+	    this.cache = new ObjectCache();
             opened = new java.util.Date();
             history.add(opened.toString() + ": Connection opened");
         }
@@ -129,6 +130,8 @@ public class GUSServer implements ServerI {
 	    String newItem = nowStr + ": " + item;
 	    history.add(newItem);
 	    this.lastUsed = now;
+
+	    // Print full history on each add() in debug mode
 	    if (debug) System.err.println(newItem);
 	}
 
@@ -308,6 +311,7 @@ public class GUSServer implements ServerI {
 	try {
 	    objs = s.conn.retrieveObjectsFromQuery(owner, tname, query);
 	} catch (RemoteException re) {}
+
 	int nRows = (objs == null) ? 0 : objs.size();
 	int numNew = 0;  // Number of objects not already in the cache
 

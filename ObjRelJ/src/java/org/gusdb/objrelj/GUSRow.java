@@ -1,6 +1,5 @@
 package org.gusdb.objrelj;
 
-import org.gusdb.objrelj.*;
 import java.util.*;
 import java.lang.*;
 import java.io.*;
@@ -139,9 +138,15 @@ public abstract class GUSRow implements java.io.Serializable {
 	    Class rowClass = Class.forName(rowClassName);
 	    return (GUSRow)rowClass.newInstance();
 	} 
-	catch (ClassNotFoundException cnfe) {}
-	catch (InstantiationException ie) {}
-	catch (IllegalAccessException iae) {}
+	catch (ClassNotFoundException cnfe) {
+	    cnfe.printStackTrace(System.err);
+	}
+	catch (InstantiationException ie) {
+	    ie.printStackTrace(System.err);
+	}
+	catch (IllegalAccessException iae) {
+	    iae.printStackTrace(System.err);
+	}
 
 	return null;
     }
@@ -149,22 +154,19 @@ public abstract class GUSRow implements java.io.Serializable {
     // ------------------------------------------------------------------
     // Abstract methods
     // ------------------------------------------------------------------
-  
-    // JC: Is this method also responsible for setting <code>id</code>?
-
-    /**
-     * Called (by the factory object that creates new rows) to set the attributes
-     * of a row based on a single row in an SQL result set, retrieved from the 
-     * database using JDBC.
-     *
-     * @param res      The result set that contains values for this row.
-     */
-    abstract void setAttributesFromResultSet(ResultSet res);
 
     /**
      * @return The table in which this row belongs.
      */
     public abstract GUSTable getTable();
+
+    /**
+     * A helper method needed because <code>setAttributesFromResultSet</code>
+     * must have package scope.
+     *
+     * @param res      The result set that contains values for this row.
+     */
+    protected abstract void setAttributesFromResultSet_aux(ResultSet res);
 
     // ------------------------------------------------------------------
     // Public methods
@@ -378,7 +380,8 @@ public abstract class GUSRow implements java.io.Serializable {
             xml.append("xml_id=\"" + xml_id + "\" ");
         }
         
-        for (int i=0; i < parent_ids.length; i++) {
+	int nParents = (parent_ids == null) ? 0 : parent_ids.length;
+        for (int i=0; i < nParents; i++) {
             xml.append("parent=\"" + parent_ids[i] + "\" ");
         }
         xml.append(">\n");
@@ -395,6 +398,17 @@ public abstract class GUSRow implements java.io.Serializable {
 
     Hashtable getInitialAttVals() { return this.initialAttVals; }
     Hashtable getCurrentAttVals() { return this.currentAttVals; }
+  
+    /**
+     * Called (by the factory object that creates new rows) to set the attributes
+     * of a row based on a single row in an SQL result set, retrieved from the 
+     * database using JDBC.
+     *
+     * @param res      The result set that contains values for this row.
+     */
+    void setAttributesFromResultSet(ResultSet res) {
+	this.setAttributesFromResultSet_aux(res);
+    }
 
     // ------------------------------------------------------------------
     // Protected methods
@@ -428,7 +442,7 @@ public abstract class GUSRow implements java.io.Serializable {
      */
     protected void setInitial ( String key, Object val ) {
 	try {
-	    if (val == null){
+	    if (val == null) {
 		// do nothing; value will not be set
 		// i.e., if there is no entry for an attribute in <code>initialAttVals</code>
 		// then its value is assumed to be null
@@ -463,7 +477,7 @@ public abstract class GUSRow implements java.io.Serializable {
      * @param toCheck   The object to check.
      */
     protected void attTypeCheck(String att, Object toCheck)
-	throws ClassNotFoundException, InstantiationException,IllegalAccessException,SQLException
+	throws ClassNotFoundException, InstantiationException, IllegalAccessException, SQLException
     {
 	GUSTable table = this.getTable();
 
@@ -500,7 +514,7 @@ public abstract class GUSRow implements java.io.Serializable {
      * @param o      A value of the type appropriate for storing in the attribute <code>att</code>.
      */
     protected void checkLength (String att, Object o) 
-	throws ClassNotFoundException, InstantiationException, SQLException, IllegalAccessException
+	throws ClassNotFoundException, InstantiationException, IllegalAccessException, SQLException
     {
 	GUSTable table = this.getTable();
 	GUSTableAttribute attInfo = table.getAttributeInfo(att);

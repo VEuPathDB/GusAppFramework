@@ -38,16 +38,19 @@ public class LocalTest {
 	ServerI server = new GUSServer(driver);
 	String s1 = null;
 
+	// Retrieve set of existing objects
+	// 
 	try {
 	    s1 = server.openConnection(gusUser, gusPassword);
 	    Vector objs = server.retrieveAllObjects(s1, "DoTS", "SequenceType");
 	    
-	    System.out.println("Retrieved " + objs.size() + " objects: ");
+	    System.out.println("Retrieved " + objs.size() + " objects: \n");
 	    
 	    Iterator i = objs.iterator();
 	    while (i.hasNext()) {
 		GUSRow obj = (GUSRow)i.next();
-		System.out.println("  " + obj.toString());
+		System.out.println(obj.toString());
+		System.out.println(obj.toXML());
 	    }
 	} catch (Throwable t) {
 	    t.printStackTrace(System.err);

@@ -76,8 +76,8 @@ public class GUSTableAttribute implements java.io.Serializable {
      * @param nulls        Whether nulls allowed
      * @param quote        Whether quoting required.
      */
-    protected GUSTableAttribute( String n, String dbtype, String javatype,  int prec, int len, 
-				 int sc, boolean nulls, boolean quote) 
+    public GUSTableAttribute( String n, String dbtype, String javatype, int prec, int len, 
+			      int sc, boolean nulls, boolean quote) 
     {
 	this.name = n;
         this.dbType = dbtype;

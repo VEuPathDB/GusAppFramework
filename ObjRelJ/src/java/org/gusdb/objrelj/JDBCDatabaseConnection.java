@@ -189,17 +189,13 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     {
 	Vector objs = new Vector();
 
-	System.err.println("query = " + query);
-
 	try {
 	    Statement stmt = conn.createStatement();
 	    ResultSet res = stmt.executeQuery(query);
 
 	    while(res.next()) {
 		GUSRow obj = GUSRow.createObject(owner, tname);
-		System.err.println("created object = " + obj);
 		obj.setAttributesFromResultSet(res);
-		System.err.println("after setAtts = " + obj);
 		objs.add(obj);
 	    }
 	    res.close();
