@@ -190,8 +190,8 @@ print STDERR "@diffArray\n";
 
 
 my %seen2 = ();
-my @diffArray2 = ();
-@diffArray2 = undef;
+my @diffArray2 = undef;
+
 my $dt;
 
   foreach $dt(@DTs)  {$seen2{$dt} = 1};
