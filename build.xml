@@ -308,7 +308,7 @@
     
   </target>
 
-  <target name="GUS/ObjRelJ-RMIC" if="${compileJava}">
+  <target name="GUS/ObjRelJ-RMIC" if="compileJava">
     <rmic base="${projectsDir}/GUS/ObjRelJ/src/java"  
       classname="org.gusdb.objrelj.RemoteJDBCServer"> 
         <classpath> 
@@ -369,8 +369,7 @@
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="WebDevKit"/>
-    <property name="skipJava" value="true"/>
-    </ant>
+     </ant>
   </target>  
 
   <target name="GUS/WDKTestSite-Installation" depends="ProjectTree">
