@@ -584,47 +584,55 @@ public abstract class GUSRow implements java.io.Serializable {
 	Long cacheStart = null;
 	Long cacheEnd = null;
 
-	// Check whether we've been told to retrieve a specific subsequence
+	// If the value is null then we simply store the entire value, 
+	// regardless of what subsequence was requested by <code>specialCases</code>.
 	//
-	if (specialCases != null) {
-	    CacheRange whatToCache = (CacheRange)(specialCases.get(att));
-	    cacheStart = whatToCache.getStart();
-	    cacheEnd = whatToCache.getEnd();
-	}
-
-	try {
-	    long length = value.length();
-	    long start = (cacheStart == null) ? 0 : cacheStart.longValue();
-	    long end = (cacheEnd == null) ? length - 1: cacheEnd.longValue();
-	    boolean isEntireLob = ((start == 0) && (end == (length - 1)));
-
-	    char[] data = new char[(int)length];
-	    java.io.Reader r = value.getCharacterStream();
-            long offset = 0;
-
-	    // Skip to the appropriate location in the stream (start)
-	    //
-            while (offset < start) {
-		long amountSkipped = r.skip(start - offset);
-		offset += amountSkipped;
-	    }
-
-	    // Then read the requested range (up to end)
-	    //
-            int arrayPosn = 0;
-            while (offset < end) {
-		int amountRead = r.read(data, arrayPosn, (int)(end - offset + 1));
-		if (amountRead == -1) break;
-		arrayPosn += amountRead;
-		offset += amountRead;
-	    }
-
-	    if (!isEntireLob) result = new CacheRange(start, end, length);
-	    setInitial(att, data); 
+	if (value == null) {
+	    // No action required; null will be returned
 	} 
-        catch (SQLException se) {}
-	catch (java.io.IOException ie) {}
+	else {
 
+	    // Check whether we've been told to retrieve a specific subsequence
+	    //
+	    if (specialCases != null) {
+		CacheRange whatToCache = (CacheRange)(specialCases.get(att));
+		cacheStart = whatToCache.getStart();
+		cacheEnd = whatToCache.getEnd();
+	    }
+	    
+	    try {
+		long length = value.length();
+		long start = (cacheStart == null) ? 0 : cacheStart.longValue();
+		long end = (cacheEnd == null) ? length - 1: cacheEnd.longValue();
+		boolean isEntireLob = ((start == 0) && (end == (length - 1)));
+		
+		char[] data = new char[(int)length];
+		java.io.Reader r = value.getCharacterStream();
+		long offset = 0;
+
+		// Skip to the appropriate location in the stream (start)
+		//
+		while (offset < start) {
+		    long amountSkipped = r.skip(start - offset);
+		    offset += amountSkipped;
+		}
+		
+		// Then read the requested range (up to end)
+		//
+		int arrayPosn = 0;
+		while (offset < end) {
+		    int amountRead = r.read(data, arrayPosn, (int)(end - offset + 1));
+		    if (amountRead == -1) break;
+		    arrayPosn += amountRead;
+		    offset += amountRead;
+		}
+		
+		if (!isEntireLob) result = new CacheRange(start, end, length);
+		setInitial(att, data); 
+	    } 
+	    catch (SQLException se) {}
+	    catch (java.io.IOException ie) {}
+	}
 	return result;
     }
 
@@ -641,47 +649,55 @@ public abstract class GUSRow implements java.io.Serializable {
 	Long cacheStart = null;
 	Long cacheEnd = null;
 
-	// Check whether we've been told to retrieve a specific subsequence
+	// If the value is null then we simply store the entire value, 
+	// regardless of what subsequence was requested by <code>specialCases</code>.
 	//
-	if (specialCases != null) {
-	    CacheRange whatToCache = (CacheRange)(specialCases.get(att));
-	    cacheStart = whatToCache.getStart();
-	    cacheEnd = whatToCache.getEnd();
-	}
-
-	try {
-	    long length = value.length();
-	    long start = (cacheStart == null) ? 0 : cacheStart.longValue();
-	    long end = (cacheEnd == null) ? length - 1: cacheEnd.longValue();
-	    boolean isEntireLob = ((start == 0) && (end == (length - 1)));
-
-	    byte[] data = new byte[(int)length];
-	    java.io.InputStream r = value.getBinaryStream();
-            long offset = 0;
-
-	    // Skip to the appropriate location in the stream (start)
-	    //
-            while (offset < start) {
-		long amountSkipped = r.skip(start - offset);
-		offset += amountSkipped;
-	    }
-
-	    // Then read the requested range (up to end)
-	    //
-            int arrayPosn = 0;
-            while (offset < end) {
-		int amountRead = r.read(data, arrayPosn, (int)(end - offset + 1));
-		if (amountRead == -1) break;
-		arrayPosn += amountRead;
-		offset += amountRead;
-	    }
-
-	    if (!isEntireLob) result = new CacheRange(start, end, length);
-	    setInitial(att, data); 
+	if (value == null) {
+	    // No action required; null will be returned
 	} 
-        catch (SQLException se) {}
-	catch (java.io.IOException ie) {}
+	else {
 
+	    // Check whether we've been told to retrieve a specific subsequence
+	    //
+	    if (specialCases != null) {
+		CacheRange whatToCache = (CacheRange)(specialCases.get(att));
+		cacheStart = whatToCache.getStart();
+		cacheEnd = whatToCache.getEnd();
+	    }
+	    
+	    try {
+		long length = value.length();
+		long start = (cacheStart == null) ? 0 : cacheStart.longValue();
+		long end = (cacheEnd == null) ? length - 1: cacheEnd.longValue();
+		boolean isEntireLob = ((start == 0) && (end == (length - 1)));
+		
+		byte[] data = new byte[(int)length];
+		java.io.InputStream r = value.getBinaryStream();
+		long offset = 0;
+		
+		// Skip to the appropriate location in the stream (start)
+		//
+		while (offset < start) {
+		    long amountSkipped = r.skip(start - offset);
+		    offset += amountSkipped;
+		}
+		
+		// Then read the requested range (up to end)
+		//
+		int arrayPosn = 0;
+		while (offset < end) {
+		    int amountRead = r.read(data, arrayPosn, (int)(end - offset + 1));
+		    if (amountRead == -1) break;
+		    arrayPosn += amountRead;
+		    offset += amountRead;
+		}
+		
+		if (!isEntireLob) result = new CacheRange(start, end, length);
+		setInitial(att, data); 
+	    } 
+	    catch (SQLException se) {}
+	    catch (java.io.IOException ie) {}
+	}
 	return result;
     }
 
