@@ -149,7 +149,7 @@ sub _fileBaseName {
 
 sub _checkPrev {
   my ($self, $answerFile, $targetDir) = @_;
-    $self->_log("Found existing $self->{resource} $self->{version}");
+    $self->_log("Found existing $self->{resource} $self->{version} in repository");
 
     $self->_waitForUnlock();
 
@@ -206,17 +206,17 @@ sub _acquire {
 
     $self->_writeWgetArgs($targetDir);
 
-    $self->_log("Calling wget");
+    $self->_log("Calling wget to acquire files(s)");
     $self->{wget}->execute($wgetDir,
 			   "$tmpDir/wget.log",
 			   "$tmpDir/wget.cmd");
 
-    $self->_log("Calling tar");
+    $self->_log("Calling tar to package them for storage in the repository");
     my $baseName = "$self->{resource}-$self->{version}";
     my $tarCmd = "tar -cf $tmpDir/$baseName.tar .";
     $self->_runCmd($tarCmd);
 
-    $self->_log("Calling gzip");
+    $self->_log("Calling gzip to compress the package");
     my $gzipCmd = "gzip $tmpDir/$baseName.tar";
     $self->_runCmd($gzipCmd);
 
@@ -323,7 +323,11 @@ sub _findVersion {
     my $todayDay = $today[3] + 1;
     my $today = "${todayYear}-${todayMonth}-$todayDay";
 
-    my @files = $self->{storageManager}->listDir($resourceDir);
+    
+    my @files;
+    if ($self->{storageManager}->dirExists($resourceDir)) {
+      @files= $self->{storageManager}->listDir($resourceDir);
+    }
     my $found;
     foreach my $file (sort @files) {
       if ($file =~ /(\d\d\d\d)-(\d\d)-(\d\d)/){
