@@ -179,7 +179,7 @@ sub new {
      { o => 'ratio_cutoff',
        t => 'float',
        h => 'p-value ratio threshold for sim/rule',
-       d => 1.0,
+       d => 0.8,
    },
 			      
      { o => 'absolute_cutoff',
@@ -211,44 +211,12 @@ sub new {
        t => 'string',
        h => 'comma separated list of Algorithm Invocation Ids of Associations that were created during a run of apply_rules that was unexpectedly interrupted.',
    },
-     
-       
-    
-     #dtb: don't know why we'd use these sql filters but keep for now
-	
-     #verify this and put in documentation
-	# guide for PlasmoDB predictions. NOTE:  you should also provide 
-	# appropriate --sql-from and --sql-filter options on the command 
-	# line.  For example:
-	#     --sql-from "TranslatedAAFeature tf,
-	#                 RNAFeature rf,
-	#                 ProjectLink pl
-	#     --sql-filter "sim.p_value_exp <= -5                  and 
-	#                   q.aa_sequence_id = tf.aa_sequence_id and 
-	#                   tf.na_feature_id = rf.na_feature_id  and 
-	#                   pl.id = rf.parent_id                 and
-	#                   pl.table_id = 108                    and 
-	#                   pl.project_id = 113
-	# Will allow you to generate predictions for PlasmoDB 3.1.
 
-
-     { o => 'rule_sql_filter',
-       t => 'string',
-       h => 'extra where clause terms used for rule selection, OVERRIDES the raid parameter; remember ruleset table is called "rs"',
+     { o => 'validate',
+       t => 'boolean',
+       h => 'set this flag to validate data after it has been processed (more time consuming but helps with level of correctness',
    },
      
-     # extra filter for SQL similarity selection
-     { o => 'sql_filter',
-       t => 'string',
-       h => 'extra where clause terms used for similarity selection; remember query sequence table is called "q"',
-       
-   },
-     # extra FROM for similarity selection
-     { o => 'sql-from',
-       t => 'string',
-       h => 'extra FROM clause terms used for similarity selection.',
-   }
-
      ];
 
 
@@ -279,7 +247,8 @@ sub run {
     my $testProteinIds = $self->getCla->{test_protein_id_list};
     my $oldGoRootId = $self->getCla->{old_function_root_go_id};
     my $newGoRootId = $self->getCla->{new_function_root_go_id};
-        
+    my $validate = $self->getCla->{validate};
+
     my ($deleteInstances, $recacheInstances, $doNotScrub) = $self->_determineInstanceManagement();
         
     $databaseAdapter->setTestProteinIds($testProteinIds) if $testProteinIds;
@@ -298,7 +267,6 @@ sub run {
  
 
     $goManager->setDeprecatedAssociations($databaseAdapter->getDeprecatedAssociations($self->getCla->{query_taxon_id},
-										      $newGoVersion,
 										      $proteinTableId));
     
     my $msg = "GoPlugin ran successfully.  ";
@@ -308,7 +276,7 @@ sub run {
 	
 	$self->log("scrubbing proteins with go version $newGoVersion without evolving the go hiearchy or applying new rules");
 	my $proteinsAffected = $goManager->scrubProteinsOnly($newGoVersion, $proteinTableId, $self->getCla()->{query_taxon_id},
-							     $deleteInstances, $recacheInstances);
+							     $deleteInstances, $recacheInstances, $validate);
 	
 	$msg .= "Scrubbed $proteinsAffected proteins.  ";
     }
@@ -320,7 +288,7 @@ sub run {
 	    my $proteinsChanged = $goManager->evolveGoHierarchy($oldGoVersion, $newGoVersion, $deleteInstances, 
 								$recacheInstances, $proteinTableId, $doNotScrub, 
 								$self->getCla()->{test_number}, $self->getCla()->{query_taxon_id},
-								$self->getCla()->{skip_protein_raid_list});
+								$self->getCla()->{skip_protein_raid_list}, $validate);
 	    $msg .= "Evolved go terms for associations with $proteinsChanged proteins.  ";
 	}
 
@@ -331,7 +299,7 @@ sub run {
 							  $self->getCla()->{similarities_file_path},
 							  $self->getCla()->{create_new_similarities_file},
 							  $self->getCla()->{skip_protein_raid_list},
-							  $self->getCla()->{test_number}); 
+							  $self->getCla()->{test_number}, $validate); 
 	    
 
 	    $msg .= "Applied rules to $proteinsAffected proteins.  ";
@@ -439,7 +407,7 @@ sub _validateCla{
 	my $absoluteCutoff = $self->getCla->{absolute_cutoff};
 
 	my $errMsg = "When applying rules, you need to set all of --protein_table_id, --query_table_id,\n";
-	$errMsg .= "--query_primary_attribute, --subject_db_release_list";
+	$errMsg .= "--query_primary_attribute, --subject_db_release_list, --query_table";
 
 	$self->userError($errMsg) if !($queryTableId && $queryTablePkAtt && $subjectDbList
 				       && $proteinTableId && $queryTable);
