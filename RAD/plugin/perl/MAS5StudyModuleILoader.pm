@@ -642,18 +642,25 @@ sub createGUSQuantParams {
 
     $self->error("Create object failed, name $param absent in table RAD3::ProtocolParam")
       unless ($protocolParam->retrieveFromDB);
-
-    my $quantParameters = GUS::Model::RAD3::QuantificationParam->new({name => $param});
+    my $value;
 
     if ($param eq "TGT") {   # HARD-CODED. Replace 'TGT' by your RAD3.ProtocolParam.name for 'TGT Value'.
-      $quantParameters->{$param} = $RPTinfo->{"TGT Value:"}; 
+      #$quantParameters->{$param} = $RPTinfo->{"TGT Value:"}; 
+      $value = $RPTinfo->{"TGT Value:"}; 
 
     } elsif ($param eq "SF") {    # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
-      $quantParameters->{$param} = $RPTinfo->{"Scale Factor (SF):"}; 
+      #$quantParameters->{$param} = $RPTinfo->{"Scale Factor (SF):"}; 
+      $value = $RPTinfo->{"Scale Factor (SF):"}; 
 
     } else {
-      $quantParameters->{$param} = $RPTinfo->{"$param:"};
+      #$quantParameters->{$param} = $RPTinfo->{"$param:"};
+      $value = $RPTinfo->{"$param:"};
     }
+
+    my $quantParameters = GUS::Model::RAD3::QuantificationParam->new({
+        name => $param,
+        value => $value
+    });
     
     $quantParameters->setParent($protocolParam);  # protocolParam in only needed here, so set parent here
 
