@@ -124,6 +124,7 @@ sub process {
 #		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
 
 		## want to skip identical documentation - query to see if already stored
+		my $dbh = $ctx->{'self_inv'}->getDbHandle();
 		my $query = "SELECT DISTINCT database_documentation_id FROM Core.DatabaseDocumentation WHERE table_id=$table_nm AND attribute_name=$attribute_nm AND html_documentation=$html_dc)";
 		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
 		my $stmt = $dbh->prepare($query);
