@@ -10,7 +10,7 @@ die "usage: testSftp hostname:rootDir\n" unless $location;
 
 my $sftp = GUS::Pipeline::ExternalResources::SftpManager->new($location);
 
-my ($host,$root) = GUS::Pipeline::ExternalResources::SftpManager::parseLocation($location);
+my ($user, $host,$root) = GUS::Pipeline::ExternalResources::SftpManager::parseLocation($location);
 
 my $test = 1;
 print "Test $test: list dir\n";
