@@ -146,7 +146,6 @@ sub __load_ontology {
     if ($id_file){
 	$logFile = FileHandle->new( '>>'. $self->getCla->{ id_file } ); 
     }
-    
     my $skipCount = 0;
     my $entryCount = 0;
     my $relationshipEntryCount = 0;
