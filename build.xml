@@ -27,7 +27,6 @@
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  Installation  oooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
-
  
   <target name="GUS-Installation" depends="CBIL-Installation,
                                            GUS/Common-Installation, 
@@ -320,20 +319,23 @@
 
   <target name="GUS/DBAdmin-WebInstallation" depends="ProjectTree">
     <ant target="defaultWebComponentInstall">
-      <property name="component" value="GUS/DBAdmin"/>
+       <property name="project" value="GUS"/>
+       <property name="component" value="DBAdmin"/>
     </ant>
   </target>  
 
   <target name="GUS/SchemaBrowser-WebInstallation" depends="ProjectTree">
     <ant target="defaultWebComponentInstall">
-      <property name="component" value="GUS/SchemaBrowser"/>
+      <property name="project" value="GUS"/>
+      <property name="component" value="SchemaBrowser"/>
     </ant>
   </target>  
 
   <target name="GUS/WebDevKit-WebInstallation" depends="ProjectTree">
     <ant target="defaultWebComponentInstall">
-      <property name="component" value="GUS/WebDevKit"/>
-    </ant>
+      <property name="project" value="GUS"/>
+      <property name="component" value="WebDevKit"/>
+  </ant>
   </target>  
 
 
