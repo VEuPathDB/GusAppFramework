@@ -79,7 +79,7 @@ sub run {
     $self->logAlert('COMMIT', $self->getCla->{commit} ? 'ON' : 'OFF' );
     print "Testing on $self->getCla->{'testnumber'}\n" if $self->getCla->{'testnumber'};
     
-    my $processedDbReleases = $self->getProcessedDbReleases();
+    my $processedDbReleases = $self->getProcessedDbReleases() if ($self->getCla()->{restart_alg_invocation_ids});
     
     ##DBI handle to be used for queries outside the objects...
     
