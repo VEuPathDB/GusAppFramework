@@ -171,7 +171,7 @@ my @properties =
     ["hybDates", "",""],
     ["allHybDatesSame", "",""],
     ["allHybDates", "",""],
-    ["description", "NONE",""],
+ #   ["description", "NONE",""],
     ["scanDate", "",""]
  ); 
 
