@@ -80,7 +80,8 @@ sub run {
     else {
 	$self->getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 
     }
-    $self->makeTaxonName($namesDmp);
+    my ($TaxonNameIdHash,$TaxonIdHash) = $self->makeTaxonName($namesDmp);
+    $self->deleteTaxonName($TaxonNameIdHash,$TaxonIdHash);
     
 }
 
@@ -247,6 +248,10 @@ sub makeTaxonName {
 
   my $self   = shift;
   my $namesDmp = shift;
+  my $dbh = $self->getQueryHandle();
+  $dbh->do("analyze table sres.Taxon compute statistics");
+  my %TaxonNameIdHash;
+  my %TaxonIdHash;
   my $num = 0;
   foreach my $tax_id (keys %$namesDmp) {
     my $taxon_id = $self->getTaxon($tax_id);;
@@ -255,11 +260,16 @@ sub makeTaxonName {
 	foreach my $unique_name_variant (keys %{$namesDmp->{$tax_id}->{$name}->{$name_class}}) {
 	  my %attHash = ('taxon_id'=>$taxon_id,'name'=>$name, 'unique_name_variant'=> $unique_name_variant, 'name_class'=>$name_class);
 	  my $newTaxonName = GUS::Model::SRes::TaxonName->new(\%attHash);
-	  
+
 	  if (!$newTaxonName->retrieveFromDB()) {
 	    $newTaxonName->submit();
 	    $num++;
 	  }
+
+	  my $taxon_name_id = $newTaxonName->getTaxonNameId();
+	  $TaxonNameIdHash{$taxon_name_id}=1;
+	  $TaxonIdHash{$taxon_id}=$name_class;
+	  
 	  
 	  $self->undefPointerCache();
 	}
@@ -267,10 +277,30 @@ sub makeTaxonName {
     }
   }
   print STDERR ("$num taxon names processed\n");
+  return (\%TaxonNameIdHash,\%TaxonIdHash);
 }
 
-
-
+sub deleteTaxonName {
+  my $self   = shift;
+  my ($TaxonNameIdHash,$TaxonIdHash) = @_;
+  my $num = 0;
+  my $dbh = $self->getQueryHandle();
+  my $st = $dbh->prepareAndExecute("select taxon_name_id, taxon_id, name_class from sres.taxonname");
+  while (my ($taxon_name_id,$taxon_id,$name_class) = $st->fetchrow_array()) {
+    if ($TaxonNameIdHash->{$taxon_name_id}==1) {
+      next();
+    }
+    elsif ($TaxonIdHash->{$Taxon_id}==$name_class) {
+      my $newTaxonName = TaxonName->new({'taxon_name_id'=>$tax_id});
+      $newTaxonName->retrieveFromDB();
+      $newTaxonName->markDeleted();
+      $newTaxonName->submit();
+      $newTaxonName->undefPointerCache();
+      $num++;
+    }
+  }
+  print STDERR ("$num TaxonName entries deleted\n");
+}
 1;
 
 __END__
