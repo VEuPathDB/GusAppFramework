@@ -61,7 +61,7 @@ sub makeGenomeDir {
     &makeGenomeTaskPropFile($inputDir, $serverInputDir, $seqFileName, $gaOptions, $gaBinPath,
 			    $localGDir, $serverGDir);
     &makeGenomeParamsPropFile($inputDir . '/params.prop', $serverGDir . '/11.ooc');
-    &makeTargetListFile(($inputDir . '/target.lst', $serverGDir);
+    &makeTargetListFile($inputDir . '/target.lst', $serverGDir);
 }
 
 sub makeMatrixDir {
