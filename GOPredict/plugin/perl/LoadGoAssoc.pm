@@ -424,7 +424,7 @@ sub __adjustDefiningAncestors{
 
     open (LASTLOG, ">>logs/definingLog") || die "pluginLog could not be opened";
 
-    my $sql = "select ga.go_association_id, upper(eas.source_id) 
+    my $sql = "select ga.go_association_id, eas.$idCol 
                from DoTS.GOAssociation ga, DoTS.ExternalAASequence eas,
                DoTS.GOAssociationInstance gai
                where ga.table_id = 83 and ga.row_id = eas.aa_sequence_id
@@ -456,11 +456,11 @@ sub __adjustDefiningAncestors{
 	my $dbGoTermGoId = $goGraph->{gusToGo}->{$dbGoTermGusId};
 	if ($assocData->{$extId}->{goTerms}->{$dbGoTermGoId}){  #found one that is explicitly set
 	 #   print LASTLOG "found matching association $extId - $dbGoTermGoId in file; ";
-	    if (!$assocObjectInst->getDefining()){
+	    if (!$assocObjectInst->getIsPrimary()){
 		$submit = 1;
 		$changeCount++;
 		#print LASTLOG " it's one that needs to be corrected\n";
-		$assocObjectInst->setDefining(1);
+		$assocObjectInst->setIsPrimary(1);
 	    }
 	    else{
 		$noChangeCount++;
@@ -565,7 +565,8 @@ sub __makeAssociation {
  	external_database_release_id=> $self->getCla->{go_ext_db_rel_id},
  	is_not => $isNot,
  	review_status_id => $reviewStatus,
- 	defining => $defining,
+ 	is_primary => $defining,
+	is_deprecated => 0,
  	go_assoc_inst_loe_id => 1, #hardcoded for now
     });
 
