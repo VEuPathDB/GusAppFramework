@@ -10,6 +10,11 @@ package GUS::ObjRelP::DbiTable;
 # 6/22/00   Sharon Diskin    Created
 #
 # 4/9/02    Brian Brunk      Modified to allow instantiation of table objects by Generator
+#
+# 3/22/04   Jason Hackney    Moved Oracle specific SQL into
+# Oracle.pm, and added support for PostgreSQL.  Metadata queries
+# are now handled generically by instantiating an Oracle or
+# PostgreSQL object in DbiDatabase.pm.
 ############################################################
 
 use strict;
@@ -183,51 +188,23 @@ sub setAttInfo {
 sub cacheAttributeInfo {
   my($self) = @_;
   my $table_name = $self->getTableName();
-  if ($self->getDatabase()->getDSN() =~ /oracle/i) {
-    $table_name =~ tr/a-z/A-Z/;
-    my $owner = $self->getSchemaNameUpper();
-    my $sql = "select column_name,data_type,nullable,column_id,
-     data_precision,data_length,data_scale
-     from all_tab_columns where table_name = '$table_name'
-     and owner = '$owner'
-     order by column_id";
-    my $stmt = $self->getMetaDbh()->prepareAndExecute($sql);
-    while (my($name,$type,$nulls,$col_id,$precision,$length,$scale) = $stmt->fetchrow_array()) {
-      $name =~ tr/A-Z/a-z/;
-      push (@{$self->{'attributeNames'}}, $name);
-      push(@{$self->{'attInfo'}},{ 'col' => $name,
-                                   'type' => $type,
-                                   'prec' => $precision,
-                                   'length' => $length,
-                                   'scale' => $scale,
-                                   'Nulls' => $nulls eq 'N' ? 0 : 1,
-                                   'base_type' => 'not set',
-                                 });
-      $self->{'quotedAtts'}->{$name} = 1 if $type !~ /(NUMBER|FLOAT)/i;
-    }
-  } else {
-    my $sth = $self->getMetaDbh()->prepareAndExecute("select * from $table_name");
-    my $numAttrs = $sth->{NUM_OF_FIELDS};
-    for (my $i = 0; $i < $numAttrs; $i++) {
-      my $name = $sth->{NAME_lc}->[$i];
-      my $type = $sth->{TYPE}->[$i];
-      push (@{$self->{'attributeNames'}}, $name);
-      push(@{$self->{'attInfo'}},{ 'col' => $name,
-                                   'type' => $type,
-                                   'prec' => $sth->{PRECISION}->[$i],
-                                   'length' => $sth->{PRECISION}->[$i],
-                                   'scale' => $sth->{SCALE}->[$i],
-                                   'Nulls' => $sth->{NULLABLE}->[$i] ? 1 : 0,
-                                   'base_type' => 'not set',
-                                 });
-      ##put into quoted hash...should check this...
-      if ($type == 1 || $type >8) {
-        $self->{'quotedAtts'}->{$name} = 1;
-      }
-    }
-    $sth->finish(); 
-  }
-
+  my $schema_name= $self->getSchemaName();
+	my $owner=$self->getSchemaNameUpper();
+	my $sql=$self->getDatabase->getDbPlatform->attributeSql($owner,$table_name);
+	my $stmt=$self->getMetaDbh->prepareAndExecute($sql);
+  while (my($name,$type,$nulls,$col_id,$precision,$length,$scale) = $stmt->fetchrow_array()) {
+    $name =~ tr/A-Z/a-z/;
+    push (@{$self->{'attributeNames'}}, $name);
+    push(@{$self->{'attInfo'}},{ 'col' => $name,
+                                 'type' => $type,
+                                 'prec' => $precision,
+                                 'length' => $length,
+                                 'scale' => $scale,
+                                 'Nulls' => $nulls eq 'N' ? 0 : 1,
+                                 'base_type' => 'not set',
+                               });
+    $self->{'quotedAtts'}->{$name} = 1 if $type !~ /(NUMBER|FLOAT|numeric|int)/i;
+	}
 }
 
 sub getAttributeInfo {
@@ -235,29 +212,9 @@ sub getAttributeInfo {
   if ($self->{'attInfo'}) {
     return $self->{'attInfo'};
   }
-  if ($self->getDatabase()->getDSN() =~ /Sybase/) {
-    my $sql_cmd = "
-       SELECT col = c.name, type = t.name, c.prec, c.scale, c.length,
-              base_type = local_type_name,
-              Nulls = convert(bit, (c.status & 8)),
-              isIdentity = convert(bit, (c.status & 0x80))
-       FROM   syscolumns c, systypes t, sybsystemprocs..spt_datatype_info d
-       WHERE  c.id = object_id('".$self->getTableName()."')
-              AND c.usertype = t.usertype
-              AND t.type = d.ss_dtype
-       ORDER BY c.id, c.colid \n";
-    my $sth = $self->getDbHandle()->prepareAndExecute($sql_cmd);
-    # SJD: future versions of DBI my reuse same reference for each fetch
-    # may want to consider accounting for this now...check this!!!
-    while ( my $info = $sth->fetchrow_hashref('NAME_lc') ) {
-      push(@{$self->{'attInfo'}},$info);
-      if ($$info{'base_type'} =~ /char|date|image|sysname|text|timestamp/) { 
-        $self->{'quotedAtts'}->{$$info{'col'}} = 1;
-      }
-    }
-  } else {
+	else {
     $self->cacheAttributeInfo(); ##generic dbi method
-  }
+	}
   return $self->{'attInfo'};
 }
 
@@ -328,33 +285,27 @@ sub getViewMapping {
 sub getViewSql {
   my ($self) = @_;
   my $sql;
-  if ($self->getDatabase()->getDSN() =~ /Sybase/) {
-    ($sql)=  $self->getDbHandle()->selectrow_array("select text from syscomments where id = object_id('".$self->getTableName()."')");
-  } elsif ($self->getDatabase()->getDSN() =~ /oracle/i) {
-    my $table = $self->getTableName();
-    my $owner = $self->getSchemaNameUpper();
-    $table =~ tr/a-z/A-Z/;
-    my $query = "select text from all_views where owner = '$owner' and view_name = '$table'"; 
-    #    print STDERR "getViewSql: $query\n";
+  my $table = $self->getTableName();
+  my $owner = $self->getSchemaNameUpper();
+	my $query = $self->getDatabase->getDbPlatform->viewSql($owner,$table);
+#    print STDERR "getViewSql: $query\n";
     
-    my($tmpSql) =  $self->getDbHandle()->selectrow_array($query);
-    ##now need to put in the att names properly...
-    $tmpSql =~ s/\s+/ /g;
-    my($raw_atts,$from) = ($tmpSql =~ /^.*?select\s+(.*?)\s+(from\s+\S+Imp.*)$/i);
-    $raw_atts =~ s/(\/\*.*?\*\/)//g; ##removes comments
-    #    print STDERR "getViewSql - Select stmt:\nSELECT $raw_atts $from\n";
-    my $atts = $self->getAttributeList();
-    my @viewatts = split(', *',$raw_atts);
-    $sql = "SELECT ";
-    for (my $i = 0;$i<scalar(@viewatts);$i++) {
-      my $attName  = $viewatts[$i];
-      $attName =~ s/(^\S+).*/$1/;
-      $self->{'viewMapping'}->{$attName} = $atts->[$i];
-      $sql .= $atts->[$i] eq $attName ? "$atts->[$i],\n" : "$attName as $atts->[$i],\n";
-    }
-    $sql .= "$from\n";
-    
-  }
+  my($tmpSql) =  $self->getDbHandle()->selectrow_array($query);
+  ##now need to put in the att names properly...
+  $tmpSql =~ s/\s+/ /g;
+  my($raw_atts,$from) = ($tmpSql =~ /^.*?select\s+(.*?)\s+(from\s+\S+Imp.*)$/i);
+  $raw_atts =~ s/(\/\*.*?\*\/)//g; ##removes comments
+  #    print STDERR "getViewSql - Select stmt:\nSELECT $raw_atts $from\n";
+  my $atts = $self->getAttributeList();
+  my @viewatts = split(', *',$raw_atts);
+  $sql = "SELECT ";
+  for (my $i = 0;$i<scalar(@viewatts);$i++) {
+    my $attName  = $viewatts[$i];
+    $attName =~ s/(^\S+).*/$1/;
+    $self->{'viewMapping'}->{$attName} = $atts->[$i];
+    $sql .= $atts->[$i] eq $attName ? "$atts->[$i],\n" : "$attName as $atts->[$i],\n";
+	}
+  $sql .= "$from\n";
   #	print STDERR "view sql:\n$sql\n";
   return $sql;
 }
@@ -405,56 +356,31 @@ sub getRealPerlTableName {
 sub getParentRelations {
   my ($self) = @_;
   if (!$self->{'parents'}) {
-    if ($self->getDatabase()->getDSN() =~ /Sybase/) { ## SYBASE SPECIFIC CODE
-      my $sql = "sp_jdbc_importkey ".$self->getDbName().", dbo, ".$self->getTableName();
-      my $sth  = $self->getDbHandle()->prepareAndExecute($sql);
-      my $rows = $sth->fetchall_arrayref({fkcolumn_name => 1, 
-                                          pkcolumn_name => 1,
-                                          fktable_name  => 1,
-                                          pktable_name  => 1 });
-      foreach my $row (@$rows) {
-        my $fk = $row->{'fkcolumn_name'};
-        my $pk = $row->{'pkcolumn_name'};
-#        $self->{'parents'}->{$row->{'pktable_name'}}->{$fk}}->{$pk} = 1;
-        push(@{$self->{'parents'}},[$row->{pktable_name},$fk, $pk]);
-      }
-      $sth->finish();
-    } elsif ($self->getDatabase()->getDSN() =~ /oracle/i) {
-      my $table = $self->getDatabase()->getTable($self->getRealTableName())->getTableName();
-      $table =~ tr/a-z/A-Z/;
-      my $owner = $self->getSchemaNameUpper();
-      my $sql = "select ac.owner,accs.table_name,accs.column_name,accr.owner,accr.table_name,accr.column_name
-        from all_cons_columns accr, all_cons_columns accs, all_constraints ac 
-        where accs.owner = '$owner'
-        and ac.table_name = '$table'
-        and ac.owner = '$owner'
-        and ac.constraint_type = 'R'
-        and accr.constraint_name = ac.r_constraint_name
-        and ac.r_owner = accr.owner
-        and accs.constraint_name = ac.constraint_name";
-      my $sth  = $self->getDbHandle()->prepareAndExecute($sql);
-      while (my($cons_owner,$selftab,$selfcol,$pkowner,$pktable,$pkcol) = $sth->fetchrow_array()) {
-        next unless $cons_owner eq $owner;  ##hack....but query runs very slowly if constrain on this!!
-        #        print STDERR "  returns: ($selftab,$selfcol,$pktable,$pkcol)\n";
+		my $table = $self->getDatabase()->getTable($self->getRealTableName())->getTableName();
+	  my $owner = $self->getSchemaNameUpper();
+		my $sql=$self->getDatabase->getDbPlatform->parentRelationsSql($owner,$table);
+#		print STDERR $sql, "\n";
+	  my $sth  = $self->getDbHandle()->prepareAndExecute($sql);
+	  while (my($cons_owner,$selftab,$selfcol,$pkowner,$pktable,$pkcol) = $sth->fetchrow_array()) {
+			$cons_owner=~tr/a-z/A-Z/;  ##upper case or else!
+	    next unless $cons_owner eq $owner;  ##hack....but query runs very slowly if constrain on this!!
+#                print STDERR "  returns: ($selftab,$selfcol,$pktable,$pkcol)\n";
         #        push(@{$self->{'relations'}->{$selftab}->{$selfcol}},$pkcol);
 ####NOTE...this willNOT work with tables in other schemas...need to somehow get the schema owner for  them!!!
-        $pktable = $self->getFullClassName($pkowner."::".$pktable);
-        next unless $pktable;
-        $selfcol =~ tr/A-Z/a-z/;
-        $pkcol =~ tr/A-Z/a-z/;
-        push(@{$self->{'parents'}},[$pktable, $selfcol, $pkcol]);
-      }
+	    $pktable = $self->getFullClassName($pkowner."::".$pktable);
+	    next unless $pktable;
+	    $selfcol =~ tr/A-Z/a-z/;
+	    $pkcol =~ tr/A-Z/a-z/;
+	    push(@{$self->{'parents'}},[$pktable, $selfcol, $pkcol]);
+		} 
       ##now do the four generic tables AlgorithmInvocation,UserInfo,GroupInfo,Project
-      push(@{$self->{'parents'}},['GUS::Model::'.$self->getDatabase()->getCoreName().'::AlgorithmInvocation','row_alg_invocation_id','algorithm_invocation_id']);
-      push(@{$self->{'parents'}},['GUS::Model::'.$self->getDatabase()->getCoreName().'::GroupInfo','row_group_id','group_id']);
-      push(@{$self->{'parents'}},['GUS::Model::'.$self->getDatabase()->getCoreName().'::UserInfo','row_user_id','user_id']);
-      push(@{$self->{'parents'}},['GUS::Model::'.$self->getDatabase()->getCoreName().'::ProjectInfo','row_project_id','project_id']);
-    } else {
-      die "DbiTable: getParentRelations not implemented yet for ".$self->getDatabase()->getDSN().".\n";
-    }
-  }
+	  push(@{$self->{'parents'}},['GUS::Model::Core::AlgorithmInvocation','row_alg_invocation_id','algorithm_invocation_id']);
+	  push(@{$self->{'parents'}},['GUS::Model::Core::GroupInfo','row_group_id','group_id']);
+	  push(@{$self->{'parents'}},['GUS::Model::Core::UserInfo','row_user_id','user_id']);
+	  push(@{$self->{'parents'}},['GUS::Model::Core::ProjectInfo','row_project_id','project_id']);
+	}
   #  print STDERR $self->getTableName,": Parents = (",join(', ', keys%{$self->{'parents'}}),")\n";
-  return $self->{'parents'};
+	return $self->{'parents'};
 }
 
 sub setParentRelations {
@@ -466,29 +392,10 @@ sub setParentRelations {
 sub getChildRelations {
   my ($self) = @_;
   if (!$self->{'children'}) {
-    if ($self->getDatabase()->getDSN() =~ /Sybase/) { ## SYBASE SPECIFIC CODE
-      # export keys (self is parent, relations are child)
-      my $sql = "sp_jdbc_exportkey ".$self->getDbName().", dbo, ".$self->getTableName();
-      my $sth  = $self->getDbHandle()->prepareAndExecute($sql);
-      my $rows = $sth->fetchall_arrayref({fkcolumn_name => 1, 
-                                          pkcolumn_name => 1,
-                                          fktable_name  => 1,
-                                          pktable_name  => 1 });
-      foreach my $row (@$rows) {
-        my $pk = $row->{'pkcolumn_name'};
-        my $fk = $row->{'fkcolumn_name'};
-        push(@{$self->{'children'}},[$row->{'fktable_name'}, $pk, $fk] );
-      }
-      $sth->finish();
-    } elsif ($self->getDatabase()->getDSN() =~ /oracle/i) {
-      my $table = $self->getRealTableName();
-      $self->{'children'} = $self->getDatabase()->getTableChildRelations($table) if $table;
-    } else {
-      die "DbiTable: getParentRelations not implemented yet for ".$self->getDatabase()->getDSN().".\n";
-    }
+    my $table = $self->getRealTableName();
+    $self->{'children'} = $self->getDatabase()->getTableChildRelations($table) if $table;
   }
   #  print STDERR $self->getTableName,": Children = (",join(', ', keys%{$self->{'children'}}),")\n";
-
   return $self->{'children'};
 }
 
@@ -500,53 +407,23 @@ sub setChildRelations {
 sub getPrimaryKeyAttributes {
   my ($self) = @_;
   if (!$self->{'pkChecked'} && !$self->{'primaryKeyList'}) { 
-    if ($self->getDatabase()->getDSN() =~ /Sybase/) {
-      # 1st check if there is an identity column  # make getObjectId sub?
-      my $sql = "SELECT name FROM syscolumns 
-                 WHERE id = object_id('".$self->getTableName()."')
-                 AND convert(bit,(status & 0x80)) = 1";
-      my ($identCol) = $self->getMetaDbh()->selectrow_array($sql);
-      if ($identCol) {
-        $self->{'primaryKeyList'}->[0] = $identCol;
-      }
-      if ($self->{'primaryKeyList'}->[0]) {
-        $self->{'pkIsIdentity'} = 1;
-      } else {
-				# should query server/sybsysprocs to see if this proc exists
-        my $sql = 
-          "sp_jdbc_primarykey ".$self->getDbName().", dbo, ".$self->{'table_name'};
-        my $sth = $self->getMetaDbh()->prepareAndExecute($sql);
-        my $rows = $sth->fetchall_arrayref({key_seq => 1,
-                                            column_name => 1});
-        for (my $i=0; $i < scalar(@$rows); $i++) { 
-          $self->{'primaryKeyList'}->[$rows->[$i]->{'key_seq'} - 1] = $rows->[$i]->{'column_name'}; 
-        }
-      }
-      $self->{'pkChecked'} = 1;
-    } elsif ($self->getDatabase()->getDSN() =~ /oracle/i) {
-      #      print STDERR "oracle: getting PrimaryKeys: \n";
-      my $tableName = $self->getRealTableName();
-      my $queryTable = $self->getTableName() eq $tableName ? $self->getTableName : $self->getDatabase()->getTable($tableName,1)->getTableName();
-      $queryTable =~ tr/a-z/A-Z/;
-      my $owner = $self->getSchemaNameUpper();
-      my $sql = "select distinct acc.column_name
-        from all_cons_columns acc, all_constraints ac
-        where acc.owner = '$owner'
-        and ac.table_name = '$queryTable'
-        and ac.constraint_type = 'P'
-        and acc.constraint_name = ac.constraint_name";
-      #      print STDERR "SQL: $sql\n";
-      my $sth = $self->getMetaDbh()->prepareAndExecute($sql);
-      while (my($att) = $sth->fetchrow_array()) {
-        $att =~ tr/A-Z/a-z/;
-        push (@{$self->{'primaryKeyList'}},$att);
-      }
-      $self->{'pkChecked'} = 1;
-      if($self->{primaryKeyList} && scalar(@{$self->{primaryKeyList}}) == 1){
-        $self->{primaryKey} = $self->{primaryKeyList}->[0];
-      }
+    my $tableName = $self->getRealTableName();
+    my $queryTable = $self->getTableName() eq $tableName ? $self->getTableName : $self->getDatabase()->getTable($tableName,1)->getTableName();
+    $queryTable =~ tr/a-z/A-Z/;
+    my $owner = $self->getSchemaNameUpper();
+		my $sql=$self->getDatabase->getDbPlatform->primaryKeySql($owner,$queryTable);
+#    print STDERR "SQL: $sql\n";
+
+    my $sth = $self->getMetaDbh()->prepareAndExecute($sql);
+    while (my($att) = $sth->fetchrow_array()) {
+      $att =~ tr/A-Z/a-z/;
+      push (@{$self->{'primaryKeyList'}},$att);
     }
-  }
+    $self->{'pkChecked'} = 1;
+    if($self->{primaryKeyList} && scalar(@{$self->{primaryKeyList}}) == 1){
+      $self->{primaryKey} = $self->{primaryKeyList}->[0];
+    }
+	} 
   return $self->{'primaryKeyList'};
 }
 
@@ -605,7 +482,7 @@ sub pkIsIdentity {
       #			print STDERR "DbiTable:pkIsIdentity is not implemented yet for Oracle.\n";
       return 0;
     }
-  }
+	}
   return $self->{'pkIsIdentity'};
 }
 
@@ -666,21 +543,22 @@ sub getNextID {
   my $result = 1;
   if ($self->idIsSequence()) {
     my $owner = $self->getSchemaNameUpper();
-    if (!exists $self->{nextidstmt}) {
-      my $query = "select $self->{oracle_table_name}_SQ.NEXTVAL from DUAL";
-      $self->{nextidstmt} = $self->getDbHandle()->prepare($query);
-    }
-    $self->{nextidstmt}->execute();
-    while (($result) = $self->{nextidstmt}->fetchrow_array()) {
-      $self->{nextidstmt}->finish();
-      return $result;
-    }
-  } else {
+		if (!exists $self->{nextidstmt}) {
+			my $query=$self->getDatabase->getDbPlatform->nextValSql($self->{oracle_table_name});
+		  $self->{nextidstmt} = $self->getDbHandle()->prepare($query);
+		}
+		$self->{nextidstmt}->execute();
+	  while (($result) = $self->{nextidstmt}->fetchrow_array()) {
+	    $self->{nextidstmt}->finish();
+	    return $result;
+		}
+	}
+	else {
     my $id_name = $self->getPrimaryKeyAttributes()->[0];
     my $sql = $self->make_sql_cmd(["max($id_name)+1,1"], $self->getOracleTableName(), undef,$holdlock); 
     ($result) = $self->getDbHandle()->selectrow_array($sql);
     $result = $result ? $result : 1;
-  }
+	}
   return $result; 
 }
 
@@ -749,6 +627,7 @@ sub makeWhereHavingClause {
   }
   return $sql_clause;
 }
+
 sub quote_chars_ref {
   my (@char_atts) = @_;
   my $attrib_ref;
@@ -763,6 +642,7 @@ sub quote_chars_ref {
     }
   }
 }
+
 sub quoteAttTable {
   my ($self, $hash_ref) = @_;
   my ($list_ref, $att, $attrib); 
@@ -779,6 +659,7 @@ sub quoteAttTable {
   }
   return \%hash_copy;
 }
+
 sub quoteAtts {
   my ($self,$hash_ref) = @_;
   my %hash_copy = %$hash_ref;   ## actual hash copy not a ref!
@@ -851,7 +732,7 @@ sub addToChildList{
 	&confess("Invalid child name: '$i->[0]'") unless $childFullName;
 	@{$self->{'childList'}->{$childFullName}} = ($i->[1],$i->[2]);
     }
-}
+		}
 
 sub getChildList{
     my $self = shift;

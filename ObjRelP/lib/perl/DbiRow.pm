@@ -9,6 +9,9 @@ package GUS::ObjRelP::DbiRow;
 #
 # 6/22/00   Sharon Diskn    Created
 #
+# 3/22/04   Jason Hackney   added PostgreSQL's "now" to list 
+# of datetime functions in function quote_and_insert.
+#
 ############################################################
 
 use strict;
@@ -646,7 +649,7 @@ sub quote_and_insert {
     #      &confess("\n No value($value) for attribute $key for table insertion. \n");
     #    }
     $insert_clause .= " $key,";
-    if ($value =~ /^\s*(sysdate|getdate).{0,2}\s*$/i) {
+    if ($value =~ /^\s*(sysdate|getdate|now).{0,2}\s*$/i) {
       $values_clause .= " $value,"; 
       $cacheKey .= $key;
     } elsif ($value eq '') {    ##oracle treats this like NULL but others may not..
