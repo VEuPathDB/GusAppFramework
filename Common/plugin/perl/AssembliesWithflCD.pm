@@ -173,7 +173,7 @@ sub RefSeqFLAssemblies {
 
     if ($assembly->retrieveFromDB())  {
 
-      if (!($assembly->getFullLengthCds(1))  {
+      if (!($assembly->getFullLengthCds(1)))  {
 
     $self->toAddEvidenceSourceID($source_id, $assembly);
     $assembly->setFullLengthCds(1);
@@ -184,10 +184,9 @@ sub RefSeqFLAssemblies {
 
     }
 
-    }
+  }
   }
 
-}
 
 
 # check to see if all previous evidence still valid using array of target ids and compare to array of DTs that now contain RefSeqs
