@@ -669,6 +669,8 @@ sub getExtDbRlsId {
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
     
     my ($releaseId) = $sth->fetchrow_array();
+
+    die "Couldn't find an external database release id for db '$dbName' version '$dbVersion'";
     
     return $releaseId;
 }
