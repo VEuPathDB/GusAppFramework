@@ -124,8 +124,10 @@ sub run {
     
     $self->log("LoadGoAssoc: starting run method" );
     
+    my $start = $self->getCla->{start_line};
+    my $end = $self->getCla->{end_line};
     my $path = $self->getCla->{file_path};
-    my $parser = CBIL::Bio::GeneAssocParser::Parser->new($path);
+    my $parser = CBIL::Bio::GeneAssocParser::Parser->new($path, $start, $end);
 
     $self->__loadOrgInfo();
 
@@ -197,7 +199,7 @@ sub loadAssociations {
 	$self->__checkDatabaseRelease($organism);
 	$self->__loadMgiMapIfMouse($organism);
 
-	open (BIGLOG, ">>logs/pluginLog$organism") || die "pluginLog could not be opened";
+#	open (BIGLOG, ">>logs/pluginLog$organism") || die "pluginLog could not be opened";
 
 	my $orgInfo = $self->{orgInfo}->{$organism};
 	
@@ -216,15 +218,12 @@ sub loadAssociations {
 	#convert file store into hash to be used by algorithm
 	my $assocData = $self->__createAssocData($allEntries, $allGusIds, $assocMethod, $organism);
 	
-	$self->__adjustIsNots($assocData, $allGoAncestors, $goGraph, $organism);
-	
-#	my @dataKeys = keys %$assocData;
-#	for (my $j = 0; $j < 1500; $j++){
+#	$self->__adjustIsNots($assocData, $allGoAncestors, $goGraph, $organism);
 
 	#for each external sequence
 	foreach my $extSeq (keys %$assocData){
-	#    my $extSeq = $dataKeys[$j];
-	    print BIGLOG "loading association for $extSeq\n";
+
+	   # print BIGLOG "loading association for $extSeq\n";
 	    $self->logVerbose("loading association for $extSeq");
 
 	    my $goIds = $assocData->{$extSeq}->{goTerms};
@@ -235,7 +234,7 @@ sub loadAssociations {
 	    # reasons not to process this line
 	    if ( ! $extSeqGusId ){ 
 		$self->logVerbose("skipped $extSeq because could not find corresponding GUS Id for this sequence");
-		print BIGLOG "skipped $extSeq because could not find corresponding GUS Id for this sequence\n";
+#		print BIGLOG "skipped $extSeq because could not find corresponding GUS Id for this sequence\n";
 		$skipCount++; next
 		}
 	    elsif ( $old_seqs->{ $extSeq  } ) {
@@ -248,7 +247,7 @@ sub loadAssociations {
 	    foreach my $goId (keys %$goIds){
 		
 		$self->logVerbose ("making defining association between $extSeq and $goId");
-		print BIGLOG "making defining association between $extSeq and $goId\n";
+#		print BIGLOG "making defining association between $extSeq and $goId\n";
 		
 		#variables for this potential association
 		my $evdIds = $goIds->{$goId}->{evidence};
@@ -263,7 +262,7 @@ sub loadAssociations {
 		unless ( $goTermGusId ) {
 		    $unknownCount++;
 		    $self->logVerbose("could not find gus ID for go term $goId");
-		    print BIGLOG "could not find goTermGusId for goId $goId $unknownCount \n";
+#		    print BIGLOG "could not find goTermGusId for goId $goId $unknownCount \n";
 		    next;
 		}
 				
@@ -275,7 +274,7 @@ sub loadAssociations {
 		
 		if ($self->__hasDefiningDescendant($goIds, $allGoAncestors, $goId, $goGraph)){
 		    my $desMsg = "\t\t skipping this defining assignment as another descendant will be making it\n";
-		    print BIGLOG $desMsg . "\n";
+#		    print BIGLOG $desMsg . "\n";
 		    $self->logVeryVerbose($desMsg);
 		    next;
 		}
@@ -298,7 +297,7 @@ sub loadAssociations {
 		    my $ancestorGoId = $goGraph->{gusToGo}->{$goAncestor};
 		    
 		    my $ancMsg = "\t\tmaking ancestor association for $goAncestor ($ancestorGoId) and $extSeq";
-		    print BIGLOG $ancMsg . "\n";
+#		    print BIGLOG $ancMsg . "\n";
 		    $self->logVeryVerbose($ancMsg);
 		 
 		    #reasons to skip this ancestor association:
@@ -308,7 +307,7 @@ sub loadAssociations {
 			
 			my $skipAncMsg = "\t\t skipping this ancestor assignment; it was made from a different descendant";
 			$skipAncMsg .= $ancestorsMade->{$extSeqGusId}->{$ancestorGoId};
-			print BIGLOG $skipAncMsg . "\n";
+#			print BIGLOG $skipAncMsg . "\n";
 			$self->logVeryVerbose($skipAncMsg);
 			next;
 		    }
@@ -319,7 +318,7 @@ sub loadAssociations {
 			if ($self->__ancestorShouldBeIs($goAncestor, $goIds, $allGoAncestors, $goGraph)){
 			    my $isMsg = "\t\t skipping this ancestor assignment because descendant IS NOT";
 			    $isMsg .= "but ancestor should be IS\n";
-			    print BIGLOG $isMsg;
+#			    print BIGLOG $isMsg;
 			    $self->logVeryVerbose($isMsg);
 			    next;
 			}
@@ -341,7 +340,7 @@ sub loadAssociations {
 	    
 	    print $idFile $extSeq . "\n";
 	} #end this external sequence
-	close BIGLOG;
+#	close BIGLOG;
     } #end this association file
     
     
@@ -363,8 +362,8 @@ sub loadAssociations {
 sub __makeAssociation {
     
     my ($self, $entry, $tableId, $externalSeqGusId, $goTermGusId,  $evdIds, $evidenceMap, $organism, $defining) = @_; 
-    open (ASSOCLOG, ">>logs/assocLog$organism") || die "assocLog could not be opened";
-    open (AILOG, ">>logs/assocInstLog$organism") || die "assocInstLog could not be opened";
+  #  open (ASSOCLOG, ">>logs/assocLog$organism") || die "assocLog could not be opened";
+  #  open (AILOG, ">>logs/assocInstLog$organism") || die "assocInstLog could not be opened";
    
     my $evidenceCount = 0;
     my $orgInfo = $self->{ orgInfo }->{ $organism };
@@ -374,7 +373,7 @@ sub __makeAssociation {
     }
 
     #$entry->showMyInfo();
-    print ASSOCLOG "getting evidence for $externalSeqGusId on $goTermGusId, outside code is $extEvd\n";
+ #   print ASSOCLOG "getting evidence for $externalSeqGusId on $goTermGusId, outside code is $extEvd\n";
     my $reviewStatus = $evidenceMap->{$extEvd}->{reviewStatus};
     my $isNot = 0;
     my $dbs = $orgInfo->{db_id};
@@ -386,7 +385,7 @@ sub __makeAssociation {
 
     #make association
     my $gusAssoc = GUS::Model::DoTS::GOAssociation->new( {
- 	table_id => $tableId - 1,    #hack for testing
+ 	table_id => $tableId,    #hack for testing
 	row_id => $externalSeqGusId,
  	go_term_id => $goTermGusId,
  	is_not => $isNot, 
@@ -414,14 +413,14 @@ sub __makeAssociation {
     }
    $gusAssoc->setChild($gusAssocInst); #big test
     
-    print ASSOCLOG "before: " . $gusAssoc->toString() . "\n";
-    print AILOG "before: " . $gusAssocInst->toString() . "\n";
+  #  print ASSOCLOG "before: " . $gusAssoc->toString() . "\n";
+  #  print AILOG "before: " . $gusAssocInst->toString() . "\n";
         
     $gusAssoc->submit() unless isReadOnly();
 
     
-    print ASSOCLOG "after: " . $gusAssoc->toString() . "\n";
-    print AILOG "after: " . $gusAssocInst->toString() . "\n";
+ #   print ASSOCLOG "after: " . $gusAssoc->toString() . "\n";
+ #   print AILOG "after: " . $gusAssocInst->toString() . "\n";
     $self->undefPointerCache();    
     return $evidenceCount;
 
@@ -487,7 +486,7 @@ sub __getSequenceIds {
 
     my %gusIds = {};
 
-    open (GETSEQID, ">>logs/getSeqLog$organism") || die "getSeqLog could not be opened";
+#    open (GETSEQID, ">>logs/getSeqLog$organism") || die "getSeqLog could not be opened";
 
     my $queryHandle = $self->getQueryHandle();
 
@@ -496,7 +495,7 @@ sub __getSequenceIds {
     my $fromTbl = $orgInfo-> { id_tbl};
     my $whereCol = $orgInfo -> {id_col};
     
-    #super hack for now
+
     my $prepareSql = "
                 select aa_sequence_id 
                 from $fromTbl 
@@ -504,7 +503,7 @@ sub __getSequenceIds {
                 and $whereCol in ?" ;
     
     $self->logVerbose("prepared query to get sequences: $prepareSql");
-
+ #   print GETSEQID "prepared query to get sequences: $prepareSql";
     my $sth = $queryHandle->prepare($prepareSql);
     
     foreach my $key (keys %$assocData){
@@ -513,15 +512,15 @@ sub __getSequenceIds {
 	my $extId = $entry->$assocMethod;
 	my @cleanId = @{ $orgInfo->{ clean_id }->( $extId ) };
 	my $cleanId = '(' . join( ', ', map { "'$_'" } @cleanId ) . ')'; #get sp id's if mgi
-#	print GETSEQID "executing sequence $extId. . . ";
+#	print GETSEQID "executing sequence $cleanId. . . ";
 	$sth->execute($cleanId);
 	while (my ($gusId) = $sth->fetchrow_array()){
-	    print GETSEQID "$cleanId in gus is $gusId\n";
+#	    print GETSEQID "$cleanId in gus is $gusId\n";
 	    %gusIds->{$key}= $gusId;
 	    
 	}
     }
-    close (GETSEQID);
+ #   close (GETSEQID);
 
     $self->log("done getting gus ids for sequences for this organism");
     return \%gusIds;
@@ -738,7 +737,8 @@ sub __makeEvidenceCodeInst{
 sub __createAssocData{
     my ($self, $allEntries, $allGusIds, $assocMethod, $organism) = @_;
     my $assocData;
-   
+  #  open (ISLOG, ">>logs/assocDataLog$organism") || die "pluginLog could not be opened";
+
     foreach my $key (keys %$allEntries){
 	my $entry = $allEntries->{$key};
 	my $tempGoTerm = $entry->getGOId();
@@ -746,11 +746,11 @@ sub __createAssocData{
 	my $tempEvd = $entry->getEvidence();
 	my $tempNewKey = $entry->$assocMethod; #gets MGI
 	my @newKeyArray = @{ $self->{orgInfo}->{$organism}->{clean_id}->($tempNewKey) };
-	
+#	print ISLOG "creating assocData for key $key\n";
 	foreach my $newKey (@newKeyArray){
 	    $assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{evidence}->{$tempEvd} = 1;
 	    $assocData->{$newKey}->{extSeqGusId} = $allGusIds->{$key};
-	
+#	    print ISLOG "\t\t creating assocData for one id in this key: $newKey\n";
 	   
 	    #change to unless 
 	    #don't make an entry if it already exists with isNot flag set (happens rarely)
@@ -772,11 +772,11 @@ sub __createAssocData{
 #(protect against rare case where a descendant is set to 'is' one but ancestor is set to 'is not'r)
 sub __adjustIsNots{
     my ($self, $assocData, $allGoAncestors, $goGraph, $organism) = @_;
-    open (ISLOG, ">>logs/isNotLog$organism") || die "pluginLog could not be opened";
+ #   open (ISLOG, ">>logs/isNotLog$organism") || die "pluginLog could not be opened";
     
     #for each external sequence
     foreach my $sourceId (keys %$assocData){
-	print ISLOG "adjusting is not for terms associated with $sourceId\n";
+#	print ISLOG "adjusting is not for terms associated with $sourceId\n";
 	my $goIds = $assocData->{$sourceId}->{goTerms};
 	
 	#for each go term associated with external sequence
@@ -793,21 +793,21 @@ sub __adjustIsNots{
 		my $ancestorGoId = $goIds->{$goGraph->{gusToGo}->{$ancestorGusId}};
 		
 		if ($ancestorGoId){  #there is
-		    print ISLOG "found ancestor $ancestorGoId that may be conflict, checking\n";
+#		    print ISLOG "found ancestor $ancestorGoId that may be conflict, checking\n";
 		    my $ancestorIsNot = $ancestorGoId->{entry}->getIsNot();
 		    my $childIsNot = $goIds->{$childGoId}->{entry}->getIsNot();
-		    print ISLOG "ancestor: $ancestorIsNot child: $childIsNot\n";
+#		    print ISLOG "ancestor: $ancestorIsNot child: $childIsNot\n";
 		    if ($ancestorIsNot == 1 && !($childIsNot)){ #is nots have conflict
 			print ISLOG "conflict: $ancestorGoId isnot and $childGoId is\n";
 			foreach my $testGoId (keys %$goIds){  #see if other ancestors can resolve
 			    if (!($goIds->{$testGoId}->{entry}->getIsNot())){  #another ancestor is
-				print ISLOG "but another ancestor $testGoId is\n";
+#				print ISLOG "but another ancestor $testGoId is\n";
 				my $testGoGusId = $goGraph->{goToGus}->{$testGoId};
 				my $testGoAncestorHash = $allGoAncestors->{$testGoGusId};
 				my $ancestorsAncestorHash = $allGoAncestors->{$ancestorGusId};
 				if (!($testGoAncestorHash->{$ancestorGusId}) &&  
 				    !($ancestorsAncestorHash->{$testGoGusId})){  #if two ancestors are related, it's fine
-				    print ISLOG "and it is not an ancestor or descendant of $ancestorGoId\n";
+#				    print ISLOG "and it is not an ancestor or descendant of $ancestorGoId\n";
 				}
 			    }
 			}
@@ -920,7 +920,7 @@ sub __loadOrgDbs{
 	$self->{ orgInfo }->{tair}->{db_id} = \@orgArray;	
     }
     if ($self->getCla->{sp_db_rls_id}) {
-	my @orgArray = ($self->getCla->{sp_db_rls_id} );
+	my @orgArray = ($self->getCla->{sp_db_rls_id}, $self->getCla->{tr_db_rls_id} );
 	$self->{ orgInfo }->{goa_sptr}->{db_id} = \@orgArray;	
 	$self->{ orgInfo }->{mgi}->{db_id} = \@orgArray;	
     }
