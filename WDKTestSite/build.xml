@@ -66,9 +66,19 @@
       <fileset dir="${basedir}/site" />
     </copy>
 
-    <copy todir="${build.home}/site/WEB-INF/lib" 
-          file="../WebDevKit/ant-build/GUS-WebDevKit.jar" />
+    <copy todir="${build.home}/site/WEB-INF/lib">
+    	<fileset dir="../WebDevKit/lib/java" 
+    		includes="commons-digester-1.5.jar,
+    			oracle-classes1.2.jar,
+    			commons-beanutils.jar,
+    			commons-cli-1.0.jar
+    			jstl.jar,
+    			standard.jar" />
+    </copy>
 
+  	<copy todir="${build.home}/site/WEB-INF/lib" 
+  		  file="../WebDevKit/ant-build/GUS-WebDevKit.jar"/>
+  	
     <copy todir="${gus.home}/lib/xml"> 
       <fileset dir="lib/xml" includes="*.xml" />
   	</copy>
