@@ -101,7 +101,8 @@ sub run {
 
 	my $dbh = $self->getQueryHandle();
 	my $sth = $dbh -> prepare("select similarity_id, pvalue_mant, pvalue_exp, number_identical/total_match_length from dots.similarity where query_table_id in (83,337) and subject_table_id in (83,337) and query_id=? and subject_id=? and row_alg_invocation_id in ($algInvoIds)");
-    ############################################################
+	my $verifySth = $dbh->prepare("select external_database_release_id from dots.externalaasequence where aa_sequence_id = ?");    
+############################################################
     # Put loop here...remember to undefPointerCache()!
     ############################################################
 	
@@ -140,7 +141,15 @@ sub run {
 		$string{$key} .= $_;
 	    }
 	}
+	my $total = scalar (keys %string);
+	print STDERR "have $total keys to process\n";
+	my $counter = 0;
+	my $processingPlasmo = 0;
 	foreach my $g (keys %string) {
+	    $processingPlasmo = 0;
+
+	    $counter++;
+	    print STDERR "processing $counter key value" if ($counter % 100 == 0);
 	    $string{$g} =~s/\$//;
 	    my @mem = split(/\s+/, $string{$g});
 	    my $n = scalar(@mem);
@@ -162,7 +171,9 @@ sub run {
 	    $maxl = 0;
 	    $minl = 100000;
 	    for(my $i=0;$i<scalar(@mem)-1;$i++) {
+		
 		for(my $j=$i+1;$j<scalar(@mem);$j++) {
+		    
 		    $sth->execute($id{$mem[$i]}, $id{$mem[$j]});
 		    if(my($s,$pm,$pe,$pi) = $sth->fetchrow_array()) {
 			 if($pm.'e'.$pe >= $maxpv) { $maxpv = $pm.'e'.$pe;}
@@ -229,6 +240,7 @@ sub simspan {
     my ($dbh,$sim,$id,$sid) = @_;
     my (%sub_start, %sub_length, %query_start, %query_length);
     my $sthSpan =$dbh->prepare("select similarity_span_id,subject_start,subject_end,query_start,query_end from dots.SimilaritySpan where similarity_id=?");
+
 #    my $sthLen = $dbh->prepare("select length from AASequence where aa_sequence_id=?");
     $sthSpan->execute($sim);
     while(my (@row) = $sthSpan -> fetchrow_array()) {
@@ -237,6 +249,7 @@ sub simspan {
 	$query_start{$row[0]}=$row[3];
 	$query_length{$row[0]}=$row[4]-$row[3]+1;
     }
+
     my $match_lengths = &matchlen(\%sub_start,\%sub_length);
     my $match_lengthq = &matchlen(\%query_start,\%query_length);			
     return ($match_lengths, $match_lengthq);
