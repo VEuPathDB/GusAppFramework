@@ -74,6 +74,10 @@ sub new {
 		 { h => 'taxon_id for running plugin for specific taxons',
 		   t => 'int',
 		   o => 'taxon_id'
+		 },
+		 { h => 'flag indicating that atts should be checked for discrepensies',
+		   t => 'boolean',
+		   o => 'fullupdate'
 		 }
                  ];
   
