@@ -98,7 +98,9 @@
     			jstl.jar,
     		    pager-taglib.jar,
     			standard.jar,
-         		jing-20030619.jar" />
+         		jing-20030619.jar,
+    			commons-dbcp-1.1.jar,
+    			commons-pool-1.1.jar" />
     </copy>
 
     
