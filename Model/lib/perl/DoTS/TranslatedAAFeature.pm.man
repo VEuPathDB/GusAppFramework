@@ -42,7 +42,7 @@ sub getFeatureSequence {
 sub getFeatureNASequence {
   my $self = shift;
   if(!$self->{featureNASequence}){
-    my @segs = sort { $a->getAaStartPos() <=> $b->getAaStartPos() } $self->getChildren('DoTS::TranslatedAAFeatureSegment',1);
+    my @segs = sort { $a->getAaStartPos() <=> $b->getAaStartPos() } $self->getChildren('DoTS::TranslatedAAFeatSeg',1);
     if(scalar(@segs) > 0 ){
       foreach my $s (@segs){
         $self->{featureNASequence} .= $s->getNASequenceSegment();
