@@ -258,6 +258,7 @@ sub run {
     
     my $proteinTableId = $self->getCla->{protein_table_id};
     my $newGoVersion = $self->getCla->{new_go_release_id};
+    my $oldGoVersion = $self->getCla->{old_go_release_id};
     my $testProteinIds = $self->getCla->{test_protein_id_list};
     my $oldGoRootId = $self->getCla->{old_function_root_go_id};
     my $newGoRootId = $self->getCla->{new_function_root_go_id};
@@ -265,7 +266,6 @@ sub run {
     my ($deleteInstances, $recacheInstances, $doNotScrub) = $self->_determineInstanceManagement();
         
     $databaseAdapter->setTestProteinIds($testProteinIds) if $testProteinIds;
-   
     $self->log("initializing translations");
     $databaseAdapter->initializeTranslations($self->getCla->{query_taxon_id}, 
 					     $self->getCla()->{translations_file_path}, 
@@ -277,12 +277,11 @@ sub run {
     $goManager->setNewFunctionRootGoId($newGoRootId) if $newGoRootId;
     $goManager->setVerbosityLevel($self->_getVerbosityLevel());
 
-    
     my $msg = "GoPlugin ran successfully.  ";
 
     if ($self->getCla->{scrub_proteins_only}){
 
-	$self->log("scrubbing proteins without evolving the go hiearchy or applying new rules");
+	$self->log("scrubbing proteins with go version $newGoVersion without evolving the go hiearchy or applying new rules");
 	my $proteinsAffected = $goManager->scrubProteinsOnly($newGoVersion, $proteinTableId, 
 							 $deleteInstances, $recacheInstances);
 
@@ -364,8 +363,8 @@ sub _validateCla{
 
     my ($self) = @_;
 
-    if ($self->getCla()->{do_not_delete_instances} && !$self->getCla()->{do_not_cache_instances}){
-	$self->userError("If --do_not_delete_instances is set, --do_not_cache_instances must also be set in order to avoid making duplicate instances");
+    if ($self->getCla()->{do_not_delete_instances} && !$self->getCla()->{do_not_recache_instances}){
+	$self->userError("If --do_not_delete_instances is set, --do_not_recache_instances must also be set in order to avoid making duplicate instances");
     }
         
     if ($self->getCla()->{create_new_translations_file} && !$self->getCla()->{translations_file_path}){
@@ -413,8 +412,8 @@ sub _validateCla{
 	    $self->userError("When applying rules, please specify at least one threshold (--ratio_cutoff or --absolute_cutoff) for a good similarity");
 	}
 	
-	if ($self->getCla()->{do_not_delete_instances} || $self->getCla()->{do_not_cache_instances}){
-	    $self->userError("When applying rules, the plugin will always delete and recache instances so deprecation occurs properly.  Do not set --do_not_delete_instances or --do_not_cache_instances when --apply_rules is set");
+	if ($self->getCla()->{do_not_delete_instances} || $self->getCla()->{do_not_recache_instances}){
+	    $self->userError("When applying rules, the plugin will always delete and recache instances so deprecation occurs properly.  Do not set --do_not_delete_instances or --do_not_recache_instances when --apply_rules is set");
 	} 
 
     }
@@ -430,3 +429,5 @@ sub _getVerbosityLevel{
     return $tempVerboseLevel;
 
 }
+
+1;
