@@ -331,8 +331,8 @@ sub makeNRDBAndExternalAASequence {
 	      my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id,$dbHash);
 	      eval {
 		$newExtAASeq->submit();
-	      }
-		&handleFailure($seq, $@) if ($@); 
+	      };
+	      &handleFailure($seq, $@) if ($@); 
 	      $num_submit++;
 	      print STDOUT ("Submitted set number:$num_submit\n");
 	      $newExtAASeq->undefPointerCache();
