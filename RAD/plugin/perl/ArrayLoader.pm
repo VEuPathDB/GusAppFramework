@@ -17,7 +17,8 @@
 #
 #   Thursday Jan. 23 2003
 #     made changes for new build system
-# 
+#
+# $Revision$ $Date$ $Author$ 
 # ----------------------------------------------------------
 package GUS::RAD::Plugin::ArrayLoader;
 @ISA = qw( GUS::PluginMgr::Plugin );

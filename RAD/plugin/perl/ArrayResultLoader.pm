@@ -14,7 +14,8 @@
 #
 # Last Modified Tuesday Jan 28 2003
 #   --to make it consitant with new Build system
-#
+# 
+# $Revision$ $Date$ $Author$
 # ----------------------------------------------------------
 package GUS::RAD::Plugin::ArrayResultLoader;
 @ISA = qw( GUS::PluginMgr::Plugin );
