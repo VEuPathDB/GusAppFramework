@@ -329,6 +329,7 @@ sub loadAlignments {
 
 	    $nAlignsLoaded += $nl;
 	    $nTotalAlignsLoaded += $nl;
+	    die "ERROR: too many skipped alignments" if $nAligns > 1000 && $nAlignsLoaded < 800;
 
 	    &progressMessage($reportInterval, $nTotalAligns, 'BLAT alignments processed.');
 	    &progressMessage($reportInterval, $nTotalAlignsLoaded, 'BLAT alignments loaded.') if ($nl > 0);
@@ -720,10 +721,13 @@ sub loadAlignment {
 		  $align->getRaw('q_starts'),
 		  $align->getRaw('t_starts')
 		  );
-
-    $sth->execute(@values) 
-	or die "$sql failed with values: \n" . join(", ", @values)  . "\n";
-    return 1;
+    if ($sth->execute(@values)) {
+	return 1;
+    } else {
+	my $errorMsg = $!;
+        print STDERR "$sql failed with values: \n" . join(", ", @values) . "\n";
+	die unless $errorMsg =~ /parent key not found/i;
+    }
 }
 
 # Return the na_sequence_id for of a TIGR TC.
