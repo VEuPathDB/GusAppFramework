@@ -554,7 +554,7 @@ sub loadData{
 # insert a row into control table
      my $row_id=$cfg_rv->{row_id};
      my $table_id=$cfg_rv->{table_id};
-     $M->updateControl($tabe_id, $row_id, @arr);
+     $M->updateControl($table_id, $row_id, @arr);
  
      my $numOfLine=$cfg_rv->{n};
 
@@ -585,8 +585,9 @@ sub getTable_Id{
     my $M = shift;
     my ($table_name)=@_;
     $M->setOk(1);
-    $query="select t.table_id from core.tableinfo t where t.name='$table_name'";
-    $sth = $dbh->prepare($query);
+    my $query="select t.table_id from core.tableinfo t where t.name='$table_name'";
+    my $dbh = $M->getSelfInv->getQueryHandle();
+    my $sth = $dbh->prepare($query);
     $sth->execute();
     my ($id) = $sth->fetchrow_array();
     $sth->finish();
@@ -596,7 +597,7 @@ sub getTable_Id{
     else{
 	$cfg_rv->{warnings} = "Cann't retrieve table_id for subclass view $table_name";
 	$M->logData('Error', $cfg_rv->{warnings});
-	if($M->getCla->{'commit'}){print STDERR "Error: $RV\n";}
+	if($M->getCla->{'commit'}){print STDERR "Error: Cann't retrieve table_id for subclass view $table_name\n";}
 	$M->setOk(0);
     }
 }
@@ -606,11 +607,12 @@ sub getRow_Id{
  my ($subclass_view, @arr)=@_;
 
  my @attributesToNotRetrieve = ('modification_date', 'row_alg_invocation_id');     
-  
+ my $RV;
 # for querying ElementImp or CompositeElementImp table to set the element_id or composite_element_id
-   my ($subClass);
-
-   if(defined $subclass_view){
+ my ($subClass);
+ my $pos=$cfg_rv->{'position'};
+ 
+ if(defined $subclass_view){
        if($subclass_view=~ /^ShortOligo$/){
 	   $subClass="GUS::Model::RAD3::ShortOligo";
        }
@@ -690,7 +692,7 @@ sub updateControl{
     $control_hash->{'row_id'} = $row_id;
   
     my @control_attr=$M->getAttrArray("GUS::Model::RAD3::Control");
-    my $control_attr_hashref=$M->getAttrHashRef("GUS::Model::RAD3::Control");
+    my $control_hashref=$M->getAttrHashRef("GUS::Model::RAD3::Control");
     for (my $i=0; $i<@control_attr; $i++) {
 	my $attr;
 	
@@ -770,19 +772,19 @@ B<--data_file> F<data_file>  [require the absolute pathname]
 
 B<--array_id> I<array_id>  [require must be one of array_id in RAD3::Array table]
 
-    set value of the ElementImp.array_id in order to determine the element_id and composite_element_id
+    set value of the array_id in ElementImp or CompositeElementImp table in order to determine the element_id or composite_element_id for setting the row_id in control table
 
 
 =head1 OPTIONS
 
 B<--e_subclass_view> I<e_subclass_view>  [optional, must be one of view name for  RAD3::ElementImp table]
-    being used for determining the element_id and composite_element_id
+    being used for determining the element_id for setting the row_id in control table if c_subclass_view not set
 
 B<--c_subclass_view> I<c_subclass_view>  [optional, must be one of view name for  RAD3::CompositeElementImp table]
-    being used for determining the composite_element_id if e_subclass_view not set
+    being used for determining the composite_element_id for setting the row_id in control table if e_subclass_view not set
 
 B<--posOption> I<posOption>  [optional, default is 1, can be 1, 2 or 3]
-    if 1, then using "name" as probe set identifier; if 2, then using "external_database_release_id" and "source_id" as probe set identifier; if 3, then using "name", "external_database_release_id" and "source_id" as probe set identifier.
+    using when c_sublass_view equal to "ShortOligoFamily", if 1, then using "name" as probe set identifier; if 2, then using "external_database_release_id" and "source_id" as probe set identifier; if 3, then using "name", "external_database_release_id" and "source_id" as probe set identifier.
 
 B<--debug>
     Debugging output.
@@ -823,21 +825,17 @@ Make sure that the F<.gus.properties> file of the user contains the correct logi
 
 The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.
 
-* The header contains a list of attributes, which can be divided into two categories. One is position attributes which is used to identify the location of each element in array or compositeElement identifier such as probe set name. The other is view attributes which is defined in the view of ElementResultImp and CompositeElementResultImp.
+* The header contains a list of attributes, which can be divided into two categories. One is position attributes which is used to identify the location of each element in array or compositeElement identifier such as probe set name such as "array_row", "array_column" and etc.. The others are attributes which are defined in the control table including control_type_id, name, value, unit_type_id. For the attributesin control, a prefix "control." is required to put before every attributes, such as "control.control_type_id", "control.name" and etc..
 
 * All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.
 
 * Every element for which the position attributes are available should have these stored in the database in order to determine the element_id and/or composite_element_id.
 
-* Depending on array platform, the position attributes are different. If  the command line argument "e_subclass_view" is set to "Spot", then position attributes will be array_row, array_column, grid_row, grid_column, sub_row and sub_column. If  the command line argument "e_subclass_view" is set to "ShortOligo", then position attributes will be x_position and y_position. You will need to have these columns in the data file for each row.
+* Depending on array platform, the position attributes are different. If the command line argument "e_subclass_view" is set to "Spot", then position attributes will be array_row, array_column, grid_row, grid_column, sub_row and sub_column. If  the command line argument "e_subclass_view" is set to "ShortOligo", then position attributes will be x_position and y_position. You will need to have these columns in the data file for each row.
 
 * If you only load the compositeElementResult for affymetrix data, you have option to use probe set identifier to set the composite_element_id without using the position attributes of x_position and y_position. First, set command line argument "c_subclass_view" to "ShortOligoFamily", second, use the "posOption" to set the probe set identifier, its default is 1, which uses "name" as the probe set identifier; 2 means using "external_database_release_id"and "source_id" as the probe set identifier; 3 means using "external_database_release_id", "source_id" and "name" as the probe set identifier.
 
-* If the data file contains two-channel array data, then you can use "channel1.attributeName" and "channel2.attributeName" to denote each channel data.
-
 * Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.
-
-* If any values in data file larger than the maximum value or smaller than minimum value that corresponding field in database allows, then the plugin will reset the value to maximum or minimum value of that field.
 
 Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.
 
