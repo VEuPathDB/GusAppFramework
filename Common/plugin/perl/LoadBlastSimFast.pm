@@ -136,7 +136,7 @@ sub run {
 
   print "Testing on $args->{testnumber} queries\n" if $args->{testnumber};
 
-  my %ignore = &handleRestart($args->{restartAlgInvs}, $dbh);
+  my %ignore = $self->handleRestart($args->{restartAlgInvs}, $dbh);
 
   my $fh  = $args->{file} =~ /\.gz$|\.Z$/ ?
     FileHandle->new("zcat $args->{file}|") : FileHandle->new("$args->{file}");
@@ -161,7 +161,7 @@ sub run {
 }
 
 sub handleRestart {
-  my ($restartAlgInvs, $dbh) = @_;
+  my ($self, $restartAlgInvs, $dbh) = @_;
 
   my %ignore;
   if ($restartAlgInvs) {
