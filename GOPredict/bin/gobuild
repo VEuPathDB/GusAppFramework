@@ -33,7 +33,7 @@ my @properties =
  ["globalExcludeIea", "", "whether to not consider TREMBL IEA sequences at all when going through the rule creation process (yes or no)"],
  ["buildDate" ,   "031401", "approximate start date of build"],
  ["taxonId" ,   "", "taxonId for the species we are applying rules to (hum is 8, mouse is 14)"],
-
+ ["speciesNickname",              "",  "eg mus, hum"],
 
  #names of latest releases of different organism sequences
  ["currentWorm", "", "name of latest wormpep release"],
@@ -152,7 +152,7 @@ my $propertySet  = CBIL::Util::PropertySet->new($propertiesFile, \@properties);
 
 my $goBuildDir = $propertySet->getProp('goBuildDir');  #goBuildDir: /files/cbil/data/cbil/GOPredict
 
-my $buildName = &makeBuildName();  # releaseNUMBER 
+my $buildName = &makeBuildName($propertySet->getProp('speciesNickname'));  # releaseNUMBER 
 
 my $pipelineDir = "$goBuildDir/$buildName"; #/files/cbil/data/cbil/ptolemy/cbil/data/cbil/GOPredict/release#
 
@@ -1300,8 +1300,9 @@ sub cleanGORules{
 
 
 sub makeBuildName {
-  
-  return "release" . $propertySet->getProp('goPredictRelease');
+    my ($nickName) = @_;
+    return "release" . $propertySet->getProp('goPredictRelease') . "/" . $nickName;
+
 }
 
 sub usage {
