@@ -23,8 +23,11 @@
 ###              recent changes in the object layer
 ###         - added checks against the database to ensure that
 ###              attribute name exists before loading documentation
+###    - May-15-2003
+###         - fixed $easycsp for 'inputFile' and removed 'testnumber'
+###         - 
 ###
-### Last modified Feb-10-2003
+### Last modified May-15-2003
 ###
 ### usage: ga GUS30Doc --InputFile doc_file --verbose
 ###   run from inside directory containing file to upload 
@@ -47,11 +50,9 @@ sub new {
     bless($self, $class);
     my $usage = 'Loads documentation for tables and attributes of the GUS project';
     my $easycsp =
-	[
-	 {o => 'inputFile',
+	[{o => 'inputFile',
 	  t => 'string',
-#	  n => 'testnumber',
-	  v => 'verbose',
+	  h => 'name of the documentation file to load',
 	 }];
     $self->initialize({requiredDbVersion => {Core => '3'},
 		       cvsRevision => '$Revision$', #CVS fills this in
@@ -60,14 +61,24 @@ sub new {
 		       revisionNotes => 'make consistent with GUS 3.0',
 		       easyCspOptions => $easycsp,
 		       usage => $usage
-    });
+		      });
     return $self;
 } # end sub new
+
+my $ctx;
+my $countInserts = 0;
 
 ############################################################
 ############################################################
 sub run {
 	my $self = shift;
+	$ctx = shift;
+	
+	if (!$ctx->{cla}->{'inputFile'}) {
+	  die "you must provide --inputFile on the command line\n";
+	}
+
+	print $ctx->{cla}->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
 
 	$self->logRAIID;
 	$self->logCommit;
@@ -82,7 +93,6 @@ sub run {
 								 $!) unless $doc_fh;
 
 	while (<$doc_fh>){ # read in line of documentation and parse from tab-delimited file
-		
 		my ($table_name, $attribute_name, $html_doc) = split (/\t/, $_);
 #		print "Table: $table_name\nAttribute: $attribute_name\nDocumentation: $html_doc\n";
 		$self->process($table_name, $attribute_name, $html_doc);
@@ -123,6 +133,8 @@ sub process {
 #		} # end if
 
 		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
+		$countInserts++;
+
 	        $self->logVerbose("Set HTML Documentation\n\n");
 
 		$doc->submit();
