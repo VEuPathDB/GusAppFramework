@@ -98,7 +98,7 @@ my $stmt4 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_seq
 
 my @na_sourceids;
 my @naSequenceIds;
-my @DTSasEvidenceTarget;
+
 my @RemoveAsMarkedFL;
 
 while(my($na_seq, $source_id) = $stmt1->fetchrow_array( ))  {
@@ -114,11 +114,7 @@ while(my($na_sequence_id) = $stmt2->fetchrow_array( ))  {
    }
 
 
-while(my($target_id) = $stmt3->fetchrow_array( ))  {
 
-  push(@DTSasEvidenceTarget, $target_id);
-
-   }
 
 
   while (my($DTnotFLength) = $stmt4->fetchrow_array())  {
@@ -140,7 +136,7 @@ foreach my $A(@na_sourceids)    {
 
 
 #check to see if all previous evidence still valid
-#may want to pass reference here
+
 
 $self->RemoveEvidenceSourceID($DTarray_ref);
 
@@ -152,6 +148,7 @@ $self->RemoveEvidenceSourceID($DTarray_ref);
 
 
     foreach my $id(@naSequenceIds)  {
+
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
 
      if ($id == $na_seq ) {
@@ -183,9 +180,7 @@ print STDERR "NextFLDT.$na_seq\n";
 
 
 
-
-
-foreach $DTnotFLength(@RemoveAsMarkedFL)  {
+foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
 
  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
@@ -200,7 +195,6 @@ foreach $DTnotFLength(@RemoveAsMarkedFL)  {
 
 
         }
-
 
 }
 
@@ -228,17 +222,19 @@ foreach $DTnotFLength(@RemoveAsMarkedFL)  {
   }
 
 
-
-
-
-
-
    sub RemoveEvidenceSourceID {
 
     my $self = shift;
 
     my $DTarray_ref = @_;
 
+    my @DTSasEvidenceTarget;
+
+while(my($target_id) = $stmt3->fetchrow_array( ))  {
+
+  push(@DTSasEvidenceTarget, $target_id);
+
+   }
 
     foreach my $target(@DTSasEvidenceTarget)  {
 
