@@ -969,7 +969,7 @@ sub openInvocation {
 	  $ap_go->submit;
 	}
       } else {
-	$P->error("The plugin argument '$param_name' is declared by the plugin to have type '$type', but a Core.AlgorithmParamKeyType was not found for that type");
+	$P->error("No Core.AlgorithmParamKeyType");
       }
     }
 
