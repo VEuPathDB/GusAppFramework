@@ -138,9 +138,10 @@ sub run {
   $self->{external_database_release_id} = $self->getReleaseId();
 
   print STDERR "loading sequences with external database release id " . $self->{external_database_release_id} . "\n";
+  
 
   print $self->getCla()->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
-  print "Testing on $self->getCla()->{'testnumber'}\n" if $self->getCla()->{'testnumber'};
+  print "Testing on " . $self->getCla()->{'testnumber'} . "\n" if $self->getCla()->{'testnumber'};
 
   eval("require GUS::Model::".$self->getCla()->{table_name});
 
@@ -149,14 +150,13 @@ sub run {
   $prim_key = $ctx->{self_inv}->getTablePKFromTableId($ctx->{self_inv}->getTableIdFromTableName($self->getCla()->{table_name}));
 
   if ($self->getCla()->{writeFile}) {
-    open(WF,">>$self->getCla()->{writeFile}");
+    open(WF,">>" . $self->getCla()->{writeFile});
   }
 
   if ($self->getCla()->{table_name} eq 'DoTS::VirtualSequence') {
     $self->getCla()->{sequence_type_id} = 20;
   }
 
-  #	my $sql = "select $prim_key from ExternalNASequence where source_id = '$source_id' and external_db_id = $self->getCla()->{'external_db_id'}";
   my $oracleName = $self->className2oracleName($self->getCla()->{table_name});
   $checkStmt = $ctx->{self_inv}->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $self->{external_database_release_id}");
 
@@ -168,7 +168,8 @@ sub run {
       opendir (DIR, $seqFileDir) or die "can't open directory $seqFileDir";
       while ($nextSeqFile = readdir DIR){
 	  next if $nextSeqFile =~/^\./;
-	  $count += $self->processOneFile($nextSeqFile, $oracleName, $checkStmt, $prim_key);
+	  my $fullSeqFile = $seqFileDir . "/" . $nextSeqFile;
+	  $count += $self->processOneFile($fullSeqFile, $oracleName, $checkStmt, $prim_key);
       }
   }
   else {
@@ -178,7 +179,7 @@ sub run {
       $count = $self->processOneFile($seqFile, $oracleName, $checkStmt, $prim_key);
   }
       
-  my $res = "Run finished: Processed $count, inserted ".($ctx->{self_inv}->getTotalInserts() - 1)." and updated ".$ctx->{self_inv}->getTotalUpdates()." sequences from file $self->getCla()->{'sequencefile'}";
+  my $res = "Run finished: Processed $count, inserted ".($ctx->{self_inv}->getTotalInserts() - 1)." and updated ".$ctx->{self_inv}->getTotalUpdates()." sequences from file " .  $self->getCla()->{'sequencefile'};
   print STDERR "$res\n";
   return $res;
 
@@ -188,13 +189,13 @@ sub run {
 sub processOneFile{
   
     my ($self, $seqFile, $oracleName, $checkStmt, $prim_key) = @_;
-    
+    print STDERR "loading sequences from $seqFile\n";
     if ($seqFile =~ /gz$/) {
 	open(F, "gunzip -c $seqFile |") || die "Can't open $seqFile for reading";
     } else {
 	open(F,"$seqFile") || die "Can't open $seqFile for reading";
     }
-    print STDERR "loading sequences from $seqFile\n";
+    
     my $source_id;
     my $name;
     my $description;
@@ -223,7 +224,10 @@ sub processOneFile{
 	    print STDERR "$source_id, $secondary_id, $name, $description,  $count, \n $seq\ninserted ".($ctx->{self_inv}->getTotalInserts() - 1)." and updated ".$ctx->{self_inv}->getTotalUpdates() ." " . ($count % ($self->getCla()->{log_frequency} * 10) == 0 ? `date` : "\n") if $count % $self->getCla()->{log_frequency} == 0;
 	    
 	    ##now get the ids etc for this defline...
-	    if (/$self->getCla()->{'regex_source_id'}/) { 
+
+	    my $regexSource = $self->getCla()->{regex_source_id};
+
+	    if (/$regexSource/) { 
 		$source_id = $1; 
 	    } else {
 		print die "ERROR: unable to parse source_id from $_"; $source_id = "";
@@ -269,7 +273,7 @@ sub process {
   $id = &checkIfHave($source_id) unless $self->getCla()->{no_check};
   my $aas;
   if ($id && $self->getCla()->{update}) {
-    my $className = "GUS::Model::$self->getCla()->{table_name}";
+    my $className = "GUS::Model::" . $self->getCla()->{table_name};
     $aas = $className->new({$prim_key => $id});
     $aas->retrieveFromDB();
     $aas->setSecondaryIdentifier($secondary_id) unless !$secondary_id || $aas->getSecondaryIdentifier() eq $secondary_id;
@@ -295,7 +299,7 @@ sub process {
 
 sub createNewExternalSequence {
   my($self, $source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence) = @_;
-  my $className = "GUS::Model::$self->getCla()->{table_name}";
+  my $className = "GUS::Model::" . $self->getCla()->{table_name};
   $className =~ /GUS::Model::\w+::(\w+)/ || die "can't parse className";
   my $tbl = $1;
 
@@ -353,6 +357,7 @@ sub getReleaseId{
 	
 	$releaseId = $self->queryForReleaseId($self->getCla()->{external_database_name},
 						 $self->getCla()->{version});
+	
     }
     die "you must provide --external_database_release_id on the command line, or --external_database_name and --version to query for it\n" 
 	unless $releaseId;
@@ -419,7 +424,7 @@ sub queryForReleaseId{
                where e.external_database_id = ex.external_database_id
                and ex.version = '$version'
                and e.name = '$dbName'";
-    
+
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
     
     my ($releaseId) = $sth->fetchrow_array();
