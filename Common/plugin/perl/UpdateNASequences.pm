@@ -188,8 +188,12 @@ sub run {
 	    print "$defline: $naSeqId: wrote $charsWritten bp\n";
 	}
 	close FA;
+
+	$dbh->do("update DoTS.NASequenceImp set length = length(sequence)"
+		 . " where na_sequence_id = $naSeqId and length(sequence) > 0");
     }
     $dbh->do("drop procedure append_dots_naseq");
+
     $dbh->disconnect();
 }
 
