@@ -9,7 +9,7 @@
 
 4. substitute 'sub run' for 'sub Run'
 
-5. run takes only one argument: $M or $self
+5. run takes only one argument: $self
 
 6.change 'sub new'
    a. Copy new from template:
@@ -63,7 +63,7 @@ sub new {
 
 16. substitute 'sub run' for 'sub Run'
 
-17. use $M->log() instead of print when appropriate
+17. use $self->log() instead of print when appropriate
     exceptions: files that the plugin uses during its run or on restart
                 plugin approriately writes to 2 or more STDERR or STDOUT files
 
