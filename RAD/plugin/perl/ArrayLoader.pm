@@ -996,6 +996,7 @@ sub loadData{
      }
 
 # build a row for SpotImp
+if(defined $cfg_rv->{'mapping'}->{'ElementImp.subclass_view'}){
      my $spot_hash;
      $subclassview=join('::', 'RAD3',$mapping->{'ElementImp.subclass_view'}); 
      my @spot_attr=$M->getAttrArray($subclassview);
@@ -1091,7 +1092,7 @@ sub loadData{
      else{
 	 $cfg_rv->{'Element_Id'}= $spot->getId();
      }
-
+   }
      if(defined $cfg_rv->{'compositeelementannotation_index'}){
 	
 	 foreach my $m (keys (%{$cfg_rv->{'compositeelementannotation_index'}})) {
