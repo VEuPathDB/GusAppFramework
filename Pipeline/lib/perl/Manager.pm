@@ -119,7 +119,7 @@ sub runCmd {
 
     my $output = `$cmd`;
     my $status = $? >> 8;
-    $self->error("Failed with status $status running '$cmd'") if ($status);
+    $self->error("Failed with status $status running: \n$cmd") if ($status);
     return $output;
 }
 
@@ -135,7 +135,7 @@ sub error {
     my ($self, $msg) = @_;
 
     unlink "$self->{pipelineDir}/signals/running";
-    die "$msg\n";
+    die "$msg\n\n";
 }
 
 #  param fromDir  - the directory in which fromFile resides

@@ -15,6 +15,12 @@ sub new {
 
 }
 
+sub fileExists {
+  my ($self, $file) = @_;
+
+  return -e "$self->{root}/$file";
+}
+
 sub dirExists {
   my ($self, $dir) = @_;
 
@@ -24,13 +30,7 @@ sub dirExists {
 sub makeDir {
   my ($self, $dir) = @_;
 
-  return mkdir("$self->{root}/$dir");
-}
-
-sub fileExists {
-  my ($self, $file) = @_;
-
-  return -e "$self->{root}/$file";
+  return mkdir("$self->{root}/$dir") || die "Can't mkdir '$self->{root}/$dir'\n";
 }
 
 sub copyOut {
@@ -56,7 +56,7 @@ sub touchFile {
 sub deleteFile {
   my ($self, $file) = @_;
 
-  return unlink("$self->{root}/$file");
+  return unlink("$self->{root}/$file") || die "Can't unlink '$self->{root}/$file'\n";
 }
 
 sub listDir {
