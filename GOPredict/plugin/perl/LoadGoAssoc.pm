@@ -188,7 +188,16 @@ sub run {
     my $msg;
 
 
-    my $fileName = $self->getCla->{flat_file};    
+    my $zipfileName = $self->getCla->{flat_file};
+    my $fileName;
+    if ($zipfileName =~ /(.*)\.gz$/){
+	system("gunzip $zipfileName");
+	$fileName = $1;
+    }
+    else {
+	$fileName = $zipfileName;
+    }
+    
     my ($shortFileName) = $fileName =~ /\S+(gene_association.*)$/;
     my ($orgName) = $fileName =~ /gene_association\.(\w+)$/;
 
@@ -209,7 +218,7 @@ sub run {
 	my $nextSourceId;
 	my @currentEntries;
 	my $idAccessor = $self->{orgInfo}->{idAccessor};
-	my $fh = FileHandle->new("<$fileName");
+	my $fh = FileHandle->new("<$fileName") || die ("cannot open $fileName");
 
 	my $counter;
 	my $fileStartLine = $self->getCla()->{restart_line};
