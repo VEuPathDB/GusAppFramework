@@ -141,13 +141,14 @@ sub error {
 #  param fromDir  - the directory in which fromFile resides
 #  param fromFile - the basename of the file or directory to copy
 sub copyToLiniac {
-    my ($self, $fromDir, $fromFile, $server, $toDir) = @_;
+    my ($self, $fromDir, $fromFile, $server, $toDir, $user) = @_;
 
     chdir $fromDir || $self->error("Can't chdir $fromDir\n");
     $self->error("$fromDir/$fromFile doesn't exist\n") unless -e $fromFile;
 
+    my $ssh_to = ($user ? $user . '@' . $server : $server);
     # workaround scp problems
-    $self->runCmd("tar cf - $fromFile | gzip -c | ssh -2 $server 'cd $toDir; gunzip -c | tar xf -'");
+    $self->runCmd("tar cf - $fromFile | gzip -c | ssh -2 $ssh_to 'cd $toDir; gunzip -c | tar xf -'");
 
    # $self->runCmd("tar cf - $fromFile | ssh $server 'cd $toDir; tar xf -'");
 }
@@ -155,12 +156,13 @@ sub copyToLiniac {
 #  param fromDir  - the directory in which fromFile resides
 #  param fromFile - the basename of the file or directory to copy
 sub copyFromLiniac {
-    my ($self, $server, $fromDir, $fromFile, $toDir) = @_;
+    my ($self, $server, $fromDir, $fromFile, $toDir, $user) = @_;
 
     # workaround scp problems
     chdir $toDir || $self->error("Can't chdir $toDir\n");
 
-    $self->runCmd("ssh -2 $server 'cd $fromDir; tar cf - $fromFile | gzip -c' | gunzip -c | tar xf -");
+    my $ssh_fro = ($user ? $user . '@' . $server : $server);
+    $self->runCmd("ssh -2 $ssh_fro 'cd $fromDir; tar cf - $fromFile | gzip -c' | gunzip -c | tar xf -");
 
 #    $self->runCmd("ssh $server 'cd $fromDir; tar cf - $fromFile' | tar xf -");
     $self->error("$toDir/$fromFile wasn't successfully copied from liniac\n") unless -e "$toDir/$fromFile";
