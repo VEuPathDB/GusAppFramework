@@ -235,7 +235,9 @@ sub new {
 
 sub run {
     my ($self) = @_;
-    
+
+
+    $self->logAlgInvocationId();
     $self->_validateCla();
     my $queryHandle = $self->getQueryHandle();
     my $db = $self->getDb(); #for undef pointer cache
