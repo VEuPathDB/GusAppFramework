@@ -615,17 +615,17 @@ sub buildFeatureObjects {
         print STDERR  "bioperl_locations object type unknown, " . ref ($bioperl_locations) . " !!!\n";
     }
 
-    ##
+    #####
     # GeneFeature object
     # buildGeneFeature returns the GeneFeature plus child objects (plus NALocation,
     # possibly Reference/DbRef objects)
-    ##
-    #TW-need to add call to submitWithProjectLink, may need to submit $gf then call method
+    #####
     my $bioperl_geneLocation  = $self->getGeneLocation (@bioperl_locations);
     my $number_of_exons       = scalar(@bioperl_locations);
     my ($gf, @gus_gf_objects) =
         $bioperl2Gus->buildGeneFeature ($number_of_exons, $bioperl_geneLocation, $gene_type, $partial, $systematic_id);
     push (@gus_objects, $gf);  #TW-bindu added $gf->submit() to BG, is this still needed?  #@gus_objects gets returned
+    #TW-need to add call to submitWithProjectLink, may need to submit $gf then call method
     $bioperl2Gus->submitWithProjectLink($gf);
     push (@gus_objects, @gus_gf_objects);
 
