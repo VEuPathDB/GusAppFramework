@@ -216,16 +216,9 @@ sub run {
   my $dbh = $M->getQueryHandle();
   my $st1 = $dbh->prepareAndExecute("select count(est.id_est) from dbest.est est, dbest.library library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
   my $numDbEST = $st1->fetchrow_array();
-  my $taxon_id_list = $M->getCla()->{taxon_id_list};
-  if (! $taxon_id_list) {
-    my $taxon_name_list = $M->getCla()->{taxon_name_list};
-    die "Supply taxon_id_list or taxon_name_list\n" unless $taxon_name_list;
-    my $st = $dbh->prepareAndExecute("select taxon_id from sres.taxonname  where name in ($taxon_name_list) and name_class = 'scientific name'");
-    my @taxon_id_array = $st->fetchrow_array();
-    $taxon_id_list = join(',', @taxon_id_array);
-  }
 
-  die "taxon_id_list = $taxon_id_list\n";
+  # change to get taxon_id_list from cache or something
+  my $taxon_id_list = $M->{taxon_id_list};
 
   my $st2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l where l.taxon_id in ($taxon_id_list) and l.library_id = e.library_id");
   my $finalNumGus = $st2->fetchrow_array();
@@ -463,8 +456,10 @@ sub insertEntry{
 sub getExternalDatabaseRelease{
 
   my $M = shift;
-  
-  my $name = 'dbEST';
+  my $name = $M->getCla()->{extDbName};
+  if (! $name) {
+    $name = 'dbEST';
+  }
   my $lcname = lc $name;
   
   my $externalDatabase = GUS::Model::SRes::ExternalDatabase->new({"name" => $name,
@@ -476,7 +471,10 @@ sub getExternalDatabaseRelease{
   }	
   my $external_db_id = $externalDatabase->getExternalDatabaseId();
   
-  my $version = 'continuous';	
+  my $version = $M->getCla()->{extDbRlsVer};
+  if (! $version) {
+    $version = 'continuous';
+  }
   
   my $externalDatabaseRel = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'version'=>$version});
 
@@ -859,6 +857,24 @@ sub setTableCaches {
   # all else is on-demand cache
 
   my $taxon_id_list = $M->getCla()->{taxon_id_list}; 
+
+  if (! $taxon_id_list) {
+    my $taxon_name_list = $M->getCla()->{taxon_name_list};
+    die "Supply taxon_id_list or taxon_name_list\n" unless $taxon_name_list;
+    my $dbh = $M->getQueryHandle();
+    my $st = $dbh->prepareAndExecute("select taxon_id from sres.taxonname  where name in ($taxon_name_list) and name_class = 'scientific name'");
+    my @taxon_id_array;
+    while ( my $taxon = $st->fetchrow()) {
+      push (@taxon_id_array,$taxon);
+    }
+    $st->finish();
+    $taxon_id_list = join(',', @taxon_id_array);
+  }
+
+  die "taxon_id_list = $taxon_id_list\n";
+
+  $M->{taxon_id_list} = $taxon_id_list;
+
   $q = "select name, taxon_id  from sres.TaxonName where taxon_id in ($taxon_id_list)";
 
   $A = $M->sql_get_as_array_refs($q);
