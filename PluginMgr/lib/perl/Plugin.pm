@@ -761,7 +761,7 @@ sub _initEasyCspOptions    {
   my %types = ('id' => 1,
 	       'date' => 1,
 	       'float' => 1,
-	       'int.' => 1,
+	       'int' => 1,
 	       'string' => 1,
 	       'boolean' => 1,
 	       'table_id' => 1,
