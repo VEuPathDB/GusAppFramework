@@ -8,7 +8,7 @@ sub new {
   my $self = {};
   bless($self,$class);
 
-  my $usage = 'version Similarities given query_table and idSQL identifying rows in that table and deletes all dependent children (SimilaritySpans and IndexWordSimLinks';
+  my $usage = 'Deletes and versions a provided set of Similarities and all dependent children (SimilaritySpans and IndexWordSimLinks).  The set of Similarties to delete is determined by the provivided idSQL, which must provide a list of similarity_ids';
 
   my $easycsp =
     [{o => 'idSQL',
