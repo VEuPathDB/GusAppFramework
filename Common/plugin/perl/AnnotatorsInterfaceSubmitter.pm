@@ -19,7 +19,8 @@ use strict;
 
 use GUS::Model::DoTS::Gene;
 use GUS::Model::DoTS::RNA;
-
+use GUS::Model::DoTS::RNARNACategory;
+use GUS::Model::DoTS::Assembly;
 #need to add GO tables that will be used here
 
 use GUS::Model::DoTS::Protein;
