@@ -3,6 +3,7 @@ package GUS::PluginMgr::Plugin;
 
 use strict 'vars';
 
+use Carp;
 use CBIL::Util::A;
 use CBIL::Util::Disp;
 
@@ -19,12 +20,7 @@ sub new {
 
   my $m = bless {}, $C;
 
-  $m->logFatal('ERROR',
-	  'You have not overridden the new method.',
-	  ref $m,
-	 );
-
-  $m
+  $m->error('This plugin must override the new method: ' . ref $m);
 }
 
 # ----------------------------------------------------------------------
@@ -49,6 +45,7 @@ sub initialize {
     unless (ref($self->{requiredDbVersion}) eq "HASH");
   $self->_failinit('easyCspOptions')
     unless (ref($self->{easyCspOptions}) eq "HASH");
+  $self->setOk(1); #assume all is well to start
 }
 
 # ----------------------------------------------------------------------
@@ -61,16 +58,26 @@ sub className2oracleName {
 }
 
 # ----------------------------------------------------------------------
-# Public Setters
+# Error Handling
+# ----------------------------------------------------------------------
+sub error {
+  my ($self, $msg) = @_;
+
+  confess("\nERROR: $msg\n\n--------------------------- STACK TRACE -------------------------\n");
+}
+
+sub userError{
+  my ($self, $msg) = @_;
+
+  die "\nUSER ERROR: $msg\n";
+}
+
+
+# ----------------------------------------------------------------------
+# Public Accessors
 # ----------------------------------------------------------------------
 
-sub setOk         { $_[0]->{__gus__plugin__OK} = $_[1]; $_[0] }
-
-# ----------------------------------------------------------------------
-# Public Getters
-# ----------------------------------------------------------------------
-
-# what does the plugin do, i.e., GUS::Model::Core::Algorithm
+# what does the plugin do
 sub getUsage             { $_[0]->{usage} }
 
 # what version of the schema does the plugin require?
@@ -84,6 +91,9 @@ sub getCVSRevision {
   $self->{cvsRevision} =~ /Revision:\s+(\S+)\s+/ || die "The plugin has an illegal cvs revision: '$self->{cvsRevision}'.  If that doesn't include a revision number, then the plugin has never been checked into CVS.  Please do so to give it an intial revision";
   return $1;
 }
+
+sub setResultDescr {$_[0]->{resultDescr} = $_[1];}
+sub getResultDescr{ $_[0]->{resultDescr}}
 
 # what cvs tag of the plugin is this?
 sub getCVSTag {
@@ -101,23 +111,17 @@ sub getEasyCspOptions    { $_[0]->{easyCspOptions} }
 # the name of the plugin
 sub getName       { $_[0]->{name} }
 
-# is the plugin ok, i.e., ready to run
-sub getOk         { $_[0]->{__gus__plugin__OK} }
-
 # file that contains the plugin
 sub getFile       { $_[0]->{__gus__plugin__FILE} }
 
-# hmm, what did I mean by this?
-sub getStatus     { $_[0]->{__gus__plugin__status} }
-
 # command line options as parsed
-sub getCla        { $_[0]->{__gus__plugin__cla} }
+sub getArgs        { $_[0]->{__gus__plugin__cla} }
 
 # the DBI database
 sub getDb         { $_[0]->{__gus__plugin__db} }
 
 # the GUS::Model::Core::AlgorithmInvocation for current run
-sub getSelfInv    { $_[0]->{__gus__plugin__self_inv} }
+sub getAlgInvocation    { $_[0]->{__gus__plugin__self_inv} }
 
 sub getQueryHandle    { $_[0]->getDb ? $_[0]->getDb->getQueryHandle : undef }
 
@@ -148,36 +152,52 @@ sub getAlgorithm  { $_[0]->{__gus__plugin__algorithm} }
 # Implementation - locate by executable name and version
 sub getImplementation  { $_[0]->{__gus__plugin__implementation} }
 
-sub undefPointerCache {	$_[0]->getSelfInv->undefPointerCache }
+sub undefPointerCache {	$_[0]->getAlgInvocation->undefPointerCache }
+
+# ----------------------------------------------------------------------
+# Deprecated
+# ----------------------------------------------------------------------
+sub getSelfInv    { $_[0]->getAlgInvocation(); }
+sub getCla        { $_[0]->getArgs(); }
+sub logAlert      { my $M = shift; $M->log(@_); }
+sub getOk         { $_[0]->{__gus__plugin__OK} }
+sub setOk         { $_[0]->{__gus__plugin__OK} = $_[1]; $_[0] }
+sub logRAIID      {$_[0]->logAlgInvocationId(); }
 
 # ----------------------------------------------------------------------
 # Public Logging Methods
 # ----------------------------------------------------------------------
 
-sub logFatal {
+# Write a time-stamped tab-delimited error message to STDERR.
+sub log {
   my $M = shift;
 
-  $M->_log(@_);
+  my $time_stamp_s = localtime;
+
+  my $msg = join("\t", $time_stamp_s, @_);
+
+  print STDERR "$msg\n";
 }
 
-sub logAlert {
+sub logDebug {
   my $M = shift;
 
-  $M->_log(@_);
+  return unless $M->getArgs()->{debug};
+  my $msg = join("\t", @_);
+
+  print STDERR "\n$msg\n";
 }
 
 sub logVerbose {
   my $M = shift;
 
-  return unless $M->getCla()->{verbose};
-  $M->_log(@_);
+  $M->log(@_) if $M->getArgs()->{verbose};
 }
 
 sub logVeryVerbose {
   my $M = shift;
 
-  return unless $M->getCla()->{veryVerbose};
-  $M->_log(@_);
+  $M->log(@_) if $M->getArgs()->{veryVerbose};
 }
 
 # to stdout
@@ -196,16 +216,16 @@ sub logData {
 
 }
 
-sub logRAIID {
+sub logAlgInvocationId {
   my $M = shift;
 
-  $M->logAlert('RAIID', $M->getSelfInv->getId)
+  $M->log('ALGINVID', $M->getAlgInvocation->getId)
 }
 
 sub logCommit {
   my $M = shift;
 
-  $M->logAlert('COMMIT', $M->getCla->{commit} ? 'commit on' : 'commit off');
+  $M->log('COMMIT', $M->getCla->{commit} ? 'commit on' : 'commit off');
 }
 
 sub logArgs {
@@ -214,9 +234,9 @@ sub logArgs {
   foreach my $flag (sort keys %{$M->getCla}) {
     my $value = $M->getCla->{$flag};
     if (ref $value) {
-      $M->logAlert('ARGS', $flag, @$value);
+      $M->log('ARGS', $flag, @$value);
     } else {
-      $M->logAlert('ARGS', $flag, $value);
+      $M->log('ARGS', $flag, $value);
     }
   }
 }
@@ -379,10 +399,9 @@ sub initName       {
   $M
 }
 
-sub initCla        { $_[0]->{__gus__plugin__cla} = $_[1]; $_[0] }
-sub initStatus     { $_[0]->{__gus__plugin__status} = $_[1]; $_[0] }
+sub initArgs        { $_[0]->{__gus__plugin__cla} = $_[1]; $_[0] }
 sub initDb         { $_[0]->{__gus__plugin__db} = $_[1]; $_[0] }
-sub initSelfInv    { $_[0]->{__gus__plugin__self_inv} = $_[1]; $_[0] }
+sub initAlgInvocation    { $_[0]->{__gus__plugin__self_inv} = $_[1]; $_[0] }
 sub initAlgorithm  { $_[0]->{__gus__plugin__algorithm} = $_[1]; $_[0] }
 sub initImplementation  { $_[0]->{__gus__plugin__implementation} = $_[1]; $_[0] }
 sub initConfig {
@@ -426,22 +445,6 @@ sub _failinit {
   print STDERR "Plugin initialization failed: invalid argument '$argname'\n";
   exit 1;
 }
-
-# Write a time-stamped tab-delimited error message to STDERR.
-sub _log {
-  my $M = shift;
-  my $T = shift;
-
-  my $time_stamp_s = localtime;
-
-  my $msg = join("\t", $time_stamp_s, $T, @_);
-
-  print STDERR "$msg\n";
-
-  # RETURN
-  $msg
-}
-
 
 1;
 
