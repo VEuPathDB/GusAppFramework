@@ -321,7 +321,7 @@ sub loadAlignments {
 	    ++$nAligns;
 	    ++$nTotalAligns;
 
-	    my $gapTab = ($gapTabPref ? "${gapTabPref}_" . $align->get('t_name') . "_gap" : "");
+	    my $gapTab = ($gapTabPref ? "${gapTabPref}" . $align->get('t_name') . "_gap" : "");
 	    my $nl = &loadAlignment($dbh, $gapTab, $insertSql, $sth, $queryTableId, $queryTaxonId,
 				    $queryExtDbRelId, $targetTableId, $targetTaxonId, $targetExtDbRelId,
 				    $qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align,
