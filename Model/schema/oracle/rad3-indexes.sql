@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* rad3-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:46:47 EST 2004     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 12:47:09 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -65,9 +65,6 @@ create index @oracle_rad@.ASSAYBIOMATERIAL_IND01 on @oracle_rad@.ASSAYBIOMATERIA
 create index @oracle_rad@.ASSAYCONTROL_IND01 on @oracle_rad@.ASSAYCONTROL (ASSAY_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.ASSAYCONTROL_IND02 on @oracle_rad@.ASSAYCONTROL (CONTROL_ID)  TABLESPACE @oracle_radIndexTablespace@;
 
-/* ASSAYGROUP */
-
-
 /* ASSAYLABELEDEXTRACT */
 create index @oracle_rad@.ASSAYLABELEDEXTRACT_IND01 on @oracle_rad@.ASSAYLABELEDEXTRACT (ASSAY_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.ASSAYLABELEDEXTRACT_IND02 on @oracle_rad@.ASSAYLABELEDEXTRACT (CHANNEL_ID)  TABLESPACE @oracle_radIndexTablespace@;
@@ -99,20 +96,16 @@ create unique index @oracle_rad@.CHANNEL_AK01 on @oracle_rad@.CHANNEL (NAME)  TA
 /* COMPOSITEELEMENTANNOTATION */
 create index @oracle_rad@.COMPELEMENTANNOT_IND01 on @oracle_rad@.COMPOSITEELEMENTANNOTATION (COMPOSITE_ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
 
-/* COMPOSITEELEMENTASSEMBLY_MV */
-create index @oracle_rad@.COMPELEMENASM_INX01 on @oracle_rad@.COMPOSITEELEMENTASSEMBLY_MV (COMPOSITE_ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
-create index @oracle_rad@.COMPELEMENASM_INX02 on @oracle_rad@.COMPOSITEELEMENTASSEMBLY_MV (ASSEMBLY_NA_SEQUENCE_ID)  TABLESPACE @oracle_radIndexTablespace@;
-
 /* COMPOSITEELEMENTGUS */
 create index @oracle_rad@.COMPOSITEELEMENTGUS_IND01 on @oracle_rad@.COMPOSITEELEMENTGUS (COMPOSITE_ELEMENT_ID,TABLE_ID,ROW_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.COMPOSITEELEMENTGUS_IND02 on @oracle_rad@.COMPOSITEELEMENTGUS (TABLE_ID,ROW_ID,COMPOSITE_ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
 
 /* COMPOSITEELEMENTIMP */
-create index @oracle_rad@.RAD3_SPOTFAMILY_IND01 on @oracle_rad@.COMPOSITEELEMENTIMP (SMALLSTRING1,SMALLSTRING2,COMPOSITE_ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
-create index @oracle_rad@.RAD3_SPOTFAMILY_IND02 on @oracle_rad@.COMPOSITEELEMENTIMP (ARRAY_ID,SOURCE_ID,EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_radIndexTablespace@;
+create index @oracle_rad@.@oracle_rad@_SPOTFAMILY_IND01 on @oracle_rad@.COMPOSITEELEMENTIMP (SMALLSTRING1,SMALLSTRING2,COMPOSITE_ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
+create index @oracle_rad@.@oracle_rad@_SPOTFAMILY_IND02 on @oracle_rad@.COMPOSITEELEMENTIMP (ARRAY_ID,SOURCE_ID,EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.SAGETAG_IND02 on @oracle_rad@.COMPOSITEELEMENTIMP (PARENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.SAGETAG_IND03 on @oracle_rad@.COMPOSITEELEMENTIMP (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_radIndexTablespace@;
-create index @oracle_rad@.RAD3_SPOTFAMILY_IND03 on @oracle_rad@.COMPOSITEELEMENTIMP (EXTERNAL_DATABASE_RELEASE_ID,ARRAY_ID)  TABLESPACE @oracle_radIndexTablespace@;
+create index @oracle_rad@.@oracle_rad@_SPOTFAMILY_IND03 on @oracle_rad@.COMPOSITEELEMENTIMP (EXTERNAL_DATABASE_RELEASE_ID,ARRAY_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.SAGETAG_IND01 on @oracle_rad@.COMPOSITEELEMENTIMP (ARRAY_ID,TINYSTRING1)  TABLESPACE @oracle_radIndexTablespace@;
 
 /* COMPOSITEELEMENTRESULTIMP */
@@ -126,16 +119,8 @@ create index @oracle_rad@.CONTROL_IND02 on @oracle_rad@.CONTROL (CONTROL_TYPE_ID
 /* ELEMENTANNOTATION */
 create index @oracle_rad@.ELEMENTANNOTATION_IND01 on @oracle_rad@.ELEMENTANNOTATION (ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
 
-/* ELEMENTASSEMBLY */
-create index @oracle_rad@.ELEMENTASSEMBLY_IND01 on @oracle_rad@.ELEMENTASSEMBLY (ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
-create index @oracle_rad@.ELEMENTASSEMBLY_IND02 on @oracle_rad@.ELEMENTASSEMBLY (ASSEMBLY_NA_SEQUENCE_ID)  TABLESPACE @oracle_radIndexTablespace@;
-
-/* ELEMENTASSEMBLY7 */
-create index @oracle_rad@.ELEMENTASSEMBLY7_IND01 on @oracle_rad@.ELEMENTASSEMBLY7 (ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
-create index @oracle_rad@.ELEMENTASSEMBLY7_IND02 on @oracle_rad@.ELEMENTASSEMBLY7 (ASSEMBLY_NA_SEQUENCE_ID)  TABLESPACE @oracle_radIndexTablespace@;
-
 /* ELEMENTIMP */
-create index @oracle_rad@.RAD3_SPOT_IND02 on @oracle_rad@.ELEMENTIMP (COMPOSITE_ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
+create index @oracle_rad@.@oracle_rad@_SPOT_IND02 on @oracle_rad@.ELEMENTIMP (COMPOSITE_ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.SHORTOLIGO_IND02 on @oracle_rad@.ELEMENTIMP (ELEMENT_TYPE_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.SHORTOLIGO_IND03 on @oracle_rad@.ELEMENTIMP (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.SAGETAGMAPPING_IND01 on @oracle_rad@.ELEMENTIMP (SOURCE_ID,COMPOSITE_ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
@@ -147,9 +132,6 @@ create index @oracle_rad@.SHORTOLIGO_IND01 on @oracle_rad@.ELEMENTIMP (ARRAY_ID,
 create index @oracle_rad@.ELEMENTRESULTIMP_IND01 on @oracle_rad@.ELEMENTRESULTIMP (ELEMENT_ID,SUBCLASS_VIEW)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.ELEMENTRESULTIMP_IND02 on @oracle_rad@.ELEMENTRESULTIMP (QUANTIFICATION_ID,ELEMENT_ID,SUBCLASS_VIEW)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.ELEMENTRESULTIMP_IND03 on @oracle_rad@.ELEMENTRESULTIMP (COMPOSITE_ELEMENT_RESULT_ID)  TABLESPACE @oracle_radIndexTablespace@;
-
-/* GUSLINKTEMP2 */
-
 
 /* INTEGRITYSTATINPUT */
 create index @oracle_rad@.INTEGRITYSTATINPUT_IND01 on @oracle_rad@.INTEGRITYSTATINPUT (INTEGRITY_STATISTIC_ID)  TABLESPACE @oracle_radIndexTablespace@;
@@ -181,9 +163,6 @@ create index @oracle_rad@.ONTOLOGYENTRY_IND02 on @oracle_rad@.ONTOLOGYENTRY (TAB
 create index @oracle_rad@.ONTOLOGYENTRY_IND03 on @oracle_rad@.ONTOLOGYENTRY (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create unique index @oracle_rad@.ONTOLOGYENTRY_AK01 on @oracle_rad@.ONTOLOGYENTRY (CATEGORY,VALUE)  TABLESPACE @oracle_radIndexTablespace@;
 
-/* ONTOLOGYENTRY_OLD */
-
-
 /* PROCESSIMPLEMENTATION */
 create index @oracle_rad@.PROCESSIMPLEMENTATION_IND_01 on @oracle_rad@.PROCESSIMPLEMENTATION (PROCESS_TYPE_ID)  TABLESPACE @oracle_radIndexTablespace@;
 
@@ -195,9 +174,6 @@ create index @oracle_rad@.PROCESSINVOCATION_IND01 on @oracle_rad@.PROCESSINVOCAT
 
 /* PROCESSINVOCATIONPARAM */
 create index @oracle_rad@.PROCESSINVOCATIONPARAM_IND01 on @oracle_rad@.PROCESSINVOCATIONPARAM (PROCESS_INVOCATION_ID)  TABLESPACE @oracle_radIndexTablespace@;
-
-/* PROCESSINVOCATION_OLD */
-
 
 /* PROCESSINVQUANTIFICATION */
 create index @oracle_rad@.PROCESSINVQUANTIFICATION_IND01 on @oracle_rad@.PROCESSINVQUANTIFICATION (PROCESS_INVOCATION_ID)  TABLESPACE @oracle_radIndexTablespace@;
@@ -211,14 +187,6 @@ create index @oracle_rad@.PROCESSIO_IND01 on @oracle_rad@.PROCESSIO (TABLE_ID)  
 
 /* PROCESSIOELEMENT */
 create index @oracle_rad@.PROCESSIOELEMENT_IND01 on @oracle_rad@.PROCESSIOELEMENT (PROCESS_IO_ID)  TABLESPACE @oracle_radIndexTablespace@;
-
-/* PROCESSIOELEMENT_MV */
-create index @oracle_rad@.PIOE_INDX1 on @oracle_rad@.PROCESSIOELEMENT_MV (PROCESS_IO_ID)  TABLESPACE @oracle_radIndexTablespace@;
-create index @oracle_rad@.PIOE_INDX2 on @oracle_rad@.PROCESSIOELEMENT_MV (ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
-
-/* PROCESSIOELEMENT_OLD */
-create index @oracle_rad@.PROCESSIOELEMENT_IDX01 on @oracle_rad@.PROCESSIOELEMENT_OLD (PROCESS_IO_ID)  TABLESPACE @oracle_radIndexTablespace@;
-create index @oracle_rad@.PROCESSIOELEMENT_IDX02 on @oracle_rad@.PROCESSIOELEMENT_OLD (ELEMENT_ID)  TABLESPACE @oracle_radIndexTablespace@;
 
 /* PROCESSRESULT */
 create index @oracle_rad@.PROCESSRESULT_IND01 on @oracle_rad@.PROCESSRESULT (PROCESS_RESULT_ID,VALUE)  TABLESPACE @oracle_radIndexTablespace@;
@@ -243,9 +211,6 @@ create index @oracle_rad@.PROTOCOLPARAM_IND03 on @oracle_rad@.PROTOCOLPARAM (PRO
 /* PROTOCOLQCPARAM */
 
 
-/* PROTOCOL_OLD */
-create unique index @oracle_rad@.PROTOCOL_AK01 on @oracle_rad@.PROTOCOL_OLD (NAME)  TABLESPACE @oracle_radIndexTablespace@;
-
 /* QUANTIFICATION */
 create index @oracle_rad@.QUANTIFICATION_IND05 on @oracle_rad@.QUANTIFICATION (NAME)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.QUANTIFICATION_IND01 on @oracle_rad@.QUANTIFICATION (ACQUISITION_ID)  TABLESPACE @oracle_radIndexTablespace@;
@@ -255,12 +220,6 @@ create index @oracle_rad@.QUANTIFICATION_IND04 on @oracle_rad@.QUANTIFICATION (R
 
 /* QUANTIFICATIONPARAM */
 create unique index @oracle_rad@.QUANTPARAM_AK01 on @oracle_rad@.QUANTIFICATIONPARAM (QUANTIFICATION_ID,NAME)  TABLESPACE @oracle_radIndexTablespace@;
-
-/* QUANTIFICATIONPARAM_OLD */
-
-
-/* QUANTIFICATION_OLD */
-
 
 /* RELATEDACQUISITION */
 create index @oracle_rad@.RELATEDACQUISITION_IND01 on @oracle_rad@.RELATEDACQUISITION (ACQUISITION_ID)  TABLESPACE @oracle_radIndexTablespace@;
@@ -299,9 +258,6 @@ create index @oracle_rad@.STUDYDESIGNDESCRIPTION_IND01 on @oracle_rad@.STUDYDESI
 create index @oracle_rad@.STUDYDESIGNTYPE_IND01 on @oracle_rad@.STUDYDESIGNTYPE (ONTOLOGY_ENTRY_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.STUDYDESIGNTYPE_IND02 on @oracle_rad@.STUDYDESIGNTYPE (STUDY_DESIGN_ID)  TABLESPACE @oracle_radIndexTablespace@;
 
-/* STUDYDESIGN_OLD */
-
-
 /* STUDYFACTOR */
 create unique index @oracle_rad@.STUDYFACTOR_AK01 on @oracle_rad@.STUDYFACTOR (STUDY_DESIGN_ID,NAME)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.STUDYFACTOR_IND01 on @oracle_rad@.STUDYFACTOR (STUDY_FACTOR_TYPE_ID)  TABLESPACE @oracle_radIndexTablespace@;
@@ -311,15 +267,6 @@ create index @oracle_rad@.STUDYFACTORVALUE_IND01 on @oracle_rad@.STUDYFACTORVALU
 create index @oracle_rad@.STUDYFACTORVALUE_IND02 on @oracle_rad@.STUDYFACTORVALUE (STUDY_FACTOR_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.STUDYFACTORVALUE_IND03 on @oracle_rad@.STUDYFACTORVALUE (VALUE_ONTOLOGY_ENTRY_ID)  TABLESPACE @oracle_radIndexTablespace@;
 create index @oracle_rad@.STUDYFACTORVALUE_IND04 on @oracle_rad@.STUDYFACTORVALUE (MEASUREMENT_UNIT_OE_ID)  TABLESPACE @oracle_radIndexTablespace@;
-
-/* STUDYFACTORVALUE_OLD */
-
-
-/* TEMP_ARRAYVIEWER_INTENSITY */
-
-
-/* TEMP_FORMHELP */
-
 
 /* TREATMENT */
 create index @oracle_rad@.TREATMENT_IND01 on @oracle_rad@.TREATMENT (BIO_MATERIAL_ID)  TABLESPACE @oracle_radIndexTablespace@;
@@ -332,7 +279,7 @@ create index @oracle_rad@.TREATMENTPARAM_IND02 on @oracle_rad@.TREATMENTPARAM (T
 
 
 
-/* 143 index(es) */
+/* 132 index(es) */
 
 SPOOL OFF
 SET ECHO OFF
