@@ -16,6 +16,9 @@ my $curatorLoeId = 4;
 my $goExtDb = 6529;
 my $output = FileHandle->new('>>DeletedAssociations');
 
+#Note:  This plugin is intended to be run as a preprocess before implementing
+#the new style GO Association system.  It will likely not be run again; however
+#it may be kept for posterity.
 
 sub new{
     my $class = shift;
@@ -27,7 +30,7 @@ sub new{
 	
 	 {o=> 'file_path',
 	  h=> 'if set, get proteins to recover associations for from this file',
-          t=> 'boolean',
+          t=> 'string',
       }, 
 	 
 	 {o=> 'recover_deleted',
@@ -98,7 +101,10 @@ sub run {
 sub _getProteinGoMapFromFile{
 
     my ($self, $filePath) = @_;
+
     my $proteinGoMap;
+
+    $self->log("attempting to open $filePath");
     my $remainingProteinFile = FileHandle->new("$filePath") || $self->userError ("could not open $filePath");
 
     while (<$remainingProteinFile>){
