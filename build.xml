@@ -109,6 +109,7 @@
       <echo message="generating java objects"/>
 
       <exec executable="generateGusObjects" 
+            failonerror="true"
             output="${projectsDir}/GUS/Model/doc/javaGenLog">
         <arg value="--javaOrPerl=java"/>
       </exec>
@@ -169,7 +170,7 @@
      <echo message="generating Perl Objects"/>
 
      <exec executable="generateGusObjects" 
-            output="${projectsDir}/GUS/Model/doc/javaGenLog">
+           failonerror="true">
 
        <arg value="--javaOrPerl=perl"/>
      </exec>
@@ -205,22 +206,20 @@
 
    </target>  
 
-  <target name="checkJavaObjects">
- 
-    <condition property="javaObjectsAlreadyGenerated">
-           
-         <uptodate srcfile="${projectsDir}/GUS/Model/lib/sql/definition.sql"
-                  targetfile="${projectsDir}/GUS/Model/src/java/org/gusdb/model/generated"/>
-    
-    </condition>
-   <echo message="checkJavaObjects: are objects generated ? ${javaObjectsAlreadyGenerated}"/>
-  </target>
-
-
   <target name="checkPerlObjects">
     <uptodate property="perlObjectsAlreadyGenerated" 
-              targetfile="${projectsDir}/GUS/Model/lib/perl/generated" 
-              srcfile="${projectsDir}/GUS/Model/schema/VERSION" />
+              targetfile="${projectsDir}/GUS/Model/lib/perl/generated">
+       <srcfiles dir= "${projectsDir}/GUS/Model/schema" includes="VERSION"/>
+       <srcfiles dir= "${projectsDir}/GUS/Model/data" includes="modelSpecialCases.txt"/>
+    </uptodate>
+  </target>
+
+  <target name="checkJavaObjects">
+    <uptodate property="javaObjectsAlreadyGenerated" 
+              targetfile="${projectsDir}/GUS/Model/src/java/org/gusdb/model/generated">
+       <srcfiles dir= "${projectsDir}/GUS/Model/schema" includes="VERSION"/>
+       <srcfiles dir= "${projectsDir}/GUS/Model/data" includes="modelSpecialCases.txt"/>
+    </uptodate>
   </target>
  
 
