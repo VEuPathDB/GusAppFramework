@@ -172,43 +172,44 @@ sub new {
 my $TPREF = 'DoTS';
 
 sub run {
-    my $M = shift;
-    my $ctx = shift;
+    my $self = shift;
     
     $| = 1;
     
-    my $blatFiles = $ctx->{'blatFiles'};
-    my $fileList =  $ctx->{'fileList'};
-    my $queryFile = $ctx->{'queryFile'};
-    my $reportInterval = $ctx->{'reportInterval'};
-    my $commitInterval = $ctx->{'commitInterval'};
-    my $prevRuns = $ctx->{'previousRuns'};
-    
-    my $queryTableId = $ctx->{'queryTableId'};
-    my $queryTaxonId = $ctx->{'queryTaxonId'};
-    my $queryExtDbRelId = $ctx->{'queryExtDbRelId'};
-    my $targetTableId = $ctx->{'targetTableId'};
-    my $targetTaxonId = $ctx->{'targetTaxonId'};
-    my $targetExtDbId = $ctx->{'targetExtDbId'};
+    my $dbh = $self->getQueryHandle();
+    my $cla = $self->getCla();
 
-    my $minQueryPct = $ctx->{'minQueryPct'};
-    my $dbh = $ctx->{'db'}->getQueryHandle();
+    my $blatFiles = $cla->{'blat_files'};
+    my $fileList =  $cla->{'file_list'};
+    my $queryFile = $cla->{'query_file'};
+    my $reportInterval = $cla->{'report_interval'};
+    my $commitInterval = $cla->{'commit_interval'};
+    my $prevRuns = $cla->{'previous_runs'};
+    
+    my $queryTableId = $cla->{'query_table_id'};
+    my $queryTaxonId = $cla->{'query_taxon_id'};
+    my $queryExtDbRelId = $cla->{'query_ext_db_rel_id'};
+    my $targetTableId = $cla->{'target_table_id'};
+    my $targetTaxonId = $cla->{'target_taxon_id'};
+    my $targetExtDbId = $cla->{'target_ext_db_id'};
+
+    my $minQueryPct = $cla->{'min_query_pct'};
 
     # Parameters used to assess alignments qualities
     #
     my $qualityParams = {
-	'maxEndMismatch' => $ctx->{'maxEndMismatch'},
-	'minPctId' => $ctx->{'minPctId'},
-	'maxQueryGap' => $ctx->{'maxQueryGap'},
-	'okInternalGap' => $ctx->{'okInternalGap'},
-	'okEndGap' => $ctx->{'okEndGap'},
-	'endGapFactor' => $ctx->{'endGapFactor'},
-	'minGapPct' => $ctx->{'minGapPct'},
+	'maxEndMismatch' => $cla->{'max_end_mismatch'},
+	'minPctId' => $cla->{'min_pct_id'},
+	'maxQueryGap' => $cla->{'max_query_gap'},
+	'okInternalGap' => $cla->{'ok_internal_gap'},
+	'okEndGap' => $cla->{'ok_end_gap'},
+	'endGapFactor' => $cla->{'end_gap_factor'},
+	'minGapPct' => $cla->{'min_gap_pct'},
     };
 
     my @prevAlgInvIds = defined($prevRuns) ? split(/,|\s+/, $prevRuns): ();
     my $qIndex = undef;
-    ($blatFiles, $qIndex) = &preProcess($blatFiles, $fileList, $queryFile, $queryTableId, $targetTableId, $ctx->{'commit'});
+    ($blatFiles, $qIndex) = &preProcess($blatFiles, $fileList, $queryFile, $queryTableId, $targetTableId, $cla->{'commit'});
 
     # 1. Read target source ids if requested
     #
@@ -225,10 +226,10 @@ sub run {
     my @files = split(/,|\s+/, $blatFiles);
     my $nFiles = scalar(@files);
 
-    my $userId = $ctx->{'userId'};
-    my $groupId = $ctx->{'groupId'};
-    my $projectId = $ctx->{'projectId'};
-    my $algInvId = $ctx->{'self_inv'}->getAlgorithmInvocationId();
+    my $userId = $cla->{'user_id'};
+    my $groupId = $cla->{'group_id'};
+    my $projectId = $cla->{'project_id'};
+    my $algInvId = $self->getAlgorithmInvocationId();
 
     my $insertSql = ("INSERT INTO $TPREF.BLATAlignment VALUES (" .
 		     "gusdev.BLATAlignment_SQ.nextval, " .
