@@ -72,10 +72,11 @@ sub getExitOnFailure{
 
 #add error checking here.
 sub prepareAndExecute {
-	my ($self, $sql_cmd) = @_;
+  my ($self, $sql_cmd) = @_;
   if ($verbose) { print STDERR"\n\nprepareAndExecute: $sql_cmd \n"; }
-	my $sth = $self->prepare($sql_cmd) || print STDERR "prepareAndExecute FAILED: $self->errstr\n";
-	$sth->execute() || print STDERR "prepareAndExecute FAILED: $sth->errstr \n";
+
+  my $sth = $self->prepare($sql_cmd) || print STDERR "Prepare FAILED: " . $self->errstr() . "\n sql_cmd:  \n $sql_cmd \n";
+  $sth->execute() || print STDERR "Execute FAILED: " . $self->errstr() . "\n sql_cmd:  \n $sql_cmd \n";
   return $sth;
 }
 
