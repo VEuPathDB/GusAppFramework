@@ -226,9 +226,9 @@ sub UnmarkFullLength {
   my $self = shift;
   my ($source_id,$assembly) = @_;
 
-  print STDERR "Value of attribute $assembly->getFullLengthCds() \n";
+  print STDERR "Value of attribute $assembly->getFullLengthCds(1)\n";
 
- # if ($assembly->getFullLengthCds() == 1)  {
+ if (!$assembly->getFullLengthCds(1))  {
 
 
   my $fact = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $source_id });
@@ -243,7 +243,7 @@ sub UnmarkFullLength {
         }
 
 
-#}
+}
    }
 
 
