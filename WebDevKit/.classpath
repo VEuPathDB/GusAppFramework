@@ -11,6 +11,6 @@
 	<classpathentry kind="lib" path="lib/java/oracle-classes12.jar"/>
 	<classpathentry kind="lib" path="lib/java/jstl.jar"/>
 	<classpathentry kind="lib" path="lib/java/isorelax-20030108.jar"/>
-	<classpathentry kind="lib" path="lib/java/jing.jar"/>
+	<classpathentry kind="lib" path="lib/java/jing-20030619.jar"/>
 	<classpathentry kind="output" path="ant-build/classes"/>
 </classpath>
