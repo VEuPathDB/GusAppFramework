@@ -1,100 +1,91 @@
-########################################################################
-##LoadNRDB.pm 
-##
-##This is a ga plug_in to populate the NRDBEntry and ExternalAASequence tables
-##with entries from the nr files of non-redundant protein sequences.
-##Can be run in three separate parts. Caution:the delete portion can be run at a 
-##separate time but must be run after the first two portions.
-##
-##NRDB external_db_id = 4194
-##
-##Created Oct. 16, 2001
-##Revised Oct. 28, 2002
-##
-##nrdb file:ftp://ncbi.nlm.nih.gov/blast/db/nr.Z 
-##gi/tax_id file:ftp://ncbi.nlm.nih.gov/pub/taxonomy/gi_taxid_prot.dmp
-##The nr file file should remain compressed for the plugin as written 
-##Deborah Pinney 
-##
-##algorithm_id=5389       
-##algorithm_imp_id=6624      
-########################################################################
-package LoadNRDB;
-use FileHandle;
-use strict;
-use GUS::Model::::NRDBEntry;
-use GUS::Model::::ExternalAASequence;
-use DBI;
+package GUS::Common::Plugin::LoadNRDB;
 
-my $Cfg;
+@ISA = qw(GUS::PluginMgr::Plugin);
+ 
+use strict;
+use DBI;
+use GUS::Model::DoTS::NRDBEntry;
+use GUS::Model::DoTS::ExternalAASequence;
+
 my $ctx;
 my $count=0;
 my $debug = 0;
 $| = 1;
 
 sub new {
-	my $Class = shift;
-	$Cfg = shift;
-	return bless {}, $Class;
-}
-sub Usage {
-	my $M   = shift;
-	return 'Plug_in to populate the NRDBEntry table';
-}
-sub CBIL::Util::EasyCspOptions {
-	my $M   = shift;
-	{
-  
-  testnumber1  => {
-                  o => 'testnumber1=i',
-		  h => 'number of iterations for testing temp table insertion',
-		 },
-  testnumber2  => {
-                  o => 'testnumber2=i',
-		  h => 'number of iterations for testing insertion 
+  my $class = shift;
+
+  my $self = {};
+  bless($self,$class);
+
+  my $usage = 'Plug_in to populate the NRDBEntry table';
+
+  my $easycsp =
+    [{o => 'testnumber1',
+      t => 'int';
+      h => 'number of iterations for testing temp table insertion',
+     },
+     {o => 'extDbRelId',
+      t => 'int',
+      h => 'external_database_release_id of the nr protein database',
+     }, 
+     {o => 'testnumber2',
+      t => 'int';
+      h => 'number of iterations for testing insertion 
                         into NRDBEntry and ExternalAASequence',
-		 },
-  gitax       => {
-                  o => 'gitax=s',
-		  h => 'location of the gi_taxid_prot.dmp file',
-                  d => '/usr/local/db/local/taxonomy/gi_taxid_prot.dmp',
-                 },
-  nrdb       =>  {
-                  o => 'nrdb=s',
-		  h => 'location of the nrdb file',
-                  d => '/usr/local/db/local/nrdb/nr.Z',
-                },
-  maketemp  =>  {
-                  o => 'maketemp!',
-		  h => 'option to create temp table',
-                }, 
-  temp_login   => {
-                  o => 'temp_login=s',
-		  h => 'login for space being used for temp table eg.pinney',
-                },
-  temp_password   => {
-                  o => 'temp_password=s',
-		  h => 'password for space being used for temp table',
-                },
-  plugin     => {
-                  o => 'plugin',
-                  t => 'boolean',
-		  h => 'choice of whether to run the remainder of the plug_in',
-                },
-  restart    => {
-                  o => 'restart=i',
-		  h => 'for restarting the interrupted plugin(use with plugin 
-                        option), use number from last set number in log',
-                },
-  delete     => {
-                o => 'delete!',
-		h => 'option to run delete portion',
-	        }
-  restart_temp_table => {
-                o => 'restart_temp_table!',
-                h => 'indicates temp table insertion should be restarted,
-                      table already exits';
-  };
+     },
+     {o => 'gitax',
+      t => 'string';
+      h => 'location of the gi_taxid_prot.dmp file',
+      d => '/usr/local/db/local/taxonomy/gi_taxid_prot.dmp',
+     },
+     {o => 'nrdb',
+      t => 'string';
+      h => 'location of the nrdb file',
+      d => '/usr/local/db/local/nrdb/nr.Z',
+     },
+     {o => 'maketemp',
+      t => 'boolean';
+      h => 'option to create temp table',
+     }, 
+     {o => 'temp_login',
+      t => 'string';
+      h => 'login for space being used for temp table eg.pinney',
+     },
+     {o => 'temp_password=s',
+      t => 'string';
+      h => 'password for space being used for temp table',
+     },
+     {o => 'plugin',
+      t => 'boolean',
+      h => 'choice of whether to run the remainder of the plug_in',
+     },
+     {o => 'restart',
+      t => 'int';
+      h => 'for restarting the interrupted plugin(use with plugin 
+            option), use number from last set number in log',
+      },
+     {o => 'delete',
+      t => 'boolean',
+      h => 'option to run delete portion',
+     }
+     {o=> 'restart_temp_table',
+      t => 'boolean',
+      h => 'indicates temp table insertion should be restarted,
+            table already exits';
+      }
+     ];
+
+  $self->initialize({requiredDbVersion => {},
+		  cvsRevision => '$Revision$', # cvs fills this in!
+		  cvsTag => '$Name$', # cvs fills this in!
+		  name => ref($m),
+		  revisionNotes => 'make consistent with GUS 3.0',
+		  easyCspOptions => $easycsp,
+		  usage => $usage
+		 });
+
+  return $self;
 }
 
 sub Run {
@@ -108,6 +99,8 @@ sub Run {
                 into NRDBEntry/ExternalAASequence\n" 
                 if $ctx->{'cla'}->{'testnumber2'};
 
+  my $external_database_release_id = $ctx->{'cla'}->{'extDbRelId'} || die 'external_database_release_id not supplied\n';
+
   my $dbHash = &getDB();
 
   my $taxonHash = &getTaxon ();
@@ -120,7 +113,7 @@ sub Run {
       return $tempresults;
   }
 
-  my $entryresults = &makeNRDBAndExternalAASequence($taxonHash, $dbHash) 
+  my $entryresults = &makeNRDBAndExternalAASequence($taxonHash, $dbHash,$external_database_release_id) 
                     if ($ctx->{'cla'}->{'plugin'}); {      
      
   if (!$ctx->{'cla'}->{'delete'}){ 
@@ -164,7 +157,7 @@ sub getTaxon {
                     die ("Can't open the gi/tax_id file\n");
     my %taxHash;
     my %taxonHash;
-    my $st = $dbh->prepare("select taxon_id from taxon3 where ncbi_tax_id = ?");
+    my $st = $dbh->prepare("select taxon_id from sres.taxon where ncbi_tax_id = ?");
     while (<TAXFILE>) {
 	chomp;
 	if (/(\d+)\s+(\d+)/) {
@@ -273,7 +266,7 @@ sub makeTempTable {
 }
 
 sub makeNRDBAndExternalAASequence {
-    my ($taxonHash, $dbHash) = @_;
+    my ($taxonHash, $dbHash,$external_database_release_id) = @_;
 
     my $count = 0;
     
@@ -310,7 +303,7 @@ sub makeNRDBAndExternalAASequence {
     else {
 	$num_submit = 0;
     }  
-    my $st = $dbh->prepare("select aa_sequence_id from nrdbentry where source_id = ? and external_db_id = ?");
+    my $st = $dbh->prepare("select aa_sequence_id from dots.nrdbentry where source_id = ? and external_db_id = ?");
 
     while (<NRDB>) {
 	chomp;
@@ -326,7 +319,7 @@ sub makeNRDBAndExternalAASequence {
 		#get the preferred gi and source_id and get any one aa_sequence_id corresponding to a member of the set
 		unless ($ctx->{'cla'}->{'restart'} && $count <= $ctx->{'cla'}->{'restart'}) {
 		    if (scalar (keys %EntryHash) != 0) {
-			my $newExtAASeq = &processHash(\%EntryHash,$seq,$st);
+			my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id);
 			$newExtAASeq->submit();
 			$num_submit++;
 			print STDERR ("Submitted set number:$num_submit\n");
@@ -349,7 +342,7 @@ sub makeNRDBAndExternalAASequence {
 	    $seq .= $_;
 	}
     }
-    my $newExtAASeq = &processHash(\%EntryHash,$seq,$st);
+    my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id);
     $newExtAASeq->submit();
     $num_submit++;
     my $entryresult = ("Number of entries to NRDB/ExternalAASequence : 
@@ -406,7 +399,7 @@ sub parseLine {
 }
 
 sub processHash {
-    my ($EntryHash,$seq,$st) = @_;
+    my ($EntryHash,$seq,$st,$external_database_release_id) = @_;
     my $newExtAASeq;
     my $pref_gi;
     my $pref_source;
@@ -446,7 +439,7 @@ sub processHash {
 		$st->execute($source,$db_id);
 		if (my ($aa_seq_id) = $st->fetchrow_array) {
 		    $st->finish;
-		    my $preExtAASeq = ExternalAASequence->new ({'aa_sequence_id'=>$aa_seq_id});
+		    my $preExtAASeq =GUS::Model::DoTS:: ExternalAASequence->new ({'aa_sequence_id'=>$aa_seq_id});
 		    $preExtAASeq->retrieveFromDB();
 		    if ($seq eq $preExtAASeq->getSequence()) {
 			$newExtAASeq = $preExtAASeq;
@@ -459,18 +452,18 @@ sub processHash {
     $pref_source = ($sp_source?$sp_source:($pir_source?$pir_source:$default_source));
     
     if ($newExtAASeq) {
-	&updateExtAASeq($newExtAASeq,$pref_gi,$pref_source,$$EntryHash{$pref_gi}->{$pref_source}[1]);
+	&updateExtAASeq($newExtAASeq,$pref_gi,$pref_source,$$EntryHash{$pref_gi}->{$pref_source}[1],$external_database_release_id);
     }
     else {
-	$newExtAASeq = &makeExtAASeq($seq,$pref_gi,$pref_source,$$EntryHash{$pref_gi}->{$pref_source}[1]);
+	$newExtAASeq = &makeExtAASeq($seq,$pref_gi,$pref_source,$$EntryHash{$pref_gi}->{$pref_source}[1],$external_database_release_id);
     }
     &makeNRDBEntries($newExtAASeq,$pref_gi,$pref_source,$EntryHash);
     return $newExtAASeq;  
 }
 
 sub updateExtAASeq {
-    my ($newExtAASeq,$secondary_identifier,$source_id,$description) = @_;
-    my $external_db_id = 4194; 
+    my ($newExtAASeq,$secondary_identifier,$source_id,$description,$external_database_release_id_id) = @_;
+
     my $shortDescr = substr($description, 0, 255);
     if ($secondary_identifier!=$newExtAASeq->get('secondary_identifier')){
 	$newExtAASeq->set('secondary_identifier',$secondary_identifier);
@@ -481,16 +474,15 @@ sub updateExtAASeq {
     if ($shortDescr!=$newExtAASeq->get('description')){
 	$newExtAASeq->set('description',$shortDescr);
     }
-    if ($external_db_id!=$newExtAASeq->get('external_db_id')){
-	$newExtAASeq->set('external_db_id'=>$external_db_id);
+    if ($external_database_release_id!=$newExtAASeq->get('external_database_release_id')){
+	$newExtAASeq->set('external_database_release_id'=>$external_database_release_id);
     }
 }
 
 sub makeExtAASeq {
-  my ($seq,$secondary_identifier,$source_id,$description) = @_;
-  my $external_db_id = 4194; 
+  my ($seq,$secondary_identifier,$source_id,$description, $external_database_release_id_id) = @_;
   my $shortDescr = substr($description, 0, 255);
-  my $newExtAASeq = ExternalAASequence->new({'external_db_id' => $external_db_id,'source_id'=> $source_id,'secondary_identifier' => $secondary_identifier, 'description' => $shortDescr});
+  my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new({'external_database_release_id' => $external_database_release_id,'source_id'=> $source_id,'secondary_identifier' => $secondary_identifier, 'description' => $shortDescr});
   $newExtAASeq->retrieveFromDB();
   if($seq){
       $newExtAASeq->set('sequence', $seq);
@@ -519,7 +511,7 @@ sub makeNRDBEntries {
 		$source_id = $1;
 		$sequence_version = $2;
 	    }
-	    my $newNRDBEntry = NRDBEntry->new({'source_id'=>$source_id, 'external_db_id'=>$external_db_id});
+	    my $newNRDBEntry = GUS::Model::DoTS::NRDBEntry->new({'source_id'=>$source_id, 'external_db_id'=>$external_db_id});
 	    $newNRDBEntry->retrieveFromDB(); 
 	    if ($secondary_id!=$newNRDBEntry->get('gid')){
 		$newNRDBEntry->set('gid',$secondary_id);
@@ -545,10 +537,10 @@ sub makeNRDBEntries {
 
 sub deleteFromNRDB {
     my $num_delete = 0;
-    my $st = $dbh->prepareAndExecute("select nrdb_entry_id from nrdbentry where source_id not in (select /** RULE */ n.source_id from nrdbentry n, pinney.nrdbtemp p where n.source_id = p.source_id and n.external_db_id = p.external_db_id)");
+    my $st = $dbh->prepareAndExecute("select nrdb_entry_id from dots.nrdbentry where source_id not in (select /** RULE */ n.source_id from dots.nrdbentry n, pinney.nrdbtemp p where n.source_id = p.source_id and n.external_db_id = p.external_db_id)");
     while (my ($nrdb_entry_id) = $st->fetchrow_array) {
 	$num_delete++;
-	my $newNRDBEntry = NRDBEntry->new ({'nrdb_entry_id'=>$nrdb_entry_id});
+	my $newNRDBEntry = GUS::Model::DoTS::NRDBEntry->new ({'nrdb_entry_id'=>$nrdb_entry_id});
 	$newNRDBEntry->retrieveFromDB();
 	$newNRDBEntry->markDeleted();
 	$newNRDBEntry->submit();
@@ -559,10 +551,10 @@ sub deleteFromNRDB {
 
 sub deleteFromExtAASeq {
     my $num_delete = 0;
-    my $st = $dbh->prepareAndExecute("select aa_sequence_id from externalaasequence where external_db_id = 4194 and aa_sequence_id not in (select /** RULE */ distinct aa_sequence_id from nrdbentry n)");
+    my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_db_id = 4194 and aa_sequence_id not in (select /** RULE */ distinct aa_sequence_id from dots.nrdbentry n)");
     while (my ($aa_sequence_id) = $st->fetchrow_array) {
 	$num_delete++;
-	my $newExtAASeq = ExternalAASequence->new ({'aa_sequence_id'=>$aa_sequence_id});
+	my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new ({'aa_sequence_id'=>$aa_sequence_id});
 	$newExtAASeq->retrieveFromDB();
 	$newExtAASeq->retrieveAllChildrenFromDB(1);
 	$newExtAASeq->markDeleted(1);
