@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* rad3ver-pkey-constraints.sql                                                               */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:09:43 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:50:09 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -22,6 +22,7 @@ alter table @oracle_radver@.ARRAYGROUPLINKVER add constraint PK_ARRAYGROUPLINKVE
 alter table @oracle_radver@.ARRAYGROUPVER add constraint PK_ARRAYGROUPVER primary key (ARRAY_GROUP_ID,MODIFICATION_DATE);
 alter table @oracle_radver@.ARRAYVER add constraint PK_ARRAYVER primary key (ARRAY_ID,MODIFICATION_DATE);
 alter table @oracle_radver@.ASSAYBIOMATERIALVER add constraint PK_ASSAYBIOMATERIALVER primary key (ASSAY_BIO_MATERIAL_ID,MODIFICATION_DATE);
+alter table @oracle_radver@.ASSAYCONTROLVER add constraint PK_ASSAYCONTROLVER primary key (ASSAY_CONTROL_ID,MODIFICATION_DATE);
 alter table @oracle_radver@.ASSAYLABELEDEXTRACTVER add constraint PK_ASSAYLABELEDEXTRACTVER primary key (ASSAY_LABELED_EXTRACT_ID,MODIFICATION_DATE);
 alter table @oracle_radver@.ASSAYPARAMVER add constraint PK_ASSAYPARAMVER primary key (ASSAY_PARAM_ID,MODIFICATION_DATE);
 alter table @oracle_radver@.ASSAYVER add constraint PK_ASSAYVER primary key (ASSAY_ID,MODIFICATION_DATE);
@@ -70,7 +71,7 @@ alter table @oracle_radver@.TREATMENTPARAMVER add constraint PK_TREATMENTPARAMVE
 alter table @oracle_radver@.TREATMENTVER add constraint PK_TREATMENTVER primary key (TREATMENT_ID,MODIFICATION_DATE);
 
 
-/* 58 primary key constraint(s) */
+/* 59 primary key constraint(s) */
 
 SPOOL OFF
 SET ECHO OFF

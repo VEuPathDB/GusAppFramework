@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* rad3ver-constraints.sql                                                                    */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:09:43 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:50:09 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -33,6 +33,8 @@ SPOOL rad3ver-constraints.log
 /* ARRAYVER */
 
 /* ASSAYBIOMATERIALVER */
+
+/* ASSAYCONTROLVER */
 
 /* ASSAYLABELEDEXTRACTVER */
 

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* rad3-views.sql                                                                             */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:09:08 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:46:43 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -330,6 +330,13 @@ FROM ElementImp
 WHERE subclass_view = 'Element'
 WITH CHECK OPTION;
 
+/* WARNING - ELEMENTASSEMBLY_MV does not appear in core.TableInfo */
+
+CREATE VIEW @oracle_rad@.ELEMENTASSEMBLY_MV
+( ELEMENT_ID,
+  ASSEMBLY_NA_SEQUENCE_ID )
+AS select "ELEMENT_ID","ASSEMBLY_NA_SEQUENCE_ID" from rad3.elementassembly7;
+
 CREATE VIEW @oracle_rad@.ELEMENTRESULT
 AS SELECT
   element_result_id,
@@ -406,6 +413,8 @@ AS SELECT
   smallint1 AS num_foreground_pixels,
   smallint2 AS num_background_pixels,
   tinyint1 AS flag,
+  tinyint2 AS autoflag,
+  float14 AS  circularity,
   modification_date,
   user_read,
   user_write,
@@ -419,6 +428,45 @@ AS SELECT
   row_alg_invocation_id 
 FROM ElementResultImp
 WHERE subclass_view = 'GenePixElementResult' WITH CHECK OPTION;
+
+CREATE VIEW @oracle_rad@.GNFAFFYMETRIXRESULT
+( COMPOSITE_ELEMENT_RESULT_ID,
+  SUBCLASS_VIEW,
+  COMPOSITE_ELEMENT_ID,
+  QUANTIFICATION_ID,
+  SIGNAL,
+  DETECTION,
+  MODIFICATION_DATE,
+  USER_READ,
+  USER_WRITE,
+  GROUP_READ,
+  GROUP_WRITE,
+  OTHER_READ,
+  OTHER_WRITE,
+  ROW_USER_ID,
+  ROW_GROUP_ID,
+  ROW_PROJECT_ID,
+  ROW_ALG_INVOCATION_ID )
+AS select composite_element_result_id,
+        subclass_view,
+        composite_element_id,
+        quantification_id,
+  float1 AS signal,
+  char1 AS detection,
+        modification_date,
+        user_read,
+        user_write,
+        group_read,
+        group_write,
+        other_read,
+        other_write,
+        row_user_id,
+        row_group_id,
+        row_project_id,
+        row_alg_invocation_id
+from rad3.compositeElementResultImp
+where subclass_view like 'GNFAffymetrixResult'
+with check option;
 
 CREATE VIEW @oracle_rad@.HQSPECIFICITY
 AS SELECT
@@ -825,7 +873,7 @@ where subclass_view = 'SpotFamily'
 WITH CHECK OPTION;
 
 
-/* 29 view(s) */
+/* 31 view(s) */
 
 SPOOL OFF
 SET ECHO OFF

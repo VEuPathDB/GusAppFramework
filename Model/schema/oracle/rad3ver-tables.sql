@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* rad3ver-tables.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:09:11 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:49:32 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -27,7 +27,7 @@ CREATE TABLE @oracle_radver@.ACQUISITIONPARAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ACQUISITIONVER (
@@ -52,7 +52,7 @@ CREATE TABLE @oracle_radver@.ACQUISITIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ANALYSISINPUTVER (
@@ -73,7 +73,7 @@ CREATE TABLE @oracle_radver@.ANALYSISINPUTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ANALYSISPARAMVER (
@@ -95,7 +95,7 @@ CREATE TABLE @oracle_radver@.ANALYSISPARAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ANALYSISQCPARAMVER (
@@ -117,7 +117,7 @@ CREATE TABLE @oracle_radver@.ANALYSISQCPARAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ANALYSISRESULTIMPVER (
@@ -158,7 +158,7 @@ CREATE TABLE @oracle_radver@.ANALYSISRESULTIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ANALYSISVER (
@@ -180,7 +180,7 @@ CREATE TABLE @oracle_radver@.ANALYSISVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ARRAYANNOTATIONVER (
@@ -202,7 +202,7 @@ CREATE TABLE @oracle_radver@.ARRAYANNOTATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ARRAYGROUPLINKVER (
@@ -223,7 +223,7 @@ CREATE TABLE @oracle_radver@.ARRAYGROUPLINKVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ARRAYGROUPVER (
@@ -244,7 +244,7 @@ CREATE TABLE @oracle_radver@.ARRAYGROUPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ARRAYVER (
@@ -281,7 +281,7 @@ CREATE TABLE @oracle_radver@.ARRAYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ASSAYBIOMATERIALVER (
@@ -302,7 +302,32 @@ CREATE TABLE @oracle_radver@.ASSAYBIOMATERIALVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - ASSAYCONTROLVER does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_radver@.ASSAYCONTROLVER (
+    ASSAY_CONTROL_ID                   NUMBER(8)                                     NOT NULL,
+    ASSAY_ID                           NUMBER(8)                                     NOT NULL,
+    CONTROL_ID                         NUMBER(5)                                     NOT NULL,
+    VALUE                              VARCHAR2(255)                                 NULL,
+    UNIT_TYPE_OE_ID                    NUMBER(10)                                    NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL,
+    VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
+    VERSION_DATE                       DATE                                          NULL,
+    VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ASSAYLABELEDEXTRACTVER (
@@ -324,7 +349,7 @@ CREATE TABLE @oracle_radver@.ASSAYLABELEDEXTRACTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ASSAYPARAMVER (
@@ -346,7 +371,7 @@ CREATE TABLE @oracle_radver@.ASSAYPARAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ASSAYVER (
@@ -375,7 +400,7 @@ CREATE TABLE @oracle_radver@.ASSAYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.BIOMATERIALCHARACTERISTICVER (
@@ -397,7 +422,7 @@ CREATE TABLE @oracle_radver@.BIOMATERIALCHARACTERISTICVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.BIOMATERIALIMPVER (
@@ -425,7 +450,7 @@ CREATE TABLE @oracle_radver@.BIOMATERIALIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.BIOMATERIALMEASUREMENTVER (
@@ -448,7 +473,7 @@ CREATE TABLE @oracle_radver@.BIOMATERIALMEASUREMENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.CHANNELVER (
@@ -469,7 +494,7 @@ CREATE TABLE @oracle_radver@.CHANNELVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.COMPOSITEELEMENTANNOTATIONVER (
@@ -491,7 +516,7 @@ CREATE TABLE @oracle_radver@.COMPOSITEELEMENTANNOTATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.COMPOSITEELEMENTGUSVER (
@@ -513,7 +538,7 @@ CREATE TABLE @oracle_radver@.COMPOSITEELEMENTGUSVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.COMPOSITEELEMENTIMPVER (
@@ -548,7 +573,7 @@ CREATE TABLE @oracle_radver@.COMPOSITEELEMENTIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.COMPOSITEELEMENTRESULTIMPVER (
@@ -586,7 +611,7 @@ CREATE TABLE @oracle_radver@.COMPOSITEELEMENTRESULTIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.CONTROLVER (
@@ -611,7 +636,7 @@ CREATE TABLE @oracle_radver@.CONTROLVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ELEMENTANNOTATIONVER (
@@ -633,7 +658,7 @@ CREATE TABLE @oracle_radver@.ELEMENTANNOTATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ELEMENTIMPVER (
@@ -673,7 +698,7 @@ CREATE TABLE @oracle_radver@.ELEMENTIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ELEMENTRESULTIMPVER (
@@ -746,7 +771,7 @@ CREATE TABLE @oracle_radver@.ELEMENTRESULTIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.INTEGRITYSTATINPUTVER (
@@ -767,7 +792,7 @@ CREATE TABLE @oracle_radver@.INTEGRITYSTATINPUTVER (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.INTEGRITYSTATISTICVER (
@@ -786,7 +811,7 @@ CREATE TABLE @oracle_radver@.INTEGRITYSTATISTICVER (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.LABELMETHODVER (
@@ -809,7 +834,7 @@ CREATE TABLE @oracle_radver@.LABELMETHODVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.LOGICALGROUPLINKVER (
@@ -832,7 +857,7 @@ CREATE TABLE @oracle_radver@.LOGICALGROUPLINKVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.LOGICALGROUPVER (
@@ -854,7 +879,7 @@ CREATE TABLE @oracle_radver@.LOGICALGROUPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.MAGEDOCUMENTATIONVER (
@@ -877,7 +902,7 @@ CREATE TABLE @oracle_radver@.MAGEDOCUMENTATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.MAGE_MLVER (
@@ -898,7 +923,7 @@ CREATE TABLE @oracle_radver@.MAGE_MLVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.ONTOLOGYENTRYVER (
@@ -927,7 +952,7 @@ CREATE TABLE @oracle_radver@.ONTOLOGYENTRYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROCESSIMPLEMENTATIONPARAMVER (
@@ -949,7 +974,7 @@ CREATE TABLE @oracle_radver@.PROCESSIMPLEMENTATIONPARAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROCESSIMPLEMENTATIONVER (
@@ -970,7 +995,7 @@ CREATE TABLE @oracle_radver@.PROCESSIMPLEMENTATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROCESSINVOCATIONPARAMVER (
@@ -992,7 +1017,7 @@ CREATE TABLE @oracle_radver@.PROCESSINVOCATIONPARAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROCESSINVOCATIONVER (
@@ -1014,7 +1039,7 @@ CREATE TABLE @oracle_radver@.PROCESSINVOCATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROCESSINVQUANTIFICATIONVER (
@@ -1035,7 +1060,7 @@ CREATE TABLE @oracle_radver@.PROCESSINVQUANTIFICATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROCESSIOELEMENTVER (
@@ -1056,7 +1081,7 @@ CREATE TABLE @oracle_radver@.PROCESSIOELEMENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROCESSIOVER (
@@ -1080,7 +1105,7 @@ CREATE TABLE @oracle_radver@.PROCESSIOVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROCESSRESULTVER (
@@ -1101,7 +1126,7 @@ CREATE TABLE @oracle_radver@.PROCESSRESULTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROJECTLINKVER (
@@ -1124,7 +1149,7 @@ CREATE TABLE @oracle_radver@.PROJECTLINKVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROTOCOLPARAMVER (
@@ -1148,7 +1173,7 @@ CREATE TABLE @oracle_radver@.PROTOCOLPARAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROTOCOLQCPARAMVER (
@@ -1172,7 +1197,7 @@ CREATE TABLE @oracle_radver@.PROTOCOLQCPARAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.PROTOCOLVER (
@@ -1200,7 +1225,7 @@ CREATE TABLE @oracle_radver@.PROTOCOLVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.QUANTIFICATIONPARAMVER (
@@ -1222,7 +1247,7 @@ CREATE TABLE @oracle_radver@.QUANTIFICATIONPARAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.QUANTIFICATIONVER (
@@ -1248,7 +1273,7 @@ CREATE TABLE @oracle_radver@.QUANTIFICATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.RELATEDACQUISITIONVER (
@@ -1272,7 +1297,7 @@ CREATE TABLE @oracle_radver@.RELATEDACQUISITIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.RELATEDQUANTIFICATIONVER (
@@ -1296,7 +1321,7 @@ CREATE TABLE @oracle_radver@.RELATEDQUANTIFICATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.STUDYASSAYVER (
@@ -1317,7 +1342,7 @@ CREATE TABLE @oracle_radver@.STUDYASSAYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.STUDYBIOMATERIALVER (
@@ -1338,7 +1363,7 @@ CREATE TABLE @oracle_radver@.STUDYBIOMATERIALVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.STUDYDESIGNASSAYVER (
@@ -1359,7 +1384,7 @@ CREATE TABLE @oracle_radver@.STUDYDESIGNASSAYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.STUDYDESIGNDESCRIPTIONVER (
@@ -1381,7 +1406,7 @@ CREATE TABLE @oracle_radver@.STUDYDESIGNDESCRIPTIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.STUDYDESIGNTYPEVER (
@@ -1402,7 +1427,7 @@ CREATE TABLE @oracle_radver@.STUDYDESIGNTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.STUDYDESIGNVER (
@@ -1423,7 +1448,7 @@ CREATE TABLE @oracle_radver@.STUDYDESIGNVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.STUDYFACTORVALUEVER (
@@ -1446,7 +1471,7 @@ CREATE TABLE @oracle_radver@.STUDYFACTORVALUEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.STUDYFACTORVER (
@@ -1469,7 +1494,7 @@ CREATE TABLE @oracle_radver@.STUDYFACTORVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.STUDYVER (
@@ -1494,7 +1519,7 @@ CREATE TABLE @oracle_radver@.STUDYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.TREATMENTPARAMVER (
@@ -1516,7 +1541,7 @@ CREATE TABLE @oracle_radver@.TREATMENTPARAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_radver@.TREATMENTVER (
@@ -1540,11 +1565,11 @@ CREATE TABLE @oracle_radver@.TREATMENTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_rad3verTablespace@
+ TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
-/* 62 table(s) */
+/* 63 table(s) */
 
 SPOOL OFF
 SET ECHO OFF
