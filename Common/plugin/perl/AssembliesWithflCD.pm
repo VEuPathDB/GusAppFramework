@@ -163,7 +163,6 @@ push (@diffArray, $id);  }
 
 
 #figure out which DTs are not present in both arrays
- }
 
 
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
@@ -235,9 +234,11 @@ push (@diffArray, $id);  }
       $self->undefPointerCache();
 
 
-        }
+}
 
-     }
+
+}
+
 
 #use RefSeq source_id as evidence for marking assembly as full length CDS containing
 
