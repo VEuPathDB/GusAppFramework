@@ -141,8 +141,8 @@ sub Run {
 		die "*******************************************\nI need the GenBank release number. See --help option\n*******************************************";
 	}
 
-	print $ctx->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
-  print "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{'testnumber'};
+	print $ctx->{ cla }->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
+  print "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{ cla }->{'testnumber'};
 
 	$ctx->{self_inv}->getDatabase()->setExitOnSQLFailure(0);      #added by DP 2/14/02
 	
@@ -359,9 +359,9 @@ sub buildKeyword {
 	
 	foreach my $k (@$A){
 		my $kid = &getKeywordId($k);
-		my $nk = GUS::Model::DoTS:NASequenceKeyword->new({'keyword_id' => $kid});
+		my $nk = GUS::Model::DoTS::NASequenceKeyword->new({'keyword_id' => $kid});
 		$nk->retrieveFromDB();
-		my $ek = GUS::Model::SRes:ExternalDatabaseKeyword->new({'keyword_id' => $kid, 'external_database_release_id' => $ctx->{ cla }->{db_rel_id}});
+		my $ek = GUS::Model::SRes::ExternalDatabaseKeyword->new({'keyword_id' => $kid, 'external_database_release_id' => $ctx->{ cla }->{db_rel_id}});
 		if (!$ek->retrieveFromDB()) {
 			$nk->addToSubmitList($ek);
 		}
@@ -1015,7 +1015,7 @@ sub getSequenceTypeId #this is on-demand caching
   my $name = shift;
   my $sequence_type_id;
   if (!exists $SequenceTypeHash{"$name"}) {
-    my $sequenceTypeRow = GUS::Model::DoTS:SequenceType->new({"name" => $name});
+    my $sequenceTypeRow = GUS::Model::DoTS::SequenceType->new({"name" => $name});
     if ($sequenceTypeRow->retrieveFromDB()){
       $sequence_type_id= $sequenceTypeRow->getId();
       $SequenceTypeHash{"$name"} = $sequence_type_id;
@@ -1097,9 +1097,9 @@ sub getMatch {
 		@diffs = $dbo->getAttributeDifferences($o);
 		$vals = $o->getAttributes();
 		
-		print "DIFFS:" . (scalar @diffs) . " VALS:" . (scalar keys %$vals) . "\n" if ($ctx->{verbose}); 
+		print "DIFFS:" . (scalar @diffs) . " VALS:" . (scalar keys %$vals) . "\n" if ($ctx->{ cla }->{verbose}); 
 		if((scalar @diffs) == 0 && (scalar keys %$vals) > 0) {
- 			if($ctx->{verbose}){
+ 			if($ctx->{ cla }->{verbose}){
 				print "DB = " . $dbo->toXML();
 				print "NEW = " . $o->toXML() . "\n"; 
 			}
