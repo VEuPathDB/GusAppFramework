@@ -1183,7 +1183,7 @@ sub getProperChildList {
      'GUS::Model::DoTS::DNARegulatory' => ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::DbRefNAFeature'],
      'GUS::Model::DoTS::DNAStructure' => ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::DbRefNAFeature'],
      'GUS::Model::DoTS::STS' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::DbRefNAFeature'],
-     'GUS::Model::DoTS::GeneFeature' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
+     'GUS::Model::DoTS::GeneFeature' =>  ['GUS::Model::DoTS::NAFeatureNAGene','GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
      'GUS::Model::DoTS::RNAType' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
      'GUS::Model::DoTS::Repeats' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::DbRefNAFeature'],
      'GUS::Model::DoTS::Miscellaneous' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene','GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
