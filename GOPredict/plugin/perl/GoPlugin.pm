@@ -229,13 +229,13 @@ sub new {
 
      booleanArg({ name => 'create_new_translations_file',
 		  reqd => 0,
-		  descr => 'set this flag to have the Database Adapter write a new result set of the Assembly-Protein translations to a file; used in conjunction with --translations_file_path',
+		  descr => 'set this flag to have the Database Adapter write a new result set of the Assembly-Protein translations to a file; used in conjunction with --translations_file',
 		  constraintFunc => undef,
 	      }),
      
      booleanArg({ name => 'create_new_similarities_file',
 		  reqd => 0,
-		  descr => 'set this flag to have the Database Adapter write a new result set of the Assembly-Motif similarities to a file; used in conjunction with --similarities_file_path',
+		  descr => 'set this flag to have the Database Adapter write a new result set of the Assembly-Motif similarities to a file; used in conjunction with --similarities_file',
 		  constraintFunc => undef,
 	      }),
      
@@ -308,7 +308,7 @@ sub new {
     $databaseAdapter->setTestProteinIds($testProteinIds) if $testProteinIds;
     $self->log("initializing translations");
     $databaseAdapter->initializeTranslations($self->getCla()->{query_taxon_id}, 
-					     $self->getCla()->{translations_file_path}, 
+					     $self->getCla()->{translations_file}, 
 					     $self->getCla()->{create_new_translations_file}) if $self->getCla->{apply_rules};
 
     
@@ -346,7 +346,7 @@ sub new {
 	    my $cla = $self->_makeClaHashForRules();
 
 	    my $proteinsAffected = $goManager->applyRules($newGoVersion, $cla, $doNotScrub, 
-							  $self->getCla()->{similarities_file_path},
+							  $self->getCla()->{similarities_file},
 							  $self->getCla()->{create_new_similarities_file},
 							  $self->getCla()->{skip_protein_raid_list},
 							  $self->getCla()->{test_number}, $validate); 
@@ -420,12 +420,12 @@ sub _validateCla{
 	$self->userError("If --do_not_delete_instances is set, --do_not_recache_instances must also be set in order to avoid making duplicate instances");
     }
         
-    if ($self->getCla()->{create_new_translations_file} && !$self->getCla()->{translations_file_path}){
-	$self->userError("Please set --translations_file_path when creating a new file to store translations in");
+    if ($self->getCla()->{create_new_translations_file} && !$self->getCla()->{translations_file}){
+	$self->userError("Please set --translations_file when creating a new file to store translations in");
     }
 
-    if ($self->getCla()->{create_new_similarities_file} && !$self->getCla()->{similarities_file_path}){
-	$self->userError("Please set --similarities_file_path when creating a new file to store similarities in");
+    if ($self->getCla()->{create_new_similarities_file} && !$self->getCla()->{similarities_file}){
+	$self->userError("Please set --similarities_file when creating a new file to store similarities in");
     }
 
     if ($self->getCla()->{evolve_go_hierarchy} && !$self->getCla()->{old_go_release_id}){
