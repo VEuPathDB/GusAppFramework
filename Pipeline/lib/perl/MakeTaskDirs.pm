@@ -70,7 +70,7 @@ sub makeMatrixDir {
     my $localBase = "$localPath/$pipelineName/matrix/$queryName-$subjectName";
     my $serverBase = "$serverPath/$pipelineName/matrix/$queryName-$subjectName"; 
     my $inputDir = "$localBase/input";
-s    &runCmd("mkdir -p $inputDir");
+    &runCmd("mkdir -p $inputDir");
     &makeControllerPropFile($inputDir, $serverBase, 2, $taskSize, 
 			    $nodePath, 
 			    "DJob::DistribJobTasks::BlastMatrixTask");
