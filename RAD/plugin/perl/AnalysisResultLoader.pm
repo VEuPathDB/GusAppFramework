@@ -520,7 +520,7 @@ sub readDataFile {
   while ($line=<$fh>) {
     $line_num++;
     if ($line_num % 200 == 0) {
-      $self->log("Reading line $line_num in the data file, after the header .");
+      $self->log("Reading line $line_num in the data file, after the header.");
     }
     if ($line =~ /^\s*$/) {
       next;
