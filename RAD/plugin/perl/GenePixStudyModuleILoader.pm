@@ -168,7 +168,8 @@ my @properties =
     ["arrayId", "",""],
     ["batchId", "",""],
     ["hybDates", "",""],
-    ["description", "",""]
+    ["description", "",""],
+    ["scanDate", "",""]
  ); 
 
 ###############################
@@ -206,23 +207,25 @@ sub createGUSAssaysFromFiles {
 
   $self->log("STATUS","Skipping assay/s @skipAssayList") if (scalar @skipAssayList > 0);
 
-  # get hyb dates
-  my $hybDateHash;
+  # ------------------- get hyb dates ---------------------------------------#
+
+  my $hybDateHashRef;
   my @hybDates = split /\;/,$self->{propertySet}->getProp("hybDates");
 
   foreach my $hybDate (@hybDates) {
-    $hybDate =~ /(.+)\|(.+)/;
-    print "hybdates: $1,$2\n";
-
+    #split /\|/;
+    #print "hybdates: $1,$2 \n";
+    my ($assayName,$date) = split /\|/,$hybDate;
+    print "hybdates: $assayName,$date \n";
+    $hybDateHashRef->{$assayName} = $date;
   }
 
-
-
+  # ------------------- get hyb dates ---------------------------------------#
 
   foreach my $assayName (@$assayNames) {
     next if (($assayCnt > ($testNumber - 1)) && (defined $testNumber));
     next if (grep { $assayName =~ /^$_/ } @skipAssayList);
-    my $gusAssay = $self->createSingleGUSAssay($assayName);
+    my $gusAssay = $self->createSingleGUSAssay($assayName, $hybDateHashRef);
     push(@gusAssays, $gusAssay);
     $assayCnt++;
   }
@@ -268,7 +271,7 @@ sub findAssayNames {
 ###############################
 
 sub createSingleGUSAssay {
-  my ($self, $assayName) = @_;
+  my ($self, $assayName, $hybDateHashRef) = @_;
 
   $self->log("STATUS","----- Assay $assayName -----");
 
@@ -284,7 +287,16 @@ sub createSingleGUSAssay {
     print "$assayName: $some, $value \n";
   }
 
-  my $gusAssay = $self->createGusAssay($assayName, $GPRinfo);
+  my $gusAssay = $self->createGusAssay($assayName, $GPRinfo, $hybDateHashRef);
+
+
+  my $gusCy5Acquisition = $self->createGusCy5Acquisition($assayName);
+  print "gusCy5Acquisition $gusCy5Acquisition \n";
+  $gusCy5Acquisition->setParent($gusAssay);
+
+  my $gusCy3Acquisition = $self->createGusCy5Acquisition($assayName);
+  print "gusCy5Acquisition $gusCy3Acquisition \n";
+  $gusCy3Acquisition->setParent($gusAssay);
 
 
 }
@@ -350,8 +362,7 @@ sub parseTabFile {
 ###############################
 
 sub createGusAssay {
-  my ($self, $assayName, $GPRinfo) = @_;
-
+  my ($self, $assayName, $GPRinfo, $hybDateHashRef) = @_;
 
 
   #my $hybDate = $GPRinfo->{"DateTime"}; # hyb date comes from config file (see notes)
@@ -362,15 +373,17 @@ sub createGusAssay {
   my $batchId = $self->{propertySet}->getProp("batchId");
   my $description = $self->{propertySet}->getProp("description");
 
-
   my $hybProtocolId = $self->{propertySet}->getProp("Hyb_Protocol_ID");
   my $hybOperatorId = $self->{propertySet}->getProp("Hyb_Operator_ID");
 
+  my $hybDate = $hybDateHashRef->{$assayName};
 
-  print "params: $arrayId, $batchId, $description, $hybProtocolId, $hybOperatorId\n";
+
+  print "params: $arrayId, $batchId, $hybDate, $description, $hybProtocolId, $hybOperatorId\n";
 
   my $params = {
     array_id => $arrayId,
+    assay_id => $hybDate,
     protocol_id => $hybProtocolId,
     operator_id => $hybOperatorId,
     name => $assayName,
@@ -378,7 +391,81 @@ sub createGusAssay {
     description => $description
   };
 
+  my $assay = GUS::Model::RAD3::Assay->new($params);
+
+  $self->log("STATUS","OK Inserted 1 row in table RAD3.Assay for assay $assayName");
+  return $assay;
 
 }
 
+
 # gusAssayParams (or hyb params) are to be input via the Study Annotator website
+
+
+sub createGusCy5Acquisition {
+  my ($self, $assayName) = @_;
+
+  my $datURI =          $self->{propertySet}->getProp("DATFilePath")."/$assayName".".DAT";
+  my $acqProtocolId =   $self->{propertySet}->getProp("Acq_Protocol_ID");
+  my $acqDate =        $self->{propertySet}->getProp("scanDate");
+
+  my $protocol = GUS::Model::RAD3::Protocol->new({
+    protocol_id => $acqProtocolId
+  });
+
+  $self->error("Create object failed, protocol ID $acqProtocolId absent in table RAD3::Protocol")
+    unless ($protocol->retrieveFromDB);
+
+  my $tempAcqName = $protocol->getName();
+  my $acqName = "Cy5 $assayName".$protocol;
+
+  my $acqParameters = {
+    name => $acqName,
+    acquisition_date => $acqDate,
+    protocol_id => $acqProtocolId,
+    channel_id => 3,
+    uri => $datURI
+  };
+
+
+  my $Cy5Acquisition = GUS::Model::RAD3::Acquisition->new($acqParameters);
+
+  $self->log("STATUS","OK Inserted 1 row in table RAD3.Acquisition for assay $assayName channel Cy5");
+  return $Cy5Acquisition;
+}
+
+sub createGusCy3Acquisition {
+  my ($self, $assayName) = @_;
+
+  my $datURI =          $self->{propertySet}->getProp("DATFilePath")."/$assayName".".DAT";
+  my $acqProtocolId =   $self->{propertySet}->getProp("Acq_Protocol_ID");
+  my $acqDate =        $self->{propertySet}->getProp("scanDate");
+
+  my $protocol = GUS::Model::RAD3::Protocol->new({
+    protocol_id => $acqProtocolId
+  });
+
+  $self->error("Create object failed, protocol ID $acqProtocolId absent in table RAD3::Protocol")
+    unless ($protocol->retrieveFromDB);
+
+  my $tempAcqName = $protocol->getName();
+  my $acqName = "Cy3 $assayName".$protocol;
+
+  my $acqParameters = {
+    name => $acqName,
+    acquisition_date => $acqDate,
+    protocol_id => $acqProtocolId,
+    channel_id => 4,
+    uri => $datURI
+  };
+
+
+  my $Cy3Acquisition = GUS::Model::RAD3::Acquisition->new($acqParameters);
+
+  $self->log("STATUS","OK Inserted 1 row in table RAD3.Acquisition for assay $assayName channel Cy5");
+  return $Cy3Acquisition;
+}
+
+# acquistionParams are to be input via the Study Annotator website
+
+
