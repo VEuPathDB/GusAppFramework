@@ -483,12 +483,14 @@ sub getInsertSpanStmt {
   my $rowGroupId = $self->getAlgInvocation()->getRowGroupId();
   my $rowProjectId = $self->getAlgInvocation()->getRowProjectId();
 
-  my $nextvalSql = $db->getDbPlatform()->nextVal("dots.SimilaritySpan");
+
+  my $nextVal = $db->getDbPlatform()->nextVal("dots.SimilaritySpan");
+
 
   my $sql = 
 "insert into dots.SimilaritySpan Values " .
 #similarity_span_id, similarity_id, match_length, number_identical,
-"($nextvalSql,                  ?,             ?,            ?, ".
+"($nextVal,                  ?,             ?,            ?, ".
 #number_positive, score, bit_score, pvalue_mant, pvalue_exp,
 "?,               ?,     ?,         ?,           ?,".
 #subject_start, subject_end, query_start, query_end,
