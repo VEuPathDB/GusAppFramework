@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-views.sql                                                                             */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Fri Feb 21 01:48:41 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:11:58 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -221,6 +221,40 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id 
 FROM AASequenceGroupImp
+WITH CHECK OPTION;
+
+CREATE VIEW @oracle_dots@.AASEQVARIATION
+AS SELECT
+  aa_feature_id,
+  aa_sequence_id,
+  na_feature_id,
+  subclass_view,
+  sequence_ontology_id,
+  tinyint1 AS is_synonymous,
+  tinyint2 AS is_stop,
+  string1 AS original,
+  string2 AS substitute,
+  string3 AS species,
+  string4 AS strain,
+  int1 AS genomic_locn,
+  string5 AS na_original,
+  string6 AS na_substitute,
+  external_database_release_id,
+  is_predicted,
+  review_status_id
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+FROM DoTS.AAFeatureImp
+WHERE subclass_view = 'AASeqVariation'
 WITH CHECK OPTION;
 
 CREATE VIEW @oracle_dots@.ALLELEFEATURE
@@ -479,6 +513,36 @@ AS SELECT
  FROM AAFeatureImp
  WHERE subclass_view = 'DomainFeature'
  WITH CHECK OPTION;
+
+CREATE VIEW @oracle_dots@.EPITOPEFEATURE
+AS SELECT
+  aa_feature_id,
+  aa_sequence_id,
+  subclass_view,
+  sequence_ontology_id,
+  prediction_algorithm_id,
+  external_database_release_id,
+  is_predicted,
+  review_status_id,
+  string1 AS haplotype,
+  string2 AS type,
+  float1 AS score,
+  float2 AS max_score,
+  int1 AS width,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+FROM AAFeatureImp
+WHERE subclass_view = 'EpitopeFeature'
+WITH CHECK OPTION;
 
 CREATE VIEW @oracle_dots@.EXONFEATURE
 AS SELECT
@@ -847,6 +911,80 @@ FROM NAFeatureImp
 WHERE subclass_view = 'IntronFeature'
 WITH CHECK OPTION;
 
+CREATE VIEW @oracle_dots@.LOWCOMPLEXITYAAFEATURE
+AS SELECT
+  aa_feature_id,
+  aa_sequence_id,
+  subclass_view,
+  sequence_ontology_id,
+  prediction_algorithm_id,
+  is_predicted,
+  review_status_id,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+FROM DoTS.AAFeatureImp
+WHERE subclass_view = 'LowComplexityAAFeature'
+WITH CHECK OPTION;
+
+CREATE VIEW @oracle_dots@.LOWCOMPLEXITYNAFEATURE
+AS SELECT
+  na_feature_id,
+  na_sequence_id,
+  subclass_view,
+  sequence_ontology_id,
+  name,
+  prediction_algorithm_id,
+  int1 AS length,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+FROM DoTS.NAFeatureImp
+WHERE subclass_view = 'LowComplexityNAFeature'
+WITH CHECK OPTION;
+
+CREATE VIEW @oracle_dots@.MASSSPECFEATURE
+AS SELECT
+  aa_feature_id,
+  aa_sequence_id,
+  subclass_view,
+  sequence_ontology_id,
+  prediction_algorithm_id,
+  external_database_release_id,
+  is_predicted,
+  review_status_id,
+  string1 AS developmental_stage,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+FROM AAFeatureImp
+WHERE subclass_view = 'MassSpecFeature'
+WITH CHECK OPTION;
+
 CREATE VIEW @oracle_dots@.MISCELLANEOUS
 AS SELECT
   na_feature_id,
@@ -1086,6 +1224,55 @@ AS SELECT
  FROM SequenceGroupImp
  WHERE subclass_view = 'OutParalogGroup'
  WITH CHECK OPTION;
+
+CREATE VIEW @oracle_dots@.PLASMOAPFEATURE
+AS SELECT
+  aa_feature_id,
+  aa_sequence_id,
+  subclass_view,
+  sequence_ontology_id,
+  string1 AS name,
+  description,
+  prediction_algorithm_id,
+  string2 AS algorithm_name,
+  float1 AS cutoff_criterion_B,
+  float2 AS result_criterion_B,
+  float3 AS cutoff_criterion_C,
+  float4 AS result_criterion_C,
+  float5 AS cutoff_criterion_D,
+  float6 AS result_criterion_D,
+  tinyint1 AS decision_criterion_A,
+  tinyint2 AS decision_criterion_B,
+  tinyint3 AS decision_criterion_C,
+  tinyint4 AS decision_criterion_D,
+  tinyint5 AS decision_targeting,
+  int1 AS length_criterion_A,
+  int2 AS cutoff_criterion_A,
+  int3 AS result_criterion_A,
+  int4 AS length_criterion_B,
+  int5 AS length_criterion_C,
+  int6 AS length_criterion_D,
+  int7 AS maxGap,
+  int8 AS minimumKN,
+  string3 AS other_criteria,
+  is_predicted,
+  review_status_id,
+  external_database_release_id,
+  source_id,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+FROM DoTS.AAFeatureImp
+WHERE subclass_view = 'PlasmoAPFeature'
+WITH CHECK OPTION;
 
 CREATE VIEW @oracle_dots@.POLYAFEATURE
 AS SELECT
@@ -1555,6 +1742,33 @@ FROM NAFeatureImp
 WHERE subclass_view = 'SAGETagFeature'
 WITH CHECK OPTION;
 
+CREATE VIEW @oracle_dots@.SCAFFOLDGAPFEATURE
+AS SELECT
+  na_feature_id,
+  na_sequence_id,
+  subclass_view,
+  sequence_ontology_id,
+  name,
+  external_database_release_id,
+  int1 AS min_size,
+  int2 AS max_size,
+  string2 AS left_contig,
+  string3 AS right_contig,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+FROM DoTS.NAFeatureImp
+WHERE subclass_view = 'ScaffoldGapFeature'
+WITH CHECK OPTION;
+
 CREATE VIEW @oracle_dots@.SECONDARYSTRUCTUREAAFEATURE
 AS SELECT
   aa_feature_id,
@@ -1701,6 +1915,8 @@ AS SELECT
   float4 AS MEANS_SCORE,
   tinyint4 AS MEANS_CONCLUSION,
   int1 AS NUM_POSITIVES,
+  float5 AS signal_probability,
+  float6 AS anchor_probability,
   is_predicted,
   review_status_id,
   external_database_release_id,
@@ -1716,7 +1932,7 @@ AS SELECT
   row_group_id,
   row_project_id,
   row_alg_invocation_id 
- FROM AAFeatureImp
+ FROM DoTS.AAFeatureImp
  WHERE subclass_view = 'SignalPeptideFeature'
  WITH CHECK OPTION;
 
@@ -2177,7 +2393,7 @@ AS SELECT
  WITH CHECK OPTION;
 
 
-/* 68 view(s) */
+/* 75 view(s) */
 
 SPOOL OFF
 SET ECHO OFF

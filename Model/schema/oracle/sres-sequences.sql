@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* sres-sequences.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:01 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:09:43 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -20,6 +20,8 @@ CREATE SEQUENCE @oracle_sres@.CONTACT_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.DBREF_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.DEVELOPMENTALSTAGE_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.DISEASE_SQ START WITH 1;
+CREATE SEQUENCE @oracle_sres@.ECPATHWAYENZYMECLASS_SQ START WITH 1;
+CREATE SEQUENCE @oracle_sres@.ECPATHWAY_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.ENZYMECLASSATTRIBUTE_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.ENZYMECLASS_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.EXTERNALDATABASEENTRY_SQ START WITH 1;
@@ -38,6 +40,7 @@ CREATE SEQUENCE @oracle_sres@.MGEDONTOLOGYRELATIONSHIP_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.MGEDONTOLOGYTERM_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.MUTAGEN_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.ONTOLOGYRELATIONSHIPTYPE_SQ START WITH 1;
+CREATE SEQUENCE @oracle_sres@.ONTOLOGYTERMTYPE_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.PATOATTRIBUTE_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.PHENOTYPECLASS_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.PHENOTYPE_SQ START WITH 1;
@@ -48,7 +51,7 @@ CREATE SEQUENCE @oracle_sres@.SEQUENCEREFERENCE_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.TAXONNAME_SQ START WITH 1;
 CREATE SEQUENCE @oracle_sres@.TAXON_SQ START WITH 1;
 
-/* 39 sequences(s) */
+/* 42 sequences(s) */
 
 SPOOL OFF
 SET ECHO OFF

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* sres-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 22:47:14 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:10:04 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -42,6 +42,8 @@ create index @oracle_sres@.CONTACT_IND02 on @oracle_sres@.CONTACT (EXTERNAL_DATA
 
 /* DBREF */
 create index @oracle_sres@.DBREF_IND01 on @oracle_sres@.DBREF (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.DBREF_IND02 on @oracle_sres@.DBREF (EXTERNAL_DATABASE_RELEASE_ID,PRIMARY_IDENTIFIER)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.DBREF_IND03 on @oracle_sres@.DBREF (EXTERNAL_DATABASE_RELEASE_ID,LOWERCASE_PRIMARY_IDENTIFIER)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* DEVELOPMENTALSTAGE */
 create index @oracle_sres@.DEVELOPMENTALSTAGE_IND01 on @oracle_sres@.DEVELOPMENTALSTAGE (PARENT_ID)  TABLESPACE @oracle_sresIndexTablespace@;
@@ -49,6 +51,13 @@ create index @oracle_sres@.DEVELOPMENTALSTAGE_IND02 on @oracle_sres@.DEVELOPMENT
 
 /* DISEASE */
 create index @oracle_sres@.DISEASE_IND01 on @oracle_sres@.DISEASE (PARENT_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+
+/* ECPATHWAY */
+create index @oracle_sres@.ECPATHWAY_IND_EXTDB on @oracle_sres@.ECPATHWAY (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+
+/* ECPATHWAYENZYMECLASS */
+create index @oracle_sres@.ECPATHWAYENZYMECLASS_IND_EC on @oracle_sres@.ECPATHWAYENZYMECLASS (ENZYME_CLASS_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.ECPATHWAYENZYMECLASS_IND_EP on @oracle_sres@.ECPATHWAYENZYMECLASS (EC_PATHWAY_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* ENZYMECLASS */
 create index @oracle_sres@.ENZYMECLASS_IND01 on @oracle_sres@.ENZYMECLASS (PARENT_ID)  TABLESPACE @oracle_sresIndexTablespace@;
@@ -101,17 +110,22 @@ create index @oracle_sres@.GOTERM_IND02 on @oracle_sres@.GOTERM (ANCESTOR_GO_TER
 
 
 /* MGEDONTOLOGYRELATIONSHIP */
-create index @oracle_sres@.MGEDONTOLOGYRELATIONSHIP_IND01 on @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (CHILD_TERM_ID)  TABLESPACE @oracle_sresIndexTablespace@;
-create index @oracle_sres@.MGEDONTOLOGYRELATIONSHIP_IND02 on @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (PARENT_TERM_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 create index @oracle_sres@.MGEDONTOLOGYRELATIONSHIP_IND03 on @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (ONTOLOGY_RELATIONSHIP_TYPE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.MGEDONTOLOGYRELATIONSHIP_IND01 on @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (OBJECT_TERM_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.MGEDONTOLOGYRELATIONSHIP_IND02 on @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (SUBJECT_TERM_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.MGEDONTOLOGYRELATIONSHIP_IND04 on @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (PREDICATE_TERM_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* MGEDONTOLOGYTERM */
 create index @oracle_sres@.MGEDONTOLOGYTERM_IND01 on @oracle_sres@.MGEDONTOLOGYTERM (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.MGEDONTOLOGYTERM_IND02 on @oracle_sres@.MGEDONTOLOGYTERM (ONTOLOGY_TERM_TYPE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* MUTAGEN */
 
 
 /* ONTOLOGYRELATIONSHIPTYPE */
+
+
+/* ONTOLOGYTERMTYPE */
 
 
 /* PATOATTRIBUTE */
@@ -152,7 +166,7 @@ create index @oracle_sres@.TAXONNAME_IND04 on @oracle_sres@.TAXONNAME (NAME_CLAS
 
 
 
-/* 52 index(es) */
+/* 59 index(es) */
 
 SPOOL OFF
 SET ECHO OFF

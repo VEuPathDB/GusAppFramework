@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* rad3-views.sql                                                                             */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 14:28:39 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:09:08 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL rad3-views.log
 
-CREATE VIEW @oracle_rad3@.AFFYMETRIXCEL
+CREATE VIEW @oracle_rad@.AFFYMETRIXCEL
 AS SELECT
   element_result_id,
   element_id,
@@ -33,7 +33,7 @@ FROM ElementResultImp
 WHERE subclass_view = 'AffymetrixCEL'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.AFFYMETRIXMAS4
+CREATE VIEW @oracle_rad@.AFFYMETRIXMAS4
 AS SELECT
   composite_element_result_id,
   composite_element_id,
@@ -61,7 +61,7 @@ FROM CompositeElementResultImp
 WHERE subclass_view = 'AffymetrixMAS4'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.AFFYMETRIXMAS5
+CREATE VIEW @oracle_rad@.AFFYMETRIXMAS5
 AS SELECT
   composite_element_result_id,
   subclass_view,
@@ -87,7 +87,74 @@ FROM CompositeElementResultImp
 WHERE SUBCLASS_VIEW = 'AffymetrixMAS5'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.ARRAYVISIONELEMENTRESULT
+CREATE VIEW @oracle_rad@.ANALYSISRESULT
+( ANALYSIS_RESULT_ID,
+  SUBCLASS_VIEW,
+  ANALYSIS_ID,
+  TABLE_ID,
+  ROW_ID,
+  MODIFICATION_DATE,
+  USER_READ,
+  USER_WRITE,
+  GROUP_READ,
+  GROUP_WRITE,
+  OTHER_READ,
+  OTHER_WRITE,
+  ROW_USER_ID,
+  ROW_GROUP_ID,
+  ROW_PROJECT_ID,
+  ROW_ALG_INVOCATION_ID )
+AS (
+select ANALYSIS_RESULT_ID,
+  SUBCLASS_VIEW,
+  ANALYSIS_ID,
+  table_id,
+  row_id,
+	MODIFICATION_DATE,
+	USER_READ ,
+	USER_WRITE  ,
+	GROUP_READ  ,
+	GROUP_WRITE ,
+	OTHER_READ  ,
+	OTHER_WRITE ,
+	ROW_USER_ID ,
+	ROW_GROUP_ID,
+	ROW_PROJECT_ID,
+	ROW_ALG_INVOCATION_ID
+from RAD3.ANALYSISRESULTIMP
+);
+
+CREATE VIEW @oracle_rad@.ARRAYSTATTWOCONDITIONS
+AS SELECT
+  analysis_result_id,
+  subclass_view,
+  analysis_id,
+  table_id,
+  row_id,
+  float1 AS mean_1,
+  float2 AS sd_1,
+  int1 AS n_1,
+  float3 AS mean_2,
+  float4 AS sd_2,
+  int2 AS n_2,
+  float5 AS p_value,
+  tinystring1 AS significance,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+FROM AnalysisResultImp
+WHERE subclass_view = 'ArrayStatTwoConditions'
+WITH CHECK OPTION;
+
+CREATE VIEW @oracle_rad@.ARRAYVISIONELEMENTRESULT
 AS SELECT
   element_result_id,
   subclass_view,
@@ -124,7 +191,7 @@ FROM ElementResultImp
 WHERE subclass_view = 'ArrayVisionElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.BIOMATERIAL
+CREATE VIEW @oracle_rad@.BIOMATERIAL
 AS SELECT
   bio_material_id,
   subclass_view,
@@ -146,7 +213,7 @@ FROM BioMaterialImp
 WHERE subclass_view = 'BioMaterial'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.BIOSAMPLE
+CREATE VIEW @oracle_rad@.BIOSAMPLE
 AS SELECT
   bio_material_id,
   subclass_view,
@@ -170,27 +237,7 @@ FROM BioMaterialImp
 WHERE subclass_view = 'BioSample'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.BIOSOURCE
-( BIO_MATERIAL_ID,
-  SUBCLASS_VIEW,
-  TAXON_ID,
-  BIO_MATERIAL_TYPE_ID,
-  BIO_SOURCE_PROVIDER_ID,
-  EXTERNAL_DATABASE_RELEASE_ID,
-  SOURCE_ID,
-  NAME,
-  DESCRIPTION,
-  MODIFICATION_DATE,
-  USER_READ,
-  USER_WRITE,
-  GROUP_READ,
-  GROUP_WRITE,
-  OTHER_READ,
-  OTHER_WRITE,
-  ROW_USER_ID,
-  ROW_GROUP_ID,
-  ROW_PROJECT_ID,
-  ROW_ALG_INVOCATION_ID )
+CREATE VIEW @oracle_rad@.BIOSOURCE
 AS SELECT
   bio_material_id,
   subclass_view,
@@ -211,13 +258,11 @@ AS SELECT
   row_user_id,
   row_group_id,
   row_project_id,
-  row_alg_invocation_id
+  row_alg_invocation_id 
 FROM BioMaterialImp
-WHERE bio_source_provider_id is not null
-AND subclass_view='BioSource'
-WITH CHECK OPTION;
+where subclass_view='BioSource' WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.COMPOSITEELEMENT
+CREATE VIEW @oracle_rad@.COMPOSITEELEMENT
 AS SELECT
   composite_element_id,
   subclass_view,
@@ -240,7 +285,7 @@ FROM CompositeElementImp
 WHERE subclass_view = 'CompositeElement'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.COMPOSITEELEMENTRESULT
+CREATE VIEW @oracle_rad@.COMPOSITEELEMENTRESULT
 AS SELECT
   composite_element_result_id,
   subclass_view,
@@ -261,7 +306,7 @@ FROM CompositeElementResultImp
 WHERE subclass_view = 'CompositeElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.ELEMENT
+CREATE VIEW @oracle_rad@.ELEMENT
 AS SELECT
   element_id,
   subclass_view,
@@ -285,7 +330,7 @@ FROM ElementImp
 WHERE subclass_view = 'Element'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.ELEMENTRESULT
+CREATE VIEW @oracle_rad@.ELEMENTRESULT
 AS SELECT
   element_result_id,
   subclass_view,
@@ -311,7 +356,7 @@ FROM ElementResultImp
 WHERE subclass_view = 'ElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.GEMTOOLSELEMENTRESULT
+CREATE VIEW @oracle_rad@.GEMTOOLSELEMENTRESULT
 AS SELECT
   element_result_id,
   element_id,
@@ -336,7 +381,7 @@ AS SELECT
 FROM ElementResultImp WHERE subclass_view = 'GEMToolsElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.GENEPIXELEMENTRESULT
+CREATE VIEW @oracle_rad@.GENEPIXELEMENTRESULT
 AS SELECT
   element_result_id,
   element_id,
@@ -356,6 +401,8 @@ AS SELECT
   float9 AS mean_of_ratios,
   float10 AS median_of_ratios,
   float11 AS ratios_sd,
+  float12 AS rgn_ratio,
+  float13 AS rgn_r_squared,
   smallint1 AS num_foreground_pixels,
   smallint2 AS num_background_pixels,
   tinyint1 AS flag,
@@ -371,10 +418,39 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id 
 FROM ElementResultImp
-WHERE subclass_view = 'GenePixElementResult'
+WHERE subclass_view = 'GenePixElementResult' WITH CHECK OPTION;
+
+CREATE VIEW @oracle_rad@.HQSPECIFICITY
+AS SELECT
+  analysis_result_id,
+  subclass_view,
+  analysis_id,
+  table_id,
+  row_id,
+  int1   AS node_number,
+  int2   AS parent_node_number,
+  int3   AS leaf_count,
+  float1 AS h_g,
+  float2 AS h_l,
+  float3 AS i_g,
+  float4 AS w,
+  float5 AS minus_log2_w,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+FROM AnalysisResultImp
+WHERE subclass_view = 'HQSpecificity'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.LABELEDEXTRACT
+CREATE VIEW @oracle_rad@.LABELEDEXTRACT
 ( BIO_MATERIAL_ID,
   SUBCLASS_VIEW,
   BIO_MATERIAL_TYPE_ID,
@@ -419,7 +495,7 @@ WHERE LABEL_METHOD_ID is not null
 AND SUBCLASS_VIEW = 'LabeledExtract'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.MOIDRESULT
+CREATE VIEW @oracle_rad@.MOIDRESULT
 AS SELECT
   composite_element_result_id,
   composite_element_id,
@@ -444,7 +520,29 @@ FROM CompositeElementResultImp
 WHERE subclass_view = 'MOIDResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.SAGETAG
+CREATE VIEW @oracle_rad@.RMAEXPRESS
+AS SELECT
+  composite_element_result_id,
+  composite_element_id,
+  quantification_id,
+  subclass_view,
+  FLOAT1 AS RMA_EXPRESSION_MEASURE,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+FROM RAD3.CompositeElementResultImp
+WHERE SUBCLASS_VIEW = 'RMAExpress'
+WITH CHECK OPTION;
+
+CREATE VIEW @oracle_rad@.SAGETAG
 AS SELECT
   composite_element_id,
   subclass_view,
@@ -466,7 +564,7 @@ FROM CompositeElementImp
 WHERE subclass_view = 'SAGETag'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.SAGETAGMAPPING
+CREATE VIEW @oracle_rad@.SAGETAGMAPPING
 AS SELECT
   element_id,
   subclass_view,
@@ -489,7 +587,7 @@ FROM ElementImp
 WHERE subclass_view = 'SAGETagMapping'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.SAGETAGRESULT
+CREATE VIEW @oracle_rad@.SAGETAGRESULT
 AS SELECT
   composite_element_result_id,
   composite_element_id,
@@ -511,7 +609,33 @@ FROM CompositeElementResultImp
 WHERE subclass_view = 'SAGETagResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.SCANALYZEELEMENTRESULT
+CREATE VIEW @oracle_rad@.SAM
+AS SELECT
+  analysis_result_id,
+  subclass_view,
+  analysis_id,
+  table_id,
+  row_id,
+  float1 AS d,
+  float2 AS r,
+  float3 AS s_plus_s0,
+  float4 AS q_value_perc,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+FROM AnalysisResultImp
+WHERE subclass_view = 'SAM'
+WITH CHECK OPTION;
+
+CREATE VIEW @oracle_rad@.SCANALYZEELEMENTRESULT
 AS SELECT
   element_result_id,
   element_id,
@@ -552,13 +676,14 @@ FROM ElementResultImp
 WHERE subclass_view = 'ScanAlyzeElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.SHORTOLIGO
+CREATE VIEW @oracle_rad@.SHORTOLIGO
 AS SELECT
   element_id,
   subclass_view,
   array_id,
   composite_element_id,
   smallstring2 AS name,
+  tinyint1 AS match,
   tinystring1 AS x_position,
   tinystring2 AS y_position,
   smallstring1 AS sequence,
@@ -575,10 +700,9 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id 
 FROM ElementImp
-WHERE subclass_view = 'ShortOligo'
-WITH CHECK OPTION;
+WHERE subclass_view = 'ShortOligo' WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.SHORTOLIGOFAMILY
+CREATE VIEW @oracle_rad@.SHORTOLIGOFAMILY
 AS SELECT
   composite_element_id,
   subclass_view,
@@ -603,7 +727,7 @@ FROM CompositeElementImp
 WHERE subclass_view = 'ShortOligoFamily'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.SPOT
+CREATE VIEW @oracle_rad@.SPOT
 AS SELECT
   element_id,
   subclass_view,
@@ -636,7 +760,7 @@ FROM ElementImp
 WHERE subclass_view = 'Spot'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.SPOTELEMENTRESULT
+CREATE VIEW @oracle_rad@.SPOTELEMENTRESULT
 AS SELECT
   element_result_id,
   element_id,
@@ -672,7 +796,7 @@ AS SELECT
 FROM ElementResultImp WHERE subclass_view = 'SpotElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3@.SPOTFAMILY
+CREATE VIEW @oracle_rad@.SPOTFAMILY
 AS SELECT
   composite_element_id,
   subclass_view,
@@ -701,7 +825,7 @@ where subclass_view = 'SpotFamily'
 WITH CHECK OPTION;
 
 
-/* 24 view(s) */
+/* 29 view(s) */
 
 SPOOL OFF
 SET ECHO OFF

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* sresver-pkey-constraints.sql                                                               */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:41 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:10:23 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -31,8 +31,6 @@ alter table @oracle_sresver@.EXTERNALDATABASEVER add constraint PK_EXTERNALDATAB
 alter table @oracle_sresver@.GENETICCODEVER add constraint PK_GENETICCODEVER primary key (GENETIC_CODE_ID,MODIFICATION_DATE);
 alter table @oracle_sresver@.GOSYNONYMVER add constraint PK_GOSYNONYMVER primary key (GO_SYNONYM_ID,MODIFICATION_DATE);
 alter table @oracle_sresver@.LINEAGEVER add constraint PK_LINEAGEVER primary key (LINEAGE_ID,MODIFICATION_DATE);
-alter table @oracle_sresver@.MGEDONTOLOGYRELATIONSHIPVER add constraint PK_MGEDONTOLOGYRELATIONSHIPVER primary key (MGED_ONTOLOGY_RELATIONSHIP_ID,MODIFICATION_DATE);
-alter table @oracle_sresver@.MGEDONTOLOGYTERMVER add constraint PK_MGEDONTOLOGYTERMVER primary key (MGED_ONTOLOGY_TERM_ID,MODIFICATION_DATE);
 alter table @oracle_sresver@.MUTAGENVER add constraint PK_MUTAGENVER primary key (MUTAGEN_ID,MODIFICATION_DATE);
 alter table @oracle_sresver@.ONTOLOGYRELATIONSHIPTYPEVER add constraint PK_ONTOLOGYRELATIONSHIPTYPEVER primary key (ONTOLOGY_RELATIONSHIP_TYPE_ID,MODIFICATION_DATE);
 alter table @oracle_sresver@.PATOATTRIBUTEVER add constraint PK_PATOATTRIBUTEVER primary key (PATO_ATTRIBUTE_ID,MODIFICATION_DATE);
@@ -46,7 +44,7 @@ alter table @oracle_sresver@.TAXONNAMEVER add constraint PK_TAXONNAMEVER primary
 alter table @oracle_sresver@.TAXONVER add constraint PK_TAXONVER primary key (TAXON_ID,MODIFICATION_DATE);
 
 
-/* 34 primary key constraint(s) */
+/* 32 primary key constraint(s) */
 
 SPOOL OFF
 SET ECHO OFF

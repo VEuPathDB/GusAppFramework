@@ -4,7 +4,7 @@
 /*                                                                                            */
 /* CREATE USER statments for the Oracle users/schemas that will hold the tables in GUS.       */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 23:57:12 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:08:07 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -45,6 +45,42 @@ GRANT CREATE SESSION TO @oracle_corever@;
 GRANT CREATE TABLE TO @oracle_corever@;
 GRANT CREATE VIEW TO @oracle_corever@;
 GRANT CREATE SEQUENCE TO @oracle_corever@;
+
+/* ----------------------------------------------------------------------- */
+/* New schema = @oracle_rad@ (original name = rad3) */
+/* ----------------------------------------------------------------------- */
+DROP USER @oracle_rad@ CASCADE;
+
+CREATE USER @oracle_rad@ IDENTIFIED BY @oracle_radPassword@ 
+  TEMPORARY TABLESPACE @oracle_tempTablespace@
+  DEFAULT TABLESPACE @oracle_rad3Tablespace@
+  QUOTA @oracle_tempQuota@ ON @oracle_tempTablespace@
+  QUOTA @oracle_defaultQuota@ ON @oracle_rad3Tablespace@;
+
+GRANT CONNECT TO @oracle_rad@;
+GRANT RESOURCE TO @oracle_rad@;
+GRANT CREATE SESSION TO @oracle_rad@;
+GRANT CREATE TABLE TO @oracle_rad@;
+GRANT CREATE VIEW TO @oracle_rad@;
+GRANT CREATE SEQUENCE TO @oracle_rad@;
+
+/* ----------------------------------------------------------------------- */
+/* New schema = @oracle_radver@ (original name = rad3ver) */
+/* ----------------------------------------------------------------------- */
+DROP USER @oracle_radver@ CASCADE;
+
+CREATE USER @oracle_radver@ IDENTIFIED BY @oracle_radverPassword@ 
+  TEMPORARY TABLESPACE @oracle_tempTablespace@
+  DEFAULT TABLESPACE @oracle_rad3verTablespace@
+  QUOTA @oracle_tempQuota@ ON @oracle_tempTablespace@
+  QUOTA @oracle_defaultQuota@ ON @oracle_rad3verTablespace@;
+
+GRANT CONNECT TO @oracle_radver@;
+GRANT RESOURCE TO @oracle_radver@;
+GRANT CREATE SESSION TO @oracle_radver@;
+GRANT CREATE TABLE TO @oracle_radver@;
+GRANT CREATE VIEW TO @oracle_radver@;
+GRANT CREATE SEQUENCE TO @oracle_radver@;
 
 /* ----------------------------------------------------------------------- */
 /* New schema = @oracle_sres@ (original name = sres) */
@@ -155,40 +191,40 @@ GRANT CREATE VIEW TO @oracle_tessver@;
 GRANT CREATE SEQUENCE TO @oracle_tessver@;
 
 /* ----------------------------------------------------------------------- */
-/* New schema = @oracle_rad3@ (original name = rad3) */
+/* New schema = @oracle_app@ (original name = app) */
 /* ----------------------------------------------------------------------- */
-DROP USER @oracle_rad3@ CASCADE;
+DROP USER @oracle_app@ CASCADE;
 
-CREATE USER @oracle_rad3@ IDENTIFIED BY @oracle_rad3Password@ 
+CREATE USER @oracle_app@ IDENTIFIED BY @oracle_appPassword@ 
   TEMPORARY TABLESPACE @oracle_tempTablespace@
-  DEFAULT TABLESPACE @oracle_rad3Tablespace@
+  DEFAULT TABLESPACE @oracle_appTablespace@
   QUOTA @oracle_tempQuota@ ON @oracle_tempTablespace@
-  QUOTA @oracle_defaultQuota@ ON @oracle_rad3Tablespace@;
+  QUOTA @oracle_defaultQuota@ ON @oracle_appTablespace@;
 
-GRANT CONNECT TO @oracle_rad3@;
-GRANT RESOURCE TO @oracle_rad3@;
-GRANT CREATE SESSION TO @oracle_rad3@;
-GRANT CREATE TABLE TO @oracle_rad3@;
-GRANT CREATE VIEW TO @oracle_rad3@;
-GRANT CREATE SEQUENCE TO @oracle_rad3@;
+GRANT CONNECT TO @oracle_app@;
+GRANT RESOURCE TO @oracle_app@;
+GRANT CREATE SESSION TO @oracle_app@;
+GRANT CREATE TABLE TO @oracle_app@;
+GRANT CREATE VIEW TO @oracle_app@;
+GRANT CREATE SEQUENCE TO @oracle_app@;
 
 /* ----------------------------------------------------------------------- */
-/* New schema = @oracle_rad3ver@ (original name = rad3ver) */
+/* New schema = @oracle_appver@ (original name = appver) */
 /* ----------------------------------------------------------------------- */
-DROP USER @oracle_rad3ver@ CASCADE;
+DROP USER @oracle_appver@ CASCADE;
 
-CREATE USER @oracle_rad3ver@ IDENTIFIED BY @oracle_rad3verPassword@ 
+CREATE USER @oracle_appver@ IDENTIFIED BY @oracle_appverPassword@ 
   TEMPORARY TABLESPACE @oracle_tempTablespace@
-  DEFAULT TABLESPACE @oracle_rad3verTablespace@
+  DEFAULT TABLESPACE @oracle_appverTablespace@
   QUOTA @oracle_tempQuota@ ON @oracle_tempTablespace@
-  QUOTA @oracle_defaultQuota@ ON @oracle_rad3verTablespace@;
+  QUOTA @oracle_defaultQuota@ ON @oracle_appverTablespace@;
 
-GRANT CONNECT TO @oracle_rad3ver@;
-GRANT RESOURCE TO @oracle_rad3ver@;
-GRANT CREATE SESSION TO @oracle_rad3ver@;
-GRANT CREATE TABLE TO @oracle_rad3ver@;
-GRANT CREATE VIEW TO @oracle_rad3ver@;
-GRANT CREATE SEQUENCE TO @oracle_rad3ver@;
+GRANT CONNECT TO @oracle_appver@;
+GRANT RESOURCE TO @oracle_appver@;
+GRANT CREATE SESSION TO @oracle_appver@;
+GRANT CREATE TABLE TO @oracle_appver@;
+GRANT CREATE VIEW TO @oracle_appver@;
+GRANT CREATE SEQUENCE TO @oracle_appver@;
 
 SPOOL OFF
 SET ECHO OFF

@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* rad3ver-views.sql                                                                          */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 13:30:36 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:09:40 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL rad3ver-views.log
 
-CREATE VIEW @oracle_rad3ver@.AFFYMETRIXCELVER
+CREATE VIEW @oracle_radver@.AFFYMETRIXCELVER
 AS SELECT
   element_result_id,
   element_id,
@@ -36,7 +36,7 @@ FROM ElementResultImpVer
 WHERE subclass_view = 'AffymetrixCEL'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.AFFYMETRIXMAS4VER
+CREATE VIEW @oracle_radver@.AFFYMETRIXMAS4VER
 AS SELECT
   composite_element_result_id,
   composite_element_id,
@@ -67,17 +67,82 @@ FROM CompositeElementResultImpVer
 WHERE subclass_view = 'AffymetrixMAS4'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.AFFYMETRIXMAS5VER
+CREATE VIEW @oracle_radver@.ANALYSISRESULTVER
+( ANALYSIS_RESULT_ID,
+  SUBCLASS_VIEW,
+  ANALYSIS_ID,
+  TABLE_ID,
+  ROW_ID,
+  MODIFICATION_DATE,
+  USER_READ,
+  USER_WRITE,
+  GROUP_READ,
+  GROUP_WRITE,
+  OTHER_READ,
+  OTHER_WRITE,
+  ROW_USER_ID,
+  ROW_GROUP_ID,
+  ROW_PROJECT_ID,
+  ROW_ALG_INVOCATION_ID )
+AS (
+select ANALYSIS_RESULT_ID,
+  SUBCLASS_VIEW,
+  ANALYSIS_ID,
+  table_id,
+  row_id,
+	MODIFICATION_DATE,
+	USER_READ ,
+	USER_WRITE  ,
+	GROUP_READ  ,
+	GROUP_WRITE ,
+	OTHER_READ  ,
+	OTHER_WRITE ,
+	ROW_USER_ID ,
+	ROW_GROUP_ID,
+	ROW_PROJECT_ID,
+	ROW_ALG_INVOCATION_ID
+FROM RAD3ver.ANALYSISRESULTIMPver
+);
+
+CREATE VIEW @oracle_radver@.ARRAYSTATTWOCONDITIONSVER
+( ANALYSIS_RESULT_ID,
+  SUBCLASS_VIEW,
+  ANALYSIS_ID,
+  TABLE_ID,
+  ROW_ID,
+  MEAN_1,
+  SD_1,
+  N_1,
+  MEAN_2,
+  SD_2,
+  N_2,
+  P_VALUE,
+  SIGNIFICANCE,
+  MODIFICATION_DATE,
+  USER_READ,
+  USER_WRITE,
+  GROUP_READ,
+  GROUP_WRITE,
+  OTHER_READ,
+  OTHER_WRITE,
+  ROW_USER_ID,
+  ROW_GROUP_ID,
+  ROW_PROJECT_ID,
+  ROW_ALG_INVOCATION_ID )
 AS SELECT
-  composite_element_result_id,
+  analysis_result_id,
   subclass_view,
-  composite_element_id,
-  quantification_id,
-  float1 AS signal,
-  char1 AS detection,
-  float2 AS detection_p_value,
-  smallint1 AS stat_pairs,
-  smallint2 AS stat_pairs_used,
+  analysis_id,
+  table_id,
+  row_id,
+  float1 AS mean_1,
+  float2 AS sd_1,
+  int1 AS n_1,
+  float3 AS mean_2,
+  float4 AS sd_2,
+  int2 AS n_2,
+  float5 AS p_value,
+  tinystring1 AS significance,
   modification_date,
   user_read,
   user_write,
@@ -88,15 +153,10 @@ AS SELECT
   row_user_id,
   row_group_id,
   row_project_id,
-  row_alg_invocation_id,
-  version_alg_invocation_id,
-  version_date,
-  version_transaction_id 
-FROM CompositeElementResultImpVer
-WHERE SUBCLASS_VIEW = 'AffymetrixMAS5'
-WITH CHECK OPTION;
+  row_alg_invocation_id
+FROM rad3ver.AnalysisResultImpver;
 
-CREATE VIEW @oracle_rad3ver@.ARRAYVISIONELEMENTRESULTVER
+CREATE VIEW @oracle_radver@.ARRAYVISIONELEMENTRESULTVER
 AS SELECT
   element_result_id,
   subclass_view,
@@ -136,7 +196,7 @@ FROM ElementResultImpVer
 WHERE subclass_view = 'ArrayVisionElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.BIOMATERIALVER
+CREATE VIEW @oracle_radver@.BIOMATERIALVER
 AS SELECT
   bio_material_id,
   subclass_view,
@@ -161,7 +221,7 @@ FROM BioMaterialImpVer
 WHERE subclass_view = 'BioMaterial'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.BIOSAMPLEVER
+CREATE VIEW @oracle_radver@.BIOSAMPLEVER
 AS SELECT
   bio_material_id,
   subclass_view,
@@ -188,7 +248,7 @@ FROM BioMaterialImpVer
 WHERE subclass_view = 'BioSample'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.BIOSOURCEVER
+CREATE VIEW @oracle_radver@.BIOSOURCEVER
 ( BIO_MATERIAL_ID,
   SUBCLASS_VIEW,
   TAXON_ID,
@@ -241,7 +301,7 @@ WHERE bio_source_provider_id is not null
 AND subclass_view='BioSource'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.COMPOSITEELEMENTRESULTVER
+CREATE VIEW @oracle_radver@.COMPOSITEELEMENTRESULTVER
 AS SELECT
   composite_element_result_id,
   subclass_view,
@@ -265,7 +325,7 @@ FROM CompositeElementResultImpVer
 WHERE subclass_view = 'CompositeElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.COMPOSITEELEMENTVER
+CREATE VIEW @oracle_radver@.COMPOSITEELEMENTVER
 AS SELECT
   composite_element_id,
   subclass_view,
@@ -291,7 +351,7 @@ FROM CompositeElementImpVer
 where subclass_view = 'CompositeElement'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.ELEMENTRESULTVER
+CREATE VIEW @oracle_radver@.ELEMENTRESULTVER
 AS SELECT
   element_result_id,
   subclass_view,
@@ -320,7 +380,7 @@ FROM ElementResultImpVer
 WHERE subclass_view = 'ElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.ELEMENTVER
+CREATE VIEW @oracle_radver@.ELEMENTVER
 AS SELECT
   element_id,
   subclass_view,
@@ -347,7 +407,7 @@ FROM ElementImpVer
 WHERE subclass_view = 'Element'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.GEMTOOLSELEMENTRESULTVER
+CREATE VIEW @oracle_radver@.GEMTOOLSELEMENTRESULTVER
 AS SELECT
   element_result_id,
   element_id,
@@ -375,7 +435,7 @@ AS SELECT
 FROM ElementResultImpVer WHERE subclass_view = 'GEMToolsElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.GENEPIXELEMENTRESULTVER
+CREATE VIEW @oracle_radver@.GENEPIXELEMENTRESULTVER
 AS SELECT
   element_result_id,
   element_id,
@@ -416,7 +476,65 @@ FROM ElementResultImpVer
 WHERE subclass_view = 'GenePixElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.LABELEDEXTRACTVER
+CREATE VIEW @oracle_radver@.HQSPECIFICITYVER
+( ANALYSIS_RESULT_ID,
+  SUBCLASS_VIEW,
+  ANALYSIS_ID,
+  TABLE_ID,
+  ROW_ID,
+  NODE_NUMBER,
+  PARENT_NODE_NUMBER,
+  LEAF_COUNT,
+  H_G,
+  H_L,
+  I_G,
+  W,
+  MINUS_LOG2_W,
+  MODIFICATION_DATE,
+  USER_READ,
+  USER_WRITE,
+  GROUP_READ,
+  GROUP_WRITE,
+  OTHER_READ,
+  OTHER_WRITE,
+  ROW_USER_ID,
+  ROW_GROUP_ID,
+  ROW_PROJECT_ID,
+  ROW_ALG_INVOCATION_ID,
+  VERSION_ALG_INVOCATION_ID,
+  VERSION_DATE,
+  VERSION_TRANSACTION_ID )
+AS SELECT
+analysis_result_id,
+subclass_view,
+analysis_id,
+table_id,
+row_id,
+int1   AS node_number,
+int2   AS parent_node_number,
+int3   AS leaf_count,
+  float1 AS h_g,
+  float2 AS h_l,
+  float3 AS i_g,
+  float4 AS w,
+  float5 AS minus_log2_w,
+modification_date,
+user_read,
+user_write,
+group_read,
+group_write,
+other_read,
+other_write,
+row_user_id,
+row_group_id,
+row_project_id,
+row_alg_invocation_id,
+ VERSION_ALG_INVOCATION_ID,
+ VERSION_DATE,
+ VERSION_TRANSACTION_ID
+FROM AnalysisResultImpVer;
+
+CREATE VIEW @oracle_radver@.LABELEDEXTRACTVER
 ( BIO_MATERIAL_ID,
   SUBCLASS_VIEW,
   BIO_MATERIAL_TYPE_ID,
@@ -467,7 +585,7 @@ WHERE LABEL_METHOD_ID is not null
 AND SUBCLASS_VIEW = 'LabeledExtract'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.MOIDRESULTVER
+CREATE VIEW @oracle_radver@.MOIDRESULTVER
 AS SELECT
   composite_element_result_id,
   composite_element_id,
@@ -495,7 +613,49 @@ FROM CompositeElementResultImpVer
 WHERE subclass_view = 'MOIDResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.SAGETAGMAPPINGVER
+CREATE VIEW @oracle_radver@.RMAEXPRESSVER
+( COMPOSITE_ELEMENT_RESULT_ID,
+  COMPOSITE_ELEMENT_ID,
+  QUANTIFICATION_ID,
+  SUBCLASS_VIEW,
+  RMA_EXPRESSION_MEASURE,
+  MODIFICATION_DATE,
+  USER_READ,
+  USER_WRITE,
+  GROUP_READ,
+  GROUP_WRITE,
+  OTHER_READ,
+  OTHER_WRITE,
+  ROW_USER_ID,
+  ROW_GROUP_ID,
+  ROW_PROJECT_ID,
+  ROW_ALG_INVOCATION_ID,
+  VERSION_ALG_INVOCATION_ID,
+  VERSION_DATE,
+  VERSION_TRANSACTION_ID )
+AS SELECT
+COMPOSITE_ELEMENT_RESULT_ID,
+COMPOSITE_ELEMENT_ID,
+QUANTIFICATION_ID,
+SUBCLASS_VIEW,
+  FLOAT1 AS RMA_EXPRESSION_MEASURE,
+MODIFICATION_DATE,
+USER_READ,
+USER_WRITE,
+GROUP_READ,
+GROUP_WRITE,
+OTHER_READ,
+OTHER_WRITE,
+ROW_USER_ID,
+ROW_GROUP_ID,
+ROW_PROJECT_ID,
+ROW_ALG_INVOCATION_ID,
+VERSION_ALG_INVOCATION_ID ,
+VERSION_DATE,
+VERSION_TRANSACTION_ID
+FROM RAD3Ver.CompositeElementResultImpVer;
+
+CREATE VIEW @oracle_radver@.SAGETAGMAPPINGVER
 AS SELECT
   element_id,
   subclass_view,
@@ -521,7 +681,7 @@ FROM ElementImpVer
 WHERE subclass_view = 'SAGETagMapping'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.SAGETAGRESULTVER
+CREATE VIEW @oracle_radver@.SAGETAGRESULTVER
 AS SELECT
   composite_element_result_id,
   composite_element_id,
@@ -546,7 +706,7 @@ FROM CompositeElementResultImpVer
 WHERE subclass_view = 'SAGETagResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.SAGETAGVER
+CREATE VIEW @oracle_radver@.SAGETAGVER
 AS SELECT
   composite_element_id,
   subclass_view,
@@ -571,7 +731,57 @@ FROM CompositeElementImpVer
 WHERE subclass_view = 'SAGETag'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.SCANALYZEELEMENTRESULTVER
+CREATE VIEW @oracle_radver@.SAMVER
+( ANALYSIS_RESULT_ID,
+  SUBCLASS_VIEW,
+  ANALYSIS_ID,
+  TABLE_ID,
+  ROW_ID,
+  D,
+  R,
+  S_PLUS_S0,
+  Q_VALUE_PERC,
+  MODIFICATION_DATE,
+  USER_READ,
+  USER_WRITE,
+  GROUP_READ,
+  GROUP_WRITE,
+  OTHER_READ,
+  OTHER_WRITE,
+  ROW_USER_ID,
+  ROW_GROUP_ID,
+  ROW_PROJECT_ID,
+  ROW_ALG_INVOCATION_ID,
+  VERSION_ALG_INVOCATION_ID,
+  VERSION_DATE,
+  VERSION_TRANSACTION_ID )
+AS SELECT
+analysis_result_id,
+subclass_view,
+analysis_id,
+table_id,
+row_id,
+  float1 AS d,
+  float2 AS r,
+  float3 AS s_plus_s0,
+  float4 AS q_value_perc,
+modification_date,
+user_read,
+user_write,
+group_read,
+group_write,
+other_read,
+other_write,
+row_user_id,
+row_group_id,
+row_project_id,
+row_alg_invocation_id ,
+ VERSION_ALG_INVOCATION_ID,
+ VERSION_DATE,
+ VERSION_TRANSACTION_ID
+FROM AnalysisResultImpVer;
+
+CREATE VIEW @oracle_radver@.SCANALYZEELEMENTRESULTVER
 AS SELECT
   element_result_id,
   element_id,
@@ -615,7 +825,7 @@ FROM ElementResultImpVer
 WHERE subclass_view = 'ScanAlyzeElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.SHORTOLIGOFAMILYVER
+CREATE VIEW @oracle_radver@.SHORTOLIGOFAMILYVER
 AS SELECT
   composite_element_id,
   subclass_view,
@@ -643,13 +853,14 @@ FROM CompositeElementImpVer
 WHERE subclass_view = 'ShortOligoFamily'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.SHORTOLIGOVER
+CREATE VIEW @oracle_radver@.SHORTOLIGOVER
 AS SELECT
   element_id,
   subclass_view,
   array_id,
   composite_element_id,
   smallstring2 AS name,
+  tinyint1 AS match,
   tinystring1 AS x_position,
   tinystring2 AS y_position,
   smallstring1 AS sequence,
@@ -669,10 +880,9 @@ AS SELECT
   version_date,
   version_transaction_id 
 FROM ElementImpVer
-WHERE subclass_view = 'ShortOligo'
-WITH CHECK OPTION;
+WHERE subclass_view = 'ShortOligo' WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.SPOTELEMENTRESULTVER
+CREATE VIEW @oracle_radver@.SPOTELEMENTRESULTVER
 AS SELECT
   element_result_id,
   element_id,
@@ -712,7 +922,7 @@ FROM ElementResultImpVer
 WHERE subclass_view = 'SpotElementResult'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.SPOTFAMILYVER
+CREATE VIEW @oracle_radver@.SPOTFAMILYVER
 AS SELECT
   composite_element_id,
   subclass_view,
@@ -743,7 +953,7 @@ FROM CompositeElementImpVer
 WHERE subclass_view = 'SpotFamily'
 WITH CHECK OPTION;
 
-CREATE VIEW @oracle_rad3ver@.SPOTVER
+CREATE VIEW @oracle_radver@.SPOTVER
 AS SELECT
   element_id,
   subclass_view,
@@ -780,7 +990,7 @@ WHERE subclass_view = 'Spot'
 WITH CHECK OPTION;
 
 
-/* 24 view(s) */
+/* 28 view(s) */
 
 SPOOL OFF
 SET ECHO OFF

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-pkey-constraints.sql                                                                  */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:45:57 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:12:06 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -21,6 +21,7 @@ alter table @oracle_dots@.AAMOTIFGOTERMRULE add constraint PK_AAMOTIFGOTERMRULE 
 alter table @oracle_dots@.AAMOTIFGOTERMRULESET add constraint AAMOTIFGOTERMRULESET_PK primary key (AA_MOTIF_GO_TERM_RULE_SET_ID);
 alter table @oracle_dots@.AASEQGROUPEXPERIMENTIMP add constraint PK_AASEQGROUPEXPERIMENTIMP primary key (AA_SEQ_GROUP_EXPERIMENT_ID);
 alter table @oracle_dots@.AASEQUENCEDBREF add constraint PK_AASEQUENCEDBREF primary key (AA_SEQUENCE_DB_REF_ID);
+alter table @oracle_dots@.AASEQUENCEENZYMECLASS add constraint AASEQUENCEENZYMECLASS_PK primary key (AA_SEQUENCE_ENZYME_CLASS_ID);
 alter table @oracle_dots@.AASEQUENCEFAMILY add constraint PK_AASEQUENCEFAMILY primary key (AA_SEQUENCE_FAMILY_ID);
 alter table @oracle_dots@.AASEQUENCEGROUPFAMILY add constraint PK_AASEQUENCEGROUPFAMILY primary key (AA_SEQUENCE_GROUP_FAMILY_ID);
 alter table @oracle_dots@.AASEQUENCEGROUPIMP add constraint PK_AASEQUENCEGROUPIMP primary key (AA_SEQUENCE_GROUP_ID);
@@ -171,7 +172,7 @@ alter table @oracle_dots@.SIMILARITYSPAN add constraint PK_SIMILARITYSPAN primar
 alter table @oracle_dots@.TRANSLATEDAAFEATSEG add constraint PK_TRANSLATEDAAFEATSEG primary key (TRANSLATED_AA_FEAT_SEG_ID);
 
 
-/* 159 primary key constraint(s) */
+/* 160 primary key constraint(s) */
 
 SPOOL OFF
 SET ECHO OFF

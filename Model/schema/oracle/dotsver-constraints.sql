@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dotsver-constraints.sql                                                                    */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:47:56 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:13:36 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -31,6 +31,8 @@ SPOOL dotsver-constraints.log
 /* AASEQGROUPEXPERIMENTIMPVER */
 
 /* AASEQUENCEDBREFVER */
+
+/* AASEQUENCEENZYMECLASSVER */
 
 /* AASEQUENCEFAMILYVER */
 

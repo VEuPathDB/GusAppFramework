@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 23:22:18 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:12:06 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -27,12 +27,12 @@ create index @oracle_dots@.AAFEATUREIMP_IND01 on @oracle_dots@.AAFEATUREIMP (AA_
 create index @oracle_dots@.AAFEATUREIMP_IND02 on @oracle_dots@.AAFEATUREIMP (FEATURE_NAME_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.EPITOPEFEATURE_IND01 on @oracle_dots@.AAFEATUREIMP (STRING1,FLOAT1,FLOAT2)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AAFEATUREIMP_IND04 on @oracle_dots@.AAFEATUREIMP (NA_FEATURE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.AAFEATUREIMP_IND05 on @oracle_dots@.AAFEATUREIMP (SUBCLASS_VIEW)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AAFEATUREIMP_IND06 on @oracle_dots@.AAFEATUREIMP (INT1)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.AAFEATUREIMP_IND07 on @oracle_dots@.AAFEATUREIMP (AA_SEQUENCE_ID,SUBCLASS_VIEW)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AAFEATUREIMP_IND10 on @oracle_dots@.AAFEATUREIMP (PFAM_ENTRY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AAFEATUREIMP_IND11 on @oracle_dots@.AAFEATUREIMP (MOTIF_AA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AAFEATUREIMP_IND12 on @oracle_dots@.AAFEATUREIMP (REPEAT_TYPE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.AAFEATUREIMP_IND05 on @oracle_dots@.AAFEATUREIMP (SUBCLASS_VIEW)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.AAFEATUREIMP_IND07 on @oracle_dots@.AAFEATUREIMP (AA_SEQUENCE_ID,SUBCLASS_VIEW)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AAFEATUREIMP_IND13 on @oracle_dots@.AAFEATUREIMP (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AAFEATUREIMP_IND14 on @oracle_dots@.AAFEATUREIMP (PARENT_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AAFEATUREIMP_IND15 on @oracle_dots@.AAFEATUREIMP (SEQUENCE_ONTOLOGY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -64,6 +64,11 @@ create index @oracle_dots@.AAMOTIFGOTERMRULESET_IND04 on @oracle_dots@.AAMOTIFGO
 /* AASEQUENCEDBREF */
 create index @oracle_dots@.AASEQUENCEDBREF_IND01 on @oracle_dots@.AASEQUENCEDBREF (DB_REF_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AASEQUENCEDBREF_IND02 on @oracle_dots@.AASEQUENCEDBREF (AA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+
+/* AASEQUENCEENZYMECLASS */
+create index @oracle_dots@.AASEQUENCEENZYMECLASS_AASEQ on @oracle_dots@.AASEQUENCEENZYMECLASS (AA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.AASEQUENCEENZYMECLASS_EC on @oracle_dots@.AASEQUENCEENZYMECLASS (ENZYME_CLASS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.AASEQUENCEENZYMECLASS_IND01 on @oracle_dots@.AASEQUENCEENZYMECLASS (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* AASEQUENCEFAMILY */
 create index @oracle_dots@.AASEQUENCEFAMILY_IND01 on @oracle_dots@.AASEQUENCEFAMILY (AA_FAMILY_EXPERIMENT_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -128,16 +133,16 @@ create index @oracle_dots@.ALLELEPHENOTYPECLASS_IND02 on @oracle_dots@.ALLELEPHE
 create index @oracle_dots@.ALLELEPHENOTYPECLASS_IND03 on @oracle_dots@.ALLELEPHENOTYPECLASS (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* ANATOMYLIBRARY */
+create index @oracle_dots@.ANATOMYLIBRARY_IND02 on @oracle_dots@.ANATOMYLIBRARY (DBEST_LIBRARY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.ANATOMYLIBRARY_IND01 on @oracle_dots@.ANATOMYLIBRARY (ANATOMY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* ANATOMYLOE */
 
 
 /* ASSEMBLYANATOMYPERCENT */
-create index @oracle_dots@.ASSEMBLYANATOMYPERCENT_IND01 on @oracle_dots@.ASSEMBLYANATOMYPERCENT (ANATOMY_ID,PERCENT,EST_COUNT,TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.ASSEMBLYANATOMYPERCENT_IND01 on @oracle_dots@.ASSEMBLYANATOMYPERCENT (ANATOMY_ID,PERCENT,EST_COUNT,TAXON_ID,NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.ASSEMBLYANATOMYPERCENT_IND03 on @oracle_dots@.ASSEMBLYANATOMYPERCENT (TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.ASSEMBLYANATOMYPERCENT_IND02 on @oracle_dots@.ASSEMBLYANATOMYPERCENT (NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.ASSEMBLYANATOMYPERCENT_IND03 on @oracle_dots@.ASSEMBLYANATOMYPERCENT (ANATOMY_ID,PERCENT,EST_COUNT,TAXON_ID,NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.ASSEMBLYANATOMYPERCENT_IND04 on @oracle_dots@.ASSEMBLYANATOMYPERCENT (TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* ASSEMBLYSEQUENCE */
 create index @oracle_dots@.ASSEMBLYSEQUENCE_IND01 on @oracle_dots@.ASSEMBLYSEQUENCE (ASSEMBLY_NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -155,19 +160,18 @@ create index @oracle_dots@.ATTRIBUTION_IND01 on @oracle_dots@.ATTRIBUTION (TABLE
 create index @oracle_dots@.ATTRIBUTION_IND02 on @oracle_dots@.ATTRIBUTION (CONTACT_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* BESTSIMILARITYPAIR */
-create index @oracle_dots@.BESTSIMILARITYPAIR_IND01 on @oracle_dots@.BESTSIMILARITYPAIR (SOURCE_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.BESTSIMILARITYPAIR_IND02 on @oracle_dots@.BESTSIMILARITYPAIR (PAIRED_SOURCE_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.BESTSIMILARITYPAIR_IND01 on @oracle_dots@.BESTSIMILARITYPAIR (SOURCE_TABLE_ID,SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.BESTSIMILARITYPAIR_IND02 on @oracle_dots@.BESTSIMILARITYPAIR (PAIRED_SOURCE_TABLE_ID,PAIRED_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.BESTSIMILARITYPAIR_IND03 on @oracle_dots@.BESTSIMILARITYPAIR (ORTHOLOG_EXPERIMENT_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* BLATALIGNMENT */
 create index @oracle_dots@.BLATALIGNMENT_IND04 on @oracle_dots@.BLATALIGNMENT (TARGET_NA_SEQUENCE_ID,TARGET_START,TARGET_END)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.BLATALIGNMENT_IND05 on @oracle_dots@.BLATALIGNMENT (QUERY_TABLE_ID,QUERY_TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.BLATALIGNMENT_IND01 on @oracle_dots@.BLATALIGNMENT (QUERY_NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.BLATALIGNMENT_IND02 on @oracle_dots@.BLATALIGNMENT (TARGET_NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.BLATALIGNMENT_IND01 on @oracle_dots@.BLATALIGNMENT (QUERY_NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.BLATALIGNMENT_IND03 on @oracle_dots@.BLATALIGNMENT (QUERY_TAXON_ID,QUERY_TABLE_ID,IS_CONSISTENT,QUERY_NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.BLATALIGNMENT_IND06 on @oracle_dots@.BLATALIGNMENT (TARGET_TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.BLATALIGNMENT_IND07 on @oracle_dots@.BLATALIGNMENT (TARGET_EXTERNAL_DB_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.BLATALIGNMENT_IND08 on @oracle_dots@.BLATALIGNMENT (BLAT_ALIGNMENT_QUALITY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.BLATALIGNMENT_IND09 on @oracle_dots@.BLATALIGNMENT (QUERY_EXTERNAL_DB_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.BLATALIGNMENT_IND10 on @oracle_dots@.BLATALIGNMENT (TARGET_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
@@ -253,11 +257,12 @@ create index @oracle_dots@.EPCR_IND01 on @oracle_dots@.EPCR (NA_SEQUENCE_ID,STAR
 create index @oracle_dots@.EPCR_IND03 on @oracle_dots@.EPCR (MAP_TABLE_ID,MAP_ID,NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* EST */
-create index @oracle_dots@.EST_IND01 on @oracle_dots@.EST (CLONE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.EST_IND02 on @oracle_dots@.EST (CONTACT_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.EST_IND03 on @oracle_dots@.EST (NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.EST_IND04 on @oracle_dots@.EST (LIBRARY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.EST_IND05 on @oracle_dots@.EST (DBEST_ID_EST)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.EST_IND06 on @oracle_dots@.EST (ACCESSION)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.EST_IND01 on @oracle_dots@.EST (CLONE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* EVIDENCE */
 create index @oracle_dots@.EVIDENCE_IND01 on @oracle_dots@.EVIDENCE (FACT_ID,FACT_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -305,6 +310,7 @@ create index @oracle_dots@.FINGERPRINTCONTIG_IND02 on @oracle_dots@.FINGERPRINTC
 create index @oracle_dots@.FINGERPRINTMAP_IND01 on @oracle_dots@.FINGERPRINTMAP (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* GENE */
+create index @oracle_dots@.GENE_IND05 on @oracle_dots@.GENE (GENE_SYMBOL)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.GENE_IND02 on @oracle_dots@.GENE (NAME)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.GENE_IND03 on @oracle_dots@.GENE (GENE_CATEGORY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.GENE_IND04 on @oracle_dots@.GENE (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -370,10 +376,12 @@ create index @oracle_dots@.GENESYNONYM_IND04 on @oracle_dots@.GENESYNONYM (REVIE
 /* GENETRAPASSEMBLY */
 create index @oracle_dots@.GENETRAPASSEMBLY_IND01 on @oracle_dots@.GENETRAPASSEMBLY (TAG_NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.GENETRAPASSEMBLY_IND02 on @oracle_dots@.GENETRAPASSEMBLY (ASSEMBLY_NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.GENETRAPASSEMBLY_IND03 on @oracle_dots@.GENETRAPASSEMBLY (PERCENT_IDENTITY,TAG_NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* GOASSOCIATION */
-create index @oracle_dots@.GOASSOCIATION_IND01 on @oracle_dots@.GOASSOCIATION (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.GOASSOCIATION_IND02 on @oracle_dots@.GOASSOCIATION (GO_TERM_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.GOASSOCIATION_IND01 on @oracle_dots@.GOASSOCIATION (GO_TERM_ID,IS_DEPRECATED,REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.GOASSOCIATION_IND02 on @oracle_dots@.GOASSOCIATION (TABLE_ID,ROW_ID,IS_DEPRECATED,REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create bitmap index @oracle_dots@.GOASSOCIATION_BM_REVIEWSTATUS on @oracle_dots@.GOASSOCIATION (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* GOASSOCIATIONINSTANCE */
 create index @oracle_dots@.GOASSOCIATIONINSTANCE_IND01 on @oracle_dots@.GOASSOCIATIONINSTANCE (GO_ASSOCIATION_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -385,25 +393,22 @@ create index @oracle_dots@.GOASSOCIATIONINSTANCE_IND04 on @oracle_dots@.GOASSOCI
 
 
 /* GOASSOCINSTEVIDCODE */
-create index @oracle_dots@.GOASSOCINSTEVIDCODE_IND01 on @oracle_dots@.GOASSOCINSTEVIDCODE (GO_EVIDENCE_CODE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.GOASSOCINSTEVIDCODE_IND02 on @oracle_dots@.GOASSOCINSTEVIDCODE (GO_ASSOCIATION_INSTANCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.GOASSOCINSTEVIDCODE_IND03 on @oracle_dots@.GOASSOCINSTEVIDCODE (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.GOASSOCINSTEVIDCODE_IND01 on @oracle_dots@.GOASSOCINSTEVIDCODE (GO_EVIDENCE_CODE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* INDEXWORD */
 create index @oracle_dots@.INDEXWORD_IND01 on @oracle_dots@.INDEXWORD (WORD)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* INDEXWORDLINK */
-create index @oracle_dots@.INDEXWORDLINK_IND01 on @oracle_dots@.INDEXWORDLINK (INDEX_WORD_ID,TARGET_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.INDEXWORDLINK_IND03 on @oracle_dots@.INDEXWORDLINK (INDEX_WORD_ID,TARGET_TABLE_ID,TARGET_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.INDEXWORDLINK_IND02 on @oracle_dots@.INDEXWORDLINK (TARGET_TABLE_ID,TARGET_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.INDEXWORDLINK_IND03 on @oracle_dots@.INDEXWORDLINK (INDEX_WORD_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* INDEXWORDSIMLINK */
-create index @oracle_dots@.INDEXWORDSIMLINK_IND01 on @oracle_dots@.INDEXWORDSIMLINK (TARGET_TABLE_ID,TARGET_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.INDEXWORDSIMLINK_IND07 on @oracle_dots@.INDEXWORDSIMLINK (SIMILARITY_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.INDEXWORDSIMLINK_IND04 on @oracle_dots@.INDEXWORDSIMLINK (BEST_SIMILARITY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.INDEXWORDSIMLINK_IND06 on @oracle_dots@.INDEXWORDSIMLINK (INDEX_WORD_ID,BEST_P_VALUE_EXP,TARGET_TABLE_ID,SIMILARITY_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.INDEXWORDSIMLINK_IND05 on @oracle_dots@.INDEXWORDSIMLINK (TARGET_TABLE_ID,TARGET_ID,INDEX_WORD_ID,BEST_P_VALUE_EXP,BEST_P_VALUE_MANT)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.INDEXWORDSIMLINK_IND08 on @oracle_dots@.INDEXWORDSIMLINK (INDEX_WORD_ID,BEST_P_VALUE_EXP,TARGET_TABLE_ID,SIMILARITY_TABLE_ID,BEST_SIMILARITY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.INDEXWORDSIMLINK_IND01 on @oracle_dots@.INDEXWORDSIMLINK (TARGET_TABLE_ID,TARGET_ID,INDEX_WORD_ID,BEST_P_VALUE_EXP,BEST_P_VALUE_MANT)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.INDEXWORDSIMLINK_IND03 on @oracle_dots@.INDEXWORDSIMLINK (SIMILARITY_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.INDEXWORDSIMLINK_IND02 on @oracle_dots@.INDEXWORDSIMLINK (INDEX_WORD_ID,BEST_P_VALUE_EXP,TARGET_TABLE_ID,SIMILARITY_TABLE_ID,BEST_SIMILARITY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* INTERACTION */
 create index @oracle_dots@.INTERACTION_IND01 on @oracle_dots@.INTERACTION (INTERACTION_TYPE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -485,7 +490,7 @@ create index @oracle_dots@.NAFEATURERELATIONSHIP_IND02 on @oracle_dots@.NAFEATUR
 create index @oracle_dots@.NAFEATURERELATIONSHIP_IND03 on @oracle_dots@.NAFEATURERELATIONSHIP (CHILD_NA_FEATURE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* NAGENE */
-
+create index @oracle_dots@.NAGENE_IND01 on @oracle_dots@.NAGENE (NAME)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* NALOCATION */
 create index @oracle_dots@.NALOCATION_IND01 on @oracle_dots@.NALOCATION (NA_FEATURE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -496,24 +501,25 @@ create index @oracle_dots@.NAPRIMARYTRANSCRIPT_IND01 on @oracle_dots@.NAPRIMARYT
 
 /* NAPROTEIN */
 create index @oracle_dots@.NAPROTEIN_IND01 on @oracle_dots@.NAPROTEIN (NA_PRIMARY_TRANSCRIPT_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.NAPROTEIN_IND02 on @oracle_dots@.NAPROTEIN (NAME)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* NASEQCYTOLOCATION */
 create index @oracle_dots@.NASEQCYTOLOCATION_IND01 on @oracle_dots@.NASEQCYTOLOCATION (NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* NASEQUENCEIMP */
-create index @oracle_dots@.NASEQUENCEIMP_IND11 on @oracle_dots@.NASEQUENCEIMP (NA_SEQUENCE_ID,TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.NASEQUENCEIMP_IND01 on @oracle_dots@.NASEQUENCEIMP (SUBCLASS_VIEW,STRING1,EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.NASEQUENCEIMP_IND15 on @oracle_dots@.NASEQUENCEIMP (EXTERNAL_DATABASE_RELEASE_ID,TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.NASEQUENCEIMP_IND02 on @oracle_dots@.NASEQUENCEIMP (SEQUENCE_TYPE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.NASEQUENCEIMP_IND07 on @oracle_dots@.NASEQUENCEIMP (INT1)  TABLESPACE @oracle_dotsIndexTablespace@;
+create bitmap index @oracle_dots@.NASEQUENCEIMP_BM_IND_SV_TAXON on @oracle_dots@.NASEQUENCEIMP (SUBCLASS_VIEW,TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.NASEQUENCEIMP_IND04 on @oracle_dots@.NASEQUENCEIMP (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.NASEQUENCEIMP_IND16 on @oracle_dots@.NASEQUENCEIMP (TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.NASEQUENCEIMP_IND09 on @oracle_dots@.NASEQUENCEIMP (STRING4,SUBCLASS_VIEW)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.NASEQUENCEIMP_IND10 on @oracle_dots@.NASEQUENCEIMP (INT1,SUBCLASS_VIEW)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.NASEQUENCEIMP_IND13 on @oracle_dots@.NASEQUENCEIMP (STRING2)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.NASEQUENCEIMP_IND08 on @oracle_dots@.NASEQUENCEIMP (EXTERNAL_DATABASE_RELEASE_ID,SUBCLASS_VIEW)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.NASEQUENCEIMP_IND01 on @oracle_dots@.NASEQUENCEIMP (SUBCLASS_VIEW,STRING1,EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.NASEQUENCEIMP_IND02 on @oracle_dots@.NASEQUENCEIMP (SEQUENCE_TYPE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.NASEQUENCEIMP_IND04 on @oracle_dots@.NASEQUENCEIMP (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.NASEQUENCEIMP_IND05 on @oracle_dots@.NASEQUENCEIMP (SEQUENCE_PIECE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.NASEQUENCEIMP_IND15 on @oracle_dots@.NASEQUENCEIMP (EXTERNAL_DATABASE_RELEASE_ID,TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.NASEQUENCEIMP_IND07 on @oracle_dots@.NASEQUENCEIMP (INT1)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.NASEQUENCEIMP_IND16 on @oracle_dots@.NASEQUENCEIMP (TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.NASEQUENCEIMP_IND17 on @oracle_dots@.NASEQUENCEIMP (SEQUENCING_CENTER_CONTACT_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.NASEQUENCEIMP_IND05 on @oracle_dots@.NASEQUENCEIMP (SEQUENCE_PIECE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* NASEQUENCEKEYWORD */
 create index @oracle_dots@.NASEQUENCEKEYWORD_IND01 on @oracle_dots@.NASEQUENCEKEYWORD (KEYWORD_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -624,6 +630,7 @@ create index @oracle_dots@.RHMAP_IND02 on @oracle_dots@.RHMAP (EXTERNAL_DATABASE
 /* RHMAPMARKER */
 create index @oracle_dots@.RHMAPMARKER_IND01 on @oracle_dots@.RHMAPMARKER (RH_MARKER_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.RHMAPMARKER_IND02 on @oracle_dots@.RHMAPMARKER (RH_MAP_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.RHMAPMARKER_IND03 on @oracle_dots@.RHMAPMARKER (CHROMOSOME,CENTIRAYS,RH_MARKER_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* RHMARKER */
 create index @oracle_dots@.RHMARKER_IND01 on @oracle_dots@.RHMARKER (TAXON_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -716,7 +723,9 @@ create index @oracle_dots@.SEQUENCETYPE_IND01 on @oracle_dots@.SEQUENCETYPE (PAR
 /* SIMILARITY */
 create index @oracle_dots@.SIMILARITY_IND03 on @oracle_dots@.SIMILARITY (SUBJECT_TABLE_ID,SUBJECT_ID,MIN_SUBJECT_START,MAX_SUBJECT_END)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.SIMILARITY_IND04 on @oracle_dots@.SIMILARITY (QUERY_TABLE_ID,QUERY_ID,MIN_QUERY_START,MAX_QUERY_END)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.SIMILARITY_IND05 on @oracle_dots@.SIMILARITY (ALGORITHM_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.SIMILARITY_IND06 on @oracle_dots@.SIMILARITY (SUBJECT_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.SIMILARITY_IND05 on @oracle_dots@.SIMILARITY (QUERY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.SIMILARITY_IND08 on @oracle_dots@.SIMILARITY (ROW_ALG_INVOCATION_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* SIMILARITYSPAN */
 create index @oracle_dots@.SIMILARITYSPAN_IND01N on @oracle_dots@.SIMILARITYSPAN (SIMILARITY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -726,7 +735,7 @@ create index @oracle_dots@.TRANSLATEDAAFEATSEG_IND01 on @oracle_dots@.TRANSLATED
 
 
 
-/* 378 index(es) */
+/* 386 index(es) */
 
 SPOOL OFF
 SET ECHO OFF

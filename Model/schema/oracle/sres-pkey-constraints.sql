@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* sres-pkey-constraints.sql                                                                  */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:22 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:10:04 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -22,6 +22,8 @@ alter table @oracle_sres@.CONTACT add constraint PK_CONTACT primary key (CONTACT
 alter table @oracle_sres@.DBREF add constraint PK_DBREF primary key (DB_REF_ID);
 alter table @oracle_sres@.DEVELOPMENTALSTAGE add constraint PK_DEVSTAGE primary key (DEVELOPMENTAL_STAGE_ID);
 alter table @oracle_sres@.DISEASE add constraint PK_DISEASE primary key (DISEASE_ID);
+alter table @oracle_sres@.ECPATHWAY add constraint ECPATHWAY_PK primary key (EC_PATHWAY_ID);
+alter table @oracle_sres@.ECPATHWAYENZYMECLASS add constraint ECPATHWAYENZYMECLASS_PK primary key (EC_PATHWAY_ENZYME_CLASS_ID);
 alter table @oracle_sres@.ENZYMECLASS add constraint ENZYMECLASS_PK primary key (ENZYME_CLASS_ID);
 alter table @oracle_sres@.ENZYMECLASSATTRIBUTE add constraint ENZYMECLASSATTRIBUTE_PK primary key (ENZYME_CLASS_ATTRIBUTE_ID);
 alter table @oracle_sres@.EXTERNALDATABASE add constraint PK_EXTERNALDATABASE primary key (EXTERNAL_DATABASE_ID);
@@ -40,6 +42,7 @@ alter table @oracle_sres@.MGEDONTOLOGYRELATIONSHIP add constraint PK_MGEDONTOLOG
 alter table @oracle_sres@.MGEDONTOLOGYTERM add constraint PK_MGEDONTOLOGYTERM primary key (MGED_ONTOLOGY_TERM_ID);
 alter table @oracle_sres@.MUTAGEN add constraint PK_MUTAGEN primary key (MUTAGEN_ID);
 alter table @oracle_sres@.ONTOLOGYRELATIONSHIPTYPE add constraint PK_ONTOLOGYRELATIONSHIPTYPE primary key (ONTOLOGY_RELATIONSHIP_TYPE_ID);
+alter table @oracle_sres@.ONTOLOGYTERMTYPE add constraint PK_ONTOLOGYTERMTYPE primary key (ONTOLOGY_TERM_TYPE_ID);
 alter table @oracle_sres@.PATOATTRIBUTE add constraint PK_PATOATTRIBUTE primary key (PATO_ATTRIBUTE_ID);
 alter table @oracle_sres@.PHENOTYPE add constraint PK_PHENOTYPE primary key (PHENOTYPE_ID);
 alter table @oracle_sres@.PHENOTYPECLASS add constraint PK_PHENOTYPECLASS primary key (PHENOTYPE_CLASS_ID);
@@ -51,7 +54,7 @@ alter table @oracle_sres@.TAXON add constraint PK_TAXON primary key (TAXON_ID);
 alter table @oracle_sres@.TAXONNAME add constraint PK_TAXONNAME primary key (TAXON_NAME_ID);
 
 
-/* 39 primary key constraint(s) */
+/* 42 primary key constraint(s) */
 
 SPOOL OFF
 SET ECHO OFF

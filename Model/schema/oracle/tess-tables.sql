@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* tess-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:47:56 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:13:37 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -149,11 +149,38 @@ CREATE TABLE @oracle_tess@.FOOTPRINTMETHODPROTOCOL (
  TABLESPACE @oracle_tessTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.MODEL (
-    ACTIVITY_MODEL_ID                  NUMBER(12)                                    NOT NULL,
-    ACTIVITY_ID                        NUMBER(12)                                    NOT NULL,
-    SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
+CREATE TABLE @oracle_tess@.MARKOVCHAINOBS (
+    MARKOV_CHAIN_OBS_ID                NUMBER(12)                                    NOT NULL,
+    MODEL_ID                           NUMBER(12)                                    NOT NULL,
+    MULTINOMIAL_OBSERVATION_SET_ID     NUMBER(12)                                    NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_tessTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+CREATE TABLE @oracle_tess@.MODELIMP (
+    MODEL_ID                           NUMBER(12)                                    NOT NULL,
+    SUBCLASS_VIEW                      VARCHAR2(32)                                  NOT NULL,
+    NAME                               VARCHAR2(255)                                 NOT NULL,
+    EXTERNAL_DATABASE_RELEASE_ID       NUMBER(12)                                    NULL,
+    SOURCE_ID                          VARCHAR2(32)                                  NULL,
+    VERSION_STRING                     VARCHAR2(32)                                  NULL,
+    VERSION_DESCRIPTION                CLOB                                          NULL,
+    SECONDARY_ID                       VARCHAR2(32)                                  NULL,
+    BEST_PRACTICE_PARAM_GROUP_ID       NUMBER(12)                                    NULL,
+    REVIEW_STATUS_ID                   NUMBER(12)                                    NOT NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    BOOL1                              NUMBER(1)                                     NULL,
+    INT1                               NUMBER(12)                                    NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
     GROUP_READ                         NUMBER(1)                                     NOT NULL,
@@ -169,7 +196,9 @@ CREATE TABLE @oracle_tess@.MODEL (
 
 CREATE TABLE @oracle_tess@.MODELRESULT (
     MODEL_RESULT_ID                    NUMBER(12)                                    NOT NULL,
-    SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
+    MODEL_ID                           NUMBER(12)                                    NOT NULL,
+    ANALYSIS_ID                        NUMBER(12)                                    NOT NULL,
+    PARAMETER_GROUP_ID                 NUMBER(12)                                    NULL,
     REVIEW_STATUS_ID                   NUMBER(12)                                    NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
@@ -304,6 +333,7 @@ CREATE TABLE @oracle_tess@.MULTINOMIALLABEL (
 CREATE TABLE @oracle_tess@.MULTINOMIALLABELSET (
     MULTINOMIAL_LABEL_SET_ID           NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(20)                                  NOT NULL,
+    LABEL_ORDER                        NUMBER(2)                                     NOT NULL,
     SIGNATURE                          VARCHAR2(255)                                 NOT NULL,
     IS_INTEGRAL                        NUMBER(1)                                     NOT NULL,
     CARDINALITY                        NUMBER                                        NOT NULL,
@@ -324,7 +354,7 @@ CREATE TABLE @oracle_tess@.MULTINOMIALLABELSET (
 CREATE TABLE @oracle_tess@.MULTINOMIALOBSERVATION (
     MULTINOMIAL_OBS_ID                 NUMBER(12)                                    NOT NULL,
     MULTINOMIAL_OBS_SET_ID             NUMBER(12)                                    NOT NULL,
-    MULTINOMIAL_LABEL_ID               NUMBER(12)                                    NOT NULL,
+    MULTINOMIAL_LABEL_INDEX            NUMBER(12)                                    NOT NULL,
     OBSERVATION                        FLOAT(126)                                    NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
@@ -342,14 +372,13 @@ CREATE TABLE @oracle_tess@.MULTINOMIALOBSERVATION (
 
 CREATE TABLE @oracle_tess@.MULTINOMIALOBSERVATIONSET (
     MULTINOMIAL_OBS_SET_ID             NUMBER                                        NOT NULL,
-    RECOGNITION_ID                     NUMBER                                        NOT NULL,
-    ORDINAL                            NUMBER                                        NOT NULL,
     MULTINOMIAL_LABEL_SET_ID           NUMBER                                        NOT NULL,
+    LABEL_ORDER                        NUMBER                                        NOT NULL,
     TOTAL_OBSERVATIONS                 NUMBER                                        NOT NULL,
     IS_NORMALIZED                      NUMBER(1)                                     NOT NULL,
     ENTROPY                            FLOAT(126)                                    NOT NULL,
     INFORMATION                        FLOAT(126)                                    NOT NULL,
-    CONSENSUS                          CHAR(32)                                      NOT NULL,
+    CONSENSUS                          VARCHAR2(32)                                  NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
@@ -506,8 +535,9 @@ CREATE TABLE @oracle_tess@.PARSERITEMLINK (
 
 CREATE TABLE @oracle_tess@.PREDICTIONRESULT (
     PREDICTION_RESULT_ID               NUMBER(12)                                    NOT NULL,
-    SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
+    MODEL_ID                           NUMBER(12)                                    NOT NULL,
     FOOTPRINT_ID                       NUMBER(12)                                    NOT NULL,
+    ANALYSIS_ID                        NUMBER(12)                                    NOT NULL,
     REVIEW_STATUS_ID                   NUMBER(12)                                    NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
@@ -568,7 +598,7 @@ CREATE TABLE @oracle_tess@.SBCGANNOTATIONFILTERTERM (
 
 CREATE TABLE @oracle_tess@.SBCGANNOTATIONGUIDE (
     SBCG_ANNOTATION_GUIDE_ID           NUMBER(12)                                    NOT NULL,
-    SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
+    MODEL_ID                           NUMBER(12)                                    NOT NULL,
     SOURCE_CODE                        CLOB                                          NOT NULL,
     TYPE_VALUE                         VARCHAR2(255)                                 NULL,
     CATEGORY_VALUE                     VARCHAR2(255)                                 NULL,
@@ -602,30 +632,6 @@ CREATE TABLE @oracle_tess@.SBCGCOMPARISONTYPE (
     SBCG_COMPARISON_TYPE_ID            NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(32)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
-    MODIFICATION_DATE                  DATE                                          NOT NULL,
-    USER_READ                          NUMBER(1)                                     NOT NULL,
-    USER_WRITE                         NUMBER(1)                                     NOT NULL,
-    GROUP_READ                         NUMBER(1)                                     NOT NULL,
-    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
-    OTHER_READ                         NUMBER(1)                                     NOT NULL,
-    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
-    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
-    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
-    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
-CREATE TABLE @oracle_tess@.SBCGGRAMMAR (
-    SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
-    NAME                               VARCHAR2(255)                                 NOT NULL,
-    EXTERNAL_DATABASE_RELEASE_ID       NUMBER(12)                                    NULL,
-    SOURCE_ID                          VARCHAR2(32)                                  NULL,
-    VERSION_STRING                     VARCHAR2(32)                                  NULL,
-    VERSION_DESCRIPTION                CLOB                                          NULL,
-    SECONDARY_ID                       VARCHAR2(32)                                  NULL,
-    BEST_PRACTICE_TEST_COND_ID         NUMBER(12)                                    NULL,
-    REVIEW_STATUS_ID                   NUMBER(12)                                    NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
@@ -721,10 +727,29 @@ CREATE TABLE @oracle_tess@.SBCGPRODUCTIONTYPE (
  TABLESPACE @oracle_tessTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
+CREATE TABLE @oracle_tess@.SBCGRECOGMULTIOBS (
+    SBCG_RECOG_MULTI_OBS_ID            NUMBER(12)                                    NOT NULL,
+    SBCG_RECOGNITION_ID                NUMBER(12)                                    NOT NULL,
+    MULTINOMIAL_OBSERVATION_SET_ID     NUMBER(12)                                    NOT NULL,
+    ORDINAL                            NUMBER                                        NOT NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_tessTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
 CREATE TABLE @oracle_tess@.SBCGRECOGNITIONIMP (
     SBCG_RECOGNITION_ID                NUMBER(12)                                    NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(32)                                  NOT NULL,
-    SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
+    MODEL_ID                           NUMBER(12)                                    NOT NULL,
     SBCG_NONTERMINAL_ID                NUMBER(12)                                    NULL,
     SBCG_STREAM_ID                     NUMBER(12)                                    NULL,
     PARENT_SBCG_RECOGNITION_ID         NUMBER(12)                                    NULL,
@@ -789,7 +814,7 @@ CREATE TABLE @oracle_tess@.SBCGRHSTERM (
 
 CREATE TABLE @oracle_tess@.SBCGSTREAM (
     SBCG_STREAM_ID                     NUMBER(12)                                    NOT NULL,
-    SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
+    MODEL_ID                           NUMBER(12)                                    NOT NULL,
     SOURCE_CODE                        CLOB                                          NOT NULL,
     COMMENT_STRING                     CLOB                                          NULL,
     STREAM_NAME                        VARCHAR2(255)                                 NOT NULL,
@@ -868,7 +893,7 @@ CREATE TABLE @oracle_tess@.TRAININGSETMEMBER (
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
-/* 39 table(s) */
+/* 40 table(s) */
 
 SPOOL OFF
 SET ECHO OFF
