@@ -1,9 +1,9 @@
-#!/usr/bin/perl
+#!@perl@
 
 # -----------------------------------------------------------------------
 # Table.pm
 #
-# An Oracle table.
+# Perl object that represents an Oracle table or view.
 #
 # Created: Thu Feb 22 13:30:43 EST 2001
 #
@@ -78,10 +78,26 @@ sub getSQL {
 	$self->getViewSQL($dbh, $newOwner) : $self->getTableSQL($dbh, $newOwner, $newTS);
 }
 
+# Generate the SQL required to create a "version table" for this object.
+#
+sub getVersionTableSQL {
+    my($self, $dbh, $newOwner, $newTS) = @_;
+    return ($self->isView($dbh)) ? 
+	$self->getViewSQL($dbh, $newOwner, 1) : $self->getTableSQL($dbh, $newOwner, $newTS, 1);
+}
+
 # Generate the SQL required to recreate this object (if it's a view.)
 #
+# $verTable  -  Whether to generate the SQL required to create the version database
+#               view that would correspond to this object.
+#
+# NOTE: The $verTable option currently has two known bugs -
+#        1. The name of the implementation table needs to have "Ver" appended.
+#        2. The extra version columns are not being added to the view.
+#           (version_alg_invocation_id, version_date, version_transaction_id)
+#
 sub getViewSQL {
-    my($self, $dbh, $newOwner) = @_;
+    my($self, $dbh, $newOwner, $verTable) = @_;
     my $owner = $self->{owner};
     my $name = $self->{name};
 
@@ -97,13 +113,6 @@ sub getViewSQL {
     $viewSql =~ s/([\s\n\m]+)$//mg;
 
     my $s;
-
-    # case 1: SQL already in the form we want, i.e. using inline column aliases
-    #
-#    if ($viewSql =~ /select\s+([^,]+\s+as\s+[^,]+\s*|[^,]+\s+[^,]+\s*)(,[^,]+\s+as\s+[^,]+\s*|from)*/si) {    
-#	print STDERR "*** HIT CASE 1 with $owner.$name\n";
-#	$s = "CREATE VIEW ${newOwner}.${name}\nAS $viewSql;\n";
-#    } els
 
     if ($viewSql =~ /select\s+\S+\s*(,|from)/i) {
 
@@ -133,26 +142,38 @@ sub getViewSQL {
 		}
 	    }
 	    
-	    $s = "CREATE VIEW ${newOwner}.${name}\nAS SELECT\n  " . join(",\n  ", @$newVals) . " $theRest;\n";
+	    if ($verTable) {
+		$s = "CREATE VIEW ${newOwner}.${name}Ver\nAS SELECT\n  " . join(",\n  ", @$newVals) . " $theRest;\n";
+	    } else {
+		$s = "CREATE VIEW ${newOwner}.${name}\nAS SELECT\n  " . join(",\n  ", @$newVals) . " $theRest;\n";
+	    }
 	} else {
 
 	    # DEBUG
-
-	    print STDERR "WARNING - unable to parse $owner.$name into simpler form\n";
-	    print STDERR "viewSql = '$viewSql'\n";
-	    print STDERR "values = '$values' theRest = '$theRest'\n";
-	    print STDERR "numcols = ", scalar(@$cols), "\n";
-	    print STDERR "numcolvals = ", scalar(@colVals), "\n";
+	    
+#	    print STDERR "WARNING - unable to parse $owner.$name into simpler form\n";
+#	    print STDERR "viewSql = '$viewSql'\n";
+#	    print STDERR "values = '$values' theRest = '$theRest'\n";
+#	    print STDERR "numcols = ", scalar(@$cols), "\n";
+#	    print STDERR "numcolvals = ", scalar(@colVals), "\n";
 
 	    my $cstring = join(",\n  ", @$cols);
-	    $s = "CREATE VIEW ${newOwner}.${name}\n( $cstring )\nAS $viewSql;\n";
 
-	    print STDERR "CREATE = '$s'\n";
+	    if ($verTable) {
+		$s = "CREATE VIEW ${newOwner}.${name}Ver\n( $cstring )\nAS $viewSql;\n";
+	    } else {
+		$s = "CREATE VIEW ${newOwner}.${name}\n( $cstring )\nAS $viewSql;\n";
+	    }
+
+#	    print STDERR "CREATE = '$s'\n";
 	}
     } else {
-	$s = "CREATE VIEW ${newOwner}.${name}\nAS $viewSql;\n";
+	if ($verTable) {
+	    $s = "CREATE VIEW ${newOwner}.${name}Ver\nAS $viewSql;\n";
+	} else {
+	    $s = "CREATE VIEW ${newOwner}.${name}\nAS $viewSql;\n";
+	}
     }
-
     return $s;
 }
 
@@ -160,7 +181,7 @@ sub getViewSQL {
 # Does not include constraints (including PRIMARY KEY, if any) or indexes.
 #
 sub getTableSQL {
-    my($self, $dbh, $newOwner, $newTS) = @_;
+    my($self, $dbh, $newOwner, $newTS, $verTable) = @_;
     my $owner = $self->{owner};
     my $name = $self->{name};
 
@@ -175,11 +196,12 @@ sub getTableSQL {
     my $cols = &Util::execQuery($dbh, $sql, 'hash');
     
     my $s = '';
+    my $tname = $verTable ? "${name}Ver" : $name;
 
     if ($newOwner =~ /^&&/) {
-	$s .= "CREATE TABLE ${newOwner}..${name} (\n";
+	$s .= "CREATE TABLE ${newOwner}..${tname} (\n";
     } else {
-	$s .= "CREATE TABLE ${newOwner}.${name} (\n";
+	$s .= "CREATE TABLE ${newOwner}.${tname} (\n";
     }
     my $first = 1;
 
@@ -228,6 +250,13 @@ sub getTableSQL {
 	$s .= ($c->{'nullable'} =~ /n/i) ? ' NOT NULL' : ' NULL';
 
 	$first = 0;
+    }
+
+    if ($verTable) {
+	$s .= ",\n";
+	$s .= "    VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,\n";
+	$s .= "    VERSION_DATE                       DATE                                          NULL,\n";
+	$s .= "    VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL\n";
     }
 
     $s .= ")\n";
@@ -293,9 +322,11 @@ sub getContentsSQL {
 
     my $insertSql = "SET ESCAPE '\\';\n";
 
-    # Find out the database's default DATE_FORMAT
+    # Find out the database's default DATE_FORMAT; unless we do this it's possible that
+    # the target database will be using a different default DATE_FORMAT and will be
+    # unable to parse the stringified date values in the output file.
     #
-    my $vals = &Util::execQuery($dbh, "select value from v\$parameter where name = 'nls_date_format'", 'scalar');
+    my $vals = &Util::execQuery($dbh, "select value from sys.v\$parameter where name = 'nls_date_format'", 'scalar');
     if (defined($vals) && (scalar(@$vals) > 0)) {
 	my $val = $vals->[0];
 	if ($val =~ /\S/) {
@@ -341,7 +372,7 @@ sub getContentsSQL {
 
     $insertSql .= "\n/* $nrows row(s) */\n\n";
 
-    # 
+    # Include SQL commands to re-create the table's sequence object at the correct index.
     #
     if ($resetSequence) {
 	my $rows = &Util::execQuery($dbh, "select max($primKeyCol) from $owner.$name", 'scalar');
@@ -443,8 +474,11 @@ sub getConstraintCols {
 
 sub constraintToSQL {
     my($self, $dbh, $tableName, $row, $renameSystemIds, $cnameHash) = @_;
+
     my($tOwner, $tName) = ($tableName =~ /^([^\.]+)\.([^\.]+)$/);
-    $tableName =~ s/^(&&\S+)\.(\S+)$/$1..$2/;
+
+    # Hack - add an extra period if the schema name begins with && (i.e. is an SQL variable)
+    $tOwner =~ s/^(&&\S+)/$1./; 
 
     my $cowner = $row->{owner};
     my $cname = $row->{constraint_name};
@@ -482,11 +516,11 @@ sub constraintToSQL {
 	    $cname = &_generateId($tName, "FK", $cnameHash);
 	}
 
-	my $cStr = ("alter table $tableName add constraint $cname" .
+	my $cStr = ("alter table ${tOwner}.${tName} add constraint $cname" .
 		    " foreign key (" . join(',', @$scols) . ")" .
-		    " references $ttable (" . join(',', @$tcols) . ");");
+		    " references ${rOwner}.${ttable} (" . join(',', @$tcols) . ");");
 	
-	return("alter table $tableName drop constraint $cname;", $cStr);
+	return("alter table ${tOwner}.${tName} drop constraint $cname;", $cStr);
     }
     
     # check constraint; ignore 'NOT NULL' constraints
@@ -500,12 +534,12 @@ sub constraintToSQL {
 	}
 
 	if ($searchCond =~ /\S+ in \(.+\)/) {
-#	    print STDERR "getConstraintSql: found check constraint $cname on $tableName with text '$searchCond'\n";
-	    my $cStr = "alter table $tableName add constraint $cname check ($searchCond);";
-	    return("alter table $tableName drop constraint $cname;", $cStr);
+#	    print STDERR "getConstraintSql: found check constraint $cname on ${tOwner}.${tName} with text '$searchCond'\n";
+	    my $cStr = "alter table ${tOwner}.${tName} add constraint $cname check ($searchCond);";
+	    return("alter table ${tOwner}.${tName} drop constraint $cname;", $cStr);
 	}
 
-	die "getConstraintSql: check constraint $cname on $tableName with text '$searchCond'\n";
+	die "getConstraintSql: check constraint $cname on ${tOwner}.${tName} with text '$searchCond'\n";
     }
     
     # primary key constraint
@@ -520,10 +554,25 @@ sub constraintToSQL {
 	    $cname = "PK_$tName";
 	}
 
-	my $cStr = ("alter table $tableName add constraint $cname" . 
+	my $cStr = ("alter table ${tOwner}.${tName} add constraint $cname" . 
 		    " primary key (" . join(',', @$cnames) . ");");
 	
-	return("alter table $tableName drop constraint $cname;", $cStr);
+	return("alter table ${tOwner}.${tName} drop constraint $cname;", $cStr);
+    }
+
+    # unique constraint
+    #
+    elsif ($type eq 'U') {
+        my $searchCond = $row->{search_condition};
+        my $ccols = $self->getConstraintCols($dbh, $cowner, $cname);
+        my $cnames = [];
+
+        foreach my $cc (@$ccols) { push(@$cnames, $cc->{column_name}); }
+
+        my $cStr = ("alter table ${tOwner}.${tName} add unique " .
+                    "(" . join(',', @$cnames) . ");");
+
+        return("alter table ${tOwner}.${tName} drop constraint $cname;", $cStr);
     }
 
     die "getConstraintSql: unsupported constraint type '$type'";
@@ -549,6 +598,7 @@ sub getForeignKeyConstraints {
 	       "from all_constraints ac1, all_constraints ac2 " .
 	       "where ac1.constraint_type = 'R' " .
 	       "and ac1.r_constraint_name = ac2.constraint_name " .
+	       "and ac1.r_owner = ac2.owner " .
 	       "and ac2.owner = upper('${owner}') " .
 	       "and ac2.table_name = upper('${name}') ");
 
@@ -566,6 +616,7 @@ sub getForeignKeyConstraintsSql {
 
     my $constraints = $self->getForeignKeyConstraints($dbh);
     my $chash = {};
+
     foreach my $c (@$constraints) {
 	my $tn = $c->{'table_name'};
 	my $cn = $c->{'constraint_name'};
@@ -577,9 +628,12 @@ sub getForeignKeyConstraintsSql {
 	# HACK - this ONLY works in the single-schema case (i.e. no foreign key constraints from outside)
 	
 	my $tn = $c->{table_name};
-	$tn =~ s/^[^\.]+\./$newOwner./ if (defined($newOwner));
+	my $to = $c->{owner};
 
-	my ($drop,$create) = $self->constraintToSQL($dbh, $tn, $c, $renameSystemIds, $chash);
+#	$newOwner = $self->{owner} if (!defined($newOwner));
+#	$tn = $newOwner . "." . $tn;
+
+	my ($drop,$create) = $self->constraintToSQL($dbh, "${to}.${tn}", $c, $renameSystemIds, $chash);
 	push(@$dropSql, $drop);
 	push(@$createSql, $create);
     }
@@ -621,7 +675,7 @@ sub getSelfConstraintsSql {
     }
 
     foreach my $c (@$constraints) {
-	my ($drop,$create) = $self->constraintToSQL($dbh, $tn, $c, $renameSystemIds, $chash);
+	my ($drop,$create) = $self->constraintToSQL($dbh, uc($tn), $c, $renameSystemIds, $chash);
 	push(@$dropSql, $drop);
 	push(@$createSql, $create);
     }
@@ -741,12 +795,8 @@ sub getIndexesSql {
 
     my $keyCols = $self->getPrimaryKeyConstraintCols($dbh);
     my $keyColHash = {};
-    foreach my $k (@$keyCols) { $keyColHash->{$k} = 1; }
 
-# DEBUG
-#    if (defined($keyCols)) {
-#	print $self->toString, " has prim key cols = ", join(",", @$keyCols), "\n";
-#    }
+    foreach my $k (@$keyCols) { $keyColHash->{$k} = 1; }
 
     foreach my $row (@$indexes) {
 	my($d, $c, $isPrimKeyIndex) = $self->indexToSQL($dbh, $tn, $row, $onTable, $renameSysIds, $newOwner, $newTS, $keyColHash);

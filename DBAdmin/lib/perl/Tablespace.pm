@@ -1,9 +1,9 @@
-#!/usr/bin/perl
+#!@perl@
 
 # -----------------------------------------------------------------------
 # Tablespace.pm
 #
-# An Oracle tablespace.
+# Perl object that represents an Oracle tablespace.
 #
 # Created: Sat Feb 24 11:31:31 EST 2001
 #

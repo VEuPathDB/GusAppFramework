@@ -1,9 +1,9 @@
-#!/usr/bin/perl
+#!@perl@
 
 # -----------------------------------------------------------------------
 # Sequence.pm
 #
-# An Oracle sequence.
+# Perl object that represents an Oracle sequence.
 #
 # Created: Mon Jul  2 15:09:52 EST 2001
 # 
@@ -51,6 +51,7 @@ sub getSQL {
     my $sql = ("select * from all_sequences " .
 	       "where sequence_owner = UPPER('$owner') " . 
 	       "and sequence_name = UPPER('$name') ");
+
     my $rows = &Util::execQuery($dbh, $sql, 'hash');
     my $row = $rows->[0];
 
