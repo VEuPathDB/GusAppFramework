@@ -33,7 +33,7 @@ sub new {
 		  usage => ""
 		 });
 
-  $m->initName(ref $M);
+  $m->initName(ref $m);
 
   return $m
 }
