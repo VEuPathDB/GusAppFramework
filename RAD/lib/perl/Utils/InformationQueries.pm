@@ -52,9 +52,15 @@ sub getArrayInfo{
     # This is affy array, query compositeelementimp
     $table = 'rad3.compositeelementimp';
   }elsif ($array->{platform_type_id } == 3 ) {
-    # This is spotted dna array, query elementimp
+    # This is spotted ds dna array, query elementimp
     $table = 'rad3.elementimp';
   }
+  elsif ($array->{platform_type_id } == 213 ) {
+    # This is spotted ss dna array, query elementimp
+    $table = 'rad3.elementimp';
+  }
+  
+
   $sql = qq[select subclass_view from $table where array_id = $id and rownum = 1];
   $array->{subclass_view} =   $slf->runquery($sql)->[0]->{subclass_view};
   return $array;
