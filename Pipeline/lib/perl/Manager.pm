@@ -107,22 +107,16 @@ sub log {
 sub runPlugin {
     my ($self, $signal, $plugin, $args, $msg, $doitProperty) = @_;
 
-    return if $self->startStep($msg, $signal, $doitProperty);
-    
-    my $err = "$self->{pipelineDir}/logs/$signal.err";
-    my $out = "$self->{pipelineDir}/logs/$signal.out";
+    $self->_runPlugin($signal, $plugin, "--commit $args", $msg, $doitProperty);
+}
 
-    my $comment = $args;
-    $comment =~ s/"/\\"/g;
+# param $doitProperty  - the name of a property which will have value 
+#                        "no" if this step should be skipped. undef means
+#                        don't skip
+sub runPluginNoCommit {
+    my ($self, $signal, $plugin, $args, $msg, $doitProperty) = @_;
 
-    my $cmd = "ga --commit $args --comment \"$comment\" $plugin >> $out 2>> $err";
-
-    $self->runCmd("mkdir -p $self->{pipelineDir}/plugins/$signal");
-    chdir "$self->{pipelineDir}/plugins/$signal";
-
-    $self->runCmd($cmd);   
-
-    $self->endStep($signal);
+    $self->_runPlugin($signal, $plugin, $args, $msg, $doitProperty);
 }
 
 sub runCmd {
@@ -233,6 +227,33 @@ sub goodbye {
 #############################################################################
 #          Private Methods
 #############################################################################
+
+# private method to do the actual work of running the plugin
+# param $args - must include '--commit' to do so.
+#
+# param $doitProperty  - the name of a property which will have value 
+#                        "no" if this step should be skipped. undef means
+#                        don't skip
+sub _runPlugin {
+    my ($self, $signal, $plugin, $args, $msg, $doitProperty) = @_;
+
+    return if $self->startStep($msg, $signal, $doitProperty);
+    
+    my $err = "$self->{pipelineDir}/logs/$signal.err";
+    my $out = "$self->{pipelineDir}/logs/$signal.out";
+
+    my $comment = $args;
+    $comment =~ s/"/\\"/g;
+
+    my $cmd = "ga $args --comment \"$comment\" $plugin >> $out 2>> $err";
+
+    $self->runCmd("mkdir -p $self->{pipelineDir}/plugins/$signal");
+    chdir "$self->{pipelineDir}/plugins/$signal";
+
+    $self->runCmd($cmd);   
+
+    $self->endStep($signal);
+}
 
 sub _getSignal {
     my ($self, $signal) = @_;
