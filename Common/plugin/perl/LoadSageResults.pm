@@ -106,8 +106,9 @@ sub run {
 		      $self->getArg('array_id'),
 		      $self->getArg('quantification_id'));
 
-  logVerbose("Finished LoadSageResults " . $self->{resultsAdded} .
-	     " results added. " . $self->{tagsAdded} . " tags added.");
+  $self->logVerbose("Finished LoadSageResults " .
+		    $self->{resultsAdded} . " results added. " .
+		    $self->{tagsAdded} . " tags added.");
 }
 
 # ----------------------------------------------------------------------
