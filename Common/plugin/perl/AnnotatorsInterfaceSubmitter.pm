@@ -79,11 +79,10 @@ print STDERR "@xml\n";
 
 	close F;
 	my $fact_hash= {};
-	$fact_hash =$self->parseFactObjects($self->getCla->{'specialfile'}, $self->getSelfInv);
+	$fact_hash =$self->parseFactObjects($self->getCla->{'specialfile'}, $self->{'self_inv');
 	my $has_evidence = 0;
 	my $remove = 0;
-
-	$self->getSelfInv->parseXML( \@xml );
+	$self->'self_inv'->parseXML( \@xml );
 
 	my @children = $self->getSelfInv->getAllChildren();
 	my $curr_gene;
