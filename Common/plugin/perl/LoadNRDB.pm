@@ -33,6 +33,14 @@ sub new {
       h => 'number of iterations for testing insertion 
                         into NRDBEntry and ExternalAASequence',
      },
+     {o => 'dbName',
+      t => 'string',
+      h => 'sres.externaldatabase.name for NRDB',
+     },
+     {o => 'dbVersion',
+      t => 'string',
+      h => 'sres.externaldatabaserelease.version for this instance of NRDB',
+     },
      {o => 'gitax',
       t => 'string',
       h => 'location of the gi_taxid_prot.dmp file',
@@ -109,7 +117,17 @@ sub run {
   
   die "Supply the name of the nr protein file\n" unless $self->getArgs()->{'nrdb'};
 
-  my $external_database_release_id = $self->getArgs()->{'extDbRelId'} || die 'external_database_release_id not supplied\n';
+  my $external_database_release_id;
+
+  if ( $self->getArgs()->{'dbName'} && $self->getArgs()->{'dbVersion'}){
+    $external_database_release_id=$self->getExtDbRlsId($self->getArgs()->{'dbName'},$self->getArgs()->{'dbVersion'});
+  }
+  elsif ($self->getArgs()->{'extDbRelId'}) {
+    $external_database_release_id = $self->getArgs()->{'extDbRelId'};
+  }
+  else {
+    die 'Supply either extDbRelId or dbName and dbVersion\n';
+  }
 
   my $dbHash = $self->getDB();
 
