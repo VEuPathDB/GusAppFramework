@@ -344,11 +344,11 @@ sub downloadGOAssoc{
 
     my $ftpsite = "ftp://ftp.geneontology.org/pub/go/gene-associations/";
 
-    my $cmd = "wget -t5 -o $logfile -m -np -nd -nH --cut-dirs=3 -A \"gene_association.fb.gz, gene_association.mgi.gz, gene_association.tair.gz, gene_association.wb.gz, gene_association.sgd.gz, gene_association.goa_sptr.gz\" -P $downloadSubDir $ftpsite";
+    my $cmd = "wget -t5 -o $logfile -m -np -nd -nH --cut-dirs=3 -A \"gene_association.fb.gz, gene_association.mgi.gz, gene_association.tair.gz, gene_association.wb.gz, gene_association.sgd.gz, gene_association.goa_uniprot.gz\" -P $downloadSubDir $ftpsite";
 
     $mgr->runCmd($cmd);
 
-    $mgr->runCmd("gunzip $downloadSubDir/gene_association.goa_sptr.gz");
+    $mgr->runCmd("gunzip $downloadSubDir/gene_association.goa_uniprot.gz");
     $mgr->runCmd("gunzip $downloadSubDir/gene_association.sgd.gz");
     $mgr->runCmd("gunzip $downloadSubDir/gene_association.fb.gz");
     $mgr->runCmd("gunzip $downloadSubDir/gene_association.mgi.gz");
