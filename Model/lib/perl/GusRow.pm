@@ -55,9 +55,9 @@ sub getGlobalNoVersion { my($self) = @_; return $self->getDatabase()->getGlobalN
 ## First Global..
 sub setGlobalDeleteEvidenceOnDelete { 
   my($self,$val) = @_; 
-  $self->getDatabase()->setGlobalDeleteEvidence($val); 
+  $self->getDatabase()->setGlobalDeleteEvidenceOnDelete($val); 
 }
-sub getGlobalDeleteEvidenceOnDelete { my($self) = @_; return $self->getDatabase()->getGlobalDeleteEvidence(); }
+sub getGlobalDeleteEvidenceOnDelete { my($self) = @_; return $self->getDatabase()->getGlobalDeleteEvidenceOnDelete(); }
 ##also instance variable...default is to always delete evidence
 sub setDeleteEvidenceOnDelete { my($self,$val) = @_; $self->{deleteEvidence} = $val; }
 sub getDeleteEvidenceOnDelete { my($self) = @_; return $self->{deleteEvidence}; }
