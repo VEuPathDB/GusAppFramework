@@ -131,14 +131,14 @@ sub process {
 #		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
 
 		if ($html_dc eq $doc->getHtmlDocumentation()){
-		  $self->logData("This documentation is identical to what is already stored for attribute: $attribute_nm in table: $table_nm. Not inserted.");
+		  $self->logAlert("This documentation is identical to what is already stored for attribute: $attribute_nm in table: $table_nm. Not inserted.");
 		  next;
 		}
 		else{
 		  $doc->setHtmlDocumentation($html_dc);
 		}
 
-		$countInserts++;
+		$ctTables++;
 	        $self->logVerbose("Set HTML Documentation\n\n");
 		$doc->submit();
 	        $self->logVerbose("Submit object to database\n\n");
@@ -150,7 +150,16 @@ sub process {
 	        $self->logVerbose("Set table ID\n\n");
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
 	        $self->logVerbose("Set attribute name\n\n");
-		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
+#		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
+
+		if ($html_dc eq $doc->getHtmlDocumentation()){
+		  $self->logAlert("This documentation is identical to what is already stored for attribute: $attribute_nm in table: $table_nm. Not inserted.");
+		  next;
+		}
+		else{
+		  $doc->setHtmlDocumentation($html_dc);
+		}
+
 		$countInserts++;
 	        $self->logVerbose("Set HTML Documentation\n\n");
 		$doc->submit();
@@ -167,7 +176,6 @@ sub process {
 	    $self->logAlert("Table $table_nm does not exist in database\n"); 
 	    next;
         }
-	$self->logData("$countInserts rows added to Core::DatabaseDocumentation\n");
 	$db->setGlobalNoVersion(0);
 	
 	
