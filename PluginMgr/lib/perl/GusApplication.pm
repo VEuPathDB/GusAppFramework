@@ -33,6 +33,8 @@ sub new {
 		  usage => ""
 		 });
 
+  $m->initName(ref $M);
+
   return $m
 }
 
@@ -308,8 +310,6 @@ sub doMajorMode_Meta {
   } else {
     return $M->getOk
   }
-
-  $M->initName(ref $M);
 
   # connect to the database
   $M->connect_to_database($M);
