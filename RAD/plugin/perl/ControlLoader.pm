@@ -492,7 +492,7 @@ sub loadData{
        $subclass_view = $M->getCla->{c_subclass_view};
    }
 
-   $cfg_rv->{table_id}=getTable_Id($subclass_view);
+   $cfg_rv->{table_id}=$M->getTable_Id($subclass_view);
    return unless $M->getOk();
 
    while ($line = <$fh>) {
@@ -549,7 +549,7 @@ sub loadData{
      my ($spot_id, $spot_family_id);
 
 # get the element_id for the row
-     $cfg_rv->{row_id}=getRow_Id($subclass_view, @arr);
+     $cfg_rv->{row_id}=$M->getRow_Id($subclass_view, @arr);
      if($cfg_rv->{skip_line}){
 	 next; # skip this row
      }
