@@ -344,9 +344,14 @@ public class Server implements ServerI {
      */
     public static void main(String[] args) 
     {
+	if (args.length != 3) {
+	    System.err.println("Usage: java org.gusdb.objrelj.GUSServer jdbcURL jdbcUser jdbcPassword");
+	    System.exit(1);
+	}
+
         try {
 	    // JC: hack - hard-coded JDBC connection info.
-            GUSServer server = new GUSServer("jdbc:oracle:thin:@nemesis:1521:gus", "gusreadonly", "s7fp4erv");
+            GUSServer server = new GUSServer(args[0], args[1], args[2]);
             String name = System.getProperty("gusservername", "GUSServer_1") ;
             Naming.rebind(name, server);
             System.out.println(name + " is bound in RMIRegistry and ready to serve.");
