@@ -42,6 +42,11 @@ sub printDate {
 sub establishLogin {
     my($user, $dbiStr, $dbAtts, $password) = @_;
 
+    # ora_session_mode must be set for sys logins
+    if ($user =~ /^sys$/i) {
+	$dbAtts->{ora_session_mode} = 2;
+    }
+
     while($password =~ /^\s*$/) {
 	print "Enter password for $user: ";
 	$password = <STDIN>;
