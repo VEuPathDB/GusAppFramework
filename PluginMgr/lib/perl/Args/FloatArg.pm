@@ -13,7 +13,7 @@ sub new {
 
   bless($self, $class);
 
-  $self->initrAttrs($paramsHashRef);
+  $self->initAttrs($paramsHashRef);
 
   return $self;
 }
