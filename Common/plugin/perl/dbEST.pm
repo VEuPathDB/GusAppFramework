@@ -145,8 +145,10 @@ sub run {
       # A setof dbEST EST entries
       my ($e);
       for (my $i = 0; $i < $M->getCla->{span}; $i++) {
+	last if $fh->eof();
         my $l = $fh->getline();
         my ($eid) = split /\t/, $l;
+	next unless ($eid);
         my $ests = $M->sql_get_as_hash_refs_lc("select * from est\@dbest where id_est = $eid");
         foreach my $est ( @{$ests}) {
           $e->{$est->{id_est}}->{e} = $est;
@@ -252,13 +254,14 @@ sub processEntries {
       #this entry is bogus, delete from insert hash
       delete $e->{$id};
       #enter the new entry into the insert hash
-      $e->{$re->{id_est}}->{e} = $re->{new};
-      $e->{$re->{id_est}}->{old} = $re->{old};
+      $e->{$re->{new}->{id_est}}->{e} = $re->{new};
+      $e->{$re->{new}->{id_est}}->{old} = $re->{old};
     }
   }
   
   # get the sequences only for most current entry
-  my $ids = join "," , keys %$e;
+  my $ids = join "," , sort {$a <=> $b} keys %$e;
+
   my $A = $M->sql_get_as_hash_refs_lc("select * from SEQUENCE\@dbest where id_est in ($ids) order by id_est, local_id");
   if ($A) {
     foreach my $s (@{$A}){
@@ -685,11 +688,15 @@ Returns HASHREF{ new => newest entry,
 
 sub getMostRecentEntry {
   my ($M,$e,$R) = @_;
+  $R->{new} = $e;
+
   my $re = $M->sql_get_as_hash_refs_lc("select * from EST\@dbest where id_est = $e->{replaced_by}")->[0];
-  # angel:2/20/2003 Found that sometimes replaced_by points to non-exsistent id_est
-  # Account forthis by inserting the most recent & *valid* entry and
+  # angel:2/20/2003: Found that sometimes replaced_by points to non-existent id_est
+  # Account for this by inserting the most recent & *valid* entry and
   # log the id_est of the entry that eventually needs an update
+
   if ($re) {
+    print STDERR "Recent Entry=$re;\n" ;
     $R->{new} = $re;
     push @{$R->{old}}, $e;
     if ($re->{replaced_by} ) {
