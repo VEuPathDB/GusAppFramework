@@ -381,8 +381,8 @@ sub doMajorMode_Run {
       my $argDecl = [@{$pu->getArgsDeclaration()},
                      @{$Self->getStandardArgsDeclaration()}
                     ];
-      my ($argList, $help) = GUS::PluginMgr::Args::ArgList->new($argDecl, 
-                                                                'ga ' . ref($pu));
+      my ($argList, $help) = 
+	GUS::PluginMgr::Args::ArgList->new($argDecl, 'ga ' . ref($pu), $pu);
       if ($help eq 'text') {
          $pu->printDocumentationText($argList->formatConcisePod(),
                                      $argList->formatLongPod());
@@ -1167,7 +1167,7 @@ sub getStandardArgsDeclaration {
                 isList=>0,
                }),
     fileArg   ({name  => 'gusconfigfile',
-                descr => 'The gus config file to use [default is $GUS_CONFIG_FILE]',
+                descr => 'The gus config file to use [note: the default is your $GUS_CONFIG_FILE]',
                 reqd  => 0,
                 default=> "$ENV{GUS_CONFIG_FILE}",
                 constraintFunc=> undef,

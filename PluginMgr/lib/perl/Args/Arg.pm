@@ -89,9 +89,9 @@ sub formatLongPod {
 }
 
 sub runConstraintFunc {
-  my ($self, $value) = @_;
+  my ($self, $plugin, $value) = @_;
   my $problem;
-  $problem = $self->{constraintFunc}($value) if (defined $self->{constraintFunc});
+  $problem = $self->{constraintFunc}($plugin, $value) if (defined $self->{constraintFunc});
   return $problem;
 }
 

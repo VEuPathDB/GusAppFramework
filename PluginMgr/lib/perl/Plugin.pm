@@ -102,7 +102,7 @@ The name of the plugin.  This value for this key I<must> be specified like this:
 
 The documentation for this plugin (excluding the documentation for command line arguments which is covered by C<argsDeclaration>).  
 
-The hashref may include only the following standard keys.  All string values (e.g., C<purpose>, C<notes>) may include embedded POD formatting directives.  If you use Perl's << operator to define your POD string, then you can use POD commands as you ordinarily would. Otherwise, precede and follow all commands (e.g., C<=item>) with C<\\n\\n>.
+The hashref may include only the following standard keys.  All string values (e.g., C<purpose>, C<notes>) may include embedded POD formatting directives.  If you use Perl's "here" document syntax (the << operator) to define your POD string, then you can use POD commands as you ordinarily would. Otherwise, precede and follow all commands (e.g., C<=item>) with C<\\n\\n>.
 
 =over 4
 
@@ -502,7 +502,7 @@ The default value to use if the user doesn't supply one (or undef if none)
 
 =item * constraintFunc (method ref)
 
-The method to call to check the validity of the value the user has supplied (undef if none).  The method is called with the value as an arugment.  The method returns a string describing the problem witht the value if there is one, or undef if there is no problem.
+The method to call to check the validity of the value the user has supplied (undef if none).  The method is called with two arugments: ($self, $argvalue) [where $self is the plugin object].  The method returns a string describing the problem with the value if there is one, or undef if there is no problem.
 
 =item * isList (0 or 1)
 
