@@ -190,7 +190,7 @@ sub insertDbRef {
 sub getCurrentAssemblyId {
   my ($self,$mapHash) = @_;
   my $dbh = $self->getQueryHandle();
-  my $sth = $dbh->prepare("select count(*) from nasequenceimp where na_sequence_id = ?");
+  my $sth = $dbh->prepare("select count(*) from dots.nasequenceimp where na_sequence_id = ?");
   my $num = 0;
   
   foreach my $sourceId (keys %$mapHash) {
