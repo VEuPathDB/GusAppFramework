@@ -1,4 +1,4 @@
-package GUS::Common::Plugin::DataLoad::dbEST;
+package GUS::Common::Plugin::dbEST;
 
 @ISA = qw( GUS::PluginMgr::Plugin );
 
@@ -50,12 +50,12 @@ sub new {
                    d => 'DataLoad_dbEST.log',
                    o => 'log',
                  },
-                 { h => 'An update file containing the EST entries that changed',
+                 { h => 'An update file containing the EST entries that changed,useful for incremental update ie. chron jobs',
                    t => 'string',
                    o => 'update_file',
                    r => 0,
                  },
-                 { h => 'Signifies that the sequences in ExternalNASequence should NOT be updated, regardless of discrepencies in dbEST. An error message is output when there is a conflict.',
+                 { h => 'Signifies that the sequences in ExternalNASequence should NOT be updated, regardless of discrepencies in dbEST. An error message is output when there is a conflict, used when reassembly is not going to occur.',
                    t => 'boolean',
                    o => 'no_sequence_update',
                    r => 0,
