@@ -158,7 +158,7 @@ print STDERR "$id,DT.$na_seq\n";
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
    }
 
-    if ($id != $na_seq | $id == "") {
+    if ($id != $na_seq | $id eq "") {
 
        print STDERR "NextFLDT.$na_seq\n";
 
