@@ -634,6 +634,7 @@ if ($doAll || $masterOnly) {
 
 	if (!($schema =~ /ver$/i)) {
 	    $sequenceTxt .= "sqlplus ${targetSchema}/${targetPassword}\@\@oracle_SID\@ \@${file}${schema}-sequences.sql\n";
+	    ++$nf;
 	}
 
 	$tableTxt .= "sqlplus ${targetSchema}/${targetPassword}\@\@oracle_SID\@ \@${file}${schema}-tables.sql\n";
@@ -646,7 +647,6 @@ if ($doAll || $masterOnly) {
     if ($doAll || $masterOnly) {
 	print $fh "# create all sequences\n";
 	print $fh "$sequenceTxt\n";
-	$nf += $numSchemas;
     }
 
     if ($doAll || $tablesOnly || $masterOnly) {
