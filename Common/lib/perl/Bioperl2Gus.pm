@@ -86,6 +86,7 @@ use Bio::SeqUtils;
 
 my $REVIEW_STATUS_ID = 0; #changed for PlasmoDB
 my $UPDATE=0;  #TW
+my $EXT_DB_REL_ID=9914;
 
 #----------------------------------
 #Global variables
@@ -394,8 +395,9 @@ sub buildNASequence {
     
     my $taxon_id  = getTaxonIdentifier ($organism);
     my $source_id = "chr. " . $chromosome;
-    
-    print STDERR "ORGANISM:$organism\tTAXON id:$taxon_id\n";
+    my $chr_ord_num = $chromosome;
+
+    print STDERR "ORGANISM:$organism\tTAXON id:$taxon_id\tCHR_ORD_NUM:$chr_ord_num\n";
     
     my $h = {
 	'sequence_type_id' => $seq_type_id,
@@ -412,6 +414,8 @@ sub buildNASequence {
 	'length'           => $length,
 	'source_id'        => $source_id,
 	'chromosome'       => $chromosome,
+	'chromosome_order_num' => $chr_ord_num,
+	'external_database_release_id'  => $EXT_DB_REL_ID,
     };
     
     #print STDERR "SEQ_DESC-2:$seq_descr\n";
@@ -437,15 +441,7 @@ sub buildNASequence {
 	$gus_seq->setChromosomeOrderNum ($chr_order_number);
     }
     
-    #TW-need to populate ProjectLink
-    #------------------------
-    # Populate ProjectLink
-    # make sure passing correct variable
-    #-------------------------
-    #my $projlink_gus = $self->buildProjectLink ($gus_seq);
  
-
-   
     #TW-PLASMODB DOES NOT USE DOTS.SOURCE
     my $source = $self->get_source($gus_seq, $name, $clone, $chromosome, $strain);    
     if (defined $datasource) {
@@ -524,10 +520,10 @@ sub get_source {
         print STDERR "get_source(): See if DoTS::Source needs updating\n";
 
         foreach my $att (keys %{$h_source}) {
-            if (defined ($h_source->{$att}) && $source->get($att) ne $h_source->{$att}) {
-                print STDERR "'$att' has changed for DoTS::Source $name (", $self->{bioperlSequence}->accession_number, ") from ", $source->get($att), " to ", $h_source->{$att}, "\n";
+            #if (defined ($h_source->{$att}) && $source->get($att) ne $h_source->{$att}) {
+                #print STDERR "'$att' has changed for DoTS::Source $name (", $self->{bioperlSequence}->accession_number, ") from ", $source->get($att), " to ", $h_source->{$att}, "\n";
                 $source->set($att, $h_source->{$att});
-            }
+            #}
         }
     }
 
@@ -556,13 +552,14 @@ sub buildGeneFeature {
     my $debug             = $self->{debug};
     my $bioperl_feature   = $self->{bioperlFeature};
     my $gus_sequence      = $self->{gusSequence}; # This is a cheat for mRNA - maybe have a fake sequence called chromosome "unknown"?
+     my $datasource       = $self->{datasource};
 
     # These are used direct in the DoTS::GeneFeature creation
     #
     my $is_predicted      = 1;
     my $review_status_id  = $REVIEW_STATUS_ID;
     my $na_sequence_id    = $gus_sequence->getNaSequenceId();
-    #my $subclass_view     = "GeneFeature"; ' Why was this needed? We create a GeneFeature object explicitly  #TW-is line above needed?
+    my $subclass_view     = "GeneFeature";  #Value for name attribute
 
     my @gus_note_objects  = ();
 
@@ -576,18 +573,37 @@ sub buildGeneFeature {
 
     #########################################
     # Get primary_name
-    #TW-QUESTION, why primary name?  All code with systmatic_id works.
-    #TW-do we get to get both primary name AND systematic id???
     my $primary_name = undef;
-
+    #my $systematic_name = undef;
+    
     if ($bioperl_feature->has_tag ('primary_name')) {
-    #if ($bioperl_feature->has_tag ('systematic_id')) {
+    #TWif ($bioperl_feature->has_tag ('systematic_id')) {
         my @primary_names = $bioperl_feature->each_tag_value ('primary_name');
-	#my @primary_names = $bioperl_feature->each_tag_value ('systematic_id');
-        $primary_name = $primary_names[0];
+	#TWmy @systematic_names = $bioperl_feature->each_tag_value ('systematic_id');
+	$primary_name = $primary_names[0];
+        #TW$systematic_name = $systematic_names[0];
         print STDERR "\n*** WOW *** primary name = '$primary_name'\n\n";
-	#print STDERR "\n*** WOW TW *** source_id = '$primary_name'\n\n";
+	#print STDERR "\n*** WOW TW *** source_id = '$systematic_name'\n\n";
     }  
+
+    #########################################
+    #TW - Get temp systematic id
+    my $temporary_systematic_id =undef;
+    if ($bioperl_feature->has_tag('temporary_systematic_id'))  {
+	my @temporary_systematic_id = $bioperl_feature->each_tag_value('temporary_systematic_id');
+	$temporary_systematic_id = $temporary_systematic_id[0];
+	print STDERR "\n*** WOW *** temp sys name = '$temporary_systematic_id'\n\n";
+    }
+
+    #########################################
+    #TW - Get decription
+    my $desc =undef;
+    if ($bioperl_feature->has_tag('description'))  {
+	my @desc = $bioperl_feature->each_tag_value('description');
+	$desc = $desc[0];
+	print STDERR "\n*** WOW *** desc = '$desc'\n\n";
+    }
+    
 
     ##############################################
     # may not have a product if it's a pseudo gene
@@ -597,15 +613,37 @@ sub buildGeneFeature {
     #        we need to store all of them!!!
     #        Perhaps concatentate all of them for now??? ie product1;product2
     
-    #TW-there are no product tags in any of the files (01/17/05)!
-    
+    #NOTE:TW-there are no product tags in any of the files (01/17/05)!!!
     my $product = undef;
-
     if ($bioperl_feature->has_tag ('product')) {
         my @products = $bioperl_feature->each_tag_value ('product');
         #$product = join('; ', @products); # axk says GeneFeature.product is first product (product name)
         $product = $products[0];
     }
+
+    ##############################################################
+    # Get the external_database_release_id associated with it
+    print STDERR "LOOKING FOR EXTDB_REL-ID\n";
+    my $ext_db = GUS::Model::SRes::ExternalDatabase->new ({"name" => $datasource});
+    my $exist  = $ext_db->retrieveFromDB();
+    my $ext_db_id;
+    print STDERR "TAAF-EXTDB_REL-ID:$ext_db\n\n";  #TW
+    my $ext_db_release_id;
+    if ($exist) {
+	$ext_db_id = $ext_db->getId();
+	my $ext_db_release = GUS::Model::SRes::ExternalDatabaseRelease->new ({"external_database_id" => $ext_db_id});
+	#TW-$exist = $ext_db_release->retrieveFromDB();
+	$exist = $ext_db_release_id = $EXT_DB_REL_ID;  #TW - hard-coded
+	if ($exist) {
+	    #$ext_db_release_id = $ext_db_release->getId();
+	    print STDERR "EXTDB_REL-ID:$ext_db_release_id\n\n";
+	}
+	else {
+	    print STDERR "ERROR-ExtDbRelId - can't get the External Database Release ID associated with this datasource, $datasource!\n";
+	    exit 1;
+	}
+    }
+
 
     ####################################
     # to figure out if it's partial, other way is to parse the Bioperl Range object
@@ -660,7 +698,7 @@ sub buildGeneFeature {
             }
         }
     }
-    print STDERR "PREDICTION_ALG_ID:$prediction_algorithm_id\n\n";
+    print STDERR "GF-PREDICTION_ALG_ID:$prediction_algorithm_id\n\n";
     
     # the source_id is a unique identifier for the gene
     # => the gene name
@@ -685,19 +723,26 @@ sub buildGeneFeature {
         'is_partial'              => $is_partial,
         'product'                 => $product,
         'prediction_algorithm_id' => $prediction_algorithm_id,
+	'name'                    => $subclass_view, 
+	'label'                   => $primary_name,
+	'source_id'               => $systematic_id,
+	'gene'                    => $temporary_systematic_id,
+	'product'                 => $desc,
+	'external_database_release_id' => $EXT_DB_REL_ID,
     };
     
-    #$h->{'standard_name'} = $primary_name if defined $primary_name; #TW
+    #$h->{'standard_name'} = $primary_name if defined $primary_name; #TW, woring mapping
     $h->{'label'} = $primary_name if defined $primary_name; #TW
     print STDERR "***LABEL:$primary_name\n";
 
     #my $gf    = GUS::Model::DoTS::GeneFeature->new ({'name' => $systematic_id});
     #my $is_in = $gf->retrieveFromDB(); # 0 means zero or 2+ records exist, 1 means 1 record exists
+
     
     
     my($gf, $is_in) = $self->getFeatureFromDB('DoTS::GeneFeature'); 
     print STDERR "\n*** GUS::Model::DoTS::GeneFeature \$gf = $gf, \$is_in = $is_in ***\n\n";
-
+    
     if ($UPDATE)  { #TW - no need to delete old gene features
 	if ($is_in) {
 	    ############
@@ -709,16 +754,20 @@ sub buildGeneFeature {
 	    print STDERR "buildGeneFeature() : Mark deleted ", scalar(@children), " NALocation(s)\n";
 	}
     }
+
     unless ($gf->getParent('DoTS::ExternalNASequence')) {
         $gf->setParent ($gus_sequence);
     }
     
-    foreach my $att (keys %{$h}) {
-	if ($gf->get($att) ne $h->{$att}) {
-	    print STDERR "buildGeneFeature(): $att has changed/will be set to for DoTS::GeneFeature $systematic_id: Object value == '",$gf->get($att), "' lastest value == '", $h->{$att},"'\n";
+    #if ($UPDATE)  {
+	foreach my $att (keys %{$h}) {
+	    #if ($gf->get($att) ne $h->{$att}) {
+		#print STDERR "buildGeneFeature(): $att has changed/will be set to for DoTS::GeneFeature $systematic_id: Object value == '",$gf->get($att), "' lastest value == '", $h->{$att},"'\n";
+	    print STDERR "Setting values from GeneFeature object: lastest value == '", $h->{$att},"'\n";
 	    $gf->set($att, $h->{$att});
+	    #}
 	}
-    }
+    #}
     
     ###############
     # NALocation object related to the Gene
@@ -963,18 +1012,96 @@ sub buildRNAFeature {
     my $is_predicted      = 1;
     my $review_status_id  = $REVIEW_STATUS_ID;
     #'my $na_sequence_id    = $gus_sequence->getNaSequenceId (); # This is the UNSPLICED na_sequence!!!
-    my $source_id         = $gus_sequence->getSourceId();
+    #my $source_id         = $gus_sequence->getSourceId();
     my $parent_id         = $gf->getId();  ## ## BG
     print STDERR "CHECK buildRNAFeature - parent_id=" . $parent_id . "\n";
 
+
+    ####################################
+    # Get codon start information
+    ############
+    my $c_start=undef;
+    
+    if ($bioperl_feature->has_tag('codon_start'))  {
+	my @start_codons = $bioperl_feature->each_tag_value ('codon_start');
+        $c_start  = $start_codons[0];
+        print STDERR "RF-Start codon:$c_start\n";
+    }
+
+    ################################
+    # Get codon stop information
+    ##############
+    my $c_stop=undef;
+    
+    # First, get peptide length value from EMBL file
+    if ($bioperl_feature->has_tag('peptide_length')) {
+        my @tmp    = $bioperl_feature->each_tag_value('peptide_length');
+        my $length = $tmp[0];
+        print STDERR "peptide length: $length\n";
+	
+	$c_stop = ($c_start - 1) + (3 * $length);
+	print STDERR "RF-CODON START:$c_start\tSTOP:$c_stop\tPEPLEN:$length\n";
+	#my $c=$c_start-1;
+	#print STDERR "RF-C:$c\n";
+    }
+
+
+
+    #########################################
+    # Figure out the $prediction_algorithm_id
+    # using /method
+    ####
+    #TW-method is ok
+    my $prediction_algorithm_id = undef;
+
+    if ($bioperl_feature->has_tag ('method')) {
+        my @methods = $bioperl_feature->each_tag_value ('method');
+        my $method  = $methods[0];
+
+        if ($method =~ /manual annotation/i) {
+            #$method = "Manual Annotation";
+	    $method = "Pf Annotation"; #value from Database for previous GeneFeature entries
+        }
+        elsif ($method =~ /automatic annotation/i) {
+            $method = "Automatic Annotation";
+	    exit 1; #TW - don't know how to handle this IF it happens
+        }
+
+	my $algo   = GUS::Model::Core::Algorithm->new ({'name' => "$method"});
+        my $result = $algo->retrieveFromDB();
+
+        if ($result == 1) {
+            $prediction_algorithm_id = $algo->getAlgorithmId();
+        }
+        else {
+            # Annotate the gene feature as a 'Manual Annotation' per default
+            $algo   =
+		#TW GUS::Model::Core::Algorithm->new ({'name' => "Manual Annotation"});
+		GUS::Model::Core::Algorithm->new ({'name' => "Pf Annotation"});
+	    $result = $algo->retrieveFromDB();
+            
+            if ($result == 1) {
+                $prediction_algorithm_id = $algo->getAlgorithmId();
+            }
+        }
+    }
+    print STDERR "RF-PREDICTION_ALG_ID:$prediction_algorithm_id\n\n";
+    ####################
+
+
     my $h = {
-        'is_predicted'      => $is_predicted,
-        'review_status_id'  => $review_status_id,
+        'is_predicted'        => $is_predicted,
+        'review_status_id'    => $review_status_id,
         # This is what it used to do, which is surely wrong
-        #'na_sequence_id'    => $na_sequence_id, # this is the unspliced sequence!
-        'number_of_exons'   => $number_of_exons,
-        'source_id'         => $source_id
-        };
+        #'na_sequence_id'     => $na_sequence_id, # this is the unspliced sequence!
+        'number_of_exons'     => $number_of_exons,
+        #'source_id'          => $standard_name, #TW-previously source_id
+        'external_database_release_id'  => $EXT_DB_REL_ID,
+	'prediction_algorithm_id'       => $prediction_algorithm_id,
+	'name'                => 'RNAFeature', 
+	'translation_start'   => $c_start,
+	'translation_stop'    => $c_stop,
+    };
 
     #my $rnaf  = GUS::Model::DoTS::RNAFeature->new ({'name' => $systematic_id});
     #my $is_in = $rnaf->retrieveFromDB();
@@ -983,20 +1110,18 @@ sub buildRNAFeature {
     my $rnaf = $gf->getChild('DoTS::RNAFeature', 1);
 
     if ($rnaf) {
-
 	#TW-NOTE: No need to delete any children!!!
-        ##
+        ########
         # Delete NALocation child object
-        ##
+        #######
         my @children = $rnaf->getChildren('DoTS::NALocation', 1);
         $rnaf->markChildrenDeleted(@children);
-
         print STDERR "buildRNAFeature() : Mark deleted ", scalar(@children),
         " NALocation(s)\n";
     }
     else {
         my $sys_id = $self->get_best_systematic_id();
-        $rnaf  = GUS::Model::DoTS::RNAFeature->new ({'name' => $sys_id}); #TW-src_id instead?
+        $rnaf  = GUS::Model::DoTS::RNAFeature->new ({'source_id' => $sys_id}); #TW - use src_id
     }
 
     unless ($rnaf->getParent($gf->getClassName(), 1)) {
@@ -1007,11 +1132,12 @@ sub buildRNAFeature {
         $rnaf->setParent($snas);
     }
 
+    #TW-just load new RNAFeatures, do not compare
     foreach my $att (keys %{$h}) {
-        if ($rnaf->get($att) ne $h->{$att}) {
+        #TWif ($rnaf->get($att) ne $h->{$att}) {
             print STDERR "buildRNAFeature(): $att has changed/will be set to for DoTS::RNAFeature $systematic_id: Object value == '",$rnaf->get($att), "' lastest value == '", $h->{$att},"'\n";
             $rnaf->set($att, $h->{$att});
-        }
+        #TW}
     }
 
     print STDERR "CHECK: rna_feat_id=" . $rnaf->getId . "\n"; ## ##BG
@@ -1037,21 +1163,70 @@ sub buildSplicedNASequence {
     my $gus_sequence      = $self->{gusSequence};
     #my $display_id       = $self->{bioperlSequence}->display_id; # The NAME
     my $display_id        = $gene_feature->getName();
-
     print STDERR "GF:$display_id\n\n";
-
-    # what for ??
     my $sequence_version  = 1;
-    my $source_id = $gus_sequence->getSourceId(); #SOURCE_ID used by us to store chromo info i.e. 'chr. 1'
-    print STDERR "DEBUG-SRCID:$source_id\n";
-    my $sequence          = $bioperl_feature->spliced_seq();
-    print STDERR "DEBUG-SplicedNASeq-bg1\n";
+
+    my $bioperl_sequence = $self->{bioperlSequence};  #TW, to get organism tag?
+
+
+
+    #################
+    # Get value of organism tag
+    #############
+    my $organism=undef;
+    my @features         = $bioperl_sequence->get_all_SeqFeatures();
+    foreach my $feature (@features) {
+	if ($feature->primary_tag() =~ /source/) {
+	    my @tags = $feature->all_tags();
+	    
+	    if ($debug) {
+		print STDERR "Found source feature\n";
+		print STDERR "Tags: @tags\n";
+	    }
+	    
+	    foreach my $tag (@tags) {
+		if ($tag =~ /organism/i) {
+		    my @values = $feature->each_tag_value('organism');
+		    $organism = $values[0];
+		}
+		
+	    }
+	}
+    }
+    my $taxon_id  = getTaxonIdentifier ($organism);
+    
+    
+
+    #################
+    # Get source_id
+    ######
+    #TW-this may not be getting the right value
+    #my $source_id = $gus_sequence->getSourceId(); #SOURCE_ID used by us to store chromo info i.e. 'chr. 1'
+    #print STDERR "DEBUG-SRCID:$source_id\n";
+    
+
+    my $sequence          = $bioperl_feature->spliced_seq();  #TW-is this correct?
+    #print STDERR "SplicedNASequence:$sequence\n";
+    #print STDERR "DEBUG-SplicedNASeq-bg1\n";
+
+
+    ######################
+    # Get the base count
+    ########
+    my $spl_sequence = $sequence->seq();
+    my %basesCount  = getBasesCount ($spl_sequence);
+    my $a_count     = $basesCount{a};
+    my $t_count     = $basesCount{t};
+    my $c_count     = $basesCount{c};
+    my $g_count     = $basesCount{g};
+    my $other_count = $basesCount{o};
+    my $length      = length ($spl_sequence);
+
+
     
     my $sequence_type_id  = $self->getSequenceTypeIdentifier ('RNA');
     print STDERR "DEBUG-SEQID for RNA:$sequence_type_id\n";
-    
     print STDERR "DEBUG-SplicedNASeq-bg2\n";
-
     if (not defined $sequence_type_id) {
         print STDERR "can't find any SequenceType Database entry associated with RNA\n";
         print STDERR "failed creating a SplicedNaSequence entry...\n";
@@ -1064,29 +1239,46 @@ sub buildSplicedNASequence {
         print STDERR $sequence->seq() . "\n";
     }
     
+    
     if ($debug)  {
-	print STDERR "buildSplicedNASequence(): source_id == $source_id, display_id = $display_id\n"; # if $self->{debug};
+	#print STDERR "buildSplicedNASequence(): source_id == $source_id, display_id = $display_id\n"; # if $self->{debug};
+	#print STDERR "buildSplicedNASequence():display_id = $display_id\n";
     }
-    my $snas  = GUS::Model::DoTS::SplicedNASequence->new({'name' => $display_id});
+    #TWmy $snas  = GUS::Model::DoTS::SplicedNASequence->new({'name' => $display_id});
     #TW  my $is_in = $snas->retrieveFromDB(); # 0 means zero or 2+ records exist, 1 means 1 record exists
-
-
     #TW unless ($is_in) {
         #PSU  WHAT ABOUT THE CHILD, 'RNAFEATURE'???    
     #TW }
 
     my $h = {
-	    'source_id'         => $source_id,
-            'sequence_version'  => $sequence_version,
+	    'sequence_version'  => $sequence_version,
 	    'sequence_type_id'  => $sequence_type_id,
-	    'sequence'          => $sequence->seq()
-	   };
+	    'external_database_release_id'  => $EXT_DB_REL_ID,
+	   #'source_id'         => $source_id, #TW	
+	    'name'              => 'SplicedNASequence',
+	    'taxon_id'          => $taxon_id,		
+	    'sequence'          => $sequence->seq(),
+	    'a_count'           => $a_count,
+	    'c_count'           => $c_count,
+	    'g_count'           => $g_count,
+	    't_count'           => $t_count,
+	    'other_count'       => $other_count,
+	    'length'            => $length,	
+	};
+    
+    print STDERR "SNAS-LEN:$length\n";
 
+    #TW-START---------------------
+    my $sys_id = $self->get_best_systematic_id();
+    my $snas  = GUS::Model::DoTS::SplicedNASequence->new ({'source_id' => $sys_id});
+    print STDERR "SNAS-SRC_ID:$sys_id\n";
+    #TW-END-----------------------
+    
     foreach my $att (keys %{$h}) {
-        if ($snas->get($att) ne $h->{$att}) {
+        #TWif ($snas->get($att) ne $h->{$att}) {
             print STDERR "buildSplicedNASequence(): $att has changed for DoTS::SplicedNASequence $display_id: Object == '",$snas->get($att), "' lastest value == '", $h->{$att},"'\n";
             $snas->set($att, $h->{$att});
-        }
+        #TW}
     }
     $snas->submit();## ##BG submit here else no ID
     print STDERR "CHECK buildSplicedNASequence - id=" . $snas->getId() . "\n";
@@ -1094,11 +1286,10 @@ sub buildSplicedNASequence {
 }
 
 ################################################################################
-#
 # This is linked to NASequence, not UnsplicedNASequence
 #
 # FIXME: Will this always find the original child feature??????
-#
+###########
 
 sub buildExonFeature {
     my ($self, $gf, $is_initial_exon, $is_final_exon, $location, $order_number) = @_;
@@ -1107,18 +1298,69 @@ sub buildExonFeature {
     my $bioperl_feature   = $self->{bioperlFeature};
     my $gus_sequence      = $self->{gusSequence};
     #my $name              = $gf->get ('standard_name') . ".exon $order_number";
-    my $name              = $gf->get('name') . ".exon $order_number";
+    #TWmy $name              = $gf->get('name') . ".exon $order_number";
+    my $name              = 'ExonFeature';
     my $is_predicted      = 1;
     my $review_status_id  = $REVIEW_STATUS_ID;
     my $na_sequence_id    = $gus_sequence->getNaSequenceId();
-    my $source_id         = $gus_sequence->getSourceId();     # SOURCE_ID used by us to store chromo info i.e. 'chr. 1'
+    #TWmy $source_id         = $gus_sequence->getSourceId();     # SOURCE_ID used by us to store chromo info i.e. 'chr. 1'
+
+    print STDERR "EF-NAME:$name\n";
 
     my ($start, $end)     = ($location->start, $location->end);
-
     if ($location->strand == -1) {
         # no 'is_reversed' like NALocation has, just switch the coords round to show 'strandiness'
         ($start, $end) = ($end, $start);
     }
+
+
+    #########################################
+    # Figure out the $prediction_algorithm_id
+    # using /method
+    ####
+    #TW-method is ok
+    my $prediction_algorithm_id = undef;
+
+    if ($bioperl_feature->has_tag ('method')) {
+        my @methods = $bioperl_feature->each_tag_value ('method');
+        my $method  = $methods[0];
+
+        if ($method =~ /manual annotation/i) {
+            #$method = "Manual Annotation";
+	    $method = "Pf Annotation"; #value from Database for previous GeneFeature entries
+        }
+        elsif ($method =~ /automatic annotation/i) {
+            $method = "Automatic Annotation";
+	    exit 1; #TW - don't know how to handle this IF it happens
+        }
+
+	my $algo   = GUS::Model::Core::Algorithm->new ({'name' => "$method"});
+        my $result = $algo->retrieveFromDB();
+
+        if ($result == 1) {
+            $prediction_algorithm_id = $algo->getAlgorithmId();
+        }
+        else {
+            # Annotate the gene feature as a 'Manual Annotation' per default
+            $algo   =
+		#TW GUS::Model::Core::Algorithm->new ({'name' => "Manual Annotation"});
+		GUS::Model::Core::Algorithm->new ({'name' => "Pf Annotation"});
+	    $result = $algo->retrieveFromDB();
+            
+            if ($result == 1) {
+                $prediction_algorithm_id = $algo->getAlgorithmId();
+            }
+        }
+    }
+    print STDERR "EF-PREDICTION_ALG_ID:$prediction_algorithm_id\n\n";
+
+
+    #TW-START---------------------
+    my $sys_id = $self->get_best_systematic_id();
+    #my $ef  = GUS::Model::DoTS::ExonFeature->new ({'source_id' => $sys_id});
+    print STDERR "EF-SRC_ID:$sys_id\n";
+    #TW-END-----------------------
+
 
     my $h = {
         'name'             => $name,
@@ -1128,10 +1370,13 @@ sub buildExonFeature {
         'order_number'     => $order_number,
         'is_initial_exon'  => $is_initial_exon,
         'is_final_exon'    => $is_final_exon,
-        'source_id'        => $source_id,
+	'source_id'        => $sys_id,
         'coding_start'     => $start,
         'coding_end'       => $end,
+	'external_database_release_id'  => $EXT_DB_REL_ID,
+	'prediction_algorithm_id'       => $prediction_algorithm_id,
     };
+
 
     my $ef = GUS::Model::DoTS::ExonFeature->new ($h);
     $ef->retrieveFromDB();
@@ -1141,12 +1386,11 @@ sub buildExonFeature {
     }
 
     foreach my $att (keys %{$h}) {
-        if ($ef->get($att) ne $h->{$att}) {
+        #TWif ($ef->get($att) ne $h->{$att}) {
             print STDERR "buildExonFeature(): $att has changed for DoTS::buildExonFeature ".$gf->getName().": Object == '",$ef->get($att), "' lastest value == '", $h->{$att},"'\n";
             $ef->set($att, $h->{$att});
-        }
+        #TW}
     }
-
     return $ef;
 }
 
@@ -1203,7 +1447,13 @@ sub buildTranslatedAASequence {
     my $bioperl_sequence = $self->{bioperlSequence};
     my $datasource       = $self->{datasource};
     
+    my $seq_version  = 1;
+    my $is_simple = 1;
+
+    ################################
     # Get the external_database_release_id associated with it
+    #TW-NOTE:This is overwritten by GLOBAL VARIABLE
+    #TW-this was done for time efficieny and is NOT RECOMENDED PRACTICE!
     print STDERR "LOOKING FOR EXTDB_REL-ID\n";
     my $ext_db = GUS::Model::SRes::ExternalDatabase->new ({"name" => $datasource});
     my $exist  = $ext_db->retrieveFromDB();
@@ -1214,7 +1464,7 @@ sub buildTranslatedAASequence {
 	$ext_db_id = $ext_db->getId();
 	my $ext_db_release = GUS::Model::SRes::ExternalDatabaseRelease->new ({"external_database_id" => $ext_db_id});
 	#TW-$exist = $ext_db_release->retrieveFromDB();
-	$exist = $ext_db_release_id = 9914;  #TW - hard-coded
+	$exist = $ext_db_release_id = $EXT_DB_REL_ID;  #TW - hard-coded
 	if ($exist) {
 	    #$ext_db_release_id = $ext_db_release->getId();
 	    print STDERR "EXTDB_REL-ID:$ext_db_release_id\n\n";
@@ -1231,10 +1481,11 @@ sub buildTranslatedAASequence {
     
     print STDERR "In buildTranslatedAASequence()\n";
 
-    my $subclass_view = "TranslatedAASequence"; # Why???
+    my $subclass_view = "TranslatedAASequence"; 
     #my $name          = $gf->get ('standard_name'); # This was only used in debug output
 
 
+    #TW-there are no product qualifiers
     # Description is now the concatenation of the set of product qualifiers
     #
     my $aa_seq_descr = "";
@@ -1248,23 +1499,21 @@ sub buildTranslatedAASequence {
     }
     $aa_seq_descr =~ s/\s$//; # Remove last space put on above via "; "
 
-    my $seq_version  = 1;
+    
   
     ##############################
     # Get the translated sequence
     # using bioperl
     ##
-
     my $spliced_seq = $bioperl_feature->spliced_seq();
     # process the frame and the is_partial
   
     # partial gene information
-
     my $is_partial   = $gf->get ('is_partial');
     my $is_complete  = 0;
     $is_complete     = 1 unless $is_partial;
 
-    ##
+    ##########
     # Frame information
     my $frame = 0;
 
@@ -1274,8 +1523,8 @@ sub buildTranslatedAASequence {
         $frame = $start_codon - 1;
     }
 
-    ##
-    # translation table to use
+    ##########
+    # Translation table to use
     my $transl_table = 1;
 
     if ($bioperl_feature->has_tag ('transl_table')) {
@@ -1301,7 +1550,10 @@ sub buildTranslatedAASequence {
 
     #my $prot_seq = $spliced_seq->translate(undef,undef,$frame,$is_complete,0);
     my $prot_seq = $spliced_seq->translate(undef, undef, $frame, $transl_table, $is_complete);
-  
+    my $test_prot_seq = $prot_seq->seq();
+    print STDERR "TAAS:TEST-PROT_SEQ:$test_prot_seq\n";
+    print STDERR "TAAS:EXT_DB_REL_ID:$EXT_DB_REL_ID\n";
+
     if ($debug) {
         print STDERR "translated protein sequence for gene, $systematic_id:\n";
         #TW-print STDERR $prot_seq->seq() . "\n";
@@ -1311,14 +1563,29 @@ sub buildTranslatedAASequence {
 	     'subclass_view'    => $subclass_view,
 	     'sequence_version' => $seq_version,
 	     'description'      => $aa_seq_descr,
-	     'sequence'         => $prot_seq->seq(),
-	     'external_database_release_id' => $ext_db_release_id,
-	    };
+	     #'sequence'         => $prot_seq->seq(),
+	     'sequence'         => $test_prot_seq, 
+	     'external_database_release_id' => $EXT_DB_REL_ID,
+	     #'is_simple'        => $is_simple,
+	 };
 
+    
     my $aa_seq  = GUS::Model::DoTS::TranslatedAASequence->new($h); ###BG
+    
+    $aa_seq->setIsSimple($is_simple);
+    print "TAAS:IS_SIMPLE:$is_simple\tAASEQ:" .  $aa_seq->getIsSimple() . "\n";
 
-    # need source ?????
+    print "PROTSEQ:" . $prot_seq->seq()  . "\n";
+    
+    # need source_id
     #$aa_seq->setSourceId ($source_feature->getNaFeatureId());
+    #TW-START---------------------
+    my $sys_id = $self->get_best_systematic_id();
+    my $aa_seq  = GUS::Model::DoTS::TranslatedAASequence->new ({'source_id' => $sys_id});
+    print STDERR "TAAS-SRC_ID:$sys_id\n";
+    #TW-END-----------------------
+
+
 
     ###
     # Molecular Weight
@@ -1359,194 +1626,6 @@ sub buildTranslatedAASequence {
 #    unless ($aa_feature_translated->getParent($aa_seq->getClassName())) {
 #        $aa_feature_translated->setParent($aa_seq);
 #    }
-
-    my (@properties) = $self->buildProteinProperties($aa_seq);
-
-    return ($aa_seq, @properties);;
-}
-
-
-##BG 
-sub buildTranslatedAASequenceBAK {
-    my ($self, $gf, $aa_feature_translated, $systematic_id) = @_;
-    
-    my $debug            = $self->{debug};
-    my $bioperl_feature  = $self->{bioperlFeature};
-    my $bioperl_sequence = $self->{bioperlSequence};
-    my $datasource       = $self->{datasource};
-    
-    # Get the external_database_release_id associated with it
-    print STDERR "LOOKING FOR EXTDB_REL-ID\n";
-    my $ext_db = GUS::Model::SRes::ExternalDatabase->new ({"name" => $datasource});
-    my $exist  = $ext_db->retrieveFromDB();
-    my $ext_db_id;
-    print STDERR "TAAF-EXTDB_REL-ID:$ext_db\n\n";  #TW
-    my $ext_db_release_id;
-    if ($exist) {
-	$ext_db_id = $ext_db->getId();
-	my $ext_db_release = GUS::Model::SRes::ExternalDatabaseRelease->new ({"external_database_id" => $ext_db_id});
-	#TW-$exist = $ext_db_release->retrieveFromDB();
-	$exist = $ext_db_release_id = 9914;  #TW - hard-coded
-	if ($exist) {
-	    #$ext_db_release_id = $ext_db_release->getId();
-	    print STDERR "EXTDB_REL-ID:$ext_db_release_id\n\n";
-	}
-	else {
-	    print STDERR "ERROR-ExtDbRelId - can't get the External Database Release ID associated with this datasource, $datasource!\n";
-	    exit 1;
-	}
-    }
-    else {
-	print STDERR "ERROR-ExtDbId - can't get the External Database ID associated with this datasource, $datasource!\n";
-	exit 1;
-    }
-    
-    print STDERR "In buildTranslatedAASequence()\n";
-    
-    my $aa_seq = $aa_feature_translated->getParent("GUS::Model::DoTS::TranslatedAASequence", 1);
-
-    #my $aa_seq_from_db = $self->getTranslatedAASequence($systematic_id);
-    #print "\nbuildTranslatedAASequence() got a '$aa_seq_from_db' back !!\n\n";
-    
-    #my $subclass_view = "TranslatedAASequence"; # Why???
-    #my $name          = $gf->get ('standard_name'); # This was only used in debug output
-
-
-    # Description is now the concatenation of the set of product qualifiers
-    #
-    my $aa_seq_descr = "";
-
-    if ($bioperl_feature->has_tag ('product')) {
-        my @bioperl_products = $bioperl_feature->each_tag_value ('product');
-
-        foreach my $bioperl_product (@bioperl_products) {
-            $aa_seq_descr .= $bioperl_product . "; ";
-        }
-    }
-
-    $aa_seq_descr =~ s/\s$//; # Remove last space put on above via "; "
-
-    my $seq_version  = 1;
-  
-    ##############################
-    # Get the translated sequence
-    # using bioperl
-    ##
-
-    my $spliced_seq = $bioperl_feature->spliced_seq();
-    # process the frame and the is_partial
-  
-    # partial gene information
-
-    my $is_partial   = $gf->get ('is_partial');
-    my $is_complete  = 0;
-    $is_complete     = 1 unless $is_partial;
-
-    ##
-    # Frame information
-    my $frame = 0;
-
-    if ($bioperl_feature->has_tag ('codon_start')) {
-        my @start_codons = $bioperl_feature->each_tag_value ('codon_start');
-        my $start_codon  = $start_codons[0];
-        $frame = $start_codon - 1;
-    }
-
-    ##
-    # translation table to use
-    my $transl_table = 1;
-
-    if ($bioperl_feature->has_tag ('transl_table')) {
-        my @transl_tables = $bioperl_feature->each_tag_value ('transl_table');
-
-        if ($transl_tables[0] != -1) {
-            $transl_table  = $transl_tables[0];
-
-            print "\n################################################################################\n";
-            print "WARNING: buildTranslatedAASequence(): using \$transl_table = '$transl_table'\n";
-            print "         This bit needs to be fully checked.\n";
-            print "################################################################################\n\n";
-        }
-
-    }
-
-    # For args to translate(), see http://doc.bioperl.org/releases/bioperl-1.4/Bio/PrimarySeqI.html#POD10
-    # 1. character for terminator (optional) defaults to '*'
-    # 2. character for unknown amino acid (optional) defaults to 'X'
-    # 3. frame (optional) valid values 0, 1, 2, defaults to 0
-    # 4. codon table id (optional) defaults to 1
-    # 5. complete coding sequence expected, defaults to 0 (false)
-
-    #my $prot_seq = $spliced_seq->translate(undef,undef,$frame,$is_complete,0);
-    my $prot_seq = $spliced_seq->translate(undef, undef, $frame, $transl_table, $is_complete);
-  
-    if ($debug) {
-        print STDERR "translated protein sequence for gene, $systematic_id:\n";
-        #TW-print STDERR $prot_seq->seq() . "\n";
-    }
-
-    my $h = {
-	     #'subclass_view'    => $subclass_view,
-	     'sequence_version' => $seq_version,
-	     'description'      => $aa_seq_descr,
-	     'sequence'         => $prot_seq->seq(),
-	     'external_database_release_id' => $ext_db_release_id,
-	    };
-
-    unless ($aa_seq) {
-        $aa_seq = GUS::Model::DoTS::TranslatedAASequence->new ($h);
-        $aa_feature_translated->setParent($aa_seq);
-    }
-    else {
-        foreach my $att (keys %{$h}) {
-            if ($aa_seq->get($att) ne $h->{$att}) {
-                print STDERR "buildTranslatedAASequence(): $att has changed for DoTS::TranslatedAASequence $systematic_id: Object == '",$aa_seq->get($att), "' lastest value == '", $h->{$att},"'\n";
-                $aa_seq->set($att, $h->{$att});
-            }
-        }
-    }
-
-    # need source ?????
-    # $aa_seq->setSourceId ($source_feature->getNaFeatureId());
-
-    ###
-    # Molecular Weight
-    #
-    if ($bioperl_feature->has_tag ('molecular_weight')) {
-        my @tmp        = $bioperl_feature->each_tag_value('molecular_weight');
-        my $mol_weight = $tmp[0];
-        $mol_weight    =~ s/\s*da//i;
-        print STDERR "mol weight    : $mol_weight\n";
-
-	if (! ($mol_weight =~ /^\d+$/)) {
-	  print STDERR "molecular weight, $mol_weight, not a number !!!\n";
-	}
-	else {
-	  if ($aa_seq->get('molecular_weight') != $mol_weight) {
-            $aa_seq->set ('molecular_weight', $mol_weight);
-	  }
-	}
-    }
-
-    ###
-    # Peptide Length
-    #
-    if ($bioperl_feature->has_tag('peptide_length')) {
-        my @tmp    = $bioperl_feature->each_tag_value('peptide_length');
-        my $length = $tmp[0];
-        print STDERR "peptide length: $length\n";
-
-        if ($aa_seq->get('length') != $length) {
-            $aa_seq->set('length', $length);
-        }
-    }
-
-    # We may have got the "old" TranslatedAASequence from $aa_feature_translated
-    # in the first place.
-    #
-    unless ($aa_feature_translated->getParent($aa_seq->getClassName())) {
-        $aa_feature_translated->setParent($aa_seq);
-    }
 
     my (@properties) = $self->buildProteinProperties($aa_seq);
 
@@ -1818,10 +1897,10 @@ sub buildProteinFeature {  ## ##BG
     }
 
     foreach my $att (keys %{$h}) {
-        if ($aaf->get($att) ne $h->{$att}) {
-            print STDERR "buildProteinFeature(): $att has changed for DoTS::TranslatedAAFeature ",$rnaf->getName(),": Object == '",$aaf->get($att), "' lastest value == '", $h->{$att},"'\n";
+        #if ($aaf->get($att) ne $h->{$att}) {
+            #print STDERR "buildProteinFeature(): $att has changed for DoTS::TranslatedAAFeature ",$rnaf->getName(),": Object == '",$aaf->get($att), "' lastest value == '", $h->{$att},"'\n";
             $aaf->set($att, $h->{$att});
-        }
+        #}
     }
 
 #    $aaf->submit(); ## ##BG    
@@ -1988,8 +2067,83 @@ sub buildTranslatedAAFeature {
     my $review_status_id = $REVIEW_STATUS_ID;
     # codon_table, is_simple, tr_start, tr_stop ????
 
-    my $description      = "";
 
+    ####################################
+    # Get codon start information
+    ############
+    my $c_start=undef;
+    
+    if ($bioperl_feature->has_tag('codon_start'))  {
+	my @start_codons = $bioperl_feature->each_tag_value ('codon_start');
+        $c_start  = $start_codons[0];
+        print STDERR "TAAF-Start codon:$c_start\n";
+    }
+
+    ################################
+    # Get codon stop information
+    ##############
+    my $c_stop=undef;
+    
+    # First, get peptide length value from EMBL file
+    if ($bioperl_feature->has_tag('peptide_length')) {
+        my @tmp    = $bioperl_feature->each_tag_value('peptide_length');
+        my $length = $tmp[0];
+        print STDERR "peptide length: $length\n";
+	
+	$c_stop = ($c_start - 1) + (3 * $length);
+	print STDERR "TAAF-CODON START:$c_start\tSTOP:$c_stop\tPEPLEN:$length\n";
+	#my $c=$c_start-1;
+	#print STDERR "RF-C:$c\n";
+    }
+
+
+
+    #########################################
+    # Figure out the $prediction_algorithm_id
+    # using /method
+    ####
+    #TW-method is ok
+    my $prediction_algorithm_id = undef;
+
+    if ($bioperl_feature->has_tag ('method')) {
+        my @methods = $bioperl_feature->each_tag_value ('method');
+        my $method  = $methods[0];
+
+        if ($method =~ /manual annotation/i) {
+            #$method = "Manual Annotation";
+	    $method = "Pf Annotation"; #value from Database for previous GeneFeature entries
+        }
+        elsif ($method =~ /automatic annotation/i) {
+            $method = "Automatic Annotation";
+	    exit 1; #TW - don't know how to handle this IF it happens
+        }
+
+	my $algo   = GUS::Model::Core::Algorithm->new ({'name' => "$method"});
+        my $result = $algo->retrieveFromDB();
+
+        if ($result == 1) {
+            $prediction_algorithm_id = $algo->getAlgorithmId();
+        }
+        else {
+            # Annotate the gene feature as a 'Manual Annotation' per default
+            $algo   =
+		#TW GUS::Model::Core::Algorithm->new ({'name' => "Manual Annotation"});
+		GUS::Model::Core::Algorithm->new ({'name' => "Pf Annotation"});
+	    $result = $algo->retrieveFromDB();
+            
+            if ($result == 1) {
+                $prediction_algorithm_id = $algo->getAlgorithmId();
+            }
+        }
+    }
+    print STDERR "TAAF-PREDICTION_ALG_ID:$prediction_algorithm_id\n\n";
+
+
+
+    ####################
+    # Get description
+    ###########
+    my $description      = "";
     if ($bioperl_feature->has_tag ('product')) {
         my @bioperl_products = $bioperl_feature->each_tag_value ('product');
 
@@ -1997,14 +2151,18 @@ sub buildTranslatedAAFeature {
             $description .= $bioperl_product . "; ";
         }
     }
-
     $description =~ s/\s$//; # Remove trailing space from above "; "
+
+
 
     my $h = {
         #'subclass_view'    => $subclass_view,
         'is_predicted'     => $is_predicted,
         'review_status_id' => $review_status_id,
         'description'      => $description,
+	'prediction_algorithm_id'  => $prediction_algorithm_id,	
+	'translation_start'   => $c_start,
+	'translation_stop'    => $c_stop,
     };
 
     unless ($aaf) {
@@ -2017,10 +2175,10 @@ sub buildTranslatedAAFeature {
     }
 
     foreach my $att (keys %{$h}) {
-        if ($aaf->get($att) ne $h->{$att}) {
+        #TWif ($aaf->get($att) ne $h->{$att}) {
             print STDERR "buildTranslatedAAFeature(): $att has changed for DoTS::TranslatedAAFeature ",$rnaf->getName(),": Object == '",$aaf->get($att), "' lastest value == '", $h->{$att},"'\n";
             $aaf->set($att, $h->{$att});
-        }
+        #TW}
     }
 
 #    $aaf->submit(); ## ##BG    
@@ -2028,12 +2186,11 @@ sub buildTranslatedAAFeature {
 
 
 
-    ###
+    ###################
     # ProteinFeature
-    ###
+    ######
     #my $pf = $rnaf->getChild('GUS::Model::DoTS::ProteinFeature', 1);  #TW
     #print STDERR "buildTranslatedAAFeature(): getChild(ProteinFeature) returned '$pf'\n";
-
     my $name       = $rnaf->getName;
     
     return ($aaf);
@@ -3488,9 +3645,9 @@ sub createGoObjects {
     #my %edrId              = %{$self->getReleaseIds($dbh)};
     #TW-hardcode hash of ids, same as used by other plugin
     my %edrId  =   
-	(F => 7798,
-	 C => 7799,
-	 P => 7800,
+	(F => 9456,
+	 C => 9454,
+	 P => 9455,
 	 );
     my $edrId4Aspect       = $edrId{$go_aspect};
     print STDERR "EDR:$edrId4Aspect\n";
@@ -3575,6 +3732,7 @@ sub createGOAssociationInstanceLOE {
                                                        'description' => $desc,
                                                    });
     my $exists = 0;#$go_ass_inst_loe->retrieveFromDB(); # TEST
+    #print STDERR "EXISTS:$exists\n";
     $go_ass_inst_loe->submit() unless $exists;
     print STDERR "GAILOE:$go_ass_inst_loe\n";
     
@@ -4193,7 +4351,7 @@ sub getFeatureFromDB {
 
     foreach my $qualifier (@name_order) {
         next unless $self->{bioperlFeature}->has_tag($qualifier);
-	print STDERR "gFFBD3\n";
+	print STDERR "gFFBD3:has_tag:$qualifier\n";
         my @values = $self->{bioperlFeature}->each_tag_value($qualifier);
 	print STDERR "gFFBD4\n";
         if (@values) {
@@ -4289,10 +4447,12 @@ sub getGeneFeatureFromDB {
         #    $gf = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $name_value_ref->{$qualifier}});
         #}
         #else {
-            foreach my $qualifier (@{$name_order_ref}) {
+	#TW-need to add additional attributes to be added here
+	            foreach my $qualifier (@{$name_order_ref}) {
                 if (defined $name_value_ref->{$qualifier}) {
 		    #if ($UPDATE) { #TW
-			$gf = GUS::Model::DoTS::GeneFeature->new({'name'=> $name_value_ref->{$qualifier}});
+			#$gf = GUS::Model::DoTS::GeneFeature->new({'name'=> $name_value_ref->{$qualifier}});
+		    $gf = GUS::Model::DoTS::GeneFeature->new({'source_id'=> $name_value_ref->{$qualifier}});
 		    #} 
 		    #else { #TW----START
 			#print STDERR "UPDATE:$UPDATE\n";
