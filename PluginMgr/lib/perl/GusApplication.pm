@@ -698,7 +698,7 @@ sub create_or_update_implementation {
 #      print STDERR "Error: $plugin_name_s with CVS revision $cvsRevision is already registered.  You don't need to do a +update.\n";
 #      $M->doMajorMode_History($C);
  #     exit 0;
-    }
+   # }
   } else {
 
     # algorithm already exists; tell user about it.
