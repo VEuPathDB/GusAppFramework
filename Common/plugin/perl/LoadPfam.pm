@@ -239,8 +239,6 @@ sub run {
 			    $pe->set('comment_string', $entry->{'CC'});
 			} 
 
-                        print STDERR "  Submitting PfamEntry\n";
-
 			$pe->submit() if (!$parseOnly);
 			my $entryId = $pe->get('pfam_entry_id');
 			my $links = {};
@@ -253,20 +251,18 @@ sub run {
 			foreach my $mref (@$mrefs) {
 			    my($muid) = ($mref =~ (/^(\d+)$/));
 			    
-			    my $ref = $self->getDbRefId($dbrefSth, $parseOnly, $mlDbId, $muid);
+			    my $dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, $mlDbId, $muid);
 
 			    my $link =
                               GUS::Model::DoTS::DbRefPfamEntry->new({'pfam_entry_id' => $entryId,
-                                                                     'db_ref_id'     => $ref});
+                                                                     'db_ref_id'     => $dbRefId});
 
-			    if (not(defined($links->{$ref}))) {
-                                print STDERR "  Submitting DbRefPfamEntry for Medline\n";
-
+			    if (not(defined($links->{$dbRefId}))) {
 				$link->submit() if (!$parseOnly);
 				++$numRefs;
-				$links->{$ref} = 1;
+				$links->{$dbRefId} = 1;
 			    } elsif (!$parseOnly) {
-				print STDERR "Duplicate reference to db_ref_id $ref from pfam_entry_id $entryId\n";
+				print STDERR "Duplicate reference to db_ref_id $dbRefId from pfam_entry_id $entryId\n";
 			    }
 			}
 
@@ -288,66 +284,65 @@ sub run {
 			foreach my $dbref (@$dbrefs) {
 			    my($db, $id, $rest) = ($dbref =~ /^([^;]+);\s*([^;]+);(.*)$/);
 			    die "Unable to parse $dbref" if (not defined($id));
-			    my $ref;
+			    my $dbRefId;
 
 			    if ($db eq 'EXPERT') {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'Pfam expert'), $id);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'Pfam expert'), $id);
 			    }
 			    elsif ($db eq 'MIM') {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'mim'), $id);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'mim'), $id);
 			    }
 			    elsif ($db eq 'PFAMB') {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'Pfam-B'), $id);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'Pfam-B'), $id);
 			    }
 			    elsif ($db eq 'PRINTS') {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'PRINTS'), $id);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'PRINTS'), $id);
 			    }
 			    elsif (($db eq 'PROSITE') || ($db eq 'PROSITE_PROFILE')) {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'prosite'), $id);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'prosite'), $id);
 			    }
 			    elsif ($db eq 'SCOP') {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'SCOP'), $id, undef, $rest);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'SCOP'), $id, undef, $rest);
 			    }
 			    elsif ($db eq 'PDB') {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'pdb'), $id, undef, $rest);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'pdb'), $id, undef, $rest);
 			    }
 			    elsif ($db eq 'SMART') {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'SMART'), $id);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'SMART'), $id);
 			    }
 			    elsif ($db eq 'URL') {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'URL'), $id);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'URL'), $id);
 			    }
 			    elsif ($db eq 'INTERPRO') {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'INTERPRO'), $id);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'INTERPRO'), $id);
 			    }
 			    elsif ($db eq 'MEROPS') {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'MEROPS'), $id);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'MEROPS'), $id);
 			    }
 			    elsif ($db eq 'HOMSTRAD') {
-				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'HOMSTRAD'), $id);
+				$dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'HOMSTRAD'), $id);
 			    }
 			    elsif ($db eq 'CAZY') {
-                                $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'CAZy'), $id);
+                                $dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'CAZy'), $id);
 			    }
 			    elsif ($db eq 'LOAD') {
-                                $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'LOAD'), $id);
+                                $dbRefId = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'LOAD'), $id);
 			    }
 			    else {
 				print STDERR "WARNING - unrecognized database in external dbref: $db\n";
 			    }
 
-			    if (defined($ref)) {
+			    if (defined($dbRefId)) {
                                 my $link =
                                     GUS::Model::DoTS::DbRefPfamEntry->new({'pfam_entry_id' => $entryId,
-                                                                           'db_ref_id'     => $ref});
+                                                                           'db_ref_id'     => $dbRefId});
 
-				if (not(defined($links->{$ref}))) {
-                                    print STDERR "  Submitting link for ",$ref->get('lowercase_secondary_id'),"\n";
+				if (not(defined($links->{$dbRefId}))) {
 				    $link->submit() if (!$parseOnly);
 				    ++$numRefs;
-				    $links->{$ref} = 1;
+				    $links->{$dbRefId} = 1;
 				} else {
-				    print STDERR "Duplicate reference to db_ref_id $ref from pfam_entry_id $entryId\n";
+				    print STDERR "Duplicate reference to db_ref_id $dbRefId from pfam_entry_id $entryId\n";
 				}
 			    }
 			}
