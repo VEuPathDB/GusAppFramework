@@ -12,4 +12,10 @@
 
 - avoid name collisions between subs in GusRow, etc, and generated class. (use a convention like underscore to delineate these)
 
+
+
+DONE
+
 - build system is not detecting when .man files change.
+
+- build system needs to delete old model when generating all objects.
