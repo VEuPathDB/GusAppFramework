@@ -5,18 +5,20 @@ import java.lang.*;
 import java.io.*;
 
 /**
- * ObjectCache.java
+ * GUSRowFactory.java
  *
  * Used by the GUS_JDBC_Server to cache GUS objects, using their Java 
  * class name and primary key value as a unique key.  Also currently 
- * used in GUSRow to store each row's parent and child objects.
+ * used in GUSRow to store each row's parent and child objects. 
+ *
+ * The name of this class was changed from "ObjectCache."
  *
  * Created: Tues June 14 12:56:00 2002
  *
  * @author Sharon Diskin, Dave Barkan, Jonathan Crabtree
  * @version $Revision$ $Date$ $Author$
  */
-public class ObjectCache implements java.io.Serializable {
+public class GUSRowFactory implements java.io.Serializable {
 
     // ------------------------------------------------------------------
     // Static variables
@@ -36,7 +38,7 @@ public class ObjectCache implements java.io.Serializable {
 
     /**
      * Maximum number of unique objects that can be stored in the object 
-     * cache; an exception will be raised if an attempt is made to store 
+     * factory; an exception will be raised if an attempt is made to store 
      * more than this number of objects.  If set to < 0, then there is
      * no limit on the number of objects.
      */
@@ -49,9 +51,9 @@ public class ObjectCache implements java.io.Serializable {
     /**
      * Constructor
      *
-     * @param mo   Maximum number of objects that can be stored in the cache.
+     * @param mo   Maximum number of objects that can be stored in the factory.
      */
-    public ObjectCache(int mo) {
+    public GUSRowFactory(int mo) {
 	this.objects = new Hashtable();
 	this.maxObjects = mo;
     } 
@@ -59,7 +61,7 @@ public class ObjectCache implements java.io.Serializable {
     /**
      * JavaBean constructor.
      */
-    public ObjectCache() {
+    public GUSRowFactory() {
 	this(DEFAULT_MAX_OBJECTS);
     }
 
@@ -68,7 +70,7 @@ public class ObjectCache implements java.io.Serializable {
     // ------------------------------------------------------------------
 
     /**
-     * @return The number of unique objects currently stored in the cache.
+     * @return The number of unique objects currently stored in the factory.
      */
     public int getNumObjs() {
 	return this.objects.size();
@@ -81,7 +83,7 @@ public class ObjectCache implements java.io.Serializable {
      */
     public void setMaxObjects( int mo ) {
 	if (mo > getNumObjs()) {
-	    throw new IllegalArgumentException("ObjectCache: setMaxObjects called with value greater than getNumObjs()");
+	    throw new IllegalArgumentException("GUSRowFactory: setMaxObjects called with value greater than getNumObjs()");
 	} 
 	this.maxObjects = mo;
     }
@@ -94,53 +96,53 @@ public class ObjectCache implements java.io.Serializable {
     }
     
     /**
-     * Clear the cache.
+     * Clear the factory.
      */
     public void clear() {
 	this.objects.clear();
     }
     
     /**
-     * Add a single GUSRow object to the cache.
+     * Add a single GUSRow object to the factory.
      * 
-     * @param obj   GUSRow object to add to the cache.
+     * @param obj   GUSRow object to add to the factory.
      */
     public void add(GUSRow obj) {
 	if ((this.maxObjects > 0) && (getNumObjs() + 1 > this.maxObjects)) {
-	    throw new IllegalArgumentException("ObjectCache: cache is full");
-	}	String key = getKey(obj);
-	System.out.println("adding object with key " + key + " to cache");
+	    throw new IllegalArgumentException("GUSRowFactory: factory is full");
+	}
+	String key = getKey(obj);
 	this.objects.put(key, obj);
     }
 
     /**
-     * Retrieve a single GUSRow object from the cache.
+     * Retrieve a single GUSRow object from the factory.
      *
      * @param owner    Owner of the table of the object to retrieve.
      * @param tname    Table of the object to retrieve.
      * @param pk       Primary key value of the object to retrieve.
-     * @return The requested object, if in the cache, null otherwise.
+     * @return The requested object, if in the factory, null otherwise.
      */
     public GUSRow get(String owner, String tname, long pk) {
 	String obj_key = getKey(owner, tname, pk);
-	System.err.println("attempting to retrieve object with key " + obj_key + " from cache");
 	return (GUSRow)objects.get(obj_key);
     }
     
     /**
-     * Retrieve a single GUSRow object from the cache.
+     * Retrieve a single GUSRow object from the factory.
      *
      * @param obj  An object with the same owner, table name, and primary key as the one to retrieve.
-     * @return The requested object, if in the cache, null otherwise.
+     * @return The requested object, if in the factory, null otherwise.
      */
     public GUSRow get(GUSRow obj) {
 	if (obj == null) return null;
 	String obj_key = getKey(obj);
+	System.err.println("GUSRowFactory.get: attempting to retrieve gusrow using object key " + obj_key);
 	return (GUSRow)objects.get(obj_key);
     }
     
     /**
-     * @return A Vector containing all the GUSRow objects in the cache.
+     * @return A Vector containing all the GUSRow objects in the factory.
      */
     public Vector getAll () {
 	Enumeration all = objects.elements();
@@ -155,29 +157,32 @@ public class ObjectCache implements java.io.Serializable {
     }
 
     /**
-     * Check whether the specified GUSRow is in the cache.
+     * Check whether the specified GUSRow is in the factory.
      *
      * @param owner    Owner of the table of the object to check for.
      * @param tname    Table of the object to check for.
      * @param pk       Primary key value of the object to check for.
-     * @return true iff the requested object is in the cache.
+     * @return true iff the requested object is in the factory.
      */
     public boolean contains(String owner, String tname, long pk) {
 	return (this.get(owner, tname, pk) != null);
     }
 
     /**
-     * Check whether the cache already contains a GUSRow object with
+     * Check whether the factory already contains a GUSRow object with
      * the same owner, table name, and primary key as the supplied
      * argument.
      *
      * @param obj  An object with the same owner, table name, and primary key as the one to check for.
-     * @returns true iff the cache contains such an object.
+     * @returns true iff the factory contains such an object.
      */
     public boolean contains(GUSRow obj) {
-	System.err.println("ObjectCache.contains: beginning method");
 	String obj_key = this.getKey(obj);
-	System.err.println("ObjectCache.contains: searching for object in cache with key " + obj_key);
+	Enumeration allKeys = objects.keys();
+	while (allKeys.hasMoreElements()){
+	    System.err.println("next key in factory is " + (String)allKeys.nextElement());
+	}
+	
 	return (this.get(obj) != null);
     }
 
@@ -186,12 +191,12 @@ public class ObjectCache implements java.io.Serializable {
     // actually removed.
 
     /**
-     * Remove a GUSRow from the cache.
+     * Remove a GUSRow from the factory.
      *
      * @param owner    Owner of the table of the object to remove.
      * @param tname    Table of the object to remove.
      * @param pk       Primary key value of the object to remove.
-     * @return The object that was removed from the cache.
+     * @return The object that was removed from the factory.
      */    
     public GUSRow remove(String owner, String tname, long pk) {
 	String obj_key = this.getKey(owner, tname, pk);
@@ -199,7 +204,7 @@ public class ObjectCache implements java.io.Serializable {
     }
     
     /**
-     * Remove a GUSRow from the cache.
+     * Remove a GUSRow from the factory.
      *
      * @param obj  An object with the same owner, table name, and primary key as the one to remove.
      */
@@ -232,19 +237,6 @@ public class ObjectCache implements java.io.Serializable {
 	return getKey(t.getOwnerName(), t.getTableName(), obj.getPrimaryKeyValue());
     }
 
-} //ObjectCache
-
-
-
-
-
-
-
-
-
-
-
-
-
+} //GUSRowFactory
 
 

@@ -91,6 +91,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
         // Establish the connection that will be used thereafter.
         try {
+	    System.out.println("JDBCDatabaseConnection: attempting to get connection, url: " + jdbcUrl + " user: " + jdbcUser + " pass: " + jdbcPassword);
             conn = DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword);
         } 
 	catch (Throwable t) { 
@@ -135,20 +136,21 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
     public long getCurrentUserId() { return this.gusUserId; }
 
-    public GUSRow retrieveObject(String owner, String tname, long pk, String clobAtt, Long start, Long end) 
+    public void retrieveGUSRow(GUSRow gusRow, String clobAtt, Long start, Long end) 
 	throws GUSObjectNotUniqueException 
     {
-	GUSTable table = GUSTable.getTableByName(owner, tname);
-	String pkName = table.getPrimaryKeyName();
-	GUSRow obj = null;
 	int numReturned = 0;
 	Hashtable specialCases = null;
+
+	GUSTable table = gusRow.getTable();
+	String pkName = table.getPrimaryKeyName();
+	long pkValue = gusRow.getPrimaryKeyValue();
+
 	if (clobAtt != null) {
 	    specialCases = new Hashtable();
 	    specialCases.put(clobAtt, new CacheRange(start, end, null));
-	    //	    System.err.println("retrieveObject: adding " + clobAtt + " start=" + start + " end=" + end + " to specialCases");
+	    //	    System.err.println("retrieveGUSRow: adding " + clobAtt + " start=" + start + " end=" + end + " to specialCases");
 	}
-	
 	try {
 
 	    // JC: In Oracle it's OK to do a 'select *' even if <code>clobAtt != null</code>
@@ -159,16 +161,15 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    //
 	    Statement stmt = conn.createStatement();
 	    String sql = "select * from " + table.getOwnerName() + "." + table.getTableName()  + 
-		" where " + pkName + " = " + pk;
-	    if (DEBUG) System.err.println("JDBCDatabaseConnection: retrieveObject, sql = '" + sql + "'");
+		" where " + pkName + " = " + pkValue;
+	    if (DEBUG) System.err.println("JDBCDatabaseConnection: retrieveGUSRow, sql = '" + sql + "'");
 
 	    ResultSet res = stmt.executeQuery(sql);
 
 	    while (res.next()) {
 		++numReturned;
-		obj = GUSRow.createObject(owner, tname);
-		obj.setAttributesFromResultSet(res, specialCases);
-
+		Hashtable rowHash = createHashtableFromResultSet(res);
+		gusRow.setAttributesFromHashtable(rowHash, specialCases);
 	    }
 	    res.close();
 	    stmt.close();
@@ -177,14 +178,39 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    e.printStackTrace(); 
 	}
 	if (numReturned != 1) {
-	    throw new GUSObjectNotUniqueException("Found " + numReturned + " rows in " + owner + "." + 
-						  tname + " with id=" + pk);
+	    throw new GUSObjectNotUniqueException("Found " + numReturned + " rows in " + table.getOwnerName() + "." + 
+						  table.getTableName() + " with id=" + pkValue);
 	}
 	
-	return obj;
     }
 
-    public Vector retrieveObjectsFromQuery(String owner, String tname, String query)
+    public Long getParentPk(GUSRow child, GUSTable parentTable, String childAtt)
+	throws RemoteException, GUSNoSuchRelationException, GUSObjectNotUniqueException{
+	GUSTable childTable = child.getTable();
+	String childSchema = childTable.getOwnerName();
+	String childTableName = childTable.getTableName();
+	String primaryKeyName = childTable.getPrimaryKeyName();
+	Long primaryKeyValue = new Long(child.getPrimaryKeyValue());
+	Long parentPk = null;
+
+	String sql = "select " + childAtt + " from " + childSchema + "." + childTableName + 
+	    " where " + primaryKeyName + " = " + primaryKeyValue;
+
+	try {
+	    Statement stmt = conn.createStatement();
+	    ResultSet res = stmt.executeQuery(sql);
+	    while (res.next()){
+	        parentPk = new Long(res.getLong(childAtt));
+	    }
+	}
+	catch (Exception e){
+	    System.err.println(e.getMessage());
+	    e.printStackTrace();
+	}
+	return parentPk;
+    }
+
+    public Vector retrieveGUSRowsFromQuery(GUSTable table, String query)
     {
 	Vector objs = new Vector();
 
@@ -193,8 +219,9 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    ResultSet res = stmt.executeQuery(query);
 
 	    while(res.next()) {
-		GUSRow obj = GUSRow.createObject(owner, tname);
-		obj.setAttributesFromResultSet(res, null);
+		GUSRow obj = GUSRow.createGUSRow(table);
+		Hashtable rowHash = createHashtableFromResultSet(res);
+		obj.setAttributesFromHashtable(rowHash, null);
 		objs.add(obj);
 	    }
 	    res.close();
@@ -223,7 +250,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 		colIsClob[i] = (rsmd.getColumnType(i+1) == Types.CLOB);
 	    }
 
-	    // Returns everything as a String.  CLOB values require special handling.
+	    // Returns everything as an Object.  CLOB values require special handling.
 	    //
 	    while(res.next()) {
 		Hashtable h = new Hashtable();
@@ -236,16 +263,16 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 			if (clobval != null) {
 			    long clobLen = clobval.length();
 			    String sval = clobval.getSubString(1, (int)clobLen);
-			    h.put(colNames[i], sval);
+			    h.put(colNames[i].toLowerCase(), sval);
 			}
 		    } 
 
-		    // All others returned as String
+		    // All others returned as Objects.  Note numbers are intialized as BigDecimals.
 		    else {
-			String sval = res.getString(i+1);
+			Object sval = res.getObject(i+1);
 			
 			if (sval != null) {
-			    h.put(colNames[i], sval);
+			    h.put(colNames[i].toLowerCase(), sval);
 			}
 		    }
 		}
@@ -265,8 +292,12 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     // Note: if the submit fails due to an SQL exception we should report the 
     // exception (either directly or as a string) in the SubmitResult object.
 
-    public SubmitResult submitObject(GUSRow obj)
+    // This transaction is committed immediately after being executed, or rolled
+    // back if it fails.
+
+    public SubmitResult submitGUSRow(GUSRow obj)
     {
+
 	// This should all be wrapped in a single transaction so can be 
 	// rolled back if need be.  Here we assume a simple update/delete.
 
@@ -288,7 +319,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	// New primary key value for an insert
 	int nextId = -1;
 	    
-	// New primary key values for insert
+	// New primary key values for insertnbb
 	Vector pkeys = null;
 
 	try {
@@ -302,27 +333,34 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    
 	    // INSERT
 	    //
-	    if (obj.isNew() || !obj.isDeleted()) {
+	    if (obj.getPrimaryKeyValue() == -1) {  
 		isInsert = true;
-		
+
 		// Query database for new primary key value
 		
 		// JC: There are many places where the code could be sped up; 
 		// caching the Statement for the following is one example.
 		
+		
 		String idSql = sqlUtils.makeNewIdSQL(table);
+
 		ResultSet rs1 = null;
 		
 		rs1 = stmt.executeQuery(idSql);
+
 		if (rs1.next()) {
 		    nextId = rs1.getInt(1);
-		}
-	    
-		if (nextId < 0) {
-		    return new SubmitResult(false,0,0,0,null); // submit failed
+		    System.err.println("preparing to submit new entry with id " + nextId);
 		}
 		
-		sql = sqlUtils.makeInsertSQL(owner, tname, pkName, nextId, obj.getCurrentAttVals());
+		if (nextId < 0) {
+		    SubmitResult badSr = new SubmitResult(false,0,0,0,null); // submit failed
+		    badSr.setMessage("Unable to retrieve a valid new primary key to insert this row");
+		    return badSr;
+		}
+		
+		sql = sqlUtils.makeInsertSQL(owner, tname, pkName, nextId, obj.getAttributeValues());
+
 	    }    
 	    
 	    // DELETE
@@ -334,11 +372,11 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 		// been marked for deletion then our first task must be to determine
 		// *which* object in the database is to be deleted (if a unique object
 		// can be determined without the primary key value.)  The simplest 
-		// way to do this is to preface the deletion with a call to retrieveObject.
+		// way to do this is to preface the deletion with a call to retrieveGUSRow.
 		// However, for now we'll keep it simple and fail if the object to be
 		// deleted is new.
 		
-		if (obj.isNew()) {
+		if (obj.getPrimaryKeyValue() == -1){
 		    return new SubmitResult(false,0,0,0,null);  // submit failed
 		}
 		
@@ -353,25 +391,39 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 		// JC: As above we'll keep things simple for now by requiring that an
 		// object first be retrieved from the database before it can be updated.
 		
-		if (obj.isNew()) {
-		    return new SubmitResult(false,0,0,0,null);  // submit failed
+		// DTB: Not sure how to find an object without using its primary key, without
+		//      using object-specific methods.
+
+		if (obj.getPrimaryKeyValue() == -1){
+		    SubmitResult badSr = new SubmitResult(false,0,0,0,null);  // submit failed
+		    badSr.setMessage("attempting to use an update statement on a newly created object");
+		    return badSr;
 		}
-		
-		sql = sqlUtils.makeUpdateSQL(owner, tname, pkName, obj.getPrimaryKeyValue(), obj.getCurrentAttVals(), obj.getInitialAttVals());
+		//DTB: change signature;
+		sql = sqlUtils.makeUpdateSQL(owner, tname, pkName, obj.getPrimaryKeyValue(), obj.getAttributeValues());//CurrentAttVals(), obj.getInitialAttVals());
 	    }
 	    
 	    // NO CHANGE
 	    //
 	    else {
-		return new SubmitResult(true,0,0,0,null);  // submit succeeded; no change needed
+		SubmitResult sr = new SubmitResult(true,0,0,0,null);  // submit succeeded; no change needed
+		sr.setMessage("no changes were made");
+		return sr;
 	    }
 	    
 	    if (sql == null) { 
-		return new SubmitResult(false,0,0,0,null);  // submit failed
+		SubmitResult badSr = new SubmitResult(false,0,0,0,null);  // submit failed
+		badSr.setMessage("could not create an SQL statement for submitting this object.");
+		return badSr;
 	    }
-	} catch (SQLException sqle) {
+	} catch (Exception sqle) {
+	    System.err.println(sqle.getMessage());
+	    sqle.printStackTrace();
 	    // REMEMBER TO ROLLBACK !! SJD
-	    return new SubmitResult(false,0,0,0,null); // submit failed
+	    SubmitResult badSr = new SubmitResult(false,0,0,0,null); // submit failed
+	    badSr.setMessage("SQLException: " +sqle.getMessage());
+	    rollback();
+	    return badSr;
 	}
 	    
 	// SJD Still to add...version the row if versionable!!
@@ -384,7 +436,9 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	int rowsAffected = 0;
 	
 	try {
+	    System.out.println("JDBCDatabaseConnection.submitGUSRow: executing " + sql); 
 	    rowsAffected += stmt.executeUpdate(sql);
+	    System.out.println("JDBCDatabaseConnection.submitGUSRow: affected " + rowsAffected + " rows.");
 	    stmt.close();
 	    success = true;
 	    
@@ -398,14 +452,36 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 		rowsDeleted += rowsAffected;
 	    }
 	    
+	    
+	    
 	} catch (SQLException sqle) {
 	    // REMEMBER TO ROLLBACK !! SJD
-	    return new SubmitResult(false,0,0,0,null); // submit failed
+	    System.err.println(sqle.getMessage());
+	    sqle.printStackTrace();
+	    SubmitResult badSr = new SubmitResult(false,0,0,0,null); // submit failed
+	    badSr.setMessage("SQLException: " + sqle.getMessage());
+	    rollback();
+	    return badSr;
 	}
 
 	return new SubmitResult(success, rowsInserted, rowsUpdated, rowsDeleted, pkeys);
     }
+    
+    public boolean commit(){
+	boolean result = false;
+	try {
+	    
+	    Statement commitStmt = conn.createStatement();
+	    result = commitStmt.execute(sqlUtils.makeTransactionSQL(false, "commit"));
+	}
+	catch (Exception e){
+	    e.printStackTrace();
+	    System.err.println(e.getMessage());
+	}
+	return result;
+    }
 
+	//this is the old way of retrieving parent...will probably want to delete it soon
     public GUSRow retrieveParent(GUSRow child, String owner, String tname, String childAtt)
 	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
@@ -421,7 +497,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 						 " and " + owner + "." + tname);
 	}
 
-	Object parentPk = child.get(childAtt);
+	Object parentPk = child.get_Attribute(childAtt);
 	long parentPkLong = -1;
 
 	if (parentPk instanceof Long) {
@@ -437,7 +513,8 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	}
 	
 	if (parentPk != null) {
-	    parent = this.retrieveObject(rel.getParentTableOwner(), rel.getParentTable(), parentPkLong, null, null, null);
+	    //DTB:  put "childTable" for compiling purposes.  This is likely broken if we decided to keep this method!
+	    //	    parent = this.retrieveGUSRow(childTable, parentPkLong, null, null, null);
 	}
 
 	return parent;
@@ -453,11 +530,11 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     //fix query where exception being thrown
 
     /*
-    public GUSRow[] retrieveParentsForAllObjects(Vector children, String parentOwner, String parentTable, String childAtt) 
+    public GUSRow[] retrieveParentsForAllGUSRows(Vector children, String parentOwner, String parentTable, String childAtt) 
     {
 	Hashtable parentHash = new Hashtable();
 	GUSRow thisChild = null;
-	int childSize = childObjects.size();
+	int childSize = childGUSRows.size();
 	GUSRow firstChild = (GUSRow)childObjects.elementAt(0);
 	GUSTable firstChildTable = firstChild.getTable();
 	String childTableOwner = firstChildTable.getOwnerName();
@@ -600,7 +677,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
     // JC: For now, here's a simple (i.e., totally non-optimized) version of the method
 
-    public GUSRow[] retrieveParentsForAllObjects(Vector children, String parentOwner, String parentTable, String childAtt) 
+    public GUSRow[] retrieveParentsForAllGUSRows(Vector children, String parentOwner, String parentTable, String childAtt) 
 	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
 	int nChildren = children.size();
@@ -647,6 +724,9 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	}
     }
 
+    public String getSubmitDate(){
+	return sqlUtils.getSubmitDate();
+    }
     
     // ------------------------------------------------------------------
     // Protected methods
@@ -680,12 +760,13 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
 	long parentPkVal = parent.getPrimaryKeyValue();
 	String sql = "select * from " + owner + "." + tname + " where " + childAtt + " = " + parentPkVal;
-	Vector kids = retrieveObjectsFromQuery(owner, tname, sql);
+	//DTB:  put "parentTable" for compiling purposes.  This is likely broken if we decided to keep this method!
+	Vector kids = retrieveGUSRowsFromQuery(parentTable, sql);
 	return kids;
     }
 
     // JC: The following method probably needs adding to the public interface
-    // so that the GUSServer can support the behavior documented when retrieveObject
+    // so that the GUSServer can support the behavior documented when retrieveGUSRow
     // is called on a cached object, but the clob range is different from what
     // has been cached.
 
@@ -697,17 +778,16 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
      * it's no worse than what we had here before, and is no longer specific
      * to the DoTS.NASequence table
      */
-    protected String getSubStringFromClob(String owner, String tname, long pk, String clobAtt, Long start, Long end) 
+    protected String getSubStringFromClob(GUSTable table, long pk, String clobAtt, Long start, Long end) 
 	throws GUSObjectNotUniqueException
     {
-	GUSTable table = GUSTable.getTableByName(owner, tname);
 	String pkName = table.getPrimaryKeyName();
 	int numRows = 0;
 	String subseq = null;
 
 	try {
 	    Statement stmt = conn.createStatement();
-	    String sql = "select " + clobAtt + " from " + owner + "." + tname + " where " + pkName + " = " + pk;
+	    String sql = "select " + clobAtt + " from " + table.getOwnerName() + "." + table.getTableName() + " where " + pkName + " = " + pk;
 	    if (DEBUG) System.err.println("JDBCDatabaseConnection: getSubStringFromClob, sql = '" + sql + "'");
 	    ResultSet res = stmt.executeQuery(sql);
 
@@ -738,12 +818,64 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	}
 
 	if (numRows != 1) {
-	    throw new GUSObjectNotUniqueException("Found " + numRows + " rows in " + owner +"." + tname + 
+	    throw new GUSObjectNotUniqueException("Found " + numRows + " rows in " + table.getOwnerName() +"." + table.getTableName() + 
 						  " with " + pkName + "=" + pk);
 	}
 
 	return subseq;
     }
+
+    // ------------------------------------------------------------------
+    // Private methods
+    // ------------------------------------------------------------------
+
+    /**
+     * Rolls back all transactions since the last 'commit'.
+     */
+    private void rollback(){
+	
+	try{
+	    Statement stmt = conn.createStatement();
+	    boolean commitResult = stmt.execute(sqlUtils.makeTransactionSQL(false, "rollback"));
+	}
+	catch (SQLException e){
+	    System.err.println(e.getMessage());
+	    e.printStackTrace();
+	}
+    }
+
+
+    /**
+     * Given a ResultSet, return a Hashtable representing its current row (that is, the row to 
+     * which the ResultSet's 'cursor' is pointing.)  The keys of the Hashtable are the column
+     * names of the ResultSet's table (all lower case) and the value of each key is the value 
+     * in the row for the column.
+     */
+    private Hashtable createHashtableFromResultSet(ResultSet rs){
+
+	Hashtable rowHash = new Hashtable();
+	
+	try {
+	    ResultSetMetaData rsmd = rs.getMetaData();
+	    for (int i = 1; i <= rsmd.getColumnCount(); i++){
+		String columnName = rsmd.getColumnName(i);
+
+		Object value = rs.getObject(columnName);
+		
+		if (value != null){
+
+		    rowHash.put(columnName.toLowerCase(), value);
+		}
+	    }
+	}
+	catch (Exception e){
+	    System.err.println(e.getMessage());
+	    e.printStackTrace();
+	}
+	return rowHash;
+    }
+
+
 
     // JC: This might be a candidate for a "hand_edited" method in the BLATAlignment object
     //     or it could just go in the application itself.

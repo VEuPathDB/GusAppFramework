@@ -51,18 +51,21 @@ public interface ServerI {
     // ------------------------------------------------------------------
 
     /**
-     * Retrieve a single object from the database.  If the object has already 
-     * been retrieved in this session, then the same Java object will be 
-     * retrieved from the cache and returned.
+     * Retrieve a single object from the database by side effect by filling in the values of 
+     * <code>gusRow</code>.  If the object has already  been retrieved in this session, 
+     * then the same Java object will be retrieved from the cache. and returned.  Optionally, 
+     * the user can specify  to retrieve an empty version of the GUSRow, with no attributes set 
+     * except for the primary key.  The object will still be stored in the cache, and its
+     * attributes will be filled in if it is later fully retrieved from the database.
      *
-     * @param session  A session identifier returned by <code>openConnection</code>
-     * @param owner    The owner of the object's table.
-     * @param tname    The object's table.
-     * @param pk       Primary key value for the row of interest.
-     * @return The requested GUSRow, retrieved from the cache if it has already been
-     * retrieved in this session.
+     * @param session               A session identifier returned by <code>openConnection</code>
+     * @param gusRow                The GUSRow object which has already been constructed by a GUSRow 
+     *                              subclass and will have its attributes filled in from the database.
+     * @param retrieveFromDatabase  Whether or not to actually get this from the database
+     *                              or just return an version of it with no attributes set 
+     *                              except for the primary key.
      */
-    public GUSRow retrieveObject(String session, String owner, String tname, long pk)
+    public GUSRow retrieveGUSRow(String session, GUSTable table, long pkValue, boolean retrieveEager)
         throws GUSNoConnectionException, GUSObjectNotUniqueException;
 
     /**
@@ -71,26 +74,24 @@ public interface ServerI {
      * returned from the cache.
      *
      * @param session  A session identifier returned by <code>openConnection</code>
-     * @param owner    The owner of the table to query.
-     * @param tname    The table to query.
+     * @param table    The GUSTable object representing the table to query.
      * @return A Vector of GUSRow objects.
      */
-    public Vector retrieveAllObjects(String session, String owner, String tname)
+    public Vector retrieveAllGUSRows(String session, GUSTable table)
         throws GUSNoConnectionException;
 
     /**
      * Retrieve a set of GUSRow objects using an SQL query.  It is assumed that the 
      * objects will all be instances of the same subclass of GUSRow.  This method 
      * will always query the database, but any objects that have already been 
-     * retrieved wil be returned from the cache.
+     * retrieved will be returned from the cache.
      *
      * @param session  A session identifier returned by <code>openConnection</code>
      * @param query    An SQL query that does a select * from a single table.
-     * @param owner    The owner of the table that the query selects from.
-     * @param tname    The name of the table that the query selects from.
+     * @param table    The GUSTable representing the table that the query selects from.
      * @return A Vector of GUSRow objects corresponding to the rows selected.
      */
-    public Vector retrieveObjectsFromQuery(String session, String owner, String tname, String query)
+    public Vector retrieveGUSRowsFromQuery(String session, GUSTable table, String query)
 	throws GUSNoConnectionException;
 
     /**
@@ -109,17 +110,21 @@ public interface ServerI {
     // ------------------------------------------------------------------
     
     /**
-     * Retrieve a single object from the database, but only retrieve as much of the
+     * Retrieve, by side effect, a single object from the database, but only retrieve as much of the
      * specified CLOB value as indicated by <code>start</code> and <code>end</code>.
      * To retrieve the entire CLOB value, either set both <code>start</code> and
-     * <code>end</code> to NULL, or use the the standard <code>retrieveObject</code>
+     * <code>end</code> to NULL, or use the the standard <code>retrieveGUSRow</code>
      * method instead.  If the requested object has already been retrieved then it
      * will be returned from the cache, but its cached CLOB value will be updated
      * to reflect the parameters of the method call.
      *
+     * Optionally, the user can specify to retrieve an empty version of the GUSRow, 
+     * with no attributes set except for the primary key.  The object will still be 
+     * stored in the cache, and its attributes will be filled in if it is later 
+     * fully retrieved from the database.
+     *
      * @param session  A session identifier returned by <code>openConnection</code>
-     * @param owner    The owner of the object's table.
-     * @param tname    The object's table.
+     * @param table    The GUSTable object representing the GUSRow's table.
      * @param pk       Primary key value for the row of interest.
      * @param clobAtt  The name of the CLOB-containing attribute.
      * @param start    Start coordinate of the CLOB range to retrieve and cache in 1-based 
@@ -127,8 +132,11 @@ public interface ServerI {
      * @param end      End coordinate of the CLOB range to retrieve and cache in 1-based 
      *                 coordinates.  If null and clobAtt != null then the value clobAtt.length() 
      *                 will be used instead.
+     * @param retrieveFromDatabase  Whether or not to actually get this from the database
+     *                              or just return an version of it with no attributes set 
+     *                              except for the primary key.
      */
-    public GUSRow retrieveObject(String session, String owner, String tname, long pk, 
+    public GUSRow retrieveGUSRow(String session, GUSTable table, long pkValue, boolean retrieveEager,
 				 String clobAtt, Long start, Long end)
 	throws GUSNoConnectionException, GUSObjectNotUniqueException;
 
@@ -146,7 +154,7 @@ public interface ServerI {
      * @param obj         The new or updated object to write back to the database.
      * @param deepSubmit  Whether to also submit all the child objects of <code>obj</code>
      */
-    public SubmitResult submitObject(String session, GUSRow obj, boolean deepSubmit) 
+    public SubmitResult submitGUSRow(String session, GUSRow obj, boolean deepSubmit, boolean newTransaction) 
 	throws GUSNoConnectionException;
     
     // ------------------------------------------------------------------
@@ -157,11 +165,10 @@ public interface ServerI {
      * Create a <i>new</i> object, not yet connected to a row in the database.
      *
      * @param session  A session identifier returned by <code>openConnection</code>
-     * @param owner    Owner of the table in which to the new object belongs.
-     * @param tname    Name of the table in which the new object belongs.
+     * @param table    GUSTable representing the table to which the new object belongs.
      * @return A new GUSRow for which <code>isNew() == true</code>
      */
-    public GUSRow createObject(String session, String owner, String tname)
+    public GUSRow createGUSRow(String session, GUSTable table)
         throws GUSNoConnectionException;
 
     // ------------------------------------------------------------------
@@ -188,6 +195,13 @@ public interface ServerI {
     public GUSRow retrieveParent(String session, GUSRow row, String owner, String tname, String childAtt)
         throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException;
     
+
+
+    //DTB: alternate way of getting parent...will have to document.
+    public GUSRow retrieveParent(String sessionId, GUSRow child, GUSTable parentTable, String childAtt)
+	throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException;
+
+
     /**
      * Retrieve all the parent rows for a set of child rows.
      *
@@ -198,7 +212,7 @@ public interface ServerI {
      * @param childAtt  The name of the referencing attribute in the child table.
      * @return An array of size <code>children.size()</code>, containing the parents.
      */
-    public GUSRow[] retrieveParentsForAllObjects(String session, Vector children, String parentOwner, 
+    public GUSRow[] retrieveParentsForAllGUSRows(String session, Vector children, String parentOwner, 
 						 String parentName, String childAtt)
 	throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException;
 
@@ -229,6 +243,7 @@ public interface ServerI {
      */
     public Vector retrieveChildren(String session, GUSRow row, String owner, String tname, String childAtt)
 	       throws GUSNoConnectionException, GUSNoSuchRelationException;
+
 
 } //ServerI
 

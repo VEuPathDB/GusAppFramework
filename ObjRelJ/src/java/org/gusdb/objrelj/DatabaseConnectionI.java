@@ -57,7 +57,7 @@ public interface DatabaseConnectionI {
      *                 coordinates.  If null and clobAtt != null then the value clobAtt.length() 
      *                 will be used instead.
      */
-    public GUSRow retrieveObject(String owner, String tname, long pk, String clobAtt, Long start, Long end)
+    public void retrieveGUSRow(GUSRow gusRow, String clobAtt, Long start, Long end)
 	throws RemoteException, GUSObjectNotUniqueException;
 
     /**
@@ -69,7 +69,7 @@ public interface DatabaseConnectionI {
      * @param query    An SQL query that does a select * from a single table.
      * @return A Vector of GUSRow objects corresponding to the rows selected.
      */
-    public Vector retrieveObjectsFromQuery(String owner, String tname, String query)
+    public Vector retrieveGUSRowsFromQuery(GUSTable table, String query)
 	throws RemoteException;
     
     /**
@@ -92,7 +92,7 @@ public interface DatabaseConnectionI {
      * @param obj         The new or updated object to write back to the database.
      * @return The result of the update, insert, or delete.
      */
-    public SubmitResult submitObject(GUSRow obj)
+    public SubmitResult submitGUSRow(GUSRow obj)
 	throws RemoteException;
 
     /**
@@ -107,6 +107,10 @@ public interface DatabaseConnectionI {
     public GUSRow retrieveParent(GUSRow row, String owner, String tname, String childAtt)
 	throws RemoteException, GUSNoSuchRelationException, GUSObjectNotUniqueException;
 	
+
+    public Long getParentPk(GUSRow child, GUSTable parentTable, String childAtt)
+    	throws RemoteException, GUSNoSuchRelationException, GUSObjectNotUniqueException;
+
     /**
      * Retrieve all the parent rows for a set of child rows.
      *
@@ -116,7 +120,7 @@ public interface DatabaseConnectionI {
      * @param childAtt  The name of the referencing attribute in the child table.
      * @return An array of size <code>children.size()</code>, containing the parents.
      */
-    public GUSRow[] retrieveParentsForAllObjects(Vector children, String parentOwner, String parentName, String childAtt)
+    public GUSRow[] retrieveParentsForAllGUSRows(Vector children, String parentOwner, String parentName, String childAtt)
 	throws RemoteException, GUSNoSuchRelationException, GUSObjectNotUniqueException;
 
     /**
@@ -143,9 +147,17 @@ public interface DatabaseConnectionI {
 	throws RemoteException, GUSNoSuchRelationException;
 
     /**
+     * Retrieve a date (as a <code>String</code>) that represents the time at which
+     * an object is submitted to the database.
+     */ 
+    public String getSubmitDate() throws RemoteException;
+
+    /**
      * Close the connection, freeing any resources that it holds.
      */
     public void close() 
 	throws RemoteException;
+
+    public boolean commit() throws RemoteException;
 
 } // DatabaseConnectionI
