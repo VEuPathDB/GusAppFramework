@@ -1,59 +1,55 @@
-############################################################
-##plugin that inserts entries into DbRef and DbRefNASequence
-##mapping assemblies to other ids (eg MGI or Genecards)
-##
-##10/09/02 Deborah Pinney 
-##
-##Currently works for MGI<->DoTS, should be revised for GeneCards.
-##Can't anticipate the form of other mappings, generalize if possible
-##
-##algorithm_id = 9095
-##algorithm_imp_id = 10927
-############################################################
-package InsertDbRefAndDbRefNASequence;
+package GUS::Common::Plugin::InsertDbRefAndDbRefNASequence;
 
+@ISA = qw(GUS::PluginMgr::Plugin);
+ 
 use strict;
 
-use Objects::GUSdev::DbRef;
-use Objects::GUSdev::DbRefNASequence;
-
+use GUS::Model::SRes::DbRef;
+use GUS::Model::DoTS::DbRefNASequence;
 
 sub new {
-  my $Class = shift;
+  my $class = shift;
 
-  return bless {}, $Class;
-}
+  my $self = {};
+  bless($self,$class);
 
-sub Usage {
-  my $M   = shift;
-  return 'Maps assemblies to other entities by inserting rows into DbRef and
-          DbRefNASequence\n';
-}
+  my $usage = 'Maps assemblies to other entities by inserting rows into DbRef and
+          DbRefNASequence';
 
+  my $easycsp =
+    [{o => 'testnumber',
+      t => 'int',
+      h => 'number of iterations for testing',
+     },
+     {o => 'mappingfiles',
+      t => 'string', 
+      h => 'mapping files of DoTS assemblies to ids from 
+            external source, file names delimited by commas',
+     },
+     {o => 'db_rel_id',
+      t => 'int',
+      h => 'external_database_release_id for external source of ids',
+     },
+     {o => 'db_id',
+      t => 'int',
+      h => 'external_database_id for external source of ids',
+     },
+     {o => 'pattern',
+      t => 'string',
+      h => 'source identifier pattern, e.g. MGI:\d+',
+     }
+    ];
 
-sub EasyCspOptions {
-    my $M   = shift;
-    {
-	
-	
-	testnumber   => {
-	             o => 'testnumber=i',
-                     h => 'number of iterations for testing',
-                     },
-	mappingfiles => {
-                     o => 'mappingfiles=s',
-                     h => 'mapping files of DoTS assemblies to ids from 
-                           external source, file names delimited by commas',
-                     },
-	db_id        => {
-                     o => 'db_id=i',
-                     h => 'external_database_id for external source of ids',
-                     },
-	pattern      => {
-                     o => 'pattern=s',
-                     h => 'source identifier pattern, e.g. MGI:\d+',
-                     },
-    };
+  $self->initialize({requiredDbVersion => {},
+		  cvsRevision => '$Revision$', # cvs fills this in!
+		  cvsTag => '$Name$', # cvs fills this in!
+		  name => ref($m),
+		  revisionNotes => 'make consistent with GUS 3.0',
+		  easyCspOptions => $easycsp,
+		  usage => $usage
+		 });
+
+  return $self;
 }
 
 my $ctx;
@@ -65,7 +61,7 @@ sub Run {
   $ctx = shift;
 
   die "Supply: --mappingfiles=s \n" unless ($ctx->{cla}->{mappingfiles});
-  die "Supply: --db_id \n" unless ($ctx->{cla}->{db_id});
+  die "Supply: --db_rel_id \n" unless ($ctx->{cla}->{db_rel_id});
   die "Supply: --pattern \n" unless ($ctx->{cla}->{pattern}); 
 
   print STDERR $ctx->{'commit'} ? "COMMIT ON\n" : "COMMIT TURNED OFF\n";
@@ -76,13 +72,15 @@ sub Run {
 
   my ($sourceIdHash, $mapHash) = &getSourceIdsAndMap();  
 
-  &insertDbRef($sourceIdHash);  
+  my $dbRefHash = &insertDbRef($sourceIdHash,$dbh);  
 
   &getCurrentAssemblyId($dbh,$mapHash); 
 
   my ($sourceIdDbrefHash) = &readDBRefs($dbh); 
 
   &insertDBRefNASeq($sourceIdDbrefHash,$mapHash); 
+
+  &deleteDbRef($dbRefHash,$dbh);
 }
 
 sub getSourceIdsAndMap {
@@ -126,32 +124,59 @@ sub getSourceIdsAndMap {
 
 sub insertDbRef {
 
-    my ($sourceIdHash) = @_;
+    my ($sourceIdHash, $dbh) = @_;
+
+    my %dbRefHash;
+
+    my $db_rel_id = $ctx->{cla}->{db_rel_id};
 
     my $db_id = $ctx->{cla}->{db_id};
+
+    my $sql = 'select external_database_release_id from sres.externaldatabaserelease 
+               where external_database_id = $db_id'; 
+
+    my $stmt = $dbh->prepareAndExecute($sql);
+
+    my @relArray;
+
+    while (my $old_rel_id = $stmt->fetchrow_array()) {
+	push (@relArray, $old_rel_id);
+    } 
 
     my $num =0;
 
     foreach my $id (keys %$sourceIdHash) {
 	my $lowercase_primary_id = lc ($id);
-	my $newDbRef = DbRef -> new ({'lowercase_primary_identifier'=>$lowercase_primary_id, 
-                                     'external_db_id'=>$db_id});
+	foreach my $old_rel_id (@relArray) {
+	    my $newDbRef = GUS::Model::SRes::DbRef -> new ({'lowercase_primary_identifier'=>$lowercase_primary_id, 'external_database_release_id'=>$old_rel_id});
+	    $newDbRef->retrieveFromDB();
 
-	if (!$newDbRef->retrieveFromDB()) {
-	    $newDbRef->setPrimaryId($id);
+	    if ($newDbRef->getPrimaryId() ne $id) {
+		$newDbRef->setPrimaryId($id);
+	    }
+	    if ($newDbRef->getExternalDatabaseReleaseId != $db_rel_id) {
+		$newDbRef->setExternalDatabaseReleaseId($db_rel_id);
+	    }	
+    
 	    $num += $newDbRef->submit();
-	}
 
-	$newDbRef->undefPointerCache();
+	    my $dbRefId = $newDbRef->getDbRefId();
+	    
+	    $dbRefHash{$dbRefId} = 1;
+	 
+	    $newDbRef->undefPointerCache();
+	}
     }
 
     print STDERR ("$num ids inserted into DbRef table\n");
+
+    return \%dbRefHash;
 }
 
 sub getCurrentAssemblyId {
 
     my($dbh, $mapHash) = @_;
-    my $st = $dbh->prepare("select count(*) from nasequenceimp where na_sequence_id = ?");
+    my $st = $dbh->prepare("select count(*) from dots.nasequenceimp where na_sequence_id = ?");
     my $num = 0;
 
     foreach my $sourceId (keys %$mapHash) {
@@ -168,7 +193,7 @@ sub getCurrentAssemblyId {
 		next;
 	    }
 	    else {	    
-		$st = $dbh->prepare("select new_id from MergeSplit where old_id = ? and table_id = 56");
+		$st = $dbh->prepare("select new_id from dots.MergeSplit where old_id = ? and table_id = 56");
 		$st->execute($assemblyId);
 		my ($newId) = $st->fetchrow_array();
 		$st->finish();
@@ -188,9 +213,9 @@ sub readDBRefs {
 
     my %sourceIdDbrefHash;
 
-    my $db_id = $ctx->{cla}->{db_id};
+    my $db_rel_id = $ctx->{cla}->{db_rel_id};
 
-    my $sql = "select primary_identifier,db_ref_id from dbref where external_db_id=$db_id";
+    my $sql = "select primary_identifier,db_ref_id from sres.dbref where external_database_release_id=$db_rel_id";
 
     my $st = $dbh->prepare($sql);
 
@@ -215,7 +240,7 @@ sub  insertDBRefNASeq {
 	    my $lowercase_Id = lc ($Id);
 	    my $db_ref_id = $sourceIdDbrefHash->{$lowercase_Id};
 	    
-	    my $newDbRefNASeq = DbRefNASequence->new ({'db_ref_id'=>$db_ref_id, 'na_sequence_id'=>$assemblyId});
+	    my $newDbRefNASeq = GUS::Model::DoTS::DbRefNASequence->new ({'db_ref_id'=>$db_ref_id, 'na_sequence_id'=>$assemblyId});
 	    
 	    $num += $newDbRefNASeq->submit() 
                        unless $newDbRefNASeq->retrieveFromDB();
@@ -226,4 +251,33 @@ sub  insertDBRefNASeq {
     print STDERR ("$num ids inserted into DbRefNASequence table\n");
 }
 
+sub deleteDbRef {
+
+    my ($dbRefHash,$dbh) = @_;
+    my $sql = 'select db_ref_id from sres.dbref';
+    my $num;
+    my $stmt = $dbh->prepareAndExecute($sql);
+    while (my $db_ref_id  = $stmt->fetchrow_array()) {
+	if ($dbRefHash->{$db_ref_id} != 1) {
+	    my newDbRef = SRes::DbRef -> new({'db_ref_id'=>$db_ref_id});
+	    newDbRef->markDeleted(1);
+	    newDbRef->submit();
+	    newDbRef->undefPointerCache();
+	    $num++;
+	}
+    }
+    print STDERR "$num DbRef entries and its children were deleted\n";
+}
     
+1;
+
+__END__
+
+=pod
+=head1 Description
+B<InsertDbRefAndDbRefNASequence>  plug-in to ga that adds and updates entries to SRes.DbRef and to the linking table DoTS.DbRefNASequence.
+
+=head1 Purpose
+B<InsertDbRefAndDbRefNASequence> adds and updates entries to SRes.DbRef and to the linking table DoTS.DbRefNASequence.
+
+=cut
