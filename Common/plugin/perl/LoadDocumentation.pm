@@ -122,8 +122,7 @@ sub process {
 	$self->logVerbose("Created new DatabaseDocumentation object");
 
 	if ($db->checkTableExists($table_nm)){ # if table exists
-	    if ($attribute_nm =~ /\w/) {
-
+	    if ($attribute_nm =~ /\w/) { # attribute NOT NULL
 		if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if valid attribute
 
 		    my $dbh = $ctx->{'self_inv'}->getDbHandle();
@@ -221,14 +220,14 @@ sub process {
 		    } #end else
 		} # end while ary2
 	    } # end elsif table documentation
-	} # end if valid attribute
-    } # end if table exists
+#	} # end if valid attribute
+	} # end if table exists
 
-    else { ## no table name in db
-	$self->logAlert("NOT INSERTED! Table $table_nm does not exist");
+	else { ## no table name in db
+	    $self->logAlert("NOT INSERTED! Table $table_nm does not exist");
 #	  return;
-    }
-    $db->setGlobalNoVersion(0);
+	}
+	$db->setGlobalNoVersion(0);
 	
 } # end sub process
 1;
