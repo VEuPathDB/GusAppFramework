@@ -241,7 +241,7 @@ sub clearAssociations {
          DoTS.MotifAaSequence mas,
          SRes.ExternalDatabaseRelease edr,
          DoTS.GoAssociationInstance gai,
-         DoTS.GoAssociation ga
+         DoTS.GoAssociation ga, DoTS.RNAFeature rnaf, DoTS.RNAInstance rnai, DoTS.Assembly am
     where edr.external_database_id = ?
       and mas.source_id = ?
       and edr.external_database_release_id = mas.external_database_release_id
@@ -253,7 +253,7 @@ sub clearAssociations {
       and e.target_id = gai.go_association_instance_id
       and gai.go_association_id = ga.go_association_id
       and ga.is_deprecated = 0 
-      and ga.row_id = p.protein_id 
+      and ga.row_id = p.protein_id and p.rna_id = rnai.rna_id and rnai.na_feature_id = rnaf.na_feature_id and rnaf.na_sequence_id = am.na_sequence_id and am.taxon_id = 8
       and ga.table_id = ? /* DoTS.Protein */
 SQL
 #and ga.row_id = 10432
@@ -268,9 +268,9 @@ SQL
   my $bind3 = $self->getTableId('DoTS', 'AAMotifGOTermRule');
   my $bind4 = $self->getTableId('DoTS', 'GOAssociationInstance');
   my $proteinTableId = $self->getTableId('DoTS', 'Protein');
-  
+  $self->logVerbose("executing $sql");  
   $stmt->execute($databaseId, $sourceId, $bind3, $bind4, $proteinTableId);
-  
+
   my $goVersion = $self->getArg('go_ext_db_rls_id');
   my $goGraph = $self->getGoGraph($goVersion);
 
@@ -280,7 +280,6 @@ SQL
   
   while (my ($proteinId) = $stmt->fetchrow_array()) {
 
-      next if ($self->getTaxonForProteinId($proteinId) != 14);
       $self->logVerbose("processing protein $proteinId");      
       my $extent = GUS::GOPredict::GoExtent->new($self->getAdapter());
       my $associationGraph = $self->getAdapter()->getAssociationGraph($goGraph, $proteinId, $proteinTableId,
