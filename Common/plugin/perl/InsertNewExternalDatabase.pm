@@ -74,13 +74,13 @@ sub run {
 
     my $msg;
 
-    my $sql = "select external_database_id from sres.externaldatabase where lower(name) like " . lc($dbName);
+    my $sql = "select external_database_id from sres.externaldatabase where lower(name) like '" . lc($dbName) ."'";
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
     
     my ($dbId) = $sth->fetchrow_array();
 
     if ($dbId){
-	$msg = "Not creating a new release Id for $dbName as there is already one for $dbName version $dbVer";
+	$msg = "Not creating a new entry for $dbName as one already exists in the database (id $dbId)";
     }
 
     else {
