@@ -15,7 +15,7 @@ package GUS::ObjRelP::DbiTable;
 use strict;
 use GUS::ObjRelP::DbiDatabase;
 use GUS::ObjRelP::DbiRow;
-
+use Carp;
 ############################################################
 # Constructor - note tableSth is used to hold all the 
 # table information.  This is prepared and executed when
@@ -848,7 +848,7 @@ sub addToChildList{
     my($self,@list) = @_;
     foreach my $i (@list) {
 	my $childFullName = $self->getFullClassName($i->[0]);
-	confess("Invalid child name: '$i->[0]'") unless $childFullName;
+	&confess("Invalid child name: '$i->[0]'") unless $childFullName;
 	@{$self->{'childList'}->{$childFullName}} = ($i->[1],$i->[2]);
     }
 }
