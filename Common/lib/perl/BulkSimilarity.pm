@@ -11,8 +11,8 @@ use FileHandle;
 use CBIL::Util::A;
 use CBIL::Util::Disp;
 
-use GUS30::GUSdev::Similarity;
-use GUS30::GUSdev::SimilaritySpan;
+use GUS::Model::DoTS::Similarity;
+use GUS::Model::DoTS::SimilaritySpan;
 
 sub new {
 	my $C = shift;
