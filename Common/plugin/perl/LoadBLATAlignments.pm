@@ -99,9 +99,9 @@ sub new {
        # 5093 = UCSC Mm virtual chromosomes (February 2002 release)
        #
        {
-	   o => 'target_db_id',
+	   o => 'target_db_rel_id',
 	   t => 'int',
-	   h => 'GUS external_db_id for the BLAT target sequences (only required if using source_ids for target.)',
+	   h => 'GUS external_db_release_id for the BLAT target sequences (only required if using source_ids for target.)',
        },
        ######################################################
        # gate-keeping parameter to prevent loading everything
