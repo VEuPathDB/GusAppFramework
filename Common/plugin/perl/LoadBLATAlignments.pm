@@ -230,7 +230,7 @@ sub run {
     my $userId = $cla->{'user_id'};
     my $groupId = $cla->{'group_id'};
     my $projectId = $cla->{'project_id'};
-    my $algInvId = $self->getAlgorithmInvocationId();
+    my $algInvId = $self->getAlgInvocation()->getId();
 
     my $insertSql = ("INSERT INTO $TPREF.BLATAlignment VALUES (" .
 		     "gusdev.BLATAlignment_SQ.nextval, " .
@@ -251,7 +251,7 @@ sub run {
 	my $nAligns = 0;
 	my $nAlignsLoaded = 0;
 
-	my $psl = BLAT::PSL->new($blatFile);
+	my $psl = CBIL::Bio::BLAT::PSL->new($blatFile);
 	my $alignments = $psl->getAlignments();
 
 	print "LoadBLATAlignments: read ", $psl->getNumAlignments, " BLAT alignments from $blatFile\n";
@@ -307,7 +307,7 @@ sub preProcess {
 
     # Make sure that query_file is indexed
     #
-    my $qIndex = new FastaIndex(TO->new({seq_file => $queryFile, open => 1}));
+    my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
 
     my $idSub = sub {
 	my($defline) = @_;
@@ -323,9 +323,9 @@ sub preProcess {
     };
 
     if (!$qIndex->open()) {
-	$qIndex->createIndex(TO->new({get_key => $idSub}));
+	$qIndex->createIndex(CBIL::Util::TO->new({get_key => $idSub}));
 	$qIndex = undef;
-	$qIndex = new FastaIndex(TO->new({seq_file => $queryFile, open => 1}));
+	$qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
     }
     ($blatFiles, $qIndex);
 }
@@ -350,7 +350,7 @@ sub progressMessage {
 sub getTableNameFromTableId {
     my($dbh, $tid) = @_;
 
-    my $sth = $dbh->prepareAndExecute("select distinct table_name from core.TableInfo where table_id = $tid");
+    my $sth = $dbh->prepareAndExecute("select distinct name from core.TableInfo where table_id = $tid");
     my($name) =  $sth->fetchrow_array();
     $sth->finish();
 
