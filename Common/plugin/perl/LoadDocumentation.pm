@@ -142,11 +142,11 @@ sub process {
 			$att_name = $ary[1]; #queried attribute name
 			$html = $ary[2]; #queried html documentation
 
-			$self->logAlert("Comparing html: -$html-  with html_dc: -$html_dc-\n"); ###TEST###
+#			$self->logAlert("Comparing html: -$html-  with html_dc: -$html_dc-\n"); ###TEST###
 			
 			if ($html eq $html_dc){ #########?????????############
 			    
-			    $self->logAlert("html and html_dc are equal\n"); ###TEST###
+			    $self->logAlert("html: $html and html_dc: $html_dc are equal\n"); ###TEST###
 
 			    $self->logAlert("ALREADY EXISTS! Documentation for column $table_nm" .
 					    "." ."$attribute_nm NOT OVERWRITTEN!");
