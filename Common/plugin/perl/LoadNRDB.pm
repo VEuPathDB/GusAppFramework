@@ -89,7 +89,7 @@ sub new {
 }
 
 sub run {
-  my $M  = shift;
+  my $self  = shift;
   $ctx = shift;
   print STDERR $ctx->{'commit'}?"***COMMIT ON***\n":"**COMMIT TURNED OFF**\n";
   print STDERR "Testing on $ctx->{'cla'}->{'testnumber1'} insertions 
@@ -135,7 +135,11 @@ sub run {
 
 sub getDB {
 
+  print STDOUT "getDB called\n";
+
   my $dbh = $ctx->{'self_inv'}->getQueryHandle();
+
+  print STDOUT "getDB called\n";
 
   my %dbNameHash = ('GENBANK (NRDB)' => 'gb',
 		    'EMBL DATA LIBRARY (NRDB)' => 'emb',
@@ -183,7 +187,8 @@ sub getTaxon {
                     die ("Can't open the gi/tax_id file\n");
     my %taxHash;
     my %taxonHash;
-    my $st = $dbh->prepare("select taxon_id from sres.taxon where ncbi_tax_id = ?");
+    my $st = $dbh->prepare("select t.taxon_id from sres.taxon t where t.ncbi_tax_id = ?");
+ 
     while (<TAXFILE>) {
 	chomp;
 	if (/(\d+)\s+(\d+)/) {
