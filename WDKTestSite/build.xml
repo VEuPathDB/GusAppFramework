@@ -15,7 +15,7 @@
   </target>
 	                                                                                           
   <target name="properties" 
-          depends="properties-local">
+          depends="start,properties-local">
     <echo message="Loading build properties file"/>
     <property file="build.properties"/>
   </target>
@@ -145,7 +145,7 @@
   </target>
 
 
-  <target name="prepare" depends="start">
+  <target name="prepare" depends="properties">
 
     <!-- Create build directories as needed -->
     <mkdir  dir="${build.home}"/>
