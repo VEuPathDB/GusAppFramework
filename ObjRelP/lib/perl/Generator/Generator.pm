@@ -67,7 +67,7 @@ sub generate {
     my ($self, $newOnly) = @_;
     
     my $cnt = scalar(@{$self->{tables}});
-    print "Generating objects for $cnt tables and views\n";
+    print "Generating objects for $cnt $self->{javaOrPerl} tables and views\n";
     
     foreach my $table (@{$self->{tables}}) {
 	
@@ -79,7 +79,7 @@ sub generate {
 	next if (($self->{schemas} && !$self->{schemas}->{$schemaName})
 		 || $tableName =~ /Ver$/ || $tableName =~ /Imp$/);
 	
-	print "  processing $table\n";
+	print "generating $self->{javaOrPerl} object for $schemaName" . "::" . $tableName . "\n";
 	
 	$self->{db}->checkTableExists($table) || die "ERROR: $table does not exist in db\n";
 	
@@ -87,7 +87,7 @@ sub generate {
 	my $tableG; my $rowG; my $wrapperG;
 	
 	if ($self->{javaOrPerl} eq "java"){
-	    print STDERR "generating java rows!\n";
+	    
 	    $rowG = GUS::ObjRelP::Generator::JavaRowGenerator->new($self, $schemaName, $tableName, $tableG);
 	    $wrapperG = GUS::ObjRelP::Generator::JavaWrapperGenerator->new($self, $schemaName, $tableName, $tableG);
 	    $tableG =  GUS::ObjRelP::Generator::JavaTableGenerator->new($self, $schemaName, $tableName);
