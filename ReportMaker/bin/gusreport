@@ -182,7 +182,7 @@ them in your report.
 
 Here is a sample call:
 
-> gusreport --configModule GUS::ReportMaker::SampleGeneReportConfig --dbLogin mylogin --dbPassword mypasswd --tempTableName mylogin.tempResult --requestedColumns 'gene_symbol, synonyms' --sql 'select distinct gene_id from DoTS.gene where gene.gene_symbol is not null union select distinct gene_id from DoTS.genesynonym' 
+> gusreport --configModule GUS::ReportMaker::SampleGeneReportConfig --dbLogin mylogin --dbPassword mypasswd --tempTableName mylogin.tempResult --requestedColumns 'gene_symbol, synonyms' --sql 'select distinct gene_id, 9999 from DoTS.gene where gene.gene_symbol is not null union select distinct gene_id from DoTS.genesynonym' 
 
 ";
 
