@@ -258,11 +258,13 @@ my $mgr = GUS::Pipeline::Manager->new($pipelineDir, $propertySet, $propertiesFil
 
 &evolveGoHierarchy();
 
+&applyGORules();   
+
 #dtb--before i do this, take out go_term_id restriction from getGusAssocIdResultSet!
 &deprecateUnevolvedAssociations(); #dtb--do I need to do this for apply to work?  Make sure only deprecate human!
 
 
-#&applyGORules();   
+
 
 $mgr->goodbye("Pipeline complete!\n");
 
