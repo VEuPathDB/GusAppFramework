@@ -549,6 +549,7 @@ Log to STDERR the argument values used for this run of the plugin.
 
 =cut
 sub logArgs {
+
   my $M = shift;
 
   foreach my $flag (sort keys %{$M->getCla}) {
