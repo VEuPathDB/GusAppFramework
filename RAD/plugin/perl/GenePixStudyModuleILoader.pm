@@ -218,6 +218,7 @@ NOTES
 
 my @properties = (
     [ "gpr_File_Path",                 "", "" ],
+    [ "gpr_File_Extension",            "", "" ],
     [ "Study_ID",                      "", "" ],
     [ "Array_ID",                      "", "" ],
     [ "Batch_ID",                      "", "" ],  # can be null
@@ -466,12 +467,13 @@ sub populateRelatedQuantification {
 ###############################
 
 sub findAssayNames {
-  my ($self,$assayNameFilesDir) = @_;
+  my ($self, $assayNameFilesDir) = @_;
+
+  my $requiredExtension = $self->{propertySet}->getProp("gpr_File_Extension"); 
 
   my @assayNames;
   my $modifiedAssayFileURIs;
 
-  my $requiredExtension = "gpr";  # filenames correspond to assay names
   my ($localFilePath, $specificPath) = split "RAD/", $assayNameFilesDir; # HARD-CODED. Based on our convention for naming files
 
   opendir (DIR,$assayNameFilesDir) || $self->userError("Cannot open dir $assayNameFilesDir");
@@ -543,15 +545,15 @@ sub getImageFileNames {
 
     if ($type eq "Cy5Cy3" || $type eq "Cy3Cy5") {  # HARD-CODED. Based on our convention for naming files
 
-      $imageFilesRef->{$assay."_Cy5"} = "$imageFilesDir/$imageFile"; # HARD-CODED. Based on our convention for naming files
-      $imageFilesRef->{$assay."_Cy3"} = "$imageFilesDir/$imageFile"; # HARD-CODED. Based on our convention for naming files
+      $imageFilesRef->{$assay."_Cy5"} = $imageFilesDir.$imageFile; # HARD-CODED. Based on our convention for naming files
+      $imageFilesRef->{$assay."_Cy3"} = $imageFilesDir.$imageFile; # HARD-CODED. Based on our convention for naming files
 
-      $modifiedImageFileURI->{$assay."_Cy5"} = "$specificPath/$imageFile"; # HARD-CODED. Based on our convention for naming files
-      $modifiedImageFileURI->{$assay."_Cy3"} = "$specificPath/$imageFile"; # HARD-CODED. Based on our convention for naming files
+      $modifiedImageFileURI->{$assay."_Cy5"} = $specificPath.$imageFile; # HARD-CODED. Based on our convention for naming files
+      $modifiedImageFileURI->{$assay."_Cy3"} = $specificPath.$imageFile; # HARD-CODED. Based on our convention for naming files
 
     } else {
-      $imageFilesRef->{$assay."_$type"} = "$imageFilesDir/$imageFile";       # HARD-CODED. Based on our convention for naming files
-      $modifiedImageFileURI->{$assay."_$type"} = "$specificPath/$imageFile"; # HARD-CODED. Based on our convention for naming files
+      $imageFilesRef->{$assay."_$type"} = $imageFilesDir.$imageFile;       # HARD-CODED. Based on our convention for naming files
+      $modifiedImageFileURI->{$assay."_$type"} = $specificPath.$imageFile; # HARD-CODED. Based on our convention for naming files
     }
   }
 
