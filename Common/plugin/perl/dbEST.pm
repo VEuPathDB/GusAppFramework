@@ -71,9 +71,10 @@ sub new {
                    o => 'restart_number',
                    r => 0,
                  },
-		 { h => 'taxon_id for running plugin for specific taxons',
-		   t => 'int',
-		   o => 'taxon_id'
+		 { h => 'Comma delimited list of taxon_ids to load',
+		   t => 'string',
+		   o => 'taxon_id_list',
+		   r => 1,
 		 },
 		 { h => 'flag indicating that atts should be checked for discrepensies',
 		   t => 'boolean',
@@ -180,13 +181,9 @@ sub run {
       ## Main loop
 
       my $ests;
-      if ($M->getCla()->{taxon_id}) {
-	$ests = $M->sql_get_as_hash_refs_lc("select est.* from dbest.est est, dbest.library library where est.id_est >= $min and est.id_est < $max and library.id_lib = est.id_lib and library.organism in ($nameStrings)");
-      }
+      
+      $ests = $M->sql_get_as_hash_refs_lc("select est.* from dbest.est est, dbest.library library where est.id_est >= $min and est.id_est < $max and library.id_lib = est.id_lib and library.organism in ($nameStrings)");
 
-      else {
-	$ests = $M->sql_get_as_hash_refs_lc("select * from dbest.est where id_est >= $min and id_est < $max");
-      }
      $M->logAlert("Processing id_est from $min to $max\n"); 
       my ($e);
       foreach my $est ( @{$ests}) {
@@ -206,11 +203,11 @@ sub run {
   my $dbh = $M->getQueryHandle();
   my $st1 = $dbh->prepareAndExecute("select count(est.id_est) from dbest.est est, dbest.library library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
   my $numDbEST = $st1->fetchrow_array();
-  my $taxon_id = $M->getCla()->{taxon_id};
-  my $st2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l where l.taxon_id = $taxon_id and l.library_id = e.library_id");
+  my $taxon_idxs_list = $M->getCla()->{taxon_id_list};
+  my $st2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l where l.taxon_id in ($taxon_id_list) and l.library_id = e.library_id");
   my $finalNumGus = $st2->fetchrow_array();
   my $diff = ($numDbEST-$finalNumGus);
-  $M->logAlert("Total number id_est for taxon $taxon_id in dbEST:$numDbEST\nTotal number id_est in dots.EST:$finalNumGus\nDifference dbEST and dots:$diff\n");
+  $M->logAlert("Total number id_est for taxon(s) $taxon_id_list in dbEST:$numDbEST\nTotal number id_est in dots.EST:$finalNumGus\nDifference dbEST and dots:$diff\n");
   return "Inserted/Updated $count dbEST est entries";
 }
 
@@ -248,11 +245,8 @@ entries that were updated/inserted into GUS.
 sub getNameStrings {
   my ($M) = @_;
   my $nameStrings;
-  my $taxon_id = $M->getCla()->{taxon_id};
   foreach my $name (keys %{$M->{taxon}}) {
-    if ($M->{taxon}->{$name} == $taxon_id) {
       $nameStrings .= " '$name',";
-    }
   }
   $nameStrings =~ s/\,$//;
   return $nameStrings;
@@ -840,7 +834,9 @@ sub setTableCaches {
   # Taxon cache
   # changed to get all organism names for human and mouse
   # all else is on-demand cache
-  $q = 'select name, taxon_id  from sres.TaxonName where taxon_id in (8,14,45,211,10730421,1124,87262,12996,2892,10730347,2736,2788)';
+
+  my $taxon_id_list = $M->getCla()->{taxon_id_list}; 
+  $q = 'select name, taxon_id  from sres.TaxonName where taxon_id in ($taxon_id_list)';
   $A = $M->sql_get_as_array_refs($q);
   foreach my $r (@$A) {
     $M->{taxon}->{$r->[0]} = $r->[1];
