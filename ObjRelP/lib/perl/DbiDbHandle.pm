@@ -2,6 +2,7 @@ package GUS::ObjRelP::DbiDbHandle;
 use strict;
 use DBI;
 use Carp;
+
 use vars qw(@ISA $verbose $noInsert $exitOnFailure);
 @ISA = qw( DBI::db DBI );
 my ($NO_EMPTY_STRINGS);
@@ -75,7 +76,7 @@ sub prepareAndExecute {
 
 sub sqlexec {
   my ($dbh, $sql_cmd) = @_; ## $dbh is $self
-  if (!$dbh) { die "\n NO DBH for $sql_cmd \n"; }
+  if (!$dbh) { &confess("\n NO DBH for $sql_cmd \n"); }
   if ($verbose) { print STDERR"\n\nsqlexec: $sql_cmd \n"; }
   if(!$dbh->do($sql_cmd)) {
     &death($dbh, "Failed doing $sql_cmd");
@@ -175,7 +176,7 @@ sub death {
   my ($dbh, $msg) = @_; 
   if ($exitOnFailure) {
     $dbh->rollback();
-    confess "$msg";
+    &confess("$msg");
   } else {
     print STDERR "$msg\n\nRolling back and continuing\n";
     $dbh->setRollBack(1);
