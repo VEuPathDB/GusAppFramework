@@ -185,7 +185,7 @@ sub readCfgFile(){
 
 	    if ($arr[1] ne "") {
 		$arr[0] =~ tr/A-Z/a-z/; ## change to lower case
-		$arr[1] =~ tr/A-Z/a-z/;	
+		#$arr[1] =~ tr/A-Z/a-z/; ## remove this, keep the original case,--hx, Mar-03-2004	
 		
 		if ( !(grep {$arr[0] =~ /$_/} @requiredCfgParam) && !(grep {$arr[0] =~ /$_/} @optCfgParam) ){
 		    $RV = "$arr[0] is not expected to be in cfg_file. Please check again.";
@@ -576,7 +576,7 @@ sub _parseHeader{
       	    my $name = $arr[$i];
       	    $name =~ s/^\s+|\s+$//g;
       	    $name =~ s/\"|\'//g;
-      	    $name =~ tr/A-Z/a-z/;
+      	    #$name =~ tr/A-Z/a-z/; --removed, --hx, Mar-03-2004
   
       	    if ($headers{$name}) {
 	    	$fh->close();
