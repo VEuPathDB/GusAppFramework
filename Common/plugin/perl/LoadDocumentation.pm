@@ -118,14 +118,30 @@ sub process {
 
 	############################### TEST
 	if ($db->checkTableExists($table_nm)){ # if table exists
-	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if valid attribute
+	    if ($attribute_nm eq "NULL" || $attribute_nm eq "null"  || $attribute_nm eq "") {
+		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
+		$doc->retrieveFromDB();
+		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) {
+		    $doc->setHtmlDocumentation($html_dc);
+		    $doc->submit();
+		    $countInserts++;
+		    $self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
+		    return();
+		}
+		elsif ($doc->setHtmlDocumentation($html_dc) eq $html_dc) {
+		    $self->logAlert("Documentation already exists: $table_nm.$attribute_nm\t$html_dc\n");
+		    return();
+		}	
+	    } # end if table documentation
+	    elsif ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if valid attribute
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
 		$doc->retrieveFromDB();
 		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) {
 		    $doc->setHtmlDocumentation($html_dc);
 		    $doc->submit();
-		    $self->logVerbose("Updated attribute documentation: $table_nm.$attribute_nm\t$html_dc");
+		    $countInserts++;
+		    $self->logVerbose("Submitted documentation: $table_nm.$attribute_nm\t$html_dc");
 		    return();
 		}
 		elsif ($doc->setHtmlDocumentation($html_dc) eq $html_dc) {
@@ -134,24 +150,11 @@ sub process {
 		}
 		else { # not already in database
 		    $doc->submit();
-		    $self->logVerbose("Submitted new attribute documentation: $table_nm.$attribute_nm\t$html_dc");
+		    $countInserts++;
+		    $self->logVerbose("Submitted documentation: $table_nm.$attribute_nm\t$html_dc");
 		    return();
 		}
 	    } # end if valid attribute
-	    elsif ($attribute_nm eq "NULL" || $attribute_nm eq "null"  || $attribute_nm eq "") {
-		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
-		$doc->retrieveFromDB();
-		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) {
-		    $doc->setHtmlDocumentation($html_dc);
-		    $doc->submit();
-		    $self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
-		    return();
-		}
-		elsif ($doc->setHtmlDocumentation($html_dc) eq $html_dc) {
-		    $self->logAlert("Documentation already exists: $table_nm.$attribute_nm\t$html_dc\n");
-		    return();
-		}
-	    } # end elsif attribute is NULL (table documentation)
 	    else {
 		$self->logAlert("Attribute $attribute_nm is not valid for $table_nm");
 		return;
