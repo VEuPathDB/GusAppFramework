@@ -79,7 +79,8 @@ Protocol ID, Hybridization Operator ID, Acquisition Protocol ID and Quantificati
 =head2 F<Config File [ required ]>
 
 Blank lines and comment lines (lines starting with '#') are ignored.
-The following keywords and their values are required:
+The following keywords and their values are required (in cases where no value is to be specified, please
+use the words 'null' as the value):
 
   - gprFilePath = full path to the dir where the GPR files are kept
   - Study_ID^ = the study identifier
@@ -120,7 +121,7 @@ The following keywords and their values are required:
  ** These values are optional, i.e., the keywords should exist, but their 
     the values can be left blank.
 
-Each of these keywords should be on a separate line. The values for these keywords should be seperated by an '=' sign. A sample
+Each of these keywords should be on a separate line. The values for these keywords should be separated by an '=' sign. A sample
 file is maintained in \$GUS_HOME/config/sample_GenePixStudyModuleILoader.cfg (the sample config file also contains instructions).
 
 =head1 EXAMPLES
@@ -342,7 +343,7 @@ sub populateRelatedTables {
     my ($acquisitionIdsRef, $acquisitionChannelsRef, $relatedAcquisitionCnt) = $self->populateRelatedAcquisition($assayName, $assayId);
     my $relatedQuantificationCnt = $self->populateRelatedQuantification($assayName, $assayId, $acquisitionIdsRef, $acquisitionChannelsRef);
 
-    $insertedRelatedCnt = $relatedAcquisitionCnt + $relatedQuantificationCnt;
+    $insertedRelatedCnt += $relatedAcquisitionCnt + $relatedQuantificationCnt;
   }
 
   return $insertedRelatedCnt;
@@ -882,3 +883,4 @@ sub createGusQuantParams {
   return (\@gusQuantParamsCy5, \@gusQuantParamsCy3);
 }
 
+#################### END
