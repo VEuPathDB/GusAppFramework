@@ -439,7 +439,7 @@ sub processHash {
 		$st->execute($source,$db_id);
 		if (my ($aa_seq_id) = $st->fetchrow_array) {
 		    $st->finish;
-		    my $preExtAASeq =GUS::Model::DoTS:: ExternalAASequence->new ({'aa_sequence_id'=>$aa_seq_id});
+		    my $preExtAASeq =GUS::Model::DoTS::ExternalAASequence->new ({'aa_sequence_id'=>$aa_seq_id});
 		    $preExtAASeq->retrieveFromDB();
 		    if ($seq eq $preExtAASeq->getSequence()) {
 			$newExtAASeq = $preExtAASeq;
