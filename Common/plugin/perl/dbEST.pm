@@ -841,17 +841,30 @@ sub newLibrary {
   ## Set the library's taxon
   if ($M->{taxon}->{$dbest_lib->{organism}}) {
     $l->setTaxonId($M->{taxon}->{$dbest_lib->{organism}});
-  } else {
-    my $taxon = GUS::Model::SRes::TaxonName->new({'name' => $dbest_lib->{organism}});
-    if ($taxon->retrieveFromDB()){
-      $M->{taxon}->{$dbest_lib->{organism}} = $taxon->getTaxonId();
-      $l->setTaxonId($taxon->getTaxonId());
-    }else {
+  } 
+  #else {
+  # my $taxon = GUS::Model::SRes::TaxonName->new({'name' => $dbest_lib->{organism}});
+  # if ($taxon->retrieveFromDB()){
+  #   $M->{taxon}->{$dbest_lib->{organism}} = $taxon->getTaxonId();
+  #   $l->setTaxonId($taxon->getTaxonId());
+  # }
+  else{
+    my $dbh = $M->getQueryHandle();
+    my $name = $dbest_lib->{organism};
+    my $st = $dbh->prepareAndExecute("select taxon_id from sres.taxonname where name = '$name'");
+    my $taxon_id = $st->fetchrow_array();
+    $st->finish();
+    if ($taxon_id) {
+      $M->{taxon}->{$dbest_lib->{organism}} = $taxon_id;
+      $l->setTaxonId($M->{taxon}->{$dbest_lib->{organism}});
+    }
+    else {
       #Log the fact that we couldn't parse out a taxon
       $M->logAlert('ERR:NEW LIBRARY: TAXON', ' LIB_ID:',  $l->getId(), ' DBEST_ID:',
 		   $l->getDbestId(), ' ORGANISM:', $dbest_lib->{organism},"\n");
     }
   }
+  
   
   ## parse out the anatomy of the library entry
   if ($M->{anat}->{$dbest_lib->{organ}}) {
