@@ -15,7 +15,9 @@ sub new{
   #  my $self = $class->connect($dsn, $user, $password, 
   #                          {AutoCommit=>$autoCommit, RaiseError=>1});
   my $self = $class->connect($dsn, $user, $password, 
-                             {AutoCommit=>$autoCommit});
+                             {AutoCommit=>$autoCommit,
+			      FetchHashKeyName=>'NAME_uc',
+			     });
   bless $self, $class;
   $self->setVerbose($verbose);
   $self->setNoInsert($noInsert);
