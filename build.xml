@@ -199,6 +199,13 @@
    <target name="perlManuallyEditedModel" depends="ProjectTree,
                                       GUS/ObjRelP-Installation">
 
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Core"/>
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/DoTS"/>
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/RAD3"/>
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/SRes"/>
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/TESS"/>
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/App"/>
+
      <copy todir="${projectsDir}/GUS/Model/lib/perl/Core">
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/Core"/>
        <mapper type="glob" from="*.pm.man" to="*.pm"/>
