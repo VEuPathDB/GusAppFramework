@@ -4,10 +4,12 @@ package GUS::RAD::Plugin::GenePixStudyModuleILoader;
 
 use strict 'vars';
 
+# CBIL specific packages
 use CBIL::Util::Disp;
 use CBIL::Util::PropertySet;
 use GUS::PluginMgr::Plugin;
 
+# GUS specific packages
 use GUS::Model::RAD3::Study;
 use GUS::Model::RAD3::Assay;
 use GUS::Model::RAD3::StudyAssay;
@@ -28,26 +30,31 @@ sub new {
   my $self = {};
   bless($self,$class);
 
-  my $purposeBrief = 'Plugin is BatchLoader, creates assays, acquisitions and quantifications for GenePix assays in RAD3 tables.';
-  
-  my $purpose = <<PURPOSE; 
-The plugin creates assays, acquisitions and quantifications for GenePix assays in RAD3 tables from multiple files in a batch mode, eliminating the need to load these files one by one. 
-PURPOSE
+  my $purposeBrief = "Creates assays, acquisitions and quantifications for GenePix assays en-batch.";
+  my $purpose      = "Create assays, acquisitions and quantifications for GenePix assays in RAD3 tables from multiple files in batch mode.";
  
-#  ------- 
- 
-  my $tablesAffected = [['RAD3::Assay','Enters as many rows as distinct assays found'],['RAD3::AssayParam','For each assay entered, enters here the values of the Fluidics protocol parameters as recorded in the corresponding .EXP file'],['RAD3::Quantification','Enters here two quantifications, cel and chp, for each assay entered'],['RAD3::QuantificationParam','For each assay entered, enters here the values for parameters recorded in the corresponding .RPT file'],['RAD3::Acquisition','Enters here one acquisition for each assay entered'],['RAD3::AcquisitionParam','For each assay entered, enters here the values for parameters recorded in the corresponding .EXP file'],['RAD3::StudyAssay','Row linking the given study to an assay is entered']];
+  my $tablesAffected = [
+    ['RAD3::Study',                 'One row for the given study is entered'],
+    ['RAD3::Assay',                 'One row for each distinct assay is entered'],
+    ['RAD3::StudyAssay',            'One row linking the given study to each assay is entered'],
+    ['RAD3::Acquisition',           'Four rows, two for each channel (Cy5 or Cy3), corresponding to one assay, are entered'],
+    ['RAD3::Quantification',        'Four rows, two for each channel (Cy5 or Cy3), corresponding to one acquisition, are entered'],
+    ['RAD3::QuantificationParam',   'Eight rows, four for each channel (Cy5 or Cy3), corresponding to one quantification, are entered'],
+    ['RAD3::RelatedAcquisition',    'Ten rows, five for each channel (Cy5 or Cy3), associating the channels with each other are entered'],
+    ['RAD3::RelatedQuantification', 'Ten rows, five for each channel (Cy5 or Cy3), associating the channels with each other are entered']
+  ];
 
-  my $tablesDependedOn = [['RAD3::Study','The particular study to which the assay belongs'],['RAD3::Array', 'Holds array information'], ['RAD3::Protocol', 'The hybridization, image_acquisition, and feature_extraction protocols used'], ['RAD3::ProtocolParam', 'Parameters for the protocol used'], ['RAD3::Contact', 'Information on researchers who performed the hybridization and the image analysis']];
+  my $tablesDependedOn = [
+    ['RAD3::Study',                  'Holds study information'],
+    ['RAD3::Array',                  'Holds array information'], 
+    ['RAD3::Channel',                'Holds channel (Cy5 or Cy3 in this case) information'], 
+    ['RAD3::Protocol',               'Holds hybridization, image acquisition and feature extraction protocol information'], 
+    ['RAD3::ProtocolParam',          'Holds protocol parameter information'], 
+    ['SRes::Contact',                'Holds personnel contact information']
+  ];
 
-  my $howToRestart = <<RESTART; 
-Cannot be restarted. 
-RESTART
-  
-  my $failureCases = <<FAILURE_CASES;
-Files not in an appropriate format.
-FAILURE_CASES
-
+  my $howToRestart = "Cannot be restarted."; 
+  my $failureCases = "Files not in an appropriate format.";
 
   my $notes = <<NOTES;
 
@@ -55,52 +62,75 @@ FAILURE_CASES
 
 =head2 F<General Description>
 
-Plugin reads a config file with information about full paths of directories where files of interest (.EXP, .RPT etc. )
-are maintained.  Data from these files are then parsed and entered into a database. The plugin can handle multiple files,
-hence works in a batch mode.
+Plugin reads a config file with information about full paths of directories where files of interest (.gpr & .tif)
+are maintained.  Data from the '.gpr' files is then parsed and entered into a database. 
 
-read config file -> follow file paths -> parse files and gather data -> input data in database
+Since assay, acquisition and quantification parameters are not readily available through the '.gpr' files,
+they cannot be added to the database through this plugin. They have to be added to the tables separately, 
+either directly or through a suite of web-based data-entry forms.
 
-=head2 F<Config File [ Mandatory ]>
+Certain portions in the PERL code are hard-coded for use by RAD at CBIL. These are indicated accordingly, and 
+should be changed based on data maintained in the local instance of RAD.
+
+
+=head2 F<Config File [ required ]>
 
 Blank lines and comment lines (lines starting with '#') are ignored.
 The following keywords and their values are required:
 
-- EXPFilePath  (full path to the dir where the EXP files are kept)
+  - GPRFilePath = full path to the dir where the GPR files are kept
+  - Study_ID^ = the study identifier
+  - arrayId^ = array type ID
+ 
+ ASSAY SECTION
 
-- RPTFilePath  (full path to the dir where the RPT files are kept)
+  - batchId** = the study identifier
+  - allAssayDescriptionsSame** = requires a yes/no answer; if yes, then allAssayDescriptions 
+    will be read, else individualAssayDescriptions will be read
+  - allAssayDescriptions** = description of the assay
+  - individualAssayDescriptions** = assayName|description; assayName|description; assayName|description
 
-- CELFilePath  (full path to the dir where the CEL files are kept)
+ HYBRIDIZATION SECTION
 
-- DATFilePath**  (full path to the dir where the DAT files are kept)
+  - Hyb_Protocol_ID^ = hybridization protocol id
+  - Hyb_Operator_ID^ = hybridization operator id
+  - allHybDatesSame = requires a yes/no answer; if yes, then allHybDates will be read, 
+    else individualHybDates will be read
+  - allHybDates = yyyy-mm-dd
+  - individualHybDates = assayName|yyyy-mm-dd; assayName|yyyy-mm-dd; assayName|yyyy-mm-dd
 
-- MetricsFilePath  (full path to the dir where the Metrics files are kept)
+ ACQUISITION SECTION
 
-- Hyb_Protocol_ID  (hybridization protocol id, should pre-exist in the RAD3 database)
+  - Acq_Protocol_ID^ = acquisition protocol id
+  - tiffFilePath = full path to the dir where the .tif files are kept
+  - allScanDatesSame = requires a yes/no answer; if yes, then allScanDates will be read, 
+    else individualScanDates will be read
+  - allScanDates = yyyy-mm-dd
+  - individualScanDates = assayName|yyyy-mm-dd; assayName|yyyy-mm-dd; assayName|yyyy-mm-dd
 
-- Acq_Protocol_ID  (acquisition protocol id, should pre-exist in the RAD3 database)
+ QUANTIFICATION SECTION
 
-- Cel_Protocol_ID  (cel quantification protocol id, should pre-exist in the RAD3 database)
+  - Quant_Protocol_ID^ = quantification protocol id
+  - Quant_Operator_ID^** = quantification operator id
 
-- Chp_Protocol_ID  (chp quantification protocol id, should pre-exist in the RAD3 database)
+  ^ These values should pre-exist in various tables in the database
+ ** These values are optional, i.e., the keywords should exist, but their 
+    the values can be left blank.
 
-- Hyb_Operator_ID  (contact_id of the person who carried out the hybridization, should pre-exist in the RAD3 database)
+Each of these keywords should be on a separate line. The values for these keywords should be seperated by an '=' sign. A sample
+file is maintained in \$GUS_HOME/config/sample_GenePixStudyModuleILoader.cfg (the sample config file also contains instructions).
 
-- Cel_Quant_Operator_ID**  (contact_id of the person who carried out the cel quantification, should pre-exist in the RAD3 database)
+=head1 EXAMPLES
 
-- Chp_Quant_Operator_ID**  (contact_id of the person who carried out the chp quantification, should pre-exist in the RAD3 database)
+ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject
 
-- Study_ID  (the study identifier, should pre-exist in the RAD3 database)
+ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject --skip assay123456
 
-** These values are optional, i.e., the keywords should exist, but their the values can be left blank.
+ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --group myPI --project myProject --skip assay123456,assay123457 --commit
 
-Each of these keywords should be on a separate line. The values for these keywords should be seperated by tabs. A sample
-file is maintained in \$GUS_HOME/config/sample_MAS5StudyModuleILoader.cfg
+=head1 AUTHOR
 
-
-=head1 AUTHORS
-
-Shailesh Date, Hongxian He
+Shailesh Date
 
 =head1 COPYRIGHT
 
@@ -111,49 +141,59 @@ Copyright, Trustees of University of Pennsylvania 2003.
 NOTES
 
 
-  my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief,tablesAffected=>$tablesAffected,tablesDependedOn=>$tablesDependedOn,howToRestart=>$howToRestart,failureCases=>$failureCases,notes=>$notes};
+  my $documentation = {
+    purpose          => $purpose, 
+    purposeBrief     => $purposeBrief,
+    tablesAffected   => $tablesAffected,
+    tablesDependedOn => $tablesDependedOn,
+    howToRestart     => $howToRestart,
+    failureCases     => $failureCases,
+    notes            => $notes
+  };
  
 
-  my $argsDeclaration  =
-    [
+  my $argsDeclaration  = [
      
-     fileArg({name => 'cfg_file',
-          descr => 'The full path of the cfg file.',
-          constraintFunc=> undef,
-          reqd  => 1,
-          isList => 0, 
-          mustExist => 1,
-          format => 'See NOTES'
-         }),
+    fileArg({
+       name           => 'cfg_file',
+       descr          => 'Full path of the cfg file.',
+       constraintFunc => undef,
+       reqd           => 1,
+       isList         => 0, 
+       mustExist      => 1,
+       format         => 'See NOTES'
+    }),
 
-     stringArg({name => 'skip',
-        descr => 'The list of prefixes of the files in the specified directories that will be skipped for loading.',
-        constraintFunc=> undef,
-        reqd  => 0,
-        isList => 1, 
-           }),
+     stringArg({
+       name           => 'skip',
+       descr          => 'List of files in specified directories that will be skipped for loading.',
+       constraintFunc => undef,
+       reqd           => 0,
+       isList         => 1, 
+     }),
      
-     integerArg({name => 'testnumber',
-         descr => 'Number of assays to be loaded for testing',
-         constraintFunc=> undef,
-         reqd  => 0,
-         isList => 0 
-        })
-    ];
+     integerArg({
+       name           => 'testnumber',
+       descr          => 'Number of assays to be loaded for testing',
+       constraintFunc => undef,
+       reqd           => 0,
+       isList         => 0 
+     })
+  ];
 
-  $self->initialize({requiredDbVersion => {RAD3 => '3', Core => '3'},
-             cvsRevision => '$Revision$',
-             cvsTag => '$Name$',
-             name => ref($self),
-             revisionNotes => '',
-             argsDeclaration => $argsDeclaration,
-             documentation => $documentation
-            });
+  $self->initialize({
+    requiredDbVersion => {RAD3 => '3', Core => '3'},
+    cvsRevision       => '$Revision$',
+    cvsTag            => '$Name$',
+    name              => ref($self),
+    revisionNotes     => '',
+    argsDeclaration   => $argsDeclaration,
+    documentation     => $documentation
+  });
   return $self;
 }
 
-my @properties =
-(
+my @properties = (
     [ "GPRFilePath",                 "", "" ],
     [ "Study_ID",                    "", "" ],
     [ "arrayId",                     "", "" ],
@@ -244,14 +284,12 @@ sub createGUSAssaysFromFiles {
 ###############################
 
 sub submitGusAssays {
-  my ($self,$gusAssays) = @_;
+  my ($self, $gusAssays) = @_;
 
   my $studyId = $self->{propertySet}->getProp("Study_ID");
 
   my $gusStudy = GUS::Model::RAD3::Study->new({study_id => $studyId});
-  unless ($gusStudy->retrieveFromDB) {
-    $self->error("Failed to create an object for study $studyId from RAD3.Study");
-  }
+  $self->checkDatabaseEntry("GUS::Model::RAD3::Study", "study_id", $studyId);
 
   my $gusInsertedAssayCnt = 0;
   foreach my $gusAssay (@$gusAssays) {
@@ -270,6 +308,17 @@ sub submitGusAssays {
 
 ###############################
 
+sub checkDatabaseEntry {
+  my ($self, $tableName, $paramName, $valueToCheck) = @_;
+
+  my $checker = $tableName->new({"$paramName" => $valueToCheck});
+
+  $self->error("Value $valueToCheck for param $paramName does not exist in $tableName")
+   unless ($checker->retrieveFromDB);
+}
+
+###############################
+
 sub populateRelatedTables {
   my ($self, $studyId) = @_; 
 
@@ -283,15 +332,14 @@ sub populateRelatedTables {
   }
 
   $sth->finish;
-  $self->error("Id $studyId does not exist in the table rad3.studyassay") if (scalar @assayIds eq 0); 
+  $self->error("Id $studyId does not exist in the table RAD3.StudyAssay") if (scalar @assayIds eq 0); 
 
   my $insertedRelatedCnt = 0;
 
   foreach my $assayId (@assayIds) {
 
     my $tempAssayName = GUS::Model::RAD3::Assay->new({assay_id => $assayId});
-    $self->error("Create object failed, assay Id $assayId absent in table RAD3::Assay")
-      unless ($tempAssayName->retrieveFromDB);
+    $self->checkDatabaseEntry("GUS::Model::RAD3::Assay", "assay_id", $assayId);
     my $assayName = $tempAssayName->getName();
 
     my ($acquisitionIdsRef, $acquisitionChannelsRef) = $self->populateRelatedAcquisition($assayName, $assayId);
@@ -300,7 +348,7 @@ sub populateRelatedTables {
     $insertedRelatedCnt++;
   }
 
-  $self->log("STATUS","Inserted $insertedRelatedCnt x 2 rows in rad3.relatedacquisition and rad3.relatedquantification");
+  $self->log("STATUS","Inserted $insertedRelatedCnt x 2 rows in RAD3.RelatedAcquisition and RAD3.RelatedQuantification");
   return $insertedRelatedCnt;
 }
 
@@ -319,16 +367,15 @@ sub populateRelatedAcquisition {
     push (@acquisitionIds, $row[0]);
 
     my $tempChannelName = GUS::Model::RAD3::Channel->new({channel_id => $row[1]});
-    $self->error("Create object failed, channel Id $row[1] absent in table RAD3::Channel")
-      unless ($tempChannelName->retrieveFromDB);
+    $self->checkDatabaseEntry("GUS::Model::RAD3::Channel", "channel_id", $row[1]);
     my $channelName = $tempChannelName->getName();
 
     push (@acquisitionChannels, $channelName);
   }
 
   $sth->finish;
-  $self->error("Id $assayId does not exist in the table rad3.acquistion") if (scalar @acquisitionIds eq 0); 
-  $self->error("More/less than two entries found for assay id $assayId in rad3.acquistion") if (scalar @acquisitionIds ne 2); 
+  $self->error("Id $assayId does not exist in the table RAD3.Acquistion") if (scalar @acquisitionIds eq 0); 
+  $self->error("More/less than two entries found for assay id $assayId in RAD3.Acquistion") if (scalar @acquisitionIds ne 2); 
     
   my $acquistionAssociationOne = GUS::Model::RAD3::RelatedAcquisition->new({
     acquisition_id            => $acquisitionIds[0],
@@ -361,14 +408,13 @@ sub populateRelatedQuantification {
   foreach my $acquisitionId (@$acquisitionIdsRef) {
 
     my $tempQuantId = GUS::Model::RAD3::Quantification->new({acquisition_id => $acquisitionId});
-    $self->error("Create object failed, acquisition Id $acquisitionId absent in table RAD3::Quantification")
-      unless ($tempQuantId->retrieveFromDB);
+    $self->checkDatabaseEntry("GUS::Model::RAD3::Quantification", "acquisition_id", $acquisitionId);
     my $quantificationId = $tempQuantId->getQuantificationId();
 
     push (@quantificationIds, $quantificationId);
   }
 
-  $self->error("More/less than two entries found for acqusitions @$acquisitionIdsRef in rad3.quantification") 
+  $self->error("More/less than two entries found for acqusitions @$acquisitionIdsRef in RAD3.Quantification") 
     if (scalar @quantificationIds ne 2); 
     
   my $quantificationAssociationOne = GUS::Model::RAD3::RelatedQuantification->new({
@@ -623,6 +669,10 @@ sub createGusAssay {
   my $batchId       = $self->{propertySet}->getProp("batchId");
   my $hybProtocolId = $self->{propertySet}->getProp("Hyb_Protocol_ID");
   my $hybOperatorId = $self->{propertySet}->getProp("Hyb_Operator_ID");
+  
+  $self->checkDatabaseEntry("GUS::Model::RAD3::Array", "array_id", $arrayId);
+  $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $hybProtocolId);
+  $self->checkDatabaseEntry("GUS::Model::SRes::Contact", "contact_id", $hybOperatorId);
 
   my $hybDate = $hybDateHashRef->{$assayName};
   my $description = $assayDescriptionHashRef->{$assayName};
@@ -665,8 +715,7 @@ sub createGusAcquisition {
   my $channelParams = $channelDefs;
 
   my $protocol = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
-  $self->error("Create object failed, protocol ID $acqProtocolId absent in table RAD3::Protocol")
-    unless ($protocol->retrieveFromDB);
+  $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $acqProtocolId);
   my $tempAcqName = $protocol->getName();
 
   my $acqParametersCommon = {
@@ -674,10 +723,10 @@ sub createGusAcquisition {
     protocol_id      => $acqProtocolId
   };
 
+  my $acquisitionCnt;
   foreach my $channel (keys %$channelDefs) {
     my $channelName = GUS::Model::RAD3::Channel->new({ name => $channel});
-    $self->error("Create object failed, parameter name '$channel' absent in table RAD3::Channel")
-      unless ($channelName->retrieveFromDB);
+    $self->checkDatabaseEntry("GUS::Model::RAD3::Channel", "name", $channel);
     $channelDefs->{$channel} = $channelName->getChannelId();
 
     my $acqName = "$channel $assayName".$protocol;
@@ -689,12 +738,13 @@ sub createGusAcquisition {
     };
 
     $channelParams->{$channel} = $acqParameters;
+    $acquisitionCnt++;
   }
 
   my $acquisitionCy5 = GUS::Model::RAD3::Acquisition->new($channelParams->{"Cy5"});
   my $acquisitionCy3 = GUS::Model::RAD3::Acquisition->new($channelParams->{"Cy3"});
 
-  $self->log("STATUS","OK Inserted 2 rows in table RAD3.Acquisition for assay $assayName channel Cy5 and Cy3");
+  $self->log("STATUS","OK Inserted $acquisitionCnt x 2 rows in table RAD3.Acquisition for Cy5 and Cy3 acquisitions");
   return ($acquisitionCy5, $acquisitionCy3);
 }
 
@@ -715,9 +765,7 @@ sub createGusQuantification {
   my $quantProtocolId = $self->{propertySet}->getProp("Quant_Protocol_ID");
 
   my $protocol = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
-  $self->error("Create object failed, $acqProtocolId absent in table RAD3::Protocol")
-    unless ($protocol->retrieveFromDB);
-
+  $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $acqProtocolId);
   my $tempAcqName = $protocol->getName();
 
   my $gprQuantParameters = {
@@ -737,7 +785,7 @@ sub createGusQuantification {
   $gprQuantParametersCy3->{name} = $acqNameCy3;
   my $gprQuantificationCy3       = GUS::Model::RAD3::Quantification->new($gprQuantParametersCy3);
 
-  $self->log("STATUS","OK Inserted 2 rows in table RAD3.Quantification for Cy5 & Cy3 quantifications");
+  $self->log("STATUS","OK Inserted 2 x 2 rows in table RAD3.Quantification for Cy5 & Cy3 quantifications");
 
   return ($gprQuantificationCy5, $gprQuantificationCy3);
 }
@@ -747,6 +795,7 @@ sub createGusQuantParams {
   my ($self, $GPRinfo) = @_;
 
   my $quantProtocolId = $self->{propertySet}->getProp("Quant_Protocol_ID");
+  $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $quantProtocolId);
 
   my (@gusQuantParamsCy5, @gusQuantParamsCy3);
   my $quantParamKeywordCnt = 0;
@@ -765,7 +814,7 @@ sub createGusQuantParams {
         name        => $param
     });
 
-    $self->error("Create object failed, name $param absent in table RAD3::ProtocolParam")
+    $self->error("Create object failed, name $param absent in table RAD3.ProtocolParam")
       unless ($protocolParam->retrieveFromDB);
 
     my $quantParameters = GUS::Model::RAD3::QuantificationParam->new({
@@ -784,7 +833,7 @@ sub createGusQuantParams {
     $quantParamKeywordCnt++;
   }
 
-  $self->log("STATUS","OK Inserted $quantParamKeywordCnt rows in table RAD3.QuantificationParam for Cy5 and Cy3");
+  $self->log("STATUS","OK Inserted $quantParamKeywordCnt x 2 rows in table RAD3.QuantificationParam for Cy5 and Cy3 quantification parameters");
   return (\@gusQuantParamsCy5, \@gusQuantParamsCy3);
 }
 
