@@ -1,8 +1,6 @@
-package GUS::Pipeline::RepositoryWget;
+package GUS::Pipeline::ExternalResources::RepositoryWget;
 
 use strict;
-use File::Basename;
-use CBIL::Util::Utils;
 
 #############################################################################
 #          Public Methods
