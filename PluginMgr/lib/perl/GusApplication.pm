@@ -692,12 +692,12 @@ sub create_or_update_implementation {
 
   # we want to create a new Algorithm
   if ($U ) {
-    $M->connect_to_database($pu);
-    $M->findImplementation($pu);
-    if ($pu->getImplementation()->getCvsRevision() eq $pu->getCVSRevision()) {
-      print STDERR "Error: $plugin_name_s with CVS revision $cvsRevision is already registered.  You don't need to do a +update.\n";
+#    $M->connect_to_database($pu);
+ #   $M->findImplementation($pu);
+  #  if ($pu->getImplementation()->getCvsRevision() eq $pu->getCVSRevision()) {
+#      print STDERR "Error: $plugin_name_s with CVS revision $cvsRevision is already registered.  You don't need to do a +update.\n";
 #      $M->doMajorMode_History($C);
-      exit 0;
+ #     exit 0;
     }
   } else {
 
