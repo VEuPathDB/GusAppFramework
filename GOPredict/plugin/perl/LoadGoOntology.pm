@@ -157,8 +157,7 @@ sub __load_ontology {
     my $logFile;
 
     my $processedEntries = $self->__loadProcessedEntries();
-    
-    $self->__checkIfLoaded("Relationship", "GO:0016912", $processedEntries, "GO:0016909");
+
     my $id_file = $self->getCla->{id_file}; 
     
     #id file where successfully created db entries will be written to
@@ -204,7 +203,7 @@ sub __load_ontology {
 
 	#make entry in SRes.GOTerm for each entry in the go file
 	foreach my $entryId(keys %$entries){
-	    next;
+	    
 	    next if (($entryId eq $store->getBranchRoot())||($entryId eq $store->getRoot()));
 	    
 	    if ($self->__checkIfLoaded("Term", $entryId, $processedEntries)){
