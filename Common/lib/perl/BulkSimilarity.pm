@@ -12,7 +12,7 @@ use CBIL::Util::A;
 use CBIL::Util::Disp;
 
 use GUS::Model::DoTS::Similarity;
-use GUS::Model::DoTS::SimilaritySpan;
+use GUS::Model::DoTS:SimilaritySpan;
 
 sub new {
 	my $C = shift;
@@ -230,7 +230,7 @@ sub getSectionObjects {
 				}
 			}else{
 				$gus_sim =
-					new Similarity( {
+					new GUS::Model::DoTS::Similarity( {
 													 subject_table_id => $table_id,
 													 subject_id       => $id,
 													 query_table_id   => $rv->getTableIdFromTableName( $rv->getTableName() ),
@@ -286,7 +286,7 @@ sub getSectionObjects {
 
 					# create the span object
 					my $gus_span =
-					new SimilaritySpan( {
+					new GUS::Model::DoTS::SimilaritySpan( {
 															 number_identical => $parts[  2 ],
 															 number_positive  => $parts[  3 ],
 															 match_length     => $parts[  4 ],
