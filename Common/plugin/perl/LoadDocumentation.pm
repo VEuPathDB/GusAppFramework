@@ -126,7 +126,7 @@ sub process {
 	        $doc->setTableId($doc->getTableId($table_nm));
 	        $self->logVerbose("Set table ID\n\n");
 
-		$doc->setAttributeName ($attribute_nm) unless $table_nm eq $attribute_nm;
+		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
 	        $self->logVerbose("Set attribute name\n\n");
 
 #		if ($doc->retrieveFromDB()){
