@@ -123,7 +123,9 @@ sub run {
       return $tempresults;
   }
 
-  my $entryresults = $self->makeNRDBAndExternalAASequence($taxonHash, $dbHash,$external_database_release_id) 
+  my $failNum;
+
+  my $entryresults = $self->makeNRDBAndExternalAASequence($taxonHash, $dbHash,$external_database_release_id,$failNum) 
     if ($self->getArgs()->{'plugin'});       
   
   if (!$self->getArgs()->{'delete'}){ 
@@ -274,7 +276,7 @@ sub makeTempTable {
 }
 
 sub makeNRDBAndExternalAASequence {
-    my ($self,$taxonHash, $dbHash,$external_database_release_id) = @_;
+    my ($self,$taxonHash, $dbHash,$external_database_release_id,$failNum) = @_;
     my $count = 0;
     
     my $temp_login = $self->getArgs->{'temp_login'} || 
@@ -332,7 +334,7 @@ sub makeNRDBAndExternalAASequence {
 	      eval {
 		$newExtAASeq->submit();
 	      };
-	      &handleFailure($seq, $@) if ($@); 
+	      &handleFailure($seq,$failNum,$@) if ($@); 
 	      $num_submit++;
 	      print STDOUT ("Submitted set number:$num_submit\n");
 	      $newExtAASeq->undefPointerCache();
@@ -504,8 +506,10 @@ sub makeExtAASeq {
 }
 
 sub handleFailure {
-  my ($seq, $errMessage) = @_;
+  my ($seq, $failNum, $errMessage) = @_;
+  $failNum++;
   print STDERR "$errMessage:\n$seq\n";
+  die "Number of failures exceeds 100" if ($failNum > 100);
 }
   
 
