@@ -4,6 +4,8 @@ package GUS::Common::Plugin::DupNRDBRows;
 use strict;
 use CBIL::Util::Disp;
 use GUS::PluginMgr::Plugin;
+use GUS::Model::DoTS::NRDBEntry;
+use GUS::Model::DoTS::ExternalAASequence;
 
 sub new {
   my ($class) = @_;
@@ -49,7 +51,7 @@ PLUGIN_NOTES
 		 descr => 'List of comma delimited pairs original source db_rel_id:duplicate source db_rel_id, for dots.NRDBEntry',
 		 reqd  => 1,
 		 constraintFunc=> undef,
-		 isList=>1,
+		 isList=>0,
 	   }),
    integerArg({name  => 'orig_NRDB_rel_id',
 	      descr => 'Original release id for NRDB, in dots.ExternalAASequence',
@@ -108,6 +110,7 @@ sub makeDBHash {
   my @dbRelPairs = split (/,/, $self->getArgs->{dbRelPairs});
   foreach my $pair (@dbRelPairs) {
     my ($origDB,$dupDB) = split (/:/, $pair);
+    $self->log("orig db:dup db - $origDB,$dupDB\n");
     $self->userError ("db release ids must be listed as original_db_rel_id:duplicate_db_rel_id") if (!$origDB || !$dupDB); 
     $dbHash{$origDB} = $dupDB;
   } 
@@ -118,8 +121,11 @@ sub getAASeqIds {
   my ($self) = @_;
   my @aaSeqIdArr;
   my $dbh = $self->getQueryHandle();
-  my $sql = "select aa_sequence_id from dots.externalaasequence where external_database_release_id = $self->getArgs->{orig_NRDB_rel_id}";
-  $sql.= " and rownum < $self->getArgs->{testnumber}" if $self->getArgs->{testnumber};
+  my $origNRDBrel = $self->getArgs->{orig_NRDB_rel_id};
+  my $testnumber = $self->getArgs->{testnumber} if $self->getArgs->{testnumber}; 
+  my $sql = "select aa_sequence_id from dots.externalaasequence where external_database_release_id = $origNRDBrel";
+  $sql.= " and rownum < $testnumber" if $self->getArgs->{testnumber};
+  $self->log("$sql\n");
   my $stmt = $dbh->prepareAndExecute($sql);
   while (my $id = $stmt->fetchrow_array()) {
     push (@aaSeqIdArr,$id);
@@ -127,21 +133,26 @@ sub getAASeqIds {
   return \@aaSeqIdArr;
 }
 
-sub makeExtAASeqDup {
+sub makeExtAASeqDups {
   my ($self) = @_;
   my %origDupIdHash;
   my $num;
   my $dbh = $self->getQueryHandle();
   my $sql = "select subclass_view,molecular_weight,sequence,length,description,source_id,secondary_identifier,name,molecule_type,crc32_value from dots.externalaasequence where aa_sequence_id = ?";
+  $self->log("$sql\n");
   my $stmt = $dbh->prepare($sql);
+  my $dupNRDBrel = $self->getArgs->{dup_NRDB_rel_id};
   foreach my $orig_aa_seq_id (@{$self->{aaSeqIdArr}}) {
     $stmt->execute($orig_aa_seq_id);
     my ($subclass_view,$molecular_weight,$sequence,$length,$description,$source_id,$secondary_identifier,$name,$molecule_type,$crc32_value) = $stmt->fetchrow_array();
-    my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new({'subclass_view'=>$subclass_view,'molecular_weight'=>$molecular_weight,'sequence'=>$sequence,'length'=>$length,'description'=>$description,'external_database_release_id'=>$self->getArgs->{dup_NRDB_rel_id},'source_id'=>$source_id,'secondary_identifier'=>$secondary_identifier,'name'=>$name,'molecule_type'=>$molecule_type,'crc32_value'=>$crc32_value});
+    my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new ({'subclass_view'=>$subclass_view,'molecular_weight'=>$molecular_weight,'length'=>$length,'description'=>$description,'external_database_release_id'=>$dupNRDBrel,'source_id'=>$source_id,'secondary_identifier'=>$secondary_identifier,'name'=>$name,'molecule_type'=>$molecule_type,'crc32_value'=>$crc32_value});
     if (!$newExtAASeq->retrieveFromDB()) {
+      if ($sequence) {
+	$newExtAASeq->setSequence($sequence);
+      }
       $num += $newExtAASeq ->submit();
     }
-    my $dup_aa_seq_id = $newExtAASeq->getAASequenceId();
+    my $dup_aa_seq_id = $newExtAASeq->getAaSequenceId();
     $self->undefPointerCache();
     $origDupIdHash{$orig_aa_seq_id}=$dup_aa_seq_id;
     $self->log("$num duplicate ExternalAASequence rows submitted\n" ) if ($num % 10000 == 0);
@@ -156,9 +167,10 @@ sub getNRDBEntryIds {
   my $dbh = $self->getQueryHandle();
   my $sql = "select nrdb_entry_id from dots.nrdbentry";
   if ($self->getArgs->{testnumber}) {
-    my $idlist = keys %{$self->{origDupIdHash}};
+    my $idlist = join ("," , keys %{$self->{origDupIdHash}});
     $sql .= " where aa_sequence_id in ($idlist)";
   }
+  $self->log("$sql\n");
   my $stmt = $dbh->prepareAndExecute($sql);
   while (my $id = $stmt->fetchrow_array()) {
     push (@nrdbEntryIdArr,$id);
@@ -171,6 +183,7 @@ sub makeNRDBEntryDups {
   my $num;
   my $dbh = $self->getQueryHandle();
   my $sql = "select aa_sequence_id,gid,source_id,sequence_version,external_database_release_id,description,taxon_id,is_preferred from dots.nrdbentry where nrdb_entry_id = ?";
+  $self->log("$sql\n");
   my $stmt = $dbh->prepare($sql);
   foreach my $orig_nrdb_entry_id (@{$self->{nrdbEntryIdArr}}) {
     $stmt->execute($orig_nrdb_entry_id);
@@ -188,4 +201,3 @@ sub makeNRDBEntryDups {
 }
 
 1;
-
