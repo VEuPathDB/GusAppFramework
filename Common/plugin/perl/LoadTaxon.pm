@@ -245,37 +245,32 @@ sub getTaxon{
 
 sub makeTaxonName {
 
-    my $self   = shift;
-    my $namesDmp = shift;
-    my $num = 0;
-    foreach my $tax_id (keys %$namesDmp) {
-	my $taxon_id = $self->getTaxon($tax_id);;
-	foreach my $name (keys %{$namesDmp->{$tax_id}}) {
-	    foreach my $name_class (keys %{$namesDmp->{$tax_id}->{$name}}) {
-		foreach my $unique_name_variant (keys %{$namesDmp->{$tax_id}->{$name}->{$name_class}}) {
-		    my $newTaxonName = GUS::Model::SRes::TaxonName->new('taxon_id'=>$taxon_id);
-		    $newTaxonName->retrieveFromDB();
-		    if ($newTaxonName->get('name') ne $name) {
-			$newTaxonName->set('name',$name);
-		    }
-		    if ($newTaxonName->get('unique_name_variant') ne $unique_name_variant) {
-			$newTaxonName->set('unique_name_variant',$unique_name_variant);
-		    }
-		    if ($newTaxonName->get('name_class') ne $name_class) {
-			$newTaxonName->set('name_class',$name_class);
-		    }
-		    $newTaxonName->submit();
-		    $self->undefPointerCache();
-		    $num++;
-		}
-	    }
+  my $self   = shift;
+  my $namesDmp = shift;
+  my $num = 0;
+  foreach my $tax_id (keys %$namesDmp) {
+    my $taxon_id = $self->getTaxon($tax_id);;
+    foreach my $name (keys %{$namesDmp->{$tax_id}}) {
+      foreach my $name_class (keys %{$namesDmp->{$tax_id}->{$name}}) {
+	foreach my $unique_name_variant (keys %{$namesDmp->{$tax_id}->{$name}->{$name_class}}) {
+	  my %attHash = ('taxon_id'=>$taxon_id,'name'=>$name, 'unique_name_variant'=> $unique_name_variant, 'name_class'=>$name_class);
+	  my $newTaxonName = GUS::Model::SRes::TaxonName->new(\%attHash);
+	  
+	  if (!$newTaxonName->retrieveFromDB()) {
+	    $newTaxonName->submit();
+	    $num++;
+	  }
+	  
+	  $self->undefPointerCache();
 	}
+      }
     }
-    print STDERR ("$num taxon names processed\n");
+  }
+  print STDERR ("$num taxon names processed\n");
 }
 
 
-    
+
 1;
 
 __END__
