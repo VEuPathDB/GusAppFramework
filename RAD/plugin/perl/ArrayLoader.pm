@@ -1409,7 +1409,11 @@ B<--commit>
     Commit the data to database.
 
 B<--testnumber> I<NUM>   
-    Number of iterations for testing (B<in non-commit mode only>).  
+    Number of iterations for testing (B<in non-commit mode only>). 
+ 
+B<--protocol_id> I<protocol_id>  [must be one of protocol_ids in RAD3::Protocol table]
+
+    set value for the Array.protocol_id
 
 B<--restart> I<NUM>   
     data file line number to start loading data from (start counting after the header)
