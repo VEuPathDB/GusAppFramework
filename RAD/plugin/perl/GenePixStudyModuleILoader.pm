@@ -367,7 +367,7 @@ sub createGusAssay {
   my $hybOperatorId = $self->{propertySet}->getProp("Hyb_Operator_ID");
 
 
-  print "params: $arrayId, $batchId, $description, @hybDates, $hybProtocolId, $hybOperatorId\n";
+  print "params: $arrayId, $batchId, $description, $hybProtocolId, $hybOperatorId\n";
 
   my $params = {
     array_id => $arrayId,
