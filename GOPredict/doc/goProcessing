@@ -1,0 +1,120 @@
+1. Evolve to new GO Hierarchy and apply
+2. Create Associations
+3. Clean Associations -- Make unsupported Associations deprecated
+4. Set Is not
+5. Set Defining
+
+0. Create new field in AssociationInstance: Is_predicted (or something)
+   indicating that the association for this instance was originally
+   made because of the CBIL prediction algorithm (or some other algorithm
+   as they become available)
+
+0.1 Create new field in Association: is_deprecated indicating that this was a predicted
+	Association in a previous run of the GO Prediction algorithm and never manually
+	reviewed	
+
+0.2 Set Associations to be defining with algorithm in 5 to make sure input is correct
+
+1. Evolve to new GO Hierarchy and apply
+	1.1 Make mapping M from GUS Id's for old GO to GUS Id's for new GO
+	1.2 For each GO Association A between Protein P and old GO term G
+		1.2.1 If M:G->G', G' is obsolete, A.is_not = false
+			1.2.1.1 Find the first of Gs parents not obselete (needs better definition)
+				1.2.1.1.1 For each parent Gp
+					1.2.1.1.1.1 Make new AssociationInstance between P and Gp, 
+						    set is_predicted = 1, 
+						    Evidence indicating 'because of obsolete descendant', 
+						    manually reviewed = 'needs re-review', 
+						    is not = false
+					1.2.1.1.1.2 Set old Association A between P and Gp 
+						    defining = true, 
+						    manually reviewd = 'needs re-review'; 
+						    keep track of A for 1.3.3 below
+	1.3 For each GO Association A between P and old GO term G
+		1.3.1 Determine if A gets a 'hat' (note: keep hat as official term).  Criteria:
+			1.3.1.1 Has AssociationInstance Is_predicted = 1
+			1.3.1.2 Has AssociationInstance review status id = manually reviewed, needs re-review
+		1.3.2 If A gets a hat
+			1.3.2.1 Find G' for M:G->G'
+			1.3.2.2 Set GO Term in A to G' (overwriting G)
+			1.3.2.3 Keep track of A
+		1.3.3 For each A with hat and its Protein P
+			1.3.3.1 Get Ancestors of G'
+			1.3.3.2 For each ancestor Gp
+				1.3.3.2.0 Skip if tracked in 1.3.2.3 or 1.3.3.2.1.3
+				1.3.3.2.1 Make Association Ap between Gp and P
+					1.3.3.2.1.1 Set review_status_id = manually reviewed 
+					1.3.3.2.1.2 If A.'is_not' = true, set Ap.'is_not' = true
+						    unless should be 'is' from another descendant
+						    (takes some additional logic)
+					1.3.3.2.1.3 Track Ap
+				1.3.3.2.2 Make AssociationInstance pointing to AP
+					1.3.3.2.1.1 Set is_predicted = false
+					1.3.3.2.1.2 Set review_status_id = unreviewed (?)
+					1.3.3.2.1.3 Set is_not = false (?)
+				1.3.3.2.2 Make Evidence pointing to this AssociationInstance and A
+				  
+
+2. Create Associations
+	
+	2.1 For each Association A between P and G which rule says you should make
+		2.1.1 If not found 
+			2.1.1.1 Make A
+				2.1.1.1.1 Set is_not = false 
+				2.1.1.1.2 Set review status = unreviewed
+		2.1.2 Make AssociationInstance AI pointing to A
+			2.1.1.1 Set review_status to 'not reviewed'
+			2.1.1.2 Set is_predicted to 'true'
+			2.1.1.3 Set is_not to be what rule predicted
+		2.1.3 Make Evidence E1 pointing to the rule and the AI
+		2.1.4 For each parent GO Term Gp
+			2.1.4.1 If !(exists Pa between P and Gp)
+				2.1.4.1.1 Make Association Pa
+			2.1.4.2 Make AssociationInstance Pai
+				2.1.4.2.1 Set is_predicted = false
+				2.1.4.2.2 Set manually_reviewed = false 
+				2.1.4.2.3 Set is_not to be what rule predicted 
+			2.1.4.3 Make Evidence pointing to rule and Pai 	
+			
+3. Clean Associations
+	
+	3.1 For each Association A between P and G
+		3.1.1 If A has one AssociationInstance where manually_reviewed != unreviewed		
+			3.1.1.1 Do not deprecate
+		3.1.2 Else if A has one AssociationInstance created by current algorithm invocation
+			3.1.2.1 Do not deprecate
+		3.1.3 Else Deprecate
+			
+4. Set Is Nots
+
+	4.1 For each Protein P with Associations {A}
+		4.1.1 Create local GO Term Graph of Associations
+		4.1.2 Perform depth-first search, starting at root of graph
+			4.1.2.1 If current Association A 'is'
+				4.1.2.1.1 set local variable 'on_is_path' for A to true
+				4.1.2.1.2 next node in depth first search
+			4.1.2.2 Else if current Association A 'is_not'
+				4.1.2.2.1 return from this node (i.e. do not process children)
+		4.1.3 Perform depth-first search, starting at root of graph
+			4.1.3.1 If current Association A 'on_is_path' = true
+				4.1.3.1.1 next node in depth first search
+			4.1.3.2 Else if current node 'on_is_path' = false/undefined
+				4.1.3.2.1 If review_status_id != unreviewed
+					4.1.3.2.1.1 Set review_status_id = 'needs rereview'
+				4.1.3.2.2 Else
+					4.1.3.2.1.2 Set is_not = true
+				4.1.3.2.3 Make AssociationInstance for current Association
+					4.1.3.2.3.1 Set is_not = true
+					4.1.3.2.3.2 Set is_predicted = 'false' (?)
+					4.1.3.2.3.3 Set review_status_id = 'unreviewed' (?)
+				4.1.3.2.4 Make Evidence, point to AssociationInstance and Ancestor that 
+					  necessitated the change	
+
+5. Set Defining
+	
+	5.1 For each Protein P with Associations {A}
+		5.1.1 Create local GO Term Graph of Associations
+		5.1.2 Depth first search to hit all A e {A}
+			5.1.2.1 If A has no children
+				5.1.2.1.1 Set A.defining = true
+			
