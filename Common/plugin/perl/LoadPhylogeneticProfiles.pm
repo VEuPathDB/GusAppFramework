@@ -88,8 +88,7 @@ sub run {
   $self->logCommit;
 
   $self->loadPhyloProfileFile($self->getArg('datafile'),
-		           $self->getArg('phylogenetic_profile_set_id'),
-			   $self->getArg('pred_alg_invocation_id'));
+		           $self->getArg('phylogenetic_profile_set_id'));
 
   $self->logVerbose("Finished Load2aryStruct.");
 }
@@ -98,32 +97,62 @@ sub run {
 # Given the name of a data file, read and load phylogenetic profile data
 
 sub loadPhyloProfileFile {
-  my ($self, $datafile, $phylogenetic_profile_set_id, $pred_alg_invocation_id) = @_;
+  my ($self, $datafile, $phylogeneticProfileSetId) = @_;
 
   my $fh = FileHandle->new('<'.$datafile);
   if (! $fh) {
     die ("Can't open datafile $datafile");
   }
 
-  my $taxonIdList = parseTaxa(<$fh>);
-  exit;
+  my $taxonLine = <$fh>;
+  chomp($taxonLine);
+  my @taxonIdList = split(/>/, $taxonLine);
 
   my ($cCalls, $hCalls, $eCalls, $aa_sequence_id);
   while (<$fh>) {
     chomp;
 
+    my ($geneDoc, $valueString) = split(/	/, $_);
+    my $sourceId = (split(/\|/, $geneDoc))[3];
 
-    $cCalls .= substr($_, 13,1);
-    $hCalls .= substr($_, 20,1);
-    $eCalls .= substr($_, 27,1);
+    my $sql = <<SQL;
+       SELECT na_feature_id
+       FROM plasmodb_42.plasmodb_genes
+       WHERE source_id='$sourceId'
+SQL
+    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+    my ($naFeatureId) = $sth->fetchrow_array();
+
+    if (!$naFeatureId) {
+      print STDERR "Error: can't get na_feature_id for source_id $sourceId\n";
+      next;
+    }
+
+    my $profile = GUS::Model::DoTS::PhylogeneticProfile->new
+      ( {
+	 phylogenetic_profile_set_id => $phylogeneticProfileSetId,
+	 na_feature_id => $naFeatureId,
+	} );
+
+    $profile->retrieveFromDB();
+    $profile->submit();
+
+    my @values = split(/ /, $valueString);
+    for (my $i=0; $i <= $#values; $i++) {
+
+      my $profileMember = GUS::Model::DoTS::PhylogeneticProfileMember->new
+	( {
+	   phylogenetic_profile_id => $profile->getPhylogeneticProfileId(),
+	   taxon_id => $taxonIdList[$i],
+	   minus_log_e_value => $values[$i]*1000,
+	  } );
+
+      $profileMember->submit();
+
+    }
+
+    $self->undefPointerCache();
   }
   $fh->close();
 
-
-}
-
-sub parseTaxa {
-  my ($taxonList) = @_;
-
-  print "taxonList = $taxonList\n";
 }
