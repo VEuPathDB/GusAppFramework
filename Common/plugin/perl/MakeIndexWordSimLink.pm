@@ -1,107 +1,75 @@
-############################################################
-## Change Package name....
-############################################################
-package MakeIndexWordSimLink;
+package GUS::Common::Plugin::MakeIndexWordSimLink;
 
-use strict;
+use GUS::Model::DoTS::Similarity;
+use GUS::Model::DoTS::IndexWordSimLink;
 use DBI;
 
-############################################################
-# Add any specific objects (GUSdev::) here
-############################################################
-use GUS::Model::::IndexWordSimLink;
-use GUS::Model::::Similarity;
+@ISA = qw(GUS::PluginMgr::Plugin);
 
-my $Cfg;  ##global configuration object....passed into constructor as second arg
+use strict;
 
 sub new {
-	my $Class = shift;
-	$Cfg = shift;  ##configuration object...
+  my ($class) = @_;
+  my $self = {};
+  bless($self,$class);
 
-	return bless {}, $Class;
-}
-
-sub Usage {
-	my $M   = shift;
-	return 'Makes materialized view for IndexWordNeighbor';
-}
-
-############################################################
-# put the options in this method....
-############################################################
-sub CBIL::Util::EasyCspOptions {
-	my $M   = shift;
-	{
-
-#		test_opt1 => {
-#									o => 'opt1=s',
-#									h => 'option 1 for test application',
-#									d => 4,
-#									l => 1,	ld => ':',
-#									e => [ qw( 1 2 3 4 ) ],
-#								 },
-
-  testnumber        => {
-                        o => 'testnumber=i',
-                        h => 'number of iterations for testing',
-                       },
-  restart           => {
-                        o => 'restart!',
-                        h => 'Restarts ignoring sequences already in IndexWordSimLink from target_table and similarity_table',
-                       },
-                         
-  target_table      => {
-                        o => 'target_table',
-                        t => 'string',
-                        h => 'table that am creating entries for....',
-                       },
-  max_p_value       => {
-                        o => 'max_p_value',
-                        t => 'float',
-                        h => 'maximum P Value for valid neighbors (similarities)',
-                        d => 1e-10,
-                       },
-#  min_p_value       => {
-#												o => 'min_p_value',
-#												t => 'float',
-#												h => 'minimum P Value for valid neighbors (similarities)',
-#												d => 0,
-#											 },
-  similarity_table      => {
-                            o => 'similarity_table',
-                            t => 'string',
-                            h => 'table for IndexWordLink (currently MotifAASequence|ExternalAASequence)',
-                           },
-  idSQL              => {
-                         o => 'idSQL',
-                         t => 'string',
-                         h => 'sql query that returns primary keys for the target_table for indexing',
-                        },
-  ignoreAlgInv      => {
-                        o => 'ignoreAlgInv',
-                        t => 'string',
-                        h => 'includes " and s.row_alg_invocation_id not in (ignoreAlgInv)" in similarity query',
-                       },
- log_frequency      => {
-                        o => 'log_frequency',
-                        t => 'int',
-                        h => 'frequency for writing to log (per id processed)',
-                        d => 10,
-                       },
-  update             => {
-                         o => 'update',
-                         t => 'boolean',
-                         h => 'update existing rows rather than create new',
-                        },
-
-	}
+  my $usage = 'Make materialized view for IndexWordNeighbor';
+  my $easycsp =
+    [{o => 'testnumber',
+      t => 'int',
+      h => 'number of iterations for testing',
+     },
+     {o => 'restart',
+      t => 'boolean',
+      h => 'Restarts ignoring sequences already in IndexWordSimLink from target_table and similarity_table',
+     },
+     {o => 'target_table',
+      t => 'string',
+      h => 'table that am creating entries for.... (schema::table format)',
+     },
+     {o => 'max_p_value',
+      t => 'float',
+      h => 'maximum P Value for valid neighbors (similarities)',
+      d => 1e-10,
+     },
+     {o => 'similarity_table',
+      t => 'string',
+      h => 'table for IndexWordLink (currently DoTS::MotifAASequence|DoTS::ExternalAASequence)',
+     },
+     {o => 'idSQL',
+      t => 'string',
+      h => 'sql query that returns primary keys for the target_table for indexing',
+     },
+     {o => 'ignoreAlgInv',
+      t => 'string',
+      h => 'includes " and s.row_alg_invocation_id not in (ignoreAlgInv)" in similarity query',
+     },
+     {o => 'log_frequency',
+      t => 'int',
+      h => 'frequency for writing to log (per id processed)',
+      d => 10,
+     },
+     {o => 'update',
+      t => 'boolean',
+      h => 'update existing rows rather than create new',
+     }];
+ 
+  $self->initialize({requiredDbVersion => {},
+		     cvsRevision => '$Revision$', # cvs fills this in!
+		     cvsTag => '$Name$', # cvs fills this in!
+		     name => ref($self),
+		     revisionNotes => 'make consistent with GUS 3.0',
+		     easyCspOptions => $easycsp,
+		     usage => $usage
+		    });
+  return $self;
 }
 
 my $ctx;
 my $debug = 0;
 $| = 1;
 
-sub Run {
+sub run {
   my $M   = shift;
   $ctx = shift;
 
@@ -118,7 +86,7 @@ sub Run {
   my %ignore;
   if ($ctx->{cla}->{restart}) {
     print STDERR "Restarting....\n";
-    my $resStmt = $dbh->prepare("select target_id from IndexWordSimLink where target_table_id = $target_table_id and similarity_table_id = $similarity_table_id");
+    my $resStmt = $dbh->prepare("select target_id from Dots.IndexWordSimLink where target_table_id = $target_table_id and similarity_table_id = $similarity_table_id");
     $resStmt->execute();
     my $ct = 0;
     while (my($rs_id) = $resStmt->fetchrow_array()) {
@@ -134,11 +102,12 @@ sub Run {
   my $loopStmt = $dbh->prepare($ctx->{cla}->{idSQL});
 
   ##and s.pValue <= $ctx->{cla}->{max_p_value}
-  my $bestSQL =  "select wl.index_word_id,s.similarity_id,s.pvalue_mant,pvalue_exp,s.score
-  from Similarity s,  IndexWordLink wl
+  my $bestSQL =  
+"select wl.index_word_id,s.similarity_id,s.pvalue_mant,pvalue_exp,s.score
+  from dots.Similarity s,  dots.IndexWordLink wl
   where s.query_id = ?
- and s.query_table_id = $target_table_id 
- and wl.target_table_id = $similarity_table_id
+  and s.query_table_id = $target_table_id 
+  and wl.target_table_id = $similarity_table_id
   and wl.target_id = s.subject_id";
   
   ##now  if want to ignore specific algorithminvocations of similarities
@@ -149,7 +118,12 @@ sub Run {
   my $bestStmt = $dbh->prepare($bestSQL);
 
   my $delStmt;
-  $delStmt = $dbh->prepare("select * from IndexWordSimLink where target_table_id = $target_table_id and target_id = ? and similarity_table_id = $similarity_table_id") if $ctx->{cla}->{update};
+  my $sql = 
+"select * from dots.IndexWordSimLink 
+where target_table_id = $target_table_id 
+and target_id = ? 
+and similarity_table_id = $similarity_table_id";
+  $delStmt = $dbh->prepare($sql) if $ctx->{cla}->{update};
 	
 
   $loopStmt->execute();
@@ -195,11 +169,11 @@ sub Run {
       $have{$iw_id} = 1;
       #			print STDERR  "Processing index_word $iw_id\n";
       ##first create Similarity Object as that gives the pValue
-      my $sim = Similarity->new({'similarity_id' => $sim_id,
+      my $sim = GUS::Model::DoTS::Similarity->new({'similarity_id' => $sim_id,
                                  'pvalue_mant' => $pMant,
                                  'pvalue_exp' => $pExp });
       next if $sim->getPValue() > $ctx->{cla}->{max_p_value};
-      my $rwl = IndexWordSimLink->new({'target_id' => $id,
+      my $rwl = GUS::Model::DoTS::IndexWordSimLink->new({'target_id' => $id,
                                        'target_table_id' => $target_table_id,
                                        'similarity_table_id' => $similarity_table_id,
                                        'index_word_id' => $iw_id,
