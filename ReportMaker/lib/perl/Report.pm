@@ -6,6 +6,8 @@ require Exporter;
 
 use strict;
 
+my $MAP_TABLE_DELIM = ":";  # used to delimit the mapping table info
+
 # primaryColumnName: "DoTS_Transcript_Id" for example
 # queries: ref to list of GUS::ReportMaker::Query objects
 # columns: ref to list of GUS::ReportMaker::Column objects
@@ -18,14 +20,22 @@ sub new {
   $self->{primaryColumnName} = $primaryColumnName;
   $self->{queries} = $queries;
 
-  my %columns;
-  foreach my $column (@$columns) {
-    $columns{$column->getName()} = $column;
-  }
-  $self->{columns} = \%columns;
-  $self->{columnsList} = $columns;
+  $self->{columns} = {};
+  $self->{columnsList} = [];
+
+  $self->_addColumns($columns);
 
   return $self;
+}
+
+# columns: ref to list of GUS::ReportMaker::Column objects
+sub _addColumns {
+  my ($self, $columns) = @_;
+
+  foreach my $column (@$columns) {
+    $self->{columns}->{$column->getName()} = $column;
+    push(@{$self->{columnsList}}, $column);
+  }
 }
 
 sub listColumns {
@@ -50,8 +60,8 @@ sub validateColumnsRequest {
 # resultTableName: name of db table containing result
 # dbiDb: GUS::ObjRelP::DbiDatabase
 sub print {
-  my ($self, $primaryKeyName, $primaryKeyPrefix, $requestedColumnNames, $resultTableName, 
-      $dbiDb, $verbose) = @_;
+  my ($self, $primaryKeyName, $primaryKeyPrefix, $requestedColumnNames, 
+      $resultTableName, $dbiDb, $verbose) = @_;
 
   # hash of query->[columns]
   my %relevantQueries = $self->_findRelevantQueries($requestedColumnNames);
@@ -69,6 +79,40 @@ sub print {
   $self->_printHeader($requestedColumnNames);
   foreach my $primaryKey (keys %answer) {
     $self->_printRow($primaryKey, $primaryKeyPrefix, $answer{$primaryKey}, $requestedColumnNames);
+  }
+}
+
+# mappingTables: a string holding a list of 'datasetname:tablename, ...'
+# mappingTableValueColumnName: the name of the col in the mapping table that holds the mapped value
+# tempTable: the name of the table that holds the main result set
+# primaryKeyColumnName: the name of the column in both tables that will join them.
+sub addMappingTables {
+  my ($self, $mappingTables, $mappingTableValueColumnName,
+      $tempTable, $primaryKeyColumnName) = @_;
+
+  my @mappingTables = split(/,\s*/, $mappingTables);
+  foreach my $mappingTableDescriptor (@mappingTables) {
+    $mappingTableDescriptor =~ /(\w+)$MAP_TABLE_DELIM(\S+)/
+      || die "mapping table descriptor '$mappingTableDescriptor' is not in the correct format";
+    my $mappingName = $1;
+    my $mappingTable = $2;
+
+    my $mappingTableSql = 
+"select distinct $tempTable.$primaryKeyColumnName, 
+$mappingTable.$mappingTableValueColumnName as $mappingName
+from $mappingTable, $tempTable 
+where $mappingTable.$primaryKeyColumnName = $tempTable.$primaryKeyColumnName
+";
+
+    my $mappingTableCol =
+      GUS::ReportMaker::DefaultColumn->new("$mappingName",
+					   "Your data set named '$mappingName'");
+    $self->_addColumns([$mappingTableCol]);
+    my $mappingQuery = 
+      GUS::ReportMaker::Query->new($mappingTableSql,
+				 [$mappingTableCol,
+				 ]);
+    push(@{$self->{queries}}, $mappingQuery);
   }
 }
 
@@ -95,7 +139,8 @@ sub _printHeader {
 
   print "$self->{primaryColumnName}\t";
   foreach my $columnName (@$requestedColumnNames) {
-    print "$columnName\t";
+    my $heading = $self->{columns}->{$columnName}->getName();
+    print "$heading\t";
   }
   print "\n";
 }

@@ -9,7 +9,8 @@ use GUS::ObjRelP::DbiDatabase;
 use GUS::Common::GusConfig;
 
 my ($verbose, $sql, $dbLogin, $dbPassword, $configModule, $tempTableName,
-    $requestedCols, $listColumns, $mappedToName, $primaryKeyName, $primaryKeyPrefix);
+    $requestedCols, $listColumns, $mappedToName, 
+    $primaryKeyName, $primaryKeyPrefix, $mappingTables);
 
 &GetOptions("verbose!"=> \$verbose,
 	    "sql=s" => \$sql,
@@ -20,21 +21,23 @@ my ($verbose, $sql, $dbLogin, $dbPassword, $configModule, $tempTableName,
 	    "primaryKeyColumnName=s" => \$primaryKeyName,
 	    "primaryKeyPrefix=s" => \$primaryKeyPrefix,
 	    "mappedToColumnName=s" => \$mappedToName,
+	    "mappingTables=s" => \$mappingTables,
 	    "listColumns!" => \$listColumns,
 	    "requestedColumns=s" => \$requestedCols);
 
 $primaryKeyPrefix = '' unless $primaryKeyPrefix;
 $primaryKeyName = 'primary_key' unless $primaryKeyName;
-$mappedToName = 'mapped_to' unless $mappedToName;
+$mappedToName = 'mapped_id' unless $mappedToName;
 
 &usage() unless ($configModule
 		 && ($listColumns
-		     || ($dbLogin && $tempTableName && $requestedCols)));
+		     || ($tempTableName && $requestedCols)));
 
 eval "use $configModule";
 die "$@\n" if $@;
 
-my $report = &createReport($tempTableName, $primaryKeyName, $mappedToName);
+my $report = &createReport($tempTableName, $primaryKeyName, $mappedToName,
+			   $mappingTables);
 
 if ($listColumns) {
   $report->listColumns();
@@ -47,6 +50,9 @@ $report->validateColumnsRequest(\@requestedColumnsList);
 
 my $gusconfig = GUS::Common::GusConfig->new();
 
+$dbLogin = $gusconfig->getDatabaseLogin() unless $dbLogin;
+$dbPassword = $gusconfig->getDatabasePassword() unless $dbPassword;
+
 my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$dbLogin,
 					$dbPassword,
@@ -58,8 +64,8 @@ eval {
   &makeTempTable($tempTableName, $db, $sql, $primaryKeyName, 
 		 $mappedToName) if $sql;
 
-  $report->print($primaryKeyName, $primaryKeyPrefix, \@requestedColumnsList, $tempTableName,
-		 $db, $verbose);
+  $report->print($primaryKeyName, $primaryKeyPrefix, \@requestedColumnsList, 
+		 $tempTableName, $db, $verbose);
 };
 
 &dropTempTable($tempTableName, $db) if $sql;
@@ -106,6 +112,7 @@ USAGE
              [--primaryKeyColumnName columnname]
              [--primaryKeyPrefix prefix]
              [--mappedToColumnName columnname]
+             [--mappingTables mapping_tables_list]
 
 
 DESCRIPTION
@@ -151,7 +158,15 @@ use the optional --primaryKeyPrefix to specify a string that should be prepended
 to the primary key column values.  By default it is '', the empty string.
 
 Use the optional --mappedToKeyColName arg to specify the name of the mapped
-to column.  By default it is 'mapped_to'.
+to column.  By default it is 'mapped_id'.
+
+Use the optional --mappingTables arg to specify a set of datasets in which 
+there is a mapping from the entities you are getting a report on to other, 
+usually external, IDs.  Each dataset has a name and a database table that
+holds the mapping.  The form of the arg's value is 'datasetname:tablename, ...'
+The mapping table must have two columns.  One holds the entity value (and 
+the column name is specified in the config file), and the other holds the 
+mapped value (and the column name is specified in the config file).
 
 If you provide --sql, then the temp table will be:
   - created
@@ -163,7 +178,8 @@ Otherwise, the temp table will be used but not be created or dropped.
 
 The --dbLogin and --dbPassword args provide a login that can access both 
 the temp table (with create privileges if nec.) and the GUS tables the 
-report will get data from.
+report will get data from.  By default these values are found in 
+\$GUS_CONFIG_FILE
 
 The config module you provide with the --configModule arg is the full name 
 of a perl module that configures the report maker.  It specifies which 

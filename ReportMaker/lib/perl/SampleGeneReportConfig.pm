@@ -9,13 +9,14 @@ use GUS::ReportMaker::Query;
 use GUS::ReportMaker::Report;
 
 sub createReport {
-  my ($tempTable, $primaryKeyName, $mappedToName) = @_;
+  my ($tempTable, $primaryKeyName, $mappedToName, $mappingTables) = @_;
 
   my @columns;
 
   my $mappedToCol =
     GUS::ReportMaker::DefaultColumn->new("$mappedToName",
 					 "Mapped To");
+
   push(@columns, $mappedToCol);
 
   my $symbolCol =
