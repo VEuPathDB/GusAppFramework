@@ -96,27 +96,23 @@ sub process {
 	if ($db->checkTableExists($table_nm)){ # if table exists
 	    if ($attribute_nm eq "NULL" || $attribute_nm eq "null"  || $attribute_nm eq "") {
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
-		$doc->setHtmlDocumentation($html_dc);
+		$doc->setAttributeName("");
+#		$doc->setHtmlDocumentation($html_dc);
 		$doc->retrieveFromDB();
-		$doc->submit();
-		$countInserts++;
-		$self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
-		return();
-
-#		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) { 
-#		    $doc->submit();
-#		    $countInserts++;
-#		    $self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
-#		    return();
-#		}
-#		elsif ($doc->setHtmlDocumentation($html_dc) eq $html_dc) {
-#		    $self->logAlert("Documentation already exists: $table_nm.$attribute_nm\t$html_dc\n");
-#		    return();
-#		}	
+		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) {
+		    $doc->submit();
+		    $countInserts++;
+		    $self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
+		    return();
+		}
+		elsif ($doc->setHtmlDocumentation($html_dc) eq $html_dc) {
+		    $self->logAlert("Documentation already exists: $table_nm.$attribute_nm\t$html_dc\n");
+		    return();
+		}	
 	    } # end if table documentation
 	    elsif ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if valid attribute
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
-		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
+		$doc->setAttributeName($attribute_nm);
 		$doc->retrieveFromDB();
 		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) {
 		    $doc->setHtmlDocumentation($html_dc);
