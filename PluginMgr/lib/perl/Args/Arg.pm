@@ -44,16 +44,18 @@ sub formatConciseText {
 sub formatLongPod {
   my ($self) = @_;
 
-  my $s = "\n=item C<--" . $self->getName() . "> I<" . $self->getType() .">";
-  $s .= "-list (comma delimited)" if $self->{isList};
+  my $s = "\n=item --" . $self->getName() . " I<" . $self->getType();
+  $s .= "-list> (comma delimited)" if $self->{isList};
+  $s .= ">" unless $self->{isList};
   $s .= " (Required)" if $self->{reqd};
-  $s .= "\n\n=over 4\n\n";
-  $s .= "$self->{descr}";
+  $s .= "\n\n";
+  $s .= "=over 4\n\n";
+  $s .= "$self->{descr}\n\n";
   my $extraLine;
   if (defined $self->{default}) {
-    $s .= "\n\n=over 4\n\n";
-    $s .= "\n\n=item default: $self->{default}\n\n";
-    $s .= "\n\n=back\n\n";
+    $s .= "=over 4\n\n";
+    $s .= "=item default: $self->{default}\n\n";
+    $s .= "=back\n\n";
     $extraLine = 1;
   }
 
@@ -61,15 +63,15 @@ sub formatLongPod {
   foreach my $attr (@attrs) {
     my ($name, $checkFunc) = @$attr;
     if ($self->{$name}) {
-      $s .= "\n\n=over 4\n\n";
-      $s .= "\n\n=item $name: $self->{$name}\n\n";
-      $s .= "\n\n=back\n\n";
+      $s .= "=over 4\n\n";
+      $s .= "=item $name: $self->{$name}\n\n";
+      $s .= "=back\n\n";
       $extraLine = 1;
     }
   }
 
-  $s .= "\n\n=back\n\n";
-  $s .= "\n\n=item\n\n" if $extraLine;
+  $s .= "=back\n\n";
+  $s .= "=item \n\n" if $extraLine;
   return $s;
 }
 
