@@ -70,7 +70,7 @@ sub getRequiredDbVersion { $_[0]->{requiredDbVersion} }
 sub getCVSRevision {
   my ($self) = @_;
 
-  $self->{cvsRevision} =~ /Revision: (\d+\.\d+.*) / || die "The1 plugin has an illegal cvs revision: '$self->{cvsRevision}'.  If that doesn't include a revision number, then the plugin has never been checked into CVS.  Please do so to give it an intial revision";
+  $self->{cvsRevision} =~ /Revision: (\d+\.\d+.*) / || die "The plugin has an illegal cvs revision: '$self->{cvsRevision}'.  If that doesn't include a revision number, then the plugin has never been checked into CVS.  Please do so to give it an intial revision";
   return $1;
 }
 

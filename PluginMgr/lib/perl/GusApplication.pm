@@ -25,8 +25,8 @@ sub new {
   my $m = bless {}, $C;
 
   $m->initialize({requiredDbVersion => { Core => '3' },
-		  cvsRevision => '$revision$',
-		  cvsTag => '$name$',
+		  cvsRevision => '$Revision$',
+		  cvsTag => '$Name$',
 		  name => ref($m),
 		  description => 'GusApplication',
 		  easyCspOptions => {},
@@ -92,8 +92,7 @@ SQL
   my $imps = $P->sql_get_as_hash_refs($sql);
 
   # none found
-  if (scalar @$imps == 0 && $M->getCla->{commit}) {
-
+  if (scalar @$imps == 0) {
     $P->initStatus("No matching Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision");
     $P->log('ERROR-IMP', $M->getStatus);
     $P->setOk(0);
@@ -119,6 +118,7 @@ SQL
 
   # just right
   else {
+    print STDERR "GA $imps->[0]->{ALGORITHM_IMPLEMENTATION_ID}\n";
     $RV = GUS::Model::Core::AlgorithmImplementation
       ->new({
 	     algorithm_implementation_id => $imps->[0]->{ALGORITHM_IMPLEMENTATION_ID}
@@ -1019,16 +1019,13 @@ sub connect_to_database {
 
   my $login    = $M->getConfig->getDatabaseLogin();
   my $password = $M->getConfig->getDatabasePassword();
-  my $owner    = $M->getConfig->getDatabaseOwner();
+  my $core     = $M->getConfig->getCoreSchemaName();
   my $dbiDsn   = $M->getConfig->getDbiDsn();
 
-  # JC: eliminate trailing whitespace from DB name
-  $database =~ s/\s+$//;
-
   $P->initDb(new GUS::ObjRelP::DbiDatabase($dbiDsn,
-					  $login,$password,
-					  $P->getCla->{verbose},0,1,
-					  $owner));
+					   $login,$password,
+					   $P->getCla->{verbose},0,1,
+					   $core));
 
   # return self.
   $M
