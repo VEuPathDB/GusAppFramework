@@ -121,7 +121,7 @@ sub loadMutualInformationFile {
     my $mi = GUS::Model::DoTS::MutualInformationScore->new
       ( {
 	 primary_profile_id => $primaryProfileId,
-	 secondary_profile_id => $primaryProfileId,
+	 secondary_profile_id => $secondaryProfileId,
 	} );
 
     $mi->retrieveFromDB();
@@ -149,6 +149,5 @@ SQL
     if (!$phylogeneticProfileId) {
       print STDERR "Error: can't get phylogenetic_profile_id for source_id $sourceId\n";
     }
-
   return $phylogeneticProfileId;
 }
