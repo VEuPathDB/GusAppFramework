@@ -12,6 +12,9 @@ package GUS::ObjRelP::RelationalRow;
 
 use strict;
 use GUS::ObjRelP::DbiRow;
+use GUS::Model::DoTS::Evidence;
+use GUS::Model::DoTS::Similarity;
+use CBIL::Bio::SequenceUtils;
 
 
 use vars qw (@ISA);
@@ -126,8 +129,8 @@ sub createNewAlgorithmInvocation {
   my $algInvoId = $tAlgInvoId ? $tAlgInvoId : 1; ##1 is unknown...
   my $res = $result ? $result : "pending";
   my $machine_id = $machineId ? $machineId : 0; ## 0 is omphale
-  my $algTable = $self->getDatabase()->getCoreName()."::AlgorithmInvocation";
-  eval($self->getDatabase()->getDbName()."::$algTable");
+  my $algTable = $self->getFullTableClassName($self->getDatabase()->getCoreName()."::AlgorithmInvocation");
+  eval("require $algTable");
   return $algTable->new({'algorithm_imp_id' => $algImpId,
                                    'start_time' => $self->getDatabase()->getDateFunction(),
                                    'end_time' => '01/01/1900',
@@ -442,6 +445,7 @@ that will be used to constrain the returned children...
 
 sub getChildren { 
   my($self,$className,$retrieveIfNoChildren,$getDeletedToo,$where,$doNotRetAtts) = @_;
+  $className = $self->getTable()->fullClassName($className);
 
   print STDERR $self->getClassName().":getChildren($className,$retrieveIfNoChildren,$getDeletedToo,$doNotRetAtts)\n" if $debug;
 
@@ -502,6 +506,7 @@ sub getChildren {
 
 sub getSuperClassChildren {
   my($self,$className,$retrieveIfNoChildren,$getDeletedToo,$where) = @_;
+  $className = $self->getTable()->fullClassName($className);
   $self->getDatabase()->getSuperClasses();
   $self->{'retrievingSuperClassChildren'} = 1;
   my @tmp;
@@ -539,6 +544,7 @@ only the first one will be returned.
 
 sub getChild{
   my($self,$className,$retIfNochildren,$getDeletedToo,$where) = @_;
+  $className = $self->getTable()->fullClassName($className);
   my @ch = $self->getChildren($className,$retIfNochildren,$getDeletedToo,$where);
   return $ch[0];
 }
@@ -582,9 +588,8 @@ sub setChild{
 sub retrieveChildrenFromDB{
   my($self,$className,$resetIfHave,$where,$doNotRetAtts) = @_;
   
-  if($className !~ /::/){
-    $className = $self->getTable()->getSchemaName()."::$className";
-  }
+  $className = $self->getTable()->fullClassName($className);
+
   if ($self->isOnChildList($className) == 0) {
     print STDERR "ERROR: ",$self->getClassName(),"->retrieveChildrenFromDB($className) - Invalid child class\n";
     return;
@@ -601,7 +606,7 @@ sub retrieveChildrenFromDB{
   print STDERR "GetRelations: className = $className: col1 = ",$self->getChildSelfColumn($className)," col2 = ",$self->getChildColumn($className),"\n" if $debug == 1;
 
   ##lazy load of the class
-  my $evalstmt = "require ".$self->getDatabase()->getDbName()."::$className";
+  my $evalstmt = "require $className";
   print STDERR "retrieveChildrenFromDB: $evalstmt\n" if $debug;
   eval($evalstmt);
 
@@ -655,9 +660,9 @@ sub retrieveChildrenFromDB{
 ##make minimal first then more robust (catch missing atts) later if need be..
 sub getImpRelations {
   my($self,$className,$relCol,$myCol,$where) = @_;
-  if($className !~ /::/){
-    $className = $self->getTable()->getSchemaName()."::$className";
-  }
+
+  $className = $self->getTable()->fullClassName($className);
+
   print STDERR "getImpRelations($self,$className,$myCol,$relCol,$where)\n" if $debug;
   $where->{$relCol} = $self->get($myCol);
   my $table = $className =~ /Imp$/ ? $className : $className . "Imp";
@@ -677,6 +682,7 @@ sub getImpRelations {
 
 sub isImpClass {
   my($self,$className) = @_;
+  $className = $self->getTable()->fullClassName($className);
   if ($className =~ /Imp$/) {
     return 1;
   }
@@ -685,6 +691,7 @@ sub isImpClass {
 
 sub isSuperClass {
   my($self,$className) = @_;
+  $className = $self->getTable()->fullClassName($className);
   return $self->getDatabase()->isSuperClass($className)
 }
 
@@ -701,6 +708,7 @@ sub getSubClasses {
 
 sub resetChildrenToDB{
   my($self,$className,$where) = @_;
+  $className = $self->getTable()->fullClassName($className);
   $self->removeChildrenInClass($className);
   $self->retrieveChildrenFromDB($className,undef,$where);
 }
@@ -820,6 +828,7 @@ sub markChildDeleted{
 
 sub markChildrenInClassDeleted{
   my($self,$className) = @_;
+  $className = $self->getTable()->fullClassName($className);
   foreach my $c ($self->getChildren($className)) {
     $c->markDeleted();
   }
@@ -904,6 +913,7 @@ sub removeChildren{
 
 sub removeChildrenInClass{
   my ($self,$className) = @_;
+  $className = $self->getTable()->fullClassName($className);
   undef $self->{'children'}->{$className};
   undef $self->{'childrenDbList'}->{$className};
   undef $self->{'retrievedChildren'}->{$className};
@@ -1003,6 +1013,7 @@ sub setParent{
 sub getParent {
   my($self,$className,$retrieveIfNoParent,$doNotRetAtts) = @_;
   ##retrieve from db if don't have any parents and have not retrieved parents already..
+  $className = $self->getTable()->fullClassName($className);
   print STDERR $self->getClassName()."->getparent($className,$retrieveIfNoParent)\n" if $debug;
   if (!exists $self->{'parents'}->{$className} && $retrieveIfNoParent && !$self->{'retrievedParents'}->{$className}) { ## && !exists $self->{'parentRet'}->{$className}){
     if ($self->isImpClass($className)) {
@@ -1020,6 +1031,7 @@ sub getParent {
 
 sub getSuperClassParent {
   my($self,$className,$retrieveIfNoParent,$doNotRetAtts) = @_;
+  $className = $self->getTable()->fullClassName($className);
   $self->getDatabase()->getSuperClasses();
   $self->{'retrievingSuperClassParent'} = 1;
   my $p;
@@ -1053,9 +1065,7 @@ sub getAllParents{
 
 sub retrieveParentFromDB{
   my($self,$className,$doNotRetAtts) = @_;
-  if($className !~ /::/){
-    $className = $self->getTable()->getSchemaName()."::$className";
-  }
+  $className = $self->getTable()->fullClassName($className);
   print STDERR "retrieving $className parent\n" if $debug;
   if ($self->isOnParentList($className)) {
     $self->{'retrievedParents'}->{$className} = 1;
@@ -1087,7 +1097,7 @@ sub retrieveParentFromDB{
         }
       }
     } else {
-      eval("require ".$self->getDatabase()->getDbName()."::$className");
+      eval("require $className");
       $list = $self->getRelations($className,$self->getParentSelfColumn($className),$self->getParentColumn($className),$className,undef,$doNotRetAtts);
     }
     if (!$list->[0]->checkReadPermission()) {
@@ -1197,11 +1207,11 @@ this.
 
 sub retrieveEvidenceFromDB {
   my($self,$factTableName,$resetIfHave) = @_;
-  if($factTableName !~ /::/){
-    $factTableName = $self->getTable()->getSchemaName()."::$factTableName";
-  } 
+
+  $factTableName = $self->getFullTableClassName($factTableName);
+
   return undef unless $self->hasSinglePrimaryKey(); ##must have a single key primary key
-  my $dbcmd = "select e.* from ".$self->getTable()->getSchemaName().".Evidence e where e.target_table_id = ".$self->getTable()->getTableId().
+  my $dbcmd = "select e.* from Dots.Evidence e where e.target_table_id = ".$self->getTable()->getTableId().
     " and e.target_id = ".$self->getId()." and e.fact_table_id = ".$self->getDatabase()->getTable($factTableName)->getTableId();
   print STDERR "retrieveEvidenceFromDB:: sql = '$dbcmd'\n" if $debug;
   $self->fetchEvidence($dbcmd,$resetIfHave);
@@ -1212,7 +1222,7 @@ sub retrieveAllEvidenceFromDB {
   my($self,$resetIfHave,$targetOrFact) = @_;
   return undef unless $self->hasSinglePrimaryKey(); ##must have a single key primary key
   my $table_id = $self->getTable()->getTableId();
-  my $cmd = "select * from ".$self->getTable()->getSchemaName().".Evidence where (target_table_id = $table_id and target_id = ".$self->getId().")";
+  my $cmd = "select * from Dots.Evidence where (target_table_id = $table_id and target_id = ".$self->getId().")";
   $cmd .= " or (fact_table_id = $table_id and fact_id = ".$self->getId().")" if $targetOrFact;
   print STDERR "\n$cmd\n" if $debug;
   $self->fetchEvidence($cmd,$resetIfHave);
@@ -1220,8 +1230,6 @@ sub retrieveAllEvidenceFromDB {
 
 sub fetchEvidence {
   my($self,$sql,$resetIfHave) = @_;
-  my $evTbl = $self->getTable()->getSchemaName()."::Evidence";
-  eval("require ".$self->getDatabase->getDbName()."::$evTbl");
   my $sth = $self->getDbHandle()->prepareAndExecute($sql);
   my @tmp;
   while (my $evidence = $sth->fetchrow_hashref('NAME_lc')) {
@@ -1229,7 +1237,7 @@ sub fetchEvidence {
   }
   foreach my $evidence (@tmp){
     my $cacheEv = $self->getFromDbCache('Evidence',$evidence->{evidence_id});
-    my $ev =  ($cacheEv && !$resetIfHave) ? $cacheEv : $evTbl->new($evidence,$self->getDatabase());
+    my $ev =  ($cacheEv && !$resetIfHave) ? $cacheEv : GUS::Model::DoTS::Evidence->new($evidence,$self->getDatabase());
     if ($ev->checkReadPermission()) {
       print STDERR "Storing Evidence: \n".$ev->toXML(2,1) if $debug;
       $self->removeEvidence($cacheEv) if ($resetIfHave && $cacheEv);
@@ -1266,10 +1274,8 @@ sub getAllEvidence{
 
 sub addEvidence{
   my($self,$fact,$egid,$attribute_name,$best_evidence) = @_;
-  my $evTbl = $self->getTable()->getSchemaName()."::Evidence";
-  eval("require ".$self->getDatabase->getDbName()."::$evTbl");
   my $evidence_group_id = $egid ? $egid : 1;
-  my $ev = $evTbl->new({'target_table_id' => $self->getTable()->getTableId(),
+  my $ev = GUS::Model::DoTS::Evidence->new({'target_table_id' => $self->getTable()->getTableId(),
                         'fact_table_id' => $self->getDatabase()->getTable($fact->getClassName())->getTableId(),
                         'evidence_group_id' => $evidence_group_id},$self->getDatabase());
   $ev->setAttributeName($attribute_name) if $attribute_name;
@@ -1389,16 +1395,12 @@ sub retrieveSimilarityFactsFromDB {
   #	my $simE = $self->getQueryHandle(); 
   my $simE = $self->getMetaHandle(); 
   my $table_id = $self->getTable()->getTableId();
-  my $simTbl = $self->getTable()->getSchemaName()."::Similarity";
-  eval("require ".$self->getDatabase->getDbName()."::$simTbl");
-  my $query = $getEitherWay ? "select * from ".$self->getTable()->getSchemaName().".Similarity where \(".
+  my $query = $getEitherWay ? "select * from Dots.Similarity where \(".
     " subject_table_id = $table_id and subject_id = ".$self->getId()."\) ".
       " OR (query_table_id = $table_id and query_id = ".$self->getId()."\)" : 
-        " select * from ".$self->getTable()->getSchemaName().".Similarity where query_table_id = $table_id and query_id = ".$self->getId();
+        " select * from Dots.Similarity where query_table_id = $table_id and query_id = ".$self->getId();
   if ($subjectTableName) {      ##restrict to particular subject tablename
-    if($subjectTableName !~ /::/){
-      $subjectTableName = $self->getSchemaName()."::$subjectTableName";
-    }
+    $subjectTableName = $self->getFullTableClassName($subjectTableName);
     my $subject_table_id = $self->getDatabase()->getTable($subjectTableName)->getTableId();
     if ($subject_table_id) {
       $query .= " and subject_table_id = $subject_table_id";
@@ -1410,7 +1412,7 @@ sub retrieveSimilarityFactsFromDB {
   my @tmp;
   while (my $row = $sth->fetchrow_hashref('NAME_lc')) {
     ##need to get children here....
-    push(@tmp,$simTbl->new($row,$self->getDatabase()));
+    push(@tmp,GUS::Model::DoTS::Similarity->new($row,$self->getDatabase()));
   }
   foreach my $f (@tmp) {
     $f->retrieveChildrenFromDB('SimilaritySpan') unless $summaryOnly;  
@@ -1732,6 +1734,7 @@ sub submitChildren{
 ##  ones that are not deleted as happens for Assemblies in incremental update.
 sub submitChildrenInClass{
   my($self,$className) = @_;
+  $className = $self->getTable()->fullClassName($className);
   foreach my $c (sort{$a->isMarkedDeleted() <=> $b->isMarkedDeleted()}$self->getChildren($className,undef,1)) {
     print STDERR $self->getClassName().": Submitting child: deleted = '".$c->isMarkedDeleted()."'\n",$c->toString() if $debug == 1;
     $c->submit(undef,1);
@@ -1820,7 +1823,7 @@ sub toXML {
   foreach my $att (@{$ext->getAttributeList()}) {
     if ($att eq "user_read") {  ##want to put the children here...
       if ($self->getClassName() eq "AssemblySequence") {
-        $xml .= substr($space,0,$indent) . "<sequence>\n" . SequenceUtils::breakSequence($self->getSequence(),80 - $indent - 2,substr($space,0,$indent + 2)) . substr($space,0,$indent) . "</sequence>\n";
+        $xml .= substr($space,0,$indent) . "<sequence>\n" . CBIL::Bio::SequenceUtils::breakSequence($self->getSequence(),80 - $indent - 2,substr($space,0,$indent + 2)) . substr($space,0,$indent) . "</sequence>\n";
       }
       foreach my $c ($self->getAllChildren()) {
         $xml .= $c->toXML($indent,$suppressDef,$doXmlIds,$doParents,$family,$objRef);
@@ -1829,7 +1832,7 @@ sub toXML {
     }
     if (length($self->get($att)) > 50) {
       if ($att eq 'sequence') {
-        $xml .= substr($space,0,$indent) . "<sequence>\n" . SequenceUtils::breakSequence($self->getSequence(),80 - $indent - 2,substr($space,0,$indent + 2)) . substr($space,0,$indent) . "</sequence>\n";
+        $xml .= substr($space,0,$indent) . "<sequence>\n" . CBIL::Bio::SequenceUtils::breakSequence($self->getSequence(),80 - $indent - 2,substr($space,0,$indent + 2)) . substr($space,0,$indent) . "</sequence>\n";
       } else {
         $xml .= substr($space,0,$indent) . "<$att>\n" . substr($space,0,$indent + 2) .
           $self->get($att) . "\n" . substr($space,0,$indent) . "</$att>\n";
@@ -1899,7 +1902,8 @@ sub parseXML {
       print STDERR "Beginning tag $1\n" if $debug;
       $tag = $1; my $xml_atts = $2; my $string = $3;
       if ($self->getDatabase()->checkIfPrettyNameExists($tag)) { ##is another table..child
-        eval("require ".$self->getDatabase()->getDbName()."::$tag");
+	my $className = $self->getFullTableClassName($tag);
+        eval("require $className");
         my $c = $tag->new(undef,$self->getDatabase());
         $c->processXmlAttributes($xml_atts) if $xml_atts;
         $self->addChild($c) unless $xml_atts =~ /(parent|child)/; ##note that not certain this is right..
@@ -2053,6 +2057,13 @@ sub copy {
   my $copy = $self->getClassName()->new($self->getAttributes(),$self->getDatabase());
   return $copy;
 }
+
+sub getFullTableClassName {
+  my ($self, $className) = @_;
+
+  return $self->getDatabase()->getFullTableClassName($className);
+}
+
 
 1;
 

@@ -27,15 +27,15 @@ my $debug = 0;
 ############################################################
 
 sub new {
-  my ($class,$dsn,$login,$password,$verbose,$noInsert,$default,$dbname,$coreName) = @_;
+  my ($class,$dsn,$login,$password,$verbose,$noInsert,$default,$coreName) = @_;
   my $self = {};
   bless $self, $class;
   $self->setDSN($dsn); 
-  if (!$dbname && $self->getDSN() !~ /sybase/i) {
-    die "You must pass in the database name (GUS,GUSdev,RAD etc) as the seventh parameter to the DbiDatabase constructor\n";
+  if (scalar(@_) != 8) {
+    die "Invalid number of args for the DbiDatabase constructor";
   }
-  $self->setDbName($dbname) if $dbname;
-  $self->{coreName} = $coreName ? $coreName : 'Core';
+
+  $self->{coreName} = $coreName;
   $self->setPassword($password);
   $self->setLogin($login);
   $self->setVerbose($verbose);
@@ -151,21 +151,26 @@ sub setUseDbiTableOnly { my($self,$val) = @_; $self->{useDbiTableOnly} = $val; }
 
 sub getUseDbiTableOnly { my($self) = @_; return $self->{useDbiTableOnly}; }
 
-sub getTable { 
-  my ($self,$table,$dbitable) = @_;
-  if ( ! $self->{'tables'}->{$table} ) {
+sub getTable {
+  my ($self,$tableClassName,$dbitable) = @_;
+
+  
+
+  if ( ! $self->{'tables'}->{$tableClassName} ) {
     my ($sc,$tb);
     if($dbitable || $self->getUseDbiTableOnly()){
-      $self->{'tables'}->{$table} = GUS::ObjRelP::DbiTable->new($table,$self);
+      $self->{'tables'}->{$tableClassName} =
+	GUS::ObjRelP::DbiTable->new($tableClassName,$self);
     }else{
-      my $tableName = $table . "Table";
-      my $evalstmt = "require GUS::Model::$tableName";
+      my $tableName = $tableClassName . "Table";
+      my $evalstmt = "require $tableName";
       print STDERR "$evalstmt\n" if $debug;
       eval($evalstmt);
-      $self->{'tables'}->{$table} = $tableName->new($table,$self);
+      $self->{'tables'}->{$tableClassName} = 
+	$tableName->new($tableClassName,$self);
     }
   }
-  return $self->{'tables'}->{$table};
+  return $self->{'tables'}->{$tableClassName};
 }
 
 sub getDateFunction {
@@ -207,30 +212,41 @@ sub rollback_tran {
 }
 
 sub tableHasSequenceId {
-  my($self,$table) = @_;
+  my($self,$className) = @_;
+
   return undef unless $self->getDSN() =~ /oracle/i;
+
+  $className = $self->getFullTableClassName($className);
+
   if (!exists $self->{'sequenceIdTables'}) {
     my $stmt = $self->getMetaDbHandle()->prepareAndExecute("select sequence_owner,sequence_name from all_sequences");
     while (my($owner,$name) = $stmt->fetchrow_array()) {
       $name =~ s/_SQ$//;
-      $self->{'sequenceIdTables'}->{$self->getPrettyTableName($owner."::".$name)} = 1;
+      my $fullName = $self->getFullTableClassName($owner."::".$name);
+      $self->{'sequenceIdTables'}->{$fullName} = 1;
     }
   }
+
   return $self->{'sequenceIdTables'}->{$table};
 }
 
 ##case INSENSITIVE test for existence of tablename
 sub checkTableExists {
-  my($self,$tabName) = @_;
+  my($self,$className) = @_;
+
+  $className = $self->getTableFullClassName($className);
+
   if (!exists $self->{'tableExists'}) {
     if ($self->getDSN() =~ /oracle/i) {
       my $stmt = $self->getDbHandle()->prepareAndExecute("select owner,table_name from all_tables");
       while (my($sc,$tn) = $stmt->fetchrow_array()) {
-        $self->{'tableExists'}->{$sc."::".$tn} = 1;
+	my $fullName = $self->getFullTableClassName($sc."::".$tn);
+        $self->{'tableExists'}->{$fullName} = 1;
       }
       $stmt = $self->getDbHandle()->prepareAndExecute("select owner,view_name from all_views");
       while (my($sc,$tn) = $stmt->fetchrow_array()) {
-        $self->{'tableExists'}->{$sc."::".$tn} = 1;
+	my $fullName = $self->getFullTableClassName($sc."::".$tn);
+        $self->{'tableExists'}->{$fullName} = 1;
       }
     } else {
       my $dbName = $self->getDbName();
@@ -242,8 +258,8 @@ sub checkTableExists {
       }
     }
   }
-  $tabName =~ tr/a-z/A-Z/;
-  return exists $self->{'tableExists'}->{$tabName};
+
+  return exists $self->{'tableExists'}->{$className};
 }
 
 ##case sensitive test if table name exists in db.
@@ -272,10 +288,10 @@ sub cacheTableNames {
   my $stmt = $self->getMetaDbHandle()->prepareAndExecute($sql);
   while (my($schema,$name,$isView) = $stmt->fetchrow_array()) {
     my $fullName = "GUS::Model::${schema}::${name}";
-    my $lowerName = $fullName;
+    my $lowerName = "${schema}::${name}";
     $lowerName =~ tr/a-z/A-Z/;
     $self->{'allTables'}->{"$isView"}->{$fullName} = 1;
-    $self->{'prettyNames'}->{$lowerName} = $fullName;
+    $self->{'fullClassNames'}->{$lowerName} = $fullName;
     $self->{'prettyNameExists'}->{$fullName} = 1;
     $self->{tableExists}->{$lowerName} = 1;
   }
@@ -317,10 +333,9 @@ sub getTableAndViewNames {
 ##oracle is very slow to get child relations...thus do here for all and cache
 ##NEED to special case the 4 core  tables as no longer have fk constraints 4/8/02
 sub getTableChildRelations {
-  my($self,$table) = @_;
-  my $tableName = $table;
-  $tableName =~ tr/a-z/A-Z/;
-  my $owner = $self->getTable($table)->getSchemaOwner();
+  my($self,$className) = @_;
+
+  my $owner = $self->getTable($className)->getSchemaNameUpper();
   if (!exists $self->{'allChildRelations'}->{$owner}) {
     my $sql = "select acon.owner,acc1.owner,acc1.table_name,acc1.column_name ,
         acon.table_name ,acc2.column_name 
@@ -335,8 +350,8 @@ sub getTableChildRelations {
     my $sth  = $self->getDbHandle()->prepareAndExecute($sql);
     while (my($ftowner,$stowner,$selftab,$selfcol,$fktable,$fkcol) = $sth->fetchrow_array()) {
       #      print STDERR "  returns: ($selftab,$selfcol,$fktable,$fkcol)\n";
-      $fktable = $self->getPrettyTableName($ftowner.'::'.$fktable);
-      $selftab = $self->getPrettyTableName($stowner.'::'.$selftab);
+      $fktable = $self->getFullTableClassName($ftowner.'::'.$fktable);
+      $selftab = $self->getFullTableClassName($stowner.'::'.$selftab);
       next unless $fktable && $selftab;     ##did not return from getPrettyTableName...won't be an object..
       $selfcol =~ tr/A-Z/a-z/;
       $fkcol =~ tr/A-Z/a-z/;
@@ -345,7 +360,7 @@ sub getTableChildRelations {
     }
     $self->cacheFourCoreChildRelations($owner);
   }
-  return $self->{'allChildRelations'}->{$owner}->{$table};
+  return $self->{'allChildRelations'}->{$owner}->{$className};
 }
 
 sub cacheFourCoreChildRelations {
@@ -362,7 +377,7 @@ sub cacheFourCoreChildRelations {
              'ProjectInfo' => 'project_id',
              'UserInfo' => 'user_id');
   foreach my $t ('AlgorithmInvocation','GroupInfo','ProjectInfo','UserInfo'){
-    my $tableName = $self->getCoreName()."::$t";
+    my $tableName = $self->getFullTableClassName($self->getCoreName()."::$t");
     foreach my $rel (@{$allTables}){
       next if $rel =~ /Ver$/;
       push(@{$self->{'allChildRelations'}->{$owner}->{$tableName}},[$rel, $pk{$t}, $fk{$t}]);
@@ -603,7 +618,7 @@ sub getTableNameFromTableId {
     ### SQL CHANGE ###
     my $sth = $dbh->prepareAndExecute("select d.name,t.name from ".$self->getCoreName().".TableInfo t, ".$self->getCoreName().".DatabaseInfo d where t.table_id = $table_id and t.database_id = d.database_id");
     if (my ($schema,$name) = $sth->fetchrow_array()) {
-      my $tn = "GUS::Model::${schema}::${name}";
+      my $tn = $self->getFullTableClassName("${schema}::${name}");
       $self->{tableIdMapping}->{$table_id} = $tn;
     } else {
       print STDERR "ERROR: tableName for $table_id not found\n";
@@ -615,6 +630,9 @@ sub getTableNameFromTableId {
 
 sub isSuperClass {
   my($self,$className) = @_;
+
+  $className = $self->getFullTableClassName($className);
+
   if (!exists $self->{superClasses}) {
     $self->getSuperClasses();
   }
@@ -627,8 +645,8 @@ sub getSuperClasses {
     my $cmd = "select d.name,t2.name as superclass,t1.name as subclass from ".$self->getCoreName().".TableInfo t1,".$self->getCoreName().".TableInfo t2 ".$self->getCoreName().".DatabaseInfo d where t2.table_id = t1.view_on_table_id and t1.name not like '%Ver' and d.database_id = t2.database_id";
     my $sth = $self->getQueryHandle()->prepareAndExecute($cmd);
     while (my ($schema,$sc,$tn) = $sth->fetchrow_array()) {
-      $sc = "GUS::Model::${schema}::$sc";
-      $tn = "GUS::Model::${schema}::$tn";
+      $sc = $self->getFullTableClassName("${schema}::$sc");
+      $tn = $self->getFullTableClassName("${schema}::$tn");
       $sc =~ s/Imp$//;
       next if $sc eq $tn;  
       #			print STDERR "getSuperClasses: $sc <- $tn\n";
@@ -642,24 +660,31 @@ sub getSuperClasses {
 }
 
 sub getSubClasses {
-  my($self,$superClass) = @_;
-  $superClass =~ s/Imp$//;
+  my($self,$superClassName) = @_;
+
+  $superClassName = $self->getFullTableClassName($superClassName);
+
+  $superClassName =~ s/Imp$//;
   if (!exists $self->{superClasses}) {
     $self->getSuperClasses();
   }
-  return @{$self->{superClasses}->{$superClass}};
+  return @{$self->{superClasses}->{$superClassName}};
 }
 
 sub getTableHasSequence {
-  my($self,$tn) = @_;
+  my($self,$className) = @_;
+
+  $className = $self->getFullTableClassName($className);
+
   if (!defined $self->{tableHasSequence}) {
     my $dbh = $self->getMetaDbHandle();
     my $sth = $dbh->prepareAndExecute("select d.name,t.name from ".$self->getCoreName().".TableInfo t, ".$self->getCoreName().".DatabaseInfo d where t.view_on_table_id in (19,159) and t.database_id = d.database_id");
     while (my($schema,$name) = $sth->fetchrow_array()) {
-      $self->{tableHasSequence}->{"GUS::Model::${schema}::${name}"} = 1;
+      my $fullName = $self->getFullTableClassName("${schema}::${name}");
+      $self->{tableHasSequence}->{$fullName} = 1;
     }
   }
-  return $self->{tableHasSequence}->{$tn}; 
+  return $self->{tableHasSequence}->{$className}; 
 }
 
 ##NOTE:  This is dependent specifically on the table_id of the Imp sequence tables!!
@@ -675,6 +700,27 @@ sub getTableHasSequence {
 #   return $self->{hasSequenceList}->{$tn} ? 1 : 0; 
 # }
 
+
+# input:
+#  - full class name (just returned as is)
+#  - or schema::table, (case ignored)
+# output: full class name w/ proper case, ie GUS::Model:Schema:Table
+sub getFullTableClassName {
+  my ($self, $className) = @_;
+
+  die "Illegal className '$className' (not in schema::table form)"
+    unless ($className =~ /\w+::\w+/);
+
+  if (!exists $self->{'fullClassNames'}) {
+    $self->cacheTableNames();
+  }
+  if (!$className /^GUS::Model/) {
+    my $lowerName = $className;
+    $lowerName =~ tr/a-z/A-Z/;
+    $className = $self->{'fullClassNames'}->{$lowerName};
+  }
+  return $className;
+}
 
 
 1;

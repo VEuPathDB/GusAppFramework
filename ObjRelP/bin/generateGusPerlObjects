@@ -15,8 +15,7 @@ $database="GUS30";
 $type=2;
 $core="Core";
 
-&GetOptions('core=s' => \$core,
-            'tables=s' => \$tables,
+&GetOptions('tables=s' => \$tables,
             'type=i' => \$type,
             'newOnly!' => \$newOnly,
             'verbose!' => \$verbose,
@@ -33,7 +32,7 @@ my $superclassesLibDir = "$ENV{PROJECT_HOME}/GUS/ObjRelP/lib/perl/GUS/ObjRelP";
 my $specialCasesFile = "$ENV{PROJECT_HOME}/GUS/Model/data/modelSpecialCases.txt";
 
 if ($help) {
-  print "usage: generateGusPerlObjects --gusconfigfile <\$GUS_CONFIG_FILE> --type (0=working, 1=_gen, 2=both(default)) --newOnly (does only tables that have no objects) --core [Core] --schemas 'comma, separated, [all]' --tables 'comma, separated, list, of, tables, [all]'\n";
+  print "usage: generateGusPerlObjects --gusconfigfile <\$GUS_CONFIG_FILE> --type (0=working, 1=_gen, 2=both(default)) --newOnly (does only tables that have no objects) --schemas 'comma, separated, [all]' --tables 'comma, separated, list, of, tables, [all]'\n";
   exit 1;
 }
 
@@ -46,8 +45,7 @@ my $db = GUS::ObjRelP::DbiDatabase->new(undef,
 					$gusconfig->getReadOnlyDatabaseLogin(),
 					$gusconfig->getReadOnlyDatabasePassword,
 					$verbose,0,1,
-					$gusconfig->getDatabase,
-					$core);
+					$gusconfig->getCoreSchemaName);
 $db->setUseDbiTableOnly(1);
 
 my $generator = GUS::ObjRelP::Generator::Generator->new($db,

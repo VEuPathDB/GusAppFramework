@@ -92,8 +92,7 @@ SQL
   my $imps = $P->sql_get_as_hash_refs($sql);
 
   # none found
-  if (scalar @$imps == 0 
-      && ($cvsRevision ne 'NO_REVISION' || $M->getCla->{commit})) {
+  if (scalar @$imps == 0 && $M->getCla->{commit}) {
 
     $P->initStatus("No matching Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision");
     $P->log('ERROR-IMP', $M->getStatus);
@@ -394,6 +393,7 @@ sub doMajorMode_Run {
 
   # what versions does the plugin want?
   $M->connect_to_database($M);
+
   return $pu->getOk unless $M->_check_schema_version_requirements($pu);
 
   # connect to the database
@@ -1019,16 +1019,16 @@ sub connect_to_database {
 
   my $login    = $M->getConfig->getDatabaseLogin();
   my $password = $M->getConfig->getDatabasePassword();
-  my $database = $P->getCla->{database} || $M->getConfig->getDatabase();
-  my $server   = $P->getCla->{server}   || $M->getConfig->getDatabaseServer();
+  my $owner    = $M->getConfig->getDatabaseOwner();
+  my $dbiDsn   = $M->getConfig->getDbiDsn();
 
   # JC: eliminate trailing whitespace from DB name
   $database =~ s/\s+$//;
 
-  $P->initDb(new GUS::ObjRelP::DbiDatabase(undef,
+  $P->initDb(new GUS::ObjRelP::DbiDatabase($dbiDsn,
 					  $login,$password,
 					  $P->getCla->{verbose},0,1,
-					  $database));
+					  $owner));
 
   # return self.
   $M

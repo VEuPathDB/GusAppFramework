@@ -22,11 +22,11 @@ use GUS::ObjRelP::DbiTable;
 ############################################################
 
 sub new {                       # constructor using DbiDatabase
-  my ($class,$tableName,$attributeHash,$databaseObj, $primaryKeyList) = @_;
+  my ($class,$tableClassName,$attributeHash,$databaseObj, $primaryKeyList) = @_;
   if (!$databaseObj) {
     $databaseObj = GUS::ObjRelP::DbiDatabase->getDefaultDatabase();
   }
-  my $table = $databaseObj->getTable($tableName);
+  my $table = $databaseObj->getTable($tableClassName);
   my $self = {};
   bless $self, $class;
   $self->setTable($table);
@@ -55,7 +55,7 @@ sub setTableName { my ($self, $table_name) = @_;  $self->{'table_name'} = $table
 ##method to get className
 sub getClassName{
   my $self = shift;
-  return $self->getTable()->getPerlTableName();
+  return $self->getTable()->getTableClassName();
 }
 
 #-----------------------------------------------------------
@@ -432,7 +432,7 @@ sub toString {
 #-----------------------------------------------------------
 sub addChild {                  # sets child's foreign key to parents primary key
   my ($self,$relatedRow,$primColumn,$forColumn) = @_;
-  my $foreign_table = $relatedRow->getPerlTableName();
+  my $foreign_table = $relatedRow->getTableClassName();
   if (!$primColumn) {
     $primColumn = $self->getForeignKeyColumn($foreign_table);
   }
@@ -607,7 +607,7 @@ sub update {
     die "No primary key defined for update ".$self->toString()."\n";
   }
   my $dbh = $self->getDbHandle();
-  my $numRows = $self->quote_and_update($self->getTable()->getPerlTableName(),$self->getChangedAttributes(),
+  my $numRows = $self->quote_and_update($self->getTable()->getTableClassName(),$self->getChangedAttributes(),
                                         $self->getPrimaryKey()); 
   $self->synch();
   return $numRows;
@@ -623,20 +623,20 @@ sub insert {
   ##here down is largely sybase...
   if ($self->getDatabase()->getDSN() =~ /sybase/i) {
     my $viewTab = $self->getViewsUnderlyingTable();
-    my $tab = ( $viewTab ? $viewTab : $self->getTable->getPerlTableName());
+    my $tab = ( $viewTab ? $viewTab : $self->getTable->getTableClassName());
     my $identIns = $self->getTable()->pkIsIdentity() && $self->isIdentityInsertOn()
       && $self->getId();
     if ($identIns) {
       $dbh->setIdentityInsertOn($tab);
     }
-    $numRows = $self->quote_and_insert($self->getTable()->getPerlTableName(),$self->getAttributes());
+    $numRows = $self->quote_and_insert($self->getTable()->getTableClassName(),$self->getAttributes());
     if ($identIns) {
       $dbh->setIdentityInsertOff($tab);
     } elsif ($self->getTable()->pkIsIdentity()) {
       $self->setId($self->getLastIdInsert());
     }
   } else {
-    $numRows = $self->quote_and_insert($self->getTable()->getPerlTableName(),$self->getAttributes());
+    $numRows = $self->quote_and_insert($self->getTable()->getTableClassName(),$self->getAttributes());
   }
   $self->synch();
   return $numRows;

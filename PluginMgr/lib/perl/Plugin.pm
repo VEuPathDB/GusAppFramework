@@ -43,13 +43,6 @@ sub initialize {
     $self->{$arg} = $argsHashRef->{$arg};
   }
 
-  # check to see if cvs has substituted in revision and tag.
-  # if not, the substitution macro will be intact.  we test for this
-  # by generating the macro (to avoid it being substituted away!)
-  $self->{cvsRevision} = 'NO_REVISION' 
-    if $self->{cvsRevision} eq '$' . 'revision$';
-  $self->{cvsTag} = 'NO_TAG' if $self->{cvsTag} eq '$'. 'name$';
-
   $self->_failinit('requiredDbVersion')
     unless (ref($self->{requiredDbVersion}) eq "HASH");
   $self->_failinit('easyCspOptions')
@@ -72,11 +65,21 @@ sub getUsage             { $_[0]->{usage} }
 # what version of the schema does the plugin require?
 sub getRequiredDbVersion { $_[0]->{requiredDbVersion} }
 
-# what cvs version of the implementation is this?
-sub getCVSRevision           { $_[0]->{cvsRevision} }
+# what cvs version of the plugin is this?
+# parse out revision from string of the form '$Revision 1.2 $'
+sub getCVSRevision {
+  my ($self) = @_;
 
-# what cvs tag of the implementation is this?
-sub getCVSTag           { $_[0]->{cvsTag} }
+  $self->{cvsRevision} =~ /Revision: (\d+\.\d+.*) / || die "The1 plugin has an illegal cvs revision: '$self->{cvsRevision}'.  If that doesn't include a revision number, then the plugin has never been checked into CVS.  Please do so to give it an intial revision";
+  return $1;
+}
+
+# what cvs tag of the plugin is this?
+sub getCVSTag {
+  my ($self) = @_;
+  $self->{cvsTag} =~ /Name: (.*) / || die "Illegal cvs tag";
+  return $1;
+}
 
 # description about the implementation
 sub getDescription       { $_[0]->{description} }

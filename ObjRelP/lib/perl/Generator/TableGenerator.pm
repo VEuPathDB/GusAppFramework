@@ -11,7 +11,7 @@ sub new {
   $self->{generator} = $generator;
   $self->{schemaName} = $schemaName;
   $self->{tableName} = $tableName;
-  $self->{fullName} = "${schemaName}::$tableName";
+  $self->{fullName} = "GUS::Model::${schemaName}::$tableName";
 
   $self->{realTable} =
     $generator->getTable($self->{generator}->getRealTableName($self->{fullName},1));

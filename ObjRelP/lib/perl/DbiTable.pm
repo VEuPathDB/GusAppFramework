@@ -25,22 +25,14 @@ use GUS::ObjRelP::DbiRow;
 
 # $dbiDbObj is a DbiDatabase object - it has the dbhandles
 sub new {
-  my ($class,$table_name,$dbiDbObj) = @_;
+  my ($class,$className,$dbiDbObj) = @_;
   my $self = {};
   bless $self, $class;
-  $table_name = $class unless $table_name;
-  $self->{'perl_table_name'} = $table_name;
-  $self->{'oracle_table_name'} = $table_name;
-  $self->{oracle_table_name} =~ s/::/\./;
-  if($table_name =~ /^(\w+)::(\w+)/){
-    ($self->{schema}, $self->{table_name}) = ($1,$2);
-  }else{
-    $self->{schema} = $dbiDbObj->getDbName();
-    $self->{table_name} = $table_name;
-  }
-  my $tmpTable = $self->{table_name};
-  $tmpTable =~ tr/a-z/A-Z/;
-  $self->{'cap_table_name'} = $tmpTable;
+  $className = $class unless $className;
+  $className = $self->getFullClassName($className);
+  $self->{'perl_table_name'} = $className;
+  $className =~ /^GUS::Model::(\w+)::(\w+)/){
+  ($self->{schema}, $self->{table_name}) = ($1,$2);
   $self->{'database'} = $dbiDbObj;
   $self->setDefaultParams() unless $class eq 'GUS::ObjRelP::DbiTable';
   return $self;
@@ -63,12 +55,13 @@ sub setDefaultParams {
 
 sub setInstanceClass {
   my ($self,$classname) = @_;
+  $classname = $self->getFullClassName($classname);
   $self->{'instanceClass'} = $classname;
 }
 sub getInstanceClass {
   my ($self) = @_;
   if (!$self->{'instanceClass'}) {
-    $self->{'instanceClass'} = $self->getPerlTableName();
+    $self->{'instanceClass'} = $self->getTableClassName();
   }
   return $self->{'instanceClass'};
 }
@@ -132,13 +125,12 @@ sub getDbName() {
 ############################################################
 
 sub getOracleTableName { my ($self) = @_; return $self->{'oracle_table_name'}; }
-sub getPerlTableName { my ($self) = @_; return $self->{'perl_table_name'}; }
+sub getTableClassName { my ($self) = @_; return $self->{'perl_table_name'}; }
 sub getTableName { my ($self) = @_; return $self->{'table_name'}; }
-sub getCapTableName { my ($self) = @_; return $self->{'cap_table_name'}; }
 sub getSchemaName { my($self) = @_; return $self->{schema}; }
 sub setSchemaName { my($self,$val) = @_; $self->{schema} = $val; }
 
-sub getSchemaOwner {
+sub getSchemaNameUpper {
   my($self) = @_;
   if(!$self->{schemaOwner}){
     $self->{schemaOwner} = $self->getSchemaName();
@@ -192,7 +184,7 @@ sub cacheAttributeInfo {
   my $table_name = $self->getTableName();
   if ($self->getDatabase()->getDSN() =~ /oracle/i) {
     $table_name =~ tr/a-z/A-Z/;
-    my $owner = $self->getSchemaOwner();
+    my $owner = $self->getSchemaNameUpper();
     my $sql = "select column_name,data_type,nullable,column_id,
      data_precision,data_length,data_scale
      from all_tab_columns where table_name = '$table_name'
@@ -280,8 +272,7 @@ sub buildObjectsFromImpTable {
   my $superClass = $self->getTableName();
   $superClass =~ s/Imp$//;
   my $class = ($row->{'subclass_view'} && $row->{'subclass_view'} !~ /null/i) ? $row->{'subclass_view'} : $superClass;
-  $class = $self->getSchemaName()."::$class";
-  eval("require GUS::Model::$class");
+  eval($class);
   #	print STDERR "Building object for $superClass: $class\n";
   my %map = $self->getDatabase->getTable($class)->getViewMapping();
   my $ob = $class->new(undef,$self->getDatabase());
@@ -339,7 +330,7 @@ sub getViewSql {
     ($sql)=  $self->getDbHandle()->selectrow_array("select text from syscomments where id = object_id('".$self->getTableName()."')");
   } elsif ($self->getDatabase()->getDSN() =~ /oracle/i) {
     my $table = $self->getTableName();
-    my $owner = $self->getSchemaOwner();
+    my $owner = $self->getSchemaNameUpper();
     $table =~ tr/a-z/A-Z/;
     my $query = "select text from all_views where owner = '$owner' and view_name = '$table'"; 
     #    print STDERR "getViewSql: $query\n";
@@ -391,10 +382,11 @@ sub getRealTableName {
       #      print STDERR "isView: $sql\n";
       my $stmt = $self->getMetaDbh()->prepareAndExecute($sql);
       while (my($tn) = $stmt->fetchrow_array()) {
-        $self->{realTableName} = $self->getSchemaName()."::".$tn;
+        $self->{realTableName} = 
+	  $self->getFullClassName($self->getSchemaName()."::".$tn);
       }
     } else {
-      $self->{realTableName} = $self->getPerlTableName();
+      $self->{realTableName} = $self->getTableClassName();
     }
   }
   return $self->{realTableName};
@@ -404,7 +396,7 @@ sub setRealTableName { my($self,$val) = @_; $self->{realTableName} = $val; }
 
 sub getRealPerlTableName {
   my($self) = @_;
-  #return $self->getSchemaName()."::".$self->getRealTableName();
+
   return $self->getRealTableName();
 }
 
@@ -428,7 +420,7 @@ sub getParentRelations {
     } elsif ($self->getDatabase()->getDSN() =~ /oracle/i) {
       my $table = $self->getDatabase()->getTable($self->getRealTableName())->getTableName();
       $table =~ tr/a-z/A-Z/;
-      my $owner = $self->getSchemaOwner();
+      my $owner = $self->getSchemaNameUpper();
       my $sql = "select ac.owner,accs.table_name,accs.column_name,accr.owner,accr.table_name,accr.column_name
         from all_cons_columns accr, all_cons_columns accs, all_constraints ac 
         where accs.owner = '$owner'
@@ -444,7 +436,7 @@ sub getParentRelations {
         #        print STDERR "  returns: ($selftab,$selfcol,$pktable,$pkcol)\n";
         #        push(@{$self->{'relations'}->{$selftab}->{$selfcol}},$pkcol);
 ####NOTE...this willNOT work with tables in other schemas...need to somehow get the schema owner for  them!!!
-        $pktable = $self->getDatabase()->getPrettyTableName($pkowner."::".$pktable);
+        $pktable = $self->getFullClassName($pkowner."::".$pktable);
         next unless $pktable;   ##did not return from getPrettyTableName...won't be an object..
         $selfcol =~ tr/A-Z/a-z/;
         $pkcol =~ tr/A-Z/a-z/;
@@ -531,9 +523,9 @@ sub getPrimaryKeyAttributes {
     } elsif ($self->getDatabase()->getDSN() =~ /oracle/i) {
       #      print STDERR "oracle: getting PrimaryKeys: \n";
       my $tableName = $self->getRealTableName();
-      my $queryTable = $self->getPerlTableName() eq $tableName ? $self->getTableName : $self->getDatabase()->getTable($tableName,1)->getTableName();
+      my $queryTable = $self->getTableName() eq $tableName ? $self->getTableName : $self->getDatabase()->getTable($tableName,1)->getTableName();
       $queryTable =~ tr/a-z/A-Z/;
-      my $owner = $self->getSchemaOwner();
+      my $owner = $self->getSchemaNameUpper();
       my $sql = "select distinct acc.column_name
         from all_cons_columns acc, all_constraints ac
         where acc.owner = '$owner'
@@ -628,12 +620,12 @@ sub sqlSelectAndGet {
   my $sth = $self->getDbHandle()->prepareAndExecute($sql);
   if (my $row = $sth->fetchrow_hashref('NAME_lc')) {
     if ($useInstanceClass) {
-      eval("require GUS::Model::".$self->getInstanceClass());
+      eval("require " . $self->getInstanceClass());
       return $self->getInstanceClass()->new($row, 
                                             $self->getDatabase(), 
                                             $self->getPrimaryKeyAttributes());
     } else {
-      return GUS::ObjRelP::DbiRow->new($self->getPerlTableName(), $row, $self->getDatabase()); ###CHECK THIS!!!!
+      return GUS::ObjRelP::DbiRow->new($self->getTableClassName(), $row, $self->getDatabase()); ###CHECK THIS!!!!
     }
   } else {
     return undef;
@@ -650,7 +642,7 @@ sub getNext {
   my ($self, $useInstanceClass) = @_;
   if (my $row = $self->{'sth'}->fetchrow_hashref('NAME_lc')) {
     if ($useInstanceClass) {
-      eval("require GUS::Model::".$self->getInstanceClass());
+      eval("require ".$self->getInstanceClass());
       return $self->getInstanceClass()->new($row, 
                                             $self->getDatabase(),
                                             $self->getPrimaryKeyAttributes());
@@ -665,12 +657,12 @@ sub getNext {
 sub getNextID {
   my ($self,$holdlock) = @_;
   if ($self->isView()) {
-    print STDERR "ERROR: ".$self->getPerlTableName()."->getNextID() is not a valid method for views\n";
+    print STDERR "ERROR: ".$self->getTableClassName()."->getNextID() is not a valid method for views\n";
     return undef;
   }
   my $result = 1;
   if ($self->idIsSequence()) {
-    my $owner = $self->getSchemaOwner();
+    my $owner = $self->getSchemaNameUpper();
     if (!exists $self->{nextidstmt}) {
       my $query = "select $owner.".$self->getCapTableName."_SQ.NEXTVAL from DUAL";
       $self->{nextidstmt} = $self->getDbHandle()->prepare($query);
@@ -879,6 +871,7 @@ sub isValidChild{
 
 sub isOnChildList{
   my($self,$className) = @_;
+  $className = $self->getFullClassName($className);
   if (exists $self->{'childList'}->{$className}) {
     return 1;
   }
@@ -887,12 +880,14 @@ sub isOnChildList{
 
 sub getChildSelfColumn{
   my ($self,$className) = @_;
+  $className = $self->getFullClassName($className);
   #	print STDERR "getChildSelfColumn: \)",join(', ',@{$self->{'childList'}->{$className}}),"\)\n";
   return $self->{'childList'}->{$className}->[0];
 }
 
 sub getChildColumn{
   my ($self,$className) = @_;
+  $className = $self->getFullClassName($className);
   return $self->{'childList'}->{$className}->[1];
 }
 
@@ -924,12 +919,14 @@ sub getParentListWithAtts {
 
 sub getParentSelfColumn{
   my ($self,$className) = @_;
+  $className = $self->getFullClassName($className);
   #	print STDERR "getParentSelfColumn: \)",join(', ',@{$self->{'childList'}->{$className}}),"\)\n";
   return $self->{'parentList'}->{$className}->[0];
 }
 
 sub getParentColumn{
   my ($self,$className) = @_;
+  $className = $self->getFullClassName($className);
   return $self->{'parentList'}->{$className}->[1];
 }
 
@@ -943,6 +940,7 @@ sub isValidParent{
 
 sub isOnParentList{
   my($self,$className) = @_;
+  $className = $self->getFullClassName($className);
   if (exists $self->{'parentList'}->{$className}) {
     return 1;
   }
@@ -962,7 +960,7 @@ sub getViewsUnderlyingTable {
 sub hasPKSequence {
   my($self) = @_;
   if (!defined $self->{hasPKSequence}) {
-    $self->{hasPKSequence} = $self->getDatabase()->tableHasSequenceId($self->getPerlTableName());
+    $self->{hasPKSequence} = $self->getDatabase()->tableHasSequenceId($self->getTableClassName());
   }
   return $self->{hasPKSequence}; 
 }
@@ -975,9 +973,15 @@ sub setHasSequence { my($self,$val) = @_; $self->{hasSequence} = $val; }
 sub hasSequence {
   my($self) = @_;
   if (!defined $self->{hasSequence}) {
-    $self->{hasSequence} = $self->getDatabase()->getTableHasSequence($self->getPerlTableName());
+    $self->{hasSequence} = $self->getDatabase()->getTableHasSequence($self->getTableClassName());
   }
   return $self->{hasSequence}; 
+}
+
+sub getFullClassName {
+  my ($self, $className) = @_;
+
+  return $self->getDatabase()->getFullTableClassName($className);
 }
 
 1;

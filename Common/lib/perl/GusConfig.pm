@@ -6,7 +6,7 @@ use CBIL::Util::PropertySet;
 
 my @properties = 
 (
- ["databaseOwner",   "",  ""],
+ ["coreSchemaName",   "",  ""],
  ["userName",   "",  ""],
  ["group",   "",  ""],
  ["project",   "",  ""],
@@ -56,9 +56,9 @@ sub getDatabasePassword {
   return $self->{propertySet}->getProp('databasePassword');
 }
 
-sub getDatabaseOwner {
+sub getCoreSchemaName {
   my ($self) = @_;
-  return $self->{propertySet}->getProp('databaseOwner');
+  return $self->{propertySet}->getProp('coreSchemaName');
 }
 
 sub getDbiDsn {
