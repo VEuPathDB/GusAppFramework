@@ -66,6 +66,8 @@ sub run {
    $row = $className->new($self->{attrHash});
   }
   $row->submit();
+
+  $self->log("Row updated");
 }
 
 sub makeAttrHash {
