@@ -112,9 +112,9 @@ sub run {
 
   my $external_database_release_id = $self->getArgs()->{'extDbRelId'} || die 'external_database_release_id not supplied\n';
 
-  my $dbHash = $self->getDB();
+  my $dbHash = $self->getDB() if ($self->getArgs()->{'maketemp'} || $self->getArgs()->{'plugin'} );
 
-  my $taxonHash = $self->getTaxon ();
+  my $taxonHash = $self->getTaxon ()if ($self->getArgs()->{'maketemp'} || $self->getArgs()->{'plugin'});
 
   my $tempresults = $self->makeTempTable($dbHash, $taxonHash) 
                     if ($self->getArgs()->{'maketemp'});
@@ -134,8 +134,8 @@ sub run {
     return $entryresults;   
   }
   
-  my $nrdbdelete = $self->deleteFromNRDB;
-  my $aadelete = $self->deleteFromExtAASeq;
+  my $nrdbdelete = $self->deleteFromNRDB if ($self->getArgs()->{'delete'});
+  my $aadelete = $self->deleteFromExtAASeq if ($self->getArgs()->{'delete'});
   my $results = "Processing completed:";
   $results = $results . $tempresults . $entryresults . $nrdbdelete . $aadelete; 
   $self->log("$results\n");
