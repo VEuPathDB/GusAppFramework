@@ -37,7 +37,7 @@ sub new {
       h => 'taxon id for these sequences',
      },
      {o => 'sequencefile',
-      t => 'int',
+      t => 'string',
       h => 'name of file containing the sequences',
      },
      {o => 'no_sequence',
@@ -90,7 +90,7 @@ sub new {
       h => 'if true, does NOT check to see if external_database_release_id,source_id is already in db...',
      },
      {o => 'startAt',
-      t => 'integer',
+      t => 'int',
       h => 'ignores entries in fasta file prior to this number...',
      },
     ];
@@ -144,9 +144,8 @@ sub run {
   }
 
   #	my $sql = "select $prim_key from ExternalNASequence where source_id = '$source_id' and external_db_id = $ctx->{'external_db_id'}";
-  $ctx->{cla}->{table_name} =~ /(\w+)::(\w+)/ || die "table_name not in schema::table format";
-  my ($sc, $tbl) = ($1, $2);
-  $checkStmt = $ctx->{self_inv}->getQueryHandle()->prepare("select $prim_key from $sc.$tbl where source_id = ? and external_database_release_id = $ctx->{'external_database_release_id'}");
+  my $oracleName = &className2oracleName($ctx->{cla}->{table_name});
+  $checkStmt = $ctx->{self_inv}->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $ctx->{'external_database_release_id'}");
 
   my $source_id;
   my $name;
@@ -242,6 +241,7 @@ sub process {
     return if $id; ##already have and am not updating..
     $aas = &createNewExternalSequence($source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence);
   }
+
   $aas->submit() if $aas->hasChangedAttributes();
 	if($ctx->{cla}->{'writeFile'}){
 		print WF ">",$aas->getId()," $source_id $description\n$sequence\n";
