@@ -53,7 +53,7 @@ PLUGIN_NOTES
 		 isList=>0,
 	   }),
    stringArg({name  => 'attrlist',
-	      descr => 'List of attributes to update',
+	      descr => 'List of attributes to update (comma delimited)',
 	      reqd  => 1,
 	      constraintFunc=> undef,
 	      isList=>1,
@@ -64,11 +64,6 @@ PLUGIN_NOTES
 	      constraintFunc=> undef,
 	      isList=>0,
 	   }),
-   booleanArg({name  => 'refresh',
-	       descr => 'True to update the row with new modification data and algorithmInvocation regardless of whether it has changed from the database',
-	       reqd  => 0,
-	       default=> 0,
-	     }),
   ];
 
 
@@ -91,23 +86,22 @@ sub run {
   $self->{attrHash} = $self->makeAttrHash();
 
   my $tableName = $self->getArgs->{'tablename'};
-  my ($db, $tbl) = split(/::/, $tableName);
-  my $className = "GUS::Model::${db}::${tbl}";
-  eval "require $className";
+  my $className = $self->getDb()->getFullTableClassName("$tableName");
+  $self->userError("'$tableName' is not a valid table name") unless $className;
 
   my $row;
-  if ($self->getArgs->{refresh}) {
-    $row = $self->refreshedRow($className);
-    $self->setResultDescr("Refreshed one row");
 
+  my $pkName =  $self->getPrimaryKeyName($className);
+  my $pkValue = $self->{attrHash}->{$pkName};
+
+  if ($pkValue) {
+    $row = $self->updateRow($pkName, $pkValue, $className);
   } else {
-    $row = $className->new($self->{attrHash});
-    $self->setResultDescr("Updated one row");
+    $row = $self->insertRow($className);
   }
 
   $row->submit();
-
-  $self->log("Row updated");
+  $self->log("Row submitted");
 }
 
 sub makeAttrHash {
@@ -126,25 +120,7 @@ sub makeAttrHash {
   return \%attrHash;
 }
 
-sub refreshedRow {
-  my ($self, $className) = @_;
-
-  my ($pkName, $pkValue) = $self->getPrimaryKey($className);
-  my $row = $className->new({$pkName => $pkValue});
-  my $exclude = ['modification_date','row_alg_invocation_id'];
-  if (!$row->retrieveFromDB($exclude)){
-    $self->error("no row found with primary key $pkName=$pkValue");
-  }
-  foreach my $attr (keys %{$self->{attrHash}}) {
-    next if $attr eq $pkName;
-    my $value = $self->{attrHash}->{$attr};
-    $value=~ s/^\s+|\s+$//g;
-    $row->set($attr, $value);
-  }
-  return $row;
-}
-
-sub getPrimaryKey {
+sub getPrimaryKeyName {
   my ($self, $tableName) = @_;
 
   my $extent = $self->getDb->getTable($tableName);
@@ -153,11 +129,34 @@ sub getPrimaryKey {
     unless $extent;
 
   # assume single value key
-  my $pkName = $extent->getPrimaryKeyAttributes()->[0];
+  return $extent->getPrimaryKeyAttributes()->[0];
+}
 
-  $self->userError("You must supply the primary key attribute $pkName if using --refresh") unless $self->{attrHash}->{$pkName};
+sub updateRow {
+  my ($self, $pkName, $pkValue, $className) = @_;
 
-  return ($pkName, $self->{attrHash}->{$pkName});
+  eval "require $className";
+  my $row = $className->new({$pkName => $pkValue});
+  if (!$row->retrieveFromDB()) {
+    $self->error("Can't update.  No row found with primary key $pkName = $pkValue");
+  }
+  foreach my $attr (keys %{$self->{attrHash}}) {
+    next if $attr eq $pkName;
+    $row->set($attr, $self->{attrHash}->{$attr});
+  }
+  $self->setResultDescr("Updated one row");
+  $self->log("Updating one row");
+  return $row;
+}
+
+sub insertRow {
+  my ($self, $className) = @_;
+
+  eval "require $className";
+  my $row = $className->new($self->{attrHash});
+  $self->setResultDescr("Inserted one row");
+  $self->log("Inserting one row");
+  return $row;
 }
 
 1;
