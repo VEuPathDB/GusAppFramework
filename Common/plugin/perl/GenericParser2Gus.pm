@@ -1,4 +1,4 @@
-# ----------------------------------------------------------
+#-----------------------------------------------------------
 # GenericParser2Gus
 #
 # Loads any file recognised by Bioperl into GUS (tested on
@@ -225,7 +225,6 @@ sub run {
         #
 	
 	print STDERR "hello1\n";
-
 	my ($gus_sequence, $source) = $bioperl2Gus->getGusSequenceFromDB($bioperl_sequence);
 	print STDERR "hello2\n";
 
@@ -237,20 +236,20 @@ sub run {
        
         else {
             # Has seq changed? IDs used in EMBL files are not probably not temp. only
-            #
             print STDERR "GUS Sequence already in the database. Checking to see if sequence has changed...\n";
 	    $self->log("GUS Sequence already in the database. Checking to see if sequence has changed...");
-
+	    
+	    #TW - do not need to look for sequence 
             #if ($bioperl_sequence->seq() ne $gus_sequence->getSequence()) {
-		
-		print STDERR "\n*** The sequence has changed ***\n\n";
-		print STDERR "Loading Sequence\n";
-		
-                my ($the_same_gus_seq, $new_source) = $bioperl2Gus->buildNASequence($gus_sequence);
-	        $bioperl2Gus->submitWithProjectLink($the_same_gus_seq); # Versioning - *** use update *** if sequence too big to version
-		$new_source->submit();
+	    print STDERR "\n*** The sequence has changed ***\n\n";
+	    print STDERR "Loading Sequence\n";
+	    
+	    my ($the_same_gus_seq, $new_source) = $bioperl2Gus->buildNASequence($gus_sequence);
+	    $bioperl2Gus->submitWithProjectLink($the_same_gus_seq); # Versioning - *** use update *** if sequence too big to version
+	    $new_source->submit();
 	    #}
             
+	    #TW - do not need to look for sequence, just load
 	    #else {
 	    #	print STDERR "The sequence has not changed.\n";
 	    #	$source = $bioperl2Gus->get_source($gus_sequence);
@@ -259,9 +258,9 @@ sub run {
 	    #	print STDERR "Source submitted.\n";
             #}
         }
+	
 
         print STDERR "Getting all features for the sequence.\n";
-
         my @bioperl_features = $bioperl_sequence->all_SeqFeatures;
 
         print STDERR scalar(@bioperl_features), " features to process in EMBL file";
@@ -483,15 +482,22 @@ sub process{
 
         $insert_count++;
 
-        # Can only link GOAssociation to a Protein when it has a row_id, hence been submitted
-        #
-        if (ref($object) eq 'GUS::Model::DoTS::Protein') {
-            print STDERR"Attempting to insert GO objects\n";
-            $insert_count += $self->buildAndSubmitGO_Objects($log, $bioperl2Gus, $object);
-        }
 
+	######
+        # Can only link GOAssociation to a TranslatedAASequence when 
+	# it has a row_id, hence been submitted
+        ######
+	#TW GO terms are linked to aa_sequence_id of GeneFeature
+	#TW TAAS is NOT in @gus_objects anymore and is submitted separately
+	#if (ref($object) eq 'GUS::Model::DoTS::Protein') {
+	#    print STDERR"\nInserted Protein Object. Call buildAndSubmitGO_Objects()\n";
+        #    $insert_count += $self->buildAndSubmitGO_Objects($log, $bioperl2Gus, $aa_seq);
+        #}
+
+
+	#####
         # Create attribution once GeneFeature has been committed
-        #
+        #####
         if (ref($object) eq 'GUS::Model::DoTS::GeneFeature') {
             $insert_count += $bioperl2Gus->buildAndSubmitAttribution($object);
         }
@@ -614,12 +620,13 @@ sub buildFeatureObjects {
     # buildGeneFeature returns the GeneFeature plus child objects (plus NALocation,
     # possibly Reference/DbRef objects)
     ##
+    #TW-need to add call to submitWithProjectLink, may need to submit $gf then call method
     my $bioperl_geneLocation  = $self->getGeneLocation (@bioperl_locations);
     my $number_of_exons       = scalar(@bioperl_locations);
     my ($gf, @gus_gf_objects) =
         $bioperl2Gus->buildGeneFeature ($number_of_exons, $bioperl_geneLocation, $gene_type, $partial, $systematic_id);
-
-    push (@gus_objects, $gf);              # @gus_objects gets returned
+    push (@gus_objects, $gf);  #TW-bindu added $gf->submit() to BG, is this still needed?  #@gus_objects gets returned
+    $bioperl2Gus->submitWithProjectLink($gf);
     push (@gus_objects, @gus_gf_objects);
 
     
@@ -708,46 +715,64 @@ sub buildFeatureObjects {
     if ($gene_type =~ /RNA/) {
         return @gus_objects;
     }
-
- 
+    
+    
     my ($aa_seq, @properties) =
         #$bioperl2Gus->buildTranslatedAASequence ($gf, $aa_feature_translated, $systematic_id);
 	$bioperl2Gus->buildTranslatedAASequence ($gf, $systematic_id);
-    push (@gus_objects, $aa_seq);
+    #push (@gus_objects, $aa_seq);
+    $aa_seq->submit();  #Need to submit here in order to have the aa_sequence_id to make an AASequenceEnzymeClass object 
     push (@gus_objects, @properties);
+    print STDERR "\nGP:DEBUG-AASEQ:$aa_seq\n\n";
+    
+    #Can now build GO Associations
+    #$insert_count +=
+    $self->buildAndSubmitGO_Objects($bioperl2Gus, $aa_seq);  #TW
 
-    ##
-    # The Protein Feature object as both a TranslatedAAFeature and a ProteinFeature
-    # ProteinFeature stores the EC number
 
+    ##################
+    # The Protein Feature object as both a TranslatedAAFeature and a ProteinFeature(?)
+    # 
     # to do : build NALocation objects attached to the ProteinFeature object
     #
-    # If $aa_feature_translated (TranslatedAAFeature) has a parent of TranslatedAASequence the old
+    # If $aa_feature_translated (TranslatedAAFeature) has a parent of 
+    # TranslatedAASequence the old
     # one will be retieved.
-    ##
-
+    ########
+    print STDERR "DEBUG-Called buildTranslatedAAFeature(), GPG\n";
     my ($aa_feature_translated) = $bioperl2Gus->buildTranslatedAAFeature ($rnaf, $aa_seq);
     #TW my ($aa_feature_translated) = $bioperl2Gus->buildProteinFeature ($rnaf); #, $aa_seq);
-#    push (@gus_objects, $aa_feature_protein);
+    #push (@gus_objects, $aa_feature_protein);  ???
     push (@gus_objects, $aa_feature_translated);
+    print "DEBUG-Method buildTranslatedAAFeature() done, GPG\n\n";
 
 
+    #####
+    # Add EC Number/TranslatedAASequence associations
+    print STDERR "DEBUG-Called  buildEcNumber(), GPG\n"; 
+    my @aasec = $bioperl2Gus->buildEcNumber($aa_seq);
+    push(@gus_objects, @aasec);
+    print STDERR "DONE Building EC number/TranslatedAASequence associations, GPG\n\n";
+    
 
-    ##
+    #####
     # AAFeatures and their location objects
     # e.g. SignalP, PredictedAAFeatures (TMHMM & Pfam)
     ##
-    my @aafs = $bioperl2Gus->buildAAFeatures ($aa_seq, $gf->getName);
+    print STDERR "Building AAFeatures\n";
+    my @aafs = $bioperl2Gus->buildAAFeatures ($aa_seq, $gf->getName);  #TW maybe this should be $gf->getSourceId()
     push (@gus_objects, @aafs);
+    print STDERR "DONE Building AAFeatures, GPG\n\n";
+    
 
-
+    #TW - Does $ec_num need to be addded here??????
     #TWmy @gus_CentralDogma_objects =
         #$self->buildCentralDogmaObjects ($bioperl2Gus, $gf, $rnaf,
          #                                $aa_feature_protein, $aa_seq,
          #                                $gene_type);
     my @gus_CentralDogma_objects =
         $self->buildCentralDogmaObjects ($bioperl2Gus, $gf, $rnaf,
-                                         $aa_seq, $gene_type);
+                                         $aa_seq, $gene_type); #TW 
     push (@gus_objects, @gus_CentralDogma_objects);
   
     return @gus_objects;
@@ -757,9 +782,9 @@ sub buildFeatureObjects {
 #
 #
 sub buildCentralDogmaObjects {
-    my ($self, $bioperl2Gus, $gf, $rnaf, $aa_feature_protein, $aa_seq, $gene_type) = @_;
+    #TWmy ($self, $bioperl2Gus, $gf, $rnaf, $aa_feature_protein, $aa_seq, $gene_type) = @_;
 
-    #my ($self, $bioperl2Gus, $gf, $rnaf, $aa_seq, $gene_type) = @_;  #TW
+    my ($self, $bioperl2Gus, $gf, $rnaf, $aa_seq, $gene_type) = @_;  #TW 
 
     my @central_dogma_objects = ();
 
@@ -768,8 +793,10 @@ sub buildCentralDogmaObjects {
     ##
 
     my ($gene_object, @gene_synonyms) = $bioperl2Gus->buildGene ($gf);
+    print STDERR "DEBUG-Called method buildGene(), GPG\n";
     push (@central_dogma_objects, $gene_object);
     push (@central_dogma_objects, @gene_synonyms);
+    print STDERR "DEBUG-DONE method buildGene(), GPG\n\n";
 
     # GeneInstance Object, links Gene to GeneFeature
     #START---
@@ -787,7 +814,9 @@ sub buildCentralDogmaObjects {
     ##
 
     my $rna_object = $bioperl2Gus->buildRNA ($gene_object);
+    print STDERR "DEBUG-Called method buildRNA(), GPG\n";
     push (@central_dogma_objects, $rna_object);
+    print STDERR "DEBUG-DONE method buildGene(), GPG\n\n";
 
     #START---
     #TW-RNAInstance not used by PlasmoDB
@@ -817,7 +846,7 @@ sub buildCentralDogmaObjects {
 
 ################################################################################
 # This has to be called after the protein/RNA object has been created so we can
-# use its row_id value in the GOAssociation - an object no yet submitted will not
+# use its row_id value in the GOAssociation - an object not yet submitted will not
 # have a value.
 #
 # Also note: all GO objects will have been submitted by the method, no need to
@@ -826,11 +855,10 @@ sub buildCentralDogmaObjects {
 #
 
 sub buildAndSubmitGO_Objects {
-    my ($self, $log, $bioperl2Gus, $object) = @_;
-
+    #TWmy ($self, $log, $bioperl2Gus, $object) = @_;
+    my ($self, $bioperl2Gus, $object) = @_;
     my $dbh        = $self->getQueryHandle();
     my @go_objects = ();
-
     my $sth = $dbh->prepare(
 qq[SELECT external_database_release_id, release_date, version
 FROM   SRes.ExternalDatabaseRelease  edr, SRes.ExternalDatabase ed
@@ -842,13 +870,17 @@ ORDER BY release_date, external_database_release_id]);
         confess("ERROR: buildAndSubmitGO_Objects() \$sth is undefined, is plugin connected to the DB anymore ? \$dbh = $dbh");
     }
 
-    push @go_objects, $bioperl2Gus->buildGO_aspectAssociation($dbh, 'GO_process',  $object);
-    push @go_objects, $bioperl2Gus->buildGO_aspectAssociation($dbh, 'GO_component',$object);
-    push @go_objects, $bioperl2Gus->buildGO_aspectAssociation($dbh, 'GO_function', $object);
-    
+    #GO info can be in two forms
+    #style 1
+    #push @go_objects, $bioperl2Gus->buildGO_aspectAssociation($dbh, 'GO_process',  $object);
+    #push @go_objects, $bioperl2Gus->buildGO_aspectAssociation($dbh, 'GO_component',$object);
+    #push @go_objects, $bioperl2Gus->buildGO_aspectAssociation($dbh, 'GO_function', $object);
+
+    #style 2
     push @go_objects, $bioperl2Gus->buildGOAssociations($dbh, $object); # /GO=""
 
-    print STDERR "GO objects submitted = ", scalar(@go_objects), "\n";
+    print STDERR "GO objects submitted = ", scalar(@go_objects), "\n\n";
+
 
     #foreach my $obj (@go_objects){
     #    print STDERR "\$obj = '$obj'";

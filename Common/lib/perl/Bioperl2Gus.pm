@@ -58,7 +58,6 @@ use GUS::Model::DoTS::RNAInstanceCategory;
 use GUS::Model::DoTS::ProteinInstance;
 use GUS::Model::DoTS::ProteinInstanceCategory;
 
-use GUS::Model::SRes::GOEvidenceCode;
 use GUS::Model::DoTS::Evidence;
 use GUS::Model::SRes::ExternalDatabaseEntry;
 use GUS::Model::SRes::ExternalDatabase;
@@ -76,6 +75,7 @@ use GUS::Model::DoTS::GOAssociation;
 use GUS::Model::DoTS::GOAssociationInstance;
 use GUS::Model::DoTS::GOAssociationInstanceLOE;
 use GUS::Model::DoTS::GOAssocInstEvidCode;
+use GUS::Model::SRes::GOEvidenceCode;
 
 # Bioperl
 use Bio::SeqUtils;
@@ -300,7 +300,7 @@ sub buildNASequence {
     }
     
     my $seq_type_id = $self->getSequenceTypeIdentifier ($sequenceType);
-    my $seq_descr   = $bioperl_sequence->desc;  # the description is into the description or the definition tags
+    my $seq_descr   = $bioperl_sequence->desc;  # the description is into the description or the definition tags  #TW
     my $seq         = $bioperl_sequence->seq;
     my $length      = length ($seq);
     my %basesCount  = getBasesCount ($seq);
@@ -314,6 +314,8 @@ sub buildNASequence {
     my $name        = $id;  # name - the only thing is ID
     my $seq_version = "1";
     
+    print STDERR "SEQ_DESC-1:$seq_descr\n";
+
     # FIXME: Arnaud, please check this is correct, I can not find Seq::seq_version
     #        in the Bioperl API.
     #if ($bioperl_sequence->seq_version()) {
@@ -400,7 +402,7 @@ sub buildNASequence {
 	'taxon_id'         => $taxon_id,
 	'name'             => $name,
 	'sequence_version' => $seq_version,
-	'description'      => $seq_descr,
+	'description'      => $seq_descr,  #TW
 	'sequence'         => $seq,
 	'a_count'          => $a_count,
 	'c_count'          => $c_count,
@@ -412,6 +414,8 @@ sub buildNASequence {
 	'chromosome'       => $chromosome,
     };
     
+    #print STDERR "SEQ_DESC-2:$seq_descr\n";
+    print STDERR "TID:$taxon_id\n";
     # $gus_seq may have been passed in just to be brought up-to-date
     #
     unless (defined $gus_seq) {
@@ -721,15 +725,6 @@ sub buildGeneFeature {
     ###
     my $gus_naLocation_gf = $self->buildNALocation ($gf, $bioperl_geneLocation);
 
-
-    #TW-FIXME, Need to populate ProjectLink
-    #---------------------------------
-    #ProjectLink
-    # make sure passing correct variable
-    #------------------------
-    #my $projlink_gus = $self->buildProjectLink ($gf);
-
-    
 
     ##########################################
     # Process the note & curation qualifiers
@@ -1664,6 +1659,110 @@ sub buildProteinProperties {
     return @properties;
 }
 
+########################################################
+# Build EC Number - TranslatedAAFeature Associtations
+#
+# Populate DoTS.AASequenceEnzymeClass table
+######################
+
+sub buildEcNumber  {
+    my ($self, $aa_seq) = @_;
+    my $bioperl_feature  = $self->{bioperlFeature}; 
+    my $ec_num  = undef;
+    print STDERR "Method ECNUM called\n";
+    
+    my @aaSequenceEnzymeClass; #TW
+    
+    # number of associations made
+    my $assoc_made_n = 0;
+    
+    # number of associations supplied
+    my $assoc_given_n = 0;
+    
+    if ($bioperl_feature->has_tag ('EC_number')) {
+	print STDERR "Found and EC number\n";
+        my @ec_numbers = $bioperl_feature->each_tag_value ('EC_number');
+        #$ec_num = $ec_numbers[0];  #TW
+	
+	foreach $ec_num(@ec_numbers)  {
+	    print STDERR "EC_NUMS:$ec_num\n\n";
+	    
+	    #EnzymeClass object cache.
+	    my $ec_cache_x = {};
+	    
+	    #get the EnzymeClass
+	    my $ec_gus = $ec_cache_x->{$ec_num};
+	    print STDERR "EC_GUS:$ec_gus\n";
+	    unless ($ec_gus) {
+		$ec_gus = GUS::Model::SRes::EnzymeClass->new({ ec_number => $ec_num, external_database_release_id=>7199 });
+		if ($ec_gus->retrieveFromDB) {
+		    $ec_cache_x->{$ec_num} = $ec_gus;
+		} else {
+		    $ec_gus = undef;
+		    print STDERR "WARN-EC: " . "Could not find EnzymeClass " . "EC num:" . $ec_num;
+		}
+	    }
+	    
+	    # make the association if we found an
+	    # EnzymeClass and process parents as well
+	    while ($ec_gus) {
+		my $aaSequenceEnzymeClass =
+		    GUS::Model::DoTS::AASequenceEnzymeClass->new({ 
+			evidence_code        => 'UNK',
+			review_status_id=> 1,
+		    });
+		# note that these are done on the  attributes so that 
+		# we can check for prexisting annotations.
+		$aaSequenceEnzymeClass->setAaSequenceId($aa_seq->getId);
+		print "AASEC1:$aaSequenceEnzymeClass\n";
+		$aaSequenceEnzymeClass->setEnzymeClassId($ec_gus->getId);
+		print "AASEC2:$aaSequenceEnzymeClass\n";
+
+		#check to see association already exists between EC number and TranslatedAAFeature
+		my $new_or_old;
+		if ($aaSequenceEnzymeClass->retrieveFromDB) {
+		    $new_or_old = 'old';
+		} else {
+		    $new_or_old = 'new ';
+		    #TW$aaSequenceEnzymeClass->submit();
+		    push (@aaSequenceEnzymeClass, $aaSequenceEnzymeClass);
+		    $assoc_made_n++;
+		    print "-ADDED EC->GENEASSOC\n";
+		}
+		print STDERR "NEW_OLD: $new_or_old " . 
+		    $aa_seq->getId,
+		    $ec_gus->getEcNumber . "\n";
+		
+		# get parent.
+		print STDERR "Looking for EC parent\n";
+		my $ec_parent_gus = $ec_gus->getParent('SRes::EnzymeClass',1);
+		print STDERR "EC parent:$ec_parent_gus\n";
+		if (!$ec_parent_gus) {
+		    print STDERR "WARN: " . 'No parent found',$ec_gus->getEcNumber . "\n";
+		    last;
+		}
+		
+		#bail out at root.
+		elsif ($ec_parent_gus->getDepth == 0) {
+		    print SRDERR "ECNUM - ROOT FOUND\n";
+		    last;
+		}
+		
+		#make parent the 'current' EC.
+		else {
+		    $ec_gus = $ec_parent_gus;
+		    print STDERR "ECNUM - Continue making ec_num associations\n";
+		}
+	    }
+	    
+	    #print STDERR "TOTAL OF:$assoc_made_n EC NUMBER ASSOCIATIONS MADE\n\n";
+	    
+	} 
+	print STDERR "TOTAL OF:$assoc_made_n EC NUMBER ASSOCIATIONS MADE\n\n";
+    }
+    return @aaSequenceEnzymeClass; 
+}
+
 
 ################################################################################
 # Builds both
@@ -1814,7 +1913,7 @@ sub buildProteinFeature {  ## ##BG
 	    $assoc_made_n++;
 	    print "-ADDED EC->GENEASSOC\n";
 	}
-	 print STDERR "NEW_OLD: $new_or_old" . 
+	 print STDERR "NEW_OLD: $new_or_old " . 
 	     #$gene_xml->{GENE_INFO}->{PUB_LOCUS} || $gene_xml->{GENE_INFO}->{LOCUS},
 	     #$gene_xml->{GENE_INFO}->{COM_NAME}, 
 	     $aaf->getId, ##BG $aaf, 
@@ -1869,6 +1968,8 @@ sub buildProteinFeature {  ## ##BG
     return ($aaf, $aaSequenceEnzymeClass);
 }
 
+
+##########################################################
 sub buildTranslatedAAFeature {
     my ($self, $rnaf, $aa_seq)    = @_;
     my $gus_sequence     = $self->{gusSequence};
@@ -1877,7 +1978,7 @@ sub buildTranslatedAAFeature {
     my $aaf = $rnaf->getChild('DoTS::TranslatedAAFeature', 1);
 
     print STDERR "buildTranslatedAAFeature(): getChild(TranslatedAAFeature) returned '$aaf'\n";
-    print STDERR " CHECK - buildTranslatedAAFeature - rnafeature_id=" . $rnaf->getId() . "\n";
+    print STDERR "CHECK - buildTranslatedAAFeature - rnafeature_id=" . $rnaf->getId() . "\n";
     ##
     # TranslatedAAFeature
     ##
@@ -1907,9 +2008,12 @@ sub buildTranslatedAAFeature {
     };
 
     unless ($aaf) {
+	print STDERR "DEBUG-TAAF1, BP\n";
         $aaf = GUS::Model::DoTS::TranslatedAAFeature->new ($h);
         $aaf->setParent($rnaf);
+	print STDERR "DEBUG-Parent1:$rnaf, BP\n";
         $aaf->setParent($aa_seq);
+	print STDERR "DEBUG-Parent2:$rnaf, BP\n";
     }
 
     foreach my $att (keys %{$h}) {
@@ -1927,12 +2031,11 @@ sub buildTranslatedAAFeature {
     ###
     # ProteinFeature
     ###
-
     #my $pf = $rnaf->getChild('GUS::Model::DoTS::ProteinFeature', 1);  #TW
     #print STDERR "buildTranslatedAAFeature(): getChild(ProteinFeature) returned '$pf'\n";
 
     my $name       = $rnaf->getName;
- 
+    
     return ($aaf);
 }
 
@@ -2017,18 +2120,21 @@ sub buildAAFeatures {
     ###
     # Create SignalPeptide
     ##
+    print STDERR "Call method SignalPeptide, BPG\n";
     my @signalP_objects = $self->buildSignalPFeature ($misc_feature_sp, $aa_seq);
     push (@aa_objects, @signalP_objects);
 
     ###
     # Create Transmembrane domain
     ##
+    print STDERR "Call method Transmembrance domain\n";
     my @transmembrane_objects = $self->buildTransmembraneDomainFeature ($misc_feature_tm, $aa_seq);
     push (@aa_objects, @transmembrane_objects);
 
     ###
     # Create GPI-anchor (DoTS.PostTranslationalModFeature)
     ##
+    print STDERR "Call method GPI-anchor\n";
     my @transmembrane_objects = $self->buildGPIAnchorFeature($aa_seq);
     push (@aa_objects, @transmembrane_objects);
 
@@ -2339,7 +2445,7 @@ sub buildGPIAnchorFeature {
     print STDERR "Processing GPI-Anchor data...\n" if $self->{'debug'};
 
     if (not $self->{bioperlFeature}->has_tag ('gpi_anchor')) {
-        print STDERR "  - no /gpi_anchor qualifier, returning." if $self->{'debug'};
+        print STDERR "  - no /gpi_anchor qualifier, returning.\n" if $self->{'debug'};
         return ();
     }
 
@@ -2581,7 +2687,7 @@ sub buildDomainFeature {
 
 sub buildGene {
     my ($self, $gf) = @_;
-
+    
     my $debug            = $self->{debug};
     my $bioperl_feature  = $self->{bioperlFeature};
 
@@ -3099,6 +3205,7 @@ ORDER BY release_date, external_database_release_id]);
         my %edrId = ();
 
         foreach my $aspect ('GO Process', 'GO Component', 'GO Function'){
+	#TWforeach my $aspect ('GO_process', 'GO_component', 'GO_function'){
             $sth->execute($aspect);
             my $fetch_all     = $sth->fetchall_arrayref();
             my $last_index    = @{$fetch_all} - 1;
@@ -3208,6 +3315,7 @@ sub getContactId {
 #             Evidence could link to anything in the DB in theory i.e.
 #             NOTE: and Interpro:0 is a Interpro to GO mapping and will have
 #             a fake record.
+#             NOTE(TW):This linking is NOT used by PlasmoDB
 #
 # with/from : Almost the same as db_xref BUT linked against
 #             GOAssociationInstEvidCode 'cos only some some GO codes will need
@@ -3218,7 +3326,7 @@ sub getContactId {
 ###
 
 sub buildGOAssociations {
-    my ($self, $dbh, $protein_object) = @_;
+    my ($self, $dbh, $taas_object) = @_;
 
     my $debug           = $self->{debug};
     my $bioperl_feature = $self->{bioperlFeature};
@@ -3233,6 +3341,7 @@ sub buildGOAssociations {
         return ();
     }
 
+    #TW-need to check that ids are correct
     my %edrId             = %{$self->getReleaseIds($dbh)};
     my @go_aspect_objects = ();
 
@@ -3247,23 +3356,25 @@ sub buildGOAssociations {
         }
 
         unless (defined($hash{'aspect'}) &&
-                defined($hash{'GOid'})   &&
-                defined($hash{'evidence'}) &&
-                defined($hash{'db_xref'}) ){
+                #defined($hash{'GOid'})   &&  #TW-use capital I instead of i
+                defined($hash{'GOId'})   &&
+		defined($hash{'evidence'}) &&
+                #defined($hash{'dbref'}) ){ #TW
+		defined($hash{'db_xref'}) ){
             print STDERR "WARNING: Ignoring incomplete or invalid GO field: '$go_qual'\n";
             next;
         }
 
-        if ($hash{'evidence'} =~ /\?/ || $hash{'GOid'} =~ /\?/) {
+        if ($hash{'evidence'} =~ /\?/ || $hash{'GOId'} =~ /\?/) {
             print STDERR "WARNING: Ignoring invalid GO field: '$go_qual' - wildcards present\n";
             next;
         }
 
-        my ($go_id) = ($hash{'GOid'} =~ /GO:(\d+)/);
+        my ($go_id) = ($hash{'GOId'} =~ /GO:(\d+)/);
 
         push @go_aspect_objects,
              $self->createGoObjects($dbh, $hash{'aspect'}, $go_id, $hash{'evidence'}, $hash{'db_xref'},
-                                    $hash{'with'}, $hash{'date'}, $protein_object);
+                                    $hash{'with'}, $hash{'date'}, $taas_object);
     }
     return @go_aspect_objects; 
 }
@@ -3282,11 +3393,13 @@ sub buildGOAssociations {
 ##
 
 sub buildGO_aspectAssociation {
-    my ($self, $dbh, $GO_aspect, $protein_object) = @_;
+    my ($self, $dbh, $GO_aspect, $taas_object) = @_;
     my $debug           = $self->{debug};
     my $bioperl_feature = $self->{bioperlFeature};
 
+    print STDERR "METHOD-GO:buildGO_aspectAssociation()\n";
     return unless $bioperl_feature->has_tag($GO_aspect);
+    print STDERR "Found a GO tag\n";
 
     my %edrId             = (); # ExternalDatabaseReleaseIds for process, component and function
     my $edrId4Aspect      = undef;
@@ -3294,12 +3407,20 @@ sub buildGO_aspectAssociation {
     my @go_aspect         = ();
 
     my ($go_aspect) = ($GO_aspect =~ /^GO_(.+)$/); # Store 'process', not 'GO_process'
+    print STDERR "GO_ASPECT:$go_aspect\n";
 
     @go_aspect    = $bioperl_feature->each_tag_value ($GO_aspect);
-    %edrId        = %{$self->getReleaseIds($dbh)};
+    %edrId        = %{$self->getReleaseIds($dbh)};  
+#TW-check that proper ext_db_rel_id are used    
+    #%edrId         = 
+#	(function  => 7798, 
+#	 component => 7799,
+#	 process   => 7800,
+#	 );  #TW-this is hardcoded in other plugin, re-use for ease of coding
+    
     $edrId4Aspect = $edrId{$go_aspect};
 
-    my $table_id_4_protein = $self->getTableId($dbh, 'DoTS', 'Protein');
+    my $table_id_4_protein = $self->getTableId($dbh, 'DoTS', 'TranslatedAASequence');
     my %already_created    = ();
 
     print STDERR "-== GO ==-\n";
@@ -3315,9 +3436,12 @@ sub buildGO_aspectAssociation {
         my ($with)     = ($go_data[3] =~ /\s*source\s*\(\w+\;\s*(.+\s*\))/); # source (TAS; PMID:8662204)
         my $date       = ''; # Is set in /GO qual, no GO_xxx qualifiers
 
+	print STDERR "\nDEBUG:DB_XREF:$db_xref\n";
+
         unless (defined $already_created{$go_id}) {
             $already_created{$go_id}++;
 
+	    #TW-need to clean-up this section
             print STDERR "$go_qual -=- \$go_id = $go_id, \$evi_code = $evi_code, \$db_xref = $db_xref\n";
 
             if ($evi_code =~ /\?/ ||$evi_code =~ /\*/  || $evi_code =~ /\*/ || $go_id =~ /\?/ || $go_id !~ /\d+/) {
@@ -3326,7 +3450,7 @@ sub buildGO_aspectAssociation {
             }
 
             push @go_aspect_objects,
-               $self->createGoObjects($dbh, $go_aspect, $go_id, $evi_code, $db_xref, $with, $date, $protein_object);
+               $self->createGoObjects($dbh, $go_aspect, $go_id, $evi_code, $db_xref, $with, $date, $taas_object);
         }
         else {
             # FIXME: One GO ID can have multiple evidence codes
@@ -3351,19 +3475,27 @@ sub buildGO_aspectAssociation {
 ################################################################################
 
 sub createGoObjects {
-    my ($self, $dbh, $go_aspect, $go_id, $evi_code, $db_xref, $with, $date, $protein_object) = @_; 
-
+    my ($self, $dbh, $go_aspect, $go_id, $evi_code, $db_xref, $with, $date, $taas_object) = @_; 
+    print STDERR "\n";
+    
     if ($self->{'debug'}) {
         print STDERR "createGoObjects() called with these values;\n",
                      "   \$go_aspect      = $go_aspect, \$go_id = $go_id, \$evi_code = $evi_code\n",
                      "   \$db_xref        = $db_xref,   \$with  = $with,  \$date     = $date,\n",
-                     "   \$protein_object = $protein_object\n";
+                     "   \$taas_object = $taas_object\n";
     }
 
-    my %edrId              = %{$self->getReleaseIds($dbh)};
+    #my %edrId              = %{$self->getReleaseIds($dbh)};
+    #TW-hardcode hash of ids, same as used by other plugin
+    my %edrId  =   
+	(F => 7798,
+	 C => 7799,
+	 P => 7800,
+	 );
     my $edrId4Aspect       = $edrId{$go_aspect};
-    my $table_id_4_protein = $self->getTableId($dbh, 'DoTS', 'Protein');
-
+    print STDERR "EDR:$edrId4Aspect\n";
+    my $table_id_4_taas = $self->getTableId($dbh, 'DoTS', 'TranslatedAASequence');
+    print STDERR "TID:$table_id_4_taas\n";
 
     my $go_term_obj = GUS::Model::SRes::GOTerm->new ({"go_id", "GO:".$go_id,
                                                       'external_database_release_id', $edrId4Aspect });
@@ -3375,24 +3507,24 @@ sub createGoObjects {
     }
     else {
         if ($self->{'debug'}) {
-            print STDERR "createGoObjects(): \$table_id_4_protein = $table_id_4_protein, \$protein_object->getProteinId() = ",$protein_object->getProteinId(),"\n";
+            print STDERR "createGoObjects(): \$table_id_4_taas = $table_id_4_taas, \$taas_object->getId() = ",$taas_object->getId(),"\n";
         }
 
         #print SDTERR "\n$GO_aspect Term id : $go_id existed, about to create a GOAssociation object\n";
         $go_ass = GUS::Model::DoTS::GOAssociation->new({'go_term_id'       => $go_term_obj->getGoTermId(),
                                                         'review_status_id' => $REVIEW_STATUS_ID,
-                                                        'table_id'         => $table_id_4_protein,
-                                                        'row_id'           => $protein_object->getProteinId(),
+                                                        'table_id'         => $table_id_4_taas,
+                                                        'row_id'           => $taas_object->getId(),
                                                         'is_deprecated'    => 0,
                                                         'is_not'           => 0,
                                                         'defining'         => 0,
                                                     });
+	print STDERR "Created a new GOAssociation Object:$go_ass\n";
+	
 
 # URGENT FIXME FIXME
-#
 # The way it is currently written the GO stuff is not versioned.
-#
-
+#TW-what needs to be versioned???
 
         # May already be in DB
         my $go_ass_exists = $go_ass->retrieveFromDB();
@@ -3405,18 +3537,20 @@ sub createGoObjects {
         }
         else {
             $go_ass->submit();
-            print STDERR "*** GOAssociation created *** \n" if $self->{'debug'};
-
-            my $go_ass_inst_loe = $self->createGOAssociationInstanceLOE('in-house curation', '');
-            print STDERR "*** createGOAssociationInstanceLOE ran, returned '$go_ass_inst_loe' ***\n"
+            print STDERR "*** GOAssociation created *** \n\n" if $self->{'debug'};
+	    
+            #TW-my $go_ass_inst_loe = $self->createGOAssociationInstanceLOE('in-house curation', '');
+	    my $go_ass_inst_loe = $self->createGOAssociationInstanceLOE('Curator', '');  #TW 
+	    #TW-matches a name in CBIL version of this table
+            print STDERR "*** createGOAssociationInstanceLOE ran, returned '$go_ass_inst_loe' ***\n\n"
                 if $self->{'debug'};
 
             my $go_ass_inst = $self->createGOAssociationInstance($dbh, $go_ass, $go_ass_inst_loe, $db_xref, $date);
-            print STDERR "*** createGOAssociationInstance ran *** \n" if $self->{'debug'};
+            print STDERR "*** createGOAssociationInstance ran *** \n\n" if $self->{'debug'};
 
             if ($go_ass_inst) {
                 $self->createGOAssocInstEvidCode($dbh, $go_ass_inst, $evi_code, $with); # need XML of CBIL GOEvidenceCode
-                print STDERR "*** ExternalDatabaseLink ran ***\n" if $self->{'debug'};
+                print STDERR "*** createGOAssocInstEvidCode ran ***\n\n" if $self->{'debug'};
             }
         }
     }
@@ -3434,14 +3568,16 @@ sub createGoObjects {
 
 sub createGOAssociationInstanceLOE {
     my ($self, $name, $desc) = @_;
-
+    
+    print STDERR "In createGOAssociationInstanceLOE()\n";
     my $go_ass_inst_loe =
       GUS::Model::DoTS::GOAssociationInstanceLOE->new({'name'        => $name,
                                                        'description' => $desc,
                                                    });
     my $exists = 0;#$go_ass_inst_loe->retrieveFromDB(); # TEST
     $go_ass_inst_loe->submit() unless $exists;
-
+    print STDERR "GAILOE:$go_ass_inst_loe\n";
+    
     return $go_ass_inst_loe;
 }
 
@@ -3457,23 +3593,32 @@ sub createGOAssociationInstanceLOE {
 sub createGOAssociationInstance {
     my ($self, $dbh, $go_ass, $go_ass_inst_loe, $db_xref, $date) = @_;
 
-    ##
+    print STDERR "In createGOAssociationInstance()\n";
+
+    #!!!!!!!!!!
+    # NOTE: external_database_release_id is nullable in this table
+    #!!!!!!!!!!
+    
+    #####
     # ExternalDatabaseReleaseId may not exist...
-    ##
+    #####
+    #print STDERR "DB_XREF:$db_xref\n";
     my ($db_xref_name, $db_xef_id) = ($db_xref =~ /(.+):(.+)/);
-    my ($edri)                     = $self->getExternalDatabaseReleaseId($dbh, $db_xref_name);
+    #print STDERR "AFTER PATTERN MATCH - DB_XREF_NAME:$db_xref_name\tDB_XEF_ID:$db_xef_id\n";
 
-    print STDERR "createGOAssociationInstance(): \$edri = $edri\n";
-    print STDERR "\n";
+    #TW-START-------------------------
+    #my ($edri)                     = $self->getExternalDatabaseReleaseId($dbh, $db_xref_name);
+    #print STDERR "Method called createGOAssociationInstance()\$edri = $edri\n";
 
-    unless ($edri) {
-        print STDERR "\nWARNING: Could not get an ExternalDatabaseReleaseId for $db_xref_name ($db_xref)\n";
-        print STDERR "         ", $self->{bioperlFeature}->primary_tag, " [", $self->{bioperlFeature}->start, "..", $self->{bioperlFeature}->end, " \n";
-        print STDERR "         \$db_xref = $db_xref, \$date = $date\n";
-        return undef;
-    }
-
-    print STDERR "createGOAssociationInstance(): Everything ok?\n";
+    #unless ($edri) {
+    #    print STDERR "\nWARNING: Could not get an ExternalDatabaseReleaseId for $db_xref_name ($db_xref)\n";
+    #    print STDERR "         ", $self->{bioperlFeature}->primary_tag, " [", $self->{bioperlFeature}->start, "..", $self->{bioperlFeature}->end, " \n";
+    #    print STDERR "         \$db_xref = $db_xref, \$date = $date\n";
+    #    return undef;
+    #}
+    
+    #print STDERR "createGOAssociationInstance(): Everything ok?\n";
+    #TW-END---------------------
 
     ##
     # Get external_database_release_id for $db_xref (i.e. SPTR:123)
@@ -3485,38 +3630,55 @@ sub createGOAssociationInstance {
                                                     'is_primary'           => 0,
                                                     'review_status_id'     => $REVIEW_STATUS_ID,
 
-                                                    #'external_database_release_id' => , # Not used?
-                                                    #'source_id'                    => ,
+                                                    #'external_database_release_id' => , # Not used?  #TW-use to debug
+                                                    #'source_id'                    => , #TW-use for debug
                                                 });
     $go_ass_inst->submit();
+    print STDERR "Created a new GOAssociationInstance object:$go_ass_inst\n";
+    
 
+    #!!!!!!!!!!!!!
+    #TW-this table has never neen used by PlasmoDB, therefore do not use now
+    #!!!!!!!!!!!!!
+    
+    #TW-START--------------------------
     ##
     # Create  SRes.ExternalDatabaseEntry  for the fact/db_xref
     # Using the above fetched ExternalDatabaseRelease id
     ##
-    my $ede = GUS::Model::SRes::ExternalDatabaseEntry->new({'external_database_release_id' => $edri,
-                                                            'external_primary_identifier'  => $db_xef_id,
-                                                            'name'                         => $db_xref,
-                                                            'review_status_id'             => $REVIEW_STATUS_ID,
-                                                        });
-    my $exists = 0; # $ede->retrieveFromDB(); # TEST
-    $ede->submit() unless ($exists);
+    #print STDERR "--build SRes.ExternalDatabaseEntry object\n";
+    #my $ede = GUS::Model::SRes::ExternalDatabaseEntry->new({'external_database_release_id' => $edri,
+    #                                                        'external_primary_identifier'  => $db_xef_id,
+    #                                                        'name'                         => $db_xref,
+    #                                                        'review_status_id'             => $REVIEW_STATUS_ID,
+    #                                                    });
+    #my $exists = 0; # $ede->retrieveFromDB(); # TEST
+    #$ede->submit() unless ($exists);
+    #print STDERR "--submitted SRes.ExternalDatabaseEntry object\n";
+    #TW-END------------------------
 
+
+    #TW-START----------------------------
+    #This table is not populated by PlasmoDB
+    #######
     # Now GOAssociationInstance can be 'joined' together with ExternalDatabaseEntry with Evidence
-    #
-    my $table_id_4_gai = $self->getTableId($dbh, 'DoTS', 'GOAssociationInstance');
-    my $table_id_4_ede = $self->getTableId($dbh, 'SRes', 'ExternalDatabaseEntry');
+    ######
+    #print STDERR "--build DoTS::Evidence object\n";
+    #my $table_id_4_gai = $self->getTableId($dbh, 'DoTS', 'GOAssociationInstance');
+    #my $table_id_4_ede = $self->getTableId($dbh, 'SRes', 'ExternalDatabaseEntry');
 
-    my $evidence = GUS::Model::DoTS::Evidence->new({'target_table_id' => $table_id_4_gai,
-                                                    'target_id'       => $go_ass_inst->getId(),
-                                                    'fact_table_id'   => $table_id_4_ede,
-                                                    'fact_id'         => $ede->getId(),
-                                                    'evidence_group_id' => 1, # 1 supports association
-                                                });
-    $exists = 0; # $evidence->retrieveFromDB(); TEST
-    $evidence->submit() unless $exists;
+    #my $evidence = GUS::Model::DoTS::Evidence->new({'target_table_id' => $table_id_4_gai,
+    #                                                'target_id'       => $go_ass_inst->getId(),
+    #                                                'fact_table_id'   => $table_id_4_ede,
+    #                                                'fact_id'         => $ede->getId(),
+    #                                                'evidence_group_id' => 1, # 1 supports association
+    #                                            });
+    #$exists = 0; # $evidence->retrieveFromDB(); TEST
+    #$evidence->submit() unless $exists;
+    #print STDERR "--submitted oTS::Evidence object\n";
 
     return $go_ass_inst;
+    #TW-END-----------------------------------
 }
 
 ################################################################################
@@ -3592,6 +3754,7 @@ sub createGOAssocInstEvidCode {
     }
 
     print STDERR "createGOAssocInstEvidCode(): \$evi_code = '$evi_code', \$exists = $exists\n";
+    print STDERR "GO_EV_CODE:$go_evidence_code, GO_ASSOC_INST_ID:$go_ass_inst\n";
 
     my $gaiec =
       GUS::Model::DoTS::GOAssocInstEvidCode->new({'go_evidence_code_id'        => $go_evidence_code->getId(),
