@@ -648,7 +648,9 @@ sub className2oracleName {
 
 =item C<getExtDbRlsId($dbName, $dbVersion)>
 
-Retrieve an external database release id from SRes::ExternalDatabaseRelease given the name of a database and the version corresponding to the release
+Retrieve an external database release id from SRes::ExternalDatabaseRelease given the name of a database and the version corresponding to the release.  
+
+Die if none found.  (If you just want to test for its existence, call the method in an eval{} block.)
 
 B<Parameters:>
 
