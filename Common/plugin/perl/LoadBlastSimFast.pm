@@ -1,5 +1,4 @@
 package GUS::Common::Plugin::LoadBlastSimFast;
-
 @ISA = qw(GUS::PluginMgr::Plugin); 
 use strict;
 
@@ -314,7 +313,8 @@ sub parseSpan {
 
   my @vals = split(/:/, $spanLine);
   die "invalid HSP line: '$spanLine'\n" unless $vals[0] =~ /HSP/;
-  die "invalid HSP line (wrong number of columns):  '$spanLine'\n" unless scalar @vals == 13;
+  my $columnCount = scalar @vals;
+  die "invalid HSP line (wrong number of columns, have $columnCount , should be 13):  '$spanLine'\n" unless $columnCount == 13;
 
   my %span;
   $span{number_identical} = $vals[2];
@@ -430,7 +430,7 @@ sub getInsertSpanStmt {
   my $rowGroupId = $self->getAlgInvocation()->getRowGroupId();
   my $rowProjectId = $self->getAlgInvocation()->getRowProjectId();
 
-  my $nextvalSql = $db->getDbPlatform()->nextValSql("dots.SimilaritySpan");
+  my $nextvalSql = $db->getDbPlatform()->nextVal("dots.SimilaritySpan");
 
   my $sql = 
 "insert into dots.SimilaritySpan Values " .
