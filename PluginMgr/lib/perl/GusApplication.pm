@@ -95,8 +95,18 @@ SQL
 
   # none found
   if (scalar @$imps == 0) {
-    $M->initStatus("No matching Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision");
-    $P->log('ERROR-IMP', $M->getStatus);
+    $sql = "select * from core.algorithmimplementation where executable = '$e'";
+    my $imps_again = $P->sql_get_as_hash_refs($sql);
+    
+    if (scalar @$imps_again == 0) {
+      $M->initStatus("No Core.AlgorithmImplementation found for $e");
+      $P->log('ERROR-IMP', $M->getStatus);
+      $P->log('ERROR-IMP', "Please use 'ga +create $e --commit'");
+    } else {
+      $M->initStatus("No Core.AlgorithmImplementation found for $e cvs revision $cvsRevision");
+      $P->log('ERROR-IMP', $M->getStatus);
+      $P->log('ERROR-IMP', "Please use 'ga +update $e --commit'");
+    }
     $P->setOk(0);
   }
 
@@ -113,7 +123,10 @@ SQL
 
   elsif ($M->getCla->{commit} &&
 	 $imps->[0]->{EXECUTABLE_MD5} ne $P->getCheckSum()) {
-    $M->initStatus("The md5 checksum of the plugin $e executable file (marked with cvs revision $cvsRevision) doesn't match the md5 checksum stored in the database for the plugin with cvs revision $cvsRevision.  It therefore seems that the plugin has been changed but not commited to cvs.  Please use cvs commit on the plugin file");
+    $M->initStatus("The md5 checksum of $e's executable file (cvs revision $cvsRevision) doesn't match the md5 checksum in the database for that plugin and revision. IE, the plugin has been changed but not commited and updated.  Please:
+                   - cvs commit the plugin file
+                   - use the build system to install it
+                   - run 'ga +update $e --commit'");
     $P->log('ERROR-IMP', $M->getStatus);
     $P->setOk(0);
   }
@@ -773,6 +786,9 @@ sub create_or_update_implementation {
       $apk_gus->setParent($alg_imp_gus);
     }
     $alg_gus->submit;
+    $M->log('INFO', "Plugin $plugin_name_s registered with cvs revision '$cvsRevision' and cvs tag '$cvsTag'");
+    $M->log('INFO', "...Just kidding: you didn't --commit")
+      unless ($M->getCla->{commit});
   }
 }
 
