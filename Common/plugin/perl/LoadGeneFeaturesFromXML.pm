@@ -208,7 +208,7 @@ sub setAlgId {
   my $self = shift;
   $self->log("Finding Algorithm");
 
-  my %alg = ( $ctx->{cla}->{Algorithm} || name => 'Pf Annotation' );
+  my %alg = ( name => $ctx->{cla}->{Algorithm} ||  'Pf Annotation' );
 
   my $alg_gus = GUS::Model::Core::Algorithm->new(\%alg);
   if ($alg_gus->retrieveFromDB){
