@@ -449,9 +449,9 @@ sub getImageFileNames {
     next if ($imageFile eq '.' || $imageFile eq '..'); # skip '.' and '..' files
     
     my ($fileName, $extention) = $imageFile =~ /(.+)\.(\w+$)/;
-    my ($assay, $type, $theRest) = $fileName =~ /(.+)\_(.+)\_/;
+    my ($assay, $type) = $fileName =~ /(.+)\_(.+)/;
 
-    if ($type eq "Cy5Cy3") {
+    if ($type eq "Cy5Cy3" || $type eq "Cy3Cy5") {
       $imageFilesRef->{$assay."_Cy5"} = $imageFilesDir."/".$imageFile;
       $imageFilesRef->{$assay."_Cy3"} = $imageFilesDir."/".$imageFile;
 
