@@ -82,8 +82,13 @@ sub new {
 		   isList => 0,
 	      }),
 
-	 booleanArg ({name => 'delete',
+ 	 booleanArg ({name => 'delete',
 	  descr => 'Set this to delete all GO Associations for sequences with the specified external database release id and organism specified by the given file',
+	  reqd => 0,
+      }),
+
+ 	 booleanArg ({name => 'exclude_iea',
+	  descr => 'Set this quickly skip all sequences that only have GO Associations annotated with evidence set to IEA (inferred by electronic annotation)',
 	  reqd => 0,
       }),
  
@@ -139,11 +144,11 @@ sub new {
                      constraintFunc => undef,
                      isList => 0,
                 }),
-	 integerArg({name => 'org_external_db_release_list',
+	 stringArg({name => 'org_external_db_release_list',
 	  descr => 'External database release id for the sequences of the organism you are loading.  Most organisms only need one, but if you are loading gene_association.goa_sptr, it is recommended you provide the release ids for both Swissprot and Trembl sequences',
 	  reqd => 1,
           constraintFunc => undef,
-          isList => 1,
+          isList => 0,
           }),
 
 	 integerArg({name => 'test_number',
@@ -282,6 +287,10 @@ sub __processAssociations{
 
     my $newAssocCount = 0;
     my $wrongBranchCount = 0;
+
+    if ($self->getCla()->{exclude_iea}){
+	return (0, 0, 0) if $self->__onlyIEAForSeq($entries);
+    }
 
     my $idAccessor = $self->{orgInfo}->{idAccessor};
     my $dbIdCol = $self->{orgInfo}->{dbIdCol};
@@ -811,6 +820,15 @@ sub __formatEntryDate{
     return $sqlDate;
 }
 
+sub __onlyIEAForSeq {
+    my ($self, $entries) = @_;
+    foreach my $entry (@$entries){
+	return 0 if ($entry->getEvidence() ne 'IEA');
+    }
+    $self->log("skipping this sequence since it only has IEA annotation");
+    return 1;
+}
+
 #map from the name of an evidence code to its GUS Id and review status
 sub __loadEvidenceMaps {
     my ($self) = @_;
@@ -823,7 +841,7 @@ sub __loadEvidenceMaps {
 	$evidenceMap->{$name}->{evdGusId} = $evdGusId;
     }
     
-    $evidenceMap->{IC}-> {reviewStatus} = 1; 
+    $evidenceMap->{IC}->{reviewStatus} = 1; 
     $evidenceMap->{IDA}->{reviewStatus} = 1;
     $evidenceMap->{IEA}->{reviewStatus} = 0;
     $evidenceMap->{IEP}->{reviewStatus} = 1,
@@ -832,9 +850,9 @@ sub __loadEvidenceMaps {
     $evidenceMap->{IPI}->{reviewStatus} = 1;
     $evidenceMap->{ISS}->{reviewStatus} = 1;
     $evidenceMap->{NAS}->{reviewStatus} = 1;
-    $evidenceMap->{ND}-> {reviewStatus} = 0;
+    $evidenceMap->{ND}->{reviewStatus} = 0;
     $evidenceMap->{TAS}->{reviewStatus} = 1;
-    $evidenceMap->{NR}-> {reviewStatus} = 0;
+    $evidenceMap->{NR}->{reviewStatus} = 0;
     
     $self->{evidenceMap} = $evidenceMap;
 }
