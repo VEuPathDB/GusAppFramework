@@ -141,7 +141,15 @@ public class ObjectCache implements java.io.Serializable {
      * @return A Vector containing all the GUSRow objects in the cache.
      */
     public Vector getAll () {
-	return (Vector)(objects.clone());
+	Enumeration all = objects.elements();
+	int n = objects.size();
+	Vector v = new Vector(n);
+
+	while (all.hasMoreElements()) {
+	    GUSRow row = (GUSRow)(all.nextElement());
+	    v.addElement(row);
+	}
+	return v;
     }
 
     /**

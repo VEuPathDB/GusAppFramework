@@ -28,7 +28,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
     // JC: temporary
     //
-    protected static boolean DEBUG = true;
+    protected static boolean DEBUG = false;
 
     // ------------------------------------------------------------------
     // Instance variables
@@ -367,12 +367,23 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 						 " and " + owner + "." + tname);
 	}
 
-	Long parentPk = (Long)child.get(childAtt);
-	
-	System.err.println("owner = " + owner + " tname = " + tname + " parentPk = " + parentPk);
+	Object parentPk = child.get(childAtt);
+	long parentPkLong = -1;
 
+	if (parentPk instanceof Long) {
+	    parentPkLong = ((Long)parentPk).longValue();
+	} else if (parentPk instanceof Integer) {
+	    parentPkLong = ((Integer)parentPk).longValue();
+	} else if (parentPk instanceof Short) {
+	    parentPkLong = ((Short)parentPk).longValue();
+	} else if (parentPk instanceof BigDecimal) {
+	    parentPkLong = ((BigDecimal)parentPk).longValue();
+	} else {
+	    throw new IllegalArgumentException("JDBCDatabaseConnection: primary key of " + child + " = " + parentPk);
+	}
+	
 	if (parentPk != null) {
-	    parent = this.retrieveObject(rel.getParentTableOwner(), rel.getParentTable(), parentPk.longValue(), null, null, null);
+	    parent = this.retrieveObject(rel.getParentTableOwner(), rel.getParentTable(), parentPkLong, null, null, null);
 	}
 
 	return parent;

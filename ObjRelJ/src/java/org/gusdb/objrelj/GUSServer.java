@@ -435,8 +435,8 @@ public class GUSServer implements ServerI {
 
 	s.addToHistory("retrieveParent: retrieved parent row " + parent + " for child row " + row);
 
-	// The addParent method should take care of the corresponding addChild call.
 	row.addParent(parent);
+	parent.addChild(row);
         return parent;
     }
 
@@ -451,8 +451,31 @@ public class GUSServer implements ServerI {
 	    parents = s.conn.retrieveParentsForAllObjects(children, parentOwner, parentName, childAtt);
 	}
 	catch (RemoteException re) {}
-
 	int nc = (children == null) ? 0 : children.size();
+
+	if (parents != null) {
+	    int np = parents.length;
+
+	    for (int i = 0;i < np;++i) {
+		GUSRow obj = s.cache.get(parents[i]);
+		
+		if (obj != null) {
+		    parents[i] = obj;
+		} else {
+		    s.cache.add(parents[i]);
+		}
+
+		// Can't be sure that the correspondence is correct unless the correct
+		// number of parents were retrieved, namely one for each child
+		//
+		if (nc == np) {
+		    GUSRow child = (GUSRow)(children.elementAt(i));
+		    child.addParent(parents[i]);
+		    parents[i].addChild(child);
+		}
+	    }
+	}
+
 	s.addToHistory("retrieveParentsForAllObjects: retrieved " + parents.length + " " + 
 		       parentOwner + "." + parentName + " object(s) for " + nc + " child row(s)");
 	return parents;
@@ -476,8 +499,8 @@ public class GUSServer implements ServerI {
 
 	s.addToHistory("retrieveChild: retrieved child " + child + " for parent " + row + ", childAtt=" + childAtt);
 
-	// The addChild method should take care of the corresponding addParent call.
 	row.addChild(child);
+	child.addParent(row);
         return child;
     }
 
@@ -501,6 +524,7 @@ public class GUSServer implements ServerI {
 	    if (co != null) {
 		children.setElementAt(co, i);
 		row.addChild(co);
+		co.addParent(row);
 	    } 
 
 	    // This object is new and should be cached
@@ -509,6 +533,7 @@ public class GUSServer implements ServerI {
 		s.cache.add(child);
 		numNew++;
 		row.addChild(child);
+		child.addParent(row);
 	    }
 
 	}

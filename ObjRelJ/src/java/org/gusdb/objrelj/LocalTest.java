@@ -110,6 +110,32 @@ public class LocalTest {
 	    System.out.println(naseq3.toXML());
 	    printFasta(naseq3,70);
 
+	    // Retrieve a small set of BLATAlignments
+	    //
+	    String alignSql = ("select * from dots.blatalignment " +
+			       "where target_na_sequence_id = 99873180 " +
+			       "and target_end <= 10000 "
+			       );
+	    Vector aligns = server.retrieveObjectsFromQuery(s1, "DoTS", "BLATAlignment", alignSql);
+	    System.out.println("Retrieved " + aligns.size() + " BLATAlignment objects");
+	    
+	    GUSRow[] parents = server.retrieveParentsForAllObjects(s1, aligns, "DoTS", "BLATAlignmentQuality", "blat_alignment_quality_id");
+	    System.out.println("Retrieved " + parents.length + " BLATAlignmentQuality parent objects");
+
+	    // Test getAllChildren
+	    //
+	    GUSRow baq = parents[0];
+	    System.out.println("BLATAlignmentQuality:");
+	    System.out.println(baq.toXML());
+
+	    Vector kids = baq.getAllChildren();
+	    int nkids = (kids == null) ? 0 : kids.size();
+
+	    System.out.println("Children of the above BLATAlignmentQuality object (" + nkids + "):");
+	    for (int k = 0;k < nkids;++k) {
+		System.out.println("  " + (GUSRow)(kids.elementAt(k)));
+	    }
+
 	} catch (Throwable t) {
 	    t.printStackTrace(System.err);
 	}
