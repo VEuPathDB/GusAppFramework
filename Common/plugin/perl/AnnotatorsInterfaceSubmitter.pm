@@ -561,7 +561,7 @@ sub submitAssocObjects {
 
 	#see if Assoc already exists as deprecated and if so un-deprecate it.  Sets assoc Id by side effect.
 	$assoc = $self->checkIfAssocDeprecated($assoc);
-	print STDERR "checked if assoc deprecated, values before submitting are:\n " .  $assoc->toXML() . "\n and referenece is " . $assoc . "\n";
+#	print STDERR "checked if assoc deprecated, values before submitting are:\n " .  $assoc->toXML() . "\n and referenece is " . $assoc . "\n";
 	$assoc->submit();
 #	print STDERR "ASSOCIATION: \n\t assocId: " . $assoc->getGoAssociationId() . " goTermId: " . $assoc->getGoTermId() . " IsNot: " . $assoc->getIsNot() . " isDeprecated: " . $assoc->getIsDeprecated() . " \n\t defining " . $assoc->getDefining() . " ReviewStatus: " . $assoc->getReviewStatusId() . "\n\n";
 	$assocHash->{$assoc->getGoTermId()} = $assoc->getGoAssociationId();
@@ -577,7 +577,7 @@ sub submitAssocObjects {
 sub checkIfAssocDeprecated {
 
     my ($self, $goAssociation) = @_;
-    print STDERR "checking if assoc with id " . $goAssociation->getGoAssociationId() . " is deprecated\n";
+ #   print STDERR "checking if assoc with id " . $goAssociation->getGoAssociationId() . " is deprecated\n";
     if (!$goAssociation->getGoAssociationId()){ #only check if newly created go association
 	my $rowId = $goAssociation->getRowId();
 
@@ -587,21 +587,23 @@ sub checkIfAssocDeprecated {
                    and table_id = 180
                    and go_term_id = $goTermId
                    and is_deprecated = 1";
-	print STDERR "no existing id, newly created, running query " . $sql . "\n";
+#	print STDERR "no existing id, newly created, running query " . $sql . "\n";
 	my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
 	my $finalAssoc = GUS::Model::DoTS::GOAssociation->new();
-	print STDERR "input object: " . $goAssociation . " and created object " . $finalAssoc . "\n";
+#	print STDERR "input object: " . $goAssociation . " and created object " . $finalAssoc . "\n";
 	while (my ($goAssocId) = $sth->fetchrow_array()){
-	    print STDERR "retrieved result $goAssocId existing in db\n";
+#	    print STDERR "retrieved result $goAssocId existing in db\n";
 	    $finalAssoc->setGoAssociationId($goAssocId);
 	}
-	$finalAssoc->retrieveFromDB();
-	$finalAssoc->setIsNot($goAssociation->getIsNot());
-	$finalAssoc->setIsDeprecated(0);
-	$finalAssoc->setReviewStatusId(1);
-	$finalAssoc->setDefining($goAssociation->getDefining);
-	$goAssociation = $finalAssoc;
-	print STDERR "input object is now " . $goAssociation . "\n";
+        if ($finalAssoc->getGoAssociationId()){
+          $finalAssoc->retrieveFromDB();
+          $finalAssoc->setIsNot($goAssociation->getIsNot());
+          $finalAssoc->setIsDeprecated(0);
+          $finalAssoc->setReviewStatusId(1);
+          $finalAssoc->setDefining($goAssociation->getDefining);
+          $goAssociation = $finalAssoc;
+        }
+#	print STDERR "input object is now " . $goAssociation . "\n";
     }
     return $goAssociation;
 }
