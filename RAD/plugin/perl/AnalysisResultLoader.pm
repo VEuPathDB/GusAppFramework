@@ -478,7 +478,7 @@ sub readDataFile {
   my %header;
   my %position;
   my $line = "";
-
+  $self->log("Checking the data file header".);
   while ($line =~ /^\s*$/) {
     last unless $line = <$fh>;
   }
@@ -519,6 +519,9 @@ sub readDataFile {
   my $dbh = $self->getQueryHandle();
   while ($line=<$fh>) {
     $line_num++;
+    if ($line_num % 200 == 0) {
+      $self->log("Reading line $line_num in the data file, after the header .");
+    }
     if ($line =~ /^\s*$/) {
       next;
     }
@@ -659,7 +662,7 @@ sub insertAnalysisResults {
 
   for (my $i=$start_line; $i<=$end_line; $i++) {
     if ($i % 200 == 0) {
-      $self->log("Working on the $i-th data line.");
+      $self->log("Inserting data from the $i-th line.");
     }
     if (defined $data->[$i] && $data->[$i]->{'discard'} == 0) {
       $num_results++;
