@@ -1,11 +1,11 @@
 
 use strict 'vars';
 
-package ListAll;
+package GUS::GOPredict::RuleBrowser::ListAll;
 
 use vars qw(@ISA);
-use Module;
-@ISA = qw( Module );
+use GUS::GOPredict::RuleBrowser::Module;
+@ISA = qw( GUS::GOPredict::RuleBrowser::Module );
 
 # ----------------------------------------------------------------------
 
@@ -34,30 +34,43 @@ sub makePage {
 # commented out -- rule groups are no longer broken out into projectInfo records
 #	push(@items,
 #			 [ 'three', 'Rule Group'],
-#			 [ 'four', $H->e_pre(new A { viz => $group_name })],
+#			 [ 'four', $H->e_pre(new CBIL::Util::A { viz => $group_name })],
 #			);
 
 	# query GUS for members of this set.
 
 	my $rvw_sql = {
-								 Yes => 'AND r.review_status_id = 1',
-								 No  => 'AND r.review_status_id = 0',
+								 Yes => "AND r.review_status_id = 1\n",
+								 No  => "AND r.review_status_id = 0\n",
 								}->{$I->{rvw}};
 	my $cnf_sql = $I->{cnf} ne 'Any' ?
-								 sprintf( "AND r.confidence = '%s'", lc $I->{cnf}) :
+								 sprintf( "AND r.confidence = '%s'\n", lc $I->{cnf}) :
 								 '';
 	my $rty_sql = $I->{rty} ne 'Any' ?
-	sprintf("AND s.rule_type like '%s\%'",
+	sprintf("AND s.rule_type like '%s\%'\n",
 					$M->getReverseRuleMap->{$I->{rty}},
 				 ) : '';
-	my $lgo_sql = sprintf('AND s.number_of_annotated_proteins >= %d',
+	my $lgo_sql = sprintf("AND s.number_of_annotated_proteins >= %d\n",
 												$I->{lgo});
-	my $hgo_sql = sprintf('AND s.number_of_annotated_proteins <= %d',
+
+	my $minp_sql = $I->{minp}
+								 ? sprintf("AND s.p_value_threshold_exp >= -%d\n", abs($I->{minp}))
+								 : '';
+
+	my $maxp_sql = $I->{maxp}
+								 ? sprintf("AND s.p_value_threshold_exp < -%d\n", abs($I->{maxp}))
+								 : '';
+
+	my $hgo_sql = sprintf("AND s.number_of_annotated_proteins <= %d\n",
 												$I->{hgo} || 2000);
 
+	my $name_sql = $I->{pat}
+								 ? 'AND (m.name like \'' . $I->{pat} . '\' OR m.source_id like \''
+										. $I->{pat} . '\' OR f.name like \'' . $I->{pat} . "\')\n"
+								 : '';
+
 	my $sql = <<SQL;
-    SELECT /*+ RULE */
-           s.aa_motif_go_term_rule_set_id
+    SELECT s.aa_motif_go_term_rule_set_id
          , s.p_value_threshold_mant
          , s.p_value_threshold_exp
          , s.rule_type
@@ -68,9 +81,9 @@ sub makePage {
          , f.name       as go_name
          , r.review_status_id
          , r.confidence
-      FROM /* Core.ProjectInfo          p
-         , DoTS.ProjectLink          l
-         , */ DoTS.AaMotifGotermRuleSet s
+         , nvl(ra.rule_applications, 0) rule_applications
+      FROM gofuncb.rule_applications ra
+         , DoTS.AaMotifGotermRuleSet s
          , DoTS.MotifAaSequence      m
          , DoTS.AaMotifGoTermRule    r
          , SRES.GoTerm               f
@@ -82,14 +95,15 @@ sub makePage {
       AND r.aa_motif_go_term_rule_set_id = s.aa_motif_go_term_rule_set_id
       AND r.defining      = 1  /* ?? was node_is_leaf */
       AND r.go_term_id    = f.go_term_id
-      $rvw_sql
-      $cnf_sql
-      $rty_sql
-      $lgo_sql
-      $hgo_sql
-    ORDER BY s.number_of_annotated_proteins DESC
+      AND m.source_id not in
+        (select source_id from DoTS.RejectedMotif rm, SRes.ExternalDatabaseRelease edr
+         where rm.external_database_id = edr.external_database_id
+           and edr.external_database_release_id = m.external_database_release_id)
+      $rvw_sql $cnf_sql $rty_sql $lgo_sql $hgo_sql $minp_sql $maxp_sql $name_sql
+    AND s.aa_motif_go_term_rule_set_id = ra.aa_motif_go_term_rule_set_id(+)
+    ORDER BY rule_applications DESC
 SQL
-	#print STDERR $sql;
+	print STDERR $sql;
 	my $sh = $Q->prepareAndExecute($sql);
 	# headers
 	my $headers = [
@@ -120,6 +134,11 @@ SQL
 												 ],
 								 },
 
+								 { -g => 'Rule',
+									 -s => [ { -t => 'Applications',    -a => 'RULE_APPLICATIONS' },
+												 ],
+								 },
+
 								];
 
 	my $row_cb = sub {
@@ -137,6 +156,9 @@ SQL
 																$row->{P_VALUE_THRESHOLD_EXP});
 		$row->{NICE_RULE} = $M->getRuleMap()->{$row->{RULE_TYPE}} || "'$row->{RULE_TYPE}'";
 
+		# bug workaround: coerce RULE_APPLICATIONS to string so zeroes don't become question-marks
+		$row->{RULE_APPLICATIONS} = $row->{RULE_APPLICATIONS} . ' ';
+
 		$row->{DETAIL}
 		= $M->makeDetailLink($I,
 												 'rsid',
@@ -146,8 +168,8 @@ SQL
 		$row
 	};
 
-	require Lister;
-	my $lister = Lister->new($M);
+	require GUS::GOPredict::RuleBrowser::Lister;
+	my $lister = GUS::GOPredict::RuleBrowser::Lister->new($M);
 	my $nav_html   = $lister->makeNavButtons($M,$I,$H);
 	#push(@items, [ 'three', $nav_html] );
 	my $table_html = $lister->makeTable($I,
