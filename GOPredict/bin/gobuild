@@ -537,9 +537,6 @@ sub insertSwissprot {
     my $swissprotDir = $propertySet->getProp('swissprotDirectory');
 
     my $currentSwissprot = $propertySet->getProp('currentSwissprot');
-    if ($currentSwissprot =~ /(\S+).gz/){
-	$currentSwissprot = $1;
-    }
 
     my $spSeqFile = "$externalDbDir/$swissprotDir/$date/$currentSwissprot";
 
@@ -796,9 +793,7 @@ sub insertYeast {
     my $externalDbDir = $propertySet->getProp('externalDbDir');
     my $yeastDir = $propertySet->getProp('yeastDirectory');
     my $currentYeast = $propertySet->getProp('currentYeast');
-    if ($currentYeast =~ /(\S+).gz/){
-	$currentYeast = $1;
-    }
+
     my $yeastSeqFile = "$externalDbDir/$yeastDir/$date/$currentYeast";
     
     my $logFile = "$pipelineDir/logs/insertYeast.log";
