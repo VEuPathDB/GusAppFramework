@@ -71,15 +71,28 @@ sub new {
                    o => 'restart_number',
                    r => 0,
                  },
-		 { h => 'Comma delimited list of taxon_ids to load',
+		 { h => 'Comma delimited list of scientific names to load',
+		   t => 'string',
+		   o => 'taxon_name_list',
+		   r => 0,
+		 },
+                 { h => 'Comma delimited list of taxon_ids to load',
 		   t => 'string',
 		   o => 'taxon_id_list',
-		   r => 1,
+		   r => 0,
 		 },
 		 { h => 'flag indicating that atts should be checked for discrepensies',
 		   t => 'boolean',
 		   o => 'fullupdate'
-		 }
+		 },
+                 {h => 'dots.externaldatabase.name',
+                  t => 'string',
+                  o => 'extDbName'
+                 },
+                 {h => 'dots.externaldatabaserelease.version',
+                  t => 'string',
+                  o => 'extDbRlsVer'
+                 }
                  ];
   
   ## Initialize the plugin
@@ -204,6 +217,16 @@ sub run {
   my $st1 = $dbh->prepareAndExecute("select count(est.id_est) from dbest.est est, dbest.library library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
   my $numDbEST = $st1->fetchrow_array();
   my $taxon_id_list = $M->getCla()->{taxon_id_list};
+  if (! $taxon_id_list) {
+    my $taxon_name_list = $M->getCla()->{taxon_name_list};
+    die "Supply taxon_id_list or taxon_name_list\n" unless $taxon_name_list;
+    my $st = $dbh->prepareAndExecute("select taxon_id from sres.taxonname  where name in ($taxon_name_list) and name_class = 'scientific name'");
+    my @taxon_id_array = $st->fetchrow_array();
+    $taxon_id_list = join(',', @taxon_id_array);
+  }
+
+  die "taxon_id_list = $taxon_id_list\n";
+
   my $st2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l where l.taxon_id in ($taxon_id_list) and l.library_id = e.library_id");
   my $finalNumGus = $st2->fetchrow_array();
   my $diff = ($numDbEST-$finalNumGus);
