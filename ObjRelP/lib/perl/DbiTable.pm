@@ -634,23 +634,6 @@ sub quote_chars_ref {
   }
 }
 
-sub quoteAttTable {
-  my ($self, $hash_ref) = @_;
-  my ($list_ref, $att, $attrib); 
-
-  my $quoteAtts = $self->getQuoteHash();
-
-  my %hash_copy = %$hash_ref;   ## actual hash copy not a ref!
-  ## LOOP THROUGH ATTRIBUTES OF PASSED IN ROW - keys of hash
-  foreach $attrib (keys %hash_copy) {
-    ## only quote char if it is a char - NULL,getdate() not quoted 
-    if ($quoteAtts->{$attrib} && ($hash_copy{$attrib} ne 'getdate()' && $hash_copy{$attrib} !~ /sysdate/i)) { 
-      &quote_chars_ref( \$hash_copy{$attrib} );
-    }
-  }
-  return \%hash_copy;
-}
-
 sub quoteAtts {
   my ($self,$hash_ref) = @_;
   my %hash_copy = %$hash_ref;   ## actual hash copy not a ref!
