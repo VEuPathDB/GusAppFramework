@@ -28,13 +28,11 @@ sub new {
       h => 'if true deletes evidence that similarities may be used in....slow
                           if false, then need to clean up evidence tables later...more efficient?',
      },
-     {o => 'log_frequency=i',
+     {o => 'log_frequency',
+      t => 'int',
       h => 'Write line to log file once every this many entries',
       d => 100,
-     },
-
-
-   }];
+     }];
 
 $self->initialize({requiredDbVersion => {},
 		   cvsRevision => '$Revision$', # cvs fills this in!
@@ -58,7 +56,7 @@ sub run {
 
   die "--idSQL are required\n" unless ($ctx->{cla}->{idSQL});
 
-  print $ctx->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
+  print $ctx->{cla}->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
 
   print "Deleting similarities match query '$ctx->{cla}->{idSQL}'\n
 ";
@@ -68,7 +66,7 @@ sub run {
 
   if (!$ctx->{cla}->{commit}) {
     print "Not in commit mode...Determining number of similarities that satisify the query\n";
-    my $stmt = $dbh->prepareAndExecute("select count(*) from similarity where  similarity_id in ($ctx->{cla}->{idSQL})");
+    my $stmt = $dbh->prepareAndExecute("select count(*) from dots.similarity where  similarity_id in ($ctx->{cla}->{idSQL})");
     while (my($num) = $stmt->fetchrow_array()) {
       print "  There are $num Similarities to be deleted\n";
     }
