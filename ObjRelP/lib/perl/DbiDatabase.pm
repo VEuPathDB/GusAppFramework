@@ -145,7 +145,7 @@ sub makeNewHandle {
   #	print STDERR "makeNewHandle($autocommit)\n";
   my $dbh = GUS::ObjRelP::DbiDbHandle->new($self->getDSN(), $self->getLogin(),$self->getPassword(),
                              $self->getVerbose(),$self->getNoInsert(), $autocommit);
-  $dbh->do("set transaction use rollback segment BIGRBS0") unless $self->getDSN() =~ /sybase/i;
+  $dbh->do("set transaction use rollback segment BIGRBS1") unless $self->getDSN() =~ /sybase/i;
   return $dbh;
 }
 
@@ -466,7 +466,7 @@ sub manageTransaction {
         $self->getDbHandle()->commit();
       }
       ##use big rollback segment for oracle
-      $self->getDbHandle()->do("set transaction use rollback segment BIGRBS0");
+      $self->getDbHandle()->do("set transaction use rollback segment BIGRBS1");
     } elsif ($self->getDbHandle()->getRollBack() ) {
       print STDERR "ERROR: submit failed...rollBack = 1...being rolled back\n";
       if ($self->getDSN() =~ /sybase/i) {
@@ -475,7 +475,7 @@ sub manageTransaction {
         $self->getDbHandle()->rollback();
       }
       ##use big rollback segment for oracle
-      $self->getDbHandle()->do("set transaction use rollback segment BIGRBS0");
+      $self->getDbHandle()->do("set transaction use rollback segment BIGRBS1");
       return 0;                 ##will cause the return value of submit to be 0
     }
   } else {

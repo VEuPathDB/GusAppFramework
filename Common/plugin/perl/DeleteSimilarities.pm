@@ -75,7 +75,7 @@ sub run {
   my $ctSim;
   ##first version the Similarities...
   if (!$ctx->{cla}->{doNotVersion}) { ##version similarities..
-    #    $dbh->do("set transaction use rollback segment BIGRBS0"); ##ensures using  big rollback segment
+    #    $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
     my $ver = "insert into dotsver.SimilarityVer (select s.*,".$ctx->{self_inv}->getId().",SYSDATE,1 from dots.Similarity s where similarity_id in ($ctx->{cla}->{idSQL}))";
     print "Versioning similarities...\n\t$ver\n",`date`;
     if ($ctx->{cla}->{commit}) {
@@ -86,7 +86,7 @@ sub run {
   }
 
   ##mark the similarities deleted by setting query_table_id and subject_table_id to 1
-  $dbh->do("set transaction use rollback segment BIGRBS0"); ##ensures using  big rollback segment
+  $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
   my $markQuery = "update dots.Similarity set query_table_id = 1, subject_table_id = 1 where similarity_id in ($ctx->{cla}->{idSQL})";
   print "marking Similarities deleted....\n\t$markQuery\n",`date`;
   if ($ctx->{cla}->{commit}) {
@@ -97,7 +97,7 @@ sub run {
   my $ctDep = 0;
 
   ##next delete the SimilaritySpans
-  $dbh->do("set transaction use rollback segment BIGRBS0"); ##ensures using  big rollback segment
+  $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
   ##need to version if --versionAll
   if ($ctx->{cla}->{versionAll}) {
     my $verSS = "insert into dotsver.SimilaritySpanVer (select l.*,".$ctx->{self_inv}->getId().",SYSDATE,1 from dots.SimilaritySpan l where l.similarity_id in (select s.similarity_id from dots.Similarity s where s.query_table_id = 1 and s.subject_table_id = 1 ))";
@@ -105,7 +105,7 @@ sub run {
     if ($ctx->{cla}->{commit}) {
       print "\tVersioned ",$dbh->do($verSS)," rows ",`date`,"\n";
       $dbh->commit();
-      $dbh->do("set transaction use rollback segment BIGRBS0"); ##ensures using  big rollback segment
+      $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
     }
   }
   my $delSpan = "delete from dots.similarityspan where similarity_id in (select s.similarity_id from dots.Similarity s where s.query_table_id = 1 and s.subject_table_id = 1)";
@@ -118,7 +118,7 @@ sub run {
 
 
   ##now the IndexWordSimLinks
-  $dbh->do("set transaction use rollback segment BIGRBS0"); ##ensures using  big rollback segment
+  $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
   ##need to version if --versionAll
   if ($ctx->{cla}->{versionAll}) {
     my $verIW = "insert into dotsver.IndexWordSimLinkVer (select l.*,".$ctx->{self_inv}->getId().",SYSDATE,1 from dots.IndexWordSimLink l where l.best_similarity_id in (select s.similarity_id from dots.Similarity s where s.query_table_id = 1 and s.subject_table_id = 1 ))";
@@ -126,7 +126,7 @@ sub run {
     if ($ctx->{cla}->{commit}) {
       print "\tVersioned ",$dbh->do($verIW)," rows ",`date`,"\n";
       $dbh->commit();
-      $dbh->do("set transaction use rollback segment BIGRBS0"); ##ensures using  big rollback segment
+      $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
     }
   }
 
