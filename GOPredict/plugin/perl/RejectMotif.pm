@@ -182,17 +182,19 @@ sub getProcessedMotifs{
 	my $fileName = $self->getArg("restart_file");
 	my $fh = FileHandle->new("<$fileName");
 	die ("error: could not open file!") unless $fh;
-	my $processedMotifs;
+	
 	$self->log("getting processed motifs");
 	while (<$fh>){
 	    chomp;
 	    my $line = $_;
 	    my ($databaseId, $version, $sourceId, $proteinId) = $line =~ /(\S+)\s(\S+)\s(\S+)\s(\S+)/;
-	    $self->logVerbose("adding $databaseId, $version, $sourceId, $proteinId to processed");
-	    $processedMotifs->{$databaseId}->{$version}->{$proteinId}->{$sourceId} = 1;
+	    $self->logVeryVerbose("adding $databaseId, $version, $sourceId, $proteinId to processed");
+	    $processedMotifs->{$databaseId}->{$version}->{$sourceId}->{$proteinId} = 1;
 	}
+	if (!$processedMotifs->{100}){ $self->logVeryVerbose("getProcessedmOtifs: no entry for 100 part 1")};
 	$self->{ProcessedMotifs} = $processedMotifs;
     }
+    if (!$processedMotifs->{100}){ $self->logVeryVerbose("getProcessedmOtifs: no entry for 100 part 2")};
     return $processedMotifs;
 }
 
@@ -205,7 +207,8 @@ sub getRejectedMotif {
 					   { source_id => $sourceId,
 					     external_database_release_id => $version,
 					 });
-
+  
+  $rejectedMotif->retrieveFromDB();
   return $rejectedMotif;
 }
 
@@ -234,13 +237,21 @@ sub clearAssociations {
     my ($self, $rejectedMotif) = @_;
     
     my $fileName = $self->getArg("restart_file");
-    my $fh = FileHandle->new("<$fileName");
+    my $fh = FileHandle->new(">>$fileName");
         
     my $ruleTableId = $self->getTableId('DoTS', 'AAMotifGOTermRule');
     my $proteinTableId = $self->getTableId('DoTS', 'Protein');
     my $instanceTableId =   $self->getTableId('DoTS', 'GOAssociationInstance');
-    my $databaseId = $rejectedMotif->getExternalDatabaseId();
+    my $databaseId = $self->getArg("external_database_id"); #should change this when have more than just 100 as id
     my $sourceId = $rejectedMotif->getSourceId();
+
+    my $goVersion = $self->getArg('go_ext_db_rls_id');
+    my $goGraph = $self->getGoGraph($goVersion);
+    my $processedMotifs = $self->getProcessedMotifs();
+    my $allRejectedMotifs = $self->getAllRejectedMotifs();
+    my $rejectedMotifId = $rejectedMotif->getRejectedMotifId();
+    my $rejectedMotifVersion = $rejectedMotif->getExternalDatabaseReleaseId();
+    my $evidenceMap;
     
     my $taxonId = $self->getArg("taxon_id");
     
@@ -262,7 +273,7 @@ sub clearAssociations {
          DoTS.GoAssociationInstance gai,
          DoTS.GoAssociation ga" . $taxonFromSql . "
     where edr.external_database_id = $databaseId
-      and mas.source_id = $sourceId
+      and mas.source_id = '$sourceId'
       and edr.external_database_release_id = mas.external_database_release_id
       and mas.aa_sequence_id = gtrs.aa_sequence_id_1
       and gtrs.aa_motif_go_term_rule_set_id = gtr.aa_motif_go_term_rule_set_id
@@ -275,36 +286,33 @@ sub clearAssociations {
       and ga.row_id = p.protein_id and ga.table_id = $proteinTableId 
       $taxonWhereSql";
     
-#and ga.row_id = 10432
-  #dtb: put back is_not?
     my $dbh = $self->getQueryHandle();
 
     $self->log("executing $sql to get all Proteins with Associations created with this motif");
     
     my $stmt = $dbh->prepareAndExecute($sql);  
-
-    my $goVersion = $self->getArg('go_ext_db_rls_id');
-    my $goGraph = $self->getGoGraph($goVersion);
-    
-    my $allRejectedMotifs = $self->getAllRejectedMotifs();
-    my $rejectedMotifId = $rejectedMotif->getRejectedMotifId();
-    my $rejectedMotifVersion = $rejectedMotif->getExternalDatabaseReleaseId();
-  
+    my $extent;
+    my $associationGraph;
+    $extent = GUS::GOPredict::GoExtent->new($self->getAdapter());    
     while (my ($proteinId) = $stmt->fetchrow_array()) {
 
-	if ($allRejectedMotifs->{$databaseId}->{$rejectedMotifVersion}->{$sourceId}->{$proteinId}){
+	$self->logVeryVerbose("checking if $databaseId $rejectedMotifVersion $sourceId $proteinId is processed");
+	if ($processedMotifs->{$databaseId}->{$rejectedMotifVersion}->{$sourceId}->{$proteinId}){
 	    $self->logVeryVerbose ("skipping motif $sourceId protein $proteinId as it has already been processed");
+	    next;
 	}
 
 	$self->logVerbose("processing $databaseId $rejectedMotifVersion $proteinId");      
-	my $extent = GUS::GOPredict::GoExtent->new($self->getAdapter());
-	my $associationGraph = $self->getAdapter()->getAssociationGraph($goGraph, $proteinId, $proteinTableId,
-									$goVersion, $extent);
+
+	$associationGraph = $self->getAdapter()->getAssociationGraph($goGraph, $proteinId, $proteinTableId,
+								     $goVersion, $extent);
+
+
 	# $self->getAdapter()->addEvidenceToGraph($associationGraph);
 	
 	$self->logVeryVerbose("AssociationGraph before processing rejected motif: " . $associationGraph->toString());
 	
-	my $evidenceMap = $self->getEvidenceMap($proteinId, $goGraph);
+	$evidenceMap = $self->getEvidenceMap($proteinId, $goGraph);
 	
 	$associationGraph->processRejectedMotif($rejectedMotifVersion, $sourceId, $rejectedMotif, 
 						$allRejectedMotifs, $evidenceMap);
@@ -331,13 +339,19 @@ sub clearAssociations {
 	  $assoc->updateGusObject();
 	  $gusAssoc->submit();
 	}
-
 	print $fh "$databaseId $rejectedMotifVersion $sourceId $proteinId\n";
+	$extent->empty();
 	$associationGraph->killReferences();
+	my $assocList = $associationGraph->getAsList();
+	foreach my $assoc (@$assocList){
+	    undef $assoc;
+	}
+	undef $associationGraph;
+	$self->getAdapter()->undefPointerCache();
 	$self->undefPointerCache();
+
     }
 }
-
 
 sub getTableId {
   my ($self, $dbName, $tableName) = @_;
@@ -422,8 +436,12 @@ sub getAllRejectedMotifs{
     my ($self) = @_;
     
     my $allRejectedMotifs = $self->{RejectedMotifs};
+
+    my $version = $self->getArg('external_database_release_id');
+
     if (!$allRejectedMotifs){
 	my $sql = "select external_database_release_id, source_id from DoTS.RejectedMotif";
+	$sql .= " where external_database_release_id = $version" if $version;
 	$self->log("getAllRejectedMotifs: executing $sql");
 	my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
 	while (my ($motifVersion, $sourceId) = $sth->fetchrow_array()){
@@ -441,12 +459,16 @@ sub getGoGraph{
     
     my ($self, $goVersion) = @_;
 
-    my $rootGoId = $self->getArg('function_root_go_id');
+    my $goGraph = $self->{GoGraph};
+    if (!$goGraph){
 
-    my $goResultSet = $self->getAdapter()->getGoResultSet($goVersion); 
-    my $newGoGraph = GUS::GOPredict::GoGraph->newFromResultSet($goVersion, $goResultSet, $rootGoId);
-    
-    return $newGoGraph;
+	my $rootGoId = $self->getArg('function_root_go_id');
+	
+	my $goResultSet = $self->getAdapter()->getGoResultSet($goVersion); 
+	$goGraph = GUS::GOPredict::GoGraph->newFromResultSet($goVersion, $goResultSet, $rootGoId);
+	$self->{GoGraph} = $goGraph;
+    }
+    return $goGraph;
 }
 
 #DatabaseAdapter accessor method
