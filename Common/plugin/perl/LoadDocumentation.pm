@@ -129,7 +129,7 @@ sub process {
 		
 		print "tid: $t_id\n\n";
 
-		my $query = "SELECT table_id, attribute_name, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$t_id";
+		my $query = "SELECT table_id, attribute_name, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$t_id AND attribute_name=$attribute_nm";
 		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
 		my $stmt = $dbh->prepare($query);
 		$stmt->execute();
@@ -139,7 +139,7 @@ sub process {
 		  my $att_name = $ary[1]; #queried attribute name
 		  my $html = $ary[2]; #queried html documentation
 
-		  print "tb_id: $tb_id\tatt_name: $att_name\thtml: $html\n";
+		  $self->logVerbose("Query results: table_id: $tb_id\tattribute_name: $att_name\thtml_documentation: $html");
 
 		  if ($html eq $html_dc){ #documentation is identical to what is already in db - SKIP
 		    $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
