@@ -136,22 +136,22 @@ sub primaryKeySql{
 }	
 
 ############################################################
-# nextValSql
+# nextValSelect
 #
-# Returns the sql to generate the next value in a sequence.
+# Returns the sql select statement to generate the next value in a sequence.
 ############################################################
-sub nextValSql{
+sub nextValSelect{
 	my($self,$table)=@_;
 	return "select ${table}_SQ.NEXTVAL from DUAL";
 }
 
 ############################################################
-# nextValVar
+# nextVal
 #
-# Returns the variable for the next value in a sequence,
+# Returns the sql for the next value in a sequence,
 # to be used directly in a statement, such as an insert.
 ############################################################
-sub nextValVar{
+sub nextVal{
 	my($self,$table)=@_;
 	return "${table}_SQ.NEXTVAL";
 }
