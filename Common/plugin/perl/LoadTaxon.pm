@@ -15,15 +15,9 @@ package GUS::Common::Plugin::LoadTaxon;
 @ISA = qw(GUS::PluginMgr::Plugin);
 use strict;
 
-use FileHandle;
-
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::GeneticCode;
-
-
-
-my $count = 0;
 
 sub new {
   my ($class) = @_;
