@@ -82,8 +82,6 @@ sub run {
 
 
 
-
-
   my @na_sourceids = ();
   my @naSequenceIds = ();
   my @DTSasEvidenceTarget = ();
@@ -225,15 +223,24 @@ sub UnmarkFullLength {
   my $self = shift;
   my ($source_id,$assembly) = @_;
 
-  print STDERR "Evidence$source_id\n";
+
+ # if ($assembly->getFullLengthCds() != 1)  {
+
 
   my $fact = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $source_id });
 
 	if($fact->retrieveFromDB()){
      	$assembly->addEvidence($fact,1,"full_length_CDS");
-      }
 
-  }
+   print STDERR "EvidenceAdded$source_id\n";
+
+      }else 
+        {   print STDERR "Can not add evidence\n";
+        }
+
+
+   }
+
 
 
 1;
