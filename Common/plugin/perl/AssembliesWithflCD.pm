@@ -394,12 +394,18 @@ sub  UnMarkAssembliesAsFrameFinderFL  {
   print STDERR "DT.$targetId Unmarked as FL from FF\n";
 
   my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $targetId });
-      $assembly->retrieveFromDB();
+  if( $assembly->retrieveFromDB())  {
       $assembly->setFullLengthCds(0);
       $assembly->submit();
 
       $self->undefPointerCache();
+
+}else {
+
+
+      print STDERR "Can not retrieve assembly; deleted by build?\n";
 }
+
 
 }
 
