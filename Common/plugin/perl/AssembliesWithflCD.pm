@@ -221,7 +221,7 @@ print "scalar(@diffArray2)\n";
 
 
    print STDERR  "DT.$target_id Evidence deleted\n";
-
+   next;
     }
 
 
