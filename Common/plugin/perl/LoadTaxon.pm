@@ -33,7 +33,7 @@ sub new {
      },
      {o => 'restart',
       t => 'int',
-      h => 'tax_id of parent for restart',
+      h => 'tax_id of parent for restart, 0 if no re',
      },
     ];
 
@@ -74,7 +74,7 @@ sub run {
 
     $self->makeTaxonEntry($rootAttArray, \$count);
     
-    if ($self->getCla->{'restart'}) {
+    if ($self->getCla->{'restart'} && $self->getCla->{'restart'} > 0) {
 	$self->getTaxonAtt($self->getCla->{'restart'},$nodesHash,\$count);
     }
     else {
