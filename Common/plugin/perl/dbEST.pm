@@ -71,7 +71,10 @@ sub new {
                    o => 'restart_number',
                    r => 0,
                  },
-		 
+		 { h => 'taxon_id for running plugin for specific taxons',
+		   t => 'int',
+		   o => 'taxon_id'
+		 }
                  ];
   
   ## Initialize the plugin
@@ -94,26 +97,27 @@ sub new {
 # ----------------------------------------------------------------------
 
 sub run {
-	my $M   = shift;
+  my $M   = shift;
 
-	$M->logRAIID;
-	$M->logCommit;
-	$M->logArgs;
+  $M->logRAIID;
+  $M->logCommit;
+  $M->logArgs;
 
   ## Set the log file
   $M->getCla()->{log_fh}  = FileHandle->new(">" . $M->getCla->{log})
     or die ("Log file " . $M->getCla->{log} . "not open\n");
   $M->getCla()->{log_fh}->autoflush(1);
-
+  
   ## Make a few cache tables for common info
   $M->{libs} = {};          # dbEST library cache
   $M->{anat} = {};          # Anatomy (tissue/organ) cache
   $M->{taxon} = {};         # Taxonomy (est.organism) cache
   $M->{contact} = {};       # Contact info cache
   $M->setTableCaches();
-
+  
   $M->{dbest_ext_db_rel_id} = $M->getExternalDatabaseRelease();
   
+  my $nameStrings = $M->getNameStrings();
   
   #####################################################################
   ## If an update file is given, use this as the basis 
@@ -166,7 +170,15 @@ sub run {
       last if ($M->getCla->{test_number} && $count > $M->getCla->{test_number});
 
       ## Main loop
-      my $ests = $M->sql_get_as_hash_refs_lc("select * from est\@dbest where id_est >= $min and id_est < $max");
+
+      my $ests;
+      if ($M->getCla()->{taxon_id}) {
+	$ests = $M->sql_get_as_hash_refs_lc("select est.* from est\@dbest est, library\@dbest library where est.id_est >= $min and est.id_est < $max and library.id_lib = est.id_lib and library.organism in ($nameStrings)");
+      }
+
+      else {
+	$ests = $M->sql_get_as_hash_refs_lc("select * from est\@dbest where id_est >= $min and id_est < $max");
+      }
       my ($e);
       foreach my $est ( @{$ests}) {
         $e->{$est->{id_est}}->{e} = $est;
@@ -214,6 +226,21 @@ entries that were updated/inserted into GUS.
 
 =cut
 
+
+
+sub getNameStrings {
+  my ($M) = @_;
+  my $nameStrings;
+  my $taxon_id = $M->getCla()->{taxon_id};
+  foreach my $name (keys %{$M->{taxon}}) {
+    if ($M->{taxon}->{$name} == $taxon_id) {
+      $nameStrings .= " '$name',";
+    }
+  }
+  $nameStrings =~ s/\,$//;
+  return $nameStrings;
+}
+ 
 sub processEntries {
   my ($M, $e ) = @_;
   my $count = 0;
@@ -286,14 +313,14 @@ sub updateEntry {
   ## update the first older entry encountered.
   #####################################################################
 
-#  foreach my $oe (@{$e->{old}}) { 
-# 	  my $est = GUS::Model::DoTS::EST->new({'dbest_id_est' => $e->{id_est}});
-# 	  
-# 	  if ($est->retrieveFromDB()) {
-# 		# Entry present in the DB; UPDATE
-# 		return  $M->insertEntry($e->{e},$est);
-# 	  }
-#  }
+  foreach my $oe (@{$e->{old}}) { 
+    my $est = GUS::Model::DoTS::EST->new({'dbest_id_est' => $e->{id_est}});
+    
+    if ($est->retrieveFromDB()) {
+      # Entry present in the DB; UPDATE
+      return  $M->insertEntry($e->{e},$est);
+    }
+  }
   ## No historical entries; INSERT if not already present
   return $M->insertEntry($e->{e});
 }
