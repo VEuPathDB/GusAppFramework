@@ -118,46 +118,30 @@ sub process {
 
 	############################### TEST
 	if ($db->checkTableExists($table_nm)){ # if table exists
-	    $self->logAlert("in if table exists\n");
 	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if valid attribute
-#		$self->logAlert("in if attribute exists\n");
-
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
-#		$self->logAlert("set table id\n");
-
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
-#		$self->logAlert("set attribute name\n");
-
-#		$doc->setHtmlDocumentation($html_dc);
-#		$self->logAlert("set html documentation\n");
-
 		$doc->retrieveFromDB();
-#		$self->logAlert("retrieved from DB\n");
-
 		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) {
-#		    $self->logAlert("in if doc not equal dc\n");
-
 		    $doc->setHtmlDocumentation($html_dc);
-#		    $self->logAlert("in if table exists\n");
-
 		    $doc->submit();
-		    $self->logVerbose("Submitted new attribute documentation: $table_nm.$attribute_nm\t$html_dc");
+		    $self->logVerbose("Updated attribute documentation: $table_nm.$attribute_nm\t$html_dc");
 		    return();
 		}
 		elsif ($doc->setHtmlDocumentation($html_dc) eq $html_dc) {
 		    $self->logAlert("Documentation already exists for: $table_nm.$attribute_nm\t$html_dc\n");
 		    return();
 		}
+		else { # not already in database
+		    $doc->submit();
+		    $self->logVerbose("Submitted new attribute documentation: $table_nm.$attribute_nm\t$html_dc");
+		    return();
+		}
 	    } # end if valid attribute
 	    elsif ($attribute_nm eq "NULL" || $attribute_nm eq "null"  || $attribute_nm eq "") {
-#		$self->logAlert("attribute name is NULL\n");
-
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
-#		$doc->setHtmlDocumentation($html_dc);
 		$doc->retrieveFromDB();
 		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) {
-		    $self->logAlert("if doc not equal dc\n");
-
 		    $doc->setHtmlDocumentation($html_dc);
 		    $doc->submit();
 		    $self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
