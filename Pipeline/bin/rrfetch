@@ -6,7 +6,7 @@ use GUS::Pipeline::ExternalResources::RepositoryEntry;
 
 usage() unless scalar @ARGV > 6;
 
-my $repositoryDir=shift;
+my $repositoryLoc=shift;
 my $resource = shift;
 my $version = shift;
 my $targetDir = shift;
@@ -19,10 +19,12 @@ foreach my $arg (@ARGV) {
 }
 
 my $repositoryEntry = 
-  GUS::Pipeline::ExternalResources::RepositoryEntry->new($repositoryDir, 
-							 $resource, $version,
+  GUS::Pipeline::ExternalResources::RepositoryEntry->new($repositoryLoc, 
+							 $resource, 
+							 $version,
 							 $sourceUrl, 
-							 \%wgetArgs);
+							 \%wgetArgs,
+							 undef);
 
 $repositoryEntry->fetch($targetDir);
 
@@ -31,10 +33,10 @@ sub usage {
 
 Fetch a file from an external resources repository.
 
-usage:  rrfetch repositoryDir resourceName version targetDir sourceUrl wgetArgs
+usage:  rrfetch repositoryLoc resourceName version targetDir sourceUrl wgetArgs
 
 where:
-  repositoryDir - the directory holding the repository
+  repositoryLoc - either a local dir that holds the repository or an ftp site that holds the repository
   resourceName  - eg NRDB, Genbank
   version       - eg 1.1.2
   targetDir     - the location to put the fetched file

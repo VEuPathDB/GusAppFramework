@@ -1,0 +1,53 @@
+#!@perl@
+use strict;
+
+use lib "$ENV{GUS_HOME}/lib/perl";
+use GUS::Pipeline::Manager;
+use GUS::Pipeline::ExternalResources::Loader;
+use CBIL::Util::PropertySet;
+
+$| = 1;
+umask 002;
+
+
+my $xmlFile = $ARGV[0];
+my $propertiesFile = $ARGV[1];
+
+&usage unless -e $xmlFile;
+&usage unless -e $propertiesFile;
+
+# [name, default (or null if reqd), comment]
+my @properties = 
+(
+ ["pipelineDir",         "",  ""],
+ ["downloadDir",         "",  ""],
+ ["insertTaxonRestart",   "",  ""],
+ ["commit",   "",  "set to --commit to commit"],
+ ["stopBefore",   "none",  "the step to stop before.  uses the signal name"],
+ ); 
+
+
+
+my $propertySet  = CBIL::Util::PropertySet->new($propertiesFile, \@properties);
+
+my $mgr = GUS::Pipeline::Manager->new($propertySet->getProp('pipelineDir'),
+				      $propertySet,
+				      $propertiesFile);
+
+my $downloadDir = $propertySet->getProp('downloadDir');
+if (! -d $downloadDir) {
+  mkdir($downloadDir) 
+    || die "Couldn't make downloadDir ''\n";
+}
+
+my $loader = GUS::Pipeline::ExternalResources::Loader->new($mgr, $xmlFile);
+
+$loader->run();
+
+sub usage {
+  my $prog = `basename $0`;
+  chomp $prog;
+  print STDERR "usage: $prog xmlfile propertiesfile\n";
+  exit 1;
+}
+
