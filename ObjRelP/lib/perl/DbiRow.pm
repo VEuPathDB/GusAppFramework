@@ -244,8 +244,12 @@ sub retrieveFromDB {
     $sth = $self->getDbHandle()->prepare($sql);
     $self->getTable()->cacheStatement('retrieve',$cacheKey,$sth);
   }
-  
-  $sth->execute(@valuesArr);
+
+  $sth->execute(@valuesArr)
+    || die("Failed executing:\n $sql \n\n with values '"
+	   . join("'  '", @valuesArr) 
+	   . "'\n errormsg: " . $sth->errstr ."\n");
+
   my $exists = 0;
   my $attributeHash;
   while (my $row = $sth->fetchrow_hashref('NAME_lc')) {
