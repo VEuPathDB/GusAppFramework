@@ -36,10 +36,10 @@ if ($help) {
   exit 1;
 }
 
-my $gusconfig = GUS::Common::GusConfig->new($gusconfigfile);
-
 my @tables = split(/,\s*/, $tables) if $tables;
 my @schemas = split(/,\s*/, $schemas) if $schemas;
+
+my $gusconfig = GUS::Common::GusConfig->new($gusconfigfile);
 
 my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$gusconfig->getReadOnlyDatabaseLogin(),
