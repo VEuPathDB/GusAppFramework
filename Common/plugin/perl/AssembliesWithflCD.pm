@@ -7,7 +7,7 @@ use strict;
 use GUS::Model::DoTS::Assembly;
 use GUS::ObjRelP::DbiDatabase;
 use GUS::Model::DoTS::ExternalNASequence;
-
+use GUS::Model::DoTS::Evidence;
 $| = 1;
 
 #JM This plugin is only in testing phase 11/18/03
@@ -211,25 +211,45 @@ my $ids = scalar(@diffArray2);
 print STDERR "$ids\n";
 
 
-my $dbh = $self->getQueryHandle();
 
-my $rows = $dbh->prepare("delete from dots.evidence where attribute_name = 'full_length_CDS' and target_id = ?");
-
-
-  foreach my $target_id(@diffArray2)  {
+foreach my $target_id(@diffArray2)  {
 
 
-    $rows->execute($target_id);
-
-   print STDERR  "DT.$target_id Evidence deleted\n";
-
-  }
+my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id});
 
 
+    if ($Evidence->retrieveFromDB()){
+
+      if ($Evidence->getAttributeName eq "full_length_CDS")
+
+        $Evidence->markDeleted(1);
+        $Evidence->submit();
+
+
+  print STDERR  "DT.$target_id Evidence deleted\n";
+
+$self->undefPointerCache();
+
+    }
+
+}
 
 
 
-#  for those assemblies that no longer contain a refSeq
+
+
+
+
+
+
+#my $dbh = $self->getQueryHandle();
+#my $rows = $dbh->prepare("delete from dots.evidence where attribute_name = 'full_length_CDS' and target_id = ?");
+#foreach my $target_id(@diffArray2)  {
+#    $rows->execute($target_id);
+#   print STDERR  "DT.$target_id Evidence deleted\n";
+#  }
+
+# those assemblies that no longer contain a refSeq
  #   foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
 # print STDERR "DT.$DTnotFLength does not have a RefSeq any longer\n";
