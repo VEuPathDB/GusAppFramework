@@ -1,5 +1,11 @@
 package GUS::Common::Plugin::DeleteSimilarities;
 
+
+####################################################################
+# NOTE: this plugin should be upgraded to use the current Plugin API
+####################################################################
+
+
 @ISA = qw(GUS::PluginMgr::Plugin); 
 use strict;
 $| = 1;
