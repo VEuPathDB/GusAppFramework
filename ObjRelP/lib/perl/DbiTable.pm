@@ -317,7 +317,10 @@ sub isView {
   my($self) = @_;
   if (!defined $self->{isView}) {
     ### SQL CHANGE ###
-    my $sql = "select is_view from ".$self->getDatabase()->getCoreName(). ".TableInfo where name = '".$self->getTableName()."'";
+    my $coredb = $self->getDatabase()->getCoreName();
+    my $schemaName = $self->getSchemaName();
+    my $sql = "select is_view from ${coredb}.TableInfo ti, ${coredb}.DatabaseInfo di where ti.name = '" . $self->getTableName() . "'" . " and di.name = '$schemaName' and ti.database_id = di.database_id";
+
     #    print STDERR "isView: $sql\n";
     my $stmt = $self->getDatabase()->getQueryHandle()->prepareAndExecute($sql);
     while (my($iv) = $stmt->fetchrow_array()) {
