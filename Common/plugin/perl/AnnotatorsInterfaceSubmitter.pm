@@ -76,8 +76,6 @@ sub run {
     my $self  = shift;
     open( F, $self->getCla->{'xmlfile'} ) || die($!);
 
-    print STDERR "running barkan's version of submitter plugin\n";
-
     my @xml = <F>;
 
 
@@ -115,20 +113,13 @@ sub run {
 		# loop through all the attributes (again in a hash)
 		# iterate through all facts for each attribute (an array)
 		my $all_facts = $$fact_hash{$child->getConcatPrimKey()};
-		print STDERR "getting facts for " . $child->getConcatPrimKey() . "\n";
+
 		foreach my $attribute (keys %$all_facts){
-		    #print STDERR "\tEvidence for attribute ", $attribute, " pk: ", $child->getConcatPrimKey(), " \n";
+		
 		    my $facts = $$all_facts{$attribute};
 		    foreach my $fact ( @$facts ) {
 			if ( $fact ) {
-			    print STDERR "handling next fact, fact table is " . $fact->getClassName() . " and target table is " . $child->getClassName() . "\n";
-			
-			#    if ($fact->getTargetId() < -9){
-			#	print STDERR "found factId for newly created instance: " . $fact->getTargetId() . "\n";
-			#	$fact->setTargetId(0);
-			#    }
-			    #print STDERR "\t\tAdding fact: ", $fact->getClassName(), ", fact pk: ", $fact->getConcatPrimKey(), "\n";
-			    # was ignoring the similarity evidence cause throws error.
+
 			    if ($fact->getClassName() ne "GUS::Model::DoTS::Similarity"){
 				$fact->setReviewStatusId(1);
 			    }
@@ -139,16 +130,18 @@ sub run {
 		    }
 		}
 	    }
-	    print STDERR "handling next object, class name = " . $child->getClassName() . "\n";
 	    if ($child->getClassName() eq "GUS::Model::DoTS::GOAssociationInstance"){
-		print STDERR "handling next Instance: " .  $child->getGoAssociationId() . "\n";
 		if ($child->getGoAssociationInstanceId() < -9){  #newly created instance
-		    print STDERR "found newly created instance with id " . $child->getGoAssociationInstanceId() . "\n";
-		    print STDERR "setting newly created instance id; current: (assoc goId) " . $child->getGoAssociationId() . " new " .  $assocHash->{$child->getGoAssociationId()} . "\n";
+
 		    $child->setGoAssociationInstanceId(0);
 		    $child->setGoAssociationId($assocHash->{$child->getGoAssociationId()});
 		}
-		print STDERR "Finalized instances GO Association id: " . $child->getGoAssociationId() . "\n";
+		print STDERR "INSTANCE: \n\t instanceId " . $child->getGoAssociationInstanceId() . " assocId: " . $child->getGoAssociationId() . " LOE: " . $child->getGoAssocInstLoeId() . " isNot: " . $child->getIsNot() . " isPrimary: " . $child->getIsPrimary() . "\n\tisDeprecated: " . $child->getIsDeprecated() . " reviewStatus " . $child->getReviewStatusId() . "\n\t\tEvidence:\n";
+		my @evidence = $child->getAllEvidence();
+		foreach my $evidence (@evidence){
+		    print STDERR "factTableId: " . $evidence->getFactTableId() . " FactId: " . $evidence->getFactId() . "\n";
+		}
+		print STDERR "\n";
 	    }
 	    # print STDERR $child->getClassName(), " has evidence: ", $has_evidence, "\n";
 	    # need to check that a copy does not already exist in db - i.e. for GeneSynonyms.  Will retreivefromDB work?  
@@ -236,9 +229,6 @@ sub run {
 
     #print STDERR "Geneids=$del_genes\n";
 
-#HERE Check Query Handle
-
-
     # Add the MergeSplit entries if there are deleted genes.
     # this means that genes have been merged.
     if ( $del_genes ) {
@@ -255,13 +245,6 @@ sub run {
 								     'merge_split_group_id' => $group_id,
 								     'table_id' => $curr_gene->getTableIdFromTableName($curr_gene->getClassName())});
 
-		#print STDERR "Test: ",$curr_gene->getTableIdFromTableName($curr_gene->getClassName()), "\n";
-
-		#print STDERR "Test:$del_gene\n";
-
-
-		#print STDERR "test:", $merge_split->getClassName(),"\n";
-
 
 		$self->getSelfInv->addChild( $merge_split );
 
@@ -271,26 +254,6 @@ sub run {
 	    print STDERR "AnnotatorsInterfaceSubmitter: Failed to obtain merge_split_group_id, could not insert into MergeSplit Table!\n";
 	}
     }
-
-    #Joan need to change this when GO tasks added back to interface
-    # deal with the special deleted ProteinGOFunction objects here.
-    #my $pgfs = $self->getPGFDeleteObjects( $self->getCla->{'specialfile'});
-    #if ( $pgfs ) {
-    #foreach my $pgf ( @$pgfs ) {
-    #$pgf->markDeleted(1);
-    #$self->getSelfInv->addChild( $pgf );
-    #}
-    #   }
-
-    # deal with the special deleted PCR objects here.
-    #my $pcrs = &getPCRDeleteObjects( $ctx->{'specialfile'});
-    #	if ( $pcrs ) {
-    #foreach my $pcr ( @$pcrs ) {
-    #print STDERR "Deleted PCR:", $pcr->getProteinCellRoleId();
-    #$pcr->markDeleted(1);
-    #$ctx->{'self_inv'}->addChild( $pcr );
-    #	}
-    #   }
 
     # deal with the special deleted GeneSynonym objects here.
 
@@ -303,42 +266,9 @@ sub run {
     }
 
 
-
-
-    # deal with adding pcrs newly to a TS - needs a new Protein.
-#	my $new_pcrs = &getGetHashRefOfCellRolesNeedingAProtein( $ctx->{'specialfile'} );
-    #  if ( $new_pcrs ) {
-    #	foreach my $crid ( keys %{$new_pcrs} ) {
-    #print STDERR "***Creating a new protein object for cell_role_id: $crid***\n";
-
-    #	my %loadHash;
-    #	$loadHash{'rna_id'} = $$new_pcrs{$crid};
-    # my $temp_r = RNA->new(\%loadHash);
-    #		$temp_r->retrieveFromDB(1);
-
-    #	my $p = &createEmptyProtein();
-    #$temp_r->addChild( $p );
-    #	undef %loadHash;
-
-    #	my %loadHash2;
-    #	$loadHash2{'cell_role_id'} = $crid;
-    #	$loadHash2{'manually_reviewed'} = 0;
-    # my $pcr_t = new ProteinCellRole(\%loadHash2);
-    #		$p->addChild( $pcr_t );
-
-    #	$ctx->{'self_inv'}->addChild( $temp_r );
-    #	}
-    #  }
-
-
-
-    ############################################################
-    # Put loop here...remember to undefPointerCache()!
-    ############################################################
-
-
     $self->getSelfInv->submit(); #submit all but delete of gene(s) (not anymore) and tu(s)
 
+    
 
 
     # now deal with deleting Gene and TU objects from added TSs.
@@ -630,7 +560,7 @@ sub submitAssocObjects {
     foreach my $assoc ($ai->getAllChildren()){
 	
 	$assoc->submit();
-	print STDERR "submitted association " . $assoc->toString() . "\n";
+	print STDERR "ASSOCIATION: \n\t assocId: " . $assoc->getGoAssociationId() . " goTermId: " . $assoc->getGoTermId() . " IsNot: " . $assoc->getIsNot() . " isDeprecated: " . $assoc->getIsDeprecated() . " \n\t defining " . $assoc->getDefining() . " ReviewStatus: " . $assoc->getReviewStatusId() . "\n\n";
 	$assocHash->{$assoc->getGoTermId()} = $assoc->getGoAssociationId();
     }
     $ai->removeAllChildren();
