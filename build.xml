@@ -40,25 +40,31 @@
                                            GUS/Pipeline-Installation, 
                                            GUS/PluginMgr-Installation, 
                                            GUS/SchemaBrowser-Installation"> 
-    <echo message="gus project: ${project}"/>
     <ant target="defaultProjectInstall"/>
+  </target>
+
+  <!-- oooooooooooooooooo  Installation Postprocess  ooooooooooooooooooooo -->
+
+  <target name="GUS-Installation-postprocess">
+    <echo message="Postprocessing the GUS installation"/>
+
+    <property name="rFile" value="${targetDir}/config/replacements.GUS.prop"/>
+
+    <available file="${rFile}" property="replacementFileExists"/>
+
+    <fail unless="replacementFileExists">
+      Error: You must configure a replacement file for ${project}.  The file will be ${rFile}.  To create it, copy ${rFile}.sample to ${rFile} and edit ${rFile}, giving it the proper values for your installation. 
+    </fail>
+
+    <replace dir="${targetDir}/bin" propertyFile="${rFile}" > 
+      <include name="**/*" />
+      <replacefilter token="@perl@" property="@perl@"/>
+    </replace> 
 
   </target>
 
-  <target name="GUS-Installation-old" depends="GUS/Common-Installation, 
-                                           GUS/DBAdmin-Installation, 
-                                           GUS/Model-Installation, 
-                                           GUS/ObjRelJ-Installation, 
-                                           GUS/ObjRelP-Installation, 
-                                           GUS/Pipeline-Installation, 
-                                           GUS/PluginMgr-Installation, 
-                                           GUS/SchemaBrowser-Installation, 
-                                           GUS/WebDevKit-Installation ">
 
-    <echo message="gus project: ${project}"/>
-    <ant target="defaultProjectInstall"/>
-
-  </target>
+  <!-- ooooooooooooooooooooooo  Install Components  ooooooooooooooooooooooo -->
 
   <target name="GUS/Common-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
@@ -81,13 +87,16 @@
   <target name="GUS/Model-Installation" depends="ProjectTree, 
                                                  checkObjects,
                                                  generatedModel,
-                                                 manuallyEditedModel">
+                                                 manuallyEditedModel,
+                                                 modelReplacementFile,
+                                                 schema">
     <ant target="defaultComponentInstall">
       <property name="component" value="GUS/Model"/>
     </ant>
+
   </target>  
 
-   <target name="generatedModel" unless="objectsAlreadyGenerated" 
+  <target name="generatedModel" unless="objectsAlreadyGenerated" 
                                  depends="ProjectTree,
                                           GUS/ObjRelP-Installation">
 
@@ -103,6 +112,11 @@
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/RAD3" includes="*.pm"/>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/SRes" includes="*.pm"/>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/TESS" includes="*.pm"/>
+       <fileset dir="${targetDir}/lib/perl/GUS/Model/Core" includes="*.pm"/>
+       <fileset dir="${targetDir}/lib/perl/GUS/Model/DoTS" includes="*.pm"/>
+       <fileset dir="${targetDir}/lib/perl/GUS/Model/RAD3" includes="*.pm"/>
+       <fileset dir="${targetDir}/lib/perl/GUS/Model/SRes" includes="*.pm"/>
+       <fileset dir="${targetDir}/lib/perl/GUS/Model/TESS" includes="*.pm"/>
      </delete>
      <exec executable="generateGusPerlObjects"/>
    </target>  
@@ -143,6 +157,31 @@
               srcfile="${projectsDir}/GUS/Model/lib/sql/definition.sql" />
   </target>
  
+
+  <target name="modelReplacementFile">
+    <property name="gusReplFile" value="${targetDir}/config/replacements.Model.prop"/>
+    <copy file="${projectsDir}/GUS/Model/config/replacements.Model.prop.sample"
+          toDir="${targetDir}/config"/>
+
+    <available file="${gusReplFile}" property="gusReplFileExists"/>
+
+    <fail unless="gusReplFileExists">
+      Error: You must configure a replacements file.  The file is ${gusReplFile}.  To create it, copy ${gusReplFile}.sample to ${gusReplFile} and edit ${gusReplFile}, giving it the proper values for your installation. 
+    </fail>
+  </target>  
+
+  <target name="schema">
+    <mkdir dir="${targetDir}/schema"/>
+    <copy todir="${targetDir}/schema">
+      <fileset dir="${projectsDir}/GUS/Model/schema" >
+        <include name="**"/>
+        <exclude name="**/CVS/*" />
+      </fileset>
+      <filterset>
+        <filtersfile file="${gusReplFile}"/>
+      </filterset>
+    </copy>
+  </target>  
 
   <target name="GUS/ObjRelJ-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">

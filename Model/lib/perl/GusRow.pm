@@ -1829,7 +1829,9 @@ sub toXML {
   my $space = "                                                                                                    ";
   my $xml = "";
   my $ext = $self->getTable();
-  $xml = substr($space,0,$indent) . "<" . $self->getClassName(); 
+  my $shortClassName = $self->getClassName();
+  $shortClassName =~ s/GUS::Model:://;
+  $xml = substr($space,0,$indent) . "<" . $shortClassName; 
   $xml .= ' xml_id="'.$self->getXmlId().'"' if $doXmlIds;
   $xml .= " objRef='$self'" if $objRef;
   foreach my $f (@{$family}) {
@@ -1866,7 +1868,7 @@ sub toXML {
       $xml .= substr($space,0,$indent) . "<$att>" . $self->get($att)."</$att>\n" if(defined $self->get($att)); # && $self->get($att) !~ /null/i);
     }
   }
-  $xml .= substr($space,0,$indent - 2) . "</" . $self->getClassName() . ">\n";
+  $xml .= substr($space,0,$indent - 2) . "</$shortClassName>\n";
   return $xml;
 }
 
