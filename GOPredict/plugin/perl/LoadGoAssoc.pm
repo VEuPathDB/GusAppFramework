@@ -471,7 +471,7 @@ sub __adjustDefiningAncestors{
 	$assocObjectInst->submit() if $submit;
 	$self->undefPointerCache();
     }
-    print LASTLOG "total: $rowCount changed: $changeCount stayed the same: $noChangeCount parents: $parentCount\n";
+    print STDERR "total: $rowCount changed: $changeCount stayed the same: $noChangeCount parents: $parentCount\n";
 
 }
 
