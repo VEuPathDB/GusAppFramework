@@ -196,7 +196,7 @@ sub run {
   $self->logArgs();
 
   $self->{propertySet} = CBIL::Util::PropertySet->new($self->getArg('cfg_file'), \@properties);
-
+  $self->getDb()->setMaximumNumberOfObjects(20000);
   my ($gusAssays, $skippedAssayCnt, $totalAssayCnt)  = $self->createGUSAssaysFromFiles();
   my $gusInsertedAssayCnt                            = $self->submitGUSAssays($gusAssays);
   
@@ -261,7 +261,6 @@ sub submitGUSAssays {
     $gusAssay->submit() if ($self->getArgs->{commit});
 
     $gusInsertedAssayCnt++;
-    $self->undefPointerCache();
   }
 
   return $gusInsertedAssayCnt;
