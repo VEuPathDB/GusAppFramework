@@ -3,8 +3,6 @@ package GUS::RAD::Plugin::GenePixStudyModuleILoader;
 @ISA = qw( GUS::PluginMgr::Plugin);
 
 use strict 'vars';
-#use IO::File;
-#use Date::Manip;
 
 use CBIL::Util::Disp;
 use CBIL::Util::PropertySet;
@@ -12,10 +10,8 @@ use GUS::PluginMgr::Plugin;
 
 use GUS::Model::RAD3::Study;
 use GUS::Model::RAD3::Assay;
-use GUS::Model::RAD3::AssayParam;
 use GUS::Model::RAD3::StudyAssay;
-use GUS::Model::RAD3::Acquisition;
-use GUS::Model::RAD3::AcquisitionParam;
+use GUS::Model::RAD3::Acquisition; 
 use GUS::Model::RAD3::RelatedAcquisition;
 use GUS::Model::RAD3::Quantification;
 use GUS::Model::RAD3::QuantificationParam;
@@ -158,21 +154,25 @@ NOTES
 
 my @properties =
 (
-    ["GPRFilePath", "",""],
-    ["tiffFilePath", "",""],
-    ["Hyb_Protocol_ID", "",""],
-    ["Acq_Protocol_ID", "",""],
-    ["Quant_Protocol_ID", "",""],
-    ["Hyb_Operator_ID", "",""],
-    ["Quant_Operator_ID", "",""],
-    ["Study_ID", "",""],
-    ["arrayId", "",""],
-    ["batchId", "",""],
-    ["hybDates", "",""],
-    ["allHybDatesSame", "",""],
-    ["allHybDates", "",""],
- #   ["description", "NONE",""],
-    ["scanDate", "",""]
+    [ "GPRFilePath",                 "", "" ],
+    [ "Study_ID",                    "", "" ],
+    [ "arrayId",                     "", "" ],
+    [ "batchId",                     "NOVALUEPROVIDED", "" ],
+    [ "allAssayDescriptionsSame",    "NOVALUEPROVIDED", "" ],
+    [ "allAssayDescriptions",        "NOVALUEPROVIDED", "" ],
+    [ "individualAssayDescriptions", "NOVALUEPROVIDED", "" ],
+    [ "Hyb_Protocol_ID",             "", "" ],
+    [ "Hyb_Operator_ID",             "", "" ],
+    [ "allHybDatesSame",             "", "" ],
+    [ "allHybDates",                 "NOVALUEPROVIDED", "" ],
+    [ "individualHybDates",          "NOVALUEPROVIDED", "" ],
+    [ "Acq_Protocol_ID",             "", "" ],
+    [ "tiffFilePath",                "", "" ],
+    [ "allScanDatesSame",            "", "" ],
+    [ "allScanDates",                "NOVALUEPROVIDED", "" ],
+    [ "individualScanDates",         "NOVALUEPROVIDED", "" ],
+    [ "Quant_Protocol_ID",           "", "" ],
+    [ "Quant_Operator_ID",           "NOVALUEPROVIDED", "" ]
  ); 
 
 ###############################
@@ -183,9 +183,6 @@ sub run {
   $self->logAlgInvocationId();
   $self->logCommit();
   $self->logArgs();
-
-  my $startTime = `date`;
-  $self->log("STATUS","Time now: $startTime");
 
   $self->{propertySet} = CBIL::Util::PropertySet->new($self->getArg('cfg_file'), \@properties);
 
@@ -206,43 +203,33 @@ sub run {
 sub createGUSAssaysFromFiles {
   my ($self) = @_;
 
+  my @gusAssays;
+  my $assayCnt = 0;
+
+  my $tiffFilePath  = $self->{propertySet}->getProp("tiffFilePath"); 
+  my $gprFilePath   = $self->{propertySet}->getProp("GPRFilePath"); 
   my $studyId       = $self->{propertySet}->getProp("Study_ID");
   my $testNumber    = $self->getArgs->{testnumber};
   my @skipAssayList = @{$self->getArgs->{skip}};
 
-  my $assayNames = $self->findAssayNames($self->{propertySet}->getProp("GPRFilePath"));
+  my $assayNames              = $self->findAssayNames($gprFilePath);
+  my $assayDescriptionHashRef = $self->parseMultipleDescriptions("allAssayDescriptionsSame","allAssayDescriptions","individualAssayDescriptions");
+  my $hybDateHashRef          = $self->parseMultipleDescriptions("allHybDatesSame","allHybDates","individualHybDates");
+  my $scanDateHashRef         = $self->parseMultipleDescriptions("allScanDatesSame","allScanDates","individualScanDates");
+  my $imageFilesRef           = $self->getImageFileNames($tiffFilePath); 
 
-  my $skipAssayCnt = scalar @skipAssayList;
+  my $skipAssayCnt  = scalar @skipAssayList;
   my $totalAssayCnt = scalar @$assayNames;
 
   $self->log("STATUS","Found $totalAssayCnt assays");
-
-  my (@gusAssays);
-  my $assayCnt = 0;
-
   $self->log("STATUS","Skipping assay/s @skipAssayList") if (scalar @skipAssayList > 0);
 
-  my $hybDateHashRef; # get hyb dates
-  if ($self->{propertySet}->getProp("allHybDatesSame") eq "yes") {
-    foreach my $assayName (@$assayNames) {
-      $hybDateHashRef->{$assayName} = $self->{propertySet}->getProp("allHybDates");
-    }
-
-  } else {
-    my @hybDates = split /\;/,$self->{propertySet}->getProp("hybDates");
-    foreach my $hybDate (@hybDates) {
-      my ($assayName,$date) = split /\|/,$hybDate;
-      $hybDateHashRef->{$assayName} = $date;
-    }
-  }
-
-  my $imageFilesRef = $self->getImageFileNames($self->{propertySet}->getProp("tiffFilePath")); 
-
   foreach my $assayName (@$assayNames) {
+
     next if (($assayCnt > ($testNumber - 1)) && (defined $testNumber));
     next if (grep { $assayName =~ /^$_/ } @skipAssayList);
 
-    my $gusAssay = $self->createSingleGUSAssay($assayName, $hybDateHashRef, $imageFilesRef);
+    my $gusAssay = $self->createSingleGUSAssay($assayName, $hybDateHashRef, $scanDateHashRef, $assayDescriptionHashRef, $imageFilesRef);
 
     push(@gusAssays, $gusAssay);
     $assayCnt++;
@@ -434,6 +421,31 @@ sub findAssayNames {
 
 ###############################
 
+sub parseMultipleDescriptions {
+  my ($self, $assayNames, $allValuesFlag, $allValues, $individualValues) = @_;
+
+  my $infoHashRef;
+  my $allValuesContent = $self->{propertySet}->getProp($allValuesFlag);
+
+  if ($allValuesContent eq "no") {
+
+    my @individualValuesArray = split /\;/, $self->{propertySet}->getProp($individualValues);
+    foreach my $individualValue (@individualValuesArray) {
+      my ($key,$value) = split /\|/, $individualValue;
+      $infoHashRef->{$key} = $value;
+    }
+  } else {
+    foreach my $assayName (@$assayNames) {
+      $infoHashRef->{$assayName} = $self->{propertySet}->getProp($allValues) if ($allValuesContent eq "yes");
+      $infoHashRef->{$assayName} = "" if ($allValuesContent eq "NOVALUEPROVIDED");
+    }
+  }
+
+  return $infoHashRef;
+}
+
+###############################
+
 sub getImageFileNames {
   my ($self, $imageFilesDir) = @_;
 
@@ -465,7 +477,7 @@ sub getImageFileNames {
 ###############################
 
 sub createSingleGUSAssay {
-  my ($self, $assayName, $hybDateHashRef, $imageFilesRef) = @_;
+  my ($self, $assayName, $hybDateHashRef, $scanDateHashRef, $assayDescriptionHashRef, $imageFilesRef) = @_;
 
   $self->log("STATUS","----- Assay $assayName -----");
 
@@ -473,9 +485,9 @@ sub createSingleGUSAssay {
 
   my $GPRinfo = $self->parseTabFile('GPR', $assayName);
 
-  my $gusAssay = $self->createGusAssay($assayName, $GPRinfo, $hybDateHashRef);
+  my $gusAssay = $self->createGusAssay($assayName, $GPRinfo, $hybDateHashRef, $assayDescriptionHashRef);
 
-  my ($gusAcquisitionCy5, $gusAcquisitionCy3) = $self->createGusAcquisition($assayName, $imageFilesRef);
+  my ($gusAcquisitionCy5, $gusAcquisitionCy3) = $self->createGusAcquisition($assayName, $imageFilesRef, $scanDateHashRef);
 
   $gusAcquisitionCy5->setParent($gusAssay);
   $gusAcquisitionCy3->setParent($gusAssay);
@@ -605,25 +617,26 @@ sub modifyKeyValuePairs {
 ###############################
 
 sub createGusAssay {
-  my ($self, $assayName, $GPRinfo, $hybDateHashRef) = @_;
+  my ($self, $assayName, $GPRinfo, $hybDateHashRef, $assayDescriptionHashRef) = @_;
 
   my $arrayId       = $self->{propertySet}->getProp("arrayId");
   my $batchId       = $self->{propertySet}->getProp("batchId");
-#  my $description   = $self->{propertySet}->getProp("description");
   my $hybProtocolId = $self->{propertySet}->getProp("Hyb_Protocol_ID");
   my $hybOperatorId = $self->{propertySet}->getProp("Hyb_Operator_ID");
 
   my $hybDate = $hybDateHashRef->{$assayName};
+  my $description = $assayDescriptionHashRef->{$assayName};
 
   my $params = {
-    array_id               => $arrayId,
-    assay_id               => $hybDate,
-    protocol_id            => $hybProtocolId,
-    operator_id            => $hybOperatorId,
-    name                   => $assayName,
-    array_batch_identifier => $batchId,
- #   description            => $description
+    array_id    => $arrayId,
+    assay_date  => $hybDate,
+    protocol_id => $hybProtocolId,
+    operator_id => $hybOperatorId,
+    name        => $assayName,
   };
+
+  $params->{"array_batch_identifier"} = $batchId if ($batchId ne "NOVALUEPROVIDED");
+  $params->{"description"} = $description if ($description ne "NOVALUEPROVIDED");
 
   my $assay = GUS::Model::RAD3::Assay->new($params);
 
@@ -639,10 +652,11 @@ sub createGusAssay {
 ###############################
 
 sub createGusAcquisition {
-  my ($self, $assayName, $imageFilesRef) = @_;
+  my ($self, $assayName, $imageFilesRef, $scanDateHashRef) = @_;
 
-  my $acqDate =       $self->{propertySet}->getProp("scanDate");
   my $acqProtocolId = $self->{propertySet}->getProp("Acq_Protocol_ID");
+
+  my $acqDate = $scanDateHashRef->{$assayName};
 
   my $channelDefs = {
     'Cy5' => "",   # HARD-CODED: select channel def from rad3.channel from your own instance
@@ -713,15 +727,15 @@ sub createGusQuantification {
 
   $gprQuantParameters->{operator_id} = $quantOperatorId if (defined $quantOperatorId);
 
-  my $acqNameCy5 = "Cy5 $assayName $tempAcqName";
-  my $gprQuantParametersCy5 = $gprQuantParameters;
+  my $acqNameCy5                 = "Cy5 $assayName $tempAcqName";
+  my $gprQuantParametersCy5      = $gprQuantParameters;
   $gprQuantParametersCy5->{name} = $acqNameCy5;
-  my $gprQuantificationCy5 = GUS::Model::RAD3::Quantification->new($gprQuantParametersCy5);
+  my $gprQuantificationCy5       = GUS::Model::RAD3::Quantification->new($gprQuantParametersCy5);
 
-  my $acqNameCy3 = "Cy3 $assayName $tempAcqName";
-  my $gprQuantParametersCy3 = $gprQuantParameters;
+  my $acqNameCy3                 = "Cy3 $assayName $tempAcqName";
+  my $gprQuantParametersCy3      = $gprQuantParameters;
   $gprQuantParametersCy3->{name} = $acqNameCy3;
-  my $gprQuantificationCy3 = GUS::Model::RAD3::Quantification->new($gprQuantParametersCy3);
+  my $gprQuantificationCy3       = GUS::Model::RAD3::Quantification->new($gprQuantParametersCy3);
 
   $self->log("STATUS","OK Inserted 2 rows in table RAD3.Quantification for Cy5 & Cy3 quantifications");
 
@@ -760,14 +774,14 @@ sub createGusQuantParams {
      });
 
     my $quantParametersCy5 = $quantParameters;
-    my $quantParametersCy3 = $quantParameters;
-
     $quantParametersCy5->setParent($protocolParam); # protocolParam in only needed here, so set parent here
-    $quantParametersCy3->setParent($protocolParam);
+    push(@gusQuantParamsCy5, $quantParametersCy5);
+
+    my $quantParametersCy3 = $quantParameters;
+    $quantParametersCy3->setParent($protocolParam); # protocolParam in only needed here, so set parent here
+    push(@gusQuantParamsCy3, $quantParametersCy3);
     
     $quantParamKeywordCnt++;
-    push(@gusQuantParamsCy5, $quantParametersCy5);
-    push(@gusQuantParamsCy3, $quantParametersCy3);
   }
 
   $self->log("STATUS","OK Inserted $quantParamKeywordCnt rows in table RAD3.QuantificationParam for Cy5 and Cy3");
