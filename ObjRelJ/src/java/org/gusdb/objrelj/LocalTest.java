@@ -97,7 +97,18 @@ public class LocalTest {
 	    printFasta(naseq2,70,140,500);
 
 	    // This should fail:
-	    printFasta(naseq2,70,0,700);
+	    try {
+		printFasta(naseq2,70,0,700);
+	    } catch (Throwable t) {
+		System.out.println("printFasta(naseq2,70,0,700) failed with an exception: " + t.toString());
+	    }
+
+	    // Retrieve a VirtualSequence whose sequence is null
+	    //
+	    VirtualSequence naseq3 = (VirtualSequence)(server.retrieveObject(s1, "DoTS", "VirtualSequence", 99873180,
+									     "sequence", new Long(0), new Long(600)));
+	    System.out.println(naseq3.toXML());
+	    printFasta(naseq3,70);
 
 	} catch (Throwable t) {
 	    t.printStackTrace(System.err);
@@ -129,7 +140,7 @@ public class LocalTest {
     //
     public static void printFasta(NASequence seq, int charsPerLine) {
 	char seqArray[] = seq.getSequence();
-	int seqLen = seqArray.length;
+	int seqLen = (seqArray == null) ? 0 : seqArray.length;
 	String descr = seq.getDescription();
 
 	System.out.println(">" + descr + " (sequence length = " + seqLen + ")");
