@@ -345,7 +345,7 @@ sub _createPipelineDir {
     $self->runCmd("mkdir -p $self->{pipelineDir}/signals") unless -e "$self->{pipelineDir}/signals";
     $self->runCmd("mkdir -p $self->{pipelineDir}/skip") unless -e "$self->{pipelineDir}/skip";
     $self->runCmd("mkdir -p $self->{pipelineDir}/plugins") unless -e "$self->{pipelineDir}/plugins";
-    $self->runCmd("mkdir -p $self->{pipelineDir}/externalFiles") unless -e "$self->{pipelineDir}/plugins";
+    $self->runCmd("mkdir -p $self->{pipelineDir}/externalFiles") unless -e "$self->{pipelineDir}/externalFiles";
 }
 
 sub _dieIfAlreadyRunning {
