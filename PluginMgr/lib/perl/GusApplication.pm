@@ -689,7 +689,13 @@ sub create_or_update_implementation {
   my $alg_gus = $pu->getAlgorithm;
 
   # we want to create a new Algorithm
-  if (!$U ) {
+  if ($U ) {
+    if ($M->getImplementation()->getCVSRevision() eq $cvsRevision) {
+      print STDERR "Error: $plugin_name_s with CVS revision $cvsRevision is already registered.  You don't need to do a +update.\n";
+#      $M->doMajorMode_History($C);
+      exit 0;
+    }
+  else {
 
     # algorithm already exists; tell user about it.
     if ($alg_gus) {
