@@ -149,29 +149,16 @@ and             g.gene_id  = r.gene_id
 				  $geneSymbolCol,
 				 ]);
 
-
+# Not tested yet
   my $gofunctionSql = 
-"select distinct gomax.na_sequence_id, go.go_id as goid, go.name as gofunction
- from
- gusdev.ProteinGOFunction pgf, 
- gusdev.ProteinAssembly pa,
- gusdev.GOFunction go,
-  (select tmp.$primaryKeyName, max(go.maximum_level) as maximum_level
-    from 
-      $tempTable tmp, 
-      gusdev.ProteinGOFunction pgf, 
-      gusdev.ProteinAssembly pa,
-      gusdev.GOFunction go
-    where pa.na_sequence_id = tmp.$primaryKeyName
-    and pgf.protein_id = pa.protein_id
-    and go.go_function_id = pgf.go_function_id
-    and go.go_cvs_version = '2.155'
-    group by tmp.$primaryKeyName
-  ) gomax
-where pa.na_sequence_id = gomax.na_sequence_id
-    and pgf.protein_id = pa.protein_id
-    and go.go_function_id = pgf.go_function_id
-    and go.maximum_level = gomax.maximum_level
+"select distinct pa.na_sequence_id, gt.go_id as goid, gt.name as gofunction
+ from sres.goterm gt, allgenes.ProteinAssembly pa, dots.goassociation ga
+ where ga.row_id = pa.protein_id
+    and ga.table_id = 
+    and ga.defining = 1
+    and ga.deprecated != 1
+    and ga.is_not != 1
+    and ga.go_term_id = gt.go_term_id
 ";
   my $gofunctionQuery = 
     GUS::ReportMaker::Query->new($gofunctionSql,
