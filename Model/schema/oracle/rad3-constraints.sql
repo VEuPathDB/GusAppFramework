@@ -102,8 +102,6 @@ alter table @oracle_rad@.BIOMATERIALMEASUREMENT add constraint FK_BMM_TREATMENT 
 /* COMPOSITEELEMENTANNOTATION */
 alter table @oracle_rad@.COMPOSITEELEMENTANNOTATION add constraint FK_CEANNOT_CE foreign key (COMPOSITE_ELEMENT_ID) references @oracle_rad@.COMPOSITEELEMENTIMP (COMPOSITE_ELEMENT_ID);
 
-/* COMPOSITEELEMENTASSEMBLY_MV */
-
 /* COMPOSITEELEMENTGUS */
 alter table @oracle_rad@.COMPOSITEELEMENTGUS add constraint FK_CEG_CE foreign key (COMPOSITE_ELEMENT_ID) references @oracle_rad@.COMPOSITEELEMENTIMP (COMPOSITE_ELEMENT_ID);
 alter table @oracle_rad@.COMPOSITEELEMENTGUS add constraint FK_CEG_TABLEINFO foreign key (TABLE_ID) references @oracle_core@.TABLEINFO (TABLE_ID);
@@ -125,10 +123,6 @@ alter table @oracle_rad@.CONTROL add constraint FK_CONTROL_ONTO02 foreign key (U
 /* ELEMENTANNOTATION */
 alter table @oracle_rad@.ELEMENTANNOTATION add constraint FK_ELEANNOT_ELEMENTIMP foreign key (ELEMENT_ID) references @oracle_rad@.ELEMENTIMP (ELEMENT_ID);
 
-/* ELEMENTASSEMBLY */
-
-/* ELEMENTASSEMBLY7 */
-
 /* ELEMENTIMP */
 alter table @oracle_rad@.ELEMENTIMP add constraint FK_ELEMENT_ARRAY foreign key (ARRAY_ID) references @oracle_rad@.ARRAY (ARRAY_ID);
 alter table @oracle_rad@.ELEMENTIMP add constraint FK_ELEMENT_COMPELEFAM foreign key (COMPOSITE_ELEMENT_ID) references @oracle_rad@.COMPOSITEELEMENTIMP (COMPOSITE_ELEMENT_ID);
@@ -139,8 +133,6 @@ alter table @oracle_rad@.ELEMENTIMP add constraint FK_ELIMP_EXTDB foreign key (E
 alter table @oracle_rad@.ELEMENTRESULTIMP add constraint FK_ELEMENTRESULT_ELEMENTIMP foreign key (ELEMENT_ID) references @oracle_rad@.ELEMENTIMP (ELEMENT_ID);
 alter table @oracle_rad@.ELEMENTRESULTIMP add constraint FK_ELEMENTRESU_QUANT foreign key (QUANTIFICATION_ID) references @oracle_rad@.QUANTIFICATION (QUANTIFICATION_ID);
 alter table @oracle_rad@.ELEMENTRESULTIMP add constraint FK_ELEMENTRES_SFR foreign key (COMPOSITE_ELEMENT_RESULT_ID) references @oracle_rad@.COMPOSITEELEMENTRESULTIMP (COMPOSITE_ELEMENT_RESULT_ID);
-
-/* GUSLINKTEMP2 */
 
 /* INTEGRITYSTATINPUT */
 alter table @oracle_rad@.INTEGRITYSTATINPUT add constraint INTEGRITYSTATINPUT_FK01 foreign key (INTEGRITY_STATISTIC_ID) references @oracle_rad@.INTEGRITYSTATISTIC (INTEGRITY_STATISTIC_ID);
@@ -169,8 +161,6 @@ alter table @oracle_rad@.ONTOLOGYENTRY add constraint FK_ONTOLOGYENTRY_PARENT fo
 alter table @oracle_rad@.ONTOLOGYENTRY add constraint FK_ONTOLOGYENTRY_TABLEINFO foreign key (TABLE_ID) references @oracle_core@.TABLEINFO (TABLE_ID);
 alter table @oracle_rad@.ONTOLOGYENTRY add constraint FK_ONTO_EXTDB foreign key (EXTERNAL_DATABASE_RELEASE_ID) references @oracle_sres@.EXTERNALDATABASERELEASE (EXTERNAL_DATABASE_RELEASE_ID);
 
-/* ONTOLOGYENTRY_OLD */
-
 /* PROCESSIMPLEMENTATION */
 alter table @oracle_rad@.PROCESSIMPLEMENTATION add constraint FK_PROCESSIMP_ONTO foreign key (PROCESS_TYPE_ID) references @oracle_rad@.ONTOLOGYENTRY (ONTOLOGY_ENTRY_ID);
 
@@ -183,8 +173,6 @@ alter table @oracle_rad@.PROCESSINVOCATION add constraint FK_PROCESS_PROCIMP for
 /* PROCESSINVOCATIONPARAM */
 alter table @oracle_rad@.PROCESSINVOCATIONPARAM add constraint FK_PROCESSINVPARAM_PROCESSINV foreign key (PROCESS_INVOCATION_ID) references @oracle_rad@.PROCESSINVOCATION (PROCESS_INVOCATION_ID);
 
-/* PROCESSINVOCATION_OLD */
-
 /* PROCESSINVQUANTIFICATION */
 alter table @oracle_rad@.PROCESSINVQUANTIFICATION add constraint FK_PROCESSINQUANT_P foreign key (PROCESS_INVOCATION_ID) references @oracle_rad@.PROCESSINVOCATION (PROCESS_INVOCATION_ID);
 alter table @oracle_rad@.PROCESSINVQUANTIFICATION add constraint FK_PROCESSINQUANT_Q foreign key (QUANTIFICATION_ID) references @oracle_rad@.QUANTIFICATION (QUANTIFICATION_ID);
@@ -196,10 +184,6 @@ alter table @oracle_rad@.PROCESSIO add constraint FK_PROCESSIO_PROCESSINV foreig
 
 /* PROCESSIOELEMENT */
 alter table @oracle_rad@.PROCESSIOELEMENT add constraint FK_PROCESSIO foreign key (PROCESS_IO_ID) references @oracle_rad@.PROCESSIO (PROCESS_IO_ID);
-
-/* PROCESSIOELEMENT_MV */
-
-/* PROCESSIOELEMENT_OLD */
 
 /* PROCESSRESULT */
 alter table @oracle_rad@.PROCESSRESULT add constraint FK_PROCESSRESULT_ONTO foreign key (UNIT_TYPE_ID) references @oracle_rad@.ONTOLOGYENTRY (ONTOLOGY_ENTRY_ID);
@@ -224,8 +208,6 @@ alter table @oracle_rad@.PROTOCOLQCPARAM add constraint FK_PROTOCOLQCPARAM_ONTO1
 alter table @oracle_rad@.PROTOCOLQCPARAM add constraint FK_PROTOCOLQCPARAM_ONTO2 foreign key (UNIT_TYPE_ID) references @oracle_rad@.ONTOLOGYENTRY (ONTOLOGY_ENTRY_ID);
 alter table @oracle_rad@.PROTOCOLQCPARAM add constraint FK_PROTOCOLQCPARAM_PROTO foreign key (PROTOCOL_ID) references @oracle_rad@.PROTOCOL (PROTOCOL_ID);
 
-/* PROTOCOL_OLD */
-
 /* QUANTIFICATION */
 alter table @oracle_rad@.QUANTIFICATION add constraint FK_QUANT_ACQ foreign key (ACQUISITION_ID) references @oracle_rad@.ACQUISITION (ACQUISITION_ID);
 alter table @oracle_rad@.QUANTIFICATION add constraint FK_QUANT_CONTACT foreign key (OPERATOR_ID) references @oracle_sres@.CONTACT (CONTACT_ID);
@@ -235,10 +217,6 @@ alter table @oracle_rad@.QUANTIFICATION add constraint FK_QUANT_TABLEINFO foreig
 /* QUANTIFICATIONPARAM */
 alter table @oracle_rad@.QUANTIFICATIONPARAM add constraint FK_QUANTPARAM_PRTPRM foreign key (PROTOCOL_PARAM_ID) references @oracle_rad@.PROTOCOLPARAM (PROTOCOL_PARAM_ID);
 alter table @oracle_rad@.QUANTIFICATIONPARAM add constraint FK_QUANTPARAM_QUANT foreign key (QUANTIFICATION_ID) references @oracle_rad@.QUANTIFICATION (QUANTIFICATION_ID);
-
-/* QUANTIFICATIONPARAM_OLD */
-
-/* QUANTIFICATION_OLD */
 
 /* RELATEDACQUISITION */
 alter table @oracle_rad@.RELATEDACQUISITION add constraint FK_RELACQ_ACQ01 foreign key (ACQUISITION_ID) references @oracle_rad@.ACQUISITION (ACQUISITION_ID);
@@ -275,8 +253,6 @@ alter table @oracle_rad@.STUDYDESIGNDESCRIPTION add constraint FK_STDYDESDCR_STD
 alter table @oracle_rad@.STUDYDESIGNTYPE add constraint FK_STDYDESTYPE_ONTO foreign key (ONTOLOGY_ENTRY_ID) references @oracle_rad@.ONTOLOGYENTRY (ONTOLOGY_ENTRY_ID);
 alter table @oracle_rad@.STUDYDESIGNTYPE add constraint FK_STDYDESTYPE_STDYDES foreign key (STUDY_DESIGN_ID) references @oracle_rad@.STUDYDESIGN (STUDY_DESIGN_ID);
 
-/* STUDYDESIGN_OLD */
-
 /* STUDYFACTOR */
 alter table @oracle_rad@.STUDYFACTOR add constraint FK_STDYFCTR_ONTO foreign key (STUDY_FACTOR_TYPE_ID) references @oracle_rad@.ONTOLOGYENTRY (ONTOLOGY_ENTRY_ID);
 alter table @oracle_rad@.STUDYFACTOR add constraint FK_STDYFCTR_STDYDES foreign key (STUDY_DESIGN_ID) references @oracle_rad@.STUDYDESIGN (STUDY_DESIGN_ID);
@@ -286,12 +262,6 @@ alter table @oracle_rad@.STUDYFACTORVALUE add constraint FK_STDYFCTRVAL_ASSAY fo
 alter table @oracle_rad@.STUDYFACTORVALUE add constraint FK_STDYFCTRVAL_OEUNIT foreign key (MEASUREMENT_UNIT_OE_ID) references @oracle_rad@.ONTOLOGYENTRY (ONTOLOGY_ENTRY_ID);
 alter table @oracle_rad@.STUDYFACTORVALUE add constraint FK_STDYFCTRVAL_OEVALUE foreign key (VALUE_ONTOLOGY_ENTRY_ID) references @oracle_rad@.ONTOLOGYENTRY (ONTOLOGY_ENTRY_ID);
 alter table @oracle_rad@.STUDYFACTORVALUE add constraint FK_STDYFCTRVAL_STDYFCTR foreign key (STUDY_FACTOR_ID) references @oracle_rad@.STUDYFACTOR (STUDY_FACTOR_ID);
-
-/* STUDYFACTORVALUE_OLD */
-
-/* TEMP_ARRAYVIEWER_INTENSITY */
-
-/* TEMP_FORMHELP */
 
 /* TREATMENT */
 alter table @oracle_rad@.TREATMENT add constraint FK_TREATMENT6 foreign key (BIO_MATERIAL_ID) references @oracle_rad@.BIOMATERIALIMP (BIO_MATERIAL_ID);

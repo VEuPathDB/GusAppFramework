@@ -316,8 +316,6 @@ CREATE TABLE @oracle_rad@.ASSAYCONTROL (
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-/* WARNING - ASSAYGROUP does not appear in core.TableInfo */
-
 CREATE TABLE @oracle_rad@.ASSAYGROUP (
     STUDY_ID                           NUMBER(4)                                     NOT NULL,
     ASSAY_ID                           NUMBER(8)                                     NOT NULL,
@@ -465,14 +463,6 @@ CREATE TABLE @oracle_rad@.COMPOSITEELEMENTANNOTATION (
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-/* WARNING - COMPOSITEELEMENTASSEMBLY_MV does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.COMPOSITEELEMENTASSEMBLY_MV (
-    COMPOSITE_ELEMENT_ID               NUMBER(12)                                    NULL,
-    ASSEMBLY_NA_SEQUENCE_ID            NUMBER(12)                                    NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
 CREATE TABLE @oracle_rad@.COMPOSITEELEMENTGUS (
     COMPOSITE_ELEMENT_GUS_ID           NUMBER(12)                                    NOT NULL,
     COMPOSITE_ELEMENT_ID               NUMBER(12)                                    NULL,
@@ -600,22 +590,6 @@ CREATE TABLE @oracle_rad@.ELEMENTANNOTATION (
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-/* WARNING - ELEMENTASSEMBLY does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.ELEMENTASSEMBLY (
-    ELEMENT_ID                         NUMBER                                        NULL,
-    ASSEMBLY_NA_SEQUENCE_ID            NUMBER                                        NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
-/* WARNING - ELEMENTASSEMBLY7 does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.ELEMENTASSEMBLY7 (
-    ELEMENT_ID                         NUMBER(10)                                    NULL,
-    ASSEMBLY_NA_SEQUENCE_ID            NUMBER(10)                                    NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
 CREATE TABLE @oracle_rad@.ELEMENTIMP (
     ELEMENT_ID                         NUMBER(10)                                    NOT NULL,
     COMPOSITE_ELEMENT_ID               NUMBER(10)                                    NULL,
@@ -720,16 +694,6 @@ CREATE TABLE @oracle_rad@.ELEMENTRESULTIMP (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
-/* WARNING - GUSLINKTEMP2 does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.GUSLINKTEMP2 (
-    COMPOSITE_ELEMENT_ID               NUMBER(10)                                    NOT NULL,
-    NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
-    SIMILARITY_ID                      NUMBER(10)                                    NOT NULL,
-    NA_FEATURE_ID                      NUMBER(10)                                    NULL)
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
@@ -896,32 +860,6 @@ CREATE TABLE @oracle_rad@.ONTOLOGYENTRY (
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-/* WARNING - ONTOLOGYENTRY_OLD does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.ONTOLOGYENTRY_OLD (
-    ONTOLOGY_ENTRY_ID                  NUMBER(10)                                    NOT NULL,
-    PARENT_ID                          NUMBER(10)                                    NULL,
-    EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NULL,
-    SOURCE_ID                          VARCHAR2(100)                                 NULL,
-    URI                                VARCHAR2(500)                                 NULL,
-    NAME                               VARCHAR2(100)                                 NULL,
-    CATEGORY                           VARCHAR2(100)                                 NOT NULL,
-    VALUE                              VARCHAR2(100)                                 NOT NULL,
-    DEFINITION                         VARCHAR2(500)                                 NULL,
-    MODIFICATION_DATE                  DATE                                          NOT NULL,
-    USER_READ                          NUMBER(1)                                     NOT NULL,
-    USER_WRITE                         NUMBER(1)                                     NOT NULL,
-    GROUP_READ                         NUMBER(1)                                     NOT NULL,
-    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
-    OTHER_READ                         NUMBER(1)                                     NOT NULL,
-    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
-    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
-    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
-    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
 CREATE TABLE @oracle_rad@.PROCESSIMPLEMENTATION (
     PROCESS_IMPLEMENTATION_ID          NUMBER(5)                                     NOT NULL,
     PROCESS_TYPE_ID                    NUMBER(5)                                     NOT NULL,
@@ -997,26 +935,6 @@ CREATE TABLE @oracle_rad@.PROCESSINVOCATIONPARAM (
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-/* WARNING - PROCESSINVOCATION_OLD does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.PROCESSINVOCATION_OLD (
-    PROCESS_INVOCATION_ID              NUMBER(5)                                     NOT NULL,
-    PROCESS_IMPLEMENTATION_ID          NUMBER(5)                                     NOT NULL,
-    PROCESS_INVOCATION_DATE            DATE                                          NOT NULL,
-    MODIFICATION_DATE                  DATE                                          NOT NULL,
-    USER_READ                          NUMBER(1)                                     NOT NULL,
-    USER_WRITE                         NUMBER(1)                                     NOT NULL,
-    GROUP_READ                         NUMBER(1)                                     NOT NULL,
-    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
-    OTHER_READ                         NUMBER(1)                                     NOT NULL,
-    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
-    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
-    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
-    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
 CREATE TABLE @oracle_rad@.PROCESSINVQUANTIFICATION (
     PROCESS_INV_QUANTIFICATION_ID      NUMBER(8)                                     NOT NULL,
     PROCESS_INVOCATION_ID              NUMBER(5)                                     NOT NULL,
@@ -1071,22 +989,6 @@ CREATE TABLE @oracle_rad@.PROCESSIOELEMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
-/* WARNING - PROCESSIOELEMENT_MV does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.PROCESSIOELEMENT_MV (
-    PROCESS_IO_ID                      NUMBER(12)                                    NOT NULL,
-    ELEMENT_ID                         NUMBER(10)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
-/* WARNING - PROCESSIOELEMENT_OLD does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.PROCESSIOELEMENT_OLD (
-    PROCESS_IO_ID                      NUMBER(12)                                    NOT NULL,
-    ELEMENT_ID                         NUMBER(10)                                    NOT NULL)
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
@@ -1197,33 +1099,6 @@ CREATE TABLE @oracle_rad@.PROTOCOLQCPARAM (
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-/* WARNING - PROTOCOL_OLD does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.PROTOCOL_OLD (
-    PROTOCOL_ID                        NUMBER(10)                                    NOT NULL,
-    PROTOCOL_TYPE_ID                   NUMBER(5)                                     NOT NULL,
-    BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NULL,
-    EXTERNAL_DATABASE_RELEASE_ID       NUMBER(4)                                     NULL,
-    SOURCE_ID                          VARCHAR2(100)                                 NULL,
-    NAME                               VARCHAR2(100)                                 NOT NULL,
-    URI                                VARCHAR2(100)                                 NULL,
-    PROTOCOL_DESCRIPTION               VARCHAR2(4000)                                NULL,
-    HARDWARE_DESCRIPTION               VARCHAR2(500)                                 NULL,
-    SOFTWARE_DESCRIPTION               VARCHAR2(500)                                 NULL,
-    MODIFICATION_DATE                  DATE                                          NOT NULL,
-    USER_READ                          NUMBER(1)                                     NOT NULL,
-    USER_WRITE                         NUMBER(1)                                     NOT NULL,
-    GROUP_READ                         NUMBER(1)                                     NOT NULL,
-    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
-    OTHER_READ                         NUMBER(1)                                     NOT NULL,
-    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
-    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
-    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
-    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
 CREATE TABLE @oracle_rad@.QUANTIFICATION (
     QUANTIFICATION_ID                  NUMBER(8)                                     NOT NULL,
     ACQUISITION_ID                     NUMBER(8)                                     NOT NULL,
@@ -1263,51 +1138,6 @@ CREATE TABLE @oracle_rad@.QUANTIFICATIONPARAM (
     ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
-    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
-/* WARNING - QUANTIFICATIONPARAM_OLD does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.QUANTIFICATIONPARAM_OLD (
-    QUANTIFICATION_PARAM_ID            NUMBER(5)                                     NOT NULL,
-    QUANTIFICATION_ID                  NUMBER(4)                                     NOT NULL,
-    NAME                               VARCHAR2(100)                                 NOT NULL,
-    VALUE                              VARCHAR2(50)                                  NOT NULL,
-    MODIFICATION_DATE                  DATE                                          NOT NULL,
-    USER_READ                          NUMBER(1)                                     NOT NULL,
-    USER_WRITE                         NUMBER(1)                                     NOT NULL,
-    GROUP_READ                         NUMBER(1)                                     NOT NULL,
-    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
-    OTHER_READ                         NUMBER(1)                                     NOT NULL,
-    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
-    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
-    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
-    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
-/* WARNING - QUANTIFICATION_OLD does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.QUANTIFICATION_OLD (
-    QUANTIFICATION_ID                  NUMBER(4)                                     NOT NULL,
-    ACQUISITION_ID                     NUMBER(4)                                     NOT NULL,
-    OPERATOR_ID                        NUMBER(10)                                    NULL,
-    PROTOCOL_ID                        NUMBER(10)                                    NULL,
-    QUANTIFICATION_DATE                DATE                                          NULL,
-    NAME                               VARCHAR2(100)                                 NULL,
-    URI                                VARCHAR2(500)                                 NULL,
-    MODIFICATION_DATE                  DATE                                          NOT NULL,
-    USER_READ                          NUMBER(1)                                     NOT NULL,
-    USER_WRITE                         NUMBER(1)                                     NOT NULL,
-    GROUP_READ                         NUMBER(1)                                     NOT NULL,
-    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
-    OTHER_READ                         NUMBER(1)                                     NOT NULL,
-    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
-    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
-    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
@@ -1485,26 +1315,6 @@ CREATE TABLE @oracle_rad@.STUDYDESIGNTYPE (
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-/* WARNING - STUDYDESIGN_OLD does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.STUDYDESIGN_OLD (
-    STUDY_DESIGN_ID                    NUMBER(5)                                     NOT NULL,
-    STUDY_ID                           NUMBER(5)                                     NOT NULL,
-    DESCRIPTION                        VARCHAR2(4000)                                NULL,
-    MODIFICATION_DATE                  DATE                                          NOT NULL,
-    USER_READ                          NUMBER(1)                                     NOT NULL,
-    USER_WRITE                         NUMBER(1)                                     NOT NULL,
-    GROUP_READ                         NUMBER(1)                                     NOT NULL,
-    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
-    OTHER_READ                         NUMBER(1)                                     NOT NULL,
-    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
-    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
-    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
-    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
 CREATE TABLE @oracle_rad@.STUDYFACTOR (
     STUDY_FACTOR_ID                    NUMBER(5)                                     NOT NULL,
     STUDY_DESIGN_ID                    NUMBER(5)                                     NOT NULL,
@@ -1545,58 +1355,6 @@ CREATE TABLE @oracle_rad@.STUDYFACTORVALUE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
-/* WARNING - STUDYFACTORVALUE_OLD does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.STUDYFACTORVALUE_OLD (
-    STUDY_FACTOR_VALUE_ID              NUMBER(8)                                     NOT NULL,
-    STUDY_FACTOR_ID                    NUMBER(5)                                     NOT NULL,
-    ASSAY_ID                           NUMBER(8)                                     NOT NULL,
-    FACTOR_VALUE                       VARCHAR2(100)                                 NOT NULL,
-    NAME                               VARCHAR2(100)                                 NULL,
-    MODIFICATION_DATE                  DATE                                          NOT NULL,
-    USER_READ                          NUMBER(1)                                     NOT NULL,
-    USER_WRITE                         NUMBER(1)                                     NOT NULL,
-    GROUP_READ                         NUMBER(1)                                     NOT NULL,
-    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
-    OTHER_READ                         NUMBER(1)                                     NOT NULL,
-    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
-    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
-    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
-    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
-/* WARNING - TEMP_ARRAYVIEWER_INTENSITY does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.TEMP_ARRAYVIEWER_INTENSITY (
-    ASSAY_ID                           NUMBER(8)                                     NOT NULL,
-    DoTS Id                            NUMBER(12)                                    NOT NULL,
-    DESCRIPTION                        VARCHAR2(500)                                 NULL,
-    ARRAY_ROW                          VARCHAR2(5)                                   NULL,
-    ARRAY_COLUMN                       VARCHAR2(5)                                   NULL,
-    GRID_ROW                           VARCHAR2(5)                                   NULL,
-    GRID_COLUMN                        VARCHAR2(5)                                   NULL,
-    SUB_ROW                            VARCHAR2(5)                                   NULL,
-    SUB_COLUMN                         VARCHAR2(5)                                   NULL,
-    normalized log value               FLOAT(126)                                    NOT NULL,
-    CONFIDENCE_LEVEL                   FLOAT(126)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
-/* WARNING - TEMP_FORMHELP does not appear in core.TableInfo */
-
-CREATE TABLE @oracle_rad@.TEMP_FORMHELP (
-    FORM_HELP_ID                       NUMBER(10)                                    NOT NULL,
-    FORM_NAME                          VARCHAR2(50)                                  NOT NULL,
-    FIELD_NAME                         VARCHAR2(50)                                  NOT NULL,
-    ATTRIBUTE_NAME                     VARCHAR2(100)                                 NULL,
-    ISMANDATORY                        VARCHAR2(4)                                   NULL,
-    DEFINITION                         VARCHAR2(1000)                                NULL,
-    EXAMPLES                           VARCHAR2(500)                                 NULL)
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 

@@ -305,8 +305,6 @@ CREATE TABLE @oracle_radver@.ASSAYBIOMATERIALVER (
  TABLESPACE @oracle_radverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-/* WARNING - ASSAYCONTROLVER does not appear in core.TableInfo */
-
 CREATE TABLE @oracle_radver@.ASSAYCONTROLVER (
     ASSAY_CONTROL_ID                   NUMBER(8)                                     NOT NULL,
     ASSAY_ID                           NUMBER(8)                                     NOT NULL,

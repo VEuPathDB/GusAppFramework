@@ -281,9 +281,7 @@ AS SELECT
   row_group_id,
   row_project_id,
   row_alg_invocation_id 
-FROM CompositeElementImp
-WHERE subclass_view = 'CompositeElement'
-WITH CHECK OPTION;
+FROM CompositeElementImp;
 
 CREATE VIEW @oracle_rad@.COMPOSITEELEMENTRESULT
 AS SELECT
@@ -326,16 +324,7 @@ AS SELECT
   row_group_id,
   row_project_id,
   row_alg_invocation_id 
-FROM ElementImp
-WHERE subclass_view = 'Element'
-WITH CHECK OPTION;
-
-/* WARNING - ELEMENTASSEMBLY_MV does not appear in core.TableInfo */
-
-CREATE VIEW @oracle_rad@.ELEMENTASSEMBLY_MV
-( ELEMENT_ID,
-  ASSEMBLY_NA_SEQUENCE_ID )
-AS select "ELEMENT_ID","ASSEMBLY_NA_SEQUENCE_ID" from rad3.elementassembly7;
+FROM ElementImp;
 
 CREATE VIEW @oracle_rad@.ELEMENTRESULT
 AS SELECT
