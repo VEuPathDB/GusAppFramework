@@ -61,7 +61,7 @@ sub runRepeatMask {
 	}
     }
     if (!$valid) {
-	&runAndZip($propFile, "$pipelineDir/logs/$name.mask.log", $resultFile);
+	&run($propFile, "$pipelineDir/logs/$name.mask.log", $resultFile);
 	$valid = &validateRM($inputFile, $resultFile, $errFile);
 	if  (!$valid) {
 	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
@@ -201,7 +201,19 @@ sub runAndZip {
   $status = system($cmd);
   die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
 
+  print "  zipping $resultFile...\n";
+
   $cmd = "gzip $resultFile";
+  $status = system($cmd);
+  die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
+}
+
+sub run {
+  my ($propFile, $logFile, $resultFile) = @_;
+
+  my ($cmd, $status);
+
+  $cmd = "liniacjob $propFile >& $logFile";
   $status = system($cmd);
   die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
 }
