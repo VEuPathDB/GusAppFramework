@@ -5,6 +5,7 @@ package GUS::Common::Plugin::LoadSequenceOntology;
 use strict;
 use FileHandle;
 use GUS::ObjRelP::DbiDatabase;
+
 $| = 1;
 
 #on command line need input file, so version, so cvs version
@@ -81,7 +82,7 @@ sub Insert {
    my $so_version =  $self->getArgs->{'so_version'};
    my $so_cvs_version = $self->getArgs->{'so_cvs_version'};
 
-   my $dbh = $db->getQueryHandle();
+   my $dbh = $self->getQueryHandle();
 
    print STDERR "$SOid,$ontology_name, $so_version, $so_cvs_version, $Term, $definition\n";
 
