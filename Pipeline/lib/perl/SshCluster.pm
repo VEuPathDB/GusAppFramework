@@ -31,7 +31,7 @@ sub copyTo {
     my ($self, $fromDir, $fromFile, $toDir) = @_;
 
     chdir $fromDir || $self->{mgr}->error("Can't chdir $fromDir\n");
-    $self->{mgr}->error("$fromDir/$fromFile doesn't exist\n") unless -e $fromFile;
+    $self->{mgr}->error("destination directory $fromDir/$fromFile doesn't exist\n") unless -e "$fromDir/$fromFile";
 
 
     my $user = "$self->{user}\@" if $self->{user};

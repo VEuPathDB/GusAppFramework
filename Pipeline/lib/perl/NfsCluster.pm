@@ -29,8 +29,8 @@ sub setManager {
 sub copyTo {
     my ($self, $fromDir, $fromFile, $toDir) = @_;
 
-    $self->{mgr}->error("$fromDir/$fromFile doesn't exist\n") unless -e $fromFile;
-    $self->{mgr}->error("$toDir doesn't exist\n") unless -d $toDir;
+    $self->{mgr}->error("origin file or directory $fromDir/$fromFile doesn't exist\n") unless -e "$fromDir/$fromFile";
+    $self->{mgr}->error("destination directory $toDir doesn't exist\n") unless -d $toDir;
 
     $self->{mgr}->runCmd("cp $fromDir/$fromFile $toDir");
 }
