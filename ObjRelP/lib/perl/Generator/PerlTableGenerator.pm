@@ -61,7 +61,6 @@ sub _genDefaultParams {
     $s .= '  $self->setChildRelations('.$self->_genChildRelationsData().");\n\n";
     $s .= $self->_genSpecialRelatives();
     $s .= '  $self->setHasSequence('.($self->{table}->hasSequence() ? 1 : 0).");\n\n";
-    $s .= '  $self->setHasPKSequence('.($self->{table}->hasPKSequence() ? 1 : 0).");\n\n";
     my $pkeys = $self->{table}->getPrimaryKeyAttributes();
     $s .= '  $self->setPrimaryKeyList(\''.join("','",@{$pkeys})."');\n\n" if $pkeys;
     $s .= '  $self->setTableId('.$self->{table}->getTableId().");\n\n";

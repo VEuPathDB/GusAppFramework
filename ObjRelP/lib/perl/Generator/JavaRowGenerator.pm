@@ -5,6 +5,8 @@ use GUS::ObjRelP::Generator::RowGenerator;
 
 use strict;
 
+my $tab = "    ";
+#test
 sub new{
     my ($class, $generator, $schemaName, $tableName, $tableGenerator) = @_;
     
@@ -83,12 +85,12 @@ sub _genConstructor {
     my ($self) = @_;
     
     my $output = "";
-    $output .= "    //Empty Constructor; used in GUSRow.createGUSRow()\n";
-    $output .= "    public " . $self->{tableName} . "_Row(){};\n\n";
-    $output .= "    // Constructor that creates a new GUSRow that is not in the database but can be submitted there.\n";
-    $output .= "    public " . $self->{tableName} . "_Row(ServerI server, String sessionId){\n";
-    $output .= "    \tsuper(server, sessionId);\n";
-    $output .= "    }\n\n";
+    $output .= $tab . "//Empty Constructor; used in GUSRow.createGUSRow()\n";
+    $output .= $tab . "public " . $self->{tableName} . "_Row(){};\n\n";
+    $output .= $tab . "// Constructor that creates a new GUSRow that is not in the database but can be submitted there.\n";
+    $output .= $tab . "public " . $self->{tableName} . "_Row(ServerI server, String sessionId){\n";
+    $output .= $tab . $tab . "super(server, sessionId);\n";
+    $output .= $tab . "}\n\n";
     return $output;
 }
  
@@ -141,10 +143,10 @@ sub _genAccessors {
     
     # Abstract methods from GUSRow: setAttributesFromResultSet and getTable
     #
-    $output .= "    // ----------------------------------------------\n";
-    $output .= "    // GUSRow abstract methods\n";
-    $output .= "    // ----------------------------------------------\n";
-    $output .= "\n";
+    $output .= $tab . "// ----------------------------------------------\n";
+    $output .= $tab . "// GUSRow abstract methods\n";
+    $output .= $tab . "// ----------------------------------------------\n";
+    $output .= $tab . "\n";
     $output .= $self->_createJavaSetAttsFromHT($setAllAtts, $setAllSuperAtts, $setAllParentAtts, $setAllFkSuperAtts);
     $output .= $self->_createJavaGetTable();
 
@@ -167,20 +169,18 @@ sub _genPkAccessors{
     my $primKeyJavaType = $self->_oracleTypeConverter( $primaryKeyInfo, $primaryKeyName);
     my $valueMethod = $self->_getValueMethodFromJavaType($primKeyJavaType);
 
-    my $output = "public long getPrimaryKeyValue(){\n";
-    $output .= "\t" . $primKeyJavaType . " pk" . $primaryKeyName . " = get" . $self->_capAttName($primaryKeyName) . "();\n";
-    $output .= "\tif (pk" . $primaryKeyName . " == null){ return -1; }\n";
-    $output .= "Long pk = new Long(pk" . $primaryKeyName . $valueMethod . ");\n";
-    $output .= "return pk.longValue();\n";
-    $output .= "}\n\n"; 
+    my $output = $tab . "public long getPrimaryKeyValue(){\n";
+    $output .= $tab . $tab . $primKeyJavaType . " pk" . $primaryKeyName . " = get" . $self->_capAttName($primaryKeyName) . "();\n";
+    $output .= $tab . $tab . "if (pk" . $primaryKeyName . " == null){ return -1; }\n";
+    $output .= $tab . $tab . "Long pk = new Long(pk" . $primaryKeyName . $valueMethod . ");\n";
+    $output .= $tab . $tab . "return pk.longValue();\n";
+    $output .= $tab . "}\n\n"; 
     
-    $output .= "protected void setPrimaryKeyValue(Long pk)\n";
-    $output .= "\tthrows ClassNotFoundException,InstantiationException, IllegalAccessException, SQLException{\n";
+    $output .= $tab . "protected void setPrimaryKeyValue(Long pk)\n";
+    $output .= $tab . $tab . "throws ClassNotFoundException,InstantiationException, IllegalAccessException, SQLException{\n";
 
-    
-#    $output .= "\tString pkString = pk.toString();\n";
-    $output .= "\tset". $self->_capAttName($primaryKeyName) . "(new " . $primKeyJavaType . "(pk" . $valueMethod .  "));\n";
-    $output .= "}\n\n";
+    $output .= $tab . $tab . "set". $self->_capAttName($primaryKeyName) . "(new " . $primKeyJavaType . "(pk" . $valueMethod .  "));\n";
+    $output .= $tab . "}\n\n";
     
     return $output;
 }
@@ -213,11 +213,11 @@ sub _createAttributeAccessors{
 	my $javaType = $self->_oracleTypeConverter( $attInfo, $att );
 
 	# add line to setAttributesFromResultSet_aux
-	$setAllAtts .= "	    ";                    # JC: these lines are in a 'try' block
+	#$setAllAtts .= "	    ";                    # JC: these lines are in a 'try' block
 	$setAllAtts .= $self->_createJavaHTLine($att, $set, $javaType, $primaryKeys, 0);
 
 	## print the set, setInitial, and get methods
-	$output .= "    // $att\n";
+	$output .= $tab . "// $att\n";
 	
 	# CLOB/BLOB columns
 	if (($javaType eq "Clob") || ($javaType eq "Blob")) {
@@ -251,7 +251,7 @@ sub _createAttributeAccessors{
 	else {
 	    $output .= $self->_createJavaSet($att, $set, $javaType, $primaryKeys);
 	    $output .= $self->_createJavaGet($att, $get, $javaType);
-	   # $output .= $self->_createJavaSetInitial($att, $set, $javaType, $primaryKeys);
+	   
 	}
     }
     return ($output, $setAllAtts);
@@ -260,7 +260,7 @@ sub _createAttributeAccessors{
 sub _createChildAccessors{
 
     my ($self) = @_;
-    my $output = "//Child Objects\n";
+    my $output = $tab . "//Child Objects\n";
     
 #    my $childRelations = $self->_getChildRelations();
     my $table = $self->{generator}->getTable($self->{fullName}, 1);
@@ -278,13 +278,15 @@ sub _createChildAccessors{
 
 	my $packageChildTable = $self->_formatPackageTableName($childSchema, $childTable);
 
-	$output .= "public void add" . $accessorName . "(" . $packageChildTable . " " .
+	$output .= $tab . "public void add" . $accessorName . "(" . $packageChildTable . " " .
 	    lc($accessorName) ."){\n";
-	$output .= "\t" . lc($accessorName) .  ".setParent(this, \"$childFkCol\");\n";
- 	$output .= "}\n";
-	$output .= "public Vector get" . $accessorName . "List(){\n";
-	$output .= "\t return getChildren(\"$instanceName\");\n";
-	$output .= "}\n";
+	$output .= $tab . $tab . lc($accessorName) .  ".setParent(this, \"$childFkCol\");\n";
+ 	$output .= $tab . "}\n";
+	$output .= $tab . "public Vector get" . $accessorName . "List(boolean localOnly)\n";
+	$output .= $tab . $tab . "throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException{\n";
+	$output .= $tab . $tab . "GUSTable table = GUSTable.getTableByName(\"$childSchema\", \"$childTable\");\n";
+	$output .= $tab . $tab ."return getChildren(\"$instanceName\", table, \"$childFkCol\", localOnly);\n";
+	$output .= $tab . "}\n\n";
     }
     return $output;
 }
@@ -296,6 +298,8 @@ sub _getChildRelations{
     my ($self) = @_;
     my $childRelations;
     my $table = $self->{generator}->getTable($self->{fullName} ,1);
+
+    #dtb: might get imp table child relations anyway, and then can take out this if block
     if ($table->isView()){
 
 	my $fullRealTableName = $table->getRealTableName();
@@ -393,24 +397,24 @@ sub _findDuplicateChildren{
 sub _createParentAccessors {
     
     my ($self, $parentHash) = @_;
-    my $accessorOutput = "// Parent Objects\n";
+    my $accessorOutput = "\n" . $tab . "// Parent Objects\n";
     #instance variable declarations
     my $setAllParentAtts = "";
     foreach my $fkAtt( keys %$parentHash){
 	my $parentTableName = $parentHash->{$fkAtt};
-		my $accessorName = $self->_attributeToJavaName($fkAtt, 1);
+	my $accessorName = $self->_attributeToJavaName($fkAtt, 1);
 	#set method
-	$accessorOutput .= "public void set" . $accessorName . "(" . $parentTableName . " " . $fkAtt . "){\n";
-	$accessorOutput .= "\tsetParent(" . $fkAtt . ", \"" . $fkAtt . "\");\n";
-	$accessorOutput .= "}\n\n";
+	$accessorOutput .= $tab . "public void set" . $accessorName . "(" . $parentTableName . " " . $fkAtt . "){\n";
+	$accessorOutput .= $tab . $tab . "setParent(" . $fkAtt . ", \"" . $fkAtt . "\");\n";
+	$accessorOutput .= $tab . "}\n\n";
 	my ($parentSchema, $parentTable) = $self->_cutPackageTableName($parentTableName);
 	#get method
 	
-	$accessorOutput .= "public $parentTableName get" . $accessorName . "(boolean retrieveFromDb)\n";
-	$accessorOutput .= "\tthrows GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException{\n";
-	$accessorOutput .= "\tGUSTable parentTable = GUSTable.getTableByName(\"$parentSchema\", \"$parentTable\");\n";
-	$accessorOutput .= "\treturn ($parentTableName)getParent(\"$fkAtt\", retrieveFromDb);\n";
-	$accessorOutput .= "}\n\n";
+	$accessorOutput .= $tab . "public $parentTableName get" . $accessorName . "(boolean retrieveFromDb)\n";
+	$accessorOutput .= $tab . $tab . "throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException{\n";
+	$accessorOutput .= $tab . $tab . "GUSTable parentTable = GUSTable.getTableByName(\"$parentSchema\", \"$parentTable\");\n";
+	$accessorOutput .= $tab . $tab . "return ($parentTableName)getParent(\"$fkAtt\", retrieveFromDb);\n";
+	$accessorOutput .= $tab . "}\n\n";
 
 	$setAllParentAtts .= $self->_createJavaParentHTLine($fkAtt, $parentTableName, 0);
     }
@@ -544,26 +548,26 @@ sub _createJavaHTLine {
 	$super = "super.";
     }
     if (($RSJavaType eq "Clob") || ($RSJavaType eq "Blob")){
-	$line .= "$super" . "$RSset" . "_Retrieved(($RSJavaType)rowHash.get(\"$RSatt\"), specialCases);"
+	$line .= $tab . $tab . "$super" . "$RSset" . "_Retrieved(($RSJavaType)rowHash.get(\"$RSatt\"), specialCases);"
     }
-    if ($RSJavaType eq "Boolean" || $RSJavaType eq "Short" || $RSJavaType eq "Long" ||
+    elsif ($RSJavaType eq "Boolean" || $RSJavaType eq "Short" || $RSJavaType eq "Long" ||
 	$RSJavaType eq "Float" || $RSJavaType eq "Double" || $RSJavaType eq "Integer"){
-	$line .= "BigDecimal $RSatt = (BigDecimal)rowHash.get(\"$RSatt\");\n";
+	$line .= $tab . $tab . "BigDecimal $RSatt = (BigDecimal)rowHash.get(\"$RSatt\");\n";
 	if ($RSJavaType eq "Boolean"){
-	    $line .= "$super" . "set_Retrieved(\"$RSatt\", $RSatt != null ? new Boolean(intToBool($RSatt.intValue())) : null);\n";
+	    $line .= $tab . $tab . "$super" . "set_Retrieved(\"$RSatt\", $RSatt != null ? new Boolean(intToBool($RSatt.intValue())) : null);\n";
 	}
 	else{
 	    my $methodName = $self->_getValueMethodFromJavaType($RSJavaType);
-	    $line .= "$super" . "set_Retrieved(\"$RSatt\", $RSatt != null ? new $RSJavaType($RSatt" . $methodName . ") : null);\n";
+	    $line .= $tab . $tab . "$super" . "set_Retrieved(\"$RSatt\", $RSatt != null ? new $RSJavaType($RSatt" . $methodName . ") : null);\n";
 	}
     }
     elsif ($RSJavaType eq "byte{}") 
     {	
-	$line .= "$super" . "set_Retrieved(\"$RSatt\", (byte[])rowHash.get(\"$RSatt\"));";
+	$line .= $tab . $tab . "$super" . "set_Retrieved(\"$RSatt\", (byte[])rowHash.get(\"$RSatt\"));";
     }
     
     else{
-	$line .=  "$super" . "set_Retrieved(\"$RSatt\", ($RSJavaType)rowHash.get(\"$RSatt\"));\n";
+	$line .=  $tab . $tab . "$super" . "set_Retrieved(\"$RSatt\", ($RSJavaType)rowHash.get(\"$RSatt\"));\n";
     }
     
     $line .= "\n";
@@ -572,16 +576,32 @@ sub _createJavaHTLine {
 
 sub _createJavaParentHTLine{
     #forSuperClass?
-    my ($self, $att, $parentTableName, $forSuperClass) = @_;
+    my ($self, $att, $packageParentTableName, $forSuperClass) = @_;
     my $super = "";
     $super = "super." if $forSuperClass;
-    my ($parentSchema, $parentTable) = $self->_cutPackageTableName($parentTableName);
-    my $line = "";
-    $line .= "BigDecimal $att = (BigDecimal)rowHash.get(\"$att\");\n";
-    $line .= "$super" . "set_ParentRetrieved(\"$att\", GUSTable.getTableByName(\"$parentSchema\", \"$parentTable\"),\n";
-    $line .= "                    $att.longValue());\n\n"; 
+    my ($parentSchema, $parentTableName) = $self->_cutPackageTableName($packageParentTableName);
     
+    my $line = "";
+    $line .= $tab . $tab . "BigDecimal $att = (BigDecimal)rowHash.get(\"$att\");\n";
 
+    my $parentTableString;
+    my $schemaTableName  = "$parentSchema" . "::" . "$parentTableName";
+
+    my $parentTable = $self->{generator}->getTable($schemaTableName, 1);
+    my $realParentTableName = $parentTable->getRealTableName();  
+    my ($parentSuperClassViewName) = $realParentTableName =~ /\S+Imp$/;  #see if parent is imp table
+    if ($parentSuperClassViewName) {  #make string to get the correct subclass
+	$parentTableString = "subclassView_" . $att . "_tablename";
+	$line .= $tab . $tab . "String $parentTableString = getSubclassViewTableName($att, \"$parentSchema\", \"" . $parentTableName . "\");\n";
+	
+    }
+    else {
+	$parentTableString = "\"$parentTableName\"";
+    }
+
+    $line .= $tab . $tab . "$super" . "set_ParentRetrieved(\"$att\", GUSTable.getTableByName(\"$parentSchema\", $parentTableString),\n";
+    $line .= $tab . $tab . $tab . "$att != null ? new Long($att.longValue()) : null);\n\n"; 
+    
     return $line;
 
 }
@@ -699,6 +719,7 @@ sub _createJavaGet{
     my $line;
     $line .= <<END_GET;
     public $GjavaType $Gget () { return ($GjavaType)get_Attribute("$Gatt"); }
+
 END_GET
     return $line;
 }
@@ -761,17 +782,11 @@ END_GET
 #JDBC result set object
 sub _createJavaSetAttsFromHT{
     my ($self, $allAtts, $allSuperAtts, $allParentAtts, $allSuperParentAtts) = @_;
-    my $line = <<END_SET_ALL;
-    protected void setAttributesFromHashtable_aux(Hashtable rowHash, Hashtable specialCases) 
-    {
-	
-	${allAtts}${allSuperAtts}${allParentAtts}${allSuperParentAtts}
-        
-
-    }
-
-END_SET_ALL
-  return $line;
+    my $line = "";
+    $line .= $tab . "protected void setAttributesFromHashtable_aux(Hashtable rowHash, Hashtable specialCases){\n";
+    $line .= $allAtts . $allSuperAtts . $allParentAtts . $allSuperParentAtts;
+    $line .= $tab . "}\n\n";
+    return $line;
 }
 
 # Implementation of GUSRow's abstract getTable method
