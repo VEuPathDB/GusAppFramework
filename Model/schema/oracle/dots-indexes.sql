@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:45:59 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 13:25:12 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -257,6 +257,7 @@ create index @oracle_dots@.EST_IND01 on @oracle_dots@.EST (CLONE_ID)  TABLESPACE
 create index @oracle_dots@.EST_IND02 on @oracle_dots@.EST (CONTACT_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.EST_IND03 on @oracle_dots@.EST (NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.EST_IND04 on @oracle_dots@.EST (LIBRARY_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.EST_IND05 on @oracle_dots@.EST (DBEST_ID_EST)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* EVIDENCE */
 create index @oracle_dots@.EVIDENCE_IND01 on @oracle_dots@.EVIDENCE (FACT_ID,FACT_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -726,7 +727,7 @@ create index @oracle_dots@.TRANSLATEDAAFEATSEG_IND01 on @oracle_dots@.TRANSLATED
 
 
 
-/* 378 index(es) */
+/* 379 index(es) */
 
 SPOOL OFF
 SET ECHO OFF

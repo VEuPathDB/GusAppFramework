@@ -4,7 +4,7 @@
 /*                                                                                            */
 /* CREATE USER statments for the Oracle users/schemas that will hold the tables in GUS.       */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:42:29 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 23:57:12 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -171,6 +171,24 @@ GRANT CREATE SESSION TO @oracle_rad3@;
 GRANT CREATE TABLE TO @oracle_rad3@;
 GRANT CREATE VIEW TO @oracle_rad3@;
 GRANT CREATE SEQUENCE TO @oracle_rad3@;
+
+/* ----------------------------------------------------------------------- */
+/* New schema = @oracle_rad3ver@ (original name = rad3ver) */
+/* ----------------------------------------------------------------------- */
+DROP USER @oracle_rad3ver@ CASCADE;
+
+CREATE USER @oracle_rad3ver@ IDENTIFIED BY @oracle_rad3verPassword@ 
+  TEMPORARY TABLESPACE @oracle_tempTablespace@
+  DEFAULT TABLESPACE @oracle_rad3verTablespace@
+  QUOTA @oracle_tempQuota@ ON @oracle_tempTablespace@
+  QUOTA @oracle_defaultQuota@ ON @oracle_rad3verTablespace@;
+
+GRANT CONNECT TO @oracle_rad3ver@;
+GRANT RESOURCE TO @oracle_rad3ver@;
+GRANT CREATE SESSION TO @oracle_rad3ver@;
+GRANT CREATE TABLE TO @oracle_rad3ver@;
+GRANT CREATE VIEW TO @oracle_rad3ver@;
+GRANT CREATE SEQUENCE TO @oracle_rad3ver@;
 
 SPOOL OFF
 SET ECHO OFF

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* tess-views.sql                                                                             */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:48:19 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 13:28:15 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -20,7 +20,7 @@ AS SELECT
   name,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -45,7 +45,7 @@ AS SELECT
   name,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -70,7 +70,7 @@ AS SELECT
   name,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -94,7 +94,7 @@ AS SELECT
   taxon_id,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -119,7 +119,7 @@ AS SELECT
   review_status_id,
   int1 AS number_of_members,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -143,7 +143,7 @@ AS SELECT
   taxon_id,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -167,7 +167,7 @@ AS SELECT
   taxon_id,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -192,7 +192,7 @@ AS SELECT
   review_status_id,
   int1 AS multiplicty,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -213,7 +213,7 @@ AS SELECT
   string1 AS value,
   int1 AS mismatches_allowed,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -232,7 +232,7 @@ AS SELECT
   subclass_view,
   sbcg_grammar_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -289,7 +289,7 @@ AS SELECT
   boolean2 AS anchor_point_center,
   boolean3 AS anchor_point_end,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -310,7 +310,7 @@ AS SELECT
   boolean1 AS is_relative,
   int1 AS value,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -331,7 +331,7 @@ AS SELECT
   string1 AS value,
   int1 AS mismatches_allowed,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -356,7 +356,7 @@ AS SELECT
   float3 AS maximum_observations,
   float4 AS minimum_observations,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* tessver-views.sql                                                                          */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:48:46 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 13:28:51 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -20,7 +20,7 @@ AS SELECT
   name,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -32,7 +32,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
   from TESSVer.ActivityImpVer WHERE subclass_view = 'ActivityGeneRegulation' WITH CHECK OPTION;
@@ -49,7 +49,7 @@ AS SELECT
   name,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -61,7 +61,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
   from TESSVer.ActivityImpVer WHERE subclass_view = 'ActivityProteinDnaBinding' WITH CHECK OPTION;
@@ -78,7 +78,7 @@ AS SELECT
   name,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -90,7 +90,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
   from TESSVer.ActivityImpVer with check option;
@@ -107,7 +107,7 @@ AS SELECT
   review_status_id,
   int1 AS number_of_members,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -119,7 +119,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
 from TESSVer.MoietyImpVer where subclass_view = 'TESS::MoietyComplex' with check option;
@@ -135,7 +135,7 @@ AS SELECT
   taxon_id,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -147,7 +147,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
 from TESSVer.MoietyImpVer where subclass_view = 'TESS::MoietyHeteroDimer' with check option;
@@ -163,7 +163,7 @@ AS SELECT
   taxon_id,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -175,7 +175,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
 from TESSVer.MoietyImpVer where subclass_view = 'TESS::MoietyMonomer' with check option;
@@ -192,7 +192,7 @@ AS SELECT
   review_status_id,
   int1 AS multiplicty,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -204,7 +204,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
 from TESSVer.MoietyImpVer where subclass_view = 'TESS::MoietyMultimer' with check option;
@@ -220,7 +220,7 @@ AS SELECT
   taxon_id,
   review_status_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -232,7 +232,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
 from TESSVer.MoietyImpVer where subclass_view = 'TESS::Moiety' with check option;
@@ -245,7 +245,7 @@ AS SELECT
   string1 AS value,
   int1 AS mismatches_allowed,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -257,7 +257,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
 from TESSVer.SbcgRecognitionImpVer where subclass_view = 'SbcgRecogConsensusString' with check option;
@@ -268,7 +268,7 @@ AS SELECT
   subclass_view,
   sbcg_grammar_id,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -280,7 +280,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
 from TESSVer.SbcgRecognitionImpVer where subclass_view = 'SbcgRecogGap' with check option;
@@ -337,7 +337,7 @@ AS SELECT
   boolean2 AS anchor_point_center,
   boolean3 AS anchor_point_end,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -349,7 +349,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
 from TESSVer.SbcgRecognitionImpVer where subclass_view = 'SbcgRecogPathExpression' with check option;
@@ -362,7 +362,7 @@ AS SELECT
   boolean1 AS is_relative,
   int1 AS value,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -374,7 +374,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
 from TESSVer.SbcgRecognitionImpVer where subclass_view = 'SbcgRecogPosition' with check option;
@@ -387,7 +387,7 @@ AS SELECT
   string1 AS value,
   int1 AS mismatches_allowed,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -399,7 +399,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
 from TESSVer.SbcgRecognitionImpVer where subclass_view = 'SbcgRecogString' with check option;
@@ -416,7 +416,7 @@ AS SELECT
   float3 AS maximum_observations,
   float4 AS minimum_observations,
   /* gus overhead */
-        modification_date AS modification_date,
+  modification_date,
   user_read,
   user_write,
   group_read,
@@ -428,7 +428,7 @@ AS SELECT
   row_project_id,
   row_alg_invocation_id,
   /* version tracking */
-        version_alg_invocation_id AS version_alg_invocation_id,
+  version_alg_invocation_id,
   version_date,
   version_transaction_id 
 from TESSVer.SbcgRecognitionImpVer where subclass_view = 'SbcgRecogWeightMatrix' with check option;

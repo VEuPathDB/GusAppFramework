@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dotsver-tables.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:45:59 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 22:56:56 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -1306,7 +1306,7 @@ CREATE TABLE @oracle_dotsver@.EVIDENCEVER (
     FACT_ID                            NUMBER(10)                                    NOT NULL,
     ATTRIBUTE_NAME                     VARCHAR2(30)                                  NULL,
     EVIDENCE_GROUP_ID                  NUMBER(12)                                    NOT NULL,
-    BEST_EVIDENCE                      NUMBER(1)                                     NOT NULL,
+    BEST_EVIDENCE                      NUMBER(1)                                     DEFAULT 0  NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
