@@ -493,12 +493,12 @@ public abstract class GUSRow implements java.io.Serializable {
      *
      * @param att      The CLOB attribute in question.
      * @param cached   Object that records how much of the CLOB has been cached locally.
-     * @param start    Start of subsequence to retrieve, inclusive.
-     * @param end      End of subsequence to retrieve, inclusive.
+     * @param start    Start of subsequence to retrieve in 1-based coordinates, inclusive.
+     * @param end      End of subsequence to retrieve in 1-based coordinates, inclusive.
      */
     protected char[] getClobValue(String att, CacheRange cached, long start, long end) {
 	char[] value = (char[])this.get(att);
-        long cacheStart = 0;
+        long cacheStart = 1;
         long cacheEnd = value.length;
 
 	if (cached != null) {
@@ -540,7 +540,7 @@ public abstract class GUSRow implements java.io.Serializable {
      */
     protected byte[] getBlobValue(String att, CacheRange cached, long start, long end) {
 	byte[] value = (byte[])this.get(att);
-        long cacheStart = 0;
+        long cacheStart = 1;
         long cacheEnd = value.length;
 
 	if (cached != null) {
@@ -602,27 +602,31 @@ public abstract class GUSRow implements java.io.Serializable {
 	    
 	    try {
 		long length = value.length();
-		long start = (cacheStart == null) ? 0 : cacheStart.longValue();
-		long end = (cacheEnd == null) ? length - 1: cacheEnd.longValue();
-		boolean isEntireLob = ((start == 0) && (end == (length - 1)));
+		long start = (cacheStart == null) ? 1 : cacheStart.longValue();
+		long end = (cacheEnd == null) ? length: cacheEnd.longValue();
+		boolean isEntireLob = ((start == 1) && (end == length));
 		
 		long cachedLength = end - start + 1;
 		char[] data = new char[(int)cachedLength];
 		java.io.Reader r = value.getCharacterStream();
 		long offset = 0;
 
+		// 0-based start and end coordinates
+		long zeroStart = start - 1;
+		long zeroEnd = end - 1;
+
 		// Skip to the appropriate location in the stream (start)
 		//
-		while (offset < start) {
-		    long amountSkipped = r.skip(start - offset);
+		while (offset < zeroStart) {
+		    long amountSkipped = r.skip(zeroStart - offset);
 		    offset += amountSkipped;
 		}
 		
 		// Then read the requested range (up to end)
 		//
 		int arrayPosn = 0;
-		while (offset < end) {
-		    int amountRead = r.read(data, arrayPosn, (int)(end - offset + 1));
+		while (offset < zeroEnd) {
+		    int amountRead = r.read(data, arrayPosn, (int)(zeroEnd - offset + 1));
 		    if (amountRead == -1) break;
 		    arrayPosn += amountRead;
 		    offset += amountRead;
@@ -668,26 +672,30 @@ public abstract class GUSRow implements java.io.Serializable {
 	    
 	    try {
 		long length = value.length();
-		long start = (cacheStart == null) ? 0 : cacheStart.longValue();
-		long end = (cacheEnd == null) ? length - 1: cacheEnd.longValue();
-		boolean isEntireLob = ((start == 0) && (end == (length - 1)));
+		long start = (cacheStart == null) ? 1 : cacheStart.longValue();
+		long end = (cacheEnd == null) ? length : cacheEnd.longValue();
+		boolean isEntireLob = ((start == 0) && (end == length));
 		
 		byte[] data = new byte[(int)length];
 		java.io.InputStream r = value.getBinaryStream();
 		long offset = 0;
-		
+				
+		// 0-based start and end coordinates
+		long zeroStart = start - 1;
+		long zeroEnd = end - 1;
+
 		// Skip to the appropriate location in the stream (start)
 		//
-		while (offset < start) {
-		    long amountSkipped = r.skip(start - offset);
+		while (offset < zeroStart) {
+		    long amountSkipped = r.skip(zeroStart - offset);
 		    offset += amountSkipped;
 		}
 		
 		// Then read the requested range (up to end)
 		//
 		int arrayPosn = 0;
-		while (offset < end) {
-		    int amountRead = r.read(data, arrayPosn, (int)(end - offset + 1));
+		while (offset < zeroEnd) {
+		    int amountRead = r.read(data, arrayPosn, (int)(zeroEnd - offset + 1));
 		    if (amountRead == -1) break;
 		    arrayPosn += amountRead;
 		    offset += amountRead;

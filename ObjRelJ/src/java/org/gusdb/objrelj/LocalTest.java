@@ -68,17 +68,17 @@ public class LocalTest {
 	    ExternalNASequence naseq1 = (ExternalNASequence)(server.retrieveObject(s1, "DoTS", "ExternalNASequence", 50130249));
 	    System.out.println(naseq1.toXML());
 	    long seqLen = naseq1.getSequenceLobLength().longValue();
-	    System.out.println("Cached sequence = " + naseq1.getSequenceLobCached());
+	    System.out.println("Cached sequence 50130249 = " + naseq1.getSequenceLobCached());
 
 	    printFasta(naseq1,70);
-	    printFasta(naseq1,70,0,(int)seqLen);
+	    printFasta(naseq1,70,1,(int)seqLen);
 
 	    // Try converting to BioJava SymbolList
 	    //
 	    SymbolList sl1 = naseq1.getSequenceAsSymbolList();
 	    printSymbolList(sl1);
 
-	    SymbolList sl2 = naseq1.getSequenceAsSymbolList(70,139);
+	    SymbolList sl2 = naseq1.getSequenceAsSymbolList(71,140);
 	    printSymbolList(sl2);
 
 	    // Try to retrieve Taxon parent of this sequence
@@ -93,12 +93,12 @@ public class LocalTest {
 										   "sequence", new Long(0), new Long(600)));
 	    System.out.println(naseq2.toXML());
 	    System.out.println("Cached sequence = " + naseq2.getSequenceLobCached());
-	    printFasta(naseq2,70,0,500);
-	    printFasta(naseq2,70,140,500);
+	    printFasta(naseq2,70,1,500);
+	    printFasta(naseq2,70,141,500);
 
 	    // This should fail:
 	    try {
-		printFasta(naseq2,70,0,700);
+		printFasta(naseq2,70,1,700);
 	    } catch (Throwable t) {
 		System.out.println("printFasta(naseq2,70,0,700) failed with an exception: " + t.toString());
 	    }
@@ -168,9 +168,9 @@ public class LocalTest {
 
 	System.out.println(">" + descr + " (sequence length = " + seqLen + ", showing " + first + "-" + (last-1) + ")");
 
-	for (int i = first;i < last - 1;i += charsPerLine) {
+	for (int i = first;i <= last;i += charsPerLine) {
 	    int end = i + charsPerLine - 1;
-	    if (end > (last - 1)) end = last - 1;
+	    if (end > last) end = last;
 	    char[] subseq = seq.getSequence(i, end);
 	    int requestLen = end - i + 1;
 	    System.out.println(new String(subseq));
@@ -186,7 +186,7 @@ public class LocalTest {
 
 	System.out.println(">" + descr + " (sequence length = " + seqLen + ")");
 
-	for (int i = 0;i < seqLen;i += charsPerLine) {
+	for (int i = 0;i <= seqLen - 1;i += charsPerLine) {
 	    int end = i + charsPerLine - 1;
 	    if (end > (seqLen - 1)) end = seqLen - 1;
 	    System.out.println(new String(seqArray, i, end - i + 1));

@@ -97,14 +97,6 @@ public interface ServerI {
     // RETRIEVE FROM DATABASE OR CACHE - OBJECTS WITH CLOB VALUES
     // ------------------------------------------------------------------
     
-    // JC: This method should be further generalized to handle the case where 
-    // an object has *multiple* CLOB values.  We should also add an argument to
-    // the retrieveObject methods to allow the user to specify a set of attributes
-    // that should not be retrieved at all e.g., allowing us to skip reading 
-    // CLOB values that aren't needed.  However, this may require some modification
-    // to the GUSRow, so that we know which attributes weren't retrieved (versus
-    // those that really are null in the database.)
-    
     /**
      * Retrieve a single object from the database, but only retrieve as much of the
      * specified CLOB value as indicated by <code>start</code> and <code>end</code>.
@@ -119,10 +111,11 @@ public interface ServerI {
      * @param tname    The object's table.
      * @param pk       Primary key value for the row of interest.
      * @param clobAtt  The name of the CLOB-containing attribute.
-     * @param start    Start coordinate of the CLOB range to retrieve and cache.  If null 
-     *                 the value 0 will be used instead.
-     * @param end      End coordinate of the CLOB range to retrieve and cache.  If null
-     *                 clobAtt.length() will be used instead.
+     * @param start    Start coordinate of the CLOB range to retrieve and cache in 1-based 
+     *                 coordinates.  If null and clobAtt != null then the value 1 will be used instead.
+     * @param end      End coordinate of the CLOB range to retrieve and cache in 1-based 
+     *                 coordinates.  If null and clobAtt != null then the value clobAtt.length() 
+     *                 will be used instead.
      */
     public GUSRow retrieveObject(String session, String owner, String tname, long pk, 
 				 String clobAtt, Long start, Long end)

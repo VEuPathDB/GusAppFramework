@@ -33,7 +33,7 @@ public class NASequence extends NASequence_Row {
      * the entire sequence is not cached locally.
      */
     public SymbolList getSequenceAsSymbolList() {
-	return this.getSequenceAsSymbolList(0, this.getSequenceLobLength().longValue() - 1);
+	return this.getSequenceAsSymbolList(1, this.getSequenceLobLength().longValue());
     }
 
     /**
