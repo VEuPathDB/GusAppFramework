@@ -6,11 +6,11 @@ use CBIL::Util::PropertySet;
 
 my @properties = 
 (
- ["database",   "",  ""],
+ ["databaseOwner",   "",  ""],
  ["userName",   "",  ""],
  ["group",   "",  ""],
  ["project",   "",  ""],
-# ["databaseServer",    "",  ""],
+ ["dbiDsn",    "",  ""],
  ["databaseLogin",         "",  ""],
  ["databasePassword",   "",  ""],
  ["readOnlyDatabaseLogin",         "",  ""],
@@ -56,14 +56,14 @@ sub getDatabasePassword {
   return $self->{propertySet}->getProp('databasePassword');
 }
 
-sub getDatabase {
+sub getDatabaseOwner {
   my ($self) = @_;
-  return $self->{propertySet}->getProp('database');
+  return $self->{propertySet}->getProp('databaseOwner');
 }
 
-sub getDatabaseServer {
+sub getDbiDsn {
   my ($self) = @_;
-  return $self->{propertySet}->getProp('databaseServer');
+  return $self->{propertySet}->getProp('dbiDsn');
 }
 
 sub getReadOnlyDatabaseLogin {
