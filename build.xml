@@ -297,7 +297,9 @@
 
 
 
-  <target name="GUS/ObjRelJ-Installation" depends="ProjectTree, GUS/ObjRelJ-RMIC">
+  <target name="GUS/ObjRelJ-Installation" depends="ProjectTree">
+
+<!-- was doing rmic compiling here, but for the time being, not necessary -->
 
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
