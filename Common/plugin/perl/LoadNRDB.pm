@@ -315,41 +315,44 @@ sub makeNRDBAndExternalAASequence {
     my $st = $dbh->prepare("select aa_sequence_id from dots.nrdbentry where source_id = ? and external_database_release_id = ?");
 
     while (<NRDB>) {
-	chomp;
-	# /^\>/ pattern indicating the beginning of the defline, if $seq exists, process the set 
-	if (/^\>/) { 
-	    if ($self->getArgs->{'testnumber2'} && $count > ($self->getArgs->{'testnumber2'})) {
-		$self->log("The testnumber, $count, 
+      chomp;
+      # /^\>/ pattern indicating the beginning of the defline, if $seq exists, process the set 
+      if (/^\>/) { 
+	if ($self->getArgs->{'testnumber2'} && $count > ($self->getArgs->{'testnumber2'})) {
+	  $self->log("The testnumber, $count, 
                               of entries has been processed\n");
-		last;
-	    }
-	    if ($seq) {
-		$count++;
-		#get the preferred gi and source_id and get any one aa_sequence_id corresponding to a member of the set
-		unless ($self->getArgs->{'restart'} && $count <= $self->getArgs->{'restart'}) {
-		    if (scalar (keys %EntryHash) != 0) {
-			my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id,$dbHash);
-			$newExtAASeq->submit();
-			$num_submit++;
-			print STDOUT ("Submitted set number:$num_submit\n");
-			$newExtAASeq->undefPointerCache();
-		    }
-		}
-		$seq = "";
-		foreach my $ky (keys %EntryHash) {
-		    delete $EntryHash{$ky};
-		}
-	    }
-	    my $line = $_;
-	    my @arr = split (/\cA/, $line);
-	    $self->parseLine(\@arr, $dbHash, $taxonHash, \%EntryHash);
-	    if (scalar (keys %EntryHash) == 0){
-		next;
-	    }
+	  last;
 	}
-	else {
-	    $seq .= $_;
+	if ($seq) {
+	  $count++;
+	  #get the preferred gi and source_id and get any one aa_sequence_id corresponding to a member of the set
+	  unless ($self->getArgs->{'restart'} && $count <= $self->getArgs->{'restart'}) {
+	    if (scalar (keys %EntryHash) != 0) {
+	      my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id,$dbHash);
+	      eval {
+		$newExtAASeq->submit();
+	      }
+		&handleFailure($seq, $@) if ($@); 
+	      $num_submit++;
+	      print STDOUT ("Submitted set number:$num_submit\n");
+	      $newExtAASeq->undefPointerCache();
+	    }
+	  }
+	  $seq = "";
+	  foreach my $ky (keys %EntryHash) {
+	    delete $EntryHash{$ky};
+	  }
 	}
+	my $line = $_;
+	my @arr = split (/\cA/, $line);
+	$self->parseLine(\@arr, $dbHash, $taxonHash, \%EntryHash);
+	if (scalar (keys %EntryHash) == 0){
+	  next;
+	}
+      }
+      else {
+	$seq .= $_;
+      }
     }
     $st->finish();
     my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id,$dbHash);
@@ -360,7 +363,7 @@ sub makeNRDBAndExternalAASequence {
     $self->log("$entryresult");
     $newExtAASeq->undefPointerCache();
     return $entryresult;
-}
+  }
 
 sub parseLine {
     my ($self,$arr, $dbHash, $taxonHash, $EntryHash) = @_;
@@ -499,6 +502,12 @@ sub makeExtAASeq {
   }
   return $newExtAASeq;
 }
+
+sub handleFailure {
+  my ($seq, $errMessage) = @_;
+  print STDERR "$errMessage:\n$seq\n";
+}
+  
 
 sub makeNRDBEntries {
     my ($newExtAASeq,$pref_gi,$pref_source,$EntryHash,$dbHash) = @_;
