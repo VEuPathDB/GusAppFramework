@@ -138,13 +138,25 @@ foreach my $A(@na_sourceids)    {
   my($na_seq, $source_id) = @{$A};
 
 
-#  print STDERR "ConsideringForFLDT.$na_seq\n";
+  print STDERR "ConsideringForFLDT.$na_seq\n";
 
    $ct++;
 
    last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
+    my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
+
+    $assembly->retrieveFromDB();
+    $assembly->setFullLengthCds(1);
+    $self->toAddEvidenceSourceID($source_id, $assembly);
+    $assembly->submit();
+    $self->undefPointerCache();
+
+
 }
+
+
+#figure out which DTs are not present in both arrays those new as full length
 
 my %seen = ();
 my @diffArray;
@@ -161,26 +173,8 @@ push (@diffArray, $id);  }
 
   }
 
-print STDERR "@diffArray";
-print STDERR scalar"(@diffArray)";
-
-#figure out which DTs are not present in both arrays and set those new as full length
-
-
-   foreach my $dt(@diffArray)   {
-
-
-    my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $dt});
-
-    $assembly->retrieveFromDB();
-    $assembly->setFullLengthCds(1);
-#    $self->toAddEvidenceSourceID($source_id, $assembly);
-    $assembly->submit();
-
-
-    $self->undefPointerCache();
-
-}
+print STDERR "@diffArray\n";
+#print STDERR scalar"(@diffArray)";
 
 
 
