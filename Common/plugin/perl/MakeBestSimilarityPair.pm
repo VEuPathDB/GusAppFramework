@@ -50,6 +50,13 @@ sub new {
 	     h => '(The ids from Taxon of the taxa from which the sequences come from separated by comma.)  for now external_database_release_ids; 211 for P.falciparum, 692 for P.yoelii.',
 	     t => 'string',
 	 },
+	 
+	 {
+	     o => 'restart_alg_invocation_ids',
+	     h => 'previous runs of the plugin that were interrupted if restarting; must also delete results for two species that were partially completed',
+	     t => 'string',
+	 },
+
 	 ];
 
     $self->initialize({requiredDbVersion => {},
@@ -72,6 +79,7 @@ sub run {
     $self->logAlert('COMMIT', $self->getCla->{commit} ? 'ON' : 'OFF' );
     print "Testing on $self->getCla->{'testnumber'}\n" if $self->getCla->{'testnumber'};
     
+    my $processedDbReleases = $self->getProcessedDbReleases();
     
     ##DBI handle to be used for queries outside the objects...
     
@@ -92,76 +100,34 @@ sub run {
     
     my $stmtLen = $dbh->prepare("select length from dots.AASequence where aa_sequence_id=?");
 
+    my $queryTableId = $self->getCla()->{queryTableId};
+
     for(my $i=0;$i<scalar(@taxa)-1;$i++) {   
 	for(my $j=$i+1;$j<scalar(@taxa);$j++) {
-
+	    
 	    my %sim;
-
-	    if(($taxa[$i] == 211 && $taxa[$j] == 692) || ($taxa[$j] == 211 && $taxa[$i] == 692) ) {
-		
-		my $sth = $dbh->prepare("select s.query_id, s.subject_id, s.pvalue_mant,s.pvalue_exp,s.number_identical/s.total_match_length, s.similarity_id from dots.similarity s, dots.translatedaasequence a1, dots.translatedaasequence a2 where s.subject_table_id=337 and s.query_table_id=337 and s.query_id=a1.aa_sequence_id and a1.external_database_release_id in ($pfdb) and s.subject_id=a2.aa_sequence_id and a2.external_database_release_id = $pyydb and s.row_alg_invocation_id in ($algInvoIds) order by s.pvalue_exp asc,s.pvalue_mant asc,s.number_identical/s.total_match_length desc");
-		$sth -> execute();
-		while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
-		    @{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s,337,337) unless(exists($sim{$qid}));
-		}
-		$sth->finish();
-		
-		$sth = $dbh->prepare("select s.query_id, s.subject_id, s.pvalue_mant,s.pvalue_exp,s.number_identical/s.total_match_length, s.similarity_id from dots.similarity s, dots.translatedaasequence a1, dots.translatedaasequence a2 where s.subject_table_id=337 and s.query_table_id=337 and s.query_id=a1.aa_sequence_id and a1.external_database_release_id in ($pyydb) and s.subject_id=a2.aa_sequence_id and a2.external_database_release_id in ($pfdb) and s.row_alg_invocation_id in ($algInvoIds) order by s.pvalue_exp asc,s.pvalue_mant asc,s.number_identical/s.total_match_length desc");
-		$sth -> execute();
-		while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
-		    @{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s,337,337) unless(exists($sim{$qid}));
-		}
-		
-	    }elsif($taxa[$i] == 211 || $taxa[$j] == 211) {
-
-		my $t = $taxa[$i] == 211 ? $taxa[$j] : $taxa[$i];
-		my $sth = $dbh->prepare("select s.query_id, s.subject_id, s.pvalue_mant,s.pvalue_exp,s.number_identical/s.total_match_length, s.similarity_id from dots.similarity s, dots.translatedaasequence a1, dots.externalaasequence a2 where s.subject_table_id=83 and s.query_table_id=337 and s.query_id=a1.aa_sequence_id and a1.external_database_release_id in ($pfdb) and s.subject_id=a2.aa_sequence_id and a2.external_database_release_id = $t and s.row_alg_invocation_id in ($algInvoIds) order by s.pvalue_exp asc,s.pvalue_mant asc,s.number_identical/s.total_match_length desc");
-		$sth -> execute();
-		while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
-		    @{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s,337,83) unless(exists($sim{$qid}));
-		}
-		$sth->finish();
-		
-		$sth = $dbh->prepare("select s.query_id, s.subject_id, s.pvalue_mant,s.pvalue_exp,s.number_identical/s.total_match_length, s.similarity_id from dots.similarity s, dots.externalaasequence a1, dots.translatedaasequence a2 where s.subject_table_id=337 and s.query_table_id=83 and s.query_id=a1.aa_sequence_id and a1.external_database_release_id = $t and s.subject_id=a2.aa_sequence_id and a2.external_database_release_id in ($pfdb) and s.row_alg_invocation_id in ($algInvoIds) order by s.pvalue_exp asc,s.pvalue_mant asc,s.number_identical/s.total_match_length desc");
-		$sth -> execute();
-		while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
-		    @{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s,83,337) unless(exists($sim{$qid}));
-		}
-	
-	    }elsif($taxa[$i] == 692 || $taxa[$j] == 692) {
-		
-		my $t = $taxa[$i] == 692 ? $taxa[$j] : $taxa[$i];
-		my $sth = $dbh->prepare("select s.query_id, s.subject_id, s.pvalue_mant,s.pvalue_exp,s.number_identical/s.total_match_length, s.similarity_id from dots.similarity s, dots.translatedaasequence a1, dots.externalaasequence a2 where s.subject_table_id=83 and s.query_table_id=337 and s.query_id=a1.aa_sequence_id and a1.external_database_release_id in ($pyydb) and s.subject_id=a2.aa_sequence_id and a2.external_database_release_id = $t and s.row_alg_invocation_id in ($algInvoIds) order by s.pvalue_exp asc,s.pvalue_mant asc,s.number_identical/s.total_match_length desc");
-		$sth -> execute();
-		while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
-		    @{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s,337,83) unless(exists($sim{$qid}));
-		}
-		$sth->finish();
-		
-		$sth = $dbh->prepare("select s.query_id, s.subject_id, s.pvalue_mant,s.pvalue_exp,s.number_identical/s  .total_match_length, s.similarity_id from dots.similarity s, dots.externalaasequence a1, dots.translatedaasequence a2 where s.subject_table_id=337 and s.query_table_id=83 and s.query_id=a1.aa_sequence_id and a1.external_database_release_id = $t and s.subject_id=a2.aa_sequence_id and a2.external_database_release_id in ($pyydb) and s.row_alg_invocation_id in ($algInvoIds) order by s.pvalue_exp asc,s.pvalue_mant asc,s.number_identical/s.total_match_length desc");
-		$sth -> execute();
-		while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
-		    @{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s,83,337) unless(exists($sim{$qid}));
-		}
-		
-	    }else{
-		$self->log("running query for database releases " . $taxa[$i] . " and " . $taxa[$j] . "\n");
-		my $sth = $dbh->prepare("select s.query_id, s.subject_id, s.pvalue_mant,s.pvalue_exp,s.number_identical/s.total_match_length, s.similarity_id from dots.similarity s, dots.externalaasequence a1, dots.externalaasequence a2 where s.subject_table_id=83 and s.query_table_id=83 and s.query_id=a1.aa_sequence_id and a1.external_database_release_id = ? and s.subject_id=a2.aa_sequence_id and a2.external_database_release_id =? and s.row_alg_invocation_id in ($algInvoIds) order by s.pvalue_exp asc,s.pvalue_mant asc,s.number_identical/s.total_match_length desc");
-		$sth -> execute($taxa[$i],$taxa[$j]);
-		while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
-		    @{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s,83,83) unless(exists($sim{$qid}));
-		}
-		$sth -> execute($taxa[$j],$taxa[$i]);
-		while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
-		    @{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s,83,83) unless(exists($sim{$qid}));
-		}
+	    my $firstTaxon = $taxa[$i];
+	    my $secondTaxon = $taxa[$j];
+	    $self->log("running query for database releases " . $firstTaxon . " and " . $secondTaxon . "\n");
+	    if ($processedDbReleases->{$firstTaxon}->{$secondTaxon} || $processedDbReleases->{$secondTaxon}->{$firstTaxon}){
+		$self->log("skipping $firstTaxon and $secondTaxon because they have already been run");
+		next;
 	    }
-	    $self->log("processing similarity info for " . $taxa[$i] . " and " . $taxa[$j] . "; have " . scalar(keys %sim) . " keys to process\n");
+	    my $sth = $dbh->prepare("select s.query_id, s.subject_id, s.pvalue_mant,s.pvalue_exp,s.number_identical/s.total_match_length, s.similarity_id from dots.similarity s, dots.externalaasequence a1, dots.externalaasequence a2 where s.subject_table_id= $queryTableId and s.query_table_id= $queryTableId and s.query_id=a1.aa_sequence_id and a1.external_database_release_id = ? and s.subject_id=a2.aa_sequence_id and a2.external_database_release_id =? and s.row_alg_invocation_id in ($algInvoIds) order by s.pvalue_exp asc,s.pvalue_mant asc,s.number_identical/s.total_match_length desc");
+	    $sth -> execute($firstTaxon,$secondTaxon);
+	    while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
+		@{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s, $queryTableId, $queryTableId) unless(exists($sim{$qid}));
+	    }
+	    $sth -> execute($secondTaxon,$firstTaxon);
+	    while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
+		@{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s, $queryTableId, $queryTableId) unless(exists($sim{$qid}));
+	    }
+	    $self->log("processing similarity info for " . $firstTaxon . " and " . $secondTaxon . "; have " . scalar(keys %sim) . " keys to process\n");
 	    my $counter = 0;
 	    foreach my $qid (keys %sim) {
 		$counter++;
 		if ($counter % 5000 == 0){
-		    $self->log("processing similarity number $counter for " . $taxa[$i] . " and " . $taxa[$j] . "\n");
+		    $self->log("processing similarity number $counter for " . $firstTaxon . " and " . $secondTaxon . "\n");
 		}
 		
 		my $percentMatch = 0;
@@ -206,6 +172,20 @@ sub run {
 	       );
     $self->logAlert('RESULT', $RV);
     return $RV;
+}
+
+sub getProcessedDbReleases{
+
+    my ($self) = @_;
+    my $sql = "select distinct eas1.external_database_release_id, eas2.external_database_release_id from dots.bestsimilaritypair p, dots.externalaasequence eas1, dots.externalaasequence eas2 where p.paired_sequence_id = eas1.aa_sequence_id and p.sequence_id = eas2.aa_sequence_id  and p.row_alg_invocation_id in (" . $self->getCla()->{restart_alg_invocation_ids} . ")";
+
+    my $processedReleases;
+    
+    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+    while (my ($release1, $release2) = $sth->fetchrow_array()){
+	$processedReleases->{$release1}->{$release2} = 1;
+    }
+    return $processedReleases;
 }
 
 
