@@ -6,6 +6,7 @@ use strict 'vars';
 use Carp;
 use CBIL::Util::A;
 use CBIL::Util::Disp;
+use CBIL::Util::Utils;
 
 use GUS::ObjRelP::DbiDatabase;
 use GUS::Common::GusConfig;
@@ -132,16 +133,11 @@ sub getCheckSum {
     my $f = $M->getFile;
 
     if (defined $f) {
-      $M->{md5} = `/usr/bin/md5sum $f`;
+      $M->{md5} = &runCmd("$M->{md5sum_executable} $f");
       chomp $M->{md5};
       $M->{md5} =~ s/^(\S+).+/$1/;
     } else {
-      $M->logFatal('ERROR',
-	      $M->getName,
-	      $M->getFile,
-	      'Can not find executable file'
-	     );
-      $M->{md5} = '';
+      $M->error("Cannot find the plugin's executable file $M->getFile");
     }
   }
   return $M->{md5};
@@ -397,6 +393,13 @@ sub initName       {
 
   # RETURN
   $M
+}
+
+sub initMd5Executable {
+  my ($self, $md5sum) = @_;
+
+  $self->userError("The file '$md5sum' is not an executable md5sum program.  Please configure \$GUS_HOME/config/GUS-Plugin.prop to specify the correct location of the md5sum program (using the 'md5sum=/your/md5sum' property)") unless -x $md5sum;
+  $self->{md5sum_executable} = $md5sum;
 }
 
 sub initArgs        { $_[0]->{__gus__plugin__cla} = $_[1]; $_[0] }

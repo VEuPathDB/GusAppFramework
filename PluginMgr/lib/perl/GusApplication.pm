@@ -18,6 +18,12 @@ use constant FLAG_DEBUG => 0;
 
 # ----------------------------------------------------------------------
 
+# [name, default (or null if reqd), comment]
+my @properties =
+(
+ ["md5sum",         "",  "full path of md5sum executable (for check summing)"],
+ );
+
 sub new {
   my $C = shift;
   my $A = shift;
@@ -32,6 +38,12 @@ sub new {
 		  easyCspOptions => {},
 		  usage => ""
 		 });
+
+  my $configFile = "$ENV{GUS_HOME}/config/GUS-PluginMgr.prop";
+
+  $m->userError("Config file $configFile does not exist.  Please copy $configFile.sample to $configFile and edit to reflect your configuration") unless -e $configFile;
+
+  $m->{propertySet}= CBIL::Util::PropertySet->new($configFile, \@properties);
 
   $m->initName(ref $m);
 
@@ -232,6 +244,7 @@ sub newFromPluginName {
   $M->error($@) if $@;
 
   $plugin->initName($C);
+  $plugin->initMd5Executable($M->{propertySet}->getProp('md5sum'));
   return $plugin;
 }
 
