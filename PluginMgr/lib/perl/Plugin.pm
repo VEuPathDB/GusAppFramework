@@ -386,6 +386,20 @@ B<Return type:> Hash reference
 sub getArgs        { $_[0]->{__gus__plugin__cla} }
 
 
+=item C<getArg($arg_name)>
+
+Get the value of one of the plugin's command line arguments.
+
+B<Return type:> scalar or list reference
+
+=cut
+sub getArg {
+  my ($self, $name) = @_;
+  my $args = $self->getArgs();
+  &confess("Attempting to access command line argument '$name', but there is not such argument\n") unless exists($args->{$name});
+  return $args->{$name};
+}
+
 =item C<getDb()>
 
 Get the DbiDatabase object which represents the database this plugin accesses.

@@ -1689,7 +1689,6 @@ sub submit {
   return $self->getDatabase()->manageTransaction($noTran,'commit');
 }
 
-
 sub setDefaultAttributes {
   my $self = shift;
   $self->set('modification_date',$self->getDatabase()->getDateFunction()); # if $self->isValidAttribute('modification_date');

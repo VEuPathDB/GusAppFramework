@@ -16,6 +16,6 @@ $c = `which $jobcmd`;
 
 chomp $c;
 
-$cmd="cmsubmit -y -d $pipelineDir/logs -p $numprocs -t 2880 -c Batch $c $pipelineDir";
+$cmd="cmsubmit -y -d $pipelineDir/logs -w $pipelineDir/logs -p $numprocs -t 2880 -c Batch $c $pipelineDir";
 
 system($cmd);
