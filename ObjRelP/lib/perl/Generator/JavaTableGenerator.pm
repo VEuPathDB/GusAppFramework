@@ -5,6 +5,8 @@ package GUS::ObjRelP::Generator::JavaTableGenerator;
 use strict;
 use GUS::ObjRelP::Generator::TableGenerator;
 
+my $tab = "    ";
+
 sub new{
     my ($class, $generator, $schemaName, $tableName, $tableGenerator) = @_;
     
@@ -69,28 +71,36 @@ sub _genDefaultParams {
 #    my $hasSeq = ($dbiTable->hasSequence()) ? "true" : "false"; 
     my $hasSeq = "true";
     my $isView = ($dbiTable->isView()) ? "true" : "false";
+
+    my $realTableName;
+    if ($dbiTable->isView()){
+	my $fullRealTableName = $dbiTable->getRealTableName();
+
+	if ($fullRealTableName =~ /\S+::(\S+)/){
+	    $realTableName = $1;
+	}
+    }
+
     my $tableId = $dbiTable->getTableId();
 
-    my $output = <<END_DFLT_PARAMS1;
-    public void setDefaultParams ()
-    {
-END_DFLT_PARAMS1
-
+    my $output =  $tab . "public void setDefaultParams (){";
+    
     $output .= $self->_getTableAttributeInfo();
     $output .= $self->_createSetChildRelations();
     $output .= $self->_createSetParentRelations();
 
-    $output .= <<END_DFLT_PARAMS2;
-
-        // Other table properties
-	this.ownerName = "$self->{schemaName}";
-	this.tableName = "$self->{tableName}";
-        this.isView = $isView;
-	this.hasSequence = $hasSeq;
-	this.primaryKey = "$primaryKeyName";
-        this.tableId = $tableId;
+    $output .= $tab . "// Other table properties\n";
+    $output .= $tab . "this.schemaName = \"" . $self->{schemaName} ."\";\n";
+    $output .= $tab . "this.tableName = \"" . $self->{tableName} . "\";\n";
+    $output .= $tab . "this.isView = $isView;\n";
+    $output .= $tab . "this.hasSequence = $hasSeq;\n";
+    $output .= $tab . "this.primaryKey = \"$primaryKeyName\";\n";
+    $output .= $tab . "this.tableId = $tableId;\n";
+    if ($realTableName){
+	$output .= $tab . "this.impTableName = \"$realTableName\";\n";
     }
-END_DFLT_PARAMS2
+    $output .= $tab . "}\n";
+    
 
     return $output;
 }
