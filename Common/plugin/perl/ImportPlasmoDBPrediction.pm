@@ -75,7 +75,7 @@ sub new {
 ############################################################
 #                Let's get started
 ############################################################
-my $debug = 1;  #my personal debug !!
+my $debug = 0;  #my personal debug !!
 my $NAseqId;
 my $Version;
 my $source_id;
@@ -165,7 +165,7 @@ sub run {
       my $gene = $_;
       chomp($gene);
       ($genename,$contig,$method,$type,$start,$stop,$strand,$phase,$numexons) = (split /\t/,$gene);
-      $self->log("II GENE $genename $contig,$method,$type,$start,$stop,$strand,$phase,$numexons");
+      #$self->log("II GENE $genename $contig,$method,$type,$start,$stop,$strand,$phase,$numexons");
       if ($genename eq ""){
 	$self->log( "EE Oops. One entry empty !! Skipping ...");
 	next;
@@ -242,8 +242,12 @@ sub run {
 	#####
 	#####    $key is actually "Pv_". $key for this query only;
 	#####
-	#$stmt->execute($key, $projectId );
-	$stmt->execute("Pv_".$key, $projectId );
+	#$stmt->execute("Pv_".$key, $projectId );
+
+
+	$stmt->execute($key, $projectId );
+	
+
       }
 		
 		
@@ -321,7 +325,7 @@ sub run {
       #determine the translation start of the gene -> to be set in the first exon feature
       if ($gphase!=0){
 	$transl_start = ($gphase+1);
-	$self->log( "II $ggenename GP=$gphase -> TS=$transl_start");
+	$self->log( "II $ggenename GP=$gphase -> TS=$transl_start") if $debug;
       }else{
 	$transl_start=1;
       }
@@ -358,7 +362,7 @@ sub run {
 	  next if ($estart eq ""); # can happen -> reject;
 	
 	  my $etransl_start = ($eorder==1) ? $transl_start : 1;
-	  $self->log( "II EXON $egenename: TS=$etransl_start") if ($transl_start != 1); 
+	  $self->log( "II EXON $egenename: TS=$etransl_start") if ($transl_start != 1) && $debug ;
 	  #
 	  # if the predicted gene does not begin with an initial but an internal exon
 	  # i.e. the ATG is off the Contig (especially when dealing with small contigs in unfinished data), 
@@ -389,6 +393,8 @@ sub run {
 							 'source_id'         => $ggenename."_e".$eorder          #set source_id to that of gene + exon_ordernumber
 						     });
 	
+	  if ($is_final)  {$gf->setHasFinalExon(1)}
+	  if ($is_initial){$gf->setHasInitialExon(1)}
 	  $exon->setScore($score) if $score;
 	  $exon->setCodingEnd($estop-$estart+1);
 	  $exon->setParent($naseq);
@@ -414,11 +420,7 @@ sub run {
       ##now create rnafeature and translated features and protein
       if($haveExons){
 
-	#####
-	##### TEMP WORKAROUND FOR VIVAX DATA
-	#####
-	$gf->makePredictedRnaToProtein(undef, $extDbRelId ,  $ggenename ); #for genuine plugin comment/uncomment this section
-	#$gf->makePredictedRnaToProtein(undef, $extDbRelId ,$key );
+	$gf->makePredictedRnaToProtein(undef, $extDbRelId ,  $ggenename );
 
 
 	my $rna = $gf->getChild('DoTS::RNAFeature');
