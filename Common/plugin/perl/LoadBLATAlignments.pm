@@ -216,13 +216,21 @@ sub run {
 
     my $summary;
 
-    my @blatFiles = &getBlatFiles($blatDir, $blatFiles, $fileList) unless $action eq 'setbest';
+    my @blatFiles;
+    my @allBlatFiles = &getBlatFiles($blatDir, $blatFiles, $fileList) unless $action eq 'setbest';
 
     if (!$action || $action eq 'strip') {
-	foreach my $file (@blatFiles) {
+	foreach my $file (@allBlatFiles) {
 	    $self->log("stripping extra headers in $file");
 	    &CBIL::Bio::BLAT::PSLDir::strip($file);
+	    if (&CBIL::Bio::BLAT::PSLDir::isFileEmpty($file)) {
+	      &system("/bin/rm $file");
+	    } else {
+	      push @blatFiles, $file;
+	    }
 	}
+    } else {
+      @blatFiles = @allBlatFiles;
     }
 
     if (!$action || $action eq 'load') {
@@ -346,7 +354,7 @@ sub loadAlignments {
 
 	$dbh->commit();
 
-	my $srcId = $1 if $blatFile =~ /(chr\S+?)\./;
+	my $srcId = $1 if $blatFile =~ /([^\/])\.(fa|fasta)$/;
 	my $target_id = $targetIdHash->{$srcId};
 	print "LoadBLATAlignments: loaded $nAlignsLoaded/$nAligns BLAT alignments for $srcId ($target_id) from $blatFile.\n";
     }
@@ -475,7 +483,7 @@ sub keepBestAlignments {
 # maybe index query sequence file
 #
 sub maybeIndexQueryFile {
-    my ($queryFile, $regEx) = @_;
+    my ($queryFile) = @_;
     # Make sure that query_file is indexed
     #
     my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
@@ -483,11 +491,9 @@ sub maybeIndexQueryFile {
     my $idSub = sub {
 	my($defline) = @_;
 
-	if ($regEx && $defline =~ /$regEx/ ) {
+	if ($defline =~ /^>(DT\.\d+|THC\d+)/) {
 	    return $1;
-	} elsif ($defline =~ /^>(DT\.\d+|THC\d+)/) {
-	    return $1;
-	} elsif ($defline =~ /^>(\d+)\s+/) {
+	} elsif ($defline =~ /^>(\d+)/) {
 	    return $1;
 	} elsif ($defline =~ /^>Pfa3D7\|(\d+)\|/) {
 	    return $1;
@@ -565,11 +571,12 @@ sub makeSourceIdHash {
     my $sql = ("select source_id, na_sequence_id " .
 	       "from $targetTable " .
 	       "where external_database_release_id = $targetDbId");
-
+    print "DEBUG: query in makeSourceIdHash: \"$sql\"\n";
     my $sth = $dbh->prepare($sql);
 
     $sth->execute();
     while (my @a = $sth->fetchrow_array()) {
+        # print "in mSIH: a0 = $a[0], a1 = $a[1]\n";
 	my $v = $hash->{$a[0]};
 	if (defined($v)) {
 	    print STDERR "LoadBLATAlignments: WARNING - duplicate source_id $a[0] in $targetTable\n";
@@ -691,6 +698,9 @@ sub loadAlignment {
     # Retrieve sequence and compute quality
     #
     my $querySeq = $qIndex->getSequence(CBIL::Util::TO->new({accno => $origQueryId, strip => 1}));
+    # print "DEBUGG: length(querySeq) = " . length($querySeq->{seq}) . " for accesion no. $origQueryId\n";
+    # print "DEBUGG: index_file = \"$qIndex->{index_file}\", seq_file = \"$qIndex->{seq_file}\"\n";
+
     # Disp::Display($querySeq);
     
     my @a = $align->checkQuality($querySeq->{'seq'}, $qualityParams, $gapTable, $dbh);
