@@ -974,8 +974,6 @@ sub _insertGoAssoc{
     my $assocDir = $propertySet->getProp('assocDirectory');
     my $filePath = "$externalDbDir/$assocDir/$date/$flatFile";
   
-    my $externalDbDir = $propertySet->getProp('externalDbDir');
-
     my $date = $propertySet->getProp('buildDate');
 
     my $goAssocFileDir = "$externalDbDir/goassoc/$date";
@@ -1165,6 +1163,39 @@ sub substituteCDDPKs {
     }
     $mgr->endStep($signal);
 }
+
+sub insertAllExternalProteinSimilarities {
+
+    my @domainNames = ("prodom", "cdd");
+    
+    my @subjectNames = ("fly", "worm", "yeast", "arabidopsis", "swissprot", "trembl"); 
+
+
+    foreach my $domain (@domainNames){
+	foreach my $subjectName (@subjectNames) {
+	    
+	    my $fullName = "$subjectName-$domain";
+	    &insertExternalProteinSimilarities ($fullName, "DoTS.ExternalAASequence");
+	    #dtb: check if need owner in parameter
+	}
+    }
+}
+
+sub insertExternalProteinSimilarities {
+    my ($name, $subjectTable) = @_;
+
+    my $file = "$pipelineDir/similarity/$name/blastSimilarity.out";
+    $file .= ".correctPK" if ($name eq "cdd");
+
+    my $restart = $propertySet->getProp('iPSRestart');
+
+    my $args = "--files $file --verbose --restart $restart --query_table ExternalAASequence --subject_table $subjectTable --log_frequency 10 --limit_sub 50 --limit_hsp 10";
+
+    $mgr->runPlugin("loadSims_$name", 
+		    "GUS::Common::Plugin::LoadBlastSimilaritiesPK", $args,
+		    "Loading $name similarities");
+}
+
 
 
 sub generateAAFilterFiles{
