@@ -740,7 +740,7 @@ sub modifyDate {
       $finalTime .= ":$hourMinArray[1]:00";
     }
     else {
-     $finalTime = "00:$hourMinArray[1]:00";
+     $finalTime = "12:$hourMinArray[1]:00";
    }
   } 
   else {
@@ -775,7 +775,7 @@ sub getQuantificationDate {
       $finalTime .= ":$hourMinArray[1]:00";
     }
     else {
-      $finalTime = "00:$hourMinArray[1]:00"; 
+      $finalTime = "12:$hourMinArray[1]:00"; 
     }
   } else {
     $finalTime = "$tempTime:00";
