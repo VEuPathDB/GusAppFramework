@@ -4,32 +4,42 @@
 ## --recursive recursively retrieves all foreign key relationships
 ## and also prints those....should be used with care.
 
-## Brian Brunk 12/12/99
-
 use strict;
 
-use Getopt::Long;
-use GUS30::dbiperl_utils::DbiDatabase;
+use lib "$ENV{GUS_HOME}/lib/perl";
 
-my ($table,$id,$deep,$verbose,$debug,$attHash,$login,$password,$database,$group,$user);
-&GetOptions("table=s" => \$table,"id=i"=> \$id, 'recursive!' => \$deep,
-            "verbose!" => \$verbose, "debug!" => \$debug, "attHash=s" => \$attHash,
-            "login=s" => \$login, "password=s" => \$password, "database=s" => \$database,
-            'group=i' => \$group,'user=i' => \$user );
+use Getopt::Long;
+use GUS::ObjRelP::DbiDatabase;
+use GUS::Common::GusConfig;
+
+my ($table,$id,$deep,$verbose,$debug,$attHash,$group,$user);
+&GetOptions("table=s" => \$table,
+	    "id=i"=> \$id, 
+	    'recursive!' => \$deep,
+            "verbose!" => \$verbose, 
+	    "debug!" => \$debug, 
+	    "attHash=s" => \$attHash,
+            'group=i' => \$group,
+	    'user=i' => \$user
+	    );
+
 
 $| = 1;
 
-if((!$id && !$attHash) || !$table){ die "usage: printXML --table <tablename> --id <identifier> --attHash '{\"att1\" => val}' --login --password --database --recursive (if you want to retrieve all children from the db)\n\teg: printXML --table Gene --id 10 --recursive --user <user_id> --group <group_id>\n"; }
+if((!$id && !$attHash) || !$table){ die "usage: printXML --table <tablename> --id <identifier> --attHash '{\"att1\" => val}' --recursive (if you want to retrieve all children from the db)\n\teg: printXML --table Gene --id 10 --recursive --user <user_id> --group <group_id>\n"; }
 
-##defaults to gusdevreadonly..
-$login = $login ? $login : "GUSdevreadonly";
-$password = $password ? $password : "s7fp4erv";
-$database = $database ? $database : "GUS30";
-my $dbi_dsn = $ENV{DBI_DSN} ? $ENV{DBI_DSN} : 'dbi:Oracle:host=erebus.pcbi.upenn.edu;sid=gusdev';
+my $gusconfigfile = "$ENV{GUS_CONFIG_FILE}";
 
-my  $db = new DbiDatabase( $dbi_dsn, $login, $password, $verbose, 0, 1, $database ,'GUSdev');
+my $gusconfig = GUS::Common::GusConfig->new($gusconfigfile);
 
-eval("require GUS30::$table");
+my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
+					$gusconfig->getReadOnlyDatabaseLogin(),
+					$gusconfig->getReadOnlyDatabasePassword,
+					$verbose,0,1,
+					$gusconfig->getCoreSchemaName);
+$db->setUseDbiTableOnly(1);
+
+eval("require $table");
 my $obj;
 if($attHash){
   $obj = $table->new(eval($attHash));
@@ -46,5 +56,5 @@ if($obj->retrieveFromDB()){
   $obj->retrieveAllChildrenFromDB(1) if $deep;
   print $obj->toXML(0,1);
 }else{
-  print "Unable to retrieve $table object from database $database\n",$obj->toXML(2,1);
+  print "Unable to retrieve $table object from database \n",$obj->toXML(2,1);
 }
