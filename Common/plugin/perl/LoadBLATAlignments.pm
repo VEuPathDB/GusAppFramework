@@ -291,7 +291,7 @@ sub loadAlignments {
     my $projectId = $self->getDb()->getDefaultProjectId();
     my $algInvId = $self->getAlgInvocation()->getId();
 
-    my $nextvalVar = $self->getDb()->getDbPlatform()->nextValVar("$TPREF.BLATAlignment");
+    my $nextvalVar = $self->getDb()->getDbPlatform()->nextVal("$TPREF.BLATAlignment");
 
     my $insertSql = ("INSERT INTO $TPREF.BLATAlignment VALUES (" .
 		     "$nextvalVar, " .
