@@ -18,7 +18,7 @@ sub new {
   my $self = {};
   bless($self,$class);
 
-  my $usage = 'Plug_in to populate the NRDBEntry table';
+  my $usage = 'Plug_in to populate and update the NRDBEntry and ExternalAASequence tables';
 
   my $easycsp =
     [{o => 'testnumber1',
@@ -100,34 +100,34 @@ sub new {
 
 sub run {
   my $self  = shift;
-  print STDERR $self->getCla()->{'commit'}?"***COMMIT ON***\n":"**COMMIT TURNED OFF**\n";
-  print STDERR "Testing on " . $self->getCla()->{'testnumber1'} . " insertions 
-                into temp table\n" 
-                if $self->getCla()->{'testnumber1'};
-  print STDERR "Testing on " . $self->getCla()->{'testnumber1'} . " insertions
-                into NRDBEntry/ExternalAASequence\n" 
-                if $self->getCla()->{'testnumber2'};
+  $self->getArgs()->{'commit'} ? $self->log("***COMMIT ON***\n") : $self->log("**COMMIT TURNED OFF**\n");
+  $self->log("Testing on " . $self->getArgs()->{'testnumber1'} . " insertions 
+                into temp table\n") 
+                if $self->getArgs()->{'testnumber1'};
+  $self->log("Testing on " . $self->getArgs()->{'testnumber1'} . " insertions
+                into NRDBEntry/ExternalAASequence\n") 
+                if $self->getArgs()->{'testnumber2'};
   
-  die "Supply the name of the nr protein file\n" unless $self->getCla()->{'nrdb'};
+  die "Supply the name of the nr protein file\n" unless $self->getArgs()->{'nrdb'};
 
-  my $external_database_release_id = $self->getCla()->{'extDbRelId'} || die 'external_database_release_id not supplied\n';
+  my $external_database_release_id = $self->getArgs()->{'extDbRelId'} || die 'external_database_release_id not supplied\n';
 
   my $dbHash = $self->getDB();
 
   my $taxonHash = $self->getTaxon ();
 
   my $tempresults = $self->makeTempTable($dbHash, $taxonHash) 
-                    if ($self->getCla()->{'maketemp'});
+                    if ($self->getArgs()->{'maketemp'});
 
-  if (!$self->getCla()->{'plugin'} && !$self->getCla()->{'delete'}) {
-      print STDERR ("NRDBTemp has been filled and the program is exiting\n");
+  if (!$self->getArgs()->{'plugin'} && !$self->getArgs()->{'delete'}) {
+      $self->log("NRDBTemp has been filled and the program is exiting\n");
       return $tempresults;
   }
 
   my $entryresults = $self->makeNRDBAndExternalAASequence($taxonHash, $dbHash,$external_database_release_id) 
-                    if ($$self->getCla()->{'plugin'});       
+                    if ($$self->getArgs()->{'plugin'});       
      
-  if (!$self->getCla()->{'delete'}){ 
+  if (!$self->getArgs()->{'delete'}){ 
       if ($tempresults) {
 	  my $entryresults .= $tempresults;
       }
@@ -138,7 +138,7 @@ sub run {
   my $aadelete = $self->deleteFromExtAASeq;
   my $results = "Processing completed:";
   $results = $results . $tempresults . $entryresults . $nrdbdelete . $aadelete; 
-  print STDERR ("$results\n");
+  $self->log("$results\n");
   return $results;
 }
 
@@ -147,26 +147,12 @@ sub getDB {
   my $dbh = $self->getQueryHandle();
 
   my %dbNameHash;
-  my @DBs = split(/,/, $self->getCla()->{'sourceDB'});
+  my @DBs = split(/,/, $self->getArgs()->{'sourceDB'});
 
   foreach my $db (@DBs) {
     my ($name, $abrev) = split(/:/, $db);
     $dbNameHash{$name}=$abrev;
   }
-#my (%dbNameHash) = ('GENBANK (NRDB)' => 'gb',
-#		     'EMBL DATA LIBRARY (NRDB)' => 'emb',
-#		     'DDBJ (NRDB)' => 'dbj',
-#		     'NBRF PIR (NRDB)' => 'pir',
-#		     'PROTEIN RESEARCH FOUNDATION (NRDB)' => 'prf',
-#		     'SWISS-PROT (NRDB)' => 'sp',
-#		     'BROOKHAVEN PROTEIN DATA BANK (NRDB)' => 'pdb',
-#		     'PATENTS (NRDB)' => 'pat',
-#		     'GENINFO BACKBONE ID (NRDB)' => 'bbs',
-#		     'GENERAL DATABASE IDENTIFIER (NRDB)' => 'gnl',
-#		     'NCBI REFERENCE SEQUENCE (NRDB)' => 'ref',
-#		     'LOCAL SEQUENCE IDENTIFIER' => 'lcl',
-#		     'GENPEPT' => 'genpept');
-
   my $sql = "select r.external_database_release_id from sres.externaldatabase d, sres.externaldatabaserelease r where upper(d.name) like ? and d.external_database_id=r.external_database_id and upper(r.version) = 'UNKNOWN'";
 
   my $stmt = $dbh->prepare($sql);
@@ -196,7 +182,7 @@ sub getDB {
 sub getTaxon {
     my ($self) = @_;
     my $dbh = $self->getQueryHandle();
-    my $gi_tax = $self->getCla->{'gitax'};
+    my $gi_tax = $self->getArgs->{'gitax'};
     open (TAXFILE, "$gi_tax") || 
                     die ("Can't open the gi/tax_id file\n");
     my %taxHash;
@@ -215,21 +201,21 @@ sub getTaxon {
     }
     close (TAXFILE);
     my $length = scalar (keys %taxonHash);
-    print STDERR ("There are $length gi to taxon_id pairs\n");
+    $self->log("There are $length gi to taxon_id pairs\n");
     return \%taxonHash;;
 }
 
 sub makeTempTable {
     my ($self,$dbHash, $taxonHash) = @_;
-    my $login = $self->getCla->{'temp_login'} || die "must provide temp_login 
+    my $login = $self->getArgs->{'temp_login'} || die "must provide temp_login 
                 and temp_password for temp table\n";
-    my $password = $self->getCla->{'temp_password'} || 
+    my $password = $self->getArgs->{'temp_password'} || 
                    die "must provide temp_login 
                      and temp_password for temp table\n";
-    my $DBI_STR = $self->getCla->{'dbi_str'} || die "must provide server and sid for temp table\n";
+    my $DBI_STR = $self->getArgs->{'dbi_str'} || die "must provide server and sid for temp table\n";
     my $dbh = DBI->connect($DBI_STR, $login, $password);
 
-    if (!$self->getCla->{'restart_temp_table'}) { 
+    if (!$self->getArgs->{'restart_temp_table'}) { 
       $dbh->do("truncate table NRDBTemp");
       $dbh->do("drop table NRDBTemp");
       $dbh->do("create table NRDBTemp (SOURCE_ID VARCHAR2(32) NOT NULL,EXTERNAL_DB_REL_ID NUMBER(5) NOT NULL,SEQUENCE_VERSION VARCHAR2(10),SET_NUM NUMBER(10) NOT NULL)");
@@ -242,7 +228,7 @@ sub makeTempTable {
     $st1->finish();
     my $st2 = $dbh->prepare("INSERT into NRDBTemp 
               (source_id,external_db_rel_id,set_num,sequence_version) values (?,?,?,?)");
-    my $nrdb = $self->getCla->{'nrdb'};
+    my $nrdb = $self->getArgs->{'nrdb'};
     if ($nrdb =~ /\.Z/) {
 	open (NRDB,"uncompress -c $nrdb |") || 
         die ("Can not open the nr file\n");
@@ -261,9 +247,9 @@ sub makeTempTable {
 	    if ($max_num && $set_num <= $max_num) { 
 		next;
 	    }
-	    if ($self->getCla->{'testnumber1'} && $set_num >= 
-                ($self->getCla->{'testnumber1'})) {
-		print STDERR ("The testnumber, $set_num, of temp table entries
+	    if ($self->getArgs->{'testnumber1'} && $set_num >= 
+                ($self->getArgs->{'testnumber1'})) {
+		$self->log("The testnumber, $set_num, of temp table entries
                                 have been processed\n");
 		last;
 	    }
@@ -288,7 +274,7 @@ sub makeTempTable {
 	    }
 	    if ($set_num%1000 == 0) {
 		$dbh->commit();
-		print STDERR ("$set_num sets have been processed 
+		$self->log("$set_num sets have been processed 
                                and put in the NRDBTemp table\n");
 		$dbh->commit();
 	    }
@@ -296,7 +282,7 @@ sub makeTempTable {
     }
     my $tempresults = "$set_num total entries have been made 
                     into the NRDBTemp table";
-    print STDERR ("$tempresults\n");
+    $self->log("$tempresults\n");
     close NRDB;
     return $tempresults;
 }
@@ -305,7 +291,7 @@ sub makeNRDBAndExternalAASequence {
     my ($self,$taxonHash, $dbHash,$external_database_release_id) = @_;
     my $count = 0;
     
-    my $temp_login = $self->getCla->{'temp_login'} || 
+    my $temp_login = $self->getArgs->{'temp_login'} || 
                      die "--temp_login required to 
                      load NRDBEntry and ExternalAASequence\n";
 
@@ -314,9 +300,9 @@ sub makeNRDBAndExternalAASequence {
     my ($max_set_num) = $st->fetchrow_array;
     $st->finish();
 
-    print STDERR ("$max_set_num entries in temp table\n");
+    $self->log("$max_set_num entries in temp table\n");
     
-    my $nrdb = $self->getCla->{'nrdb'};
+    my $nrdb = $self->getArgs->{'nrdb'};
 
     if ($nrdb =~ /\.Z/) {
 	open (NRDB,"uncompress -c $nrdb |") || 
@@ -335,7 +321,7 @@ sub makeNRDBAndExternalAASequence {
     my $seq;
     my $num_submit;
     if ($ctx->{'cla'}->{'restart'}) {
-	$num_submit = $self->getCla->{'restart'};
+	$num_submit = $self->getArgs->{'restart'};
     }
     else {
 	$num_submit = 0;
@@ -346,15 +332,15 @@ sub makeNRDBAndExternalAASequence {
 	chomp;
 	# /^\>/ pattern indicating the beginning of the defline, if $seq exists, process the set 
 	if (/^\>/) { 
-	    if ($self->getCla->{'testnumber2'} && $count > ($self->getCla->{'testnumber2'})) {
-		print STDERR ("The testnumber, $count, 
+	    if ($self->getArgs->{'testnumber2'} && $count > ($self->getArgs->{'testnumber2'})) {
+		$self->log("The testnumber, $count, 
                               of entries has been processed\n");
 		last;
 	    }
 	    if ($seq) {
 		$count++;
 		#get the preferred gi and source_id and get any one aa_sequence_id corresponding to a member of the set
-		unless ($self->getCla->{'restart'} && $count <= $self->getCla->{'restart'}) {
+		unless ($self->getArgs->{'restart'} && $count <= $self->getArgs->{'restart'}) {
 		    if (scalar (keys %EntryHash) != 0) {
 			my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id,$dbHash);
 			$newExtAASeq->submit();
@@ -384,7 +370,7 @@ sub makeNRDBAndExternalAASequence {
     $num_submit++;
     my $entryresult = ("Number of entries to NRDB/ExternalAASequence : 
                         $num_submit\n");
-    print STDERR ("$entryresult");
+    $self->log("$entryresult");
     $newExtAASeq->undefPointerCache();
     return $entryresult;
 }
@@ -411,8 +397,8 @@ sub parseLine {
 		    $source_id = $1;
 		}
 		else{
-		    print STDERR "ERROR: Unable to parse source id 
-                                  for gnl, pir, pat, or prf.\n";
+		    $self->log("ERROR: Unable to parse source id 
+                                  for gnl, pir, pat, or prf.\n");
 		}
 	    }
 	    elsif ($external_db eq 'pdb'){
@@ -420,7 +406,7 @@ sub parseLine {
 		    $source_id = $source_id . "." . "$1" if $1;
 		}
 		else{
-		    print STDERR "ERROR: Unable to parse source id for pdb.\n";
+		    $self->log("ERROR: Unable to parse source id for pdb.\n");
 		}
 	    }
 	    elsif (!$source_id){
@@ -502,17 +488,17 @@ sub updateExtAASeq {
     my ($newExtAASeq,$secondary_identifier,$source_id,$description,$external_database_release_id) = @_;
 
     my $shortDescr = substr($description, 0, 255);
-    if ($secondary_identifier!=$newExtAASeq->get('secondary_identifier')){
-	$newExtAASeq->set('secondary_identifier',$secondary_identifier);
+    if ($secondary_identifier != $newExtAASeq->getSecondaryIdentifier()){
+	$newExtAASeq->setSecondaryIdentifier($secondary_identifier);
     }
-    if ($source_id!=$newExtAASeq->get('source_id')){
-	$newExtAASeq->set('source_id',$source_id);
+    if ($source_id ne $newExtAASeq->getSourceId()){
+      $newExtAASeq->setSourceId($source_id);
     }
-    if ($shortDescr!=$newExtAASeq->get('description')){
-	$newExtAASeq->set('description',$shortDescr);
+    if ($shortDescr ne $newExtAASeq->getDescription()){
+	$newExtAASeq->setDescription($shortDescr);
     }
-    if ($external_database_release_id!=$newExtAASeq->get('external_database_release_id')){
-	$newExtAASeq->set('external_database_release_id'=>$external_database_release_id);
+    if ($external_database_release_id != $newExtAASeq->getExternalDatabaseReleaseId()){
+	$newExtAASeq->setExternalDatabaseReleaseId($external_database_release_id);
     }
 }
 
@@ -522,7 +508,7 @@ sub makeExtAASeq {
   my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new({'external_database_release_id' => $external_database_release_id,'source_id'=> $source_id,'secondary_identifier' => $secondary_identifier, 'description' => $shortDescr});
   $newExtAASeq->retrieveFromDB();
   if($seq){
-      $newExtAASeq->set('sequence', $seq);
+      $newExtAASeq->setSequence($seq);
   }
   return $newExtAASeq;
 }
@@ -544,29 +530,27 @@ sub makeNRDBEntries {
 		$is_preferred=0;
 	    }
 	    
-	    if ($source_id =~ /(\S*?)\.(\S*)/ && $db_rel_id != 8) {
+	    if ($source_id =~ /(\S*?)\.(\S*)/ && $db_rel_id != $dbHash->{pdb}) {
 		$source_id = $1;
 		$sequence_version = $2;
 	    }
 	    my $newNRDBEntry = GUS::Model::DoTS::NRDBEntry->new({'source_id'=>$source_id, 'external_database_release_id'=>$db_rel_id});
 	    $newNRDBEntry->retrieveFromDB(); 
-	    if ($secondary_id!=$newNRDBEntry->get('gid')){
-		$newNRDBEntry->set('gid',$secondary_id);
+	    if ($secondary_id!=$newNRDBEntry->getGid()){
+		$newNRDBEntry->setGid($secondary_id);
 	    }
-	    if ($shortDescr ne $newNRDBEntry->get('description')){
-		$newNRDBEntry->set('description',$shortDescr);	  
+	    if ($shortDescr ne $newNRDBEntry->getDescription()){
+		$newNRDBEntry->setDescription($shortDescr);	  
 	    }
-	    if (!defined $newNRDBEntry->get('is_preferred') || $is_preferred != $newNRDBEntry->get('is_preferred')){
-		$newNRDBEntry->set('is_preferred',$is_preferred);	  
+	    if (!defined $newNRDBEntry->getIsPreferred() || $is_preferred != $newNRDBEntry->get('is_preferred')){
+		$newNRDBEntry->setIsPreferred($is_preferred);	  
 	    }  
-	    if ($taxon_id && $taxon_id!=$newNRDBEntry->get('taxon_id')) {
-		$newNRDBEntry->set('taxon_id',$taxon_id);
+	    if ($taxon_id && $taxon_id!=$newNRDBEntry->getTaxonId()) {
+		$newNRDBEntry->setTaxonId($taxon_id);
 	    }
-	    if ($sequence_version && $sequence_version != $newNRDBEntry->get('sequence_version')) {
-		$newNRDBEntry->set('sequence_version',$sequence_version);
+	    if ($sequence_version && $sequence_version != $newNRDBEntry->getSequenceVersion()) {
+		$newNRDBEntry->setSequenceVersion($sequence_version);
 	    }
-	    my $s = $newNRDBEntry-> get('source_id');
-	    my $p = $newNRDBEntry-> get('is_preferred');
 	    $newNRDBEntry->setParent($newExtAASeq);
 	}
     }
@@ -577,7 +561,7 @@ sub deleteFromNRDB {
     my $num_delete = 0;
 
     my $dbh = $self->getQueryHandle();
-    my $login = $self->getCla()->{temp_login};
+    my $login = $self->getArgs()->{temp_login};
     my $st = $dbh->prepareAndExecute("select nrdb_entry_id from dots.nrdbentry where source_id not in (select /** RULE */ n.source_id from dots.nrdbentry n, $login" . ".NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_database_release_id)");
     while (my ($nrdb_entry_id) = $st->fetchrow_array) {
 	$num_delete++;
@@ -595,7 +579,7 @@ sub deleteFromExtAASeq {
   my $num_delete = 0;
   
   my $dbh = $self->getQueryHandle();
-  my $ext_db_rel_id = $self->getCla()->{extDbRelId};
+  my $ext_db_rel_id = $self->getArgs()->{extDbRelId};
   my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_database_release_id = $ext_db_rel_id and aa_sequence_id not in (select /** RULE */ distinct aa_sequence_id from dots.nrdbentry n)");
   while (my ($aa_sequence_id) = $st->fetchrow_array) {
     $num_delete++;
