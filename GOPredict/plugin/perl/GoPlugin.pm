@@ -62,11 +62,16 @@ sub new {
        h => 'GUS external database release id of new GO version (to upgrade to) or current if not upgrading',
        r => 1,
    },
-    #for now make the lazy progamming decision that this GO Id will always stay the same as the 
-    # hierarchy changes
-     { o => 'function_root_go_id',
+    
+     { o => 'old_function_root_go_id',
        t => 'string',
-       h => 'GO Id (GO:XXXX format) of root of molecular function branch of GO Hierarchy',
+       h => 'GO Id (GO:XXXX format) of root of molecular function branch of old GO Hierarchy',
+       d => 'GO:-0000001',
+   },
+ 
+     { o => 'new_function_root_go_id',
+       t => 'string',
+       h => 'GO Id (GO:XXXX format) of root of molecular function branch of new GO Hierarchy',
        d => 'GO:0003674',
    },
     
@@ -205,12 +210,15 @@ sub run {
     my $proteinTableId = $self->getCla->{protein_table_id};
     my $newGoVersion = $self->getCla->{new_go_release_id};
     my $testProteinIds = $self->getCla->{test_protein_id_list};
+    my $oldGoRootId = $self->getCla->{old_function_root_go_id};
+    my $newGoRootId = $self->getCla->{new_function_root_go_id};
 
     $databaseAdapter->setTestProteinIds($testProteinIds) if $testProteinIds;
 
     my $goManager = GUS::GOPredict::GoManager->new($databaseAdapter);
-    $goManager->setFunctionRootGoId($self->getCla->{function_root_go_id};
-
+    $goManager->setOldFunctionRootGoId($oldGoRootId) if $oldGoRootId;
+    $goManager->setNewFunctionRootGoId($newGoRootId) if $newGoRootId;
+    
     my $msg;
     # get method name
 
