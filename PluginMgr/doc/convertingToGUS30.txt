@@ -72,6 +72,9 @@ sub new {
 
 19. give fully qualified package names for any GUS objects using methods 
     within the plugin
-   e.g. CBIL::Bio::SequenceUtils::breakSequence($sequence) 
+   e.g. CBIL::Bio::SequenceUtils::breakSequence($sequence)
+
+20. methods that refer to GUS objects must have fully qualified paths 
+    e.g. getChildren(GUS::Model::DoTS::MergeSplit) 
 
 Note:WHY DOESN'T GA automatically log the command line args.-this information can now be obtained from the algorithmparam tables and is automatically inserted 
