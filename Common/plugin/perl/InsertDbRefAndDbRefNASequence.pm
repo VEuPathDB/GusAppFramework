@@ -166,11 +166,11 @@ sub insertDbRef {
   foreach my $id (keys %$sourceIdHash) {
     my $lowercase_primary_id = lc ($id);
     foreach my $old_rel_id (@relArray) {
-      my $newDbRef = GUS::Model::SRes::DbRef -> new ({'lowercase_primary_identifier'=>$lowercase_primary_id, 'external_database_release_id'=>$old_rel_id});
+      my $newDbRef = GUS::Model::SRes::DbRef -> new ({'primary_identifier'=>$id, 'external_database_release_id'=>$old_rel_id});
       $newDbRef->retrieveFromDB();
       
-      if ($newDbRef->getPrimaryIdentifier() ne $id) {
-	$newDbRef->setPrimaryIdentifier($id);
+      if ($newDbRef->getLowercasePrimaryIdentifier() ne $lowercase_primary_id) {
+	$newDbRef->setLowercasePrimaryIdentifier($lowercase_primary_id);
       }
       if ($newDbRef->getExternalDatabaseReleaseId != $db_rel_id) {
 	$newDbRef->setExternalDatabaseReleaseId($db_rel_id);
