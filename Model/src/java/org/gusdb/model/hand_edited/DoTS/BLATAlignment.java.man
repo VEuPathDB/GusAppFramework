@@ -14,20 +14,22 @@ import java.math.*;
 import java.util.Date;
 import org.gusdb.objrelj.*;
 
-import org.gusdb.model.DoTS.BLATAlignment_Row;
+/**
+ * BLATAlignment.java.man
+ *
+ * Wrapper class containing methods that return the BLAT output
+ * in a slightly more usable form.
+ *
+ * @author Dave Barkan
+ * @version $Revision$ $Date$ $Author$
+ */
+public class BLATAlignment extends BLATAlignment_Row {
 
-public class BLATAlignment extends BLATAlignment_Row implements java.io.Serializable{
-
-   public BLATAlignment (){}
-    
-    public BLATAlignment (String owner, String name){
-	super (owner, name);
-    }
-     
+    // Constructor
+    public BLATAlignment () {}
     
     public Vector getQstartsVector(){
 	String starts = getQstarts();
-	
 	return parseString(starts);
     }
 
@@ -41,20 +43,18 @@ public class BLATAlignment extends BLATAlignment_Row implements java.io.Serializ
 	return parseString(tStarts);
     }
     
-    
-    private Vector parseString (String forParsing){
+    protected Vector parseString (String forParsing){
 	Vector parsedVector = new Vector();
 	int start = 0;
 	int nextComma = forParsing.indexOf(',');
 	while (nextComma != -1){
 	    Long nextStartV = new Long(forParsing.substring(start, nextComma));
-	    
 	    parsedVector.add(nextStartV);
 	    start = nextComma + 1;
 	    nextComma = forParsing.indexOf(',', nextComma + 1);
 	  
 	}
 	return parsedVector;
-
     }
-}
+
+} // BLATAlignment
