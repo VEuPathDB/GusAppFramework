@@ -9,7 +9,6 @@ use GUS::ObjRelP::DbiDatabase;
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::Evidence;
 use GUS::Model::Core::AlgorithmInvocation;
-
 use GUS::Model::DoTS::TranslatedAAFeature;
 
 
@@ -67,10 +66,10 @@ sub run {
 
   #can add new log ability  $self->logCommit();
   #move out external_database_release_id put as cla external_database_release_id = $self->getArgs->{'external_database_release_id'}
-  #NOTE FOR TESTING taxon set to human only FOR THIS Query also check for rownum
+  #NOTE FOR TESTING taxon set to human only FOR THIS Query
 
 
-  my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8 and rownum < 5");
+  my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8");
 
   my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
 
@@ -128,9 +127,14 @@ sub run {
   }
 
 
+#to Mark Assemblies as full CDS using RefSeqs
    $self->RefSeqFLAssemblies(\@na_sourceids);
 
+#Delete the evidence if no longer containing a RefSeq
+
    $self->DeleteEvidence(\@DTs,\@DTSasEvidenceTarget);
+
+#Unmark as FL those no longer containing a RefSeq
 
    $self->UnmarkFullLength(\@RemoveAsMarkedFL);
 
@@ -140,10 +144,14 @@ sub run {
 
     $self->DeleteFrameFinderEvidence(\@DTsMarkedUsingFeatures);
 
+#now Mark as FL using translated features
     $self->MarkFLUsingFFfeatures(\@NaSeqStop);
 
+
+
+
 #need this return to finish run of plugin adds result set attribute to algorithm invoc.
-    return "marked as full length";
+    return "Assemblies marked as full length";
 
 }
 
