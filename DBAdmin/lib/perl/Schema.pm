@@ -12,9 +12,9 @@
 # $Revision$ $Date$ $Author$
 # -----------------------------------------------------------------------
 
-package Schema;
+package GUS::DBAdmin::Schema;
 
-use Util;
+use GUS::DBAdmin::Util;
 
 # -----------------------------------------------------------------------
 # Constructor
@@ -46,7 +46,7 @@ sub getTables {
     my($self, $dbh) = @_;
     my $nm = $self->{name};
     my $sql = ("select table_name from all_tables where owner = upper('$nm')");
-    return &Util::execQuery($dbh, $sql, 'scalar');
+    return &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'scalar');
 }
 
 # Return an arrayref of all the views owned by this schema.
@@ -55,7 +55,7 @@ sub getViews {
     my($self, $dbh) = @_;
     my $nm = $self->{name};
     my $sql = ("select view_name from all_views where owner = upper('$nm')");
-    return &Util::execQuery($dbh, $sql, 'scalar');
+    return &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'scalar');
 }
 
 # Return an arrayref of all the sequences owned by this schema.
@@ -64,7 +64,7 @@ sub getSequences {
     my($self, $dbh) = @_;
     my $nm = $self->{name};
     my $sql = ("select sequence_name from all_sequences where sequence_owner = upper('$nm')");
-    return &Util::execQuery($dbh, $sql, 'scalar');
+    return &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'scalar');
 }
 
 1;

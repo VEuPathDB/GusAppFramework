@@ -12,10 +12,10 @@
 # $Revision$ $Date$ $Author$
 # -----------------------------------------------------------------------
 
-package Database;
+package GUS::DBAdmin::Database;
 
-use Tablespace;
-use Util;
+use GUS::DBAdmin::Tablespace;
+use GUS::DBAdmin::Util;
 
 # -----------------------------------------------------------------------
 # Constructor
@@ -67,11 +67,11 @@ sub getDbiStr {
 sub getTablespaces {
     my($self, $dbh) = @_;
     my $sql = "select tablespace_name from dba_tablespaces";
-    my $tsNames = &Util::execQuery($dbh, $sql, 'scalar');
+    my $tsNames = &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'scalar');
     my $list = [];
 
     foreach my $ts (@$tsNames) {
-	push(@$list, Tablespace->new({db => $self, name => $ts}));
+	push(@$list, GUS::DBAdmin::Tablespace->new({db => $self, name => $ts}));
     }
 
     return $list;
@@ -116,7 +116,7 @@ sub backupArchivedRedoLogs {
     # 
     while (1) {
 	my $sql = "select count(*) from v\$archive_processes where state = 'BUSY'";
-	my $rows = &Util::execQuery($dbh, $sql, 'scalar');
+	my $rows = &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'scalar');
 
 	# Should return exactly one row
 	#
@@ -141,7 +141,7 @@ sub backupArchivedRedoLogs {
 	       "from v\$archive_dest " .
 	       "where status = 'VALID' ");
 
-    my $logDirs = &Util::execQuery($dbh, $sql, 'scalar');
+    my $logDirs = &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'scalar');
 
     # List the contents of each directory
     #
