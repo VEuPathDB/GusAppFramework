@@ -406,7 +406,7 @@ sub getInsertSubjStmt {
   my $rowGroupId = $self->getAlgInvocation()->getRowGroupId();
   my $rowProjectId = $self->getAlgInvocation()->getRowProjectId();
 
-  my $sql = 
+  my $sql =
 "insert into dots.Similarity Values " .
 "(?, $subj_tbl_id, ?, $query_tbl_id, ?, " .
 #score, bit_score_summary, pvalue_mant, pvalue_exp, min_subject_start,
