@@ -187,6 +187,7 @@ sub getTaxon {
 	    $taxonHash{$1} = $taxHash{$2};
 	}
     }
+    $st->finish();
     close (TAXFILE);
     my $length = scalar (keys %taxonHash);
     $self->log("There are $length gi to taxon_id pairs\n");
@@ -351,6 +352,7 @@ sub makeNRDBAndExternalAASequence {
 	    $seq .= $_;
 	}
     }
+    $st->finish();s
     my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id,$dbHash);
     $newExtAASeq->submit();
     $num_submit++;
@@ -543,21 +545,33 @@ sub makeNRDBEntries {
 }
 
 sub deleteFromNRDB {
-    my ($self, $dbHash) = @_;
-    my $num_delete = 0;
-    my $rel_list = join(',', values %{$dbHash});
-    my $dbh = $self->getQueryHandle();
-    my $login = $self->getArgs()->{temp_login};
-    my $st = $dbh->prepareAndExecute("select nrdb_entry_id from dots.nrdbentry where external_database_release_id in ($rel_list) minus (select n.nrdb_entry_id from dots.nrdbentry n, $login" . ".NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_db_rel_id)");
-    while (my ($nrdb_entry_id) = $st->fetchrow_array) {
-	$num_delete++;
-	my $newNRDBEntry = GUS::Model::DoTS::NRDBEntry->new ({'nrdb_entry_id'=>$nrdb_entry_id});
-	$newNRDBEntry->retrieveFromDB();
-	$newNRDBEntry->markDeleted();
-	$newNRDBEntry->submit();
-	$newNRDBEntry->undefPointerCache();
-      }
-    return $num_delete;
+  my ($self, $dbHash) = @_;
+  my $num_delete = 0;
+  my $rel_list = join(',', values %{$dbHash});
+  my $dbh = $self->getQueryHandle();
+  my $login = $self->getArgs()->{temp_login};
+  my %nrdbId;
+  my $sql1 = "select n.nrdb_entry_id from dots.nrdbentry n, $login" . ".NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_db_rel_id";
+  my $st1 = $dbh->prepareAndExecute($sql1) || die "SQL failed: $sql\n";
+  while (my ($nrdb_entry_id) = $st1->fetchrow_array) {
+    $nrdbId{$nrdb_entry_id} = 1;
+  }
+  $st1->finish();
+  my $sql2 = "select nrdb_entry_id from dots.nrdbentry where external_database_release_id in ($rel_list)";
+  my $st2 = $dbh->prepareAndExecute($sql2) || die "SQL failed: $sql\n";
+  while (my ($nrdb_entry_id) = $st2->fetchrow_array) {
+    if ($nrdbId{$nrdb_entry_id} != 1) {
+      $num_delete++;
+      my $newNRDBEntry = GUS::Model::DoTS::NRDBEntry->new ({'nrdb_entry_id'=>$nrdb_entry_id});
+      $newNRDBEntry->retrieveFromDB();
+      $newNRDBEntry->markDeleted();
+      $newNRDBEntry->submit();
+      $newNRDBEntry->undefPointerCache();
+    }
+  }
+  $st2->finish();
+  my $results = "Number of rows deleted from NRDB : $num_delete\n";
+  return $results;
 }
 
 sub deleteFromExtAASeq {
@@ -566,7 +580,8 @@ sub deleteFromExtAASeq {
   my $rel_list = join (',', values %{$dbHash});
   my $dbh = $self->getQueryHandle();
   my $ext_db_rel_id = $self->getArgs()->{extDbRelId};
-  my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_database_release_id = $ext_db_rel_id and aa_sequence_id not in (select aa_sequence_id from dots.nrdbentry)");
+  my $sql = "select aa_sequence_id from dots.externalaasequence where external_database_release_id = $ext_db_rel_id and aa_sequence_id not in (select aa_sequence_id from dots.nrdbentry)" || die "SQL failed: $sql\n";
+  my $st = $dbh->prepareAndExecute($sql);
   while (my ($aa_sequence_id) = $st->fetchrow_array) {
     $num_delete++;
     my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new ({'aa_sequence_id'=>$aa_sequence_id});
@@ -576,7 +591,9 @@ sub deleteFromExtAASeq {
     $newExtAASeq->submit();
     $newExtAASeq->undefPointerCache();
   }
-  return $num_delete;
+  $st->finish();
+  my $results = "Number of rows deleted from ExternalAASequence : $num_delete\n";
+  return $results;
 }
 
 1;
