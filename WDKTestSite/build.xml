@@ -63,11 +63,11 @@
   	
     <!-- Copy application resources -->
     <copy todir="${build.home}/webapp/WEB-INF">
-      <fileset dir="${basedir}/webinf/*" />
+      <fileset dir="${basedir}/webinf" />
     </copy>
 
     <copy todir="${build.home}/webapp/">
-      <fileset dir="${basedir}/docroot/*" />
+      <fileset dir="${basedir}/docroot" />
     </copy>
       
     <copy todir="${build.home}/webapp/WEB-INF/lib">
