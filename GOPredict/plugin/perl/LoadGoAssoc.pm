@@ -1,6 +1,6 @@
 package GUS::GOPredict::Plugin::LoadGoAssoc;
 @ISA = qw( GUS::PluginMgr::Plugin);
-use CBIL::Bio::DbFfWrapper::GeneAssoc::Parser;
+use CBIL::Bio::GeneAssocParser::Parser;
 
 use lib "$ENV{GUS_HOME}/lib/perl";
 
@@ -52,7 +52,7 @@ sub new {
 #      },
 	
 	 {o => 'id_file',
-	  h => 'read and append successfully processed ID here',
+	  h => 'read and append successfully processed ID here (necessary for crash-recovery)',
 	  t => 'string',
 	  r => 1,
       }
@@ -70,10 +70,7 @@ sub new {
 
     
     #set private configuration data for this plugin
-    
-    
-
-      
+     
     $self->{ orgInfo } = {
 	sgd => { id_col   => 'secondary_identifier', #yeast
 		 id_tbl   => 'Dots.ExternalAASequence',
@@ -102,7 +99,7 @@ sub new {
 	mgi => { id_col   => 'source_id',
 		 id_tbl   => 'Dots.ExternalAASequence',
 		 db_id    => [ 22, 2893, 3093 ], #medline, swissprot, trembl
-		 clean_id => sub { $self->{ maps }->{ mgi }->{ $_[ 0 ] } },
+		 clean_id => sub { [ $_[ 0 ] ] },
 		 assoc_meth    => 'getDBObjectId',
 	     },
 	hum => { id_col   => 'source_id',
@@ -133,7 +130,7 @@ sub new {
     }
     
     # return object.
-    print STDERR "LoadGoAssoc::new() is finished \n";
+    #print STDERR "LoadGoAssoc::new() is finished \n";
     return $self;
 }
 
@@ -154,11 +151,11 @@ sub run {
     
     # open the file
     # .................................................................
-    print STDERR "beginning method LoadGoAssoc::run \n";
+    #print STDERR "beginning method LoadGoAssoc::run \n";
     use FileHandle;
 
     my $path = $self->getCla->{file_path};
-    my $parser = CBIL::Bio::DbFfWrapper::GeneAssoc::Parser->new($path);
+    my $parser = CBIL::Bio::GeneAssocParser::Parser->new($path);
 
 
     my $fileName = $self->getCla->{flat_file};
@@ -217,7 +214,7 @@ sub __load_associations {
 
 	open (BIGLOG, ">>logs/pluginLog$organism") || die "pluginLog could not be opened";
 
-	print STDERR "loading organism $organism\n";
+	#print STDERR "loading organism $organism\n";
 	my $tempOrgInfo = $self->{orgInfo}->{$organism};
 	my $assocMethod = $tempOrgInfo->{assoc_meth};
 	
@@ -234,24 +231,20 @@ sub __load_associations {
 	my $tableId = $tableIdGetter->getTableIdFromTableName($tableNameO);
 	
 	#convert file store into hash to be used by algorithm
-	
 	my $assocData = $self->__createAssocData($allEntries, $allGusIds, $assocMethod);
 	
         
 	#for each external sequence
 	foreach my $key (keys %$assocData){
 	    
-	    print BIGLOG "loading association for $key\n";
+	    #print BIGLOG "loading association for $key\n";
 
 	    my $goIds = $assocData->{$key}->{goTerms};
 	    my $extSeqGusId = $assocData->{$key}->{extSeqGusId};
 	    
 	    my $ancestorsMade;
 	    
-	    unless ($goIds) {
-		print BIGLOG "LoadAssoc:  no entry for key: $key";
-	    }
-	    
+   
 	    # reasons not to process this line
 	    
 	    if ( ! $extSeqGusId ){ 
@@ -264,12 +257,12 @@ sub __load_associations {
 	    #for each go term associated with this external sequence
 	    foreach my $goId (keys %$goIds){
 		
-		print BIGLOG "making association with GOTerm $goId \n";   
+		#print BIGLOG "making association with GOTerm $goId \n";   
 		# GUS id for this GO id
 		my $goTermGusId = $goGraph->{ goToGus }->{ $goId };
 		unless ( $goTermGusId ) {
 		    $unknownCount++;
-		    print BIGLOG "could not find goTermGusId for goId $goId $unknownCount \n";
+		    #print BIGLOG "could not find goTermGusId for goId $goId $unknownCount \n";
 		    next
 		    }
 		
@@ -294,12 +287,12 @@ sub __load_associations {
 		#make association for terms on path to root.
 		foreach my $goAncestor ( @goAncestors ) {
 		    my $ancestorGoId = $goGraph->{gusToGo}->{$goAncestor};		
-		    print BIGLOG "\t\tmaking ancestor association for $ancestorGoId and " . $entry->getDBObjectId . "\n";
+		    #print BIGLOG "\t\tmaking ancestor association for $ancestorGoId and " . $entry->getDBObjectId . "\n";
 		    
 		    #don't make if already made from common descendant
 		    #or if other descendant is 'isnot'
 		    if ($ancestorsMade->{$key}->{$ancestorGoId} == 1){
-			print BIGLOG "\t\t skipping this ancestor assignment as $key  mapped to $ancestorGoId is true\n";
+			#print BIGLOG "\t\t skipping this ancestor assignment as $key  mapped to $ancestorGoId is true\n";
 			next;}
 		    
 		    $self->__make_association( $entry,
@@ -313,18 +306,17 @@ sub __load_associations {
 					       );
 		    $ancestorCount++;
 		    
-		    print BIGLOG "\t\t made ancestor\n";
+		    #print BIGLOG "\t\t made ancestor\n";
 		    if ($entry->getIsNot()){
 			$ancestorsMade->{$key}->{$ancestorGoId} = -1; }
 		    else {$ancestorsMade->{$key}->{$ancestorGoId} = 1;}	       
 		} # end ancestor association
 	    }  #end this go term    
+
+	    print $logFile $key . "\n";
 	} #end this external sequence
 	close BIGLOG;
     }#end this association file
-
-
-#	print $fh_log $assocRow->{ id }, "\n" if $fh_log;
     
 
 # return value
@@ -381,11 +373,11 @@ sub __make_association {
     }
     $gusAssoc->addChild($gusAssocInst); #big test
     
-    print ASSOCLOG $gusAssoc->toString() . "\n";
-    print AILOG $gusAssocInst->toString() . "\n";
+    #print ASSOCLOG $gusAssoc->toString() . "\n";
+    #print AILOG $gusAssocInst->toString() . "\n";
     
     
-    #$gusAssoc->submit() unless isReadOnly();
+    $gusAssoc->submit() unless isReadOnly();
     $self->undefPointerCache();
     return $evidenceCount;
     #return $gusAssocInst;
@@ -396,7 +388,7 @@ sub __make_association {
 
 sub __get_evidence_ids{
     my ($self, $assocData) = @_;
-    print STDERR "running get_evidence_ids\n";
+    #print STDERR "running get_evidence_ids\n";
     my %evdIds = {};
     my $queryHandle = $self->getQueryHandle();
     my $sql =  
@@ -411,7 +403,7 @@ sub __get_evidence_ids{
 	    %evdIds->{$key} = $evdId;
 	}
     }
-    print STDERR "end get_evidence_ids\n";
+    #print STDERR "end get_evidence_ids\n";
     return \%evdIds;
 }
 	
@@ -442,32 +434,18 @@ sub __get_sequence_id {
     foreach my $key (keys %$assocData){
 	my $entry = $assocData->{$key};
 	my $extId = $entry->$assocMethod;
-	my @cleanIds =  @{$orgInfo->{ clean_id }-> ($extId)};
-	my $cleanId = "(" . join (', ', @cleanIds) . ")";
-#my $cleanId = $cleanIds[0];
-	$sth->execute($cleanId);
+	#my @cleanIds =  @{$orgInfo->{ clean_id }-> ($extId)};
+	#my $cleanId = "(" . join (', ', @cleanIds) . ")";
+	#my $cleanId = $cleanIds[0];
+	$sth->execute($extId);
 	while (my ($gusId) = $sth->fetchrow_array()){
 	    %gusIds->{$key}= $gusId;
-	    
-	    if ($gusId){
-	       print GETSEQID "$extId, $cleanId, $gusId \n";
-	    }
-	    else{
-		print GETSEQID "no GUS for $extId \n";
-	    }
+	    	    
 	}
     }
-
-	#old version of plugin, clean id could be @.  Find out if this can really happen (mgi maybe?)
-
-   #    return [] unless scalar @cleanId;
-      #?
- # my $cleanId = join( ', ', map { "'$_'" } @cleanId );
-    
-
     close (GETSEQID);
     # return value
-    print STDERR "end get_sequence_id\n";
+    #print STDERR "end get_sequence_id\n";
     return \%gusIds;
     }
 
@@ -496,7 +474,7 @@ sub __load_processed_sequences {
 
 sub __load_go_graph {
     my ($self) = @_;
-    print STDERR "Running LoadGoAssoc::load_go_graph";
+    #print STDERR "Running LoadGoAssoc::load_go_graph";
     my $queryHandle = $self->getQueryHandle();
     # object to return
     my $graph;
@@ -582,7 +560,7 @@ sub __make_evidence_code_inst{
 	go_evidence_code_id => $realEvidGusCode,
      	review_status_id => $reviewStatus,
     });
-    print EVDLOG $evidCodeInst->toString();
+    #print EVDLOG $evidCodeInst->toString();
     return $evidCodeInst;
 }
 

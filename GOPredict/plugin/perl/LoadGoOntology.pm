@@ -1,6 +1,6 @@
 package GUS::GOPredict::Plugin::LoadGoOntology;
 @ISA = qw( GUS::PluginMgr::Plugin);
-use CBIL::Bio::DbFfWrapper::GeneOntology::Parser;
+use CBIL::Bio::GeneOntologyParser::Parser;
 
 use lib "$ENV{GUS_HOME}/lib/perl";
 
@@ -33,14 +33,21 @@ sub new {
 	 {o=> 'flat_file',
 	  h=> 'read data from this flat_file.  If blank, read data from all .ontology files in filepath',
           t=> 'string',
-          	  
       },
+	
+	 {o => 'id_file',
+	  h => 'read and append successfully processed ID here (necessary for crash-recovery)',
+	  t => 'string',
+	  r => 1,
+      },
+	 
 	 {o=> 'file_path',
 	  h=> 'location of .ontology files to read',
 	  t=> 'string',
 	  r=> 1,
       }
 	 ];
+
     $self->initialize({requiredDbVersion => {},
 		       cvsRevision => '$Revision$', # cvs fills this in!
 	 		   cvsTag => '$Name$', # cvs fills this in!
@@ -88,7 +95,7 @@ sub run {
     my $self = shift;
 
     my $path = $self->getCla->{file_path};
-    my $parser = CBIL::Bio::DbFfWrapper::GeneOntology::Parser->new($path);
+    my $parser = CBIL::Bio::GeneOntologyParser::Parser->new($path);
 
 
     my $fileName = $self->getCla->{flat_file};
@@ -116,9 +123,12 @@ sub __load_ontology {
 
     my $fakeGusId = 1;
     
-    # increase the number of objects allowed in memory
+    my $id_file = $self->getCla->{id_file}; 
+    if ($id_file){
+	$logFile = FileHandle->new( '>>'. $self->getCla->{ id_file } ); 
+    }
     
-    open (ontLOG, ">>logs/OntologyLog");
+    #open (ontLOG, ">>logs/OntologyLog");
     my $entryCount = 0;
     my $relationshipEntryCount = 0;
     my $synonymEntryCount = 0;
@@ -129,21 +139,12 @@ sub __load_ontology {
 	my $store = $stores->{$file};
 	
 	
-#    $parser->loadAllFiles();
-	# dictionary of terms go_id -> hash ref
-	
 	my ($branch) = $file =~ /^(\w+).ontology$/;
 	my $goVersion = $store->getVersion();
 
 	my $extDbRelId = $self->__getExtDbRelId($branch, $goVersion);
     
 
- 
-	#  my $my_id = 1;
-	#for readonly stuff, not sure how this comes into play, ask
-	#   my $get_my_id = sub { $my_id++ };
-	
-	
 	my $gus2go;
 	my $go2gus;
 	my $gus_terms;
@@ -157,7 +158,7 @@ sub __load_ontology {
 	my $obsoleteGoId = $self->{branchInfo}->{$branch}->{obsoleteGoId};
 	my $ancestor;
 	
-	print STDERR "got $obsoleteGoId as obsolete Id for $branch \n";
+	#print STDERR "got $obsoleteGoId as obsolete Id for $branch \n";
 	foreach my $entryId(keys %$entries){
 	    $fakeGusId++;
 	    my $entry = $entries->{$entryId};
@@ -190,22 +191,26 @@ sub __load_ontology {
 	    
 	    
 	    #submit new term
-	    #$gusGoTerm->submit();
-	    $gusGoTerm->setId($fakeGusId);
-	    $gusGoTerm->{gus_id} = $fakeGusId;
-	    print ontLOG $gusGoTerm->toString();
-	    print ontLOG "levels: ";
-	    foreach my $level (@levelList) { print ontLOG "$level ";}
-	    print ontLOG "\n";
+	    $gusGoTerm->submit();
 	    
-	    # update the temporary structure to have the new gus id -- dtb does submit() assign the gusid back to the object? 
-	    #ask shug but assume yes for now
-	    #$gusGoTerm->{ gus_id } = $gusGoTerm->getId();
+	    #write to successfully processed id file
+	    my $goId = $entry->getId();
+	    print $logFile ("Term = $goId = $goId\n");
+
+	    #$gusGoTerm->setId($fakeGusid);
+
+
+ 	    $gusGoTerm->{gus_id} = $gusGoTerm->getId();
+	    
+            #print ontLOG $gusGoTerm->toString();
+	    #print ontLOG "levels: ";
+	    #foreach my $level (@levelList) { print ontLOG "$level ";}
+	    #print ontLOG "\n";
 	    
 	    # make translation tables between GO and GUS ids.
 	    
-	    $gus2go->{ $gusGoTerm->getId() } = $entry->getId();#easy enough
-		$go2gus->{ $entry->getId() } = $gusGoTerm->getId();
+	    $gus2go->{ $gusGoTerm->getId() } = $entry->getId();
+	    $go2gus->{ $entry->getId() } = $gusGoTerm->getId();
 	    $self->undefPointerCache();
 	    
 	}
@@ -224,11 +229,13 @@ sub __load_ontology {
 			child_term_id => $go2gus-> {$entryId},
 			go_relationship_type_id => $isaId,
 		    });
-		    print ontLOG $goRelationship->toString();
+		    $goRelationship->submit();
+		    print $logFile "Relationship = $entryId = $class\n";
+		    #print ontLOG $goRelationship->toString();
 		    $self->undefPointerCache();
 		    $relationshipEntryCount++;
 		}
-	}
+	    }
 	    if ($containers){
 		foreach my $container (@$containers){
 		    my $goRelationship = GUS::Model::SRes::GORelationship->new({
@@ -236,7 +243,10 @@ sub __load_ontology {
 			child_term_id => $go2gus-> {$entryId},
 			go_relationship_type_id => $partOfId,
 		    });
-		    print ontLOG $goRelationship->toString();
+		    $goRelationship->submit();
+		    print $logFile "Relationship = $entryId = $container\n";
+
+		    #print ontLOG $goRelationship->toString();
 		    $self->undefPointerCache();
 		    $relationshipEntryCount++;
 		    
@@ -254,7 +264,10 @@ sub __load_ontology {
 			text => "$altId is an alternate GO Id for " . $entryId,
 			external_database_release_id => $extDbRelId,
 		    });
-		    print ontLOG $goSynonym->toString();
+		    $goSynonym->submit();
+		    print $logFile "Synonym = $entryId = $altId\n";
+
+		    #print ontLOG $goSynonym->toString();
 		    $self->undefPointerCache();
 		    $synonymEntryCount++;
 		}
@@ -266,7 +279,10 @@ sub __load_ontology {
 			text => $synonym,
 			external_database_release_id => $extDbRelId,
 		    });
-		    print ontLOG $goSynonym->toString();
+		    $goSynonym->submit();
+		    print $logFile "Relationship = $entryId = $synonym\n";
+
+		    #print ontLOG $goSynonym->toString();
 		    $self->undefPointerCache();
 		    $synonymEntryCount++;
 		}
@@ -287,7 +303,7 @@ sub __getExtDbRelId{
     my $queryHandle = $self->getQueryHandle();
     my $dbName = $self->{branchInfo}->{$branch}->{dbName};
     my $dbId = $self->{branchInfo}->{$branch}->{db_id};
-    print STDERR "got dbid $dbId for $branch";
+    #print STDERR "got dbid $dbId for $branch";
     my $sql = "select external_database_release_id 
                from sres.externalDatabaseRelease
                where version = \'$version\' and external_database_id = $dbId";
@@ -304,7 +320,7 @@ sub __getExtDbRelId{
 	# $extDbRelEntry->submit();
 	$extDbRelId = $extDbRelEntry->getId();
 	$extDbRelId = $dbId;
-	print LOG $extDbRelEntry->toString();
+	#print LOG $extDbRelEntry->toString();
 	return $extDbRelId;
     }
     return $extDbRelId;
