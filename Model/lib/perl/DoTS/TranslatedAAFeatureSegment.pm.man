@@ -1,16 +1,16 @@
 
 package GUS::Model::DoTS::TranslatedAAFeatureSegment; # table name
 use strict;
-use GUS::Model::DoTS::TranslatedAAFeatureSegmentRow;
+use GUS::Model::DoTS::TranslatedAAFeatureSegment_Row;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::TranslatedAAFeatureSegmentRow);
+@ISA = qw (GUS::Model::DoTS::TranslatedAAFeatureSegment_Row);
 
 sub getAASequenceSegmentFromTranslatedAASequence {
   my($self) = shift;
   if(!$self->{aaSeqSeg}){
-    $self->{aaSeqSeg} = substr($self->getParent('TranslatedAAFeature',1)->getParent('TranslatedAASequence',1)->getSequence(),$self->getAaStartPos()-1,$self->getAaEndPos() - $self->getAaStartPos() + 1);
+    $self->{aaSeqSeg} = substr($self->getParent('DoTS::TranslatedAAFeature',1)->getParent('DoTS::TranslatedAASequence',1)->getSequence(),$self->getAaStartPos()-1,$self->getAaEndPos() - $self->getAaStartPos() + 1);
   }
   return $self->{aaSeqSeg};
 }
@@ -18,12 +18,12 @@ sub getAASequenceSegmentFromTranslatedAASequence {
 sub getNASequenceSegment {
   my($self) = shift;
   if(!$self->{naSeqSeg}){ 
-    my $isrev = $self->getParent('TranslatedAAFeature',1)->getIsReversed();
+    my $isrev = $self->getParent('DoTS::TranslatedAAFeature',1)->getIsReversed();
     my $aStart = $self->getStartPos() - 1;
     my $aStop = $self->getEndPos();
     #		my $aStop = $is_reversed ? $pLength - $start : $stop;
     my $length = $aStop - $aStart;
-    $self->{naSeqSeg} = $isrev ? SequenceUtils::reverseComplementSequence(substr($self->getParent('TranslatedAAFeature',1)->getParent('RNAFeature',1)->getFeatureSequence(),$aStart,$length)) : substr($self->getParent('TranslatedAAFeature',1)->getParent('RNAFeature',1)->getFeatureSequence(),$aStart,$length);
+    $self->{naSeqSeg} = $isrev ? CBIL::Bio::SequenceUtils::reverseComplementSequence(substr($self->getParent('DoTS::TranslatedAAFeature',1)->getParent('DoTS::RNAFeature',1)->getFeatureSequence(),$aStart,$length)) : substr($self->getParent('DoTS::TranslatedAAFeature',1)->getParent('DoTS::RNAFeature',1)->getFeatureSequence(),$aStart,$length);
     if(length($self->{naSeqSeg}) != $length){
       print STDERR "ERROR TranslatedAAFeatureSegment->getNASequenceSegment(): Length of the sequence ",length($self->{naSeqSeg})," is not equal to the length computed from the start_pos and end_pos\n",$self->toXML(0,1);
     }

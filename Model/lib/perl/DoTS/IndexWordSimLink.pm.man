@@ -1,11 +1,11 @@
 
 package GUS::Model::DoTS::IndexWordSimLink; # table name
 use strict;
-use GUS::Model::DoTS::IndexWordSimLinkRow;
+use GUS::Model::DoTS::IndexWordSimLink_Row;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::IndexWordSimLinkRow);
+@ISA = qw (GUS::Model::DoTS::IndexWordSimLink_Row);
 
 
 sub setBestPValue {

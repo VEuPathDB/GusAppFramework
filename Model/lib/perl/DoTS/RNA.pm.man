@@ -1,11 +1,11 @@
 
 package GUS::Model::DoTS::RNA; # table name
 use strict;
-use GUS::Model::DoTS::RNARow;
+use GUS::Model::DoTS::RNA_Row;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::RNARow);
+@ISA = qw (GUS::Model::DoTS::RNA_Row);
 
 my $debug = 0;
 
@@ -16,10 +16,10 @@ sub getNASequences{
 	my($self,$naClass,$retrieve,$getDeletedToo,$where) = @_;
 	my @ass;
 	print STDERR "RNA->getRNAs\($naClass,$retrieve,$getDeletedToo\)\n" if $debug == 1;
-	foreach my $rs ($self->getChildren('RNASequence',$retrieve,$getDeletedToo,$where)){
+	foreach my $rs ($self->getChildren('DoTS::RNASequence',$retrieve,$getDeletedToo,$where)){
 		print STDERR $rs->toString() if $debug == 1;
 		print STDERR $rs->getId()," $rs\n" if $debug == 2;
-		my $f = $rs->getParent('NAFeature',$retrieve);
+		my $f = $rs->getParent('DoTS::NAFeature',$retrieve);
 		return undef unless $f;
 		print STDERR $f->toString() if $debug == 1;
 		print STDERR $f->getId()," $f\n" if $debug == 2;

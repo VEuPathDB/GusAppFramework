@@ -1,11 +1,11 @@
 
 package GUS::Model::DoTS::Gene; # table name
 use strict;
-use GUS::Model::DoTS::GeneRow;
+use GUS::Model::DoTS::Gene_Row;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::GeneRow);
+@ISA = qw (GUS::Model::DoTS::Gene_Row);
 
 my $debug = 0;
 
@@ -43,10 +43,10 @@ sub countAssembliesAndAssemblySequences {
 sub getRNAs {
 	my($self,$retrieve,$getDeletedToo,$where) = @_;
 	my @tmp;
-	foreach my $tu ($self->getChildren('TranscriptUnit',$retrieve,$getDeletedToo,$where)){
+	foreach my $tu ($self->getChildren('DoTS::TranscriptUnit',$retrieve,$getDeletedToo,$where)){
 		print STDERR $tu->toString() if $debug == 1;
 		print STDERR $tu->getId()," $tu\n" if $debug == 2;
-		foreach my $rna ($tu->getChildren('RNA',$retrieve,$getDeletedToo,$where)){
+		foreach my $rna ($tu->getChildren('DoTS::RNA',$retrieve,$getDeletedToo,$where)){
 			print STDERR $rna->toString() if $debug == 1;
 			print STDERR $rna->getId()," $rna\n" if $debug == 2;
 			push(@tmp,$rna);
@@ -58,14 +58,14 @@ sub getRNAs {
 #method to add an RNA object
 #sub addRNA{
 #	my($self,$rna) = @_;
-#	$self->getChild('TranscriptUnit',1)->addChild($rna);
+#	$self->getChild('DoTS::TranscriptUnit',1)->addChild($rna);
 #}
 
 sub countRNAs {
 	my $self = shift;
 	my $count = 0;
-	foreach my $tu ($self->getChildren('TranscriptUnit')){
-		$count += scalar($tu->getChildren('RNA'));
+	foreach my $tu ($self->getChildren('DoTS::TranscriptUnit')){
+		$count += scalar($tu->getChildren('DoTS::RNA'));
 	}
 	return $count;
 }

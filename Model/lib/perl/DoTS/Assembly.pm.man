@@ -1,7 +1,7 @@
 
 package GUS::Model::DoTS::Assembly;               # table name
 use strict;
-use GUS::Model::DoTS::AssemblyRow;
+use GUS::Model::DoTS::Assembly_Row;
 use GUS::Model::DoTS::AssemblySequence;
 use GUS::Model::DoTS::AssemblySNP;
 use GUS::Model::DoTS::AssemblySequenceSNP;
@@ -15,7 +15,7 @@ use GUS::Model::DoTS::Protein;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::AssemblyRow);
+@ISA = qw (GUS::Model::DoTS::Assembly_Row);
 
 
 ############################################################
@@ -34,20 +34,20 @@ sub setAssemblyDebugging {
 sub getGene{
   my($self,$retrieve) = @_;
   my $rna = $self->getRNA($retrieve);
-  my $gene = $rna->getParent('Gene',$retrieve);
+  my $gene = $rna->getParent('DoTS::Gene',$retrieve);
   print STDERR $gene->toString() if $debug == 1 && $gene;
   return $gene;
 }
 
 sub getRNA {
   my($self,$retrieve,$getDeletedToo) = @_;
-  my $naf = $self->getChild('RNAFeature',$retrieve,$getDeletedToo);
+  my $naf = $self->getChild('DoTS::RNAFeature',$retrieve,$getDeletedToo);
   return undef unless $naf;
   print STDERR $naf->toXML() if $debug == 1;
-  my $rs = $naf->getChild('RNAInstance',$retrieve,$getDeletedToo);
+  my $rs = $naf->getChild('DoTS::RNAInstance',$retrieve,$getDeletedToo);
   return undef unless $rs;
   print STDERR $rs->toXML() if $debug == 1;
-  my $rna = $rs->getParent('RNA',$retrieve);
+  my $rna = $rs->getParent('DoTS::RNA',$retrieve);
   print STDERR $rna->toXML() if $debug == 1 && $rna;
   return $rna;
 }
@@ -66,11 +66,11 @@ sub markFromRNAToSelfDeleted {
 sub getTranslatedAASequences {
   my($self,$retrieve,$getDeletedToo) = @_;
   my @tmp;
-  foreach my $rf ( $self->getChildren('RNAFeature',$retrieve,$getDeletedToo)){
+  foreach my $rf ( $self->getChildren('DoTS::RNAFeature',$retrieve,$getDeletedToo)){
     print STDERR $rf->toXML() if $debug == 1;
-    foreach my $tf ( $rf->getChildren('TranslatedAAFeature',$retrieve,$getDeletedToo)){
+    foreach my $tf ( $rf->getChildren('DoTS::TranslatedAAFeature',$retrieve,$getDeletedToo)){
       print STDERR $tf->toXML() if $debug == 1;
-      my $ts = $tf->getParent('TranslatedAASequence',$retrieve);
+      my $ts = $tf->getParent('DoTS::TranslatedAASequence',$retrieve);
       print STDERR $ts->toXML() if $debug == 1 && $ts;
       push(@tmp,$ts) if $ts;
     }
@@ -114,8 +114,8 @@ sub retrieveAllChildrenExceptAssSeqsFromDB {
       $c->retrieveAllChildrenFromDB($recursive,$resetIfHave);
     }
   }else{  ##getthe assemblysequencesnps
-    foreach my $snp ($self->getChildren('AssemblySNP')){
-      $snp->retrieveChildrenFromDB('AssemblySequenceSNP');
+    foreach my $snp ($self->getChildren('DoTS::AssemblySNP')){
+      $snp->retrieveChildrenFromDB('DoTS::AssemblySequenceSNP');
     }
   }
 }
@@ -129,7 +129,6 @@ sub createFeaturesAndAASequence {
   $rnaf->setParent($self); 
 
   ##next the TranslatedAAFeature...
-  my $taafName = $self->getSchemaName().'::TranslatedAAFeature';
   my $aaf = GUS::Model::DoTS::TranslatedAAFeature->
 	new({'subclass_view' => 'TranslatedAAFeature',
 		                              'is_simple' => 1,
@@ -317,7 +316,6 @@ sub parseCap2Alignment {
   ##ready for new alignment
   $self->deleteGappedValues();
   my $assemblyName = $self->getTable()->getPerlTableName();
-  my $aseqName = $self->getTable()->getSchemaName()."::AssemblySequence";
 
   my @alignment = split("\n", $alignment);
   my $bk = 0;                   #block number of alignment
@@ -337,7 +335,7 @@ sub parseCap2Alignment {
           print STDERR "Getting AssemblySequence $id from cache\n" if $debug;
         } else {
           print STDERR "Getting new Assembly Sequence $id from db....\n" if $debug;
-          $as = $aseqName->new({'assembly_sequence_id' => $id});
+          $as = GUS::Model::DoTS::AssemblySequence->new({'assembly_sequence_id' => $id});
           $as->retrieveFromDB() unless $id =~ /^D/;
         }
         $self->addChild($as);
@@ -384,14 +382,14 @@ sub parseCap2Alignment {
   }
   print STDERR "Finished parsing...tidying up\n" if $debug;
   ##should do finish up things here like setting the gaps and could set gappedLength here once!!
-  foreach my $c ($self->getChildren('AssemblySequence')) { ##could also get from {'align'}
+  foreach my $c ($self->getChildren('DoTS::AssemblySequence')) { ##could also get from {'align'}
     #		print STDERR $c->toXML();
     #		print STDERR "GappedSequence: ",$c->getGappedSequence(),"\n";
     $c->setGappedLength(length($c->getGappedSequence()));
     $c->setGapsFromGappedSequence(); ##Note that this uses the gapped sequence to generate the gaps...
   }
   ##also set the number of contained sequences
-  $self->set('number_of_contained_sequences',scalar($self->getChildren('AssemblySequence')));
+  $self->set('number_of_contained_sequences',scalar($self->getChildren('DoTS::AssemblySequence')));
 
   ##not sure should set the sequence...is set upon submitting....
   $self->setSequence($self->makeConsensus()); # unless ($self->countContainedAssemblies() == 1 && $self->get('number_of_contained_sequences') == 1); ##don't set if only constains an old assembly and no others...will barf and am finished..
@@ -409,7 +407,6 @@ sub parseCap4Caml {
     $contigAtts = $self->getCamlAtts($1);
   }
   my $assemblyName = $self->getTable()->getPerlTableName();
-  my $aseqName = $self->getTable()->getSchemaName()."::AssemblySequence";
   ##now the consensus stuff
   if ($caml =~ /^.*?\<CONSENSUS (.*?)\>(.*)\<\/CONSENSUS\>/) {
     $consensusAtts = $self->getCamlAtts($1);
@@ -450,7 +447,7 @@ sub parseCap4Caml {
         my $dtid = $1;
         print STDERR "The Id is '$id' and dtid is '$dtid'\n" if $debug;
         my $oldAss;
-        $as = $aseqName->new({'assembly_sequence_id' => $id});
+        $as = GUS::Model::DoTS::AssemblySequence->new({'assembly_sequence_id' => $id});
         $self->addChild($as);
         $as->parseCap4Caml($seqString);
         if ($self->assemblyIsCached($dtid)) { ##...is cached
@@ -481,7 +478,7 @@ sub parseCap4Caml {
           print STDERR "Getting AssemblySequence $id from cache\n" if $debug;
         } else {
           print STDERR "Getting new Assembly Sequence $id from db....\n" if $debug;
-          $as = $aseqName->new({'assembly_sequence_id' => $id});
+          $as = GUS::Model::DoTS::AssemblySequence->new({'assembly_sequence_id' => $id});
           $as->retrieveFromDB() unless $doNotRetrieve; 
         }
         $self->addChild($as);
@@ -493,7 +490,7 @@ sub parseCap4Caml {
     }
   }
   ##set the number of contained sequences..
-  $self->set('number_of_contained_sequences',scalar($self->getChildren('AssemblySequence')));
+  $self->set('number_of_contained_sequences',scalar($self->getChildren('DoTS::AssemblySequence')));
   ##little bit of error checking
   if ($debug) {
     my @q = split(' +',$self->getQualityValues());
@@ -542,14 +539,13 @@ sub trimAssembly {
   ##self attributes..
   ##AssemblySequences
   my @deletedAssSeqs;
-  my $aseqName = $self->getTable()->getSchemaName()."::AssemblySequence";
-  foreach my $aseq ($self->getChildren('AssemblySequence',1)) {
+  foreach my $aseq ($self->getChildren('DoTS::AssemblySequence',1)) {
     if ($aseq->trimAssembledSequence($assemblyStart,$assemblyLength) == 0) {
       ##this one is outside the current assembly bounds...what to do?
       ##reset to input....should I retrieve it from the db first incase has been
       ##trimmed in a previous round?
       print STDERR "trimAssembly: AssemblySequence ",$aseq->getId()," removed entirely\n";
-      my $tmpAseq = $aseqName->new({'assembly_sequence_id' => $aseq->getId()});
+      my $tmpAseq = GUS::Model::DoTS::AssemblySequence->new({'assembly_sequence_id' => $aseq->getId()});
       $tmpAseq->retrieveFromDB();
       $tmpAseq->resetAssemblySequence(); ##resets for no Assembly parent
       $self->removeChild($aseq);
@@ -627,7 +623,7 @@ sub buildCompleteAlignment{
     return;
   }
 
-  print STDERR "Building Complete alignment: AssemblySequences (".join(', ',$self->getChildren('AssemblySequence')).")\n" if $debug;
+  print STDERR "Building Complete alignment: AssemblySequences (".join(', ',$self->getChildren('DoTS::AssemblySequence')).")\n" if $debug;
 
   ##first, make the gappedConsensus and adjust the offsets of the ass sequences according tot he new offset...
   #	my $old = $self->{'oldAssemblies'};  ##make copy for convenience
@@ -680,7 +676,7 @@ sub buildCompleteAlignment{
     if (%insInOthers) {
       ##inserts a gap into this assembly thus need to insert a quality value here...make it low as is gap
       $self->insertGapInQualityValues($i);
-      foreach my $as ($self->getChildren('AssemblySequence')) {
+      foreach my $as ($self->getChildren('DoTS::AssemblySequence')) {
         my $id = $as->getId();
         $as->insertGap($i) ;    #unless exists $insInOthers{$id};  ##insert gap unless causing it to be inserted in others
         if (exists $old->{$id} && !exists $insInOthers{$id}) { ##insert gaps in assemblies...
@@ -698,13 +694,13 @@ sub buildCompleteAlignment{
   ##calculate new gappedConsensus...
   foreach my $k (keys%{$old}) {
     print STDERR "adding all $k children...\n" if $debug == 1;
-    $self->addChildren($old->{$k}->[1]->getChildren('AssemblySequence'));
+    $self->addChildren($old->{$k}->[1]->getChildren('DoTS::AssemblySequence'));
     print STDERR "Removing $k child...\n" if $debug == 1;
     $self->removeChild($old->{$k}->[0]);
   }
   $self->makeGappedConsensus(); ##generates new gappedConsensus
   $self->setGappedLength(length($self->getGappedConsensus()));
-  $self->set('number_of_contained_sequences',scalar($self->getChildren('AssemblySequence'))); ##important before setting sequence
+  $self->set('number_of_contained_sequences',scalar($self->getChildren('DoTS::AssemblySequence'))); ##important before setting sequence
   $self->setSequence($self->makeConsensus());
 }
 
@@ -725,8 +721,8 @@ sub setContainsMrna{
   my $self = shift;
   my $current = $self->getContainsMrna();
   my $new = 0;
-  foreach my $c ($self->getChildren('AssemblySequence')) {
-    if ($c->getParent('ExternalNASequence',1)->get('sequence_type_id') == 7 || $c->getParent('ExternalNASequence',1)->get('sequence_type_id') == 2) { 
+  foreach my $c ($self->getChildren('DoTS::AssemblySequence')) {
+    if ($c->getParent('DoTS::ExternalNASequence',1)->get('sequence_type_id') == 7 || $c->getParent('DoTS::ExternalNASequence',1)->get('sequence_type_id') == 2) { 
       $new = 1;
       last;
     }
@@ -755,12 +751,12 @@ sub assignIdentifier {
   ##note...need to transfer self to $best rather than other way around
   ##then return $best and array of ones to delete...
   $best->removeChildrenInClass('AssemblySequence');
-  $best->addChildren($self->getChildren('AssemblySequence'));
+  $best->addChildren($self->getChildren('DoTS::AssemblySequence'));
   $best->deleteGappedValues();  ##reset all gapped values...
   ##note that here $self should have all the proper values...don't recompute..
  # $debug = 0;
   $best->setGappedConsensus($self->getGappedConsensus());
-  $best->set('number_of_contained_sequences',scalar($best->getChildren('AssemblySequence')));
+  $best->set('number_of_contained_sequences',scalar($best->getChildren('DoTS::AssemblySequence')));
   $best->setSequence($best->makeConsensus()); ##generate consensus in buildCompleteAlignment
   $best->setQualityValues($self->getQualityValues());
   #	$best->set('contains_mrna',$self->get('contains_mrna'));
@@ -776,7 +772,7 @@ sub assignIdentifier {
 sub insertGapInAssembly{
   my($self,$index) = @_;
   print STDERR $self->getCacheId(),": inserting gap in self at $index\n" if $debug == 1;
-  foreach my $as ($self->getChildren('AssemblySequence')) {
+  foreach my $as ($self->getChildren('DoTS::AssemblySequence')) {
     $as->insertGap($index);
   }
   ##need to also insert a gap in the gappedConsensus NO LONGER USING THIS!!
@@ -796,7 +792,7 @@ sub adjustOffsets{
   my($self,$adjust) = @_;
   print STDERR $self->getCacheId().": Addjusting offsets by $adjust\n" if $debug;
   $self->{'containedOffset'} = $adjust;	##offset of this assembly in whole..
-  foreach my $as ($self->getChildren('AssemblySequence',1)) {
+  foreach my $as ($self->getChildren('DoTS::AssemblySequence',1)) {
     print STDERR "  ".$as->getId().": ".$as->getAssemblyOffset()."=>" if $debug;
     $as->set('assembly_offset',$as->get('assembly_offset') + $adjust);
     print STDERR $as->getAssemblyOffset()."\n" if $debug;
@@ -859,7 +855,7 @@ sub toFasta {
   } else {
     $id = "DT." . $self->getId();
   }
-  return "\>$id\n" . SequenceUtils::breakSequence($self->getSequence());
+  return "\>$id\n" . CBIL::Bio::SequenceUtils::breakSequence($self->getSequence());
 }
 
 ##outputs sequence in fasta format with the DOTS header (defline)
@@ -874,13 +870,13 @@ sub toDOTSConsensus {
   my $defline;
   if($doGene){
     my $rna = $self->getRNA(1);
-    $defline = "\>DT.".$self->getId()." G.".$rna->getParent('TranscriptUnit',1)->getGeneId()." [".($self->getTaxonId() == 8 ? "Homo sapiens]" : "Mus musculus]");
+    $defline = "\>DT.".$self->getId()." G.".$rna->getGeneId()." [".($self->getTaxonId() == 8 ? "Homo sapiens]" : "Mus musculus]");
   }else{
     $defline = "\>DT.".$self->getId()." [".($self->getTaxonId() == 8 ? "Homo sapiens]" : "Mus musculus]");
   }
   my $desc = $self->getDescription();
   $defline .= " $desc (".$self->get('number_of_contained_sequences')." sequences) length=".$self->get('length')."\n";
-  return $defline . SequenceUtils::breakSequence($sequence);
+  return $defline . CBIL::Bio::SequenceUtils::breakSequence($sequence);
 }
 
 
@@ -921,11 +917,11 @@ sub reverseComplementAssembly{
   print STDERR "reverseComplementing assembly..$self: ",$self->getCacheId(),"\n" if $debug;
   ##need the gappedConsensus for reverseComplementing the AssemblySequences!!
   #	$self->makeGappedConsensus() unless exists $self->{'gappedConsensus'};
-  foreach my $c ($self->getChildren('AssemblySequence',1)) {
+  foreach my $c ($self->getChildren('DoTS::AssemblySequence',1)) {
     $c->reverseComplement();
   }
   ##gappedConsensus
-  $self->setGappedConsensus(SequenceUtils::reverseComplementSequence($self->getGappedConsensus()));
+  $self->setGappedConsensus(CBIL::Bio::SequenceUtils::reverseComplementSequence($self->getGappedConsensus()));
   ##sequence
   $self->setSequence($self->makeConsensus());
   ##qualityValues
@@ -945,7 +941,7 @@ sub getCap2Alignment {
 
   #	$self->deleteGappedValues(); ##don't delete so don't regenerate gappedCons needlessly
 
-  my @order = sort{$a->get('assembly_offset') <=> $b->get('assembly_offset')} $self->getChildren('AssemblySequence',1);
+  my @order = sort{$a->get('assembly_offset') <=> $b->get('assembly_offset')} $self->getChildren('DoTS::AssemblySequence',1);
 
   my $alignment = "";
   my $tmpLine;
@@ -1015,7 +1011,7 @@ sub getValidChildren {
   my $size = $s ? $s : 60;
 	
   my @validChildren;
-  foreach my $c ($self->getChildren('AssemblySequence',1)) {
+  foreach my $c ($self->getChildren('DoTS::AssemblySequence',1)) {
     if ($c->get('assembly_offset') <= $index + $size && $c->get('assembly_offset') + $c->getGappedLength() >= $index ) {
       push(@validChildren,$c);
     }
@@ -1032,7 +1028,7 @@ sub getGappedConsensusSegment {
   my $i = 0;
   my $nuc;
 
-  if(scalar($self->getChildren('AssemblySequence',1)) == 0){
+  if(scalar($self->getChildren('DoTS::AssemblySequence',1)) == 0){
     $self->{'finishedGappedConsensus'} = 1;
     print STDERR $self->getClassName(),"->getGappedConsensusSegement($index): na_sequence_id (",$self->getId(),") Have NO AssemblySequence children\n";
     return undef;
@@ -1064,7 +1060,7 @@ sub getGappedConsensusSegment {
     $gappedCons .= $self->genNucFromNucHash(%con);
     #		print STDERR "$i:",$self->genNucFromNucHash(%con),"-",scalar(keys%con),",";
   }
-  print STDERR "gappedConsensusSegment:\n",SequenceUtils::breakSequence($gappedCons) if $debug;
+  print STDERR "gappedConsensusSegment:\n",CBIL::Bio::SequenceUtils::breakSequence($gappedCons) if $debug;
   $self->{'gappedConsensusSegment'} .= $gappedCons;
   if ($haveAll){ # && length($self->getWholeGappedConsensusSegment()) >= $index) { ##have the entire gapped consensus
     $self->setGappedConsensus($self->getWholeGappedConsensusSegment()) unless $self->get('gapped_consensus') eq $self->getWholeGappedConsensusSegment(); ##only set if not same  as there already
@@ -1133,7 +1129,7 @@ sub orientAssemblyByAssemblySequences {
   my $self = shift;
   my %or;                       ##hash for recording orientation
   print STDERR "Orienting the new assembly $self\n" if $debug;
-  foreach my $a ($self->getChildren('AssemblySequence')) {
+  foreach my $a ($self->getChildren('DoTS::AssemblySequence')) {
     my $o = $a->isOrientationConsistent(); ##returns -1 if no information...
     ##1,correct EST,0-incorrect EST,2-correct mRNA,-2-incorrect mRNA
     $or{$o}++;
@@ -1150,9 +1146,9 @@ sub orientAssemblyByAssemblySequences {
 sub submit {
   my($self,$notDeep,$noTran) = @_;
   return $self->SUPER::submit($notDeep,$noTran) unless $self->hasChangedAttributes();
-  if (!$self->isMarkedDeleted() && $self->getDescription() ne 'DELETED' && $self->getSetDefaultsOnSubmit() && $self->getChildren('AssemblySequence',1) ) { ##only do these things if have AssemblySequence kids
+  if (!$self->isMarkedDeleted() && $self->getDescription() ne 'DELETED' && $self->getSetDefaultsOnSubmit() && $self->getChildren('DoTS::AssemblySequence',1) ) { ##only do these things if have AssemblySequence kids
     print STDERR "Setting defaults for Assembly: ".$self->getId()."\n" if $debug;
-    $self->set('number_of_contained_sequences',scalar($self->getChildren('AssemblySequence'))) unless $self->getNumberOfContainedSequences() == scalar($self->getChildren('AssemblySequence'));
+    $self->set('number_of_contained_sequences',scalar($self->getChildren('DoTS::AssemblySequence'))) unless $self->getNumberOfContainedSequences() == scalar($self->getChildren('DoTS::AssemblySequence'));
     $self->set('sequence_type_id',5) unless $self->getSequenceTypeId() == 5;
     $self->setContainsMrna();
     print STDERR "  Orienting assembly by contained sequences...\n" if $debug;
@@ -1212,7 +1208,7 @@ sub getConsistencyArray {
 
 sub getConsistency {
   my $self = shift;
-  return 100 if scalar($self->getChildren('AssemblySequence',1)) == 1;
+  return 100 if scalar($self->getChildren('DoTS::AssemblySequence',1)) == 1;
   if (!exists $self->{'consistency'}) {
     $self->calculateConsistency();
   }
@@ -1223,12 +1219,12 @@ sub getConsistency {
 sub retrieveSNPsFromDB {
   my($self,$where) = @_;
   if(!$where && !$snpStmt){
-    $snpStmt = $self->getQueryHandle()->prepare("select assembly_position from ".$self->getTable()->getSchemaName().".AssemblySNP where na_sequence_id = ? order by assembly_position");
+    $snpStmt = $self->getQueryHandle()->prepare("select assembly_position from DoTS.AssemblySNP where na_sequence_id = ? order by assembly_position");
   }
   delete $self->{'snps'};
   my $stmt;
   if($where){
-    $stmt = $self->getQueryHandle()->prepare("select assembly_position from ".$self->getTable()->getSchemaName().".AssemblySNP where na_sequence_id = ? and $where order by assembly_position");
+    $stmt = $self->getQueryHandle()->prepare("select assembly_position from DoTS.AssemblySNP where na_sequence_id = ? and $where order by assembly_position");
   }else{
     $stmt = $snpStmt;
   }
@@ -1266,7 +1262,7 @@ sub findSNPs {
         my $tmp = substr($self->getGappedConsensus(),0,$pos);
         $tmp =~ s/-//g;
         $snps .= "SNP at position ".length($tmp).": $pos in gappedConsensus\n";
-        foreach my $aseq ($self->getChildren('AssemblySequence')) {
+        foreach my $aseq ($self->getChildren('DoTS::AssemblySequence')) {
           my $nuc = $aseq->getNucAtIndex($c->[3]);
           $snps .= " $nuc\t".$aseq->getId()."\n" if $nuc;
         }
@@ -1280,23 +1276,21 @@ sub findSNPs {
 sub makeAssemblySNPObjects {
   my($self,$makeSnpType,$index,$depth,$best_percent) = @_;
   ##first create the AssemblySNP object so can  add as parent to assnps
-  my $assSeqSnpName = $self->getTable()->getSchemaName()."::AssemblySequenceSNP";
-  my $assSnpName = $self->getTable()->getSchemaName()."::AssemblySNP";
-  my $snp = $assSnpName->new({ 'assembly_position' => $index + 1,
+  my $snp = GUS::Model::DoTS::AssemblySNP->new({ 'assembly_position' => $index + 1,
                                'assembly_depth' => $depth });
   $self->addChild($snp);
 
   my %cons;
   ##now loop through the assseqs and get nucs etc...
   my $checkDepth = 0;
-  foreach my $aseq ($self->getChildren('AssemblySequence')) {
+  foreach my $aseq ($self->getChildren('DoTS::AssemblySequence')) {
     my $nuc = $aseq->getNucAtIndex($index);
     next unless $nuc;  ##not in region of this assemblysequence
     $checkDepth++;
     $cons{$nuc}++;
     ##now need to create the AssemblySequenceSNP object...
     if($makeSnpType == 2){
-      my $assnp = $assSeqSnpName->new( { 'sequence_character' => $nuc } );
+      my $assnp = GUS::Model::DoTS::AssemblySequenceSNP->new( { 'sequence_character' => $nuc } );
       my $gloc = $aseq->getPositionAtIndex($index);
       $assnp->setGappedLocation($gloc);
       $assnp->setNaSequenceLocation($aseq->getNaSequencePosition($gloc));
@@ -1351,10 +1345,10 @@ sub toCAML {
     print STDERR "toCAML: gappedConsensus length: ",length($self->getGappedConsensus()),", qualityValues: ",scalar(@q),"\n" if $debug;
   my $caml;
   my $quality = $self->getQualityValues();
-  my $numFrags = $self->getNumberOfContainedSequences() ? $self->getNumberOfContainedSequences() : scalar($self->getChildren('AssemblySequence',1));
+  my $numFrags = $self->getNumberOfContainedSequences() ? $self->getNumberOfContainedSequences() : scalar($self->getChildren('DoTS::AssemblySequence',1));
 #  ##if there are no quality values and is singleton then return caml for assembllysequence??
 #  if(!quality && $numFrags == 1){
-#    return $self->getChild('AssemblySequence')->toCAML();
+#    return $self->getChild('DoTS::AssemblySequence')->toCAML();
 #  }
   ##if there are no quality values, generate them so can print more informaively...
   my $makeQual = 0;
@@ -1373,7 +1367,7 @@ sub toCAML {
   if ($quality) {
     $caml .= "    <CONSENSUS LENGTH=\"".$self->getGappedLength()."\">\n";
   }
-  #  $caml .= "    <BASE>\n".($quality ? SequenceUtils::breakSequence($self->getGappedConsensus(),74,'      ') : SequenceUtils::breakSequence($self->getSequence(),74,'      '))."    </BASE>\n";
+  #  $caml .= "    <BASE>\n".($quality ? CBIL::Bio::SequenceUtils::breakSequence($self->getGappedConsensus(),74,'      ') : CBIL::Bio::SequenceUtils::breakSequence($self->getSequence(),74,'      '))."    </BASE>\n";
   $caml .= "    <BASE>".$self->getGappedConsensus()."    </BASE>\n";
   if ($quality) { 
     $caml .= "    <QUALITY>".$quality."</QUALITY>\n";

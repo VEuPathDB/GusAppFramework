@@ -1,11 +1,11 @@
 
 package GUS::Model::DoTS::Similarity; # table name
 use strict;
-use GUS::Model::DoTS::SimilarityRow;
+use GUS::Model::DoTS::Similarity_Row;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::SimilarityRow);
+@ISA = qw (GUS::Model::DoTS::Similarity_Row);
 
 my $debug = 0;
 
@@ -16,7 +16,7 @@ my $debug = 0;
 sub setSummaryValuesFromSpans {
 	my($self) = @_;
         print STDERR "Not implemented yet....any volunteers?\n";
-	return undef unless $self->getChildren('SimilaritySpan');
+	return undef unless $self->getChildren('DoTS::SimilaritySpan');
 }
 
 sub getSubjectLengthCovered {
@@ -24,7 +24,7 @@ sub getSubjectLengthCovered {
   my $cov = 0;
   my $end = 0;
   print STDERR "Similarity: Getting Length covered\n" if $debug;
-  foreach my $s (sort {$a->getSubjectStart() <=> $b->getSubjectStart()} $self->getChildren('SimilaritySpan',1)){
+  foreach my $s (sort {$a->getSubjectStart() <=> $b->getSubjectStart()} $self->getChildren('DoTS::SimilaritySpan',1)){
     print STDERR "SubStart: ",$s->getSubjectStart()," - SubEnd: ",$s->getSubjectEnd(),"\n" if $debug;
     $cov += $s->getSubjectStart() > $end ? $s->getSubjectEnd() - $s->getSubjectStart() + 1 : ($s->getSubjectEnd() > $end ? $s->getSubjectEnd() - $end : 0);
     $end = $s->getSubjectEnd() if $end < $s->getSubjectEnd();
@@ -90,9 +90,9 @@ sub generateSimilarityAlignment {
   my $ct = 1;
   my @sort;
   if($self->getScore() == "-1"){
-    @sort = $self->getIsReversed ? sort{$b->getQueryStart() <=> $a->getQueryStart()}$self->getChildren('SimilaritySpan',1) : sort{$a->getQueryStart() <=> $b->getQueryStart()}$self->getChildren('SimilaritySpan',1);
+    @sort = $self->getIsReversed ? sort{$b->getQueryStart() <=> $a->getQueryStart()}$self->getChildren('DoTS::SimilaritySpan',1) : sort{$a->getQueryStart() <=> $b->getQueryStart()}$self->getChildren('DoTS::SimilaritySpan',1);
   }else{
-    @sort = sort{$b->getScore() <=> $a->getScore()}$self->getChildren('SimilaritySpan',1);
+    @sort = sort{$b->getScore() <=> $a->getScore()}$self->getChildren('DoTS::SimilaritySpan',1);
   }
   foreach my $span (@sort){
     $align .= "  HSP_$ct: ".$span->generateHSPAlignment($type);

@@ -1,11 +1,11 @@
 
 package GUS::Model::DoTS::RNAFeature; # table name
 use strict;
-use GUS::Model::DoTS::RNAFeatureRow;
+use GUS::Model::DoTS::RNAFeature_Row;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::RNAFeatureRow);
+@ISA = qw (GUS::Model::DoTS::RNAFeature_Row);
 
 my $debug = 0;
 
@@ -22,15 +22,15 @@ sub getFeatureSequence {
 			print STDERR "getFeatureSequence: is not predicted\n" if $debug;
 			return $self->SUPER::getFeatureSequence();
 		}
-    my $snas = $self->getParent('SplicedNASequence',1);
+    my $snas = $self->getParent('DoTS::SplicedNASequence',1);
     if($snas && $snas->get('sequence')){
 			$self->{'sequence'} = $snas->getSequence();
     }else{
       my @exons = $self->getExons();
       print STDERR "RNAFeature->getFeatureSequence: Have ",scalar(@exons)," exons\n" if $debug;
       foreach my $e (sort { $a->get('order_number') <=> $b->get('order_number')} @exons){
-#		foreach my $e (sort { $a->getChild('NALocation',1)->get('start_min') <=> $b->getChild('NALocation',1)->get('start_min')} @exons){
-        print STDERR "Getting ExonFeature sequence for exon: ".$e->get('order_number')." start=".$e->getChild('NALocation',1)->get('start_min')."\n".$e->getFeatureSequence()."\n" if $debug;
+#		foreach my $e (sort { $a->getChild('DoTS::NALocation',1)->get('start_min') <=> $b->getChild('DoTS::NALocation',1)->get('start_min')} @exons){
+        print STDERR "Getting ExonFeature sequence for exon: ".$e->get('order_number')." start=".$e->getChild('DoTS::NALocation',1)->get('start_min')."\n".$e->getFeatureSequence()."\n" if $debug;
         
         $self->{'sequence'} .= $e->getFeatureSequence();
       }
@@ -43,9 +43,9 @@ sub getFeatureSequence {
 sub getExons {
 	my $self = shift;
 	my @exons;
-	foreach my $r ($self->getChildren('RNAFeatureExon',1)) {
+	foreach my $r ($self->getChildren('DoTS::RNAFeatureExon',1)) {
     print STDERR "Retrieving exon: na_feature_id '".$r->getExonFeatureId()."'\n" if $debug;
-		push(@exons,$r->getParent('ExonFeature',1));
+		push(@exons,$r->getParent('DoTS::ExonFeature',1));
 	}
 	return @exons;
 }

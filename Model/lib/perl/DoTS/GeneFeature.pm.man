@@ -1,7 +1,7 @@
 
 package GUS::Model::DoTS::GeneFeature; # table name
 use strict;
-use GUS::Model::DoTS::GeneFeatureRow;
+use GUS::Model::DoTS::GeneFeature_Row;
 
 use GUS::Model::DoTS::RNAFeature;
 use GUS::Model::DoTS::TranslatedAAFeature;
@@ -11,7 +11,7 @@ use GUS::Model::DoTS::RNAFeatureExon;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::GeneFeatureRow);
+@ISA = qw (GUS::Model::DoTS::GeneFeature_Row);
 
 my $debug = 0;
 
@@ -20,14 +20,14 @@ sub getGBLocation {
   my $self = shift;
   if(!exists $self->{gblocation}){
     my @loc;
-    my @exons = $self->getChildren('ExonFeature',1);
+    my @exons = $self->getChildren('DoTS::ExonFeature',1);
     return unless scalar(@exons) >= 1;
-    my $naloc = $exons[0]->getChild('NALocation',1);
+    my $naloc = $exons[0]->getChild('DoTS::NALocation',1);
     return unless $naloc;
     my $isRev = $naloc->getIsReversed();
     my @sort = $isRev ? sort {$b->getOrderNumber() <=> $a->getOrderNumber()} @exons : sort {$a->getOrderNumber() <=> $b->getOrderNumber()} @exons;
     foreach my $exon (@sort) {
-      my $l = $exon->getChild('NALocation',1);
+      my $l = $exon->getChild('DoTS::NALocation',1);
       next  unless $l;
 #      print STDERR $self->getId(),": ",$exon->getOrderNumber(),", ",$l->getStartMin(),"..",$l->getEndMin(),"\n";
       push (@loc,$l->getStartMin()."..".$l->getEndMin());
@@ -55,7 +55,7 @@ sub makePredictedRna {
 	if(defined $exons){
 		@exFeats = @{$exons};
 	}else{
-		@exFeats = $self->getChildren('ExonFeature',1);
+		@exFeats = $self->getChildren('DoTS::ExonFeature',1);
 		print STDERR "GeneFeature->makeRNAtoProtein():  You must add the ExonFeature children or pass in an array reference of exons before calling this method\n" if scalar(@exFeats) == 0;
 	}
 	if(scalar(@exFeats) < 1){
@@ -66,7 +66,7 @@ sub makePredictedRna {
 	my $doExternal = ($external_db_id && $source_id) ? 1 : 0;
 	my $pred_alg_id = $self->get('prediction_algorithm_id');
 
-#	my @exons = $self->getChildren('ExonFeature',1);
+#	my @exons = $self->getChildren('DoTS::ExonFeature',1);
 #	if(scalar(@exons) < 1){
 #		print STDERR "GeneFeature->makeRNAtoProtein():  You must add the ExonFeature children before calling this method\n";
 #		return undef;
@@ -100,7 +100,7 @@ sub makePredictedRna {
 																	 });
 	$self->setExternalDbAndSourceId($nas,$external_db_id,$source_id) if $doExternal;
 	$nas->set('length',$rna->getFeatureLength());
-  if($self->getParent('ExternlaNASequence')){ $nas->setSequence($nas->getSequence());}
+  if($self->getParent('DoTS::ExternlaNASequence')){ $nas->setSequence($nas->getSequence());}
 	$nas->addChild($rna);
 	
 	return $rna;
@@ -140,7 +140,7 @@ sub makePredictedRnaToProtein {
 																			} );
 	my $tranLength = int(($tranStop - $tranStart + 1) / 3);
 	if($tranLength > 1){ $aas->setLength($tranLength); }  ##only set if tranLength is valid number...
-  if($self->getParent('ExternlaNASequence')){ $aas->setSequence($aas->getSequence());}
+  if($self->getParent('DoTS::ExternlaNASequence')){ $aas->setSequence($aas->getSequence());}
 	$self->setExternalDbAndSourceId($aas,$external_db_id,$source_id) if $doExternal;
 	$aas->addChild($aaf);
 

@@ -1,13 +1,13 @@
 
 package GUS::Model::DoTS::NASequence; # table name
 use strict;
-use GUS::Model::DoTS::NASequenceRow;
+use GUS::Model::DoTS::NASequence_Row;
 use GUS::Model::DoTS::VirtualSequence;
 use CBIL::Bio::SequenceUtils;
 #use GUS30::GUS_utils::Sequence;
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::NASequenceRow);
+@ISA = qw (GUS::Model::DoTS::NASequence_Row);
 
 my $debug = 0;
 
@@ -42,7 +42,7 @@ sub toFasta {
 		$defline = ">".$self->getId()."\|".($self->get('source_id') ? "\|" . $self->get('source_id') : '').($self->get('secondary_identifier') ? "\|" . $self->get('secondary_identifier') : "")." ";
 		$defline .= $self->get('description') if $self->get('description');
   }
-	return "$defline\n" . SequenceUtils::breakSequence($self->getSequence());
+	return "$defline\n" . CBIL::Bio::SequenceUtils::breakSequence($self->getSequence());
 }
 
 ##XML format for cap4
@@ -50,7 +50,7 @@ sub toCAML {
   my($self) = @_;
   my $caml;
   $caml = "  <SEQUENCE NAME=\"".$self->getId()."\">\n";
-  $caml .= "    <BASE>\n".SequenceUtils::breakSequence($self->getSequence(),74,'      ')."    </BASE>\n";
+  $caml .= "    <BASE>\n".CBIL::Bio::SequenceUtils::breakSequence($self->getSequence(),74,'      ')."    </BASE>\n";
   ##print the quality values if exist
   if(exists $self->{quality}){ $caml .= "    <QUALITY>$self->{quality}</QUALITY>\n";}
   $caml .= "  </SEQUENCE>\n";

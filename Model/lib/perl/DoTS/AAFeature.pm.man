@@ -1,17 +1,17 @@
 
 package GUS::Model::DoTS::AAFeature;              # table name
 use strict;
-use GUS::Model::DoTS::AAFeatureRow;
+use GUS::Model::DoTS::AAFeature_Row;
 use CBIL::Bio::SequenceUtils;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::AAFeatureRow);
+@ISA = qw (GUS::Model::DoTS::AAFeature_Row);
 
 sub getFeatureSequence {
   my $self = shift;
   if (!exists $self->{'sequence'}) {
-    my $seqob = $self->getParent('AASequence',1);
+    my $seqob = $self->getParent('DoTS::AASequence',1);
     my($start,$stop) = $self->getFeatureLocation();
     if ($stop) {                ##have a valid location
       $self->{'sequence'} = $seqob->{'didNotRetrieve'}->{'sequence'} ? $seqob->getSubstrFromClob('sequence',$start,$stop-$start+1) : substr($seqob->getSequence(),$start-1,$stop-$start+1);
@@ -26,7 +26,7 @@ sub getFeatureSequence {
 sub getFeatureLocation {
   my($self) = @_;
   my($start,$end);
-  my @loc = $self->getChildren('AALocation',1);
+  my @loc = $self->getChildren('DoTS::AALocation',1);
   if (scalar(@loc) > 1) {
     ##complex location such as for genes exons....
     ##we are representing a hierarchical feature structure

@@ -1,22 +1,22 @@
 
 package GUS::Model::DoTS::SimilaritySpan;         # table name
 use strict;
-use GUS::Model::DoTS::SimilaritySpanRow;
+use GUS::Model::DoTS::SimilaritySpan_Row;
 use CBIL::Bio::SequenceUtils;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::SimilaritySpanRow);
+@ISA = qw (GUS::Model::DoTS::SimilaritySpan_Row);
 
 ##$type eq query|subject
 sub getHSPSequence {
   my($self,$type,$reverseComp) = @_;
   if (!$self->{$type."Sequence"}) {
-    my $seqob = $self->getParent('Similarity',1)->getSequenceObject($type);
+    my $seqob = $self->getParent('DoTS::Similarity',1)->getSequenceObject($type);
     my $seq = $seqob->{didNotRetrieve}->{sequence} ? $seqob->getSubstrFromClob('sequence',$self->get($type."_start"),$self->get($type."_end") - $self->get($type."_start") + 1) : substr($seqob->getSequence(),$self->get($type."_start")-1,$self->get($type."_end") - $self->get($type."_start") + 1);
     $self->{$type."Sequence"} = $seq;
   }
-  return ($reverseComp && $self->getIsReversed() && $type eq 'query') ? SequenceUtils::reverseComplementSequence($self->{$type."Sequence"}) : $self->{$type."Sequence"};
+  return ($reverseComp && $self->getIsReversed() && $type eq 'query') ? CBIL::Bio::SequenceUtils::reverseComplementSequence($self->{$type."Sequence"}) : $self->{$type."Sequence"};
 }
 
 my $fastaPath = '/usr/local/src/bio/fasta/3.3';
@@ -37,10 +37,10 @@ sub generateHSPAlignment {
 
   ##writeFiles
   open(Q,">$qFile");
-  print Q ">Query\n".SequenceUtils::breakSequence($self->getHSPSequence('query',$type =~ /fasta/i));
+  print Q ">Query\n".CBIL::Bio::SequenceUtils::breakSequence($self->getHSPSequence('query',$type =~ /fasta/i));
   close Q;
   open(S,">$sFile");
-  print S ">Sbjct\n".SequenceUtils::breakSequence($self->getHSPSequence('subject'));
+  print S ">Sbjct\n".CBIL::Bio::SequenceUtils::breakSequence($self->getHSPSequence('subject'));
   close S;
 
   my $retrying = 0;
@@ -55,7 +55,7 @@ sub generateHSPAlignment {
   #  print STDERR "Running $type:\n$query\n\n";
   ##need to make the db if  blast
   if ($type =~ /blast/i) {
-    if ($self->getTableNameFromTableId($self->getParent('Similarity',1)->getSubjectTableId()) =~ /AASequence/) {
+    if ($self->getTableNameFromTableId($self->getParent('DoTS::Similarity',1)->getSubjectTableId()) =~ /AASequence/) {
       system("$blastPath/setdb $sFile > /dev/null");
     } else {
       system("$blastPath/pressdb $sFile > /dev/null");
@@ -148,15 +148,15 @@ sub getRealLocation {
 sub getAlignmentProgram {
   my ($self,$type) = @_;
   if ($type =~ /blast/i) {
-    return $self->getTableNameFromTableId($self->getParent('Similarity',1)->getQueryTableId()) =~ /AASequence/ ?
-      ($self->getTableNameFromTableId($self->getParent('Similarity',1)->getSubjectTableId()) =~ /AASequence/ ? "blastp" : "tblastn") : 
-        ($self->getTableNameFromTableId($self->getParent('Similarity',1)->getSubjectTableId()) =~ /AASequence/ ? "blastx" : "blastn");
+    return $self->getTableNameFromTableId($self->getParent('DoTS::Similarity',1)->getQueryTableId()) =~ /AASequence/ ?
+      ($self->getTableNameFromTableId($self->getParent('DoTS::Similarity',1)->getSubjectTableId()) =~ /AASequence/ ? "blastp" : "tblastn") : 
+        ($self->getTableNameFromTableId($self->getParent('DoTS::Similarity',1)->getSubjectTableId()) =~ /AASequence/ ? "blastx" : "blastn");
   }elsif($type eq 'sim4'){
     return 'sim4'
   } else {
-    return $self->getTableNameFromTableId($self->getParent('Similarity',1)->getQueryTableId()) =~ /AASequence/ ?
-      ($self->getTableNameFromTableId($self->getParent('Similarity',1)->getSubjectTableId()) =~ /AASequence/ ? "fasta33" : "tfasta33") : 
-        ($self->getTableNameFromTableId($self->getParent('Similarity',1)->getSubjectTableId()) =~ /AASequence/ ? "fastx33" : "fasta33");
+    return $self->getTableNameFromTableId($self->getParent('DoTS::Similarity',1)->getQueryTableId()) =~ /AASequence/ ?
+      ($self->getTableNameFromTableId($self->getParent('DoTS::Similarity',1)->getSubjectTableId()) =~ /AASequence/ ? "fasta33" : "tfasta33") : 
+        ($self->getTableNameFromTableId($self->getParent('DoTS::Similarity',1)->getSubjectTableId()) =~ /AASequence/ ? "fastx33" : "fasta33");
   }
 }
 

@@ -1,11 +1,11 @@
 
 package GUS::Model::DoTS::VirtualSequence; # table name
 use strict;
-use GUS::Model::DoTS::VirtualSequenceRow;
+use GUS::Model::DoTS::VirtualSequence_Row;
 use GUS30::GUS_utils::Sequence;
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::VirtualSequenceRow);
+@ISA = qw (GUS::Model::DoTS::VirtualSequence_Row);
 
 sub getSequence {
     my($self, $dieIfError) = @_;

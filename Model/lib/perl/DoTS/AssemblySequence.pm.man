@@ -1,12 +1,12 @@
 
 package GUS::Model::DoTS::AssemblySequence;       # table name
 use strict;
-use GUS::Model::DoTS::AssemblySequenceRow;
+use GUS::Model::DoTS::AssemblySequence_Row;
 use CBIL::Bio::SequenceUtils;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::AssemblySequenceRow);
+@ISA = qw (GUS::Model::DoTS::AssemblySequence_Row);
 
 my $debug = 0;
 
@@ -20,7 +20,7 @@ sub getSequence{
     }
     print STDERR "getSequence: retrieving ExternalNASequence obj\n" if $debug == 1;
     #    $self->retrieveParentFromDB('ExternalNASequence');
-    my $nas = $self->getParent('ExternalNASequence',1);
+    my $nas = $self->getParent('DoTS::ExternalNASequence',1);
     my $tseq = $nas->getSequence();
     $tseq =~ tr/a-z/A-Z/;       ##upercase everything
     my $start = $self->get('sequence_start') - 1;
@@ -28,7 +28,7 @@ sub getSequence{
     if ($self->get('assembly_strand')) { ##is in forward orientation
       $self->{'sequence'} = substr($tseq,$start,$length);
     } else {
-      $self->{'sequence'} = SequenceUtils::reverseComplementSequence(substr($tseq,$start,$length));
+      $self->{'sequence'} = CBIL::Bio::SequenceUtils::reverseComplementSequence(substr($tseq,$start,$length));
     }
   }
   return $self->{'sequence'};
@@ -37,7 +37,7 @@ sub getSequence{
 ##set sequence should take in a sequence and generate the sequence_start and sequence_end against the ExternalNASequence
 sub setSequence {
   my($self,$sequence) = @_;
-  my $nas = $self->getParent('ExternalNASequence',1)->getSequence();
+  my $nas = $self->getParent('DoTS::ExternalNASequence',1)->getSequence();
   $nas =~ tr/a-z/A-Z/;          #3upper case it as this is what do with assemblySequence..
   $sequence =~ tr/a-z/A-Z/;
   $sequence =~ s/\s//g;
@@ -47,11 +47,11 @@ sub setSequence {
   if ($index >= 0) {            ##matches forward strand...
     $self->set('assembly_strand',1);
   } else {
-    $index = index($nas,SequenceUtils::reverseComplementSequence($sequence));
+    $index = index($nas,CBIL::Bio::SequenceUtils::reverseComplementSequence($sequence));
     if ($index >= 0) {          ##sequence matches on reverse strand
       $self->set('assembly_strand',0);
     } else {                    ##does not match...
-      print STDERR "ERROR: AssemblySequence->setSequence - sequence does not match ExternalNASequence: NOT UPDATING\n", $self->getParent('ExternalNASequence',1)->toFasta(),"\nAssemblySequence: ",$self->getId(),"\n",SequenceUtils::breakSequence($sequence);
+      print STDERR "ERROR: AssemblySequence->setSequence - sequence does not match ExternalNASequence: NOT UPDATING\n", $self->getParent('DoTS::ExternalNASequence',1)->toFasta(),"\nAssemblySequence: ",$self->getId(),"\n",CBIL::Bio::SequenceUtils::breakSequence($sequence);
       ##don't want to update this sequence!!
       $self->setUpdateable(0);
       return undef;
@@ -143,11 +143,11 @@ sub resetAssemblySequence {
 sub toFasta{
   my($self,$type) = @_;
   if ($type) {
-    return SequenceUtils::makeFastaFormattedSequence($self->getId(),$self->getSequence());
+    return CBIL::Bio::SequenceUtils::makeFastaFormattedSequence($self->getId(),$self->getSequence());
   }
-  my $p = $self->getParent('ExternalNASequence',1);
+  my $p = $self->getParent('DoTS::ExternalNASequence',1);
   ##note could add in the description to make a better defline here..deal with "NULL"
-  return SequenceUtils::makeFastaFormattedSequence($p->get('source_id'),$self->getSequence());
+  return CBIL::Bio::SequenceUtils::makeFastaFormattedSequence($p->get('source_id'),$self->getSequence());
 }
 
 ##XML format for cap4
@@ -158,8 +158,8 @@ sub toCAML {
   $isSinglet = 1;  ##always print as if singlet so will assemble with <CONTIG assemblies
   #  $caml  = "  <".($self->isSinglet() ? "SINGLET" : "SEQUENCE")." NAME=\"".$self->getId()."\">    <BASE>".$self->getSequence()."    </BASE>\n";
   $caml = "  <".($isSinglet ? "SINGLET" : "SEQUENCE")." LENGTH=\"".$self->getLength()."\" ".($index ? "INDEX=\"$index\" " : "")."NAME=\"".$self->getId()."\">";
-  $caml .= "\n    <BASE>\n".SequenceUtils::breakSequence($self->getSequence(),60,'      ')."    </BASE>\n";
-  #  $caml .= "    <BASE>\n".SequenceUtils::breakSequence($self->getSequence(),74,'      ')."    </BASE>\n";
+  $caml .= "\n    <BASE>\n".CBIL::Bio::SequenceUtils::breakSequence($self->getSequence(),60,'      ')."    </BASE>\n";
+  #  $caml .= "    <BASE>\n".CBIL::Bio::SequenceUtils::breakSequence($self->getSequence(),74,'      ')."    </BASE>\n";
   ##now quality values....20 for rna and 10 for est
   if ($qual) {
     $caml .= "    <QUALITY>\n".$self->getQualityValues()."    </QUALITY>\n";
@@ -172,7 +172,7 @@ sub getQualityValues {
   my ($self) = @_;
   my @qual;
 	my $length = length($self->getSequence());
-  if ($self->getParent('ExternalNASequence',1)->getSequenceTypeId() == 8) { ##is est
+  if ($self->getParent('DoTS::ExternalNASequence',1)->getSequenceTypeId() == 8) { ##is est
     for (my $i = 0;$i<$length;$i++) {
       push(@qual,11);
     }
@@ -310,15 +310,15 @@ sub reverseComplement{
   $self->set('assembly_strand',($self->get('assembly_strand') ? 0 : 1));
   ##sequence
   if (exists $self->{'sequence'}) { ##don't retrieve it if it doesn't exists
-    $self->{'sequence'} = SequenceUtils::reverseComplementSequence($self->getSequence());
+    $self->{'sequence'} = CBIL::Bio::SequenceUtils::reverseComplementSequence($self->getSequence());
   }
   ##gappedSequence if it exists then revcomp and set gaps from it else need to revcomp the gaps and set them
   if ($self->get('sequence_gaps')) {
-    $self->setGappedSequence(SequenceUtils::reverseComplementSequence($self->get('sequence_gaps')));
+    $self->setGappedSequence(CBIL::Bio::SequenceUtils::reverseComplementSequence($self->get('sequence_gaps')));
   }
   ##lastly, need to reset the assembly_offset
-  if ($self->getParent('Assembly')) {
-    $self->set('assembly_offset',$self->getParent('Assembly')->getGappedLength() - ($self->getGappedLength() + $self->get('assembly_offset')));
+  if ($self->getParent('DoTS::Assembly')) {
+    $self->set('assembly_offset',$self->getParent('DoTS::Assembly')->getGappedLength() - ($self->getGappedLength() + $self->get('assembly_offset')));
   } else {
     $self->set('assembly_offset',0);
   }
@@ -453,7 +453,7 @@ sub makeCap2SequenceLine {
   }
   my $strLength = 60;
   my $ins = "";
-  my $id = $idType ? $self->getParent('ExternalNASequence',1)->get('source_id') : $self->getId();
+  my $id = $idType ? $self->getParent('DoTS::ExternalNASequence',1)->get('source_id') : $self->getId();
   $id = substr($id,0,10);
   my $insSpace = 12 - (length($id) + 1);
   #	print STDERR "Making the cap2 sequence line for ",$self->getId(),"\n" if $debug == 1;
@@ -522,12 +522,12 @@ sub getNaSequencePosition {
   my $length = length($tmp);
   my $loc = $self->getSequenceStart - 1 + $length;
   if($self->getAssemblyStrand()){  ##is forward
-#    print STDERR $self->getParent('ExternalNASequence',1)->getSourceId(),": \$pos=$pos, +$loc..NANuc '",substr($self->getParent('ExternalNASequence')->getSequence(),$loc - 1,5),"'\n";
+#    print STDERR $self->getParent('DoTS::ExternalNASequence',1)->getSourceId(),": \$pos=$pos, +$loc..NANuc '",substr($self->getParent('DoTS::ExternalNASequence')->getSequence(),$loc - 1,5),"'\n";
     return $loc;
   }else{
-    my $nalen = $self->getParent('ExternalNASequence',1)->getLength();
+    my $nalen = $self->getParent('DoTS::ExternalNASequence',1)->getLength();
     my $naloc = $nalen - ($length + ($nalen - $self->getSequenceEnd() - 1));
-#    print STDERR $self->getParent('ExternalNASequence')->getSourceId(),": \$pos=$pos, -$naloc..NANuc '",substr($self->getParent('ExternalNASequence')->getSequence(),$naloc - 1,5),"'\n";
+#    print STDERR $self->getParent('DoTS::ExternalNASequence')->getSourceId(),": \$pos=$pos, -$naloc..NANuc '",substr($self->getParent('DoTS::ExternalNASequence')->getSequence(),$naloc - 1,5),"'\n";
     return $naloc;
   }
 }
@@ -555,11 +555,11 @@ sub isOrientationConsistent {
   my $self = shift;
   ##first check if mRNA....if so should be +
   print STDERR "AssSeq->isOrientationConsistent\n" if $debug;
-  my $exnaseq = $self->getParent('ExternalNASequence',1);
+  my $exnaseq = $self->getParent('DoTS::ExternalNASequence',1);
   if ($exnaseq->get('sequence_type_id') == 7 || $exnaseq->get('sequence_type_id') == 2) { ##check this number
     return $self->get('assembly_strand') ? 2 : -2; ##will be either 2 if correct or -2 if not...
   } else {
-    my $query = "select p_end from ".$self->getTable()->getSchemaName().".LENSSequence e " .
+    my $query = "select p_end from DoTS.LENSSequence e " .
       "where e.na_sequence_id = " . $exnaseq->getNaSequenceId();
     print STDERR "Query: $query\n" if $debug;
     my $dbh = $self->getDbHandle();

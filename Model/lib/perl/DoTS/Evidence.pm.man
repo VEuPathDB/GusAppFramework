@@ -1,11 +1,11 @@
 
 package GUS::Model::DoTS::Evidence; # table name
 use strict;
-use GUS::Model::DoTS::EvidenceRow;
+use GUS::Model::DoTS::Evidence_Row;
 
 
 use vars qw (@ISA);
-@ISA = qw (GUS::Model::DoTS::EvidenceRow);
+@ISA = qw (GUS::Model::DoTS::Evidence_Row);
 
 my $debug = 0;
 
