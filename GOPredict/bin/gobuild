@@ -26,6 +26,7 @@ my $propertiesFile = $ARGV[0];
 my @properties = 
 (
  # global pipeline information
+ ["testNextPlugin", "false", "'true' to run in no-commit mode the first plugin not yet done and then exit"],
  ["stopBefore",   "none",  "the step to stop before.  uses the signal name"],
  ["goBuildDir",         "",  "local GO Predict update dir"],
  ["externalDbDir", "", "directory for downloaded data from external databases"],
@@ -119,7 +120,8 @@ my @properties =
  #Blast
  #global blast param files
  ["blastsimilarity.taskSize", "",  "number of seqs to process per blastsimilarity subtask"],
- ["clusterServer",         "",  "full name of cluster server"],
+ ["clusterServer",         "none",  "full name of cluster server"],
+ ["clusterUser",           "", "user for copyToCluster sub in Manager.pm"],
  ["dotsSeqDir",         "",  "where to find prodom.fsa file in dots build directory"],
  ["serverPath",           "",  "full path of dots update dir on cluster server"],
  ["nodePath",             "",  "full path of scratch dir on cluster node"],
@@ -1086,14 +1088,13 @@ sub copyPipelineDirToCluster {
 
 
     my $serverPath = $propertySet->getProp('serverPath');
-    my $clusterServer = $propertySet->getProp('clusterServer');
     my $fromDir = $goBuildDir;
     my $fromFile = $buildName;
     
     my $signal = "dir2cluster";
     return if $mgr->startStep("Copying $goBuildDir/$buildName to $serverPath on $clusterServer", $signal, 'blastSeqs');
 
-    $mgr->copyToCluster($fromDir, $fromFile, $clusterServer, $serverPath);
+    $mgr->{cluster}->copyTo($fromDir, $fromFile, $serverPath);
 
     $mgr->endStep($signal);
 
@@ -1132,8 +1133,7 @@ sub copySimsFromCluster{
 	foreach my $subjectName (@subjectNames) {
 	    my $fullName = "$subjectName-$domain";
 	    
-	    $mgr->copyFromCluster($clusterServer, 
-				 "$serverPath/$buildName/similarity/$fullName/master/mainresult", 
+	    $mgr->{cluster}->copyFrom("$serverPath/$buildName/similarity/$fullName/master/mainresult", 
 				 "blastSimilarity.out.gz", 
 				 "$pipelineDir/similarity/$fullName");
 	}
