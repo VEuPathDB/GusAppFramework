@@ -1,4 +1,4 @@
- 
+
 package GUS::Common::Bioperl2Gus;
 
 # ----------------------------------------------------------
@@ -111,6 +111,11 @@ sub new {
 	      @_,
 	     };
   bless ($self, $class);
+
+  if (defined $self->{'default_review_status'}) {
+      $REVIEW_STATUS_ID = $self->{'default_review_status'};
+  }
+
   return $self;
 }
 
@@ -1080,8 +1085,6 @@ sub buildTranslatedAASequence {
     my $debug           = $self->{debug};
     my $bioperl_feature = $self->{bioperlFeature};
 
-    print STDERR "In buildTranslatedAASequence()\n";
-
     my $aa_seq = $aa_feature_translated->getParent("GUS::Model::DoTS::TranslatedAASequence", 1);
 
     #my $aa_seq_from_db = $self->getTranslatedAASequence($systematic_id);
@@ -1124,8 +1127,8 @@ sub buildTranslatedAASequence {
     my $is_complete  = 0;
     $is_complete     = 1 unless $is_partial;
 
-    # frame information
-
+    ##
+    # Frame information
     my $frame = 0;
 
     if ($bioperl_feature->has_tag ('codon_start')) {
@@ -1133,8 +1136,34 @@ sub buildTranslatedAASequence {
         my $start_codon  = $start_codons[0];
         $frame = $start_codon - 1;
     }
-      
-    my $prot_seq = $spliced_seq->translate (undef,undef,$frame,$is_complete,0);
+
+    ##
+    # translation table to use
+    my $transl_table = 1;
+
+    if ($bioperl_feature->has_tag ('transl_table')) {
+        my @transl_tables = $bioperl_feature->each_tag_value ('transl_table');
+
+        if ($transl_tables[0] != -1) {
+            $transl_table  = $transl_tables[0];
+
+            print "\n################################################################################\n";
+            print "WARNING: buildTranslatedAASequence(): using \$transl_table = '$transl_table'\n";
+            print "         This bit needs to be fully checked.\n";
+            print "################################################################################\n\n";
+        }
+
+    }
+
+    # For args to translate(), see http://doc.bioperl.org/releases/bioperl-1.4/Bio/PrimarySeqI.html#POD10
+    # 1. character for terminator (optional) defaults to '*'
+    # 2. character for unknown amino acid (optional) defaults to 'X'
+    # 3. frame (optional) valid values 0, 1, 2, defaults to 0
+    # 4. codon table id (optional) defaults to 1
+    # 5. complete coding sequence expected, defaults to 0 (false)
+
+    #my $prot_seq = $spliced_seq->translate(undef,undef,$frame,$is_complete,0);
+    my $prot_seq = $spliced_seq->translate(undef, undef, $frame, $transl_table, $is_complete);
   
     if ($debug) {
         print STDERR "translated protein sequence for gene, $systematic_id:\n";
@@ -2099,6 +2128,9 @@ sub buildGene {
 
     if ($bioperl_feature->has_tag ('synonym')) {
         @bioperl_gene_synonyms = $bioperl_feature->each_tag_value ('synonym');
+
+        # Check no dodgy '/synonym="gyra or pard or nala or hisw or b2231"' type qualifiers
+        #@bioperl_gene_synonyms = grep !/ or /, @bioperl_gene_synonyms ;
     }
 
     my @synonym_objs = $self->createGeneSynonyms(0, $gene_object, \@gus_gene_synonyms, \@bioperl_gene_synonyms);
@@ -2541,13 +2573,16 @@ sub getReleaseIds {
     my ($self, $dbh) = @_;
 
     unless (defined $self->{'cache'}->{edrId}) {
-
         my $sth = $dbh->prepare(
 qq[SELECT external_database_release_id, release_date, version
 FROM   SRes.ExternalDatabaseRelease  edr, SRes.ExternalDatabase ed
 WHERE  ed.name = ?
 AND    ed.external_database_id = edr.external_database_id
 ORDER BY release_date, external_database_release_id]);
+
+        unless (defined $sth) {
+            confess("ERROR: getReleaseIds() \$sth is undefined, is plugin connected to the DB? \$dbh = $dbh");
+        }
 
         my %edrId = ();
 
@@ -2683,6 +2718,9 @@ sub buildGOAssociations {
     if ($bioperl_feature->has_tag ('GO')) {
         @go_qualifiers = $bioperl_feature->each_tag_value ('GO');
     }
+    else {
+        return ();
+    }
 
     my %edrId             = %{$self->getReleaseIds($dbh)};
     my @go_aspect_objects = ();
@@ -2702,6 +2740,11 @@ sub buildGOAssociations {
                 defined($hash{'evidence'}) &&
                 defined($hash{'db_xref'}) ){
             print STDERR "WARNING: Ignoring incomplete or invalid GO field: '$go_qual'\n";
+            next;
+        }
+
+        if ($hash{'evidence'} =~ /\?/ || $hash{'GOid'} =~ /\?/) {
+            print STDERR "WARNING: Ignoring invalid GO field: '$go_qual' - wildcards present\n";
             next;
         }
 
@@ -2770,6 +2813,11 @@ sub buildGO_aspectAssociation {
             $already_created{$go_id}++;
 
             print STDERR "$go_qual -=- \$go_id = $go_id, \$evi_code = $evi_code, \$db_xref = $db_xref\n";
+
+            if ($evi_code =~ /\?/ ||$evi_code =~ /\*/  || $evi_code =~ /\*/ || $go_id =~ /\?/ || $go_id !~ /\d+/) {
+                print STDERR "WARNING: Ignoring invalid GO field: '$go_qual' - wildcards present/invalid go ID\n";
+                    next;
+            }
 
             push @go_aspect_objects,
                $self->createGoObjects($dbh, $go_aspect, $go_id, $evi_code, $db_xref, $with, $date, $protein_object);
