@@ -136,7 +136,7 @@
   <target name="checkObjects">
     <uptodate property="objectsAlreadyGenerated" 
               targetfile="${projectsDir}/GUS/Model/lib/perl/generated" 
-              srcfile="${projectsDir}/GUS/Model/lib/sql/definition.sql" />
+              srcfile="${projectsDir}/GUS/Model/schema/VERSION" />
   </target>
  
 
