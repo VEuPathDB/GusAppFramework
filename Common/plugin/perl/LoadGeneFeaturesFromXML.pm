@@ -22,22 +22,13 @@ use GUS::Model::Core::Algorithm;
 use GUS::Model::Core::ProjectInfo;
 use GUS::Model::DoTS::GeneFeature;
 use GUS::Model::DoTS::ExonFeature;
-#use GUS::Model::DoTS::ExternalAASequence;
 use GUS::Model::DoTS::ExternalNASequence;
-#use GUS::Model::DoTS::Miscellaneous;
 use GUS::Model::DoTS::NAFeatureComment;
 use GUS::Model::DoTS::NALocation;
 use GUS::Model::DoTS::ProjectLink;
-#use GUS::Model::DoTS::Repeats;
-#use GUS::Model::DoTS::RNA;
 use GUS::Model::DoTS::RNAFeature; 
-#use GUS::Model::DoTS::PromoterFeature;
-#use GUS::Model::DoTS::PolyAFeature;
-#use GUS::Model::DoTS::Similarity;
-#use GUS::Model::DoTS::SimilaritySpan;
 use GUS::Model::SRes::ExternalDatabase;
 use GUS::Model::SRes::ExternalDatabaseRelease;
-#use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 
 ### use GUS::Model::DoTS::ScaffoldGapFeature;
@@ -67,6 +58,11 @@ sub new {
        t => 'string',
        o => 'Project',
        d => 'PlasmodiumDB-4.0',
+     },
+     { h => 'algorithm name',
+       t => 'string',
+       o => 'Algorithm',
+       d => 'Pf Annotation',
      },
      { h => 'Indicates what task to accomplish',
        t => 'string',
@@ -212,8 +208,7 @@ sub setAlgId {
   my $self = shift;
   $self->log("Finding Algorithm");
 
-  ### NOTE: Algorithm name is 'Pf Annotation' - CHANGE??
-  my %alg = ( name => 'Pf Annotation' );
+  my %alg = ( $ctx->{cla}->{Algorithm} || name => 'Pf Annotation' );
 
   my $alg_gus = GUS::Model::Core::Algorithm->new(\%alg);
   if ($alg_gus->retrieveFromDB){
@@ -235,7 +230,7 @@ sub setProjId {
   my $self = shift;
   $self->log("Finding Project");
 
-  my %project = ( name => $self->{Project} || 'PlasmodiumDB-4.0' );
+  my %project = ( name => $ctx->{cla}->{Project} || 'PlasmodiumDB-4.0' );
 
   my $project_gus = GUS::Model::Core::ProjectInfo->new(\%project);
   if ($project_gus->retrieveFromDB) {
@@ -367,7 +362,7 @@ sub createObjects{
     # also programmer's error since this bad task passed the error
     # checking.
     else {
-      $self->log("ERROR: " . "no method found for $self->{taskFlag}");
+      $self->log("ERROR: " . "no method found for $ctx->{cla}->{taskFlag}");
     }
   }
 }
@@ -557,11 +552,19 @@ sub makeChromosome {
   # Find ExternalNASequence
   my %enaSeq = ( taxon_id       => $self->getTaxonId($T),
 		 external_database_release_id => $self->getExtDbRelId,
+		 );
+
   # NOTE: for falciparum XML, map_asmbl_id_to_source_id method was used to set 
   #       the source_id appropriately.
-  #		 source_id      => $self->map_asmbl_id_to_source_id($T),
-		 source_id      => "chrPyl_0" . $T->{ASSEMBLY}->{ASMBL_ID}->{content},
-	       );
+  ### $enaSeq{source_id} = $self->map_asmbl_id_to_source_id($T);
+  
+  # NOTE: for P_yoelii, source_id is of the form: chrPyl_(\d\d\d\d\d)
+  #       so, source_id needs to be cushioned with 0s (zeroes)
+  my $tmpStr = $T->{ASSEMBLY}->{ASMBL_ID}->{content};
+  while (length ($tmpStr) < 5) { $tmpStr = '0'.$tmpStr; }
+  $enaSeq{source_id} = 'chrPyl_' . $tmpStr;
+      
+
   my $ena_gus = GUS::Model::DoTS::ExternalNASequence->new(\%enaSeq);
 
   # got it
@@ -601,6 +604,7 @@ sub makeChromosome {
 	  $ena_gus->set('c_count', $cts->{'c'});
 	  $ena_gus->set('other_count', $cts->{'o'});
 	  $ena_gus->setSequence($sequence);
+	  $ena_gus->setSequenceTypeId(3);
 
 	  # DEBUG
 	  print "Submitting sequence ", length($sequence), "\n";
@@ -633,7 +637,7 @@ sub makeGeneModel {
 
   $trna_src_id = $G->{TRNA}->{FEAT_NAME};
   $trna_src_id =~ s/(\d+)\.(\S+)/$2/;
-  $trna_src_id = $self->{chrnum} . "-" . $trna_src_id;
+  $trna_src_id = $ctx->{cla}->{chrnum} . "-" . $trna_src_id;
   # make the gene feature
   my %gene_feat_h =
     ( external_database_release_id => $self->getExtDbRelId,
@@ -646,7 +650,7 @@ sub makeGeneModel {
 
   my $gene_feat_gus = GUS::Model::DoTS::GeneFeature->new(\%gene_feat_h);
 
-  if ($gene_feat_gus->retrieveFromDB && !$self->{seqFlag}){
+  if ($gene_feat_gus->retrieveFromDB && !$ctx->{cla}->{seqFlag}){
     # case when gene feature is in dB, and not to be over-written
     print "GeneFeature already in DB with ID " . $gene_feat_gus->getId . "\n";
     return undef;
@@ -747,7 +751,7 @@ sub makeGeneModel {
       print "Translated AminoAcid sequence does not match with DB entry\n";
       print "TranslatedAAS db Entry = \n" . $tas_gus->getSequence() . "\n";
       print "proteinSeq in XML: \n" . $proSeq . "\n"; ## remove --check
-      $tas_gus->setSequence($proSeq) if $self->{seqFlag};
+      $tas_gus->setSequence($proSeq) if $ctx->{cla}->{seqFlag};
     } else {
       print "Translated AminoAcid sequence identical\n";
       $tas_gus->setSequence($proSeq);
@@ -890,16 +894,15 @@ sub TASK_FixGeneFeatures {
       # ........................................
 
       # adjust pseudogene settings.
-      $self->log("TALLY: " . 										 $gene_gus->getSourceId,
+      $self->log("TALLY: " . $gene_gus->getSourceId,
 		 $gene_gus->getIsPseudo,
 		 $gene_xml->{GENE_INFO}->{IS_PSEUDOGENE});
       $gene_gus->setIsPseudo($gene_xml->{GENE_INFO}->{IS_PSEUDOGENE});
-
       # put more fixes here as needed.
       # at end of fixes
       # ........................................
 
-      unless ($self->{Survey}) {
+      unless ($ctx->{cla}->{Survey}) {
 	$gene_gus->submit;
       }
       $gene_gus->undefPointerCache;
@@ -956,7 +959,7 @@ sub TASK_EcAnnotation {
     $self->log("Count " .
 	       $gene_xml->{GENE_INFO}->{PUB_LOCUS},
 	       $ec_annot_n);
-    Disp::Display($ec_xml) if $self->{Display};
+    Disp::Display($ec_xml) if $ctx->{cla}->{Display};
 
     # count the number of associations given
     $assoc_given_n += $ec_annot_n;
@@ -1007,7 +1010,7 @@ sub TASK_EcAnnotation {
 		    $new_or_old = 'old';
 		  } else {
 		    $new_or_old = 'new';
-		    $aaSequenceEnzymeClass->submit() unless $self->{Survey};
+		    $aaSequenceEnzymeClass->submit() unless $ctx->{cla}->{Survey};
 		    $assoc_made_n++;
 		  }
 		  $self->log("$new_or_old" . 
@@ -1107,7 +1110,7 @@ sub TASK_GoAnnotation {
     my $go_xml = $gene_xml->{GENE_INFO}->{GENE_ONTOLOGY}->{GO_ID};
     my $go_annot_n = defined $go_xml ? scalar @$go_xml : 0;
     $self->log("GOANON" . $gene_xml->{GENE_INFO}->{PUB_LOCUS}, $go_annot_n);
-    Disp::Display($go_xml) if $self->{Display};
+    Disp::Display($go_xml) if $ctx->{cla}->{Display};
 
     # count the number of associations given
     $assoc_given_n += $go_annot_n;
