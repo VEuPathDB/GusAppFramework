@@ -724,7 +724,7 @@ sub _setOracleRollbackSegment {
 	my $rbs = $self->getDefaultOracleRollbackSegment();
 
 	# Can't specify a rollback segment named "none".  Probably not a bad thing.
-	if (($rbs =~ /\S+/) && !($rbs =~ /none/i)) {
+	if (($rbs =~ /\S+/) && !($rbs =~ /^none$/i)) {
 	    $dbh->do("set transaction use rollback segment $rbs");
 	}
     }
