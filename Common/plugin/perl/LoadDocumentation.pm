@@ -131,7 +131,7 @@ sub process {
 
 	    ## SKIP if documentation is identical to what is already in db
 	    if ($html eq $html_dc){ 
-	      $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
+	      $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNOT OVERWRITTEN!");
 	      return; # SKIP
 	    }
 	  }
@@ -158,11 +158,6 @@ sub process {
 	    $self->logVerbose("UndefPointerCache()");
 	  }#end if
 
-	  ## attribute is not valid for this table - DON'T SUBMIT
-	  elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){
-	    $self->logAlert("$attribute_nm is NOT a valid attribute for table: $table_nm\tNot inserted!");
-	  }
-
 	  ## Documentation for table (attribute name is NULL) - SUBMIT
 	  elsif ($attribute_nm == "NULL" || $attribute_nm == "null"  || $attribute_nm == ""){
 	    print "Documentation for table (no attribute supplied)\n";
@@ -184,6 +179,11 @@ sub process {
 	    $self->logVerbose("UndefPointerCache()");
 	  }#end elsif
 
+	  ## attribute is not valid for this table - DON'T SUBMIT
+	  elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){
+	    $self->logAlert("$attribute_nm is not a valid attribute for table: $table_nm\tNOT INSERTED!");
+	  }
+
 	  ## no attribute name in table
 	  else{
 	    $self->logAlert("Attribute $attribute_nm does not exist in $table_nm");
@@ -193,7 +193,7 @@ sub process {
 
 	## no table name in db
 	else {
-	  $self->logAlert("Table $table_nm does not exist in database");
+	  $self->logAlert("Table $table_nm does not exist in database - NOT INSERTED!");
 	  return;
         }
 	$db->setGlobalNoVersion(0);
