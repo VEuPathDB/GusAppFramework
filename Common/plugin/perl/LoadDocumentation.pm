@@ -73,6 +73,8 @@ sub run {
     while (<$doc_fh>){
 	chomp;
 	my ($table_name, $attribute_name, $html_doc) = split (/\t/, $_);
+
+	### SEND TO &PROCESS
 	$self->process($table_name, $attribute_name, $html_doc);
     }
     $doc_fh->close;
@@ -162,8 +164,8 @@ sub process {
 		return();
 	    }
 
-	    ### PREVIOUSLY DOCUMENTATED ATTRIBUTE
-	    else { # not already in database
+	    ### PREVIOUSLY UNDOCUMENTATED ATTRIBUTE
+	    else {
 		$doc->submit();
 		$countInserts++;
 		$self->logVerbose("Submitted documentation: $table_nm.$attribute_nm\t$html_dc");
@@ -184,6 +186,7 @@ sub process {
 	return;
     }
     $db->setGlobalNoVersion(0);
+    return();
 } # end sub process
 1;
 
