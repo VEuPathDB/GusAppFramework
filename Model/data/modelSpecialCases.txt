@@ -10,3 +10,4 @@ rel GUS::Model::Core::UserProject GUS::Model::Core::UserInfo user_id user_id
 rel GUS::Model::Core::UserDatabase GUS::Model::Core::UserInfo user_id user_id
 rel GUS::Model::Core::UserGroup GUS::Model::Core::GroupInfo group_id group_id
 rel GUS::Model::Core::UserProject GUS::Model::Core::ProjectInfo project_id project_id
+rel GUS::Model::DoTS::AAFeatureImp GUS::Model::DoTS::SequenceImp aa_sequence_id aa_sequence_id 
