@@ -3,7 +3,7 @@ package GUS::GOPredict::Plugin::GoPlugin;
 
 use lib "$ENV{GUS_HOME}/lib/perl";
 
-use strict 'vars';
+use strict;
 
 use GUS::Model::DoTS::AAMotifGOTermRule;
 use GUS::Model::DoTS::AAMotifGOTermRuleSet;
@@ -288,7 +288,7 @@ sub run {
     $goManager->setOldFunctionRootGoId($oldGoRootId) if $oldGoRootId;
     $goManager->setNewFunctionRootGoId($newGoRootId) if $newGoRootId;
     $goManager->setVerbosityLevel($self->_getVerbosityLevel());
-
+    
     my $msg = "GoPlugin ran successfully.  ";
 
     if ($self->getCla->{scrub_proteins_only}){
@@ -311,16 +311,19 @@ sub run {
 	}
 
 	if ($self->getCla->{apply_rules}){
-	    $goManager->setDeprecatedAssociations($databaseAdapter->getDeprecatedAssociations($self->getCla->{query_taxon_id}));
+	    $goManager->setDeprecatedAssociations($databaseAdapter->getDeprecatedAssociations($self->getCla->{query_taxon_id},
+											      $newGoVersion,
+											      $proteinTableId));
 	    my $cla = $self->_makeClaHashForRules();
+
 	    my $proteinsAffected = $goManager->applyRules($newGoVersion, $cla, $doNotScrub, 
 							  $self->getCla()->{similarities_file_path},
 							  $self->getCla()->{create_new_similarities_file},
 							  $self->getCla()->{test_number}); 
 	    
+
 	    $msg .= "Applied rules to $proteinsAffected proteins.  ";
 	}
-
 	if ($self->getCla->{deprecate_associations}){
 	    my $raidList = $self->getCla()->{apply_rules_raid_list};
 	    my $proteinsAffected = $goManager->deprecateAssociations($raidList, $proteinTableId,
