@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* appver-pkey-constraints.sql                                                                */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:14:20 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 12:49:46 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
