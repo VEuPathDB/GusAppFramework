@@ -58,7 +58,7 @@ sub run {
   my $fh = FileHandle->new('<'.$self->getCla->{'filename'});
   if ($fh) {
 
-    $self->log('COMMIT', $self->getCla->{commit} ? 'ON' : 'OFF' );
+    $self->logAlert('COMMIT', $self->getCla->{commit} ? 'ON' : 'OFF' );
 
     ##testing exitOnFailure...
     $self->getDb()->setExitOnSQLFailure(0);
@@ -93,7 +93,7 @@ sub run {
 	       $!);
   }
 
-  $self->log('RESULT', $RV);
+  $self->logAlert('RESULT', $RV);
   return $RV;
 }
 
@@ -116,9 +116,9 @@ sub process {
   }
   $self->getSelfInv->manageTransaction(undef,'commit');
   if (!$self->getCla->{commit}) {
-    $self->log('ERROR', "XML that was not committed to the database\n\n");
+    $self->logAlert('ERROR', "XML that was not committed to the database\n\n");
     foreach my $c ($self->getSelfInv->getAllChildren()) {
-      $self->log('BAD-XML', $c->toXML());
+      $self->logAlert('BAD-XML', $c->toXML());
     }
   }
   $self->getSelfInv->removeAllChildren();
@@ -130,12 +130,12 @@ sub countChangedObjs {
   my($par) = @_;
 
   foreach my $c ($par->getAllChildren()) {
-    $self->log('DEBUG',
+    $self->logAlert('DEBUG',
 	    "Checking to see if has changed attributes\n".$c->toXML()) if $self->getCla->{debug};
     $countObjs++;
     $countUpdates++;
     if (!$self->getCla->{refresh} && !$c->hasChangedAttributes()) {
-      $self->log('DEBUG','There are no changed attributes') if $self->getCla->{debug};
+      $self->logAlert('DEBUG','There are no changed attributes') if $self->getCla->{debug};
       $countUpdates--;
     }
     $self->countChangedObjs($c);
