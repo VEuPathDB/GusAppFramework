@@ -27,6 +27,7 @@ use GUS::Model::SRes::Reference;
 use GUS::Model::DoTS::SecondaryAccs;
 use GUS::Model::DoTS::SequenceType;
 use GUS::Model::SRes::Taxon;
+use GUS::Model::SRes::TaxonName;
 use GUS::Model::DoTS::Note;
 
 ## many-to-many
@@ -446,10 +447,7 @@ sub buildComment {
 	my $e = shift;
 	my $c = $e->{COMMENT}->[0];
 	return undef unless $c;
-	my $h = {'comment_string' => substr($c->getString(), 0, 255)};
-	if ((length $c->getString()) >=  255) {
-		$h->{'more_comment'} = substr($c->getString(), 255); 
-	}
+	my $h = {'comment_string' => substr($c->getString(), 0, 4000)};
 	return GUS::Model::DoTS::NAComment->new($h);
 }
 
@@ -741,10 +739,7 @@ sub buildPrimaryTranscript {
 
 sub buildNote {
 	my $q = shift;
-	my %h = ('remark' => substr($q->getValue(), 0, 255));
-	if (substr($q->getValue(), 255)) {
-		$h{'more_remark'} = substr($q->getValue(), 255);
-	}
+	my %h = ('remark' => substr($q->getValue(), 0, 4000));
 	return GUS::Model::DoTS::Note->new(\%h);
 }
 
@@ -782,70 +777,70 @@ sub getFeatureViewName {
 	my $n = shift;
 
 	my %featureNameTableMapping = (
-                              "allele" => "SeqVariation",
-                              "-" => "Miscellaneous",
-                              "attenuator" => "DNARegulatory",
-                              "C_region" => "Immunoglobulin",
-                              "CAAT_signal" => "DNARegulatory",
-                              "CDS" => "Transcript",
-                              "conflict" => "SeqVariation",
-                              "D-loop" => "DNAStructure",
-                              "D_segment" => "Immunoglobulin",
-                              "enhancer" => "DNARegulatory",
-                              "exon" => "Transcript",
-                              "GC_signal" => "DNARegulatory",
-                              "gene" => "GeneFeature",
-                              "iDNA" => "Immunoglobulin",
-                              "intron" => "Transcript",
-                              "J_segment" => "Immunoglobulin",
-                              "LTR" => "Repeats",
-                              "mat_peptide" => "ProteinFeature",
-                              "misc_binding" => "Miscellaneous",
-                              "misc_difference" => "SeqVariation",
-                              "misc_feature" => "Miscellaneous",
-                              "misc_recomb" => "SeqVariation",
-                              "misc_RNA" => "RNAStructure",
-                              "misc_signal" => "Miscellaneous",
-                              "misc_structure" => "Miscellaneous",
-                              "modified_base" => "SeqVariation",
-                              "mRNA" => "Transcript",
-                              "mutation" => "SeqVariation",
-                              "N_region" => "Immunoglobulin",
-                              "old_sequence" => "SeqVariation",
-                              "polyA_signal" => "Transcript",
-                              "polyA_site" => "Transcript",
-                              "precursor_RNA" => "Transcript",
-                              "prim_transcript" => "Transcript",
-                              "primer_bind" => "DNAStructure",
-                              "promoter" => "DNARegulatory",
-                              "protein_bind" => "Miscellaneous",
-                              "RBS" => "RNAStructure",
-                              "repeat_region" => "Repeats",
-                              "repeat_unit" => "Repeats",
-                              "rep_origin" => "DNAStructure",
-                              "rRNA" => "RNAType",
-                              "S_region" => "Immunoglobulin",
-                              "satellite" => "Repeats",
-                              "scRNA" => "RNAType",
-                              "sig_peptide" => "ProteinFeature",
-                              "snRNA" => "RNAType",
-                              "source" => "Source",
-                              "stem_loop" => "Miscellaneous",
-                              "STS" => "STS",
-                              "TATA_signal" => "DNARegulatory",
-                              "terminator" => "DNARegulatory",
-                              "transit_peptide" => "ProteinFeature",
-                              "tRNA" => "RNAType",
-                              "unsure" => "Miscellaneous",
-                              "V_region" => "Immunoglobulin",
-                              "V_segment" => "Immunoglobulin",
-                              "variation" => "SeqVariation",
-                              "3'clip" => "Transcript",
-                              "3'UTR" => "Transcript",
-                              "5'clip" => "Transcript",
-                              "5'UTR" => "Transcript",
-                              "-10_signal" => "DNARegulatory",
-                              "-35_signal" => "DNARegulatory"
+                              "allele" => "GUS::Model::DoTS::SeqVariation",
+                              "-" => "GUS::Model::DoTS::Miscellaneous",
+                              "attenuator" => "GUS::Model::DoTS::DNARegulatory",
+                              "C_region" => "GUS::Model::DoTS::Immunoglobulin",
+                              "CAAT_signal" => "GUS::Model::DoTS::DNARegulatory",
+                              "CDS" => "GUS::Model::DoTS::Transcript",
+                              "conflict" => "GUS::Model::DoTS::SeqVariation",
+                              "D-loop" => "GUS::Model::DoTS::DNAStructure",
+                              "D_segment" => "GUS::Model::DoTS::Immunoglobulin",
+                              "enhancer" => "GUS::Model::DoTS::DNARegulatory",
+                              "exon" => "GUS::Model::DoTS::Transcript",
+                              "GC_signal" => "GUS::Model::DoTS::DNARegulatory",
+                              "gene" => "GUS::Model::DoTS::GeneFeature",
+                              "iDNA" => "GUS::Model::DoTS::Immunoglobulin",
+                              "intron" => "GUS::Model::DoTS::Transcript",
+                              "J_segment" => "GUS::Model::DoTS::Immunoglobulin",
+                              "LTR" => "GUS::Model::DoTS::Repeats",
+                              "mat_peptide" => "GUS::Model::DoTS::ProteinFeature",
+                              "misc_binding" => "GUS::Model::DoTS::Miscellaneous",
+                              "misc_difference" => "GUS::Model::DoTS::SeqVariation",
+                              "misc_feature" => "GUS::Model::DoTS::Miscellaneous",
+                              "misc_recomb" => "GUS::Model::DoTS::SeqVariation",
+                              "misc_RNA" => "GUS::Model::DoTS::RNAStructure",
+                              "misc_signal" => "GUS::Model::DoTS::Miscellaneous",
+                              "misc_structure" => "GUS::Model::DoTS::Miscellaneous",
+                              "modified_base" => "GUS::Model::DoTS::SeqVariation",
+                              "mRNA" => "GUS::Model::DoTS::Transcript",
+                              "mutation" => "GUS::Model::DoTS::SeqVariation",
+                              "N_region" => "GUS::Model::DoTS::Immunoglobulin",
+                              "old_sequence" => "GUS::Model::DoTS::SeqVariation",
+                              "polyA_signal" => "GUS::Model::DoTS::Transcript",
+                              "polyA_site" => "GUS::Model::DoTS::Transcript",
+                              "precursor_RNA" => "GUS::Model::DoTS::Transcript",
+                              "prim_transcript" => "GUS::Model::DoTS::Transcript",
+                              "primer_bind" => "GUS::Model::DoTS::DNAStructure",
+                              "promoter" => "GUS::Model::DoTS::DNARegulatory",
+                              "protein_bind" => "GUS::Model::DoTS::Miscellaneous",
+                              "RBS" => "GUS::Model::DoTS::RNAStructure",
+                              "repeat_region" => "GUS::Model::DoTS::Repeats",
+                              "repeat_unit" => "GUS::Model::DoTS::Repeats",
+                              "rep_origin" => "GUS::Model::DoTS::DNAStructure",
+                              "rRNA" => "GUS::Model::DoTS::RNAType",
+                              "S_region" => "GUS::Model::DoTS::Immunoglobulin",
+                              "satellite" => "GUS::Model::DoTS::Repeats",
+                              "scRNA" => "GUS::Model::DoTS::RNAType",
+                              "sig_peptide" => "GUS::Model::DoTS::ProteinFeature",
+                              "snRNA" => "GUS::Model::DoTS::RNAType",
+                              "source" => "GUS::Model::DoTS::Source",
+                              "stem_loop" => "GUS::Model::DoTS::Miscellaneous",
+                              "STS" => "GUS::Model::DoTS::STS",
+                              "TATA_signal" => "GUS::Model::DoTS::DNARegulatory",
+                              "terminator" => "GUS::Model::DoTS::DNARegulatory",
+                              "transit_peptide" => "GUS::Model::DoTS::ProteinFeature",
+                              "tRNA" => "GUS::Model::DoTS::RNAType",
+                              "unsure" => "GUS::Model::DoTS::Miscellaneous",
+                              "V_region" => "GUS::Model::DoTS::Immunoglobulin",
+                              "V_segment" => "GUS::Model::DoTS::Immunoglobulin",
+                              "variation" => "GUS::Model::DoTS::SeqVariation",
+                              "3'clip" => "GUS::Model::DoTS::Transcript",
+                              "3'UTR" => "GUS::Model::DoTS::Transcript",
+                              "5'clip" => "GUS::Model::DoTS::Transcript",
+                              "5'UTR" => "GUS::Model::DoTS::Transcript",
+                              "-10_signal" => "GUS::Model::DoTS::DNARegulatory",
+                              "-35_signal" => "GUS::Model::DoTS::DNARegulatory"
                               );
 
 	return $featureNameTableMapping{$n};
@@ -889,6 +884,7 @@ sub setWholeTableCache{
 sub getDbRelId 
 {
   my $name = shift;
+
   my $lcname = lc $name;
   
   my $external_db_rel_id;
@@ -901,7 +897,7 @@ sub getDbRelId
   else {
       my $externalDatabaseRow = GUS::Model::SRes::ExternalDatabase->new({"name" => $name,
 						       "lowercase_name" => $lcname});
-      $externalDatabaseRow->retrieveFromDatabase();
+      $externalDatabaseRow->retrieveFromDB();
 
       if (! $externalDatabaseRow->getId()){
 	  $externalDatabaseRow->submit();
@@ -910,13 +906,16 @@ sub getDbRelId
       $external_db_id = $externalDatabaseRow->getId();
       
       my $version = 'unknown';
+
+      my $release_date = 'sysdate'; 
       
-      my $externalDatabaseRelRow = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'version'=>$version});
+      my $externalDatabaseRelRow = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'release_date'=>$release_date, 'version'=>$version});
       $externalDatabaseRelRow->submit();
-      my $external_db_rel_id = $externalDatabaseRelRow->getId();
+      $external_db_rel_id = $externalDatabaseRelRow->getExternalDatabaseReleaseId();
       
       $ExternalDatabaseRelHash{"$lcname"} = $external_db_rel_id;
   }
+
   return $external_db_rel_id;
 }
 
@@ -1124,18 +1123,18 @@ sub updateObj {
 sub getProperChildList {
   my ($obj) = @_;
   my %classChildList = 
-			('NASequenceImp' => [ 'NASequenceOrganelle', 'DNARegulatory','DNAStructure','STS','GeneFeature','RNAType','Repeats','Miscellaneous','Immunoglobulin','ProteinFeature','SeqVariation','RNAStructure','Source','Transcript', 'NAEntry', 'NAComment',  'DbRefNASequence', 'NASequenceKeyword'], #'NASequenceRef',
-			 'NASequence' =>  [ 'NASequenceOrganelle', 'DNARegulatory','DNAStructure','STS','GeneFeature','RNAType','Repeats','Miscellaneous','Immunoglobulin','ProteinFeature','SeqVariation','RNAStructure','Source','Transcript', 'NAEntry', 'NAComment', 'DbRefNASequence', 'NASequenceKeyword'],#'NASequenceRef',
-			 'ExternalNASequence' => [ 'NASequenceOrganelle', 'DNARegulatory','DNAStructure','STS','GeneFeature','RNAType','Repeats','Miscellaneous','Immunoglobulin','ProteinFeature','SeqVariation','RNAStructure','Source','Transcript', 'NAEntry', 'NAComment', 'DbRefNASequence', 'NASequenceKeyword'],#'NASequenceRef',
+			('GUS::Model::DoTS::NASequenceImp' => [ 'GUS::Model::DoTS::NASequenceOrganelle', 'GUS::Model::DoTS::DNARegulatory','GUS::Model::DoTS::DNAStructure','GUS::Model::DoTS::STS','GUS::Model::DoTS::GeneFeature','GUS::Model::DoTS::RNAType','GUS::Model::DoTS::Repeats','GUS::Model::DoTS::Miscellaneous','GUS::Model::DoTS::Immunoglobulin','GUS::Model::DoTS::ProteinFeature','GUS::Model::DoTS::SeqVariation','GUS::Model::DoTS::RNAStructure','GUS::Model::DoTS::Source','GUS::Model::DoTS::Transcript', 'GUS::Model::DoTS::NAEntry', 'GUS::Model::DoTS::NAComment',  'GUS::Model::DoTS::DbRefNASequence', 'GUS::Model::DoTS::NASequenceKeyword'], #'NASequenceRef',
+			 'GUS::Model::DoTS::NASequence' =>  [ 'GUS::Model::DoTS::NASequenceOrganelle', 'GUS::Model::DoTS::DNARegulatory','GUS::Model::DoTS::DNAStructure','GUS::Model::DoTS::STS','GUS::Model::DoTS::GeneFeature','GUS::Model::DoTS::RNAType','GUS::Model::DoTS::Repeats','GUS::Model::DoTS::Miscellaneous','GUS::Model::DoTS::Immunoglobulin','GUS::Model::DoTS::ProteinFeature','GUS::Model::DoTS::SeqVariation','GUS::Model::DoTS::RNAStructure','GUS::Model::DoTS::Source','GUS::Model::DoTS::Transcript', 'GUS::Model::DoTS::NAEntry', 'GUS::Model::DoTS::NAComment', 'GUS::Model::DoTS::DbRefNASequence', 'GUS::Model::DoTS::NASequenceKeyword'],#'NASequenceRef',
+			 'GUS::Model::DoTS::ExternalNASequence' => [ 'GUS::Model::DoTS::NASequenceOrganelle', 'GUS::Model::DoTS::DNARegulatory','GUS::Model::DoTS::DNAStructure','GUS::Model::DoTS::STS','GUS::Model::DoTS::GeneFeature','GUS::Model::DoTS::RNAType','GUS::Model::DoTS::Repeats','GUS::Model::DoTS::Miscellaneous','GUS::Model::DoTS::Immunoglobulin','GUS::Model::DoTS::ProteinFeature','GUS::Model::DoTS::SeqVariation','GUS::Model::DoTS::RNAStructure','GUS::Model::DoTS::Source','GUS::Model::DoTS::Transcript', 'GUS::Model::DoTS::NAEntry', 'GUS::Model::DoTS::NAComment', 'GUS::Model::DoTS::DbRefNASequence', 'GUS::Model::DoTS::NASequenceKeyword'],#'NASequenceRef',
 			 #'NAComment' => [], # Standard Tables
-			 'NAEntry' => ['SecondaryAccs'],
+			 'GUS::Model::DoTS::NAEntry' => ['GUS::Model::DoTS::SecondaryAccs'],
 			 #'NALocation' => [], 
-			 'NAGene' => ['NAFeatureNAGene', 'NAPrimaryTranscript'],
-			 'DbRef' => ['DbRefNASequence', 'Ref', 'DbRefNAFeature'],
+			 'GUS::Model::DoTS::NAGene' => ['GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAPrimaryTranscript'],
+			 'GUS::Model::SRes::DbRef' => ['GUS::Model::DoTS::DbRefNASequence', 'GUS::Model::SRes::Reference', 'GUS::Model::DoTS::DbRefNAFeature'],
 			 #'ExternalDatabase' => [],
-			 'Keyword' => ['NASequenceKeyword', 'ExternalDatabaseKeyword'],
+			 'GUS::Model::DoTS::Keyword' => ['GUS::Model::DoTS::NASequenceKeyword', 'GUS::Model::SRes::ExternalDatabaseKeyword'],
 			 #'Organelle' => [],
-			 'Ref' => ['NASequenceRef'],
+			 'GUS::Model::SRes::Ref' => ['GUS::Model::DoTS::NASequenceRef'],
 			 #'SecondaryAccs' => [],
 			 #'SequenceType' => [],
 			 #'Note' => [],
@@ -1148,22 +1147,22 @@ sub getProperChildList {
 			 #'NAFeatureNAProtein' =>  [],
 			 #'NAFeatureNAPT' => [],
 			 #'DbRefNAFeature' => [], # NAFeatureImp plus views
-			 'NAFeatureImp' => ['RNATranslation', 'TranscriptUnitSequence', 'Note', 'RNAFeatureExon', 'NALocation', 'NAFeatureNAGene','RNASequence', 'NAFeatureNAProtein', 'DbRefNAFeature', 'NAFeatureNAPT'], 
+			 'GUS::Model::DoTS::NAFeatureImp' => ['GUS::Model::DoTS::RNATranslation', 'GUS::Model::DoTS::TranscriptUnitSequence', 'GUS::Model::DoTS::Note', 'GUS::Model::DoTS::RNAFeatureExon', 'GUS::Model::DoTS::NALocation', 'GUS::Model::DoTS::NAFeatureNAGene','GUS::Model::DoTS::RNASequence', 'GUS::Model::DoTS::NAFeatureNAProtein', 'GUS::Model::DoTS::DbRefNAFeature', 'GUS::Model::DoTS::NAFeatureNAPT'], 
 			 #'NAFeature' =>  ['RNATranslation', 'TranscriptUnitSequence', 'Note', 'RNAFeatureExon',  'NALocation', 'NAFeatureNAGene','RNASequence', 'NAFeatureNAProtein', 'DbRefNAFeature', 'NAFeatureNAPT'],
-			 'DNARegulatory' => ['Note','NALocation','NAFeatureNAGene', 'DbRefNAFeature'],
-			 'DNAStructure' => ['Note','NALocation','NAFeatureNAGene', 'DbRefNAFeature'],
-			 'STS' =>  ['Note','NALocation','NAFeatureNAGene', 'DbRefNAFeature'],
-			 'GeneFeature' =>  ['Note','NALocation','NAFeatureNAGene', 'NAFeatureNAProtein','DbRefNAFeature'],
-			 'RNAType' =>  ['Note','NALocation','NAFeatureNAGene', 'NAFeatureNAProtein','DbRefNAFeature'],
-			 'Repeats' =>  ['Note','NALocation','NAFeatureNAGene', 'DbRefNAFeature'],
-			 'Miscellaneous' =>  ['Note','NALocation','NAFeatureNAGene','NAFeatureNAProtein','DbRefNAFeature'],
-			 'Immunoglobulin' =>  ['Note','NALocation','NAFeatureNAGene', 'NAFeatureNAProtein','DbRefNAFeature'],
-			 'ProteinFeature' =>  ['Note','NALocation','NAFeatureNAGene', 'NAFeatureNAProtein','DbRefNAFeature'],
-			 'SeqVariation' =>  ['Note','NALocation','NAFeatureNAGene', 'NAFeatureNAProtein','DbRefNAFeature'],
-			 'RNAStructure' => ['Note','NALocation','DbRefNAFeature','NAFeatureNAGene','NAFeatureNAProtein'],
-          'Source' => ['Note','NALocation','DbRefNAFeature'],
-			 'Transcript' =>  ['Note','NALocation','NAFeatureNAGene', 'NAFeatureNAPT','NAFeatureNAProtein','DbRefNAFeature'],
-			 'ExonFeature' =>  ['Note','NALocation','NAFeatureNAGene', 'NAFeatureNAProtein','DbRefNAFeature']);
+			 'GUS::Model::DoTS::DNARegulatory' => ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::DbRefNAFeature'],
+			 'GUS::Model::DoTS::DNAStructure' => ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::DbRefNAFeature'],
+			 'GUS::Model::DoTS::STS' =>  ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::DbRefNAFeature'],
+			 'GUS::Model::DoTS::GeneFeature' =>  ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
+			 'GUS::Model::DoTS::RNAType' =>  ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
+			 'GUS::Model::DoTS::Repeats' =>  ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::DbRefNAFeature'],
+			 'GUS::Model::DoTS::Miscellaneous' =>  ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene','GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
+			 'GUS::Model::DoTS::Immunoglobulin' =>  ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','NAFeatureNAGene', 'NAFeatureNAProtein','DbRefNAFeature'],
+			 'GUS::Model::DoTS::ProteinFeature' =>  ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
+			 'GUS::Model::DoTS::SeqVariation' =>  ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
+			 'GUS::Model::DoTS::RNAStructure' => ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::DbRefNAFeature','GUS::Model::DoTS::NAFeatureNAGene','GUS::Model::DoTS::NAFeatureNAProtein'],
+          'GUS::Model::DoTS::Source' => ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::DbRefNAFeature'],
+			 'GUS::Model::DoTS::Transcript' =>  ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAPT','GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
+			 'GUS::Model::DoTS::ExonFeature' =>  ['GUS::Model::DoTS::Note','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature']);
 	
 	return ($classChildList{$obj->getClassName()}) ? $classChildList{$obj->getClassName()} : undef; 
  
@@ -1172,44 +1171,44 @@ sub getProperChildList {
 ### Methods for dealing with many-to-many relations
 sub getManyToManyParent {
 	my ($class_name) = @_;
-	my %h = ('NASequenceRef' => 'Ref',
-					 'NASequenceOrganelle' => 'Organelle',
-					 'NASequenceKeyword' => 'Keyword', 
-					 'NAFeatureNAGene' => 'NAGene',
-					 'NAFeatureNAPT' => 'NAPrimaryTranscript',
-					 'NAFeatureNAProtein' => 'NAProtein',
-					 'DbRefNAFeature' => 'DbRef', 
-					 'DbRefNASequence' => 'DbRef', 
-					 'ExternalDatabaseKeyword' => 'ExternalDatabaseRelease', 
+	my %h = ('GUS::Model::DoTS::NASequenceRef' => 'GUS::Model::SRes::Reference',
+					 'GUS::Model::DoTS::NASequenceOrganelle' => 'GUS::Model::DoTS::Organelle',
+					 'GUS::Model::DoTS::NASequenceKeyword' => 'GUS::Model::DoTS::Keyword', 
+					 'GUS::Model::DoTS::NAFeatureNAGene' => 'GUS::Model::DoTS::NAGene',
+					 'GUS::Model::DoTS::NAFeatureNAPT' => 'GUS::Model::DoTS::NAPrimaryTranscript',
+					 'GUS::Model::DoTS::NAFeatureNAProtein' => 'GUS::Model::DoTS::NAProtein',
+					 'GUS::Model::DoTS::DbRefNAFeature' => 'GUS::Model::SRes::DbRef', 
+					 'GUS::Model::DoTS::DbRefNASequence' => 'GUS::Model::SRes::DbRef', 
+					 'GUS::Model::SRes::ExternalDatabaseKeyword' => 'GUS::Model::SRes::ExternalDatabaseRelease', 
 					 );
 	return $h{$class_name} ? $h{$class_name} : undef;
 }
 sub getTheOtherParent {
 	my ($class_name) = @_;
-	my %h = ('NASequenceRef' => 'NASequenceImp',
-					 'NASequenceOrganelle' => 'NASequenceImp',
-					 'NASequenceKeyword' => 'NASequenceImp', 
-					 'NAFeatureNAGene' => 'NAFeatureImp',
-					 'NAFeatureNAPT' => 'NAFeatureImp',
-					 'NAFeatureNAProtein' => 'NAFeatureImp',
-					 'DbRefNAFeature' => 'NAFeatureImp', 
-					 'DbRefNASequence' => 'NASequenceImp', 
-					 'ExternalDatabaseKeyword' => 'Keyword', 
+	my %h = ('GUS::Model::DoTS::NASequenceRef' => 'GUS::Model::DoTS::NASequenceImp',
+					 'GUS::Model::DoTS::NASequenceOrganelle' => 'GUS::Model::DoTS::NASequenceImp',
+					 'GUS::Model::DoTS::NASequenceKeyword' => 'GUS::Model::DoTS::NASequenceImp', 
+					 'GUS::Model::DoTS::NAFeatureNAGene' => 'GUS::Model::DoTS::NAFeatureImp',
+					 'GUS::Model::DoTS::NAFeatureNAPT' => 'GUS::Model::DoTS::NAFeatureImp',
+					 'GUS::Model::DoTS::NAFeatureNAProtein' => 'GUS::Model::DoTS::NAFeatureImp',
+					 'GUS::Model::DoTS::DbRefNAFeature' => 'GUS::Model::DoTS::NAFeatureImp', 
+					 'GUS::Model::DoTS::DbRefNASequence' => 'GUS::Model::DoTS::NASequenceImp', 
+					 'GUS::Model::SRes::ExternalDatabaseKeyword' => 'GUS::Model::DoTS::Keyword', 
 					 );
 	return $h{$class_name} ? $h{$class_name} : undef;
 }
 ### Methods for dealing with many-to-many relations
 sub manyToManyObj {
 	my ($class_name) = @_;
-	my %h = ('NASequenceRef' => 1,
-					 'NASequenceOrganelle' => 1,
-					 'NASequenceKeyword' => 1, 
-					 'NAFeatureNAGene' => 1,
-					 'NAFeatureNAPT' => 1,
-					 'NAFeatureNAProtein' => 1,
-					 'DbRefNAFeature' => 1, 
-					 'DbRefNASequence' => 1, 
-					 'ExternalDatabaseKeyword' => 1, 
+	my %h = ('GUS::Model::DoTS::NASequenceRef' => 1,
+					 'GUS::Model::DoTS::NASequenceOrganelle' => 1,
+					 'GUS::Model::DoTS::NASequenceKeyword' => 1, 
+					 'GUS::Model::DoTS::NAFeatureNAGene' => 1,
+					 'GUS::Model::DoTS::NAFeatureNAPT' => 1,
+					 'GUS::Model::DoTS::NAFeatureNAProtein' => 1,
+					 'GUS::Model::DoTS::DbRefNAFeature' => 1, 
+					 'GUS::Model::DoTS::DbRefNASequence' => 1, 
+					 'GUS::Model::SRes::ExternalDatabaseKeyword' => 1, 
 					 );
 	return ($h{$class_name} ? 1 : 0);
 }
