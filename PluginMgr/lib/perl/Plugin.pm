@@ -644,10 +644,11 @@ B<Parameters>
 
 =cut
 sub printDocumentationText {
+  $| = 1;
   my ($self, $synopsis, $argDetails) = @_;
-  print "\n";
   open(POD, "| pod2text") || die "couldn't open pod2text";
   print POD $self->_formatDocumentationPod($synopsis, $argDetails);
+  close(POD);
 }
 
 =item C<printDocumentationHTML($synopsis, $argDetails)>
@@ -665,6 +666,7 @@ sub printDocumentationHTML {
   print "\n";
   open(POD, "| pod2html") || die "couldn't open pod2html";
   print POD $self->_formatDocumentationPod($synopsis, $argDetails);
+  close(POD);
 }
 
 sub _formatDocumentationPod {
