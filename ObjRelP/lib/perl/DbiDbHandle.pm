@@ -19,7 +19,7 @@ sub new{
   bless $self, $class;
   $self->setVerbose($verbose);
   $self->setNoInsert($noInsert);
-  $self->setRollback(0);
+  $self->setRollBack(0);
   return $self;
 }
 
