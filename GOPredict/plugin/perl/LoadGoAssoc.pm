@@ -555,7 +555,7 @@ sub __getSeqGusId{
     my $dbList = '( ' . join (',', @{$self->getCla()->{org_external_db_release_list} }) . ') ';
     my $sql = "select eas.aa_sequence_id
                from dots.externalAASequence eas
-               where eas." . $dbIdCol . " = '$sourceId'
+               where $dbIdCol " . = '$sourceId'
                and eas.external_database_release_id in ($dbList)";
 
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
@@ -761,13 +761,13 @@ sub __getDbIdColForOrg{
     my $dbIdCol = $self->getCla()->{database_id_col};
     if (!$dbIdCol){
 	if ($orgName eq 'sgd' || $orgName eq 'fb'){
-	    $dbIdCol = 'secondary_identifier';
+	    $dbIdCol = 'eas.secondary_identifier';
 	}
 	elsif ($orgName eq 'wb' || $orgName eq 'mgi' || $orgName eq 'goa_sptr'){
-	    $dbIdCol = 'source_id';
+	    $dbIdCol = 'eas.source_id';
 	}
 	elsif ($orgName eq 'tair'){
-	    $dbIdCol = 'upper(source_id)';
+	    $dbIdCol = 'upper(eas.source_id)';
 	}
 	else {
 	    $self->userError("Did not get proper organism name; \'$orgName\' does not match one of the expected types.");
