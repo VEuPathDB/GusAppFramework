@@ -7,17 +7,15 @@ require Exporter;
 use strict;
 
 # primaryColumnName: "DoTS_Transcript_Id" for example
-# primaryKeyName: "na_sequence_id" for example
 # queries: ref to list of GUS::ReportMaker::Query objects
 # columns: ref to list of GUS::ReportMaker::Column objects
 sub new {
-  my ($class, $primaryColumnName, $primaryKeyName, $queries, $columns) = @_;
+  my ($class, $primaryColumnName, $queries, $columns) = @_;
 
   my $self = {};
   bless($self, $class);
 
   $self->{primaryColumnName} = $primaryColumnName;
-  $self->{primaryKeyName} = $primaryKeyName;
   $self->{queries} = $queries;
 
   my %columns;
@@ -52,7 +50,8 @@ sub validateColumnsRequest {
 # resultTableName: name of db table containing result
 # dbiDb: GUS::ObjRelP::DbiDatabase
 sub print {
-  my ($self, $requestedColumnNames, $resultTableName, $dbiDb) = @_;
+  my ($self, $primaryKeyName, $requestedColumnNames, $resultTableName, 
+      $dbiDb, $verbose) = @_;
 
   # hash of query->[columns]
   my %relevantQueries = $self->_findRelevantQueries($requestedColumnNames);
@@ -63,8 +62,8 @@ sub print {
   foreach my $q (keys(%relevantQueries)) {
     my $query = $relevantQueries{$q}->[0];
     my $relevantColumns = $relevantQueries{$q}->[1];
-    $query->run($self->{primaryKeyName}, $relevantColumns, $resultTableName, 
-		$dbh, \%answer);
+    $query->run($primaryKeyName, $relevantColumns, $resultTableName, 
+		$dbh, \%answer, $verbose);
   }
 
   $self->_printHeader($requestedColumnNames);
@@ -85,7 +84,8 @@ sub _findRelevantQueries {
   }
   my %relevantQueries;
   foreach my $query (@{$self->{queries}}) {
-    $relevantQueries{$query} = [$query, $query->findRelevantColumns(\%columnNames)];
+    my $relevantCols = $query->findRelevantColumns(\%columnNames);
+    $relevantQueries{$query} = [$query, $relevantCols] if scalar(@$relevantCols);
   }
   return %relevantQueries;
 }

@@ -1,0 +1,183 @@
+#!@perl@
+
+use strict;
+
+use lib "$ENV{GUS_HOME}/lib/perl";
+
+use Getopt::Long;
+use GUS::ObjRelP::DbiDatabase;
+use GUS::Common::GusConfig;
+
+my ($verbose, $sql, $dbLogin, $dbPassword, $configModule, $tempTableName,
+    $requestedCols, $listColumns, $mappedToName, $primaryKeyName);
+
+&GetOptions("verbose!"=> \$verbose,
+	    "sql=s" => \$sql,
+	    "dbLogin=s" => \$dbLogin,
+	    "dbPassword=s" => \$dbPassword,
+	    "configModule=s" => \$configModule,
+	    "tempTableName=s" => \$tempTableName,
+	    "primaryKeyColumnName=s" => \$primaryKeyName,
+	    "mappedToColumnName=s" => \$mappedToName,
+	    "listColumns!" => \$listColumns,
+	    "requestedColumns=s" => \$requestedCols);
+
+$primaryKeyName = 'primary_key' unless $primaryKeyName;
+$mappedToName = 'mapped_to' unless $mappedToName;
+
+&usage() unless ($configModule
+		 && ($listColumns
+		     || ($dbLogin && $tempTableName && $requestedCols)));
+
+eval "use $configModule";
+die "$@\n" if $@;
+
+my $report = &createReport($tempTableName, $primaryKeyName, $mappedToName);
+
+if ($listColumns) {
+  $report->listColumns();
+  exit(0);
+}
+
+my @requestedColumnsList = split(/,\s*/, $requestedCols);
+
+$report->validateColumnsRequest(\@requestedColumnsList);
+
+my $gusconfig = GUS::Common::GusConfig->new();
+
+my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
+					$dbLogin,
+					$dbPassword,
+					$verbose,0,1,
+					$gusconfig->getCoreSchemaName());
+
+eval {
+  &makeTempTable($tempTableName, $db, $sql, $primaryKeyName, 
+		 $mappedToName) if $sql;
+
+  $report->print($primaryKeyName, \@requestedColumnsList, $tempTableName,
+		 $db, $verbose);
+};
+
+&dropTempTable($tempTableName, $db) if $sql;
+
+die "$@\n" if $@;
+
+
+########################### subroutines ###################################
+
+sub makeTempTable {
+    my ($tempTableName, $db, $sql, $primaryKeyColumn, $mappedToColumn) = @_;
+
+    my $dbh = $db->getDbHandle();
+
+    my $createTableSql = 
+"create table $tempTableName (
+  $primaryKeyColumn number not null,
+  $mappedToColumn varchar(255)
+)
+";
+    $dbh->do($createTableSql);
+    $dbh->do("insert into $tempTableName ($sql)");
+    $dbh->commit();
+}
+
+sub dropTempTable {
+    my ($tempTableName, $db) = @_;
+
+    my $dbh = $db->getDbHandle();
+    my $stmt  = $dbh->do("drop table $tempTableName");
+    $dbh->commit();
+    $db->logout();
+}
+
+sub usage {
+  print STDERR "
+USAGE
+
+   gusreport --configModule modulename --listColumns
+
+   gusreport --configModule modulename [--sql sqlstring] --dbLogin login 
+             --dbPassword password --tempTableName name 
+             --requestedColumns columnslist
+             [--primaryKeyColName columnname]
+             [--mappedToColName columnname]
+
+
+DESCRIPTION
+
+gusreport prints a tab-delimited report of information about a set of GUS 
+entities.
+
+You provide three main things:
+ 1. a configuration module that tells the report maker how to make the 
+    columns in the report.
+
+ 2. a result set that contains the primary keys of the entities you would 
+    like a report for, second, nullable, column that provides a string 
+    value that the primary key has been mapped to (eg, an external accession).
+
+ 3. a list of columns you want included in your report.
+
+The first form of gusreport simply lists the columns that the provided 
+config module makes available.
+
+The second form of gusreport prints the report. 
+
+
+There are two ways to provide your result set:
+ 1. use the --sql argument to provide an sql statement that specifies 
+    the set of entities to report on.  
+
+    The sql statement must return two columns:
+      - primary key for each entity.  This may not be null. 
+
+      - a string to which the primary key has been mapped 
+       (eg, and external accession).  This may be null.
+
+ 2. provide a temp table with that result set already loaded, in which 
+    case, do not provide the --sql argument
+
+In either case, you must provide the --tempTableName argument.
+
+Use the optional --primaryKeyColName arg to specify the name of the primary 
+key column.  By default it is 'primary_key'.
+
+Use the optional --mappedToKeyColName arg to specify the name of the mapped
+to column.  By default it is 'mapped_to'.
+
+If you provide --sql, then the temp table will be:
+  - created
+  - loaded with the results of your sql statement
+  - dropped after the report is printed
+
+Otherwise, the temp table will be used but not be created or dropped.
+
+
+The --dbLogin and --dbPassword args provide a login that can access both 
+the temp table (with create privileges if nec.) and the GUS tables the 
+report will get data from.
+
+The config module you provide with the --configModule arg is the full name 
+of a perl module that configures the report maker.  It specifies which 
+columns can go into a report and which queries to run to fill those 
+columns.  With luck, you will be able to use a pre-existing config module.  
+If there isn't one that meets your need, make a new one using a 
+pre-existing one as a template.
+
+The list of columns you want in your report is drawn from those columns 
+that the config module makes available.  You might want all the available 
+columns, or, you might want only some.  The --requestedColumns arg is a 
+comma delimited list of column names, in the order that you would like 
+them in your report.
+
+
+
+Here is a sample call:
+
+> gusreport --configModule GUS::ReportMaker::SampleGeneReportConfig --dbLogin mylogin --dbPassword mypasswd --tempTableName mylogin.tempResult --requestedColumns 'gene_symbol, synonyms' --sql 'select distinct gene_id from DoTS.gene where gene.gene_symbol is not null union select distinct gene_id from DoTS.genesynonym' 
+
+";
+
+exit 1;
+}

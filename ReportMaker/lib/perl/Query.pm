@@ -33,19 +33,13 @@ sub new {
 # answerHash: ref to hash of primaryKey->column->value
 sub run {
   my ($self, $primaryKeyName, $requestedColumns, $resultTableName, $dbh,
-      $answerHash) = @_;
+      $answerHash, $verbose) = @_;
 
-  my $sql = $self->{sql};
+  print STDERR "\nrunning query: \n$self->{sql}...\n" if $verbose;
 
-  $sql =~ s/_RESULT_TABLE_NAME_/$resultTableName/;
-
-  my $q = substr($self->{sql}, 0, 60);
-  print STDERR "\nrunning query: \n${q}...\n";
-
-  my $stmt  = $dbh->prepare($sql);
+  my $stmt  = $dbh->prepare($self->{sql});
   $stmt->execute();
 
-  my $count;
   while (my $row = $stmt->fetchrow_hashref('NAME_lc')) {
     my $primaryKey = $row->{$primaryKeyName};
     foreach my $requestedCol (@$requestedColumns) {
