@@ -116,7 +116,7 @@ SQL
     foreach (@$imps) {
       $err .= "  algimp_id:$_->{ALGORITHM_IMPLEMENTATION_ID}  md5:$_->{EXECUTABLE_MD5}  rev:$_->{CVS_REVISION}  tag:$_->{CVS_TAG}\n";
     }
-    $M->userErr($err);
+    $M->userError($err);
   }
 
   elsif ($M->getArgs->{commit} &&
