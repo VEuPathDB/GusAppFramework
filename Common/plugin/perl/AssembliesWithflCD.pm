@@ -127,7 +127,7 @@ while(my($target_id) = $stmt3->fetchrow_array( ))  {
   }
 
 
-push (@naSequenceIds, 0);
+#push (@naSequenceIds, 0);
 
 #print STDERR "scalar(@naSequenceIds)\n";
 
@@ -158,13 +158,14 @@ print STDERR "MarkedDT.$id,DT.$na_seq\n";
      if ($id == $na_seq) {
 
     print STDERR "AlreadyMarkedFLDT.$na_seq\n";
-    last;
+    next;
 
    }
 
 #    if ($id != $na_seq) {
     else {
        print STDERR "NextFLDT.$na_seq\n";
+
 
      my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
