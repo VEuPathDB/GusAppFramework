@@ -16,6 +16,8 @@ charset=iso-8859-1">
                # do nothing
             } else if (ereg("^index",$f)) {
             } else {
+                  $h = ereg_replace(".html", "", $f);
+                  $h = ereg_replace("-", "::", $h);                  
                   print "<a href='$f'><BR>$f<BR>\n";
             }
     }
