@@ -13,9 +13,16 @@ package GUS::ObjRelP::Generator::Generator;
 
 use strict;
 use GUS::ObjRelP::DbiDatabase;
-use GUS::ObjRelP::Generator::TableGenerator;
-use GUS::ObjRelP::Generator::RowGenerator;
-use GUS::ObjRelP::Generator::WrapperGenerator;
+
+use GUS::ObjRelP::Generator::PerlTableGenerator;
+use GUS::ObjRelP::Generator::PerlRowGenerator;
+use GUS::ObjRelP::Generator::PerlWrapperGenerator;
+
+use GUS::ObjRelP::Generator::JavaTableGenerator;
+use GUS::ObjRelP::Generator::JavaRowGenerator;
+use GUS::ObjRelP::Generator::JavaWrapperGenerator;
+
+
 
 # param db: dbi object
 # param special_cases_file: ???
@@ -25,7 +32,7 @@ use GUS::ObjRelP::Generator::WrapperGenerator;
 # param tables: a list of tables to restrict generation to.  null = all
 sub new {
   my( $class, $db, $targetDir, $specialCasesFile, $superclassesLibDir,
-      $schemas, $tables) = @_;
+      $javaOrPerl, $schemas, $tables) = @_;
 
   my $self = {};
   bless $self, $class;
@@ -41,7 +48,7 @@ sub new {
   $self->{tables} = $tables;
   $self->{tables} = $self->{db}->getTableAndViewNames()
     unless scalar(@{$self->{tables}});
-
+  $self->{javaOrPerl} = $javaOrPerl;
   if ($specialCasesFile) {
     die "Special cases file $specialCasesFile doesn't exist"
       unless -e $specialCasesFile;
@@ -57,37 +64,47 @@ sub new {
 }
 
 sub generate {
-  my ($self, $newOnly) = @_;
-
-  my $cnt = scalar(@{$self->{tables}});
-  print "Generating objects for $cnt tables and views\n";
-
-  foreach my $table (@{$self->{tables}}) {
-
-    # parse schema::tablename format
-    $table =~ /(GUS::Model::)?(\w+)::(\w+)/ || die "ERROR: table '$table' not in schema::tablename format\n";
-
-    my ($schemaName, $tableName) = ($2, $3);
-
-    next if (($self->{schemas} && !$self->{schemas}->{$schemaName})
-	     || $tableName =~ /Ver$/ );
-
-    print "  processing $table\n";
-
-    $self->{db}->checkTableExists($table) || die "ERROR: $table does not exist in db\n";
-
-    `mkdir -p $self->{targetDir}/$schemaName` unless -d "$self->{targetDir}/$schemaName";
-
-    my $tableG = GUS::ObjRelP::Generator::TableGenerator->new($self, $schemaName, $tableName);
-    my $rowG = GUS::ObjRelP::Generator::RowGenerator->new($self, $schemaName, $tableName, $tableG);
-    my $wrapperG = GUS::ObjRelP::Generator::WrapperGenerator->new($self, $schemaName, $tableName);
-
-    my $type = 2;
-    $tableG->generate($newOnly) if ($type == 1 || $type == 2);
-    $rowG->generate($newOnly) if ($type == 1 || $type == 2);
-    $wrapperG->generate($newOnly) if ($type == 0 || $type == 2);
-
-  }
+    my ($self, $newOnly) = @_;
+    
+    my $cnt = scalar(@{$self->{tables}});
+    print "Generating objects for $cnt tables and views\n";
+    
+    foreach my $table (@{$self->{tables}}) {
+	
+	# parse schema::tablename format
+	$table =~ /(GUS::Model::)?(\w+)::(\w+)/ || die "ERROR: table '$table' not in schema::tablename format\n";
+	
+	my ($schemaName, $tableName) = ($2, $3);
+	
+	next if (($self->{schemas} && !$self->{schemas}->{$schemaName})
+		 || $tableName =~ /Ver$/ || $tableName =~ /Imp$/);
+	
+	print "  processing $table\n";
+	
+	$self->{db}->checkTableExists($table) || die "ERROR: $table does not exist in db\n";
+	
+	`mkdir -p $self->{targetDir}/$schemaName` unless -d "$self->{targetDir}/$schemaName";
+	my $tableG; my $rowG; my $wrapperG;
+	
+	if ($self->{javaOrPerl} eq "java"){
+	    print STDERR "generating java rows!\n";
+	    $rowG = GUS::ObjRelP::Generator::JavaRowGenerator->new($self, $schemaName, $tableName, $tableG);
+	    $wrapperG = GUS::ObjRelP::Generator::JavaWrapperGenerator->new($self, $schemaName, $tableName, $tableG);
+	    $tableG =  GUS::ObjRelP::Generator::JavaTableGenerator->new($self, $schemaName, $tableName);
+	}
+	elsif ($self->{javaOrPerl} eq "perl") {
+	    $tableG = GUS::ObjRelP::Generator::PerlTableGenerator->new($self, $schemaName, $tableName);
+	    $rowG = GUS::ObjRelP::Generator::PerlRowGenerator->new($self, $schemaName, $tableName, $tableG);
+	    $wrapperG = GUS::ObjRelP::Generator::PerlWrapperGenerator->new($self, $schemaName, $tableName);
+	}
+	else {die "please set attribute --javaOrPerl to be either \'java\' or \'perl\' depending on which object layer you are generating";}
+	       
+	my $type = 2;
+	$tableG->generate($newOnly) if ($type == 1 || $type == 2);
+	$rowG->generate($newOnly) if ($type == 1 || $type == 2);
+	$wrapperG->generate($newOnly) if ($type == 0 || $type == 2);
+	
+    }
 }
 
 
@@ -102,35 +119,36 @@ sub getSpecialCases {
   return $self->{spec_cases};
 }
 
+#creates associations between "imp" tables and views upon those tables
 sub getSubclasses {
-  my($self, $superName) = @_;
-
-  $superName = $self->getFullTableClassName($superName);
-
-  if (! $self->{subclasses}) {
-    print "(Caching all subclasses)\n";
-
-    my $dbh= $self->{'db'}->getDbHandle();
-
-    my $coreName = $self->{db}->getCoreName();
-    my $sql =
+    my($self, $superName) = @_;
+    
+    $superName = $self->getFullTableClassName($superName);
+    
+    if (! $self->{subclasses}) {
+	print "(Caching all subclasses)\n";
+	
+	my $dbh= $self->{'db'}->getDbHandle();
+	
+	my $coreName = $self->{db}->getCoreName();
+	my $sql =
 "select d.name, t2.name, t1.name\
  from $coreName.TableInfo t1,$coreName.TableInfo t2, $coreName.DatabaseInfo d\
  where t2.table_id = t1.view_on_table_id\
  and t1.database_id = d.database_id";
-
-    my $sth = $dbh->prepareAndExecute($sql);
-    while (my($schema,$superclass,$subclass) = $sth->fetchrow_array()) {
-      next if $subclass =~ /ver$/i;
-      my $superclassFull =
-	$self->getFullTableClassName($schema.'::'.$superclass);
-      my $subclassFull = 
-	$self->getFullTableClassName($schema.'::'.$subclass);
-      push(@{$self->{subclasses}->{$superclassFull}}, $subclassFull);
+	
+	my $sth = $dbh->prepareAndExecute($sql);
+	while (my($schema,$superclass,$subclass) = $sth->fetchrow_array()) {
+	    next if $subclass =~ /ver$/i;
+	    my $superclassFull =
+		$self->getFullTableClassName($schema.'::'.$superclass);
+	    my $subclassFull = 
+		$self->getFullTableClassName($schema.'::'.$subclass);
+	    push(@{$self->{subclasses}->{$superclassFull}}, $subclassFull);
+	}
     }
-  }
-
-  return @{$self->{subclasses}->{$superName}} if $self->{subclasses}->{$superName};
+    
+    return @{$self->{subclasses}->{$superName}} if $self->{subclasses}->{$superName};
 }
 
 sub isValidAttribute {
@@ -149,6 +167,7 @@ sub isValidAttribute {
 
 
 # if table is a view, return the viewed table, else, just table name
+#returns in form of schema::tablename
 sub getRealTableName {
   my($self, $className) = @_;
 
@@ -174,27 +193,30 @@ sub getRealTableName {
    $self->{realTableName}->{$className} : $className ;
 }
 
+#param classname: form of schema::table
+#creates associations between "tables" (really views) and their subclasses
 sub getParentTable {
-  my($self, $className) = @_;
+    my($self, $className) = @_;
+    
+    $className = $self->getFullTableClassName($className);
+    #returns GUS::Model::schema::table
 
-  $className = $self->getFullTableClassName($className);
-
-  if(!exists $self->{parentTable}){
-    print "(Caching all parents)\n";
-    my $coreName = $self->{db}->getCoreName();
-    my $sql =
-"select d.name, t2.name, t1.name
+    if(!exists $self->{parentTable}){
+	print "(Caching all parents)\n";
+	my $coreName = $self->{db}->getCoreName();
+	my $sql =
+	    "select d.name, t2.name, t1.name
  from $coreName.TableInfo t1,$coreName.TableInfo t2, $coreName.DatabaseInfo d
  where t2.table_id = t1.superclass_table_id
  and t2.database_id = d.database_id";
-    my $stmt = $self->{db}->getDbHandle()->prepareAndExecute($sql);
-    while (my($sc,$pn,$tn) = $stmt->fetchrow_array()) {
-      my $pFull = $self->getFullTableClassName($sc.'::'.$pn);
-      my $tFull = $self->getFullTableClassName($sc.'::'.$tn);
-      $self->{parentTable}->{$tFull} = $pFull;
+	my $stmt = $self->{db}->getDbHandle()->prepareAndExecute($sql);
+	while (my($sc,$pn,$tn) = $stmt->fetchrow_array()) {
+	    my $pFull = $self->getFullTableClassName($sc.'::'.$pn);
+	    my $tFull = $self->getFullTableClassName($sc.'::'.$tn);
+	    $self->{parentTable}->{$tFull} = $pFull;
+	}
     }
-  }
-  return $self->{parentTable}->{$className};
+    return $self->{parentTable}->{$className};
 }
 
 sub getVersionable {
