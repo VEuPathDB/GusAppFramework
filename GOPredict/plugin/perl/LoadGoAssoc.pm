@@ -260,25 +260,25 @@ sub __load_associations {
  
 
 	    $termCount += $self->__make_association( $entry, $extSeqGusId, $goTermGusId, $self->getCla->{ organism });
-#	  GusApplication::Log( 'term', $assocRow->{ id },
-#			       $termCount, $goTermGusId,
-#			       $goGraph->{ name }->{ $goTermGusId },
-#			       );
+	  GusApplication::Log( 'term', $assocRow->{ id },
+			       $termCount, $goTermGusId,
+			       $goGraph->{ name }->{ $goTermGusId },
+			       );
 	    
 	    # for terms on path to root.
-#	    my @gi_ancestors = @{ $self->__get_ancestors( $goTermGusId, $goGraph ) };
-#	    foreach my $gi_ancestor ( @gi_ancestors ) {
-#		$ancestorCount += $self->__make_association( $extSeqGusId,
-#							     $gi_ancestor,
-#							     undef,
-#							     );
-#	      GusApplication::Log( 'path', $assocRow->{ id },
-#				   $ancestorCount, $gi_ancestor,
-##				   $goGraph->{ name }->{ $gi_ancestor },
-#				   );
-#	    } # ancestor nodes
+	    my @gi_ancestors = @{ $self->__get_ancestors( $goTermGusId, $goGraph ) };
+	    foreach my $gi_ancestor ( @gi_ancestors ) {
+		$ancestorCount += $self->__make_association( $extSeqGusId,
+							     $gi_ancestor,
+							     undef,
+							     );
+	      GusApplication::Log( 'path', $assocRow->{ id },
+				   $ancestorCount, $gi_ancestor,
+				   $goGraph->{ name }->{ $gi_ancestor },
+				   );
+	    } # ancestor nodes
 	    # term nodes
-#	}
+	}
 	
     # log processing of this sequence.
 #	print $fh_log $assocRow->{ id }, "\n" if $fh_log;
