@@ -100,15 +100,15 @@ sub new {
      },
     ];
     
-#     {o => 'failDir',
- #     t => 'string',
-  #    h => 'directory to write failed entries and their error messages',
-   #  },
-    # {o => 'failTolerance',
-     # t => 'int',
-  #    h => 'number of entries that can fail before aborting',
-   #   d => '100'
-    # }
+     {o => 'failDir',
+      t => 'string',
+      h => 'directory to write failed entries and their error messages',
+     },
+     {o => 'failTolerance',
+      t => 'int',
+      h => 'number of entries that can fail before aborting',
+      d => '100'
+     }
   $self->initialize({requiredDbVersion => {},
 		     cvsRevision => '$Revision$',	# cvs fills this in!
 		     cvsTag => '$Name$', # cvs fills this in!
@@ -144,7 +144,6 @@ sub run {
   if (!$ctx->{cla}->{file}) {
     die "--file is a required argument. See --help option\n";
   }
-  $ctx->{cla}->{failDir} = "/home/sfischer/gbtest";
   $ctx->{cla}->{failTolerance} = 100;
   if (!$ctx->{cla}->{failDir}) {
     die "--failDir is a required argument. See --help option\n";
