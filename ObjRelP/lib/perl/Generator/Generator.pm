@@ -227,7 +227,7 @@ sub getDontOverride {
 
     $self->{dontOverrideSubs} = {};
 
-    foreach my $f ('RelationalRow.pm', 'DbiRow.pm') {
+    foreach my $f ('GUS/Model/lib/perl/GUS/Model/GusRow.pm', 'GUS/ObjRelP/lib/perl/GUS/ObjRelP/DbiRow.pm') {
       my $file = "$self->{superclassesLibDir}/$f";
 
       open(F, $file) || print STDERR "Can't open superclass $file\n";

@@ -365,7 +365,7 @@ sub logout {
 }
 
 #############################################################
-# Moving RelationalRow global variables to DbiDatabase
+# Moving Row global variables to DbiDatabase
 #############################################################
 
 ##called by constructor to setup the default values...

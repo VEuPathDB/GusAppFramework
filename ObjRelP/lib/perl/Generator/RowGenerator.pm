@@ -59,7 +59,7 @@ sub _genISA {
   my ( $self ) = @_;
 
   my $parent = $self->_getParentTable();
-  my $isa = '@ISA = qw (GUS::ObjRelP::RelationalRow);';
+  my $isa = '@ISA = qw (GUS::Model::GusRow);';
   $isa = "\@ISA = qw ($parent);" if $parent;
   return "
 use vars qw (\@ISA);
