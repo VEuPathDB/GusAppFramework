@@ -207,7 +207,7 @@ sub createGUSAssaysFromFiles {
   $self->log("STATUS","Skipping assay/s @skipAssayList") if (scalar @skipAssayList > 0);
 
   # get hyb dates
-  my $hybDateHash
+  my $hybDateHash;
   my @hybDates = split /\;/,$self->{propertySet}->getProp("hybDates");
 
   foreach my $hybDate (@hybDates) {
