@@ -237,6 +237,7 @@ sub run {
 	my $blatFiles = join(',', @blatFiles);
 	$self->log("Load alignments from raw BLAT output files $blatFiles ...");
 	my $qIndex = &maybeIndexQueryFile($queryFile, $regEx);
+print "DEBUGG made query index on file \"$queryFile\", using regEx \"$regEx\"\n";
 	$summary = $self->loadAlignments($blatFiles, $qIndex);
     }
 
@@ -576,7 +577,7 @@ sub makeSourceIdHash {
 
     $sth->execute();
     while (my @a = $sth->fetchrow_array()) {
-        # print "in mSIH: a0 = $a[0], a1 = $a[1]\n";
+print "DEBUG:in mSIH: a0 = $a[0], a1 = $a[1]\n";
 	my $v = $hash->{$a[0]};
 	if (defined($v)) {
 	    print STDERR "LoadBLATAlignments: WARNING - duplicate source_id $a[0] in $targetTable\n";
@@ -698,11 +699,12 @@ sub loadAlignment {
     # Retrieve sequence and compute quality
     #
     my $querySeq = $qIndex->getSequence(CBIL::Util::TO->new({accno => $origQueryId, strip => 1}));
-    # print "DEBUGG: length(querySeq) = " . length($querySeq->{seq}) . " for accesion no. $origQueryId\n";
-    # print "DEBUGG: index_file = \"$qIndex->{index_file}\", seq_file = \"$qIndex->{seq_file}\"\n";
+
+print "DEBUGG: length(querySeq) = " . length($querySeq->{seq}) . " for accesion no. $origQueryId\n";
+print "DEBUGG: index_file = \"$qIndex->{index_file}\", seq_file = \"$qIndex->{seq_file}\"\n";
 
     # Disp::Display($querySeq);
-    
+
     my @a = $align->checkQuality($querySeq->{'seq'}, $qualityParams, $gapTable, $dbh);
 
     # determine BLAT alignment quality id (as specified in BlatAlignmentQuality table)
