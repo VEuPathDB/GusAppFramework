@@ -67,7 +67,7 @@ sub runRepeatMask {
 	die "failed running '$cmd' with stderr:\n $!" if ($? >> 8);
 	$valid = &validateRM($inputFile, $blockedFile, $errFile);
 	if  (!$valid) {
-	    print "  please correct failures, and set restart=yes in $propfile\n";
+	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propfile\n";
 	}
     }
 
@@ -100,7 +100,7 @@ sub runMatrix {
 	die "failed running '$cmd' with stderr:\n $!" if ($? >> 8);
 	my $valid = &validateBM($inputFile, $resultFile);
 	if  (!$valid) {
-	    print "  please correct failures, and set restart=yes in $propfile\n";
+	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propfile\n";
 	}
     }
 
@@ -135,7 +135,7 @@ sub runSimilarity {
 
 	my $valid = &validateBM($inputFile, $resultFile);
 	if  (!$valid) {
-	    print "  please correct failures, and set restart=yes in $propfile\n";
+	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propfile\n";
 	}
     
     }
