@@ -41,7 +41,7 @@ sub new {
 #  my @erSubclassViewList=@$arrayRef;
 #  print "@erSubclassViewList\n";
 
-  my @erSubclassViewList=[qw (ArrayVisionElementResult GenePixElementResult SpotElementResult ScanAlyzeElementResult AffymetrixCEL GEMToolsElementResult AgilentElementResult)];
+  my @erSubclassViewList=[qw (ArrayVisionElementResult GenePixElementResult SpotElementResult ScanAlyzeElementResult AffymetrixCEL GEMToolsElementResult AgilentElementResult QuantArrayElementResult)];
 # modify the following line to add a new view for CompositeElementResultImp table
   my @crSubclassViewList=[qw (AffymetrixMAS4 AffymetrixMAS5 SAGETagResult MOIDResult RMAExpress GNFAffymetrixResult)];
 # modify the following line to add a new view for ElementImp table
@@ -1354,7 +1354,7 @@ Legal values for this argument must be either "SpotFamily" or "ShortOligoFamily"
 
 =head2 F<er_subclass_view>
 
-Legal values for "er_subclass_view" must be "ArrayVisionElementResult", "GenePixElementResult", "SpotElementResult", "ScanalyzeElementResult", "AgilentElementResult", "AffymetrixCEL". 
+Legal values for "er_subclass_view" must be "ArrayVisionElementResult", "GenePixElementResult", "SpotElementResult", "ScanalyzeElementResult", "AgilentElementResult", "QuantArrayElementResult", "AffymetrixCEL". 
 
 =head2 F<cr_subclass_view>
 
