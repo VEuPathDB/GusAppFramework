@@ -552,7 +552,7 @@ sub createGusAcquisition {
 
     $tempDatURI = $self->{propertySet}->getProp("DATFilePath");
     $tempDatURI .= "/" if ($tempDatURI !~ m/(.+)\/$/);
-    $tempDatURI = $assayName.".".$extensionHashRef->{"DATFile"};
+    $tempDatURI .= $assayName.".".$extensionHashRef->{"DATFile"};
     ($localFilePath, $datURI) = split "RAD_images/", $tempDatURI; # HARD-CODED. Based on our convention for naming files
   }
 
@@ -638,15 +638,15 @@ sub createGUSQuantification {
   my $celQuantOperatorId = $self->{propertySet}->getProp("Cel_Quant_Operator_ID");
   my $chpQuantOperatorId = $self->{propertySet}->getProp("Chp_Quant_Operator_ID");
 
-  $tempCelURI .= "/" if ($tempCelURI !~ m/(.+)\/$/);
-  $tempChpURI .= "/" if ($tempChpURI !~ m/(.+)\/$/);
-  $tempCelURI = $assayName.".".$extensionHashRef->{"CELFile"};
-  $tempChpURI = $assayName."_Metrics.".$extensionHashRef->{"MetricsFile"};
-
   $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $celProtocolId);
   $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $chpProtocolId);
   $self->checkDatabaseEntry("GUS::Model::SRes::Contact", "contact_id", $celQuantOperatorId);
   $self->checkDatabaseEntry("GUS::Model::SRes::Contact", "contact_id", $chpQuantOperatorId);
+
+  $tempCelURI .= "/" if ($tempCelURI !~ m/(.+)\/$/);
+  $tempCelURI .= $assayName.".".$extensionHashRef->{"CELFile"};
+  $tempChpURI .= "/" if ($tempChpURI !~ m/(.+)\/$/);
+  $tempChpURI .= $assayName."_Metrics.".$extensionHashRef->{"MetricsFile"};
 
   my ($localCelFilePath, $celURI) = split "RAD/", $tempCelURI; # HARD-CODED. Based on our convention for naming files
   my ($localChpFilePath, $chpURI) = split "RAD/", $tempChpURI; # HARD-CODED. Based on our convention for naming files
@@ -658,7 +658,6 @@ sub createGUSQuantification {
   }
   my ($tempTime, $tempDate) = split " ", $tempQuantificationDate;
   $quantificationDate = $self->getQuantificationDate($tempTime, $tempDate);
-
 
   my $protocol = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
   $self->error("Create object failed, $acqProtocolId absent in table RAD3::Protocol") 
