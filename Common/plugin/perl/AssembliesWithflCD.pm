@@ -137,7 +137,6 @@ sub run {
 
 
   #push (@naSequenceIds, 0);
-
   #print STDERR "scalar(@naSequenceIds)\n";
 
   my $ct = 0;
@@ -167,73 +166,57 @@ sub run {
   }
 
 
-  #figure out which DTs are not present in both arrays those new as full length
+# call deleting and updating subroutines
+   $self->DeleteEvidence(@DTs,@DTSasEvidenceTarget);
+   $self->UnmarkFullLength(@RemoveAsMarkedFL);
+
+
+#need this return to finish run of plugin adds result set attribute 
+
+  return "marked as full length";
+
+}
+
+
+
+
+
+
+ #check to see if all previous evidence still valid
+ #use array of target ids and compare to array of DTs
+
+
+sub  DeleteEvidence   {
+
+  my $self = shift;
+
+
+  my (@DTs,@DTSasEvidenceTarget) = @_;
+
 
   my %seen = ();
-  my @diffArray;
-  my $id;
-
-  foreach $id(@naSequenceIds) {
-    $seen{$id} = 1;
-  }
-
-
-  foreach $id(@DTs) { 
-    unless ($seen{$id}) {
-
-      #add to new array
-
-      push (@diffArray, $id);
-    }
-
-  }
-
-  print STDERR "@diffArray\n";
-  #print STDERR scalar"(@diffArray)";
-
-
-
-  #check to see if all previous evidence still valid
-  #use array of target ids and compare to array of DTs
-
-
-
-  my %seen2 = ();
-  my @diffArray2 = ();
-
+  my @diffArray = ();
   my $dt;
 
   foreach $dt(@DTs) {
     $seen2{$dt} = 1;
   }
-
-
   foreach $dt(@DTSasEvidenceTarget) {
-    unless ($seen2{$dt}) {
-
-      #add to new array
-
-      push (@diffArray2, $dt);
+    unless ($seen2{$dt}) {   #add to new array
+     push (@diffArray, $dt);
     }
-
   }
 
-  #print STDERR "@diffArray\n";
-  #print STDERR scalar"(@diffArray)";
-
-  print STDERR "Arrayids@diffArray2\n";
-  my $ids = scalar(@diffArray2);
-  print STDERR "$ids\n";
-
-
+  print STDERR "Arrayids@diffArray\n";
+  my $ids = scalar(@diffArray);
+  print STDERR "number in diffarray= $ids\n";
 
   foreach my $target_id (@diffArray2) {
     my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
                                                     'attribute_name' =>"full_length_CDS"});
     if ($Evidence->retrieveFromDB()) {
-
-      $Evidence->markDeleted(1);
-      $Evidence->submit();
+        $Evidence->markDeleted(1);
+        $Evidence->submit();
       print STDERR  "DT.$target_id Evidence deleted\n"; 
     } else {
       print STDERR  "Cannot delete DT.$target_id Evidence; not retrieved\n";
@@ -244,19 +227,19 @@ sub run {
 
   }
 
-
-  #my $dbh = $self->getQueryHandle();
-  #my $rows = $dbh->prepare("delete from dots.evidence where attribute_name = 'full_length_CDS' and target_id = ?");
-  #foreach my $target_id(@diffArray2)  {
-  #  $rows->execute($target_id);
-  # print STDERR  "DT.$target_id Evidence deleted\n";
-  # }
-
+}
 
 
 
 #  those assemblies that no longer contain a refSeq
-    foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
+
+
+sub UnmarkFullLength {
+
+  my $self = shift;
+  my (@RemoveAsMarkedFL) = @_;
+
+  foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
   print STDERR "DT.$DTnotFLength does not have a RefSeq any longer\n";
 
@@ -266,15 +249,8 @@ sub run {
       $assembly->setFullLengthCds(0);
       $assembly->submit();
 
-     $self->undefPointerCache();
-
-
+      $self->undefPointerCache();
    }
-
-
-#need this return to finish run of plugin adds result set attribute 
-
-  return "marked as full length";
 
 }
 
