@@ -590,11 +590,11 @@ sub relateQuantifications{
 	 if($M->getCla->{'commit'}){print STDERR "RESULT: $RV\n";}
      }
      else{
-	 if($c_subclass_view == "RMAExpress"){
+	 if($c_subclass_view eq "RMAExpress"){
 	     $rel_quantification->setDesignation("RMA quantification");
 	     $rel_quantification->setAssociatedDesignation("cel quantification");
 	 }
-	 elsif($c_subclass_view == "MOIDResult"){
+	 elsif($c_subclass_view eq "MOIDResult"){
 	     $rel_quantification->setDesignation("MOID quantification");
 	     $rel_quantification->setAssociatedDesignation("cel quantification");	 
 	 }
@@ -633,11 +633,11 @@ sub relateQuantifications{
 	 if($M->getCla->{'commit'}){print STDERR "RESULT: $RV\n";}
      }
      else{
-	 if($c_subclass_view == "RMAExpress"){
+	 if($c_subclass_view eq "RMAExpress"){
 	     $rel_quantification->setDesignation("cel quantification");
 	     $rel_quantification->setAssociatedDesignation("RMA quantification");
 	 }
-	 elsif($c_subclass_view == "MOIDResult"){
+	 elsif($c_subclass_view eq "MOIDResult"){
 	     $rel_quantification->setDesignation("cel quantification");
 	     $rel_quantification->setAssociatedDesignation("MOID quantification");	 
 	 }
