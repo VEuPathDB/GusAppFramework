@@ -82,35 +82,35 @@ Blank lines and comment lines (lines starting with '#') are ignored.
 The following keywords and their values are required (in cases where no value is to be specified, please
 use the words 'null' as the value):
 
-  - gprFilePath = full path to the dir where the GPR files are kept
+  - GPR_File_Path= full path to the dir where the GPR files are kept
   - Study_ID^ = the study identifier
-  - arrayId^ = array type ID
+  - Array_ID^ = array type ID
  
  ASSAY SECTION
 
-  - batchId** = the study identifier
-  - allAssayDescriptionsSame** = requires a yes/no answer; if yes, then allAssayDescriptions 
+  - Batch_ID** = the study identifier
+  - All_Assay_Descriptions_Same** = requires a yes/no answer; if yes, then allAssayDescriptions 
     will be read, else individualAssayDescriptions will be read
-  - allAssayDescriptions** = description of the assay
-  - individualAssayDescriptions** = assayName|description; assayName|description; assayName|description
+  - All_Assay_Descriptions** = description of the assay
+  - Individual_Assay_Descriptions** = assayName|description; assayName|description; assayName|description
 
  HYBRIDIZATION SECTION
 
   - Hyb_Protocol_ID^ = hybridization protocol id
   - Hyb_Operator_ID^ = hybridization operator id
-  - allHybDatesSame = requires a yes/no answer; if yes, then allHybDates will be read, 
-    else individualHybDates will be read
-  - allHybDates = yyyy-mm-dd
-  - individualHybDates = assayName|yyyy-mm-dd; assayName|yyyy-mm-dd; assayName|yyyy-mm-dd
+  - All_Hyb_Dates_Same = requires a yes/no answer; if yes, then allHybDates will be read, 
+    else individual_HybDates will be read
+  - All_Hyb_Dates = yyyy-mm-dd
+  - Individual_Hyb_Dates = assayName|yyyy-mm-dd; assayName|yyyy-mm-dd; assayName|yyyy-mm-dd
 
  ACQUISITION SECTION
 
   - Acq_Protocol_ID^ = acquisition protocol id
-  - tiffFilePath = full path to the dir where the .tif files are kept
-  - allScanDatesSame = requires a yes/no answer; if yes, then allScanDates will be read, 
-    else individualScanDates will be read
-  - allScanDates = yyyy-mm-dd
-  - individualScanDates = assayName|yyyy-mm-dd; assayName|yyyy-mm-dd; assayName|yyyy-mm-dd
+  - Tiff_File_Path = full path to the dir where the .tif files are kept
+  - All_Scan_Dates_Same = requires a yes/no answer; if yes, then allScanDates will be read, 
+    else individual_Scan_Dates will be read
+  - All_Scan_Dates = yyyy-mm-dd
+  - Individual_Scan_Dates = assayName|yyyy-mm-dd; assayName|yyyy-mm-dd; assayName|yyyy-mm-dd
 
  QUANTIFICATION SECTION
 
@@ -198,25 +198,25 @@ NOTES
 }
 
 my @properties = (
-    [ "gprFilePath",                 "", "" ],
-    [ "Study_ID",                    "", "" ],
-    [ "arrayId",                     "", "" ],
-    [ "batchId",                     "", "" ],
-    [ "allAssayDescriptionsSame",    "", "" ],
-    [ "allAssayDescriptions",        "", "" ],
-    [ "individualAssayDescriptions", "", "" ],
-    [ "Hyb_Protocol_ID",             "", "" ],
-    [ "Hyb_Operator_ID",             "", "" ],
-    [ "allHybDatesSame",             "", "" ],
-    [ "allHybDates",                 "", "" ],
-    [ "individualHybDates",          "", "" ],
-    [ "Acq_Protocol_ID",             "", "" ],
-    [ "tiffFilePath",                "", "" ],
-    [ "allScanDatesSame",            "", "" ],
-    [ "allScanDates",                "", "" ],
-    [ "individualScanDates",         "", "" ],
-    [ "Quant_Protocol_ID",           "", "" ],
-    [ "Quant_Operator_ID",           "", "" ]
+    [ "GPR_File_Path",                 "", "" ],
+    [ "Study_ID",                      "", "" ],
+    [ "Array_ID",                      "", "" ],
+    [ "Batch_ID",                      "", "" ],  # can be null
+    [ "All_Assay_Descriptions_Same",   "", "" ],  # can be null
+    [ "All_Assay_Descriptions",        "", "" ],  # can be null
+    [ "Individual_Assay_Descriptions", "", "" ],  # can be null
+    [ "Hyb_Protocol_ID",               "", "" ],
+    [ "Hyb_Operator_ID",               "", "" ],
+    [ "All_Hyb_Dates_Same",            "", "" ],
+    [ "All_Hyb_Dates",                 "", "" ],
+    [ "Individual_Hyb_Dates",          "", "" ],
+    [ "Acq_Protocol_ID",               "", "" ],
+    [ "Tiff_File_Path",                "", "" ],
+    [ "All_Scan_Dates_Same",           "", "" ],
+    [ "All_Scan_Dates",                "", "" ],
+    [ "Individual_Scan_Dates",         "", "" ],
+    [ "Quant_Protocol_ID",             "", "" ],
+    [ "Quant_Operator_ID",             "", "" ]   # can be null
  ); 
 
 ###############################
@@ -250,16 +250,16 @@ sub createGUSAssaysFromFiles {
   my @gusAssays;
   my $assayCnt = 0;
 
-  my $tiffFilePath  = $self->{propertySet}->getProp("tiffFilePath"); 
-  my $gprFilePath   = $self->{propertySet}->getProp("gprFilePath"); 
+  my $tiffFilePath  = $self->{propertySet}->getProp("Tiff_File_Path"); 
+  my $gprFilePath   = $self->{propertySet}->getProp("GPR_File_Path"); 
   my $testNumber    = $self->getArgs->{testnumber};
   my @skipAssayList = @{$self->getArgs->{skip}};
 
   my ($assayNames, $modifiedAssayFileURIRef)    = $self->findAssayNames($gprFilePath);
   my ($imageFilesRef, $modifiedImageFileURIRef) = $self->getImageFileNames($tiffFilePath); 
-  my $assayDescriptionHashRef                   = $self->parseMultipleDescriptions($assayNames,"allAssayDescriptionsSame","allAssayDescriptions","individualAssayDescriptions");
-  my $hybDateHashRef                            = $self->parseMultipleDescriptions($assayNames,"allHybDatesSame","allHybDates","individualHybDates");
-  my $scanDateHashRef                           = $self->parseMultipleDescriptions($assayNames,"allScanDatesSame","allScanDates","individualScanDates");
+  my $assayDescriptionHashRef                   = $self->parseMultipleDescriptions($assayNames,"All_Assay_Descriptions_Same","All_Assay_Descriptions","Individual_Assay_Descriptions");
+  my $hybDateHashRef                            = $self->parseMultipleDescriptions($assayNames,"All_Hyb_Dates_Same","All_Hyb_Dates","Individual_Hyb_Dates");
+  my $scanDateHashRef                           = $self->parseMultipleDescriptions($assayNames,"All_Scan_Dates_Same","All_Scan_Dates","Individual_Scan_Dates");
 
   my $skipAssayCnt  = scalar @skipAssayList;
   my $totalAssayCnt = scalar @$assayNames;
@@ -574,7 +574,7 @@ sub createSingleGUSAssay {
 sub checkRequiredFilesExist {
   my ($self, $assayName, $imageFilesRef) = @_;
 
-  my $gprFile     = $self->{propertySet}->getProp("gprFilePath")."/$assayName.gpr";
+  my $gprFile     = $self->{propertySet}->getProp("GPR_File_Path")."/$assayName.gpr";
   my $tiffFileCy5 = $imageFilesRef->{$assayName."_Cy5"};
   my $tiffFileCy3 = $imageFilesRef->{$assayName."_Cy3"};
 
@@ -689,8 +689,8 @@ sub modifyKeyValuePairs {
 sub createGusAssay {
   my ($self, $assayName, $hybDateHashRef, $assayDescriptionHashRef) = @_;
 
-  my $arrayId       = $self->{propertySet}->getProp("arrayId");
-  my $batchId       = $self->{propertySet}->getProp("batchId");
+  my $arrayId       = $self->{propertySet}->getProp("Array_ID");
+  my $batchId       = $self->{propertySet}->getProp("Batch_ID");
   my $hybProtocolId = $self->{propertySet}->getProp("Hyb_Protocol_ID");
   my $hybOperatorId = $self->{propertySet}->getProp("Hyb_Operator_ID");
   
