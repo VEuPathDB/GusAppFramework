@@ -88,7 +88,7 @@ sub versionRows {
     $tablever =~ s/\./Ver./;
 
     for(my $i=0;$i<scalar(@ids);$i++){ 
-	my $stm = "insert into $tablever (select *,$userId,SYSDATE,1 from $table where $tablePK=$ids[$i])";
+	my $stm = "insert into $tablever (select t.*,$userId,SYSDATE,1 from $table t where $tablePK=$ids[$i])";
 	print STDERR "Versioning row with $tablePK:\t$ids[$i]\n";
 	$ctVer += $dbh->do($stm) if ($versioned{$ids[$i]} != 1);
 	$dbh->commit();
