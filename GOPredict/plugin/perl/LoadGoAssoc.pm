@@ -407,8 +407,10 @@ sub __makeAssociation {
     if ($defining){
 	foreach my $evdId (keys %$evdIds){
 	    my $evdCodeInst = $self->__makeEvidenceCodeInst($evdId, $evidenceMap);
-	    $gusAssocInst->setChild($evdCodeInst);
-	    $evidenceCount++;
+	    if ($evdCodeInst){
+		$gusAssocInst->setChild($evdCodeInst);
+		$evidenceCount++;
+	    }
 	}
     }
    $gusAssoc->setChild($gusAssocInst); #big test
@@ -478,7 +480,7 @@ sub __hasDefiningDescendant{
 #given an organism and its external primary sequence identifiers, get the GUS Id's
 #for those sequences
 sub __getSequenceIds {
-    my ($self, $organism, $assocData) = @_;
+    my ($self, $organism, $allEntries) = @_;
 
     $self->log("getting gus Ids for external $organism sequences");
 
@@ -506,21 +508,29 @@ sub __getSequenceIds {
  #   print GETSEQID "prepared query to get sequences: $prepareSql";
     my $sth = $queryHandle->prepare($prepareSql);
     
-    foreach my $key (keys %$assocData){
-
-	my $entry = $assocData->{$key};
-	my $extId = $entry->$assocMethod;
-	my @cleanId = @{ $orgInfo->{ clean_id }->( $extId ) };
-	my $cleanId = '(' . join( ', ', map { "'$_'" } @cleanId ) . ')'; #get sp id's if mgi
-#	print GETSEQID "executing sequence $cleanId. . . ";
-	$sth->execute($cleanId);
-	while (my ($gusId) = $sth->fetchrow_array()){
-#	    print GETSEQID "$cleanId in gus is $gusId\n";
-	    %gusIds->{$key}= $gusId;
+    foreach my $entryKey (keys %$allEntries){
+	
+	my $entry = $allEntries->{$entryKey};
+	my $entryId = $entry->$assocMethod;
+	if ($entryId){  #account for missing id's in wormpep file!!
+	    my @cleanIds = @{ $orgInfo->{ clean_id }->( $entryId ) };
+	
 	    
+	    #	$cleanId = '(' . join( ', ', map { "$_" } @cleanId ) . ')';  #get sp id's if mgi
+	    #$cleanId = join( ', ', map { "$_" } @cleanId );  #get sp id's if mgi
+	    
+	#    print GETSEQID "$entryKey: executing sequence $entryId, mapping to " . join (',', @cleanIds) . "\n";
+	    
+	    foreach my $extId (@cleanIds){
+		$sth->execute($extId);
+		while (my ($gusId) = $sth->fetchrow_array()){
+		#    print GETSEQID "\t$extId in gus is $gusId\n";
+		    %gusIds->{$entryKey}->{$extId}= $gusId;
+		}
+	    }
 	}
     }
- #   close (GETSEQID);
+#    close (GETSEQID);
 
     $self->log("done getting gus ids for sequences for this organism");
     return \%gusIds;
@@ -721,10 +731,12 @@ sub __getTableIdForOrg{
 sub __makeEvidenceCodeInst{
     
     my ($self, $extEvd, $evidenceMap) = @_;
-   # open (EVDLOG, ">>logs/evdLog") || die "evdlog could not be opened";
+   # open(EVDLOG, ">>logs/evdLog") || die "evdlog could not be opened";
     my $reviewStatus = $evidenceMap->{$extEvd}->{reviewStatus};
     my $realEvidGusCode = $evidenceMap->{$extEvd}->{evdGusId};
-    
+    if (!($realEvidGusCode)){  #skip if evidence set to null
+	return undef;
+    }
     my $evidCodeInst = GUS::Model::DoTS::GOAssocInstEvidCode->new ({
 	go_evidence_code_id => $realEvidGusCode,
      	review_status_id => $reviewStatus,
@@ -737,33 +749,32 @@ sub __makeEvidenceCodeInst{
 sub __createAssocData{
     my ($self, $allEntries, $allGusIds, $assocMethod, $organism) = @_;
     my $assocData;
-  #  open (ISLOG, ">>logs/assocDataLog$organism") || die "pluginLog could not be opened";
 
-    foreach my $key (keys %$allEntries){
-	my $entry = $allEntries->{$key};
+    foreach my $entryKey (keys %$allEntries){
+	my $entry = $allEntries->{$entryKey};
 	my $tempGoTerm = $entry->getGOId();
 	
 	my $tempEvd = $entry->getEvidence();
-	my $tempNewKey = $entry->$assocMethod; #gets MGI
-	my @newKeyArray = @{ $self->{orgInfo}->{$organism}->{clean_id}->($tempNewKey) };
-#	print ISLOG "creating assocData for key $key\n";
-	foreach my $newKey (@newKeyArray){
-	    $assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{evidence}->{$tempEvd} = 1;
-	    $assocData->{$newKey}->{extSeqGusId} = $allGusIds->{$key};
-#	    print ISLOG "\t\t creating assocData for one id in this key: $newKey\n";
-	   
-	    #change to unless 
-	    #don't make an entry if it already exists with isNot flag set (happens rarely)
-	    if ($assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{entry}){
-		if (($assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{entry}->getIsNot()) &&
-		    (!($entry->getIsNot()))) {
-		    next;
-		}
-	    }	
-	    $assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{entry} = $entry;
+	my $entryId = $entry->$assocMethod; 
+	if ($entryId){ #account for missing identifiers in wormpep file!
+	    my @cleanIds = @{ $self->{orgInfo}->{$organism}->{clean_id}->($entryId) };
+
+	    foreach my $extId (@cleanIds){
+		$assocData->{$extId}->{goTerms}->{$tempGoTerm}->{evidence}->{$tempEvd} = 1;
+		$assocData->{$extId}->{extSeqGusId} = $allGusIds->{$entryKey}->{$extId};
+		
+		#don't make an entry if it already exists with isNot flag set (happens rarely)
+		if ($assocData->{$extId}->{goTerms}->{$tempGoTerm}->{entry}){
+		    if (($assocData->{$extId}->{goTerms}->{$tempGoTerm}->{entry}->getIsNot()) &&
+			(!($entry->getIsNot()))) {
+			next;
+		    }
+		}	
+		$assocData->{$extId}->{goTerms}->{$tempGoTerm}->{entry} = $entry;
+	    }
 	}
     }
-        
+    
     return $assocData;
 }
 
@@ -890,7 +901,7 @@ sub __checkIfSeqsLoaded{
 	    $errorM = $errorM . "$fileName, have already been associated with GO Terms.\n";
 	    $errorM = $errorM . "To reload, set --loadAgain command line argument to true.  Plugin will skip\n";
 	    $errorM = $errorM . "this file for now.\n";
-	    print STDERR $errorM;
+	    $self->userError($errorM);
 	    return 1;
 	}
     }
