@@ -85,14 +85,16 @@ sub getIdsToDelete {
 
 sub deleteRows {
   my ($self, $ids) = @_;
+  my $table = $self->getArgs()->{'table'};
+  eval("require GUS::Model::".$table);
   my $numDelete = 0;
 
   my $prim_key = $self->getTablePKFromTableId($self->getTableIdFromTableName($self->getArgs()->{'table'}));
 
-  my $table = $self->getArgs()->{'table'};
+  $table = "GUS::Model::".$table;
 
   foreach my $id (@$ids) {
-    my $newTable = GUS::Model::$table->new ({'$prim_key'=>$id});
+    my $newTable = $table->new ({'$prim_key'=>$id});
     $newTable->retrieveFromDB();
     $newTable->retrieveAllChildrenFromDB(1) if ($self->getArgs()->{'delete_children'});
     if ($self->getArgs()->{'delete_children'}) {
