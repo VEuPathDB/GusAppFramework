@@ -140,7 +140,7 @@ sub initAttrs {
 
   foreach my $attr (@attrs) {
     my ($name, $checkFunc) = @$attr;
-    next if ($name EQ 'default');
+    next if ($name eq 'default');
     $self->failinit($name) unless exists $attrsHashRef->{$name};
     $self->{$name} = $attrsHashRef->{$name};
     &$checkFunc($self) if $checkFunc;
