@@ -240,7 +240,7 @@ sub _runPlugin {
     my $comment = $args;
     $comment =~ s/"/\\"/g;
 
-    my $cmd = "ga $args --comment \"$comment\" $plugin >> $out 2>> $err";
+    my $cmd = "ga $plugin $args --comment \"$comment\"  >> $out 2>> $err";
 
     $self->runCmd("mkdir -p $self->{pipelineDir}/plugins/$signal");
     chdir "$self->{pipelineDir}/plugins/$signal";
