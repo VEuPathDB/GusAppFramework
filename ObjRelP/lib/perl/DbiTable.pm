@@ -667,7 +667,7 @@ sub getNextID {
   if ($self->idIsSequence()) {
     my $owner = $self->getSchemaNameUpper();
     if (!exists $self->{nextidstmt}) {
-      my $query = "select $owner.".$self->getCapTableName."_SQ.NEXTVAL from DUAL";
+      my $query = "select $self->{oracle_table_name}_SQ.NEXTVAL from DUAL";
       $self->{nextidstmt} = $self->getDbHandle()->prepare($query);
     }
     $self->{nextidstmt}->execute();
