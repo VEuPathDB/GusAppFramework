@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dotsver-constraints.sql                                                                    */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:13:36 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:49:09 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON

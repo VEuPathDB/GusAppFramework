@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-constraints.sql                                                                       */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:12:06 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:45:25 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -395,6 +395,8 @@ alter table @oracle_dots@.MERGESPLIT add constraint MERGESPLIT_FK04 foreign key 
 /* MOTIF */
 alter table @oracle_dots@.MOTIF add constraint MOTIF_FK04 foreign key (EXTERNAL_DATABASE_RELEASE_ID) references @oracle_sres@.EXTERNALDATABASERELEASE (EXTERNAL_DATABASE_RELEASE_ID);
 
+/* MOTIFREJECTIONREASON */
+
 /* NACOMMENT */
 alter table @oracle_dots@.NACOMMENT add constraint NACOMMENT_FK01 foreign key (NA_SEQUENCE_ID) references @oracle_dots@.NASEQUENCEIMP (NA_SEQUENCE_ID);
 
@@ -536,6 +538,9 @@ alter table @oracle_dots@.PROTEINPROTEINCATEGORY add constraint PROTEINPROTEINCA
 alter table @oracle_dots@.PROTEINSYNONYM add constraint PROTEINSYNONYM_FK04 foreign key (PROTEIN_ID) references @oracle_dots@.PROTEIN (PROTEIN_ID);
 alter table @oracle_dots@.PROTEINSYNONYM add constraint PROTEINSYNONYM_FK05 foreign key (REVIEW_STATUS_ID) references @oracle_sres@.REVIEWSTATUS (REVIEW_STATUS_ID);
 
+/* REJECTEDMOTIF */
+alter table @oracle_dots@.REJECTEDMOTIF add constraint REJECTEDMOTIF_FK01 foreign key (MOTIF_REJECTION_REASON_ID) references @oracle_dots@.MOTIFREJECTIONREASON (MOTIF_REJECTION_REASON_ID);
+
 /* REPEATTYPE */
 alter table @oracle_dots@.REPEATTYPE add constraint REPEATTYPE_FK04 foreign key (PARENT_ID) references @oracle_dots@.REPEATTYPE (REPEAT_TYPE_ID);
 alter table @oracle_dots@.REPEATTYPE add constraint REPEATTYPE_FK05 foreign key (EXTERNAL_DATABASE_RELEASE_ID) references @oracle_sres@.EXTERNALDATABASERELEASE (EXTERNAL_DATABASE_RELEASE_ID);
@@ -642,7 +647,7 @@ alter table @oracle_dots@.TRANSLATEDAAFEATSEG add constraint TRANSLATEDAAFEATSEG
 
 
 
-/* 310 non-primary key constraint(s) */
+/* 311 non-primary key constraint(s) */
 
 SPOOL OFF
 SET ECHO OFF

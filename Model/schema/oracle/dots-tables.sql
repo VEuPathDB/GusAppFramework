@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:10:25 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:43:11 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -692,6 +692,7 @@ CREATE TABLE @oracle_dots@.ASSEMBLYSEQUENCESNP (
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
  TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
+
 
 CREATE TABLE @oracle_dots@.ASSEMBLYSNP (
     ASSEMBLY_SNP_ID                    NUMBER(10)                                    NOT NULL,
@@ -2098,6 +2099,24 @@ CREATE TABLE @oracle_dots@.MOTIF (
  TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
+CREATE TABLE @oracle_dots@.MOTIFREJECTIONREASON (
+    MOTIF_REJECTION_REASON_ID          NUMBER(10)                                    NOT NULL,
+    NAME                               VARCHAR2(255)                                 NOT NULL,
+    DESCRIPTION                        VARCHAR2(255)                                 NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_dotsTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
 CREATE TABLE @oracle_dots@.NACOMMENT (
     NA_COMMENT_ID                      NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
@@ -2503,6 +2522,7 @@ CREATE TABLE @oracle_dots@.NASEQUENCEIMP (
  TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
+
 CREATE TABLE @oracle_dots@.NASEQUENCEKEYWORD (
     NA_SEQUENCE_KEYWORD_ID             NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
@@ -2782,7 +2802,7 @@ CREATE TABLE @oracle_dots@.PLASMOMAP (
 
 CREATE TABLE @oracle_dots@.PROJECTLINK (
     PROJECT_LINK_ID                    NUMBER(10)                                    NOT NULL,
-    PROJECT_ID                         NUMBER(3)                                     NOT NULL,
+    PROJECT_ID                         NUMBER(4)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
     ID                                 NUMBER(10)                                    NOT NULL,
     CURRENT_VERSION                    VARCHAR2(4)                                   NULL,
@@ -2945,6 +2965,26 @@ CREATE TABLE @oracle_dots@.PROTEINSYNONYM (
     PROTEIN_ID                         NUMBER(10)                                    NOT NULL,
     SYNONYM_NAME                       VARCHAR2(50)                                  NOT NULL,
     REVIEW_STATUS_ID                   NUMBER(10)                                    NOT NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_dotsTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+CREATE TABLE @oracle_dots@.REJECTEDMOTIF (
+    REJECTED_MOTIF_ID                  NUMBER(10)                                    NOT NULL,
+    SOURCE_ID                          VARCHAR2(32)                                  NOT NULL,
+    EXTERNAL_DATABASE_ID               NUMBER(10)                                    NOT NULL,
+    EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
+    MOTIF_REJECTION_REASON_ID          NUMBER(10)                                    NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
@@ -3514,7 +3554,7 @@ CREATE TABLE @oracle_dots@.SIMILARITY (
     OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
     ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(4)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
  TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
@@ -3544,7 +3584,7 @@ CREATE TABLE @oracle_dots@.SIMILARITYSPAN (
     OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
     ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(4)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
  TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
@@ -3574,7 +3614,7 @@ CREATE TABLE @oracle_dots@.TRANSLATEDAAFEATSEG (
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
-/* 160 table(s) */
+/* 166 table(s) */
 
 SPOOL OFF
 SET ECHO OFF

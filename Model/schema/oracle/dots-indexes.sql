@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:12:06 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:45:25 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -51,6 +51,9 @@ create index @oracle_dots@.AAMOTIFGOTERMRULE_IND01 on @oracle_dots@.AAMOTIFGOTER
 create index @oracle_dots@.AAMOTIFGOTERMRULE_IND02 on @oracle_dots@.AAMOTIFGOTERMRULE (GO_TERM_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AAMOTIFGOTERMRULE_IND03 on @oracle_dots@.AAMOTIFGOTERMRULE (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AAMOTIFGOTERMRULE_IND04 on @oracle_dots@.AAMOTIFGOTERMRULE (REVIEWER_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.AAMOTIFGOTERMRULE_IND05 on @oracle_dots@.AAMOTIFGOTERMRULE (DEFINING)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.AAMOTIFGOTERMRULE_IND06 on @oracle_dots@.AAMOTIFGOTERMRULE (AA_MOTIF_GO_TERM_RULE_ID,AA_MOTIF_GO_TERM_RULE_SET_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.AAMOTIFGOTERMRULE_IND07 on @oracle_dots@.AAMOTIFGOTERMRULE (DEFINING,AA_MOTIF_GO_TERM_RULE_SET_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* AAMOTIFGOTERMRULESET */
 create index @oracle_dots@.AAMOTIFGOTERMRULESET_IND01 on @oracle_dots@.AAMOTIFGOTERMRULESET (AA_SEQUENCE_ID_1)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -86,6 +89,7 @@ create index @oracle_dots@.AASEQUENCEIMP_IND04 on @oracle_dots@.AASEQUENCEIMP (S
 create index @oracle_dots@.AASEQUENCEIMP_IND05 on @oracle_dots@.AASEQUENCEIMP (SUBCLASS_VIEW,SOURCE_ID,EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AASEQUENCEIMP_IND06 on @oracle_dots@.AASEQUENCEIMP (SUBCLASS_VIEW,AA_SEQUENCE_ID,SEQUENCE_VERSION)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.AASEQUENCEIMP_IND02 on @oracle_dots@.AASEQUENCEIMP (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.AASEQUENCEIMP_IND08 on @oracle_dots@.AASEQUENCEIMP (SUBCLASS_VIEW,SOURCE_ID,STRING2)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* AASEQUENCEKEYWORD */
 create index @oracle_dots@.AASEQUENCEKEYWORD_IND01 on @oracle_dots@.AASEQUENCEKEYWORD (KEYWORD_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -269,7 +273,7 @@ create index @oracle_dots@.EVIDENCE_IND01 on @oracle_dots@.EVIDENCE (FACT_ID,FAC
 create index @oracle_dots@.EVIDENCE_IND02 on @oracle_dots@.EVIDENCE (TARGET_ID,TARGET_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.EVIDENCE_IND03 on @oracle_dots@.EVIDENCE (FACT_TABLE_ID,TARGET_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.EVIDENCE_IND04 on @oracle_dots@.EVIDENCE (TARGET_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.EVIDENCE_IND05 on @oracle_dots@.EVIDENCE (FACT_TABLE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+create index @oracle_dots@.EVIDENCE_IND05 on @oracle_dots@.EVIDENCE (FACT_TABLE_ID,TARGET_TABLE_ID,FACT_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* EXONLOCATION */
 create index @oracle_dots@.EXONLOCATION_IND01 on @oracle_dots@.EXONLOCATION (NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -384,13 +388,12 @@ create index @oracle_dots@.GOASSOCIATION_IND02 on @oracle_dots@.GOASSOCIATION (T
 create bitmap index @oracle_dots@.GOASSOCIATION_BM_REVIEWSTATUS on @oracle_dots@.GOASSOCIATION (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* GOASSOCIATIONINSTANCE */
+create index @oracle_dots@.GOASSOCIATIONINSTANCE_IND06 on @oracle_dots@.GOASSOCIATIONINSTANCE (REVIEW_STATUS_ID,IS_DEPRECATED)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.GOASSOCIATIONINSTANCE_IND01 on @oracle_dots@.GOASSOCIATIONINSTANCE (GO_ASSOCIATION_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.GOASSOCIATIONINSTANCE_IND02 on @oracle_dots@.GOASSOCIATIONINSTANCE (GO_ASSOC_INST_LOE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.GOASSOCIATIONINSTANCE_IND03 on @oracle_dots@.GOASSOCIATIONINSTANCE (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
-create index @oracle_dots@.GOASSOCIATIONINSTANCE_IND04 on @oracle_dots@.GOASSOCIATIONINSTANCE (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* GOASSOCIATIONINSTANCELOE */
-
 
 /* GOASSOCINSTEVIDCODE */
 create index @oracle_dots@.GOASSOCINSTEVIDCODE_IND02 on @oracle_dots@.GOASSOCINSTEVIDCODE (GO_ASSOCIATION_INSTANCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -445,6 +448,9 @@ create index @oracle_dots@.MERGESPLIT_IND01 on @oracle_dots@.MERGESPLIT (TABLE_I
 
 /* MOTIF */
 create index @oracle_dots@.MOTIF_IND01 on @oracle_dots@.MOTIF (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+
+/* MOTIFREJECTIONREASON */
+
 
 /* NACOMMENT */
 create index @oracle_dots@.NACOMMENT_IND01 on @oracle_dots@.NACOMMENT (NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -618,6 +624,9 @@ create index @oracle_dots@.PROTEINPROTEINCATEGORY_IND02 on @oracle_dots@.PROTEIN
 create index @oracle_dots@.PROTEINSYNONYM_IND01 on @oracle_dots@.PROTEINSYNONYM (PROTEIN_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.PROTEINSYNONYM_IND02 on @oracle_dots@.PROTEINSYNONYM (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
+/* REJECTEDMOTIF */
+create index @oracle_dots@.REJECTEDMOTIFSOURCEIDX on @oracle_dots@.REJECTEDMOTIF (SOURCE_ID,EXTERNAL_DATABASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
+
 /* REPEATTYPE */
 create index @oracle_dots@.REPEATTYPE_IND01 on @oracle_dots@.REPEATTYPE (PARENT_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.REPEATTYPE_IND02 on @oracle_dots@.REPEATTYPE (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
@@ -735,7 +744,7 @@ create index @oracle_dots@.TRANSLATEDAAFEATSEG_IND01 on @oracle_dots@.TRANSLATED
 
 
 
-/* 386 index(es) */
+/* 391 index(es) */
 
 SPOOL OFF
 SET ECHO OFF

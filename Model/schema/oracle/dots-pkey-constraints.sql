@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-pkey-constraints.sql                                                                  */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:12:06 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:45:25 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -105,6 +105,7 @@ alter table @oracle_dots@.KEYWORD add constraint PK_KEYWORD primary key (KEYWORD
 alter table @oracle_dots@.LIBRARY add constraint PK_LIBRARY primary key (LIBRARY_ID);
 alter table @oracle_dots@.MERGESPLIT add constraint PK_MERGESPLIT primary key (MERGE_SPLIT_ID);
 alter table @oracle_dots@.MOTIF add constraint PK_MOTIF primary key (MOTIF_ID);
+alter table @oracle_dots@.MOTIFREJECTIONREASON add constraint PK_MOTIFREJECTIONREASON primary key (MOTIF_REJECTION_REASON_ID);
 alter table @oracle_dots@.NACOMMENT add constraint PK_NACOMMENT primary key (NA_COMMENT_ID);
 alter table @oracle_dots@.NAENTRY add constraint PK_NAENTRY primary key (NA_ENTRY_ID);
 alter table @oracle_dots@.NAFEATRELATIONSHIPTYPE add constraint PK_NAFEATRELATIONSHIPTYPE primary key (NA_FEAT_RELATIONSHIP_TYPE_ID);
@@ -142,6 +143,7 @@ alter table @oracle_dots@.PROTEINPROPERTY add constraint PK_PROTEINPROPERTY prim
 alter table @oracle_dots@.PROTEINPROPERTYTYPE add constraint PK_PROTEINPROPERTYTYPE primary key (PROTEIN_PROPERTY_TYPE_ID);
 alter table @oracle_dots@.PROTEINPROTEINCATEGORY add constraint PK_PROTEINPROTEINCATEGORY primary key (PROTEIN_PROTEIN_CATEGORY_ID);
 alter table @oracle_dots@.PROTEINSYNONYM add constraint PK_PROTEINSYNONYM primary key (PROTEIN_SYNONYM_ID);
+alter table @oracle_dots@.REJECTEDMOTIF add constraint PK_REJECTEDMOTIF primary key (REJECTED_MOTIF_ID);
 alter table @oracle_dots@.REPEATTYPE add constraint PK_REPEATTYPE primary key (REPEAT_TYPE_ID);
 alter table @oracle_dots@.RHMAP add constraint PK_RHMAP primary key (RH_MAP_ID);
 alter table @oracle_dots@.RHMAPMARKER add constraint PK_RHMAPMARKER primary key (RH_MAP_MARKER_ID);
@@ -172,7 +174,7 @@ alter table @oracle_dots@.SIMILARITYSPAN add constraint PK_SIMILARITYSPAN primar
 alter table @oracle_dots@.TRANSLATEDAAFEATSEG add constraint PK_TRANSLATEDAAFEATSEG primary key (TRANSLATED_AA_FEAT_SEG_ID);
 
 
-/* 160 primary key constraint(s) */
+/* 162 primary key constraint(s) */
 
 SPOOL OFF
 SET ECHO OFF
