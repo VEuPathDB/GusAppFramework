@@ -120,7 +120,6 @@ SQL
 
   # just right
   else {
-    print STDERR "GA $imps->[0]->{ALGORITHM_IMPLEMENTATION_ID}\n";
     $RV = GUS::Model::Core::AlgorithmImplementation
       ->new({
 	     algorithm_implementation_id => $imps->[0]->{ALGORITHM_IMPLEMENTATION_ID}
