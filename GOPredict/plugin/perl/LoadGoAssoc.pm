@@ -50,16 +50,26 @@ sub new {
 	  t=> 'string',
       },
 	
+	 {o=> 'loadSeqsFromDb',
+	  h=> 'Set this to retrieve all sequences that have already been loaded so they will not be duplicated.  Appends loaded sequences to file specified with --id_file',
+	  t=> 'boolean',
+      },
+
 	 {o=> 'loadAgain',
-	  h=> 'Set this to reload a release of External Sequences that have already been loaded',
+	  h=> 'set this to load sequences even if some with the same external database release are already loaded',
 	  t=> 'boolean',
       },
 
 	 {o => 'id_file',
-	  h => 'read and append successfully processed ID here (necessary for crash-recovery)',
+	  h => 'read and append successfully processed ID here.  If --loadSeqsFromDb is also set, it will append loaded sequences to whatever is already in this file.',
 	  t => 'string',
 	  r => 1,
       },
+	 {o => 'increment',
+	  h => 'number of lines in associations to parse in each iteration',
+	  t => 'int',
+      }, 
+	 
 	 {o => 'start_line',
 	  h => 'Line of association file on which to start parsing',
 	  t => 'int',
@@ -123,40 +133,66 @@ sub run {
     my $self = shift;
     
     $self->log("LoadGoAssoc: starting run method" );
-    
-    my $start = $self->getCla->{start_line};
-    my $end = $self->getCla->{end_line};
+    my $globalStart = $self->getCla->{start_line};
+    my $globalEnd = $self->getCla->{end_line};
     my $path = $self->getCla->{file_path};
-    my $parser = CBIL::Bio::GeneAssocParser::Parser->new($path, $start, $end);
+    my $parser;
+
+    my $msg;
+    my $fileName = $self->getCla->{flat_file};    
+    my $increment = $self->getCla->{increment};
+   
+    $self->__validateIncrement();
+
+    my $oneFileMsg = "CBIL:Bio:GeneAssocParser:Parser is loading $fileName in preparation for parsing";
 
     $self->__loadOrgInfo();
 
+    my $currentCounters;
 
-    my $fileName = $self->getCla->{flat_file};
+    if (!($increment)){
+	
+	$parser = CBIL::Bio::GeneAssocParser::Parser->new($path, $globalStart, $globalEnd);
+	
+	if ($fileName){
+	    $self->log($oneFileMsg);
+	    $parser->loadFile($fileName);
+	}
+	else {
+	    my $logMsg = "CBIL:Bio:GeneAssocParser:Parser is loading all gene_association files in ";
+	    $logMsg .= $path;
+	    $self->log($logMsg);
+	    $parser->loadAllFiles();
+	}
+	$parser->parseAllFiles();
+	$currentCounters = $self->loadAssociations($parser);
+    }
+    else{  #parse only one file in increments
+	if ($fileName){
+	    $self->log($oneFileMsg);
+	    for (my $j = $globalStart; $j <= $globalEnd; $j += $increment){ 
+		$parser = CBIL::Bio::GeneAssocParser::Parser->new($path, $j, $j + $increment - 1);
+		$parser->loadFile($fileName);
+		$parser->parseAllFiles();
+		my $returnedCounters = $self->loadAssociations($parser);
+		$currentCounters = $self->__combineResults($currentCounters, $returnedCounters);
+	    }
+	}
+	else {
+	    my $incError = "--increment flag is set but no file is specified to parse. \n ";
+	    $incError .= "Either specify a file or do not parse files incrementally (turn --increment off)";
+	    $self->userError($incError);
+ 	}
+    }
 
-    if ($fileName){
-	$self->log("CBIL:Bio:GeneAssocParser:Parser is loading $fileName in preparation for parsing");
-	$parser->loadFile($fileName);
-    }
-    else {
-	my $msg = "CBIL:Bio:GeneAssocParser:Parser is loading all gene_association files in ";
-	$msg .= $path;
-	$self->log($msg);
-	$parser->loadAllFiles();
-    }
-    $parser->parseAllFiles();
-        
-    my $msg;
-    
-    $msg = $self->loadAssociations($parser);
-    
-     
+    $msg = $self->__createReturnMsg($currentCounters);
     # return value
     return $msg;
 }
 
 # ---------------------------------------------------------------------- #
 # ---------------------------------------------------------------------- #
+
 
 
 sub loadAssociations {
@@ -166,8 +202,7 @@ sub loadAssociations {
 
     my $idFile;
     
-    # get the list of sequences we've already annotated.
-    my $old_seqs = $self->__loadProcessedSequences();
+  
     
     my $claIdFile = $self->getCla->{id_file}; 
     if ($claIdFile){
@@ -194,16 +229,18 @@ sub loadAssociations {
 	my $allEntries = $fileStore->getParsedEntries();
 	
 	my ($organism) = $file =~ /gene_association\.(\w+)$/;
+	my $orgInfo = $self->{orgInfo}->{$organism};
 	
-		
 	$self->__checkDatabaseRelease($organism);
+
+	next if ($self->__checkIfSeqsLoaded($orgInfo, $file));
+
+	# get the list of sequences we've already annotated.
+	my $old_seqs = $self->__loadProcessedSequences($organism);
+		
 	$self->__loadMgiMapIfMouse($organism);
 
 #	open (BIGLOG, ">>logs/pluginLog$organism") || die "pluginLog could not be opened";
-
-	my $orgInfo = $self->{orgInfo}->{$organism};
-	
-	next if ($self->__checkIfSeqsLoaded($orgInfo, $file));
 
 	my $assocMethod = $orgInfo->{assoc_meth};
 	
@@ -281,7 +318,7 @@ sub loadAssociations {
 		
 		#make association for the term itself
 
-		$evidenceCount += 
+		$evidenceCount+= 
 		    $self->__makeAssociation( $entry, $tableId, $extSeqGusId, 
 					      $goTermGusId, $evdIds, $evidenceMap, 
 					      $organism, 1);
@@ -345,14 +382,15 @@ sub loadAssociations {
     
     
     # return value
-    my $returnMsg = "loaded: ". join( ', ',
-				      "terms=$termCount",
-				      "ancestors=$ancestorCount",
-				      "old=$oldCount",
-				      "unknownGOTerm=$unknownCount",
-				      "and unknownExternalSeq=$skipCount"
-				      );
-    return $returnMsg;
+    my $returnCounter;
+    $returnCounter->{term_count} = $termCount;
+    $returnCounter->{ancestor_count} = $ancestorCount;
+    $returnCounter->{skip_count} = $skipCount;
+    $returnCounter->{old_count} = $oldCount;
+    $returnCounter->{unknown_count} = $unknownCount;
+    $returnCounter->{evidence_count} = $evidenceCount;
+
+    return $returnCounter;
 }
 
 
@@ -541,22 +579,45 @@ sub __getSequenceIds {
 
 #load sequences that have already had associations made for them in this version
 sub __loadProcessedSequences {
-    my $self = shift;
+    my ($self, $organism) = @_;
     
-    my $old_seqs = {};
-    
-    my $fh = FileHandle->new( '<'. $self->getCla ->{ id_file } );
-    if ( $fh ) {
-	while ( <$fh> ) {
-	    chomp; 
-	    $old_seqs->{ $_ } = 1 
-	    }
-	$fh->close;
+    my $orgIdCol = $self->{orgInfo}->{$organism}->{id_col};
+    if ($orgIdCol =~ /upper\((.*)\)/){
+	$orgIdCol = $1;
     }
+    my $old_seqs = {};
+    if ($self->getCla->{loadSeqsFromDb}){
+	my $dbList = '( '. join( ', ', @{ $self->{orgInfo}->{$organism}->{ db_id } } ). ' )';
+	my $goDb = $self->getCla->{go_ext_db_rel_id};
+		
+	my $queryHandle = $self->getQueryHandle();
+	my $sql = "select eas." . "$orgIdCol ";
+	$sql .= "from DoTS.GOAssociation ga, DoTS.ExternalAASequence eas, DoTS.GOAssociationInstance gai ";
+	$sql .= "where eas.aa_sequence_id = ga.row_id and ga.go_association_id = gai.go_association_id ";
+	$sql .= "and eas.external_database_release_id in $dbList and gai.external_database_release_id = $goDb ";
+	$sql .= "and ga.defining = 1";
+	
+	my $sth = $queryHandle->prepareAndExecute($sql);
+	my $counter = 0;
+	my $writeFh = FileHandle->new( '>>'. $self->getCla ->{ id_file } );
+	while (my $oldId = $sth->fetchrow_array()){
+	    print $writeFh $oldId . "\n";
+	}
+	$writeFh->close();
+    }	
+
+    my $readFh = FileHandle->new( '<'. $self->getCla ->{ id_file } );
+    if ( $readFh ) {
+	while ( <$readFh>){
+	    chomp;
+	    $old_seqs->{$_} = 1;   #reads seqs just written from db and ones already in file
+	}
+    }
+    $readFh->close();
     
     # return the set
-    return $old_seqs
-    }
+    return $old_seqs;
+}
 
 # ......................................................................
 
@@ -988,6 +1049,58 @@ sub __loadOrgInfo{
     $self->__loadOrgDbs();
 }
 
+sub __validateIncrement{
+    
+    my ($self) = @_;
+    my $start = $self->getCla->{start_line};
+    my $end = $self->getCla->{end_line};
+    my $increment = $self->getCla->{increment};
+
+    if ($increment){
+	if (!($start) || !($end)){
+	    my $msg = "--increment flag set but no start or end specified. \n";
+	    $msg .= "Please specify --start_line and --end_line if parsing file incrementally,\n";
+	    $msg .= "to give plugin indication of how many increments to iterate over";
+	    
+	    $self->userError($msg);
+	}
+    }
+
+}
+
+sub __combineResults{
+    my ($self, $currentCounter, $counterToJoin) = @_;
+    my $newCounter;
+    $newCounter->{term_count} = $currentCounter->{term_count} + $counterToJoin->{term_count};
+    $newCounter->{ancestor_count} = $currentCounter->{ancestor_count} + $counterToJoin->{ancestor_count};
+    $newCounter->{skip_count} = $currentCounter->{skip_count} + $counterToJoin->{skip_count};
+    $newCounter->{old_count} = $currentCounter->{old_count} + $counterToJoin->{old_count};
+    $newCounter->{unknown_count} = $currentCounter->{unknown_count} + $counterToJoin->{unknown_count};
+    $newCounter->{evidence_count} = $currentCounter->{evidence_count} + $counterToJoin->{evidence_count};
+
+    return $newCounter;
+}
+
+sub __createReturnMsg{
+    my ($self, $counters) = @_;
+    my $msg;
+    my $termCount = $counters->{term_count};
+    my $ancestorCount = $counters->{ancestor_count};
+    my $skipCount = $counters->{skip_count};
+    my $oldCount = $counters->{old_count};
+    my $unknownCount = $counters->{unknown_count};
+    my $evidenceCount =  $counters->{evidence_count};
+    my $returnMsg = "loaded: ". join( ', ',
+				      "terms=$termCount",
+				      "ancestors=$ancestorCount",
+				      "old=$oldCount",
+				      "unknownGOTerm=$unknownCount",
+				      "unknownExternalSeq=$skipCount",
+				      "on $evidenceCount evidence entries"
+				      );
+}
+
+
 #change entry date from what is in association file to something to go in Dots.GoAssociation table
 sub __getEntryDate{
     my ($self, $date) = @_;
@@ -1026,6 +1139,7 @@ sub __getEvidenceReviewStatusMap {
     
     return $evidenceMap;
 }
+
 
 
 
