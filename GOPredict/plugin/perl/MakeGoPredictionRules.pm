@@ -204,12 +204,12 @@ sub new {
        r => 1,
    },
      
-#     { o => 'gus_nobj',
-#       h => 'number of GSU objects to allow',
-#       d => 500000,
-#       t => 'int',
-#       r => 1,
-#   },
+     { o => 'gus_nobj',
+       h => 'number of GSU objects to allow',
+       d => 500000,
+       t => 'int',
+       r => 1,
+   },
         
      ];
      
@@ -232,7 +232,7 @@ sub isReadOnly { 0 }
 # ---------------------------------------------------------------------- #
 # ---------------------------------------------------------------------- #
 
-sub Run {
+sub run {
     my $self = shift;
 
     #save this part for later
@@ -241,6 +241,8 @@ sub Run {
 #	$C->{ self_inv }->setMaximumNumberOfObjects( $C->{ cla }->{ gus_nobj } );
 #    }
     
+    $self->setMaximumNumberOfObjects($self->getCla->{gus_nobj});
+
 
     $self->__verifySliding();
     
@@ -295,9 +297,11 @@ sub Run {
 
 sub __verifySliding{
     my ($self) = @_;
-    if (!($self->getCla->{sliding} ne "most-generous")){
+    if (($self->getCla->{sliding} ne "most-generous")){
+	
 	my $msg = "The only supported threshold type is \"most-generous\"\n";
-	$msg .= "Please set the --sliding command line argument to that value\n"; 
+	$msg .= "Please set the --sliding command line argument to that value\n";
+	$msg .= "(you entered: " . $self->getCla->{sliding} . ")\n";
 	$self->userError($msg);
     }
 }
@@ -371,7 +375,7 @@ sub GetGoFunctionGraph {
 
      my $sql = "
 	select f.go_term_id, h.parent_term_id, f.minimum_level, f.maximum_level, f.go_id
-     from SRes.GOTerm f, SRes.GORelationship h, 
+     from SRes.GOTerm f, SRes.GORelationship h 
      where h.child_term_id = f.go_term_id
      and f.external_database_release_id = $goDbRelId
      
@@ -589,7 +593,7 @@ sub GetSimilarityDictionary {
     
     my $sql_filter = $self->GetSimilarityFilterSQL();
     
-    my $motifTableId = $self->GetGusTableId("DoTS", "MotifAASequence");
+    my $motifTableId = $self->getGusTableId("DoTS", "MotifAASequence");
 
     # try filter proteins from each
     foreach my $id_table ( keys %$aaFilter ) {
@@ -624,7 +628,7 @@ sub GetSimilarityDictionary {
 				  ),
 			    "\n where",
 			    join( "\n  and ",
-				  's.subject_table_id = $motifTableId',
+				  's.subject_table_id = ' . $motifTableId,
 				  's.query_table_id  =  '. $id_table,
 				  $sql_filter,
 				  's.query_id in ('.  join( ', ', @id_aa_seq[ $i .. $j ] ). ')',
@@ -640,23 +644,35 @@ sub GetSimilarityDictionary {
 	    if (! defined $self->getCla->{ no_csc } ){
 		$sql = $sql . " and m.number_of_contained_sequences >= ". $self->getCla->{ pd_n };
 	    }
-	    
+	    #figure out better way to do this
 	    my $sth = $queryHandle->prepareAndExecute($sql);
-	    while ( my $hash = $sth->fetchrow_hashref(NAME_lc=>1) ) {
+	    while ( my ($similarityId, $subjectId, $queryId, $queryTableId, $pValueMant, $pValueExp, $numberPositive, $totalMatchLength, $description, $name) = $sth->fetchrow_array() ) {
 		
-		$hash->{pValue} = $hash->{pvalue_mant} * 10**$hash->{pvalue_exp};
+		my $similarityHash;
+		$similarityHash->{ similarity_id } = $similarityId;
+		$similarityHash->{ subject_id } = $subjectId;
+		$similarityHash->{ query_id} = $queryId;
+		$similarityHash->{ query_table_id} = $queryTableId;
+		$similarityHash->{ pvalue_mant} = $pValueMant;
+		$similarityHash->{ pvalue_exp} = $pValueExp;
+		$similarityHash->{ number_positive} = $numberPositive;
+		$similarityHash->{ total_match_length} = $totalMatchLength;
+		$similarityHash->{ description } = $description;
+		$similarityHash->{ name} = $name;
+		
+		$similarityHash->{pValue} = $similarityHash->{pvalue_mant} * 10**$similarityHash->{pvalue_exp};
 		
 		if ( defined $self->getCla->{ sliding } ) {
 		    if ( defined $self->getCla->{ sm_pv } ) {
-			$hash->{ threshold } = $hash->{ pValue }
+			$similarityHash->{ threshold } = $similarityHash->{ pValue }
 		    }
 		    elsif ( defined $self->getCla->{ sm_ps } ) {
-			$hash->{ threshold } =
-			    $hash->{ number_positive } / $hash->{ total_match_length };
+			$similarityHash->{ threshold } =
+			    $similarityHash->{ number_positive } / $similarityHash->{ total_match_length };
 		    }
 		}
 		
-		push( @{ $rv->{ $hash->{ subject_id } } }, $hash );
+		push( @{ $rv->{ $similarityHash->{ subject_id } } }, $similarityHash );
 		
 	    }
 	    $sth->finish();
