@@ -59,7 +59,7 @@ sub new {
 
 $| = 1;
 
-sub Run {
+sub run {
 
   my $self   = shift;
 
