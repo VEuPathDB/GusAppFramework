@@ -1439,8 +1439,6 @@ Make sure that the F<.gus.properties> file of the user contains the correct logi
 
 This configuration file tells the plug-in how to map table/view attributes to columns in the data file. Here is a detailed description of the format:
 
-You should save this file in the CVS repository, in the directory $PROJECT_HOME/RAD/DataLoad/config (the name of this file, stripped of its path, is stored by the ga as an algorithm parameter).
-
 * This should be a tab-delimited text file, with 2 columns, named: "Table.attribute", "value or header" The order and case of these columns is important, and it is recommended to follow the template for the sake of consistency.
 
 * Lines which start with "#" are ignored (use this for comments).
