@@ -11,16 +11,11 @@ import java.sql.*;
 import oracle.jdbc.driver.*;
 import oracle.sql.*; 
 
-import org.biojava.bio.*;
-import org.biojava.bio.seq.*;
-import org.biojava.bio.seq.io.*;
-import org.biojava.bio.symbol.*;
-
 /**
  * JDBCDatabaseConnection.java
  *
- * An implementation of DatabaseConnectionI that connects directly to a GUS
- * database instance and uses JDBC to retrieve and submit objects.
+ * An implementation of DatabaseConnectionI that connects directly to a 
+ * GUS database instance and uses JDBC to retrieve and submit objects.
  *
  * @author Sharon Diskin, Dave Barkan, Jonathan Crabtree
  * @version $Revision$ $Date$ $Author$
@@ -28,37 +23,43 @@ import org.biojava.bio.symbol.*;
 public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
     // ------------------------------------------------------------------
+    // Static variables
+    // ------------------------------------------------------------------
+
+    // JC: temporary
+    //
+    protected static boolean DEBUG = true;
+
+    // ------------------------------------------------------------------
     // Instance variables
     // ------------------------------------------------------------------
 
     /**
-     * JDBC Connection.
+     * JDBC connection
      */
-    private Connection conn = null;    // JC: think about using connection pools to support multithreaded apps.
+    private Connection conn = null;  // JC: think about using connection pools to support multithreaded apps.
 
-    /*
-     * User data
-     */
-    private String user;                     
-    private String password;
-    
-    /**
-     * Cache
-     */
-    private GUSObjectCache cache;
+    private String jdbcUrl;
+    private String jdbcUser;
+    private String jdbcPassword;
 
     /**
-     * Default values for standard attributes (e.g., group_id, user_id, etc.)
-     */ 
-    private Hashtable defaults;
+     * Username of current GUS user
+     */
+    private String gusUser;
 
     /**
-     * Version of SQLutils appropriate for the current database.
+     * Core.UserInfo.user_id that corresponds to <code>gusUse</code>
+     */
+    private long gusUserId;
+
+    /**
+     * Version of SQLutils compatible with the database referenced by <code>jdbcUrl</code>
      */
     private SQLutilsI sqlUtils;
 
     // JC: this should go in sqlUtils
-    private int maxSQLBuffer = 250; //the maximum number of values to put in an SQL IN clause
+    //    private int maxSQLBuffer = 250; //the maximum number of values to put in an SQL IN clause
 
     // JC: There were a bunch of undocumented global attributes here that were not being used.
     //     It's not clear what all of them are:
@@ -77,23 +78,20 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     /**
      * Constructor.
      *
-     * @param jdbcUrl
-     * @param dbUser
-     * @param dbPassword
+     * @param utils         SQLutils object that's compatible with the database being used.
+     * @param jdbcUrl       JDBC URL for a GUS-compliant database.
+     * @param jdbcUser      Username with which to log into the database.
+     * @param jdbcPassword  Password for <code>dbUser</code>
      */
-    public GUS_JDBC_Server(String jdbcUrl, String dbUser, String dbPassword) {
-        this.defaults = new Hashtable();
-        this.setDefaultValues();
-	this.cache = new GUSObjectCache();
-	this.sqlUtils = new OracleSQLutils();  // JC: oracle-specific
+    public JDBCDatabaseConnection(SQLutilsI utils, String jdbcUrl, String jdbcUser, String jdbcPassword) {
+	this.sqlUtils = utils;
+	this.jdbcUrl = jdbcUrl;
+	this.jdbcUser = jdbcUser;
+	this.jdbcPassword = jdbcPassword;
 
         // Establish the connection that will be used thereafter.
         try {
-	    // JC: oracle-specific
-
-            // Load the Oracle JDBC driver
-            DriverManager.registerDriver(new oracle.jdbc.driver.OracleDriver());
-            conn = DriverManager.getConnection(jdbcUrl, dbUser, dbPassword);
+            conn = DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword);
         } 
 	catch (Throwable t) { 
 	    t.printStackTrace(); 
@@ -104,187 +102,297 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     // Public methods
     // ------------------------------------------------------------------
 
-    /**
-     * Close the underlying JDBC connection and free any resources
-     * associated with this object.
-     */
-    public void closeConnection() {
-        try {
-            conn.close();
-            if (cache != null){ cache.clear(); }
-	    this.defaults = null;
-	    this.cache = null;
-        } catch (SQLException e) {
-	    e.printStackTrace(); 
-	}
-    }
+    public SQLutilsI getSqlUtils() { return sqlUtils; }
 
-    /**
-     * Checks the GUS_JDBC object cache for the object with the given
-     * primary key and returns it; returns null if object is not in cache
-     */
-    public GUSRow checkCache(String c_owner, String c_table, long key){
-	
- 	System.out.println ("checking cache for " + c_owner + "." + c_table + "_" + key);
-	GUSRow newObj = null;
-	try {
-	    newObj = cache.get(c_owner, c_table, key);
-	}
-	catch (Exception e){
-	    e.printStackTrace();
-	    System.out.println(e.getMessage());
-	}
-	if (newObj == null){ System.out.println ("this object was not in the cache"); }
-	return newObj;
-    }
-
-    /**
-     * createObject: Creates and returns a new instance of the specified class.
-     */
-    public GUSRow createObject(String table_owner, String table_name) 
-        throws ClassNotFoundException, 
-               InstantiationException, IllegalAccessException, NullPointerException,
-	       NoSuchMethodException, InvocationTargetException
+    public long setCurrentUser(String user, String password) 
     {
-        Class c = Class.forName(GUSRow.MODEL_PACKAGE + "." + table_owner + "." + table_name);
-	
-	GUSRow newObj = (GUSRow)c.newInstance();
-	return (GUSRow)newObj;
-    }
+	long newUserId = -1;
 
-    
-    public void initObject(GUSRow gusObj, ResultSet res) {
-
-	try{
-	    gusObj.setAttributesFromResultSet(res);
-	}
-	catch (Exception e){
-	    System.out.println (e.getMessage());
-	    e.printStackTrace();
-	}
-    }
-	
-    /**
-     * submitObject: Submits the given object to the database. If object has 
-     * any children, will submit them as well (if they are updated...)
-     */
-  
-
-
-    public int checkValidUser(String username, String password){
-        int userid = 0;
-        try{
+        try {
             Statement stmt = conn.createStatement();
-            String sql = makeCheckUserSQL(username, password);
+            String sql = makeCheckUserSQL(user, password);
             ResultSet res = stmt.executeQuery(sql);
-            while(res.next()){
-                userid = res.getInt("user_id");
+	    
+	    // JC: ignores multiple rows
+	    //
+            while (res.next()) {
+                newUserId = res.getLong("user_id");
             }
+
             res.close();
             stmt.close();
-        }catch (SQLException e){
-            // throw invalid user exception...
+        } 
+	catch (SQLException e) {
             e.printStackTrace(); 
         }
-     
-        return userid;
-    }
 
-    public GUSRow getObject(String table_owner, String table_name, long pk) {
-
-        // check the cache (once it is implemented)
-        // if not in cache, retrieve from db - here just always retrieves from DB...
-	GUSRow newObj = checkCache(table_owner, table_name, pk);
-	if (newObj == null){
-
-	    GUSTable tempTable = GUSTable.getTableByName(table_owner, table_name);
-	    String pk_name = tempTable.getPrimaryKeyName();
-	    newObj = getGeneralObject (table_owner, table_name, pk_name, pk); 
+	if (newUserId >= 0) {
+	    this.gusUserId = newUserId;
 	}
-	
-	//put in cache
-	
-        return newObj;
-    }
-    
-    public SymbolList getSubSequence(Long start, Long end, long pk) {
 
+        return newUserId;
+    }
+
+    public long getCurrentUserId() { return this.gusUserId; }
+
+    public GUSRow retrieveObject(String owner, String tname, long pk, String clobAtt, Long start, Long end) 
+	throws GUSObjectNotUniqueException 
+    {
+	GUSTable table = GUSTable.getTableByName(owner, tname);
+	String pkName = table.getPrimaryKeyName();
+	GUSRow obj = null;
+	int numReturned = 0;
 	
-	String table_owner = "DoTS";
-	String table_name = "NASequence";
-	GUSTable tempTable = GUSTable.getTableByName(table_owner, table_name);
-	String pk_name = tempTable.getPrimaryKeyName();
-	SymbolList dna = null;
-	FiniteAlphabet dnaAlphabet = DNATools.getDNA();
-	
-	try{
+	try {
+
+	    // JC: In Oracle it's OK to do a 'select *' even if <code>clobAtt != null</code>
+	    // because the CLOB value itself won't be returned, only a pointer to the CLOB
+	    // value.  However, I don't think there's any guarantee that other JDBC
+	    // implementations will behave the same way.  The safe thing to do is to remove
+	    // the column completely from the select statement.
+	    //
 	    Statement stmt = conn.createStatement();
-	    String sql = "select * from " + table_owner + "." + table_name  + " where " + pk_name + " = " + pk;
-	    
-	    System.out.println("JDBC:  Executing " + sql);
+	    String sql = "select * from " + owner + "." + table  + " where " + pkName + " = " + pk;
 	    ResultSet res = stmt.executeQuery(sql);
-	    System.out.println ("query executed");
-	    while(res.next()){
-		
-		Clob sequence = res.getClob("sequence");		    
-		if ((start == null) && (end == null)){
-		    //retrieve whole sequence
-		    dna = DNATools.createDNA(sequence.getSubString((long)1, (int)sequence.length()));
-		}
-		else {
-		    System.out.println ("retrieving specified subsequence");
-		    dna = DNATools.createDNA(sequence.getSubString(start.longValue(), 
-								   (int) (end.longValue() - start.longValue() + 1)));
-		    //retrieve specified part of subsequence
-		}
+
+	    while (res.next()) {
+		++numReturned;
+		obj = GUSRow.createObject(owner, tname);
+		obj.setAttributesFromResultSet(res);
 	    }
+	    
 	    res.close();
 	    stmt.close();
-	}catch (Exception e){
-	    e.getMessage();
+	} catch (Exception e) {
+	    System.err.println(e.getMessage());
 	    e.printStackTrace(); 
 	}
-	return dna;
-    }
- 
-    /**
-     *Returns a vector of GUSRows retrieve by the given query
-     */
-    Vector getGusRowsFromQuery(String query, String table_owner, String table_name)
-    {
-	//dtb: for now passing in owner and name but maybe later figure out a way to avoid this?
-	//might make method more flexible
+
+	if (numReturned != 1) {
+	    throw new GUSObjectNotUniqueException("Found " + numReturned + " rows in " + owner + "." + 
+						  tname + " with id=" + pk);
+	}
+
+	// Store cached CLOB value in the object
+	//
+	if (clobAtt != null) {
+	    String clobSubSeq = getSubStringFromClob(owner, tname, pk, clobAtt, start, end);
+
+	    // JC: need generic CLOB caching functionality in the GUSRow subclasses
+	    
+	}
 	
-	Vector gusObjs = new Vector();
-	try{
+        return obj;
+    }
+
+    public Vector retrieveObjectsFromQuery(String owner, String tname, String query)
+    {
+	Vector objs = new Vector();
+
+	System.err.println("query = " + query);
+
+	try {
 	    Statement stmt = conn.createStatement();
 	    ResultSet res = stmt.executeQuery(query);
-	    while(res.next()){
-		
-		GUSRow gusObj = createObject(table_owner, table_name);
-		initObject(gusObj, res);
-		gusObjs.add(gusObj);
+
+	    while(res.next()) {
+		GUSRow obj = GUSRow.createObject(owner, tname);
+		System.err.println("created object = " + obj);
+		obj.setAttributesFromResultSet(res);
+		System.err.println("after setAtts = " + obj);
+		objs.add(obj);
 	    }
 	    res.close();
 	    stmt.close();
-	}catch (Exception e){
-	    e.printStackTrace(); 
-	    System.err.println(e.getMessage());
 	}
-	// put the object in the cache!!
-        return gusObjs;
+	catch (Exception e) {
+	    System.err.println(e.getMessage());
+	    e.printStackTrace(); 
+	}
+        return objs;
     }
 
-    
+    // JC: work remains to be done here
+    // Note: if the submit fails due to an SQL exception we should report the 
+    // exception (either directly or as a string) in the SubmitResult object.
+
+    public SubmitResult submitObject(GUSRow obj)
+    {
+	// This should all be wrapped in a single transaction so can be 
+	// rolled back if need be.  Here we assume a simple update/delete.
+
+	Statement stmt = null;
+	
+	// Insert, update, or delete statement
+	//
+	String sql = null;
+	
+	boolean isInsert = false;
+	boolean isDelete = false;
+	boolean isUpdate = false;
+	
+	GUSTable table = obj.getTable();
+	String owner = table.getOwnerName();
+	String tname = table.getTableName();
+	String pkName = table.getPrimaryKeyName();
+	    
+	// New primary key value for an insert
+	int nextId = -1;
+	    
+	// New primary key values for insert
+	Vector pkeys = null;
+
+	try {
+	    stmt = conn.createStatement();
+	    
+	    // Should first check if have write permissions!...SJD
+	    
+	    // JC: Can do so using getCurrentUserId() although we should probably 
+	    // change this method to getCurrentUserInfo() so we can check the group 
+	    // permissions too
+	    
+	    // INSERT
+	    //
+	    if (obj.isNew() || !obj.isDeleted()) {
+		isInsert = true;
+		
+		// Query database for new primary key value
+		
+		// JC: There are many places where the code could be sped up; 
+		// caching the Statement for the following is one example.
+		
+		String idSql = sqlUtils.makeNewIdSQL(table);
+		ResultSet rs1 = null;
+		
+		rs1 = stmt.executeQuery(idSql);
+		if (rs1.next()) {
+		    nextId = rs1.getInt(1);
+		}
+	    
+		if (nextId < 0) {
+		    return new SubmitResult(false,0,0,0,null); // submit failed
+		}
+		
+		sql = sqlUtils.makeInsertSQL(owner, tname, pkName, nextId, obj.getCurrentAttVals());
+	    }    
+	    
+	    // DELETE
+	    //
+	    else if (obj.isDeleted()) {
+		isDelete = true;
+		
+		// JC: This is more complicated than you think; if a new object has
+		// been marked for deletion then our first task must be to determine
+		// *which* object in the database is to be deleted (if a unique object
+		// can be determined without the primary key value.)  The simplest 
+		// way to do this is to preface the deletion with a call to retrieveObject.
+		// However, for now we'll keep it simple and fail if the object to be
+		// deleted is new.
+		
+		if (obj.isNew()) {
+		    return new SubmitResult(false,0,0,0,null);  // submit failed
+		}
+		
+		sql = sqlUtils.makeDeleteSQL(owner, tname, pkName, obj.getPrimaryKeyValue());
+	    }
+	    
+	    // UPDATE
+	    //
+	    else if (obj.hasChangedAtts()) {
+		isUpdate = true;
+		
+		// JC: As above we'll keep things simple for now by requiring that an
+		// object first be retrieved from the database before it can be updated.
+		
+		if (obj.isNew()) {
+		    return new SubmitResult(false,0,0,0,null);  // submit failed
+		}
+		
+		sql = sqlUtils.makeUpdateSQL(owner, tname, pkName, obj.getPrimaryKeyValue(), obj.getCurrentAttVals(), obj.getInitialAttVals());
+	    }
+	    
+	    // NO CHANGE
+	    //
+	    else {
+		return new SubmitResult(true,0,0,0,null);  // submit succeeded; no change needed
+	    }
+	    
+	    if (sql == null) { 
+		return new SubmitResult(false,0,0,0,null);  // submit failed
+	    }
+	} catch (SQLException sqle) {
+	    // REMEMBER TO ROLLBACK !! SJD
+	    return new SubmitResult(false,0,0,0,null); // submit failed
+	}
+	    
+	// SJD Still to add...version the row if versionable!!
+	// JC: applies to both updates and deletes
+	
+	boolean success = false;
+	int rowsInserted = 0;
+	int rowsUpdated = 0;
+	int rowsDeleted = 0;
+	int rowsAffected = 0;
+	
+	try {
+	    rowsAffected += stmt.executeUpdate(sql);
+	    stmt.close();
+	    success = true;
+	    
+	    if (isInsert) {
+		rowsInserted += rowsAffected;
+		pkeys = new Vector();
+		pkeys.addElement(new Long(nextId));
+	    } else if (isUpdate) {
+		rowsUpdated += rowsAffected;
+	    } else if (isDelete) {
+		rowsDeleted += rowsAffected;
+	    }
+	    
+	} catch (SQLException sqle) {
+	    // REMEMBER TO ROLLBACK !! SJD
+	    return new SubmitResult(false,0,0,0,null); // submit failed
+	}
+
+	return new SubmitResult(success, rowsInserted, rowsUpdated, rowsDeleted, pkeys);
+    }
+
+    public GUSRow retrieveParent(GUSRow child, String owner, String tname, String childAtt)
+	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
+    {
+	GUSRow parent = null;
+
+	// First check that such a relationship does in fact exist
+	
+	GUSTable childTable = child.getTable();
+	GUSTableRelation rel = childTable.getParentRelation(owner, tname, childAtt);
+
+	if (rel == null) { 
+	    throw new GUSNoSuchRelationException("No relation between " + childTable + "." + childAtt + 
+						 " and " + owner + "." + tname);
+	}
+
+	Long parentPk = (Long)child.get(childAtt);
+	
+	if (parentPk != null) {
+	    parent = this.retrieveObject(owner, tname, parentPk.longValue(), null, null, null);
+	}
+
+	return parent;
+    }
+
+    // JC: The following code is an optimization and needs some work.  In
+    // particular the information about whether the database/user is allowed
+    // to create temp. tables (and what SQL should be used for doing so)
+    // should probably be encapsulated in the SQLutils object.
+
     //to fix in this method after nye:
     //better name for temp table, configurable as whether to create temp table (not everyone has privileges)
     //fix query where exception being thrown
 
-    //given a vector of gusRows, gets the specified parent GUSRow for each child in the vector and adds
-    //it to the the child's 'parent' table
-    public void getParentsForAllObjects(Vector childObjects, String parentTableOwner, String parentTableName, String foreignKey, 
-					boolean hasSequence) {
-	
+    /*
+    public GUSRow[] retrieveParentsForAllObjects(Vector children, String parentOwner, String parentTable, String childAtt) 
+    {
 	Hashtable parentHash = new Hashtable();
 	GUSRow thisChild = null;
 	int childSize = childObjects.size();
@@ -302,17 +410,12 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    //set autocommit false so the temptable isn't automatically added to db
 	    conn.setAutoCommit(false);
 	    	    
-	    /*Statement dropone = conn.createStatement();
-	      dropone.executeUpdate("Drop TABLE TempChild");
-	      dropone.close();
-	    */
 	    //Create Temporary table to store the child primary keys and their parents foreign keys
 	    String tempTableString = "CREATE GLOBAL TEMPORARY TABLE TempChild (" + 
 		childPKName + " INTEGER, " + 
 		childFKName + " INTEGER)";
 	    
 	    System.out.println ("JDBC: submitting query " + tempTableString);
-	    
 	
 	    Statement tempTableStatement = conn.createStatement();
 	    tempTableStatement.executeUpdate(tempTableString);
@@ -431,397 +534,154 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    }
 	}
     }
-  
+    */
 
-    /**
-     *Retrieve the given NASequence.  
-     * @param cacheSequence set to true to cache the raw sequence data 
-     *                      in the NASequence GUSRow object
-     * @param subSeqStart   If not null, the starting position of the sequence to retrieve
-     *                      If null, retrieve the whole sequence
-     * @param subSeqEnd     If not null, the end position of the sequence to retrieve
-     */
-    
-    public GUSRow getGUSRow(String table_owner, String table_name, long pk, boolean cacheSequence, Long subSeqStart, Long subSeqEnd) {
-	//for now does all the work by itself
-	//later try to use getGeneralObject?
-	
-	GUSRow newSeq = (GUSRow)checkCache(table_owner, table_name, pk);
-	if (newSeq == null){
-	    GUSTable tempTable = GUSTable.getTableByName(table_owner, table_name);
-	    String pk_name = tempTable.getPrimaryKeyName();
-	    
-	    try{
-		Statement stmt = conn.createStatement();
-		
-		String sql = "select * from " + table_owner + "." + table_name  + " where " + pk_name + " = " + pk; 
-		
-		System.out.println("JDBC:  Executing " + sql);
-		ResultSet res = stmt.executeQuery(sql);
-		
-		while(res.next()){
+    // JC: For now, here's a simple (i.e., totally non-optimized) version of the method
 
-		    newSeq = (GUSRow)createObject(table_owner, table_name);
-		    
-		    Clob longSeq = res.getClob("sequence");    
-		    if ((subSeqStart == null) && (subSeqEnd == null)){
+    public GUSRow[] retrieveParentsForAllObjects(Vector children, String parentOwner, String parentTable, String childAtt) 
+	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
+    {
+	int nChildren = children.size();
 
-			if (cacheSequence == true){
-			    //	    newSeq.setBounds(new Long(1), new Long(longSeq.length())); //for now
-			    //	    newSeq.setCache(longSeq);
-			}
-			else{
-//			    newSeq.setBounds(new Long(1), new Long(longSeq.length())); //for now
-			    //  System.out.println("JDBC: calling setbounds where cache is false and values null");
-			}
-		    }
-		    else {
-			//	newSeq.setBounds(subSeqStart, subSeqEnd);
-			//			newSeq.setCache(longSeq);
-			
-			initObject(newSeq, res);
-		
-			/*	if  (newSeq instanceof cbil.gus.Objects.GUS30.DoTS.VirtualSequence){
-			    
-			    String blatAlignmentQuery = sqlUtils.makeBlatAlignmentQuery(pk, subSeqStart, subSeqEnd);
-			    Vector myAlignments = getGusRowsFromQuery(blatAlignmentQuery, "DoTS", "BLATAlignment");
-			    if (myAlignments.size() > 0){
-				getParentsForAllObjects(myAlignments, "DoTS", "Assembly", "query_na_sequence_id", true);
-			     }
-			    			    
-			    getParentsForAllObjects(myAlignments, "DoTS", "BLATAlignmentQuality", "blat_alignment_quality_id", false);
-			    for (int i = 0; i < myAlignments.size(); ++i) {
-				newSeq.addChild((GUSRow)myAlignments.elementAt(i));
-			    }
-			    }*/
-		    }
-		    
-		    
-		}
-		res.close();
-		stmt.close();
-	    }catch (Exception e){
-		e.getMessage();
-		e.printStackTrace(); 
-	    }
+	GUSRow parents[] = new GUSRow[nChildren];
+
+	for (int i = 0;i < nChildren;++i) {
+	    GUSRow child = (GUSRow)children.elementAt(i);
+	    parents[i] = retrieveParent(child, parentOwner, parentTable, childAtt);
 	}
-	// put the object in the cache
-	return newSeq;
+
+	return parents;
+    }
+
+    public GUSRow retrieveChild(GUSRow parent, String owner, String tname, String childAtt)
+	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
+    {
+	Vector kids = retrieveChildren_aux(parent, owner, tname, childAtt);
+	int nKids = (kids == null) ? 0 : kids.size();
+	if (nKids != 1) {
+	    throw new GUSObjectNotUniqueException("Found " + nKids + " rows in " + owner + "." + tname +
+						  " where " + childAtt + " references " + parent);
+	}
+	return (GUSRow)(kids.elementAt(0));
     }
     
-    /**
-     *Performs simple retrieve query on a primary or foreign key column..
-     *Used by getObject, getChild, getParent, etc.
-     */
-    public GUSRow getGeneralObject (String owner, String table, String key_column_name, long key_number) {
-	GUSRow gusObj = null;
-	
-	try{
-	    Statement stmt = conn.createStatement();
+    public Vector retrieveChildren(GUSRow parent, String owner, String tname, String childAtt)
+	throws GUSNoSuchRelationException
+    {
+	try {
+	    return retrieveChildren_aux(parent, owner, tname, childAtt);
+	} catch (GUSObjectNotUniqueException nue) {
 	    
-	    String sql = "select * from " +owner + "." + table  + " where " + key_column_name + " = " + key_number; 
-	    
-	    System.out.println("JDBC:  Executing " + sql);
-	    ResultSet res = stmt.executeQuery(sql);
-	    
-	    while(res.next()){
-		
-		gusObj = createObject(owner, table);
-		initObject(gusObj, res);
-	    }
-	    
-	    res.close();
-	    stmt.close();
-	}catch (Exception e){
-	    e.getMessage();
+	    // This should *never* happen; retrieveChildren_aux should only throw
+	    // an exception if told to expect a unique
+	    return null;
+	}
+    }
+
+    public void close() {
+        try {
+            conn.close();
+        } catch (SQLException e) {
 	    e.printStackTrace(); 
 	}
-	// put the object in the cache
-	return gusObj;
     }
+
     
-    public Vector getAllObjects(String table_owner, String table_name)
-    {
-        // always retrieves from DB
-        
-        Vector gusObjs = new Vector();
-        try{
-            Statement stmt = conn.createStatement();
-            String sql = "select * from " + table_owner + "." + table_name; 
-            ResultSet res = stmt.executeQuery(sql);
-	    while(res.next()) {
-		
-		GUSRow gusObj = createObject(table_owner, table_name);
-		initObject(gusObj, res);
-
-                
-		gusObjs.add(gusObj);
-            }
-            res.close();
-            stmt.close();
-        } catch (Exception e){
-            e.printStackTrace(); 
-	    System.err.println(e.getMessage());
-        }
-        // put the object in the cache!!
-        return gusObjs;
-    }
-
-    //throw exception if not unique...although this may never happen dtb
-    public GUSRow getParent(GUSRow child_row, String parent_table_owner, String parent_table_name, String childAtt)
-    {
-	
-	GUSTableRelation this_parent = child_row.getTable().getParentRelation(parent_table_owner, parent_table_name);
-	GUSRow parent = null;
-	
-	Long parent_pk = (Long)child_row.get(this_parent.getChildAtt());
-	
-	if (!(parent_pk == null)){
-	    
-	    parent = getGeneralObject(parent_table_owner, parent_table_name,  
-				      this_parent.getParentAtt(), parent_pk.longValue());
-	}
-	else{
-	    //throw exception
-	}
-	//put in cache
-	return parent;
-    }
-    
-    //throw exception if not unique
-    public GUSRow getChild(GUSRow parent_row, String child_table_owner, String child_table_name, String childAtt)
-    {
-	GUSTableRelation this_child = parent_row.getTable().getChildRelation(child_table_owner, child_table_name, childAtt);
-	
-	// JC: should be doing a select - this is not correct
-	//GUSRow child = getGeneralObject(child_table_owner, child_table_name, this_child.getChildAtt(), fk.longValue());
-	//return child;
-	
-	return null;
-    }
-    
-    
-    
-    public Vector getChildren(GUSRow parent_row, String child_table_owner, String child_table_name, String childAtt) {
-	
-	Vector children = new Vector();
-	GUSTableRelation this_child = parent_row.getTable().getChildRelation(child_table_owner, child_table_name, childAtt);
-	try {
-	    
-	    Statement stmt = conn.createStatement();
-	    String sql = "select * from " + child_table_owner + "." + child_table_name + 
-		" where " + this_child.getChildAtt() + " = " + fk.toString(); 
-	    ResultSet res = stmt.executeQuery(sql);   
-	    while(res.next()){
-		GUSRow gusChild = createObject(child_table_owner, child_table_name);
-		initObject(gusChild, res);
-
-		children.add(gusChild);
-	    }
-	    res.close();
-	    stmt.close();
-	}
-	catch (Exception e){
-	    e.printStackTrace();
-	    System.err.println(e.getMessage());
-	}
-	return children;
-    }
-
-
-    public int submitObject(GUSRow obj) throws SQLException {
-	if (!obj.isDeleted()){
-		cache.add(obj);
-	}
-	//need to handle if cache contains max # of objects
-	
-	
-	
-	// This should all be wrapped in a single transaction so can be 
-	// rolled back if need be.  Here assumes simple update/delete.
-	Statement stmt = conn.createStatement();
-	String sql = null;  //check if ok
-
-	GUSTable g_table = obj.getTable();
-	String owner_name = g_table.getOwnerName();
-	String table_name = g_table.getTableName();
-	String pk_name = g_table.getPrimaryKeyName();
-	
-	int rowcount = 0;
-	
-	// Should first check if have write permissions!...SJD
-	if (obj.isNew()){
-	    
-	    System.out.println ("JDBC: Inserting new object");
-	    
-	    ResultSet res2 = null;
-	    // INSERT
-            // First try to insert using the Oracle sequence to generate pk.
-            Integer pk = new Integer(-9999);
-            Statement stmt2 = conn.createStatement();
-	    String sql2;
-	    //	    String sql2 = sqlUtils.makeIdSeqSQL(owner, table_name);
-	    //  try{
-            //    ResultSet res2 = stmt2.executeQuery(sql2);
-            //    while(res2.next()){
-            //        pk = new Integer(res2.getInt("NEXTVAL"));
-            //    }  
-            //    res2.close();
-            //   stmt2.close();
-	    // } catch (SQLException e) {
-	    //	 System.err.println("ERROR" + sql2.toString());
-            //    e.printStackTrace();
-	    // TEMPORARY WHILE SEQUENCES MISSING FROM DB!
-	    try{
-		sql2 = sqlUtils.makeNewIdSQL(g_table);
-		res2 = stmt2.executeQuery(sql2);
-		while(res2.next()){
-		    pk = new Integer(res2.getInt("pk_val"));
-		}
-	    }
-	    catch (SQLException e){  
-		res2.close();
-		stmt2.close();
-	    }
-	    res2.close();
-	    stmt2.close();
-	    
-	    sql = sqlUtils.makeInsertSQL(owner_name, table_name, pk_name, pk, obj.getCurrentAttVals(), this.defaults);
-            
-        }    
-	
-	else if (obj.isDeleted()){     
-	    System.out.println("JDBC: deleting object");// DELETE
-            Long pk = new Long(obj.getPrimaryKeyValue());
-            sql  = sqlUtils.makeDeleteSQL(owner_name, table_name, pk_name, pk);
-        }
-        else if (obj.hasChangedAtts()){     // UPDATE
-	    System.out.println("JDBC: Object has changed attributes, SQLUpdate");
-	    Long pk = new Long(obj.getPrimaryKeyValue());
-	    //modified 9-11-02 dtb
-	    sql = sqlUtils.makeUpdateSQL(owner_name, table_name, pk_name, pk, obj.getCurrentAttVals(),
-					 obj.getInitialAttVals());
-	    
-	    //  sql  = sqlUtils.makeUpdateSQL(owner, table_name, pk_name, pk, obj.getAttValues());
-        }
-	else {
-	    //temporary, later if object has been modified, throw exception
-	    System.out.println ("Object has not been modified; not submitting to database");
-	}
-	
-	//        System.err.println("JDBC: " + sql.toString());
-        
-        // SJD Still to add...version the row if versionable!!
-        
-        if (!(sql == null)){
-	    try {
-	        rowcount += stmt.executeUpdate(sql.toString());
-		
-		
-		stmt.close();
-	    } catch (SQLException e) {
-		System.err.println("Error " + sql.toString());
-		e.printStackTrace();
-		//REMEBER TO ROLLBACK !! SJD
-	    }
-	}
-        
-        // Rewriting: If this object has children, call submit parts...  SJD
-	
-	return rowcount;  //need to change to return the (possibly) updated obj.
-	
-    }
-
     // ------------------------------------------------------------------
-    // DEFAULT VALUES FOR SHARED COLUMNS
+    // Protected methods
     // ------------------------------------------------------------------
-    
-    protected void setDefaultValues() {
-	
-	// JC: Could we put all this stuff in a new instance of GUSRow?  I think this
-	// is called the "prototype" OO design pattern.  Another problem here is that
-	// these values (Integer vs. Long) depend on the database and so should not
-	// be hardcoded.
-	
-	defaults.put("modification_date", "SYSDATE");  //should move elsewhere perhaps.
-	
-	// by default all permissions set to 1 except other_write
-	//
-	setDefaultUserRead(new Integer(1));
-	setDefaultUserWrite(new Integer(1));
-	setDefaultGroupRead(new Integer(1));
-	setDefaultGroupWrite(new Integer(1));
-	setDefaultOtherRead(new Integer(1));
-	setDefaultOtherWrite(new Integer(0));
-	
-	// not setting DefaultRowUserId - this depends on login information
-	
-	setDefaultRowGroupId(new Integer(0));
-	setDefaultRowProjectId(new Integer(0));
-	setDefaultRowAlgInvocationId(new Integer(1));
-    }
-    
-    // modification_date
-    public String getDefaultModificationDate() { return (String)(defaults.get("modification_date")); }
-    
-    // user_read
-    public void setDefaultUserRead(Integer d) { defaults.put("user_read", d);  }
-    public Integer getDefaultUserRead() { return (Integer)(defaults.get("user_read")); }
-    
-    // user_write
-    public void setDefaultUserWrite(Integer d) { defaults.put("user_write", d); }
-    public Integer getDefaultUserWrite() { return (Integer)(defaults.get("user_write")); }
-    
-    // group_read
-    public void setDefaultGroupRead(Integer d) { defaults.put("group_read", d);  }
-    public Integer getDefaultGroupRead() { return (Integer)(defaults.get("group_read")); }
-    
-    // group_write
-    public void setDefaultGroupWrite(Integer d) { defaults.put("group_write", d); }
-    public Integer getDefaultGroupWrite() { return (Integer)(defaults.get("group_write")); }
-    
-    // other_read
-    public void setDefaultOtherRead(Integer d) { defaults.put("other_read", d);  }
-    public Integer getDefaultOtherRead() { return (Integer)(defaults.get("other_read")); }
-    
-    // other_write
-    public void setDefaultOtherWrite(Integer d) { defaults.put("other_write", d); }
-    public Integer getDefaultOtherWrite() { return (Integer)(defaults.get("other_write")); }
-    
-    // row_user_id
-    public void setDefaultRowUserId(Integer d) { defaults.put("row_user_id", d);  }
-    public Integer getDefaultRowUserId() { return (Integer)(defaults.get("row_user_id")); }
-    
-    // row_group_id
-    public void setDefaultRowGroupId(Integer d) { defaults.put("row_group_id", d);  }
-    public Integer getDefaultRowGroupId() { return (Integer)(defaults.get("row_group_id")); }
-    
-    // row_project_id
-    public void setDefaultRowProjectId(Integer d) { defaults.put("row_project_id", d);  }
-    public Integer getDefaultRowProjectId() { return (Integer)(defaults.get("row_project_id")); }
-    
-    // row_alg_invocation_id
-    public void setDefaultRowAlgInvocationId(Integer d) { defaults.put("row_alg_invocation_id", d); }
-    public Integer getDefaultRowAlgInvocationId() { return (Integer)(defaults.get("row_alg_invocation_id")); }
-
-    // ------------------------------------------------------------------
-    // Miscellaneous - these methods were moved here temporarily from the old sqlUtils
-    // ------------------------------------------------------------------
-    
-    // JC: could this be done using the object layer itself?  i.e., retrieve the
-    // core.UserInfo object with username = ? and then compare the passwords.
 
     /**
      * makeCheckUserSQL: Returns SQL to check if valid user
      */
-    public static String makeCheckUserSQL(String username, String password) {
+    protected String makeCheckUserSQL(String user, String password) {
         StringBuffer sql = new StringBuffer("SELECT u.user_id from CORE.USERINFO u\n");
-        sql.append("WHERE u.login = '" + username + "'\n");
+        sql.append("WHERE u.login = '" + user + "'\n");
         sql.append("  AND u.password = '" + password + "'\n");
-        
         return sql.toString();
     }
     
+    /**
+     * Helper method for retrieveChild and retrieveChildren;
+     */
+    protected Vector retrieveChildren_aux(GUSRow parent, String owner, String tname, String childAtt)
+	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
+    {
+	// First check that such a relationship does in fact exist
+
+	GUSTable parentTable = parent.getTable();
+	GUSTableRelation rel = parentTable.getChildRelation(owner, tname, childAtt);
+
+	if (rel == null) { 
+	    throw new GUSNoSuchRelationException("No relation between " + parentTable + 
+						 " and " + owner + "." + tname + "." + childAtt);
+	}
+
+	long parentPkVal = parent.getPrimaryKeyValue();
+	String sql = "select * from " + owner + "." + tname + " where " + childAtt + " = " + parentPkVal;
+	Vector kids = retrieveObjectsFromQuery(owner, tname, sql);
+	return kids;
+    }
+
+    // JC: The following method probably needs adding to the public interface
+    // so that the GUSServer can support the behavior documented when retrieveObject
+    // is called on a cached object, but the clob range is different from what
+    // has been cached.
+
+    /**
+     * Generic method to retrieve a subsequence of a CLOB-valued column as
+     * a String.  This is probably not the most efficient way to handle CLOB 
+     * values, particularly if we are going to later convert them into 
+     * BioJava SymbolLists (i.e., for DNA and protein sequences).  However,
+     * it's no worse than what we had here before, and is no longer specific
+     * to the DoTS.NASequence table
+     */
+    protected String getSubStringFromClob(String owner, String tname, long pk, String clobAtt, Long start, Long end) 
+	throws GUSObjectNotUniqueException
+    {
+	GUSTable table = GUSTable.getTableByName(owner, tname);
+	String pkName = table.getPrimaryKeyName();
+	int numRows = 0;
+	String subseq = null;
+
+	try {
+	    Statement stmt = conn.createStatement();
+	    String sql = "select " + clobAtt + " from " + owner + "." + tname + " where " + pkName + " = " + pk;
+	    ResultSet res = stmt.executeQuery(sql);
+
+	    while (res.next()) {
+		++numRows;
+		Clob clobval = res.getClob(clobAtt);
+
+		if (clobval != null) {
+		    long clobLen = clobval.length();
+		    long clobStart = (start == null) ? 1 : start.longValue();
+		    long clobEnd = (end == null) ? clobLen : end.longValue();
+
+		    // JC: Does this coercion mean that the method will fail if we request
+		    // too much sequence?  Perhaps this method will have to be rewritten to
+		    // return a stream or some other datatype instead of a String.
+		    //
+		    int subseqLen = (int)(clobEnd - clobStart + 1);
+		    subseq = clobval.getSubString(clobStart, subseqLen);
+		}
+	    }
+	    res.close();
+	    stmt.close();
+	} 
+	catch (Exception e) {
+	    e.getMessage();
+	    e.printStackTrace(); 
+	}
+
+	if (numRows != 1) {
+	    throw new GUSObjectNotUniqueException("Found " + numRows + " rows in " + owner +"." + tname + 
+						  " with " + pkName + "=" + pk);
+	}
+
+	return subseq;
+    }
+
     // JC: This might be a candidate for a "hand_edited" method in the BLATAlignment object
     //     or it could just go in the application itself.
     /*
@@ -833,6 +693,18 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	return query;
     }
     */
+
+    // JC: This BioJava-dependent code should also be moved elsewhere, perhaps 
+    // into the hand_edited code
+
+    // import org.biojava.bio.*;
+    // import org.biojava.bio.seq.*;
+    // import org.biojava.bio.seq.io.*;
+    // import org.biojava.bio.symbol.*;
+
+    //	SymbolList dna = null;
+    //	FiniteAlphabet dnaAlphabet = DNATools.getDNA();
+    //  dna = DNATools.createDNA(sequence.getSubString((long)1, (int)sequence.length()));
     
 } //JDBCDatabaseConnection
 

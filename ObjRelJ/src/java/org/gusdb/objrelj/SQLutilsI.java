@@ -16,6 +16,20 @@ import java.util.Hashtable;
  */
 public interface SQLutilsI {
 
+    // ------------------------------------------------------------------
+    // SELECT
+    // ------------------------------------------------------------------
+
+    /**
+     * Generate an SQL SELECT statement that will retrieve all the rows
+     * from a given table.
+     *
+     * @param owner     Owner of the table from which to select
+     * @param table     Name of the table from which to select.
+     * @return A String that contains the SQL select statement.
+     */
+    public String makeSelectAllRowsSQL(String owner, String table);
+
     // JC: Is there a reason that we're not passing GUSRow objects directly to
     // these methods (e.g., makeInsertSQL, makeUpdateSQL)?
 
@@ -32,13 +46,11 @@ public interface SQLutilsI {
      * @param table     Name of the table into which to insert.
      * @param pkatt     Name of the table's primary key column.
      * @param pk        Primary key value of the row to insert.
-     * @param atts      Values for 0 or more of the table's NON-primary key columns.
-     * @param defaults  Values for 0 or more of the table's NON-primary key columns.  
-     *                  None of these columns should appear in <code>atts</code>
+     * @param atts      Values for <B>all</B> of the table's non-nullable, non-primary key columns.
      * @return A String that contains the SQL insert statement.
      */
     public String makeInsertSQL(String owner, String table, String pkatt, 
-				Integer pk, Hashtable atts, Hashtable defaults);
+				long pk, Hashtable atts);
 
     // ------------------------------------------------------------------
     // UPDATE
@@ -56,7 +68,7 @@ public interface SQLutilsI {
      * @return A String that contains the SQL update statement.
      */    
     public String makeUpdateSQL(String owner, String table, String pkatt, 
-				Long pk, Hashtable atts, Hashtable oldAtts);
+				long pk, Hashtable atts, Hashtable oldAtts);
 
     // ------------------------------------------------------------------
     // DELETE
@@ -75,7 +87,7 @@ public interface SQLutilsI {
      * @param pk        Primary key value of the row to delete.
      * @return A String that contains the SQL delete statement.
      */
-    public String makeDeleteSQL(String owner, String table, String pkatt, Long pk);
+    public String makeDeleteSQL(String owner, String table, String pkatt, long pk);
 
     // ------------------------------------------------------------------
     // PRIMARY KEY VALUES

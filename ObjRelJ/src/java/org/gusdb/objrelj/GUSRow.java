@@ -127,6 +127,26 @@ public abstract class GUSRow implements java.io.Serializable {
     }
 
     // ------------------------------------------------------------------
+    // Static methods
+    // ------------------------------------------------------------------
+
+    /**
+     * Create a new object of the specified class.
+     */
+    public static GUSRow createObject(String owner, String tname) {
+	String rowClassName = GUSRow.MODEL_PACKAGE + "." + owner + "." + tname;
+	try {
+	    Class rowClass = Class.forName(rowClassName);
+	    return (GUSRow)rowClass.newInstance();
+	} 
+	catch (ClassNotFoundException cnfe) {}
+	catch (InstantiationException ie) {}
+	catch (IllegalAccessException iae) {}
+
+	return null;
+    }
+
+    // ------------------------------------------------------------------
     // Abstract methods
     // ------------------------------------------------------------------
   
@@ -386,7 +406,7 @@ public abstract class GUSRow implements java.io.Serializable {
      *
      * @param new_id  
      */
-    protected void setGusRowId (Long new_id) {
+    protected void setPrimaryKeyValue(Long newId) {
 
 	// It is illegal to change this row's primary key once it
 	// has been set to a non-null value.
@@ -394,7 +414,7 @@ public abstract class GUSRow implements java.io.Serializable {
 	if (this.id != null) {
 	    throw new IllegalArgumentException("Row's GusRowId has already been set.");
 	}
-	id = new_id;
+	id = newId;
     }
 
     /**
@@ -598,5 +618,6 @@ public abstract class GUSRow implements java.io.Serializable {
 	String tname = table.getTableName();
 	return "[" + owner + "." + tname + ":" + id + "]";
     }
+
 
 } //GUSRow
