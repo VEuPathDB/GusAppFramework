@@ -45,7 +45,7 @@
 # Last modified Jun-10-2003
 #
 # ----------------------------------------------------------
-package GUS::RAD::DataLoad::Plugin::ProcessedResultLoader;
+package GUS::RAD::Plugin::ProcessedResultLoader;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 use strict;
