@@ -74,14 +74,18 @@ sub new {
 sub run {
 	my $self  = shift;
 	open( F, $self->getCla->{'xmlfile'} ) || die($!);
+
 	my @xml = <F>;
+
+print STDERR "@xml\n";
+
 	close F;
 	my $fact_hash= {};
 	$fact_hash = $self->parseFactObjects($self->getCla->{'specialfile'}, $self->getSelfInv);
 	my $has_evidence = 0;
 	my $remove = 0;
 
-	$self->{self_inv}->parseXML( \@xml );
+	$self->getSelfInv->parseXML( \@xml );
 
 	my @children = $self->getSelfInv->getAllChildren();
 	my $curr_gene;
@@ -539,7 +543,8 @@ sub parseFactObjects {
 
   my $self = shift;
 
-	my( $file, $ai ) = @_;
+     my ($file, $ai) = @_;
+
 
 	my $hash;
 	open( FF, "$file" ) || die($!);
