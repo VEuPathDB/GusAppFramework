@@ -7,7 +7,7 @@ use CBIL::Util::Disp;
 use GUS::PluginMgr::Args::BooleanArg;
 
 sub new {
-  my ($class, $argsList, $usagePrefixText) = @_;
+  my ($class, $argsList, $usagePrefixText, $plugin) = @_;
 
   my $self = {};
 
@@ -43,7 +43,7 @@ sub new {
   return ($self, 'text') if $self->getValue('help');
   return ($self, 'html') if $self->getValue('helpHTML');
 
-  $self->checkArgs();
+  $self->checkArgs($plugin);
 
   return ($self, 0);
 }
@@ -92,7 +92,7 @@ sub getGetOptionsHash {
 }
 
 sub checkArgs {
-  my ($self) = @_;
+  my ($self, $plugin) = @_;
 
   foreach my $arg (@{$self->{argsList}}) {
     my $problem = $arg->checkReqd();
@@ -103,7 +103,7 @@ sub checkArgs {
 
       foreach my $value (@valueList) {
 	$problem = $arg->checkValue($value);
-	$problem = $arg->runConstraintFunc($arg->getValue()) unless $problem;
+	$problem = $arg->runConstraintFunc($plugin, $arg->getValue()) unless $problem;
 	last if $problem;
       }
     }
