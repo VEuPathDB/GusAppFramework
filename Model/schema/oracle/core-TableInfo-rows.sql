@@ -4,7 +4,7 @@
 /*                                                                                            */
 /* Populate Core.TableInfo, which lists each of the GUS tables.                               */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:08:08 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:42:27 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -921,12 +921,19 @@ INSERT INTO @oracle_core@.TableInfo VALUES(3767,'HQSpecificity','view','analysis
 INSERT INTO @oracle_core@.TableInfo VALUES(3768,'SAM','view','analysis_result_id',10,1,1,3655,3685,1,'2003-10-13 15:13:55',1,1,1,1,1,0,1, 1, 1, 1);
 INSERT INTO @oracle_core@.TableInfo VALUES(3769,'HQSpecificityVer','view',NULL,11,0,1,3656,3686,0,'2003-10-13 15:13:55',1,1,1,1,1,0,1, 1, 1, 1);
 INSERT INTO @oracle_core@.TableInfo VALUES(3786,'RMAExpress','standard','composite_element_result_id',10,1,1,2965,2994,1,'2003-11-13 10:31:05',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3806,'RejectedMotif','standard','rejected_motif_id',5,0,0,NULL,NULL,1,'2004-01-07 17:35:16',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3826,'MotifRejectionReason','controlled vocabulary','motif_rejection_reason_id',5,0,0,NULL,NULL,1,'2004-01-07 17:43:25',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3846,'AffymetrixMAS5Ver','version',NULL,11,0,1,3487,3523,1,'2004-01-27 12:10:06',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3847,'GNFAffymetrixResult','standard','composite_element_result_id',10,1,1,2965,2994,1,'2004-01-27 12:10:06',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3848,'GNFAffymetrixResultVer','version',NULL,11,0,1,3487,3523,1,'2004-01-27 12:10:06',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3866,'WorkflowNode','standard','worklow_node_id',1,1,1,447,NULL,1,'2004-02-16 13:28:26',1,1,1,1,1,0,1, 1, 1, 1);
+INSERT INTO @oracle_core@.TableInfo VALUES(3867,'WorkflowNodeVer','version',NULL,2,0,1,451,NULL,1,'2004-02-16 13:29:49',1,1,1,1,1,0,1, 1, 1, 1);
 
-/* 909 row(s) */
+/* 916 row(s) */
 
 
 DROP SEQUENCE @oracle_core@.TableInfo_SQ;
-CREATE SEQUENCE @oracle_core@.TableInfo_SQ START WITH 3787;
+CREATE SEQUENCE @oracle_core@.TableInfo_SQ START WITH 3868;
 
 COMMIT;
 SPOOL OFF

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* core-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:08:09 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:42:28 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -68,7 +68,7 @@ CREATE TABLE @oracle_core@.ALGORITHMINVOCATION (
     OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
     ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(4)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
  TABLESPACE @oracle_coreTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
@@ -95,7 +95,7 @@ CREATE TABLE @oracle_core@.ALGORITHMPARAM (
     OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
     ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
-    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(4)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
  TABLESPACE @oracle_coreTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
@@ -351,7 +351,7 @@ CREATE TABLE @oracle_core@.USERGROUP (
 CREATE TABLE @oracle_core@.USERINFO (
     USER_ID                            NUMBER(12)                                    NOT NULL,
     LOGIN                              VARCHAR2(30)                                  NOT NULL,
-    PASSWORD                           VARCHAR2(30)                                  NOT NULL,
+    PASSWORD                           VARCHAR2(50)                                  NOT NULL,
     FIRST_NAME                         VARCHAR2(30)                                  NOT NULL,
     LAST_NAME                          VARCHAR2(30)                                  NOT NULL,
     E_MAIL                             VARCHAR2(60)                                  NOT NULL,
