@@ -1,4 +1,4 @@
-package GUS::Common::Plugin::UpdateRow;
+package GUS::Common::Plugin::SubmitRow;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;
