@@ -75,20 +75,22 @@ sub run {
 
 	my @xml = <F>;
 
-print STDERR "@xml\n";
+ my($xml) = @xml;
+
+print STDERR "$xml\n";
 
 	close F;
 	my $fact_hash= {};
-	$fact_hash =$self->parseFactObjects($self->getCla->{'specialfile'}, $self->{'self_inv');
+	$fact_hash =$self->parseFactObjects($self->getCla->{'specialfile'}, $self->{self_inv});
 	my $has_evidence = 0;
 	my $remove = 0;
-	$self->'self_inv'->parseXML( \@xml );
+	$self->{self_inv}->parseXML($xml);
 
 	my @children = $self->getSelfInv->getAllChildren();
 	my $curr_gene;
 
 
-  if(!$self->getCla->{'refresh'}){
+  if(!$self->getCla->{refresh}){
 
 		foreach my $child ( @children ) {
 			print STDERR "Child class name: ", $child->getClassName(), " \n";
