@@ -153,7 +153,7 @@ foreach my $A(@na_sourceids)    {
 print STDERR "$id,DT.$na_seq\n";
 
 
-     if ($id == $na_seq ) {
+     if ($id == $na_seq | $id == 0) {
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
      next;
    }
