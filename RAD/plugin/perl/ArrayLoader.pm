@@ -29,6 +29,7 @@ use strict;
 use IO::File;
 
 use GUS::Model::RAD3::Array;
+use GUS::Model::RAD3::Protocol;
 use GUS::Model::SRes::Contact;
 use GUS::Model::RAD3::OntologyEntry;
 use GUS::Model::RAD3::ArrayAnnotation;
