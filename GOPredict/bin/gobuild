@@ -45,6 +45,14 @@ my @properties =
  ["currentTremblSubset", "", "output file in which to write subset of trembl sequences that have annotated GO Terms"], 
  ["currentMgi", "", "name of latest mapping file between mgi and swissprot"],
 
+ #names of go association files to organism sequences
+ ["flyAssocFile", "", "name of file with go associations to fly sequences"],
+ ["wormAssocFile", "", "name of file with go associations to worm sequences"],
+ ["yeastAssocFile", "", "name of file with go associations to yeast sequences"],
+ ["mgiAssocFile", "", "name of file with go associations to mgi sequences"],
+ ["tairAssocFile", "", "name of file with go associations to tair sequences"],
+ ["sptrAssocFile", "", "name of file with go associations to sptr sequences"],
+
  #directories within the overall third party data directory to store retrieved data
  ["tairDirectory", "", "name of directory in which to store arabidopsis sequences"], 
  ["yeastDirectory", "", "name of directory in which to store yeast sequences"],
@@ -343,18 +351,18 @@ sub downloadGOAssoc{
     $mgr->runCmd("mkdir -p $downloadSubDir");
 
     my $ftpsite = "ftp://ftp.geneontology.org/pub/go/gene-associations/";
+    my $flyFile = $propertySet->getProp($flyAssocFile);
+    my $wormFile = $propertySet->getProp($wormAssocFile);
+    my $yeastFile = $propertySet->getProp($yeastAssocFile);
+    my $mgiFile = $propertySet->getProp($mgiAssocFile);
+    my $tairFile = $propertySet->getProp($tairAssocFile);
+    my $sptrFile = $propertySet->getProp($sptrAssocFile);
 
-    my $cmd = "wget -t5 -o $logfile -m -np -nd -nH --cut-dirs=3 -A \"gene_association.fb.gz, gene_association.mgi.gz, gene_association.tair.gz, gene_association.wb.gz, gene_association.sgd.gz, gene_association.goa_uniprot.gz\" -P $downloadSubDir $ftpsite";
+
+    my $cmd = "wget -t5 -o $logfile -m -np -nd -nH --cut-dirs=3 -A \"$flyFile, $wormFile, $yeastFile, $mgiFile, $tairFile, $sptrFile\" -P $downloadSubDir $ftpsite";
 
     $mgr->runCmd($cmd);
-
-    $mgr->runCmd("gunzip $downloadSubDir/gene_association.goa_uniprot.gz");
-    $mgr->runCmd("gunzip $downloadSubDir/gene_association.sgd.gz");
-    $mgr->runCmd("gunzip $downloadSubDir/gene_association.fb.gz");
-    $mgr->runCmd("gunzip $downloadSubDir/gene_association.mgi.gz");
-    $mgr->runCmd("gunzip $downloadSubDir/gene_association.wb.gz");
-    $mgr->runCmd("gunzip $downloadSubDir/gene_association.tair.gz");
-
+    
     $mgr->endStep($signal);
 
 }
@@ -614,10 +622,17 @@ sub createTREMBLAssocHash{
     my ($downloadSubDir) = @_;
     my $assocData;
 
-    my $fh = FileHandle->new("<$downloadSubDir/gene_association.goa_uniprot");
+    my $sptrAssocFile = $propertySet->getProp("sptrAssocFile");
+    
+    if ($sptrAssocFile =~ /(.*)\.gz$/){
+	$sptrAssocFile = $1;
+	$mgr->runCmd("gunzip $downloadSubDir/$sptrAssocFile");
+    }
+
+    my $fh = FileHandle->new("<$downloadSubDir/$sptrAssocFile");
 
     if (!($fh)){
-	die "Cannot find gene_association.goa_uniprot for swissprot/trembl!";
+	die "Cannot find $sptrAssocFile for swissprot/trembl!";
     }
     my $excludeIea = $propertySet->getProp('globalExcludeIea');
     my $counter = 0;
@@ -866,7 +881,7 @@ sub insertFlyGoAssoc{
     
     my $flyDb = $propertySet->getProp('fly_db_rls_id');
     
-    my $flatFile = "gene_association.fb";
+    my $flatFile = $propertySet->getProp("flyAssocFile");
     my $orgArgs = "--org_external_db_release_list $flyDb";
     my $doIt = "insertFlyGoAssoc";
 
@@ -876,7 +891,7 @@ sub insertFlyGoAssoc{
 sub insertWormGoAssoc{
     
     my $wormDb = $propertySet->getProp('worm_db_rls_id');
-    my $flatFile = "gene_association.wb";
+    my $flatFile = $propertySet->getProp("wormAssocFile");
     my $orgArgs = "--org_external_db_release_list $wormDb";
     my $doIt = "insertWormGoAssoc";
 
@@ -887,7 +902,7 @@ sub insertWormGoAssoc{
 sub insertYeastGoAssoc{
     
     my $yeastDb = $propertySet->getProp('yeast_db_rls_id');
-    my $flatFile = "gene_association.sgd";
+    my $flatFile = $propertySet->getProp("yeastAssocFile");
     my $orgArgs = "--org_external_db_release_list $yeastDb";
     my $doIt = "insertYeastGoAssoc";
 
@@ -898,7 +913,7 @@ sub insertYeastGoAssoc{
 sub insertArabidopsisGoAssoc{
     
     my $tairDb = $propertySet->getProp('tair_db_rls_id');
-    my $flatFile = "gene_association.tair";
+    my $flatFile = $propertySet->getProp("tairAssocFile");
     my $orgArgs = "--org_external_db_release_list $tairDb";
     my $doIt = "insertArabidopsisGoAssoc";
     
@@ -910,7 +925,7 @@ sub insertMgiGoAssoc{
     
     my $spDb = $propertySet->getProp('sp_db_rls_id');
     my $trDb = $propertySet->getProp('tr_db_rls_id');
-    my $flatFile = "gene_association.mgi";
+    my $flatFile = $propertySet->getProp("mgiAssocFile");
     
     my $externalDbDir = $propertySet->getProp('externalDbDir');
     my $date = $propertySet->getProp('buildDate');
@@ -936,7 +951,7 @@ sub insertSpTrGoAssoc{
 	$excludeIea .= "--exclude_iea";
     }
     
-    my $flatFile = "gene_association.goa_uniprot";
+    my $flatFile = $propertySet->getProp("sptrAssocFile");
     my $orgArgs = "--org_external_db_release_list $spDb,$trDb $excludeIea";
     my $doIt = "insertSpTrGoAssoc";
 
