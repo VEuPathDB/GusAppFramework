@@ -1180,7 +1180,7 @@ if(defined $cfg_rv->{'mapping'}->{'ElementImp.subclass_view'}){
 	     $row_id=$cfg_rv->{'Element_Id'};
 
 	 }
-	 if($view eq 'ShortOligo' || $view eq 'Spot'){
+	 if($view eq 'ShortOligoFamily' || $view eq 'SpotFamily'){
 	     $row_id=$cfg_rv->{'CompositeElement_Id'};
 	 }
 
