@@ -4,6 +4,7 @@ use strict;
 use GUS::Pipeline::ExternalResources::RepositoryWget;
 use GUS::Pipeline::ExternalResources::FileSysManager;
 use GUS::Pipeline::ExternalResources::SftpManager;
+use File::Basename;
 
 
 # This class represents an entry in an External Data Files Repository.
@@ -108,6 +109,15 @@ sub parseWgetArg {
   }
   return @arg;
 }
+
+sub runCmd {
+  my ($cmd) = @_;
+
+  system($cmd);
+  my $status = $? >> 8;
+  die("Failed with status $status running '$cmd': $!\n") if ($status);
+}
+
 
 ########################################################################
 #          Private Methods
@@ -222,18 +232,21 @@ sub _acquire {
     $self->_log("Calling tar to package them for storage in the repository");
     my $baseName = "$self->{resource}-$self->{version}";
     my $tarCmd = "tar -cf $tmpDir/$baseName.tar .";
-    $self->_runCmd($tarCmd);
+    &runCmd($tarCmd);
 
     $self->_log("Calling gzip to compress the package");
     my $gzipCmd = "gzip $tmpDir/$baseName.tar";
-    $self->_runCmd($gzipCmd);
+    &runCmd($gzipCmd);
 
-    $self->{storageManager}->copyIn("$tmpDir/wget.log", $self->{versionDir});
-    $self->{storageManager}->copyIn("$tmpDir/wget.cmd", $self->{versionDir});
-    $self->{storageManager}->copyIn("$tmpDir/$baseName.tar.gz", $self->{versionDir});
+    $self->{storageManager}->copyIn("$tmpDir/wget.log", 
+				    "$self->{versionDir}/wget.log");
+    $self->{storageManager}->copyIn("$tmpDir/wget.cmd", 
+				    "$self->{versionDir}/wget.cmd");
+    $self->{storageManager}->copyIn("$tmpDir/$baseName.tar.gz", 
+				    "$self->{versionDir}/$baseName.tar.gz");
 
     chdir $targetDir || die "Could not cd to '$targetDir/'\n";
-    $self->_runCmd("rm -rf $tmpDir");
+    &runCmd("rm -rf $tmpDir");
   };
 
   my $err = $@;
@@ -280,26 +293,19 @@ sub _copyTo {
   my ($self, $targetDir) = @_;
 
   my $fileNm = $self->_getAnswerFile();
+  my $baseName = basename($fileNm);
 
-  $self->_log("Copying $self->{resource}-$self->{version}.tar.gz to $targetDir");
-  $self->{storageManager}->copyOut($fileNm, $targetDir);
+  $self->_log("Copying $baseName to $targetDir");
+  $self->{storageManager}->copyOut($fileNm, "$targetDir/$baseName");
 
   $self->_log("Unzipping and untarring $self->{resource}-$self->{version}.tar.gz");
 
   my $cmd = "tar -C $targetDir/ -zxf $targetDir/$self->{resource}-$self->{version}.tar.gz";
-  $self->_runCmd($cmd);
+  &runCmd($cmd);
 
   $self->_log("Deleting $self->{resource}-$self->{version}.tar.gz");
   my $cmd = "rm $targetDir/$self->{resource}-$self->{version}.tar.gz";
-  $self->_runCmd($cmd);
-}
-
-sub _runCmd {
-  my ($self, $cmd) = @_;
-
-  system($cmd);
-  my $status = $? >> 8;
-  die("Failed with status $status running '$cmd': $!\n") if ($status);
+  &runCmd($cmd);
 }
 
 sub _log {

@@ -50,30 +50,66 @@ sub _parseXmlFile {
   my ($self) = @_;
 
   my $commit = $self->{manager}->{propertySet}->getProp('commit');
+  my $dbCommit = $self->{manager}->{propertySet}->getProp('commit');
   my $xmlString = $self->_substituteMacros();
   my $xml = new XML::Simple;
   my $data = $xml->XMLin($xmlString);
   my $repositoryLogFile = "$self->{manager}->{pipelineDir}/logs/repository.log";
-  foreach my $resource (@{$data->{resource}}) {
-    my $targetDir = "$data->{downloadDir}/$resource->{resource}";
-    my $wgetArgs = &_parseWgetArgs($resource->{wgetArgs});
-    my $loaderStep =
-      GUS::Pipeline::ExternalResources::LoaderStep->new($data->{repository},
-							$resource->{resource},
-							$resource->{version},
-							$targetDir,
-							$resource->{url},
-							$resource->{plugin},
-							$resource->{pluginArgs},
-							$resource->{dbName},
-							$resource->{releaseDescription},
-							$commit,
-							$wgetArgs,
-							$repositoryLogFile
-						       );
-
-    push(@{$self->{steps}}, $loaderStep);
+  if (ref($data->{resource}) eq 'ARRAY') {
+    foreach my $resource (@{$data->{resource}}) {
+      $self->_processResource($resource, $data, $commit, $dbCommit,
+			      $repositoryLogFile);
+    }
+  } else {
+      $self->_processResource($data->{resource}, $data, $commit, $dbCommit,
+			      $repositoryLogFile);
   }
+}
+
+sub _processResource {
+  my ($self, $resource, $data, $commit, $dbCommit, $repositoryLogFile) = @_;
+
+
+  # this perverse code is a workaround for a mysterious XML::Simple/Net::SFTP
+  # bug that was detecting incorrect character encodings in strings
+  # derived from the values parsed from the xml file
+  my $repositoryDir = 
+    substr($data->{repository},0,length($data->{repository}));
+  my $resourceNm = 
+    substr($resource->{resource},0,length($resource->{resource}));
+  my $version = 
+    substr($resource->{version},0,length($resource->{version}));
+  my $downloadDir = 
+    substr($data->{downloadDir},0,length($data->{downloadDir}));
+  my $wgetArgs = 
+    &_parseWgetArgs(substr($resource->{wgetArgs},0,length($resource->{wgetArgs})));
+
+  my $unpackers;
+  if (ref($resource->{unpack}) eq 'ARRAY') {
+    $unpackers = $resource->{unpack};
+  } else {
+    $unpackers = [$resource->{unpack}];
+  }
+
+  my $targetDir = "$downloadDir/$resourceNm";
+  my $loaderStep =
+    GUS::Pipeline::ExternalResources::LoaderStep->new($repositoryDir,
+						      $resourceNm,
+						      $version,
+						      $targetDir,
+						      $unpackers,
+						      $resource->{url},
+						      $resource->{plugin},
+						      $resource->{pluginArgs},
+						      $resource->{dbName},
+						      $resource->{releaseDescription},
+						      $commit,
+						      $dbCommit,
+						      $wgetArgs,
+						      $repositoryLogFile
+						     );
+
+  push(@{$self->{steps}}, $loaderStep);
 }
 
 sub _parseWgetArgs {
@@ -98,7 +134,7 @@ sub _substituteMacros {
   open(FILE, $self->{xmlFile});
   while (<FILE>) {
     my $line = $_;
-    my @macroKeys = /\@(\w+)\@/g;
+    my @macroKeys = /\@([\w.]+)\@/g;   # allow keys of the form nrdb.release
     foreach my $macroKey (@macroKeys) {
       my $val = $propertySet->getProp($macroKey);
       die "Invalid macro '\@$macroKey\@' in xml file $self->{xmlFile}" unless defined $val;
