@@ -847,7 +847,7 @@ sub addToChildList{
   my($self,@list) = @_;
   foreach my $i (@list) {
     my $childFullName = $self->getFullClassName($i->[0]);
-    @{$self->{'childList'}->{$childFullName} = ($i->[1],$i->[2]);
+    @{$self->{'childList'}->{$childFullName}} = ($i->[1],$i->[2]);
   }
 }
 

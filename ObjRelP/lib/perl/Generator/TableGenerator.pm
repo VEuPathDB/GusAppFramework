@@ -91,7 +91,7 @@ sub _genRelativeList {
   my @r;
   foreach my $rel (@$relatives) {
     my $s = join("','", @{$rel});
-    push(@r, "['$s']");
+    push(@r, "\n      ['$s']");
   }
   return join(",", @r);
 }
@@ -131,9 +131,9 @@ sub _genAttributeInfo {
   $self->{table}->cacheAttributeInfo() unless $self->{table}->{attributeNames};
 
   my $atn = $self->{table}->{attributeNames};
-  my $s = "  \$self->setAttributeNames('".join("','",@{$atn})."');\n\n" if $atn;
+  my $s = "  \$self->setAttributeNames(\n      '".join("',\n      '",@{$atn})."');\n\n" if $atn;
   my $qat = $self->{table}->{quotedAtts};
-  $s .= "  \$self->setQuotedAtts('".join("','",keys%{$qat})."');\n\n" if $qat;
+  $s .= "  \$self->setQuotedAtts(\n      '".join("',\n      '",keys%{$qat})."');\n\n" if $qat;
 
   my @attInfo;
   my $info = $self->{table}->{attInfo};
@@ -144,7 +144,7 @@ sub _genAttributeInfo {
     my $nulls = defined $h->{Nulls} ? $h->{Nulls} : "''";
     my $base_type = defined $h->{base_type} ? $h->{base_type} : "";
 
-    push(@attInfo,"\{'col' => '$h->{col}', 'type' => '$type', 'prec' => $prec, 'length' => $length, 'Nulls' => $nulls, 'base_type' => '$base_type'\}");
+    push(@attInfo,"\n      \{'col' => '$h->{col}', 'type' => '$type', 'prec' => $prec, 'length' => $length, 'Nulls' => $nulls, 'base_type' => '$base_type'\}");
   }
 
   my $attInfo = join(', ', @attInfo);
@@ -157,7 +157,7 @@ sub _genChildRelationsData {
   my @rels;
   my $children = $self->{table}->getChildRelations();
   foreach my $r (@{$children}){
-    push(@rels,"['".join("','",@{$r})."']");
+    push(@rels,"\n      ['".join("','",@{$r})."']");
   }
   return join(', ',@rels);
 }
@@ -167,7 +167,7 @@ sub _genParentRelationsData {
   my @rels;
   my $parents = $self->{table}->getParentRelations();
   foreach my $r (@{$parents}){
-    push(@rels,"['".join("','",@{$r})."']");
+    push(@rels,"\n      ['".join("','",@{$r})."']");
   }
   return join(', ',@rels);
 }
