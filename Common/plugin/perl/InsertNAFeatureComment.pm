@@ -74,7 +74,7 @@ sub run {
 	}
 	my $c = GUS::Model::DoTS::NAFeatureComment->new();
 	$c->set('na_feature_id',$fid);
-	$c->set('comment',$comm);
+	$c->set('comment_string',$comm);
 	$c->submit();
     }
     $fh->close;
