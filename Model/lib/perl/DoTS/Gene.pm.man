@@ -40,15 +40,14 @@ sub countAssembliesAndAssemblySequences {
 }
 
 sub getRNAs {
-	my($self,$retrieve,$getDeletedToo,$where) = @_;
-	my @tmp;
-	foreach my $rna ($self->getChildren('DoTS::RNA',$retrieve,$getDeletedToo,$where)) {
-	  print STDERR $rna->toString() if $debug == 1;
-	  print STDERR $rna->getId()," $rna\n" if $debug == 2;
-	  push(@tmp,$rna);
-	}
-      }
-	return @tmp;
+  my($self,$retrieve,$getDeletedToo,$where) = @_;
+  my @tmp;
+  foreach my $rna ($self->getChildren('DoTS::RNA',$retrieve,$getDeletedToo,$where)) {
+    print STDERR $rna->toString() if $debug == 1;
+    print STDERR $rna->getId()," $rna\n" if $debug == 2;
+    push(@tmp,$rna);
+  }
+  return @tmp;
 }
 
 sub countRNAs {
