@@ -1,4 +1,4 @@
-#!@perlLocation@
+#!@perl@
 
 ## dumps sequences from sequence table 
 ##note the sequence must be returned as thelast item

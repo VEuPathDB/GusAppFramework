@@ -1,4 +1,4 @@
-#!@perlLocation@
+#!@perl@
 
 ## Prints simple XML for tuples in the database.
 ## --recursive recursively retrieves all foreign key relationships
