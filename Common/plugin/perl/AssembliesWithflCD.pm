@@ -162,7 +162,7 @@ push (@diffArray, $id);  }
   }
 
 print STDERR "@diffArray";
-print STDERR scalar(@diffArray)";
+print STDERR scalar"(@diffArray)";
 
 #figure out which DTs are not present in both arrays and set those new as full length
 
