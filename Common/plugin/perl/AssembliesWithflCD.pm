@@ -74,7 +74,9 @@ sub run {
 
   my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
 
-  my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
+#fact_table_id = 89 is ExternalNASequence
+
+  my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS' and fact_table_id = 89");
 
   my $stmt4 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.assembly a where a.full_length_CDS = 1 and a.taxon_id = 8 minus select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
 
@@ -86,9 +88,6 @@ sub run {
 #fact_table_id = 338 is translatedAAsequence
 
   my $stmt6 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS' and fact_table_id = 338");
-
-
-
 
 
 
@@ -169,7 +168,7 @@ sub run {
 }
 
 
- # check to see if all previous evidence still valid using array of target ids and compare to array of DTs
+ # check to see if all previous evidence still valid using array of target ids and compare to array of DTs that now contain RefSeqs
 sub  DeleteEvidence   {
 
   my $self = shift;
@@ -195,7 +194,8 @@ sub  DeleteEvidence   {
 
   foreach my $target_id (@diffArray) {
     my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
-                                                    'attribute_name' =>"full_length_CDS"});
+                                                    'attribute_name' =>"full_length_CDS",
+                                                   'fact_table_id' => 89 });
     if ($Evidence->retrieveFromDB()) {
         $Evidence->markDeleted(1);
         $Evidence->submit();
@@ -223,7 +223,8 @@ sub UnmarkFullLength {
 
   print STDERR "DT.$DTnotFLength does not have a RefSeq any longer\n";
 
-  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
+  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength,
+                                                  'full_length_CDS' => 1 });
 
       $assembly->retrieveFromDB();
       $assembly->setFullLengthCds(0);
@@ -347,8 +348,9 @@ sub  UnMarkAssembliesAsFrameFinderFL  {
 
   print STDERR "DT.$targetId\n";
 
-  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $targetId});
-
+  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $targetId,
+                                                  'full_length_CDS' => 1  });
+  
       $assembly->retrieveFromDB();
       $assembly->setFullLengthCds(0);
       $assembly->submit();
