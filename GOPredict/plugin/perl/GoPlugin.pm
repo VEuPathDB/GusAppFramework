@@ -311,7 +311,7 @@ sub run {
 	    $self->log("GoPlugin: evolving Go Hierarchy");
 	    my $proteinsChanged = $goManager->evolveGoHierarchy($oldGoVersion, $newGoVersion, $deleteInstances, 
 								$recacheInstances, $proteinTableId, $doNotScrub, 
-								$self->getCla()->{test_number});
+								$self->getCla()->{test_number}, $self->getCla()->{query_taxon_id});
 	    $msg .= "Evolved go terms for associations with $proteinsChanged proteins.  ";
 	}
 
