@@ -67,6 +67,10 @@ sub new {
 Plugin reads a config file with information about full paths of directories where files of interest (.gpr & .tif)
 are maintained.  Information is extracted from the '.gpr' files and entered into a database. 
 
+This plugin requires two utilities, Disp and PropertySet, which are currently available from the CBIL cvs ( 
+http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/). These may be available via the GUS cvs repository at the
+Sanger center in the near future.
+
 Since assay, acquisition and most quantification parameters are not readily available through the '.gpr' files,
 they cannot be added to the database through this plugin. They have to be added to the tables separately, 
 either directly or through the following forms in the RAD StudyAnnotator: Hybridization Parameters, Acquisition
