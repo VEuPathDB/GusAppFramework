@@ -8,6 +8,10 @@ use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 use GUS::Model::Core::DatabaseDocumentation;
 
+############ UNDER DEVELOPMENT!!!!!!#############
+############ 2/17/04#############################
+
+
 ############################################################
 ###########################################################
 ### LoadDocumentation.pm
@@ -141,6 +145,33 @@ sub process {
 					"." ."$attribute_nm NOT OVERWRITTEN!");
 			return; # SKIP
 		    } # end if same doc
+		    else { ## SUBMIT if valid attribute
+			if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){
+
+			    ## bind table id to DatabaseDocumentation object
+			    $doc->setTableId($doc->getTableIdFromTableName($table_nm));
+			    $self->logVerbose("Set table ID");
+
+			    ## bind attribute name to DatabaseDocumentation object
+			    $doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
+			    $self->logVerbose("Set attribute name");
+
+			    ## bind html documentation to DatabaseDocumentation object
+			    $doc->setHtmlDocumentation($html_dc);
+			    $self->logVerbose("Set HTML Documentation");
+
+			    ## submit to db
+			    $doc->submit();
+			    $countInserts++;
+			    $self->logData("Inserted documentation for attribute: $table_nm" . "." ."$attribute_nm");
+			    $self->undefPointerCache();
+			    $self->logVerbose("UndefPointerCache()");
+			}#end if
+			## attribute is not valid for this table - DON'T SUBMIT
+			elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){
+			    $self->logAlert("NOT INSERTED! $attribute_nm is not a valid attribute for $table_nm");
+			}
+		    } # end else doc does NOT already exist
 		} # end while
 	    }# end if  
 
@@ -167,61 +198,29 @@ sub process {
 			$self->logAlert("ALREADY EXISTS! Documentation for $table_nm NOT OVERWRITTEN!");
 			return; # SKIP
 		    }
+		    elsif ($attribute_nm eq "NULL" || $attribute_nm eq "null"  || $attribute_nm eq ""){
+			$self->logVerbose("Documentation for table (no attribute supplied)");
+
+			## bind table id to DatabaseDocumentation object
+			$doc->setTableId($doc->getTableIdFromTableName($table_nm));
+			$self->logVerbose("Set table ID");
+			
+			## bind html documentation to DatabaseDocumentation object
+			$doc->setHtmlDocumentation($html_dc);
+			$self->logVerbose("Set HTML Documentation");
+
+			## submit to db
+			$doc->submit();
+			$countInserts++;
+			$self->logData("Inserted documentation for table: $table_nm");
+			$self->undefPointerCache();
+			$self->logVerbose("UndefPointerCache()");
+		    }#end elsif
 		} # end while
 	    } # end elsif attribute_nm NULL
-
-	  ## attribute is valid for this table - SUBMIT
-	  if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
-
-	    ## bind table id to DatabaseDocumentation object
-	    $doc->setTableId($doc->getTableIdFromTableName($table_nm));
-	    $self->logVerbose("Set table ID");
-
-	    ## bind attribute name to DatabaseDocumentation object
-	    $doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
-	    $self->logVerbose("Set attribute name");
-
-	    ## bind html documentation to DatabaseDocumentation object
-	    $doc->setHtmlDocumentation($html_dc);
-	    $self->logVerbose("Set HTML Documentation");
-
-	    ## submit to db
-	    $doc->submit();
-	    $countInserts++;
-	    $self->logData("Inserted documentation for attribute: $table_nm" . "." ."$attribute_nm");
-	    $self->undefPointerCache();
-	    $self->logVerbose("UndefPointerCache()");
-	  }#end if
-
-	  ## documentation for the table (attribute name is NULL) - SUBMIT
-	  elsif ($attribute_nm eq "NULL" || $attribute_nm eq "null"  || $attribute_nm eq ""){
-	    $self->logVerbose("Documentation for table (no attribute supplied)");
-
-	    ## bind table id to DatabaseDocumentation object
-	    $doc->setTableId($doc->getTableIdFromTableName($table_nm));
-	    $self->logVerbose("Set table ID");
-
-	    ## bind html documentation to DatabaseDocumentation object
-	    $doc->setHtmlDocumentation($html_dc);
-	    $self->logVerbose("Set HTML Documentation");
-
-	    ## submit to db
-	    $doc->submit();
-	    $countInserts++;
-	    $self->logData("Inserted documentation for table: $table_nm");
-	    $self->undefPointerCache();
-	    $self->logVerbose("UndefPointerCache()");
-	  }#end elsif
-
-	  ## attribute is not valid for this table - DON'T SUBMIT
-	  elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){
-	    $self->logAlert("NOT INSERTED! $attribute_nm is not a valid attribute for $table_nm");
-	  }
-
 	}#end if table exists
 
-	## no table name in db
-	else {
+	else { ## no table name in db
 	  $self->logAlert("NOT INSERTED! $table_nm does not exist");
 	  return;
         }
