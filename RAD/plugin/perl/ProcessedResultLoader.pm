@@ -733,7 +733,7 @@ The output value can be a number or "NA". In the latter case, the I<entire> line
 B<Caution>: The data_file should contain only the data involved in one
 specific process and not combine more than one process.  For example,
 if the user has results from normalization of I<n> different assays, then
-plugin needs to be run I<n> times (leading to I<n> different process
+this plug-in needs to be run I<n> times (leading to I<n> different process
 invocations), once per assay.  Accordingly, I<n> separate data files will need to be
 created.  All elements in the same input column of the data file
 should correspond to the same quantification_id and the data_file
