@@ -222,7 +222,7 @@ sub run {
     my $testProteinIds = $self->getCla->{test_protein_id_list};
     my $oldGoRootId = $self->getCla->{old_function_root_go_id};
     my $newGoRootId = $self->getCla->{new_function_root_go_id};
-
+    my $msg = "GoPlugin ran successfully.  "
     $databaseAdapter->setTestProteinIds($testProteinIds) if $testProteinIds;
     $self->log("initializing translations");
     $databaseAdapter->initializeTranslations($self->getCla->{query_taxon_id}) if $self->getCla->{apply_rules};
@@ -250,12 +250,13 @@ sub run {
 	    my $goErrMsg = "Please pass in external db release id of old go hierarchy if --evolve_go_hierarchy is set";
 	    $self->userError($goErrMsg) if !$oldGoVersion;
 	    
-	    my $recache = 1;
-	    $recache = 0 if $self->getCla->{apply_rules}; #don't recache if applying rules right afterwards
+	    my $recache = 0;
+#	    $recache = 0 if $self->getCla->{apply_rules}; #don't recache if applying rules right afterwards
 #	    my $deleteCache = 1;
 	    my $deleteCache = 0;
 	    $self->log("GoPlugin: evolving Go Hierarchy (ie starting)");
-	    $goManager->evolveGoHierarchy($oldGoVersion, $newGoVersion, $deleteCache, $recache, $proteinTableId);
+	    my $proteinsChanged = $goManager->evolveGoHierarchy($oldGoVersion, $newGoVersion, $deleteCache, $recache, $proteinTableId);
+	    $msg .= "Evolved go terms for associations with $proteinsChanged proteins.  ";
 	}
 
 	if ($self->getCla->{apply_rules}){
@@ -271,7 +272,7 @@ sub run {
 	$self->log("done scrubbing--i.e. all done!");
     }
     
-    return "plugin worked!";
+    return $msg;
 }
 
 
