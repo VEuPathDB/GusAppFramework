@@ -98,7 +98,6 @@ sub run {
   my @DTSasEvidenceTarget = ();
   my @RemoveAsMarkedFL = ();
   my @DTs = ();
-
   my @NaSeqStop = ();
   my @DTsMarkedUsingFeatures = ();
 
@@ -129,10 +128,34 @@ sub run {
   }
 
 
+   $self->RefSeqFLAssemblies(\@na_sourceids);
 
-   my $ct = 0;
+   $self->DeleteEvidence(\@DTs,\@DTSasEvidenceTarget);
 
-   foreach my $A (@na_sourceids) {
+   $self->UnmarkFullLength(\@RemoveAsMarkedFL);
+
+#Mark FL using features; first call unmark then delete; this has to done first since the features may change from build to build
+
+    $self->UnMarkAssembliesAsFrameFinderFL(\@DTsMarkedUsingFeatures);
+
+    $self->DeleteFrameFinderEvidence(\@DTsMarkedUsingFeatures);
+
+    $self->MarkFLUsingFFfeatures(\@NaSeqStop);
+
+#need this return to finish run of plugin adds result set attribute to algorithm invoc.
+    return "marked as full length";
+
+}
+
+
+
+sub RefSeqFLAssemblies {
+
+  my $self = shift;
+  my ($na_sourceids) = @_;
+  my $ct = 0;
+
+   foreach my $A (@$na_sourceids) {
 
     my($na_seq, $source_id) = @{$A};
 
@@ -153,26 +176,11 @@ sub run {
 
 
 
-   $self->DeleteEvidence(\@DTs,\@DTSasEvidenceTarget);
-   $self->UnmarkFullLength(\@RemoveAsMarkedFL);
-
-#Mark FL using features; first call unmark then delete; this has to done first since the features may change from build to build
-
-
-
-    $self->UnMarkAssembliesAsFrameFinderFL(\@DTsMarkedUsingFeatures);
-
-    $self->DeleteFrameFinderEvidence(\@DTsMarkedUsingFeatures);
-
-    $self->MarkFLUsingFFfeatures(\@NaSeqStop);
-
-#need this return to finish run of plugin adds result set attribute to algorithm invoc.
-  return "$ct marked as full length";
-
 }
 
 
- # check to see if all previous evidence still valid using array of target ids and compare to array of DTs that now contain RefSeqs
+
+# check to see if all previous evidence still valid using array of target ids and compare to array of DTs that now contain RefSeqs
 sub  DeleteEvidence   {
 
   my $self = shift;
