@@ -40,7 +40,7 @@ sub makeRMDir {
     my $inputDir = "$localBase/input";
     &runCmd("mkdir -p $inputDir");
     &makeControllerPropFile($inputDir, $serverBase, 2, $taskSize, 
-			    $nodePath, "DistribJobTask::RepeatMaskerTask");
+			    $nodePath, "DistribJobTasks::RepeatMaskerTask");
     my $seqFileName = "$serverPath/$pipelineName/seqfiles/$datasetName.fsa"; 
     &makeRMTaskPropFile($inputDir, $seqFileName, $rmOptions, $rmPath);
 }
@@ -54,7 +54,7 @@ sub makeMatrixDir {
     my $inputDir = "$localBase/input";
     &runCmd("mkdir -p $inputDir");
     &makeControllerPropFile($inputDir, $serverBase, 2, $taskSize, 
-			    $nodePath, "DistribJobTask::BlastMatrixTask");
+			    $nodePath, "DistribJobTasks::BlastMatrixTask");
     my $dbFileName = "$serverPath/$pipelineName/repeatmask/$subjectName/master/mainresult/blocked.seq"; 
     my $seqFileName = "$serverPath/$pipelineName/repeatmask/$queryName/master/mainresult/blocked.seq"; 
     &makeBMTaskPropFile($inputDir, $blastBinPath, $seqFileName, $dbFileName);
