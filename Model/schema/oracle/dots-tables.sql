@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:43:11 EST 2004     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 12:43:58 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -692,7 +692,6 @@ CREATE TABLE @oracle_dots@.ASSEMBLYSEQUENCESNP (
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
  TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
-
 
 CREATE TABLE @oracle_dots@.ASSEMBLYSNP (
     ASSEMBLY_SNP_ID                    NUMBER(10)                                    NOT NULL,
@@ -2522,7 +2521,6 @@ CREATE TABLE @oracle_dots@.NASEQUENCEIMP (
  TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-
 CREATE TABLE @oracle_dots@.NASEQUENCEKEYWORD (
     NA_SEQUENCE_KEYWORD_ID             NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
@@ -3614,7 +3612,7 @@ CREATE TABLE @oracle_dots@.TRANSLATEDAAFEATSEG (
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
-/* 166 table(s) */
+/* 162 table(s) */
 
 SPOOL OFF
 SET ECHO OFF

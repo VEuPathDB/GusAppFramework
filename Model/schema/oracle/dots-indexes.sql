@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:45:25 EST 2004     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 12:45:59 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -394,6 +394,7 @@ create index @oracle_dots@.GOASSOCIATIONINSTANCE_IND02 on @oracle_dots@.GOASSOCI
 create index @oracle_dots@.GOASSOCIATIONINSTANCE_IND03 on @oracle_dots@.GOASSOCIATIONINSTANCE (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* GOASSOCIATIONINSTANCELOE */
+
 
 /* GOASSOCINSTEVIDCODE */
 create index @oracle_dots@.GOASSOCINSTEVIDCODE_IND02 on @oracle_dots@.GOASSOCINSTEVIDCODE (GO_ASSOCIATION_INSTANCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;

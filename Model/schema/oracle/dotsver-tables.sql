@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dotsver-tables.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:47:23 EST 2004     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 12:47:44 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -1941,6 +1941,33 @@ CREATE TABLE @oracle_dotsver@.GOASSOCIATIONINSTANCEVER (
     IS_DEPRECATED                      NUMBER(1)                                     NOT NULL,
     REVIEW_STATUS_ID                   NUMBER(10)                                    NOT NULL,
     P_VALUE_RATIO                      FLOAT(126)                                    NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL,
+    VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
+    VERSION_DATE                       DATE                                          NULL,
+    VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
+ TABLESPACE @oracle_dotsverTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+CREATE TABLE @oracle_dotsver@.GOASSOCIATIONVER (
+    GO_ASSOCIATION_ID                  NUMBER(10)                                    NOT NULL,
+    TABLE_ID                           NUMBER(10)                                    NOT NULL,
+    ROW_ID                             NUMBER(10)                                    NOT NULL,
+    GO_TERM_ID                         NUMBER(10)                                    NOT NULL,
+    IS_NOT                             NUMBER(1)                                     NOT NULL,
+    IS_DEPRECATED                      NUMBER(1)                                     NOT NULL,
+    DEFINING                           NUMBER(1)                                     NOT NULL,
+    GO_ASSOCIATION_DATE                DATE                                          NULL,
+    REVIEW_STATUS_ID                   NUMBER(10)                                    NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
@@ -3953,7 +3980,7 @@ CREATE TABLE @oracle_dotsver@.TRANSLATEDAAFEATSEGVER (
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
-/* 160 table(s) */
+/* 158 table(s) */
 
 SPOOL OFF
 SET ECHO OFF

@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dotsver-indexes.sql                                                                        */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:49:09 EST 2004     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 12:49:25 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -245,13 +245,7 @@ SPOOL dotsver-indexes.log
 /* GOASSOCIATIONINSTANCEVER */
 
 
-/* GOASSOCIATIONINSTANCEVER_OLD */
-
-
 /* GOASSOCIATIONVER */
-
-
-/* GOASSOCIATIONVER_OLD */
 
 
 /* GOASSOCINSTEVIDCODEVER */
