@@ -45,6 +45,7 @@ $self->initialize({requiredDbVersion => {},
 $| = 1;
 
 sub run {
+
   my $self   = shift;
 
   die "--idSQL are required\n" unless ($self->getArgs()->{idSQL});
@@ -53,7 +54,9 @@ sub run {
 
   $self->log ("Deleting similarities match query ".$self->getArgs()->{idSQL}."\n");
 
-  $self->getIds();
+  my ($ids,$num) = $self->getIds();
+
+  $self->processIds($ids,$num);
 
 }
 
@@ -65,57 +68,85 @@ sub getIds {
   my $idSQL = $self->getArgs()->{'idSQL'};
 
   my $stmt = $dbh->prepare($idSQL);
+
   $stmt->execute();
-  my $total;
+
   my @ids;
-  my $ct;
+
+  my $ct=0;
 
   while (my ($id) = $stmt->fetchrow_array()){
     push (@ids,$id);
-    $ct++;	
+    $ct++;
     if ($self->getArgs()->{'testnumber'} && $ct > $self->getArgs()->{'testnumber'}) {
       last;
     }
-    if ($ct % 1000 == 0) {
-      my $del = $self->doDeletes(\@ids);
-      $total += $del;
-      @ids = ();
-      $stmt->finish(); 
-      $self->log ("$total total Similarity rows deleted\n");
-      $stmt->execute();
-    }	
   }
-  if ($ct > 0 && $ct % 1000 != 0) {
-    my $del = $self->doDeletes(\@ids);
-    $total += $del;
+  my $num = @ids;
+
+  $self->log ("$num Similarity rows should be deleted\n");
+
+  return (\@ids,$num);
+}
+
+sub processIds {
+
+  my ($self,$ids,$num) = @_;
+
+  my $beg = 0;
+
+  my $end = 999;
+
+  if ($end >$num) {
+      $end = ($num-1);
+    }
+
+  my $total = 0;
+
+  while ($beg < $num) {
+
+    my $del = $self->doDeletes($ids,$beg,$end);
+
+    $total+=$del;
+
+    $self->log ("$total total Similarity rows deleted\n");
+
+    $beg+=1000;
+
+    $end+=1000;
+
+    if ($end >$num) {
+      $end = ($num-1);
+    }
   }
+
   $self->log ("$total total Similarity rows and children deleted\n");
-  $self->log ("$ct total Similarity rows should have been deleted\n"); 
-}	
+  $self->log ("$num total Similarity rows should have been deleted\n");
+}
 
 
 sub doDeletes {
-	my ($self,$ids) = @_;
+	my ($self,$ids,$beg,$end) = @_;
+
 	my $dbh = $self->getQueryHandle();
-	my $max = (scalar(@$ids) - 1); 
 
-	my $rows2 = $dbh->do("insert into dotsver.SimilaritySpanVer (select l.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.SimilaritySpan l where l.similarity_id in (".join(', ',@{$ids}[0..$max])."))") if $self->getArgs->{'versionAll'};
-	$self->log("Inserted $rows2 into dotsver.SimilaritySpanVer\n") if $self->getArgs->{'versionAll'};
+	my $rows2 = $dbh->do("insert into dotsver.SimilaritySpanVer (select l.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.SimilaritySpan l where l.similarity_id in (".join(', ',@{$ids}[$beg..$end])."))") if $self->getArgs->{'versionAll'};
+	$self->log("Inserted $rows2 rows into dotsver.SimilaritySpanVer\n") if $self->getArgs->{'versionAll'};
 
-	my $rows3 = $dbh->do("delete from dots.similarityspan where similarity_id in (".join(', ',@{$ids}[0..$max]).")");
-	$self->log("$rows3 row of dots.similarityspan deleted\n");
+	my $rows3 = $dbh->do("delete from dots.similarityspan where similarity_id in (".join(', ',@{$ids}[$beg..$end]).")");
+	$self->log("$rows3 rows of dots.similarityspan deleted\n");
 
-	my $rows4 = $dbh->do("insert into dotsver.IndexWordSimLinkVer (select l.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.IndexWordSimLink l where l.best_similarity_id in (".join(', ',@{$ids}[0..$max])."))") if $self->getArgs->{'versionAll'};
+	my $rows4 = $dbh->do("insert into dotsver.IndexWordSimLinkVer (select l.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.IndexWordSimLink l where l.best_similarity_id in (".join(', ',@{$ids}[$beg..$end])."))") if $self->getArgs->{'versionAll'};
 	$self->log("Inserted $rows4 rows into dotsver.IndexWordSimLinkVer\n") if $self->getArgs->{'versionAll'};
 
-	my $rows5 = $dbh->do("delete from dots.IndexWordSimLink where best_similarity_id in (".join(', ',@{$ids}[0..$max]).")");
-	$self->log("$rows5 row of dots.IndexWordSimLink deleted\n");
+	my $rows5 = $dbh->do("delete from dots.IndexWordSimLink where best_similarity_id in (".join(', ',@{$ids}[$beg..$end]).")");
+	$self->log("$rows5 rows of dots.IndexWordSimLink deleted\n");
 
-	my $rows = $dbh->do("insert into dotsver.SimilarityVer (select s.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.Similarity s where similarity_id in (".join(', ',@{$ids}[0..$max])."))") unless $self->getArgs()->{'doNotVersion'};
-	$self->log("Inserted $rows into dotsver.SimilarityVer, $$ids[0] - $$ids[$max]\n") unless $self->getArgs()->{'doNotVersion'};
+	my $rows = $dbh->do("insert into dotsver.SimilarityVer (select s.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.Similarity s where similarity_id in (".join(', ',@{$ids}[$beg..$end])."))") unless $self->getArgs()->{'doNotVersion'};
+	$self->log("Inserted $rows rows into dotsver.SimilarityVer, $$ids[$beg] - $$ids[$end]\n") unless $self->getArgs()->{'doNotVersion'};
 
-	my $rows6 = $dbh->do("delete from dots.Similarity where similarity_id in (".join(', ',@{$ids}[0..$max]).")");
-	$self->log("$rows6 row of dots.Similarity deleted\n");
+	my $rows6 = $dbh->do("delete from dots.Similarity where similarity_id in (".join(', ',@{$ids}[$beg..$end]).")");
+	$self->log("$rows6 rows of dots.Similarity deleted\n");
 
 	if ($self->getArgs()->{'commit'}) {
 		$dbh->commit;
