@@ -113,33 +113,27 @@ sub run {
 
 
   while (my($na_seq, $source_id) = $stmt1->fetchrow_array( )) {
-
     push(@na_sourceids, [$na_seq, $source_id]);
     push(@DTs, $na_seq);
   }
 
   while (my($na_sequence_id) = $stmt2->fetchrow_array( )) {
-
     push(@naSequenceIds, $na_sequence_id);
-
   }
 
   while (my($target_id) = $stmt3->fetchrow_array( )) {
-
     push(@DTSasEvidenceTarget, $target_id);
-
   }
 
   while (my($DTnotFLength) = $stmt4->fetchrow_array()) {
-
-    push (@RemoveAsMarkedFL,$DTnotFLength);
+   push (@RemoveAsMarkedFL,$DTnotFLength);
   }
 
 
   #push (@naSequenceIds, 0);
   #print STDERR "scalar(@naSequenceIds)\n";
 
-  my $ct = 0;
+   my $ct = 0;
 
   foreach my $A (@na_sourceids) {
 
@@ -167,8 +161,8 @@ sub run {
 
 #really need to send ref of arrays
 # call deleting and updating subroutines
-   $self->DeleteEvidence(@DTs,@DTSasEvidenceTarget);
-   $self->UnmarkFullLength(@RemoveAsMarkedFL);
+   $self->DeleteEvidence(\@DTs,\@DTSasEvidenceTarget);
+   $self->UnmarkFullLength(\@RemoveAsMarkedFL);
 
 
 #need this return to finish run of plugin adds result set attribute
@@ -189,17 +183,17 @@ sub  DeleteEvidence   {
   my $self = shift;
 
 
-  my (@DTs,@DTSasEvidenceTarget) = @_;
+  my ($DTs,$DTSasEvidenceTarget) = @_;
 
 
   my %seen = ();
   my @diffArray = ();
   my $dt;
 
-  foreach $dt(@DTs) {
+  foreach $dt(@$DTs) {
     $seen{$dt} = 1;
   }
-  foreach $dt(@DTSasEvidenceTarget) {
+  foreach $dt(@$DTSasEvidenceTarget) {
     unless ($seen{$dt}) {   #add to new array
      push (@diffArray, $dt);
     }
@@ -235,9 +229,9 @@ sub  DeleteEvidence   {
 sub UnmarkFullLength {
 
   my $self = shift;
-  my (@RemoveAsMarkedFL) = @_;
+  my ($RemoveAsMarkedFL) = @_;
 
-  foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
+  foreach my $DTnotFLength(@$RemoveAsMarkedFL)  {
 
   print STDERR "DT.$DTnotFLength does not have a RefSeq any longer\n";
 
