@@ -222,7 +222,7 @@ sub run {
     my $testProteinIds = $self->getCla->{test_protein_id_list};
     my $oldGoRootId = $self->getCla->{old_function_root_go_id};
     my $newGoRootId = $self->getCla->{new_function_root_go_id};
-    my $msg = "GoPlugin ran successfully.  "
+    my $msg = "GoPlugin ran successfully.  ";
     $databaseAdapter->setTestProteinIds($testProteinIds) if $testProteinIds;
     $self->log("initializing translations");
     $databaseAdapter->initializeTranslations($self->getCla->{query_taxon_id}) if $self->getCla->{apply_rules};
