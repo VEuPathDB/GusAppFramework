@@ -73,7 +73,7 @@
     <copy todir="${build.home}/webapp/WEB-INF/lib">
     	<fileset dir="../WebDevKit/lib/java" 
     		includes="commons-digester-1.5.jar,
-    			oracle-classes1.2.jar,
+    			oracle-classes12.jar,
     			commons-beanutils.jar,
     			commons-cli-1.0.jar
     			jstl.jar,
