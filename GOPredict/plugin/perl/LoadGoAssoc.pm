@@ -145,7 +145,7 @@ sub new {
                      isList => 0,
                 }),
 	 stringArg({name => 'org_external_db_release_list',
-	  descr => 'External database release id for the sequences of the organism you are loading.  Most organisms only need one, but if you are loading gene_association.goa_sptr, it is recommended you provide the release ids for both Swissprot and Trembl sequences',
+	  descr => 'External database release id for the sequences of the organism you are loading.  Most organisms only need one, but if you are loading gene_association.goa_uniprot, it is recommended you provide the release ids for both Swissprot and Trembl sequences',
 	  reqd => 1,
           constraintFunc => undef,
           isList => 0,
@@ -786,7 +786,7 @@ sub __getDbIdColForOrg{
 	if ($orgName eq 'sgd' || $orgName eq 'fb'){
 	    $dbIdCol = 'eas.secondary_identifier';
 	}
-	elsif ($orgName eq 'wb' || $orgName eq 'mgi' || $orgName eq 'goa_sptr'){
+	elsif ($orgName eq 'wb' || $orgName eq 'mgi' || $orgName eq 'goa_uniprot'){
 	    $dbIdCol = 'eas.source_id';
 	}
 	elsif ($orgName eq 'tair'){
@@ -812,7 +812,7 @@ sub __getFileIdAccessorForOrg{
 	if ($orgName eq 'tair'){
 	    $fileIdAccessor = 'getDBObjectSymbol';
 	}
-	elsif ($orgName eq 'wb' || $orgName eq 'mgi' || $orgName eq 'goa_sptr' ||
+	elsif ($orgName eq 'wb' || $orgName eq 'mgi' || $orgName eq 'goa_uniprot' ||
 	       $orgName eq 'sgd' || $orgName eq 'fb'){
 	    $fileIdAccessor = 'getDBObjectId';
 	}
