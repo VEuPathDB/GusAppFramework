@@ -43,13 +43,14 @@ sub new {
 
 
  my $easycsp = [
-            {
+            { o => 'xmlfile',
+              t => 'string',
               h => 'file containing xml to be parsed',
-              o => 'xmlfile',
+
              },
-	    {
+	    { o => 'specialfile',
+              t => 'string',
               h => 'file containing formatted text describing special cases',
-              o => 'specialfile',
 	     },
              ];
 
@@ -80,7 +81,7 @@ sub run {
 	my $has_evidence = 0;
 	my $remove = 0;
 
-	$self->getCla->{'self_inv'}->parseXML( \@xml );
+	$self->getCla->getSelfInv->parseXML( \@xml );
 
 	my @children = $self->getCla->{'self_inv'}->getAllChildren();
 	my $curr_gene;
@@ -117,7 +118,7 @@ sub run {
 				}
 			}
 			print STDERR $child->getClassName(), " has evidence: ", $has_evidence, "\n";
-			# need to check that a copy does not already exist in db - i.e. for GeneSynonyms.  Will retreivefromDB work?  
+      		# need to check that a copy does not already exist in db - i.e. for GeneSynonyms.  Will retreivefromDB work?  
 			if ( !$child->hasChangedAttributes() ) {
 				$remove = 1;
 				print STDERR $child->getClassName(), " retrieved from database.\n";
