@@ -107,23 +107,21 @@ sub process {
 	my ($table_nm, $attribute_nm, $html_dc) = @_;
 	$self->logData("\tTable: $table_nm\tAttribute: $attribute_nm\tDocumentation: $html_dc");
 
+	$self->logAlert("This documentation is identical to what is already stored for attribute: $attribute_nm in table: $table_nm. Not inserted."); #remove
+
 	my $verbose = $self->getCla->{verbose};
-
-	$self->logVerbose("Test: table name = $table_nm attribute name = $attribute_nm html documentation = $html_dc\n");
-
 	my $db = $self->getDb;
         $db->setGlobalNoVersion(1);
-
 	my $doc = GUS::Model::Core::DatabaseDocumentation->new();
-	$self->logVerbose("Created new DatabaseDocumentation object\n\n");
+	$self->logVerbose("Created new DatabaseDocumentation object");
 	
 	if ($db->checkTableExists($table_nm)){ # if table exists
 
 	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
-	        $self->logVerbose("Set table ID\n\n");
+	        $self->logVerbose("Set table ID");
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
-	        $self->logVerbose("Set attribute name\n\n");
+	        $self->logVerbose("Set attribute name");
 #		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
 
 		if ($html_dc eq $doc->getHtmlDocumentation()){
@@ -135,17 +133,17 @@ sub process {
 		}
 
 		$countInserts++;
-	        $self->logVerbose("Set HTML Documentation\n\n");
+	        $self->logVerbose("Set HTML Documentation");
 		$doc->submit();
-	        $self->logVerbose("Submit object to database\n\n");
+	        $self->logVerbose("Submit object to database");
 		$self->undefPointerCache();
-	        $self->logVerbose("UndefPointerCache()\n\n");
+	        $self->logVerbose("UndefPointerCache()");
 	    }
 	    elsif ($attribute_nm == "NULL"){ #attribute name is null
 	      	$doc->setTableId($doc->getTableIdFromTableName($table_nm));
-	        $self->logVerbose("Set table ID\n\n");
+	        $self->logVerbose("Set table ID");
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
-	        $self->logVerbose("Set attribute name\n\n");
+	        $self->logVerbose("Set attribute name");
 #		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
 
 		if ($html_dc eq $doc->getHtmlDocumentation()){
@@ -157,19 +155,19 @@ sub process {
 		}
 
 		$countInserts++;
-	        $self->logVerbose("Set HTML Documentation\n\n");
+	        $self->logVerbose("Set HTML Documentation");
 		$doc->submit();
-	        $self->logVerbose("Submit object to database\n\n");
+	        $self->logVerbose("Submit object to database");
 		$self->undefPointerCache();
-	        $self->logVerbose("UndefPointerCache()\n\n");
+	        $self->logVerbose("UndefPointerCache()");
 	    }
 	    else{ # no attribute name in table
-		$self->logAlert("Attribute $attribute_nm does not exist in $table_nm\n");
+		$self->logAlert("Attribute $attribute_nm does not exist in $table_nm");
 		next;
 	    }
 	}
 	else { # no table name in db
-	    $self->logAlert("Table $table_nm does not exist in database\n"); 
+	    $self->logAlert("Table $table_nm does not exist in database");
 	    next;
         }
 	$db->setGlobalNoVersion(0);
