@@ -57,6 +57,6 @@ my $generator = GUS::ObjRelP::Generator::Generator->new($db,
 $generator->generate($newOnly);
 
 my $date = `date`;
-open(F, ">$ENV{PROJECT_HOME}/GUS/Model/lib/perl/GUS/Model/generated");
+open(F, ">$ENV{PROJECT_HOME}/GUS/Model/lib/perl/generated");
 print F "$date\n";
 close(F);
