@@ -1,7 +1,7 @@
 package GUS::Common::Plugin::LoadMutualInformationScores;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
-# $Id$
+#$Id$
 
 use strict;
 use GUS::PluginMgr::Plugin;
@@ -127,6 +127,8 @@ sub loadMutualInformationFile {
     $mi->retrieveFromDB();
     $mi->setMutualInformationScore($score * 10000);
     $mi->submit();
+
+    $self->undefPointerCache();
   }
 
   $fh->close();
