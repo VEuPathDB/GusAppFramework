@@ -697,7 +697,7 @@ sub modifyDate {
   my $finalTime;
 
   if ($time2.$time1 eq "PM") {
-    $finalTime = $hourMinArray[0] + 12;
+    $finalTime = $hourMinArray[0] + 12 if ($hourMinArray[0] < 11);
     $finalTime .= ":$hourMinArray[1]:00";
 
   } else {
