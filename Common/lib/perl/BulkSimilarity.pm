@@ -341,9 +341,9 @@ my $bs = new BulkSimilarities( new CBIL::Util::A {
 	types   => 'both',
 } );
 
-CBIL::Util::CBIL::Util::Disp:: Display( $bs->{ parameters } );
+CBIL::Util::Disp::Display( $bs->{ parameters } );
 while ( my $o = $bs->getSectionObjects() ) {
-	CBIL::Util::CBIL::Util::Disp:: Display( $o );
+	CBIL::Util::Disp::Display( $o );
 }
 
 =cut
