@@ -104,7 +104,7 @@ sub run {
 sub process {
 	my $self = shift;
 	my ($table_nm, $attribute_nm, $html_dc) = @_;
-	$self->logData("\tTable: $table_nm\tAttribute: $attribute_nm\tDocumentation: $html_dc");
+	$self->logVerbose("Reading table: $table_nm\tAttribute: $attribute_nm\tDocumentation: $html_dc");
 
 	my $verbose = $self->getCla->{verbose};
 	my $db = $self->getDb;
@@ -131,7 +131,7 @@ sub process {
 
 	    ## SKIP if documentation is identical to what is already in db
 	    if ($html eq $html_dc){ 
-	      $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNOT OVERWRITTEN!");
+	      $self->logAlert("ALREADY EXISTS! Documentation for $table_nm" . "." ."$attribute_nm NOT OVERWRITTEN!");
 	      return; # SKIP
 	    }
 	  }
@@ -153,14 +153,13 @@ sub process {
 	    ## submit to db
 	    $doc->submit();
 	    $countInserts++;
-	    $self->logVerbose("Submit object to database");
+	    $self->logData("Inserted documentation for attribute: $table_nm" . "." ."$attribute_nm");
 	    $self->undefPointerCache();
 	    $self->logVerbose("UndefPointerCache()");
 	  }#end if
 
 	  ## documentation for the table (attribute name is NULL) - SUBMIT
 	  elsif ($attribute_nm eq "NULL" || $attribute_nm eq "null"  || $attribute_nm eq ""){
-	    print "Documentation for table (no attribute supplied)\n";
 	    $self->logVerbose("Documentation for table (no attribute supplied)");
 
 	    ## bind table id to DatabaseDocumentation object
@@ -174,26 +173,21 @@ sub process {
 	    ## submit to db
 	    $doc->submit();
 	    $countInserts++;
-	    $self->logVerbose("Submit object to database");
+	    $self->logData("Inserted documentation for table: $table_nm");
 	    $self->undefPointerCache();
 	    $self->logVerbose("UndefPointerCache()");
 	  }#end elsif
 
 	  ## attribute is not valid for this table - DON'T SUBMIT
 	  elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){
-	    $self->logAlert("$attribute_nm is not a valid attribute for table: $table_nm\tNOT INSERTED!");
+	    $self->logAlert("NOT INSERTED! $attribute_nm is not a valid attribute for table: $table_nm");
 	  }
 
-	  ## no attribute name in table
-	  else{
-	    $self->logAlert("Attribute $attribute_nm does not exist in $table_nm");
-	    return;
-	  }
 	}#end if table exists
 
 	## no table name in db
 	else {
-	  $self->logAlert("Table $table_nm does not exist in database - NOT INSERTED!");
+	  $self->logAlert("NOT INSERTED! Table $table_nm does not exist");
 	  return;
         }
 	$db->setGlobalNoVersion(0);
