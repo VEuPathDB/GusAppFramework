@@ -237,7 +237,7 @@ sub retrieveFromDB {
   my $sth;
   $sth = $self->getTable()->getCachedStatement('retrieve',$cacheKey);
   if (!$sth) {
-    #    print STDERR "retrieveFromDB: $sql\n";
+#        print STDERR "retrieveFromDB: $sql\n";
     $sth = $self->getDbHandle()->prepare($sql);
     $self->getTable()->cacheStatement('retrieve',$cacheKey,$sth);
   }

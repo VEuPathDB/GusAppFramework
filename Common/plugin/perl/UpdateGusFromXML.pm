@@ -16,7 +16,7 @@
    my $usage = 'module that parses an XML file and updates GUS: "// on newline delimits submits';
 
    my $easycsp =
-     (
+     [
       { h => 'if true then will update the row with new modification data and algorithmInvocation regardless if has changed from the database',
 	t => 'boolean',
 	o => 'refresh',
@@ -26,11 +26,11 @@
 	d => '-',
 	o => 'filename',
       },
-     );
+     ];
 
    $m->initialize({requiredDbVersion => {},
-		   cvsRevision => '$Revision$',
-		   cvsTag => '$Name$',
+		   cvsRevision => '$Revision$', # cvs fills this in!
+		   cvsTag => '$Name$',             # cvs fills this in!
 		   name => ref($m),
 		   description => '',
 		   easyCspOptions => $easycsp,

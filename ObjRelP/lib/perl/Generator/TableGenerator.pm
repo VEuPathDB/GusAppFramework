@@ -47,7 +47,7 @@ sub _genHeader {
 use strict;
 use GUS::ObjRelP::DbiTable;
 use vars qw (\@ISA);
-\@ISA = qw (DbiTable);
+\@ISA = qw (GUS::ObjRelP::DbiTable);
 
 ";
 }

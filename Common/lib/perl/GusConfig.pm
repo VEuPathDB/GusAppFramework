@@ -31,9 +31,9 @@ sub new {
 }
 
 
-sub getUser {
+sub getUserName {
   my ($self) = @_;
-  return $self->{propertySet}->getProp('user');
+  return $self->{propertySet}->getProp('userName');
 }
 
 sub getGroup {

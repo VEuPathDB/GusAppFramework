@@ -43,6 +43,8 @@ sub initialize {
     $self->{$arg} = $argsHashRef->{$arg};
   }
 
+  $self->_initEasyCspOptions($self->{easyCspOptions});
+
   $self->_failinit('requiredDbVersion')
     unless (ref($self->{requiredDbVersion}) eq "HASH");
   $self->_failinit('easyCspOptions')
@@ -124,7 +126,7 @@ sub getCheckSum {
       $M->log('ERROR',
 	      $M->getName,
 	      $M->getFile,
-	      'Can not find executable,'
+	      'Can not find executable file'
 	     );
       $M->{md5} = '';
     }
@@ -335,17 +337,17 @@ sub _initEasyCspOptions    {
 
   # list (of assumed hash refs)
   if ($args_n > 1) {
-    $M->{__gus__plugin__ECO} = { map {($_->{o},$_)} @_ };
+    $M->{easyCspOptions} = { map {($_->{o},$_)} @_ };
   }
 
   # list ref (of assumed hash refs)
   elsif ($type_s eq 'ARRAY') {
-    $M->{__gus__plugin__ECO} = { map {($_->{o},$_)} @{$_[0]} };
+    $M->{easyCspOptions} = { map {($_->{o},$_)} @{$_[0]} };
   }
 
   # direct hash ref
   else {
-    $_[0]->{__gus__plugin__ECO} = $_[1];
+    $_[0]->{easyCspOptions} = $_[1];
   }
 
   # RETURN

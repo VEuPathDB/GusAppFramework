@@ -40,7 +40,7 @@ sub _genHeader {
   my ($self) = @_;
 
   my $temp =
-"package GUS::Model::$self->{fullName};
+"package GUS::Model::$self->{fullName}Row;
 
 use strict;
 ";
@@ -59,7 +59,7 @@ sub _genISA {
   my ( $self ) = @_;
 
   my $parent = $self->_getParentTable();
-  my $isa = '@ISA = qw (RelationalRow);';
+  my $isa = '@ISA = qw (GUS::ObjRelP::RelationalRow);';
   $isa = "\@ISA = qw ($parent);" if $parent;
   return "
 use vars qw (\@ISA);

@@ -18,7 +18,7 @@ use CBIL::Bio::SequenceUtils;
 
 
 use vars qw (@ISA);
-@ISA = qw (DbiRow);
+@ISA = qw (GUS::ObjRelP::DbiRow);
 
 sub new {
   my($class,$attributeHash,$dbiDatabase,$pkList) = @_;
@@ -445,7 +445,7 @@ that will be used to constrain the returned children...
 
 sub getChildren { 
   my($self,$className,$retrieveIfNoChildren,$getDeletedToo,$where,$doNotRetAtts) = @_;
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
 
   print STDERR $self->getClassName().":getChildren($className,$retrieveIfNoChildren,$getDeletedToo,$doNotRetAtts)\n" if $debug;
 
@@ -506,7 +506,7 @@ sub getChildren {
 
 sub getSuperClassChildren {
   my($self,$className,$retrieveIfNoChildren,$getDeletedToo,$where) = @_;
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
   $self->getDatabase()->getSuperClasses();
   $self->{'retrievingSuperClassChildren'} = 1;
   my @tmp;
@@ -544,7 +544,7 @@ only the first one will be returned.
 
 sub getChild{
   my($self,$className,$retIfNochildren,$getDeletedToo,$where) = @_;
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
   my @ch = $self->getChildren($className,$retIfNochildren,$getDeletedToo,$where);
   return $ch[0];
 }
@@ -588,7 +588,7 @@ sub setChild{
 sub retrieveChildrenFromDB{
   my($self,$className,$resetIfHave,$where,$doNotRetAtts) = @_;
   
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
 
   if ($self->isOnChildList($className) == 0) {
     print STDERR "ERROR: ",$self->getClassName(),"->retrieveChildrenFromDB($className) - Invalid child class\n";
@@ -661,7 +661,7 @@ sub retrieveChildrenFromDB{
 sub getImpRelations {
   my($self,$className,$relCol,$myCol,$where) = @_;
 
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
 
   print STDERR "getImpRelations($self,$className,$myCol,$relCol,$where)\n" if $debug;
   $where->{$relCol} = $self->get($myCol);
@@ -682,7 +682,7 @@ sub getImpRelations {
 
 sub isImpClass {
   my($self,$className) = @_;
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
   if ($className =~ /Imp$/) {
     return 1;
   }
@@ -691,7 +691,7 @@ sub isImpClass {
 
 sub isSuperClass {
   my($self,$className) = @_;
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
   return $self->getDatabase()->isSuperClass($className)
 }
 
@@ -708,7 +708,7 @@ sub getSubClasses {
 
 sub resetChildrenToDB{
   my($self,$className,$where) = @_;
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
   $self->removeChildrenInClass($className);
   $self->retrieveChildrenFromDB($className,undef,$where);
 }
@@ -828,7 +828,7 @@ sub markChildDeleted{
 
 sub markChildrenInClassDeleted{
   my($self,$className) = @_;
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
   foreach my $c ($self->getChildren($className)) {
     $c->markDeleted();
   }
@@ -913,7 +913,7 @@ sub removeChildren{
 
 sub removeChildrenInClass{
   my ($self,$className) = @_;
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
   undef $self->{'children'}->{$className};
   undef $self->{'childrenDbList'}->{$className};
   undef $self->{'retrievedChildren'}->{$className};
@@ -1013,7 +1013,7 @@ sub setParent{
 sub getParent {
   my($self,$className,$retrieveIfNoParent,$doNotRetAtts) = @_;
   ##retrieve from db if don't have any parents and have not retrieved parents already..
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
   print STDERR $self->getClassName()."->getparent($className,$retrieveIfNoParent)\n" if $debug;
   if (!exists $self->{'parents'}->{$className} && $retrieveIfNoParent && !$self->{'retrievedParents'}->{$className}) { ## && !exists $self->{'parentRet'}->{$className}){
     if ($self->isImpClass($className)) {
@@ -1031,7 +1031,7 @@ sub getParent {
 
 sub getSuperClassParent {
   my($self,$className,$retrieveIfNoParent,$doNotRetAtts) = @_;
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
   $self->getDatabase()->getSuperClasses();
   $self->{'retrievingSuperClassParent'} = 1;
   my $p;
@@ -1065,7 +1065,7 @@ sub getAllParents{
 
 sub retrieveParentFromDB{
   my($self,$className,$doNotRetAtts) = @_;
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
   print STDERR "retrieving $className parent\n" if $debug;
   if ($self->isOnParentList($className)) {
     $self->{'retrievedParents'}->{$className} = 1;
@@ -1734,7 +1734,7 @@ sub submitChildren{
 ##  ones that are not deleted as happens for Assemblies in incremental update.
 sub submitChildrenInClass{
   my($self,$className) = @_;
-  $className = $self->getTable()->fullClassName($className);
+  $className = $self->getTable()->getFullClassName($className);
   foreach my $c (sort{$a->isMarkedDeleted() <=> $b->isMarkedDeleted()}$self->getChildren($className,undef,1)) {
     print STDERR $self->getClassName().": Submitting child: deleted = '".$c->isMarkedDeleted()."'\n",$c->toString() if $debug == 1;
     $c->submit(undef,1);

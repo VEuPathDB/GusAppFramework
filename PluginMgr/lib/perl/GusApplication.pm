@@ -93,14 +93,14 @@ SQL
 
   # none found
   if (scalar @$imps == 0) {
-    $P->initStatus("No matching Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision");
+    $M->initStatus("No matching Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision");
     $P->log('ERROR-IMP', $M->getStatus);
     $P->setOk(0);
   }
 
   # too many found
   elsif ( scalar @$imps > 1 ) {
-    $P->initStatus("Found more than one Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision");
+    $M->initStatus("Found more than one Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision");
     $P->log('ERROR-IMP', $M->getStatus);
     foreach (@$imps) {
       $P->log('ERROR-IMP', $_->{ALGORITHM_IMPLEMENTATION_ID}, $_->{EXECUTABLE_MD5},
@@ -111,7 +111,7 @@ SQL
 
   elsif ($M->getCla->{commit} &&
 	 $imps->[0]->{EXECUTABLE_MD5} ne $P->getCheckSum()) {
-    $P->initStatus("The md5 checksum of the plugin file (marked with cvs revision $cvsRevision) doesn't match the md5 checksum stored in the database for the plugin with cvs revision $cvsRevision.  It therefore seems that the plugin has been changed but not commited to cvs.  Please use cvs commit on the plugin file");
+    $M->initStatus("The md5 checksum of the plugin $e executable file (marked with cvs revision $cvsRevision) doesn't match the md5 checksum stored in the database for the plugin with cvs revision $cvsRevision.  It therefore seems that the plugin has been changed but not commited to cvs.  Please use cvs commit on the plugin file");
     $P->log('ERROR-IMP', $M->getStatus);
     $P->setOk(0);
   }
@@ -309,6 +309,8 @@ sub doMajorMode_Meta {
     return $M->getOk
   }
 
+  $M->initName(ref $M);
+
   # connect to the database
   $M->connect_to_database($M);
 
@@ -323,7 +325,7 @@ sub doMajorMode_Meta {
   $alg_go->retrieveFromDB;
 
   my $imp_go = GUS::Model::Core::AlgorithmImplementation
-    ->new({ cvs_revision   => $M->getCVS,
+    ->new({ cvs_revision   => $M->getCVSRevision,
 	    cvs_tag        => $M->getCVSTag,
 	    executable     => $M->getName,
 	    executable_md5 => $M->getCheckSum,
@@ -331,7 +333,7 @@ sub doMajorMode_Meta {
 	  });
   $imp_go->setParent($alg_go);
 
-  my $now = '2002/04/16';
+  my $now = '2002/12/6';
   my $inv_go = GUS::Model::Core::AlgorithmInvocation->new({ start_time  => $now,
 							    end_time    => $now,
 							    machine_id  => 0,
@@ -813,7 +815,7 @@ sub getUser {
   my $M = shift;
 
   my $cla = $M->getCla;
-  $cla->{user}? $cla->{user} : $M->getConfig()->getUser();
+  $cla->{user}? $cla->{user} : $M->getConfig()->getUserName();
 
 }
 
