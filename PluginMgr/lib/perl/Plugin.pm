@@ -168,10 +168,26 @@ B<Params:>
 
 - resultDescrip: a description of the plugin's main result for posterity.
 
-B<Return type:> C<string>
-
 =cut
 sub setResultDescr {$_[0]->{resultDescr} = $_[1];}
+
+=item C<setOracleDateFormat($oracleDateFormat)>
+
+Set Oracle's NLS_DATE_FORMAT for the duration of this plugin's run.  This is the format which oracle will allow for data of type 'Date.'  See Oracle's documentation to find valid formats.  The default format is 'YYYY-MM-DD HH24:MI:SS.'
+
+B<Params:>
+
+- oracleDateFormat: a string specifying a valid Oracle date format
+
+=cut
+
+sub setOracleDateFormat {
+  my ($self, $oracleDateFormat) = @_;
+  
+  my $dbh = $self->getDb()->getDbHandle();
+
+  $dbh->do("alter session set NLS_DATE_FORMAT='$oracleDateFormat'");
+}
 
 =head2 Getters
 
