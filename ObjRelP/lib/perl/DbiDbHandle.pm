@@ -3,7 +3,7 @@ use strict;
 use DBI;
 use Carp;
 
-use vars qw(@ISA $verbose $noInsert $exitOnFailure);
+use vars qw(@ISA $verbose $noInsert $exitOnFailure $rollBack);
 @ISA = qw( DBI::db DBI );
 my ($NO_EMPTY_STRINGS);
 
