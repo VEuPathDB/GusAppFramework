@@ -561,7 +561,8 @@ sub __getSeqGusId{
     
     my ($self, $sourceId) = @_;
     my $dbIdCol = $self->{orgInfo}->{dbIdCol};
-    my $dbList = '( ' . join (',', @{$self->getCla()->{org_external_db_release_list} }) . ') ';
+    my $dbList = $self->getCla()->{org_external_db_release_list};
+    #my $dbList = '( ' . join (',', @{$self->getCla()->{org_external_db_release_list} }) . ') ';
     my $sql = "select eas.aa_sequence_id
                from dots.externalAASequence eas
                where $dbIdCol = '$sourceId'
@@ -823,9 +824,10 @@ sub __formatEntryDate{
 sub __onlyIEAForSeq {
     my ($self, $entries) = @_;
     foreach my $entry (@$entries){
+	
 	return 0 if ($entry->getEvidence() ne 'IEA');
     }
-    $self->log("skipping this sequence since it only has IEA annotation");
+    $self->logVeryVerbose("skipping this sequence since it only has IEA annotation");
     return 1;
 }
 
