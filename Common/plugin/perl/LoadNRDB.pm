@@ -80,9 +80,9 @@ sub new {
      },
      {o => 'sourceDB',
       t => 'string',
-     h=> 'comma delimited pairs of source db name (from ExternalDatabase.name) and abreviations (from ncbi README file) 
+     h=> 'comma delimited pairs of source external_database_release_id for each db in the defline and abreviations (from ncbi README file) 
           separated by a colon, 
-          e.g. GENBANK (NRDB):gb,EMBL DATA LIBRARY (NRDB):emb',
+          e.g. 6501:gb, 6502:emb',
      } 
      ];
 
@@ -134,8 +134,8 @@ sub run {
     return $entryresults;   
   }
   
-  my $nrdbdelete = $self->deleteFromNRDB if ($self->getArgs()->{'delete'});
-  my $aadelete = $self->deleteFromExtAASeq if ($self->getArgs()->{'delete'});
+  my $nrdbdelete = $self->deleteFromNRDB ($dbHash) if ($self->getArgs()->{'delete'});
+  my $aadelete = $self->deleteFromExtAASeq($dbHash) if ($self->getArgs()->{'delete'});
   my $results = "Processing completed:";
   $results = $results . $tempresults . $entryresults . $nrdbdelete . $aadelete; 
   $self->log("$results\n");
@@ -146,30 +146,18 @@ sub getDB {
   my ($self) = @_;
   my $dbh = $self->getQueryHandle();
 
-  my %dbNameHash;
+  my %dbHash;
   my @DBs = split(/,/, $self->getArgs()->{'sourceDB'});
 
   foreach my $db (@DBs) {
-    my ($name, $abrev) = split(/:/, $db);
-    $dbNameHash{$name}=$abrev;
+    my ($db_rel_id, $abrev) = split(/:/, $db);
+    die "--sourceDB db_rel_id:abreviation pairs must be provided\n" if (!$db_rel_id || !$abrev);
+    $dbHash{$abrev} = $db_rel_id;
   }
-  my $sql = "select r.external_database_release_id from sres.externaldatabase d, sres.externaldatabaserelease r where upper(d.name) like ? and d.external_database_id=r.external_database_id and upper(r.version) = 'UNKNOWN'";
 
-  my $stmt = $dbh->prepare($sql);
-
-  my %dbHash;
-
-  foreach my $dbName (keys %dbNameHash) {
-    $stmt->execute($dbName);
-    my $boundName = "%".$dbName."%";
-    my ($db_rel_id) = $stmt->fetchrow_array();
-    $stmt->finish();
-    
-    $dbHash{$dbNameHash{$dbName}} = $db_rel_id;
-  }
   my $num = scalar keys %dbHash;
 
-  print "There are $num entries in the database hash\n";
+  print "There are $num entries in the source database hash\n";
 
   return \%dbHash;
 }
@@ -219,7 +207,7 @@ sub makeTempTable {
       $dbh->do("truncate table NRDBTemp");
       $dbh->do("drop table NRDBTemp");
       $dbh->do("create table NRDBTemp (SOURCE_ID VARCHAR2(32) NOT NULL,EXTERNAL_DB_REL_ID NUMBER(5) NOT NULL,SEQUENCE_VERSION VARCHAR2(10),SET_NUM NUMBER(10) NOT NULL)");
-      $dbh->do("grant select on NRDBTemp to gusrw");
+      $dbh->do("grant select on NRDBTemp to public");
     }
     my $st1 = $dbh->prepare("select max(set_num) from NRDBTemp");
     $st1->execute();
@@ -555,12 +543,12 @@ sub makeNRDBEntries {
 }
 
 sub deleteFromNRDB {
-    my ($self) = @_;
+    my ($self, $dbHash) = @_;
     my $num_delete = 0;
-
+    my $rel_list = join(',', values %{$dbHash});
     my $dbh = $self->getQueryHandle();
     my $login = $self->getArgs()->{temp_login};
-    my $st = $dbh->prepareAndExecute("select nrdb_entry_id from dots.nrdbentry where source_id not in (select n.source_id from dots.nrdbentry n, $login" . ".NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_db_rel_id)");
+    my $st = $dbh->prepareAndExecute("select nrdb_entry_id from dots.nrdbentry where external_database_release_id in ($rel_list) and source_id not in (select n.source_id from dots.nrdbentry n, $login" . ".NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_db_rel_id)");
     while (my ($nrdb_entry_id) = $st->fetchrow_array) {
 	$num_delete++;
 	my $newNRDBEntry = GUS::Model::DoTS::NRDBEntry->new ({'nrdb_entry_id'=>$nrdb_entry_id});
@@ -573,12 +561,12 @@ sub deleteFromNRDB {
 }
 
 sub deleteFromExtAASeq {
-  my ($self) = @_;
+  my ($self, $dbHash) = @_;
   my $num_delete = 0;
-  
+  my $rel_list = join (',', values %{$dbHash});
   my $dbh = $self->getQueryHandle();
   my $ext_db_rel_id = $self->getArgs()->{extDbRelId};
-  my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_database_release_id = $ext_db_rel_id and aa_sequence_id not in (select distinct aa_sequence_id from dots.nrdbentry n)");
+  my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_database_release_id = $ext_db_rel_id and aa_sequence_id not in (select distinct aa_sequence_id from dots.nrdbentry n where external_database_release_id in ($rel_list))");
   while (my ($aa_sequence_id) = $st->fetchrow_array) {
     $num_delete++;
     my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new ({'aa_sequence_id'=>$aa_sequence_id});
