@@ -1,4 +1,3 @@
-
 package GUS::Model::DoTS::Gene; # table name
 use strict;
 use GUS::Model::DoTS::Gene_Row;
@@ -43,31 +42,18 @@ sub countAssembliesAndAssemblySequences {
 sub getRNAs {
 	my($self,$retrieve,$getDeletedToo,$where) = @_;
 	my @tmp;
-	foreach my $tu ($self->getChildren('DoTS::TranscriptUnit',$retrieve,$getDeletedToo,$where)){
-		print STDERR $tu->toString() if $debug == 1;
-		print STDERR $tu->getId()," $tu\n" if $debug == 2;
-		foreach my $rna ($tu->getChildren('DoTS::RNA',$retrieve,$getDeletedToo,$where)){
-			print STDERR $rna->toString() if $debug == 1;
-			print STDERR $rna->getId()," $rna\n" if $debug == 2;
-			push(@tmp,$rna);
-		}
+	foreach my $rna ($self->getChildren('DoTS::RNA',$retrieve,$getDeletedToo,$where)) {
+	  print STDERR $rna->toString() if $debug == 1;
+	  print STDERR $rna->getId()," $rna\n" if $debug == 2;
+	  push(@tmp,$rna);
 	}
+      }
 	return @tmp;
 }
 
-#method to add an RNA object
-#sub addRNA{
-#	my($self,$rna) = @_;
-#	$self->getChild('DoTS::TranscriptUnit',1)->addChild($rna);
-#}
-
 sub countRNAs {
 	my $self = shift;
-	my $count = 0;
-	foreach my $tu ($self->getChildren('DoTS::TranscriptUnit')){
-		$count += scalar($tu->getChildren('DoTS::RNA'));
-	}
-	return $count;
+	return scalar($self->getChildren('DoTS::RNA'));
 }
 
 ## override submit so submits all merged genes...should add submit of all gene_nasequences as well!!
