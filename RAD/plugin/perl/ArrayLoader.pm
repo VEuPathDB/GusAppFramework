@@ -13,6 +13,8 @@
 # junmin liu
 #
 # Modified
+#   Thursday October 16, 2003
+#     made final changes for loading control infor.
 #   Monday Sept. 13 2002
 #
 #   Thursday Jan. 23 2003
@@ -23,11 +25,8 @@
 package GUS::RAD::Plugin::ArrayLoader;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
-
-
 use strict;
 use IO::File;
-
 
 use GUS::Model::RAD3::Array;
 use GUS::Model::SRes::Contact;
@@ -35,7 +34,7 @@ use GUS::Model::RAD3::OntologyEntry;
 use GUS::Model::RAD3::ArrayAnnotation;
 use GUS::Model::RAD3::ElementAnnotation;
 use GUS::Model::RAD3::CompositeElementAnnotation;
-
+use GUS::Model::RAD3::Control;
 
 sub new {
   my $class = shift;
@@ -48,7 +47,7 @@ sub new {
 #  $m->setVersion('1.2');
 #  $m->setRequiredDbVersion({SRes => '3',RAD3 => '3'} );
 #  $m->setDescription('Loads data into Array, ArrayAnnotation, ElementImp, CompositeElementImp, ElementAnnotation, CompositeAnnotation tables in RAD3 database.');
-  my $usage = 'Loads data into Array, ArrayAnnotation, ElementImp, CompositeElementImp, ElementAnnotation, CompositeAnnotation tables in RAD3 database.';
+  my $usage = 'Loads data into Array, ArrayAnnotation, ElementImp, CompositeElementImp, ElementAnnotation, CompositeAnnotation, Control tables in RAD3 database.';
 
 
 
@@ -498,8 +497,20 @@ sub checkCfg(){
             }
 	}
     }    
-  $RV = join(' ','Finish checking configuration file', $M->getCla->{'cfg_file'});
-  $M->logData('Result', $RV);
+
+# for Control table
+    if(defined $cfg_rv->{'mapping'}->{'Control.subclass_view'}){
+	if(defined $cfg_rv->{'mapping'}->{'Control.control_type_id'}){
+	 $M->setOk(0);
+	 $RV="You must provide Control.control_type_id in your configuration file.\n";
+	 $M->logData('ERROR', $RV);	
+	 if($M->getCla->{'commit'}){print STDERR "ERROR: $RV\n";}
+	 return;   
+	}
+    }
+
+    $RV = join(' ','Finish checking configuration file', $M->getCla->{'cfg_file'});
+    $M->logData('Result', $RV);
 }
 
 sub workOnArray {
@@ -785,7 +796,7 @@ sub loadData{
    my $num_inserts = 0; # holds current number of rows inserted into ElementImp
    my $num_spot_family = 0; # holds current number of rows inserted into CompositeElementImp
    my $line = "";
-  
+   $cfg_rv->{num_control_inserts}=0;
 # the following hash is used for caching
    my %ext_db_cache; 
    my $warnings;
@@ -1113,10 +1124,6 @@ sub loadData{
 
 # work on elementannation
      if(defined $cfg_rv->{'elementannotation_index'}){
-	
-	
-# for debug
-#   $element_annotation_hash->{'element_id'}=1;
 	 foreach my $m (keys (%{$cfg_rv->{'elementannotation_index'}})) {
 	     my $element_annotation_hash;
 	     my $element_annotation;
@@ -1152,6 +1159,27 @@ sub loadData{
 	 }
      }
 
+# work on control table
+     if(defined $cfg_rv->{'mapping'}->{'Control.subclass_view'}){
+	 my $view=$cfg_rv->{'mapping'}->{'Control.subclass_view'};
+	 my $table_id=getTable_Id($view);
+	 my $row_id;
+	 
+	 if($view eq 'ShortOligo' || $view eq 'Spot'){
+	     $row_id=$cfg_rv->{'Element_Id'};
+
+	 }
+	 if($view eq 'ShortOligo' || $view eq 'Spot'){
+	     $row_id=$cfg_rv->{'CompositeElement_Id'};
+	 }
+
+	 $M->updateControl($table_id, $row_id, @arr);
+
+     }
+
+
+
+
      $num_inserts++;
 #     $spot_family->undefPointerCache();
 
@@ -1169,8 +1197,89 @@ sub loadData{
    $RV="Number of records which have been inserted into CompositeElementImp table (after header): $num_spot_family.";
    $M->logData('Result', $RV);
    if($M->getCla->{'commit'}){print STDERR "Result: $RV\n";}   
-   $RV = "Processed $n dataline, Inserted $num_inserts Elements and $num_spot_family CompositeElements."; 
+   my $num_control=$cfg_rv->{num_control_inserts};
+   $RV = "Processed $n dataline, Inserted $num_inserts Elements and $num_spot_family CompositeElements and $num_control Controls ."; 
    return $RV;
+}
+
+sub getTable_Id{
+    my $M = shift;
+    my ($table_name)=@_;
+    $M->setOk(1);
+    my $query="select t.table_id from core.tableinfo t where t.name='$table_name'";
+    my $dbh = $M->getSelfInv->getQueryHandle();
+    my $sth = $dbh->prepare($query);
+    $sth->execute();
+    my ($id) = $sth->fetchrow_array();
+    $sth->finish();
+    if (defined $id) {
+	return $id;
+    }
+    else{
+	$cfg_rv->{warnings} = "Cann't retrieve table_id for subclass view $table_name";
+	$M->logData('Error', $cfg_rv->{warnings});
+	if($M->getCla->{'commit'}){print STDERR "Error: Cann't retrieve table_id for subclass view $table_name\n";}
+	$M->setOk(0);
+    }
+}
+
+sub updateControl{
+    my $M = shift;
+    my ($table_id, $row_id, @arr)=@_;
+
+    my $control_hash;
+    my $pos=$cfg_rv->{'position'};
+    my $mapping=$cfg_rv->{'mapping'};
+    my $warnings;
+    my $RV;
+    my @attributesToNotRetrieve = ('modification_date', 'row_alg_invocation_id');     
+    $control_hash->{'table_id'} = $table_id;
+    $control_hash->{'row_id'} = $row_id;
+  
+    my @control_attr=$M->getAttrArray("GUS::Model::RAD3::Control");
+    my $control_hashref=$M->getAttrHashRef("GUS::Model::RAD3::Control");
+    for (my $i=0; $i<@control_attr; $i++) {
+	my $attr;
+	
+	$attr="Control.$control_attr[$i]";
+	
+	if ( defined $pos->{$mapping->{$attr}} && $arr[$pos->{$mapping->{$attr}}] ne "") {
+	    $control_hash->{$control_attr[$i]} = $arr[$pos->{$mapping->{$attr}}];
+	}
+	 if ( ($control_hashref->{$control_attr[$i]} =~ /^Not Nullable$/)  && !defined $control_hash->{$control_attr[$i]}) {
+	     $warnings = "Data file line $cfg_rv->{n} is missing attribute Control.$control_attr[$i], which is mandatory.\nData from this data line were not loaded.\nHere $cfg_rv->{n} is the number of lines (including empty ones) after the header.\n\n";
+	     $M->logData('Error', $warnings);
+	     if($M->getCla->{'commit'}){print STDERR "Error: $RV\n";}
+	     return; 
+	 }
+     }
+
+     my $CONTROL_VIEW=join('::', 'GUS', 'Model', 'RAD3', 'Control');
+     my $control = $CONTROL_VIEW->new($control_hash);
+# check whether this row is already in the database
+# if it is, get its primary key
+     if ($control->retrieveFromDB(\@attributesToNotRetrieve)) {
+	 $RV="Data line no. $cfg_rv->{n}\tAlready existing an entry in Control\tNo insert";
+	 if(! $M->getCla->{noWarning}){
+	     $M->logData('Warning', $RV);
+	 }
+	 if($M->getCla->{'commit'} && !$M->getCla->{noWarning} ){
+	     print STDERR "Warning: $RV\n";
+	 }
+     }
+     else{
+	 $control->submit();
+# need to rewrite this part
+#
+	 if(!$control->getId()){
+	     $RV="Data line no. $cfg_rv->{n}\t cann't be inserted into Control table\tSkip this one";
+	     $M->logData('Warning', $RV);
+	     if($M->getCla->{'commit'}){print STDERR "Warning: $RV\n";}
+	 }
+	 else{
+	     $cfg_rv->{num_control_inserts}++;
+	 }
+     }
 }
 
 sub mapCVNameToId{
@@ -1246,7 +1355,7 @@ ga GUS::RAD::Plugin::ArrayLoader B<[options]> B<--cfg_file> cfg_file B<--data_fi
 
 =head1 DESCRIPTION
 
-    This is a plug-in that loads array data (spotted microarray and oligonucleotide array) into Array, ArrayAnnotation, CompositeElementAnnotaion, ElementAnnotation tables and views of CompositeElementImp, ElementImp.  
+    This is a plug-in that loads array data (spotted microarray and oligonucleotide array) into Array, Control, ArrayAnnotation, CompositeElementAnnotaion, ElementAnnotation tables and views of CompositeElementImp, ElementImp.  
 
 =head1 ARGUMENTS
 
@@ -1336,6 +1445,9 @@ You should save this file in the CVS repository, in the directory $PROJECT_HOME/
 * It is crucial that the attributes of CompositeElememtImp that you are listing are such that each CompositeElement in your data file is uniquely identified by those attributes. For spotted array case, if one of the attributes listed should be present in each spot family and uniquely identifies a spot family (e.g. a well id might do this), make that attribute mandatory in your configuration file.
 
 * It is also very important for shortOligo array, the name attribute for each shortOligoFamily should be unique, since the plugin will cache the name attribute of each shortOligoFamily and all shortOligoFamily with same name will be loaded into database once.
+
+
+* The control.subclass_view is the name of the view of either RAD3.ElementImp or RAD3.CompositeElementImp to which Control.table_id should point for every control loaded in this run. If the controls refer to elements on the array, the subclass_view should be the name of view of RAD3.ElementImp. If the controls refer to CompositeElements on the array, the subclass_view should be the name of view of RAD3.CompositeElementImp.
 
 =head2 F<data_file>
 
