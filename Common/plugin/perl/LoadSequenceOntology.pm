@@ -3,8 +3,8 @@ package GUS::Common::Plugin::LoadSequenceOntology;
 @ISA = qw(GUS::PluginMgr::Plugin);
  
 use strict;
-use DBI;
 use FileHandle;
+use GUS::ObjRelP::DbiDatabase;
 $| = 1;
 
 #on command line need input file, so version, so cvs version
