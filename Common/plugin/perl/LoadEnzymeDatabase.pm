@@ -7,7 +7,7 @@ package GUS::Common::Plugin::LoadEnzymeDatabase;
 
 use strict;
 
-use Disp;
+use CBIL::Util::Disp;
 
 use GUS::Model::SRes::EnzymeClass;
 use GUS::Model::SRes::EnzymeClassAttribute;
@@ -125,7 +125,7 @@ sub run {
 
    if ($Self->getCla()->{Update}) {
       my $enzymes = $ezp->getFileCache('enzymes')->getEntries();
-      Disp::Display($enzymes);
+      CBIL::Util::Disp::Display($enzymes);
    } else {
 
       # get the parsed entries as a list of objects
@@ -355,7 +355,7 @@ sub _process_attributes {
            });
    }
 
-   foreach my $ez _att_h (@ez_atts_h) {
+   foreach my $ez_att_h (@ez_atts_h) {
       my $ez_att_g = GUS::Model::SRes::EnzymeClassAttribute->new($ez_att_h);
       $ez_att_g->setParent($GusZyme);
       $Self->_incEnzymeClassAttribute;
@@ -399,7 +399,7 @@ sub _process_dbrefs {
 
             # we got some sequences to annotate, make the links
             if (scalar @eas_g) {
-               foreach my $eas _g (@eas_g) {
+               foreach my $eas_g (@eas_g) {
                   my $asec_h = { evidence_code     => 'TAS',
                                  review_status_id  => 0, # not reviewed.
                                  aa_sequence_id    => $eas_g->getId,
