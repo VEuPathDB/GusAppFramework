@@ -1,7 +1,25 @@
+<?xml version="1.0"?>
 <project name="WDK temp build" default="deploy" basedir=".">
-
-  <property name="webapp.dir"    value="/nfs/team81/art/genedb/webapps/sampleWDK"/>
-  <property name="gus.home"    value="/nfs/team81/art/gus/gus_home"/>
+	
+  <target name="start">
+    <tstamp/>
+    <available file="${basedir}/local.properties" 
+           property="local.properties.available"/>
+  </target>
+	                                                                                           
+  <target name="properties-local" 
+          if="local.properties.available" 
+          depends="start">
+    <echo message="Loading local properties file"/>
+    <property file="${basedir}/local.properties"/>
+  </target>
+	                                                                                           
+  <target name="properties" 
+          depends="properties-local">
+    <echo message="Loading build properties file"/>
+    <property file="build.properties"/>
+  </target>
+	
   <property name="build.home"    value="${basedir}/ant-build"/>
   <property name="src.home"      value="${basedir}/src/java"/>
 
