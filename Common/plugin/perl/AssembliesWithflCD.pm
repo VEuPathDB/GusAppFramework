@@ -161,7 +161,7 @@ sub run {
 
 
     $self->UnMarkAssembliesAsFrameFinderFL(\@DTsMarkedUsingFeatures);
-  print STDERR "getting to this\n";
+
     $self->DeleteFrameFinderEvidence(\@DTsMarkedUsingFeatures);
 
     $self->MarkFLUsingFFfeatures(\@NaSeqStop);
