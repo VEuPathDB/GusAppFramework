@@ -59,6 +59,8 @@ sub new {
 
   my $failureCases = "Files not in an appropriate format.";
 
+# notes begin here -------
+
   my $notes = <<NOTES;
 
 =pod
@@ -68,22 +70,20 @@ sub new {
 Plugin reads a config file with information about full paths of directories where files of interest (.gpr & .tif)
 are maintained.  Information is extracted from the '.gpr' files and entered into a database. 
 
-This plugin requires two utilities, Disp and PropertySet, which are currently available from the CBIL cvs ( 
-http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/). These may be available via the GUS cvs repository at the
-Sanger center in the near future.
+This plugin requires two utilities, Disp and PropertySet, which are available with RAD, and also 
+from the CBIL cvs at:
+ http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/ 
 
 Since assay, acquisition and most quantification parameters are not readily available through the '.gpr' files,
 they cannot be added to the database through this plugin. They have to be added to the tables separately, 
 either directly or through the following forms in the RAD StudyAnnotator: Hybridization Parameters, Acquisition
 Parameters and Quantification Parameters.
 
-Certain portions in the PERL code are hard-coded for use by RAD at CBIL. These are indicated with the comment 'HARD-CODED', 
-and should be changed based on data maintained in the local instance of RAD.
+The plugin also assumes the following parameters to be the same for all assays: Array ID, Batch ID, 
+Hybridization Protocol ID, Hybridization Operator ID, Acquisition Protocol ID, Quantification Protocol 
+ID and Quantification Operator ID.
 
-The plugin also assumes the following parameters to be the same for all assays: Array ID, Batch ID, Hybridization
-Protocol ID, Hybridization Operator ID, Acquisition Protocol ID, Quantification Protocol ID and Quantification Operator ID.
-
-=head2 F<Config File [ required ]>
+=head2 F<Config File (is mandatory)>
 
 Blank lines and comment lines (lines starting with '#') are ignored.
 The following keywords and their values are required (in cases where no value is to be specified, please
@@ -107,8 +107,8 @@ use the words 'null' as the value):
   - Hyb_Operator_ID^ = hybridization operator id
   - All_Hyb_Dates_Same = requires a yes/no answer; if yes, then allHybDates will be read, 
     else individual_HybDates will be read
-  - All_Hyb_Dates = yyyy-mm-dd
-  - Individual_Hyb_Dates = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;
+  - All_Hyb_Dates" = yyyy-mm-dd
+  - Individual_Hyb_Dates" = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;
 
  ACQUISITION SECTION
 
@@ -116,19 +116,23 @@ use the words 'null' as the value):
   - Tiff_File_Path = full path to the dir where the .tif files are kept
   - All_Scan_Dates_Same = requires a yes/no answer; if yes, then allScanDates will be read, 
     else individual_Scan_Dates will be read
-  - All_Scan_Dates = yyyy-mm-dd
-  - Individual_Scan_Dates = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;
+  - All_Scan_Dates" = yyyy-mm-dd
+  - Individual_Scan_Dates" = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;
 
  QUANTIFICATION SECTION
 
   - Quant_Operator_ID^** = quantification operator id
 
+
+  Footnotes:
   ^ These values should pre-exist in various tables in the database
+  " All dates should be in the format: yyyy-mm-dd
  ** These values are optional, i.e., the keywords should exist, but their 
     the values can be left blank.
 
-Each of these keywords should be on a separate line. The values for these keywords should be separated by an '=' sign. A sample
-file is maintained in \$PROJECT_HOME/GUS/RAD/config/sample_GenePixStudyModuleILoader.cfg (the sample config file also contains instructions).
+All keywords are required, and each should be on a separate line with the keywords and 
+values seperated by '='. A sample config file with some instructions is maintained in:
+ \$PROJECT_HOME/GUS/RAD/config/sample_GenePixStudyModuleILoader.cfg
 
 
 =head2 F<Database requirements>
@@ -142,10 +146,13 @@ This plugin assumes that the following entries exist in your instance of the dat
 
 If any of the above is missing, the plugin will report an error.
 
+
 =head2 F<Warning (for non-CBIL instances)>
 
-For local installations of RAD which differ from the CBIL database, some lines of this plugin will need to be modified, to accomodate
-hard-coded information. You might need to modify any piece of code labelled as 'HARD-CODED' in the comments below.
+For local installations of RAD which differ from the CBIL database, some lines of this plugin 
+will need to be modified, to accomodate hard-coded information. Modify lines labelled 
+'HARD-CODED' based on information contained in your instance of RAD.
+
 
 =head1 EXAMPLES
 
@@ -154,6 +161,14 @@ ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.c
 ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject --skip assay123456
 
 ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --group myPI --project myProject --skip assay123456,assay123457 --commit
+
+
+=head1 REPORT BUGS TO
+
+ svdate (AT) pcbi (dot) upenn (dot) edu
+ OR
+ rad3 (AT) pcbi (dot) upenn (dot) edu
+
 
 =head1 AUTHOR
 
@@ -164,8 +179,8 @@ Shailesh Date, Hongxian He
 Copyright, Trustees of University of Pennsylvania 2003. 
 
 =cut
-
 NOTES
+# notes end here -------
 
 
   my $documentation = {

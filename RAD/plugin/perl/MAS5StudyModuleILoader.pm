@@ -147,6 +147,15 @@ plugin will need to be modified, to accomodate hard-coded information. Modify li
 labelled 'HARD-CODED' based on information contained in your instance of RAD.
 
 
+=head1 EXAMPLES
+
+ga GUS::RAD::Plugin::MAS5StudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject
+
+ga GUS::RAD::Plugin::MAS5StudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject --skip assay123456
+
+ga GUS::RAD::Plugin::MAS5StudyModuleILoader --cfg_file /somePath/configFile.cfg --group myPI --project myProject --skip assay123456,assay123457 --commit
+
+
 =head1 REPORT BUGS TO
 
  svdate (AT) pcbi (dot) upenn (dot) edu
