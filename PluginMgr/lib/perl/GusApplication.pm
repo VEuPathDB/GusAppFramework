@@ -344,7 +344,7 @@ sub doMajorMode_Meta {
 	  });
   $imp_go->setParent($alg_go);
 
-  my $now = '2002/12/6';
+  my $now = 'sysdate';
   my $inv_go = GUS::Model::Core::AlgorithmInvocation->new({ start_time  => $now,
 							    end_time    => $now,
 							    machine_id  => 0,
