@@ -226,8 +226,9 @@ sub UnmarkFullLength {
   my $self = shift;
   my ($source_id,$assembly) = @_;
 
+  print STDERR "Value of attribute $assembly->getFullLengthCds() \n";
 
- if ($assembly->getFullLengthCds() != 1)  {
+ # if ($assembly->getFullLengthCds() == 1)  {
 
 
   my $fact = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $source_id });
@@ -241,7 +242,8 @@ sub UnmarkFullLength {
         {   print STDERR "Can not add evidence\n";
         }
 
-}
+
+#}
    }
 
 
@@ -284,6 +286,8 @@ sub MarkFLUsingFFfeatures  {
         $assembly->setFullLengthCds(1);
         $assembly->submit();
         $self->undefPointerCache();
+
+     print STDERR "$naSeq marked full length by features\n";
 
 #  $self->AddEvidenceTranslatedFeature($assembly,$tStop);
 
