@@ -82,7 +82,7 @@ Blank lines and comment lines (lines starting with '#') are ignored.
 The following keywords and their values are required (in cases where no value is to be specified, please
 use the words 'null' as the value):
 
-  - GPR_File_Path= full path to the dir where the GPR files are kept
+  - gpr_File_Path= full path to the dir where the gpR files are kept
   - Study_ID^ = the study identifier
   - Array_ID^ = array type ID
  
@@ -198,7 +198,7 @@ NOTES
 }
 
 my @properties = (
-    [ "GPR_File_Path",                 "", "" ],
+    [ "gpr_File_Path",                 "", "" ],
     [ "Study_ID",                      "", "" ],
     [ "Array_ID",                      "", "" ],
     [ "Batch_ID",                      "", "" ],  # can be null
@@ -251,7 +251,7 @@ sub createGUSAssaysFromFiles {
   my $assayCnt = 0;
 
   my $tiffFilePath  = $self->{propertySet}->getProp("Tiff_File_Path"); 
-  my $gprFilePath   = $self->{propertySet}->getProp("GPR_File_Path"); 
+  my $gprFilePath   = $self->{propertySet}->getProp("gpr_File_Path"); 
   my $testNumber    = $self->getArgs->{testnumber};
   my @skipAssayList = @{$self->getArgs->{skip}};
 
@@ -574,7 +574,7 @@ sub createSingleGUSAssay {
 sub checkRequiredFilesExist {
   my ($self, $assayName, $imageFilesRef) = @_;
 
-  my $gprFile     = $self->{propertySet}->getProp("GPR_File_Path")."/$assayName.gpr";
+  my $gprFile     = $self->{propertySet}->getProp("gpr_File_Path")."/$assayName.gpr";
   my $tiffFileCy5 = $imageFilesRef->{$assayName."_Cy5"};
   my $tiffFileCy3 = $imageFilesRef->{$assayName."_Cy3"};
 
@@ -594,7 +594,7 @@ sub parseTabFile {
   my $GPRinfo;
   my $flag = 1;
 
-  my $filePath = $self->{propertySet}->getProp("${prefix}FilePath");
+  my $filePath = $self->{propertySet}->getProp("${prefix}_File_Path");
 
   my $file = "$filePath/$assayName.$prefix";
 
