@@ -18,6 +18,7 @@ use strict;
 use Data::Dumper;
 use Carp;
 
+use GUS::Model::DoTS::ExternalAASequence;
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::Source;
 use GUS::Model::SRes::Taxon;
@@ -60,6 +61,8 @@ use GUS::Model::DoTS::ProteinInstanceCategory;
 use GUS::Model::SRes::GOEvidenceCode;
 use GUS::Model::DoTS::Evidence;
 use GUS::Model::SRes::ExternalDatabaseEntry;
+use GUS::Model::SRes::ExternalDatabase;
+use GUS::Model::SRes::ExternalDatabaseRelease;
 
 use GUS::Model::DoTS::Attribution;
 
@@ -222,6 +225,52 @@ sub getGusSequence {
 ##################################
 ##################################
 
+################################################################################
+# Build DoTS::ExternalAASequence object
+#
+# => Uniprot storage purposes
+#
+
+sub buildAASequence {
+  my ($self, $gus_seq, $no_sequence, $external_database_release_id) = @_;
+  my $bioperl_sequence = $self->{bioperlSequence};
+  my $debug            = $self->{debug};
+  
+  if (not defined ($bioperl_sequence)) {
+    print STDERR "ERROR - can't generate the AA Sequence object, bioperl sequence object not specified !!\n";
+    return undef;
+  }
+  
+  my $seq_descr   = $bioperl_sequence->desc;
+  my $accession   = $bioperl_sequence->accession_number;
+  my $id          = $bioperl_sequence->display_id;
+  my $name        = $id;
+  my $seq_length  = length ($bioperl_sequence->seq);
+  # source_id ???
+  my $source_id   = "";
+
+  my $h = {
+	   'name'             => $name,
+	   'description'      => $seq_descr,
+	   'length'           => $seq_length,
+	  };
+  
+  # $gus_seq may have been passed in just to be brought up-to-date
+  #
+  $gus_seq = GUS::Model::DoTS::ExternalAASequence->new ($h);
+
+  if (not $no_sequence) {
+    $gus_seq->setSequence ($bioperl_sequence->seq);
+  }
+
+  # print STDERR "Dumping AA sequence object, " . Dumper ($gus_seq) . "\n";
+
+  # The sequence ...
+
+  $self->{gusSequence} = $gus_seq;
+  return $gus_seq;
+}
+
 
 ################################################################################
 # Build DoTS::ExternalNASequence object
@@ -275,6 +324,7 @@ sub buildNASequence {
   my $clone            = "UNKNOWN";
   my $strain           = "UNKNOWN";
   my $chr_order_number = undef;
+  my $datasource       = undef;
   my @features         = $bioperl_sequence->get_all_SeqFeatures();
 
   #print STDERR "\n*** \$bioperl_sequence = $bioperl_sequence\n\n";
@@ -311,6 +361,10 @@ sub buildNASequence {
 	elsif ($tag =~ /strain/i) {
 	  my @values = $feature->each_tag_value('strain');
 	  $strain = $values[0];
+	}
+	elsif ($tag =~ /datasource/i) {
+	  my @values = $feature->each_tag_value('datasource');
+	  $datasource = $values[0];
 	}
       }
 
@@ -368,6 +422,13 @@ sub buildNASequence {
 
   my $source = $self->get_source($gus_seq, $name, $clone, $chromosome, $strain);
 
+  if (defined $datasource) {
+    $self->{datasource} = $datasource;
+  }
+  else {
+    print STDERR "ERROR - can't get the datasource from the source feature!!\n";
+    exit 1;
+  }
   $self->{gusSequence} = $gus_seq;
   return ($gus_seq, $source);
 }
@@ -1082,8 +1143,36 @@ sub buildRNAFeatureExon {
 
 sub buildTranslatedAASequence {
     my ($self, $gf, $aa_feature_translated, $systematic_id) = @_;
-    my $debug           = $self->{debug};
-    my $bioperl_feature = $self->{bioperlFeature};
+
+    my $debug            = $self->{debug};
+    my $bioperl_feature  = $self->{bioperlFeature};
+    my $bioperl_sequence = $self->{bioperlSequence};
+    my $datasource       = $self->{datasource};
+
+    # Get the external_database_release_id associated with it
+
+    my $ext_db = GUS::Model::SRes::ExternalDatabase->new ({"name" => $datasource});
+    my $exist  = $ext_db->retrieveFromDB();
+    my $ext_db_id;
+    my $ext_db_release_id;
+    if ($exist) {
+      $ext_db_id = $ext_db->getId();
+      my $ext_db_release = GUS::Model::SRes::ExternalDatabaseRelease->new ({"external_database_id" => $ext_db_id});
+      $exist = $ext_db_release->retrieveFromDB();
+      if ($exist) {
+	$ext_db_release_id = $ext_db_release->getId();
+      }
+      else {
+	print STDERR "ERROR - can't get the DatabaseRelease Entry associated with this datasource, $datasource!\n";
+	exit 1;
+      }
+    }
+    else {
+      print STDERR "ERROR - can't get the Database Entry associated with this datasource, $datasource!\n";
+      exit 1;
+    }
+    
+    print STDERR "In buildTranslatedAASequence()\n";
 
     my $aa_seq = $aa_feature_translated->getParent("GUS::Model::DoTS::TranslatedAASequence", 1);
 
@@ -1171,11 +1260,12 @@ sub buildTranslatedAASequence {
     }
 
     my $h = {
-        #'subclass_view'    => $subclass_view,
-        'sequence_version' => $seq_version,
-        'description'      => $aa_seq_descr,
-        'sequence'         => $prot_seq->seq()
-        };
+	     #'subclass_view'    => $subclass_view,
+	     'sequence_version' => $seq_version,
+	     'description'      => $aa_seq_descr,
+	     'sequence'         => $prot_seq->seq(),
+	     'external_database_release_id' => $ext_db_release_id,
+	    };
 
     unless ($aa_seq) {
         $aa_seq = GUS::Model::DoTS::TranslatedAASequence->new ($h);
@@ -1201,9 +1291,14 @@ sub buildTranslatedAASequence {
         $mol_weight    =~ s/\s*da//i;
         print STDERR "mol weight    : $mol_weight\n";
 
-        if ($aa_seq->get('molecular_weight') != $mol_weight) {
+	if (! ($mol_weight =~ /^\d+$/)) {
+	  print STDERR "molecular weight, $mol_weight, not a number !!!\n";
+	}
+	else {
+	  if ($aa_seq->get('molecular_weight') != $mol_weight) {
             $aa_seq->set ('molecular_weight', $mol_weight);
-        }
+	  }
+	}
     }
 
     # Peptide Length
