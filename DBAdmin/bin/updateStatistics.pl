@@ -12,14 +12,10 @@
 # $Revision$ $Date$ $Author$
 # -----------------------------------------------------------------------
 
-BEGIN {
-    unshift(@INC, $ENV{'HOME'} . "/GUS/oracle/dba/scripts");
-}
-
 use strict;
 
-use Database;
-use Schema;
+use GUS::DBAdmin::Database;
+use GUS::DBAdmin::Schema;
 
 use Getopt::Long;
 
@@ -27,9 +23,7 @@ use Getopt::Long;
 # Configuration
 # -----------------------------------------------------------------------
 
-my $DB_SID = "gus";
-my $DB_HOST = "localhost";
-my $DBI_ATTS = { RaiseError => 0, AutoCommit => 0, LongReadLen => 10000000 };
+my $DBI_ATTS = { RaiseError => 0, AutoCommit => 0 };
 
 # -----------------------------------------------------------------------
 # Input
@@ -38,6 +32,8 @@ my $DBI_ATTS = { RaiseError => 0, AutoCommit => 0, LongReadLen => 10000000 };
 my(
    $login,        # Oracle login with ANALYZE TABLE permissions
    $password,
+   $dbSid,        # SID of Oracle database
+   $dbHost,       # Hostname  of machine running Oracle database
    $owners,       # Only analyze tables belonging to these schemas
    $allTables,    # Update all tables
    $maxDaysOld,   # Update tables last analyzed more than this number of days ago
@@ -47,6 +43,8 @@ my(
 &GetOptions("login=s" => \$login,
 	    "owners=s" => \$owners,
 	    "password=s" => \$password,
+	    "sid=s" => \$dbSid,
+	    "host=s" => \$dbHost,
 	    "allTables!" => \$allTables,
 	    "maxDaysOld=i" => \$maxDaysOld,
 	    "verbose!" => \$verbose
@@ -55,6 +53,8 @@ my(
 if (!$login) {
     print <<USAGE;
 Usage: updateStatistics.pl options
+   --host=host         # Hostname of machine running Oracle
+   --sid=SID           # SID of target Oracle instance
    --login=login       # Oracle login with ANALYZE TABLE permissions
    --password=password # (optional) password for login
    --owners=o1,o2...   # Update statistics for tables owned by these schemas only
@@ -71,10 +71,10 @@ USAGE
 
 $| = 1;
 
-my $db = Database->new({sid => $DB_SID, host => $DB_HOST});
-my $dbh = &Util::establishLogin($login, $db->getDbiStr(), $DBI_ATTS, $password);
+my $db = GUS::DBAdmin::Database->new({sid => $dbSid, host => $dbHost});
+my $dbh = &GUS::DBAdmin::Util::establishLogin($login, $db->getDbiStr(), $DBI_ATTS, $password);
 
-&Util::printDate() if ($verbose);
+&GUS::DBAdmin::Util::printDate() if ($verbose);
 
 my $tables = &tableList($dbh, $allTables, $owners);
 
@@ -82,7 +82,7 @@ foreach my $t (@$tables) {
     &updateStats($dbh, $t->{'owner'}, $t->{'table_name'});
 }
 
-&Util::printDate() if ($verbose);
+&GUS::DBAdmin::Util::printDate() if ($verbose);
 print "Computed statistics for ", scalar(@$tables), " tables\n" if ($verbose);
 
 $dbh->disconnect();
@@ -110,7 +110,7 @@ sub tableList {
     #
     if ($allTables) {
 	my $sql = ("select owner, table_name FROM all_tables " . $where);
-	$tables = &Util::execQuery($dbh, $sql, 'hash');
+	$tables = &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'hash');
     } 
 
     # Analyze those older than $maxDaysOld (includes those that have never been analyzed)
@@ -128,7 +128,7 @@ sub tableList {
 	}
 
 	my $sql = ("select owner, table_name from all_tables " . $where);
-	$tables = &Util::execQuery($dbh, $sql, 'hash');
+	$tables = &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'hash');
     }
 
     return $tables;
