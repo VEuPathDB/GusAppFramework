@@ -63,7 +63,6 @@
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="GOPredict"/>
-      <property name ="skipJava" value="true"/>
     </ant>
   </target>
 
@@ -75,10 +74,6 @@
       <property name="project" value="GUS"/>
       <property name="component" value="Model"/>
       
-      <!-- uncomment the following line to stop java compiling -->
-
-      <property name="skipJava" value="true"/>   
-
      </ant>
 
   </target>  
@@ -304,45 +299,41 @@
 
 
 
-  <target name="GUS/ObjRelJ-Installation" depends="ProjectTree">
+  <target name="GUS/ObjRelJ-Installation" depends="ProjectTree, GUS/ObjRelJ-RMIC">
 
-<!-- Be sure to comment out rmic code below before committing file to cvs -->
-
-<!--    <rmic base="${projectsDir}/GUS/ObjRelJ/src/java" --> 
-<!-- 	 classname="org.gusdb.objrelj.RemoteJDBCServer"> -->
-<!--        <classpath> -->
-<!--            <fileset dir="${targetDir}/lib/java/"> -->
-<!--               <include name="*.jar"/>  -->
-<!--            </fileset>  -->
-<!--         </classpath>     -->
-<!--      </rmic>  -->
-
-    
-<!--     <rmic base="${projectsDir}/GUS/ObjRelJ/src/java" -->
-<!-- 	 classname="org.gusdb.objrelj.RemoteDatabaseConnection"> -->
-<!-- 	<classpath> -->
-<!--            <fileset dir="${targetDir}/lib/java/"> -->
-<!--               <include name="*.jar"/> -->
-<!--            </fileset> -->
-<!--         </classpath>     --> 
-<!--     </rmic>    -->
-  
-   <move todir="${projectsDir}/GUS/ObjRelJ/classes/org/gusdb/objrelj"> 
-	 <fileset dir="${projectsDir}/GUS/ObjRelJ/src/java/org/gusdb/objrelj"> 
-            <include name="*.class"/> 
-         </fileset>  
-   </move>  
-
-   <ant target="defaultComponentInstall">
+    <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="ObjRelJ"/>
-
-      <property name="skipJava" value="true"/>   
-
    </ant>
     
   </target>
 
+  <target name="GUS/ObjRelJ-RMIC" if="${compileJava}">
+    <rmic base="${projectsDir}/GUS/ObjRelJ/src/java"  
+      classname="org.gusdb.objrelj.RemoteJDBCServer"> 
+        <classpath> 
+           <fileset dir="${targetDir}/lib/java/"> 
+              <include name="*.jar"/>  
+            </fileset>  
+         </classpath>     
+      </rmic>  
+
+    
+     <rmic base="${projectsDir}/GUS/ObjRelJ/src/java" 
+ 	 classname="org.gusdb.objrelj.RemoteDatabaseConnection"> 
+ 	<classpath> 
+            <fileset dir="${targetDir}/lib/java/"> 
+               <include name="*.jar"/> 
+            </fileset> 
+         </classpath>      
+     </rmic>    
+  
+     <move todir="${projectsDir}/GUS/ObjRelJ/classes/org/gusdb/objrelj"> 
+       <fileset dir="${projectsDir}/GUS/ObjRelJ/src/java/org/gusdb/objrelj"> 
+          <include name="*.class"/> 
+       </fileset>  
+   </move>  
+  </target>
 
 
   <target name="GUS/Pipeline-Installation" depends="ProjectTree">
