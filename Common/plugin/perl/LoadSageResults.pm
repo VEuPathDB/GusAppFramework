@@ -110,6 +110,7 @@ sub run {
 	     " results added. " . $self->{tagsAdded} . " tags added.");
 }
 
+# ----------------------------------------------------------------------
 # Given the name of a data file, read tag-count pairs from it
 # and add them to RAD
 
@@ -139,7 +140,9 @@ sub loadSageFile {
   }
   $fh->close();
 }
+
 # ----------------------------------------------------------------------
+# Find SageTag object (inserting into DB if it's novel)
 
 sub getSageTag {
   my ($self, $tag, $array_id) = @_;
@@ -162,7 +165,9 @@ sub getSageTag {
 		    $sageTag->getCompositeElementId());
   return $sageTag;
 }
+
 # ----------------------------------------------------------------------
+# make and populate SageTagResult object
 
 sub addSageTagResult {
   my ($self, $sageTag, $quantification_id, $count) = @_;
