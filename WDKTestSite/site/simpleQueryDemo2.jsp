@@ -4,21 +4,22 @@
 
 <sample:header banner="Simple Query 2" />
 
-<p>This page has a simple, non-boolean query. Here the taxon query is selected. 
+<p>This page has a simple, non-boolean query. An initial query is selected 
+so you should go straight into the form. 
 <hr><p>
 
 
 <table>
 <wdkq:queryHolder name="form1"
                   querySet="RNASimpleQueries"
-                  initQuery="TaxonName"
+                  initQuery="TaxonName"                 
                   var="q">
 
   <input type="hidden" name="fromPage" value="/simpleQueryDemo2.jsp">
 
-  <tr><td><wdkq:displayQuery queryInstance="${q}" /></td></tr>
-  <c:forEach var="p" 
-             items="${q.query.params}">
+  <tr><td><wdkq:displayQuery queryInstance="${q}"></td></tr>
+    <c:forEach var="p" 
+               items="${q.query.params}">
 	     
        <tr>
 	     <td><b>${p.prompt}</b></td>
@@ -26,7 +27,8 @@
 	     <td>${p.help}</td>
        </tr>
   
-  </c:forEach>
+    </c:forEach>
+  </wdkq:displayQuery>
 
   <tr>
      <td><wdkq:submit /></td>
@@ -39,3 +41,4 @@
 
 
 <sample:footer />
+
