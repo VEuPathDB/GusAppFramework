@@ -502,7 +502,7 @@ sub checkCfg(){
 
 # for Control table
     if(defined $cfg_rv->{'mapping'}->{'Control.subclass_view'}){
-	if(defined $cfg_rv->{'mapping'}->{'Control.control_type_id'}){
+	if(!defined $cfg_rv->{'mapping'}->{'Control.control_type_id'}){
 	 $M->setOk(0);
 	 $RV="You must provide Control.control_type_id in your configuration file.\n";
 	 $M->logData('ERROR', $RV);	
