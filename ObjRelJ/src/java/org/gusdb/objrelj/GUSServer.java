@@ -252,23 +252,29 @@ public class GUSServer implements ServerI {
     // ------------------------------------------------------------------
     // ServerI
     // ------------------------------------------------------------------
-
+    
     public String openConnection(String user, String password) throws GUSInvalidLoginException
     {
 	String session = null;
-	DatabaseConnectionI conn = driver.getConnection(user, password);
-
+	DatabaseConnectionI conn = null;
+	try {
+	    conn = driver.getConnection(user, password);
+	}
+	catch (GUSInvalidLoginException e){
+	    System.out.println(e.getMessage());
+	    e.printStackTrace();
+	}
 	if (conn != null) {
 	    long suff = (new java.util.Date()).getTime();
 	    // JC: This is not guaranteed to be unique, although it probably will be
 	    session = user + "_" + suff;
-
+	    
 	    Session s = new Session(conn, user, password, session);
 	    sessions.put(session, s);
 	}
 	return session;
     }
-
+    
     public void closeConnection(String session) 
 	throws GUSNoConnectionException 
     {
