@@ -1,4 +1,4 @@
-package GUS::Common::Plugin::InsertDbRefAndDbRefNASequenceGeneral;
+package GUS::Common::Plugin::InsertDbRefAndDbRefNaSequenceGeneral;
 
 @ISA = qw(GUS::PluginMgr::Plugin);
  
