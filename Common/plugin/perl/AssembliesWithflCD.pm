@@ -82,7 +82,7 @@ sub run {
 
   my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = " .$self->getArgs->{'external_database_release_id'}." and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id");
 
-  my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1");
+  my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1");
 
 #fact_table_id = 89 is ExternalNASequence
 
@@ -90,10 +90,8 @@ sub run {
 
 #this query reflects those which no longer have a RefSeq associated with them
 
-  my $stmt4 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.assembly a, dots.evidence e where e.fact_table_id = 89 and e.target_id = a.na_sequence_id and a.full_length_CDS = 1 minus select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1");
+  my $stmt4 = $self->getQueryHandle()->prepareAndExecute("select a.na_sequence_id from dots.assembly a, dots.evidence e where e.fact_table_id = 89 and e.target_id = a.na_sequence_id and a.full_length_CDS = 1 minus select a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1");
 
-
-#Note that this query is restricted to human
 
   my $stmt5 = $self->getQueryHandle()->prepareAndExecute("select asm.na_sequence_id, taf.translation_stop, taf.aa_feature_id from dots.assembly asm, dots.NAFeatureImp naf, dots.TranslatedAAFeature taf, dots.TranslatedAAsequence ts where asm.na_sequence_id = naf.na_sequence_id and naf.na_feature_id = taf.na_feature_id and taf.translation_start = taf.diana_atg_position + 2 and taf.diana_atg_score > 0.5 and taf.p_value < 0.5 and taf.aa_sequence_id = ts.aa_sequence_id and ts.length > 100");
 
