@@ -1,24 +1,77 @@
 1. package statement:  use fully qualified package name
+   e.g.package DoTS::DotsBuild::Plugin::ExtractAndBlockAssemblySequences;
 
 2. add: @ISA = qw(GUS::PluginMgr::Plugin);   (before use strict)
 
-3. in all use statements, (eg, for GUS objects) give fully qualified package name (eg use GUS::Model::DoTS::AssemblyAnatomyPercent;)
+3. in all use statements, (for GUS objects) give fully qualified package names
+   e.g.use GUS::Model::DoTS::AssemblySequence;
+       use CBIL::Bio::SequenceUtils;
 
-4. changes to the new method:
+4. substitute 'sub run' for 'sub Run'
 
-5. get rid of the 'my $ctx' declaration
+5. run takes only one argument: $M or $self
 
-6. replace 'sub Run {' with 'sub run {'
+6.change 'sub new'
+   a. Copy new from template:
 
-7. run takes only one argument: $M or $self
+sub new {
+  my $Class = shift;
+  my $self = {};
+  bless($self,$class);
+  my $usage = 'Extract unprocessed AssembySequences........';
+  my $easycsp =
+    [
+     {o => 'testnumber',
+      t => 'int',
+      h => 'number of iterations for testing',
+     }];
+  $self->initialize({requiredDbVersion => {},
+		  cvsRevision => '$Revision$', # cvs fills this in!
+		  cvsTag => '$Name$', # cvs fills this in!
+		  name => ref($m),
+		  revisionNotes => 'make consistent with GUS 3.0',
+		  easyCspOptions => $easycsp,
+		  usage => $usage
+		 });
+  return $self;
+}
+   b. Replace usage string with string in original usage sub, delete usage sub
 
-8. replace all $ctx->{cla}->  with $M->getCla()->
+   c. replace easycsp hashes with original EasyCspOptions hash, delete keys 
+      and conform to above model
 
-9. replace all $ctx->{self_inv}->getQueryHandle() with $M->getQueryHandle()
+7. get rid of the 'my $ctx' declaration, global or local
 
-10. use $M->getQueryHandle() to get all database handles
+8. put $self = shift at beginning of all subs  
 
-11. Logging: 
-     use $M->log() instead of print.
+9. call all subs with $self->subname (search for & and replace with $self->)
 
-12. WHY DOESN'T GA automatically log the command line args.
+10. replace $ctx->{cla}-> with $self->getCla
+
+11. replace $ctx->{'self_inv'}->getQueryHandle with $self->getQueryHandle
+
+12. use $self->getQueryHandle instead of passing a database handle or using a 
+   global database handle
+
+13. avoid use DBI or DbiDatabase
+
+14. search for 'new' (instantiating new database objects) and add the full 
+    path for objects e.g. GUS::Model::DoTS::AssemblySequence-> 
+    new( { 'assembly_sequence_id' => $id } );
+
+15. use $self->undefPointerCache instead of newObject->undefPointerCache
+
+16. substitute 'sub run' for 'sub Run'
+
+17. use $M->log() instead of print when appropriate
+    exceptions: files that the plugin uses during its run or on restart
+                plugin approriately writes to 2 or more STDERR or STDOUT files
+
+18. search for sql statements and use space.table in place of table
+    e.g. dots.assembly in place of assembly
+
+19. give fully qualified package names for any GUS objects using methods 
+    within the plugin
+   e.g. CBIL::Bio::SequenceUtils::breakSequence($sequence) 
+
+Note:WHY DOESN'T GA automatically log the command line args.-this information can now be obtained from the algorithmparam tables and is automatically inserted 
