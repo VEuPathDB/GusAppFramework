@@ -312,7 +312,7 @@ sub getViewMapping {
     } elsif ($self->getDatabase->getDSN() =~ /oracle/i) {
       foreach my $att (split(', *',$sql)) {
         #			print STDERR "$att\n";
-        my($v,$i) = split(' as ',$att);
+        my($i,$v) = split(' as ',$att);
         $i =~ s/^.*?\.(\w+)$/$1/;
         $v = $v ? $v : $i;
         #			print STDERR "'$i' => '$v'\n";
