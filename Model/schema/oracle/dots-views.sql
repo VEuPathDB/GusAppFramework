@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-views.sql                                                                             */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:11:58 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:45:16 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -241,7 +241,7 @@ AS SELECT
   string6 AS na_substitute,
   external_database_release_id,
   is_predicted,
-  review_status_id
+  review_status_id,
   modification_date,
   user_read,
   user_write,
