@@ -19,7 +19,7 @@ sub new {
 
   my $m = bless {}, $C;
 
-  $m->log('ERROR',
+  $m->logFatal('ERROR',
 	  'You have not overridden the new method.',
 	  ref $m,
 	 );
@@ -132,7 +132,7 @@ sub getCheckSum {
       chomp $M->{md5};
       $M->{md5} =~ s/^(\S+).+/$1/;
     } else {
-      $M->log('ERROR',
+      $M->logFatal('ERROR',
 	      $M->getName,
 	      $M->getFile,
 	      'Can not find executable file'
@@ -154,31 +154,40 @@ sub undefPointerCache {	$_[0]->getSelfInv->undefPointerCache }
 # Public Logging Methods
 # ----------------------------------------------------------------------
 
-# Write a time-stamped tab-delimited error message to STDOUT.
-sub log {
+sub logFatal {
   my $M = shift;
-  my $T = shift;
 
-  my $time_stamp_s = localtime;
+  $M->_log(@_);
+}
 
-  my $msg = join("\t", $T, $time_stamp_s, @_);
+sub logAlert {
+  my $M = shift;
 
-  print "$msg\n";
+  $M->_log(@_);
+}
 
-  # RETURN
-  $msg
+sub logVerbose {
+  my $M = shift;
+
+  $M->_log(@_);
+}
+
+sub logVeryVerbose {
+  my $M = shift;
+
+  $M->_log(@_);
 }
 
 sub logRAIID {
   my $M = shift;
 
-  $M->log('RAIID', $M->getSelfInv->getId)
+  $M->logAlert('RAIID', $M->getSelfInv->getId)
 }
 
 sub logCommit {
   my $M = shift;
 
-  $M->log('COMMIT', $M->getCla->{commit} ? 'commit on' : 'commit off');
+  $M->logAlert('COMMIT', $M->getCla->{commit} ? 'commit on' : 'commit off');
 }
 
 sub logArgs {
@@ -187,9 +196,9 @@ sub logArgs {
   foreach my $flag (sort keys %{$M->getCla}) {
     my $value = $M->getCla->{$flag};
     if (ref $value) {
-      $M->log('ARGS', $flag, @$value);
+      $M->logAlert('ARGS', $flag, @$value);
     } else {
-      $M->log('ARGS', $flag, $value);
+      $M->logAlert('ARGS', $flag, $value);
     }
   }
 }
@@ -370,6 +379,21 @@ sub _failinit {
 
   print STDERR "Plugin initialization failed: invalid argument '$argname'\n";
   exit 1;
+}
+
+# Write a time-stamped tab-delimited error message to STDERR.
+sub _log {
+  my $M = shift;
+  my $T = shift;
+
+  my $time_stamp_s = localtime;
+
+  my $msg = join("\t", $T, $time_stamp_s, @_);
+
+  print STDERR "$msg\n";
+
+  # RETURN
+  $msg
 }
 
 
