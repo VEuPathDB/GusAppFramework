@@ -347,7 +347,7 @@ sub checkRequiredFilesExist {
   my $rptFile     = $self->{propertySet}->getProp("RPTFilePath")."/$assayName.RPT";
   my $celFile     = $self->{propertySet}->getProp("CELFilePath")."/$assayName.CEL";
   my $datFile     = $self->{propertySet}->getProp("DATFilePath")."/$assayName.DAT";
-  my $metricsFile = $self->{propertySet}->getProp("MetricsFilePath")."/$assayName"."_Metrics.txt";
+  my $metricsFile = $self->{propertySet}->getProp("MetricsFilePath")."/$assayName"."_Metrics.TXT";
 
   $self->userError("Missing file: $rptFile") if ( ! -e $rptFile ); 
   $self->userError("Missing file: $celFile") if ( ! -e $celFile );
@@ -593,7 +593,7 @@ sub createGUSQuantification {
   my ($self, $assayName, $RPTinfo) = @_;
 
   my $tempCelURI         = $self->{propertySet}->getProp("CELFilePath")."/$assayName".".CEL";
-  my $tempChpURI         = $self->{propertySet}->getProp("MetricsFilePath")."/$assayName"."_Metrics.txt";
+  my $tempChpURI         = $self->{propertySet}->getProp("MetricsFilePath")."/$assayName"."_Metrics.TXT";
   my $acqProtocolId      = $self->{propertySet}->getProp("Acq_Protocol_ID");
   my $celProtocolId      = $self->{propertySet}->getProp("Cel_Protocol_ID");
   my $chpProtocolId      = $self->{propertySet}->getProp("Chp_Protocol_ID");
