@@ -63,7 +63,7 @@ public interface ServerI {
      * retrieved in this session.
      */
     public GUSRow retrieveObject(String session, String owner, String tname, long pk)
-        throws GUSNoConnectionException;
+        throws GUSNoConnectionException, GUSObjectNotUniqueException;
 
     /**
      * Retrieve all objects from a single table.  This method will always query
@@ -88,9 +88,9 @@ public interface ServerI {
      * @param query    An SQL query that does a select * from a single table.
      * @param owner    The owner of the table that the query selects from.
      * @param tname    The name of the table that the query selects from.
-     * @return A Vector of GUSRow objects corresponding to the rows selected from 
+     * @return A Vector of GUSRow objects corresponding to the rows selected.
      */
-    public Vector retrieveGusRowsFromQuery(String session, String owner, String tname, String query)
+    public Vector retrieveObjectsFromQuery(String session, String owner, String tname, String query)
 	throws GUSNoConnectionException;
 
     // ------------------------------------------------------------------
@@ -126,18 +126,17 @@ public interface ServerI {
      */
     public GUSRow retrieveObject(String session, String owner, String tname, long pk, 
 				 String clobAtt, Long start, Long end)
-	throws GUSNoConnectionException;
+	throws GUSNoConnectionException, GUSObjectNotUniqueException;
 
     // ------------------------------------------------------------------
     // UPDATE DATABASE
     // ------------------------------------------------------------------
 
     /**
-     * Submit a <B>single</B> object to the database (i.e., this is not a "deep" submit).  
-     * This can result in the object being deleted, updated, or inserted, depending 
-     * on the situation.  If <code>deepSubmit</code> then the GUSRow and its child
-     * objects may be modified directly as a side-effect to reflect their new structure.
-     * Otherwise the original GUSRow will not be modified.
+     * Submit an object to the database.  This can result in the object and/or
+     * its children being deleted, updated, or inserted, depending on the situation.  
+     * If <code>deepSubmit == true</code> then all of the GUSRow's child objects
+     * will also be submitted.
      *
      * @param session     A session identifier returned by <code>openConnection</code>
      * @param obj         The new or updated object to write back to the database.
@@ -145,11 +144,6 @@ public interface ServerI {
      */
     public SubmitResult submitObject(String session, GUSRow obj, boolean deepSubmit) 
 	throws GUSNoConnectionException;
-
-    /**
-     * @return Whether <code>submitObject</code> supports deep submits.
-     */
-    public boolean supportsDeepSubmit();
     
     // ------------------------------------------------------------------
     // CREATE *NEW* OBJECT(S)
@@ -188,13 +182,13 @@ public interface ServerI {
      * @return The unique parent object if one exists, null otherwise.
      */
     public GUSRow retrieveParent(String session, GUSRow row, String owner, String tname, String childAtt)
-        throws GUSNoConnectionException;
+        throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException;
     
     /**
      * Retrieve all the parent rows for a set of child rows.
      *
      * @param session      A session identifier returned by <code>openConnection</code>
-     * @param children     The rows whose parent rows are to be returned.
+     * @param children     The rows whose (unique) parent rows are to be returned.
      * @param parentOwner  The owner of the parent table.
      * @param parentName   The name of the parent table
      * @param childAtt  The name of the referencing attribute in the child table.
@@ -202,7 +196,7 @@ public interface ServerI {
      */
     public GUSRow[] retrieveParentsForAllObjects(String session, Vector children, String parentOwner, 
 						 String parentName, String childAtt)
-	throws GUSNoConnectionException;
+	throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException;
 
     // JC: the following method should throw an exception (GUSMultipleObjectsException?) if 
     // there are multiple children that meet the specified criteria.
@@ -218,7 +212,7 @@ public interface ServerI {
      * @return The unique child row if one exists, null otherwise.
      */
     public GUSRow retrieveChild(String session, GUSRow row, String owner, String tname, String childAtt)
-	       throws GUSNoConnectionException;
+	       throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException;
 
     /**
      * Retrieve all rows in a given table (children) that reference a specified row (the parent).
@@ -230,7 +224,7 @@ public interface ServerI {
      * @param childAtt  The name of the referencing attribute in the child table.
      */
     public Vector retrieveChildren(String session, GUSRow row, String owner, String tname, String childAtt)
-	       throws GUSNoConnectionException;
+	       throws GUSNoConnectionException, GUSNoSuchRelationException;
 
 } //ServerI
 

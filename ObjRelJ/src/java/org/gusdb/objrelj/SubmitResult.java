@@ -1,5 +1,7 @@
 package org.gusdb.objrelj;
 
+import java.util.Vector;
+
 /**
  * SubmitResult.java
  *
@@ -39,15 +41,15 @@ public class SubmitResult implements java.io.Serializable {
     protected int rowsDeleted;
 
     /**
-     * The new primary key values for any newly-inserted rows.
+     * The new primary key values for any newly-inserted rows; a Vector of Longs
      */
-    protected long[] newPrimaryKeys;
+    protected Vector newPrimaryKeys;
 
     // ------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------
 
-    public SubmitResult(boolean success, int rowsInserted, int rowsUpdated, int rowsDeleted, long pkeys[]) 
+    public SubmitResult(boolean success, int rowsInserted, int rowsUpdated, int rowsDeleted, Vector pkeys) 
     {
 	this.submitSucceeded = success;
 	this.rowsInserted = rowsInserted;
@@ -60,10 +62,29 @@ public class SubmitResult implements java.io.Serializable {
     // Public methods
     // ------------------------------------------------------------------
 
+    // Accessors
     public boolean submitSucceeded() { return this.submitSucceeded; }
     public int getRowsInserted() { return this.rowsInserted; }
     public int getRowsUpdated() { return this.rowsUpdated; }
     public int getRowsDeleted() { return this.rowsDeleted; }
-    public long[] getNewPrimaryKeys() { return this.newPrimaryKeys; }
+    public Vector getNewPrimaryKeys() { return this.newPrimaryKeys; }
 
+    // ------------------------------------------------------------------
+    // Package-scoped methods
+    // ------------------------------------------------------------------
+
+    /**
+     * Update the contents of this object based on those of another.
+     * Assumes that this object is being used to aggregate the results
+     * of several other submits.
+     */
+    void update(SubmitResult sr) {
+	if (this.submitSucceeded) {
+	    this.submitSucceeded = sr.submitSucceeded();
+	}
+	this.rowsInserted += sr.getRowsInserted();
+	this.rowsUpdated+= sr.getRowsUpdated();
+	this.rowsDeleted += sr.getRowsDeleted();
+	this.getNewPrimaryKeys().addAll(sr.getNewPrimaryKeys());
+    }
 }

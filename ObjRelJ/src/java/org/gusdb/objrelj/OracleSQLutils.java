@@ -14,14 +14,18 @@ import java.util.Enumeration;
  * @author Sharon Diskin, Dave Barkan, Jonathan Crabtree
  * @version $Revision$ $Date$ $Author$
  */
-public class OracleSQLutils implements SQLutilsI {
+public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
 
     // ------------------------------------------------------------------
     // SQLutilsI
     // ------------------------------------------------------------------
 
-    public String makeInsertSQL(String owner, String table, String pkatt, 
-				Integer pk, Hashtable atts, Hashtable defaults) 
+    public String makeSelectAllRowsSQL(String owner, String table) 
+    {
+	return "select * from " + owner + "." + table;
+    }
+
+    public String makeInsertSQL(String owner, String table, String pkatt, long pk, Hashtable atts)
     {
 	StringBuffer insertSQL = new StringBuffer("INSERT into " + owner + "." + table + "\n(" );
 	StringBuffer valuesClause = new StringBuffer("VALUES \n(" );
@@ -29,13 +33,8 @@ public class OracleSQLutils implements SQLutilsI {
 	Object val;
 
 	insertSQL.append(pkatt);
-	valuesClause.append(pk.toString());
+	valuesClause.append(pk);
 
-	// Note that atts and defaults are handled *exactly* the same way; the
-	// only reason that the two are separated is to make it easier for the
-	// object layer to set the GUS "overhead" columns (e.g., modification_date,
-	// row_alg_invocation_id, etc.)
-	
 	Enumeration attKeys= atts.keys();
 	while (attKeys.hasMoreElements()){
 	    key = (String)attKeys.nextElement();
@@ -44,24 +43,15 @@ public class OracleSQLutils implements SQLutilsI {
 	    valuesClause.append(", " + makeAppendValue(key, val));
 	}
 	
-	// add on the default values...
-	Enumeration defKeys= defaults.keys();
-	while (defKeys.hasMoreElements()){
-	    key = (String)defKeys.nextElement();
-	    insertSQL.append(",\n" + key);
-	    val = defaults.get(key);
-	    valuesClause.append(", " + makeAppendValue(key, val));
-	}
-	
 	insertSQL.append(")\n" + valuesClause + ")\n" );
 	return insertSQL.toString();
     }
 
     public String makeUpdateSQL(String owner, String table, String pkatt, 
-				Long pk, Hashtable atts, Hashtable oldAtts) 
+				long pk, Hashtable atts, Hashtable oldAtts) 
     {	
 	StringBuffer updateSQL = new StringBuffer("update " + owner + "." + table +  " set \n ");
-	StringBuffer whereSQL = new StringBuffer(" where " + pkatt + " = " + pk.toString() );
+	StringBuffer whereSQL = new StringBuffer(" where " + pkatt + " = " + pk );
     
 	Enumeration attKeys= atts.keys();
 	Enumeration oldAttKeys = oldAtts.keys();
@@ -79,7 +69,7 @@ public class OracleSQLutils implements SQLutilsI {
 	while (oldAttKeys.hasMoreElements()){
 	    Object oldKey = oldAttKeys.nextElement();
 	    if (!(atts.containsKey(oldKey))){
-		updateSQL.append(", \n" + key + " = NULL ");
+		updateSQL.append(", \n" + oldKey + " = NULL ");
 	    }
 	}
 	    
@@ -87,7 +77,7 @@ public class OracleSQLutils implements SQLutilsI {
 	return updateSQL.toString();
     } 
 
-    public String makeDeleteSQL(String owner, String table, String pkatt, Long pk) {
+    public String makeDeleteSQL(String owner, String table, String pkatt, long pk) {
 
 	// NOTE: WE REALLY WILL WANT TO VERSION HERE, THIS IS JUST FOR 
 	// TEST PURPOSES...    SJD
@@ -97,19 +87,19 @@ public class OracleSQLutils implements SQLutilsI {
 	// required to handle to versioning step.
 
 	StringBuffer deleteSQL = new StringBuffer("DELETE from " + owner + "." + table + "\n" );
-	deleteSQL.append("WHERE " + pkatt + " = " + pk.toString());
-	return deleteSQLtoString();
+	deleteSQL.append("WHERE " + pkatt + " = " + pk);
+	return deleteSQL.toString();
     }
 
     public String makeNewIdSQL(GUSTable table) {
 	String owner = table.getOwnerName();
-	String table = table.getTableName();
+	String tname = table.getTableName();
 
 	// If the table in question has a SEQUENCE object, select the next
 	// primary key value from there.
 	//
 	if (table.hasSequence()) {
-	    return ("SELECT " + owner + "." + table +"_SQ.NEXTVAL from DUAL" );
+	    return ("SELECT " + owner + "." + tname +"_SQ.NEXTVAL from DUAL" );
 	}
 
 	// If not, do a select max(prim_key_att) + 1
@@ -119,7 +109,7 @@ public class OracleSQLutils implements SQLutilsI {
 	// application grabs the same primary key value and both try to insert?
 	else {
 	    String pkatt = table.getPrimaryKeyName();
-	    return "SELECT max(" + owner + "." + table +"."+ pkatt +") + 1 as pk_val from " + owner + "." + table;
+	    return "SELECT max(" + owner + "." + tname +"."+ pkatt +") + 1 as pk_val from " + owner + "." + tname;
 	}
     }
 
@@ -159,7 +149,7 @@ public class OracleSQLutils implements SQLutilsI {
 		// JC: this is another oracle-specific section
 		final_value = "\n'" + value + "'";
 	    } else if (value instanceof Boolean) {
-		final_value = value.booleanValue() ? "1" : "0";
+		final_value = ((Boolean)value).booleanValue() ? "1" : "0";
 	    }
 	    else {
 		final_value = value.toString();

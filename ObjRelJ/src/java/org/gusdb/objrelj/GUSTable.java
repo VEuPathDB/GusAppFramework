@@ -146,9 +146,15 @@ public class GUSTable implements java.io.Serializable {
 	    //     e.g. dots => DoTS and NASEQUENCE => NASequence
 	    
 	    String tableClassName = GUSRow.MODEL_PACKAGE + "." + owner + "." + tname + "_Table";
-	    Class tableClass = Class.forName(tableClassName);
-	    t = (GUSTable)tableClass.newInstance();
-	    tableHash.put(lcKey, t);
+
+	    try {
+		Class tableClass = Class.forName(tableClassName);
+		t = (GUSTable)tableClass.newInstance();
+		tableHash.put(lcKey, t);
+	    } 
+	    catch (ClassNotFoundException cnfe) {}
+	    catch (InstantiationException ie) {}
+	    catch (IllegalAccessException ie) {}
 	}
 
 	return t;
@@ -225,11 +231,12 @@ public class GUSTable implements java.io.Serializable {
 	System.out.println("there are " + childRelations.size() + " child tables");
 	Enumeration e = childRelations.keys();
 	while (e.hasMoreElements()) {
-	    String h2 = (Hashtable)e.nextElement();
+	    String k1 = (String)(e.nextElement());
+	    Hashtable h2 = (Hashtable)(childRelations.get(k1));
 	    Enumeration e2 = h2.keys();
 	    while (e2.hasMoreElements()) {
-		String key = (String) e2.nextElement();
-		System.out.println( h2.get(key));
+		String k2 = (String)(e2.nextElement());
+		System.out.println( h2.get(k2));
 	    }
 	}
     }
@@ -238,11 +245,12 @@ public class GUSTable implements java.io.Serializable {
 	System.out.println("there are " + parentRelations.size() + " parent tables");
 	Enumeration e = parentRelations.keys();
 	while (e.hasMoreElements()) {
-	    String h2 = (Hashtable)e.nextElement();
+	    String k1 = (String)(e.nextElement());
+	    Hashtable h2 = (Hashtable)(parentRelations.get(k1));
 	    Enumeration e2 = h2.keys();
 	    while (e2.hasMoreElements()) {
-		String key = (String) e2.nextElement();
-		System.out.println( h2.get(key));
+		String k2 = (String)(e2.nextElement());
+		System.out.println( h2.get(k2));
 	    }
 	}
     }
