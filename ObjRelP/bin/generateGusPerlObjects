@@ -27,7 +27,7 @@ $core="Core";
 
 die '$PROJECT_HOME is not defined.' unless $ENV{PROJECT_HOME};
 
-my $targetDir = "$ENV{PROJECT_HOME}/GUS/Model/lib/perl/GUS/Model";
+my $targetDir = "$ENV{PROJECT_HOME}/GUS/Model/lib/perl";
 my $superclassesLibDir = "$ENV{PROJECT_HOME}";
 my $specialCasesFile = "$ENV{PROJECT_HOME}/GUS/Model/data/modelSpecialCases.txt";
 
