@@ -135,9 +135,6 @@ sub run {
   ##now the query table pk..
   $query_table_pk = $ctx->{self_inv}->getTablePKFromTableId($ctx->{self_inv}->getTableIdFromTableName( $ctx->{cla}->{query_table} ));
 
-  my $queryClassName = "GUS::Model::$ctx->{cla}->{'query_table'}";
-  eval("require $queryClassName");
-
   my $n_queries = 0;
   my $n_files   = 0;
 
@@ -188,7 +185,7 @@ sub run {
     # get an object to manage the file.
     my $bs = new GUS::Common::BulkSimilarity( new CBIL::Util::A {
       file    => GetFileClever( $file ),
-	query   => \&GetQueryObject,
+	query   => \&GetQueryObject(),
 	  subject => \&GetSubjectTableAndSeqId,
 	    types   => $ctx->{cla}->{ output },
 	  } )
@@ -226,6 +223,8 @@ sub run {
 ## NOTE: using primary key so just create object and return it!!
 sub GetQueryObject{
   my $Line = shift;
+  my $queryClassName = "GUS::Model::$ctx->{cla}->{'query_table'}";
+  eval("require $queryClassName");
   $queriesProcessed++;
   # extract the query id from the defline
   $Line =~ /^\>*(\S+)\s\((\d+)/;
