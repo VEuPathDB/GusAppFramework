@@ -24,12 +24,12 @@ sub new {
           h => 'name of the file',
           },
 
-          { h => 'SOversion',
+          { h => 'version of SeqOntology',
           t => 'int',
           o => 'so_version',
           },
 
-          { h => 'SOcvsVersion',
+          { h => 'cvs version of SeqOntology',
           t => 'int',
           o => 'so_cvs_version',
 
