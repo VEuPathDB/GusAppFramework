@@ -1191,7 +1191,7 @@ sub insertExternalProteinSimilarities {
 
     my $restart = $propertySet->getProp('iPSRestart');
 
-    my $args = "--files $file --verbose --restartAlgInvs $restart --query_table ExternalAASequence --subject_table $subjectTable --log_frequency 10 --subjectsLimit 50 --hspsLimit 10";
+    my $args = "--file $file --verbose --restartAlgInvs $restart --queryTable ExternalAASequence --subjectTable $subjectTable --subjectsLimit 50 --hspsLimit 10";
 
     $mgr->runPlugin("loadSims_$name", 
 		    "GUS::Common::Plugin::LoadBlastSimFast", $args,
