@@ -32,8 +32,9 @@ my $noVerboseLevel = 0;
 
 sub new {
     my $class = shift;
+    print STDERR "class: $class";
     my $self = bless {}, $class;
-    
+    print STDERR "self: $self";
     # initialize counters
     $self->{n_predictions} = 0;
     $self->{n_rnas}        = 0;
@@ -286,24 +287,31 @@ sub run {
     $databaseAdapter->initializeTranslations($self->getCla->{query_taxon_id}, 
 					     $self->getCla()->{translations_file_path}, 
 					     $self->getCla()->{create_new_translations_file}) if $self->getCla->{apply_rules};
+
     
     $self->log("creating new go manager");
     my $goManager = GUS::GOPredict::GoManager->new($databaseAdapter);
     $goManager->setOldFunctionRootGoId($oldGoRootId) if $oldGoRootId;
     $goManager->setNewFunctionRootGoId($newGoRootId) if $newGoRootId;
     $goManager->setVerbosityLevel($self->_getVerbosityLevel());
+
+ 
+
+    $goManager->setDeprecatedAssociations($databaseAdapter->getDeprecatedAssociations($self->getCla->{query_taxon_id},
+										      $newGoVersion,
+										      $proteinTableId));
     
     my $msg = "GoPlugin ran successfully.  ";
-
+    
+    
     if ($self->getCla->{scrub_proteins_only}){
-
+	
 	$self->log("scrubbing proteins with go version $newGoVersion without evolving the go hiearchy or applying new rules");
-	my $proteinsAffected = $goManager->scrubProteinsOnly($newGoVersion, $proteinTableId, 
-							 $deleteInstances, $recacheInstances);
-
+	my $proteinsAffected = $goManager->scrubProteinsOnly($newGoVersion, $proteinTableId, $self->getCla()->{query_taxon_id},
+							     $deleteInstances, $recacheInstances);
+	
 	$msg .= "Scrubbed $proteinsAffected proteins.  ";
     }
-
     else{
 
 	if ($self->getCla->{evolve_go_hierarchy}){
@@ -316,9 +324,6 @@ sub run {
 	}
 
 	if ($self->getCla->{apply_rules}){
-	    $goManager->setDeprecatedAssociations($databaseAdapter->getDeprecatedAssociations($self->getCla->{query_taxon_id},
-											      $newGoVersion,
-											      $proteinTableId));
 	    my $cla = $self->_makeClaHashForRules();
 
 	    my $proteinsAffected = $goManager->applyRules($newGoVersion, $cla, $doNotScrub, 
