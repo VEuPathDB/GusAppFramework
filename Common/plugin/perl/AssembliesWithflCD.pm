@@ -129,7 +129,7 @@ while(my($target_id) = $stmt3->fetchrow_array( ))  {
 
 push (@naSequenceIds, 0);
 
-print STDERR "scalar(@naSequenceIds)\n";
+#print STDERR "scalar(@naSequenceIds)\n";
 
 my $ct = 0;
 
@@ -137,7 +137,7 @@ foreach my $A(@na_sourceids)    {
 
   my($na_seq, $source_id) = @{$A};
 
- #print STDERR "@na_sourceids\n";
+ print STDERR "scalar(@na_sourceids)\n";
 
 
   print STDERR "ConsideringForFLDT.$na_seq\n";
@@ -148,18 +148,21 @@ foreach my $A(@na_sourceids)    {
 
    foreach my $id(@naSequenceIds)  {
 
+    print STDERR "scalar(@naSequenceIds)\n";
+
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
 
-print STDERR "$id,DT.$na_seq\n";
+print STDERR "MarkedDT.$id,DT.$na_seq\n";
 
 
-     if ($id == $na_seq) {
+     last if ($id == $na_seq) {
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
-   next;
+
+
    }
 
-    if ($id != $na_seq) {
-
+#    if ($id != $na_seq) {
+    else {
        print STDERR "NextFLDT.$na_seq\n";
 
      my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
@@ -177,7 +180,7 @@ print STDERR "$id,DT.$na_seq\n";
 
 
 }
-next;
+
 
 }
 
