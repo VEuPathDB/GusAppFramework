@@ -10,8 +10,6 @@ use Getopt::Long;
 my($tables, $login, $database, $javaOrPerl, $type, $newOnly, $core, $schemas, $verbose,
   $passwd, $gusconfigfile, $help);
 
-print STDERR "generateGusObjects: generating $javaOrPerl objects\n";
-
 # defaults
 $database="GUS30";
 $type=2;
@@ -67,6 +65,13 @@ my $generator = GUS::ObjRelP::Generator::Generator->new($db,
 $generator->generate($newOnly);
 
 my $date = `date`;
-open(F, ">$ENV{PROJECT_HOME}/GUS/Model/lib/perl/generated");
-print F "$date\n";
-close(F);
+if ($javaOrPerl eq "perl"){
+   open(F, ">$ENV{PROJECT_HOME}/GUS/Model/lib/perl/generated");
+   print F "$date\n";
+   close(F);
+}
+elsif ($javaOrPerl eq "java"){
+   open(F, ">$ENV{PROJECT_HOME}/GUS/Model/src/java/org/gusdb/model/generated");
+   print F "$date\n";
+   close(F);
+}
