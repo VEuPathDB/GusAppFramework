@@ -1086,7 +1086,7 @@ sub _check_schema_version_requirements {
       my $errMsg = 'Actual version does not match required version for these schemas:' . join (" ", @bad_ones) . "\n";
 
       # report actual and requested versions
-      my $vers = $Self->sql_get_as_hash_refs('select name, version, from Core.DatabaseInfo order by name');
+      my $vers = $Self->sql_get_as_hash_refs('select name, version from Core.DatabaseInfo order by name');
       $errMsg .= "\t#NAME\t#DB-VER\t#RQ-VER\n";
       foreach my $schema (@$vers) {
          $errMsg .= "\t$schema->{NAME}\t$schema->{VERSION}\t$ver_h->{$schema->{NAME}}\n";
