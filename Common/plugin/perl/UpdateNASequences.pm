@@ -192,7 +192,11 @@ sub run {
 	$dbh->do("update DoTS.NASequenceImp set length = length(sequence)"
 		 . " where na_sequence_id = $naSeqId and length(sequence) > 0");
     }
-    $dbh->do("drop procedure append_dots_naseq");
+
+    # huh? Comment above notes that this script fails on sequences
+    # over a Meg without the append_dots_naseq feature
+    # so why are we dropping it?
+    # $dbh->do("drop procedure append_dots_naseq");
 
     $dbh->disconnect();
 }
