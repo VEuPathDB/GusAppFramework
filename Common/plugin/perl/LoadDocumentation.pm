@@ -210,7 +210,6 @@ sub process {
 			    $self->logAlert("ALREADY EXISTS! Documentation for $table_nm NOT OVERWRITTEN!");
 			    return; # SKIP
 			}
-#			elsif ($attribute_nm eq "NULL" || $attribute_nm eq "null"  || $attribute_nm eq ""){
 			else {
 			    $self->logVerbose("Documentation for table (no attribute supplied)");
 
@@ -228,14 +227,10 @@ sub process {
 			    $self->logData("Inserted documentation for table: $table_nm");
 			    $self->undefPointerCache();
 			    $self->logVerbose("UndefPointerCache()");
-			}#end else
+			} #end else
 		    } # end while ary2
 		} # end elsif table documentation
 	    } # end if valid attribute
-	    ## attribute is not valid for this table - DON'T SUBMIT
-#	    elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # not valid attribute
-#		$self->logAlert("NOT INSERTED! $attribute_nm is not a valid attribute for $table_nm");
-#	    }
 	} # end if table exists
 
 	else { ## no table name in db
