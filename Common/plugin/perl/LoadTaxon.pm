@@ -94,7 +94,8 @@ sub run {
 sub mergeTaxons {
   my $self   = shift;
   print STDERR "Merging taxons\n";
-  open (MERGED,$self->getCla->{'merged'}) || die "Can't open merged file: !\n";
+  my $merged = $self->getCla->{'merged'};
+  open (MERGED,$merged) || die "Can't open merged file '$merged': $!\n";
   while(<MERGED>) {
     chomp;
     my @merged = split(/\s*\|\s*/, $_);
