@@ -544,7 +544,7 @@ sub getNextID {
   my $result = 1;
 
   my $owner = $self->getSchemaNameUpper();
-  my $query = $self->getDatabase->getDbPlatform->nextValSql($self->{oracle_table_name});
+  my $query = $self->getDatabase->getDbPlatform->nextValSelect($self->{oracle_table_name});
   if (!exists $self->{nextidstmt}) {
 
     $self->{nextidstmt} = $self->getDbHandle()->prepare($query)
