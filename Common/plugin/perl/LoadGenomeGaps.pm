@@ -73,7 +73,7 @@ sub run {
     my $tempLogin = $self->getArgs()->{'tempLogin'} || die ' not supplied\n';
     my $tempPassword = $self->getArgs()->{'tempPassword'} || die ' not supplied\n';
     my $DBI_STR = $self->getArgs->{'dbiStr'} || die "must provide server and sid for temp table\n";
-    my $dbh = DBI->connect($DBI_STR, $login, $password);
+    my $dbh = DBI->connect($DBI_STR, $tempLogin, $tempPassword);
 
     my $chrs = &_getChrs($dbh, $genomeVer);
     my $tables = {};
@@ -105,7 +105,6 @@ sub run {
 		    . "ix, n, length, type, bridge) \n"
 		    . "values($b, '$c', $s, $e, $ix, '$n', $sz, '$t', '$br')\n";
 		$sth = $dbh->prepare($sql);
-		print "sql = $sql\n" if $debug;
 		$count++;
 		$sth->execute() or die "could not run $sql";
 	    }
