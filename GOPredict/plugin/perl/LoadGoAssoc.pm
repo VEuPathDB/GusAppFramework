@@ -424,7 +424,7 @@ sub __adjustDefiningAncestors{
 
     open (LASTLOG, ">>logs/definingLog") || die "pluginLog could not be opened";
 
-    my $sql = "select ga.go_association_id, eas.$idCol 
+    my $sql = "select ga.go_association_id, upper(eas.source_id) 
                from DoTS.GOAssociation ga, DoTS.ExternalAASequence eas,
                DoTS.GOAssociationInstance gai
                where ga.table_id = 83 and ga.row_id = eas.aa_sequence_id
