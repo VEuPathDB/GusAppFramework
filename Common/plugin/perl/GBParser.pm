@@ -833,6 +833,7 @@ sub getFeatureViewName {
 				 "scRNA" => "GUS::Model::DoTS::RNAType",
 				 "sig_peptide" => "GUS::Model::DoTS::ProteinFeature",
 				 "snRNA" => "GUS::Model::DoTS::RNAType",
+				 "snoRNA" => "GUS::Model::DoTS::RNAType",
 				 "source" => "GUS::Model::DoTS::Source",
 				 "stem_loop" => "GUS::Model::DoTS::Miscellaneous",
 				 "STS" => "GUS::Model::DoTS::STS",
