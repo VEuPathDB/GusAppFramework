@@ -8,6 +8,7 @@ use DBI;
 
 use CBIL::Bio::GenBank::Entry;
 use CBIL::Bio::GenBank::IoStream;
+use CBIL::Bio::GenBank::ArrayStream;
 
 ## Standard tables
 use GUS::Model::DoTS::NASequence; ## View -> NASequenceImp
@@ -85,11 +86,6 @@ sub new {
       t => 'int',
       h => 'GUS ExternalDatabaseRelease id.',
      },
-     {o => 'log',
-      t => 'string',
-      h => 'Path to log file.',
-      d => "GBParser.pid$$.log",
-     },
      {o => 'start',
       t => 'int',
       h => 'Entry number in specified file to start at.',
@@ -102,13 +98,17 @@ sub new {
       t => 'string',
       h => 'OPTIONAL: If given, entries will be filtered on DIV. (Ex: div="PRI")',
      },
-     {o => 'failfile',
-      t => 'string',
-      h => 'file to write accession numbers for entries that fail upon submission',
-      d => 'failfile',
-     }
     ];
     
+#     {o => 'failDir',
+ #     t => 'string',
+  #    h => 'directory to write failed entries and their error messages',
+   #  },
+    # {o => 'failTolerance',
+     # t => 'int',
+  #    h => 'number of entries that can fail before aborting',
+   #   d => '100'
+    # }
   $self->initialize({requiredDbVersion => {},
 		     cvsRevision => '$Revision$',	# cvs fills this in!
 		     cvsTag => '$Name$', # cvs fills this in!
@@ -139,142 +139,160 @@ sub run {
   my $M  = shift;
   $ctx = shift;
   if (!$ctx->{cla}->{gbRel}) {
-    die "*******************************************\nI need the GenBank release number. See --help option\n*******************************************";
+    die "--gbRel is a required argument. See --help option\n";
   }
+  if (!$ctx->{cla}->{file}) {
+    die "--file is a required argument. See --help option\n";
+  }
+  $ctx->{cla}->{failDir} = "/home/sfischer/gbtest";
+  $ctx->{cla}->{failTolerance} = 100;
+  if (!$ctx->{cla}->{failDir}) {
+    die "--failDir is a required argument. See --help option\n";
+  }
+  mkdir $ctx->{cla}->{failDir} || die "Can't mkdir $ctx->{cla}->{failDir} (--failDir)";
 
-  print $ctx->{ cla }->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
-  print "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{ cla }->{'testnumber'};
+  $M->logCommit();
+  $M->logAlert("", "Testing on $ctx->{cla}->{'testnumber'}") if $ctx->{ cla }->{'testnumber'};
 
-  $ctx->{self_inv}->getDatabase()->setExitOnSQLFailure(0); #added by DP 2/14/02
-	
-  #	$ctx->{ self_inv }->setGlobalNoVersion(1);
   $ctx->{ self_inv }->setMaximumNumberOfObjects(50000);
   &setWholeTableCache();
   my $fh  = $ctx->{cla}->{file} =~ /\.gz$|\.Z$/ ?
     FileHandle->new( "zcat $ctx->{cla}->{file}|" )
       : FileHandle->new( '<'. $ctx->{cla}->{file} );
+  
+  die "Can't open file $ctx->{cla}->{file}" unless $fh;
 
-  my $fail = new FileHandle;	#added by DP 2/14/02
-  $fail->open("$ctx->{'cla'}->{'failfile'}",">");
-	
-  my $log = FileHandle->new( '>'. $ctx->{cla}->{log} );
-  $log->autoflush(1);
-  $log->print("RELEASE: $ctx->{ cla }->{ gbRel }\n");
-  $log->print("FILE: $ctx->{ cla }->{ file }\n");
+  $M->logAlert("RELEASE", "$ctx->{ cla }->{ gbRel }\n");
+  $M->logAlert("FILE", "$ctx->{ cla }->{ file }\n");
   if ($ctx->{ cla }->{ start }) {
-    $log->print("START: $ctx->{ cla }->{ start }\n");
+    $M->logAlert("START", "$ctx->{ cla }->{ start }\n");
   }
-	
-  my $ios = CBIL::Bio::GenBank::IoStream->new( { fh => $fh } );
-  my $n   = 0; my $update_count = 0; my $insert_count = 0;
-  while ( ! $ios->eof() ) {
-    $n++;
-	    
-    my $e = CBIL::Bio::GenBank::Entry->new( { ios => $ios } );
-	    
-    # js
-    print join("\t", 'VLD', $e->getValidity()), "\n";
-    if (!( $e->getValidity())) {
-      $log->print("SKIPPING INVALID ENTRY: N=$n ACC=",$e->{ACCESSION}->[0]->getAccession(),"\n");
-      next;
-    }
-    # Added DIVISION filter ## angel 2001/12/18
-    if (defined $ctx->{cla}->{div}) {
-      my $div = $ctx->{cla}->{div};
-      my $e_div = $e->{LOCUS}->[0]->getDivision();
-      next unless ($div eq $e_div);
-    }
-	    
-    ## Print the status of the script to LOG
-    if ($n % 1 == 0 ) { 
-      $log->print("STATUS: N=$n ACCS=", $e->{ACCESSION}->[0]->getAccession()," TOTAL_OBJECTS=", ($ctx->{self_inv}->getTotalInserts() + $ctx->{self_inv}->getTotalUpdates()), " TIME=" , `date`); 
-    }
-	    
-    last if ($ctx->{cla}->{testnumber} && $n > $ctx->{cla}->{testnumber});
-    next if ($ctx->{ cla }->{ start } && $n < $ctx->{ cla }->{ start }) ;
-	    
-    ## Check NAEntry for update
-    my $naentry = GUS::Model::DoTS::NAEntry->new({'source_id' => $e->{'ACCESSION'}->[0]->getAccession(),
-						  #'version' => $e->{VERSION}->[0]->getSeqVersion()
-						 });
-	    
-    my $chkdif = ($naentry->retrieveFromDB()) ? 1 : 0 ;
-    if ($chkdif && !$ctx->{ cla }->{ updateAll }) { 
-      my $dbDate = ($naentry->getUpdateDate()) ? $naentry->getUpdateDate() : $naentry->getCreatedDate();
-      $dbDate =~ s/^(\S+)\s+.+$/$1/;
-      next if( &dbDateMoreRecent($dbDate,$e->{LOCUS}->[0]->getDate()));
-      #next ;
-      #} else {
-      #$log->print("UPDATE NEEDED:N=$n ACCS=", $e->{ACCESSION}->[0]->getAccession(),"\n");
-      #}
-    }
 
-    ## Entry must either be new or need an update if we get to this point
-    ## Following the strategy of building the complete entry and then 
-    ## comparing it to the DB entry, applying changes where needed. 
-	    
-    my $seqobj = &buildNASeq($e);
-    $seqobj->addChild(&buildNAEntry($e, $naentry, $chkdif));
-    my ($c,@C) ;		# temp vars to see if build subs return anything valid
-	    
-    #### Scrap keywords for now, since they are giving me a hard time
-    #		@C = &buildKeyword($e);
-    #		$seqobj->addChildren(@C) if @C; undef @C;
-	    
-    $c = &buildOrganelle($e);
-    $seqobj->addChild($c) if $c; undef $c;
-    $c = &buildComment($e);
-    $seqobj->addChild($c) if $c; undef $c;
-    @C = &buildFeatures($e,$seqobj,$log);
-    $seqobj->addChildren(@C) if @C; undef @C;
-	    
-    # References are really screwed up in GUS so leave this for later.
-    #$seqobj->addChild(&buildReference($e));
-    # DbRef is part of the Features --> moved to &buildFeatures() 
-    # $seqobj->addChild(&buildDbRef($e));		
-	    
-    if ($chkdif) { 
-      my $dbSeq = $naentry->getParent('GUS::Model::DoTS::ExternalNASequence',1);
-      ## First check if sequence object needs update
-      # print $dbSeq->toXML();
-      # print $seqobj->toXML();
-      &updateObj($dbSeq,$seqobj);
-		
-      ## Now let's do the checks in a civil manner
-      my $childList = &getProperChildList($dbSeq);
-      my(@dbChildren, @newChildren);
-      foreach my $class (@$childList) {
-	@dbChildren = $dbSeq->getChildren($class, 1);
-	@newChildren = $seqobj->getChildren($class);
-	&processChildren($dbSeq,\@dbChildren, \@newChildren);
-      }
-      $dbSeq->submit();
-      if ($dbSeq->getDbHandle()->getRollBack()) {
-	$fail->print ("Acc:", $e->{ACCESSION}->[0]->getAccession(), "\n");
-      } else {
-	$log->print( "UPDATED:", $e->{ACCESSION}->[0]->getAccession(), "; N=$n\n");
-	$update_count++;
-      }
-    } else {    
-      $seqobj->submit();
-      if ($seqobj->getDbHandle()->getRollBack()) {
-	$fail->print ("Acc:", $e->{ACCESSION}->[0]->getAccession(), "\n"); #DP added 2/14/02
-      } else {
-	$log->print( "INSERTED: ", $e->{ACCESSION}->[0]->getAccession(), "; N=$n\n");
-	$insert_count++;
-      }
-    }
-    #&undefCache(%DbRefCache);
-	    
-    $ctx->{self_inv}->undefPointerCache();
+  $M->{entryCnt} = 0;
+  $M->{updateCnt} = 0;
+  $M->{insertCnt} = 0;
+  $M->{failCnt} = 0;
+
+  while ( my $entryLines = &getEntryLines($fh)) {
+    last unless scalar (@$entryLines);
+    $M->{entryCnt}++;
+    my $entryStream = CBIL::Bio::GenBank::ArrayStream->new($entryLines);
+
+    last if ($ctx->{cla}->{testnumber}
+	     && $M->{entryCnt} > $ctx->{cla}->{testnumber});
+    next if ($ctx->{ cla }->{ start }
+	     && $M->{entryCnt} < $ctx->{ cla }->{ start }) ;
+
+    eval {
+      $M->processEntry($entryStream);
+    };
+    $M->handleFailure($entryLines, $ctx->{cla}, $@) if ($@);
   }
-	
   ## Close DBI handle
   $ctx->{'self_inv'}->closeQueryHandle();
-	
-  print STDERR "Genbank entries inserted= $insert_count;  updated= $update_count; total #(inserted::updated::deleted)=" . $ctx->{self_inv}->getTotalInserts() . "::" . $ctx->{self_inv}->getTotalUpdates() . "::" . $ctx->{self_inv}->getTotalDeletes() .  "\n";
-  return "Genbank entries inserted= $insert_count;  updated= $update_count";
+
+  print STDERR "Genbank entries inserted= $M->{insertCnt};  updated= $M->{updateCnt}; total #(inserted::updated::deleted)=" . $ctx->{self_inv}->getTotalInserts() . "::" . $ctx->{self_inv}->getTotalUpdates() . "::" . $ctx->{self_inv}->getTotalDeletes() .  "\n";
+  return "Genbank entries inserted= $M->{insertCnt};  updated= $M->{updateCnt}";
 }
+
+sub processEntry {
+  my($M, $ios) = @_;
+
+  my $e = CBIL::Bio::GenBank::Entry->new( { ios => $ios } );
+
+  if (!$e->getValidity()) {
+    die "INVALID ENTRY N=$M->{entryCnt} ACC=" .
+      $e->{ACCESSION}->[0]->getAccession();
+  }
+
+  if (defined $ctx->{cla}->{div}) {
+    my $div = $ctx->{cla}->{div};
+    my $e_div = $e->{LOCUS}->[0]->getDivision();
+    return unless ($div eq $e_div);
+  }
+
+  ## Print the status of the script to LOG
+  if ($M->{entryCnt} % 1 == 0 ) { 
+    $M->logAlert("STATUS", "N=$M->{entryCnt} ACC=" .
+		 $e->{ACCESSION}->[0]->getAccession(),
+		 " TOTAL_OBJECTS=" . ($ctx->{self_inv}->getTotalInserts() + $ctx->{self_inv}->getTotalUpdates()));
+  }
+
+  ## Check NAEntry for update
+  my $naentry = GUS::Model::DoTS::NAEntry->new({'source_id' => $e->{'ACCESSION'}->[0]->getAccession(),
+						#'version' => $e->{VERSION}->[0]->getSeqVersion()
+					       });
+ 
+  my $chkdif = ($naentry->retrieveFromDB()) ? 1 : 0 ;
+  if ($chkdif && !$ctx->{ cla }->{ updateAll }) { 
+    my $dbDate = ($naentry->getUpdateDate()) ? $naentry->getUpdateDate() : $naentry->getCreatedDate();
+    $dbDate =~ s/^(\S+)\s+.+$/$1/;
+    return if( &dbDateMoreRecent($dbDate,$e->{LOCUS}->[0]->getDate()));
+  }
+
+  ## Entry must either be new or need an update if we get to this point
+  ## Following the strategy of building the complete entry and then 
+  ## comparing it to the DB entry, applying changes where needed. 
+	    
+  my $seqobj = &buildNASeq($e);
+  $seqobj->addChild(&buildNAEntry($e, $naentry, $chkdif));
+  my ($c,@C) ;			# temp vars to see if build subs return anything valid
+	    
+  #### Scrap keywords for now, since they are giving me a hard time
+  #		@C = &buildKeyword($e);
+  #		$seqobj->addChildren(@C) if @C; undef @C;
+	    
+  $c = &buildOrganelle($e);
+  $seqobj->addChild($c) if $c; undef $c;
+  $c = &buildComment($e);
+  $seqobj->addChild($c) if $c; undef $c;
+  @C = $M->buildFeatures($e,$seqobj);
+  $seqobj->addChildren(@C) if @C; undef @C;
+
+  # References are really screwed up in GUS so leave this for later.
+  #$seqobj->addChild(&buildReference($e));
+  # DbRef is part of the Features --> moved to &buildFeatures() 
+  # $seqobj->addChild(&buildDbRef($e));		
+	    
+  if ($chkdif) { 
+    my $dbSeq = $naentry->getParent('GUS::Model::DoTS::ExternalNASequence',1);
+    ## First check if sequence object needs update
+    # print $dbSeq->toXML();0
+    # print $seqobj->toXML();
+    &updateObj($dbSeq,$seqobj);
+		
+    ## Now let's do the checks in a civil manner
+    my $childList = &getProperChildList($dbSeq);
+    my(@dbChildren, @newChildren);
+    foreach my $class (@$childList) {
+      @dbChildren = $dbSeq->getChildren($class, 1);
+      @newChildren = $seqobj->getChildren($class);
+      &processChildren($dbSeq,\@dbChildren, \@newChildren);
+    }
+
+    $dbSeq->submit();
+    if ($dbSeq->getDbHandle()->getRollBack()) {
+      $M->logAlert('FAILED ENTRY', "Acc:", $e->{ACCESSION}->[0]->getAccession());
+      die "dbSeq submit caused a rollback";
+    } else {
+      $M->logAlert( "UPDATED", $e->{ACCESSION}->[0]->getAccession(), "; N=$M->{entryCnt}\n");
+      $M->{updateCnt}++;
+    }
+  } else {    
+    $seqobj->submit();
+    if ($seqobj->getDbHandle()->getRollBack()) {
+      $M->logAlert('FAILED ENTRY', "Acc:", $e->{ACCESSION}->[0]->getAccession());
+      die "seqobj submit caused a rollback";
+    } else {
+      $M->logAlert( "INSERTED", $e->{ACCESSION}->[0]->getAccession(), "; N=$M->{entryCnt}\n");
+      $M->{insertCnt}++;
+    }
+  }
+  #&undefCache(%DbRefCache);
+	    
+  $ctx->{self_inv}->undefPointerCache();
+}
+
 
 sub buildNASeq {
   my $e = shift;
@@ -454,7 +472,7 @@ sub buildComment {
 }
 
 sub buildFeatures {
-  my ($e,$seq,$log) = @_;
+  my ($M, $e,$seq) = @_;
 
   my @F;			## Array of NAFeature objects to return
   # grab the array of hashrefs representing the features
@@ -489,7 +507,7 @@ sub buildFeatures {
       } elsif ($q->getTag() eq 'db_xref') {
 	$o->addChild(&buildDbXRef($q, $seq));
       } elsif (!($o->isValidAttribute($q->getTag()))) {
-	$log->print("INVALID QUALIFIER::", $o->getClassName(),
+	$M->logAlert("INVALID QUALIFIER", $o->getClassName(),
 		    "::", $q->getTag(),"::",$q->getValue(), "\n");
       }
     }
@@ -1240,6 +1258,37 @@ sub checkObjectForReplace {
 sub undefCache {
   my (%cache) = @_;
   delete @cache{(keys %cache)};
+}
+
+sub getEntryLines {
+  my ($fh) = @_;
+
+  my @lines;
+  while ( <$fh> ) {
+    push(@lines, $_);
+    last if /^\/\//;
+  }
+  return \@lines;
+}
+
+sub handleFailure {
+  my ($self, $entryLines, $cla, $errMsg) = @_;
+
+  my $failureDir = $cla->{failDir};
+  my $failTol = $cla->{failTolerance};
+
+  die "More than $failTol entries failed.  Aborting."
+    if ($self->{failCount}++ > $failTol);
+  my $failFile = "$failureDir/$self->{entryCnt}.gb";
+  open(F, ">$failFile") || die "Can't open failure file $failFile";
+  print F join("", @$entryLines);
+  close(F);
+
+  my $errFile = "$failureDir/errors";
+  open(F, ">>$errFile") || die "Can't open error file $errFile";
+  print F " ------------------ entry number $self->{entryCnt} -----------------\n";
+  print F "$errMsg\n\n\n";
+  close(F);
 }
 
 1;
