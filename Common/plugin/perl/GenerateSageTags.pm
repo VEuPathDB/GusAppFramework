@@ -1,6 +1,12 @@
 package GUS::Common::Plugin::GenerateSageTags;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
+#
+# This plugin, developed to scan ExternalNaSequences for
+# SAGE tags, has been replaced by LoadGenomicSageData.pm,
+# which is in this same directory.  Go look at that one.
+#
+
 use strict;
 use GUS::PluginMgr::Plugin;
 use GUS::Model::DoTS::SAGETagFeature;
@@ -75,7 +81,7 @@ PLUGIN_NOTES
 		 reqd  => 1,
 		 constraintFunc=> undef,
 		 isList=>0,
-		}), 
+		}),
      integerArg({name  => 'taxon_id',
 		 descr => 'taxon_id',
 		 reqd  => 1,
