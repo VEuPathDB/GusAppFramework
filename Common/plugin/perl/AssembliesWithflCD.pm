@@ -91,7 +91,7 @@ print STDERR "$na_seq\n";
 
       $assembly->setFullLengthCds(1);
 
-      $self->getAlgInvocation->submit();
+      $assembly->submit();
 
 
       $self->undefPointerCache();
