@@ -27,8 +27,7 @@ sub generate {
     return if ($newOnly && -e $file);
     
     open(F,">$file") || die "Can't open file $file for writing";
-    print F $self->_genHeader() . $self->_genSetDefaultParams() .
-	$self->_genAccessors() . "\n}\n";
+    print F $self->_genHeader() . $self->_genAccessors() . "} // $self->{tableName}_Row\n";
     close(F);
 }
 
@@ -55,9 +54,8 @@ sub _genHeader{
     
     $output .= $self->_genClassDeclaration();
     $output .= $self->_genConstructor();
-    $output .= "\n\n";
+
     return $output;
-    
 } 
 
 sub _genClassDeclaration{
@@ -68,41 +66,20 @@ sub _genClassDeclaration{
     my $fullParent = $self->_getParentTable();
     if ($fullParent){
 	my ($parentSchema, $parentName) = $self->_cutFullQualifiedName($fullParent);
-	$output .= "public class $self->{tableName}"."_Row extends $parentName implements java.io.Serializable{\n\n";
+	$output .= "public class $self->{tableName}"."_Row extends $parentName {\n\n";
     } 
     else {
-	$output .= "public class $self->{tableName}"."_Row extends GUSRow implements java.io.Serializable {\n\n";
+	$output .= "public class $self->{tableName}"."_Row extends GUSRow {\n\n";
     }
     return $output;
 }
 
-sub _genConstructor{
+sub _genConstructor {
     my ($self) = @_;
-      
-    my $output = "public " . $self->{tableName} . "_Row () {\n\n";
-    $output .= "  super(\"" . $self->{tableName} . "\", \"" . $self->{schemaName} . "\");\n";
-    $output .= "  setDefaultParams();\n";
-    $output .= "}\n\n";
-    $output .= "public ". $self->{tableName} . "_Row (String owner, String name) { \n\n";
-    $output .= "     super(owner, name);\n";
-    $output .= "}\n\n";
     
-    return $output;
-}
-
-sub _genSetDefaultParams{
-    my ($self) = @_;
-    my $output; my $versionable;
-       
-    if ( $self->_getVersionable())
-       { $versionable = "true";}
-    else
-    { $versionable = "false";}
-  
-    $output .= "   public void setDefaultParams \(\) \{\n";
-    $output .= "     super.setIsVersionable\($versionable\);\n";
-    $output .= "     super.setIsUpdateable\(true\);\n";
-    $output .= "   \}\n\n";
+    my $output = "";
+    $output .= "    // Constructor\n";
+    $output .= "    public " . $self->{tableName} . "_Row () {}\n\n";
     return $output;
 }
  
@@ -139,8 +116,9 @@ sub _genAccessors {
     foreach my $att ( @final_att_list ) {
 	
 	my $sub_name = $self->_capAttName( $att );
-	if ($sub_name eq "Class"){
-	    $sub_name = "myClass";}
+	if ($sub_name eq "Class") {
+	    $sub_name = "myClass";
+	}
 	my $set = "set" . $sub_name;
 	my $get = "get" . $sub_name;
 	
@@ -150,12 +128,14 @@ sub _genAccessors {
 	my $javaType = $self->_oracleTypeConverter( $attInfo, $att );
 	
 	if (!(($javaType eq "Clob")||($javaType eq "Blob"))){
+	    $setAllAtts .= "	    ";  # JC: these lines are in a 'try' block
 	    $setAllAtts .= $self->_createJavaRSLine($att, $set, $javaType, $primaryKeys);
 	
 	    ## print the set and gets 
-	    $output .= $self->_createJavaSet($att, $set, $javaType);
-	    $output .= $self->_createJavaSetInitial($att, $set, $javaType);
+	    $output .= "    // $att\n";
+	    $output .= $self->_createJavaSet($att, $set, $javaType, $primaryKeys);
 	    $output .= $self->_createJavaGet($att, $get, $javaType);
+	    $output .= $self->_createJavaSetInitial($att, $set, $javaType, $primaryKeys);
 	}
     }
     
@@ -164,21 +144,21 @@ sub _genAccessors {
 	$setAllSuperAtts .= $self->_addSuperSets();
     } 
     
-    
-    #append table information and attribute value methods
+    # Abstract methods from GUSRow: setAttributesFromResultSet and getTable
+    #
+    $output .= "    // ----------------------------------------------\n";
+    $output .= "    // GUSRow abstract methods\n";
+    $output .= "    // ----------------------------------------------\n";
+    $output .= "\n";
     $output .= $self->_createJavaSetAttsFromRS($setAllAtts, $setAllSuperAtts);
-    
+    $output .= $self->_createJavaGetTable();
+
     return $output;
 }
-
-
-
     
 ############################################################################
 ####                    Private utility methods                         ####
 ############################################################################
-
-
 
 #Take oracle type and return Java equivalent
 sub _oracleTypeConverter {
@@ -242,10 +222,7 @@ sub _oracleTypeConverter {
 
 sub _createJavaRSLine {
     my ($self, $RSatt, $RSset, $RSJavaType, $keys) = @_;
-    
-    my $primaryKeyName = $keys->[0];
     my $line =  "$RSset" . "Initial(";
-    
     
     if ($RSJavaType eq "Boolean" || $RSJavaType eq "Short" || $RSJavaType eq "Long" ||
 	$RSJavaType eq "Float" || $RSJavaType eq "Double"){
@@ -262,46 +239,70 @@ sub _createJavaRSLine {
     
 #	die "Error in method createJavaRSLine:  Java type \"$RSJavaType\" not found!\n";
 
+    return $line;
+}
 
-    if ($RSatt eq $primaryKeyName){
-	if ($RSJavaType eq "Integer"){
-	    $line .= "  //super.setId(new Integer(rs.getInt(\"$primaryKeyName\")));\n";
+# create Java used to set the row's primary key value, in the case where that is
+# the attribute being modified
+sub _createJavaSetPrimKey {
+    my ( $self, $Satt, $Sset, $SjavaType, $keys)= @_;
+    my $primaryKeyName = $keys->[0];
+    my $primKeySet = "";
+
+    if ($Satt eq $primaryKeyName) {
+	if ($SjavaType eq "Long"){
+	    $primKeySet = "this.setPrimaryKeyValue(value);";
 	}
-	elsif ($RSJavaType eq "BigDecimal"){
-	    $line .= " // super.setId(rs.getBigDecimal(\"$primaryKeyName\"));\n";
+	elsif ($SjavaType eq "Integer"){
+	    $primKeySet = "this.setPrimaryKeyValue(new Long(value.intValue()));";
 	}
-	else{
-	    $line .= "// super.setId(new $RSJavaType(rs.get" . "$RSJavaType(\"$primaryKeyName\")));\n";
+	elsif ($SjavaType eq "Short"){
+	    $primKeySet = "this.setPrimaryKeyValue(new Long(value.shortValue()));";
+	}
+	elsif ($SjavaType eq "BigDecimal"){
+	    $primKeySet = "this.setPrimaryKeyValue(new Long(value.longValue()));";
 	}
     }
-    return $line;
+    return $primKeySet;
 }
 
 #creates java method to set a GUSRow attribute
 sub _createJavaSet{
-    my ( $self, $Satt, $Sset, $SjavaType)= @_;
-    my $line;
-    
-    $line .= "   public void $Sset ($SjavaType value)
-              throws GUSInvalidObjectException, ClassNotFoundException,
-                   InstantiationException, IllegalAccessException, SQLException
- {
-       attTypeCheck(\"$Satt\", value);   
-       set(\"$Satt\", value);
-  }\n\n";
-  
+    my ( $self, $Satt, $Sset, $SjavaType, $keys)= @_;
+    my $primKeySet = $self->_createJavaSetPrimKey($Satt, $Sset, $SjavaType, $keys);
+
+    my $line = <<END_SET1;
+    public void $Sset ($SjavaType value)
+        throws ClassNotFoundException,InstantiationException, IllegalAccessException, SQLException
+    {
+        attTypeCheck("$Satt", value);   
+        set("$Satt", value);
+    }
+END_SET1
+
       return $line;
 }
 
 #method: createJavaSetInitial
 #creates java method to set a GUSRow attribute without type-checking
-sub _createJavaSetInitial{
-    my ( $self, $ISatt, $ISset, $ISjavaType) = @_;
+sub _createJavaSetInitial {
+    my ( $self, $ISatt, $ISset, $ISjavaType, $keys) = @_;
+    my $primKeySet = $self->_createJavaSetPrimKey($ISatt, $ISset, $ISjavaType, $keys);
     my $line;
-    $line .= "   public void $ISset" . "Initial ($ISjavaType value) {
-       setInitial(\"$ISatt\", value);
-  }\n\n";
-      return $line;
+
+    if ($primKeySet =~ /\S/) {
+	$line = <<END_SET_INIT;
+    public void ${ISset}Initial ($ISjavaType value) { 
+	${primKeySet}
+        setInitial("$ISatt", value); 
+    }
+
+END_SET_INIT
+    } else {
+	$line = "    public void ${ISset}Initial (${ISjavaType} value) { setInitial(\"${ISatt}\", value); }\n\n";
+    }
+
+    return $line;
 }
 
 #method:  createJavaGet
@@ -309,9 +310,9 @@ sub _createJavaSetInitial{
 sub _createJavaGet{
     my ($self, $Gatt, $Gget, $GjavaType)= @_;
     my $line;
-    $line .= "  public $GjavaType $Gget () {
-     return ($GjavaType)get(\"$Gatt\");
-    }\n\n";
+    $line .= <<END_GET;
+    public $GjavaType $Gget () { return ($GjavaType)get("$Gatt"); }
+END_GET
     return $line;
 }
 
@@ -319,24 +320,38 @@ sub _createJavaGet{
 #JDBC result set object
 sub _createJavaSetAttsFromRS{
     my ($self, $allAtts, $allSuperAtts) = @_;
-    my $line;
+    my $line = <<END_SET_ALL;
+    protected void setAttributesFromResultSet_aux(ResultSet rs) 
+    {
+	try { 
+${allAtts}${allSuperAtts}
+        } catch (Exception e) {}
 
+        this.currentAttVals = (Hashtable)(this.initialAttVals.clone());
+	this.isNew = false;
+    }
 
-    $line .=  "    public void setAttributesFromResultSet(ResultSet rs) {
-      try { \n
-$allAtts  \n 
-$allSuperAtts \n
-           }
-          catch (Exception e) {}
-     
-     }\n\n\n";
+END_SET_ALL
   return $line;
+}
+
+# Implementation of GUSRow's abstract getTable method
+#
+sub _createJavaGetTable() {
+    my($self) = @_;
+    my $line = <<END_GET_TABLE;
+    public GUSTable getTable() {
+	return GUSTable.getTableByName("$self->{schemaName}", "$self->{tableName}");
+    }
+    
+END_GET_TABLE
+    return $line;
 }
 
 #In the generated object, adds calls to set attributes that the object's
 #parent also has
 sub _addSuperSets{
-    my($self ) = @_;
+    my($self) = @_;
 #    my $parent = $self->_getParentTable();
 #    my ($parentSchema, $parentName) = $self->_cutFullQualifiedName($parent);
     
@@ -364,6 +379,7 @@ sub _addSuperSets{
 	my $attInfo = $attHash->{$parentAtt};
 	my $javaType = $self->_oracleTypeConverter ($attInfo, $parentAtt);
 	if (!(($javaType eq "Clob")||($javaType eq "Blob"))){
+	    $output .= "	    ";  # JC: these lines are in a 'try' block
 	    $output .= "super." . $self->_createJavaRSLine($parentAtt, $set, $javaType, $primaryKeys);
 	}	    
     }
