@@ -1,0 +1,17 @@
+
+TO DO:
+ -Finish refactoring of ServerI, DatabaseConnectionI
+ -Get the code to compile!
+ -Make sure that case-sensitivity assumptions are documented and
+  that the documented behavior is strictly adhered to.
+ -Correctly implement the equals() method for the various metadata
+  classes (e.g. GUSTable, GUSTableAttribute, GUSTableRelation).
+ -Check that tables are always identified by owner and table_name
+ -Implement the build system rules to generate javadocs
+ -Attribute lengths are being set incorrectly by the code generator in 
+  the Table subclasses; clobs are getting 4000 instead of 4 gig, 
+  varchar2 are getting length 2000 instead of 4000.
+ -Change subclasses of GUSRow to use GUSTable.getTableByName()
+ -Replace system.(out|err).println calls with a proper logging facility
+
+DONE:
