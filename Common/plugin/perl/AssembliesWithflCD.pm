@@ -6,6 +6,7 @@ package GUS::Common::Plugin::AssembliesWithflCD;
 use strict;
 use GUS::Model::DoTS::Assembly;
 use GUS::ObjRelP::DbiDatabase;
+
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::Evidence;
 
@@ -220,17 +221,17 @@ print STDERR "$ids\n";
 
 
 
-foreach my $target_id(@diffArray2)  {
-my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
+#foreach my $target_id(@diffArray2)  {
+#my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
                                                 'attribute_name' =>"full_length_CDS"});
-    if ($Evidence->retrieveFromDB()){
+ #   if ($Evidence->retrieveFromDB()){
 
-        $Evidence->markDeleted(1);
-        $Evidence->submit();
-      print STDERR  "DT.$target_id Evidence deleted\n";  
-      $self->undefPointerCache();
-      }
-}
+  #      $Evidence->markDeleted(1);
+   #     $Evidence->submit();
+    #  print STDERR  "DT.$target_id Evidence deleted\n";  
+     # $self->undefPointerCache();
+    #  }
+#}
 
 
 
