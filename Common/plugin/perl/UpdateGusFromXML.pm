@@ -29,8 +29,8 @@
      );
 
    $m->initialize({requiredDbVersion => {},
-		   cvsRevision => '$revision$',
-		   cvsTag => '$name$',
+		   cvsRevision => '$Revision$',
+		   cvsTag => '$Name$',
 		   name => ref($m),
 		   description => '',
 		   easyCspOptions => $easycsp,
