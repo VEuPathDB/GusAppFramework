@@ -586,7 +586,8 @@ sub createGUSQuantification {
   $self->error("Create object failed, $acqProtocolId absent in table RAD3::Protocol") 
     unless ($protocol->retrieveFromDB);
 
-  my $acqName = $assayName."-Biotin-".$protocol->getName();
+  my $tempAcqName = $protocol->getName();
+  my $acqName = $assayName."-Biotin-".$tempAcqName;
 
   my $celQuantParameters = {
     protocol_id => $celProtocolId, 
