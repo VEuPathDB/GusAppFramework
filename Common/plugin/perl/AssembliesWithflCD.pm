@@ -243,12 +243,12 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
     foreach my $target_id(@DTSasEvidenceTarget)  {
 
-      foreach my $DT(@$DTarray_ref)  {
+      foreach (@{$DTarray_ref})  {
 
 
-       if ($target_id == $DT){  next;  }
+       if ($target_id == $_){  next;  }
 
-        if ($target_id != $DT)  {
+        if ($target_id != $_)  {
 
           my $dbh = $self->getQueryHandle();
 
