@@ -260,7 +260,7 @@ sub readCfgFile {
   my ($self) = @_;
   my $cfg_info;
 
-  my $dbh->$self->getQueryHandle();
+  my $dbh = $self->getQueryHandle();
   my $fh = new IO::File;
   my $file = $self->getArgs->{'cfg_file'};
   unless ($fh->open("<$file")) {
