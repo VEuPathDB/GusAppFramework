@@ -65,6 +65,7 @@ sub run {
    $self->logDebug(CBIL::Util::Disp::Display($self->{attrHash}));
    $row = $className->new($self->{attrHash});
   }
+
   $row->submit();
 
   $self->log("Row updated");
