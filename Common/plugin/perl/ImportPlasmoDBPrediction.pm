@@ -16,8 +16,8 @@ use GUS::Model::DoTS::NAFeatureComment;
 use GUS::Model::DoTS::NALocation;
 use GUS::Model::DoTS::ProjectLink;
 use GUS::Model::DoTS::RNAFeature;
-
-
+use GUS::Model::SRes::ExternalDatabaseRelease;
+use GUS::Model::SRes::ExternalDatabase;
 
 sub new {
   my $class = shift;
@@ -26,11 +26,9 @@ sub new {
 
   my $easycsp =
     [
-     # JC: Is this parameter used?  Should probably be used in place of project_id.
      { h => 'project name',
        t => 'string',
-       o => 'Project',
-       d => 'PlasmodiumDB-4.1'
+       o => 'Project'
      },
      {
       t => 'int',
@@ -41,51 +39,21 @@ sub new {
       t => 'string',
       o => 'restart',
       h => 'For restarting script...takes list of row_alg_invocation_ids to exclude'
+     },   
+     {
+      t => 'string',
+      o => 'dataSource',
+      h => 'Name of the data source; e.g. plasmodium-vivax_tigr',
      },
      {
       t => 'string',
       o => 'filename',
       h => 'Name of file(s) containing the predicted gene features',
      },
-#     {
-#      o => 'source_id',
-#      t => 'string',
-#      h => 'Source_id of origin of gene features',
-#     },
-#     {
-#      o => 'NAseqId',
-#      t => 'int',
-#      h => 'NA_sequence_id of origin of gene features'
-#     },
      {
-      o => 'projectId',
       t => 'int',
-      h => 'project_id of this release',
-      d => 900
-     },
-     {
-      o => 'extDbRelId',
-      t => 'int',
-      h => 'external database identifier for the contigs',
-      d => 692
-     },
-     {
-      t => 'boolean',
-      o => 'reload',
-      h => 'For loading new Ids and scores for HmmPfam entries',
-     },
-     {
-      t => 'boolean',
-      o => 'parseSequence',
-      h => 'Experimental : parsing out the AA sequences to set them in the DB, default: OFF',
-      d => 0
-     },
-     # JC: Isn't --commit provided by default?
-     {
-      t => 'boolean',
-      o => 'commit',
-      h => 'Set flag to commit changes to database. Default: off',
-      d => 0,
+      o => 'NAseqId',
+      h => 'supply NA_sequence_id of origin of gene features'
      }
     ];
 
@@ -107,16 +75,24 @@ sub new {
 ############################################################
 #                Let's get started
 ############################################################
-my $ctx;
 my $debug = 1;  #my personal debug !!
-my $projectId;
 my $NAseqId;
 my $Version;
-my $extDbRelId;
 my $source_id;
 my %data;
 my %allFeatures;
 $| = 1;
+
+### Expected format of input file
+### Not exactly gff, but woiks:
+
+#>> 395454.phat_1        395454  FullPhat        predicted_gene  36      6338    +       0       3
+#395454  FullPhat        exon    36      1899    0.43    +       0       na      395454.phat_1   1       intl    frame "2"
+#395454  FullPhat        exon    1992    4696    0.91    +       2       na      395454.phat_1   2       intl    frame "1"
+#395454  FullPhat        exon    4877    6338    0.81    +       0       na      395454.phat_1   3       intl    frame "1"
+#
+#>> 395455.phat_1        395455  FullPhat        predicted_gene  25      6838    -       0       4
+#395455  FullPhat        exon    6725    6838    0.87    -       0       na      395455.phat_1   1       init    frame "1"
 
 
 #####
@@ -125,35 +101,37 @@ $| = 1;
 
 sub run {
   my $self = shift;
-  #$ctx=shift;
 
-  #$extDbRelId = $ctx->{cla}->{'extDbRelId'};
-  $extDbRelId =  $self->getArgs()->{'extDbRelId'};
-
-  $projectId  =  $self->getArgs()->{'projectId'};
-  #$projectId = $ctx->{cla}->{'projectId'};
-
-#  $source_id = $self->getArgs()->{'source_id'};
-# # $source_id = $ctx->{cla}->{'source_id'};
-
-#  $NAseqId = $self->getArgs()->{'NAseqId'};
-# # $NAseqId = $ctx->{cla}->{'NAseqId'};
+  my $project =  $self->getArgs()->{'Project'};
+  $source_id  =  $self->getArgs()->{'source_id'};
+  $NAseqId    =  $self->getArgs()->{'NAseqId'};
 
 
-
-  unless ($projectId=~m/\d+/){
-    $self->log("EE Please specify the project_id, e.g. with --project_id=900");
+  unless ($project=~m/\S+/){
+    $self->log("EE Please specify the project, e.g. with --Project=PlasmodiumDB-4.1");
     return 0 ;
   }
-  unless ($extDbRelId=~m/\d+/){
-    $self->log("EE Please specify the external_db_release_id, e.g. with --extDbRelId=151");
-    return 0;
+  unless ($self->getArgs()->{'dataSource'}=~m/\S+/){
+    $self->log("EE Please specify the dataSource, e.g. \'plasmodium_vivax_tigr\'");
+    return 0 ;
   }
+
+  $self->setProjId($project) || $self->log("EE Could not set the projectId");
+  my $projectId= $self->getProjectId();
+  $self->log("II Determined projectId= " . $projectId );
+
+  $self->setExtDbId($self->getArgs()->{'dataSource'})|| $self->log("EE Could not set the extDbId");
+
+  $self->setExtDbRelId() || $self->log("EE Could not set ExtDbRelId");
+  my $extDbRelId= $self->getExtDbRelId();
+  $self->log("II Determined extDbRelId= " . $extDbRelId );
+
   unless ($source_id=~m/^\S+$/ || $NAseqId=~m/^\d+$/){
     $self->log("EE source_id or na_sequence_id has not been set, will use source_id supplied by genegff-file")
   }
 
   if ($debug){
+    $self->log("II Project: $project");
     $self->log("II ". $self->getArgs()->{'commit'}==1 ? "II *** COMMIT ON ***" : "II *** COMMIT TURNED OFF ***");
     $self->log("II Testing plugin on ". $self->getArgs()->{'testnumber'} . " examples\n") if $self->getArgs()->{'testnumber'};
     $self->log("II Using External_db_release_id: $extDbRelId");
@@ -161,7 +139,8 @@ sub run {
     $self->log("II Source_id:      $source_id");
     $self->log("II NA_sequence_id: $NAseqId");
   }
-  
+
+
   ## PARSE THE GENEGFF FILE
   ## a couple of counters for the result
   my $contigcount=0;
@@ -253,7 +232,7 @@ sub run {
       ## execute statement with source_id if specified on CL
       ## or use 'chr1' notation if otherwise
       if ($source_id) {
-	$stmt->execute($source_id, $self->getArgs()->{'projectId'});
+	$stmt->execute($source_id, $projectId);
       }else{ 
 
 	##### MJF
@@ -261,8 +240,8 @@ sub run {
 	#####
 	#####    $key is actually "Pv_". $key for this query only;
 	#####
-
-	$stmt->execute("Pv_".$key, $self->getArgs()->{'projectId'} );
+	#$stmt->execute($key, $projectId );
+	$stmt->execute("Pv_".$key, $projectId );
       }
 		
 		
@@ -291,34 +270,38 @@ sub run {
       }
     }
 
-    #$self->log($naseq->getSequence());
 
     # get the genelist for each contig
       my @todogene=split(/\t/,$genes{$key});
-      
+
     ## FOREACH GENE
     foreach my $tdg (@todogene){
       my $transl_start;
       my ($ggenename,$gcontig,$gmethod,$gtype,$gstart,$gstop,$gstrand,$gphase,$gnumexons) = @{$coord{$tdg}};
-      
+
       $self->log("II Making GeneFeature for $ggenename") if $debug;
-      $self->log("II Got gene data:$ggenename,$gcontig,$gmethod,$gtype,$gstart,$gstop,$gstrand,$gphase,$gnumexons") if $debug;
-      
+
+
+      # Gotta set the 'external_database_release_id', I guess....
       my $gf = GUS::Model::DoTS::GeneFeature->new({
 						   'name' => 'GeneFeature',
 						   'is_predicted' => 1,
-						   #'na_sequence_id' =>  $naseq->getNaSequenceId()
+						   'external_database_release_id' => $extDbRelId,
 						  });
-      
-	
-      #######
+
+      ######
+      ###### TO WHAT DO I HAVE TO SET EXTDBRELID, IF I (PLASMODB) 
+      ###### PREDICTS GENES FOR DATA GENERATED BY TIGR/SANGER/ETC   ????
+      ######
+
+      #################################
       # if a gene is not 5' terminal complete the translationstart for the exonfeature is
       # given in $gphase (for genes !!)	
       # A workaround: difference between PHAT \/ Genefinder+GlimmerM
-      # until I change the parsing
+      # until I change the parsing method elsewhere
       ######
       my $regulation;
-      if ($gphase!=0){                 
+      if ($gphase!=0){
 	if ($gmethod!~/phat/i){
 	  $regulation = (3-$gphase);
 	}else{
@@ -327,9 +310,13 @@ sub run {
       }else{
 	$regulation=0;
       }
-      $gphase=$regulation;	    
-      ###### END WORKAROUND
+      $gphase=$regulation;
+      ######
+      #
+      ###### END WORKAROUND#############
 	
+
+      #determine the translation start of the gene -> to be set in the first exon feature
       if ($gphase!=0){
 	$transl_start = ($gphase+1);
 	$self->log( "II $ggenename GP=$gphase -> TS=$transl_start");
@@ -338,28 +325,23 @@ sub run {
       }
 	
 	
-      ##set the sequence attributes:
-      #$naseq->addChild($gf);
+      ##set some  GeneFeature  attributes
       $gf->setParent($naseq);
       $gf->setReviewStatusId(0);
       $gf->setGeneType('protein_coding');
-
-      $gf->setExternalDatabaseReleaseId($extDbRelId);      ###### TO WHAT DO I HAVE TO SET EXTDBRELID, IF I (PLASMODB) PREDICTS GENES FOR DATA GENERATED BY TIGR/SANGER/ETC
       $gf->setSourceId($ggenename);
       $gf->setName($ggenename);
       $self->log("II Setting gf->source_id to $ggenename") if $debug;
       $gf->setPredictionAlgorithmId($method{$gmethod});
       $gf->setNumberOfExons($gnumexons);
 	
-      ##set the location
+      ##set the location for the GeneFeature
       my $isrev = $gstrand eq "+" ? 0 : 1;
       my $loc = &makeNALocation($gstart,$gstop,0,$isrev);
       $gf->addChild($loc) if $loc;
 	
-
-      $self->log("II GF: source_id ". $gf->getSourceId(). ", GT " . $gf->getGeneType(). ", naseqid : ". $naseq->getNaSequenceId() ) if $debug;
-
-      # Now we are importing the exons for the gene
+      # Now add the ExonFeatures for the current GeneFeature
+      # Exons for the gene 'ggenename' are stored in an array within the hash %exon
       $self->log( "II Making ExonFeatures for $ggenename") if $debug;
       my @todoexon=split(/\n/,$exon{$ggenename});
 		
@@ -371,25 +353,27 @@ sub run {
 	  my ($econtigname,$emethodname,$etype,$estart,$estop,
 	      $equality,$estrand,$startphase, $endphase,$egenename,
 	      $eorder,$extype,$eframe) = split(/\t/,$ex);
-	  
-	  next if ($estart eq "");
-	  
-	  my $etransl_start = ($eorder==1) ? $transl_start : 1 ;
-	  $self->log("II GOT: $econtigname,$emethodname,$etype,$estart,$estop,$equality,$estrand,$startphase, $endphase,$egenename,$eorder,$extype,$eframe") if $debug;
+	
+	  next if ($estart eq ""); # can happen -> reject;
+	
+	  my $etransl_start = ($eorder==1) ? $transl_start : 1;
 	  $self->log( "II EXON $egenename: TS=$etransl_start") if ($transl_start != 1); 
-	  #temp. debug
-	  #if the predicted gene does not begin with an initial but an internal exon
-	  #ie the ATG is of the Contig, then set the translation start of the initial exon
-	  
+	  #
+	  # if the predicted gene does not begin with an initial but an internal exon
+	  # i.e. the ATG is off the Contig (especially when dealing with small contigs in unfinished data), 
+	  # then set the translation start of the initial exon
+	  #
+
 	  $self->log( "II Making ExonFeatures for $egenename") if $debug;
 	  $is_final  = ($extype=~m/term/i) ? 1 : 0;
 	  $is_initial= ($extype=~m/init/i) ? 1 : 0;
-	  
+	
 	  #is_initial should probably be set by: ($eorder==1) ? 1 : 0;
-	  #to avoid errors from incomplete genefinder predictions
-	  
+	  #but it is not true for incomplete genes !!!
+	  #errors from incomplete genefinder predictions expected!
+
 	  $score  = ($equality eq "na") ? undef : $equality;
-	  
+	
 	  my $exon = GUS::Model::DoTS::ExonFeature->new({
 						      'name'              => 'ExonFeature',
 						      'na_sequence_id'    => $naseq->getNaSequenceId(),
@@ -403,67 +387,70 @@ sub run {
 						     });
 	
 	  $exon->setScore($score) if $score;
-	  $exon->setCodingEnd($estop-$estart+1);  
+	  $exon->setCodingEnd($estop-$estart+1);
 	  $exon->setParent($naseq);
 
+	  ## Add the location for the ExonFeature
 	  my $naloc = &makeNALocation($estart,$estop,$eorder,$isrev);
 	  $exon->addChild($naloc) if $naloc;
 	  $gf->addChild($exon) if $exon;
 	  $exoncount++;
 	  $j++;
-	} # END foreach exon
+	}  # END foreach exon
+
+
+
 		
+      ###
+      ### set the AA and SNAS sequences
+      ###
 
-      ### retrieve the AA sequence, if parseAAsequence is set, DEFAULT: OFF
-      my $cds;
-
-      ##check to make certain that have exons...
+      ### check to make certain, that GF has actually exons...
       $haveExons = $gf->getChildren('DoTS::ExonFeature') ? 1 : 0;
 		
       ##now create rnafeature and translated features and protein
-      $self->log("II Has Exons: $haveExons") if $debug;
       if($haveExons){
 
-	if ($self->getArgs()->{'parseSequence'}){
-	  $self->log("EE parseSequence not implemented. Using supplied methods");
+	#####
+	##### TEMP WORKAROUND FOR VIVAX DATA
+	#####
+	$gf->makePredictedRnaToProtein(undef, $extDbRelId ,  "Pv_".$key ); #for genuine plugin comment/uncomment this section
+	#$gf->makePredictedRnaToProtein(undef, $extDbRelId ,$key );
 
-
-	}
-
-	#################### MJF	
-	my $rtp=$gf->makePredictedRnaToProtein(undef, $extDbRelId ,  "Pv_".$key ) || $self->log("EE makePredictedRNAtoProtein complains");
-	$self->log("GB ". $gf->getGBLocation()) if $debug;
 
 	my $rna = $gf->getChild('DoTS::RNAFeature');
 	$rna->setReviewStatusId('0');
 
-
 	my $tas = $gf->getChild('DoTS::RNAFeature')->getChild('DoTS::TranslatedAAFeature')->getParent('DoTS::TranslatedAASequence');
 	$tas->setDescription("predicted gene");	
-	$self->log("AASEQ: ". $tas->getSequence()) if $debug;
+	$self->log("AASEQ: ". $tas->getSequence()) if $debug;  #just to see if frame is continuous
 
 	my $snas = $rna->getParent('DoTS::SplicedNASequence');
 	my $t=$snas->getSequence();
-	$self->log("SNAS: " . $snas->getSequence() ) if $debug;
+	$self->log("II Setting SPlicedNASequenceSNAS") if $debug;
+	#$self->log("SNAS:\n" . $snas->getSequence() ) if $debug;
       }
 	
-      ##following must be in loop to allow garbage collection...
+
       $gf->submit();
       $self->undefPointerCache();
       $genecount++;
       $self->log( "II genecount $genecount") if $debug;
+
       #limit the test to a number of genes for testing
-      if (($self->getArgs()->{'testnumber'}=~m/\d+/ ) && ($genecount > $self->getArgs()->{'testnumber'} ) ) {
+      if ( ( $self->getArgs()->{'testnumber'} )  &&  ($genecount > $self->getArgs()->{'testnumber'} )  ) {
 	$self->log( "II Reached number " . $self->getArgs()->{'testnumber'} . ". Aborting...") ;
 	last;
       }
+
     } #end foreach gene 
     $contigcount++;
+
   } # end foreach contig (keys)
-  my $results = "Processed " . $contigcount ." contig(s) with $genecount gene features and a total of $exoncount exon features\n\n";
+  my $results = "Processed " . $contigcount ." contig(s) with $genecount gene features and a total of " . $exoncount . " exon features\n\n";
   return $results;
 } # end Run loop
-  
+
 
 
 #######################################################
@@ -479,9 +466,86 @@ sub makeNALocation {
     $l->set('is_reversed',$is_reversed);
     return $l;
 }
+# --------------------------------------------------------------------
+
+sub setExtDbId {
+  my $self = shift;
+  my $src = shift;
+  $self->log("Finding ExternalDatabaseId ....");
+
+  # ExternalDatabase
+  my %extdb;
+  $extdb{lowercase_name} = $src;
+
+  my $extdb_gus = GUS::Model::SRes::ExternalDatabase->new(\%extdb);
+  if ($extdb_gus->retrieveFromDB){
+      $self->{'extDbId'} = $extdb_gus->getExternalDatabaseId;
+  }
+  else {
+    $self->log("EE error in returning ExtDbId");
+    return undef;
+  }
+  return 1;
+}
 
 
+sub getExtDbId {
+  my $self=shift;
+  return $self->{'extDbId'};
+}
 
+# --------------------------------------------------------------------
+sub setProjId {
+  my $self = shift;
+  $self->log("Finding Project ". $self->getArgs()->{'Project'} );
+
+  my %project = ( name => $self->getArgs()->{'Project'} );;
+
+  my $project_gus = GUS::Model::Core::ProjectInfo->new(\%project);
+  if ($project_gus->retrieveFromDB) {
+    $self->{'projectId'} = $project_gus->getId;
+  } else {
+    $self->log("EE Error while determining ProjectID of project " . $self->getArgs()->{'Project'} );
+    return undef;
+  }
+  return 1;
+}
+
+sub getProjectId {
+  my $self=shift;
+  return $self->{'projectId'};
+}
+
+# --------------------------------------------------------------------
+
+sub setExtDbRelId {
+  my $self = shift;
+  my $T = shift;
+
+  my $id = $self->getExtDbId;   # the external_database_id;
+  $self->log("the external_database_id = ". $id);
+  $self->log("Finding ExternalDatabaseReleaseId...");
+
+  # ExternalDatabaseRelease
+  my %extdbrel;
+  $extdbrel{external_database_id} = $id;
+  $extdbrel{version} = 'unknown';  ## NOTE: may need to be modified
+
+  my $extdbrel_gus = GUS::Model::SRes::ExternalDatabaseRelease->new(\%extdbrel);
+  if ($extdbrel_gus->retrieveFromDB){
+   $self->{'extDbRelId'} = $extdbrel_gus->getExternalDatabaseReleaseId;
+  }
+  else {
+    $self->log( "EE error returning ExtDbRelId");
+    return undef;
+  }
+  return 1;
+}
+
+sub getExtDbRelId {
+  my $self=shift;
+  return $self->{'extDbRelId'};
+}
 
 # --------------------------------------------------------------------
 
@@ -508,10 +572,6 @@ XML
 
 }
 
-
 1;
-
-
-
 
 __END__
