@@ -106,7 +106,7 @@ sub sqlexecIns {
 
   }else{
     if(!($row_count = $dbh->do($sql_cmd))){
-      &death("\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n");
+      &death($dbh, "\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n");
       return 0;
     }
   }
@@ -136,7 +136,7 @@ sub sqlExec {
   if($stmt->execute(@$values)){
     if ($verbose) { print STDERR " DbiHandle:sqlExec:insert succeeded 1 row(s)\n";}
   }else{
-    &death("\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n");
+    &death($dbh, "\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n");
     return 0;
   }
 
