@@ -675,7 +675,7 @@ sub _formatDocumentationPod {
   my $doc = $self->getDocumentation();
 
   my $s .= "\n=head1 NAME\n\n";
-  $s .= "C<$self->{name}> -  $doc->{purposeBrief} \n\n";
+  $s .= "$self->{name} -  $doc->{purposeBrief} \n\n";
   $s .= "=head1 SYNOPSIS\n\n";
   $s .= "$synopsis\n\n";
   $s .= "=head1 DESCRIPTION\n\n";

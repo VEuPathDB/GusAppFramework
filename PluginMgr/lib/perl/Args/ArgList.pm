@@ -117,7 +117,7 @@ sub checkArgs {
 sub usage {
   my ($self) = @_;
 
-  print STDERR "Usage: " . $self->formatConciseText();
+  print STDERR "Usage: " . $self->formatConciseText(). "\n\n";
   exit(1);
 }
 
@@ -134,7 +134,7 @@ sub longHelp {
 sub formatConciseText {
   my ($self) = @_;
 
-  my $usage = "\n   $self->{usagePrefixText} --help\n   $self->{usagePrefixText} --helpHTML\n   $self->{usagePrefixText}";
+  my $usage = "\n   $self->{usagePrefixText} --help\n\n   $self->{usagePrefixText} --helpHTML\n\n   $self->{usagePrefixText}";
   foreach my $arg (@{$self->{argsList}}) {
     next if ($arg->getName() eq "help");
     next if ($arg->getName() eq "helpHTML");
@@ -146,8 +146,9 @@ sub formatConciseText {
 sub formatConcisePod {
   my ($self) = @_;
 
-  my $usage = "\n$self->{usagePrefixText} --help\n\n$self->{usagePrefixText}";
-  my $usage = "\n$self->{usagePrefixText} --helpHTML\n\n$self->{usagePrefixText}";
+  my $usage = "\n$self->{usagePrefixText} --help\n\n";
+  $usage .= "$self->{usagePrefixText} --helpHTML\n\n";
+  $usage .= "$self->{usagePrefixText}";
   foreach my $arg (@{$self->{argsList}}) {
     next if ($arg->getName() eq "help");
     next if ($arg->getName() eq "helpHTML");
