@@ -25,7 +25,7 @@ sub new {
   my $easycsp =
     [
      { h => 'number of iterations for testing',
-       t => 'int'
+       t => 'int',
 
        o => 'testnumber',
      },
