@@ -19,7 +19,7 @@ sub new{
   bless $self, $class;
   $self->setVerbose($verbose);
   $self->setNoInsert($noInsert);
-  $self->{rollBack} = 0;
+  $self->setRollback(0);
   return $self;
 }
 
@@ -45,8 +45,13 @@ sub getNoInsert{
 sub setNoEmptyStrings { shift; my($bool)=@_; $NO_EMPTY_STRINGS = $bool; }
 sub getNoEmptyStrings {return $NO_EMPTY_STRINGS;}
 
-sub setRollBack { my($self,$rb) = @_; $self->{rollBack} = $rb; }
-sub getRollBack { my $self = shift; return $self->{rollBack}; }
+sub setRollBack { 
+  my($self,$rb) = @_;
+  $rollback = $rb;
+}
+sub getRollBack {
+  return $rollback;
+}
 
 sub getTransactionStatus {
   my($self) = @_;
