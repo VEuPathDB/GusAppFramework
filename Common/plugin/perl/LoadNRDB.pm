@@ -7,7 +7,6 @@ use DBI;
 use GUS::Model::DoTS::NRDBEntry;
 use GUS::Model::DoTS::ExternalAASequence;
 
-my $ctx;
 my $count=0;
 my $debug = 0;
 $| = 1;
@@ -307,7 +306,7 @@ sub makeNRDBAndExternalAASequence {
     my %EntryHash; 
     my $seq;
     my $num_submit;
-    if ($ctx->{'cla'}->{'restart'}) {
+    if ($self->getArgs->{'restart'}) {
 	$num_submit = $self->getArgs->{'restart'};
     }
     else {
