@@ -234,7 +234,7 @@ sub getTableSQL {
 	# Column name
 	#
 	my $cname = $c->{'column_name'};
-	$s .= sprintf("    %-35s", $cname);
+	$s .= sprintf("    %-35s", '"'.$cname.'"');
 
 	# Datatype
 	#
@@ -297,9 +297,9 @@ sub getTableSQL {
     my $ts = $tcols->{'tablespace_name'};
 
     if (defined($newTS)) {
-	$s .= " TABLESPACE $newTS\n";
+	$s .= " TABLESPACE \"$newTS\"\n";
     } elsif (defined($ts)) {
-	$s .= " TABLESPACE $ts\n";
+	$s .= " TABLESPACE \"$ts\"\n";
     }
 
     my $sClause = '';
