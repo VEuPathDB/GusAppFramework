@@ -617,11 +617,11 @@ sub createGUSQuantParams {
   my ($self, $RPTinfo) = @_;
 
   my $params = {
-    'Alpha1'=>1,  # WARNING. The plugin assumes this is your RAD3.ProtocalParam.name for 'Alpha1'.
-    'Alpha2'=>1,  # WARNING. The plugin assumes this is your RAD3.ProtocalParam.name for 'Alpha2'.
-    'Tau'=>1,     # WARNING. The plugin assumes this is your RAD3.ProtocalParam.name for 'Tau'.
-    'TGT'=>1,     # HARD-CODED. Replace 'TGT' by your RAD3.ProtocolParam.name for 'TGT Value'.
-    'SF'=>1       # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
+    'Alpha1' => 1,  # WARNING. The plugin assumes this is your RAD3.ProtocalParam.name for 'Alpha1'.
+    'Alpha2' => 1,  # WARNING. The plugin assumes this is your RAD3.ProtocalParam.name for 'Alpha2'.
+    'Tau'    => 1,     # WARNING. The plugin assumes this is your RAD3.ProtocalParam.name for 'Tau'.
+    'TGT'    => 1,     # HARD-CODED. Replace 'TGT' by your RAD3.ProtocolParam.name for 'TGT Value'.
+    'SF'     => 1       # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
   };
 
   # Note: 
@@ -646,11 +646,13 @@ sub createGUSQuantParams {
     my $quantParameters = GUS::Model::RAD3::QuantificationParam->new({name => $param});
 
     if ($param eq "TGT") {   # HARD-CODED. Replace 'TGT' by your RAD3.ProtocolParam.name for 'TGT Value'.
-      $quantParameters->{value} = $RPTinfo->{"TGT Value"}; 
+      $quantParameters->{value} = $RPTinfo->{"TGT Value:"}; 
+
     } elsif ($param eq "SF") {    # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
-      $quantParameters->{value} = $RPTinfo->{"Scale Factor (SF)"}; 
+      $quantParameters->{value} = $RPTinfo->{"Scale Factor (SF):"}; 
+
     } else {
-      $quantParameters->{value} = $RPTinfo->{$param};
+      $quantParameters->{value} = $RPTinfo->{"$param:"};
     }
     
     $quantParameters->setParent($protocolParam);  # protocolParam in only needed here, so set parent here
