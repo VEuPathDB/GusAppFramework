@@ -71,7 +71,7 @@ sub createReport {
   push(@columns, $goIdCol);
 
   my $goNameCol =
-    GUS::ReportMaker::DefaultColumn->new("GoName",
+    GUS::ReportMaker::DefaultColumn->new("GOname",
 					 "Names of Gene Ontology (GO) consortium terms assigned to the transcript");
   push(@columns, $goNameCol);
 
@@ -176,7 +176,6 @@ and             g.gene_id  = r.gene_id
 				  $geneSymbolCol,
 				 ]);
 
-# Not tested yet
   my $gofunctionSql = 
 "select distinct pa.na_sequence_id, gt.go_id as goid, gt.name as goname
  from $tempTable tmp, sres.goterm gt, allgenes_60.ProteinAssembly pa, dots.goassociation ga
@@ -228,6 +227,7 @@ and pa.na_sequence_id = a.na_sequence_id
 		 $locuslinkQuery,
 		 $genecardsQuery,
 		 $mgiQuery,
+		 $gofunctionQuery,
 		 $geneQuery,
 		 $mappedToQuery,
 		 $motifsQuery,
