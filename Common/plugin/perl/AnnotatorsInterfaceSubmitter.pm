@@ -34,7 +34,7 @@ use GUS::Model::Core::AlgorithmInvocation;
 use GUS::ObjRelP::DbiDatabase;
 
 
-#$| = 1;
+$| = 1;
 
 sub new {
 	my ($class) = @_;
@@ -148,11 +148,12 @@ sub run {
                           # All objects except DoTS::Assembly and DoTS::RNARNACategory have 
                           # a review_status_id that should be set to 1 (= manually reviewed)
                           #
-                          if (!($child->getClassName =~ /^GUS::Model::DoTS::(Assembly|RNARNACategory)/)) {
+                          if ($child->getClassName ne GUS::Model::DoTS::(Assembly|RNARNACategory)) {
 
+                      #(!($child->getClassName =~ /^GUS::Model::DoTS::(Assembly|RNARNACategory)/))
 
-                            $child->setReviewStatusId(1);
-                          }
+                           $child->setReviewStatusId(1);
+                         }
 			}
 
 			$has_evidence = 0;
