@@ -307,6 +307,42 @@ sub run {
     return $summary;
 }
 
+sub getAlignmentGroups {
+    my ($self) = @_;
+
+    my $dbh = $self->getQueryHandle();
+    my $cla = $self->getCla();
+
+    my $keepBest = $cla->{'keep_best'};
+    my $queryTableId = $cla->{'query_table_id'};
+    my $queryTaxonId = $cla->{'query_taxon_id'};
+    my $queryExtDbRelId = $cla->{'query_db_rel_id'};
+    my $targetTableId = $cla->{'target_table_id'};
+    my $targetTaxonId = $cla->{'target_taxon_id'};
+    my $targetExtDbRelId = $cla->{'target_db_rel_id'};
+
+    my $sql = "select query_na_sequence_id, blat_alignment_id, score, percent_identity "
+	. "from DoTS.BlatAlignment "
+        . "where query_table_id = $queryTableId "
+	. "and query_taxon_id = $queryTaxonId "
+	. "and query_external_db_release_id = $queryExtDbRelId "
+	. "and target_table_id = $targetTableId "
+        . "and target_taxon_id = $targetTaxonId "
+        . "and target_external_db_release_id = $targetExtDbRelId";
+    my $sth = $dbh->prepare($sql) or die "bad sql $sql:!\n";
+    print "# running $sql...\n";
+    $sth->execute or die "could not run $sql: $!";
+
+    my %alnGrps;
+    while (my ($sid, $bid, $score, $pct_id) = $sth->fetchrow_array) {
+	$alnGrps{$sid} = [] unless $alnGrps{$sid};
+	push @{ $alnGrps{$sid} }, [$bid, $score, $pct_id];
+    }
+    $sth->finish;
+
+    \%alnGrps;
+}
+
 sub keepBestAlignments {
     my ($self) = @_;
 
@@ -321,56 +357,44 @@ sub keepBestAlignments {
     my $targetTaxonId = $cla->{'target_taxon_id'};
     my $targetExtDbRelId = $cla->{'target_db_rel_id'};
 
-    # do the query
+    # get alignment groups by query
     #
-    my $sql = "select query_na_sequence_id, blat_alignment_id, score, percent_identity "
-	. "from DoTS.BlatAlignment "
-        . "where query_table_id = $queryTableId "
-	. "and query_taxon_id = $queryTaxonId "
-	. "and query_external_db_release_id = $queryExtDbRelId "
-	. "and target_table_id = $targetTableId "
-        . "and target_taxon_id = $targetTaxonId "
-        . "and target_external_db_release_id = $targetExtDbRelId "
-        . "order by query_na_sequence_id";
-    my $sth = $dbh->prepare($sql) or die "bad sql $sql:!\n";
-    print "# running $sql...\n";
-    $sth->execute or die "could not run $sql: $!";
+    my $alnGrps = $self->getAlignmentGroups();
 
     # process result
     #
-    my ($tot_sq, $tot_al, $tot_bs_sq, $tot_bs) = (0,0,0,0);
-    my $prev_seq_id;
-    my $prev_best_score;
-    my %prev_blat_group;
-    while (my ($sid, $bid, $score, $pct_id) = $sth->fetchrow_array) {
-	my $pct_al = $score * $score / $pct_id;
-	if (!$prev_seq_id) {
-	    $prev_best_score = $score;
-	} else {
-	    if ($sid != $prev_seq_id) {
-		my ($al, $bs) = &processOneGroup($dbh, $prev_seq_id, $prev_best_score, \%prev_blat_group);
-		$tot_sq++; $tot_al += $al; $tot_bs_sq++ if $bs; $tot_bs += $bs;
-		$prev_best_score = $score;
-		undef %prev_blat_group;
-	    } else {
-		$prev_best_score = $score if $score > $prev_best_score;
+    my $tot_sq = scalar(keys %$alnGrps);
+    my ($tot_al, $tot_bs) = (0,0);
+    foreach my $sid (keys %$alnGrps) {
+	my @oneGrp = @{ $alnGrps->{$sid} };
+	print "# processing DT.$sid: " . scalar(@oneGrp). " blat alignments...\n";
+
+	my $best_score = 0;
+	foreach (@oneGrp) {
+	    my ($bid, $score, $pct_id) = @$_;
+	    $best_score = $score if $score > $best_score;
+	    $tot_al++;
+	}
+	foreach (@oneGrp) {
+	    my ($bid, $score, $pct_id) = @$_;
+
+	    my $is_best = 0;
+	    $is_best = 1 if $score >= 0.99 * $best_score;
+	    if ($is_best) {
+		$tot_bs++;
+		$dbh->do("update DoTS.BlatAlignment set is_best_alignment = 1 "
+			 . "where blat_alignment_id = $bid" );
 	    }
 	}
-	$prev_seq_id = $sid;
-	$prev_blat_group{$bid} = { score=>$score, pct_id=>$pct_id, pct_al=>$pct_al };
     }
-    my ($al, $bs) = &processOneGroup($dbh, $prev_seq_id, $prev_best_score, \%prev_blat_group);
-    $tot_sq++; $tot_al += $al; $tot_bs_sq++ if $bs; $tot_bs += $bs;
-    $sth->finish;
 
-    print "$tot_sq DoTS with $tot_al alignments\n";
-    print "$tot_bs_sq DoTS with $tot_bs alignments that are best alignments\n";
+    print "$tot_sq DoTS with $tot_al ($tot_bs) alignments (that are bests)\n";
 
     if ($keepBest == 1) {
 	print "# TODO: keep only one alignment per query\n";
     } elsif ($keepBest == 2) {
 	print "deleting non-top alignments ...\n";
-	$sql = "delete DoTS.BlatAlignment "
+	my $sql = "delete DoTS.BlatAlignment "
 	    . "where query_table_id = $queryTableId "
 	    . "and query_taxon_id = $queryTaxonId "
 	    . "and target_table_id = $targetTableId "
@@ -689,34 +713,6 @@ sub getUcscGenomeVersion {
     }
 
     $v;
-}
-
-# for given query sequence, set "top alignment" status 
-#
-sub processOneGroup {
-    my ($dbh, $seq_id, $best_score, $blat_group) = @_;
-
-    my $al = scalar(keys %$blat_group);
-    my $bs = 0;
-
-    print "# processing DT.$seq_id: " . scalar(keys %$blat_group). " blat alignments...\n";
-    foreach my $bid (keys %$blat_group) {
-        my $al = $blat_group->{$bid};
-        my $score = $al->{score};
-        my $pct_id = $al->{pct_id};
-        my $pct_al = $al->{pct_al};
-
-        my $is_best = 0;
-        # $is_best = 1 if ($pct_al > 90 || ($pct_al > 60 && $pct_id > 95)) && $score >= 0.99 * $best_score;
-        $is_best = 1 if $score >= 0.99 * $best_score;
-        $bs++ if $is_best;
-        my $sql = "update DoTS.BlatAlignment set is_best_alignment = $is_best "
-            . "where blat_alignment_id = $bid";
-        print "#  $sql\n" if $is_best; # only update the bests
-        $dbh->do($sql) if $is_best;  # only update the bests
-    }
-
-    ($al, $bs);
 }
 
 1;
