@@ -62,6 +62,7 @@ my(
    $indexesOnly,
    $constraintsOnly,
    $masterOnly,
+   $verbose,
    );
 
 &GetOptions("gus-version=s" => \$gusVersion,
@@ -83,6 +84,7 @@ my(
 	    "indexes-only!" => \$indexesOnly,
 	    "constraints-only!" => \$constraintsOnly,
 	    "master-only!" => \$masterOnly,
+	    "verbose!" => \$verbose,
 	    );
 
 if (!$login || !$schemaList || !$dbSid || !$dbHost) {
@@ -107,6 +109,7 @@ Usage: dumpSchema.pl options
   --indexes-only                               # only generate CREATE INDEX statements
   --constraints-only                           # only generate ALTER TABLE...ADD CONSTRAINT statements
   --master-only                                # only generate master control file
+  --verbose                                    # print more detailed progress messages
 USAGE
     die "Invalid arguments";
 }
@@ -241,8 +244,8 @@ my $fh = new FileHandle();
 #
 if ($doAll || $usersOnly) {
     my $userFile = "${file}users.sql";
-    print "writing $userFile...";
-    $fh->open("> $userFile");
+    print "writing ${userFile}.tmp..." if ($verbose);
+    $fh->open("> ${userFile}.tmp");
     &printSqlFileHeader($fh, $userFile, 'CREATE USER statments for the Oracle users/schemas that will hold the tables in GUS.');
 
     for (my $i = 0;$i < $numSchemas;++$i) {
@@ -272,14 +275,14 @@ if ($doAll || $usersOnly) {
 	print $fh "GRANT CREATE TABLE TO $targetSchema;\n";
 	print $fh "GRANT CREATE VIEW TO $targetSchema;\n";
 	print $fh "GRANT CREATE SEQUENCE TO $targetSchema;\n";
-#	print $fh "/* The following is required if you wish to be able to create functional indexes: */\n";
-#	print $fh "GRANT QUERY REWRITE TO $targetSchema;\n";
 	print $fh "\n";
     }
 
     &printSqlFileFooter($fh, $userFile);
     $fh->close();
-    print "done.\n";
+    print "done.\n" if ($verbose);
+    &installFileIfModified($userFile);
+    
 }
 
 # Tables whose contents should be included in a complete dump
@@ -306,8 +309,8 @@ if ($doAll && !defined($tableList)) {
     # Bootstrap rows for crucial infrastructure tables
     #
     my $bfile = "${file}bootstrap-rows.sql";
-    print "writing bootstrap rows to $bfile...";
-    $fh->open("> $bfile");
+    print "writing bootstrap rows to $bfile..." if ($verbose);
+    $fh->open("> ${bfile}.tmp");
     &printSqlFileHeader($fh, $bfile, 'Inserts a row into each of the central tracking/data provenance tables.');
 
     if ($gusVersion >= 3.0) {
@@ -354,7 +357,8 @@ if ($doAll && !defined($tableList)) {
 
     &printSqlFileFooter($fh, $bfile);
     $fh->close();
-    print "done.\n";
+    print "done.\n" if ($verbose);
+    &installFileIfModified($bfile);
 
     # Dumps of table contents for selected tables 
     # 
@@ -362,8 +366,8 @@ if ($doAll && !defined($tableList)) {
 	my($srcSchema, $tname, $primKeyCol, $fileDescr) = @$td;
 	my $dfile = ($srcSchema) ? "${file}$srcSchema-$tname-rows.sql" : "${file}$tname-rows.sql";
 	my $fullTName = ($srcSchema) ? "${srcSchema}.$tname" : $tname;
-	print "writing contents of $fullTName to $dfile...";
-	$fh->open("> $dfile");
+	print "writing contents of $fullTName to $dfile..." if ($verbose);
+	$fh->open("> ${dfile}.tmp");
 	&printSqlFileHeader($fh, $dfile, $fileDescr);
 
 	$srcSchema = $tableinfoSchema if (!defined($srcSchema));
@@ -388,7 +392,8 @@ if ($doAll && !defined($tableList)) {
 	print $fh "COMMIT;\n";
 	&printSqlFileFooter($fh, $dfile);
 	$fh->close();
-	print "done.\n";
+	print "done.\n" if ($verbose);
+	&installFileIfModified($dfile);
     }
 }
 
@@ -413,15 +418,15 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 	# 
 	if (($doAll) && !($schema =~ /ver$/i)) {
 	    my $sFile = "${file}$schema-sequences.sql";
-	    print "writing sequences to $sFile...";
-	    $fh->open("> $sFile");
+	    print "writing sequences to $sFile..." if ($verbose);
+	    $fh->open("> ${sFile}.tmp");
 	    &printSqlFileHeader($fh, $sFile);
 	    my $sequences = $s->getSequences($dbh);
 	    my $nseqs = 0;
 	    foreach my $seqname (@$sequences) {
 		my $seq = GUS::DBAdmin::Sequence->new({owner => $targetSchema, name => $seqname});
 		print $fh $seq->getSQL($dbh, 1), "\n";
-		print ".";
+		print "." if ($verbose);
 		++$nseqs;
 	    }
 	    print $fh "\n";
@@ -429,7 +434,8 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 	    
 	    &printSqlFileFooter($fh, $sFile);
 	    $fh->close();
-	    print "done.\n";
+	    print "done.\n" if ($verbose);
+	    &installFileIfModified($sFile);
 	}
 
 	# 2. Tables
@@ -442,12 +448,12 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 	my $tFile = "${file}$schema-tables.sql";
 
 	if ($doAll || $tablesOnly) {
-	    print "writing tables to $tFile...";
-	    $fh->open("> $tFile");      
+	    print "writing tables to $tFile..." if ($verbose);
+	    $fh->open("> ${tFile}.tmp");      
 	    &printSqlFileHeader($fh, $tFile);
 	} 
 	elsif ($indexesOnly || $constraintsOnly) {      # constraints and indexes are actually generated here
-	    print "processing table information...";
+	    print "processing table information..." if ($verbose);
 	}
 
 	if ($doAll || $tablesOnly || $indexesOnly || $constraintsOnly) {
@@ -499,7 +505,7 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 		    print $fh $tbl->getSQL($dbh, $targetSchema, $targetTablespace), "\n";
 		}
 		
-		print ".";
+		print "." if ($verbose);
 		++$ntables;
 	    }
 	}
@@ -509,17 +515,18 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 	    print $fh "/* $ntables table(s) */\n\n";
 	    &printSqlFileFooter($fh, $tFile);
 	    $fh->close();
-	    print "done.\n";
+	    print "done.\n" if ($verbose);
+	    &installFileIfModified($tFile);
 	} elsif ($indexesOnly || $constraintsOnly) {
-	    print "done.\n";
+	    print "done.\n" if ($verbose);
 	}
 	
 	# 3. Views
 	#
 	if ($doAll || $viewsOnly) {
 	    my $vFile = "${file}$schema-views.sql";
-	    print "writing views to $vFile...";
-	    $fh->open("> $vFile");
+	    print "writing views to $vFile..." if ($verbose);
+	    $fh->open("> ${vFile}.tmp");
 	    &printSqlFileHeader($fh, $vFile);
 	    my $views = $s->getViews($dbh);
 	    my $nviews = 0;
@@ -533,22 +540,23 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 		    print $fh "/* WARNING - $vname does not appear in ${tableinfoSchema}.TableInfo */\n\n";
 		}
 		print $fh $tbl->getSQL($dbh, $targetSchema), "\n";
-		print ".";
+		print "." if ($verbose);
 		++$nviews;
 	    }
 	    print $fh "\n";
 	    print $fh "/* $nviews view(s) */\n\n";
 	    &printSqlFileFooter($fh, $vFile);
 	    $fh->close();
-	    print "done.\n";
+	    print "done.\n" if ($verbose);
+	    &installFileIfModified($vFile);
 	}
 
 	# 4. Constraints: one file for primary keys, one file for the rest
 	#
 	if ($doAll || $constraintsOnly) {
 	    my $cFile1 = "${file}$schema-pkey-constraints.sql";
-	    print "writing primary key constraints to $cFile1...";
-	    $fh->open("> $cFile1");
+	    print "writing primary key constraints to $cFile1..." if ($verbose);
+	    $fh->open("> ${cFile1}.tmp");
 	    &printSqlFileHeader($fh, $cFile1);
 	    print $fh "/* PRIMARY KEY CONSTRAINTS */\n\n";
 	    print $fh $primKeyConstraintTxt, "\n";
@@ -556,11 +564,12 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 	    print $fh "/* $nPrimKeyConstraints primary key constraint(s) */\n\n";
 	    &printSqlFileFooter($fh, $cFile1);
 	    $fh->close();
-	    print "done.\n";
+	    print "done.\n" if ($verbose);
+	    &installFileIfModified($cFile1);
 
 	    my $cFile2 = "${file}$schema-constraints.sql";
-	    print "writing remaining constraints to $cFile2...";
-	    $fh->open("> $cFile2");
+	    print "writing remaining constraints to $cFile2..." if ($verbose);
+	    $fh->open("> ${cFile2}.tmp");
 	    &printSqlFileHeader($fh, $cFile2);
 	    print $fh "/* NON-PRIMARY KEY CONSTRAINTS */\n\n";
 	    print $fh $constraintTxt, "\n";
@@ -568,22 +577,24 @@ if ($doAll || $tablesOnly || $viewsOnly || $indexesOnly || $constraintsOnly) {
 	    print $fh "/* $nOtherConstraints non-primary key constraint(s) */\n\n";
 	    &printSqlFileFooter($fh, $cFile2);
 	    $fh->close();
-	    print "done.\n";
+	    print "done.\n" if ($verbose);
+	    &installFileIfModified($cFile2);
 	}
 
 	# 5. Indexes
 	#
 	if ($doAll || $indexesOnly) {
 	    my $iFile = "${file}$schema-indexes.sql";
-	    print "writing indexes to $iFile...";
-	    $fh->open("> $iFile");
+	    print "writing indexes to $iFile..." if ($verbose);
+	    $fh->open("> ${iFile}.tmp");
 	    &printSqlFileHeader($fh, $iFile);
 	    print $fh $indexTxt, "\n";
 	    print $fh "\n";
 	    print $fh "/* $nIndexes index(es) */\n\n";
 	    &printSqlFileFooter($fh, $iFile);
 	    $fh->close();
-	    print "done.\n";
+	    print "done.\n" if ($verbose);
+	    &installFileIfModified($iFile);
 	}
     }
 }
@@ -600,8 +611,8 @@ $dbh->disconnect();
 if ($doAll || $masterOnly) {
     my $nf = 0;
     my $masterFile = "${file}create-db.sh";
-    print "writing $masterFile...";
-    $fh->open("> $masterFile");
+    print "writing $masterFile..." if ($verbose);
+    $fh->open("> ${masterFile}.tmp");
     
     print $fh "#!/bin/sh\n\n";
 
@@ -701,12 +712,61 @@ if ($doAll || $masterOnly) {
     print $fh "# Issued sqlplus commands for $nf SQL files\n\n";
 
     $fh->close();
-    print "done.\n";
+    print "done.\n" if ($verbose);
+    &installFileIfModified($masterFile);
 }
 
 # -----------------------------------------------------------------------
 # Subroutines
 # -----------------------------------------------------------------------
+
+# Copy a new schema file into place, if it is new or differs from the
+# existing version of itself.
+#
+sub installFileIfModified {
+    my($oldFile) = @_;
+    my $newFile = $oldFile . ".tmp";
+
+    if ((! -e $oldFile) || &schemaFilesDiffer($newFile, $oldFile)) {
+	print "*** updating $oldFile\n";
+	system("mv $newFile $oldFile");
+    } 
+    else {
+	print "$oldFile unchanged\n";
+	unlink $newFile;
+    }
+}
+
+# Determine whether two versions of the same file have non-trivial
+# differences.  Non trivial in this case means any differences 
+# except in the line that says "This file was generated automatically by..."
+#
+sub schemaFilesDiffer {
+    my($f1, $f2) = @_;
+
+    open(FH1, $f1);
+    open(FH2, $f2);
+
+    my @l1 = <FH1>;
+    my @l2 = <FH2>;
+
+    close(FH2);
+    close(FH1);
+
+    my $nl1 = scalar(@l1);
+    my $nl2 = scalar(@l2);
+
+    return 1 if ($nl1 != $nl2);
+
+    for (my $i = 0;$i < $nl1;++$i) {
+	my $line1 = $l1[$i];
+	my $line2 = $l2[$i];
+	next if ($line1 =~ /^\/\* This file was generated automatically by dumpSchema\.pl/i);
+	return 1 if ($line1 ne $line2);
+    }
+
+    return 0;
+}
 
 # Get a default password for the specified schema.  Returns a '@style@' 
 # parameter so we can use Ant to replace it with the actual value when
