@@ -221,32 +221,35 @@ print STDERR "$ids\n";
 
 
 
-#foreach my $target_id(@diffArray2)  {
-#my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
-                                      #        'attribute_name' =>"full_length_CDS"});
-  #if ($Evidence->retrieveFromDB()){
-
- #      $Evidence->markDeleted(1);
-  #     $Evidence->submit();
-   #  print STDERR  "DT.$target_id Evidence deleted\n";  
-    #  $self->undefPointerCache();
-   #   }
-#}
-
-
-
-
-
-
-
-
-
-my $dbh = $self->getQueryHandle();
-my $rows = $dbh->prepare("delete from dots.evidence where attribute_name = 'full_length_CDS' and target_id = ?");
 foreach my $target_id(@diffArray2)  {
-    $rows->execute($target_id);
-  print STDERR  "DT.$target_id Evidence deleted\n";
- }
+my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
+                                             'attribute_name' =>"full_length_CDS"});
+  if ($Evidence->retrieveFromDB()){
+
+       $Evidence->markDeleted(1);
+       $Evidence->submit();
+     print STDERR  "DT.$target_id Evidence deleted\n";  
+      $self->undefPointerCache();
+     }
+}
+
+
+
+
+
+
+
+
+
+#my $dbh = $self->getQueryHandle();
+#my $rows = $dbh->prepare("delete from dots.evidence where attribute_name = 'full_length_CDS' and target_id = ?");
+#foreach my $target_id(@diffArray2)  {
+  #  $rows->execute($target_id);
+
+
+
+ # print STDERR  "DT.$target_id Evidence deleted\n";
+# }
 
 
 
