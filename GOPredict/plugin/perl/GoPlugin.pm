@@ -13,7 +13,8 @@ use GUS::Model::SRes::GORelationship;
 use GUS::Model::DoTS::RNAInstance;
 use GUS::Model::DoTS::Similarity;
 use GUS::Model::DoTS::GOAssociation;
-
+use GUS::GOPredict::DatabaseAdapter;
+use GUS::GOPredict::GoManager;
 
 use FileHandle;
 
@@ -61,7 +62,14 @@ sub new {
        h => 'GUS external database release id of new GO version (to upgrade to) or current if not upgrading',
        r => 1,
    },
-     
+    #for now make the lazy progamming decision that this GO Id will always stay the same as the 
+    # hierarchy changes
+     { o => 'function_root_go_id',
+       t => 'string',
+       h => 'GO Id (GO:XXXX format) of root of molecular function branch of GO Hierarchy',
+       d => 'GO:0003674',
+   },
+    
      { o => 'test_protein_id_list',
        t => 'string',
        h => 'if testing, comma separated list of proteins to perform algorithms on',
@@ -152,7 +160,7 @@ sub new {
      { o => 'rule_sql_filter',
        t => 'string',
        h => 'extra where clause terms used for rule selection, OVERRIDES the raid parameter; remember ruleset table is called "rs"',
-       r => 1,
+       
    },
 
      
@@ -160,13 +168,13 @@ sub new {
      { o => 'sql_filter',
        t => 'string',
        h => 'extra where clause terms used for similarity selection; remember query sequence table is called "q"',
-       r => 1,
+       
    },
      # extra FROM for similarity selection
      { o => 'sql-from',
        t => 'string',
        h => 'extra FROM clause terms used for similarity selection.',
-       r => 1,
+       
        t => 'string',
    }
 
@@ -186,13 +194,13 @@ sub new {
     return $self;
 }
 
-sub Run {
+sub run {
     my ($self) = @_;
     
     my $queryHandle = $self->getQueryHandle();
     my $databaseAdapter = GUS::GOPredict::DatabaseAdapter->new($queryHandle);
     
-    $databaseAdapter->initializeTranslations($self->getCla->{query_taxon_id});
+#    $databaseAdapter->initializeTranslations($self->getCla->{query_taxon_id});
 
     my $proteinTableId = $self->getCla->{protein_table_id};
     my $newGoVersion = $self->getCla->{new_go_release_id};
@@ -200,7 +208,8 @@ sub Run {
 
     $databaseAdapter->setTestProteinIds($testProteinIds) if $testProteinIds;
 
-    my $goManager = GUS::GOPredict->GoManager->new($databaseAdapter);
+    my $goManager = GUS::GOPredict::GoManager->new($databaseAdapter);
+    $goManager->setFunctionRootGoId($self->getCla->{function_root_go_id};
 
     my $msg;
     # get method name
@@ -219,7 +228,8 @@ sub Run {
 	    
 	    my $recache = 1;
 	    $recache = 0 if $self->getCla->{apply_rules}; #don't recache if applying rules right afterwards
-	    my $deleteCache = 1;
+#	    my $deleteCache = 1;
+	    my $deleteCache = 0;
 
 	    $goManager->evolveGoHierarchy($oldGoVersion, $newGoVersion, $deleteCache, $recache, $proteinTableId);
 	}
@@ -258,7 +268,7 @@ sub _makeClaHashForRules{
     my $errMsg = "When applying rules, you need to set all of --protein_table_id, --query_table_id,\n";
     $errMsg .= "--query_primary_attribute, --subject_db_release_list";
 
-    $self->userError($errMsg) if !($queryTableId && $queryTablePkAtt && $subjectTablePkAtt && $subjectDbList
+    $self->userError($errMsg) if !($queryTableId && $queryTablePkAtt && $subjectDbList
 				   && $proteinTableId);
 
     my $cla;
