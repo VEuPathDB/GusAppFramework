@@ -1,4 +1,4 @@
-<project name="WDK temp build" default="package" basedir=".">
+<project name="WDK temp build" default="deploy" basedir=".">
 
   <property name="webapp.dir"    value="/nfs/team81/art/genedb/webapps/sampleWDK"/>
   <property name="build.home"    value="${basedir}/ant-build"/>
