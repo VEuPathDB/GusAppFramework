@@ -50,7 +50,7 @@ sub validateColumnsRequest {
 # resultTableName: name of db table containing result
 # dbiDb: GUS::ObjRelP::DbiDatabase
 sub print {
-  my ($self, $primaryKeyName, $requestedColumnNames, $resultTableName, 
+  my ($self, $primaryKeyName, $primaryKeyPrefix, $requestedColumnNames, $resultTableName, 
       $dbiDb, $verbose) = @_;
 
   # hash of query->[columns]
@@ -68,7 +68,7 @@ sub print {
 
   $self->_printHeader($requestedColumnNames);
   foreach my $primaryKey (keys %answer) {
-    $self->_printRow($primaryKey, $answer{$primaryKey}, $requestedColumnNames);
+    $self->_printRow($primaryKey, $primaryKeyPrefix, $answer{$primaryKey}, $requestedColumnNames);
   }
 }
 
@@ -101,9 +101,9 @@ sub _printHeader {
 }
 
 sub _printRow {
-  my ($self, $primaryKey, $answerRow, $requestedColumnNames) = @_;
+  my ($self, $primaryKey, $primaryKeyPrefix, $answerRow, $requestedColumnNames) = @_;
 
-  print "$primaryKey\t";
+  print "${primaryKeyPrefix}${primaryKey}\t";
   foreach my $columnName (@$requestedColumnNames) {
     $self->{columns}->{$columnName}->print($answerRow);
   }
