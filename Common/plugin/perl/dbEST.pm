@@ -18,21 +18,25 @@ use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::Anatomy;
+use GUS::Model::SRes::Contact;
 
-# ----------------------------------------------------------------------
+use FileHandle;
+
+#####################################################################
 # The new method should create and bless a new instance and call the
 # following methods to initialize the necessary attributes of a
 # plugin.
+#####################################################################
 
 sub new {
 	my $Class = shift;
 
-	my $m = bless {}, $Class;
+	my $M = bless {}, $Class;
   
   my $easycsp = [{ h => 'number of iterations for testing',
                    t => 'int',
-                   d => 10,
-                   o => 'TestNumber',
+                   o => 'test_number',
+                   r => 0,
                  },
                  { h => 'The span of entries to retrieve in batches',
                    t => 'int',
@@ -40,7 +44,7 @@ sub new {
                    d => 100,
                    r => 0,
                  },
-                 { h => 'A log file (full path)',
+                 { h => 'A log file (path relative to current/working directory)',
                    t => 'string',
                    r => 0,
                    d => 'DataLoad_dbEST.log',
@@ -49,26 +53,36 @@ sub new {
                  { h => 'An update file containing the EST entries that changed',
                    t => 'string',
                    o => 'update_file',
+                   r => 0,
                  },
                  { h => 'Signifies that the sequences in ExternalNASequence should NOT be updated, regardless of discrepencies in dbEST. An error message is output when there is a conflict.',
                    t => 'boolean',
                    o => 'no_sequence_update',
-                 }];
+                   r => 0,
+                 },
+                 {
+                   h=> 'Restart number. If input is a file, then the line number is given. If from the DB then the id_est is given.',
+                   t=> 'int',
+                   o => 'restart_number',
+                   r => 0,
+                 },
+                 ];
   
   ## Initialize the plugin
   
-  $m->initialize({requiredDbVersion => { DoTS => '3',
+  $M->initialize({requiredDbVersion => { DoTS => '3',
                                          Core => '3',
                                          SRes => '3',
                                        },
                   cvsRevision => ' $Revision$ ', # cvs fills this in
                   cvsTag => ' $Name$ ', # cvs fills this in!
-                  name => ref($m),
+                  name => ref($M),
                   revisionNotes => 'GUS 3.0 compliant',
                   easyCspOptions => $easycsp,
                   usage => 'Loads dbEST information into GUS',
                 });
   
+  $M;
 }
 
 # ----------------------------------------------------------------------
@@ -79,69 +93,80 @@ sub run {
 	$M->logRAIID;
 	$M->logCommit;
 	$M->logArgs;
-  
-#  my $ctx = $M->getCla();
+
+  ## Set the log file
+  $M->getCla()->{log_fh}  = FileHandle->new(">" . $M->getCla->{log})
+    or die ("Log file " . $M->getCla->{log} . "not open\n");
+  $M->getCla()->{log_fh}->autoflush(1);
+
   ## Make a few cache tables for common info
   $M->{libs} = {};          # dbEST library cache
   $M->{anat} = {};          # Anatomy (tissue/organ) cache
   $M->{taxon} = {};         # Taxonomy (est.organism) cache
   $M->{contact} = {};       # Contact info cache
-  $M->setTableCaches(); 
+  $M->setTableCaches();
   
+  
+  #####################################################################
   ## If an update file is given, use this as the basis 
   ## for an update. Otherwise query GUS for what needs to 
   ## be updated.
+  #####################################################################
 
   my $count = 0;
-  my $dbh = $M->getQueryhandle();
-  my $est_q = 'select * from dbest.est@gus ';
-  
+
 	############################################################
 	# Put loop here...remember to $M->undefPointerCache()!
 	############################################################
   
-
   if ($M->getCla->{update_file}) {
     my $fh = FileHandle->new( "<" . $M->getCla->{update_file})  or 
       die "Could not open update file ". $M->getCla->{update_file} . "\n";
-    $est_q .= " where id_est = ?";
-    my $s = $dbh->prepare($est_q) or die "SQL=$est_q\n", $dbh->errstr;
     
     while (!$fh->eof()) {
+      ## Testing condition 
+      last if ($M->getCla->{test_number} && $count > $M->getCla->{test_number});
+
+      ## Skip entries until we get to the restart point, if defined
+      next if ($M->getCla()->{restart_number} && $M->getCla()->{restart_number} > $fh->input_line_number);
+      ## Main loop
       # A setof dbEST EST entries
       my ($e);
       for (my $i = 0; $i < $M->getCla->{span}; $i++) {
         my $l = $fh->getline();
         my ($eid) = split /\t/, $l;
-        $s->execute($eid);
-        while (my $r = $s->fetchrow_hashref('NAME_lc')){
-          $e->{$r->{id_est}}->{e} = $r;
+        my $ests = $M->sql_get_as_hash_refs_lc("select * from est\@dbest where id_est = $eid");
+        foreach my $est ( @{$ests}) {
+          $e->{$est->{id_est}}->{e} = $est;
         }
       }
-      $count += $M->processEntries($e,$dbh);
+      $count += $M->processEntries($e);
       $M->undefPointerCache();
     }
   }else {
-    $est_q .= " where id_est >= ? and id_est < ?";    
-    my $dbh = $M->getQueryHandle();
-    my $s = $dbh->prepare($est_q) or die "SQL=$est_q\n", $dbh->errstr;
-    
-    # get the absolute max id_est
-    my ($abs_max) = $M->sql_get_as_array('select max(id_est) from est@dbest');
+        # get the absolute max id_est
+    my ($abs_max) = $M->sql_get_as_array("select max(id_est) from est\@dbest");
     # get the min and max ids
     
     my $min = 0;
-    my $max = $$M->{cla}->{span};
+    # Set the restart entry id if defined
+    $min = $M->getCla()->{restart_number} ? $M->getCla()->{restart_number} : $min ;
+    
+    my $max = $min + $M->getCla->{span};
     while ($max <= $abs_max) {
-      $s->execute($min,$max)  or die "SQL=$est_q\n", $dbh->errstr;
+      ## Testing condition 
+      last if ($M->getCla->{test_number} && $count > $M->getCla->{test_number});
+
+      ## Main loop
+      my $ests = $M->sql_get_as_hash_refs_lc("select * from est\@dbest where id_est >= $min and id_est < $max");
       my ($e);
-      while (my $r = $s->fetchrow_hashref('NAME_lc')) {
-        $e->{$r->{id_est}}->{e} = $r;
+      foreach my $est ( @{$ests}) {
+        $e->{$est->{id_est}}->{e} = $est;
       }
-      $count += $M->processEntries($e,$dbh);
+      $count += $M->processEntries($e);
       $M->undefPointerCache();
       $min = $max;
-      $max += $M->{cla}->{span};
+      $max += $M->getCla()->{span};
     }
   }
 	############################################################
@@ -182,13 +207,13 @@ entries that were updated/inserted into GUS.
 =cut
 
 sub processEntries {
-  my ($M, $e,$dbh ) = @_;
+  my ($M, $e ) = @_;
   my $count = 0;
   
   # get the most recent entry 
   foreach my $id (keys %$e) {
     if ($e->{$id}->{e}->{replaced_by}){
-      my $re =  $M->getMostRecentEntry($e->{$id}->{e},$dbh);
+      my $re =  $M->getMostRecentEntry($e->{$id}->{e});
       #this entry is bogus, delete from insert hash
       delete $e->{$id};
       #enter the new entry into the insert hash
@@ -197,28 +222,37 @@ sub processEntries {
     }
   }
   
-  # get the sequences
+  # get the sequences only for most current entry
   my $ids = join "," , keys %$e;
-  my $A = $M->sql_get_as_hash_refs("select * from SEQUENCE\@dbest where id_est in ($ids) order by id_est, local_id");
-  foreach my $s (@$A){
-    $e->{$s->{id_est}}->{sequence} .= $s->{data};
+  my $A = $M->sql_get_as_hash_refs_lc("select * from SEQUENCE\@dbest where id_est in ($ids) order by id_est, local_id");
+  if ($A) {
+    foreach my $s (@{$A}){
+      $e->{$s->{id_est}}->{e}->{sequence} .= $s->{data};
+    }
   }
-  # get the comments
+
+  # get the comments, if any
   $ids = join "," , keys %$e;
-  $A = $M->sql_get_as_hash_refs("select * from CMNT\@dbest where id_est in ($ids) order by id_est, local_id");
-  foreach my $c (@$A){
-    $e->{$c->{id_est}}->{comment} .= $c->{data};
+  $A = $M->sql_get_as_hash_refs_lc("select * from CMNT\@dbest where id_est in ($ids) order by id_est, local_id");
+  if ($A) {
+    foreach my $c (@{$A}){
+      $e->{$c->{id_est}}->{e}->{comment} .= $c->{data};
+    }
   }
   
-  ## Now that we have all the information we need, start processing
-  ## this batch 
+  # Now that we have all the information we need, start processing
+  # this batch 
   foreach my $id (keys %$e) {
+
+    #####################################################################
     # If there are older entries, then we need to go through an update 
-    # proceedure of historical entries. Else just insert if not already present.
-    if (@{$e->{$id}->{old}} > 0) {
-      $count +=  $M->updateEntry($e->{$id},$dbh);
+    # proceedure of historical entries. Else just insert if not already 
+    # present.
+    #####################################################################
+    if ($e->{$id}->{old} && @{$e->{$id}->{old}} > 0) {
+      $count +=  $M->updateEntry($e->{$id});
     }else {
-      $count += $M->insertEntry($e->{$id}->{e},$dbh);
+      $count += $M->insertEntry($e->{$id}->{e});
     }
   }
   return $count;
@@ -236,23 +270,24 @@ Returns 1 if succesful update or 0 if not.
 =cut
 
 sub updateEntry {
-  my ($M,$e,$dbh) = @_;
-  my ($last,$present);
-  ## Go through the older entries and determine whic is in GUS, if any
+  my ($M,$e) = @_;
+
+  #####################################################################
+  ## Go through the older entries and determine which is in GUS, if any.
   ## Since there should only be one entry in GUS, it is valid to just 
-  ## return after the first on is met.
-  foreach my $oe (@{$e->{old}}) {
-    my $est = GUS::Model::DoTS::EST->new({'source_id' => $e->{id_est},
-                                          'external_database_release_id'
-                                          => $DBEST_EXTDB_ID}
-                                         );
+  ## update the first older entry encountered.
+  #####################################################################
+
+  foreach my $oe (@{$e->{old}}) { 
+    my $est = GUS::Model::DoTS::EST->new({'dbest_id_est' => $e->{id_est}});
+    
     if ($est->retrieveFromDB()) {
       # Entry present in the DB; UPDATE
-      return  $M->insertEntry($e->{e},$dbh,$est);
+      return  $M->insertEntry($e->{e},$est);
     }
   }
-  #qq No historical entries; INSERT if not already present
-  return $M->insertEntry($e->{e},$dbh);
+  ## No historical entries; INSERT if not already present
+  return $M->insertEntry($e->{e});
 }
 
 
@@ -274,56 +309,83 @@ Returns 1 if successful insert or 0 if not.
 =cut
 
 sub insertEntry{
-  my ($M,$e,$dbh,$est) = @_;
+  my ($M,$e,$est) = @_;
   my $needsUpdate = 0;
+  #####################################################################
   ## Do a full update only if the dbest.id_est is not the same
-  ## This is valid since all EST 
-  if (defined $est && ( $est->getSourceId() ne $e->{id_est})){
+  ## This is valid since all EST
+  #####################################################################
+  if ((defined $est) && ($est->getDbestIdEst() != $e->{id_est} )){
     $needsUpdate = 1;
   }else {
-    $est = GUS::Model::DoTS::EST->new({'source_id' => $e->{id_est},
-                                       'external_database_release_id'
-                                       => $DBEST_EXTDB_ID}
-                                     );
+    $est = GUS::Model::DoTS::EST->new({'dbest_id_est' => $e->{id_est}});
   }
   
   if ($est->retrieveFromDB()){    
     # The entry exists in GUS. Must check to see if valid
     if ($M->getCla()->{fullupdate} || $needsUpdate) {
       # Treat this as a new entry
-      $M->populateEst($e,$est,$dbh);
+      $M->populateEst($e,$est);
       # check to see if clone information already exists
       # for this EST
-      $M->checkCloneInfo($e,$est,$dbh);
+      $M->checkCloneInfo($e,$est);
     }
     # else this is already in the DB. Do Nothing.
     
   } else {
     # This is a new entry
-    $M->populateEst($e,$est,$dbh);
+    $M->populateEst($e,$est);
     # check to see if clone information already exists
     # for this EST
-    $M->checkCloneInfo($e,$est,$dbh);
+    $M->checkCloneInfo($e,$est);
   }
   
-  # Check for an update of the sequence 
+
+  #####################################################################
+  # Check for an update of the sequence. Change the sequence unless 
+  # the no_sequence_update flag is given
+  #####################################################################
+
   my $seq = $est->getParent('GUS::Model::DoTS::ExternalNASequence',1);
-  if ($e->{sequence} ne $seq->getSequence()){
-    # change the sequence unless the no_sequence_update flag is given
-    if (! $M->{cla}->{no_sequence_update}) {
+  if ((defined $seq) && $e->{sequence} ne $seq->getSequence()){
+    if (! $M->getCla->{no_sequence_update}) {
       $seq->setSequence($e->{sequence});
       # set the ExtDBId to dbEST if not already so.
-      $seq->setExternalDatabaseReleaseId( $DBEST_EXTDB_ID);
+      #$seq->setExternalDatabaseReleaseId( $DBEST_EXTDB_ID);
       # log the change of sequence
-      $M->log('SEQ_UPDATE:', $seq->getId());
+      $M->getCla->{log_fh}->print($M->log('WARN: SEQ_UPDATE:', $seq->getId()));
+      $M->log('WARN: SEQ_UPDATE:', $seq->getId());
     } else {
+
+      #####################################################################
       # There is a conflict, but the 'no_sequence_update' flag given
       # Output a message to the log
-      $M->log('SEQ_NO_UPDATE: NA_SEQUENCE_ID=' , $seq->getId(), " DBEST_ID_EST=$e->{id_est}");
+      #####################################################################
+
+      $M->getCla->{log_fh}->print($M->log('WARN: SEQ_NO_UPDATE: NA_SEQUENCE_ID=' , $seq->getId(), " DBEST_ID_EST=$e->{id_est}"));
+      $M->log('WARN: SEQ_NO_UPDATE: NA_SEQUENCE_ID=' , $seq->getId(), " DBEST_ID_EST=$e->{id_est}");
     }
+  }else {
+    #####################################################################
+    ## This sequence entry does no0t exist. We must make it. 
+    #####################################################################
+    $seq = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $e->{accession},
+                                                      #'external_database_release_id' => $DBEST_EXTDB_ID
+                                                      });
+    $M->newExtNASeq($e,$seq);
+    $est->setParent($seq);
   }
+  
+  ## Add the clone entry (if there is one) to the submit list
+  my $clone = $est->getParent('GUS::Model::DoTS::Clone');
+  if ($clone) { $seq->addToSubmitList($clone); }
+  
   # submit the sequence and EST entry. Return the submit() result.
-  return $seq->submit();
+  my $result = $seq->submit();
+  if ($result) {
+    $M->getCla->{log_fh}->print($M->log('INSERT/UPDATE', $e->{id_est}));
+  }
+  return $result;
 }
 
 
@@ -347,7 +409,7 @@ sub populateEst {
   
   ## Mapping to dots.EST columns
   my %atthash = ('id_est' => 'dbest_id_est',
-                 'ID_gi'         => 'g_id'             ,
+                 'id_gi'         => 'g_id'             ,
                  'id_lib'        => 'dbest_lib_id'     ,
                  'id_contact'    => 'dbest_contact_id' ,
                  'gb_uid'        => 'accession'        ,
@@ -373,7 +435,7 @@ sub populateEst {
                 );
   
   # set the easy stuff
-  foreach my $a (keys %{$M->{atthash}}) {
+  foreach my $a (keys %atthash) {
     my $att = $atthash{$a};
     if ( $est->isValidAttribute($att)) {
       my $method = 'set';
@@ -389,8 +451,8 @@ sub populateEst {
   }else {
     # get from DB and cache
     my $c = GUS::Model::SRes::Contact->new({'source_id' => $e->{id_contact},
-                                            'external_database_release_id' => 22, #dbEST
-                                           });
+                                            #'external_database_release_id' => $DBEST_EXTDB_ID, #dbEST
+                                          });
     unless ($c->retrieveFromDB()) {
       $M->newContact($e,$c);
     }
@@ -432,8 +494,10 @@ IMAGE Consortium, then the entry is processed.
 sub checkCloneInfo {
   my ($M,$e,$est) = @_;
   
+  #####################################################################
   # It only makes sense to check clone entries if the EST comes from
   # WashU or IMAGE
+  #####################################################################
   return $M unless (($e->{is_image} && $e->{image_id}) 
                     || $e->{washu_name});
   
@@ -466,7 +530,7 @@ sub updateClone {
   my ($M, $e, $c) = @_;
   # Check the clone for updated attributes
   my %atthash = ('id_est' => 'dbest_id_est',
-                 'ID_gi'         => 'g_id'             ,
+                 'id_gi'         => 'g_id'             ,
                  'id_lib'        => 'dbest_lib_id'     ,
                  'id_contact'    => 'dbest_contact_id' ,
                  'gb_uid'        => 'accession'        ,
@@ -490,9 +554,9 @@ sub updateClone {
                  'putative_full_length_read'   => 'putative_full_length_read',
                  'trace_poor_quality'   => 'trace_poor_quality',
                  );
-
+  
   foreach my $a (keys %atthash) {
-    my $att = ${$a};
+    my $att = $atthash{$a};
     if ( $c->isvalidAttribute($att)) {
       my $getmethod = 'get';
       my $setmethod = 'set';
@@ -508,19 +572,34 @@ sub updateClone {
   # check the library information 
   unless  (exists $M->{libs}->{$e->{id_lib}}->{dots_lib}){
     # get from DB and cache
-    my $l = GUS::Model::DoTS::Library->new({'dbest_id' => $e->{id_lib},
-                                           });
+    my $l = GUS::Model::DoTS::Library->new({ 'dbest_id' => $e->{id_lib} });
     unless ($l->retrieveFromDB()) {
       $M->newLibrary($e,$l);
     }
+    
     # Add to cache
     $M->{libs}->{$l->getDbestId()}->{dots_lib} = $l->getDbestId();
     $M->{libs}->{$l->getDbestId()}->{taxon} = $l->getTaxonId();    
   }
+  
+  ######################################################################
+  ## OK this lib exists, but there are currently no is_image libraries 
+  ## in the DB, which is obviously false. 
+  ## Check to make sure that the lib.is_image column is set currectly.
+  ## After the first run of this plugin I will take out this test. 
+  ## since it only need be done once.
+  ######################################################################
+  if ($e->{is_image} && !$M->{libs}->{$e->{id_lib}}->{is_image}) {        
+    my $l = GUS::Model::DoTS::Library->new({'dbest_id' => $e->{id_lib}});
+    $l->retrieveFromDB();
+    $l->setIsImage(1);
+    $l->submit();
+    $M->{libs}->{$e->{id_lib}}->{is_image} = 1;
+  }
+  
   if ($c->getLibraryId() ne $M->{libs}->{$e->{id_lib}}->{dots_lib}){
     $c->setLibraryId($M->{libs}->{$e->{id_lib}}->{dots_lib});
   }
-  
   # RETURN 
   $M;
 }
@@ -532,21 +611,18 @@ sub updateClone {
 Gets the most recent EST entry from dbEST. Shoves all older entries into
 an array to check for in GUS.
 
-Returns HASHREF (new => newest entry,
+Returns HASHREF{ new => newest entry,
                  old => array of all older entries,
-                )
+               }
 
 =cut
 
 sub getMostRecentEntry {
-  my ($M,$e,$dbh,$R) = @_;
+  my ($M,$e,$R) = @_;
   push @{$R->{old}}, $e;
-  my $s = $dbh->prepare("select * from EST\@dbest where id_est = $e->{replaced_by}") 
-      or die $dbh->errstr;
-  $s->execute() or die $dbh->errstr;
-  my $re = $s->fetchrow_hashref('NAME_lc');
+  my $re = $M->sql_get_as_hash_refs_lc("select * from EST\@dbest where id_est = $e->{replaced_by}")->[0];
   if ($re->{replaced_by} ) {
-    $R = $M->getMostRecentEntry($re,$dbh,$R);
+    $R = $M->getMostRecentEntry($re,$R);
   } else {
     $R->{new} = $re;
   }
@@ -554,7 +630,7 @@ sub getMostRecentEntry {
 }
 
 
-=pod 
+=pod
 
 =head2 parseEntry
 
@@ -572,10 +648,10 @@ sub parseEntry {
     $e->{washu_id} = $e->{est_uid};
     $e->{est_uid} =~ /(\w+)\.\w{2}/;
     $e->{washu_name} = $1;
-  } elsif ( $e->{est_uid} =~ /\w+\.[a-z]\d/) { 
+  } elsif ( $e->{est_uid} =~ /(\w+)\.[a-z]\d/) { 
     # probably a washu_id
     $e->{washu_id} = $e->{est_uid};
-    $e->{est_uid} =~ /(\w+)\.\w{2}/;
+    #$e->{est_uid} =~ /(\w+)\.\w{2}/;
     $e->{washu_name} = $1;
   }
 	
@@ -636,22 +712,27 @@ sub setTableCaches {
   my $M = shift;
   
   # Library cache
-  my $q = 'select dbest_id as dbest_lib_id, library_id, taxon_id from dots.Library';
+  my $q = 'select dbest_id as dbest_lib_id, library_id, taxon_id, is_image from dots.Library';
   my $A = $M->sql_get_as_array_refs($q);
   foreach my $r (@$A) {
     $M->{libs}->{$r->[0]}->{dots_lib} = $r->[1];
     $M->{libs}->{$r->[0]}->{taxon} = $r->[2];
+    $M->{libs}->{$r->[0]}->{is_image} = $r->[3];
   }
   
   # Contact info, get entries only from dbEST
-  $q = 'select contact_id, source_id from sres.contact where external_database_release_id = ?? and source_id is not null';
+  $q = qq[select contact_id, source_id 
+          from sres.contact 
+          where source_id is not null 
+          ];
+          # and external_database_release_id = $DBEST_EXTDB_ID
+
   $A = $M->sql_get_as_array_refs($q);
   foreach my $r (@$A) {
     $M->{contact}->{$r->[1]} = $r->[0];
   }
   
-  # Anatomy cache
-  # changed to on-demand caching
+  # Anatomy cache is on-demand
   
   # Taxon cache
   # changed to get all organism names for human and mouse
@@ -662,6 +743,7 @@ sub setTableCaches {
     $M->{taxon}->{$r->[0]} = $r->[1];
   }
 }
+
 =pod
 
 =head2 newLibrary
@@ -672,7 +754,7 @@ Populates the attributes for a new DoTS.Library entry from dbEST.
 
 sub newLibrary {
   my ($M,$e,$l) = @_;
-  my ($dbest_lib) = $M->sql_get_as_hash_refs("select * from library where id_lib = $e->{id_lib}");
+  my $dbest_lib = $M->sql_get_as_hash_refs_lc("select * from library\@dbest where id_lib = $e->{id_lib}")->[0];
   my $atthash = {'id_lib' => 'dbest_id',
                  'name' => 'dbest_name',
                  'organism' => 'dbest_organism',
@@ -747,6 +829,13 @@ sub newLibrary {
     }
   }
   
+  ## Check to see whether this is an IMAGE library via EST entry
+  if ($e->{is_image}) {
+    $l->setIsImage(1);
+  } else {
+    $l->setIsImage(0);
+  }
+
   ## Submit the new library
   $l->submit();
   # return
@@ -768,13 +857,12 @@ sub newContact {
   
   my $q = qq[select * 
              from contact\@dbest 
-             where id_contact = $e->{cid_contact}];
-  my ($C) = $M->sql_get_as_has_refs($q);
-  
+             where id_contact = $e->{id_contact}];
+  my $C = $M->sql_get_as_hash_refs_lc($q)->[0];
+  $C->{lab} = "$C->{lab}; $C->{institution}";
   my %atthash = ('id_conact' => 'source_id',
                  'name' => 'name',
-                 'lab' => 'lab',
-                 'institution' =>  'address1',
+                 'lab' => 'address1',
                  'address' => 'address2',
                  'email' => 'email',
                  'phone' => 'phone',
@@ -786,10 +874,29 @@ sub newContact {
     $c->set($atthash{$k}, $C->{$k});
   }
   # Set the external_database_release_id
-  $c->setExternalDatabaseReleaseId($DBEST_EXTDB_ID);
+  #$c->setExternalDatabaseReleaseId($DBEST_EXTDB_ID);
   # submit the new contact to the DB
   $c->submit();
   $M;
+}
+
+
+sub newExtNASeq {
+  my ($M,$e,$seq) = @_;
+  
+  my %seq_vals = ( 'setTaxonId' => $M->{libs}->{$e->{id_lib}}->{taxon_id},
+                   'setSequence' => $e->{sequence},
+                   'setLength' => length $e->{sequence},
+                   'setSequenceTypeId' =>  8,
+                   'setACount' => (scalar($e->{sequence} =~ s/A/A/g)) || 0,
+                   'setTCount' => (scalar($e->{sequence} =~ s/T/T/g)) || 0,
+                   'setCCount' => (scalar($e->{sequence} =~ s/C/C/g)) || 0,
+                   'setGCount' => (scalar($e->{sequence} =~ s/G/G/g)) || 0,
+                   'setDescription' => $e->{comment},
+                 );
+  foreach my $k (keys %seq_vals) {
+    $seq->$k($seq_vals{$k});
+  }
 }
 
 1;
