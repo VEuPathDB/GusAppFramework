@@ -26,7 +26,6 @@ sub new {
 
 	$m->{ span }    = '(HSP)(\d+)' unless defined $m->{ span };
 	$m->{ summary } = 'Sum'        unless defined $m->{ summary };
-
 	$m->openFile();
 
 	return $m;
@@ -142,7 +141,7 @@ sub getSectionObjects {
 	my $SuF = shift; # summary filters; pValue, percentIdentitiy, length
 	my $SpF = shift; # span filters;    pValue, percentIdentitiy, length
 	my $limitF = shift; # filter that limits the number of subjects and/or hsps
-
+	
 	#print join( "\t", 'getSectionObjects-in', localtime ), "\n";
 
 	# the structure we'll return.
@@ -173,6 +172,7 @@ sub getSectionObjects {
 		}
 
 		# here's the object we'll return
+
 		$rv = &{ $M->{ query } }( $section->{ header } );
 		next SECTION_SCAN_LOOP unless $rv;
 
@@ -225,22 +225,22 @@ sub getSectionObjects {
 				$gus_sim = $updateSim{$id};
 				delete $updateSim{$id}; ##so know have dealt with this one..
 				##delete existing SimilaritySpan children 
-				foreach my $c ($gus_sim->getChildren('SimilaritySpan',1)){
+				foreach my $c ($gus_sim->getChildren('DoTS::SimilaritySpan',1)){
 					$c->markDeleted();
 				}
-			}else{
+			      }else{
 				$gus_sim =
-					new GUS::Model::DoTS::Similarity( {
-													 subject_table_id => $table_id,
-													 subject_id       => $id,
-													 query_table_id   => $rv->getTableIdFromTableName( $rv->getTableName() ),
-													 query_id         => $rv->getId(),
-													 } );
-
+				  new GUS::Model::DoTS::Similarity( {
+								     subject_table_id => $table_id,
+								     subject_id       => $id,
+								     query_table_id   => $rv->getTableIdFromTableName( $rv->getClassName() ),
+								     query_id         => $rv->getId(),
+								    } );
+				
 				# add similarity to parent object
 				$rv->addSimilarityFact( $gus_sim );
-
-			}	
+				
+			      }	
 			##now set values
 			$gus_sim->set('score',$parts[  2 ]);
 			$gus_sim->setPValue($parts[  3 ]);
