@@ -283,23 +283,23 @@ sub get_object{
 	
 	my $dbh = $self->getQueryHandle();
 	
-#	my $query="select tas.*
-#from  dots.genefeature gf, dots.rnafeature rnaf, dots.translatedaafeature taf, dots.translatedaasequence tas
-#where  gf.external_database_release_id = $extDbRelId
-#and  rnaf.parent_id = gf.na_feature_id
-#and  rnaf.na_feature_id = taf.na_feature_id
-#and  taf.aa_sequence_id = tas.aa_sequence_id
-#and  gf.source_id=\'$key\'";
-
 	my $query="select tas.*
-from  dots.genefeature gf, dots.projectlink pl, dots.rnafeature rnaf, dots.translatedaafeature taf, dots.translatedaasequence tas
-where  gf.na_feature_id = pl.id
-and  pl.table_id = 108
-and  pl.project_id = $projectId
+from  dots.genefeature gf, dots.rnafeature rnaf, dots.translatedaafeature taf, dots.translatedaasequence tas
+where  gf.external_database_release_id = $extDbRelId
 and  rnaf.parent_id = gf.na_feature_id
 and  rnaf.na_feature_id = taf.na_feature_id
 and  taf.aa_sequence_id = tas.aa_sequence_id
 and  gf.source_id=\'$key\'";
+
+#	my $query="select tas.*
+#from  dots.genefeature gf, dots.projectlink pl, dots.rnafeature rnaf, dots.translatedaafeature taf, dots.translatedaasequence tas
+#where  gf.na_feature_id = pl.id
+#and  pl.table_id = 108
+#and  pl.project_id = $projectId
+#and  rnaf.parent_id = gf.na_feature_id
+#and  rnaf.na_feature_id = taf.na_feature_id
+#and  taf.aa_sequence_id = tas.aa_sequence_id
+#and  gf.source_id=\'$key\'";
 
 	$self->log($query) if $verbose; #if $self->getArgs()->{'verbose'};
 
