@@ -510,9 +510,7 @@ sub addToPointerCache {
   my($self,$ob) = @_;
   return unless $ob;
   if (scalar(keys%{$self->{pointers}}) > $self->getMaximumNumberOfObjects()) {
-    print STDERR "You have exceeded the maximum number of allowable objects in memory:\n  You must use the method 'undefPointerCache()' in each loop \n    to clear the cache and allow garbage collection!!\n"; 
-    print STDERR "  If you need > ".$self->getMaximumNumberOfObjects()." objects at one time, \n   then increase the default number with the method 'setMaximumNumberOfObjects(<number>)'\n";
-    exit();
+    &confess("You have exceeded the maximum number of allowable objects in memory:\n  You must use the method 'undefPointerCache()' in each loop \n    to clear the cache and allow garbage collection!!\n If you need > ".$self->getMaximumNumberOfObjects()." objects at one time, \n   then increase the default number with the method 'setMaximumNumberOfObjects(<number>)'");
   }
   $self->{pointers}->{$ob} = $ob;
 }
@@ -597,7 +595,7 @@ sub getTableNameFromTableId {
       my $tn = $self->getFullTableClassName("${schema}::${name}");
       $self->{tableIdMapping}->{$table_id} = $tn;
     } else {
-      print STDERR "ERROR: tableName for $table_id not found\n";
+      &confess("ERROR: tableName for $table_id not found");
     }
   }
   return $self->{tableIdMapping}->{$table_id};
