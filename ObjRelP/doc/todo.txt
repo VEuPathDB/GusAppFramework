@@ -14,7 +14,12 @@
 
 - avoid name collisions between subs in GusRow, etc, and generated class. (use a convention like underscore to delineate these)
 
+- mention in docs:  failure to insert rows due to primary key constraint violation, ie, object layer is trying to insert a row whose primary key value is already in db.   DBD::Oracle::st execute failed: ORA-00001: unique constraint
+(DOTS.PK_CLONE) violated (DBD ERROR: OCIStmtExecute)
 
+- provide an oracle independent "sysdate" function
+
+- use Carp's confess instead die, etc
 
 
 DONE
