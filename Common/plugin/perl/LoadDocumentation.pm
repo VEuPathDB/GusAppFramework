@@ -115,6 +115,7 @@ sub process {
 	$self->logVerbose("Created new DatabaseDocumentation object");
 	
 	if ($db->checkTableExists($table_nm)){ # if table exists
+	  print "\nin IF1\n";
 
 	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
@@ -122,6 +123,9 @@ sub process {
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
 	        $self->logVerbose("Set attribute name");
 #		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
+		
+		my $test_dc = $doc->getHtmlDocumentation();
+		print "\nhtml: $test_dc\n\n";
 
 		if ($html_dc eq $doc->getHtmlDocumentation()){
 		  $self->logAlert("This documentation is identical to what is already stored for attribute: $attribute_nm in table: $table_nm. Not inserted.");
