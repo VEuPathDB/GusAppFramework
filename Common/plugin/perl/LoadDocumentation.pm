@@ -86,9 +86,6 @@ sub run {
 	$self->logCommit;
 	$self->logArgs;
 	
-	my $ctTables = 0; #counter for number of tables
-	my $ctAtts   = 0; #counter for number of attributes
-
 	my $doc_fh = FileHandle->new('<' . $self->getCla->{inputFile});
 	return sprintf('documentation file %s was not found %s',
 								 $self->getCla->{inputFile},
@@ -101,7 +98,7 @@ sub run {
 	}
 	$doc_fh->close;
 
-	return "processed $ctTables rows";
+	return "processed $countInserts rows";
 } # end sub run
 
 ############################################################
@@ -138,7 +135,7 @@ sub process {
 		  $doc->setHtmlDocumentation($html_dc);
 		}
 
-		$ctTables++;
+		$countInserts++;
 	        $self->logVerbose("Set HTML Documentation\n\n");
 		$doc->submit();
 	        $self->logVerbose("Submit object to database\n\n");
