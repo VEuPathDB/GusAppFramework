@@ -1,3 +1,17 @@
+- make rollback segment a config property (where "null" means none)
+
+- think about the problem that $rollback is global across all DbiDbHandles.
+
+- correct the inserted object count in the case where there has been a rollback
+
+- rename userName to loginName in .gus.properties
+
+- document .gus.properties 
+
+- write getSubclass($id, $tableName) method to get the subclass object
+
+- don't generate Imp objects in the perl layer. Upgrade obj layer so that it doesn't need them.
+
 - handle case where Objects need to be regenerated because generator has been updated
 
 - factor the RelationalRow stuff out of Model/GusRow.pm.
