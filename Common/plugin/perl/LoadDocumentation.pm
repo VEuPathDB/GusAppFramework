@@ -153,7 +153,7 @@ sub process {
                              "WHERE table_id=$t_id2 " .
 			     "AND attribute_name IS NULL";
 		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate table documentation");
-		my $stmt2 = $dbh->prepare($query2);
+		my $stmt2 = $dbh2->prepare($query2);
 		$stmt2->execute();
 		my ($tb_id2, $html2);
 
