@@ -36,7 +36,10 @@ sub new {
        o => 'testnumber',
      },
 
-
+    { h => 'number of iterations for testing',
+       t => 'int',
+       o => 'testnumber2',
+     },
 
          ];
 
@@ -224,7 +227,7 @@ sub UnmarkFullLength {
   my ($source_id,$assembly) = @_;
 
 
- # if ($assembly->getFullLengthCds() != 1)  {
+ if ($assembly->getFullLengthCds() == 0)  {
 
 
   my $fact = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $source_id });
@@ -238,7 +241,7 @@ sub UnmarkFullLength {
         {   print STDERR "Can not add evidence\n";
         }
 
-
+}
    }
 
 
@@ -253,21 +256,24 @@ sub MarkFLUsingFFfeatures  {
    my $self = shift;
    my ($NaSeqStop) = @_;
 
+
+   my $ct = 0;
+
    foreach my $B(@$NaSeqStop) {
 
     my($naSeq, $tStop) = @{$B};
 
     print STDERR "ConsideringForFLDT.$naSeq using Features\n";
-  
-   #need to add testing for this
-   #last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
-   #$ct++;
- 
+
+
+   last if $self->getArgs->{testnumber2} && $ct >$self->getArgs->{testnumber2};
+   $ct++;
+
 
     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $naSeq});
 
     if ($assembly->retrieveFromDB( ))  {
-    
+
     #need to substract 2 to get the stop codon string
       my  $sequence = $assembly ->getSubstrFromClob('sequence', $tStop - 2, 3);
 
@@ -275,7 +281,6 @@ sub MarkFLUsingFFfeatures  {
 
     print STDERR "$naSeq,$sequence\n";
 
-        $assembly->retrieveFromDB();
         $assembly->setFullLengthCds(1);
         $assembly->submit();
         $self->undefPointerCache();
