@@ -142,7 +142,7 @@ sub process {
 			$att_name = $ary[1]; #queried attribute name
 			$html = $ary[2]; #queried html documentation
 
-			$self->logAlert("Comparing html: -$html-\nwith html_dc: -$html_dc-\n"); ###TEST###
+			$self->logAlert("Comparing html: -$html-  with html_dc: -$html_dc-\n"); ###TEST###
 			
 			if ($html eq $html_dc){ #########?????????############
 			    
@@ -155,6 +155,9 @@ sub process {
 			elsif ($html ne $html_dc) { ## SUBMIT if new documentation
 			    ## bind table id to DatabaseDocumentation object
 			    $doc->setTableId($doc->getTableIdFromTableName($table_nm));
+
+			    $self->logAlert("html: $html and html_dc: $html_dc are NOT equal\n"); ###TEST###
+
 			    $self->logVerbose("Set table ID");
 			    
 			    ## bind attribute name to DatabaseDocumentation object
