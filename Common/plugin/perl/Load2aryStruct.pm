@@ -134,6 +134,22 @@ sub loadStructureFile {
 
   $secondaryStructure->retrieveFromDB();
 
+  my $cCall = GUS::Model::DoTS::SecondaryStructureCall->new
+    ( {
+       structure_type => 'C'
+      } );
+
+  $cCall->setCallConfidence($cCalls);
+  $cCall->setParent($secondaryStructure);
+
+  my $hCall = GUS::Model::DoTS::SecondaryStructureCall->new
+    ( {
+       structure_type => 'H'
+      } );
+
+  $hCall->setCallConfidence($hCalls);
+  $hCall->setParent($secondaryStructure);
+
   my $eCall = GUS::Model::DoTS::SecondaryStructureCall->new
     ( {
        structure_type => 'E'
@@ -141,5 +157,7 @@ sub loadStructureFile {
 
   $eCall->setCallConfidence($eCalls);
   $eCall->setParent($secondaryStructure);
+
+  $secondaryStructure->submit();
 
 }
