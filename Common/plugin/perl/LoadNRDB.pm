@@ -1,4 +1,4 @@
-package GUS::Common::Plugin::LoadNRDB;
+ package GUS::Common::Plugin::LoadNRDB;
 
 @ISA = qw(GUS::PluginMgr::Plugin);
  
@@ -125,15 +125,15 @@ sub run {
   }
 
   my $entryresults = $self->makeNRDBAndExternalAASequence($taxonHash, $dbHash,$external_database_release_id) 
-                    if ($$self->getArgs()->{'plugin'});       
-     
+    if ($self->getArgs()->{'plugin'});       
+  
   if (!$self->getArgs()->{'delete'}){ 
-      if ($tempresults) {
-	  my $entryresults .= $tempresults;
-      }
-      return $entryresults;   
+    if ($tempresults) {
+      my $entryresults .= $tempresults;
+    }
+    return $entryresults;   
   }
-
+  
   my $nrdbdelete = $self->deleteFromNRDB;
   my $aadelete = $self->deleteFromExtAASeq;
   my $results = "Processing completed:";
@@ -480,7 +480,7 @@ sub processHash {
     else {
 	$newExtAASeq = &makeExtAASeq($seq,$pref_gi,$pref_source,$$EntryHash{$pref_gi}->{$pref_source}[1],$external_database_release_id);
     }
-    &makeNRDBEntries($newExtAASeq,$pref_gi,$pref_source,$EntryHash);
+    &makeNRDBEntries($newExtAASeq,$pref_gi,$pref_source,$EntryHash,$dbHash);
     return $newExtAASeq;  
 }
 
@@ -514,7 +514,7 @@ sub makeExtAASeq {
 }
 
 sub makeNRDBEntries {
-    my ($newExtAASeq,$pref_gi,$pref_source,$EntryHash) = @_;
+    my ($newExtAASeq,$pref_gi,$pref_source,$EntryHash,$dbHash) = @_;
     foreach my $secondary_id (keys %$EntryHash) {
 	foreach my $source_id (keys %{$$EntryHash{$secondary_id}}) {
 	    my $db_rel_id = $$EntryHash{$secondary_id}->{$source_id}[0];
