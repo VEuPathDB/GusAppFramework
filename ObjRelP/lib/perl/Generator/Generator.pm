@@ -49,7 +49,7 @@ sub new {
 
   if (scalar(@$schemas)) {
     $self->{schemas} = {};
-    foreach my $s (@$schemas) { $self->{schemas} = 1 };
+    foreach my $s (@$schemas) { $self->{schemas}->{$s} = 1 };
   }
 
   return $self;
@@ -63,15 +63,15 @@ sub generate {
 
   foreach my $table (@{$self->{tables}}) {
 
-    print "  processing $table\n";
-
     # parse schema::tablename format
-    $table =~ /^(\w+)::(\w+)/ || die "ERROR: table '$table' not in schema::tablename format\n";
+    $table =~ /(GUS::Model::)?(\w+)::(\w+)/ || die "ERROR: table '$table' not in schema::tablename format\n";
 
-    my ($schemaName, $tableName) = ($1, $2);
+    my ($schemaName, $tableName) = ($2, $3);
 
     next if (($self->{schemas} && !$self->{schemas}->{$schemaName})
 	     || $tableName =~ /Ver$/ );
+
+    print "  processing $table\n";
 
     $self->{db}->checkTableExists($table) || die "ERROR: $table does not exist in db\n";
 
@@ -104,6 +104,8 @@ sub getSpecialCases {
 sub getSubclasses {
   my($self, $superName) = @_;
 
+  $superName = $self->getFullTableClassName($superName);
+
   if (! $self->{subclasses}) {
     print "(Caching all subclasses)\n";
 
@@ -119,8 +121,11 @@ sub getSubclasses {
     my $sth = $dbh->prepareAndExecute($sql);
     while (my($schema,$superclass,$subclass) = $sth->fetchrow_array()) {
       next if $subclass =~ /ver$/i;
-      push(@{$self->{subclasses}->{$schema.'::'.$superclass}},
-	   $schema.'::'.$subclass);
+      my $superclassFull =
+	$self->getFullTableClassName($schema.'::'.$superclass);
+      my $subclassFull = 
+	$self->getFullTableClassName($schema.'::'.$subclass);
+      push(@{$self->{subclasses}->{$superclassFull}}, $subclassFull);
     }
   }
 
@@ -130,23 +135,26 @@ sub getSubclasses {
 sub isValidAttribute {
   my($self, $tableName, $att) = @_;
 
+  $tableName = $self->getFullTableClassName($tableName);
+
   if (!exists $self->{'attList'}->{'$tableName'}) {
     my $list = $self->getTable($tableName, 1)->getAttributeList();
     foreach my $a (@{$list}) {
       $self->{'attList'}->{$tableName}->{$a} = 1;
     }
   }
-  return 1 if exists $self->{'attList'}->{$tableName}->{$att};
+  return exists $self->{'attList'}->{$tableName}->{$att};
 }
 
 
 # if table is a view, return the viewed table, else, just table name
 sub getRealTableName {
-  my($self, $tableName) = @_;
+  my($self, $className) = @_;
+
+  $className = $self->getFullTableClassName($className);
 
   if(!exists $self->{realTableName}){
     print "(Caching all real table names)\n";
-    $self->{realTableName}->{$tableName} = $tableName;
     my $coreName = $self->{db}->getCoreName();
     my $sql =
 "select d.name, t2.name, t1.name\
@@ -155,14 +163,18 @@ sub getRealTableName {
  and t2.database_id = d.database_id";
     my $stmt = $self->{db}->getDbHandle()->prepareAndExecute($sql);
     while (my($sc,$vn,$tn) = $stmt->fetchrow_array()) {
-      $self->{realTableName}->{$tn} = $sc."::".$vn;
+      my $vFull = $self->getFullTableClassName($sc.'::'.$vn);
+      my $tFull = $self->getFullTableClassName($sc.'::'.$tn);
+      $self->{realTableName}->{$tFull} = $vFull;
     }
   }
-  return $self->{realTableName}->{$tableName};
+  return $self->{realTableName}->{$className};
 }
 
 sub getParentTable {
-  my($self, $table_name) = @_;
+  my($self, $className) = @_;
+
+  $className = $self->getFullTableClassName($className);
 
   if(!exists $self->{parentTable}){
     print "(Caching all parents)\n";
@@ -174,14 +186,19 @@ sub getParentTable {
  and t2.database_id = d.database_id";
     my $stmt = $self->{db}->getDbHandle()->prepareAndExecute($sql);
     while (my($sc,$pn,$tn) = $stmt->fetchrow_array()) {
-      $self->{parentTable}->{$sc."::".$tn} = $sc."::".$pn;
+      my $pFull = $self->getFullTableClassName($sc.'::'.$pn);
+      my $tFull = $self->getFullTableClassName($sc.'::'.$tn);
+      $self->{parentTable}->{$tFull} = $pFull;
     }
   }
-  return $self->{parentTable}->{$table_name};
+  return $self->{parentTable}->{$className};
 }
 
 sub getVersionable {
-  my($self, $table_name) = @_;
+  my($self, $className) = @_;
+
+  $className = $self->getFullTableClassName($className);
+
   if (! exists $self->{versionable}) {
     print "(Caching all versionables)\n";
 
@@ -193,10 +210,11 @@ sub getVersionable {
 
     my $stmt = $self->{db}->getDbHandle()->prepareAndExecute($sql);
     while (my($sch,$tn,$v) = $stmt->fetchrow_array()) {
-      $self->{versionable}->{$sch."::".$tn} = $v;
+      my $tFull = $self->getFullTableClassName($sch.'::'.$tn);
+      $self->{versionable}->{$tFull} = $v;
     }
   }
-  return $self->{versionable}->{$table_name};
+  return $self->{versionable}->{$className};
 }
 
 ## gets all method names in ObjRelP super classes
@@ -225,6 +243,12 @@ sub getTable {
   my ($self, $fullName, $dbiTable) = @_;
 
   return $self->{db}->getTable($fullName, $dbiTable);
+}
+
+sub getFullTableClassName {
+  my ($self, $className) = @_;
+
+  return $self->{db}->getFullTableClassName($className);
 }
 
 

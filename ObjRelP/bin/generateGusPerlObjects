@@ -41,7 +41,7 @@ my $gusconfig = GUS::Common::GusConfig->new($gusconfigfile);
 my @tables = split(/,\s*/, $tables) if $tables;
 my @schemas = split(/,\s*/, $schemas) if $schemas;
 
-my $db = GUS::ObjRelP::DbiDatabase->new(undef,
+my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$gusconfig->getReadOnlyDatabaseLogin(),
 					$gusconfig->getReadOnlyDatabasePassword,
 					$verbose,0,1,

@@ -42,7 +42,7 @@ sub _genHeader {
   my($self) = @_;
 
   return
-"package GUS::Model::$self->{fullName}Table;
+"package $self->{fullName}Table;
 
 use strict;
 use GUS::ObjRelP::DbiTable;
@@ -58,7 +58,7 @@ sub _genDefaultParams {
 'sub setDefaultParams {
   my $self = shift;
 ';
-  $s .= $self->_genChildAndParentLists($self->{table}->getPerlTableName());
+  $s .= $self->_genChildAndParentLists($self->{table}->getClassName());
   $s .= $self->_genAttributeInfo($self->{table});
   $s .= '  $self->setRealTableName(\''.$self->{table}->getRealTableName()."');\n\n";
   $s .= '  $self->setIsView('.$self->{table}->isView().");\n\n";
@@ -203,7 +203,7 @@ sub _getRelations {
   my @list;
   foreach my $rel (@{$relations}) {
     my ($tn, $fk, $pk) = ($rel->[0], $rel->[1], $rel->[2]);
-
+    print STDERR "rels: $tn\n";
     next if($tn =~ /dropme/i || $tn =~ /tmp$/i);
 
     if ($tn =~ /Imp$/) {

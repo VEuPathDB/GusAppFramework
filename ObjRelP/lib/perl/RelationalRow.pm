@@ -1901,7 +1901,7 @@ sub parseXML {
     } elsif ($x->[$i] =~ /^\s*\<(\S+)\s*(.*)\>(.*?)\s*$/) { ##a beginning tag
       print STDERR "Beginning tag $1\n" if $debug;
       $tag = $1; my $xml_atts = $2; my $string = $3;
-      if ($self->getDatabase()->checkIfPrettyNameExists($tag)) { ##is another table..child
+      if ($self->getDatabase()->checkTableExists($tag)) { ##is another table..child
 	my $className = $self->getFullTableClassName($tag);
         eval("require $className");
         my $c = $tag->new(undef,$self->getDatabase());

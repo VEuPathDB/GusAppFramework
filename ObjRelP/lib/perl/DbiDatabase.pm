@@ -30,7 +30,10 @@ sub new {
   my ($class,$dsn,$login,$password,$verbose,$noInsert,$default,$coreName) = @_;
   my $self = {};
   bless $self, $class;
-  $self->setDSN($dsn); 
+  $self->setDSN($dsn);
+
+  die "You must supply a DbiDsn to the constructor of DbiDatabase" unless $dsn;
+
   if (scalar(@_) != 8) {
     die "Invalid number of args for the DbiDatabase constructor";
   }
@@ -227,64 +230,25 @@ sub tableHasSequenceId {
     }
   }
 
-  return $self->{'sequenceIdTables'}->{$table};
+  return $self->{'sequenceIdTables'}->{$className};
 }
 
 ##case INSENSITIVE test for existence of tablename
 sub checkTableExists {
   my($self,$className) = @_;
 
-  $className = $self->getTableFullClassName($className);
+  $className = $self->getFullTableClassName($className);
 
   if (!exists $self->{'tableExists'}) {
-    if ($self->getDSN() =~ /oracle/i) {
-      my $stmt = $self->getDbHandle()->prepareAndExecute("select owner,table_name from all_tables");
-      while (my($sc,$tn) = $stmt->fetchrow_array()) {
-	my $fullName = $self->getFullTableClassName($sc."::".$tn);
-        $self->{'tableExists'}->{$fullName} = 1;
-      }
-      $stmt = $self->getDbHandle()->prepareAndExecute("select owner,view_name from all_views");
-      while (my($sc,$tn) = $stmt->fetchrow_array()) {
-	my $fullName = $self->getFullTableClassName($sc."::".$tn);
-        $self->{'tableExists'}->{$fullName} = 1;
-      }
-    } else {
-      my $dbName = $self->getDbName();
-      my $tabsth = $self->getDbHandle()->table_info();
-      while (my ($qual, $owner, $name, $objType, $remarks) = $tabsth->fetchrow_array()) {
-        next unless $owner eq $self->getDbName();
-        $name =~ tr/a-z/A-Z/;
-        $self->{'tableExists'}->{$name} = 1;
-      }
-    }
+    $self->cacheTableNames();
   }
 
   return exists $self->{'tableExists'}->{$className};
 }
 
-##case sensitive test if table name exists in db.
-sub checkIfPrettyNameExists {
-  my($self,$tn) = @_;
-  if (!exists $self->{'prettyNameExists'}) {
-    $self->cacheTableNames();
-  }
-  return $self->{'prettyNameExists'}->{$tn};
-}
-
-##takes in case insensitive name and returns correct name..
-sub getPrettyTableName {
-  my($self,$name) = @_;
-  $self->cacheTableNames() unless exists $self->{'allTables'};
-  $name =~ tr/a-z/A-Z/;
-  return $self->{'prettyNames'}->{$name} if exists $self->{'prettyNames'}->{$name};
-  #  print STDERR "Pretty name does not exist for $name\n";
-  return undef;
-}
-
 sub cacheTableNames {
   my ($self) = @_;
   my $sql = "select d.name,t.name,t.is_view from ".$self->getCoreName().".TableInfo t, ".$self->getCoreName().".DatabaseInfo d where d.database_id = t.database_id";
-#  print STDERR "cacheTableNames SQL: $sql\n" if $debug;
   my $stmt = $self->getMetaDbHandle()->prepareAndExecute($sql);
   while (my($schema,$name,$isView) = $stmt->fetchrow_array()) {
     my $fullName = "GUS::Model::${schema}::${name}";
@@ -292,8 +256,7 @@ sub cacheTableNames {
     $lowerName =~ tr/a-z/A-Z/;
     $self->{'allTables'}->{"$isView"}->{$fullName} = 1;
     $self->{'fullClassNames'}->{$lowerName} = $fullName;
-    $self->{'prettyNameExists'}->{$fullName} = 1;
-    $self->{tableExists}->{$lowerName} = 1;
+    $self->{tableExists}->{$fullName} = 1;
   }
 }
 
@@ -705,21 +668,23 @@ sub getTableHasSequence {
 #  - full class name (just returned as is)
 #  - or schema::table, (case ignored)
 # output: full class name w/ proper case, ie GUS::Model:Schema:Table
+# return null if not an actual table.
 sub getFullTableClassName {
   my ($self, $className) = @_;
-
-  die "Illegal className '$className' (not in schema::table form)"
-    unless ($className =~ /\w+::\w+/);
 
   if (!exists $self->{'fullClassNames'}) {
     $self->cacheTableNames();
   }
-  if (!$className /^GUS::Model/) {
-    my $lowerName = $className;
-    $lowerName =~ tr/a-z/A-Z/;
-    $className = $self->{'fullClassNames'}->{$lowerName};
+
+  if ($className =~ /^GUS::Model::(.*)/) {
+    $className = $1;
   }
-  return $className;
+
+  die "Illegal className '$className' (not in schema::table form)"
+    unless ($className =~ /\w+::\w+/);
+
+  $className =~ tr/a-z/A-Z/;
+  return $self->{'fullClassNames'}->{$className};
 }
 
 
