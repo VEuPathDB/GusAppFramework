@@ -61,7 +61,7 @@ sub new {
   return $self;
 }
 
-sub Run {
+sub run {
 
     my $self   = shift;
 
