@@ -662,11 +662,12 @@ B<Return type:> C<integer>
 =cut
 sub getExtDbRlsId {
     my ($self, $dbName, $dbVersion) = @_;
+    my $lcName = lc($dbName);
     my $sql = "select ex.external_database_release_id
                from sres.externaldatabaserelease ex, sres.externaldatabase e
                where e.external_database_id = ex.external_database_id
                and ex.version = '$dbVersion'
-               and e.name = '$dbName'";
+               and lower(e.name) = '$lcName'";
 
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
     
