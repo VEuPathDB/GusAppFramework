@@ -1,0 +1,3 @@
+jdbcUrl =  jdbc:oracle:thin:@erebus:1521:gusdev
+jdbcUser = gusrw
+rmiUrl = RemoteJDBCServer_1
