@@ -1,6 +1,7 @@
 package GUS::ObjRelP::Generator::RowGenerator;
 
 use strict;
+use Carp;
 
 sub new {
   my ($class, $generator, $schemaName, $tableName, $tableGenerator) = @_;
@@ -75,7 +76,7 @@ sub _cutFullQualifiedName{
 	return ($1, $2);
     }
     else {
-	die "Error: Fully Qualified Name '$fqName' not in form of GUS::Model::Schema::Owner";
+	&confess("Error: Fully Qualified Name '$fqName' not in form of GUS::Model::Schema::Owner");
     }
 }
 #input: $packageTableName is string in form of \S+.model.Schema.Name
@@ -87,7 +88,7 @@ sub _cutPackageTableName{
 	return ($1, $2);
     }
     else {
-	die "Error:  Package Table Name '$packageTableName' is not in the form of org.gusdb.model.SCHEMA.NAME";
+	&confess("Error:  Package Table Name '$packageTableName' is not in the form of org.gusdb.model.SCHEMA.NAME");
     }
 }
 
