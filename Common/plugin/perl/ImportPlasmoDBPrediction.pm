@@ -117,7 +117,7 @@ sub run {
   }
 
   $self->setProjId($project) || $self->log("EE Could not set the projectId");
-  my $projectId= $self->getProjectId();
+  my $projectId= $self->getProjId();
   $self->log("II Determined projectId= " . $projectId );
 
   $self->setExtDbId($self->getArgs()->{'dataSource'})|| $self->log("EE Could not set the extDbId");
@@ -438,6 +438,10 @@ sub run {
 	
 
       $gf->submit();
+
+      ##MakeProjectLink
+      $self->makeProjLink($gf);
+
       $genecount++;
       $self->log( "II genecount $genecount") if $debug;
 
@@ -472,6 +476,33 @@ sub makeNALocation {
 }
 # --------------------------------------------------------------------
 
+sub makeProjLink {
+  my $self = shift;
+  my $T = shift;         # table object;
+
+
+  my %plink;
+  # table
+  $plink{table_id} = $T->getTableIdFromTableName($T->getClassName);
+  $plink{id}       = $T->getId();
+
+  my $projlink_gus = GUS::Model::DoTS::ProjectLink->new(\%plink);
+  if ($projlink_gus->retrieveFromDB) {
+    # case when projectLink is in dB
+    $self->log ("ProjectLink already in DB with ID " . $projlink_gus->getId);
+    return undef;
+  } else {
+    $projlink_gus->setProjectId($self->getProjId());
+    # using setParent method here creates a NEW row in ProjectInfo table, if needed:
+    # $projlink_gus->setParent($project_gus);
+    $projlink_gus->submit();
+    return 1;
+  }
+}
+
+
+
+# --------------------------------------------------------------------
 sub setExtDbId {
   my $self = shift;
   my $src = shift;
@@ -515,7 +546,7 @@ sub setProjId {
   return 1;
 }
 
-sub getProjectId {
+sub getProjId {
   my $self=shift;
   return $self->{'projectId'};
 }
