@@ -172,4 +172,16 @@ sub free{
 
 } 
 
+# JC 9/6/2002 
+#
+# Subclassing not set up correctly according to DBI manpage;
+# this appears to fix it, although the structure is still 
+# a little off.  The fact that we're reblessing the return 
+# value from the DBI connect() method is making everything
+# work, albeit in a roundabout way.
+#
+package DbiDbHandle::db;
+use vars qw(@ISA);
+@ISA = qw( DBI::db );
+
 1;
