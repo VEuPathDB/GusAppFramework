@@ -296,10 +296,14 @@ sub __processAssociations{
     my $dbIdCol = $self->{orgInfo}->{dbIdCol};
 
     my $dbList = '( ' . $self->getCla()->{org_external_db_release_list} . ') ';
-    my $sourceId = $entries->[0]->$idAccessor;
-   
-
+    my $tempSourceId = $entries->[0]->$idAccessor;
+    my $sourceId;
+    if ($orgName eq 'mgi'){
+	$sourceId = $self->{mgiMap}->{$tempSourceId};
+    }
+    
     $self->logVerbose("\tLoadGoAssoc.processAssociations: processing external source id: $sourceId");
+    
     #exclude iea code here
     my $seqGusId = $self->__getSeqGusId($sourceId);
     if (!$seqGusId){
@@ -686,8 +690,8 @@ sub __loadMgiMapIfMouse{
 	while ( <$fh> ) {
 	    chomp;
 	    my @parts = split /\t/, $_;
-	    my @id_sp = split /\s/, $parts[ 5 ];
-	    $self->{ maps }->{ mgi }->{ $parts[ 0 ] } = \@id_sp;
+	    my $id_sp =  $parts[ 6 ];
+	    $self->{ mgiMap }->{ $parts[ 0 ] } = $id_sp;
 	}
 	$fh->close if $fh;
 
