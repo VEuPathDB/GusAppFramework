@@ -383,7 +383,11 @@ sub insertSubjects {
 
   }
 
-  $self->log("$self->{queryCount} Queries parsed.  Inserted $self->{subjectCount} subj, $self->{spanCount} hsp.  Filtered $self->{filteredQueries} q, $self->{filteredSubjects} subj, $self->{filteredHSPs} hsp.  Restart past $self->{ignoredQueries} q");
+  # Sum it all up in a message for the log and AlgInv.result
+  my $summaryMessage = "$self->{queryCount} Queries parsed.  Inserted $self->{subjectCount} subj, $self->{spanCount} hsp.  Filtered $self->{filteredQueries} q, $self->{filteredSubjects} subj, $self->{filteredHSPs} hsp.  Restart past $self->{ignoredQueries} q";
+
+  $self->log($summaryMessage);
+  $self->setResultDescr($summaryMessage);
 
   if ($self->getArgs()->{commit}) {
     print STDERR "Committing\n";
