@@ -4,22 +4,31 @@
 ## query must return primary key of table..
 
 use strict;
-use DBI;
 use Getopt::Long;
-use Objects::GUS::ObjRelP::DbiDatabase;
-use GUS::Model::::TableInfo;
+use GUS::ObjRelP::DbiDatabase;
+use GUS::Model::Core::TableInfo;
 
 $| = 1;
 
-my ($verbose,$idSQL,$table,$batch_size);
-&GetOptions("verbose!"=> \$verbose,"idSQL=s" => \$idSQL, "table=s" => \$table,"batch_size=i" => \$batch_size);
+my ($verbose,$idSQL,$table,$batch_size, $gusConfigFile);
+&GetOptions("verbose!"=> \$verbose,
+	    "idSQL=s" => \$idSQL, 
+	    "gusConfigFile=s" => \$gusConfigFile, 
+	    "table=s" => \$table,
+	    "batch_size=i" => \$batch_size);
 
 die "usage: deleteEntries.pl --idSQL 'sql query returns primary keys of table' --table <tablename> --verbose --batch_size [100]\n" unless $idSQL && $table;
 
 $batch_size = $batch_size ? $batch_size : 1000;
 
 print STDERR "Establishing dbi login\n" if $verbose;
-my $db = new GUS::ObjRelP::DbiDatabase( undef, 'GUSrw', 'pskwa82', $verbose, 0, 1, 'GUSdev' );
+my $gusconfig = GUS::Common::GusConfig->new($gusConfigFile);
+
+my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
+					$gusconfig->getReadOnlyDatabaseLogin(),
+					$gusconfig->getReadOnlyDatabasePassword,
+					$verbose,0,1,
+					$gusconfig->getCoreSchemaName());
 
 my $dbh = $db->makeNewHandle();
 
