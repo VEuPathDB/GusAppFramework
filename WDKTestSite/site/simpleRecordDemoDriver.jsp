@@ -9,7 +9,7 @@
 <input type="hidden" name="recordSetName" value="RNARecords">
 <input type="hidden" name="recordName" value="PSUCDSRecord">
 
-<p>Please enter a <b>systematic id</b> for <i>S. pombe</i> or <i>A. fumigatus</i>
+<p>Please enter a <b>systematic id</b> for <i>S. pombe</i> <!-- or <i>A. fumigatus</i> -->
 <input type="text" name="primaryKey" size="16">
 
 <p>Style:
