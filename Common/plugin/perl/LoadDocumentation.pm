@@ -125,7 +125,8 @@ sub process {
 
 		## want to skip identical documentation - query to see if already stored
 		my $dbh = $ctx->{'self_inv'}->getDbHandle();
-		my $query = "SELECT table_id, attribute_name, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$doc->getTableIdFromTableName($table_nm)";
+		my $t_id = $doc->getTableIdFromTableName($table_nm); #get table_id from table name
+		my $query = "SELECT table_id, attribute_name, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$t_id";
 		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
 		my $stmt = $dbh->prepare($query);
 		$stmt->execute();
