@@ -190,8 +190,6 @@ my $mgr = GUS::Pipeline::Manager->new($pipelineDir, $propertySet, $propertiesFil
 
 &insertFly();
 
-&insertGOTerms();
-
 &findTREMBLSubset();
 
 &insertTREMBLSubset();
@@ -203,6 +201,8 @@ my $mgr = GUS::Pipeline::Manager->new($pipelineDir, $propertySet, $propertiesFil
 &insertArabidopsis();
 
 &insertSwissprot();
+
+&insertGOTerms();
 
 &insertFlyGoAssoc();
 
