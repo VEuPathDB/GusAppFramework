@@ -65,7 +65,7 @@ sub makeMatrixDir {
 sub makeSimilarityDir {
     my ($queryName, $subjectName, $pipelineName, $localPath, $serverPath, 
 	$nodePath, $taskSize, $blastBinPath,
-	$dbName, $regex, $blast, $blastParams) = @_;
+	$dbName, $dbPath, $queryFileName, $regex, $blast, $blastParams) = @_;
     
     my $localBase = "$localPath/$pipelineName/similarity/$queryName-$subjectName";
     my $serverBase = "$serverPath/$pipelineName/similarity/$queryName-$subjectName";
@@ -75,8 +75,8 @@ sub makeSimilarityDir {
     &runCmd("mkdir -p $inputDir");
     &makeControllerPropFile($inputDir, $serverBase, 1, $taskSize, 
 			    $nodePath, "DJob::DistribJobTasks::BlastSimilarityTask");
-    my $dbFileName = "$serverPath/$pipelineName/seqfiles/$dbName"; 
-    my $seqFileName = "$serverPath/$pipelineName/seqfiles/finalDots.fsa"; 
+    my $dbFileName = "$dbPath/$dbName"; 
+    my $seqFileName = "$serverPath/$pipelineName/seqfiles/$queryFileName";
     &makeBSTaskPropFile($inputDir, $blastBinPath, $seqFileName, $dbFileName, 
 			$regex, $blast, "blastParams");
 
