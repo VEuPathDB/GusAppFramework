@@ -20,22 +20,27 @@ sub createReport {
   push(@columns, $mappedToCol);
 
   my $symbolCol =
-    GUS::ReportMaker::DefaultColumn->new("gene_symbol",
+    GUS::ReportMaker::DefaultColumn->new("GeneSymbol",
 					 "Gene Symbol");
   push(@columns, $symbolCol);
 
   my $geneCardsCol =
-    GUS::ReportMaker::DefaultColumn->new("gene_cards_id",
+    GUS::ReportMaker::DefaultColumn->new("GeneCardsId",
 					 "GeneCardsId");
   push(@columns, $geneCardsCol);
 
   my $mgiLocusCol =
-    GUS::ReportMaker::DefaultColumn->new("mgi_locus",
+    GUS::ReportMaker::DefaultColumn->new("MGILocus",
 					 "MGI Locus");
   push(@columns, $mgiLocusCol);
 
+  my $mgiIdCol =
+    GUS::ReportMaker::DefaultColumn->new("MGI_Id",
+					 "MGI Id");
+  push(@columns, $mgiIdCol);
+
   my $synonymCol =
-    GUS::ReportMaker::DefaultColumn->new("synonyms",
+    GUS::ReportMaker::DefaultColumn->new("Synonyms",
 					 "Gene Synonyms");
   push(@columns, $synonymCol);
 
@@ -50,7 +55,7 @@ from $tempTable tmp
 				 ]);
 
   my $geneCardsSql = 
-"select distinct tmp.$primaryKeyName, dbr.primary_identifier as gene_cards_id
+"select distinct tmp.$primaryKeyName, dbr.primary_identifier as GeneCardsId
 from $tempTable tmp, dots.DBRefNASequence dbrn, sres.DBRef dbr,
      sres.ExternalDatabaseRelease edr,
      dots.nafeature naf, dots.rna r, dots.RNAInstance rs
@@ -66,8 +71,8 @@ where r.gene_id = tmp.$primaryKeyName
 				 [$geneCardsCol,
 				 ]);
 
-   my $mgiLocusSql = 
-"select distinct tmp.$primaryKeyName, dbr.secondary_identifier as mgi_locus
+   my $mgiSql = 
+"select distinct tmp.$primaryKeyName, dbr.primary_identifier as MGI_Id, dbr.secondary_identifier as MGILocus
 from $tempTable tmp, dots.DBRefNASequence dbrn, sres.DBRef dbr,
      sres.ExternalDatabaseRelease edr,
      dots.nafeature naf, dots.rna r, dots.RNAInstance rs
@@ -78,13 +83,14 @@ where r.gene_id = tmp.$primaryKeyName
  and dbrn.db_ref_id = dbr.db_ref_id
  and dbr.external_database_release_id = 4893
 ";
-  my $mgiLocusQuery = 
-    GUS::ReportMaker::Query->new($mgiLocusSql,
+  my $mgiQuery = 
+    GUS::ReportMaker::Query->new($mgiSql,
 				 [$mgiLocusCol,
+                                  $mgiIdCol,
 				 ]);
 
  my $symbolSql = 
-"select distinct tmp.$primaryKeyName, g.gene_symbol
+"select distinct tmp.$primaryKeyName, g.GeneSymbol
 from DoTS.gene g, $tempTable tmp
 where g.gene_id = tmp.$primaryKeyName
 ";
@@ -94,7 +100,7 @@ where g.gene_id = tmp.$primaryKeyName
 				 ]);
 
   my $synonymSql =
-"select distinct tmp.$primaryKeyName, gs.synonym_name as synonyms
+"select distinct tmp.$primaryKeyName, gs.synonym_name as Synonyms
 from DoTS.genesynonym gs, $tempTable tmp
 where gs.gene_id = tmp.$primaryKeyName
 ";
@@ -108,6 +114,8 @@ where gs.gene_id = tmp.$primaryKeyName
   return GUS::ReportMaker::Report->new("DoTS_Gene",
 				      [$synonymQuery,
 				       $symbolQuery,
+                                       $geneCardsQuery,
+                                       $mgiQuery,
 				       $mappedToQuery],
 				      \@columns);
 }
