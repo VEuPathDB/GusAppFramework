@@ -3,6 +3,7 @@ package GUS::Model::DoTS::BLATAlignment;
 
 use strict;
 use GUS::Model::DoTS::BLATAlignment_Row;
+use GUS::Model::DoTS::VirtualSequence;
 
 use vars qw (@ISA);
 @ISA = qw (GUS::Model::DoTS::BLATAlignment_Row);
@@ -14,13 +15,10 @@ sub getStrand {
 
 sub getChromosome {
     my $self = shift;
-    my $dbh = $self->getDatabase()->getQueryHandle();
-    my $genomeId = $self->getTargetExternalDbReleaseId();
     my $chrId = $self->getTargetNaSequenceId();
-    my $sql = "select chromosome from dots.VirtualSequence "
-            . "where external_database_release_id = $genomeId and na_sequence_id $chrId";
-    my $sth = $dbh->sqlexec($sql);
-    return $sth->fetchrow_array;
+    my $vs = GUS::Model::DoTS::VirtualSequence->new({na_sequence_id => $chrId});
+    my $doNotRet = ['sequence', 'description'];
+    if ($vs->retrieveFromDB($doNotRet)) { return $vs->getChromosome(); } else { return undef; }
 }
 
 sub getQstartsArray {
