@@ -19,6 +19,8 @@ use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::Anatomy;
 use GUS::Model::SRes::Contact;
+use GUS::Model::SRes::ExternalDatabase;
+use GUS::Model::SRes::ExternalDatabaseRelease;
 
 use FileHandle;
 
@@ -359,8 +361,8 @@ sub insertEntry{
       # set the ExtDBId to dbEST if not already so.
       #$seq->setExternalDatabaseReleaseId( $DBEST_EXTDB_ID);
       # log the change of sequence
-      $M->getCla->{log_fh}->print($M->logAlert('WARN: SEQ_UPDATE:', $seq->getId()));
-      $M->logAlert('WARN: SEQ_UPDATE:', $seq->getId());
+      $M->getCla->{log_fh}->print($M->logAlert('WARN: SEQ_UPDATE:', $seq->getId(),'\n'));
+      $M->logAlert('WARN: SEQ_UPDATE:', $seq->getId(),'\n');
     } else {
 
       #####################################################################
@@ -368,8 +370,8 @@ sub insertEntry{
       # Output a message to the log
       #####################################################################
 
-      $M->getCla->{log_fh}->print($M->logAlert('WARN: SEQ_NO_UPDATE: NA_SEQUENCE_ID=' , $seq->getId(), " DBEST_ID_EST=$e->{id_est}"));
-      $M->logAlert('WARN: SEQ_NO_UPDATE: NA_SEQUENCE_ID=' , $seq->getId(), " DBEST_ID_EST=$e->{id_est}");
+      $M->getCla->{log_fh}->print($M->logAlert('WARN: SEQ_NO_UPDATE: NA_SEQUENCE_ID=' , $seq->getId(), " DBEST_ID_EST=$e->{id_est}\n"));
+      $M->logAlert('WARN: SEQ_NO_UPDATE: NA_SEQUENCE_ID=' , $seq->getId(), " DBEST_ID_EST=$e->{id_est}\n");
     }
   }else {
     #####################################################################
@@ -390,7 +392,7 @@ sub insertEntry{
   # submit the sequence and EST entry. Return the submit() result.
   my $result = $seq->submit();
   if ($result) {
-    $M->getCla->{log_fh}->print($M->logAlert('INSERT/UPDATE', $e->{id_est}));
+    $M->getCla->{log_fh}->print($M->logAlert('INSERT/UPDATE', $e->{id_est}),"\n");
   }
   return $result;
 }
@@ -847,7 +849,7 @@ sub newLibrary {
     }else {
       #Log the fact that we couldn't parse out a taxon
       $M->logAlert('ERR:NEW LIBRARY: TAXON', ' LIB_ID:',  $l->getId(), ' DBEST_ID:',
-              $l->getDbestId(), ' ORGANISM:', $dbest_lib->{organism});
+              $l->getDbestId(), ' ORGANISM:', $dbest_lib->{organism},"\n");
     }
   }
   
@@ -862,7 +864,7 @@ sub newLibrary {
     }else {
       #Log the fact that we couldn't parse out a taxon
       $M->logAlert('ERR: NEW LIBRARY: ANATOMY', ' LIB_ID:',  $l->getId(), ' DBEST_ID:',
-              $l->getDbestId(), ' ORGAN:', $dbest_lib->{organ});
+              $l->getDbestId(), ' ORGAN:', $dbest_lib->{organ},"\n");
     }
   }
   
@@ -951,7 +953,7 @@ sub checkExtNASeq {
       if ($seq->$getmethod() ne $seq_vals{$a}) {
         if ( $M->getCla()->{no_sequence_update}) {
           # Log an entry 
-          $M->logAlert("WARN:", "ExternalNaSequence.$a not updated", $e->{id_est});
+          $M->logAlert("WARN:", "ExternalNaSequence.$a not updated", $e->{id_est},"\n");
         } else {
           $seq->$setmethod($seq_vals{$a});
         }
