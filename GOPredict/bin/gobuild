@@ -519,7 +519,7 @@ sub downloadSwissprot {
 
     $mgr->runCmd("mkdir -p $downloadSubDir");
     
-    my $ftpsite = "ftp://ftp.ebi.ac.uk/pub/databases/sp_tr_nrdb/fasta/$currentSwissprot";
+    my $ftpsite = "ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/$currentSwissprot";
     
     my $cmd = "wget -t5 -o $logfile -m -np -nd -nH --cut-dirs=4 -P $downloadSubDir $ftpsite";
     
@@ -578,7 +578,7 @@ sub downloadTREMBL {
 
     $mgr->runCmd("mkdir -p $downloadSubDir");
     
-    my $ftpsite = "ftp://ftp.ebi.ac.uk/pub/databases/sp_tr_nrdb/fasta/$currentTrembl";
+    my $ftpsite = "ftp://ftp.ebi.ac.uk/pub/databases/uniprot/knowledgebase/$currentTrembl";
     
     my $cmd = "wget -t5 -o $logfile -m -np -nd -nH --cut-dirs=4 -P $downloadSubDir $ftpsite";
     
