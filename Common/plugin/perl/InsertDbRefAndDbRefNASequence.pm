@@ -258,16 +258,8 @@ sub  insertDBRefNASeq {
   
   my $num = 0;
 
-  my $dbh = $self->getQueryHandle;
-
-  my $stmt = $dbh->prepare("select na_sequence_id from dots.assembly where na_sequence_id = ?");
-  
   foreach my $Id (keys %$mapHash) {
-    foreach my $assemblyId (@{$mapHash->{$Id}}) {
-      $stmt->execute($assemblyId);
-      my ($na_sequence_id) = $stmt->fetchrow_array();
-      $stmt->finish();
-      next unless ($na_sequence_id);
+    foreach my $na_sequence_id (@{$mapHash->{$Id}}) {
       my $lowercase_Id = lc ($Id);
       my $db_ref_id = $sourceIdDbrefHash->{$lowercase_Id};
       
