@@ -29,6 +29,7 @@
 		<li><a href="#warning_(for_noncbil_instances)"><em>Warning (for non-CBIL instances)</em></a></li>
 	</ul>
 
+	<li><a href="#examples">EXAMPLES</a></li>
 	<li><a href="#report_bugs_to">REPORT BUGS TO</a></li>
 	<li><a href="#authors">AUTHORS</a></li>
 	<li><a href="#copyright">COPYRIGHT</a></li>
@@ -114,7 +115,7 @@
 </dl>
 <p>
 </p>
-<hr>
+<hr />
 <h1><a name="failure_cases">FAILURE CASES</a></h1>
 <p>Files not in an appropriate format.
 </p>
@@ -309,6 +310,13 @@ will not tolerate spaces between the semi-colons after each file type).</p>
 <p>For local installations of RAD which differ from the CBIL database, some lines of this 
 plugin will need to be modified, to accomodate hard-coded information. Modify lines
 labelled 'HARD-CODED' based on information contained in your instance of RAD.</p>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>ga GUS::RAD::Plugin::MAS5StudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject</p>
+<p>ga GUS::RAD::Plugin::MAS5StudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject --skip assay123456</p>
+<p>ga GUS::RAD::Plugin::MAS5StudyModuleILoader --cfg_file /somePath/configFile.cfg --group myPI --project myProject --skip assay123456,assay123457 --commit</p>
 <p>
 </p>
 <hr />
