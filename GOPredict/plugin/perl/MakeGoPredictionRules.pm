@@ -241,7 +241,7 @@ sub run {
 #	$C->{ self_inv }->setMaximumNumberOfObjects( $C->{ cla }->{ gus_nobj } );
 #    }
     
-    $self->setMaximumNumberOfObjects($self->getCla->{gus_nobj});
+    $self->getDb()->setMaximumNumberOfObjects($self->getCla->{gus_nobj});
 
 
     $self->__verifySliding();
@@ -262,19 +262,18 @@ sub run {
 	$self->getCla->{motifs} :
 	[ keys %{ $sim_dict } ];
   
-    
+
     # Process each motif in the filter...
     foreach my $id_motif_aa_sequence ( @{ $id_motif_aa_sequences } ) {
 
 	# Get the similarities for this motif.
 	my $gus_similarities = $sim_dict->{ $id_motif_aa_sequence };
 	
-	
 	# Save off the number of similarities for this motif - convenience.
 	my $n_sim = scalar @{ $gus_similarities };
-	
+	#DTB: TAKE OUT ADDITIONS TO LOGS
 	# Log some interesting info.
-	$self->log( 'INF', 'NSIM', $id_motif_aa_sequence, $n_sim );
+	$self->log( 'NEW MOTIF', 'INF', 'NSIM', 'id: $id_motif_aa_sequence', 'number of sims: $n_sim' );
 	
 	# Skip this motif if there aren't enough similarities.
 	next if $n_sim < $self->getCla->{ sm_n };
@@ -411,10 +410,7 @@ sub IsAncestor {
 
 	# haven't determined the anwswer yet; figure it out.
 	if ( not defined $h->{ $id_ch }->{ ancestor }->{ $id_an } ) {
-	    my @parents = $self->GetParents( {
-		children => [ $id_ch ],
-		graph    => $h,
-	    } );
+	    my @parents = $self->GetParents([$id_ch],  $h);
 	    my $b_is_ancestor = 0;
 	    foreach my $ancestor ( @parents ) {
 		$h->{ $id_ch }->{ ancestor }->{ $ancestor } = 1;
@@ -601,9 +597,9 @@ sub GetSimilarityDictionary {
 	my $seqs = $aaFilter->{$id_table};
 	# list of ids from the current table
 	my @id_aa_seq = keys %$seqs;
-	
+
 	for ( my $i = 0; $i < scalar @id_aa_seq; $i += $n ) {
-	    
+
 	    my $j = $self->min( scalar @id_aa_seq - 1, $i + $n - 1 );
 	    my $sql = join( ' ',
 			    'select ',
@@ -679,16 +675,17 @@ sub GetSimilarityDictionary {
 	    
 	} # eo id bunch
     } # eo sequence table
-
+    my $simcounter = 0;
     # instantiate an empty GUS object for each similarity
     foreach my $id_subj ( keys %{ $rv } ) {
 	foreach ( @{ $rv->{ $id_subj } } ) {
 	    $_->{ gus_obj } = GUS::Model::DoTS::Similarity->new( {
 		similarity_id => $_->{ similarity_id }
 	    } );
+	    $simcounter++;
 	}
     }
-    
+    print STDERR "made $simcounter sim objects and have " . scalar(keys %$rv) . " motifs\n";
     # return value
     $rv
     }
@@ -747,30 +744,48 @@ sub IntersectGoFunctions {
     my $goDbRelId = $self->getCla->{go_ext_db_rel_id};
     my $queryTableId = $self->getGusTableId("DoTS", "ExternalAASequence");
     {
-
-	foreach my $gus_similarity ( @$similarities ) {
-	    
-	    my $sql = "select ga.go_term_id from DoTS.GOAssociation ga,  
+	$self->log("getting ids for " . scalar(@$similarities) . " sims for this motif\n");
+	
+	
+	my $sql = "select ga.go_term_id from DoTS.GOAssociation ga,  
                        DoTS.GOAssociationInstance gai 
                        where ga.table_id = $queryTableId
-                       and ga.row_id = " . $gus_similarity->{ query_id } . "
                        and ga.is_not != 1
+                       and ga.row_id in ?                
                        and gai.go_association_id = ga.go_association_id
                        and gai.external_database_release_id = $goDbRelId
-                       and where gai.defining = 1            
-			";
-
-	    my $ids = $self->get_ids( $sql );
-	    
+                       and gai.is_primary = 1";            
+		
+	
+	my $queryHandle = $self->getQueryHandle();
+	
+	$self->log( 'SQL', 'get_ids', $sql );
+	
+	
+	
+	my $sth = $queryHandle->prepare($sql);
+	foreach my $gus_similarity ( @$similarities ) {
+	    my $ids;
+	    $sth->execute($gus_similarity->{query_id});
+	    while ( my $id = $sth->fetchrow_array( ) ) {
+		print STDERR "adding $id to the list for " . $gus_similarity->{query_id} . "\n";
+		push (@$ids, $id);
+		
+	    }
 	    $gusGoIdsBySimilarity->{ $gus_similarity } = $ids;
-	    
+	    if (scalar (@$ids) == 0){ print STDERR "no ids in database for sim\n";}
+	    else{print STDERR "found " . scalar(@$ids) . " for sim in database \n";}
 	    foreach my $id_go ( @{ $ids } ) {
 		$gusSimilaritiesByGoId->{ $id_go }->{ $gus_similarity } = 1;
 	    }
+
 	}
+	$sth->finish();
+	    
     }
+
     
-    $self->log( 'INF', 'nfunc', $motifId, $n_similarities,
+    $self->log( 'INF(ORMATION)', 'nfunc', $motifId, $n_similarities,
 		scalar grep {
 		    scalar @{ $gusGoIdsBySimilarity->{ $_ } } > 0
 		    } keys %{ $gusGoIdsBySimilarity } 
@@ -798,8 +813,9 @@ sub IntersectGoFunctions {
     if ( $self->getCla->{ sliding } eq 'most-generous' ) {
 	
 	# hash of the rules (rule types) that we think are ok.
-	my $goodRules = {}; foreach ( @{ $self->getCla->{ sl_gr } } ) { $goodRules->{ $_ } = 1 }
-	
+	my @ruleArray = split (/,/, $self->getCla->{ sl_gr });
+	my $goodRules = {}; foreach (@ruleArray ) { $goodRules->{ $_ } = 1 }
+
       THRESHOLD_SCAN:
 	for ( my $i = 0; $i < $n_similarities; $i++ ) {
 	    my $this_call =
@@ -808,7 +824,7 @@ sub IntersectGoFunctions {
 				    @sortedSims[ 0 .. $i ],
 				    );
 	    #dtb: pass sorted sims in with [] around it?
-	    
+	    #dtb: take out my additions to this log
 	    # count as good if is a good rule-type and explains weakest similarity.
 	    if ( $goodRules->{ $this_call->{ ruleType } } &&
 		 $this_call->{ predicted_similarities }->{ $sortedSims[ $i ] }
@@ -816,15 +832,20 @@ sub IntersectGoFunctions {
 		$h_call                   = $this_call;
 		$h_call->{ threshold }    = $thresholds[ $i ];
 		$h_call->{ proteinsUsed } = $i + 1;
-		$self->log( 'sig', 'ok', $motifId,
-			    $sortedSims[ $i ]->{ threshold },
-			    $this_call->{ signature } );
+		$self->log( 'sig', 'ok', 'motifId: ' . $motifId,
+			    'threshold: ' . $sortedSims[ $i ]->{ threshold },
+			    'go terms: ' . $this_call->{ signature } );
 	    }
 	    else {
-		$self->log( 'sig', 'bad', $motifId,
-			    $sortedSims[ $i ]->{ threshold },
-			    $this_call->{ signature } );
+		$self->log( 'sig', 'bad', 'motifId: ' .  $motifId,
+			    'threshold: ' . $sortedSims[ $i ]->{ threshold },
+			    'go terms: ' . $this_call->{ signature } );
+		
 	    }
+	    print STDERR "rule when adding next sim: " . $this_call->{ruleType} . "\n";
+	    print STDERR "not on list of good rules\n" if  !$goodRules->{ $this_call->{ ruleType } };
+	    print STDERR "not account for similarities\n" if !$this_call->{ predicted_similarities }->{ $sortedSims[ $i ] };
+	   
 	}
 	
     }
@@ -853,7 +874,7 @@ sub IntersectGoFunctions {
     # log the rule and some interesting statistics.
     # .................................................................
     
-    $self->log( 'INF', 'ifl', $motifId,
+    $self->log( 'FINAL INF', 'ifl', $motifId,
 		$h_call->{ ruleType }, $n_similarities,
 		$h_call->{ proteinsUsed }                    || '-',
 		$h_call->{ n_predicted_similarities }        || '-',
@@ -923,7 +944,7 @@ sub IntersectGoFunctions {
 
 sub MakePredictionRule {
     my ($self, $graph, $motifId, $gusGofIdsBySimilarity, 
-	$gusSimilaritiesByGofId, $similarities) = @_;
+	$gusSimilaritiesByGofId, @similarities) = @_;
 	
     #two arrays in @_: ok?
     
@@ -938,7 +959,7 @@ sub MakePredictionRule {
     
     my $gus_best_similarity;
     {
-	foreach my $gus_similarity ( @$similarities ) {
+	foreach my $gus_similarity ( @similarities ) {
 	    
 	    if ( scalar @{ $gusGofIdsBySimilarity->{ $gus_similarity } } ) {
 		if ( defined $gus_best_similarity ) {
@@ -962,7 +983,7 @@ sub MakePredictionRule {
     my $id_best_leaves      = {};
     my $goid_to_sims        = {};
     
-    foreach my $gus_similarity ( @$similarities ) {
+    foreach my $gus_similarity ( @similarities ) {
 	
 	# get the GO term ids for the protein in this similarity
 	# skip those that aren't annotated.
@@ -970,6 +991,7 @@ sub MakePredictionRule {
 	
 	my $ids = $gusGofIdsBySimilarity->{ $gus_similarity };
         next if scalar @{ $ids } == 0;
+	
 	my $id_hash; foreach ( @{ $ids } ) { $id_hash->{ $_ } = 1 }
 	
 	# determine set of leaf nodes in the subtree defined by the set of
@@ -1023,7 +1045,7 @@ sub MakePredictionRule {
 	}
 	
     } # eo similarity scan
-    
+    print STDERR "number of assigned proteins for this iteration: $n_assigned_proteins\n";    
     # leaf functions sort by frequency ( high to low )
     my @id_leaf_terms = sort {
 	$id_leaf_terms->{ $b } <=> $id_leaf_terms->{ $a } ||  $a <=> $b
@@ -1092,12 +1114,12 @@ sub MakePredictionRule {
 		    }
 	# by p-value of best match
 	elsif ( $self->getCla->{ sm_pv } &&
-		$similarities->[ 0 ]->{ threshold } <= $self->getCla->{ cf_hpv } ) {
+		$similarities[ 0 ]->{ threshold } <= $self->getCla->{ cf_hpv } ) {
 	    $confidence = 'high';
 	}		
 	# by similarity of best match
 	elsif ( $self->getCla->{ sm_ps } &&
-		$similarities->[ 0 ]->{ threshold } >= $self->getCla->{ cf_hps } ) {
+		$similarities[ 0 ]->{ threshold } >= $self->getCla->{ cf_hps } ) {
 	    $confidence = 'high';
 	}
 	
@@ -1107,11 +1129,11 @@ sub MakePredictionRule {
 	    $confidence = 'medium';
 	}
 	elsif ( $self->getCla->{ sm_pv } &&
-		$similarities->[ 0 ]->{ threshold } <= $self->getCla->{ cf_mpv } ) {
+		$similarities[ 0 ]->{ threshold } <= $self->getCla->{ cf_mpv } ) {
 	    $confidence = 'medium';
 	}
 	elsif ( $self->getCla->{ sm_ps } &&
-		$similarities->[ 0 ]->{ threshold } >= $self->getCla->{ cf_mps } ) {
+		$similarities[ 0 ]->{ threshold } >= $self->getCla->{ cf_mps } ) {
 	    $confidence = 'medium';
 	}
 	
@@ -1255,8 +1277,8 @@ sub RC_NearAncestor {
 
 	my $rv;
 
-	my $h_ncra = RC_NearConsensusRecentAncestor( $A );
-	my $h_cra  = RC_ConsensusRecentAncestor( $A );
+	my $h_ncra = $self->RC_NearConsensusRecentAncestor( $A );
+	my $h_cra  = $self->RC_ConsensusRecentAncestor( $A );
 
 	if ( $h_ncra && $h_cra ) {
 		$rv = $h_ncra->{ depth } > $h_cra->{ depth } ? $h_ncra : $h_cra;
