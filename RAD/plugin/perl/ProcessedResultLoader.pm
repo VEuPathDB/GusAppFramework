@@ -511,8 +511,16 @@ sub _get_quant_id{
 
     if ($view_id && $view_id==2953) {
 
+      # currently, there is an error with the object invovling table AgilentElementResult, 
+      # we need to avoid to retrieve column p_val_feat_eq_bg. --hongxian, Aug-11-2004
+      my @attributeNotToRetrieve;
+      if ($cfg_rv->{'table_name'.$i} eq 'AgilentElementResult') {
+	@attributesNotToRetrieve = qw(p_val_feat_eq_bg);
+      } else {
+	@attributesNotToRetrieve = ();
+      }
 	my $ele_result = $table->new( {element_result_id => $id} );
-	unless ($ele_result->retrieveFromDB) {
+	unless ($ele_result->retrieveFromDB(\@attributesNotToRetrieve)) {
 	    $M->error("Failed to create an instance of $table with element_result_id = $id");
 	}
 	push @qids, $ele_result->getQuantificationId;
@@ -611,8 +619,18 @@ sub _checkValidInput() {
 
     if ($view_id && $view_id==2953) {
        # view on ElementResultImp
-       $inputResult = $table->new( {element_result_id => $input_result_id } );
-       return 1 if ($inputResult->retrieveFromDB);
+
+      # currently, there is an error with the object invovling table AgilentElementResult, 
+      # we need to avoid to retrieve column p_val_feat_eq_bg. --hongxian, Aug-11-2004
+      my @attributeNotToRetrieve;
+      if ($cfg_rv->{'table_name'.$i} eq 'AgilentElementResult') {
+	@attributesNotToRetrieve = qw(p_val_feat_eq_bg);
+      } else {
+	@attributesNotToRetrieve = ();
+      }
+      
+      $inputResult = $table->new( {element_result_id => $input_result_id } );
+      return 1 if ($inputResult->retrieveFromDB(\@attributesNotToRetrieve));
     } elsif ($view_id && $view_id==2965) {
         # view on CompositeElementImp
 	$inputResult = $table->new( {composite_element_result_id => $input_result_id } );
