@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* rad3-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:45:57 EST 2004     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 12:46:26 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -313,14 +313,6 @@ CREATE TABLE @oracle_rad@.ASSAYCONTROL (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_radTablespace@
- STORAGE (MAXEXTENTS UNLIMITED );
-
-CREATE TABLE @oracle_rad@.ASSAYGROUP (
-    STUDY_ID                           NUMBER(4)                                     NOT NULL,
-    ASSAY_ID                           NUMBER(8)                                     NOT NULL,
-    STUDY_DESIGN_ID                    NUMBER(5)                                     NOT NULL,
-    FACTOR_VALUE                       VARCHAR2(100)                                 NOT NULL)
  TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
@@ -1399,7 +1391,7 @@ CREATE TABLE @oracle_rad@.TREATMENTPARAM (
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
-/* 79 table(s) */
+/* 63 table(s) */
 
 SPOOL OFF
 SET ECHO OFF
