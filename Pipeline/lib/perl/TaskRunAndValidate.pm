@@ -134,7 +134,7 @@ sub runMatrixOrSimilarity {
     }
 
     if (!$valid) {
-	&runAndZip($propFile, "$pipelineDir/logs/$name.matrix.log", $resultFile);
+	&runAndZip($propFile, $logFile, $resultFile);
 	my $valid = &validateBM($inputFile, "${resultFile}.gz");
 	if  (!$valid) {
 	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
