@@ -17,6 +17,7 @@ package GUS::Common::Plugin::LoadBLATAlignments;
 
 @ISA = qw(GUS::PluginMgr::Plugin); 
 use strict;
+use Disp;
 use CBIL::Bio::BLAT::PSL;
 use CBIL::Bio::BLAT::Alignment;
 use CBIL::Bio::FastaIndex;
@@ -189,10 +190,10 @@ sub run {
     
     my $queryTableId = $cla->{'query_table_id'};
     my $queryTaxonId = $cla->{'query_taxon_id'};
-    my $queryExtDbRelId = $cla->{'query_ext_db_rel_id'};
+    my $queryExtDbRelId = $cla->{'query_db_rel_id'};
     my $targetTableId = $cla->{'target_table_id'};
     my $targetTaxonId = $cla->{'target_taxon_id'};
-    my $targetExtDbId = $cla->{'target_ext_db_id'};
+    my $targetExtDbId = $cla->{'target_db_rel_id'};
 
     my $minQueryPct = $cla->{'min_query_pct'};
 
@@ -215,8 +216,8 @@ sub run {
     # 1. Read target source ids if requested
     #
     my $targetTable = &getTableNameFromTableId($dbh, $targetTableId);
-    my $targetIdHash = ($targetExtDbId =~ /\d+/) ? &makeSourceIdHash($dbh, $targetTable, $targetExtDbId) : undef;
-
+    my $targetIdHash = ($targetExtDbId =~ /\d+/) ?
+	&makeSourceIdHash($dbh, "$TPREF.$targetTable", $targetExtDbId) : undef;
     # 2. Build hash of alignments that have already been loaded; we assume
     #    that an alignment can be uniquely identified by its coordinates.
     #
@@ -227,19 +228,19 @@ sub run {
     my @files = split(/,|\s+/, $blatFiles);
     my $nFiles = scalar(@files);
 
-    my $userId = $cla->{'user_id'};
-    my $groupId = $cla->{'group_id'};
-    my $projectId = $cla->{'project_id'};
+    my $userId = $self->getDb()->getDefaultUserId();  # used to be $cla->{'user_id'};
+    my $groupId = $self->getDb()->getDefaultGroupId(); 
+    my $projectId = $self->getDb()->getDefaultProjectId();
     my $algInvId = $self->getAlgInvocation()->getId();
 
     my $insertSql = ("INSERT INTO $TPREF.BLATAlignment VALUES (" .
-		     "gusdev.BLATAlignment_SQ.nextval, " .
+		     "$TPREF.BLATAlignment_SQ.nextval, " .
 		     "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " .
 		     "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " .
 		     "SYSDATE, 1, 1, 1, 1, 1, 0, " .
 		     "$userId, $groupId, $projectId, $algInvId)");
 
-    print STDERR "LoadBLATAlignments: insert sql = '$insertSql'\n";
+    #print STDERR "LoadBLATAlignments: insert sql = '$insertSql'\n";
 
     my $sth = $dbh->prepare($insertSql);
 
@@ -260,9 +261,9 @@ sub run {
 	    ++$nAligns;
 	    ++$nTotalAligns;
 
-	    my $nl = &loadAlignment($dbh, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
-				    $targetTableId, $targetTaxonId, $targetExtDbId,
-				    $qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align, $minQueryPct);
+	    my $nl = &loadAlignment($dbh, $insertSql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
+				    $targetTableId, $targetTaxonId, $targetExtDbId, $qIndex, $qualityParams,
+				    $alreadyLoaded, $targetIdHash, $align, $minQueryPct);
 
 	    $nAlignsLoaded += $nl;
 	    $nTotalAlignsLoaded += $nl;
@@ -366,9 +367,10 @@ sub makeSourceIdHash {
 
     my $sql = ("select source_id, na_sequence_id " .
 	       "from $targetTable " .
-	       "where external_db_release_id = $targetDbId");
+	       "where external_database_release_id = $targetDbId");
 
     my $sth = $dbh->prepare($sql);
+
     $sth->execute();
     while (my @a = $sth->fetchrow_array()) {
 	my $v = $hash->{$a[0]};
@@ -437,8 +439,8 @@ sub makeAlignmentHash {
 # of alignments (0 or 1) actually loaded.
 #
 sub loadAlignment {
-    my($dbh, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId, $targetTableId, $targetTaxonId, $targetExtDbId,
-       $qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align, $minQueryPct) = @_;
+    my($dbh, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId, $targetTableId, $targetTaxonId,
+       $targetExtDbId,$qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align, $minQueryPct) = @_;
 
     my $query_id = $align->get('q_name');
     my $target_id = $align->get('t_name');
@@ -499,6 +501,8 @@ sub loadAlignment {
     # Retrieve sequence and compute quality
     #
     my $querySeq = $qIndex->getSequence(CBIL::Util::TO->new({accno => $origQueryId, strip => 1}));
+    # Disp::Display($querySeq);
+    
     my @a = $align->checkQuality($querySeq->{'seq'}, $qualityParams, $gapTable, $dbh);
 
     # determine BLAT alignment quality id (as specified in BlatAlignmentQuality table)
@@ -538,7 +542,7 @@ sub loadAlignment {
 		  );
 
     $sth->execute(@values) 
-	or die "database operation failed with values: \n" . join(", ", map {"'$_'"} @values)  . "\n";
+	or die "$sql failed with values: \n" . join(", ", @values)  . "\n";
     return 1;
 }
 
