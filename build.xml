@@ -39,6 +39,7 @@
                                            GUS/ReportMaker-Installation, 
                                            GUS/SchemaBrowser-Installation,
 					   GUS/WebDevKit-Installation,
+					   GUS/WDKTestSite-Installation,
 					   GUS/RAD-Installation"> 
     <ant target="defaultProjectInstall"/>
   </target>
@@ -377,6 +378,14 @@
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="WebDevKit"/>
+<!--      <property name="skipJava" value="false"/>   -->
+    </ant>
+  </target>  
+
+  <target name="GUS/WDKTestSite-Installation" depends="ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="project" value="GUS"/>
+      <property name="component" value="WDKTestSite"/>
     </ant>
   </target>  
 
