@@ -326,7 +326,7 @@ sub doMajorMode_Meta {
 	  });
   $imp_go->setParent($alg_go);
 
-  my $now = 'sysdate';
+  my $now = $M->getDb->getDateFunction();
   my $inv_go = GUS::Model::Core::AlgorithmInvocation->new({ start_time  => $now,
 							    end_time    => $now,
 							    machine_id  => 0,
@@ -378,12 +378,15 @@ sub doMajorMode_Run {
   # connect to the database
   $M->connect_to_database($pu);
 
+  $pu->setOracleDateFormat('YYYY-MM-DD HH24:MI:SS');
+
   # get PI's version to find the AlgorithmImplementation.
   $M->findImplementation($pu);
 
   # the application context
+  $M->openInvocation($pu);
+
   eval {
-    $M->openInvocation($pu);
     my $resultDescrip;
     # include the args for legacy plugins
     $resultDescrip = $pu->run({ cla      => $pu->getCla,
@@ -393,12 +396,14 @@ sub doMajorMode_Run {
     $M->logAlert("RESULT", $pu->getResultDescr());
   };
 
+  my $err = $@;
+
   # clean up.
-  $M->closeInvocation($pu, $@);
+  $M->closeInvocation($pu, $err);
 
   $M->disconnect_from_database($M);
 
-  die "$@" if $@;
+  die "$err" if $err;
 }
 
 # ----------------------------------------------------------------------
@@ -656,6 +661,10 @@ sub create_or_update_implementation {
   # we want to create a new Algorithm
   if ($U ) {
 
+    if (!$alg_gus) {
+      print STDERR "Error:   You are trying to update $plugin_name_s, but it has not been registered with the databae.  Please use 'ga +create $plugin_name_s [--commit]' instead.\n";
+      exit 0;
+    }
     my $sql =
       "SELECT *
        FROM Core.AlgorithmImplementation
@@ -784,15 +793,26 @@ sub set_defaults {
 
   # default values for GUS overhead columns
   $O->setDefaultAlgoInvoId( $cla->{algoinvo} );
-  $O->setDefaultUserId(     $M->sql_translate('Core.UserInfo',
-					      'user_id',
-					      'login',$M->getUser()));
-  $O->setDefaultGroupId(    $M->sql_translate('Core.GroupInfo',
-					      'group_id',
-					      'name',$M->getGroup()));
-  $O->setDefaultProjectId(  $M->sql_translate('Core.ProjectInfo',
-					      'project_id',
-					      'name',$M->getProject()));
+
+  my $user = $M->getUser();
+  my $userId = $M->sql_translate('Core.UserInfo', 'user_id', 'login',
+				 $user);
+  die "No row Core.UserInfo has a login = '$user'.  This value was found in the userName= property of your .gus.properties file.  Please be sure it is correct and has been registered in the database" unless defined $userId;
+
+  my $group = $M->getGroup();
+  my $groupId = $M->sql_translate('Core.GroupInfo', 'group_id', 
+				 'name',$group);
+  die "No row in Core.GroupInfo has a name = '$group'.  This value was found in the group= property of your .gus.properties file.  Please be sure it is correct and has been registered in the database" unless defined $groupId;
+
+  my $project = $M->getProject();
+  my $projectId = $M->sql_translate('Core.ProjectInfo',
+				    'project_id',
+				    'name',$project);
+  die "No row in Core.ProjectInfo has name = $project'.  This value was found in the project= property of your .gus.properties file.  Please be sure it is correct and has been registered in the database" unless defined $projectId;
+
+  $O->setDefaultUserId($userId);
+  $O->setDefaultGroupId($groupId);
+  $O->setDefaultProjectId($projectId);
 
 }
 
@@ -878,21 +898,7 @@ sub openInvocation {
 	  });
   $P->initAlgInvocation($alg_inv_gus);
 
-  # global parameters
-  $alg_inv_gus->setCommitOff()     unless $cla->{commit};
-  $alg_inv_gus->setDebuggingOn()   if $cla->{debug};
-
-  # default values for GUS overhead columns
-  $alg_inv_gus->setDefaultAlgoInvoId($cla->{algoinvo});
-  $alg_inv_gus->setDefaultUserId(  $P->sql_translate('Core.UserInfo',
-						     'user_id',
-						     'login',$M->getUser()));
-  $alg_inv_gus->setDefaultGroupId( $P->sql_translate('Core.GroupInfo',
-						     'group_id',
-						     'name',$M->getGroup()));
-  $alg_inv_gus->setDefaultProjectId($P->sql_translate('Core.ProjectInfo',
-						      'project_id',
-						      'name',$M->getProject()));
+  $M->set_defaults($alg_inv_gus);
   $alg_inv_gus->submit();
   $alg_inv_gus->setDefaultAlgoInvoId($alg_inv_gus->getId);
 
