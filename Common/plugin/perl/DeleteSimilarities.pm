@@ -8,7 +8,7 @@ sub new {
   my $self = {};
   bless($self,$class);
 
-  my $usage = 'version Similarities given query_table and idSQL identifying rows in that table and deletes all dependent children (SimilaritySpans, ConsistentAlignments and IndexWordSimLinks';
+  my $usage = 'version Similarities given query_table and idSQL identifying rows in that table and deletes all dependent children (SimilaritySpans and IndexWordSimLinks';
 
   my $easycsp =
     [{o => 'idSQL',
@@ -118,26 +118,6 @@ sub run {
     print "\tDeleted $ctDep rows from SimilaritySpan: ",`date`,"\n";
   }
 
-  ##now the ConsistentAlignments
-  $dbh->do("set transaction use rollback segment BIGRBS0"); ##ensures using  big rollback segment
-  ##need to version if --versionAll
-  if ($ctx->{cla}->{versionAll}) {
-    my $verCA = "insert into dotsver.ConsistentAlignmentVer (select l.*,".$ctx->{self_inv}->getId().",SYSDATE,1 from dots.ConsistentAlignment l where l.similarity_id in (select s.similarity_id from dots.Similarity s where s.query_table_id = 1 and s.subject_table_id = 1))";
-    print "Versioning ConsistentAlignments...$verCA\n",`date`;
-    if ($ctx->{cla}->{commit}) {
-      print "\tVersioned ",$dbh->do($verCA)," rows ",`date`,"\n";
-      $dbh->commit();
-      $dbh->do("set transaction use rollback segment BIGRBS0"); ##ensures using  big rollback segment
-    }
-  }
-  my $delConsAl = "delete from dots.ConsistentAlignment where similarity_id in (select s.similarity_id from dots.Similarity s where s.query_table_id =  1 and s.subject_table_id = 1)";
-  print "Deleting ConsistentAlignments....\n\t$delConsAl\n",`date`;
-  if ($ctx->{cla}->{commit}) {
-    my $ctAl = $dbh->do($delConsAl);
-    $ctDep += $ctAl;
-    $dbh->commit();
-    print "\tDeleted $ctAl rows from ConsistentAlignment: ",`date`,"\n";
-  }
 
   ##now the IndexWordSimLinks
   $dbh->do("set transaction use rollback segment BIGRBS0"); ##ensures using  big rollback segment
