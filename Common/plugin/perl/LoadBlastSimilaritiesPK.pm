@@ -18,9 +18,7 @@ sub new {
       h => 'subjects are taken from this table (schema::table format).',
      },
      {o => 'log_frequency',
-  
-
-    t => 'int',
+      t => 'int',
       h => 'Write line to log file once every this many entries',
       d => 10,
      },
@@ -137,6 +135,9 @@ sub run {
   ##now the query table pk..
   $query_table_pk = $ctx->{self_inv}->getTablePKFromTableId($ctx->{self_inv}->getTableIdFromTableName( $ctx->{cla}->{query_table} ));
 
+  my $queryClassName = "GUS::Model::$ctx->{cla}->{'query_table'}";
+  eval("require $queryClassName");
+
   my $n_queries = 0;
   my $n_files   = 0;
 
@@ -147,7 +148,117 @@ sub run {
   ##note that the login and password are coming from the gus_cfg file..
   my $dbh = $ctx->{'self_inv'}->getDbHandle();
 
-  
+  ## want to be able to ignore entries already done!!
+  if ($ctx->{cla}->{'restart'}) {
+    my $query = "select distinct query_id from dots.Similarity where row_alg_invocation_id in ($ctx->{cla}->{'restart'})";
+    print "Restarting: Querying for the ids to ignore\n$query\n";
+    my $stmt = $dbh->prepare($query);
+    $stmt->execute();
+    while ( my($id) = $stmt->fetchrow_array()) {
+      $ignore{$id} = 1;
+    }
+    print "Ignoring ".scalar(keys%ignore)." entries\n";
+  }
+
+  ##filters to pass into the Bulkloader module...
+  my $filter_ns;
+  $filter_ns->{ min }             = $ctx->{cla}->{ ns_mi } if defined $ctx->{cla}->{ ns_mi };
+  $filter_ns->{ max }             = $ctx->{cla}->{ ns_ma } if defined $ctx->{cla}->{ ns_ma };
+
+  my $filter_su;
+  $filter_su->{ length          } = $ctx->{cla}->{ su_ml } if defined $ctx->{cla}->{ su_ml };
+  $filter_su->{ pValue          } = $ctx->{cla}->{ su_pv } if defined $ctx->{cla}->{ su_pv };
+  $filter_su->{ percentIdentity } = $ctx->{cla}->{ su_pi } if defined $ctx->{cla}->{ su_pi };
+
+  my $filter_sp;
+  $filter_sp->{ length          } = $ctx->{cla}->{ sp_ml } if defined $ctx->{cla}->{ sp_ml };
+  $filter_sp->{ pValue          } = $ctx->{cla}->{ sp_pv } if defined $ctx->{cla}->{ sp_pv };
+  $filter_sp->{ percentIdentity } = $ctx->{cla}->{ sp_pi } if defined $ctx->{cla}->{ sp_pi };
+
+  my $filter_limit;
+  $filter_limit->{subjects} = $ctx->{cla}->{limit_sub} if defined $ctx->{cla}->{limit_sub};
+  $filter_limit->{hsps} = $ctx->{cla}->{limit_hsp} if defined $ctx->{cla}->{limit_hsp};
+
+  # work through files in the list
+ FILE_SCAN_LOOP:
+  foreach my $file ( @{ $ctx->{cla}->{ files } } ) {
+
+    $n_files++;
+
+    # get an object to manage the file.
+    my $bs = new GUS::Common::BulkSimilarity( new CBIL::Util::A {
+      file    => GetFileClever( $file ),
+	query   => \&GetQueryObject,
+	  subject => \&GetSubjectTableAndSeqId,
+	    types   => $ctx->{cla}->{ output },
+	  } )
+      ;
+
+    #CBIL::Util::Disp::Display( $bs->{ parameters } );
+
+    # parse into objects and submit to db
+  SECTION_SCAN_LOOP:
+    while ( my $o = $bs->getSectionObjects($filter_ns, $filter_su, $filter_sp, $filter_limit) ) {
+      $n_queries++;
+      #CBIL::Util::Disp::Display( $o );
+
+      $o->submit();
+
+      if ($n_queries % ($ctx->{cla}->{'log_frequency'} * 10) == 0) {
+	print join( "\t", $queriesProcessed, "$n_queries entered", $o->getId(), scalar $o->getSimilarityFacts,`date`);
+      } elsif ($n_queries % $ctx->{cla}->{'log_frequency'} == 0) {
+	print join( "\t", $queriesProcessed, "$n_queries entered", $o->getId(), scalar $o->getSimilarityFacts)."\n";
+      }
+
+      $o->undefPointerCache();
+
+      last FILE_SCAN_LOOP if $n_queries >= $ctx->{cla}->{ nqueries };
+
+    }				# eo similarities in file
+  }				# eo filenames
+
+  my $result = "Processed $queriesProcessed and loaded similarities for $n_queries from $n_files files";
+  print "\n$result\n";
+  return $result;
+}
+
+# given a source_id we return the query object..
+## NOTE: using primary key so just create object and return it!!
+sub GetQueryObject{
+  my $Line = shift;
+  $queriesProcessed++;
+  # extract the query id from the defline
+  $Line =~ /^\>*(\S+)\s\((\d+)/;
+  return undef if $2 == 0;	##there are no subjects for this one so don't bother retrieving from DB.
+  my $id = $1;
+
+  ##want to ignore things that already have done!!
+  if ($ctx->{cla}->{'restart'}) {
+    if (exists $ignore{$id}) {
+      $countIgnored++;
+      return undef;
+    }
+  }
+
+  # get the query object 
+  my $qObj = $queryClassName->new( { $query_table_pk => $id } );
+
+  if ($qObj->retrieveFromDB()) { ##have object..
+    $qObj->retrieveSimilarityFactsFromDB($ctx->{cla}->{subject_table}) if $ctx->{cla}->{update};
+    return $qObj;
+  }
+	
+  return undef;
+}
+
+##NOTE: we have the primary key already so just return expected....
+sub GetSubjectTableAndSeqId {
+  my $Id = shift;
+  return undef unless $Id;
+  return ( $subject_table_id, $Id );
+}
+
+# ----------------------------------------------------------------------
 
 sub GetFileClever {
   my $F = shift;
