@@ -65,10 +65,7 @@ sub findImplementation {
   my $implementation = $M->findSomeImplementation($P);
   $P->initImplementation($implementation) if $implementation;
 
-  $P->log('DEBUG',
-	  ref $implementation,
-	  $M->getOk,
-	 );
+  $P->log('DEBUG', ref $implementation, $M->getOk) if FLAG_DEBUG;
 
   # RETURN
   $P->getOk
@@ -698,7 +695,7 @@ sub create_or_update_implementation {
     if ($alg_gus) {
       print STDERR join("\n",
 			"$plugin_name_s is already registered.",
-			"Use '+update' instead if this is the plugin you want."
+			"Use '+update' if you need to register a new version."
 		       ), "\n";
 #      $M->doMajorMode_History($C);
       exit 0;
