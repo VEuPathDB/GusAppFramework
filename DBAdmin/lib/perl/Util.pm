@@ -12,7 +12,7 @@
 # $Revision$ $Date$ $Author$
 # -----------------------------------------------------------------------
 
-package Util;
+package GUS::DBAdmin::Util;
 
 use DBI;
 use DBD::Oracle;

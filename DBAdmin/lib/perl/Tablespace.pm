@@ -12,9 +12,9 @@
 # $Revision$ $Date$ $Author$
 # -----------------------------------------------------------------------
 
-package Tablespace;
+package GUS::DBAdmin::Tablespace;
 
-use Util;
+use GUS::DBAdmin::Util;
 
 # -----------------------------------------------------------------------
 # Constructor
@@ -49,7 +49,7 @@ sub getDatafiles {
 	       "from dba_data_files ddf " .
 	       "where ddf.tablespace_name = upper('$name')");
 
-    return &Util::execQuery($dbh, $sql, 'scalar');
+    return &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'scalar');
 }
 
 # Perform an on-line ("hot") backup of all the datafiles in this tablespace.

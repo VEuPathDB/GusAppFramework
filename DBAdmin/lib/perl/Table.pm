@@ -12,11 +12,11 @@
 # $Revision$ $Date$ $Author$
 # -----------------------------------------------------------------------
 
-package Table;
+package GUS::DBAdmin::Table;
 
 use strict;
 
-use Util;
+use GUS::DBAdmin::Util;
 
 # -----------------------------------------------------------------------
 # Constructor
@@ -65,7 +65,7 @@ sub isView {
 	       "where owner = upper('$owner') " .
 	       "and view_name = upper('$name') ");
 
-    my $rows = &Util::execQuery($dbh, $sql, 'scalar');
+    my $rows = &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'scalar');
 
     return ($rows->[0] > 0);
 }
@@ -108,7 +108,7 @@ sub getViewSQL {
 	       "where owner = upper('$owner') " .
 	       "and view_name = upper('$name') ");
 
-    my $rows = &Util::execQuery($dbh, $sql, 'scalar');
+    my $rows = &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'scalar');
     my $viewSql = $rows->[0];
     $viewSql =~ s/([\s\n\m]+)$//mg;
 
@@ -193,7 +193,7 @@ sub getTableSQL {
 	       "and table_name = upper('$name') " .
 	       "order by column_id asc ");
 
-    my $cols = &Util::execQuery($dbh, $sql, 'hash');
+    my $cols = &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'hash');
     
     my $s = '';
     my $tname = $verTable ? "${name}Ver" : $name;
@@ -267,7 +267,7 @@ sub getTableSQL {
 	    "where owner = upper('$owner') " .
 	    "and table_name = upper('$name') ");
 
-    my $rows = &Util::execQuery($dbh, $sql, 'hash');
+    my $rows = &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'hash');
     die "FAILED: $sql" if (scalar(@$rows) != 1);
     my $tcols = $rows->[0];
 
@@ -311,7 +311,7 @@ sub getContents {
     my $name = $self->{'name'};
 
     my $sql = "select * from $owner.$name $orderBy";
-    return &Util::execQuery($dbh, $sql, defined($returnMode) ? $returnMode : 'array');
+    return &GUS::DBAdmin::Util::execQuery($dbh, $sql, defined($returnMode) ? $returnMode : 'array');
 }
 
 # Return the SQL required to re-insert all the rows currently in
@@ -326,7 +326,7 @@ sub getContentsSQL {
     # the target database will be using a different default DATE_FORMAT and will be
     # unable to parse the stringified date values in the output file.
     #
-    my $vals = &Util::execQuery($dbh, "select value from sys.v\$parameter where name = 'nls_date_format'", 'scalar');
+    my $vals = &GUS::DBAdmin::Util::execQuery($dbh, "select value from sys.v\$parameter where name = 'nls_date_format'", 'scalar');
     if (defined($vals) && (scalar(@$vals) > 0)) {
 	my $val = $vals->[0];
 	if ($val =~ /\S/) {
@@ -375,7 +375,7 @@ sub getContentsSQL {
     # Include SQL commands to re-create the table's sequence object at the correct index.
     #
     if ($resetSequence) {
-	my $rows = &Util::execQuery($dbh, "select max($primKeyCol) from $owner.$name", 'scalar');
+	my $rows = &GUS::DBAdmin::Util::execQuery($dbh, "select max($primKeyCol) from $owner.$name", 'scalar');
 	my $newStart = $rows->[0] + 1;
 
 	$insertSql .= "\n";
@@ -401,7 +401,7 @@ sub getColumnList {
 		  "and atc.table_name = upper('$name') " .
 		  "order by atc.column_id asc ");
    
-    return &Util::execQuery($dbh, $colSql, 'scalar');
+    return &GUS::DBAdmin::Util::execQuery($dbh, $colSql, 'scalar');
 }
 
 # Return the datatype of a single column
@@ -418,7 +418,7 @@ sub getColumnDatatype {
 		  "AND atc.table_name = upper('$name') " .
 		  "AND atc.column_name = upper('$colName')");
 
-    my $values = &Util::execQuery($dbh, $colSql, 'scalar');
+    my $values = &GUS::DBAdmin::Util::execQuery($dbh, $colSql, 'scalar');
     return $values->[0];
 }
 
@@ -437,7 +437,7 @@ sub getPrimaryKeyConstraintCols {
 		"and c.table_name = upper('$name') " .
 		"and c.constraint_type = 'P'");
 
-    my $rows = &Util::execQuery($dbh, $cSql, 'hash');
+    my $rows = &GUS::DBAdmin::Util::execQuery($dbh, $cSql, 'hash');
 
     if (defined($rows)) {
 	my $nRows = scalar(@$rows);
@@ -469,7 +469,7 @@ sub getConstraintCols {
 		"where cc.owner = '$cowner' " .
 		"and cc.constraint_name = '$cname' ");
 
-    return &Util::execQuery($dbh, $cSql, 'hash');
+    return &GUS::DBAdmin::Util::execQuery($dbh, $cSql, 'hash');
 }
 
 sub constraintToSQL {
@@ -602,7 +602,7 @@ sub getForeignKeyConstraints {
 	       "and ac2.owner = upper('${owner}') " .
 	       "and ac2.table_name = upper('${name}') ");
 
-    return &Util::execQuery($dbh, $sql, 'hash');
+    return &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'hash');
 }
 
 # Get constraints that reference this table as a foreign key.
@@ -651,7 +651,7 @@ sub getSelfConstraints {
 		"where c.owner = upper('$owner') " .
 		"and c.table_name = upper('$name') ");
 
-   return &Util::execQuery($dbh, $cSql, 'hash');
+   return &GUS::DBAdmin::Util::execQuery($dbh, $cSql, 'hash');
 }
 
 sub getSelfConstraintsSql {
@@ -691,7 +691,7 @@ sub getIndexColumns {
 	       "and aic.index_name = upper('${name}') " . 
 	       "order by aic.column_position asc ");
 
-    return &Util::execQuery($dbh, $sql, 'hash');
+    return &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'hash');
 }
 
 sub indexToSQL {
@@ -734,7 +734,7 @@ sub indexToSQL {
     if ((scalar(@cnames) == 1) && ($cnames[0] =~ /^SYS_/i)) {
 	my $cname = $cnames[0];
 #	print STDERR "Table.pm: detected system-named index $cname\n";
-	my $vals = Util::execQuery($dbh, "select data_default from all_tab_cols where column_name = '$cname'", 'scalar');
+	my $vals = GUS::DBAdmin::Util::execQuery($dbh, "select data_default from all_tab_cols where column_name = '$cname'", 'scalar');
 	if (defined($vals) && (scalar(@$vals) == 1)) {
 	    $indexFn = $vals->[0];
 	} else {
@@ -781,7 +781,7 @@ sub getIndexes {
 		"where i.table_owner = upper('$owner') " .
 		"and i.table_name = upper('$name') ");
 
-    return &Util::execQuery($dbh, $sql, 'hash');
+    return &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'hash');
 }
 
 sub getIndexesSql {
@@ -823,7 +823,7 @@ sub getUnusableIndexes {
 	       "and i.table_name = upper('$name') " .
 	       "and i.status = 'UNUSABLE' ");
 
-    return &Util::execQuery($dbh, $sql, 'hash');
+    return &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'hash');
 }
 
 # Return a list of the columns in the table in order of appearance

@@ -12,10 +12,10 @@
 # $Revision$ $Date$ $Author
 # -----------------------------------------------------------------------
 
-package Sequence;
+package GUS::DBAdmin::Sequence;
 
 use strict;
-use Util;
+use GUS::DBAdmin::Util;
 
 # -----------------------------------------------------------------------
 # Constructor
@@ -52,7 +52,7 @@ sub getSQL {
 	       "where sequence_owner = UPPER('$owner') " . 
 	       "and sequence_name = UPPER('$name') ");
 
-    my $rows = &Util::execQuery($dbh, $sql, 'hash');
+    my $rows = &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'hash');
     my $row = $rows->[0];
 
     my $minVal = $row->{min_value};
