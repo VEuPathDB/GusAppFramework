@@ -30,15 +30,22 @@ sub new {
 
   my $easycsp =
     [
-     { h => 'number of iterations for testing',
+ #    { h => 'number of iterations for testing',
+  #     t => 'int',
+   #    o => 'testnumber',
+    # },
+
+ #   { h => 'number of iterations for testing',
+   #    t => 'int',
+  #     o => 'testnumber2',
+    # },
+
+#992 is external database release id for RefSeq (this should not change?)
+     { h => 'external database release id for RefSeq',
        t => 'int',
-       o => 'testnumber',
+       o => 'external_database_release_id',
      },
 
-    { h => 'number of iterations for testing',
-       t => 'int',
-       o => 'testnumber2',
-     },
 
          ];
 
@@ -62,14 +69,15 @@ sub new {
 
 sub run {
   my $self   = shift;
-  print "Testing on Assembly $self->getArgs->{'testnumber'}\n" if $self->getArgs->{'testnumber'};
+  #print "Testing on Assembly $self->getArgs->{'testnumber'}\n" if $self->getArgs->{'testnumber'};
 
   #can add new log ability  $self->logCommit();
   #move out external_database_release_id put as cla external_database_release_id = $self->getArgs->{'external_database_release_id'}
+  #move out in all queries
   #NOTE FOR TESTING taxon set to human only FOR THIS Query
 
 
-  my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8");
+  my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = $self->getArgs->{'external_database_release_id'} and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8");
 
   my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
 
@@ -77,7 +85,7 @@ sub run {
 
   my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS' and fact_table_id = 89");
 
-#this query reflects all need to exclude those marked FL by framefinder need to be excluded
+#this query reflects those which no longer have a RefSeq associated with them
 
   my $stmt4 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.assembly a, dots.evidence e where e.fact_table_id = 89 and e.target_id = a.na_sequence_id and a.full_length_CDS = 1 and a.taxon_id = 8 minus select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
 
@@ -165,10 +173,10 @@ sub RefSeqFLAssemblies {
     my($na_seq, $source_id) = @{$A};
 
     print STDERR "ConsideringForFLDT.$na_seq\n";
-    last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
+  #  last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
     $ct++;
-  
+
     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
     if ($assembly->retrieveFromDB())  {
@@ -235,6 +243,9 @@ sub  DeleteEvidence   {
 
 
 #  those assemblies that no longer contain a refSeq
+
+# these may later be marked full length by translated features
+
 sub UnmarkFullLength {
 
   my $self = shift;
@@ -281,8 +292,8 @@ sub UnmarkFullLength {
         }
 
 
+    }
 }
-   }
 
 
 sub MarkFLUsingFFfeatures  {
@@ -300,7 +311,7 @@ sub MarkFLUsingFFfeatures  {
     print STDERR "ConsideringForFLDT.$naSeq using Features\n";
 
 
-   last if $self->getArgs->{testnumber2} && $ct >$self->getArgs->{testnumber2};
+ #  last if $self->getArgs->{testnumber2} && $ct >$self->getArgs->{testnumber2};
    $ct++;
 
 
@@ -334,7 +345,7 @@ sub MarkFLUsingFFfeatures  {
 
 
 sub AddEvidenceTranslatedFeature  {
- 
+
 
   my $self = shift;
   my ($assembly, $featureId) = @_;
@@ -421,11 +432,10 @@ sub DeleteFrameFinderEvidence {
 #since framefinder or diana may not find the refSeq ATG it maybe best to keep them separate and if meet this additional criteria
 #looks as if in table framefinder translation start is +2 greater than DIANA ATG
 #query for marking as full length based on DIANA ATG and translations
-#will also mark those assemblies which have good DIANA ATG prediction which equals the framefinder and also has framefinder stop codon, could also use a length greater than 50 amino acids
+#will also mark those assemblies which have good DIANA ATG prediction which equals the framefinder and also has framefinder stop codon, could also use a length greater than 100 amino acids
 
-#NOTE taxon_id in this query
 
-#select distinct naf.na_sequence_id from dots.assembly asm, dots.NAFeatureImp naf, dots.TranslatedAAFeature taf, dots.TranslatedAAsequence ts where asm.na_sequence_id = naf.na_sequence_id and naf.na_feature_id = taf.na_feature_id and taf.translation_start = taf.diana_atg_position + 2 and taf.diana_atg_score > 0.5 and taf.p_value < 0.5 and asm.taxon_id = 8 and taf.aa_sequence_id = ts.aa_sequence_id and ts.length > 100
+
 
 #How to handle updates in this case ???? if assemblies chance in this case have to evaluate all parameters
 #maybe the best way to do this would be to delete all DTs.that are marked full length which have a certain type of attribute evidence (diana ATG prediction for example and then jusr rerun to mark new set as full length so would need a plugin to delete than a plugin to rerun; first run delete in work flow or have delete first in plugin and then remark as full length in for this criteria if run RefSeq plugin first then will have an additional attribute evidence for this
