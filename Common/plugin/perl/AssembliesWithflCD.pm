@@ -174,10 +174,10 @@ print STDERR "$id,DT.$na_seq\n";
 
 
      }
-next;
 
-}
 next;
+}
+
 
 }
 
