@@ -158,7 +158,7 @@ print STDERR "$id,DT.$na_seq\n";
      next;
    }
 
-     if($id != $na_seq )
+    if($id != $na_seq ) {
 
        print STDERR "NextFLDT.$na_seq\n";
 
@@ -173,7 +173,7 @@ print STDERR "$id,DT.$na_seq\n";
       $self->undefPointerCache();
 
 
-}
+     }
 }
 
 }
