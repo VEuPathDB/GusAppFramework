@@ -1,18 +1,98 @@
 package GUS::GOPredict::Instance;
 
+use GUS::Model::DoTS::GOAssociationInstance;
+
 use strict;
 use Carp;
 
-my $nextId = 10000;
+
+
 sub new{
-    my ($class, $id) = @_;
+    my ($class) = @_;
     my $self = {};
     bless $self, $class;
-    
-    $id = $nextId++ unless $id;
-    $self->setId($id);
+    $self->{Evidence} = [];
     return $self;
 
+}
+
+sub newFromGusInstance{
+    my ($class, $gusInstance) = @_;
+    my $self = {};
+    bless $self, $class;
+    $self->{Evidence} = [];
+
+    $self->setIsNot($gusInstance->getIsNot());
+    $self->setIsPrimary($gusInstance->getIsPrimary());
+    $self->setLOEId($gusInstance->getGoAssocInstLoeId());
+    $self->setDeprecated($gusInstance->getIsDeprecated());
+    $self->setReviewStatusId($gusInstance->getReviewStatusId());
+    $self->setGusInstanceObject($gusInstance);
+    return $self;
+    #evidence?
+}
+
+sub setGusInstanceObject{
+    my ($self, $gusInstance) = @_;
+    $self->{GusInstanceObject} = $gusInstance;
+}
+
+sub getGusInstanceObject{
+    my ($self) = @_;
+    return $self->{GusInstanceObject};
+}
+
+sub createGusInstance{
+    
+    my ($self) = @_;
+  
+    my $gusInstance = GUS::Model::DoTS::GOAssociationInstance->new();
+    $gusInstance->setGoAssocInstLoeId($self->getLOEId());
+
+    $gusInstance->setIsNot($self->getIsNot());
+    $gusInstance->setIsPrimary($self->getIsPrimary());
+    if (!$self->getIsPrimary()){
+	$gusInstance->setIsPrimary(0);
+    }
+    #update when schema changes
+    $gusInstance->setReviewStatusId($self->getReviewStatusId());
+    if (!$self->getReviewStatusId()){
+	$gusInstance->setReviewStatusId(0);
+    }
+    $gusInstance->setPValueRatio(); #??
+    $gusInstance->setIsDeprecated(0);
+
+    my $evidenceList = $self->getEvidence();
+    if ($evidenceList){
+
+	foreach my $evidence (@$evidenceList){
+
+	    $gusInstance->addEvidence($evidence->getGusEvidenceObject());
+
+	}
+	##maybe add as similarity evidence
+    }
+    $self->setGusInstanceObject($gusInstance);
+
+}
+
+
+sub addEvidence{
+    my ($self, $evidence) = @_;
+   
+    push (@{$self->{Evidence} }, $evidence);
+}
+
+sub getEvidence{
+    my ($self) = @_;
+    return $self->{Evidence};
+}
+
+sub removeAllEvidence{
+    my ($self) = @_;
+    while (my $nextEvidence = shift (@{$self->{Evidence} }))
+    {}
+    
 }
 
 sub getReviewStatusId{
@@ -23,16 +103,6 @@ sub getReviewStatusId{
 sub setReviewStatusId{
     my ($self, $reviewStatusId) = @_;
     $self->{ReviewStatusId} = $reviewStatusId;
-}
-
-sub getId{
-    my ($self) = @_;
-    return $self->{Id};
-}
-
-sub setId{
-    my ($self, $id) = @_;
-    $self->{Id} = $id;
 }
 
 sub getLOEId{
@@ -64,6 +134,17 @@ sub clone{
     $newInstance->setIsNot($self->getIsNot());
     $newInstance->setLOEId($self->getLOEId());
 
+    my $evidenceList = $self->getEvidence();
+    if ($evidenceList){
+	foreach my $evidence (@$evidenceList){
+
+	    $newInstance->addEvidence($evidence);
+	}
+    }
+
+    my $gusInstance = $self->getGusInstanceObject();
+    $newInstance->setGusInstanceObject($gusInstance) if $gusInstance;
+
     return $newInstance;
 
 }
@@ -73,8 +154,8 @@ sub cloneNotPrimary{
     
     my $newInstance = $self->clone();
     $newInstance->setIsPrimary(0);
+    $newInstance->removeAllEvidence();
     return $newInstance;
-
 }
 
 sub getIsPrimary{
@@ -109,8 +190,30 @@ sub setIsNot{
 
 sub toString{
     my ($self, $tab) = @_;
- 
-    return "$tab InstanceId: $self->{Id}  LOE Id: $self->{LOEId}  IsPrimary: $self->{IsPrimary}";
+
+    my $gusId;
+    my $evidenceString;
+    my $evidenceList = $self->getEvidence();
+    if ($evidenceList){
+	foreach my $evidence (@$evidenceList){
+	    $evidenceString .= $evidence->toString() . "$tab \n"; 
+	}
+    }
+    my $gusInstance = $self->getGusInstanceObject();
+    $gusId = $gusInstance->getGoAssociationInstanceId() if $gusInstance;
+    
+#    return
+#"$tab INSTANCE gusId: $gusId self: $self
+# $tab  LOE Id:         $self->{LOEId} 
+# $tab  is not:         $self->{IsNot} 
+# $tab  IsPrimary:      $self->{IsPrimary}
+# $tab  Review Status:  $self->{ReviewStatusId}
+# $tab  Deprecated:     $self->{Deprecated}
+# $tab  Evidence:       $evidenceString
+# $tab  GusObjectId:    $gusInstance";
+
+    return
+" $tab INSTANCE gusId: $gusId LOE Id: $self->{LOEId} isnot: $self->{IsNot} Pri: $self->{IsPrimary}  RS: $self->{ReviewStatusId} Dep: $self->{Deprecated} Ev: $evidenceString  ";
 }
 
 1;
