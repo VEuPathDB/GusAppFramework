@@ -650,6 +650,7 @@ sub getQueryNaSeqId {
     my ($dbh, $qid, $queryTableId) = @_;
 
     return $qid if $queryTableId =~ /^56|339$/;
+    return $qid if $queryTableId == 89 && $qid =~ /^\d+$/;
 
     my $sql;
     if ($queryTableId == 89) {
