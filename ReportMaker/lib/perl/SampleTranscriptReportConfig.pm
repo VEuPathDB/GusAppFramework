@@ -9,13 +9,14 @@ use GUS::ReportMaker::Query;
 use GUS::ReportMaker::Report;
 
 sub createReport {
-  my ($tempTable, $primaryKeyName, $mappedToName) = @_;
+  my ($tempTable, $primaryKeyName, $mappedToName, $mappingTables) = @_;
 
   my @columns;
 
   my $mappedToCol =
     GUS::ReportMaker::DefaultColumn->new("$mappedToName",
 					 "Mapped To");
+
   push(@columns, $mappedToCol);
 
   my $lengthCol =
@@ -221,18 +222,30 @@ and pa.na_sequence_id = a.na_sequence_id
 				 [$protSeqCol,
 				  $mrnaSeqCol
 				 ]);
+ 
 
-  return GUS::ReportMaker::Report->new("DoTS_Transcript",
-				      [$assemQuery,
-				       $locuslinkQuery,
-				       $genecardsQuery,
-				       $mgiQuery,
-				       $geneQuery,
-				       $mappedToQuery,
-				       $motifsQuery,
-				       $seqQuery,
-				       ],
-				      \@columns);
+  my $queries = [$assemQuery,
+		 $locuslinkQuery,
+		 $genecardsQuery,
+		 $mgiQuery,
+		 $geneQuery,
+		 $mappedToQuery,
+		 $motifsQuery,
+		 $seqQuery,
+		];
+
+  my $report = GUS::ReportMaker::Report->new("DoTS_Transcript",
+					     $queries,
+					     \@columns);
+
+  # TO DO
+  # this should create a MappingTableList object so that it is declarative
+  # and pass it to report via a setMappingTableList() method
+  $report->addMappingTables($mappingTables, $mappedToName,
+			    $tempTable, $primaryKeyName);
+
+  return $report;
 }
 
 1;
+
