@@ -595,7 +595,7 @@ SQL
          # show columns for this implementation
          $Self->logData('IMP',
                         #$alg_h->{ALGORITHM_ID},
-                        ( map {$imp_h->{$_}} qw(ALGORITHM_IMPLEMENTATION_ID CVS_REVISION, CVS_TAG)),
+                        ( map {$imp_h->{$_}} qw(ALGORITHM_IMPLEMENTATION_ID CVS_REVISION CVS_TAG)),
                         $inv_n,
                         ( map {$imp_h->{$_}} qw(EXECUTABLE EXECUTABLE_MD5 MODIFICATION_DATE DESCRIPTION)),
                        );
