@@ -4,6 +4,19 @@
 
 
 
-This is the intro page.
+<p>This is the intro page.
+
+<h2>Queries</h2>
+<a href="/simpleQueryDemo1.jsp">A form with no query initially selected</a>
+<a href="/simpleQueryDemo2.jsp">A form with a text box parameter</a>
+<a href="/simpleQueryDemo3.jsp">A form with a SqlEnumParam parameter</a>
+
+<h2>ResultSet</h2>
+No test pages available yet
+
+
+<h2>Record</h2>
+<a href="/simpleRecordDemoDriver.jsp">Simple Record test form</a>
+
 
 <sample:footer />

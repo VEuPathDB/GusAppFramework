@@ -15,6 +15,6 @@
 </head>
 <body background="white">
 <table width="100%"><tr>
-<td><img src="/sampleWDK/images/WDKTestSite.png" alt="Site logo"></td>
+<td><a href="/sampleWDK"><img src="/sampleWDK/images/WDKTestSite.png" border="0" alt="Site logo"></a></td>
 <td><h1>${banner}</h1></td></tr></table>
 <hr>
