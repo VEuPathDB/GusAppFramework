@@ -85,7 +85,7 @@ sub run {
 
     my $fh_index = FileHandle->new('<'.$self->getCla->{'index'});
     my $fh_matrix = FileHandle->new('<'.$self->getCla->{'matrix'});
-    my $algInvoIds = $self->getCla->{'algInvoIds'};
+    my $algInvoIds = $self->getCla->{'alginvoIds'};
     my $percent_identity = $self->getCla->{'percent_identity'} ? $self->getCla->{'percent_identity'} : 0;
     my $percent_match = $self->getCla->{'percent_match'} ? $self->getCla->{'percent_match'} : 0;
     my $pvalue = $self->getCla->{'pvalue'} ? $self->getCla->{'pvalue'} : '1e-5';
