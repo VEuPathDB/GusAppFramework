@@ -16,7 +16,7 @@ specified so you should get a list of possible queries.
 
   <input type="hidden" name="fromPage" value="/simpleQueryDemo1.jsp">
 
-  <tr><td><wdkq:displayQuery queryInstance="${q}" /></td></tr>
+  <tr><td><wdkq:displayQuery queryInstance="${q}"></td></tr>
   <c:forEach var="p" 
              items="${q.query.params}">
 	     
@@ -27,6 +27,7 @@ specified so you should get a list of possible queries.
        </tr>
   
   </c:forEach>
+  </wdkq:displayQuery>
 
   <tr>
      <td><wdkq:submit /></td>
