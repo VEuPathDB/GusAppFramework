@@ -93,8 +93,8 @@ sub new {
 		  reqd => 0,
 		  descr => 'Set this flag to have the plugin make sure all association data is consistent, without evolving the GO hierarchy or applying rules.  By default, deletes and recaches non-primary instances',
 		  constraintFunc => undef,
-	     }),
-
+	      }),
+     
      booleanArg({ name => 'do_not_scrub_proteins',
 		  reqd => 0,
 		  descr => 'Set this flag in conjunction with evolve_go_hierarchy or apply_rules to have the plugin skip the data consistency check at the end.  This is rarely necessary; make sure you have a good reason to do this.  Note that setting this will also skip recaching primary instances.',
@@ -232,6 +232,13 @@ sub new {
 		  descr => 'set this flag to have the Database Adapter write a new result set of the Assembly-Protein translations to a file; used in conjunction with --translations_file',
 		  constraintFunc => undef,
 	      }),
+
+     booleanArg({ name => 'create_new_deprecated_file',
+		  reqd => 0,
+		  descr => 'set this flag to have the Database Adapter write a new result set of all deprecated associations to a file; used in conjunction with --translations_file',
+		  constraintFunc => undef,
+	      }),
+
      
      booleanArg({ name => 'create_new_similarities_file',
 		  reqd => 0,
@@ -242,9 +249,18 @@ sub new {
      
      fileArg({ name => 'translations_file',
 	       reqd => 0,
-	       descr => 'File that stores the result set of the Assembly-Protein translations returned by the Database Adapter.  Use while testing',
+	       descr => 'File that stores the result set of the Assembly-Protein translations returned by the Database Adapter.',
 	       mustExist => 0,
 	       format => 'Each line of the file consists of the AssemblyId and its ProteinId, separated by a space',
+     		    constraintFunc => undef,
+		 isList => 0,
+	 }),
+
+     fileArg({ name => 'deprecated_file',
+	       reqd => 0,
+	       descr => 'File that stores the result set of all deprecated associatoins returned by the Database Adapter.',
+	       mustExist => 0,
+	       format => 'Each line of the file consists a ProteinId, a GO Id for that protein Id, the external database release ID for that GO Id, and the GO Association Id that binds them together; elements are separated by a space',
      		    constraintFunc => undef,
 		 isList => 0,
 	 }),
@@ -252,7 +268,7 @@ sub new {
      fileArg({ name => 'similarities_file',
 	      reqd => 0,
 	      mustExist => 0,
-	      descr => 'File that stores the result set of the Assembly-Motif similarities returned by the Database Adapter.  Use while testing.',
+	      descr => 'File that stores the result set of the Assembly-Motif similarities returned by the Database Adapter.',
 	      format => 'Each line of the file is a space-separated triplet representing one similarity in the order QueryId SubjectId SimilarityId',
 		    constraintFunc => undef,
 		 isList => 0,
@@ -260,9 +276,9 @@ sub new {
 
 	 stringArg({ name => 'skip_protein_raid_list',
 		    reqd => 0,
-		    descr => 'comma separated list of Algorithm Invocation Ids of Associations that were created during a run of apply_rules that was unexpectedly interrupted.',
+		    descr => 'List of Algorithm Invocation Ids of Associations that were created during a run of apply_rules that was unexpectedly interrupted.',
   		    constraintFunc => undef,
-		  isList => 0,
+		  isList => 1,
 	 }),
 
 	       booleanArg({ name => 'validate',
@@ -299,7 +315,7 @@ sub new {
     my $proteinTableId = $self->getCla->{protein_table_id};
     my $newGoVersion = $self->getCla->{new_go_release_id};
     my $oldGoVersion = $self->getCla->{old_go_release_id};
-    my $testProteinIds = $self->getCla->{test_protein_id_list};
+    my $testProteinIds = join(",", @{$self->getCla->{test_protein_id_list}}) if $self->getCla->{test_protein_id_list};
     my $rootGoId = $self->getCla->{function_root_go_id};
     my $validate = $self->getCla->{validate};
 
@@ -318,7 +334,10 @@ sub new {
     $goManager->setVerbosityLevel($self->_getVerbosityLevel());
 
     $goManager->setDeprecatedAssociations($databaseAdapter->getDeprecatedAssociations($self->getCla()->{query_taxon_id},
-										      $proteinTableId));
+										      $proteinTableId,
+										      $self->getCla()->{deprecated_file}, 
+										      $self->getCla()->{create_new_deprecated_file}
+					  ));
     
     my $returnString = "GoPlugin ran successfully.  ";
         
@@ -392,7 +411,7 @@ sub _makeClaHashForRules{
     my $proteinTableId = $self->getCla->{protein_table_id};
     my $queryTableId = $self->getCla->{query_table_id};
     my $queryTablePkAtt = $self->getCla->{query_primary_attribute};
-    my $subjectDbList =   $self->getCla->{subject_db_release_list};
+    my $subjectDbList =   join (",", @{$self->getCla->{subject_db_release_list}}) if $self->getCla->{subject_db_release_list};
     my $queryDbList =   $self->getCla->{query_db_release_list};
     my $queryTaxonId = $self->getCla->{query_taxon_id};
     my $ratioCutoff = $self->getCla->{ratio_cutoff};
