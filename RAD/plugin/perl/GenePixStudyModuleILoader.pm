@@ -81,7 +81,7 @@ Protocol ID, Hybridization Operator ID, Acquisition Protocol ID and Quantificati
 Blank lines and comment lines (lines starting with '#') are ignored.
 The following keywords and their values are required:
 
-  - GPRFilePath = full path to the dir where the GPR files are kept
+  - gprFilePath = full path to the dir where the GPR files are kept
   - Study_ID^ = the study identifier
   - arrayId^ = array type ID
  
@@ -133,7 +133,7 @@ ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.c
 
 =head1 AUTHOR
 
-Shailesh Date
+Shailesh Date, Hongxian He
 
 =head1 COPYRIGHT
 
@@ -197,25 +197,25 @@ NOTES
 }
 
 my @properties = (
-    [ "GPRFilePath",                 "", "" ],
+    [ "gprFilePath",                 "", "" ],
     [ "Study_ID",                    "", "" ],
     [ "arrayId",                     "", "" ],
-    [ "batchId",                     "NOVALUEPROVIDED", "" ],
-    [ "allAssayDescriptionsSame",    "NOVALUEPROVIDED", "" ],
-    [ "allAssayDescriptions",        "NOVALUEPROVIDED", "" ],
-    [ "individualAssayDescriptions", "NOVALUEPROVIDED", "" ],
+    [ "batchId",                     "", "" ],
+    [ "allAssayDescriptionsSame",    "", "" ],
+    [ "allAssayDescriptions",        "", "" ],
+    [ "individualAssayDescriptions", "", "" ],
     [ "Hyb_Protocol_ID",             "", "" ],
     [ "Hyb_Operator_ID",             "", "" ],
     [ "allHybDatesSame",             "", "" ],
-    [ "allHybDates",                 "NOVALUEPROVIDED", "" ],
-    [ "individualHybDates",          "NOVALUEPROVIDED", "" ],
+    [ "allHybDates",                 "", "" ],
+    [ "individualHybDates",          "", "" ],
     [ "Acq_Protocol_ID",             "", "" ],
     [ "tiffFilePath",                "", "" ],
     [ "allScanDatesSame",            "", "" ],
-    [ "allScanDates",                "NOVALUEPROVIDED", "" ],
-    [ "individualScanDates",         "NOVALUEPROVIDED", "" ],
+    [ "allScanDates",                "", "" ],
+    [ "individualScanDates",         "", "" ],
     [ "Quant_Protocol_ID",           "", "" ],
-    [ "Quant_Operator_ID",           "NOVALUEPROVIDED", "" ]
+    [ "Quant_Operator_ID",           "", "" ]
  ); 
 
 ###############################
@@ -235,7 +235,7 @@ sub run {
   my $insertedAssayCnt = $self->submitGusAssays($gusAssays);
 
   my $insertedRelatedCnt = $self->populateRelatedTables($studyId); 
-  $self->log("STATUS","Inserted $insertedRelatedCnt x 2 rows in RAD3.RelatedAcquisition and RAD3.RelatedQuantification");
+  $self->log("STATUS","Inserted $insertedRelatedCnt rows in RAD3.RelatedAcquisition and RAD3.RelatedQuantification");
 
   $self->setResultDescr(
    "Total assay/s: $totalAssayCnt; Assay/s inserted: $insertedAssayCnt; Assay/s skipped: $skippedAssayCnt"
@@ -251,7 +251,7 @@ sub createGUSAssaysFromFiles {
   my $assayCnt = 0;
 
   my $tiffFilePath  = $self->{propertySet}->getProp("tiffFilePath"); 
-  my $gprFilePath   = $self->{propertySet}->getProp("GPRFilePath"); 
+  my $gprFilePath   = $self->{propertySet}->getProp("gprFilePath"); 
   my $studyId       = $self->{propertySet}->getProp("Study_ID");
   my $testNumber    = $self->getArgs->{testnumber};
   my @skipAssayList = @{$self->getArgs->{skip}};
@@ -339,10 +339,10 @@ sub populateRelatedTables {
      unless ($assayObject->retrieveFromDB);
     my $assayName = $assayObject->getName();
 
-    my ($acquisitionIdsRef, $acquisitionChannelsRef) = $self->populateRelatedAcquisition($assayName, $assayId);
-    $self->populateRelatedQuantification($assayName, $assayId, $acquisitionIdsRef, $acquisitionChannelsRef);
+    my ($acquisitionIdsRef, $acquisitionChannelsRef, $relatedAcquisitionCnt) = $self->populateRelatedAcquisition($assayName, $assayId);
+    my $relatedQuantificationCnt = $self->populateRelatedQuantification($assayName, $assayId, $acquisitionIdsRef, $acquisitionChannelsRef);
 
-    $insertedRelatedCnt++;
+    $insertedRelatedCnt = $relatedAcquisitionCnt + $relatedQuantificationCnt;
   }
 
   return $insertedRelatedCnt;
@@ -363,7 +363,7 @@ sub populateRelatedAcquisition {
     push (@acquisitionIds, $row[0]);
 
     my $channelObject = GUS::Model::RAD3::Channel->new({channel_id => $row[1]});
-    $self->error("Create object failed: Table RAD3.Channel, ID $row[1]") 
+    $self->error("Create object failed: Table RAD3.Channel, channel_id $row[1]") 
      unless ($channelObject->retrieveFromDB);
     my $channelName = $channelObject->getName();
 
@@ -373,6 +373,8 @@ sub populateRelatedAcquisition {
   $sth->finish;
   $self->error("Assay Id $assayId does not exist in the table RAD3.Acquisition") if (scalar @acquisitionIds eq 0); 
   $self->error("More/less than two entries found for assay id $assayId in RAD3.Acquisition") if (scalar @acquisitionIds ne 2); 
+
+  my $relatedAcquisitionCnt = 0;
     
   my $acquistionAssociationOne = GUS::Model::RAD3::RelatedAcquisition->new({
     acquisition_id            => $acquisitionIds[0],
@@ -381,6 +383,7 @@ sub populateRelatedAcquisition {
     designation               => $acquisitionChannels[0],
     associated_designation    => $acquisitionChannels[1]
   });
+  $relatedAcquisitionCnt++;
 
   my $acquistionAssociationTwo = GUS::Model::RAD3::RelatedAcquisition->new({
     acquisition_id            => $acquisitionIds[1],
@@ -389,11 +392,12 @@ sub populateRelatedAcquisition {
     designation               => $acquisitionChannels[1],
     associated_designation    => $acquisitionChannels[0]
   });
+  $relatedAcquisitionCnt++;
 
   $acquistionAssociationOne->submit() if ($self->getArgs->{commit});
   $acquistionAssociationTwo->submit() if ($self->getArgs->{commit});
 
-  return (\@acquisitionIds, \@acquisitionChannels);
+  return (\@acquisitionIds, \@acquisitionChannels, $relatedAcquisitionCnt);
 }
 
 ###############################
@@ -405,7 +409,7 @@ sub populateRelatedQuantification {
   foreach my $acquisitionId (@$acquisitionIdsRef) {
 
     my $quantificationObject = GUS::Model::RAD3::Quantification->new({acquisition_id => $acquisitionId});
-    $self->error("Create object failed: Table RAD3.Quantification, ID $acquisitionId") 
+    $self->error("Create object failed: Table RAD3.Quantification, acquisition_id $acquisitionId") 
      unless ($quantificationObject->retrieveFromDB);
     my $quantificationId = $quantificationObject->getQuantificationId();
 
@@ -415,6 +419,8 @@ sub populateRelatedQuantification {
   $self->error("More/less than two entries found for acqusitions @$acquisitionIdsRef in RAD3.Quantification") 
     if (scalar @quantificationIds ne 2); 
     
+  my $relatedQuantificationCnt = 0;
+
   my $quantificationAssociationOne = GUS::Model::RAD3::RelatedQuantification->new({
     quantification_id            => $quantificationIds[0],
     associated_quantification_id => $quantificationIds[1],
@@ -422,6 +428,7 @@ sub populateRelatedQuantification {
     designation                  => @$acquisitionChannelsRef[0],
     associated_designation       => @$acquisitionChannelsRef[1]
   });
+  $relatedQuantificationCnt++;
 
   my $quantificationAssociationTwo = GUS::Model::RAD3::RelatedQuantification->new({
     quantification_id            => $quantificationIds[1],
@@ -430,10 +437,12 @@ sub populateRelatedQuantification {
     designation                  => @$acquisitionChannelsRef[1],
     associated_designation       => @$acquisitionChannelsRef[0]
   });
+  $relatedQuantificationCnt++;
 
   $quantificationAssociationOne->submit() if ($self->getArgs->{commit});
   $quantificationAssociationTwo->submit() if ($self->getArgs->{commit});
 
+  return $relatedQuantificationCnt;
 }
 
 ###############################
@@ -445,7 +454,7 @@ sub findAssayNames {
   my $modifiedAssayFileURIs;
 
   my $requiredExtension = "gpr";  # filenames correspond to assay names
-  my ($localFilePath, $specificPath) = split "RAD/", $assayNameFilesDir;
+  my ($localFilePath, $specificPath) = split "RAD/", $assayNameFilesDir; # HARD-CODED. Based on our convention for naming files
 
   opendir (DIR,$assayNameFilesDir) || $self->userError("Cannot open dir $assayNameFilesDir");
   my @assayDir = readdir DIR; 
@@ -505,7 +514,7 @@ sub getImageFileNames {
   my @imageFiles = readdir DIR; 
   close (DIR);
 
-  my ($localPath, $specificPath) = split "RAD_images/", $imageFilesDir;
+  my ($localPath, $specificPath) = split "RAD_images/", $imageFilesDir; # HARD-CODED. Based on our convention for naming files
 
   foreach my $imageFile (@imageFiles) { 
 
@@ -514,19 +523,17 @@ sub getImageFileNames {
     my ($fileName, $extention) = $imageFile =~ /(.+)\.(\w+$)/;
     my ($assay, $type) = $fileName =~ /(.+)\_(.+)/;
 
-    #print "$imageFilesDir/$imageFile, $specificPath/$imageFile \n";
+    if ($type eq "Cy5Cy3" || $type eq "Cy3Cy5") {  # HARD-CODED. Based on our convention for naming files
 
-    if ($type eq "Cy5Cy3" || $type eq "Cy3Cy5") {
+      $imageFilesRef->{$assay."_Cy5"} = "$imageFilesDir/$imageFile"; # HARD-CODED. Based on our convention for naming files
+      $imageFilesRef->{$assay."_Cy3"} = "$imageFilesDir/$imageFile"; # HARD-CODED. Based on our convention for naming files
 
-      $imageFilesRef->{$assay."_Cy5"} = "$imageFilesDir/$imageFile";
-      $imageFilesRef->{$assay."_Cy3"} = "$imageFilesDir/$imageFile";
-
-      $modifiedImageFileURI->{$assay."_Cy5"} = "$specificPath/$imageFile";
-      $modifiedImageFileURI->{$assay."_Cy3"} = "$specificPath/$imageFile";
+      $modifiedImageFileURI->{$assay."_Cy5"} = "$specificPath/$imageFile"; # HARD-CODED. Based on our convention for naming files
+      $modifiedImageFileURI->{$assay."_Cy3"} = "$specificPath/$imageFile"; # HARD-CODED. Based on our convention for naming files
 
     } else {
-      $imageFilesRef->{$assay."_$type"} = "$imageFilesDir/$imageFile";
-      $modifiedImageFileURI->{$assay."_$type"} = "$specificPath/$imageFile";
+      $imageFilesRef->{$assay."_$type"} = "$imageFilesDir/$imageFile";       # HARD-CODED. Based on our convention for naming files
+      $modifiedImageFileURI->{$assay."_$type"} = "$specificPath/$imageFile"; # HARD-CODED. Based on our convention for naming files
     }
   }
 
@@ -542,7 +549,7 @@ sub createSingleGUSAssay {
 
   $self->checkRequiredFilesExist($assayName, $imageFilesRef);
 
-  my $GPRinfo = $self->parseTabFile('GPR', $assayName);
+  my $GPRinfo = $self->parseTabFile('gpr', $assayName);
 
   my $gusAssay = $self->createGusAssay($assayName, $hybDateHashRef, $assayDescriptionHashRef);
 
@@ -573,7 +580,7 @@ sub createSingleGUSAssay {
 sub checkRequiredFilesExist {
   my ($self, $assayName, $imageFilesRef) = @_;
 
-  my $gprFile     = $self->{propertySet}->getProp("GPRFilePath")."/$assayName.gpr";
+  my $gprFile     = $self->{propertySet}->getProp("gprFilePath")."/$assayName.gpr";
   my $tiffFileCy5 = $imageFilesRef->{$assayName."_Cy5"};
   my $tiffFileCy3 = $imageFilesRef->{$assayName."_Cy3"};
 
@@ -595,8 +602,6 @@ sub parseTabFile {
 
   my $filePath = $self->{propertySet}->getProp("${prefix}FilePath");
 
-  $prefix = "gpr" if ($prefix eq "GPR"); # quick fix
- 
   my $file = "$filePath/$assayName.$prefix";
 
   open (GPRFILE, $file) || $self->userError("Can't open $file: $!");
@@ -630,8 +635,13 @@ sub modifyKeyValuePairs {
 
   my ($modifiedKey, $modifiedValue);
 
-  # can be extended to fill as many values as required, 
-  # via 'elsif' statements
+  # HARD-CODED. 
+  # All names and values are modified in this subroutine to suit our
+  # instance of RAD. Please modify names and their values based on your
+  # instance, if necessary.
+
+  # The following statement can be extended to fill as many values 
+  # as required, via 'elsif' statements
 
   if ($key eq "Creator") {
     my @softwareVersionInfo = split " ",$value;
@@ -808,12 +818,12 @@ sub createGusQuantification {
 
   $gprQuantParameters->{operator_id} = $quantOperatorId if (defined $quantOperatorId);
 
-  my $acqNameCy5                 = "$assayName-Cy5-$tempAcqName-Genepix quantification";
+  my $acqNameCy5                 = "$assayName-Cy5-$tempAcqName-Genepix quantification"; # HARD-CODED. Replace by your name if necessary.
   my $gprQuantParametersCy5      = $gprQuantParameters;
   $gprQuantParametersCy5->{name} = $acqNameCy5;
   my $gprQuantificationCy5       = GUS::Model::RAD3::Quantification->new($gprQuantParametersCy5);
 
-  my $acqNameCy3                 = "$assayName-Cy3-$tempAcqName-Genepix quantification";
+  my $acqNameCy3                 = "$assayName-Cy3-$tempAcqName-Genepix quantification"; # HARD-CODED. Replace by your name if necessary.
   my $gprQuantParametersCy3      = $gprQuantParameters;
   $gprQuantParametersCy3->{name} = $acqNameCy3;
   my $gprQuantificationCy3       = GUS::Model::RAD3::Quantification->new($gprQuantParametersCy3);
@@ -834,10 +844,10 @@ sub createGusQuantParams {
   my $quantParamKeywordCnt = 0;
 
   my $params = {
-    'ratio formulations'         => 1, 
-    'standard deviation'         => 1,
-    'background density measure' => 1,
-    'software version'           => 1
+    'ratio formulations'         => 1,  # HARD-CODED. Replace by your RAD3.ProtocolParam.name.
+    'standard deviation'         => 1,  # HARD-CODED. Replace by your RAD3.ProtocolParam.name.
+    'background density measure' => 1,  # HARD-CODED. Replace by your RAD3.ProtocolParam.name.
+    'software version'           => 1   # HARD-CODED. Replace by your RAD3.ProtocolParam.name.
   };
 
   foreach my $param (keys %$params) {
@@ -865,10 +875,9 @@ sub createGusQuantParams {
     $quantParametersCy3->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
     push(@gusQuantParamsCy3, $quantParametersCy3);
     $quantParamKeywordCnt++;
-
   }
 
-  $self->log("STATUS","OK Inserted $quantParamKeywordCnt x 2 rows in table RAD3.QuantificationParam for Cy5 and Cy3 quantification parameters");
+  $self->log("STATUS","OK Inserted $quantParamKeywordCnt rows in table RAD3.QuantificationParam for Cy5 and Cy3 quantification parameters");
 
   return (\@gusQuantParamsCy5, \@gusQuantParamsCy3);
 }
