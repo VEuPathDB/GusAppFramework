@@ -58,7 +58,7 @@ public class FixableSmallMap implements Map {
             Iterator it = entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry em = (Map.Entry) it.next();
-                if (key.equals((String)em.getKey())) {
+                if (key.equals(em.getKey())) {
                     return em.getValue();
                 }
             }
