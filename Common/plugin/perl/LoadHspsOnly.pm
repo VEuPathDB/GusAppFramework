@@ -131,6 +131,7 @@ sub run {
   
 
   my $args = $self->getArgs();
+
   my $algInv = $self->getAlgInvocation();
   my $dbh = $self->getDb()->getDbHandle();
 
@@ -148,7 +149,7 @@ sub run {
 
   $self->logArgs();
   $self->logCommit();
-
+  my $testNumber = $args->{testnumber};
   print "Testing on $args->{testnumber} queries\n" if $args->{testnumber};
 
   my %ignore = $self->handleRestart($args->{restartAlgInvs}, $dbh);
@@ -162,7 +163,7 @@ sub run {
   $self->{filteredSubjects} = 0;
   $self->{filteredHSPs} = 0;
 
-  $self->loadHspsInPlasmoGroups($self->getArg()->{batchSize});
+  $self->loadHspsInPlasmoGroups($args->{batchSize}, $testNumber);
   my $spanCount = $self->{spanCount};
   return "Loaded $spanCount HSPS for existing similarities";
 }
@@ -187,7 +188,7 @@ sub handleRestart {
 }
 
 sub loadHspsInPlasmoGroups{
-    my ($self, $batchSize) = @_;
+    my ($self, $batchSize, $testNumber) = @_;
     $self->log("loading hsps in batches of $batchSize");
     $self->log("loading matrix map");
     my $matrixMap = $self->loadMatrixMap();
@@ -209,6 +210,7 @@ sub loadHspsInPlasmoGroups{
     my $queryIndexId;
     my $counter = 0;
     my $globalCounter = 0;
+    my $queryCounter = 0;
     my $queryGusId;
     my @spansToSubmit;
     $self->log("parsing file");
@@ -216,12 +218,22 @@ sub loadHspsInPlasmoGroups{
 	my $line = $_;
 	if ($line =~ /^\>(\d+)\s/){
 	    $counter++;
+	    $queryCounter++;
 	    $queryGusId = $1;
+#	    $self->log("checking $queryGusId; counter is $counter and batch is $batchSize\n");
 	    if ($counter == $batchSize){
+	
 		$self->submitAndCommit(@spansToSubmit);
 		$counter = 0;
-		@spansToSubmit = [];
+		@spansToSubmit = ();
 	    }
+	    if ($globalCounter >= $testNumber){
+		$self->log ("done testing; test number is $testNumber");
+		
+		$self->submitAndCommit(@spansToSubmit);
+		last;
+	    }
+	    $self->log("processed $queryCounter queries") if ($queryCounter % 1000 == 0);
 	    $checkSubjects = 0;
 	    $queryIndexId = $gusToIndexMap->{$queryGusId};
 	    #die ("no query index id for gus id $queryGusId") unless $queryIndexId;
@@ -229,19 +241,20 @@ sub loadHspsInPlasmoGroups{
 		$groupKeys = $plasmoGroupMap->{$queryIndexId};
 		if ($groupKeys){  #query is in group that contains plasmo
 		    $checkSubjects = 1;
-		    print STDERR "sequence $queryIndexId (gus $queryGusId) is in a group that contains plasmo\n";
+		    #print STDERR "sequence $queryIndexId (gus $queryGusId) is in a group that contains plasmo\n";
 		}
 	    }
 	}
 	else {
 	    if ($checkSubjects){
-		if ($line =~ /HSP:\s(\d+):/){
+		if ($line =~ /HSP\d:\s(\d+):/){
 		    $globalCounter++;
-		    $self->log("loading HSP number $globalCounter\n") if ($globalCounter % 1000 == 0);
- 
+		    $self->log("loading HSP number $globalCounter") if ($globalCounter % 1000 == 0);
+
 		    my $subjectGusId = $1;
 		 
 		    my $subjectIndexId = $gusToIndexMap->{$subjectGusId};
+		    #print STDERR "checking subject $subjectGusId for query $queryGusId\n";
 		    #    die ("no subject index id for gus id $subjectGusId") unless $subjectIndexId;
 		    if ($subjectIndexId){
 			foreach my $key (keys %$groupKeys){  #foreach key for a group that has query
@@ -251,6 +264,7 @@ sub loadHspsInPlasmoGroups{
 				my $span = $self->parseSpan($line);
 				$span->{subjectGusId} = $subjectGusId;
 				$span->{queryGusId} = $queryGusId;
+			
 				push (@spansToSubmit, $span);
 				$finalSimCount++;  #note if more than one group has same subject/query Id, will be counted twice, so number will be high
 			    }
@@ -281,12 +295,16 @@ sub submitSpans{
     my ($self, @spansToSubmit) = @_;
     my $simQueryStmt = $self->getSimQueryStmt($self->getDb());
     my $spanStmt = $self->getInsertSpanStmt($self->getDb());
+    
     foreach my $span (@spansToSubmit){
+
 	my $subjectGusId = $span->{subjectGusId};
 	my $queryGusId = $span->{queryGusId};
 	my $simPk = $self->queryForSimId($subjectGusId, $queryGusId, $simQueryStmt);
+
 	$self->insertSpan($simPk, $span, $spanStmt);
     }
+    $self->log("submitted " . scalar (@spansToSubmit) . " spans; total spans submitted: " . $self->{spanCount});
 }
 
 sub getSimQueryStmt{
@@ -374,7 +392,7 @@ sub insertSpan{
 		    $span->{is_reversed}, $span->{reading_frame});
 
     $spanStmt->execute(@spanVals) || die $spanStmt->errstr;
-    $self->log("Inserting SimilaritySpan: ", @spanVals) if ($self->getVerbose());
+    $self->logVerbose("Inserting SimilaritySpan: ", @spanVals);
     $self->{spanCount} += 1;
 
 
@@ -466,11 +484,11 @@ sub loadMatrixMap{
 	if($_ =~/^(\d+)\s+(.+)/) {
 
 	    $key = $1;
-	    print STDERR "loading matrix map for key $key\n";
+#	    print STDERR "loading matrix map for key $key\n";
 	    $matrixMap->{$key} = $2;
 	}
  	else{
-	    print STDERR "appending matrix map for key $key\n";
+	#    print STDERR "appending matrix map for key $key\n";
 	    $matrixMap->{$key} .= $_;
 	    
 	}
@@ -499,12 +517,12 @@ sub getPlasmoGroupMap{
 	    }
 	}
 	if ($containsPlasmo){
-	    print STDERR "adding seqs to plasmo group for key $key: ";
+	    #print STDERR "adding seqs to plasmo group for key $key: ";
 	    foreach my $seq (@seqsInGroup){
 		$plasmoGroupMap->{$seq}->{$key} = 1;
-		print STDERR " $seq ";
+		#print STDERR " $seq ";
 	    }
-	    print STDERR "\n";
+	    #print STDERR "\n";
 	}
 	else {
 	    $otherCount++;
