@@ -94,6 +94,15 @@ sub new {
           isList => 0,
       }), 
 
+	  integerArg ({name  => 'log_frequency',
+	  descr => 'Frequency of entries in the file with which to write a line out to the log',
+	  reqd  => 0,
+          constraintFunc => undef,
+          isList => 0,
+          default => 1000,
+      }), 
+
+
 	  integerArg ({name  => 'instance_loe_id',
 	  descr => 'The line of evidence value for a GO Association Instance created for Associations that wil be loaded witht his plugin.',
 	  reqd  => 0,
@@ -183,10 +192,11 @@ sub run {
     $self->__loadOrgInfo($orgName);
     $self->__loadGlobalData($orgName);
 
+    my $logFrequency = $self->getCla()->{log_frequency};
+
     if ($self->getCla->{delete}){
 	$msg = $self->deleteAssociations();
     }
-
     else{
 
 	#deal with restart file line
@@ -209,6 +219,7 @@ sub run {
 
 	while(<$fh>){
 	    chomp;
+	    next if (/^!/);
 	    $counter++;
 	    last if ($self->getCla()->{test_number} && $counter > $self->getCla()->{test_number});
 
@@ -236,7 +247,8 @@ sub run {
 
 			undef(@currentEntries);
 		    }
-		    
+		    $self->log("processing entry with id " . $fileEntry->$idAccessor . "; total entries processed: $counter")
+			if ($logFrequency && ($counter % $logFrequency == 0));
 		    push (@currentEntries, $fileEntry);
 		    $currentSourceId = $nextSourceId;
 		}
