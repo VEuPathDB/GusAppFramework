@@ -165,16 +165,14 @@ sub run {
 
   }
 
-
+#really need to send ref of arrays
 # call deleting and updating subroutines
    $self->DeleteEvidence(@DTs,@DTSasEvidenceTarget);
    $self->UnmarkFullLength(@RemoveAsMarkedFL);
 
 
-#need this return to finish run of plugin adds result set attribute 
-
+#need this return to finish run of plugin adds result set attribute
   return "marked as full length";
-
 }
 
 
@@ -199,10 +197,10 @@ sub  DeleteEvidence   {
   my $dt;
 
   foreach $dt(@DTs) {
-    $seen2{$dt} = 1;
+    $seen{$dt} = 1;
   }
   foreach $dt(@DTSasEvidenceTarget) {
-    unless ($seen2{$dt}) {   #add to new array
+    unless ($seen{$dt}) {   #add to new array
      push (@diffArray, $dt);
     }
   }
@@ -211,7 +209,7 @@ sub  DeleteEvidence   {
   my $ids = scalar(@diffArray);
   print STDERR "number in diffarray= $ids\n";
 
-  foreach my $target_id (@diffArray2) {
+  foreach my $target_id (@diffArray) {
     my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
                                                     'attribute_name' =>"full_length_CDS"});
     if ($Evidence->retrieveFromDB()) {
