@@ -1,14 +1,15 @@
 <%@ taglib prefix="sample" tagdir="/WEB-INF/tags/local" %>
 <%@ taglib prefix="wdkq" uri="http://www.gusdb.org/taglibs/wdk-query-0.1" %>
 
-<sample:header banner="Simple Query 1" />
+<sample:header banner="Query Demo 2" />
 
-<p>This page has a simple, non-boolean query
+<p>This page has a simple, non-boolean query with a pre-set query
 <hr><p>
 
 
 <table>
 <wdkq:queryHolder name="form1"
+                  initQuery="TaxonName"
                   var="q">
 
 
