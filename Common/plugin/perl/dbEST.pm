@@ -69,6 +69,7 @@ sub new {
                    o => 'restart_number',
                    r => 0,
                  },
+		 
                  ];
   
   ## Initialize the plugin
@@ -372,9 +373,10 @@ sub insertEntry{
     #####################################################################
     ## This sequence entry does no0t exist. We must make it. 
     #####################################################################
+
+    my $externalDatabaseReleaseId = $M->getExternalDatabaseRelease();
     $seq = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $e->{gb_uid},
-                                                      #'external_database_release_id' => $DBEST_EXTDB_ID
-                                                      });
+                                                      'external_database_release_id' =>$externalDatabaseReleaseId });
     $seq->retrieveFromDB();
     $M->checkExtNASeq($e,$seq);
     $est->setParent($seq);
@@ -390,6 +392,46 @@ sub insertEntry{
     $M->getCla->{log_fh}->print($M->logAlert('INSERT/UPDATE', $e->{id_est}));
   }
   return $result;
+}
+
+sub getExternalDatabaseRelease{
+
+  my $M = shift;
+  my $dbh = $M->getQueryHandle();
+  
+  my $st = $dbh->prepare("select r.external_database_release_id 
+                          from sres.ExternalDatabase e, sres.ExternalDatabaseRelease r 
+                          where r.external_database_id = e.external_database_id 
+			  and r.version = 'continuous' and e.lowercase_name = 'dbest'");
+  $st->execute() || die $st->errstr;
+  
+  my ($external_db_rel_id) = $st->fetchrow_array();
+  
+  $st->finish();
+  $dbh->disconnect();
+  if ($external_db_rel_id) {
+    return $external_db_rel_id;
+  }
+  else {
+    my $name = 'dbEST';
+    my $lcname = lc $name;
+    
+    my $externalDatabase = GUS::Model::SRes::ExternalDatabase->new({"name" => $name,
+								    "lowercase_name" => $lcname});
+    $externalDatabase->retrieveFromDB();
+    
+    if (! $externalDatabase->getId()) {
+      $externalDatabase->submit();
+    }	
+    my $external_db_id = $externalDatabase->getId();
+    
+    my $version = 'continuous';	
+    
+    my $externalDatabaseRel = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'version'=>$version});
+    $externalDatabaseRel->submit();
+    $external_db_rel_id = $externalDatabaseRelRow->getExternalDatabaseReleaseId();
+    return $external_db_rel_id;
+  }
 }
 
 
