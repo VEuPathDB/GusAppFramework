@@ -1,0 +1,44 @@
+<?xml version="1.0"  encoding="ISO-8859-1" ?>
+<!DOCTYPE cfg SYSTEM "FileTranslatorCfg.dtd" >
+
+<!-- $Revision$ $Date$ $Author$ -->
+
+<cfg>
+  <inputs qualifier_row_present='0'>
+    <header>
+      <col header_val = 'Probe Set Name' req='1' name='probe_set_name' />
+      <col header_val='Stat Pairs'  name='stat_pairs' />
+      <col header_val='Stat Pairs Used'  name='stat_pairs_used' />
+      <col header_val='Signal'  req='1' name='signal' />
+      <col header_val='Detection'  req='1'  name='detection' />
+      <col header_val='Detection p-value'  req='1' name='detection_p_value' />
+    </header>
+  </inputs>
+
+  <outputs>
+    <map name='name'>
+      <in name='probe_set_name' />
+      <do> $probe_set_name </do>
+    </map>
+    <map name='stat_pairs'>
+      <in name='stat_pairs' />
+      <do> $stat_pairs </do>
+    </map>
+    <map name='stat_pairs_used'>
+      <in name='stat_pairs_used' />
+      <do> $stat_pairs_used </do>
+    </map>
+    <map name='signal'>
+      <in name='signal' />
+      <do> $signal </do>
+    </map>
+    <map name='detection'>
+      <in name='detection' />
+      <do> $detection </do>
+    </map>
+    <map name='detection_p_value'>
+      <in name='detection_p_value' />
+      <do> $detection_p_value </do>
+    </map>
+  </outputs>
+</cfg>
