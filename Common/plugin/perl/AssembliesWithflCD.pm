@@ -69,7 +69,7 @@ $self->logCommit();
 
 #NOTE FOR TESTING taxon set to human only FOR THIS Query and rownum
 
-my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8 and rownum < 10");
+my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8 and rownum < 15");
 
 #update considerations for DTs
 #those which still contain a RefSeq
@@ -228,6 +228,7 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
     my $DTarray_ref = @_;
 
+
     my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
 
     my @DTSasEvidenceTarget;
@@ -242,12 +243,12 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
     foreach my $target_id(@DTSasEvidenceTarget)  {
 
-      foreach (@$DTarray_ref)  {
+      foreach my $DT(@$DTarray_ref)  {
 
 
-       if ($target_id == $_){  next;  }
+       if ($target_id == $DT){  next;  }
 
-        if ($target_id != $_)  {
+        if ($target_id != $DT)  {
 
           my $dbh = $self->getQueryHandle();
 
