@@ -6,9 +6,8 @@
 ## Brian Brunk 01/05/2000
 
 use strict;
-use DBI;
 use Getopt::Long;
-use Objects::GUS::ObjRelP::DbiDatabase;
+use GUS::ObjRelP::DbiDatabase;
 use CBIL::Bio::SequenceUtils;
 
 my ($login,$password,$debug,$verbose,$outFile,$idSQL,$minLength,$database);
@@ -74,6 +73,6 @@ sub printSequence{
     return;
   }
 	my $defline = "\>".join(' ',@row)."\n";
-	print OUT $defline . SequenceUtils::breakSequence($sequence,60);
+	print OUT $defline . CBIL::Bio::SequenceUtils::breakSequence($sequence,60);
 }
 
