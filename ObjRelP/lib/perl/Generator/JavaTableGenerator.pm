@@ -116,7 +116,7 @@ sub _createSetChildRelations{
 	$output .= "\"$childSchema\", \"$childTable\", \"$fkcol\");\n";
     }
     $output .= "        }\n";
-    $output .= "        catch (Exception e) {}\n";
+    $output .= "        catch (Exception e) {System.err.println(e.getMessage());\ne.printStackTrace();\n}\n";
     $output .= "\n";
 
     return $output;
@@ -145,7 +145,7 @@ sub _createSetParentRelations{
 	#print STDERR "fk table is " . $fktab . " selfcol is " . $selfcol . "fkcol is " . $fkcol . "\n";
     }
     $output .= "        }\n";
-    $output .= "        catch (Exception e) {}\n";
+    $output .= "        catch (Exception e) {System.err.println(e.getMessage());\ne.printStackTrace();\n}\n";
     return $output;
 # SJD: WILL NEED TO ADD CODE TO CREATE SPECIAL RELS FOR JAVA!!!
 #  $temp .= $self->createSpecialRels($tn);   
@@ -282,7 +282,7 @@ sub _createJavaSetTAInfo{
 	Hashtable tableAtts = new Hashtable();
         try {
 $allInfo
-        } catch (Exception e) {}
+        } catch (Exception e) {System.err.println(e.getMessage());\ne.printStackTrace();\n}
         this.attributeInfo = tableAtts;
 
 END_SET_TA
