@@ -62,14 +62,15 @@ sub run {
         while (<$Input>){
 
           chomp;
-          my ($SOid, $Term, $definition) = split (/\t/, $_);
+
+       my ($SOid, $Term, $definition) = split (/\t/, $_);
 
       print STDERR "$SOid, $Term, $definition\n";
 
         $self->Insert($SOid,$Term,$definition);
         }
 
-
+     $Input->close;
 
         return "LoadedSOontologyFromFile";
 }
@@ -87,7 +88,7 @@ sub Insert {
 
    my $dbh = $self->getQueryHandle();
 
-  print STDERR "$SOid,$ontology_name, $so_version, $so_cvs_version, $Term, $definition\n";
+  #print STDERR "$SOid,$ontology_name, $so_version, $so_cvs_version, $Term, $definition\n";
 
   $dbh->do("INSERT into sres.SequenceOntology (so_id, ontology_name, so_version, so_cvs_version, term_name, definition) values ('$SOid', '$ontology_name', '$so_version', '$so_cvs_version', '$Term', '$definition')");
 
