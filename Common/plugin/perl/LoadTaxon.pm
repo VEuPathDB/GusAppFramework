@@ -22,7 +22,7 @@ use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::GeneticCode;
 
 
-my $dbh;
+
 my $count = 0;
 
 sub new {
@@ -68,15 +68,18 @@ sub new {
 }
 
 sub Run {
+
     my $M   = shift;
-    my $ctx = shift;
-    $dbh = $ctx->{'self_inv'}->getQueryHandle();
-    if (!$ctx->{'cla'}->{'names'} || !$ctx->{'cla'}->{'nodes'} || !$ctx->{'cla'}->{'gencode'}) {
-	print STDERR ("Provide the names of the names.dmp, nodes.dmp, and gencode.dmp files on the command line\n");
+
+    my $count = 0;
+
+    $dbh = $M->getQueryHandle();
+    if (!$M->getCla{'names'} || !$M->getCla{'nodes'} || !$M->getCla{'gencode'}) {
+	$M->log ("Provide the names of the names.dmp, nodes.dmp, and gencode.dmp files on the command line\n");
     }
     
-    print STDERR $ctx->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
-    print STDERR "Testing on $ctx->{'cla'}->{'testnumber'}\n" if $ctx->{'cla'}->{'testnumber'};
+    $M->log ($M->getCla{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n");
+    $M->log ("Testing on $M->getCla{'testnumber'}\n" if $M->getCla{'testnumber'});
 
     my $genCodes = &makeGeneticCode();
     
@@ -86,21 +89,23 @@ sub Run {
     
     my $rootAttArray = &getRootAttArray($genCodes);
 
-    &makeTaxonEntry($rootAttArray);
+    &makeTaxonEntry($rootAttArray, \$count = 0;);
     
-    if ($ctx->{'cla'}->{'restart'}) {
-	&getTaxonAtt($ctx->{'cla'}->{'restart'},$nodesHash);
+    if ($M->getCla{'restart'}) {
+	&getTaxonAtt($M->getCla{'restart'},$nodesHash,\$count);
     }
     else {
-	&getTaxonAtt($rootAttArray->[0],$nodesHash); 
+	&getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 
     }
     &makeTaxonName($namesDmp);
     
 }
 
 sub makeGeneticCode {
+
+    my $M   = shift;
     my %genCodes;  #$genCodes{ncbi_gencode_id}=GUS genetic_code_id
-    open (GENCODE,$ctx->{'cla'}->{'gencode'}) || die "Can't open gencode file\n";
+    open (GENCODE,$M->getCla{'gencode'}) || die "Can't open gencode file\n";
     while (<GENCODE>) {
 	chomp;
 	my @nodeArray = split(/\s*\|\s*/, $_);
@@ -131,14 +136,16 @@ sub makeGeneticCode {
 	}
 	$newGeneticCode->submit();
 	$genCodes{$ncbi_gencode_id} = $newGeneticCode->get('genetic_code_id');
-	$newGeneticCode->undefPointerCache();
+	$M->undefPointerCache();
     }
     return \%genCodes;
 }
 
-sub getNames { 
+sub getNames {
+
+    my $M   = shift;
     my %namesDmp;
-    open (NAMES,$ctx->{'cla'}->{'names'}) || die "Can't open names file\n";                   
+    open (NAMES,$M->getCla{'names'}) || die "Can't open names file\n";                   
     while (<NAMES>) {
 	chomp;
 	my @nameArray = split(/\s*\|\s*/, $_);
@@ -148,8 +155,10 @@ sub getNames {
 }
 
 sub makeNodesHash {
+
+    my $M   = shift;
     my %nodesHash; #nodesHash{parent ncbi tax_id}->{child ncbi tax_id}=(rank,genetic_code_id,mitochondrial_genetic_code_id) 
-    open (NODES,$ctx->{'cla'}->{'nodes'}) || die "Can't open nodes file\n";
+    open (NODES,$M->getCla{'nodes'}) || die "Can't open nodes file\n";
     while (<NODES>) {
 	chomp;
 	my @nodeArray = split(/\s*\|\s*/, $_);
@@ -170,6 +179,8 @@ sub makeNodesHash {
 }
 
 sub getRootAttArray {
+
+    my $M   = shift;
     my ($genCodes) = @_;
     my $tax_id=1;
     my $rank='no rank';
@@ -181,13 +192,15 @@ sub getRootAttArray {
 }
 
 sub makeTaxonEntry {
-    my ($attArray) = @_;
+
+    my $M   = shift;
+    my ($attArray, $count) = @_;
     my $tax_id = $attArray->[0];
     my $rank = $attArray->[1];
     my $parent_id = $attArray->[2];
     my $gen_code = $attArray->[3];
     my $mit_code = $attArray->[4];
-
+    
     my $newTaxon  = GUS::Model::SRes::Taxon->new({'ncbi_tax_id'=>$tax_id});
     $newTaxon ->retrieveFromDB();
     
@@ -206,40 +219,46 @@ sub makeTaxonEntry {
     
     
     $newTaxon->submit();
-    $newTaxon->undefPointerCache();
-    print STDERR ("processed ncbi_tax_id : $tax_id\n");
-    $count++;
-    my $time = `date`;
-    if ($count % 100 == 0) {
-	print STDERR ("Number processed: $count   $date");
+    $M->undefPointerCache();
+    $M->log ("processed ncbi_tax_id : $tax_id\n");
+    $$count++;
+    if ($$count % 100 == 0) {
+	$M->log ("Number processed: $count");
     }
 }
 
 
 sub getTaxonAtt {
-  my ($parent_tax_id,$nodesHash) = @_;
-  foreach my $tax_id (keys %{$nodesHash->{$parent_tax_id}}) {
-    my $parent_taxon_id = &getTaxon($parent_tax_id);
-    my $rank = $nodesHash{$parent_tax_id}->{$tax_id}[0];
-    my $gen_code = $nodesHash{$parent_tax_id}->{$tax_id}[1];
-    my $mit_code = $nodesHash{$parent_tax_id}->{$tax_id}[2];
-    my @attArr=($tax_id,$rank,$parent_taxon_id,$gen_code,$mit_code);
-    &makeTaxonEntry(\@attArr);
-    &getTaxonAtt($tax_id);
-  }
+    
+    my $M   = shift;
+    my ($parent_tax_id,$nodesHash,$count) = @_;
+    foreach my $tax_id (keys %{$nodesHash->{$parent_tax_id}}) {
+	my $parent_taxon_id = &getTaxon($parent_tax_id);
+	my $rank = $nodesHash{$parent_tax_id}->{$tax_id}[0];
+	my $gen_code = $nodesHash{$parent_tax_id}->{$tax_id}[1];
+	my $mit_code = $nodesHash{$parent_tax_id}->{$tax_id}[2];
+	my @attArr=($tax_id,$rank,$parent_taxon_id,$gen_code,$mit_code);
+	&makeTaxonEntry(\@attArr,$count);
+	&getTaxonAtt($tax_id,$nodesHash,$count);
+    }
 }
 
 sub getTaxon{
-  my ($tax_id) = @_;
-  my $taxon_id;
-  my $st = $dbh->prepare("select taxon_id from taxon where ncbi_tax_id = ?");
-  $st->execute($tax_id);
-  $taxon_id = $st->fetchrow_array();
-  $st->finish();
-  return $taxon_id;
+    
+    my $M   = shift;
+    my ($tax_id) = @_;
+    my $taxon_id;
+    my $dbh = $M->getQueryHandle();
+    my $st = $dbh->prepare("select t.taxon_id from sres.taxon t where t.ncbi_tax_id = ?");
+    $st->execute($tax_id);
+    $taxon_id = $st->fetchrow_array();
+    $st->finish();
+    return $taxon_id;
 }
 
 sub makeTaxonName {
+
+    my $M   = shift;
     my ($namesDmp) = @_; 
     my $num = 0;
     foreach my $tax_id (keys %$namesDmp) {
@@ -259,13 +278,13 @@ sub makeTaxonName {
 			$newTaxonName->set('name_class',$name_class);
 		    }
 		    $newTaxonName->submit();
-		    $newTaxonName->undefPointerCache();
+		    $M->undefPointerCache();
 		    $num++;
 		}
 	    }
 	}
     }
-    print STDERR ("$num taxon names processed\n");
+    $M->log ("$num taxon names processed\n");
 }
 
 
