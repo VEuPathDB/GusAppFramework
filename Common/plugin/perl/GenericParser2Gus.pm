@@ -75,9 +75,6 @@ use GUS::Common::Bioperl2Gus;
 use Bio::Location::Simple;
 use Bio::SeqIO;
 
-# BioPSU
-use Bio::PSU::IO::BufferFH;
-
 my $logdir = "/tmp/"; # Not sure how useful this log is...
 
 # OUTPUT_AUTOFLUSH forced
@@ -557,123 +554,10 @@ sub parseOneSequenceFile {
 
   # Basic Seq factory object - direct stream from file
   
-  if ($fileType ne "embl") {
+  my $in  = Bio::SeqIO->new('-file'   => $fileName,
+                            '-format' => $fileType);
+  return $in->next_seq();
 
-    my $in  = Bio::SeqIO->new('-file'   => $fileName,
-			      '-format' => $fileType);
-    return $in->next_seq();
-
-  }
-  else {
-    
-    # more complex seq factory - stream the file into a temporary buffer where the some lines are filtered
-    # e.g. if DR line or XX line before ID line, get rid of them as bioperl expects embl files to start with an ID line !!
-    
-    my $biopsu_fh  = Bio::PSU::IO::BufferFH->new(-file => $fileName);
-    
-    my $line = $biopsu_fh->buffered_read;
-    if ($line =~ /^ID/) {
-      # the file starts with an ID line which is fine !!
-
-      print STDERR "ID line fine!!!\n";
-      ## process it normally
-
-      # undef $biopsu_fh;
-      #my $in  = Bio::SeqIO->new('-file'   => $fileName,
-      #				'-format' => $fileType);
-      #return $in->next_seq();
-
-      my $tmp_fh = IO::File->new_tmpfile() or die "can't create a temporary file, $!\n";
-      print $tmp_fh "$line\n";
-      my $has_FH = 0;
-      
-      while ($line = $biopsu_fh->buffered_read) {
-	if ($line =~ /^FH/) {
-	  $has_FH = 1;
-	}
-	if ($line =~ /^FT   source/) {
-	  print STDERR "source feature found, $line!!\n";
-	
-	  # if not FH line present, add it just before the source feature
-	  if (! $has_FH) {
-	    
-	    print STDERR "no FH line, adding it!\n";
-
-	    print $tmp_fh "FH   Key             Location/Qualifiers\n";
-	    #print $tmp_fh "FH\n";
-	  }
-	  
-	  # add 'FT   source' line
-	  print $tmp_fh "$line\n";
-	}
-	else {
-	  print $tmp_fh "$line\n";
-	}
-      }
-
-      undef $biopsu_fh;
-      seek ($tmp_fh, 0, 0);
-      my $sembl    = Bio::SeqIO->new('-fh'   => $tmp_fh,
-				     '-format' => 'embl');
-      
-      return $sembl->next_seq();
-      
-    }
-    else {
-      # doesn't start with an ID line
-      # filter the lines until ID line
-      
-      my $tmp_fh = IO::File->new_tmpfile() or die "can't create a temporary file, $!\n";
-
-      print STDERR "file doesn't start with an ID line!!!\n";
-      
-      while (defined $line && not ($line =~ /^ID/)) {
-	$line = $biopsu_fh->buffered_read;
-      }
-      
-      if (defined $line) {
-	print STDERR "got it!! - line: $line\n";
-	
-	# Finally found the ID line!!
-	print $tmp_fh "$line\n";
-
-	my $has_FH = 0;
-	
-	while ($line = $biopsu_fh->buffered_read) {
-	  if ($line =~ /^FH/) {
-	    $has_FH = 1;
-	  }
-	  if ($line =~ /^FT   source/) {
-	    # if not FH line present, add it just before the source feature
-	    if (! $has_FH) {
-	      
-	      print STDERR "no FH line, adding it!\n";
-	      
-	      print $tmp_fh "FH   Key             Location/Qualifiers\n";
-	      #print $tmp_fh "FH\n";
-	    }
-
-	    # add 'FT   source' line
-	    print $tmp_fh "$line\n";
-	  }
-	  else {
-	    print $tmp_fh "$line\n";
-	  }
-	}
-      }
-      else {
-	print STDERR "no ID line found in embl file, $fileName!!!\n";
-      }
-      
-      undef $biopsu_fh;
-      seek ($tmp_fh, 0, 0);
-      my $sembl    = Bio::SeqIO->new('-fh'   => $tmp_fh,
-				     '-format' => 'embl');
-      
-      return $sembl->next_seq();
-      
-    }
-  }
 }
 
 
