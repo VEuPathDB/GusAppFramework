@@ -68,7 +68,7 @@ sub setGlobalDeleteSimilarityOnDelete {
   my($self,$val) = @_; 
   $self->getDatabase()->setGlobalDeleteSimilarityOnDelete($val); 
 }
-sub getGlobalDeleteSimilarityOnDelete { my($self) = @_; return $self->getDatabase()->getGlobalDeleteSimilarity(); }
+sub getGlobalDeleteSimilarityOnDelete { my($self) = @_; return $self->getDatabase()->getGlobalDeleteSimilarityOnDelete(); }
 ##also instance variable...default is to always delete evidence
 sub setDeleteSimilarityOnDelete { my($self,$val) = @_; $self->{deleteSimilarity} = $val; }
 sub getDeleteSimilarityOnDelete { my($self) = @_; return $self->{deleteSimilarity}; }
@@ -1628,9 +1628,9 @@ sub submit {
       $self->version();         ##should distinguish things that can version vs those that can't
       $self->getDatabase()->incrementTotalDeletes();
       ##need to also delete all evidence for this entry!!
-      $self->deleteAllEvidence(undef,1) if ($self->{deleteEvidence} && $self->getDatabase()->getGlobalDeleteEvidence());
+      $self->deleteAllEvidence(undef,1) if ($self->{deleteEvidence} && $self->getDatabase()->getGlobalDeleteEvidenceOnDelete());
       ##SimilarityFacts
-      $self->deleteOrRepointAllSimilarityFacts(1) if ($self->hasSequence() && $self->getDatabase()->getGlobalDeleteSimilarity() && $self->{deleteSimilarity}); ##want to also delete the Spans
+      $self->deleteOrRepointAllSimilarityFacts(1) if ($self->hasSequence() && $self->getDatabase()->getGlobalDeleteSimilarityOnDelete() && $self->{deleteSimilarity}); ##want to also delete the Spans
 
       ##submitList of other things to be submitted on submit..
       $self->submitSubmitList();
