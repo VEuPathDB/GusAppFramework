@@ -125,7 +125,7 @@ my $prim_key;
 $| = 1;
 
 sub run {
-  my $M   = shift;
+  my $self   = shift;
   $ctx = shift;
 
   if (!$ctx->{cla}->{regex_source_id}){
@@ -176,7 +176,7 @@ sub run {
   }
 
   #	my $sql = "select $prim_key from ExternalNASequence where source_id = '$source_id' and external_db_id = $ctx->{cla}->{'external_db_id'}";
-  my $oracleName = $M->className2oracleName($ctx->{cla}->{table_name});
+  my $oracleName = $self->className2oracleName($ctx->{cla}->{table_name});
   $checkStmt = $ctx->{self_inv}->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $self->{external_database_release_id}");
   
   my $source_id;
@@ -239,7 +239,7 @@ sub run {
       $seq .= $_;
     }
   }
-  &process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq) if ($source_id);
+  $self->process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq) if ($source_id);
 
 
   # return status
@@ -253,7 +253,7 @@ sub run {
 ##SUBS
 
 sub process {
-  my($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$sequence) = @_;
+  my($self, $source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$sequence) = @_;
 #    print STDERR "process($source_id,$secondary_id,$name,$description,$sequence)\n";
   my $id;
   $id = &checkIfHave($source_id) unless $ctx->{cla}->{no_check};
@@ -271,7 +271,7 @@ sub process {
     $aas->setSequence($sequence) if $sequence;
   } else {
     return if $id;		##already have and am not updating..
-    $aas = &createNewExternalSequence($source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence);
+    $aas = $self->createNewExternalSequence($source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence);
   }
 
   $aas->submit() if $aas->hasChangedAttributes();
@@ -284,7 +284,7 @@ sub process {
 
 
 sub createNewExternalSequence {
-  my($source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence) = @_;
+  my($self, $source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence) = @_;
   my $className = "GUS::Model::$ctx->{cla}->{table_name}";
   $className =~ /GUS::Model::\w+::(\w+)/ || die "can't parse className";
   my $tbl = $1;
