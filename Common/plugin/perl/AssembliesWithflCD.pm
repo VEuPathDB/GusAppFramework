@@ -162,7 +162,7 @@ print STDERR "MarkedDT.$id,DT.$na_seq\n";
 
    }
 
-next;
+
 
 #    if ($id != $na_seq) {
     else {
@@ -182,7 +182,7 @@ next;
 
  }
 
-
+next;
   }
 
 }
