@@ -552,13 +552,13 @@ sub deleteFromNRDB {
   my $login = $self->getArgs()->{temp_login};
   my %nrdbId;
   my $sql1 = "select n.nrdb_entry_id from dots.nrdbentry n, $login" . ".NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_db_rel_id";
-  my $st1 = $dbh->prepareAndExecute($sql1) || die "SQL failed: $sql\n";
+  my $st1 = $dbh->prepareAndExecute($sql1) || die "SQL failed: $sql1\n";
   while (my ($nrdb_entry_id) = $st1->fetchrow_array) {
     $nrdbId{$nrdb_entry_id} = 1;
   }
   $st1->finish();
   my $sql2 = "select nrdb_entry_id from dots.nrdbentry where external_database_release_id in ($rel_list)";
-  my $st2 = $dbh->prepareAndExecute($sql2) || die "SQL failed: $sql\n";
+  my $st2 = $dbh->prepareAndExecute($sql2) || die "SQL failed: $sql2\n";
   while (my ($nrdb_entry_id) = $st2->fetchrow_array) {
     if ($nrdbId{$nrdb_entry_id} != 1) {
       $num_delete++;
