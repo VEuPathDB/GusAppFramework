@@ -57,7 +57,7 @@ sub new {
 	  t => 'string',
        },
        {  o => 'file_list',
-	  h => 'File containing new line separated list of FASTA files (to be used in place of --fasta_files)',
+	  h => 'File containing new line separated list of FASTA files (to be used in place of --fasta_files).',
 	  t => 'string',
        },
        { 
@@ -66,6 +66,11 @@ sub new {
 	   t => 'string',
 	   d => '^>(\S+)',
        },
+       {  o => 'source_id_lookup_table',
+	  h => 'GUS table from which to lookup na_sequence_id for source_id.',
+	  t => 'string',
+	  d => 'DoTS.VirtualSequence',
+       },       
        ];
 
   $self->initialize({requiredDbVersion => {},
@@ -96,6 +101,7 @@ sub run {
     my @fastaFiles = &getFastaFilesArray($fastaFiles, $fileList);
     my $extDbRelId = $cla->{'external_database_release_id'};
     my $srcid_regex = $cla->{'source_id_regex'};
+    my $srcid_lookup_table = $cla->{'source_id_lookup_table'};
 
     # Maximum amount of sequence to buffer on the client side before writing
     # it into the database.
@@ -105,7 +111,7 @@ sub run {
     # SQL statement used to retrieve the sequence to update, based on the
     # source_id parsed out of the FASTA file's defline.
     #
-    my $SEQ_SQL = "select na_sequence_id from DoTS.ExternalNASequence "
+    my $SEQ_SQL = "select na_sequence_id from $srcid_lookup_table "
 	. "where external_database_release_id = $extDbRelId and source_id = ? ";
 
     my $seqLookup = $dbh->prepare($SEQ_SQL);
