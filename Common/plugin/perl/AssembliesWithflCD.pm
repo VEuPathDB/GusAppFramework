@@ -409,7 +409,7 @@ sub  UnMarkAssembliesAsFrameFinderFL  {
 
 }
 
-
+}
 
 #delete feature evidence from the evidence table
 
