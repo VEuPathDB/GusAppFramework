@@ -692,13 +692,20 @@ sub create_or_update_implementation {
 
   # we want to create a new Algorithm
   if ($U ) {
-#    $M->connect_to_database($pu);
- #   $M->findImplementation($pu);
-  #  if ($pu->getImplementation()->getCvsRevision() eq $pu->getCVSRevision()) {
-#      print STDERR "Error: $plugin_name_s with CVS revision $cvsRevision is already registered.  You don't need to do a +update.\n";
-#      $M->doMajorMode_History($C);
- #     exit 0;
-   # }
+
+    my $sql =
+      "SELECT *
+       FROM Core.AlgorithmImplementation
+       WHERE executable = '$plugin_name_s'
+       AND cvs_revision    = '$cvsRevision'";
+    print STDERR "$sql\n";
+
+    my $imps = $M->sql_get_as_hash_refs($sql);
+
+    if (scalar(@$imps) !=0) {
+      print STDERR "Error:   $plugin_name_s with CVS revision $cvsRevision is already registered.  You don't need to do a +update.\n";
+      exit 0;
+    }
   } else {
 
     # algorithm already exists; tell user about it.
