@@ -57,9 +57,6 @@ sub run {
 
   my $overheadInsertCount = $self->getSelfInv->getTotalInserts();
 
-   ##testing exitOnFailure...
-  $self->getDb()->setExitOnSQLFailure(0); 
-
   my $fh = FileHandle->new('<'.$self->getCla->{'filename'});
   if ($fh) {
 
