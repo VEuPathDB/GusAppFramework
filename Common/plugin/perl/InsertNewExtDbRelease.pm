@@ -219,8 +219,8 @@ sub getExtDbId{
     my ($self, $name, ) = @_;
 
     my $queryHandle = $self->getQueryHandle();
-
-    my $sql = "select external_database_id from SRes.ExternalDatabase where name = '$name'";
+	my $lcName = lc($name);
+    my $sql = "select external_database_id from SRes.ExternalDatabase where lower(name) = '$lcName'";
 
     my $sth = $queryHandle->prepareAndExecute($sql);
    
