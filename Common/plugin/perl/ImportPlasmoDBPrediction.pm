@@ -221,7 +221,9 @@ sub run {
       }
 		
     }else{
-      ## ELSE GET THE NASEQUENCE OBJECT FOR THE CONTIG, USING SOURCE_ID
+      ## ELSE GET THE NASEQUENCE OBJECT FOR THE CONTIG, USING SOURCE_ID (if specified)
+      ## OR SEQUENCE NAME ($key; which should be the same as source_id)
+
       $self->log( "II no na_sequence_id provided for source_id $key. Querying database ...") if $debug;
       my $sql="SELECT s.*  FROM dots.ExternalNASequence s, dots.ProjectLink pl WHERE s.source_id=? AND pl.table_id = 89 AND pl.id = s.na_sequence_id AND pl.project_id = ?";
 
@@ -302,11 +304,11 @@ sub run {
       ######
       my $regulation;
       if ($gphase!=0){
-	if ($gmethod!~/phat/i){
-	  $regulation = (3-$gphase);
+	if ($gmethod=~m/phat/i){
+	  $regulation = $gphase;     ## in the case of PHAT
 	}else{
-	  $regulation = $gphase;
-	} 
+	  $regulation = (3-$gphase); ## in the case of GlimmerM and Genefinder
+	}
       }else{
 	$regulation=0;
       }
@@ -330,7 +332,6 @@ sub run {
       $gf->setReviewStatusId(0);
       $gf->setGeneType('protein_coding');
       $gf->setSourceId($ggenename);
-      $gf->setName($ggenename);
       $self->log("II Setting gf->source_id to $ggenename") if $debug;
       $gf->setPredictionAlgorithmId($method{$gmethod});
       $gf->setNumberOfExons($gnumexons);
@@ -375,15 +376,17 @@ sub run {
 	  $score  = ($equality eq "na") ? undef : $equality;
 	
 	  my $exon = GUS::Model::DoTS::ExonFeature->new({
-						      'name'              => 'ExonFeature',
-						      'na_sequence_id'    => $naseq->getNaSequenceId(),
-						      'is_predicted'      => 1,
-						      'review_status_id'  => 0,
-						      'is_initial_exon'   => $is_initial,
-						      'is_final_exon'     => $is_final,
-						      'order_number'      => $eorder,
-						      'coding_start'      => 1,
-						      'reading_frame'     => $etransl_start
+							 'name'              => 'ExonFeature',
+							 'na_sequence_id'    => $naseq->getNaSequenceId(),
+							 'is_predicted'      => 1,
+							 'review_status_id'  => 0,
+							 'is_initial_exon'   => $is_initial,
+							 'is_final_exon'     => $is_final,
+							 'order_number'      => $eorder,
+							 'coding_start'      =>	$etransl_start,
+							 #'coding_start'      => 1,
+							 'reading_frame'     => $etransl_start,
+							 'source_id'         => $ggenename."_e".$eorder          #set source_id to that of gene + exon_ordernumber
 						     });
 	
 	  $exon->setScore($score) if $score;
@@ -414,7 +417,7 @@ sub run {
 	#####
 	##### TEMP WORKAROUND FOR VIVAX DATA
 	#####
-	$gf->makePredictedRnaToProtein(undef, $extDbRelId ,  "Pv_".$key ); #for genuine plugin comment/uncomment this section
+	$gf->makePredictedRnaToProtein(undef, $extDbRelId ,  $ggenename ); #for genuine plugin comment/uncomment this section
 	#$gf->makePredictedRnaToProtein(undef, $extDbRelId ,$key );
 
 
@@ -433,19 +436,18 @@ sub run {
 	
 
       $gf->submit();
-      $self->undefPointerCache();
       $genecount++;
       $self->log( "II genecount $genecount") if $debug;
 
+
       #limit the test to a number of genes for testing
-      if ( ( $self->getArgs()->{'testnumber'} )  &&  ($genecount > $self->getArgs()->{'testnumber'} )  ) {
-	$self->log( "II Reached number " . $self->getArgs()->{'testnumber'} . ". Aborting...") ;
-	last;
-      }
+      last if ( ( $self->getArgs()->{'testnumber'} )  &&  ( $genecount > $self->getArgs()->{'testnumber'} )  );
+
+      $self->undefPointerCache();
 
     } #end foreach gene 
+    last if ( ( $self->getArgs()->{'testnumber'} )  &&  ( $genecount > $self->getArgs()->{'testnumber'} )  );
     $contigcount++;
-
   } # end foreach contig (keys)
   my $results = "Processed " . $contigcount ." contig(s) with $genecount gene features and a total of " . $exoncount . " exon features\n\n";
   return $results;
