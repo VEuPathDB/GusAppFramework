@@ -1,0 +1,65 @@
+package org.gusdb.model.SRes;
+
+import java.util.*;
+
+import org.gusdb.objrelj.*;
+
+/** 
+ * Taxon.java
+ *
+ * Created: Fri Apr 25 09:43:42 EDT 2003
+ *
+ * @author Jonathan Crabtree
+ * @version $Release$ $Date$ $Author$
+*/
+
+public class Taxon extends Taxon_Row {
+
+    // Constructor
+    public Taxon () {}
+
+    /**
+     * Retrieve the TaxonName entry with the specified name_class (e.g. "scientific name")
+     * from the database (if not already in memory.)
+     */
+    public String getTaxonName(ServerI server, String session, String name_class) {
+	try {
+	    server.retrieveChildren(session, this, "SRes", "TaxonName", "taxon_id");
+	} 
+	catch (GUSNoConnectionException gnce) {
+	    System.err.println(gnce);
+	}
+	catch (GUSNoSuchRelationException gnsr) {
+	    System.err.println(gnsr);
+	}
+	return this.getTaxonName(name_class);
+    }
+
+    /**
+     * Retrieve the TaxonName entry with the specified name_class (e.g. "scientific name").
+     * Does NOT query the database.
+     */
+    public String getTaxonName(String name_class) {
+	if (name_class == null) throw new IllegalArgumentException();
+
+	// TO DO - there should be a method in GUSRow that returns only the children
+	// of a specified class.
+	//
+	Vector kids = this.getAllChildren();
+
+	int nk = kids.size();
+	
+	for (int i = 0;i < nk;++i) {
+	    GUSRow gr = (GUSRow)(kids.elementAt(i));
+
+	    if (gr instanceof TaxonName) {
+		TaxonName tn = (TaxonName)gr;
+		if (tn.getNameClass().equals(name_class)) {
+		    return tn.getName();
+		}
+	    }
+	}
+	return null;
+    }
+
+} // Taxon
