@@ -36,8 +36,9 @@
                                            GUS/ObjRelP-Installation, 
                                            GUS/Pipeline-Installation, 
                                            GUS/PluginMgr-Installation, 
-                                           GUS/WebDevKit-Installation, 
-                                           GUS/SchemaBrowser-Installation"> 
+                                           GUS/ReportMaker-Installation, 
+                                           GUS/SchemaBrowser-Installation,
+					   GUS/WebDevKit-Installation"> 
     <ant target="defaultProjectInstall"/>
   </target>
 
@@ -72,7 +73,7 @@
       <property name="component" value="Model"/>
       
       <!-- uncomment the following line to stop java compiling -->
-<!--      <property name="skipJava" value="true"/>   -->
+      <property name="skipJava" value="true"/>   
      </ant>
 
   </target>  
@@ -174,10 +175,11 @@
      </delete>
      <echo message="generating Perl Objects"/>
 
-     <exec executable="generateGusObjects" 
-           failonerror="true">
-       <arg value="--javaOrPerl=perl"/>
-     </exec>
+      <exec executable="generateGusObjects" 
+            failonerror="true">
+        <arg value="--javaOrPerl=perl"/>
+      </exec>
+
    </target>  
 
    <target name="perlManuallyEditedModel" depends="ProjectTree,
@@ -325,7 +327,14 @@
       <property name="component" value="PluginMgr"/>
     </ant>
   </target>
-
+  
+  <target name="GUS/ReportMaker-Installation" depends="ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="project" value="GUS"/>
+      <property name="component" value="ReportMaker"/>
+    </ant>
+  </target>
+  
   <target name="GUS/SchemaBrowser-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
