@@ -110,12 +110,10 @@ sub process {
 	my $self = shift;
 	my ($table_nm, $attribute_nm, $html_dc) = @_;
 	$self->logVerbose("Reading table: $table_nm\tAttribute: $attribute_nm\tDocumentation: $html_dc");
-
 	my $verbose = $self->getCla->{verbose};
 	my $db = $self->getDb;
         $db->setGlobalNoVersion(1);
 #	my $doc = GUS::Model::Core::DatabaseDocumentation->new();
-
 	$self->logVerbose("Created new DatabaseDocumentation object");
 
 	############################### TEST
@@ -126,7 +124,7 @@ sub process {
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
 		$doc->setHtmlDocumentation($html_dc);
 		$doc->retrieveFromDB();
-		if ($doc->get('html_documentation') ne $html_dc) {
+		if ($doc->setHtmlDocumentation($html_dc) ne $html_dc) {
 		    $doc->set('html_documentation', $html_dc);
 		    $doc->submit();
 		    $self->logVerbose("Submitted new DatabaseDocumentation object: $table_nm.$attribute_nm\t$html_dc");
@@ -177,9 +175,9 @@ sub process {
 #			$html = $ary[2]; #queried html documentation
 
 #			$self->logAlert("tb_id: $tb_id\tatt_name: $att_name\thtml: $html\n"); ###TEST###
-			
+
 #			if ($html eq $html_dc){
-			    
+
 #			    $self->logAlert("html: $html and html_dc: $html_dc are equal\n"); ###TEST###
 
 #			    $self->logAlert("ALREADY EXISTS! Documentation for column $table_nm" .
@@ -231,7 +229,6 @@ sub process {
 #		    $self->logAlert("NOT INSERTED! $attribute_nm is not a valid attribute for $table_nm");
 #		    return; # SKIP
 #		}
-
 		    
 #	    } # end if $attribute_nm NOT NULL
 
@@ -270,7 +267,7 @@ sub process {
 #			## bind table id to DatabaseDocumentation object
 #			$doc->setTableId($doc->getTableIdFromTableName($table_nm));
 #			$self->logVerbose("Set table ID");
-			
+
 #			## bind html documentation to DatabaseDocumentation object
 #			$doc->setHtmlDocumentation($html_dc);
 #			$self->logVerbose("Set HTML Documentation");
@@ -292,7 +289,6 @@ sub process {
 #	  return;
 #	}
 	$db->setGlobalNoVersion(0);
-	
 } # end sub process
 1;
 
