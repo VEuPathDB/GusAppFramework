@@ -1,5 +1,15 @@
-sub createDoTSTranscriptReport {
-  my ($rnaTempTable) = @_;
+package GUS::ReportMaker::SampleTranscriptReportConfig;
+
+our @ISA = qw(Exporter);
+our @EXPORT = qw(createReport getPrimaryKeyColumn);
+
+use strict;
+use GUS::ReportMaker::DefaultColumn;
+use GUS::ReportMaker::Query;
+use GUS::ReportMaker::Report;
+
+sub createReport {
+  my ($tempTable, $primaryKeyName, $mappedToName) = @_;
 
   my @columns;
 
@@ -67,75 +77,76 @@ sub createDoTSTranscriptReport {
   push(@columns, $mgiCol);
 
   my $assemSql = 
-"select distinct a.na_sequence_id, description, scientific_name, length,
+"select distinct tmp.$primaryKeyName, description, tn.name, length,
 number_of_contained_sequences as seqs_in_assem, contains_mrna
-from gusdev.Assembly a, gusdev.Taxon ta, $rnaTempTable tmp
-where a.na_sequence_id = tmp.na_sequence_id
-and ta.taxon_id = a.taxon_id
+from DoTS.Assembly a, Sres.TaxonNAme tn, $tempTable tmp
+where a.na_sequence_id = tmp.$primaryKeyName
+and tn.taxon_id = a.taxon_id
+and tn.name_class = 'scientific name'
 ";
   my $assemQuery = 
     GUS::ReportMaker::Query->new($assemSql,
-				 [$descriptionCol->getName(),
-				  $organismCol->getName(),
-				  $lengthCol->getName(),
-				  $seqsInAssemCol->getName(),
-				  $containsmRNACol->getName(),
+				 [$descriptionCol,
+				  $organismCol,
+				  $lengthCol,
+				  $seqsInAssemCol,
+				  $containsmRNACol,
 				 ]);
 
   my $locuslinkSql = 
-"select distinct tmp.na_sequence_id, dbref.primary_identifier as locuslink
-from gusdev.DbRefNASequence dbrnas, gusdev.DbRef dbref, $rnaTempTable tmp
-where dbrnas.na_sequence_id = tmp.na_sequence_id
+"select distinct tmp.$primaryKeyName, dbref.primary_identifier as locuslink
+from dots.DbRefNASequence dbrnas, sres.DbRef dbref, $tempTable tmp
+where dbrnas.na_sequence_id = tmp.$primaryKeyName
 and dbref.db_ref_id  = dbrnas.db_ref_id
-and dbref.external_db_id = 6095
+and dbref.external_database_release_id = 6095
 ";
   my $locuslinkQuery = 
     GUS::ReportMaker::Query->new($locuslinkSql,
-				 [$locusLinkCol->getName(),
+				 [$locusLinkCol,
 				 ]);
 
 
   my $genecardsSql =
-"select distinct tmp.na_sequence_id, dbref.primary_identifier as genecards
-from gusdev.DbRefNASequence dbrnas, gusdev.DbRef dbref, $rnaTempTable tmp
-where dbrnas.na_sequence_id = tmp.na_sequence_id
+"select distinct tmp.$primaryKeyName, dbref.primary_identifier as genecards
+from dots.DbRefNASequence dbrnas, sres.DbRef dbref, $tempTable tmp
+where dbrnas.na_sequence_id = tmp.$primaryKeyName
 and dbref.db_ref_id  = dbrnas.db_ref_id
-and dbref.external_db_id = 4892
+and dbref.external_database_release_id =4892
 ";
   my $genecardsQuery =
     GUS::ReportMaker::Query->new($genecardsSql,
-				 [$geneCardsCol->getName(),
+				 [$geneCardsCol,
 				 ]);
 
 
   my $mgiSql =
-"select distinct tmp.na_sequence_id, dbref.primary_identifier as genecards
-from gusdev.DbRefNASequence dbrnas, gusdev.DbRef dbref, $rnaTempTable tmp
-where dbrnas.na_sequence_id = tmp.na_sequence_id
+"select distinct tmp.$primaryKeyName, dbref.primary_identifier as MGI
+from dots.DbRefNASequence dbrnas, sres.DbRef dbref, $tempTable tmp
+where dbrnas.na_sequence_id = tmp.$primaryKeyName
 and dbref.db_ref_id  = dbrnas.db_ref_id
-and dbref.external_db_id = 4893
+and dbref.external_database_release_id =4893
 ";
   my $mgiQuery =
     GUS::ReportMaker::Query->new($mgiSql,
-				 [$mgiCol->getName(),
+				 [$mgiCol,
 				 ]);
 
 
   my $geneSql = 
-"select distinct tmp.na_sequence_id, g.gene_id as dots_gene, 
+"select distinct tmp.$primaryKeyName, g.gene_id as dotsgene, 
 g.name as genesymbol
-from gusdev.RNA r, $rnaTempTable tmp, gusdev.RNASequence rs, 
-     gusdev.NAFeature naf, gusdev.TranscriptUnit tu, gusdev.Gene g 
-where     naf.na_sequence_id = tmp.na_sequence_id
-and       rs.na_feature_id  = naf.na_feature_id
-and         r.rna_id  = rs.rna_id
-and           tu.transcript_unit_id  = r.transcript_unit_id 
-and             g.gene_id  = tu.gene_id 
+from dots.RNA r, $tempTable tmp, dots.RNAInstance ri, 
+     dots.NAFeature naf, dots.Gene g 
+where     naf.na_sequence_id = tmp.$primaryKeyName
+and       ri.na_feature_id  = naf.na_feature_id
+and         r.rna_id  = ri.rna_id
+and             g.gene_id  = r.gene_id 
 ";
+
   my $geneQuery = 
     GUS::ReportMaker::Query->new($geneSql,
-				 [$dotsGeneCol->getName(),
-				  $geneSymbolCol->getName(),
+				 [$dotsGeneCol,
+				  $geneSymbolCol,
 				 ]);
 
 
@@ -145,17 +156,17 @@ and             g.gene_id  = tu.gene_id
  gusdev.ProteinGOFunction pgf, 
  gusdev.ProteinAssembly pa,
  gusdev.GOFunction go,
-  (select tmp.na_sequence_id, max(go.maximum_level) as maximum_level
+  (select tmp.$primaryKeyName, max(go.maximum_level) as maximum_level
     from 
-      $rnaTempTable tmp, 
+      $tempTable tmp, 
       gusdev.ProteinGOFunction pgf, 
       gusdev.ProteinAssembly pa,
       gusdev.GOFunction go
-    where pa.na_sequence_id = tmp.na_sequence_id
+    where pa.na_sequence_id = tmp.$primaryKeyName
     and pgf.protein_id = pa.protein_id
     and go.go_function_id = pgf.go_function_id
     and go.go_cvs_version = '2.155'
-    group by tmp.na_sequence_id
+    group by tmp.$primaryKeyName
   ) gomax
 where pa.na_sequence_id = gomax.na_sequence_id
     and pgf.protein_id = pa.protein_id
@@ -164,14 +175,14 @@ where pa.na_sequence_id = gomax.na_sequence_id
 ";
   my $gofunctionQuery = 
     GUS::ReportMaker::Query->new($gofunctionSql,
-				 [$goIdCol->getName(),
-				  $goFuncCol->getName(),
+				 [$goIdCol,
+				  $goFuncCol,
 				 ]);
 
   my $motifsSql = 
-"select distinct tmp.na_sequence_id, mas.source_id as motifs
-from gusdev.Similarity s, gusdev.MotifAASequence mas, $rnaTempTable tmp 
-where s.query_id = tmp.na_sequence_id 
+"select distinct tmp.$primaryKeyName, mas.source_id as motifs
+from dots.Similarity s, dots.MotifAASequence mas, $tempTable tmp 
+where s.query_id = tmp.$primaryKeyName 
  and s.query_table_id = 56 
  and s.subject_table_id = 277 
  and s.pvalue_exp <= -50
@@ -179,12 +190,17 @@ where s.query_id = tmp.na_sequence_id
 ";
   my $motifsQuery = 
     GUS::ReportMaker::Query->new($motifsSql,
-				 [$motifsCol->getName(),
+				 [$motifsCol,
 				 ]);
 
 
-  return GUS::ReportMaker::Report->new("DoTS_Transcript", 'na_sequence_id',
-				      [$assemQuery],
+  return GUS::ReportMaker::Report->new("DoTS_Transcript",
+				      [$assemQuery,
+				       $locuslinkQuery,
+				       $genecardsQuery,
+				       $mgiQuery,
+				       $geneQuery,
+				       $motifsQuery],
 				      \@columns);
 }
 

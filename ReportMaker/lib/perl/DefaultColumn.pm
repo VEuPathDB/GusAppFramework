@@ -15,9 +15,10 @@ sub new {
 }
 
 sub getValue {
-  my ($self, $rowHash) = @_;
+  my ($self, $rowHashLowerCase) = @_;
 
-  return $rowHash->{$self->{name}};
+  my $nm = lc($self->{name});
+  return $rowHashLowerCase->{$nm};
 }
 
 sub getName {
