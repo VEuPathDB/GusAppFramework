@@ -17,11 +17,12 @@ package GUS::Common::Plugin::LoadBLATAlignments;
 
 @ISA = qw(GUS::PluginMgr::Plugin); 
 use strict;
-use Disp;
 use CBIL::Bio::BLAT::PSL;
+use CBIL::Bio::BLAT::PSLDir;
 use CBIL::Bio::BLAT::Alignment;
 use CBIL::Bio::FastaIndex;
 use CBIL::Util::TO;
+use CBIL::Util::Disp;
 
 my $VERSION = '$Revision$'; $VERSION =~ s/Revision://; $VERSION =~ s/\$//g; $VERSION =~ s/ //g; #'
 
@@ -33,7 +34,11 @@ sub new {
   my $usage = "Load a set of BLAT alignments into GUS.  Assumes that the query sequences are identified with GUS na_sequence_ids.  The subject (genomic) sequences may use either na_sequence_ids or source_ids (if the corresponding external_db_id is given)";
 
   my $easycsp =
-      [{  o => 'blat_files',
+      [{  o => 'blat_dir',
+	  h => 'dir with files containing BLAT results in .psl format',
+	  t => 'string', 
+      },
+       {  o => 'blat_files',
 	  h => 'Files containing BLAT results in .psl format',
 	  t => 'string', 
       },
@@ -47,6 +52,11 @@ sub new {
 	   h => 'FASTA file that contains all of the BLAT query sequences.',
 	   t => 'string',
 	   r => 1,
+       },
+       {
+	   o => 'keep_best',
+	   h => 'keep how many alignments per query? (1: 1, 2: top 1%, o.w. all)',
+	   t => 'int',
        },
        {
 	   o => 'previous_runs',
@@ -181,6 +191,7 @@ sub run {
     my $dbh = $self->getQueryHandle();
     my $cla = $self->getCla();
 
+    my $blatDir = $cla->{'blat_dir'};
     my $blatFiles = $cla->{'blat_files'};
     my $fileList =  $cla->{'file_list'};
     my $queryFile = $cla->{'query_file'};
@@ -212,7 +223,7 @@ sub run {
 
     my @prevAlgInvIds = defined($prevRuns) ? split(/,|\s+/, $prevRuns): ();
     my $qIndex = undef;
-    ($blatFiles, $qIndex) = &preProcess($blatFiles, $fileList, $queryFile, $queryTableId, $targetTableId, $cla->{'commit'});
+    ($blatFiles, $qIndex) = &preProcess($blatDir, $blatFiles, $fileList, $queryFile, $queryTableId, $targetTableId, $cla->{'commit'});
 
     # 1. Read target source ids if requested
     #
@@ -281,7 +292,84 @@ sub run {
 
     my $summary = "Loaded $nTotalAlignsLoaded/$nTotalAligns BLAT alignments from $nFiles file(s).\n";
     print "LoadBLATAlignments: ", $summary, "\n";
+
+    print "Postprocessing: set best alignment status, maybe remove unwanted entries...";
+    $self->keepBestAlignments;
+
     return $summary;
+}
+
+sub keepBestAlignments {
+    my ($self) = @_;
+
+    my $dbh = $self->getQueryHandle();
+    my $cla = $self->getCla();
+
+    my $keepBest = $cla->{'keep_best'};
+    my $queryTableId = $cla->{'query_table_id'};
+    my $queryTaxonId = $cla->{'query_taxon_id'};
+    my $queryExtDbRelId = $cla->{'query_db_rel_id'};
+    my $targetTableId = $cla->{'target_table_id'};
+    my $targetTaxonId = $cla->{'target_taxon_id'};
+    my $targetExtDbRelId = $cla->{'target_db_rel_id'};
+
+    # do the query
+    #
+    my $sql = "select query_na_sequence_id, blat_alignment_id, score, percent_identity "
+	. "from DoTS.BlatAlignment "
+        . "where query_table_id = $queryTableId "
+	. "and query_taxon_id = $queryTaxonId "
+	. "and target_table_id = $targetTableId "
+        . "and target_taxon_id = $targetTaxonId "
+        . "and target_external_db_release_id = $targetExtDbRelId "
+        . "order by query_na_sequence_id";
+    my $sth = $dbh->prepare($sql) or die "bad sql $sql:!\n";
+    print "# running $sql...\n";
+    $sth->execute or die "could not run $sql: $!";
+
+    # process result
+    #
+    my ($tot_sq, $tot_al, $tot_bs_sq, $tot_bs) = (0,0,0,0);
+    my $prev_seq_id;
+    my $prev_best_score;
+    my %prev_blat_group;
+    while (my ($sid, $bid, $score, $pct_id) = $sth->fetchrow_array) {
+	my $pct_al = $score * $score / $pct_id;
+	if (!$prev_seq_id) {
+	    $prev_best_score = $score;
+	} else {
+	    if ($sid != $prev_seq_id) {
+		my ($al, $bs) = &processOneGroup($dbh, $prev_seq_id, $prev_best_score, \%prev_blat_group);
+		$tot_sq++; $tot_al += $al; $tot_bs_sq++ if $bs; $tot_bs += $bs;
+		$prev_best_score = $score;
+		undef %prev_blat_group;
+	    } else {
+		$prev_best_score = $score if $score > $prev_best_score;
+	    }
+	}
+	$prev_seq_id = $sid;
+	$prev_blat_group{$bid} = { score=>$score, pct_id=>$pct_id, pct_al=>$pct_al };
+    }
+    my ($al, $bs) = &precessOneGroup($dbh, $prev_seq_id, $prev_best_score, \%prev_blat_group);
+    $tot_sq++; $tot_al += $al; $tot_bs_sq++ if $bs; $tot_bs += $bs;
+    $sth->finish;
+
+    print "$tot_sq DoTS with $tot_al alignments\n";
+    print "$tot_bs_sq DoTS with $tot_bs alignments that are best alignments\n";
+
+    if ($keepBest == 1) {
+	print "# TODO: keep only one alignment per query\n";
+    } elsif ($keepBest == 2) {
+	print "deleting non-top alignments ...\n";
+	$sql = "delete DoTS.BlatAlignment "
+	    . "where query_table_id = $queryTableId "
+	    . "and query_taxon_id = $queryTaxonId "
+	    . "and target_table_id = $targetTableId "
+            . "and target_taxon_id = $targetTaxonId "
+            . "and target_external_db_release_id = $targetExtDbRelId "
+            . "and (is_best_alignment is null or is_best_alignment = 0)";
+	$dbh->do($sql) or die "could not run $sql:!\n";
+    }
 }
 
 #-------------------------------------------------
@@ -291,20 +379,25 @@ sub run {
 # preprocessing by the Run subroutine to do sanity checking and maybe index query sequence file
 #
 sub preProcess {
-    my ($blatFiles, $fileList, $queryFile, $queryTableId, $targetTableId, $commit) = @_;
-    die "LoadBLATAlignments: blat_files and file_list not defined" if ((!defined($blatFiles)) && (!defined($fileList)));
-    die "LoadBLATAlignments: query_file not defined" if (not defined($queryFile));
-    #die "LoadBLATAlignments: unrecognized query_table_id" if (!($queryTableId =~ /^56|89|245$/));
+    my ($blatDir, $blatFiles, $fileList, $queryFile, $queryTableId, $targetTableId, $commit) = @_;
+    die "LoadBLATAlignments: blat files not defined" unless $blatDir || $blatFiles || $fileList;
+    die "LoadBLATAlignments: query_file not defined" unless $queryFile;
     die "LoadBLATAlignments: unrecognized query_table_id" if (!($queryTableId =~ /^56|89|245|339$/));
     die "LoadBLATAlignments: unrecognized target_table_id" if (!($targetTableId =~ /^56|89|245$/));
     print "LoadBLATAlignments: COMMIT ", $commit ? "****ON****" : "OFF", "\n";
 
     # Read list of files if need be
     #
-    if (defined($fileList)) {
+    if ($fileList && !$blatFiles) {
 	my $fl = `cat $fileList`;
 	my @files = split(/[\s\n]+/,$fl);
 	$blatFiles = join(",", @files);
+    }
+    if ($blatDir && !$blatFiles) {
+	my $bd = CBIL::Bio::BLAT::PSLDir->new($blatDir);
+	$bd->stripExtraHeaders;
+	my @bfs = $bd->getPSLFiles;
+	$blatFiles = join(",", @bfs);
     }
 
     # Make sure that query_file is indexed
@@ -577,6 +670,34 @@ sub getUcscGenomeVersion {
     }
 
     $v;
+}
+
+# for given query sequence, set "top alignment" status 
+#
+sub processOneGroup {
+    my ($dbh, $seq_id, $best_score, $blat_group) = @_;
+
+    my $al = scalar(keys %$blat_group);
+    my $bs = 0;
+
+    print "# processing DT.$seq_id: " . scalar(keys %$blat_group). " blat alignments...\n";
+    foreach my $bid (keys %$blat_group) {
+        my $al = $blat_group->{$bid};
+        my $score = $al->{score};
+        my $pct_id = $al->{pct_id};
+        my $pct_al = $al->{pct_al};
+
+        my $is_best = 0;
+        # $is_best = 1 if ($pct_al > 90 || ($pct_al > 60 && $pct_id > 95)) && $score >= 0.99 * $best_score;
+        $is_best = 1 if $score >= 0.99 * $best_score;
+        $bs++ if $is_best;
+        my $sql = "update DoTS.BlatAlignment set is_best_alignment = $is_best "
+            . "where blat_alignment_id = $bid";
+        print "#  $sql\n" if $is_best; # only update the bests
+        $dbh->do($sql) if $is_best;  # only update the bests
+    }
+
+    ($al, $bs);
 }
 
 1;

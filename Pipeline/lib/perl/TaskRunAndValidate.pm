@@ -36,7 +36,7 @@ package GUS::Pipeline::TaskRunAndValidate;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(runRepeatMask runMatrix runSimilarity); 
+@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign); 
 
 use strict;
 use Carp;
@@ -67,6 +67,33 @@ sub runRepeatMask {
 	if  (!$valid) {
 	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
 	}
+    }
+
+    return $valid;
+}
+
+sub runGenomeAlign {
+    my ($pipelineDir, $queryName, $subjectName) = @_;
+    
+    my $name = "$queryName-$subjectName";
+    print "\nRunning alignment of $queryName against $name\n";
+
+    my $resultDir = 
+	"$pipelineDir/genome/$name/master/mainresult/";
+    # TODO: handle the case when query is not from repeatmask
+    #       (i.e. final DoTS minus troublesome deflines)
+    my $queryFile = 
+	"$pipelineDir/repeatmask/$queryName/master/mainresult/blocked.seq";
+    my $subjectDir = "$pipelineDir/seqfiles/$subjectName";
+    my $propFile = "$pipelineDir/genome/$name/input/controller.prop";
+    my $logFile = "$pipelineDir/logs/$name.genomealign.log";
+
+    my $valid = 0;
+    # TODO: validate previous results
+
+    if (!$valid) {
+	&run($propFile, $logFile);
+	# TODO: validate results
     }
 
     return $valid;
