@@ -94,19 +94,15 @@
 <P>
 <H2><A NAME="data_file"><EM>data_file</EM></A></H2>
 <P>The data file should be in tab-delimited text format with one header row and a row for each control (composite) element. All rows should contain the same number of tabs/fields.</P>
-<P>* The header contains a list of attributes, which can be divided into two categories. One is position attributes which is used to identify the location of each element in array or compositeElement identifier such as probe set name such as ``array_row'', ``array_column'' and etc.. The others are attributes which are defined in the control table including control_type_id, name, value, unit_type_id. For the attributesin control, a prefix ``control.'' is required to put before every attributes, such as ``control.control_type_id'', ``control.name'' and etc..</P>
-<P>* All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.</P>
-<P>* Every element for which the position attributes are available should have these stored in the database in order to determine the element_id and/or composite_element_id.</P>
-<P>* Depending on array platform, the position attributes are different. If the command line argument ``e_subclass_view'' is set to ``Spot'', then position attributes will be array_row, array_column, grid_row, grid_column, sub_row and sub_column. If  the command line argument ``e_subclass_view'' is set to ``ShortOligo'', then position attributes will be x_position and y_position. You will need to have these columns in the data file for each row.</P>
-<P>* If you only load the compositeElementResult for affymetrix data, you have option to use probe set identifier to set the composite_element_id without using the position attributes of x_position and y_position. First, set command line argument ``c_subclass_view'' to ``ShortOligoFamily'', second, use the ``posOption'' to set the probe set identifier, its default is 1, which uses ``name'' as the probe set identifier; 2 means using ``external_database_release_id''and ``source_id'' as the probe set identifier; 3 means using ``external_database_release_id'', ``source_id'' and ``name'' as the probe set identifier.</P>
+<P>* The header should contain two categories of fields: (1) fields that identify the (composite) element on the array and (2) fields that correspond to the attributes in RAD3.Control. As for (1), these should be: (i) (array_row, array_column, grid_row, grid_column, sub_row, sub_column) if e_subclass_view is set to Spot, (ii) (x_position,y_position) if e_subclass_view is set to ShortOligo, (iii) the identifiers specified in --posOption if c_subclass_view is set to ShortOligoFamily. These attributes should be in lower case and spelled exactly as they are spelled in the database. As for (2) these fields, should be preceded by ``control.'' and they should be: control.control_type_id, control.name, control.value, control.unit_type_id (if applicable).</P>
 <P>* Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.</P>
 <P>Please double-check that your data file has no inconsistencies before loading the data.</P>
 <P>
 <H2><A NAME="e_subclass_view"><EM>e_subclass_view</EM></A></H2>
-<P>Legal values for this argument must be either ``Spot'' or ``ShortOligo'' or ``SAGETagMapping''.</P>
+<P>Legal values for this argument must be either ``Spot'' or ``ShortOligo''.</P>
 <P>
 <H2><A NAME="c_subclass_view"><EM>c_subclass_view</EM></A></H2>
-<P>Legal values for this argument must be either ``SpotFamily'' or ``ShortOligoFamily'' or ``SAGETag''.</P>
+<P>Legal values for this argument must be either ``SpotFamily'' or ``ShortOligoFamily''.</P>
 <P>
 <H2><A NAME="restart"><EM>restart</EM></A></H2>
 <P>If you need to restart loading from your data file from a specific line (e.g. due to previous interruptions in data loading), give the line number of this line in the --restart option. You should start your line count from the line after the header line and include any empty lines.</P>
