@@ -625,11 +625,11 @@ __END__
 
 =head1 NAME
 
-GUS::RAD::DataLoad::Plugin::ProcessedResultLoader
+GUS::RAD::Plugin::ProcessedResultLoader
 
 =head1 SYNOPSIS
 
-ga GUS::RAD::DataLoad::Plugin:ProcessedResultLoader B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file
+ga GUS::RAD::Plugin:ProcessedResultLoader B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file
 
 =head1 DESCRIPTION
 
