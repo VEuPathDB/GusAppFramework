@@ -155,7 +155,7 @@ sub process {
 					    "." ."$attribute_nm NOT OVERWRITTEN!");
 			    return; # SKIP
 			} # end if same doc
-			elsif ($html ne $html_dc) { ## SUBMIT if new documentation
+			elsif ($html ne $html_dc) { ## SUBMIT if new documentation (UPDATE!!!)
 			    ## bind table id to DatabaseDocumentation object
 			    $doc->setTableId($doc->getTableIdFromTableName($table_nm));
 
@@ -180,6 +180,20 @@ sub process {
 			    return;
 			}# end else SUBMIT
 		    } # end while
+
+		    ### if no duplicate record - SUBMIT
+		    $doc->setTableId($doc->getTableIdFromTableName($table_nm));
+		    $doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
+		    $self->logVerbose("Set attribute name");
+		    $doc->setHtmlDocumentation($html_dc);
+		    $self->logVerbose("Set HTML Documentation");
+		    $doc->submit();
+		    $countInserts++;
+		    $self->logData("Inserted documentation for attribute: $table_nm" . "." ."$attribute_nm");
+		    $self->undefPointerCache();
+		    $self->logVerbose("UndefPointerCache()");
+$self->logAlert("submitted non-duplicated entry: $table_nm.$attribute_nm: $html_dc\n"); ###TEST###
+		    return;
 		} # end if attribute is valid
 		    
 		elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # not valid attribute
