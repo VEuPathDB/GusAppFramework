@@ -78,7 +78,6 @@ sub getIdsToDelete {
   my $stmt = $dbh->prepareAndExecute($sql) || die "SQL failed: $sql\n";
 
   while (my ($id) = $stmt->fetchrow_array()) {
-    print "$id *********\n";
     push (@ids, $id);
   }
 
@@ -97,7 +96,7 @@ sub deleteRows {
   my $numDelete = 0;
   my $algInv = $self->getAlgInvocation();
   my $prim_key = $algInv->getTablePKFromTableId($algInv->getTableIdFromTableName($self->getArgs()->{'table'}));
-
+  $algInv->setMaximumNumberOfObjects(500000);
   $algInv->setGlobalNoVersion(1) if $self->getArgs()->{'doNotVersion'};
   $table = "GUS::Model::".$table;
 
