@@ -101,6 +101,7 @@
      <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/RAD3"/>
      <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes"/>
      <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS"/>
+     <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/App"/>
      
       <delete>
         <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/Core" includes="*.java, *.class"/>
@@ -108,6 +109,7 @@
         <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/RAD3" includes="*.java, *.class"/>
         <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/SRes" includes="*.java, *.class"/>
         <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/TESS" includes="*.java, *.class"/>
+        <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/App" includes="*.java, *.class"/>
       </delete>
       <echo message="generating java objects"/>
 
@@ -125,6 +127,7 @@
         <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/SRes"/>
         <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/TESS"/>
         <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/RAD3"/>
+        <mkdir dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/App"/>
 
         <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/DoTS" overwrite="true">
            <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/DoTS"/>
@@ -146,6 +149,10 @@
            <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/RAD3"/>
            <mapper type="glob" from="*.java.man" to="*.java"/>
         </copy>
+        <copy todir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/App" overwrite="true">
+           <fileset dir="${projectsDir}/GUS/Model/src/java/org/gusdb/model/hand_edited/App"/>
+           <mapper type="glob" from="*.java.man" to="*.java"/>
+        </copy>
   </target>
 	                                 
   <target name="perlGeneratedModel" unless="perlObjectsAlreadyGenerated" 
@@ -157,12 +164,14 @@
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/RAD3"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/SRes"/>
      <mkdir dir="${projectsDir}/GUS/Model/lib/perl/TESS"/>
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/App"/>
 
      <mkdir dir="${targetDir}/lib/perl/GUS/Model/Core"/>
      <mkdir dir="${targetDir}/lib/perl/GUS/Model/DoTS"/>
      <mkdir dir="${targetDir}/lib/perl/GUS/Model/RAD3"/>
      <mkdir dir="${targetDir}/lib/perl/GUS/Model/SRes"/>
      <mkdir dir="${targetDir}/lib/perl/GUS/Model/TESS"/>
+     <mkdir dir="${targetDir}/lib/perl/GUS/Model/App"/>
 
      <delete>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/Core" includes="*.pm"/>
@@ -170,11 +179,13 @@
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/RAD3" includes="*.pm"/>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/SRes" includes="*.pm"/>
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/TESS" includes="*.pm"/>
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/App" includes="*.pm"/>
        <fileset dir="${targetDir}/lib/perl/GUS/Model/Core" includes="*.pm"/>
        <fileset dir="${targetDir}/lib/perl/GUS/Model/DoTS" includes="*.pm"/>
        <fileset dir="${targetDir}/lib/perl/GUS/Model/RAD3" includes="*.pm"/>
        <fileset dir="${targetDir}/lib/perl/GUS/Model/SRes" includes="*.pm"/>
        <fileset dir="${targetDir}/lib/perl/GUS/Model/TESS" includes="*.pm"/>
+       <fileset dir="${targetDir}/lib/perl/GUS/Model/App" includes="*.pm"/>
      </delete>
      <echo message="generating Perl Objects"/>
 
@@ -213,6 +224,10 @@
        <mapper type="glob" from="*.pm.man" to="*.pm"/>
      </copy>
 
+     <copy todir="${projectsDir}/GUS/Model/lib/perl/App">
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/App"/>
+       <mapper type="glob" from="*.pm.man" to="*.pm"/>
+     </copy>
    </target>  
 
   <target name="checkPerlObjects">
@@ -335,6 +350,14 @@
       <property name="component" value="PluginMgr"/>
     </ant>
   </target>
+
+  <target name="GUS/RAD-Installation" depends="GUS/PluginMgr-Installation,
+                                                     ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="project" value="GUS"/>
+      <property name="component" value="RAD"/>
+    </ant>
+  </target>
   
   <target name="GUS/ReportMaker-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
@@ -356,7 +379,6 @@
       <property name="component" value="WebDevKit"/>
     </ant>
   </target>  
-
 
  <target name="GUS/RAD-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
