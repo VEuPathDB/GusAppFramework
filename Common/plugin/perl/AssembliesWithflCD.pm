@@ -40,6 +40,9 @@ sub new {
   #     o => 'testnumber2',
     # },
 
+
+
+#consider adding the +2 in query for feature location equivalence and in substring identification
 #992 is external database release id for RefSeq (this should not change?)
      { h => 'external database release id for RefSeq',
        t => 'int',
@@ -175,7 +178,7 @@ sub RefSeqFLAssemblies {
     print STDERR "ConsideringForFLDT.$na_seq\n";
   #  last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
-    $ct++;
+
 
     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
@@ -188,12 +191,19 @@ sub RefSeqFLAssemblies {
     $assembly->submit();
     $self->undefPointerCache();
 
+
+     $ct++;
   }
 
     }
 
   }
-  }
+    print STDERR "$ct Number marked using RefSeq\n";
+
+
+}
+
+
 
 
 
@@ -312,7 +322,7 @@ sub MarkFLUsingFFfeatures  {
 
 
  #  last if $self->getArgs->{testnumber2} && $ct >$self->getArgs->{testnumber2};
-   $ct++;
+
 
 
     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $naSeq});
@@ -322,7 +332,7 @@ sub MarkFLUsingFFfeatures  {
 
       if (!($assembly->getFullLengthCds(1)))  {
 
-    #need to substract 2 to get the stop codon string
+    #need to substract 2 to get the stop codon string from FF stop location
       my  $sequence = $assembly ->getSubstrFromClob('sequence', $tStop - 2, 3);
 
       if (($sequence eq 'TAA') || ($sequence eq 'TAG') || ($sequence eq 'TGA')) {
@@ -335,11 +345,18 @@ sub MarkFLUsingFFfeatures  {
         $self->undefPointerCache();
 
      print STDERR "$naSeq marked full length by features\n";
+     $ct++;
   }
+
     }
     }
   }
+     print STDERR "$ct Number marked using features\n";
+
 }
+
+
+
 
 
 
