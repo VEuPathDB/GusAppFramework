@@ -188,7 +188,7 @@ and             g.gene_id  = r.gene_id
 
   my $gofunctionSql = 
 "select distinct pa.na_sequence_id, gt.go_id as goid, gt.name as goname
- from $tempTable tmp, sres.goterm gt, allgenes_70.ProteinAssembly pa, dots.goassociation ga
+ from $tempTable tmp, sres.goterm gt, allgenes.ProteinAssembly pa, dots.goassociation ga
  where ga.row_id = pa.protein_id
     and pa.na_sequence_id = tmp.$primaryKeyName
     and ga.table_id = 180
@@ -207,7 +207,7 @@ and             g.gene_id  = r.gene_id
 "select tmp.$primaryKeyName, 
 'chr:' || chromosome || ':' || substr(strand,1,3) || ':' || region_start || '-' ||  region_end as promoterLoc, 
 sequence as promoterSeq
-from allgenes_70.promoterRegion pr, $tempTable tmp 
+from allgenes.promoterRegion pr, $tempTable tmp 
 where pr.na_sequence_id =  tmp.$primaryKeyName
 ";
   my $promoterSeqQuery = 
@@ -232,7 +232,7 @@ where s.query_id = tmp.$primaryKeyName
 
   my $seqSql =
 "select tmp.$primaryKeyName, tas.sequence as proteinSeq, a.sequence as mRNASeq
-from $tempTable tmp, allgenes_70.ProteinAssembly pa, dots.TranslatedAAFeature taf,  
+from $tempTable tmp, allgenes.ProteinAssembly pa, dots.TranslatedAAFeature taf,  
      dots.TranslatedAASequence tas, dots.Assembly a
 where tmp.$primaryKeyName = pa.na_sequence_id
 and pa.na_feature_id = taf.na_feature_id

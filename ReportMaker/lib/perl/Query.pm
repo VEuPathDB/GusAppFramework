@@ -37,7 +37,7 @@ sub run {
 
   print STDERR "\nrunning query: \n$self->{sql}...\n" if $verbose;
 
-  my $stmt  = $dbh->prepare($self->{sql});
+  my $stmt  = $dbh->prepare($self->{sql}) || die "Could not prepare sql: '$self->{sql}'";
   $stmt->execute() || die "Could not execute sql: '$self->{sql}'";
 
   while (my $row = $stmt->fetchrow_hashref('NAME_lc')) {
