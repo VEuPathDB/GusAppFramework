@@ -159,11 +159,11 @@ sub process {
 
 		while (my @ary2 = $stmt2->fetchrow_array() ){
 		    chomp;
-		    $tb_id = $ary2[0]; #queried table id
-		    $html = $ary2[1]; #queried html documentation
+		    $tb_id2 = $ary2[0]; #queried table id
+		    $html2 = $ary2[1]; #queried html documentation
 
 		    ## SKIP if documentation is identical to what is already in db
-		    if ($html eq $html_dc){ 
+		    if ($html2 eq $html_dc){ 
 			$self->logAlert("ALREADY EXISTS! Documentation for $table_nm NOT OVERWRITTEN!");
 			return; # SKIP
 		    }
