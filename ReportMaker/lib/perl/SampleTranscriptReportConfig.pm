@@ -75,6 +75,16 @@ sub createReport {
 					 "Names of Gene Ontology (GO) consortium terms assigned to the transcript");
   push(@columns, $goNameCol);
 
+  my $promoterSeqCol =
+    GUS::ReportMaker::DefaultColumn->new("PromoterSeq",
+					 "Promoter region sequence, ie, -300 to 1200 bp upstream from this DT's highest confidence BLAT alignment");
+  push(@columns, $promoterSeqCol);
+
+  my $promoterLocCol =
+    GUS::ReportMaker::DefaultColumn->new("PromoterLoc",
+					 "Promoter region location, ie, -300 to 1200 bp upstream from this DT's highest confidence BLAT alignment");
+  push(@columns, $promoterLocCol);
+
   my $motifsCol =
     GUS::ReportMaker::DefaultColumn->new("Motifs",
 					 "Protein motifs/domains found in the transcript's predicted mRNA with p-value <= 10E-50");
@@ -178,7 +188,7 @@ and             g.gene_id  = r.gene_id
 
   my $gofunctionSql = 
 "select distinct pa.na_sequence_id, gt.go_id as goid, gt.name as goname
- from $tempTable tmp, sres.goterm gt, allgenes_60.ProteinAssembly pa, dots.goassociation ga
+ from $tempTable tmp, sres.goterm gt, allgenes_70.ProteinAssembly pa, dots.goassociation ga
  where ga.row_id = pa.protein_id
     and pa.na_sequence_id = tmp.$primaryKeyName
     and ga.table_id = 180
@@ -191,6 +201,19 @@ and             g.gene_id  = r.gene_id
     GUS::ReportMaker::Query->new($gofunctionSql,
 				 [$goIdCol,
 				  $goNameCol,
+				 ]);
+
+  my $promoterSeqSql = 
+"select tmp.$primaryKeyName, 
+'chr:' || chromosome || ':' || strand || ':' || region_start || '-' ||  region_end as promoterLoc, 
+sequence as promoterSeq
+from allgenes_70.promoterRegion pr, $tempTable tmp 
+where pr.na_sequence_id =  tmp.$primaryKeyName
+";
+  my $promoterSeqQuery = 
+    GUS::ReportMaker::Query->new($promoterSeqSql,
+				 [$promoterSeqCol,
+				  $promoterLocCol,
 				 ]);
 
   my $motifsSql = 
@@ -209,7 +232,7 @@ where s.query_id = tmp.$primaryKeyName
 
   my $seqSql =
 "select tmp.$primaryKeyName, tas.sequence as proteinSeq, a.sequence as mRNASeq
-from $tempTable tmp, allgenes_60.ProteinAssembly pa, dots.TranslatedAAFeature taf,  
+from $tempTable tmp, allgenes_70.ProteinAssembly pa, dots.TranslatedAAFeature taf,  
      dots.TranslatedAASequence tas, dots.Assembly a
 where tmp.$primaryKeyName = pa.na_sequence_id
 and pa.na_feature_id = taf.na_feature_id
@@ -230,6 +253,7 @@ and pa.na_sequence_id = a.na_sequence_id
 		 $gofunctionQuery,
 		 $geneQuery,
 		 $mappedToQuery,
+		 $promoterSeqQuery,
 		 $motifsQuery,
 		 $seqQuery,
 		];
