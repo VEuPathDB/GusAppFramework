@@ -261,10 +261,10 @@ sub run {
     # Get the aa seq ids of the GOAP that will use in rule generation.
     #
     my $aa_filter = $self->GetAaFilterFile();
-       
+    my $processedMotifs;
     if ($self->getCla()->{restart}){  #we are restarting an interrupted run of the plugin
   	
-	my $processedMotifs = $self->getProcessedMotifs();
+	$processedMotifs = $self->getProcessedMotifs();
 
     }
 
@@ -280,10 +280,10 @@ sub run {
   
     $self->log("built similarity dictionary; preparing to process ". scalar @{$id_motif_aa_sequences} . "motifs"); 
     # Process each motif in the filter...
-    my $counter = 0;
+
     
     foreach my $id_motif_aa_sequence ( @{ $id_motif_aa_sequences } ) {
-	$counter++; last if ($counter == 100);
+
 	# Get the similarities for this motif.
 	my $gus_similarities = $sim_dict->{ $id_motif_aa_sequence };
 	
@@ -586,6 +586,8 @@ sub GetSimilarityFilterSQL {
 }
 
 sub getProcessedMotifs {
+    
+    my ($self) = @_;
 
     my $queryHandle = $self->getQueryHandle();
     my $algInvIds = $self->getCla->{previous_invocation_ids};
@@ -682,7 +684,7 @@ sub GetSimilarityDictionary {
 	    my $sth = $queryHandle->prepareAndExecute($sql);
 	    while ( my ($similarityId, $subjectId, $queryId, $queryTableId, $pValueMant, $pValueExp, $numberPositive, $totalMatchLength, $description, $name) = $sth->fetchrow_array() ) {
 		if ($processedMotifs->{$subjectId}){
-		    $self->log ("not adding $subjectId to similarity dictionary");
+		    $self->logVerbose ("not adding $subjectId to similarity dictionary");
 		    next;
 		}
 		my $similarityHash;
@@ -808,11 +810,12 @@ sub IntersectGoFunctions {
 	foreach my $gus_similarity ( @$similarities ) {
 	    my $ids;
 	    $sth->execute($gus_similarity->{query_id});
+
 	    while ( my $id = $sth->fetchrow_array( ) ) {
-		print STDERR "adding $id to the list for " . $gus_similarity->{query_id} . "\n";
+		$self->logVerbose("adding $id to the list for " . $gus_similarity->{query_id});
 		push (@$ids, $id);
-		
 	    }
+	    $self->logVerbose("finished processing external protein " . $gus_similarity->{query_id});	    
 	    $gusGoIdsBySimilarity->{ $gus_similarity } = $ids;
 	    if (scalar (@$ids) == 0){ print STDERR "no ids in database for sim\n";}
 	    else{print STDERR "found " . scalar(@$ids) . " for sim in database \n";}
