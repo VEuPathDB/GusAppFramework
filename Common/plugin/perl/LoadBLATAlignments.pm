@@ -32,7 +32,7 @@ sub new {
   my $usage = "Load a set of BLAT alignments into GUS.  Assumes that the query sequences are identified with GUS na_sequence_ids.  The subject (genomic) sequences may use either na_sequence_ids or source_ids (if the corresponding external_db_id is given)";
 
   my $easycsp =
-      ({  o => 'blat_files',
+      [{  o => 'blat_files',
 	  h => 'Files containing BLAT results in .psl format',
 	  t => 'string', 
       },
@@ -156,7 +156,8 @@ sub new {
 	   h => 'minimum size percentage of a genomic gap that seems to correspond to a query gap',
 	   t => 'int',
 	   d => 90,
-       });
+       }
+       ];
 
   $self->initialize({requiredDbVersion => {},
 		     cvsRevision => '$Revision$', # cvs fills this in!
