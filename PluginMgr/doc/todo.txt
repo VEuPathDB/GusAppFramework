@@ -1,3 +1,5 @@
+- A nice thing to add to the GUsApplication would be command line arguments for the read/write bits in GUS.  This way all plugins would have this level of control.  We implemented oracle's Virtual Private Database functionality so that oracle logins respect the GUS read write bits for users/ groups and others so allowing users to set those read write bits when they insert using the plugins would be very nice!  -Brian
+
 - protect ga +meta from inserting an existing revision of GusApplication
 
 - add getSubclass($id, $superclasstablename) method to plugin.pm
