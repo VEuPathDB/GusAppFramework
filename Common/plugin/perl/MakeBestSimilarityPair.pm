@@ -28,6 +28,12 @@ sub new {
 	 },
 	 
 	 {
+	     o => 'set_percent_match',
+	     t => 'boolean',
+	     h => 'if true, will query Dots::SimilaritySpan table to retrieve best percent match information for similarities',
+	 },
+
+	 {
 	     o => 'algorithm_id',
 	     t => 'int',
 	     d => '15820',
@@ -50,7 +56,7 @@ sub new {
 		       cvsRevision => '$Revision$', # cvs fills this in!
 		     cvsTag => '$Name$', # cvs fills this in!
 		       name => ref($self),
-		       revisionNotes => 'make consistent with GUS 3.0',
+		       revisionNotes => 'optional now to set percent_match attribute ',
 		       easyCspOptions => $easycsp,
 		       usage => $usage
 		       });
@@ -139,7 +145,7 @@ sub run {
 		}
 		
 	    }else{
-		
+		$self->log("running query for database releases " . $taxa[$i] . " and " . $taxa[$j] . "\n");
 		my $sth = $dbh->prepare("select s.query_id, s.subject_id, s.pvalue_mant,s.pvalue_exp,s.number_identical/s.total_match_length, s.similarity_id from dots.similarity s, dots.externalaasequence a1, dots.externalaasequence a2 where s.subject_table_id=83 and s.query_table_id=83 and s.query_id=a1.aa_sequence_id and a1.external_database_release_id = ? and s.subject_id=a2.aa_sequence_id and a2.external_database_release_id =? and s.row_alg_invocation_id in ($algInvoIds) order by s.pvalue_exp asc,s.pvalue_mant asc,s.number_identical/s.total_match_length desc");
 		$sth -> execute($taxa[$i],$taxa[$j]);
 		while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
@@ -150,21 +156,29 @@ sub run {
 		    @{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s,83,83) unless(exists($sim{$qid}));
 		}
 	    }
-	    
+	    $self->log("processing similarity info for " . $taxa[$i] . " and " . $taxa[$j] . "; have " . scalar(keys %sim) . " keys to process\n");
+	    my $counter = 0;
 	    foreach my $qid (keys %sim) {
-		my (%sub_start,%sub_length,%query_start,%query_length);
-		$stmtSpan->execute($sim{$qid}->[4]);   
-		while(my (@row) = $stmtSpan -> fetchrow_array()) {
-		    $sub_start{$row[0]}=$row[1]; 
-		    $sub_length{$row[0]}=$row[2]-$row[1]+1;
-		    $query_start{$row[0]}=$row[3];
-		    $query_length{$row[0]}=$row[4]-$row[3]+1;
+		if ($counter % 5000 == 0){
+		    $self->log("processing similarity number $counter for " . $taxa[$i] . " and " . $taxa[$j] . "\n");
 		}
+		my $percentMatch = 0;
 		
-		my $match_lengthq = &matchlen(\%query_start,\%query_length);   
-		$stmtLen->execute($qid);
-		my ($lengthq) = $stmtLen -> fetchrow_array();
-		my $percent_matchq = $match_lengthq/$lengthq; 
+		if ($self->getCla->{percent_match}){
+		    my (%sub_start,%sub_length,%query_start,%query_length);
+		    $stmtSpan->execute($sim{$qid}->[4]);   
+		    while(my (@row) = $stmtSpan -> fetchrow_array()) {
+			$sub_start{$row[0]}=$row[1]; 
+			$sub_length{$row[0]}=$row[2]-$row[1]+1;
+			$query_start{$row[0]}=$row[3];
+			$query_length{$row[0]}=$row[4]-$row[3]+1;
+		    }
+		
+		    my $match_lengthq = &matchlen(\%query_start,\%query_length);   
+		    $stmtLen->execute($qid);
+		    my ($lengthq) = $stmtLen -> fetchrow_array();
+		    $percent_matchq = $match_lengthq/$lengthq; 
+		}
 		
 		my $bmp = GUS::Model::DoTS::BestSimilarityPair->new();
 		$bmp -> set('sequence_id', $qid);
