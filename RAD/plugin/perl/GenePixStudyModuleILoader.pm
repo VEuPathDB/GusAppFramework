@@ -232,12 +232,11 @@ sub run {
 
   my $studyId = $self->{propertySet}->getProp("Study_ID");
 
-  my ($gusAssays, $skippedAssayCnt, $totalAssayCnt) = $self->createGUSAssaysFromFiles();
-  my $insertedAssayCnt = $self->submitGusAssays($gusAssays);
+  my ($gusAssays, $skippedAssayCnt, $totalAssayCnt) = $self->createGUSAssaysFromFiles($studyId);
+  my $insertedAssayCnt                              = $self->submitGusAssays($gusAssays, $studyId);
+  my $insertedRelatedCnt                            = $self->populateRelatedTables($studyId); 
 
-  my $insertedRelatedCnt = $self->populateRelatedTables($studyId); 
   $self->log("STATUS","Inserted $insertedRelatedCnt rows in RAD3.RelatedAcquisition and RAD3.RelatedQuantification");
-
   $self->setResultDescr(
    "Total assay/s: $totalAssayCnt; Assay/s inserted: $insertedAssayCnt; Assay/s skipped: $skippedAssayCnt"
   );
@@ -246,24 +245,21 @@ sub run {
 ###############################
 
 sub createGUSAssaysFromFiles {
-  my ($self) = @_;
+  my ($self, $studyId) = @_;
 
   my @gusAssays;
   my $assayCnt = 0;
 
   my $tiffFilePath  = $self->{propertySet}->getProp("tiffFilePath"); 
   my $gprFilePath   = $self->{propertySet}->getProp("gprFilePath"); 
-  my $studyId       = $self->{propertySet}->getProp("Study_ID");
   my $testNumber    = $self->getArgs->{testnumber};
   my @skipAssayList = @{$self->getArgs->{skip}};
 
-  my ($assayNames, $modifiedAssayFileURIRef) = $self->findAssayNames($gprFilePath);
-
+  my ($assayNames, $modifiedAssayFileURIRef)    = $self->findAssayNames($gprFilePath);
   my ($imageFilesRef, $modifiedImageFileURIRef) = $self->getImageFileNames($tiffFilePath); 
-
-  my $assayDescriptionHashRef = $self->parseMultipleDescriptions($assayNames,"allAssayDescriptionsSame","allAssayDescriptions","individualAssayDescriptions");
-  my $hybDateHashRef          = $self->parseMultipleDescriptions($assayNames,"allHybDatesSame","allHybDates","individualHybDates");
-  my $scanDateHashRef         = $self->parseMultipleDescriptions($assayNames,"allScanDatesSame","allScanDates","individualScanDates");
+  my $assayDescriptionHashRef                   = $self->parseMultipleDescriptions($assayNames,"allAssayDescriptionsSame","allAssayDescriptions","individualAssayDescriptions");
+  my $hybDateHashRef                            = $self->parseMultipleDescriptions($assayNames,"allHybDatesSame","allHybDates","individualHybDates");
+  my $scanDateHashRef                           = $self->parseMultipleDescriptions($assayNames,"allScanDatesSame","allScanDates","individualScanDates");
 
   my $skipAssayCnt  = scalar @skipAssayList;
   my $totalAssayCnt = scalar @$assayNames;
@@ -291,9 +287,7 @@ sub createGUSAssaysFromFiles {
 ###############################
 
 sub submitGusAssays {
-  my ($self, $gusAssays) = @_;
-
-  my $studyId = $self->{propertySet}->getProp("Study_ID");
+  my ($self, $gusAssays, $studyId) = @_;
 
   my $gusStudy = GUS::Model::RAD3::Study->new({study_id => $studyId});
   $self->error("Create object failed: Table RAD3.Study, study_id $studyId")
@@ -554,16 +548,15 @@ sub createSingleGUSAssay {
 
   my $gusAssay = $self->createGusAssay($assayName, $hybDateHashRef, $assayDescriptionHashRef);
 
-  my ($gusAcquisitionCy5, $gusAcquisitionCy3) = $self->createGusAcquisition($assayName, $modifiedImageFileURIRef, $scanDateHashRef);
+  my ($gusAcquisitionCy5, $gusAcquisitionCy3)       = $self->createGusAcquisition($assayName, $modifiedImageFileURIRef, $scanDateHashRef);
+  my ($gusQuantificationCy5, $gusQuantificationCy3) = $self->createGusQuantification($assayName, $modifiedAssayFileURIRef, $GPRinfo);
+  my ($gusQuantParamsCy5Ref, $gusQuantParamsCy3Ref) = $self->createGusQuantParams($GPRinfo);
 
   $gusAcquisitionCy5->setParent($gusAssay);
   $gusAcquisitionCy3->setParent($gusAssay);
 
-  my ($gusQuantificationCy5, $gusQuantificationCy3) = $self->createGusQuantification($assayName, $modifiedAssayFileURIRef, $GPRinfo);
   $gusQuantificationCy5->setParent($gusAcquisitionCy5);
   $gusQuantificationCy3->setParent($gusAcquisitionCy3);
-
-  my ($gusQuantParamsCy5Ref, $gusQuantParamsCy3Ref) = $self->createGusQuantParams($GPRinfo);
 
   foreach my $gusQuantParamsCy5 (@$gusQuantParamsCy5Ref) {
     $gusQuantParamsCy5->setParent($gusQuantificationCy5);
