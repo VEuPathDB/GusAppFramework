@@ -81,7 +81,7 @@ sub run {
 
   my ($dbRefHash) = $self->insertDbRef($mapHash); 
 
-  $self->insertDBRefNASeq($dbRefHash);
+  $self->insertDBRefNASeq($dbRefHash,$mapHash);
 
   $self->deleteDbRef() if $self->getArgs()->{'delete'};
 }
@@ -157,7 +157,7 @@ sub insertDbRef {
 
     my $dbRefId = $newDbRef->getDbRefId();
 
-    $dbRefHash{$dbRefId} = $mapHash->{$id};
+    $dbRefHash{$id} = $dbRefId;
 
     $newDbRef->undefPointerCache();
   }
@@ -170,19 +170,21 @@ sub insertDbRef {
 
 
 sub  insertDBRefNASeq {
-  my ($self,$dbRefHash) = @_;
+  my ($self,$dbRefHash,$mapHash) = @_;
 
   my $num = 0;
 
-  foreach my $dbRefId (keys %$dbRefHash) {
+  foreach my $id (keys %$mapHash) {
 
-    my $naSeqId = $dbRefHash->{$dbRefId};
+    foreach my $naSeqId ( @$mapHash->{$id}) {
+      my $dbRefId = $dbRefHash->{$id};
 
-    my $newDbRefNASeq = GUS::Model::DoTS::DbRefNASequence->new ({'db_ref_id'=>$dbRefId, 'na_sequence_id'=>$naSeqId});
+      my $newDbRefNASeq = GUS::Model::DoTS::DbRefNASequence->new ({'db_ref_id'=>$dbRefId, 'na_sequence_id'=>$naSeqId});
 
-    $num += $newDbRefNASeq->submit() unless $newDbRefNASeq->retrieveFromDB();
+      $num += $newDbRefNASeq->submit() unless $newDbRefNASeq->retrieveFromDB();
 
-    $newDbRefNASeq->undefPointerCache();
+      $newDbRefNASeq->undefPointerCache();
+    }
   }
 
   print STDERR ("$num ids inserted into DbRefNASequence table\n");
