@@ -856,7 +856,7 @@ sub openInvocation {
 	   result                      => 'pending',
 	   comment_string              => substr($cla->{comment},0,255),
 	  });
-  $P->initSelfInv($alg_inv_gus);
+  $P->initAlgInvocation($alg_inv_gus);
 
   # global parameters
   $alg_inv_gus->setCommitOff()     unless $cla->{commit};
@@ -894,7 +894,7 @@ sub openInvocation {
   foreach my $param_name (sort keys %$cla) {
 
     # skip CBIL::Util::EasyCsp options which we do not record.
-    next if$param_name =~ /(debug|verbose|usage)/;
+    next if$param_name =~ /(debug|verbose|veryVerbose|usage)/;
 
     # get the Core.AlgorithmParamKey object
     my $apk_go      = $key_to_obj{$param_name};
@@ -906,20 +906,15 @@ sub openInvocation {
       my $apkt_go         = $apk_go->getParent('GUS::Model::Core::AlgorithmParamKeyType',1);
       if ($apkt_go) {
 
-	#				$P->log('ok-DPKT',
-	#								'A Core.AlgorithmParamKeyType was found for this param.',
-	#								$param_name,
-	#							 );
-
 	my $type            = $apkt_go->getType;
 
-				# get a list of its values (list or not originally)
+	# get a list of its values (list or not originally)
 	my $typed_value_key = $type.'_value';
 	my $param_value     = $cla->{$param_name};
 	my @values = ref $param_value ? @$param_value : ($param_value);
 
-				# process each value for param in (posible) list.  Note that we
-				# store value in string_value as well as its native type.
+	# process each value for param in (posible) list.  Note that we
+	# store value in string_value as well as its native type.
 	for (my $v_i = 0; $v_i < @values; $v_i++) {
 	  my $ap_h = { algorithm_param_key_id  => $apk_go->getId,
 		       string_value            => $values[$v_i],
