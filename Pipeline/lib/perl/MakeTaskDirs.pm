@@ -28,7 +28,7 @@ require Exporter;
 @EXPORT = qw(makeRMDir makeGenomeDir makeMatrixDir makeSimilarityDir makeControllerPropFile);
 
 use strict;
-
+use Carp;
 use CBIL::Util::Utils;
 
 sub makeRMDir {
@@ -194,7 +194,7 @@ sub makeTargetListFile {
   `$cmd`;
 
   my $status = $? >> 8;
-  $self->error("Failed with status $status running '$cmd'") if ($status);
+  &confess("Failed with status $status running '$cmd'") if ($status);
   #opendir (DIR, $genomeDir) || die "Can't open $genomeDir to get file names";
 
   #while (defined (my $file = readdir DIR)) {
