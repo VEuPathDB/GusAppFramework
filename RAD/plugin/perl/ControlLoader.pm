@@ -10,7 +10,9 @@
 # junmin liu
 #
 # Last Modified $Date$
-# 
+# 10/13/03 make change to the documentation part
+# 09/05/03 make change to the documentation part
+#  
 # $Revision$ $Date$ $Author$
 # ----------------------------------------------------------
 package GUS::RAD::Plugin::ControlLoader;
@@ -762,29 +764,29 @@ ga GUS::RAD::Plugin::ControlLoader B<[options]> B<--data_file> data_file B<--arr
 
 =head1 DESCRIPTION
 
-This is a plug-in that loads control information (spotted microarray and oligonucleotide array) data into control table. 
+    The plug-in loads information on the controls on a given array (spotted microarray and oligonucleotide array) data into the RAD3.control table. And it assumes that the array information has already been loaded into the appropriate view(s) of (Composite)ElementImp. 
 
 =head1 ARGUMENTS
 
 B<--data_file> F<data_file>  [require the absolute pathname]
 
-    The file contains the values for attributes in Control.
+    The file containing the mapping information from (composite)element identifiers to attributes in RAD3.Control for all those (composite)elements on the array which represent controls.
 
 B<--array_id> I<array_id>  [require must be one of array_id in RAD3::Array table]
 
-    set value of the array_id in ElementImp or CompositeElementImp table in order to determine the element_id or composite_element_id for setting the row_id in control table
+    The identifier in RAD3.Array of the array whose controls are being loaded. set value of the array_id in ElementImp or CompositeElementImp table in order to determine the element_id or composite_element_id for setting the row_id in control table 
 
 
 =head1 OPTIONS
 
-B<--e_subclass_view> I<e_subclass_view>  [optional, must be one of view name for  RAD3::ElementImp table]
-    being used for determining the element_id for setting the row_id in control table if c_subclass_view not set
+B<--e_subclass_view> I<e_subclass_view>  [optional, must be provided is c_subclass_view is not provided, must be one of view name for RAD3::ElementImp table]
+    The name of the view of RAD3.ElementImp to which Control.table_id should point for every control loaded in this run, if the controls refer to elements on the array. It is being used for determining the element_id for setting the row_id in control table if c_subclass_view not set
 
-B<--c_subclass_view> I<c_subclass_view>  [optional, must be one of view name for  RAD3::CompositeElementImp table]
-    being used for determining the composite_element_id for setting the row_id in control table if e_subclass_view not set
+B<--c_subclass_view> I<c_subclass_view>  [optional, must be provided is e_subclass_view is not provided, must be one of view name for RAD3::CompositeElementImp table]
+    The name of the view of RAD3.CompositeElementImp to which Control.table_id should point for every control loaded in this run, if the controls refer to composite_elements on the array. It is being used for determining the composite_element_id for setting the row_id in control table if e_subclass_view not set
 
 B<--posOption> I<posOption>  [optional, default is 1, can be 1, 2 or 3]
-    using when c_sublass_view equal to "ShortOligoFamily", if 1, then using "name" as probe set identifier; if 2, then using "external_database_release_id" and "source_id" as probe set identifier; if 3, then using "name", "external_database_release_id" and "source_id" as probe set identifier.
+    to be used when c_sublass_view is set to "ShortOligoFamily", to specify what the data_file uses as probe-set identifier: set to 1 if "name" is used, set to 2 if the pair (external_database_release_id, and source_id) is used, set to 3 if the triplet (name, external_database_release_id and source_id) is used.
 
 B<--debug>
     Debugging output.
@@ -823,29 +825,22 @@ Make sure that the F<.gus.properties> file of the user contains the correct logi
 
 =head2 F<data_file>
 
-The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.
+The data file should be in tab-delimited text format with one header row and a row for each control (composite) element. All rows should contain the same number of tabs/fields.
 
-* The header contains a list of attributes, which can be divided into two categories. One is position attributes which is used to identify the location of each element in array or compositeElement identifier such as probe set name such as "array_row", "array_column" and etc.. The others are attributes which are defined in the control table including control_type_id, name, value, unit_type_id. For the attributesin control, a prefix "control." is required to put before every attributes, such as "control.control_type_id", "control.name" and etc..
+* The header should contain two categories of fields: (1) fields that identify the (composite) element on the array and (2) fields that correspond to the attributes in RAD3.Control. As for (1), these should be: (i) (array_row, array_column, grid_row, grid_column, sub_row, sub_column) if e_subclass_view is set to Spot, (ii) (x_position,y_position) if e_subclass_view is set to ShortOligo, (iii) the identifiers specified in --posOption if c_subclass_view is set to ShortOligoFamily. These attributes should be in lower case and spelled exactly as they are spelled in the database. As for (2) these fields, should be preceded by "control." and they should be: control.control_type_id, control.name, control.value, control.unit_type_id (if applicable).
 
-* All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.
-
-* Every element for which the position attributes are available should have these stored in the database in order to determine the element_id and/or composite_element_id.
-
-* Depending on array platform, the position attributes are different. If the command line argument "e_subclass_view" is set to "Spot", then position attributes will be array_row, array_column, grid_row, grid_column, sub_row and sub_column. If  the command line argument "e_subclass_view" is set to "ShortOligo", then position attributes will be x_position and y_position. You will need to have these columns in the data file for each row.
-
-* If you only load the compositeElementResult for affymetrix data, you have option to use probe set identifier to set the composite_element_id without using the position attributes of x_position and y_position. First, set command line argument "c_subclass_view" to "ShortOligoFamily", second, use the "posOption" to set the probe set identifier, its default is 1, which uses "name" as the probe set identifier; 2 means using "external_database_release_id"and "source_id" as the probe set identifier; 3 means using "external_database_release_id", "source_id" and "name" as the probe set identifier.
 
 * Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.
 
-Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.
+Please double-check that your data file has no inconsistencies before loading the data. 
 
 =head2 F<e_subclass_view>
 
-Legal values for this argument must be either "Spot" or "ShortOligo" or "SAGETagMapping".
+Legal values for this argument must be either "Spot" or "ShortOligo".
 
 =head2 F<c_subclass_view>
 
-Legal values for this argument must be either "SpotFamily" or "ShortOligoFamily" or "SAGETag". 
+Legal values for this argument must be either "SpotFamily" or "ShortOligoFamily". 
 
 =head2 I<restart>
 
