@@ -113,24 +113,24 @@ sub process {
 	my $verbose = $self->getCla->{verbose};
 	my $db = $self->getDb;
         $db->setGlobalNoVersion(1);
-#	my $doc = GUS::Model::Core::DatabaseDocumentation->new();
+	my $doc = GUS::Model::Core::DatabaseDocumentation->new();
 	$self->logVerbose("Created new DatabaseDocumentation object");
 
 	############################### TEST
 	if ($db->checkTableExists($table_nm)){ # if table exists
 	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if valid attribute
-		my $doc = GUS::Model::Core::DatabaseDocumentation->new();
+#		my $doc = GUS::Model::Core::DatabaseDocumentation->new();
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
 		$doc->setHtmlDocumentation($html_dc);
 		$doc->retrieveFromDB();
-		if ($doc->setHtmlDocumentation($html_dc) ne $html_dc) {
+		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) {
 		    $doc->set('html_documentation', $html_dc);
 		    $doc->submit();
 		    $self->logVerbose("Submitted new DatabaseDocumentation object: $table_nm.$attribute_nm\t$html_dc");
 		    return();
 		}
-		elsif ($doc->get('html_documentation') eq $html_dc) {
+		elsif ($doc->setHtmlDocumentation($html_dc) eq $html_dc) {
 		    $self->logAlert("Documentation already exists for: $table_nm.$attribute_nm\t$html_dc\n");
 		    return();
 		}
