@@ -311,13 +311,13 @@ sub _waitForFiles {
 
 sub _createPipelineDir {
     my ($self) = @_;
-   
-    print "Creating pipeline dir $self->{pipelineDir}\n";
 
     if (-e "$self->{pipelineDir}") {
-	print "...$self->{pipelineDir} already exists\n\n";
+#	print "...$self->{pipelineDir} already exists\n\n";
 	return;
     } 
+
+    print "Creating pipeline dir $self->{pipelineDir}\n";
 
     print "\n";
 
