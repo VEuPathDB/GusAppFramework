@@ -88,7 +88,7 @@ sub getCVSRevision {
 # what cvs tag of the plugin is this?
 sub getCVSTag {
   my ($self) = @_;
-  $self->{cvsTag} =~ /Name: (.*) / || die "Illegal cvs tag";
+  $self->{cvsTag} =~ /Name:\s+(\S+)\s+/ || die "Illegal cvs tag";
   return $1;
 }
 
