@@ -59,13 +59,71 @@ sub new {
 # INSTANCE methods
 # ----------------------------------------------------------------------
 
-=head2 Instance methods
+=head2 Initialization
 
 =over 4
 
-=item C<initialize()>
+=item C<initialize($argsHashRef)>
 
 Initialize the plugin.  This method is called in the plugin's C<new> method.
+
+B<Parameters>
+
+- argsHashRef (hash ref).  This argument is a hash ref which must contain the following key values pairs:
+
+=over 4
+
+=item * requiredDbVersion (string)
+
+=item * cvsRevision (string)
+
+The CVS revision number (eg 1.11) of the plugin.  The value for this key I<must> be specified using the CVS magic substitution format.  In particular, it must be: C<'$Revision$'>. CVS will substitute in the revision number, so that, after substitution, the value will be, eg, C<'$Revision$>'
+
+=item * cvsTag (string)
+
+The CVS tag (ie, the software release it is from) of the plugin.  The value for this key I<must> be specified using the CVS magic substitution format.  In particular, it must be: C<'$Name$'>. CVS will substitute in the tag, so that, after substitution, the value will be, eg, C<'$Name$>'
+
+=item * name (string)
+
+The name of the plugin.  This value for this key I<must> be specified like this: C<ref($self)>.
+
+=item * usage (string)
+
+An explanation of the usage of the plugin.  The value for this key is used for two purposes:  to inform the user of the plugins usage when the user supplies the --usage argument; and, it is written into the description field of the Core.Algorithm table when the plugin is first registered in the database (by using ga +create).
+
+=item * revisionNotes (string)
+
+An explanation of what is new in this revision of the plugin.  This value is written into the description field of the Core.AlgorithmImplementation table when the plugin's registration is updated (by using ga +update).
+
+=item * easyCspOptions (reference to an array of hash refs)
+
+A specification of the command line arguments for the plugin.  Each hash ref in the array specifies a single command line argument.  The keys in the array are:
+
+=over 4
+
+=item o
+
+Required.  Specifies the argument's name (o for option). This must be a single word.  The user will use it on the command line this this:  --arg_name.
+
+=item h
+
+Required.  A helpful description for the argument (h for help).
+
+=item d
+
+Optional.  The default value, if there is one.  
+
+=item r
+
+Optional.  True (=1) if the argument is required.
+
+=item t
+
+Required.  Specifies the data type of the argument.  Allowed types are: id, float, int, date, string, boolean, table_id.
+
+=back
+
+=back
 
 B<Return type:> none
 
@@ -98,11 +156,32 @@ sub initialize {
 # Public Accessors
 # ----------------------------------------------------------------------
 
+=head2 Setters
+
+=over 4
+
+=item C<setResultDescr($resultDescrip)>
+
+Set the result description.  This value is stored in the database in the AlgorithmInvocation table's result column after the plugin completes.
+
+B<Params:>
+
+- resultDescrip: a description of the plugin's main result for posterity.
+
+B<Return type:> C<string>
+
+=cut
+sub setResultDescr {$_[0]->{resultDescr} = $_[1];}
+
+=head2 Getters
+
+=over 4
+
 =item C<getUsage()>
 
 Get the plugin's usage.  This value is set by the C<initialize> method.
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub getUsage             { $_[0]->{usage} }
@@ -111,7 +190,7 @@ sub getUsage             { $_[0]->{usage} }
 
 Get the plugin's required database version.  This value is set by the C<initialize> method.
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub getRequiredDbVersion { $_[0]->{requiredDbVersion} }
@@ -120,7 +199,7 @@ sub getRequiredDbVersion { $_[0]->{requiredDbVersion} }
 
 Get the plugin's CVS revision number.  This value is set by the C<initialize> method.
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 # parse out revision from string of the form '$Revision 1.2 $'
@@ -131,24 +210,11 @@ sub getCVSRevision {
   return $1;
 }
 
-=item C<setResultDescr($resultDescrip)>
-
-Set the result description.  This value is stored in the database in the AlgorithmInvocation table's result column after the plugin completes.
-
-B<Params:>
-
-- resultDescrip: a description of the plugin's main result for posterity.
-
-B<Return type:> string
-
-=cut
-sub setResultDescr {$_[0]->{resultDescr} = $_[1];}
-
 =item C<getResultDescr>
 
 Get the result description.
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 
@@ -158,7 +224,7 @@ sub getResultDescr{ $_[0]->{resultDescr}}
 
 Get the plugin's CVS tag.  This value is set by the C<initialize> method.
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub getCVSTag {
@@ -171,7 +237,7 @@ sub getCVSTag {
 
 Get the plugin's revision notes.  This value is set by the C<initialize> method.
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub getRevisionNotes       { $_[0]->{revisionNotes} }
@@ -180,72 +246,71 @@ sub getRevisionNotes       { $_[0]->{revisionNotes} }
 
 Get the plugin's EasyCsp options.  This value is set by the C<initialize> method.
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub getEasyCspOptions    { $_[0]->{easyCspOptions} }
 
 =item C<getName()>
 
-  Get the name of the plugin, eg, C<GUS::Common::Plugin::UpdateRow>
+Get the name of the plugin, eg, C<GUS::Common::Plugin::UpdateRow>
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub getName       { $_[0]->{name} }
 
 =item C<getFile()>
 
-Get the fill path of the file that contains the plugin, eg, /home/me/gushome/lib/perl/GUS/Common/Plugin/UpdateRow.pm
+Get the full path of the file that contains the plugin, eg, /home/me/gushome/lib/perl/GUS/Common/Plugin/UpdateRow.pm
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub getFile       { $_[0]->{__gus__plugin__FILE} }
 
 =item C<getArgs()>
 
-Get 
+Get the plugin's command line arguments.  To access these within the plugin, use: C<< $self->getArgs()->{arg_name} >>.
 
-B<Return type:> string
+B<Return type:> Hash reference
 
 =cut
 sub getArgs        { $_[0]->{__gus__plugin__cla} }
 
-# the DBI database
-=item C<()>
 
+=item C<getDb()>
 
+Get the DbiDatabase object which represents the database this plugin accesses.
 
-B<Return type:> string
+B<Return type:> C<GUS::ObjRelP::DbiDatabase>
 
 =cut
 sub getDb         { $_[0]->{__gus__plugin__db} }
 
-# the GUS::Model::Core::AlgorithmInvocation for current run
-=item C<()>
+=item C<getAlgInvocation()>
 
+Get the AlgorithmInvocation which tracks the running of this plugin in the database.
 
-
-B<Return type:> string
+B<Return type:> C<GUS::Model::Core::AlgorithmInvocation>
 
 =cut
 sub getAlgInvocation    { $_[0]->{__gus__plugin__self_inv} }
 
-=item C<()>
+=item C<getQueryHandle()>
 
+Get the DbiDbHandle which this plugin uses to access the database.
 
-
-B<Return type:> string
+B<Return type:> C<GUS::ObjRelP::DbiDbHandle>
 
 =cut
 sub getQueryHandle    { $_[0]->getDb ? $_[0]->getDb->getQueryHandle : undef }
 
-=item C<()>
+=item C<getCheckSum()>
 
+Get an md5 digest checksum of the perl file which codes this plugin.  (This is used by GusApplication when registering the plugin in the database.)
 
-
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub getCheckSum {
@@ -264,22 +329,21 @@ sub getCheckSum {
   }
   return $M->{md5};
 }
-# The Algorithm for the plugin
-=item C<()>
 
+=item C<getAlgorithm()>
 
+Get the Algorithm that represents this plugin in the database.
 
-B<Return type:> string
+B<Return type:> C<GUS::Model::Core::Algorithm>
 
 =cut
 sub getAlgorithm  { $_[0]->{__gus__plugin__algorithm} }
 
-# Implementation - locate by executable name and version
-=item C<()>
+=item C<getImplementation()>
 
+Get the AlgorithmImplementation that represents this version of this plugin in the database.
 
-
-B<Return type:> string
+B<Return type:> C<GUS::Model::Core::AlgorithmImplementation>
 
 =cut
 sub getImplementation  { $_[0]->{__gus__plugin__implementation} }
@@ -288,11 +352,19 @@ sub getImplementation  { $_[0]->{__gus__plugin__implementation} }
 # Public Utilities
 # ----------------------------------------------------------------------
 
-=item C<()>
+=head2 Utilities
 
+=over 4
 
+=item C<className2oracleName($className)>
 
-B<Return type:> string
+Convert a perl style class name for a database object to the form required in an SQL statement.  For example, convert Core::Algorithm to core.algorithm
+
+B<Parameters:>
+
+- className (string):  A class name in the form: GUS::Model::Core::Algorithm or Core::Algorithm
+
+B<Return type:> C<string>
 
 =cut
 sub className2oracleName {
@@ -300,11 +372,9 @@ sub className2oracleName {
   return GUS::ObjRelP::DbiDatabase::className2oracleName($className);
 }
 
-=item C<()>
+=item C<undefPointerCache()>
 
-
-
-B<Return type:> string
+Clear out the GUS Object Layer's cache of database objects.  The object cache holds 10000 objects by default.  (You can change its capacity by calling C<< $self->getDb()->setMaximumNumberOfObjects() >>.)  Typically a plugin may loop over a set of input, using a number of objects for each iteration through the loop.  Because the next time through the loop will not need those objects, it is good practice to call C<< $self->undefPointerCache() >> at the bottom of the loop to avoid filling the cache with objects that are not needed anymore.
 
 =cut
 sub undefPointerCache {	$_[0]->getAlgInvocation->undefPointerCache }
@@ -313,11 +383,22 @@ sub undefPointerCache {	$_[0]->getAlgInvocation->undefPointerCache }
 # ----------------------------------------------------------------------
 # Error Handling
 # ----------------------------------------------------------------------
-=item C<()>
 
+=head2 Error handling
 
+=over 4
 
-B<Return type:> string
+=item C<error()>
+
+Handle a fatal error in a plugin.  This method terminates the plugin gracefully, writing the provided message to STDERR.  It also writes a stack trace showing where the error occurred.
+
+When the plugin is terminated, GusApplication will still catch the error and attempt to track the plugin's failure in the database.
+
+Do not use this method to report user errors such as invalid argument values (use C<userError> for that).
+
+B<Parameters>
+
+- msg (string):  the error message to write.
 
 =cut
 sub error {
@@ -326,11 +407,13 @@ sub error {
   confess("\nERROR: $msg\n\n--------------------------- STACK TRACE -------------------------\n");
 }
 
-=item C<()>
+=item C<userError($msg)>
 
+Handle a fatal user error in a plugin.  This method terminates the plugin gracefully, writing the provided message to STDERR.  It it intended only for errors made by the user of the plugin (such as incorrect argument values).
 
+B<Parameters>
 
-B<Return type:> string
+- msg (string):  the error message to write.
 
 =cut
 sub userError{
@@ -338,68 +421,22 @@ sub userError{
 
   die "\nUSER ERROR: $msg\n";
 }
-# ----------------------------------------------------------------------
-# Deprecated
-# ----------------------------------------------------------------------
-=item C<()>
-
-
-
-B<Return type:> string
-
-=cut
-sub getSelfInv    { $_[0]->getAlgInvocation(); }
-=item C<()>
-
-
-
-B<Return type:> string
-
-=cut
-sub getCla        { $_[0]->getArgs(); }
-=item C<()>
-
-
-
-B<Return type:> string
-
-=cut
-sub logAlert      { my $M = shift; $M->log(@_); }
-=item C<()>
-
-
-
-B<Return type:> string
-
-=cut
-sub getOk         { $_[0]->{__gus__plugin__OK} }
-=item C<()>
-
-
-
-B<Return type:> string
-
-=cut
-sub setOk         { $_[0]->{__gus__plugin__OK} = $_[1]; $_[0] }
-=item C<()>
-
-
-
-B<Return type:> string
-
-=cut
-sub logRAIID      {$_[0]->logAlgInvocationId(); }
 
 # ----------------------------------------------------------------------
 # Public Logging Methods
 # ----------------------------------------------------------------------
 
-# Write a time-stamped tab-delimited error message to STDERR.
-=item C<()>
+=head2 Logging
 
+=over 4
 
+=item C<log($msg1, $msg2, ...)>
 
-B<Return type:> string
+Write a date stamped tab delimited message to STDERR.  The messages supplied as arguments are joined with tabs in between.
+
+B<Parameters>
+
+- @messages (list of strings):  the error messages to write.
 
 =cut
 sub log {
@@ -412,11 +449,13 @@ sub log {
   print STDERR "$msg\n";
 }
 
-=item C<()>
+=item C<logDebug($msg1, $msg2, ...)>
 
+Write a date stamped tab delimited debugging message to STDERR.  The messages supplied as arguments are joined with tabs in between.  It will only be written if the user specifies the C<--debug> argument.
 
+B<Parameters>
 
-B<Return type:> string
+- @messages (list of strings):  the error messages to write.
 
 =cut
 sub logDebug {
@@ -428,11 +467,13 @@ sub logDebug {
   print STDERR "\n$msg\n";
 }
 
-=item C<()>
+=item C<logVerbose($msg1, $msg2, ...)>
 
+Write a date stamped tab delimited debugging message to STDERR.  The messages supplied as arguments are joined with tabs in between.  It will only be written if the user specifies the C<--verbose> argument.
 
+B<Parameters>
 
-B<Return type:> string
+- @messages (list of strings):  the error messages to write.
 
 =cut
 sub logVerbose {
@@ -441,11 +482,13 @@ sub logVerbose {
   $M->log(@_) if $M->getArgs()->{verbose};
 }
 
-=item C<()>
+=item C<logVeryVerbose($msg1, $msg2, ...)>
 
+Write a date stamped tab delimited debugging message to STDERR.  The messages supplied as arguments are joined with tabs in between.  It will only be written if the user specifies the C<--veryVerbose> argument.
 
+B<Parameters>
 
-B<Return type:> string
+- @messages (list of strings):  the error messages to write.
 
 =cut
 sub logVeryVerbose {
@@ -454,12 +497,13 @@ sub logVeryVerbose {
   $M->log(@_) if $M->getArgs()->{veryVerbose};
 }
 
-# to stdout
-=item C<()>
+=item C<logData($msg1, $msg2, ...)>
 
+Write a date stamped tab delimited debugging message to STDOUT.  The messages supplied as arguments are joined with tabs in between.
 
+B<Parameters>
 
-B<Return type:> string
+- @messages (list of strings):  the error messages to write.
 
 =cut
 sub logData {
@@ -477,11 +521,9 @@ sub logData {
 
 }
 
-=item C<()>
+=item C<logAlgInvocationId()>
 
-
-
-B<Return type:> string
+Log to STDERR the id for the AlgorithmInvocation that represents this run of the plugin in the database.
 
 =cut
 sub logAlgInvocationId {
@@ -490,11 +532,9 @@ sub logAlgInvocationId {
   $M->log('ALGINVID', $M->getAlgInvocation->getId)
 }
 
-=item C<()>
+=item C<logCommit()>
 
-
-
-B<Return type:> string
+Log to STDERR the state of the commit flag for this run of the plugin.
 
 =cut
 sub logCommit {
@@ -503,11 +543,9 @@ sub logCommit {
   $M->log('COMMIT', $M->getCla->{commit} ? 'commit on' : 'commit off');
 }
 
-=item C<()>
+=item C<logArgs()>
 
-
-
-B<Return type:> string
+Log to STDERR the argument values used for this run of the plugin.
 
 =cut
 sub logArgs {
@@ -527,11 +565,15 @@ sub logArgs {
 # Common SQL routines
 # ----------------------------------------------------------------------
 
-=item C<()>
+=head2 SQL utilities
+
+=over 4
+
+=item C<sql_get_as_array()>
 
 
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub sql_get_as_array {
@@ -567,7 +609,7 @@ sub sql_get_as_array {
 
 
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub sql_get_as_array_refs {
@@ -605,7 +647,7 @@ sub sql_get_as_array_refs {
 
 
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub sql_get_as_hash_refs {
@@ -640,7 +682,7 @@ sub sql_get_as_hash_refs {
 
 
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub sql_get_as_hash_refs_lc {
@@ -676,7 +718,7 @@ sub sql_get_as_hash_refs_lc {
 
 
 
-B<Return type:> string
+B<Return type:> C<string>
 
 =cut
 sub sql_translate {
@@ -699,6 +741,56 @@ sub sql_translate {
   $M->{__gus__plugin_sql_xlate_cache}->{$T}->{$Vc}->{$V}
 }
 
+# ----------------------------------------------------------------------
+# Deprecated
+# ----------------------------------------------------------------------
+
+=head2 Deprecated
+
+=over 4
+
+=item C<getSelfInv()>
+
+Replaced by C<getAlgInvocation>
+
+=cut
+sub getSelfInv    { $_[0]->getAlgInvocation(); }
+
+=item C<getCla()>
+
+Replaced by C<getArgs>
+
+=cut
+sub getCla        { $_[0]->getArgs(); }
+
+=item C<logAlert()>
+
+Replaced by C<log>
+
+=cut
+sub logAlert      { my $M = shift; $M->log(@_); }
+
+=item C<getOk()>
+
+This method is replaced by the C<die/eval> facilities of perl.  Instead of using C<setOK(0)>, use C<die>. 
+
+=cut
+
+sub getOk         { $_[0]->{__gus__plugin__OK} }
+
+=item C<setOk()>
+
+This method is replaced by the C<die/eval> facilities of perl.  Instead of using C<getOK()>, use C<eval>.
+
+=cut
+sub setOk         { $_[0]->{__gus__plugin__OK} = $_[1]; $_[0] }
+
+=item C<logRAIID()>
+
+Replaced by C<logAlgInvocationId>
+
+=cut
+sub logRAIID      {$_[0]->logAlgInvocationId(); }
 
 # ----------------------------------------------------------------------
 # Initialization Methods - called by GusApplication
