@@ -80,7 +80,8 @@
 
   <target name="GUS/Model-Installation" depends="ProjectTree, 
                                                  checkObjects,
-                                                 generatedModel">
+                                                 generatedModel,
+                                                 manuallyEditedModel">
     <ant target="defaultComponentInstall">
       <property name="component" value="GUS/Model"/>
     </ant>
@@ -89,12 +90,50 @@
    <target name="generatedModel" unless="objectsAlreadyGenerated" 
                                  depends="ProjectTree,
                                           GUS/ObjRelP-Installation">
+     <delete>
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/Core" includes="*.pm"/>
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/DoTS" includes="*.pm"/>
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/RAD3" includes="*.pm"/>
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/SRes" includes="*.pm"/>
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/TESS" includes="*.pm"/>
+     </delete>
      <exec executable="generateGusPerlObjects"/>
+   </target>  
+
+   <target name="manuallyEditedModel" depends="ProjectTree,
+                                      GUS/ObjRelP-Installation">
+
+     <copy todir="${projectsDir}/GUS/Model/lib/perl/Core">
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/Core"/>
+       <mapper type="glob" from="*.pm.man" to="*.pm"/>
+     </copy>
+
+     <copy todir="${projectsDir}/GUS/Model/lib/perl/DoTS">
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/DoTS"/>
+       <mapper type="glob" from="*.pm.man" to="*.pm"/>
+     </copy>
+
+     <copy todir="${projectsDir}/GUS/Model/lib/perl/RAD3">
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/RAD3"/>
+       <mapper type="glob" from="*.pm.man" to="*.pm"/>
+     </copy>
+
+     <copy todir="${projectsDir}/GUS/Model/lib/perl/SRes">
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/SRes"/>
+       <mapper type="glob" from="*.pm.man" to="*.pm"/>
+     </copy>
+
+     <copy todir="${projectsDir}/GUS/Model/lib/perl/TESS">
+       <fileset dir="${projectsDir}/GUS/Model/lib/perl/TESS"/>
+       <mapper type="glob" from="*.pm.man" to="*.pm"/>
+     </copy>
+
    </target>  
 
   <target name="checkObjects">
     <uptodate property="objectsAlreadyGenerated" 
-              targetfile="${projectsDir}/GUS/Model/lib/perl/GUS/Model/generated"             srcfile="${projectsDir}/GUS/Model/lib/sql/definition.sql" />
+              targetfile="${projectsDir}/GUS/Model/lib/perl/generated" 
+              srcfile="${projectsDir}/GUS/Model/lib/sql/definition.sql" />
   </target>
  
 
