@@ -47,7 +47,7 @@ sub new {
 	    h => 'FASTA file that contains all of the BLAT query sequences.',
 	    t => 'string',
 	    r => 1,
-	}
+	},
 	previousRuns => {
 	    o => 'previous_runs',
 	    h => ('Comma-separated list of algorithm_invocation_ids of previous runs; ' .
