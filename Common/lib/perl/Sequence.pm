@@ -270,7 +270,7 @@ sub getVirtualSequence {
 	my $uncertainty = $row->{'uncertainty'};
 	my $pieceNaSeqId = $row->{'piece_na_sequence_id'};
 	
-	my $piece = NASequence->new({'na_sequence_id' => $pieceNaSeqId});
+	my $piece = GUS::Model::DoTS::NASequence->new({'na_sequence_id' => $pieceNaSeqId});
 	$piece->retrieveFromDB();
 	my $pieceSeq = $piece->getSequence();
 	
@@ -325,7 +325,7 @@ sub getSequence {
     my $result;
 
     if ($subclass eq 'Assembly') {
-	my $ass = Assembly->new({'na_sequence_id' => $naSeq->get('na_sequence_id')});
+	my $ass = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $naSeq->get('na_sequence_id')});
 	$ass->retrieveFromDB();
 	$result = $ass->getSequence();
     } else {
