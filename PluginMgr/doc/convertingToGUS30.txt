@@ -40,30 +40,30 @@ sub new {
    c. replace easycsp hashes with original EasyCspOptions hash, delete keys 
       and conform to above model
 
-7. get rid of the 'my $ctx' declaration, global or local
+7. get rid of the 'my $ctx' declaration, global or local **********
 
-8. put $self = shift at beginning of all subs  
+8. put $self = shift at beginning of all subs  *************
 
-9. call all subs with $self->subname (search for & and replace with $self->)
+9. call all subs with $self->subname (search for & and replace with $self->) ***************
 
-10. replace $ctx->{cla}-> with $self->getCla
+10. replace $ctx->{cla}-> with $self->getCla ***********************
 
-11. replace $ctx->{'self_inv'}->getQueryHandle with $self->getQueryHandle
+11. replace $ctx->{'self_inv'}->getQueryHandle with $self->getQueryHandle *******************************
 
-12. use $self->getQueryHandle instead of passing a database handle or using a 
+12. use $self->getQueryHandle instead of passing a database handle or using a  ***********************
    global database handle
 
-13. avoid use DBI or DbiDatabase
+13. avoid use DBI or DbiDatabase ********************
 
 14. search for 'new' (instantiating new database objects) and add the full 
     path for objects e.g. GUS::Model::DoTS::AssemblySequence-> 
     new( { 'assembly_sequence_id' => $id } );
 
-15. use $self->undefPointerCache instead of newObject->undefPointerCache
+15. use $self->undefPointerCache instead of newObject->undefPointerCache   *********************
 
 16. substitute 'sub run' for 'sub Run'
 
-17. use $self->log() instead of print when appropriate
+17. use $self->log() instead of print when appropriate                  *********************
     exceptions: files that the plugin uses during its run or on restart
                 plugin approriately writes to 2 or more STDERR or STDOUT files
 
@@ -79,7 +79,7 @@ sub new {
          getParent
     ... so, search for getChild and getParent
 
-21. new way to create a new DbiDatabase:
+21. new way to create a new DbiDatabase:                 ##### for scripts
     - take a command line property called --gusConfigFile (defaults to 
       $GUS_CONFIG_FILE
    
