@@ -53,7 +53,7 @@
       <rtexprvalue>true</rtexprvalue>
     </attribute>
     <attribute>
-      <description>The new name for the attribute</description>
+      <description>Whether to remove the old key ie mv or cp</description>
       <name>remove</name>
       <required>false</required>
       <type>java.lang.String</type>
