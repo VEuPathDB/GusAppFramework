@@ -4,9 +4,11 @@
 ## query must return primary key of versioned table.
 
 use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
 use Getopt::Long;
 use GUS::ObjRelP::DbiDatabase;
 use GUS::Model::Core::TableInfo;
+use GUS::Common::GusConfig;
 
 $| = 1;
 
@@ -29,7 +31,7 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$verbose,0,1,
 					$gusconfig->getCoreSchemaName());
 
-my $dbh = $db->makeNewHandle();
+my $dbh = $db->getQueryHandle();
 
 my %versioned;
 my @ids;
