@@ -61,12 +61,12 @@ sub makeMatrixDir {
 }
 
 sub makeSimilarityDir {
-    my ($subjectName, $pipelineName, $localPath, $serverPath, 
+    my ($queryName, $subjectName, $pipelineName, $localPath, $serverPath, 
 	$nodePath, $taskSize, $blastBinPath,
 	$dbName, $regex, $blast, $blastParams) = @_;
     
-    my $localBase = "$localPath/$pipelineName/similarity/$subjectName";
-    my $serverBase = "$serverPath/$pipelineName/similarity/$subjectName"; 
+    my $localBase = "$localPath/$pipelineName/similarity/$queryName-$subjectName";
+    my $serverBase = "$serverPath/$pipelineName/similarity/$queryName-$subjectName";
     my $inputDir = "$localBase/input";
     my $blastParamsFile = "$inputDir/blastParams";
 
