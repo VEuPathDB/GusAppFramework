@@ -33,7 +33,7 @@ use CBIL::Util::Utils;
 
 sub makeRMDir {
     my ($datasetName, $pipelineName, $localPath, $serverPath, $nodePath, 
-	$taskSize, $rmOptions, $rmPath,$dangleMax) = @_;
+	$taskSize, $rmOptions, $dangleMax, $rmPath) = @_;
     
     my $localBase = "$localPath/$pipelineName/repeatmask/$datasetName";
     my $serverBase = "$serverPath/$pipelineName/repeatmask/$datasetName"; 
@@ -43,7 +43,7 @@ sub makeRMDir {
 			    $nodePath, 
 			    "DJob::DistribJobTasks::RepeatMaskerTask");
     my $seqFileName = "$serverPath/$pipelineName/seqfiles/$datasetName.fsa"; 
-    &makeRMTaskPropFile($inputDir, $seqFileName, $rmOptions, $rmPath);
+    &makeRMTaskPropFile($inputDir, $seqFileName, $rmOptions, $rmPath,$dangleMax);
 }
 
 sub makeMatrixDir {
@@ -106,7 +106,7 @@ restart=no
 }
 
 sub makeRMTaskPropFile {
-    my ($inputDir, $seqFileBasename, $rmOptions, $rmPath) = @_;
+    my ($inputDir, $seqFileBasename, $rmOptions, $rmPath, $dangleMax) = @_;
 
     open(F, ">$inputDir/task.prop") 
 	|| die "Can't open $inputDir/task.prop for writing";
