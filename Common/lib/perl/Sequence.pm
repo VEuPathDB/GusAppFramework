@@ -93,46 +93,62 @@ sub parseFasta {
 }
 
 # ----------------------------------------------------------
-# getCounts
+# getCounts()
 #
-# Returns the counts of 'a', 'g', 't', 'c', and 'other'
-# in a sequence.
-#
+# INPUT:
 # $seq         Sequence with NO newlines, whitespace, or FASTA defline.
 # $len         Optional length of $seq.
 # $dieIfError  Whether to halt if an error is detected (default = no)
 #
+# OUTPUT:
+# Returns the counts of 'a', 'c', 'g', 't', and 'other'
+# in an anonymous hash.
+#
+# Modified to count string composition in STRIDE chunks,
+# each chunk derived from substr() then split() into an array.   
+# The motivation was to reduce calls to Perl's substr() function.
+# The previous getCounts() made strlen($seq) invocations of substr(),
+# which due to UTF-8 encoding of XML XML::Parser and XML::Simple,
+# caused extremely long processing (> 10 hours) for sequences on
+# the order of mbases in length. TC072003
+
+use constant STRIDE => 1024*16;
+
 sub getCounts {
     my($seq, $len, $dieIfError) = @_;
+    my $lengthlocal = length($seq);
+    $len = $lengthlocal unless defined($len);
 
-    my $a = 0;
-    my $g = 0;
-    my $t = 0;    
-    my $c = 0;
-    my $o = 0;
+    #printf STDERR "-------> getCounts() LENGTH = $lengthlocal\n";
+    my %charhash = ();
+    my $remaining = $lengthlocal;
 
-    my $l = length($seq);
-
-    for (my $i = 0;$i < $l;++$i) {
-	$_ = substr($seq, $i, 1);
-
-      SWITCH: {
-	  /^a$/i && do { ++$a; last SWITCH; };
-	  /^g$/i && do { ++$g; last SWITCH; };
-	  /^t$/i && do { ++$t; last SWITCH; };
-	  /^c$/i && do { ++$c; last SWITCH; };
-	  ++$o;
-      }
+    for(my $offset=0; $remaining>0; $offset += STRIDE) {
+       my $substrlength = (STRIDE > $remaining) ? $remaining : STRIDE;
+       my $substring = substr($seq, $offset, $substrlength);
+       $remaining -= $substrlength;
+       my @seqArray = split(//,$substring);
+       for (my $i = 0; $i < $substrlength; $i++) {
+         $charhash{lc($seqArray[$i])}++;       
+       }
     }
+
+    my $a = $charhash{'a'};
+    my $c = $charhash{'c'};
+    my $g = $charhash{'g'};
+    my $t = $charhash{'t'};
+    my $o = $lengthlocal - ($a+$c+$g+$t);
 
     # Sanity check
     #
-    if (defined($len) && (($a + $g + $t + $c + $o) != $len))  {
-	print STDERR "Sequence: ERROR! a=$a g=$g t=$t c=$c o=$o length=$len\n";
-	die "Sum of counts does not match sequence length." if ($dieIfError);
+    if ( ($a + $g + $t + $c + $o) != $len )  {
+        my $desc = "Sum of counts does not match sequence length";
+	printf STDERR "ERROR Common::Sequence::getCounts() : $desc\n";
+        printf STDERR "getCounts() counts: a=$a g=$g t=$t c=$c o=$o length=$len\n";
+	die "Terminating in Common::Sequence::getCounts()\n" if ($dieIfError);
     }
 
-    return {'a' =>$a, 'g' => $g, 't' => $t, 'c' => $c, 'o' => $o};
+    return {'a' => $a, 'c' => $c, 'g' => $g, 't' => $t, 'o' => $o};
 }
 
 # ----------------------------------------------------------
