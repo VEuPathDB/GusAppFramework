@@ -1172,7 +1172,7 @@ sub loadData{
 # work on control table
      if(defined $cfg_rv->{'mapping'}->{'Control.subclass_view'}){
 	 my $view=$cfg_rv->{'mapping'}->{'Control.subclass_view'};
-	 my $table_id=getTable_Id($view);
+	 my $table_id=$M->getTable_Id($view);
 	 my $row_id;
 	 
 	 if($view eq 'ShortOligo' || $view eq 'Spot'){
@@ -1182,9 +1182,9 @@ sub loadData{
 	 if($view eq 'ShortOligo' || $view eq 'Spot'){
 	     $row_id=$cfg_rv->{'CompositeElement_Id'};
 	 }
-
-	 $M->updateControl($table_id, $row_id, @arr);
-
+	 if ( defined $pos->{$mapping->{control_type_id}} && $arr[$pos->{$mapping->{control_type_id}}] ne ""){
+	     $M->updateControl($table_id, $row_id, @arr);
+	 }
      }
 
 
@@ -1215,7 +1215,9 @@ sub loadData{
 sub getTable_Id{
     my $M = shift;
     my ($table_name)=@_;
-#    $M->setOk(1);
+ #eval "require GUS::Model::RAD3::$cfg_rv->{'mapping'}->{'CompositeElementImp.subclass_view'}";
+  #eval "require GUS::Model::RAD3::$cfg_rv->{'mapping'}->{'ElementImp.subclass_view'}";
+   $M->setOk(1);
     my $query="select t.table_id from core.tableinfo t where t.name='$table_name'";
     my $dbh = $M->getSelfInv->getQueryHandle();
     my $sth = $dbh->prepare($query);
@@ -1229,7 +1231,7 @@ sub getTable_Id{
 	$cfg_rv->{warnings} = "Cann't retrieve table_id for subclass view $table_name";
 	$M->logData('Error', $cfg_rv->{warnings});
 	if($M->getCla->{'commit'}){print STDERR "Error: Cann't retrieve table_id for subclass view $table_name\n";}
-#	$M->setOk(0);
+	$M->setOk(0);
     }
 }
 
