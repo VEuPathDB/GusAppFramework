@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!@perlLocation@
 
 
 $jobcmd=$ARGV[0];

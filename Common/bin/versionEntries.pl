@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!@perlLocation@
 
 ##takes in an SQL query and versions entries one at a time...
 ## query must return primary key of versioned table.
