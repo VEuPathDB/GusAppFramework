@@ -256,9 +256,12 @@ sub loadAlignments {
     my $targetTableId = $cla->{'target_table_id'};
     my $targetTaxonId = $cla->{'target_taxon_id'};
     my $targetExtDbRelId = $cla->{'target_db_rel_id'};
-    my $ext_genome_ver = &getUcscGenomeVersion($dbh, $targetExtDbRelId);
     my $gapTabSpace = $cla->{'gap_table_space'};
-    my $gapTabPref = ($gapTabSpace ? "${gapTabSpace}.${ext_genome_ver}_" : "");
+    my $gapTabPref = '';
+    if ($gapTabSpace) {
+      my $ext_genome_ver = &getUcscGenomeVersion($dbh, $targetExtDbRelId);
+      $gapTabPref = "${gapTabSpace}.${ext_genome_ver}_";
+    }
 
     my $minQueryPct = $cla->{'min_query_pct'};
 
