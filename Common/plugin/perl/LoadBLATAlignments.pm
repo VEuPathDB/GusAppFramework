@@ -210,6 +210,8 @@ sub run {
     my $action = $cla->{'action'};
     my $regEx = $cla->{'reg_ex'};
 
+    $self->getArgs()->{'commit'} ? $self->log("***COMMIT ON***\n") : $self->log("**COMMIT TURNED OFF**\n");
+
     die "LoadBLATAlignments: query_file not defined" unless $queryFile;
     die "LoadBLATAlignments: unrecognized query_table_id" if (!($queryTableId =~ /^56|57|89|245|339$/));
     die "LoadBLATAlignments: unrecognized target_table_id" if (!($targetTableId =~ /^56|57|89|245|339$/));
@@ -224,7 +226,7 @@ sub run {
 	    $self->log("stripping extra headers in $file");
 	    &CBIL::Bio::BLAT::PSLDir::strip($file);
 	    if (&CBIL::Bio::BLAT::PSLDir::isFileEmpty($file)) {
-	      &system("/bin/rm $file");
+	      system("/bin/rm $file");
 	    } else {
 	      push @blatFiles, $file;
 	    }
