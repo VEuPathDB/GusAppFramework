@@ -484,6 +484,30 @@ sub getPrimaryKeyConstraintCols {
     return $result;
 }
 
+sub getUniqueConstraintColHash {
+    my($self, $dbh) = @_;
+
+    my $hash = {};
+
+    my $owner = $self->{'owner'};
+    my $name = $self->{'name'};
+
+    my $cSql = ("select * " .
+		"from all_constraints c " .
+		"where c.owner = upper('$owner') " .
+		"and c.table_name = upper('$name') " .
+		"and c.constraint_type = 'U'");
+
+    my $rows = &GUS::DBAdmin::Util::execQuery($dbh, $cSql, 'hash');
+
+    foreach my $row (@$rows) {
+	my $cols = $self->getConstraintCols($dbh, $row->{'owner'}, $row->{'constraint_name'});
+	$hash->{join(',', map { uc($_->{column_name}) } @$cols)} = 1;
+    }
+
+    return $hash;
+}
+
 sub getConstraintCols {
     my($self, $dbh, $cowner, $cname) = @_;
 
@@ -500,7 +524,7 @@ sub constraintToSQL {
 
     my($tOwner, $tName) = ($tableName =~ /^([^\.]+)\.([^\.]+)$/);
 
-    # Hack - add an extra period if the schema name begins with && (i.e. is an SQL variable)
+    # Hack - add an extra '.' if the schema name begins with && (i.e. is an SQL variable)
     $tOwner =~ s/^(&&\S+)/$1./; 
 
     my $cowner = $row->{owner};
@@ -787,7 +811,7 @@ sub indexToSQL {
     $create .= " TABLESPACE $newTS" if (defined($newTS));
     $create .=";";
 
-    return ("drop index ${owner}.${name};", $create, ($unique && $colsMatch));
+    return ("drop index ${owner}.${name};", $create, ($unique && $colsMatch), $cols);
 }
 
 sub getIndexes {
@@ -807,8 +831,13 @@ sub getIndexes {
     return &GUS::DBAdmin::Util::execQuery($dbh, $sql, 'hash');
 }
 
+# $includePrimKeyIndex       Whether to include the system-generated index that corresponds to 
+#                            the table's primary key constraint.
+# $includeUniqueConsIndexes  Whether to include the system-generated indexes that correspond to
+#                            the table's unique constraints.
+#
 sub getIndexesSql {
-    my($self, $dbh, $onTable, $renameSysIds, $newOwner, $newTS, $includePrimKeyIndex) = @_;
+    my($self, $dbh, $onTable, $renameSysIds, $newOwner, $newTS, $includePrimKeyIndex, $includeUniqueConsIndexes) = @_;
 
     my $createSql = [];
     my $dropSql = [];
@@ -818,13 +847,19 @@ sub getIndexesSql {
 
     my $keyCols = $self->getPrimaryKeyConstraintCols($dbh);
     my $keyColHash = {};
-
     foreach my $k (@$keyCols) { $keyColHash->{$k} = 1; }
 
-    foreach my $row (@$indexes) {
-	my($d, $c, $isPrimKeyIndex) = $self->indexToSQL($dbh, $tn, $row, $onTable, $renameSysIds, $newOwner, $newTS, $keyColHash);
+    my $uniqueCols = $self->getUniqueConstraintColHash($dbh);
 
-	if (!$isPrimKeyIndex || $includePrimKeyIndex) {
+    foreach my $row (@$indexes) {
+	my($d, $c, $isPrimKeyIndex, $indexCols) = $self->indexToSQL($dbh, $tn, $row, $onTable, $renameSysIds, $newOwner, $newTS, $keyColHash);
+	my $isUniqueConsIndex = $uniqueCols->{join(',', map {uc($_->{column_name})} @$indexCols)};
+
+	my $include = 1;
+	if ($isPrimKeyIndex && !$includePrimKeyIndex) { $include = 0; }
+	if ($isUniqueConsIndex && !$includeUniqueConsIndexes) { $include = 0; }
+
+	if ($include) {
 	    push(@$dropSql, $d);
 	    push(@$createSql, $c);
 	}
