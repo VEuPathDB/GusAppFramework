@@ -573,6 +573,7 @@ sub relateQuantifications{
     my $relQuan_hash;
     $relQuan_hash->{'quantification_id'} = $M->getCla->{quantification_id};
     $relQuan_hash->{'associated_quantification_id'} = $M->getCla->{cel_quantification_id};
+    my $c_subclass_view=$M->getCla->{'cr_subclass_view'};
   #  $relQuan_hash->{'ASSOCIATED_DESIGNATION'}="cel quantification";
   #  $relQuan_hash->{'DESIGNATION'}="chp quantification";
     my @attributesToNotRetrieve = ('modification_date', 'row_alg_invocation_id');     
@@ -589,9 +590,18 @@ sub relateQuantifications{
 	 if($M->getCla->{'commit'}){print STDERR "RESULT: $RV\n";}
      }
      else{
-	 $rel_quantification->setDesignation("chp quantification");
-	 $rel_quantification->setAssociatedDesignation("cel quantification");
-
+	 if($c_subclass_view == "RMAExpress"){
+	     $rel_quantification->setDesignation("RMA quantification");
+	     $rel_quantification->setAssociatedDesignation("cel quantification");
+	 }
+	 elsif($c_subclass_view == "MOIDResult"){
+	     $rel_quantification->setDesignation("MOID quantification");
+	     $rel_quantification->setAssociatedDesignation("cel quantification");	 
+	 }
+	 else{
+	     $rel_quantification->setDesignation("chp quantification");
+	     $rel_quantification->setAssociatedDesignation("cel quantification");
+	 }
 	 $rel_quantification->submit();
 # need to rewrite this part
 #
@@ -623,9 +633,18 @@ sub relateQuantifications{
 	 if($M->getCla->{'commit'}){print STDERR "RESULT: $RV\n";}
      }
      else{
-	 $rel_quantification->setDesignation("cel quantification");
-	 $rel_quantification->setAssociatedDesignation("chp quantification");
-
+	 if($c_subclass_view == "RMAExpress"){
+	     $rel_quantification->setDesignation("cel quantification");
+	     $rel_quantification->setAssociatedDesignation("RMA quantification");
+	 }
+	 elsif($c_subclass_view == "MOIDResult"){
+	     $rel_quantification->setDesignation("cel quantification");
+	     $rel_quantification->setAssociatedDesignation("MOID quantification");	 
+	 }
+	 else{
+	     $rel_quantification->setDesignation("cel quantification");
+	     $rel_quantification->setAssociatedDesignation("chp quantification");
+	 }
 	 $rel_quantification->submit();
 # need to rewrite this part
 #
