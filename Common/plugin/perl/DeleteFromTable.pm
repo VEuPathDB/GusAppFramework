@@ -30,6 +30,10 @@ sub new {
      {o => 'delete_children',
       t => 'boolean',
       h => 'explicit option to delete children, used as a safeguard',
+     },
+     {o => 'doNotVersion',
+      t => 'boolean',
+      h => 'option to avoid versioning'
      }
      ];
 
@@ -49,7 +53,7 @@ sub run {
   $self->getArgs()->{'commit'} ? $self->log("***COMMIT ON***\n") : $self->log("**COMMIT TURNED OFF**\n");
   $self->log("Testing on " . $self->getArgs()->{'testnumber'}) if $self->getArgs()->{'testnumber'};
 
-  die "Supply sql and table\n $usage\n " unless ($self->getArgs()->{'table'} && $self->getArgs()->{'idSQL'});
+  die "Supply sql and table\n" unless ($self->getArgs()->{'table'} && $self->getArgs()->{'idSQL'});
 
   my $ids = $self->getIdsToDelete();
   my $results = $self->deleteRows($ids);
@@ -66,12 +70,15 @@ sub getIdsToDelete {
 
   my $dbh = $self->getDb()->getDbHandle();
   my $sql = ($self->getArgs()->{'idSQL'});
-  $sql .= " where" if ($self->getArgs()->{'testnumber'} && $sql !~ /where/);
-  $sql .= " and rownum = " . $self->getArgs()->{'testnumber'} if $self->getArgs()->{'testnumber'};
+
+  $sql .= " and rownum < " .$self->getArgs()->{'testnumber'} if ($self->getArgs()->{'testnumber'} && $sql =~ /where/);
+  $sql .= " where rownum < " .$self->getArgs()->{'testnumber'} if ($self->getArgs()->{'testnumber'} && $sql !~ /where/);
+
 
   my $stmt = $dbh->prepareAndExecute($sql) || die "SQL failed: $sql\n";
 
-  while (my ($id) = $stmt->fetchrow_array) {
+  while (my ($id) = $stmt->fetchrow_array()) {
+    print "$id *********\n";
     push (@ids, $id);
   }
 
@@ -88,13 +95,14 @@ sub deleteRows {
   my $table = $self->getArgs()->{'table'};
   eval("require GUS::Model::".$table);
   my $numDelete = 0;
+  my $algInv = $self->getAlgInvocation();
+  my $prim_key = $algInv->getTablePKFromTableId($algInv->getTableIdFromTableName($self->getArgs()->{'table'}));
 
-  my $prim_key = $self->getTablePKFromTableId($self->getTableIdFromTableName($self->getArgs()->{'table'}));
-
+  $algInv->setGlobalNoVersion(1) if $self->getArgs()->{'doNotVersion'};
   $table = "GUS::Model::".$table;
 
   foreach my $id (@$ids) {
-    my $newTable = $table->new ({'$prim_key'=>$id});
+    my $newTable = $table->new ({$prim_key=>$id});
     $newTable->retrieveFromDB();
     $newTable->retrieveAllChildrenFromDB(1) if ($self->getArgs()->{'delete_children'});
     if ($self->getArgs()->{'delete_children'}) {
