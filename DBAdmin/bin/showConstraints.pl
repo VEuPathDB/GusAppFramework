@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!@perl@
 
 # -----------------------------------------------------------------------
 # showConstraints.pl
@@ -44,6 +44,8 @@ die "Must specify source table name as owner.table" if (!defined($srcTName));
 # -----------------------------------------------------------------------
 # Main program
 # -----------------------------------------------------------------------
+
+if ($login =~ /^sys$/i) { $DBI_ATTS->{ora_session_mode} = 2; }
 
 my $dbh = &Util::establishLogin($login, $DBI_STR, $DBI_ATTS);
 
