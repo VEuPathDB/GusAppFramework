@@ -6,6 +6,7 @@
 # additional modifications 3/29/2000 so that generator does not 
 # create any method names that over-ride methods in super classes
 # Modified by Sharon Diskin 7/5/2000 to support DBI.
+#
 # Refactored into TableGenerator, RowGenerator and WrapperGenerator by Steve Fischer 10/29/2002
 
 package GUS::ObjRelP::Generator::Generator;
@@ -227,7 +228,7 @@ sub getDontOverride {
 
     $self->{dontOverrideSubs} = {};
 
-    foreach my $f ('GUS/Model/lib/perl/GUS/Model/GusRow.pm', 'GUS/ObjRelP/lib/perl/GUS/ObjRelP/DbiRow.pm') {
+    foreach my $f ('GUS/Model/lib/perl/GusRow.pm', 'GUS/ObjRelP/lib/perl/DbiRow.pm') {
       my $file = "$self->{superclassesLibDir}/$f";
 
       open(F, $file) || print STDERR "Can't open superclass $file\n";
