@@ -327,19 +327,12 @@ sub _waitForFiles {
 sub _createPipelineDir {
     my ($self) = @_;
 
-    if (-e "$self->{pipelineDir}") {
-#	print "...$self->{pipelineDir} already exists\n\n";
-	return;
-    } 
+    print "Creating pipeline dir $self->{pipelineDir}\n\n" unless -e $self->{pipelineDir};
 
-    print "Creating pipeline dir $self->{pipelineDir}\n";
-
-    print "\n";
-
-    $self->runCmd("mkdir -p $self->{pipelineDir}/logs");
-    $self->runCmd("mkdir -p $self->{pipelineDir}/signals");
-    $self->runCmd("mkdir -p $self->{pipelineDir}/skip");
-    $self->runCmd("mkdir -p $self->{pipelineDir}/plugins");
+    $self->runCmd("mkdir -p $self->{pipelineDir}/logs") unless -e "$self->{pipelineDir}/logs";
+    $self->runCmd("mkdir -p $self->{pipelineDir}/signals") unless -e "$self->{pipelineDir}/signals";
+    $self->runCmd("mkdir -p $self->{pipelineDir}/skip") unless -e "$self->{pipelineDir}/skip";
+    $self->runCmd("mkdir -p $self->{pipelineDir}/plugins") unless -e "$self->{pipelineDir}/plugins";
 }
 
 sub _dieIfAlreadyRunning {
