@@ -158,8 +158,8 @@ sub process {
 	    $self->logVerbose("UndefPointerCache()");
 	  }#end if
 
-	  ## Documentation for table (attribute name is NULL) - SUBMIT
-	  elsif ($attribute_nm == "NULL" || $attribute_nm == "null"  || $attribute_nm == ""){
+	  ## documentation for the table (attribute name is NULL) - SUBMIT
+	  elsif ($attribute_nm == "NULL"){
 	    print "Documentation for table (no attribute supplied)\n";
 	    $self->logVerbose("Documentation for table (no attribute supplied)");
 
