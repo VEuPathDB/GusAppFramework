@@ -8,9 +8,9 @@
 
 <h2>Queries</h2>
 <ul>
-<li><a href="/simpleQueryDemo1.jsp">A form with no query initially selected</a>
-<li><a href="/simpleQueryDemo2.jsp">A form with a text box parameter</a>
-<li><a href="/simpleQueryDemo3.jsp">A form with a SqlEnumParam parameter</a>
+<li><a href="/sampleWDK/simpleQueryDemo1.jsp">A form with no query initially selected</a>
+<li><a href="/sampleWDK/simpleQueryDemo2.jsp">A form with a text box parameter</a>
+<li><a href="/sampleWDK/simpleQueryDemo3.jsp">A form with a SqlEnumParam parameter</a>
 </ul>
 
 <h2>ResultSet</h2>
@@ -18,7 +18,7 @@ No test pages available yet
 
 
 <h2>Record</h2>
-<a href="/simpleRecordDemoDriver.jsp">Simple Record test form</a>
+<a href="/sampleWDK/simpleRecordDemoDriver.jsp">Simple Record test form</a>
 
 
 <sample:footer />
