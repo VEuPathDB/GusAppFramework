@@ -57,12 +57,12 @@ sub run {
 
     my $dbh = $self->getQueryHandle();
     if (!$self->getCla->{'names'} || !$self->getCla->{'nodes'} || !$self->getCla->{'gencode'}) {
-	print STDOUT ("Provide the names of the names.dmp, nodes.dmp, and gencode.dmp files on the command line\n");
+	die "Provide the names of the names.dmp, nodes.dmp, and gencode.dmp files on the command line: !\n";
     }
     
-    print STDOUT ($self->getCla->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n");
+    print STDERR ($self->getCla->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n");
     my $testnum = $self->getCla->{'testnumber'} if $self->getCla->{'testnumber'};
-    print STDOUT ("Testing on " . $self->getCla->{'testnumber'} . "\n") if $self->getCla->{'testnumber'};
+    print STDERR ("Testing on " . $self->getCla->{'testnumber'} . "\n") if $self->getCla->{'testnumber'};
 
     my $genCodes = $self->makeGeneticCode();
     
@@ -88,7 +88,7 @@ sub makeGeneticCode {
 
     my $self   = shift;
     my %genCodes;  #$genCodes{ncbi_gencode_id}=GUS genetic_code_id
-    open (GENCODE,$self->getCla->{'gencode'}) || die "Can't open gencode file\n";
+    open (GENCODE,$self->getCla->{'gencode'}) || die "Can't open gencode file: !\n";
     while (<GENCODE>) {
 	chomp;
 	my @nodeArray = split(/\s*\|\s*/, $_);
@@ -128,7 +128,7 @@ sub getNames {
 
     my $self   = shift;
     my %namesDmp;
-    open (NAMES,$self->getCla->{'names'}) || die "Can't open names file\n";                   
+    open (NAMES,$self->getCla->{'names'}) || die "Can't open names file: ! \n";                   
     while (<NAMES>) {
 	chomp;
 	my @nameArray = split(/\s*\|\s*/, $_);
@@ -142,7 +142,7 @@ sub makeNodesHash {
     my $self   = shift;
     my $genCodes = shift;
     my %nodesHash; #nodesHash{parent ncbi tax_id}->{child ncbi tax_id}=(rank,genetic_code_id,mitochondrial_genetic_code_id) 
-    open (NODES,$self->getCla->{'nodes'}) || die "Can't open nodes file\n";
+    open (NODES,$self->getCla->{'nodes'}) || die "Can't open nodes file: !\n";
     while (<NODES>) {
 	chomp;
 	my @nodeArray = split(/\s*\|\s*/, $_);
@@ -208,7 +208,7 @@ sub makeTaxonEntry {
     print STDOUT ("processed ncbi_tax_id : $tax_id\n");
     $$count++;
     if ($$count % 100 == 0) {
-	print STDOUT ("Number processed: $count");
+	print STDERR ("Number processed: $$count");
     }
 }
 
@@ -271,7 +271,7 @@ sub makeTaxonName {
 	    }
 	}
     }
-    print STDOUT ("$num taxon names processed\n");
+    print STDERR ("$num taxon names processed\n");
 }
 
 
