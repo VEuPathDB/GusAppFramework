@@ -37,13 +37,23 @@ sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-views.sql
 sqlplus @oracle_rad3ver@/@oracle_rad3verPassword@@@oracle_SID@ @rad3ver-views.sql
 
 # Grant permission to reference tables in @oracle_core@ to all other schemas
-grantPermissions.pl --login=@oracle_core@ --owner=@oracle_core@ --permissions=REFERENCES --grantees=@oracle_corever@,@oracle_sres@,@oracle_sresver@,@oracle_dots@,@oracle_dotsver@,@oracle_tess@,@oracle_tessver@,@oracle_rad3@,@oracle_rad3ver@ --password=@oracle_corePassword@
+echo '@oracle_corePassword@' | grantPermissions.pl --login=@oracle_core@ --owner=@oracle_core@ --permissions=REFERENCES --grantees=@oracle_sres@,@oracle_dots@,@oracle_tess@,@oracle_rad3@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ >@oracle_core@-grants.log
 
-# Grant permission to reference tables in @oracle_sres@ to all other schemas except @oracle_core@
-grantPermissions.pl --login=@oracle_sres@ --owner=@oracle_sres@ --permissions=REFERENCES --grantees=@oracle_corever@,@oracle_sresver@,@oracle_dots@,@oracle_dotsver@,@oracle_tess@,@oracle_tessver@,@oracle_rad3@,@oracle_rad3ver@ --password=@oracle_sresPassword@
+# Grant permission to reference tables in @oracle_sres@ to all other schemas
+echo '@oracle_sresPassword@' | grantPermissions.pl --login=@oracle_sres@ --owner=@oracle_sres@ --permissions=REFERENCES --grantees=@oracle_core@,@oracle_dots@,@oracle_tess@,@oracle_rad3@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ >@oracle_sres@-grants.log
 
 # Grant permission to reference tables in @oracle_dots@ to all other schemas except @oracle_core@
-grantPermissions.pl --login=@oracle_dots@ --owner=@oracle_dots@ --permissions=REFERENCES --grantees=@oracle_corever@,@oracle_sres@,@oracle_sresver@,@oracle_dots@,@oracle_dotsver@,@oracle_tess@,@oracle_tessver@,@oracle_rad3@,@oracle_rad3ver@ --password=@oracle_dotsPassword@
+echo '@oracle_dotsPassword@' | grantPermissions.pl --login=@oracle_dots@ --owner=@oracle_dots@ --permissions=REFERENCES --grantees=@oracle_sres@,@oracle_tess@,@oracle_rad3@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ >@oracle_dots@-grants.log
+
+# Grant permission to reference tables in @oracle_rad3@ to @oracle_tess@
+echo '@oracle_rad3Password@' | grantPermissions.pl --login=@oracle_rad3@ --owner=@oracle_rad3@ --permissions=REFERENCES --grantees=@oracle_tess@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ >@oracle_rad3@-grants.log
+
+# insert bootstrap rows, reset relevant sequences
+sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @bootstrap-rows.sql
+
+# insert any other shared data/controlled vocabularies
+sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-DatabaseInfo-rows.sql
+sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-TableInfo-rows.sql
 
 # create all primary key constraints
 sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-pkey-constraints.sql
@@ -69,14 +79,6 @@ sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-constrai
 sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-constraints.sql
 sqlplus @oracle_rad3ver@/@oracle_rad3verPassword@@@oracle_SID@ @rad3ver-constraints.sql
 
-# insert bootstrap rows, reset relevant sequences
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @bootstrap-rows.sql
-
-# insert any other shared data/controlled vocabularies
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-DatabaseInfo-rows.sql
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-TableInfo-rows.sql
-sqlplus @oracle_sres@/@oracle_sresPassword@@@oracle_SID@ @sres-BibRefType-rows.sql
-
 # create all indexes
 sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-indexes.sql
 sqlplus @oracle_corever@/@oracle_coreverPassword@@@oracle_SID@ @corever-indexes.sql
@@ -89,5 +91,5 @@ sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-indexes.
 sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-indexes.sql
 sqlplus @oracle_rad3ver@/@oracle_rad3verPassword@@@oracle_SID@ @rad3ver-indexes.sql
 
-# Issued sqlplus commands for 60 SQL files
+# Issued sqlplus commands for 59 SQL files
 
