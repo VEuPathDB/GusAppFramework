@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
-<TITLE>ArrayLoader_pod.pm</TITLE>
-<LINK REV="made" HREF="mailto:bhcompile@stripples.devel.redhat.com">
+<TITLE>GUS::RAD::Plugin::ArrayLoader.pm</TITLE>
+<LINK REV="made" HREF="mailto:bhcompile@porky.devel.redhat.com">
 </HEAD>
 
 <BODY>
@@ -44,7 +44,8 @@
 <P>
 <HR>
 <H1><A NAME="description">DESCRIPTION</A></H1>
-<P>This is a plug-in that loads array data (spotted microarray and oligonucleotide array) into Array, ArrayAnnotation, CompositeElementAnnotaion, ElementAnnotation tables and views of CompositeElementImp, ElementImp.</P>
+<PRE>
+    This is a plug-in that loads array data (spotted microarray and oligonucleotide array) into Array, Control, ArrayAnnotation, CompositeElementAnnotaion, ElementAnnotation tables and views of CompositeElementImp, ElementImp.</PRE>
 <P>
 <HR>
 <H1><A NAME="arguments">ARGUMENTS</A></H1>
@@ -108,6 +109,7 @@
 <P>* Please make sure that the column in your data file to which external_database_release_id is mapped, if present (which in most cases should be), contains valid SRes.ExternalDatabaseRelease.ext_db_ids. If this is not the case, you will need to re-parse your data file, as the plug-in will not insert any row with an invalid external_database_release_id, when this is present.</P>
 <P>* It is crucial that the attributes of CompositeElememtImp that you are listing are such that each CompositeElement in your data file is uniquely identified by those attributes. For spotted array case, if one of the attributes listed should be present in each spot family and uniquely identifies a spot family (e.g. a well id might do this), make that attribute mandatory in your configuration file.</P>
 <P>* It is also very important for shortOligo array, the name attribute for each shortOligoFamily should be unique, since the plugin will cache the name attribute of each shortOligoFamily and all shortOligoFamily with same name will be loaded into database once.</P>
+<P>* The control.subclass_view is the name of the view of either RAD3.ElementImp or RAD3.CompositeElementImp to which Control.table_id should point for every control loaded in this run. If the controls refer to elements on the array, the subclass_view should be the name of view of RAD3.ElementImp. If the controls refer to CompositeElements on the array, the subclass_view should be the name of view of RAD3.CompositeElementImp.</P>
 <P>
 <H2><A NAME="data_file"><EM>data_file</EM></A></H2>
 <P>The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.</P>
