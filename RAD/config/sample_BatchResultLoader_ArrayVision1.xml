@@ -1,0 +1,96 @@
+<?xml version="1.0"  encoding="ISO-8859-1" ?>
+<!DOCTYPE cfg SYSTEM "FileTranslatorCfg.dtd" >
+
+<!-- 
+ $Revision$ $Date$ $Author$
+-->
+
+<cfg functions_class='GUS::RAD::FileTranslator::Functions'>
+ <inputs qualifier_row_present='1' > 
+  <header >
+    <col name='coordinate' header_val='Spot Labels' qualifier='0' req='1' />
+    <col name='foreground' header_val='Dens - Levels' qualifier='0' req='1' />
+    <col name='sd' header_val='SD - Levels' qualifier='0' req='0' />
+    <col name='x' header_val='PosX - mm' qualifier='0' req='0' />
+    <col name='y' header_val='PosY - mm' qualifier='0' req='0' />
+    <col name='area' header_val='Area - mm2' qualifier='0' req='0' />
+    <col name='bkgd' header_val='Bkgd' qualifier='0' req='0' />
+    <col name='sn' header_val='S/N' qualifier='0' req='0' />
+    <col name='flag' header_val='Flag' qualifier='0' req='0' />
+    <col name='percent_floor' header_val='% At Floor' qualifier='0' req='0' />
+    <col name='percent_ceiling' header_val='% At Ceiling' qualifier='0' req='0' />
+    <col name='bg_percent_floor' header_val='% At Floor - Bkgd' qualifier='0' req='0' />
+    <col name='bg_percent_ceiling' header_val='% At Ceiling - Bkgd' qualifier='0' req='0' />
+    <col name='mad' header_val='MAD' qualifier='0' req='0' />
+    <col name='percent_removed' header_val='% Removed' qualifier='0' req='0' />
+    <col name='percent_replaced' header_val='% Replaced' qualifier='0' req='0' />
+  </header>
+ </inputs>
+ <outputs>
+    <idmap function='coordGenePix2RAD'
+           output_header="array_row\tarray_column\tgrid_row\tgrid_column\tsub_row\tsub_column"
+           mapkey='$coordinate'  >
+      <in name='coordinate'/>
+    </idmap>
+  <map name='foreground' >
+    <in name='foreground' />
+    <do> $foreground </do>
+  </map>
+  <map name='background' >
+    <in name='bkgd' />
+    <do> $bkgd </do>
+  </map>
+  <map name='sd' >
+    <in name='sd' />
+    <do> $sd</do>
+  </map>
+  <map name='signal_to_noise' >
+    <in name='sn' />
+    <do> $sn</do>
+  </map>
+  <map name='percent_at_floor' >
+    <in name='percent_floor' />
+    <do> $percent_floor</do>
+  </map>
+  <map name='percent_at_ceiling' >
+    <in name='percent_ceiling' />
+    <do> $percent_ceiling</do>
+  </map>
+  <map name='bkg_percent_at_floor' >
+    <in name='bg_percent_floor' />
+    <do> $bg_percent_floor</do>
+  </map>
+  <map name='bg_percent_at_ceiling' >
+    <in name='bg_percent_ceiling' />
+    <do> $bg_percent_ceiling</do>
+  </map>
+  <map name='x' >
+    <in name='x' />
+    <do> $x</do>
+  </map>
+  <map name='y' >
+    <in name='y' />
+    <do> $y</do>
+  </map>
+  <map name='area' >
+    <in name='area' />
+    <do> $area</do>
+  </map>
+  <map name='flag' >
+    <in name='flag' />
+    <do> $flag</do>
+  </map>
+  <map name='mad' >
+    <in name='mad' />
+    <do> $mad</do>
+  </map>
+  <map name='percent_removed' >
+    <in name='percent_removed' />
+    <do> $percent_removed</do>
+  </map>
+  <map name='percent_replaced' >
+    <in name='percent_replaced' />
+    <do> $replaced</do>
+  </map>  
+</outputs>
+</cfg>
