@@ -1,7 +1,7 @@
-package GUS::Pipeline::RepositoryEntry;
+package GUS::Pipeline::ExternalResources::RepositoryEntry;
 
 use strict;
-use GUS::Pipeline::RepositoryWget;
+use GUS::Pipeline::ExternalResources::RepositoryWget;
 
 
 # This class represents an entry in an External Data Files Repository.
@@ -43,17 +43,27 @@ sub new {
 
   -d $repositoryDir || die "Repository directory '$repositoryDir' does not exist\n";
 
-  $self->{wget} = GUS::Pipeline::RepositoryWget->new($sourceUrl, $wgetArgs);
+  $self->{wget} = GUS::Pipeline::ExternalResources::RepositoryWget->new($sourceUrl, $wgetArgs);
 
   return $self;
+}
+
+sub getAnswerFile {
+  my ($self) = @_;
+
+  return $self->_fileBaseName() . ".tar.gz";
 }
 
 sub fetch {
   my ($self, $targetDir) = @_;
 
+  die "Target dir '$targetDir' does not exist\n" unless -d $targetDir;
+
   if (!-d $self->{resourceDir}) {
     mkdir($self->{resourceDir}) || die "Can't 'mkdir $self->{resourceDir}'\n";
   }
+
+  my $answerFile = $self->getAnswerFile();
 
   # if versionDir exists, then we have previously acquired this version.
   # make sure it is ok
@@ -62,7 +72,6 @@ sub fetch {
 
     $self->_waitForUnlock();
 
-    my $answerFile = $self->_fileBaseName() . ".tar.gz";
     -e $answerFile || die "Previously attempted fetch did not produce expected file '$answerFile'\n";
 
     my ($prevSourceUrl, $prevWgetArgs) = $self->_parseWgetArgs();
@@ -81,6 +90,19 @@ sub fetch {
 
   # in either case, copy it to the requested target
   $self->_copyTo($targetDir);
+  return $answerFile;
+}
+
+sub getResource {
+  my ($self) = @_;
+
+  return $self->{resource};
+}
+
+sub getVersion {
+  my ($self) = @_;
+
+  return $self->{version};
 }
 
 sub parseWgetArg {
@@ -208,12 +230,19 @@ sub _writeWgetArgs {
 sub _copyTo {
   my ($self, $targetDir) = @_;
 
-  my $fileNm = $self->_fileBaseName() . ".tar.gz";
+  my $fileNm = $self->getAnswerFile();
 
   $self->_log("Copying $self->{resource}-$self->{version}.tar.gz to $targetDir");
   my $cmd = "cp $fileNm $targetDir";
   $self->_runCmd($cmd);
 
+  $self->_log("Unzipping and untarring $self->{resource}-$self->{version}.tar.gz");
+  my $cmd = "tar -C $targetDir -zxf $targetDir/$self->{resource}-$self->{version}.tar.gz";
+  $self->_runCmd($cmd);
+
+  $self->_log("Deleting $self->{resource}-$self->{version}.tar.gz");
+  my $cmd = "rm $targetDir/$self->{resource}-$self->{version}.tar.gz";
+  $self->_runCmd($cmd);
 }
 
 sub _runCmd {
@@ -246,7 +275,7 @@ sub _findVersion {
     my $todayDay = $today[3] + 1;
     my $today = "${todayYear}-${todayMonth}-$todayDay";
 
-    opendir(RDIR, $resourceDir) || die "Couldn't open '$resourceDir'\n";
+    opendir(RDIR, $resourceDir) || die "Couldn't open repository directory '$resourceDir'\n";
     my @files = grep !/^\./, readdir RDIR;    # lose . and ..
     close(RDIR);
     my $found;
