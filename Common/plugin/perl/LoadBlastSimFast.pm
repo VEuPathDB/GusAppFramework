@@ -5,7 +5,6 @@ use strict;
 use FileHandle;
 use CBIL::Util::Disp;
 
-# axk
 use GUS::Model::DoTS::Protein;
 use GUS::Model::DoTS::ExternalAASequence;
 use GUS::Model::DoTS::ExternalNASequence;
@@ -115,7 +114,6 @@ sub run {
   my $algInv = $self->getAlgInvocation();
   my $dbh = $self->getDb()->getDbHandle();
 
-  # axk
   $self->{queryTable}   = $args->{queryTable};
   $self->{subjectTable} = $args->{subjectTable};
   
@@ -473,9 +471,6 @@ sub getInsertSubjStmt {
 #total_match_length, number_identical, number_positive, is_reversed, reading_fr
 "?,                  ?,                ?,               ?,           ?, ".
 " null, SYSDATE, 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
-
-  # axk
-  print STDERR "sql: $sql\n";
 
   return $dbh->prepare($sql);
 }
