@@ -17,8 +17,8 @@ use GUS::Model::RAD3::QuantificationParam;
 use GUS::Model::RAD3::Array;
 use GUS::Model::RAD3::Protocol;
 use GUS::Model::RAD3::ProtocolParam;
-use GUS::Model::SRes::Contact;
 use GUS::Model::RAD3::Channel;
+use GUS::Model::SRes::Contact;
 
 
 sub new {
@@ -62,35 +62,35 @@ read config file -> follow file paths -> parse files and gather data -> input da
 Blank lines and comment lines (lines starting with '#') are ignored.
 The following keywords and their values are required:
 
-- EXPFilePath  (full path to the dir where the EXP files are kept)
+- EXPFilePath=(full path to the dir where the EXP files are kept)
 
-- RPTFilePath  (full path to the dir where the RPT files are kept)
+- RPTFilePath=(full path to the dir where the RPT files are kept)
 
-- CELFilePath  (full path to the dir where the CEL files are kept)
+- CELFilePath=(full path to the dir where the CEL files are kept)
 
-- DATFilePath**  (full path to the dir where the DAT files are kept)
+- DATFilePath=(full path to the dir where the DAT files are kept)**
 
-- MetricsFilePath  (full path to the dir where the Metrics files are kept)
+- MetricsFilePath=(full path to the dir where the Metrics files are kept)
 
-- Hyb_Protocol_ID  (hybridization protocol id, should pre-exist in the RAD3 database)
+- Hyb_Protocol_ID=(hybridization protocol id, should pre-exist in the RAD3 database)
 
-- Acq_Protocol_ID  (acquisition protocol id, should pre-exist in the RAD3 database)
+- Acq_Protocol_ID=(acquisition protocol id, should pre-exist in the RAD3 database)
 
-- Cel_Protocol_ID  (cel quantification protocol id, should pre-exist in the RAD3 database)
+- Cel_Protocol_ID=(cel quantification protocol id, should pre-exist in the RAD3 database)
 
-- Chp_Protocol_ID  (chp quantification protocol id, should pre-exist in the RAD3 database)
+- Chp_Protocol_ID=(chp quantification protocol id, should pre-exist in the RAD3 database)
 
-- Hyb_Operator_ID  (contact_id of the person who carried out the hybridization, should pre-exist in the RAD3 database)
+- Hyb_Operator_ID=(contact_id of the person who carried out the hybridization, should pre-exist in the RAD3 database)
 
-- Cel_Quant_Operator_ID**  (contact_id of the person who carried out the cel quantification, should pre-exist in the RAD3 database)
+- Cel_Quant_Operator_ID**=(contact_id of the person who carried out the cel quantification, should pre-exist in the RAD3 database)
 
-- Chp_Quant_Operator_ID**  (contact_id of the person who carried out the chp quantification, should pre-exist in the RAD3 database)
+- Chp_Quant_Operator_ID**=(contact_id of the person who carried out the chp quantification, should pre-exist in the RAD3 database)
 
-- Study_ID  (the study identifier, should pre-exist in the RAD3 database)
+- Study_ID=(the study identifier, should pre-exist in the RAD3 database)
 
 ** These values are optional, i.e., the keywords should exist, but their the values can be left blank.
 
-Each of these keywords should be on a separate line. The values for these keywords should be seperated by tabs. A sample
+Each of these keywords should be on a separate line. The values for these keywords should be seperated by '='. A sample
 file is maintained in \$GUS_HOME/config/sample_MAS5StudyModuleILoader.cfg
 
 =head2 F<Database requirements>
@@ -132,7 +132,6 @@ NOTES
 
   my $argsDeclaration  =
     [
-     
      fileArg({name => 'cfg_file',
           descr => 'The full path of the cfg file.',
           constraintFunc=> undef,
@@ -173,7 +172,7 @@ my @properties =
     ["EXPFilePath", "",""],
     ["RPTFilePath", "",""],
     ["CELFilePath", "",""],
-    ["DATFilePath", "NOVALUEPROVIDED",""],
+    ["DATFilePath", "NOVALUEPROVIDED",""],  # can be empty
     ["MetricsFilePath", "",""],
     ["Hyb_Protocol_ID", "",""],
     ["Acq_Protocol_ID", "",""],
@@ -324,7 +323,7 @@ sub createSingleGUSAssay {
     $gusAcquisitionParam->setParent($gusAcquisition); 
   }
   
-  my $gusQuantificationsRef = $self->createGUSQuantification($assayName);
+  my $gusQuantificationsRef = $self->createGUSQuantification($assayName, $RPTinfo);
   foreach my $gusQuantification (@$gusQuantificationsRef) { 
 
     $gusQuantification->setParent($gusAcquisition); 
@@ -567,9 +566,7 @@ sub createGusAcquisitionParams {
 ###############################
 
 sub createGUSQuantification {
-  my ($self, $assayName) = @_;
-  my (@gusQuantifications, $celQuantification, $chpQuantification);
-
+  my ($self, $assayName, $RPTinfo) = @_;
 
   my $celURI =             $self->{propertySet}->getProp("CELFilePath")."/$assayName".".CEL";
   my $chpURI =             $self->{propertySet}->getProp("MetricsFilePath")."/$assayName"."_Metrics.txt";
@@ -579,8 +576,16 @@ sub createGUSQuantification {
   my $celQuantOperatorId = $self->{propertySet}->getProp("Cel_Quant_Operator_ID");
   my $chpQuantOperatorId = $self->{propertySet}->getProp("Chp_Quant_Operator_ID");
 
-  my $protocol = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
+  # modify quantification date, which is not in regular format
+  my ($quantificationDate, $tempQuantificationDate);
+  foreach my $key (keys %$RPTinfo) {
+    $tempQuantificationDate = $RPTinfo->{$key} if ($key =~ m/Date/);
+  }
+  my ($tempTime, $tempDate) = split " ", $tempQuantificationDate;
+  $quantificationDate = $self->getQuantificationDate($tempTime, $tempDate);
 
+
+  my $protocol = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
   $self->error("Create object failed, $acqProtocolId absent in table RAD3::Protocol") 
     unless ($protocol->retrieveFromDB);
 
@@ -596,7 +601,8 @@ sub createGUSQuantification {
   my $chpQuantParameters = {
     protocol_id => $chpProtocolId,
     name => $acqName."-Affymetrix MAS5 Absolute Expression Analysis", 
-    uri => $chpURI
+    uri => $chpURI,
+    quantification_date => $quantificationDate
   };
 
   $celQuantParameters->{operator_id} = $celQuantOperatorId if ( defined $celQuantOperatorId );
@@ -605,6 +611,7 @@ sub createGUSQuantification {
   my $celQuantification = GUS::Model::RAD3::Quantification->new($celQuantParameters);
   my $chpQuantification = GUS::Model::RAD3::Quantification->new($chpQuantParameters);
 
+  my @gusQuantifications;
   push (@gusQuantifications, $celQuantification, $chpQuantification);
 
   $self->log("STATUS","OK   Inserted 2 rows in table RAD3.Quantification for CEL & CHP quantification");
@@ -619,9 +626,9 @@ sub createGUSQuantParams {
   my $params = {
     'Alpha1' => 1,  # WARNING. The plugin assumes this is your RAD3.ProtocalParam.name for 'Alpha1'.
     'Alpha2' => 1,  # WARNING. The plugin assumes this is your RAD3.ProtocalParam.name for 'Alpha2'.
-    'Tau'    => 1,     # WARNING. The plugin assumes this is your RAD3.ProtocalParam.name for 'Tau'.
-    'TGT'    => 1,     # HARD-CODED. Replace 'TGT' by your RAD3.ProtocolParam.name for 'TGT Value'.
-    'SF'     => 1       # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
+    'Tau'    => 1,  # WARNING. The plugin assumes this is your RAD3.ProtocalParam.name for 'Tau'.
+    'TGT'    => 1,  # HARD-CODED. Replace 'TGT' by your RAD3.ProtocolParam.name for 'TGT Value'.
+    'SF'     => 1   # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
   };
 
   # Note: 
@@ -642,24 +649,22 @@ sub createGUSQuantParams {
 
     $self->error("Create object failed, name $param absent in table RAD3::ProtocolParam")
       unless ($protocolParam->retrieveFromDB);
-    my $value;
+
+    my $paramValue;
 
     if ($param eq "TGT") {   # HARD-CODED. Replace 'TGT' by your RAD3.ProtocolParam.name for 'TGT Value'.
-      #$quantParameters->{$param} = $RPTinfo->{"TGT Value:"}; 
-      $value = $RPTinfo->{"TGT Value:"}; 
+      $paramValue = $RPTinfo->{"TGT Value:"}; 
 
     } elsif ($param eq "SF") {    # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
-      #$quantParameters->{$param} = $RPTinfo->{"Scale Factor (SF):"}; 
-      $value = $RPTinfo->{"Scale Factor (SF):"}; 
+      $paramValue = $RPTinfo->{"Scale Factor (SF):"}; 
 
     } else {
-      #$quantParameters->{$param} = $RPTinfo->{"$param:"};
-      $value = $RPTinfo->{"$param:"};
+      $paramValue = $RPTinfo->{"$param:"};
     }
 
     my $quantParameters = GUS::Model::RAD3::QuantificationParam->new({
         name => $param,
-        value => $value
+        value => $paramValue
     });
     
     $quantParameters->setParent($protocolParam);  # protocolParam in only needed here, so set parent here
@@ -706,6 +711,38 @@ sub modifyDate {
 
   my $monthNum = $monthHash{$dateArray[0]};
   my $finalDateTime = "$dateArray[2]-$monthNum-$dateArray[1]". " $finalTime";
+
+  return $finalDateTime;
+}
+
+###############################
+
+sub getQuantificationDate {
+  my ($self, $tempTime, $tempDate) = @_;
+
+  # this sub deals with quantification date only, since quantification date
+  # is in a different format than other dates in EXP files
+  # eg: 09:57PM 06/21/2004
+
+  my $time1 = chop $tempTime;       #get AM/PM
+  my $time2 = chop $tempTime;       #get AM/PM
+
+  my @hourMinArray = split /\:/,$tempTime;
+
+  my $finalTime;
+
+  if ($time2.$time1 eq "PM") {
+    $finalTime = $hourMinArray[0] + 12 if ($hourMinArray[0] < 11);
+    $finalTime .= ":$hourMinArray[1]:00";
+
+  } else {
+    $finalTime = "$tempTime:00";
+  }
+
+  my @dateArray = split /\//, $tempDate;
+  my $finalDate = "$dateArray[2]-$dateArray[0]-$dateArray[1]";
+
+  my $finalDateTime = "$finalDate $finalTime";
 
   return $finalDateTime;
 }
