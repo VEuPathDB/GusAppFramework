@@ -33,11 +33,11 @@ sub new {
       h => 'number of iterations for testing insertion 
                         into NRDBEntry and ExternalAASequence',
      },
-     {o => 'dbName',
+     {o => 'extDbName',
       t => 'string',
       h => 'sres.externaldatabase.name for NRDB',
      },
-     {o => 'dbVersion',
+     {o => 'extDbRlsVer',
       t => 'string',
       h => 'sres.externaldatabaserelease.version for this instance of NRDB',
      },
@@ -119,8 +119,8 @@ sub run {
 
   my $external_database_release_id;
 
-  if ( $self->getArgs()->{'dbName'} && $self->getArgs()->{'dbVersion'}){
-    $external_database_release_id=$self->getExtDbRlsId($self->getArgs()->{'dbName'},$self->getArgs()->{'dbVersion'});
+  if ( $self->getArgs()->{'extDbName'} && $self->getArgs()->{'extDbRlsVer'}){
+    $external_database_release_id=$self->getExtDbRlsId($self->getArgs()->{'extDbName'},$self->getArgs()->{'extDbRlsVer'});
   }
   elsif ($self->getArgs()->{'extDbRelId'}) {
     $external_database_release_id = $self->getArgs()->{'extDbRelId'};
