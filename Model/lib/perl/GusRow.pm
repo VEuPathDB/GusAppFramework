@@ -66,7 +66,7 @@ sub getDeleteEvidenceOnDelete { my($self) = @_; return $self->{deleteEvidence}; 
 ## First Global..
 sub setGlobalDeleteSimilarityOnDelete { 
   my($self,$val) = @_; 
-  $self->getDatabase()->setGlobalDeleteSimilarity($val); 
+  $self->getDatabase()->setGlobalDeleteSimilarityOnDelete($val); 
 }
 sub getGlobalDeleteSimilarityOnDelete { my($self) = @_; return $self->getDatabase()->getGlobalDeleteSimilarity(); }
 ##also instance variable...default is to always delete evidence
