@@ -369,10 +369,11 @@ sub insertEntry{
     #####################################################################
     ## This sequence entry does no0t exist. We must make it. 
     #####################################################################
-    $seq = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $e->{accession},
+    $seq = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $e->{gb_uid},
                                                       #'external_database_release_id' => $DBEST_EXTDB_ID
                                                       });
-    $M->newExtNASeq($e,$seq);
+    $seq->retrieveFromDB();
+    $M->checkExtNASeq($e,$seq);
     $est->setParent($seq);
   }
   
@@ -473,7 +474,7 @@ sub populateEst {
       $M->newLibrary($e,$l);
     }
     # Add to cache
-    $M->{libs}->{$l->getDbestId()}->{dots_lib} = $l->getDbestId();
+    $M->{libs}->{$l->getDbestId()}->{dots_lib} = $l->getId();
     $M->{libs}->{$l->getDbestId()}->{taxon} = $l->getTaxonId();    
     # set parent-child relationship
     $est->setParent($l);
@@ -502,22 +503,23 @@ sub checkCloneInfo {
                     || $e->{washu_name});
   
   # This is a clone. Try and grab the entry from GUS
-  my $c = GUS::Model::DoTS::Clone->new();
-  if ($e->{is_image}) {
-    $c->setImageId($e->{image_id});
-  } else {
-    $c->setWashuName($e->{washu_name});
+  my $c = $est->getParent("GUS::Model::DoTS::Clone",1);
+  unless (defined $c) {
+    $c =  GUS::Model::DoTS::Clone->new();
+    if ($e->{is_image}) {
+      $c->setImageId($e->{image_id});
+    } else {
+      $c->setWashuName($e->{washu_name});
+    }
+    $c->retrieveFromDB();
+    $est->setParent($c);
   }
-  $c->retrieveFromDB();
-  $M->updateClone($e,$c);
-  
-  $est->setParent($c);
-  $est->addToSubmitList($c); ## NOTE: Must test this!!
+  $M->updateClone($e,$c);  
 }
 
 =pod
 
-=head2 newClone
+=head2 updateClone
 
 Populates the attributes of a new clone from a dbEST EST entry.
 It only makes sense to do this if the EST came from 
@@ -557,7 +559,7 @@ sub updateClone {
   
   foreach my $a (keys %atthash) {
     my $att = $atthash{$a};
-    if ( $c->isvalidAttribute($att)) {
+    if ( $c->isValidAttribute($att)) {
       my $getmethod = 'get';
       my $setmethod = 'set';
       $setmethod .= ucfirst $att;
@@ -880,22 +882,46 @@ sub newContact {
   $M;
 }
 
+=pod 
 
-sub newExtNASeq {
+=head2 checkExtNASeq
+
+Method that checks the attributes of a sequence entry and updates it as
+necessary to reflect the EST entry. This is only if the C<no_sequence_update>
+is not given.
+
+=cut
+
+sub checkExtNASeq {
   my ($M,$e,$seq) = @_;
   
-  my %seq_vals = ( 'setTaxonId' => $M->{libs}->{$e->{id_lib}}->{taxon_id},
-                   'setSequence' => $e->{sequence},
-                   'setLength' => length $e->{sequence},
-                   'setSequenceTypeId' =>  8,
-                   'setACount' => (scalar($e->{sequence} =~ s/A/A/g)) || 0,
-                   'setTCount' => (scalar($e->{sequence} =~ s/T/T/g)) || 0,
-                   'setCCount' => (scalar($e->{sequence} =~ s/C/C/g)) || 0,
-                   'setGCount' => (scalar($e->{sequence} =~ s/G/G/g)) || 0,
-                   'setDescription' => $e->{comment},
-                 );
-  foreach my $k (keys %seq_vals) {
-    $seq->$k($seq_vals{$k});
+  my %seq_vals = ( 'taxon_id' => $M->{libs}->{$e->{id_lib}}->{taxon_id},
+                   'sequence' => $e->{sequence},
+                   'length' => length $e->{sequence},
+                   'sequence_type_id' =>  8,
+                   'a_count' => (scalar($e->{sequence} =~ s/A/A/g)) || 0,
+                   't_count' => (scalar($e->{sequence} =~ s/T/T/g)) || 0,
+                   'c_count' => (scalar($e->{sequence} =~ s/C/C/g)) || 0,
+                   'g_count' => (scalar($e->{sequence} =~ s/G/G/g)) || 0,
+                   'description' => $e->{comment},
+                   );
+  foreach my $a (keys %seq_vals) {
+    if ( $seq->isValidAttribute($a)) {
+      my $getmethod = 'get';
+      my $setmethod = 'set';
+      $setmethod .= ucfirst $a;
+      $setmethod =~s/\_(\w)/uc $1/ge;
+      $getmethod .= ucfirst $a;
+      $getmethod =~s/\_(\w)/uc $1/ge;
+      if ($seq->$getmethod() ne $seq_vals{$a}) {
+        if ( $M->getCla()->{no_sequence_update}) {
+          # Log an entry 
+          $M->log("WARN:", "ExternalNaSequence.$a not updated", $e->{id_est});
+        } else {
+          $seq->$setmethod($seq_vals{$a});
+        }
+      }
+    }
   }
 }
 
