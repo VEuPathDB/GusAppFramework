@@ -238,10 +238,10 @@ print STDERR "Test:$del_gene";
 
  print STDERR "Test: ",$curr_gene->getTableIdFromTableName($curr_gene->getClassName()), "\n";
 
- print STDERR "Test:$del_gene";
+ print STDERR "Test:$del_gene\n";
 
 
-print STDERR "test:", $merge_split->getClassName(),"n";
+print STDERR "test:", $merge_split->getClassName(),"\n";
 
 
   $self->getSelfInv->addChild( $merge_split );
@@ -337,7 +337,7 @@ print STDERR "test:", $merge_split->getClassName(),"n";
 
 			# now the TU
 
-	undef %loadHash;
+	#undef %loadHash;
 			#my %loadHash2;
 			#$loadHash2{'transcript_unit_id'} = $$del_tus[$i];
 			#print STDERR "Delete TU: ", $$del_tus[$i];
