@@ -3,42 +3,86 @@ package GUS::Common::Plugin::SubmitRow;
 
 use strict;
 use CBIL::Util::Disp;
+use GUS::PluginMgr::Plugin;
 
 sub new {
   my ($class) = @_;
   my $self = {};
   bless($self,$class);
 
-  my $usage = 'Update a row with values supplied as command line arguments.';
+  my $purposeBrief = 'Update a row with values supplied as command line arguments.';
 
-  my $easycsp =
-    [{ h => 'if true then update the row with new modification data and algorithmInvocation regardless if has changed from the database',
-       t => 'boolean',
-       o => 'refresh',
-     },
-     {	h => 'list of attributes to update (comma delimited)',
-	t => 'string',
-	r => 1,
-	o => 'attrlist',
-     },
-     {	h => 'list of values to update (^^^ delimited)',
-	t => 'string',
-	r => 1,
-	o => 'valuelist',
-     },
-     {	h => 'name of table or view',
-	t => 'string',
-	r => 1,
-	o => 'tablename',
-     }];
+  my $purpose = <<PLUGIN_PURPOSE;
+This plugin either inserts or updates a row in the database, depending upon whether the you provide a primary key as one of the attributes.  If you do, that row will be read, updated with the attribute values you supply, and written.  Otherwise, a new row will be inserted.\n\n=item first hello\n\n=item second bye\n\n
+PLUGIN_PURPOSE
+
+  my $tablesAffected = 
+    [
+    ];
+
+  my $tablesDependedOn =
+    [
+    ];
+
+  my $howToRestart = <<PLUGIN_RESTART;
+This plugin has no restart facility.
+PLUGIN_RESTART
+
+  my $failureCases = <<PLUGIN_FAILURE_CASES;
+PLUGIN_FAILURE_CASES
+
+my $resourceUsage = <<PLUGIN_RESOURCE_USAGE;
+This is a nice quick and simple plugin.
+PLUGIN_RESOURCE_USAGE
+
+my $notes = <<PLUGIN_NOTES;
+This plugin replaces C<GUS::Common::Plugin::UpdateGusFromCla>
+PLUGIN_NOTES
+
+  my $documentation = { purpose=>$purpose,
+			purposeBrief=>$purposeBrief,
+			tablesAffected=>$tablesAffected,
+			tablesDependedOn=>$tablesDependedOn,
+			howToRestart=>$howToRestart,
+			failureCases=>$failureCases,
+			notes=>$notes
+		      };
+
+  my $argsDeclaration =
+  [
+   tableNameArg({name  => 'tablename',
+		 descr => 'Name of table or view to submit to',
+		 reqd  => 1,
+		 constraintFunc=> undef,
+		 isList=>0,
+	   }),
+   stringArg({name  => 'attrlist',
+	      descr => 'List of attributes to update',
+	      reqd  => 1,
+	      constraintFunc=> undef,
+	      isList=>1,
+	   }),
+   stringArg({name  => 'valuelist',
+	      descr => 'List of values to update (^^^ delimited)',
+	      reqd  => 1,
+	      constraintFunc=> undef,
+	      isList=>0,
+	   }),
+   booleanArg({name  => 'refresh',
+	       descr => 'True to update the row with new modification data and algorithmInvocation regardless of whether it has changed from the database',
+	       reqd  => 0,
+	       default=> 0,
+	     }),
+  ];
+
 
   $self->initialize({requiredDbVersion => {},
 		     cvsRevision => '$Revision$', # cvs fills this in!
 		     cvsTag => '$Name$', # cvs fills this in!
 		     name => ref($self),
 		     revisionNotes => 'make consistent with GUS 3.0',
-		     easyCspOptions => $easycsp,
-		     usage => $usage
+		     argsDeclaration => $argsDeclaration,
+		     documentation => $documentation
 		    });
   return $self;
 }
@@ -48,8 +92,6 @@ sub run {
   $self->logAlgInvocationId;
   $self->logCommit;
 
-  $self->checkArgs();
-
   $self->{attrHash} = $self->makeAttrHash();
 
   my $tableName = $self->getArgs->{'tablename'};
@@ -58,7 +100,6 @@ sub run {
   eval "require $className";
 
   my $row;
-  $self->logVeryVerbose("very");
   if ($self->getArgs->{refresh}) {
     $row = $self->refreshedRow($className);
     $self->setResultDescr("Refreshed one row");
@@ -76,15 +117,15 @@ sub run {
 sub makeAttrHash {
   my ($self) = @_;
 
-  my @attrList = split(/,/, $self->getArgs->{attrlist});
+  my $attrList = $self->getArgs->{attrlist};
   my @valueList = split(/\^\^\^/, $self->getArgs->{valuelist});
 
-  $self->userError("attrlist and valuelist must have the same number of elements") if (scalar(@attrList) != scalar(@valueList));
+  $self->userError("attrlist and valuelist must have the same number of elements") if (scalar(@$attrList) != scalar(@valueList));
 
   my %attrHash;
-  for (my $i=0; $i<@attrList; $i++) {
+  for (my $i=0; $i<@$attrList; $i++) {
     $valueList[$i]=~ s/^\s+|\s+$//g;
-    $attrHash{$attrList[$i]} = $valueList[$i];
+    $attrHash{$attrList->[$i]} = $valueList[$i];
   }
   return \%attrHash;
 }
@@ -121,15 +162,6 @@ sub getPrimaryKey {
   $self->userError("You must supply the primary key attribute $pkName if using --refresh") unless $self->{attrHash}->{$pkName};
 
   return ($pkName, $self->{attrHash}->{$pkName});
-}
-
-sub checkArgs {
-  my ($self) = @_;
-
-  my $tableName = $self->getArgs->{'tablename'};
-
-  $self->userError("--tablename must be in the form: 'schema::table'") unless $tableName =~ /\w+::\w+/;
-
 }
 
 1;
