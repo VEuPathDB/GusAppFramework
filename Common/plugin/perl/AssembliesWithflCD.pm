@@ -146,8 +146,6 @@ last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
    $ct++;
 
-
-
     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
     $assembly->retrieveFromDB();
@@ -215,20 +213,19 @@ print "scalar(@diffArray2)\n";
 
 
 
-  #foreach my $target_id(@diffArray2)  {
+  foreach my $target_id(@diffArray2)  {
 
-      #  my $dbh = $self->getQueryHandle();
+      my $dbh = $self->getQueryHandle();
 
-        # my $rows = $dbh->do("delete from dots.evidence where target_id = $target_id and attribute_name = 'full_length_CDS'");
+        my $rows = $dbh->do("delete from dots.evidence where target_id = $target_id and attribute_name = 'full_length_CDS'");
 
 
-   #    print STDERR  "DT.$target_id Evidence deleted\n";
+   print STDERR  "DT.$target_id Evidence deleted\n";
 
-   #   }
+    }
 
-   #  }
 
-  #   }
+
 
 
 #  for those assemblies that no longer contain a refSeq
