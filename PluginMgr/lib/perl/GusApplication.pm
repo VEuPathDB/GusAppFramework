@@ -385,7 +385,7 @@ sub doMajorMode_Run {
     $resultDescrip = $pu->run({ cla      => $pu->getCla,
 				self_inv => $pu->getSelfInv,
 			      });
-    if ($resultDescrip) { $pu->setResultDescr($resultDescrip); }
+    if (!$pu->getResultDescr()) { $pu->setResultDescr($resultDescrip); }
     $M->logAlert("RESULT", $pu->getResultDescr());
   };
 
