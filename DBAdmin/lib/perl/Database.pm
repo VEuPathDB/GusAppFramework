@@ -30,6 +30,17 @@ sub new {
 	sid => $args->{sid},
     };
 
+    if (defined($args->{port})) {
+	my $port = $args->{port};
+	if ($port =~ /\S/) {
+	    my $portValid = (($port =~ /^\d+$/) && ($port >= 1) && ($port <= 65535));
+	    if (!$portValid) {
+		print STDERR "Database.pm: WARNING - invalid Oracle port number '$port', ignoring\n";
+		$self->{port} = undef;
+	    }
+	}
+    }
+
     bless $self, $class;
     return $self;
 }
@@ -58,7 +69,7 @@ sub getDbiStr {
     my $sid = $self->{sid};
 
     return ("dbi:Oracle:host=${host}" . 
-	    (defined($port) ? ":${port}" : "") .
+	    ((defined($port) && ($port =~ /^\d+$/)) ? ";port=${port}" : "") .
 	    ";sid=${sid}");
 }
 
