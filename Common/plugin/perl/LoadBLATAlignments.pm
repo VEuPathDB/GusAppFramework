@@ -251,10 +251,10 @@ sub run {
     my $projectId = $self->getDb()->getDefaultProjectId();
     my $algInvId = $self->getAlgInvocation()->getId();
 
-    my $nextvalSql = $self->getDb()->getDbPlatform()->nextValSql("$TPREF.BLATAlignment");
+    my $nextvalVar = $self->getDb()->getDbPlatform()->nextValVar("$TPREF.BLATAlignment");
 
     my $insertSql = ("INSERT INTO $TPREF.BLATAlignment VALUES (" .
-		     "$nextvalSql, " .
+		     "$nextvalVar, " .
 		     "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " .
 		     "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " .
 		     "SYSDATE, 1, 1, 1, 1, 1, 0, " .
