@@ -1,3 +1,7 @@
+- table objects should provide documentation that is stored in db (for use by schema browser)
+
+- object classes should have pod documentation so we can make a web doc.
+
 - make rollback segment a config property (where "null" means none)
 
 - think about the problem that $rollback is global across all DbiDbHandles.
