@@ -420,7 +420,7 @@ sub getExternalDatabaseRelease{
   if (! $externalDatabaseRel->getExternalDatabaseReleaseId()) {
     $externalDatabaseRel->submit();
   }
-  $external_db_rel_id = $externalDatabaseRel->getExternalDatabaseReleaseId();
+  my $external_db_rel_id = $externalDatabaseRel->getExternalDatabaseReleaseId();
   return $external_db_rel_id;
 
 }
