@@ -58,58 +58,65 @@ $self->logCommit();
 
 
 #get the assembly ids that contain RefSeqs
-#add evidence that assembly has RefSeq; also this will have to have delete or update so when updates are done assemblies will be marked as full length that contain RefSeqs
+#add evidence that assembly has RefSeq; also this will have to have delete or update attribute so when updates are done assemblies will be marked as full length that contain RefSeqs;mark attribute value as null if assembly still exists then rerun plugin
 
 
-my $stmt = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id ");
+my $stmt = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id ");
 
 
-my @na_seqs;
+my @na_sourceids;
 
-while((my $na_seq) = $stmt->fetchrow_array( ))  {
 
-  push(@na_seqs, $na_seq);
+while(my($na_seq, $source_id) = $stmt->fetchrow_array( ))  {
+
+  push(@na_sourceids, [$na_seq, $source_id]);
 
    }
 
 my $ct = 0;
 
-foreach my $na_seq(@na_seqs)    {
+foreach my $A(@na_sourceids)    {
 
-print STDERR "$na_seq\n";
-
+  my($na_seq, $source_id) = @{$A};
+  
    $ct++;
 
+    print STDERR "$na_seq\n";
 
     last if $self->getArgs->{testnumber} && $ct > $self->getArgs->{testnumber};
 
-
     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
-    if($assembly->retrieveFromDB())    {
-
+      $assembly->retrieveFromDB();    
 
       $assembly->setFullLengthCds(1);
+      
+      $self->toAddEvidenceSourceID($source_id);
 
       $assembly->submit();
 
 
       $self->undefPointerCache();
 
-    } else {
+      }
 
-      print STDERR "Did not retrieve $na_seq from db\n";
+ }
 
+#use RefSeq source_id as evidence for marking assembly as full length CDS containing
+
+  sub toAddEvidenceSourceID {
+
+  my $self = shift;
+
+  my ($source_id) = @_;
+
+  my $fact = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $source_id });
+ 
+	if($fact->retrieveFromDB()){
+     	$assembly->addEvidence($fact,1,"full_length_CDS");
+      }
+ 
   }
-
-  }
-}
-
-
-
-
-
-
 
 
 
