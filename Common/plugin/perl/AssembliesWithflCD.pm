@@ -215,14 +215,15 @@ print "scalar(@diffArray2)\n";
 
   foreach my $target_id(@diffArray2)  {
 
+    my $tid = $target_id;
+
       my $dbh = $self->getQueryHandle();
 
-        my $rows = $dbh->do("delete from dots.evidence where target_id = $target_id and attribute_name = 'full_length_CDS'");
+        my $rows = $dbh->do("delete from dots.evidence where target_id = $tid and attribute_name = 'full_length_CDS'");
 
 
    print STDERR  "DT.$target_id Evidence deleted\n";
-   next;
-    }
+  }
 
 
 
@@ -245,7 +246,6 @@ print "scalar(@diffArray2)\n";
 #}
 
 }
-
 
 #use RefSeq source_id as evidence for marking assembly as full length CDS containing
 
