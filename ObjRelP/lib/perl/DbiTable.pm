@@ -541,30 +541,21 @@ sub getNextID {
     return undef;
   }
   my $result = 1;
-  if ($self->idIsSequence()) {
-    my $owner = $self->getSchemaNameUpper();
-		if (!exists $self->{nextidstmt}) {
-			my $query=$self->getDatabase->getDbPlatform->nextValSql($self->{oracle_table_name});
-		  $self->{nextidstmt} = $self->getDbHandle()->prepare($query);
-		}
-		$self->{nextidstmt}->execute();
-	  while (($result) = $self->{nextidstmt}->fetchrow_array()) {
-	    $self->{nextidstmt}->finish();
-	    return $result;
-		}
-	}
-	else {
-    my $id_name = $self->getPrimaryKeyAttributes()->[0];
-    my $sql = $self->make_sql_cmd(["max($id_name)+1,1"], $self->getOracleTableName(), undef,$holdlock); 
-    ($result) = $self->getDbHandle()->selectrow_array($sql);
-    $result = $result ? $result : 1;
-	}
-  return $result; 
-}
 
-sub idIsSequence {
-  my $self = shift;
-  return $self->hasPKSequence();
+  my $owner = $self->getSchemaNameUpper();
+
+  if (!exists $self->{nextidstmt}) {
+    my $query=$self->getDatabase->getDbPlatform->nextValSql($self->{oracle_table_name});
+    $self->{nextidstmt} = $self->getDbHandle()->prepare($query)
+      || &confess("Failed preparing sql '$query' with error: " . $self->getDbHandle()->errstr());
+  }
+
+  $self->{nextidstmt}->execute()
+    || &confess("Failed executing sql '$query' with error: " . $self->getDbHandle()->errstr());
+
+  ($result) = $self->{nextidstmt}->fetchrow_array();
+  $self->{nextidstmt}->finish();
+  return $result;
 }
 
 sub make_sql_cmd {
@@ -839,16 +830,6 @@ sub getViewsUnderlyingTable {
 	my $self = shift;
 	return $self->{'underlyingTable'};
 }
-
-sub hasPKSequence {
-  my($self) = @_;
-  if (!defined $self->{hasPKSequence}) {
-    $self->{hasPKSequence} = $self->getDatabase()->tableHasSequenceId($self->getClassName());
-  }
-  return $self->{hasPKSequence}; 
-}
-
-sub setHasPKSequence { my($self,$val) = @_; $self->{hasPKSequence} = $val; }
 
 ##NOTE:  This is dependent specifically on the table_id of the Imp sequence tables!!
 sub setHasSequence { my($self,$val) = @_; $self->{hasSequence} = $val; }
