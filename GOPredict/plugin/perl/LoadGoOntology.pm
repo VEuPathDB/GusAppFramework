@@ -1,5 +1,6 @@
 package GUS::GOPredict::Plugin::LoadGoOntology;
 @ISA = qw( GUS::PluginMgr::Plugin);
+
 use CBIL::Bio::GeneOntologyParser::Parser;
 
 use lib "$ENV{GUS_HOME}/lib/perl";
@@ -38,26 +39,27 @@ sub new {
 	  t => 'string',
 	  r => 1,
       },
-	
+	 {o => 'create_release',
+	  h => 'Set this to automatically create an external database release id for this GO Term version',
+	  t => 'boolean',
+      },	
+	 {o => 'function_ext_db_rel',
+	  h => 'External database release id in GUS of the molecular function GO branch',
+	  t => 'int',
+      },	
+	 {o => 'component_ext_db_rel',
+	  h => 'External database release id in GUS of the cellular component GO branch',
+	  t => 'int',
+      },	
+	 {o => 'process_ext_db_rel',
+	  h => 'External database release id in GUS of the biological process GO branch',
+	  t => 'int',
+      },	
 	 {o => 'loadAgain',
 	  h => 'set this to reload a version of the GO Ontology that has been previously loaded',
 	  t => 'boolean',
       },
-	 {o => 'function_db_id',
-	  h => 'external_database_id of the GO Function database in SRes.ExternalDatabase',
-	  t => 'int',
-      },
-	 
-	 {o => 'process_db_id',
-	  h => 'external_database_id of the GO Process database in SRes.ExternalDatabase',
-	  t => 'int',
-      },
-
-	 {o => 'component_db_id',
-	  h => 'external_database_id of the GO Component database in SRes.ExternalDatabase',
-	  t => 'int',
-      },
-	 
+		 
 	 {o=> 'file_path',
 	  h=> 'location of .ontology files to read',
 	  t=> 'string',
@@ -109,7 +111,7 @@ sub run {
     $self->{'rootLoaded'} = 0;
 
     $self->__loadExtDbIds();
-
+   
     my $fileName = $self->getCla->{flat_file};
     if ($fileName){
 	$parser->loadFile($fileName);
@@ -120,7 +122,7 @@ sub run {
 	
     $parser->parseAllFiles();
 
-    print STDERR ("\nparsing finished; loading ontology into database\n");
+    $self->log("parsing finished; loading ontology into database");
 
     my $msg = $self->__load_ontology($parser);
     
@@ -172,7 +174,7 @@ sub __load_ontology {
 	
 	my $obsoleteGoId = $self->{branchInfo}->{$branch}->{obsoleteGoId};
 	
-	print STDERR ("making root node for $branch\n");
+	$self->log("making root node for $branch");
 	my ($gus2go, $go2gus, $newEntries) = $self->__makeRoots ($entries, $store, 
 								 $extDbRelId, $processedEntries,
 								 $logFile);
@@ -181,7 +183,7 @@ sub __load_ontology {
 	
 	my $ancestorGusId = $go2gus->{$store->getBranchRoot()};
 	
-	print STDERR ("loading GO Terms into SRes.GOTerm\n");
+	$self->log("loading GO Terms into SRes.GOTerm");
 
 	#make entry in SRes.GOTerm for each entry in the go file
 	foreach my $entryId(keys %$entries){
@@ -229,7 +231,7 @@ sub __load_ontology {
 	
 	my ($isaId, $partOfId) = $self->__getRelationshipTypeIds();
 	
-	print STDERR ("loading hierarchy and synonyms into SRes.GORelationship and SRes.GOSynonym\n");
+	$self->log("loading hierarchy and synonyms into SRes.GORelationship and SRes.GOSynonym");
 
 	#make hierarchy representation in SRes.GORelationship
 	foreach my $entryId(keys %$entries){
@@ -326,34 +328,44 @@ sub __load_ontology {
 
 sub __getExtDbRelId{
     my ($self, $branch, $version) = @_;
-   
-    my $queryHandle = $self->getQueryHandle();
 
-    my $dbId = $self->{branchInfo}->{$branch}->{db_id};
-    
-    my $sql = "select external_database_release_id 
+    my $extDbRelId;
+
+    if (!($self->getCla->{create_release})) { 
+	#db's passed in from cla
+        $extDbRelId = $self->getCla->{$branch . "_ext_db_rel"};
+	if (!($extDbRelId)){
+	    $self->userError("no external database release passed in for $branch branch.\n Either pass in --" . $branch . "_ext_db_rel or create a new one by setting --create_release to true");
+	}
+    }
+    #dtb should also check to see if release that was passed in already loaded
+
+    else{  #create new db
+	my $queryHandle = $self->getQueryHandle();
+	
+	my $dbId = $self->{branchInfo}->{$branch}->{db_id};
+	
+	my $sql = "select external_database_release_id 
                from sres.externalDatabaseRelease
                where version = \'$version\' and external_database_id = $dbId";
-    print STDERR ("executing" . $sql . "\n");
-    my $sth = $queryHandle->prepareAndExecute($sql);
-    my $extDbRelId;
-    while ( ($extDbRelId) = $sth->fetchrow_array()) {} #should only be one entry
-    if (($extDbRelId) && !($self->getCla->{ loadAgain })){
-	die "This version of GO already exists in SRes.ExternalDatabaseRelease.\n  If you want to load the terms for this version again, please set the --loadAgain flag in the command line\n";
-    }
-    unless ($extDbRelId) {   #this release doesn't exist and needs to be insertd
-	my $extDbRelEntry = GUS::Model::SRes::ExternalDatabaseRelease->new({
-	    external_database_id => $dbId,
-	    version => $version,
-	});
 
- 	$extDbRelEntry->submit();
-	$extDbRelId = $extDbRelEntry->getId();
-	print STDERR ("successfully submitted new entry into SRes.ExternalDatabaseReleaseId with primary key of $extDbRelId\n");
+	my $sth = $queryHandle->prepareAndExecute($sql);
 	
-	return $extDbRelId;
+	while ( ($extDbRelId) = $sth->fetchrow_array()) {} #should only be one entry
+	if (($extDbRelId) && !($self->getCla->{ loadAgain })){
+	    $self->userError("This version of GO already exists in SRes.ExternalDatabaseRelease.\n  If you want to load the terms for this version again, please set the --loadAgain flag in the command line\n");
+	}
+	unless ($extDbRelId) {   #this release doesn't exist and needs to be insertd
+	    my $extDbRelEntry = GUS::Model::SRes::ExternalDatabaseRelease->new({
+		external_database_id => $dbId,
+		version => $version,
+	    });
+	    
+	    $extDbRelEntry->submit();
+	    $extDbRelId = $extDbRelEntry->getId();
+	    $self->log("successfully submitted new entry into SRes.ExternalDatabaseReleaseId with primary key of $extDbRelId\n");
+	}
     }
-    return $extDbRelId;
 }
 # ---------------------------------------------------------------------- #
 sub __make_level_graph{
@@ -450,8 +462,6 @@ sub __makeBranchRoot{
                where external_database_release_id = $extDbRelId
                and go_term_id = $gusId";
 
-    print STDERR ("executing sql: $sql\n");
-
     my $queryHandle = $self->getQueryHandle();
     my $sth = $queryHandle->prepareAndExecute($sql);
     
@@ -487,9 +497,7 @@ sub __makeOntologyRoot{
                where external_database_release_id = $extDbRelId
                and go_term_id = $gusId";
 
-    print STDERR ("sql command in update: $sql\n");
-
-
+   
     my $queryHandle = $self->getQueryHandle();
     my $sth = $queryHandle->prepareAndExecute($sql);
 
@@ -579,6 +587,7 @@ sub __getRelationshipTypeIds{
     }
     return ($isaId, $partOfId);
 }
+
 
 sub __loadExtDbIds{
 
