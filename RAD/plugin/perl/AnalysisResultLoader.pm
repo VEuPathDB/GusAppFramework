@@ -12,6 +12,8 @@ package GUS::RAD::Plugin::AnalysisResultLoader;
 
 use strict;
 use IO::File;
+use CBIL::Util::Disp;
+use GUS::PluginMgr::Plugin;
 
 use GUS::Model::RAD3::Analysis;
 use GUS::Model::SRes::Contact;
@@ -29,69 +31,77 @@ sub new {
     my ($class) = @_;
     my $self = {};
     bless($self,$class);
-    
-    my $purposeBrief = 'Loads inputs, parameter settings, and results of gene expression data analyses into the appropriate group of RAD3 tables';
+    my $purposeBrief = 'Loads inputs, parameter settings, and results of gene expression data analyses into the appropriate group of RAD3 tables.';
     
     my $purpose = <<PURPOSE;
-    This plugins reads a configuration file and a data file (representing the results of some gene expression data analysis) and inserts inputs, parameter settings, and results into the appropriate tables in RAD3.
+This plugin reads a configuration file and a data file (representing the results of some gene expression data analysis) and inserts inputs, parameter settings, and results into the appropriate tables in RAD3.
 PURPOSE
-
+	    
     my $tablesAffected = [['RAD3::Analysis', 'Enters a row representing this analysis here'], ['RAD3::AnalysisParam', 'Enters the values of the protocol parameters for this analysis here'], ['RAD3::AnalysisQCParam', 'Enters the values of the protocol quality control parameters for this analysis here'], ['RAD3::AnalysisInput', 'Enters the input(s) of this analysis here'], ['RAD3::AnalysisResultImp', 'Enters the results of this analysis here']];
-
-  my $tablesDependedOn = [['RAD3::Contact', 'The researcher or organization who performed this analysis'], ['RAD3::Protocol', 'The analysis protocol used' ], ['RAD3::ProtocolParam', 'The parameters for the protocol used'], ['RAD3::ProtocolQCParam', 'The quality control parameters for the protocol used'], ['RAD3::LogicalGroup', 'The input group(s) to the analysis'], ['Core::TableInfo', 'The table whose entries the analysis results refer to']]; 
-	   
-  my $howToRestart = <<RESTART;
-Loading can be resumed using the "--restart n" argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted). If this argument is given then the "--analysis_id" argument should be given too.
+    
+    my $tablesDependedOn = [['RAD3::Contact', 'The researcher or organization who performed this analysis'], ['RAD3::Protocol', 'The analysis protocol used' ], ['RAD3::ProtocolParam', 'The parameters for the protocol used'], ['RAD3::ProtocolQCParam', 'The quality control parameters for the protocol used'], ['RAD3::LogicalGroup', 'The input group(s) to the analysis'], ['Core::TableInfo', 'The table whose entries the analysis results refer to']]; 
+    
+    my $howToRestart = <<RESTART;
+Loading can be resumed using the I<--restart n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted). If this argument is given then the I<analysis_id> argument should be given too.
 RESTART
 
-  my $failureCases = <<FAILURE_CASES;
+    my $failureCases = <<FAILURE_CASES;
 FAILURE_CASES
 
     my $notes = <<NOTES;
 
-\\n\\n=head2 F<cfg_file>\\n\\n
+=head2 F<cfg_file>
 
 This should be a tab-delimited text file with 2 columns: I<name> and I<value>.
 The names should be spelled exactly as described below. The order of the rows is not important. 
 
-See the sample config file F<sample_AnalysisResultLoader.cfg> in GUS/RAD/config directory.
+See the sample config file F<sample_AnalysisResultLoader.cfg> in the GUS/RAD/config directory.
 
 Empty lines are ignored.
 
 Each (non-empty) line should contain B<exactly one> tab.
 
-Do not use special symbols (like "NA" or similar) for empty fields, either leave the field empty or delete the entire line.
+Do not use special symbols (like NA or similar) for empty fields: either leave the field empty or delete the entire line.
 
 The names of each field and instructions for their values are as follows:
 
 B<I<table>> [Mandatory]
-    The table (or view) whose entries the analysis results refer to. The format should be I<space.name>, e.g. RAD3.SpotFamily. Both I<space> and I<name> must be spelled B<exactly> (case sensitive) as spelled in Core.DatabaseInfo.name and Core.TableInfo.name.
+
+The table (or view) whose entries the analysis results refer to. The format should be I<space.name>, e.g. RAD3.SpotFamily. Both I<space> and I<name> must be spelled B<exactly> (case sensitive) as spelled in Core.DatabaseInfo.name and Core.TableInfo.name.
 
 B<I<operator_id>>
-    The contact_id (in SRes.Contact) of the researcher or organization who performed this analysis.  
+
+The contact_id (in SRes.Contact) of the researcher or organization who performed this analysis.  
 
 B<I<protocol_id>> [Mandatory]
-    The protocol_id (in RAD3.Protocol) of the protocol for this analysis. The type of this protocol should be in the HigherLevelAnalysisProtocolType category.
+
+The protocol_id (in RAD3.Protocol) of the protocol for this analysis. The type of this protocol should be in the HigherLevelAnalysisProtocolType category.
 
 B<I<analysis_date>> [Mandatory]
-    The date when the specific analysis was performed. The correct format is YYYY-MM-DD.
+
+The date when the specific analysis was performed. The correct format is YYYY-MM-DD.
 
 B<I<protocol_param_idN>>
-    The protocol_parameter_id (in RAD3.ProtocolParam) of the I<N>th parameter whose value is being assigned (possibly overwriting a specified default value). Start with I<N>=1, for the first parameter you want to set, and continue up to the number of parameters you want to set. 
+
+The protocol_parameter_id (in RAD3.ProtocolParam) of the I<N>th parameter whose value is being assigned (possibly overwriting a specified default value). Start with I<N>=1, for the first parameter you want to set, and continue up to the number of parameters you want to set. 
 
 B<I<protocol_param_valueN>>
-    The value to be assigned to the I<N>th parameter, whose id is specified by I<protocol_param_idN>.
+
+The value to be assigned to the I<N>th parameter, whose id is specified by I<protocol_param_idN>.
 
 B<I<protocol_qc_param_idN>>
-    The protocol_qc_parameter_id (in RAD3.ProtocolQCParam) of the I<N>th quality control parameter whose value is being assigned (possibly overwriting a specified default value). Start with I<N>=1, for the first qc parameter you want to set, and continue up to the number of qc parameters you want to set. 
- 
+
+The protocol_qc_parameter_id (in RAD3.ProtocolQCParam) of the I<N>th quality control parameter whose value is being assigned (possibly overwriting a specified default value). Start with I<N>=1, for the first qc parameter you want to set, and continue up to the number of qc parameters you want to set. 
+
 B<I<protocol_qc_param_valueN>>
-    The value to be assigned to the I<N>th quality control parameter, whose id is specified by I<protocol_qc_param_idN>.
+
+The value to be assigned to the I<N>th quality control parameter, whose id is specified by I<protocol_qc_param_idN>.
 
 B<I<logical_group_idN>>
-    The logical_group_id (in RAD3.LogicalGroup) of the I<N>th input group to this analysis. Start with I<N>=1, for the first input group, and continue up to the number of input groups. B<At least one> logical group id should be provided.
 
-\\n\\n=head2 F<data_file>\\n\\n
+The logical_group_id (in RAD3.LogicalGroup) of the I<N>th input group to this analysis. Start with I<N>=1, for the first input group, and continue up to the number of input groups. B<At least one> logical group id should be provided.
+
+=head2 F<data_file>
 
 The data file should be in tab-delimited text format with one header line and a line for each result to be entered in the appropriate view of ArrayResultImp.
 All lines should contain the same number of tab/fields. Empty lines will be ignored.
@@ -100,46 +110,41 @@ The header should contain a field called I<row_id>, to hold the primary keys
 (in the table I<table>, given in the F<cfg_file>), for the entries the results refer to.
 
 The other fields should have B<lower case> names spelled B<exactly> as the field names in the view specified by the I<--subclass_view> argument.
- 
+
 The fields I<subclass_view>, I<analysis_id>, and I<table_id> do not have to be specified in the F<data_file>, as this plugin derives their values from its arguments (including the F<cfg_file>).
 
-Missing values in a field different from row_id can be left empty or set to "na" or "NA" or "n/a" or "N/A". If all values for a row_id are missing, that row is not entered.
+Missing values in a field different from row_id can be left empty or set to na or NA or n/a or N/A. If all values for a row_id are missing, that row is not entered.
 
-\\n\\n=head1 AUTHOR\\n\\n
+=head1 AUTHOR
 
 Written by Elisabetta Manduchi.
 
-\\n\\n=head1 COPYRIGHT\\n\\n
+=head1 COPYRIGHT
 
 Copyright Elisabetta Manduchi, Trustees of University of Pennsylvania 2003. 
 NOTES
 
-  my $documentation = { purpose=>$purpose,
-			purposeBrief=>$purposeBrief,
-			tablesAffected=>$tablesAffected,
-			tablesDependedOn=>$tablesDependedOn,
-			howToRestart=>$howToRestart,
-			failureCases=>$failureCases,
-			notes=>$notes
-		      };
+    my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief,tablesAffected=>$tablesAffected,tablesDependedOn=>$tablesDependedOn,howToRestart=>$howToRestart,failureCases=>$failureCases,notes=>$notes};
 
-  my $argsDeclaration =
-  [
-   tableNameArg({name => 'subclass_view',
-                 desc => 'The name of the view of RAD3.AnalysisResultImp in which the results of the analysis should be loaded. Format should be \"RAD3::viewname\".',
-		 constraintFunc => \&GUS::RAD::Plugin::AnalysisResultLoader::checkViewName,
-                 reqd => 1,
-		 isList => 0,
-	     }),
-   fileArg({name => 'cfg_file'
+    my $argsDeclaration  =
+    [
+     tableNameArg({name => 'subclass_view',
+		   descr => 'The name of the view of RAD3.AnalysisResultImp in which the results of the analysis should be loaded. Format should be RAD3::viewname.',
+		   constraintFunc => \&GUS::RAD::Plugin::AnalysisResultLoader::checkViewName,
+		   reqd => 1,
+		   isList => 0
+		   }),
+   fileArg({name => 'cfg_file',
 	    descr => 'The full path of the cfg_file.',
-	    reqd  => 1
+	    constraintFunc=> undef,
+	    reqd  => 1,
 	    isList => 0,
 	    mustExist => 1,
 	    format => 'See the NOTES for the format of this file'
 	   }),
-   fileArg({name => 'data_file'
+   fileArg({name => 'data_file',
 	    descr => 'The full path of the data_file.',
+            constraintFunc=> undef,
 	    reqd  => 1,
 	    isList => 0,
 	    mustExist => 1,
@@ -147,35 +152,38 @@ NOTES
 	   }),
    integerArg({name  => 'restart',
 	       descr => 'Line number in data_file from which loading should be resumed (line 1 is the first line after the header, empty lines are counted). If this argument is given the analysis_id should also be given.',
+               constraintFunc=> undef,
 	       reqd  => 0,
-	       isList => 0,
+	       isList => 0
 	   }),
    integerArg({name  => 'analysis_id',
 	       descr => 'The analysis_id of the analysis whose results loading should be resumed with the --restart option. This argument should be provided if and only if the restart option is used.',
+               constraintFunc=> undef,
 	       reqd  => 0,
-	       isList => 0,
+	       isList => 0
 	   }),
    integerArg({name  => 'testnum',
 	       descr => 'The number of data lines to read when testing this plugin. Not to be used in commit mode.',
+               constraintFunc=> undef,
 	       reqd  => 0,
-	       isList => 0,
+	       isList => 0
 	   })
-  ];
+     ];
 
-  $self->initialize({requiredDbVersion => {RAD3 => '3', Core => '3'},
-		     cvsRevision => '$Revision$',
-                     cvsTag => '$Name$',
-		     name => ref($self),
-		     revisionNotes => '',
-		     argsDeclaration => $argsDeclaration,
-		     documentation => $documentation
-		    });
-  return $self;
+    $self->initialize({requiredDbVersion => {RAD3 => '3', Core => '3'},
+	               cvsRevision => '$Revision$',
+                       cvsTag => '$Name$',
+		       name => ref($self),
+		       revisionNotes => '',
+		       argsDeclaration => $argsDeclaration,
+		       documentation => $documentation
+		      });
+    return $self;
 }
 
 sub run {
     my ($self) = @_;
-
+    
     $self->logAlgInvocationId();
     $self->logCommit();
     $self->logArgs();
@@ -200,8 +208,7 @@ sub run {
     $self->setResultDescr($resultDescrip);
     $self->log($resultDescrip);
     $self->logData($resultDescrip);
-}
-
+} 
 sub checkViewName {
     my ($self, $name) = @_;
     
@@ -220,7 +227,6 @@ sub checkViewName {
 	return "The format for --subclass_view should be RAD3::viewname.";
     }
 }
-						 }
 
 sub checkArgs {
     my ($self) = @_;
@@ -456,7 +462,7 @@ sub readDataFile {
 
     $self->logData("Valid attributes in the header:");
     my $num_attr = 0;
-    foreach $key (keys %{$attribute}) {
+    foreach my $key (keys %{$attribute}) {
 	$self->logData("$key");
 	$num_attr++;
     }
@@ -487,7 +493,7 @@ sub readDataFile {
 	}
 	$data->[$line_num]->{'discard'} = 0;
 	my $num_missing = 0;
-	foreach $key (keys %{$attribute}) {
+	foreach my $key (keys %{$attribute}) {
 	    if ($arr[$attribute->{$key}] ne "") {
 		$data->[$line_num]->{$key} = $arr[$attribute->{$key}];
 	    } 
@@ -586,4 +592,6 @@ sub insertAnalysisResults {
 
     $resultDescrip = "Entered $num_results rows in RAD3.$subclass_view.";
     return $resultDescrip;
+}
+
 1;
