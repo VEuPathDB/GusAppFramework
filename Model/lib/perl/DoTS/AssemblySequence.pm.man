@@ -357,49 +357,6 @@ sub addToGappedSequence {
   $self->set('gapped_sequence',$self->get('gapped_sequence') . $gs);
 }
 
-##uses the gapped sequence string and sets gaps from it....
-##	@gaps array can just be joined (' ', to generate gaps and vice versa split(' ', $gaps) = @gaps
-sub makeGapsFromGappedSequence{
-  my($self) = @_;
-  my @gaps;
-  my $seq = $self->getGappedSequence();
-  $seq =~ s/\s+//g;             #removes spaces which should only be at beginning and end
-  my  $inGap = 0;
-  my  $ppos = 0;
-  my $startGapPos = 0;
-  my $numGaps = 0;
-  while ($seq =~ m/-/g) {
-    #    print STDERR "Matches: ", pos $seq, "\n";
-    if ($numGaps == 0) {
-      ##don`t do anything here....increment etc at end
-    } elsif ((pos $seq) - $ppos == 1) {
-      if ($inGap == 0) {        ##first gapchar in gap
-        $startGapPos = $ppos; 
-        $inGap = 1;             ##am in a gap
-      }
-    } else {
-      ($inGap,@gaps) = $self->addGapToArray($inGap,$ppos,$startGapPos,$numGaps,@gaps);
-    }
-    $ppos = pos$seq;            ##need to check this....when to increment $numGaps!!
-    $numGaps++;
-  }
-  ($inGap,@gaps) = $self->addGapToArray($inGap,$ppos,$startGapPos,$numGaps,@gaps) if $numGaps != 0;
-  #  print STDERR join(',', @gaps), "\n";
-  return join(' ',@gaps);       ##returns the gaps for this sequence
-}
-
-sub addGapToArray{
-  my($self,$inGap,$ppos,$startGapPos,$numGaps,@gaps) = @_;
-  my $gapLen = $ppos - $startGapPos + 1;
-  if ($inGap == 1) {
-    push(@gaps, ($startGapPos - ($numGaps - $gapLen + 1) . ",$gapLen"));
-    $inGap = 0;
-  } else {
-    push(@gaps, ($ppos - $numGaps));  
-  }
-  return ($inGap,@gaps);
-}
-
 sub getLength {
   my $self = shift;
   if (!exists $self->{'length'}) {
