@@ -285,11 +285,20 @@ sub undefDbCache {
 ##$doNotRetrieveAtts specifies attributes that should not be retrieved...
 sub retrieveFromDB {
   my($self,$doNotRetrieveAtts,$replaceCache) = @_;
-  print STDERR $self->getClassName()."->retrieveFromDB(\$doNotRetrieveAtts=(",($doNotRetrieveAtts ? join(', ',@$doNotRetrieveAtts) : ""),"),$replaceCache)\n" if $debug;
 
   ##if $doNotRetrieveAtts check to make certain is not "1" for replaceCache...
   if($doNotRetrieveAtts && ref($doNotRetrieveAtts) ne "ARRAY"){
     $replaceCache = 1;
+  }
+
+  if ($debug) {
+    print STDERR $self->getClassName()."->retrieveFromDB(\$doNotRetrieveAtts=";
+    if ($doNotRetrieveAtts && ref($doNotRetrieveAtts) eq 'ARRAY') {
+      print STDERR '(', join(', ', @$doNotRetrieveAtts), ')';
+    } else {
+      print STDERR $doNotRetrieveAtts;
+    }
+    print STDERR ",$replaceCache)\n";
   }
 
   ##could check cache first if has primary key...
