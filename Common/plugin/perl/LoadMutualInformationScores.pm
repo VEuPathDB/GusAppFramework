@@ -126,7 +126,7 @@ sub loadMutualInformationFile {
 	 secondary_profile_id => $secondaryProfileId,
 	} );
 
-    $mi->retrieveFromDB();
+#    $mi->retrieveFromDB();
     $mi->setMutualInformationScore($score * 10000);
     $mi->submit();
 
