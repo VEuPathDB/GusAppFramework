@@ -60,7 +60,7 @@ sub run {
 
     my $count = 0;
 
-    if (!$self->getCla->{'names'} || !$self->getCla->{'nodes'} || !$self->getCla->{'gencode'} || $self->getCla->{'merged'}) {
+    if (!$self->getCla->{'names'} || !$self->getCla->{'nodes'} || !$self->getCla->{'gencode'} || !$self->getCla->{'merged'}) {
 	die "ERROR: The names of the names.dmp, nodes.dmp, gencode.dmp and merged.dmp files must be provided on the command line.\n";
     }
     

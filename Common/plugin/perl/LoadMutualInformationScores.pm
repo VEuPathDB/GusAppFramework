@@ -30,6 +30,7 @@ PLUGIN_PURPOSE
 
   my $tablesDependedOn =
     [
+      ['phylo profile', 'Look up table IDs by database/table names'],
       ['Core::DatabaseInfo', 'Look up table IDs by database/table names'],
       ['Core::TableInfo', 'Look up table IDs by database/table names'],
     ];
@@ -42,6 +43,7 @@ PLUGIN_RESTART
 PLUGIN_FAILURE_CASES
 
   my $notes = <<PLUGIN_NOTES;
+fill in
 PLUGIN_NOTES
 
   my $documentation = { purpose=>$purpose,
@@ -55,15 +57,16 @@ PLUGIN_NOTES
 
   my $argsDeclaration =
     [
+# should be SQL
      integerArg({name  => 'phylogenetic_profile_set_id',
-		 descr => 'phylogenetic_profile_set_id',
+		 descr => 'phylogenetic_profile_set_id',  # talk about what SQL does
 		 reqd  => 1,
 		 constraintFunc=> undef,
 		 isList=> 0,
 		}),
-
+# should be fileArg -- use the "format" field to descript file format
      stringArg({name  => 'datafile',
-		 descr => 'datafile',
+		 descr => 'datafile',    # <- more descriptive
 		 reqd  => 1,
 		 constraintFunc=> undef,
 		 isList=> 0,
@@ -107,6 +110,7 @@ sub loadMutualInformationFile {
   my %profileIdHash = $self->getProfileIdHash($phylogeneticProfileSetId);
   my $i;
 
+# loop in run(); subroutine to make object
   while (<$fh>) {
     chomp;
 
