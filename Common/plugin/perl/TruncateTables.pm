@@ -56,14 +56,18 @@ my %isSystemTable =
      "CORE.TABLEINFO"                 => 1,
      "CORE.USERINFO"                  => 1,
 
-     "DOTS.GOASSOCINSTEVIDCODE"       => 1,
      "DOTS.GENEINSTANCECATEGORY"      => 1,
      "DOTS.PROTEININSTANCECATEGORY"   => 1,
      "DOTS.RNAINSTANCECATEGORY"       => 1, 
      "DOTS.SEQUENCETYPE"              => 1,
      "DOTS.DBREFPFAMENTRY"            => 1,
      "DOTS.PFAMENTRY"                 => 1,
+     "DOTS.PROTEINPROPERTYTYPE"       => 1,
 
+     "DOTSVER.PROTEINPROPERTYTYPEVER" => 1,
+
+
+     "SRES.CONTACT"                   => 1,
      "SRES.REVIEWSTATUS"              => 1,
      "SRES.GENETICCODE"               => 1,
      "SRES.TAXON"                     => 221097,
@@ -86,7 +90,7 @@ my %isSystemTable =
      "SRES.EXTERNALDATABASE"          => 1,
      "SRES.EXTERNALDATABASERELEASE"   => 1,
 
-     "DOTSVER.AAFEATUREIMPVER"        => 1,
+     "DOTSVER.AAFEATUREIMPVER"        => 1, # No onjects for version tables, can not truncates easily????
      "DOTSVER.AALOCATIONVER"          => 1,
      "DOTSVER.AASEQUENCEIMPVER"       => 1,
      "DOTSVER.GENESYNONYMVER"         => 1,
@@ -94,6 +98,7 @@ my %isSystemTable =
      "DOTSVER.NALOCATIONVER"          => 1,
      "DOTSVER.NASEQUENCEIMPVER"       => 1,
      "DOTSVER.PROTEINVER"             => 1,
+     "DOTSVER.PROTEINPROPERTYVER"     => 1,
      );
 
 #
@@ -104,23 +109,26 @@ my %isSystemTable =
 my %optInTables =
     ("DOTS.AALOCATION"                => 1,
      "DOTS.AAFEATUREIMP"              => 2,
-     "DOTS.AASEQUENCEIMP"             => 3,
-     "DOTS.EVIDENCE"                  => 4,
-     "DOTS.GENESYNONYM"               => 5,
-     "DOTS.GENEINSTANCE"              => 6,
-     "DOTS.GOASSOCIATIONINSTANCE"     => 7,
-     "DOTS.GOASSOCIATIONINSTANCELOE"  => 8,
-     "DOTS.GOASSOCIATION"             => 9,
-     "DOTS.NALOCATION"                => 10,
-     "DOTS.RNAFEATUREEXON"            => 11,
-     "DOTS.RNAINSTANCE"               => 12,
-     "DOTS.NAFEATUREIMP"              => 13,
-     "DOTS.PROTEIN"                   => 14,
-     "DOTS.RNA"                       => 15,
-     "DOTS.GENE"                      => 16,
-     "DOTS.NASEQUENCEIMP"             => 17,
-
-     "SRES.EXTERNALDATABASEENTRY"     => 18,
+     "DOTS.PROTEINPROPERTY"           => 3,
+     "DOTS.AASEQUENCEIMP"             => 4,
+     "DOTS.EVIDENCE"                  => 5,
+     "DOTS.GENESYNONYM"               => 6,
+     "DOTS.GENEINSTANCE"              => 7,
+     "DOTS.GOASSOCIATIONINSTANCELOE"  => 9,
+     "DOTS.GOASSOCINSTEVIDCODE"       => 1,
+     "DOTS.GOASSOCIATIONINSTANCE"     => 8,
+     "DOTS.GOASSOCIATION"             => 10,
+     "DOTS.NALOCATION"                => 11,
+     "DOTS.RNAFEATUREEXON"            => 12,
+     "DOTS.RNAINSTANCE"               => 13,
+     "DOTS.DBREFNAFEATURE"            => 14,
+     "DOTS.NAFEATUREIMP"              => 15,
+     "DOTS.PROTEIN"                   => 16,
+     "DOTS.RNA"                       => 17,
+     "DOTS.GENE"                      => 18,
+     "DOTS.NASEQUENCEIMP"             => 19,
+     "DOTS.ATTRIBUTION"               => 20,
+     "SRES.EXTERNALDATABASEENTRY"     => 21,
      );
 
 
@@ -163,8 +171,8 @@ PLUGIN_PURPOSE
      ["DOTS.EVIDENCE"                  , 'TRUNCATE!!!'],
      ["DOTS.GENESYNONYM"               , 'TRUNCATE!!!'],
      ["DOTS.GENEINSTANCE"              , 'TRUNCATE!!!'],
-     ["DOTS.GOASSOCIATIONINSTANCE"     , 'TRUNCATE!!!'],
      ["DOTS.GOASSOCIATIONINSTANCELOE"  , 'TRUNCATE!!!'],
+     ["DOTS.GOASSOCIATIONINSTANCE"     , 'TRUNCATE!!!'],
      ["DOTS.GOASSOCIATION"             , 'TRUNCATE!!!'],
      ["DOTS.NALOCATION"                , 'TRUNCATE!!!'],
      ["DOTS.RNAFEATUREEXON"            , 'TRUNCATE!!!'],
@@ -259,14 +267,6 @@ sub run {
     $self->set_dsn($dsn);
     $self->set_user_passwords(\%users_password);
 
-    my $to_truncate =
-        $self->check_no_other_populated_rows($dsn, $db_user,,
-                                             \%isSystemTable, \%optInTables);
-
-    print "\nTables to be truncated;\n\n";            # DEBUG
-    foreach my $full_table_name (@{$to_truncate}) {
-        print "$full_table_name\n";
-    }                                                 # END DEBUG
 
 
     eval {
@@ -275,6 +275,16 @@ sub run {
 
         $self->{'dbh'} = DBI->connect($dsn, $self->{'db_user'}, $self->get_user_password($self->{'db_user'}),
                                       { RaiseError => 1, AutoCommit => 0 });
+
+        my $to_truncate =
+            $self->check_no_other_populated_rows($dsn, $db_user,,
+                                                 \%isSystemTable, \%optInTables);
+
+        print "\nTables to be truncated;\n\n";            # DEBUG
+        foreach my $full_table_name (@{$to_truncate}) {
+            print "$full_table_name\n";
+        }                                                 # END DEBUG
+
 
         $self->truncate_tables($dsn, \%optInTables, @{$to_truncate});
 
@@ -418,7 +428,7 @@ sub check_no_other_populated_rows {
 
             #if ($debug) { print "  $full_table_name is NOT a system table\n"; }
 
-            my @count_row = $dbh->selectrow_array("SELECT count(*) FROM $full_table_name");
+            my @count_row = $self->{'dbh'}->selectrow_array("SELECT count(*) FROM $full_table_name");
             my $num_rows  = $count_row[0];
 
             #if ($debug) { print "    $num_rows\n";}
@@ -438,9 +448,12 @@ sub check_no_other_populated_rows {
         if (keys %notOptInTables) {
             print "\n#############################################################################\n";
             print "ERROR: one or more tables found to contain records not specified to be truncated or ignored!\n";
+
             foreach my $key (keys %notOptInTables) {
                 print "  $key\n";
             }
+
+            die "ERROR: tables populated but not specified to be ignoed or truncated! Please fix and try again!";
         }
         else {
             #&truncate_tables($dbh, $dsn, \%users_password, \%optInTables, @truncate);
@@ -449,7 +462,8 @@ sub check_no_other_populated_rows {
 
     if( $@ ){
         my $error = $@;
-        print $error;
+        #print $error;
+        die $error;
     }
 
     return \@truncate;
@@ -655,12 +669,13 @@ sub gus_schema_name_for {
     my ($self, $owner) = @_;
 
     for ($owner) {
-        /^DOTS$/ and do {return 'DoTS'};
-        /^APP$/  and do {return 'App'};
-        /^CORE$/ and do {return 'Core'};
-        /^SRES$/ and do {return 'SRes'};
-        /^RAD3$/ and do {return 'RAD3'};
-        /^TESS$/ and do {return 'TESS'};        
+        /^DOTS$/    and do {return 'DoTS'};
+        /^DOTSVER$/ and do {return 'DoTSVer'};
+        /^APP$/     and do {return 'App'};
+        /^CORE$/    and do {return 'Core'};
+        /^SRES$/    and do {return 'SRes'};
+        /^RAD3$/    and do {return 'RAD3'};
+        /^TESS$/    and do {return 'TESS'};        
         die "ERROR: Unknown schema '$owner'";
     }
 }
