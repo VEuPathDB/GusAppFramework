@@ -235,7 +235,7 @@ my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
            }
 
            $self->undefPointerCache();
-           next;
+
 }
 
 
@@ -268,6 +268,7 @@ my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
 
 #}
 
+
 }
 
 #use RefSeq source_id as evidence for marking assembly as full length CDS containing
@@ -291,7 +292,7 @@ my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
   }
 
 
-
+1;
 
 
 
