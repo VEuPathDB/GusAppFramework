@@ -97,7 +97,7 @@ sub _parentAndChildAttributes{
     } else {
 	my ($parentSchema, $parentName) = $self->_cutFullQualifiedName($fullParentTable);
 	my $parent = $parentSchema . "::" . $parentName;
-	print STDERR "parentAndChild atts: calling get table on $parent\n";
+	
 	my $parent_table_object = $self->{generator}->getTable($parent,1);
 	my %parentAtt;
 	my %childAtt;

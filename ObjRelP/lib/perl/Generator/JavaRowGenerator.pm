@@ -341,7 +341,7 @@ sub _addSuperSets{
 #    my ($parentSchema, $parentName) = $self->_cutFullQualifiedName($parent);
     
 #    my $parentFullName = $parentSchema . "::" . $parentName;
-    print STDERR "Calling getparentandchildattributes \n";
+
     my @parentAtts = $self->_parentAndChildAttributes();
     
     my $table = $self->{generator}->getTable($self->{fullName} ,1);
