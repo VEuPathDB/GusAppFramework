@@ -90,19 +90,19 @@ sub run {
 	my @children = $self->getSelfInv->getAllChildren();
 	my $curr_gene;
 
- print STDERR map {ref $_}@children,"\n";
+ #print STDERR map {ref $_}@children,"\n";
 
 
 
   if(!$self->getCla->{refresh}){
 
 		foreach my $child ( @children ) {
-			print STDERR "Child class name: ", $child->getClassName(), "\n";
-			print STDERR "Concat prim key: " , $child->getConcatPrimKey(), "\n";
+			#print STDERR "Child class name: ", $child->getClassName(), "\n";
+			#print STDERR "Concat prim key: " , $child->getConcatPrimKey(), "\n";
 
    if ($child->getClassName() eq "GUS::Model::DoTS::Gene"){
 
-   print STDERR "TestChild class name: ", $child->getClassName(), "\n";
+ #  print STDERR "TestChild class name: ", $child->getClassName(), "\n";
 
 
        $curr_gene = $child;  # save off the current gene...
@@ -116,11 +116,11 @@ sub run {
 				# iterate through all facts for each attribute (an array)
 				my $all_facts = $$fact_hash{$child->getConcatPrimKey()};
 				foreach my $attribute (keys %$all_facts){
-					print STDERR "\tEvidence for attribute ", $attribute, " pk: ", $child->getConcatPrimKey(), " \n";
+					#print STDERR "\tEvidence for attribute ", $attribute, " pk: ", $child->getConcatPrimKey(), " \n";
 					my $facts = $$all_facts{$attribute};
 					foreach my $fact ( @$facts ) {
 						if ( $fact ) {
-							print STDERR "\t\tAdding fact: ", $fact->getClassName(), ", fact pk: ", $fact->getConcatPrimKey(), "\n";
+							#print STDERR "\t\tAdding fact: ", $fact->getClassName(), ", fact pk: ", $fact->getConcatPrimKey(), "\n";
 							# was ignoring the similarity evidence cause throws error.
 							if ($fact->getClassName() ne "GUS::Model::DoTS::Similarity"){
 								$fact->setReviewStatusId(1);
@@ -131,11 +131,11 @@ sub run {
 					}
 				}
 			}
-			print STDERR $child->getClassName(), " has evidence: ", $has_evidence, "\n";
+		# print STDERR $child->getClassName(), " has evidence: ", $has_evidence, "\n";
       		# need to check that a copy does not already exist in db - i.e. for GeneSynonyms.  Will retreivefromDB work?  
 			if ( !$child->hasChangedAttributes() ) {
 				$remove = 1;
-				print STDERR $child->getClassName(), " retrieved from database.\n";
+				#print STDERR $child->getClassName(), " retrieved from database.\n";
 			}
 			if ( $has_evidence ) {
 				$remove = 0;
@@ -143,9 +143,9 @@ sub run {
 
 			if ( $remove ) {
 				$self->getSelfInv->removeChild($child);
-				print STDERR $child->getClassName(), " is not changed, not submitting to db.\n";
+			# print STDERR $child->getClassName(), " is not changed, not submitting to db.\n";
 			} else {
-                          print STDERR $child->getClassName(), " IS changed, submitting to db.\n";
+                          #print STDERR $child->getClassName(), " IS changed, submitting to db.\n";
 
                           # All objects except DoTS::Assembly and DoTS::RNARNACategory have 
                           # a review_status_id that should be set to 1 (= manually reviewed)
@@ -169,7 +169,7 @@ sub run {
         my( $deleted ) = $self->getDeletedTsIds( $self->getCla->{'specialfile'} );
 	if ( $deleted ) {
 		if ($self->getCla->{debug} ) {
-			print STDERR "Deleted TS: ", join " ", @$deleted, "\n";
+	#print STDERR "Deleted TS: ", join " ", @$deleted, "\n";
 		}
 		my $new_gene = $self->createEmptyGene();
 
@@ -199,7 +199,7 @@ sub run {
   my $added_rnas = $self->getAddedRNAObjects( $self->getCla->{'specialfile'});
 	if ( $added_rnas ) {
 
-      print STDERR "Trying to add these RNAs to gene_id:$added_rnas\n";
+  #    print STDERR "Trying to add these RNAs to gene_id:$added_rnas\n";
 		foreach my $rna ( @$added_rnas ) {
 
 
@@ -215,7 +215,7 @@ sub run {
 
  my( $del_genes ) = $self->getGeneAndTUIdsForAddedTSs($self->getCla->{'specialfile'} );
 
-print STDERR "Geneids=$del_genes\n";
+    #print STDERR "Geneids=$del_genes\n";
 
 #HERE Check Query Handle
 
@@ -229,24 +229,24 @@ print STDERR "Geneids=$del_genes\n";
 
       next if ( $del_gene == "" );
 
-print STDERR "Test:$del_gene";
+     #  print STDERR "Test:$del_gene";
         my $merge_split = GUS::Model::DoTS::MergeSplit->new({'old_id' => $del_gene,
                                        'new_id' => $curr_gene->getGeneId(),
                                        'is_merge' => 1,
                                        'merge_split_group_id' => $group_id,
                                        'table_id' => $curr_gene->getTableIdFromTableName($curr_gene->getClassName())});
 
- print STDERR "Test: ",$curr_gene->getTableIdFromTableName($curr_gene->getClassName()), "\n";
+ #print STDERR "Test: ",$curr_gene->getTableIdFromTableName($curr_gene->getClassName()), "\n";
 
- print STDERR "Test:$del_gene\n";
+ #print STDERR "Test:$del_gene\n";
 
 
-print STDERR "test:", $merge_split->getClassName(),"\n";
+  #print STDERR "test:", $merge_split->getClassName(),"\n";
 
 
   $self->getSelfInv->addChild( $merge_split );
 
- print STDERR "Test: ", $curr_gene->getClassName(), "\n";
+ #print STDERR "Test: ", $curr_gene->getClassName(), "\n";
       }
     } else {
       print STDERR "AnnotatorsInterfaceSubmitter: Failed to obtain merge_split_group_id, could not insert into MergeSplit Table!\n";
@@ -358,6 +358,8 @@ print STDERR "test:", $merge_split->getClassName(),"\n";
 	if ( $deleted ) {
 		$message = "Deleted ", scalar @$deleted, " TS\'s: ", join " ", @$deleted, "\n";
 		$message .= "Deleted gene";
+
+
 	}
 	return $message;
 
@@ -404,7 +406,7 @@ sub getGeneAndTUIdsForAddedTSs {
 			if ( $_ =~ /\d/ ) {
 				chomp;
 				@$del_genes = split(/\s+/,$_);
-				print STDERR "Del genes in sub: ", @$del_genes, "\n";
+				#print STDERR "Del genes in sub: ", @$del_genes, "\n";
 				$ok = 1;
 			}
 		#} elsif ( $_ =~ s/delete transcript_unit\: // ) {
@@ -467,7 +469,7 @@ sub getAddedRNAObjects {
 				foreach my $set ( @data ) {
 					my @data2 = split(/\|/,$set);
 					my %loadHash;
-				  print STDERR "Adding RNA: ", $data2[0], "\n";
+				#  print STDERR "Adding RNA: ", $data2[0], "\n";
 
 					$loadHash{'rna_id'} = $data2[0]; # the rna id being added
 
@@ -479,7 +481,7 @@ sub getAddedRNAObjects {
 
         my $gene_id = $data2[1]; # this is the new gene_id
 
-        print STDERR "Adding RNA to gene_id: ", $data2[1], "\n";
+     #   print STDERR "Adding RNA to gene_id: ", $data2[1], "\n";
 
                                my $rna = GUS::Model::DoTS::RNA->new(\%loadHash);
 					$rna->retrieveFromDB(1); # get existing RNA entry
@@ -616,7 +618,7 @@ sub parseFactObjects {
 					undef @xml;
 					foreach my $child ( $ai->getAllChildren() ) {
 						push( @{$$hash{$id}{$attribute}}, $child );
-						print STDERR "AI child: ", $child->getClassName(), "\n";
+						#print STDERR "AI child: ", $child->getClassName(), "\n";
 					}
 					$ai->removeAllChildren();  #WHY?
 				}
@@ -647,7 +649,7 @@ sub parseFactObjects {
 		foreach my $child ( $ai->getAllChildren() ) {
 			push( @{$$hash{$id}{$attribute}}, $child );
        		#push( @{$$hash{$id}}, $child );
-		#	print STDERR "AI child: ", $child->getClassName(), "\n";
+		#print STDERR "AI child: ", $child->getClassName(), "\n";
 		}
 		$ai->removeAllChildren();
 	}
