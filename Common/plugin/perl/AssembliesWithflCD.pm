@@ -395,6 +395,12 @@ sub DeleteFrameFinderEvidence {
 1;
 
 
+
+####check framefinderProteinsDeleteEvidence
+##check for unmark also for these assemblies 
+
+
+
 #Notes
 #could also use best_evidence attribute in Evidence table for those containing refSeq
 
