@@ -117,6 +117,7 @@ sub new {
 
 # Global variable
 my $cfg_rv;
+my $cfg_rv_rev;
 
 sub run {
   my $M   = shift;
@@ -285,6 +286,7 @@ sub readCfg{
       if ($arr[1] ne "") {
 # $cfg_rv is a global hash varaibale
 	$cfg_rv->{'mapping'}->{$arr[0]} = $arr[1];
+	$cfg_rv_rev->{$arr[1]} = $arr[0];
 	if ($arr[0] =~ /^ElementAnnotation(\d+)\.value$/) {
 	  $cfg_rv->{'elementannotation_index'}->{$1} = 1;
 	}
@@ -758,7 +760,7 @@ sub parseHeader{
   my  $M=shift;
   my ($fh) = @_;
   my %headers;
-
+  my $is_header=0;
   my $line = "";
   while ($line =~ /^\s*$/) {
       last unless $line = <$fh>;
@@ -769,19 +771,27 @@ sub parseHeader{
   }
   my @arr = split (/\t/, $line);
   for (my $i=0; $i<@arr; $i++) {
-    $arr[$i] =~ s/^\s+|\s+$//g;
-    $arr[$i] =~ s/\"|\'//g;
-    if ($headers{$arr[$i]}) {
-      $fh->close();
-      die "No two columns can have the same name in the data file header.\n";
-    }
-    else {
-      $headers{$arr[$i]} = 1;
-    }
-    $cfg_rv->{'position'}->{$arr[$i]} = $i;
+      $arr[$i] =~ s/^\s+|\s+$//g;
+      $arr[$i] =~ s/\"|\'//g;
+      if ($headers{$arr[$i]}) {
+	  $fh->close();
+	  die "No two columns can have the same name in the data file header.\n";
+      }
+      else {
+	  $headers{$arr[$i]} = 1;
+      }
+
+      if(define $cfg_rv_rev->{$arr[$i]}){
+	  $is_header=1;
+      }
+
+      $cfg_rv->{'position'}->{$arr[$i]} = $i;
 
   }
 
+  if($is_header==0){
+      die "No header information in data file header.\n";
+  }
   $cfg_rv->{'num_fields'} = scalar(@arr);
   $M->logData('Result', 'finish parse the headers of array data file');
 }
