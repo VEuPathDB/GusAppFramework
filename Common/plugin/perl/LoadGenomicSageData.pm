@@ -1,6 +1,6 @@
 package GUS::Common::Plugin::LoadGenomicSageData;
 @ISA = qw(GUS::PluginMgr::Plugin);
-
+ 
 use strict;
 use GUS::PluginMgr::Plugin;
 use GUS::Model::DoTS::SAGETagFeature;
