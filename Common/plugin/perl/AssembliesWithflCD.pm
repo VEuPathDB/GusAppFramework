@@ -176,7 +176,7 @@ sub run {
   foreach $id(@naSequenceIds) {
     $seen{$id} = 1;
   }
-  ;
+
 
   foreach $id(@DTs) { 
     unless ($seen{$id}) {
@@ -206,7 +206,7 @@ sub run {
   foreach $dt(@DTs) {
     $seen2{$dt} = 1;
   }
-  ;
+
 
   foreach $dt(@DTSasEvidenceTarget) {
     unless ($seen2{$dt}) {
@@ -249,33 +249,40 @@ sub run {
   #my $rows = $dbh->prepare("delete from dots.evidence where attribute_name = 'full_length_CDS' and target_id = ?");
   #foreach my $target_id(@diffArray2)  {
   #  $rows->execute($target_id);
-
-
-
   # print STDERR  "DT.$target_id Evidence deleted\n";
   # }
 
 
 
 
-  # those assemblies that no longer contain a refSeq
-  #   foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
+#  those assemblies that no longer contain a refSeq
+    foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
-  # print STDERR "DT.$DTnotFLength does not have a RefSeq any longer\n";
+  print STDERR "DT.$DTnotFLength does not have a RefSeq any longer\n";
 
-  # my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
+  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
 
-  #     $assembly->retrieveFromDB();
-  #   $assembly->setFullLengthCds(0);
-  #   $assembly->submit();
+      $assembly->retrieveFromDB();
+      $assembly->setFullLengthCds(0);
+      $assembly->submit();
 
-  #   $self->undefPointerCache();
+     $self->undefPointerCache();
 
 
-  #}
+   }
 
-  return 1;
+
+#need this return to finish run of plugin adds result set attribute 
+
+  return "marked as full length";
+
 }
+
+
+
+
+
+
 
 #use RefSeq source_id as evidence for marking assembly as full length CDS containing
 
