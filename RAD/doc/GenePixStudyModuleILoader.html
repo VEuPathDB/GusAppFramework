@@ -22,15 +22,16 @@
 	<li><a href="#restarting">RESTARTING</a></li>
 	<li><a href="#arguments_in_detail">ARGUMENTS IN DETAIL</a></li>
 	<li><a href="#notes">NOTES</a></li>
-	<ul>
+    <ul>
 
 		<li><a href="#general_description"><em>General Description</em></a></li>
-		<li><a href="#config_file_[_required_]"><em>Config File [ required ]</em></a></li>
+		<li><a href="#config_file_(is_mandatory)"><em>Config File (is mandatory)</em></a></li>
 		<li><a href="#database_requirements"><em>Database requirements</em></a></li>
 		<li><a href="#warning_(for_noncbil_instances)"><em>Warning (for non-CBIL instances)</em></a></li>
 	</ul>
 
 	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#report_bugs_to">REPORT BUGS TO</a></li>
 	<li><a href="#author">AUTHOR</a></li>
 	<li><a href="#copyright">COPYRIGHT</a></li>
 </ul>
@@ -53,9 +54,7 @@
 <hr />
 <h1><a name="description">DESCRIPTION</a></h1>
 <p>Create assays, acquisitions and quantifications for GenePix assays in RAD3 tables from multiple files in batch mode.
-</p>
-<hr />
-<h1><a name="tables_affected">TABLES AFFECTED</a></h1>
+=head1 TABLES AFFECTED</p>
 <dl>
 <dt><strong><a name="item_rad3%3a%3astudy"><strong>RAD3::Study</strong></a></strong><br />
 </dt>
@@ -154,7 +153,7 @@
 <p>Number of assays to be loaded for testing</p>
 <dt><strong><a name="item_%2d%2dcommit">--commit <em></em></a></strong><br />
 </dt>
-<p>Actually commit changes to the database</p>
+<p>Actualy commit changes to the database</p>
 <dl>
 <dt><strong><a name="item_default%3a_0">default: 0</a></strong><br />
 </dt>
@@ -244,22 +243,19 @@
 <h2><a name="general_description"><em>General Description</em></a></h2>
 <p>Plugin reads a config file with information about full paths of directories where files of interest (.gpr &amp; .tif)
 are maintained.  Information is extracted from the '.gpr' files and entered into a database.</p>
-
-<p>This plugin requires two utilities, Disp and PropertySet, which are currently available from the CBIL cvs ( 
-http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/). These may be available via the GUS cvs repository at the
-Sanger center in the near future.</p>
-
+<p>This plugin requires two utilities, Disp and PropertySet, which are available with RAD, and also 
+from the CBIL cvs at:
+ <a href="http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/">http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/</a></p>
 <p>Since assay, acquisition and most quantification parameters are not readily available through the '.gpr' files,
 they cannot be added to the database through this plugin. They have to be added to the tables separately, 
 either directly or through the following forms in the RAD StudyAnnotator: Hybridization Parameters, Acquisition
 Parameters and Quantification Parameters.</p>
-<p>Certain portions in the PERL code are hard-coded for use by RAD at CBIL. These are indicated with the comment 'HARD-CODED', 
-and should be changed based on data maintained in the local instance of RAD.</p>
-<p>The plugin also assumes the following parameters to be the same for all assays: Array ID, Batch ID, Hybridization
-Protocol ID, Hybridization Operator ID, Acquisition Protocol ID, Quantification Protocol ID and Quantification Operator ID.</p>
+<p>The plugin also assumes the following parameters to be the same for all assays: Array ID, Batch ID, 
+Hybridization Protocol ID, Hybridization Operator ID, Acquisition Protocol ID, Quantification Protocol 
+ID and Quantification Operator ID.</p>
 <p>
 </p>
-<h2><a name="config_file_[_required_]"><em>Config File [ required ]</em></a></h2>
+<h2><a name="config_file_(is_mandatory)"><em>Config File (is mandatory)</em></a></h2>
 <p>Blank lines and comment lines (lines starting with '#') are ignored.
 The following keywords and their values are required (in cases where no value is to be specified, please
 use the words 'null' as the value):</p>
@@ -282,8 +278,8 @@ use the words 'null' as the value):</p>
   - Hyb_Operator_ID^ = hybridization operator id
   - All_Hyb_Dates_Same = requires a yes/no answer; if yes, then allHybDates will be read, 
     else individual_HybDates will be read
-  - All_Hyb_Dates = yyyy-mm-dd
-  - Individual_Hyb_Dates = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;</pre>
+  - All_Hyb_Dates&quot; = yyyy-mm-dd
+  - Individual_Hyb_Dates&quot; = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;</pre>
 <pre>
  ACQUISITION SECTION</pre>
 <pre>
@@ -291,18 +287,21 @@ use the words 'null' as the value):</p>
   - Tiff_File_Path = full path to the dir where the .tif files are kept
   - All_Scan_Dates_Same = requires a yes/no answer; if yes, then allScanDates will be read, 
     else individual_Scan_Dates will be read
-  - All_Scan_Dates = yyyy-mm-dd
-  - Individual_Scan_Dates = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;</pre>
+  - All_Scan_Dates&quot; = yyyy-mm-dd
+  - Individual_Scan_Dates&quot; = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;</pre>
 <pre>
  QUANTIFICATION SECTION</pre>
 <pre>
   - Quant_Operator_ID^** = quantification operator id</pre>
 <pre>
+  Footnotes:
   ^ These values should pre-exist in various tables in the database
+  &quot; All dates should be in the format: yyyy-mm-dd
  ** These values are optional, i.e., the keywords should exist, but their 
     the values can be left blank.</pre>
-<p>Each of these keywords should be on a separate line. The values for these keywords should be separated by an '=' sign. A sample
-file is maintained in $PROJECT_HOME/GUS/RAD/config/sample_GenePixStudyModuleILoader.cfg (the sample config file also contains instructions).</p>
+<p>All keywords are required, and each should be on a separate line with the keywords and 
+values seperated by '='. A sample config file with some instructions is maintained in:
+ $PROJECT_HOME/GUS/RAD/config/sample_GenePixStudyModuleILoader.cfg</p>
 <p>
 </p>
 <h2><a name="database_requirements"><em>Database requirements</em></a></h2>
@@ -316,8 +315,9 @@ file is maintained in $PROJECT_HOME/GUS/RAD/config/sample_GenePixStudyModuleILoa
 <p>
 </p>
 <h2><a name="warning_(for_noncbil_instances)"><em>Warning (for non-CBIL instances)</em></a></h2>
-<p>For local installations of RAD which differ from the CBIL database, some lines of this plugin will need to be modified, to accomodate
-hard-coded information. You might need to modify any piece of code labelled as 'HARD-CODED' in the comments below.</p>
+<p>For local installations of RAD which differ from the CBIL database, some lines of this plugin 
+will need to be modified, to accomodate hard-coded information. Modify lines labelled 
+'HARD-CODED' based on information contained in your instance of RAD.</p>
 <p>
 </p>
 <hr />
@@ -325,6 +325,14 @@ hard-coded information. You might need to modify any piece of code labelled as '
 <p>ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject</p>
 <p>ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject --skip assay123456</p>
 <p>ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --group myPI --project myProject --skip assay123456,assay123457 --commit</p>
+<p>
+</p>
+<hr />
+<h1><a name="report_bugs_to">REPORT BUGS TO</a></h1>
+<pre>
+ svdate (AT) pcbi (dot) upenn (dot) edu
+ OR
+ rad3 (AT) pcbi (dot) upenn (dot) edu</pre>
 <p>
 </p>
 <hr />
