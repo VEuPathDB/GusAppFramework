@@ -1,0 +1,60 @@
+package org.gusdb.model.DoTS;
+
+import java.sql.*;
+
+import org.biojava.bio.*;
+import org.biojava.bio.seq.*;
+import org.biojava.bio.seq.io.*;
+import org.biojava.bio.symbol.*;
+
+import java.util.*;
+
+import java.math.*;
+
+import java.util.Date;
+import org.gusdb.objrelj.*;
+
+import org.gusdb.model.DoTS.BLATAlignment_Row;
+
+public class BLATAlignment extends BLATAlignment_Row implements java.io.Serializable{
+
+   public BLATAlignment (){}
+    
+    public BLATAlignment (String owner, String name){
+	super (owner, name);
+    }
+     
+    
+    public Vector getQstartsVector(){
+	String starts = getQstarts();
+	
+	return parseString(starts);
+    }
+
+    public Vector getBlocksizesVector(){
+	String lengths = getBlocksizes();
+	return parseString(lengths);
+    }
+
+    public Vector getTstartsVector(){
+	String tStarts = getTstarts();
+	return parseString(tStarts);
+    }
+    
+    
+    private Vector parseString (String forParsing){
+	Vector parsedVector = new Vector();
+	int start = 0;
+	int nextComma = forParsing.indexOf(',');
+	while (nextComma != -1){
+	    Long nextStartV = new Long(forParsing.substring(start, nextComma));
+	    
+	    parsedVector.add(nextStartV);
+	    start = nextComma + 1;
+	    nextComma = forParsing.indexOf(',', nextComma + 1);
+	  
+	}
+	return parsedVector;
+
+    }
+}
