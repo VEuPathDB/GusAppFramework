@@ -115,7 +115,7 @@ sub run {
   
   die "You must provide (--idSQL or --inputFile) and --logFile\n" unless ( $self->getCla->{inputFile} || $self->getCla->{idSQL} ) && $self->getCla->{logFile};
 
- 
+  
   print "Testing on $self->getCla->{'testnumber'}\n" if $self->getCla->{'testnumber'};
 
   $self->logAlert('COMMIT', $self->getCla->{commit} ? 'ON' : 'OFF' );
@@ -200,7 +200,7 @@ sub run {
     my $cts = scalar($a->getChildren('DoTS::AssemblySNP'));
     $ctSNPs += $cts;
     $a->submit();
-    $a->undefPointerCache();
+    $self->getSelfInv->undefPointerCache();
     print LOG "$id: $cts snps ",($ctSeqs % 100 == 0 ? "$ctSeqs processed..".($total - $ctSeqs)." remaining ".`date` : "\n");
   }
   close LOG;
