@@ -306,7 +306,7 @@ sub __processAssociations{
 
     my $dbList = '( ' . $self->getCla()->{org_external_db_release_list} . ') ';
     my $tempSourceId = $entries->[0]->$idAccessor;
-    my $sourceId;
+    my $sourceId = $tempSourceId;
     if ($orgName eq 'mgi'){
 	$sourceId = $self->{mgiMap}->{$tempSourceId};
     }
