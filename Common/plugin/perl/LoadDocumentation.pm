@@ -53,7 +53,7 @@ sub new {
     my $usage = 'Loads documentation for tables and attributes of the GUS project';
     my $easycsp =
 	[{o => 'inputFile',
-	  t => 'string',#	$self->logData("Test: table name = $table_nm attribute name = $attribute_nm html documentation = $html_dc\n") if $verbose;
+	  t => 'string',
 	  h => 'name of the documentation file to load',
 	 }];
     $self->initialize({requiredDbVersion => {Core => '3'},
@@ -116,23 +116,26 @@ sub process {
 	
 	if ($db->checkTableExists($table_nm)){ # if table exists
 
-	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
+#	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
+
+	  if ($self->getTable()->isValidAttribute($attribute_nm)){
+
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
 	        $self->logVerbose("Set table ID");
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
 	        $self->logVerbose("Set attribute name");
-		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
+#		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
 		
 		my $test_dc = $doc->getHtmlDocumentation();
 		print "\nhtml: $test_dc\n\n";
 
-#		if ($html_dc eq $doc->getHtmlDocumentation()){
-#		  $self->logAlert("This documentation is identical to what is already stored for attribute: $attribute_nm in table: $table_nm. Not inserted.");
-#		  next;
-#		}
-#		else{
-#		  $doc->setHtmlDocumentation($html_dc);
-#		}
+		if ($html_dc eq $doc->getHtmlDocumentation()){
+		  $self->logAlert("This documentation is identical to what is already stored for attribute: $attribute_nm in table: $table_nm. Not inserted.");
+		  next;
+		}
+		else{
+		  $doc->setHtmlDocumentation($html_dc);
+		}
 
 		$countInserts++;
 	        $self->logVerbose("Set HTML Documentation");
@@ -148,13 +151,13 @@ sub process {
 	        $self->logVerbose("Set attribute name");
 		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
 
-#		if ($html_dc eq $doc->getHtmlDocumentation()){
-#		  $self->logAlert("This documentation is identical to what is already stored for table: $table_nm. Not inserted.");
-#		  next;
-#		}
-#		else{
-#		  $doc->setHtmlDocumentation($html_dc);
-#		}
+		if ($html_dc eq $doc->getHtmlDocumentation()){
+		  $self->logAlert("This documentation is identical to what is already stored for table: $table_nm. Not inserted.");
+		  next;
+		}
+		else{
+		  $doc->setHtmlDocumentation($html_dc);
+		}
 
 		$countInserts++;
 	        $self->logVerbose("Set HTML Documentation");
