@@ -103,26 +103,31 @@
    <target name="manuallyEditedModel" depends="ProjectTree,
                                       GUS/ObjRelP-Installation">
 
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/Core"/>
      <copy todir="${projectsDir}/GUS/Model/lib/perl/Core">
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/Core"/>
        <mapper type="glob" from="*.pm.man" to="*.pm"/>
      </copy>
 
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/DoTS"/>
      <copy todir="${projectsDir}/GUS/Model/lib/perl/DoTS">
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/DoTS"/>
        <mapper type="glob" from="*.pm.man" to="*.pm"/>
      </copy>
 
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/RAD3"/>
      <copy todir="${projectsDir}/GUS/Model/lib/perl/RAD3">
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/RAD3"/>
        <mapper type="glob" from="*.pm.man" to="*.pm"/>
      </copy>
 
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/SRes"/>
      <copy todir="${projectsDir}/GUS/Model/lib/perl/SRes">
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/SRes"/>
        <mapper type="glob" from="*.pm.man" to="*.pm"/>
      </copy>
 
+     <mkdir dir="${projectsDir}/GUS/Model/lib/perl/TESS"/>
      <copy todir="${projectsDir}/GUS/Model/lib/perl/TESS">
        <fileset dir="${projectsDir}/GUS/Model/lib/perl/TESS"/>
        <mapper type="glob" from="*.pm.man" to="*.pm"/>
