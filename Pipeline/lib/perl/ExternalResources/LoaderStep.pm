@@ -59,21 +59,18 @@ sub run {
     
     if ($self->{dbName}){
 
-	my $dbPluginArgs = "--name $self->{dbName} --commit";
+	my $dbPluginArgs = "--name \'$self->{dbName}\' --commit";
 	$mgr->runPluginNoCommit("createDb_${signalBase}", "GUS::Common::Plugin::InsertNewExternalDatabase",
 				$dbPluginArgs, "Creating database entry for $resource");
 	
 	
-	my $releasePluginArgs = "--database_name $self->{dbName} --database_version $version --description $self->{description} --commit";
-	print STDERR "LoaderStep.pm: running release plugin with args $releasePluginArgs\n";
+	my $releasePluginArgs = "--database_name \'$self->{dbName}\' --database_version \'$version\' --description \'$self->{description}\' --commit";
 	$mgr->runPluginNoCommit("createRelease_${signalBase}", "GUS::Common::Plugin::InsertNewExtDbRelease",
 				$releasePluginArgs, "Creating database release for $resource $version");
 	
-	$loadDataDbArgs .= " --external_database_name $self->{dbName} --version $version";
-	print STDERR "loader step: load data db args set: $loadDataDbArgs\n";
+	$loadDataDbArgs .= " --external_database_name \'$self->{dbName}\' --version \'$version\'";
     }
     
-    print STDERR "loader step: load data db args before running plugin: $loadDataDbArgs\n";
     ## handle commit ourselves
     $mgr->runPluginNoCommit("load_${signalBase}", $self->{plugin}, 
 			    "$self->{pluginArgs} $loadDataDbArgs $self->{commit}",

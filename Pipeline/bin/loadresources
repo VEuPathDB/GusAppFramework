@@ -27,7 +27,6 @@ my @properties =
  ); 
 
 
-
 my $propertySet  = CBIL::Util::PropertySet->new($propertiesFile, \@properties);
 
 my $mgr = GUS::Pipeline::Manager->new($propertySet->getProp('pipelineDir'),
