@@ -11,6 +11,7 @@ use GUS::Model::DoTS::MutualInformationScore;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 use FileHandle;
+#use Dump::Dumper;
 
 sub new {
   my ($class) = @_;
@@ -103,20 +104,23 @@ sub loadMutualInformationFile {
     die ("Can't open datafile $datafile");
   }
 
+  my $sth = $self->getPreparedProfileIdQuery();
+  my $i;
+
   while (<$fh>) {
     chomp;
 
     my ($primarySourceId, $secondarySourceId, $score) = (split(/\|/, $_));
 
     my $primaryProfileId =
-      $self->getProfileIdForSourceId($primarySourceId,
-				    $phylogeneticProfileSetId);
-    exit if (!$primaryProfileId);
+      $self->getProfileIdForSourceId($sth, $primarySourceId,
+				     $phylogeneticProfileSetId);
+    die("Can't find profile_id for source_id $primarySourceId") if (!$primaryProfileId);
 
     my $secondaryProfileId =
-      $self->getProfileIdForSourceId($secondarySourceId,
-				    $phylogeneticProfileSetId);
-    exit if (!$secondaryProfileId);
+      $self->getProfileIdForSourceId($sth, $secondarySourceId,
+				     $phylogeneticProfileSetId);
+    die("Can't find profile_id for source_id $secondarySourceId") if (!$secondaryProfileId);
 
     my $mi = GUS::Model::DoTS::MutualInformationScore->new
       ( {
@@ -128,28 +132,39 @@ sub loadMutualInformationFile {
     $mi->setMutualInformationScore($score * 10000);
     $mi->submit();
 
-    $self->undefPointerCache();
+    if ($i++ % 1000 == 0) {
+      $self->undefPointerCache();
+    }
   }
 
   $fh->close();
 }
 
-sub getProfileIdForSourceId {
-  my ($self, $sourceId, $phylogeneticProfileSetId) = @_;
+sub getPreparedProfileIdQuery {
+  my ($self) = @_;
 
-    my $sql = <<SQL;
+  my $sql = <<SQL;
        SELECT phylogenetic_profile_id
        FROM plasmodb_42.plasmodb_genes gf, DoTS.PhylogeneticProfile pp
-       WHERE source_id='$sourceId'
+       WHERE source_id=?
          AND gf.na_feature_id=pp.na_feature_id
-         AND pp.phylogenetic_profile_set_id=$phylogeneticProfileSetId
+         AND pp.phylogenetic_profile_set_id=?
 SQL
 
-    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
-    my ($phylogeneticProfileId) = $sth->fetchrow_array();
+  my $sth = $self->getQueryHandle()->prepare($sql);
 
-    if (!$phylogeneticProfileId) {
-      print STDERR "Error: can't get phylogenetic_profile_id for source_id $sourceId\n";
-    }
+  return $sth;
+}
+
+sub getProfileIdForSourceId {
+  my ($self, $sth, $sourceId, $phylogeneticProfileSetId) = @_;
+
+  my @bindVars = ($sourceId, $phylogeneticProfileSetId);
+  $sth->execute(@bindVars) or die; #  Dumper($sth);
+  my ($phylogeneticProfileId) = $sth->fetchrow_array();
+
+  if (!$phylogeneticProfileId) {
+    print STDERR "Error: can't get phylogenetic_profile_id for source_id $sourceId\n";
+  }
   return $phylogeneticProfileId;
 }
