@@ -69,7 +69,7 @@ sub run {
         $self->Insert($SOid,$Term,$definition);
         }
 
-         close $Input;
+
 
         return "LoadedSOontologyFromFile";
 }
