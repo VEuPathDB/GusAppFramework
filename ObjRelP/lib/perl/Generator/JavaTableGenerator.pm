@@ -19,18 +19,13 @@ sub new{
 
 sub generate {
     my($self, $newOnly) = @_;
-    
     my $dir = $self->{generator}->{targetDir};
-    
     my $file = "$dir/$self->{schemaName}/$self->{tableName}_Table.java";
-    
+
     return if ($newOnly && -e $file);
     
     open(F,">$file") || die "Can't open table file $file for writing";
-
-    print F $self->_genHeader() . $self->_genConstructor() .  $self->_genDefaultParams() . "\n\n}\n";
-
-
+    print F $self->_genHeader() . $self->_genConstructor() .  $self->_genDefaultParams() . "\n} // $self->{tableName}_Table\n";
     close(F);
 }
 
@@ -42,7 +37,7 @@ sub _genHeader{
 
     my $output = "package $modelPackagePrefix." . $self->{schemaName} . ";\n\n";
     $output .= "import java.util.*;\n";
-    $output .= "import  $objreljPackagePrefix.*;\n\n";
+    $output .= "import $objreljPackagePrefix.*;\n\n";
     $output .= "public class ". $self->{tableName} . "_Table extends GUSTable {\n\n";
     return $output;
 }
@@ -51,11 +46,15 @@ sub _genConstructor {
     my($self) = @_; 
     my $schemaName = $self->{schemaName};
     my $tableName = $self->{tableName};
-    my $output = "public $tableName" . "_Table () {\n\n";
-    
-    $output .= "  super(\"$schemaName\", \"$tableName\");\n";
-    $output .= "  setDefaultParams();\n";
-    $output .= "}\n\n";
+    my $output = <<END_CONSTRUCTOR;
+    public ${tableName}_Table () 
+    {
+	super("$schemaName", "$tableName");
+        setDefaultParams();
+    }
+
+END_CONSTRUCTOR
+
     return $output;
 }
 
@@ -65,49 +64,61 @@ sub _genDefaultParams {
     my $dbiTable = $self->{table};#maybe should be realtable?
     my $realTableName = $self->{generator}->getRealTableName($self->{fullName});
  
-    my $output = "public void setDefaultParams () \{\n";
-    
     my $keys = $dbiTable->getPrimaryKeyAttributes();
     my $primaryKeyName = $keys->[0]; 
+
+    my $hasSeq = ($dbiTable->hasSequence()) ? "true" : "false"; 
+    my $isView = ($dbiTable->isView()) ? "true" : "false";
+    my $tableId = $dbiTable->getTableId();
+
+    my $output = <<END_DFLT_PARAMS1;
+    public void setDefaultParams ()
+    {
+END_DFLT_PARAMS1
+
     $output .= $self->_getTableAttributeInfo();
     $output .= $self->_createSetChildRelations();
     $output .= $self->_createSetParentRelations();
-    
 
-    $output .= "  setImpTableName(\"$realTableName\");\n\n";
-    my $hasSeq = "false"; 
-    my $isView = "false";
-    if ($dbiTable->hasSequence()){$hasSeq = "true";} 
-    if ($dbiTable->isView()){$isView = "true";}
-    $output .= "  setIsView($isView);\n\n"; 
-    $output .= "  setHasSequence($hasSeq);\n\n";
-    $output .=    "\n setPrimaryKeyName(\"$primaryKeyName\");\n \n";
-    $output .= '  setTableId('.$dbiTable->getTableId().");\n\n"; 
-    $output .= "}\n\n";
+    $output .= <<END_DFLT_PARAMS2;
+
+        // Other table properties
+	this.ownerName = "$self->{schemaName}";
+	this.tableName = "$self->{tableName}";
+        this.isView = $isView;
+	this.hasSequence = $hasSeq;
+	this.primaryKey = "$primaryKeyName";
+        this.tableId = $tableId;
+    }
+END_DFLT_PARAMS2
+
     return $output;
-    
 }
+
 #add all this table's children to the GUSTable's hash of child relations
 sub _createSetChildRelations{
     my($self) = @_;
     
     my $output;
+    my $schemaName = $self->{schemaName};
     my $tableName = $self->{tableName};
-    
-    $output .= "   Hashtable childRels = new Hashtable(); \n";
-    $output .= "   try{\n";
     my $children = $self->_getChildren();
+    
+    $output .= "        // Child relationships (tables and views that reference this one) \n";
+    $output .= "        this.childRelations = new Hashtable(); \n";
+    $output .= "        try {\n";
+
     foreach my $child (@$children) {
 	my ($childSchema, $childTable);
-	
 	my ($fktab,$selfcol,$fkcol) = @{$child}; 
 	($childSchema, $childTable) = $self->_cutFullQualifiedName($fktab);
-		
-	$output .=  "          childRels.put(\"$childTable\", new GUSTableRelation(\"$tableName\",\"$childTable\", \"$selfcol\", \"$fkcol\"));\n";
+	$output .=  "	    ";
+	$output .= "this.childRelations.put(\"$childTable\", new GUSTableRelation(\"$schemaName\", \"$tableName\",\"$selfcol\",\"$childSchema\",\"$childTable\",\"$fkcol\"));\n";
     }
-    $output .= "          }";
-    $output .= "          catch (Exception e){}\n";
-    $output .= "          setChildRelations(childRels);";
+    $output .= "        }\n";
+    $output .= "        catch (Exception e) {}\n";
+    $output .= "\n";
+
     return $output;
 }
 
@@ -116,31 +127,28 @@ sub _createSetParentRelations{
     my($self) = @_;
     
     my $output;
+    my $schema = $self->{schemaName};
     my $tableName = $self->{tableName};
-    
-    $output .= " \n  Hashtable ParentRels = new Hashtable(); \n";
-    $output .= "   try{\n";
     my $parents = $self->_getParents();
+    
+    $output .= "        // Parent relationships (tables and views referenced by this one) \n";
+    $output .= "        this.parentRelations = new Hashtable(); \n";
+    $output .= "        try { \n";
 
     foreach my $parent (@$parents) {
 	my ($parentSchema, $parentTable);
-
 	my ($pktable, $selfcol, $pkcol) = @{$parent};
 	($parentSchema, $parentTable) = $self->_cutFullQualifiedName($pktable);
-	
-	$output .=  "          ParentRels.put(\"$parentTable\", new GUSTableRelation(\"$parentTable\",\"$tableName\", \"$pkcol\", \"$selfcol\"));\n";
+	$output .=  "	    ";
+	$output .=  "this.parentRelations.put(\"$parentTable\", new GUSTableRelation(\"$parentSchema\",\"$parentTable\",\"$pkcol\",\"$schema\",\"$tableName\",\"$selfcol\"));\n";
 	#print STDERR "fk table is " . $fktab . " selfcol is " . $selfcol . "fkcol is " . $fkcol . "\n";
     }
-    $output .= "          }";
-    $output .= "          catch (Exception e){}\n";
-    $output .= "          setParentRelations(ParentRels);\n\n";  
+    $output .= "        }\n";
+    $output .= "        catch (Exception e) {}\n";
     return $output;
 # SJD: WILL NEED TO ADD CODE TO CREATE SPECIAL RELS FOR JAVA!!!
 #  $temp .= $self->createSpecialRels($tn);   
-
 }
-
-
 
 #retrieve all oracle info for a particular GUSRow attribute
 #write java method to add it to the GUSTable's hash of attribute information 
@@ -163,13 +171,10 @@ sub _getTableAttributeInfo {
     return undef unless @final_att_list;
     foreach my $att ( @final_att_list ) {
 	my $attInfo = $attHash->{$att};
-	
+
 	# convert attribute oracle type to Java type
 	my $javaType = $self->_oracleTypeConverter( $attInfo, $att );
-	
-	
 	$addTableInfo .= $self->_createJavaTALine($att, $attInfo, $javaType);
-
     }    
     $output .= $self->_createJavaSetTAInfo($addTableInfo);
     
@@ -252,11 +257,13 @@ sub _createJavaTALine {
     else {$prec = -1;}
     if ($scale){}
     else {$scale = -1;}
-    if ($javaType eq "BigDecimal"){
-	$line .= "TableAtts.put(\"$att\", new GUSTableAttribute(\"$att\", \"$oraType\", \"java.math.$javaType\", $prec, $len, $scale, false, false) );\n";}
-    else{
-	$line .= "TableAtts.put(\"$att\", new GUSTableAttribute(\"$att\", \"$oraType\", \"java.lang.$javaType\", $prec, $len, $scale, false, false) );\n";}
-    
+    if ($javaType eq "BigDecimal") {
+	$line .= "	    ";
+	$line .= "tableAtts.put(\"$att\", new GUSTableAttribute(\"$att\", \"$oraType\", \"java.math.$javaType\", $prec, $len, $scale, false, false) );\n";
+    } else {
+	$line .= "	    ";
+	$line .= "tableAtts.put(\"$att\", new GUSTableAttribute(\"$att\", \"$oraType\", \"java.lang.$javaType\", $prec, $len, $scale, false, false) );\n";
+    }
     
     return $line;
 }
@@ -264,13 +271,16 @@ sub _createJavaTALine {
 #overhead for setting the GUSTable's hash of attribute information
 sub _createJavaSetTAInfo{
     my($self, $allInfo) = @_;
-    my $line;
-    $line .= "\n\nHashtable TableAtts = new Hashtable(); \n
-      try {
-     $allInfo
-         }
-      catch (Exception e) {}\n   ";
-    $line .= "setAttInfo(TableAtts);\n\n";
+    my $line = <<END_SET_TA;
+	// Attributes (columns) of the table
+	Hashtable tableAtts = new Hashtable();
+        try {
+$allInfo
+        } catch (Exception e) {}
+        this.attributeInfo = tableAtts;
+
+END_SET_TA
+
     return $line;
 }
 
