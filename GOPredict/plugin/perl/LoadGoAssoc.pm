@@ -63,7 +63,6 @@ sub new {
       }
 	 ];
 
-    #all should be fine except cvs maybe
     $self->initialize({requiredDbVersion => {},
 		       cvsRevision => '$Revision$', # cvs fills this in!
 		     cvsTag => '$Name$', # cvs fills this in!
@@ -260,7 +259,7 @@ sub __load_associations {
 	    # for the term.
  
 
-#	    $termCount += $self->__make_association( $entry, $extSeqGusId, $goTermGusId, $self->getCla->{ organism });
+	    $termCount += $self->__make_association( $entry, $extSeqGusId, $goTermGusId, $self->getCla->{ organism });
 #	  GusApplication::Log( 'term', $assocRow->{ id },
 #			       $termCount, $goTermGusId,
 #			       $goGraph->{ name }->{ $goTermGusId },
