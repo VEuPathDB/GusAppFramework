@@ -438,6 +438,7 @@ CREATE TABLE @oracle_sres@.EXTERNALDATABASELINK (
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     EXTERNAL_PRIMARY_IDENTIFIER        VARCHAR2(255)                                 NULL,
     EXTERNAL_SECONDARY_IDENTIFIER      VARCHAR2(255)                                 NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
     GROUP_READ                         NUMBER(1)                                     NOT NULL,
