@@ -25,9 +25,10 @@
 ###              attribute name exists before loading documentation
 ###    - May-15-2003
 ###         - fixed $easycsp for 'inputFile' and removed 'testnumber'
-###         - 
+###    - May-17-2003
+###         - added 1; to end of file
 ###
-### Last modified May-15-2003
+### Last modified May-17-2003
 ###
 ### usage: ga LoadDocumentation --inputFile [file]
 ###   run from inside directory containing file to upload 
