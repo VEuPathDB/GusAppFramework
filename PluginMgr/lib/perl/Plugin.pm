@@ -672,7 +672,7 @@ sub getExtDbRlsId {
     
     my ($releaseId) = $sth->fetchrow_array();
 
-    die "Couldn't find an external database release id for db '$dbName' version '$dbVersion'";
+    die "Couldn't find an external database release id for db '$dbName' version '$dbVersion'" unless $releaseId;
     
     return $releaseId;
 }
