@@ -56,7 +56,7 @@ sub new{
 		       easyCspOptions => $easycsp,
 		       usage => $usage,
 		   });
-
+    
     return $self;
 }
 
@@ -99,27 +99,27 @@ sub run {
 
 #used for getting proteins that have no remaining associations
 sub _getProteinGoMapFromFile{
-
+    
     my ($self, $filePath) = @_;
-
+    
     my $proteinGoMap;
-
+    
     $self->log("attempting to open $filePath");
     my $remainingProteinFile = FileHandle->new("$filePath") || $self->userError ("could not open $filePath");
-
+    
     while (<$remainingProteinFile>){
-
+	
 	chomp;
 	$proteinGoMap->{$_} = 1;
     }
-
+    
     return $proteinGoMap;
 }
 
 sub _findMissingProteins{
     
     my ($self, $proteinGoMap, $gusGoMap) = @_;
-
+    
     my $changeCount = 0;
     
     my $queryHandle = $self->getQueryHandle();
@@ -138,11 +138,11 @@ sub _findMissingProteins{
                and rs.rna_id = rna.rna_id
                and p.rna_id = rna.rna_id
                and p.protein_id in ?";
-
+    
     my $sth = $queryHandle->prepare($sql);
     
     my $proteinChangeCount;
-
+    
     foreach my $proteinId (keys %$proteinGoMap){
 	$sth->execute($proteinId);
 	
@@ -151,27 +151,24 @@ sub _findMissingProteins{
 	    if (!$proteinGoMap->{$proteinId}->{$goTermId}){
 		$proteinChangeCount->{$proteinId} = 1;
 		$changeCount++;
-		    
+		
 		$self->_makeGoAssociation($proteinId, $goTermId, $gusGoMap->{$goTermId});
 	    }
-	    else {
-		$self->logVerbose 
 	}
     }
-
     my $proteinsChanged = scalar keys %$proteinChangeCount;
-
+    
     my $msg = "Made $changeCount new assocations and instances with is_not set to 1 for $proteinsChanged Proteins";
-
+    
     return $msg;
 }
 
 
 #used for getting proteins that have remaining associations set to 'is'
 sub _getProteinGoMap{
-
+    
     my ($self) = @_;
-
+    
     my $queryHandle = $self->getQueryHandle();
     my $sql = "select ga.row_id, ga.go_term_id
                from DoTS.GOAssociation ga, SRes.GOTerm gt 
@@ -179,7 +176,7 @@ sub _getProteinGoMap{
                and ga.go_term_id = gt.go_term_id
                and gt.external_database_release_id = $goExtDb
                and ga.review_status_id = 1";
-
+    
     my $sth = $queryHandle->prepareAndExecute($sql);
 
     my $proteinGoMap;
@@ -269,37 +266,51 @@ sub _deprecateAutomatedInstances{
     my ($self) = @_;
 
     my $queryHandle = $self->getQueryHandle();
-    my $sql = "update DoTS.GOAssociationInstance gai
-               set gai.is_deprecated = 1
-               where gai.go_association_instance_id in 
-               (select gait.go_association_instance_id
-                from DoTS.GOAssociationInstance gait, DoTS.GOAssociation ga               
-                where ga.go_association_id = gait.go_association_id
-                and ga.table_id = 180
-                and gait.review_status_id != 1
-                and gait.is_deprecated = 0)"
-	      ;
+  #  my $sql = "update DoTS.GOAssociationInstance gai
+  #             set gai.is_deprecated = 1
+  #             where gai.go_association_instance_id in 
+  #             (select gait.go_association_instance_id
+  #              from DoTS.GOAssociationInstance gait, DoTS.GOAssociation ga               
+  #              where ga.go_association_id = gait.go_association_id
+  #              and ga.table_id = 180
+  #              and gait.review_status_id != 1
+  #              and gait.is_deprecated = 0)"
+#	      ;
+    my $sql = "select go_association_instance_id 
+               from dots.goAssociationInstance
+               where row_alg_invocation_id in (192173, 192005, 191935)";
+
+    my $counter = 0;
 
     my $sth = $queryHandle->prepareAndExecute($sql);
-
+    while (my ($id) = $sth->fetchrow_array()){
+	$counter++;
+	my $instance = GUS::Model::DoTS::GOAssociationInstance->new();
+	print STDERR "deleting $id\n";
+	$instance->setGOAssociationInstanceId($id);
+	$instance->retrieveFromDB();
+	$instance->markDeleted();
+	$instance->submit();
+    }
+    
 #    my ($result) = $sth->fetchrow_array();
 #    print STDERR "_deprecateAutomatedInstances: affectd $result rows\n";
-
-    return "set is_deprecated = 1 for all non-manually reviewed instances of associations to proteins"; 
+    return "deleted $counter instances";
+#    return "set is_deprecated = 1 for all non-manually reviewed instances of associations to proteins"; 
 
 }
 
 sub _deprecateOldInstances{
 
     my ($self) = @_;
-
+    
     my $queryHandle = $self->getQueryHandle();
-
+    
     my $sql = "update DoTS.GOAssociationInstance gai
                SET gai.is_deprecated = 1
                where gai.go_association_instance_id in 
                (select distinct gait.go_association_instance_id
-                from DoTS.GOAssociationInstance gait, DoTS.GOAssociation ga, SRes.GOTerm gt
+               from DoTS.GOAssociationInstance gait, DoTS.GOAssociation ga, SRes.GOTerm gt
                where ga.go_association_id = gait.go_association_id
                and ga.go_term_id = gt.go_term_id
                and ga.table_id = 180
@@ -307,12 +318,11 @@ sub _deprecateOldInstances{
 
    
     my $sth = $queryHandle->prepareAndExecute($sql);
-
+    
 #    my ($result) = $sth->fetchrow_array();
 #    print STDERR "_deprecateOldInstances: affectd $result rows\n";
-
+    
     return "set is_deprecated = 1 for all non-manually reviewed instances of associations to proteins"; 
-
-
-
+  
+    
 }
