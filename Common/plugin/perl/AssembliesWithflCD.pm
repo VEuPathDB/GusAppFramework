@@ -132,13 +132,11 @@ foreach my $A(@na_sourceids)    {
 
   my($na_seq, $source_id) = @{$A};
 
-  push (@DTs, $na_seq);
 
 
 #check to see if all previous evidence still valid
- my $array_ref = \@DTs;
 
-$self->RemoveEvidenceSourceID(\@DTs);
+$self->RemoveEvidenceSourceID($na_seq);
 
    print STDERR "ConsideringForFLDT.$na_seq\n";
 
@@ -226,9 +224,9 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
     my $self = shift;
 
-    my $DTarray_ref = @_;
+    my $na_seq = @_;
 
-  print "arrayref$DTarray_ref";
+
 
   my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
 
@@ -242,17 +240,13 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
    }
 
-   print "array DTs@{$DTarray_ref}";
 
-#both if these arrays can be empty if no evidence needs to be deleted for an assembly
-    foreach my $target_id(@DTSasEvidenceTarget)  {
-
-      foreach (@{$DTarray_ref})  {
+  foreach my $target_id(@DTSasEvidenceTarget)  {
 
 
-       if ($target_id == $_){  next;  }
+       if ($target_id == $na_seq){  next;  }
 
-        if ($target_id != $_)  {
+        if ($target_id != $na_seq)  {
 
           my $dbh = $self->getQueryHandle();
 
