@@ -279,6 +279,7 @@ sub readExternalDbReleases() {
 	my $name    = $row->{'name'};
         my $extDbId = $row->{'external_database_id'};
 
+
         # Make sure only the last release is fetched and used
         $sth2->execute($extDbId);
         my $exDbRelRow = $sth2->fetchrow_hashref('NAME_lc');
@@ -364,8 +365,10 @@ sub addRecords {
     foreach my $dbref (@$dbrefs) {
         my($db, $id, $rest) = ($dbref =~ /^([^;]+);\s*([^;]+);(.*)$/);
         die "Unable to parse $dbref" if (not defined($id));
-                            
-        my $dbId = &getExtDbRelId($extDbs, $self->{'nameForDB'}->{$db});
+
+        my $correct_name = $self->{'nameForDB'}->{$db} || $db;
+
+        my $dbId = &getExtDbRelId($extDbs, $correct_name); #$self->{'nameForDB'}->{$db});
 
         if( $self->createReferences($links, $entryId, $dbId, $id) ){
             ++$$numRefs;
@@ -414,7 +417,7 @@ sub getExtDbRelId {
     my $db    = $extDbRels->{$name};
     my $relId = $db->{'external_database_release_id'} if defined($db);
     
-    die "Unable to find most recent ExternalDatabaseRelease for ExternalDatabase $name" if (not defined($relId));
+    die "Unable to find most recent ExternalDatabaseRelease for ExternalDatabase '$name', \$relId = '$relId'" if (not defined($relId));
     return $relId;
 }
 
