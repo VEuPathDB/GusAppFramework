@@ -1863,7 +1863,7 @@ sub parseXML {
       }
     } elsif ($x->[$i] =~ /^\s*(.*?)\<\/\s*(\S*?)\s*\>\s*$/) { ##a closing tag
       print STDERR "Closing tag $2\n" if $debug;
-      if ($2 eq $self->getClassName()) {
+      if ($self->getFullTableClassName($2) eq $self->getClassName()) {
 
 				##here need to do the things necessary to deal with updates vs. inserts...
         if ($self->haveAllPrimaryKeyValues()) { ##have primary key therefore update....
@@ -1904,7 +1904,7 @@ sub parseXML {
       if ($self->getDatabase()->checkTableExists($tag)) { ##is another table..child
 	my $className = $self->getFullTableClassName($tag);
         eval("require $className");
-        my $c = $tag->new(undef,$self->getDatabase());
+        my $c = $className->new(undef,$self->getDatabase());
         $c->processXmlAttributes($xml_atts) if $xml_atts;
         $self->addChild($c) unless $xml_atts =~ /(parent|child)/; ##note that not certain this is right..
         ##might want to also addChild to the current object....but I don't think so...

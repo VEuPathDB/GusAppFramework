@@ -36,7 +36,7 @@ sub initialize {
   my ($self, $argsHashRef) = @_;
 
   my @args = ('requiredDbVersion', 'cvsRevision', 'cvsTag', 'name',
-	      'description', 'usage', 'easyCspOptions');
+	      'revisionNotes', 'usage', 'easyCspOptions');
 
   foreach my $arg (@args) {
     $self->_failinit($arg) unless exists $argsHashRef->{$arg};
@@ -83,8 +83,8 @@ sub getCVSTag {
   return $1;
 }
 
-# description about the implementation
-sub getDescription       { $_[0]->{description} }
+# revisionNotes about the implementation
+sub getRevisionNotes       { $_[0]->{revisionNotes} }
 
 # what options are needed
 sub getEasyCspOptions    { $_[0]->{easyCspOptions} }

@@ -29,7 +29,7 @@ sub generate {
 
   my $dir = $self->{generator}->{targetDir};
 
-  my $file = "$dir/$self->{schemaName}/$self->{tableName}Table.pm";
+  my $file = "$dir/$self->{schemaName}/$self->{tableName}_Table.pm";
 
   return if ($newOnly && -e $file);
 
@@ -42,7 +42,7 @@ sub _genHeader {
   my($self) = @_;
 
   return
-"package $self->{fullName}Table;
+"package $self->{fullName}_Table;
 
 use strict;
 use GUS::ObjRelP::DbiTable;

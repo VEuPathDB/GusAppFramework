@@ -26,7 +26,7 @@ sub generate {
 
   my $dir = $self->{generator}->{targetDir};
 
-  my $file = "$dir/$self->{schemaName}/$self->{tableName}Row.pm";
+  my $file = "$dir/$self->{schemaName}/$self->{tableName}_Row.pm";
 
   return if ($newOnly && -e $file);
 
@@ -40,7 +40,7 @@ sub _genHeader {
   my ($self) = @_;
 
   my $temp =
-"package GUS::Model::$self->{fullName}Row;
+"package GUS::Model::$self->{fullName}_Row;
 
 use strict;
 ";

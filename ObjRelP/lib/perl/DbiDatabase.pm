@@ -165,7 +165,7 @@ sub getTable {
       $self->{'tables'}->{$tableClassName} =
 	GUS::ObjRelP::DbiTable->new($tableClassName,$self);
     }else{
-      my $tableName = $tableClassName . "Table";
+      my $tableName = $tableClassName . "_Table";
       my $evalstmt = "require $tableName";
       print STDERR "$evalstmt\n" if $debug;
       eval($evalstmt);

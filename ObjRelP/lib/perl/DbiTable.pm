@@ -840,16 +840,14 @@ sub cacheStatement {
 sub setChildList{
   my($self,@list) = @_;
   undef $self->{'childList'};
-  foreach my $i (@list) {
-    @{$self->{'childList'}->{$i->[0]}} = ($i->[1],$i->[2]);
-    #		print STDERR "Adding Child: \(",join(', ',@{$i}),"\)\n";
-  }
+  $self->addToChildList(@list);
 }
 
 sub addToChildList{
   my($self,@list) = @_;
   foreach my $i (@list) {
-    @{$self->{'childList'}->{$i->[0]}} = ($i->[1],$i->[2]);
+    my $childFullName = $self->getFullClassName($i->[0]);
+    @{$self->{'childList'}->{$childFullName} = ($i->[1],$i->[2]);
   }
 }
 
@@ -896,15 +894,15 @@ sub getChildColumn{
 sub setParentList{
   my($self,@list) = @_;
   undef $self->{'ParentList'};
-  foreach my $i (@list) {
-    @{$self->{'parentList'}->{$i->[0]}} = ($i->[1],$i->[2]);
-  }
+  $self->addToParentList(@list);
 }
 
 sub addToParentList{
   my($self,@list) = @_;
+
   foreach my $i (@list) {
-    @{$self->{'parentList'}->{$i->[0]}} = ($i->[1],$i->[2]);
+    my $parentFullName = $self->getFullClassName($i->[0]);
+    @{$self->{'parentList'}->{$parentFullName}} = ($i->[1],$i->[2]);
   }
 }
 

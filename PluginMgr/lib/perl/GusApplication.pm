@@ -28,7 +28,7 @@ sub new {
 		  cvsRevision => '$Revision$',
 		  cvsTag => '$Name$',
 		  name => ref($m),
-		  description => 'GusApplication',
+		  revisionNotes => 'update for GUS 3.0',
 		  easyCspOptions => {},
 		  usage => ""
 		 });
@@ -329,7 +329,7 @@ sub doMajorMode_Meta {
 	    cvs_tag        => $M->getCVSTag,
 	    executable     => $M->getName,
 	    executable_md5 => $M->getCheckSum,
-	    description    => $M->getDescription,
+	    description    => $M->getRevisionNotes,
 	  });
   $imp_go->setParent($alg_go);
 
@@ -711,11 +711,7 @@ sub create_or_update_implementation {
   my $cvsRevision = $pu->getCVSRevision;
   my $cvsTag = $pu->getCVSTag;
 
-  my $imp_description = $pu->getDescription;
-  if (not defined $imp_description) {
-    print STDERR "You have not overridden the getDescription method in your plugin.\n";
-    exit 0;
-  }
+  my $imp_description = $pu->getRevisionNotes;
 
   use Sys::Hostname;
   my $host = hostname();
@@ -1125,13 +1121,13 @@ sub getGlobalEasyCspOptions {
 	o => 'project',
       },
 
-      { h => 'set this algorithm invocation to rows in new or changed rows',
+      { h => 'use this algorithm invocation id in the event that a new algorithm invocation id cannot be generated automatically',
 	t => 'integer',
 	d => 1,
 	o => 'algoinvo',
       },
 
-      { h => 'set this comment to the Core.AlgorithmInvocation',
+      { h => 'set Core.AlgorithmInvocation.comment with this comment',
 	t => 'string',
 	o => 'comment',
       },
@@ -1140,11 +1136,6 @@ sub getGlobalEasyCspOptions {
 	t => 'string',
 	o => 'gusconfigfile',
 	d => "$ENV{GUS_CONFIG_FILE}"
-      },
-
-      { h => 'this implementation of application',
-	t => 'integer',
-	o => 'implementation',
       },
      )
     };

@@ -13,7 +13,7 @@
 
    my $m = bless {}, $Class;
 
-   my $usage = 'module that parses an XML file and updates GUS: "// on newline delimits submits';
+   my $usage = 'update GUS from an XML file. ("// on newline delimits submits)';
 
    my $easycsp =
      [
@@ -32,7 +32,7 @@
 		   cvsRevision => '$Revision$', # cvs fills this in!
 		   cvsTag => '$Name$',             # cvs fills this in!
 		   name => ref($m),
-		   description => '',
+		   revisionNotes => 'make consistent with GUS 3.0',
 		   easyCspOptions => $easycsp,
 		   usage => $usage
 		  });

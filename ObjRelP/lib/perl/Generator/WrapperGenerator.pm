@@ -37,7 +37,7 @@ sub generate {
 sub _genHeader {
   my ( $self ) = @_;
 
-  my $rowclass = "GUS::Model::$self->{fullName}Row";
+  my $rowclass = "GUS::Model::$self->{fullName}_Row";
 
   my $temp .= "
 package GUS::Model::$self->{fullName};
