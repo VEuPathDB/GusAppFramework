@@ -244,7 +244,7 @@ sub process {
 
   $aas->submit() if $aas->hasChangedAttributes();
   if ($ctx->{cla}->{'writeFile'}) {
-    print WF ">",$aas->getId()," $source_id $description\n$sequence\n";
+    print WF ">",$aas->getId()," $source_id $secondary_id $name $description\n$sequence\n";
   }
   $countInserts++;
 }
