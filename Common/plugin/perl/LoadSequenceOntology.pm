@@ -49,7 +49,6 @@ sub new {
 }
 
 
-
 sub run {
         my $self = shift;
 
@@ -86,13 +85,17 @@ sub Insert {
    my $so_version =  $self->getArgs->{'so_version'};
    my $so_cvs_version = $self->getArgs->{'so_cvs_version'};
 
+   my $ontology_name = 'sequence';
 
    my $SOterm = GUS::Model::SRes::SequenceOntology->new({'so_id' => $SOid,
-                                                         'ontology_name' => 'sequence',
+                                                         'ontology_name' => $ontology_name,
                                                          'so_version' => $so_version,
                                                          'so_cvs_version' => $so_cvs_version,
                                                          'term_name' => $Term,
                                                          'definition' => $definition });
+
+   print STDERR "$SOid\t$ontology_name\t$so_version\t$so_cvs_version\t$Term\t$definition\n";
+
 
 
    $SOterm->submit();
