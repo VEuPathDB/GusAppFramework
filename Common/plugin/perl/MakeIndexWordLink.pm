@@ -146,9 +146,13 @@ and rownum < 100";
     foreach my $wd (split(' +',$desc)) {
       $words{$wd} = 1;
     }
+
+    $self->getDb()->manageTransaction(0,'begin');
     foreach my $wd (keys%words){
       &processWord($id,$wd);
     }
+    $self->getDb()->manageTransaction(0,'commit');
+
     $ctx->{self_inv}->undefPointerCache();
   }
   $dbh->disconnect();           ##close database connection
@@ -208,7 +212,7 @@ sub createIWL {
 	 'target_id' => $id,
 	 'index_word_id' => &getWordId($word,$id),
 	});
-  $wl->submit();
+  $wl->submit(0,0);
   $totalLinks++;
 }
 
@@ -218,7 +222,7 @@ sub getWordId {
     #		print STDERR "New Word $id: '$word'\n";
     $ctNewWords++;
     my $iw = GUS::Model::DoTS::IndexWord->new({'word' => $word});
-    $iw->submit();
+    $iw->submit(0,0);
     $words{$word} = $iw->getId();
   }
   return $words{$word};
