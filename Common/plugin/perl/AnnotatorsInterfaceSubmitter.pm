@@ -86,17 +86,25 @@ sub run {
 	my @children = $self->getSelfInv->getAllChildren();
 	my $curr_gene;
 
+ print STDERR map {ref $_}@children,"\n";
+
+
 
   if(!$self->getCla->{refresh}){
 
 		foreach my $child ( @children ) {
-			print STDERR "Child class name: ", $child->getClassName(), " \n";
+			print STDERR "Child class name: ", $child->getClassName(), "\n";
 			print STDERR "Concat prim key: " , $child->getConcatPrimKey(), "\n";
-      if ($child->getClassName() eq "GUS::Model:DoTS::Gene"){
-        $curr_gene = $child;  # save off the current gene...
+
+   if ($child->getClassName() eq "GUS::Model::DoTS::Gene"){
+
+   print STDERR "TestChild class name: ", $child->getClassName(), "\n";
 
 
-      }
+       $curr_gene = $child;  # save off the current gene...
+
+
+  }
   		# add the evidence.
 			if ( $fact_hash ) {
 				# get all facts (hash) for the current object (based on prim key)
@@ -130,15 +138,17 @@ sub run {
 			}
 
 			if ( $remove ) {
-				$self->getCla->{self_inv}->removeChild($child);
+				$self->getSelfInv->removeChild($child);
 				print STDERR $child->getClassName(), " is not changed, not submitting to db.\n";
 			} else {
-				print STDERR $child->getClassName(), " IS changed, submitting to db.\n";
-        if ($child->getClassName() ne "GUS::Model::DoTS::Assembly"){
-          $child->setReviewStatusId(1);
+                          print STDERR $child->getClassName(), " IS changed, submitting to db.\n";
 
-
-        }
+                          # All objects except DoTS::Assembly and DoTS::RNARNACategory have 
+                          # a review_status_id that should be set to 1 (= manually reviewed)
+                          #
+                          if (!($child->getClassName =~ /^GUS::Model::DoTS::(Assembly|RNARNACategory)/)) {
+                            $child->setReviewStatusId(1);
+                          }
 			}
 
 			$has_evidence = 0;
@@ -175,7 +185,7 @@ sub run {
     # MergeSplit will only be used when the old_id is deleted.
     #$ctx->{'self_inv'}->addChild( $new_tu );
 
-       $self->getCla->{self_inv}->addChild( $new_gene );
+       $self->getSelfInv->addChild( $new_gene );
 	}
 
 
@@ -216,13 +226,18 @@ print STDERR "Geneids=$del_genes\n";
 
 
         my $merge_split = GUS::Model::DoTS::MergeSplit->new({'old_id' => $del_gene,
-
-#HERE with get gene_id from database
                                        'new_id' => $curr_gene->getGeneId(),
                                        'is_merge' => 1,
                                        'merge_split_group_id' => $group_id,
                                        'table_id' => $curr_gene->getTableIdFromTableName($curr_gene->getClassName())});
-        $self->getCla->{self_inv}->addChild( $merge_split );
+
+ print STDERR "Test: ",$curr_gene->getTableIdFromTableName($curr_gene->getClassName()), "\n";
+
+
+
+  $self->getSelfInv->addChild( $merge_split );
+
+ print STDERR "Test: ", $curr_gene->getClassName(), "\n";
       }
     } else {
       print STDERR "AnnotatorsInterfaceSubmitter: Failed to obtain merge_split_group_id, could not insert into MergeSplit Table!\n";
@@ -235,7 +250,7 @@ print STDERR "Geneids=$del_genes\n";
 	if ( $pgfs ) {
 		foreach my $pgf ( @$pgfs ) {
 			$pgf->markDeleted(1);
-			$self->getCla->{'self_inv'}->addChild( $pgf );
+			$self->getSelfInv->addChild( $pgf );
 		}
               }
 
@@ -254,7 +269,7 @@ print STDERR "Geneids=$del_genes\n";
 	if ( $gss ) {
 		foreach my $gs ( @$gss ) {
 			$gs->markDeleted(1);
-			$self->getCla->{self_inv}->addChild( $gs );
+			$self->getSelfInv->addChild( $gs );
 		}
               }
 
@@ -397,31 +412,31 @@ sub getGeneAndTUIdsForAddedTSs {
 # get a list ref of the ProteinGOFunction objects to delete.
 # Joan 1/9/03 need to come back to this when converting interface to handle GO Function updates
 
-sub getPGFDeleteObjects {
+#sub getPGFDeleteObjects {
 
-  my( $file ) = @_;
-	my $pgfs;
-	open( PGFF, "$file" );
-	while( <PGFF> ) {
-		if ( $_ =~ s/deleted protein_go_function: // ) {
-			if ( $_ =~ /\d/ ) {
-				chomp;
-				my @data = split(/\s+/,$_);
-				foreach my $pgf_id ( @data ) {
-					my %loadHash;
-					$loadHash{'protein_go_function_id'} = $pgf_id;
-          my $pgf = ProteinGOFunction->new(\%loadHash);
-					$pgf->retrieveFromDB();
-					push( @$pgfs, $pgf );
-				}
-			} else {
-				return 0;
-			}
-		}
-	}
-	close PGFF;
-	return $pgfs;
-}
+ # my( $file ) = @_;
+	#my $pgfs;
+	#open( PGFF, "$file" );
+	#while( <PGFF> ) {
+		#if ( $_ =~ s/deleted protein_go_function: // ) {
+			#if ( $_ =~ /\d/ ) {
+				#chomp;
+			#	my @data = split(/\s+/,$_);
+				#foreach my $pgf_id ( @data ) {
+					#my %loadHash;
+	 #				$loadHash{'protein_go_function_id'} = $pgf_id;
+         # my $pgf = ProteinGOFunction->new(\%loadHash);
+		#			$pgf->retrieveFromDB();
+			#		push( @$pgfs, $pgf );
+		#		}
+			#} else {
+		#		%return 0;
+			#}
+	#	}
+#	}
+	#close PGFF;
+#	return $pgfs;
+#}
 
 # get a list ref of the RNA objects to add.
 sub getAddedRNAObjects {
@@ -580,10 +595,10 @@ sub parseFactObjects {
 			#if ( $_ !~ /\</ ) { # not part of the xml so must be pk and possibly attribute.
 			if ( $_ =~ /^Evidence:/ ) { # not part of the xml so must be pk and possibly attribute.
 				if ( @xml ) {
-print STDERR "@xml\n";
+#print STDERR "@xml\n";
 
 				$ai->parseXML(\@xml);
-					print STDERR "XML: @xml\n";
+					#print STDERR "XML: @xml\n";
 					undef @xml;
 					foreach my $child ( $ai->getAllChildren() ) {
 						push( @{$$hash{$id}{$attribute}}, $child );
@@ -609,16 +624,16 @@ print STDERR "@xml\n";
 	}
 	if ( @xml ) {
 
-print STDERR "@xml\n";
+   #print STDERR "@xml\n";
 
 
   $ai->parseXML(\@xml);
-		print STDERR "XML: @xml\n";
+		#print STDERR "XML: @xml\n";
 
 		foreach my $child ( $ai->getAllChildren() ) {
 			push( @{$$hash{$id}{$attribute}}, $child );
-			#push( @{$$hash{$id}}, $child );
-			print STDERR "AI child: ", $child->getClassName(), "\n";
+       		#push( @{$$hash{$id}}, $child );
+		#	print STDERR "AI child: ", $child->getClassName(), "\n";
 		}
 		$ai->removeAllChildren();
 	}
@@ -630,7 +645,7 @@ print STDERR "@xml\n";
 sub createEmptyProtein {
 
         my $self = shift;
-	my $protein = GUS::Model::DoTS::Protein->new({'is_reference' => 0,														'review_status_id' => 0 });
+	my $protein = GUS::Model::DoTS::Protein->new({'review_status_id' => 0 });
 	return $protein;
 }
 
@@ -640,8 +655,7 @@ sub createEmptyProtein {
 
   my $self = shift;
 
-  my $gene = GUS::Model::DoTS::Gene->new({'is_reference' => 0,
-                        'review_status_id' => 0 });
+  my $gene = GUS::Model::DoTS::Gene->new({'review_status_id' => 0 });
 
 
   ##add a transcriptUnit no longer applicable
