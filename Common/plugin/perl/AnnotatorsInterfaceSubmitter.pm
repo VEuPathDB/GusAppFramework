@@ -626,7 +626,7 @@ print STDERR "@xml\n";
 }
 
 
-#01/06/03 modified subroutine
+#01/06/03 modified
 sub createEmptyProtein {
 
         my $self = shift;
