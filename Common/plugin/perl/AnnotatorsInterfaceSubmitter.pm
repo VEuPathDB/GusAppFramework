@@ -147,6 +147,8 @@ sub run {
                           # a review_status_id that should be set to 1 (= manually reviewed)
                           #
                           if (!($child->getClassName =~ /^GUS::Model::DoTS::(Assembly|RNARNACategory)/)) {
+
+
                             $child->setReviewStatusId(1);
                           }
 			}
@@ -224,7 +226,7 @@ print STDERR "Geneids=$del_genes\n";
 
       next if ( $del_gene == "" );
 
-
+print STDERR "Test:$del_gene";
         my $merge_split = GUS::Model::DoTS::MergeSplit->new({'old_id' => $del_gene,
                                        'new_id' => $curr_gene->getGeneId(),
                                        'is_merge' => 1,
@@ -233,7 +235,7 @@ print STDERR "Geneids=$del_genes\n";
 
  print STDERR "Test: ",$curr_gene->getTableIdFromTableName($curr_gene->getClassName()), "\n";
 
-
+ print STDERR "Test:$del_gene";
 
   $self->getSelfInv->addChild( $merge_split );
 
@@ -315,7 +317,7 @@ print STDERR "Geneids=$del_genes\n";
 		foreach my $del_gene ( @$del_genes ) {
 			next if ( $del_gene == "" );
 			$i++;
-		# then delete the Gene and TU objects, first the Gene
+		# then delete the Gene and TU objects, first the Gene- now only the gene
 			my %loadHash;
 			$loadHash{'gene_id'} = $del_gene;
       my $delete_gene = new GUS::Model::DoTS::Gene(\%loadHash);
