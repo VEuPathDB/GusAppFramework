@@ -23,8 +23,6 @@ sub new {
 
     $self->_dieIfAlreadyRunning();
 
-    $self->_checkGUSConfig();
-
     open(STDERR, ">$self->{pipelineDir}/logs/pipeline.err")  || die "Can't open $self->{pipelineDir}/logs/pipeline.err";
 
     $self->_setSignal("running");
@@ -250,7 +248,7 @@ sub _runPlugin {
     $self->runCmd("mkdir -p $self->{pipelineDir}/plugins/$signal");
     chdir "$self->{pipelineDir}/plugins/$signal";
 
-    $self->runCmd($cmd);   
+    $self->runCmd($cmd);
 
     $self->endStep($signal);
 }
@@ -320,23 +318,6 @@ sub _createPipelineDir {
     $self->runCmd("mkdir -p $self->{pipelineDir}/logs");
     $self->runCmd("mkdir -p $self->{pipelineDir}/signals");
     $self->runCmd("mkdir -p $self->{pipelineDir}/plugins");
-}
-
-sub _checkGUSConfig {
-    my ($self) = @_;
-    
-    my $objectsPath = $self->{propertySet}->getProp('objectsPath');
-
-    if (! -d $objectsPath) {
-	print STDERR "Error: objectPath property doesn't contain a valid object path\n";
-	exit(1);
-    } 
-    push(@INC, $self->{propertySet}->getProp("objectsPath"));
-
-    if (! -e $ENV{GUS_CFG}) {
-	print STDERR "Error: \$GUS_CFG env. var. must point to your gus application config file\n";
-	exit(1);
-    } 
 }
 
 sub _dieIfAlreadyRunning {
