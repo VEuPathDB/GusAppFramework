@@ -120,7 +120,7 @@ sub run {
     die "you must provide --external_database_release_id, --table_name and valid fasta sequencefile on the command line\n";
   }
   
-  print $ctx->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
+  print $ctx->{cla}->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
   print "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{cla}->{'testnumber'};
 
   eval("require GUS::Model::".$ctx->{cla}->{table_name});

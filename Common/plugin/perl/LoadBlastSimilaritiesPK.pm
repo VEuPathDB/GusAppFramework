@@ -127,30 +127,30 @@ sub run {
   $ctx->{'self_inv'}->setMaximumNumberOfObjects(400000);
 
   ##get the subject table_id
-  $subject_table_id = $ctx->{ self_inv }->getTableIdFromTableName( $ctx->{ subject_table } );
+  $subject_table_id = $ctx->{ self_inv }->getTableIdFromTableName( $ctx->{cla}->{ subject_table } );
   ##and the query_table_id
   $query_table_id = $ctx->{ self_inv }->getTableIdFromTableName( $ctx->{cla}->{query_table} );
   ##get the subject_table_pk
   $subject_table_pk = $ctx->{self_inv}->getTablePKFromTableId($subject_table_id);
   ##now the query table pk..
-  $query_table_pk = $ctx->{self_inv}->getTablePKFromTableId($ctx->{self_inv}->getTableIdFromTableName( $ctx->{query_table} ));
+  $query_table_pk = $ctx->{self_inv}->getTablePKFromTableId($ctx->{self_inv}->getTableIdFromTableName( $ctx->{cla}->{query_table} ));
 
-  my $queryClassName = "GUS::Model::$ctx->{'query_table'}";
+  my $queryClassName = "GUS::Model::$ctx->{cla}->{'query_table'}";
   eval("require $queryClassName");
 
   my $n_queries = 0;
   my $n_files   = 0;
 
-  print $ctx->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
-  print "Testing on $ctx->{'testnumber'}\n" if $ctx->{'testnumber'};
+  print $ctx->{cla}->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
+  print "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{cla}->{'testnumber'};
 
   # open dbi database connection
   ##note that the login and password are coming from the gus_cfg file..
   my $dbh = $ctx->{'self_inv'}->getDbHandle();
 
   ## want to be able to ignore entries already done!!
-  if ($ctx->{'restart'}) {
-    my $query = "select distinct query_id from dots.Similarity where row_alg_invocation_id in ($ctx->{'restart'})";
+  if ($ctx->{cla}->{'restart'}) {
+    my $query = "select distinct query_id from dots.Similarity where row_alg_invocation_id in ($ctx->{cla}->{'restart'})";
     print "Restarting: Querying for the ids to ignore\n$query\n";
     my $stmt = $dbh->prepare($query);
     $stmt->execute();
@@ -162,18 +162,18 @@ sub run {
 
   ##filters to pass into the Bulkloader module...
   my $filter_ns;
-  $filter_ns->{ min }             = $ctx->{ ns_mi } if defined $ctx->{ ns_mi };
-  $filter_ns->{ max }             = $ctx->{ ns_ma } if defined $ctx->{ ns_ma };
+  $filter_ns->{ min }             = $ctx->{cla}->{ ns_mi } if defined $ctx->{cla}->{ ns_mi };
+  $filter_ns->{ max }             = $ctx->{cla}->{ ns_ma } if defined $ctx->{cla}->{ ns_ma };
 
   my $filter_su;
-  $filter_su->{ length          } = $ctx->{ su_ml } if defined $ctx->{ su_ml };
-  $filter_su->{ pValue          } = $ctx->{ su_pv } if defined $ctx->{ su_pv };
-  $filter_su->{ percentIdentity } = $ctx->{ su_pi } if defined $ctx->{ su_pi };
+  $filter_su->{ length          } = $ctx->{cla}->{ su_ml } if defined $ctx->{cla}->{ su_ml };
+  $filter_su->{ pValue          } = $ctx->{cla}->{ su_pv } if defined $ctx->{cla}->{ su_pv };
+  $filter_su->{ percentIdentity } = $ctx->{cla}->{ su_pi } if defined $ctx->{cla}->{ su_pi };
 
   my $filter_sp;
-  $filter_sp->{ length          } = $ctx->{ sp_ml } if defined $ctx->{ sp_ml };
-  $filter_sp->{ pValue          } = $ctx->{ sp_pv } if defined $ctx->{ sp_pv };
-  $filter_sp->{ percentIdentity } = $ctx->{ sp_pi } if defined $ctx->{ sp_pi };
+  $filter_sp->{ length          } = $ctx->{cla}->{ sp_ml } if defined $ctx->{cla}->{ sp_ml };
+  $filter_sp->{ pValue          } = $ctx->{cla}->{ sp_pv } if defined $ctx->{cla}->{ sp_pv };
+  $filter_sp->{ percentIdentity } = $ctx->{cla}->{ sp_pi } if defined $ctx->{cla}->{ sp_pi };
 
   my $filter_limit;
   $filter_limit->{subjects} = $ctx->{cla}->{limit_sub} if defined $ctx->{cla}->{limit_sub};
@@ -181,7 +181,7 @@ sub run {
 
   # work through files in the list
  FILE_SCAN_LOOP:
-  foreach my $file ( @{ $ctx->{ files } } ) {
+  foreach my $file ( @{ $ctx->{cla}->{ files } } ) {
 
     $n_files++;
 
@@ -190,7 +190,7 @@ sub run {
       file    => GetFileClever( $file ),
 	query   => \&GetQueryObject,
 	  subject => \&GetSubjectTableAndSeqId,
-	    types   => $ctx->{ output },
+	    types   => $ctx->{cla}->{ output },
 	  } )
       ;
 
@@ -204,15 +204,15 @@ sub run {
 
       $o->submit();
 
-      if ($n_queries % ($ctx->{'log_frequency'} * 10) == 0) {
+      if ($n_queries % ($ctx->{cla}->{'log_frequency'} * 10) == 0) {
 	print join( "\t", $queriesProcessed, "$n_queries entered", $o->getId(), scalar $o->getSimilarityFacts,`date`);
-      } elsif ($n_queries % $ctx->{'log_frequency'} == 0) {
+      } elsif ($n_queries % $ctx->{cla}->{'log_frequency'} == 0) {
 	print join( "\t", $queriesProcessed, "$n_queries entered", $o->getId(), scalar $o->getSimilarityFacts)."\n";
       }
 
       $o->undefPointerCache();
 
-      last FILE_SCAN_LOOP if $n_queries >= $ctx->{ nqueries };
+      last FILE_SCAN_LOOP if $n_queries >= $ctx->{cla}->{ nqueries };
 
     }				# eo similarities in file
   }				# eo filenames
@@ -233,7 +233,7 @@ sub GetQueryObject{
   my $id = $1;
 
   ##want to ignore things that already have done!!
-  if ($ctx->{'restart'}) {
+  if ($ctx->{cla}->{'restart'}) {
     if (exists $ignore{$id}) {
       $countIgnored++;
       return undef;

@@ -64,7 +64,7 @@ sub Run {
   die "Supply: --db_rel_id \n" unless ($ctx->{cla}->{db_rel_id});
   die "Supply: --pattern \n" unless ($ctx->{cla}->{pattern}); 
 
-  print STDERR $ctx->{'commit'} ? "COMMIT ON\n" : "COMMIT TURNED OFF\n";
+  print STDERR $ctx->{cla}->{'commit'} ? "COMMIT ON\n" : "COMMIT TURNED OFF\n";
   print STDERR "Testing on $ctx->{'cla'}->{'testnumber'}\n" 
                 if $ctx->{'cla'}->{'testnumber'};
 
