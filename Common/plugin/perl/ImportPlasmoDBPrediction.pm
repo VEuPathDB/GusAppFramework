@@ -45,16 +45,16 @@ sub new {
       o => 'filename',
       h => 'Name of file(s) containing the predicted gene features',
      },
-     {
-      o => 'source_id',
-      t => 'string',
-      h => 'Source_id of origin of gene features',
-     },
-     {
-      o => 'NAseqId',
-      t => 'int',
-      h => 'NA_sequence_id of origin of gene features'
-     },
+#     {
+#      o => 'source_id',
+#      t => 'string',
+#      h => 'Source_id of origin of gene features',
+#     },
+#     {
+#      o => 'NAseqId',
+#      t => 'int',
+#      h => 'NA_sequence_id of origin of gene features'
+#     },
      {
       o => 'projectId',
       t => 'int',
@@ -106,11 +106,11 @@ sub new {
 ############################################################
 my $ctx;
 my $debug = 1;  #my personal debug !!
-my $projectId=undef;
+my $projectId;
 my $NAseqId;
 my $Version;
-my $extDbRelId=undef;
-my $source_id=undef;
+my $extDbRelId;
+my $source_id;
 my %data;
 my %allFeatures;
 $| = 1;
@@ -130,11 +130,13 @@ sub run {
   $projectId  =  $self->getArgs()->{'projectId'};
   #$projectId = $ctx->{cla}->{'projectId'};
 
-  $source_id = $self->getArgs()->{'source_id'};
- # $source_id = $ctx->{cla}->{'source_id'};
+#  $source_id = $self->getArgs()->{'source_id'};
+# # $source_id = $ctx->{cla}->{'source_id'};
 
-  $NAseqId = $self->getArgs()->{'NAseqId'};
- # $NAseqId = $ctx->{cla}->{'NAseqId'};
+#  $NAseqId = $self->getArgs()->{'NAseqId'};
+# # $NAseqId = $ctx->{cla}->{'NAseqId'};
+
+
 
   unless ($projectId=~m/\d+/){
     $self->log("EE Please specify the project_id, e.g. with --project_id=900");
@@ -209,6 +211,7 @@ sub run {
   ## evolved out ot the need to load gene predictions for unfinished contig data
 	
   foreach my $key (keys %genes){
+
     $self->log( "II working on contig $key") if $debug;
     # retrieve the sequence_id to which the features will be linked
     # external_db_id for PlasmoDB_RoosLab is '151'
@@ -231,7 +234,7 @@ sub run {
 	my $errormessage="EE $NAseqId did not retrieve a sequence object";
 	$self->log($errormessage);
 	$self->undefPointerCache();
-	return $errormessage;
+	return 0;
       }
 		
     }else{
@@ -240,60 +243,70 @@ sub run {
       my $sql="SELECT s.*  FROM dots.ExternalNASequence s, dots.ProjectLink pl WHERE s.source_id=? AND pl.table_id = 89 AND pl.id = s.na_sequence_id AND pl.project_id = ?";
 
       my $stmt = $dbh->prepare($sql) || $self->log("could not prepare statement: $!\nSQL:\n$sql") && die ("Aborting...");
-		
+
+      $self->log("II SQL:\n$sql") if $debug;
+
       ## execute statement with source_id if specified on CL
       ## or use 'chr1' notation if otherwise
       if ($source_id) {
 	$stmt->execute($source_id, $self->getArgs()->{'projectId'});
       }else{ 
-	$stmt->execute($key);
+
+	##### MJF
+	##### BIIIIIG WORKARAOUND, SINCE OFR VIVAX DATA I DID NOT HAVE THE PV_ ADDITION TO THE  SOURCE_ID
+	#####
+	#####    $key is actually "Pv_". $key for this query only;
+	#####
+
+	$stmt->execute("Pv_".$key, $self->getArgs()->{'projectId'} );
       }
 		
 		
       my $countRows = 0;
       while(my $row = $stmt->fetchrow_hashref('NAME_lc')){
-	$naseq=GUS::Model::DoTS::ExternalNASequence->new($row);	    
+	$naseq= GUS::Model::DoTS::ExternalNASequence->new($row);	    
 	$countRows++;
       }
-		
-		
+      
       ## ERROR AND EXIT ON TOO MANY OR ZERO RETURNED ROWS
       my $contigid=($source_id) ? $source_id : $key;
       if ($countRows > 1){
 	my $errormessage="EE query with $contigid returns $countRows rows";
 	$self->log($errormessage);
 	$self->undefPointerCache();
-	return $errormessage;
+	return 0;
       }elsif($countRows < 1){
 	my $errormessage="EE query with $contigid returned no rows";
 	$self->log($errormessage);
 	$self->undefPointerCache();
-	return $errormessage;
-      }
-		
-      if ($debug){
-	$self->log( "II NAsequence: $countRows rows returned for $contigid");
+	return 0;
+      }else{
+	if ($debug){
+	  $self->log( "II NAsequence: $countRows row returned for $contigid");
+	}
       }
     }
 
-
+    #$self->log($naseq->getSequence());
 
     # get the genelist for each contig
-    my @todogene=split(/\t/,$genes{$key});
-    
+      my @todogene=split(/\t/,$genes{$key});
+      
     ## FOREACH GENE
     foreach my $tdg (@todogene){
       my $transl_start;
-      my ($ggenename,$gcontig,$gmethod,$gtype,$gstart,$gstop,
-	  $gstrand,$gphase,$gnumexons) = @{$coord{$tdg}};
-		
+      my ($ggenename,$gcontig,$gmethod,$gtype,$gstart,$gstop,$gstrand,$gphase,$gnumexons) = @{$coord{$tdg}};
+      
       $self->log("II Making GeneFeature for $ggenename") if $debug;
+      $self->log("II Got gene data:$ggenename,$gcontig,$gmethod,$gtype,$gstart,$gstop,$gstrand,$gphase,$gnumexons") if $debug;
+      
       my $gf = GUS::Model::DoTS::GeneFeature->new({
 						   'name' => 'GeneFeature',
 						   'is_predicted' => 1,
+						   #'na_sequence_id' =>  $naseq->getNaSequenceId()
 						  });
-
-
+      
+	
       #######
       # if a gene is not 5' terminal complete the translationstart for the exonfeature is
       # given in $gphase (for genes !!)	
@@ -312,133 +325,141 @@ sub run {
       }
       $gphase=$regulation;	    
       ###### END WORKAROUND
-
+	
       if ($gphase!=0){
 	$transl_start = ($gphase+1);
 	$self->log( "II $ggenename GP=$gphase -> TS=$transl_start");
       }else{
 	$transl_start=1;
       }
-		
-
+	
+	
       ##set the sequence attributes:
+      #$naseq->addChild($gf);
       $gf->setParent($naseq);
-      $gf->setManuallyReviewed(0);
+      $gf->setReviewStatusId(0);
       $gf->setGeneType('protein_coding');
-      
-      #$gf->setExternalDbRelId('151');
-      $gf->setSourceId($ggenename); 
+
+      $gf->setExternalDatabaseReleaseId($extDbRelId);      ###### TO WHAT DO I HAVE TO SET EXTDBRELID, IF I (PLASMODB) PREDICTS GENES FOR DATA GENERATED BY TIGR/SANGER/ETC
+      $gf->setSourceId($ggenename);
+      $gf->setName($ggenename);
+      $self->log("II Setting gf->source_id to $ggenename") if $debug;
       $gf->setPredictionAlgorithmId($method{$gmethod});
       $gf->setNumberOfExons($gnumexons);
-		
+	
       ##set the location
       my $isrev = $gstrand eq "+" ? 0 : 1;
       my $loc = &makeNALocation($gstart,$gstop,0,$isrev);
       $gf->addChild($loc) if $loc;
-		
+	
+
+      $self->log("II GF: source_id ". $gf->getSourceId(). ", GT " . $gf->getGeneType(). ", naseqid : ". $naseq->getNaSequenceId() ) if $debug;
+
       # Now we are importing the exons for the gene
       $self->log( "II Making ExonFeatures for $ggenename") if $debug;
       my @todoexon=split(/\n/,$exon{$ggenename});
 		
 		
-
-      ## FOREACH EXON
-      ## Exoncounter j
-      my $j=0;
-      foreach my $ex (@todoexon){
-	my ($econtigname,$emethodname,$etype,$estart,$estop,
-	    $equality,$estrand,$startphase, $endphase,$egenename,
-	    $eorder,$extype,$eframe) = split(/\t/,$ex);
-		
-	next if ($estart eq "");
-		
-	my $etransl_start = ($eorder==1) ? $transl_start : 1 ;
-
-	$self->log( "II EXON $egenename: TS=$etransl_start") if ($transl_start != 1); 
-	#temp. debug
-	#if the predicted gene does not begin with an initial but an internal exon
-	#ie the ATG is of the Contig, then set the translation start of the initial exon
-		
-	$self->log( "II Making ExonFeatures for $egenename") if $debug;
-	$is_final  = ($extype=~m/term/i) ? 1 : 0;
-	$is_initial= ($extype=~m/init/i) ? 1 : 0;
-
-	#is_initial should probably be set by: ($eorder==1) ? 1 : 0;
-	#to avoid errors from incomplete genefinder predictions
-
-	$score  = ($equality eq "na") ? undef : $equality;
-
-	$exon = GUS::Model::DoTS::ExonFeature->new({
-						    'name'              => 'ExonFeature',
-						    'is_predicted'      => 1,
-						    'manually_reviewed' => 0,
-						    'review_status_id'  => 0,
-						    'is_initial_exon'   => $is_initial,
-						    'is_final_exon'     => $is_final,
-						    'order_number'      => $eorder,
-						    'coding_start'      => 1,
-						    'reading_frame'     => $etransl_start
-						   });
+	## FOREACH EXON
+	## Exoncounter j
+	my $j=0;
+	foreach my $ex (@todoexon){
+	  my ($econtigname,$emethodname,$etype,$estart,$estop,
+	      $equality,$estrand,$startphase, $endphase,$egenename,
+	      $eorder,$extype,$eframe) = split(/\t/,$ex);
+	  
+	  next if ($estart eq "");
+	  
+	  my $etransl_start = ($eorder==1) ? $transl_start : 1 ;
+	  $self->log("II GOT: $econtigname,$emethodname,$etype,$estart,$estop,$equality,$estrand,$startphase, $endphase,$egenename,$eorder,$extype,$eframe") if $debug;
+	  $self->log( "II EXON $egenename: TS=$etransl_start") if ($transl_start != 1); 
+	  #temp. debug
+	  #if the predicted gene does not begin with an initial but an internal exon
+	  #ie the ATG is of the Contig, then set the translation start of the initial exon
+	  
+	  $self->log( "II Making ExonFeatures for $egenename") if $debug;
+	  $is_final  = ($extype=~m/term/i) ? 1 : 0;
+	  $is_initial= ($extype=~m/init/i) ? 1 : 0;
+	  
+	  #is_initial should probably be set by: ($eorder==1) ? 1 : 0;
+	  #to avoid errors from incomplete genefinder predictions
+	  
+	  $score  = ($equality eq "na") ? undef : $equality;
+	  
+	  my $exon = GUS::Model::DoTS::ExonFeature->new({
+						      'name'              => 'ExonFeature',
+						      'is_predicted'      => 1,
+						      'review_status_id'  => 0,
+						      'is_initial_exon'   => $is_initial,
+						      'is_final_exon'     => $is_final,
+						      'order_number'      => $eorder,
+						      'coding_start'      => 1,
+						      'reading_frame'     => $etransl_start
+						     });
 	
-	$exon->setScore($score) if $score;
-	$exon->setCodingEnd($estop-$estart+1);  
-	$exon->setParent($naseq);
-		
-	my $naloc = &makeNALocation($estart,$estop,$eorder,$isrev);
-	$exon->addChild($naloc) if $naloc;
-		
-	$gf->addChild($exon) if $exon;
-	$exoncount++;
-	$j++;
-      } # END foreach exon
+	  $exon->setScore($score) if $score;
+	  $exon->setCodingEnd($estop-$estart+1);  
+	  $exon->setParent($naseq);
+	  
+	  my $naloc = &makeNALocation($estart,$estop,$eorder,$isrev);
+	  $exon->addChild($naloc) if $naloc;
+	  $gf->addChild($exon) if $exon;
+	  $exoncount++;
+	  $j++;
+	} # END foreach exon
 		
 
       ### retrieve the AA sequence, if parseAAsequence is set, DEFAULT: OFF
       my $cds;
-      
+
       ##check to make certain that have exons...
-      $haveExons = $gf->getChildren('ExonFeature') ? 1 : 0;
+      $haveExons = $gf->getChildren('DoTS::ExonFeature') ? 1 : 0;
 		
       ##now create rnafeature and translated features and protein
+      $self->log("II Has Exons: $haveExons") if $debug;
       if($haveExons){
-	$gf->makePredictedRnaToProtein(undef,$gf->getExternalDbId(),$gf->getSourceId());
+
 	if ($self->getArgs()->{'parseSequence'}){
-	  $self->log("parseSequence not implemented. Using supplied methods");
+	  $self->log("EE parseSequence not implemented. Using supplied methods");
+
+
 	}
 
-	## now need to set the protein_sequence....
-	## this method preferred over parseAAsequence 
-	my $tas = $gf->getChild('RNAFeature')->getChild('TranslatedAAFeature')->getParent('TranslatedAASequence');
+	#################### MJF	
+	my $rtp=$gf->makePredictedRnaToProtein(undef, $extDbRelId ,  "Pv_".$key ) || $self->log("EE makePredictedRNAtoProtein complains");
+	$self->log("GB ". $gf->getGBLocation()) if $debug;
+
+	my $rna = $gf->getChild('DoTS::RNAFeature');
+	$rna->setReviewStatusId('0');
+
+
+	my $tas = $gf->getChild('DoTS::RNAFeature')->getChild('DoTS::TranslatedAAFeature')->getParent('DoTS::TranslatedAASequence');
 	$tas->setSequence($tas->getSequence());
-	$tas->setDescription("predicted gene");
-		
-	## now set the sequence for the splicednasequence
-	my $snas = $gf->getChild('RNAFeature')->getParent('SplicedNASequence');
-	$snas->setSequence($snas->getSequence());
+	$tas->setDescription("predicted gene");	
+	$self->log("AASEQ: ". $tas->getSequence()) if $debug;
+
+	my $snas = $rna->getParent('DoTS::SplicedNASequence');
+	my $t=$snas->getSequence();
+	$self->log("SNAS: " . $snas->getSequence() ) if $debug;
       }
-		
-		
+	
       ##following must be in loop to allow garbage collection...
-      $gf->submit();	  
-		
+      $gf->submit();
       $self->undefPointerCache();
       $genecount++;
       $self->log( "II genecount $genecount") if $debug;
       #limit the test to a number of genes for testing
-      if (($self->getArgs()->{'testnumber'}) && ($genecount == $self->getArgs()->{'testnumber'} ) ) {
+      if (($self->getArgs()->{'testnumber'}=~m/\d+/ ) && ($genecount > $self->getArgs()->{'testnumber'} ) ) {
 	$self->log( "II Reached number " . $self->getArgs()->{'testnumber'} . ". Aborting...") ;
 	last;
       }
-		
     } #end foreach gene 
     $contigcount++;
-	
   } # end foreach contig (keys)
-	
   my $results = "Processed " . $contigcount ." contig(s) with $genecount gene features and a total of $exoncount exon features\n\n";
   return $results;
 } # end Run loop
-    
+  
 
 
 #######################################################
