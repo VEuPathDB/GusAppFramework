@@ -12,16 +12,17 @@ sub new {
   my $self = {};
   bless $self, $class;
 
-  ($self->{host}, $self->{root}) = &parseLocation($location);
+  my $user;
+  ($user, $self->{host}, $self->{root}) = &parseLocation($location);
 
-  die "invalid sftp location '$location'\n" unless ($self->{host} && $self->{root});
+  die "invalid sftp location '$location'\n" unless ($user && $self->{host} && $self->{root});
 
   if ($self->{root} !~ /\/$/) {
     $self->{root} .= "/";
   }
 
   eval {
-    $self->{sftp} = Net::SFTP->new($self->{host}, {debug => 1});
+    $self->{sftp} = Net::SFTP->new($self->{host}, user => $user);
   };
 
   if ($@) {
@@ -40,14 +41,15 @@ sub new {
   return $self;
 }
 
-# return ($host, $path) or undef if not valid
+# return ($user, $host, $path) or undef if not valid
 sub parseLocation {
   my ($location) = @_;
 
+  my $user_regex = "(\\w+)@";
   my $host_regex = "(\\w+\\.)+\\w+";
   my $path_regex = "\\/?(\\w+\\/)*\\w+/\?";
-  if ($location =~ /^($host_regex):($path_regex)$/) {
-    return ($1, $3);
+  if ($location =~ /^($user_regex)?($host_regex):($path_regex)$/) {
+    return ($2, $3, $5);
   } else {
     return undef;
   }
