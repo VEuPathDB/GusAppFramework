@@ -81,7 +81,7 @@ sub run {
 
     close F;
     my $fact_hash = {};
-    my $assocHash = &submitAssocObjects($self->getCla->{'specialfile'}, $self->getSelfInv);
+    my $assocHash = $self->submitAssocObjects($self->getCla->{'specialfile'}, $self->getSelfInv);
     $fact_hash = &parseFactObjects($self->getCla->{'specialfile'}, $self->getSelfInv);
 
     my $has_evidence = 0;
@@ -534,7 +534,7 @@ sub getGeneSynonymDeleteObjects {
 
 sub submitAssocObjects {
 
-    my ($file, $ai) = @_;
+    my ($self, $file, $ai) = @_;
 
     my $xml;
     my $loadingXML = 0;
@@ -558,13 +558,38 @@ sub submitAssocObjects {
 
     $ai->parseXML($xml);
     foreach my $assoc ($ai->getAllChildren()){
-	
+
+	#see if Assoc already exists as deprecated and if so un-deprecate it.  Sets assoc Id by side effect.
+	$self->checkIfAssocDeprecated($assoc);
+
 	$assoc->submit();
 #	print STDERR "ASSOCIATION: \n\t assocId: " . $assoc->getGoAssociationId() . " goTermId: " . $assoc->getGoTermId() . " IsNot: " . $assoc->getIsNot() . " isDeprecated: " . $assoc->getIsDeprecated() . " \n\t defining " . $assoc->getDefining() . " ReviewStatus: " . $assoc->getReviewStatusId() . "\n\n";
 	$assocHash->{$assoc->getGoTermId()} = $assoc->getGoAssociationId();
     }
     $ai->removeAllChildren();
     return $assocHash;
+}
+
+sub checkIfAssocDeprecated {
+
+    my ($self, $goAssociation) = @_;
+    
+    if (!$goAssociation->getGoAssociationId()){ #only check if newly created go association
+	my $rowId = $goAssociation->getRowId();
+
+	my $goTermId = $goAssociation->getGoTermId();
+
+	my $sql = "select go_association_id from dots.goassociation where row_id = $rowId
+                   and table_id = 180
+                   and go_term_id = $goTermId
+                   and is_deprecated = 1";
+	my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+	while (my ($goAssocId) = $sth->fetchrow_array()){
+	    $goAssociation->setGoAssociationId($goAssocId);
+	}
+	$goAssociation->setIsDeprecated(0);
+    }
+
 }
 
 
