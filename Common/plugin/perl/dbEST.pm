@@ -1009,14 +1009,15 @@ is not given.
 
 sub checkExtNASeq {
   my ($M,$e,$seq) = @_;
+
+  my $name = "EST";
+  my $sequenceType = GUS::Model::DoTS::SequenceType->new({"name" => $name});
+  $sequenceType->retrieveFromDB() || die "Unable to obtain sequence_type_id from dots.sequencetype with name = EST";
+  my $sequence_type_id= $sequenceType->getId();
   
   my %seq_vals = ( 'taxon_id' => $M->{libs}->{$e->{id_lib}}->{taxon},
                    'sequence' => $e->{sequence},
                    'length' => length $e->{sequence},
-                   my $name = 'EST';
-                   my $sequenceType = GUS::Model::DoTS::SequenceType->new({"name" => $name});
-		   $sequenceType->retrieveFromDB() || die "Unable to obtain sequence_type_id from dots.sequencetype with name = EST";
-		   $sequence_type_id= $sequenceType->getId();
                    'sequence_type_id' =>  $sequence_type_id,
                    'a_count' => (scalar($e->{sequence} =~ s/A/A/g)) || 0,
                    't_count' => (scalar($e->{sequence} =~ s/T/T/g)) || 0,
