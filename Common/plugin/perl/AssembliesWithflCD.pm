@@ -85,7 +85,7 @@ my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_seq
 my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1");
 
 
-#my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
+my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
 
 
 #combine queries to get those assemblies which no longer have a refSeq associated with them these can go into an array and then $assembly->setFullLengthCds(0);
@@ -98,13 +98,15 @@ my $stmt4 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_seq
 
 my @na_sourceids;
 my @naSequenceIds;
-
+my @DTSasEvidenceTarget;
 my @RemoveAsMarkedFL;
+my @DTs;
+
 
 while(my($na_seq, $source_id) = $stmt1->fetchrow_array( ))  {
 
   push(@na_sourceids, [$na_seq, $source_id]);
-
+  push(@DTs, $na_seq);
    }
 
 while(my($na_sequence_id) = $stmt2->fetchrow_array( ))  {
@@ -113,9 +115,11 @@ while(my($na_sequence_id) = $stmt2->fetchrow_array( ))  {
 
    }
 
+while(my($target_id) = $stmt3->fetchrow_array( ))  {
 
+      push(@DTSasEvidenceTarget, $target_id);
 
-
+   }
 
   while (my($DTnotFLength) = $stmt4->fetchrow_array())  {
 
@@ -124,8 +128,6 @@ while(my($na_sequence_id) = $stmt2->fetchrow_array( ))  {
 
 
 
-my @DTs;
-
 my $ct = 0;
 
 foreach my $A(@na_sourceids)    {
@@ -133,26 +135,21 @@ foreach my $A(@na_sourceids)    {
   my($na_seq, $source_id) = @{$A};
 
 
-
-#check to see if all previous evidence still valid
-
-$self->RemoveEvidenceSourceID($na_seq);
-
-   print STDERR "ConsideringForFLDT.$na_seq\n";
+  print STDERR "ConsideringForFLDT.$na_seq\n";
 
    $ct++;
 
-    last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
+   last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
 
-    foreach my $id(@naSequenceIds)  {
+   foreach my $id(@naSequenceIds)  {
 
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
 
      if ($id == $na_seq ) {
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
      next;
-}
+   }
 
      if($id != $na_seq) {
 
@@ -176,8 +173,28 @@ print STDERR "NextFLDT.$na_seq\n";
 }
 
 
+#check to see if all previous evidence still valid
+     foreach my $target_id(@DTSasEvidenceTarget)  {
 
+       foreach my $DT(@DTs)   {
 
+       if ($target_id == $DT){  next;  }
+
+        if ($target_id != $DT)  {
+
+          my $dbh = $self->getQueryHandle();
+
+          my $rows = $dbh->do("delete from dots.evidence where target_id = $target_id and attribute_name = 'full_length_CDS'");
+
+          print "DT.$target_id Evidence deleted\n";
+
+        }
+
+     }
+
+     }
+
+#for those assemblies that no longer contain a refSeq
 foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
 
@@ -195,9 +212,6 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
         }
 
 }
-
-
-
 
 #use RefSeq source_id as evidence for marking assembly as full length CDS containing
 
@@ -220,45 +234,10 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
   }
 
 
-   sub RemoveEvidenceSourceID {
-
-    my $self = shift;
-
-    my $na_seq = @_;
 
 
 
-  my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
 
-    my @DTSasEvidenceTarget;
-
-
-
-   while(my($target_id) = $stmt3->fetchrow_array( ))  {
-
-      push(@DTSasEvidenceTarget, $target_id);
-
-   }
-
-
-  foreach my $target_id(@DTSasEvidenceTarget)  {
-
-
-       if ($target_id == $na_seq){  next;  }
-
-        if ($target_id != $na_seq)  {
-
-          my $dbh = $self->getQueryHandle();
-
-          my $rows = $dbh->do("delete from dots.evidence where target_id = $target_id and attribute_name = 'full_length_CDS'");
-
-          $self->log("DT.$target_id Evidence deleted\n");
-
-        }
-
-     }
-
-    }
 
 
 
