@@ -12,8 +12,8 @@
 
 use strict;
 
-use Database;
-use Schema;
+use GUS::DBAdmin::Database;
+use GUS::DBAdmin::Schema;
 
 use Getopt::Long;
 
@@ -21,8 +21,6 @@ use Getopt::Long;
 # Configuration
 # -----------------------------------------------------------------------
 
-my $DB_SID = "gus";
-my $DB_HOST = "localhost";
 my $DBI_ATTS = { RaiseError => 0, AutoCommit => 0, LongReadLen => 10000000 };
 
 # -----------------------------------------------------------------------
@@ -30,6 +28,8 @@ my $DBI_ATTS = { RaiseError => 0, AutoCommit => 0, LongReadLen => 10000000 };
 # -----------------------------------------------------------------------
 
 my(
+   $dbSid,
+   $dbHost,
    $login,        # Oracle login with grant/revoke permissions
    $permissions,  # list of permissions to grant/revoke
    $grantees,     # list of users & roles to grant permissions to
@@ -38,7 +38,9 @@ my(
    $verbose
    );
 
-&GetOptions("login=s" => \$login,
+&GetOptions("db-sid=s" => \$dbSid,
+	    "db-host=s" => \$dbHost,
+	    "login=s" => \$login,
 	    "permissions=s" => \$permissions,
 	    "grantees=s" => \$grantees,
 	    "revoke!" => \$revoke,
@@ -46,14 +48,16 @@ my(
 	    "verbose!" => \$verbose
 	    );
 
-if (!$login || !$permissions || !$grantees || !$owner) {
+if (!$dbSid || !$dbHost || !$login || !$permissions || !$grantees || !$owner) {
     print <<USAGE;
 Usage: grantPermissions.pl options
-   --login=login       # Oracle login with grant/revoke permissions
-   --permissions=list  # list of permissions to grant/revoke
-   --grantees=list     # list of users & roles to grant permissions to
-   --revoke            # revoke instead of grant
-   --owner=owner       # grant/revoke $permissions to objects owned by this schema
+   --db-sid=SID                # SID of the Oracle server
+   --db-host=hostname          # Hostname of the Oracle server
+   --login=login               # Oracle login with grant/revoke permissions on the objects owned by --owner
+   --permissions=p1,p2,..      # list of permissions to grant/revoke
+   --grantees=u1,u2,...        # List of users or roles to grant permissions to
+   --revoke                    # Revoke listed permissions instead of granting them
+   --owner=owner               # Grant/revoke --permissions to all objects owned by this schema
    --verbose
 USAGE
     die "Invalid arguments";
@@ -65,15 +69,15 @@ USAGE
 
 $| = 1;
 
-my $db = Database->new({sid => $DB_SID, host => $DB_HOST});
-my $dbh = &Util::establishLogin($login, $db->getDbiStr(), $DBI_ATTS);
+my $db = GUS::DBAdmin::Database->new({sid => $dbSid, host => $dbHost});
+my $dbh = &GUS::DBAdmin::Util::establishLogin($login, $db->getDbiStr(), $DBI_ATTS);
 
 my @perms = split(',',  $permissions);
 my @grantees = split(',', $grantees);
 
 # If no object specified, list all owned by $owner
 #
-my $s = Schema->new({name => $owner});
+my $s = GUS::DBAdmin::Schema->new({name => $owner});
 
 my $tables = $s->getTables($dbh);
 my $ntables = scalar(@$tables);
@@ -109,6 +113,9 @@ $dbh->disconnect();
 # Subroutines
 # -----------------------------------------------------------------------
 
+# Run the specified GRANT statements on a set of objects, allowing
+# only those operations listed in $validPerms.
+#
 sub runGrants {
     my($dbh, $objects, $grantees, $perms, $validPerms) = @_;
 
