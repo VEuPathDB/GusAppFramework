@@ -82,9 +82,6 @@ sub runGenomeAlign {
 	"$pipelineDir/genome/$name/master/mainresult/";
     # TODO: handle the case when query is not from repeatmask
     #       (i.e. final DoTS minus troublesome deflines)
-    my $queryFile = 
-	"$pipelineDir/repeatmask/$queryName/master/mainresult/blocked.seq";
-    my $subjectDir = "$pipelineDir/seqfiles/$subjectName";
     my $propFile = "$pipelineDir/genome/$name/input/controller.prop";
     my $logFile = "$pipelineDir/logs/$name.genomealign.log";
 
@@ -98,6 +95,8 @@ sub runGenomeAlign {
 
     return $valid;
 }
+
+
 
 sub runGeneTagAlign {
     my ($pipelineDir, $queryName, $subjectName) = @_;
