@@ -3,6 +3,5 @@
 	<classpathentry kind="src" path=""/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="src" path="/WebDevKit"/>
-	<classpathentry kind="lib" path="/WebDevKit/ant-build/wdk.jar"/>
 	<classpathentry kind="output" path=""/>
 </classpath>
