@@ -51,7 +51,13 @@ sub new {
        t => 'boolean',
        h => 'Set this flag to have the plugin make sure all association data is consistent (automaticaly performed in conjunction with apply_rules and evolve_go_hierarchy',
    },
+
+     { o => 'deprecate_associations',
+       t => 'boolean',
+       h => 'Set this flag to deprecate associations that have only deprecated instances.  Must be done as a separate process (generally after new rules have been applied)',
+   },
      
+
      { o => 'old_go_release_id',
        t => 'int',
        h => 'GUS external database release id of old GO version (to upgrade from)',
@@ -109,9 +115,6 @@ sub new {
        h => 'name of table (in schema.table format) from which to select query sequences',
        t => 'string',
    },
-
-
-     
 
      { o => 'query_table_id',
        h => 'Id of table from which to select query sequences',
@@ -221,9 +224,9 @@ sub run {
     my $newGoRootId = $self->getCla->{new_function_root_go_id};
 
     $databaseAdapter->setTestProteinIds($testProteinIds) if $testProteinIds;
-
-    $databaseAdapter->initializeTranslations($self->getCla->{query_taxon_id});
-
+    $self->log("initializing translations");
+    $databaseAdapter->initializeTranslations($self->getCla->{query_taxon_id}) if $self->getCla->{apply_rules};
+    $self->log("creating new go manager");
     my $goManager = GUS::GOPredict::GoManager->new($databaseAdapter);
     $goManager->setOldFunctionRootGoId($oldGoRootId) if $oldGoRootId;
     $goManager->setNewFunctionRootGoId($newGoRootId) if $newGoRootId;
@@ -233,6 +236,7 @@ sub run {
 
     if ($self->getCla->{scrub_proteins} && !($self->getCla->{evolve_go_hierarchy} && $self->getCla->{apply_rules})){
 	#only scrubbing
+	$self->log("scrubbing proteins");
 	$goManager->scrubProteins($newGoVersion, $proteinTableId);
     }
     else{
@@ -247,7 +251,7 @@ sub run {
 	    $recache = 0 if $self->getCla->{apply_rules}; #don't recache if applying rules right afterwards
 #	    my $deleteCache = 1;
 	    my $deleteCache = 0;
-
+	    $self->log("GoPlugin: evolving Go Hierarchy (ie starting)");
 	    $goManager->evolveGoHierarchy($oldGoVersion, $newGoVersion, $deleteCache, $recache, $proteinTableId);
 	}
 
@@ -261,7 +265,7 @@ sub run {
 	}
 
 	$goManager->scrubProteins($newGoVersion, $proteinTableId);
-	
+	$self->log("done scrubbing--i.e. all done!");
     }
     
     return "plugin worked!";
