@@ -137,7 +137,7 @@ sub new {
 
 $| = 1;
 my $ctx;
-my $debug = 0;
+my $debug = 0; 
 my $extDbId;     # ExternalDatabaseId
 my $extDbRelId;  # ExternalDatabaseReleaseId
 my $projId;      # ProjectId
@@ -171,7 +171,7 @@ sub run {
 
 ###  NOTE: use argument to both createObjects and setExtDbId as not $tree, but
 ###     $tree->{PSEUDOCHROMOSOME} if the PSEUDOCHROMOSOME tag is present in XML,
-###     as is the case with falciparum XML, but not for yoelii XML.
+###     as is the case with falciparum XML, but it is not so for yoelii XML.
 
 	$self->createObjects($tree) if ($self->setProjId && $self->setExtDbId($tree)
 					&& $self->setExtDbRelId($tree));
@@ -458,17 +458,17 @@ sub TASK_GeneFeatures {
   # GeneModel entries
   my $ref_gmodel;
 
-  #
+  # protein-coding genes
   $ref_gmodel = $X->{ASSEMBLY}->{GENE_LIST}->{PROTEIN_CODING}->{TU};  # array ref
   foreach my $genemodel (@$ref_gmodel){
-      $self->makeGeneModel($C, $genemodel, 'protein coding');
+    $self->makeGeneModel($C, $genemodel, 'protein coding');
   }
-
-###  $ref_gmodel = $X->{ASSEMBLY}->{GENE_LIST}->{RNA_GENES}->{'PRE-TRNA'};
-###  foreach my $genemodel (@$ref_gmodel){
-###    $self->makeGeneModel($C, $genemodel, 'trna');
-###  }
-
+  
+  # non-protein-coding genes
+  $ref_gmodel = $X->{ASSEMBLY}->{GENE_LIST}->{RNA_GENES}->{'PRE-TRNA'};
+  foreach my $genemodel (@$ref_gmodel){
+    $self->makeGeneModel($C, $genemodel, 'trna');
+  }
 }
 
 # --------------------------------------------------------------------
@@ -676,7 +676,7 @@ sub makeGeneModel {
     # add/append note
     addNote($gene_feat_gus, $G->{GENE_INFO}->{COMMENT}, 'COMMENT') if ($G->{GENE_INFO}->{COMMENT});
     addNote($gene_feat_gus, $G->{GENE_INFO}->{PUB_COMMENT}, 'PUB_COMMENT') if ($G->{GENE_INFO}->{PUB_COMMENT});
-}
+  }
   # add exons
   my $exons_xml;
   if ($T eq 'protein coding'){
@@ -838,7 +838,7 @@ sub addExon {
       prediction_algorithm_id      => $G->getPredictionAlgorithmId,
       is_predicted                 => $G->getIsPredicted,
       review_status_id             => $G->getReviewStatusId,
-      order_number                 => $O+1,  # NOTE: to start order_number of exons with 1
+      order_number                 => $O+1,  # NOTE: starting exon order_number with 1
       coding_start                 => abs($E->{COORDSET}->{END5} -
 					  $E->{CDS}->{COORDSET}->{END5})+1,
       name                         => 'ExonFeature',
