@@ -101,7 +101,7 @@ sub run {
 	$self->logAlert('COMMIT', $self->getCla->{commit} ? 'ON' : 'OFF' );
 
 	my $dbh = $self->getQueryHandle();
-	my $sth = $dbh -> prepare("select similarity_id, pvalue_mant, pvalue_exp, number_identical/total_match_length from similarity where query_table_id in (83,337) and subject_table_id in (83,337) and query_id=? and subject_id=? and row_alg_invocation_id in ($algInvoIds)");
+	my $sth = $dbh -> prepare("select similarity_id, pvalue_mant, pvalue_exp, number_identical/total_match_length from dots.similarity where query_table_id in (83,337) and subject_table_id in (83,337) and query_id=? and subject_id=? and row_alg_invocation_id in ($algInvoIds)");
     ############################################################
     # Put loop here...remember to undefPointerCache()!
     ############################################################
@@ -229,7 +229,7 @@ sub run {
 sub simspan {
     my ($dbh,$sim,$id,$sid) = @_;
     my (%sub_start, %sub_length, %query_start, %query_length);
-    my $sthSpan =$dbh->prepare("select similarity_span_id,subject_start,subject_end,query_start,query_end from SimilaritySpan where similarity_id=?");
+    my $sthSpan =$dbh->prepare("select similarity_span_id,subject_start,subject_end,query_start,query_end from dots.SimilaritySpan where similarity_id=?");
 #    my $sthLen = $dbh->prepare("select length from AASequence where aa_sequence_id=?");
     $sthSpan->execute($sim);
     while(my (@row) = $sthSpan -> fetchrow_array()) {
