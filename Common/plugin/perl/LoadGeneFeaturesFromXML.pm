@@ -169,8 +169,8 @@ sub run {
 ###     $tree->{PSEUDOCHROMOSOME} if the PSEUDOCHROMOSOME tag is present in XML,
 ###     as is the case with falciparum XML, but it is not so for yoelii XML.
 
-	$self->createObjects($tree) if ($self->setProjId && $self->setExtDbId($tree)
-					&& $self->setExtDbRelId($tree));
+	$self->createObjects($tree->{PSEUDOCHROMOSOME}) if ($self->setProjId && $self->setExtDbId($tree->{PSEUDOCHROMOSOME})
+					&& $self->setExtDbRelId($tree->{PSEUDOCHROMOSOME}));
       }
     }
   }
@@ -259,7 +259,8 @@ sub setExtDbRelId {
   # ExternalDatabaseRelease
   my %extdbrel;
   $extdbrel{external_database_id} = $id;
-  $extdbrel{version} = 'unknown';  ## NOTE: may need to be modified
+  ## NOTE: version may need to be modified; 2 possible values are: 'unknown' and 'final'
+  $extdbrel{version} = 'final'; 
 
   my $extdbrel_gus = GUS::Model::SRes::ExternalDatabaseRelease->new(\%extdbrel);
   if ($extdbrel_gus->retrieveFromDB){
@@ -290,12 +291,10 @@ sub setExtDbId {
   } else {
     my $seqsrc = $T->{ASSEMBLY}->{HEADER}->{SEQ_GROUP};
 
-   ### in the database, lowercase_names are not 'pfinal_tigr', but 'plasmodium_tigr'
     my %dbsrc =
-	( 'TIGR'                => 'plasmodium_tigr',
-	  #( 'TIGR'                => 'pfinal_tigr',
-	  'Sanger Institute'    => 'pfinal_sanger',
-	  'Stanford University' => 'pfinal_stanford',
+	( 'TIGR'                => 'plasmodium_falciparum_tigr',
+	  'Sanger Institute'    => 'plasmodium_falciparum_sanger',
+	  'Stanford University' => 'plasmodium_falciparum_stanford',
 	  );
     print $dbsrc{$seqsrc} . " -- SOURCE\n";
     $extdb{lowercase_name} = $dbsrc{$seqsrc};
@@ -539,6 +538,7 @@ sub map_asmbl_id_to_source_id {
 	      2285 => "unmapped_3",
 	      2286 => "unmapped_4",
 	      );
+  
   my $x = $X->{ASSEMBLY}->{ASMBL_ID}->{content};
   return $map{$x};
 }
@@ -556,13 +556,13 @@ sub makeChromosome {
 
   # NOTE: for falciparum XML, map_asmbl_id_to_source_id method was used to set 
   #       the source_id appropriately.
-  ### $enaSeq{source_id} = $self->map_asmbl_id_to_source_id($T);
+  $enaSeq{source_id} = $self->map_asmbl_id_to_source_id($T);
   
   # NOTE: for P_yoelii, source_id is of the form: chrPyl_(\d\d\d\d\d)
   #       so, source_id needs to be cushioned with 0s (zeroes)
-  my $tmpStr = $T->{ASSEMBLY}->{ASMBL_ID}->{content};
-  while (length ($tmpStr) < 5) { $tmpStr = '0'.$tmpStr; }
-  $enaSeq{source_id} = 'chrPyl_' . $tmpStr;
+  #my $tmpStr = $T->{ASSEMBLY}->{ASMBL_ID}->{content};
+  #while (length ($tmpStr) < 5) { $tmpStr = '0'.$tmpStr; }
+  #$enaSeq{source_id} = 'chrPyl_' . $tmpStr;
       
 
   my $ena_gus = GUS::Model::DoTS::ExternalNASequence->new(\%enaSeq);
@@ -929,7 +929,6 @@ sub TASK_FixGeneFeatures {
 # ====================================================================
 # Attaches AASequenceEnzymeClass rows to TranslatedAASequences.
 
-### NOTE: NOT YET UPDATED 
 sub TASK_EcAnnotation {
   my $self = shift; # plugin
   my $X = shift; # hash ref           : XML tree from file.
@@ -937,7 +936,6 @@ sub TASK_EcAnnotation {
 
   require GUS::Model::DoTS::AASequenceEnzymeClass;
   require GUS::Model::SRes::EnzymeClass;
-
   # get the (protein coding) genes on this assembly.
   my $genes_xml
       = $X->{ASSEMBLY}->{GENE_LIST}->{PROTEIN_CODING}->{TU};
@@ -970,9 +968,9 @@ sub TASK_EcAnnotation {
       # and finally its TranslatedAASeq.
 
       if (my $gene_gus = $self->findGeneFromXml($gene_xml,$C)) {
-        if (my ($rna_feat_gus) = $gene_gus->getChild('RNAFeature',1)) {
-	  if (my ($xaa_feat_gus) = $rna_feat_gus->getChild('TranslatedAAFeature',1)) {
-	    if (my ($xaa_seq_gus)  = $xaa_feat_gus->getParent('TranslatedAASequence',1)) {
+        if (my ($rna_feat_gus) = $gene_gus->getChild('DoTS::RNAFeature',1)) {
+	  if (my ($xaa_feat_gus) = $rna_feat_gus->getChild('DoTS::TranslatedAAFeature',1)) {
+	    if (my ($xaa_seq_gus)  = $xaa_feat_gus->getParent('DoTS::TranslatedAASequence',1)) {
 	      # process the links.
 	      foreach my $asn_xml (@$ec_xml) {
 		# clean up the EC number
@@ -982,7 +980,7 @@ sub TASK_EcAnnotation {
 		# get the EnzymeClass
 		my $ec_gus = $ec_cache_x->{$asn_xml};
 		unless ($ec_gus) {
-		  $ec_gus = EnzymeClass->new({ ec_number => $asn_xml });
+		  $ec_gus = GUS::Model::SRes::EnzymeClass->new({ ec_number => $asn_xml, external_database_release_id=>7199 });
 		  if ($ec_gus->retrieveFromDB) {
 		    $ec_cache_x->{$asn_xml} = $ec_gus;
 		  } else {
@@ -997,8 +995,8 @@ sub TASK_EcAnnotation {
 		
 		while ($ec_gus) {
 		  my $aaSequenceEnzymeClass =
-		      AASequenceEnzymeClass->new({ evidence_code        => 'UNK',
-						   manual_review_status => 'reviewed',
+		      GUS::Model::DoTS::AASequenceEnzymeClass->new({ evidence_code        => 'UNK',
+						   review_status_id=> 1,
 					       });
 		  # note that these are done on the  attributes so that 
 		  # we can check for prexisting annotations.
@@ -1019,7 +1017,7 @@ sub TASK_EcAnnotation {
 			     $ec_gus->getEcNumber);
 		  
 		  # get parent.
-		  my $ec_parent_gus = $ec_gus->getParent('EnzymeClass',1);
+		  my $ec_parent_gus = $ec_gus->getParent('SRes::EnzymeClass',1);
 		  if (!$ec_parent_gus) {
 		    $self->log("WARN: " . 'No parent found',
 			       $ec_gus->getEcNumber,
