@@ -159,7 +159,9 @@ sub process {
 	    }#end if
 
 	    ## Document table: table exists but attribute name is NULL
-	    elsif ($attribute_nm == "NULL" || $attribute_nm == "null"  || $attribute_nm == ""){
+	    elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){
+#	    elsif ($attribute_nm == "NULL" || $attribute_nm == "null"  || $attribute_nm == ""){
+	      print "Documentation for table (no attribute supplied)\n";
 	      $self->logVerbose("Documentation for table (no attribute supplied)");
 
 	       ## bind table id to DatabaseDocumentation object
