@@ -147,9 +147,6 @@ sub run {
 #now Mark as FL using translated features
     $self->MarkFLUsingFFfeatures(\@NaSeqStop);
 
-
-
-
 #need this return to finish run of plugin adds result set attribute to algorithm invoc.
     return "Assemblies marked as full length";
 
@@ -171,21 +168,26 @@ sub RefSeqFLAssemblies {
     last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
     $ct++;
+  
     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
-    $assembly->retrieveFromDB();
+    if ($assembly->retrieveFromDB())  {
+
+      if (!($assembly->getFullLengthCds(1))  {
 
     $self->toAddEvidenceSourceID($source_id, $assembly);
-
     $assembly->setFullLengthCds(1);
     $assembly->submit();
     $self->undefPointerCache();
+
   }
 
+    }
 
+    }
+  }
 
 }
-
 
 
 # check to see if all previous evidence still valid using array of target ids and compare to array of DTs that now contain RefSeqs
