@@ -258,7 +258,7 @@ sub parseSubject {
 
   my @vals = split(/:/, $sumLine);
   die "invalid Sum line: '$sumLine'\n" unless $vals[0] =~ /Sum/;
-  die "invalid Sum line (wrong number of columns):  '$sumLine'\n" unless scalar @vals == 14;
+  die "invalid Sum line (wrong number of columns):  '$sumLine'\n" unless scalar @vals == 13;
 
   my %subj;
   $subj{query_id} = $queryPK;
@@ -324,7 +324,7 @@ sub parseSpan {
   my @vals = split(/:/, $spanLine);
   die "invalid HSP line: '$spanLine'\n" unless $vals[0] =~ /HSP/;
   my $columnCount = scalar @vals;
-  die "invalid HSP line (wrong number of columns, have $columnCount , should be 13):  '$spanLine'\n" unless $columnCount == 13;
+  die "invalid HSP line (wrong number of columns, have $columnCount , should be 13):  '$spanLine'\n" unless $columnCount == 12;
 
   my %span;
   $span{number_identical} = $vals[2];
