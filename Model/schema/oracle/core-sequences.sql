@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* core-sequences.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:42:33 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:42:27 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -20,6 +20,7 @@ CREATE SEQUENCE @oracle_core@.DATABASEINFO_SQ START WITH 1;
 CREATE SEQUENCE @oracle_core@.GENERALDOCUMENTATION_SQ START WITH 1;
 CREATE SEQUENCE @oracle_core@.GROUPINFO_SQ START WITH 1;
 CREATE SEQUENCE @oracle_core@.MACHINE_SQ START WITH 1;
+CREATE SEQUENCE @oracle_core@.MOTIF_REJ_REASON_SQ START WITH 1;
 CREATE SEQUENCE @oracle_core@.PROJECTINFO_SQ START WITH 1;
 CREATE SEQUENCE @oracle_core@.TABLECATEGORY_SQ START WITH 1;
 CREATE SEQUENCE @oracle_core@.TABLEINFO_SQ START WITH 1;
@@ -35,7 +36,7 @@ CREATE SEQUENCE @oracle_core@.WORKFLOWNODEIMP_SQ START WITH 1;
 CREATE SEQUENCE @oracle_core@.WORKFLOWSTATUS_SQ START WITH 1;
 CREATE SEQUENCE @oracle_core@.WORKFLOW_SQ START WITH 1;
 
-/* 26 sequences(s) */
+/* 27 sequences(s) */
 
 SPOOL OFF
 SET ECHO OFF

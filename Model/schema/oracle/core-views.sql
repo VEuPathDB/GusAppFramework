@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* core-views.sql                                                                             */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 13:21:18 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:42:42 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -31,6 +31,30 @@ AS SELECT
   row_alg_invocation_id 
  FROM WorkflowNodeImp
  WHERE subclass_view = 'WorkflowConditionalNode'
+ WITH CHECK OPTION;
+
+CREATE VIEW @oracle_core@.WORKFLOWNODE
+AS SELECT
+  workflow_node_id,
+  workflow_id,
+  subclass_view,
+  name,
+  description,
+  is_start,
+  is_and,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id 
+ FROM WorkflowNodeImp
+ WHERE subclass_view = 'WorkflowNode'
  WITH CHECK OPTION;
 
 CREATE VIEW @oracle_core@.WORKFLOWNOOPNODE
@@ -108,7 +132,7 @@ AS SELECT
  WITH CHECK OPTION;
 
 
-/* 4 view(s) */
+/* 5 view(s) */
 
 SPOOL OFF
 SET ECHO OFF

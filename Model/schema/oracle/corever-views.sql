@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* corever-views.sql                                                                          */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 13:21:30 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:47:00 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -34,6 +34,33 @@ AS SELECT
   version_transaction_id 
  FROM WorkflowNodeImpVer
  WHERE subclass_view = 'WorkflowConditionalNode'
+ WITH CHECK OPTION;
+
+CREATE VIEW @oracle_corever@.WORKFLOWNODEVER
+AS SELECT
+  workflow_node_id,
+  workflow_id,
+  subclass_view,
+  name,
+  description,
+  is_start,
+  is_and,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id,
+  version_alg_invocation_id,
+  version_date,
+  version_transaction_id 
+ FROM WorkflowNodeImpVer
+ WHERE subclass_view = 'WorkflowNode'
  WITH CHECK OPTION;
 
 CREATE VIEW @oracle_corever@.WORKFLOWNOOPNODEVER
@@ -120,7 +147,7 @@ AS SELECT
  WITH CHECK OPTION;
 
 
-/* 4 view(s) */
+/* 5 view(s) */
 
 SPOOL OFF
 SET ECHO OFF
