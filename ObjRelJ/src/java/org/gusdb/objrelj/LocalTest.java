@@ -81,6 +81,12 @@ public class LocalTest {
 	    SymbolList sl2 = naseq1.getSequenceAsSymbolList(70,139);
 	    printSymbolList(sl2);
 
+	    // Try to retrieve Taxon parent of this sequence
+	    //
+	    GUSRow parent = server.retrieveParent(s1, naseq1, "sres", "taxon", "taxon_id");
+	    System.out.println("Parent Taxon row =");
+	    System.out.println(parent.toXML());
+
 	    // Retrieve another ExternalNASequence, but only the first 500bp of its sequence (Y00864)
 	    //
 	    ExternalNASequence naseq2 = (ExternalNASequence)(server.retrieveObject(s1, "DoTS", "ExternalNASequence", 85319819, 

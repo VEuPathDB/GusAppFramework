@@ -844,9 +844,7 @@ public abstract class GUSRow implements java.io.Serializable {
 
     public String toString() {
 	GUSTable table = this.getTable();
-	String owner = table.getOwnerName();
-	String tname = table.getTableName();
-	return "[" + owner + "." + tname + ":" + id + "]";
+	return "[" + table + ":" + id + "]";
     }
 
 

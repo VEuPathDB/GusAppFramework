@@ -216,6 +216,44 @@ public class GUSTable implements java.io.Serializable {
     }
 
     // ------------------------------------------------------------------
+    // Protected methods
+    // ------------------------------------------------------------------
+
+    /**
+     * Add a new child relation to <code>this.childRelations</code>.
+     */
+    protected void addChildRelation(GUSTableRelation gtr, String owner, String tname, String childAtt) {
+	addRelation_aux(this.childRelations, gtr, owner, tname, childAtt);
+    }
+
+    /**
+     * Add a new parent relation to <code>this.parentRelations</code>.
+     */
+    protected void addParentRelation(GUSTableRelation gtr, String owner, String tname, String childAtt) {
+	addRelation_aux(this.parentRelations, gtr, owner, tname, childAtt);
+    }
+
+    /**
+     * Helper method for <code>addChildRelation</code> and <code>addParentRelation</code>.
+     */
+    protected void addRelation_aux(Hashtable h, GUSTableRelation gtr, String owner, String tname, String childAtt) {
+	String lcOwner = owner.toLowerCase();
+	String lcTable = tname.toLowerCase();
+	String lcAtt = childAtt.toLowerCase();
+	String key1 = lcOwner + "." + lcTable;
+
+	Hashtable h1 = (Hashtable)(h.get(key1));
+	if (h1 == null) {
+	    h1 = new Hashtable();
+	    h.put(key1, h1);
+	}
+
+	if (h1.put(lcAtt, gtr) != null) {
+	    throw new IllegalArgumentException(this + ": relation already defined when trying to add " + gtr);
+	}
+    }
+
+    // ------------------------------------------------------------------
     // Display/debugging methods
     // ------------------------------------------------------------------
     
@@ -255,19 +293,14 @@ public class GUSTable implements java.io.Serializable {
 	}
     }
 
+    // ------------------------------------------------------------------
+    // java.lang.Object
+    // ------------------------------------------------------------------
+
+    public String toString() {
+	String owner = this.getOwnerName();
+	String tname = this.getTableName();
+	return owner + "." + tname;
+    }
+
 } //GUSTable
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
