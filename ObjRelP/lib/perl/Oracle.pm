@@ -129,6 +129,7 @@ sub primaryKeySql{
 	return "select acc.column_name
         from all_cons_columns acc, all_constraints ac
         where acc.owner = '$owner'
+        and ac.owner = '$owner'
         and ac.table_name = '$table'
         and ac.constraint_type = 'P'
         and acc.constraint_name = ac.constraint_name";
