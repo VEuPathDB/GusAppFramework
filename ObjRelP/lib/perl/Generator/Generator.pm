@@ -150,8 +150,10 @@ sub getSubclasses {
 	    push(@{$self->{subclasses}->{$superclassFull}}, $subclassFull);
 	}
     }
-    
-    return @{$self->{subclasses}->{$superName}} if $self->{subclasses}->{$superName};
+    my @answer = ();
+    @answer =  @{$self->{subclasses}->{$superName}} 
+      if $self->{subclasses}->{$superName};
+    return @answer;
 }
 
 sub isValidAttribute {
