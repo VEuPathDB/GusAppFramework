@@ -1264,7 +1264,7 @@ sub evolveGoHierarchy{
     my $functionRootGoId =  $propertySet->getProp('function_root_go_id');
     my $proteinTableId = $propertySet->getProp('protein_table_id');
     
-    my $args = "--verbose --evolve_go_hierarchy --query_taxon_id $taxonId --old_go_release_id $oldGoVersion --new_go_release_id $newGoVersion --old_function_root_go_id \"$functionRootGoId\" --new_function_root_go_id \"$functionRootGoId\" --protein_table_id $proteinTableId";
+    my $args = "--verbose --evolve_go_hierarchy --query_taxon_id $taxonId --old_go_release_id $oldGoVersion --new_go_release_id $newGoVersion --function_root_go_id \"$functionRootGoId\" --protein_table_id $proteinTableId";
 
     $mgr->runPlugin($signal, "GUS::GOPredict::Plugin::GoPlugin", $args, "Evolving GO Hierarchy");
 }
