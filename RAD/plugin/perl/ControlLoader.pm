@@ -614,17 +614,19 @@ sub getRow_Id{
  my ($subClass);
  my $pos=$cfg_rv->{'position'};
  
+#$M->logData('Error', $subclass_view);
  if(defined $subclass_view){
        if($subclass_view=~ /^ShortOligo$/){
 	   $subClass="GUS::Model::RAD3::ShortOligo";
        }
        elsif($subclass_view=~ /^Spot$/){
-	   $subClass="GUS::Model::RAD3::Spot"; 
+	   $subClass="GUS::Model::RAD3::Spot";
+#	   $M->logData('Error', $subClass); 
        }
-       else{
+       elsif($subclass_view=~ /^SAGETagMappin$/){
 	   $subClass="GUS::Model::RAD3::SAGETagMapping"; 
        }
-       if($subclass_view=~ /^ShortOligoFamily$/){
+       elsif($subclass_view=~ /^ShortOligoFamily$/){
 	   $subClass="GUS::Model::RAD3::ShortOligoFamily";
        }
        elsif($subclass_view=~ /^SpotFamily$/){
