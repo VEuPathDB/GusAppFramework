@@ -209,16 +209,16 @@ sub run {
 
     my $summary;
     if (!$skipLoading) {
-	print "Preprocessing: arg checking, result file listing, query file indexing...";
+	print "Preprocessing: arg checking, result file listing, query file indexing...\n";
 	my $qIndex = undef;
 	($blatFiles, $qIndex) = &preProcess($blatDir, $blatFiles, $fileList, $queryFile,
 					    $queryTableId, $targetTableId, $cla->{'commit'});
 
-	print "Processing: load alignments from raw BLAT output files...";
+	print "Processing: load alignments from raw BLAT output files...\n";
 	$summary = $self->loadAlignments($blatFiles, $qIndex);
     }
 
-    print "Postprocessing: set best alignment status, maybe remove unwanted entries...";
+    print "Postprocessing: set best alignment status, maybe remove unwanted entries...\n";
     $summary .= $self->keepBestAlignments;
 
     return $summary;
@@ -233,7 +233,6 @@ sub loadAlignments {
     my $reportInterval = $cla->{'report_interval'};
     my $commitInterval = $cla->{'commit_interval'};
     my $prevRuns = $cla->{'previous_runs'};
-    my $gapTabSpace = $cla->{'gap_table_space'};
 
     my $queryTableId = $cla->{'query_table_id'};
     my $queryTaxonId = $cla->{'query_taxon_id'};
@@ -242,6 +241,8 @@ sub loadAlignments {
     my $targetTaxonId = $cla->{'target_taxon_id'};
     my $targetExtDbRelId = $cla->{'target_db_rel_id'};
     my $ext_genome_ver = &getUcscGenomeVersion($dbh, $targetExtDbRelId);
+    my $gapTabSpace = $cla->{'gap_table_space'};
+    my $gapTabPref = ($gapTabSpace ? "${gapTabSpace}.${ext_genome_ver}_" : "");
 
     my $minQueryPct = $cla->{'min_query_pct'};
 
@@ -279,7 +280,7 @@ sub loadAlignments {
     my $projectId = $self->getDb()->getDefaultProjectId();
     my $algInvId = $self->getAlgInvocation()->getId();
 
-    my $nextval = $self->getDb()->getDbPlatform()->nextVal("$TPREF.BLATAlignment");
+    my $nextvalVar = $self->getDb()->getDbPlatform()->nextValVar("$TPREF.BLATAlignment");
 
     my $insertSql = ("INSERT INTO $TPREF.BLATAlignment VALUES (" .
 		     "$nextvalVar, " .
@@ -309,9 +310,11 @@ sub loadAlignments {
 	    ++$nAligns;
 	    ++$nTotalAligns;
 
-	    my $nl = &loadAlignment($dbh, $ext_genome_ver, $insertSql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
-				    $targetTableId, $targetTaxonId, $targetExtDbRelId, $qIndex, $qualityParams,
-				    $alreadyLoaded, $targetIdHash, $align, $minQueryPct, $gapTabSpace);
+	    my $gapTab = ($gapTabPref ? "${gapTabPref}_" . $align->get('t_name') . "_gap" : "");
+	    my $nl = &loadAlignment($dbh, $gapTab, $insertSql, $sth, $queryTableId, $queryTaxonId,
+				    $queryExtDbRelId, $targetTableId, $targetTaxonId, $targetExtDbRelId,
+				    $qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align,
+				    $minQueryPct);
 
 	    $nAlignsLoaded += $nl;
 	    $nTotalAlignsLoaded += $nl;
@@ -381,18 +384,21 @@ sub keepBestAlignments {
     my $targetTableId = $cla->{'target_table_id'};
     my $targetTaxonId = $cla->{'target_taxon_id'};
     my $targetExtDbRelId = $cla->{'target_db_rel_id'};
+    my $commitInterval = $cla->{'commit_interval'};
 
     # get alignment groups by query
     #
+    print "# grouping alignments by query (DT)...\n";
     my $alnGrps = $self->getAlignmentGroups();
 
     # process result
     #
+    print "# setting is_best_alignment status for each group...\n";
     my $tot_sq = scalar(keys %$alnGrps);
     my ($tot_al, $tot_bs) = (0,0);
     foreach my $sid (keys %$alnGrps) {
 	my @oneGrp = @{ $alnGrps->{$sid} };
-	print "# processing DT.$sid: " . scalar(@oneGrp). " blat alignments...\n";
+	my $grpSize = scalar(@oneGrp);
 
 	my $best_score = 0;
 	foreach (@oneGrp) {
@@ -403,12 +409,15 @@ sub keepBestAlignments {
 	foreach (@oneGrp) {
 	    my ($bid, $score, $pct_id) = @$_;
 
-	    my $is_best = 0;
-	    $is_best = 1 if $score >= 0.99 * $best_score;
+	    my $is_best = ($grpSize == 1 || $score >= 0.99 * $best_score);
 	    if ($is_best) {
 		$tot_bs++;
 		$dbh->do("update DoTS.BlatAlignment set is_best_alignment = 1 "
 			 . "where blat_alignment_id = $bid" );
+		if (($tot_bs % $commitInterval) == 0) {
+		    $dbh->commit();
+		    print "# $tot_bs alignments marked is_best_alignment = 1\n";
+		}
 	    }
 	}
     }
@@ -598,13 +607,12 @@ sub makeAlignmentHash {
 # of alignments (0 or 1) actually loaded.
 #
 sub loadAlignment {
-    my($dbh, $ext_genome_ver, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
+    my($dbh, $gapTable, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
        $targetTableId, $targetTaxonId, $targetExtDbRelId,$qIndex, $qualityParams,
-       $alreadyLoaded, $targetIdHash, $align, $minQueryPct, $gapTabSpace) = @_;
+       $alreadyLoaded, $targetIdHash, $align, $minQueryPct) = @_;
 
     my $query_id = $align->get('q_name');
     my $target_id = $align->get('t_name');
-    my $gapTable = ($gapTabSpace ? "${gapTabSpace}.${ext_genome_ver}_${target_id}_gap" : "");
 
     # Map target query name -> na_sequence_id if required
     #
