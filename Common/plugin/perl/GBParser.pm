@@ -743,7 +743,7 @@ sub buildPrimaryTranscript {
 
 sub buildNAFeatureComment {
   my $q = shift;
-  my %h = ('remark' => substr($q->getValue(), 0, 4000));
+  my %h = ('comment_string' => substr($q->getValue(), 0, 4000));
   return GUS::Model::DoTS::NAFeatureComment->new(\%h);
 }
 
