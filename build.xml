@@ -308,7 +308,7 @@
     
   </target>
 
-  <target name="GUS/ObjRelJ-RMIC" if="compileJava">
+  <target name="GUS/ObjRelJ-RMIC" unless="skipJavaCompiling">
     <rmic base="${projectsDir}/GUS/ObjRelJ/src/java"  
       classname="org.gusdb.objrelj.RemoteJDBCServer"> 
         <classpath> 
