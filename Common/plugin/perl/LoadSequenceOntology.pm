@@ -87,7 +87,7 @@ sub Insert {
    my $so_cvs_version = $self->getArgs->{'so_cvs_version'};
 
 
-   my $SOTerm = GUS::Model::SRes::SequenceOntology->new({'so_id' => $SOid,
+   my $SOterm = GUS::Model::SRes::SequenceOntology->new({'so_id' => $SOid,
                                                          'ontology_name' => 'sequence',
                                                          'so_version' => $so_version,
                                                          'so_cvs_version' => $so_cvs_version,
