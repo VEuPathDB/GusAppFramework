@@ -158,8 +158,10 @@ sub run {
 
 #Mark FL using features; first call unmark then delete; this has to done first since the features may change from build to build
 
-    $self->UnMarkAssembliesAsFrameFinderFL(\@DTsMarkedUsingFeatures);
 
+
+    $self->UnMarkAssembliesAsFrameFinderFL(\@DTsMarkedUsingFeatures);
+  print STDERR "getting to this\n";
     $self->DeleteFrameFinderEvidence(\@DTsMarkedUsingFeatures);
 
     $self->MarkFLUsingFFfeatures(\@NaSeqStop);
@@ -352,7 +354,7 @@ sub  UnMarkAssembliesAsFrameFinderFL  {
       $assembly->submit();
 
       $self->undefPointerCache();
-   }
+}
 
 }
 
@@ -368,10 +370,15 @@ sub DeleteFrameFinderEvidence {
 
 
   foreach my $target_id(@$DTsMarkedUsingFeatures) {
-    my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id });
+    my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
+                                                   'attribute_name' =>"full_length_CDS",
+                                                   'fact_table_id' => 338 });
+
     if ($Evidence->retrieveFromDB()) {
         $Evidence->markDeleted(1);
         $Evidence->submit();
+
+        $self->undefPointerCache();
 
       print STDERR  "DT.$target_id FeatureEvidence deleted\n"; 
     } else {
@@ -380,6 +387,7 @@ sub DeleteFrameFinderEvidence {
 
   }
 
+ 
 }
 
 1;
