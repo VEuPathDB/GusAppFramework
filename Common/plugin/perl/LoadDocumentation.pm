@@ -125,7 +125,7 @@ sub process {
 		$doc->setHtmlDocumentation($html_dc);
 		$doc->retrieveFromDB();
 		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) {
-		    $doc->set('html_documentation', $html_dc);
+		    $doc->setHtmlDocumentation($html_dc);
 		    $doc->submit();
 		    $self->logVerbose("Submitted new DatabaseDocumentation object: $table_nm.$attribute_nm\t$html_dc");
 		    return();
