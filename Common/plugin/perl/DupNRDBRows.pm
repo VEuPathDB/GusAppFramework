@@ -175,7 +175,7 @@ sub makeNRDBEntryDups {
   foreach my $orig_nrdb_entry_id (@{$self->{nrdbEntryIdArr}}) {
     $stmt->execute($orig_nrdb_entry_id);
     my ($orig_aa_sequence_id,$gid,$source_id,$sequence_version,$orig_external_database_release_id,$description,$taxon_id,$is_preferred) = $stmt->fetchrow_array();
-    my $newNRDBEntry = GUS::Model::DoTS::NRDBEntry->new({'aa_sequence_id'=> $self->{origDupIdHash}->{$orig_aa_seq_id},'gid'=>$gid,'source_id'=>$source_id,'sequence_version'=>$sequence_version,'external_database_release_id'=>$self->{dbHash}->{$orig_external_database_release_id},'description'=>$description,'taxon_id'=>$taxon_id,'is_preferred'=>$is_preferred});
+    my $newNRDBEntry = GUS::Model::DoTS::NRDBEntry->new({'aa_sequence_id'=> $self->{origDupIdHash}->{$orig_aa_sequence_id},'gid'=>$gid,'source_id'=>$source_id,'sequence_version'=>$sequence_version,'external_database_release_id'=>$self->{dbHash}->{$orig_external_database_release_id},'description'=>$description,'taxon_id'=>$taxon_id,'is_preferred'=>$is_preferred});
     if (!$newNRDBEntry->retrieveFromDB()) {
       $num += $newNRDBEntry ->submit();
     }
