@@ -1,7 +1,7 @@
 
 package GUS::PluginMgr::GusApplication;
 @ISA = qw( GUS::PluginMgr::Plugin );
-
+ 
 use strict;
 
 use CBIL::Util::EasyCsp;
