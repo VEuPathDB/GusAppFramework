@@ -193,7 +193,7 @@ sub run {
     my $queryExtDbRelId = $cla->{'query_db_rel_id'};
     my $targetTableId = $cla->{'target_table_id'};
     my $targetTaxonId = $cla->{'target_taxon_id'};
-    my $targetExtDbId = $cla->{'target_db_rel_id'};
+    my $targetExtDbRelId = $cla->{'target_db_rel_id'};
 
     my $minQueryPct = $cla->{'min_query_pct'};
 
@@ -216,8 +216,8 @@ sub run {
     # 1. Read target source ids if requested
     #
     my $targetTable = &getTableNameFromTableId($dbh, $targetTableId);
-    my $targetIdHash = ($targetExtDbId =~ /\d+/) ?
-	&makeSourceIdHash($dbh, "$TPREF.$targetTable", $targetExtDbId) : undef;
+    my $targetIdHash = ($targetExtDbRelId =~ /\d+/) ?
+	&makeSourceIdHash($dbh, "$TPREF.$targetTable", $targetExtDbRelId) : undef;
     # 2. Build hash of alignments that have already been loaded; we assume
     #    that an alignment can be uniquely identified by its coordinates.
     #
@@ -262,7 +262,7 @@ sub run {
 	    ++$nTotalAligns;
 
 	    my $nl = &loadAlignment($dbh, $insertSql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
-				    $targetTableId, $targetTaxonId, $targetExtDbId, $qIndex, $qualityParams,
+				    $targetTableId, $targetTaxonId, $targetExtDbRelId, $qIndex, $qualityParams,
 				    $alreadyLoaded, $targetIdHash, $align, $minQueryPct);
 
 	    $nAlignsLoaded += $nl;
@@ -440,17 +440,13 @@ sub makeAlignmentHash {
 #
 sub loadAlignment {
     my($dbh, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId, $targetTableId, $targetTaxonId,
-       $targetExtDbId,$qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align, $minQueryPct) = @_;
+       $targetExtDbRelId,$qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align, $minQueryPct) = @_;
 
     my $query_id = $align->get('q_name');
     my $target_id = $align->get('t_name');
-    #HACK: the gap tables are now only in gus, not gusdev
-    my $gapTable = undef;
-    if ($targetTaxonId == 8) {
-	$gapTable = "ygan.${target_id}_gap";
-    } elsif($targetTaxonId == 14) {
-	$gapTable = "mm2.${target_id}_gap\@gus.pcbi.upenn.edu";
-    }
+    #HACK: the gap tables are loaded into ygan space
+    my $ext_genome_ver = &getUcscGenomeVersion($dbh, $targetExtDbRelId);
+    my $gapTable = 'ygan.' . $ext_genome_ver . '_' . $target_id . '_gap';
 
     # Map target query name -> na_sequence_id if required
     #
@@ -517,7 +513,7 @@ sub loadAlignment {
 		  $queryExtDbRelId,
 		  $targetTableId,
 		  $targetTaxonId,
-		  $targetExtDbId,
+		  $targetExtDbRelId,
 		  $isConsist,
 		  0,
 		  $end3, $end5,
@@ -555,6 +551,30 @@ sub getNaSequenceId4TC {
     my($sid) =  $sth->fetchrow_array();
     $sth->finish();
     return $sid;
+}
+
+# Return the (UCSC) genome version for given external databaser release id
+#
+sub getUcscGenomeVersion {
+    my ($dbh, $ext_db_rel_id) = @_;
+
+    my $sql = "select version from SRES.ExternalDatabaseRelease " .
+	      "where external_database_release_id = $ext_db_rel_id";
+    my $sth = $dbh->prepare($sql) or die "bad sql $sql: $!";
+    $sth->execute or die "could not run $sql: $!";
+    my @vers;
+    while (my ($v) = $sth->fetchrow_array) { push @vers, $v; }
+    my $c = $#vers+1;
+    die "expected 1 entry but got $c\n" unless $c == 1;
+
+    my $v = $vers[0];
+    if ($v =~ /^((hg|mm)\d+)/i) {
+	$v = $1;
+    } else {
+	die "can not parse UCSC genome version from \"$v\"\n";
+    }
+
+    $v;
 }
 
 1;
