@@ -251,9 +251,8 @@ sub run {
 
   my $studyId = $self->{propertySet}->getProp("Study_ID");
 
-  my ($gusAssays, $skippedAssayCnt, $totalAssayCnt) = $self->createGUSAssaysFromFiles($studyId);
-  my $insertedAssayCnt                              = $self->submitGusAssays($gusAssays, $studyId);
-  my $insertedRelatedCnt                            = $self->populateRelatedTables($studyId); 
+  my ($insertedAssayCnt, $skippedAssayCnt, $totalAssayCnt) = $self->createAndSubmitGUSAssaysFromFiles($studyId);
+  my $insertedRelatedCnt = $self->populateRelatedTables($studyId); 
 
   $self->log("STATUS","Inserted $insertedRelatedCnt rows in RAD3.RelatedAcquisition and RAD3.RelatedQuantification");
   $self->setResultDescr(
@@ -263,16 +262,18 @@ sub run {
 
 ###############################
 
-sub createGUSAssaysFromFiles {
+sub createAndSubmitGUSAssaysFromFiles {
   my ($self, $studyId) = @_;
 
-  my @gusAssays;
   my $assayCnt = 0;
 
   my $tiffFilePath  = $self->{propertySet}->getProp("Tiff_File_Path"); 
   my $gprFilePath   = $self->{propertySet}->getProp("gpr_File_Path"); 
   my $testNumber    = $self->getArgs->{testnumber};
   my @skipAssayList = @{$self->getArgs->{skip}};
+
+  $tiffFilePath .= "/" if ($tiffFilePath !~ m/(.+)\/$/);
+  $gprFilePath .= "/" if ($gprFilePath !~ m/(.+)\/$/);
 
   my ($assayNames, $modifiedAssayFileURIRef)    = $self->findAssayNames($gprFilePath);
   my ($imageFilesRef, $modifiedImageFileURIRef) = $self->getImageFileNames($tiffFilePath); 
@@ -286,42 +287,44 @@ sub createGUSAssaysFromFiles {
   $self->log("STATUS","Found $totalAssayCnt assays");
   $self->log("STATUS","Skipping assay/s @skipAssayList") if (scalar @skipAssayList > 0);
 
+  my $insertedAssayCnt = 0;
   foreach my $assayName (@$assayNames) {
 
     next if (($assayCnt > ($testNumber - 1)) && (defined $testNumber));
     next if (grep { $assayName =~ /^$_/ } @skipAssayList);
 
     my $gusAssay = $self->createSingleGUSAssay($assayName, $modifiedAssayFileURIRef, $hybDateHashRef, $scanDateHashRef, $assayDescriptionHashRef, $imageFilesRef, $modifiedImageFileURIRef);
-
-    push(@gusAssays, $gusAssay);
     $assayCnt++;
+    $insertedAssayCnt += $self->submitSingleGusAssay($gusAssay, $studyId);
+
+	$self->undefPointerCache();  # clean memory
   }
 
   $self->log("STATUS","-------- End Assay Descriptions --------");
   $self->log("STATUS","OK Created $assayCnt assay/s");
 
-  return (\@gusAssays, $skipAssayCnt, $totalAssayCnt);
+  return ($insertedAssayCnt, $skipAssayCnt, $totalAssayCnt);
 }
 
 ###############################
 
-sub submitGusAssays {
-  my ($self, $gusAssays, $studyId) = @_;
+sub submitSingleGusAssay {
+  my ($self, $gusAssay, $studyId) = @_;
 
   my $gusStudy = GUS::Model::RAD3::Study->new({study_id => $studyId});
   $self->error("Create object failed: Table RAD3.Study, study_id $studyId")
    unless ($gusStudy->retrieveFromDB);
 
   my $gusInsertedAssayCnt = 0;
-  foreach my $gusAssay (@$gusAssays) {
 
-    my $studyAssay = GUS::Model::RAD3::StudyAssay->new(); # links RAD3.Study & RAD3.Assay
+  my $studyAssay = GUS::Model::RAD3::StudyAssay->new(); # links RAD3.Study & RAD3.Assay
 
-    $studyAssay->setParent($gusAssay);
-    $studyAssay->setParent($gusStudy);
+  $studyAssay->setParent($gusAssay);
+  $studyAssay->setParent($gusStudy);
 
-    $gusAssay->submit() if ($self->getArgs->{commit});
-    $gusInsertedAssayCnt++;
+  if ($self->getArgs->{commit}) {
+    $gusAssay->submit();
+    $gusInsertedAssayCnt = 1;
   }
 
   return $gusInsertedAssayCnt;
@@ -357,6 +360,7 @@ sub populateRelatedTables {
     my $relatedQuantificationCnt = $self->populateRelatedQuantification($assayName, $assayId, $acquisitionIdsRef, $acquisitionChannelsRef);
 
     $insertedRelatedCnt += $relatedAcquisitionCnt + $relatedQuantificationCnt;
+    $self->undefPointerCache();  # clean memory
   }
 
   return $insertedRelatedCnt;
@@ -593,9 +597,12 @@ sub createSingleGUSAssay {
 sub checkRequiredFilesExist {
   my ($self, $assayName, $imageFilesRef) = @_;
 
-  my $gprFile     = $self->{propertySet}->getProp("gpr_File_Path")."/$assayName.gpr";
+  my $gprFilePath = $self->{propertySet}->getProp("gpr_File_Path");
   my $tiffFileCy5 = $imageFilesRef->{$assayName."_Cy5"};
   my $tiffFileCy3 = $imageFilesRef->{$assayName."_Cy3"};
+
+  $gprFilePath .= "/" if ($gprFilePath !~ m/(.+)\/$/);
+  my $gprFile = $gprFilePath."$assayName.gpr";
 
   $self->userError("Missing file: $gprFile") if (! -e $gprFile); 
 
