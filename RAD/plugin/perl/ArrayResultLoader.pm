@@ -41,20 +41,14 @@ sub new {
 #  my @erSubclassViewList=@$arrayRef;
 #  print "@erSubclassViewList\n";
 
-  my @erSubclassViewList=[qw (ArrayVisionElementResult GenePixElementResult SpotElementResult ScanAlyzeElementResult AffymetrixCEL GEMToolsElementResult AgilentElementResult QuantArrayElementResult)];
+#  my @erSubclassViewList=[qw (ArrayVisionElementResult GenePixElementResult SpotElementResult ScanAlyzeElementResult AffymetrixCEL GEMToolsElementResult AgilentElementResult QuantArrayElementResult)];
 # modify the following line to add a new view for CompositeElementResultImp table
-  my @crSubclassViewList=[qw (AffymetrixMAS4 AffymetrixMAS5 SAGETagResult MOIDResult RMAExpress GNFAffymetrixResult)];
+#  my @crSubclassViewList=[qw (AffymetrixMAS4 AffymetrixMAS5 SAGETagResult MOIDResult RMAExpress GNFAffymetrixResult)];
 # modify the following line to add a new view for ElementImp table
   my @eSubclassViewList=[qw (ShortOligo Spot SAGETagMapping)];  
   my @cSubclassViewList=[qw (ShortOligoFamily SpotFamily SAGETag)];  
   my @posOption=(1, 2, 3);
-#  my $sh=$m->getQueryHandle->prepareAndExecute('select array_id from RAD3.Array');
-#  my @arrayIdList;
-#  while (my @row = $sh->fetchrow_array) {
-#		push(@arrayIdList,@row);
-#	} 
-#  $sh->finish;
-  
+
   my $easycsp = [
     {
       o => 'data_file',
@@ -94,14 +88,14 @@ sub new {
       o => 'er_subclass_view',
       t => 'string',
       r => 0,
-      e => @erSubclassViewList,
+#      e => @erSubclassViewList,
       h => 'view name of ElementResultImp table',
     }, 
    {
       o => 'cr_subclass_view',
       t => 'string',
       r => 0,
-      e => @crSubclassViewList,
+#      e => @crSubclassViewList,
       h => 'view name of CompositeElementResultImp table',
     },  
     {
@@ -296,6 +290,19 @@ sub checkArgs {
 	if($M->getCla->{'commit'}){print STDERR "ERROR: $RV\n";}
 	return;
     }
+
+    if(defined $M->getCla->{er_subclass_view}){
+	my $erSubView=$M->getCla->{er_subclass_view};
+	$M->checkViewName($erSubView);
+	return unless $M->getOk();
+    }
+
+    if(defined $M->getCla->{cr_subclass_view}){
+	my $crSubView=$M->getCla->{cr_subclass_view};
+	$M->checkViewName($crSubView);
+	return unless $M->getOk();
+    }
+
 
 # check that the given quantification_id is a valid one
 # skip this check for now
@@ -1000,6 +1007,28 @@ sub updateQuantification{
   else{
       return 0;
   }
+}
+
+
+sub checkViewName{
+    my $M = shift;
+    my ($table_name)=@_;
+    $M->setOk(1);
+    my $query="select t.table_id from core.tableinfo t where t.name='$table_name' and is_view=1";
+    my $dbh = $M->getSelfInv->getQueryHandle();
+    my $sth = $dbh->prepare($query);
+    $sth->execute();
+    my ($id) = $sth->fetchrow_array();
+    $sth->finish();
+    if (defined $id) {
+	return 1;
+    }
+    else{
+	$cfg_rv->{warnings} = "The subclass view $table_name doesn't exist!";
+	$M->logData('Error', $cfg_rv->{warnings});
+	if($M->getCla->{'commit'}){print STDERR "Error: The subclass view $table_name doesn't exist!\n";}
+	$M->setOk(0);
+    }
 }
 
 sub getTable_Id{
