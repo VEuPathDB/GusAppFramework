@@ -75,6 +75,7 @@ sub run {
 	$c->set('na_feature_id',$fid);
 	$c->set('comment_string',$comm);
 	$c->submit();
+	$countObjs++;
     }
     $fh->close;
 
