@@ -29,15 +29,15 @@ public class Taxon extends Taxon_Row {
      * from the database (if not already in memory.)
      */
     public String getTaxonName(ServerI server, String session, String name_class) {
+
 	try {
-	    server.retrieveChildren(session, this, "SRes", "TaxonName", "taxon_id");
-	} 
-	catch (GUSNoConnectionException gnce) {
-	    System.err.println(gnce);
+	    Vector allTaxonNames = getTaxonNameList(false);
 	}
-	catch (GUSNoSuchRelationException gnsr) {
-	    System.err.println(gnsr);
+	catch(Exception e){
+	    System.err.println(e.getMessage());
+	    e.printStackTrace();
 	}
+	
 	return this.getTaxonName(name_class);
     }
 
@@ -51,8 +51,15 @@ public class Taxon extends Taxon_Row {
 	// TO DO - there should be a method in GUSRow that returns only the children
 	// of a specified class.
 	//
-	Vector kids = this.getChildren("taxon_name");
+	Vector kids = null;
+	try {
 
+	    kids = this.getTaxonNameList(true);
+	}
+	catch (Exception e){
+	    System.err.println(e.getMessage());
+	    e.printStackTrace();
+	}
 	int nk = kids.size();
 	
 	for (int i = 0;i < nk;++i) {
