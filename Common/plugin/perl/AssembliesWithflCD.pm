@@ -127,13 +127,10 @@ while(my($target_id) = $stmt3->fetchrow_array( ))  {
   }
 
 if (my @naSequenceIds = undef)  { undef @naSequenceIds;
+
 }
 
-
-#print STDERR "scalar(@naSequenceIds)\n";
-#my $number = 1;
-#push(@naSequenceIds, $number);
-#print STDERR "scalar(@naSequenceIds)\n";
+print STDERR "scalar(@naSequenceIds)\n";
 
 my $ct = 0;
 
@@ -163,7 +160,7 @@ print STDERR "$id,DT.$na_seq\n";
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
    }
 
-    if ($id != $na_seq | $id == 1) {
+    if ($id != $na_seq | $id eq "") {
 
        print STDERR "NextFLDT.$na_seq\n";
 
