@@ -46,6 +46,7 @@ sub new {
   $m->{propertySet}= CBIL::Util::PropertySet->new($configFile, \@properties);
 
   $m->initName(ref $m);
+  $m->initMd5Executable($m->{propertySet}->getProp('md5sum'));
 
   return $m
 }
