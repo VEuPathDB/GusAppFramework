@@ -178,6 +178,22 @@ sub logVeryVerbose {
   $M->_log(@_);
 }
 
+# to stdout
+sub logData {
+  my $M = shift;
+  my $T = shift;
+
+  my $time_stamp_s = localtime;
+
+  my $msg = join("\t", $T, $time_stamp_s, @_);
+
+  print "$msg\n";
+
+  # RETURN
+  $msg
+
+}
+
 sub logRAIID {
   my $M = shift;
 
