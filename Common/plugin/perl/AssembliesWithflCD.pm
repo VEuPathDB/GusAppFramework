@@ -235,9 +235,8 @@ my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
            }
 
            $self->undefPointerCache();
-           last;
+           next;
 }
-
 
 
 #my $dbh = $self->getQueryHandle();
