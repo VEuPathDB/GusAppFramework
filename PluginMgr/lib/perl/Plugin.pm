@@ -56,7 +56,7 @@ sub initialize {
 # ----------------------------------------------------------------------
 
 sub className2oracleName {
-  my ($className) = @_;
+  my ($self, $className) = @_;
   return GUS::ObjRelP::DbiDatabase::className2oracleName($className);
 }
 
