@@ -1,5 +1,7 @@
-
 package GUS::Model::DoTS::GeneFeature; # table name
+
+# $Id$
+
 use strict;
 use GUS::Model::DoTS::GeneFeature_Row;
 
@@ -45,11 +47,11 @@ sub getGBLocation {
 
 
 ##method for filling in the RNA and Protein features and sequences from this GeneFeature
-##take in optional external_db_id and source_id as args.
+##take in optional external_database_release_id and source_id as args.
 sub makePredictedRna {
-	my($self,$exons,$external_db_id,$source_id) = @_;
+	my($self,$exons,$external_database_release_id,$source_id) = @_;
 
-	print STDERR "GeneFeature->makePredictedRna()\n" if $debug;
+	print STDERR "GeneFeature->makePredictedRna($exons,$external_database_release_id,$source_id)\n" if $debug;
 
 	my @exFeats;
 	if(defined $exons){
@@ -59,11 +61,11 @@ sub makePredictedRna {
 		print STDERR "GeneFeature->makeRNAtoProtein():  You must add the ExonFeature children or pass in an array reference of exons before calling this method\n" if scalar(@exFeats) == 0;
 	}
 	if(scalar(@exFeats) < 1){
-		print STDERR $self->getClassName()."->makeRnaToProtein ERROR: No exons found for this GeneFeature,\n  usage:\n\tmakePredictedRna(array reference of ExonFeature objects (optional if using all exons),\$external_db_id (optional),\$source_id (optional))\n";
+		print STDERR $self->getClassName()."->makeRnaToProtein ERROR: No exons found for this GeneFeature,\n  usage:\n\tmakePredictedRna(array reference of ExonFeature objects (optional if using all exons),\$external_database_release_id (optional),\$source_id (optional))\n";
 		return undef;
 	}
 
-	my $doExternal = ($external_db_id && $source_id) ? 1 : 0;
+	my $doExternal = ($external_database_release_id && $source_id) ? 1 : 0;
 	my $pred_alg_id = $self->get('prediction_algorithm_id');
 
 #	my @exons = $self->getChildren('DoTS::ExonFeature',1);
@@ -76,31 +78,31 @@ sub makePredictedRna {
 #	$self->set('is_predicted',1) unless $self->get('is_predicted');
 
 	##first the RNAFeature
-	my $rna = RNAFeature->new({'subclass_view' => 'RNAFeature',
-														 'name' => 'RNAFeature'
-														});
-	$self->setExternalDbAndSourceId($rna,$external_db_id,$source_id) if $doExternal;
+	my $rna = GUS::Model::DoTS::RNAFeature->new({'subclass_view' => 'RNAFeature',
+						     'name' => 'RNAFeature'
+						     });
+	$self->setExternalDbAndSourceId($rna,$external_database_release_id,$source_id) if $doExternal;
 	$rna->set('is_predicted',1) if defined $self->get('is_predicted');
 	$rna->set('prediction_algorithm_id',$pred_alg_id) if $pred_alg_id;
 	$rna->set('number_of_exons',scalar(@exFeats));
-	$rna->set('manually_reviewed',0);
+	$rna->set('review_status_id',0);
 	$self->addChild($rna);
 
 	##what about RNAFeatureExons...could not set if ! $self->get('is_differentially_processed')
 	foreach my $exon (@exFeats){
-		my $re = RNAFeatureExon->new();
+		my $re = GUS::Model::DoTS::RNAFeatureExon->new();
 		$re->setParent($rna);
 		$re->setParent($exon);
 	}
 
 		##now the SplicedNASequence
-	my $nas = SplicedNASequence->new({'subclass_view' => 'SplicedNASequence',
-																		'name' => 'SplicedNASequence',
-																		'sequence_type_id' => 13
-																	 });
-	$self->setExternalDbAndSourceId($nas,$external_db_id,$source_id) if $doExternal;
+	my $nas = GUS::Model::DoTS::SplicedNASequence->new({'subclass_view' => 'SplicedNASequence',
+							    'name' => 'SplicedNASequence',
+							    'sequence_type_id' => 13
+							    });
+	$self->setExternalDbAndSourceId($nas,$external_database_release_id,$source_id) if $doExternal;
 	$nas->set('length',$rna->getFeatureLength());
-  if($self->getParent('DoTS::ExternlaNASequence')){ $nas->setSequence($nas->getSequence());}
+  if($self->getParent('DoTS::ExternalNASequence')){ $nas->setSequence($nas->getSequence());}##B
 	$nas->addChild($rna);
 	
 	return $rna;
@@ -108,23 +110,23 @@ sub makePredictedRna {
 
 ##NOTE:  this method takes in a list of exons so can be used for differential splicing..
 sub makePredictedRnaToProtein {
-	my($self,$exons,$external_db_id,$source_id) = @_;
+	my($self,$exons,$external_database_release_id,$source_id) = @_;
 
-	my $doExternal = ($external_db_id && $source_id) ? 1 : 0;
+	my $doExternal = ($external_database_release_id && $source_id) ? 1 : 0;
 	my $pred_alg_id = $self->get('prediction_algorithm_id');
 
-	print STDERR "GeneFeature->makePredictedRnaToProtein($exons,$external_db_id,$source_id)\n" if $debug;
+	print STDERR "GeneFeature->makePredictedRnaToProtein($exons,$external_database_release_id,$source_id)\n" if $debug;
 	print STDERR "GeneFeature->makePredictedRnaToProtein: Number of exons = ".scalar(@$exons)."\n" if $debug;
 
-	my $rna = $self->makePredictedRna($exons,$external_db_id,$source_id);
+	my $rna = $self->makePredictedRna($exons,$external_database_release_id,$source_id);
 
 	if (!$rna) { return undef; } 
 
 	##the TranslatedAAFeature
-	my $aaf = TranslatedAAFeature->new({'subclass_view' => 'TranslatedAAFeature',
-																			'is_simple' => 1,
-																			'manually_reviewed' => 0
-																		 });
+	my $aaf = GUS::Model::DoTS::TranslatedAAFeature->new({'subclass_view' => 'TranslatedAAFeature',
+							      'is_simple' => 1,
+							      'review_status_id' => 0
+							      });
 	$aaf->setParent($rna);
 	$aaf->set('is_predicted',defined $self->get('is_predicted') ? $self->getIsPredicted() : 1);
 	$aaf->set('prediction_algorithm_id',$pred_alg_id) if $pred_alg_id;
@@ -134,14 +136,14 @@ sub makePredictedRnaToProtein {
 	$aaf->set('translation_stop',$tranStop);
 	
 	##the TranslatedAASequence
-	my $aas = TranslatedAASequence->new({'subclass_view' => 'TranslatedAASequence',
-																			 'sequence_version' => 1,
-																			 'is_simple' => 1  ##this method is only for simple translations...
-																			} );
+	my $aas = GUS::Model::DoTS::TranslatedAASequence->new({'subclass_view' => 'TranslatedAASequence',
+							       'sequence_version' => 1,
+							       'is_simple' => 1  ##this method is only for simple translations...
+							       } );
 	my $tranLength = int(($tranStop - $tranStart + 1) / 3);
 	if($tranLength > 1){ $aas->setLength($tranLength); }  ##only set if tranLength is valid number...
-  if($self->getParent('DoTS::ExternlaNASequence')){ $aas->setSequence($aas->getSequence());}
-	$self->setExternalDbAndSourceId($aas,$external_db_id,$source_id) if $doExternal;
+  if($self->getParent('DoTS::ExternalNASequence')){ $aas->setSequence($aas->getSequence());}
+	$self->setExternalDbAndSourceId($aas,$external_database_release_id,$source_id) if $doExternal;
 	$aas->addChild($aaf);
 
 	return 1;
@@ -149,7 +151,7 @@ sub makePredictedRnaToProtein {
 
 sub setExternalDbAndSourceId {
 	my($self,$o,$ext_db,$source_id) = @_;
-	$o->set('external_db_id',$ext_db);
+	$o->set('external_database_release_id',$ext_db);
 	$o->set('source_id',$source_id);
 }
 
