@@ -73,19 +73,17 @@ sub run {
   print STDERR "Testing on ". $self->getArgs()->{'testnumber'}."\n" 
                 if $self->getArgs()->{'testnumber'};
 
-  my $dbh = $self->getQueryHandle();
-
   my ($sourceIdHash, $mapHash) = $self->getSourceIdsAndMap();  
 
-  my $dbRefHash = $self->insertDbRef($sourceIdHash,$dbh);  
+  my $dbRefHash = $self->insertDbRef($sourceIdHash); 
 
-  $self->getCurrentAssemblyId($dbh,$mapHash); 
+  $self->getCurrentAssemblyId($mapHash); 
 
-  my ($sourceIdDbrefHash) = $self->readDBRefs($dbh); 
+  my ($sourceIdDbrefHash) = $self->readDBRefs(); 
 
   $self->insertDBRefNASeq($sourceIdDbrefHash,$mapHash); 
 
-  $self->deleteDbRef($dbRefHash,$dbh);
+  $self->deleteDbRef($dbRefHash);
 }
 
 sub getSourceIdsAndMap {
@@ -109,9 +107,9 @@ sub getSourceIdsAndMap {
 	last;
       }
       
-      if (/pattern1/) {
+      if (/$pattern1/) {
 	my $MappedFrom = $1;
-	if (/pattern2/) {
+	if (/$pattern2/) {
 	  my $MappedTo = $1;
 	  $sourceIdHash{$MappedFrom} = 1;
 	  push (@{$mapHash{$MappedFrom}},$MappedTo);
@@ -124,30 +122,28 @@ sub getSourceIdsAndMap {
       }
     }
   }
-  
+
   print STDERR ("$nLinks ids are mapped to the source's ids\n");
 
-  foreach my $id (keys %sourceIdHash) {
-    print "$id\n";
-  }
-  exit;
   return (\%sourceIdHash, \%mapHash);
 }
 
 sub insertDbRef {
 
-  my ($self) = @_;
-  
-  my ($sourceIdHash, $dbh) = @_;
+  my ($self,$sourceIdHash) = @_;
+
+  my $dbh = $self->getQueryHandle();
   
   my %dbRefHash;
   
   my $db_rel_id = $self->getArgs()->{db_rel_id};
+
+  print "$db_rel_id   db_rel_id\n";
   
   my $db_id = $self->getArgs()->{db_id};
-  
-  my $sql = 'select external_database_release_id from sres.externaldatabaserelease 
-               where external_database_id = $db_id'; 
+
+  my $sql = "select external_database_release_id from sres.externaldatabaserelease 
+               where external_database_id = $db_id"; 
   
   my $stmt = $dbh->prepareAndExecute($sql);
   
@@ -165,8 +161,8 @@ sub insertDbRef {
       my $newDbRef = GUS::Model::SRes::DbRef -> new ({'lowercase_primary_identifier'=>$lowercase_primary_id, 'external_database_release_id'=>$old_rel_id});
       $newDbRef->retrieveFromDB();
       
-      if ($newDbRef->getPrimaryId() ne $id) {
-	$newDbRef->setPrimaryId($id);
+      if ($newDbRef->getPrimaryIdentifier() ne $id) {
+	$newDbRef->setPrimaryIdentifier($id);
       }
       if ($newDbRef->getExternalDatabaseReleaseId != $db_rel_id) {
 	$newDbRef->setExternalDatabaseReleaseId($db_rel_id);
@@ -188,42 +184,45 @@ sub insertDbRef {
 }
 
 sub getCurrentAssemblyId {
-  my ($self) = @_;
-  my($dbh, $mapHash) = @_;
-  my $st = $dbh->prepare("select count(*) from dots.nasequenceimp where na_sequence_id = ?");
+  my ($self,$mapHash) = @_;
+  my $dbh = $self->getQueryHandle();
+  my $sth = $dbh->prepare("select count(*) from nasequenceimp where na_sequence_id = ?");
   my $num = 0;
   
   foreach my $sourceId (keys %$mapHash) {
     my $length = scalar(@{$mapHash->{$sourceId}});
     
     for (my $i = 0; $i < $length; $i++) {
-      my $assemblyId = $mapHash->{$sourceId}->[$i]; 
-      
-      $st->execute($assemblyId);
-      my($count) = $st->fetchrow_array();
-      $st->finish();
-      
+      my $assemblyId = $mapHash->{$sourceId}->[$i];
+
+      $sth->execute($assemblyId);
+      my($count) = $sth->fetchrow_array();
+      $sth->finish();
+
       if ($count > 0) {
+	my $st = $dbh->prepare("select new_id from dots.MergeSplit where old_id = ? and table_id = 56");
+	$st->execute($assemblyId);
+        my ($newId) = $st->fetchrow_array();
+	$st->finish();
+	if ($newId) {
+	  $num++;
+	  print STDERR "Mapped old ID $assemblyId -> $newId\n";
+	  $mapHash->{$sourceId}->[$i] = $newId;
+	}
+
+      }
+      else {
 	next;
       }
-      else {	    
-	$st = $dbh->prepare("select new_id from dots.MergeSplit where old_id = ? and table_id = 56");
-	$st->execute($assemblyId);
-	my ($newId) = $st->fetchrow_array();
-	$st->finish();
-	$num++;
-	print STDERR "Mapped old ID $assemblyId -> $newId\n";
-	$mapHash->{$sourceId}->[$i] = $newId;
-      }
     }
-  }
-  
+  }  
   print STDERR "Mapped $num old IDs to newIds\n";
 }
 
 sub readDBRefs {
   my ($self) = @_;
-  my($dbh) = @_;
+
+  my $dbh = $self->getQueryHandle();
   
   my %sourceIdDbrefHash;
   
@@ -231,21 +230,23 @@ sub readDBRefs {
   
   my $sql = "select primary_identifier,db_ref_id from sres.dbref where external_database_release_id=$db_rel_id";
 
-    my $st = $dbh->prepare($sql);
+    my $st = $dbh->prepareAndExecute($sql);
 
-    $st->execute();
     while (my @a = $st->fetchrow_array()) {
 	my $lowercase_source_id = lc ($a[0]);
 	$sourceIdDbrefHash{$lowercase_source_id} = $a[1];
     }
     $st->finish();
+
+  my $size = scalar keys %sourceIdDbrefHash;
+
+  print "size of hash : $size\n";
     
     return \%sourceIdDbrefHash;
 }
 
 sub  insertDBRefNASeq {
-  my ($self) = @_;
-  my ($sourceIdDbrefHash,$mapHash) = @_;
+  my ($self,$sourceIdDbrefHash,$mapHash) = @_;
   
   my $num = 0;
   
@@ -266,8 +267,10 @@ sub  insertDBRefNASeq {
 }
 
 sub deleteDbRef {
-  my ($self) = @_;
-  my ($dbRefHash,$dbh) = @_;
+  my ($self,$dbRefHash) = @_;
+
+  my $dbh = $self->getQueryHandle();
+
   my $sql = 'select db_ref_id from sres.dbref';
   my $num;
   my $stmt = $dbh->prepareAndExecute($sql);
