@@ -66,7 +66,8 @@ sub _genDefaultParams {
     my $keys = $dbiTable->getPrimaryKeyAttributes();
     my $primaryKeyName = $keys->[0]; 
 
-    my $hasSeq = ($dbiTable->hasSequence()) ? "true" : "false"; 
+#    my $hasSeq = ($dbiTable->hasSequence()) ? "true" : "false"; 
+    my $hasSeq = "true";
     my $isView = ($dbiTable->isView()) ? "true" : "false";
     my $tableId = $dbiTable->getTableId();
 
@@ -260,7 +261,12 @@ sub _createJavaTALine {
     if ($javaType eq "BigDecimal") {
 	$line .= "	    ";
 	$line .= "tableAtts.put(\"$att\", new GUSTableAttribute(\"$att\", \"$oraType\", \"java.math.$javaType\", $prec, $len, $scale, false, false) );\n";
-    } else {
+    } 
+    elsif ($javaType eq "Date"){
+	$line .= "tableAtts.put(\"$att\", new GUSTableAttribute(\"$att\", \"$oraType\", \"java.sql.$javaType\", $prec, $len, $scale, false, false) );\n";
+	
+    }
+    else {
 	$line .= "	    ";
 	$line .= "tableAtts.put(\"$att\", new GUSTableAttribute(\"$att\", \"$oraType\", \"java.lang.$javaType\", $prec, $len, $scale, false, false) );\n";
     }

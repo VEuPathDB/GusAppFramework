@@ -78,6 +78,19 @@ sub _cutFullQualifiedName{
 	die "Error: Fully Qualified Name not in form of GUS::Model::Schema::Owner";
     }
 }
+#input: $packageTableName is string in form of \S+.model.Schema.Name
+#returns (Schema, name)
+sub _cutPackageTableName{
+    my ($self, $packageTableName) = @_;
+
+    if ($packageTableName =~ /org.gusdb.model.(\w+).(\w+)/){
+	return ($1, $2);
+    }
+    else {
+	die "Error:  Package Table Name is not in the form of xxxxxx.model.Schema.Name";
+    }
+}
+
 
 #parentAndChildAttributes - takes in a table name, true table boolean, and extentobject 
 #of the table and outputs the list of attributes in both the parent and the child so the
