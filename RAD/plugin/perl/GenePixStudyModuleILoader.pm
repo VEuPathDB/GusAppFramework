@@ -280,8 +280,6 @@ sub createSingleGUSAssay {
   my $GPRinfo = $self->parseTabFile('GPR', $assayName);
 
 
-
-
   foreach my $some (keys %$GPRinfo) {
     my $value = $GPRinfo->{$some};
     print "$assayName: $some, $value \n";
@@ -401,6 +399,7 @@ sub createGusAssay {
 
 # gusAssayParams (or hyb params) are to be input via the Study Annotator website
 
+###############################
 
 sub createGusCy5Acquisition {
   my ($self, $assayName) = @_;
@@ -434,6 +433,8 @@ sub createGusCy5Acquisition {
   return $Cy5Acquisition;
 }
 
+###############################
+
 sub createGusCy3Acquisition {
   my ($self, $assayName) = @_;
 
@@ -462,10 +463,90 @@ sub createGusCy3Acquisition {
 
   my $Cy3Acquisition = GUS::Model::RAD3::Acquisition->new($acqParameters);
 
-  $self->log("STATUS","OK Inserted 1 row in table RAD3.Acquisition for assay $assayName channel Cy5");
+  $self->log("STATUS","OK Inserted 1 row in table RAD3.Acquisition for assay $assayName channel Cy3");
   return $Cy3Acquisition;
 }
 
-# acquistionParams are to be input via the Study Annotator website
+# acquisitionParams are to be input via the Study Annotator website
+
+###############################
+
+sub createGUSQuantification {
+  my ($self, $assayName) = @_;
+
+  # questions:
+  # - only one quantification or one for cy5 and one for cy3
+  # - acqname varies in db
+  # based on MAS5, what is needed?
 
 
+  my @gusQuantifications;
+
+  my $acqProtocolId = $self->{propertySet}->getProp("Acq_Protocol_ID");
+
+  my $protocol = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
+  $self->error("Create object failed, $acqProtocolId absent in table RAD3::Protocol")
+    unless ($protocol->retrieveFromDB);
+
+  my $tempAcqName = $protocol->getName();
+  my $acqName = "Cy5 $assayName $tempAcqName";
+
+  #my $celQuantParameters = {
+  #  protocol_id => $celProtocolId,
+  #  name => $acqName."-Affymetrix Probe Cell Analysis",
+  #  uri => $celURI
+  #};
+
+  #$celQuantParameters->{operator_id} = $celQuantOperatorId if (defined $celQuantOperatorId);
+
+  #my $celQuantification = GUS::Model::RAD3::Quantification->new($celQuantParameters);
+  #push (@gusQuantifications);
+
+  $self->log("STATUS","OK Inserted 1 rows in table RAD3.Quantification for Cy5 quantification");
+  return \@gusQuantifications;
+}
+
+###############################
+
+# put in quantificationParams through website too?
+
+sub createGUSQuantParams {
+  my ($self, $GPRinfo) = @_;
+
+  my $params = {
+    'RatioFormulations'=>1, 
+    'Wavelengths'=>1,
+    'StdDev'=>1,
+    'BackgroundSubtraction'=>1,
+    ''=>1,
+    ''=>1,
+    'Creator'=>1 # software version or use ArrayerSoftwareVersion?
+  };
+
+  my @gusQuantParams;
+  my $quantParamKeywordCnt = 0;
+  
+  my $chpProtocolId = $self->{propertySet}->getProp("Chp_Protocol_ID"); #???
+  foreach my $param (keys %$params) {
+
+    my $protocolParam = GUS::Model::RAD3::ProtocolParam->new({
+        protocol_id => $chpProtocolId, #???
+        name => $param
+    });
+
+    $self->error("Create object failed, name $param absent in table RAD3::ProtocolParam")
+      unless ($protocolParam->retrieveFromDB);
+
+    my $quantParameters = GUS::Model::RAD3::QuantificationParam->new({name => $param});
+
+    $quantParameters->{value} = $GPRinfo->{$param};
+    $quantParameters->setParent($protocolParam); # protocolParam in only needed here, so set parent here
+    
+    $quantParamKeywordCnt++;
+    push(@gusQuantParams,$quantParameters);
+  }
+
+  $self->log("STATUS","OK Inserted $quantParamKeywordCnt rows in table RAD3.QuantificationParam");
+  return \@gusQuantParams;
+}
+  
