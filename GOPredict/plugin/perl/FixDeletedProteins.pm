@@ -24,6 +24,11 @@ sub new{
     my $usage = "Recover deleted associations between proteins and GO Terms"; 
     my $easycsp =
 	[
+	
+	 {o=> 'file_path',
+	  h=> 'if set, get proteins to recover associations for from this file',
+          t=> 'boolean',
+      }, 
 	 
 	 {o=> 'recover_deleted',
 	  h=> 'used to recover deleted associations between proteins and GO Terms',
@@ -61,8 +66,14 @@ sub run {
     if ($self->getCla->{recover_deleted}){
 	
 	my $gusGoMap = $self->_makeGoMap();
-	my $proteinGoMap = $self->_getProteinGoMap();
-#	my $proteinGoMap = $self->_getProteinGoMapFromFile();
+	my $filePath = $self->getCla->{file_path};
+	my $proteinGoMap;
+	if ($filePath){
+	    $proteinGoMap = $self->_getProteinGoMapFromFile($filePath);
+	}
+	else{
+	    $proteinGoMap = $self->_getProteinGoMap();
+	}
 	$msg = $self->_findMissingProteins($proteinGoMap, $gusGoMap);
 	return $msg;
     }
@@ -86,9 +97,9 @@ sub run {
 #used for getting proteins that have no remaining associations
 sub _getProteinGoMapFromFile{
 
-    my ($self) = @_;
+    my ($self, $filePath) = @_;
     my $proteinGoMap;
-    my $remainingProteinFile = FileHandle->new("<JoanProtein") || $self->userError ("could not open file");
+    my $remainingProteinFile = FileHandle->new("$filePath") || $self->userError ("could not open $filePath");
 
     while (<$remainingProteinFile>){
 
