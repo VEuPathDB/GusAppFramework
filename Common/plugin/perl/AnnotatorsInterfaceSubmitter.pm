@@ -68,7 +68,6 @@ sub new {
 }
 
 
-
 sub run {
 	my $self  = shift;
 	open( F, $self->getCla->{'xmlfile'} ) || die($!);
@@ -77,12 +76,11 @@ sub run {
 
 
 	close F;
-	my $fact_hash= {};
-	$fact_hash = $self->parseFactObjects($self->getCla->{'specialfile'}, $self->{self_inv});
+	my $fact_hash = {};
+	$fact_hash = &parseFactObjects($self->getCla->{'specialfile'}, $self->getSelfInv);
 	my $has_evidence = 0;
 	my $remove = 0;
 
-print STDERR "HERE\n";
 	$self->getSelfInv->parseXML(\@xml);
 
 	my @children = $self->getSelfInv->getAllChildren();
@@ -96,6 +94,8 @@ print STDERR "HERE\n";
 			print STDERR "Concat prim key: " , $child->getConcatPrimKey(), "\n";
       if ($child->getClassName() eq "GUS::Model:DoTS::Gene"){
         $curr_gene = $child;  # save off the current gene...
+
+
       }
   		# add the evidence.
 			if ( $fact_hash ) {
@@ -111,7 +111,7 @@ print STDERR "HERE\n";
 							print STDERR "\t\tAdding fact: ", $fact->getClassName(), ", fact pk: ", $fact->getConcatPrimKey(), "\n";
 							# was ignoring the similarity evidence cause throws error.
 							if ($fact->getClassName() ne "GUS::Model::DoTS::Similarity"){
-								$fact->review_status_id(1);
+								$fact->setReviewStatusId(1);
 							}
               $child->addEvidence( $fact, 1, $attribute );
 							$has_evidence = 1;
@@ -130,19 +130,21 @@ print STDERR "HERE\n";
 			}
 
 			if ( $remove ) {
-				$self->getCla->{'self_inv'}->removeChild($child);
+				$self->getCla->{self_inv}->removeChild($child);
 				print STDERR $child->getClassName(), " is not changed, not submitting to db.\n";
 			} else {
 				print STDERR $child->getClassName(), " IS changed, submitting to db.\n";
         if ($child->getClassName() ne "GUS::Model::DoTS::Assembly"){
           $child->setReviewStatusId(1);
+
+
         }
 			}
 
 			$has_evidence = 0;
 			$remove = 0;
-		}
-	}
+                      }
+              }
 
 	# deal with deleted TS ids. They all will be added to a new TU which will be added to a new gene.
         # 1/0/03 just add deleted TSs to new gene GUS30 no transcript unit
@@ -151,7 +153,7 @@ print STDERR "HERE\n";
 
         my( $deleted ) = $self->getDeletedTsIds( $self->getCla->{'specialfile'} );
 	if ( $deleted ) {
-		if ($self->getCla->{'debug'} ) {
+		if ($self->getCla->{debug} ) {
 			print STDERR "Deleted TS: ", join " ", @$deleted, "\n";
 		}
 		my $new_gene = $self->createEmptyGene();
@@ -173,7 +175,7 @@ print STDERR "HERE\n";
     # MergeSplit will only be used when the old_id is deleted.
     #$ctx->{'self_inv'}->addChild( $new_tu );
 
-       $self->getCla->{'self_inv'}->addChild( $new_gene );
+       $self->getCla->{self_inv}->addChild( $new_gene );
 	}
 
 
@@ -181,8 +183,12 @@ print STDERR "HERE\n";
   # a list ref of RNA objects.
   my $added_rnas = $self->getAddedRNAObjects( $self->getCla->{'specialfile'});
 	if ( $added_rnas ) {
+
+print STDERR "Trying to add these RNAs to gene_id:$added_rnas\n";
 		foreach my $rna ( @$added_rnas ) {
-   		$self->getCla->{'self_inv'}->addChild( $rna );  #add all rnas so will be submitted.
+
+
+   		$self->getSelfInv->addChild( $rna );  #add all rnas so will be submitted.
     }
   }
 
@@ -194,22 +200,29 @@ print STDERR "HERE\n";
 
  my( $del_genes ) = $self->getGeneAndTUIdsForAddedTSs($self->getCla->{'specialfile'} );
 
+print STDERR "Geneids=$del_genes\n";
+
 #HERE Check Query Handle
 
 
   # Add the MergeSplit entries if there are deleted genes.
   # this means that genes have been merged.
 	if ( $del_genes ) {
-    my $sth = $self->getCla->{'self_inv'}->getDb()->getQueryHandle()->prepareAndExecute("select max(merge_split_group_id)+1 from MergeSplit");
+    my $sth = $self->getQueryHandle()->prepareAndExecute("select max(merge_split_group_id)+1 from dots.MergeSplit");
     if (my ($group_id) = $sth->fetchrow_array()){
       foreach my $del_gene ( @$del_genes ) {
-        next if ( $del_gene == "" );
+
+      next if ( $del_gene == "" );
+
+
         my $merge_split = GUS::Model::DoTS::MergeSplit->new({'old_id' => $del_gene,
+
+#HERE with get gene_id from database
                                        'new_id' => $curr_gene->getGeneId(),
                                        'is_merge' => 1,
                                        'merge_split_group_id' => $group_id,
                                        'table_id' => $curr_gene->getTableIdFromTableName($curr_gene->getClassName())});
-        $self->getCla->{'self_inv'}->addChild( $merge_split );
+        $self->getCla->{self_inv}->addChild( $merge_split );
       }
     } else {
       print STDERR "AnnotatorsInterfaceSubmitter: Failed to obtain merge_split_group_id, could not insert into MergeSplit Table!\n";
@@ -241,7 +254,7 @@ print STDERR "HERE\n";
 	if ( $gss ) {
 		foreach my $gs ( @$gss ) {
 			$gs->markDeleted(1);
-			$self->getCla->{'self_inv'}->addChild( $gs );
+			$self->getCla->{self_inv}->addChild( $gs );
 		}
               }
 
@@ -277,7 +290,7 @@ print STDERR "HERE\n";
 	############################################################
 
 
-        $self->getCla->{'self_inv'}->submit(); #submit all but delete of gene(s) (not anymore) and tu(s)
+        $self->getSelfInv->submit(); #submit all but delete of gene(s) (not anymore) and tu(s)
 
 
 
@@ -319,7 +332,7 @@ print STDERR "HERE\n";
 	}
 	return $message;
 
-}
+    }
 
 # gets a list ref of TS ids to be deleted.  Also get the gene_id and transcript_unit_id
 # of the cluster containing the deleted ts's.  Returns 0 if there are none.
@@ -425,7 +438,7 @@ sub getAddedRNAObjects {
 				foreach my $set ( @data ) {
 					my @data2 = split(/\|/,$set);
 					my %loadHash;
-				  #print STDERR "Adding RNA: ", $data2[0], "\n";
+				  print STDERR "Adding RNA: ", $data2[0], "\n";
 
 					$loadHash{'rna_id'} = $data2[0]; # the rna id being added
 
@@ -434,9 +447,12 @@ sub getAddedRNAObjects {
 
 	#my $transcript_unit_id = $data2[1]; # this is the new transcript_unit_id
         #file now has to have RNA_id|Gene_id ie add RNA: 36942532|gene_id
+
         my $gene_id = $data2[1]; # this is the new gene_id
 
-                                        my $rna = GUS::Model::DoTS::RNA->new(\%loadHash);
+        print STDERR "Adding RNA to gene_id: ", $data2[1], "\n";
+
+                               my $rna = GUS::Model::DoTS::RNA->new(\%loadHash);
 					$rna->retrieveFromDB(); # get existing RNA entry
         #$rna->setTranscriptUnitId($transcript_unit_id); # update the tu id, no longer now need gene_id
          $rna->setGeneId ($gene_id);
@@ -539,7 +555,7 @@ sub getGeneSynonymDeleteObjects {
 # returns a hash ref with fact object as value and primary_key as key.
 sub parseFactObjects {
 
-     my $self = shift;
+  #   my $self = shift;
 
      my ($file, $ai) = @_;
 
@@ -564,7 +580,9 @@ sub parseFactObjects {
 			#if ( $_ !~ /\</ ) { # not part of the xml so must be pk and possibly attribute.
 			if ( $_ =~ /^Evidence:/ ) { # not part of the xml so must be pk and possibly attribute.
 				if ( @xml ) {
-					$ai->parseXML(\@xml);
+print STDERR "@xml\n";
+
+				$ai->parseXML(\@xml);
 					print STDERR "XML: @xml\n";
 					undef @xml;
 					foreach my $child ( $ai->getAllChildren() ) {
@@ -590,7 +608,11 @@ sub parseFactObjects {
 		} 
 	}
 	if ( @xml ) {
-		$ai->parseXML(\@xml);
+
+print STDERR "@xml\n";
+
+
+  $ai->parseXML(\@xml);
 		print STDERR "XML: @xml\n";
 
 		foreach my $child ( $ai->getAllChildren() ) {
@@ -643,3 +665,5 @@ B<Template> is a minimal 'plug-in' GUS application.
 
 
     
+
+
