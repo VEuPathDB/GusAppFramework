@@ -1152,12 +1152,13 @@ sub substituteCDDPKs {
 
     my @cddFiles = ("fly-cdd", "worm-cdd", "yeast-cdd", "arabidopsis-cdd", "swissprot-cdd", "trembl-cdd");
     foreach my $cddFile (@cddFiles){
+      my $file = "$mgr->{pipelineDir}/similarity/$cddFile/blastSimilarity.out.gz";
+      $mgr->runCmd("gunzip $file");
+      my $infile = "$pipelineDir/similarity/$cddFile/blastSimilarity.out";
+      my $outfile = "$pipelineDir/similarity/$cddFile/blastSimilarity.out.correctPK";
+      my $logfile = "$pipelineDir/logs/$signal.log";
 
-	my $infile = "$pipelineDir/similarity/$cddFile/blastSimilarity.out";
-	my $outfile = "$pipelineDir/similarity/$cddFile/blastSimilarity.out.correctPK";
-	my $logfile = "$pipelineDir/logs/$signal.log";
-
-	my $sql = "select source_id,aa_sequence_id from dots.motifaasequence where external_database_release_id in ($smartDB,$pfamDB,$loadDB,$cogDB,$cdDB,$kogDB)";
+      my $sql = "select source_id,aa_sequence_id from dots.motifaasequence where external_database_release_id in ($smartDB,$pfamDB,$loadDB,$cogDB,$cdDB,$kogDB)";
 
 	$mgr->runCmd("cat $infile | substitutePrimKeysInSimilarity --subjectSQL \"$sql\" --verbose --gusConfigFile $gusConfigFile > $outfile 2>> $logfile");
     }
@@ -1181,7 +1182,10 @@ sub insertAllExternalProteinSimilarities {
 
 sub insertExternalProteinSimilarities {
     my ($name, $subjectTable) = @_;
-
+    if ($name =~ /prodom/) {
+      my $prodomFile = "$pipelineDir/similarity/$name/blastSimilarity.out.gz";
+      $mgr->runCmd("gunzip $file");
+    }
     my $file = "$pipelineDir/similarity/$name/blastSimilarity.out";
     $file .= ".correctPK" if ($name eq "cdd");
 
