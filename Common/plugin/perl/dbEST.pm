@@ -710,21 +710,24 @@ sub parseEntry {
   my ($M,$e) = @_;
 
   ## Parse for WashU atts
-  if (($e->{comment} =~ /Washington University Genome Sequencing Center/i)) {
-    $e->{washu_id} = $e->{est_uid};
-    $e->{est_uid} =~ /(\w+)\.\w{2}/;
-    $e->{washu_name} = $1;
-  } elsif ( $e->{est_uid} =~ /(\w+)\.[a-z]\d/) { 
+
+  if (($e->{comment} =~ /Washington University Genome Sequencing
+Center/i) || ( $e->{est_uid} =~ /([\w\-]+)\.[a-z]\d/)) {
     # probably a washu_id
-    $e->{washu_id} = $e->{est_uid};
-    #$e->{est_uid} =~ /(\w+)\.\w{2}/;
-    $e->{washu_name} = $1;
+    $e->{est_uid} =~ /([\w\-]+)\.\w{2}/;
+    my $wname = $1;
+    unless ($wname =~ /[\.\s]/) {
+      $e->{washu_id} = $e->{est_uid};
+      $e->{washu_name} = $1;
+    }
   }
+
   
-  if (length ($e->{washu_id}) > 15) {
-    $e->{washu_id} ="";
-    print STDOUT "dbest_id_est : $e->{id_est} \n";
-  }
+  
+  #if (length ($e->{washu_id}) > 15) {
+  #  $e->{washu_id} = undef;
+  #  print STDOUT "dbest_id_est : $e->{id_est} \n";
+  #}
 	
   ## Parse IMAGE clone information 
   if ($e->{clone_uid}  =~ /IMAGE\:(\d+)/) {
