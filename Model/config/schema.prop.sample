@@ -63,3 +63,8 @@ oracle_rad3=RAD3
 oracle_rad3Password=password5
 oracle_rad3Tablespace=tablespace5
 oracle_rad3IndexTablespace=tablespace5
+
+oracle_rad3ver=RAD3Ver
+oracle_rad3verPassword=password5
+oracle_rad3verTablespace=tablespace5
+oracle_rad3verIndexTablespace=tablespace5
