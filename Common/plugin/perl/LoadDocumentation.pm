@@ -134,9 +134,10 @@ sub process {
 
 		while (my @ary = $stmt->fetchrow_array() ){
 		  chomp;
-		  my $tb_id = $ary[0]; #queried table id
-		  my $att_name = $ary[1]; #queried attribute name
-		  my $html = $ary[2]; #queried html documentation
+		  my ($tb_id, $att_name, $html);
+		  $tb_id = $ary[0]; #queried table id
+		  $att_name = $ary[1]; #queried attribute name
+		  $html = $ary[2]; #queried html documentation
 		  $self->logVerbose("Query results: table_id: $tb_id\tattribute_name: $att_name\thtml_documentation: $html");
 
 		  if ($html eq $html_dc){ #documentation is identical to what is already in db - SKIP
@@ -145,20 +146,10 @@ sub process {
 		  }
 		}
 		
-		my $test_dc = $doc->getHtmlDocumentation();
-		print "\nhtml: $test_dc\n\n";
-
-		if ($html_dc eq $doc->getHtmlDocumentation()){
-		  $self->logAlert("This documentation is identical to what is already stored for attribute: $attribute_nm in table: $table_nm. Not inserted.");
-		  next;
-		}
-		else{
-		  $doc->setHtmlDocumentation($html_dc);
-		}
-
-		$countInserts++;
-	        $self->logVerbose("Set HTML Documentation");
+		$doc->setHtmlDocumentation($html_dc);
+		$self->logVerbose("Set HTML Documentation");
 		$doc->submit();
+		$countInserts++;
 	        $self->logVerbose("Submit object to database");
 		$self->undefPointerCache();
 	        $self->logVerbose("UndefPointerCache()");
