@@ -356,8 +356,8 @@ sub getReleaseId{
     my $releaseId =  $self->getCla()->{external_database_release_id}; 
     if (!$releaseId){
 	
-	$releaseId = $self->queryForReleaseId($self->getCla()->{external_database_name},
-						 $self->getCla()->{version});
+	$releaseId = $self->getExtDbRlsId($self->getCla()->{external_database_name},
+					  $self->getCla()->{version});
 	
     }
     die "you must provide --external_database_release_id on the command line, or --external_database_name and --version to query for it\n" 
