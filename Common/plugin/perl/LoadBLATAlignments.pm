@@ -59,6 +59,11 @@ sub new {
 	   t => 'int',
        },
        {
+	   o => 'gap_table_space',
+	   h => 'table space where genomic gap info is stored',
+	   t => 'string',
+       },
+       {
 	   o => 'previous_runs',
 	   h => 'Comma-separated list of algorithm_invocation_ids of previous runs; any duplicate results from these runs are ignored.',
 	   t => 'string',
@@ -198,7 +203,8 @@ sub run {
     my $reportInterval = $cla->{'report_interval'};
     my $commitInterval = $cla->{'commit_interval'};
     my $prevRuns = $cla->{'previous_runs'};
-    
+    my $gapTabSpace = $cla->{'gap_table_space'};
+
     my $queryTableId = $cla->{'query_table_id'};
     my $queryTaxonId = $cla->{'query_taxon_id'};
     my $queryExtDbRelId = $cla->{'query_db_rel_id'};
@@ -275,7 +281,7 @@ sub run {
 
 	    my $nl = &loadAlignment($dbh, $ext_genome_ver, $insertSql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
 				    $targetTableId, $targetTaxonId, $targetExtDbRelId, $qIndex, $qualityParams,
-				    $alreadyLoaded, $targetIdHash, $align, $minQueryPct);
+				    $alreadyLoaded, $targetIdHash, $align, $minQueryPct, $gapTabSpace);
 
 	    $nAlignsLoaded += $nl;
 	    $nTotalAlignsLoaded += $nl;
@@ -319,6 +325,7 @@ sub keepBestAlignments {
 	. "from DoTS.BlatAlignment "
         . "where query_table_id = $queryTableId "
 	. "and query_taxon_id = $queryTaxonId "
+	. "and query_external_db_release_id = $queryExtDbRelId "
 	. "and target_table_id = $targetTableId "
         . "and target_taxon_id = $targetTaxonId "
         . "and target_external_db_release_id = $targetExtDbRelId "
@@ -536,13 +543,13 @@ sub makeAlignmentHash {
 # of alignments (0 or 1) actually loaded.
 #
 sub loadAlignment {
-    my($dbh, $ext_genome_ver, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId, $targetTableId, $targetTaxonId,
-       $targetExtDbRelId,$qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align, $minQueryPct) = @_;
+    my($dbh, $ext_genome_ver, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
+       $targetTableId, $targetTaxonId, $targetExtDbRelId,$qIndex, $qualityParams,
+       $alreadyLoaded, $targetIdHash, $align, $minQueryPct, $gapTabSpace) = @_;
 
     my $query_id = $align->get('q_name');
     my $target_id = $align->get('t_name');
-    #HACK: the gap tables are loaded into ygan space
-    my $gapTable = 'ygan.' . $ext_genome_ver . '_' . $target_id . '_gap';
+    my $gapTable = ($gapTabSpace ? "${gapTabSpace}.${ext_genome_ver}_${target_id}_gap" : "");
 
     # Map target query name -> na_sequence_id if required
     #
@@ -560,7 +567,7 @@ sub loadAlignment {
     #
     my $origQueryId = $query_id;
     # HACK
-    $query_id = &getQueryNaSeqId($dbh, $query_id) if $queryTableId == 89;
+    $query_id = &getQueryNaSeqId($dbh, $query_id) if $queryTableId == 89 && $queryExtDbRelId != 2;
     $query_id =~ s/[^0-9]//g;
 
     # Check to see whether this alignment has already been loaded
