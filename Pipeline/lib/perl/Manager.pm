@@ -9,16 +9,16 @@ use CBIL::Util::Utils;
 #############################################################################
 
 sub new {
-    my ($class, $pipelineDir, $propertySet, $propertiesFile) = @_;
+    my ($class, $pipelineDir, $propertySet, $propertiesFile, $testNextPlugin) = @_;
 
     my $self = {};
     bless $self;
-
+    
     $self->{pipelineDir} = $pipelineDir;
     $self->{propertySet} = $propertySet;
     $self->{propertiesFile} = $propertiesFile;
     $self->{program} = basename($0);
-
+    $self->{testNextPlugin} = $testNextPlugin;
     $self->_createPipelineDir();
 
     $self->_dieIfAlreadyRunning();
@@ -27,6 +27,12 @@ sub new {
 
     $self->_setSignal("running");
 
+    if ($testNextPlugin){
+	my $msg = "***Running pipeline " . $self->{program} . "; will only run until reaching a step containing a plugin which hasn't been run.\n";
+	$msg .= "***That plugin will be tested, the results will not be committed, and the pipeline will exit\n\n";
+	print STDOUT $msg;
+    }
+ 
     my $signal = "init";
 
     return $self if $self->startStep("Initializing", $signal);
@@ -101,8 +107,12 @@ sub log {
 #                        don't skip
 sub runPlugin {
     my ($self, $signal, $plugin, $args, $msg, $doitProperty) = @_;
+    my $commit = $args;
+    if (!$self->{testNextPlugin}){
+	$commit .= " --commit";
+    }
 
-    $self->_runPlugin($signal, $plugin, "--commit $args", $msg, $doitProperty);
+    $self->_runPlugin($signal, $plugin, "$commit", $msg, $doitProperty);
 }
 
 # param $doitProperty  - the name of a property which will have value 
@@ -137,6 +147,20 @@ sub error {
     unlink "$self->{pipelineDir}/signals/running";
     die "$msg\n\n";
 }
+
+#output message, write signal
+sub exitWithMessage {
+    my ($self, $msg, $signal) = @_;
+
+    print STDERR $msg . "\n\n";
+    $self->log($msg);
+    unlink "$self->{pipelineDir}/signals/running";
+
+    $self->endStep($signal);
+
+    exit(0);
+}    
+
 
 #  param fromDir  - the directory in which fromFile resides
 #  param fromFile - the basename of the file or directory to copy
@@ -273,8 +297,13 @@ sub _runPlugin {
     chdir "$self->{pipelineDir}/plugins/$signal";
 
     $self->runCmd($cmd);
-
-    $self->endStep($signal);
+    if ($self->{testNextPlugin}){
+	print STDERR "Tested next plugin.  Check $self->{pipelineDir}/logs/$signal" . ".err and $signal" . ".out for results\n\n";
+	exit(0);
+    }
+    else{
+	$self->endStep($signal);
+    }
 }
 
 sub _getSignal {

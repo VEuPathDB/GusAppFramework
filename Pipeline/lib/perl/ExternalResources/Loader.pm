@@ -65,10 +65,13 @@ sub _parseXmlFile {
 							$resource->{url},
 							$resource->{plugin},
 							$resource->{pluginArgs},
+							$resource->{dbName},
+							$resource->{releaseDescription},
 							$commit,
 							$wgetArgs,
 							$repositoryLogFile
 						       );
+    print STDERR "Loader: release description : " . $resource->{releaseDescription} . "\n";
 
     push(@{$self->{steps}}, $loaderStep);
   }

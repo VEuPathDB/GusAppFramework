@@ -138,10 +138,13 @@ sub runSimilarity {
 }
 
 sub runMatrixOrSimilarity {
-  my ($resultFile, $inputFile, $propFile, $logFile) = @_;
-
+    my ($resultFile, $inputFile, $propFile, $logFile) = @_;
+    
     my $valid = 0;
-    if (-e $resultFile) {
+    
+    my $propfile = "$pipelineDir/similarity/$name/input/controller.prop";
+    
+  if (-e $resultFile) {
 	print "  previous (unzipped) result found\n";
 	$valid = &validateBM($inputFile, $resultFile);
 	if (!$valid) {

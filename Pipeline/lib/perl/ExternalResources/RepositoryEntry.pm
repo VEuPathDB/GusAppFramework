@@ -55,7 +55,7 @@ sub fetch {
 
 
   -d $targetDir || die "Target dir '$targetDir' does not exist\n";
-
+  
   if (!$self->{storageManager}->dirExists($self->{resourceDir})) {
     $self->{storageManager}->makeDir($self->{resourceDir})
       || die "Can't 'mkdir $self->{resourceDir}'\n";
