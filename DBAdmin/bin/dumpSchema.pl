@@ -6,13 +6,6 @@
 # Generates the Oracle DDL required to recreate the objects owned by a 
 # given schema (or schemas, in the case of GUS 3.0-compliant databases.)
 #
-# TO DO:
-#  -Dumps of controlled vocabulary tables?
-#   (everything in SReS for GUS 3.0?)
-#  -Handle GRANTing of permissions, at the very least so
-#   that the cross-schema constraints can be enabled without
-#   errors.
-#
 # Created: Mon Feb 26 20:25:15 EST 2001
 #
 # Jonathan Crabtree
@@ -666,6 +659,40 @@ if ($doAll || $masterOnly) {
 	print $fh "# create all views\n";
 	print $fh "$viewTxt\n";
 	$nf += $numSchemas;
+    }
+
+    # Once the tables have been created we have to grant REFERENCES permissions
+    # between the schemas in order to allow the creation of cross-schema constraints.
+
+    my $coreTs = &getTargetSchema('Core', \@schemas, \@targetSchemas);
+    my $sresTs = &getTargetSchema('SRes', \@schemas, \@targetSchemas);
+    my $dotsTs = &getTargetSchema('DoTS', \@schemas, \@targetSchemas);
+
+    if ($coreTs) {
+	my $password = &getTargetPassword($coreTs);
+	my @grantees = grep(!/^$coreTs$/, @targetSchemas);
+
+	print $fh "# Grant permission to reference tables in $coreTs to all other schemas\n";
+	print $fh "grantPermissions.pl --login=$coreTs --owner=$coreTs --permissions=REFERENCES ";
+	print $fh "--grantees=", join(',', @grantees), " --password=$password\n\n";
+    }
+
+    if ($sresTs) {
+	my $password = &getTargetPassword($sresTs);
+	my @grantees = grep(!/^($coreTs|$sresTs)$/, @targetSchemas);
+
+	print $fh "# Grant permission to reference tables in $sresTs to all other schemas except $coreTs\n";
+	print $fh "grantPermissions.pl --login=$sresTs --owner=$sresTs --permissions=REFERENCES ";
+	print $fh "--grantees=", join(',', @grantees), " --password=$password\n\n";
+    }
+
+    if ($dotsTs) {
+	my $password = &getTargetPassword($dotsTs);
+	my @grantees = grep(!/^$coreTs$/, @targetSchemas);
+
+	print $fh "# Grant permission to reference tables in $dotsTs to all other schemas except $coreTs\n";
+	print $fh "grantPermissions.pl --login=$dotsTs --owner=$dotsTs --permissions=REFERENCES ";
+	print $fh "--grantees=", join(',', @grantees), " --password=$password\n\n";
     }
 
     if ($doAll || $constraintsOnly || $masterOnly) {
