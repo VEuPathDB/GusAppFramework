@@ -720,6 +720,11 @@ sub parseEntry {
     #$e->{est_uid} =~ /(\w+)\.\w{2}/;
     $e->{washu_name} = $1;
   }
+  
+  if (length ($e->{washu_id}) > 15) {
+    $e->{washu_id} ="";
+    print STDOUT "dbest_id_est : $e->{id_est} \n";
+  }
 	
   ## Parse IMAGE clone information 
   if ($e->{clone_uid}  =~ /IMAGE\:(\d+)/) {
