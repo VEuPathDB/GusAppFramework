@@ -16,7 +16,7 @@
 #   --to make it consitant with new Build system
 #
 # ----------------------------------------------------------
-package RAD::DataLoad::Plugin::ArrayResultLoader;
+package GUS::RAD::Plugin::ArrayResultLoader;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 use strict;

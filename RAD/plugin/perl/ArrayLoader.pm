@@ -19,7 +19,7 @@
 #     made changes for new build system
 # 
 # ----------------------------------------------------------
-package RAD::DataLoad::Plugin::ArrayLoader;
+package GUS::RAD::Plugin::ArrayLoader;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 
