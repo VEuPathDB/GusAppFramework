@@ -46,19 +46,17 @@ sub new {
 	 {o => 'function_db_id',
 	  h => 'external_database_id of the GO Function database in SRes.ExternalDatabase',
 	  t => 'int',
-	  r => 1,
       },
+	 
 	 {o => 'process_db_id',
 	  h => 'external_database_id of the GO Process database in SRes.ExternalDatabase',
 	  t => 'int',
-	  r => 1,
       },
+
 	 {o => 'component_db_id',
 	  h => 'external_database_id of the GO Component database in SRes.ExternalDatabase',
 	  t => 'int',
-	  r => 1,
       },
-	 
 	 
 	 {o=> 'file_path',
 	  h=> 'location of .ontology files to read',
@@ -586,12 +584,34 @@ sub __getRelationshipTypeIds{
 sub __loadExtDbIds{
 
     my ($self) = @_;
-    $self->{branchInfo}->{function}->{db_id} = $self->getCla->{function_db_id};
-    $self->{branchInfo}->{process}->{db_id} = $self->getCla->{process_db_id};
-    $self->{branchInfo}->{component}->{db_id} = $self->getCla->{component_db_id};
-
+    
+    $self->__loadExtDbId("function", "GO Function");
+    $self->__loadExtDbId("component", "GO Component");
+    $self->__loadExtDbId("process", "GO Process");
 
 }
+
+
+sub __loadExtDbId{
+    my ($self, $branch, $name) = @_;
+
+    my $queryHandle = $self->getQueryHandle();
+
+    my $sth = $queryHandle->prepare("Select external_database_id from sres.externaldatabase where name = ?");
+    
+    my $db_id = $branch . "_db_id";
+    if (!($self->getCla->{$db_id})){
+	$sth->execute($name);
+	my ($id) = $sth->fetchrow_array();
+	$self->{branchInfo}->{$branch}->{db_id} = $id;
+	
+    }
+    else{
+	$self->{branchInfo}->{$branch}->{db_id} = $self->getCla->{$db_id};
+    }
+}
+
+
 
 
 
