@@ -3,12 +3,13 @@ package GUS::Pipeline::ExternalResources::LoaderStep;
 use strict;
 use GUS::Pipeline::ExternalResources::RepositoryEntry;
 
-my $DBNAME_MACRO = "\%DATABASE_NAME\%";
-my $DBVERSION_MACRO = "\%REPOSITORY_VERSION\%";
+my $DBNAME_MACRO = "\%EXT_DB_NAME\%";
+my $DBVERSION_MACRO = "\%EXT_DB_RLS_VER\%";
 
 sub new {
   my ($class, $repositoryDir, $resource, $version, $targetDir, $unpackers,
-      $url, $plugin, $pluginArgs, $dbName, $releaseDescription, $commit, 
+      $url, $plugin, $pluginArgs, $extDbName, $extDbRlsDescrip, 
+      $extDbRlsVer, $commit, 
       $dbCommit, $wgetArgs, $repositoryLogFile) = @_;
 
   my $self = {};
@@ -20,8 +21,9 @@ sub new {
 							     $wgetArgs,
 							     $repositoryLogFile);
   
-  $self->{dbName} = $dbName;
-  $self->{description} = $releaseDescription;
+  $self->{extDbName} = $extDbName;
+  $self->{extDbRlsDescrip} = $extDbRlsDescrip;
+  $self->{extDbRlsVer} = $extDbRlsVer;
   $self->{targetDir} = $targetDir;
   $self->{unpackers} = $unpackers;
   $self->{plugin} = $plugin;
@@ -54,19 +56,19 @@ sub run {
 sub _handleDatabaseInfo {
   my ($self, $mgr, $signalBase, $resource, $version) = @_;
 
-    my $dbPluginArgs = "--name \'$self->{dbName}\' $self->{dbCommit}";
+    my $dbPluginArgs = "--name \'$self->{extDbName}\' $self->{dbCommit}";
 
     $mgr->runPluginNoCommit("createDb_${signalBase}", 
 			    "GUS::Common::Plugin::InsertNewExternalDatabase",
 			    $dbPluginArgs, 
-			    "Creating database entry for $resource");
+			    "Inserting/checking external database info for $self->{extDbName}");
 
-    my $releasePluginArgs = "--database_name \'$self->{dbName}\' --database_version \'$version\' --description \'$self->{description}\' $self->{dbCommit}";
+    my $releasePluginArgs = "--database_name \'$self->{extDbName}\' --database_version \'$self->{extDbRlsVer}\' --description \'$self->{extDbRlsDescrip}\' $self->{dbCommit}";
 
     $mgr->runPluginNoCommit("createRelease_${signalBase}",
 			    "GUS::Common::Plugin::InsertNewExtDbRelease",
 			    $releasePluginArgs,
-			    "Creating database release for $resource $version");
+			    "Inserting/checking external database release for $self->{extDbName} $self->{extDbRlsVer}");
 }
 
 
@@ -96,14 +98,12 @@ sub _loadData {
 
     $self->_validatePluginDbArgs();
 
-    $self->{pluginArgs} =~ s/$DBNAME_MACRO/$self->{dbName}/;
-    $self->{pluginArgs} =~ s/$DBVERSION_MACRO/$version/;
-
-    my $pluginDbArgs = " --external_database_name \'$self->{dbName}\' --version \'$version\'";
+    $self->{pluginArgs} =~ s/$DBNAME_MACRO/$self->{extDbName}/;
+    $self->{pluginArgs} =~ s/$DBVERSION_MACRO/$self->{extDbRlsVer}/;
 
     ## handle commit ourselves
     $mgr->runPluginNoCommit("load_${signalBase}", $self->{plugin}, 
-			    "$self->{pluginArgs} $pluginDbArgs $self->{commit}",
+			    "$self->{pluginArgs} $self->{commit}",
 			    "Loading $resource $version");
 }
 
@@ -115,7 +115,7 @@ sub _validatePluginDbArgs {
     my $resource = $self->{repositoryEntry}->getResource();
     if (!($pluginArgs =~ /$DBNAME_MACRO/ && 
 	  $pluginArgs =~ /$DBVERSION_MACRO/)){
-      die ("error in resource $resource: attribute dbName specified, but database name and version macros not found in plugin args");
+      die ("error in resource $resource: attribute extDbName specified, but database name and version macros not found in plugin args");
     }
 }
 
