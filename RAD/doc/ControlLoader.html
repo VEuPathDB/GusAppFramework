@@ -1,6 +1,6 @@
 <HTML>
 <HEAD>
-<TITLE>GUS::RAD::Plugin::ControlLoader.pm</TITLE>
+<TITLE>ProcessedResultLoader.pm</TITLE>
 <LINK REV="made" HREF="mailto:bhcompile@porky.devel.redhat.com">
 </HEAD>
 
@@ -48,13 +48,13 @@
 <HR>
 <H1><A NAME="description">DESCRIPTION</A></H1>
 <PRE>
-    This is a plug-in that loads control information on a given array (spotted microarray and oligonucleotide array) data into RAD3.control table. The plug-in assumes that the array information has already been loaded into the appropriate view(s) of (Composite)ElementImp.</PRE>
+    The plug-in loads information on the controls on a given array (spotted microarray and oligonucleotide array) data into the RAD3.control table. And it assumes that the array information has already been loaded into the appropriate view(s) of (Composite)ElementImp.</PRE>
 <P>
 <HR>
 <H1><A NAME="arguments">ARGUMENTS</A></H1>
 <P><STRONG>--data_file</STRONG> <EM>data_file</EM>  [require the absolute pathname]</P>
 <PRE>
-    The file contains the values for attributes in Control also the mapping information from (composite)element identifiers to attributes in RAD3.Control for all those (composite)elements on the array which represents controls.</PRE>
+    The file containing the mapping information from (composite)element identifiers to attributes in RAD3.Control for all those (composite)elements on the array which represent controls.</PRE>
 <P><STRONG>--array_id</STRONG> <EM>array_id</EM>  [require must be one of array_id in RAD3::Array table]</P>
 <PRE>
     The identifier in RAD3.Array of the array whose controls are being loaded. set value of the array_id in ElementImp or CompositeElementImp table in order to determine the element_id or composite_element_id for setting the row_id in control table</PRE>
@@ -66,7 +66,7 @@
 <P><STRONG>--c_subclass_view</STRONG> <EM>c_subclass_view</EM>  [optional, must be provided is e_subclass_view is not provided, must be one of view name for RAD3::CompositeElementImp table]
     The name of the view of RAD3.CompositeElementImp to which Control.table_id should point for every control loaded in this run, if the controls refer to composite_elements on the array. It is being used for determining the composite_element_id for setting the row_id in control table if e_subclass_view not set</P>
 <P><STRONG>--posOption</STRONG> <EM>posOption</EM>  [optional, default is 1, can be 1, 2 or 3]
-    using when c_sublass_view equal to ``ShortOligoFamily'', if 1, then using ``name'' column in data_file as probe set identifier; if 2, then using ``external_database_release_id'' and ``source_id'' as probe set identifier; if 3, then using ``name'', ``external_database_release_id'' and ``source_id'' as probe set identifier.</P>
+    to be used when c_sublass_view is set to ``ShortOligoFamily'', to specify what the data_file uses as probe-set identifier: set to 1 if ``name'' is used, set to 2 if the pair (external_database_release_id, and source_id) is used, set to 3 if the triplet (name, external_database_release_id and source_id) is used.</P>
 <P><STRONG>--debug</STRONG>
     Debugging output.</P>
 <P><STRONG>--help</STRONG>
