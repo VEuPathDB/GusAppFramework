@@ -182,9 +182,9 @@ print STDERR scalar(@diffArray)";
 
 }
 
-
-
 }
+
+
 
 #check to see if all previous evidence still valid
   #   foreach my $target_id(@DTSasEvidenceTarget)  {
@@ -197,7 +197,7 @@ print STDERR scalar(@diffArray)";
 
       #    my $dbh = $self->getQueryHandle();
 
-      #   my $rows = $dbh->do("delete from dots.evidence where target_id = $target_id and attribute_name = 'full_length_CDS'");
+      # my $rows = $dbh->do("delete from dots.evidence where target_id = $target_id and attribute_name = 'full_length_CDS'");
 
       #   print "DT.$target_id Evidence deleted\n";
 
