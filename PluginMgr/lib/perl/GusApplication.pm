@@ -216,7 +216,7 @@ ga [<mode>] <plugin-class-name> [<options>]
 
   +create  - create rows for Core.Algorithm and Core.AlgorithmImplementation.
 
-	+update  - create a new Core.AlgorithmImplementation for and existing
+  +update  - create a new Core.AlgorithmImplementation for and existing
              Core.Algorithm.
 
   +history - list any Core.Algorithm, Core.AlgorithmImplementation, and
@@ -224,13 +224,13 @@ ga [<mode>] <plugin-class-name> [<options>]
 
 For example,
 
-  ga UpdateGusFromXML --file my_new_data.xml --commit
+  ga GUS::Common::Plugin::UpdateGusFromXML --file my_new_data.xml --commit
 
 The legal options depend on the mode and plugin.  To get help use a command like this:
 
   ga +update --help
 
-  ga UpdateGusFromXML --help
+  ga GUS::Common::Plugin::UpdateGusFromXML --help
 
 USAGE
 
