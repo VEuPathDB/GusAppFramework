@@ -197,14 +197,14 @@ sub makeNewReleaseId{
     my $newRelease = GUS::Model::SRes::ExternalDatabaseRelease->new({
 	external_database_id => $id,
 	version => $dbVer,
-	download_url => self->getCla()->{download_url},
-	id_type => self->getCla()->{id_type},
-	id_url => self->getCla()->{id_url},
-	secondary_id_type => self->getCla()->{secondary_id_type},
-	secondary_id_url => self->getCla()->{secondary_id_url},
-	description => self->getCla()->{description},
-	file_name => self->getCla()->{file_name},
-	file_md5 => self->getCla()->{file_md5},
+	download_url => $self->getCla()->{download_url},
+	id_type => $self->getCla()->{id_type},
+	id_url => $self->getCla()->{id_url},
+	secondary_id_type => $self->getCla()->{secondary_id_type},
+	secondary_id_url => $self->getCla()->{secondary_id_url},
+	description => $self->getCla()->{description},
+	file_name => $self->getCla()->{file_name},
+	file_md5 => $self->getCla()->{file_md5},
 	
     });
 
