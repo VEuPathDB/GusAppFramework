@@ -1,7 +1,10 @@
+- protect ga +meta from inserting an existing revision of GusApplication
 
-- use POD for api docs.
+- add getSubclass($id, $superclasstablename) method to plugin.pm
 
 DONE
+
+- use POD for api docs.
 
 - finish implementing the log methods: do the logging based on user's log level
 
