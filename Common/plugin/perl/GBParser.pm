@@ -84,7 +84,7 @@ sub new {
      },
      {o => 'db_rel_id',
       t => 'int',
-      h => 'GUS ExternalDatabaseRelease id.',
+      h => 'GUS ExternalDatabaseRelease id for the GenBank release being loaded.',
      },
      {o => 'start',
       t => 'int',
@@ -139,6 +139,9 @@ sub run {
   }
   if (!$ctx->{cla}->{file}) {
     die "--file is a required argument. See --help option\n";
+  }
+  if (!$ctx->{cla}->{db_rel_id}) {
+    die "--db_rel_id is a required argument. See --help option\n";
   }
   $ctx->{cla}->{failTolerance} = 100;
 
