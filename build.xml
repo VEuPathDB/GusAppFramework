@@ -109,8 +109,7 @@
       <echo message="generating java objects"/>
 
       <exec executable="generateGusObjects" 
-            failonerror="true"
-            output="${projectsDir}/GUS/Model/doc/javaGenLog">
+            failonerror="true">
         <arg value="--javaOrPerl=java"/>
       </exec>
 
@@ -171,7 +170,6 @@
 
      <exec executable="generateGusObjects" 
            failonerror="true">
-
        <arg value="--javaOrPerl=perl"/>
      </exec>
    </target>  
@@ -252,6 +250,21 @@
       <property name="project" value="GUS"/>
       <property name="component" value="ObjRelP"/>
     </ant>
+
+    <!-- Hack to do replace immediately after ObjRelP is installed -->
+    <!-- so objects can be generated without breaking              -->
+
+    <replace dir="${targetDir}/bin" 
+             propertyFile="${targetDir}/config/install.prop" > 
+      <include name="**/*" />
+      <replacefilter token="@perl@" property="perl"/>
+    </replace> 
+
+    <!-- because the replace task clobbers permissions.  see ant bug #5661 -->
+    <chmod perm="+x">
+      <fileset dir="${targetDir}/bin"/>
+    </chmod>
+
   </target>  
 
 
