@@ -42,6 +42,12 @@ PLUGIN_RESTART
 PLUGIN_FAILURE_CASES
 
   my $notes = <<PLUGIN_NOTES;
+This plugin loads a phylogenetic profile data file with the following format:
+first record: a list of taxon_ids, separated by greater-than (">") characters.
+subsequent records: one profile per record in this format:
+><species>|<na sequence id><tab><e-value><space>[. . .]
+example record:
+>pfalciparum|101717199	1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 0.085 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 0.053 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 1.000 0.034 0.087 0.047 1.000 0.043 1.000 0.007 1.000 1.000 
 PLUGIN_NOTES
 
   my $documentation = { purpose=>$purpose,
@@ -113,19 +119,9 @@ sub loadPhyloProfileFile {
     chomp;
 
     my ($geneDoc, $valueString) = split(/	/, $_);
-#    my $sourceId = (split(/\|/, $geneDoc))[3];
     my $naFeatureId = (split(/\|/, $geneDoc))[1];
 
-#    my $sql = <<SQL;
-#       SELECT na_feature_id
-#       FROM plasmodb_42.plasmodb_genes
-#       WHERE source_id='$sourceId'
-#SQL
-#    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
-#    my ($naFeatureId) = $sth->fetchrow_array();
-
     if (!$naFeatureId) {
-#      print STDERR "Error: can't get na_feature_id for source_id $sourceId\n";
       print STDERR "Error: can't get na_feature_id from geneDoc \"$geneDoc\"\n";
       next;
     }
