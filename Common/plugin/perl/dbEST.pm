@@ -203,7 +203,7 @@ sub run {
   my $st1 = $dbh->prepareAndExecute("select count(est.id_est) from est\@dbest est, library\@dbest library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
   my $numDbEST = $st1->fetchrow_array();
   my $taxon_id = $M->getCla()->{taxon_id};
-  my $st2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l where l.taxon_id = 14 and l.library_id = e.library_id");
+  my $st2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l where l.taxon_id = $taxon_id and l.library_id = e.library_id");
   my $finalNumGus = $st2->fetchrow_array();
   my $diff = ($numDbEST-$finalNumGus);
   $M->logAlert("Total number id_est for taxon $taxon_id in dbEST:$numDbEST\nTotal number id_est in dots.EST:$finalNumGus\nDifference dbEST and dots:$diff\n");
@@ -835,7 +835,7 @@ sub setTableCaches {
   # Taxon cache
   # changed to get all organism names for human and mouse
   # all else is on-demand cache
-  $q = 'select name, taxon_id  from sres.TaxonName where taxon_id in (8,14)';
+  $q = 'select name, taxon_id  from sres.TaxonName where taxon_id in (8,14,45,211)';
   $A = $M->sql_get_as_array_refs($q);
   foreach my $r (@$A) {
     $M->{taxon}->{$r->[0]} = $r->[1];
