@@ -272,7 +272,9 @@ sub run {
     # keys of the $sim_dict hash are the motifaasequence ids.
     #
     my $sim_dict = $self->GetSimilarityDictionary( $aa_filter, $processedMotifs );
-            
+
+    my $badMotifs = $self->__getBadMotifs();
+    
     my $id_motif_aa_sequences = 
 	scalar @{$self->getCla->{motifs}} > 0 ?
 	$self->getCla->{motifs} :
@@ -283,10 +285,15 @@ sub run {
 
     
     foreach my $id_motif_aa_sequence ( @{ $id_motif_aa_sequences } ) {
-
+	
 	# Get the similarities for this motif.
 	my $gus_similarities = $sim_dict->{ $id_motif_aa_sequence };
-	
+	my $databaseId = $gus_similarities->[0]->{databaseId};
+	my $sourceId =  $gus_similarities->[0]->{sourceId};
+	if ($badMotifs->{$databaseId}->{$sourceId}){
+	    $self->log("skipping motif $sourceId from database id $databaseId since it has been flagged");
+	    next;
+	}
 	# Save off the number of similarities for this motif - convenience.
 	my $n_sim = scalar @{ $gus_similarities };
 	#DTB: TAKE OUT ADDITIONS TO LOGS
@@ -309,6 +316,21 @@ sub run {
     
     return "Completed Rule Generation";
     
+}
+
+sub __getBadMotifs{
+
+    my ($self) = @_;
+
+    my $badMotifs;
+
+    my $sql = "select source_id, external_database_id
+               from DoTS.RejectedMotif";
+    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+    while (my ($motifSourceId, $databaseId) = $sth->fetchrow_array()){
+	$badMotifs->{$databaseId}->{$motifSourceId} = 1;
+    }
+    return $badMotifs;
 }
 
 
@@ -626,6 +648,8 @@ sub GetSimilarityDictionary {
     my $queryHandle = $self->getQueryHandle();
     # dictionary of motifs
     my $rv;
+
+    my $databaseMap;
     
     my $sql_filter = $self->GetSimilarityFilterSQL();
     
@@ -654,6 +678,8 @@ sub GetSimilarityDictionary {
 				    's.total_match_length',
 				    'q.description',
 				    'q.name',
+				    'm.external_database_release_id',
+				    'm.source_id',
 				    )
 				  ),
 			    "\n  from",
@@ -682,7 +708,7 @@ sub GetSimilarityDictionary {
 	    }
 	    #figure out better way to do this
 	    my $sth = $queryHandle->prepareAndExecute($sql);
-	    while ( my ($similarityId, $subjectId, $queryId, $queryTableId, $pValueMant, $pValueExp, $numberPositive, $totalMatchLength, $description, $name) = $sth->fetchrow_array() ) {
+	    while ( my ($similarityId, $subjectId, $queryId, $queryTableId, $pValueMant, $pValueExp, $numberPositive, $totalMatchLength, $description, $name, $releaseId, $sourceId) = $sth->fetchrow_array() ) {
 		if ($processedMotifs->{$subjectId}){
 		    $self->logVerbose ("not adding $subjectId to similarity dictionary");
 		    next;
@@ -698,7 +724,8 @@ sub GetSimilarityDictionary {
 		$similarityHash->{ total_match_length} = $totalMatchLength;
 		$similarityHash->{ description } = $description;
 		$similarityHash->{ name} = $name;
-		
+		$similarityHash->{sourceId} = $sourceId;
+
 		$similarityHash->{pValue} = $similarityHash->{pvalue_mant} * 10**$similarityHash->{pvalue_exp};
 		
 		if ( defined $self->getCla->{ sliding } ) {
@@ -711,6 +738,13 @@ sub GetSimilarityDictionary {
 		    }
 		}
 		
+		my $databaseId = $databaseMap->{$releaseId};
+		if (!$databaseId){
+		    $databaseId = $self->getDatabaseIdForRelease($releaseId);
+		    $databaseMap->{$releaseId} = $databaseId;
+		}
+		$similarityHash->{databaseId} = $databaseId;
+	
 		push( @{ $rv->{ $similarityHash->{ subject_id } } }, $similarityHash );
 		
 	    }
@@ -732,6 +766,16 @@ sub GetSimilarityDictionary {
     # return value
     $rv
     }
+
+sub getDatabaseIdForRelease{
+
+    my ($self, $releaseId) = @_;
+    my $sql = "select external_database_id from sres.externaldatabaserelease where external_database_release_id = $releaseId";
+    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+    while (my ($dbId) = $sth->fetchrow_array()){
+	return $dbId;   
+    }
+}
 
 sub getGusTableId {
     my ($self, $owner, $table) = @_;
@@ -789,22 +833,20 @@ sub IntersectGoFunctions {
     {
 	$self->log("getting ids for " . scalar(@$similarities) . " sims for this motif\n");
 	
-	
 	my $sql = "select ga.go_term_id from DoTS.GOAssociation ga,  
-                       DoTS.GOAssociationInstance gai 
+                       DoTS.GOAssociationInstance gai, SRes.GOTerm gt 
                        where ga.table_id = $queryTableId
                        and ga.is_not != 1
                        and ga.row_id in ?                
+                       and gt.go_term_id = ga.go_term_id 
+                       and gt.external_database_release_id = $goDbRelId
                        and gai.go_association_id = ga.go_association_id
-                       and gai.external_database_release_id = $goDbRelId
                        and gai.is_primary = 1";            
 		
 	
 	my $queryHandle = $self->getQueryHandle();
 	
 	$self->log( 'SQL', 'get_ids', $sql );
-	
-	
 	
 	my $sth = $queryHandle->prepare($sql);
 	foreach my $gus_similarity ( @$similarities ) {
