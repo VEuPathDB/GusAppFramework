@@ -117,12 +117,21 @@ sub process {
 	if ($db->checkTableExists($table_nm)){ # if table exists
 
 	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
-
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
 	        $self->logVerbose("Set table ID");
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
 	        $self->logVerbose("Set attribute name");
 #		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
+
+		## want to skip identical documentation - query to see if already stored
+		my $query = "SELECT DISTINCT database_documentation_id FROM Core.DatabaseDocumentation WHERE table_id=$table_nm AND attribute_name=$attribute_nm AND html_documentation=$html_dc)";
+		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
+		my $stmt = $dbh->prepare($query);
+		$stmt->execute();
+		if ( my($id) = $stmt->fetchrow_array()) {
+		  $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
+		  return;
+		}
 		
 		my $test_dc = $doc->getHtmlDocumentation();
 		print "\nhtml: $test_dc\n\n";
@@ -142,6 +151,7 @@ sub process {
 		$self->undefPointerCache();
 	        $self->logVerbose("UndefPointerCache()");
 	    }
+
 	    elsif ($attribute_nm == "NULL" || $attribute_nm == "null"  || $attribute_nm == ""){ #attribute name is null
 	      	$doc->setTableId($doc->getTableIdFromTableName($table_nm));
 	        $self->logVerbose("Set table ID");
@@ -153,6 +163,7 @@ sub process {
 		  $self->logAlert("This documentation is identical to what is already stored for table: $table_nm. Not inserted.");
 		  next;
 		}
+
 		else{
 		  $doc->setHtmlDocumentation($html_dc);
 		}
@@ -164,11 +175,13 @@ sub process {
 		$self->undefPointerCache();
 	        $self->logVerbose("UndefPointerCache()");
 	    }
+
 	    else{ # no attribute name in table
 		$self->logAlert("Attribute $attribute_nm does not exist in $table_nm");
 		next;
 	    }
 	}
+
 	else { # no table name in db
 	    $self->logAlert("Table $table_nm does not exist in database");
 	    next;
