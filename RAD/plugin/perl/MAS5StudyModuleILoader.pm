@@ -646,13 +646,13 @@ sub createGUSQuantParams {
     my $quantParameters = GUS::Model::RAD3::QuantificationParam->new({name => $param});
 
     if ($param eq "TGT") {   # HARD-CODED. Replace 'TGT' by your RAD3.ProtocolParam.name for 'TGT Value'.
-      $quantParameters->{value} = $RPTinfo->{"TGT Value:"}; 
+      $quantParameters->{$param} = $RPTinfo->{"TGT Value:"}; 
 
     } elsif ($param eq "SF") {    # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
-      $quantParameters->{value} = $RPTinfo->{"Scale Factor (SF):"}; 
+      $quantParameters->{$param} = $RPTinfo->{"Scale Factor (SF):"}; 
 
     } else {
-      $quantParameters->{value} = $RPTinfo->{"$param:"};
+      $quantParameters->{$param} = $RPTinfo->{"$param:"};
     }
     
     $quantParameters->setParent($protocolParam);  # protocolParam in only needed here, so set parent here
