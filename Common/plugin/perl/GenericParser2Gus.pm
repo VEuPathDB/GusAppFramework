@@ -14,6 +14,7 @@
 #
 # Original by Arnaud Kerhornou (GUSdev)
 # Modified by Paul Mooney (GUS3.0)
+# Modified for PlasmoDB by Trish Whetzel
 # ----------------------------------------------------------
 
 #
@@ -212,7 +213,7 @@ sub run {
     # process the bioperl sequence objects
     #
     foreach my $bioperl_sequence (@bioperl_seqs) {
-        print "processing bioperl sequence, " . $bioperl_sequence->display_id . "...\n";
+        print "Processing bioperl sequence, " . $bioperl_sequence->display_id . "...\n";
         $bioperl2Gus->setBioperlSequence ($bioperl_sequence);
 
         # Check if sequence is already in the database
@@ -246,7 +247,7 @@ sub run {
             }
         }
 
-        print STDERR "Getting all featurs for the sequence.\n";
+        print STDERR "Getting all features for the sequence.\n";
 
         my @bioperl_features = $bioperl_sequence->all_SeqFeatures;
 
