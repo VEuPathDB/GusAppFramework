@@ -9,7 +9,7 @@ use GUS::ObjRelP::DbiDatabase;
 use GUS::Common::GusConfig;
 
 my ($verbose, $sql, $dbLogin, $dbPassword, $configModule, $tempTableName,
-    $requestedCols, $listColumns, $mappedToName, $primaryKeyName);
+    $requestedCols, $listColumns, $mappedToName, $primaryKeyName, $primaryKeyPrefix);
 
 &GetOptions("verbose!"=> \$verbose,
 	    "sql=s" => \$sql,
@@ -18,10 +18,12 @@ my ($verbose, $sql, $dbLogin, $dbPassword, $configModule, $tempTableName,
 	    "configModule=s" => \$configModule,
 	    "tempTableName=s" => \$tempTableName,
 	    "primaryKeyColumnName=s" => \$primaryKeyName,
+	    "primaryKeyPrefix=s" => \$primaryKeyPrefix,
 	    "mappedToColumnName=s" => \$mappedToName,
 	    "listColumns!" => \$listColumns,
 	    "requestedColumns=s" => \$requestedCols);
 
+$primaryKeyPrefix = '' unless $primaryKeyPrefix;
 $primaryKeyName = 'primary_key' unless $primaryKeyName;
 $mappedToName = 'mapped_to' unless $mappedToName;
 
@@ -55,7 +57,7 @@ eval {
   &makeTempTable($tempTableName, $db, $sql, $primaryKeyName, 
 		 $mappedToName) if $sql;
 
-  $report->print($primaryKeyName, \@requestedColumnsList, $tempTableName,
+  $report->print($primaryKeyName, $primaryKeyPrefix, \@requestedColumnsList, $tempTableName,
 		 $db, $verbose);
 };
 
@@ -100,8 +102,9 @@ USAGE
    gusreport --configModule modulename [--sql sqlstring] --dbLogin login 
              --dbPassword password --tempTableName name 
              --requestedColumns columnslist
-             [--primaryKeyColName columnname]
-             [--mappedToColName columnname]
+             [--primaryKeyColumnName columnname]
+             [--primaryKeyPrefix prefix]
+             [--mappedToColumnName columnname]
 
 
 DESCRIPTION
@@ -140,8 +143,11 @@ There are two ways to provide your result set:
 
 In either case, you must provide the --tempTableName argument.
 
-Use the optional --primaryKeyColName arg to specify the name of the primary 
+Use the optional --primaryKeyColumnName arg to specify the name of the primary 
 key column.  By default it is 'primary_key'.
+
+use the optional --primaryKeyPrefix to specify a string that should be prepended
+to the primary key column values.  By default it is '', the empty string.
 
 Use the optional --mappedToKeyColName arg to specify the name of the mapped
 to column.  By default it is 'mapped_to'.

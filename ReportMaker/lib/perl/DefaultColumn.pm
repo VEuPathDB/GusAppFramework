@@ -2,14 +2,18 @@ package GUS::ReportMaker::DefaultColumn;
 
 use strict;
 
+# $formatFn  An optional formatting function to apply to the column value 
+#            before displaying it.  Accepts a string and returns a string.  
+#
 sub new {
-  my ($class, $name, $description) = @_;
+  my ($class, $name, $description, $formatFn) = @_;
 
   my $self = {};
   bless($self, $class);
 
   $self->{name} = $name;
   $self->{description} = $description;
+  $self->{formatFn} = $formatFn;
 
   return $self;
 }
@@ -33,13 +37,24 @@ sub getDescription {
 
 sub print {
   my ($self, $answerRow) = @_;
+  my $value = '';
 
-  my $value = '--';
   if ($answerRow->{$self->{name}}) {
     $value = join(",", @{$answerRow->{$self->{name}}});
     $value =~ s/\t/ /g;    # just in case
   }
-  $value = '--' unless $value =~ /\S+/;
+
+  if ($value =~ /\S/) {
+
+      # Apply formatting function if we have one
+      my $formatFn = $self->{formatFn};
+      if (defined($formatFn)) {
+	  $value = &$formatFn($value);
+      }
+  } else {
+      $value = '--';
+  }
+
   print "$value\t";
 }
 

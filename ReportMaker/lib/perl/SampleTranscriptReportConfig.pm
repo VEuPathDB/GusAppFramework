@@ -20,32 +20,33 @@ sub createReport {
 
   my $lengthCol =
     GUS::ReportMaker::DefaultColumn->new("Length",
-					 "Length of the assembly consensus sequence (i.e., predicted mRNA sequence)");
+					 "Length of the transcript's predicted mRNA sequence");
   push(@columns, $lengthCol);
 
   my $seqsInAssemCol =
     GUS::ReportMaker::DefaultColumn->new("SeqsInAssem",
-					 "Number of sequences (ESTs and mRNAs) in the assembly");
+					 "Number of sequences (ESTs and mRNAs) in the assembly on which the transcript is based");
   push(@columns, $seqsInAssemCol);
 
   my $containsmRNACol =
     GUS::ReportMaker::DefaultColumn->new("ContainsMRNA",
-					 "Whether the assembly contains at least one mRNA sequence (returns 0 or 1)");
+					 "Whether the assembly on which the transcript is based contains at least one mRNA sequence (0 or 1)");
   push(@columns, $containsmRNACol);
 
   my $locusLinkCol =
     GUS::ReportMaker::DefaultColumn->new("LocusLink",
-					 "LocusLink entries linked to the assembly");
+					 "LocusLink entries linked to the transcript");
   push(@columns, $locusLinkCol);
 
   my $geneCardsCol =
     GUS::ReportMaker::DefaultColumn->new("GeneCards",
-					 "GeneCards entries linked to the assembly (human transcripts only)");
+					 "GeneCards entries linked to the transcript (human transcripts only)");
   push(@columns, $geneCardsCol);
 
   my $dotsGeneCol =
     GUS::ReportMaker::DefaultColumn->new("DoTSGene",
-					 "DoTS Gene that this assembly belongs to");
+					 "DoTS Gene to which the transcript belongs",
+					 sub { my $geneId = shift; return "DG.$geneId"; });
   push(@columns, $dotsGeneCol);
 
   my $geneSymbolCol =
@@ -55,7 +56,7 @@ sub createReport {
 
   my $descriptionCol =
     GUS::ReportMaker::DefaultColumn->new("Description",
-					 "Description of the assembly generated based on similarity to known proteins");
+					 "Description of the transcript generated based on its similarity to known proteins");
   push(@columns, $descriptionCol);
 
   my $organismCol =
@@ -75,7 +76,7 @@ sub createReport {
 
   my $motifsCol =
     GUS::ReportMaker::DefaultColumn->new("Motifs",
-					 "Protein motifs/domains found in the mRNA with p-value <= 10E-50");
+					 "Protein motifs/domains found in the transcript's predicted mRNA with p-value <= 10E-50");
   push(@columns, $motifsCol);
 
   my $mgiCol =
