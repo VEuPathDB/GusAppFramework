@@ -17,14 +17,17 @@ sub new {
     [{o => 'file',
       t => 'string',
       h => 'read condensed results from this file',
+      r => 1,
      },
      {o => 'subjectTable',
       t => 'string',
       h => 'subjects are taken from this table (schema::table format).',
+      r => 1,
      },
      {o => 'queryTable',
       t => 'string',
       h => 'queries are taken from this table (schema::table format). ',
+      r => 1,
      },
      {o => 'batchSize',
       t => 'int',
@@ -46,11 +49,11 @@ sub new {
      },
      {o => 'subjectsLimit',
       t => 'int',
-      h => 'maximum number of subjects to load / query'
+      h => 'maximum number of subjects to load per query'
      },
      {o => 'hspsLimit',
       t => 'int',
-      h => 'maximum number of hsps to load / subject'
+      h => 'maximum number of hsps to load per subject'
      },
      {o => 'minSubjects',
       t => 'int',
@@ -106,11 +109,10 @@ sub run {
   my $algInv = $self->getAlgInvocation();
   my $dbh = $self->getDb()->getDbHandle();
 
-  my %filter = &setupFilters($args);
-
   my $query_tbl_id = $algInv->getTableIdFromTableName($args->{queryTable});
   my $subj_tbl_id = $algInv->getTableIdFromTableName($args->{subjectTable});
 
+  $self->logArgs();
   $self->logCommit();
 
   print "Testing on $args->{testnumber} queries\n" if $args->{testnumber};
@@ -122,11 +124,20 @@ sub run {
 
   die "Can't open file $args->{file}" unless $fh;
 
-  while(1) {
-    my @subjects = $self->parseQueries($fh, $args->{batchSize}, \%ignore, $args,
-				       $args->{testnumber});
-    last unless @subjects;
-    $self->insertSubjects($dbh, \@subjects, $query_tbl_id, $subj_tbl_id);
+  $self->{queryCount} = 0;
+  $self->{subjectCount} = 0;
+  $self->{spanCount} = 0;
+  $self->{ignoredQueries} = 0;
+  $self->{filteredQueries} = 0;
+  $self->{filteredSubjects} = 0;
+  $self->{filteredHSPs} = 0;
+
+  my $eof;
+  while(!$eof) {
+    my $subjects;
+    ($subjects, $eof) = $self->parseQueries($fh, $args->{batchSize}, \%ignore, $args,
+					    $args->{testnumber});
+    $self->insertSubjects($dbh, $subjects, $query_tbl_id, $subj_tbl_id);
   }
 }
 
@@ -153,15 +164,23 @@ sub parseQueries {
   my $batchSpanCount = 0;
 
   my @subjects;
+  my $eof;
   while ($batchSpanCount < $batchSize) {
-    my ($queryId, $spanCount, $querySubjects, $eof) = $self->parseQuery($fh, $filter);
-    $eof = 1 if ($testnumber && $self->{queryCount} > $testnumber);
+    if ($testnumber && $self->{queryCount} >= $testnumber) {
+      $eof = 1;
+      last;
+    }
+    my ($queryId, $spanCount, $querySubjects);
+    ($queryId, $spanCount, $querySubjects, $eof) = $self->parseQuery($fh, $filter);
     last if $eof;
-    next if $ignore->{$queryId};
+    if ($ignore->{$queryId}) {
+      $self->{ignoredQueries} += 1;
+      next;
+    }
     $batchSpanCount += $spanCount;
     push(@subjects, @$querySubjects);
   }
-  return @subjects;
+  return (\@subjects, $eof);
 }
 
 sub parseQuery {
@@ -189,25 +208,32 @@ sub parseQuery {
     $queryPK = $1;
     my $subjCount = $2;
 
-    $self->{queryCount} += 1 unless $subjCount == 0;
-
-    my $ignoringQuery = ($filter->{maxSubjects} && $subjCount > $filter->{maxSubjects})
+    # filter query
+    my $filterQuery = ($filter->{maxSubjects} && $subjCount > $filter->{maxSubjects})
       || ($filter->{minSubjects} && $subjCount < $filter->{minSubjects});
+
+    if ($filterQuery) {
+      $self->{filteredQueries} += 1;
+    } else {
+      $self->{queryCount} += 1 unless $subjCount == 0;
+    }
 
     my $c = 0;
     while ($c++ < $subjCount) {
-      my ($subjSpanCount, $subject) = &parseSubject($fh, $queryPK, $filter);
+      my ($subjSpanCount, $subject) = $self->parseSubject($fh, $queryPK, $filter);
 
-      #filter
-      next if $ignoringQuery;
-      next if ($subjectsLimit && $c >= $subjectsLimit);
-      next if ($pvalueF && $subject->{pvalue} > $pvalueF);
-      next if ($pctIdentF
-	       && $subject->{number_identical}/$subject->{total_match_length}*100 <$pctIdentF);
-      next if ($matchLengthF && $subject->{total_match_length} < $matchLengthF);
+      next if ($filterQuery);
 
-      $self->{subjectCount} += 1;
-      $self->{spanCount} += $subjSpanCount;
+      # filter subject
+      if (($subjectsLimit && $c > $subjectsLimit)
+	  || ($pvalueF && $subject->{pvalue} > $pvalueF)
+	  || ($pctIdentF
+	      && $subject->{number_identical}/$subject->{total_match_length}*100 <$pctIdentF)
+	  || ($matchLengthF && $subject->{total_match_length} < $matchLengthF)) {
+	$self->{filteredSubjects} += 1;
+	next;
+      }
+
       $spanCount += $subjSpanCount;
       push(@subjects, $subject);
     }
@@ -216,7 +242,7 @@ sub parseQuery {
 }
 
 sub parseSubject {
-  my ($fh, $queryPK, $filter) = @_;
+  my ($self, $fh, $queryPK, $filter) = @_;
 
 #  Sum: 13058520:483:4e-49:1:193:175:642:2:290:126:172:0:+1
 
@@ -245,9 +271,10 @@ sub parseSubject {
   $subj{reading_frame} = $vals[13];
   $subj{reading_frame} =~ s/\D//g;   # get rid of (+-)
 
-  my $pvalueF = $filter->{subjectPvalue};
-  my $pctIdentF = $filter->{subjectPctIdent};
-  my $matchLengthF = $filter->{subjectMatchLength};
+  my $hspsLimit = $filter->{hspsLimit};
+  my $pvalueF = $filter->{hspPvalue};
+  my $pctIdentF = $filter->{hspPctIdent};
+  my $matchLengthF = $filter->{hspMatchLength};
 
   my $c = 0;
   my @subjSpans;
@@ -255,10 +282,15 @@ sub parseSubject {
     my $span = &parseSpan($fh, $filter);
 
     # filter
-    next if ($pvalueF && $span->{pvalue} > $pvalueF);
-    next if ($pctIdentF
-	     && $span->{number_identical}/$span->{match_length}*100 < $pctIdentF);
-    next if ($matchLengthF && $span->{match_length} < $matchLengthF);
+    if (($hspsLimit && $c > $hspsLimit) 
+	|| ($pvalueF && $span->{pvalue} > $pvalueF)
+	|| ($pctIdentF
+	    && $span->{number_identical}/$span->{match_length}*100 < $pctIdentF)
+	|| ($matchLengthF && $span->{match_length} < $matchLengthF)) {
+      $self->{filteredHSPs} += 1;
+      next;
+    }
+
 
     push(@subjSpans, $span);
   }
@@ -317,7 +349,8 @@ sub insertSubjects {
 
     my $simPK = &getNextId($nextIdStmt);
 
-    die "$s->{query_id} $s->{subject_id}\n" unless  $s->{pvalue_mant};
+    next if (scalar @{$s->{spans}} == 0);
+
     my @simVals = ($simPK, $s->{subject_id}, $s->{query_id},
 		   $s->{score}, undef,
 		   $s->{pvalue_mant}, $s->{pvalue_exp},
@@ -329,6 +362,7 @@ sub insertSubjects {
     $simStmt->execute(@simVals) || die $simStmt->errstr;
     $self->log("Inserting Similarity: ", @simVals) if $verbose;
 
+    $self->{subjectCount} += 1;
     if (!$noHSPs) {
       foreach my $span (@{$s->{spans}}) {
 	my @spanVals = ($simPK, $span->{match_length},
@@ -340,12 +374,13 @@ sub insertSubjects {
 			$span->{is_reversed}, $span->{reading_frame});
 	$spanStmt->execute(@spanVals) || die $spanStmt->errstr;
 	$self->log("Inserting SimilaritySpan: ", @spanVals) if $verbose;
+	$self->{spanCount} += 1;
       }
     }
 
   }
 
-  $self->log("Inserted total of: $self->{queryCount} queries, $self->{subjectCount} subjects, $self->{spanCount} HSPs so far");
+  $self->log("$self->{queryCount} Queries parsed.  Inserted $self->{subjectCount} subj, $self->{spanCount} hsp.  Filtered $self->{filteredQueries} q, $self->{filteredSubjects} subj, $self->{filteredHSPs} hsp.  Restart past $self->{ignoredQueries} q");
 
   if ($self->getArgs()->{commit}) {
     print STDERR "Committing\n";
