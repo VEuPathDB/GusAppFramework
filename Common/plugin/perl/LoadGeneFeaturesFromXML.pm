@@ -145,7 +145,7 @@ my $extDbId;  # ExternalDatabaseId
 my $projId;   # ProjectId
 my $algId;    # AlgorithmId
 my $dbh;      # database query handle
-
+my $Version;
 
 
 sub run {
@@ -483,25 +483,25 @@ sub map_asmbl_id_to_source_id {
   my $X = shift;
 
   # map supplied by BG that enforces naming convention.
-  my %map = ( 2271 => pfal_chr1,
-	      1400 => pfal_chr2,
-	      1757 => pfal_chr3,
-	      1758 => pfal_chr4,
-	      2272 => pfal_chr5,
-	      2278 => chr6,
-	      2279 => chr7,
-	      2280 => chr8,
-	      2274 => pfal_chr9,
-	      1398 => chr10,
-	      1399 => chr11,
-	      2277 => chr12,
-	      2281 => chr13_1,
-	      2282 => chr13_2,
-	      1396 => chr14,
-	      2283 => unmapped_1,
-	      2284 => unmapped_2,
-	      2285 => unmapped_3,
-	      2286 => unmapped_4,
+  my %map = ( 2271 => "pfal_chr1",
+	      1400 => "pfal_chr2",
+	      1757 => "pfal_chr3",
+	      1758 => "pfal_chr4",
+	      2272 => "pfal_chr5",
+	      2278 => "chr6",
+	      2279 => "chr7",
+	      2280 => "chr8",
+	      2274 => "pfal_chr9",
+	      1398 => "chr10",
+	      1399 => "chr11",
+	      2277 => "chr12",
+	      2281 => "chr13_1",
+	      2282 => "chr13_2",
+	      1396 => "chr14",
+	      2283 => "unmapped_1",
+	      2284 => "unmapped_2",
+	      2285 => "unmapped_3",
+	      2286 => "unmapped_4",
 	      );
   my $x = $X->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{ASMBL_ID}->{content};
 
@@ -845,7 +845,7 @@ sub TASK_FixGeneFeatures {
       # ........................................
 
       # adjust pseudogene settings.
-      $log->self("TALLY: " . 										 $gene_gus->getSourceId,
+      $self->log("TALLY: " . 										 $gene_gus->getSourceId,
 		 $gene_gus->getIsPseudo,
 		 $gene_xml->{GENE_INFO}->{IS_PSEUDOGENE});
       $gene_gus->setIsPseudo($gene_xml->{GENE_INFO}->{IS_PSEUDOGENE});
@@ -1376,7 +1376,7 @@ if ( $0 !~ /ga$/i ) {
 </Algorithm>
 
 <AlgorithmImplementation xml_id="1002" parent="1001">
-  <version>$self->requiredDbVersion</version>
+  <version>$Version</version>
   <executable>$0</executable>
   <executable_md5>$md5</executable_md5>
 </AlgorithmImplementation>
