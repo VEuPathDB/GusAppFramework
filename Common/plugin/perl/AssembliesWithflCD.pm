@@ -121,7 +121,7 @@ foreach my $A(@na_sourceids)    {
 
    $ct++;
 
-    last if $self->getArgs->{testnumber} && $ct >= $self->getArgs->{testnumber};
+    last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
 
     foreach my $id(@naSequenceIds)  {
