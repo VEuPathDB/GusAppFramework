@@ -104,9 +104,11 @@ SQL
     my $imps_again = $P->sql_get_as_hash_refs($sql);
 
     if (scalar @$imps_again == 0) {
-      $M->userError("No Core.AlgorithmImplementation found for $e.\nPlease use 'ga +create $e --commit'");
+      $M->userError("$e has never been registered.\nPlease use 'ga +create $e --commit'");
     } else {
-      $M->userError("No Core.AlgorithmImplementation found for $e cvs revision $cvsRevision. \nPlease use 'ga +update $e --commit'");
+      my $ga_cmd = "ga +update $e --commit";
+      $ga_cmd = "ga +meta --commit" if $e eq "GUS::PluginMgr::GusApplication";
+      $M->userError("$e revision $cvsRevision has not been registered. \nPlease use '$ga_cmd'");
     }
   }
 
@@ -297,7 +299,7 @@ sub doMajorMode_Meta {
   my $M = shift;
 
   my $ecd = { %{$M->getGlobalEasyCspOptions} };
-  my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$M->getUsage) || die;
+  my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$M->getUsage) || die "\n";
 
   $M->initArgs($cla);
 
@@ -363,7 +365,7 @@ sub doMajorMode_Run {
 	     %{$M->getGlobalEasyCspOptions},
 	     %{$pu->getEasyCspOptions},
 	    };
-  my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage) || die;
+  my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage) || die "\n";
   $pu->initArgs($cla);
   $M->initArgs($cla);
 
@@ -439,7 +441,7 @@ sub doMajorMode_History {
 	     # global options -- are they needed ?
 	     %{$M->getGlobalEasyCspOptions}
 	    );
-  my $cla = CBIL::Util::EasyCsp::DoItAll(\%ecd,$usg) || exit 0;
+  my $cla = CBIL::Util::EasyCsp::DoItAll(\%ecd,$usg) || die "\n";
   $M->initArgs($cla);
 
   # do preps
@@ -605,7 +607,7 @@ sub create_or_update_implementation {
 	       ) )
 	    );
   CBIL::Util::Disp::Display(\%ecd) if FLAG_DEBUG;
-  my $cla = CBIL::Util::EasyCsp::DoItAll(\%ecd,$usg) || die;
+  my $cla = CBIL::Util::EasyCsp::DoItAll(\%ecd,$usg) || die "\n";
   $M->initArgs($cla);
 
   # do preps
