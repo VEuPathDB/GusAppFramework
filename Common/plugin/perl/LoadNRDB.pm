@@ -88,7 +88,7 @@ sub new {
   return $self;
 }
 
-sub Run {
+sub run {
   my $M  = shift;
   $ctx = shift;
   print STDERR $ctx->{'commit'}?"***COMMIT ON***\n":"**COMMIT TURNED OFF**\n";
@@ -160,7 +160,7 @@ sub getDB {
   foreach my $dbName (keys %dbNameHash) {
     $stmt->execute($dbName);
     my $boundName = "%".$dbName."%";
-    my ($db_rel_id) = $stmt->fethrow_array();
+    my ($db_rel_id) = $stmt->fetchrow_array();
     $stmt->finish();
     
     $dbHash{$dbNameHash{$boundName}} = $db_rel_id;
