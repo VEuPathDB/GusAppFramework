@@ -198,7 +198,7 @@ sub run {
     my $snps = $a->findSNPs($self->getCla->{minDepth}, undef, $self->getCla->{maxBestPercent}, $self->getCla->{minDepthLessBest}, $snpObjectType);
     print STDERR "\nSNPs:\n$snps\n\n";
     print STDERR $a->getCap2Alignment();
-    my $cts = scalar($a->getChildren('GUS::Model::DoTS::AssemblySNP'));
+    my $cts = scalar($a->getChildren('DoTS::AssemblySNP'));
     $ctSNPs += $cts;
     $a->submit();
     $a->undefPointerCache();
