@@ -182,7 +182,7 @@ sub run {
       if (/$ctx->{cla}->{'regex_source_id'}/) { 
         $source_id = $1; 
       } else {
-        print STDERR "ERROR: unable to parse source_id from $_"; $source_id = "";
+        print die "ERROR: unable to parse source_id from $_"; $source_id = "";
       }
 
       $secondary_id = ""; $name = ""; $description = ""; $mol_wgt = ""; $contained_seqs= ""; $chromosome=""; ##in case can't parse out of this defline...
