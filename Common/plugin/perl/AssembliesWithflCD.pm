@@ -256,10 +256,10 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
         }
 
-      }
+     }
 
     }
-}
+
 
 
 
