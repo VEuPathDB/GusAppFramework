@@ -114,12 +114,15 @@ sub run {
    
     my $fileName = $self->getCla->{flat_file};
     if ($fileName){
+	$self->log("loading $fileName in preparation for parsing");
 	$parser->loadFile($fileName);
+	
     }
     else {
+	$self->log("loading all .ontology files in $path in preparation for parsing");
 	$parser->loadAllFiles();
     }
-	
+    $self->log("parsing all .ontology files in preparation for inserting into database");
     $parser->parseAllFiles();
 
     $self->log("parsing finished; loading ontology into database");
@@ -321,7 +324,7 @@ sub __load_ontology {
     }
     
     
-    return "Test Plugin: Created (but did not insert) $entryCount entries in GOTerm, $relationshipEntryCount entries in GORelationship, and $synonymEntryCount entries in GOSynonym.  Skipped $skipCount total entries";
+    return "Created $entryCount entries in GOTerm, $relationshipEntryCount entries in GORelationship, and $synonymEntryCount entries in GOSynonym.  Skipped $skipCount total entries";
 }
     
 # ---------------------------------------------------------------------- #
@@ -366,6 +369,7 @@ sub __getExtDbRelId{
 	    $self->log("successfully submitted new entry into SRes.ExternalDatabaseReleaseId with primary key of $extDbRelId\n");
 	}
     }
+    return $extDbRelId;
 }
 # ---------------------------------------------------------------------- #
 sub __make_level_graph{
