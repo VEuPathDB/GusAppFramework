@@ -19,6 +19,7 @@ use Data::Dumper;
 use Carp;
 
 use GUS::Model::DoTS::ExternalNASequence;
+use GUS::Model::DoTS::Source;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 
@@ -33,8 +34,10 @@ use GUS::Model::DoTS::SplicedNASequence;
 use GUS::Model::DoTS::RNAFeatureExon;
 use GUS::Model::DoTS::TranslatedAAFeature;
 use GUS::Model::DoTS::TranslatedAASequence;
+use GUS::Model::DoTS::DomainFeature;
+use GUS::Model::DoTS::ProteinProperty;
 use GUS::Model::DoTS::ProteinFeature;
-use GUS::Model::DoTS::PredictedAAFeature;
+#use GUS::Model::DoTS::PredictedAAFeature;
 use GUS::Model::DoTS::SignalPeptideFeature;
 use GUS::Model::DoTS::Gene;
 use GUS::Model::DoTS::RNA;
@@ -227,7 +230,8 @@ sub buildNASequence {
     return undef;
   }
 
-  my $seq_type_id = getSequenceTypeIdentifier ($sequenceType);
+
+  my $seq_type_id = $self->getSequenceTypeIdentifier ($sequenceType);
   my $seq_descr   = $bioperl_sequence->desc;  # the description is into the description or the definition tags
   my $seq         = $bioperl_sequence->seq;
   my $length      = length ($seq);
@@ -258,6 +262,8 @@ sub buildNASequence {
   
   my $chromosome       = undef;
   my $organism         = undef;
+  my $clone            = "UNKNOWN";
+  my $strain           = "UNKNOWN";
   my $chr_order_number = undef;
   my @features         = $bioperl_sequence->get_all_SeqFeatures();
 
@@ -287,6 +293,14 @@ sub buildNASequence {
 	elsif ($tag =~ /chromosome_order_number/i) {
 	  my @values = $feature->each_tag_value('chromosome_order_number');
 	  $chr_order_number = $values[0];
+	}
+	elsif ($tag =~ /clone/i) {
+	  my @values = $feature->each_tag_value('clone');
+	  $clone = $values[0];
+	}
+	elsif ($tag =~ /strain/i) {
+	  my @values = $feature->each_tag_value('strain');
+	  $strain = $values[0];
 	}
       }
 
@@ -342,8 +356,87 @@ sub buildNASequence {
     $gus_seq->setChromosomeOrderNum ($chr_order_number);
   }
 
+  my $source = $self->get_source($gus_seq, $name, $clone, $chromosome, $strain);
+
   $self->{gusSequence} = $gus_seq;
-  return $gus_seq;
+  return ($gus_seq, $source);
+}
+
+
+################################################################################
+#
+##
+sub get_source {
+    my ($self, $gus_seq, $name, $clone, $chromosome, $strain) = @_;
+
+    print STDERR "1: get_source(): $gus_seq, $name, $clone, $chromosome, $strain\n";
+
+    unless (defined $name && defined $clone && defined $chromosome) {
+        my @features = $self->{bioperlSequence}->get_all_SeqFeatures();
+
+        print STDERR "get_source(): num features = ", scalar(@features), "\n";
+
+        foreach my $feature (@features) {
+            if ($feature->primary_tag() =~ /source/) {
+
+                print STDERR "get_source(): Found 'source' feature\n";
+
+                my @tags = $feature->all_tags();
+
+                foreach my $tag (@tags) {
+                    print STDERR "get_source(): Looking at $tag\n";
+
+                    if ($tag =~ /chromosome$/i) {
+                        my @values = $feature->each_tag_value('chromosome');
+                        $chromosome = $values[0];
+                    }
+                    elsif ($tag =~ /clone/i) {
+                        my @values = $feature->each_tag_value('clone');
+                        $clone = $values[0];
+                    }
+                    elsif ($tag =~ /strain/i) {
+                        my @values = $feature->each_tag_value('strain');
+                        $strain = $values[0];
+                    }
+
+                    print STDERR "get_source(): Finished looking at $tag\n";
+                }
+
+                last;
+            }
+        }
+    }
+
+    print STDERR "2: get_source(): $gus_seq, $name, $clone, $chromosome, $strain\n";
+    
+    my $h_source = {'name'       => $self->{bioperlSequence}->display_id,
+                    'clone'      => $clone,
+                    'chromosome' => $chromosome,
+                    'strain'     => $strain,
+                };
+
+    my $source = $gus_seq->getChild('DoTS::Source', 1);
+
+    unless (defined $source) {
+        print STDERR "get_source(): creating new DoTS::Source\n";
+
+        $source = GUS::Model::DoTS::Source->new($h_source);
+        $source->setParent($gus_seq);
+    }
+    else {
+        print STDERR "get_source(): See if DoTS::Source needs updating\n";
+
+        foreach my $att (keys %{$h_source}) {
+            if (defined ($h_source->{$att}) && $source->get($att) ne $h_source->{$att}) {
+                print STDERR "'$att' has changed for DoTS::Source $name (", $self->{bioperlSequence}->accession_number, ") from ", $source->get($att), " to ", $h_source->{$att}, "\n";
+                $source->set($att, $h_source->{$att});
+            }
+        }
+    }
+
+    print "get_source(): returning $source\n";
+
+    return $source;
 }
 
 ################################################################################
@@ -497,14 +590,15 @@ sub buildGeneFeature {
         'gene_type'               => $gene_type,
         'is_pseudo'               => $is_pseudo,
         'is_partial'              => $is_partial,
-        #'name'           => $systematic_id,
         'product'                 => $product,
         'prediction_algorithm_id' => $prediction_algorithm_id,
     };
 
+    $h->{'standard_name'} = $primary_name if defined $primary_name;
+
     #my $gf    = GUS::Model::DoTS::GeneFeature->new ({'name' => $systematic_id});
-    my ($gf, $is_in) = $self->getFeatureFromDB('DoTS::GeneFeature');
     #my $is_in = $gf->retrieveFromDB(); # 0 means zero or 2+ records exist, 1 means 1 record exists
+    my ($gf, $is_in) = $self->getFeatureFromDB('DoTS::GeneFeature');
 
     print STDERR "\n*** GUS::Model::DoTS::GeneFeature \$gf = $gf, \$is_in = $is_in ***\n\n";
 
@@ -590,7 +684,6 @@ sub buildGeneFeature {
 # NOTE: The old version used to set na_sequence (its parent) to be the unspliced_sequence
 #       I presume this is a bug.
 #
-#
 # FIXME?
 # It will not update values to its parents GeneFeature and SplicedNASequence.
 # Is this an issue??? Possibly
@@ -629,9 +722,10 @@ sub buildRNAFeature {
     #my $rnaf  = GUS::Model::DoTS::RNAFeature->new ({'name' => $systematic_id});
     #my $is_in = $rnaf->retrieveFromDB();
 
-    my ($rnaf, $is_new) = $self->getFeatureFromDB('DoTS::RNAFeature');
+    #my ($rnaf, $is_new) = $self->getFeatureFromDB('DoTS::RNAFeature');
+    my $rnaf = $gf->getChild('DoTS::RNAFeature', 1);
 
-    if ($is_new) {
+    if ($rnaf) {
         ##
         # Delete NALocation child object
         ##
@@ -642,7 +736,8 @@ sub buildRNAFeature {
         " NALocation(s)\n";
     }
     else {
-        $rnaf  = GUS::Model::DoTS::RNAFeature->new ({'name' => $systematic_id});
+        my $sys_id = $self->get_best_systematic_id();
+        $rnaf  = GUS::Model::DoTS::RNAFeature->new ({'name' => $sys_id});
     }
 
     unless ($rnaf->getParent($gf->getClassName(), 1)) {
@@ -668,6 +763,8 @@ sub buildRNAFeature {
     return $rnaf, $gus_naLocation_rf;
 }
 
+
+
 ################################################################################
 # Return a new DoTS::SplicedNASequence object or the existing one that *may*
 # have been updated if values have changed.
@@ -686,7 +783,7 @@ sub buildSplicedNASequence {
     ##
     my $source_id         = $gus_sequence->getSourceId(); # SOUCE_ID used by us to store chromo info i.e. 'chr. 1'
     my $sequence          = $bioperl_feature->spliced_seq();
-    my $sequence_type_id  = getSequenceTypeIdentifier ('RNA');
+    my $sequence_type_id  = $self->getSequenceTypeIdentifier ('RNA');
 
     if (not defined $sequence_type_id) {
         print STDERR "can't find any SequenceType Database entry associated with RNA\n";
@@ -736,7 +833,7 @@ sub buildSplicedNASequence {
 #
 
 sub buildExonFeature {
-    my ($self, $gf, $is_initial_exon, $is_final_exon, $order_number) = @_;
+    my ($self, $gf, $is_initial_exon, $is_final_exon, $location, $order_number) = @_;
 
     my $debug             = $self->{debug};
     my $bioperl_feature   = $self->{bioperlFeature};
@@ -749,16 +846,25 @@ sub buildExonFeature {
     my $na_sequence_id    = $gus_sequence->getNaSequenceId();
     my $source_id         = $gus_sequence->getSourceId();     # SOURCE_ID used by us to store chromo info i.e. 'chr. 1'
 
+    my ($start, $end)     = ($location->start, $location->end);
+
+    if ($location->strand == -1) {
+        # no 'is_reversed' like NALocation has, just switch the coords round to show 'strandiness'
+        ($start, $end) = ($end, $start);
+    }
+
     my $h = {
-        'name'              => $name,
-        'is_predicted'      => $is_predicted,
-        'review_status_id'  => $review_status_id,
-        'na_sequence_id'    => $na_sequence_id,
-        'order_number'      => $order_number,
-        'is_initial_exon'   => $is_initial_exon,
-        'is_final_exon'     => $is_final_exon,
-        'source_id'         => $source_id
-        };
+        'name'             => $name,
+        'is_predicted'     => $is_predicted,
+        'review_status_id' => $review_status_id,
+        'na_sequence_id'   => $na_sequence_id,
+        'order_number'     => $order_number,
+        'is_initial_exon'  => $is_initial_exon,
+        'is_final_exon'    => $is_final_exon,
+        'source_id'        => $source_id,
+        'coding_start'     => $start,
+        'coding_end'       => $end,
+    };
 
     my $ef = GUS::Model::DoTS::ExonFeature->new ($h);
     $ef->retrieveFromDB();
@@ -776,6 +882,7 @@ sub buildExonFeature {
 
     return $ef;
 }
+
 
 ################################################################################
 #
@@ -937,14 +1044,125 @@ sub buildTranslatedAASequence {
     }
 
     # We may have got the "old" TranslatedAASequence from $aa_feature_translated
-    # in the forst place.
+    # in the first place.
     #
     unless ($aa_feature_translated->getParent($aa_seq->getClassName())) {
         $aa_feature_translated->setParent($aa_seq);
     }
 
-    return $aa_seq;
+    my (@properties) = $self->buildProteinProperties($aa_seq);
+
+    return ($aa_seq, @properties);;
 }
+
+
+################################################################################
+# Set stuff like molecular_weight, isoelectric_point etc.
+#
+# Due to deisng error in Schema (DomainFeature has 2 parents of
+# TranslatedAASequence) the objects create dhere must be returned. No deep
+# submit can be done - DoaminFeature bodge in place in genericParser2Gus
+##
+
+sub buildProteinProperties {
+    my ($self, $aa_seq) = @_;
+
+    ##
+    # get dictionary ProteinPropertyType
+
+    my $sql                      = "SELECT name, protein_property_type_id FROM DoTS.ProteinPropertyType";
+    my $queryHandle              = $aa_seq->getDatabase()->getDbHandle();
+    my $sth                      = $queryHandle->prepareAndExecute($sql);
+    my %protein_property_type_id = ();
+    my $bioperl_feature          = $self->{'bioperlFeature'};
+
+    while (my ($name, $id) = $sth->fetchrow_array()) {
+        $protein_property_type_id{$name} = $id;
+    }
+
+    ##
+    # Make hash map of each protein_type to the object
+
+    my @protein_properties = $aa_seq->getChildren('DoTS::ProteinProperty', 1);
+    my %hash_properties    = map {$_->get('protein_property_type_id'), $_} @protein_properties;
+
+    # 
+    #print "buildProteinProperties(): \%hash_properites (previous versions values) ;\n";
+    #print Data::Dumper::Dumper(\%hash_properties);
+
+    foreach my $type_id (keys %hash_properties) {
+        
+        my $type        = $hash_properties{$type_id}->{'attributes'}->{'protein_property_type_id'};
+        my $value       = $hash_properties{$type_id}->{'attributes'}->{'value'};
+        my $value_units = $hash_properties{$type_id}->{'attributes'}->{'value_units'};
+
+        print "   Type ID: '$type'  Value & Units: '$value' '$value_units'\n";
+    }
+
+
+    ##
+    # For each ProteinPropertyType, alter old value or create new one.
+    # Delete if value no longer is in EMBL file
+    my @properties;
+
+    foreach my $prop (keys %protein_property_type_id) {
+        my ($pp, $embl_value, $embl_unit) = (undef, undef, undef); 
+        my $prop_type_id = $protein_property_type_id{$prop};
+
+        if ($bioperl_feature->has_tag($prop)) {
+            my @values = $bioperl_feature->each_tag_value($prop);
+            my $value  = $values[0];
+            ($embl_value, $embl_unit) = split(/\s+/, $value);
+
+            if ($embl_value eq 'pH'){ # specail case for ioselectric-point
+                ($embl_value, $embl_unit) = ($embl_unit, $embl_value);
+            }
+
+            $embl_unit = 'unknown' unless defined $embl_unit;
+        }
+
+
+        if (defined($hash_properties{$prop_type_id})) {
+            $pp = $hash_properties{$prop_type_id};
+        }
+
+        print "buildProteinProperties(): prop = $prop, type_id = ", $protein_property_type_id{$prop}, "  pp = $pp\n";
+
+        # Delete if prop no longer in EMBL file but still exists in DB
+        #
+        if ( (! defined($embl_value)) && $pp) {
+            print "buildProteinProperties(): Deleting $pp, value no longer in EMBL file\n";
+            $pp->markDeleted();
+        }
+        # Update if no changed in EMBL file
+        elsif ($embl_value && $pp) {
+            if ($pp->getValue() ne $embl_value) {
+                print "buildProteinProperties(): Changing from ", $pp->getValue(), " to $embl_value, $embl_unit\n";
+
+                $pp->setValue($embl_value);
+                $pp->setValueUnits($embl_unit);
+            }
+        }
+        # Create new one if in EMBL file but not hash
+        elsif ($embl_value && (! defined($pp))) {
+            print "buildProteinProperties(): Creating new ProteinProperty of type '$prop' with values $embl_value, $embl_unit\n";
+
+            $pp = GUS::Model::DoTS::ProteinProperty->new({
+                'value'                    => $embl_value,
+                'value_units'              => $embl_unit,
+                'protein_property_type_id' => $protein_property_type_id{$prop},
+            });
+
+            $pp->setParent($aa_seq);
+        }
+
+        push @properties, $pp;
+    }
+
+    return @properties;
+}
+
+
 
 ################################################################################
 # Builds both
@@ -1047,8 +1265,8 @@ sub buildProteinFeature {
 
 ################################################################################
 #
-# Build SignalPeptide, Transmembrane domain, Pfam objects, make $aa_seq the
-# parent
+# Build SignalPeptide, Transmembrane domain, link to Pfam objects, and make 
+# $aa_seq the parent.
 #
 # Any "old" features of these type are marked for deletion. It is too hard to
 # see which new prediction matches up to an old prediction and probably not
@@ -1071,26 +1289,28 @@ sub buildAAFeatures {
     if ($aa_seq) {
         print STDERR "buildAAFeatures() : \$aa_seq already exists (ID = ", $aa_seq->getId(),"), deleting certain children\n";
 
-        $aa_seq->retrieveChildrenFromDB('DoTS::PredictedAAFeature');   # Force loading from DB of "old" objects
+        $aa_seq->retrieveChildrenFromDB('DoTS::DomainFeature');        # Force loading from DB of "old" objects
         $aa_seq->retrieveChildrenFromDB('DoTS::SignalPeptideFeature'); # Force loading from DB of "old" objects
 
-        my @paa_features  = $aa_seq->getChildren('DoTS::PredictedAAFeature');
+        my @d_features    = $aa_seq->getChildren('DoTS::DomainFeature');
         my @sigp_features = $aa_seq->getChildren('DoTS::SignalPeptideFeature');
 
         # Remove child locations too
-        foreach my $aaf (@paa_features, @sigp_features){
+        foreach my $aaf (@d_features, @sigp_features){
             my @aa_locs = $aaf->getChildren('DoTS::AALOCATION', 1);
 
             $aaf->markChildrenDeleted(@aa_locs);
             $aaf->markDeleted();
         }
 
-        $aa_seq->markChildrenDeleted(@paa_features, @sigp_features);
+        $aa_seq->markChildrenDeleted(@d_features, @sigp_features);
 
-        print STDERR "buildAAFeatures() : \@paa_features = ", scalar(@paa_features),
-                     " \@sigp_features = ", scalar(@sigp_features), "\n";
+        print STDERR "buildAAFeatures() : \@d_features = ", scalar(@d_features),
+            " \@sigp_features = ", scalar(@sigp_features), "\n";
 
-        print STDERR "buildAAFeatures() : deleted ", (scalar(@paa_features) + scalar(@sigp_features))," children plus any AALocations\n";
+        print STDERR "buildAAFeatures() : deleted ",
+            (scalar(@d_features) + scalar(@sigp_features)),
+            " children plus any AALocations\n";
     }
 
     ##
@@ -1327,7 +1547,7 @@ sub buildTransmembraneDomainFeature {
     }
 
     ##
-    # Loop over each /transmembrane_domain and build PredictedAAFeature and AALocation
+    # Loop over each /transmembrane_domain and build DomainFeature and AALocation
     ##
 
     # my @tms = $misc_feature->each_tag_value ('note');
@@ -1338,9 +1558,9 @@ sub buildTransmembraneDomainFeature {
 
             my @bioperl_locations = ();
 
-            my $subclass_view    = "PredictedAAFeature";
+            #my $subclass_view    = "DomainFeature";
             my $description      = $tm;
-            my $algorithm_name   = "TMHMM2.0";
+            my $algorithm_name   = "TMHMM2.0"; # default
             my $is_predicted     = 1;
             my $review_status_id = $REVIEW_STATUS_ID;
             my $source_id        = $gus_sequence->getSourceId();
@@ -1393,7 +1613,7 @@ sub buildTransmembraneDomainFeature {
       
             my $h = {
                 'name'               => $td_name,
-                'subclass_view'      => $subclass_view,
+                #'subclass_view'      => $subclass_view,
                 'description'        => $description,
                 'algorithm_name'     => $algorithm_name,
                 'is_predicted'       => $is_predicted,
@@ -1401,8 +1621,11 @@ sub buildTransmembraneDomainFeature {
                 'source_id'          => $source_id,
             };
 
-            my $gus_transmembraneFeature = GUS::Model::DoTS::PredictedAAFeature->new ($h);
-            $gus_transmembraneFeature->setParent ($aa_seq);
+            my $gus_transmembraneFeature = GUS::Model::DoTS::DomainFeature->new ($h);
+            $gus_transmembraneFeature->setParent($aa_seq); # DESIGN ERROR - 2 parents same object, see processDomainFeatureHack() in GenericParser2Gus
+
+#print STDERR "buildTransmembraneDomainFeature(): domain feature parent ($aa_seq)= ", $gus_transmembraneFeature->getParent($aa_seq->getClassName()), "\n";
+#print STDERR "buildTransmembraneDomainFeature(): aa_sequence_id = ", $gus_transmembraneFeature->get('aa_sequence_id'), "\n";
 
             push (@transmembrane_objects, $gus_transmembraneFeature);
 
@@ -1417,10 +1640,14 @@ sub buildTransmembraneDomainFeature {
 }
 
 
+
 ################################################################################
 #
-# Creates records PrdeictedAAFeature from /domain
+# Creates records DomainFeature from /domain
 # If its a Pfam entry, set the link to the PfamEntry object
+#
+# GUSdev used to use PredictedAAFeature instead of DomainFeature but it is
+# almost identical :)
 #
 sub buildDomainFeature {
     my ($self, $aa_seq) = @_;
@@ -1500,7 +1727,6 @@ sub buildDomainFeature {
             $other_locations = $3;
         }
 
-        my $subclass_view    = "PredictedAAFeature";
         my $description      = $domain_name;
         my $name             = "$db_name:$domain_id";
         # my $prediction_algo_id = ???????;
@@ -1508,10 +1734,9 @@ sub buildDomainFeature {
         my $review_status_id = $REVIEW_STATUS_ID;
         my $source_id        = $gus_sequence->getSourceId();
 
-        print STDERR "buildDomainFeature() : Generating PredictedAAFeature Entry for $db_name domain, $domain_id ($domain_name)...\n";
+        print STDERR "buildDomainFeature() : Generating DomainFeature Entry for $db_name domain, $domain_id ($domain_name)...\n";
 
         my $h = {
-            'subclass_view'     => $subclass_view,
             'description'       => $description,
             'name'              => $name,
             'is_predicted'      => $is_predicted,
@@ -1519,15 +1744,17 @@ sub buildDomainFeature {
             'source_id'         => $source_id,
         };
 
-        my $gus_PAAFeature = GUS::Model::DoTS::PredictedAAFeature->new ($h);
-        $gus_PAAFeature->setParent ($aa_seq);
+        my $gus_DomainFeature = GUS::Model::DoTS::DomainFeature->new ($h);
+        $gus_DomainFeature->setParent ($aa_seq);
+
+        print STDERR "domain feature parent ($aa_seq)= ", $gus_DomainFeature->getParent($aa_seq->getClassName()), "\n";
 
         ##
         # If Pfam, setPfamEntryId()
         ##
         if ($db_name =~ /pfam/i) {
             print STDERR "buildDomainFeature() : Mapping Pfam domain, $domain_id, to PfamEntry table Id...\n";
-            my $dbh       = $gus_PAAFeature->getDatabase()->getDbHandle();
+            my $dbh       = $gus_DomainFeature->getDatabase()->getDbHandle();
             my $pfamEntry = $self->getPfamEntry ($domain_id, $dbh);
 
             if (defined $pfamEntry) {
@@ -1536,22 +1763,21 @@ sub buildDomainFeature {
                 print STDERR "buildDomainFeature() : Found pfam_entry_id = $pfam_entry_id\n";
 
                 if (defined ($pfam_entry_id)) {
-                    #$gus_PAAFeature->setMotifId ($motif_id);
-                    $gus_PAAFeature->setPfamEntryId($pfam_entry_id);
+                    $gus_DomainFeature->setPfamEntryId($pfam_entry_id);
                 }
             }
             else {
-                print STDERR "buildDomainFeature() : Pfam accession, $domain_id, can not be found !!!\n";
+                print STDERR "WARNING: buildDomainFeature() : Pfam accession, $domain_id, can not be found !!!\n";
             }
         }
 
-        push (@domain_objects, $gus_PAAFeature);
+        push (@domain_objects, $gus_DomainFeature);
 
         ##
         # Build any location objects
         ##
         foreach my $bioperl_location (@bioperl_locations) {
-            my $gus_aaLocation = $self->buildAALocation ($gus_PAAFeature, $bioperl_location);
+            my $gus_aaLocation = $self->buildAALocation ($gus_DomainFeature, $bioperl_location);
             push (@domain_objects, $gus_aaLocation);
         }
     }
@@ -2065,20 +2291,46 @@ ORDER BY release_date, external_database_release_id]);
 # Return the table_id for a given tables name.
 # It uses a cache as it could be called multiple times.
 #
+#sub getTableId {
+#    my ($self, $dbh, $schema, $table_name) = @_;
+#
+#    unless ( defined $self->{'cache'}->{'table_name'}->{$table_name} ) {
+#        my $sth = $dbh->prepare(qq[select table_id FROM Core.TableInfo WHERE  name = ?]);
+#        $sth->execute($table_name);
+#        
+#        my @row      = $sth->fetchrow_array();
+#        my $table_id = $row[0];
+#
+#        $self->{'cache'}->{'table_name'}->{$table_name} = $table_id;
+#    }
+#
+#    return $self->{'cache'}->{'table_name'}->{$table_name};
+#}
+
 sub getTableId {
-    my ($self, $dbh, $table_name) = @_;
+    my ($self, $dbh, $schema, $table) = @_;
 
-    unless ( defined $self->{'cache'}->{'table_name'}->{$table_name} ) {
-        my $sth = $dbh->prepare(qq[select table_id FROM Core.TableInfo WHERE  name = ?]);
-        $sth->execute($table_name);
-        
-        my @row      = $sth->fetchrow_array();
-        my $table_id = $row[0];
+    unless ( defined $self->{'cache'}->{$schema}->{$table}) {
 
-        $self->{'cache'}->{'table_name'}->{$table_name} = $table_id;
+        my $sth_t_id =
+            $dbh->prepare("SELECT ti.table_id FROM Core.TableInfo ti, Core.Databaseinfo di ".
+                          "WHERE  di.name        = ? ".
+                          "AND    ti.name        = ? ".
+                          "AND    ti.database_id = di.database_id");
+        $sth_t_id->execute($schema, $table);
+
+        my $ref = $sth_t_id->fetchall_arrayref();
+ 
+
+        if (scalar(@{$ref}) == 0) {
+            return;
+        }
+        else {
+            $self->{'cache'}->{$schema}->{$table} = $ref->[0]->[0];
+        }
     }
 
-    return $self->{'cache'}->{'table_name'}->{$table_name};
+    return $self->{'cache'}->{$schema}->{$table};
 }
 
 ################################################################################
@@ -2096,7 +2348,7 @@ sub getTableId {
 #
 # term      : already in GoTerm table
 #
-# evidence  : GOAssociationInstance->GOAsscoiationInstEvidCode->GOEvidenceCode
+# evidence  : GOAssociationInstance->GOAssociationInstEvidCode->GOEvidenceCode
 #             That last table is a dictionary of terms (ISS, IEA etc).
 #
 # db_xref   : GOAssociationInstance->Evidence->ExternalDatabaseEntry
@@ -2191,7 +2443,7 @@ sub buildGO_aspectAssociation {
     %edrId        = %{$self->getReleaseIds($dbh)};
     $edrId4Aspect = $edrId{$go_aspect};
 
-    my $table_id_4_protein = $self->getTableId($dbh, 'Protein');
+    my $table_id_4_protein = $self->getTableId($dbh, 'DoTS', 'Protein');
     my %already_created    = ();
 
     print STDERR "-== GO ==-\n";
@@ -2233,7 +2485,7 @@ sub buildGO_aspectAssociation {
 
 ################################################################################
 #
-# This is sub is shared by buildGO_aspectAssociation() and 
+# This is sub is shared by buildGO_aspectAssociation() and buildGOAssociations()
 #
 #
 #
@@ -2253,7 +2505,7 @@ sub createGoObjects {
 
     my %edrId              = %{$self->getReleaseIds($dbh)};
     my $edrId4Aspect       = $edrId{$go_aspect};
-    my $table_id_4_protein = $self->getTableId($dbh, 'Protein');
+    my $table_id_4_protein = $self->getTableId($dbh, 'DoTS', 'Protein');
 
 
     my $go_term_obj = GUS::Model::SRes::GOTerm->new ({"go_id", "GO:".$go_id,
@@ -2274,6 +2526,7 @@ sub createGoObjects {
                                                         'review_status_id' => $REVIEW_STATUS_ID,
                                                         'table_id'         => $table_id_4_protein,
                                                         'row_id'           => $protein_object->getProteinId(),
+                                                        'is_deprecated'    => 0,
                                                         'is_not'           => 0,
                                                         'defining'         => 0,
                                                     });
@@ -2292,7 +2545,6 @@ sub createGoObjects {
             #    "CHECK THE EMBL FILE FOR MULTIPLE GO:$go_id FOR THIS FEATURE";
             print STDERR "\nWARNING: createGoObjects() will not version GO:",$go_id, " for ", $self->{bioperlFeature}->each_tag_value ('systematic_id'),"\n";
             print STDERR "         FIXME!\n\n";
-            
         }
         else {
             $go_ass->submit();
@@ -2354,12 +2606,17 @@ sub createGOAssociationInstance {
     my ($db_xref_name, $db_xef_id) = ($db_xref =~ /(.+):(.+)/);
     my ($edri)                     = $self->getExternalDatabaseReleaseId($dbh, $db_xref_name);
 
+    print STDERR "createGOAssociationInstance(): \$edri = $edri\n";
+    print STDERR "\n";
+
     unless ($edri) {
         print STDERR "\nWARNING: Could not get an ExternalDatabaseReleaseId for $db_xref_name ($db_xref)\n";
-        print STDERR "         ", $self->{bioperlFeature},"\n";
+        print STDERR "         ", $self->{bioperlFeature}->primary_tag, " [", $self->{bioperlFeature}->start, "..", $self->{bioperlFeature}->end, " \n";
         print STDERR "         \$db_xref = $db_xref, \$date = $date\n";
         return undef;
     }
+
+    print STDERR "createGOAssociationInstance(): Everything ok?\n";
 
     ##
     # Get external_database_release_id for $db_xref (i.e. SPTR:123)
@@ -2367,10 +2624,9 @@ sub createGOAssociationInstance {
     my $go_ass_inst =
       GUS::Model::DoTS::GOAssociationInstance->new({'go_association_id'    => $go_ass->getId(),
                                                     'go_assoc_inst_loe_id' => $go_ass_inst_loe->getId(),
-                                                    'defining' => 0, # THIS IS NOT PRESENT ON www.gusdb.org!!!!
-                                                    #'is_deprecated' => 0,# THIS IS NOT PRESENT ON www.gusdb.org!!!!
-                                                    #'is_primary' => 0, # On www.gusdb.org!!!
-                                                    'review_status_id' => $REVIEW_STATUS_ID,
+                                                    'is_deprecated'        => 0,
+                                                    'is_primary'           => 0,
+                                                    'review_status_id'     => $REVIEW_STATUS_ID,
 
                                                     #'external_database_release_id' => , # Not used?
                                                     #'source_id'                    => ,
@@ -2391,8 +2647,8 @@ sub createGOAssociationInstance {
 
     # Now GOAssociationInstance can be 'joined' together with ExternalDatabaseEntry with Evidence
     #
-    my $table_id_4_gai = $self->getTableId($dbh, 'GOAssociationInstance');
-    my $table_id_4_ede = $self->getTableId($dbh, 'ExternalDatabaseEntry');
+    my $table_id_4_gai = $self->getTableId($dbh, 'DoTS', 'GOAssociationInstance');
+    my $table_id_4_ede = $self->getTableId($dbh, 'SRes', 'ExternalDatabaseEntry');
 
     my $evidence = GUS::Model::DoTS::Evidence->new({'target_table_id' => $table_id_4_gai,
                                                     'target_id'       => $go_ass_inst->getId(),
@@ -2456,14 +2712,20 @@ ORDER BY release_date, external_database_release_id]);
 # Creates a GOAssocInstEvidCode thats is linked to GOEvidenceCode.
 # Creates an Evidence link for the 'with' part of the GO qaulifier, i.e.
 #   GOEvidience  <-GOAssocInstEvidCode->  Evidence->ExternalDatabaseEntry
+#
+# Does nothing and returns undef if no $with value
+#
 ################################################################################
 
 sub createGOAssocInstEvidCode {
     my ($self, $dbh, $go_ass_inst, $evi_code, $with) = @_;
 
-    unless ($with) {
-        return undef;
-    }
+    # Exit point below for same thing!
+    # How else can ISS, IEA etc be stored???
+    #unless ($with) {
+    #    return undef;
+    #}
+
 
 
     my $go_evidence_code = GUS::Model::SRes::GOEvidenceCode->new({'name' => $evi_code});
@@ -2473,16 +2735,7 @@ sub createGOAssocInstEvidCode {
         die "ERROR: could not get evidence code '$evi_code' from table GOEvidenceCode.";
     }
 
-    my ($db_name, $db_id) = ($with =~ /(.+):(.+)/);
-    my ($edri)            = $self->getExternalDatabaseReleaseId($dbh, $db_name);
-
-    unless ($edri) {
-        print STDERR "\nWARNING: Could not get a ExternalDatabaseReleaseId for $db_name\n";
-        print STDERR "         ",$self->{bioperlFeature},"\n";
-        print STDERR "         \$go_ass_inst = $go_ass_inst, \$evi_code = $evi_code, \$with = $with\n";
-
-        return undef;
-    }
+    print STDERR "createGOAssocInstEvidCode(): \$evi_code = '$evi_code', \$exists = $exists\n";
 
     my $gaiec =
       GUS::Model::DoTS::GOAssocInstEvidCode->new({'go_evidence_code_id'        => $go_evidence_code->getId(),
@@ -2501,7 +2754,16 @@ sub createGOAssocInstEvidCode {
 
     return unless (defined $with && $with ne '' ); # <---- Exit point
 
+    my ($db_name, $db_id) = ($with =~ /(.+):(.+)/);
+    my ($edri)            = $self->getExternalDatabaseReleaseId($dbh, $db_name);
 
+    unless ($edri) {
+        print STDERR "\nWARNING: Could not get a ExternalDatabaseReleaseId for $db_name\n";
+        print STDERR "         ",$self->{bioperlFeature},"\n";
+        print STDERR "         \$go_ass_inst = $go_ass_inst, \$evi_code = $evi_code, \$with = $with\n";
+
+        return undef;
+    }
 
     my $ede = GUS::Model::SRes::ExternalDatabaseEntry->new({'external_database_release_id' => $edri,
                                                             'external_primary_identifier'  => $db_id,
@@ -2511,8 +2773,8 @@ sub createGOAssocInstEvidCode {
     my $exists = 0; #$ede->retrieveFromDB(); # TEST
     $ede->submit() unless ($exists);
 
-    my $table_id_4_gaiec = $self->getTableId($dbh, 'GOAssocInstEvidCode');
-    my $table_id_4_ede   = $self->getTableId($dbh, 'ExternalDatabaseEntry');
+    my $table_id_4_gaiec = $self->getTableId($dbh, 'DoTS', 'GOAssocInstEvidCode');
+    my $table_id_4_ede   = $self->getTableId($dbh, 'SRes', 'ExternalDatabaseEntry');
 
     my $evidence = GUS::Model::DoTS::Evidence->new({'target_table_id' => $table_id_4_gaiec,
                                                     'target_id'       => $gaiec->getId(),
@@ -2538,7 +2800,7 @@ sub createGOAssocInstEvidCode {
 # 
 #
 sub buildNALocation {
-    my ($self, $feature_obj, $range) = @_;
+    my ($self, $feature_obj, $range, $loc_order) = @_;
   
     my $debug         = $self->{debug};
     my $location_type = ref ($range);
@@ -2573,6 +2835,7 @@ sub buildNALocation {
         'start_max'     => $start_max,
         'end_min'       => $end_min,
         'end_max'       => $end_max,
+        'loc_order'     => $loc_order,
     };
 
     my $naLocation = GUS::Model::DoTS::NALocation->new ($h);
@@ -2672,16 +2935,20 @@ sub getGusSequenceFromDB {
 
   if ($gus_sequence->retrieveFromDB()) {
     $self->{gusSequence} = $gus_sequence;
-    return $gus_sequence;
+    my $source = $self->get_source($gus_sequence);
+
+    return ($gus_sequence, $source);
   }
   else {
       print STDERR "sequence not in GUS yet\n";
 
-      $gus_sequence = $self->buildNASequence();
+      my $source;
+      ($gus_sequence, $source) = $self->buildNASequence();
       
       if (defined $gus_sequence) {
           $gus_sequence->submit();
-          return $gus_sequence;
+          $source->submit();
+          return ($gus_sequence, $source);
       }
       else {
           print SDTERR "\n*** ERROR: Unable to create new ExternalNASequence\n";
@@ -2742,23 +3009,25 @@ sub getTaxonIdentifier { #this is on-demand caching
   #return $taxonNameRow->get('taxon_id');
 }
 
-######################################
+#############################################
 # Get the Sequence Type Id from the database,
 # giving a sequence type name
 ##
 
 sub getSequenceTypeIdentifier {
-  my ($type) = @_;
-  
+  my ($self, $type) = @_;
+
   my $typeRow = GUS::Model::DoTS::SequenceType->new({"name" => $type});
+  
   my $exist = $typeRow->retrieveFromDB();
   
   if ($exist) {
     return $typeRow->getId();
   }
   else {
-    print STDERR "can't find SequenceType, $type\n";
-    return undef;
+    print STDERR "ERROR: getSequenceTypeIdentifier(): can't find SequenceType, $type\n";
+    #return undef;
+    confess("getSequenceTypeIdentifier(): can't find SequenceType, $type");
   }
 }
 
@@ -2860,11 +3129,11 @@ sub getFeatureFromDB {
     }
 
     ## DEBUG START #########################################################
+    print STDERR "getFeatureFromDB() : \$feature_type = $feature_type\n";  #
     print STDERR "getFeatureFromDB() : Got Qualifiers ";                   #
     foreach my $qualifier (@name_order) {                                  #
         print STDERR ", $qualifier = ", $name_value{$qualifier};           #
     }                                                                      #
-    print STDERR " getFeatureFromDB() : \$feature_type = $feature_type\n"; #
     print STDERR "\n";                                                     #
     ## DEBUG END   #########################################################
 
@@ -2873,9 +3142,10 @@ sub getFeatureFromDB {
     if ($feature_type eq 'DoTS::GeneFeature') {
         return $self->getGeneFeatureFromDB(\@name_order, \%name_value);
     }
-    elsif ($feature_type eq 'DoTS::RNAFeature') {
-        return $self->getRNAFeatureFromDB(\@name_order, \%name_value);
-    }
+# Genefeature should be the start of any named search
+#    elsif ($feature_type eq 'DoTS::RNAFeature') {
+#        return $self->getRNAFeatureFromDB(\@name_order, \%name_value);
+#    }
     else {
         die "ERROR: feature of type $feature_type not currently supported";
     }
@@ -2894,27 +3164,32 @@ sub getFeatureFromDB {
 
 sub getGeneFeatureFromDB {
     my ($self, $name_order_ref, $name_value_ref) = @_;
-
     my $gf    = undef;
     my $is_in = 0;
 
-    foreach my $qualifier (@{$name_order_ref}) {
-        if (defined $name_value_ref->{$qualifier}) {
-            # Does feature with this name exist?
 
-            $gf    = GUS::Model::DoTS::GeneFeature->new({'name'=> $name_value_ref->{$qualifier}});
-            $is_in = $gf->retrieveFromDB();
+    # SHOULD I ONLY BE LOOKING FOR GENE WITH A SYSTEMATIC ID?
+    # Cerevisiae and Pombe both have cdc2!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            print STDERR "getGeneFeatureFromDB() : name:          '",$name_value_ref->{$qualifier},"' \$is_in = $is_in\n";
+    #if ($self->{bioperlFeature}->has_tag('primary_name')) {
+    #    my $primary_name = $self->{bioperlFeature}->each_tag_value('primary_name');
+    #    $gf              = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $primary_name});
+    #    $is_in           = $gf->retrieveFromDB();
+    #}
+    #print STDERR "getGeneFeatureFromDB() : standard_name: 'primary_name' \$is_in = $is_in\n";
 
-            if ($is_in == 1) {
-                last;
-            }
-            else {
-                $gf    = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $name_value_ref->{$qualifier}});
+    ##
+    # name qualifeir can hold systematic and temporary_systematic_id
+
+    unless ($is_in) {
+        foreach my $qualifier (@{$name_order_ref}) {
+            if (defined $name_value_ref->{$qualifier}) {
+                # Does feature with this name exist?
+
+                $gf    = GUS::Model::DoTS::GeneFeature->new({'name'=> $name_value_ref->{$qualifier}});
                 $is_in = $gf->retrieveFromDB();
 
-                print STDERR "getGeneFeatureFromDB() : standard_name: '",$name_value_ref->{$qualifier},"' \$is_in = $is_in\n";
+                print STDERR "getGeneFeatureFromDB() : name:          '",$name_value_ref->{$qualifier},"' \$is_in = $is_in\n";
 
                 if ($is_in == 1) {
                     last;
@@ -2927,12 +3202,18 @@ sub getGeneFeatureFromDB {
     # If GeneFeature not found, create new one from "best" name qualifier
     ##
     unless ($is_in) {
-        foreach my $qualifier (@{$name_order_ref}) {
-            if (defined $name_value_ref->{$qualifier}) {
-                $gf = GUS::Model::DoTS::GeneFeature->new({'name'=> $name_value_ref->{$qualifier}});
-                last;
+        #if ($self->{bioperlFeature}->has_tag('primary_name')) {
+        #    my $primary_name = $self->{bioperlFeature}->each_tag_value('primary_name');
+        #    $gf = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $name_value_ref->{$qualifier}});
+        #}
+        #else {
+            foreach my $qualifier (@{$name_order_ref}) {
+                if (defined $name_value_ref->{$qualifier}) {
+                    $gf = GUS::Model::DoTS::GeneFeature->new({'name'=> $name_value_ref->{$qualifier}});
+                    last;
+                }
             }
-        }
+        #}
     }
 
     print STDERR "getGeneFeatureFromDB() : Returning $gf, $is_in\n";
@@ -2947,47 +3228,46 @@ sub getGeneFeatureFromDB {
 # IS THIS METHOD NEEDED????
 # WE CAN GETTHE RNAFeature  FROM THE GeneFeature!!!!!!!!
 
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ##
 
-sub getRNAFeatureFromDB {
-    my ($self, $name_order_ref, $name_value_ref) = @_;
+#sub getRNAFeatureFromDB {
+#    my ($self, $name_order_ref, $name_value_ref) = @_;
+#
+#    my $rnaf  = undef;
+#    my $is_in = 0;
+#
+#    foreach my $qualifier (@{$name_order_ref}) {
+#        if (defined $name_value_ref->{$qualifier}) {
+#            # Does feature with this name exist?
+#
+#            $rnaf  = GUS::Model::DoTS::RNAFeature->new({'name'=> $name_value_ref->{$qualifier}});
+#            $is_in = $rnaf->retrieveFromDB();
+#
+#            print STDERR "getRNAFeatureFromDB() : name:          '",$name_value_ref->{$qualifier},"' \$is_in = $is_in\n";
+#
+#            if ($is_in == 1) {
+#                last;
+#            }
+#        }
+#    }
 
-    my $rnaf  = undef;
-    my $is_in = 0;
-
-    foreach my $qualifier (@{$name_order_ref}) {
-        if (defined $name_value_ref->{$qualifier}) {
-            # Does feature with this name exist?
-
-            $rnaf  = GUS::Model::DoTS::RNAFeature->new({'name'=> $name_value_ref->{$qualifier}});
-            $is_in = $rnaf->retrieveFromDB();
-
-            print STDERR "getRNAFeatureFromDB() : name:          '",$name_value_ref->{$qualifier},"' \$is_in = $is_in\n";
-
-            if ($is_in == 1) {
-                last;
-            }
-        }
-    }
-
-    ##
-    # If RNAFeature not found, create new one from "best" name qualifier
-    ##
-    unless ($is_in) {
-        foreach my $qualifier (@{$name_order_ref}) {
-            if (defined $name_value_ref->{$qualifier}) {
-                $rnaf = GUS::Model::DoTS::RNAFeature->new({'name'=> $name_value_ref->{$qualifier}});
-                last;
-            }
-        }
-    }
-
-    print STDERR "getRNAFeatureFromDB() : Returning $rnaf, $is_in\n";
-
-    return ($rnaf, $is_in); 
-}
+#    ##
+#    # If RNAFeature not found, create new one from "best" name qualifier
+#    ##
+#    unless ($is_in) {
+#        foreach my $qualifier (@{$name_order_ref}) {
+#            if (defined $name_value_ref->{$qualifier}) {
+#                $rnaf = GUS::Model::DoTS::RNAFeature->new({'name'=> $name_value_ref->{$qualifier}});
+#                last;
+#            }
+#        }
+#    }
+#
+#    print STDERR "getRNAFeatureFromDB() : Returning $rnaf, $is_in\n";
+#
+#    return ($rnaf, $is_in); 
+#}
 
 ################################################################################
 #
@@ -3018,6 +3298,24 @@ sub getNameOrder {
 }
 
 
+################################################################################
+#
+##
+sub get_best_systematic_id {
+    my ($self) = @_;
 
+    my @name_order  = &getNameOrder();
+    my %name_value  = ();
+
+    foreach my $qualifier (@name_order) {
+        next unless $self->{bioperlFeature}->has_tag($qualifier);
+
+        my @values = $self->{bioperlFeature}->each_tag_value($qualifier);
+
+        if (@values) {
+             return $values[0];
+        }
+    }
+}
 
 1;
