@@ -6,6 +6,7 @@ package GUS::Common::Plugin::LoadGeneFeaturesFromXML;
 # developed originally by J Schug
 # modified for GUS30 by B Gajria
 # --------------------------------------------------------------------
+# for additional comments, look for 'NOTE:'
 
 @ISA = qw(GUS::PluginMgr::Plugin);
 
@@ -21,38 +22,34 @@ use GUS::Model::Core::Algorithm;
 use GUS::Model::Core::ProjectInfo;
 use GUS::Model::DoTS::GeneFeature;
 use GUS::Model::DoTS::ExonFeature;
-use GUS::Model::DoTS::ExternalAASequence;
+#use GUS::Model::DoTS::ExternalAASequence;
 use GUS::Model::DoTS::ExternalNASequence;
-use GUS::Model::DoTS::Miscellaneous;
+#use GUS::Model::DoTS::Miscellaneous;
+use GUS::Model::DoTS::NAFeatureComment;
 use GUS::Model::DoTS::NALocation;
 use GUS::Model::DoTS::ProjectLink;
-use GUS::Model::DoTS::Repeats;
-use GUS::Model::DoTS::RNA;
-use GUS::Model::DoTS::PromoterFeature;
-use GUS::Model::DoTS::PolyAFeature;
-use GUS::Model::DoTS::Similarity;
-use GUS::Model::DoTS::SimilaritySpan;
+#use GUS::Model::DoTS::Repeats;
+#use GUS::Model::DoTS::RNA;
+use GUS::Model::DoTS::RNAFeature; 
+#use GUS::Model::DoTS::PromoterFeature;
+#use GUS::Model::DoTS::PolyAFeature;
+#use GUS::Model::DoTS::Similarity;
+#use GUS::Model::DoTS::SimilaritySpan;
 use GUS::Model::SRes::ExternalDatabase;
-use GUS::Model::SRes::Taxon;
+use GUS::Model::SRes::ExternalDatabaseRelease;
+#use GUS::Model::SRes::Taxon;
+use GUS::Model::SRes::TaxonName;
 
-### use GUS::Model::DoTS::Note;
 ### use GUS::Model::DoTS::ScaffoldGapFeature;
-### NOTE: Both these objects are missing; however yoelii XML has no PUB_COMMENT, 
-###       COMMENT OR SCAFFOLD. So, those objects are not urgently needed.
+### NOTE: This object (and view) is currently missing; but the yoelii XML
+### has no SCAFFOLD. So, not urgently needed, but needs to be fixed.
 
-
-###use Objects::GUS_utils::Sequence;
 use GUS::Common::Sequence;
 
 
 sub new {
   my $class = shift;
-
   my $self = {};
-  bless($self, $class);
-
-###  my $Cfg = shift;              ##configuration object...
-
   my $usage = 'loads gene features from an XML data file...';
 
   my $easycsp =
@@ -121,7 +118,7 @@ sub new {
        o => 'Survey',
      }
      ];
-
+  bless($self, $class);
   $self->initialize({requiredDbVersion => {},
 		  cvsRevision => '$Revision$', # keyword filled in by cvs
 		  cvsTag => '$Name$', # keyword filled in by cvs
@@ -139,17 +136,19 @@ sub new {
 # --------------------------------------------------------------------
 
 $| = 1;
-#my $ctx;
+my $ctx;
 my $debug = 0;
-my $extDbId;  # ExternalDatabaseId
-my $projId;   # ProjectId
-my $algId;    # AlgorithmId
-my $dbh;      # database query handle
+my $extDbId;     # ExternalDatabaseId
+my $extDbRelId;  # ExternalDatabaseReleaseId
+my $projId;      # ProjectId
+my $algId;       # AlgorithmId
+my $dbh;         # database query handle
 my $Version;
 
 
 sub run {
-  my $self   = shift;
+  my $self = shift;
+  $ctx =shift; 
 
   $self->logRAIID;
   $self->logCommit;
@@ -157,20 +156,25 @@ sub run {
 
   die "Name of the XML file\n" unless $self->getArgs()->{'XmlFile'};
 
-  my $external_database_release_id = $self->getArgs()->{'extDbRelId'} || 
-      die 'external_database_release_id not supplied\n';
+#  my $external_database_release_id = $self->getArgs()->{'extDbRelId'} || 
+#      die 'external_database_release_id not supplied\n';
 
   $dbh = $self->getQueryHandle;
 
  ### GusApplication::Log('INFO', 'RAIID', $ctx->{self_inv}->getId);
 
   if ($self->setAlgId) {
-    foreach my $glob (@{$self->{XmlFile}}) {
+    foreach my $glob (@{$ctx->{cla}->{XmlFile}}) {
       my @files = glob($glob);
       foreach my $file (@files) {
-	$self->log("FILE ". $glob . $file);
 	my $tree = $self->parseFile($file);
-	$self->createObjects($tree) if ($self->setProjId && $self->setExtDbId($tree));
+
+###  NOTE: use argument to both createObjects and setExtDbId as not $tree, but
+###     $tree->{PSEUDOCHROMOSOME} if the PSEUDOCHROMOSOME tag is present in XML,
+###     as is the case with falciparum XML, but not for yoelii XML.
+
+	$self->createObjects($tree) if ($self->setProjId && $self->setExtDbId($tree)
+					&& $self->setExtDbRelId($tree));
       }
     }
   }
@@ -188,14 +192,14 @@ sub parseFile{
   my $self = shift;
   my $F = shift;
   
-  self->log("Loading XML file" . $F);
-
+ ### self->log("Loading XML file" . $F);
+  print "Loading XML file: $F\n";
   my $xp = XML::Simple->new();
   my $tree = $xp->XMLin($F, forcearray=>['EXON', 'RNA-EXON', 'PRE-TRNA',
 					 'GO_ID', 'GO_EVIDENCE',
 					 'EC_NUM',
 					 'TU']);
-  #Disp::Display($tree) if $self->{verbose};
+  Disp::Display($tree) if $ctx->{cla}->{verbose};
 
   return $tree;
 }
@@ -208,9 +212,10 @@ sub setAlgId {
   my $self = shift;
   $self->log("Finding Algorithm");
 
+  ### NOTE: Algorithm name is 'Pf Annotation' - CHANGE??
   my %alg = ( name => 'Pf Annotation' );
 
-  my $alg_gus = Algorithm->new(\%alg);
+  my $alg_gus = GUS::Model::Core::Algorithm->new(\%alg);
   if ($alg_gus->retrieveFromDB){
     $algId = $alg_gus->getId;
   } else {
@@ -230,9 +235,9 @@ sub setProjId {
   my $self = shift;
   $self->log("Finding Project");
 
-  my %project = ( name => $self->{ProjectInfo} || 'PlasmodiumDB-4.0' );
+  my %project = ( name => $self->{Project} || 'PlasmodiumDB-4.0' );
 
-  my $project_gus = ProjectInfo->new(\%project);
+  my $project_gus = GUS::Model::Core::ProjectInfo->new(\%project);
   if ($project_gus->retrieveFromDB) {
     $projId = $project_gus->getId;
   } else {
@@ -248,28 +253,62 @@ sub getProjId {
 
 # --------------------------------------------------------------------
 
+sub setExtDbRelId {
+  my $self = shift;
+  my $T = shift;
+
+  my $id = $self->getExtDbId;   # the external_database_id;
+  $self->log("the external_database_id = ". $id);
+  $self->log("Finding ExternalDatabaseReleaseId");
+
+  # ExternalDatabaseRelease
+  my %extdbrel;
+  $extdbrel{external_database_id} = $id;
+  $extdbrel{version} = 'unknown';  ## NOTE: may need to be modified
+
+  my $extdbrel_gus = GUS::Model::SRes::ExternalDatabaseRelease->new(\%extdbrel);
+  if ($extdbrel_gus->retrieveFromDB){
+   $extDbRelId = $extdbrel_gus->getExternalDatabaseReleaseId;
+  }
+  else {
+    print "ERROR in returning ExtDbRelId\n";
+    return undef;
+  }
+  return 1;
+}
+
+sub getExtDbRelId {
+  return $extDbRelId;
+}
+
+# --------------------------------------------------------------------
+
 sub setExtDbId {
   my $self = shift;
   my $T = shift;
-  $self->log("Finding ExternalDatabase");
+  $self->log("Finding ExternalDatabaseId");
 
   # ExternalDatabase
   my %extdb;
   if ($self->{ExtDb}){
     $extdb{lowercase_name} = $self->{ExtDb};
   } else {
-    my $seqsrc = $T->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{HEADER}->{SEQ_GROUP};
+    my $seqsrc = $T->{ASSEMBLY}->{HEADER}->{SEQ_GROUP};
+
+   ### in the database, lowercase_names are not 'pfinal_tigr', but 'plasmodium_tigr'
     my %dbsrc =
-	( 'TIGR'                => 'pfinal_tigr',
+	( 'TIGR'                => 'plasmodium_tigr',
+	  #( 'TIGR'                => 'pfinal_tigr',
 	  'Sanger Institute'    => 'pfinal_sanger',
 	  'Stanford University' => 'pfinal_stanford',
 	  );
     print $dbsrc{$seqsrc} . " -- SOURCE\n";
     $extdb{lowercase_name} = $dbsrc{$seqsrc};
   }
-  my $extdb_gus = ExternalDatabase->new(\%extdb);
+
+  my $extdb_gus = GUS::Model::SRes::ExternalDatabase->new(\%extdb);
   if ($extdb_gus->retrieveFromDB){
-    $extDbId = $extdb_gus->getId;
+      $extDbId = $extdb_gus->getExternalDatabaseId;
   }
   else {
     print "ERROR in returning ExtDbId\n";
@@ -287,16 +326,16 @@ sub getExtDbId {
 sub getTaxonId {
   my $self = shift;
   my $T = shift;
-  $self->log("Finding Taxon");
+  $self->log("Finding TaxonID");
 
   # Taxon
-  my %taxon = ( scientific_name => $self->{Taxon}
-		|| $T->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{HEADER}->{ORGANISM},
+  my %taxon = ( name => 
+		$T->{ASSEMBLY}->{HEADER}->{ORGANISM} || $ctx->{cla}->{Taxon},
 	      );
 
-  my $taxon_gus = Taxon->new(\%taxon);
+  my $taxon_gus = GUS::Model::SRes::TaxonName->new(\%taxon);
   if ($taxon_gus->retrieveFromDB) {
-    return $taxon_gus->getId;
+    return $taxon_gus->getTaxonId;
   }
   else {
     print "ERROR in returning TaxonId\n";
@@ -315,10 +354,11 @@ sub createObjects{
   # ExternalNASequence entry
   my $ena_gus = $self->makeChromosome($t);
 
-  if ($ena_gus) {
+  if ($ena_gus && $ctx->{cla}->{taskFlag} ne'LoadGenomicSequence') {
     # create method name from task.
-    my $method = 'TASK_'. $self->{taskFlag};
+    my $method = 'TASK_'. $ctx->{cla}->{taskFlag};
 
+    ###$self->log("METHOD: " . $method); 
     # execute it if plugin has a method for it.
     if (my $sub = $self->can($method)) {
       $sub->($self,$t,$ena_gus);
@@ -337,6 +377,7 @@ sub createObjects{
 #  -could be modified to load both the gap features and also 
 #   ScaffoldContigFeatures (table not yet created)
 
+### NOTE: NOT YET UPDATED 
 sub TASK_ScaffoldGapFeatures {
   my $self = shift; # plugin
   my $X = shift; # hash ref           : XML tree from file.
@@ -346,7 +387,7 @@ sub TASK_ScaffoldGapFeatures {
   my $seqSrcId = $C->get('source_id');
   my $seqExtDbId = $C->get('external_db_id');
   my $nGaps = 0;
-  my $scaffold = $X->{PSEUDOCHROMOSOME}->{SCAFFOLD};
+  my $scaffold = $X->{SCAFFOLD};
 
   if ($scaffold) {
     my $components = $scaffold->{SCAFFOLD_COMPONENT};
@@ -377,7 +418,7 @@ sub TASK_ScaffoldGapFeatures {
 	    right_contig => $clone,
 	});
 
-	my $nal = NALocation->new({
+	my $nal = GUS::Model::DoTS::NALocation->new({
 	    start_min => $lastCr,
 	    start_max => $lastCr,
 	    end_min => $cl,
@@ -417,18 +458,18 @@ sub TASK_GeneFeatures {
   # GeneModel entries
   my $ref_gmodel;
 
-  #   $ref_gmodel = $X->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{GENE_LIST}->{PROTEIN_CODING}->{TU};  # array ref
-  #   foreach my $genemodel (@$ref_gmodel){
-  #     $self->makeGeneModel($C, $genemodel, 'protein coding');
-  #   }
-
-  $ref_gmodel = $X->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{GENE_LIST}->{RNA_GENES}->{'PRE-TRNA'};
+  #
+  $ref_gmodel = $X->{ASSEMBLY}->{GENE_LIST}->{PROTEIN_CODING}->{TU};  # array ref
   foreach my $genemodel (@$ref_gmodel){
-    $self->makeGeneModel($C, $genemodel, 'trna');
+      $self->makeGeneModel($C, $genemodel, 'protein coding');
   }
 
+###  $ref_gmodel = $X->{ASSEMBLY}->{GENE_LIST}->{RNA_GENES}->{'PRE-TRNA'};
+###  foreach my $genemodel (@$ref_gmodel){
+###    $self->makeGeneModel($C, $genemodel, 'trna');
+###  }
+
 }
-#>>>>>>> 1.6
 
 # --------------------------------------------------------------------
 
@@ -437,7 +478,7 @@ sub findGeneFromXml {
   my $G = shift; # hash ref : TIGR XML at TU level.
   my $C = shift; # ExternalNaSequence : the chromosome.
 
-  my $gene_gus = GeneFeature->new({ na_sequence_id => $C->getId,
+  my $gene_gus = GUS::Model::DoTS::GeneFeature->new({ na_sequence_id => $C->getId,
 				    gene           => $G->{GENE_INFO}->{LOCUS},
 				  });
 
@@ -456,10 +497,10 @@ sub makeProjLink {
   my %plink;
 
   # table
-  $plink{table_id} = $T->getTableIdFromTableName($T->getTableName);
+  $plink{table_id} = $T->getTableIdFromTableName($T->getClassName);
   $plink{id}       = $T->getId();
 
-  my $projlink_gus = ProjectLink->new(\%plink);
+  my $projlink_gus = GUS::Model::DoTS::ProjectLink->new(\%plink);
 
   if ($projlink_gus->retrieveFromDB) {
     # case when projectLink is in dB
@@ -503,8 +544,7 @@ sub map_asmbl_id_to_source_id {
 	      2285 => "unmapped_3",
 	      2286 => "unmapped_4",
 	      );
-  my $x = $X->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{ASMBL_ID}->{content};
-
+  my $x = $X->{ASSEMBLY}->{ASMBL_ID}->{content};
   return $map{$x};
 }
 
@@ -516,23 +556,27 @@ sub makeChromosome {
 
   # Find ExternalNASequence
   my %enaSeq = ( taxon_id       => $self->getTaxonId($T),
-		 external_db_id => $self->getExtDbId,
-		 source_id      => $self->map_asmbl_id_to_source_id($T),
+		 external_database_release_id => $self->getExtDbRelId,
+  # NOTE: for falciparum XML, map_asmbl_id_to_source_id method was used to set 
+  #       the source_id appropriately.
+  #		 source_id      => $self->map_asmbl_id_to_source_id($T),
+		 source_id      => "chrPyl_0" . $T->{ASSEMBLY}->{ASMBL_ID}->{content},
 	       );
-  my $ena_gus = ExternalNASequence->new(\%enaSeq);
+  my $ena_gus = GUS::Model::DoTS::ExternalNASequence->new(\%enaSeq);
 
   # got it
   if ($ena_gus->retrieveFromDB) {
     print "ExternalNASequence already in DB with ID " . $ena_gus->getId . "\n";
 
     # update if requested by task.  We should do this elsewhere?
-    if ($self->{taskFlag} eq 'UpdateGenomicSequence') {
+    if ($ctx->{cla}->{taskFlag} eq 'UpdateGenomicSequence') {
 	
-      my $tmp_chr = $self->{chrnum};
+      my $tmp_chr = $ctx->{cla}->{chrnum};
       $tmp_chr =~ s/chr//;
-      $enaSeq{chromosome}           = $tmp_chr||$T->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{CHROMOSOME};
+
+      $enaSeq{chromosome}           = $tmp_chr||$T->{ASSEMBLY}->{CHROMOSOME};
       #  $enaSeq{chromosome}           = 'unmapped';
-      ###BBB
+
       $enaSeq{sequence_version}     = 1;
       $enaSeq{sequence_type_id}     = 3;   # for double-stranded DNA
     }
@@ -540,14 +584,16 @@ sub makeChromosome {
   # couldn't find it
   else {
     # we expect to make new entries.
-      if ($self->{taskFlag} eq 'LoadGenomicSequence') {
+      if ($ctx->{cla}->{taskFlag} eq 'LoadGenomicSequence') {
 	# case when sequence is in dB and may be over-written, OR sequence not in dB
-	  $ena_gus->setSecondaryIdentifier($T->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{ASMBL_ID}->{content});
-	  $ena_gus->setName($T->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{HEADER}->{CLONE_NAME});
-	  $ena_gus->setChromosomeOrderNum($T->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{CHROMOSOME});
-	  #$ena_gus->setSequence($T->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{ASSEMBLY_SEQUENCE});
-	  my $sequence = $T->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{ASSEMBLY_SEQUENCE};
-	  my $cts = &Sequence::getCounts($sequence, length($sequence), 1);
+
+	  ### $ena_gus->setSequenceTypeId     = 3;   # for double-stranded DNA
+	  $ena_gus->setSecondaryIdentifier($T->{ASSEMBLY}->{ASMBL_ID}->{content});
+	  $ena_gus->setName($T->{ASSEMBLY}->{HEADER}->{CLONE_NAME});
+	  $ena_gus->setChromosomeOrderNum($T->{ASSEMBLY}->{CHROMOSOME});
+	  #$ena_gus->setSequence($T->{ASSEMBLY}->{ASSEMBLY_SEQUENCE});
+	  my $sequence = $T->{ASSEMBLY}->{ASSEMBLY_SEQUENCE};
+	  my $cts = &GUS::Common::Sequence::getCounts($sequence, length($sequence), 1);
 	  $ena_gus->set('length', length($sequence));
 	  $ena_gus->set('a_count', $cts->{'a'});
 	  $ena_gus->set('g_count', $cts->{'g'});
@@ -555,6 +601,7 @@ sub makeChromosome {
 	  $ena_gus->set('c_count', $cts->{'c'});
 	  $ena_gus->set('other_count', $cts->{'o'});
 	  $ena_gus->setSequence($sequence);
+
 	  # DEBUG
 	  print "Submitting sequence ", length($sequence), "\n";
 
@@ -565,7 +612,7 @@ sub makeChromosome {
       # couldn't find sequence but expected to; just let 'em know and toss the ExtNaSeq.
       else {
 	$self->log("WARN: " . "Did not find matching chromosome " .
-		   $T->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{ASMBL_ID}->{content},
+		   $T->{ASSEMBLY}->{ASMBL_ID}->{content},
 		   $ena_gus->getSourceId
 		  );
 	undef $ena_gus;
@@ -589,15 +636,15 @@ sub makeGeneModel {
   $trna_src_id = $self->{chrnum} . "-" . $trna_src_id;
   # make the gene feature
   my %gene_feat_h =
-    ( external_db_id          => $self->getExtDbId,
-      na_sequence_id          => $C->getId,
-      gene                    => $G->{GENE_INFO}->{LOCUS} || $G->{TRNA}->{COM_NAME},
-      gene_type               => $T,
-      name                    => 'GeneFeature', # other choices: CDS, gene, snRNA, tRNA
-      source_id               => ($T eq 'trna'? $trna_src_id:$G->{GENE_INFO}->{PUB_LOCUS}),
+    ( external_database_release_id => $self->getExtDbRelId,
+      na_sequence_id               => $C->getId,
+      gene                         => $G->{GENE_INFO}->{LOCUS} || $G->{TRNA}->{COM_NAME},
+      gene_type                    => $T,
+      name                         => 'GeneFeature', # other choices: CDS, gene, snRNA, tRNA
+      source_id                    => ($T eq 'trna'? $trna_src_id:$G->{GENE_INFO}->{PUB_LOCUS}),
     );
 
-  my $gene_feat_gus = GeneFeature->new(\%gene_feat_h);
+  my $gene_feat_gus = GUS::Model::DoTS::GeneFeature->new(\%gene_feat_h);
 
   if ($gene_feat_gus->retrieveFromDB && !$self->{seqFlag}){
     # case when gene feature is in dB, and not to be over-written
@@ -611,7 +658,7 @@ sub makeGeneModel {
     } else {
       $gene_feat_gus->setProduct($G->{GENE_INFO}->{COM_NAME});
       $gene_feat_gus->setIsPseudo($G->{GENE_INFO}->{IS_PSEUDOGENE});
-      $gene_feat_gus->setManuallyReviewed($G->{GENE_INFO}->{FUNCT_ANNOT_EVIDENCE}->{TYPE} eq 'CURATED' ? 1 : 0);
+      $gene_feat_gus->setReviewStatusId($G->{GENE_INFO}->{FUNCT_ANNOT_EVIDENCE}->{TYPE} eq 'CURATED' ? 1 : 0);
       $gene_feat_gus->setConfirmedBySimilarity
 	  ($G->{MODEL}->{MODEL_EVIDENCE}->{EVIDENCE_TYPE}->{SEQUENCE_DB_MATCH}->{SEARCH_DB} ? 1 : 0);
     }
@@ -622,8 +669,6 @@ sub makeGeneModel {
   $gene_feat_gus ->setParent($C); #new
 
   # make and attach location, if need be
-
-  print "GeneFeature Location : " . $G->{COORDSET}{END3} . " - OK \n";
   my $naloc = &addNALocation($gene_feat_gus,$G->{COORDSET},1);
   $gene_feat_gus -> addChild($naloc); #--check
 
@@ -655,23 +700,23 @@ sub makeGeneModel {
   } else {
     sort revorderExons@$exons_xml;
   }
-  
+
   for (my $i = 0; $i < @$exons_xml; $i++) {
     addExon($gene_feat_gus, $C, $exons_xml->[$i], $i, scalar @$exons_xml);
   }
   # add further gene-related features
-  if ($T eq 'protein coding'){
+  if ($T eq 'protein coding' ){
     $gene_feat_gus->makePredictedRnaToProtein(undef,
-					      $self->getExtDbId,
+					      $self->getExtDbRelId,
 					      $gene_feat_gus->getSourceId);
     # spliced rna sequence
-    my $rna_gus = $gene_feat_gus->getChild('RNAFeature');      # RNAFeature
-    # RNAFeature.manually_reviewed value to match corresponding GeneFeature value
-    $rna_gus->setManuallyReviewed($G->{GENE_INFO}->{FUNCT_ANNOT_EVIDENCE}->{TYPE} eq 'CURATED' ? 1 : 0);
-    my $sseq_gus = $rna_gus->getParent('SplicedNASequence');   # SplicedNASequence
+    my $rna_gus = $gene_feat_gus->getChild('DoTS::RNAFeature');      # RNAFeature
+    # RNAFeature.review_status_id value to match corresponding GeneFeature value
+    $rna_gus->setReviewStatusId($G->{GENE_INFO}->{FUNCT_ANNOT_EVIDENCE}->{TYPE} eq 'CURATED' ? 1 : 0);
+    my $sseq_gus = $rna_gus->getParent('DoTS::SplicedNASequence');   # SplicedNASequence
 
     my $dbSeq = $sseq_gus->getSequence();
-    my $cts = &Sequence::getCounts($dbSeq, length($dbSeq), 1);
+    my $cts = &GUS::Common::Sequence::getCounts($dbSeq, length($dbSeq), 1);
     $sseq_gus->set('length', length($dbSeq));
     $sseq_gus->set('a_count', $cts->{'a'});
     $sseq_gus->set('g_count', $cts->{'g'});
@@ -685,9 +730,9 @@ sub makeGeneModel {
     ### transcribed region of gene - so not to be used as though earlier
 
     # translated aminoacid sequence
-    my $tas_gus = $gene_feat_gus->getChild('RNAFeature')
-	->getChild('TranslatedAAFeature')
-	    ->getParent('TranslatedAASequence');
+    my $tas_gus = $gene_feat_gus->getChild('DoTS::RNAFeature')
+	->getChild('DoTS::TranslatedAAFeature')
+	    ->getParent('DoTS::TranslatedAASequence');
 
     my $proSeq  = $G->{MODEL}->{PROTEIN_SEQUENCE};
     $proSeq =~ s/\s+//g;         # remove whitespaces (eg: newlines)
@@ -712,7 +757,7 @@ sub makeGeneModel {
       
   } elsif ($T eq 'trna'){
     $gene_feat_gus->makePredictedRna(undef,
-				     $self->getExtDbId,
+				     $self->getExtDbRelId,
 				     $gene_feat_gus->getSourceId);
   }
 
@@ -748,7 +793,7 @@ sub addNALocation {
     $is_reversed = 1;
   }
 
-  my $l = NALocation->new({'start_min'   => $start,
+  my $l = GUS::Model::DoTS::NALocation->new({'start_min'   => $start,
 			   'start_max'   => $start,
 			   'end_min'     => $stop,
 			   'end_max'     => $stop,
@@ -768,9 +813,9 @@ sub addNote {
   my $rem = shift; # string
 
   $rem = "Sequencing Center " . $rem;
-  my $n = Note->new({'more_remark'   => $S,
-		     'remark'        => $rem,
-		   });
+  my $n = GUS::Model::DoTS::NAFeatureComment->new
+      ({'comment_string'   => $rem . $S,
+       });
   $n->setParent($F);
 
   return $n;
@@ -787,23 +832,23 @@ sub addExon {
 
   # make the ExonFeature
   my %exon_h = 
-    ( external_db_id          => getExtDbId,
-      na_sequence_id          => $C->getId,
-      source_id               => $E->{FEAT_NAME},
-      prediction_algorithm_id => $G->getPredictionAlgorithmId,
-      is_predicted            => $G->getIsPredicted,
-      manually_reviewed       => $G->getManuallyReviewed,
-      order_number            => $O,
-      coding_start            => abs($E->{COORDSET}->{END5} -
-				     $E->{CDS}->{COORDSET}->{END5})+1,
-      name                    => 'ExonFeature',
-      coding_end              => abs($E->{COORDSET}->{END5} -
-				     $E->{CDS}->{COORDSET}->{END3})+1,
+    ( external_database_release_id => getExtDbId,
+      na_sequence_id               => $C->getId,
+      source_id                    => $E->{FEAT_NAME},
+      prediction_algorithm_id      => $G->getPredictionAlgorithmId,
+      is_predicted                 => $G->getIsPredicted,
+      review_status_id             => $G->getReviewStatusId,
+      order_number                 => $O+1,  # NOTE: to start order_number of exons with 1
+      coding_start                 => abs($E->{COORDSET}->{END5} -
+					  $E->{CDS}->{COORDSET}->{END5})+1,
+      name                         => 'ExonFeature',
+      coding_end                   => abs($E->{COORDSET}->{END5} -
+					  $E->{CDS}->{COORDSET}->{END3})+1,
       );
   $exon_h{is_initial_exon} = 1 if ($O == 0);
   $exon_h{is_final_exon} = 1 if ($O == $l-1);
 
-  my $exon_gus = ExonFeature->new(\%exon_h);
+  my $exon_gus = GUS::Model::DoTS::ExonFeature->new(\%exon_h);
 
   # give it a location
   addNALocation($exon_gus,$E->{COORDSET},1);
@@ -826,7 +871,7 @@ sub TASK_FixGeneFeatures {
   my $C = shift; # ExternalNASequence : chromosome
 
   # get the (protein coding) genes on this assembly.
-  my $genes_xml = $X->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{GENE_LIST}->{PROTEIN_CODING}->{TU};
+  my $genes_xml = $X->{ASSEMBLY}->{GENE_LIST}->{PROTEIN_CODING}->{TU};
   # count found and fixed genes
   my $found_genes_n = 0;
 
@@ -881,17 +926,18 @@ sub TASK_FixGeneFeatures {
 # ====================================================================
 # Attaches AASequenceEnzymeClass rows to TranslatedAASequences.
 
+### NOTE: NOT YET UPDATED 
 sub TASK_EcAnnotation {
   my $self = shift; # plugin
   my $X = shift; # hash ref           : XML tree from file.
   my $C = shift; # ExternalNASequence : chromosome
 
   require GUS::Model::DoTS::AASequenceEnzymeClass;
-  require GUS::Model::DoTS::EnzymeClass;
+  require GUS::Model::SRes::EnzymeClass;
 
   # get the (protein coding) genes on this assembly.
   my $genes_xml
-      = $X->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{GENE_LIST}->{PROTEIN_CODING}->{TU};
+      = $X->{ASSEMBLY}->{GENE_LIST}->{PROTEIN_CODING}->{TU};
 
   # number of associations made
   my $assoc_made_n = 0;
@@ -1025,6 +1071,7 @@ sub TASK_EcAnnotation {
 # Attaches GO annotation for a TIGR XML gene to AASequences associated
 # with a GUS GeneFeature.
 
+### NOTE: NOT YET UPDATED
 sub TASK_GoAnnotation {
   my $self = shift; # plugin
   my $X = shift; # hash ref           : XML tree from file.
@@ -1045,7 +1092,7 @@ sub TASK_GoAnnotation {
   $self->goLoadSynonyms;
 
   # get the (protein coding) genes on this assembly.
-  my $genes_xml = $X->{PSEUDOCHROMOSOME}->{ASSEMBLY}->{GENE_LIST}->{PROTEIN_CODING}->{TU};
+  my $genes_xml = $X->{ASSEMBLY}->{GENE_LIST}->{PROTEIN_CODING}->{TU};
 
   # number of associations made
   my $assoc_made_n = 0;
