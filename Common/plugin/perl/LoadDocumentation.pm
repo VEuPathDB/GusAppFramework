@@ -51,7 +51,7 @@ sub new {
     my $usage = 'Loads documentation for tables and attributes of the GUS project';
     my $easycsp =
 	[{o => 'inputFile',
-	  t => 'string',
+	  t => 'string',#	$self->logData("Test: table name = $table_nm attribute name = $attribute_nm html documentation = $html_dc\n") if $verbose;
 	  h => 'name of the documentation file to load',
 	 }];
     $self->initialize({requiredDbVersion => {Core => '3'},
@@ -76,7 +76,7 @@ sub run {
 	
 	if (!$ctx->{cla}->{'inputFile'}) {
 	  die "you must provide --inputFile on the command line\n";
-	}
+	}#	$self->logData("Test: table name = $table_nm attribute name = $attribute_nm html documentation = $html_dc\n") if $verbose;
 
 	print $ctx->{cla}->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
 
@@ -111,7 +111,7 @@ sub process {
 
 	my $verbose = $self->getCla->{verbose};
 
-
+#	$self->logData("Test: table name = $table_nm attribute name = $attribute_nm html documentation = $html_dc\n") if $verbose;
 
 	my $db = $self->getDb;
         $db->setGlobalNoVersion(1);
@@ -158,6 +158,7 @@ sub process {
 	
 	
 } # end sub process
+1;
 
 ############################################################
 ############################################################
