@@ -1,45 +1,36 @@
 #!/usr/bin/perl
 
 # -------------------------------------------------------------
-# ImportPfam.pm
+# LoadPfam.pm
 #
 # Load a release of Pfam into GUS.  Assumes that the 
 # ExternalDatabase table has already been populated with
 # entries for the databases to which Pfam links (see below
 # for the full list.)
 # 
-# Most recently tested on 9/9/2002 against Pfam Release 7.5,
+# Most recently tested on 17 March 2003 against Pfam Release 8.0,
 # specifically the following file:
 #  <ftp://ftp.sanger.ac.uk/pub/databases/Pfam/Pfam-A.full.gz>
 #
-# Created: Wed May 24 20:05:51 EDT 2000
+# This is the GUS3.0 version converted from ImportPfam in GUSdev. The code has
+# been modified to take into account the extra table;
 #
-# Jonathan Crabtree
+#   Was: DbRef -> ExternalDatabase
+#   Now: SRes.DBRef -> SRes::ExternalDatabaseRelease -> SRes::ExternalDatabase
+#
+# Because of this it uses the lastest ExternalDatabaseRelease (by date).
+#
+# DbRefPfamEntries are created for all DbRef types, not just Medline
+# ones as ImportPfam did. I think this was a bug in the old version.
+#
+#
+# Created: Mon Mar 17 13:39:56 GMT 2003
+#
+# Author:  Paul Mooney (Original by Jonathan Crabtree)
 #
 # $Revision$ $Date$ $Author$
 # -------------------------------------------------------------
-#
-#
-# For testing only;
-#
-# ga GUS::Common::Plugin::LoadPfam --parse_only --flat_file=/nfs/team81/pjm/temp/Pfam-A.full.gz --release=8.0
-#
-# NOTES
-# -----
-#
-# Now extra middle table for DB version
-#
-# Was: DbRef -> ExternalDatabase
-# Now: SRes.DBRef -> SRes::ExternalDatabaseRelease -> SRes::ExternalDatabase
-#
-# If I want to link to PRINTS, how do I know which version???
-# I only know the version of PFam from the cmd line.
-#
-# Is is safe to assume that loadign the latest PFam means linking to the
-# latest OTHER DBs???  
-#
-#
-#
+
 
 package GUS::Common::Plugin::LoadPfam;
 @ISA = qw(GUS::PluginMgr::Plugin); #defines what is inherited
@@ -53,9 +44,6 @@ use GUS::Model::DoTS::DbRefPfamEntry;
 use GUS::Model::SRes::DbRef;
 use GUS::Model::SRes::ExternalDatabase;
 
-# ----------------------------------------------------------
-# Configuration
-# ----------------------------------------------------------
 
 # ----------------------------------------------------------
 # GUSApplication
@@ -103,6 +91,12 @@ sub new {
     return $self;
 }
 
+# Check command line args and open the flat_file for parsing, which can be in
+# .gz format. Create PfamEntrys and link to the correct DbRef (create as need
+# be) by adding DbRefPfamEntry for each.
+#
+# Finish by showing summary of how many records have been created.
+#
 sub run {
     my $self      = shift;
     my $flatFile  = $self->getCla->{'flat_file'};
@@ -151,7 +145,7 @@ sub run {
 	next if (/^\# STOCKHOLM 1\.0$/);
 
 	if (/^\#=GF (\S\S)\s+(\S.*)$/) {
-	    my $code = $1;
+	    my $code  = $1;
 	    my $value = $2;
 
 	    # Single-valued attributes
@@ -241,11 +235,11 @@ sub run {
 
 			$pe->submit() if (!$parseOnly);
 			my $entryId = $pe->get('pfam_entry_id');
-			my $links = {};
+			my $links   = {};
 
 			# MEDLINE references
 			#
-			my $mrefs = $entry->{'RM'};
+			my $mrefs  = $entry->{'RM'};
 			my $mlDbId = &getExtDbRelId($extDbs, 'medline');
 
 			foreach my $mref (@$mrefs) {
@@ -363,7 +357,6 @@ sub run {
 
     my $summary = undef;
 
-
     if ($parseOnly) {
 	$summary = "Parsed $numEntries entries and $numRefs new database references from Pfam release $release.";
     } else {
@@ -376,27 +369,6 @@ sub run {
 # ----------------------------------------------------------
 # Other subroutines
 # ----------------------------------------------------------
-
-# Reads ExternalDatabase table into a hash indexed on 'name'
-#
-sub readExternalDbs_OLD_VERSION() {
-    my($dbh) = @_;
-    
-    my $dbHash = {};
-    my $sth = $dbh->prepare("select * from SRes.ExternalDatabase");
-    $sth->execute();
-
-    while (my $row = $sth->fetchrow_hashref('NAME_lc')) {
-	my %copy = %$row;
-	my $name = $row->{'name'};
-	# normalize to lowercase
-	$name =~ tr/A-Z/a-z/;
-	$dbHash->{$name} = \%copy;
-    }
-    $sth->finish();
-    return $dbHash;
-}
-
 
 # Reads ExternalDatabase and ExternalDatabaseRelease tables into a hash
 # indexed on 'name' with value of the last release by date.
@@ -435,23 +407,6 @@ sub readExternalDbReleases() {
 
 # Return the external_db_id of an ExternalDatabase given its name.
 #
-# TO BE REMOVED
-
-sub getExtDbId_OLD_VERSION {
-    my($extDbs, $name) = @_;
-
-    # Normalize to lowercase
-    $name =~ tr/A-Z/a-z/;
-
-    my $db = $extDbs->{$name};
-    my $dbId = $db->{'external_db_id'} if defined($db);
-    
-    die "Unable to find ID for ExternalDatabase $name" if (not defined($dbId));
-    return $dbId;
-}
-
-# Return the external_db_id of an ExternalDatabase given its name.
-#
 sub getExtDbRelId {
     my($extDbRels, $name) = @_;
 
@@ -464,8 +419,8 @@ sub getExtDbRelId {
     return $relId;
 }
 
-# Return the ID of a DbRef, if it already exists.  Otherwise
-# create the DbRef and submit it before returning the newly-
+# Return the ID of a DbRef, if it already exists. If several exist, return the
+# first. Otherwise create the DbRef and submit it before returning the newly
 # generated ID.
 #
 sub getDbRefId {
@@ -479,8 +434,6 @@ sub getDbRefId {
     $dbrefSth->execute($extDbRelId, $lcPrimaryId);
     while (my($id) = $dbrefSth->fetchrow_array()) { push(@$ids, $id); }
     my $idCount = scalar(@$ids);
-
-    #print STDERR "  getDbRefId: \$idCount = $idCount\n";
 
     # Not in the database; create and add a new entry
     #
@@ -499,8 +452,6 @@ sub getDbRefId {
 	}
 
 	$dbRef->set('remark', $remark) if (defined($remark));
-
-        #print STDERR "  Submitting DbRef where \$extDbRelId = $extDbRelId, \$primaryId = $primaryId, \$lcPrimaryId = $lcPrimaryId\n";
 
 	if ($parseOnly) {
 	    return 1; 
