@@ -26,6 +26,7 @@ sub new {                       # constructor using DbiDatabase
   if (!$databaseObj) {
     $databaseObj = GUS::ObjRelP::DbiDatabase->getDefaultDatabase();
   }
+  &confess ("did not make default database") unless $databaseObj;
   my $table = $databaseObj->getTable($tableClassName);
   my $self = {};
   bless $self, $class;
@@ -429,111 +430,90 @@ sub toString {
 ############################################################
 
 #-----------------------------------------------------------
-# addChild - sets child's (child is the $relatedRow) foreign
-#         key to parent's primary key.
-#-----------------------------------------------------------
-sub addChild {                  # sets child's foreign key to parents primary key
-  my ($self,$relatedRow,$primColumn,$forColumn) = @_;
-  my $foreign_table = $relatedRow->getClassName();
-  if (!$primColumn) {
-    $primColumn = $self->getForeignKeyColumn($foreign_table);
-  }
-  if (!$forColumn) { 
-    $forColumn = $self->getTable()->getForeignTableColumn($foreign_table,$primColumn);
-  }
-  $relatedRow->set($forColumn,$self->get($primColumn));
-}
-
-#-----------------------------------------------------------
 # getRelations - returns a list ref 
 #-----------------------------------------------------------
+
+#dtb: called by retrieveParentsFromDb, retrieveChildrenFromDb in GusRow.pm
+#both of which pass in $relationKey as the $foreign_table
+#and pass in $relationKey as $object_type
+
 sub getRelations {              # returns list ref # this assume only one rel between tables!
-  my ($self,$foreign_table,$self_column,$foreign_column,$object_type,$where,$doNotRetAtts) = @_;
-  #  print STDERR "DbiRow:getRelations($self,$foreign_table,$self_column,$foreign_column,$object_type,$where)\n";
-  my ($foreignKey);
-  my $dbh = $self->getDbHandle();
-  if (!$self_column) {
-    $self_column = $self->getTable()->getForeignKeyColumn($foreign_table);
-  }
-  if (!$foreign_column) {
-    $foreign_column = $self->getTable()->getForeignTableColumn($foreign_table,	$self_column);
-  }
-  ##note want to cache the statements to  make more efficient...do not cache if $where
-  my $cacheKey = "";
-
-  ##if $doNotRetAtts need to build up stmt...
-  my @atts;
-  my $dnr = {};
-  if ($doNotRetAtts && ref $doNotRetAtts eq 'ARRAY') {
-    my $attlist = $self->getDatabase()->getTable($foreign_table)->getAttributeList();
-    foreach my $a (@$attlist) {
-      push(@atts,$a) unless grep /^$a$/,@$doNotRetAtts;
+    my ($self,$foreign_table,$self_column,$foreign_column,$object_type,$where,$doNotRetAtts) = @_;
+    #  print STDERR "DbiRow:getRelations($self,$foreign_table,$self_column,$foreign_column,$object_type,$where)\n";
+    my ($foreignKey);
+    my $dbh = $self->getDbHandle();
+    if (!$self_column) {
+	&confess("self_column is null");
     }
-    ##if not retrieving atts that needs to be reflected in the cache key..
-    foreach my $att (@$doNotRetAtts) {
-      $cacheKey .= "NOT".$att;
-      $dnr->{$att} = 1;
-    }
-  }
-
-  my @valuesArr;
-  my @where;
-  while (my($key, $value) = each(%$where) ) {
-    push(@where, " $key = ?");
-    push(@valuesArr,($value =~ /^null$/i ? undef : $value));
-    $cacheKey .= "$key";
-  }
-  push(@where, " $foreign_column = ?");
-  push(@valuesArr,$self->get($self_column));
-  $cacheKey .= "$foreign_column";
-  my $whereClause = join(' and ',@where);
-
-  my $sth = $self->getTable()->getCachedStatement($foreign_table,$cacheKey.$self_column);
-
-  my $forTbl = $self->getDatabase()->getTable($foreign_table);
-
-  my $sql = "select ".($doNotRetAtts ? join(', ',@atts) : "*"). " from " . $forTbl->getOracleTableName() . " where " . $whereClause;
-
-  if ($self->getDatabase()->getVerbose()) {
-    print STDERR "\ngetRelations: $sql\n  bindValues (",join(', ',@valuesArr),")\n";
-  }
-
-  if (!$sth) {                  ##don't have it cached...
-    $sth = $dbh->prepare($sql);
-    ##now the caching...
-    #    print STDERR "Caching $sql\n";
-    $self->getTable()->cacheStatement($foreign_table,$cacheKey.$self_column,$sth);
-  }
     
-  $sth->execute(@valuesArr);
-  my (@objects);
-  my $i = 0;
-  while (my $row = $sth->fetchrow_hashref('NAME_lc')) {
-    if (!$object_type) {
-      $objects[$i] = GUS::ObjRelP::DbiRow->new($foreign_table,$row,$self->getDatabase(),undef); 
-    } else {
-      ##      $objects[$i] = $object_type->new($row,undef,$dbh); 
-      $objects[$i] = $object_type->new($row,$self->getDatabase()); 
+    if (!$foreign_column) {
+	&confess("foreign_column is null");
     }
-    if ($doNotRetAtts) {
-      $objects[$i]->{'didNotRetrieve'} = $dnr;
+    
+    ##note want to cache the statements to  make more efficient...do not cache if $where
+    my $cacheKey = "";
+    
+    ##if $doNotRetAtts need to build up stmt...
+    my @atts;
+    my $dnr = {};
+    if ($doNotRetAtts && ref $doNotRetAtts eq 'ARRAY') {
+	my $attlist = $self->getDatabase()->getTable($foreign_table)->getAttributeList();
+	foreach my $a (@$attlist) {
+	    push(@atts,$a) unless grep /^$a$/,@$doNotRetAtts;
+	}
+	##if not retrieving atts that needs to be reflected in the cache key..
+	foreach my $att (@$doNotRetAtts) {
+	    $cacheKey .= "NOT".$att;
+	    $dnr->{$att} = 1;
+	}
     }
-    $i++;
-  }
-  return \@objects;
-  
-}
-
-#-----------------------------------------------------------
-# getRelation - returns a single relation.
-#-----------------------------------------------------------
-sub getRelation {               # returns single instance
-  my ($self,$foreign_table,$column,$foreign_column,$object_type,$singleCheck,$where) = @_;
-  my $list = $self->getRelations($foreign_table,$column,$foreign_column,$object_type,undef,$where);
-  if ($singleCheck && scalar @$list > 1) { 
-    print STDERR "GUS::ObjRelP::DbiRow->getRelation: more than one relation for foreign table ".$foreign_table ." for object ".$self->toString();
-  }
-  return $list->[0];
+    
+    my @valuesArr;
+    my @where;
+    while (my($key, $value) = each(%$where) ) {
+	push(@where, " $key = ?");
+	push(@valuesArr,($value =~ /^null$/i ? undef : $value));
+	$cacheKey .= "$key";
+    }
+    push(@where, " $foreign_column = ?");
+    push(@valuesArr,$self->get($self_column));
+    $cacheKey .= "$foreign_column";
+    my $whereClause = join(' and ',@where);
+    
+    my $sth = $self->getTable()->getCachedStatement($foreign_table,$cacheKey.$self_column);
+    
+    my $forTbl = $self->getDatabase()->getTable($foreign_table);
+    
+    my $sql = "select ".($doNotRetAtts ? join(', ',@atts) : "*"). " from " . $forTbl->getOracleTableName() . " where " . $whereClause;
+    
+    if ($self->getDatabase()->getVerbose()) {
+	print STDERR "\ngetRelations: $sql\n  bindValues (",join(', ',@valuesArr),")\n";
+    }
+    
+    if (!$sth) {                  ##don't have it cached...
+	$sth = $dbh->prepare($sql);
+	##now the caching...
+	#    print STDERR "Caching $sql\n";
+	$self->getTable()->cacheStatement($foreign_table,$cacheKey.$self_column,$sth);
+    }
+    
+    $sth->execute(@valuesArr);
+    my (@objects);
+    my $i = 0;
+    while (my $row = $sth->fetchrow_hashref('NAME_lc')) {
+	if (!$object_type) {
+	    $objects[$i] = GUS::ObjRelP::DbiRow->new($foreign_table,$row,$self->getDatabase(),undef); 
+	} else {
+	    ##      $objects[$i] = $object_type->new($row,undef,$dbh); 
+	    $objects[$i] = $object_type->new($row,$self->getDatabase()); 
+	}
+	if ($doNotRetAtts) {
+	    $objects[$i]->{'didNotRetrieve'} = $dnr;
+	}
+	$i++;
+    }
+    return \@objects;
+    
 }
 
 sub getNextID {
@@ -609,7 +589,7 @@ sub update {
     &confess("No primary key defined for update ".$self->toString()."\n");
   }
   my $dbh = $self->getDbHandle();
-  my $numRows = $self->quote_and_update($self->getTable()->getClassName(),$self->getChangedAttributes(),
+  my $numRows = $self->quote_and_update($self->getChangedAttributes(),
                                         $self->getPrimaryKey()); 
   $self->synch();
   return $numRows;
@@ -631,14 +611,14 @@ sub insert {
     if ($identIns) {
       $dbh->setIdentityInsertOn($tab);
     }
-    $numRows = $self->quote_and_insert($self->getTable()->getClassName(),$self->getAttributes());
+    $numRows = $self->quote_and_insert($self->getAttributes());
     if ($identIns) {
       $dbh->setIdentityInsertOff($tab);
     } elsif ($self->getTable()->pkIsIdentity()) {
       $self->setId($self->getLastIdInsert());
     }
   } else {
-    $numRows = $self->quote_and_insert($self->getTable()->getClassName(),$self->getAttributes());
+    $numRows = $self->quote_and_insert($self->getAttributes());
   }
   $self->synch();
   return $numRows;
@@ -649,7 +629,7 @@ sub insert {
 #------------------------------------------------------
 sub quote_and_insert {
   ## INSERT HASH REF PASSED IN
-  my ($self, $table,$insert ) = @_;
+  my ($self, $insert ) = @_;
   my ($insert_clause, $values_clause, $key, $value); ## locals
 
   ##deal with clob types....actually any long strings...>500 chars...
@@ -698,7 +678,7 @@ sub quote_and_insert {
 
 sub quote_and_update {
   ## PARAMETERS - dbhandle, table(string), set hash ref, where hash ref, 
-  my ($self, $table, $set, $where, $override_update_operator) = @_;
+  my ($self, $set, $where, $override_update_operator) = @_;
   my $dbh = $self->getDbHandle();
   my $valuesArr;
   my $set_clause = "";
