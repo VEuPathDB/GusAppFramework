@@ -1,3 +1,7 @@
+- use die to fail
+
+- always test mkdir and open and die if they fail.
+
 - never fail.  always use status, and exit gracefully.
 
 - never use print, use log:
@@ -7,8 +11,9 @@
    - logVerbose 
    - logVeryVerbose
 
+- args are of the form firstSecond not first_second
 
-
+- loading plugins need to be called LoadXXXX
 
 --verbose --veryVerbose
 --objVerbose --objVeryVerbose

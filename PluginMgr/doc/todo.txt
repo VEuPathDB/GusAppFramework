@@ -1,3 +1,18 @@
+- need property for location of md5
+
+- test existence of md5
+
+- use POD for api docs.
+
+- check the arg types provided in easy csp declaration (query db for values)
+
+DONE
+
 - finish implementing the log methods: do the logging based on user's log level
 
-- provide a die method?
+- run the run() method in an eval to capture exception
+
+- convert getSelfInv to getAlgInvocation
+
+- convert logAlert to log
+
