@@ -1,13 +1,11 @@
 #!/usr/bin/perl 
 package GUS::Common::Plugin::LoadAnnotatedSeqs;
-                                                                                                                             
 @ISA = qw(GUS::PluginMgr::Plugin);
-                                                                                                                             
 
 #########################################################
 #                LoadAnnotatedSeqs.pm
 #
-#    Ed Robinson, Steve Fischer: December 2004
+#    Ed Robinson, Steve Fischer, Thomas Gan: December 2004
 #  Mapping File Format: Deborah Pinney, John Iodice
 #
 #  Copyright: Board of Regents, University System of GA
@@ -47,7 +45,7 @@ use GUS::PluginMgr::Plugin;
  use GUS::Model::DoTS::SecondaryAccs;
  use GUS::Model::DoTS::NALocation; #NEED TO IMPLEMENT THIS FOR EACH FEATURE!!!!!!!!!!!!!!!!!!!!!
  #tables for checking your parameters
- etables called by special cases
+ #tables called by special cases
   use GUS::Model::DoTS::NAGene;
   use GUS::Model::DoTS::NAProtein;
   use GUS::Model::DoTS::NAPrimaryTranscript;
@@ -93,10 +91,10 @@ sub new {
   my $class = shift;
   my $self = {};
   bless($self, $class);
-  
+
   my $documentation = getDocumentation();
 
-  my $args = getArguments();
+  my $args = getArgsDeclaration();
 
   $self->initialize({requiredDbVersion => {RAD3 => '3', Core => '3'},
              cvsRevision => '$Revision$',
@@ -155,6 +153,8 @@ sub run{
               #submit feature tree
 #         }
  # }
+  print "*** testing ***\n";
+  return "short summary";
 
 }
 
@@ -477,11 +477,6 @@ sub buildProtein {
   return $o;
 }
 
-
-=Acut
-
-
-                                                                                                                             
 sub getNaProteinId {
   my $n = shift;
   if (!$NaProteinCache{$n}) {
@@ -507,17 +502,51 @@ sub getNaProteinId {
 # Load Arguments
 # ----------------------------------------------------------
 
-sub getArguments {
-#ok, make this real, someday
+sub getArgsDeclaration {
+  my $argsDeclaration  =
+    [
+     fileArg({name => 'map_xml',
+	      descr => 'XML file with Mapping of Sequence Feature from BioPerl to GUS',
+	      constraintFunc=> undef,
+	      reqd  => 1,
+	      isList => 0,
+	      mustExist => 1,
+	      format => 'XML',
+	     }),
 
-my $map='mapp.xml';
-my $format='genbank';
-my $dataFile='mydata.txt';
-my $ExtDbRel=1;
-my $SeqType=1;
-my $TaxId=1;
+     fileArg({name => 'data_file',
+	      descr => 'text file with GenBank records of sequence annotation data',
+	      constraintFunc=> undef,
+	      reqd  => 1,
+	      isList => 0,
+	      mustExist => 1,
+	      format => 'genbank',
+	     }),
 
-  return ($map, $ExtDbRel, $SeqType, $TaxId, $dataFile, $format);
+     integerArg({name => 'db_rls_id',
+		 descr => 'external database release id for the data',
+		 constraintFunc=> undef,
+		 reqd  => 1,
+		 isList => 0
+		}),
+
+     integerArg({name => 'test_number',
+		 descr => 'number of entries to do test on',
+		 constraintFunc=> undef,
+		 reqd  => 0,
+		 isList => 0
+		}),
+
+     booleanArg({name => 'is_update_mode',
+		 descr => 'whether this is an update mode',
+		 constraintFunc=> undef,
+		 reqd  => 0,
+		 isList => 0,
+		 default => 0,
+		}),
+    ];
+
+  return $argsDeclaration;
 }
 
 
@@ -569,6 +598,4 @@ FAIL
 return ($documentation);
 
 }
-
-#return 1;
 
