@@ -99,10 +99,6 @@ sub doDeletes {
 	my $dbh = $self->getQueryHandle();
 	my $max = (scalar(@$ids) - 1); 
 
-	my $rows = $dbh->do("insert into dotsver.SimilarityVer (select s.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.Similarity s where similarity_id in (".join(', ',@{$ids}[0..$max])."))") unless $self->getArgs()->{'doNotVersion'};
-	$self->log("Inserted $rows into dotsver.SimilarityVer, $$ids[0] - $$ids[$max]\n") unless $self->getArgs()->{'doNotVersion'};
-
-
 	my $rows2 = $dbh->do("insert into dotsver.SimilaritySpanVer (select l.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.SimilaritySpan l where l.similarity_id in (".join(', ',@{$ids}[0..$max])."))") if $self->getArgs->{'versionAll'};
 	$self->log("Inserted $rows2 into dotsver.SimilaritySpanVer\n") if $self->getArgs->{'versionAll'};
 
@@ -114,6 +110,9 @@ sub doDeletes {
 
 	my $rows5 = $dbh->do("delete from dots.IndexWordSimLink where best_similarity_id in (".join(', ',@{$ids}[0..$max]).")");
 	$self->log("$rows5 row of dots.IndexWordSimLink deleted\n");
+
+	my $rows = $dbh->do("insert into dotsver.SimilarityVer (select s.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.Similarity s where similarity_id in (".join(', ',@{$ids}[0..$max])."))") unless $self->getArgs()->{'doNotVersion'};
+	$self->log("Inserted $rows into dotsver.SimilarityVer, $$ids[0] - $$ids[$max]\n") unless $self->getArgs()->{'doNotVersion'};
 
 	my $rows6 = $dbh->do("delete from dots.Similarity where similarity_id in (".join(', ',@{$ids}[0..$max]).")");
 	$self->log("$rows6 row of dots.Similarity deleted\n");
