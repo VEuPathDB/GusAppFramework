@@ -128,6 +128,8 @@ sub __load_ontology {
 
     my $fakeGusId = 1;
     
+    my $logFile;
+    
     my $id_file = $self->getCla->{id_file}; 
     if ($id_file){
 	$logFile = FileHandle->new( '>>'. $self->getCla->{ id_file } ); 
