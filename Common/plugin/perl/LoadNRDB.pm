@@ -125,9 +125,12 @@ sub run {
   elsif ($self->getArgs()->{'extDbRelId'}) {
     $external_database_release_id = $self->getArgs()->{'extDbRelId'};
   }
-  else {
+
+  if ( ! $external_database_release_id ) {
     die 'Supply either extDbRelId or dbName and dbVersion\n';
   }
+
+  $self->{'extDbRelId'} = $external_database_release_id;
 
   my $dbHash = $self->getDB();
 
@@ -286,8 +289,7 @@ sub makeTempTable {
 	    }
 	}
     }
-    my $tempresults = "$set_num total entries have been made 
-                    into the NRDBTemp table";
+    my $tempresults = "$set_num total entries into NRDBTemp. ";
     $self->log("$tempresults\n");
     close NRDB;
     return $tempresults;
@@ -609,7 +611,7 @@ sub deleteFromExtAASeq {
   my $num_delete = 0;
   my $rel_list = join (',', values %{$dbHash});
   my $dbh = $self->getQueryHandle();
-  my $ext_db_rel_id = $self->getArgs()->{extDbRelId};
+  my $ext_db_rel_id = $self->{extDbRelId};
   my $sql = "select aa_sequence_id from dots.externalaasequence where external_database_release_id = $ext_db_rel_id and aa_sequence_id not in (select aa_sequence_id from dots.nrdbentry)";
   my $st = $dbh->prepareAndExecute($sql)|| die "SQL failed: $sql\n";
   while (my ($aa_sequence_id) = $st->fetchrow_array) {
