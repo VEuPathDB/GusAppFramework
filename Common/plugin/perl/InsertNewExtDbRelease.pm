@@ -1,6 +1,6 @@
-package GUS::GOPredict::Plugin::LoadGoOntology;
+package GUS::Common::Plugin::InsertNewExtDbRelease;
 @ISA = qw( GUS::PluginMgr::Plugin);
-use CBIL::Bio::GeneOntologyParser::Parser;
+
 
 use lib "$ENV{GUS_HOME}/lib/perl";
 
@@ -25,8 +25,8 @@ sub new {
 	  t => 'string',
 	  r => 1,
       },
-	 {o => 'version',
-	  h => 'New version of external databaseUS of database for which we are creating a new release',
+	 {o => 'database_version',
+	  h => 'New version of external database for which we are creating a new release',
 	  t => 'int',
 	  r => 1,
       }
@@ -93,7 +93,7 @@ sub makeNewReleaseId{
 
     my $newRelease = GUS::Model::SRes::ExternalDatabaseRelease->new({
 	external_database_id => $id,
-	version = $dbVer,
+	version => $dbVer,
     });
 
     $newRelease->submit();
