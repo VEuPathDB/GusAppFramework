@@ -30,6 +30,7 @@ my $DBI_ATTS = { RaiseError => 0, AutoCommit => 0, LongReadLen => 10000000 };
 my(
    $dbSid,
    $dbHost,
+   $dbPort,
    $login,        # Oracle login with grant/revoke permissions
    $permissions,  # list of permissions to grant/revoke
    $grantees,     # list of users & roles to grant permissions to
@@ -40,6 +41,7 @@ my(
 
 &GetOptions("db-sid=s" => \$dbSid,
 	    "db-host=s" => \$dbHost,
+	    "db-port=s" => \$dbPort,
 	    "login=s" => \$login,
 	    "permissions=s" => \$permissions,
 	    "grantees=s" => \$grantees,
@@ -53,6 +55,7 @@ if (!$dbSid || !$dbHost || !$login || !$permissions || !$grantees || !$owner) {
 Usage: grantPermissions.pl options
    --db-sid=SID                # SID of the Oracle server
    --db-host=hostname          # Hostname of the Oracle server
+   --db-port=portnum           # Port on which the Oracle server will accept connections
    --login=login               # Oracle login with grant/revoke permissions on the objects owned by --owner
    --permissions=p1,p2,..      # list of permissions to grant/revoke
    --grantees=u1,u2,...        # List of users or roles to grant permissions to
@@ -69,7 +72,7 @@ USAGE
 
 $| = 1;
 
-my $db = GUS::DBAdmin::Database->new({sid => $dbSid, host => $dbHost});
+my $db = GUS::DBAdmin::Database->new({sid => $dbSid, host => $dbHost, port => $dbPort});
 my $dbh = &GUS::DBAdmin::Util::establishLogin($login, $db->getDbiStr(), $DBI_ATTS);
 
 my @perms = split(',',  $permissions);
