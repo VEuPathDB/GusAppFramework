@@ -246,13 +246,13 @@ print STDERR "Geneids=$del_genes\n";
 
         #Joan need to change this when GO tasks added back to interface
 	# deal with the special deleted ProteinGOFunction objects here.
-	my $pgfs = $self->getPGFDeleteObjects( $self->getCla->{'specialfile'});
-	if ( $pgfs ) {
-		foreach my $pgf ( @$pgfs ) {
-			$pgf->markDeleted(1);
-			$self->getSelfInv->addChild( $pgf );
-		}
-              }
+	#my $pgfs = $self->getPGFDeleteObjects( $self->getCla->{'specialfile'});
+	#if ( $pgfs ) {
+		#foreach my $pgf ( @$pgfs ) {
+			#$pgf->markDeleted(1);
+			#$self->getSelfInv->addChild( $pgf );
+		#}
+           #   }
 
 	# deal with the special deleted PCR objects here.
 	#my $pcrs = &getPCRDeleteObjects( $ctx->{'specialfile'});
