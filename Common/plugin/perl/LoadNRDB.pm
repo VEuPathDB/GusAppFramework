@@ -52,7 +52,7 @@ sub new {
       t => 'string',
       h => 'login for space being used for temp table eg.pinney',
      },
-     {o => 'temp_password=s',
+     {o => 'temp_password',
       t => 'string',
       h => 'password for space being used for temp table',
      },
@@ -73,7 +73,11 @@ sub new {
       t => 'boolean',
       h => 'indicates temp table insertion should be restarted because
             table already exits',
-      }
+      },
+     {o => 'dbi_str',
+      t	=> 'string',
+      h => 'server and machine for temp table, e.g. dbi:Oracle:host=erebus.pcbi.upenn.edu;sid=gusdev',
+     }
      ];
 
   $self->initialize({requiredDbVersion => {},
@@ -90,43 +94,42 @@ sub new {
 
 sub run {
   my $self  = shift;
-  $ctx = shift;
-  print STDERR $ctx->{'commit'}?"***COMMIT ON***\n":"**COMMIT TURNED OFF**\n";
-  print STDERR "Testing on $ctx->{'cla'}->{'testnumber1'} insertions 
+  print STDERR $self->getCla()->{'commit'}?"***COMMIT ON***\n":"**COMMIT TURNED OFF**\n";
+  print STDERR "Testing on " . $self->getCla()->{'testnumber1'} . " insertions 
                 into temp table\n" 
-                if $ctx->{'cla'}->{'testnumber1'};
-  print STDERR "Testing on $ctx->{'cla'}->{'testnumber2'} insertions
+                if $self->getCla()->{'testnumber1'};
+  print STDERR "Testing on " . $self->getCla()->{'testnumber1'} . " insertions
                 into NRDBEntry/ExternalAASequence\n" 
-                if $ctx->{'cla'}->{'testnumber2'};
+                if $self->getCla()->{'testnumber2'};
   
-  die "Supply the name of the nr protein file\n" unless $ctx->{'cla'}->{'nrdb'};
+  die "Supply the name of the nr protein file\n" unless $self->getCla()->{'nrdb'};
 
-  my $external_database_release_id = $ctx->{'cla'}->{'extDbRelId'} || die 'external_database_release_id not supplied\n';
+  my $external_database_release_id = $self->getCla()->{'extDbRelId'} || die 'external_database_release_id not supplied\n';
 
-  my $dbHash = &getDB();
+  my $dbHash = $self->getDB();
 
-  my $taxonHash = &getTaxon ();
+  my $taxonHash = $self->getTaxon ();
 
-  my $tempresults = &makeTempTable($dbHash, $taxonHash) 
-                    if ($ctx->{'cla'}->{'maketemp'});
+  my $tempresults = $self->makeTempTable($dbHash, $taxonHash) 
+                    if ($self->getCla()->{'maketemp'});
 
-  if (!$ctx->{'cla'}->{'plugin'} && !$ctx->{'cla'}->{'delete'}) {
+  if (!$self->getCla()->{'plugin'} && !$self->getCla()->{'delete'}) {
       print STDERR ("NRDBTemp has been filled and the program is exiting\n");
       return $tempresults;
   }
 
-  my $entryresults = &makeNRDBAndExternalAASequence($taxonHash, $dbHash,$external_database_release_id) 
-                    if ($ctx->{'cla'}->{'plugin'});       
+  my $entryresults = $self->makeNRDBAndExternalAASequence($taxonHash, $dbHash,$external_database_release_id) 
+                    if ($$self->getCla()->{'plugin'});       
      
-  if (!$ctx->{'cla'}->{'delete'}){ 
+  if (!$self->getCla()->{'delete'}){ 
       if ($tempresults) {
 	  my $entryresults .= $tempresults;
       }
       return $entryresults;   
   }
 
-  my $nrdbdelete = &deleteFromNRDB;
-  my $aadelete = &deleteFromExtAASeq;
+  my $nrdbdelete = $self->deleteFromNRDB;
+  my $aadelete = $self->deleteFromExtAASeq;
   my $results = "Processing completed:";
   $results = $results . $tempresults . $entryresults . $nrdbdelete . $aadelete; 
   print STDERR ("$results\n");
@@ -134,12 +137,8 @@ sub run {
 }
 
 sub getDB {
-
-  print STDOUT "getDB called\n";
-
-  my $dbh = $ctx->{'self_inv'}->getQueryHandle();
-
-  print STDOUT "getDB called\n";
+  my ($self) = @_;
+  my $dbh = $self->getQueryHandle();
 
   my %dbNameHash = ('GENBANK (NRDB)' => 'gb',
 		    'EMBL DATA LIBRARY (NRDB)' => 'emb',
@@ -170,8 +169,6 @@ sub getDB {
     $dbHash{$dbNameHash{$boundName}} = $db_rel_id;
   }
 
-  $dbh->disconnect();
-
   return \%dbHash;
 }
 
@@ -181,9 +178,10 @@ sub getDB {
 ##taxHash{ncbi_tax_id}=taxon_id
 #################################
 sub getTaxon {
-    
-    my $dbh = $ctx->{'self_inv'}->getQueryHandle();
-    open (TAXFILE, "$ctx->{'cla'}->{'gitax'} ") || 
+    my ($self) = @_;
+    my $dbh = $self->getQueryHandle();
+    my $gi_tax = $self->getCla->{'gitax'};
+    open (TAXFILE, "$gi_tax") || 
                     die ("Can't open the gi/tax_id file\n");
     my %taxHash;
     my %taxonHash;
@@ -204,22 +202,20 @@ sub getTaxon {
     my $length = scalar (keys %taxonHash);
     print STDERR ("There are $length gi to taxon_id pairs\n");
 
-    $dbh->disconnect();
     return \%taxonHash;;
 }
 
 sub makeTempTable {
-    my ($dbHash, $taxonHash) = @_;
-
-    my $login = $ctx->{'cla'}->{'temp_login'} || die "must provide temp_login 
+    my ($self,$dbHash, $taxonHash) = @_;
+    my $login = $self->getCla->{'temp_login'} || die "must provide temp_login 
                 and temp_password for temp table\n";
-    my $password = $ctx->{'cla'}->{'temp_password'} || 
+    my $password = $self->getCla->{'temp_password'} || 
                    die "must provide temp_login 
                    and temp_password for temp table\n";
-    my $DBI_STR = 'dbi:Oracle:host=erebus.pcbi.upenn.edu;sid=gusdev';
+    my $DBI_STR = $self->getCla->{'dbi_str'} || die "must provide server and sid for temp table\n";
     my $dbh = DBI->connect($DBI_STR, $login, $password);
 
-    if (!$ctx->{'cla'}->{'restart_temp_table'}) { 
+    if (!$self->getCla->{'restart_temp_table'}) { 
       $dbh->do("truncate table NRDBTemp");
       $dbh->do("drop table NRDBTemp");
       $dbh->do("create table NRDBTemp 
@@ -236,7 +232,7 @@ sub makeTempTable {
 
     my $st2 = $dbh->prepare("INSERT into NRDBTemp 
               (source_id,external_db_id,set_num,sequence_version) values (?,?,?,?)");
-    my $nrdb = $ctx->{'cla'}->{'nrdb'};
+    my $nrdb = $self->getCla->{'nrdb'};
 
     if ($nrdb =~ /\.Z/) {
 	open (NRDB,"uncompress -c $nrdb |") || 
@@ -256,8 +252,8 @@ sub makeTempTable {
 	    if ($max_num && $set_num <= $max_num) { 
 		next;
 	    }
-	    if ($ctx->{'cla'}->{'testnumber1'} && $set_num > 
-                ($ctx->{'cla'}->{'testnumber1'})) {
+	    if ($self->getCla->{'testnumber1'} && $set_num > 
+                ($self->getCla->{'testnumber1'})) {
 		print STDERR ("The testnumber, $set_num, of temp table entries
                                 have been processed\n");
 		last;
@@ -294,27 +290,25 @@ sub makeTempTable {
                     into the NRDBTemp table";
     print STDERR ("$tempresults\n");
     close NRDB;
-    $dbh->disconnect();
     return $tempresults;
 }
 
 sub makeNRDBAndExternalAASequence {
-    my ($taxonHash, $dbHash,$external_database_release_id) = @_;
-
+    my ($self,$taxonHash, $dbHash,$external_database_release_id) = @_;
     my $count = 0;
     
-    my $temp_login = $ctx->{'cla'}->{'temp_login'} || 
+    my $temp_login = $self->getCla->{'temp_login'} || 
                      die "--temp_login required to 
                      load NRDBEntry and ExternalAASequence\n";
 
-    my $dbh = $ctx->{'self_inv'}->getQueryHandle();
+    my $dbh = $self->getQueryHandle();
     my $st = $dbh->prepareAndExecute("select max(set_num) from $temp_login".".nrdbtemp");
     my ($max_set_num) = $st->fetchrow_array;
     $st->finish();
 
     print STDERR ("$max_set_num entries in temp table\n");
     
-    my $nrdb = $ctx->{'cla'}->{'nrdb'};
+    my $nrdb = $self->getCla->{'nrdb'};
 
     if ($nrdb =~ /\.Z/) {
 	open (NRDB,"uncompress -c $nrdb |") || 
@@ -333,7 +327,7 @@ sub makeNRDBAndExternalAASequence {
     my $seq;
     my $num_submit;
     if ($ctx->{'cla'}->{'restart'}) {
-	$num_submit = $ctx->{'cla'}->{'restart'};
+	$num_submit = $self->getCla->{'restart'};
     }
     else {
 	$num_submit = 0;
@@ -344,7 +338,7 @@ sub makeNRDBAndExternalAASequence {
 	chomp;
 	# /^\>/ pattern indicating the beginning of the defline, if $seq exists, process the set 
 	if (/^\>/) { 
-	    if ($ctx->{'cla'}->{'testnumber2'} && $count > ($ctx->{'cla'}->{'testnumber2'})) {
+	    if ($self->getCla->{'testnumber2'} && $count > ($self->getCla->{'testnumber2'})) {
 		print STDERR ("The testnumber, $count, 
                               of entries has been processed\n");
 		last;
@@ -352,7 +346,7 @@ sub makeNRDBAndExternalAASequence {
 	    if ($seq) {
 		$count++;
 		#get the preferred gi and source_id and get any one aa_sequence_id corresponding to a member of the set
-		unless ($ctx->{'cla'}->{'restart'} && $count <= $ctx->{'cla'}->{'restart'}) {
+		unless ($self->getCla->{'restart'} && $count <= $self->getCla->{'restart'}) {
 		    if (scalar (keys %EntryHash) != 0) {
 			my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id);
 			$newExtAASeq->submit();
@@ -571,9 +565,10 @@ sub makeNRDBEntries {
 }
 
 sub deleteFromNRDB {
+    my ($self) = @_;
     my $num_delete = 0;
 
-    my $dbh = $ctx->{'self_inv'}->getQueryHandle();
+    my $dbh = $self->getQueryHandle();
 
     my $st = $dbh->prepareAndExecute("select nrdb_entry_id from dots.nrdbentry where source_id not in (select /** RULE */ n.source_id from dots.nrdbentry n, pinney.nrdbtemp p where n.source_id = p.source_id and n.external_db_id = p.external_db_id)");
     while (my ($nrdb_entry_id) = $st->fetchrow_array) {
@@ -588,9 +583,10 @@ sub deleteFromNRDB {
 }
 
 sub deleteFromExtAASeq {
+  my ($self) = @_;
   my $num_delete = 0;
   
-  my $dbh = $ctx->{'self_inv'}->getQueryHandle();
+  my $dbh = $self->getQueryHandle();
   
   my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_db_id = 4194 and aa_sequence_id not in (select /** RULE */ distinct aa_sequence_id from dots.nrdbentry n)");
   while (my ($aa_sequence_id) = $st->fetchrow_array) {
