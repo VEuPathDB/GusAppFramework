@@ -515,7 +515,7 @@ sub createGusAcquisition {
   } else {
 
     $tempDatURI = $self->{propertySet}->getProp("DATFilePath")."/$assayName".".DAT";
-    ($localFilePath, $datURI) = split "RAD/", $tempDatURI; # HARD-CODED. Based on our convention for naming files
+    ($localFilePath, $datURI) = split "RAD_images/", $tempDatURI; # HARD-CODED. Based on our convention for naming files
   }
 
   my $protocolId = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
