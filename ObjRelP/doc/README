@@ -13,7 +13,7 @@ NOTE: Currently will work with Oracle (DBI must be installed) and
 3.  Must have Project, Group, UserInfo, and Algorthm et. al. tables
     due to #2 above.
 
-4.  RelationalRow->hasSequence specific to the implementation (which
+4.  GusRow->hasSequence specific to the implementation (which
     table_ids are Imp tables containing sequence).
 
 5.  Evidence table will be needed in order to use the evidence methods.

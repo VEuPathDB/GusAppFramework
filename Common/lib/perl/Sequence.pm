@@ -36,7 +36,7 @@ use CBIL::Bio::SequenceUtils;
 sub revcomp {
   my($seq_string) = @_;
   my @s = reverse(split(//,$seq_string));
-  return join("", map {sprintf("%c",SequenceUtils::reverseComplement(ord($_)))} @s);
+  return join("", map {sprintf("%c",CBIL::Bio::SequenceUtils::reverseComplement(ord($_)))} @s);
 #  return join("", map {sprintf("%c",NSEQ::complement(ord($_)))} @s);
 }
 
