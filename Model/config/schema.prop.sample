@@ -12,6 +12,11 @@ oracle_SID=gusdb1
 #
 oracle_host=gus.somewhere.org
 
+# Oracle port number. Default for Oracle is 1521
+#
+oracle_port=1521
+
+
 # Default tablespace and quotas for the new users.
 #
 oracle_tempTablespace=TEMP
