@@ -536,14 +536,24 @@ sub createSingleGUSAssay {
   $gusAcquisitionCy3->setParent($gusAssay);
 
   my ($gusQuantificationCy5, $gusQuantificationCy3) = $self->createGusQuantification($assayName, $GPRinfo);
-  my ($gusQuantParamsCy5Ref, $gusQuantParamsCy3Ref) = $self->createGusQuantParams($GPRinfo);
-
   $gusQuantificationCy5->setParent($gusAcquisitionCy5);
+  $gusQuantificationCy3->setParent($gusAcquisitionCy3);
+
+  my ($gusQuantParamsCy5Ref, $gusQuantParamsCy3Ref) = $self->createGusQuantParams($GPRinfo);
+  #my ($gusQuantParamsRef) = $self->createGusQuantParams($GPRinfo);
+  #foreach my $gusQuantParams (@$gusQuantParamsRef) {
+  #  my $gusQuantParamsCy5 = $gusQuantParams;
+  #  my $gusQuantParamsCy3 = $gusQuantParams;
+  #  print "$gusQuantParamsCy5, $gusQuantParamsCy3\n";
+  #  $gusQuantParamsCy5->setParent($gusQuantificationCy5);
+  #  $gusQuantParamsCy3->setParent($gusQuantificationCy3);
+  #}
+
+  #print "$gusQuantParamsCy5Ref, $gusQuantParamsCy3Ref\n";
   foreach my $gusQuantParamsCy5 (@$gusQuantParamsCy5Ref) {
     $gusQuantParamsCy5->setParent($gusQuantificationCy5);
   }
 
-  $gusQuantificationCy3->setParent($gusAcquisitionCy3);
   foreach my $gusQuantParamsCy3 (@$gusQuantParamsCy3Ref) {
     $gusQuantParamsCy3->setParent($gusQuantificationCy3);
   }
@@ -814,6 +824,7 @@ sub createGusQuantParams {
   $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $quantProtocolId);
 
   my (@gusQuantParamsCy5, @gusQuantParamsCy3);
+  #my (@gusQuantParams);
   my $quantParamKeywordCnt = 0;
 
   my $params = {
@@ -833,25 +844,45 @@ sub createGusQuantParams {
     $self->error("Create object failed: Table RAD3.ProtocolParam, name $param")
       unless ($protocolParamObject->retrieveFromDB);
 
-    my $quantParameters = GUS::Model::RAD3::QuantificationParam->new({
+    my $quantParametersCy5 = GUS::Model::RAD3::QuantificationParam->new({
      name  => $param,
      value => $GPRinfo->{$param}
      });
-
-    my $quantParametersCy5 = $quantParameters;
     $quantParametersCy5->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
     push(@gusQuantParamsCy5, $quantParametersCy5);
     $quantParamKeywordCnt++;
 
-    my $quantParametersCy3 = $quantParameters;
+    my $quantParametersCy3 = GUS::Model::RAD3::QuantificationParam->new({
+     name  => $param,
+     value => $GPRinfo->{$param}
+     });
     $quantParametersCy3->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
     push(@gusQuantParamsCy3, $quantParametersCy3);
     $quantParamKeywordCnt++;
+
+
+
+    #my $quantParametersCy5 = $quantParameters;
+    #$quantParametersCy5->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
+    #push(@gusQuantParamsCy5, $quantParametersCy5);
+    #$quantParamKeywordCnt++;
+
+    #my $quantParametersCy3 = $quantParameters;
+    #$quantParametersCy3->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
+    #push(@gusQuantParamsCy3, $quantParametersCy3);
+    #$quantParamKeywordCnt++;
+
+    #$quantParameters->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
+    #push(@gusQuantParams, $quantParameters);
+    #$quantParamKeywordCnt++;
+
+
   }
 
-  $self->log("STATUS","OK Inserted $quantParamKeywordCnt rows in table RAD3.QuantificationParam for Cy5 and Cy3 quantification parameters");
+  $self->log("STATUS","OK Inserted $quantParamKeywordCnt x 2 rows in table RAD3.QuantificationParam for Cy5 and Cy3 quantification parameters");
 
   #print "@gusQuantParamsCy5, @gusQuantParamsCy3\n";
   return (\@gusQuantParamsCy5, \@gusQuantParamsCy3);
+  #return (\@gusQuantParams);
 }
 
