@@ -120,6 +120,9 @@ sub run {
   my $M   = shift;
   $ctx = shift;
 
+  if (!$ctx->{cla}->{regex_source_id}){
+      die "you must provide --regex_source_id on the command line\n";
+  }
   if (!$ctx->{cla}->{external_database_release_id}){
       die "you must provide --external_database_release_id on the command line\n";
   }
@@ -135,10 +138,11 @@ sub run {
   eval("require GUS::Model::".$ctx->{cla}->{table_name});
 
   ##open sequence file
-  if ($ctx->{cla}->{'sequencefile'} =~ /gz$/) {
-    open(F, "gunzip -c $ctx->{cla}->{'sequencefile'} |");
+  my $seqFile = $ctx->{cla}->{'sequencefile'};
+  if ($seqFile =~ /gz$/) {
+    open(F, "gunzip -c $seqFile |") || die "Can't open $seqFile for reading";
   } else {
-    open(F,"$ctx->{cla}->{'sequencefile'}");
+    open(F,"$seqFile") || die "Can't open $seqFile for reading";
   }
 
   # get primary key for table_name
