@@ -40,7 +40,7 @@
 <H1><A NAME="synopsis">SYNOPSIS</A></H1>
 <P>ga GUS::RAD::Plugin::AnalysisResultLoader --help</P>
 <P>ga GUS::RAD::Plugin::AnalysisResultLoader --helpHTML</P>
-<P>ga GUS::RAD::Plugin::AnalysisResultLoader --subclass_view tablename --cfg_file file --data_file file [--restart integer] [--analysis_id integer] [--testnum integer] [--commit ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</P>
+<P>ga GUS::RAD::Plugin::AnalysisResultLoader --subclass_view tablename --cfg_file file --data_file file [--restart integer] [--analysis_id integer] [--testnum integer] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</P>
 <P>
 <HR>
 <H1><A NAME="description">DESCRIPTION</A></H1>
@@ -158,6 +158,38 @@
 <DD>
 </DL>
 <DT><DD>
+<DT><STRONG><A NAME="item_%2D%2Ddebug">--debug <EM></EM></A></STRONG><BR>
+<DD>
+<P>output extra debugging information to verify correct operation</P>
+<DL>
+<DT><STRONG>default: 0</STRONG><BR>
+<DD>
+</DL>
+<DT><DD>
+<DT><STRONG><A NAME="item_%2D%2DsqlVerbose">--sqlVerbose <EM></EM></A></STRONG><BR>
+<DD>
+<P>Use this flag to switch on a log of SQL statements executed by Perl object layer.</P>
+<DL>
+<DT><STRONG>default: 0</STRONG><BR>
+<DD>
+</DL>
+<DT><DD>
+<DT><STRONG><A NAME="item_%2D%2Dverbose">--verbose <EM></EM></A></STRONG><BR>
+<DD>
+<P>Use this flag to enable output of logVerbose messages from the plugin.</P>
+<DL>
+<DT><STRONG>default: 0</STRONG><BR>
+<DD>
+</DL>
+<DT><DD>
+<DT><STRONG><A NAME="item_%2D%2DveryVerbose">--veryVerbose <EM></EM></A></STRONG><BR>
+<DD>
+<P>Use this flag to enable output of logVeryVerbose and logVerbose messages from the plugin.</P>
+<DL>
+<DT><STRONG>default: 0</STRONG><BR>
+<DD>
+</DL>
+<DT><DD>
 <DT><STRONG><A NAME="item_%2D%2Duser_string">--user <EM>string</EM></A></STRONG><BR>
 <DD>
 <P>Set the user name in new or changed rows with this GUS user name (from Core.UserInfo table) [default is value in gus config file]</P>
@@ -239,7 +271,7 @@ All lines should contain the same number of tab/fields. Empty lines will be igno
 (in the table <EM>table</EM>, given in the <EM>cfg_file</EM>), for the entries the results refer to.</P>
 <P>The other fields should have <STRONG>lower case</STRONG> names spelled <STRONG>exactly</STRONG> as the field names in the view specified by the <EM>--subclass_view</EM> argument.</P>
 <P>The fields <EM>subclass_view</EM>, <EM>analysis_id</EM>, and <EM>table_id</EM> do not have to be specified in the <EM>data_file</EM>, as this plugin derives their values from its arguments (including the <EM>cfg_file</EM>).</P>
-<P>Missing values in a field different from row_id can be left empty or set to na or NA or n/a or N/A. If all values for a row_id are missing, that row is not entered.</P>
+<P>Missing values in a field can be left empty or set to na or NA or n/a or N/A. If all (non row_id) values for a row are missing, that row is not entered.</P>
 <P>
 <HR>
 <H1><A NAME="author">AUTHOR</A></H1>
