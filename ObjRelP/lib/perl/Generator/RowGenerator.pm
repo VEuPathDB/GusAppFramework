@@ -49,12 +49,14 @@ sub _genHeader {
 
 use strict;
 ";
+  my $parentPkg;
   if ($self->_getParentTable()) {
-    $temp .= $self->_getParentTable().";\n";
+    $parentPkg = $self->_getParentTable();
   } else {
-    $temp .= "use GUS::Model::GusRow;\n";
+    $parentPkg = "GUS::Model::GusRow";
   }
 
+  $temp .= "use $parentPkg;\n";
   $temp .= $self->_genISA();
 
   return $temp;
