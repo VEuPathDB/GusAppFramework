@@ -8,6 +8,14 @@ use GUS::Model::DoTS::Assembly;
 use GUS::ObjRelP::DbiDatabase;
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::Evidence;
+
+
+
+use GUS::Model::Core::AlgorithmInvocation;
+
+
+
+
 $| = 1;
 
 #JM This plugin is only in testing phase 11/18/03
