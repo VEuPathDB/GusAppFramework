@@ -128,6 +128,7 @@ while(my($target_id) = $stmt3->fetchrow_array( ))  {
   }
 
 
+push (@naSequenceIds, 0);
 
 print STDERR "scalar(@naSequenceIds)\n";
 
@@ -146,8 +147,6 @@ foreach my $A(@na_sourceids)    {
 
    last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
-
-
    foreach my $id(@naSequenceIds)  {
 
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
@@ -159,7 +158,7 @@ print STDERR "$id,DT.$na_seq\n";
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
    }
 
-    if ($id != $na_seq | $id eq "undef") {
+    if ($id != $na_seq) {
 
        print STDERR "NextFLDT.$na_seq\n";
 
