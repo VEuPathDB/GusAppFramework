@@ -4,6 +4,11 @@ import java.util.*;
 import org.gusdb.model.DoTS.*;
 import org.gusdb.model.SRes.*;
 
+import org.biojava.bio.*;
+import org.biojava.bio.seq.*;
+import org.biojava.bio.seq.io.*;
+import org.biojava.bio.symbol.*;
+
 /**
  * LocalTest.java
  *
@@ -68,6 +73,14 @@ public class LocalTest {
 	    printFasta(naseq1,70);
 	    printFasta(naseq1,70,0,(int)seqLen);
 
+	    // Try converting to BioJava SymbolList
+	    //
+	    SymbolList sl1 = naseq1.getSequenceAsSymbolList();
+	    printSymbolList(sl1);
+
+	    SymbolList sl2 = naseq1.getSequenceAsSymbolList(70,139);
+	    printSymbolList(sl2);
+
 	    // Retrieve another ExternalNASequence, but only the first 500bp of its sequence (Y00864)
 	    //
 	    ExternalNASequence naseq2 = (ExternalNASequence)(server.retrieveObject(s1, "DoTS", "ExternalNASequence", 85319819, 
@@ -121,4 +134,19 @@ public class LocalTest {
 	    System.out.println(new String(seqArray, i, end - i + 1));
 	}
     }
+
+    // Print a BioJava SymbolList
+    //
+    public static void printSymbolList(SymbolList sl) {
+	try {
+	    FiniteAlphabet dnaAlphabet = DNATools.getDNA();
+	    SymbolTokenization dnaToke = dnaAlphabet.getTokenization("token");
+	    String seqString = dnaToke.tokenizeSymbolList(sl);
+	    System.out.println("SymbolList = " + seqString);    
+	} 
+	catch (Exception e) {
+	    e.printStackTrace(System.err);
+	}
+    }
+
 }
