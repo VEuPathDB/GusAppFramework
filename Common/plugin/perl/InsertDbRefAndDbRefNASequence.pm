@@ -259,10 +259,12 @@ sub deleteDbRef {
     my $stmt = $dbh->prepareAndExecute($sql);
     while (my $db_ref_id  = $stmt->fetchrow_array()) {
 	if ($dbRefHash->{$db_ref_id} != 1) {
-	    my newDbRef = SRes::DbRef -> new({'db_ref_id'=>$db_ref_id});
-	    newDbRef->markDeleted(1);
-	    newDbRef->submit();
-	    newDbRef->undefPointerCache();
+	    my $newDbRef = SRes::DbRef -> new({'db_ref_id'=>$db_ref_id});
+	    $newDbRef->retrieveFromDB();
+	    $newDbRef->retrieveAllChildrenFromDB(1);
+	    $newDbRef->markDeleted(1);
+	    $newDbRef->submit();
+	    $newDbRef->undefPointerCache();
 	    $num++;
 	}
     }
