@@ -73,7 +73,7 @@ sub run {
 	$self->logAlert('COMMIT', $self->getCla->{commit} ? 'ON' : 'OFF' );
 
 	##testing exitOnFailure...
-	$self->getDb()->setExitOnSQLFailure(0);
+	#$self->getDb()->setExitOnSQLFailure(0);
 
     ############################################################
     # Put loop here...remember to undefPointerCache()!
@@ -118,7 +118,7 @@ sub run {
 	    $string{$g} =~s/\$//;
 	    my @mem = split(/\s+/, $string{$g});
 	    my $n = scalar(@mem);
-	    my $orthgrp = AAOrthologGroup -> new();
+	    my $orthgrp = GUS::Model::DoTS::AAOrthologGroup -> new();
 	    $orthgrp -> set('subclass_view','AAOrthologGroup');
 	    $orthgrp -> set('number_of_members',$n);
 	    $orthgrp -> set('aa_seq_group_experiment_id',$expId);
