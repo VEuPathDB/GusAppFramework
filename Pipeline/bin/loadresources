@@ -17,17 +17,12 @@ my $propertiesFile = $ARGV[1];
 &usage unless -e $propertiesFile;
 
 # [name, default (or null if reqd), comment]
-my @properties = 
-(
- ["pipelineDir",         "",  ""],
- ["downloadDir",         "",  ""],
- ["insertTaxonRestart",   "",  ""],
- ["commit",   "",  "set to --commit to commit"],
+my @properties = (
+ ["pipelineDir", "", ""],
  ["stopBefore",   "none",  "the step to stop before.  uses the signal name"],
- ); 
+); 
 
-
-my $propertySet  = CBIL::Util::PropertySet->new($propertiesFile, \@properties);
+my $propertySet  = CBIL::Util::PropertySet->new($propertiesFile, \@properties, 1);
 
 my $mgr = GUS::Pipeline::Manager->new($propertySet->getProp('pipelineDir'),
 				      $propertySet,
