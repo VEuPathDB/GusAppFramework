@@ -206,8 +206,12 @@ sub new {
        h => 'fully qualified path, including the file name, of the file that stores the result set of the Assembly-Protein translations returned by the Database Adapter.  Use while testing',
    },
 
-
+     { o => 'skip_protein_raid_list',
+       t => 'string',
+       h => 'comma separated list of Algorithm Invocation Ids of Associations that were created during a run of apply_rules that was unexpectedly interrupted.',
+   },
      
+       
     
      #dtb: don't know why we'd use these sql filters but keep for now
 	
@@ -319,6 +323,7 @@ sub run {
 	    my $proteinsAffected = $goManager->applyRules($newGoVersion, $cla, $doNotScrub, 
 							  $self->getCla()->{similarities_file_path},
 							  $self->getCla()->{create_new_similarities_file},
+							  $self->getCla()->{skip_protein_raid_list},
 							  $self->getCla()->{test_number}); 
 	    
 
