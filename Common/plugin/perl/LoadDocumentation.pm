@@ -26,28 +26,11 @@ use GUS::Model::Core::DatabaseDocumentation;
 ### 
 ### Matt Mailman
 ###
-### Modifications:
-###    - Summer 2002 - made compliant with new object layer -
-###         renamed: GUS30Doc.pm
-###    - Feb-10-2003 
-###         - made compliant with new CVS structure and
-###              recent changes in the object layer
-###         - added checks against the database to ensure that
-###              attribute name exists before loading documentation
-###    - May-15-2003
-###         - fixed $easycsp for 'inputFile' and removed 'testnumber'
-###    - November-10-2003
-###         - fixed so that an additional check is done to see if 
-###              table documentation already exists
-###    - December-09-2003
-###         - fixed bug in table doc fetchrow
-###
-### Last modified December-09-2003
+### Last modified March-01-2004
 ###
 ### usage: ga LoadDocumentation --inputFile [file]
 ###   run from inside directory containing file to upload 
 ############################################################
-
 ############################################################
 sub new {
     my ($class) = @_;
@@ -78,29 +61,23 @@ my $countInserts = 0;
 sub run {
 	my $self = shift;
 	$ctx = shift;
-	
 	if (!$ctx->{cla}->{'inputFile'}) {
 	  die "you must provide --inputFile on the command line\n";
 	}
-
 	print $ctx->{cla}->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
-
 	$self->logRAIID;
 	$self->logCommit;
 	$self->logArgs;
-	
 	my $doc_fh = FileHandle->new('<' . $self->getCla->{inputFile});
 	return sprintf('documentation file %s was not found %s',
 								 $self->getCla->{inputFile},
 								 $!) unless $doc_fh;
-
 	while (<$doc_fh>){ # read in line of documentation and parse from tab-delimited file
 	  chomp;
 	  my ($table_name, $attribute_name, $html_doc) = split (/\t/, $_);
 	  $self->process($table_name, $attribute_name, $html_doc);
 	}
 	$doc_fh->close;
-
 	return "Inserted $countInserts rows";
 } # end sub run
 
@@ -116,22 +93,26 @@ sub process {
 	my $doc = GUS::Model::Core::DatabaseDocumentation->new();
 	$self->logVerbose("Created new DatabaseDocumentation object");
 
-	############################### TEST
 	if ($db->checkTableExists($table_nm)){ # if table exists
 	    if ($attribute_nm eq "NULL" || $attribute_nm eq "null"  || $attribute_nm eq "") {
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
+		$doc->setHtmlDocumentation($html_dc);
 		$doc->retrieveFromDB();
-		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) {
-		    $doc->setHtmlDocumentation($html_dc);
-		    $doc->submit();
-		    $countInserts++;
-		    $self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
-		    return();
-		}
-		elsif ($doc->setHtmlDocumentation($html_dc) eq $html_dc) {
-		    $self->logAlert("Documentation already exists: $table_nm.$attribute_nm\t$html_dc\n");
-		    return();
-		}	
+		$doc->submit();
+		$countInserts++;
+		$self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
+		return();
+
+#		if ($doc->getHtmlDocumentation($html_dc) ne $html_dc) { 
+#		    $doc->submit();
+#		    $countInserts++;
+#		    $self->logVerbose("Submitted new table documentation for: $table_nm\t$html_dc");
+#		    return();
+#		}
+#		elsif ($doc->setHtmlDocumentation($html_dc) eq $html_dc) {
+#		    $self->logAlert("Documentation already exists: $table_nm.$attribute_nm\t$html_dc\n");
+#		    return();
+#		}	
 	    } # end if table documentation
 	    elsif ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if valid attribute
 		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
