@@ -37,7 +37,6 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$gusconfig->getReadOnlyDatabasePassword,
 					$verbose,0,1,
 					$gusconfig->getCoreSchemaName);
-$db->setUseDbiTableOnly(1);
 
 eval("require $table");
 my $obj;
