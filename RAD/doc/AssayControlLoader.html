@@ -1,0 +1,109 @@
+<HTML>
+<HEAD>
+<TITLE>ProcessedResultLoader.pm</TITLE>
+<LINK REV="made" HREF="mailto:bhcompile@stripples.devel.redhat.com">
+</HEAD>
+
+<BODY>
+
+<A NAME="__index__"></A>
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#name">NAME</A></LI>
+	<LI><A HREF="#synopsis">SYNOPSIS</A></LI>
+	<LI><A HREF="#description">DESCRIPTION</A></LI>
+	<LI><A HREF="#arguments">ARGUMENTS</A></LI>
+	<LI><A HREF="#options">OPTIONS</A></LI>
+	<LI><A HREF="#notes">NOTES</A></LI>
+	<UL>
+
+		<LI><A HREF="#data_file"><EM>data_file</EM></A></LI>
+		<LI><A HREF="#restart"><EM>restart</EM></A></LI>
+		<LI><A HREF="#testnumber"><EM>testnumber</EM></A></LI>
+	</UL>
+
+	<LI><A HREF="#author">AUTHOR</A></LI>
+	<LI><A HREF="#copyright">COPYRIGHT</A></LI>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="name">NAME</A></H1>
+<P>GUS::RAD::Plugin::AssayControlLoader</P>
+<P>
+<HR>
+<H1><A NAME="synopsis">SYNOPSIS</A></H1>
+<P>*For help</P>
+<P>ga GUS::RAD::Plugin::AssayControlLoader <STRONG>[options]</STRONG> <STRONG>--help</STRONG></P>
+<P>*For loading data into AssayControl table</P>
+<P>ga GUS::RAD::Plugin::AssayControlLoader <STRONG>[options]</STRONG> <STRONG>--data_file</STRONG> data_file <STRONG>--assay_id</STRONG> assay_id <STRONG>--debug</STRONG> &gt; logfile</P>
+<P>*For loading data into AssayControl table</P>
+<P>ga GUS::RAD::Plugin::AssayControlLoader <STRONG>[options]</STRONG> <STRONG>--data_file</STRONG> data_file <STRONG>--assay_id</STRONG> assay_id <STRONG>--commit</STRONG> &gt; logfile</P>
+<P>
+<HR>
+<H1><A NAME="description">DESCRIPTION</A></H1>
+<P>This is a plug-in that loads AssayControl information (spotted microarray and oligonucleotide array) data into control table.</P>
+<P>
+<HR>
+<H1><A NAME="arguments">ARGUMENTS</A></H1>
+<P><STRONG>--data_file</STRONG> <EM>data_file</EM>  [require the absolute pathname]</P>
+<PRE>
+    The file contains the values for attributes in Control.</PRE>
+<P><STRONG>--assay_id</STRONG> <EM>assay_id</EM>  [require must be one of assay_id in RAD3::AssayControl table]</P>
+<PRE>
+    set value of the assay_id in AssayControl table</PRE>
+<P>
+<HR>
+<H1><A NAME="options">OPTIONS</A></H1>
+<P><STRONG>--debug</STRONG>
+    Debugging output.</P>
+<P><STRONG>--help</STRONG>
+    Get usage; same as usage.</P>
+<P><STRONG>--verbose</STRONG>
+    Lots of output.</P>
+<P><STRONG>--commit</STRONG>   
+    Commit the data to database.</P>
+<P><STRONG>--testnumber</STRONG> <EM>NUM</EM>   
+    Number of iterations for testing (<STRONG>in non-commit mode only</STRONG>).</P>
+<P><STRONG>--restart</STRONG> <EM>NUM</EM>   
+    data file line number to start loading data from (start counting after the header)</P>
+<P><STRONG>--user</STRONG> <EM>STRING</EM>
+    The user name, used to set value for row_user_id. The user must already be in Core::UserInfo table. [Default: from $HOME/.gus.properties file]</P>
+<P><STRONG>--group</STRONG> <EM>STRING</EM>
+    The group name, used to set value for row_group_id. The group must already be in Core::GroupInfo table. [Default: from $HOME/.gus.properties file]</P>
+<P><STRONG>--project</STRONG> <EM>STRING</EM>
+    The project name, used to set value for row_project_id. The project must already be in Core::ProjectInfo table. [Default: from $HOME/.gus.properties file]</P>
+<P>
+<HR>
+<H1><A NAME="notes">NOTES</A></H1>
+<P>Before you can run this plug-in you need to create the Perl objects for the views you will be loading, should these objects not exist yet. Based on the ``build'' system, this will involve two steps. First, check out the RAD, CBIL, GUS and Install modules from the cvs repository; secondly, build the GUS_HOME which the Perl objects reside in.</P>
+<P>The plug-in outputs a print statement to STDOUT (for possible redirection to a log file) which lists the number of data file lines read (counting empty lines, but not counting the header and the lines preceding it in the data file) and any warning <CODE>statement(s)</CODE> regarding data lines which have not been loaded into RAD3.</P>
+<P>Make sure that the <EM>.gus.properties</EM> file of the user contains the correct login name [RAD3rw]. Also, if the group and project differ from the default values in <EM>.gus.properties</EM>, <EM>please specify the proper group and project name on the command line using --group and --project options respectively</EM>.</P>
+<P>
+<H2><A NAME="data_file"><EM>data_file</EM></A></H2>
+<P>The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.</P>
+<P>* The header contains a list of attributes which are defined in the assaycontrol table including control__id, value, unit_type_id.</P>
+<P>* All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.</P>
+<P>* Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.</P>
+<P>Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.</P>
+<P>
+<H2><A NAME="restart"><EM>restart</EM></A></H2>
+<P>If you need to restart loading from your data file from a specific line (e.g. due to previous interruptions in data loading), give the line number of this line in the --restart option. You should start your line count from the line after the header line and include any empty lines.</P>
+<P>
+<H2><A NAME="testnumber"><EM>testnumber</EM></A></H2>
+<P>If you are testing the plug-in and want only to test n lines from your data file, use the --testnumber option. If you set this to n, it will test the plug-in on the first n data lines (counting empty lines) after the header or after --restart, if this is set.</P>
+<P>
+<HR>
+<H1><A NAME="author">AUTHOR</A></H1>
+<P>Written by Junmin Liu.</P>
+<P>
+<HR>
+<H1><A NAME="copyright">COPYRIGHT</A></H1>
+<P>Copyright Trustees of University of Pennsylvania 2003.</P>
+
+</BODY>
+
+</HTML>
