@@ -12,7 +12,7 @@ use CBIL::Util::A;
 use CBIL::Util::Disp;
 
 use GUS::Model::DoTS::Similarity;
-use GUS::Model::DoTS:SimilaritySpan;
+use GUS::Model::DoTS::SimilaritySpan;
 
 sub new {
 	my $C = shift;
