@@ -116,20 +116,20 @@ sub run {
   my $M   = shift;
   $ctx = shift;
 
-  if (!$ctx->{'external_database_release_id'} || !-e "$ctx->{'sequencefile'}" || !$ctx->{cla}->{table_name}) {
+  if (!$ctx->{cla}->{'external_database_release_id'} || !-e $ctx->{cla}->{'sequencefile'} || !$ctx->{cla}->{table_name}) {
     die "you must provide --external_database_release_id, --table_name and valid fasta sequencefile on the command line\n";
   }
   
   print $ctx->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
-  print "Testing on $ctx->{'testnumber'}\n" if $ctx->{'testnumber'};
+  print "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{cla}->{'testnumber'};
 
   eval("require GUS::Model::".$ctx->{cla}->{table_name});
 
   ##open sequence file
-  if ($ctx->{'sequencefile'} =~ /gz$/) {
-    open(F, "gunzip -c $ctx->{'sequencefile'} |");
+  if ($ctx->{cla}->{'sequencefile'} =~ /gz$/) {
+    open(F, "gunzip -c $ctx->{cla}->{'sequencefile'} |");
   } else {
-    open(F,"$ctx->{'sequencefile'}");
+    open(F,"$ctx->{cla}->{'sequencefile'}");
   }
 
   # get primary key for table_name
@@ -143,9 +143,9 @@ sub run {
     $ctx->{cla}->{sequence_type_id} = 20;
   }
 
-  #	my $sql = "select $prim_key from ExternalNASequence where source_id = '$source_id' and external_db_id = $ctx->{'external_db_id'}";
-  my $oracleName = &className2oracleName($ctx->{cla}->{table_name});
-  $checkStmt = $ctx->{self_inv}->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $ctx->{'external_database_release_id'}");
+  #	my $sql = "select $prim_key from ExternalNASequence where source_id = '$source_id' and external_db_id = $ctx->{cla}->{'external_db_id'}";
+  my $oracleName = $M->className2oracleName($ctx->{cla}->{table_name});
+  $checkStmt = $ctx->{self_inv}->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $ctx->{cla}->{'external_database_release_id'}");
 
   my $source_id;
   my $name;
@@ -164,7 +164,7 @@ sub run {
       ##following must be in loop to allow garbage collection...
       $ctx->{'self_inv'}->undefPointerCache();
 
-      last if($ctx->{'testnumber'} && $count > $ctx->{'testnumber'});
+      last if($ctx->{cla}->{'testnumber'} && $count > $ctx->{cla}->{'testnumber'});
 
       $count++;
 
@@ -175,45 +175,45 @@ sub run {
       print STDERR "$source_id  $count, inserted ".($ctx->{self_inv}->getTotalInserts() - 1)." and updated ".$ctx->{self_inv}->getTotalUpdates() ." " . ($count % ($ctx->{cla}->{log_frequency} * 10) == 0 ? `date` : "\n") if $count % $ctx->{cla}->{log_frequency} == 0;
 
       ##now get the ids etc for this defline...
-      if (/$ctx->{'regex_source_id'}/) { 
+      if (/$ctx->{cla}->{'regex_source_id'}/) { 
         $source_id = $1; 
       } else {
         print STDERR "ERROR: unable to parse source_id from $_"; $source_id = "";
       }
 
-      $secondary_id = ""; $name = ""; $description = ""; $mol_wgt = ""; $contained_seqs= ""; $chromosome="";##in case can't parse out of this defline...
-      if ($ctx->{'regex_secondary_id'} && /$ctx->{'regex_secondary_id'}/) {
+      $secondary_id = ""; $name = ""; $description = ""; $mol_wgt = ""; $contained_seqs= ""; $chromosome=""; ##in case can't parse out of this defline...
+      if ($ctx->{cla}->{'regex_secondary_id'} && /$ctx->{cla}->{'regex_secondary_id'}/) {
         $secondary_id = $1;
       }
-      if ($ctx->{'regex_name'} && /$ctx->{'regex_name'}/) {
+      if ($ctx->{cla}->{'regex_name'} && /$ctx->{cla}->{'regex_name'}/) {
         $name = $1;
       }
-      if ($ctx->{'regex_chromosome'} && /$ctx->{'regex_chromosome'}/) {
+      if ($ctx->{cla}->{'regex_chromosome'} && /$ctx->{cla}->{'regex_chromosome'}/) {
         $chromosome = $1;
       }
-      if ($ctx->{'regex_desc'} && /$ctx->{'regex_desc'}/){ 
+      if ($ctx->{cla}->{'regex_desc'} && /$ctx->{cla}->{'regex_desc'}/) { 
         $description = $1; 
       }
-      if($ctx->{'regex_mol_wgt'} && /$ctx->{'regex_mol_wgt'}/){ 
+      if ($ctx->{cla}->{'regex_mol_wgt'} && /$ctx->{cla}->{'regex_mol_wgt'}/) { 
         $mol_wgt = $1; 
       }
-      if($ctx->{'regex_contained_seqs'} && /$ctx->{'regex_contained_seqs'}/){ 
+      if ($ctx->{cla}->{'regex_contained_seqs'} && /$ctx->{cla}->{'regex_contained_seqs'}/) { 
         $contained_seqs = $1; 
       }
 
-			##reset the sequence..
-			$seq = "";
-		}else{
-			$seq .= $_;
-		}
-	}
-	&process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq) if ($source_id);
+      ##reset the sequence..
+      $seq = "";
+    } else {
+      $seq .= $_;
+    }
+  }
+  &process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq) if ($source_id);
 
 
-	# return status
-	# ........................................
+  # return status
+  # ........................................
 	
-  my $res = "Run finished: Processed $count, inserted ".($ctx->{self_inv}->getTotalInserts() - 1)." and updated ".$ctx->{self_inv}->getTotalUpdates()." sequences from file $ctx->{'sequencefile'}";
+  my $res = "Run finished: Processed $count, inserted ".($ctx->{self_inv}->getTotalInserts() - 1)." and updated ".$ctx->{self_inv}->getTotalUpdates()." sequences from file $ctx->{cla}->{'sequencefile'}";
   print STDERR "$res\n";
   return $res;
 }
@@ -221,12 +221,12 @@ sub run {
 ##SUBS
 
 sub process {
-	my($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$sequence) = @_;
-#  print STDERR "process($source_id,$secondary_id,$name,$description,$sequence)\n";
+  my($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$sequence) = @_;
+#    print STDERR "process($source_id,$secondary_id,$name,$description,$sequence)\n";
   my $id;
-	$id = &checkIfHave($source_id) unless $ctx->{cla}->{no_check};
+  $id = &checkIfHave($source_id) unless $ctx->{cla}->{no_check};
   my $aas;
-  if($id && $ctx->{cla}->{update}){
+  if ($id && $ctx->{cla}->{update}) {
     my $className = "GUS::Model::$ctx->{cla}->{table_name}";
     $aas = $className->new({$prim_key => $id});
     $aas->retrieveFromDB();
@@ -237,79 +237,81 @@ sub process {
     $aas->setMolecularWeight($mol_wgt) unless ((!$aas->isValidAttribute('molecular_weight')) || (!$mol_wgt || $aas->getMolecularWeight() eq $mol_wgt));  
     $aas->setNumberOfContainedSequences($contained_seqs) unless ((!$aas->isValidAttribute('number_of_contained_sequences')) || (!$contained_seqs || $aas->getNumberOfContainedSequences() eq $contained_seqs));  
     $aas->setSequence($sequence) if $sequence;
-  }else{
-    return if $id; ##already have and am not updating..
+  } else {
+    return if $id;		##already have and am not updating..
     $aas = &createNewExternalSequence($source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence);
   }
 
   $aas->submit() if $aas->hasChangedAttributes();
-	if($ctx->{cla}->{'writeFile'}){
-		print WF ">",$aas->getId()," $source_id $description\n$sequence\n";
-	}
-	$countInserts++;
+  if ($ctx->{cla}->{'writeFile'}) {
+    print WF ">",$aas->getId()," $source_id $description\n$sequence\n";
+  }
+  $countInserts++;
 }
 
 
 sub createNewExternalSequence {
-	my($source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence) = @_;
-	my $className = "GUS::Model::$ctx->{cla}->{table_name}";
-	$className =~ /GUS::Model::\w+::(\w+)/ || die "can't parse className";
-	my $tbl = $1;
+  my($source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence) = @_;
+  my $className = "GUS::Model::$ctx->{cla}->{table_name}";
+  $className =~ /GUS::Model::\w+::(\w+)/ || die "can't parse className";
+  my $tbl = $1;
 
-	my $aas = $className->
-	  new({'external_database_release_id' => $ctx->{cla}->{'external_database_release_id'},
-	       'source_id' => $source_id,
-	       'subclass_view' => $tbl });
-	if($secondary_id && $aas->isValidAttribute('name')){ $aas->set('secondary_identifier',$secondary_id);}
-	if ($aas->isValidAttribute('sequence_type_id')) {
+  my $aas = $className->
+    new({'external_database_release_id' => $ctx->{cla}->{'external_database_release_id'},
+	 'source_id' => $source_id,
+	 'subclass_view' => $tbl });
+  if ($secondary_id && $aas->isValidAttribute('name')) {
+    $aas->set('secondary_identifier',$secondary_id);
+  }
+  if ($aas->isValidAttribute('sequence_type_id')) {
     $aas->setSequenceTypeId($ctx->{cla}->{'sequence_type_id'} ? $ctx->{cla}->{'sequence_type_id'} : 11);
   }
-	#if($ctx->{cla}->{'taxon_id'}){ $aas->setTaxonId($ctx->{cla}->{'taxon_id'});}
-  if($ctx->{cla}->{'taxon_id'}){ 
-    if ($aas->isValidAttribute('taxon_id')){
+  #if($ctx->{cla}->{'taxon_id'}){ $aas->setTaxonId($ctx->{cla}->{'taxon_id'});}
+  if ($ctx->{cla}->{'taxon_id'}) { 
+    if ($aas->isValidAttribute('taxon_id')) {
       $aas->setTaxonId($ctx->{cla}->{'taxon_id'});
-    }elsif ($ctx->{cla}->{table_name} eq 'DoTS::ExternalAASequence'){
+    } elsif ($ctx->{cla}->{table_name} eq 'DoTS::ExternalAASequence') {
       eval ("require GUS::Model::DoTS::AASequenceTaxon");
       my $aast =  GUS::Model::DoTS::AASequenceTaxon->
 	new({taxon_id => $ctx->{cla}->{'taxon_id'}});
       $aas->addChild($aast);
-    }else{
+    } else {
       print STDERR "Cannot set taxon_id for table_name " . $ctx->{cla}->{table_name} . "\n";
     }
   }   
-	if($description){ 
-		$description =~ s/\"//g; $description =~ s/\'//g;
-		$aas->set('description',substr($description,0,255)); 
-	}
-	if($name && $aas->isValidAttribute('name') ){ 
-		$name =~ s/\"//g; $name =~ s/\'//g;
-		$aas->set('name',$name);
-	}
-	if($chromosome && $aas->isValidAttribute('chromosome') ){ 
-		$aas->setChromosome($chromosome);
-	}
-  if($mol_wgt && $aas->isValidAttribute('molecular_weight')){ 
-		$aas->setMolecularWeight($mol_wgt); 
-	}
-  if($contained_seqs && $aas->isValidAttribute('number_of_contained_sequences')){ 
-		$aas->setNumberOfContainedSequences($contained_seqs); 
-	}
-	if($sequence && !$ctx->{'no_sequence'}){
-		$aas->setSequence($sequence);
-	}
-	print STDERR $aas->toString() if $ctx->{'debug'};
-	return $aas;
+  if ($description) { 
+    $description =~ s/\"//g; $description =~ s/\'//g;
+    $aas->set('description',substr($description,0,255)); 
+  }
+  if ($name && $aas->isValidAttribute('name') ) { 
+    $name =~ s/\"//g; $name =~ s/\'//g;
+    $aas->set('name',$name);
+  }
+  if ($chromosome && $aas->isValidAttribute('chromosome') ) { 
+    $aas->setChromosome($chromosome);
+  }
+  if ($mol_wgt && $aas->isValidAttribute('molecular_weight')) { 
+    $aas->setMolecularWeight($mol_wgt); 
+  }
+  if ($contained_seqs && $aas->isValidAttribute('number_of_contained_sequences')) { 
+    $aas->setNumberOfContainedSequences($contained_seqs); 
+  }
+  if ($sequence && !$ctx->{cla}->{'no_sequence'}) {
+    $aas->setSequence($sequence);
+  }
+  print STDERR $aas->toString() if $ctx->{cla}->{'debug'};
+  return $aas;
 }
  
 sub checkIfHave {
-	my($source_id) = @_;
-	$checkStmt->execute($source_id);
-	if(my($id) = $checkStmt->fetchrow_array()){
-		print STDERR "Entry already inserted for '$source_id'\n" unless $ctx->{cla}->{update};
-		$checkStmt->finish();
-		return $id;
-	}
-	return 0;
+  my($source_id) = @_;
+  $checkStmt->execute($source_id);
+  if (my($id) = $checkStmt->fetchrow_array()) {
+    print STDERR "Entry already inserted for '$source_id'\n" unless $ctx->{cla}->{update};
+    $checkStmt->finish();
+    return $id;
+  }
+  return 0;
 }
 
 
