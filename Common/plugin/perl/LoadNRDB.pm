@@ -1,7 +1,8 @@
  package GUS::Common::Plugin::LoadNRDB;
 
 @ISA = qw(GUS::PluginMgr::Plugin);
- 
+
+
 use strict;
 use DBI;
 use GUS::Model::DoTS::NRDBEntry;
