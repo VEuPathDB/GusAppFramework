@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* rad3ver-views.sql                                                                          */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:09:40 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:50:06 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -65,6 +65,35 @@ AS SELECT
   version_transaction_id 
 FROM CompositeElementResultImpVer
 WHERE subclass_view = 'AffymetrixMAS4'
+WITH CHECK OPTION;
+
+CREATE VIEW @oracle_radver@.AFFYMETRIXMAS5VER
+AS SELECT
+  composite_element_result_id,
+  subclass_view,
+  composite_element_id,
+  quantification_id,
+  float1 AS signal,
+  char1 AS detection,
+  float2 AS detection_p_value,
+  smallint1 AS stat_pairs,
+  smallint2 AS stat_pairs_used,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id,
+  version_alg_invocation_id,
+  version_date,
+  version_transaction_id 
+FROM CompositeElementResultImpVer
+WHERE SUBCLASS_VIEW = 'AffymetrixMAS5'
 WITH CHECK OPTION;
 
 CREATE VIEW @oracle_radver@.ANALYSISRESULTVER
@@ -435,6 +464,51 @@ AS SELECT
 FROM ElementResultImpVer WHERE subclass_view = 'GEMToolsElementResult'
 WITH CHECK OPTION;
 
+/* WARNING - GENEPIXELEMENTRESULT does not appear in core.TableInfo */
+
+CREATE VIEW @oracle_radver@.GENEPIXELEMENTRESULT
+AS SELECT
+  element_result_id,
+  element_id,
+  composite_element_result_id,
+  quantification_id,
+  subclass_view,
+  foreground_sd,
+  background_sd,
+  float1 AS spot_diameter,
+  float2 AS foreground_mean,
+  float3 AS foreground_median,
+  float4 AS background_mean,
+  float5 AS background_median,
+  float6 AS percent_over_bg_plus_one_sd,
+  float7 AS percent_over_bg_plus_two_sds,
+  float8 AS percent_foreground_saturated,
+  float9 AS mean_of_ratios,
+  float10 AS median_of_ratios,
+  float11 AS ratios_sd,
+  float12 AS rgn_ratio,
+  float13 AS rgn_r_squared,
+  smallint1 AS num_foreground_pixels,
+  smallint2 AS num_background_pixels,
+  tinyint1 AS flag,
+  tinyint2 AS autoflag,
+  float14 AS  circularity,
+  modification_date,
+  user_read,
+  user_write,
+  group_read,
+  group_write,
+  other_read,
+  other_write,
+  row_user_id,
+  row_group_id,
+  row_project_id,
+  row_alg_invocation_id,
+  version_alg_invocation_id,
+  version_date,
+  version_transaction_id      FROM ElementResultImpVer
+ WHERE subclass_view = 'GenePixElementResult' WITH CHECK OPTION;
+
 CREATE VIEW @oracle_radver@.GENEPIXELEMENTRESULTVER
 AS SELECT
   element_result_id,
@@ -475,6 +549,51 @@ AS SELECT
 FROM ElementResultImpVer
 WHERE subclass_view = 'GenePixElementResult'
 WITH CHECK OPTION;
+
+CREATE VIEW @oracle_radver@.GNFAFFYMETRIXRESULTVER
+( COMPOSITE_ELEMENT_RESULT_ID,
+  SUBCLASS_VIEW,
+  COMPOSITE_ELEMENT_ID,
+  QUANTIFICATION_ID,
+  SIGNAL,
+  DETECTION,
+  MODIFICATION_DATE,
+  USER_READ,
+  USER_WRITE,
+  GROUP_READ,
+  GROUP_WRITE,
+  OTHER_READ,
+  OTHER_WRITE,
+  ROW_USER_ID,
+  ROW_GROUP_ID,
+  ROW_PROJECT_ID,
+  ROW_ALG_INVOCATION_ID,
+  VERSION_ALG_INVOCATION_ID,
+  VERSION_DATE,
+  VERSION_TRANSACTION_ID )
+AS select composite_element_result_id,
+        subclass_view,
+        composite_element_id,
+        quantification_id,
+  float1 AS signal,
+  char1 AS detection,
+        modification_date,
+        user_read,
+        user_write,
+        group_read,
+        group_write,
+        other_read,
+        other_write,
+        row_user_id,
+        row_group_id,
+        row_project_id,
+        row_alg_invocation_id,
+        version_alg_invocation_id,
+        version_date,
+        version_transaction_id
+from rad3ver.compositeElementResultImpver
+where subclass_view like 'GNFAffymetrixResult'
+with check option;
 
 CREATE VIEW @oracle_radver@.HQSPECIFICITYVER
 ( ANALYSIS_RESULT_ID,
@@ -990,7 +1109,7 @@ WHERE subclass_view = 'Spot'
 WITH CHECK OPTION;
 
 
-/* 28 view(s) */
+/* 31 view(s) */
 
 SPOOL OFF
 SET ECHO OFF

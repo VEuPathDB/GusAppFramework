@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* rad3-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:08:34 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 11:45:57 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -27,7 +27,7 @@ CREATE TABLE @oracle_rad@.ACQUISITION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ACQUISITIONPARAM (
@@ -47,7 +47,7 @@ CREATE TABLE @oracle_rad@.ACQUISITIONPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ANALYSIS (
@@ -66,7 +66,7 @@ CREATE TABLE @oracle_rad@.ANALYSIS (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ANALYSISINPUT (
@@ -84,7 +84,7 @@ CREATE TABLE @oracle_rad@.ANALYSISINPUT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ANALYSISPARAM (
@@ -103,7 +103,7 @@ CREATE TABLE @oracle_rad@.ANALYSISPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ANALYSISQCPARAM (
@@ -122,7 +122,7 @@ CREATE TABLE @oracle_rad@.ANALYSISQCPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ANALYSISRESULTIMP (
@@ -160,7 +160,7 @@ CREATE TABLE @oracle_rad@.ANALYSISRESULTIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ARRAY (
@@ -194,7 +194,7 @@ CREATE TABLE @oracle_rad@.ARRAY (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ARRAYANNOTATION (
@@ -213,7 +213,7 @@ CREATE TABLE @oracle_rad@.ARRAYANNOTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ARRAYGROUP (
@@ -231,7 +231,7 @@ CREATE TABLE @oracle_rad@.ARRAYGROUP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ARRAYGROUPLINK (
@@ -249,7 +249,7 @@ CREATE TABLE @oracle_rad@.ARRAYGROUPLINK (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ASSAY (
@@ -275,7 +275,7 @@ CREATE TABLE @oracle_rad@.ASSAY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ASSAYBIOMATERIAL (
@@ -293,7 +293,7 @@ CREATE TABLE @oracle_rad@.ASSAYBIOMATERIAL (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ASSAYCONTROL (
@@ -313,7 +313,17 @@ CREATE TABLE @oracle_rad@.ASSAYCONTROL (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - ASSAYGROUP does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.ASSAYGROUP (
+    STUDY_ID                           NUMBER(4)                                     NOT NULL,
+    ASSAY_ID                           NUMBER(8)                                     NOT NULL,
+    STUDY_DESIGN_ID                    NUMBER(5)                                     NOT NULL,
+    FACTOR_VALUE                       VARCHAR2(100)                                 NOT NULL)
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ASSAYLABELEDEXTRACT (
@@ -332,7 +342,7 @@ CREATE TABLE @oracle_rad@.ASSAYLABELEDEXTRACT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ASSAYPARAM (
@@ -351,7 +361,7 @@ CREATE TABLE @oracle_rad@.ASSAYPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.BIOMATERIALCHARACTERISTIC (
@@ -370,7 +380,7 @@ CREATE TABLE @oracle_rad@.BIOMATERIALCHARACTERISTIC (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.BIOMATERIALIMP (
@@ -395,7 +405,7 @@ CREATE TABLE @oracle_rad@.BIOMATERIALIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.BIOMATERIALMEASUREMENT (
@@ -415,7 +425,7 @@ CREATE TABLE @oracle_rad@.BIOMATERIALMEASUREMENT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.CHANNEL (
@@ -433,7 +443,7 @@ CREATE TABLE @oracle_rad@.CHANNEL (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.COMPOSITEELEMENTANNOTATION (
@@ -452,7 +462,15 @@ CREATE TABLE @oracle_rad@.COMPOSITEELEMENTANNOTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - COMPOSITEELEMENTASSEMBLY_MV does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.COMPOSITEELEMENTASSEMBLY_MV (
+    COMPOSITE_ELEMENT_ID               NUMBER(12)                                    NULL,
+    ASSEMBLY_NA_SEQUENCE_ID            NUMBER(12)                                    NULL)
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.COMPOSITEELEMENTGUS (
@@ -471,7 +489,7 @@ CREATE TABLE @oracle_rad@.COMPOSITEELEMENTGUS (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.COMPOSITEELEMENTIMP (
@@ -503,7 +521,7 @@ CREATE TABLE @oracle_rad@.COMPOSITEELEMENTIMP (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.COMPOSITEELEMENTRESULTIMP (
@@ -538,7 +556,7 @@ CREATE TABLE @oracle_rad@.COMPOSITEELEMENTRESULTIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.CONTROL (
@@ -560,7 +578,7 @@ CREATE TABLE @oracle_rad@.CONTROL (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ELEMENTANNOTATION (
@@ -579,7 +597,23 @@ CREATE TABLE @oracle_rad@.ELEMENTANNOTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - ELEMENTASSEMBLY does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.ELEMENTASSEMBLY (
+    ELEMENT_ID                         NUMBER                                        NULL,
+    ASSEMBLY_NA_SEQUENCE_ID            NUMBER                                        NULL)
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - ELEMENTASSEMBLY7 does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.ELEMENTASSEMBLY7 (
+    ELEMENT_ID                         NUMBER(10)                                    NULL,
+    ASSEMBLY_NA_SEQUENCE_ID            NUMBER(10)                                    NULL)
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ELEMENTIMP (
@@ -616,7 +650,7 @@ CREATE TABLE @oracle_rad@.ELEMENTIMP (
     ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ELEMENTRESULTIMP (
@@ -686,7 +720,17 @@ CREATE TABLE @oracle_rad@.ELEMENTRESULTIMP (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - GUSLINKTEMP2 does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.GUSLINKTEMP2 (
+    COMPOSITE_ELEMENT_ID               NUMBER(10)                                    NOT NULL,
+    NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
+    SIMILARITY_ID                      NUMBER(10)                                    NOT NULL,
+    NA_FEATURE_ID                      NUMBER(10)                                    NULL)
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.INTEGRITYSTATINPUT (
@@ -707,7 +751,7 @@ CREATE TABLE @oracle_rad@.INTEGRITYSTATINPUT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.INTEGRITYSTATISTIC (
@@ -726,7 +770,7 @@ CREATE TABLE @oracle_rad@.INTEGRITYSTATISTIC (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.LABELMETHOD (
@@ -746,7 +790,7 @@ CREATE TABLE @oracle_rad@.LABELMETHOD (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.LOGICALGROUP (
@@ -765,7 +809,7 @@ CREATE TABLE @oracle_rad@.LOGICALGROUP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.LOGICALGROUPLINK (
@@ -785,7 +829,7 @@ CREATE TABLE @oracle_rad@.LOGICALGROUPLINK (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.MAGEDOCUMENTATION (
@@ -805,7 +849,7 @@ CREATE TABLE @oracle_rad@.MAGEDOCUMENTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.MAGE_ML (
@@ -823,7 +867,7 @@ CREATE TABLE @oracle_rad@.MAGE_ML (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.ONTOLOGYENTRY (
@@ -849,7 +893,33 @@ CREATE TABLE @oracle_rad@.ONTOLOGYENTRY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - ONTOLOGYENTRY_OLD does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.ONTOLOGYENTRY_OLD (
+    ONTOLOGY_ENTRY_ID                  NUMBER(10)                                    NOT NULL,
+    PARENT_ID                          NUMBER(10)                                    NULL,
+    EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NULL,
+    SOURCE_ID                          VARCHAR2(100)                                 NULL,
+    URI                                VARCHAR2(500)                                 NULL,
+    NAME                               VARCHAR2(100)                                 NULL,
+    CATEGORY                           VARCHAR2(100)                                 NOT NULL,
+    VALUE                              VARCHAR2(100)                                 NOT NULL,
+    DEFINITION                         VARCHAR2(500)                                 NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROCESSIMPLEMENTATION (
@@ -867,7 +937,7 @@ CREATE TABLE @oracle_rad@.PROCESSIMPLEMENTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROCESSIMPLEMENTATIONPARAM (
@@ -886,7 +956,7 @@ CREATE TABLE @oracle_rad@.PROCESSIMPLEMENTATIONPARAM (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROCESSINVOCATION (
@@ -905,7 +975,7 @@ CREATE TABLE @oracle_rad@.PROCESSINVOCATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROCESSINVOCATIONPARAM (
@@ -924,7 +994,27 @@ CREATE TABLE @oracle_rad@.PROCESSINVOCATIONPARAM (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - PROCESSINVOCATION_OLD does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.PROCESSINVOCATION_OLD (
+    PROCESS_INVOCATION_ID              NUMBER(5)                                     NOT NULL,
+    PROCESS_IMPLEMENTATION_ID          NUMBER(5)                                     NOT NULL,
+    PROCESS_INVOCATION_DATE            DATE                                          NOT NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROCESSINVQUANTIFICATION (
@@ -942,7 +1032,7 @@ CREATE TABLE @oracle_rad@.PROCESSINVQUANTIFICATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROCESSIO (
@@ -963,7 +1053,7 @@ CREATE TABLE @oracle_rad@.PROCESSIO (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROCESSIOELEMENT (
@@ -981,7 +1071,23 @@ CREATE TABLE @oracle_rad@.PROCESSIOELEMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - PROCESSIOELEMENT_MV does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.PROCESSIOELEMENT_MV (
+    PROCESS_IO_ID                      NUMBER(12)                                    NOT NULL,
+    ELEMENT_ID                         NUMBER(10)                                    NOT NULL)
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - PROCESSIOELEMENT_OLD does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.PROCESSIOELEMENT_OLD (
+    PROCESS_IO_ID                      NUMBER(12)                                    NOT NULL,
+    ELEMENT_ID                         NUMBER(10)                                    NOT NULL)
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROCESSRESULT (
@@ -999,7 +1105,7 @@ CREATE TABLE @oracle_rad@.PROCESSRESULT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROJECTLINK (
@@ -1019,7 +1125,7 @@ CREATE TABLE @oracle_rad@.PROJECTLINK (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROTOCOL (
@@ -1046,7 +1152,7 @@ CREATE TABLE @oracle_rad@.PROTOCOL (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROTOCOLPARAM (
@@ -1067,7 +1173,7 @@ CREATE TABLE @oracle_rad@.PROTOCOLPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.PROTOCOLQCPARAM (
@@ -1088,7 +1194,34 @@ CREATE TABLE @oracle_rad@.PROTOCOLQCPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - PROTOCOL_OLD does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.PROTOCOL_OLD (
+    PROTOCOL_ID                        NUMBER(10)                                    NOT NULL,
+    PROTOCOL_TYPE_ID                   NUMBER(5)                                     NOT NULL,
+    BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NULL,
+    EXTERNAL_DATABASE_RELEASE_ID       NUMBER(4)                                     NULL,
+    SOURCE_ID                          VARCHAR2(100)                                 NULL,
+    NAME                               VARCHAR2(100)                                 NOT NULL,
+    URI                                VARCHAR2(100)                                 NULL,
+    PROTOCOL_DESCRIPTION               VARCHAR2(4000)                                NULL,
+    HARDWARE_DESCRIPTION               VARCHAR2(500)                                 NULL,
+    SOFTWARE_DESCRIPTION               VARCHAR2(500)                                 NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.QUANTIFICATION (
@@ -1111,7 +1244,7 @@ CREATE TABLE @oracle_rad@.QUANTIFICATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.QUANTIFICATIONPARAM (
@@ -1131,7 +1264,52 @@ CREATE TABLE @oracle_rad@.QUANTIFICATIONPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - QUANTIFICATIONPARAM_OLD does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.QUANTIFICATIONPARAM_OLD (
+    QUANTIFICATION_PARAM_ID            NUMBER(5)                                     NOT NULL,
+    QUANTIFICATION_ID                  NUMBER(4)                                     NOT NULL,
+    NAME                               VARCHAR2(100)                                 NOT NULL,
+    VALUE                              VARCHAR2(50)                                  NOT NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - QUANTIFICATION_OLD does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.QUANTIFICATION_OLD (
+    QUANTIFICATION_ID                  NUMBER(4)                                     NOT NULL,
+    ACQUISITION_ID                     NUMBER(4)                                     NOT NULL,
+    OPERATOR_ID                        NUMBER(10)                                    NULL,
+    PROTOCOL_ID                        NUMBER(10)                                    NULL,
+    QUANTIFICATION_DATE                DATE                                          NULL,
+    NAME                               VARCHAR2(100)                                 NULL,
+    URI                                VARCHAR2(500)                                 NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.RELATEDACQUISITION (
@@ -1152,7 +1330,7 @@ CREATE TABLE @oracle_rad@.RELATEDACQUISITION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.RELATEDQUANTIFICATION (
@@ -1173,7 +1351,7 @@ CREATE TABLE @oracle_rad@.RELATEDQUANTIFICATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.STUDY (
@@ -1195,7 +1373,7 @@ CREATE TABLE @oracle_rad@.STUDY (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.STUDYASSAY (
@@ -1213,7 +1391,7 @@ CREATE TABLE @oracle_rad@.STUDYASSAY (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.STUDYBIOMATERIAL (
@@ -1231,14 +1409,13 @@ CREATE TABLE @oracle_rad@.STUDYBIOMATERIAL (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.STUDYDESIGN (
     STUDY_DESIGN_ID                    NUMBER(5)                                     NOT NULL,
     STUDY_ID                           NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
-    DESCRIPTION                        VARCHAR2(4000)                                NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
     USER_WRITE                         NUMBER(1)                                     NOT NULL,
@@ -1250,7 +1427,7 @@ CREATE TABLE @oracle_rad@.STUDYDESIGN (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.STUDYDESIGNASSAY (
@@ -1268,7 +1445,7 @@ CREATE TABLE @oracle_rad@.STUDYDESIGNASSAY (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.STUDYDESIGNDESCRIPTION (
@@ -1287,7 +1464,7 @@ CREATE TABLE @oracle_rad@.STUDYDESIGNDESCRIPTION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.STUDYDESIGNTYPE (
@@ -1305,7 +1482,27 @@ CREATE TABLE @oracle_rad@.STUDYDESIGNTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - STUDYDESIGN_OLD does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.STUDYDESIGN_OLD (
+    STUDY_DESIGN_ID                    NUMBER(5)                                     NOT NULL,
+    STUDY_ID                           NUMBER(5)                                     NOT NULL,
+    DESCRIPTION                        VARCHAR2(4000)                                NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.STUDYFACTOR (
@@ -1325,7 +1522,7 @@ CREATE TABLE @oracle_rad@.STUDYFACTOR (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.STUDYFACTORVALUE (
@@ -1348,7 +1545,59 @@ CREATE TABLE @oracle_rad@.STUDYFACTORVALUE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - STUDYFACTORVALUE_OLD does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.STUDYFACTORVALUE_OLD (
+    STUDY_FACTOR_VALUE_ID              NUMBER(8)                                     NOT NULL,
+    STUDY_FACTOR_ID                    NUMBER(5)                                     NOT NULL,
+    ASSAY_ID                           NUMBER(8)                                     NOT NULL,
+    FACTOR_VALUE                       VARCHAR2(100)                                 NOT NULL,
+    NAME                               VARCHAR2(100)                                 NULL,
+    MODIFICATION_DATE                  DATE                                          NOT NULL,
+    USER_READ                          NUMBER(1)                                     NOT NULL,
+    USER_WRITE                         NUMBER(1)                                     NOT NULL,
+    GROUP_READ                         NUMBER(1)                                     NOT NULL,
+    GROUP_WRITE                        NUMBER(1)                                     NOT NULL,
+    OTHER_READ                         NUMBER(1)                                     NOT NULL,
+    OTHER_WRITE                        NUMBER(1)                                     NOT NULL,
+    ROW_USER_ID                        NUMBER(12)                                    NOT NULL,
+    ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
+    ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
+    ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - TEMP_ARRAYVIEWER_INTENSITY does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.TEMP_ARRAYVIEWER_INTENSITY (
+    ASSAY_ID                           NUMBER(8)                                     NOT NULL,
+    DoTS Id                            NUMBER(12)                                    NOT NULL,
+    DESCRIPTION                        VARCHAR2(500)                                 NULL,
+    ARRAY_ROW                          VARCHAR2(5)                                   NULL,
+    ARRAY_COLUMN                       VARCHAR2(5)                                   NULL,
+    GRID_ROW                           VARCHAR2(5)                                   NULL,
+    GRID_COLUMN                        VARCHAR2(5)                                   NULL,
+    SUB_ROW                            VARCHAR2(5)                                   NULL,
+    SUB_COLUMN                         VARCHAR2(5)                                   NULL,
+    normalized log value               FLOAT(126)                                    NOT NULL,
+    CONFIDENCE_LEVEL                   FLOAT(126)                                    NOT NULL)
+ TABLESPACE @oracle_radTablespace@
+ STORAGE (MAXEXTENTS UNLIMITED );
+
+/* WARNING - TEMP_FORMHELP does not appear in core.TableInfo */
+
+CREATE TABLE @oracle_rad@.TEMP_FORMHELP (
+    FORM_HELP_ID                       NUMBER(10)                                    NOT NULL,
+    FORM_NAME                          VARCHAR2(50)                                  NOT NULL,
+    FIELD_NAME                         VARCHAR2(50)                                  NOT NULL,
+    ATTRIBUTE_NAME                     VARCHAR2(100)                                 NULL,
+    ISMANDATORY                        VARCHAR2(4)                                   NULL,
+    DEFINITION                         VARCHAR2(1000)                                NULL,
+    EXAMPLES                           VARCHAR2(500)                                 NULL)
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.TREATMENT (
@@ -1369,7 +1618,7 @@ CREATE TABLE @oracle_rad@.TREATMENT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 CREATE TABLE @oracle_rad@.TREATMENTPARAM (
@@ -1388,11 +1637,11 @@ CREATE TABLE @oracle_rad@.TREATMENTPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_rad3Tablespace@
+ TABLESPACE @oracle_radTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
-/* 63 table(s) */
+/* 79 table(s) */
 
 SPOOL OFF
 SET ECHO OFF
