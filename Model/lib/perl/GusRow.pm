@@ -577,11 +577,11 @@ one-to-one relationships as all current children of this class will be removed.
 sub setChild{
   my($self,$c) = @_;
 
-  $self->checkChild($c);
-
   if (!$c) {
     return undef;
   }
+
+  $self->checkChild($c);
 
   my $prevP = $c->getParent($self->getClassName());
   if ( $prevP eq $self) {       ##breaks loop!!!am finished
@@ -985,11 +985,12 @@ sub haveAllPrimaryKeyValues {
 sub setParent{
   my($self,$p) = @_;
 
-  $self->checkParent($p);
-
   if (!$p) {
     return undef;
   }
+
+  $self->checkParent($p);
+
   print STDERR "Setting parent for $self:",$self->getId(),", Parent: $p:",$p->getId(),"\n" if $debug == 1;
 
   ##in the instance where the pointer cache has been undef'ed and the user still has
