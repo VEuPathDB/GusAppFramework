@@ -70,7 +70,7 @@
       <description></description>
       <name>param</name>
       <required>true</required>
-      <type>org.gusdb.gus.wdk.model.query.Param</type>
+      <type>org.gusdb.gus.wdk.model.Param</type>
       <rtexprvalue>true</rtexprvalue>
     </attribute>
   </tag>
@@ -88,7 +88,7 @@
       <description></description>
       <name>queryInstance</name>
       <required>true</required>
-      <type>org.gusdb.gus.wdk.model.query.SimpleQueryInstanceI</type>
+      <type>org.gusdb.gus.wdk.model.SimpleQueryInstanceI</type>
       <rtexprvalue>true</rtexprvalue>
     </attribute>
   </tag>
