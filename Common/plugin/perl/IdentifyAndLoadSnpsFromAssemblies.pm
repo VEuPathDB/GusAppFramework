@@ -112,8 +112,6 @@ sub run {
   my ($self) = @_;
   $self->logAlgInvocationId;
   $self->logCommit;
-
-  $self->{attrHash} = $self->makeAttrHash();
   
   die "You must provide (--idSQL or --inputFile) and --logFile\n" unless ( $self->getCla->{inputFile} || $self->getCla->{idSQL} ) && $self->getCla->{logFile};
 
