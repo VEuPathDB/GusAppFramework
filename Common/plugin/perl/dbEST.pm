@@ -840,7 +840,7 @@ sub setTableCaches {
   # Taxon cache
   # changed to get all organism names for human and mouse
   # all else is on-demand cache
-  $q = 'select name, taxon_id  from sres.TaxonName where taxon_id in (8,14,45,211)';
+  $q = 'select name, taxon_id  from sres.TaxonName where taxon_id in (8,14,45,211,1124)';
   $A = $M->sql_get_as_array_refs($q);
   foreach my $r (@$A) {
     $M->{taxon}->{$r->[0]} = $r->[1];
