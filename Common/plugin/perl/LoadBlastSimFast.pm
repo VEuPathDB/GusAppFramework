@@ -343,7 +343,7 @@ sub insertSubjects {
 
   my $spanStmt = $self->getInsertSpanStmt($db);
 
-  my $nextvalSql = $db->getDbPlatform()->getNextValSql("dots.similarity");
+  my $nextvalSql = $db->getDbPlatform()->nextValSql("dots.similarity");
 
   my $nextIdStmt = $db->getDbHandle()->prepare("select $nextvalSql from DUAL");
 
@@ -430,7 +430,7 @@ sub getInsertSpanStmt {
   my $rowGroupId = $self->getAlgInvocation()->getRowGroupId();
   my $rowProjectId = $self->getAlgInvocation()->getRowProjectId();
 
-  my $nextvalSql = $db->getDbPlatform()->getNextValSql("dots.SimilaritySpan");
+  my $nextvalSql = $db->getDbPlatform()->nextValSql("dots.SimilaritySpan");
 
   my $sql = 
 "insert into dots.SimilaritySpan Values " .
