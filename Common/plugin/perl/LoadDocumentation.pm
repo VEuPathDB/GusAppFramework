@@ -142,6 +142,8 @@ sub process {
 		    $stmt->execute();
 		    my ($tb_id, $att_name, $html);
 
+		    $self->logAlert("tb_id = $tb_id\tatt_name = $att_name\thtml = $html\n"); ###TEST###
+
 		    while (my @ary = $stmt->fetchrow_array() ){
 			chomp;
 			$tb_id = $ary[0]; #queried table id
@@ -207,6 +209,8 @@ sub process {
 		my $stmt2 = $dbh2->prepare($query2);
 		$stmt2->execute();
 		my ($tb_id2, $html2);
+
+		$self->logAlert("tb_id2 = $tb_id2\thtml2 = $html2\n"); ###TEST###
 
 		while (my @ary2 = $stmt2->fetchrow_array() ){
 		    chomp;
