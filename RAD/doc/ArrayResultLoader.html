@@ -19,10 +19,13 @@
 	<LI><A HREF="#notes">NOTES</A></LI>
 	<UL>
 
-		<LI><A HREF="#cfg_file">cfg_file</A></LI>
-		<LI><A HREF="#data_file">data_file</A></LI>
-		<LI><A HREF="#restart">restart</A></LI>
-		<LI><A HREF="#testnumber">testnumber</A></LI>
+		<LI><A HREF="#data_file"><EM>data_file</EM></A></LI>
+		<LI><A HREF="#e_subclass_view"><EM>e_subclass_view</EM></A></LI>
+		<LI><A HREF="#c_subclass_view"><EM>c_subclass_view</EM></A></LI>
+		<LI><A HREF="#er_subclass_view"><EM>er_subclass_view</EM></A></LI>
+		<LI><A HREF="#cr_subclass_view"><EM>cr_subclass_view</EM></A></LI>
+		<LI><A HREF="#restart"><EM>restart</EM></A></LI>
+		<LI><A HREF="#testnumber"><EM>testnumber</EM></A></LI>
 	</UL>
 
 	<LI><A HREF="#author">AUTHOR</A></LI>
@@ -33,34 +36,52 @@
 <HR>
 <P>
 <H1><A NAME="name">NAME</A></H1>
-<P>RAD::DataLoad::Plugin::ArrayLoader</P>
+<P>RAD::DataLoad::Plugin::ArrayResultLoader</P>
 <P>
 <HR>
 <H1><A NAME="synopsis">SYNOPSIS</A></H1>
-<P>ga RAD::DataLoad::Plugin:ArrayLoader <STRONG>[options]</STRONG> <STRONG>--cfg_file</STRONG> cfg_file <STRONG>--data_file</STRONG> data_file</P>
-<P>ga RAD::DataLoad::Plugin::ArrayLoader <STRONG>[options]</STRONG> <STRONG>--help</STRONG></P>
-<P>ga RAD::DataLoad::Plugin::ArrayLoader <STRONG>[options]</STRONG> <STRONG>--cfg_file</STRONG> cfg_file <STRONG>--data_file</STRONG> data_file <STRONG>--manufacturer_id</STRONG> manufacturer_id <STRONG>--platform_type_id</STRONG> platform_type_id <STRONG>--substrate_type_id</STRONG> substrate_type_id <STRONG>--debug</STRONG> &gt; logfile</P>
-<P>ga RAD::DataLoad::Plugin::ArrayLoader <STRONG>[options]</STRONG> <STRONG>--cfg_file</STRONG> cfg_file <STRONG>--data_file</STRONG> data_file <STRONG>--manufacturer_id</STRONG> manufacturer_id <STRONG>--platform_type_id</STRONG>  platform_type_id <STRONG>--substrate_type_id</STRONG> substrate_type_id <STRONG>--commit</STRONG> &gt; logfile</P>
+<P>*For help
+    ga RAD::DataLoad::Plugin::ArrayResultLoader <STRONG>[options]</STRONG> <STRONG>--help</STRONG></P>
+<P>*For loading data into ElementResultImp table   
+    ga RAD::DataLoad::Plugin::ArrayResultLoader <STRONG>[options]</STRONG> <STRONG>--data_file</STRONG> data_file <STRONG>--array_id</STRONG> array_id <STRONG>--e_subclass_view</STRONG> e_subclass_view <STRONG>--quantification_id</STRONG> quantification_id <STRONG>--er_subclass_view</STRONG> er_subclass_view <STRONG>--debug</STRONG> &gt; logfile</P>
+<P>*For loading data into CompositeElementResultImp table
+    ga RAD::DataLoad::Plugin::ArrayResultLoader <STRONG>[options]</STRONG> <STRONG>--data_file</STRONG> data_file <STRONG>--array_id</STRONG> array_id <STRONG>--e_subclass_view</STRONG> e_subclass_view <STRONG>--quantification_id</STRONG> quantification_id <STRONG>--cr_subclass_view</STRONG> cr_subclass_view <STRONG>--commit</STRONG> &gt; logfile</P>
+<P>*For loading data into CompositeElementResultImp table such as loading Affymetrix Chp data
+    ga  RAD::DataLoad::Plugin::ArrayResultLoader <STRONG>[options]</STRONG> <STRONG>--data_file</STRONG> data_file <STRONG>--array_id</STRONG> array_id <STRONG>--c_subclass_view</STRONG> c_subclass_view  <STRONG>--quantification_id</STRONG> quantification_id <STRONG>--cr_subclass_view</STRONG> cr_subclass_view <STRONG>--debug</STRONG> &gt; logfile</P>
+<P>*For loading data into ElementResultImp and CompositeElementResultImp table
+    ga  RAD::DataLoad::Plugin::ArrayResultLoader <STRONG>[options]</STRONG> <STRONG>--data_file</STRONG> data_file <STRONG>--array_id</STRONG> array_id <STRONG>--e_subclass_view</STRONG> e_subclass_view  <STRONG>--quantification_id</STRONG> quantification_id <STRONG>--er_subclass_view</STRONG> er_subclass_view <STRONG>--cr_subclass_view</STRONG> cr_subclass_view <STRONG>--rel_quantification_id</STRONG> rel_quantification_id <STRONG>--debug</STRONG> &gt; logfile</P>
+<P>*For loading two-channel data into ElementResultImp and CompositeElementResultImp table
+    ga  RAD::DataLoad::Plugin::ArrayResultLoader <STRONG>[options]</STRONG> <STRONG>--data_file</STRONG> data_file <STRONG>--array_id</STRONG> array_id <STRONG>--e_subclass_view</STRONG> e_subclass_view  <STRONG>--quantification_id</STRONG> quantification_id <STRONG>--er_subclass_view</STRONG> er_subclass_view <STRONG>--cr_subclass_view</STRONG> cr_subclass_view <STRONG>--rel_quantification_id</STRONG> rel_quantification_id <STRONG>--commit</STRONG> &gt; logfile</P>
 <P>
 <HR>
 <H1><A NAME="description">DESCRIPTION</A></H1>
-<P>This is a plug-in that loads array data (spotted microarray and oligonucleotide array) into Array, ArrayAnnotation, CompositeElementAnnotaion, ElementAnnotation tables and views of CompositeElementImp, ElementImp.</P>
+<P>This is a plug-in that loads array  (spotted microarray and oligonucleotide array) result data into CompositeElementResultImp, ElementResultImp and if applicable, link the chp quantification_id with cel quantification_id in relatedQuantification table.</P>
 <P>
 <HR>
 <H1><A NAME="arguments">ARGUMENTS</A></H1>
-<P><STRONG>--cfg_file</STRONG> <EM>config_file</EM> [require the absolute pathname]   
-    This file tells the plug-in how to map table/view attributes to columns in the data file and gives the values for attributes in Array, ArrayAnnotation.</P>
 <P><STRONG>--data_file</STRONG> <EM>data_file</EM>  [require the absolute pathname]  
-    The file contains the values for attributes in ElementImp, CompositeElementImp, ElementAnnotation and CompositeElementAnnotation.</P>
-<P><STRONG>--manufacturer_id</STRONG> <EM>manufacturer_id</EM>  [require must be one of contact_id in SRes:Contact table]
-    set value for the Array.manufacturer_id</P>
-<P><STRONG>--platform_type_id</STRONG> <EM>platform_type_id</EM>  [require must be one of ontology_entry_id in RAD3::OntologyEntry table]
-    set value for the Array.platform_type_id</P>
-<P><STRONG>--substrate_type_id</STRONG> <EM>substrate_type_id</EM>  [require must be one of ontology_entry_id in RAD3::OntologyEntry table]
-    set value for the Array.substrate_type_id</P>
+    The file contains the values for attributes in ElementResultImp, CompositeResultElementImp.</P>
+<P><STRONG>--array_id</STRONG> <EM>array_id</EM>  [require must be one of array_id in RAD3::Array table]
+    set value of the ElementImp.array_id in order to determine the element_id and composite_element_id</P>
+<P><STRONG>--quantification_id</STRONG> <EM>quantification_id</EM>  [require must must be one of quantification_id in RAD3::Quantification table]
+    set value for the ElementImp.quantification_id and CompositeElementImp.quantification_id</P>
 <P>
 <HR>
-<H1><A NAME="options">OPTIONS</A></H1>
+<H1><A NAME="options b<e_subclass_view> i<e_subclass_view> [optional, must be one of view name for rad3::elementimp table] being used for determining the element_id and composite_element_id">OPTIONS
+<STRONG>--e_subclass_view</STRONG> <EM>e_subclass_view</EM>  [optional, must be one of view name for  RAD3::ElementImp table]
+    being used for determining the element_id and composite_element_id</A></H1>
+<P><STRONG>--c_subclass_view</STRONG> <EM>c_subclass_view</EM>  [optional, must be one of view name for  RAD3::CompositeElementImp table]
+    being used for determining the composite_element_id if e_subclass_view not set</P>
+<P><STRONG>--er_subclass_view</STRONG> <EM>er_subclass_view</EM>  [optional, must be one of view name for  RAD3::ElementResultImp table]
+    being used for updating ElementResultImp table, if set, will update ElementResultImp table</P>
+<P><STRONG>--cr_subclass_view</STRONG> <EM>cr_subclass_view</EM>  [optional, must be one of view name for  RAD3::CompositeElementResultImp table]
+    being used for updating CompositeElementResultImp table, if set, will update CompositeElementResultImp table</P>
+<P><STRONG>--rel_quantification_id</STRONG> <EM>rel_quantification_id</EM>  [optional, must be one of quantification_id in RAD3::Quantification table]
+    must be provided when associated channel data is loaded. set value of  the ElementImp.quantification_id and CompositeElementImp.quantification_id for the associated channel</P>
+<P><STRONG>--cel_quantification_id</STRONG> <EM>cel_quantification_id</EM>  [optional, must be one of quantification_id in RAD3::Quantification table]
+    can be provided when associated chp data is loaded. set value of  the cel quantification_id and chp quantification_id in relatedQuantification table</P>
+<P><STRONG>--posOption</STRONG> <EM>posOption</EM>  [optional, default is 1, can be 1, 2 or 3]
+    if 1, then using ``name'' as probe set identifier; if 2, then using ``external_database_release_id'' and ``source_id'' as probe set identifier; if 3, then using ``name'', ``external_database_release_id'' and ``source_id'' as probe set identifier.</P>
 <P><STRONG>--debug</STRONG>
     Debugging output.</P>
 <P><STRONG>--help</STRONG>
@@ -86,44 +107,34 @@
 <P>The plug-in outputs a print statement to STDOUT (for possible redirection to a log file) which lists the number of data file lines read (counting empty lines, but not counting the header and the lines preceding it in the data file) and any warning <CODE>statement(s)</CODE> regarding data lines which have not been loaded into RAD3.</P>
 <P>Make sure that the <EM>.gus.properties</EM> file of the user contains the correct login name [RAD3rw]. Also, if the group and project differ from the default values in <EM>.gus.properties</EM>, <EM>please specify the proper group and project name on the command line using --group and --project options respectively</EM>.</P>
 <P>
-<H2><A NAME="cfg_file">cfg_file</A></H2>
-<P>This configuration file tells the plug-in how to map table/view attributes to columns in the data file. Here is a detailed description of the format:</P>
-<P>You should save this file in the CVS repository, in the directory $PROJECT_HOME/RAD/DataLoad/config (the name of this file, stripped of its path, is stored by the ga as an algorithm parameter).</P>
-<PRE>
-    * This should be a tab-delimited text file, with 2 columns, named: &quot;Table.attribute&quot;, &quot;value or header&quot; The order and case of these columns is important, and it is recommended to follow the template for the sake of consistency.</PRE>
-<PRE>
-    * Lines which start with &quot;#&quot; are ignored (use this for comments)</PRE>
-<PRE>
-    * Each (non-comment) line should contain exactly only one tab.</PRE>
-<PRE>
-    * The first column should be in the same format as &quot;Table.attribute&quot;, Even if it is view, give the ImpTable name and the names in for &quot;attribute&quot; should be the attribute names as named in the view of interest.</PRE>
-<PRE>
-    * For empty fields do not use special symbols (like NA or similar), just leave that field empty or delete this line.</PRE>
-<PRE>
-    * If a line of the Template does not apply to your situation,  you do not have to enter it in your configuration file.</PRE>
-<PRE>
-    * In case the Template does not include the attribute required by your array design and is in RAD3 schema,  you can add it in your configuration file.</PRE>
-<PRE>
-    * You can have mutiple entries for annotation tables such as ArrayAnnotation, ElementAnnotation and CompositeAnnotation table. The number after annotation table name denotes each entry. For example, ArrayAnnotation1.name and ArrayAnnotation1.value. And the name attribute for annotation table should be provided as value and value attribute for annotation table as header.</PRE>
-<PRE>
-    *  For each row, only one of VALUE and HEADER can be given. If the value of a particular table attribute is constant for all data lines, enter that in the second column. Else, if the value has to be taken from the data file, put in the second column the name of the data file column containing that value (the names under second column should be identical, case and all, to how they appear in the data file). But for external_database_release_id and element_type_id, always provide them as HEADER even if they are constant for all elements.</PRE>
-<PRE>
-    * Please make sure that the column in your data file to which external_database_release_id is mapped, if present (which in most cases should be), contains valid SRes.ExternalDatabaseRelease.ext_db_ids. If this is not the case, you will need to re-parse your data file, as the plug-in will not insert any row with an invalid external_database_release_id, when this is present.</PRE>
-<PRE>
-    * It is crucial that the attributes of CompositeElememtImp that you are listing are such that each CompositeElement in your data file is uniquely identified by those attributes. For spotted array case, if one of the attributes listed should be present in each spot family and uniquely identifies a spot family (e.g. a well id might do this), make that attribute mandatory in your configuration file.</PRE>
-<PRE>
-    * It is also very important for shortOligo array, the name attribute for each shortOligoFamily should be unique, since the plugin will cache the name attribute of each shortOligoFamily and all shortOligoFamily with same name will be loaded into database once.</PRE>
-<P>
-<H2><A NAME="data_file">data_file</A></H2>
+<H2><A NAME="data_file"><EM>data_file</EM></A></H2>
 <P>The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.</P>
-<P>* Every element for which an external_database_release_id and source_id are available should have these stored in the database. You will need to have two columns in the data file one for each of these two fields.</P>
-<P>* Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.</P>
+<P>* The header contains a list of attributes, which can be divided into two categories. One is position attributes which is used to identify the location of each element in array or compositeElement identifier such as probe set name. The other is view attributes which is defined in the view of ElementResultImp and CompositeElementResultImp.
+* All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.
+* Every element for which the position attributes are available should have these stored in the database in order to determine the element_id and/or composite_element_id.
+* Depending on array platform, the position attributes are different. If  the command line argument ``e_subclass_view'' is set to ``Spot'', then position attributes will be array_row, array_column, grid_row, grid_column, sub_row and sub_column. If  the command line argument ``e_subclass_view'' is set to ``ShortOligo'', then position attributes will be x_position and y_position. You will need to have these columns in the data file for each row.
+* If you only load the compositeElementResult for affymetrix data, you have option to use probe set identifier to set the composite_element_id without using the position attributes of x_position and y_position. First, set command line argument ``c_subclass_view'' to ``ShortOligoFamily'', second, use the ``posOption'' to set the probe set identifier, its default is 1, which uses ``name'' as the probe set identifier; 2 means using ``external_database_release_id''and ``source_id'' as the probe set identifier; 3 means using ``external_database_release_id'', ``source_id'' and ``name'' as the probe set identifier.
+* If the data file contains two-channel array data, then you can use ``channel1.attributeName'' and ``channel2.attributeName'' to denote each channel data.
+* Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.
+* If any values in data file larger than the maximum value or smaller than minimum value that corresponding field in database allows, then the plugin will reset the value to maximum or minimum value of that field.</P>
 <P>Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.</P>
 <P>
-<H2><A NAME="restart">restart</A></H2>
+<H2><A NAME="e_subclass_view legal values for this argument must be either spot or shortoligo or sagetagmapping."><EM>e_subclass_view</EM>
+Legal values for this argument must be either ``Spot'' or ``ShortOligo'' or ``SAGETagMapping''.</A></H2>
+<P>
+<H2><A NAME="c_subclass_view legal values for this argument must be either spotfamily or shortoligofamily or sagetag."><EM>c_subclass_view</EM>
+Legal values for this argument must be either ``SpotFamily'' or ``ShortOligoFamily'' or ``SAGETag''.</A></H2>
+<P>
+<H2><A NAME="er_subclass_view legal values for er_subclass_view must be arrayvisionelementresult, genepixelementresult, spotelementresult, scanalyzeelementresult, affymetrixcel."><EM>er_subclass_view</EM>
+Legal values for ``er_subclass_view'' must be ``ArrayVisionElementResult'', ``GenePixElementResult'', ``SpotElementResult'', ``ScanalyzeElementResult'', ``AffymetrixCEL''.</A></H2>
+<P>
+<H2><A NAME="cr_subclass_view legal values for cr_subclass_view must be affymetrixmas4, affymetrixmas5, sagetagresult, moidresult."><EM>cr_subclass_view</EM>
+Legal values for ``cr_subclass_view'' must be ``AffymetrixMAS4'', ``AffymetrixMAS5'', ``SAGETagResult'', ``MOIDResult''.</A></H2>
+<P>
+<H2><A NAME="restart"><EM>restart</EM></A></H2>
 <P>If you need to restart loading from your data file from a specific line (e.g. due to previous interruptions in data loading), give the line number of this line in the --restart option. You should start your line count from the line after the header line and include any empty lines.</P>
 <P>
-<H2><A NAME="testnumber">testnumber</A></H2>
+<H2><A NAME="testnumber"><EM>testnumber</EM></A></H2>
 <P>If you are testing the plug-in and want only to test n lines from your data file, use the --testnumber option. If you set this to n, it will test the plug-in on the first n data lines (counting empty lines) after the header or after --restart, if this is set.</P>
 <P>
 <HR>
