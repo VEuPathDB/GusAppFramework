@@ -22,7 +22,7 @@ sub new {
 
   my $easycsp =
     [{o => 'testnumber1',
-      t => 'int';
+      t => 'int',
       h => 'number of iterations for testing temp table insertion',
      },
      {o => 'extDbRelId',
@@ -30,30 +30,30 @@ sub new {
       h => 'external_database_release_id of the nr protein database',
      }, 
      {o => 'testnumber2',
-      t => 'int';
+      t => 'int',
       h => 'number of iterations for testing insertion 
                         into NRDBEntry and ExternalAASequence',
      },
      {o => 'gitax',
-      t => 'string';
+      t => 'string',
       h => 'location of the gi_taxid_prot.dmp file',
       d => '/usr/local/db/local/taxonomy/gi_taxid_prot.dmp',
      },
      {o => 'nrdb',
-      t => 'string';
+      t => 'string',
       h => 'location of the nrdb file',
       d => '/usr/local/db/local/nrdb/nr.Z',
      },
      {o => 'maketemp',
-      t => 'boolean';
+      t => 'boolean',
       h => 'option to create temp table',
      }, 
      {o => 'temp_login',
-      t => 'string';
+      t => 'string',
       h => 'login for space being used for temp table eg.pinney',
      },
      {o => 'temp_password=s',
-      t => 'string';
+      t => 'string',
       h => 'password for space being used for temp table',
      },
      {o => 'plugin',
@@ -61,25 +61,25 @@ sub new {
       h => 'choice of whether to run the remainder of the plug_in',
      },
      {o => 'restart',
-      t => 'int';
+      t => 'int',
       h => 'for restarting the interrupted plugin(use with plugin 
             option), use number from last set number in log',
       },
      {o => 'delete',
       t => 'boolean',
       h => 'option to run delete portion',
-     }
+     },
      {o=> 'restart_temp_table',
       t => 'boolean',
-      h => 'indicates temp table insertion should be restarted,
-            table already exits';
+      h => 'indicates temp table insertion should be restarted because
+            table already exits',
       }
      ];
 
   $self->initialize({requiredDbVersion => {},
 		  cvsRevision => '$Revision$', # cvs fills this in!
 		  cvsTag => '$Name$', # cvs fills this in!
-		  name => ref($m),
+		  name => ref($self),
 		  revisionNotes => 'make consistent with GUS 3.0',
 		  easyCspOptions => $easycsp,
 		  usage => $usage
@@ -98,6 +98,8 @@ sub Run {
   print STDERR "Testing on $ctx->{'cla'}->{'testnumber2'} insertions
                 into NRDBEntry/ExternalAASequence\n" 
                 if $ctx->{'cla'}->{'testnumber2'};
+  
+  die "Supply the name of the nr protein file\n" unless $ctx->{'cla'}->{'nrdb'};
 
   my $external_database_release_id = $ctx->{'cla'}->{'extDbRelId'} || die 'external_database_release_id not supplied\n';
 
@@ -114,7 +116,7 @@ sub Run {
   }
 
   my $entryresults = &makeNRDBAndExternalAASequence($taxonHash, $dbHash,$external_database_release_id) 
-                    if ($ctx->{'cla'}->{'plugin'}); {      
+                    if ($ctx->{'cla'}->{'plugin'});       
      
   if (!$ctx->{'cla'}->{'delete'}){ 
       if ($tempresults) {
@@ -132,16 +134,40 @@ sub Run {
 }
 
 sub getDB {
-  my %dbHash = ( 'prf' => 6,
-                 'dbj' => 4,
-                 'gnl' => 11,
-                 'gb'  => 22,
-                 'pir' => 5,
-                 'sp'  => 7,
-                 'emb' => 3,
-                 'ref' => 168,
-                 'pdb' => 8,
-                 'genpept'=> 12);
+
+  my $dbh = $ctx->{'self_inv'}->getQueryHandle();
+
+  my %dbNameHash = ('GENBANK (NRDB)' => 'gb',
+		    'EMBL DATA LIBRARY (NRDB)' => 'emb',
+		    'DDBJ (NRDB)' => 'dbj',
+		    'NBRF PIR (NRDB)' => 'pir',
+		    'PROTEIN RESEARCH FOUNDATION (NRDB)' => 'prf',
+		    'SWISS PROT (NRDB)' => 'sp',
+		    'BROOKHAVEN PROTEIN DATA BANK (NRDB)' => 'pdb',
+		    'PATENTS (NRDB)' => 'pat',
+		    'GENINFO BACKBONE ID (NRDB)' => 'bbs',
+		    'GENERAL DATABASE IDENTIFIER (NRDB)' => 'gnl',
+		    'NCBI REFERENCE SEQUENCE (NRDB)' => 'ref',
+		    'LOCAL SEQUENCE IDENTIFIER' => 'lcl',
+		    'GENPEPT' => 'genpept');
+
+  my $sql = "select r.external_database_release_id from sres.externaldatabase d, sres.externaldatabaserelease r where upper(d.name) = ? and d.external_database_id=r.external_database_id and upper(r.version) = 'UNKNOWN'";
+
+  my $stmt = $dbh->prepare($sql);
+
+  my %dbHash;
+
+  foreach my $dbName (keys %dbNameHash) {
+    $stmt->execute($dbName);
+    my $boundName = "%".$dbName."%";
+    my ($db_rel_id) = $stmt->fethrow_array();
+    $stmt->finish();
+    
+    $dbHash{$dbNameHash{$boundName}} = $db_rel_id;
+  }
+
+  $dbh->disconnect();
+
   return \%dbHash;
 }
 
@@ -189,7 +215,9 @@ sub makeTempTable {
     my $dbh = DBI->connect($DBI_STR, $login, $password);
 
     if (!$ctx->{'cla'}->{'restart_temp_table'}) { 
-	$dbh->do("create table NRDBTemp 
+      $dbh->do("truncate table NRDBTemp");
+      $dbh->do("drop table NRDBTemp");
+      $dbh->do("create table NRDBTemp 
                  (SOURCE_ID	NOT NULL VARCHAR2(32),
                   EXTERNAL_DB_ID 	NOT NULL NUMBER(5),
                   SEQUENCE_VERSION		 VARCHAR2(10),
@@ -257,7 +285,7 @@ sub makeTempTable {
 	}
     }
     $dbh->commit();
-    $tempresults = "$set_num total entries have been made 
+    my $tempresults = "$set_num total entries have been made 
                     into the NRDBTemp table";
     print STDERR ("$tempresults\n");
     close NRDB;
@@ -281,6 +309,8 @@ sub makeNRDBAndExternalAASequence {
 
     print STDERR ("$max_set_num entries in temp table\n");
     
+    my $nrdb = $ctx->{'cla'}->{'nrdb'};
+
     if ($nrdb =~ /\.Z/) {
 	open (NRDB,"uncompress -c $nrdb |") || 
         die ("Can not open the nr file\n");
@@ -322,7 +352,7 @@ sub makeNRDBAndExternalAASequence {
 			my $newExtAASeq = &processHash(\%EntryHash,$seq,$st,$external_database_release_id);
 			$newExtAASeq->submit();
 			$num_submit++;
-			print STDERR ("Submitted set number:$num_submit\n");
+			print STDOUT ("Submitted set number:$num_submit\n");
 			$newExtAASeq->undefPointerCache();
 		    }
 		}
@@ -462,7 +492,7 @@ sub processHash {
 }
 
 sub updateExtAASeq {
-    my ($newExtAASeq,$secondary_identifier,$source_id,$description,$external_database_release_id_id) = @_;
+    my ($newExtAASeq,$secondary_identifier,$source_id,$description,$external_database_release_id) = @_;
 
     my $shortDescr = substr($description, 0, 255);
     if ($secondary_identifier!=$newExtAASeq->get('secondary_identifier')){
@@ -480,7 +510,7 @@ sub updateExtAASeq {
 }
 
 sub makeExtAASeq {
-  my ($seq,$secondary_identifier,$source_id,$description, $external_database_release_id_id) = @_;
+  my ($seq,$secondary_identifier,$source_id,$description, $external_database_release_id) = @_;
   my $shortDescr = substr($description, 0, 255);
   my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new({'external_database_release_id' => $external_database_release_id,'source_id'=> $source_id,'secondary_identifier' => $secondary_identifier, 'description' => $shortDescr});
   $newExtAASeq->retrieveFromDB();
@@ -537,6 +567,9 @@ sub makeNRDBEntries {
 
 sub deleteFromNRDB {
     my $num_delete = 0;
+
+    my $dbh = $ctx->{'self_inv'}->getQueryHandle();
+
     my $st = $dbh->prepareAndExecute("select nrdb_entry_id from dots.nrdbentry where source_id not in (select /** RULE */ n.source_id from dots.nrdbentry n, pinney.nrdbtemp p where n.source_id = p.source_id and n.external_db_id = p.external_db_id)");
     while (my ($nrdb_entry_id) = $st->fetchrow_array) {
 	$num_delete++;
@@ -545,23 +578,26 @@ sub deleteFromNRDB {
 	$newNRDBEntry->markDeleted();
 	$newNRDBEntry->submit();
 	$newNRDBEntry->undefPointerCache();
-    }
+      }
     return $num_delete;
 }
 
 sub deleteFromExtAASeq {
-    my $num_delete = 0;
-    my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_db_id = 4194 and aa_sequence_id not in (select /** RULE */ distinct aa_sequence_id from dots.nrdbentry n)");
-    while (my ($aa_sequence_id) = $st->fetchrow_array) {
-	$num_delete++;
-	my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new ({'aa_sequence_id'=>$aa_sequence_id});
-	$newExtAASeq->retrieveFromDB();
-	$newExtAASeq->retrieveAllChildrenFromDB(1);
-	$newExtAASeq->markDeleted(1);
-	$newExtAASeq->submit();
-	$newExtAASeq->undefPointerCache();
-    }
-    return $num_delete;
+  my $num_delete = 0;
+  
+  my $dbh = $ctx->{'self_inv'}->getQueryHandle();
+  
+  my $st = $dbh->prepareAndExecute("select aa_sequence_id from dots.externalaasequence where external_db_id = 4194 and aa_sequence_id not in (select /** RULE */ distinct aa_sequence_id from dots.nrdbentry n)");
+  while (my ($aa_sequence_id) = $st->fetchrow_array) {
+    $num_delete++;
+    my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new ({'aa_sequence_id'=>$aa_sequence_id});
+    $newExtAASeq->retrieveFromDB();
+    $newExtAASeq->retrieveAllChildrenFromDB(1);
+    $newExtAASeq->markDeleted(1);
+    $newExtAASeq->submit();
+    $newExtAASeq->undefPointerCache();
+  }
+  return $num_delete;
 }
 
 1;
