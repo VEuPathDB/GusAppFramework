@@ -10,12 +10,17 @@ package GUS::ObjRelP::DbiDatabase;
 #
 # 6/22/2000   Sharon Diskin      Created
 # 6/17/2003   Jonathan Crabtree  Fixed hard-coding of rollback segment.
-#
+# 3/22/04     Jason Hackney      Moved Oracle specific SQL into
+# Oracle.pm, and added support for PostgreSQL.  Metadata queries
+# are now handled generically by instantiating an Oracle or
+# PostgreSQL object in DbiDatabase.pm.
 ############################################################
 
 use strict;
 use GUS::ObjRelP::DbiDbHandle;
 use GUS::ObjRelP::DbiTable;
+use GUS::ObjRelP::Oracle;
+use GUS::ObjRelP::PostgreSQL;
 use Carp;
 
 ############################################################
@@ -146,6 +151,23 @@ sub getDSN {
   return $self->{'dsn'};
 }
 
+sub getDbPlatform{
+	my($self)=@_;
+	if(!$self->{dbPlatform}){
+		my $dsn=$self->getDSN();
+		if($dsn=~/oracle/i){
+			$self->{dbPlatform}=GUS::ObjRelP::Oracle->new();
+		}
+		elsif($dsn=~/pg/i && $dsn!~/pgpp/i){
+			$self->{dbPlatform}=GUS::ObjRelP::PostgreSQL->new();
+		}
+		else{
+			die "You are using an unsupported DB with DSN: ".$self->getDSN().". If you are using PostgreSQL with the DBD::PgPP module, please use the DBD::Pg module, instead. There are problems with the PgPP implementation.\n";
+		}
+	}
+	return $self->{dbPlatform};
+}
+
 sub makeNewHandle { 
   my ($self, $autocommit) = @_;
   #	print STDERR "makeNewHandle($autocommit)\n";
@@ -185,14 +207,7 @@ sub getTable {
 
 sub getDateFunction {
   my($self) = @_;
-  if ($self->getDSN() =~ /sybase/i) {
-    return "getdate()";
-  } elsif ($self->getDSN() =~ /oracle/i) {
-    return "SYSDATE";
-  } else {
-    print STDERR "ERROR: getDateFunction not implemented for ",$self->getDatabase()->getDSN(),": default=01/01/1900\n";
-    return '01/01/1900';
-  }
+	return $self->getDbPlatform->dateFunction();
 }
 
 
@@ -224,12 +239,11 @@ sub rollback_tran {
 sub tableHasSequenceId {
   my($self,$className) = @_;
 
-  return undef unless $self->getDSN() =~ /oracle/i;
-
   $className = $self->getFullTableClassName($className);
 
   if (!exists $self->{'sequenceIdTables'}) {
-    my $stmt = $self->getMetaDbHandle()->prepareAndExecute("select sequence_owner,sequence_name from all_sequences");
+		my $sql=$self->getDbPlatform->sequenceIdSql();
+		my $stmt=$self->getMetaDbHandle->prepareAndExecute($sql);
     while (my($owner,$name) = $stmt->fetchrow_array()) {
       $name =~ s/_SQ$//;
       my $fullName = $self->getFullTableClassName($owner."::".$name);
@@ -309,19 +323,11 @@ sub getTableChildRelations {
 
   my $owner = $self->getTable($className)->getSchemaNameUpper();
   if (!exists $self->{'allChildRelations'}->{$owner}) {
-    my $sql = "select acon.owner,acc1.owner,acc1.table_name,acc1.column_name ,
-        acon.table_name ,acc2.column_name 
-        from all_cons_columns acc1, all_constraints acon,all_cons_columns acc2
-        where acon.r_constraint_name = acc1.constraint_name
-        and acc1.owner = '$owner'
-        and acon.r_owner = acc1.owner
-        and acc2.constraint_name = acon.constraint_name
-        and acc2.owner = acon.owner";
-        
+		my $sql=$self->getDbPlatform->tableChildRelationsSql($owner);
 #    print STDERR "getChildRelations sql: $sql\n";
     my $sth  = $self->getDbHandle()->prepareAndExecute($sql);
     while (my($ftowner,$stowner,$selftab,$selfcol,$fktable,$fkcol) = $sth->fetchrow_array()) {
-      #      print STDERR "  returns: ($selftab,$selfcol,$fktable,$fkcol)\n";
+#            print STDERR "  returns: ($selftab,$selfcol,$fktable,$fkcol)\n";
       $fktable = $self->getFullTableClassName($ftowner.'::'.$fktable);
       $selftab = $self->getFullTableClassName($stowner.'::'.$selftab);
       next unless $fktable && $selftab;     ##did not return from getPrettyTableName...won't be an object..
