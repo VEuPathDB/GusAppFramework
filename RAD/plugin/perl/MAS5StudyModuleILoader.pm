@@ -54,50 +54,77 @@ sub new {
   
   my $failureCases = "Files not in an appropriate format.";
 
+# notes begin here -------
+
   my $notes = <<NOTES;
 
 =pod
 
 =head2 F<General Description>
 
-Plugin reads a config file with information about full paths of directories where files of interest (.EXP, .RPT etc. )
-are maintained.  Data from these files are then parsed and entered into a database. The plugin can handle multiple files,
-hence works in a batch mode.
+Plugin reads a config file with information about full paths of directories where files of 
+interest (.EXP, .RPT etc. ) are maintained.  Data from these files are then parsed and 
+entered into a database. The plugin can parse and load information from one or more data 
+files into the database at once, and therefore works in 'batch mode'.
 
-This plugin requires two utilities, Disp and PropertySet, which are currently available from the CBIL cvs ( 
-http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/). These may be available via the GUS cvs repository at the
-Sanger center in the near future.
+This plugin requires two utilities, 'Disp' and 'PropertySet', which are are available with
+RAD, and also from the CBIL cvs at:
+ http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/ 
 
-=head2 F<Config File [ Mandatory ]>
+=head2 F<Config File (is mandatory)>
 
 Blank lines and comment lines (lines starting with '#') are ignored.
 The following keywords and their values are required:
 
  - EXPFilePath = full path to the dir where the EXP files are kept 
+
  - RPTFilePath = full path to the dir where the RPT files are kept 
+
  - CELFilePath = full path to the dir where the CEL files are kept 
+
  - DATFilePath** = full path to the dir where the DAT files are kept
+
  - MetricsFilePath = full path to the dir where the Metrics files are kept 
- - Hyb_Protocol_ID = hybridization protocol id, should pre-exist in the RAD3 database 
- - Acq_Protocol_ID = acquisition protocol id, should pre-exist in the RAD3 database 
- - Cel_Protocol_ID = cel quantification protocol id, should pre-exist in the RAD3 database 
- - Chp_Protocol_ID = chp quantification protocol id, should pre-exist in the RAD3 database 
- - Hyb_Operator_ID = contact_id of the person who carried out the hybridization, should pre-exist in the RAD3 database 
- - Cel_Quant_Operator_ID** = contact_id of the person who carried out the cel quantification, should pre-exist in the RAD3 database 
- - Chp_Quant_Operator_ID** = contact_id of the person who carried out the chp quantification, should pre-exist in the RAD3 database 
- - Study_ID = the study identifier, should pre-exist in the RAD3 database 
- - Extensions = the extensions for each file type (should be in the form: expFile|EXP;celFile|CEL; and so on)
 
-** These values are optional, i.e., the keywords should exist, but their the values can be input as the word 'null',
-(without the single quotes) if no values exist.
+ - Hyb_Protocol_ID = hybridization protocol id, should pre-exist in the 
+   RAD3 database 
 
-Each of these keywords should be on a separate line. The values for these keywords should be seperated by '='. A sample
-file is maintained in \$PROJECT_HOME/GUS/RAD/config/sample_MAS5StudyModuleILoader.cfg
+ - Acq_Protocol_ID = acquisition protocol id, should pre-exist in the RAD3 
+   database 
 
-For the 'Extensions' keyword, multiple values can be input in the following form:
+ - Cel_Protocol_ID = cel quantification protocol id, should pre-exist in 
+   the RAD3 database 
+
+ - Chp_Protocol_ID = chp quantification protocol id, should pre-exist in 
+   the RAD3 database 
+
+ - Hyb_Operator_ID = contact_id of the person who carried out the 
+   hybridization, should pre-exist in the RAD3 database 
+
+ - Cel_Quant_Operator_ID** = contact_id of the person who carried out the 
+   cel quantification, should pre-exist in the RAD3 database 
+
+ - Chp_Quant_Operator_ID** = contact_id of the person who carried out the 
+   chp quantification, should pre-exist in the RAD3 database 
+
+ - Study_ID = the study identifier, should pre-exist in the RAD3 database
+
+ - Extensions = the extensions for each file type (should be in the form: 
+   expFile|EXP;celFile|CEL; and so on)
+
+** These values are optional, i.e., the keywords should exist, but their the values can be 
+input as the word 'null', (without the single quotes) if no values exist.
+
+All keywords are required, and each should be on a separate line with the 
+keywords and values seperated by '='. A sample config file is maintained in 
+ \$PROJECT_HOME/GUS/RAD/config/sample_MAS5StudyModuleILoader.cfg
+
+The 'Extensions' keyword can support multiple values, provided they are in the following
+form:
  EXPFile|EXP;RPTFile|RPT;CELFile|CEL;DATFile|DAT;MetricsFile|txt;
-This allows the user to specify proper extensions; for instance, if all the Metrics files have an extension 'TXT', and not
-'txt', it can be specified here. Please make sure there is no space between the semi-colons after each file type.
+
+This facilitates file extension specification for individual file types (the plugin
+will not tolerate spaces between the semi-colons after each file type).
 
 
 =head2 F<Database requirements>
@@ -106,16 +133,25 @@ This plugin assumes that the following entries exist in your instance of the dat
 
  1.  The study in RAD3.Study
  2.  The appropriate Affymetrix array in RAD3.Array
- 3.  The hybridization protocol, the acquisition protocol, the quantification protocol in RAD3.Protocol
- 4.  For each of the protocol entries in 3, all of its parameters in RAD3.ProtocolParam
+ 3.  The hybridization protocol, the acquisition protocol, the 
+     quantification protocol in RAD3.Protocol
+ 4.  For each of the protocol entries in 3, all of its parameters 
+     in RAD3.ProtocolParam
 
 If any of the above is missing, the plugin will report an error.
 
 =head2 F<Warning (for non-CBIL instances)>
 
-For local installations of RAD which differ from the CBIL database, some lines of this plugin will need to be modified, to accomodate
-hard-coded information. You might need to modify any piece of code labelled as 'HARD-CODED' in the comments below.
+For local installations of RAD which differ from the CBIL database, some lines of this 
+plugin will need to be modified, to accomodate hard-coded information. Modify lines
+labelled 'HARD-CODED' based on information contained in your instance of RAD.
 
+
+=head1 REPORT BUGS TO
+
+ svdate (AT) pcbi (dot) upenn (dot) edu
+ OR
+ rad3 (AT) pcbi (dot) upenn (dot) edu
 
 =head1 AUTHORS
 
@@ -126,9 +162,8 @@ Shailesh Date, Hongxian He
 Copyright, Trustees of University of Pennsylvania 2003. 
 
 =cut
-
 NOTES
-
+# notes end here -------
 
   my $documentation = {
     purpose          =>$purpose, 
