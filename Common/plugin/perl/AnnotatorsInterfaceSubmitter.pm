@@ -267,6 +267,7 @@ print STDERR "Test:$del_gene";
 	#   }
 
 	# deal with the special deleted GeneSynonym objects here.
+
 	my $gss = $self->getGeneSynonymDeleteObjects( $self->getCla->{'specialfile'});
 	if ( $gss ) {
 		foreach my $gs ( @$gss ) {
@@ -274,6 +275,9 @@ print STDERR "Test:$del_gene";
 			$self->getSelfInv->addChild( $gs );
 		}
               }
+
+
+
 
 	# deal with adding pcrs newly to a TS - needs a new Protein.
 #	my $new_pcrs = &getGetHashRefOfCellRolesNeedingAProtein( $ctx->{'specialfile'} );
@@ -325,7 +329,8 @@ print STDERR "Test:$del_gene";
 			$delete_gene->markDeleted(1);
 
 			# now the TU
-			#undef %loadHash;
+
+	undef %loadHash;
 			#my %loadHash2;
 			#$loadHash2{'transcript_unit_id'} = $$del_tus[$i];
 			#print STDERR "Delete TU: ", $$del_tus[$i];
