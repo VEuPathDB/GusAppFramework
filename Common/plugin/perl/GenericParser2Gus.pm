@@ -696,7 +696,7 @@ sub buildFeatureObjects {
         }
 
         my $ef = $bioperl2Gus->buildExonFeature ($gf, $is_initial_exon, $is_final_exon,
-                                                 $bioperl_location, $i);
+                                                 $bioperl_location, $i, $systematic_id); #TW
         push (@gus_objects, $ef);
 
         my $gus_naLocation_ef = $bioperl2Gus->buildNALocation ($ef, $bioperl_location, $i);
