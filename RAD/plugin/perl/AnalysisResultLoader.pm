@@ -415,7 +415,7 @@ sub readCfgFile {
     my ($category, $protocol_type) = $sth1->fetchrow_array();
     my @protocol_ids = ($cfg_info->{'protocol_id'});
     if ($category eq "DataTransformationProtocolType" && $protocol_type eq "transformation_protocol_series") {
-      my $sth2 = $dbh->prepare("select children_protocol_id from RAD3.ProtocolStep where parent_protocol_id=$cfg_info->{'protocol_id'}");
+      my $sth2 = $dbh->prepare("select child_protocol_id from RAD3.ProtocolStep where parent_protocol_id=$cfg_info->{'protocol_id'}");
       $sth2->execute();
       while (my ($id) = $sth2->fetchrow_array()) {
 	push(@protocol_ids, $id);
@@ -441,7 +441,7 @@ sub readCfgFile {
     my ($category, $protocol_type) = $sth1->fetchrow_array();
     my @protocol_ids = ($cfg_info->{'protocol_id'});
     if ($category eq "DataTransformationProtocolType" && $protocol_type eq "transformation_protocol_series") {
-      my $sth2 = $dbh->prepare("select children_protocol_id from RAD3.ProtocolStep where parent_protocol_id=$cfg_info->{'protocol_id'}");
+      my $sth2 = $dbh->prepare("select child_protocol_id from RAD3.ProtocolStep where parent_protocol_id=$cfg_info->{'protocol_id'}");
       $sth2->execute();
       while (my ($id) = $sth2->fetchrow_array()) {
 	push(@protocol_ids, $id);
