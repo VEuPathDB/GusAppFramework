@@ -42,16 +42,16 @@ sqlplus @oracle_appver@/@oracle_appverPassword@@@oracle_SID@ @appver-views.sql
 sqlplus @oracle_radver@/@oracle_radverPassword@@@oracle_SID@ @rad3ver-views.sql
 
 # Grant permission to reference tables in @oracle_core@ to all other schemas
-echo '@oracle_corePassword@' | grantPermissions.pl --login=@oracle_core@ --owner=@oracle_core@ --permissions=REFERENCES --grantees=@oracle_sres@,@oracle_dots@,@oracle_tess@,@oracle_app@,@oracle_rad@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ >@oracle_core@-grants.log
+echo '@oracle_corePassword@' | grantPermissions.pl --login=@oracle_core@ --owner=@oracle_core@ --permissions=REFERENCES --grantees=@oracle_sres@,@oracle_dots@,@oracle_tess@,@oracle_app@,@oracle_rad@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ --db-port=@oracle_port@ >@oracle_core@-grants.log
 
 # Grant permission to reference tables in @oracle_sres@ to all other schemas
-echo '@oracle_sresPassword@' | grantPermissions.pl --login=@oracle_sres@ --owner=@oracle_sres@ --permissions=REFERENCES --grantees=@oracle_core@,@oracle_dots@,@oracle_tess@,@oracle_app@,@oracle_rad@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ >@oracle_sres@-grants.log
+echo '@oracle_sresPassword@' | grantPermissions.pl --login=@oracle_sres@ --owner=@oracle_sres@ --permissions=REFERENCES --grantees=@oracle_core@,@oracle_dots@,@oracle_tess@,@oracle_app@,@oracle_rad@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ --db-port=@oracle_port@ >@oracle_sres@-grants.log
 
 # Grant permission to reference tables in @oracle_dots@ to all other schemas except @oracle_core@
-echo '@oracle_dotsPassword@' | grantPermissions.pl --login=@oracle_dots@ --owner=@oracle_dots@ --permissions=REFERENCES --grantees=@oracle_sres@,@oracle_tess@,@oracle_app@,@oracle_rad@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ >@oracle_dots@-grants.log
+echo '@oracle_dotsPassword@' | grantPermissions.pl --login=@oracle_dots@ --owner=@oracle_dots@ --permissions=REFERENCES --grantees=@oracle_sres@,@oracle_tess@,@oracle_app@,@oracle_rad@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ --db-port=@oracle_port@ >@oracle_dots@-grants.log
 
 # Grant permission to reference tables in @oracle_rad@ to @oracle_tess@
-echo '@oracle_radPassword@' | grantPermissions.pl --login=@oracle_rad@ --owner=@oracle_rad@ --permissions=REFERENCES --grantees=@oracle_tess@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ >@oracle_rad@-grants.log
+echo '@oracle_radPassword@' | grantPermissions.pl --login=@oracle_rad@ --owner=@oracle_rad@ --permissions=REFERENCES --grantees=@oracle_tess@ --db-sid=@oracle_SID@ --db-host=@oracle_host@ --db-port=@oracle_port@ >@oracle_rad@-grants.log
 
 # insert bootstrap rows, reset relevant sequences
 sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @bootstrap-rows.sql
