@@ -16,13 +16,18 @@
 	<li><a href="#name">NAME</a></li>
 	<li><a href="#synopsis">SYNOPSIS</a></li>
 	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#tables_affected">TABLES AFFECTED</a></li>
 	<li><a href="#tables_depended_on">TABLES DEPENDED ON</a></li>
 	<li><a href="#failure_cases">FAILURE CASES</a></li>
+	<li><a href="#restarting">RESTARTING</a></li>
+	<li><a href="#arguments_in_detail">ARGUMENTS IN DETAIL</a></li>
 	<li><a href="#notes">NOTES</a></li>
 	<ul>
 
 		<li><a href="#general_description"><em>General Description</em></a></li>
 		<li><a href="#config_file_[_required_]"><em>Config File [ required ]</em></a></li>
+		<li><a href="#database_requirements"><em>Database requirements</em></a></li>
+		<li><a href="#warning_(for_noncbil_instances)"><em>Warning (for non-CBIL instances)</em></a></li>
 	</ul>
 
 	<li><a href="#examples">EXAMPLES</a></li>
@@ -48,7 +53,9 @@
 <hr />
 <h1><a name="description">DESCRIPTION</a></h1>
 <p>Create assays, acquisitions and quantifications for GenePix assays in RAD3 tables from multiple files in batch mode.
-=head1 TABLES AFFECTED</p>
+</p>
+<hr />
+<h1><a name="tables_affected">TABLES AFFECTED</a></h1>
 <dl>
 <dt><strong><a name="item_rad3%3a%3astudy"><strong>RAD3::Study</strong></a></strong><br />
 </dt>
@@ -61,19 +68,19 @@
 <p>One row linking the given study to each assay is entered</p>
 <dt><strong><a name="item_rad3%3a%3aacquisition"><strong>RAD3::Acquisition</strong></a></strong><br />
 </dt>
-<p>Four rows, two for each channel (Cy5 or Cy3), corresponding to one assay, are entered</p>
+<p>Two rows, two for each channel (Cy5 and Cy3), corresponding to one assay, are entered</p>
 <dt><strong><a name="item_rad3%3a%3aquantification"><strong>RAD3::Quantification</strong></a></strong><br />
 </dt>
-<p>Four rows, two for each channel (Cy5 or Cy3), corresponding to one acquisition, are entered</p>
+<p>Two rows, two for each channel (Cy5 and Cy3), corresponding to one acquisition, are entered</p>
 <dt><strong><a name="item_rad3%3a%3aquantificationparam"><strong>RAD3::QuantificationParam</strong></a></strong><br />
 </dt>
-<p>Eight rows, four for each channel (Cy5 or Cy3), corresponding to one quantification, are entered</p>
+<p>Eight rows, four for each channel (Cy5 and Cy3), corresponding to four parameters per quantification, are entered</p>
 <dt><strong><a name="item_rad3%3a%3arelatedacquisition"><strong>RAD3::RelatedAcquisition</strong></a></strong><br />
 </dt>
-<p>Ten rows, five for each channel (Cy5 or Cy3), associating the channels with each other are entered</p>
+<p>Two rows, associating two channels (Cy5 and Cy3) with each other, are entered</p>
 <dt><strong><a name="item_rad3%3a%3arelatedquantification"><strong>RAD3::RelatedQuantification</strong></a></strong><br />
 </dt>
-<p>Ten rows, five for each channel (Cy5 or Cy3), associating the channels with each other are entered</p>
+<p>Two rows, associating two channels (Cy5 and Cy3) with each other, are entered</p>
 <dt><strong><a name="item_core%3a%3aalgorithminvocation"><strong>Core::AlgorithmInvocation</strong></a></strong><br />
 </dt>
 <p>The plugin manager (ga) inserts a row into this table describing the plugin and the parameter values used</p>
@@ -119,9 +126,13 @@
 <hr />
 <h1><a name="failure_cases">FAILURE CASES</a></h1>
 <p>Files not in an appropriate format.
-=head1 RESTARTING</p>
+</p>
+<hr />
+<h1><a name="restarting">RESTARTING</a></h1>
 <p>Cannot be restarted.
-=head1 ARGUMENTS IN DETAIL</p>
+</p>
+<hr />
+<h1><a name="arguments_in_detail">ARGUMENTS IN DETAIL</a></h1>
 <dl>
 <dt><strong><a name="item_file">--cfg_file <em>file</em> (Required)</a></strong><br />
 </dt>
@@ -143,7 +154,7 @@
 <p>Number of assays to be loaded for testing</p>
 <dt><strong><a name="item_%2d%2dcommit">--commit <em></em></a></strong><br />
 </dt>
-<p>Actualy commit changes to the database</p>
+<p>Actually commit changes to the database</p>
 <dl>
 <dt><strong><a name="item_default%3a_0">default: 0</a></strong><br />
 </dt>
@@ -232,7 +243,7 @@
 </p>
 <h2><a name="general_description"><em>General Description</em></a></h2>
 <p>Plugin reads a config file with information about full paths of directories where files of interest (.gpr &amp; .tif)
-are maintained.  Data from the '.gpr' files are then parsed and entered into a database.</p>
+are maintained.  Information is extracted from the '.gpr' files and entered into a database.</p>
 <p>Since assay, acquisition and most quantification parameters are not readily available through the '.gpr' files,
 they cannot be added to the database through this plugin. They have to be added to the tables separately, 
 either directly or through the following forms in the RAD StudyAnnotator: Hybridization Parameters, Acquisition
@@ -240,7 +251,7 @@ Parameters and Quantification Parameters.</p>
 <p>Certain portions in the PERL code are hard-coded for use by RAD at CBIL. These are indicated with the comment 'HARD-CODED', 
 and should be changed based on data maintained in the local instance of RAD.</p>
 <p>The plugin also assumes the following parameters to be the same for all assays: Array ID, Batch ID, Hybridization
-Protocol ID, Hybridization Operator ID, Acquisition Protocol ID and Quantification Protocol ID.</p>
+Protocol ID, Hybridization Operator ID, Acquisition Protocol ID, Quantification Protocol ID and Quantification Operator ID.</p>
 <p>
 </p>
 <h2><a name="config_file_[_required_]"><em>Config File [ required ]</em></a></h2>
@@ -287,7 +298,22 @@ use the words 'null' as the value):</p>
  ** These values are optional, i.e., the keywords should exist, but their 
     the values can be left blank.</pre>
 <p>Each of these keywords should be on a separate line. The values for these keywords should be separated by an '=' sign. A sample
-file is maintained in $GUS_HOME/config/sample_GenePixStudyModuleILoader.cfg (the sample config file also contains instructions).</p>
+file is maintained in $PROJECT_HOME/GUS/RAD/config/sample_GenePixStudyModuleILoader.cfg (the sample config file also contains instructions).</p>
+<p>
+</p>
+<h2><a name="database_requirements"><em>Database requirements</em></a></h2>
+<p>This plugin assumes that the following entries exist in your instance of the database:</p>
+<pre>
+ 1.  The study in RAD3.Study
+ 2.  The appropriate GenePix array in RAD3.Array
+ 3.  The hybridization protocol, the acquisition protocol, the quantification protocol in RAD3.Protocol
+ 4.  Quantification parameters for quantification in RAD3.ProtocolParam</pre>
+<p>If any of the above is missing, the plugin will report an error.</p>
+<p>
+</p>
+<h2><a name="warning_(for_noncbil_instances)"><em>Warning (for non-CBIL instances)</em></a></h2>
+<p>For local installations of RAD which differ from the CBIL database, some lines of this plugin will need to be modified, to accomodate
+hard-coded information. You might need to modify any piece of code labelled as 'HARD-CODED' in the comments below.</p>
 <p>
 </p>
 <hr />
