@@ -62,7 +62,7 @@ my $Cfg;  ##global configuration object....passed into constructor as second arg
 sub new {
     my ($class) = @_;
     
-    my $self = {};
+     my $self = {};
     bless($self,$class);
     
     my $usage = 'Module used to parse GenBank records into the DB';
@@ -132,7 +132,7 @@ my (%OrganelleCache, %ExternalDatabaseRelHash, %KeywordHash, %SequenceTypeHash);
  #on-demand caching
 my ( %KeywordCache, $NaGeneCache, %TaxonHash, %MedlineCache,%DbRefCache,%featureCache, %NAGeneCache, %NaProteinCache);
 
-sub Run {
+sub run {
 	$| = 1;	
 
 	my $M  = shift;
@@ -428,11 +428,11 @@ sub buildReference {
 
 		## Take care of external refs
 		if ($r->getPubMed()) { 
-			my $o = GUS::Model::SRes::DbRef->new({'external_db_id' => &getDbId('PubMed'), 'primary_identifier' => $r->getPubMed()});
+			my $o = GUS::Model::SRes::DbRef->new({'external_database_release_id' => &getDbRelId('PubMed'), 'primary_identifier' => $r->getPubMed()});
 			$o->retrieveFromDB();
 			$o->addChild($ref);
 		} elsif ($r->getMEDLINE()) { 
-			my $o = GUS::Model::SRes::DbRef->new({'external_db_id' => &getDbId('MEDLINE'), 'primary_identifier' => $r->getMEDLINE()});
+			my $o = GUS::Model::SRes::DbRef->new({'external_database_release_id' => &getDbRelId('MEDLINE'), 'primary_identifier' => $r->getMEDLINE()});
 			$o->retrieveFromDB();
 			$o->addChild($ref);
 		}
@@ -768,8 +768,7 @@ sub getDbXRefId {
 	my $k = shift;
 	if (!$DbRefCache{$k}) {
 		my ($db,$id,$sid)= split /\:/, $k;
-		my $dbref = GUS::Model::SRes::DbRef->new({'external_db_id' => &getDbId($db),
-														'primary_identifier' => $id});
+		my $dbref = GUS::Model::SRes::DbRef->new({'external_database_release_id' => &getDbRelId($db),'primary_identifier' => $id});
 		if ($sid) { $dbref->set('secondary_identifier',$sid); }
 		unless ($dbref->retrieveFromDB()) { $dbref->submit() };
     $DbRefCache{$k} = $dbref->getId();
@@ -894,6 +893,8 @@ sub getDbRelId
   
   my $external_db_rel_id;
 
+  my $external_db_id;
+
   if ($ExternalDatabaseRelHash{"$lcname"}) {
       $external_db_rel_id = $ExternalDatabaseRelHash{"$lcname"};
   } 
@@ -901,7 +902,8 @@ sub getDbRelId
       my $externalDatabaseRow = GUS::Model::SRes::ExternalDatabase->new({"name" => $name,
 						       "lowercase_name" => $lcname});
       $externalDatabaseRow->retrieveFromDatabase();
-      if (!$external_db_id = $externalDatabaseRow->getId()){
+
+      if (! $externalDatabaseRow->getId()){
 	  $externalDatabaseRow->submit();
       }
 
