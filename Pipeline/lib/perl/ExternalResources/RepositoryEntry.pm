@@ -206,7 +206,7 @@ sub _acquire {
 
     $self->_writeWgetArgs($targetDir);
 
-    $self->_log("Calling wget to acquire files(s)");
+    $self->_log("Calling wget to acquire $self->{resource} $self->{version} files(s)");
     $self->{wget}->execute($wgetDir,
 			   "$tmpDir/wget.log",
 			   "$tmpDir/wget.cmd");
