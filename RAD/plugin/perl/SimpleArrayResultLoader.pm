@@ -750,7 +750,12 @@ sub updateQuantification{
   my $quan=GUS::Model::RAD3::Quantification->new($quan_hash);
   $quan->retrieveFromDB();
   if(  $quan->setResultTableId($result_table_id)){
-    return 1;
+      if($quan->submit()}{
+	  return 1;
+      }
+      else{
+	  return 0;
+      }
   }
   else{
     return 0;
