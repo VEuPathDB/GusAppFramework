@@ -85,18 +85,21 @@ my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_seq
 my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1");
 
 
+my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
+
 
 #combine queries to get those assemblies which no longer have a refSeq associated with them these can go into an array and then $assembly->setFullLengthCds(0);
 #must get rid of past evidence too
 
 
-#my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.assembly a where a.full_length_CDS = 1  minus select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1");
-
+my $stmt4 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.assembly a where a.full_length_CDS = 1  minus select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1");
 
 
 
 my @na_sourceids;
 my @naSequenceIds;
+my @DTSasEvidenceTarget;
+my @RemoveAsMarkedFL;
 
 while(my($na_seq, $source_id) = $stmt1->fetchrow_array( ))  {
 
@@ -111,11 +114,35 @@ while(my($na_sequence_id) = $stmt2->fetchrow_array( ))  {
    }
 
 
+while(my($target_id) = $stmt3->fetchrow_array( ))  {
+
+  push(@DTSasEvidenceTarget, $target_id);
+
+   }
+
+
+  while (my($DTnotFLength) = $stmt4->fetchrow_array())  {
+
+    push (@RemoveAsMarkedFL,$DTnotFLength);
+  }
+
+
+
+my @DTs;
+my $DTarray_ref = \@DTs;
 my $ct = 0;
 
 foreach my $A(@na_sourceids)    {
 
   my($na_seq, $source_id) = @{$A};
+
+  push (@DTs, $na_seq);
+
+
+#check to see if all previous evidence still valid
+#may want to pass reference here
+
+$self->RemoveEvidenceSourceID($DTarray_ref);
 
    print STDERR "ConsideringForFLDT.$na_seq\n";
 
@@ -153,7 +180,31 @@ print STDERR "NextFLDT.$na_seq\n";
 
 }
 
+
+
+
+
+
+foreach $DTnotFLength(@RemoveAsMarkedFL)  {
+
+
+ my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
+
+      $assembly->retrieveFromDB();
+
+      $assembly->setFullLengthCds(0);
+      $assembly->submit();
+
+
+      $self->undefPointerCache();
+
+
+        }
+
+
 }
+
+
 
 
 #use RefSeq source_id as evidence for marking assembly as full length CDS containing
@@ -169,24 +220,47 @@ print STDERR "NextFLDT.$na_seq\n";
 #could also use best_evidence attribute in Evidence table for those containing refSeq
 
   my $fact = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $source_id });
- 
+
 	if($fact->retrieveFromDB()){
      	$assembly->addEvidence($fact,1,"full_length_CDS");
       }
- 
+
   }
 
 
-#These subroutines are necessary since Refseqs can be removed from an assembly during the update process
-
-#sub UnMarkDTasFL
-
-#sub RemoveEvidenceSourceID
 
 
 
 
 
+   sub RemoveEvidenceSourceID {
+
+    my $self = shift;
+
+    my $DTarray_ref = @_;
+
+
+    foreach my $target(@DTSasEvidenceTarget)  {
+
+      foreach (@$DTarray_ref)  {
+
+
+        if ($target == $DT){  next;  }
+
+        if ($target != $DT)  {
+
+          my $dbh = $self->getQueryHandle();
+
+          my $rows = $dbh->do("delete from dots.evidence where target_id = $target_id and attribute_name = 'full_length_CDS'");
+
+          $self->log("DT.$target_id Evidence deleted\n");
+
+        }
+
+      }
+
+    }
+}
 
 
 
