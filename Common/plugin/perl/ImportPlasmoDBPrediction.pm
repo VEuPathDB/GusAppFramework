@@ -28,17 +28,17 @@ sub new {
      { h => 'project name',
        t => 'string',
        o => 'Project',
-       d => 'PlasmodiumDB-4.1',
+       d => 'PlasmodiumDB-4.1'
      },
      {
       t => 'int',
       o => 'testnumber',
-      h => 'Number of iterations for testing',
+      h => 'Number of iterations for testing'
      },
      {
       t => 'string',
       o => 'restart',
-      h => 'For restarting script...takes list of row_alg_invocation_ids to exclude',
+      h => 'For restarting script...takes list of row_alg_invocation_ids to exclude'
      },
      {
       t => 'string',
@@ -46,36 +46,44 @@ sub new {
       h => 'Name of file(s) containing the predicted gene features',
      },
      {
-      l => 1,
+      o => 'source_id',
+      t => 'string',
+      h => 'Source_id of origin of gene features',
+     },
+     {
+      o => 'NAseqId',
+      t => 'int',
+      h => 'NA_sequence_id of origin of gene features'
+     },
+     {
       o => 'projectId',
       t => 'int',
       h => 'project_id of this release',
       d => 900
      },
-      {
-       l => 1,
-       o => 'extDbRelId',
-       t => 'int',
-       h => 'external database identifier for the contigs',
-       d => 692
-      },
-      {
-       t => 'boolean',
-       o => 'reload',
-       h => 'For loading new Ids and scores for HmmPfam entries',
-      },
-      {
-       t => 'boolean',
-       o => 'parseSequence',
-       h => 'Experimental : parsing out the AA sequences to set them in the DB, default: OFF',
-       d => 0
-      },
-      {
-       t => 'boolean',
-       o => 'commit',
-       h => 'Set flag to commit changes to database. Default: off',
-       d => 0,
-      }
+     {
+      o => 'extDbRelId',
+      t => 'int',
+      h => 'external database identifier for the contigs',
+      d => 692
+     },
+     {
+      t => 'boolean',
+      o => 'reload',
+      h => 'For loading new Ids and scores for HmmPfam entries',
+     },
+     {
+      t => 'boolean',
+      o => 'parseSequence',
+      h => 'Experimental : parsing out the AA sequences to set them in the DB, default: OFF',
+      d => 0
+     },
+     {
+      t => 'boolean',
+      o => 'commit',
+      h => 'Set flag to commit changes to database. Default: off',
+      d => 0,
+     }
     ];
 
   bless($self, $class);
@@ -96,6 +104,7 @@ sub new {
 ############################################################
 #                Let's get started
 ############################################################
+my $ctx;
 my $debug = 1;  #my personal debug !!
 my $projectId=undef;
 my $NAseqId;
@@ -113,17 +122,32 @@ $| = 1;
 
 sub run {
   my $self = shift;
+  #$ctx=shift;
+
+  #$extDbRelId = $ctx->{cla}->{'extDbRelId'};
   $extDbRelId =  $self->getArgs()->{'extDbRelId'};
+
   $projectId  =  $self->getArgs()->{'projectId'};
-  $source_id=$self->getArgs()->{'source_id'};
-  $NAseqId=$self->getArgs()->{'NAseqId'};
-  
-  
-  $self->log("EE Please specify the project_id, e.g. with --project_id=900") && return 0 unless $projectId;
-  $self->log("EE Please specify the external_db_release_id, e.g. with --extDbRelId=151") unless $extDbRelId;
-  $self->log("EE source_id or na_sequence_id has not been set, will use source_id supplied by genegff-file") unless ($source_id || $NAseqId);
-  
-  
+  #$projectId = $ctx->{cla}->{'projectId'};
+
+  $source_id = $self->getArgs()->{'source_id'};
+ # $source_id = $ctx->{cla}->{'source_id'};
+
+  $NAseqId = $self->getArgs()->{'NAseqId'};
+ # $NAseqId = $ctx->{cla}->{'NAseqId'};
+
+  unless ($projectId=~m/\d+/){
+    $self->log("EE Please specify the project_id, e.g. with --project_id=900");
+    return 0 ;
+  }
+  unless ($extDbRelId=~m/\d+/){
+    $self->log("EE Please specify the external_db_release_id, e.g. with --extDbRelId=151");
+    return 0;
+  }
+  unless ($source_id=~m/^\S+$/ || $NAseqId=~m/^\d+$/){
+    $self->log("EE source_id or na_sequence_id has not been set, will use source_id supplied by genegff-file")
+  }
+
   if ($debug){
     $self->log("II ". $self->getArgs()->{'commit'}==1 ? "II *** COMMIT ON ***" : "II *** COMMIT TURNED OFF ***");
     $self->log("II Testing plugin on ". $self->getArgs()->{'testnumber'} . " examples\n") if $self->getArgs()->{'testnumber'};
@@ -192,8 +216,7 @@ sub run {
     # unless specified otherwis on the CL with --source_id option
 
     #prepare connection to DB
-    my $dbh = $self->getQueryHandle(); 
-
+    my $dbh = $self->getQueryHandle();
 
     # get the sequence_object
     my $naseq;
@@ -213,15 +236,15 @@ sub run {
 		
     }else{
       ## ELSE GET THE NASEQUENCE OBJECT FOR THE CONTIG, USING SOURCE_ID
-
-      my $sql="SELECT s.*  FROM dots.ExternalNASequence s, dots.ProjectLink pl WHERE s.source_id=? AND pl.table_id = 89 AND pl.id = s.na_sequence_id AND pl.project_id = $projectId";
+      $self->log( "II no na_sequence_id provided for source_id $key. Querying database ...") if $debug;
+      my $sql="SELECT s.*  FROM dots.ExternalNASequence s, dots.ProjectLink pl WHERE s.source_id=? AND pl.table_id = 89 AND pl.id = s.na_sequence_id AND pl.project_id = ?";
 
       my $stmt = $dbh->prepare($sql) || $self->log("could not prepare statement: $!\nSQL:\n$sql") && die ("Aborting...");
 		
       ## execute statement with source_id if specified on CL
       ## or use 'chr1' notation if otherwise
       if ($source_id) {
-	$stmt->execute($source_id);
+	$stmt->execute($source_id, $self->getArgs()->{'projectId'});
       }else{ 
 	$stmt->execute($key);
       }
