@@ -266,7 +266,6 @@ sub UnmarkFullLength {
    }
 
 
-
 sub MarkFLUsingFFfeatures  {
 
    my $self = shift;
@@ -290,6 +289,9 @@ sub MarkFLUsingFFfeatures  {
 
     if ($assembly->retrieveFromDB( ))  {
 
+
+      if (!($assembly->getFullLengthCds(1)))  {
+
     #need to substract 2 to get the stop codon string
       my  $sequence = $assembly ->getSubstrFromClob('sequence', $tStop - 2, 3);
 
@@ -303,8 +305,8 @@ sub MarkFLUsingFFfeatures  {
         $self->undefPointerCache();
 
      print STDERR "$naSeq marked full length by features\n";
-
-      }
+  }
+    }
     }
   }
 }
@@ -317,10 +319,6 @@ sub AddEvidenceTranslatedFeature  {
 
   my $self = shift;
   my ($assembly, $featureId) = @_;
-
-
- if (!($assembly->getFullLengthCds(1)))  {
-
 
 #whole row in translatedAAfeature by aa_feature_id as Evidence
 
@@ -338,8 +336,6 @@ sub AddEvidenceTranslatedFeature  {
 
 }
 
-}
-
 #UnMark all assemblies which have used features to mark them full length
 sub  UnMarkAssembliesAsFrameFinderFL  {
 
@@ -348,11 +344,9 @@ sub  UnMarkAssembliesAsFrameFinderFL  {
 
   foreach my $targetId(@$DTsMarkedUsingFeatures)  {
 
-  print STDERR "DT.$targetId\n";
+  print STDERR "DT.$targetId Unmarked as FL from FF\n";
 
-  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $targetId,
-                                                  'full_length_CDS' => 1  });
-  
+  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $targetId });
       $assembly->retrieveFromDB();
       $assembly->setFullLengthCds(0);
       $assembly->submit();
@@ -374,9 +368,7 @@ sub DeleteFrameFinderEvidence {
 
 
   foreach my $target_id(@$DTsMarkedUsingFeatures) {
-    my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
-                                                    'attribute_name' =>"full_length_CDS",
-                                                    'fact_table_id' => 338 });
+    my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id });
     if ($Evidence->retrieveFromDB()) {
         $Evidence->markDeleted(1);
         $Evidence->submit();
@@ -385,8 +377,6 @@ sub DeleteFrameFinderEvidence {
     } else {
       print STDERR  "Cannot delete DT.$target_id FeatureEvidence; not retrieved\n";
     }
-
-
 
   }
 
