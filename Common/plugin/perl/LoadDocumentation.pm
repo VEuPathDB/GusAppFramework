@@ -25,10 +25,8 @@
 ###              attribute name exists before loading documentation
 ###    - May-15-2003
 ###         - fixed $easycsp for 'inputFile' and removed 'testnumber'
-###    - May-17-2003
-###         - added 1; to end of file
 ###
-### Last modified May-17-2003
+### Last modified May-22-2003
 ###
 ### usage: ga LoadDocumentation --inputFile [file]
 ###   run from inside directory containing file to upload 
@@ -114,88 +112,91 @@ sub process {
 	my $doc = GUS::Model::Core::DatabaseDocumentation->new();
 	$self->logVerbose("Created new DatabaseDocumentation object");
 
-	## want to skip identical documentation - query to see if already stored
-	my $dbh = $ctx->{'self_inv'}->getDbHandle();
-	my $t_id = $doc->getTableIdFromTableName($table_nm); #get table_id from table name
-	my $query = "SELECT table_id, attribute_name, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$t_id AND attribute_name='$attribute_nm'";
-	$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
-	my $stmt = $dbh->prepare($query);
-	$stmt->execute();
+	if ($db->checkTableExists($table_nm)){ # if table exists
 
-	## evaluate db rows for identical documentation on same table and attribute
-	while (my @ary = $stmt->fetchrow_array() ){
-	  chomp;
-	  my ($tb_id, $att_name, $html);
-	  $tb_id = $ary[0]; #queried table id
-	  $att_name = $ary[1]; #queried attribute name
-	  $html = $ary[2]; #queried html documentation
+	  ## skip identical documentation - query db
+	  my $dbh = $ctx->{'self_inv'}->getDbHandle();
+	  my $t_id = $doc->getTableIdFromTableName($table_nm); #get table_id from table name
+	  my $query = "SELECT table_id, attribute_name, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$t_id AND attribute_name='$attribute_nm'";
+	  $self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
+	  my $stmt = $dbh->prepare($query);
+	  $stmt->execute();
 
-	  ## SKIP if documentation is identical to what is already in db
-	  if ($html eq $html_dc){ 
-	    $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
+	  while (my @ary = $stmt->fetchrow_array() ){
+	    chomp;
+	    my ($tb_id, $att_name, $html);
+	    $tb_id = $ary[0]; #queried table id
+	    $att_name = $ary[1]; #queried attribute name
+	    $html = $ary[2]; #queried html documentation
+
+	    ## SKIP if documentation is identical to what is already in db
+	    if ($html eq $html_dc){ 
+	      $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
+	      return; # SKIP
+	    }
+	  }
+	  ## attribute is valid for this table - SUBMIT
+	  if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
+
+	    ## bind table id to DatabaseDocumentation object
+	    $doc->setTableId($doc->getTableIdFromTableName($table_nm));
+	    $self->logVerbose("Set table ID");
+
+	    ## bind attribute name to DatabaseDocumentation object
+	    $doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
+	    $self->logVerbose("Set attribute name");
+
+	    ## bind html documentation to DatabaseDocumentation object
+	    $doc->setHtmlDocumentation($html_dc);
+	    $self->logVerbose("Set HTML Documentation");
+
+	    ## submit to db
+	    $doc->submit();
+	    $countInserts++;
+	    $self->logVerbose("Submit object to database");
+	    $self->undefPointerCache();
+	    $self->logVerbose("UndefPointerCache()");
+	  }#end if
+
+	  ## attribute is not valid for this table - DON'T SUBMIT
+	  elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){
+	    $self->logAlert("$attribute_nm is NOT a valid attribute for table: $table_nm\tNot inserted!");
+	  }
+
+	  ## Documentation for table (attribute name is NULL) - SUBMIT
+	  elsif ($attribute_nm == "NULL" || $attribute_nm == "null"  || $attribute_nm == ""){
+	    print "Documentation for table (no attribute supplied)\n";
+	    $self->logVerbose("Documentation for table (no attribute supplied)");
+
+	    ## bind table id to DatabaseDocumentation object
+	    $doc->setTableId($doc->getTableIdFromTableName($table_nm));
+	    $self->logVerbose("Set table ID");
+
+	    ## bind html documentation to DatabaseDocumentation object
+	    $doc->setHtmlDocumentation($html_dc);
+	    $self->logVerbose("Set HTML Documentation");
+
+	    ## submit to db
+	    $doc->submit();
+	    $countInserts++;
+	    $self->logVerbose("Submit object to database");
+	    $self->undefPointerCache();
+	    $self->logVerbose("UndefPointerCache()");
+	  }#end elsif
+
+	  ## no attribute name in table
+	  else{
+	    $self->logAlert("Attribute $attribute_nm does not exist in $table_nm");
 	    return;
 	  }
-	
-	  if ($db->checkTableExists($table_nm)){ # if table exists
-
-	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
-	      ## bind table id to DatabaseDocumentation object
-	      $doc->setTableId($doc->getTableIdFromTableName($table_nm));
-	      $self->logVerbose("Set table ID");
-
-	      ## bind attribute name to DatabaseDocumentation object
-	      $doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
-	      $self->logVerbose("Set attribute name");
-
-	      ## bind html documentation to DatabaseDocumentation object
-	      $doc->setHtmlDocumentation($html_dc);
-	      $self->logVerbose("Set HTML Documentation");
-
-	      ## submit to db
-	      $doc->submit();
-	      $countInserts++;
-	      $self->logVerbose("Submit object to database");
-	      $self->undefPointerCache();
-	      $self->logVerbose("UndefPointerCache()");
-	    }#end if
-
-	    ## Document table: table exists but attribute name is NULL
-#	    elsif (! $db->getTable($table_nm)->isValidAttribute($attribute_nm)){
-	    elsif ($attribute_nm == "NULL" || $attribute_nm == "null"  || $attribute_nm == ""){
-	      print "Documentation for table (no attribute supplied)\n";
-	      $self->logVerbose("Documentation for table (no attribute supplied)");
-
-	      ## bind table id to DatabaseDocumentation object
-	      $doc->setTableId($doc->getTableIdFromTableName($table_nm));
-	      $self->logVerbose("Set table ID");
-
-	      ## bind html documentation to DatabaseDocumentation object
-	      $doc->setHtmlDocumentation($html_dc);
-	      $self->logVerbose("Set HTML Documentation");
-
-	      ## submit to db
-	      $doc->submit();
-	      $countInserts++;
-	      $self->logVerbose("Submit object to database");
-	      $self->undefPointerCache();
-	      $self->logVerbose("UndefPointerCache()");
-	    }#end elsif
-
-	    ## no attribute name in table
-	    else{
-		$self->logAlert("Attribute $attribute_nm does not exist in $table_nm");
-		return;
-	    }
 	}#end if table exists
 
 	## no table name in db
 	else {
-	    $self->logAlert("Table $table_nm does not exist in database");
-	    return;
+	  $self->logAlert("Table $table_nm does not exist in database");
+	  return;
         }
-	}#end while?
 	$db->setGlobalNoVersion(0);
-	
 	
 } # end sub process
 1;
