@@ -155,7 +155,7 @@ print STDERR "$id,DT.$na_seq\n";
 
      if ($id == $na_seq) {
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
-   last;
+   next;
    }
 
     if ($id != $na_seq) {
@@ -175,9 +175,9 @@ print STDERR "$id,DT.$na_seq\n";
 
      }
 
-next;
-}
 
+}
+next;
 
 }
 
