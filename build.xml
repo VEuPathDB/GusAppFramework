@@ -38,8 +38,6 @@
                                            GUS/PluginMgr-Installation, 
                                            GUS/ReportMaker-Installation, 
                                            GUS/SchemaBrowser-Installation,
-					   GUS/WebDevKit-Installation,
-					   GUS/WDKTestSite-Installation,
 					   GUS/RAD-Installation"> 
     <ant target="defaultProjectInstall"/>
   </target>
@@ -365,20 +363,6 @@
     </ant>
   </target>  
 
-  <target name="GUS/WebDevKit-Installation" depends="ProjectTree">
-    <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="WebDevKit"/>
-     </ant>
-  </target>  
-
-  <target name="GUS/WDKTestSite-Installation" depends="ProjectTree">
-    <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="WDKTestSite"/>
-    </ant>
-  </target>  
-
  <target name="GUS/RAD-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
@@ -392,8 +376,7 @@
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
   <target name="GUS-WebInstallation" depends="GUS/DBAdmin-WebInstallation, 
-                                              GUS/SchemaBrowser-WebInstallation, 
-                                              GUS/WebDevKit-WebInstallation "/>
+                                              GUS/SchemaBrowser-WebInstallation"/>
 
 
   <target name="GUS/DBAdmin-WebInstallation" depends="ProjectTree">
@@ -410,14 +393,7 @@
     </ant>
   </target>  
 
-  <target name="GUS/WebDevKit-WebInstallation" depends="ProjectTree">
-    <ant target="defaultWebComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="WebDevKit"/>
-  </ant>
-  </target>  
-
-
+  
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  ProjectTree  ooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
