@@ -156,7 +156,7 @@ public abstract class GUSRow implements java.io.Serializable {
      * Create a new object of the specified class.
      */
     public static GUSRow createGUSRow(GUSTable table) {
-	String rowClassName = GUSRow.MODEL_PACKAGE + "." + table.getOwnerName() + "." + table.getTableName();
+	String rowClassName = GUSRow.MODEL_PACKAGE + "." + table.getSchemaName() + "." + table.getTableName();
 	try {
 	    Class rowClass = Class.forName(rowClassName);
 	    GUSRow gr = (GUSRow)rowClass.newInstance();
@@ -214,6 +214,30 @@ public abstract class GUSRow implements java.io.Serializable {
 	this.sessionId = session;
     }
 
+    public String getSubclassViewTableName(BigDecimal fk, String parentOwner, String parentTable){
+	if (fk == null){
+	    return null;
+	}
+	String subclassTable = null;
+	try{
+	    GUSTable table = GUSTable.getTableByName(parentOwner, parentTable);
+	    String parentPkName = table.getPrimaryKeyName();
+	    String sqlQuery = "select subclass_view from " + parentOwner + "." + parentTable + "Imp" + 
+		" where " + parentPkName + " = " + fk.longValue();
+
+	    Vector result = server.runSqlQuery(sessionId, sqlQuery);
+	    
+	    Hashtable hashResult = (Hashtable)result.elementAt(0);
+	    subclassTable = (String)hashResult.get("subclass_view");
+	}
+	catch (Exception e){
+	    System.err.println(e.getMessage());
+	    e.printStackTrace();
+	}
+	return subclassTable;
+
+    }
+
 
     /**
      * If the primary key for this GUSRow is not in the database, no values will be set.
@@ -225,7 +249,7 @@ public abstract class GUSRow implements java.io.Serializable {
 	    throw new GUSInvalidPrimaryKeyException("No primary key set for the object the user is trying to retrieve");
 	}
 	GUSTable myTable = getTable();
-	String schema = myTable.getOwnerName();
+	String schema = myTable.getSchemaName();
 	String tName = myTable.getTableName();
 	String pkAtt = myTable.getPrimaryKeyName();
 	String query = "select * from " + schema + "." + tName + " where " + pkAtt + " = " + id;
@@ -300,13 +324,14 @@ public abstract class GUSRow implements java.io.Serializable {
     protected void addChild(GUSRow child, String fkAtt){
 	
 	String childKey = getUniqueChildKey(child, fkAtt);
-	//	System.err.println("GUSRow.addChild: parent is " + getTable().getTableName() + " and got unique child key: " + childKey);
+	
 	Vector thisChildVector = (Vector)children.get(childKey);
 	if (thisChildVector == null){
-	    //	    System.err.println("GUSRow.addChild: creating Vector to put these children in");
+	
 	    thisChildVector = new Vector();
 	    children.put(childKey, thisChildVector);
 	}
+
 	thisChildVector.add(child);
 	
     }
@@ -362,17 +387,17 @@ public abstract class GUSRow implements java.io.Serializable {
 	return parent;
     }
 
-    protected void set_ParentRetrieved(String parentAtt, GUSTable parentTable, long parentPk){
+    protected void set_ParentRetrieved(String parentAtt, GUSTable parentTable, Long parentPk){
 	try{
 
 	    GUSRow parent = null;
-
-	    GUSRowAttribute gusRowAttribute = (GUSRowAttribute)attributeValues.get(parentAtt);
-	    if (gusRowAttribute == null){  //don't overwrite existing parent
-		parent = (GUSRow)server.retrieveGUSRow(sessionId, parentTable, parentPk, false);
-		parent.addChild(this, parentAtt);
+	    if (parentPk != null){
+		GUSRowAttribute gusRowAttribute = (GUSRowAttribute)attributeValues.get(parentAtt);
+		if (gusRowAttribute == null){  //don't overwrite existing parent
+		    parent = (GUSRow)server.retrieveGUSRow(sessionId, parentTable, parentPk.longValue(), false);
+		    parent.addChild(this, parentAtt);
+		}
 	    }
-	    
 	    set_Retrieved(parentAtt, parent);
 	}
 	catch (Exception e){
@@ -395,11 +420,11 @@ public abstract class GUSRow implements java.io.Serializable {
 	String childKey;
 	GUSTable childTable = child.getTable();
 	GUSTable myTable = getTable();
-	if (myTable.childHasMultipleFksToMe(childTable.getOwnerName(), childTable.getTableName())){
+	if (myTable.childHasMultipleFksToMe(childTable.getSchemaName(), childTable.getTableName())){
 	    childKey = makeSpecialChildKey(child, childFkToMe);
 	}
 	else{
-	    childKey = childTable.getTableName().toLowerCase();
+	    childKey = getChildKeyForTableOrView(child);
 	}
 	return childKey;
     }
@@ -435,15 +460,45 @@ public abstract class GUSRow implements java.io.Serializable {
 
     private String makeSpecialChildKey(GUSRow child, String childFkToMe){
 	
-	return child.getTable().getTableName().toLowerCase() + "_IAmA_" + childFkToMe;
+	String finalChildTableName = getChildKeyForTableOrView(child);
+		
+	return finalChildTableName + "_IAmA_" + childFkToMe;
+    }
+
+
+    private String getChildKeyForTableOrView(GUSRow child){
+	
+	GUSTable childTable = child.getTable();
+	
+	String finalChildTableName = null;
+	if (childTable.isView() == true){
+	    
+	    String impTableName = childTable.getImpTableName();
+	    int impStartsAt = impTableName.lastIndexOf("Imp");
+	    finalChildTableName = impTableName.substring(0, impStartsAt).toLowerCase();
+	}
+	else {
+	    finalChildTableName = childTable.getTableName().toLowerCase();
+	}
+	return finalChildTableName;
     }
 
     protected Vector getParents(){
 	return parents;
     }
     
-    protected Vector getChildren(String childAtt){
-	Vector theseChildren = (Vector)children.get(childAtt);
+    protected Vector getChildren(String childAtt, GUSTable childTable, String childFkToMe, boolean localOnly)
+	throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException{
+	Vector theseChildren = null;
+	if (localOnly == true){
+	    theseChildren = (Vector)children.get(childAtt);
+	}
+	else{
+	    String query = "select * from " + childTable.getSchemaName() + "." + childTable.getTableName() +
+		" where " + childFkToMe + " = " + getPrimaryKeyValue();
+	    theseChildren = server.retrieveGUSRowsFromQuery(sessionId, childTable, query);
+	} 
+	
 	return theseChildren;
     }
     
@@ -460,7 +515,6 @@ public abstract class GUSRow implements java.io.Serializable {
      */
     public void setDeleted(boolean d){
         
-	//	System.err.println("GUSRow.setDeleted setting myself (" + getTable().getTableName() + "_" + getPrimaryKeyValue() + ") deleted");
 	isDeleted = d;
 	Enumeration childKeys = children.keys();
 	while (childKeys.hasMoreElements()){
@@ -474,7 +528,6 @@ public abstract class GUSRow implements java.io.Serializable {
 
 		//will you ever have lazy children?--yes if children are new
 		if (nextChild.isEager()){
-		    //		    System.err.println("\tGUSRow.setDeleted setting child(" + nextChild.getTable().getTableName() + "_" + nextChild.getPrimaryKeyValue() + ") deleted");
 		    nextChild.setDeleted(d);
 		}
 	    }
@@ -589,12 +642,11 @@ public abstract class GUSRow implements java.io.Serializable {
     	throws ClassNotFoundException, InstantiationException, IllegalAccessException, SQLException { 
 	
 	if (! (val instanceof GUSRow)){
-	    attTypeCheck(key, val);
+	    //attTypeCheck(key, val);
 	}
 
 	GUSRowAttribute gusRowAttribute = (GUSRowAttribute)attributeValues.get(key);
 	if (gusRowAttribute == null){ //parent that hasn't been retrieved yet
-	    //	    if (val instanceof GUSRow){System.err.println("creating new gra for parent and inserting it");}
 	    gusRowAttribute = new GUSRowAttribute(val);
 	    attributeValues.put(key, gusRowAttribute);
 	}
@@ -627,7 +679,7 @@ public abstract class GUSRow implements java.io.Serializable {
 		}
 		catch (Exception e){
 		    System.err.println(e.getMessage());
-		    //		    e.printStackTrace();
+		    e.printStackTrace();
 		}
 		gusRowAttribute = (GUSRowAttribute)attributeValues.get(key);
 	    }
@@ -800,9 +852,9 @@ public abstract class GUSRow implements java.io.Serializable {
 
 	    // Check whether we've been told to retrieve a specific subsequence
 	    //
-	    if (specialCases != null) {
+	    if (specialCases != null) { //dtb-will never be null?
 		CacheRange whatToCache = (CacheRange)(specialCases.get(att));
-		cacheStart = whatToCache.getStart();
+		cacheStart = whatToCache.getStart();  //might be null
 		cacheEnd = whatToCache.getEnd();
 	    }
 	    
@@ -1063,8 +1115,15 @@ public abstract class GUSRow implements java.io.Serializable {
         while( keys.hasMoreElements() ) {
             String next = (String)(keys.nextElement());
 	    GUSRowAttribute nextAttribute = (GUSRowAttribute)attributeValues.get(next);
+	    
 	    Object nextVal = nextAttribute.getSubmitValue();
-	    String nextstr = nextVal.toString();
+	    String nextstr = null;
+	    if (nextVal != null){
+		nextstr = nextVal.toString();
+	    }
+	    else {
+		nextstr = "NULL";
+	    }
 
 	    // JC: why don't we print an attribute if its value is -1 or the empty string???
 	    //     aren't these perfectly valid values in many attributes?

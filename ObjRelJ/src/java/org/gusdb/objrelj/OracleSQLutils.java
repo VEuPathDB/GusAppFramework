@@ -90,7 +90,7 @@ public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
 	return deleteSQL.toString();    }
 
     public String makeNewIdSQL(GUSTable table) {
-	String owner = table.getOwnerName();
+	String owner = table.getSchemaName();
 	String tname = table.getTableName();
 
 	// If the table in question has a SEQUENCE object, select the next
