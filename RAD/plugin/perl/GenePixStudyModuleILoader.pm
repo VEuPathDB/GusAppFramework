@@ -652,7 +652,8 @@ sub modifyKeyValuePairs {
   } elsif ($key eq "DateTime") {
 
       $modifiedKey = $key;
-      $modifiedValue = $value =~ s/\//\-/;
+      $value =~ s/\//\-/g;
+      $modifiedValue = $value;
 
   } else {
       $modifiedKey = $key;
