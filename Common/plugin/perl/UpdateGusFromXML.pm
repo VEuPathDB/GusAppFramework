@@ -51,37 +51,37 @@ my $countUpdates = 0;
 # run method to do the work
 
 sub run {
-  my $M   = shift;
+  my $self   = shift;
 
   my $RV;
 
-  my $fh = FileHandle->new('<'.$M->getCla->{'filename'});
+  my $fh = FileHandle->new('<'.$self->getCla->{'filename'});
   if ($fh) {
 
-    $M->log('COMMIT', $M->getCla->{commit} ? 'ON' : 'OFF' );
+    $self->log('COMMIT', $self->getCla->{commit} ? 'ON' : 'OFF' );
 
     ##testing exitOnFailure...
-    $M->getDb()->setExitOnSQLFailure(0);
+    $self->getDb()->setExitOnSQLFailure(0);
 
     # process XML file.
     my @xml;
     while (<$fh>) {
       if (/^\/\/\s*$/) {	##"//" on a newline defines entry
-	$M-process(\@xml) if scalar(@xml) > 1; ##must be at least 3 actually to be valid...
+	$self-process(\@xml) if scalar(@xml) > 1; ##must be at least 3 actually to be valid...
 	undef @xml;		##reset for the new one...
       } else {
 	push(@xml,$_);
       }
     }
-    $M->process(\@xml) if scalar(@xml) > 1; ##must be at least 3 actually to be valid...
+    $self->process(\@xml) if scalar(@xml) > 1; ##must be at least 3 actually to be valid...
     $fh->close;
 
     # create, log, and return result string.
     $RV = join(' ',
 	       "processed $countObjs objects, inserted",
-	       $M->getSelfInv->getTotalInserts(),
+	       $self->getSelfInv->getTotalInserts(),
 	       'and updated',
-	       $M->getSelfInv->getTotalUpdates() || 0,
+	       $self->getSelfInv->getTotalUpdates() || 0,
 	      );
   }
 
@@ -89,56 +89,56 @@ sub run {
   else {
     $RV = join(' ',
 	       'a valid --filename <filename> must be on the commandline',
-	       $M->getCla->{filename},
+	       $self->getCla->{filename},
 	       $!);
   }
 
-  $M->log('RESULT', $RV);
+  $self->log('RESULT', $RV);
   return $RV;
 }
 
 # ----------------------------------------------------------------------
 # do the real work.
 sub process {
-  my $M    = shift;
+  my $self    = shift;
   my($xml) = @_;
 
-  $M->getSelfInv->parseXML($xml);
-  $M->countChangedObjs($M->getSelfInv);
+  $self->getSelfInv->parseXML($xml);
+  $self->countChangedObjs($self->getSelfInv);
 
   ##now submit the sucker...
   ##must first remove invocation parent before submitting immediate children
-  $M->getSelfInv->manageTransaction(undef,'begin');
-  foreach my $c ($M->getSelfInv->getAllChildren()) {
-    $c->removeParent($M->getSelfInv);
+  $self->getSelfInv->manageTransaction(undef,'begin');
+  foreach my $c ($self->getSelfInv->getAllChildren()) {
+    $c->removeParent($self->getSelfInv);
     $c->submit(undef,1);
-    $c->setParent($M->getSelfInv); ##add back so can see at the end...
+    $c->setParent($self->getSelfInv); ##add back so can see at the end...
   }
-  $M->getSelfInv->manageTransaction(undef,'commit');
-  if (!$M->getCla->{commit}) {
-    $M->log('ERROR', "XML that was not committed to the database\n\n");
-    foreach my $c ($M->getSelfInv->getAllChildren()) {
-      $M->log('BAD-XML', $c->toXML());
+  $self->getSelfInv->manageTransaction(undef,'commit');
+  if (!$self->getCla->{commit}) {
+    $self->log('ERROR', "XML that was not committed to the database\n\n");
+    foreach my $c ($self->getSelfInv->getAllChildren()) {
+      $self->log('BAD-XML', $c->toXML());
     }
   }
-  $M->getSelfInv->removeAllChildren();
-  $M->getSelfInv->undefPointerCache();
+  $self->getSelfInv->removeAllChildren();
+  $self->getSelfInv->undefPointerCache();
 }
 
 sub countChangedObjs {
-  my $M = shift;
+  my $self = shift;
   my($par) = @_;
 
   foreach my $c ($par->getAllChildren()) {
-    $M->log('DEBUG',
-	    "Checking to see if has changed attributes\n".$c->toXML()) if $M->getCla->{debug};
+    $self->log('DEBUG',
+	    "Checking to see if has changed attributes\n".$c->toXML()) if $self->getCla->{debug};
     $countObjs++;
     $countUpdates++;
-    if (!$M->getCla->{refresh} && !$c->hasChangedAttributes()) {
-      $M->log('DEBUG','There are no changed attributes') if $M->getCla->{debug};
+    if (!$self->getCla->{refresh} && !$c->hasChangedAttributes()) {
+      $self->log('DEBUG','There are no changed attributes') if $self->getCla->{debug};
       $countUpdates--;
     }
-    $M->countChangedObjs($c);
+    $self->countChangedObjs($c);
   }
 }
 
