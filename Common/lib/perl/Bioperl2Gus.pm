@@ -1,4 +1,4 @@
-
+ 
 package GUS::Common::Bioperl2Gus;
 
 # ----------------------------------------------------------
@@ -22,6 +22,8 @@ use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::Source;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
+use GUS::Model::SRes::DbRef;
+use GUS::Model::DoTS::DbRefNAFeature;
 
 use GUS::Model::DoTS::SequenceType;
 use GUS::Model::DoTS::PfamEntry;
@@ -35,10 +37,11 @@ use GUS::Model::DoTS::RNAFeatureExon;
 use GUS::Model::DoTS::TranslatedAAFeature;
 use GUS::Model::DoTS::TranslatedAASequence;
 use GUS::Model::DoTS::DomainFeature;
+use GUS::Model::DoTS::SignalPeptideFeature;
+use GUS::Model::DoTS::PostTranslationalModFeature;
 use GUS::Model::DoTS::ProteinProperty;
 use GUS::Model::DoTS::ProteinFeature;
-#use GUS::Model::DoTS::PredictedAAFeature;
-use GUS::Model::DoTS::SignalPeptideFeature;
+
 use GUS::Model::DoTS::Gene;
 use GUS::Model::DoTS::RNA;
 use GUS::Model::DoTS::Protein;
@@ -57,6 +60,8 @@ use GUS::Model::DoTS::ProteinInstanceCategory;
 use GUS::Model::SRes::GOEvidenceCode;
 use GUS::Model::DoTS::Evidence;
 use GUS::Model::SRes::ExternalDatabaseEntry;
+
+use GUS::Model::DoTS::Attribution;
 
 #use GUS::Model::DoTS::Note; # !!!!! THIS NO LONGER EXISTS!!!!!!!!!!!!!!!!!!!!!!
 
@@ -499,8 +504,8 @@ sub buildGeneFeature {
 
     if ($bioperl_feature->has_tag ('product')) {
         my @products = $bioperl_feature->each_tag_value ('product');
-        #$product = $products[0];
-        $product = join('; ', @products);
+        #$product = join('; ', @products); # axk says GeneFeature.product is first product (product name)
+        $product = $products[0];
     }
 
     ####################################
@@ -561,20 +566,7 @@ sub buildGeneFeature {
     # my $source_id = $standard_name;
     #my $source_id = $systematic_id;
 
-    ##############################################
-    # Attribution Site in a Contact Entry
-    ##############################################
 
-    # gusdev hasn't been designed to cover attributions data
-    # GUS3 has an attribution table to fill the gap
-    # But with gusdev, if it's really needed, it is possible though to use the evidence table to link Contacts and Features.
-
-    my $attribution_site = undef;
-
-    if ($bioperl_feature->has_tag ('attribution_site')) {
-        my @attribution_sites = $bioperl_feature->each_tag_value ('attribution_site');
-        $attribution_site = $attribution_sites[0];
-    }
 
     print STDERR "BuildGeneFeature() : Got details, about to retrieve/create GeneFeature\n";
 
@@ -623,7 +615,7 @@ sub buildGeneFeature {
             $gf->set($att, $h->{$att});
         }
     }
-
+    
     ##
     # NALocation object related to the Gene
     ##
@@ -672,10 +664,164 @@ sub buildGeneFeature {
         }
     }
 
+    ##
+    # /db_xref & psu_db_xref - the later can have a description after the DB:123 bit.
+    ##
+    my @child_refs = $self->buildDbRefs($gf);
+
+    ##
+    # /literature
+    ##
+
+    # Delete old /literature info, no versioning here.
+
+#
+# THIS CODE NEEDS TO BE EXAMINED IN DETAIL, CUT AND PASTE JOBS HENCE LOGIC CORRECT BUT NOT OBJECT NAMES ETC
+#
+
+    #my @children = $rnaf->getChildren('DoTS::NALocation', 1);
+    #$rnaf->markChildrenDeleted(@children);
+
+    #print STDERR "buildGeneFeature() : Mark deleted ", scalar(@children), " NALocation(s)\n";
+
+    # create new literature
+    #if ($bioperl_feature->has_tag ('literature')) {
+    #    my @lit_strings = $bioperl_feature->each_tag_value ('literature');
+
+    #    foreach my $lit (@lit_strings) {
+    #        # parse out 'PubMed:8719249; blah blah blah'
+    #        my ($db, $remark) = split(/\s*;\s*/, $lit); 
+
+    #        my $db_ref_id = $self->get_db_ref_id($db);
+
+    #        my $h = {
+    #            'db_ref_id' => $db_ref_id,
+    #            'remark'    => $remark,
+    #        };
+      
+            # FIXME - The Note table has gone. What has replaced it???
+
+            #my $gus_note = Note->new ($h);
+            #$gus_note->retrieveFromDB();
+            #$gus_note->setParent ($gf);
+            #push (@gus_notes, $gus_note);
+    #    }
+    #}
+
+
     push (@gus_note_objects, @gus_notes);
 
-    return ($gf, $gus_naLocation_gf, @gus_note_objects);
+    return ($gf, $gus_naLocation_gf, @gus_note_objects, @child_refs);
 }
+
+################################################################################
+# 
+# Probably based in a GeneFeature but could be anything.
+# Deletes old db refs, no versioning
+# Creates new DbRefNAFeature -> SRes.DbRef
+#
+##
+sub buildDbRefs {
+    my ($self, $na_feature) = @_;
+    my @objects;
+
+    # Delete old, no versioning here (yet). DbRef holds remark, hence can not be shared between
+    # "identical" DbRefs
+    my @children = $na_feature->getChildren('DoTS::DbRefNAFeature', 1);
+
+    foreach my $child (@children) {
+        my $db_ref_parent = $child->getParent('SRes::DbRef');
+        print "\$db_ref_parent  = $db_ref_parent\n";
+        $db_ref_parent->markDeleted();
+    }
+
+    $na_feature->markChildrenDeleted(@children);
+
+    print STDERR "buildDdRefs() : Mark deleted ", scalar(@children), " NALocation(s)\n";
+
+    my @all_refs = ();
+
+    if ($self->{'bioperlFeature'}->has_tag('db_xref')) { # 
+        my @db_xrefs = $self->{'bioperlFeature'}->each_tag_value('db_xref');
+        @all_refs    = map { [$_, undef] } @db_xrefs;
+    }
+
+    # db_xref
+    #
+    if ($self->{'bioperlFeature'}->has_tag('db_xref')) { # 
+        my @db_xrefs = $self->{'bioperlFeature'}->each_tag_value('db_xref');
+
+        foreach my $db_xref (@db_xrefs) {
+            my $db_ref_obj = $self->buildDbRef($db_xref, undef, $na_feature->getDatabase()->getDbHandle());
+
+            next unless defined $db_ref_obj;
+
+            my $db_ref_na_feature = GUS::Model::DoTS::DbRefNAFeature->new();
+            $db_ref_na_feature->setParent($na_feature);
+            $db_ref_na_feature->setParent($db_ref_obj);
+
+            push @objects, ($db_ref_obj, $db_ref_na_feature);
+        }
+    }
+
+    # psu_db_xref - it has a remark field, db_xref does not.
+    #
+    if ($self->{'bioperlFeature'}->has_tag('psu_db_xref')) { # 
+        my @psu_db_xrefs = $self->{'bioperlFeature'}->each_tag_value('psu_db_xref');
+
+        foreach my $psu_ref (@psu_db_xrefs) {
+            my ($db_ref, $remark) = split(/\s*;\s*/, $psu_ref); # parse out 'PubMed:8719249; This is a link'
+
+            my $db_ref_obj = $self->buildDbRef($db_ref, $remark, $na_feature->getDatabase()->getDbHandle());
+
+            next unless defined $db_ref_obj;
+
+            my $db_ref_na_feature = GUS::Model::DoTS::DbRefNAFeature->new();
+            $db_ref_na_feature->setParent($na_feature);
+            $db_ref_na_feature->setParent($db_ref_obj);
+
+            push @objects, ($db_ref_obj, $db_ref_na_feature);
+        }
+    }
+
+    print "buildDbRefs() returning ", join(', ', @objects), "\n";
+
+    return @objects;
+}
+
+
+
+################################################################################
+#
+# Return a SRes::DbRef object given an string e.g. 'PubMed:123'
+##
+sub buildDbRef {
+    my ($self, $ref, $remark, $dbh) = @_;
+
+    if ((! defined $ref) || ($ref eq '')) {
+        die "ERROR: buildDbRef() passed invalid xref = '$ref'";
+    }
+
+    my ($db, $id) = split(':', $ref);
+    my ($edri)    = $self->getExternalDatabaseReleaseId($dbh, $db);
+
+    unless (defined $edri) {
+        print STDERR "WARNING: Can not build SRes::DbRef without a external_database_release_id for $db\n";
+        return undef;
+    }
+
+    my $db_ref    = GUS::Model::SRes::DbRef->new({'external_database_release_id' => $edri,
+                                                  'primary_identifier'           => $id,
+                                                  'lowercase_primary_identifier' => lc($id),});
+    if (defined $remark) {
+        $db_ref->setRemark($remark);
+    }
+
+    #my $result    = $db_ref->retrieveFromDB();
+
+    return $db_ref;
+}
+
 
 ################################################################################
 #
@@ -1156,8 +1302,10 @@ sub buildProteinProperties {
             $pp->setParent($aa_seq);
         }
 
-        push @properties, $pp;
+        push @properties, $pp if defined $pp;
     }
+
+    print "buildProteinProperties(): returning: ", join(', ', @properties), "\n";
 
     return @properties;
 }
@@ -1166,7 +1314,7 @@ sub buildProteinProperties {
 
 ################################################################################
 # Builds both
-#     . TranslatedAAFeature
+#     . TranslatedAAFeature (link table between na_feature and aa_feature/aa_sequence)
 #     . ProteinFeature
 #
 # objects and returns them in that order.
@@ -1291,6 +1439,7 @@ sub buildAAFeatures {
 
         $aa_seq->retrieveChildrenFromDB('DoTS::DomainFeature');        # Force loading from DB of "old" objects
         $aa_seq->retrieveChildrenFromDB('DoTS::SignalPeptideFeature'); # Force loading from DB of "old" objects
+        $aa_seq->retrieveChildrenFromDB('DoTS::PostTranslationalModFeature');
 
         my @d_features    = $aa_seq->getChildren('DoTS::DomainFeature');
         my @sigp_features = $aa_seq->getChildren('DoTS::SignalPeptideFeature');
@@ -1315,24 +1464,27 @@ sub buildAAFeatures {
 
     ##
     # Get misc_features of type sigP and TMHMM
+    # NOTE: GeneDB now outputs a single qualifier for each TMHMM, SignalP and GPI anchor
+    #       and _no_ misc_features, hence this code is now redenudant (yes?).
     ##
-    my @misc_features = $self->getMiscFeatures ($gene_name);
+    #my @misc_features = $self->getMiscFeatures ($gene_name);
+    
 
-    my $misc_feature_tm;
+    my $misc_feature_tm; # left here so it compiles!
     my $misc_feature_sp;
 
-    foreach my $misc_feature (@misc_features) {
-        my @notes = $misc_feature->each_tag_value ('note');
+    #foreach my $misc_feature (@misc_features) {
+    #    my @notes = $misc_feature->each_tag_value ('note');
 
-        foreach my $note (@notes) {
-            if ($note =~ /signal peptide/i) {
-                $misc_feature_sp = $misc_feature;
-            }
-            elsif ($note =~ /transmembrane heli/i) {
-                $misc_feature_tm = $misc_feature;
-            }
-        }
-    }
+    #    foreach my $note (@notes) {
+    #        if ($note =~ /signal peptide/i) {
+    #            $misc_feature_sp = $misc_feature;
+    #        }
+    #        elsif ($note =~ /transmembrane heli/i) {
+    #            $misc_feature_tm = $misc_feature;
+    #        }
+    #    }
+    #}
 
     ##
     # Create SignalPeptide
@@ -1344,6 +1496,12 @@ sub buildAAFeatures {
     # Create Transmembrane domain
     ##
     my @transmembrane_objects = $self->buildTransmembraneDomainFeature ($misc_feature_tm, $aa_seq);
+    push (@aa_objects, @transmembrane_objects);
+
+    ##
+    # Create GPI-anchor (DoTS.PostTranslationalModFeature)
+    ##
+    my @transmembrane_objects = $self->buildGPIAnchorFeature($aa_seq);
     push (@aa_objects, @transmembrane_objects);
 
 
@@ -1589,10 +1747,10 @@ sub buildTransmembraneDomainFeature {
         
                 $other_locations =~ s/\sand\s/\, /g;
         
-                if ($debug) {
+                #if ($debug) {
                     # print STDERR "tm: $tm\n";
                     # print STDERR "other locations to parse: $other_locations.\n";
-                }
+                #}
         
                 while (length ($other_locations) > 0) {
                     $other_locations     =~ /,\s(\d+)\D(\d+)(.*)/;
@@ -1606,8 +1764,7 @@ sub buildTransmembraneDomainFeature {
                                                                        );
                     push (@bioperl_locations, $bioperl_location);
 
-                    #print STDERR "buildTransmembraneDomainFeature() : ", scalar(@bioperl_locations),
-                    #" locations for TMHMM\n";
+                    #print STDERR "buildTransmembraneDomainFeature() : ", scalar(@bioperl_locations), " locations for TMHMM\n";
                 }
             }
       
@@ -1619,6 +1776,7 @@ sub buildTransmembraneDomainFeature {
                 'is_predicted'       => $is_predicted,
                 'review_status_id'   => $review_status_id,
                 'source_id'          => $source_id,
+                'number_of_domains'  => scalar(@bioperl_locations),
             };
 
             my $gus_transmembraneFeature = GUS::Model::DoTS::DomainFeature->new ($h);
@@ -1639,6 +1797,91 @@ sub buildTransmembraneDomainFeature {
     return @transmembrane_objects;
 }
 
+
+################################################################################
+#
+# build PostTranslationalModFeature for GPI-Anchor
+##
+sub buildGPIAnchorFeature {
+    my ($self, $aa_seq) = @_;
+
+    print STDERR "Processing GPI-Anchor data...\n" if $self->{'debug'};
+
+    if (not $self->{bioperlFeature}->has_tag ('gpi_anchor')) {
+        print STDERR "  - no /gpi_anchor qualifier, returning." if $self->{'debug'};
+        return ();
+    }
+
+    my @gpi_objects     = ();
+    my @gpis            = $self->{bioperlFeature}->each_tag_value ('gpi_anchor');
+
+    foreach my $gpi (@gpis) {
+        if ($gpi =~ /gpi-anchor/i) {
+
+            if ($self->{'debug'}) {
+                print STDERR "Parsing next GPI feature/qualifier...\n" if $self->{'debug'};
+            }
+
+            my @bioperl_locations = ();
+
+            # set defaults before getting real values
+            my $name              = "GPI-Anchored Signal";
+            my $description       = $gpi;
+            my $algorithm_name    = "DGPI v2.04";
+            my $is_predicted      = 1;
+            my $review_status_id  = $REVIEW_STATUS_ID;
+            my $source_id         = $self->{'gusSequence'}->getSourceId();
+            my $bioperl_location;
+
+            if ($gpi =~ /by\s/) {
+
+                $gpi             =~ /.+by\s([^with]+).*/;
+                $algorithm_name  = $1;
+
+                print STDERR "Algorithm name , $algorithm_name\n" if $self->{'debug'};
+
+                # xxx
+                # Need to look up algorithm_id - algorithms not loaded yet...
+            }
+
+            if ($gpi =~ /near (\d+)$/) {
+                my $start = $1;
+                my $end   = $start;
+
+                print STDERR "location information: start & end = $start\n" if $self->{'debug'};
+
+                $bioperl_location = Bio::Location::Simple->new (-start  => $start,
+                                                                -end    => $end,
+                                                                -strand => 1,);
+                push (@bioperl_locations, $bioperl_location);
+            }
+      
+            my $h = {
+                'name'               => $name,
+                'description'        => $description,
+                #'prediction_algorithm_id'     => $algorithm_name, # need to lookup algorithm_id, see above
+                'review_status_id'   => $review_status_id,
+                'is_predicted'       => $is_predicted,
+                'source_id'          => $source_id,
+            };
+
+            my $gus_gpiFeature = GUS::Model::DoTS::PostTranslationalModFeature->new($h);
+
+            $gus_gpiFeature->setParent ($aa_seq);
+
+            print "567 parent = $aa_seq\n";
+            print "567 parent = ", $gus_gpiFeature->getParent($aa_seq->getClassName()), "\n";
+            
+
+            push (@gpi_objects, $gus_gpiFeature);
+
+            my $gus_aaLocation = $self->buildAALocation ($gus_gpiFeature, $bioperl_location);
+            push (@gpi_objects, $gus_aaLocation);
+        }
+    }
+
+    return @gpi_objects;
+}
 
 
 ################################################################################
@@ -1798,7 +2041,9 @@ sub buildDomainFeature {
 ################################################################################
 #
 # Returns the Gene object plus all child GeneSynonym objects, including those
-# to be deleted, created and no change
+# to be deleted, created and no change.
+#
+# A GeneSynonym is /synonym and /obsolete_name, the latter having is_obsolete = 1
 ##
 
 sub buildGene {
@@ -1814,10 +2059,6 @@ sub buildGene {
 
     print STDERR "buildGene() : building '$gene_name'\n";
 
-
-
-    #my $is_reference = 0; # is_reference ?????????????
-
     ##
     # build gene object
     ##
@@ -1825,7 +2066,6 @@ sub buildGene {
     my $h = {
         'name'              => $gene_name,
         'review_status_id'  => $review_status_id,
-        #'is_reference'      => $is_reference, # I don't think there is anything in GUS3 to replace this...
     };
 
     my $gene_object = GUS::Model::DoTS::Gene->new ($h);
@@ -1834,28 +2074,63 @@ sub buildGene {
     print STDERR "buildGene() : DoTS.Gene \$is_in = $is_in\n";
 
     ##
-    # Process the synonym qualifiers
-    # Get GUS GeneSynonyms first, then Bioperl
+    # Create DoTS.GeneSynonyms
     ##
-  
+
+
+    my @gus_gene_synonyms       = $gene_object->getChildren('DoTS::GeneSynonym', 1, undef, {'is_obsolete' => 0});
+    my @gus_gene_obsolete_names = $gene_object->getChildren('DoTS::GeneSynonym', 1, undef, {'is_obsolete' => 1});
+
+    ##
+    # /obsolete_name
+    ##
+    my @bioperl_obsolete_names  = ();
+
+    if ($bioperl_feature->has_tag ('obsolete_name')) {
+        @bioperl_obsolete_names = $bioperl_feature->each_tag_value ('obsolete_name');
+    }
+
+    my @obsolete_objs = $self->createGeneSynonyms(1, $gene_object, \@gus_gene_obsolete_names, \@bioperl_obsolete_names);
+
+    ##
+    # /synonym
+    ##
     my @bioperl_gene_synonyms  = ();
-    my @gus_gene_synonyms      = $gene_object->getChildren('DoTS::GeneSynonym', 1);
-    my @to_be_created_synonyms = ();
-    my @to_be_deleted_synonyms = ();
-    my @in_both                = (); # holds GUS GeneSynonym objects common to both
-    my @gene_synonyms          = (); # The return array of ALL GeneSynonym objects created, deleted
 
     if ($bioperl_feature->has_tag ('synonym')) {
         @bioperl_gene_synonyms = $bioperl_feature->each_tag_value ('synonym');
     }
 
+    my @synonym_objs = $self->createGeneSynonyms(0, $gene_object, \@gus_gene_synonyms, \@bioperl_gene_synonyms);
+
+    return ($gene_object, @obsolete_objs, @synonym_objs);
+}
+
+################################################################################
+#
+# Creates/deletes DoTS.GeneSynonym objects.
+# No modifications are done as all they hold is a name.
+##
+sub createGeneSynonyms {
+    my ($self, $is_obsolete, $gene_object, $gus_gene_synonyms_ref, $bioperl_gene_synonyms_ref) = @_;
+
+    my @to_be_created_synonyms = ();
+    my @to_be_deleted_synonyms = ();
+    my @in_both                = (); # holds GUS GeneSynonym objects common to both GUS & Bioperl
+    my @gene_synonyms          = (); # The return array of ALL GeneSynonym objects created and marked deleted
+
+
+    print "createGeneSynonyms(): is_obsolete = $is_obsolete, gene_object = $gene_object\n";
+    print "createGeneSynonyms(): bioperl_gene_synonyms_ref = ", join(', ', @{$bioperl_gene_synonyms_ref}), "\n";
+    print "createGeneSynonyms(): gus_gene_synonyms_ref     = ", join(', ', @{$gus_gene_synonyms_ref}), "\n";
+
     ##
     # What needs to be created?
     ##
-    foreach my $bioperl_synonym (@bioperl_gene_synonyms) {    
+    foreach my $bioperl_synonym (@{$bioperl_gene_synonyms_ref}) {    
         my $not_found = 1;
 
-        foreach my $gus_synonym (@gus_gene_synonyms) {
+        foreach my $gus_synonym (@{$gus_gene_synonyms_ref}) {
             if ($gus_synonym->getSynonymName() eq $bioperl_synonym) {
                 $not_found = 0;
             }
@@ -1869,10 +2144,10 @@ sub buildGene {
     ##
     # What needs to be deleted?
     ##
-    foreach my $gus_synonym (@gus_gene_synonyms) {    
+    foreach my $gus_synonym (@{$gus_gene_synonyms_ref}) {    
         my $not_found = 1;
 
-        foreach my $bioperl_synonym (@bioperl_gene_synonyms) {
+        foreach my $bioperl_synonym (@{$bioperl_gene_synonyms_ref}) {
             if ($bioperl_synonym eq $gus_synonym->getSynonymName()) {
                 $not_found = 0;
             }
@@ -1895,6 +2170,7 @@ sub buildGene {
         my $h = {
             'synonym_name'     => $bioperl_synonym,
             'review_status_id' => $review_status_id,
+            'is_obsolete'      => $is_obsolete,
         };
 
         my $geneSynonym = GUS::Model::DoTS::GeneSynonym->new ($h);
@@ -1902,7 +2178,7 @@ sub buildGene {
 
         push (@gene_synonyms, $geneSynonym);
 
-        print STDERR "buildGene() : created '$bioperl_synonym'\n";
+        print STDERR "createGeneSynonyms() : created '$bioperl_synonym', is_obsolete = $is_obsolete\n";
     }
 
     ##
@@ -1918,21 +2194,23 @@ sub buildGene {
     ##
     # DEBUG OUTPUT
     ##
-    if (@in_both) {
-        print STDERR "buildGene() : unchanged ";
-
-        foreach my $geneSymObj (@in_both) {
-            print STDERR $geneSymObj->getSynonymName(), ", ";
-        }
-
-        print STDERR "\n";
-    }
-
-    print STDERR "buildGene() : returning: $gene_object, CHANGED", join(', ', @gene_synonyms),", UNCHANGED: ", join(', ', @in_both), "\n";
+#    if (@in_both) {
+#        print STDERR "buildGene() : unchanged ";
+#
+#        foreach my $geneSymObj (@in_both) {
+#            print STDERR $geneSymObj->getSynonymName(), ", ";
+#        }
+#
+#        print STDERR "\n";
+#    }
 
 
-    return ($gene_object, @gene_synonyms, @in_both);
+    print STDERR "createGeneSynonyms() : returning: $gene_object, CHANGED", join(', ', @gene_synonyms),", UNCHANGED: ", join(', ', @in_both), "\n";
+
+
+    return (@gene_synonyms, @in_both);
 }
+
 
 ################################################################################
 # Creates the linking table between Central Dogma and Feature Land i.e.
@@ -2291,22 +2569,8 @@ ORDER BY release_date, external_database_release_id]);
 # Return the table_id for a given tables name.
 # It uses a cache as it could be called multiple times.
 #
-#sub getTableId {
-#    my ($self, $dbh, $schema, $table_name) = @_;
-#
-#    unless ( defined $self->{'cache'}->{'table_name'}->{$table_name} ) {
-#        my $sth = $dbh->prepare(qq[select table_id FROM Core.TableInfo WHERE  name = ?]);
-#        $sth->execute($table_name);
-#        
-#        my @row      = $sth->fetchrow_array();
-#        my $table_id = $row[0];
-#
-#        $self->{'cache'}->{'table_name'}->{$table_name} = $table_id;
-#    }
-#
-#    return $self->{'cache'}->{'table_name'}->{$table_name};
-#}
-
+# It will die if schema.table not in Core.TableInfo
+##
 sub getTableId {
     my ($self, $dbh, $schema, $table) = @_;
 
@@ -2323,7 +2587,7 @@ sub getTableId {
  
 
         if (scalar(@{$ref}) == 0) {
-            return;
+            die "ERROR: ${schema}.${table} was not found in Core.TableInfo!!!";
         }
         else {
             $self->{'cache'}->{$schema}->{$table} = $ref->[0]->[0];
@@ -2331,6 +2595,49 @@ sub getTableId {
     }
 
     return $self->{'cache'}->{$schema}->{$table};
+}
+
+################################################################################
+# return contact_id from SRes.Contact. It uses a cache.
+# Attribution_site should map to SRes.Contact.name
+#
+# It will die if $attribution_site is not in SRes.Contact
+##
+sub getContactId {
+    my ($self, $dbh, $attribution_site) = @_;
+
+    print "getContactId(): called :)\n";
+
+    # Sanger EMBL files do not have /attribution_site in them, hence we default to Sanger here;
+    unless (defined $attribution_site) {
+        $attribution_site = 'Sanger';
+    }
+
+    print "getContactId(): attribution_site = $attribution_site\n";
+
+    unless ( defined $self->{'cache'}->{'contact'}->{$attribution_site}) {
+
+        my $sth_c_id =
+            $dbh->prepare("SELECT c.contact_id ".
+                          "FROM   SRes.Contact c ".
+                          "WHERE  name = ?");
+        $sth_c_id->execute($attribution_site);
+
+        my $ref = $sth_c_id->fetchall_arrayref();
+
+        print Data::Dumper::Dumper($ref);
+
+        if (scalar(@{$ref}) == 0) {
+            die "Could not get SRes.Contact.contact_id for /attribution_site quual to '$attribution_site' - do you need to add a new contact?";
+        }
+        else {
+            $self->{'cache'}->{'contact'}->{$attribution_site} = $ref->[0]->[0];
+        }
+    }
+
+    print "getContactId(): returning ", $self->{'cache'}->{'contact'}->{$attribution_site}, " for $attribution_site\n";
+
+    return $self->{'cache'}->{'contact'}->{$attribution_site};
 }
 
 ################################################################################
@@ -2681,15 +2988,15 @@ sub getExternalDatabaseReleaseId {
         my $sth = $dbh->prepare(
 qq[SELECT external_database_release_id, release_date, version
 FROM   SRes.ExternalDatabaseRelease  edr, SRes.ExternalDatabase ed
-WHERE  ed.name = ?
+WHERE  ed.lowercase_name = ?
 AND    ed.external_database_id = edr.external_database_id
 ORDER BY release_date, external_database_release_id]);
 
-        $sth->execute($db_name);
+        $sth->execute(lc($db_name));
         my $fetch_all     = $sth->fetchall_arrayref();
 
         if( scalar(@{$fetch_all}) <= 0 ){
-            print STDERR "WARNING: No ExternalDatabase called '$db_name' *** ";
+            print STDERR "WARNING: No ExternalDatabase called '$db_name' ***\n";
             return undef;
         }
         else {
@@ -2846,14 +3153,60 @@ sub buildNALocation {
 
 ################################################################################
 #
+# Link $object -> DoTS.Attribution -> SRes.Contact
+#
+# Currently only a DoTS.GeneFeature is understood, but trivial to add others
+# The Bioperl feature must have an /attribution_site, no action is taken otherwise.
+#
+# Returns: number of objects sunmitted - 0 or 1.
+##
+sub buildAndSubmitAttribution {
+    my ($self, $object) = @_;
+
+    my $object_id  = -1;
+    my $table_id   = -1;
+    my $dbh        = $object->getDatabase()->getDbHandle();
+    my $contact_id = undef;
+
+    if ($self->{'bioperlFeature'}->has_tag ('attribution_site')) {
+        my @attribution_sites = $self->{bioperlFeature}->each_tag_value ('attribution_site');
+        my $attribution_site  = $attribution_sites[0];
+        $contact_id           = $self->getContactId($dbh, $attribution_site);
+    }
+    else {
+        return 0;
+    }
+
+    ##
+    # DoTS.GeneFeature
+    ##
+    if (ref($object) eq 'GUS::Model::DoTS::GeneFeature') {
+        $object_id = $object->getNaFeatureId();
+        $table_id  = $self->getTableId($dbh, 'DoTS', 'GeneFeature');
+    }
+
+    print "buildAndSubmitAttribution(): \$object_id = $object_id, \$table_id = $table_id, \$contact_id = $contact_id (object is type ",ref($object),") \n";
+
+    if ($object_id != -1 && $table_id != -1) {
+        my $att_obj = GUS::Model::DoTS::Attribution->new({'table_id'   => $table_id,
+                                                          'row_id'     => $object_id,
+                                                          'contact_id' => $contact_id
+                                                          });
+        $att_obj->submit(1);
+        return 1;
+    }
+
+    return 0;
+}
+
+################################################################################
+#
 # Create a DoTS::AALocation object and set the parent to be $feature_obj
 # No updating done here: which location gets updated if 2+ locations ???
 # Can't be done... Can it?
 #
 sub buildAALocation {
     my ($self, $feature_obj, $range) = @_;
-
-    my $debug = $self->{debug};
 
     my $start = $range->start;
     my $end   = $range->end;
@@ -3110,7 +3463,7 @@ sub getPfamEntry {
 sub getFeatureFromDB {
     my ($self, $feature_type) = @_;
 
-    my $return_feat = undef; # This hold the value returned.
+    my $return_feat = undef; # This holds the value returned.
 
     my @name_order  = &getNameOrder();
     my %name_value  = ();
