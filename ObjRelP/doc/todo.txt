@@ -11,3 +11,5 @@
 - setSubclassView can be generated and include xform into proper table name syntax
 
 - avoid name collisions between subs in GusRow, etc, and generated class. (use a convention like underscore to delineate these)
+
+- build system is not detecting when .man files change.
