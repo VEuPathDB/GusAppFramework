@@ -81,7 +81,7 @@ sub run {
 
   my ($dbRefHash) = $self->insertDbRef($mapHash); 
 
-  $self->insertDBRefNASeq($DbRefHash);
+  $self->insertDBRefNASeq($dbRefHash);
 
   $self->deleteDbRef() if $self->getArgs()->{'delete'};
 }
@@ -143,7 +143,7 @@ sub insertDbRef {
 
   foreach my $id (keys %$mapHash) {
     my $lowercase_primary_id = lc ($id);
-    my $newDbRef = GUS::Model::SRes::DbRef -> new ({'lowercase_primary_identifier'=>$lowercase_primary_id, 'external_database_release_id'=>$old_rel_id});
+    my $newDbRef = GUS::Model::SRes::DbRef -> new ({'lowercase_primary_identifier'=>$lowercase_primary_id, 'external_database_release_id'=>$db_rel_id});
     $newDbRef->retrieveFromDB();
 
     if ($newDbRef->getPrimaryIdentifier() ne $id) {
@@ -178,7 +178,7 @@ sub  insertDBRefNASeq {
 
     my $naSeqId = $dbRefHash->{$dbRefId};
 
-    my $newDbRefNASeq = GUS::Model::DoTS::DbRefNASequence->new ({'db_ref_id'=>$db_ref_id, 'na_sequence_id'=>$naSeqId});
+    my $newDbRefNASeq = GUS::Model::DoTS::DbRefNASequence->new ({'db_ref_id'=>$dbRefId, 'na_sequence_id'=>$naSeqId});
 
     $num += $newDbRefNASeq->submit() unless $newDbRefNASeq->retrieveFromDB();
 
