@@ -77,7 +77,7 @@ sub run {
 
 	close F;
 	my $fact_hash= {};
-	$fact_hash =$self->parseFactObjects($self->getCla->{'specialfile'}, $self->{self_inv});
+	$fact_hash = $self->parseFactObjects($self->getCla->{'specialfile'}, $self->{self_inv});
 	my $has_evidence = 0;
 	my $remove = 0;
 	$self->{self_inv}->parseXML(\@xml);
