@@ -8,7 +8,7 @@ use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 use GUS::Model::Core::DatabaseDocumentation;
 
-
+'
 ############################################################
 ###########################################################
 ### LoadDocumentation.pm
@@ -136,7 +136,7 @@ sub process {
 	    $html = $ary[2]; #queried html documentation
 
 	    ## SKIP if documentation is identical to what is already in db
-	    if ($html eq $html_dc){ 
+	    if (($att_name eq $attribute_nm) && ($html eq $html_dc)){ 
 	      $self->logAlert("ALREADY EXISTS! Documentation for $table_nm" . "." ."$attribute_nm NOT OVERWRITTEN!");
 	      return; # SKIP
 	    }
