@@ -159,7 +159,7 @@ sub process {
 	  }#end if
 
 	  ## documentation for the table (attribute name is NULL) - SUBMIT
-	  elsif ($attribute_nm == "NULL"){
+	  elsif ($attribute_nm eq "NULL"){
 	    print "Documentation for table (no attribute supplied)\n";
 	    $self->logVerbose("Documentation for table (no attribute supplied)");
 
