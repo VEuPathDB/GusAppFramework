@@ -580,8 +580,8 @@ sub deleteFromExtAASeq {
   my $rel_list = join (',', values %{$dbHash});
   my $dbh = $self->getQueryHandle();
   my $ext_db_rel_id = $self->getArgs()->{extDbRelId};
-  my $sql = "select aa_sequence_id from dots.externalaasequence where external_database_release_id = $ext_db_rel_id and aa_sequence_id not in (select aa_sequence_id from dots.nrdbentry)" || die "SQL failed: $sql\n";
-  my $st = $dbh->prepareAndExecute($sql);
+  my $sql = "select aa_sequence_id from dots.externalaasequence where external_database_release_id = $ext_db_rel_id and aa_sequence_id not in (select aa_sequence_id from dots.nrdbentry)";
+  my $st = $dbh->prepareAndExecute($sql)|| die "SQL failed: $sql\n";
   while (my ($aa_sequence_id) = $st->fetchrow_array) {
     $num_delete++;
     my $newExtAASeq = GUS::Model::DoTS::ExternalAASequence->new ({'aa_sequence_id'=>$aa_sequence_id});
