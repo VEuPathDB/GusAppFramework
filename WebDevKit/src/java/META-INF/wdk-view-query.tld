@@ -55,6 +55,12 @@
       <rtexprvalue>true</rtexprvalue>
     </attribute>
 
+    <attribute>
+      <description></description>
+      <name>querySet</name>
+      <required>true</required>
+      <rtexprvalue>true</rtexprvalue>
+    </attribute>
   </tag>
 
 
