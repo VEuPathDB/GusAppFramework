@@ -10,7 +10,7 @@
 ##algorithm_id=4889       
 ##algorithm_imp_id=5825
 ##################################################################################################
-package LoadTaxon;
+package GUS::Common::Plugin::LoadTaxon;
 
 @ISA = qw(GUS::PluginMgr::Plugin);
 use strict;
