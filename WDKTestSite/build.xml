@@ -57,16 +57,19 @@
     <!-- Compile Java classes as necessary -->
     <mkdir dir="${build.home}/site"/>
 
+  	
+  	<ant antfile="../WebDevKit/build.xml" inheritAll="false" />
+  	
     <!-- Copy application resources -->
-    <copy  todir="${build.home}/site">
+    <copy todir="${build.home}/site">
       <fileset dir="${basedir}/site" />
     </copy>
 
-    <copy  todir="${build.home}/site/WEB-INF/lib" 
-           file="../WebDevKit/ant-build/wdk.jar" />
+    <copy todir="${build.home}/site/WEB-INF/lib" 
+          file="../WebDevKit/ant-build/wdk.jar" />
 
     <mkdir dir="${webapp.dir}"/>
-    <copy  todir="${webapp.dir}">
+    <copy todir="${webapp.dir}">
       <fileset dir="${basedir}/ant-build/site" />
     </copy>
   </target>
