@@ -38,7 +38,7 @@ sub run {
   print STDERR "\nrunning query: \n$self->{sql}...\n" if $verbose;
 
   my $stmt  = $dbh->prepare($self->{sql});
-  $stmt->execute();
+  $stmt->execute() || die "Could not execute sql: '$self->{sql}'";
 
   while (my $row = $stmt->fetchrow_hashref('NAME_lc')) {
     my $primaryKey = $row->{$primaryKeyName};
