@@ -147,11 +147,11 @@ and rownum < 100";
       $words{$wd} = 1;
     }
 
-    $self->getDb()->manageTransaction(0,'begin');
+    $ctx->{self_inv}->getDb()->manageTransaction(0,'begin');
     foreach my $wd (keys%words){
       &processWord($id,$wd);
     }
-    $self->getDb()->manageTransaction(0,'commit');
+    $ctx->{self_inv}->getDb()->manageTransaction(0,'commit');
 
     $ctx->{self_inv}->undefPointerCache();
   }
