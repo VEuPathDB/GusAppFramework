@@ -1,6 +1,7 @@
 package GUS::ObjRelP::DbiDbHandle;
 use strict;
 use DBI;
+use Carp;
 use vars qw(@ISA $verbose $noInsert $exitOnFailure);
 @ISA = qw( DBI::db DBI );
 my ($NO_EMPTY_STRINGS);
@@ -174,7 +175,7 @@ sub death {
   my ($dbh, $msg) = @_; 
   if ($exitOnFailure) {
     $dbh->rollback();
-    die "$msg";
+    confess "$msg";
   } else {
     print STDERR "$msg\n\nRolling back and continuing\n";
     $dbh->setRollBack(1);
