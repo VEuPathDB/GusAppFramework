@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="lib/java/jsp-api-2.0.jar"/>
 	<classpathentry kind="lib" path="lib/java/commons-digester-1.5.jar"/>
 	<classpathentry kind="lib" path="lib/java/oracle-classes12.jar"/>
+	<classpathentry kind="lib" path="lib/java/jstl.jar"/>
 	<classpathentry kind="output" path="ant-build/classes"/>
 </classpath>
