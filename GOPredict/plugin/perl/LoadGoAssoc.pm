@@ -417,27 +417,36 @@ sub deleteAssociations{
     my ($organism) = $file =~ /gene_association\.(\w+)$/;
     my $dbList = '( '. join( ', ', @{ $self->{orgInfo}->{$organism}->{ db_id } } ). ' )'; 
     
+    my $msg;
+    my $counter = 0;
+
     open (DELLOG, ">>logs/deleteLog") || die "pluginLog could not be opened";
 
-    my $sql = "select ga go_association_id 
-               from DoTS.GOAssociation ga, DoTS.ExternalAASequence eas
+    my $sql = "select ga.go_association_id 
+               from DoTS.GOAssociation ga, DoTS.ExternalAASequence eas,
+               DoTS.GOAssociationInstance gai
                where ga.table_id = 83 and ga.row_id = eas.aa_sequence_id
+               and gai.go_association_id = ga.go_association_id
                and eas.external_database_release_id in $dbList 
                and gai.external_database_release_id = $goDb"; 
 
     my $queryHandle = $self->getQueryHandle();
-    my $sth = $queryHandle->prepareAndExecute();
+    my $sth = $queryHandle->prepareAndExecute($sql);
     while (my ($assocId) = $sth->fetchrow_array()){
-	my $assocObject = 
-	  GUS::Model::DoTS::GOAssociation->new(go_association_id=>$assocId);
-	$assocObject->retrieveFromDb();
-	print DELLOG "got assoc with id " . $assocObject->getGoAssociationId() . " and row id " . $assocObject->getRowId() . "\n";
 
+	my $assocObject = 
+	  GUS::Model::DoTS::GOAssociation->new( {go_association_id=>$assocId,});
+	$assocObject->retrieveFromDB();
+	$assocObject->retrieveAllChildrenFromDB(1);
+	$assocObject->markDeleted(1);
+	$assocObject->submit();
+	$counter++;
+	$self->undefPointerCache();
     }
+    $msg = "Deleted $counter DoTS.Association Objects and their children";
+    return $msg;
 							      
 }
-
-
 
 # ......................................................................
 
