@@ -96,11 +96,11 @@ my $stmt4 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_seq
 
 
 
-my @na_sourceids;
-my @naSequenceIds;
-my @DTSasEvidenceTarget;
-my @RemoveAsMarkedFL;
-my @DTs;
+my @na_sourceids = ();
+my @naSequenceIds = ();
+my @DTSasEvidenceTarget = ();
+my @RemoveAsMarkedFL = ();
+my @DTs = ();
 
 
 while(my($na_seq, $source_id) = $stmt1->fetchrow_array( ))  {
@@ -126,11 +126,9 @@ while(my($target_id) = $stmt3->fetchrow_array( ))  {
     push (@RemoveAsMarkedFL,$DTnotFLength);
   }
 
-if (my @naSequenceIds = undef)  { undef @naSequenceIds;
 
-}
 
-print STDERR "scalar(@naSequenceIds)\n";
+#print STDERR "scalar(@naSequenceIds)\n";
 
 my $ct = 0;
 
@@ -160,7 +158,7 @@ print STDERR "$id,DT.$na_seq\n";
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
    }
 
-    if ($id != $na_seq | $id eq "") {
+    if ($id != $na_seq | $id == "") {
 
        print STDERR "NextFLDT.$na_seq\n";
 
