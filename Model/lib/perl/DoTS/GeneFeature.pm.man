@@ -100,11 +100,11 @@ sub makePredictedRna {
 							    'name' => 'SplicedNASequence',
 							    'sequence_type_id' => 13
 							    });
+	$nas->addChild($rna);
 	$self->setExternalDbAndSourceId($nas,$external_database_release_id,$source_id) if $doExternal;
 	$nas->set('length',$rna->getFeatureLength());
-  if($self->getParent('DoTS::ExternalNASequence')){ $nas->setSequence($nas->getSequence());}##B
-	$nas->addChild($rna);
-	
+  if($self->getParent('DoTS::ExternalNASequence')){ $nas->setSequence($nas->getSequence());}
+
 	return $rna;
 }
 
