@@ -724,7 +724,7 @@ B<I<invocation_param_valueN>> [Optional]
 
 =head2 F<data_file>
 
-The data file should be in tab-delimited text format with one header line and multiple lines for input element_results and corresponding output value. Each line\ should contain the same number of tab/fields. There can be multiple input_result_ids but only one output value per line. The header specifies the column names for the input_result_ids (specified by I<input_column_nameN> in F<cfg_file>) and the output value (specified by the column name I<output> in F<data_file>).
+The data file should be in tab-delimited text format with one header line and multiple lines for input element_results and corresponding output value. Each line should contain the same number of tab/fields. There can be multiple input_result_ids but only one output value per line. The header specifies the column names for the input_result_ids (specified by I<input_column_nameN> in F<cfg_file>) and the output value (specified by the column name I<output> in F<data_file>).
 
 Please make sure that the input_result_id is valid (must already be in GUS::Model::RAD3::ElementResultImp, GUS::Model::RAD3::CompositeElementResultImp, or GUS::Model::RAD3::ProcessResult table). If input_result_id = "NA", then this entry will be discarded [Note: Only this input entry will be removed. If there are other valid entries in the same line, they will be loaded accordingly.]
 
