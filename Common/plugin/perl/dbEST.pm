@@ -988,7 +988,7 @@ sub checkExtNASeq {
                    't_count' => (scalar($e->{sequence} =~ s/T/T/g)) || 0,
                    'c_count' => (scalar($e->{sequence} =~ s/C/C/g)) || 0,
                    'g_count' => (scalar($e->{sequence} =~ s/G/G/g)) || 0,
-                   'description' => substr($e->{comment},0,1999);
+                   'description' => substr($e->{comment},0,1999)
                    );
   foreach my $a (keys %seq_vals) {
     if ( $seq->isValidAttribute($a)) {
