@@ -91,11 +91,19 @@ sub run {
   print STDERR "Fetched ".scalar(keys%words)." IndexWords from db\n";
 
   ##next need to get genus and species so can not index these!!
-  my $taxStmt = $dbh->prepare("select genus,species from sres.Taxon");
+
+  my $sql = 
+"select name
+from sres.taxonName, sres.taxon
+where rank = 'species'
+and name_class = 'scientific name'
+and rownum < 100";
+
+  my $taxStmt = $dbh->prepare($sql);
   $taxStmt->execute();
-  while (my($gen,$sp) = $taxStmt->fetchrow_array()) {
-    $taxon{$gen} = 1;
-    $taxon{$sp} = 1;
+  while (my($name) = $taxStmt->fetchrow_array()) {
+    my @a = split(/\s+/, $name);
+    foreach my $a (@a) { $taxon{$a} = 1; print STDERR "adding $a to taxon\n";}
   }
   $taxStmt->finish();
   print STDERR "Ignoring ".scalar(keys%taxon)." organism names\n";
