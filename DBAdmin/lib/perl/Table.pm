@@ -675,7 +675,7 @@ sub getSelfConstraintsSql {
     }
 
     foreach my $c (@$constraints) {
-	my ($drop,$create) = $self->constraintToSQL($dbh, uc($tn), $c, $renameSystemIds, $chash);
+	my ($drop,$create) = $self->constraintToSQL($dbh, $tn, $c, $renameSystemIds, $chash);
 	push(@$dropSql, $drop);
 	push(@$createSql, $create);
     }
