@@ -1176,7 +1176,7 @@ sub insertAllExternalProteinSimilarities {
     foreach my $domain (@domainNames){
 	foreach my $subjectName (@subjectNames) {
 	    my $fullName = "$subjectName-$domain";
-	    &insertExternalProteinSimilarities ($fullName, "DoTS.ExternalAASequence");
+	    &insertExternalProteinSimilarities ($fullName, "DoTS::MotifAASequence");
 	    #dtb: check if need owner in parameter
 	}
     }
@@ -1186,14 +1186,14 @@ sub insertExternalProteinSimilarities {
     my ($name, $subjectTable) = @_;
     if ($name =~ /prodom/) {
       my $prodomFile = "$pipelineDir/similarity/$name/blastSimilarity.out.gz";
-      $mgr->runCmd("gunzip $prodomFile");
+      $mgr->runCmd("gunzip $prodomFile") if (-e $prodomFile);
     }
     my $file = "$pipelineDir/similarity/$name/blastSimilarity.out";
-    $file .= ".correctPK" if ($name eq "cdd");
+    $file .= ".correctPK" if ($name =~ /cdd/);
 
     my $restart = $propertySet->getProp('iPSRestart');
 
-    my $args = "--file $file --verbose --restartAlgInvs $restart --queryTable ExternalAASequence --subjectTable $subjectTable --subjectsLimit 50 --hspsLimit 10";
+    my $args = "--file $file --verbose --restartAlgInvs $restart --queryTable DoTS::ExternalAASequence --subjectTable $subjectTable --subjectsLimit 50 --hspsLimit 10";
 
     $mgr->runPlugin("loadSims_$name", 
 		    "GUS::Common::Plugin::LoadBlastSimFast", $args,
