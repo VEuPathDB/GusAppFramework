@@ -64,40 +64,6 @@ sub getIds {
 
   my $idSQL = $self->getArgs()->{'idSQL'};
 
-  my $stmt = $dbh->prepareAndExecute($idSQL);
-
-  my $total;
-  my @ids;
-  my $ct;
-
-  while (my ($id) = $stmt->fetchrow_array()){
-    push (@ids,$id);
-    $ct++;	
-    if ($self->getArgs()->{'testnumber'} && $ct > $self->getArgs()->{'testnumber'}) {
-      last;
-    }
-    if ($ct % 1000 == 0) {
-      my $del = $self->doDeletes(\@ids);
-      $total += $del;
-      @ids = ();
-    }	
-  }
-  if ($ct > 0 && $ct % 1000 != 0) {
-    my $del = $self->doDeletes(\@ids);
-    $total += $del;
-  }
-  $self->log ("$total Similarity rows and children deleted\n");
-  $self->log ("$ct Similarity rows should have been deleted\n"); 
-}	
-
-
-sub getIds {
-  my ($self) = @_;
-
-  my $dbh = $self->getQueryHandle();
-
-  my $idSQL = $self->getArgs()->{'idSQL'};
-
   my $stmt = $dbh->prepare($idSQL);
   $stmt->execute();
   my $total;
@@ -115,7 +81,7 @@ sub getIds {
       $total += $del;
       @ids = ();
       $stmt->finish(); 
-      $self->log ("$total Similarity rows\n");
+      $self->log ("$total total Similarity rows deleted\n");
       $stmt->execute();
     }	
   }
