@@ -19,6 +19,7 @@ use GUS::Model::RAD3::Analysis;
 use GUS::Model::SRes::Contact;
 use GUS::Model::RAD3::Protocol;
 use GUS::Model::RAD3::OntologyEntry;
+use GUS::Model::RAD3::AssayAnalysis;
 use GUS::Model::RAD3::AnalysisParam;
 use GUS::Model::RAD3::ProtocolParam;
 use GUS::Model::RAD3::AnalysisQCParam;
@@ -32,29 +33,29 @@ sub new {
   my ($class) = @_;
   my $self = {};
   bless($self,$class);
-  my $purposeBrief = 'Loads inputs, parameter settings, and results of gene expression data analyses into the appropriate group of RAD3 tables.';
-  
+  my $purposeBrief = 'Loads inputs, parameter settings, and results of gene expression data analyses (pre-processing or down-stream) into the appropriate group of RAD3 tables.';
+
   my $purpose = <<PURPOSE;
-This plugin reads a configuration file and a data file (representing the results of some gene expression data analysis) and inserts inputs, parameter settings, and results into the appropriate tables in RAD3.
+This plugin reads a configuration file and a data file (representing the results of some gene expression data pre-processing or down-stream analysis) and inserts inputs, parameter settings, and results into the appropriate tables in RAD3.
 PURPOSE
-  
-  my $tablesAffected = [['RAD3::Analysis', 'Enters a row representing this analysis here'], ['RAD3::AnalysisParam', 'Enters the values of the protocol parameters for this analysis here'], ['RAD3::AnalysisQCParam', 'Enters the values of the protocol quality control parameters for this analysis here'], ['RAD3::AnalysisInput', 'Enters the input(s) of this analysis here'], ['RAD3::AnalysisResultImp', 'Enters the results of this analysis here']];
-  
-  my $tablesDependedOn = [['RAD3::Contact', 'The researcher or organization who performed this analysis'], ['RAD3::Protocol', 'The analysis protocol used' ], ['RAD3::ProtocolParam', 'The parameters for the protocol used'], ['RAD3::ProtocolQCParam', 'The quality control parameters for the protocol used'], ['RAD3::LogicalGroup', 'The input group(s) to the analysis'], ['Core::TableInfo', 'The table whose entries the analysis results refer to'], ['Core::DatabaseInfo', 'The name of the GUS space containing the table whose entries the analysis results refer to']]; 
-  
+
+  my $tablesAffected = [['RAD3::Analysis', 'Enters a row representing this analysis here'], ['RAD3::AssayAnalysis', 'Enters rows here linking this analysis to all relevant assays, if the LogicalGroups input into the analysis consists of quantifications, or acquisitions, or assays'], ['RAD3::AnalysisParam', 'Enters the values of the protocol parameters for this analysis here'], ['RAD3::AnalysisQCParam', 'Enters the values of the protocol quality control parameters for this analysis here'], ['RAD3::AnalysisInput', 'Enters the input(s) of this analysis here'], ['RAD3::AnalysisResultImp', 'Enters the results of this analysis here']];
+
+  my $tablesDependedOn = [['RAD3::Contact', 'The researcher or organization who performed this analysis'], ['RAD3::Protocol', 'The analysis protocol used'], ['RAD3::ProtocolStep', 'The components of the analysis protocol used, if the latter is an ordered series of protocols'], ['RAD3::ProtocolParam', 'The parameters for the protocol used or for its components'], ['RAD3::ProtocolQCParam', 'The quality control parameters for the protocol used or for its components'], ['RAD3::LogicalGroup', 'The input group(s) to the analysis'], ['RAD3::LogicalGroupLink', 'The memberss of the logical group(s) input into the analysis'],['Core::TableInfo', 'The table whose entries the analysis results refer to'], ['Core::DatabaseInfo', 'The name of the GUS space containing the table whose entries the analysis results refer to']]; 
+
   my $howToRestart = <<RESTART;
 Loading can be resumed using the I<--restart n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted). If this argument is given then the I<analysis_id> argument should be given too.
 RESTART
-  
+
   my $failureCases = <<FAILURE_CASES;
 FAILURE_CASES
-  
+
   my $notes = <<NOTES;
 
 =head2 F<cfg_file>
 
 This should be a tab-delimited text file with 2 columns: I<name> and I<value>.
-The names should be spelled exactly as described below. The order of the rows is not important. 
+The names should be spelled exactly as described below. The order of the rows is not important.
 
 See the sample config file F<sample_AnalysisResultLoader.cfg> in the GUS/RAD/config directory.
 
@@ -72,11 +73,11 @@ The table (or view) whose entries the analysis results refer to. The format shou
 
 B<I<operator_id>>
 
-The contact_id (in SRes.Contact) of the researcher or organization who performed this analysis.  
+The contact_id (in SRes.Contact) of the researcher or organization who performed this analysis.
 
 B<I<protocol_id>> [Mandatory]
 
-The protocol_id (in RAD3.Protocol) of the protocol for this analysis. The type of this protocol should be in the HigherLevelAnalysisProtocolType category.
+The protocol_id (in RAD3.Protocol) of the protocol for this analysis. If I<--subclass_view> is RAD3::DataTransformationResult, then the type of this protocol should be in the DataTransformationProtocolType category. In all other cases, it should be in the HigherLevelAnalysisProtocolType category.
 
 B<I<analysis_date>> [Mandatory]
 
@@ -84,7 +85,7 @@ The date when the specific analysis was performed. The correct format is YYYY-MM
 
 B<I<protocol_param_idN>>
 
-The protocol_parameter_id (in RAD3.ProtocolParam) of the I<N>th parameter whose value is being assigned (possibly overwriting a specified default value). Start with I<N>=1, for the first parameter you want to set, and continue up to the number of parameters you want to set. 
+The protocol_parameter_id (in RAD3.ProtocolParam) of the I<N>th parameter whose value is being assigned (possibly overwriting a specified default value). Start with I<N>=1, for the first parameter you want to set, and continue up to the number of parameters you want to set.
 
 B<I<protocol_param_valueN>>
 
@@ -92,7 +93,7 @@ The value to be assigned to the I<N>th parameter, whose id is specified by I<pro
 
 B<I<protocol_qc_param_idN>>
 
-The protocol_qc_parameter_id (in RAD3.ProtocolQCParam) of the I<N>th quality control parameter whose value is being assigned (possibly overwriting a specified default value). Start with I<N>=1, for the first qc parameter you want to set, and continue up to the number of qc parameters you want to set. 
+The protocol_qc_parameter_id (in RAD3.ProtocolQCParam) of the I<N>th quality control parameter whose value is being assigned (possibly overwriting a specified default value). Start with I<N>=1, for the first qc parameter you want to set, and continue up to the number of qc parameters you want to set.
 
 B<I<protocol_qc_param_valueN>>
 
@@ -104,7 +105,7 @@ The logical_group_id (in RAD3.LogicalGroup) of the I<N>th input group to this an
 
 =head2 F<data_file>
 
-The data file should be in tab-delimited text format with one header line and a line for each result to be entered in the appropriate view of ArrayResultImp.
+The data file should be in tab-delimited text format with one header line and a line for each result to be entered in the appropriate view of AnalysisResultImp.
 All lines should contain the same number of tab/fields. Empty lines will be ignored.
 
 The header should contain a field called I<row_id>, to hold the primary keys
@@ -125,8 +126,8 @@ Written by Elisabetta Manduchi.
 Copyright Elisabetta Manduchi, Trustees of University of Pennsylvania 2003. 
 NOTES
 
-  my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief,tablesAffected=>$tablesAffected,tablesDependedOn=>$tablesDependedOn,howToRestart=>$howToRestart,failureCases=>$failureCases,notes=>$notes};
-  
+  my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief, tablesAffected=>$tablesAffected, tablesDependedOn=>$tablesDependedOn, howToRestart=>$howToRestart, failureCases=>$failureCases, notes=>$notes};
+
   my $argsDeclaration  =
     [
      tableNameArg({name => 'subclass_view',
@@ -184,7 +185,7 @@ NOTES
 
 sub run {
   my ($self) = @_;
-  
+
   $self->logAlgInvocationId();
   $self->logCommit();
   $self->logArgs();
@@ -206,25 +207,25 @@ sub run {
     ($resultDescrip, $analysis_id) = $self->insertAnalysis($cfg_info);
   }
   $self->setResultDescr($resultDescrip);
-  
+
   $resultDescrip .= " ". $self->insertAnalysisResults($view, $analysis_id, $cfg_info->{'table_id'}, $data, $line_count);
-  
+
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
-} 
+}
 
 sub checkArgs {
   my ($self) = @_;
 
   my $dbh = $self->getQueryHandle();
-  my $sth = $dbh->prepare("select table_id from Core.TableInfo where name='AnalysisResultImp'");
+  my $sth = $dbh->prepare("select t.table_id from Core.TableInfo t, Core.DatabaseInfo d where t.name='AnalysisResultImp' and d.name='RAD3' and t.database_id=d.database_id");
   $sth->execute();
   my ($id) = $sth->fetchrow_array();
-  
+
   my ($space, $name) = split(/::/, $self->getArgs->{'subclass_view'});
   if ($space eq "RAD3") {
     my $table = GUS::Model::Core::TableInfo->new({name => $name, is_view => 1, view_on_table_id => $id});
-    if (!$table->retrieveFromDB) {
+    if (!$table->retrieveFromDB()) {
       $self->userError("$space\:\:$name is not a valid view of RAD3.AnalysisResultImp.");
     }
   }
@@ -236,20 +237,20 @@ sub checkArgs {
     $self->userError("The --testnum argument can only be provided if COMMIT is OFF.");
   }
   if (!defined($self->getArgs->{'restart'}) && defined($self->getArgs->{'analysis_id'})) {
-    $self->userError('The restart argument must be provided if the analysis_id argument is provided.');
+    $self->userError('The --restart argument must be provided only if the --analysis_id argument is provided.');
   }
   if (!defined($self->getArgs->{'analysis_id'}) && defined($self->getArgs->{'restart'})) {
-    $self->userError('The analysis_id argument must be provided if the restart argument is provided.');
+    $self->userError('The --analysis_id argument must be provided only if the --restart argument is provided.');
   }
   if (defined($self->getArgs->{'restart'}) && $self->getArgs->{'restart'}<1) {
-    $self->userError('The value of the restart argument should be an integer greater than or equal to 1.');
+    $self->userError('The value of the --restart argument should be an integer greater than or equal to 1.');
   }
   if (defined($self->getArgs->{'testnum'}) && $self->getArgs->{'testnum'}<1) {
-    $self->userError('The value of the testnum argument should be an integer greater than or equal to 1.');
+    $self->userError('The value of the --testnum argument should be an integer greater than or equal to 1.');
   }
   if (defined($self->getArgs->{'analysis_id'})) {
     my $analysis = GUS::Model::RAD3::Analysis->new({'analysis_id' => $self->getArgs->{'analysis_id'}});
-    if (!$analysis->retrieveFromDB) {
+    if (!$analysis->retrieveFromDB()) {
       $self->userError('Invalid analysis_id.');
     }
   }
@@ -258,7 +259,8 @@ sub checkArgs {
 sub readCfgFile {
   my ($self) = @_;
   my $cfg_info;
-  
+
+  my $dbh->$self->getQueryHandle();
   my $fh = new IO::File;
   my $file = $self->getArgs->{'cfg_file'};
   unless ($fh->open("<$file")) {
@@ -269,6 +271,7 @@ sub readCfgFile {
   my $protocol_id_given = 0;
   my $analysis_date_given = 0;
   my $logical_group_id_given = 0;
+
   while (my $line=<$fh>) {
     my ($name, $value) = split(/\t/, $line);
     $name =~ s/^\s+|\s+$//g;
@@ -278,15 +281,15 @@ sub readCfgFile {
 	if (!$table_given) {
 	  my ($space, $tablename) = split(/\./, $value);
 	  my $db = GUS::Model::Core::DatabaseInfo->new({'name' =>$space});
-	  if (!$db->retrieveFromDB) {
+	  if (!$db->retrieveFromDB()) {
 	    $self->userError("The space name $space, provided in the cfg_file for the table field, is not a valid name in Core.DatabaseInfo.");
-	  }  
+	  }
 	  else {
 	    my $db_id = $db->getId();
 	    my $table = GUS::Model::Core::TableInfo->new({'name' =>$tablename, 'database_id' => $db_id});
-	    if (!$table->retrieveFromDB) {
+	    if (!$table->retrieveFromDB()) {
 	      $self->userError("The table name $tablename with database $space, as provided in the cfg_file for the table field, is not a valid entry in Core.TableInfo.");
-	    }		
+	    }
 	    else {
 	      $cfg_info->{'table_id'} = $table->getId();
 	      $cfg_info->{'pk'} = $table->get('primary_key_column');
@@ -302,9 +305,9 @@ sub readCfgFile {
       elsif ($name eq 'operator_id') {
 	if (!$operator_id_given) {
 	  my $contact = GUS::Model::SRes::Contact->new({'contact_id' =>$value});
-	  if (!$contact->retrieveFromDB) {
+	  if (!$contact->retrieveFromDB()) {
 	    $self->userError("operator_id $value, provided in the cfg_file, is not a valid contact_id.");
-	  }		    
+	  }
 	  $cfg_info->{'operator_id'} = $value;
 	  $operator_id_given = 1;
 	}
@@ -315,15 +318,18 @@ sub readCfgFile {
       elsif ($name eq 'protocol_id') {
 	if (!$protocol_id_given) {
 	  my $protocol = GUS::Model::RAD3::Protocol->new({'protocol_id' =>$value});
-	  if (!$protocol->retrieveFromDB) {
+	  if (!$protocol->retrieveFromDB()) {
 	    $self->userError("protocol_id $value, provided in the cfg_file, is not a valid protocol_id.");
-	  }		    
+	  }
 	  my $oe_id = $protocol->get('protocol_type_id');
 	  my $oe = GUS::Model::RAD3::OntologyEntry->new({'ontology_entry_id' =>$oe_id});
 	  $oe->retrieveFromDB();
-	  if ($oe->get('category') ne 'HigherLevelAnalysisProtocolType') {
-	    $self->userError("The protocol type for the protocol_idprovided in the cfg_file is not in the HigherLevelAnalysisProtocolType category.");
-	  }	
+	  if ($self->getArgs->{'subclass_view'} eq 'RAD3::DataTransformationResult' && $oe->get('category') ne 'DataTransformationProtocolType') {
+	    $self->userError("You are trying to load into the view RAD3::DataTransformationResult, but the protocol type for the protocol_id provided in the cfg_file is not in the DataTransformationProtocolType category.");
+	  }
+	  if ($self->getArgs->{'subclass_view'} ne 'RAD3::DataTransformationResult' && $oe->get('category') ne 'HigherLevelAnalysisProtocolType') {
+	    $self->userError("The protocol type for the protocol_id provided in the cfg_file is not in the HigherLevelAnalysisProtocolType category.");
+	  }
 	  $cfg_info->{'protocol_id'} = $value;
 	  $protocol_id_given = 1;
 	}
@@ -338,8 +344,8 @@ sub readCfgFile {
 	    $analysis_date_given = 1;
 	  } 
 	  else {
-	    $self>userError("Invalid date format for analysis_date in the cfg_file. The correct format is YYYY-MM-DD.");		    
-	  }       
+	    $self->userError("Invalid date format for analysis_date in the cfg_file. The correct format is YYYY-MM-DD."); 
+	  }
 	}
 	else {
 	  $self->userError('Only one analysis_date should be provided in the cfg_file.');
@@ -356,7 +362,7 @@ sub readCfgFile {
 	my $index = $1;
 	if ($index<1) {
 	  $self->userError('In the cfg_file, each protocol_param_valueN must have N>0.');
-	}		    
+	}
 	$cfg_info->{'protocol_param_value'}->[$index] = $value;
       }
       elsif ($name =~ /^protocol_qc_param_id(\d+)$/) {
@@ -379,9 +385,9 @@ sub readCfgFile {
 	  $self->userError('In the cfg_file, each logical_group_idN must have N>0.');
 	}
 	my $group = GUS::Model::RAD3::LogicalGroup->new({'logical_group_id' => $value});
-	if (!$group->retrieveFromDB) {
+	if (!$group->retrieveFromDB()) {
 	  $self->userError("logical_group_id $value, provided in the cfg_file, is not a valid logical_group_id.");
-	}		    		
+	}
 	$cfg_info->{'logical_group_id'}->[$index] = $value;
 	$logical_group_id_given++;
       }
@@ -404,19 +410,55 @@ sub readCfgFile {
     $self->userError("The number or protocol_qc_param_id's given in the cfg_file does not match the number of protocol_qc_param_value's.");
   }
   if (defined($cfg_info->{'protocol_param_id'})) {
+     my $sth1 = $dbh->prepare("select o.category, o.value from RAD3.OntologyEntry o, RAD3.Protocol p where p.protocol_type_id=o.ontology_entry_id and p.protocol_id=$cfg_info->{'protocol_id'}");
+    $sth1->execute();
+    my ($category, $protocol_type) = $sth1->fetchrow_array();
+    my @protocol_ids = ($cfg_info->{'protocol_id'});
+    if ($category eq "DataTransformationProtocolType" && $protocol_type eq "transformation_protocol_series") {
+      my $sth2 = $dbh->prepare("select children_protocol_id from RAD3.ProtocolStep where parent_protocol_id=$cfg_info->{'protocol_id'}");
+      $sth2->execute();
+      while (my ($id) = $sth2->fetchrow_array()) {
+	push(@protocol_ids, $id);
+      }
+    }
     for (my $i=1; $i<scalar(@{$cfg_info->{'protocol_param_id'}}); $i++) {
-      my $protocol_param = GUS::Model::RAD3::ProtocolParam->new({'protocol_param_id' =>$cfg_info->{'protocol_param_id'}->[$i], 'protocol_id'=>$cfg_info->{'protocol_id'}});
-      if (!$protocol_param->retrieveFromDB) {
-	$self->userError("protocol_param_id $cfg_info->{'protocol_param_id'}->[$i], provided in the cfg_file for the $i-th protocol parameter, is not a valid protocol_param_id for protocol_id $cfg_info->{'protocol_id'}.");
+      my $is_valid_protocol = 0;
+      for (my $j=0; $j<@protocol_ids; $j++) {
+	my $protocol_param = GUS::Model::RAD3::ProtocolParam->new({'protocol_param_id' =>$cfg_info->{'protocol_param_id'}->[$i], 'protocol_id'=>$protocol_ids[$j]});
+	if ($protocol_param->retrieveFromDB()) {
+	  $is_valid_protocol = 1;
+	  last;
+	}
+      }
+      if (!$is_valid_protocol) {
+	$self->userError("protocol_param_id $cfg_info->{'protocol_param_id'}->[$i], provided in the cfg_file for the $i-th protocol parameter, is not a valid protocol_param_id for protocol_id $cfg_info->{'protocol_id'} or its components.");
       }
     }
   }
   if (defined($cfg_info->{'protocol_qc_param_id'})) {
+     my $sth1 = $dbh->prepare("select o.category, o.value from RAD3.OntologyEntry o, RAD3.Protocol p where p.protocol_type_id=o.ontology_entry_id and p.protocol_id=$cfg_info->{'protocol_id'}");
+    $sth1->execute();
+    my ($category, $protocol_type) = $sth1->fetchrow_array();
+    my @protocol_ids = ($cfg_info->{'protocol_id'});
+    if ($category eq "DataTransformationProtocolType" && $protocol_type eq "transformation_protocol_series") {
+      my $sth2 = $dbh->prepare("select children_protocol_id from RAD3.ProtocolStep where parent_protocol_id=$cfg_info->{'protocol_id'}");
+      $sth2->execute();
+      while (my ($id) = $sth2->fetchrow_array()) {
+	push(@protocol_ids, $id);
+      }
+    }
     for (my $i=1; $i<scalar(@{$cfg_info->{'protocol_qc_param_id'}}); $i++) {
-      my $protocol_qc_param = GUS::Model::RAD3::ProtocolQCParam->new({'protocol_qc_param_id' =>$cfg_info->{'protocol_qc_param_id'}->[$i], 'protocol_id'=>$cfg_info->{'protocol_id'}});
-      if (!$protocol_qc_param->retrieveFromDB) {
-	$self->userError("protocol_qc_param_id $cfg_info->{'protocol_qc_param_id'}->[$i] for the $i-th protocol qc parameter, provided in the cfg_file, is not a valid protocol_qc_param_id for protocol_id $cfg_info->{'protocol_id'}.");
-      }      
+      my $is_valid_protocol = 0;
+      for (my $j=0; $j<@protocol_ids; $j++) {
+	my $protocol_qc_param = GUS::Model::RAD3::ProtocolQCParam->new({'protocol_qc_param_id' =>$cfg_info->{'protocol_qc_param_id'}->[$i], 'protocol_id'=>$protocol_ids[$j]});
+	if ($protocol_qc_param->retrieveFromDB()) {
+	  $is_valid_protocol = 1;
+	  last;
+	}
+      }
+      if (!$is_valid_protocol) {
+	$self->userError("protocol_qc_param_id $cfg_info->{'protocol_qc_param_id'}->[$i] for the $i-th protocol qc parameter, provided in the cfg_file, is not a valid protocol_qc_param_id for protocol_id $cfg_info->{'protocol_id'} or its components.");
+      }
     }
   }
   return $cfg_info;
@@ -426,21 +468,21 @@ sub readDataFile {
   my ($self, $view, $pk, $table) = @_;
   my $data;
   my $line_num = 0;
-  
+
   my $fh = new IO::File;
   my $file = $self->getArgs->{'data_file'};
   unless ($fh->open("<$file")) {
     $self->error("Could not open the file $self->getArgs->{'data_file'}.");
   }
-  
+
   my %header;
   my %position;
   my $line = "";
-  
+
   while ($line =~ /^\s*$/) {
     last unless $line = <$fh>;
   }
-  
+
   my @arr = split(/\t/, $line);
   my $num_fields = scalar(@arr);
   for (my $i=0; $i<@arr; $i++) {
@@ -466,14 +508,14 @@ sub readDataFile {
       }
     }
   }
-  
+
   $self->logData("Valid attributes in the header:");
   my $num_attr = 0;
   foreach my $key (keys %{$attribute}) {
     $self->logData("$key");
     $num_attr++;
   }
-  
+
   my $dbh = $self->getQueryHandle();
   while ($line=<$fh>) {
     $line_num++;
@@ -524,18 +566,65 @@ sub insertAnalysis {
   my $num_analysis_input = 0;
   my $num_analysis_param = 0;
   my $num_analysis_qc_param = 0;
-  
+  my $num_assay_analysis = 0;
+  my $dbh = $self->getQueryHandle();
+  my @assay_ids;
+  my %assay_counted;
+
   my $analysis = GUS::Model::RAD3::Analysis->new({protocol_id => $cfg_info->{'protocol_id'}, analysis_date => $cfg_info->{'analysis_date'}});
   if (defined $cfg_info->{'operator_id'}) {
     $analysis->set('operator_id', $cfg_info->{'operator_id'});
   }
-  
+
+  my $sth =$dbh->prepare("select t.table_id from Core.TableInfo t, Core.DatabaseInfo d where t.name='Assay' and d.name='RAD3' and t.database_id=d.database_id");
+  $sth->execute();
+  my ($assay_table_id) = $sth->fetchrow_array();
+
+  $sth =$dbh->prepare("select t.table_id from Core.TableInfo t, Core.DatabaseInfo d where t.name='Acquisition' and d.name='RAD3' and t.database_id=d.database_id");
+  $sth->execute();
+  my ($acquisition_table_id) = $sth->fetchrow_array();
+
+  $sth =$dbh->prepare("select t.table_id from Core.TableInfo t, Core.DatabaseInfo d where t.name='Quantification' and d.name='RAD3' and t.database_id=d.database_id");
+  $sth->execute();
+  my ($quantification_table_id) = $sth->fetchrow_array();
+
   for (my $i=1; $i<@{$cfg_info->{'logical_group_id'}}; $i++) {
     if (defined $cfg_info->{'logical_group_id'}->[$i]) {
+      my $sth1 = $dbh->prepare("select distinct row_id from RAD3.LogicalGroupLink where table_id=$assay_table_id and logical_group_id= $cfg_info->{'logical_group_id'}->[$i]");
+      $sth1->execute();
+      while (my ($assay_id)= $sth1->fetchrow_array()) {
+	if (!$assay_counted{$assay_id}) {
+	  push (@assay_ids, $assay_id);
+	  $assay_counted{$assay_id) = 1;
+	}
+      }
+      my $sth2 = $dbh->prepare("select distinct a.assay_id from RAD3.Acquisition a, RAD3.LogicalGroupLink l where l.table_id=$acquisition_table_id and l.logical_group_id= $cfg_info->{'logical_group_id'}->[$i] and l.row_id=a.acquisition_id");
+      $sth2->execute();
+      while (my ($assay_id)= $sth2->fetchrow_array()) {
+	if (!$assay_counted{$assay_id}) {
+	  push (@assay_ids, $assay_id);
+	  $assay_counted{$assay_id) = 1;
+	}
+      }
+
+      my $sth3 = $dbh->prepare("select distinct a.assay_id from RAD3.Acquisition a, RAD3.Quantification q, RAD3.LogicalGroupLink l where l.table_id=$quantification_table_id and l.logical_group_id= $cfg_info->{'logical_group_id'}->[$i] and l.row_id=q.quantification_id and q.acquisition_id=a.acquisition_id");
+      $sth3->execute();
+      while (my ($assay_id)= $sth3->fetchrow_array()) {
+	if (!$assay_counted{$assay_id}) {
+	  push (@assay_ids, $assay_id);
+	  $assay_counted{$assay_id) = 1;
+	}
+      }
+
       my $analysis_input = GUS::Model::RAD3::AnalysisInput->new({logical_group_id => $cfg_info->{'logical_group_id'}->[$i]});
       $analysis_input->setParent($analysis);
       $num_analysis_input++;
     }
+  }
+  for (my $i=0; $i<@assay_ids; $i++) {
+    my $assay_analysis = GUS::Model::RAD3::AssayAnalysis->new({assay_id => $assay_ids[$i]});
+      $assay_analysis->setParent($analysis);
+      $num_assay_analysis++;
   }
   if (defined($cfg_info->{'protocol_param_id'})) {
     for (my $i=1; $i<@{$cfg_info->{'protocol_param_id'}}; $i++) {
@@ -551,9 +640,9 @@ sub insertAnalysis {
       $num_analysis_qc_param++;
     }
   }
-  
+
   $analysis->submit();
-  $resultDescrip .= "Entered $num_analysis_input rows in RAD3.AnalysisInput, $num_analysis_param rows in RAD3.AnalysisParam, $num_analysis_qc_param rows in RAD3.AnalysisQCParam.";
+  $resultDescrip .= "Entered $num_analysis_input rows in RAD3.AnalysisInput, $num_assay_analysis rows in RAD3.AssayAnalysis, $num_analysis_param rows in RAD3.AnalysisParam, $num_analysis_qc_param rows in RAD3.AnalysisQCParam.";
   $analysis_id = $analysis->getId();
   return ($resultDescrip, $analysis_id);
 }
@@ -565,9 +654,9 @@ sub insertAnalysisResults {
 
   my ($space, $subclass_view) = split(/::/, $self->getArgs->{'subclass_view'});
   my $start_line = defined $self->getArgs->{'restart'} ? $self->getArgs->{'restart'} : 1;
-  
+
   my $end_line = defined $self->getArgs->{'testnum'} ? $start_line-1+$self->getArgs->{'testnum'} : $line_count;
-  
+
   for (my $i=$start_line; $i<=$end_line; $i++) {
     if ($i % 200 == 0) {
       $self->log("Working on the $i-th data line.");
@@ -584,11 +673,10 @@ sub insertAnalysisResults {
 	}
       }
       $analysis_result->submit();
-      
     }
     $self->undefPointerCache();
   }
-  
+
   $resultDescrip = "Entered $num_results rows in RAD3.$subclass_view.";
   return $resultDescrip;
 }
