@@ -38,7 +38,8 @@
                                            GUS/PluginMgr-Installation, 
                                            GUS/ReportMaker-Installation, 
                                            GUS/SchemaBrowser-Installation,
-					   GUS/WebDevKit-Installation"> 
+					   GUS/WebDevKit-Installation,
+					   GUS/RAD-Installation"> 
     <ant target="defaultProjectInstall"/>
   </target>
 
@@ -355,6 +356,14 @@
       <property name="component" value="WebDevKit"/>
     </ant>
   </target>  
+
+
+ <target name="GUS/RAD-Installation" depends="ProjectTree">
+    <ant target="defaultComponentInstall">
+      <property name="project" value="GUS"/>
+      <property name="component" value="RAD"/>
+    </ant>
+  </target>
 
 
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
