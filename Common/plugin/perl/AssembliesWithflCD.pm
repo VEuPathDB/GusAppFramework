@@ -146,7 +146,7 @@ foreach my $A(@na_sourceids)    {
 
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
 
-print "$id,$DT.$na_seq\n";
+print "$id,DT.$na_seq\n";
 
      if ($id == $na_seq ) {
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
