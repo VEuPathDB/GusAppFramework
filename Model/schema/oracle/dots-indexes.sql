@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 13:25:12 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 23:22:18 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -372,7 +372,6 @@ create index @oracle_dots@.GENETRAPASSEMBLY_IND01 on @oracle_dots@.GENETRAPASSEM
 create index @oracle_dots@.GENETRAPASSEMBLY_IND02 on @oracle_dots@.GENETRAPASSEMBLY (ASSEMBLY_NA_SEQUENCE_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
 /* GOASSOCIATION */
-create unique index @oracle_dots@.GOASSOCIATION_UC01 on @oracle_dots@.GOASSOCIATION (TABLE_ID,ROW_ID,GO_TERM_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.GOASSOCIATION_IND01 on @oracle_dots@.GOASSOCIATION (REVIEW_STATUS_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 create index @oracle_dots@.GOASSOCIATION_IND02 on @oracle_dots@.GOASSOCIATION (GO_TERM_ID)  TABLESPACE @oracle_dotsIndexTablespace@;
 
@@ -727,7 +726,7 @@ create index @oracle_dots@.TRANSLATEDAAFEATSEG_IND01 on @oracle_dots@.TRANSLATED
 
 
 
-/* 379 index(es) */
+/* 378 index(es) */
 
 SPOOL OFF
 SET ECHO OFF
