@@ -188,13 +188,11 @@ sub getProcessedMotifs{
 	    chomp;
 	    my $line = $_;
 	    my ($databaseId, $version, $sourceId, $proteinId) = $line =~ /(\S+)\s(\S+)\s(\S+)\s(\S+)/;
-	    $self->logVeryVerbose("adding $databaseId, $version, $sourceId, $proteinId to processed");
+	    $self->logVerbose("adding $databaseId, $version, $sourceId, $proteinId to motifs that will be skipped");
 	    $processedMotifs->{$databaseId}->{$version}->{$sourceId}->{$proteinId} = 1;
 	}
-	if (!$processedMotifs->{100}){ $self->logVeryVerbose("getProcessedmOtifs: no entry for 100 part 1")};
 	$self->{ProcessedMotifs} = $processedMotifs;
     }
-    if (!$processedMotifs->{100}){ $self->logVeryVerbose("getProcessedmOtifs: no entry for 100 part 2")};
     return $processedMotifs;
 }
 
@@ -298,7 +296,7 @@ sub clearAssociations {
 
 	$self->logVeryVerbose("checking if $databaseId $rejectedMotifVersion $sourceId $proteinId is processed");
 	if ($processedMotifs->{$databaseId}->{$rejectedMotifVersion}->{$sourceId}->{$proteinId}){
-	    $self->logVeryVerbose ("skipping motif $sourceId protein $proteinId as it has already been processed");
+	    $self->logVerbose ("skipping motif $sourceId protein $proteinId as it has already been processed");
 	    next;
 	}
 
