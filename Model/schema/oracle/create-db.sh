@@ -89,5 +89,5 @@ sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-indexes.
 sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-indexes.sql
 sqlplus @oracle_rad3ver@/@oracle_rad3verPassword@@@oracle_SID@ @rad3ver-indexes.sql
 
-# Issued sqlplus commands for 65 SQL files
+# Issued sqlplus commands for 60 SQL files
 
