@@ -1,5 +1,5 @@
 ############################################################
-# 01/06/03 JM ConvertPlugin for use with GUS30
+# 01/06/03  JM     ConvertPlugin for use with GUS30
 # 08/07/00  SJD    Modified to support facts/evidence for 
 #                  specific attributes in the special cases
 #                  file.
