@@ -174,7 +174,7 @@ print STDERR scalar"(@diffArray)";
 
     $assembly->retrieveFromDB();
     $assembly->setFullLengthCds(1);
-    $self->toAddEvidenceSourceID($source_id, $assembly);
+#    $self->toAddEvidenceSourceID($source_id, $assembly);
     $assembly->submit();
 
 
