@@ -6,8 +6,8 @@
 # ProcessInvQuantification
 #
 # Mandatory inputs: a configuration file and a data file.
-# (a) the data_file, a tab-delimited text file with one header line.
-#     There are, per line, the element name and the corresponding value 
+# (a) the data_file, a tab-delimited text file with one header line and
+#     lines for the input element results and the corresponding output value 
 #     (must make sure that there are no two columns with the same name
 #     in the header; see parse_header subroutine below).
 # (b) the cfg_file which specifies the values for some attributes in 
@@ -18,8 +18,9 @@
 # Author: Hongxian He
 #
 # Modifications:
-#    - ProcessImplementation table will be populated beforehand, thus the plug-in will take implementation_id 
-#      directly for table insert. --hx, Aug-27-02
+#    - ProcessImplementation table will be populated beforehand, thus
+#    - the plug-in will take implementation_id
+#        directly for table insert. --hx, Aug-27-02
 #    - check also CompositeElementResultImp for validating input_result_id. --hx, Oct-2-02
 #    - to accomondate the following changes made to Process-related tables:
 #        a. add an optional "description" field to ProcessInvocation, which can be specified
@@ -28,21 +29,27 @@
 #        c. create a ProcessInvQuantification linking table. --hx, Oct-14-02
 #
 #    - changed "--desc" option in cfg_file to a command line argument. --hx, Nov-15-2002
-#    - fixed a bug that incorrectly resized the input array when the last output value is NA. --hx, Nov-15-2002
+#    - fixed a bug that incorrectly resized the input array when the
+#    - last output value is NA. --hx, Nov-15-2002
 #    - converted to conform to the new CVS, GUS build system. --hx, Jan-16-2003
 #        * giving the complete path name and modifying sub new{};
 #        * replace log() with logData() or logAlert().
 #
 #    - remove *ResultImp tables. These objects are no longer used.
-#      conform the plug-in to new usages, e.g. use userError, error(), getArgs(), etc. --hx, Mar-13-2003
-#    - somehow has to fix a sql query, change from double quotes to single qoutes. --hx, May-22-2003
-#    - could not used ElementResult, CompositeElementResult objects any more => change to ElementResultImp, and 
-#      CompositeElementResultImp objects respectively. -- hx, May-27-2003
-#    - again, romoved the usgae of Imp tables. Use the objects for specific views, which are loaded inline 
-#        using eval("require $table") statement. --hx, Jun-10-2003
+#    - conform the plug-in to new usages, e.g. use userError, error(),
+#        getArgs(), etc. --hx, Mar-13-2003
+#    - somehow has to fix a sql query, change from double quotes to
+#        single qoutes. --hx, May-22-2003
+#    - could not used ElementResult, CompositeElementResult objects
+#        any more => change to ElementResultImp, and
+#        CompositeElementResultImp objects respectively. -- hx, May-27-2003
+#    - again, romoved the usgae of Imp tables. Use the objects for
+#        specific views, which are loaded inline
+#      using eval("require $table") statement. --hx, Jun-10-2003
 #    - change the plug-in name, in order to move it to cvs at Sanger center. --hx, Jun-10-2003
-# 
-# Last modified Jun-10-2003
+#    - updated documentation. --hx, Oct-22-2003
+#
+# Last modified Oct-22-2003
 #
 # ----------------------------------------------------------
 package GUS::RAD::Plugin::ProcessedResultLoader;
@@ -633,7 +640,7 @@ ga GUS::RAD::Plugin:ProcessedResultLoader B<[options]> B<--cfg_file> cfg_file B<
 
 =head1 DESCRIPTION
 
-This plug-in loads the processed data (e.g. after normalization) into the following tables: ProcessInvocation, ProcessInvocationParam, ProcessIO, ProcessResult, and ProcessInvQuantification. 
+This plug-in loads the processed data (e.g. after normalization) resulted from one particular process into the following tables: ProcessInvocation, ProcessInvocationParam, ProcessIO, ProcessResult, and ProcessInvQuantification. 
 
 =head1 ARGUMENTS
 
@@ -717,11 +724,23 @@ B<I<invocation_param_valueN>> [Optional]
 
 =head2 F<data_file>
 
-The data file should be in tab-delimited text format with one header line and a line for each processed output value. All lines should contain the same number of tab/fields. In each line, there can be multiple input_result_ids but only one output value. The header specifies the column names for the input_result_ids (specified by I<input_column_nameN> in F<cfg_file>) and the output value (with the column name as I<output>). 
+The data file should be in tab-delimited text format with one header line and multiple lines for input element_results and corresponding output value. Each line\ should contain the same number of tab/fields. There can be multiple input_result_ids but only one output value per line. The header specifies the column names for the input_result_ids (specified by I<input_column_nameN> in F<cfg_file>) and the output value (specified by the column name I<output> in F<data_file>).
 
 Please make sure that the input_result_id is valid (must already be in GUS::Model::RAD3::ElementResultImp, GUS::Model::RAD3::CompositeElementResultImp, or GUS::Model::RAD3::ProcessResult table). If input_result_id = "NA", then this entry will be discarded [Note: Only this input entry will be removed. If there are other valid entries in the same line, they will be loaded accordingly.]
 
 The output value can be a number or "NA". In the latter case, the I<entire> line will be automatically removed. An error will occur if the column for output value is empty.
+
+B<Caution>: The data_file should contain only the data involved in one
+specific process and not combine more than one process.  For example,
+if the user has results from normalization of I<n> different assays, then
+plugin needs to be run I<n> times (leading to I<n> different process
+invocations), once per assay.  Accordingly, I<n> separate data files will need to be
+created.  All elements in the same input column of the data file
+should correspond to the same quantification_id and the data_file
+should contain all input columns corresponding to data which yielded the
+results in the output column. For example, if the process corresponds
+to computing the average of spot values over I<n> arrays, then there should be
+I<n> input columns.  
 
 =head1 AUTHOR
 
