@@ -78,7 +78,7 @@ sub run {
 	
 	if (!$ctx->{cla}->{'inputFile'}) {
 	  die "you must provide --inputFile on the command line\n";
-	}#	$self->logData("Test: table name = $table_nm attribute name = $attribute_nm html documentation = $html_dc\n") if $verbose;
+	}
 
 	print $ctx->{cla}->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
 
@@ -93,7 +93,6 @@ sub run {
 
 	while (<$doc_fh>){ # read in line of documentation and parse from tab-delimited file
 		my ($table_name, $attribute_name, $html_doc) = split (/\t/, $_);
-#		print "Table: $table_name\nAttribute: $attribute_name\nDocumentation: $html_doc\n";
 		$self->process($table_name, $attribute_name, $html_doc);
 	}
 	$doc_fh->close;
@@ -106,17 +105,17 @@ sub run {
 sub process {
 	my $self = shift;
 	my ($table_nm, $attribute_nm, $html_dc) = @_;
-	$self->logData("\nTable: $table_nm\nAttribute: $attribute_nm\nDocumentation: $html_dc");
+	$self->logData("\tTable: $table_nm\tAttribute: $attribute_nm\tDocumentation: $html_dc");
 
 	my $verbose = $self->getCla->{verbose};
 
-	$self->logData("Test: table name = $table_nm attribute name = $attribute_nm html documentation = $html_dc\n") if $verbose;
+	$self->logVerbose("Test: table name = $table_nm attribute name = $attribute_nm html documentation = $html_dc\n");
 
 	my $db = $self->getDb;
         $db->setGlobalNoVersion(1);
 
 	my $doc = GUS::Model::Core::DatabaseDocumentation->new();
-	$self->logData("Created new DatabaseDocumentation object\n\n") if $verbose;
+	$self->logVerbose("Created new DatabaseDocumentation object\n\n");
 	
 	if ($db->checkTableExists($table_nm)){ # if table exists
 
@@ -150,7 +149,7 @@ sub process {
 #		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
 
 		if ($html_dc eq $doc->getHtmlDocumentation()){
-		  $self->logAlert("This documentation is identical to what is already stored for attribute: $attribute_nm in table: $table_nm. Not inserted.");
+		  $self->logAlert("This documentation is identical to what is already stored for table: $table_nm. Not inserted.");
 		  next;
 		}
 		else{
