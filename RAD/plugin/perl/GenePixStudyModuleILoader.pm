@@ -22,6 +22,7 @@ use GUS::Model::RAD3::Array;
 use GUS::Model::RAD3::Protocol;
 use GUS::Model::RAD3::ProtocolParam;
 use GUS::Model::RAD3::Channel;
+use GUS::Model::RAD3::OntologyEntry;
 use GUS::Model::SRes::Contact;
 
 
@@ -120,7 +121,6 @@ use the words 'null' as the value):
 
  QUANTIFICATION SECTION
 
-  - Quant_Protocol_ID^ = quantification protocol id
   - Quant_Operator_ID^** = quantification operator id
 
   ^ These values should pre-exist in various tables in the database
@@ -239,7 +239,6 @@ my @properties = (
     [ "All_Scan_Dates_Same",           "", "" ],
     [ "All_Scan_Dates",                "", "" ],
     [ "Individual_Scan_Dates",         "", "" ],
-    [ "Quant_Protocol_ID",             "", "" ],
     [ "Quant_Operator_ID",             "", "" ]   # can be null
  ); 
 
@@ -302,7 +301,7 @@ sub createAndSubmitGUSAssaysFromFiles {
     $assayCnt++;
     $insertedAssayCnt += $self->submitSingleGusAssay($gusAssay, $studyId);
 
-	$self->undefPointerCache();  # clean memory
+    $self->undefPointerCache();  # clean memory
   }
 
   $self->log("STATUS","-------- End Assay Descriptions --------");
@@ -417,8 +416,8 @@ sub populateRelatedAcquisition {
   });
   $relatedAcquisitionCnt++;
 
-  $acquistionAssociationOne->submit() if ($self->getArgs->{commit});
-  $acquistionAssociationTwo->submit() if ($self->getArgs->{commit});
+  $acquistionAssociationOne->submit() if ($self->getArgs->{commit} && ! $acquistionAssociationOne->retrieveFromDB);
+  $acquistionAssociationTwo->submit() if ($self->getArgs->{commit} && ! $acquistionAssociationTwo->retrieveFromDB);
 
   return (\@acquisitionIds, \@acquisitionChannels, $relatedAcquisitionCnt);
 }
@@ -462,8 +461,8 @@ sub populateRelatedQuantification {
   });
   $relatedQuantificationCnt++;
 
-  $quantificationAssociationOne->submit() if ($self->getArgs->{commit});
-  $quantificationAssociationTwo->submit() if ($self->getArgs->{commit});
+  $quantificationAssociationOne->submit() if ($self->getArgs->{commit} && ! $quantificationAssociationOne->retrieveFromDB);
+  $quantificationAssociationTwo->submit() if ($self->getArgs->{commit} && ! $quantificationAssociationTwo->retrieveFromDB);
 
   return $relatedQuantificationCnt;
 }
@@ -496,7 +495,7 @@ sub findAssayNames {
     next if ($2 ne $requiredExtension); # skip files with diff extension
     push (@assayNames,$1);
 
-    $modifiedAssayFileURIs->{$1} = "$specificPath/$1.$2";
+    $modifiedAssayFileURIs->{$1} = $specificPath.$1.".$2";
   }
  
   return (\@assayNames, $modifiedAssayFileURIs);
@@ -578,8 +577,8 @@ sub createSingleGUSAssay {
   my $gusAssay = $self->createGusAssay($assayName, $hybDateHashRef, $assayDescriptionHashRef);
 
   my ($gusAcquisitionCy5, $gusAcquisitionCy3)       = $self->createGusAcquisition($assayName, $modifiedImageFileURIRef, $scanDateHashRef);
-  my ($gusQuantificationCy5, $gusQuantificationCy3) = $self->createGusQuantification($assayName, $modifiedAssayFileURIRef, $GPRinfo);
-  my ($gusQuantParamsCy5Ref, $gusQuantParamsCy3Ref) = $self->createGusQuantParams($GPRinfo);
+  my ($gusQuantificationCy5, $gusQuantificationCy3, $quantProtocolId) = $self->createGusQuantification($assayName, $modifiedAssayFileURIRef, $GPRinfo);
+  my ($gusQuantParamsCy5Ref, $gusQuantParamsCy3Ref) = $self->createGusQuantParams($GPRinfo, $quantProtocolId);
 
   $gusAcquisitionCy5->setParent($gusAssay);
   $gusAcquisitionCy3->setParent($gusAssay);
@@ -730,6 +729,22 @@ sub createGusAssay {
   $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $hybProtocolId);
   $self->checkDatabaseEntry("GUS::Model::SRes::Contact", "contact_id", $hybOperatorId);
 
+  my $getOntologyProtocolTypeIdObject = GUS::Model::RAD3::OntologyEntry->new({
+    category => "ExperimentalProtocolType",
+    value    => "hybridization"
+  });
+  $self->error("Create object failed: Table RAD3.OntologyEntry, category ExperimentalProtocolType, value hybridization") 
+   unless ($getOntologyProtocolTypeIdObject->retrieveFromDB);
+  my $ontologyProtocolTypeIdFromDb = $getOntologyProtocolTypeIdObject->getOntologyEntryId();
+
+  my $protocolTypeIdObject = GUS::Model::RAD3::Protocol->new({ protocol_id => $hybProtocolId });
+  $self->error("Create object failed: Table RAD3.Protocol, category ExperimentalProtocolType, value hybridization") 
+   unless ($protocolTypeIdObject->retrieveFromDB);
+  my $protocolTypeIdFromDb = $protocolTypeIdObject->getProtocolTypeId();
+
+  $self->error("Hybridization protocol ID specified does not correspond to any hybridization protocol in table RAD3.Ontology")
+   if ($ontologyProtocolTypeIdFromDb ne $protocolTypeIdFromDb);
+
   my $hybDate = $hybDateHashRef->{$assayName};
   my $description = $assayDescriptionHashRef->{$assayName};
 
@@ -826,15 +841,19 @@ sub createGusQuantification {
 
   my $acqProtocolId   = $self->{propertySet}->getProp("Acq_Protocol_ID");
   my $quantOperatorId = $self->{propertySet}->getProp("Quant_Operator_ID");
-  my $quantProtocolId = $self->{propertySet}->getProp("Quant_Protocol_ID");
 
   my $quantDate = $GPRinfo->{"DateTime"};
   my $gprURI = $modifiedAssayFileURIRef->{$assayName};
 
-  my $protocolObject = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
+  my $protocolNameObject = GUS::Model::RAD3::Protocol->new({protocol_id => $acqProtocolId});
   $self->error("Create object failed: Table RAD3.Protocol, protocol_id $acqProtocolId") 
-   unless ($protocolObject->retrieveFromDB);
-  my $tempAcqName = $protocolObject->getName();
+   unless ($protocolNameObject->retrieveFromDB);
+  my $tempAcqName = $protocolNameObject->getName();
+
+  my $protocolIdObject = GUS::Model::RAD3::Protocol->new({name => "GenePix quantification"}); # HARD-CODED. Replace by your name if necessary.
+  $self->error("Create object failed: Table RAD3.Protocol, name GenePix quantification") 
+   unless ($protocolIdObject->retrieveFromDB);
+  my $quantProtocolId = $protocolIdObject->getId();
 
   my $gprQuantParameters = {
     protocol_id         => $quantProtocolId,
@@ -856,14 +875,13 @@ sub createGusQuantification {
 
   $self->log("STATUS","OK Inserted 2 rows in table RAD3.Quantification for Cy5 & Cy3 quantifications");
 
-  return ($gprQuantificationCy5, $gprQuantificationCy3);
+  return ($gprQuantificationCy5, $gprQuantificationCy3, $quantProtocolId);
 }
 ###############################
 
 sub createGusQuantParams {
-  my ($self, $GPRinfo) = @_;
+  my ($self, $GPRinfo, $quantProtocolId) = @_;
 
-  my $quantProtocolId = $self->{propertySet}->getProp("Quant_Protocol_ID");
   $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $quantProtocolId);
 
   my (@gusQuantParamsCy5, @gusQuantParamsCy3);
