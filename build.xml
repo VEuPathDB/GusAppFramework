@@ -72,6 +72,9 @@
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="Model"/>
+      
+      <!-- uncomment the following line to stop java compiling -->
+      <property name="skipJava" value="true"/> 
      </ant>
 
   </target>  
@@ -275,35 +278,36 @@
 
   <target name="GUS/ObjRelJ-Installation" depends="ProjectTree">
 
-    <rmic base="${projectsDir}/GUS/ObjRelJ/src/java"
-	 classname="org.gusdb.objrelj.RemoteJDBCServer">
-        <classpath>
-           <fileset dir="${targetDir}/lib/java/">
-              <include name="*.jar"/>
-           </fileset>
-        </classpath>     
-     </rmic>  
+<!--    <rmic base="${projectsDir}/GUS/ObjRelJ/src/java" -->
+<!--	 classname="org.gusdb.objrelj.RemoteJDBCServer"> -->
+<!--        <classpath> -->
+<!--           <fileset dir="${targetDir}/lib/java/"> -->
+<!--              <include name="*.jar"/>  -->
+<!--           </fileset>  -->
+<!--        </classpath>     -->
+<!--     </rmic>  -->
 
     
-    <rmic base="${projectsDir}/GUS/ObjRelJ/src/java"
-	 classname="org.gusdb.objrelj.RemoteDatabaseConnection">
-	<classpath>
-           <fileset dir="${targetDir}/lib/java/">
-              <include name="*.jar"/>
-           </fileset>
-        </classpath>     
-     </rmic>    
+<!--    <rmic base="${projectsDir}/GUS/ObjRelJ/src/java" -->
+<!--	 classname="org.gusdb.objrelj.RemoteDatabaseConnection"> -->
+<!--	<classpath> -->
+<!--           <fileset dir="${targetDir}/lib/java/"> -->
+<!--              <include name="*.jar"/> -->
+<!--           </fileset> -->
+<!--        </classpath>     -->
+<!--     </rmic>    -->
   
-   <move todir="${projectsDir}/GUS/ObjRelJ/classes/org/gusdb/objrelj">
-	 <fileset dir="${projectsDir}/GUS/ObjRelJ/src/java/org/gusdb/objrelj">
-            <include name="*.class"/>
-         </fileset>
-   </move>
+<!--   <move todir="${projectsDir}/GUS/ObjRelJ/classes/org/gusdb/objrelj"> -->
+<!--	 <fileset dir="${projectsDir}/GUS/ObjRelJ/src/java/org/gusdb/objrelj"> -->
+<!--            <include name="*.class"/> -->
+<!--         </fileset>  -->
+<!--   </move>  -->
 
    <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="ObjRelJ"/>
-    </ant>
+      <property name="skipJava" value="true"/> 
+   </ant>
     
   </target>
 
