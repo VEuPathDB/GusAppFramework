@@ -68,10 +68,10 @@ sub run {
     my $self  = shift;
     $self->getArgs()->{'commit'} ? $self->log("***COMMIT ON***\n") : $self->log("**COMMIT TURNED OFF**\n");
     
-    my $genomeVer = $self->getArgs()->{'genomeVersion'} || die 'genomeVersion not supplied\n';
-    my $gapDir = $self->getArgs()->{'gapDir'} || die 'gapDir not supplied\n';
-    my $tempLogin = $self->getArgs()->{'tempLogin'} || die ' not supplied\n';
-    my $tempPassword = $self->getArgs()->{'tempPassword'} || die ' not supplied\n';
+    my $genomeVer = $self->getArgs()->{'genomeVersion'} || die "genomeVersion not supplied\n";
+    my $gapDir = $self->getArgs()->{'gapDir'} || die "gapDir not supplied\n";
+    my $tempLogin = $self->getArgs()->{'tempLogin'} || die " not supplied\n";
+    my $tempPassword = $self->getArgs()->{'tempPassword'} || die " not supplied\n";
     my $DBI_STR = $self->getArgs->{'dbiStr'} || die "must provide server and sid for temp table\n";
     my $dbh = DBI->connect($DBI_STR, $tempLogin, $tempPassword);
 
@@ -80,7 +80,8 @@ sub run {
     foreach my $chr (keys %$chrs) {
 	my $table = $genomeVer . '_' . "chr$chr" . '_gap';
 	$tables->{$chr} = $table;
-	&_createGapTable($dbh, $table);
+        $dbh->do("drop table $table") or print "was not able to drop table $table, maybe doesnot exist\n"; 
+        &_createGapTable($dbh, $table);
     }
 
     my @chrs = `ls $gapDir`;
@@ -113,6 +114,8 @@ sub run {
 	$sth->finish if $sth;
 	print "loaded $count gaps into $table from $gapDir/$chr\n";
     }
+    $dbh->commit;
+    return "genome gaps loaded";
 }
 #-------------------------
 
