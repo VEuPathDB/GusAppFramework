@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* tess-views.sql                                                                             */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 03:59:16 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:28:51 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL tess-views.log
 
-CREATE VIEW @oracle_tess@.ACTIVITY
+CREATE VIEW TESStest.ACTIVITY
 AS SELECT
   activity_id,
   subclass_view,
@@ -33,7 +33,7 @@ AS SELECT
   row_alg_invocation_id 
   from TESS.ActivityImp with check option;
 
-CREATE VIEW @oracle_tess@.ACTIVITYGENEREGULATION
+CREATE VIEW TESStest.ACTIVITYGENEREGULATION
 AS SELECT
   activity_id,
   subclass_view,
@@ -58,7 +58,7 @@ AS SELECT
   row_alg_invocation_id 
   FROM TESS.ActivityImp WHERE subclass_view = 'ActivityGeneRegulation' WITH CHECK OPTION;
 
-CREATE VIEW @oracle_tess@.ACTIVITYPROTEINDNABINDING
+CREATE VIEW TESStest.ACTIVITYPROTEINDNABINDING
 AS SELECT
   activity_id,
   subclass_view,
@@ -83,7 +83,7 @@ AS SELECT
   row_alg_invocation_id 
   FROM TESS.ActivityImp WHERE subclass_view = 'ActivityProteinDnaBinding' WITH CHECK OPTION;
 
-CREATE VIEW @oracle_tess@.MOIETY
+CREATE VIEW TESStest.MOIETY
 AS SELECT
   moiety_id,
   subclass_view,
@@ -107,7 +107,7 @@ AS SELECT
   row_alg_invocation_id 
 from TESS.MoietyImp where subclass_view = 'TESS::Moiety' with check option;
 
-CREATE VIEW @oracle_tess@.MOIETYCOMPLEX
+CREATE VIEW TESStest.MOIETYCOMPLEX
 AS SELECT
   moiety_id,
   subclass_view,
@@ -132,7 +132,7 @@ AS SELECT
   row_alg_invocation_id 
 from TESS.MoietyImp where subclass_view = 'TESS::MoietyComplex' with check option;
 
-CREATE VIEW @oracle_tess@.MOIETYHETERODIMER
+CREATE VIEW TESStest.MOIETYHETERODIMER
 AS SELECT
   moiety_id,
   subclass_view,
@@ -156,7 +156,7 @@ AS SELECT
   row_alg_invocation_id 
 from TESS.MoietyImp where subclass_view = 'TESS::MoietyHeteroDimer' with check option;
 
-CREATE VIEW @oracle_tess@.MOIETYMONOMER
+CREATE VIEW TESStest.MOIETYMONOMER
 AS SELECT
   moiety_id,
   subclass_view,
@@ -180,7 +180,7 @@ AS SELECT
   row_alg_invocation_id 
 from TESS.MoietyImp where subclass_view = 'TESS::MoietyMonomer' with check option;
 
-CREATE VIEW @oracle_tess@.MOIETYMULTIMER
+CREATE VIEW TESStest.MOIETYMULTIMER
 AS SELECT
   moiety_id,
   subclass_view,
@@ -205,7 +205,7 @@ AS SELECT
   row_alg_invocation_id 
 from TESS.MoietyImp where subclass_view = 'TESS::MoietyMultimer' with check option;
 
-CREATE VIEW @oracle_tess@.SBCGRECOGCONSENSUSSTRING
+CREATE VIEW TESStest.SBCGRECOGCONSENSUSSTRING
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
@@ -226,7 +226,7 @@ AS SELECT
   row_alg_invocation_id 
 from TESS.SbcgRecognitionImp where subclass_view = 'SbcgRecogConsensusString' with check option;
 
-CREATE VIEW @oracle_tess@.SBCGRECOGGAP
+CREATE VIEW TESStest.SBCGRECOGGAP
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
@@ -245,7 +245,7 @@ AS SELECT
   row_alg_invocation_id 
 from TESS.SbcgRecognitionImp where subclass_view = 'SbcgRecogGap' with check option;
 
-CREATE VIEW @oracle_tess@.SBCGRECOGNITION
+CREATE VIEW TESStest.SBCGRECOGNITION
 ( SBCG_RECOGNITION_ID,
   SUBCLASS_VIEW,
   SBCG_GRAMMAR_ID,
@@ -279,7 +279,7 @@ AS select
         row_alg_invocation_id
 from TESS.SbcgRecognitionImp;
 
-CREATE VIEW @oracle_tess@.SBCGRECOGPATHEXPRESSION
+CREATE VIEW TESStest.SBCGRECOGPATHEXPRESSION
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
@@ -302,7 +302,7 @@ AS SELECT
   row_alg_invocation_id 
 From TESS.SbcgRecognitionImp where subclass_view = 'SbcgRecogPathExpression' with check option;
 
-CREATE VIEW @oracle_tess@.SBCGRECOGPOSITION
+CREATE VIEW TESStest.SBCGRECOGPOSITION
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
@@ -323,7 +323,7 @@ AS SELECT
   row_alg_invocation_id 
 from TESS.SbcgRecognitionImp where subclass_view = 'SbcgRecogPosition' with check option;
 
-CREATE VIEW @oracle_tess@.SBCGRECOGSTRING
+CREATE VIEW TESStest.SBCGRECOGSTRING
 AS SELECT
   sbcg_recognition_id,
   subclass_view,
@@ -344,7 +344,7 @@ AS SELECT
   row_alg_invocation_id 
 from TESS.SbcgRecognitionImp where subclass_view = 'SbcgRecogString' with check option;
 
-CREATE VIEW @oracle_tess@.SBCGRECOGWEIGHTMATRIX
+CREATE VIEW TESStest.SBCGRECOGWEIGHTMATRIX
 AS SELECT
   sbcg_recognition_id,
   subclass_view,

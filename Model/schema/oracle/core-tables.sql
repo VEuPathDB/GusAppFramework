@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* core-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 03:53:33 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:22:27 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL core-tables.log
 
-CREATE TABLE @oracle_core@.ALGORITHM (
+CREATE TABLE Coretest.ALGORITHM (
     ALGORITHM_ID                       NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -23,10 +23,10 @@ CREATE TABLE @oracle_core@.ALGORITHM (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.ALGORITHMIMPLEMENTATION (
+CREATE TABLE Coretest.ALGORITHMIMPLEMENTATION (
     ALGORITHM_IMPLEMENTATION_ID        NUMBER(5)                                     NOT NULL,
     ALGORITHM_ID                       NUMBER(5)                                     NOT NULL,
     VERSION                            VARCHAR2(10)                                  NULL,
@@ -46,10 +46,10 @@ CREATE TABLE @oracle_core@.ALGORITHMIMPLEMENTATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.ALGORITHMINVOCATION (
+CREATE TABLE Coretest.ALGORITHMINVOCATION (
     ALGORITHM_INVOCATION_ID            NUMBER(12)                                    NOT NULL,
     ALGORITHM_IMPLEMENTATION_ID        NUMBER(5)                                     NOT NULL,
     START_TIME                         DATE                                          NOT NULL,
@@ -70,10 +70,10 @@ CREATE TABLE @oracle_core@.ALGORITHMINVOCATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.ALGORITHMPARAM (
+CREATE TABLE Coretest.ALGORITHMPARAM (
     ALGORITHM_PARAM_ID                 NUMBER(10)                                    NOT NULL,
     ALGORITHM_PARAM_KEY_ID             NUMBER(5)                                     NOT NULL,
     STRING_VALUE                       VARCHAR2(1000)                                NULL,
@@ -97,10 +97,10 @@ CREATE TABLE @oracle_core@.ALGORITHMPARAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.ALGORITHMPARAMKEY (
+CREATE TABLE Coretest.ALGORITHMPARAMKEY (
     ALGORITHM_PARAM_KEY_ID             NUMBER(5)                                     NOT NULL,
     ALGORITHM_IMPLEMENTATION_ID        NUMBER(5)                                     NOT NULL,
     ALGORITHM_PARAM_KEY                VARCHAR2(60)                                  NOT NULL,
@@ -118,10 +118,10 @@ CREATE TABLE @oracle_core@.ALGORITHMPARAMKEY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.ALGORITHMPARAMKEYTYPE (
+CREATE TABLE Coretest.ALGORITHMPARAMKEYTYPE (
     ALGORITHM_PARAM_KEY_TYPE_ID        NUMBER(3)                                     NOT NULL,
     TYPE                               VARCHAR2(15)                                  NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
@@ -135,10 +135,10 @@ CREATE TABLE @oracle_core@.ALGORITHMPARAMKEYTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.CATEGORY (
+CREATE TABLE Coretest.CATEGORY (
     CATEGORY_ID                        NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(500)                                 NULL,
@@ -153,10 +153,10 @@ CREATE TABLE @oracle_core@.CATEGORY (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.DATABASEDOCUMENTATION (
+CREATE TABLE Coretest.DATABASEDOCUMENTATION (
     DATABASE_DOCUMENTATION_ID          NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
     ATTRIBUTE_NAME                     VARCHAR2(120)                                 NULL,
@@ -172,10 +172,10 @@ CREATE TABLE @oracle_core@.DATABASEDOCUMENTATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.DATABASEINFO (
+CREATE TABLE Coretest.DATABASEINFO (
     DATABASE_ID                        NUMBER(5)                                     NOT NULL,
     VERSION                            VARCHAR2(10)                                  NOT NULL,
     NAME                               VARCHAR2(60)                                  NULL,
@@ -191,10 +191,10 @@ CREATE TABLE @oracle_core@.DATABASEINFO (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.GENERALDOCUMENTATION (
+CREATE TABLE Coretest.GENERALDOCUMENTATION (
     GENERAL_DOCUMENTATION_ID           NUMBER(10)                                    NOT NULL,
     DOC                                CLOB                                          NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
@@ -208,10 +208,10 @@ CREATE TABLE @oracle_core@.GENERALDOCUMENTATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.GROUPINFO (
+CREATE TABLE Coretest.GROUPINFO (
     GROUP_ID                           NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(30)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -226,10 +226,10 @@ CREATE TABLE @oracle_core@.GROUPINFO (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.MACHINE (
+CREATE TABLE Coretest.MACHINE (
     MACHINE_ID                         NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     IP_ADDRESS                         VARCHAR2(24)                                  NULL,
@@ -246,10 +246,10 @@ CREATE TABLE @oracle_core@.MACHINE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.PROJECTINFO (
+CREATE TABLE Coretest.PROJECTINFO (
     PROJECT_ID                         NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(40)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -264,10 +264,10 @@ CREATE TABLE @oracle_core@.PROJECTINFO (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.TABLECATEGORY (
+CREATE TABLE Coretest.TABLECATEGORY (
     TABLE_CATEGORY_ID                  NUMBER(5)                                     NOT NULL,
     CATEGORY_ID                        NUMBER(5)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -282,10 +282,10 @@ CREATE TABLE @oracle_core@.TABLECATEGORY (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.TABLEINFO (
+CREATE TABLE Coretest.TABLEINFO (
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(30)                                  NOT NULL,
     TABLE_TYPE                         VARCHAR2(40)                                  NOT NULL,
@@ -307,10 +307,10 @@ CREATE TABLE @oracle_core@.TABLEINFO (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.USERDATABASE (
+CREATE TABLE Coretest.USERDATABASE (
     USER_DATABASE_ID                   NUMBER(12)                                    NOT NULL,
     USER_ID                            NUMBER(12)                                    NOT NULL,
     DATABASE_ID                        NUMBER(38)                                    NOT NULL,
@@ -327,10 +327,10 @@ CREATE TABLE @oracle_core@.USERDATABASE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.USERGROUP (
+CREATE TABLE Coretest.USERGROUP (
     USER_GROUP_ID                      NUMBER(12)                                    NOT NULL,
     USER_ID                            NUMBER(12)                                    NOT NULL,
     GROUP_ID                           NUMBER(3)                                     NOT NULL,
@@ -345,10 +345,10 @@ CREATE TABLE @oracle_core@.USERGROUP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.USERINFO (
+CREATE TABLE Coretest.USERINFO (
     USER_ID                            NUMBER(12)                                    NOT NULL,
     LOGIN                              VARCHAR2(30)                                  NOT NULL,
     PASSWORD                           VARCHAR2(30)                                  NOT NULL,
@@ -367,10 +367,10 @@ CREATE TABLE @oracle_core@.USERINFO (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.USERPROJECT (
+CREATE TABLE Coretest.USERPROJECT (
     USER_PROJECT_ID                    NUMBER(12)                                    NOT NULL,
     USER_ID                            NUMBER(12)                                    NOT NULL,
     PROJECT_ID                         NUMBER(3)                                     NOT NULL,
@@ -385,10 +385,10 @@ CREATE TABLE @oracle_core@.USERPROJECT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.WORKFLOW (
+CREATE TABLE Coretest.WORKFLOW (
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     DEFAULT_ALG_INVOCATION_ID          NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
@@ -405,10 +405,10 @@ CREATE TABLE @oracle_core@.WORKFLOW (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.WORKFLOWBLACKBOARD (
+CREATE TABLE Coretest.WORKFLOWBLACKBOARD (
     WORKFLOW_BLACKBOARD_ID             NUMBER(12)                                    NOT NULL,
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     WORKFLOW_ALG_INVOCATION_ID         NUMBER(12)                                    NOT NULL,
@@ -431,10 +431,10 @@ CREATE TABLE @oracle_core@.WORKFLOWBLACKBOARD (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.WORKFLOWEDGE (
+CREATE TABLE Coretest.WORKFLOWEDGE (
     WORKFLOW_EDGE_ID                   NUMBER(10)                                    NOT NULL,
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     FROM_WORKFLOW_NODE_ID              NUMBER(10)                                    NOT NULL,
@@ -451,10 +451,10 @@ CREATE TABLE @oracle_core@.WORKFLOWEDGE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.WORKFLOWEDGESQL (
+CREATE TABLE Coretest.WORKFLOWEDGESQL (
     WORKFLOW_EDGE_SQL_ID               NUMBER(10)                                    NOT NULL,
     WORKFLOW_EDGE_ID                   NUMBER(10)                                    NOT NULL,
     SQL                                CLOB                                          NOT NULL,
@@ -470,10 +470,10 @@ CREATE TABLE @oracle_core@.WORKFLOWEDGESQL (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.WORKFLOWINIT (
+CREATE TABLE Coretest.WORKFLOWINIT (
     WORKFLOW_INIT_ID                   NUMBER(12)                                    NOT NULL,
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -489,10 +489,10 @@ CREATE TABLE @oracle_core@.WORKFLOWINIT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.WORKFLOWNODEIMP (
+CREATE TABLE Coretest.WORKFLOWNODEIMP (
     WORKFLOW_NODE_ID                   NUMBER(10)                                    NOT NULL,
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
@@ -522,10 +522,10 @@ CREATE TABLE @oracle_core@.WORKFLOWNODEIMP (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_core@.WORKFLOWSTATUS (
+CREATE TABLE Coretest.WORKFLOWSTATUS (
     WORKFLOW_STATUS_ID                 NUMBER(12)                                    NOT NULL,
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     WORKFLOW_ALG_INVOCATION_ID         NUMBER(12)                                    NOT NULL,
@@ -548,7 +548,7 @@ CREATE TABLE @oracle_core@.WORKFLOWSTATUS (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_coreTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
 

@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* tess-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 03:58:53 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:28:25 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL tess-tables.log
 
-CREATE TABLE @oracle_tess@.ACTIVITYCONDITIONS (
+CREATE TABLE TESStest.ACTIVITYCONDITIONS (
     ACTIVITY_CONDITIONS_ID             NUMBER(12)                                    NOT NULL,
     ACTIVITY_ID                        NUMBER(12)                                    NOT NULL,
     REVIEW_STATUS_ID                   NUMBER(12)                                    NULL,
@@ -29,10 +29,10 @@ CREATE TABLE @oracle_tess@.ACTIVITYCONDITIONS (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.ACTIVITYIMP (
+CREATE TABLE TESStest.ACTIVITYIMP (
     ACTIVITY_ID                        NUMBER(12)                                    NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(32)                                  NOT NULL,
     TYPE_NAME                          VARCHAR2(32)                                  NOT NULL,
@@ -66,10 +66,10 @@ CREATE TABLE @oracle_tess@.ACTIVITYIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.ACTIVITYINFERENCESOURCE (
+CREATE TABLE TESStest.ACTIVITYINFERENCESOURCE (
     ACTIVITY_INFERENCE_SOURCE          NUMBER(12)                                    NOT NULL,
     ACTIVITY_ID                        NUMBER(12)                                    NOT NULL,
     RESULT_GROUP_ID                    NUMBER(12)                                    NOT NULL,
@@ -84,10 +84,10 @@ CREATE TABLE @oracle_tess@.ACTIVITYINFERENCESOURCE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.ANALYSIS (
+CREATE TABLE TESStest.ANALYSIS (
     ANALYSIS_ID                        NUMBER(12)                                    NOT NULL,
     POSITIVE_TRAINING_SET_ID           NUMBER(12)                                    NOT NULL,
     NEGATIVE_TRAINING_SET_ID           NUMBER(12)                                    NULL,
@@ -108,10 +108,10 @@ CREATE TABLE @oracle_tess@.ANALYSIS (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.FOOTPRINT (
+CREATE TABLE TESStest.FOOTPRINT (
     FOOTPRINT_ID                       NUMBER(12)                                    NOT NULL,
     ACTIVITY_ID                        NUMBER(12)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(12)                                    NOT NULL,
@@ -128,10 +128,10 @@ CREATE TABLE @oracle_tess@.FOOTPRINT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.FOOTPRINTMETHODPROTOCOL (
+CREATE TABLE TESStest.FOOTPRINTMETHODPROTOCOL (
     FOOTPRINT_PROTOCOL_ID              NUMBER(12)                                    NOT NULL,
     FOOTPRINT_ID                       NUMBER(12)                                    NOT NULL,
     PROTOCOL_ID                        NUMBER(12)                                    NOT NULL,
@@ -146,10 +146,10 @@ CREATE TABLE @oracle_tess@.FOOTPRINTMETHODPROTOCOL (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.MODEL (
+CREATE TABLE TESStest.MODEL (
     ACTIVITY_MODEL_ID                  NUMBER(12)                                    NOT NULL,
     ACTIVITY_ID                        NUMBER(12)                                    NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
@@ -164,10 +164,10 @@ CREATE TABLE @oracle_tess@.MODEL (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.MODELRESULT (
+CREATE TABLE TESStest.MODELRESULT (
     MODEL_RESULT_ID                    NUMBER(12)                                    NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     REVIEW_STATUS_ID                   NUMBER(12)                                    NOT NULL,
@@ -182,10 +182,10 @@ CREATE TABLE @oracle_tess@.MODELRESULT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.MOIETYIMP (
+CREATE TABLE TESStest.MOIETYIMP (
     MOIETY_ID                          NUMBER(12)                                    NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(32)                                  NOT NULL,
     TYPE_NAME                          VARCHAR2(32)                                  NOT NULL,
@@ -218,10 +218,10 @@ CREATE TABLE @oracle_tess@.MOIETYIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.MOIETYINSTANCE (
+CREATE TABLE TESStest.MOIETYINSTANCE (
     MOIETY_INSTANCE_ID                 NUMBER(12)                                    NOT NULL,
     MOIETY_ID                          NUMBER(12)                                    NOT NULL,
     DOGMA_OBJECT_TABLE_ID              NUMBER(12)                                    NOT NULL,
@@ -238,10 +238,10 @@ CREATE TABLE @oracle_tess@.MOIETYINSTANCE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.MOIETYMEMBER (
+CREATE TABLE TESStest.MOIETYMEMBER (
     MOIETY_MEMBER_ID                   NUMBER(12)                                    NOT NULL,
     WHOLE_MOIETY_ID                    NUMBER(12)                                    NOT NULL,
     PART_MOIETY_ID                     NUMBER(12)                                    NOT NULL,
@@ -260,10 +260,10 @@ CREATE TABLE @oracle_tess@.MOIETYMEMBER (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.MOIETYSYNONYM (
+CREATE TABLE TESStest.MOIETYSYNONYM (
     MOIETY_SYNONYM_ID                  NUMBER(12)                                    NOT NULL,
     MOIETY_ID                          NUMBER(12)                                    NOT NULL,
     SYNONYM_TEXT                       VARCHAR2(255)                                 NOT NULL,
@@ -279,10 +279,10 @@ CREATE TABLE @oracle_tess@.MOIETYSYNONYM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.MULTINOMIALLABEL (
+CREATE TABLE TESStest.MULTINOMIALLABEL (
     MULTINOMIAL_LABEL_ID               NUMBER(12)                                    NOT NULL,
     MULTINOMIAL_LABEL_SET_ID           NUMBER(12)                                    NOT NULL,
     ORDINAL                            NUMBER                                        NOT NULL,
@@ -298,10 +298,10 @@ CREATE TABLE @oracle_tess@.MULTINOMIALLABEL (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.MULTINOMIALLABELSET (
+CREATE TABLE TESStest.MULTINOMIALLABELSET (
     MULTINOMIAL_LABEL_SET_ID           NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(20)                                  NOT NULL,
     SIGNATURE                          VARCHAR2(255)                                 NOT NULL,
@@ -318,10 +318,10 @@ CREATE TABLE @oracle_tess@.MULTINOMIALLABELSET (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.MULTINOMIALOBSERVATION (
+CREATE TABLE TESStest.MULTINOMIALOBSERVATION (
     MULTINOMIAL_OBS_ID                 NUMBER(12)                                    NOT NULL,
     MULTINOMIAL_OBS_SET_ID             NUMBER(12)                                    NOT NULL,
     MULTINOMIAL_LABEL_ID               NUMBER(12)                                    NOT NULL,
@@ -337,10 +337,10 @@ CREATE TABLE @oracle_tess@.MULTINOMIALOBSERVATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.MULTINOMIALOBSERVATIONSET (
+CREATE TABLE TESStest.MULTINOMIALOBSERVATIONSET (
     MULTINOMIAL_OBS_SET_ID             NUMBER                                        NOT NULL,
     RECOGNITION_ID                     NUMBER                                        NOT NULL,
     ORDINAL                            NUMBER                                        NOT NULL,
@@ -361,10 +361,10 @@ CREATE TABLE @oracle_tess@.MULTINOMIALOBSERVATIONSET (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.NOTE (
+CREATE TABLE TESStest.NOTE (
     NOTE_ID                            NUMBER(12)                                    NOT NULL,
     TABLE_ID                           NUMBER(12)                                    NOT NULL,
     ROW_ID                             NUMBER(12)                                    NOT NULL,
@@ -382,10 +382,10 @@ CREATE TABLE @oracle_tess@.NOTE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.PARAMETERGROUP (
+CREATE TABLE TESStest.PARAMETERGROUP (
     PARAMETER_GROUP_ID                 NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        CLOB                                          NULL,
@@ -401,10 +401,10 @@ CREATE TABLE @oracle_tess@.PARAMETERGROUP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.PARAMETERSUBGROUP (
+CREATE TABLE TESStest.PARAMETERSUBGROUP (
     PARAMETER_SUBGROUP_ID              NUMBER(12)                                    NOT NULL,
     PARENT_GROUP_ID                    NUMBER(12)                                    NOT NULL,
     CHILD_GROUP_ID                     NUMBER(12)                                    NOT NULL,
@@ -420,10 +420,10 @@ CREATE TABLE @oracle_tess@.PARAMETERSUBGROUP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.PARAMETERVALUE (
+CREATE TABLE TESStest.PARAMETERVALUE (
     PARAMETER_VALUE_ID                 NUMBER(12)                                    NOT NULL,
     PARAMETER_GROUP_ID                 NUMBER(12)                                    NOT NULL,
     ORDINAL                            NUMBER                                        NOT NULL,
@@ -441,10 +441,10 @@ CREATE TABLE @oracle_tess@.PARAMETERVALUE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.PARSERITEM (
+CREATE TABLE TESStest.PARSERITEM (
     PARSER_ITEM_ID                     NUMBER(12)                                    NOT NULL,
     SBCG_RECOGNITION_ID                NUMBER(12)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(12)                                    NULL,
@@ -464,10 +464,10 @@ CREATE TABLE @oracle_tess@.PARSERITEM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.PARSERITEMEDGETYPE (
+CREATE TABLE TESStest.PARSERITEMEDGETYPE (
     PARSER_ITEM_EDGE_TYPE_ID           NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(16)                                  NOT NULL,
     DESCRIPTION                        CLOB                                          NOT NULL,
@@ -482,10 +482,10 @@ CREATE TABLE @oracle_tess@.PARSERITEMEDGETYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.PARSERITEMLINK (
+CREATE TABLE TESStest.PARSERITEMLINK (
     PARSER_ITEM_LINK_ID                NUMBER(12)                                    NOT NULL,
     PARENT_PARSER_ITEM_ID              NUMBER(12)                                    NOT NULL,
     CHILD_PARSER_ITEM_ID               NUMBER(12)                                    NOT NULL,
@@ -501,10 +501,10 @@ CREATE TABLE @oracle_tess@.PARSERITEMLINK (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.PREDICTIONRESULT (
+CREATE TABLE TESStest.PREDICTIONRESULT (
     PREDICTION_RESULT_ID               NUMBER(12)                                    NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     FOOTPRINT_ID                       NUMBER(12)                                    NOT NULL,
@@ -520,10 +520,10 @@ CREATE TABLE @oracle_tess@.PREDICTIONRESULT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGANNOTATIONFILTER (
+CREATE TABLE TESStest.SBCGANNOTATIONFILTER (
     SBCG_ANNOTATION_FILTER_ID          NUMBER(12)                                    NOT NULL,
     SBCG_RECOG_PATH_EXPRESSION_ID      NUMBER(12)                                    NOT NULL,
     ORDINAL                            NUMBER(6)                                     NOT NULL,
@@ -541,10 +541,10 @@ CREATE TABLE @oracle_tess@.SBCGANNOTATIONFILTER (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGANNOTATIONFILTERTERM (
+CREATE TABLE TESStest.SBCGANNOTATIONFILTERTERM (
     SCBG_ANNOTATION_FILTER_TERM_ID     NUMBER(12)                                    NOT NULL,
     SBCG_ANNOTATION_FILTER_ID          NUMBER(12)                                    NOT NULL,
     ORDINAL                            NUMBER(4)                                     NOT NULL,
@@ -563,10 +563,10 @@ CREATE TABLE @oracle_tess@.SBCGANNOTATIONFILTERTERM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGANNOTATIONGUIDE (
+CREATE TABLE TESStest.SBCGANNOTATIONGUIDE (
     SBCG_ANNOTATION_GUIDE_ID           NUMBER(12)                                    NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     SOURCE_CODE                        CLOB                                          NOT NULL,
@@ -595,10 +595,10 @@ CREATE TABLE @oracle_tess@.SBCGANNOTATIONGUIDE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGCOMPARISONTYPE (
+CREATE TABLE TESStest.SBCGCOMPARISONTYPE (
     SBCG_COMPARISON_TYPE_ID            NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(32)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -613,10 +613,10 @@ CREATE TABLE @oracle_tess@.SBCGCOMPARISONTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGGRAMMAR (
+CREATE TABLE TESStest.SBCGGRAMMAR (
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(12)                                    NULL,
@@ -637,10 +637,10 @@ CREATE TABLE @oracle_tess@.SBCGGRAMMAR (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGNONTERMINAL (
+CREATE TABLE TESStest.SBCGNONTERMINAL (
     SBCG_NONTERMINAL_ID                NUMBER(12)                                    NOT NULL,
     SBGC_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
@@ -655,10 +655,10 @@ CREATE TABLE @oracle_tess@.SBCGNONTERMINAL (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGPATHTERMRELATIONTYPE (
+CREATE TABLE TESStest.SBCGPATHTERMRELATIONTYPE (
     SBCG_PATH_TERM_REL_TYPE_ID         NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(32)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -673,10 +673,10 @@ CREATE TABLE @oracle_tess@.SBCGPATHTERMRELATIONTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGPRODUCTION (
+CREATE TABLE TESStest.SBCGPRODUCTION (
     SBCG_PRODUCTION_ID                 NUMBER(12)                                    NOT NULL,
     SBGC_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     ORDINAL                            NUMBER(12)                                    NOT NULL,
@@ -701,10 +701,10 @@ CREATE TABLE @oracle_tess@.SBCGPRODUCTION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGPRODUCTIONTYPE (
+CREATE TABLE TESStest.SBCGPRODUCTIONTYPE (
     SBCG_PRODUCTION_TYPE_ID            NUMBER(12)                                    NOT NULL,
     TYPE_NAME                          VARCHAR2(16)                                  NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
@@ -718,10 +718,10 @@ CREATE TABLE @oracle_tess@.SBCGPRODUCTIONTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGRECOGNITIONIMP (
+CREATE TABLE TESStest.SBCGRECOGNITIONIMP (
     SBCG_RECOGNITION_ID                NUMBER(12)                                    NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(32)                                  NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
@@ -756,10 +756,10 @@ CREATE TABLE @oracle_tess@.SBCGRECOGNITIONIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGRHSTERM (
+CREATE TABLE TESStest.SBCGRHSTERM (
     SBCG_RHS_TERM_ID                   NUMBER(12)                                    NOT NULL,
     SBCG_PRODUCTION_ID                 NUMBER(12)                                    NOT NULL,
     COMMENT_STRING                     CLOB                                          NULL,
@@ -784,10 +784,10 @@ CREATE TABLE @oracle_tess@.SBCGRHSTERM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGSTREAM (
+CREATE TABLE TESStest.SBCGSTREAM (
     SBCG_STREAM_ID                     NUMBER(12)                                    NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     SOURCE_CODE                        CLOB                                          NOT NULL,
@@ -805,10 +805,10 @@ CREATE TABLE @oracle_tess@.SBCGSTREAM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.SBCGSTREAMPARAMETER (
+CREATE TABLE TESStest.SBCGSTREAMPARAMETER (
     SBCG_STREAM_PARAMETER_ID           NUMBER(12)                                    NOT NULL,
     SBCG_STREAM_ID                     NUMBER(12)                                    NOT NULL,
     PARAMETER_NAME                     VARCHAR2(255)                                 NOT NULL,
@@ -825,10 +825,10 @@ CREATE TABLE @oracle_tess@.SBCGSTREAMPARAMETER (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.TRAININGSET (
+CREATE TABLE TESStest.TRAININGSET (
     TRAINING_SET_ID                    NUMBER(12)                                    NOT NULL,
     ACTIVITY_ID                        NUMBER(12)                                    NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
@@ -845,10 +845,10 @@ CREATE TABLE @oracle_tess@.TRAININGSET (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_tess@.TRAININGSETMEMBER (
+CREATE TABLE TESStest.TRAININGSETMEMBER (
     TRAINING_SET_MEMBER_ID             NUMBER(12)                                    NOT NULL,
     TRAINING_SET_ID                    NUMBER(12)                                    NOT NULL,
     FOOTPRINT_ID                       NUMBER(12)                                    NOT NULL,
@@ -864,7 +864,7 @@ CREATE TABLE @oracle_tess@.TRAININGSETMEMBER (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_tessTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
 

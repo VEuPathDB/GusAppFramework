@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* sres-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 03:54:00 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:22:55 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL sres-tables.log
 
-CREATE TABLE @oracle_sres@.ABSTRACT (
+CREATE TABLE SRestest.ABSTRACT (
     ABSTRACT_ID                        NUMBER(10)                                    NOT NULL,
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NOT NULL,
     ABSTRACT                           CLOB                                          NOT NULL,
@@ -23,10 +23,10 @@ CREATE TABLE @oracle_sres@.ABSTRACT (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.ANATOMY (
+CREATE TABLE SRestest.ANATOMY (
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     HIER_LEVEL                         NUMBER(3)                                     NULL,
@@ -58,10 +58,10 @@ CREATE TABLE @oracle_sres@.ANATOMY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.ANATOMYLINEAGE (
+CREATE TABLE SRestest.ANATOMYLINEAGE (
     ANATOMY_LINEAGE_ID                 NUMBER(10)                                    NOT NULL,
     LINEAGE_ID                         NUMBER(2)                                     NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
@@ -76,10 +76,10 @@ CREATE TABLE @oracle_sres@.ANATOMYLINEAGE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.AUTHOR (
+CREATE TABLE SRestest.AUTHOR (
     AUTHOR_ID                          NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(200)                                 NOT NULL,
     FIRST                              VARCHAR2(100)                                 NULL,
@@ -96,10 +96,10 @@ CREATE TABLE @oracle_sres@.AUTHOR (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.BIBLIOGRAPHICREFERENCE (
+CREATE TABLE SRestest.BIBLIOGRAPHICREFERENCE (
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NOT NULL,
     BIB_REF_TYPE_ID                    NUMBER(10)                                    NOT NULL,
     TITLE                              VARCHAR2(255)                                 NOT NULL,
@@ -125,10 +125,10 @@ CREATE TABLE @oracle_sres@.BIBLIOGRAPHICREFERENCE (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.BIBREFANNOTATION (
+CREATE TABLE SRestest.BIBREFANNOTATION (
     BIB_REF_ANNOTATION_ID              NUMBER(10)                                    NOT NULL,
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NOT NULL,
     ANNOTATION                         VARCHAR2(50)                                  NOT NULL,
@@ -143,10 +143,10 @@ CREATE TABLE @oracle_sres@.BIBREFANNOTATION (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.BIBREFAUTHOR (
+CREATE TABLE SRestest.BIBREFAUTHOR (
     BIB_REF_AUTHOR_ID                  NUMBER(10)                                    NOT NULL,
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NOT NULL,
     AUTHOR_ID                          NUMBER(10)                                    NOT NULL,
@@ -162,10 +162,10 @@ CREATE TABLE @oracle_sres@.BIBREFAUTHOR (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.BIBREFTYPE (
+CREATE TABLE SRestest.BIBREFTYPE (
     BIB_REF_TYPE_ID                    NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(500)                                 NULL,
@@ -183,10 +183,10 @@ CREATE TABLE @oracle_sres@.BIBREFTYPE (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.CONTACT (
+CREATE TABLE SRestest.CONTACT (
     CONTACT_ID                         NUMBER(12)                                    NOT NULL,
     AFFILIATION_ID                     NUMBER(12)                                    NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NULL,
@@ -214,10 +214,10 @@ CREATE TABLE @oracle_sres@.CONTACT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.DBREF (
+CREATE TABLE SRestest.DBREF (
     DB_REF_ID                          NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NOT NULL,
     PRIMARY_IDENTIFIER                 VARCHAR2(100)                                 NULL,
@@ -239,10 +239,10 @@ CREATE TABLE @oracle_sres@.DBREF (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.DEVELOPMENTALSTAGE (
+CREATE TABLE SRestest.DEVELOPMENTALSTAGE (
     DEVELOPMENTAL_STAGE_ID             NUMBER(4)                                     NOT NULL,
     PARENT_ID                          NUMBER(4)                                     NULL,
     TAXON_ID                           NUMBER(12)                                    NULL,
@@ -263,10 +263,10 @@ CREATE TABLE @oracle_sres@.DEVELOPMENTALSTAGE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.DISEASE (
+CREATE TABLE SRestest.DISEASE (
     DISEASE_ID                         NUMBER(4)                                     NOT NULL,
     PARENT_ID                          NUMBER(4)                                     NULL,
     SOURCE                             VARCHAR2(255)                                 NULL,
@@ -288,10 +288,10 @@ CREATE TABLE @oracle_sres@.DISEASE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.ENZYMECLASS (
+CREATE TABLE SRestest.ENZYMECLASS (
     ENZYME_CLASS_ID                    NUMBER(12)                                    NOT NULL,
     DEPTH                              NUMBER(1)                                     NOT NULL,
     EC_NUMBER                          VARCHAR2(16)                                  NOT NULL,
@@ -313,10 +313,10 @@ CREATE TABLE @oracle_sres@.ENZYMECLASS (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.ENZYMECLASSATTRIBUTE (
+CREATE TABLE SRestest.ENZYMECLASSATTRIBUTE (
     ENZYME_CLASS_ATTRIBUTE_ID          NUMBER(12)                                    NOT NULL,
     ENZYME_CLASS_ID                    NUMBER(12)                                    NULL,
     ATTRIBUTE_NAME                     VARCHAR2(32)                                  NOT NULL,
@@ -332,10 +332,10 @@ CREATE TABLE @oracle_sres@.ENZYMECLASSATTRIBUTE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.EXTERNALDATABASE (
+CREATE TABLE SRestest.EXTERNALDATABASE (
     EXTERNAL_DATABASE_ID               NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     LOWERCASE_NAME                     VARCHAR2(80)                                  NOT NULL,
@@ -350,10 +350,10 @@ CREATE TABLE @oracle_sres@.EXTERNALDATABASE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.EXTERNALDATABASEENTRY (
+CREATE TABLE SRestest.EXTERNALDATABASEENTRY (
     EXTERNAL_DATABASE_ENTRY_ID         NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     EXTERNAL_PRIMARY_IDENTIFIER        VARCHAR2(255)                                 NULL,
@@ -372,10 +372,10 @@ CREATE TABLE @oracle_sres@.EXTERNALDATABASEENTRY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.EXTERNALDATABASEKEYWORD (
+CREATE TABLE SRestest.EXTERNALDATABASEKEYWORD (
     EXTERNAL_DATABASE_KEYWORD_ID       NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     KEYWORD_ID                         NUMBER(6)                                     NOT NULL,
@@ -391,10 +391,10 @@ CREATE TABLE @oracle_sres@.EXTERNALDATABASEKEYWORD (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.EXTERNALDATABASELINK (
+CREATE TABLE SRestest.EXTERNALDATABASELINK (
     EXTERNAL_DATABASE_LINK_ID          NUMBER(10)                                    NOT NULL,
     LINK_TABLE_ID                      NUMBER(5)                                     NOT NULL,
     LINK_PRIMARY_ID                    NUMBER(10)                                    NOT NULL,
@@ -411,10 +411,10 @@ CREATE TABLE @oracle_sres@.EXTERNALDATABASELINK (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.EXTERNALDATABASERELEASE (
+CREATE TABLE SRestest.EXTERNALDATABASERELEASE (
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_ID               NUMBER(10)                                    NOT NULL,
     RELEASE_DATE                       DATE                                          NULL,
@@ -440,10 +440,10 @@ CREATE TABLE @oracle_sres@.EXTERNALDATABASERELEASE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.GENETICCODE (
+CREATE TABLE SRestest.GENETICCODE (
     GENETIC_CODE_ID                    NUMBER(10)                                    NOT NULL,
     NCBI_GENETIC_CODE_ID               NUMBER(10)                                    NOT NULL,
     ABBREVIATION                       VARCHAR2(255)                                 NULL,
@@ -461,10 +461,10 @@ CREATE TABLE @oracle_sres@.GENETICCODE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.GOEVIDENCECODE (
+CREATE TABLE SRestest.GOEVIDENCECODE (
     GO_EVIDENCE_CODE_ID                NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(3)                                   NOT NULL,
     DESCRIPTION                        VARCHAR2(1000)                                NULL,
@@ -479,10 +479,10 @@ CREATE TABLE @oracle_sres@.GOEVIDENCECODE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.GORELATIONSHIP (
+CREATE TABLE SRestest.GORELATIONSHIP (
     GO_RELATIONSHIP_ID                 NUMBER(10)                                    NOT NULL,
     PARENT_TERM_ID                     NUMBER(10)                                    NOT NULL,
     CHILD_TERM_ID                      NUMBER(10)                                    NOT NULL,
@@ -498,10 +498,10 @@ CREATE TABLE @oracle_sres@.GORELATIONSHIP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.GORELATIONSHIPTYPE (
+CREATE TABLE SRestest.GORELATIONSHIPTYPE (
     GO_RELATIONSHIP_TYPE_ID            NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
@@ -515,10 +515,10 @@ CREATE TABLE @oracle_sres@.GORELATIONSHIPTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.GOSYNONYM (
+CREATE TABLE SRestest.GOSYNONYM (
     GO_SYNONYM_ID                      NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(32)                                  NULL,
@@ -535,10 +535,10 @@ CREATE TABLE @oracle_sres@.GOSYNONYM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.GOTERM (
+CREATE TABLE SRestest.GOTERM (
     GO_TERM_ID                         NUMBER(10)                                    NOT NULL,
     GO_ID                              VARCHAR2(32)                                  NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
@@ -562,10 +562,10 @@ CREATE TABLE @oracle_sres@.GOTERM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.LINEAGE (
+CREATE TABLE SRestest.LINEAGE (
     LINEAGE_ID                         NUMBER(2)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -580,10 +580,10 @@ CREATE TABLE @oracle_sres@.LINEAGE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (
+CREATE TABLE SRestest.MGEDONTOLOGYRELATIONSHIP (
     MGED_ONTOLOGY_RELATIONSHIP_ID      NUMBER(10)                                    NOT NULL,
     PARENT_TERM_ID                     NUMBER(10)                                    NOT NULL,
     CHILD_TERM_ID                      NUMBER(10)                                    NOT NULL,
@@ -599,10 +599,10 @@ CREATE TABLE @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.MGEDONTOLOGYTERM (
+CREATE TABLE SRestest.MGEDONTOLOGYTERM (
     MGED_ONTOLOGY_TERM_ID              NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(10)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(255)                                 NOT NULL,
@@ -620,10 +620,10 @@ CREATE TABLE @oracle_sres@.MGEDONTOLOGYTERM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.MUTAGEN (
+CREATE TABLE SRestest.MUTAGEN (
     MUTAGEN_ID                         NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(1000)                                NULL,
@@ -638,10 +638,10 @@ CREATE TABLE @oracle_sres@.MUTAGEN (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.ONTOLOGYRELATIONSHIPTYPE (
+CREATE TABLE SRestest.ONTOLOGYRELATIONSHIPTYPE (
     ONTOLOGY_RELATIONSHIP_TYPE_ID      NUMBER(4)                                     NOT NULL,
     IS_NATIVE                          NUMBER(1)                                     NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
@@ -656,10 +656,10 @@ CREATE TABLE @oracle_sres@.ONTOLOGYRELATIONSHIPTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.PATOATTRIBUTE (
+CREATE TABLE SRestest.PATOATTRIBUTE (
     PATO_ATTRIBUTE_ID                  NUMBER(8)                                     NOT NULL,
     SOURCE                             VARCHAR2(255)                                 NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
@@ -681,10 +681,10 @@ CREATE TABLE @oracle_sres@.PATOATTRIBUTE (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.PHENOTYPE (
+CREATE TABLE SRestest.PHENOTYPE (
     PHENOTYPE_ID                       NUMBER(8)                                     NOT NULL,
     PARENT_ID                          NUMBER(8)                                     NULL,
     PATO_ATTRIBUTE_ID                  NUMBER(8)                                     NULL,
@@ -703,10 +703,10 @@ CREATE TABLE @oracle_sres@.PHENOTYPE (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.PHENOTYPECLASS (
+CREATE TABLE SRestest.PHENOTYPECLASS (
     PHENOTYPE_CLASS_ID                 NUMBER(10)                                    NOT NULL,
     CLASS                              VARCHAR2(100)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(1000)                                NULL,
@@ -721,10 +721,10 @@ CREATE TABLE @oracle_sres@.PHENOTYPECLASS (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.REFERENCE (
+CREATE TABLE SRestest.REFERENCE (
     REFERENCE_ID                       NUMBER(10)                                    NOT NULL,
     DB_REF_ID                          NUMBER(10)                                    NULL,
     POSITION                           VARCHAR2(100)                                 NULL,
@@ -746,10 +746,10 @@ CREATE TABLE @oracle_sres@.REFERENCE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.REVIEWSTATUS (
+CREATE TABLE SRestest.REVIEWSTATUS (
     REVIEW_STATUS_ID                   NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -764,10 +764,10 @@ CREATE TABLE @oracle_sres@.REVIEWSTATUS (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.SEQUENCEONTOLOGY (
+CREATE TABLE SRestest.SEQUENCEONTOLOGY (
     SEQUENCE_ONTOLOGY_ID               NUMBER(10)                                    NOT NULL,
     SO_ID                              NUMBER(10)                                    NOT NULL,
     ONTOLOGY_NAME                      VARCHAR2(30)                                  NOT NULL,
@@ -786,10 +786,10 @@ CREATE TABLE @oracle_sres@.SEQUENCEONTOLOGY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.SEQUENCEREFERENCE (
+CREATE TABLE SRestest.SEQUENCEREFERENCE (
     SEQUENCE_REFERENCE_ID              NUMBER(10)                                    NOT NULL,
     BIBLIOGRAPHIC_REFERENCE_ID         NUMBER(10)                                    NOT NULL,
     POSITION                           VARCHAR2(100)                                 NULL,
@@ -805,10 +805,10 @@ CREATE TABLE @oracle_sres@.SEQUENCEREFERENCE (
     ROW_GROUP_ID                       NUMBER(12)                                    NOT NULL,
     ROW_PROJECT_ID                     NUMBER(12)                                    NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.TAXON (
+CREATE TABLE SRestest.TAXON (
     TAXON_ID                           NUMBER(10)                                    NOT NULL,
     NCBI_TAX_ID                        NUMBER(10)                                    NULL,
     PARENT_ID                          NUMBER(10)                                    NULL,
@@ -826,10 +826,10 @@ CREATE TABLE @oracle_sres@.TAXON (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_sres@.TAXONNAME (
+CREATE TABLE SRestest.TAXONNAME (
     TAXON_NAME_ID                      NUMBER(10)                                    NOT NULL,
     TAXON_ID                           NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
@@ -846,7 +846,7 @@ CREATE TABLE @oracle_sres@.TAXONNAME (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE @oracle_sresTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
 

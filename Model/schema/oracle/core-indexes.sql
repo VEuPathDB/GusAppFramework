@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* core-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 03:53:47 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:22:42 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -12,19 +12,19 @@ SPOOL core-indexes.log
 
 
 /* ALGORITHMIMPLEMENTATION */
-create index @oracle_core@.ALGORITHMIMPLEMENTATION_IND01 on @oracle_core@.ALGORITHMIMPLEMENTATION (ALGORITHM_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.ALGORITHMIMPLEMENTATION_IND01 on Coretest.ALGORITHMIMPLEMENTATION (ALGORITHM_ID)  TABLESPACE INDX2;
 
 /* ALGORITHMINVOCATION */
-create index @oracle_core@.ALGORITHMINVOCATION_IND01 on @oracle_core@.ALGORITHMINVOCATION (MACHINE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.ALGORITHMINVOCATION_IND02 on @oracle_core@.ALGORITHMINVOCATION (ALGORITHM_IMPLEMENTATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.ALGORITHMINVOCATION_IND01 on Coretest.ALGORITHMINVOCATION (MACHINE_ID)  TABLESPACE INDX2;
+create index Coretest.ALGORITHMINVOCATION_IND02 on Coretest.ALGORITHMINVOCATION (ALGORITHM_IMPLEMENTATION_ID)  TABLESPACE INDX2;
 
 /* ALGORITHMPARAM */
-create index @oracle_core@.ALGORITHMPARAM_IND01 on @oracle_core@.ALGORITHMPARAM (ALGORITHM_INVOCATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.ALGORITHMPARAM_IND02 on @oracle_core@.ALGORITHMPARAM (ALGORITHM_PARAM_KEY_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.ALGORITHMPARAM_IND01 on Coretest.ALGORITHMPARAM (ALGORITHM_INVOCATION_ID)  TABLESPACE INDX2;
+create index Coretest.ALGORITHMPARAM_IND02 on Coretest.ALGORITHMPARAM (ALGORITHM_PARAM_KEY_ID)  TABLESPACE INDX2;
 
 /* ALGORITHMPARAMKEY */
-create index @oracle_core@.ALGORITHMPARAMKEY_IND01 on @oracle_core@.ALGORITHMPARAMKEY (ALGORITHM_IMPLEMENTATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.ALGORITHMPARAMKEY_IND02 on @oracle_core@.ALGORITHMPARAMKEY (ALGORITHM_PARAM_KEY_TYPE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.ALGORITHMPARAMKEY_IND01 on Coretest.ALGORITHMPARAMKEY (ALGORITHM_IMPLEMENTATION_ID)  TABLESPACE INDX2;
+create index Coretest.ALGORITHMPARAMKEY_IND02 on Coretest.ALGORITHMPARAMKEY (ALGORITHM_PARAM_KEY_TYPE_ID)  TABLESPACE INDX2;
 
 /* ALGORITHMPARAMKEYTYPE */
 
@@ -33,7 +33,7 @@ create index @oracle_core@.ALGORITHMPARAMKEY_IND02 on @oracle_core@.ALGORITHMPAR
 
 
 /* DATABASEDOCUMENTATION */
-create index @oracle_core@.DATABASEDOCUMENTATION_IND01 on @oracle_core@.DATABASEDOCUMENTATION (TABLE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.DATABASEDOCUMENTATION_IND01 on Coretest.DATABASEDOCUMENTATION (TABLE_ID)  TABLESPACE INDX2;
 
 /* DATABASEINFO */
 
@@ -51,60 +51,60 @@ create index @oracle_core@.DATABASEDOCUMENTATION_IND01 on @oracle_core@.DATABASE
 
 
 /* TABLECATEGORY */
-create index @oracle_core@.TABLECATEGORY_IND01 on @oracle_core@.TABLECATEGORY (CATEGORY_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.TABLECATEGORY_IND02 on @oracle_core@.TABLECATEGORY (TABLE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.TABLECATEGORY_IND01 on Coretest.TABLECATEGORY (CATEGORY_ID)  TABLESPACE INDX2;
+create index Coretest.TABLECATEGORY_IND02 on Coretest.TABLECATEGORY (TABLE_ID)  TABLESPACE INDX2;
 
 /* TABLEINFO */
-create index @oracle_core@.TABLEINFO_IND01 on @oracle_core@.TABLEINFO (DATABASE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.TABLEINFO_IND02 on @oracle_core@.TABLEINFO (VIEW_ON_TABLE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.TABLEINFO_IND03 on @oracle_core@.TABLEINFO (SUPERCLASS_TABLE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.TABLEINFO_IND01 on Coretest.TABLEINFO (DATABASE_ID)  TABLESPACE INDX2;
+create index Coretest.TABLEINFO_IND02 on Coretest.TABLEINFO (VIEW_ON_TABLE_ID)  TABLESPACE INDX2;
+create index Coretest.TABLEINFO_IND03 on Coretest.TABLEINFO (SUPERCLASS_TABLE_ID)  TABLESPACE INDX2;
 
 /* USERDATABASE */
-create index @oracle_core@.USERDATABASE_IND01 on @oracle_core@.USERDATABASE (USER_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.USERDATABASE_IND02 on @oracle_core@.USERDATABASE (DATABASE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.USERDATABASE_IND01 on Coretest.USERDATABASE (USER_ID)  TABLESPACE INDX2;
+create index Coretest.USERDATABASE_IND02 on Coretest.USERDATABASE (DATABASE_ID)  TABLESPACE INDX2;
 
 /* USERGROUP */
-create unique index @oracle_core@.SYS_C00173306 on @oracle_core@.USERGROUP (USER_ID,GROUP_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.USERGROUP_IND01 on @oracle_core@.USERGROUP (GROUP_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create unique index Coretest.SYS_C00173306 on Coretest.USERGROUP (USER_ID,GROUP_ID)  TABLESPACE INDX2;
+create index Coretest.USERGROUP_IND01 on Coretest.USERGROUP (GROUP_ID)  TABLESPACE INDX2;
 
 /* USERINFO */
-create index @oracle_core@.USERINFO_IND01 on @oracle_core@.USERINFO (CONTACT_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.USERINFO_IND01 on Coretest.USERINFO (CONTACT_ID)  TABLESPACE INDX2;
 
 /* USERPROJECT */
-create unique index @oracle_core@.SYS_C00173307 on @oracle_core@.USERPROJECT (USER_ID,PROJECT_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.USERPROJECT_IND01 on @oracle_core@.USERPROJECT (PROJECT_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create unique index Coretest.SYS_C00173307 on Coretest.USERPROJECT (USER_ID,PROJECT_ID)  TABLESPACE INDX2;
+create index Coretest.USERPROJECT_IND01 on Coretest.USERPROJECT (PROJECT_ID)  TABLESPACE INDX2;
 
 /* WORKFLOW */
-create index @oracle_core@.WORKFLOW_IND01 on @oracle_core@.WORKFLOW (DEFAULT_ALG_INVOCATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.WORKFLOW_IND01 on Coretest.WORKFLOW (DEFAULT_ALG_INVOCATION_ID)  TABLESPACE INDX2;
 
 /* WORKFLOWBLACKBOARD */
-create index @oracle_core@.WORKFLOWBLACKBOARD_IND01 on @oracle_core@.WORKFLOWBLACKBOARD (WORKFLOW_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWBLACKBOARD_IND02 on @oracle_core@.WORKFLOWBLACKBOARD (WORKFLOW_ALG_INVOCATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWBLACKBOARD_IND03 on @oracle_core@.WORKFLOWBLACKBOARD (EDGE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWBLACKBOARD_IND04 on @oracle_core@.WORKFLOWBLACKBOARD (TABLE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWBLACKBOARD_IND05 on @oracle_core@.WORKFLOWBLACKBOARD (SECONDARY_TABLE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWBLACKBOARD_IND06 on @oracle_core@.WORKFLOWBLACKBOARD (EDGE_INVOCATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.WORKFLOWBLACKBOARD_IND01 on Coretest.WORKFLOWBLACKBOARD (WORKFLOW_ID)  TABLESPACE INDX2;
+create index Coretest.WORKFLOWBLACKBOARD_IND02 on Coretest.WORKFLOWBLACKBOARD (WORKFLOW_ALG_INVOCATION_ID)  TABLESPACE INDX2;
+create index Coretest.WORKFLOWBLACKBOARD_IND03 on Coretest.WORKFLOWBLACKBOARD (EDGE_ID)  TABLESPACE INDX2;
+create index Coretest.WORKFLOWBLACKBOARD_IND04 on Coretest.WORKFLOWBLACKBOARD (TABLE_ID)  TABLESPACE INDX2;
+create index Coretest.WORKFLOWBLACKBOARD_IND05 on Coretest.WORKFLOWBLACKBOARD (SECONDARY_TABLE_ID)  TABLESPACE INDX2;
+create index Coretest.WORKFLOWBLACKBOARD_IND06 on Coretest.WORKFLOWBLACKBOARD (EDGE_INVOCATION_ID)  TABLESPACE INDX2;
 
 /* WORKFLOWEDGE */
-create index @oracle_core@.WORKFLOWEDGE_IND01 on @oracle_core@.WORKFLOWEDGE (WORKFLOW_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWEDGE_IND02 on @oracle_core@.WORKFLOWEDGE (TO_WORKFLOW_NODE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWEDGE_IND03 on @oracle_core@.WORKFLOWEDGE (FROM_WORKFLOW_NODE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.WORKFLOWEDGE_IND01 on Coretest.WORKFLOWEDGE (WORKFLOW_ID)  TABLESPACE INDX2;
+create index Coretest.WORKFLOWEDGE_IND02 on Coretest.WORKFLOWEDGE (TO_WORKFLOW_NODE_ID)  TABLESPACE INDX2;
+create index Coretest.WORKFLOWEDGE_IND03 on Coretest.WORKFLOWEDGE (FROM_WORKFLOW_NODE_ID)  TABLESPACE INDX2;
 
 /* WORKFLOWEDGESQL */
-create index @oracle_core@.WORKFLOWEDGESQL_IND01 on @oracle_core@.WORKFLOWEDGESQL (WORKFLOW_EDGE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.WORKFLOWEDGESQL_IND01 on Coretest.WORKFLOWEDGESQL (WORKFLOW_EDGE_ID)  TABLESPACE INDX2;
 
 /* WORKFLOWINIT */
-create index @oracle_core@.WORKFLOWINIT_IND01 on @oracle_core@.WORKFLOWINIT (WORKFLOW_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWINIT_IND02 on @oracle_core@.WORKFLOWINIT (TABLE_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.WORKFLOWINIT_IND01 on Coretest.WORKFLOWINIT (WORKFLOW_ID)  TABLESPACE INDX2;
+create index Coretest.WORKFLOWINIT_IND02 on Coretest.WORKFLOWINIT (TABLE_ID)  TABLESPACE INDX2;
 
 /* WORKFLOWNODEIMP */
-create index @oracle_core@.WORKFLOWNODEIMP_IND01 on @oracle_core@.WORKFLOWNODEIMP (WORKFLOW_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWNODEIMP_IND02 on @oracle_core@.WORKFLOWNODEIMP (ALGORITHM_INVOCATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.WORKFLOWNODEIMP_IND01 on Coretest.WORKFLOWNODEIMP (WORKFLOW_ID)  TABLESPACE INDX2;
+create index Coretest.WORKFLOWNODEIMP_IND02 on Coretest.WORKFLOWNODEIMP (ALGORITHM_INVOCATION_ID)  TABLESPACE INDX2;
 
 /* WORKFLOWSTATUS */
-create index @oracle_core@.WORKFLOWSTATUS_IND01 on @oracle_core@.WORKFLOWSTATUS (WORKFLOW_ALG_INVOCATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWSTATUS_IND02 on @oracle_core@.WORKFLOWSTATUS (WORKFLOW_ID)  TABLESPACE @oracle_coreIndexTablespace@;
-create index @oracle_core@.WORKFLOWSTATUS_IND03 on @oracle_core@.WORKFLOWSTATUS (ITEM_INVOCATION_ID)  TABLESPACE @oracle_coreIndexTablespace@;
+create index Coretest.WORKFLOWSTATUS_IND01 on Coretest.WORKFLOWSTATUS (WORKFLOW_ALG_INVOCATION_ID)  TABLESPACE INDX2;
+create index Coretest.WORKFLOWSTATUS_IND02 on Coretest.WORKFLOWSTATUS (WORKFLOW_ID)  TABLESPACE INDX2;
+create index Coretest.WORKFLOWSTATUS_IND03 on Coretest.WORKFLOWSTATUS (ITEM_INVOCATION_ID)  TABLESPACE INDX2;
 
 
 
