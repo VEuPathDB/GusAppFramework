@@ -93,6 +93,10 @@ sub new {
       t => 'int',
       h => 'ignores entries in fasta file prior to this number...',
      },
+     {o => 'Project',
+      t => 'string',
+      h => 'if set, projectlink entry is made',
+     },
     ];
 
   $self->initialize({requiredDbVersion => {},
@@ -243,6 +247,7 @@ sub process {
   }
 
   $aas->submit() if $aas->hasChangedAttributes();
+  &makeProjLink($aas) if $ctx->{cla}->{Project}; 
   if ($ctx->{cla}->{'writeFile'}) {
     print WF ">",$aas->getId()," $source_id $secondary_id $name $description\n$sequence\n";
   }
@@ -314,5 +319,45 @@ sub checkIfHave {
   return 0;
 }
 
+sub makeProjLink {
+  my $T = shift;  # table object;
+  my %plink;
+
+  # table
+  $plink{table_id} = $T->getTableIdFromTableName($T->getClassName);
+  $plink{id}       = $T->getId();
+
+  eval ("require GUS::Model::DoTS::ProjectLink");
+  my $projlink_gus = GUS::Model::DoTS::ProjectLink->new(\%plink);
+
+  if ($projlink_gus->retrieveFromDB) {
+    # case when projectLink is in dB
+    print "ProjectLink already in DB with ID " . $projlink_gus->getId . "\n";
+    return undef;
+  } else {
+    $projlink_gus->setProjectId(&getProjId());
+
+    $projlink_gus->submit();
+    return 1;
+  }
+}
+
+sub setProjId {
+  my %project = ( name => $ctx->{cla}->{Project} );
+
+  eval ("require GUS::Model::Core::ProjectInfo");
+  my $project_gus = GUS::Model::Core::ProjectInfo->new(\%project);
+  if ($project_gus->retrieveFromDB) {
+    my $projId = $project_gus->getId;
+    return $projId;
+  } else {
+    print "ERROR in returning ProjectID\n";
+    return undef;
+  }
+}
+
+sub getProjId {
+  return (&setProjId);
+}
 
 1;
