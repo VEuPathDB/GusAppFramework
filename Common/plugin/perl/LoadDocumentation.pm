@@ -25,8 +25,11 @@
 ###              attribute name exists before loading documentation
 ###    - May-15-2003
 ###         - fixed $easycsp for 'inputFile' and removed 'testnumber'
+###    - November-10-2003
+###         - fixed so that an additional check is done to see if 
+###              table documentation already exists
 ###
-### Last modified May-22-2003
+### Last modified November-10-2003
 ###
 ### usage: ga LoadDocumentation --inputFile [file]
 ###   run from inside directory containing file to upload 
@@ -96,7 +99,7 @@ sub run {
 	}
 	$doc_fh->close;
 
-	return "processed $countInserts rows";
+	return "Inserted $countInserts rows";
 } # end sub run
 
 ############################################################
@@ -114,11 +117,11 @@ sub process {
 
 	if ($db->checkTableExists($table_nm)){ # if table exists
 
-	  ## skip identical documentation - query db
+	  ## skip identical documentation - query db for attribute documentation
 	  my $dbh = $ctx->{'self_inv'}->getDbHandle();
 	  my $t_id = $doc->getTableIdFromTableName($table_nm); #get table_id from table name
 	  my $query = "SELECT table_id, attribute_name, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$t_id AND attribute_name='$attribute_nm'";
-	  $self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
+	  $self->logVerbose("Querying Core.DatabaseDocumentation for duplicate attribute documentation");
 	  my $stmt = $dbh->prepare($query);
 	  $stmt->execute();
 	  my ($tb_id, $att_name, $html);
@@ -134,7 +137,29 @@ sub process {
 	      $self->logAlert("ALREADY EXISTS! Documentation for $table_nm" . "." ."$attribute_nm NOT OVERWRITTEN!");
 	      return; # SKIP
 	    }
-	  }
+	  } # end while
+
+	  ## skip identical documentation - query db for table documentation
+	  my $dbh2 = $ctx->{'self_inv'}->getDbHandle();
+	  my $t_id2 = $doc->getTableIdFromTableName($table_nm); #get table_id from table name
+	  my $query2 = "SELECT table_id, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$t_id AND attribute_name IS NULL";
+	  $self->logVerbose("Querying Core.DatabaseDocumentation for duplicate table documentation");
+	  my $stmt2 = $dbh->prepare($query2);
+	  $stmt2->execute();
+	  my ($tb_id2, $html2);
+
+	  while (my @ary = $stmt->fetchrow_array() ){
+	    chomp;
+	    $tb_id = $ary[0]; #queried table id
+	    $html = $ary[1]; #queried html documentation
+
+	    ## SKIP if documentation is identical to what is already in db
+	    if ($html eq $html_dc){ 
+	      $self->logAlert("ALREADY EXISTS! Documentation for $table_nm NOT OVERWRITTEN!");
+	      return; # SKIP
+	    }
+	  } # end while
+
 	  ## attribute is valid for this table - SUBMIT
 	  if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
 
@@ -160,12 +185,6 @@ sub process {
 
 	  ## documentation for the table (attribute name is NULL) - SUBMIT
 	  elsif ($attribute_nm eq "NULL" || $attribute_nm eq "null"  || $attribute_nm eq ""){
-	    ## SKIP if documentation is identical to what is already in db
-	    if ($html eq $html_dc){ 
-	      $self->logAlert("ALREADY EXISTS! Documentation for $table_nm NOT OVERWRITTEN!");
-	      return; # SKIP
-	    }
-
 	    $self->logVerbose("Documentation for table (no attribute supplied)");
 
 	    ## bind table id to DatabaseDocumentation object
