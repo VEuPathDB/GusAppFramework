@@ -74,7 +74,7 @@ sub new {
      },
      {o => 'table_name',
       t => 'string',
-      h => 'Table name to insert sequences into',
+      h => 'Table name to insert sequences into, in schema::table format',
       e => [ qw( DoTS::ExternalNASequence DoTS::VirtualSequence DoTS::ExternalAASequence DoTS::MotifAASequence) ],
      },
      {o => 'update',
