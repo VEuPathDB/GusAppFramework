@@ -1525,8 +1525,8 @@ sub getTableNameFromTableId {
 }
 
 sub getTableIdFromTableName {
-  my($self,$tableName) = @_;
-  return $self->getDatabase()->getTable($tableName)->getTableId();
+  my($self,$className) = @_;
+  return $self->getDatabase()->getTable($className)->getTableId();
 }
 
 sub getTablePKFromTableId {
