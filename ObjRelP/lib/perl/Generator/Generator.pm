@@ -76,8 +76,11 @@ sub generate {
 	
 	my ($schemaName, $tableName) = ($2, $3);
 	
+	if ($self->{javaOrPerl} eq "java"){
+	    next if ( $tableName =~ /Imp$/);
+	}
 	next if (($self->{schemas} && !$self->{schemas}->{$schemaName})
-		 || $tableName =~ /Ver$/ || $tableName =~ /Imp$/);
+		 || $tableName =~ /Ver$/);
 	
 	print "generating $self->{javaOrPerl} object for $schemaName" . "::" . $tableName . "\n";
 	
