@@ -194,6 +194,7 @@ sub run {
     my $targetTableId = $cla->{'target_table_id'};
     my $targetTaxonId = $cla->{'target_taxon_id'};
     my $targetExtDbRelId = $cla->{'target_db_rel_id'};
+    my $ext_genome_ver = &getUcscGenomeVersion($dbh, $targetExtDbRelId);
 
     my $minQueryPct = $cla->{'min_query_pct'};
 
@@ -261,7 +262,7 @@ sub run {
 	    ++$nAligns;
 	    ++$nTotalAligns;
 
-	    my $nl = &loadAlignment($dbh, $insertSql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
+	    my $nl = &loadAlignment($dbh, $ext_genome_ver, $insertSql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
 				    $targetTableId, $targetTaxonId, $targetExtDbRelId, $qIndex, $qualityParams,
 				    $alreadyLoaded, $targetIdHash, $align, $minQueryPct);
 
@@ -439,13 +440,12 @@ sub makeAlignmentHash {
 # of alignments (0 or 1) actually loaded.
 #
 sub loadAlignment {
-    my($dbh, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId, $targetTableId, $targetTaxonId,
+    my($dbh, $ext_genome_ver, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId, $targetTableId, $targetTaxonId,
        $targetExtDbRelId,$qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align, $minQueryPct) = @_;
 
     my $query_id = $align->get('q_name');
     my $target_id = $align->get('t_name');
     #HACK: the gap tables are loaded into ygan space
-    my $ext_genome_ver = &getUcscGenomeVersion($dbh, $targetExtDbRelId);
     my $gapTable = 'ygan.' . $ext_genome_ver . '_' . $target_id . '_gap';
 
     # Map target query name -> na_sequence_id if required
