@@ -290,8 +290,8 @@ sub deleteTaxonName {
     if ($TaxonNameIdHash->{$taxon_name_id}==1) {
       next();
     }
-    elsif ($TaxonIdHash->{$Taxon_id}==$name_class) {
-      my $newTaxonName = TaxonName->new({'taxon_name_id'=>$tax_id});
+    elsif ($TaxonIdHash->{$taxon_id}==$name_class) {
+      my $newTaxonName = TaxonName->new({'taxon_name_id'=>$taxon_name_id});
       $newTaxonName->retrieveFromDB();
       $newTaxonName->markDeleted();
       $newTaxonName->submit();
