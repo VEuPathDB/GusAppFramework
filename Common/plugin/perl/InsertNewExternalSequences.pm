@@ -1,143 +1,94 @@
-############################################################
-## Change Package name....
-############################################################
-package InsertNewExternalSequences;
+package GUS::Common::Plugin::InsertNewExternalSequences;
 
+@ISA = qw(GUS::PluginMgr::Plugin); 
 use strict;
 
-############################################################
-# Add any specific objects (GUSdev::) here
-############################################################
 
 sub new {
-	my $Class = shift;
+  my ($class) = @_;
+  my $self = {};
+  bless($self,$class);
 
-	return bless {}, $Class
-}
+  my $usage = 'insert new ExternalSequences (NA or AA) from a FASTA file';
+  my $easycsp =
+    [{o => 'testnumber=i',
+      h => 'number of iterations for testing',
+     },
+     {o => 'writeFile',
+      t => 'string',
+      h => 'writes a sequence file of the new entries',
+     },
+     {o => 'external_database_release_id=i',
+      h => 'ExternalDatabase release id for these sequences',
+     },
+     {o => 'log_frequency=i',
+      h => 'frequency to print log',
+      d => 10,
+     },
+     {o => 'sequence_type_id=i',
+      h => 'sequence type id for these sequences',
+     },
+     {o => 'taxon_id=i',
+      h => 'taxon id for these sequences',
+     },
+     {o => 'sequencefile=s',
+      h => 'name of file containing the sequences',
+     },
+     {o => 'no_sequence!',
+      h => 'if on command line, will not set sequence',
+     },
+     {o => 'regex_source_id=s',
+      h => 'regular expression to pick the source_id of the sequence from the defline',
+     },
+     {o => 'regex_secondary_id=s',
+      h => 'regular expression to pick the secondary id of the sequence from the defline',
+     },
+     {o => 'regex_name=s',
+      h => 'regular expression to pick the name of the sequence from the defline',
+     },
+     {o => 'regex_desc=s',
+      h => 'regular expression to pick the description of the sequence from the defline',
+     },
+     {o => 'regex_chromosome=s',
+      h => 'regular expression to pick the chromosome from the defline',
+     },
+     {o => 'regex_mol_wgt=s',
+      h => 'regular expression to pick the molecular weight of the sequence from the defline',
+     },
+     {o => 'regex_contained_seqs=s',
+      h => 'regular expression to pick the number of contained sequences from the defline',
+     },
+     {o => 'table_name=s',
+      h => 'Table name to insert sequences into',
+      e => [ qw( DoTS::ExternalNASequence DoTS::VirtualSequence DoTS::ExternalAASequence DoTS::MotifAASequence) ],
+     },
+     {o => 'update',
+      t => 'boolean',
+      h => 'if true, checks to see if row is updated...',
+     },
+     {o => 'update_longest',
+      t => 'boolean',
+      h => 'if true, checks to see if sequence is longer than that currently loaded, if so, updates the entry...',
+     },
+     {o => 'no_check',
+      t => 'boolean',
+      h => 'if true, does NOT check to see if external_database_release_id,source_id is already in db...',
+     },
+     {o => 'startAt',
+      t => 'integer',
+      h => 'ignores entries in fasta file prior to this number...',
+     },
+    ];
 
-sub Usage {
-	my $M   = shift;
-	return 'Use for inserting new ExternalSequences (NA or AA) from a FASTA file';
-}
-
-############################################################
-# put the options in this method....
-############################################################
-sub CBIL::Util::EasyCspOptions {
-	my $M   = shift;
-	{
-
-#		test_opt1 => {
-#									o => 'opt1=s',
-#									h => 'option 1 for test application',
-#									d => 4,
-#									l => 1,	ld => ':',
-#									e => [ qw( 1 2 3 4 ) ],
-#								 },
-
- testnumber        => {
-                       o => 'testnumber=i',
-                       h => 'number of iterations for testing',
-                      },
- writeFile         => {
-                       o => 'writeFile',
-                       t => 'string',
-                       h => 'writes a sequence file of the new entries',
-                      },
- external_db_id          => {
-                             o => 'external_db_id=i',
-                             h => 'ExternalDatabase identifier for these sequences',
-                            },
- log_frequency           => {
-                             o => 'log_frequency=i',
-                             h => 'frequency to print log',
-                             d => 10,
-                            },
-                              
- sequence_type_id        => {
-                             o => 'sequence_type_id=i',
-                             h => 'sequence type id for these sequences',
-                            },
-                              
- taxon_id                => {
-                             o => 'taxon_id=i',
-                             h => 'taxon id for these sequences',
-                            },
-                              
-                              
- sequencefile            => {
-                             o => 'sequencefile=s',
-                             h => 'name of file containing the sequences',
-                            },
-                              
- no_sequence             => {
-                             o => 'no_sequence!',
-                             h => 'if on command line, will not set sequence',
-                            },
-
- regex_source_id         => {
-                             o => 'regex_source_id=s',
-                             h => 'regular expression to pick the source_id of the sequence from the defline',
-                            },
-
- regex_secondary_id      => {
-                             o => 'regex_sec_id=s',
-                             h => 'regular expression to pick the secondary id of the sequence from the defline',
-                            },
-
- regex_name              => {
-                             o => 'regex_name=s',
-                             h => 'regular expression to pick the name of the sequence from the defline',
-                            },
-
- regex_description       => {
-                             o => 'regex_desc=s',
-                             h => 'regular expression to pick the description of the sequence from the defline',
-                            },
-
- regex_chromosome        => {
-                             o => 'regex_chromosome=s',
-                             h => 'regular expression to pick the chromosome from the defline',
-                            },
-
- regex_mol_wgt           => {
-                             o => 'regex_mol_wgt=s',
-                             h => 'regular expression to pick the molecular weight of the sequence from the defline',
-                            },
-
- regex_contained_seqs    => {
-                             o => 'regex_contained_seqs=s',
-                             h => 'regular expression to pick the number of contained sequences from the defline',
-                            },
-
- table_name              => {
-                             o => 'table_name=s',
-                             h => 'Table name to insert sequences into',
-                             #														 d => 'ExternalNASequence',
-                             e => [ qw( ExternalNASequence VirtualSequence ExternalAASequence MotifAASequence) ],
-                            },
- update                   => {
-                              o => 'update',
-                              t => 'boolean',
-                              h => 'if true, checks to see if row is updated...',
-                          },
- update_longest           => {
-														 o => 'update_longest',
-                             t => 'boolean',
-														 h => 'if true, checks to see if sequence is longer than that currently loaded, if so, updates the entry...',
-											    },
-
- no_check             => {
-                          o => 'no_check',
-                          t => 'boolean',
-                          h => 'if true, does NOT check to see if external_db_id,source_id is already in db...',
-                         },
- startAt              => {
-                          o => 'startAt',
-                          t => 'integer',
-                          h => 'ignores entries in fasta file prior to this number...',
-                         },
-	}
+  $self->initialize({requiredDbVersion => {},
+		     cvsRevision => '$Revision$', # cvs fills this in!
+		     cvsTag => '$Name$', # cvs fills this in!
+		     name => ref($self),
+		     revisionNotes => 'make consistent with GUS 3.0',
+		     easyCspOptions => $easycsp,
+		     usage => $usage
+		    });
+  return $self;
 }
 
 my $countInserts = 0;
@@ -146,18 +97,18 @@ my $checkStmt;
 my $prim_key;
 $| = 1;
 
-sub Run {
+sub run {
   my $M   = shift;
   $ctx = shift;
 
-  if (!$ctx->{'external_db_id'} || !-e "$ctx->{'sequencefile'}" || !$ctx->{cla}->{table_name}) {
-    die "you must provide --external_db_id, --table_name and valid fasta sequencefile on the command line\n";
+  if (!$ctx->{'external_database_release_id'} || !-e "$ctx->{'sequencefile'}" || !$ctx->{cla}->{table_name}) {
+    die "you must provide --external_database_release_id, --table_name and valid fasta sequencefile on the command line\n";
   }
   
   print $ctx->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
   print "Testing on $ctx->{'testnumber'}\n" if $ctx->{'testnumber'};
 
-  eval("require GUS::Model::::".$ctx->{cla}->{table_name});
+  eval("require GUS::Model::".$ctx->{cla}->{table_name});
 
   ##open sequence file
   if ($ctx->{'sequencefile'} =~ /gz$/) {
@@ -173,12 +124,14 @@ sub Run {
     open(WF,">>$ctx->{cla}->{writeFile}");
   }
 
-  if ($ctx->{cla}->{table_name} eq 'VirtualSequence') {
+  if ($ctx->{cla}->{table_name} eq 'DoTS::VirtualSequence') {
     $ctx->{cla}->{sequence_type_id} = 20;
   }
 
   #	my $sql = "select $prim_key from ExternalNASequence where source_id = '$source_id' and external_db_id = $ctx->{'external_db_id'}";
-  $checkStmt = $ctx->{self_inv}->getQueryHandle()->prepare("select $prim_key from $ctx->{cla}->{table_name} where source_id = ? and external_db_id = $ctx->{'external_db_id'}");
+  $ctx->{cla}->{table_name} =~ /(\w+)::(\w+)/ || die "table_name not in schema::table format";
+  my ($sc, $tbl) = ($1, $2);
+  $checkStmt = $ctx->{self_inv}->getQueryHandle()->prepare("select $prim_key from $sc.$tbl where source_id = ? and external_database_release_id = $ctx->{'external_database_release_id'}");
 
   my $source_id;
   my $name;
@@ -224,7 +177,7 @@ sub Run {
       if ($ctx->{'regex_chromosome'} && /$ctx->{'regex_chromosome'}/) {
         $chromosome = $1;
       }
-      if ($ctx->{'regex_description'} && /$ctx->{'regex_description'}/){ 
+      if ($ctx->{'regex_desc'} && /$ctx->{'regex_desc'}/){ 
         $description = $1; 
       }
       if($ctx->{'regex_mol_wgt'} && /$ctx->{'regex_mol_wgt'}/){ 
@@ -260,7 +213,8 @@ sub process {
 	$id = &checkIfHave($source_id) unless $ctx->{cla}->{no_check};
   my $aas;
   if($id && $ctx->{cla}->{update}){
-    $aas = $ctx->{cla}->{table_name}->new({$prim_key => $id});
+    my $className = "GUS::Model::$ctx->{cla}->{table_name}";
+    $aas = $className->new({$prim_key => $id});
     $aas->retrieveFromDB();
     $aas->setSecondaryIdentifier($secondary_id) unless !$secondary_id || $aas->getSecondaryIdentifier() eq $secondary_id;
     $aas->setDescription($description) unless !$description || $aas->getDescription() eq $description;
@@ -283,9 +237,14 @@ sub process {
 
 sub createNewExternalSequence {
 	my($source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence) = @_;
-	my $aas = $ctx->{cla}->{table_name}->new({'external_db_id' => $ctx->{cla}->{'external_db_id'},
-																		 'source_id' => $source_id,
-																		 'subclass_view' => $ctx->{cla}->{table_name} });
+	my $className = "GUS::Model::$ctx->{cla}->{table_name}";
+	$className =~ /GUS::Model::\w+::(\w+)/ || die "can't parse className";
+	my $tbl = $1;
+
+	my $aas = $className->
+	  new({'external_database_release_id' => $ctx->{cla}->{'external_database_release_id'},
+	       'source_id' => $source_id,
+	       'subclass_view' => $tbl });
 	if($secondary_id && $aas->isValidAttribute('name')){ $aas->set('secondary_identifier',$secondary_id);}
 	if ($aas->isValidAttribute('sequence_type_id')) {
     $aas->setSequenceTypeId($ctx->{cla}->{'sequence_type_id'} ? $ctx->{cla}->{'sequence_type_id'} : 11);
@@ -294,9 +253,10 @@ sub createNewExternalSequence {
   if($ctx->{cla}->{'taxon_id'}){ 
     if ($aas->isValidAttribute('taxon_id')){
       $aas->setTaxonId($ctx->{cla}->{'taxon_id'});
-    }elsif ($ctx->{cla}->{table_name} eq 'ExternalAASequence'){
-      eval ("require GUS::Model::::AASequenceTaxon");
-      my $aast = AASequenceTaxon->new({taxon_id => $ctx->{cla}->{'taxon_id'}});
+    }elsif ($ctx->{cla}->{table_name} eq 'DoTS::ExternalAASequence'){
+      eval ("require GUS::Model::DoTS::AASequenceTaxon");
+      my $aast =  GUS::Model::DoTS::AASequenceTaxon->
+	new({taxon_id => $ctx->{cla}->{'taxon_id'}});
       $aas->addChild($aast);
     }else{
       print STDERR "Cannot set taxon_id for table_name " . $ctx->{cla}->{table_name} . "\n";
