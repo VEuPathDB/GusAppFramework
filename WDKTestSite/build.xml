@@ -1,6 +1,7 @@
 <project name="WDK temp build" default="deploy" basedir=".">
 
   <property name="webapp.dir"    value="/nfs/team81/art/genedb/webapps/sampleWDK"/>
+  <property name="gus.home"    value="/nfs/team81/art/gus/gus_home"/>
   <property name="build.home"    value="${basedir}/ant-build"/>
   <property name="src.home"      value="${basedir}/src/java"/>
 
@@ -66,9 +67,13 @@
     </copy>
 
     <copy todir="${build.home}/site/WEB-INF/lib" 
-          file="../WebDevKit/ant-build/wdk.jar" />
+          file="../WebDevKit/ant-build/GUS-WebDevKit.jar" />
 
-    <mkdir dir="${webapp.dir}"/>
+    <copy todir="${gus.home}/lib/xml"> 
+      <fileset dir="lib/xml" includes="*.xml" />
+  	</copy>
+  	
+  	<mkdir dir="${webapp.dir}"/>
     <copy todir="${webapp.dir}">
       <fileset dir="${basedir}/ant-build/site" />
     </copy>
