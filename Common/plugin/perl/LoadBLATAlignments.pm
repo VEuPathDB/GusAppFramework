@@ -41,12 +41,16 @@ sub new {
        {  o => 'blat_dir',
 	  h => 'dir with files containing BLAT results in .psl format',
 	  t => 'string', 
-      },
+       },
        {  o => 'blat_files',
 	  h => 'Files containing BLAT results in .psl format',
-	  t => 'string', 
-      },
-      { 
+	  t => 'string',
+       },
+       {  o => 'reg_ex',
+	  h => 'Regular expression for finding source ID in defline',
+	  t => 'string',
+       },
+       {
 	  o => 'file_list',
 	  h => 'File that contains a list of newline-separated BLAT files (used instead of --blat_files).',
 	  t => 'string',
@@ -204,6 +208,7 @@ sub run {
     my $queryTableId = $cla->{'query_table_id'};
     my $targetTableId = $cla->{'target_table_id'};
     my $action = $cla->{'action'};
+    my $regEx = $cla->{'reg_ex'};
 
     die "LoadBLATAlignments: query_file not defined" unless $queryFile;
     die "LoadBLATAlignments: unrecognized query_table_id" if (!($queryTableId =~ /^56|57|89|245|339$/));
@@ -223,7 +228,7 @@ sub run {
     if (!$action || $action eq 'load') {
 	my $blatFiles = join(',', @blatFiles);
 	$self->log("Load alignments from raw BLAT output files $blatFiles ...");
-	my $qIndex = &maybeIndexQueryFile($queryFile);
+	my $qIndex = &maybeIndexQueryFile($queryFile, $regEx);
 	$summary = $self->loadAlignments($blatFiles, $qIndex);
     }
 
@@ -467,7 +472,7 @@ sub keepBestAlignments {
 # maybe index query sequence file
 #
 sub maybeIndexQueryFile {
-    my ($queryFile) = @_;
+    my ($queryFile, $regEx) = @_;
     # Make sure that query_file is indexed
     #
     my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
@@ -475,7 +480,9 @@ sub maybeIndexQueryFile {
     my $idSub = sub {
 	my($defline) = @_;
 
-	if ($defline =~ /^>(DT\.\d+|THC\d+)/) {
+	if ($regEx && $defline =~ /$regEx/ ) {
+	    return $1;
+	} elsif ($defline =~ /^>(DT\.\d+|THC\d+)/) {
 	    return $1;
 	} elsif ($defline =~ /^>(\d+)\s+/) {
 	    return $1;
