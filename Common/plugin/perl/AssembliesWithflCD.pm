@@ -232,20 +232,23 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
     my @DTSasEvidenceTarget;
 
+    my $DT;
+
+
    while(my($target_id) = $stmt3->fetchrow_array( ))  {
 
       push(@DTSasEvidenceTarget, $target_id);
 
    }
 
-    foreach my $target(@DTSasEvidenceTarget)  {
+    foreach my $target_id(@DTSasEvidenceTarget)  {
 
       foreach (@$DTarray_ref)  {
 
 
-       if ($target == $DT){  next;  }
+       if ($target_id == $DT){  next;  }
 
-        if ($target != $DT)  {
+        if ($target_id != $DT)  {
 
           my $dbh = $self->getQueryHandle();
 
