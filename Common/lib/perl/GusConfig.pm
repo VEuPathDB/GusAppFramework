@@ -4,6 +4,8 @@ use strict;
 
 use CBIL::Util::PropertySet;
 
+# JC: What is the third field in these arrays used for?  
+# I don't see where PropertySet.pm makes use of it.
 my @properties = 
 (
  ["coreSchemaName",   "",  ""],
@@ -15,9 +17,12 @@ my @properties =
  ["databasePassword",   "",  ""],
  ["readOnlyDatabaseLogin",         "",  ""],
  ["readOnlyDatabasePassword",   "",  ""],
+ # JC: this is not optimal, but PropertySet won't accept an empty string here
+ # without requiring that the user supply a value for the parameter
+ ["oracleDefaultRollbackSegment",   "none", ""],  
 );
 
-# param gusconfigfile - an optional file of 'name=value'.
+# param gusConfigFile - an optional file of 'name=value'.
 #                       default = $ENV{GUS_CONFIG_FILE}
 sub new {
   my ($class, $gusConfigFile) = @_;
@@ -74,5 +79,10 @@ sub getReadOnlyDatabaseLogin {
 sub getReadOnlyDatabasePassword {
   my ($self) = @_;
   return $self->{propertySet}->getProp('readOnlyDatabasePassword');
+}
+
+sub getOracleDefaultRollbackSegment {
+  my ($self) = @_;
+  return $self->{propertySet}->getProp('oracleDefaultRollbackSegment');
 }
 

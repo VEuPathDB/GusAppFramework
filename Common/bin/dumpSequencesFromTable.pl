@@ -32,7 +32,8 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$gusconfig->getReadOnlyDatabaseLogin(),
 					$gusconfig->getReadOnlyDatabasePassword,
 					$verbose,0,1,
-					$gusconfig->getCoreSchemaName);
+					$gusconfig->getCoreSchemaName,
+					$gusconfig->getOracleDefaultRollbackSegment());
 
 my $dbh = $db->getQueryHandle();
 

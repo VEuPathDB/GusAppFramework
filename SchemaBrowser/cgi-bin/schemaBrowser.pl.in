@@ -137,7 +137,7 @@ my $hasTableInfo;
 my $hasDocumentation;
 
 if ($rq{'db'} ne '*') {
-    $db = new GUS::ObjRelP::DbiDatabase($$login{'dbi_str'}, $$login{'login'}, $$login{'password'}, 0, 1, 1, $rq{'db'});
+    $db = new GUS::ObjRelP::DbiDatabase($$login{'dbi_str'}, $$login{'login'}, $$login{'password'}, 0, 1, 1, $rq{'db'}, undef);
     $hasTableInfo = $$login{'tableinfo'};
 }
 

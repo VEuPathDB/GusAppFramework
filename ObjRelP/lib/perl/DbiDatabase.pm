@@ -5,10 +5,11 @@ package GUS::ObjRelP::DbiDatabase;
 # Package:  DbiDatabase
 # Description  :
 #
-# Modified  By               Description
+# Modified    By                 Description
 # _________________________________________________________
 #
-# 6/22/00   Sharon Diskin    Created
+# 6/22/2000   Sharon Diskin      Created
+# 6/17/2003   Jonathan Crabtree  Fixed hard-coding of rollback segment.
 #
 ############################################################
 
@@ -28,14 +29,15 @@ my $debug = 0;
 ############################################################
 
 sub new {
-  my ($class,$dsn,$login,$password,$verbose,$noInsert,$default,$coreName) = @_;
+  my ($class,$dsn,$login,$password,$verbose,$noInsert,$default,$coreName,$defaultOracleRollbackSegment) = @_;
   my $self = {};
   bless $self, $class;
   $self->setDSN($dsn);
 
   &confess("You must supply a DbiDsn to the constructor of DbiDatabase") unless $dsn;
 
-  if (scalar(@_) != 8) {
+  # $defaultOracleRollbackSegment is optional
+  if ((scalar(@_) < 8) || (scalar(@_) > 9)) {
     &confess("Invalid number of args for the DbiDatabase constructor");
   }
 
@@ -44,6 +46,7 @@ sub new {
   $self->setLogin($login);
   $self->setVerbose($verbose);
   $self->setNoInsert($noInsert);
+  $self->setDefaultOracleRollbackSegment($defaultOracleRollbackSegment);
   if ($default || !$defDbiDb) {
     $defDbiDb = $self;
   }
@@ -92,6 +95,8 @@ sub setVerbose { my ($self,$v) = @_; $self->{'verbose'} = $v; }
 sub getVerbose { my ($self) = @_; return $self->{'verbose'}; }
 sub setNoInsert { my ($self,$ni) = @_; $self->{'noInsert'} = $ni; }
 sub getNoInsert { my ($self) = @_; return $self->{'noInsert'}; }
+sub setDefaultOracleRollbackSegment { my ($self, $rs) = @_; $self->{'defaultOracleRollbackSegment'} = $rs; }
+sub getDefaultOracleRollbackSegment { my ($self) = @_; return $self->{'defaultOracleRollbackSegment'}; }
 sub setDbName { my ($self,$dbn) = @_; $self->{'dbname'} = $dbn; }
 sub getDbName { 
   my ($self,$dbh) = @_;
@@ -146,7 +151,8 @@ sub makeNewHandle {
   #	print STDERR "makeNewHandle($autocommit)\n";
   my $dbh = GUS::ObjRelP::DbiDbHandle->new($self->getDSN(), $self->getLogin(),$self->getPassword(),
                              $self->getVerbose(),$self->getNoInsert(), $autocommit);
-  $dbh->do("set transaction use rollback segment BIGRBS1") unless $self->getDSN() =~ /sybase/i;
+
+  $self->_setOracleRollbackSegment($dbh);
   return $dbh;
 }
 
@@ -466,8 +472,7 @@ sub manageTransaction {
       } else {
         $self->getDbHandle()->commit();
       }
-      ##use big rollback segment for oracle
-      $self->getDbHandle()->do("set transaction use rollback segment BIGRBS1");
+      $self->_setOracleRollbackSegment($self->getDbHandle());
     } elsif ($self->getDbHandle()->getRollBack() ) {
       print STDERR "ERROR: submit failed...rollBack = 1...being rolled back\n";
       if ($self->getDSN() =~ /sybase/i) {
@@ -475,8 +480,7 @@ sub manageTransaction {
       } else {
         $self->getDbHandle()->rollback();
       }
-      ##use big rollback segment for oracle
-      $self->getDbHandle()->do("set transaction use rollback segment BIGRBS1");
+      $self->_setOracleRollbackSegment($self->getDbHandle());
       return 0;                 ##will cause the return value of submit to be 0
     }
   } else {
@@ -700,6 +704,31 @@ sub className2oracleName {
   return $className;
 }
 
+############################################################
+# "Private" functions
+############################################################
+
+# Only used in Oracle; resets the current transaction's rollback segment
+# to getDefaultOracleRollbackSegment().  Must be called at the beginning
+# of every transaction in which the default rollback segment is to be used.
+# Does nothing unless the current setting of getDSN() indicates that we
+# are connected to an Oracle database.  Also does nothing if the current
+# value of getDefaultOracleRollbackSegment is "none" (e.g., if the current
+# Oracle instance is using AUTO undo management instead of rollback segments,
+# or the user does not wish to change his/her default rollback segment.)
+#
+sub _setOracleRollbackSegment {
+    my($self, $dbh) = @_;
+
+    if ($self->getDSN() =~ /oracle/i) {
+	my $rbs = $self->getDefaultOracleRollbackSegment();
+
+	# Can't specify a rollback segment named "none".  Probably not a bad thing.
+	if (($rbs =~ /\S+/) && !($rbs =~ /none/i)) {
+	    $dbh->do("set transaction use rollback segment $rbs");
+	}
+    }
+}
+
+
 1;
-
-

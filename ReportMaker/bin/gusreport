@@ -51,7 +51,8 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$dbLogin,
 					$dbPassword,
 					$verbose,0,1,
-					$gusconfig->getCoreSchemaName());
+					$gusconfig->getCoreSchemaName(),
+					$gusconfig->getOracleDefaultRollbackSegment());
 
 eval {
   &makeTempTable($tempTableName, $db, $sql, $primaryKeyName, 
