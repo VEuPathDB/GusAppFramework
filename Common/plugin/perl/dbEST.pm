@@ -1004,7 +1004,7 @@ is not given.
 sub checkExtNASeq {
   my ($M,$e,$seq) = @_;
   
-  my %seq_vals = ( 'taxon_id' => $M->{libs}->{$e->{id_lib}}->{taxon_id},
+  my %seq_vals = ( 'taxon_id' => $M->{libs}->{$e->{id_lib}}->{taxon},
                    'sequence' => $e->{sequence},
                    'length' => length $e->{sequence},
                    'sequence_type_id' =>  8,
