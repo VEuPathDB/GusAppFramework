@@ -7,9 +7,9 @@ use strict 'vars';
 # CBIL specific packages
 use CBIL::Util::Disp;
 use CBIL::Util::PropertySet;
-use GUS::PluginMgr::Plugin;
 
 # GUS specific packages
+use GUS::PluginMgr::Plugin;
 use GUS::Model::RAD3::Study;
 use GUS::Model::RAD3::Assay;
 use GUS::Model::RAD3::StudyAssay;
@@ -31,17 +31,18 @@ sub new {
   bless($self,$class);
 
   my $purposeBrief = "Creates assays, acquisitions and quantifications for GenePix assays en-batch.";
+
   my $purpose      = "Create assays, acquisitions and quantifications for GenePix assays in RAD3 tables from multiple files in batch mode.";
  
   my $tablesAffected = [
     ['RAD3::Study',                 'One row for the given study is entered'],
     ['RAD3::Assay',                 'One row for each distinct assay is entered'],
     ['RAD3::StudyAssay',            'One row linking the given study to each assay is entered'],
-    ['RAD3::Acquisition',           'Four rows, two for each channel (Cy5 or Cy3), corresponding to one assay, are entered'],
-    ['RAD3::Quantification',        'Four rows, two for each channel (Cy5 or Cy3), corresponding to one acquisition, are entered'],
-    ['RAD3::QuantificationParam',   'Eight rows, four for each channel (Cy5 or Cy3), corresponding to one quantification, are entered'],
-    ['RAD3::RelatedAcquisition',    'Ten rows, five for each channel (Cy5 or Cy3), associating the channels with each other are entered'],
-    ['RAD3::RelatedQuantification', 'Ten rows, five for each channel (Cy5 or Cy3), associating the channels with each other are entered']
+    ['RAD3::Acquisition',           'Two rows, two for each channel (Cy5 and Cy3), corresponding to one assay, are entered'],
+    ['RAD3::Quantification',        'Two rows, two for each channel (Cy5 and Cy3), corresponding to one acquisition, are entered'],
+    ['RAD3::QuantificationParam',   'Eight rows, four for each channel (Cy5 and Cy3), corresponding to four parameters per quantification, are entered'],
+    ['RAD3::RelatedAcquisition',    'Two rows, associating two channels (Cy5 and Cy3) with each other, are entered'],
+    ['RAD3::RelatedQuantification', 'Two rows, associating two channels (Cy5 and Cy3) with each other, are entered']
   ];
 
   my $tablesDependedOn = [
@@ -54,6 +55,7 @@ sub new {
   ];
 
   my $howToRestart = "Cannot be restarted."; 
+
   my $failureCases = "Files not in an appropriate format.";
 
   my $notes = <<NOTES;
@@ -63,7 +65,7 @@ sub new {
 =head2 F<General Description>
 
 Plugin reads a config file with information about full paths of directories where files of interest (.gpr & .tif)
-are maintained.  Data from the '.gpr' files are then parsed and entered into a database. 
+are maintained.  Information is extracted from the '.gpr' files and entered into a database. 
 
 Since assay, acquisition and most quantification parameters are not readily available through the '.gpr' files,
 they cannot be added to the database through this plugin. They have to be added to the tables separately, 
@@ -74,7 +76,7 @@ Certain portions in the PERL code are hard-coded for use by RAD at CBIL. These a
 and should be changed based on data maintained in the local instance of RAD.
 
 The plugin also assumes the following parameters to be the same for all assays: Array ID, Batch ID, Hybridization
-Protocol ID, Hybridization Operator ID, Acquisition Protocol ID and Quantification Protocol ID.
+Protocol ID, Hybridization Operator ID, Acquisition Protocol ID, Quantification Protocol ID and Quantification Operator ID.
 
 =head2 F<Config File [ required ]>
 
@@ -122,7 +124,7 @@ use the words 'null' as the value):
     the values can be left blank.
 
 Each of these keywords should be on a separate line. The values for these keywords should be separated by an '=' sign. A sample
-file is maintained in \$GUS_HOME/config/sample_GenePixStudyModuleILoader.cfg (the sample config file also contains instructions).
+file is maintained in \$PROJECT_HOME/GUS/RAD/config/sample_GenePixStudyModuleILoader.cfg (the sample config file also contains instructions).
 
 =head1 EXAMPLES
 
