@@ -1,0 +1,24 @@
+1. package statement:  use fully qualified package name
+
+2. add: @ISA = qw(GUS::PluginMgr::Plugin);   (before use strict)
+
+3. in all use statements, (eg, for GUS objects) give fully qualified package name (eg use GUS::Model::DoTS::AssemblyAnatomyPercent;)
+
+4. changes to the new method:
+
+5. get rid of the 'my $ctx' declaration
+
+6. replace 'sub Run {' with 'sub run {'
+
+7. run takes only one argument: $M or $self
+
+8. replace all $ctx->{cla}->  with $M->getCla()->
+
+9. replace all $ctx->{self_inv}->getQueryHandle() with $M->getQueryHandle()
+
+10. use $M->getQueryHandle() to get all database handles
+
+11. Logging: 
+     use $M->log() instead of print.
+
+12. WHY DOESN'T GA automatically log the command line args.
