@@ -7,7 +7,7 @@ use GUS::Pipeline::Manager;
 use GUS::Pipeline::MakeTaskDirs;
 use CBIL::Util::PropertySet;
 use File::Basename;
-
+use GUS::Pipeline::SshCluster;
 use FileHandle;
 
 $| = 1;
@@ -119,10 +119,10 @@ my @properties =
  #Blast
  #global blast param files
  ["blastsimilarity.taskSize", "",  "number of seqs to process per blastsimilarity subtask"],
- ["liniacServer",         "",  "full name of liniac server"],
+ ["clusterServer",         "",  "full name of cluster server"],
  ["dotsSeqDir",         "",  "where to find prodom.fsa file in dots build directory"],
- ["serverPath",           "",  "full path of dots update dir on liniac server"],
- ["nodePath",             "",  "full path of scratch dir on liniac node"],
+ ["serverPath",           "",  "full path of dots update dir on cluster server"],
+ ["nodePath",             "",  "full path of scratch dir on cluster node"],
 
  #prodom blast param files
  ["blastsimilarity.Bparam", "", "paramter B for blastsimilarity"], 
@@ -131,10 +131,10 @@ my @properties =
  ["blastsimilarity.Tparam", "", "paramter T for blastsimilarity"],
  ["blastsimilarity.Wparam", "", "paramter W for blastsimilarity"],
  ["prodomBlastType", "", "blast type to blast external sequences agains prodom domains"],
- ["wuBlastBinPathLiniac",         "",  "path of wu blast bin dir on Liniac"],
+ ["wuBlastBinPathCluster",         "",  "path of wu blast bin dir on Cluster"],
 
  #cdd blast param files
- ["ncbiBlastBinPathLiniac",         "",  "path of ncbi blast bin dir on Liniac"],  
+ ["ncbiBlastBinPathCluster",         "",  "path of ncbi blast bin dir on Cluster"],  
  ["blastsimilarity.Pparam", "", "paramter P for blastsimilarity"], 
  ["blastsimilarity.Aparam", "", "paramter A for blastsimilarity"],
  ["blastsimilarity.cddEparam", "", "paramter E for cdd blastsimilarity"],
@@ -169,8 +169,19 @@ my $pipelineDir = "$goBuildDir/$buildName"; #/files/cbil/data/cbil/ptolemy/cbil/
 ###################  The Pipeline  ##########################
 
 #initialize
+my $cluster;
+if ($propertySet->getProp('clusterServer') ne "none") {
+  $cluster = GUS::Pipeline::SshCluster->new($propertySet->getProp('clusterServer'),
+					  $propertySet->getProp('clusterUser') );
+} else {
+  $cluster = GUS::Pipeline::NfsCluster->new();
+}
 
-my $mgr = GUS::Pipeline::Manager->new($pipelineDir, $propertySet, $propertiesFile);
+
+my $mgr = GUS::Pipeline::Manager->new($pipelineDir, $propertySet, 
+				      $propertiesFile, $cluster, 
+				      $propertySet->getProp('testNextPlugin'));
+
 
 &createGoPredictPipelineDir();
 
@@ -240,11 +251,11 @@ my $mgr = GUS::Pipeline::Manager->new($pipelineDir, $propertySet, $propertiesFil
 
 #blast sequences against motifs
 
-&copyPipelineDirToLiniac();
+&copyPipelineDirToCluster();
 
 &blastGOSeqsAgainstMotifs();
 
-&copySimsFromLiniac();
+&copySimsFromCluster();
 
 &substituteCDDPKs();
 
@@ -279,7 +290,7 @@ sub createGoPredictPipelineDir {
 	return;
     }
     
-    #paths on liniac server
+    #paths on cluster server
     my $serverPath = $propertySet->getProp('serverPath');
     my $nodePath = $propertySet->getProp('nodePath');
 
@@ -288,7 +299,7 @@ sub createGoPredictPipelineDir {
     my $dotsSeqDir = $propertySet->getProp('dotsSeqDir');
    
     #prodom blast params
-    my $wuBlastBinPathLiniac = $propertySet->getProp('wuBlastBinPathLiniac');
+    my $wuBlastBinPathCluster = $propertySet->getProp('wuBlastBinPathCluster');
     my $bsBparam = $propertySet->getProp('blastsimilarity.Bparam');
     my $bsVparam = $propertySet->getProp('blastsimilarity.Vparam');
     my $bsWparam = $propertySet->getProp('blastsimilarity.Wparam');
@@ -297,7 +308,7 @@ sub createGoPredictPipelineDir {
     my $prodomBlastType = $propertySet->getProp('prodomBlastType'); #blastp
 
     #cdd blast params
-    my $ncbiBlastBinPathLiniac = $propertySet->getProp('ncbiBlastBinPathLiniac');
+    my $ncbiBlastBinPathCluster = $propertySet->getProp('ncbiBlastBinPathCluster');
     my $bsPparam = $propertySet->getProp('blastsimilarity.Pparam');
     my $bsAparam = $propertySet->getProp('blastsimilarity.Aparam');
     my $bsCddEParam = $propertySet->getProp('blastsimilarity.cddEparam');
@@ -318,14 +329,14 @@ sub createGoPredictPipelineDir {
 	#make "prodom" and "cdd" into parameters?
 	&makeSimilarityDir($subjectName, "prodom", $buildName, $goBuildDir, 
 			   $serverPath, $nodePath, $bsTaskSize, 
-			   $wuBlastBinPathLiniac,
+			   $wuBlastBinPathCluster,
 			   "prodom.fsa", $dotsSeqDir, "$subjectName.fsa",  '(\S+)', $prodomBlastType, 
 			   $prodomBlastParamsString);
 
 
 	&makeSimilarityDir($subjectName, "cdd", $buildName, $goBuildDir, 
 			   $serverPath, $nodePath, $bsTaskSize, 
-			   $ncbiBlastBinPathLiniac,
+			   $ncbiBlastBinPathCluster,
  			   "cdd/All", $dotsSeqDir, "$subjectName.fsa", '\w+\|\w+\|\d+\s+(\w+)', $cddBlastType, 
 			   $cddBlastParamsString);
 	 
@@ -1064,25 +1075,25 @@ sub _extractOrgProteinSeqs {
 
 
 
-#copy directory $buildName to liniac server directory 
+#copy directory $buildName to cluster server directory 
 #/genomics/binf/scratch/goPredicts/
 
 #make sure these directories are correct!
 
 #DTB: Make sure nodepath is correct, which is /scratch/user/dbarkan -- make
 #sure my permissions are ok
-sub copyPipelineDirToLiniac {
+sub copyPipelineDirToCluster {
 
 
     my $serverPath = $propertySet->getProp('serverPath');
-    my $liniacServer = $propertySet->getProp('liniacServer');
+    my $clusterServer = $propertySet->getProp('clusterServer');
     my $fromDir = $goBuildDir;
     my $fromFile = $buildName;
     
-    my $signal = "dir2liniac";
-    return if $mgr->startStep("Copying $goBuildDir/$buildName to $serverPath on $liniacServer", $signal, 'blastSeqs');
+    my $signal = "dir2cluster";
+    return if $mgr->startStep("Copying $goBuildDir/$buildName to $serverPath on $clusterServer", $signal, 'blastSeqs');
 
-    $mgr->copyToLiniac($fromDir, $fromFile, $liniacServer, $serverPath);
+    $mgr->copyToCluster($fromDir, $fromFile, $clusterServer, $serverPath);
 
     $mgr->endStep($signal);
 
@@ -1094,23 +1105,23 @@ sub blastGOSeqsAgainstMotifs{
     my $serverPath = $propertySet->getProp('serverPath');
     
     my $signal = "findGoSimilarities";
-    return if $mgr->startStep("Starting similarities between domains and external sequences on liniac", $signal, 'blastSeqs');
+    return if $mgr->startStep("Starting similarities between domains and external sequences on cluster", $signal, 'blastSeqs');
     
     $mgr->endStep($signal);
 
-    my $liniacCmdMsg = "submitPipelineJob runGoSimilarities $serverPath/$buildName NUMBER_OF_NODES";
-    my $liniacLogMsg = "monitor $serverPath/$buildName/logs/*.log and xxxxx.xxxx.stdout";
+    my $clusterCmdMsg = "submitPipelineJob runGoSimilarities $serverPath/$buildName NUMBER_OF_NODES";
+    my $clusterLogMsg = "monitor $serverPath/$buildName/logs/*.log and xxxxx.xxxx.stdout";
 
-    $mgr->exitToLiniac($liniacCmdMsg, $liniacLogMsg, 1);
+    $mgr->exitToCluster($clusterCmdMsg, $clusterLogMsg, 1);
 }
 
-sub copySimsFromLiniac{
+sub copySimsFromCluster{
 
     my $serverPath = $propertySet->getProp('serverPath');
-    my $liniacServer = $propertySet->getProp('liniacServer');
+    my $clusterServer = $propertySet->getProp('clusterServer');
 
-    my $signal = "copySimsFromLiniac";
-    return if $mgr->startStep("Copying external protein similarities from $liniacServer", 
+    my $signal = "copySimsFromCluster";
+    return if $mgr->startStep("Copying external protein similarities from $clusterServer", 
 			 $signal, 'blastSeqs');
 
     my @domainNames = ("prodom", "cdd");
@@ -1121,7 +1132,7 @@ sub copySimsFromLiniac{
 	foreach my $subjectName (@subjectNames) {
 	    my $fullName = "$subjectName-$domain";
 	    
-	    $mgr->copyFromLiniac($liniacServer, 
+	    $mgr->copyFromCluster($clusterServer, 
 				 "$serverPath/$buildName/similarity/$fullName/master/mainresult", 
 				 "blastSimilarity.out.gz", 
 				 "$pipelineDir/similarity/$fullName");
