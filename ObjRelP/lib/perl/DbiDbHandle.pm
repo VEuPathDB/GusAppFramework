@@ -206,4 +206,10 @@ package GUS::ObjRelP::DbiDbHandle::db;
 use vars qw(@ISA);
 @ISA = qw( DBI::db );
 
+package GUS::ObjRelP::DbiDbHandle::st;
+use vars qw(@ISA);
+@ISA = qw( DBI::st );
+
+
+
 1;
