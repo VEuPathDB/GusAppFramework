@@ -129,7 +129,7 @@ sub process {
 		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
 		my $stmt = $dbh->prepare($query);
 		$stmt->execute();
-		while (my @ary = $stmp->fetchrow_array() ){
+		while (my @ary = $stmt->fetchrow_array() ){
 		  chomp;
 		  my $tb_id = $ary[0]; #queried table id
 		  my $att_name = $ary[1]; #queried attribute name
