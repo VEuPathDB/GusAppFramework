@@ -214,9 +214,9 @@ sub run {
     my @blatFiles = &getBlatFiles($blatDir, $blatFiles, $fileList) unless $action eq 'setbest';
 
     if (!$action || $action eq 'strip') {
-	foreach (@blatFiles) {
-	    $self->log("stripping extra headers in $_");
-	    &CBIL::Bio::BLAT::PSLDir::strip($_);
+	foreach my $file (@blatFiles) {
+	    $self->log("stripping extra headers in $file");
+	    &CBIL::Bio::BLAT::PSLDir::strip($file);
 	}
     }
 
