@@ -122,13 +122,13 @@ sub setupNameHash {
 #
 sub run {
     my $self      = shift;
-    my $flatFile  = $self>getArgs->{'flat_file'};
-    my $release   = $self>getArgs->{'release'};
+    my $flatFile  = $self->getArgs->{'flat_file'};
+    my $release   = $self->getArgs->{'release'};
 
     die "No release specified"   if (not defined($release));
     die "No flat file specified" if (not defined($flatFile));
 
-    print STDERR "ImportPfam: COMMIT ", $self>getArgs->{'commit'} ? "****ON****" : "OFF", "\n";
+    print STDERR "ImportPfam: COMMIT ", $self->getArgs->{'commit'} ? "****ON****" : "OFF", "\n";
     print STDERR "ImportPfam: reading Pfam release $release from $flatFile\n";
 
     die "Unable to read $flatFile" if (not -r $flatFile);
@@ -244,7 +244,7 @@ sub run {
 
     my $summary = undef;
 
-    if ($self>getArgs->{'parse_only'}) {
+    if ($self->getArgs->{'parse_only'}) {
 	$summary = "Parsed $numEntries entries and $numRefs new database references from Pfam release $release.";
     } else {
 	$summary = "Loaded $numEntries entries and $numRefs database references from Pfam release $release.";
@@ -262,7 +262,7 @@ sub run {
 #
 sub readExternalDbReleases() {
     my($self, $dbh) = @_;
-    my $verbose     = $self>getArgs->{'verbose'};
+    my $verbose     = $self->getArgs->{'verbose'};
 
     print "In readExternalDbReleases()\n" if $verbose;
 
@@ -306,7 +306,7 @@ sub addRecords {
 
     # Mandatory attributes
     #
-    $pe->set('release',   $self>getArgs->{'release'});
+    $pe->set('release',   $self->getArgs->{'release'});
     $pe->set('accession', $entry->{'AC'});
 
     # escape single quotes
@@ -330,7 +330,7 @@ sub addRecords {
         $pe->set('comment_string', $entry->{'CC'});
     } 
 
-    $pe->submit() if (!$self>getArgs->{'parse_only'});
+    $pe->submit() if (!$self->getArgs->{'parse_only'});
     my $entryId = $pe->get('pfam_entry_id');
     my $links   = {}; # store flag for each $links->{$dbRefId} to say DbRefPfamEntry has had a submit()
 
@@ -390,10 +390,10 @@ sub createReferences {
                                                  'db_ref_id'     => $dbRefId});
 
         if (not(defined($links->{$dbRefId}))) {
-            $link->submit() if (!$self>getArgs->{'parse_only'});
+            $link->submit() if (!$self->getArgs->{'parse_only'});
             $links->{$dbRefId} = 1;
             return 1;
-        } elsif (!$self>getArgs->{'parse_only'}) {
+        } elsif (!$self->getArgs->{'parse_only'}) {
             print STDERR "Duplicate reference to db_ref_id $dbRefId from pfam_entry_id $pfamEntryId\n";
             return 0;
         }
@@ -422,8 +422,8 @@ sub getExtDbRelId {
 sub getDbRefId {
     my($self, $extDbRelId, $primaryId, $secondaryId, $remark) = @_;
 
-    my $verbose     = $self>getArgs->{'verbose'};
-    my $parseOnly   = $self>getArgs->{'parse_only'};
+    my $verbose     = $self->getArgs->{'verbose'};
+    my $parseOnly   = $self->getArgs->{'parse_only'};
     my $lcPrimaryId = $primaryId;
     $lcPrimaryId    =~ tr/A-Z/a-z/;
     
