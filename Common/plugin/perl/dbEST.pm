@@ -159,7 +159,9 @@ sub run {
     }
   }else {
         # get the absolute max id_est
-    my ($abs_max) = $M->sql_get_as_array("select max(id_est) from est\@dbest");
+    my $dbh = $M->getQueryHandle();
+    my $st = $dbh->prepareAndExecute("select max(id_est) from est\@dbest");
+    my ($abs_max) = $st->fetchrow_array();
     # get the min and max ids
     
     my $min = 0;
@@ -170,7 +172,7 @@ sub run {
     while ($max <= $abs_max) {
       ## Testing condition 
       last if ($M->getCla->{test_number} && $count > $M->getCla->{test_number});
-
+      
       ## Main loop
 
       my $ests;
@@ -181,6 +183,7 @@ sub run {
       else {
 	$ests = $M->sql_get_as_hash_refs_lc("select * from est\@dbest where id_est >= $min and id_est < $max");
       }
+     $M->logAlert("Processing id_est from $min to $max\n"); 
       my ($e);
       foreach my $est ( @{$ests}) {
         $e->{$est->{id_est}}->{e} = $est;
@@ -191,12 +194,20 @@ sub run {
       $max += $M->getCla()->{span};
     }
   }
-	############################################################
-	# return status
-	# replace word "done" with meaningful return value/summary of the
-	# work that was done.
-	############################################################
-	return "Inserted/Updated $count dbEST est entries";
+  ############################################################
+  # return status
+  # replace word "done" with meaningful return value/summary of the
+  # work that was done.
+  ############################################################
+  my $dbh = $M->getQueryHandle();
+  my $st1 = $dbh->prepareAndExecute("select count(est.id_est) from est\@dbest est, library\@dbest library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
+  my $numDbEST = $st1->fetchrow_array();
+  my $taxon_id = $M->getCla()->{taxon_id};
+  my $st2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l where l.taxon_id = 14 and l.library_id = e.library_id");
+  my $finalNumGus = $st2->fetchrow_array();
+  my $diff = ($numDbEST-$finalNumGus);
+  $M->logAlert("Total number id_est for taxon $taxon_id in dbEST:$numDbEST\nTotal number id_est in dots.EST:$finalNumGus\nDifference dbEST and dots:$diff\n");
+  return "Inserted/Updated $count dbEST est entries";
 }
 
 
