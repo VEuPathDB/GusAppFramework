@@ -74,7 +74,7 @@ sub run {
 
     $self->makeTaxonEntry($rootAttArray, \$count);
     
-    if ($self->getCla->{'restart'} && $self->getCla->{'restart'} > 0) {
+    if ($self->getCla->{'restart'} && $self->getCla->{'restart'} > 1) {
 	$self->getTaxonAtt($self->getCla->{'restart'},$nodesHash,\$count);
     }
     else {
