@@ -165,23 +165,35 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    ResultSet res = stmt.executeQuery(sql);
 
 	    while (res.next()) {
+		System.err.println ("DTB: processing next " + tname);
 		++numReturned;
 		obj = GUSRow.createObject(owner, tname);
+		System.err.println ("DTB: setting atts for " + tname);
 		obj.setAttributesFromResultSet(res, specialCases);
+		System.err.println ("DTB: atts set for " + tname);
+
 	    }
-	    
 	    res.close();
 	    stmt.close();
 	} catch (Exception e) {
 	    System.err.println(e.getMessage());
 	    e.printStackTrace(); 
 	}
-
+	System.err.println ("DTB: JDBCDatabaseConnection: finished retrieving " + tname);
 	if (numReturned != 1) {
 	    throw new GUSObjectNotUniqueException("Found " + numReturned + " rows in " + owner + "." + 
 						  tname + " with id=" + pk);
 	}
-        return obj;
+	else{
+	    System.err.println ("DTB: Found " + numReturned + " rows in " + owner + "." + 
+				tname + " with id=" + pk);
+	}
+	if (obj == null){ System.err.println("DTB: Object is still null");}
+	else {
+	    System.err.println("returning object that is not null of type " + tname);
+	}
+	return obj;
+       
     }
 
     public Vector retrieveObjectsFromQuery(String owner, String tname, String query)

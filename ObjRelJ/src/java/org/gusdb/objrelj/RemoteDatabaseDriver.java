@@ -68,7 +68,7 @@ public class RemoteDatabaseDriver implements DatabaseDriverI {
 		
 		remoteConn = server.createRemoteConnection(gusUser, gusPassword);
 		if (remoteConn.setCurrentUser(gusUser, gusPassword) == -1){
-		    throw new GUSInvalidLoginException("Error: incorrect GUS login or password");
+		   throw new GUSInvalidLoginException("Error: incorrect GUS login or password");
 		}
 	    } catch (RemoteException e){
 		
