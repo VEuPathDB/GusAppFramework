@@ -258,8 +258,9 @@ sub processOneFile{
 	} else {
 	    $seq .= $_;
 	}
-	$self->process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq) if ($source_id);
+	
     }
+    $self->process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq) if ($source_id);
     print STDERR "processed $count seqs in $seqFile\n";
     return $count;
 }
