@@ -53,11 +53,11 @@ sub new {
       t => 'int',
       o => 'NAseqId',
       h => 'supply NA_sequence_id of origin of gene features'
-     }
+     },
      {
-      t => 'int',
-      o => 'extDbRelId',
-      h => 'supply the external_database_release_id'
+       t => 'int',
+       o => 'extDbRelId',
+       h => 'supply the external_database_release_id'
      }
     ];
 
