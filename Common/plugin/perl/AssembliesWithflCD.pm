@@ -82,7 +82,7 @@ my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_seq
 
 # to check for na_sequence_id in result set from query 2 before marking as full length from query 1
 
-my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
+my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select NVL(a.na_sequence_id, 1) from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
 
 
 my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
@@ -143,7 +143,7 @@ foreach my $A(@na_sourceids)    {
 
    last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
- # print STDERR "@naSequenceIds\n";
+  print STDERR "scalar(@naSequenceIds)\n";
 
 
    foreach my $id(@naSequenceIds)  {
@@ -157,7 +157,7 @@ print STDERR "$id,DT.$na_seq\n";
      print STDERR "AlreadyMarkedFLDT.$na_seq\n";
    }
 
-    if ($id != $na_seq | $id == 0) {
+    if ($id != $na_seq | $id == 1) {
 
        print STDERR "NextFLDT.$na_seq\n";
 
