@@ -9,31 +9,29 @@ use strict;
 use Getopt::Long;
 use GUS::ObjRelP::DbiDatabase;
 use CBIL::Bio::SequenceUtils;
+use GUS::Common::GusConfig;
 
-my ($login,$password,$debug,$verbose,$outFile,$idSQL,$minLength,$database);
+my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength);
 &GetOptions("verbose!"=> \$verbose,
             "outputFile=s" => \$outFile,"idSQL=s" => \$idSQL, 
             "minLength=i" => \$minLength,"debug!" => \$debug,
-            "login=s" => \$login,"password=s" => \$password,
-            "database=s" => \$database );
+            "gusConfigFile=s" => \$gusConfigFile);
 
 if(!$idSQL || !$outFile){
-	die "usage: dumpSequencesFromFile.pl --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --login [GUSrw] --database [GUSdev]\n";
+	die "usage: dumpSequencesFromFile.pl --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --gusConfigFile [\$GUS_CONFIG_FILE]\n";
 }
 
 ##set the defaults
 $minLength = $minLength ? $minLength : 1;
-$database = $database ? $database : "GUSdev";
-$login = $login ? $login : 'gusrw';
-
-if(!$password){
-  print STDERR "Enter the password for login $login\n";
-  $password = <STDIN>;
-  chomp $password;
-}
 
 print STDERR "Establishing dbi login\n" if $verbose;
-my $db = new GUS::ObjRelP::DbiDatabase( undef, $login, $password, $verbose, 0, 1, $database );
+my $gusconfig = GUS::Common::GusConfig->new($gusConfigFile);
+
+my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
+					$gusconfig->getReadOnlyDatabaseLogin(),
+					$gusconfig->getReadOnlyDatabasePassword,
+					$verbose,0,1,
+					$gusconfig->getCoreSchemaName);
 
 my $dbh = $db->getQueryHandle();
 
