@@ -836,7 +836,7 @@ sub setTableCaches {
   # all else is on-demand cache
 
   my $taxon_id_list = $M->getCla()->{taxon_id_list}; 
-  $q = 'select name, taxon_id  from sres.TaxonName where taxon_id in ($taxon_id_list)';
+  $q = "select name, taxon_id  from sres.TaxonName where taxon_id in ($taxon_id_list)";
 
   $A = $M->sql_get_as_array_refs($q);
   foreach my $r (@$A) {
