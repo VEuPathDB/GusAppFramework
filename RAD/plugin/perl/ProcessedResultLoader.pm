@@ -274,7 +274,7 @@ sub readDataFile(){
     my $fh = new IO::File;
     unless ($fh->open("<$file")) {
 		$RV = join(' ','Cannot open data file', $file);
-		$M->erro($RV);
+		$M->error($RV);
     }
 
     $M->_parseHeader($fh);
