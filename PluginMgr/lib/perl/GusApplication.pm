@@ -687,10 +687,12 @@ sub create_or_update_implementation {
   my $alg_h;
   $M->findAlgorithm($pu);
   my $alg_gus = $pu->getAlgorithm;
+  my $cvsRevision = $pu->getCVSRevision;
+  my $cvsTag = $pu->getCVSTag;
 
   # we want to create a new Algorithm
   if ($U ) {
-    if ($M->getImplementation()->getCVSRevision() eq $cvsRevision) {
+    if ($M->getImplementation()->getCVSRevision() eq $pu->getCVSRevision()) {
       print STDERR "Error: $plugin_name_s with CVS revision $cvsRevision is already registered.  You don't need to do a +update.\n";
 #      $M->doMajorMode_History($C);
       exit 0;
@@ -725,8 +727,6 @@ sub create_or_update_implementation {
   # implementation data
   # ......................................................................,
 
-  my $cvsRevision = $pu->getCVSRevision;
-  my $cvsTag = $pu->getCVSTag;
 
   my $imp_description = $pu->getRevisionNotes;
 
