@@ -48,6 +48,16 @@ sub new {
        t => 'string',
        h => 'restrict attention to these motifs',
    },
+
+     { o => 'restart',
+       t => 'boolean',
+       h => 'restart an interrupted run of this plugin',
+   },
+
+     { o => 'previous_invocation_ids',
+       t => 'string',
+       h => 'comma separtated list of algorithm invocation ids of previous plugin runs.  Use with --restart',
+   },
      
      { o => 'go_ext_db_rel_id',
        h => 'External Database Release Id for GO Function hierarchy associated with external AA Sequences',
@@ -252,20 +262,28 @@ sub run {
     #
     my $aa_filter = $self->GetAaFilterFile();
        
+    if ($self->getCla()->{restart}){  #we are restarting an interrupted run of the plugin
+  	
+	my $processedMotifs = $self->getProcessedMotifs();
+
+    }
+
     # Get all the similarity information for the ids in aa_filter
     # keys of the $sim_dict hash are the motifaasequence ids.
     #
-    my $sim_dict = $self->GetSimilarityDictionary( $aa_filter );
+    my $sim_dict = $self->GetSimilarityDictionary( $aa_filter, $processedMotifs );
             
     my $id_motif_aa_sequences = 
 	scalar @{$self->getCla->{motifs}} > 0 ?
 	$self->getCla->{motifs} :
 	[ keys %{ $sim_dict } ];
   
-
+    $self->log("built similarity dictionary; preparing to process ". scalar @{$id_motif_aa_sequences} . "motifs"); 
     # Process each motif in the filter...
+    my $counter = 0;
+    
     foreach my $id_motif_aa_sequence ( @{ $id_motif_aa_sequences } ) {
-
+	$counter++; last if ($counter == 100);
 	# Get the similarities for this motif.
 	my $gus_similarities = $sim_dict->{ $id_motif_aa_sequence };
 	
@@ -567,6 +585,26 @@ sub GetSimilarityFilterSQL {
     join( ' and ', @sql );
 }
 
+sub getProcessedMotifs {
+
+    my $queryHandle = $self->getQueryHandle();
+    my $algInvIds = $self->getCla->{previous_invocation_ids};
+    my $sql = "select aa_sequence_id_1 from DoTS.AAMotifGOTermRuleSet 
+               where row_alg_invocation_id in (" . $algInvIds . ")";
+    
+    my $processedMotifs;
+
+    my $sth = $queryHandle->prepareAndExecute($sql);
+    
+    while (my ($motifId) = $sth->fetchrow_array()){
+	$processedMotifs->{$motifId} = 1;
+    }
+
+    return $processedMotifs;
+}
+
+
+
 # ----------------------------------------------------------------------
 # GetSimilarityDictionary : given a list of aa sequences and table_ids
 # that we're interested in, this routine returns a hash ref of the
@@ -580,7 +618,7 @@ sub GetSimilarityFilterSQL {
 # ----------------------------------------------------------------------
 
 sub GetSimilarityDictionary {
-    my ($self, $aaFilter) = @_;
+    my ($self, $aaFilter, $processedMotifs) = @_;
         
     my $n = 25;
     my $queryHandle = $self->getQueryHandle();
@@ -643,7 +681,10 @@ sub GetSimilarityDictionary {
 	    #figure out better way to do this
 	    my $sth = $queryHandle->prepareAndExecute($sql);
 	    while ( my ($similarityId, $subjectId, $queryId, $queryTableId, $pValueMant, $pValueExp, $numberPositive, $totalMatchLength, $description, $name) = $sth->fetchrow_array() ) {
-		
+		if ($processedMotifs->{$subjectId}){
+		    $self->log ("not adding $subjectId to similarity dictionary");
+		    next;
+		}
 		my $similarityHash;
 		$similarityHash->{ similarity_id } = $similarityId;
 		$similarityHash->{ subject_id } = $subjectId;
