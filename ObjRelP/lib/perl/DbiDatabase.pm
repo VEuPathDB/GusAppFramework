@@ -271,7 +271,7 @@ sub cacheTableNames {
 #  print STDERR "cacheTableNames SQL: $sql\n" if $debug;
   my $stmt = $self->getMetaDbHandle()->prepareAndExecute($sql);
   while (my($schema,$name,$isView) = $stmt->fetchrow_array()) {
-    my $fullName = $schema.'::'.$name;
+    my $fullName = "GUS::Model::${schema}::${name}";
     my $lowerName = $fullName;
     $lowerName =~ tr/a-z/A-Z/;
     $self->{'allTables'}->{"$isView"}->{$fullName} = 1;
@@ -603,7 +603,7 @@ sub getTableNameFromTableId {
     ### SQL CHANGE ###
     my $sth = $dbh->prepareAndExecute("select d.name,t.name from ".$self->getCoreName().".TableInfo t, ".$self->getCoreName().".DatabaseInfo d where t.table_id = $table_id and t.database_id = d.database_id");
     if (my ($schema,$name) = $sth->fetchrow_array()) {
-      my $tn = $schema."::".$name;
+      my $tn = "GUS::Model::${schema}::${name}";
       $self->{tableIdMapping}->{$table_id} = $tn;
     } else {
       print STDERR "ERROR: tableName for $table_id not found\n";
@@ -627,8 +627,8 @@ sub getSuperClasses {
     my $cmd = "select d.name,t2.name as superclass,t1.name as subclass from ".$self->getCoreName().".TableInfo t1,".$self->getCoreName().".TableInfo t2 ".$self->getCoreName().".DatabaseInfo d where t2.table_id = t1.view_on_table_id and t1.name not like '%Ver' and d.database_id = t2.database_id";
     my $sth = $self->getQueryHandle()->prepareAndExecute($cmd);
     while (my ($schema,$sc,$tn) = $sth->fetchrow_array()) {
-      $sc = $schema."::".$sc;
-      $tn = $schema."::".$tn;
+      $sc = "GUS::Model::${schema}::$sc";
+      $tn = "GUS::Model::${schema}::$tn";
       $sc =~ s/Imp$//;
       next if $sc eq $tn;  
       #			print STDERR "getSuperClasses: $sc <- $tn\n";
@@ -656,7 +656,7 @@ sub getTableHasSequence {
     my $dbh = $self->getMetaDbHandle();
     my $sth = $dbh->prepareAndExecute("select d.name,t.name from ".$self->getCoreName().".TableInfo t, ".$self->getCoreName().".DatabaseInfo d where t.view_on_table_id in (19,159) and t.database_id = d.database_id");
     while (my($schema,$name) = $sth->fetchrow_array()) {
-      $self->{tableHasSequence}->{$schema."::".$name} = 1;
+      $self->{tableHasSequence}->{"GUS::Model::${schema}::${name}"} = 1;
     }
   }
   return $self->{tableHasSequence}->{$tn}; 
