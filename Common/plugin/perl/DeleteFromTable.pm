@@ -80,7 +80,7 @@ sub getIdsToDelete {
   my $num =  @ids;
   $self->log("Got $num ids to delete\n using: $sql\n");
 
-  return /@ids;
+  return \@ids;
 }
 
 sub deleteRows {
