@@ -100,8 +100,7 @@ sub run {
 }
 
 # ----------------------------------------------------------------------
-# Given the name of a data file, read tag-count pairs from it
-# and add them to RAD
+# Given the name of a data file, read and load secondary-structure data
 
 sub loadStructureFile {
   my ($self, $datafile, $aa_sequence_id, $pred_alg_invocation_id) = @_;
@@ -139,24 +138,28 @@ sub loadStructureFile {
        structure_type => 'C'
       } );
 
-  $cCall->setCallConfidence($cCalls);
   $cCall->setParent($secondaryStructure);
+  $cCall->retrieveFromDB();
+  $cCall->setCallConfidence($cCalls);
+
 
   my $hCall = GUS::Model::DoTS::SecondaryStructureCall->new
     ( {
        structure_type => 'H'
       } );
 
-  $hCall->setCallConfidence($hCalls);
   $hCall->setParent($secondaryStructure);
+  $hCall->retrieveFromDB();
+  $hCall->setCallConfidence($hCalls);
 
   my $eCall = GUS::Model::DoTS::SecondaryStructureCall->new
     ( {
        structure_type => 'E'
       } );
 
-  $eCall->setCallConfidence($eCalls);
   $eCall->setParent($secondaryStructure);
+  $eCall->retrieveFromDB();
+  $eCall->setCallConfidence($eCalls);
 
   $secondaryStructure->submit();
 
