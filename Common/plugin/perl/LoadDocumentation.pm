@@ -78,7 +78,7 @@ sub run {
 	$self->process($table_name, $attribute_name, $html_doc);
     }
     $doc_fh->close;
-    return "Inserted $countInserts rows";
+    return "$countInserts rows inserted, updated, or overwritten";
 } # end sub run
 
 ############################################################
