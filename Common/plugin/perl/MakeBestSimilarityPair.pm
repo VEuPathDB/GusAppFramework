@@ -40,6 +40,13 @@ sub new {
 	     #d => '4089',
 	     h => 'algorithm_id for ortholog group generation',
 	 },
+
+	 {
+	     o => 'queryTableId',
+	     t => 'int',
+	     h => 'id of table where sequences that make up similarities are stored',
+	     d => 83,
+	 },
 	 {
 	     o => 'algInvoIds',
 	     t => 'string',
@@ -113,12 +120,14 @@ sub run {
 		$self->log("skipping $firstTaxon and $secondTaxon because they have already been run");
 		next;
 	    }
-	    my $sth = $dbh->prepare("select s.query_id, s.subject_id, s.pvalue_mant,s.pvalue_exp,s.number_identical/s.total_match_length, s.similarity_id from dots.similarity s, dots.externalaasequence a1, dots.externalaasequence a2 where s.subject_table_id= $queryTableId and s.query_table_id= $queryTableId and s.query_id=a1.aa_sequence_id and a1.external_database_release_id = ? and s.subject_id=a2.aa_sequence_id and a2.external_database_release_id =? and s.row_alg_invocation_id in ($algInvoIds) order by s.pvalue_exp asc,s.pvalue_mant asc,s.number_identical/s.total_match_length desc");
-	    $sth -> execute($firstTaxon,$secondTaxon);
+	    my $sql = "select s.query_id, s.subject_id, s.pvalue_mant,s.pvalue_exp,s.number_identical/s.total_match_length, s.similarity_id from dots.similarity s, dots.externalaasequence a1, dots.externalaasequence a2 where s.subject_table_id= $queryTableId and s.query_table_id= $queryTableId and s.query_id=a1.aa_sequence_id and a1.external_database_release_id = ? and s.subject_id=a2.aa_sequence_id and a2.external_database_release_id =? and s.row_alg_invocation_id in ($algInvoIds) order by s.pvalue_exp asc,s.pvalue_mant asc,s.number_identical/s.total_match_length desc";
+
+	    my $sth = $dbh->prepare($sql);
+	    $sth->execute($firstTaxon, $secondTaxon);
 	    while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
 		@{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s, $queryTableId, $queryTableId) unless(exists($sim{$qid}));
 	    }
-	    $sth -> execute($secondTaxon,$firstTaxon);
+	    $sth->execute($secondTaxon,$firstTaxon);
 	    while(my($qid,$sid,$pm,$pe,$pi,$s) = $sth->fetchrow_array()) {
 		@{$sim{$qid}} = ($sid,$pm,$pe,$pi,$s, $queryTableId, $queryTableId) unless(exists($sim{$qid}));
 	    }
@@ -135,7 +144,7 @@ sub run {
 		if ($self->getCla->{percent_match}){
 		    my (%sub_start,%sub_length,%query_start,%query_length);
 		    $stmtSpan->execute($sim{$qid}->[4]);   
-		    while(my (@row) = $stmtSpan -> fetchrow_array()) {
+		    while(my (@row) = $stmtSpan->fetchrow_array()) {
 			$sub_start{$row[0]}=$row[1]; 
 			$sub_length{$row[0]}=$row[2]-$row[1]+1;
 			$query_start{$row[0]}=$row[3];
@@ -144,22 +153,22 @@ sub run {
 		
 		    my $match_lengthq = &matchlen(\%query_start,\%query_length);   
 		    $stmtLen->execute($qid);
-		    my ($lengthq) = $stmtLen -> fetchrow_array();
+		    my ($lengthq) = $stmtLen->fetchrow_array();
 		    $percentMatch = $match_lengthq/$lengthq; 
 		}
 		
 		my $bmp = GUS::Model::DoTS::BestSimilarityPair->new();
-		$bmp -> set('sequence_id', $qid);
-		$bmp -> set('paired_sequence_id',$sim{$qid}->[0]);
-		$bmp -> set('pvalue_exp',$sim{$qid}->[2]);
-		$bmp -> set('pvalue_mant',$sim{$qid}->[1]);
-#		$bmp -> set('score',$values{$query.' '.$subject}->[5]);
-		$bmp -> set('percent_identity',$sim{$qid}->[3]);
-		$bmp -> set('percent_match', $percentMatch);
-		$bmp -> set('source_table_id',$sim{$qid}->[5]);
-		$bmp -> set('paired_source_table_id', $sim{$qid}->[6]);
+		$bmp->set('sequence_id', $qid);
+		$bmp->set('paired_sequence_id',$sim{$qid}->[0]);
+		$bmp->set('pvalue_exp',$sim{$qid}->[2]);
+		$bmp->set('pvalue_mant',$sim{$qid}->[1]);
+#		$bmp->set('score',$values{$query.' '.$subject}->[5]);
+		$bmp->set('percent_identity',$sim{$qid}->[3]);
+		$bmp->set('percent_match', $percentMatch);
+		$bmp->set('source_table_id',$sim{$qid}->[5]);
+		$bmp->set('paired_source_table_id', $sim{$qid}->[6]);
 
-		$bmp -> submit();
+		$bmp->submit();
 		$self->getSelfInv->undefPointerCache();
 	    }
 	}
