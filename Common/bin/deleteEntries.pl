@@ -4,9 +4,11 @@
 ## query must return primary key of table..
 
 use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
 use Getopt::Long;
 use GUS::ObjRelP::DbiDatabase;
 use GUS::Model::Core::TableInfo;
+use GUS::Common::GusConfig;
 
 $| = 1;
 
@@ -30,9 +32,10 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$verbose,0,1,
 					$gusconfig->getCoreSchemaName());
 
-my $dbh = $db->makeNewHandle();
+my $dbh = $db->getQueryHandle();
 
-my $o = TableInfo->new();
+my $o = GUS::Model::Core::TableInfo->new();
+
 my $pk = $o->getTablePKFromTableId($o->getTableIdFromTableName($table));
 
 print STDERR "Query: $idSQL\n" if $verbose;
@@ -46,7 +49,7 @@ while(my($id) = $stmt->fetchrow_array()){
   print STDERR "Retrieving ids: $ct\n" if $ct % 1000 == 0;
 }
 print STDERR "deleting ",scalar(@ids)," ids from $table\n";
-
+$table =~ s/\:\:/\./;
 $ct = 0;
 for(my $i=0;$i<scalar(@ids);$i += $batch_size){
   $ct += $dbh->do("delete from $table where $pk in (".join(', ',@ids[$i..($i + $batch_size - 1 < scalar(@ids) ? $i + $batch_size - 1 : scalar(@ids) - 1)]).")");
