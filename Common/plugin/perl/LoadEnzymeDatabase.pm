@@ -1,7 +1,72 @@
 
 package GUS::Common::Plugin::LoadEnzymeDatabase;
-
 @ISA = qw(GUS::PluginMgr::Plugin);
+
+=pod
+
+Here are some technical details that might be interesting.
+
+=head2 Finding an EC Flat File Distribution
+
+A flat file release of the EC database is available at
+http://www.expasy.org/enzyme/.  Use the 'Downloading ENZYME by FTP'
+link which links to http://tw.expasy.org/ftp/databases/enzyme.  You
+need to download only enzclass.txt and enzyme.dat.  They should be
+placed together in a directory.  Point the plugin to this directory
+using the --InPath option.
+
+=head2 Missing Entries
+
+We have observed that some of the parent nodes in the EC database are
+missing.  For example, if there is an EC entry 1.2.3.4, there should
+be a parent 1.2.3.-.  When a parent is missing, the plugin will create
+them as needed.
+
+=head2 Attributes
+
+The EC database has various class attributes that GUS does not
+structure, but does enter into the SRes.EnzymeClassAttribute table.
+These are:
+
+=over 4
+
+=item Alternate Name (AN lines),
+
+=item Catalytic Activity (CA lines),
+
+=item Comment (CC lines),
+
+=item Cofactor (CF lines),
+
+=item Database Reference (DR lines).
+
+=back
+
+=head2 External Database Release Specification
+
+Several of the options of this plugin are specifications of a row in
+SRes.ExternalDatabaseRelease.  While this could be done using the
+external_database_release_id, we've tried to be a little more symbolic
+and use a comma-delimited list of the
+SRes.ExternalDatabase.lowercase_name and
+SRes.ExternalDatabaseRelease.version, e.g., 'swissprot,5.4'.
+
+The --Enzyme option must be used to set the
+SRes.ExternalDatabaseRelease for the SRes.EnzymeClass entries.
+
+=head2 Linking to Other Databases
+
+The --Prosite, --SwissProt, and --OMIM options let the user indicate
+which SRes.ExternalDatabaseRelease to link PROSITE, SWISSPROT, and
+OMIM references to.
+
+=head3 GUS::Model::DoTS::AASequenceEnzymeClass
+
+This plugin also attempts to make links to DoTS.ExternalAASequences
+that are refered to in the EC release.  This is done via a
+DoTS.AASequenceEnzymeClass row.
+
+=cut
 
 # ----------------------------------------------------------------------
 
@@ -18,12 +83,19 @@ use GUS::Model::DoTS::AASequenceEnzymeClass;
 
 use CBIL::Bio::Enzyme::Parser;
 
+use GUS::PluginMgr::Plugin;
+use GUS::PluginMgr::PluginUtilities;
+use GUS::PluginMgr::PluginUtilities::ConstraintFunction;
+
 # ----------------------------------------------------------------------
 
 sub new {
    my $Class = shift;
 
    my $self = bless {}, $Class;
+
+   my $selfPodCommand = 'pod2text '. __FILE__;
+   my $selfPod        = `$selfPodCommand`;
 
    $self->initialize
    ({ requiredDbVersion => {},
@@ -35,60 +107,79 @@ sub new {
       revisionNotes     => '',
       revisionNotes     => 'initial conversion to GUS3.0',
 
-      # user info
-      usage             => 'loads data from Enzyme database',
-      easyCspOptions    =>
-      [ { h => 'just survey what is to be done',
-          t => 'boolean',
-          o => 'Survey',
-        },
+			# documentation
+			documentation =>
+			{ purpose        => 'loads data from Enzyme database',
+				purposeBrief   => 'loads data from Enzyme database',
+				tablesAffected => [
+													 [ 'SRes.EnzymeClass', '' ],
+													 [ 'SRes.EnzymeClassAttribute', '' ],
+													 [ 'DoTS.AASequenceEnzymeClass', '' ],
+													 [ 'SRes.DbRef', '' ],
+													],
+				tablesDependedOn => [
+														 [ 'SRes.ExternalDatabase', '' ],
+														 [ 'SRes.ExternalDatabaseRelease', '' ],
+													],
+        howToRestart     => 'do not know yet',
+        failureCases     => 'do not know yet',
+				notes            => $selfPod,
+			},
 
-        { h => 'add some entries without creating new database',
-          t => 'boolean',
-          o => 'Update',
-        },
+			#
+			argsDeclaration =>
+			[ booleanArg({ name   => 'Survey',
+										 descr  => 'just survey what is to be done',
+										 reqd   => 0,
+										 isList => 0,
+										 constraintFunc => sub { CfIsAnything(@_); },
+									 }),
+				booleanArg({ name   => 'Update',
+										 descr  => 'add some entries without creating new database',
+										 reqd   => 0,
+										 isList => 0,
+										 constraintFunc => sub { CfIsAnyting(@_); },
+									 }),
+				stringArg ({ name    => 'InPath',
+										 descr   => 'find data files here',
+										 reqd    => 0,
+										 default => '.',
+										 isList  => 0,
+										 constraintFunc => sub { CfIsDirectory(@_); },
+									 }),
+				stringArg ({ name    => 'Enzyme',
+										 descr   => 'lowercase_name,version of Enzyme database',
+										 reqd    => 1,
+										 isList  => 1,
+										 constraintFunc => sub { CfIsAnything(@_); },
+									 }),
+				stringArg ({ name    => 'Prosite',
+										 descr   => 'lowercase_name,version of Prosite database',
+										 reqd    => 1,
+										 isList  => 1,
+										 constraintFunc => sub { CfIsAnything(@_); },
+									 }),
+				stringArg ({ name    => 'SwissProt',
+										 descr   => 'lowercase_name,version of SwissProt database',
+										 reqd    => 1,
+										 isList  => 1,
+										 constraintFunc => sub { CfIsAnything(@_); },
+									 }),
+				stringArg ({ name    => 'Omim',
+										 descr   => 'lowercase_name,version of Omim database',
+										 reqd    => 1,
+										 isList  => 1,
+										 constraintFunc => sub { CfIsAnything(@_); },
+									 }),
+				integerArg({ name    => 'EntriesN',
+										 descr   => 'process at most this many entries',
+										 reqd    => 0,
+										 default => 1_000_000_000,
+										 isList  => 0,
+										 constraintFunc => sub { CfIsPositive(@_); },
+									 }),
+			],
 
-        { h => 'find data files here',
-          t => 'string',
-          o => 'InPath',
-        },
-
-        # finding referenced databases
-        { h => '',
-          t => 'string',
-          d => '',
-          l => 1,
-          o => 'Enzyme',
-        },
-
-        { h => 'lowercase_name and version for Prosite',
-          t => 'string',
-          d => '',
-          l => 1,
-          o => 'Prosite',
-        },
-
-        { h => 'lowercase_name and version for SwissProt',
-          t => 'string',
-          d => '',
-          l => 1,
-          o => 'SwissProt',
-        },
-
-        { h => 'lowercase_name and version for OMIM',
-          t => 'string',
-          d => '',
-          l => 1,
-          o => 'Omim',
-        },
-
-        # protection
-        { h => 'process this many entries',
-          t => 'int',
-          d => 1e6,
-          o => 'EntriesN',
-        },
-      ],
     });
 
    return $self;
@@ -105,6 +196,7 @@ sub run {
    # log stuff we always want to see.
    $Self->logCommit();
    $Self->logRAIID();
+	 $Self->logArgs();
 
    # RETURN
    my $RV = 'programmar did not set a message';
