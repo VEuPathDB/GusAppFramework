@@ -464,9 +464,7 @@ AS SELECT
 FROM ElementResultImpVer WHERE subclass_view = 'GEMToolsElementResult'
 WITH CHECK OPTION;
 
-/* WARNING - GENEPIXELEMENTRESULT does not appear in core.TableInfo */
-
-CREATE VIEW @oracle_radver@.GENEPIXELEMENTRESULT
+CREATE VIEW @oracle_radver@.GENEPIXELEMENTRESULTVER
 AS SELECT
   element_result_id,
   element_id,
@@ -509,46 +507,6 @@ AS SELECT
   version_transaction_id      FROM ElementResultImpVer
  WHERE subclass_view = 'GenePixElementResult' WITH CHECK OPTION;
 
-CREATE VIEW @oracle_radver@.GENEPIXELEMENTRESULTVER
-AS SELECT
-  element_result_id,
-  element_id,
-  composite_element_result_id,
-  quantification_id,
-  subclass_view,
-  foreground_sd,
-  background_sd,
-  float1 AS spot_diameter,
-  float2 AS foreground_mean,
-  float3 AS foreground_median,
-  float4 AS background_mean,
-  float5 AS background_median,
-  float6 AS percent_over_bg_plus_one_sd,
-  float7 AS percent_over_bg_plus_two_sds,
-  float8 AS percent_foreground_saturated,
-  float9 AS mean_of_ratios,
-  float10 AS median_of_ratios,
-  float11 AS ratios_sd,
-  smallint1 AS num_foreground_pixels,
-  smallint2 AS num_background_pixels,
-  tinyint1 AS flag,
-  modification_date,
-  user_read,
-  user_write,
-  group_read,
-  group_write,
-  other_read,
-  other_write,
-  row_user_id,
-  row_group_id,
-  row_project_id,
-  row_alg_invocation_id,
-  version_alg_invocation_id,
-  version_date,
-  version_transaction_id 
-FROM ElementResultImpVer
-WHERE subclass_view = 'GenePixElementResult'
-WITH CHECK OPTION;
 
 CREATE VIEW @oracle_radver@.GNFAFFYMETRIXRESULTVER
 ( COMPOSITE_ELEMENT_RESULT_ID,
