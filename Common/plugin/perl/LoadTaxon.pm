@@ -31,6 +31,11 @@ sub new {
       h => 'file from ncbi with genetic_code_id,abbreviation,ame,code,starts
             e.g./usr/local/db/local/taxonomy/gencode.dmp',
      },
+     {o => 'merged',
+      t => 'string',
+      h => 'file from ncbi with old_tax_id\tnew_tax_id
+            e.g./usr/local/db/local/taxonomy/merged.dmp',
+     },
      {o => 'restart',
       t => 'int',
       h => 'tax_id of parent for restart, 0 if no re',
@@ -63,6 +68,8 @@ sub run {
     my $testnum = $self->getCla->{'testnumber'} if $self->getCla->{'testnumber'};
     print STDERR ("Testing on " . $self->getCla->{'testnumber'} . "\n") if $self->getCla->{'testnumber'};
 
+    $self->mergeTaxons();
+
     my $genCodes = $self->makeGeneticCode();
     
     my $namesDmp = $self->getNames(); 
@@ -82,6 +89,76 @@ sub run {
     my ($TaxonNameIdHash,$TaxonIdHash) = $self->makeTaxonName($namesDmp);
     $self->deleteTaxonName($TaxonNameIdHash,$TaxonIdHash);
     
+}
+
+sub mergeTaxons {
+  my $self   = shift;
+  open (MERGED,$self->getCla->{'merged'}) || die "Can't open merged file: !\n";
+  my %mergedHsh;
+  while(<MERGED>) {
+    chomp;
+    my @merged = split(/\t/, $_);
+    $mergedHsh{$merged[0]} = $merged[1]; 
+  }
+  my ($taxonToTaxId,$oldTaxonToNewTaxon) = &getUpdateHashes(\%mergedHsh);
+  $self->updateTaxonTable($taxonToTaxId);
+  $self->updateTaxonAndChildTables($oldTaxonToNewTaxon);
+}
+
+sub getUpdateHashes {
+  my ($self,$mergedHsh) = @_;
+  my (%taxonToTaxId,%oldTaxonToNewTaxon);
+  my $dbh = $self->getDb()->getDbHandle();
+  my $st = $dbh->prepare("select t.taxon_id from sres.taxon t where t.ncbi_tax_id = ?");
+  foreach my $oldTaxId (keys %$mergedHsh) {
+    my ($oldTaxonId,$newTaxonId);
+    $st->execute($oldTaxId);
+    if (! ($oldTaxonId = $st->fetchrow_array())) {
+      $st->finish();
+      next;
+    }
+    else {
+      $st->execute($mergedHsh->{$oldTaxId});
+      if (! ($newTaxonId = $st->fetchrow_array()) ) {
+	$taxonToTaxId{$oldTaxonId} = $mergedHsh->{$oldTaxId};
+      }
+      else {
+	$oldTaxonToNewTaxon{$oldTaxonId} = $newTaxonId;
+      }
+    }
+    $st->finish();
+  }
+  return (\%taxonToTaxId,\%oldTaxonToNewTaxon);
+}
+
+sub updateTaxonTable {
+  my ($self,$taxonToTaxId) = @_;
+  foreach my $oldTaxonId (keys %$taxonToTaxId) {
+    my $newTaxon  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxonId});
+    $newTaxon ->retrieveFromDB();
+    if ($newTaxon->get('ncbi_tax_id') ne $taxonToTaxId->{$oldTaxonId}) {
+      $newTaxon->set('ncbi_tax_id',$taxonToTaxId->{$oldTaxonId});
+    }
+    $newTaxon->submit();
+    $self->undefPointerCache();
+  }
+}
+
+sub updateTaxonAndChildTables {
+  my ($self,$oldTaxonToNewTaxon)= @_;
+  foreach my $oldTaxonId (keys %$oldTaxonToNewTaxon) {
+    my $newTaxon = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxonToNewTaxon->{$oldTaxonId}});
+    my $oldTaxon  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxonId});
+    my @children = $oldTaxon->getAllChildren(1);
+    foreach my $child (@children) {
+      $child->removeParent($oldTaxon);
+      $child->setParent($newTaxon);
+    }
+    $newTaxon->submit();
+    $oldTaxon->markDeleted(); 
+    $oldTaxon->submit();
+    $self->undefPointerCache();
+  }
 }
 
 sub makeGeneticCode {
