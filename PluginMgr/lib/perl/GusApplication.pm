@@ -657,7 +657,6 @@ sub create_or_update_implementation {
        FROM Core.AlgorithmImplementation
        WHERE executable = '$plugin_name_s'
        AND cvs_revision    = '$cvsRevision'";
-    print STDERR "$sql\n";
 
     my $imps = $M->sql_get_as_hash_refs($sql);
 
