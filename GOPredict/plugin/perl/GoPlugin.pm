@@ -73,10 +73,16 @@ sub new {
        h => 'Set this flag to skip the step of deleting non-primary instances of an association',
    },
 
-#     { o => 'deprecate_associations',
-#       t => 'boolean',
-#       h => 'Set this flag to deprecate associations that have only deprecated instances.  Must be done as a separate process (generally after new rules have been applied)',
-#   },
+     { o => 'deprecate_associations',
+       t => 'boolean',
+       h => 'Set this flag to deprecate associations that have only deprecated instances.  Must be done as a separate process (generally after new rules have been applied)',
+   },
+
+     { o => 'apply_rules_raid_list',
+       t => 'string',
+       h => 'Comma separated list of row_alg_invocation_ids of associations whose proteins we will not consider when running deprecate_associations.  The associations to deprecate in this case are those that were not hit by previous runs of apply_rules (whose raids are those passed in with this parameter) and thus need to be deprecated, if they were not reviewed',
+   },
+    
     
      { o => 'old_go_release_id',
        t => 'int',
@@ -306,6 +312,12 @@ sub run {
 							  $self->getCla()->{create_new_similarities_file}); 
 	    
 	    $msg .= "Applied rules to $proteinsAffected proteins.  ";
+	}
+
+	if ($self->getCla->{deprecate_associations}){
+	    my $raidList = $self->getCla()->{apply_rules_raid_list};
+	    my $proteinsAffected = $goManager->deprecateAssociations($raidList, $proteinTableId, $newGoVersion);
+	    $msg .= "Processed $proteinsAffected proteins for deprecating.  ";
 	}
 
 	$self->log("plugin all done!");
