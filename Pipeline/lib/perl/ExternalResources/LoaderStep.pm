@@ -113,8 +113,8 @@ sub _validatePluginDbArgs {
     my ($self) = @_;
     my $pluginArgs = $self->{pluginArgs};
     my $resource = $self->{repositoryEntry}->getResource();
-    if (!($pluginArgs =~ /$DBNAME_MACRO/ && 
-	  $pluginArgs =~ /$DBVERSION_MACRO/)){
+    if ($self->{extDbName}
+	&& ($pluginArgs !~ /$DBNAME_MACRO/ || $pluginArgs !~ /$DBVERSION_MACRO/)){
       die ("error in resource $resource: attribute extDbName specified, but database name and version macros not found in plugin args");
     }
 }
