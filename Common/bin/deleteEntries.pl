@@ -17,7 +17,7 @@ my ($verbose,$idSQL,$table,$batch_size, $gusConfigFile);
 	    "table=s" => \$table,
 	    "batch_size=i" => \$batch_size);
 
-die "usage: deleteEntries.pl --idSQL 'sql query returns primary keys of table' --table <tablename> --verbose --batch_size [100]\n" unless $idSQL && $table;
+die "usage: deleteEntries.pl --idSQL 'sql query returns primary keys of table' --table <tablename in schema.table format> --verbose --batch_size [100]\n" unless $idSQL && $table;
 
 $batch_size = $batch_size ? $batch_size : 1000;
 
