@@ -1,0 +1,3 @@
+- finish implementing the log methods: do the logging based on user's log level
+
+- provide a die method?

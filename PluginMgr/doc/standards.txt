@@ -1,0 +1,14 @@
+- never fail.  always use status, and exit gracefully.
+
+- never use print, use log:
+   - logData
+   - logFatal
+   - logAlert
+   - logVerbose 
+   - logVeryVerbose
+
+
+
+
+--verbose --veryVerbose
+--objVerbose --objVeryVerbose
