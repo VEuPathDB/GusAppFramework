@@ -23,6 +23,16 @@ sub createReport {
 					 "Gene Symbol");
   push(@columns, $symbolCol);
 
+  my $geneCardsCol =
+    GUS::ReportMaker::DefaultColumn->new("gene_cards_id",
+					 "GeneCardsId");
+  push(@columns, $geneCardsCol);
+
+  my $mgiLocusCol =
+    GUS::ReportMaker::DefaultColumn->new("mgi_locus",
+					 "MGI Locus");
+  push(@columns, $mgiLocusCol);
+
   my $synonymCol =
     GUS::ReportMaker::DefaultColumn->new("synonyms",
 					 "Gene Synonyms");
@@ -38,7 +48,41 @@ from $tempTable tmp
 				 [$mappedToCol,
 				 ]);
 
-  my $symbolSql = 
+  my $geneCardsSql = 
+"select distinct tmp.$primaryKeyName, dbr.primary_identifier as gene_cards_id
+from $tempTable tmp, dots.DBRefNASequence dbrn, sres.DBRef dbr,
+     sres.ExternalDatabaseRelease edr,
+     dots.nafeature naf, dots.rna r, dots.RNAInstance rs
+where r.gene_id = tmp.$primaryKeyName
+ and rs.rna_id = r.rna_id 
+ and rs.na_feature_id = naf.na_feature_id
+ and naf.na_sequence_id = dbrn.na_sequence_id
+ and dbrn.db_ref_id = dbr.db_ref_id
+ and dbr.external_database_release_id = 4892
+";
+  my $geneCardsQuery = 
+    GUS::ReportMaker::Query->new($geneCardsSql,
+				 [$geneCardsCol,
+				 ]);
+
+   my $mgiLocusSql = 
+"select distinct tmp.$primaryKeyName, dbr.secondary_identifier as mgi_locus
+from $tempTable tmp, dots.DBRefNASequence dbrn, sres.DBRef dbr,
+     sres.ExternalDatabaseRelease edr,
+     dots.nafeature naf, dots.rna r, dots.RNAInstance rs
+where r.gene_id = tmp.$primaryKeyName
+ and rs.rna_id = r.rna_id 
+ and rs.na_feature_id = naf.na_feature_id
+ and naf.na_sequence_id = dbrn.na_sequence_id
+ and dbrn.db_ref_id = dbr.db_ref_id
+ and dbr.external_database_release_id = 4893
+";
+  my $mgiLocusQuery = 
+    GUS::ReportMaker::Query->new($mgiLocusSql,
+				 [$mgiLocusCol,
+				 ]);
+
+ my $symbolSql = 
 "select distinct tmp.$primaryKeyName, g.gene_symbol
 from DoTS.gene g, $tempTable tmp
 where g.gene_id = tmp.$primaryKeyName
