@@ -191,6 +191,7 @@ sub initialize {
   } elsif (exists $argsHashRef->{documentation}) {
     $self->{documentation} = $argsHashRef->{documentation};
     $self->checkDocumentation();
+    $self->{usage} = $argsHashRef->{documentation}->{purposeBrief};
   } else {
     $self->_failinit('documentation');
   }
