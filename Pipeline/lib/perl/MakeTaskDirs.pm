@@ -25,7 +25,7 @@ package GUS::Pipeline::MakeTaskDirs;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(makeRMDir makeGenomeDir makeMatrixDir makeSimilarityDir makeControllerPropFile);
+@EXPORT = qw(makeRMDir makeGenomeDir makeGenomeReleaseXml makeMatrixDir makeSimilarityDir makeControllerPropFile);
 
 use strict;
 use Carp;
@@ -61,6 +61,22 @@ sub makeGenomeDir {
     &makeGenomeTaskPropFile($inputDir, $serverInputDir, $seqFileName, $gaOptions, $gaBinPath,
 			    $localGDir, $serverGDir);
     &makeGenomeParamsPropFile($inputDir . '/params.prop', $serverGDir . '/11.ooc');
+}
+
+sub makeGenomeReleaseXml {
+  my ($xml, $ext_db_id, $rls_date, $version, $url) = @_;
+
+  open(F, ">$xml")
+    || die "Can't open $xml for writing";
+  print F
+    "<SRES::ExternalDatabaseRelease>
+   <external_database_id>$ext_db_id</external_database_id>
+   <release_date>$rls_date</release_date>
+   <version>$version</version>
+   <download_url>$url</download_url>
+ </SRES::ExternalDatabaseRelease>
+ ";
+  close(F);
 }
 
 sub makeMatrixDir {
