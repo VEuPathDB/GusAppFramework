@@ -349,7 +349,7 @@ sub getContentsSQL {
     # the target database will be using a different default DATE_FORMAT and will be
     # unable to parse the stringified date values in the output file.
     #
-    my $vals = &GUS::DBAdmin::Util::execQuery($dbh, "select value from sys.v\$parameter where name = 'nls_date_format'", 'scalar');
+    my $vals = &GUS::DBAdmin::Util::execQuery($dbh, "select value from v\$parameter where name = 'nls_date_format'", 'scalar');
     if (defined($vals) && (scalar(@$vals) > 0)) {
 	my $val = $vals->[0];
 	if ($val =~ /\S/) {
