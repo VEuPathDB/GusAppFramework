@@ -21,6 +21,10 @@ use GUS::PluginMgr::Args::TableNameArg;
 use GUS::PluginMgr::Args::FloatArg;
 use GUS::PluginMgr::Args::Arg;
 use GUS::PluginMgr::Args::Arg;
+
+use GUS::Model::Core::DatabaseInfo;
+use GUS::Model::Core::TableInfo;
+
 =head1 Name
 
 C<GUS::PluginMgr::Plugin>
@@ -640,6 +644,51 @@ B<Return type:> C<string>
 sub className2oracleName {
   my ($self, $className) = @_;
   return GUS::ObjRelP::DbiDatabase::className2oracleName($className);
+}
+
+=item C<className2tableId($className)>
+
+Convert a perl style class name for a database object to a numerical table id suitable for comparison to one of GUS's many table_id columns.  For example, convert Core::Algorithm to something like 34.
+
+B<Parameters:>
+
+- className (string):  A class name in the form: Core::Algorithm
+
+B<Return type:> C<integer>
+
+=cut
+sub className2tableId {
+  my ($self, $className) = @_;
+
+  my @classParts = split /::/, $className;
+
+  if ($#classParts != 1) {
+    die("className2tableId requires a table name argument " .
+	"in the format 'schema::table'");
+  }
+
+  my $dbName = $classParts[0];
+  my $tableName = $classParts[1];
+
+  my $db =
+    GUS::Model::Core::DatabaseInfo->new( { name => $dbName } );
+
+  if (! $db->retrieveFromDB() ) {
+    die("can't find database schema $dbName");
+  }
+
+  my $table =
+    GUS::Model::Core::TableInfo->new
+	( {
+	   name => $tableName,
+	   database_id => $db->getDatabaseId()
+	  } );
+
+  if (! $table->retrieveFromDB() ) {
+    die("can't find table $tableName in schema $dbName");
+  }
+
+  return $table->getTableId();
 }
 
 =item C<undefPointerCache()>
