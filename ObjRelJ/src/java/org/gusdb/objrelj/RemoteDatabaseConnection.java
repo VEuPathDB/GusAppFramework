@@ -60,16 +60,16 @@ public class RemoteDatabaseConnection extends UnicastRemoteObject implements Rem
 	return localConn.getCurrentUserId();
     }
 
-    public GUSRow retrieveObject(String owner, String tname, long pk, String clobAtt, Long start, Long end)
+    public void retrieveGUSRow(GUSRow gusRow, String clobAtt, Long start, Long end)
 	throws RemoteException, GUSObjectNotUniqueException
     {
-	return localConn.retrieveObject(owner, tname, pk, clobAtt, start, end);
+	localConn.retrieveGUSRow(gusRow, clobAtt, start, end);
     }
     
-    public Vector retrieveObjectsFromQuery(String owner, String tname, String query)
+    public Vector retrieveGUSRowsFromQuery(GUSTable table, String query)
 	throws RemoteException
     {
-	return localConn.retrieveObjectsFromQuery(owner, tname, query);
+	return localConn.retrieveGUSRowsFromQuery(table, query);
     }
 
     public Vector runSqlQuery(String query)
@@ -78,22 +78,28 @@ public class RemoteDatabaseConnection extends UnicastRemoteObject implements Rem
 	return localConn.runSqlQuery(query);
     }
     
-    public SubmitResult submitObject(GUSRow obj)
+    public SubmitResult submitGUSRow(GUSRow obj)
 	throws RemoteException
     {
-	return localConn.submitObject(obj);
+	return localConn.submitGUSRow(obj);
     }
     
+    public Long getParentPk(GUSRow child, GUSTable parentTable, String childAtt)
+    	throws RemoteException, GUSNoSuchRelationException, GUSObjectNotUniqueException{
+	return localConn.getParentPk(child, parentTable, childAtt);
+    }
+
+
     public GUSRow retrieveParent(GUSRow row, String owner, String tname, String childAtt)
 	throws RemoteException, GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
 	return localConn.retrieveParent(row, owner, tname, childAtt);
     }
     
-    public GUSRow[] retrieveParentsForAllObjects(Vector children, String parentOwner, String parentName, String childAtt)
+    public GUSRow[] retrieveParentsForAllGUSRows(Vector children, String parentOwner, String parentName, String childAtt)
 	throws RemoteException, GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
-	return localConn.retrieveParentsForAllObjects(children, parentOwner, parentName, childAtt);
+	return localConn.retrieveParentsForAllGUSRows(children, parentOwner, parentName, childAtt);
     }
     
     public GUSRow retrieveChild(GUSRow row, String owner, String tname, String childAtt)
@@ -106,6 +112,16 @@ public class RemoteDatabaseConnection extends UnicastRemoteObject implements Rem
 	throws RemoteException, GUSNoSuchRelationException
     {
 	return localConn.retrieveChildren(row, owner, tname, childAtt);
+    }
+
+    public String getSubmitDate() throws RemoteException
+    {
+	return localConn.getSubmitDate();
+    }
+
+    public boolean commit() throws RemoteException
+    {
+	return localConn.commit();
     }
 
     public void close() 

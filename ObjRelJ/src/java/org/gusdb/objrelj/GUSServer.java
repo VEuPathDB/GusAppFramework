@@ -88,9 +88,9 @@ public class GUSServer implements ServerI {
 	DatabaseConnectionI conn;
 
 	/**
-	 * Object cache for this session.
+	 * Object factory for this session.
 	 */
-	ObjectCache cache;
+	GUSRowFactory factory;
 
 	/**
 	 * Default values for standard attributes (e.g., group_id, user_id, etc.)
@@ -117,13 +117,12 @@ public class GUSServer implements ServerI {
 	    this.logger.setLevel(Level.INFO);
 	    StreamHandler logHandler = new StreamHandler(System.out, new SimpleFormatter());
 	    this.logger.addHandler(logHandler);
-
+	    defaults = new Hashtable();
             this.user = user;
             this.password = password;
             this.session = session;
             this.conn = conn;
-	    this.initDefaultValues();
-	    this.cache = new ObjectCache();
+	    this.factory = new GUSRowFactory();
             opened = new java.util.Date();
             history.add(opened.toString() + ": Connection opened");
         }
@@ -150,78 +149,62 @@ public class GUSServer implements ServerI {
 		this.conn.close();
 	    } catch (RemoteException re) {}
 	    this.history = null;
-	    this.cache = null;
+	    this.factory = null;
 	}
 
 	// ------------------------------------------------------------------
 	// DEFAULT VALUES FOR SHARED COLUMNS
 	// ------------------------------------------------------------------
+	
+	// DTB:  Took out 'initDefaultValues' method that duplicates Perl DbiDatabase
+	// functionality; it initialized these default values with hardcoded values.
+	// For right now, it is the responsibility of the client using the object layer
+	// to set default values on its Session (through its GUSServer); later, we will
+	// probably use java object layer plugins to do this.
 
-	/**
-	 * Set default attribute values for any new GUSRow objects created in this session.
-	 */
-	protected void initDefaultValues() {
-	    this.defaults = new Hashtable();
-	    
-	    // JC: Could we put all this stuff in a new instance of GUSRow instead of 
-	    // a Hashtable?  I think this is called the "prototype" OO design pattern.
-	    // The problem here is that these values (Integer vs. Long) depend on the 
-	    // database and so should not be hardcoded (or, if they are to be hardcoded,
-	    // it would be better to make them part of the generated code.)
-	    
-	    defaults.put("modification_date", "SYSDATE");  //should move elsewhere perhaps.
-	    
-	    // by default all permissions set to 1 except other_write
-	    //
-	    Short s0 = new Short((short)0);
-	    Short s1 = new Short((short)1);
-
-	    setDefaultUserRead(s1);
-	    setDefaultUserWrite(s1);
-	    setDefaultGroupRead(s1);
-	    setDefaultGroupWrite(s1);
-	    setDefaultOtherRead(s1);
-	    setDefaultOtherWrite(s0);
-	    setDefaultRowGroupId(s0);
-	    setDefaultRowProjectId(s0);
-	    setDefaultRowAlgInvocationId(new Long(1));
-
-	    try {
-		setDefaultRowUserId(new Long(this.conn.getCurrentUserId()));
-	    } catch (RemoteException re) {}
+	//DTB: This returns "SYSDATE" in Oracle; but there is a data type conflict
+	//since it returns as a String and we handle this as Date.  For now will
+	//just return new Date();
+	/*public String getDefaultModificationDate() { 
+	    String date = "";
+	    try{
+		date = conn.getSubmitDate();
+	    }
+	    catch(RemoteException e){
+		e.printStackTrace();
+	    }
+	    return date;
+	}*/
+	
+	public java.sql.Date getDefaultModificationDate(){
+	    java.util.Date currentDate = new java.util.Date();
+	    long ms = currentDate.getTime();
+	    return new java.sql.Date(ms);
 	}
 
-	// JC: either these methods need to be duplicated in GUSServer proper, or 
-	// the session needs to be turned into a first-class object.  It's not
-	// crucial, however, since the application can always set these shared
-	// columns manually.
-    
-	// modification_date
-	public String getDefaultModificationDate() { return (String)(defaults.get("modification_date")); }
-	
 	// user_read
-	public void setDefaultUserRead(Short d) { defaults.put("user_read", d);  }
-	public Short getDefaultUserRead() { return (Short)(defaults.get("user_read")); }
+	public void setDefaultUserRead(Boolean d) { defaults.put("user_read", d);  }
+	public Boolean getDefaultUserRead() { return (Boolean)(defaults.get("user_read")); }
 	
 	// user_write
-	public void setDefaultUserWrite(Short d) { defaults.put("user_write", d); }
-	public Short getDefaultUserWrite() { return (Short)(defaults.get("user_write")); }
+	public void setDefaultUserWrite(Boolean d) { defaults.put("user_write", d); }
+	public Boolean getDefaultUserWrite() { return (Boolean)(defaults.get("user_write")); }
 	
 	// group_read
-	public void setDefaultGroupRead(Short d) { defaults.put("group_read", d);  }
-	public Short getDefaultGroupRead() { return (Short)(defaults.get("group_read")); }
+	public void setDefaultGroupRead(Boolean d) { defaults.put("group_read", d);  }
+	public Boolean getDefaultGroupRead() { return (Boolean)(defaults.get("group_read")); }
 	
 	// group_write
-	public void setDefaultGroupWrite(Short d) { defaults.put("group_write", d); }
-	public Short getDefaultGroupWrite() { return (Short)(defaults.get("group_write")); }
+	public void setDefaultGroupWrite(Boolean d) { defaults.put("group_write", d); }
+	public Boolean getDefaultGroupWrite() { return (Boolean)(defaults.get("group_write")); }
 	
 	// other_read
-	public void setDefaultOtherRead(Short d) { defaults.put("other_read", d);  }
-	public Short getDefaultOtherRead() { return (Short)(defaults.get("other_read")); }
+	public void setDefaultOtherRead(Boolean d) { defaults.put("other_read", d);  }
+	public Boolean getDefaultOtherRead() { return (Boolean)(defaults.get("other_read")); }
 	
 	// other_write
-	public void setDefaultOtherWrite(Short d) { defaults.put("other_write", d); }
-	public Short getDefaultOtherWrite() { return (Short)(defaults.get("other_write")); }
+	public void setDefaultOtherWrite(Boolean d) { defaults.put("other_write", d); }
+	public Boolean getDefaultOtherWrite() { return (Boolean)(defaults.get("other_write")); }
 	
 	// row_user_id
 	public void setDefaultRowUserId(Long d) { defaults.put("row_user_id", d);  }
@@ -295,42 +278,113 @@ public class GUSServer implements ServerI {
 	return new ArrayList(s.history);
     }
     
-    public GUSRow retrieveObject(String session, String owner, String tname, long pk) 
+    public GUSRow retrieveGUSRow(String session, GUSTable table, long pkValue, boolean retrieveEager) 
 	throws GUSNoConnectionException, GUSObjectNotUniqueException
     {
-	return this.retrieveObject(session,owner,tname,pk,null,null,null);
+	return this.retrieveGUSRow(session, table, pkValue, retrieveEager, null,null,null);
+    }
+    
+    public GUSRow retrieveGUSRow(String session, GUSTable table, long pkValue, boolean retrieveEager,
+				 String clobAtt, Long start, Long end) 
+        throws GUSNoConnectionException, GUSObjectNotUniqueException
+    {
+        Session s = getSession(session);
+	
+	//	System.err.println("GUSServer.retrieveGUSRow: retrieving gusRow " + pkValue + " from factory");
+	// Check the factory first
+
+	GUSRow gusRow = null;
+
+	boolean gusRowInFactory = s.factory.contains(table.getOwnerName(), table.getTableName(), pkValue);
+	//System.err.println("GUSServer.retrieveGUSRow: gusRow in factory? " + gusRowInFactory);
+	if (!gusRowInFactory){
+	    gusRow = GUSRow.createGUSRow(table);
+	    try{
+		gusRow.setPrimaryKeyValue(new Long(pkValue));
+	    }
+	    catch (Exception e){
+		e.printStackTrace();
+	    }
+	    s.factory.add(gusRow);
+	    gusRow.setServer(this);
+	    gusRow.setSessionId(session);
+	    gusRow.setIsEager(retrieveEager);
+	    
+	    if (retrieveEager){  
+		//		System.err.println("GUSServer.retrieveGUSRow: attempting to retrieve eager");
+		try {
+		    s.conn.retrieveGUSRow(gusRow, clobAtt, start, end);
+		}
+		catch (RemoteException e) {}
+		//DTB: throw exception?  used to only add gusrow to factory here if it wasn't null...
+		//but with new way of doing things will never be null
+		s.factory.add(gusRow); 
+		s.addToHistory("retrieveGUSRow: retrieved from db - " + gusRow);
+	    }
+	    else { //return lazy object
+		s.addToHistory("retrieveGUSRow: returned empty GUSRow - " + gusRow);
+	    }
+	} 
+	else { //object was in the factory; it may be lazy
+	    gusRow = s.factory.get(table.getOwnerName(), table.getTableName(), pkValue);
+	    //	    System.err.println("GUSServer.retrieveGUSRow:  GUSRow was in the factory");
+	    if (!gusRow.isEager() && retrieveEager){
+		try{
+		    //		    System.err.println("GUSServer.retrieveGUSRow: retrieving lazy gusrow");
+		    gusRow.retrieve();
+		}
+		catch (Exception e){
+		    System.err.println(e.getMessage());
+		    e.printStackTrace();
+		}
+		s.addToHistory("retrieveGUSRow: retrieved existing unretrieved GUSRow - " + gusRow);
+	    }
+	    else{ //return whatever's in there.
+
+		// If the requested CLOB substring differs from that stored in the 
+		// factoryd object then we have to query the database to retrieve
+		// the requested substring.
+		//
+		if (clobAtt != null) {
+		    // JC: to do
+		}
+		
+		s.addToHistory("retrieveGUSRow: retrieved from factory - " + gusRow);
+	    }
+	}
+	return gusRow;
     }
 
-    public Vector retrieveAllObjects(String session, String owner, String tname) 
+    public Vector retrieveAllGUSRows(String session, GUSTable table) 
         throws GUSNoConnectionException
     {
         Session s = getSession(session);
 	try {
 	    SQLutilsI sqlUtils = s.conn.getSqlUtils();
-	    String selectSql = sqlUtils.makeSelectAllRowsSQL(owner, tname);
-	    return retrieveObjectsFromQuery(session, owner, tname, selectSql);
+	    String selectSql = sqlUtils.makeSelectAllRowsSQL(table.getOwnerName(), table.getTableName());
+	    return retrieveGUSRowsFromQuery(session, table, selectSql);
 	} catch (RemoteException re) {}
 
 	return null;
     }
     
-    public Vector retrieveObjectsFromQuery(String session, String owner, String tname, String query)
+    public Vector retrieveGUSRowsFromQuery(String session, GUSTable table, String query)
 	throws GUSNoConnectionException
     {
         Session s = getSession(session);
         Vector objs = null;
 	try {
-	    objs = s.conn.retrieveObjectsFromQuery(owner, tname, query);
+	    objs = s.conn.retrieveGUSRowsFromQuery(table, query);
 	} catch (RemoteException re) {}
 
 	int nRows = (objs == null) ? 0 : objs.size();
-	int numNew = 0;  // Number of objects not already in the cache
+	int numNew = 0;  // Number of objects not already in the factory
 
-	// See whether any of the objects are already in the cache
+	// See whether any of the objects are already in the factory
 	// 
 	for (int i = 0;i < nRows;++i) {
 	    GUSRow row = (GUSRow)(objs.elementAt(i));
-	    GUSRow co = s.cache.get(row);
+	    GUSRow co = s.factory.get(row);
 
 	    // This object is not new; it should be returned in place of row
 	    // 
@@ -338,16 +392,16 @@ public class GUSServer implements ServerI {
 		objs.setElementAt(co, i);
 	    } 
 
-	    // This object is new and should be cached
+	    // This object is new and should be factoryd
 	    //
 	    else {
-		s.cache.add(row);
+		s.factory.add(row);
 		numNew++;
 	    }
 	}
 
-	s.addToHistory("retrieveObjectsFromQuery: selected " + nRows + " rows from " + owner + "." + tname + 
-		       ", of which " + numNew + " are not in the cache.");
+	s.addToHistory("retrieveGUSRowsFromQuery: selected " + nRows + " rows from " + table.getOwnerName() + 
+		       "." + table.getTableName() + ", of which " + numNew + " are not in the factory.");
         return objs;
     }
 
@@ -363,76 +417,78 @@ public class GUSServer implements ServerI {
 	return objs;
     }
 
-    public GUSRow retrieveObject(String session, String owner, String tname, long pk, String clobAtt, Long start, Long end) 
-        throws GUSNoConnectionException, GUSObjectNotUniqueException
-    {
-        Session s = getSession(session);
-	GUSRow obj = null;
-	
-	// Check the cache first
-	//
-	obj = s.cache.get(owner, tname, pk);
 
-	// Otherwise query the database
-	//
-	if (obj == null) {
-	    try {
-		obj = s.conn.retrieveObject(owner, tname, pk, clobAtt, start, end);
-	    }
-	    catch (RemoteException e) {}
-
-	    if (obj != null) { s.cache.add(obj); }
-	    s.addToHistory("retrieveObject: retrieved from db - " + obj);
-	} else {
-
-	    // If the requested CLOB substring differs from that stored in the 
-	    // cached object then we have to query the database to retrieve
-	    // the requested substring.
-	    //
-	    if (clobAtt != null) {
-		// JC: to do
-	    }
-
-	    s.addToHistory("retrieveObject: retrieved from cache - " + obj);
-	}
-
-	return obj;
-    }
-
-    public SubmitResult submitObject(String session, GUSRow obj, boolean deepSubmit) 
+    public SubmitResult submitGUSRow(String session, GUSRow obj, boolean deepSubmit, boolean startTransaction) 
         throws GUSNoConnectionException
     {
 	SubmitResult sr = new SubmitResult(true, 0, 0, 0, new Vector());
 	Session s = getSession(session);
-	this.submitObject_aux(s, obj, deepSubmit, sr);
-        s.addToHistory("submitObject: submitted " + obj + ", deep submit = " + deepSubmit);
+	//TO DO - this doesn't check if submit_aux correctly submitted
+		
+	this.submitGUSRow_aux(s, obj, deepSubmit, sr);
+	//GUSRow now has a pk value, put in factory.
+	//DTB: running the "get" check every time...will that slow
+	//things down if submitting a bunch of objects?
+	
+	s.addToHistory("submitGUSRow: submitted " + obj + ", deep submit = " + deepSubmit);
+	if (startTransaction == true){
+	    try {
+		s.conn.commit();
+	    }
+	    catch (RemoteException e){
+		e.printStackTrace();
+		System.err.println(e.getMessage());
+	    }
+	}
 	return sr;
 
     }
 
-    public GUSRow createObject(String session, String owner, String tname) 
+    public GUSRow createGUSRow(String session, GUSTable table) 
         throws GUSNoConnectionException 
     {
 	Session s = getSession(session);
-	GUSRow newObj = GUSRow.createObject(owner, tname);
+	GUSRow newObj = GUSRow.createGUSRow(table);
 
-	// Set default properties for the session
-	//
-	Enumeration e = s.defaults.keys();
-	while (e.hasMoreElements()) {
-	    String key = (String)(e.nextElement());
-	    Object value = s.defaults.get(key);
-	    newObj.set(key, value);
-	}
+	
+	// TO DO - set these when creating the object or upon submit?
 
-	s.addToHistory("createObject: created new object " + newObj);
+       	/*	Enumeration e = s.defaults.keys();
+		while (e.hasMoreElements()) {
+		String key = (String)(e.nextElement());
+		Object value = s.defaults.get(key);
+		newObj.set(key, value);
+		}*/
+
+	s.addToHistory("createGUSRow: created new object " + newObj);
         return newObj;
     }
 
+    public GUSRow retrieveParent(String sessionId, GUSRow child, GUSTable parentTable, String childAtt)
+    throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException{
+	Session s = getSession(sessionId);
+	GUSRow parent = null;
+	try{
+	    Long parentPk = s.conn.getParentPk(child, parentTable, childAtt);
+	    if (parentPk != null){
+		parent = GUSRow.createGUSRow(parentTable);
+		
+		parent.setPrimaryKeyValue(parentPk);
+		parent = retrieveGUSRow(sessionId, parentTable, parentPk.longValue(), true);
+		parent.setIsEager(true);
+	    }
+	}
+	catch (Exception e){
+	    e.printStackTrace();
+	}
+	
+	return parent;
+    }
+
     // JC: retrieveParent, retrieveChild, and retrieveChildren should be 
-    // rewritten to rely on retrieveObject and retrieveObjectsFromQuery
+    // rewritten to y on retrieveGUSRow and retrieveGUSRowsFromQuery
     // (with some post-processing to make the setChild/setParent calls)
-	    
+	//dtb:  this is the way we used to do it...don't delete just yet
     public GUSRow retrieveParent(String session, GUSRow row, String owner, String tname, String childAtt)
 	throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
@@ -442,24 +498,24 @@ public class GUSServer implements ServerI {
 	    parent = s.conn.retrieveParent(row, owner, tname, childAtt);
 	} catch (RemoteException re) {}
 
-	GUSRow obj = s.cache.get(parent);
+	GUSRow obj = s.factory.get(parent);
 
 	if (obj != null) { 
 	    parent = obj;
 	} else {
-	    s.cache.add(parent);
+	    s.factory.add(parent);
 	}
 
 	s.addToHistory("retrieveParent: retrieved parent row " + parent + " for child row " + row);
 
 	// TO DO: make sure this works even if the parent-child relationship has already
 	// been established.
-	row.addParent(parent);
-	parent.addChild(row);
+	//row.setParent(parent);
+	//	parent.addChild(row);
         return parent;
     }
 
-    public GUSRow[] retrieveParentsForAllObjects(String session, Vector children, String parentOwner, 
+    public GUSRow[] retrieveParentsForAllGUSRows(String session, Vector children, String parentOwner, 
 						 String parentName, String childAtt)
 	throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
@@ -467,7 +523,7 @@ public class GUSServer implements ServerI {
 	Session s = getSession(session);
 
 	try {
-	    parents = s.conn.retrieveParentsForAllObjects(children, parentOwner, parentName, childAtt);
+	    parents = s.conn.retrieveParentsForAllGUSRows(children, parentOwner, parentName, childAtt);
 	}
 	catch (RemoteException re) {}
 	int nc = (children == null) ? 0 : children.size();
@@ -476,12 +532,12 @@ public class GUSServer implements ServerI {
 	    int np = parents.length;
 
 	    for (int i = 0;i < np;++i) {
-		GUSRow obj = s.cache.get(parents[i]);
+		GUSRow obj = s.factory.get(parents[i]);
 		
 		if (obj != null) {
 		    parents[i] = obj;
 		} else {
-		    s.cache.add(parents[i]);
+		    s.factory.add(parents[i]);
 		}
 
 		// Can't be sure that the correspondence is correct unless the correct
@@ -489,13 +545,13 @@ public class GUSServer implements ServerI {
 		//
 		if (nc == np) {
 		    GUSRow child = (GUSRow)(children.elementAt(i));
-		    child.addParent(parents[i]);
-		    parents[i].addChild(child);
+		    //		    child.addParent(parents[i]);
+		    //		    parents[i].addChild(child);
 		}
 	    }
 	}
 
-	s.addToHistory("retrieveParentsForAllObjects: retrieved " + parents.length + " " + 
+	s.addToHistory("retrieveParentsForAllGUSRows: retrieved " + parents.length + " " + 
 		       parentOwner + "." + parentName + " object(s) for " + nc + " child row(s)");
 	return parents;
     }
@@ -508,20 +564,20 @@ public class GUSServer implements ServerI {
 	try {
 	    child = s.conn.retrieveChild(row, owner, tname, childAtt);
 	} catch (RemoteException re) {}
-	GUSRow obj = s.cache.get(child);
+	GUSRow obj = s.factory.get(child);
 
 	if (obj != null) { 
 	    child = obj;
 	} else {
-	    s.cache.add(child);
+	    s.factory.add(child);
 	}
 
 	s.addToHistory("retrieveChild: retrieved child " + child + " for parent " + row + ", childAtt=" + childAtt);
 
 	// TO DO: make sure this works even if the parent-child relationship has already
 	// been established.
-	row.addChild(child);
-	child.addParent(row);
+	//	row.addChild(child);
+	//	child.addParent(row);
         return child;
     }
 
@@ -534,35 +590,128 @@ public class GUSServer implements ServerI {
 	    children = s.conn.retrieveChildren(row, owner, tname, childAtt);
 	} catch (RemoteException re) {}
 	int nc = (children == null) ? 0 : children.size();
-	int numNew = 0;  // Number of objects not already in the cache
+	int numNew = 0;  // Number of objects not already in the factory
 
 	for (int i = 0;i < nc;++i) {
 	    GUSRow child = (GUSRow)(children.elementAt(i));
-	    GUSRow co = s.cache.get(child);
+	    GUSRow co = s.factory.get(child);
 
 	    // This object is not new; it should be returned in place of child
 	    // 
 	    if (co != null) {
 		children.setElementAt(co, i);
-		row.addChild(co);
-		co.addParent(row);
+		//		row.addChild(co);
+		//		co.addParent(row);
 	    } 
 
-	    // This object is new and should be cached
+	    // This object is new and should be factoryd
 	    //
 	    else {
-		s.cache.add(child);
+		s.factory.add(child);
 		numNew++;
-		row.addChild(child);
-		child.addParent(row);
+		//		row.addChild(child);
+		//		child.addParent(row);
 	    }
 
 	}
 
 	s.addToHistory("retrieveChildren: retrieved " + nc + " child rows for " + row + ", childAtt=" + 
-		       owner + "." + tname + "." + childAtt + ", of which " + numNew + " are not in the cache");
+		       owner + "." + tname + "." + childAtt + ", of which " + numNew + " are not in the factory");
 	return children;
     }
+    
+    public java.sql.Date getDefaultModificationDate(String sessionName) throws GUSNoConnectionException { 
+	Session session = getSession(sessionName);
+	return session.getDefaultModificationDate();
+    }
+
+    // TO DO - add this restriction to other setters
+
+    /**
+     * Must be called only after opening a connection to the database.
+     */
+    public void setDefaultUserRead(String sessionName, Boolean d) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	session.setDefaultUserRead(d);
+    }
+    public Boolean getDefaultUserRead(String sessionName) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	return session.getDefaultUserRead();
+    }
+    public void setDefaultUserWrite(String sessionName, Boolean d) throws GUSNoConnectionException { 
+	Session session = getSession(sessionName);
+	session.setDefaultUserWrite(d);
+    }
+    public Boolean getDefaultUserWrite(String sessionName) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	return session.getDefaultUserWrite();
+    }
+    public void setDefaultGroupRead(String sessionName, Boolean d) throws GUSNoConnectionException { 
+	Session session = getSession(sessionName);
+	session.setDefaultGroupRead(d);
+    }
+    public Boolean getDefaultGroupRead(String sessionName) throws GUSNoConnectionException { 
+	Session session = getSession(sessionName);
+	return session.getDefaultGroupRead();
+    }
+    public void setDefaultGroupWrite(String sessionName, Boolean d) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	session.setDefaultGroupWrite(d);
+    }
+    public Boolean getDefaultGroupWrite(String sessionName) throws GUSNoConnectionException { 
+	Session session = getSession(sessionName);
+	return session.getDefaultGroupWrite();
+    }
+    public void setDefaultOtherRead(String sessionName, Boolean d) throws GUSNoConnectionException { 
+	Session session = getSession(sessionName);
+	session.setDefaultOtherRead(d);
+    }
+    public Boolean getDefaultOtherRead(String sessionName) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	return session.getDefaultOtherRead();
+    }
+    public void setDefaultOtherWrite(String sessionName, Boolean d) throws GUSNoConnectionException { 
+	Session session = getSession(sessionName);
+	session.setDefaultOtherWrite(d);
+    }
+    public Boolean getDefaultOtherWrite(String sessionName) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	return session.getDefaultOtherWrite();
+    }
+    public void setDefaultRowUserId(String sessionName, Long d) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	session.setDefaultRowUserId(d);
+    }
+    public Long getDefaultRowUserId(String sessionName) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	return session.getDefaultRowUserId();
+    }
+    public void setDefaultRowGroupId(String sessionName, Short d) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	session.setDefaultRowGroupId(d);
+    }
+    public Short getDefaultRowGroupId(String sessionName) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	return session.getDefaultRowGroupId();
+    }
+    public void setDefaultRowProjectId(String sessionName, Short d) throws GUSNoConnectionException { 
+	Session session = getSession(sessionName);
+	session.setDefaultRowProjectId(d);
+    }
+    public Short getDefaultRowProjectId(String sessionName) throws GUSNoConnectionException { 
+	Session session = getSession(sessionName);
+	return session.getDefaultRowProjectId();
+    }
+    public void setDefaultRowAlgInvocationId(String sessionName, Long d) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	session.setDefaultRowAlgInvocationId(d);
+    }
+    public Long getDefaultRowAlgInvocationId(String sessionName) throws GUSNoConnectionException {
+	Session session = getSession(sessionName);
+	return session.getDefaultRowAlgInvocationId();
+    }
+    
+
 
     // ------------------------------------------------------------------
     // Protected methods
@@ -582,57 +731,177 @@ public class GUSServer implements ServerI {
     }
 
     /**
-     * Helper method for submitObject.  It updates the SubmitResult in place to 
-     * indicate the actions that it has performed.
+     * Helper method for submitGUSRow.  It updates the SubmitResult in place to 
+     * indicate the actions that it has performed.  Also sets default overhead
+     * attributes for a GUSRow, and sets the primary key attribute for the GUSRow
+     * if it is newly created (using the primary key in the submit result.)
      *
      * @return Whether the submit succeeded
      */
-    protected boolean submitObject_aux(Session s, GUSRow obj, boolean deepSubmit, SubmitResult sr) {
+    protected boolean submitGUSRow_aux(Session s, GUSRow gusRow, boolean deepSubmit, SubmitResult sr) {
 	
-	// First submit the object itself
-	//
+	//Default attributes are Session specific, so set them here.
 	SubmitResult sres = null;
-	try {
-	    sres = s.conn.submitObject(obj);
-	} catch (RemoteException re) {
-	    return false;
-	}
-
-	sr.update(sres);
-
-	if (!sr.submitSucceeded()) {
-	    return false;
-	}
-
-	// Update the object to reflect the fact that it is now up-to-date
-	// with respect to the database.
-
-	// JC: to do
-
-	// If the submit succeeded and deepSubmit == true then we
-	// must also submit the object's children.
-	//
-	if (sr.submitSucceeded && deepSubmit) {
-	    Vector kids = obj.getAllChildren();
-	    Iterator e = kids.iterator();
-
-	    while (e.hasNext()) {
-		GUSRow kid = (GUSRow)(e.next());
-
-		// Abort as soon as a submit fails
-		//
-		if (!submitObject_aux(s, obj, deepSubmit, sr)) {
-		    return false;
-		}
-
-		// JC: Update parent/child relationships based on results
-		// of submit.  Need to be careful since we're in the
-		// middle of an iteration.
-
-		// JC: to do
+	if (gusRow.isDeleted()){
+	    
+	    boolean childSubmitSucceeded = submitGUSRowChildren(s, gusRow, sr);
+	    gusRow.removeFromParents();
+	    try {
+		sres = s.conn.submitGUSRow(gusRow);
+	    }
+	    catch (Exception e) {
+		System.err.println(e.getMessage());
+		e.printStackTrace();
+		return false;
 	    }
 	}
-	return true; // succeeded
+	else{
+	    
+	    setDefaultAttributes(s, gusRow);
+	    
+	    //Make sure all parents have foreign key values
+	    try {
+		gusRow.submitNewParents(sr);
+		
+		// First submit the gusRow itself
+		//
+		sres = s.conn.submitGUSRow(gusRow);
+		//		System.err.println("message from submitResult = " + sres.getMessage());
+	    } catch (Exception e) {
+		System.err.println(e.getMessage());
+		e.printStackTrace();
+		return false;
+	    }
+	    //	    System.err.println("GUSServer:  submitted object, got result: " + sr.getMessage());
+	    sr.update(sres);
+
+	    if (!sr.submitSucceeded()) {
+		return false;
+	    }
+	    
+	    if (gusRow.isEager == false){
+		gusRow.setIsEager(true);
+		
+		Vector newPks = sres.getNewPrimaryKeys();
+		Long newPk = (Long)newPks.elementAt(0);
+		//		System.out.println("GUSServer.submitGUSRow_aux: setting pk attribute");
+		//	System.out.println("att name is : " + gusRow.getTable().getPrimaryKeyName() + " and value is " + newPk);
+		try{
+		    gusRow.setPrimaryKeyValue(newPk);
+		}
+		catch (Exception e) {
+		    e.printStackTrace();
+		    System.err.println(e.getMessage());
+		}
+	    }
+	    gusRow.syncAttsWithDb();
+	    if (s.factory.get(gusRow) == null){
+		s.factory.add(gusRow);
+	    }
+	    if (sr.submitSucceeded && deepSubmit) {
+		boolean submitChildrenSuccess = submitGUSRowChildren(s, gusRow, sr);
+	    }
+	}
+	return true;
+    }
+    
+    protected boolean submitGUSRowChildren(Session s, GUSRow gusRow, SubmitResult sr){
+
+	Hashtable allChildren = gusRow.getAllChildren(); 
+	Enumeration childKeys = allChildren.keys();
+	while (childKeys.hasMoreElements()){
+	    String nextChildKey = (String)childKeys.nextElement();
+	    
+	    Vector nextChildList = (Vector)allChildren.get(nextChildKey);
+		
+	    for (int i = 0; i < nextChildList.size(); i++){
+		
+		GUSRow nextChild = (GUSRow)nextChildList.elementAt(i);
+		//		System.err.println("GUSServer.submit_aux: submitting next child of type " + nextChildKey + " with pk of " + nextChild.getPrimaryKeyValue());
+		// Abort as soon as a submit fails
+		//
+		if (!submitGUSRow_aux(s, nextChild, true, sr)) {
+		    
+		    return false;
+		}
+	    }
+	}
+	return true;
+    }
+    
+    // ------------------------------------------------------------------
+    // Private Methods
+    // ------------------------------------------------------------------
+    
+    /**
+     * Set default attributes for this GUSRow if they haven't been set already.
+     * ModificationDate is always set regardless of if it has been already.
+     */
+    private void setDefaultAttributes(Session s, GUSRow gr){
+	try{
+	    
+	    gr.set_Attribute("modification_date", s.getDefaultModificationDate());
+	    
+	    //attributes (non-foreign key values)
+	    Boolean userRead = (Boolean)gr.get_Attribute("user_read");
+	    if (userRead == null){
+		gr.set_Attribute("user_read", s.getDefaultUserRead());
+	    }
+	    
+	    Boolean userWrite = (Boolean)gr.get_Attribute("user_write");
+	    if (userWrite == null){
+		gr.set_Attribute("user_write", s.getDefaultUserWrite());
+	    }
+	    
+	    Boolean groupRead = (Boolean)gr.get_Attribute("group_read");
+	    if (groupRead == null){
+		gr.set_Attribute("group_read", s.getDefaultGroupRead());
+	    }
+	    
+	    Boolean groupWrite = (Boolean)gr.get_Attribute("group_write");
+	    if (groupWrite == null){
+		gr.set_Attribute("group_write", s.getDefaultGroupWrite());
+	    }
+	    
+	    Boolean otherRead = (Boolean)gr.get_Attribute("other_read");
+	    if (otherRead == null){
+		gr.set_Attribute("other_read", s.getDefaultOtherRead());
+	    }
+	    
+	    Boolean otherWrite = (Boolean)gr.get_Attribute("other_write");
+	    if (otherWrite == null){
+		gr.set_Attribute("other_write", s.getDefaultOtherWrite());
+	    }
+	    
+	    //Foreign keys:  get values from session and create objects
+	    GUSRow rowUserId = (GUSRow)gr.get_Attribute("row_user_id");
+	    if (rowUserId == null){
+		gr.set_OverheadAttribute("Core", "UserInfo", "row_user_id", s.getDefaultRowUserId().longValue());
+	    }
+	    
+	    GUSRow rowProjectId = (GUSRow)gr.get_Attribute("row_project_id");
+	    if (rowProjectId == null){
+		gr.set_OverheadAttribute("Core", "ProjectInfo", "row_project_id", s.getDefaultRowProjectId().longValue());
+	    }
+	    
+	    GUSRow rowGroupId = (GUSRow)gr.get_Attribute("row_group_id");
+	    if (rowGroupId == null){
+		gr.set_OverheadAttribute("Core", "GroupInfo", "row_group_id", s.getDefaultRowGroupId().longValue());
+	    }
+	    
+	    GUSRow rowAlgInvocationId = (GUSRow)gr.get_Attribute("row_alg_invocation_id");
+	    if (rowAlgInvocationId == null){
+		gr.set_OverheadAttribute("Core", "AlgorithmInvocation", "row_alg_invocation_id", 
+					 s.getDefaultRowAlgInvocationId().longValue());
+	    }
+	}
+	catch (Exception e){
+	    System.err.println(e.getMessage());
+	    e.printStackTrace();
+	}
+
     }
 
 } //GUSServer
+
+

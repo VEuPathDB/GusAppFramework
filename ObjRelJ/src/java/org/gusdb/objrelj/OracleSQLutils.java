@@ -30,6 +30,7 @@ public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
 	StringBuffer insertSQL = new StringBuffer("INSERT into " + owner + "." + table + "\n(" );
 	StringBuffer valuesClause = new StringBuffer("VALUES \n(" );
 	String key;
+	GUSRowAttribute grAtt;
 	Object val;
 
 	insertSQL.append(pkatt);
@@ -39,7 +40,8 @@ public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
 	while (attKeys.hasMoreElements()){
 	    key = (String)attKeys.nextElement();
 	    insertSQL.append(",\n" + key);
-	    val = atts.get(key);
+	    grAtt = (GUSRowAttribute)atts.get(key);
+	    val = grAtt.getSubmitValue();
 	    valuesClause.append(", " + makeAppendValue(key, val));
 	}
 	
@@ -48,31 +50,28 @@ public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
     }
 
     public String makeUpdateSQL(String owner, String table, String pkatt, 
-				long pk, Hashtable atts, Hashtable oldAtts) 
+				long pk, Hashtable atts) 
     {	
 	StringBuffer updateSQL = new StringBuffer("update " + owner + "." + table +  " set \n ");
 	StringBuffer whereSQL = new StringBuffer(" where " + pkatt + " = " + pk );
     
 	Enumeration attKeys= atts.keys();
-	Enumeration oldAttKeys = oldAtts.keys();
+	GUSRowAttribute grAtt;
 
 	int i = 0;
 	while (attKeys.hasMoreElements()){
-	    if (i++ == 0) { updateSQL.append(",\n"); }
+	    
 	    String key = (String)attKeys.nextElement();
-	    updateSQL.append(key.toUpperCase() + " = ");
-	    Object val = atts.get(key);
-	    updateSQL.append(makeAppendValue(key, val));
-	}
+	    grAtt = (GUSRowAttribute)atts.get(key);
 
-	//attributes that are in oldAttKeys but not attKeys have been set to NULL
-	while (oldAttKeys.hasMoreElements()){
-	    Object oldKey = oldAttKeys.nextElement();
-	    if (!(atts.containsKey(oldKey))){
-		updateSQL.append(", \n" + oldKey + " = NULL ");
+	    if (grAtt.isSetByApp()){
+		if (i > 0) { updateSQL.append(",\n"); }
+		i++;
+		updateSQL.append(key.toUpperCase() + " = ");
+		Object val = grAtt.getSubmitValue();
+		updateSQL.append(makeAppendValue(key, val));
 	    }
 	}
-	    
 	updateSQL.append(whereSQL.toString());
 	return updateSQL.toString();
     } 
@@ -88,8 +87,7 @@ public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
 
 	StringBuffer deleteSQL = new StringBuffer("DELETE from " + owner + "." + table + "\n" );
 	deleteSQL.append("WHERE " + pkatt + " = " + pk);
-	return deleteSQL.toString();
-    }
+	return deleteSQL.toString();    }
 
     public String makeNewIdSQL(GUSTable table) {
 	String owner = table.getOwnerName();
@@ -113,6 +111,11 @@ public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
 	}
     }
 
+    public String getSubmitDate(){
+	return "SYSDATE";
+    }
+    
+    //DTB:  is this database-specific?
     public String makeTransactionSQL(boolean noTran, String cmd) {
         String command = null;
         if (!noTran){
@@ -147,7 +150,7 @@ public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
             if (value instanceof String || value instanceof Date) {
 		// JC: Don't we have to worry about quoting embedded quote characters here?
 		// JC: this is another oracle-specific section
-		final_value = "\n'" + value + "'";
+		final_value = " '" + value + "'";
 	    } else if (value instanceof Boolean) {
 		final_value = ((Boolean)value).booleanValue() ? "1" : "0";
 	    }

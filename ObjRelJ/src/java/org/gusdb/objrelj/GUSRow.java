@@ -5,6 +5,7 @@ import java.lang.*;
 import java.io.*;
 import java.sql.*;
 import java.math.*;
+import java.util.logging.Logger;
 
 /**
  * GUSRow.java
@@ -14,11 +15,11 @@ import java.math.*;
  * This is the class that should be subclassed by all GUS objects.
  * It handles the parent-child relationships (i.e., the relational
  * foreign key constraints) and is meant to be the Java analog of
- * the Perl object layer's DBIRow and RelationalRow packages.  One
- * significant difference with the Perl object layer, however, is
- * that in the Java object layer all of the actual database 
- * communication is handled by the GUSServer class, rather than the 
- * individual GUS objects.
+ * the Perl object layer's DBIRow and RelationalRow packages.  
+ *
+ * An instance of a GUSRow should be created through a GUS object
+ * subclass with a ServerI object.  The ServerI object handles all
+ * communication between the GUSRow and the database or object cache.
  *
  * Created: Tues April 16 12:56:00 2002
  *
@@ -41,25 +42,23 @@ public abstract class GUSRow implements java.io.Serializable {
     // Instance variables
     // ------------------------------------------------------------------
 
-    // JC: make sure that the attribute names really are all-lowercase
+    /**
+     * ServerI object that handles all communication with the database.
+     */
+    protected ServerI server;
 
     /**
-     * The original values for the attributes of the row.  The attribute names
-     * are in all-lowercase.
+     * String representing the particular Session with the server to which this GUSRow belongs.
      */
-    protected Hashtable initialAttVals = new Hashtable();
+    protected String sessionId;
+
 
     /**
      * The current values for the attributes of the row.  The attribute names
      * are in all-lowercase.
      */
-    protected Hashtable currentAttVals = new Hashtable();
+    protected Hashtable attributeValues = new Hashtable();
 
-    /**
-     * The unique primary key of the row, i.e., the value stored in the 
-     * attribute named by <code>table.getPrimaryKeyName()</code>
-     */ 
-    protected Long id;
 
     /**
      * "Facts" are rows that provide support for the existence of this row
@@ -87,30 +86,41 @@ public abstract class GUSRow implements java.io.Serializable {
     protected boolean isDeleted;
 
     /**
-     * Whether this row is newly created (i.e., versus having been retrieved from the db.)
+     * Whether this row has been retrieved from the database or is newly created.
      */
-    // JC: Is this redundant?  Isn't a row "new" iff it has no primary key value.
-    protected boolean isNew;
 
+    protected boolean isEager;
+    
     /**
      * Whether any of the attributes of the row have been updated; the updated values
-     * themselves are stored in <code>currentAttVals</code>.
+     * themselves are stored in <code>attributeValues</code>.
      */
     protected boolean hasChangedAtts;
 
-    // JC: See if we can replace these ObjectCaches with something lighter-weight
-    //     might also considering not initializing these variables until we have some
-    //     children or parents to store.
+    /**
+     * A Hashtable of Vectors; each of the contained Vectors holds a list of GUSRows that are all of the same 
+     * type.  Each of these GUSRows are those that have foreign keys to this GUSRow.  Children have 
+     * protected access through the <code>getChildren()</code> method in this class.  To get individual
+     * Vectors of children, use the child accessors in the GUSRow subclasses.
+     */
+    protected Hashtable children; //DTB update documentation for this
 
     /**
-     * Children of this row, i.e., rows that reference it.
+     * A Vector containing GUSRows that represent all the foreign key rows of this GUSRow, regardless
+     * of type.  They have protected access through the <code>getParents()</code> method in this class.
+     * To get individual parents, use the parent accessors in the GUSRow subclasses.
      */
-    protected ObjectCache children = new ObjectCache();
+    protected Vector parents;
+
+
+    //TO DO - determine if logger will work when passed over RMI.  
+    //Also- Could have each GusTable for specific classes have its own logger
+    //and each GUSRow for specific classes access that.
 
     /**
-     * Parents of this row, i.e., rows that it references.
+     * Logger from java.util.logging package.
      */
-    protected ObjectCache parents = new ObjectCache();
+    protected Logger logger; 
 
     // ------------------------------------------------------------------
     // Constructors
@@ -119,11 +129,24 @@ public abstract class GUSRow implements java.io.Serializable {
     /**
      * Constructor
      */
-    public GUSRow() {
-	this.isNew = true;       // will be set to false if setAttributesFromResultSet called
+    public GUSRow(){};
+
+
+    public GUSRow(ServerI server, String sessionId) {
+	this.server = server;
+	this.sessionId = sessionId;
+	this.isEager = false;
 	this.isDeleted = false;
 	this.hasChangedAtts = false;
+	parents = new Vector();
+	children = new Hashtable();
     }
+
+    private void initialize(){
+	parents = new Vector();
+	children = new Hashtable();
+    }
+    
 
     // ------------------------------------------------------------------
     // Static methods
@@ -132,16 +155,20 @@ public abstract class GUSRow implements java.io.Serializable {
     /**
      * Create a new object of the specified class.
      */
-    public static GUSRow createObject(String owner, String tname) {
-	String rowClassName = GUSRow.MODEL_PACKAGE + "." + owner + "." + tname;
+    public static GUSRow createGUSRow(GUSTable table) {
+	String rowClassName = GUSRow.MODEL_PACKAGE + "." + table.getOwnerName() + "." + table.getTableName();
 	try {
 	    Class rowClass = Class.forName(rowClassName);
-	    return (GUSRow)rowClass.newInstance();
+	    GUSRow gr = (GUSRow)rowClass.newInstance();
+	    gr.initialize();
+	    return gr;
 	} 
 	catch (ClassNotFoundException cnfe) {
 	    cnfe.printStackTrace(System.err);
 	}
 	catch (InstantiationException ie) {
+	    System.err.println("caught instantiation exception");
+	    System.err.println(ie.getMessage());
 	    ie.printStackTrace(System.err);
 	}
 	catch (IllegalAccessException iae) {
@@ -174,64 +201,80 @@ public abstract class GUSRow implements java.io.Serializable {
      *                      special cases (i.e., all CLOBs and BLOBs should be retrieved in
      *                      their entirety.)
      */
-    protected abstract void setAttributesFromResultSet_aux(ResultSet res, Hashtable specialCases);
+    protected abstract void setAttributesFromHashtable_aux(Hashtable rowHash, Hashtable specialCases);
 
     // ------------------------------------------------------------------
     // Public methods
     // ------------------------------------------------------------------
-    
+
+    protected void setServer(ServerI server){
+	this.server = server;
+    }
+    protected void setSessionId(String session){
+	this.sessionId = session;
+    }
+
+
     /**
-     * Set an attribute to a particular value.  Note that this only affects 
-     * <code>currentAttVals</code>, not <code>initialAttVals</code>, until the row
-     * is written to the database.  The original values are retained so that
-     * we know which attributes have changed and must be updated, in the case
-     * of an SQL update.
-     *
-     * @param key   The name of the attribute to be changed.
-     * @param val   The new value for the attribute named by <code>key</code>.
+     * If the primary key for this GUSRow is not in the database, no values will be set.
      */
-    public void set( String key, Object val ) { 
-	String lcKey = key.toLowerCase();
+    public void retrieve()
+	throws GUSInvalidPrimaryKeyException, GUSNoConnectionException, GUSObjectNotUniqueException{
+	long id = getPrimaryKeyValue();
+	if (id == -1){
+	    throw new GUSInvalidPrimaryKeyException("No primary key set for the object the user is trying to retrieve");
+	}
+	GUSTable myTable = getTable();
+	String schema = myTable.getOwnerName();
+	String tName = myTable.getTableName();
+	String pkAtt = myTable.getPrimaryKeyName();
+	String query = "select * from " + schema + "." + tName + " where " + pkAtt + " = " + id;
+	
+	Vector result = server.runSqlQuery(sessionId, query);
+	
+	if (result.size() > 1){
+	    throw new GUSObjectNotUniqueException("Found " + result.size() + " rows in " + schema + "." + 
+						  tName + " with id=" + id);
+	}
+	if (result.size() == 1){
+	    setIsEager(true);
+	    Hashtable rowHash = (Hashtable)result.elementAt(0);
+	    setAttributesFromHashtable(rowHash, null);
+	}
+    }
+    
+    protected SubmitResult submit_aux(boolean deepSubmit, boolean startTransaction) throws GUSNoConnectionException{
+	
+	//	Enumeration 
+	
+        SubmitResult sr = this.server.submitGUSRow(sessionId, this, deepSubmit, startTransaction);
+	return sr;
+    }
 
-	try {
+    public SubmitResult submit(boolean deepSubmit) throws GUSNoConnectionException{
 
-	    // To indicate a null value we remove the key from the 
-	    // currentAttVals hashtable.
-	    //
-	    if (val == null) {
-		currentAttVals.remove(lcKey);
-	    }
-	    else {
+	return  submit_aux(deepSubmit, true);
+	
+    }
 
-		// If the attribute being set is the primary key column we throw
-		// an exception, since the primary key value shouldn't be set by
-		// users in the public interface.
-		//
-		if (lcKey.equals(getTable().getPrimaryKeyName())) {
-		    throw new IllegalArgumentException("Not allowed to change primary key value using set()");
-		} 
-		else {
-		    this.currentAttVals.put(lcKey, val);
-		    this.hasChangedAtts = true;
+    protected void submitNewParents(SubmitResult sr) throws GUSNoConnectionException{
+	
+	Enumeration allAttributes = attributeValues.keys();
+	SubmitResult parentSubmits = null;
+	while (allAttributes.hasMoreElements()){
+	    String nextAtt = (String)allAttributes.nextElement();
+	    GUSRowAttribute gra = (GUSRowAttribute)attributeValues.get(nextAtt);
+	    Object value = gra.getCurrentValue();
+	    if (value instanceof GUSRow){
+		GUSRow nextParent = (GUSRow)value;
+		if (nextParent.getPrimaryKeyValue() == -1){
+		    parentSubmits = nextParent.submit_aux(false, false);
+		    sr.update(parentSubmits);
 		}
 	    }
 	}
-
-	// JC: Do we want to fail silently here?
-	catch ( NullPointerException e ) {}
     }
 
-    /**
-     * Get the <I>current</I> value of an attribute.
-     *
-     * JC: If used on a CLOB/BLOB value, this method will ONLY return the cached portion of the LOB.
-     *
-     * @param key   The name of the attribute to get.
-     * @return The requested attribute value.
-     */
-    public Object get( String key ) {
-	return currentAttVals.get(key.toLowerCase());
-    }
 
     /**
      * @return Whether any of this row's attributes have been changed from their initial values.
@@ -240,109 +283,175 @@ public abstract class GUSRow implements java.io.Serializable {
 	return hasChangedAtts;
     }
 
-    /**
-     * @return Whether this row is new, i.e., has not yet been connected
-     * with a row in the database via its <code>id</code>.
-     */
-    public boolean isNew() {
-	return this.isNew;
+    public boolean isEager(){
+	return this.isEager;
     }
 
-    /**
-     * @return The unique primary key value for the row.  Will return
-     * -1 iff <code>isNew()</code>.
-     */
-    public long getPrimaryKeyValue() {
-	return (id == null) ? -1 : id.longValue();
+    protected void setIsEager(boolean isEager){
+	this.isEager = isEager;
+    }
+
+    public abstract long getPrimaryKeyValue();
+
+    public String getSessionId(){
+	return this.sessionId;
+    }
+    //test for 
+    protected void addChild(GUSRow child, String fkAtt){
+	
+	String childKey = getUniqueChildKey(child, fkAtt);
+	//	System.err.println("GUSRow.addChild: parent is " + getTable().getTableName() + " and got unique child key: " + childKey);
+	Vector thisChildVector = (Vector)children.get(childKey);
+	if (thisChildVector == null){
+	    //	    System.err.println("GUSRow.addChild: creating Vector to put these children in");
+	    thisChildVector = new Vector();
+	    children.put(childKey, thisChildVector);
+	}
+	thisChildVector.add(child);
+	
+    }
+
+    public void setParent(GUSRow newParent, String parentAtt){
+
+	GUSRowAttribute parentGrAtt = (GUSRowAttribute)attributeValues.get(parentAtt);
+
+	if (parentGrAtt != null){
+	    GUSRow currentParent = (GUSRow)parentGrAtt.getCurrentValue();
+
+	    if (currentParent != null){
+
+		currentParent.removeChild(this, parentAtt);
+	    }
+	}
+	try{
+	    //	    System.err.println("GUSRow.setParent:  setting new parent here.");
+	    set_Attribute(parentAtt, newParent);
+	}
+	catch (Exception e){
+	    System.err.println(e.getMessage());
+	    e.printStackTrace();
+	    //dtb might want to do something with this later or throw it to the calling method.
+	}
+	if (newParent != null){
+	    
+	    newParent.addChild(this, parentAtt);
+	}
     }
     
-    /**
-     * Add a child to this row.
-     *
-     * @param c  The child row.
-     */
-    public void addChild(GUSRow c){
-	// TO DO:
-	//  check that this is a valid child (using GUSTableRelations in table)
-	//  set the referencing attribute in the child row, if:
-	//    1. this row has a valid id (primary key)
-	//    2. it does not already point to this row
-	//  have a useful return value
-	this.children.add(c);
-    }  
+    protected GUSRow getParent(String parentAtt, boolean retrieveFromDb)
+	throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException{
+	GUSRow parent = null;
+	GUSRowAttribute parentGrAtt = (GUSRowAttribute)attributeValues.get(parentAtt);
+	
+	if (parentGrAtt == null){
+	    return null; //child is new or there is no parent in db.
+	    //DTB: offline mode?
+	}
+	parent = (GUSRow)parentGrAtt.getCurrentValue();
+	if (retrieveFromDb){
+	    if (!parent.isEager()){
+		try{
+		    parent.retrieve();
+		}
+		catch (Exception e){
+		    System.err.println(e.getMessage());
+		    e.printStackTrace();
+		}
+	    }
+	}
+	return parent;
+    }
+
+    protected void set_ParentRetrieved(String parentAtt, GUSTable parentTable, long parentPk){
+	try{
+
+	    GUSRow parent = null;
+
+	    GUSRowAttribute gusRowAttribute = (GUSRowAttribute)attributeValues.get(parentAtt);
+	    if (gusRowAttribute == null){  //don't overwrite existing parent
+		parent = (GUSRow)server.retrieveGUSRow(sessionId, parentTable, parentPk, false);
+		parent.addChild(this, parentAtt);
+	    }
+	    
+	    set_Retrieved(parentAtt, parent);
+	}
+	catch (Exception e){
+	    e.printStackTrace();
+	}
+    }
     
-    // JC: shouldn't this be setParent, not addParent?
+    protected void removeChild(GUSRow child, String childFkToMe){
 
-    /**
-     * Add a parent for this row.
-     *
-     * @param c  The parent row.
-     */
-    public void addParent(GUSRow c){
-	// TO DO:
-	// same as above, more or less
-	this.parents.add(c);
+	GUSTable myTable = getTable();
+	GUSTable childTable = child.getTable();
+	String childKey = getUniqueChildKey(child, childFkToMe);
+	Vector thisChildVector = (Vector)children.get(childKey);
+	thisChildVector.remove(child);
     }
 
-    // JC: Note that all of these get methods only operate on the child and
-    // parent objects that have been cached in the row (versus those that may
-    // exist in the database.)  Should we rename these methods to make this
-    // clearer?
 
-    /**
-     * @return A Vector containing all of the child GUSRow objects that have been
-     * added to this object so far.  Does not query the database.
-     */
-    public Vector getAllChildren(){
-	return children.getAll();
+    private String getUniqueChildKey(GUSRow child, String childFkToMe){
+	
+	String childKey;
+	GUSTable childTable = child.getTable();
+	GUSTable myTable = getTable();
+	if (myTable.childHasMultipleFksToMe(childTable.getOwnerName(), childTable.getTableName())){
+	    childKey = makeSpecialChildKey(child, childFkToMe);
+	}
+	else{
+	    childKey = childTable.getTableName().toLowerCase();
+	}
+	return childKey;
     }
 
-    // JC: why does this method (and the next) take the primary key as an argument?
-    // JC: this can't be correct because before an object has been submitted to the
-    // database it won't have a primary key value.
+    //does not remove my parents from me...need to decide if that will mess things up.
+    protected void removeFromParents(){
 
-    /**
-     * Retrieve a unique child of this row.  (i.e., the sole row from the specified
-     * table that references this row.)  Will throw an exception if the specified 
-     * table contains multiple rows that reference this one.  Does not query the
-     * database.
-     *
-     * @param cowner   The owner of the child table.
-     * @param cname    Name of the child table
-     * @param pk       Primary key of the requested child object.
-     * @return The requested child row.
-     */
-    public GUSRow getChild(String cowner, String cname, long pk) {
-	// returns the child represented by the cname.  If does
-	// not exist throw exception.  Also, throw exception
-	// if has two children with the cname.
-	return this.children.get(cowner, cname, pk);
+	Enumeration allAttributes = attributeValues.keys();
+	SubmitResult parentSubmits = null;
+	while (allAttributes.hasMoreElements()){
+	    String nextAtt = (String)allAttributes.nextElement();
+	    GUSRowAttribute gra = (GUSRowAttribute)attributeValues.get(nextAtt);
+	    Object value = gra.getCurrentValue();
+	    if (value instanceof GUSRow){
+		GUSRow gusRow = (GUSRow)value;
+		gusRow.removeChild(this, nextAtt);
+	    }
+	}
     }
 
-    /**
-     * Retrieve the parent of this row.  (i.e., the unique row from the specified table 
-     * that is referenced by this row.)  Does not query the database.
-     *
-     * @param cowner   The owner of the parent table.
-     * @param cname    Name of the parent table
-     * @param pk       Primary key of the requested parent object.
-     * @return The requested parent row.
-     */
-    public GUSRow getParent(String cowner, String cname, long pk) {
-	//returns the GUSRow parent Object.
-	GUSRow pars = this.parents.get(cowner, cname, pk);
-	return pars;
+    protected void set_OverheadAttribute(String schema, String tableName, String attName, long pkValue){
+	try{
+	    GUSTable table = GUSTable.getTableByName(schema, tableName);
+	    GUSRow parentGusRow = server.retrieveGUSRow(sessionId, table, pkValue, false);
+	    setParent(parentGusRow, attName);
+	}
+	catch (Exception e){
+	    e.printStackTrace();
+	    System.err.println(e.getMessage());
+	}
     }
 
-    /**
-     * @return A Vector containing of the parent GUSRow objects that have been
-     * added to this object so far.   Does not query the database.
-     */
-    public Vector getAllParents() {
-	Vector c = parents.getAll();
-	return c;
+
+    private String makeSpecialChildKey(GUSRow child, String childFkToMe){
+	
+	return child.getTable().getTableName().toLowerCase() + "_IAmA_" + childFkToMe;
     }
-   
+
+    protected Vector getParents(){
+	return parents;
+    }
+    
+    protected Vector getChildren(String childAtt){
+	Vector theseChildren = (Vector)children.get(childAtt);
+	return theseChildren;
+    }
+    
+    protected Hashtable getAllChildren(){
+	return children;
+    }
+    
+
     /**
      * Set the deletion status of this row.  If set to <code>true</code>
      * when the row is next submitted to the database, it will be deleted.
@@ -350,7 +459,26 @@ public abstract class GUSRow implements java.io.Serializable {
      * @param d   Whether to delete this row the next time it is submitted.
      */
     public void setDeleted(boolean d){
-        isDeleted = d;
+        
+	//	System.err.println("GUSRow.setDeleted setting myself (" + getTable().getTableName() + "_" + getPrimaryKeyValue() + ") deleted");
+	isDeleted = d;
+	Enumeration childKeys = children.keys();
+	while (childKeys.hasMoreElements()){
+	    String nextChildKey = (String)childKeys.nextElement();
+
+	    Vector nextChildList = (Vector)children.get(nextChildKey);
+		
+	    for (int i = 0; i < nextChildList.size(); i++){
+		    
+		GUSRow nextChild = (GUSRow)nextChildList.elementAt(i);
+
+		//will you ever have lazy children?--yes if children are new
+		if (nextChild.isEager()){
+		    //		    System.err.println("\tGUSRow.setDeleted setting child(" + nextChild.getTable().getTableName() + "_" + nextChild.getPrimaryKeyValue() + ") deleted");
+		    nextChild.setDeleted(d);
+		}
+	    }
+	}
     }
 
     /**
@@ -374,6 +502,24 @@ public abstract class GUSRow implements java.io.Serializable {
         return xml.toString();
     }
     
+    public String childrenToXML(){
+	String allChildren = "All children for this GUSRow: ";
+	Enumeration childKeys = children.keys();
+	while (childKeys.hasMoreElements()){
+	    String nextChildKey = (String)childKeys.nextElement();
+	    Vector nextChildList = (Vector)children.get(nextChildKey);
+		
+	    for (int i = 0; i < nextChildList.size(); i++){
+		    
+		GUSRow nextChild = (GUSRow)nextChildList.elementAt(i);
+		allChildren = allChildren + nextChild.toXML();
+	    }
+	}
+	return allChildren;
+    }
+
+
+
     /**
      * Dump the current values of this row's attributes in XML.  Also allows
      * one to set the row's "xml_id" and "parent" XML attributes.
@@ -406,8 +552,7 @@ public abstract class GUSRow implements java.io.Serializable {
     // JC: These methods are inherently unsafe, so access is restricted to
     // other classes in the package.
 
-    Hashtable getInitialAttVals() { return this.initialAttVals; }
-    Hashtable getCurrentAttVals() { return this.currentAttVals; }
+    Hashtable getAttributeValues() { return this.attributeValues; }
   
     /**
      * Called (by the factory object that creates new rows) to set the attributes
@@ -424,8 +569,8 @@ public abstract class GUSRow implements java.io.Serializable {
      *                      special cases (i.e., all CLOBs and BLOBs should be retrieved in
      *                      their entirety.)
      */
-    void setAttributesFromResultSet(ResultSet res, Hashtable specialCases) {
-	this.setAttributesFromResultSet_aux(res, specialCases);
+    void setAttributesFromHashtable(Hashtable rowHash, Hashtable specialCases) {
+	this.setAttributesFromHashtable_aux(rowHash, specialCases);
     }
 
     // ------------------------------------------------------------------
@@ -433,59 +578,122 @@ public abstract class GUSRow implements java.io.Serializable {
     // ------------------------------------------------------------------
 
     /**
+     * Set an attribute to a particular value.  Note that this only affects 
+     * <code>currentValue</code> of the GUSRowAttribute in the GUSRow that represents
+     * the attribute, until the row is written to the database.  
+     *
+     * @param key   The name of the attribute to be changed.
+     * @param val   The new value for the attribute named by <code>key</code>.
+     */
+    protected void set_Attribute( String key, Object val )
+    	throws ClassNotFoundException, InstantiationException, IllegalAccessException, SQLException { 
+	
+	if (! (val instanceof GUSRow)){
+	    attTypeCheck(key, val);
+	}
+
+	GUSRowAttribute gusRowAttribute = (GUSRowAttribute)attributeValues.get(key);
+	if (gusRowAttribute == null){ //parent that hasn't been retrieved yet
+	    //	    if (val instanceof GUSRow){System.err.println("creating new gra for parent and inserting it");}
+	    gusRowAttribute = new GUSRowAttribute(val);
+	    attributeValues.put(key, gusRowAttribute);
+	}
+	gusRowAttribute.setAttributeSetByApp(true);
+	gusRowAttribute.setCurrentValue(val);
+	this.hasChangedAtts = true;
+		
+	// If the attribute being set is the primary key column we throw
+	// an exception, since the primary key value shouldn't be set by
+	// users in the public interface.
+	// DTB: changing this restriction -- with even the GUSServer wouldn't
+	// be able to set the value.  Is there a way to prevent the client from
+	// doing so?
+    }
+
+    /**
+     * Get the <I>current</I> value of an attribute.  
+     *
+     * JC: If used on a CLOB/BLOB value, this method will ONLY return the cached portion of the LOB.
+     *
+     * @param key   The name of the attribute to get.
+     * @return The requested attribute value.
+     */
+    protected Object get_Attribute( String key ) {
+	GUSRowAttribute gusRowAttribute = (GUSRowAttribute)attributeValues.get(key);
+	if (gusRowAttribute == null){
+	    if (isEager == false && attributeValues.get(getTable().getPrimaryKeyName()) != null){
+		try{
+		    retrieve();
+		}
+		catch (Exception e){
+		    System.err.println(e.getMessage());
+		    //		    e.printStackTrace();
+		}
+		gusRowAttribute = (GUSRowAttribute)attributeValues.get(key);
+	    }
+	    
+	}
+	if (gusRowAttribute == null){
+	    return null;
+	}
+	return gusRowAttribute.getCurrentValue();
+    }
+
+    /**
      * Set this row's unique ID.  Requires interaction with the database.
      * Once set it should never change.
      *
      * @param new_id  
      */
-    protected void setPrimaryKeyValue(Long newId) {
-
-	// It is illegal to change this row's primary key once it
-	// has been set to a non-null value.
-	//
-	if (this.id != null) {
-	    throw new IllegalArgumentException("Row's GusRowId has already been set.");
-	}
-	id = newId;
-    }
+    protected abstract void setPrimaryKeyValue(Long newId) 
+	throws ClassNotFoundException,InstantiationException, IllegalAccessException, SQLException;
 
     /**
-     * Sets the <I>initial</I> value of an attribute to a particular value.
-     * Called by a GUSRow subclass to populate <code>initialAttVals</code> with 
+     * Sets the database value of an attribute to a particular value.
+     * Called by a GUSRow subclass to initialize <code>attributeValues</code> with 
      * values from the database when this row is first retrieved from the
-     * database.
+     * database.  
      *
      * @param key   The name of the attribute to set.
      * @param val   The <I>initial</I> value for the attribute named by <code>key</code>
      */
-    protected void setInitial ( String key, Object val ) {
-	try {
-	    if (val == null) {
-		// do nothing; value will not be set
-		// i.e., if there is no entry for an attribute in <code>initialAttVals</code>
-		// then its value is assumed to be null
-	    }
-	    else {
-		this.initialAttVals.put(key.toLowerCase(), val);
+    protected void set_Retrieved ( String key, Object val ) {
+	
+ 	GUSRowAttribute gusRowAttribute = (GUSRowAttribute)attributeValues.get(key);
+	if (gusRowAttribute == null){ //hasn't been set yet, do so with db value
 
-		// JC: If the value being set is the primary key value then
-		// we must also update <code>id</code>
-	    }
+	    gusRowAttribute = new GUSRowAttribute(val);
+	    attributeValues.put(key, gusRowAttribute);
 	}
-	catch (NullPointerException e) {}
+	else{
+	    gusRowAttribute.setDbValue(val); //populate dbValue but keep currentValue as is
+	}
+
+	// JC: If the value being set is the primary key value then
+	// we must also update <code>id</code>
+	// DTB -- no, this is done in the subclassed objects
+    }
+
+    /**
+     * Called after a submit to updated the attributes of this GUSRow to 
+     * reflect that they are the same as those for the corresponding row
+     * in the database.
+     */
+    protected void syncAttsWithDb(){
+
+	Enumeration allAtts = attributeValues.keys();
+	while (allAtts.hasMoreElements()){
+	    String nextAtt = (String)allAtts.nextElement();
+	    GUSRowAttribute nextGrAtt = (GUSRowAttribute)attributeValues.get(nextAtt);
+	    nextGrAtt.syncAttWithDb();
+	}
     }
 
     // JC: can we get rid of this method completely?
+    // DTB: when an object is submitted, it needs to have its initial 
+    // attribute hashtable updated to reflect what is now in the DB.
+    // This method is the only way to do this, so far.
 
-    /**
-     * Sets the <I>initial</I> values of all the row's attributes.
-     *
-     * @param vals  Hashtable keyed by lowercase attribute name.
-     */
-    protected void setInitialAttValues( Hashtable vals ) {
-	// needs to check if valid attributes still !! SJD
-	this.initialAttVals = vals;
-    }
 
     /**
      * Retrieve a subsequence of the specified CLOB value; throws an
@@ -497,7 +705,7 @@ public abstract class GUSRow implements java.io.Serializable {
      * @param end      End of subsequence to retrieve in 1-based coordinates, inclusive.
      */
     protected char[] getClobValue(String att, CacheRange cached, long start, long end) {
-	char[] value = (char[])this.get(att);
+	char[] value = (char[])this.get_Attribute(att);
         long cacheStart = 1;
         long cacheEnd = value.length;
 
@@ -509,7 +717,6 @@ public abstract class GUSRow implements java.io.Serializable {
 	        cacheEnd = cached.end.longValue();
 	    }
         }
-
         if ((start >= cacheStart) && (start <= cacheEnd) && (end >= cacheStart) && (end <= cacheEnd)) 
         {
 	    int localStart = (int)(start - cacheStart);
@@ -521,7 +728,6 @@ public abstract class GUSRow implements java.io.Serializable {
 	    for (int i = localStart; i <= localEnd;++i) {
 		result[ind++] = value[i];
 	    }
-	    
 	    return result;
 	} else {
 	    throw new IllegalArgumentException(this + ": requested CLOB range, " + start + "-" + end + 
@@ -539,7 +745,7 @@ public abstract class GUSRow implements java.io.Serializable {
      * @param end      End of subsequence to retrieve.
      */
     protected byte[] getBlobValue(String att, CacheRange cached, long start, long end) {
-	byte[] value = (byte[])this.get(att);
+	byte[] value = (byte[])this.get_Attribute(att);
         long cacheStart = 1;
         long cacheEnd = value.length;
 
@@ -633,7 +839,7 @@ public abstract class GUSRow implements java.io.Serializable {
 		}
 		
 		if (!isEntireLob) result = new CacheRange(start, end, length);
-		setInitial(att, data); 
+		set_Retrieved(att, data); 
 	    } 
 	    catch (SQLException se) {}
 	    catch (java.io.IOException ie) {}
@@ -702,7 +908,7 @@ public abstract class GUSRow implements java.io.Serializable {
 		}
 		
 		if (!isEntireLob) result = new CacheRange(start, end, length);
-		setInitial(att, data); 
+		set_Retrieved(att, data); 
 	    } 
 	    catch (SQLException se) {}
 	    catch (java.io.IOException ie) {}
@@ -724,6 +930,9 @@ public abstract class GUSRow implements java.io.Serializable {
 
 	//refactor this after adding length check	
 	GUSTableAttribute attInfo = table.getAttributeInfo(att);
+	if (attInfo == null){
+	    throw new IllegalArgumentException("GUSRow: Attempted to set an att " + att + " that is not in this GUSRow's table");
+	}
 	String type = attInfo.getJavaType();
 	boolean nullable = attInfo.isNullable();
 	
@@ -745,6 +954,11 @@ public abstract class GUSRow implements java.io.Serializable {
 	checkLength(att, toCheck);	
     }								       
 
+    protected boolean intToBool(int input){
+	boolean res = (input == 0) ? false : true;
+	return res;
+    }
+    
     /**
      * Check that the specified value <code>o</code> is not larger than the 
      * maximum value allowed by the attribute named <code>att</code>.  Assumes
@@ -844,21 +1058,22 @@ public abstract class GUSRow implements java.io.Serializable {
      * @see toXML
      */
     private void toXML_aux(StringBuffer xml) {
-        Enumeration keys = currentAttVals.keys();
+        Enumeration keys = attributeValues.keys();
 
         while( keys.hasMoreElements() ) {
             String next = (String)(keys.nextElement());
-	    Object nextval = currentAttVals.get(next);
-	    String nextstr = nextval.toString();
+	    GUSRowAttribute nextAttribute = (GUSRowAttribute)attributeValues.get(next);
+	    Object nextVal = nextAttribute.getSubmitValue();
+	    String nextstr = nextVal.toString();
 
 	    // JC: why don't we print an attribute if its value is -1 or the empty string???
 	    //     aren't these perfectly valid values in many attributes?
 
-	    if ( !nextstr.equals("") && !nextstr.equals("-1") ) { 
+	    //	    if ( !nextstr.equals("") && !nextstr.equals("-1") ) { 
                 xml.append("  <" + next + ">");
 		xml.append(nextstr);
 		xml.append("</" + next + ">" +  "\n");
-            }
+		// }
         }
         xml.append("</" + this.getTable().getTableName() + ">" + "\n");
     }
@@ -869,8 +1084,11 @@ public abstract class GUSRow implements java.io.Serializable {
 
     public String toString() {
 	GUSTable table = this.getTable();
+	long id = getPrimaryKeyValue();
 	return "[" + table + ":" + id + "]";
     }
 
 
 } //GUSRow
+
+

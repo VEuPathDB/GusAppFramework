@@ -215,6 +215,15 @@ public class GUSTable implements java.io.Serializable {
         return (getAttributeInfo(att) != null);
     }
 
+    public boolean childHasMultipleFksToMe(String owner, String tname){
+	String key = owner.toLowerCase() + "." + tname.toLowerCase();
+	Hashtable thisChildInfo = (Hashtable)childRelations.get(key);
+	int size = thisChildInfo.size();
+	boolean result = (size > 1) ? true : false;
+	return result;
+    }
+						    
+
     // ------------------------------------------------------------------
     // Protected methods
     // ------------------------------------------------------------------
@@ -241,16 +250,17 @@ public class GUSTable implements java.io.Serializable {
 	String lcTable = tname.toLowerCase();
 	String lcAtt = childAtt.toLowerCase();
 	String key1 = lcOwner + "." + lcTable;
-
 	Hashtable h1 = (Hashtable)(h.get(key1));
 	if (h1 == null) {
 	    h1 = new Hashtable();
 	    h.put(key1, h1);
 	}
-
-	if (h1.put(lcAtt, gtr) != null) {
+	
+	//DTB:  this was causing overhead tables to fail when adding DoTS.OrthologExperiment; examine that table
+	//for duplicate constraints and then add this in later.
+	/*if (h1.put(lcAtt, gtr) != null) {
 	    throw new IllegalArgumentException(this + ": relation already defined when trying to add " + gtr);
-	}
+	    }*/ 
     }
 
     // ------------------------------------------------------------------

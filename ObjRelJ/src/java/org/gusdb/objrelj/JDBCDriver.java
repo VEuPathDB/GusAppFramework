@@ -53,6 +53,7 @@ public class JDBCDriver implements DatabaseDriverI {
     public JDBCDriver(String jdbcDriverClass, SQLutilsI utils, String url, String user, String password) 
     {
 	try {
+	    System.out.println("JDBCDriver: creating new with driverclass: " + jdbcDriverClass);
 	    Class dclass = Class.forName(jdbcDriverClass);
 	} 
 	catch (ClassNotFoundException cnfe) {}

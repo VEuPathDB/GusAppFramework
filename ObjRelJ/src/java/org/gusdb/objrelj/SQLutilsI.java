@@ -68,7 +68,7 @@ public interface SQLutilsI {
      * @return A String that contains the SQL update statement.
      */    
     public String makeUpdateSQL(String owner, String table, String pkatt, 
-				long pk, Hashtable atts, Hashtable oldAtts);
+				long pk, Hashtable atts);
 
     // ------------------------------------------------------------------
     // DELETE
@@ -113,6 +113,16 @@ public interface SQLutilsI {
      * @param cmd        Either 'commit' or 'rollback'
      * @return The SQL command that corresponds to <code>cmd</code>, if <code>!noTran</code>
      */
+
+    // DTB: take 'noTran' out as a parameter?  Need to figure out scenarios for its usage.
+
     public String makeTransactionSQL(boolean noTran, String cmd);
+
+    /**
+     * Retrieve a date (as a <code>String</code>) that represents the time at which
+     * an object is submitted to the database.
+     */ 
+    public String getSubmitDate();
+
 
 } //SQLutilsI

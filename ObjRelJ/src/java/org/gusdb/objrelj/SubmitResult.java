@@ -45,6 +45,12 @@ public class SubmitResult implements java.io.Serializable {
      */
     protected Vector newPrimaryKeys;
 
+    /**
+     * Message from the database to the user regarding this attempt to submit.  
+     * A good place to pass Exception error messages along.
+     */
+    protected String message;
+
     // ------------------------------------------------------------------
     // Constructor
     // ------------------------------------------------------------------
@@ -56,6 +62,7 @@ public class SubmitResult implements java.io.Serializable {
 	this.rowsUpdated = rowsUpdated;
 	this.rowsDeleted = rowsDeleted;
 	this.newPrimaryKeys = pkeys;
+	this.message = "";
     }
 
     // ------------------------------------------------------------------
@@ -68,6 +75,11 @@ public class SubmitResult implements java.io.Serializable {
     public int getRowsUpdated() { return this.rowsUpdated; }
     public int getRowsDeleted() { return this.rowsDeleted; }
     public Vector getNewPrimaryKeys() { return this.newPrimaryKeys; }
+    public String getMessage() { return this.message; }
+
+    public void setMessage(String newMessage){
+	message = newMessage;
+    }
 
     // ------------------------------------------------------------------
     // Package-scoped methods
@@ -82,9 +94,15 @@ public class SubmitResult implements java.io.Serializable {
 	if (this.submitSucceeded) {
 	    this.submitSucceeded = sr.submitSucceeded();
 	}
-	this.rowsInserted += sr.getRowsInserted();
-	this.rowsUpdated+= sr.getRowsUpdated();
-	this.rowsDeleted += sr.getRowsDeleted();
-	this.getNewPrimaryKeys().addAll(sr.getNewPrimaryKeys());
+	if (this.submitSucceeded){
+	    this.rowsInserted += sr.getRowsInserted();
+	    this.rowsUpdated+= sr.getRowsUpdated();
+	    this.rowsDeleted += sr.getRowsDeleted();
+	    Vector myPrimaryKeys = this.getNewPrimaryKeys();
+	    Vector newPrimaryKeys = sr.getNewPrimaryKeys();
+	    if (myPrimaryKeys != null && newPrimaryKeys != null){
+		this.getNewPrimaryKeys().addAll(sr.getNewPrimaryKeys());
+	    }
+	}
     }
 }
