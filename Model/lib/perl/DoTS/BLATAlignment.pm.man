@@ -1,0 +1,94 @@
+
+package GUS::Model::DoTS::BLATAlignment;
+
+use strict;
+use GUS::Model::DoTS::BLATAlignment_Row;
+
+use vars qw (@ISA);
+@ISA = qw (GUS::Model::DoTS::BLATAlignment_Row);
+
+sub getStrand {
+    my $self = shift;
+    return ($self->getIsReversed() ? '-' : '+');
+} 
+
+sub getChromosome {
+    my $self = shift;
+    my $dbh = $self->getDatabase()->getQueryHandle();
+    my $genomeId = $self->getTargetExternalDbReleaseId();
+    my $chrId = $self->getTargetNaSequenceId();
+    my $sql = "select chromosome from dots.VirtualSequence "
+            . "where external_database_release_id = $genomeId and na_sequence_id $chrId";
+    my $sth = $dbh->sqlexec($sql);
+    return $sth->fetchrow_array;
+}
+
+sub getQstartsArray {
+    my $self = shift;
+    my $qstarts = $self->getQstarts(); $qstarts =~ s/,$//;
+    my $sc = $self->getNumberOfSpans();
+    my @qstarts = split(/,/, $qstarts);
+    die "qstarts not matching span count" if scalar(@qstarts) != $sc;   
+    return @qstarts;
+}
+
+sub getTstartsArray {
+    my $self = shift;
+    my $tstarts = $self->getTstarts(); $tstarts =~ s/,$//;
+    my $sc = $self->getNumberOfSpans();
+    my @tstarts = split(/,/, $tstarts);
+    die "tstarts not matching span count" if scalar(@tstarts) != $sc; 
+    return @tstarts;
+}
+
+sub getBlocksizesArray {
+    my $self = shift;
+    my $bsizes = $self->getBlocksizes(); $bsizes =~ s/,$//;
+    my $sc = $self->getNumberOfSpans();
+    my @bsizes = split(/,/, $bsizes);
+    die "blocksizes not matching span count" if scalar(@bsizes) != $sc; 
+    return @bsizes;
+}
+
+sub getQendsArray {
+    my $self = shift;
+    my $sc = $self->getNumberOfSpans();
+    my @qstarts = $self->getQstartsArray();
+    my @bsizes = $self->getBlocksizesArray();
+    my @qends;
+    for (my $i=0; $i<$sc; $i++) { push @qends, $qstarts[$i] + $bsizes[$i]; }
+    return  @qends;
+}
+
+sub getTendsArray {
+    my $self = shift;
+    my $sc = $self->getNumberOfSpans();
+    my @tstarts = $self->getTstartsArray();
+    my @bsizes = $self->getBlocksizesArray();
+    my @tends;
+    for (my $i=0; $i<$sc; $i++) { push @tends, $tstarts[$i] + $bsizes[$i]; }
+    return  @tends;
+}
+
+sub getQueryCoordinates {
+    my $self = shift;
+    my $sc = $self->getNumberOfSpans();
+    my @qstarts = $self->getQstartsArray();
+    my @qends = $self->getQendsArray(); 
+    my @coords;
+    for (my $i=0; $i<$sc; $i++) { push @coords, [$qstarts[$i], $qends[$i]]; }
+    return @coords;
+}
+
+sub getTargetCoordinates {
+    my $self = shift;
+    my $sc = $self->getNumberOfSpans();
+    my @tstarts = $self->getTstartsArray();
+    my @tends = $self->getTendsArray();
+    my @coords;
+    for (my $i=0; $i<$sc; $i++) { push @coords, [$tstarts[$i], $tends[$i]]; }
+    return @coords;
+}
+
+1;
+
