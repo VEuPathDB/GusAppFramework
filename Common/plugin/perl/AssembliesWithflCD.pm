@@ -125,7 +125,7 @@ sub run {
   }
 
     while (my($target_Id) = $stmt6->fetchrow_array( )) {
-    push(@DTsMarkedUsingFeatures);
+    push(@DTsMarkedUsingFeatures,$target_Id);
   }
 
 
@@ -387,7 +387,6 @@ sub DeleteFrameFinderEvidence {
 
   }
 
- 
 }
 
 1;
