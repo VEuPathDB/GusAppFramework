@@ -115,8 +115,9 @@ SQL
     $M->initStatus("Found more than one Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision");
     $P->log('ERROR-IMP', $M->getStatus);
     foreach (@$imps) {
-      $P->log('ERROR-IMP', $_->{ALGORITHM_IMPLEMENTATION_ID}, $_->{EXECUTABLE_MD5},
-	     $_->{CVS_VERSION}, $_->{CVS_TAG});
+      $P->log('ERROR-IMP', "algimp_id:$_->{ALGORITHM_IMPLEMENTATION_ID}", 
+	      "md5:$_->{EXECUTABLE_MD5}",
+	      "rev:$_->{CVS_REVISION}", "tag:$_->{CVS_TAG}");
     }
     $P->setOk(0);
   }
@@ -699,7 +700,7 @@ sub create_or_update_implementation {
 			"A GUS::Model::Core::Algorithm called $plugin_name_s is already registered.",
 			"Use '+update' instead if this is the plugin you want."
 		       ), "\n";
-      $M->doMajorMode_History($C);
+#      $M->doMajorMode_History($C);
       exit 0;
     }
 
