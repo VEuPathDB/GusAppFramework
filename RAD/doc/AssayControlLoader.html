@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
-<TITLE>ProcessedResultLoader.pm</TITLE>
-<LINK REV="made" HREF="mailto:bhcompile@stripples.devel.redhat.com">
+<TITLE>GUS::RAD::Plugin::AssayControlLoader.pm</TITLE>
+<LINK REV="made" HREF="mailto:bhcompile@porky.devel.redhat.com">
 </HEAD>
 
 <BODY>
@@ -45,16 +45,16 @@
 <P>
 <HR>
 <H1><A NAME="description">DESCRIPTION</A></H1>
-<P>This is a plug-in that loads AssayControl information (spotted microarray and oligonucleotide array) data into control table.</P>
+<P>This plugin loads data into RAD3.AssayControl. This table relates the Control elements of an Array to Assay-specific values. For example, a spiked-in control would have a concentration associated with that particular hybridization.</P>
 <P>
 <HR>
 <H1><A NAME="arguments">ARGUMENTS</A></H1>
 <P><STRONG>--data_file</STRONG> <EM>data_file</EM>  [require the absolute pathname]</P>
 <PRE>
-    The file contains the values for attributes in Control.</PRE>
+    The file containing mapping from control_ids to assay-specific values.</PRE>
 <P><STRONG>--assay_id</STRONG> <EM>assay_id</EM>  [require must be one of assay_id in RAD3::AssayControl table]</P>
 <PRE>
-    set value of the assay_id in AssayControl table</PRE>
+    The identifier in RAD3.Assay of the assay whose specific control values are being loaded.</PRE>
 <P>
 <HR>
 <H1><A NAME="options">OPTIONS</A></H1>
@@ -85,10 +85,10 @@
 <P>
 <H2><A NAME="data_file"><EM>data_file</EM></A></H2>
 <P>The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.</P>
-<P>* The header contains a list of attributes which are defined in the assaycontrol table including control__id, value, unit_type_id.</P>
-<P>* All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.</P>
+<P>* The header should contain a list of attributes which are defined in the assaycontrol table including control__id, value, unit_type_id.</P>
+<P>* All attributes in the header should be small case.</P>
 <P>* Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.</P>
-<P>Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.</P>
+<P>Please double-check that your data file has no inconsistencies before loading the data.</P>
 <P>
 <H2><A NAME="restart"><EM>restart</EM></A></H2>
 <P>If you need to restart loading from your data file from a specific line (e.g. due to previous interruptions in data loading), give the line number of this line in the --restart option. You should start your line count from the line after the header line and include any empty lines.</P>
