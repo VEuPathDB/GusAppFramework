@@ -138,49 +138,77 @@ foreach my $A(@na_sourceids)    {
   my($na_seq, $source_id) = @{$A};
 
 
-  print STDERR "ConsideringForFLDT.$na_seq\n";
+#  print STDERR "ConsideringForFLDT.$na_seq\n";
 
    $ct++;
 
    last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
-   foreach my $id(@naSequenceIds)  {
+}
 
-    print STDERR "scalar(@naSequenceIds)\n";
+my %seen = ();
+my @diffArray;
+my $id;
 
-#need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
+  foreach $id(@naSequenceIds)  {$seen{$id} = 1};
 
-print STDERR "MarkedDT.$id,DT.$na_seq\n";
+  foreach $id(@DTs)  { 
+    unless ($seen{$id})  {
 
+#add to new array
 
-     next if ($id == $na_seq) {
-
-    print STDERR "AlreadyMarkedFLDT.$na_seq\n";
-
-   }
-
-     next if ($id != $na_seq) {
-
-       print STDERR "NextFLDT.$na_seq\n";
-
-
-     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
-
-      $assembly->retrieveFromDB();
-      $assembly->setFullLengthCds(1);
-      $self->toAddEvidenceSourceID($source_id, $assembly);
-      $assembly->submit();
-
-
-      $self->undefPointerCache();
-
-
-     }
-
+push (@diffArray; $id);  }
 
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#figure out which DTs are not present in both arrays
+ }
 }
+
+#need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
+
+#print STDERR "MarkedDT.$id,DT.$na_seq\n";
+
+
+ #   if ($id == $na_seq) {
+
+  #  print STDERR "AlreadyMarkedFLDT.$na_seq\n";  }
+
+
+   # if ($id != $na_seq)  {
+
+    #   print STDERR "NextFLDT.$na_seq\n";
+
+
+   #  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
+
+    #  $assembly->retrieveFromDB();
+     # $assembly->setFullLengthCds(1);
+     # $self->toAddEvidenceSourceID($source_id, $assembly);
+     # $assembly->submit();
+
+
+     # $self->undefPointerCache();
+
+  #}
+ 
+
+
+
 
 
 
@@ -189,7 +217,7 @@ print STDERR "MarkedDT.$id,DT.$na_seq\n";
 
        foreach my $DT(@DTs)   {
 
-      if ($target_id == $DT){  next;  }
+      if ($target_id == $DT){ { next;}  }
 
         if ($target_id != $DT)  {
 
