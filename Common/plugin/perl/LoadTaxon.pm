@@ -12,59 +12,64 @@
 ##################################################################################################
 package LoadTaxon;
 
-use FileHandle;
+@ISA = qw(GUS::PluginMgr::Plugin);
 use strict;
 
-use GUS::Model::::Taxon3;
-use GUS::Model::::TaxonName;
-use GUS::Model::::GeneticCode;
+use FileHandle;
 
-my $Cfg;
-my $ctx;
+use GUS::Model::SRes::Taxon;
+use GUS::Model::SRes::TaxonName;
+use GUS::Model::SRes::GeneticCode;
+
+
 my $dbh;
 my $count = 0;
 
 sub new {
-    my $Class = shift;
-    $Cfg = shift;
-    return bless {}, $Class;
-}
+  my ($class) = @_;
 
-sub Usage {
-    my $M   = shift;
-    return 'Plug_in to populate the Taxon3, GeneticCode, and TaxonName tables using files downloaded from NCBI';
-}
+  my $self = {};
+  bless($self,$class);
 
+  my $usage = 'Plug_in to populate the Taxon, GeneticCode, and TaxonName tables using files downloaded from NCBI';
 
-sub CBIL::Util::EasyCspOptions {
-    my $M   = shift;
-    {	
-	nodes       => {
-	    o => 'nodes=s',
-	    h => 'file from ncbi with tax_id,parent_id,rank,etc 
-              e.g. /usr/local/db/local/taxonomy/nodes.dmp',
-	    },
-	names       => {
-	    o => 'names=s',
-	    h => 'file from ncbi with tax_id,name,name_class,etc
+  my $easycsp =
+    [
+     {o => 'nodes',
+      t => 'string',
+      h => 'file from ncbi with tax_id,parent_id,rank,etc e.g. /usr/local/db/local/taxonomy/nodes.dmp',
+     },
+     {o => 'names',
+      t => 'string',
+      h => 'file from ncbi with tax_id,name,name_class,etc
             e.g. /usr/local/db/local/taxonomy/names.dmp',
-	    },
-	gencode     => {
-	    o => 'gencode=s',
-	    h => 'file from ncbi with genetic_code_id,abbreviation,
-            ame,code,starts
+     },
+     {o => 'gencode',
+      t => 'string',
+      h => 'file from ncbi with genetic_code_id,abbreviation,ame,code,starts
             e.g./usr/local/db/local/taxonomy/gencode.dmp',
-	    },
-	restart     => {
-	    o=> 'restart=i',
-	    h => 'tax_id of parent for restart',
-	    },
-    }
+     },
+     {o => 'restart',
+      t => 'int',
+      h => 'tax_id of parent for restart',
+     },
+    ];
+
+  $self->initialize({requiredDbVersion => {},
+		     cvsRevision => '$Revision$', # cvs fills this in!
+		     cvsTag => '$Name$', # cvs fills this in!
+		     name => ref($self),
+		     revisionNotes => 'make consistent with GUS 3.0',
+		     easyCspOptions => $easycsp,
+		     usage => $usage
+		    });
+
+  return $self;
 }
 
 sub Run {
     my $M   = shift;
-    $ctx = shift;
+    my $ctx = shift;
     $dbh = $ctx->{'self_inv'}->getQueryHandle();
     if (!$ctx->{'cla'}->{'names'} || !$ctx->{'cla'}->{'nodes'} || !$ctx->{'cla'}->{'gencode'}) {
 	print STDERR ("Provide the names of the names.dmp, nodes.dmp, and gencode.dmp files on the command line\n");
@@ -110,7 +115,7 @@ sub makeGeneticCode {
 	if (!$starts) {
 	    $starts = 'Unspecified';
 	}
-	my $newGeneticCode = GeneticCode->new({'ncbi_genetic_code_id'=> $ncbi_gencode_id});
+	my $newGeneticCode = GUS::Model::SRes::GeneticCode->new({'ncbi_genetic_code_id'=> $ncbi_gencode_id});
 	$newGeneticCode->retrieveFromDB();
 	if ($newGeneticCode->get('abbreviation') ne $abbreviation) {
 	    $newGeneticCode->set('abbreviation',$abbreviation);
@@ -183,25 +188,25 @@ sub makeTaxonEntry {
     my $gen_code = $attArray->[3];
     my $mit_code = $attArray->[4];
 
-    my $newTaxon3  = Taxon3->new({'ncbi_tax_id'=>$tax_id});
-    $newTaxon3 ->retrieveFromDB();
+    my $newTaxon  = GUS::Model::SRes::Taxon->new({'ncbi_tax_id'=>$tax_id});
+    $newTaxon ->retrieveFromDB();
     
-    if ($newTaxon3->get('rank') ne $rank) {
-	$newTaxon3->set('rank',$rank);
+    if ($newTaxon->get('rank') ne $rank) {
+	$newTaxon->set('rank',$rank);
     }
-    if ($parent_id != -1 && $newTaxon3->get('parent_id') != $parent_id ) {
-	$newTaxon3->set('parent_id',$parent_id);
+    if ($parent_id != -1 && $newTaxon->get('parent_id') != $parent_id ) {
+	$newTaxon->set('parent_id',$parent_id);
     }
-    if ($newTaxon3->get('genetic_code_id') != $gen_code) {
-	$newTaxon3->set('genetic_code_id',$gen_code);
+    if ($newTaxon->get('genetic_code_id') != $gen_code) {
+	$newTaxon->set('genetic_code_id',$gen_code);
     }
-    if ($newTaxon3->get('mitochondrial_genetic_code_id') != $mit_code) { 
-	$newTaxon3->set('mitochondrial_genetic_code_id',$mit_code);
+    if ($newTaxon->get('mitochondrial_genetic_code_id') != $mit_code) { 
+	$newTaxon->set('mitochondrial_genetic_code_id',$mit_code);
     }  
     
     
-    $newTaxon3->submit();
-    $newTaxon3->undefPointerCache();
+    $newTaxon->submit();
+    $newTaxon->undefPointerCache();
     print STDERR ("processed ncbi_tax_id : $tax_id\n");
     $count++;
     my $time = `date`;
@@ -227,7 +232,7 @@ sub getTaxonAtt {
 sub getTaxon{
   my ($tax_id) = @_;
   my $taxon_id;
-  my $st = $dbh->prepare("select taxon_id from taxon3 where ncbi_tax_id = ?");
+  my $st = $dbh->prepare("select taxon_id from taxon where ncbi_tax_id = ?");
   $st->execute($tax_id);
   $taxon_id = $st->fetchrow_array();
   $st->finish();
@@ -242,7 +247,7 @@ sub makeTaxonName {
 	foreach my $name (keys %{$namesDmp->{$tax_id}}) {
 	    foreach my $name_class (keys %{$namesDmp->{$tax_id}->{$name}}) {
 		foreach my $unique_name_variant (keys %{$namesDmp->{$tax_id}->{$name}->{$name_class}}) {
-		    my $newTaxonName = TaxonName->new('taxon_id'=>$taxon_id);
+		    my $newTaxonName = GUS::Model::SRes::TaxonName->new('taxon_id'=>$taxon_id);
 		    $newTaxonName->retrieveFromDB();
 		    if ($newTaxonName->get('name') ne $name) {
 			$newTaxonName->set('name',$name);
