@@ -54,6 +54,11 @@ sub new {
 	  t=> 'boolean',
       },
 
+	 {o=> 'delete',
+	  h=> 'Set this to delete all GO Associations for sequences with the specified external database release id and organism specified by the given file',
+	  t=> 'boolean',
+      },
+
 	 {o=> 'loadAgain',
 	  h=> 'set this to load sequences even if some with the same external database release are already loaded',
 	  t=> 'boolean',
@@ -130,62 +135,69 @@ sub isReadOnly { 0 }
 
 sub run {
     my $self = shift;
-    
-    $self->log("LoadGoAssoc: starting run method" );
-    my $globalStart = $self->getCla->{start_line};
-    my $globalEnd = $self->getCla->{end_line};
-    my $path = $self->getCla->{file_path};
-    my $parser;
 
     my $msg;
-    my $fileName = $self->getCla->{flat_file};    
-    my $increment = $self->getCla->{increment};
-   
-    $self->__validateIncrement();
-
-    my $oneFileMsg = "CBIL:Bio:GeneAssocParser:Parser is loading $fileName in preparation for parsing";
 
     $self->__loadOrgInfo();
-
-    my $currentCounters;
-
-    if (!($increment)){
-	
-	$parser = CBIL::Bio::GeneAssocParser::Parser->new($path, $globalStart, $globalEnd);
-	
-	if ($fileName){
-	    $self->log($oneFileMsg);
-	    $parser->loadFile($fileName);
-	}
-	else {
-	    my $logMsg = "CBIL:Bio:GeneAssocParser:Parser is loading all gene_association files in ";
-	    $logMsg .= $path;
-	    $self->log($logMsg);
-	    $parser->loadAllFiles();
-	}
-	$parser->parseAllFiles();
-	$currentCounters = $self->loadAssociations($parser);
+    
+    if ($self->getCla->{delete}){
+	$msg = $self->deleteAssociations();
     }
-    else{  #parse only one file in increments
-	if ($fileName){
-	    $self->log($oneFileMsg);
-	    for (my $j = $globalStart; $j <= $globalEnd; $j += $increment){ 
-		$parser = CBIL::Bio::GeneAssocParser::Parser->new($path, $j, $j + $increment - 1);
+    else{
+	
+	$self->log("LoadGoAssoc: starting run method" );
+	my $globalStart = $self->getCla->{start_line};
+	my $globalEnd = $self->getCla->{end_line};
+	my $path = $self->getCla->{file_path};
+	my $parser;
+	
+	my $fileName = $self->getCla->{flat_file};    
+	my $increment = $self->getCla->{increment};
+	
+	$self->__validateIncrement();
+	
+	my $oneFileMsg = "CBIL:Bio:GeneAssocParser:Parser is loading $fileName in preparation for parsing";
+	
+	my $currentCounters;
+	
+	if (!($increment)){
+	    
+	    $parser = CBIL::Bio::GeneAssocParser::Parser->new($path, $globalStart, $globalEnd);
+	    
+	    if ($fileName){
+		$self->log($oneFileMsg);
 		$parser->loadFile($fileName);
-		$parser->parseAllFiles();
-		my $returnedCounters = $self->loadAssociations($parser);
-		$currentCounters = $self->__combineResults($currentCounters, $returnedCounters);
+	    }
+	    else {
+		my $logMsg = "CBIL:Bio:GeneAssocParser:Parser is loading all gene_association files in ";
+		$logMsg .= $path;
+		$self->log($logMsg);
+		$parser->loadAllFiles();
+	    }
+	    $parser->parseAllFiles();
+	    $currentCounters = $self->loadAssociations($parser);
+	}
+	else{  #parse only one file in increments
+	    if ($fileName){
+		$self->log($oneFileMsg);
+		for (my $j = $globalStart; $j <= $globalEnd; $j += $increment){ 
+		    $parser = CBIL::Bio::GeneAssocParser::Parser->new($path, $j, $j + $increment - 1);
+		    $parser->loadFile($fileName);
+		    $parser->parseAllFiles();
+		    my $returnedCounters = $self->loadAssociations($parser);
+		    $currentCounters = $self->__combineResults($currentCounters, $returnedCounters);
+	    }
+	    }
+	    else {
+		my $incError = "--increment flag is set but no file is specified to parse. \n ";
+		$incError .= "Either specify a file or do not parse files incrementally (turn --increment off)";
+		$self->userError($incError);
 	    }
 	}
-	else {
-	    my $incError = "--increment flag is set but no file is specified to parse. \n ";
-	    $incError .= "Either specify a file or do not parse files incrementally (turn --increment off)";
-	    $self->userError($incError);
- 	}
+	
+	$msg = $self->__createReturnMsg($currentCounters);
     }
-
-    $msg = $self->__createReturnMsg($currentCounters);
-    # return value
+# return value
     return $msg;
 }
 
@@ -391,6 +403,40 @@ sub loadAssociations {
 
     return $returnCounter;
 }
+
+# ......................................................................
+
+
+sub deleteAssociations{
+
+    my ($self) = @_;
+    
+    my $goDb = $self->getCla->{go_ext_db_rel_id};
+   
+    my $file = $self->getCla->{flat_file};
+    my ($organism) = $file =~ /gene_association\.(\w+)$/;
+    my $dbList = '( '. join( ', ', @{ $self->{orgInfo}->{$organism}->{ db_id } } ). ' )'; 
+    
+    open (DELLOG, ">>logs/deleteLog") || die "pluginLog could not be opened";
+
+    my $sql = "select ga go_association_id 
+               from DoTS.GOAssociation ga, DoTS.ExternalAASequence eas
+               where ga.table_id = 83 and ga.row_id = eas.aa_sequence_id
+               and eas.external_database_release_id in $dbList 
+               and gai.external_database_release_id = $goDb"; 
+
+    my $queryHandle = $self->getQueryHandle();
+    my $sth = $queryHandle->prepareAndExecute();
+    while (my ($assocId) = $sth->fetchrow_array()){
+	my $assocObject = 
+	  GUS::Model::DoTS::GOAssociation->new(go_association_id=>$assocId);
+	$assocObject->retrieveFromDb();
+	print DELLOG "got assoc with id " . $assocObject->getGoAssociationId() . " and row id " . $assocObject->getRowId() . "\n";
+
+    }
+							      
+}
+
 
 
 # ......................................................................
