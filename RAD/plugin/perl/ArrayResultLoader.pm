@@ -242,6 +242,15 @@ sub run {
   $M->checkHeader(); 
   return unless $M->getOk();
 
+# self-defined subroutine, update ResultTableId in quantification table
+#
+#
+  $M->updateResultTableId();
+  return unless $M->getOk();
+  $M->logData('Result', "Finish updating Result_Table_Id in quantification table.");
+  
+
+
 # self-defined subroutine, related the .cel file and .chp file's quantification_id 
 # 
   if($M->getCla->{cel_quantification_id}){
@@ -915,6 +924,82 @@ if(defined $c_subclass_view){
    
 }
 
+
+sub updateResultTableId{
+  my $M = shift;
+  $M ->setOk(1);
+  my $t_id;
+  my $RV;
+  my $er_subclass_view;
+  if(defined $M->getCla->{er_subclass_view}){
+    $er_subclass_view = $M->getCla->{er_subclass_view};
+    $t_id=$M->getTable_Id($er_subclass_view);  
+  } 
+  
+  my $cr_subclass_view;
+  if(defined $M->getCla->{cr_subclass_view}){
+    $cr_subclass_view = $M->getCla->{cr_subclass_view};
+    $t_id=$M->getTable_Id($cr_subclass_view);
+  }
+  
+  my $quantification_id = $M->getCla->{quantification_id};
+  if(!$M->updateQuantification($t_id, $quantification_id)){
+    $RV = "ERROR\tCann't set result_table_id to $t_id for quantification id $quantification_id in quantification table.\n";
+    print STDERR  $RV;
+    $M ->setOk(0);
+    return;
+  }
+
+   my $rel_quantification_id;
+   if(defined $M->getCla->{rel_quantification_id}){
+      $rel_quantification_id = $M->getCla->{rel_quantification_id}; 
+      if(!$M->updateQuantification($t_id, $rel_quantification_id)){
+	$RV = "ERROR\tCann't set result_table_id to $t_id for quantification id $rel_quantification_id in quantification table.\n";
+	print STDERR  $RV;
+	$M ->setOk(0);
+	return;
+    }
+   }
+}
+
+sub updateQuantification{
+  my $M = shift;
+  my ($result_table_id, $q_id )=@_;
+  my $quan_hash;
+  $quan_hash->{'quantification_id'}=$q_id;
+  my $quan=GUS::Model::RAD3::Quantification->new($quan_hash);
+  $quan->retrieveFromDB();
+  if(  $quan->setResultTableId($result_table_id)){
+    return 1;
+  }
+  else{
+    return 0;
+  }
+}
+
+sub getTable_Id{
+    my $M = shift;
+    my ($table_name)=@_;
+ #eval "require GUS::Model::RAD3::$cfg_rv->{'mapping'}->{'CompositeElementImp.subclass_view'}";
+  #eval "require GUS::Model::RAD3::$cfg_rv->{'mapping'}->{'ElementImp.subclass_view'}";
+    $M->setOk(1);
+    my $query="select t.table_id from core.tableinfo t where t.name='$table_name'";
+    my $dbh = $M->getSelfInv->getQueryHandle();
+    my $sth = $dbh->prepare($query);
+    $sth->execute();
+    my ($id) = $sth->fetchrow_array();
+    $sth->finish();
+    if (defined $id) {
+	return $id;
+    }
+    else{
+	$cfg_rv->{warnings} = "Cann't retrieve table_id for subclass view $table_name";
+	$M->logData('Error', $cfg_rv->{warnings});
+	if($M->getCla->{'commit'}){print STDERR "Error: Cann't retrieve table_id for subclass view $table_name\n";}
+	$M->setOk(0);
+    }
+}
+
 sub updateSpotFamResult{
     my $M = shift;
     my (@arr)=@_;
@@ -1135,7 +1220,7 @@ ga  GUS::RAD::Plugin::ArrayResultLoader B<[options]> B<--data_file> data_file B<
 
 =head1 DESCRIPTION
 
-This is a plug-in that loads array  (spotted microarray and oligonucleotide array) result data into CompositeElementResultImp, ElementResultImp and if applicable, link the chp quantification_id with cel quantification_id in relatedQuantification table. 
+This is a plug-in that loads array  (spotted microarray and oligonucleotide array) result data into CompositeElementResultImp, ElementResultImp, set the value of result_table_id in Quantification table and if applicable, link the chp quantification_id with cel quantification_id in relatedQuantification table. 
 
 =head1 ARGUMENTS
 
@@ -1255,7 +1340,7 @@ Legal values for "cr_subclass_view" must be "AffymetrixMAS4", "AffymetrixMAS5", 
 If you need to restart loading from your data file from a specific line (e.g. due to previous interruptions in data loading), give the line number of this line in the --restart option. You should start your line count from the line after the header line and include any empty lines. 
 
 =head2 I<testnumber>
-
+ 
 If you are testing the plug-in and want only to test n lines from your data file, use the --testnumber option. If you set this to n, it will test the plug-in on the first n data lines (counting empty lines) after the header or after --restart, if this is set. 
 
 =head1 AUTHOR
@@ -1265,3 +1350,5 @@ Written by Junmin Liu.
 =head1 COPYRIGHT
 
 Copyright Trustees of University of Pennsylvania 2003.
+
+
