@@ -2750,7 +2750,7 @@ sub getContactId {
         my $sth_c_id =
             $dbh->prepare("SELECT c.contact_id ".
                           "FROM   SRes.Contact c ".
-                          "WHERE  name = ?");
+                          "WHERE  LOWER (name) = LOWER (?)");
         $sth_c_id->execute($attribution_site);
 
         my $ref = $sth_c_id->fetchall_arrayref();
