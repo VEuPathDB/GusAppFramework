@@ -99,14 +99,15 @@ sub sqlexecIns {
     if($stmt->execute(@$longValues)){
       $row_count = 1;  ##not true but will throw error if not successful and objects only do one row!!
     }else{
-      my $msg =  "\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n longValues (",join(', ', @$longValues),")\n";
+      my $msg =  "\n SQL ERROR!! involving\n $sql_cmd \n longValues: \n" . 
+	join(', ', @$longValues);
       &death($dbh, $msg);
       return 0;
     }
 
   }else{
     if(!($row_count = $dbh->do($sql_cmd))){
-      &death($dbh, "\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n");
+      &death($dbh, "\n SQL ERROR!! involving\n $sql_cmd \n");
       return 0;
     }
   }
@@ -136,7 +137,8 @@ sub sqlExec {
   if($stmt->execute(@$values)){
     if ($verbose) { print STDERR " DbiHandle:sqlExec:insert succeeded 1 row(s)\n";}
   }else{
-    &death($dbh, "\n DbiDbHandle:sqlexecIns: SQL ERROR!! involving\n $sql_cmd \n");
+    &death($dbh, "\n SQL ERROR!! involving\n $sql_cmd \n Values: " .
+	   join(', ',@$values));
     return 0;
   }
 
