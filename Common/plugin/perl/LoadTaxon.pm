@@ -291,7 +291,7 @@ sub deleteTaxonName {
       next();
     }
     elsif ($TaxonIdHash->{$taxon_id}==$name_class) {
-      my $newTaxonName = TaxonName->new({'taxon_name_id'=>$taxon_name_id});
+      my $newTaxonName = GUS::Model::SRes::TaxonName->new({'taxon_name_id'=>$taxon_name_id});
       $newTaxonName->retrieveFromDB();
       $newTaxonName->markDeleted();
       $newTaxonName->submit();
