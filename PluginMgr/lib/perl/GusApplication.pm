@@ -449,6 +449,11 @@ sub doMajorMode_RunOrReport {
 
    eval {
       my $resultDescrip;
+
+      $pu->logArgs();
+      $pu->logCommit();
+      $pu->logAlgInvocationId();
+
       # include the args for legacy plugins
       $resultDescrip = $pu->run({ cla      => $pu->getCla,
                                   self_inv => $pu->getSelfInv,
