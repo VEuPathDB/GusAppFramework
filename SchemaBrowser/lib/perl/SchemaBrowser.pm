@@ -277,7 +277,8 @@ sub displayTable {
 
     foreach my $p (@$parents) {
 	my $rel = $p->[0];
-        $pHash{$p->[1]} =  {'table' => $p->[0], 'columns' => $p->[2]};
+	$rel =~ s/GUS::Model:://;
+        $pHash{$p->[1]} =  {'table' => $rel, 'columns' => $p->[2]};
     }
 #     foreach my $p (keys %$parents) {
 # 	my $rel = $parents->{$p};
@@ -296,7 +297,9 @@ sub displayTable {
 #    }
     ##using childList with expanded views..
     foreach my $k (keys%$kids) {
-        $cHash{$kids->{$k}->[0]} =  {'table' => $k, 'columns' => $kids->{$k}->[1]};
+	my $rel = $k;
+	$rel =~ s/GUS::Model:://;
+        $cHash{$kids->{$k}->[0]} =  {'table' => $rel, 'columns' => $kids->{$k}->[1]};
     }
 #     foreach my $c (keys %$kids) {
 # 	my $rel = $kids->{$c};
@@ -461,7 +464,11 @@ sub displayTable {
     
     print "<FONT FACE=\"helvetica, sans-serif\"><B>Child tables:</B></FONT> ";
     
-    foreach my $k (keys%$kids) { print &tableLink($self, $k, $dbName, $path), " "; }
+    foreach my $k (keys%$kids) { 
+	my $rel = $k;
+	$rel =~ s/GUS::Model:://;
+	print &tableLink($self, $rel, $dbName, $path), " "; 
+    }
 #    foreach my $kid (@$kids) { print &tableLink($self, $kid->[0], $dbName, $path), " "; }
     print "<I>none</I>" if (scalar(keys%$kids) == 0);
 #    print "<I>none</I>" if (scalar(@$kids) == 0);
