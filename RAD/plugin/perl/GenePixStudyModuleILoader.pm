@@ -391,7 +391,6 @@ sub populateRelatedAcquisition {
   $acquistionAssociationOne->submit() if ($self->getArgs->{commit});
   $acquistionAssociationTwo->submit() if ($self->getArgs->{commit});
 
-  #$self->log("STATUS","OK Inserted 2 rows in table RAD3.RelatedAcquisition for Cy5 and Cy3 acquisitions");
   return (\@acquisitionIds, \@acquisitionChannels);
 }
 
@@ -432,7 +431,6 @@ sub populateRelatedQuantification {
   $quantificationAssociationOne->submit() if ($self->getArgs->{commit});
   $quantificationAssociationTwo->submit() if ($self->getArgs->{commit});
 
-  #$self->log("STATUS","OK Inserted 2 rows in table RAD3.RelatedQuantification for Cy5 and Cy3 quantifications");
 }
 
 ###############################
