@@ -36,7 +36,7 @@ package GUS::Pipeline::TaskRunAndValidate;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign); 
+@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGeneTagAlign runMicerAlign); 
 
 use strict;
 use Carp;
@@ -98,6 +98,61 @@ sub runGenomeAlign {
 
     return $valid;
 }
+
+sub runGeneTagAlign {
+    my ($pipelineDir, $queryName, $subjectName) = @_;
+    
+    my $name = "$queryName-$subjectName";
+    print "\nRunning alignment of $queryName against $name\n";
+
+    my $resultDir = 
+	"$pipelineDir/genetrap/$name/master/mainresult/";
+    # TODO: handle the case when query is not from repeatmask
+    #       (i.e. final DoTS minus troublesome deflines)
+    my $queryFile = 
+	"$pipelineDir/seqfiles/genetags";
+    my $subjectDir = "$pipelineDir/seqfiles/$subjectName";
+    my $propFile = "$pipelineDir/genetrap/$name/input/controller.prop";
+    my $logFile = "$pipelineDir/logs/$name.log";
+
+    my $valid = 0;
+    # TODO: validate previous results
+
+    if (!$valid) {
+	&run($propFile, $logFile);
+	# TODO: validate results
+    }
+
+    return $valid;
+}
+
+sub runMicerAlign {
+    my ($pipelineDir, $queryName, $subjectName) = @_;
+    
+    my $name = "$queryName-$subjectName";
+    print "\nRunning alignment of $queryName against $name\n";
+
+    my $resultDir = 
+	"$pipelineDir/micer/$name/master/mainresult/";
+    # TODO: handle the case when query is not from repeatmask
+    #       (i.e. final DoTS minus troublesome deflines)
+    my $queryFile = 
+	"$pipelineDir/repeatmask/$queryName/master/mainresult/blocked.seq";
+    my $subjectDir = "$pipelineDir/seqfiles/$subjectName";
+    my $propFile = "$pipelineDir/micer/$name/input/controller.prop";
+    my $logFile = "$pipelineDir/logs/$name.log";
+
+    my $valid = 0;
+    # TODO: validate previous results
+
+    if (!$valid) {
+	&run($propFile, $logFile);
+	# TODO: validate results
+    }
+
+    return $valid;
+}
+
 
 sub runMatrix {
     my ($pipelineDir, $queryname, $subjectname) = @_;
