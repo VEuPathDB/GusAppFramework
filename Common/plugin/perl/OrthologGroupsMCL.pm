@@ -170,7 +170,7 @@ sub run {
 			 if($pm.'e'.$pe < $minpv) { $minpv = $pm.'e'.$pe;}
 			 if($pi> $maxpi) { $maxpi = $pi; }
 			 if($pi< $minpi) { $minpi = $pi; }
-			 my @lens = &simspan($s,$mem[$i],$mem[$j]);
+			 my @lens = &simspan($dbh, $s,$mem[$i],$mem[$j]);
 			 foreach my $len (@lens) {
 			     if($len > $maxl) { $maxl = $len; }
 			     if($len < $minl) { $minl = $len; }
@@ -182,7 +182,7 @@ sub run {
 			if($pm.'e'.$pe < $minpv) { $minpv = $pm.'e'.$pe;}
 			if($pi> $maxpi) { $maxpi = $pi; }
 			if($pi< $minpi) { $minpi = $pi; }
-			my @lens = &simspan($s,$mem[$j],$mem[$i]);
+			my @lens = &simspan($dbh,$s,$mem[$j],$mem[$i]);
 			foreach my $len (@lens) {
 			    if($len > $maxl) { $maxl = $len; }
 			    if($len < $minl) { $minl = $len; }
@@ -227,7 +227,7 @@ sub run {
 }
 
 sub simspan {
-    my ($sim,$id,$sid) = @_;
+    my ($dbh,$sim,$id,$sid) = @_;
     my (%sub_start, %sub_length, %query_start, %query_length);
     my $sthSpan =$dbh->prepare("select similarity_span_id,subject_start,subject_end,query_start,query_end from SimilaritySpan where similarity_id=?");
 #    my $sthLen = $dbh->prepare("select length from AASequence where aa_sequence_id=?");
