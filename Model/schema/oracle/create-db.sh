@@ -52,6 +52,7 @@ echo '@oracle_rad3Password@' | grantPermissions.pl --login=@oracle_rad3@ --owner
 sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @bootstrap-rows.sql
 
 # insert any other shared data/controlled vocabularies
+sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-AlgorithmParamKeyType-rows.sql
 sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-DatabaseInfo-rows.sql
 sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-TableInfo-rows.sql
 
@@ -91,5 +92,5 @@ sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-indexes.
 sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-indexes.sql
 sqlplus @oracle_rad3ver@/@oracle_rad3verPassword@@@oracle_SID@ @rad3ver-indexes.sql
 
-# Issued sqlplus commands for 59 SQL files
+# Issued sqlplus commands for 60 SQL files
 
