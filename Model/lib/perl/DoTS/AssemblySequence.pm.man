@@ -290,17 +290,6 @@ sub isSinglet {
 #	$self->setSequenceGaps($self->makeGapsFromGappedSequence());
 #}
 
-sub setSequenceGaps {
-  my($self,$gaps) = @_;
-  print STDERR "Not stroring sequence_gaps...rather  storing gapped sequence in this attribute\n";
-  #  $self->{'sequence_gaps'} = $gaps;
-}
-
-sub getSequenceGaps {
-  my $self = shift;
-  return $self->makeGapsFromGappedSequence();
-}
-
 ##note that this reverse complements the sequence that is cached and sets it...
 ##this also needs to reverse complement the gaps and set the assembly_strand and assembly_offset.
 sub reverseComplement{
@@ -313,8 +302,8 @@ sub reverseComplement{
     $self->{'sequence'} = CBIL::Bio::SequenceUtils::reverseComplementSequence($self->getSequence());
   }
   ##gappedSequence if it exists then revcomp and set gaps from it else need to revcomp the gaps and set them
-  if ($self->get('sequence_gaps')) {
-    $self->setGappedSequence(CBIL::Bio::SequenceUtils::reverseComplementSequence($self->get('sequence_gaps')));
+  if ($self->get('gapped_sequence')) {
+    $self->setGappedSequence(CBIL::Bio::SequenceUtils::reverseComplementSequence($self->get('gapped_sequence')));
   }
   ##lastly, need to reset the assembly_offset
   if ($self->getParent('DoTS::Assembly')) {
@@ -352,20 +341,20 @@ sub addGapsToSequence {
 
 sub getGappedSequence{
   my($self) = @_;
-  return $self->get('sequence_gaps') ? $self->get('sequence_gaps') : $self->getSequence();
+  return $self->get('gapped_sequence') ? $self->get('gapped_sequence') : $self->getSequence();
 }
 
 sub setGappedSequence {
   my($self,$gs) = @_;
   chomp $gs;
-  $self->set('sequence_gaps',$gs);
+  $self->set('gapped_sequence',$gs);
   #	$self->{'gappedSequence'} = $gs;
 }
 
 sub addToGappedSequence {
   my($self,$gs) = @_;
   chomp $gs;
-  $self->set('sequence_gaps',$self->get('sequence_gaps') . $gs);
+  $self->set('gapped_sequence',$self->get('gapped_sequence') . $gs);
 }
 
 ##uses the gapped sequence string and sets gaps from it....

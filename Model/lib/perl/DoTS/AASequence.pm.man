@@ -21,6 +21,7 @@ sub setSequence{
   }
 }
 
+# this method is bogus: using incorrect attributes...
 sub toFasta {
 	my($self,$type) = @_;
 	if( ! $self->hasSequence()){

@@ -106,7 +106,7 @@ sub retrieveAllChildrenExceptAssSeqsFromDB {
     $self->retrieveChildrenFromDB($super,$resetIfHave);
   }
   foreach my $className ($self->getChildList()) {
-    next if $className eq 'AssemblySequence' || $self->isImpClass($className) || exists $subs{$className}; ##have already done these!!
+    next if $className eq 'GUS::Model::DoTS::AssemblySequence' || $self->isImpClass($className) || exists $subs{$className}; ##have already done these!!
     $self->retrieveChildrenFromDB($className,$resetIfHave);
   }
   if($recursive){
@@ -132,7 +132,7 @@ sub createFeaturesAndAASequence {
   my $aaf = GUS::Model::DoTS::TranslatedAAFeature->
 	new({'subclass_view' => 'TranslatedAAFeature',
 		                              'is_simple' => 1,
-			                      'review_staus_id' => 1,
+			                      'review_status_id' => 1,
 				              'is_predicted' => 1
                                      });
   $aaf->setParent($rnaf);
@@ -315,7 +315,7 @@ sub parseCap2Alignment {
   my($self,$alignment) = @_;
   ##ready for new alignment
   $self->deleteGappedValues();
-  my $assemblyName = $self->getTable()->getPerlTableName();
+  my $assemblyName = $self->getTable()->getClassName();
 
   my @alignment = split("\n", $alignment);
   my $bk = 0;                   #block number of alignment
@@ -406,7 +406,7 @@ sub parseCap4Caml {
   if ($caml =~ /\<CONTIG\s(.*?)\>/) {
     $contigAtts = $self->getCamlAtts($1);
   }
-  my $assemblyName = $self->getTable()->getPerlTableName();
+  my $assemblyName = $self->getTable()->getClassName();
   ##now the consensus stuff
   if ($caml =~ /^.*?\<CONSENSUS (.*?)\>(.*)\<\/CONSENSUS\>/) {
     $consensusAtts = $self->getCamlAtts($1);
