@@ -141,8 +141,6 @@ sub process {
 			$tb_id = $ary[0]; #queried table id
 			$att_name = $ary[1]; #queried attribute name
 			$html = $ary[2]; #queried html documentation
-
-#			$self->logAlert("Comparing html: -$html-  with html_dc: -$html_dc-\n"); ###TEST###
 			
 			if ($html eq $html_dc){ #########?????????############
 			    
@@ -174,6 +172,7 @@ sub process {
 			    $self->logData("Inserted documentation for attribute: $table_nm" . "." ."$attribute_nm");
 			    $self->undefPointerCache();
 			    $self->logVerbose("UndefPointerCache()");
+			    return;
 			}# end else SUBMIT
 		    } # end while
 		} # end if attribute is valid
@@ -226,6 +225,7 @@ sub process {
 			$self->logData("Inserted documentation for table: $table_nm");
 			$self->undefPointerCache();
 			$self->logVerbose("UndefPointerCache()");
+			return;
 		    } #end else
 		} # end while ary2
 	    } # end elsif table documentation
