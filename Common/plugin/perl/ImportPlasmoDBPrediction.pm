@@ -2,7 +2,6 @@ package GUS::Common::Plugin::ImportPlasmoDBPrediction;
 
 # $Id$ 
 
-# Martin Fraunholz
 
 @ISA = qw(GUS::PluginMgr::Plugin);
 
@@ -55,13 +54,21 @@ sub new {
       o => 'NAseqId',
       h => 'supply NA_sequence_id of origin of gene features'
      }
+     {
+      t => 'int',
+      o => 'extDbRelId',
+      h => 'supply the external_database_release_id'
+     }
     ];
 
   bless($self, $class);
   $self->initialize({
 		     requiredDbVersion => {},
-		     cvsRevision => '$Revision$ ',# keyword filled in by cvs
-		     cvsTag => '$Name$ ',     # keyword filled in by cvs
+		     cvsRevision => '$Revision$ ',
+# keyword filled in by cvs
+
+		     cvsTag => '$Name$ ',
+# keyword filled in by cvs
 		     name => ref($self),
 		     revisionNotes => 'first pass of plugin for GUS 3.0',
 		     easyCspOptions => $easycsp,
@@ -75,7 +82,8 @@ sub new {
 ############################################################
 #                Let's get started
 ############################################################
-my $debug = 0;  #my personal debug !!
+#my $debug = 0;  #my personal debug !!
+
 my $NAseqId;
 my $Version;
 my $source_id;
@@ -101,6 +109,7 @@ $| = 1;
 
 sub run {
   my $self = shift;
+  my $debug   =  $self->getArgs()->{'verbose'} ? 1: 0;
 
   my $project =  $self->getArgs()->{'Project'};
   $source_id  =  $self->getArgs()->{'source_id'};
@@ -120,10 +129,16 @@ sub run {
   my $projectId= $self->getProjId();
   $self->log("II Determined projectId= " . $projectId );
 
-  $self->setExtDbId($self->getArgs()->{'dataSource'})|| $self->log("EE Could not set the extDbId");
+  my $extDbRelId;
+  if ($self->getArgs()->{'extDbRelId'}=~m/(\d+)/ ){
+    $extDbRelId=$1;
+  }else{
+    $self->setExtDbId($self->getArgs()->{'dataSource'})|| $self->log("EE Could not set the extDbId");
+    $self->setExtDbRelId() || $self->log("EE Could not set ExtDbRelId: ***CRITICAL**");
+    $extDbRelId=$self->getExtDbRelId();
+  }
 
-  $self->setExtDbRelId() || $self->log("EE Could not set ExtDbRelId");
-  my $extDbRelId= $self->getExtDbRelId();
+
   $self->log("II Determined extDbRelId= " . $extDbRelId );
 
   unless ($source_id=~m/^\S+$/ || $NAseqId=~m/^\d+$/){
@@ -242,10 +257,10 @@ sub run {
 	#####
 	#####    $key is actually "Pv_". $key for this query only;
 	#####
-	#$stmt->execute("Pv_".$key, $projectId );
+	$stmt->execute("Pv_".$key, $projectId );
 
 
-	$stmt->execute($key, $projectId );
+	#$stmt->execute($key, $projectId );
 	
 
       }
@@ -432,7 +447,7 @@ sub run {
 
 	my $snas = $rna->getParent('DoTS::SplicedNASequence');
 	my $t=$snas->getSequence();
-	$self->log("II Setting SPlicedNASequenceSNAS") if $debug;
+	$self->log("II Setting SplicedNASequenceSNAS") if $debug;
 	#$self->log("SNAS:\n" . $snas->getSequence() ) if $debug;
       }
 	
@@ -499,7 +514,6 @@ sub makeProjLink {
     return 1;
   }
 }
-
 
 
 # --------------------------------------------------------------------
