@@ -72,7 +72,7 @@ $self->logCommit();
 my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8 and rownum < 15");
 
 #update considerations for DTs
-#those which still contain a RefSeq
+#those which still contain a RefSeq these are updated
 #those which no longer contain a RefSeq (removed by assembly process) but are still marked as fullLengthCDS
 #those which now contain a RefSeq (from new build)
 #DT no longer exists but this case no entry in assembly table assume that RefSeq in new assembly
@@ -140,9 +140,13 @@ foreach my $A(@na_sourceids)    {
 
   print STDERR "ConsideringForFLDT.$na_seq\n";
 
+
+last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
+
+
    $ct++;
 
-   last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
+
 
     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
@@ -152,6 +156,8 @@ foreach my $A(@na_sourceids)    {
     $assembly->submit();
     $self->undefPointerCache();
 
+
+last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
 
 }
 
@@ -179,13 +185,35 @@ print STDERR "@diffArray\n";
 
 
 #check to see if all previous evidence still valid
-  #   foreach my $target_id(@DTSasEvidenceTarget)  {
+#use array of target ids and compare to array of DTs
 
-   #    foreach my $DT(@DTs)   {
 
-    #  if ($target_id == $DT){ { next;}  }
 
-     #   if ($target_id != $DT)  {
+my %seen2 = ();
+my @diffArray2;
+my $dt;
+
+  foreach $dt(@DTs)  {$seen2{$dt} = 1};
+
+  foreach $dt(@DTSasEvidenceTarget)  {
+    unless ($seen2{$dt})  {
+
+#add to new array
+
+push (@diffArray2, $dt);  }
+
+  }
+
+#print STDERR "@diffArray\n";
+#print STDERR scalar"(@diffArray)";
+
+print "Arrayids@DTSasEvidenceTarget\n";
+
+
+
+
+
+  #foreach my $target_id(@diffArray2)  {
 
       #  my $dbh = $self->getQueryHandle();
 
