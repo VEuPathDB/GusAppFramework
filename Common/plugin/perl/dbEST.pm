@@ -203,7 +203,7 @@ sub run {
   my $dbh = $M->getQueryHandle();
   my $st1 = $dbh->prepareAndExecute("select count(est.id_est) from dbest.est est, dbest.library library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
   my $numDbEST = $st1->fetchrow_array();
-  my $taxon_idxs_list = $M->getCla()->{taxon_id_list};
+  my $taxon_id_list = $M->getCla()->{taxon_id_list};
   my $st2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l where l.taxon_id in ($taxon_id_list) and l.library_id = e.library_id");
   my $finalNumGus = $st2->fetchrow_array();
   my $diff = ($numDbEST-$finalNumGus);
