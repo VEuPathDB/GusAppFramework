@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* sresver-constraints.sql                                                                    */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 03:54:40 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:23:37 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON

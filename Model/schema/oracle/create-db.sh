@@ -3,77 +3,77 @@
 # Running this file will create a new GUS instance 
 
 # create new users (as sys/sysdba) 
-sqlplus 'sys/@oracle_systemPassword@@@oracle_SID@ as sysdba' @users.sql
+sqlplus 'sys/gornfhs8@gusdev as sysdba' @users.sql
 
 # create all sequences
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-sequences.sql
-sqlplus @oracle_sres@/@oracle_sresPassword@@@oracle_SID@ @sres-sequences.sql
-sqlplus @oracle_dots@/@oracle_dotsPassword@@@oracle_SID@ @dots-sequences.sql
-sqlplus @oracle_tess@/@oracle_tessPassword@@@oracle_SID@ @tess-sequences.sql
-sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-sequences.sql
+sqlplus Coretest/password1@gusdev @core-sequences.sql
+sqlplus SRestest/password2@gusdev @sres-sequences.sql
+sqlplus DoTStest/password3@gusdev @dots-sequences.sql
+sqlplus TESStest/password4@gusdev @tess-sequences.sql
+sqlplus RAD3test/password5@gusdev @rad3-sequences.sql
 
 # create all tables
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-tables.sql
-sqlplus @oracle_corever@/@oracle_coreverPassword@@@oracle_SID@ @corever-tables.sql
-sqlplus @oracle_sres@/@oracle_sresPassword@@@oracle_SID@ @sres-tables.sql
-sqlplus @oracle_sresver@/@oracle_sresverPassword@@@oracle_SID@ @sresver-tables.sql
-sqlplus @oracle_dots@/@oracle_dotsPassword@@@oracle_SID@ @dots-tables.sql
-sqlplus @oracle_dotsver@/@oracle_dotsverPassword@@@oracle_SID@ @dotsver-tables.sql
-sqlplus @oracle_tess@/@oracle_tessPassword@@@oracle_SID@ @tess-tables.sql
-sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-tables.sql
-sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-tables.sql
+sqlplus Coretest/password1@gusdev @core-tables.sql
+sqlplus CoretestVer/password1@gusdev @corever-tables.sql
+sqlplus SRestest/password2@gusdev @sres-tables.sql
+sqlplus SRestestVer/password2@gusdev @sresver-tables.sql
+sqlplus DoTStest/password3@gusdev @dots-tables.sql
+sqlplus DoTStestVer/password3@gusdev @dotsver-tables.sql
+sqlplus TESStest/password4@gusdev @tess-tables.sql
+sqlplus TESStestVer/password4@gusdev @tessver-tables.sql
+sqlplus RAD3test/password5@gusdev @rad3-tables.sql
 
 # create all views
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-views.sql
-sqlplus @oracle_corever@/@oracle_coreverPassword@@@oracle_SID@ @corever-views.sql
-sqlplus @oracle_sres@/@oracle_sresPassword@@@oracle_SID@ @sres-views.sql
-sqlplus @oracle_sresver@/@oracle_sresverPassword@@@oracle_SID@ @sresver-views.sql
-sqlplus @oracle_dots@/@oracle_dotsPassword@@@oracle_SID@ @dots-views.sql
-sqlplus @oracle_dotsver@/@oracle_dotsverPassword@@@oracle_SID@ @dotsver-views.sql
-sqlplus @oracle_tess@/@oracle_tessPassword@@@oracle_SID@ @tess-views.sql
-sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-views.sql
-sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-views.sql
+sqlplus Coretest/password1@gusdev @core-views.sql
+sqlplus CoretestVer/password1@gusdev @corever-views.sql
+sqlplus SRestest/password2@gusdev @sres-views.sql
+sqlplus SRestestVer/password2@gusdev @sresver-views.sql
+sqlplus DoTStest/password3@gusdev @dots-views.sql
+sqlplus DoTStestVer/password3@gusdev @dotsver-views.sql
+sqlplus TESStest/password4@gusdev @tess-views.sql
+sqlplus TESStestVer/password4@gusdev @tessver-views.sql
+sqlplus RAD3test/password5@gusdev @rad3-views.sql
 
 # create all primary key constraints
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-pkey-constraints.sql
-sqlplus @oracle_corever@/@oracle_coreverPassword@@@oracle_SID@ @corever-pkey-constraints.sql
-sqlplus @oracle_sres@/@oracle_sresPassword@@@oracle_SID@ @sres-pkey-constraints.sql
-sqlplus @oracle_sresver@/@oracle_sresverPassword@@@oracle_SID@ @sresver-pkey-constraints.sql
-sqlplus @oracle_dots@/@oracle_dotsPassword@@@oracle_SID@ @dots-pkey-constraints.sql
-sqlplus @oracle_dotsver@/@oracle_dotsverPassword@@@oracle_SID@ @dotsver-pkey-constraints.sql
-sqlplus @oracle_tess@/@oracle_tessPassword@@@oracle_SID@ @tess-pkey-constraints.sql
-sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-pkey-constraints.sql
-sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-pkey-constraints.sql
+sqlplus Coretest/password1@gusdev @core-pkey-constraints.sql
+sqlplus CoretestVer/password1@gusdev @corever-pkey-constraints.sql
+sqlplus SRestest/password2@gusdev @sres-pkey-constraints.sql
+sqlplus SRestestVer/password2@gusdev @sresver-pkey-constraints.sql
+sqlplus DoTStest/password3@gusdev @dots-pkey-constraints.sql
+sqlplus DoTStestVer/password3@gusdev @dotsver-pkey-constraints.sql
+sqlplus TESStest/password4@gusdev @tess-pkey-constraints.sql
+sqlplus TESStestVer/password4@gusdev @tessver-pkey-constraints.sql
+sqlplus RAD3test/password5@gusdev @rad3-pkey-constraints.sql
 
 # create all non-primary key constraints
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-constraints.sql
-sqlplus @oracle_corever@/@oracle_coreverPassword@@@oracle_SID@ @corever-constraints.sql
-sqlplus @oracle_sres@/@oracle_sresPassword@@@oracle_SID@ @sres-constraints.sql
-sqlplus @oracle_sresver@/@oracle_sresverPassword@@@oracle_SID@ @sresver-constraints.sql
-sqlplus @oracle_dots@/@oracle_dotsPassword@@@oracle_SID@ @dots-constraints.sql
-sqlplus @oracle_dotsver@/@oracle_dotsverPassword@@@oracle_SID@ @dotsver-constraints.sql
-sqlplus @oracle_tess@/@oracle_tessPassword@@@oracle_SID@ @tess-constraints.sql
-sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-constraints.sql
-sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-constraints.sql
+sqlplus Coretest/password1@gusdev @core-constraints.sql
+sqlplus CoretestVer/password1@gusdev @corever-constraints.sql
+sqlplus SRestest/password2@gusdev @sres-constraints.sql
+sqlplus SRestestVer/password2@gusdev @sresver-constraints.sql
+sqlplus DoTStest/password3@gusdev @dots-constraints.sql
+sqlplus DoTStestVer/password3@gusdev @dotsver-constraints.sql
+sqlplus TESStest/password4@gusdev @tess-constraints.sql
+sqlplus TESStestVer/password4@gusdev @tessver-constraints.sql
+sqlplus RAD3test/password5@gusdev @rad3-constraints.sql
 
 # insert bootstrap rows, reset relevant sequences
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @bootstrap-rows.sql
+sqlplus Coretest/password1@gusdev @bootstrap-rows.sql
 
 # insert any other shared data/controlled vocabularies
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-DatabaseInfo-rows.sql
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-TableInfo-rows.sql
-sqlplus @oracle_sres@/@oracle_sresPassword@@@oracle_SID@ @sres-BibRefType-rows.sql
+sqlplus Coretest/password1@gusdev @core-DatabaseInfo-rows.sql
+sqlplus Coretest/password1@gusdev @core-TableInfo-rows.sql
+sqlplus SRestest/password2@gusdev @sres-BibRefType-rows.sql
 
 # create all indexes
-sqlplus @oracle_core@/@oracle_corePassword@@@oracle_SID@ @core-indexes.sql
-sqlplus @oracle_corever@/@oracle_coreverPassword@@@oracle_SID@ @corever-indexes.sql
-sqlplus @oracle_sres@/@oracle_sresPassword@@@oracle_SID@ @sres-indexes.sql
-sqlplus @oracle_sresver@/@oracle_sresverPassword@@@oracle_SID@ @sresver-indexes.sql
-sqlplus @oracle_dots@/@oracle_dotsPassword@@@oracle_SID@ @dots-indexes.sql
-sqlplus @oracle_dotsver@/@oracle_dotsverPassword@@@oracle_SID@ @dotsver-indexes.sql
-sqlplus @oracle_tess@/@oracle_tessPassword@@@oracle_SID@ @tess-indexes.sql
-sqlplus @oracle_tessver@/@oracle_tessverPassword@@@oracle_SID@ @tessver-indexes.sql
-sqlplus @oracle_rad3@/@oracle_rad3Password@@@oracle_SID@ @rad3-indexes.sql
+sqlplus Coretest/password1@gusdev @core-indexes.sql
+sqlplus CoretestVer/password1@gusdev @corever-indexes.sql
+sqlplus SRestest/password2@gusdev @sres-indexes.sql
+sqlplus SRestestVer/password2@gusdev @sresver-indexes.sql
+sqlplus DoTStest/password3@gusdev @dots-indexes.sql
+sqlplus DoTStestVer/password3@gusdev @dotsver-indexes.sql
+sqlplus TESStest/password4@gusdev @tess-indexes.sql
+sqlplus TESStestVer/password4@gusdev @tessver-indexes.sql
+sqlplus RAD3test/password5@gusdev @rad3-indexes.sql
 
 # Issued sqlplus commands for 59 SQL files
 

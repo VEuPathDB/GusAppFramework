@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* tessver-indexes.sql                                                                        */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 03:59:43 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:29:24 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON

@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* corever-tables.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 03:53:47 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:22:42 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL corever-tables.log
 
-CREATE TABLE @oracle_corever@.ALGORITHMIMPLEMENTATIONVER (
+CREATE TABLE CoretestVer.ALGORITHMIMPLEMENTATIONVER (
     ALGORITHM_IMPLEMENTATION_ID        NUMBER(5)                                     NOT NULL,
     ALGORITHM_ID                       NUMBER(5)                                     NOT NULL,
     VERSION                            VARCHAR2(10)                                  NULL,
@@ -31,10 +31,10 @@ CREATE TABLE @oracle_corever@.ALGORITHMIMPLEMENTATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.ALGORITHMINVOCATIONVER (
+CREATE TABLE CoretestVer.ALGORITHMINVOCATIONVER (
     ALGORITHM_INVOCATION_ID            NUMBER(12)                                    NOT NULL,
     ALGORITHM_IMPLEMENTATION_ID        NUMBER(5)                                     NOT NULL,
     START_TIME                         DATE                                          NOT NULL,
@@ -58,10 +58,10 @@ CREATE TABLE @oracle_corever@.ALGORITHMINVOCATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.ALGORITHMPARAMKEYTYPEVER (
+CREATE TABLE CoretestVer.ALGORITHMPARAMKEYTYPEVER (
     ALGORITHM_PARAM_KEY_TYPE_ID        NUMBER(3)                                     NOT NULL,
     TYPE                               VARCHAR2(15)                                  NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
@@ -78,10 +78,10 @@ CREATE TABLE @oracle_corever@.ALGORITHMPARAMKEYTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.ALGORITHMPARAMKEYVER (
+CREATE TABLE CoretestVer.ALGORITHMPARAMKEYVER (
     ALGORITHM_PARAM_KEY_ID             NUMBER(5)                                     NOT NULL,
     ALGORITHM_IMPLEMENTATION_ID        NUMBER(5)                                     NOT NULL,
     ALGORITHM_PARAM_KEY                VARCHAR2(60)                                  NOT NULL,
@@ -102,10 +102,10 @@ CREATE TABLE @oracle_corever@.ALGORITHMPARAMKEYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.ALGORITHMPARAMVER (
+CREATE TABLE CoretestVer.ALGORITHMPARAMVER (
     ALGORITHM_PARAM_ID                 NUMBER(10)                                    NOT NULL,
     ALGORITHM_PARAM_KEY_ID             NUMBER(5)                                     NOT NULL,
     STRING_VALUE                       VARCHAR2(1000)                                NULL,
@@ -132,10 +132,10 @@ CREATE TABLE @oracle_corever@.ALGORITHMPARAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.ALGORITHMVER (
+CREATE TABLE CoretestVer.ALGORITHMVER (
     ALGORITHM_ID                       NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -153,10 +153,10 @@ CREATE TABLE @oracle_corever@.ALGORITHMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.CATEGORYVER (
+CREATE TABLE CoretestVer.CATEGORYVER (
     CATEGORY_ID                        NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(500)                                 NULL,
@@ -174,10 +174,10 @@ CREATE TABLE @oracle_corever@.CATEGORYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.DATABASEDOCUMENTATIONVER (
+CREATE TABLE CoretestVer.DATABASEDOCUMENTATIONVER (
     DATABASE_DOCUMENTATION_ID          NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
     ATTRIBUTE_NAME                     VARCHAR2(120)                                 NULL,
@@ -196,10 +196,10 @@ CREATE TABLE @oracle_corever@.DATABASEDOCUMENTATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.DATABASEINFOVER (
+CREATE TABLE CoretestVer.DATABASEINFOVER (
     DATABASE_ID                        NUMBER(5)                                     NOT NULL,
     VERSION                            VARCHAR2(10)                                  NOT NULL,
     NAME                               VARCHAR2(60)                                  NULL,
@@ -218,10 +218,10 @@ CREATE TABLE @oracle_corever@.DATABASEINFOVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.GENERALDOCUMENTATIONVER (
+CREATE TABLE CoretestVer.GENERALDOCUMENTATIONVER (
     GENERAL_DOCUMENTATION_ID           NUMBER(10)                                    NOT NULL,
     DOC                                CLOB                                          NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
@@ -238,10 +238,10 @@ CREATE TABLE @oracle_corever@.GENERALDOCUMENTATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.GROUPINFOVER (
+CREATE TABLE CoretestVer.GROUPINFOVER (
     GROUP_ID                           NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(30)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -259,10 +259,10 @@ CREATE TABLE @oracle_corever@.GROUPINFOVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.MACHINEVER (
+CREATE TABLE CoretestVer.MACHINEVER (
     MACHINE_ID                         NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     IP_ADDRESS                         VARCHAR2(24)                                  NULL,
@@ -282,10 +282,10 @@ CREATE TABLE @oracle_corever@.MACHINEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.PROJECTINFOVER (
+CREATE TABLE CoretestVer.PROJECTINFOVER (
     PROJECT_ID                         NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(40)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -303,10 +303,10 @@ CREATE TABLE @oracle_corever@.PROJECTINFOVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.TABLECATEGORYVER (
+CREATE TABLE CoretestVer.TABLECATEGORYVER (
     TABLE_CATEGORY_ID                  NUMBER(5)                                     NOT NULL,
     CATEGORY_ID                        NUMBER(5)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -324,10 +324,10 @@ CREATE TABLE @oracle_corever@.TABLECATEGORYVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.TABLEINFOVER (
+CREATE TABLE CoretestVer.TABLEINFOVER (
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(30)                                  NOT NULL,
     TABLE_TYPE                         VARCHAR2(40)                                  NOT NULL,
@@ -352,10 +352,10 @@ CREATE TABLE @oracle_corever@.TABLEINFOVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.USERDATABASEVER (
+CREATE TABLE CoretestVer.USERDATABASEVER (
     USER_DATABASE_ID                   NUMBER(12)                                    NOT NULL,
     USER_ID                            NUMBER(12)                                    NOT NULL,
     DATABASE_ID                        NUMBER(38)                                    NOT NULL,
@@ -375,10 +375,10 @@ CREATE TABLE @oracle_corever@.USERDATABASEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.USERGROUPVER (
+CREATE TABLE CoretestVer.USERGROUPVER (
     USER_GROUP_ID                      NUMBER(12)                                    NOT NULL,
     USER_ID                            NUMBER(12)                                    NOT NULL,
     GROUP_ID                           NUMBER(3)                                     NOT NULL,
@@ -396,10 +396,10 @@ CREATE TABLE @oracle_corever@.USERGROUPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.USERINFOVER (
+CREATE TABLE CoretestVer.USERINFOVER (
     USER_ID                            NUMBER(12)                                    NOT NULL,
     LOGIN                              VARCHAR2(30)                                  NOT NULL,
     PASSWORD                           VARCHAR2(30)                                  NOT NULL,
@@ -421,10 +421,10 @@ CREATE TABLE @oracle_corever@.USERINFOVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.USERPROJECTVER (
+CREATE TABLE CoretestVer.USERPROJECTVER (
     USER_PROJECT_ID                    NUMBER(12)                                    NOT NULL,
     USER_ID                            NUMBER(12)                                    NOT NULL,
     PROJECT_ID                         NUMBER(3)                                     NOT NULL,
@@ -442,10 +442,10 @@ CREATE TABLE @oracle_corever@.USERPROJECTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.WORKFLOWBLACKBOARDVER (
+CREATE TABLE CoretestVer.WORKFLOWBLACKBOARDVER (
     WORKFLOW_BLACKBOARD_ID             NUMBER(12)                                    NOT NULL,
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     WORKFLOW_ALG_INVOCATION_ID         NUMBER(12)                                    NOT NULL,
@@ -471,10 +471,10 @@ CREATE TABLE @oracle_corever@.WORKFLOWBLACKBOARDVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.WORKFLOWEDGESQLVER (
+CREATE TABLE CoretestVer.WORKFLOWEDGESQLVER (
     WORKFLOW_EDGE_SQL_ID               NUMBER(10)                                    NOT NULL,
     WORKFLOW_EDGE_ID                   NUMBER(10)                                    NOT NULL,
     SQL                                CLOB                                          NOT NULL,
@@ -493,10 +493,10 @@ CREATE TABLE @oracle_corever@.WORKFLOWEDGESQLVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.WORKFLOWEDGEVER (
+CREATE TABLE CoretestVer.WORKFLOWEDGEVER (
     WORKFLOW_EDGE_ID                   NUMBER(10)                                    NOT NULL,
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     FROM_WORKFLOW_NODE_ID              NUMBER(10)                                    NOT NULL,
@@ -516,10 +516,10 @@ CREATE TABLE @oracle_corever@.WORKFLOWEDGEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.WORKFLOWINITVER (
+CREATE TABLE CoretestVer.WORKFLOWINITVER (
     WORKFLOW_INIT_ID                   NUMBER(12)                                    NOT NULL,
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -538,10 +538,10 @@ CREATE TABLE @oracle_corever@.WORKFLOWINITVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.WORKFLOWNODEIMPVER (
+CREATE TABLE CoretestVer.WORKFLOWNODEIMPVER (
     WORKFLOW_NODE_ID                   NUMBER(10)                                    NOT NULL,
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
@@ -574,10 +574,10 @@ CREATE TABLE @oracle_corever@.WORKFLOWNODEIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.WORKFLOWSTATUSVER (
+CREATE TABLE CoretestVer.WORKFLOWSTATUSVER (
     WORKFLOW_STATUS_ID                 NUMBER(12)                                    NOT NULL,
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     WORKFLOW_ALG_INVOCATION_ID         NUMBER(12)                                    NOT NULL,
@@ -603,10 +603,10 @@ CREATE TABLE @oracle_corever@.WORKFLOWSTATUSVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE @oracle_corever@.WORKFLOWVER (
+CREATE TABLE CoretestVer.WORKFLOWVER (
     WORKFLOW_ID                        NUMBER(5)                                     NOT NULL,
     DEFAULT_ALG_INVOCATION_ID          NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
@@ -626,7 +626,7 @@ CREATE TABLE @oracle_corever@.WORKFLOWVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE @oracle_coreverTablespace@
+ TABLESPACE RAID1
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
