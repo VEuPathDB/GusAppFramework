@@ -1,0 +1,92 @@
+#!/usr/bin/perl
+
+use strict;
+use lib "/usr/lib/perl5/site_perl/5.6.0/";
+use lib "$ENV{GUS_HOME}/lib/perl";
+use CBIL::Util::Disp;
+use GUS::ObjRelP::DbiDatabase;
+use GUS::ObjRelP::DbiDatabase;
+use GUS::Common::GusConfig;
+
+my $targetDir = shift @ARGV;
+my @files = @ARGV;
+
+my $gusconfig = GUS::Common::GusConfig->new();
+
+my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
+					$gusconfig->getReadOnlyDatabaseLogin(),
+					$gusconfig->getReadOnlyDatabasePassword,
+					0,0,1,
+					$gusconfig->getCoreSchemaName);
+
+foreach my $f (@files) {
+  print STDERR "processing $f\n";
+  my ($package, $use) = getPackage($f);
+  eval("require $use");
+  $package =~ /(\w+)::(\w+)_/;
+  my $targetFile = "$1::$2";
+  open (OUT, ">$targetDir/$targetFile");
+  select OUT;
+  my $table = $package->new("", $db);
+  printFile($table);
+  close(OUT);
+  zapHashes("$targetDir/$targetFile");
+} 
+
+sub getPackage {
+  my ($file) = @_;
+
+  open(I, $file) || die "can't open $file";
+  my $prefix = "";
+  my $package;
+  my $use;
+  while (<I>) {
+    if (/package (\S+);/) {
+      $package = $use = $1;
+      if ($file =~ /_tbl/) {
+	$package =~ /(\w+)::(\w+)/;
+	$use = "GUS30::$1::gen::$2";
+      }
+    }
+  }
+  return ($package, $use);
+}
+
+sub printFile {
+  my ($table) = @_;
+  printList('childList', $table->{childList});
+  printList('parentList', $table->{parentList});
+  printList('attrNames', $table->{attributeNames});
+  printList('quotedAttrNames', $table->{quotedAtts});
+  printList('AttrInfo', $table->{attInfo});
+  print OUT "\nRealTableName: $table->{realTableName}\n";
+  print OUT "\nIsView: $table->{isView}\n";
+  printList('kidRelations', $table->{children});
+  printList('parentRelations', $table->{parents});
+  print OUT "\nhasSequence: $table->{hasSequence}\n";
+  print OUT "\nhasPKSequence: $table->{hasPKSequence}\n";
+  printList('primaryKeyList', $table->{primaryKeyList});
+  print OUT "\ntableId: $table->{table_id}\n";
+}
+
+sub printList {
+  my ($name, $list) = @_;
+
+  print OUT "\n\n============== $name ======\n";
+  CBIL::Util::Disp::Display($list, '', *OUT);
+}
+
+sub zapHashes {
+  my ($file) = @_;
+  open(F, "$file");
+  my @f = <F>;
+  close(F);
+  open(O, ">$file");
+  foreach my $l (@f) {
+    $l =~ s/HASH\(0x\w+\)/HASH/;
+    $l =~ s/GUS::Model:://;
+    $l =~ s/GUS30:://;
+    print O $l;
+  }
+  close(O);
+}
