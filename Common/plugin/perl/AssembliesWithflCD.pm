@@ -232,7 +232,6 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
     my @DTSasEvidenceTarget;
 
-    my $DT;
 
 
    while(my($target_id) = $stmt3->fetchrow_array( ))  {
@@ -246,9 +245,9 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
       foreach (@$DTarray_ref)  {
 
 
-       if ($target_id == $DT){  next;  }
+       if ($target_id == $_){  next;  }
 
-        if ($target_id != $DT)  {
+        if ($target_id != $_)  {
 
           my $dbh = $self->getQueryHandle();
 
