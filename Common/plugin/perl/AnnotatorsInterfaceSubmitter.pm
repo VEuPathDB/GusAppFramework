@@ -108,6 +108,37 @@ sub run {
 		
 		$curr_gene = $child;  # save off the current gene...
 	    }
+	    
+	    # add the evidence.
+	    if ( $fact_hash ) {
+		# get all facts (hash) for the current object (based on prim key)
+		# loop through all the attributes (again in a hash)
+		# iterate through all facts for each attribute (an array)
+		my $all_facts = $$fact_hash{$child->getConcatPrimKey()};
+		print STDERR "getting facts for " . $child->getConcatPrimKey() . "\n";
+		foreach my $attribute (keys %$all_facts){
+		    #print STDERR "\tEvidence for attribute ", $attribute, " pk: ", $child->getConcatPrimKey(), " \n";
+		    my $facts = $$all_facts{$attribute};
+		    foreach my $fact ( @$facts ) {
+			if ( $fact ) {
+			    print STDERR "handling next fact, fact table is " . $fact->getClassName() . " and target table is " . $child->getClassName() . "\n";
+			
+			#    if ($fact->getTargetId() < -9){
+			#	print STDERR "found factId for newly created instance: " . $fact->getTargetId() . "\n";
+			#	$fact->setTargetId(0);
+			#    }
+			    #print STDERR "\t\tAdding fact: ", $fact->getClassName(), ", fact pk: ", $fact->getConcatPrimKey(), "\n";
+			    # was ignoring the similarity evidence cause throws error.
+			    if ($fact->getClassName() ne "GUS::Model::DoTS::Similarity"){
+				$fact->setReviewStatusId(1);
+			    }
+			    
+			    $child->addEvidence( $fact, 1, $attribute );
+			    $has_evidence = 1;
+			}
+		    }
+		}
+	    }
 	    print STDERR "handling next object, class name = " . $child->getClassName() . "\n";
 	    if ($child->getClassName() eq "GUS::Model::DoTS::GOAssociationInstance"){
 		print STDERR "handling next Instance: " .  $child->getGoAssociationId() . "\n";
@@ -118,32 +149,6 @@ sub run {
 		    $child->setGoAssociationId($assocHash->{$child->getGoAssociationId()});
 		}
 		print STDERR "Finalized instances GO Association id: " . $child->getGoAssociationId() . "\n";
-	    }
-	    # add the evidence.
-	    if ( $fact_hash ) {
-		# get all facts (hash) for the current object (based on prim key)
-		# loop through all the attributes (again in a hash)
-		# iterate through all facts for each attribute (an array)
-		my $all_facts = $$fact_hash{$child->getConcatPrimKey()};
-		foreach my $attribute (keys %$all_facts){
-		    #print STDERR "\tEvidence for attribute ", $attribute, " pk: ", $child->getConcatPrimKey(), " \n";
-		    my $facts = $$all_facts{$attribute};
-		    foreach my $fact ( @$facts ) {
-			if ( $fact ) {
-			#    if ($fact->getTargetId() < -9){
-			#	print STDERR "found factId for newly created instance: " . $fact->getTargetId() . "\n";
-			#	$fact->setTargetId(0);
-			#    }
-			    #print STDERR "\t\tAdding fact: ", $fact->getClassName(), ", fact pk: ", $fact->getConcatPrimKey(), "\n";
-			    # was ignoring the similarity evidence cause throws error.
-			    if ($fact->getClassName() ne "GUS::Model::DoTS::Similarity"){
-				$fact->setReviewStatusId(1);
-			    }
-			    $child->addEvidence( $fact, 1, $attribute );
-			    $has_evidence = 1;
-			}
-		    }
-		}
 	    }
 	    # print STDERR $child->getClassName(), " has evidence: ", $has_evidence, "\n";
 	    # need to check that a copy does not already exist in db - i.e. for GeneSynonyms.  Will retreivefromDB work?  
