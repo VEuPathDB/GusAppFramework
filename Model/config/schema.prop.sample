@@ -63,12 +63,12 @@ oracle_tessverPassword=password4
 oracle_tessverTablespace=tablespace4
 oracle_tessverIndexTablespace=tablespace4
 
-oracle_rad=RAD
+oracle_rad=RAD3
 oracle_radPassword=password5
 oracle_radTablespace=tablespace5
 oracle_radIndexTablespace=tablespace5
 
-oracle_radver=RADVer
+oracle_radver=RAD3Ver
 oracle_radverPassword=password5
 oracle_radverTablespace=tablespace5
 oracle_radverIndexTablespace=tablespace5
