@@ -261,15 +261,16 @@ sub run {
 
 	if ($self->getCla->{apply_rules}){
 	    
-	    my $deleteCache = 1;
+	    my $deleteCache = 0; #change back eventually
 	    $deleteCache = 0 if ($self->getCla->{evolve_go_hierarchy}); #don't delete cache if already done so
 	    my $recache = 1;
 	    my $cla = $self->_makeClaHashForRules();
-	    $goManager->applyRules($newGoVersion, $deleteCache, $recache, $cla);
+	    my $proteinsAffected = $goManager->applyRulesAndScrub($newGoVersion, $deleteCache, $recache, $cla);
+	    $msg .= "Applied rules to $proteinsAffected proteins.  ";
 	}
 
-	$goManager->scrubProteins($newGoVersion, $proteinTableId);
-	$self->log("done scrubbing--i.e. all done!");
+#	$goManager->scrubProteins($newGoVersion, $proteinTableId);
+	$self->log("plugin worked!");
     }
     
     return $msg;
