@@ -367,7 +367,10 @@ sub doMajorMode_Run {
   eval {
     $M->openInvocation($pu);
     my $resultDescrip;
-    $resultDescrip = $pu->run();
+    # include the args for legacy plugins
+    $resultDescrip = $pu->run({ cla      => $pu->getCla,
+				self_inv => $pu->getSelfInv,
+			      });
     if ($resultDescrip) { $pu->setResultDescr($resultDescrip); }
     $M->logAlert("RESULT", $pu->getResultDescr());
   };
