@@ -5,3 +5,6 @@ rel GUS::Model::DoTS::SequencePiece GUS::Model::DoTS::VirtualSequence virtual_na
 rel GUS::Model::DoTS::SequencePiece GUS::Model::DoTS::NASequence piece_na_sequence_id na_sequence_id
 rel GUS::Model::DoTS::RNAFeatureExon GUS::Model::DoTS::RNAFeature rna_feature_id na_feature_id
 rel GUS::Model::DoTS::RNAFeatureExon GUS::Model::DoTS::ExonFeature exon_feature_id na_feature_id
+rel Core::UserGroup Core::UserInfo user_id user_id
+rel Core::UserProject Core::UserInfo user_id user_id
+rel Core::UserDatabase Core::UserInfo user_id user_id
