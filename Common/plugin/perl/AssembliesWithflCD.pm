@@ -117,10 +117,9 @@ foreach my $A(@na_sourceids)    {
 
   my($na_seq, $source_id) = @{$A};
 
+   print STDERR "ConsideringForFLDT.$na_seq\n";
 
    $ct++;
-
-    print STDERR "$na_seq\n";
 
     last if $self->getArgs->{testnumber} && $ct > $self->getArgs->{testnumber};
 
@@ -128,9 +127,17 @@ foreach my $A(@na_sourceids)    {
     foreach my $id(@naSequenceIds)  {
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
 
-     if ($id == $na_seq ) {next;}
+     if ($id == $na_seq ) {next;
+
+
+print STDERR "AlreadyMarkedFLDT.$na_seq\n";
+
+
+}
 
      elsif($id != $na_seq) {
+
+print STDERR "NextFLDT.$na_seq\n";
 
      my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
@@ -167,7 +174,7 @@ foreach my $A(@na_sourceids)    {
 
   my ($source_id,$assembly) = @_;
 
-  print STDERR "$source_id\n";
+  print STDERR "Evidence$source_id\n";
 
 #could also use best_evidence attribute in Evidence table for those containing refSeq
 
