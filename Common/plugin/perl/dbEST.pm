@@ -217,9 +217,9 @@ entries that were updated/inserted into GUS.
 sub processEntries {
   my ($M, $e ) = @_;
   my $count = 0;
-  
+  return $count unless (keys %$e) ;
   # get the most recent entry 
-  foreach my $id (keys %$e) {
+  foreach my $id (sort {$a <=> $b} keys %$e) {
     if ($e->{$id}->{e}->{replaced_by}){
       my $re =  $M->getMostRecentEntry($e->{$id}->{e});
       #this entry is bogus, delete from insert hash
@@ -235,10 +235,10 @@ sub processEntries {
   my $A = $M->sql_get_as_hash_refs_lc("select * from SEQUENCE\@dbest where id_est in ($ids) order by id_est, local_id");
   if ($A) {
     foreach my $s (@{$A}){
-      $e->{$s->{id_est}}->{e}->{sequence} .= $s->{data};
+	$e->{$s->{id_est}}->{e}->{sequence} .= $s->{data};
     }
   }
-
+  
   # get the comments, if any
   $ids = join "," , keys %$e;
   $A = $M->sql_get_as_hash_refs_lc("select * from CMNT\@dbest where id_est in ($ids) order by id_est, local_id");
@@ -250,8 +250,8 @@ sub processEntries {
   
   # Now that we have all the information we need, start processing
   # this batch 
-  foreach my $id (keys %$e) {
-
+  foreach my $id (sort {$a <=> $b} keys %$e) {
+    
     #####################################################################
     # If there are older entries, then we need to go through an update 
     # proceedure of historical entries. Else just insert if not already 
@@ -849,7 +849,7 @@ sub newLibrary {
     }else {
       #Log the fact that we couldn't parse out a taxon
       $M->logAlert('ERR:NEW LIBRARY: TAXON', ' LIB_ID:',  $l->getId(), ' DBEST_ID:',
-              $l->getDbestId(), ' ORGANISM:', $dbest_lib->{organism},"\n");
+		   $l->getDbestId(), ' ORGANISM:', $dbest_lib->{organism},"\n");
     }
   }
   
@@ -862,7 +862,7 @@ sub newLibrary {
       $M->{anat}->{$dbest_lib->{organ}} = $anat->getId();
       $l->setAnatomyId($anat->getId());
     }else {
-      #Log the fact that we couldn't parse out a taxon
+      #Log the fact that we couldn't parse out an anatomy
       $M->logAlert('ERR: NEW LIBRARY: ANATOMY', ' LIB_ID:',  $l->getId(), ' DBEST_ID:',
               $l->getDbestId(), ' ORGAN:', $dbest_lib->{organ},"\n");
     }
