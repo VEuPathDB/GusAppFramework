@@ -25,12 +25,12 @@ sub new {
           },
 
           { h => 'version of SeqOntology',
-          t => 'int',
+          t => 'string',
           o => 'so_version',
           },
 
           { h => 'cvs version of SeqOntology',
-          t => 'int',
+          t => 'string',
           o => 'so_cvs_version',
 
          },];
