@@ -1,3 +1,4 @@
+
 package GUS::GOPredict::Plugin::LoadGoAssoc;
 @ISA = qw( GUS::PluginMgr::Plugin);
 use CBIL::Bio::GeneAssocParser::Parser;
@@ -26,7 +27,7 @@ sub new {
     # initialize--for now do not override initialize in plugin.pm just set methods
     my $usage = 'loads associations of external sequences to GO terms into GUS';
 
-    #good go id: 6532
+    #good go id: 5996
     my $easycsp =
 	[
 	 {o=> 'go_ext_db_rel_id',
@@ -59,32 +60,38 @@ sub new {
 	  t => 'string',
 	  r => 1,
       },
-	 {o => 'yeast_db_rls_id',
+	 {o => 'start_line',
+	  h => 'Line of association file on which to start parsing',
+	  t => 'int',
+      }, 
+	 {o => 'end_line', 
+	  h => 'Line of association file on which to stop parsing',
+	  t => 'int',
+      }, 
+	 {o => 'yeast_db_rls_id', #2794
 	  h => 'External database release id for yeast sequences',
 	  t => 'int',
-      },
-	 {o => 'fb_db_rls_id',
+      }, 
+	 {o => 'fb_db_rls_id',  #2193
 	  h => 'External database release id for fly sequences',
 	  t => 'int',
       },
-	 {o => 'tair_db_rls_id',
+	 {o => 'tair_db_rls_id', #2693
 	  h => 'External database release id for Arabidopsis sequences',
 	  t => 'int',
       },
-	 {o => 'worm_db_rls_id',
+	 {o => 'worm_db_rls_id',  #6674
 	  h => 'External database release id for worm sequences',
 	  t => 'int',
       },
-	 {o => 'sp_db_rls_id',
-	  h => 'External database release id for yeast sequences',
+	 {o => 'sp_db_rls_id',  #2893
+	  h => 'External database release id for worm sequences',
 	  t => 'int',
       },
-	 {o => 'tr_db_rls_id',
-	  h => 'External database release id for yeast sequences',
+	 {o => 'tr_db_rls_id',  #3093
+	  h => 'External database release id for worm sequences',
 	  t => 'int',
       },
-	
-
 
 	 ];
 
@@ -97,8 +104,6 @@ sub new {
 		       usage => $usage
 		       });
 
-    # return object.
-    #print STDERR "LoadGoAssoc::new() is finished \n";
     return $self;
 }
 
@@ -117,55 +122,59 @@ sub isReadOnly { 0 }
 sub run {
     my $self = shift;
     
-    # open the file
-    # .................................................................
-    #print STDERR "beginning method LoadGoAssoc::run \n";
+    $self->log("LoadGoAssoc: starting run method" );
     
     my $path = $self->getCla->{file_path};
     my $parser = CBIL::Bio::GeneAssocParser::Parser->new($path);
 
-    $self->loadOrgInfo();
+    $self->__loadOrgInfo();
 
 
     my $fileName = $self->getCla->{flat_file};
 
     if ($fileName){
+	$self->log("CBIL:Bio:GeneAssocParser:Parser is loading $fileName in preparation for parsing");
 	$parser->loadFile($fileName);
     }
     else {
+	my $msg = "CBIL:Bio:GeneAssocParser:Parser is loading all gene_association files in ";
+	$msg .= $path;
+	$self->log($msg);
 	$parser->loadAllFiles();
     }
     $parser->parseAllFiles();
         
     my $msg;
     
-    $msg = $self->__load_associations($parser);
+    $msg = $self->loadAssociations($parser);
     
      
     # return value
-     return $msg
+    return $msg;
 }
 
 # ---------------------------------------------------------------------- #
 # ---------------------------------------------------------------------- #
 
 
-sub __load_associations {
+sub loadAssociations {
     my ($self, $parser) = @_;
 
-    my $logFile;
-    # get the list of sequences we've already annotated.
-    #right now should be empty
-    my $old_seqs = $self->__load_processed_sequences();
+    $self->log("Association file(s) parsed; preparing to insert into database");
+
+    my $idFile;
     
-    my $id_file = $self->getCla->{id_file}; 
-    if ($id_file){
-	$logFile = FileHandle->new( '>>'. $self->getCla->{ id_file } ); 
+    # get the list of sequences we've already annotated.
+    my $old_seqs = $self->__loadProcessedSequences();
+    
+    my $claIdFile = $self->getCla->{id_file}; 
+    if ($claIdFile){
+	$idFile = FileHandle->new( '>>'. $self->getCla->{ id_file } ); 
     }
-    # get the GO graph
-    my $goGraph = $self->__load_go_graph( );
-    my $allGoAncestors = $self->__load_go_ancestors($goGraph);
-    # measure of progress
+    my $goGraph = $self->__loadGoGraph( );
+    my $allGoAncestors = $self->__loadGoAncestors($goGraph);
+    
+    # variables for counting progress
     my $termCount      = 0;
     my $ancestorCount  = 0;
     my $skipCount      = 0;
@@ -173,19 +182,23 @@ sub __load_associations {
     my $unknownCount   = 0;
     my $evidenceCount = 0;
    
-
+    #get all parsed files
     my $stores = $parser->getFileStores();
+
     foreach my $file (keys %$stores){
+
 	my $fileStore = $stores->{$file};
 	
 	my $allEntries = $fileStore->getParsedEntries();
+	
 	my ($organism) = $file =~ /gene_association\.(\w+)$/;
+	
+		
 	$self->__checkDatabaseRelease($organism);
 	$self->__loadMgiMapIfMouse($organism);
 
 	open (BIGLOG, ">>logs/pluginLog$organism") || die "pluginLog could not be opened";
 
-	#print STDERR "loading organism $organism\n";
 	my $orgInfo = $self->{orgInfo}->{$organism};
 	
 	next if ($self->__checkIfSeqsLoaded($orgInfo, $file));
@@ -193,23 +206,26 @@ sub __load_associations {
 	my $assocMethod = $orgInfo->{assoc_meth};
 	
 	#retrieve Ids for external info 
-	my $allGusIds = $self->__get_sequence_id($organism, $allEntries);
-	my $allEvdIds = $self->__get_evidence_ids($allEntries);
-	my $evidenceMap = $self->__get_evidence_review_status_map();
+	my $allGusIds = $self->__getSequenceIds($organism, $allEntries);
+	my $allEvdIds = $self->__getEvidenceIds($allEntries);
+	my $evidenceMap = $self->__getEvidenceReviewStatusMap();
 	
 	#get table id for table name that external sequences are in
 	my $tableId = $self->__getTableIdForOrg($orgInfo->{id_tbl});
 		
 	#convert file store into hash to be used by algorithm
-	my $assocData = $self->__createAssocData($allEntries, $allGusIds, $assocMethod);
-	print STDERR "starting adjust isnots\n";
-	$self->__adjustIsNots($assocData, $allGoAncestors, $goGraph);
-	print STDERR "ending adjust isnots\n";
+	my $assocData = $self->__createAssocData($allEntries, $allGusIds, $assocMethod, $organism);
 	
+	$self->__adjustIsNots($assocData, $allGoAncestors, $goGraph, $organism);
+	
+#	my @dataKeys = keys %$assocData;
+#	for (my $j = 0; $j < 1500; $j++){
+
 	#for each external sequence
 	foreach my $extSeq (keys %$assocData){
-	    
+	#    my $extSeq = $dataKeys[$j];
 	    print BIGLOG "loading association for $extSeq\n";
+	    $self->logVerbose("loading association for $extSeq");
 
 	    my $goIds = $assocData->{$extSeq}->{goTerms};
 	    my $extSeqGusId = $assocData->{$extSeq}->{extSeqGusId};
@@ -217,119 +233,148 @@ sub __load_associations {
 	    my $ancestorsMade;
    
 	    # reasons not to process this line
-	    
 	    if ( ! $extSeqGusId ){ 
+		$self->logVerbose("skipped $extSeq because could not find corresponding GUS Id for this sequence");
+		print BIGLOG "skipped $extSeq because could not find corresponding GUS Id for this sequence\n";
 		$skipCount++; next
 		}
 	    elsif ( $old_seqs->{ $extSeq  } ) {
+		$self->logVerbose("skipped $extSeq because there is already an association made for this version");
+		
 		$oldCount++; next
 		}
 	    
 	    #for each go term associated with this external sequence
 	    foreach my $goId (keys %$goIds){
 		
+		$self->logVerbose ("making defining association between $extSeq and $goId");
+		print BIGLOG "making defining association between $extSeq and $goId\n";
 		
+		#variables for this potential association
+		my $evdIds = $goIds->{$goId}->{evidence};
+		my $entry = $goIds->{$goId}->{entry};	
+
+		my $goTermGusId = $goGraph->{ goToGus }->{ $goId };	
+		my @goAncestors = keys %{ $allGoAncestors->{$goTermGusId} };		
+	
+	
 		
-		my $goTermGusId = $goGraph->{ goToGus }->{ $goId };
+		#reasons to skip this defining association:
 		unless ( $goTermGusId ) {
 		    $unknownCount++;
+		    $self->logVerbose("could not find gus ID for go term $goId");
 		    print BIGLOG "could not find goTermGusId for goId $goId $unknownCount \n";
-		    next
-		    }
-	
-	
-		my @goAncestors = @{ $allGoAncestors->{$goTermGusId} };		
-		my $entry = $goIds->{$goId}->{entry};
-		my $tempIsNot = $entry->getIsNot();
+		    next;
+		}
+				
+		if ($entry->getEvidence() eq 'NULL') {
+		    #so far only have seen in wb associations, no counter incrementing
+		    $self->logVerbose("skipped $extSeq association with go id $goId because evidence is NULL");
+		    next;
+		}
 		
-		print BIGLOG "making association with GOTerm $goId is not: $tempIsNot\n";   
-		my $evdIds = $goIds->{$goId}->{evidence};
-		if ($ancestorsMade->{$extSeqGusId}->{$goId}){
-			my $msg = "\t\t skipping this defining assignment as $extSeq  mapped to $goId is ";
-			$msg .= $ancestorsMade->{$extSeqGusId}->{$goId};
-			print BIGLOG $msg . "\n";
-			next;
-		    }
-		    
-                #make association for the term itself
+		if ($self->__hasDefiningDescendant($goIds, $allGoAncestors, $goId, $goGraph)){
+		    my $desMsg = "\t\t skipping this defining assignment as another descendant will be making it\n";
+		    print BIGLOG $desMsg . "\n";
+		    $self->logVeryVerbose($desMsg);
+		    next;
+		}
+		
+		#make association for the term itself
+
 		$evidenceCount += 
-		    $self->__make_association( $entry, $tableId, $extSeqGusId, 
-					       $goTermGusId, $evdIds, $evidenceMap, 
-					       $organism, 1);
+		    $self->__makeAssociation( $entry, $tableId, $extSeqGusId, 
+					      $goTermGusId, $evdIds, $evidenceMap, 
+					      $organism, 1);
 		$termCount++;
 		
 		if ($entry->getIsNot()){
 		    $ancestorsMade->{$extSeqGusId}->{$goId} = -1; }
 		else {$ancestorsMade->{$extSeqGusId}->{$goId} = 1;}
-		
-		
+				
 		#make association for terms on path to root.
 		
 		foreach my $goAncestor ( @goAncestors ) {
-		    my $ancestorGoId = $goGraph->{gusToGo}->{$goAncestor};		
-		    print BIGLOG "\t\tmaking ancestor association for $ancestorGoId and " . $entry->getDBObjectId . " is not: $tempIsNot \n";
+		    my $ancestorGoId = $goGraph->{gusToGo}->{$goAncestor};
 		    
+		    my $ancMsg = "\t\tmaking ancestor association for $goAncestor ($ancestorGoId) and $extSeq";
+		    print BIGLOG $ancMsg . "\n";
+		    $self->logVeryVerbose($ancMsg);
+		 
+		    #reasons to skip this ancestor association:
+
 		    #don't make if already made from common descendant
-		    
 		    if ($ancestorsMade->{$extSeqGusId}->{$ancestorGoId}){
-			my $msg = "\t\t skipping this ancestor assignment as $extSeq  mapped to $ancestorGoId is ";
-			$msg .= $ancestorsMade->{$extSeqGusId}->{$ancestorGoId};
-			print BIGLOG $msg . "\n";
+			
+			my $skipAncMsg = "\t\t skipping this ancestor assignment; it was made from a different descendant";
+			$skipAncMsg .= $ancestorsMade->{$extSeqGusId}->{$ancestorGoId};
+			print BIGLOG $skipAncMsg . "\n";
+			$self->logVeryVerbose($skipAncMsg);
 			next;
 		    }
-
+		    
 		    #don't make if ancestor should be set to 'is' even though the descendant goId 'is not'
 		    elsif ($entry->getIsNot()){
-			print BIGLOG "\t\t entry isNot, check to see if ancestor $ancestorGoId should be is\n";
+			
 			if ($self->__ancestorShouldBeIs($goAncestor, $goIds, $allGoAncestors, $goGraph)){
-			    print BIGLOG "\t\t skipping this ancestor assignment because it should be IS\n";
+			    my $isMsg = "\t\t skipping this ancestor assignment because descendant IS NOT";
+			    $isMsg .= "but ancestor should be IS\n";
+			    print BIGLOG $isMsg;
+			    $self->logVeryVerbose($isMsg);
 			    next;
 			}
-			else {print BIGLOG "\t\tthis ancestor should be isNot\n";}
 		    }
-
+		    
 		    #make if ancestor passes the previous conditions
-		    $self->__make_association( $entry, $tableId, $extSeqGusId,
-					       $goAncestor, $evdIds, $evidenceMap,
-					       $organism, 0
-					       );
+		    $self->__makeAssociation( $entry, $tableId, $extSeqGusId,
+					      $goAncestor, $evdIds, $evidenceMap,
+					      $organism, 0
+					      );
 		    $ancestorCount++;
 		    
 		    if ($entry->getIsNot()){
 			$ancestorsMade->{$extSeqGusId}->{$ancestorGoId} = -1; }
 		    else {$ancestorsMade->{$extSeqGusId}->{$ancestorGoId} = 1;}	       
-		
+		    
 		} # end ancestor association
 	    }  #end this go term    
-
-	    print $logFile $extSeq . "\n";
+	    
+	    print $idFile $extSeq . "\n";
 	} #end this external sequence
 	close BIGLOG;
-    }#end this association file
+    } #end this association file
     
-
-# return value
-	"loaded: ". join( ', ',
-			  "terms=$termCount",
-			  "ancestors=$ancestorCount",
-			  "old=$oldCount",
-			  "unknown=$unknownCount",
-			  "and skipped=$skipCount"
-			  );
+    
+    # return value
+    my $returnMsg = "loaded: ". join( ', ',
+				      "terms=$termCount",
+				      "ancestors=$ancestorCount",
+				      "old=$oldCount",
+				      "unknownGOTerm=$unknownCount",
+				      "and unknownExternalSeq=$skipCount"
+				      );
+    return $returnMsg;
 }
 
 
 # ......................................................................
 
-sub __make_association {
+#make GUS Objects for each association and submit to db
+sub __makeAssociation {
     
     my ($self, $entry, $tableId, $externalSeqGusId, $goTermGusId,  $evdIds, $evidenceMap, $organism, $defining) = @_; 
     open (ASSOCLOG, ">>logs/assocLog$organism") || die "assocLog could not be opened";
     open (AILOG, ">>logs/assocInstLog$organism") || die "assocInstLog could not be opened";
-    
+   
     my $evidenceCount = 0;
     my $orgInfo = $self->{ orgInfo }->{ $organism };
     my $extEvd = $entry->getEvidence();
+    if (!($extEvd)){
+	$extEvd = $entry->getWith();  #account for errors in wb association file and possibly others
+    }
+
+    #$entry->showMyInfo();
+    print ASSOCLOG "getting evidence for $externalSeqGusId on $goTermGusId, outside code is $extEvd\n";
     my $reviewStatus = $evidenceMap->{$extEvd}->{reviewStatus};
     my $isNot = 0;
     my $dbs = $orgInfo->{db_id};
@@ -339,6 +384,7 @@ sub __make_association {
 
     my $assocDate = $self->__getEntryDate($entry->getEntryDate());
 
+    #make association
     my $gusAssoc = GUS::Model::DoTS::GOAssociation->new( {
  	table_id => $tableId - 1,    #hack for testing
 	row_id => $externalSeqGusId,
@@ -349,6 +395,7 @@ sub __make_association {
 	go_association_date => $assocDate,
     });
     
+    #make instance of this association; 1:1 Association:AssociationInstance ratio
     my $gusAssocInst = GUS::Model::DoTS::GOAssociationInstance->new( {
  	external_database_release_id=> $self->getCla->{go_ext_db_rel_id},
  	is_not => $isNot,
@@ -357,9 +404,10 @@ sub __make_association {
  	go_assoc_inst_loe_id => 1, #hardcoded for now
     });
 
+    #make evidence code link for each 
     if ($defining){
 	foreach my $evdId (keys %$evdIds){
-	    my $evdCodeInst = $self->__make_evidence_code_inst($evdId, $evidenceMap);
+	    my $evdCodeInst = $self->__makeEvidenceCodeInst($evdId, $evidenceMap);
 	    $gusAssocInst->setChild($evdCodeInst);
 	    $evidenceCount++;
 	}
@@ -376,16 +424,17 @@ sub __make_association {
     print AILOG "after: " . $gusAssocInst->toString() . "\n";
     $self->undefPointerCache();    
     return $evidenceCount;
-    #return $gusAssocInst;
 
 }
 
 # ......................................................................
-
-sub __get_evidence_ids{
+#given external sequences and the evidence codes used to associate them with GO Terms,
+#get the GUS Id for each evidence code and put it in the supplied hash of sequences 
+sub __getEvidenceIds{
     my ($self, $assocData) = @_;
-    #print STDERR "running get_evidence_ids\n";
-    #prepare sql to get GUS id for evidence code for each external sequence
+    
+    $self->log("getting gus evidence code ids for GO Evidence codes");
+
     my %evdIds = {};
     my $queryHandle = $self->getQueryHandle();
     my $sql =  
@@ -400,20 +449,45 @@ sub __get_evidence_ids{
 	    %evdIds->{$key} = $evdId;
 	}
     }
-    #print STDERR "end get_evidence_ids\n";
+    
+    $self->log("finished getting go evidence codes");
     return \%evdIds;
 }
-	
+
+#given a go term that has been associated with a sequence, check if the go term has any
+#descendants that are also associated with this sequence.  We only want to have the lowest go term
+#in the graph get the defining tag; the ancestor association will be made later.
+
+sub __hasDefiningDescendant{
+    my ($self, $goIds, $allGoAncestors, $goIdToTest, $graph) = @_;
+
+    my $entryToTest = $goIds->{$goIdToTest}->{entry}; #entry of term we are checking
+       
+    foreach my $goId (keys %$goIds){  #for all other go terms associated with the sequence  
+	my $descendantsGoAncestors = $allGoAncestors->{ $graph->{goToGus}->{$goId} };
+	if ($descendantsGoAncestors->{ $graph->{goToGus}->{$goIdToTest} }) { #found a descendant that is explicitly set
+	    
+	    my $descendantEntry = $goIds->{$goId}->{entry};
+	    if ($descendantEntry->getIsNot() == $entryToTest->getIsNot()){  #same isNots()
+		return 1;
+	    }
+	}
+    }
+    return 0;
+}
+
 #given an organism and its external primary sequence identifiers, get the GUS Id's
 #for those sequences
-sub __get_sequence_id {
+sub __getSequenceIds {
     my ($self, $organism, $assocData) = @_;
-    print STDERR "running LoadGoAssoc::get_sequence_id\n";
-    # prepare SQL to get GUS id for external sequence.
-    my $orgInfo = $self->{ orgInfo }->{ $organism };
-    my %gusIds = {};
-    open (GETSEQID, ">>logs/getSeqLog") || die "getSeqLog could not be opened";
 
+    $self->log("getting gus Ids for external $organism sequences");
+
+    my $orgInfo = $self->{ orgInfo }->{ $organism };
+
+    my %gusIds = {};
+
+    open (GETSEQID, ">>logs/getSeqLog$organism") || die "getSeqLog could not be opened";
 
     my $queryHandle = $self->getQueryHandle();
 
@@ -421,35 +495,43 @@ sub __get_sequence_id {
     my $assocMethod = $orgInfo->{assoc_meth};
     my $fromTbl = $orgInfo-> { id_tbl};
     my $whereCol = $orgInfo -> {id_col};
-
+    
+    #super hack for now
     my $prepareSql = "
                 select aa_sequence_id 
                 from $fromTbl 
                 where external_database_release_id in $dbList
                 and $whereCol in ?" ;
+    
+    $self->logVerbose("prepared query to get sequences: $prepareSql");
+
     my $sth = $queryHandle->prepare($prepareSql);
     
     foreach my $key (keys %$assocData){
+
 	my $entry = $assocData->{$key};
 	my $extId = $entry->$assocMethod;
 	my @cleanId = @{ $orgInfo->{ clean_id }->( $extId ) };
 	my $cleanId = '(' . join( ', ', map { "'$_'" } @cleanId ) . ')'; #get sp id's if mgi
-	$sth->execute($extId);
+#	print GETSEQID "executing sequence $extId. . . ";
+	$sth->execute($cleanId);
 	while (my ($gusId) = $sth->fetchrow_array()){
+	    print GETSEQID "$cleanId in gus is $gusId\n";
 	    %gusIds->{$key}= $gusId;
 	    
 	}
     }
     close (GETSEQID);
-    # return value
-    #print STDERR "end get_sequence_id\n";
+
+    $self->log("done getting gus ids for sequences for this organism");
     return \%gusIds;
 }
 
 
 # ......................................................................
 
-sub __load_processed_sequences {
+#load sequences that have already had associations made for them in this version
+sub __loadProcessedSequences {
     my $self = shift;
     
     my $old_seqs = {};
@@ -471,13 +553,23 @@ sub __load_processed_sequences {
 
 #check to see if an ancestor should still be associated with an external sequence
 #even though it has a descendant set to 'is not', because it has another descendant
-#set to 'is'
+#set to 'is', or if ancestor is explicitly set to is in gene_association file
 sub __ancestorShouldBeIs{
     my ($self, $ancestorGusId, $goIds, $allGoAncestors, $graph) = @_; 
 
+    
+    #check if ancestor explicitly set to 'is' in association file
+    #$my $ancestorEntry = $goIds->{ $graph->{gusToGo}->{$ancestorGusId} }->{entry};
+    #if ($ancestorEntry) {
+        #if !($ancestorEntry->getIsNot()){ 
+    #      return 1;   }
+    #    }
+        
+    
+    #check if another descendant of this ancestor explicitly set to is in association file
     foreach my $goId (keys %$goIds){
 	if (!($goIds->{$goId}->{entry}->getIsNot())){
-	    my $goAncestors = $self->__makeAncestorHash($allGoAncestors->{ $graph->{goToGus}->{$goId} });
+	    my $goAncestors = $allGoAncestors->{ $graph->{goToGus}->{$goId} };
 	    my $number = scalar(keys %$goAncestors);
 	    if ($goAncestors->{$ancestorGusId}){
 		return 1;
@@ -500,29 +592,61 @@ sub __makeAncestorHash{
     return $ancestorHash;
 }
 
-#create hash keyed on go terms; for each term entry is array of its ancestors
-sub __load_go_ancestors{
+#create hash keyed on go terms; for each key (the go term), value is hash w/keys being 
+#the ancestors of the go term
+sub __loadGoAncestors{
     my ($self, $graph) = @_;
+    my $ancestorsArray;
     my $ancestors;
+    #keys of $gusIds will be GUS ids, not GO ids.
     my $gusIds = $graph->{gusToGo};
-    foreach my $gusId (keys %$gusIds){
-	$ancestors->{$gusId} = $self->__get_ancestors($gusId, $graph);
 
+    my $rootGusIds = $self->__getOntologyRoots();
+
+    foreach my $gusId (keys %$gusIds){
+	$ancestorsArray->{$gusId} = $self->__getAncestors($gusId, $graph, $rootGusIds);
+    }
+    foreach my $gusIdWithAnc(keys %$ancestorsArray){
+	$ancestors->{$gusIdWithAnc}= $self->__makeAncestorHash($ancestorsArray->{$gusIdWithAnc});
     }
     return $ancestors;
 }
 
+#get gus ID for root of GO ontology so it doesn't get set as an ancestor
+sub __getOntologyRoots{
+
+    my ($self) = @_;
+
+    my $roots;
+
+    my $queryHandle = $self->getQueryHandle();
+    my $sql = "select go_term_id from sres.goterm where name = 'Gene_Ontology'";
+
+    my $sth = $queryHandle->prepareAndExecute($sql);
+    
+    #need to get roots for all external db ids because no guarantee ontology root
+    #is loaded with the external db release of a given branch
+
+    while (my ($root) = $sth->fetchrow_array()){
+	$roots->{$root} = 1;
+    }
+
+    return $roots;
+}
+   
+
+
 #create hash containing info about each go term; its children, parents, and maps
 #from its gusID to its GO ID and vice versa
-sub __load_go_graph {
+sub __loadGoGraph {
     my ($self) = @_;
-    #print STDERR "Running LoadGoAssoc::load_go_graph";
+
+    $self->log("creating graph of go hierarchy");
     my $queryHandle = $self->getQueryHandle();
+
     # object to return
     my $graph;
     
-    #temp output file for debugging:
-#    open (GOGRAPH, ">>./goGraphLog") || die "go graph log could not be opened";
     my $goDbId = $self->getCla->{go_ext_db_rel_id};
 
     my $sql = "
@@ -532,7 +656,7 @@ sub __load_go_graph {
      where f.go_term_id = h.child_term_id
      and f.external_database_release_id = $goDbId
 
-  "; #and f.name <> 'root'
+  "; 
     
     # execute the SQL and get the graph
     my $sth = $queryHandle->prepareAndExecute($sql);
@@ -540,35 +664,30 @@ sub __load_go_graph {
 	
 	# parent link for child
 	$graph->{ childToParent }->{ $childId }->{ $parentId } = 1;
-	  #print GOGRAPH "$parentId is parent of $childId\t";
-	 
+		 
         # child link for parent
 	$graph->{ parentToChild }->{ $parentId }->{ $childId } = 1;
-	  #print GOGRAPH "$childId is child of $parentId\t";
-
+	
 	# map from (GUS) child to GO id
 	$graph->{ gusToGo }->{ $childId } = $childGoId;
 	#if we don't need the above then don't store it
 
 	# map from GO id to (GUS) child
 	$graph->{ goToGus }->{ $childGoId } = $childId;
-	  #print GOGRAPH "GUS id of $childGoId is $childId\n"; 
-
+	
 	# name of function
 	$graph->{ name }->{ $childId } = $name;
     }
     
-	
-#    close (GOGRAPH);
     # return value
     return $graph
     }
 
 # ......................................................................
 
-#get array of ancestors for one go term
-sub __get_ancestors {
-    my ($self, $goTermGusId, $goGraph) = @_;
+#get array of ancestors, except for ontology root, for one go term 
+sub __getAncestors {
+    my ($self, $goTermGusId, $goGraph, $roots) = @_;
 
     # set (hash) of nodes on path to root.
     my $path;
@@ -579,6 +698,7 @@ sub __get_ancestors {
     while ( my $nextTerm = shift @queue ) {
 	foreach my $parentOfNextTerm ( keys %{ $goGraph->{ childToParent }->{ $nextTerm } }) {
 	    next if $path->{ $parentOfNextTerm };
+	    next if $roots->{$parentOfNextTerm};
 	    $path->{ $parentOfNextTerm } = 1;
 	    push( @queue, $parentOfNextTerm );
 	}
@@ -599,10 +719,10 @@ sub __getTableIdForOrg{
     return $tableId;
 }
 
-sub __make_evidence_code_inst{
+sub __makeEvidenceCodeInst{
     
     my ($self, $extEvd, $evidenceMap) = @_;
-    open (EVDLOG, ">>logs/evdLog") || die "evdlog could not be opened";
+   # open (EVDLOG, ">>logs/evdLog") || die "evdlog could not be opened";
     my $reviewStatus = $evidenceMap->{$extEvd}->{reviewStatus};
     my $realEvidGusCode = $evidenceMap->{$extEvd}->{evdGusId};
     
@@ -610,60 +730,89 @@ sub __make_evidence_code_inst{
 	go_evidence_code_id => $realEvidGusCode,
      	review_status_id => $reviewStatus,
     });
-    print EVDLOG $evidCodeInst->toString();
+   # print EVDLOG $evidCodeInst->toString();
     return $evidCodeInst;
 }
 
 #create hash mapped on source_id of association containing the association's go terms, evidence, etc.
 sub __createAssocData{
-    my ($self, $allEntries, $allGusIds, $assocMethod) = @_;
+    my ($self, $allEntries, $allGusIds, $assocMethod, $organism) = @_;
     my $assocData;
+   
     foreach my $key (keys %$allEntries){
 	my $entry = $allEntries->{$key};
 	my $tempGoTerm = $entry->getGOId();
 	
 	my $tempEvd = $entry->getEvidence();
-	my $newKey = $entry->$assocMethod;
-	$assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{evidence}->{$tempEvd} = 1;
-	$assocData->{$newKey}->{extSeqGusId} = $allGusIds->{$key};
-
-	#change to unless 
-	#don't make an entry if it already exists with isNot flag set (happens rarely)
-	if ($assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{entry}){
-	    if (($assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{entry}->getIsNot()) &&
-		(!($entry->getIsNot()))) {
-		next;
+	my $tempNewKey = $entry->$assocMethod; #gets MGI
+	my @newKeyArray = @{ $self->{orgInfo}->{$organism}->{clean_id}->($tempNewKey) };
+	
+	foreach my $newKey (@newKeyArray){
+	    $assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{evidence}->{$tempEvd} = 1;
+	    $assocData->{$newKey}->{extSeqGusId} = $allGusIds->{$key};
+	
+	   
+	    #change to unless 
+	    #don't make an entry if it already exists with isNot flag set (happens rarely)
+	    if ($assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{entry}){
+		if (($assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{entry}->getIsNot()) &&
+		    (!($entry->getIsNot()))) {
+		    next;
 		}
-	}	
-	$assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{entry} = $entry;
+	    }	
+	    $assocData->{$newKey}->{goTerms}->{$tempGoTerm}->{entry} = $entry;
+	}
     }
         
     return $assocData;
 }
 
-#go through entries and set descendants is nots to match ancestors is nots where necessary
-#(protect against rare case where a descendant is set to one but ancestor is set to another)
+#dtb: decide if I want to keep this
+#go through entries and set descendants' 'is not' to match their ancestors' 'is not' where necessary
+#(protect against rare case where a descendant is set to 'is' one but ancestor is set to 'is not'r)
 sub __adjustIsNots{
-    my ($self, $assocData, $allGoAncestors, $goGraph) = @_;
-
+    my ($self, $assocData, $allGoAncestors, $goGraph, $organism) = @_;
+    open (ISLOG, ">>logs/isNotLog$organism") || die "pluginLog could not be opened";
+    
+    #for each external sequence
     foreach my $sourceId (keys %$assocData){
+	print ISLOG "adjusting is not for terms associated with $sourceId\n";
 	my $goIds = $assocData->{$sourceId}->{goTerms};
+	
+	#for each go term associated with external sequence
 	foreach my $childGoId (keys %$goIds){
+	    
 	    my $goGusId = $goGraph->{goToGus}->{$childGoId};
-	    my @ancestors = @ { $allGoAncestors->{$goGusId} };
-	    foreach my $ancestorGusId (@ancestors) {  #two nested loops! But both average about 5 iterations
-		#can't call get is not on ancestor go id
+	    my $ancestorHash = $allGoAncestors->{$goGusId};
+	    my @ancestors = keys %$ancestorHash;
+	    
+	    #for each ancestor of the go term
+	    foreach my $ancestorGusId (@ancestors) {  
+		
+		#see if there is an explicit association in file with sequence
 		my $ancestorGoId = $goIds->{$goGraph->{gusToGo}->{$ancestorGusId}};
 		
-		#if ancestor is also associated with this source id:
-		if ($ancestorGoId){
-		    my $tempAncestorGoId = $goGraph->{gusToGo}->{$ancestorGusId};
-		  
+		if ($ancestorGoId){  #there is
+		    print ISLOG "found ancestor $ancestorGoId that may be conflict, checking\n";
 		    my $ancestorIsNot = $ancestorGoId->{entry}->getIsNot();
 		    my $childIsNot = $goIds->{$childGoId}->{entry}->getIsNot();
-		 #   print STDERR "$sourceId: associated with both $tempAncestorGoId and $childGoId\n";
-		    if ($ancestorIsNot != $childIsNot){
-			print STDERR "$sourceId: ancestor $tempAncestorGoId is not $childGoId\n";
+		    print ISLOG "ancestor: $ancestorIsNot child: $childIsNot\n";
+		    if ($ancestorIsNot == 1 && !($childIsNot)){ #is nots have conflict
+			print ISLOG "conflict: $ancestorGoId isnot and $childGoId is\n";
+			foreach my $testGoId (keys %$goIds){  #see if other ancestors can resolve
+			    if (!($goIds->{$testGoId}->{entry}->getIsNot())){  #another ancestor is
+				print ISLOG "but another ancestor $testGoId is\n";
+				my $testGoGusId = $goGraph->{goToGus}->{$testGoId};
+				my $testGoAncestorHash = $allGoAncestors->{$testGoGusId};
+				my $ancestorsAncestorHash = $allGoAncestors->{$ancestorGusId};
+				if (!($testGoAncestorHash->{$ancestorGusId}) &&  
+				    !($ancestorsAncestorHash->{$testGoGusId})){  #if two ancestors are related, it's fine
+				    print ISLOG "and it is not an ancestor or descendant of $ancestorGoId\n";
+				}
+			    }
+			}
+			#DTB: STILL MAKE SURE THIS IS BEING SET IN THE CORRECT SCOPE			
+			#not done testing this yet
 			$goIds->{$childGoId}->{entry}->setIsNot($ancestorIsNot);
 		    }
 		}
@@ -672,29 +821,35 @@ sub __adjustIsNots{
     }
 }
 
+
+#make sure database release has been passed in for this file
+#arbitrary number of files may be parsed (1 to 7) so cannot make required in CLA
 sub __checkDatabaseRelease{
     my ($self, $organism) = @_;
-    my $orgVar = $organism . "_db_rls_id";
-    print STDERR "checking database release for $organism\n";
-    my $dbs = $self->getCla->{$orgVar};
-    #my $dbNumber = scalar (@$dbs);
-    if (!($dbs)){
-	print STDERR "didn't find db's\n";
+
+    $self->log("verifying external database release for organism $organism");
+
+    my $dbs = $self->{orgInfo}->{$organism}->{db_id};
+     
+    if (!($dbs->[0])){
 	$self->userError("Please supply an external database release id for sequences in file gene_association.$organism");
     }
-    else{
-	$self->{ orgInfo }->{$organism}->{db_id} = $dbs;
-    }
     
-    print STDERR "apparently found dbs:  $dbs\n";
 }
 
+#load mapping in MRK_SwissProt.rpt file from MGI ID's to SwissProt Ids that have been loaded.
 sub __loadMgiMapIfMouse{
     my ($self, $organism) = @_;
     
     if ($organism eq 'mgi'){
 	my $mgiDirectory = $self->getCla->{mgi_file_path};
-	my $fh = new FileHandle '<'. '$mgiDirectory/MRK_SwissProt.rpt';
+	if (!($mgiDirectory)){
+	    my $msg = "Please specifiy the full path of the directory that file MRK_SwissProt.rpt\n";
+	    $msg .= " is located in with the command line argument '--mgi_file_path'";
+	    $self->userError($msg);
+	}
+	my $fhName = '<' . $mgiDirectory . '/MRK_SwissProt.rpt';
+	my $fh = FileHandle->new($fhName);
 	if (!($fh)){
 	    my $msg = "Could not open file MRK_SwissProt.rpt to load mgi associations\n";
 	    $msg .= "Please check that the file is in $mgiDirectory";
@@ -708,16 +863,20 @@ sub __loadMgiMapIfMouse{
 	    $self->{ maps }->{ mgi }->{ $parts[ 0 ] } = \@id_sp;
 	}
 	$fh->close if $fh;
+
+	$self->log("Loaded $mgiDirectory/MRK_SwissProt.rpt for mapping from MGI Id's to SwissProt Id's");
     }
 
 }
 
 sub __checkIfSeqsLoaded{
     my ($self, $orgInfo, $fileName) = @_;
-    
+  
     my $orgTable = $orgInfo->{id_tbl};
-    my $dbList = '( '. join( ', ', @{$orgInfo->{ db_id } } ). ' )';
 
+    my $dbList = '( '. join( ', ', @{ $orgInfo->{ db_id } }  ). ' )';
+
+    $self->log("checking if sequences are already loaded in database for external database release(s) $dbList");
 
     my $queryHandle = $self->getQueryHandle();
     my $sql = "select count(*) from $orgTable 
@@ -738,90 +897,87 @@ sub __checkIfSeqsLoaded{
     return 0;
 }
 
-sub loadOrgDbs{
+sub __loadOrgDbs{
     my ($self) = @_;
     print STDERR "loading org dbs\n";
     #maybe make this more dynamic later, but for now, HACK
+   
+    
+    if ($self->getCla->{yeast_db_rls_id}) {
+	my @orgArray = ($self->getCla->{yeast_db_rls_id});
+	$self->{ orgInfo }->{sgd}->{db_id} = \@orgArray;	
+    }
+    if ($self->getCla->{fb_db_rls_id}) {
+	my @orgArray = ($self->getCla->{fb_db_rls_id});
+	$self->{ orgInfo }->{fb}->{db_id} = \@orgArray;	
+    }
+    if ($self->getCla->{worm_db_rls_id}) {
+	my @orgArray = ($self->getCla->{worm_db_rls_id});
+	$self->{ orgInfo }->{wb}->{db_id} = \@orgArray;	
+    }
+    if ($self->getCla->{tair_db_rls_id}) {
+	my @orgArray = ($self->getCla->{tair_db_rls_id});
+	$self->{ orgInfo }->{tair}->{db_id} = \@orgArray;	
+    }
+    if ($self->getCla->{sp_db_rls_id}) {
+	my @orgArray = ($self->getCla->{sp_db_rls_id} );
+	$self->{ orgInfo }->{goa_sptr}->{db_id} = \@orgArray;	
+	$self->{ orgInfo }->{mgi}->{db_id} = \@orgArray;	
+    }
+    #push tr
 
-
-    $self->{orgInfo}->{sgd}->{db_id} = ($self->getCla->{yeast_db_rls_id}) 
-	if $self->getCla->{yeast_db_rls_id};
-
-
-
-    $self->{orgInfo}->{fb}->{db_id} = ($self->getCla->{fb_db_rls_id}) 
-	if $self->getCla->{fb_db_rls_id};
-
-
-
-    $self->{orgInfo}->{wb}->{db_id} = ($self->getCla->{worm_db_rls_id}) 
-	if $self->getCla->{worm_db_rls_id};
-
-    $self->{orgInfo}->{goa_sptr}->{db_id} = ($self->getCla->{sp_db_rls_id}, $self->getCla->{tr_db_rls_id}) 
-	if $self->getCla->{sp_db_rls_id};
-
-    $self->{orgInfo}->{mgi}->{db_id} = ($self->getCla->{sp_db_rls_id}, $self->getCla->{tr_db_rls_id})
-	if $self->getCla->{sp_db_rls_id};
-
-    $self->{orgInfo}->{tair}->{db_id} = ($self->getCla->{tair_db_rls_id}) 
-	if $self->getCla->{tair_db_rls_id};
 }
 
-sub loadOrgInfo{
+sub __loadOrgInfo{
     
     my ($self) = @_;
-
-  #set private configuration data for this plugin
+    
+    #set private configuration data for this plugin
     my $flyDb = $self->getCla->{fb_db_rls_id};
 
     $self->{ orgInfo } = {
 	sgd => { id_col   => 'secondary_identifier', 
 		 id_tbl   => 'Dots.ExternalAASequence',
-	#	 db_id    => [ $self->getCla->{yeast_db_rls_id} ],
 		 clean_id => sub { [ $_[ 0 ] ] },
 		 assoc_meth    => 'getDBObjectId',
 	     },
 
-	fb  => { id_col   => 'source_id',
+	fb  => { id_col   => 'secondary_identifier',  #FBgn style CHANGE BACK
 		 id_tbl   => 'Dots.ExternalAASequence',
-	#	 db_id    => [ $flyDb ], 
 		 clean_id => sub { [ $_[ 0 ] ] },
 		 assoc_meth    => 'getDBObjectId',
 	     },
 
 	wb  => { id_col   => 'source_id',
 		 id_tbl   => 'Dots.ExternalAASequence',
+ 		 clean_id => sub { [ $_[ 0 ] ] },
 		 db_id    => [  $self->getCla->{worm_db_rls_id} ], 
-	#	 clean_id => sub { [ $_[ 0 ] ] },
-		 assoc_meth    => 'getDBObjectSymbol',
+		 assoc_meth    => 'getDBObjectId',
 	     },
 	
-	tair => { id_col   => 'source_id',
+	tair => { id_col   => 'upper(source_id)',
 		  id_tbl   => 'Dots.ExternalAASequence',
-	#	  db_id    => [  $self->getCla->{tair_db_rls_id} ],
 		  clean_id => sub { [ $_[ 0 ] ] }, 
 		  assoc_meth    => 'getDBObjectSymbol',
 	      },
 
 	mgi => { id_col   => 'source_id',
 		 id_tbl   => 'Dots.ExternalAASequence',
-	#	 db_id    => [  $self->getCla->{sp_db_rls_id},  $self->getCla->{tr_db_rls_id} ], 
 		 clean_id => sub { $self->{ maps }->{ mgi }->{ $_[ 0 ] } },
 		 assoc_meth    => 'getDBObjectId',
 	     },
 
 	goa_sptr => { id_col => 'source_id',
 		      id_tbl => 'Dots.ExternalAASequence',
-	#	      db_id => [$self->getCla->{sp_db_rls_id},  $self->getCla->{tr_db_rls_id}],
 		      clean_id => sub { [ $_[ 0 ] ] },
 		      assoc_meth => 'getDBObjectId',
 		  },
     };
 
-  #  $self->loadOrgDbs();
+    $self->__loadOrgDbs();
 }
 
-
+#change entry date from what is in association file to something to go in Dots.GoAssociation table
 sub __getEntryDate{
     my ($self, $date) = @_;
     my $sqlDate;
@@ -832,12 +988,14 @@ sub __getEntryDate{
     return $sqlDate;
 }
 
-sub __get_evidence_review_status_map {
+#map from the name of an evidence code to its review status
+sub __getEvidenceReviewStatusMap {
     my ($self) = @_;
     my $queryHandle = $self->getQueryHandle();
     my $sql = "select name, go_evidence_code_id from sres.goevidencecode";
     my $sth = $queryHandle->prepareAndExecute($sql);
     my $evidenceMap;
+    
     while (my ($name, $evdGusId) = $sth->fetchrow_array()){
 	$evidenceMap->{$name}->{evdGusId} = $evdGusId;
     }
@@ -857,7 +1015,6 @@ sub __get_evidence_review_status_map {
     
     return $evidenceMap;
 }
-
 
 
 
