@@ -60,8 +60,11 @@ package GUS::Common::Plugin::GenericParser2Gus;
 use strict;
 #use DBI;
 use Data::Dumper;
+use Carp;
+
 use Benchmark;
 use FileHandle;
+use IO::File;
 
 #################################
 # Load the bioperl2Gus module
@@ -74,13 +77,12 @@ use Bio::SeqIO;
 
 # BioPSU
 use Bio::PSU::IO::BufferFH;
-use IO::File;
 
 my $logdir = "/tmp/"; # Not sure how useful this log is...
 
 # OUTPUT_AUTOFLUSH forced
 $| = 1;
-my $debug = 0;
+my $debug = 1;
 
 print STDERR "GUSLOGS ENV: $ENV{GUSLOGS}\n";
 
@@ -180,9 +182,7 @@ sub run {
     my $path         = $self->getArgs->{filepath};
     my $fileType     = $self->getArgs->{filetype};
     my $sequenceType = $self->getArgs->{sequencetype};
-    #my $db           = $self->getArgs->{ db }; # These 2 never used?
-    #my $dbh          = $db->getDbHandle();
-  
+    my $strand       = $self->getArgs->{strand};
     my $log          = FileHandle->new( '>'. $self->getArgs->{log} );
 
     print STDERR "Dumping log: " . Dumper ($self->getArgs->{log}) . "\n";
@@ -194,13 +194,12 @@ sub run {
     my $update_count = 0;
     my $insert_count = 0;
 
-    # Load the Bioperl2Gusdev converter
-  
+    # Load the Bioperl2Gusdev converter and create bioperl objects
+    #
     my $bioperl2Gus =
-      GUS::Common::Bioperl2Gus->new (sequenceType => $sequenceType,
-                                     debug        => $debug,
-                                     );
-    # parsing the file(s)
+        GUS::Common::Bioperl2Gus->new (sequenceType => $sequenceType,
+                                       debug        => $debug,
+                                       );
 
     my @bioperl_seqs = $self->parseSequenceFiles ($path, $fileType);
 
@@ -212,7 +211,7 @@ sub run {
 
         # Check if sequence is already in the database
         #
-        my $gus_sequence = $bioperl2Gus->getGusSequenceFromDB ($bioperl_sequence);
+        my ($gus_sequence, $source) = $bioperl2Gus->getGusSequenceFromDB($bioperl_sequence);
 
         if (not defined ($gus_sequence)) {
             print STDERR "GUS Sequence creation failed!!! Going to next sequence.\n";
@@ -227,21 +226,31 @@ sub run {
 
                 print STDERR "\n*** The sequence has changed ***\n\n";
 
-                my $the_same_gus_seq = $bioperl2Gus->buildNASequence($gus_sequence);
+                my ($the_same_gus_seq, $new_source) = $bioperl2Gus->buildNASequence($gus_sequence);
                 $the_same_gus_seq->submit(); # Versioning - *** use update *** if sequence too big to version
+                $new_source->submit();
             }
             else {
                 print STDERR "The sequence has not changed.\n";
+
+                $source = $bioperl2Gus->get_source($gus_sequence);
+                $source->submit;
+
+                print STDERR "source submitted.\n";
             }
         }
 
+        print STDERR "Getting all featurs for the sequence.\n";
+
         my @bioperl_features = $bioperl_sequence->all_SeqFeatures;
+
+        print STDERR scalar(@bioperl_features), " features to process in EMBL file";
 
         foreach my $bioperl_feature (@bioperl_features) {
             $bioperl2Gus->setBioperlFeature ($bioperl_feature);
             my $primary_tag  = $bioperl_feature->primary_tag;
 
-            print "\n-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n";
+            print STDERR "\n-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n";
             print "Processing '$primary_tag' bioperl feature...\n";
 
 
@@ -256,7 +265,9 @@ sub run {
                     my @values      = $bioperl_feature->each_tag_value ('systematic_id');	  
                     $systematic_id  = $values[0];
 
-                    print STDERR "/systematic_id(s) found : '" . join (', ', @values) . "'. First used.\n";
+                    if (scalar(@values) > 1) {
+                        die "ERROR: 2+ /systematic_ids found : '" . join (', ', @values) . "'.\n";
+                    }
                 }
                 elsif ($bioperl_feature->has_tag ('temporary_systematic_id')) {
                     my @systematic_ids = $bioperl_feature->each_tag_value ('temporary_systematic_id');
@@ -309,9 +320,6 @@ sub run {
 
     } # next bioperl sequence object process
 
-    ## Close DBI handle
-    #$self->getQueryHandle()->closeQueryHandle();
-    #$self->{'self_inv'}->closeQueryHandle();
 
     my $t2 = Benchmark->new ();
     print  STDERR "\nTotal: ", timestr (timediff ($t2, $t1)), "\n";
@@ -320,6 +328,60 @@ sub run {
     return "Objects inserted= $insert_count;  updated= $update_count; total #(inserted::updated::deleted)=" . $self->getSelfInv->getTotalInserts() . "::" . $self->getSelfInv->getTotalUpdates() . "::" . $self->getSelfInv->getTotalDeletes() .  "\n";
 
 }
+
+################################################################################
+# The PSU can have multiple name qualifiers.
+# These qulaifiers are fairly stable but change over time
+#
+#   /primary_name                 DoTS.GeneFeature.Name
+#   /systematic_id                DoTS.GeneFeature.standard_name
+#   /temporary_systematic_id      ??                               
+#   /previous_systematic_name     ??
+#   /synonym                      DoTS.GeneSynonym.synonym_name
+#   /obsolete_name                ??
+#   /reserved_name                ??
+#
+# NOTE: if the /systematic_id does not exist, /temporary_systematic_id will be
+#       used in its place, for now.
+##
+
+sub check_names {
+    my ($self, $bioperl_feature ) = @_;
+    my @errors;
+
+    if ($bioperl_feature->has_tag ('primary_name')) {
+        my @values      = $bioperl_feature->each_tag_value ('primary_name');	  
+
+        if (scalar(@values) > 1) {
+            push @errors, "ERROR: 2+ /primary_naames found : '" . join (', ', @values) . "'.\n";
+        }
+    }
+
+    if ($bioperl_feature->has_tag ('systematic_id')) {
+        my @values      = $bioperl_feature->each_tag_value ('systematic_id');	  
+
+        if (scalar(@values) > 1) {
+            push @errors, "ERROR: 2+ /systematic_ids found : '" . join (', ', @values) . "'.\n";
+        }
+    }
+
+    if ($bioperl_feature->has_tag ('temporary_systematic_id')) {
+        my @systematic_ids = $bioperl_feature->each_tag_value ('temporary_systematic_id');
+
+        if (scalar(@systematic_ids) > 1) {
+            push @errors, "ERROR: 2+ /temporary_systematic_ids found : '" . join (', ', @systematic_ids) . "'.\n";
+        }
+    }
+
+    unless ($bioperl_feature->has_tag ('primary_name')      ||
+                $bioperl_feature->has_tag ('systematic_id') ||
+                $bioperl_feature->has_tag ('temporary_systematic_id')){
+        print STDERR "\n\n*** ERROR: can't find /primary_name or (temporary) systematic id tag for current '".
+            $bioperl_feature->primary_tag."' bioperl feature at ",  $bioperl_feature->location->to_FTstring(), "***\n\n\n";
+        next;
+    }
+}
+
 
 ################################################################################
 #
@@ -332,9 +394,6 @@ sub processCDS{
     my ($self, $log, $bioperl_feature, $bioperl2Gus, $systematic_id) = @_;
 
     my $insert_count  = 0;    # return value in here
-    #my $gf            = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
-    #my $gf            = $bioperl2Gus->getFeatureFromDB('DoTS::GeneFeature');
-    #my $is_in         = $gf->retrieveFromDB(); # Returns 1 ONLY IF one entry, 0 or 2+ returns zero.
     my $gene_type     = "protein coding";
 
     if ($bioperl_feature->has_tag ('pseudo')) {
@@ -349,8 +408,7 @@ sub processCDS{
 
     # Create/update/leave alone DoTS::GeneFeature and all child objects
     #
-    my @gus_objects = $self->processGene ($bioperl2Gus, $gene_type, $systematic_id);
-
+    my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id); 
 
     #
     # DEBUG TO SEE WHATS IN THE ARRAY SO FAR
@@ -396,7 +454,11 @@ sub processCDS{
         #       Add '1' as the argument to submit() to make it a non-deep submit!!!
         ##
 
-        $object->submit(); # Will version the object *if* it has changed
+        print "Inserting ",ref($object),"\n"; 
+
+        $self->processDomainFeatureHack($object); # FIXME: to be taken out when design erro fixed - 2 fields can have same parent!!
+
+        $object->submit(1); # Will version the object *if* it has changed
 
 
         $log->print( "object INSERTED (", ref($object),")\n");
@@ -416,14 +478,30 @@ sub processCDS{
 
 ################################################################################
 #
+#                                                 =-=-=-= HACK HACK HACK =-=-=-=
+##
+sub processDomainFeatureHack {
+    my ($self, $domain_feature) = @_;
+
+    if (ref($domain_feature) eq 'GUS::Model::DoTS::DomainFeature') {
+        my $aa_seq = $domain_feature->getParent('DoTS::TranslatedAASequence');
+
+        print "processDomainFeatureHack(): \$aa_seq = $aa_seq, id = ", $aa_seq->getId(), "\n";
+
+        $domain_feature->set('aa_sequence_id', $aa_seq->getId());
+
+        print STDERR "processDomainFeatureHack(): Done.\n";
+    }
+}
+
+################################################################################
+#
 # @returns number of object created. Not sure if this is helpful or not...
 #
 sub processtRNA {
     my ($self, $log, $bioperl_feature, $bioperl2Gus, $systematic_id) = @_;
 
     my $insert_count  = 0;
-    #my $gf            = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
-    #my $is_in         = 0; # $gf->retrieveFromDB(); # TEST
     my $gene_type     = "tRNA";
 	  
     if ($bioperl_feature->has_tag ('pseudo')) {
@@ -437,7 +515,7 @@ sub processtRNA {
 
     print STDERR "tRNA, '$systematic_id', is being processed...\n";  	    
 
-    my @gus_objects = $self->process_tRNA ($bioperl2Gus, $gene_type, $systematic_id);
+    my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id);
     print STDERR "gus objects done\n";
 
     # commit the GUS objects associated with the tRNA bioperl feature object
@@ -464,8 +542,6 @@ sub processrRNA {
     my ($self, $log, $bioperl_feature, $bioperl2Gus, $systematic_id) = @_;
 
     my $insert_count  = 0;    # return value in here
-    #my $gf            = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
-    #my $is_in         = 0; # $gf->retrieveFromDB(); # TEST
     my $gene_type     = "rRNA";
 	  
     if ($bioperl_feature->has_tag ('pseudo')) {
@@ -478,8 +554,7 @@ sub processrRNA {
 
 
     print STDERR "rRNA, $systematic_id, is being processed...\n";  	    
-
-    my @gus_objects = $self->process_rRNA ($bioperl2Gus, $gene_type);
+    my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id);
     print STDERR "gus objects done\n";
 	    
     # commit the GUS objects associated with the CDS bioperl feature object
@@ -508,7 +583,7 @@ sub processmRNA {
     my $insert_count  = 0;    # return value in here
     #my $gf            = GUS::Model::DoTS::GeneFeature->new({'standard_name'=> $systematic_id});
     #my $is_in         = 0;    # $gf->retrieveFromDB(); # TEST
-    my $gene_type     = "protein coding";
+    my $gene_type     = "protein coding"; # Should this be mRNA???
 
     if ($bioperl_feature->has_tag ('pseudo')) {
         $gene_type = "pseudogene";
@@ -520,7 +595,7 @@ sub processmRNA {
 
     print STDERR "mRNA, $systematic_id, is being processed...\n";  	    
 
-    my @gus_objects = $self->process_mRNA ($bioperl2Gus, $gene_type, $systematic_id);
+    my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id);
     print STDERR "gus objects done\n";
 	    
     # commit the GUS objects associated with the CDS bioperl feature object
@@ -703,46 +778,6 @@ sub parseOneSequenceFile {
   }
 }
 
-################################################################################
-# @param a Bioperl2Gusdev converter object
-# @return a set of GUS feature objects
-#
-sub processGene {
-  my ($self, $bioperl2Gus, $gene_type, $systematic_id) = @_;
-
-  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id);  
-  return @gus_objects;
-}
-
-################################################################################
-#
-#
-sub process_tRNA {
-  my ($self, $bioperl2Gus, $gene_type, $systematic_id) = @_;
-
-  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id);
-  return @gus_objects;
-}
-
-################################################################################
-#
-#
-sub process_rRNA {
-  my ($self, $bioperl2Gus, $gene_type, $systematic_id, $is_in) = @_;
-
-  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id);
-  return @gus_objects;
-}
-
-################################################################################
-#
-#
-sub process_mRNA {
-  my ($self, $bioperl2Gus, $gene_type, $systematic_id, $is_in) = @_;
-
-  my @gus_objects = $self->buildFeatureObjects ($bioperl2Gus, $gene_type, $systematic_id);
-  return @gus_objects;
-}
 
 ################################################################################
 #
@@ -832,7 +867,18 @@ sub buildFeatureObjects {
 
     # ExonFeatures, link each to RNAFeature via RNAFeatureExon
     #
-    my $i  = 1;
+    my $i = 1;
+
+    # Bioperl represents sequence going right to left if reverse strand. Change it so more like EMBL,
+    # always go 5' to 3'
+    #if (scalar(@bioperl_locations) > 1) {
+    #    if (($bioperl_locations[0]->start > $bioperl_locations[1]->start)
+    #             && $bioperl_locations[0]->strand == -1) {
+    #        @bioperl_locations = reverse @bioperl_locations;
+    #        $loc_order         = scalar(@bioperl_locations);
+    #        $loc_add           = -1;
+    #    }
+    #}
 
     foreach my $bioperl_location (@bioperl_locations) {
         print STDERR "Creating ExonFeature $i\n";
@@ -847,10 +893,11 @@ sub buildFeatureObjects {
             $is_final_exon = 1;
         }
 
-        my $ef = $bioperl2Gus->buildExonFeature ($gf, $is_initial_exon, $is_final_exon, $i);
+        my $ef = $bioperl2Gus->buildExonFeature ($gf, $is_initial_exon, $is_final_exon,
+                                                 $bioperl_location, $i);
         push (@gus_objects, $ef);
 
-        my $gus_naLocation_ef = $bioperl2Gus->buildNALocation ($ef, $bioperl_location);    
+        my $gus_naLocation_ef = $bioperl2Gus->buildNALocation ($ef, $bioperl_location, $i);
         push (@gus_objects, $gus_naLocation_ef);
     
         my $rfe = $bioperl2Gus->buildRNAFeatureExon ($ef, $rnaf);
@@ -882,9 +929,17 @@ sub buildFeatureObjects {
     push (@gus_objects, $aa_feature_protein);
     push (@gus_objects, $aa_feature_translated);
 
-    my $aa_seq = $bioperl2Gus->buildTranslatedAASequence ($gf, $aa_feature_translated, $systematic_id);
+    my ($aa_seq, @properties) =
+        $bioperl2Gus->buildTranslatedAASequence ($gf, $aa_feature_translated, $systematic_id);
     push (@gus_objects, $aa_seq);
+    push (@gus_objects, @properties);
 
+
+#
+# Eh? Where did this come from?
+# Why is @domain_features not used anywhere????????
+#
+#    my @domain_features = $bioperl2Gus->buildDomainFeatures($aa_seq);
 
     ##
     # AAFeatures and their location objects
