@@ -781,7 +781,7 @@ sub parseHeader{
 	  $headers{$arr[$i]} = 1;
       }
 
-      if(define $cfg_rv_rev->{$arr[$i]}){
+      if($is_header==0 && defined $cfg_rv_rev->{$arr[$i]}){
 	  $is_header=1;
       }
 
