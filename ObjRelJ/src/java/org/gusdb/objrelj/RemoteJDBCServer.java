@@ -2,6 +2,8 @@ package org.gusdb.objrelj;
 
 import java.rmi.server.*;
 import java.rmi.*;
+import java.util.*;
+import java.io.*;
 
 /**
  * RemoteJDBCServer.java
@@ -66,15 +68,35 @@ public class RemoteJDBCServer extends UnicastRemoteObject implements RemoteDatab
     
     public static void main(String[] args){
 	
-	if (args.length != 3){
-	    System.err.println("Usage: java [-Dremotejdbcservername=<name>] " +
-			       "org.gusdb.objrelj.RemoteJDBCServer jdbcURL jdbcLogin jdbcPassword");
+	if (args.length != 1){
+	    System.err.println("Usage: java " +
+			       "org.gusdb.objrelj.RemoteJDBCServer propertiesFilePath");
 	    System.exit(1); //force an exit because there may be hanging RMI threads.
+	    }
+	FileInputStream fis = null;
+	String propsFilePath = args[0];
+	File propsFile = new File(propsFilePath);
+	try {
+	    fis = new FileInputStream(propsFile);
 	}
+	catch (FileNotFoundException fe){
+	    fe.getMessage();
+	    fe.printStackTrace();
+	}
+	Properties props = new Properties();
 	
-	String jdbcUrl = args[0];
-	String jdbcUser = args[1];
-	String jdbcPassword = args[2];
+	try {
+	    props.load(fis);
+	}
+	catch (IOException ie){
+	    System.err.println(ie.getMessage());
+	    ie.printStackTrace();
+	}
+
+	String jdbcUrl = props.getProperty("jdbcUrl");
+	String jdbcUser = props.getProperty("jdbcUser");
+	String jdbcPassword = props.getProperty("jdbcPassword");
+	String rmiUrl = props.getProperty("rmiUrl");
 	
 	String driverClass = "oracle.jdbc.driver.OracleDriver";
 
@@ -95,9 +117,8 @@ public class RemoteJDBCServer extends UnicastRemoteObject implements RemoteDatab
 	    RemoteJDBCServer server = new RemoteJDBCServer(jdbcDriver);
 	    
 	    //dtb: decide exact naming convention
-	    String name = System.getProperty("remotejdbcservername", "rmi://localhost/RemoteJDBCServer_1") ;
-	    Naming.rebind(name, server);
-	    System.out.println(name + " is bound in RMIRegistry and ready to serve.");
+	    Naming.rebind(rmiUrl, server);
+	    System.out.println(rmiUrl + " is bound in RMIRegistry and ready to serve.");
 	} 
 	catch ( Exception e ) {
 	    System.err.println(e);
