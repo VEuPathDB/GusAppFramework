@@ -227,7 +227,7 @@ sub UnmarkFullLength {
   my ($source_id,$assembly) = @_;
 
 
- if ($assembly->getFullLengthCds() == 0)  {
+ if ($assembly->getFullLengthCds() != 1)  {
 
 
   my $fact = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $source_id });
