@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* sres-constraints.sql                                                                       */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:10:04 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 12:43:57 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON

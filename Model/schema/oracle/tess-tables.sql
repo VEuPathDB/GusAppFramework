@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* tess-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Tue Dec  9 16:13:37 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 17 12:45:59 EST 2004     */
 /*                                                                                            */
 
 SET ECHO ON
