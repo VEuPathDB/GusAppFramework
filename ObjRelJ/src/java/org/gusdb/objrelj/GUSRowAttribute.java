@@ -66,7 +66,6 @@ public class GUSRowAttribute implements java.io.Serializable {
 	if (currentValue instanceof GUSRow){  //foreign key attribute
 	    //DTB:  Throw exception or return null if pk value == -1?
 	    return new Long(((GUSRow)currentValue).getPrimaryKeyValue());
-	    
 	}
 	else{
 	    return currentValue;

@@ -229,7 +229,7 @@ public class ObjectCache implements java.io.Serializable {
      */
     protected String getKey(GUSRow obj) {
 	GUSTable t = obj.getTable();
-	return getKey(t.getOwnerName(), t.getTableName(), obj.getPrimaryKeyValue());
+	return getKey(t.getSchemaName(), t.getTableName(), obj.getPrimaryKeyValue());
     }
 
 } //ObjectCache

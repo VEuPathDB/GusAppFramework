@@ -71,7 +71,7 @@ public class RemoteJDBCServer extends UnicastRemoteObject implements RemoteDatab
 	    System.err.println("Usage: java " +
 			       "org.gusdb.objrelj.RemoteJDBCServer propertiesFilePath");
 	    System.exit(1); //force an exit because there may be hanging RMI threads.
-	    }
+	}
 	FileInputStream fis = null;
 	String propsFilePath = args[0];
 	File propsFile = new File(propsFilePath);
@@ -108,9 +108,9 @@ public class RemoteJDBCServer extends UnicastRemoteObject implements RemoteDatab
 	//and the appropriate driver can return the connection with the correct SQLutils, 
 	//and driver class
 	
-	
+	System.err.println("attempting to connect with driverClass " + driverClass + " url " + jdbcUrl + " user " + jdbcUser + " password " + jdbcPassword);	
 	DatabaseDriverI jdbcDriver = new JDBCDriver(driverClass, utils, jdbcUrl, jdbcUser, jdbcPassword);
-	
+	System.err.println("made connection, doing rmi");
 	try {
 	    
 	    RemoteJDBCServer server = new RemoteJDBCServer(jdbcDriver);

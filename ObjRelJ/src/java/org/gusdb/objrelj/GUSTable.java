@@ -23,7 +23,7 @@ public class GUSTable implements java.io.Serializable {
     /** 
      * Schema/user that owns the table or view (eg. DoTS, SRes, Core, RAD, etc.)
      */
-    protected String ownerName;
+    protected String schemaName;
 
     /**
      * Name of this table or view, as it appears in core.TableInfo (JC: is this true?)
@@ -72,7 +72,7 @@ public class GUSTable implements java.io.Serializable {
 
     /**
      * Whether this table has a corresponding Oracle SEQUENCE object named
-     * <code>ownerName + "." + tableName + "_SQ"</code> that can be used to
+     * <code>schemaName + "." + tableName + "_SQ"</code> that can be used to
      * generate unique ids for its primary key column.
      */
     protected boolean hasSequence;
@@ -110,11 +110,11 @@ public class GUSTable implements java.io.Serializable {
     /**
      * Constructor.
      *
-     * @param owner    Owner of the table.
+     * @param schema    Schema of the table.
      * @param tname    Name of the table as it appears in core.TableInfo.name
      */
-    public GUSTable (String owner, String tname) {
-	this.ownerName = owner;
+    public GUSTable (String schema, String tname) {
+	this.schemaName = schema;
 	this.tableName = tname;
         this.childRelations = new Hashtable();
         this.parentRelations = new Hashtable();
@@ -127,17 +127,19 @@ public class GUSTable implements java.io.Serializable {
 
     /**
      * Hashtable that stores the GUSTable instances, indexed by 
-     * owner.toLowerCase + "." + table.toLowerCase().
+     * schema.toLowerCase + "." + table.toLowerCase().
      */
     protected static Hashtable tableHash = new Hashtable();
 
     /**
-     * The method that must be used to create new instances of the GUSTable
-     * subclasses; ensures that at most one instance of GUSTable exists
-     * for each (owner, name) pair.
+     * Method to create new instances of the GUSTable subclasses; ensures that 
+     * at most one instance of GUSTable exists for each (schema, name) pair.
+     *
+     * @param schema Schema in which the table exists.
+     * @param tname  Name of the table.
      */
-    public static GUSTable getTableByName(String owner, String tname) {
-	String lcKey = owner.toLowerCase() + "." + tname.toLowerCase();
+    public static GUSTable getTableByName(String schema, String tname) {
+	String lcKey = schema.toLowerCase() + "." + tname.toLowerCase();
 	GUSTable t = (GUSTable)(tableHash.get(lcKey));
 
 	if (t == null) {
@@ -145,7 +147,7 @@ public class GUSTable implements java.io.Serializable {
 	    //     to the correct capitalization expected by the object layer
 	    //     e.g. dots => DoTS and NASEQUENCE => NASequence
 	    
-	    String tableClassName = GUSRow.MODEL_PACKAGE + "." + owner + "." + tname + "_Table";
+	    String tableClassName = GUSRow.MODEL_PACKAGE + "." + schema + "." + tname + "_Table";
 
 	    try {
 		Class tableClass = Class.forName(tableClassName);
@@ -160,13 +162,47 @@ public class GUSTable implements java.io.Serializable {
 	return t;
     }
 
+
+    /**
+     * Method to create new instances of the GUSTable subclasses; ensures that 
+     * at most one instance of GUSTable exists for each (schema, name) pair.
+     *
+     * @param schemaTableName schema and table name as a single string; expected in 
+     * either the format schemaName::tableName or schemaName.TableName.
+     */
+    public static GUSTable getTableByName(String schemaTableName) throws ClassNotFoundException{
+	String schemaName = null;
+	String tableName = null;
+
+	int endSchemaName = schemaTableName.indexOf('.');
+	if (endSchemaName == -1){
+	    endSchemaName = schemaTableName.indexOf(':');
+	    if (endSchemaName == -1 || schemaTableName.charAt(endSchemaName + 1) != ':'){
+		throw new ClassNotFoundException("GUSTable.getTableByName: table name " + schemaTableName
+						 + " not in schema::table or schema.table format");
+	    }
+	    else {
+		schemaName = schemaTableName.substring(0, endSchemaName);
+		tableName = schemaTableName.substring(endSchemaName + 2);
+	    }
+	}
+	else {
+	    schemaName = schemaTableName.substring(0, endSchemaName);
+	    tableName = schemaTableName.substring(endSchemaName + 1);
+	}
+    
+	return getTableByName(schemaName, tableName);
+    }
+	  
+
+
     // ------------------------------------------------------------------
     // Public methods
     // ------------------------------------------------------------------
 
     // Basic accessor methods
     
-    public String getOwnerName() { return this.ownerName; }
+    public String getSchemaName() { return this.schemaName; }
     public String getTableName() { return this.tableName; }
     public int getTableId() { return tableId; }
     public String getTableType() { return tableType; }
@@ -190,8 +226,8 @@ public class GUSTable implements java.io.Serializable {
     /**
      * Return a relation in which this table is the child.
      */
-    public GUSTableRelation getParentRelation(String owner, String tname, String childAtt) {
-	String lcKey = owner.toLowerCase() + "." + tname.toLowerCase();
+    public GUSTableRelation getParentRelation(String schema, String tname, String childAtt) {
+	String lcKey = schema.toLowerCase() + "." + tname.toLowerCase();
         Hashtable h = (Hashtable)parentRelations.get(lcKey);
 	if (h == null) { return null; }
 	return (GUSTableRelation)h.get(childAtt.toLowerCase());
@@ -200,8 +236,8 @@ public class GUSTable implements java.io.Serializable {
     /**
      * Return a relation in which this table is the parent.
      */
-    public GUSTableRelation getChildRelation(String owner, String tname, String childAtt) {
-	String lcKey = owner.toLowerCase() + "." + tname.toLowerCase();
+    public GUSTableRelation getChildRelation(String schema, String tname, String childAtt) {
+	String lcKey = schema.toLowerCase() + "." + tname.toLowerCase();
         Hashtable h = (Hashtable)childRelations.get(lcKey);
 	if (h == null) { return null; }
 	return (GUSTableRelation)h.get(childAtt.toLowerCase());
@@ -215,8 +251,8 @@ public class GUSTable implements java.io.Serializable {
         return (getAttributeInfo(att) != null);
     }
 
-    public boolean childHasMultipleFksToMe(String owner, String tname){
-	String key = owner.toLowerCase() + "." + tname.toLowerCase();
+    public boolean childHasMultipleFksToMe(String schema, String tname){
+	String key = schema.toLowerCase() + "." + tname.toLowerCase();
 	Hashtable thisChildInfo = (Hashtable)childRelations.get(key);
 	int size = thisChildInfo.size();
 	boolean result = (size > 1) ? true : false;
@@ -231,25 +267,25 @@ public class GUSTable implements java.io.Serializable {
     /**
      * Add a new child relation to <code>this.childRelations</code>.
      */
-    protected void addChildRelation(GUSTableRelation gtr, String owner, String tname, String childAtt) {
-	addRelation_aux(this.childRelations, gtr, owner, tname, childAtt);
+    protected void addChildRelation(GUSTableRelation gtr, String schema, String tname, String childAtt) {
+	addRelation_aux(this.childRelations, gtr, schema, tname, childAtt);
     }
 
     /**
      * Add a new parent relation to <code>this.parentRelations</code>.
      */
-    protected void addParentRelation(GUSTableRelation gtr, String owner, String tname, String childAtt) {
-	addRelation_aux(this.parentRelations, gtr, owner, tname, childAtt);
+    protected void addParentRelation(GUSTableRelation gtr, String schema, String tname, String childAtt) {
+	addRelation_aux(this.parentRelations, gtr, schema, tname, childAtt);
     }
 
     /**
      * Helper method for <code>addChildRelation</code> and <code>addParentRelation</code>.
      */
-    protected void addRelation_aux(Hashtable h, GUSTableRelation gtr, String owner, String tname, String childAtt) {
-	String lcOwner = owner.toLowerCase();
+    protected void addRelation_aux(Hashtable h, GUSTableRelation gtr, String schema, String tname, String childAtt) {
+	String lcSchema = schema.toLowerCase();
 	String lcTable = tname.toLowerCase();
 	String lcAtt = childAtt.toLowerCase();
-	String key1 = lcOwner + "." + lcTable;
+	String key1 = lcSchema + "." + lcTable;
 	Hashtable h1 = (Hashtable)(h.get(key1));
 	if (h1 == null) {
 	    h1 = new Hashtable();
@@ -258,9 +294,9 @@ public class GUSTable implements java.io.Serializable {
 	
 	//DTB:  this was causing overhead tables to fail when adding DoTS.OrthologExperiment; examine that table
 	//for duplicate constraints and then add this in later.
-	/*if (h1.put(lcAtt, gtr) != null) {
-	    throw new IllegalArgumentException(this + ": relation already defined when trying to add " + gtr);
-	    }*/ 
+	//	if (h1.put(lcAtt, gtr) != null) {
+	//   throw new IllegalArgumentException(this + ": relation already defined when trying to add " + gtr);
+	//} 
     }
 
     // ------------------------------------------------------------------
@@ -308,9 +344,9 @@ public class GUSTable implements java.io.Serializable {
     // ------------------------------------------------------------------
 
     public String toString() {
-	String owner = this.getOwnerName();
+	String schema = this.getSchemaName();
 	String tname = this.getTableName();
-	return owner + "." + tname;
+	return schema + "." + tname;
     }
 
 } //GUSTable

@@ -111,7 +111,8 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
         try {
             Statement stmt = conn.createStatement();
-            String sql = makeCheckUserSQL(user, password);
+            System.err.println("JDBCDatabaseConnection: opening connection with user " + user + " and pw " + password);
+	    String sql = makeCheckUserSQL(user, password);
             ResultSet res = stmt.executeQuery(sql);
 	    
 	    // JC: ignores multiple rows
@@ -149,7 +150,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	if (clobAtt != null) {
 	    specialCases = new Hashtable();
 	    specialCases.put(clobAtt, new CacheRange(start, end, null));
-	    //	    System.err.println("retrieveGUSRow: adding " + clobAtt + " start=" + start + " end=" + end + " to specialCases");
+	    System.err.println("retrieveGUSRow: adding " + clobAtt + " start=" + start + " end=" + end + " to specialCases");
 	}
 	try {
 
@@ -160,7 +161,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    // the column completely from the select statement.
 	    //
 	    Statement stmt = conn.createStatement();
-	    String sql = "select * from " + table.getOwnerName() + "." + table.getTableName()  + 
+	    String sql = "select * from " + table.getSchemaName() + "." + table.getTableName()  + 
 		" where " + pkName + " = " + pkValue;
 	    if (DEBUG) System.err.println("JDBCDatabaseConnection: retrieveGUSRow, sql = '" + sql + "'");
 
@@ -178,7 +179,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    e.printStackTrace(); 
 	}
 	if (numReturned != 1) {
-	    throw new GUSObjectNotUniqueException("Found " + numReturned + " rows in " + table.getOwnerName() + "." + 
+	    throw new GUSObjectNotUniqueException("Found " + numReturned + " rows in " + table.getSchemaName() + "." + 
 						  table.getTableName() + " with id=" + pkValue);
 	}
 	
@@ -187,7 +188,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     public Long getParentPk(GUSRow child, GUSTable parentTable, String childAtt)
 	throws RemoteException, GUSNoSuchRelationException, GUSObjectNotUniqueException{
 	GUSTable childTable = child.getTable();
-	String childSchema = childTable.getOwnerName();
+	String childSchema = childTable.getSchemaName();
 	String childTableName = childTable.getTableName();
 	String primaryKeyName = childTable.getPrimaryKeyName();
 	Long primaryKeyValue = new Long(child.getPrimaryKeyValue());
@@ -221,8 +222,9 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    while(res.next()) {
 		GUSRow obj = GUSRow.createGUSRow(table);
 		Hashtable rowHash = createHashtableFromResultSet(res);
-		obj.setAttributesFromHashtable(rowHash, null);
-		objs.add(obj);
+		objs.add(rowHash);
+		//obj.setAttributesFromHashtable(rowHash, null);
+		//objs.add(obj);
 	    }
 	    res.close();
 	    stmt.close();
@@ -236,7 +238,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
     public Vector runSqlQuery(String query) {
 	Vector objs = new Vector();
-
+	System.err.println("JDBCDatabaseConnection: runnning sql query " + query);
 	try {
 	    Statement stmt = conn.createStatement();
 	    ResultSet res = stmt.executeQuery(query);
@@ -251,30 +253,30 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    }
 
 	    // Returns everything as an Object.  CLOB values require special handling.
-	    //
+	    //dtb: why?
 	    while(res.next()) {
 		Hashtable h = new Hashtable();
 
 		for(int i = 0;i < numCols;++i) {
 
-		    // Clob value
-		    if (colIsClob[i]) {
-			Clob clobval = res.getClob(i+1);
-			if (clobval != null) {
-			    long clobLen = clobval.length();
-			    String sval = clobval.getSubString(1, (int)clobLen);
-			    h.put(colNames[i].toLowerCase(), sval);
-			}
-		    } 
-
+		    //Clob value
+		    //		    if (colIsClob[i]) {
+		    //	Clob clobval = res.getClob(i+1);
+		    //	if (clobval != null) {
+		    //	    long clobLen = clobval.length();
+		    //	    String sval = clobval.getSubString(1, (int)clobLen);
+		    //	    h.put(colNames[i].toLowerCase(), sval);
+		    //	}
+		    // } 
+		    
 		    // All others returned as Objects.  Note numbers are intialized as BigDecimals.
-		    else {
+		    // else {
 			Object sval = res.getObject(i+1);
 			
 			if (sval != null) {
 			    h.put(colNames[i].toLowerCase(), sval);
 			}
-		    }
+			//	    }
 		}
 		objs.add(h);
 	    }
@@ -312,7 +314,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	boolean isUpdate = false;
 	
 	GUSTable table = obj.getTable();
-	String owner = table.getOwnerName();
+	String owner = table.getSchemaName();
 	String tname = table.getTableName();
 	String pkName = table.getPrimaryKeyName();
 	    
@@ -537,7 +539,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	int childSize = childGUSRows.size();
 	GUSRow firstChild = (GUSRow)childObjects.elementAt(0);
 	GUSTable firstChildTable = firstChild.getTable();
-	String childTableOwner = firstChildTable.getOwnerName();
+	String childTableOwner = firstChildTable.getSchemaName();
 	String childTableName = firstChildTable.getTableName();
 	GUSTable parentTableObject = GUSTable.getTableByName(parentTableOwner, parentTableName);
 	String childPKName = firstChildTable.getPrimaryKeyName();
@@ -787,7 +789,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
 	try {
 	    Statement stmt = conn.createStatement();
-	    String sql = "select " + clobAtt + " from " + table.getOwnerName() + "." + table.getTableName() + " where " + pkName + " = " + pk;
+	    String sql = "select " + clobAtt + " from " + table.getSchemaName() + "." + table.getTableName() + " where " + pkName + " = " + pk;
 	    if (DEBUG) System.err.println("JDBCDatabaseConnection: getSubStringFromClob, sql = '" + sql + "'");
 	    ResultSet res = stmt.executeQuery(sql);
 
@@ -818,7 +820,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	}
 
 	if (numRows != 1) {
-	    throw new GUSObjectNotUniqueException("Found " + numRows + " rows in " + table.getOwnerName() +"." + table.getTableName() + 
+	    throw new GUSObjectNotUniqueException("Found " + numRows + " rows in " + table.getSchemaName() +"." + table.getTableName() + 
 						  " with " + pkName + "=" + pk);
 	}
 
@@ -861,7 +863,6 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 		String columnName = rsmd.getColumnName(i);
 
 		Object value = rs.getObject(columnName);
-		
 		if (value != null){
 
 		    rowHash.put(columnName.toLowerCase(), value);

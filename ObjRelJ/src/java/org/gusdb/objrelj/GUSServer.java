@@ -290,13 +290,11 @@ public class GUSServer implements ServerI {
     {
         Session s = getSession(session);
 	
-	//	System.err.println("GUSServer.retrieveGUSRow: retrieving gusRow " + pkValue + " from factory");
 	// Check the factory first
 
 	GUSRow gusRow = null;
 
-	boolean gusRowInFactory = s.factory.contains(table.getOwnerName(), table.getTableName(), pkValue);
-	//System.err.println("GUSServer.retrieveGUSRow: gusRow in factory? " + gusRowInFactory);
+	boolean gusRowInFactory = s.factory.contains(table.getSchemaName(), table.getTableName(), pkValue);
 	if (!gusRowInFactory){
 	    gusRow = GUSRow.createGUSRow(table);
 	    try{
@@ -311,7 +309,6 @@ public class GUSServer implements ServerI {
 	    gusRow.setIsEager(retrieveEager);
 	    
 	    if (retrieveEager){  
-		//		System.err.println("GUSServer.retrieveGUSRow: attempting to retrieve eager");
 		try {
 		    s.conn.retrieveGUSRow(gusRow, clobAtt, start, end);
 		}
@@ -326,11 +323,9 @@ public class GUSServer implements ServerI {
 	    }
 	} 
 	else { //object was in the factory; it may be lazy
-	    gusRow = s.factory.get(table.getOwnerName(), table.getTableName(), pkValue);
-	    //	    System.err.println("GUSServer.retrieveGUSRow:  GUSRow was in the factory");
+	    gusRow = s.factory.get(table.getSchemaName(), table.getTableName(), pkValue);
 	    if (!gusRow.isEager() && retrieveEager){
 		try{
-		    //		    System.err.println("GUSServer.retrieveGUSRow: retrieving lazy gusrow");
 		    gusRow.retrieve();
 		}
 		catch (Exception e){
@@ -361,7 +356,7 @@ public class GUSServer implements ServerI {
         Session s = getSession(session);
 	try {
 	    SQLutilsI sqlUtils = s.conn.getSqlUtils();
-	    String selectSql = sqlUtils.makeSelectAllRowsSQL(table.getOwnerName(), table.getTableName());
+	    String selectSql = sqlUtils.makeSelectAllRowsSQL(table.getSchemaName(), table.getTableName());
 	    return retrieveGUSRowsFromQuery(session, table, selectSql);
 	} catch (RemoteException re) {}
 
@@ -372,37 +367,45 @@ public class GUSServer implements ServerI {
 	throws GUSNoConnectionException
     {
         Session s = getSession(session);
-        Vector objs = null;
+        Vector returnedRows = null;
+	Vector gusRows = new Vector();
 	try {
-	    objs = s.conn.retrieveGUSRowsFromQuery(table, query);
+	    returnedRows = s.conn.retrieveGUSRowsFromQuery(table, query);
 	} catch (RemoteException re) {}
 
-	int nRows = (objs == null) ? 0 : objs.size();
+	int nRows = (returnedRows == null) ? 0 : returnedRows.size();
 	int numNew = 0;  // Number of objects not already in the factory
 
 	// See whether any of the objects are already in the factory
 	// 
 	for (int i = 0;i < nRows;++i) {
-	    GUSRow row = (GUSRow)(objs.elementAt(i));
-	    GUSRow co = s.factory.get(row);
+	    Hashtable rowHash = (Hashtable)returnedRows.elementAt(i);
+	    GUSRow gusRow = GUSRow.createGUSRow(table);
+	    gusRow.setServer(this);
+	    gusRow.setSessionId(session);
+	    gusRow.setIsEager(true);
+	    gusRow.setAttributesFromHashtable(rowHash, null);
+	    
+	    GUSRow co = s.factory.get(gusRow);
 
 	    // This object is not new; it should be returned in place of row
 	    // 
 	    if (co != null) {
-		objs.setElementAt(co, i);
+		gusRows.addElement(co);
 	    } 
-
-	    // This object is new and should be factoryd
+	    
+	    // This object is new and should be cached
 	    //
 	    else {
-		s.factory.add(row);
+		s.factory.add(gusRow);
 		numNew++;
+		gusRows.addElement(gusRow);
 	    }
 	}
 
-	s.addToHistory("retrieveGUSRowsFromQuery: selected " + nRows + " rows from " + table.getOwnerName() + 
+	s.addToHistory("retrieveGUSRowsFromQuery: selected " + nRows + " rows from " + table.getSchemaName() + 
 		       "." + table.getTableName() + ", of which " + numNew + " are not in the factory.");
-        return objs;
+        return gusRows;
     }
 
     public Vector runSqlQuery(String session, String sql) 
@@ -766,13 +769,11 @@ public class GUSServer implements ServerI {
 		// First submit the gusRow itself
 		//
 		sres = s.conn.submitGUSRow(gusRow);
-		//		System.err.println("message from submitResult = " + sres.getMessage());
 	    } catch (Exception e) {
 		System.err.println(e.getMessage());
 		e.printStackTrace();
 		return false;
 	    }
-	    //	    System.err.println("GUSServer:  submitted object, got result: " + sr.getMessage());
 	    sr.update(sres);
 
 	    if (!sr.submitSucceeded()) {
@@ -817,7 +818,6 @@ public class GUSServer implements ServerI {
 	    for (int i = 0; i < nextChildList.size(); i++){
 		
 		GUSRow nextChild = (GUSRow)nextChildList.elementAt(i);
-		//		System.err.println("GUSServer.submit_aux: submitting next child of type " + nextChildKey + " with pk of " + nextChild.getPrimaryKeyValue());
 		// Abort as soon as a submit fails
 		//
 		if (!submitGUSRow_aux(s, nextChild, true, sr)) {
