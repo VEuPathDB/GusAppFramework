@@ -317,6 +317,22 @@ sub doMajorMode_Meta {
 	  });
   $alg_go->retrieveFromDB;
 
+  my $name = $M->getName();
+  my $cvsRevision = $M->getCVSRevision();
+
+  my $sql =
+    "SELECT *
+     FROM Core.AlgorithmImplementation
+     WHERE executable = '$name'
+     AND cvs_revision    = '$cvsRevision'";
+
+  my $imps = $M->sql_get_as_hash_refs($sql);
+
+  if (scalar(@$imps) !=0) {
+    print STDERR "Error: $name with CVS revision $cvsRevision is already registered.  You don't need to do a +meta.\n";
+    exit 0;
+  }
+
   my $imp_go = GUS::Model::Core::AlgorithmImplementation
     ->new({ cvs_revision   => $M->getCVSRevision,
 	    cvs_tag        => $M->getCVSTag,
