@@ -88,7 +88,9 @@ sub _acquire {
       $self->{repositoryEntry}->fetch($self->{targetDir});
 
       foreach my $unpacker (@{$self->{unpackers}}) {
-	GUS::Pipeline::ExternalResources::RepositoryEntry::runCmd($unpacker);
+	if ($unpacker){  #might be necessary to protect against weird Perl array stuff
+	  GUS::Pipeline::ExternalResources::RepositoryEntry::runCmd($unpacker);
+	}
       }
 
       $mgr->endStep("acquire_${signalBase}");
