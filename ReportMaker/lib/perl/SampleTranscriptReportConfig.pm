@@ -20,67 +20,78 @@ sub createReport {
 
   my $lengthCol =
     GUS::ReportMaker::DefaultColumn->new("Length",
-					 "Sequence Length");
+					 "Length of the assembly consensus sequence (i.e., predicted mRNA sequence)");
   push(@columns, $lengthCol);
 
   my $seqsInAssemCol =
     GUS::ReportMaker::DefaultColumn->new("SeqsInAssem",
-					 "Sequences in assembly");
+					 "Number of sequences (ESTs and mRNAs) in the assembly");
   push(@columns, $seqsInAssemCol);
 
   my $containsmRNACol =
     GUS::ReportMaker::DefaultColumn->new("ContainsMRNA",
-					 "Contains mRNA");
+					 "Whether the assembly contains at least one mRNA sequence (returns 0 or 1)");
   push(@columns, $containsmRNACol);
 
   my $locusLinkCol =
     GUS::ReportMaker::DefaultColumn->new("LocusLink",
-					 "Locus Link ID");
+					 "LocusLink entries linked to the assembly");
   push(@columns, $locusLinkCol);
 
   my $geneCardsCol =
     GUS::ReportMaker::DefaultColumn->new("GeneCards",
-					 "Gene Cards ID");
+					 "GeneCards entries linked to the assembly (human transcripts only)");
   push(@columns, $geneCardsCol);
 
   my $dotsGeneCol =
     GUS::ReportMaker::DefaultColumn->new("DoTSGene",
-					 "DoTS Gene ID");
+					 "DoTS Gene that this assembly belongs to");
   push(@columns, $dotsGeneCol);
 
   my $geneSymbolCol =
     GUS::ReportMaker::DefaultColumn->new("GeneSymbol",
-					 "Gene Symbol");
+					 "Official gene symbol (e.g. HUGO or MGI gene name) for the transcript");
   push(@columns, $geneSymbolCol);
 
   my $descriptionCol =
     GUS::ReportMaker::DefaultColumn->new("Description",
-					 "Description");
-  my $organismCol =
-    GUS::ReportMaker::DefaultColumn->new("Organism",
-					 "Organism");
+					 "Description of the assembly generated based on similarity to known proteins");
   push(@columns, $descriptionCol);
 
+  my $organismCol =
+    GUS::ReportMaker::DefaultColumn->new("Organism",
+					 "Organism/species to which the transcript belongs");
+  push(@columns, $organismCol);
+
   my $goIdCol =
-    GUS::ReportMaker::DefaultColumn->new("GoId",
-					 "GO Id");
+    GUS::ReportMaker::DefaultColumn->new("GOid",
+					 "IDs of Gene Ontology (GO) consortium terms assigned to the transcript");
   push(@columns, $goIdCol);
 
-  my $goFuncCol =
-    GUS::ReportMaker::DefaultColumn->new("GoFunction",
-					 "GO Function");
-  push(@columns, $goFuncCol);
+  my $goNameCol =
+    GUS::ReportMaker::DefaultColumn->new("GoName",
+					 "Names of Gene Ontology (GO) consortium terms assigned to the transcript");
+  push(@columns, $goNameCol);
 
   my $motifsCol =
     GUS::ReportMaker::DefaultColumn->new("Motifs",
-					 "Motifs");
+					 "Protein motifs/domains found in the mRNA with p-value <= 10E-50");
   push(@columns, $motifsCol);
 
   my $mgiCol =
     GUS::ReportMaker::DefaultColumn->new("MGI",
-					 "MGI ID");
+					 "MGI gene IDs assigned to the transcript (mouse transcripts only)");
   push(@columns, $mgiCol);
 
+  my $mrnaSeqCol =
+    GUS::ReportMaker::DefaultColumn->new("mRNASeq",
+					 "Predicted mRNA sequence for the transcript, derived from the assembly consensus sequence");
+  push(@columns, $mrnaSeqCol);
+
+  my $protSeqCol =
+    GUS::ReportMaker::DefaultColumn->new("proteinSeq",
+					 "Predicted protein sequence for the transcript, derived from a FrameFinder prediction");
+  push(@columns, $protSeqCol);
 
   my $mappedToSql = 
 "select distinct tmp.$primaryKeyName, tmp.$mappedToName
@@ -92,8 +103,8 @@ from $tempTable tmp
 				 ]);
 
   my $assemSql = 
-"select distinct tmp.$primaryKeyName, description, tn.name, length,
-number_of_contained_sequences as seqs_in_assem, contains_mrna
+"select distinct tmp.$primaryKeyName, description, tn.name as organism, length,
+number_of_contained_sequences as SeqsInAssem, contains_mrna as ContainsMRNA
 from DoTS.Assembly a, Sres.TaxonNAme tn, $tempTable tmp
 where a.na_sequence_id = tmp.$primaryKeyName
 and tn.taxon_id = a.taxon_id
@@ -146,10 +157,9 @@ and dbref.external_database_release_id =4893
 				 [$mgiCol,
 				 ]);
 
-
   my $geneSql = 
 "select distinct tmp.$primaryKeyName, g.gene_id as dotsgene, 
-g.name as genesymbol
+g.gene_symbol as genesymbol
 from dots.RNA r, $tempTable tmp, dots.RNAInstance ri, 
      dots.NAFeature naf, dots.Gene g 
 where     naf.na_sequence_id = tmp.$primaryKeyName
@@ -166,19 +176,20 @@ and             g.gene_id  = r.gene_id
 
 # Not tested yet
   my $gofunctionSql = 
-"select distinct pa.na_sequence_id, gt.go_id as goid, gt.name as gofunction
- from sres.goterm gt, allgenes.ProteinAssembly pa, dots.goassociation ga
+"select distinct pa.na_sequence_id, gt.go_id as goid, gt.name as goname
+ from $tempTable tmp, sres.goterm gt, allgenes_60.ProteinAssembly pa, dots.goassociation ga
  where ga.row_id = pa.protein_id
-    and ga.table_id = 
+    and pa.na_sequence_id = tmp.$primaryKeyName
+    and ga.table_id = 180
     and ga.defining = 1
-    and ga.deprecated != 1
+    and ga.is_deprecated != 1
     and ga.is_not != 1
     and ga.go_term_id = gt.go_term_id
 ";
   my $gofunctionQuery = 
     GUS::ReportMaker::Query->new($gofunctionSql,
 				 [$goIdCol,
-				  $goFuncCol,
+				  $goNameCol,
 				 ]);
 
   my $motifsSql = 
@@ -195,6 +206,20 @@ where s.query_id = tmp.$primaryKeyName
 				 [$motifsCol,
 				 ]);
 
+  my $seqSql =
+"select tmp.$primaryKeyName, tas.sequence as proteinSeq, a.sequence as mRNASeq
+from $tempTable tmp, allgenes_60.ProteinAssembly pa, dots.TranslatedAAFeature taf,  
+     dots.TranslatedAASequence tas, dots.Assembly a
+where tmp.$primaryKeyName = pa.na_sequence_id
+and pa.na_feature_id = taf.na_feature_id
+and taf.aa_sequence_id = tas.aa_sequence_id
+and pa.na_sequence_id = a.na_sequence_id
+";
+  my $seqQuery =
+    GUS::ReportMaker::Query->new($seqSql,
+				 [$protSeqCol,
+				  $mrnaSeqCol
+				 ]);
 
   return GUS::ReportMaker::Report->new("DoTS_Transcript",
 				      [$assemQuery,
@@ -203,7 +228,9 @@ where s.query_id = tmp.$primaryKeyName
 				       $mgiQuery,
 				       $geneQuery,
 				       $mappedToQuery,
-				       $motifsQuery],
+				       $motifsQuery,
+				       $seqQuery,
+				       ],
 				      \@columns);
 }
 
