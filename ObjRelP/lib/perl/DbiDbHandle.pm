@@ -180,7 +180,7 @@ sub free{
 # value from the DBI connect() method is making everything
 # work, albeit in a roundabout way.
 #
-package DbiDbHandle::db;
+package GUS::ObjRelP::DbiDbHandle::db;
 use vars qw(@ISA);
 @ISA = qw( DBI::db );
 
