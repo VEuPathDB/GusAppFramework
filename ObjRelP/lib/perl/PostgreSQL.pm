@@ -132,12 +132,23 @@ sub primaryKeySql{
 ############################################################
 # nextValSql
 #
-# Returns the sql to generate the next value in a sequence.
+# Returns the sql to generate the select statement for next value in a sequence.
 ############################################################
-sub nextValSql{
+sub nextValSelect{
 	my($self,$table)=@_;
 	$table=~tr/A-Z/a-z/;
 	return "select nextval('${table}_sq')";
+}
+
+############################################################
+# nextVal
+#
+# Returns the sql for the next value in a sequence,
+# to be used directly in a statement, such as an insert.
+############################################################
+sub nextVal{
+	my($self,$table)=@_;
+	return "nextval('${table}_sq')";
 }
 
 ############################################################
