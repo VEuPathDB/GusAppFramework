@@ -130,7 +130,7 @@ sub process {
 			        "AND attribute_name = '$attribute_nm'";
 
 		    
-#		    $self->logAlert("valid attribute query: $query\n"); ###TEST###
+		    $self->logAlert("valid attribute query: $query\n"); ###TEST###
 
 
 		    $self->logVerbose("Querying Core.DatabaseDocumentation for duplicate attribute documentation");
@@ -145,11 +145,11 @@ sub process {
 			$html = $ary[2]; #queried html documentation
 
 
-#			$self->logAlert("tb_id: $tb_id\tatt_name: $att_name\thtml: $html\n"); ###TEST###
+			$self->logAlert("tb_id: $tb_id\tatt_name: $att_name\thtml: $html\n"); ###TEST###
 			
 			if ($html eq $html_dc){ #########?????????############
 			    
-#			    $self->logAlert("html: $html and html_dc: $html_dc are equal\n"); ###TEST###
+			    $self->logAlert("html: $html and html_dc: $html_dc are equal\n"); ###TEST###
 
 			    $self->logAlert("ALREADY EXISTS! Documentation for column $table_nm" .
 					    "." ."$attribute_nm NOT OVERWRITTEN!");
@@ -159,7 +159,7 @@ sub process {
 			    ## bind table id to DatabaseDocumentation object
 			    $doc->setTableId($doc->getTableIdFromTableName($table_nm));
 
-#			    $self->logAlert("html: $html and html_dc: $html_dc are NOT equal\n"); ###TEST###
+			    $self->logAlert("html: $html and html_dc: $html_dc are NOT equal\n"); ###TEST###
 
 			    $self->logVerbose("Set table ID");
 			    
@@ -200,7 +200,7 @@ sub process {
        		             "AND attribute_name IS NULL";
 
 
-#		    $self->logAlert("table query: $query2\n"); ###TEST###
+		    $self->logAlert("table query: $query2\n"); ###TEST###
 
 		$self->logVerbose("Querying Core.DatabaseDocumentation for duplicate table documentation");
 		my $stmt2 = $dbh2->prepare($query2);
@@ -212,7 +212,7 @@ sub process {
 		    $tb_id2 = $ary2[0]; #queried table id
 		    $html2 = $ary2[1]; #queried html documentation
 
-#		    $self->logAlert("tb_id2: $tb_id2\thtml2: $html2\n"); ###TEST###
+		    $self->logAlert("tb_id2: $tb_id2\thtml2: $html2\n"); ###TEST###
 
 		    ## SKIP if documentation is identical to what is already in db
 		    if ($html2 eq $html_dc){ 
@@ -245,7 +245,7 @@ sub process {
 
 	else { ## no table name in db
 	    $self->logAlert("NOT INSERTED! Table $table_nm does not exist");
-#	  return;
+	  return;
 	}
 	$db->setGlobalNoVersion(0);
 	
