@@ -6,7 +6,7 @@ package GUS::Common::Plugin::AssembliesWithflCD;
 use strict;
 use GUS::Model::DoTS::Assembly;
 use GUS::ObjRelP::DbiDatabase;
-
+use GUS::Model::DoTS::ExternalNASequence;
 
 $| = 1;
 
@@ -25,7 +25,8 @@ sub new {
   my $easycsp =
     [
      { h => 'number of iterations for testing',
-       t => 'int',
+       t => 'int'
+
        o => 'testnumber',
      },
          ];
