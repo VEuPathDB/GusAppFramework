@@ -164,9 +164,17 @@ public abstract class GUSRow implements java.io.Serializable {
      * A helper method needed because <code>setAttributesFromResultSet</code>
      * must have package scope.
      *
-     * @param res      The result set that contains values for this row.
+     * @param res           The result set that contains values for this row.
+     * @param specialCases  Hashtable that specifies special-case handling for one or
+     *                      more of the row's CLOB or BLOB columns.  Indexed by attribute
+     *                      name, it contains a null value if the corresponding CLOB or BLOB
+     *                      attribute should not be retrieved at all.  Otherwise it contains
+     *                      an object of type CacheRange that specifies which part of the 
+     *                      CLOB or BLOB to cache locally.  May be null if there are no 
+     *                      special cases (i.e., all CLOBs and BLOBs should be retrieved in
+     *                      their entirety.)
      */
-    protected abstract void setAttributesFromResultSet_aux(ResultSet res);
+    protected abstract void setAttributesFromResultSet_aux(ResultSet res, Hashtable specialCases);
 
     // ------------------------------------------------------------------
     // Public methods
@@ -215,6 +223,8 @@ public abstract class GUSRow implements java.io.Serializable {
 
     /**
      * Get the <I>current</I> value of an attribute.
+     *
+     * JC: If used on a CLOB/BLOB value, this method will ONLY return the cached portion of the LOB.
      *
      * @param key   The name of the attribute to get.
      * @return The requested attribute value.
@@ -404,10 +414,18 @@ public abstract class GUSRow implements java.io.Serializable {
      * of a row based on a single row in an SQL result set, retrieved from the 
      * database using JDBC.
      *
-     * @param res      The result set that contains values for this row.
+     * @param res           The result set that contains values for this row.
+     * @param specialCases  Hashtable that specifies special-case handling for one or
+     *                      more of the row's CLOB or BLOB columns.  Indexed by attribute
+     *                      name, it contains a null value if the corresponding CLOB or BLOB
+     *                      attribute should not be retrieved at all.  Otherwise it contains
+     *                      an object of type CacheRange that specifies which part of the 
+     *                      CLOB or BLOB to cache locally.  May be null if there are no
+     *                      special cases (i.e., all CLOBs and BLOBs should be retrieved in
+     *                      their entirety.)
      */
-    void setAttributesFromResultSet(ResultSet res) {
-	this.setAttributesFromResultSet_aux(res);
+    void setAttributesFromResultSet(ResultSet res, Hashtable specialCases) {
+	this.setAttributesFromResultSet_aux(res, specialCases);
     }
 
     // ------------------------------------------------------------------
@@ -467,6 +485,204 @@ public abstract class GUSRow implements java.io.Serializable {
     protected void setInitialAttValues( Hashtable vals ) {
 	// needs to check if valid attributes still !! SJD
 	this.initialAttVals = vals;
+    }
+
+    /**
+     * Retrieve a subsequence of the specified CLOB value; throws an
+     * Exception if the requested subsequence is not available locally.
+     *
+     * @param att      The CLOB attribute in question.
+     * @param cached   Object that records how much of the CLOB has been cached locally.
+     * @param start    Start of subsequence to retrieve, inclusive.
+     * @param end      End of subsequence to retrieve, inclusive.
+     */
+    protected char[] getClobValue(String att, CacheRange cached, long start, long end) {
+	char[] value = (char[])this.get(att);
+        long cacheStart = 0;
+        long cacheEnd = value.length;
+
+	if (cached != null) {
+	    if (cached.start != null) {
+	        cacheStart = cached.start.longValue();
+	    }
+	    if (cached.end != null) {
+	        cacheEnd = cached.end.longValue();
+	    }
+        }
+
+        if ((start >= cacheStart) && (start <= cacheEnd) && (end >= cacheStart) && (end <= cacheEnd)) 
+        {
+	    int localStart = (int)(start - cacheStart);
+	    int localEnd = (int)(end - cacheStart);
+	    int requestLen = (int)(localEnd - localStart + 1);
+	    int ind = 0;
+
+	    char[] result = new char[requestLen];
+	    for (int i = localStart; i <= localEnd;++i) {
+		result[ind++] = value[i];
+	    }
+	    
+	    return result;
+	} else {
+	    throw new IllegalArgumentException(this + ": requested CLOB range, " + start + "-" + end + 
+					       " is out of range for " + att);
+	}
+    }
+
+    /**
+     * Retrieve a subsequence of the specified BLOB value; throws an
+     * Exception if the requested subsequence is not available locally.
+     *
+     * @param att      The BLOB attribute in question.
+     * @param cached   Object that records how much of the BLOB has been cached locally.
+     * @param start    Start of subsequence to retrieve.
+     * @param end      End of subsequence to retrieve.
+     */
+    protected byte[] getBlobValue(String att, CacheRange cached, long start, long end) {
+	byte[] value = (byte[])this.get(att);
+        long cacheStart = 0;
+        long cacheEnd = value.length;
+
+	if (cached != null) {
+	    if (cached.start != null) {
+	        cacheStart = cached.start.longValue();
+	    }
+	    if (cached.end != null) {
+	        cacheEnd = cached.end.longValue();
+	    }
+        }
+
+        if ((start >= cacheStart) && (start <= cacheEnd) && (end >= cacheStart) && (end <= cacheEnd)) 
+        {
+	    int localStart = (int)(start - cacheStart);
+	    int localEnd = (int)(end - cacheStart);
+	    int requestLen = (int)(localEnd - localStart + 1);
+	    int ind = 0;
+
+	    byte[] result = new byte[requestLen];
+	    for (int i = localStart; i < localEnd;++i) {
+		result[ind++] = value[i];
+	    }
+	    
+	    return result;
+	} else {
+	    throw new IllegalArgumentException(this + ": requested BLOB range, " + start + "-" + end + 
+					       " is out of range for " + att);
+	}
+    }
+
+    /**
+     * Set the initial value of a CLOB attribute.
+     *
+     * @param att            The CLOB attribute in question.
+     * @param value          The SQL Clob to use.
+     * @param specialCases   Hashtable that specifies which CLOB/BLOB attributes should only be partially retrieved.
+     * @return CacheResult object, if only a partial retrieval was performed.
+     */
+    protected CacheRange setClobInitial(String att, Clob value, Hashtable specialCases) {
+	CacheRange result = null;
+	Long cacheStart = null;
+	Long cacheEnd = null;
+
+	// Check whether we've been told to retrieve a specific subsequence
+	//
+	if (specialCases != null) {
+	    CacheRange whatToCache = (CacheRange)(specialCases.get(att));
+	    cacheStart = whatToCache.getStart();
+	    cacheEnd = whatToCache.getEnd();
+	}
+
+	try {
+	    long length = value.length();
+	    long start = (cacheStart == null) ? 0 : cacheStart.longValue();
+	    long end = (cacheEnd == null) ? length - 1: cacheEnd.longValue();
+	    boolean isEntireLob = ((start == 0) && (end == (length - 1)));
+
+	    char[] data = new char[(int)length];
+	    java.io.Reader r = value.getCharacterStream();
+            long offset = 0;
+
+	    // Skip to the appropriate location in the stream (start)
+	    //
+            while (offset < start) {
+		long amountSkipped = r.skip(start - offset);
+		offset += amountSkipped;
+	    }
+
+	    // Then read the requested range (up to end)
+	    //
+            int arrayPosn = 0;
+            while (offset < end) {
+		int amountRead = r.read(data, arrayPosn, (int)(end - offset + 1));
+		if (amountRead == -1) break;
+		arrayPosn += amountRead;
+		offset += amountRead;
+	    }
+
+	    if (!isEntireLob) result = new CacheRange(start, end, length);
+	    setInitial(att, data); 
+	} 
+        catch (SQLException se) {}
+	catch (java.io.IOException ie) {}
+
+	return result;
+    }
+
+    /**
+     * Set the initial value of a BLOB attribute.
+     *
+     * @param att            The BLOB attribute in question.
+     * @param value          The SQL Blob to use.
+     * @param specialCases   Hashtable that specifies which CLOB/BLOB attributes should only be partially retrieved.
+     * @return CacheResult object, if only a partial retrieval was performed.
+     */
+    protected CacheRange setBlobInitial(String att, Blob value, Hashtable specialCases) {
+	CacheRange result = null;
+	Long cacheStart = null;
+	Long cacheEnd = null;
+
+	// Check whether we've been told to retrieve a specific subsequence
+	//
+	if (specialCases != null) {
+	    CacheRange whatToCache = (CacheRange)(specialCases.get(att));
+	    cacheStart = whatToCache.getStart();
+	    cacheEnd = whatToCache.getEnd();
+	}
+
+	try {
+	    long length = value.length();
+	    long start = (cacheStart == null) ? 0 : cacheStart.longValue();
+	    long end = (cacheEnd == null) ? length - 1: cacheEnd.longValue();
+	    boolean isEntireLob = ((start == 0) && (end == (length - 1)));
+
+	    byte[] data = new byte[(int)length];
+	    java.io.InputStream r = value.getBinaryStream();
+            long offset = 0;
+
+	    // Skip to the appropriate location in the stream (start)
+	    //
+            while (offset < start) {
+		long amountSkipped = r.skip(start - offset);
+		offset += amountSkipped;
+	    }
+
+	    // Then read the requested range (up to end)
+	    //
+            int arrayPosn = 0;
+            while (offset < end) {
+		int amountRead = r.read(data, arrayPosn, (int)(end - offset + 1));
+		if (amountRead == -1) break;
+		arrayPosn += amountRead;
+		offset += amountRead;
+	    }
+
+	    if (!isEntireLob) result = new CacheRange(start, end, length);
+	    setInitial(att, data); 
+	} 
+        catch (SQLException se) {}
+	catch (java.io.IOException ie) {}
+
+	return result;
     }
 
     /**
