@@ -130,12 +130,11 @@ sub process {
 	  $att_name = $ary[1]; #queried attribute name
 	  $html = $ary[2]; #queried html documentation
 
-#	  ## SKIP if documentation is identical to what is already in db
-#	  if ($html eq $html_dc){ 
-#	    $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
-#	    return;
-#	  }
-#	}#end while
+	  ## SKIP if documentation is identical to what is already in db
+	  if ($html eq $html_dc){ 
+	    $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
+	    return;
+	  }
 	
 	  if ($db->checkTableExists($table_nm)){ # if table exists
 
@@ -148,40 +147,16 @@ sub process {
 	      $doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
 	      $self->logVerbose("Set attribute name");
 
-#	      ## want to skip identical documentation - query to see if already stored
-#	      my $dbh = $ctx->{'self_inv'}->getDbHandle();
-#	      my $t_id = $doc->getTableIdFromTableName($table_nm); #get table_id from table name
+	      ## bind html documentation to DatabaseDocumentation object
+	      $doc->setHtmlDocumentation($html_dc);
+	      $self->logVerbose("Set HTML Documentation");
 
-#	      my $query = "SELECT table_id, attribute_name, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$t_id AND attribute_name='$attribute_nm'";
-#	      $self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
-#	      my $stmt = $dbh->prepare($query);
-#	      $stmt->execute();
-
-#	      ## evaluate db rows for identical documentation on same table and attribute
-#	      while (my @ary = $stmt->fetchrow_array() ){
-#		chomp;
-#		my ($tb_id, $att_name, $html);
-#		$tb_id = $ary[0]; #queried table id
-#		$att_name = $ary[1]; #queried attribute name
-#		$html = $ary[2]; #queried html documentation
-
-	      ## SKIP if documentation is identical to what is already in db
-		if ($html eq $html_dc){ 
-		  $self->logAlert("Identical documentation already exists for Table: $table_nm\tAttribute: $attribute_nm\tNot overwritten!");
-		  return;
-		}
-#	      }#end while
-
-		## bind html documentation to DatabaseDocumentation object
-		$doc->setHtmlDocumentation($html_dc);
-		$self->logVerbose("Set HTML Documentation");
-
-		## submit to db
-		$doc->submit();
-		$countInserts++;
-	        $self->logVerbose("Submit object to database");
-		$self->undefPointerCache();
-	        $self->logVerbose("UndefPointerCache()");
+	      ## submit to db
+	      $doc->submit();
+	      $countInserts++;
+	      $self->logVerbose("Submit object to database");
+	      $self->undefPointerCache();
+	      $self->logVerbose("UndefPointerCache()");
 	    }#end if
 
 	    ## Document table: table exists but attribute name is NULL
@@ -190,31 +165,9 @@ sub process {
 	      print "Documentation for table (no attribute supplied)\n";
 	      $self->logVerbose("Documentation for table (no attribute supplied)");
 
-	       ## bind table id to DatabaseDocumentation object
+	      ## bind table id to DatabaseDocumentation object
 	      $doc->setTableId($doc->getTableIdFromTableName($table_nm));
 	      $self->logVerbose("Set table ID");
-
-#	      ## want to skip identical documentation - query to see if already stored
-#	      my $dbh = $ctx->{'self_inv'}->getDbHandle();
-#	      my $t_id = $doc->getTableIdFromTableName($table_nm); #get table_id from table name
-#	      my $query = "SELECT table_id, html_documentation FROM Core.DatabaseDocumentation WHERE table_id=$t_id AND (attribute_name='' OR attribute_name='NULL' OR attribute_name='null')";
-#	      $self->logVerbose("Querying Core.DatabaseDocumentation for duplicate entry");
-#	      my $stmt = $dbh->prepare($query);
-#	      $stmt->execute();
-
-#	      ## evaluate db rows for identical documentation on same table and attribute
-#	      while (my @ary = $stmt->fetchrow_array() ){
-#		chomp;
-#		my ($tb_id, $html);
-#		$tb_id = $ary[0]; #queried table id
-#		$html = $ary[1]; #queried html documentation
-
-		## SKIP if documentation is identical to what is already in db
-		if ($html eq $html_dc){ 
-		  $self->logAlert("Identical documentation already exists for Table: $table_nm\tNot overwritten!");
-		  return;
-		}
-#	      }#end while
 
 	      ## bind html documentation to DatabaseDocumentation object
 	      $doc->setHtmlDocumentation($html_dc);
