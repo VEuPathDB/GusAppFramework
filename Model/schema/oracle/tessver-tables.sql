@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* tessver-tables.sql                                                                         */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:28:53 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:48:21 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL tessver-tables.log
 
-CREATE TABLE TESStestVer.ACTIVITYCONDITIONSVER (
+CREATE TABLE @oracle_tessver@.ACTIVITYCONDITIONSVER (
     ACTIVITY_CONDITIONS_ID             NUMBER(12)                                    NOT NULL,
     ACTIVITY_ID                        NUMBER(12)                                    NOT NULL,
     REVIEW_STATUS_ID                   NUMBER(12)                                    NULL,
@@ -32,10 +32,10 @@ CREATE TABLE TESStestVer.ACTIVITYCONDITIONSVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.ACTIVITYIMPVER (
+CREATE TABLE @oracle_tessver@.ACTIVITYIMPVER (
     ACTIVITY_ID                        NUMBER(12)                                    NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(32)                                  NOT NULL,
     TYPE_NAME                          VARCHAR2(32)                                  NOT NULL,
@@ -72,10 +72,10 @@ CREATE TABLE TESStestVer.ACTIVITYIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.ACTIVITYINFERENCESOURCEVER (
+CREATE TABLE @oracle_tessver@.ACTIVITYINFERENCESOURCEVER (
     ACTIVITY_INFERENCE_SOURCE          NUMBER(12)                                    NOT NULL,
     ACTIVITY_ID                        NUMBER(12)                                    NOT NULL,
     RESULT_GROUP_ID                    NUMBER(12)                                    NOT NULL,
@@ -93,10 +93,10 @@ CREATE TABLE TESStestVer.ACTIVITYINFERENCESOURCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.ANALYSISVER (
+CREATE TABLE @oracle_tessver@.ANALYSISVER (
     ANALYSIS_ID                        NUMBER(12)                                    NOT NULL,
     POSITIVE_TRAINING_SET_ID           NUMBER(12)                                    NOT NULL,
     NEGATIVE_TRAINING_SET_ID           NUMBER(12)                                    NULL,
@@ -120,10 +120,10 @@ CREATE TABLE TESStestVer.ANALYSISVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.FOOTPRINTMETHODPROTOCOLVER (
+CREATE TABLE @oracle_tessver@.FOOTPRINTMETHODPROTOCOLVER (
     FOOTPRINT_PROTOCOL_ID              NUMBER(12)                                    NOT NULL,
     FOOTPRINT_ID                       NUMBER(12)                                    NOT NULL,
     PROTOCOL_ID                        NUMBER(12)                                    NOT NULL,
@@ -141,10 +141,10 @@ CREATE TABLE TESStestVer.FOOTPRINTMETHODPROTOCOLVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.FOOTPRINTVER (
+CREATE TABLE @oracle_tessver@.FOOTPRINTVER (
     FOOTPRINT_ID                       NUMBER(12)                                    NOT NULL,
     ACTIVITY_ID                        NUMBER(12)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(12)                                    NOT NULL,
@@ -164,10 +164,10 @@ CREATE TABLE TESStestVer.FOOTPRINTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.MODELRESULTVER (
+CREATE TABLE @oracle_tessver@.MODELRESULTVER (
     MODEL_RESULT_ID                    NUMBER(12)                                    NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     REVIEW_STATUS_ID                   NUMBER(12)                                    NOT NULL,
@@ -185,10 +185,10 @@ CREATE TABLE TESStestVer.MODELRESULTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.MODELVER (
+CREATE TABLE @oracle_tessver@.MODELVER (
     ACTIVITY_MODEL_ID                  NUMBER(12)                                    NOT NULL,
     ACTIVITY_ID                        NUMBER(12)                                    NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
@@ -206,10 +206,10 @@ CREATE TABLE TESStestVer.MODELVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.MOIETYIMPVER (
+CREATE TABLE @oracle_tessver@.MOIETYIMPVER (
     MOIETY_ID                          NUMBER(12)                                    NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(32)                                  NOT NULL,
     TYPE_NAME                          VARCHAR2(32)                                  NOT NULL,
@@ -245,10 +245,10 @@ CREATE TABLE TESStestVer.MOIETYIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.MOIETYINSTANCEVER (
+CREATE TABLE @oracle_tessver@.MOIETYINSTANCEVER (
     MOIETY_INSTANCE_ID                 NUMBER(12)                                    NOT NULL,
     MOIETY_ID                          NUMBER(12)                                    NOT NULL,
     DOGMA_OBJECT_TABLE_ID              NUMBER(12)                                    NOT NULL,
@@ -268,10 +268,10 @@ CREATE TABLE TESStestVer.MOIETYINSTANCEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.MOIETYMEMBERVER (
+CREATE TABLE @oracle_tessver@.MOIETYMEMBERVER (
     MOIETY_MEMBER_ID                   NUMBER(12)                                    NOT NULL,
     WHOLE_MOIETY_ID                    NUMBER(12)                                    NOT NULL,
     PART_MOIETY_ID                     NUMBER(12)                                    NOT NULL,
@@ -293,10 +293,10 @@ CREATE TABLE TESStestVer.MOIETYMEMBERVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.MOIETYSYNONYMVER (
+CREATE TABLE @oracle_tessver@.MOIETYSYNONYMVER (
     MOIETY_SYNONYM_ID                  NUMBER(12)                                    NOT NULL,
     MOIETY_ID                          NUMBER(12)                                    NOT NULL,
     SYNONYM_TEXT                       VARCHAR2(255)                                 NOT NULL,
@@ -315,10 +315,10 @@ CREATE TABLE TESStestVer.MOIETYSYNONYMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.MULTINOMIALLABELSETVER (
+CREATE TABLE @oracle_tessver@.MULTINOMIALLABELSETVER (
     MULTINOMIAL_LABEL_SET_ID           NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(20)                                  NOT NULL,
     SIGNATURE                          VARCHAR2(255)                                 NOT NULL,
@@ -338,10 +338,10 @@ CREATE TABLE TESStestVer.MULTINOMIALLABELSETVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.MULTINOMIALLABELVER (
+CREATE TABLE @oracle_tessver@.MULTINOMIALLABELVER (
     MULTINOMIAL_LABEL_ID               NUMBER(12)                                    NOT NULL,
     MULTINOMIAL_LABEL_SET_ID           NUMBER(12)                                    NOT NULL,
     ORDINAL                            NUMBER                                        NOT NULL,
@@ -360,10 +360,10 @@ CREATE TABLE TESStestVer.MULTINOMIALLABELVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.MULTINOMIALOBSERVATIONSETVER (
+CREATE TABLE @oracle_tessver@.MULTINOMIALOBSERVATIONSETVER (
     MULTINOMIAL_OBS_SET_ID             NUMBER                                        NOT NULL,
     RECOGNITION_ID                     NUMBER                                        NOT NULL,
     ORDINAL                            NUMBER                                        NOT NULL,
@@ -387,10 +387,10 @@ CREATE TABLE TESStestVer.MULTINOMIALOBSERVATIONSETVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.MULTINOMIALOBSERVATIONVER (
+CREATE TABLE @oracle_tessver@.MULTINOMIALOBSERVATIONVER (
     MULTINOMIAL_OBS_ID                 NUMBER(12)                                    NOT NULL,
     MULTINOMIAL_OBS_SET_ID             NUMBER(12)                                    NOT NULL,
     MULTINOMIAL_LABEL_ID               NUMBER(12)                                    NOT NULL,
@@ -409,10 +409,10 @@ CREATE TABLE TESStestVer.MULTINOMIALOBSERVATIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.NOTEVER (
+CREATE TABLE @oracle_tessver@.NOTEVER (
     NOTE_ID                            NUMBER(12)                                    NOT NULL,
     TABLE_ID                           NUMBER(12)                                    NOT NULL,
     ROW_ID                             NUMBER(12)                                    NOT NULL,
@@ -433,10 +433,10 @@ CREATE TABLE TESStestVer.NOTEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.PARAMETERGROUPVER (
+CREATE TABLE @oracle_tessver@.PARAMETERGROUPVER (
     PARAMETER_GROUP_ID                 NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        CLOB                                          NULL,
@@ -455,10 +455,10 @@ CREATE TABLE TESStestVer.PARAMETERGROUPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.PARAMETERSUBGROUPVER (
+CREATE TABLE @oracle_tessver@.PARAMETERSUBGROUPVER (
     PARAMETER_SUBGROUP_ID              NUMBER(12)                                    NOT NULL,
     PARENT_GROUP_ID                    NUMBER(12)                                    NOT NULL,
     CHILD_GROUP_ID                     NUMBER(12)                                    NOT NULL,
@@ -477,10 +477,10 @@ CREATE TABLE TESStestVer.PARAMETERSUBGROUPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.PARAMETERVALUEVER (
+CREATE TABLE @oracle_tessver@.PARAMETERVALUEVER (
     PARAMETER_VALUE_ID                 NUMBER(12)                                    NOT NULL,
     PARAMETER_GROUP_ID                 NUMBER(12)                                    NOT NULL,
     ORDINAL                            NUMBER                                        NOT NULL,
@@ -501,10 +501,10 @@ CREATE TABLE TESStestVer.PARAMETERVALUEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.PARSERITEMEDGETYPEVER (
+CREATE TABLE @oracle_tessver@.PARSERITEMEDGETYPEVER (
     PARSER_ITEM_EDGE_TYPE_ID           NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(16)                                  NOT NULL,
     DESCRIPTION                        CLOB                                          NOT NULL,
@@ -522,10 +522,10 @@ CREATE TABLE TESStestVer.PARSERITEMEDGETYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.PARSERITEMLINKVER (
+CREATE TABLE @oracle_tessver@.PARSERITEMLINKVER (
     PARSER_ITEM_LINK_ID                NUMBER(12)                                    NOT NULL,
     PARENT_PARSER_ITEM_ID              NUMBER(12)                                    NOT NULL,
     CHILD_PARSER_ITEM_ID               NUMBER(12)                                    NOT NULL,
@@ -544,10 +544,10 @@ CREATE TABLE TESStestVer.PARSERITEMLINKVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.PARSERITEMVER (
+CREATE TABLE @oracle_tessver@.PARSERITEMVER (
     PARSER_ITEM_ID                     NUMBER(12)                                    NOT NULL,
     SBCG_RECOGNITION_ID                NUMBER(12)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(12)                                    NULL,
@@ -570,10 +570,10 @@ CREATE TABLE TESStestVer.PARSERITEMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.PREDICTIONRESULTVER (
+CREATE TABLE @oracle_tessver@.PREDICTIONRESULTVER (
     PREDICTION_RESULT_ID               NUMBER(12)                                    NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     FOOTPRINT_ID                       NUMBER(12)                                    NOT NULL,
@@ -592,10 +592,10 @@ CREATE TABLE TESStestVer.PREDICTIONRESULTVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGANNOTATIONFILTERTERMVER (
+CREATE TABLE @oracle_tessver@.SBCGANNOTATIONFILTERTERMVER (
     SCBG_ANNOTATION_FILTER_TERM_ID     NUMBER(12)                                    NOT NULL,
     SBCG_ANNOTATION_FILTER_ID          NUMBER(12)                                    NOT NULL,
     ORDINAL                            NUMBER(4)                                     NOT NULL,
@@ -617,10 +617,10 @@ CREATE TABLE TESStestVer.SBCGANNOTATIONFILTERTERMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGANNOTATIONFILTERVER (
+CREATE TABLE @oracle_tessver@.SBCGANNOTATIONFILTERVER (
     SBCG_ANNOTATION_FILTER_ID          NUMBER(12)                                    NOT NULL,
     SBCG_RECOG_PATH_EXPRESSION_ID      NUMBER(12)                                    NOT NULL,
     ORDINAL                            NUMBER(6)                                     NOT NULL,
@@ -641,10 +641,10 @@ CREATE TABLE TESStestVer.SBCGANNOTATIONFILTERVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGANNOTATIONGUIDEVER (
+CREATE TABLE @oracle_tessver@.SBCGANNOTATIONGUIDEVER (
     SBCG_ANNOTATION_GUIDE_ID           NUMBER(12)                                    NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     SOURCE_CODE                        CLOB                                          NOT NULL,
@@ -676,10 +676,10 @@ CREATE TABLE TESStestVer.SBCGANNOTATIONGUIDEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGCOMPARISONTYPEVER (
+CREATE TABLE @oracle_tessver@.SBCGCOMPARISONTYPEVER (
     SBCG_COMPARISON_TYPE_ID            NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(32)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -697,10 +697,10 @@ CREATE TABLE TESStestVer.SBCGCOMPARISONTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGGRAMMARVER (
+CREATE TABLE @oracle_tessver@.SBCGGRAMMARVER (
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(12)                                    NULL,
@@ -724,10 +724,10 @@ CREATE TABLE TESStestVer.SBCGGRAMMARVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGNONTERMINALVER (
+CREATE TABLE @oracle_tessver@.SBCGNONTERMINALVER (
     SBCG_NONTERMINAL_ID                NUMBER(12)                                    NOT NULL,
     SBGC_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
@@ -745,10 +745,10 @@ CREATE TABLE TESStestVer.SBCGNONTERMINALVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGPATHTERMRELATIONTYPEVER (
+CREATE TABLE @oracle_tessver@.SBCGPATHTERMRELATIONTYPEVER (
     SBCG_PATH_TERM_REL_TYPE_ID         NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(32)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -766,10 +766,10 @@ CREATE TABLE TESStestVer.SBCGPATHTERMRELATIONTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGPRODUCTIONTYPEVER (
+CREATE TABLE @oracle_tessver@.SBCGPRODUCTIONTYPEVER (
     SBCG_PRODUCTION_TYPE_ID            NUMBER(12)                                    NOT NULL,
     TYPE_NAME                          VARCHAR2(16)                                  NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
@@ -786,10 +786,10 @@ CREATE TABLE TESStestVer.SBCGPRODUCTIONTYPEVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGPRODUCTIONVER (
+CREATE TABLE @oracle_tessver@.SBCGPRODUCTIONVER (
     SBCG_PRODUCTION_ID                 NUMBER(12)                                    NOT NULL,
     SBGC_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     ORDINAL                            NUMBER(12)                                    NOT NULL,
@@ -817,10 +817,10 @@ CREATE TABLE TESStestVer.SBCGPRODUCTIONVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGRECOGNITIONIMPVER (
+CREATE TABLE @oracle_tessver@.SBCGRECOGNITIONIMPVER (
     SBCG_RECOGNITION_ID                NUMBER(12)                                    NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(32)                                  NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
@@ -858,10 +858,10 @@ CREATE TABLE TESStestVer.SBCGRECOGNITIONIMPVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGRHSTERMVER (
+CREATE TABLE @oracle_tessver@.SBCGRHSTERMVER (
     SBCG_RHS_TERM_ID                   NUMBER(12)                                    NOT NULL,
     SBCG_PRODUCTION_ID                 NUMBER(12)                                    NOT NULL,
     COMMENT_STRING                     CLOB                                          NULL,
@@ -889,10 +889,10 @@ CREATE TABLE TESStestVer.SBCGRHSTERMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGSTREAMPARAMETERVER (
+CREATE TABLE @oracle_tessver@.SBCGSTREAMPARAMETERVER (
     SBCG_STREAM_PARAMETER_ID           NUMBER(12)                                    NOT NULL,
     SBCG_STREAM_ID                     NUMBER(12)                                    NOT NULL,
     PARAMETER_NAME                     VARCHAR2(255)                                 NOT NULL,
@@ -912,10 +912,10 @@ CREATE TABLE TESStestVer.SBCGSTREAMPARAMETERVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.SBCGSTREAMVER (
+CREATE TABLE @oracle_tessver@.SBCGSTREAMVER (
     SBCG_STREAM_ID                     NUMBER(12)                                    NOT NULL,
     SBCG_GRAMMAR_ID                    NUMBER(12)                                    NOT NULL,
     SOURCE_CODE                        CLOB                                          NOT NULL,
@@ -936,10 +936,10 @@ CREATE TABLE TESStestVer.SBCGSTREAMVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.TRAININGSETMEMBERVER (
+CREATE TABLE @oracle_tessver@.TRAININGSETMEMBERVER (
     TRAINING_SET_MEMBER_ID             NUMBER(12)                                    NOT NULL,
     TRAINING_SET_ID                    NUMBER(12)                                    NOT NULL,
     FOOTPRINT_ID                       NUMBER(12)                                    NOT NULL,
@@ -958,10 +958,10 @@ CREATE TABLE TESStestVer.TRAININGSETMEMBERVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE TESStestVer.TRAININGSETVER (
+CREATE TABLE @oracle_tessver@.TRAININGSETVER (
     TRAINING_SET_ID                    NUMBER(12)                                    NOT NULL,
     ACTIVITY_ID                        NUMBER(12)                                    NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
@@ -981,7 +981,7 @@ CREATE TABLE TESStestVer.TRAININGSETVER (
     VERSION_ALG_INVOCATION_ID          NUMBER(12)                                    NULL,
     VERSION_DATE                       DATE                                          NULL,
     VERSION_TRANSACTION_ID             NUMBER(12)                                    NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_tessverTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 

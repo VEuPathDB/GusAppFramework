@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* sres-views.sql                                                                             */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:23:17 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:22 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON

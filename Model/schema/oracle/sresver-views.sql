@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* sresver-views.sql                                                                          */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:23:37 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:41 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON

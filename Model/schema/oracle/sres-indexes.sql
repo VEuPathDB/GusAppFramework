@@ -2,78 +2,78 @@
 /*                                                                                            */
 /* sres-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:23:17 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:22 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL sres-indexes.log
 
 /* ABSTRACT */
-create index SRestest.ABSTRACT_IND01 on SRestest.ABSTRACT (BIBLIOGRAPHIC_REFERENCE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.ABSTRACT_IND01 on @oracle_sres@.ABSTRACT (BIBLIOGRAPHIC_REFERENCE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* ANATOMY */
-create index SRestest.ANATOMY_IND01 on SRestest.ANATOMY (PARENT_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.ANATOMY_IND01 on @oracle_sres@.ANATOMY (PARENT_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* ANATOMYLINEAGE */
-create index SRestest.ANATOMYLINEAGE_IND01 on SRestest.ANATOMYLINEAGE (ANATOMY_ID)  TABLESPACE INDX2;
-create index SRestest.ANATOMYLINEAGE_IND02 on SRestest.ANATOMYLINEAGE (LINEAGE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.ANATOMYLINEAGE_IND01 on @oracle_sres@.ANATOMYLINEAGE (ANATOMY_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.ANATOMYLINEAGE_IND02 on @oracle_sres@.ANATOMYLINEAGE (LINEAGE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* AUTHOR */
 
 
 /* BIBLIOGRAPHICREFERENCE */
-create index SRestest.BIBLIOGRAPHICREFERENCE_IND01 on SRestest.BIBLIOGRAPHICREFERENCE (BIB_REF_TYPE_ID)  TABLESPACE INDX2;
-create index SRestest.BIBLIOGRAPHICREFERENCE_IND02 on SRestest.BIBLIOGRAPHICREFERENCE (CONTACT_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.BIBLIOGRAPHICREFERENCE_IND01 on @oracle_sres@.BIBLIOGRAPHICREFERENCE (BIB_REF_TYPE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.BIBLIOGRAPHICREFERENCE_IND02 on @oracle_sres@.BIBLIOGRAPHICREFERENCE (CONTACT_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* BIBREFANNOTATION */
-create index SRestest.BIBREFANNOTATION_IND01 on SRestest.BIBREFANNOTATION (BIBLIOGRAPHIC_REFERENCE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.BIBREFANNOTATION_IND01 on @oracle_sres@.BIBREFANNOTATION (BIBLIOGRAPHIC_REFERENCE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* BIBREFAUTHOR */
-create index SRestest.BIBREFAUTHOR_IND01 on SRestest.BIBREFAUTHOR (AUTHOR_ID)  TABLESPACE INDX2;
-create index SRestest.BIBREFAUTHOR_IND02 on SRestest.BIBREFAUTHOR (BIBLIOGRAPHIC_REFERENCE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.BIBREFAUTHOR_IND01 on @oracle_sres@.BIBREFAUTHOR (AUTHOR_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.BIBREFAUTHOR_IND02 on @oracle_sres@.BIBREFAUTHOR (BIBLIOGRAPHIC_REFERENCE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* BIBREFTYPE */
-create index SRestest.BIBREFTYPE_IND01 on SRestest.BIBREFTYPE (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.BIBREFTYPE_IND01 on @oracle_sres@.BIBREFTYPE (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* CONTACT */
-create unique index SRestest.CONTACT_AK01 on SRestest.CONTACT (NAME)  TABLESPACE INDX2;
-create index SRestest.CONTACT_IND01 on SRestest.CONTACT (AFFILIATION_ID)  TABLESPACE INDX2;
-create index SRestest.CONTACT_IND02 on SRestest.CONTACT (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE INDX2;
+create unique index @oracle_sres@.CONTACT_AK01 on @oracle_sres@.CONTACT (NAME)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.CONTACT_IND01 on @oracle_sres@.CONTACT (AFFILIATION_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.CONTACT_IND02 on @oracle_sres@.CONTACT (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* DBREF */
-create index SRestest.DBREF_IND01 on SRestest.DBREF (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.DBREF_IND01 on @oracle_sres@.DBREF (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* DEVELOPMENTALSTAGE */
-create index SRestest.DEVELOPMENTALSTAGE_IND01 on SRestest.DEVELOPMENTALSTAGE (PARENT_ID)  TABLESPACE INDX2;
-create index SRestest.DEVELOPMENTALSTAGE_IND02 on SRestest.DEVELOPMENTALSTAGE (TAXON_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.DEVELOPMENTALSTAGE_IND01 on @oracle_sres@.DEVELOPMENTALSTAGE (PARENT_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.DEVELOPMENTALSTAGE_IND02 on @oracle_sres@.DEVELOPMENTALSTAGE (TAXON_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* DISEASE */
-create index SRestest.DISEASE_IND01 on SRestest.DISEASE (PARENT_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.DISEASE_IND01 on @oracle_sres@.DISEASE (PARENT_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* ENZYMECLASS */
-create index SRestest.ENZYMECLASS_IND01 on SRestest.ENZYMECLASS (PARENT_ID)  TABLESPACE INDX2;
-create index SRestest.ENZYMECLASS_IND02 on SRestest.ENZYMECLASS (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.ENZYMECLASS_IND01 on @oracle_sres@.ENZYMECLASS (PARENT_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.ENZYMECLASS_IND02 on @oracle_sres@.ENZYMECLASS (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* ENZYMECLASSATTRIBUTE */
-create index SRestest.ENZYMECLASSATTRIBUTE_IND01 on SRestest.ENZYMECLASSATTRIBUTE (ENZYME_CLASS_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.ENZYMECLASSATTRIBUTE_IND01 on @oracle_sres@.ENZYMECLASSATTRIBUTE (ENZYME_CLASS_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* EXTERNALDATABASE */
 
 
 /* EXTERNALDATABASEENTRY */
-create index SRestest.EXTERNALDATABASEENTRY_IND01 on SRestest.EXTERNALDATABASEENTRY (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE INDX2;
-create index SRestest.EXTERNALDATABASEENTRY_IND02 on SRestest.EXTERNALDATABASEENTRY (REVIEW_STATUS_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.EXTERNALDATABASEENTRY_IND01 on @oracle_sres@.EXTERNALDATABASEENTRY (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.EXTERNALDATABASEENTRY_IND02 on @oracle_sres@.EXTERNALDATABASEENTRY (REVIEW_STATUS_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* EXTERNALDATABASEKEYWORD */
-create index SRestest.EXTERNALDATABASEKEYWORD_IND01 on SRestest.EXTERNALDATABASEKEYWORD (KEYWORD_ID)  TABLESPACE INDX2;
-create index SRestest.EXTERNALDATABASEKEYWORD_IND02 on SRestest.EXTERNALDATABASEKEYWORD (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.EXTERNALDATABASEKEYWORD_IND01 on @oracle_sres@.EXTERNALDATABASEKEYWORD (KEYWORD_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.EXTERNALDATABASEKEYWORD_IND02 on @oracle_sres@.EXTERNALDATABASEKEYWORD (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* EXTERNALDATABASELINK */
-create index SRestest.EXTERNALDATABASELINK_IND01 on SRestest.EXTERNALDATABASELINK (LINK_TABLE_ID)  TABLESPACE INDX2;
-create index SRestest.EXTERNALDATABASELINK_IND02 on SRestest.EXTERNALDATABASELINK (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.EXTERNALDATABASELINK_IND01 on @oracle_sres@.EXTERNALDATABASELINK (LINK_TABLE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.EXTERNALDATABASELINK_IND02 on @oracle_sres@.EXTERNALDATABASELINK (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* EXTERNALDATABASERELEASE */
-create index SRestest.EXTERNALDATABASERELEASE_IND01 on SRestest.EXTERNALDATABASERELEASE (EXTERNAL_DATABASE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.EXTERNALDATABASERELEASE_IND01 on @oracle_sres@.EXTERNALDATABASERELEASE (EXTERNAL_DATABASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* GENETICCODE */
 
@@ -82,31 +82,31 @@ create index SRestest.EXTERNALDATABASERELEASE_IND01 on SRestest.EXTERNALDATABASE
 
 
 /* GORELATIONSHIP */
-create index SRestest.GORELATIONSHIP_IND03 on SRestest.GORELATIONSHIP (GO_RELATIONSHIP_TYPE_ID)  TABLESPACE INDX2;
-create index SRestest.GORELATIONSHIP_IND01 on SRestest.GORELATIONSHIP (PARENT_TERM_ID,CHILD_TERM_ID)  TABLESPACE INDX2;
-create index SRestest.GORELATIONSHIP_IND02 on SRestest.GORELATIONSHIP (CHILD_TERM_ID,PARENT_TERM_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.GORELATIONSHIP_IND03 on @oracle_sres@.GORELATIONSHIP (GO_RELATIONSHIP_TYPE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.GORELATIONSHIP_IND01 on @oracle_sres@.GORELATIONSHIP (PARENT_TERM_ID,CHILD_TERM_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.GORELATIONSHIP_IND02 on @oracle_sres@.GORELATIONSHIP (CHILD_TERM_ID,PARENT_TERM_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* GORELATIONSHIPTYPE */
 
 
 /* GOSYNONYM */
-create index SRestest.GOSYNONYM_IND01 on SRestest.GOSYNONYM (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE INDX2;
-create index SRestest.GOSYNONYM_IND02 on SRestest.GOSYNONYM (GO_TERM_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.GOSYNONYM_IND01 on @oracle_sres@.GOSYNONYM (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.GOSYNONYM_IND02 on @oracle_sres@.GOSYNONYM (GO_TERM_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* GOTERM */
-create index SRestest.GOTERM_IND01 on SRestest.GOTERM (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE INDX2;
-create index SRestest.GOTERM_IND02 on SRestest.GOTERM (ANCESTOR_GO_TERM_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.GOTERM_IND01 on @oracle_sres@.GOTERM (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.GOTERM_IND02 on @oracle_sres@.GOTERM (ANCESTOR_GO_TERM_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* LINEAGE */
 
 
 /* MGEDONTOLOGYRELATIONSHIP */
-create index SRestest.MGEDONTOLOGYRELATIONSHIP_IND01 on SRestest.MGEDONTOLOGYRELATIONSHIP (CHILD_TERM_ID)  TABLESPACE INDX2;
-create index SRestest.MGEDONTOLOGYRELATIONSHIP_IND02 on SRestest.MGEDONTOLOGYRELATIONSHIP (PARENT_TERM_ID)  TABLESPACE INDX2;
-create index SRestest.MGEDONTOLOGYRELATIONSHIP_IND03 on SRestest.MGEDONTOLOGYRELATIONSHIP (ONTOLOGY_RELATIONSHIP_TYPE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.MGEDONTOLOGYRELATIONSHIP_IND01 on @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (CHILD_TERM_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.MGEDONTOLOGYRELATIONSHIP_IND02 on @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (PARENT_TERM_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.MGEDONTOLOGYRELATIONSHIP_IND03 on @oracle_sres@.MGEDONTOLOGYRELATIONSHIP (ONTOLOGY_RELATIONSHIP_TYPE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* MGEDONTOLOGYTERM */
-create index SRestest.MGEDONTOLOGYTERM_IND01 on SRestest.MGEDONTOLOGYTERM (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.MGEDONTOLOGYTERM_IND01 on @oracle_sres@.MGEDONTOLOGYTERM (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* MUTAGEN */
 
@@ -118,17 +118,17 @@ create index SRestest.MGEDONTOLOGYTERM_IND01 on SRestest.MGEDONTOLOGYTERM (EXTER
 
 
 /* PHENOTYPE */
-create index SRestest.PHENOTYPE_IND01 on SRestest.PHENOTYPE (ANATOMY_ID)  TABLESPACE INDX2;
-create index SRestest.PHENOTYPE_IND02 on SRestest.PHENOTYPE (CELL_TYPE_ID)  TABLESPACE INDX2;
-create index SRestest.PHENOTYPE_IND03 on SRestest.PHENOTYPE (DEVELOPMENTAL_STAGE_ID)  TABLESPACE INDX2;
-create index SRestest.PHENOTYPE_IND04 on SRestest.PHENOTYPE (PARENT_ID)  TABLESPACE INDX2;
-create index SRestest.PHENOTYPE_IND05 on SRestest.PHENOTYPE (PATO_ATTRIBUTE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.PHENOTYPE_IND01 on @oracle_sres@.PHENOTYPE (ANATOMY_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.PHENOTYPE_IND02 on @oracle_sres@.PHENOTYPE (CELL_TYPE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.PHENOTYPE_IND03 on @oracle_sres@.PHENOTYPE (DEVELOPMENTAL_STAGE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.PHENOTYPE_IND04 on @oracle_sres@.PHENOTYPE (PARENT_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.PHENOTYPE_IND05 on @oracle_sres@.PHENOTYPE (PATO_ATTRIBUTE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* PHENOTYPECLASS */
 
 
 /* REFERENCE */
-create index SRestest.REFERENCE_IND01 on SRestest.REFERENCE (DB_REF_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.REFERENCE_IND01 on @oracle_sres@.REFERENCE (DB_REF_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* REVIEWSTATUS */
 
@@ -137,18 +137,18 @@ create index SRestest.REFERENCE_IND01 on SRestest.REFERENCE (DB_REF_ID)  TABLESP
 
 
 /* SEQUENCEREFERENCE */
-create index SRestest.SEQUENCEREFERENCE_IND01 on SRestest.SEQUENCEREFERENCE (BIBLIOGRAPHIC_REFERENCE_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.SEQUENCEREFERENCE_IND01 on @oracle_sres@.SEQUENCEREFERENCE (BIBLIOGRAPHIC_REFERENCE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* TAXON */
-create index SRestest.TAXON_IND01 on SRestest.TAXON (NCBI_TAX_ID)  TABLESPACE INDX2;
-create index SRestest.TAXON_IND02 on SRestest.TAXON (GENETIC_CODE_ID)  TABLESPACE INDX2;
-create index SRestest.TAXON_IND03 on SRestest.TAXON (MITOCHONDRIAL_GENETIC_CODE_ID)  TABLESPACE INDX2;
-create index SRestest.TAXON_IND04 on SRestest.TAXON (PARENT_ID)  TABLESPACE INDX2;
+create index @oracle_sres@.TAXON_IND01 on @oracle_sres@.TAXON (NCBI_TAX_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.TAXON_IND02 on @oracle_sres@.TAXON (GENETIC_CODE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.TAXON_IND03 on @oracle_sres@.TAXON (MITOCHONDRIAL_GENETIC_CODE_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.TAXON_IND04 on @oracle_sres@.TAXON (PARENT_ID)  TABLESPACE @oracle_sresIndexTablespace@;
 
 /* TAXONNAME */
-create index SRestest.TAXONNAME_IND01 on SRestest.TAXONNAME (TAXON_ID)  TABLESPACE INDX2;
-create index SRestest.TAXONNAME_IND02 on SRestest.TAXONNAME (NAME)  TABLESPACE INDX2;
-create index SRestest.TAXONNAME_IND04 on SRestest.TAXONNAME (NAME_CLASS)  TABLESPACE INDX2;
+create index @oracle_sres@.TAXONNAME_IND01 on @oracle_sres@.TAXONNAME (TAXON_ID)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.TAXONNAME_IND02 on @oracle_sres@.TAXONNAME (NAME)  TABLESPACE @oracle_sresIndexTablespace@;
+create index @oracle_sres@.TAXONNAME_IND04 on @oracle_sres@.TAXONNAME (NAME_CLASS)  TABLESPACE @oracle_sresIndexTablespace@;
 
 
 

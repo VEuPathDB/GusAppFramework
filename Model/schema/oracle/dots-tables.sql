@@ -2,13 +2,13 @@
 /*                                                                                            */
 /* dots-tables.sql                                                                            */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 12:23:38 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:43:42 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
 SPOOL dots-tables.log
 
-CREATE TABLE DoTStest.AACOMMENT (
+CREATE TABLE @oracle_dots@.AACOMMENT (
     AA_COMMENT_ID                      NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     COMMENT_NAME_ID                    NUMBER(4)                                     NULL,
@@ -24,10 +24,10 @@ CREATE TABLE DoTStest.AACOMMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AAENTRY (
+CREATE TABLE @oracle_dots@.AAENTRY (
     AA_ENTRY_ID                        NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(15)                                  NOT NULL,
@@ -49,10 +49,10 @@ CREATE TABLE DoTStest.AAENTRY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AAFAMILYEXPERIMENT (
+CREATE TABLE @oracle_dots@.AAFAMILYEXPERIMENT (
     AA_FAMILY_EXPERIMENT_ID            NUMBER(12)                                    NOT NULL,
     DESCRIPTION                        VARCHAR2(2000)                                NULL,
     AA_ORTHOLOG_EXPERIMENT_ID          NUMBER(12)                                    NULL,
@@ -68,10 +68,10 @@ CREATE TABLE DoTStest.AAFAMILYEXPERIMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AAFEATUREIMP (
+CREATE TABLE @oracle_dots@.AAFEATUREIMP (
     AA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     FEATURE_NAME_ID                    NUMBER(10)                                    NULL,
@@ -127,10 +127,10 @@ CREATE TABLE DoTStest.AAFEATUREIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AAGENE (
+CREATE TABLE @oracle_dots@.AAGENE (
     AA_GENE_ID                         NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(50)                                  NOT NULL,
@@ -146,10 +146,10 @@ CREATE TABLE DoTStest.AAGENE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AAGENESYNONYM (
+CREATE TABLE @oracle_dots@.AAGENESYNONYM (
     AA_GENE_SYNONYM_ID                 NUMBER(10)                                    NOT NULL,
     AA_GENE_ID                         NUMBER(10)                                    NOT NULL,
     SYNONYM_NAME                       VARCHAR2(50)                                  NOT NULL,
@@ -164,10 +164,10 @@ CREATE TABLE DoTStest.AAGENESYNONYM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AALOCATION (
+CREATE TABLE @oracle_dots@.AALOCATION (
     AA_LOCATION_ID                     NUMBER(10)                                    NOT NULL,
     AA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     START_MIN                          NUMBER(12)                                    NULL,
@@ -185,10 +185,10 @@ CREATE TABLE DoTStest.AALOCATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AAMOTIFGOTERMRULE (
+CREATE TABLE @oracle_dots@.AAMOTIFGOTERMRULE (
     AA_MOTIF_GO_TERM_RULE_ID           NUMBER(10)                                    NOT NULL,
     AA_MOTIF_GO_TERM_RULE_SET_ID       NUMBER(10)                                    NOT NULL,
     GO_TERM_ID                         NUMBER(10)                                    NOT NULL,
@@ -208,10 +208,10 @@ CREATE TABLE DoTStest.AAMOTIFGOTERMRULE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AAMOTIFGOTERMRULESET (
+CREATE TABLE @oracle_dots@.AAMOTIFGOTERMRULESET (
     AA_MOTIF_GO_TERM_RULE_SET_ID       NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID_1                   NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID_2                   NUMBER(10)                                    NULL,
@@ -233,10 +233,10 @@ CREATE TABLE DoTStest.AAMOTIFGOTERMRULESET (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AASEQGROUPEXPERIMENTIMP (
+CREATE TABLE @oracle_dots@.AASEQGROUPEXPERIMENTIMP (
     AA_SEQ_GROUP_EXPERIMENT_ID         NUMBER(12)                                    NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(2000)                                NULL,
@@ -256,10 +256,10 @@ CREATE TABLE DoTStest.AASEQGROUPEXPERIMENTIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AASEQUENCEDBREF (
+CREATE TABLE @oracle_dots@.AASEQUENCEDBREF (
     AA_SEQUENCE_DB_REF_ID              NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     DB_REF_ID                          NUMBER(10)                                    NOT NULL,
@@ -274,10 +274,10 @@ CREATE TABLE DoTStest.AASEQUENCEDBREF (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AASEQUENCEFAMILY (
+CREATE TABLE @oracle_dots@.AASEQUENCEFAMILY (
     AA_SEQUENCE_FAMILY_ID              NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(500)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(2000)                                NULL,
@@ -293,10 +293,10 @@ CREATE TABLE DoTStest.AASEQUENCEFAMILY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AASEQUENCEGROUPFAMILY (
+CREATE TABLE @oracle_dots@.AASEQUENCEGROUPFAMILY (
     AA_SEQUENCE_GROUP_FAMILY_ID        NUMBER(12)                                    NOT NULL,
     AA_SEQUENCE_FAMILY_ID              NUMBER(12)                                    NULL,
     AA_SEQUENCE_GROUP_ID               NUMBER(12)                                    NULL,
@@ -311,10 +311,10 @@ CREATE TABLE DoTStest.AASEQUENCEGROUPFAMILY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AASEQUENCEGROUPIMP (
+CREATE TABLE @oracle_dots@.AASEQUENCEGROUPIMP (
     AA_SEQUENCE_GROUP_ID               NUMBER(12)                                    NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
     NAME                               VARCHAR2(500)                                 NULL,
@@ -342,10 +342,10 @@ CREATE TABLE DoTStest.AASEQUENCEGROUPIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AASEQUENCEIMP (
+CREATE TABLE @oracle_dots@.AASEQUENCEIMP (
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1     NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
@@ -374,10 +374,10 @@ CREATE TABLE DoTStest.AASEQUENCEIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AASEQUENCEKEYWORD (
+CREATE TABLE @oracle_dots@.AASEQUENCEKEYWORD (
     AA_SEQUENCE_KEYWORD_ID             NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     KEYWORD_ID                         NUMBER(6)                                     NOT NULL,
@@ -392,10 +392,10 @@ CREATE TABLE DoTStest.AASEQUENCEKEYWORD (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AASEQUENCEORGANELLE (
+CREATE TABLE @oracle_dots@.AASEQUENCEORGANELLE (
     AA_SEQUENCE_ORGANELLE_ID           NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     ORGANELLE_ID                       NUMBER(10)                                    NOT NULL,
@@ -410,10 +410,10 @@ CREATE TABLE DoTStest.AASEQUENCEORGANELLE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AASEQUENCEREF (
+CREATE TABLE @oracle_dots@.AASEQUENCEREF (
     AA_SEQUENCE_REF_ID                 NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     REFERENCE_ID                       NUMBER(10)                                    NOT NULL,
@@ -428,10 +428,10 @@ CREATE TABLE DoTStest.AASEQUENCEREF (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AASEQUENCESEQUENCEGROUP (
+CREATE TABLE @oracle_dots@.AASEQUENCESEQUENCEGROUP (
     AA_SEQUENCE_SEQUENCE_GROUP_ID      NUMBER(12)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(12)                                    NOT NULL,
     AA_SEQUENCE_GROUP_ID               NUMBER(12)                                    NOT NULL,
@@ -446,10 +446,10 @@ CREATE TABLE DoTStest.AASEQUENCESEQUENCEGROUP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.AASEQUENCETAXON (
+CREATE TABLE @oracle_dots@.AASEQUENCETAXON (
     AA_SEQUENCE_TAXON_ID               NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     TAXON_ID                           NUMBER(12)                                    NOT NULL,
@@ -464,10 +464,10 @@ CREATE TABLE DoTStest.AASEQUENCETAXON (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ALLELE (
+CREATE TABLE @oracle_dots@.ALLELE (
     ALLELE_ID                          NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
@@ -486,10 +486,10 @@ CREATE TABLE DoTStest.ALLELE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ALLELECOMPLEMENTATION (
+CREATE TABLE @oracle_dots@.ALLELECOMPLEMENTATION (
     ALLELE_COMPLEMENTATION_ID          NUMBER(10)                                    NOT NULL,
     ALLELE_ID                          NUMBER(10)                                    NOT NULL,
     COMPLEMENTATION_ID                 NUMBER(10)                                    NOT NULL,
@@ -506,10 +506,10 @@ CREATE TABLE DoTStest.ALLELECOMPLEMENTATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ALLELEINSTANCE (
+CREATE TABLE @oracle_dots@.ALLELEINSTANCE (
     ALLELE_INSTANCE_ID                 NUMBER(10)                                    NOT NULL,
     ALLELE_ID                          NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
@@ -526,10 +526,10 @@ CREATE TABLE DoTStest.ALLELEINSTANCE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ALLELEPHENOTYPE (
+CREATE TABLE @oracle_dots@.ALLELEPHENOTYPE (
     ALLELE_PHENOTYPE_ID                NUMBER(10)                                    NOT NULL,
     ALLELE_ID                          NUMBER(10)                                    NOT NULL,
     PHENOTYPE_ID                       NUMBER(10)                                    NOT NULL,
@@ -545,10 +545,10 @@ CREATE TABLE DoTStest.ALLELEPHENOTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ALLELEPHENOTYPECLASS (
+CREATE TABLE @oracle_dots@.ALLELEPHENOTYPECLASS (
     ALLELE_PHENOTYPE_CLASS_ID          NUMBER(10)                                    NOT NULL,
     ALLELE_ID                          NUMBER(10)                                    NOT NULL,
     PHENOTYPE_CLASS_ID                 NUMBER(10)                                    NOT NULL,
@@ -564,10 +564,10 @@ CREATE TABLE DoTStest.ALLELEPHENOTYPECLASS (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ANATOMYLIBRARY (
+CREATE TABLE @oracle_dots@.ANATOMYLIBRARY (
     ANATOMY_LIBRARY_ID                 NUMBER(10)                                    NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
     DBEST_LIBRARY_ID                   NUMBER(12)                                    NOT NULL,
@@ -582,10 +582,10 @@ CREATE TABLE DoTStest.ANATOMYLIBRARY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ANATOMYLOE (
+CREATE TABLE @oracle_dots@.ANATOMYLOE (
     ANATOMY_LOE_ID                     NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(500)                                 NULL,
@@ -600,10 +600,10 @@ CREATE TABLE DoTStest.ANATOMYLOE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ASSEMBLYANATOMYPERCENT (
+CREATE TABLE @oracle_dots@.ASSEMBLYANATOMYPERCENT (
     ASSEMBLY_ANATOMY_PERCENT_ID        NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     TAXON_ID                           NUMBER(12)                                    NULL,
@@ -622,10 +622,10 @@ CREATE TABLE DoTStest.ASSEMBLYANATOMYPERCENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ASSEMBLYSEQUENCE (
+CREATE TABLE @oracle_dots@.ASSEMBLYSEQUENCE (
     ASSEMBLY_SEQUENCE_ID               NUMBER(10)                                    NOT NULL,
     ASSEMBLY_NA_SEQUENCE_ID            NUMBER(10)                                    NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
@@ -649,10 +649,10 @@ CREATE TABLE DoTStest.ASSEMBLYSEQUENCE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ASSEMBLYSEQUENCESNP (
+CREATE TABLE @oracle_dots@.ASSEMBLYSEQUENCESNP (
     ASSEMBLY_SEQUENCE_SNP_ID           NUMBER(10)                                    NOT NULL,
     ASSEMBLY_SEQUENCE_ID               NUMBER(10)                                    NOT NULL,
     ASSEMBLY_SNP_ID                    NUMBER(10)                                    NOT NULL,
@@ -670,10 +670,10 @@ CREATE TABLE DoTStest.ASSEMBLYSEQUENCESNP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ASSEMBLYSNP (
+CREATE TABLE @oracle_dots@.ASSEMBLYSNP (
     ASSEMBLY_SNP_ID                    NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     NUM_A                              NUMBER(8)                                     NOT NULL,
@@ -705,10 +705,10 @@ CREATE TABLE DoTStest.ASSEMBLYSNP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ATTRIBUTION (
+CREATE TABLE @oracle_dots@.ATTRIBUTION (
     ATTRIBUTION_ID                     NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(10)                                    NOT NULL,
     ROW_ID                             NUMBER(10)                                    NOT NULL,
@@ -724,10 +724,10 @@ CREATE TABLE DoTStest.ATTRIBUTION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.BESTSIMILARITYPAIR (
+CREATE TABLE @oracle_dots@.BESTSIMILARITYPAIR (
     BEST_SIMILARITY_PAIR_ID            NUMBER                                        NOT NULL,
     SEQUENCE_ID                        NUMBER                                        NOT NULL,
     PAIRED_SEQUENCE_ID                 NUMBER                                        NOT NULL,
@@ -750,10 +750,10 @@ CREATE TABLE DoTStest.BESTSIMILARITYPAIR (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.BLATALIGNMENT (
+CREATE TABLE @oracle_dots@.BLATALIGNMENT (
     BLAT_ALIGNMENT_ID                  NUMBER(10)                                    NOT NULL,
     QUERY_NA_SEQUENCE_ID               NUMBER(10)                                    NOT NULL,
     TARGET_NA_SEQUENCE_ID              NUMBER(10)                                    NOT NULL,
@@ -800,10 +800,10 @@ CREATE TABLE DoTStest.BLATALIGNMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.BLATALIGNMENTQUALITY (
+CREATE TABLE @oracle_dots@.BLATALIGNMENTQUALITY (
     BLAT_ALIGNMENT_QUALITY_ID          NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(30)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(4000)                                NOT NULL,
@@ -818,10 +818,10 @@ CREATE TABLE DoTStest.BLATALIGNMENTQUALITY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.CLONE (
+CREATE TABLE @oracle_dots@.CLONE (
     CLONE_ID                           NUMBER(10)                                    NOT NULL,
     LIBRARY_ID                         NUMBER(5)                                     NOT NULL,
     IMAGE_ID                           NUMBER(12)                                    NULL,
@@ -842,10 +842,10 @@ CREATE TABLE DoTStest.CLONE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.CLONEINSET (
+CREATE TABLE @oracle_dots@.CLONEINSET (
     CLONE_IN_SET_ID                    NUMBER(10)                                    NOT NULL,
     CLONE_ID                           NUMBER(10)                                    NOT NULL,
     CLONE_SET_ID                       NUMBER(12)                                    NOT NULL,
@@ -860,10 +860,10 @@ CREATE TABLE DoTStest.CLONEINSET (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.CLONESET (
+CREATE TABLE @oracle_dots@.CLONESET (
     CLONE_SET_ID                       NUMBER(12)                                    NOT NULL,
     CONTACT_ID                         NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(20)                                  NOT NULL,
@@ -882,10 +882,10 @@ CREATE TABLE DoTStest.CLONESET (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.COMMENTNAME (
+CREATE TABLE @oracle_dots@.COMMENTNAME (
     COMMENT_NAME_ID                    NUMBER(4)                                     NOT NULL,
     NAME                               VARCHAR2(20)                                  NOT NULL,
     C_CATEGORY                         VARCHAR2(20)                                  NULL,
@@ -900,10 +900,10 @@ CREATE TABLE DoTStest.COMMENTNAME (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.COMMENTS (
+CREATE TABLE @oracle_dots@.COMMENTS (
     COMMENTS_ID                        NUMBER(10)                                    NOT NULL,
     COMMENT_STRING                     CLOB                                          NOT NULL,
     REVIEW_STATUS_ID                   NUMBER(10)                                    NOT NULL,
@@ -918,10 +918,10 @@ CREATE TABLE DoTStest.COMMENTS (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.COMPLEMENTATION (
+CREATE TABLE @oracle_dots@.COMPLEMENTATION (
     COMPLEMENTATION_ID                 NUMBER(10)                                    NOT NULL,
     IS_EXTERNAL_REFERENCE              NUMBER(1)                                     NOT NULL,
     ENTITY_NAME                        VARCHAR2(100)                                 NOT NULL,
@@ -941,10 +941,10 @@ CREATE TABLE DoTStest.COMPLEMENTATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.COMPLEX (
+CREATE TABLE @oracle_dots@.COMPLEX (
     COMPLEX_ID                         NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -963,10 +963,10 @@ CREATE TABLE DoTStest.COMPLEX (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.COMPLEXANATOMY (
+CREATE TABLE @oracle_dots@.COMPLEXANATOMY (
     COMPLEX_ANATOMY_ID                 NUMBER(10)                                    NOT NULL,
     COMPLEX_ID                         NUMBER(10)                                    NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
@@ -982,10 +982,10 @@ CREATE TABLE DoTStest.COMPLEXANATOMY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.COMPLEXCOMPONENT (
+CREATE TABLE @oracle_dots@.COMPLEXCOMPONENT (
     COMPLEX_COMPONENT_ID               NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
     ROW_ID                             NUMBER(10)                                    NOT NULL,
@@ -1001,10 +1001,10 @@ CREATE TABLE DoTStest.COMPLEXCOMPONENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.COMPLEXTYPE (
+CREATE TABLE @oracle_dots@.COMPLEXTYPE (
     COMPLEX_TYPE_ID                    NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1019,10 +1019,10 @@ CREATE TABLE DoTStest.COMPLEXTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.CONSISTENTALIGNMENT (
+CREATE TABLE @oracle_dots@.CONSISTENTALIGNMENT (
     CONSISTENT_ALIGNMENT_ID            NUMBER(10)                                    NOT NULL,
     SIMILARITY_ID                      NUMBER(10)                                    NOT NULL,
     GENOMIC_NA_SEQUENCE_ID             NUMBER(10)                                    NOT NULL,
@@ -1052,10 +1052,10 @@ CREATE TABLE DoTStest.CONSISTENTALIGNMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.DBREFNAFEATURE (
+CREATE TABLE @oracle_dots@.DBREFNAFEATURE (
     DB_REF_NA_FEATURE_ID               NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     DB_REF_ID                          NUMBER(10)                                    NOT NULL,
@@ -1070,10 +1070,10 @@ CREATE TABLE DoTStest.DBREFNAFEATURE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.DBREFNASEQUENCE (
+CREATE TABLE @oracle_dots@.DBREFNASEQUENCE (
     DB_REF_NA_SEQUENCE_ID              NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     DB_REF_ID                          NUMBER(10)                                    NOT NULL,
@@ -1088,10 +1088,10 @@ CREATE TABLE DoTStest.DBREFNASEQUENCE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.DBREFPFAMENTRY (
+CREATE TABLE @oracle_dots@.DBREFPFAMENTRY (
     DB_REF_PFAM_ENTRY_ID               NUMBER(10)                                    NOT NULL,
     PFAM_ENTRY_ID                      NUMBER(10)                                    NOT NULL,
     DB_REF_ID                          NUMBER(10)                                    NOT NULL,
@@ -1106,10 +1106,10 @@ CREATE TABLE DoTStest.DBREFPFAMENTRY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.EFFECTORACTIONTYPE (
+CREATE TABLE @oracle_dots@.EFFECTORACTIONTYPE (
     EFFECTOR_ACTION_TYPE_ID            NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1126,10 +1126,10 @@ CREATE TABLE DoTStest.EFFECTORACTIONTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ENDSEQUENCEPAIRMAP (
+CREATE TABLE @oracle_dots@.ENDSEQUENCEPAIRMAP (
     END_SEQUENCE_PAIR_MAP_ID           NUMBER(12)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NOT NULL,
     SOURCE_ID                          VARCHAR2(16)                                  NOT NULL,
@@ -1151,10 +1151,10 @@ CREATE TABLE DoTStest.ENDSEQUENCEPAIRMAP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.EPCR (
+CREATE TABLE @oracle_dots@.EPCR (
     EPCR_ID                            NUMBER(12)                                    NOT NULL,
     MAP_TABLE_ID                       NUMBER(5)                                     NOT NULL,
     MAP_ID                             NUMBER(12)                                    NOT NULL,
@@ -1178,10 +1178,10 @@ CREATE TABLE DoTStest.EPCR (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.EST (
+CREATE TABLE @oracle_dots@.EST (
     EST_ID                             NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     CLONE_ID                           NUMBER(10)                                    NULL,
@@ -1210,10 +1210,10 @@ CREATE TABLE DoTStest.EST (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.EVIDENCE (
+CREATE TABLE @oracle_dots@.EVIDENCE (
     EVIDENCE_ID                        NUMBER(10)                                    NOT NULL,
     TARGET_TABLE_ID                    NUMBER(5)                                     NOT NULL,
     TARGET_ID                          NUMBER(10)                                    NOT NULL,
@@ -1233,10 +1233,10 @@ CREATE TABLE DoTStest.EVIDENCE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.EXONLOCATION (
+CREATE TABLE @oracle_dots@.EXONLOCATION (
     EXON_LOCATION_ID                   NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NULL,
     START_MIN                          NUMBER(12)                                    NULL,
@@ -1255,10 +1255,10 @@ CREATE TABLE DoTStest.EXONLOCATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.FAMILY (
+CREATE TABLE @oracle_dots@.FAMILY (
     FAMILY_ID                          NUMBER(10)                                    NOT NULL,
     PARENT_FAMILY_ID                   NUMBER(10)                                    NOT NULL,
     HIERARCHY                          NUMBER(5)                                     NOT NULL,
@@ -1276,10 +1276,10 @@ CREATE TABLE DoTStest.FAMILY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.FAMILYGENE (
+CREATE TABLE @oracle_dots@.FAMILYGENE (
     FAMILY_GENE_ID                     NUMBER(10)                                    NOT NULL,
     FAMILY_ID                          NUMBER(10)                                    NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
@@ -1294,10 +1294,10 @@ CREATE TABLE DoTStest.FAMILYGENE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.FAMILYPROTEIN (
+CREATE TABLE @oracle_dots@.FAMILYPROTEIN (
     FAMILY_PROTEIN_ID                  NUMBER(10)                                    NOT NULL,
     PROTEIN_ID                         NUMBER(10)                                    NOT NULL,
     FAMILY_ID                          NUMBER(10)                                    NOT NULL,
@@ -1312,10 +1312,10 @@ CREATE TABLE DoTStest.FAMILYPROTEIN (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.FEATURENAME (
+CREATE TABLE @oracle_dots@.FEATURENAME (
     FEATURE_NAME_ID                    NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(30)                                  NOT NULL,
     FEATURE_CATEGORY                   VARCHAR2(30)                                  NULL,
@@ -1330,10 +1330,10 @@ CREATE TABLE DoTStest.FEATURENAME (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.FINGERPRINTCLONE (
+CREATE TABLE @oracle_dots@.FINGERPRINTCLONE (
     FINGERPRINT_CLONE_ID               NUMBER(12)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(30)                                  NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NOT NULL,
@@ -1349,10 +1349,10 @@ CREATE TABLE DoTStest.FINGERPRINTCLONE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.FINGERPRINTCLONECONTIG (
+CREATE TABLE @oracle_dots@.FINGERPRINTCLONECONTIG (
     FINGERPRINT_CLONE_CONTIG_ID        NUMBER(12)                                    NOT NULL,
     FINGERPRINT_CLONE_ID               NUMBER(12)                                    NOT NULL,
     FINGERPRINT_CONTIG_ID              NUMBER(12)                                    NOT NULL,
@@ -1368,10 +1368,10 @@ CREATE TABLE DoTStest.FINGERPRINTCLONECONTIG (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.FINGERPRINTCLONEMARKER (
+CREATE TABLE @oracle_dots@.FINGERPRINTCLONEMARKER (
     FINGERPRINT_CLONE_MARKER_ID        NUMBER(12)                                    NOT NULL,
     FINGERPRINT_MAP_ID                 NUMBER(12)                                    NOT NULL,
     FINGERPRINT_CLONE_ID               NUMBER(12)                                    NOT NULL,
@@ -1389,10 +1389,10 @@ CREATE TABLE DoTStest.FINGERPRINTCLONEMARKER (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.FINGERPRINTCONTIG (
+CREATE TABLE @oracle_dots@.FINGERPRINTCONTIG (
     FINGERPRINT_CONTIG_ID              NUMBER(12)                                    NOT NULL,
     FINGERPRINT_MAP_ID                 NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(30)                                  NOT NULL,
@@ -1408,10 +1408,10 @@ CREATE TABLE DoTStest.FINGERPRINTCONTIG (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.FINGERPRINTMAP (
+CREATE TABLE @oracle_dots@.FINGERPRINTMAP (
     FINGERPRINT_MAP_ID                 NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     MAP_VERSION                        VARCHAR2(30)                                  NOT NULL,
@@ -1430,10 +1430,10 @@ CREATE TABLE DoTStest.FINGERPRINTMAP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENE (
+CREATE TABLE @oracle_dots@.GENE (
     GENE_ID                            NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NULL,
     GENE_SYMBOL                        VARCHAR2(50)                                  NULL,
@@ -1452,10 +1452,10 @@ CREATE TABLE DoTStest.GENE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENEALIAS (
+CREATE TABLE @oracle_dots@.GENEALIAS (
     GENE_ALIAS_ID                      NUMBER(10)                                    NOT NULL,
     GENE_ID                            NUMBER(10)                                    NULL,
     GENE_ALIAS_NAME                    VARCHAR2(255)                                 NULL,
@@ -1471,10 +1471,10 @@ CREATE TABLE DoTStest.GENEALIAS (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENECATEGORY (
+CREATE TABLE @oracle_dots@.GENECATEGORY (
     GENE_CATEGORY_ID                   NUMBER(10)                                    NOT NULL,
     TERM                               VARCHAR2(80)                                  NOT NULL,
     DEFINITION                         VARCHAR2(255)                                 NULL,
@@ -1489,10 +1489,10 @@ CREATE TABLE DoTStest.GENECATEGORY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENECHROMOSOMALLOCATION (
+CREATE TABLE @oracle_dots@.GENECHROMOSOMALLOCATION (
     GENE_CHROMOSOMAL_LOCATION_ID       NUMBER(10)                                    NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
     CHROMOSOME                         NUMBER(5)                                     NOT NULL,
@@ -1509,10 +1509,10 @@ CREATE TABLE DoTStest.GENECHROMOSOMALLOCATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENEFAMILY (
+CREATE TABLE @oracle_dots@.GENEFAMILY (
     GENE_FAMILY_ID                     NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(40)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1527,10 +1527,10 @@ CREATE TABLE DoTStest.GENEFAMILY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENEFAMILYRELATION (
+CREATE TABLE @oracle_dots@.GENEFAMILYRELATION (
     GENE_FAMILY_RELATION_ID            NUMBER(10)                                    NOT NULL,
     GENE_FAMILY_ID                     NUMBER(10)                                    NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
@@ -1546,10 +1546,10 @@ CREATE TABLE DoTStest.GENEFAMILYRELATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENEFEATURESAGETAGLINK (
+CREATE TABLE @oracle_dots@.GENEFEATURESAGETAGLINK (
     GENE_FEATURE_SAGE_TAG_LINK_ID      NUMBER(12)                                    NOT NULL,
     GENOMIC_NA_SEQUENCE_ID             NUMBER(12)                                    NOT NULL,
     GENE_NA_FEATURE_ID                 NUMBER(12)                                    NOT NULL,
@@ -1569,10 +1569,10 @@ CREATE TABLE DoTStest.GENEFEATURESAGETAGLINK (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENEFEATURESEQOVERLAP (
+CREATE TABLE @oracle_dots@.GENEFEATURESEQOVERLAP (
     GENE_FEATURE_SEQ_OVERLAP_ID        NUMBER(12)                                    NOT NULL,
     GENE_NA_FEATURE_ID                 NUMBER(12)                                    NOT NULL,
     GENOMIC_NA_SEQUENCE_ID             NUMBER(12)                                    NOT NULL,
@@ -1602,10 +1602,10 @@ CREATE TABLE DoTStest.GENEFEATURESEQOVERLAP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENEINSTANCE (
+CREATE TABLE @oracle_dots@.GENEINSTANCE (
     GENE_INSTANCE_ID                   NUMBER(10)                                    NOT NULL,
     GENE_INSTANCE_CATEGORY_ID          NUMBER(3)                                     NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
@@ -1625,10 +1625,10 @@ CREATE TABLE DoTStest.GENEINSTANCE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENEINSTANCECATEGORY (
+CREATE TABLE @oracle_dots@.GENEINSTANCECATEGORY (
     GENE_INSTANCE_CATEGORY_ID          NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(40)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1643,10 +1643,10 @@ CREATE TABLE DoTStest.GENEINSTANCECATEGORY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENESUPERFAMILY (
+CREATE TABLE @oracle_dots@.GENESUPERFAMILY (
     GENE_SUPER_FAMILY_ID               NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(40)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1661,10 +1661,10 @@ CREATE TABLE DoTStest.GENESUPERFAMILY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENESUPERFAMILYRELATION (
+CREATE TABLE @oracle_dots@.GENESUPERFAMILYRELATION (
     GENE_SUPERFAMILY_RELATION_ID       NUMBER(10)                                    NOT NULL,
     GENE_SUPER_FAMILY_ID               NUMBER(10)                                    NOT NULL,
     GENE_FAMILY_ID                     NUMBER(10)                                    NOT NULL,
@@ -1680,10 +1680,10 @@ CREATE TABLE DoTStest.GENESUPERFAMILYRELATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENESYNONYM (
+CREATE TABLE @oracle_dots@.GENESYNONYM (
     GENE_SYNONYM_ID                    NUMBER(10)                                    NOT NULL,
     GENE_ID                            NUMBER(10)                                    NOT NULL,
     SYNONYM_NAME                       VARCHAR2(30)                                  NOT NULL,
@@ -1700,10 +1700,10 @@ CREATE TABLE DoTStest.GENESYNONYM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GENETRAPASSEMBLY (
+CREATE TABLE @oracle_dots@.GENETRAPASSEMBLY (
     GENE_TRAP_ASSEMBLY_ID              NUMBER(10)                                    NOT NULL,
     TAG_NA_SEQUENCE_ID                 NUMBER(10)                                    NOT NULL,
     ASSEMBLY_NA_SEQUENCE_ID            NUMBER(10)                                    NOT NULL,
@@ -1723,10 +1723,10 @@ CREATE TABLE DoTStest.GENETRAPASSEMBLY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GOASSOCIATION (
+CREATE TABLE @oracle_dots@.GOASSOCIATION (
     GO_ASSOCIATION_ID                  NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(10)                                    NOT NULL,
     ROW_ID                             NUMBER(10)                                    NOT NULL,
@@ -1746,10 +1746,10 @@ CREATE TABLE DoTStest.GOASSOCIATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GOASSOCIATIONINSTANCE (
+CREATE TABLE @oracle_dots@.GOASSOCIATIONINSTANCE (
     GO_ASSOCIATION_INSTANCE_ID         NUMBER(10)                                    NOT NULL,
     GO_ASSOCIATION_ID                  NUMBER(10)                                    NOT NULL,
     GO_ASSOC_INST_LOE_ID               NUMBER(5)                                     NOT NULL,
@@ -1770,10 +1770,10 @@ CREATE TABLE DoTStest.GOASSOCIATIONINSTANCE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GOASSOCIATIONINSTANCELOE (
+CREATE TABLE @oracle_dots@.GOASSOCIATIONINSTANCELOE (
     GO_ASSOC_INST_LOE_ID               NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1788,10 +1788,10 @@ CREATE TABLE DoTStest.GOASSOCIATIONINSTANCELOE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.GOASSOCINSTEVIDCODE (
+CREATE TABLE @oracle_dots@.GOASSOCINSTEVIDCODE (
     GO_ASSOC_INST_EVID_CODE_ID         NUMBER(10)                                    NOT NULL,
     GO_EVIDENCE_CODE_ID                NUMBER(3)                                     NOT NULL,
     GO_ASSOCIATION_INSTANCE_ID         NUMBER(10)                                    NOT NULL,
@@ -1807,10 +1807,10 @@ CREATE TABLE DoTStest.GOASSOCINSTEVIDCODE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.INDEXWORD (
+CREATE TABLE @oracle_dots@.INDEXWORD (
     INDEX_WORD_ID                      NUMBER(10)                                    NOT NULL,
     WORD                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1825,10 +1825,10 @@ CREATE TABLE DoTStest.INDEXWORD (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.INDEXWORDLINK (
+CREATE TABLE @oracle_dots@.INDEXWORDLINK (
     INDEX_WORD_LINK_ID                 NUMBER(10)                                    NOT NULL,
     INDEX_WORD_ID                      NUMBER(10)                                    NOT NULL,
     TARGET_TABLE_ID                    NUMBER(5)                                     NOT NULL,
@@ -1844,10 +1844,10 @@ CREATE TABLE DoTStest.INDEXWORDLINK (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.INDEXWORDSIMLINK (
+CREATE TABLE @oracle_dots@.INDEXWORDSIMLINK (
     INDEX_WORD_SIM_LINK_ID             NUMBER(10)                                    NOT NULL,
     TARGET_TABLE_ID                    NUMBER(5)                                     NOT NULL,
     TARGET_ID                          NUMBER(10)                                    NOT NULL,
@@ -1868,10 +1868,10 @@ CREATE TABLE DoTStest.INDEXWORDSIMLINK (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.INTERACTION (
+CREATE TABLE @oracle_dots@.INTERACTION (
     INTERACTION_ID                     NUMBER(10)                                    NOT NULL,
     INTERACTION_TYPE_ID                NUMBER(5)                                     NOT NULL,
     EFFECTOR_ACTION_TYPE_ID            NUMBER(5)                                     NOT NULL,
@@ -1893,10 +1893,10 @@ CREATE TABLE DoTStest.INTERACTION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.INTERACTIONINTERACTIONLOE (
+CREATE TABLE @oracle_dots@.INTERACTIONINTERACTIONLOE (
     INTERACTION_INTERACTION_LOE_ID     NUMBER(10)                                    NOT NULL,
     INTERACTION_ID                     NUMBER(10)                                    NOT NULL,
     INTERACTION_LOE_ID                 NUMBER(10)                                    NOT NULL,
@@ -1911,10 +1911,10 @@ CREATE TABLE DoTStest.INTERACTIONINTERACTIONLOE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.INTERACTIONLOE (
+CREATE TABLE @oracle_dots@.INTERACTIONLOE (
     INTERACTION_LOE_ID                 NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1929,10 +1929,10 @@ CREATE TABLE DoTStest.INTERACTIONLOE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.INTERACTIONTYPE (
+CREATE TABLE @oracle_dots@.INTERACTIONTYPE (
     INTERACTION_TYPE_ID                NUMBER(5)                                     NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1949,10 +1949,10 @@ CREATE TABLE DoTStest.INTERACTIONTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ISEXPRESSED (
+CREATE TABLE @oracle_dots@.ISEXPRESSED (
     IS_EXPRESSED_ID                    NUMBER(10)                                    NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -1969,10 +1969,10 @@ CREATE TABLE DoTStest.ISEXPRESSED (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.KEYWORD (
+CREATE TABLE @oracle_dots@.KEYWORD (
     KEYWORD_ID                         NUMBER(6)                                     NOT NULL,
     KEYWORD                            VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -1988,10 +1988,10 @@ CREATE TABLE DoTStest.KEYWORD (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.LIBRARY (
+CREATE TABLE @oracle_dots@.LIBRARY (
     LIBRARY_ID                         NUMBER(5)                                     NOT NULL,
     TAXON_ID                           NUMBER(12)                                    NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NULL,
@@ -2030,10 +2030,10 @@ CREATE TABLE DoTStest.LIBRARY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.MERGESPLIT (
+CREATE TABLE @oracle_dots@.MERGESPLIT (
     MERGE_SPLIT_ID                     NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
     OLD_ID                             NUMBER(10)                                    NOT NULL,
@@ -2051,10 +2051,10 @@ CREATE TABLE DoTStest.MERGESPLIT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.MOTIF (
+CREATE TABLE @oracle_dots@.MOTIF (
     MOTIF_ID                           NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NULL,
     SOURCE_ID                          VARCHAR2(15)                                  NOT NULL,
@@ -2073,10 +2073,10 @@ CREATE TABLE DoTStest.MOTIF (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NACOMMENT (
+CREATE TABLE @oracle_dots@.NACOMMENT (
     NA_COMMENT_ID                      NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     COMMENT_STRING                     CLOB                                          NOT NULL,
@@ -2091,10 +2091,10 @@ CREATE TABLE DoTStest.NACOMMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NAENTRY (
+CREATE TABLE @oracle_dots@.NAENTRY (
     NA_ENTRY_ID                        NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(15)                                  NOT NULL,
@@ -2117,10 +2117,10 @@ CREATE TABLE DoTStest.NAENTRY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NAFEATRELATIONSHIPTYPE (
+CREATE TABLE @oracle_dots@.NAFEATRELATIONSHIPTYPE (
     NA_FEAT_RELATIONSHIP_TYPE_ID       NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        CLOB                                          NOT NULL,
@@ -2135,10 +2135,10 @@ CREATE TABLE DoTStest.NAFEATRELATIONSHIPTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NAFEATURECOMMENT (
+CREATE TABLE @oracle_dots@.NAFEATURECOMMENT (
     NA_FEATURE_COMMENT_ID              NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     COMMENT_STRING                     CLOB                                          NOT NULL,
@@ -2153,10 +2153,10 @@ CREATE TABLE DoTStest.NAFEATURECOMMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NAFEATUREIMP (
+CREATE TABLE @oracle_dots@.NAFEATUREIMP (
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NULL,
@@ -2248,10 +2248,10 @@ CREATE TABLE DoTStest.NAFEATUREIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NAFEATURENAGENE (
+CREATE TABLE @oracle_dots@.NAFEATURENAGENE (
     NA_FEATURE_NA_GENE_ID              NUMBER(10)                                    NOT NULL,
     NA_GENE_ID                         NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
@@ -2266,10 +2266,10 @@ CREATE TABLE DoTStest.NAFEATURENAGENE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NAFEATURENAPROTEIN (
+CREATE TABLE @oracle_dots@.NAFEATURENAPROTEIN (
     NA_FEATURE_NA_PROTEIN_ID           NUMBER(10)                                    NOT NULL,
     NA_PROTEIN_ID                      NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
@@ -2284,10 +2284,10 @@ CREATE TABLE DoTStest.NAFEATURENAPROTEIN (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NAFEATURENAPT (
+CREATE TABLE @oracle_dots@.NAFEATURENAPT (
     NA_FEATURE_NA_PT_ID                NUMBER(10)                                    NOT NULL,
     NA_PRIMARY_TRANSCRIPT_ID           NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
@@ -2302,10 +2302,10 @@ CREATE TABLE DoTStest.NAFEATURENAPT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NAFEATURERELATIONSHIP (
+CREATE TABLE @oracle_dots@.NAFEATURERELATIONSHIP (
     NA_FEATURE_RELATIONSHIP_ID         NUMBER(10)                                    NOT NULL,
     PARENT_NA_FEATURE_ID               NUMBER(10)                                    NOT NULL,
     CHILD_NA_FEATURE_ID                NUMBER(10)                                    NOT NULL,
@@ -2322,10 +2322,10 @@ CREATE TABLE DoTStest.NAFEATURERELATIONSHIP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NAGENE (
+CREATE TABLE @oracle_dots@.NAGENE (
     NA_GENE_ID                         NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(300)                                 NULL,
     IS_VERIFIED                        NUMBER(1)                                     NOT NULL,
@@ -2340,10 +2340,10 @@ CREATE TABLE DoTStest.NAGENE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NALOCATION (
+CREATE TABLE @oracle_dots@.NALOCATION (
     NA_LOCATION_ID                     NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     START_MIN                          NUMBER(12)                                    NULL,
@@ -2370,10 +2370,10 @@ CREATE TABLE DoTStest.NALOCATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NAPRIMARYTRANSCRIPT (
+CREATE TABLE @oracle_dots@.NAPRIMARYTRANSCRIPT (
     NA_PRIMARY_TRANSCRIPT_ID           NUMBER(10)                                    NOT NULL,
     NA_GENE_ID                         NUMBER(10)                                    NULL,
     IS_VERIFIED                        NUMBER(1)                                     NOT NULL,
@@ -2388,10 +2388,10 @@ CREATE TABLE DoTStest.NAPRIMARYTRANSCRIPT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NAPROTEIN (
+CREATE TABLE @oracle_dots@.NAPROTEIN (
     NA_PROTEIN_ID                      NUMBER(10)                                    NOT NULL,
     NA_PRIMARY_TRANSCRIPT_ID           NUMBER(10)                                    NULL,
     NAME                               VARCHAR2(300)                                 NULL,
@@ -2407,10 +2407,10 @@ CREATE TABLE DoTStest.NAPROTEIN (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NASEQCYTOLOCATION (
+CREATE TABLE @oracle_dots@.NASEQCYTOLOCATION (
     NA_SEQ_CYTO_LOCATION_ID            NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     CHROMOSOME                         CHAR(2)                                       NOT NULL,
@@ -2428,10 +2428,10 @@ CREATE TABLE DoTStest.NASEQCYTOLOCATION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NASEQUENCEIMP (
+CREATE TABLE @oracle_dots@.NASEQUENCEIMP (
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     SEQUENCE_VERSION                   NUMBER(3)                                     DEFAULT 1     NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
@@ -2444,7 +2444,7 @@ CREATE TABLE DoTStest.NASEQUENCEIMP (
     G_COUNT                            NUMBER(12)                                    NULL,
     T_COUNT                            NUMBER(12)                                    NULL,
     OTHER_COUNT                        NUMBER(12)                                    NULL,
-    DESCRIPTION                        VARCHAR2(500)                                 NULL,
+    DESCRIPTION                        VARCHAR2(1000)                                NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NULL,
     SOURCE_NA_SEQUENCE_ID              NUMBER(10)                                    NULL,
     SEQUENCE_PIECE_ID                  NUMBER(10)                                    NULL,
@@ -2478,10 +2478,10 @@ CREATE TABLE DoTStest.NASEQUENCEIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NASEQUENCEKEYWORD (
+CREATE TABLE @oracle_dots@.NASEQUENCEKEYWORD (
     NA_SEQUENCE_KEYWORD_ID             NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     KEYWORD_ID                         NUMBER(6)                                     NOT NULL,
@@ -2496,10 +2496,10 @@ CREATE TABLE DoTStest.NASEQUENCEKEYWORD (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NASEQUENCEORGANELLE (
+CREATE TABLE @oracle_dots@.NASEQUENCEORGANELLE (
     NA_SEQUENCE_ORGANELLE_ID           NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     ORGANELLE_ID                       NUMBER(10)                                    NOT NULL,
@@ -2514,10 +2514,10 @@ CREATE TABLE DoTStest.NASEQUENCEORGANELLE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NASEQUENCEREF (
+CREATE TABLE @oracle_dots@.NASEQUENCEREF (
     NA_SEQUENCE_REF_ID                 NUMBER(10)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     REFERENCE_ID                       NUMBER(10)                                    NOT NULL,
@@ -2532,10 +2532,10 @@ CREATE TABLE DoTStest.NASEQUENCEREF (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.NRDBENTRY (
+CREATE TABLE @oracle_dots@.NRDBENTRY (
     NRDB_ENTRY_ID                      NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     GID                                VARCHAR2(255)                                 NULL,
@@ -2556,10 +2556,10 @@ CREATE TABLE DoTStest.NRDBENTRY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.OPTICALMAP (
+CREATE TABLE @oracle_dots@.OPTICALMAP (
     OPTICAL_MAP_ID                     NUMBER(12)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NULL,
     SOURCE_ID                          VARCHAR2(32)                                  NULL,
@@ -2579,10 +2579,10 @@ CREATE TABLE DoTStest.OPTICALMAP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.OPTICALMAPALIGNMENT (
+CREATE TABLE @oracle_dots@.OPTICALMAPALIGNMENT (
     OPTICAL_MAP_ALIGNMENT_ID           NUMBER(12)                                    NOT NULL,
     OPTICAL_MAP_ID                     NUMBER(12)                                    NOT NULL,
     NA_SEQUENCE_ID                     NUMBER(12)                                    NOT NULL,
@@ -2602,10 +2602,10 @@ CREATE TABLE DoTStest.OPTICALMAPALIGNMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.OPTICALMAPALIGNMENTSPAN (
+CREATE TABLE @oracle_dots@.OPTICALMAPALIGNMENTSPAN (
     OPTICAL_MAP_ALIGNMENT_SPAN_ID      NUMBER(12)                                    NOT NULL,
     OPTICAL_MAP_ALIGNMENT_ID           NUMBER(12)                                    NOT NULL,
     OPTICAL_MAP_FRAGMENT_ID            NUMBER(12)                                    NULL,
@@ -2626,10 +2626,10 @@ CREATE TABLE DoTStest.OPTICALMAPALIGNMENTSPAN (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.OPTICALMAPFRAGMENT (
+CREATE TABLE @oracle_dots@.OPTICALMAPFRAGMENT (
     OPTICAL_MAP_FRAGMENT_ID            NUMBER(12)                                    NOT NULL,
     OPTICAL_MAP_ID                     NUMBER(12)                                    NOT NULL,
     FRAGMENT_LENGTH_KB                 FLOAT(22)                                     NOT NULL,
@@ -2646,10 +2646,10 @@ CREATE TABLE DoTStest.OPTICALMAPFRAGMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ORGANELLE (
+CREATE TABLE @oracle_dots@.ORGANELLE (
     ORGANELLE_ID                       NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(300)                                 NULL,
     PLASMID_NAME                       VARCHAR2(300)                                 NULL,
@@ -2664,10 +2664,10 @@ CREATE TABLE DoTStest.ORGANELLE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PATHWAY (
+CREATE TABLE @oracle_dots@.PATHWAY (
     PATHWAY_ID                         NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -2684,10 +2684,10 @@ CREATE TABLE DoTStest.PATHWAY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PATHWAYINTERACTION (
+CREATE TABLE @oracle_dots@.PATHWAYINTERACTION (
     PATHWAY_INTERACTION_ID             NUMBER(10)                                    NOT NULL,
     PATHWAY_ID                         NUMBER(10)                                    NOT NULL,
     INTERACTION_ID                     NUMBER(10)                                    NOT NULL,
@@ -2702,10 +2702,10 @@ CREATE TABLE DoTStest.PATHWAYINTERACTION (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PFAMENTRY (
+CREATE TABLE @oracle_dots@.PFAMENTRY (
     PFAM_ENTRY_ID                      NUMBER(10)                                    NOT NULL,
     RELEASE                            VARCHAR2(5)                                   NOT NULL,
     ACCESSION                          VARCHAR2(10)                                  NOT NULL,
@@ -2726,10 +2726,10 @@ CREATE TABLE DoTStest.PFAMENTRY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PLASMOMAP (
+CREATE TABLE @oracle_dots@.PLASMOMAP (
     PLASMOMAP_ID                       NUMBER(12)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NULL,
     SOURCE_ID                          VARCHAR2(15)                                  NOT NULL,
@@ -2755,10 +2755,10 @@ CREATE TABLE DoTStest.PLASMOMAP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PROJECTLINK (
+CREATE TABLE @oracle_dots@.PROJECTLINK (
     PROJECT_LINK_ID                    NUMBER(10)                                    NOT NULL,
     PROJECT_ID                         NUMBER(3)                                     NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -2775,10 +2775,10 @@ CREATE TABLE DoTStest.PROJECTLINK (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PROTEIN (
+CREATE TABLE @oracle_dots@.PROTEIN (
     PROTEIN_ID                         NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(255)                                 NULL,
     RNA_ID                             NUMBER(10)                                    NOT NULL,
@@ -2796,10 +2796,10 @@ CREATE TABLE DoTStest.PROTEIN (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PROTEINCATEGORY (
+CREATE TABLE @oracle_dots@.PROTEINCATEGORY (
     PROTEIN_CATEGORY_ID                NUMBER(10)                                    NOT NULL,
     TERM                               VARCHAR2(80)                                  NOT NULL,
     DEFINITION                         VARCHAR2(255)                                 NULL,
@@ -2814,10 +2814,10 @@ CREATE TABLE DoTStest.PROTEINCATEGORY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PROTEININSTANCE (
+CREATE TABLE @oracle_dots@.PROTEININSTANCE (
     PROTEIN_INSTANCE_ID                NUMBER(10)                                    NOT NULL,
     PROTEIN_INSTANCE_CATEGORY_ID       NUMBER(3)                                     NOT NULL,
     PROTEIN_ID                         NUMBER(10)                                    NOT NULL,
@@ -2836,10 +2836,10 @@ CREATE TABLE DoTStest.PROTEININSTANCE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PROTEININSTANCECATEGORY (
+CREATE TABLE @oracle_dots@.PROTEININSTANCECATEGORY (
     PROTEIN_INSTANCE_CATEGORY_ID       NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(40)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -2854,10 +2854,10 @@ CREATE TABLE DoTStest.PROTEININSTANCECATEGORY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PROTEINPROPERTY (
+CREATE TABLE @oracle_dots@.PROTEINPROPERTY (
     PROTEIN_PROPERTY_ID                NUMBER(10)                                    NOT NULL,
     AA_SEQUENCE_ID                     NUMBER(10)                                    NOT NULL,
     PROTEIN_PROPERTY_TYPE_ID           NUMBER(10)                                    NOT NULL,
@@ -2879,10 +2879,10 @@ CREATE TABLE DoTStest.PROTEINPROPERTY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PROTEINPROPERTYTYPE (
+CREATE TABLE @oracle_dots@.PROTEINPROPERTYTYPE (
     PROTEIN_PROPERTY_TYPE_ID           NUMBER(10)                                    NOT NULL,
     NAME                               VARCHAR2(80)                                  NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NOT NULL,
@@ -2897,10 +2897,10 @@ CREATE TABLE DoTStest.PROTEINPROPERTYTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PROTEINPROTEINCATEGORY (
+CREATE TABLE @oracle_dots@.PROTEINPROTEINCATEGORY (
     PROTEIN_PROTEIN_CATEGORY_ID        NUMBER(10)                                    NOT NULL,
     PROTEIN_ID                         NUMBER(10)                                    NOT NULL,
     PROTEIN_CATEGORY_ID                NUMBER(10)                                    NOT NULL,
@@ -2915,10 +2915,10 @@ CREATE TABLE DoTStest.PROTEINPROTEINCATEGORY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.PROTEINSYNONYM (
+CREATE TABLE @oracle_dots@.PROTEINSYNONYM (
     PROTEIN_SYNONYM_ID                 NUMBER(18)                                    NOT NULL,
     PROTEIN_ID                         NUMBER(10)                                    NOT NULL,
     SYNONYM_NAME                       VARCHAR2(50)                                  NOT NULL,
@@ -2934,10 +2934,10 @@ CREATE TABLE DoTStest.PROTEINSYNONYM (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.REPEATTYPE (
+CREATE TABLE @oracle_dots@.REPEATTYPE (
     REPEAT_TYPE_ID                     NUMBER(10)                                    NOT NULL,
     PARENT_ID                          NUMBER(10)                                    NOT NULL,
     HIERARCHY                          NUMBER(3)                                     NOT NULL,
@@ -2957,10 +2957,10 @@ CREATE TABLE DoTStest.REPEATTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RHMAP (
+CREATE TABLE @oracle_dots@.RHMAP (
     RH_MAP_ID                          NUMBER(12)                                    NOT NULL,
     NAME                               VARCHAR2(100)                                 NOT NULL,
     TAXON_ID                           NUMBER(12)                                    NOT NULL,
@@ -2979,10 +2979,10 @@ CREATE TABLE DoTStest.RHMAP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RHMAPMARKER (
+CREATE TABLE @oracle_dots@.RHMAPMARKER (
     RH_MAP_MARKER_ID                   NUMBER(12)                                    NOT NULL,
     RH_MARKER_ID                       NUMBER(12)                                    NOT NULL,
     RH_MAP_ID                          NUMBER(12)                                    NOT NULL,
@@ -3006,10 +3006,10 @@ CREATE TABLE DoTStest.RHMAPMARKER (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RHMARKER (
+CREATE TABLE @oracle_dots@.RHMARKER (
     RH_MARKER_ID                       NUMBER(12)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(12)                                    NOT NULL,
     SOURCE_ID                          VARCHAR2(30)                                  NULL,
@@ -3034,10 +3034,10 @@ CREATE TABLE DoTStest.RHMARKER (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RNA (
+CREATE TABLE @oracle_dots@.RNA (
     RNA_ID                             NUMBER(10)                                    NOT NULL,
     DESCRIPTION                        VARCHAR2(500)                                 NULL,
     REVIEW_STATUS_ID                   NUMBER(1)                                     NOT NULL,
@@ -3054,10 +3054,10 @@ CREATE TABLE DoTStest.RNA (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RNAANATOMY (
+CREATE TABLE @oracle_dots@.RNAANATOMY (
     RNA_ANATOMY_ID                     NUMBER(10)                                    NOT NULL,
     ANATOMY_ID                         NUMBER(4)                                     NOT NULL,
     RNA_ID                             NUMBER(10)                                    NOT NULL,
@@ -3075,10 +3075,10 @@ CREATE TABLE DoTStest.RNAANATOMY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RNAANATOMYLOE (
+CREATE TABLE @oracle_dots@.RNAANATOMYLOE (
     RNA_ANATOMY_LOE_ID                 NUMBER(10)                                    NOT NULL,
     RNA_ANATOMY_ID                     NUMBER(10)                                    NOT NULL,
     ANATOMY_LOE_ID                     NUMBER(5)                                     NOT NULL,
@@ -3093,10 +3093,10 @@ CREATE TABLE DoTStest.RNAANATOMYLOE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RNACATEGORY (
+CREATE TABLE @oracle_dots@.RNACATEGORY (
     RNA_CATEGORY_ID                    NUMBER(10)                                    NOT NULL,
     TERM                               VARCHAR2(80)                                  NOT NULL,
     DEFINITION                         VARCHAR2(255)                                 NULL,
@@ -3111,10 +3111,10 @@ CREATE TABLE DoTStest.RNACATEGORY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RNAFEATUREEXON (
+CREATE TABLE @oracle_dots@.RNAFEATUREEXON (
     RNA_FEATURE_EXON_ID                NUMBER(10)                                    NOT NULL,
     RNA_FEATURE_ID                     NUMBER(10)                                    NOT NULL,
     EXON_FEATURE_ID                    NUMBER(10)                                    NOT NULL,
@@ -3129,10 +3129,10 @@ CREATE TABLE DoTStest.RNAFEATUREEXON (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RNAICONSTRUCT (
+CREATE TABLE @oracle_dots@.RNAICONSTRUCT (
     RNAI_CONSTRUCT_ID                  NUMBER(10)                                    NOT NULL,
     RNA_ID                             NUMBER(10)                                    NOT NULL,
     DESCRIPTION                        VARCHAR2(1000)                                NULL,
@@ -3149,10 +3149,10 @@ CREATE TABLE DoTStest.RNAICONSTRUCT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RNAINSTANCE (
+CREATE TABLE @oracle_dots@.RNAINSTANCE (
     RNA_INSTANCE_ID                    NUMBER(10)                                    NOT NULL,
     RNA_ID                             NUMBER(10)                                    NOT NULL,
     NA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
@@ -3171,10 +3171,10 @@ CREATE TABLE DoTStest.RNAINSTANCE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RNAINSTANCECATEGORY (
+CREATE TABLE @oracle_dots@.RNAINSTANCECATEGORY (
     RNA_INSTANCE_CATEGORY_ID           NUMBER(3)                                     NOT NULL,
     NAME                               VARCHAR2(255)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(255)                                 NULL,
@@ -3189,10 +3189,10 @@ CREATE TABLE DoTStest.RNAINSTANCECATEGORY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RNAIPHENOTYPE (
+CREATE TABLE @oracle_dots@.RNAIPHENOTYPE (
     RNAI_PHENOTYPE_ID                  NUMBER(10)                                    NOT NULL,
     RNAI_CONSTRUCT_ID                  NUMBER(10)                                    NOT NULL,
     PHENOTYPE_ID                       NUMBER(10)                                    NOT NULL,
@@ -3208,10 +3208,10 @@ CREATE TABLE DoTStest.RNAIPHENOTYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.RNARNACATEGORY (
+CREATE TABLE @oracle_dots@.RNARNACATEGORY (
     RNA_RNA_CATEGORY_ID                NUMBER(10)                                    NOT NULL,
     RNA_ID                             NUMBER(10)                                    NOT NULL,
     RNA_CATEGORY_ID                    NUMBER(10)                                    NOT NULL,
@@ -3226,10 +3226,10 @@ CREATE TABLE DoTStest.RNARNACATEGORY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ROWSET (
+CREATE TABLE @oracle_dots@.ROWSET (
     ROW_SET_ID                         NUMBER(10)                                    NOT NULL,
     MODIFICATION_DATE                  DATE                                          NOT NULL,
     USER_READ                          NUMBER(1)                                     NOT NULL,
@@ -3242,10 +3242,10 @@ CREATE TABLE DoTStest.ROWSET (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.ROWSETMEMBER (
+CREATE TABLE @oracle_dots@.ROWSETMEMBER (
     ROW_SET_MEMBER_ID                  NUMBER(10)                                    NOT NULL,
     ROW_SET_ID                         NUMBER(10)                                    NOT NULL,
     TABLE_ID                           NUMBER(5)                                     NOT NULL,
@@ -3261,10 +3261,10 @@ CREATE TABLE DoTStest.ROWSETMEMBER (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.SECONDARYACCS (
+CREATE TABLE @oracle_dots@.SECONDARYACCS (
     SECONDARY_ACCS_ID                  NUMBER(10)                                    NOT NULL,
     EXTERNAL_DATABASE_RELEASE_ID       NUMBER(5)                                     NULL,
     AA_ENTRY_ID                        NUMBER(10)                                    NULL,
@@ -3282,10 +3282,10 @@ CREATE TABLE DoTStest.SECONDARYACCS (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.SEQGROUPEXPERIMENTIMP (
+CREATE TABLE @oracle_dots@.SEQGROUPEXPERIMENTIMP (
     SEQ_GROUP_EXPERIMENT_ID            NUMBER                                        NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(30)                                  NOT NULL,
     ALGORITHM_ID                       NUMBER                                        NULL,
@@ -3306,10 +3306,10 @@ CREATE TABLE DoTStest.SEQGROUPEXPERIMENTIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.SEQUENCEFAMILY (
+CREATE TABLE @oracle_dots@.SEQUENCEFAMILY (
     SEQUENCE_FAMILY_ID                 NUMBER                                        NOT NULL,
     NAME                               VARCHAR2(500)                                 NOT NULL,
     DESCRIPTION                        VARCHAR2(2000)                                NULL,
@@ -3325,10 +3325,10 @@ CREATE TABLE DoTStest.SEQUENCEFAMILY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.SEQUENCEFAMILYEXPERIMENT (
+CREATE TABLE @oracle_dots@.SEQUENCEFAMILYEXPERIMENT (
     SEQUENCE_FAMILY_EXPERIMENT_ID      NUMBER                                        NOT NULL,
     DESCRIPTION                        VARCHAR2(2000)                                NULL,
     ORTHOLOG_EXPERIMENT_ID             NUMBER                                        NULL,
@@ -3345,10 +3345,10 @@ CREATE TABLE DoTStest.SEQUENCEFAMILYEXPERIMENT (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.SEQUENCEGROUPFAMILY (
+CREATE TABLE @oracle_dots@.SEQUENCEGROUPFAMILY (
     SEQUENCE_GROUP_FAMILY_ID           NUMBER                                        NOT NULL,
     SEQUENCE_FAMILY_ID                 NUMBER                                        NULL,
     SEQUENCE_GROUP_ID                  NUMBER                                        NULL,
@@ -3363,10 +3363,10 @@ CREATE TABLE DoTStest.SEQUENCEGROUPFAMILY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.SEQUENCEGROUPIMP (
+CREATE TABLE @oracle_dots@.SEQUENCEGROUPIMP (
     SEQUENCE_GROUP_ID                  NUMBER                                        NOT NULL,
     SUBCLASS_VIEW                      VARCHAR2(100)                                 NOT NULL,
     NAME                               VARCHAR2(500)                                 NULL,
@@ -3395,10 +3395,10 @@ CREATE TABLE DoTStest.SEQUENCEGROUPIMP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.SEQUENCEPIECE (
+CREATE TABLE @oracle_dots@.SEQUENCEPIECE (
     SEQUENCE_PIECE_ID                  NUMBER(10)                                    NOT NULL,
     VIRTUAL_NA_SEQUENCE_ID             NUMBER(10)                                    NOT NULL,
     PIECE_NA_SEQUENCE_ID               NUMBER(10)                                    NOT NULL,
@@ -3417,10 +3417,10 @@ CREATE TABLE DoTStest.SEQUENCEPIECE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.SEQUENCESEQUENCEGROUP (
+CREATE TABLE @oracle_dots@.SEQUENCESEQUENCEGROUP (
     SEQUENCE_SEQUENCE_GROUP_ID         NUMBER                                        NOT NULL,
     SEQUENCE_ID                        NUMBER                                        NOT NULL,
     SOURCE_TABLE_ID                    NUMBER                                        NULL,
@@ -3436,10 +3436,10 @@ CREATE TABLE DoTStest.SEQUENCESEQUENCEGROUP (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.SEQUENCETYPE (
+CREATE TABLE @oracle_dots@.SEQUENCETYPE (
     SEQUENCE_TYPE_ID                   NUMBER(4)                                     NOT NULL,
     NUCLEOTIDE_TYPE                    CHAR(7)                                       NOT NULL,
     SUB_TYPE                           VARCHAR2(20)                                  NULL,
@@ -3459,10 +3459,10 @@ CREATE TABLE DoTStest.SEQUENCETYPE (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.SIMILARITY (
+CREATE TABLE @oracle_dots@.SIMILARITY (
     SIMILARITY_ID                      NUMBER(10)                                    NOT NULL,
     SUBJECT_TABLE_ID                   NUMBER(5)                                     NOT NULL,
     SUBJECT_ID                         NUMBER(10)                                    NOT NULL,
@@ -3494,10 +3494,10 @@ CREATE TABLE DoTStest.SIMILARITY (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.SIMILARITYSPAN (
+CREATE TABLE @oracle_dots@.SIMILARITYSPAN (
     SIMILARITY_SPAN_ID                 NUMBER(10)                                    NOT NULL,
     SIMILARITY_ID                      NUMBER(10)                                    NOT NULL,
     MATCH_LENGTH                       NUMBER(12)                                    NOT NULL,
@@ -3524,10 +3524,10 @@ CREATE TABLE DoTStest.SIMILARITYSPAN (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
-CREATE TABLE DoTStest.TRANSLATEDAAFEATSEG (
+CREATE TABLE @oracle_dots@.TRANSLATEDAAFEATSEG (
     TRANSLATED_AA_FEAT_SEG_ID          NUMBER(10)                                    NOT NULL,
     AA_FEATURE_ID                      NUMBER(10)                                    NOT NULL,
     TRANSLATION_SCORE                  FLOAT(126)                                    NOT NULL,
@@ -3548,7 +3548,7 @@ CREATE TABLE DoTStest.TRANSLATEDAAFEATSEG (
     ROW_GROUP_ID                       NUMBER(3)                                     NOT NULL,
     ROW_PROJECT_ID                     NUMBER(3)                                     NOT NULL,
     ROW_ALG_INVOCATION_ID              NUMBER(12)                                    NOT NULL)
- TABLESPACE RAID1
+ TABLESPACE @oracle_dotsTablespace@
  STORAGE (MAXEXTENTS UNLIMITED );
 
 
