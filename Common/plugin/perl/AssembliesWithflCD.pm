@@ -85,7 +85,7 @@ my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_seq
 my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1");
 
 
-my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
+#my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
 
 
 #combine queries to get those assemblies which no longer have a refSeq associated with them these can go into an array and then $assembly->setFullLengthCds(0);
@@ -228,11 +228,13 @@ foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
     my $DTarray_ref = @_;
 
+    my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
+
     my @DTSasEvidenceTarget;
 
-while(my($target_id) = $stmt3->fetchrow_array( ))  {
+   while(my($target_id) = $stmt3->fetchrow_array( ))  {
 
-  push(@DTSasEvidenceTarget, $target_id);
+      push(@DTSasEvidenceTarget, $target_id);
 
    }
 
@@ -241,7 +243,7 @@ while(my($target_id) = $stmt3->fetchrow_array( ))  {
       foreach (@$DTarray_ref)  {
 
 
-        if ($target == $DT){  next;  }
+       if ($target == $DT){  next;  }
 
         if ($target != $DT)  {
 
