@@ -111,7 +111,7 @@ sub getMapHash {
 	my $MappedFrom = $1;
 	if (/$pattern2/) {
 	  my $MappedTo = $1;
-	  push (@$mapHash{$MappedFrom},$MappedTo);
+	  push (@{$mapHash{$MappedFrom}},$MappedTo);
 	  ++$nLinks;
 	}
       }
