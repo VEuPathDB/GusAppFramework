@@ -48,3 +48,5 @@ sub runCmdOnCluster {
 
   $self->{mgr}->runCmd($cmd);
 }
+
+1;
