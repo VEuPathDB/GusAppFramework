@@ -217,7 +217,7 @@ print "scalar(@diffArray2)\n";
 
 
         my $dbh = $self->getQueryHandle();
-        my $rows = $dbh->do("delete from dots.evidence where target_id = ? and attribute_name = 'full_length_CDS'");
+        my $rows = $dbh->do("delete from dots.evidence where target_id = ".$target_id."  and attribute_name = 'full_length_CDS'");
 
 
    print STDERR  "DT.$target_id Evidence deleted\n";
