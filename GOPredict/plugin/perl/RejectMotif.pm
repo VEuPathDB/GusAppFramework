@@ -165,8 +165,6 @@ sub run {
 
 sub getProcessedMotifs{
     my ($self) = @_;
-
-
     my $fh = FileHandle->new("</home/dbarkan/projects/GUS/GOPredict/plugin/perl/finished.txt");
     die ("error: could not open file!") unless $fh;
     my $doneMotifs;
@@ -299,10 +297,13 @@ SQL
       $self->logVeryVerbose("processedRejectedMotif for AssociationGraph: " . $associationGraph->toString());
      
       my $assocList = $associationGraph->getAsList();
+
       foreach my $assoc (@$assocList){
-	  #temporary; should always be an object here
+	  
+#temporary; should always be an object here
 	  my $gusAssoc = $assoc->getGusAssociationObject();
 	  if (!$gusAssoc){
+
 	      $gusAssoc = 
 		GUS::Model::DoTS::GOAssociation->new({ go_term_id => $assoc->getGoTerm()->getGusId(),
 						       table_id => $proteinTableId,
@@ -314,8 +315,9 @@ SQL
 		  if !$gusAssoc;
 	      $assoc->setGusAssociationObject($gusAssoc);
 	  }
+	  
 	  $assoc->updateGusObject();
-	  $gusAssoc->submit(1);
+	  $gusAssoc->submit();
       }
       $associationGraph->killReferences();
       $self->undefPointerCache();
