@@ -210,18 +210,15 @@ print "Arrayids@diffArray2\n";
 print "scalar(@diffArray2)\n";
 
 
+my $dbh = $self->getQueryHandle();
 
+my $rows = $dbh->prepare("delete from dots.evidence where attribute_name = 'full_length_CDS' and target_id = ?");
 
 
   foreach my $target_id(@diffArray2)  {
 
 
-        my $dbh = $self->getQueryHandle();
-        my $rows = $dbh->do("delete from dots.evidence where attribute_name = 'full_length_CDS' and target_id = ?", undef,($target_id));
-
-#my $sql = "delete from dots.evidence where target_id = $target_id and attribute_name = 'full_length_CDS";
-#print "$sql";
-
+    $rows->execute($target_id);
 
    print STDERR  "DT.$target_id Evidence deleted\n";
 
