@@ -298,6 +298,7 @@ sub parseSubject {
   $subj{spans} = \@subjSpans;
 
 
+
   return ($subj{number_of_matches}, \%subj);
 }
 
