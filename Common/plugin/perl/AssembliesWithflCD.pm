@@ -190,7 +190,8 @@ print STDERR "@diffArray\n";
 
 
 my %seen2 = ();
-my @diffArray2;
+my @diffArray2 = ();
+@diffArray2 = undef;
 my $dt;
 
   foreach $dt(@DTs)  {$seen2{$dt} = 1};
@@ -207,7 +208,8 @@ push (@diffArray2, $dt);  }
 #print STDERR "@diffArray\n";
 #print STDERR scalar"(@diffArray)";
 
-print "Arrayids@DTSasEvidenceTarget\n";
+print "Arrayids@diffArray2\n";
+print "scalar(@diffArray2)\n";
 
 
 
