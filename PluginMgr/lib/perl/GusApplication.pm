@@ -172,6 +172,7 @@ sub parseAndRun {
     $plugin_class_str = shift @$A unless $A->[0] =~ /^-/;
   }
 
+
   # first argument begins with a '-'; this the old mode, show help
   elsif ($A->[0] =~ /^-/) {
     ;
