@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* dots-views.sql                                                                             */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Wed Feb 12 20:45:49 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Fri Feb 21 01:48:41 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -1655,6 +1655,7 @@ AS SELECT
   string7 AS LABEL,
   string8 AS MAP,
   string9 AS ORGANISM,
+  string4 AS STRAIN,
   string10 AS PARTIAL,
   string11 AS PHENOTYPE,
   string12 AS PRODUCT,

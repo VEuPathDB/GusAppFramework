@@ -2,7 +2,7 @@
 /*                                                                                            */
 /* rad3-indexes.sql                                                                           */
 /*                                                                                            */
-/* This file was generated automatically by dumpSchema.pl on Thu Feb 13 22:54:27 EST 2003     */
+/* This file was generated automatically by dumpSchema.pl on Tue Feb 25 10:37:14 EST 2003     */
 /*                                                                                            */
 
 SET ECHO ON
@@ -119,8 +119,8 @@ create index @oracle_rad3@.ELEMENTANNOTATION_IND01 on @oracle_rad3@.ELEMENTANNOT
 create index @oracle_rad3@.RAD3_SPOT_IND02 on @oracle_rad3@.ELEMENTIMP (COMPOSITE_ELEMENT_ID)  TABLESPACE @oracle_rad3IndexTablespace@;
 create index @oracle_rad3@.SHORTOLIGO_IND02 on @oracle_rad3@.ELEMENTIMP (ELEMENT_TYPE_ID)  TABLESPACE @oracle_rad3IndexTablespace@;
 create index @oracle_rad3@.SHORTOLIGO_IND03 on @oracle_rad3@.ELEMENTIMP (EXTERNAL_DATABASE_RELEASE_ID)  TABLESPACE @oracle_rad3IndexTablespace@;
+create index @oracle_rad3@.SAGETAGMAPPING_IND01 on @oracle_rad3@.ELEMENTIMP (SOURCE_ID,COMPOSITE_ELEMENT_ID)  TABLESPACE @oracle_rad3IndexTablespace@;
 create index @oracle_rad3@.SPOT_IND01 on @oracle_rad3@.ELEMENTIMP (ARRAY_ID,CHAR1,CHAR2,CHAR3,CHAR4,CHAR5,CHAR6)  TABLESPACE @oracle_rad3IndexTablespace@;
-create index @oracle_rad3@.SAGETAMAPPING_IND01 on @oracle_rad3@.ELEMENTIMP (ARRAY_ID,EXTERNAL_DATABASE_RELEASE_ID,SOURCE_ID)  TABLESPACE @oracle_rad3IndexTablespace@;
 create index @oracle_rad3@.ARRAY_IND01 on @oracle_rad3@.ELEMENTIMP (ARRAY_ID)  TABLESPACE @oracle_rad3IndexTablespace@;
 create index @oracle_rad3@.SHORTOLIGO_IND01 on @oracle_rad3@.ELEMENTIMP (ARRAY_ID,TINYSTRING1,TINYSTRING2)  TABLESPACE @oracle_rad3IndexTablespace@;
 

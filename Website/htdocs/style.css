@@ -28,6 +28,20 @@ BODY   {
 	background: white;
 	margin-left: 5%;
 	}
+.five  {
+ 	background: #000000;	
+	color: white;
+	margin-left: 5%;
+	font-family: sans-serif;
+	font-size: x-small;
+	font-weight: bold;
+	horizontal-alignment: center;
+	}
+
+.list-one {
+	horizontal-align: left;
+	vertical-align: top;
+	}
 
 .formSummary {
 	font-weight: bold;
