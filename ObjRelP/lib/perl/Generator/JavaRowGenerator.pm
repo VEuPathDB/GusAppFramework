@@ -262,8 +262,9 @@ sub _createChildAccessors{
     my ($self) = @_;
     my $output = "//Child Objects\n";
     
-    my $childRelations = $self->_getChildRelations();
-    
+#    my $childRelations = $self->_getChildRelations();
+    my $table = $self->{generator}->getTable($self->{fullName}, 1);
+    my $childRelations = $table->getChildRelations();
     my $childHash = $self->_createChildHash($childRelations);
     my $duplicateChildren = $self->_findDuplicateChildren($childHash);
     
@@ -271,7 +272,7 @@ sub _createChildAccessors{
 	my ($childFkCol) = $childKey =~ /(\S+)\.\.\S+/;
 	my $fullChildTable = $childHash->{$childKey};
 	my ($childSchema, $childTable) = $self->_cutFullQualifiedName($fullChildTable);
-	next if $childSchema eq "TESS";
+	next if $childSchema eq "TESS" || $childTable eq "ProjectLink";
 	my $instanceName = $self->_createChildInstanceVar($childFkCol, $fullChildTable, $duplicateChildren);
 	my $accessorName = $self->_createChildAccessorName($childFkCol, $fullChildTable, $duplicateChildren);
 
@@ -279,7 +280,7 @@ sub _createChildAccessors{
 
 	$output .= "public void add" . $accessorName . "(" . $packageChildTable . " " .
 	    lc($accessorName) ."){\n";
-	$output .= "\t" . lc($accessorName) .  ".setParent(this, \"$instanceName\");\n";
+	$output .= "\t" . lc($accessorName) .  ".setParent(this, \"$childFkCol\");\n";
  	$output .= "}\n";
 	$output .= "public Vector get" . $accessorName . "List(){\n";
 	$output .= "\t return getChildren(\"$instanceName\");\n";
@@ -333,6 +334,11 @@ sub _createChildAccessorName{
     if ($duplicateChildren->{$fullChildTable}){
 	$accessorName = $self->_handleDuplicateChild($childFkCol, $childTable);
     }
+    
+    if (lc($accessorName) eq "abstract"){   #java keyword
+	$accessorName = "abstract_child";
+    }
+
     return $accessorName;
 }
 
