@@ -67,7 +67,7 @@ sub new {
 		     isList =>0,
 		 }),
 	 
-	 floatArg ({name => 'database_version',
+	 stringArg ({name => 'database_version',
 		    descr => 'New version of external database for which we are creating a new release',
 		    reqd => 1,
 		    constraintFunc => undef,
