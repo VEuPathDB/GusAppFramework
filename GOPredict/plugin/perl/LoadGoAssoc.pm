@@ -310,6 +310,15 @@ sub __processAssociations{
     if ($orgName eq 'mgi'){
 	$sourceId = $self->{mgiMap}->{$tempSourceId};
     }
+    #DTB and DFP 1/03/05 We put this clause in here because the gene_assocation.sgd file had put in two 
+    #extra 0's for the secondary_identifier for yeast.  This did not match up with the fasta file for yeast
+    #so it was not finding the sequences as they were loaded in GUS.  If the gene_association.sgd file fixes
+    #this error, we will have to remove this clause.
+    if ($orgName eq 'sgd'){
+	my $origSourceId = $sourceId;
+	$sourceId =~ s/S00/S/;
+	$self->logVerbose("converted $origSourceId to $sourceId for yeast");
+    }
     
     $self->logVerbose("\tLoadGoAssoc.processAssociations: processing external source id: $sourceId");
     
