@@ -126,13 +126,14 @@ while(my($target_id) = $stmt3->fetchrow_array( ))  {
     push (@RemoveAsMarkedFL,$DTnotFLength);
   }
 
- print STDERR "scalar(@naSequenceIds)\n";
+if (my @naSequenceIds = undef)  { undef @naSequenceIds;
+}
 
-my $number = 1;
 
- push(@naSequenceIds, $number);
-
- print STDERR "scalar(@naSequenceIds)\n";
+#print STDERR "scalar(@naSequenceIds)\n";
+#my $number = 1;
+#push(@naSequenceIds, $number);
+#print STDERR "scalar(@naSequenceIds)\n";
 
 my $ct = 0;
 
