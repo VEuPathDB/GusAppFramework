@@ -105,6 +105,13 @@
       <fileset dir="lib/xml" includes="*.xml" />
   	</copy>
   	
+  	<mkdir dir="${build.home}/webapp/WEB-INF/gus-config" />
+  	<copy todir="${build.home}/webapp/WEB-INF/gus-config/QuerySet.xml" 
+  		  file="${basedir}/lib/xml/PSUSampleQuerySet.xml"/>
+  	<copy todir="${build.home}/webapp/WEB-INF/gus-config/RecordSet.xml" 
+  		  file="${basedir}/lib/xml/PSUSampleRecordSet.xml"/>
+    <copy todir="${build.home}/webapp/WEB-INF/gus-config/ModelConfig.xml" 
+	      file="/nfs/team81/art/gus/gus_home/lib/xml/modelConfig.xml"/>
   	<mkdir dir="${webapp.dir}"/>
     <copy todir="${webapp.dir}">
       <fileset dir="${basedir}/ant-build/webapp" />
@@ -138,7 +145,7 @@
   </target>
 
 
-  <target name="prepare">
+  <target name="prepare" depends="start">
 
     <!-- Create build directories as needed -->
     <mkdir  dir="${build.home}"/>
