@@ -607,7 +607,7 @@ sub isSuperClass {
 sub getSuperClasses {
   my $self = shift;
   if (!exists $self->{superClasses}) {
-    my $cmd = "select d.name,t2.name as superclass,t1.name as subclass from ".$self->getCoreName().".TableInfo t1,".$self->getCoreName().".TableInfo t2 ".$self->getCoreName().".DatabaseInfo d where t2.table_id = t1.view_on_table_id and t1.name not like '%Ver' and d.database_id = t2.database_id";
+    my $cmd = "select d.name,t2.name as superclass,t1.name as subclass from ".$self->getCoreName().".TableInfo t1,".$self->getCoreName().".TableInfo t2, ".$self->getCoreName().".DatabaseInfo d where t2.table_id = t1.view_on_table_id and t1.name not like '%Ver' and d.database_id = t2.database_id";
     my $sth = $self->getQueryHandle()->prepareAndExecute($cmd);
     while (my ($schema,$sc,$tn) = $sth->fetchrow_array()) {
       $sc = $self->getFullTableClassName("${schema}::$sc");
