@@ -75,8 +75,8 @@ PLUGIN_NOTES
   my $argsDeclaration =
   [
    stringArg({name  => 'source_id',
-              descr => 'Motif Source ID',
-              reqd  => 1,
+              descr => 'Motif Source ID.  Leave blank to process all motifs',
+              reqd  => 0,
               constraintFunc=> undef,
               isList=>0,
            }),
@@ -87,14 +87,14 @@ PLUGIN_NOTES
               isList=>0,
            }),
    integerArg({name  => 'external_database_id',
-              descr => 'external_database_id of the motif that has been rejected',
-              reqd  => 1,
+              descr => 'external_database_id of the motif that has been rejected.  Leave blank to process all motifs.',
+              reqd  => 0,
               constraintFunc=> undef,
               isList=>0,
            }),
    integerArg({name  => 'external_database_release_id',
-              descr => 'external_database_release_id of the motif that has been rejected',
-              reqd  => 1,
+              descr => 'external_database_release_id of the motif that has been rejected.  Leave blank to process all motifs',
+              reqd  => 0,
               constraintFunc=> undef,
               isList=>0,
            }),
@@ -110,8 +110,22 @@ PLUGIN_NOTES
               constraintFunc=> undef,
               isList=>0,
            }),
+   integerArg({name  => 'taxon_id',
+              descr => 'taxon id of species to reject associations for.  If left blank, will do all species for this motif.',
+             reqd => 0,
+	       constraintFunc=> undef,
+              isList=>0,
+           }),
+   fileArg({name => 'restart_file',
+		  descr => 'write processed proteins into this file.  Use it to recover from an interrupted run of the plugin',
+		  reqd => 1,
+		  constraintFunc => undef,
+		  isList => 0,
+		  mustExist => 1,
+		  format => 'Each line in the file is a space-separated quadruplet representing the external database id, external database release id, source id, and processed proteins of each motif.  The plugin automatically writes to it when running and reads from it when restarting.',
+	      }),
+   
   ];
-
 
   $self->initialize({requiredDbVersion => {},
                      cvsRevision => '$Revision$', # cvs fills this in!
@@ -130,110 +144,115 @@ sub run {
   $self->log("beginning run");
   $self->logAlgInvocationId;
   $self->logCommit;
-  $self->log("logged stuff");
+
   my $queryHandle = $self->getQueryHandle();
   my $db = $self->getDb(); #for undef pointer cache
   $self->setAdapter(GUS::GOPredict::DatabaseAdapter->new($queryHandle, $db));
   $self->log("created adapter");
-  ##begin one-time fix to do all bad motifs instead of one at a time
-  my $motifList = $self->getAllBadMotifs();
-  my $doneMotifs = $self->getProcessedMotifs();
+  
+  my $motifList = $self->getAllRejectedMotifs();
 
-  foreach my $motifVersion (keys %$motifList){
-      my $sourceIds = $motifList->{$motifVersion};
-      foreach my $sourceId (keys %$sourceIds){
-	  $self->log("processing database release $motifVersion motif source $sourceId");
-	  if ($doneMotifs->{$motifVersion}->{$sourceId}){
-	      $self->log("skipping this pair since it is already done");
-	      next;
+  my $sourceId = $self->getArg("source_id");
+  my $dbId = $self->getArg("external_database_id");
+  my $version = $self->getArg("external_database_release_id");
+  my $reason = $self->getArg("motif_rejection_reason_id");
+
+  if ($sourceId && $dbId && $version){   #user has specified a specific motif to reject
+      my $rejectedMotif = $self->createRejectedMotif($sourceId, $version, $reason, $dbId);
+      $self->clearAssociations($rejectedMotif);
+  }
+  else{ #user want to process all rejected motifs in the database
+      foreach my $nextMotifVersion (keys %$motifList){
+	  my $sourceIds = $motifList->{$nextMotifVersion};
+	  foreach my $nextSourceId (keys %$sourceIds){
+	      my $rejectedMotif = $self->getRejectedMotif($nextSourceId, $nextMotifVersion);
+	      $self->clearAssociations($rejectedMotif);
 	  }
-	  my $rejectedMotif = $self->getRejectedMotifTemp($motifVersion, $sourceId);
-	  $self->clearAssociations($rejectedMotif);
       }
   }
 
-##end one-time fix
-
-#uncomment these lines to return to one at a time
-#my $rejectedMotif = $self->getRejectedMotif();
-
- # $self->clearAssociations($rejectedMotif);
-
   my $returnMessage = "RejectMotif:  Plugin ran successfully";
-
+  
 }
 
 sub getProcessedMotifs{
     my ($self) = @_;
-    my $fh = FileHandle->new("</home/dbarkan/projects/GUS/GOPredict/plugin/perl/finished.txt");
-    die ("error: could not open file!") unless $fh;
-    my $doneMotifs;
-    $self->log("getting processed motifs");
-    while (<$fh>){
-	chomp;
-	my $line = $_;
-	my ($version, $sourceId) = $line =~ /release\s(\d+)\smotif\ssource\s(.*)$/;
-	$self->logVerbose("adding $version, $sourceId to processed");
-	$doneMotifs->{$version}->{$sourceId} = 1;
+    my $processedMotifs = $self->{ProcessedMotifs};
+    if (!$processedMotifs){
+	my $fileName = $self->getArg("restart_file");
+	my $fh = FileHandle->new("<$fileName");
+	die ("error: could not open file!") unless $fh;
+	my $processedMotifs;
+	$self->log("getting processed motifs");
+	while (<$fh>){
+	    chomp;
+	    my $line = $_;
+	    my ($databaseId, $version, $sourceId, $proteinId) = $line =~ /(\S+)\s(\S+)\s(\S+)\s(\S+)/;
+	    $self->logVerbose("adding $databaseId, $version, $sourceId, $proteinId to processed");
+	    $processedMotifs->{$databaseId}->{$version}->{$proteinId}->{$sourceId} = 1;
+	}
+	$self->{ProcessedMotifs} = $processedMotifs;
     }
-    return $doneMotifs;
+    return $processedMotifs;
 }
 
-
-#this method uses its parameters instead of global cla to get the motif, and does not
-#die if it is already in the database
-sub getRejectedMotifTemp{
-
-    my ($self, $motifVersion, $sourceId) = @_;
-    
-    my $rejectedMotif = 
-	GUS::Model::DoTS::RejectedMotif->new(
-					     { source_id => $sourceId,
-					       external_database_release_id => $motifVersion,
-					   });
-    
-    $rejectedMotif->retrieveFromDB();
-    return $rejectedMotif;
-}
-
-sub getAllBadMotifs{
-
-    my ($self) = @_;
-    my $motifList;
-    my $sql = "select external_database_release_id, source_id from dots.rejectedmotif";
-    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
-    while (my ($version, $sourceId) = $sth->fetchrow_array()){
-	$motifList->{$version}->{$sourceId} = 1;
-    }
-    return $motifList;
-}
-
-
+#retrieves a rejected motif given the external database release id of the motif and its source id
 sub getRejectedMotif {
-  my ($self) = @_;
-
+  my ($self, $sourceId, $version) = @_;
+  
   my $rejectedMotif = 
-    GUS::Model::DoTS::RejectedMotif->new(
-					 { source_id => $self->getArg('source_id'),
-        external_database_id => $self->getArg('external_database_id'),
-        external_database_release_id => $self->getArg('external_database_release_id'),
-        motif_rejection_reason_id => $self->getArg('motif_rejection_reason_id')
-      });
-
-  if ($rejectedMotif->retrieveFromDB() ) {
-    die("Motif already in database");
-  }
-
-  $rejectedMotif->submit();
+      GUS::Model::DoTS::RejectedMotif->new(
+					   { source_id => $sourceId,
+					     external_database_release_id => $version,
+					 });
 
   return $rejectedMotif;
 }
 
-sub clearAssociations {
-  my ($self, $rejectedMotif) = @_;
+#creates a new rejected motif, setting attributes according to parameters.  Fails if the motif already
+#exists.  Returns the motif object (GUS::Model::DoTS::RejectedMotif)
+sub createRejectedMotif {
+  my ($self, $sourceId, $version, $dbId, $reason) = @_;
+  
+  my $rejectedMotif = 
+      GUS::Model::DoTS::RejectedMotif->new(
+					   { source_id => $sourceId,
+					     external_database_id => $dbId,
+					     external_database_release_id => $version,
+					     motif_rejection_reason_id => $reason,
+					 });
+  
+  if ($rejectedMotif->retrieveFromDB() ) {
+      die("Motif already in database");
+  }
+  
+  $rejectedMotif->submit();
+  return $rejectedMotif;
+}
 
-  my $sql = <<SQL;
-    select distinct ga.row_id
+sub clearAssociations {
+    my ($self, $rejectedMotif) = @_;
+    
+    my $fileName = $self->getArg("restart_file");
+    my $fh = FileHandle->new("<$fileName");
+        
+    my $ruleTableId = $self->getTableId('DoTS', 'AAMotifGOTermRule');
+    my $proteinTableId = $self->getTableId('DoTS', 'Protein');
+    my $instanceTableId =   $self->getTableId('DoTS', 'GOAssociationInstance');
+    my $databaseId = $rejectedMotif->getExternalDatabaseId();
+    my $sourceId = $rejectedMotif->getSourceId();
+    
+    my $taxonId = $self->getArg("taxon_id");
+    
+    my $taxonFromSql = "";
+    my $taxonWhereSql = "";
+
+    if ($taxonId){
+	$taxonFromSql = ",  DoTS.RNAFeature rnaf, DoTS.RNAInstance rnai, DoTS.Assembly am ";
+	$taxonWhereSql = "  and p.rna_id = rnai.rna_id and rnai.na_feature_id = rnaf.na_feature_id and rnaf.na_sequence_id = am.na_sequence_id and am.taxon_id = $taxonId";
+    }
+
+    my $sql = "select distinct ga.row_id
     from DoTS.Evidence e,
 	 DoTS.Protein p,
          DoTS.AaMotifGoTermRule gtr,
@@ -241,87 +260,84 @@ sub clearAssociations {
          DoTS.MotifAaSequence mas,
          SRes.ExternalDatabaseRelease edr,
          DoTS.GoAssociationInstance gai,
-         DoTS.GoAssociation ga, DoTS.RNAFeature rnaf, DoTS.RNAInstance rnai, DoTS.Assembly am
-    where edr.external_database_id = ?
-      and mas.source_id = ?
+         DoTS.GoAssociation ga" . $taxonFromSql . "
+    where edr.external_database_id = $databaseId
+      and mas.source_id = $sourceId
       and edr.external_database_release_id = mas.external_database_release_id
       and mas.aa_sequence_id = gtrs.aa_sequence_id_1
       and gtrs.aa_motif_go_term_rule_set_id = gtr.aa_motif_go_term_rule_set_id
       and gtr.aa_motif_go_term_rule_id = e.fact_id
-      and e.fact_table_id = ? /* DoTS.AaMotifGoTermRule */
-      and e.target_table_id = ? /* DoTS.GoAssociationInstance */
+      and e.fact_table_id = $ruleTableId
+      and e.target_table_id = $instanceTableId
       and e.target_id = gai.go_association_instance_id
       and gai.go_association_id = ga.go_association_id
       and ga.is_deprecated = 0 
-      and ga.row_id = p.protein_id and p.rna_id = rnai.rna_id and rnai.na_feature_id = rnaf.na_feature_id and rnaf.na_sequence_id = am.na_sequence_id and am.taxon_id = 8
-      and ga.table_id = ? /* DoTS.Protein */
-SQL
+      and ga.row_id = p.protein_id and ga.table_id = $proteinTableId 
+      $taxonWhereSql";
+    
 #and ga.row_id = 10432
-    #dtb: put back is_not?
-  my $dbh = $self->getQueryHandle();
+  #dtb: put back is_not?
+    my $dbh = $self->getQueryHandle();
+
+    $self->log("executing $sql to get all Proteins with Associations created with this motif");
+    
+    my $stmt = $dbh->prepareAndExecute($sql);  
+
+    my $goVersion = $self->getArg('go_ext_db_rls_id');
+    my $goGraph = $self->getGoGraph($goVersion);
+    
+    my $allRejectedMotifs = $self->getAllRejectedMotifs();
+    my $rejectedMotifId = $rejectedMotif->getRejectedMotifId();
+    my $rejectedMotifVersion = $rejectedMotif->getExternalDatabaseReleaseId();
   
-  my $stmt = $dbh->prepare($sql);
-  my $databaseId = $rejectedMotif->getExternalDatabaseId();
-  my $sourceId = $rejectedMotif->getSourceId();
-  #my $bind1 = $self->getArg('external_database_id');
-  #my $sourceId = $self->getArg('source_id');
-  my $bind3 = $self->getTableId('DoTS', 'AAMotifGOTermRule');
-  my $bind4 = $self->getTableId('DoTS', 'GOAssociationInstance');
-  my $proteinTableId = $self->getTableId('DoTS', 'Protein');
-  $self->logVerbose("executing $sql");  
-  $stmt->execute($databaseId, $sourceId, $bind3, $bind4, $proteinTableId);
+    while (my ($proteinId) = $stmt->fetchrow_array()) {
 
-  my $goVersion = $self->getArg('go_ext_db_rls_id');
-  my $goGraph = $self->getGoGraph($goVersion);
+	if ($allRejectedMotifs->{$databaseId}->{$rejectedMotifVersion}->{$sourceId}->{$proteinId}){
+	    $self->logVeryVerbose ("skipping motif $sourceId protein $proteinId as it has already been processed");
+	}
 
-  my $allRejectedMotifs = $self->getAllRejectedMotifs();
-  my $rejectedMotifId = $rejectedMotif->getRejectedMotifId();
-  my $rejectedMotifVersion = $rejectedMotif->getExternalDatabaseReleaseId();
-  
-  while (my ($proteinId) = $stmt->fetchrow_array()) {
+	$self->logVerbose("processing $databaseId $rejectedMotifVersion $proteinId");      
+	my $extent = GUS::GOPredict::GoExtent->new($self->getAdapter());
+	my $associationGraph = $self->getAdapter()->getAssociationGraph($goGraph, $proteinId, $proteinTableId,
+									$goVersion, $extent);
+	# $self->getAdapter()->addEvidenceToGraph($associationGraph);
+	
+	$self->logVeryVerbose("AssociationGraph before processing rejected motif: " . $associationGraph->toString());
+	
+	my $evidenceMap = $self->getEvidenceMap($proteinId, $goGraph);
+	
+	$associationGraph->processRejectedMotif($rejectedMotifVersion, $sourceId, $rejectedMotif, 
+						$allRejectedMotifs, $evidenceMap);
+	
+	$self->logVeryVerbose("processedRejectedMotif for AssociationGraph: " . $associationGraph->toString());
+	
+	my $assocList = $associationGraph->getAsList();
 
-      $self->logVerbose("processing protein $proteinId");      
-      my $extent = GUS::GOPredict::GoExtent->new($self->getAdapter());
-      my $associationGraph = $self->getAdapter()->getAssociationGraph($goGraph, $proteinId, $proteinTableId,
-								      $goVersion, $extent);
-     # $self->getAdapter()->addEvidenceToGraph($associationGraph);
-
-      $self->logVeryVerbose("AssociationGraph before processing rejected motif: " . $associationGraph->toString());
-
-      my $evidenceMap = $self->getEvidenceMap($proteinId, $goGraph);
-      
-      $associationGraph->processRejectedMotif($rejectedMotifVersion, $sourceId, $rejectedMotif, 
-					      $allRejectedMotifs, $evidenceMap);
-      
-      $self->logVeryVerbose("processedRejectedMotif for AssociationGraph: " . $associationGraph->toString());
-     
-      my $assocList = $associationGraph->getAsList();
-
-      foreach my $assoc (@$assocList){
-	  
-#temporary; should always be an object here
-	  my $gusAssoc = $assoc->getGusAssociationObject();
-	  if (!$gusAssoc){
-
-	      $gusAssoc = 
-		GUS::Model::DoTS::GOAssociation->new({ go_term_id => $assoc->getGoTerm()->getGusId(),
-						       table_id => $proteinTableId,
-						       row_id => $proteinId
-						       });
-	      
-	      $gusAssoc->retrieveFromDB();
-	      &confess ("gusAssoc for go term " . $assoc->getGoTerm()->getRealId() . " was not even listed as deprecated in the db\n") 
-		  if !$gusAssoc;
-	      $assoc->setGusAssociationObject($gusAssoc);
+	foreach my $assoc (@$assocList){
+	    #temporary; should always be an object here
+	    my $gusAssoc = $assoc->getGusAssociationObject();
+	    if (!$gusAssoc){
+		$gusAssoc = 
+		    GUS::Model::DoTS::GOAssociation->new({ go_term_id => $assoc->getGoTerm()->getGusId(),
+							   table_id => $proteinTableId,
+							   row_id => $proteinId
+							   });
+		$gusAssoc->retrieveFromDB();
+		&confess ("gusAssoc for go term " . $assoc->getGoTerm()->getRealId() . " was not even listed as deprecated in the db\n") 
+		    if !$gusAssoc;
+		$assoc->setGusAssociationObject($gusAssoc);
 	  }
 	  
 	  $assoc->updateGusObject();
 	  $gusAssoc->submit();
-      }
-      $associationGraph->killReferences();
-      $self->undefPointerCache();
-  }
+	}
+
+	print $fh "$databaseId $rejectedMotifVersion $sourceId $proteinId\n";
+	$associationGraph->killReferences();
+	$self->undefPointerCache();
+    }
 }
+
 
 sub getTableId {
   my ($self, $dbName, $tableName) = @_;
@@ -337,11 +353,8 @@ sub getTableId {
 	GUS::Model::Core::TableInfo->new(
 					 { name => $tableName,
 					   database_id => $db->getDatabaseId() } );
-      
       $table->retrieveFromDB();
-      
       $id = $table->getTableId();
-
       if (! $id ) {
 	  die("can't get tableId for '$dbName\.$tableName'");
       }
@@ -404,19 +417,21 @@ sub getEvidenceMap{
 #since they are all loaded into memory!
 #map is of the form:
 #{motif database release id} -> {motif source id}
-
 sub getAllRejectedMotifs{
 
     my ($self) = @_;
-
-    my $allRejectedMotifs;
-    my $sql = "select external_database_release_id, source_id from DoTS.RejectedMotif";
-    $self->log("getAllRejectedMotifs: executing $sql");
-    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
-    while (my ($motifVersion, $sourceId) = $sth->fetchrow_array()){
-	$allRejectedMotifs->{$motifVersion}->{$sourceId} = 1;
+    
+    my $allRejectedMotifs = $self->{RejectedMotifs};
+    if (!$allRejectedMotifs){
+	my $sql = "select external_database_release_id, source_id from DoTS.RejectedMotif";
+	$self->log("getAllRejectedMotifs: executing $sql");
+	my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+	while (my ($motifVersion, $sourceId) = $sth->fetchrow_array()){
+	    $allRejectedMotifs->{$motifVersion}->{$sourceId} = 1;
+	}
+	$self->{RejectedMotifs} = $allRejectedMotifs;
+	$self->log("got rejected motifs");
     }
-    $self->log("got rejected motifs");
     return $allRejectedMotifs;
 }
 
@@ -445,17 +460,5 @@ sub getAdapter{
     my ($self) = @_;
     return $self->{Adapter};
 }
-
-sub getTaxonForProteinId{
-
-    my ($self, $proteinId) = @_;
-    my $tempSql = "select am.taxon_id from dots.protein p, dots.rnainstance rnai, dots.rnafeature rnaf, dots.assembly am
-	where p.protein_id = $proteinId and p.rna_id = rnai.rna_id and rnai.na_feature_id = rnaf.na_feature_id
-                  and rnaf.na_sequence_id = am.na_sequence_id";
-    my $sth = $self->getQueryHandle()->prepareAndExecute($tempSql);
-    my ($taxonId) = $sth->fetchrow_array();
-    return $taxonId;
-}
-
 
 1;
