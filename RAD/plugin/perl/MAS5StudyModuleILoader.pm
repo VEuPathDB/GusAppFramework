@@ -735,10 +735,15 @@ sub modifyDate {
   my $finalTime;
 
   if ($time2.$time1 eq "PM") {
-    $finalTime = $hourMinArray[0] + 12 if ($hourMinArray[0] < 11);
-    $finalTime .= ":$hourMinArray[1]:00";
-
-  } else {
+    if ($hourMinArray[0] <= 11) {
+      $finalTime = $hourMinArray[0] + 12;
+      $finalTime .= ":$hourMinArray[1]:00";
+    }
+    else {
+     $finalTime = "00:$hourMinArray[1]:00";
+   }
+  } 
+  else {
     $finalTime = "$tempTime:00";
   }
 
@@ -765,9 +770,13 @@ sub getQuantificationDate {
   my $finalTime;
 
   if ($time2.$time1 eq "PM") {
-    $finalTime = $hourMinArray[0] + 12 if ($hourMinArray[0] < 11);
-    $finalTime .= ":$hourMinArray[1]:00";
-
+    if ($hourMinArray[0] <= 11) } {
+      $finalTime = $hourMinArray[0] + 12;
+      $finalTime .= ":$hourMinArray[1]:00";
+    }
+    else {
+      $finalTime = "00:$hourMinArray[1]:00"; 
+    }
   } else {
     $finalTime = "$tempTime:00";
   }
