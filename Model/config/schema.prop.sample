@@ -8,6 +8,10 @@ oracle_systemPassword=12345
 #
 oracle_SID=gusdb1
 
+# Hostname for the Oracle server on which to install GUS
+#
+oracle_host=gus.somewhere.org
+
 # Default tablespace and quotas for the new users.
 #
 oracle_tempTablespace=TEMP

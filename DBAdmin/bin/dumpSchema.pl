@@ -284,7 +284,11 @@ my $tablesToDump = ($gusVersion >= 3.0) ?
     [
      ['core', 'DatabaseInfo', 'database_id', 'Populate Core.DatabaseInfo, which lists each of the GUS namespaces (i.e. schemas/users).'],
      ['core', 'TableInfo', 'table_id', 'Populate Core.TableInfo, which lists each of the GUS tables.'],
-     ['sres', 'BibRefType', 'bib_ref_type_id', 'Populate sres.BibRefType, a controlled vocabulary of bibliographic reference types.'],
+
+# Can't include this without also including ExternalDatabaseRelease; need 
+# a different approach to transfer controlled vocabularies like this.
+
+#     ['sres', 'BibRefType', 'bib_ref_type_id', 'Populate sres.BibRefType, a controlled vocabulary of bibliographic reference types.'],
      ] 
     : 
     [
@@ -667,44 +671,51 @@ if ($doAll || $masterOnly) {
     my $coreTs = &getTargetSchema('Core', \@schemas, \@targetSchemas);
     my $sresTs = &getTargetSchema('SRes', \@schemas, \@targetSchemas);
     my $dotsTs = &getTargetSchema('DoTS', \@schemas, \@targetSchemas);
+    my $radTs = &getTargetSchema('RAD3', \@schemas, \@targetSchemas);
+    my $tessTs = &getTargetSchema('TESS', \@schemas, \@targetSchemas);
+
+    my @nonVerTargetSchemas = grep(!/Ver\@?$/i, @targetSchemas);
 
     if ($coreTs) {
 	my $password = &getTargetPassword($coreTs);
-	my @grantees = grep(!/^$coreTs$/, @targetSchemas);
+	my @grantees = grep(!/^$coreTs$/, @nonVerTargetSchemas);
 
 	print $fh "# Grant permission to reference tables in $coreTs to all other schemas\n";
-	print $fh "grantPermissions.pl --login=$coreTs --owner=$coreTs --permissions=REFERENCES ";
-	print $fh "--grantees=", join(',', @grantees), " --password=$password\n\n";
+	print $fh "echo '$password' | grantPermissions.pl --login=$coreTs --owner=$coreTs --permissions=REFERENCES ";
+	print $fh "--grantees=", join(',', @grantees), " --db-sid=\@oracle_SID\@ --db-host=\@oracle_host\@ >$coreTs-grants.log\n\n";
     }
 
     if ($sresTs) {
 	my $password = &getTargetPassword($sresTs);
-	my @grantees = grep(!/^($coreTs|$sresTs)$/, @targetSchemas);
+	my @grantees = grep(!/^$sresTs$/, @nonVerTargetSchemas);
 
-	print $fh "# Grant permission to reference tables in $sresTs to all other schemas except $coreTs\n";
-	print $fh "grantPermissions.pl --login=$sresTs --owner=$sresTs --permissions=REFERENCES ";
-	print $fh "--grantees=", join(',', @grantees), " --password=$password\n\n";
+	print $fh "# Grant permission to reference tables in $sresTs to all other schemas\n";
+	print $fh "echo '$password' | grantPermissions.pl --login=$sresTs --owner=$sresTs --permissions=REFERENCES ";
+	print $fh "--grantees=", join(',', @grantees), " --db-sid=\@oracle_SID\@ --db-host=\@oracle_host\@ >$sresTs-grants.log\n\n";
     }
 
     if ($dotsTs) {
 	my $password = &getTargetPassword($dotsTs);
-	my @grantees = grep(!/^$coreTs$/, @targetSchemas);
+	my @grantees = grep(!/^($coreTs|$dotsTs)$/, @nonVerTargetSchemas);
 
 	print $fh "# Grant permission to reference tables in $dotsTs to all other schemas except $coreTs\n";
-	print $fh "grantPermissions.pl --login=$dotsTs --owner=$dotsTs --permissions=REFERENCES ";
-	print $fh "--grantees=", join(',', @grantees), " --password=$password\n\n";
+	print $fh "echo '$password' | grantPermissions.pl --login=$dotsTs --owner=$dotsTs --permissions=REFERENCES ";
+	print $fh "--grantees=", join(',', @grantees), " --db-sid=\@oracle_SID\@ --db-host=\@oracle_host\@ >$dotsTs-grants.log\n\n";
     }
 
-    if ($doAll || $constraintsOnly || $masterOnly) {
-	print $fh "# create all primary key constraints\n";
-	print $fh "$primKeyTxt\n";
-	$nf += $numSchemas;
+    if ($radTs && $tessTs) {
+	my $password = &getTargetPassword($radTs);
+	my @grantees = ($tessTs);
 
-	print $fh "# create all non-primary key constraints\n";
-	print $fh "$nonPrimKeyTxt\n";
-	$nf += $numSchemas;
+	print $fh "# Grant permission to reference tables in $radTs to $tessTs\n";
+	print $fh "echo '$password' | grantPermissions.pl --login=$radTs --owner=$radTs --permissions=REFERENCES ";
+	print $fh "--grantees=", join(',', @grantees), " --db-sid=\@oracle_SID\@ --db-host=\@oracle_host\@ >$radTs-grants.log\n\n";
     }
 
+    # This step is performed before enabling the constraints in case the rows
+    # being inserted are not ordered correctly (i.e. the parent for a row does
+    # appear, but is inserted after the one that references it.)
+    #
     if (($doAll && !defined($tableList)) || ($masterOnly)) {
 	print $fh "# insert bootstrap rows, reset relevant sequences\n";
 	my $targetSchema = ($gusVersion >= 3.0) ?  &getTargetSchema('Core', \@schemas, \@targetSchemas) : $targetSchemas[0];
@@ -728,6 +739,16 @@ if ($doAll || $masterOnly) {
 	}
 
 	print $fh "\n";
+    }
+
+    if ($doAll || $constraintsOnly || $masterOnly) {
+	print $fh "# create all primary key constraints\n";
+	print $fh "$primKeyTxt\n";
+	$nf += $numSchemas;
+
+	print $fh "# create all non-primary key constraints\n";
+	print $fh "$nonPrimKeyTxt\n";
+	$nf += $numSchemas;
     }
 
     if ($doAll || $indexesOnly || $masterOnly) {

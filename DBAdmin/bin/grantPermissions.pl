@@ -90,21 +90,25 @@ my @objects = (@$tables, @$views, @$seqs);
 
 # Run the grants/revokes
 #
-&runGrants($dbh, $tables, \@grantees, \@perms, {'select' => 1,
-					       'update' => 1,
-					       'insert' => 1,
-					       'delete' =>1});
+my $ntg = &runGrants($dbh, $tables, \@grantees, \@perms, {'select' => 1,
+							  'update' => 1,
+							  'insert' => 1,
+							  'delete' => 1,
+							  'references' => 1,
+						      });
 
-&runGrants($dbh, $views, \@grantees, \@perms, {'select' => 1,
-					       'update' => 1,
-					       'insert' => 1,
-					       'delete' =>1});
+my $nvg = &runGrants($dbh, $views, \@grantees, \@perms, {'select' => 1,
+							 'update' => 1,
+							 'insert' => 1,
+							 'delete' =>1,
+						     });
 
-&runGrants($dbh, $seqs, \@grantees, \@perms, {'select' => 1, 
-					      'alter' => 1});
+my $nsg = &runGrants($dbh, $seqs, \@grantees, \@perms, {'select' => 1, 
+							'alter' => 1,
+						    });
 
 
-print "Permissions set on $ntables tables, $nviews views and $nseqs sequences\n";
+print "Permissions set on ${ntg}/${ntables} table(s), ${nvg}/${nviews} view(s) and ${nsg}/${nseqs} sequence(s)\n";
 
 $dbh->commit();
 $dbh->disconnect();
@@ -118,14 +122,17 @@ $dbh->disconnect();
 #
 sub runGrants {
     my($dbh, $objects, $grantees, $perms, $validPerms) = @_;
+    my $numAffected = 0;
 
     foreach my $obj (@$objects) {
+	my $grantsRun = 0;
+
 	foreach my $grantee (@$grantees) {
 	    foreach my $perm (@$perms) {
-
 		$perm =~ tr/A-Z/a-z/;
+
 		if (not defined($validPerms->{$perm})) {
-		    print "$perm not valid for $obj: ignoring\n";
+		    print "[$perm not valid for $obj: ignoring]\n" if ($verbose);
 		    next;
 		}
 
@@ -136,7 +143,10 @@ sub runGrants {
 		
 		print "[$cmd]\n" if ($verbose);
 		$dbh->do($cmd);
+		$grantsRun = 1;
 	    }
 	}
+	++$numAffected if ($grantsRun);
     }
+    return $numAffected;
 }
