@@ -18,7 +18,9 @@ sub new {
       h => 'subjects are taken from this table (schema::table format).',
      },
      {o => 'log_frequency',
-      t => 'int',
+  
+
+    t => 'int',
       h => 'Write line to log file once every this many entries',
       d => 10,
      },
@@ -224,7 +226,8 @@ sub run {
 sub GetQueryObject{
   my $Line = shift;
   my $queryClassName = "GUS::Model::$ctx->{cla}->{'query_table'}";
-  eval("require $queryClassName");
+  print "the query table name = $queryClassName\n";
+#  eval("require $queryClassName");
   $queriesProcessed++;
   # extract the query id from the defline
   $Line =~ /^\>*(\S+)\s\((\d+)/;
