@@ -112,7 +112,7 @@ sub run {
 
   my $external_database_release_id = $self->getArgs()->{'extDbRelId'} || die 'external_database_release_id not supplied\n';
 
-  my $dbHash = $self->getDB() if ($self->getArgs()->{'maketemp'} || $self->getArgs()->{'plugin'} );
+  my $dbHash = $self->getDB();
 
   my $taxonHash = $self->getTaxon ()if ($self->getArgs()->{'maketemp'} || $self->getArgs()->{'plugin'});
 
