@@ -64,96 +64,96 @@ sub run {
   my $self   = shift;
 
 
-print "Testing on Assembly $self->getArgs->{'testnumber'}\n" if $self->getArgs->{'testnumber'};
+  print "Testing on Assembly $self->getArgs->{'testnumber'}\n" if $self->getArgs->{'testnumber'};
 
-$self->logCommit();
-
-
-#get the assembly ids that contain RefSeqs
-#add evidence that assembly has RefSeq; also this will have to have delete or update attribute so when updates are done assemblies will be marked as full length that contain RefSeqs
-#will also mark those assemblies which have good DIANA ATG prediction which equals the framefinder and also has framefinder stop codon, could also use a length greater than 50 amino acids
+  $self->logCommit();
 
 
-#move out external_database_release_id put as cla external_database_release_id = $self->getArgs->{'external_database_release_id'} 
-
-#NOTE FOR TESTING taxon set to human only FOR THIS Query and rownum
-
-my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8 and rownum < 15");
-
-#update considerations for DTs
-#those which still contain a RefSeq these are updated
-#those which no longer contain a RefSeq (removed by assembly process) but are still marked as fullLengthCDS
-#those which now contain a RefSeq (from new build)
-#DT no longer exists but this case no entry in assembly table assume that RefSeq in new assembly
+  #get the assembly ids that contain RefSeqs
+  #add evidence that assembly has RefSeq; also this will have to have delete or update attribute so when updates are done assemblies will be marked as full length that contain RefSeqs
+  #will also mark those assemblies which have good DIANA ATG prediction which equals the framefinder and also has framefinder stop codon, could also use a length greater than 50 amino acids
 
 
-#query to get DT, RefSeq ids for assemblies currently in db marked as FullLengthCds = 1
+  #move out external_database_release_id put as cla external_database_release_id = $self->getArgs->{'external_database_release_id'} 
 
-# to check for na_sequence_id in result set from query 2 before marking as full length from query 1
+  #NOTE FOR TESTING taxon set to human only FOR THIS Query and rownum
 
-my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
+  my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8 and rownum < 15");
 
-
-my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
-
-
-#combine queries to get those assemblies which no longer have a refSeq associated with them these can go into an array and then $assembly->setFullLengthCds(0);
-#must get rid of past evidence too
-
-
-my $stmt4 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.assembly a where a.full_length_CDS = 1 and a.taxon_id = 8 minus select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
+  #update considerations for DTs
+  #those which still contain a RefSeq these are updated
+  #those which no longer contain a RefSeq (removed by assembly process) but are still marked as fullLengthCDS
+  #those which now contain a RefSeq (from new build)
+  #DT no longer exists but this case no entry in assembly table assume that RefSeq in new assembly
 
 
+  #query to get DT, RefSeq ids for assemblies currently in db marked as FullLengthCds = 1
 
-my @na_sourceids = ();
-my @naSequenceIds = ();
-my @DTSasEvidenceTarget = ();
-my @RemoveAsMarkedFL = ();
-my @DTs = ();
+  # to check for na_sequence_id in result set from query 2 before marking as full length from query 1
+
+  my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
 
 
-while(my($na_seq, $source_id) = $stmt1->fetchrow_array( ))  {
+  my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS'");
 
-  push(@na_sourceids, [$na_seq, $source_id]);
-  push(@DTs, $na_seq);
-   }
 
-while(my($na_sequence_id) = $stmt2->fetchrow_array( ))  {
+  #combine queries to get those assemblies which no longer have a refSeq associated with them these can go into an array and then $assembly->setFullLengthCds(0);
+  #must get rid of past evidence too
 
-  push(@naSequenceIds, $na_sequence_id);
 
-   }
+  my $stmt4 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.assembly a where a.full_length_CDS = 1 and a.taxon_id = 8 minus select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1 and a.taxon_id = 8");
 
-while(my($target_id) = $stmt3->fetchrow_array( ))  {
 
-      push(@DTSasEvidenceTarget, $target_id);
 
-   }
+  my @na_sourceids = ();
+  my @naSequenceIds = ();
+  my @DTSasEvidenceTarget = ();
+  my @RemoveAsMarkedFL = ();
+  my @DTs = ();
 
-  while (my($DTnotFLength) = $stmt4->fetchrow_array())  {
+
+  while (my($na_seq, $source_id) = $stmt1->fetchrow_array( )) {
+
+    push(@na_sourceids, [$na_seq, $source_id]);
+    push(@DTs, $na_seq);
+  }
+
+  while (my($na_sequence_id) = $stmt2->fetchrow_array( )) {
+
+    push(@naSequenceIds, $na_sequence_id);
+
+  }
+
+  while (my($target_id) = $stmt3->fetchrow_array( )) {
+
+    push(@DTSasEvidenceTarget, $target_id);
+
+  }
+
+  while (my($DTnotFLength) = $stmt4->fetchrow_array()) {
 
     push (@RemoveAsMarkedFL,$DTnotFLength);
   }
 
 
-#push (@naSequenceIds, 0);
+  #push (@naSequenceIds, 0);
 
-#print STDERR "scalar(@naSequenceIds)\n";
+  #print STDERR "scalar(@naSequenceIds)\n";
 
-my $ct = 0;
+  my $ct = 0;
 
-foreach my $A(@na_sourceids)    {
+  foreach my $A (@na_sourceids) {
 
-  my($na_seq, $source_id) = @{$A};
-
-
-  print STDERR "ConsideringForFLDT.$na_seq\n";
+    my($na_seq, $source_id) = @{$A};
 
 
-last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
+    print STDERR "ConsideringForFLDT.$na_seq\n";
 
 
-   $ct++;
+    last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
+
+
+    $ct++;
 
     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
@@ -164,111 +164,117 @@ last if $self->getArgs->{testnumber} && $ct >$self->getArgs->{testnumber};
     $self->undefPointerCache();
 
 
-}
+  }
 
 
-#figure out which DTs are not present in both arrays those new as full length
+  #figure out which DTs are not present in both arrays those new as full length
 
-my %seen = ();
-my @diffArray;
-my $id;
+  my %seen = ();
+  my @diffArray;
+  my $id;
 
-  foreach $id(@naSequenceIds)  {$seen{$id} = 1};
+  foreach $id(@naSequenceIds) {
+    $seen{$id} = 1;
+  }
+  ;
 
-  foreach $id(@DTs)  { 
-    unless ($seen{$id})  {
+  foreach $id(@DTs) { 
+    unless ($seen{$id}) {
 
-#add to new array
+      #add to new array
 
-push (@diffArray, $id);  }
+      push (@diffArray, $id);
+    }
 
   }
 
-print STDERR "@diffArray\n";
-#print STDERR scalar"(@diffArray)";
+  print STDERR "@diffArray\n";
+  #print STDERR scalar"(@diffArray)";
 
 
 
-#check to see if all previous evidence still valid
-#use array of target ids and compare to array of DTs
+  #check to see if all previous evidence still valid
+  #use array of target ids and compare to array of DTs
 
 
 
-my %seen2 = ();
-my @diffArray2 = ();
+  my %seen2 = ();
+  my @diffArray2 = ();
 
-my $dt;
+  my $dt;
 
-  foreach $dt(@DTs)  {$seen2{$dt} = 1};
+  foreach $dt(@DTs) {
+    $seen2{$dt} = 1;
+  }
+  ;
 
-  foreach $dt(@DTSasEvidenceTarget)  {
-    unless ($seen2{$dt})  {
+  foreach $dt(@DTSasEvidenceTarget) {
+    unless ($seen2{$dt}) {
 
-#add to new array
+      #add to new array
 
-push (@diffArray2, $dt);  }
+      push (@diffArray2, $dt);
+    }
 
   }
 
-#print STDERR "@diffArray\n";
-#print STDERR scalar"(@diffArray)";
+  #print STDERR "@diffArray\n";
+  #print STDERR scalar"(@diffArray)";
 
-print STDERR "Arrayids@diffArray2\n";
-my $ids = scalar(@diffArray2);
-print STDERR "$ids\n";
-
-
-
-foreach my $target_id(@diffArray2)  {
-my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
-                                             'attribute_name' =>"full_length_CDS"});
-  if ($Evidence->retrieveFromDB()){
-
-       $Evidence->markDeleted(1);
-       $Evidence->submit();
-       print STDERR  "DT.$target_id Evidence deleted\n"; 
-     }
+  print STDERR "Arrayids@diffArray2\n";
+  my $ids = scalar(@diffArray2);
+  print STDERR "$ids\n";
 
 
-       else { print STDERR  "Cannot delete DT.$target_id Evidence; not retrieved\n";
 
-           }
+  foreach my $target_id (@diffArray2) {
+    my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id,
+                                                    'attribute_name' =>"full_length_CDS"});
+    if ($Evidence->retrieveFromDB()) {
 
-           $self->undefPointerCache();
+      $Evidence->markDeleted(1);
+      $Evidence->submit();
+      print STDERR  "DT.$target_id Evidence deleted\n"; 
+    } else {
+      print STDERR  "Cannot delete DT.$target_id Evidence; not retrieved\n";
 
-}
+    }
+
+    $self->undefPointerCache();
+
+  }
 
 
-#my $dbh = $self->getQueryHandle();
-#my $rows = $dbh->prepare("delete from dots.evidence where attribute_name = 'full_length_CDS' and target_id = ?");
-#foreach my $target_id(@diffArray2)  {
+  #my $dbh = $self->getQueryHandle();
+  #my $rows = $dbh->prepare("delete from dots.evidence where attribute_name = 'full_length_CDS' and target_id = ?");
+  #foreach my $target_id(@diffArray2)  {
   #  $rows->execute($target_id);
 
 
 
- # print STDERR  "DT.$target_id Evidence deleted\n";
-# }
+  # print STDERR  "DT.$target_id Evidence deleted\n";
+  # }
 
 
 
 
-# those assemblies that no longer contain a refSeq
- #   foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
+  # those assemblies that no longer contain a refSeq
+  #   foreach my $DTnotFLength(@RemoveAsMarkedFL)  {
 
-# print STDERR "DT.$DTnotFLength does not have a RefSeq any longer\n";
+  # print STDERR "DT.$DTnotFLength does not have a RefSeq any longer\n";
 
-# my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
+  # my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
 
- #     $assembly->retrieveFromDB();
+  #     $assembly->retrieveFromDB();
   #   $assembly->setFullLengthCds(0);
-   #   $assembly->submit();
+  #   $assembly->submit();
 
-   #   $self->undefPointerCache();
-
-
-#}
+  #   $self->undefPointerCache();
 
 
+  #}
+
+  return 1;
 }
 
 #use RefSeq source_id as evidence for marking assembly as full length CDS containing
