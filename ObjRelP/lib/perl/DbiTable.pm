@@ -848,6 +848,7 @@ sub addToChildList{
     my($self,@list) = @_;
     foreach my $i (@list) {
 	my $childFullName = $self->getFullClassName($i->[0]);
+	confess("Invalid child name: '$i->[0]'") unless $childFullName;
 	@{$self->{'childList'}->{$childFullName}} = ($i->[1],$i->[2]);
     }
 }
