@@ -872,6 +872,10 @@ sub newLibrary {
                  'description' => 'comment_string'
                 };
 
+  ##truncate tissue_type to fit 
+
+  $dbest_lib->{'tissue_type'} = substr($dbest_lib->{'tissue_type'},0,99);
+
   ## Set the easy of the attributes
 
   foreach my $a (keys %{$atthash}) {
