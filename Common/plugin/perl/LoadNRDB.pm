@@ -219,7 +219,7 @@ sub makeTempTable {
       $dbh->do("truncate table NRDBTemp");
       $dbh->do("drop table NRDBTemp");
       $dbh->do("create table NRDBTemp (SOURCE_ID VARCHAR2(32) NOT NULL,EXTERNAL_DB_REL_ID NUMBER(5) NOT NULL,SEQUENCE_VERSION VARCHAR2(10),SET_NUM NUMBER(10) NOT NULL)");
-      $dbh->do("grant select on NRDBTemp to gusdev");
+      $dbh->do("grant select on NRDBTemp to gusrw");
     }
     my $st1 = $dbh->prepare("select max(set_num) from NRDBTemp");
     $st1->execute();
@@ -257,7 +257,7 @@ sub makeTempTable {
 	    my @arr = split (/\cA/, $line);
 	    #$EntryHash{gid}->{source_id}=[db_rel_id,description,taxon_id]
 	    my %EntryHash;
-	    self->parseLine(\@arr, $dbHash, $taxonHash, \%EntryHash); 
+	    $self->parseLine(\@arr, $dbHash, $taxonHash, \%EntryHash); 
 	    foreach my $gid (keys %EntryHash) {
 		foreach my $source_id (keys %{$EntryHash{$gid}}) {
 		    my $sequence_version;
@@ -273,10 +273,8 @@ sub makeTempTable {
 		}
 	    }
 	    if ($set_num%1000 == 0) {
-		$dbh->commit();
 		$self->log("$set_num sets have been processed 
                                and put in the NRDBTemp table\n");
-		$dbh->commit();
 	    }
 	}
     }
@@ -326,7 +324,7 @@ sub makeNRDBAndExternalAASequence {
     else {
 	$num_submit = 0;
     }  
-    my $st = $dbh->prepare("select aa_sequence_id from dots.nrdbentry where source_id = ? and external_db_id = ?");
+    my $st = $dbh->prepare("select aa_sequence_id from dots.nrdbentry where source_id = ? and external_database_release_id = ?");
 
     while (<NRDB>) {
 	chomp;
@@ -356,7 +354,7 @@ sub makeNRDBAndExternalAASequence {
 	    }
 	    my $line = $_;
 	    my @arr = split (/\cA/, $line);
-	    &parseLine(\@arr, $dbHash, $taxonHash, \%EntryHash);
+	    $self->parseLine(\@arr, $dbHash, $taxonHash, \%EntryHash);
 	    if (scalar (keys %EntryHash) == 0){
 		next;
 	    }
