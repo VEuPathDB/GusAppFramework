@@ -77,9 +77,9 @@ sub new {
      {o => 'dbi_str',
       t	=> 'string',
       h => 'server and machine for temp table, e.g. dbi:Oracle:host=erebus.pcbi.upenn.edu;sid=gusdev',
-     }
+     },
      {o => 'sourceDB',
-     t => 'string',
+      t => 'string',
      h=> 'comma delimited pairs of source db name (from ExternalDatabase.name) and abreviations (from ncbi README file) 
           separated by a colon, 
           e.g. GENBANK (NRDB):gb,EMBL DATA LIBRARY (NRDB):emb',
