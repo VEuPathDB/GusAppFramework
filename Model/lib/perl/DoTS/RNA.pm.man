@@ -16,7 +16,7 @@ sub getNASequences{
 	my($self,$naClass,$retrieve,$getDeletedToo,$where) = @_;
 	my @ass;
 	print STDERR "RNA->getRNAs\($naClass,$retrieve,$getDeletedToo\)\n" if $debug == 1;
-	foreach my $rs ($self->getChildren('DoTS::RNASequence',$retrieve,$getDeletedToo,$where)){
+	foreach my $rs ($self->getChildren('DoTS::RNAInstance',$retrieve,$getDeletedToo,$where)){
 		print STDERR $rs->toString() if $debug == 1;
 		print STDERR $rs->getId()," $rs\n" if $debug == 2;
 		my $f = $rs->getParent('DoTS::NAFeature',$retrieve);
