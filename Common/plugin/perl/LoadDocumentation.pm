@@ -183,7 +183,7 @@ sub process {
 #			    $self->logAlert("html: $html and html_dc: $html_dc are equal\n"); ###TEST###
 
 #			    $self->logAlert("ALREADY EXISTS! Documentation for column $table_nm" .
-					    "." ."$attribute_nm NOT OVERWRITTEN!");
+#					    "." ."$attribute_nm NOT OVERWRITTEN!");
 #			    return; # SKIP
 #			} # end if same doc
 #			elsif ($html ne $html_dc) { ## SUBMIT if new documentation (UPDATE!!!)
