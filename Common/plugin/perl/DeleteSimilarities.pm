@@ -2,7 +2,7 @@ package GUS::Common::Plugin::DeleteSimilarities;
 
 @ISA = qw(GUS::PluginMgr::Plugin); 
 use strict;
-
+$| = 1;
 sub new {
   my ($class) = @_;
   my $self = {};
@@ -22,17 +22,8 @@ sub new {
      {o => 'versionAll',
       t => 'boolean',
       h => 'if true versions all rows,  default versions only Similarity rows',
-     },
-     {o => 'deleteEvidence',
-      t => 'boolean',
-      h => 'if true deletes evidence that similarities may be used in....slow
-                          if false, then need to clean up evidence tables later...more efficient?',
-     },
-     {o => 'log_frequency',
-      t => 'int',
-      h => 'Write line to log file once every this many entries',
-      d => 100,
-     }];
+     }
+    ];
 
 $self->initialize({requiredDbVersion => {},
 		   cvsRevision => '$Revision$', # cvs fills this in!
@@ -46,115 +37,86 @@ $self->initialize({requiredDbVersion => {},
 }
 
 
-my $ctx;
-my $debug = 0;
+
 $| = 1;
 
 sub run {
-  my $M   = shift;
-  $ctx = shift;
+  my $self   = shift;
 
-  die "--idSQL are required\n" unless ($ctx->{cla}->{idSQL});
+  die "--idSQL are required\n" unless ($self->getArgs()->{idSQL});
 
-  print $ctx->{cla}->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
+  $self->log $self->getArgs()->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
 
-  print "Deleting similarities match query '$ctx->{cla}->{idSQL}'\n
-";
+  $self->log "Deleting similarities match query ".$self->getArgs()->{idSQL}."\n";
 
-  ##DBI handle to be used for queries outside the objects...
-  my $dbh = $ctx->{'self_inv'}->getQueryHandle();
+  $self->getIds();
 
-  if (!$ctx->{cla}->{commit}) {
-    print "Not in commit mode...Determining number of similarities that satisify the query\n";
-    my $stmt = $dbh->prepareAndExecute("select count(*) from dots.similarity where  similarity_id in ($ctx->{cla}->{idSQL})");
-    while (my($num) = $stmt->fetchrow_array()) {
-      print "  There are $num Similarities to be deleted\n";
-    }
-  }
-
-  my $ctSim;
-  ##first version the Similarities...
-  if (!$ctx->{cla}->{doNotVersion}) { ##version similarities..
-    #    $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
-    my $ver = "insert into dotsver.SimilarityVer (select s.*,".$ctx->{self_inv}->getId().",SYSDATE,1 from dots.Similarity s where similarity_id in ($ctx->{cla}->{idSQL}))";
-    print "Versioning similarities...\n\t$ver\n",`date`;
-    if ($ctx->{cla}->{commit}) {
-      $ctSim = $dbh->do($ver);
-      $dbh->commit();
-      print "\tInserted $ctSim rows into SimilarityVer: ",`date`,"\n";
-    }
-  }
-
-  ##mark the similarities deleted by setting query_table_id and subject_table_id to 1
-  $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
-  my $markQuery = "update dots.Similarity set query_table_id = 1, subject_table_id = 1 where similarity_id in ($ctx->{cla}->{idSQL})";
-  print "marking Similarities deleted....\n\t$markQuery\n",`date`;
-  if ($ctx->{cla}->{commit}) {
-    print "\tUpdated ",$dbh->do($markQuery)," rows in Similarity: ",`date`,"\n";
-    $dbh->commit();
-  }
-  
-  my $ctDep = 0;
-
-  ##next delete the SimilaritySpans
-  $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
-  ##need to version if --versionAll
-  if ($ctx->{cla}->{versionAll}) {
-    my $verSS = "insert into dotsver.SimilaritySpanVer (select l.*,".$ctx->{self_inv}->getId().",SYSDATE,1 from dots.SimilaritySpan l where l.similarity_id in (select s.similarity_id from dots.Similarity s where s.query_table_id = 1 and s.subject_table_id = 1 ))";
-    print "Versioning SimilaritySpan...$verSS\n",`date`;
-    if ($ctx->{cla}->{commit}) {
-      print "\tVersioned ",$dbh->do($verSS)," rows ",`date`,"\n";
-      $dbh->commit();
-      $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
-    }
-  }
-  my $delSpan = "delete from dots.similarityspan where similarity_id in (select s.similarity_id from dots.Similarity s where s.query_table_id = 1 and s.subject_table_id = 1)";
-  print "Deleting SimilaritySpans ....\n\t$delSpan\n",`date`;
-  if ($ctx->{cla}->{commit}) {
-    $ctDep += $dbh->do($delSpan);
-    $dbh->commit();
-    print "\tDeleted $ctDep rows from SimilaritySpan: ",`date`,"\n";
-  }
-
-
-  ##now the IndexWordSimLinks
-  $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
-  ##need to version if --versionAll
-  if ($ctx->{cla}->{versionAll}) {
-    my $verIW = "insert into dotsver.IndexWordSimLinkVer (select l.*,".$ctx->{self_inv}->getId().",SYSDATE,1 from dots.IndexWordSimLink l where l.best_similarity_id in (select s.similarity_id from dots.Similarity s where s.query_table_id = 1 and s.subject_table_id = 1 ))";
-    print "Versioning IndexWordSimLinks...$verIW\n",`date`;
-    if ($ctx->{cla}->{commit}) {
-      print "\tVersioned ",$dbh->do($verIW)," rows ",`date`,"\n";
-      $dbh->commit();
-      $dbh->do("set transaction use rollback segment BIGRBS1"); ##ensures using  big rollback segment
-    }
-  }
-
-  my $delIWSL = "delete from dots.IndexWordSimLink where best_similarity_id in (select s.similarity_id from dots.Similarity s where s.query_table_id = 1 and s.subject_table_id = 1 )";
-  print "Deleting IndexWordSimLinks....\n\t$delIWSL\n",`date`;
-  if ($ctx->{cla}->{commit}) {
-    my $ctLinks = $dbh->do($delIWSL);
-    $ctDep += $ctLinks;
-    $dbh->commit();
-    print "\tDeleted $ctLinks rows from IndexWordSimLink: ",`date`,"\n";
-  }
-
-  ##finally the similarities...use DeleteEntriesFromTable.pl to do 1000 rows at a time
-  ##alternative here is to copy the table except for the entries to  be  deleted then rename etc...
-  my $cmd = "deleteEntries.pl --table dots.Similarity --gusConfigFile $ctx->{cla}->{gusconfigfile}--idSQL 'select s.similarity_id from dots.Similarity s where s.query_table_id = 1 and s.subject_table_id = 1'";
-  print "Deleting Similarities ...$cmd\n",`date`;
-  if ($ctx->{cla}->{commit}) {
-    system("$cmd");
-  }
-
-  ############################################################
-  # return status
-  # replace word "done" with meaningful return value/summary
-  ############################################################
-  my $res = "Deleted $ctSim Similarities and $ctDep Dependent Children";
-  print "\n\nComplete: $res\n";
-  return $res;
 }
+
+sub getIds {
+  my ($self) = @_;
+
+  my $dbh = $db->getQueryHandle();
+
+  my $idSQL = $self->getArgs()->{'idSQL'};
+
+  my $stmt = $dbh->prepareAndExecute($idSQL);
+
+  my $numDeleted;
+  my $numTotal;
+  my @ids;
+
+  while (my ($id) = $stmt->fetchrow_array()){
+    push (@ids,$id);
+    $ct++;	
+    if ($ct % 1000 == 0) {
+      my $del = $self->doDeletes(\@ids);
+      $total += $del;
+      @ids = ();
+    }	
+  }
+  if ($ct > 0 && $ct % 1000 != 0) {
+    my $del = $self->doDeletes(\@ids);
+    $total += $del;
+  }
+  $self->log "$total Similarity rows and children deleted\n";
+  $self->log "$ct Similarity rows should have been deleted\n"; 
+}	
+
+
+sub doDeletes {
+	my ($self,$ids) = @_;
+	my $dbh = $db->getQueryHandle();
+	my $max = (scalar(@$ids)-1); 
+
+	my $rows = $dbh->do("insert into dotsver.SimilarityVer (select s.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.Similarity s where similarity_id in (".join(', ',@$ids[0..$max)])."))") unless $self->getArgs()->{'doNotVersion'};
+	$self->log("Inserted $rows into dotsver.SimilarityVer, $ids[0] - $id[$max]\n") unless $self->getArgs()->{'doNotVersion'};
+
+
+	my $rows2 = $dbh->do("insert into dotsver.SimilaritySpanVer (select l.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.SimilaritySpan l where l.similarity_id in (".join(', ',@$ids[0..$max)])."))") if $self->getArgs->{'versionAll'};
+	$self->log("Inserted $rows2 into dotsver.SimilaritySpanVer\n") if $self->getArgs->{'versionAll'};
+
+	my $rows3 = $dbh->do("delete from dots.similarityspan where similarity_id in (".join(', ',@$ids[0..$max)]).")");
+	$self->log("$rows3 row of dots.similarityspan deleted\n");
+
+	my $rows4 = $dbh->do("insert into dotsver.IndexWordSimLinkVer (select l.*,".$self->getAlgInvocation->getId.",SYSDATE,1 from dots.IndexWordSimLink l where l.best_similarity_id in (".join(', ',@$ids[0..$max)])."))") if $self->getArgs->{'versionAll'};
+	$self->log("Inserted $rows4 rows into dotsver.IndexWordSimLinkVer\n") if $self->getArgs->{'versionAll'};
+
+	my $rows5 = $dbh->do("delete from dots.IndexWordSimLink where best_similarity_id in (".join(', ',@$ids[0..$max)]).")");
+	$self->log("$rows5 row of dots.IndexWordSimLink deleted\n");
+
+	my $rows6 = $dbh->do("delete from dots.Similarity where similarity_id in (".join(', ',@$ids[0..$max)]).")");
+	$self->log("$rows6 row of dots.Similarity deleted\n");
+
+	if ($self->getArgs()->{'commit'}) {
+		$dbh->commit;
+	}
+	else {
+		$dbh->rollback;
+	}
+	return $rows6;
+}
+
 
 1;
 
