@@ -85,7 +85,7 @@ sub run {
 
 #fact_table_id = 338 is translatedAAsequence
 
-  my $stmt6 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS' and fact_table_id = 338"));
+  my $stmt6 = $self->getQueryHandle()->prepareAndExecute("select target_id from dots.evidence where attribute_name = 'full_length_CDS' and fact_table_id = 338");
 
 
 
