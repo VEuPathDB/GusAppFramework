@@ -161,38 +161,26 @@ push (@diffArray, $id);  }
 
   }
 
+print STDERR "@diffArray";
+print STDERR scalar(@diffArray)";
 
-#figure out which DTs are not present in both arrays
-
-
-#need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
-
-#print STDERR "MarkedDT.$id,DT.$na_seq\n";
+#figure out which DTs are not present in both arrays and set those new as full length
 
 
- #   if ($id == $na_seq) {
-
-  #  print STDERR "AlreadyMarkedFLDT.$na_seq\n";  }
+   foreach my $dt(@diffArray)   {
 
 
-   # if ($id != $na_seq)  {
+    my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $dt});
 
-    #   print STDERR "NextFLDT.$na_seq\n";
-
-
-   #  my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
-
-    #  $assembly->retrieveFromDB();
-     # $assembly->setFullLengthCds(1);
-     # $self->toAddEvidenceSourceID($source_id, $assembly);
-     # $assembly->submit();
+    $assembly->retrieveFromDB();
+    $assembly->setFullLengthCds(1);
+    $self->toAddEvidenceSourceID($source_id, $assembly);
+    $assembly->submit();
 
 
-     # $self->undefPointerCache();
+    $self->undefPointerCache();
 
-  #}
- 
-
+  }
 
 
 
