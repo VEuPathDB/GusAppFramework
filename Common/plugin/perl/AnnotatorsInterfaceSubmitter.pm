@@ -77,13 +77,13 @@ sub run {
 	my @xml = <F>;
 	close F;
 	my $fact_hash= {};
-	$fact_hash = $self->parseFactObjects($self->getCla->{'specialfile'}, $self->getCla->{'self_inv'} );
+	$fact_hash = $self->parseFactObjects($self->getCla->{'specialfile'}, $self->getSelfInv);
 	my $has_evidence = 0;
 	my $remove = 0;
 
-	$self->getCla->getSelfInv->parseXML( \@xml );
+	$self->{self_inv}->parseXML( \@xml );
 
-	my @children = $self->getCla->{'self_inv'}->getAllChildren();
+	my @children = $self->getSelfInv->getAllChildren();
 	my $curr_gene;
 
 
