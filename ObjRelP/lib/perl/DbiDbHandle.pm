@@ -75,8 +75,8 @@ sub prepareAndExecute {
   my ($self, $sql_cmd) = @_;
   if ($verbose) { print STDERR"\n\nprepareAndExecute: $sql_cmd \n"; }
 
-  my $sth = $self->prepare($sql_cmd) || print STDERR "Prepare FAILED: " . $self->errstr() . "\n sql_cmd:  \n $sql_cmd \n";
-  $sth->execute() || print STDERR "Execute FAILED: " . $self->errstr() . "\n sql_cmd:  \n $sql_cmd \n";
+  my $sth = $self->prepare($sql_cmd) || &death("Prepare FAILED: " . $self->errstr() . "\n sql_cmd:  \n $sql_cmd \n");
+  $sth->execute() || &death("Execute FAILED: " . $self->errstr() . "\n sql_cmd:  \n $sql_cmd \n");
   return $sth;
 }
 
