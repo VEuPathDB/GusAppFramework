@@ -167,6 +167,7 @@ sub run {
   my %exon=();
   my %coord=();
   my %method=(
+	      'Phat'       => '83',
 	      'FullPhat'   => '83',
 	      'GlimmerM'   => '47',
 	      'Genefinder' => '84'
@@ -252,17 +253,11 @@ sub run {
 	$stmt->execute($source_id, $projectId);
       }else{ 
 
-	##### MJF
-	##### BIIIIIG WORKARAOUND, SINCE OFR VIVAX DATA I DID NOT HAVE THE PV_ ADDITION TO THE  SOURCE_ID
-	#####
-	#####    $key is actually "Pv_". $key for this query only;
-	#####
-	$stmt->execute("Pv_".$key, $projectId );
+	## NOT A GOOD HACK
+	##  used by MFG, when Pv_ was not at start of vivax source_id
+	## $stmt->execute("Pv_".$key, $projectId );
 
-
-	#$stmt->execute($key, $projectId );
-	
-
+	$stmt->execute($key, $projectId );
       }
 		
 		
@@ -325,11 +320,14 @@ sub run {
       if ($gphase!=0){
 	if ($gmethod=~m/phat/i){
 	  $regulation = $gphase;     ## in the case of PHAT
+	  $self->log( "II A- $gmethod phase=$gphase") if $debug;
 	}else{
 	  $regulation = (3-$gphase); ## in the case of GlimmerM and Genefinder
+	  $self->log( "II B- $gmethod phase=$gphase regulation=$regulation");
 	}
       }else{
 	$regulation=0;
+	$self->log( "II C- $gmethod phase =$phase regulation=$regulation");
       }
       $gphase=$regulation;
       ######
@@ -349,7 +347,8 @@ sub run {
       ##set some  GeneFeature  attributes
       $gf->setParent($naseq);
       $gf->setReviewStatusId(0);
-      $gf->setGeneType('protein_coding');
+      ## $gf->setGeneType('protein_coding');
+      $gf->setGeneType('protein coding');
       $gf->setSourceId($ggenename);
       $self->log("II Setting gf->source_id to $ggenename") if $debug;
       $gf->setPredictionAlgorithmId($method{$gmethod});
@@ -578,7 +577,8 @@ sub setExtDbRelId {
   # ExternalDatabaseRelease
   my %extdbrel;
   $extdbrel{external_database_id} = $id;
-  $extdbrel{version} = 'unknown';  ## NOTE: may need to be modified
+  #$extdbrel{version} = 'unknown';  ## NOTE: may need to be modified
+  $extdbrel{version} = 'final';
 
   my $extdbrel_gus = GUS::Model::SRes::ExternalDatabaseRelease->new(\%extdbrel);
   if ($extdbrel_gus->retrieveFromDB){
