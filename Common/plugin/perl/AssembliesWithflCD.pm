@@ -200,7 +200,7 @@ print STDERR "NextFLDT.$na_seq\n";
 
  print "DT.$DTnotFLength does not have a RefSeq any longer\n";
 
- my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $target_id});
+ my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $DTnotFLength});
 
       $assembly->retrieveFromDB();
       $assembly->setFullLengthCds(0);
