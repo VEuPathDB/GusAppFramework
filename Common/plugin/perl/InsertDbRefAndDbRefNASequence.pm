@@ -34,9 +34,13 @@ sub new {
       t => 'int',
       h => 'external_database_id for external source of ids',
      },
-     {o => 'pattern',
+     {o => 'pattern1',
       t => 'string',
-      h => 'source identifier pattern, e.g. MGI:\d+',
+      h => 'source identifier pattern with parenthesis around the id to be stored, e.g. ^(MGI:\d+)',
+     },
+     {o => 'pattern2',
+      t => 'string',
+      h => 'identifier pattern for the na_sequence_id stored in the DbRefNASequence table, with parenthesis, e.g. \s+DT.(\d+)',
      }
     ];
 
@@ -52,74 +56,82 @@ sub new {
   return $self;
 }
 
-my $ctx;
+
 $| = 1;
 
 sub Run {
 
-  my $M   = shift;
-  $ctx = shift;
+  my $self   = shift;
 
-  die "Supply: --mappingfiles=s \n" unless ($ctx->{cla}->{mappingfiles});
-  die "Supply: --db_rel_id \n" unless ($ctx->{cla}->{db_rel_id});
-  die "Supply: --pattern \n" unless ($ctx->{cla}->{pattern}); 
+  die "Supply: --mappingfiles=s \n" unless ($self->getArgs()->{mappingfiles});
+  die "Supply: --db_rel_id \n" unless ($self->getArgs()->{db_rel_id});
+  die "Supply: --pattern1 \n" unless ($self->getArgs()->{pattern1});
+  die "Supply: --pattern2 \n" unless ($self->getArgs()->{pattern2});
+  die "Supply: --db_id \n" unless ($self->getArgs()->{db_id});
 
-  print STDERR $ctx->{cla}->{'commit'} ? "COMMIT ON\n" : "COMMIT TURNED OFF\n";
-  print STDERR "Testing on $ctx->{'cla'}->{'testnumber'}\n" 
-                if $ctx->{'cla'}->{'testnumber'};
+  print STDERR $self->getArgs()->{'commit'} ? "COMMIT ON\n" : "COMMIT TURNED OFF\n";
+  print STDERR "Testing on ". $self->getArgs()->{'testnumber'}."\n" 
+                if $self->getArgs()->{'testnumber'};
 
-  my $dbh = $ctx->{self_inv}->getQueryHandle();
+  my $dbh = $self->getQueryHandle();
 
-  my ($sourceIdHash, $mapHash) = &getSourceIdsAndMap();  
+  my ($sourceIdHash, $mapHash) = $self->getSourceIdsAndMap();  
 
-  my $dbRefHash = &insertDbRef($sourceIdHash,$dbh);  
+  my $dbRefHash = $self->insertDbRef($sourceIdHash,$dbh);  
 
-  &getCurrentAssemblyId($dbh,$mapHash); 
+  $self->getCurrentAssemblyId($dbh,$mapHash); 
 
-  my ($sourceIdDbrefHash) = &readDBRefs($dbh); 
+  my ($sourceIdDbrefHash) = $self->readDBRefs($dbh); 
 
-  &insertDBRefNASeq($sourceIdDbrefHash,$mapHash); 
+  $self->insertDBRefNASeq($sourceIdDbrefHash,$mapHash); 
 
-  &deleteDbRef($dbRefHash,$dbh);
+  $self->deleteDbRef($dbRefHash,$dbh);
 }
 
 sub getSourceIdsAndMap {
 
-    my (%sourceIdHash, %mapHash); 
-
-    my @files = split(",", $ctx->{cla}->{mappingfiles});
-    my $pattern = $ctx->{cla}->{pattern};
-    my $nLinks = 0;
-
-    foreach my $file (@files) {
-	open (F,$file);
-	
-	while (<F>) {
-
-	    chomp;
-	    
-	    if ($ctx->{cla}->{testnumber} && $nLinks >= $ctx->{cla}->{testnumber}) {
-		print STDERR "testing on $nLinks samples\n";
-		last;
-	    }
-	    
-	    if (/^DT.(\d+)\s+($pattern)$/) {
-		my $dotsId = $1;
-		my $Id = $2;
-		$sourceIdHash{$Id} = 1;
-		push (@{$mapHash{$Id}},$dotsId);
-		++$nLinks;
-	    }
-	
-	    else {
-		die "Unable to parse $_";
-	    }
+  my ($self) = @_;
+  
+  my (%sourceIdHash, %mapHash); 
+  
+  my @files = split(",", $self->getArgs()->{mappingfiles});
+  my $pattern1 = $self->getArgs()->{pattern1};
+  my $pattern2 = $self->getArgs()->{pattern2};
+  my $nLinks = 0;
+  
+  foreach my $file (@files) {
+    open (F,$file);
+    while (<F>) {
+      chomp;
+      
+      if ($self->getArgs()->{testnumber} && $nLinks >= $self->getArgs()->{testnumber}) {
+	print STDERR "testing on $nLinks samples\n";
+	last;
+      }
+      
+      if (/pattern1/) {
+	my $MappedFrom = $1;
+	if (/pattern2/) {
+	  my $MappedTo = $1;
+	  $sourceIdHash{$MappedFrom} = 1;
+	  push (@{$mapHash{$MappedFrom}},$MappedTo);
+	  ++$nLinks;
 	}
+      }
+      
+      else {
+	die "Unable to parse $_";
+      }
     }
+  }
+  
+  print STDERR ("$nLinks ids are mapped to the source's ids\n");
 
-    print STDERR ("$nLinks DoTS ids are mapped to the source's ids\n");
-
-    return (\%sourceIdHash, \%mapHash);
+  foreach my $id (keys %sourceIdHash) {
+    print "$id\n";
+  }
+  exit;
+  return (\%sourceIdHash, \%mapHash);
 }
 
 sub insertDbRef {
