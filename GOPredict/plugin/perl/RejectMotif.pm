@@ -18,6 +18,7 @@ use GUS::GOPredict::Association;
 use GUS::GOPredict::AssociationGraph;
 use GUS::GOPredict::GoGraph;
 
+use FileHandle;
 
 sub new {
   my ($class) = @_;
@@ -136,11 +137,16 @@ sub run {
   $self->log("created adapter");
   ##begin one-time fix to do all bad motifs instead of one at a time
   my $motifList = $self->getAllBadMotifs();
-  $self->log("got bad motifs");
+  my $doneMotifs = $self->getProcessedMotifs();
+
   foreach my $motifVersion (keys %$motifList){
       my $sourceIds = $motifList->{$motifVersion};
       foreach my $sourceId (keys %$sourceIds){
 	  $self->log("processing database release $motifVersion motif source $sourceId");
+	  if ($doneMotifs->{$motifVersion}->{$sourceId}){
+	      $self->log("skipping this pair since it is already done");
+	      next;
+	  }
 	  my $rejectedMotif = $self->getRejectedMotifTemp($motifVersion, $sourceId);
 	  $self->clearAssociations($rejectedMotif);
       }
@@ -156,6 +162,25 @@ sub run {
   my $returnMessage = "RejectMotif:  Plugin ran successfully";
 
 }
+
+sub getProcessedMotifs{
+    my ($self) = @_;
+
+
+    my $fh = FileHandle->new("</home/dbarkan/projects/GUS/GOPredict/plugin/perl/finished.txt");
+    die ("could not open file!") unless $fh;
+    my $doneMotifs;
+    $self->log("getting processed motifs");
+    while (<$fh>){
+	chomp;
+	my $line = $_;
+	my ($version, $sourceId) = $line =~ /release\s(\d+)\smotif\ssource\s(.*)$/;
+	$self->logVerbose("adding $version, $sourceId to processed");
+	$doneMotifs->{$version}->{$sourceId} = 1;
+    }
+    return $doneMotifs;
+}
+
 
 #this method uses its parameters instead of global cla to get the motif, and does not
 #die if it is already in the database
