@@ -23,6 +23,7 @@ sub new {
     $columns{$column->getName()} = $column;
   }
   $self->{columns} = \%columns;
+  $self->{columnsList} = $columns;
 
   return $self;
 }
@@ -30,9 +31,8 @@ sub new {
 sub listColumns {
   my ($self) = @_;
 
-  my $columns = $self->{columns};
   print "\nColumnName\tDescription\n";
-  foreach my $column (values %$columns) {
+  foreach my $column (@{$self->{columnsList}}) {
     print $column->getName() . "\t" . $column->getDescription() . "\n";
   }
 }
