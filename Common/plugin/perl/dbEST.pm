@@ -408,7 +408,7 @@ sub getExternalDatabaseRelease{
   my ($external_db_rel_id) = $st->fetchrow_array();
   
   $st->finish();
-  $dbh->disconnect();
+
   if ($external_db_rel_id) {
     return $external_db_rel_id;
   }
@@ -429,7 +429,7 @@ sub getExternalDatabaseRelease{
     
     my $externalDatabaseRel = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'version'=>$version});
     $externalDatabaseRel->submit();
-    $external_db_rel_id = $externalDatabaseRelRow->getExternalDatabaseReleaseId();
+    $external_db_rel_id = $externalDatabaseRel->getExternalDatabaseReleaseId();
     return $external_db_rel_id;
   }
 }
