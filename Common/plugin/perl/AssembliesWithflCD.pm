@@ -31,8 +31,6 @@ sub new {
 
 
 
-
-
          ];
 
   $self->initialize({requiredDbVersion => {},
@@ -69,7 +67,9 @@ $self->logCommit();
 
 #move out external_database_release_id put as cla external_database_release_id = $self->getArgs->{'external_database_release_id'} 
 
-my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id ");
+#NOTE FOR TESTING taxon set to human only FOR THIS Query
+
+my $stmt1 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id, eas.source_id from dots.externalNAsequence eas,dots.assemblysequence aseq, dots.assembly a where eas.external_database_release_id = 992 and eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and a.taxon_id = 8");
 
 #update considerations for DTs
 #those which still contain a RefSeq
@@ -90,7 +90,7 @@ my $stmt2 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_seq
 #must get rid of past evidence too
 
 
-my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.assembly a where a.full_length_CDS = 1  minus select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1");
+#my $stmt3 = $self->getQueryHandle()->prepareAndExecute("select distinct a.na_sequence_id from dots.assembly a where a.full_length_CDS = 1  minus select distinct a.na_sequence_id from dots.externalNAsequence eas, dots.assemblysequence aseq, dots.assembly a where eas.na_sequence_id = aseq.na_sequence_id and aseq.assembly_na_sequence_id = a.na_sequence_id and eas.external_database_release_id = 992 and a.full_length_CDS = 1");
 
 
 
@@ -125,14 +125,14 @@ foreach my $A(@na_sourceids)    {
     last if $self->getArgs->{testnumber} && $ct > $self->getArgs->{testnumber};
 
 
-#    foreach my $id(@naSequenceIds)  {
+    foreach my $id(@naSequenceIds)  {
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
-#
-#    if ($id == $na_seq ) next  if($id != $na_seq)
 
+     if ($id == $na_seq ) {next;}
 
+     elsif($id != $na_seq) {
 
-    my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
+     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
       $assembly->retrieveFromDB();    
 
@@ -144,10 +144,10 @@ foreach my $A(@na_sourceids)    {
 
       $self->undefPointerCache();
 
+   }
+   }
 
-  }
-
-  }
+}
 
 }
 
