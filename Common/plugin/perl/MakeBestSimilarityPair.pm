@@ -86,7 +86,7 @@ sub run {
     my $pfdb = '5201,5202,5203';
     my $pyydb = 692;
 #    push (@taxa,'211');
-    print STDERR "make best similarity pairs from".join(",",@taxa)."\n";
+    print STDERR "make best similarity pairs from ".join(",",@taxa)."\n";
     
     my $stmtSpan =$dbh->prepare("select similarity_span_id,subject_start,subject_end,query_start,query_end from dots.SimilaritySpan where similarity_id=?");
     
@@ -159,9 +159,11 @@ sub run {
 	    $self->log("processing similarity info for " . $taxa[$i] . " and " . $taxa[$j] . "; have " . scalar(keys %sim) . " keys to process\n");
 	    my $counter = 0;
 	    foreach my $qid (keys %sim) {
+		$counter++;
 		if ($counter % 5000 == 0){
 		    $self->log("processing similarity number $counter for " . $taxa[$i] . " and " . $taxa[$j] . "\n");
 		}
+		
 		my $percentMatch = 0;
 		
 		if ($self->getCla->{percent_match}){
