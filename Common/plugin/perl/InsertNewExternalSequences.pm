@@ -11,32 +11,40 @@ sub new {
 
   my $usage = 'insert new ExternalSequences (NA or AA) from a FASTA file';
   my $easycsp =
-    [{o => 'testnumber',
-      t => 'int',
-      h => 'number of iterations for testing',
+      [{o => 'testnumber',
+	t => 'int',
+	h => 'number of iterations for testing',
+    },
+       {o => 'writeFile',
+	t => 'string',
+	h => 'writes a sequence file of the new entries',
      },
-     {o => 'writeFile',
-      t => 'string',
-      h => 'writes a sequence file of the new entries',
-     },
-     {o => 'external_database_release_id',
-      t => 'int',
-      h => 'ExternalDatabase release id for these sequences',
-     },
-     {o => 'log_frequency',
-      t => 'int',
-      h => 'frequency to print log',
-      d => 10,
-     },
-     {o => 'sequence_type_id',
-      t => 'int',
-      h => 'sequence type id for these sequences',
-     },
-     {o => 'taxon_id',
-      t => 'int',
-      h => 'taxon id for these sequences',
-     },
-     {o => 'sequencefile',
+       {o => 'external_database_name',
+	t => 'string',
+	h => 'If external_database_release_id is not known, query for it by supplying --external_database_name and --version',
+    }, 
+       {o => 'version',
+	t => 'string',
+	h => 'If external_database_release_id is not known, query for it by supplying --external_database_name and --version',
+    },
+       {o => 'external_database_release_id',
+	t => 'int',
+	h => 'ExternalDatabase release id for these sequences',
+    },
+       {o => 'log_frequency',
+	t => 'int',
+	h => 'frequency to print log',
+	d => 10,
+    },
+       {o => 'sequence_type_id',
+	t => 'int',
+	h => 'sequence type id for these sequences',
+    },
+       {o => 'taxon_id',
+	t => 'int',
+	h => 'taxon id for these sequences',
+    },
+       {o => 'sequencefile',
       t => 'string',
       h => 'name of file containing the sequences',
      },
@@ -124,7 +132,18 @@ sub run {
       die "you must provide --regex_source_id on the command line\n";
   }
   if (!$ctx->{cla}->{external_database_release_id}){
-      die "you must provide --external_database_release_id on the command line\n";
+      
+      my $releaseId = $self->queryForReleaseId($self->getCla()->{external_database_name},
+					       $self->getCla()->{version});
+      if ($releaseId){
+	  $self->{external_database_release_id} = $releaseId;
+      }
+      else{
+	  die "you must provide --external_database_release_id on the command line, or --external_databae_name and --version to query for it\n";
+      }
+  }
+  else {
+      $self->{external_database_release_id} = $ctx->{cla}->{external_database_release_id};
   }
   if (!$ctx->{cla}->{sequencefile}){
       die "you must provide valid fasta sequence file on the command line";
@@ -158,8 +177,8 @@ sub run {
 
   #	my $sql = "select $prim_key from ExternalNASequence where source_id = '$source_id' and external_db_id = $ctx->{cla}->{'external_db_id'}";
   my $oracleName = $M->className2oracleName($ctx->{cla}->{table_name});
-  $checkStmt = $ctx->{self_inv}->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $ctx->{cla}->{'external_database_release_id'}");
-
+  $checkStmt = $ctx->{self_inv}->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $self->{external_database_release_id}");
+  
   my $source_id;
   my $name;
   my $description;
@@ -271,7 +290,7 @@ sub createNewExternalSequence {
   my $tbl = $1;
 
   my $aas = $className->
-    new({'external_database_release_id' => $ctx->{cla}->{'external_database_release_id'},
+    new({'external_database_release_id' => $self->{external_database_release_id},
 	 'source_id' => $source_id,
 	 'subclass_view' => $tbl });
   if ($secondary_id && $aas->isValidAttribute('name')) {
