@@ -31,6 +31,12 @@ sub getType {
   return "integer";
 }
 
+sub getPrimativeType {
+  my ($self) = @_;
+
+  return "int";
+}
+
 sub checkValue {
   my ($self, $value) = @_;
   my $problem;

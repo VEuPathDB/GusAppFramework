@@ -379,14 +379,7 @@ sub doMajorMode_Run {
   my $pu = $M->newFromPluginName($C);
 
   my $argsHash;
-  if ($pu->getEasyCspOptions) {
-    # get command line arguments from combined CBIL::Util::EasyCsp options structure
-    my $ecd = {
-	       %{$M->getGlobalEasyCspOptions},
-	       %{$pu->getEasyCspOptions},
-	      };
-    $argsHash = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage) || die "\n";
-  } else {
+  if ($pu->getArgsDeclaration) {
     my $argDecl = [@{$pu->getArgsDeclaration()},
 		   @{$M->getStandardArgsDeclaration()}
 		  ];
@@ -403,6 +396,13 @@ sub doMajorMode_Run {
       exit(0);
     }
     $argsHash = $argList->getArgsValueHash();
+  } else {
+    # get command line arguments from combined CBIL::Util::EasyCsp options structure
+    my $ecd = {
+	       %{$M->getGlobalEasyCspOptions},
+	       %{$pu->getEasyCspOptions},
+	      };
+    $argsHash = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage) || die "\n";
   }
   $pu->initArgs($argsHash);
   $M->initArgs($argsHash);

@@ -17,6 +17,17 @@ sub getValue {
   return $self->{value};
 }
 
+sub getEasyCsp {
+  my ($self) = @_;
+  
+  return {h=> $self->{descr}, 
+	  o=> $self->getName(), 
+	  t=> $self->getPrimativeType(), 
+	  l=> $self->{isList},
+	  r=> $self->{reqd}
+	  };
+}
+
 # return true if a problem
 sub checkReqd {
   my ($self) = @_;
@@ -35,7 +46,8 @@ sub checkReqd {
 sub formatConciseText {
   my ($self) = @_;
 
-  my $s = "--" . $self->getName() . " " . $self->getType();
+  my $type = $self->getType();
+  my $s = "--" . $self->getName() . " " . $type;
   $s .= "-list"  if $self->{isList};
   $s = "[$s]" unless $self->{reqd};
   return $s;
@@ -44,7 +56,8 @@ sub formatConciseText {
 sub formatLongPod {
   my ($self) = @_;
 
-  my $s = "\n=item --" . $self->getName() . " I<" . $self->getType();
+  my $type = $self->getType();
+  my $s = "\n=item --" . $self->getName() . " I<" . $type;
   $s .= "-list> (comma delimited)" if $self->{isList};
   $s .= ">" unless $self->{isList};
   $s .= " (Required)" if $self->{reqd};
@@ -73,12 +86,6 @@ sub formatLongPod {
   $s .= "=back\n\n";
   $s .= "=item \n\n" if $extraLine;
   return $s;
-}
-
-sub formatConciseHTML {
-}
-
-sub formatLongHTML {
 }
 
 sub runConstraintFunc {

@@ -30,6 +30,12 @@ sub getType {
   return "";
 }
 
+sub getPrimativeType {
+  my ($self) = @_;
+
+  return "boolean";
+}
+
 sub checkValue {
   my ($self, $value) = @_;
   return 0;

@@ -337,7 +337,17 @@ Get the plugin's EasyCsp options.  This value is set by the C<initialize> method
 B<Return type:> C<string>
 
 =cut
-sub getArgsDeclaration    { $_[0]->{argsDeclaration} }
+sub getEasyCspOptions { 
+  my ($self) = @_;
+  if ($self->{argsDeclaration} && !$self->{easyCspOptions}) {
+    $self->{easyCspOptions} = {};
+    foreach my $arg (@{$self->{argsDeclaration}}) {
+      $self->{easyCspOptions}->{$arg->getName} = $arg->getEasyCsp();
+    }
+  }
+
+  return $self->{easyCspOptions};
+}
 
 =item C<getArgsDeclaration()>
 
@@ -346,7 +356,7 @@ Get the plugin's argument declaration.  This value is set by the C<initialize> m
 B<Return type:> C<ref_to_list_of_Args>
 
 =cut
-sub getEasyCspOptions    { $_[0]->{easyCspOptions} }
+sub getArgsDeclaration    { $_[0]->{argsDeclaration} }
 
 =item C<getName()>
 
