@@ -131,8 +131,10 @@ sub run {
     my $assembly = GUS::Model::DoTS::Assembly->new({'na_sequence_id' => $na_seq});
 
     $assembly->retrieveFromDB();
-    $assembly->setFullLengthCds(1);
+
     $self->toAddEvidenceSourceID($source_id, $assembly);
+
+    $assembly->setFullLengthCds(1);
     $assembly->submit();
     $self->undefPointerCache();
   }
@@ -226,9 +228,8 @@ sub UnmarkFullLength {
   my $self = shift;
   my ($source_id,$assembly) = @_;
 
-  print STDERR "Value of attribute $assembly->getFullLengthCds(1)\n";
 
- if (!$assembly->getFullLengthCds(1))  {
+ if (!($assembly->getFullLengthCds(1)))  {
 
 
   my $fact = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $source_id });
