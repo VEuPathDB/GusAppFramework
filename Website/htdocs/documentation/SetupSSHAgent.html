@@ -31,7 +31,7 @@ file, see if <tt>authorized_keys</tt> contains the text from identity.pub</li>
     <ol>
       <li>on your local machine:</li>
       <ol>
-        <li><tt>emacs authorized_keys</tt></li>
+        <li><tt>edit authorized_keys</tt></li>
         <li>select and copy the contents of that file (make sure you haven't
 introduced incorrect newlines)</li>
         <li><tt>ssh cvs.sanger.ac.uk </tt>(to get to the sanger machine)<br>
@@ -41,8 +41,9 @@ introduced incorrect newlines)</li>
       </li>
       <ol>
         <li><tt>mkdir .ssh</tt></li>
-        <li><tt>emacs .ssh/authorized_keys</tt></li>
+        <li><tt>vi .ssh/authorized_keys</tt></li>
         <li>paste what you had copied into your clipboard</li>
+        <li>(make sure there are no bogus backslashes introduced from newlines in your cut and past operation)
         <li>save the file</li>
         <li>logout from sanger<br>
         </li>
@@ -50,27 +51,13 @@ introduced incorrect newlines)</li>
     </ol>
     <li>test ssh to sanger from your local machine:</li>
     <ol>
-      <li><tt>ssh -1 cvs.sanger.ac.uk</tt></li>
+      <li><tt>ssh cvs.sanger.ac.uk</tt></li>
       <li>it should ask you for your passphrase (not a password)</li>
-      <li>if it doesn't debug by using<tt> ssh -1 -v cvs.sanger.ac.uk &nbsp;</tt></li>
-    </ol>
-    <li>create the ssh1 command (if you don't already have an ssh1 command)<br>
-    </li>
-    <ol>
-      <li>in a <tt>bin/</tt> directory that is in your path, and that you
-can write to, do this:</li>
-      <li><tt>echo "ssh -1 $*" &gt; ssh1</tt></li>
-      <li><tt>chmod +x ssh1</tt></li>
-      <li><tt>rehash</tt></li>
-      <li>now test ssh1:</li>
-      <ol>
-        <li><tt>ssh1 cvs.sanger.ac.uk</tt><br>
-        </li>
-      </ol>
+      <li>if it doesn't debug by using<tt> ssh -v cvs.sanger.ac.uk &nbsp;</tt></li>
     </ol>
     <li>setup the <tt>CVS_RSH</tt> variable, in your .login or .cshrc</li>
     <ol>
-      <li><tt>setenv CVS_RSH ssh1</tt></li>
+      <li><tt>setenv CVS_RSH ssh</tt></li>
       <li>now open a new terminal window so that the change will take effect
 (or use the <tt>source</tt> command)<br>
       </li>
