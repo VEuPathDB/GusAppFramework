@@ -142,7 +142,7 @@ sub primaryKeySql{
 sub nextValSql{
 	my($self,$table)=@_;
 	my $seqname=$table."_SQ";
-	return "select $seqname"."NEXTVAL from DUAL";
+	return "select $seqname".".NEXTVAL from DUAL";
 }
 
 ############################################################
