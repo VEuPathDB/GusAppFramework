@@ -203,6 +203,7 @@ sub makeTaxonEntry {
 	$newTaxon->set('mitochondrial_genetic_code_id',$mit_code);
     }  
     
+
     
     $newTaxon->submit();
     $self->undefPointerCache();
@@ -268,7 +269,7 @@ sub makeTaxonName {
 
 	  my $taxon_name_id = $newTaxonName->getTaxonNameId();
 	  $TaxonNameIdHash{$taxon_name_id}=1;
-	  $TaxonIdHash{$taxon_id}=$name_class;
+	  $TaxonIdHash{$taxon_id}->{$name_class}=1;
 	  
 	  
 	  $self->undefPointerCache();
@@ -290,7 +291,7 @@ sub deleteTaxonName {
     if ($TaxonNameIdHash->{$taxon_name_id}==1) {
       next();
     }
-    elsif ($TaxonIdHash->{$taxon_id} eq $name_class) {
+    elsif ($TaxonIdHash->{$taxon_id}->{$name_class}==1) {
       my $newTaxonName = GUS::Model::SRes::TaxonName->new({'taxon_name_id'=>$taxon_name_id});
       $newTaxonName->retrieveFromDB();
       $newTaxonName->markDeleted();
