@@ -1,4 +1,3 @@
-
 package GUS::GOPredict::Plugin::LoadGoAssoc;
 @ISA = qw( GUS::PluginMgr::Plugin);
 use CBIL::Bio::GeneAssocParser::Parser;
@@ -589,7 +588,7 @@ sub __loadProcessedSequences {
     if ($self->getCla->{loadSeqsFromDb}){
 	my $dbList = '( '. join( ', ', @{ $self->{orgInfo}->{$organism}->{ db_id } } ). ' )';
 	my $goDb = $self->getCla->{go_ext_db_rel_id};
-		
+	my $loadedSeqs;
 	my $queryHandle = $self->getQueryHandle();
 	my $sql = "select eas." . "$orgIdCol ";
 	$sql .= "from DoTS.GOAssociation ga, DoTS.ExternalAASequence eas, DoTS.GOAssociationInstance gai ";
@@ -601,7 +600,10 @@ sub __loadProcessedSequences {
 	my $counter = 0;
 	my $writeFh = FileHandle->new( '>>'. $self->getCla ->{ id_file } );
 	while (my $oldId = $sth->fetchrow_array()){
-	    print $writeFh $oldId . "\n";
+	    $loadedSeqs->{$oldId} = 1;
+	}
+	foreach my $loadedSeq (keys %$loadedSeqs){
+	    print $writeFh $loadedSeq . "\n";
 	}
 	$writeFh->close();
     }	
