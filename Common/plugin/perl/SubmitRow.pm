@@ -58,12 +58,14 @@ sub run {
   eval "require $className";
 
   my $row;
+  $self->logVeryVerbose("very");
   if ($self->getArgs->{refresh}) {
     $row = $self->refreshedRow($className);
+    $self->setResultDescr("Refreshed one row");
 
   } else {
-   $self->logDebug(CBIL::Util::Disp::Display($self->{attrHash}));
-   $row = $className->new($self->{attrHash});
+    $row = $className->new($self->{attrHash});
+    $self->setResultDescr("Updated one row");
   }
 
   $row->submit();

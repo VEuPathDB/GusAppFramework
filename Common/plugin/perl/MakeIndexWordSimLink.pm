@@ -73,8 +73,8 @@ sub run {
   my $M   = shift;
   $ctx = shift;
 
-  print $ctx->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
-  print "Testing on $ctx->{'testnumber'}\n" if $ctx->{'testnumber'};
+  print $ctx->{cla}->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
+  print "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{cla}->{'testnumber'};
 
   die "You must provide  --target_table, --similarity_table and --idSQL on command line\n" unless $ctx->{cla}->{target_table} && $ctx->{cla}->{similarity_table} && $ctx->{cla}->{idSQL};
   my $target_table_id = $ctx->{self_inv}->getTableIdFromTableName($ctx->{cla}->{target_table});

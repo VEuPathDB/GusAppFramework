@@ -71,8 +71,8 @@ sub run {
   my $M   = shift;
   $ctx = shift;
 
-  print STDERR $ctx->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
-  print STDERR "Testing on $ctx->{'testnumber'}\n" if $ctx->{'testnumber'};
+  print STDERR $ctx->{cla}->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
+  print STDERR "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{cla}->{'testnumber'};
 
   die "--table and (--attribute or --idSQL) are required arguments\n" unless $ctx->{cla}->{table} && ($ctx->{cla}->{table} || $ctx->{cla}->{table});
 
