@@ -249,8 +249,6 @@ sub makeTaxonName {
 
   my $self   = shift;
   my $namesDmp = shift;
-  my $dbh = $self->getQueryHandle();
-  $dbh->do("analyze table sres.Taxon compute statistics");
   my %TaxonNameIdHash;
   my %TaxonIdHash;
   my $num = 0;
