@@ -3,6 +3,7 @@ package GUS::ObjRelP::Generator::PerlWrapperGenerator;
 @ISA = qw (GUS::ObjRelP::Generator::WrapperGenerator);
 
 use strict;
+use GUS::ObjRelP::Generator::WrapperGenerator;
 
 sub new{
     my ($class, $generator, $schemaName, $tableName, $tableGenerator) = @_;

@@ -3,6 +3,7 @@ package GUS::ObjRelP::Generator::PerlRowGenerator;
 @ISA = qw (GUS::ObjRelP::Generator::RowGenerator);
 
 use strict;
+use GUS::ObjRelP::Generator::RowGenerator;
 
 sub new{
     my ($class, $generator, $schemaName, $tableName, $tableGenerator) = @_;

@@ -1,6 +1,7 @@
 package GUS::ObjRelP::Generator::JavaRowGenerator;
 
 @ISA = qw (GUS::ObjRelP::Generator::RowGenerator);
+use GUS::ObjRelP::Generator::RowGenerator;
 
 use strict;
 
