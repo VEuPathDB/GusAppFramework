@@ -27,7 +27,7 @@ sub new {
       },
 	 {o => 'database_version',
 	  h => 'New version of external database for which we are creating a new release',
-	  t => 'int',
+	  t => 'float',
 	  r => 1,
       }
 	 ];
@@ -48,7 +48,7 @@ sub run {
     my $self = shift;
 
     my $dbName = $self->getCla->{database_name};
-    my $dbVer = $self->getCla->{version}; 
+    my $dbVer = $self->getCla->{database_version}; 
 
     my $msg;
 
@@ -71,12 +71,12 @@ sub releaseAlreadyExists{
     my $queryHandle = $self->getQueryHandle();
 
 
-    my $dbVer = $self->getCla->{version}; 
+    my $dbVer = $self->getCla->{database_version}; 
 
     my $sql = "select external_database_release_id 
                from SRes.ExternalDatabaseRelease
-               where exteranl_database_id = $id
-               and version = $dbVer";
+               where external_database_id = $id
+               and version = '$dbVer'";
 
     my $sth = $queryHandle->prepareAndExecute($sql);
 
@@ -89,7 +89,7 @@ sub makeNewReleaseId{
     
     my ($self, $id) = @_;
 
-    my $dbVer = $self->getCla->{version}; 
+    my $dbVer = $self->getCla->{database_version}; 
 
     my $newRelease = GUS::Model::SRes::ExternalDatabaseRelease->new({
 	external_database_id => $id,
@@ -107,12 +107,13 @@ sub getExtDbId{
     my ($self, $name) = @_;
 
     my $queryHandle = $self->getQueryHandle();
-    my $sql = "select external_database_id from SRes.ExternalDatabase where name = $name";
+
+    my $sql = "select external_database_id from SRes.ExternalDatabase where name = '$name'";
 
     print STDERR "executing $sql\n";
 
     my $sth = $queryHandle->prepareAndExecute($sql);
-    
+   
     my ($id) = $sth->fetchrow_array();
     if (!($id)){
 	$self->userError("no entry in SRes.ExternalDatabase for database $name");
