@@ -120,10 +120,15 @@ sub run {
   my $M   = shift;
   $ctx = shift;
 
-  if (!$ctx->{cla}->{'external_database_release_id'} || !-e $ctx->{cla}->{'sequencefile'} || !$ctx->{cla}->{table_name}) {
-    die "you must provide --external_database_release_id, --table_name and valid fasta sequencefile on the command line\n";
+  if (!$ctx->{cla}->{external_database_release_id}){
+      die "you must provide --external_database_release_id on the command line\n";
   }
-  
+  if (!$ctx->{cla}->{sequencefile}){
+      die "you must provide valid fasta sequence file on the command line";
+  }
+  if (!$ctx->{cla}->{table_name}) {
+      die " you must provide --table_name n the command line\n";
+  }
   print $ctx->{cla}->{'commit'} ? "*** COMMIT ON ***\n" : "*** COMMIT TURNED OFF ***\n";
   print "Testing on $ctx->{cla}->{'testnumber'}\n" if $ctx->{cla}->{'testnumber'};
 
@@ -176,7 +181,7 @@ sub run {
 
       &process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq) if ($source_id);
 
-      print STDERR "$source_id  $count, inserted ".($ctx->{self_inv}->getTotalInserts() - 1)." and updated ".$ctx->{self_inv}->getTotalUpdates() ." " . ($count % ($ctx->{cla}->{log_frequency} * 10) == 0 ? `date` : "\n") if $count % $ctx->{cla}->{log_frequency} == 0;
+      print STDERR "$source_id, $secondary_id, $name, $description,  $count, \n $seq\ninserted ".($ctx->{self_inv}->getTotalInserts() - 1)." and updated ".$ctx->{self_inv}->getTotalUpdates() ." " . ($count % ($ctx->{cla}->{log_frequency} * 10) == 0 ? `date` : "\n") if $count % $ctx->{cla}->{log_frequency} == 0;
 
       ##now get the ids etc for this defline...
       if (/$ctx->{cla}->{'regex_source_id'}/) { 
