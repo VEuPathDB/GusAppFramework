@@ -3,6 +3,9 @@ package GUS::Pipeline::ExternalResources::LoaderStep;
 use strict;
 use GUS::Pipeline::ExternalResources::RepositoryEntry;
 
+my $dbNameMacro = "\%DATABASE_NAME\%";
+my $dbVersionMacro = "\%REPOSITORY_VERSION\%";
+
 sub new {
   my ($class, $repositoryDir, $resource, $version, $targetDir, $url, $plugin,
       $pluginArgs, $dbName, $releaseDescription, $commit, $wgetArgs, $repositoryLogFile) = @_;
@@ -59,6 +62,11 @@ sub run {
     
     if ($self->{dbName}){
 
+	$self->_validateDbPluginArgs();
+
+	$self->{pluginArgs} =~ s/$dbNameMacro/$self->{dbName}/;
+	$self->{pluginArgs} =~ s/$dbVersionMacro/$version/;
+
 	my $dbPluginArgs = "--name \'$self->{dbName}\' --commit";
 	$mgr->runPluginNoCommit("createDb_${signalBase}", "GUS::Common::Plugin::InsertNewExternalDatabase",
 				$dbPluginArgs, "Creating database entry for $resource");
@@ -68,6 +76,8 @@ sub run {
 	$mgr->runPluginNoCommit("createRelease_${signalBase}", "GUS::Common::Plugin::InsertNewExtDbRelease",
 				$releasePluginArgs, "Creating database release for $resource $version");
 	
+	
+
 	$loadDataDbArgs .= " --external_database_name \'$self->{dbName}\' --version \'$version\'";
     }
     
@@ -75,6 +85,17 @@ sub run {
     $mgr->runPluginNoCommit("load_${signalBase}", $self->{plugin}, 
 			    "$self->{pluginArgs} $loadDataDbArgs $self->{commit}",
 			    "Loading $resource $version");
+}
+
+#make sure that plugin args contain necessary macros for handling ExternalDatabase info
+sub _validateDbPluginArgs {
+
+    my ($self) = @_;
+    my $pluginArgs = $self->{pluginArgs};
+    my $resource = $self->{repositoryEntry}->getResource();
+    if (!($pluginArgs =~ /$dbNameMacro/ && $pluginArgs =~ /$dbVersionMacro/)){
+	die ("error in resource $resource: attribute dbName specified, but database name and version macros not found in plugin args");
+    }
 }
 
 1;
