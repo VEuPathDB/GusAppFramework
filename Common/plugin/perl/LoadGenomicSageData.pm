@@ -165,7 +165,6 @@ sub run {
 }
 
 # ----------------------------------------------------------------------
-
 # Given a projectId, use ProjectLink to find and process
 # the correspoding ExternalNaSequences
 
@@ -196,7 +195,6 @@ SQL
 }
 
 # ----------------------------------------------------------------------
-
 # given a sequence (by its naSequenceId), process it
 # (i.e. find its SageTagFeatures or link them to Gene features)
 
@@ -214,7 +212,8 @@ sub processSequence {
 
   $self->undefPointerCache();
 }
-# ----------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# scan the given sequence for restriction sites, and record the adjacent tags
 
 sub findTags {
   my ($self, $na_sequence_id) = @_;
@@ -272,7 +271,6 @@ sub findTags {
 }
 
 # ----------------------------------------------------------------------
-
 # Create SageTagFeature and NaLocation objects, and call updateRad()
 # to create RAD schema objects.
 
@@ -315,7 +313,7 @@ sub createSageObjects {
   my $sageTagFeature =
     GUS::Model::DoTS::SAGETagFeature->new
 	( {
-	   name => substr($sourceId,0,30),
+	   name => $name,
 	   source_id          => $sourceId,
 	   is_predicted       => 1,
 	   restriction_enzyme => $argHash->{enzymeName},
@@ -375,7 +373,6 @@ sub createSageObjects {
 }
 
 # ----------------------------------------------------------------------
-
 # Given a SageTagFeature and tag sequence, find or create
 # a SageTag object for the tag, and link them with a
 # new SageTagMapping object
@@ -407,8 +404,8 @@ sub updateRad {
 }
 
 # ----------------------------------------------------------------------
-
 # returns the reverse complement of a nucleic acid sequence
+
 sub reverseComplement {
   my $s = $_[0];
   $s =~ tr/ACGT/TGCA/;
@@ -417,6 +414,9 @@ sub reverseComplement {
   return $rs;
 }
 # ----------------------------------------------------------------------
+# prepares a query to find linked genes and tags on a given NaSequence
+# (the prepare is done separately, since the query will be executed
+#  for each NaSequenceId in the big loop)
 
 sub prepareQuery {
   my ($self, $maxDistance) = @_;
@@ -535,8 +535,8 @@ sub findLinks {
 }
 
 # ----------------------------------------------------------------------
-
 # look up tableId by database/table name
+
 sub getTableId {
   my ($dbName, $tableName) = @_;
 
