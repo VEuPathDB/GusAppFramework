@@ -1231,37 +1231,42 @@ __END__
 
 =head1 NAME
 
-RAD::DataLoad::Plugin::ArrayLoader
+GUS::RAD::Plugin::ArrayLoader
 
 =head1 SYNOPSIS
 
-ga RAD::DataLoad::Plugin:ArrayLoader B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file
+ga GUS::RAD::Plugin:ArrayLoader B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file
 
-ga RAD::DataLoad::Plugin::ArrayLoader B<[options]> B<--help>
+ga GUS::RAD::Plugin::ArrayLoader B<[options]> B<--help>
 
-ga RAD::DataLoad::Plugin::ArrayLoader B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file B<--manufacturer_id> manufacturer_id B<--platform_type_id> platform_type_id B<--substrate_type_id> substrate_type_id B<--debug> > logfile
+ga GUS::RAD::Plugin::ArrayLoader B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file B<--manufacturer_id> manufacturer_id B<--platform_type_id> platform_type_id B<--substrate_type_id> substrate_type_id B<--debug> > logfile
 
-ga RAD::DataLoad::Plugin::ArrayLoader B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file B<--manufacturer_id> manufacturer_id B<--platform_type_id>  platform_type_id B<--substrate_type_id> substrate_type_id B<--commit> > logfile 
+ga GUS::RAD::Plugin::ArrayLoader B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file B<--manufacturer_id> manufacturer_id B<--platform_type_id>  platform_type_id B<--substrate_type_id> substrate_type_id B<--commit> > logfile 
 
 =head1 DESCRIPTION
 
-This is a plug-in that loads array data (spotted microarray and oligonucleotide array) into Array, ArrayAnnotation, CompositeElementAnnotaion, ElementAnnotation tables and views of CompositeElementImp, ElementImp.  
+    This is a plug-in that loads array data (spotted microarray and oligonucleotide array) into Array, ArrayAnnotation, CompositeElementAnnotaion, ElementAnnotation tables and views of CompositeElementImp, ElementImp.  
 
 =head1 ARGUMENTS
 
-B<--cfg_file> F<config_file> [require the absolute pathname]   
+B<--cfg_file> F<config_file> [require the absolute pathname]
+   
     This file tells the plug-in how to map table/view attributes to columns in the data file and gives the values for attributes in Array, ArrayAnnotation.
 
-B<--data_file> F<data_file>  [require the absolute pathname]  
+B<--data_file> F<data_file>  [require the absolute pathname]
+
     The file contains the values for attributes in ElementImp, CompositeElementImp, ElementAnnotation and CompositeElementAnnotation.
 
 B<--manufacturer_id> I<manufacturer_id>  [require must be one of contact_id in SRes:Contact table]
+
     set value for the Array.manufacturer_id
 
 B<--platform_type_id> I<platform_type_id>  [require must be one of ontology_entry_id in RAD3::OntologyEntry table]
+
     set value for the Array.platform_type_id
 
 B<--substrate_type_id> I<substrate_type_id>  [require must be one of ontology_entry_id in RAD3::OntologyEntry table]
+
     set value for the Array.substrate_type_id
 
 =head1 OPTIONS
@@ -1301,25 +1306,37 @@ The plug-in outputs a print statement to STDOUT (for possible redirection to a l
 
 Make sure that the F<.gus.properties> file of the user contains the correct login name [RAD3rw]. Also, if the group and project differ from the default values in F<.gus.properties>, I<please specify the proper group and project name on the command line using --group and --project options respectively>. 
 
-=head2 cfg_file 
+=head2 F<cfg_file> 
 
 This configuration file tells the plug-in how to map table/view attributes to columns in the data file. Here is a detailed description of the format:
 
 You should save this file in the CVS repository, in the directory $PROJECT_HOME/RAD/DataLoad/config (the name of this file, stripped of its path, is stored by the ga as an algorithm parameter).
-    * This should be a tab-delimited text file, with 2 columns, named: "Table.attribute", "value or header" The order and case of these columns is important, and it is recommended to follow the template for the sake of consistency.
-    * Lines which start with "#" are ignored (use this for comments)
-    * Each (non-comment) line should contain exactly only one tab.
-    * The first column should be in the same format as "Table.attribute", Even if it is view, give the ImpTable name and the names in for "attribute" should be the attribute names as named in the view of interest.
-    * For empty fields do not use special symbols (like NA or similar), just leave that field empty or delete this line.
-    * If a line of the Template does not apply to your situation,  you do not have to enter it in your configuration file.
-    * In case the Template does not include the attribute required by your array design and is in RAD3 schema,  you can add it in your configuration file.
-    * You can have mutiple entries for annotation tables such as ArrayAnnotation, ElementAnnotation and CompositeAnnotation table. The number after annotation table name denotes each entry. For example, ArrayAnnotation1.name and ArrayAnnotation1.value. And the name attribute for annotation table should be provided as value and value attribute for annotation table as header.
-    *  For each row, only one of VALUE and HEADER can be given. If the value of a particular table attribute is constant for all data lines, enter that in the second column. Else, if the value has to be taken from the data file, put in the second column the name of the data file column containing that value (the names under second column should be identical, case and all, to how they appear in the data file). But for external_database_release_id and element_type_id, always provide them as HEADER even if they are constant for all elements.
-    * Please make sure that the column in your data file to which external_database_release_id is mapped, if present (which in most cases should be), contains valid SRes.ExternalDatabaseRelease.ext_db_ids. If this is not the case, you will need to re-parse your data file, as the plug-in will not insert any row with an invalid external_database_release_id, when this is present.
-    * It is crucial that the attributes of CompositeElememtImp that you are listing are such that each CompositeElement in your data file is uniquely identified by those attributes. For spotted array case, if one of the attributes listed should be present in each spot family and uniquely identifies a spot family (e.g. a well id might do this), make that attribute mandatory in your configuration file.
-    * It is also very important for shortOligo array, the name attribute for each shortOligoFamily should be unique, since the plugin will cache the name attribute of each shortOligoFamily and all shortOligoFamily with same name will be loaded into database once. 
 
-=head2 data_file
+* This should be a tab-delimited text file, with 2 columns, named: "Table.attribute", "value or header" The order and case of these columns is important, and it is recommended to follow the template for the sake of consistency.
+
+* Lines which start with "#" are ignored (use this for comments).
+
+* Each (non-comment) line should contain exactly only one tab.
+
+* The first column should be in the same format as "Table.attribute", Even if it is view, give the ImpTable name and the names in for "attribute" should be the attribute names as named in the view of interest.
+
+* For empty fields do not use special symbols (like NA or similar), just leave that field empty or delete this line.
+
+* If a line of the Template does not apply to your situation,  you do not have to enter it in your configuration file.
+
+* In case the Template does not include the attribute required by your array design and is in RAD3 schema,  you can add it in your configuration file.
+
+* You can have mutiple entries for annotation tables such as ArrayAnnotation, ElementAnnotation and CompositeAnnotation table. The number after annotation table name denotes each entry. For example, ArrayAnnotation1.name and ArrayAnnotation1.value. And the name attribute for annotation table should be provided as value and value attribute for annotation table as header.
+
+*  For each row, only one of VALUE and HEADER can be given. If the value of a particular table attribute is constant for all data lines, enter that in the second column. Else, if the value has to be taken from the data file, put in the second column the name of the data file column containing that value (the names under second column should be identical, case and all, to how they appear in the data file). But for external_database_release_id and element_type_id, always provide them as HEADER even if they are constant for all elements.
+
+* Please make sure that the column in your data file to which external_database_release_id is mapped, if present (which in most cases should be), contains valid SRes.ExternalDatabaseRelease.ext_db_ids. If this is not the case, you will need to re-parse your data file, as the plug-in will not insert any row with an invalid external_database_release_id, when this is present.
+
+* It is crucial that the attributes of CompositeElememtImp that you are listing are such that each CompositeElement in your data file is uniquely identified by those attributes. For spotted array case, if one of the attributes listed should be present in each spot family and uniquely identifies a spot family (e.g. a well id might do this), make that attribute mandatory in your configuration file.
+
+* It is also very important for shortOligo array, the name attribute for each shortOligoFamily should be unique, since the plugin will cache the name attribute of each shortOligoFamily and all shortOligoFamily with same name will be loaded into database once.
+
+=head2 F<data_file>
 
 The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.
 
@@ -1329,7 +1346,7 @@ The data file should be in tab-delimited text format with one header row and a r
 
 Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.
 
-=head2 restart
+=head2 I<restart>
 
 If you need to restart loading from your data file from a specific line (e.g. due to previous interruptions in data loading), give the line number of this line in the --restart option. You should start your line count from the line after the header line and include any empty lines. 
 
@@ -1343,4 +1360,4 @@ Written by Junmin Liu.
 
 =head1 COPYRIGHT
 
-Copyright Trustees of University of Pennsylvania 2003.
+Copyright Trustees of University of Pennsylvania 2003. 

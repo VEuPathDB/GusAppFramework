@@ -1098,32 +1098,39 @@ sub doSelect {
 
 1;
 
+
 __END__
 
 =head1 NAME
 
-RAD::DataLoad::Plugin::ArrayResultLoader
+GUS::RAD::Plugin::ArrayResultLoader
 
 =head1 SYNOPSIS
 
 *For help
-    ga RAD::DataLoad::Plugin::ArrayResultLoader B<[options]> B<--help>
 
-*For loading data into ElementResultImp table   
-    ga RAD::DataLoad::Plugin::ArrayResultLoader B<[options]> B<--data_file> data_file B<--array_id> array_id B<--e_subclass_view> e_subclass_view B<--quantification_id> quantification_id B<--er_subclass_view> er_subclass_view B<--debug> > logfile
+ga GUS::RAD::Plugin::ArrayResultLoader B<[options]> B<--help>
+
+*For loading data into ElementResultImp table
+
+ga GUS::RAD::Plugin::ArrayResultLoader B<[options]> B<--data_file> data_file B<--array_id> array_id B<--e_subclass_view> e_subclass_view B<--quantification_id> quantification_id B<--er_subclass_view> er_subclass_view B<--debug> > logfile
 
 *For loading data into CompositeElementResultImp table
-    ga RAD::DataLoad::Plugin::ArrayResultLoader B<[options]> B<--data_file> data_file B<--array_id> array_id B<--e_subclass_view> e_subclass_view B<--quantification_id> quantification_id B<--cr_subclass_view> cr_subclass_view B<--commit> > logfile 
+
+ga GUS::RAD::Plugin::ArrayResultLoader B<[options]> B<--data_file> data_file B<--array_id> array_id B<--e_subclass_view> e_subclass_view B<--quantification_id> quantification_id B<--cr_subclass_view> cr_subclass_view B<--commit> > logfile 
 
 *For loading data into CompositeElementResultImp table such as loading Affymetrix Chp data
-    ga  RAD::DataLoad::Plugin::ArrayResultLoader B<[options]> B<--data_file> data_file B<--array_id> array_id B<--c_subclass_view> c_subclass_view  B<--quantification_id> quantification_id B<--cr_subclass_view> cr_subclass_view B<--debug> > logfile
+
+ga  GUS::RAD::Plugin::ArrayResultLoader B<[options]> B<--data_file> data_file B<--array_id> array_id B<--c_subclass_view> c_subclass_view  B<--quantification_id> quantification_id B<--cr_subclass_view> cr_subclass_view B<--debug> > logfile
 
 
 *For loading data into ElementResultImp and CompositeElementResultImp table
-    ga  RAD::DataLoad::Plugin::ArrayResultLoader B<[options]> B<--data_file> data_file B<--array_id> array_id B<--e_subclass_view> e_subclass_view  B<--quantification_id> quantification_id B<--er_subclass_view> er_subclass_view B<--cr_subclass_view> cr_subclass_view B<--rel_quantification_id> rel_quantification_id B<--debug> > logfile
+
+ga  GUS::RAD::Plugin::ArrayResultLoader B<[options]> B<--data_file> data_file B<--array_id> array_id B<--e_subclass_view> e_subclass_view  B<--quantification_id> quantification_id B<--er_subclass_view> er_subclass_view B<--cr_subclass_view> cr_subclass_view B<--rel_quantification_id> rel_quantification_id B<--debug> > logfile
 
 *For loading two-channel data into ElementResultImp and CompositeElementResultImp table
-    ga  RAD::DataLoad::Plugin::ArrayResultLoader B<[options]> B<--data_file> data_file B<--array_id> array_id B<--e_subclass_view> e_subclass_view  B<--quantification_id> quantification_id B<--er_subclass_view> er_subclass_view B<--cr_subclass_view> cr_subclass_view B<--rel_quantification_id> rel_quantification_id B<--commit> > logfile
+
+ga  GUS::RAD::Plugin::ArrayResultLoader B<[options]> B<--data_file> data_file B<--array_id> array_id B<--e_subclass_view> e_subclass_view  B<--quantification_id> quantification_id B<--er_subclass_view> er_subclass_view B<--cr_subclass_view> cr_subclass_view B<--rel_quantification_id> rel_quantification_id B<--commit> > logfile
 
 =head1 DESCRIPTION
 
@@ -1131,19 +1138,23 @@ This is a plug-in that loads array  (spotted microarray and oligonucleotide arra
 
 =head1 ARGUMENTS
 
-B<--data_file> F<data_file>  [require the absolute pathname]  
+B<--data_file> F<data_file>  [require the absolute pathname]
+
     The file contains the values for attributes in ElementResultImp, CompositeResultElementImp.
 
 B<--array_id> I<array_id>  [require must be one of array_id in RAD3::Array table]
+
     set value of the ElementImp.array_id in order to determine the element_id and composite_element_id
 
 B<--quantification_id> I<quantification_id>  [require must must be one of quantification_id in RAD3::Quantification table]
+
     set value for the ElementImp.quantification_id and CompositeElementImp.quantification_id
 
 
 
 
 =head1 OPTIONS
+
 B<--e_subclass_view> I<e_subclass_view>  [optional, must be one of view name for  RAD3::ElementImp table]
     being used for determining the element_id and composite_element_id
 
@@ -1205,26 +1216,37 @@ Make sure that the F<.gus.properties> file of the user contains the correct logi
 The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.
 
 * The header contains a list of attributes, which can be divided into two categories. One is position attributes which is used to identify the location of each element in array or compositeElement identifier such as probe set name. The other is view attributes which is defined in the view of ElementResultImp and CompositeElementResultImp.
+
 * All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.
+
 * Every element for which the position attributes are available should have these stored in the database in order to determine the element_id and/or composite_element_id.
+
 * Depending on array platform, the position attributes are different. If  the command line argument "e_subclass_view" is set to "Spot", then position attributes will be array_row, array_column, grid_row, grid_column, sub_row and sub_column. If  the command line argument "e_subclass_view" is set to "ShortOligo", then position attributes will be x_position and y_position. You will need to have these columns in the data file for each row.
+
 * If you only load the compositeElementResult for affymetrix data, you have option to use probe set identifier to set the composite_element_id without using the position attributes of x_position and y_position. First, set command line argument "c_subclass_view" to "ShortOligoFamily", second, use the "posOption" to set the probe set identifier, its default is 1, which uses "name" as the probe set identifier; 2 means using "external_database_release_id"and "source_id" as the probe set identifier; 3 means using "external_database_release_id", "source_id" and "name" as the probe set identifier.
+
 * If the data file contains two-channel array data, then you can use "channel1.attributeName" and "channel2.attributeName" to denote each channel data.
+
 * Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.
+
 * If any values in data file larger than the maximum value or smaller than minimum value that corresponding field in database allows, then the plugin will reset the value to maximum or minimum value of that field.
 
 Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.
 
 =head2 F<e_subclass_view>
+
 Legal values for this argument must be either "Spot" or "ShortOligo" or "SAGETagMapping".
 
 =head2 F<c_subclass_view>
+
 Legal values for this argument must be either "SpotFamily" or "ShortOligoFamily" or "SAGETag". 
 
 =head2 F<er_subclass_view>
+
 Legal values for "er_subclass_view" must be "ArrayVisionElementResult", "GenePixElementResult", "SpotElementResult", "ScanalyzeElementResult", "AffymetrixCEL". 
 
 =head2 F<cr_subclass_view>
+
 Legal values for "cr_subclass_view" must be "AffymetrixMAS4", "AffymetrixMAS5", "SAGETagResult", "MOIDResult".
 
 =head2 I<restart>
