@@ -24,6 +24,12 @@ sub getType {
   return "file";
 }
 
+sub getPrimativeType {
+  my ($self) = @_;
+
+  return "string";
+}
+
 sub getGetOptionsSuffix {
   my ($self) = @_;
 

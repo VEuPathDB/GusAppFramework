@@ -34,6 +34,7 @@ sub new {
   $self->parseArgs();
 
   $self->{argsHash} = {};
+  $self->{easyCsp} = [];
   foreach my $arg (@{$self->{argsList}}) {
     $self->{argsHash}->{$arg->getName()} = $arg;
     $self->{argsValueHash}->{$arg->getName()} = $arg->getValue();

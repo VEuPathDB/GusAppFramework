@@ -29,6 +29,12 @@ sub getType {
   return "tablename";
 }
 
+sub getPrimativeType {
+  my ($self) = @_;
+
+  return "string";
+}
+
 sub checkValue {
   my ($self, $value) = @_;
   my $problem;
