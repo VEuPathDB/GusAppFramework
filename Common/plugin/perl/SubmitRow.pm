@@ -85,7 +85,7 @@ sub run {
 
   $self->{attrHash} = $self->makeAttrHash();
 
-  my $tableName = $self->getArgs->{'tablename'};
+  my $tableName = $self->getArg('tablename');
   my $className = $self->getDb()->getFullTableClassName("$tableName");
   $self->userError("'$tableName' is not a valid table name") unless $className;
 
@@ -107,8 +107,8 @@ sub run {
 sub makeAttrHash {
   my ($self) = @_;
 
-  my $attrList = $self->getArgs->{attrlist};
-  my @valueList = split(/\^\^\^/, $self->getArgs->{valuelist});
+  my $attrList = $self->getArg('attrlist');
+  my @valueList = split(/\^\^\^/, $self->getArg('valuelist');
 
   $self->userError("attrlist and valuelist must have the same number of elements") if (scalar(@$attrList) != scalar(@valueList));
 
