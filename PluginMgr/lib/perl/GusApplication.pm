@@ -628,7 +628,8 @@ SQL
             $val_sh->execute($inv_h->{ALGORITHM_INVOCATION_ID});
             while (my $val_h = $val_sh->fetchrow_hashref) {
                $Self->logData('PARVAL',
-                              ( map {$val_h->{$_}} qw(ALGORITHM_PARAM_KEY ORDER_NUM STRING_VALUE))
+                              sprintf('%24.24s', $val_h->{ALGORITHM_PARAM_KEY}),
+                              ( map {$val_h->{$_}} qw(ORDER_NUM STRING_VALUE))
                              );
             }
             $val_sh->finish;
