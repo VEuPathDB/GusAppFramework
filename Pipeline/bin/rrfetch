@@ -36,7 +36,7 @@ Fetch a file from an external-resources repository.
 usage:  rrfetch repositoryLoc resourceName version targetDir sourceUrl wgetArgs
 
 where:
-  repositoryLoc - either a local dir that holds the repository or an ftp site that holds the repository
+  repositoryLoc - the location of the repository in host:path form (path is optional) 
   resourceName  - eg NRDB, Genbank
   version       - eg 1.1.2 or 2004-10-23
   targetDir     - the location to put the fetched file

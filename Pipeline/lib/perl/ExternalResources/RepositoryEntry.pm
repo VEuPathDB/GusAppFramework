@@ -3,7 +3,7 @@ package GUS::Pipeline::ExternalResources::RepositoryEntry;
 use strict;
 use GUS::Pipeline::ExternalResources::RepositoryWget;
 use GUS::Pipeline::ExternalResources::FileSysManager;
-#use GUS::Pipeline::ExternalResources::FtpManager;
+use GUS::Pipeline::ExternalResources::SftpManager;
 
 
 # This class represents an entry in an External Data Files Repository.
@@ -123,10 +123,18 @@ sub _getAnswerFile {
 sub _makeStorageManager {
   my ($storageLocation) = @_;
 
-  if ($storageLocation =~ /^ftp:/) {
-  } elsif ($storageLocation =~ /^\//) {
+  # if host:path
+  if (GUS::Pipeline::ExternalResources::Sftp::parseLocation($storageLocation)) {
+    return GUS::Pipeline::ExternalResources::Sftp->new($storageLocation);
+  }
+
+  # if path
+  elsif ($storageLocation =~ /\/?(\w+\/)*(\w+)?/) {
     return GUS::Pipeline::ExternalResources::FileSysManager->new($storageLocation);
-  } else {
+  }
+
+  # otherwise
+  else {
     die "Illegal repository location '$storageLocation'";
   }
 
