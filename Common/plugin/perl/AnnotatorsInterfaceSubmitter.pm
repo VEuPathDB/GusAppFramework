@@ -136,12 +136,12 @@ sub run {
 		    $child->setGoAssociationInstanceId(0);
 		    $child->setGoAssociationId($assocHash->{$child->getGoAssociationId()});
 		}
-		print STDERR "INSTANCE: \n\t instanceId " . $child->getGoAssociationInstanceId() . " assocId: " . $child->getGoAssociationId() . " LOE: " . $child->getGoAssocInstLoeId() . " isNot: " . $child->getIsNot() . " isPrimary: " . $child->getIsPrimary() . "\n\tisDeprecated: " . $child->getIsDeprecated() . " reviewStatus " . $child->getReviewStatusId() . "\n\t\tEvidence:\n";
+		#print STDERR "INSTANCE: \n\t instanceId " . $child->getGoAssociationInstanceId() . " assocId: " . $child->getGoAssociationId() . " LOE: " . $child->getGoAssocInstLoeId() . " isNot: " . $child->getIsNot() . " isPrimary: " . $child->getIsPrimary() . "\n\tisDeprecated: " . $child->getIsDeprecated() . " reviewStatus " . $child->getReviewStatusId() . "\n\t\tEvidence:\n";
 		my @evidence = $child->getAllEvidence();
 		foreach my $evidence (@evidence){
-		    print STDERR "factTableId: " . $evidence->getFactTableId() . " FactId: " . $evidence->getFactId() . "\n";
+#		    print STDERR "factTableId: " . $evidence->getFactTableId() . " FactId: " . $evidence->getFactId() . "\n";
 		}
-		print STDERR "\n";
+#		print STDERR "\n";
 	    }
 	    # print STDERR $child->getClassName(), " has evidence: ", $has_evidence, "\n";
 	    # need to check that a copy does not already exist in db - i.e. for GeneSynonyms.  Will retreivefromDB work?  
@@ -560,7 +560,7 @@ sub submitAssocObjects {
     foreach my $assoc ($ai->getAllChildren()){
 	
 	$assoc->submit();
-	print STDERR "ASSOCIATION: \n\t assocId: " . $assoc->getGoAssociationId() . " goTermId: " . $assoc->getGoTermId() . " IsNot: " . $assoc->getIsNot() . " isDeprecated: " . $assoc->getIsDeprecated() . " \n\t defining " . $assoc->getDefining() . " ReviewStatus: " . $assoc->getReviewStatusId() . "\n\n";
+#	print STDERR "ASSOCIATION: \n\t assocId: " . $assoc->getGoAssociationId() . " goTermId: " . $assoc->getGoTermId() . " IsNot: " . $assoc->getIsNot() . " isDeprecated: " . $assoc->getIsDeprecated() . " \n\t defining " . $assoc->getDefining() . " ReviewStatus: " . $assoc->getReviewStatusId() . "\n\n";
 	$assocHash->{$assoc->getGoTermId()} = $assoc->getGoAssociationId();
     }
     $ai->removeAllChildren();
