@@ -1,3 +1,13 @@
 - factor the RelationalRow stuff out of Model/GusRow.pm.
 
 - generate should take an option to remove all non-manually edited files first
+
+- object constructor must pass all attr values through dedicated settors
+
+- use initXXX method for values coming from db
+
+- use attribute name not table name as key for all relations
+
+- setSubclassView can be generated and include xform into proper table name syntax
+
+- avoid name collisions between subs in GusRow, etc, and generated class. (use a convention like underscore to delineate these)
