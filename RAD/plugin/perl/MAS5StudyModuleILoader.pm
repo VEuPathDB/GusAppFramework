@@ -24,7 +24,7 @@ use GUS::Model::SRes::Contact;
 sub new {
   my ($class) = @_;
   my $self = {};
-  bless($self,$class);
+  bless($self, $class);
 
   my $purposeBrief = 'Plugin is BatchLoader, creates assays, acquisitions and quantifications for Affymetrix assays in RAD3 tables.';
   my $purpose      = "Create assays, acquisitions and quantifications for Affymetrix assays in RAD3 tables from multiple files in batch mode.";
@@ -81,11 +81,19 @@ The following keywords and their values are required:
  - Cel_Quant_Operator_ID** = contact_id of the person who carried out the cel quantification, should pre-exist in the RAD3 database 
  - Chp_Quant_Operator_ID** = contact_id of the person who carried out the chp quantification, should pre-exist in the RAD3 database 
  - Study_ID = the study identifier, should pre-exist in the RAD3 database 
+ - Extensions = the extensions for each file type (should be in the form: expFile|EXP;celFile|CEL; and so on)
 
-** These values are optional, i.e., the keywords should exist, but their the values can be left blank.
+** These values are optional, i.e., the keywords should exist, but their the values can be input as the word 'null',
+(without the single quotes) if no values exist.
 
 Each of these keywords should be on a separate line. The values for these keywords should be seperated by '='. A sample
 file is maintained in \$GUS_HOME/config/sample_MAS5StudyModuleILoader.cfg
+
+For the 'Extensions' keyword, multiple values can be input in the following form:
+ EXPFile|EXP;RPTFile|RPT;CELFile|CEL;DATFile|DAT;MetricsFile|txt;
+This allows the user to specify proper extensions; for instance, if all the Metrics files have an extension 'TXT', and not
+'txt', it can be specified here. Please make sure there is no space between the semi-colons after each file type.
+
 
 =head2 F<Database requirements>
 
@@ -174,7 +182,7 @@ my @properties =
     ["EXPFilePath",           "",""],
     ["RPTFilePath",           "",""],
     ["CELFilePath",           "",""],
-    ["DATFilePath",           "NOVALUEPROVIDED",""],  # can be empty
+    ["DATFilePath",           "",""],  # can be empty
     ["MetricsFilePath",       "",""],
     ["Hyb_Protocol_ID",       "",""],
     ["Acq_Protocol_ID",       "",""],
@@ -183,7 +191,8 @@ my @properties =
     ["Hyb_Operator_ID",       "",""],
     ["Cel_Quant_Operator_ID", "",""],
     ["Chp_Quant_Operator_ID", "",""],
-    ["Study_ID",              "",""]
+    ["Study_ID",              "",""],
+    ["Extensions",            "",""]
  ); 
 
 ###############################
@@ -196,29 +205,38 @@ sub run {
   $self->logArgs();
 
   $self->{propertySet} = CBIL::Util::PropertySet->new($self->getArg('cfg_file'), \@properties);
-  $self->getDb()->setMaximumNumberOfObjects(30000);
-  my ($gusAssays, $skippedAssayCnt, $totalAssayCnt)  = $self->createGUSAssaysFromFiles();
-  my $gusInsertedAssayCnt                            = $self->submitGUSAssays($gusAssays);
+
+  # UNCOMMENT THE FOLLOWING LINE IF THE PLUGIN PRESENTS MEMORY PROBLEMS
+  #$self->getDb()->setMaximumNumberOfObjects(30000);
+
+  my ($insertedAssayCnt, $skippedAssayCnt, $totalAssayCnt) = $self->createAndSubmitGUSAssaysFromFiles();
   
   $self->setResultDescr(
-   "Total assays: $totalAssayCnt; Assay/s inserted in DB: $gusInsertedAssayCnt; Skipped assay/s: $skippedAssayCnt"
+   "Total assays: $totalAssayCnt; Assay/s inserted in DB: $insertedAssayCnt; Skipped assay/s: $skippedAssayCnt"
   );
 }
 
 ###############################
 
-sub createGUSAssaysFromFiles {
+sub createAndSubmitGUSAssaysFromFiles {
   my ($self) = @_;
 
-  my $assayNames    = $self->findAssayNames($self->{propertySet}->getProp("EXPFilePath"));
+  my $expFilePath   = $self->{propertySet}->getProp("EXPFilePath");
+  my $extensionInfo = $self->{propertySet}->getProp("Extensions");
   my $testNumber    = $self->getArgs->{testnumber};
   my @skipAssayList = @{$self->getArgs->{skip}};
+
+  $expFilePath .= "/" if ($expFilePath !~ m/(.+)\/$/);
+
+  my $extensionHashRef = $self->getFileExtensions($extensionInfo);
+  my $assayNames       = $self->findAssayNames($expFilePath, $extensionHashRef);
 
   my $skipAssayCnt  = scalar @skipAssayList;
   my $totalAssayCnt = scalar @$assayNames;
 
   my @gusAssays;
   my $assayCnt = 0;
+  my $insertedAssayCnt = 0;
 
   $self->log("STATUS","Found $totalAssayCnt assays");
   $self->log("STATUS","Skipping assay/s @skipAssayList") if (scalar @skipAssayList > 0);
@@ -227,21 +245,23 @@ sub createGUSAssaysFromFiles {
 
     next if (($assayCnt > ($testNumber - 1)) && (defined $testNumber));
     next if (grep { $assayName =~ /^$_/ } @skipAssayList);
-    my $gusAssay = $self->createSingleGUSAssay($assayName);
-    push(@gusAssays, $gusAssay);
+
+    my $gusAssay       = $self->createSingleGUSAssay($assayName, $extensionHashRef);
+    $insertedAssayCnt += $self->submitSingleGUSAssay($gusAssay);
     $assayCnt++;
+	$self->undefPointerCache();  # clean memory
   }
 
   $self->log("STATUS","-------- End Assay Descriptions --------");
   $self->log("STATUS","OK   Created $assayCnt assay/s");
 
-  return (\@gusAssays, $skipAssayCnt, $totalAssayCnt);
+  return ($insertedAssayCnt, $skipAssayCnt, $totalAssayCnt);
 }
 
 ###############################
 
-sub submitGUSAssays {
-  my ($self,$gusAssays) = @_;
+sub submitSingleGUSAssay {
+  my ($self, $gusAssay) = @_;
 
   my $studyId = $self->{propertySet}->getProp("Study_ID");
 
@@ -250,33 +270,48 @@ sub submitGUSAssays {
     $self->error("Failed to create an object for study $studyId from RAD3.Study"); 
   }
 
-  my $gusInsertedAssayCnt = 0;
-  foreach my $gusAssay (@$gusAssays) {
+  my $insertedAssayCnt = 0;
 
-    my $studyAssay = GUS::Model::RAD3::StudyAssay->new(); # links RAD3.Study & RAD3.Assay
+  my $studyAssay = GUS::Model::RAD3::StudyAssay->new(); # links RAD3.Study & RAD3.Assay
 
-    $studyAssay->setParent($gusAssay);
-    $studyAssay->setParent($gusStudy);
+  $studyAssay->setParent($gusAssay);
+  $studyAssay->setParent($gusStudy);
  
-    $gusAssay->submit() if ($self->getArgs->{commit});
-
-    $gusInsertedAssayCnt++;
+  if ($self->getArgs->{commit}) {
+    $gusAssay->submit();
+    $insertedAssayCnt = 1;
   }
 
-  return $gusInsertedAssayCnt;
+  return $insertedAssayCnt;
+}
+
+###############################
+
+sub getFileExtensions {
+  my ($self, $extensions) = @_;
+  
+  my $extensionHashRef;
+
+  my @extensionArray = split /\;/, $extensions;
+
+  foreach my $extensionType (@extensionArray) {
+    my ($fileType, $extension) = split /\|/, $extensionType;
+    $extensionHashRef->{$fileType} = $extension;
+  }
+
+  return $extensionHashRef;
 }
 
 ###############################
 
 sub findAssayNames {
-  my ($self,$assayNameFilesDir) = @_;
+  my ($self, $assayNameFilesDir, $extensionHashRef) = @_;
 
   my (@assayNames, @assayDir);
-  my $modifiedAssayFileURIs;
 
-  my $requiredExtension = "EXP"; # EXP filenames correspond to assay names
+  my $requiredExtension = $extensionHashRef->{"EXPFile"}; # EXP filenames correspond to assay names
 
-  opendir (DIR,$assayNameFilesDir) || $self->userError("Cannot open dir $assayNameFilesDir");
+  opendir (DIR, $assayNameFilesDir) || $self->userError("Cannot open dir $assayNameFilesDir");
   @assayDir = readdir DIR; 
   close (DIR);
 
@@ -291,7 +326,7 @@ sub findAssayNames {
     next unless ($extension);                             # skip files with no extension
     next if ($extension ne $requiredExtension);           # skip files with diff extension
 
-    push (@assayNames,$1);
+    push (@assayNames, $1);
   }
  
   return \@assayNames;
@@ -300,20 +335,20 @@ sub findAssayNames {
 ###############################
 
 sub createSingleGUSAssay {
-  my ($self, $assayName) = @_;
+  my ($self, $assayName, $extensionHashRef) = @_;
 
   $self->log("STATUS","----- Assay $assayName -----");
 
-  $self->checkRequiredFilesExist($assayName);
+  $self->checkRequiredFilesExist($assayName, $extensionHashRef);
 
-  my ($EXPinfo, $EXPfluidicsInfo) = $self->parseTabFile('EXP', $assayName);
-  my ($RPTinfo, $RPTfluidicsInfo) = $self->parseTabFile('RPT', $assayName);
+  my ($EXPinfo, $EXPfluidicsInfo) = $self->parseTabFile($extensionHashRef->{"EXPFile"}, $assayName);
+  my ($RPTinfo, $RPTfluidicsInfo) = $self->parseTabFile($extensionHashRef->{"RPTFile"}, $assayName);
   
   my $gusAssay               = $self->createGusAssay($assayName, $EXPinfo);
   my $gusAssayParams         = $self->createGusAssayParams($EXPinfo, $EXPfluidicsInfo);
-  my $gusAcquisition         = $self->createGusAcquisition($assayName, $EXPinfo);
+  my $gusAcquisition         = $self->createGusAcquisition($assayName, $EXPinfo, $extensionHashRef);
   my $gusAcquistionParamsRef = $self->createGusAcquisitionParams($EXPinfo);
-  my $gusQuantificationsRef  = $self->createGUSQuantification($assayName, $RPTinfo);
+  my $gusQuantificationsRef  = $self->createGUSQuantification($assayName, $RPTinfo, $extensionHashRef);
 
   foreach my $gusAssayParam (@$gusAssayParams) { 
     $gusAssayParam->setParent($gusAssay); 
@@ -341,23 +376,24 @@ sub createSingleGUSAssay {
 ###############################
 
 sub checkRequiredFilesExist {
-  my ($self, $assayName) = @_;
+  my ($self, $assayName, $extensionHashRef) = @_;
 
-  my $expFile     = $self->{propertySet}->getProp("EXPFilePath")."/$assayName.EXP";
-  my $rptFile     = $self->{propertySet}->getProp("RPTFilePath")."/$assayName.RPT";
-  my $celFile     = $self->{propertySet}->getProp("CELFilePath")."/$assayName.CEL";
-  my $datFile     = $self->{propertySet}->getProp("DATFilePath")."/$assayName.DAT";
-  my $metricsFile = $self->{propertySet}->getProp("MetricsFilePath")."/$assayName"."_Metrics.txt";
+  my @fileTypes = ("EXP", "RPT", "CEL", "DAT", "Metrics");  # HARD-CODED for our instance of RAD
 
-  $self->userError("Missing file: $rptFile") if ( ! -e $rptFile ); 
-  $self->userError("Missing file: $celFile") if ( ! -e $celFile );
+  foreach my $fileType (@fileTypes) {
 
-  $self->userError("Missing file: $datFile for assay $assayName") 
-   if (( ! -e $datFile ) && ($self->{propertySet}->getProp("DATFilePath") ne "NOVALUEPROVIDED"));
+    my $filePath = $self->{propertySet}->getProp($fileType."FilePath");
+	$filePath .= "/" if ($filePath !~ m/(.+)\/$/);
 
-  $self->userError("Missing file: $metricsFile") if ( ! -e $metricsFile );
-  $self->userError("Empty file: $expFile") if ( -z $expFile ); 
-  $self->userError("Empty file: $rptFile") if ( -z $rptFile ); 
+	my $file = "$assayName.".$extensionHashRef->{$fileType."File"};
+
+	$file = "$assayName"."_Metrics.".$extensionHashRef->{$fileType."File"} if ($fileType eq "Metrics");
+
+    next if (( $fileType eq "DAT" ) && ($self->{propertySet}->getProp($fileType."FilePath") eq "null"));
+
+    $self->userError("Missing file: $file") if ( ! -e $filePath.$file ); 
+    $self->userError("Empty file: $file") if ( -z $filePath.$file ); 
+  }
 
   $self->log("STATUS","OK   All required files exist for assay $assayName, and none are empty");
 }
@@ -502,19 +538,21 @@ sub createGusAssayParams {
 ###############################
 
 sub createGusAcquisition {
-  my ($self, $assayName, $EXPinfo) = @_;
+  my ($self, $assayName, $EXPinfo, $extensionHashRef) = @_;
 
   my $acqProtocolId = $self->{propertySet}->getProp("Acq_Protocol_ID");
   my $scanDate      = $EXPinfo->{"Scan Date"};
   my $channelDef    = "biotin";  # HARD-CODED: select channel def from rad3.channel from your own instance
 
   my ($localFilePath, $tempDatURI, $datURI);
-  if ($self->{propertySet}->getProp("DATFilePath") eq "NOVALUEPROVIDED") {
+  if ($self->{propertySet}->getProp("DATFilePath") eq "null") {
     $datURI = "";
 
   } else {
 
-    $tempDatURI = $self->{propertySet}->getProp("DATFilePath")."/$assayName".".DAT";
+    $tempDatURI = $self->{propertySet}->getProp("DATFilePath");
+    $tempDatURI .= "/" if ($tempDatURI !~ m/(.+)\/$/);
+    $tempDatURI = $assayName.".".$extensionHashRef->{"DATFile"};
     ($localFilePath, $datURI) = split "RAD_images/", $tempDatURI; # HARD-CODED. Based on our convention for naming files
   }
 
@@ -550,13 +588,13 @@ sub createGusAcquisition {
 sub createGusAcquisitionParams {
   my ($self, $EXPinfo) = @_;
 
+  my $acqProtocolId = $self->{propertySet}->getProp("Acq_Protocol_ID");
+
   my %params = (
     'Pixel Size'      =>1,   # WARNING. The plugin assumes this is your RAD3.ProtocolParam.name for 'Pixel Size'.
     'Filter'          =>1,   # WARNING. The plugin assumes this is your RAD3.ProtocolParam.name for 'Filter'.
     'Number of Scans' =>1,   # WARNING. The plugin assumes this is your RAD3.ProtocolParam.name for 'Number of Scans'.
   );
-
-  my $acqProtocolId = $self->{propertySet}->getProp("Acq_Protocol_ID");
 
   my @gusAcquisitionParams;
   my $acqParamKeywordCnt = 0;
@@ -579,7 +617,7 @@ sub createGusAcquisitionParams {
     });
 
     $acqParamKeywordCnt++;
-    push (@gusAcquisitionParams,$acquisitionParam);
+    push (@gusAcquisitionParams, $acquisitionParam);
   }
 
   $self->log("STATUS","OK   Inserted $acqParamKeywordCnt rows in table RAD3.AcquisitionParam");
@@ -590,15 +628,20 @@ sub createGusAcquisitionParams {
 ###############################
 
 sub createGUSQuantification {
-  my ($self, $assayName, $RPTinfo) = @_;
+  my ($self, $assayName, $RPTinfo, $extensionHashRef) = @_;
 
-  my $tempCelURI         = $self->{propertySet}->getProp("CELFilePath")."/$assayName".".CEL";
-  my $tempChpURI         = $self->{propertySet}->getProp("MetricsFilePath")."/$assayName"."_Metrics.txt";
+  my $tempCelURI         = $self->{propertySet}->getProp("CELFilePath");
+  my $tempChpURI         = $self->{propertySet}->getProp("MetricsFilePath");
   my $acqProtocolId      = $self->{propertySet}->getProp("Acq_Protocol_ID");
   my $celProtocolId      = $self->{propertySet}->getProp("Cel_Protocol_ID");
   my $chpProtocolId      = $self->{propertySet}->getProp("Chp_Protocol_ID");
   my $celQuantOperatorId = $self->{propertySet}->getProp("Cel_Quant_Operator_ID");
   my $chpQuantOperatorId = $self->{propertySet}->getProp("Chp_Quant_Operator_ID");
+
+  $tempCelURI .= "/" if ($tempCelURI !~ m/(.+)\/$/);
+  $tempChpURI .= "/" if ($tempChpURI !~ m/(.+)\/$/);
+  $tempCelURI = $assayName.".".$extensionHashRef->{"CELFile"};
+  $tempChpURI = $assayName."_Metrics.".$extensionHashRef->{"MetricsFile"};
 
   $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $celProtocolId);
   $self->checkDatabaseEntry("GUS::Model::RAD3::Protocol", "protocol_id", $chpProtocolId);
@@ -665,9 +708,7 @@ sub createGUSQuantParams {
     'SF'     => 1   # HARD-CODED. Replace 'SF' your RAD3.ProtocolParam.name for 'Scale Factor (SF)'.
   };
 
-  # Note: 
-  # 'TGT' in RAD is represented as 'TGT Value' in .RPT files.
-  # 'SF' in RAD is represented as 'Scale Factor (SF)' in .RPT files. 
+  # Note: 'TGT' in RAD is represented as 'TGT Value' and 'SF' in RAD is represented as 'Scale Factor (SF)' in .RPT files. 
 
   my @gusQuantParams;
   my $quantParamKeywordCnt = 0;
@@ -735,13 +776,9 @@ sub modifyDate {
   my $finalTime;
 
   if ($time2.$time1 eq "PM") {
-    if ($hourMinArray[0] <= 11) {
-      $finalTime = $hourMinArray[0] + 12;
+      $finalTime = $hourMinArray[0] + 12 if ($hourMinArray[0] <= 11);
+      $finalTime = $hourMinArray[0] if ($hourMinArray[0] eq 12);
       $finalTime .= ":$hourMinArray[1]:00";
-    }
-    else {
-     $finalTime = "12:$hourMinArray[1]:00";
-   }
   } 
   else {
     $finalTime = "$tempTime:00";
@@ -770,13 +807,10 @@ sub getQuantificationDate {
   my $finalTime;
 
   if ($time2.$time1 eq "PM") {
-    if ($hourMinArray[0] <= 11) {
-      $finalTime = $hourMinArray[0] + 12;
-      $finalTime .= ":$hourMinArray[1]:00";
-    }
-    else {
-      $finalTime = "12:$hourMinArray[1]:00"; 
-    }
+    $finalTime = $hourMinArray[0] + 12 if ($hourMinArray[0] <= 11);
+    $finalTime = $hourMinArray[0] if ($hourMinArray[0] eq 12);
+    $finalTime = ":$hourMinArray[1]:00"; 
+
   } else {
     $finalTime = "$tempTime:00";
   }
