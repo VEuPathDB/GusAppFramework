@@ -3,6 +3,12 @@ package GUS::GOPredict::Plugin::LoadGoAssoc;
 
 use CBIL::Bio::GeneAssocParser::Parser;
 use GUS::PluginMgr::Plugin;
+use GUS::GOPredict::GoGraph;
+use GUS::GOPredict::AssociationGraph;
+use GUS::GOPredict::Association;
+use GUS::GOPredict::Instance;
+use GUS::GOPredict::GoTerm;
+
 use Carp;
 
 use lib "$ENV{GUS_HOME}/lib/perl";
@@ -24,7 +30,6 @@ sub new {
     # create
 
     my $self = bless {}, $class;
-    
     
     # initialize--for now do not override initialize in plugin.pm just set methods
     my $purposeBrief = "Loads associations of external sequences to GO terms into GUS";
@@ -168,8 +173,9 @@ sub run {
 
     my $msg;
 
-    my $fileName = $self->getCla->{flat_file};    
 
+    my $fileName = $self->getCla->{flat_file};    
+    my ($shortFileName) = $fileName =~ /\S+(gene_association.*)$/;
     my ($orgName) = $fileName =~ /gene_association\.(\w+)$/;
 
     $self->log("Running plugin; loading $orgName associations");
@@ -186,7 +192,7 @@ sub run {
 	#deal with restart file line
 	my $currentSourceId;
 	my $nextSourceId;
-	my $currentEntries;
+	my @currentEntries;
 	my $idAccessor = $self->{orgInfo}->{idAccessor};
 	my $fh = FileHandle->new("<$fileName");
 
@@ -196,6 +202,10 @@ sub run {
 	if (!$fileStartLine){
 	    $fileStartLine = 0;
 	}
+	my $assocCount = 0;
+	my $wrongBranchCount = 0;
+	my $noSeqCount = 0;
+	my $totalSeqCount = 0;
 
 	while(<$fh>){
 	    chomp;
@@ -207,33 +217,46 @@ sub run {
 		my $fileEntry = CBIL::Bio::GeneAssocParser::Assoc->new($_);
 		if (!$currentSourceId){  #first entry in file
 		    $currentSourceId = $fileEntry->$idAccessor;
-		    $self->log("LoadGoAssoc.run: processing first entry in file, $currentSourceId");
 		    $nextSourceId = $currentSourceId;
-		    push (@$currentEntries, $fileEntry);
+		    push (@currentEntries, $fileEntry);
 		}
 
 		else{  #every other case
 		    $nextSourceId = $fileEntry->$idAccessor;
-		    $self->log("LoadGoAssoc.run: next source id is: $nextSourceId");
+		    
 		    if ($currentSourceId ne $nextSourceId){
-			$self->__processAssociations($orgName, $currentEntries);
-			undef($currentEntries);
+			my ($newAssocCount, $newWrongBranchCount, $newNoSeqCount) = 
+			    $self->__processAssociations($orgName, \@currentEntries);
+			
+			#increment results of process
+			$assocCount += $newAssocCount;
+			$wrongBranchCount += $newWrongBranchCount;
+			$noSeqCount += $newNoSeqCount;
+			$totalSeqCount++ if !$newNoSeqCount;
+
+			undef(@currentEntries);
 		    }
-		    else{
-			$self->log("LoadGoAssoc.run: adding $nextSourceId to list");
-			push (@$currentEntries, $fileEntry);
-			$currentSourceId = $nextSourceId;
-		    }
+		    
+		    push (@currentEntries, $fileEntry);
+		    $currentSourceId = $nextSourceId;
 		}
 	    }
 	}
-
 	#terminating case
-	$self->__processAssociations($currentEntries);
-			 
-	my $currentCounters;
+	my ($newAssocCount, $newWrongBranchCount, $newNoSeqCount) = 
+	    $self->__processAssociations($orgName, \@currentEntries);
+
+	$assocCount += $newAssocCount;
+	$wrongBranchCount += $newWrongBranchCount;
+	$noSeqCount += $newNoSeqCount;
+	$totalSeqCount++ if !$newNoSeqCount;
 	
-	$msg = $self->__createReturnMsg($currentCounters);
+	
+	$msg = "processed $totalSeqCount entries (give or take a few) from file $shortFileName\n";
+	$msg .= "created $assocCount new Associations; skipped $wrongBranchCount entries because they were not\n";
+	$msg .= "in the molecular function branch of GO, and skipped $noSeqCount sequences because they were not\n";
+	$msg .= "in GUS\n";
+
     }
     #return value
     return $msg;
@@ -245,19 +268,22 @@ sub __processAssociations{
 
     my ($self, $orgName, $entries) = @_;
 
+    my $newAssocCount = 0;
+    my $wrongBranchCount = 0;
+
     my $idAccessor = $self->{orgInfo}->{idAccessor};
     my $dbIdCol = $self->{orgInfo}->{dbIdCol};
 
     my $dbList = '( ' . $self->getCla()->{org_external_db_release_list} . ') ';
-
     my $sourceId = $entries->[0]->$idAccessor;
+   
 
-    $self->logVerbose("processing external source id: $sourceId");
-
+    $self->logVerbose("\tLoadGoAssoc.processAssociations: processing external source id: $sourceId");
+    #exclude iea code here
     my $seqGusId = $self->__getSeqGusId($sourceId);
     if (!$seqGusId){
-	$self->log("LoadGoAssoc.processAssociations: no gus id for $sourceId");
-	return 0;
+	$self->logVerbose("\tLoadGoAssoc.processAssociations: no gus id for $sourceId");
+	return ($newAssocCount, $wrongBranchCount, 1);
     }
     
     my $assocGraph = $self->__getExistingAssocGraph($seqGusId, 
@@ -268,34 +294,43 @@ sub __processAssociations{
     foreach my $entry (@$entries){
 
 	my $goId = $entry->getGOId();
-	
-	next if (!($self->{goGraph}->getGoTermFromRealGoId($goId)));
-	
+
+	if (!($self->{goGraph}->getGoTermFromRealGoId($goId))){
+	    $wrongBranchCount++;
+	    next;
+	}
+
 	if (!($processedGoIds->{$goId})){
-	    $self->log("LoadGoAssoc.processAssociations: adding $goId to the list for $sourceId");
+
 	    my $nextAssoc = $self->__makeAssociation($entry);
+	    $newAssocCount++;
 	    push (@$assocList, $nextAssoc);
 	    $processedGoIds->{$goId} = 1;
 	}	    
     }
 
     if ($assocGraph){
+	$self->logVerbose("\t\t LoadGoAssoc.processAssociation: already have associations for this sequence; adding more");
 	$assocGraph->_addAssociations($assocList, $self->{goGraph});
     }
     else{
-	$assocGraph = GUS::GOPredict::AssociationGraph->newFromAssocList($assocList);
+	$assocGraph = GUS::GOPredict::AssociationGraph->newFromAssocList($assocList, $self->{goGraph});
     }
+    if (!$assocGraph){ # no go terms in function branch for this sequence
 
+	return ($newAssocCount, $wrongBranchCount, 0);
+    }
+	
     $assocGraph->createNonPrimaryInstances($self->getCla()->{instance_loe_id});
     $assocGraph->setDefiningLeaves();
     $assocGraph->adjustIsNots(1);
-
+    
     $self->__trimRedundantInstances($assocGraph);
-
+    
     foreach my $assoc (@{$assocGraph->getAsList()}){
 	my $gusAssoc = $assoc->getGusAssociationObject();
 	if (!$gusAssoc){
-	    $assoc->createGusAssociation($self->{tableId}, $seqGusId);
+	    $assoc->createGusAssociation($self->{seqTableId}, $seqGusId);
 	}
 	else{
 	    $assoc->updateGusObject();
@@ -303,51 +338,115 @@ sub __processAssociations{
     }
     
     $self->__addEvidenceCodes($assocGraph, $entries);
-    
+    $self->__cacheEvidenceCodes($assocGraph);
+
+    $self->logVeryVerbose("\t\t LoadGoAssoc.processAssociation: done processing assocGraph for sequence $sourceId: " . $assocGraph->toString . "\n");
+
     foreach my $assoc(@{$assocGraph->getAsList()}){
+	$assoc->updateGusObject(); #in case evidence codes have changed review status id
 	my $gusAssoc = $assoc->getGusAssociationObject();
 	$gusAssoc->submit();
     }
     
-    #cache evidence codes!
-
     $assocGraph->killReferences();
     $self->undefPointerCache();
-
+    
+    return ($newAssocCount, $wrongBranchCount, 0);
 }
 
+#assumes instances have been trimmed
 sub __addEvidenceCodes{
 
     my ($self, $assocGraph, $entries) = @_;
     foreach my $entry (@$entries){
-	my $entryGoId = $entry->getGoId();
+	my $entryGoId = $entry->getGOId();
 	my $assoc = $assocGraph->find($entryGoId);
-	my $instances = $assoc->getInstances();
-	my $primaryInstance;
-	foreach my $testInstance(@$instances){
-	    if ($testInstance->getIsPrimary()){
-		$primaryInstance = $testInstance;
-	    }
-	}
-	my $gusInstance = $primaryInstance->getGusInstanceObject();
-	my $goEvidenceCodeInst = $self->__makeGoEvidenceCodeInst($entry, $gusInstance);
-	if ($self->__isNewEvidenceCodeInst($gusInstance, $goEvidenceCodeInst)){
-	    $gusInstance->addChild($goEvidenceCodeInst);
-	    my $evidenceCodeRS = $goEvidenceCodeInst->getReviewStatusId();
-	    $assoc->setReviewStatusId($evidenceCodeRS) if $evidenceCodeRS;
-	    $primaryInstance->setReviewStatusId($evidenceCodeRS) if $evidenceCodeRS;
-	    $assoc->updateGusAssociationObject();
+	if ($assoc) {     #some go ids not in assoc graph because they are in a different branch
+	    my $goEvidenceCodeInst = $self->__makeGoEvidenceCodeInst($entry);
+	    $self->__addEvidenceCodeAux($assoc, $goEvidenceCodeInst);
 	}
     }
 }
+
+sub __cacheEvidenceCodes{
+
+    my ($self, $assocGraph) = @_;
+    foreach my $assoc (@{$assocGraph->getAsList()}){
+	if ($assoc->isPrimary() && !$assoc->getIsNot()){
+	    my $instances = $assoc->getInstances();
+	    my @evidenceCodes;
+	    foreach my $instance(@$instances){ 
+		my $gusInstance = $instance->getGusInstanceObject();
+
+		my @childEvidCodes = $gusInstance->getChildren('DoTS::GOAssocInstEvidCode');
+		foreach my $evidCode (@childEvidCodes){
+		    push (@evidenceCodes, $evidCode);
+		}
+	    }
+	    foreach my $evidCode(@evidenceCodes){
+		my $parents = $assoc->getParents();
+		foreach my $parentAssoc (@$parents){
+		    $self->__addEvidenceCodeToParent($parentAssoc, $evidCode);
+		}
+	    }
+	}
+    }
+}
+
+
+sub __addEvidenceCodeToParent{
+
+    my ($self, $parentAssoc, $evidCodeInst) = @_;
+    if ($parentAssoc->getGoTerm()->getRealId() ne $self->{goGraph}->getRootTerm()->getRealId()){
+
+	my $evidCodeId = $evidCodeInst->getGoEvidenceCodeId();
+	my $reviewStatusId = $evidCodeInst->getReviewStatusId();
+	
+	my $evidCodeCopy = GUS::Model::DoTS::GOAssocInstEvidCode->new ({
+	    go_evidence_code_id => $evidCodeId,
+	    review_status_id => $reviewStatusId,
+	});
+	
+	$self->__addEvidenceCodeAux($parentAssoc, $evidCodeCopy);
+	
+    }
+    foreach my $grandParent (@{$parentAssoc->getParents()}){
+	$self->__addEvidenceCodeToParent($grandParent, $evidCodeInst);
+    }
+}
+
+
+sub __addEvidenceCodeAux{
+
+    my ($self, $assoc, $evidCodeInst) = @_;
+
+    my $instances = $assoc->getInstances();
+    my $instanceForCode;
+    foreach my $testInstance(@$instances){
+	if ($testInstance->getIsPrimary() || !$assoc->isPrimary()){ 
+	    $instanceForCode = $testInstance;
+	    last;
+	}
+    }
+    my $gusInstance = $instanceForCode->getGusInstanceObject();
+    
+    if ($self->__isNewEvidenceCodeInst($gusInstance, $evidCodeInst)){
+	$gusInstance->addChild($evidCodeInst);
+	my @evidCodes = $gusInstance->getChildren('DoTS::GOAssocInstEvidCode');
+	my $evidenceCodeRS = $evidCodeInst->getReviewStatusId();
+	$assoc->setReviewStatusId($evidenceCodeRS) if $evidenceCodeRS;
+	$instanceForCode->setReviewStatusId($evidenceCodeRS) if $evidenceCodeRS;
+    }
+}
+
 
 sub __isNewEvidenceCodeInst{
 
     my ($self, $gusInstance, $evidCodeInst) = @_;
     
     my $evidCodeId = $evidCodeInst->getGoEvidenceCodeId();
-    my $evidCodeInstList = $gusInstance->getChildren("DoTS.GOAssocInstEvidCode");
-    foreach my $nextEvidCodeInst (@$evidCodeInstList){
+    my @evidCodeInstList = $gusInstance->getChildren('DoTS::GOAssocInstEvidCode');
+    foreach my $nextEvidCodeInst (@evidCodeInstList){
 	if ($nextEvidCodeInst->getGoEvidenceCodeId() == $evidCodeId){
 	    return 0;
 	}
@@ -359,18 +458,19 @@ sub __trimRedundantInstances{
 
     my ($self, $assocGraph) = @_;
     my $assocList = $assocGraph->getAsList();
-    my @oldPrimaryInstances;
-    my @newPrimaryInstances;
-    my @oldNonPrimaryInstances;
-    my @newNonPrimaryInstances;
 
     foreach my $assoc (@$assocList){
+	
+	my @oldPrimaryInstances;
+	my @newPrimaryInstances;
+	my @oldNonPrimaryInstances;
+	my @newNonPrimaryInstances;
 	my $instanceList = $assoc->getInstances();
 	while (my $nextInstance  = shift(@$instanceList)){
-
+	    
 	    my $gusInstance = $nextInstance->getGusInstanceObject();
 	    my $isPrimary = $nextInstance->getIsPrimary();
-
+	    
 	    if ($gusInstance && $isPrimary){
 		push (@oldPrimaryInstances, $nextInstance);
 	    }
@@ -384,12 +484,11 @@ sub __trimRedundantInstances{
 		push (@newNonPrimaryInstances, $nextInstance);
 	    }
 	}
-	print STDERR "Should be 0 instances in this assoc: " . scalar(@{$assoc->getInstances}) . "\n";
 	if (scalar (@oldPrimaryInstances)){
 	    foreach my $instance (@oldPrimaryInstances) { $assoc->addInstance($instance);}
-	}
+	}						     
 	else{
-	    foreach my $instance (@newPrimaryInstances) { $assoc->addInstance($instance);}
+	    foreach my $instance (@newPrimaryInstances) { $assoc->addInstance($instance);} 
 	}
 	if (scalar (@oldNonPrimaryInstances)){
 	    foreach my $instance (@oldNonPrimaryInstances) { $assoc->addInstance($instance);}
@@ -404,7 +503,7 @@ sub __getExistingAssocGraph{
 
     my ($self, $seqGusId) = @_;
 
-    my $tableId = $self->{extTableId};
+    my $tableId = $self->{seqTableId};
     my $goVersion = $self->getCla()->{go_ext_db_rel_id};
     
     my $sql = "select distinct ga.go_association_id
@@ -415,13 +514,14 @@ sub __getExistingAssocGraph{
                and eas.aa_sequence_id = $seqGusId
                and ga.go_term_id = gt.go_term_id
                and gt.external_database_release_id = $goVersion";
-    
-    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+
+    my $sth = $self->getDb()->getDbHandle()->prepareAndExecute($sql); #in test mode need to use db handle
     my $assocList;
     while (my ($goAssocId) = $sth->fetchrow_array()){
+	
 	my $gusAssoc = GUS::Model::DoTS::GOAssociation->new();
 	$gusAssoc->setGoAssociationId($goAssocId);
-	$gusAssoc->retrieveFromDb();
+	$gusAssoc->retrieveFromDB();
 	
 	$gusAssoc->retrieveAllChildrenFromDB(1);  #get evidence codes too
 	
@@ -438,10 +538,10 @@ sub __getSeqGusId{
     
     my ($self, $sourceId) = @_;
     my $dbIdCol = $self->{orgInfo}->{dbIdCol};
-    my $dbList = '( ' . $self->getCla()->{org_external_db_release_list} . ') ';
+    my $dbList = '( ' . join (',', @{$self->getCla()->{org_external_db_release_list} }) . ') ';
     my $sql = "select eas.aa_sequence_id
                from dots.externalAASequence eas
-               where eas." . $dbIdCol . " = $sourceId
+               where eas." . $dbIdCol . " = '$sourceId'
                and eas.external_database_release_id in ($dbList)";
 
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
@@ -501,10 +601,24 @@ sub __makeAssociation{
     my $assoc = GUS::GOPredict::Association->new($goTerm);
 
     $assoc->setReviewStatusId(0);
-    $assoc->setIsNot($entry->getIsNot());
+    if ($entry->getIsNot()){ #returns 'NOT' so need to do conversion
+	$assoc->setIsNot(1);
+    }
+    else{
+	$assoc->setIsNot(0);
+    }
     $assoc->setDeprecated(0);
     $assoc->setDefining(0);
     
+    my $instance = GUS::GOPredict::Instance->new();
+    $instance->setIsNot($assoc->getIsNot());
+    $instance->setIsPrimary(1);
+    $instance->setLOEId($self->getCla()->{instance_loe_id});
+    $instance->setDeprecated(0);
+    $instance->setReviewStatusId(0);
+    
+    $assoc->addInstance($instance);
+
     return $assoc;
 }
 
@@ -514,6 +628,8 @@ sub __makeGoEvidenceCodeInst{
 
     my $evidenceCode = $entry->getEvidence();
     if (!$evidenceCode){
+	my $idAccessor = $self->{orgInfo}->{idAccessor};
+	$self->log("LoadGoAssoc.makeGoEvidenceCodeInst: sequence " . $entry->$idAccessor . " GO Term " . $entry->getGOId() . " has no evidence");
 	$evidenceCode = $entry->getWith();
     }
     my $evidenceGusId = $self->{evidenceMap}->{$evidenceCode}->{evdGusId};
@@ -527,37 +643,6 @@ sub __makeGoEvidenceCodeInst{
     return $evidCodeInst;
 }
 
-
-
-# ......................................................................
-
-#make an object of type GUS::Model::DoTS::GOAssocInstEvidCode and add it as 
-#a child of the GOAssociationInstance of the supplied $gusAssociation.  
-#Assumes the $gusAssociation has the child instance already set, and adds the 
-#evidence code as a child by side effect.
-sub __makeGoEvidenceCode{
-
-    my ($self, $entry, $gusAssociation) = @_;
-    my $gusInstance = $gusAssociation->getChild("DoTS.GOAssociationInstance");
-
-    my $evidenceCode = $entry->getEvidence();
-    if (!$evidenceCode){
-	$evidenceCode = $entry->getWith();
-    }
-    my $evidenceGusId = $self->{evidenceMap}->{$evidenceCode}->{evdGusId};
-    my $reviewStatusId = $self->{evidenceMap}->{$evidenceCode}->{reviewStatus};
-
-    $gusAssociation->setReviewStatusId(1) if $reviewStatusId;  
-    $gusInstance->setReviewStatusId(1) if $reviewStatusId;
-
-    my $evidCodeInst = GUS::Model::DoTS::GOAssocInstEvidCode->new ({
-	go_evidence_code_id => $evidenceGusId,
-     	review_status_id => $reviewStatusId,
-    });
-    
-    $gusInstance->addChild($evidCodeInst);
-
-}
 
 #load mapping in MRK_SwissProt.rpt file from MGI ID's to SwissProt Ids that have been loaded.
 sub __loadMgiMapIfMouse{
@@ -619,8 +704,9 @@ sub __loadGoGraph{
 ";
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
 
+    $self->log("LoadGoAssoc.loadGoGraph: making new go graph with root = $functionRootGoId");
+
     my $goGraph = GUS::GOPredict::GoGraph->newFromResultSet($goVersion, $sth, $functionRootGoId);
-    $self->logVeryVerbose("Loaded Go Graph:\n" . $goGraph->toString());
     $self->{goGraph} = $goGraph;
 }
 
@@ -667,7 +753,7 @@ sub __getDbIdColForOrg{
 	    $dbIdCol = 'source_id';
 	}
 	elsif ($orgName eq 'tair'){
-	    $dbIdCol = 'upper(source_id)';
+	    $dbIdCol = 'upper(source_idg)';
 	}
 	else {
 	    $self->userError("Did not get proper organism name; \'$orgName\' does not match one of the expected types.");
@@ -699,40 +785,6 @@ sub __getFileIdAccessorForOrg{
     }
     return $fileIdAccessor;
 }
-
-
-sub __combineResults{
-    my ($self, $currentCounter, $counterToJoin) = @_;
-    my $newCounter;
-    $newCounter->{term_count} = $currentCounter->{term_count} + $counterToJoin->{term_count};
-    $newCounter->{ancestor_count} = $currentCounter->{ancestor_count} + $counterToJoin->{ancestor_count};
-    $newCounter->{skip_count} = $currentCounter->{skip_count} + $counterToJoin->{skip_count};
-    $newCounter->{old_count} = $currentCounter->{old_count} + $counterToJoin->{old_count};
-    $newCounter->{unknown_count} = $currentCounter->{unknown_count} + $counterToJoin->{unknown_count};
-    $newCounter->{evidence_count} = $currentCounter->{evidence_count} + $counterToJoin->{evidence_count};
-
-    return $newCounter;
-}
-
-sub __createReturnMsg{
-    my ($self, $counters) = @_;
-    my $msg;
-    my $termCount = $counters->{term_count};
-    my $ancestorCount = $counters->{ancestor_count};
-    my $skipCount = $counters->{skip_count};
-    my $oldCount = $counters->{old_count};
-    my $unknownCount = $counters->{unknown_count};
-    my $evidenceCount =  $counters->{evidence_count};
-    my $returnMsg = "loaded: ". join( ', ',
-				      "terms=$termCount",
-				      "ancestors=$ancestorCount",
-				      "old=$oldCount",
-				      "unknownGOTerm=$unknownCount",
-				      "unknownExternalSeq=$skipCount",
-				      "on $evidenceCount evidence entries"
-				      );
-}
-
 
 #change entry date from what is in association file to something to go in Dots.GoAssociation table
 sub __formatEntryDate{
