@@ -109,11 +109,11 @@ sub run {
 sub process {
 	my $self = shift;
 	my ($table_nm, $attribute_nm, $html_dc) = @_;
-#	$self->logData("Table: $table_name\nAttribute: $attribute_name\nDocumentation: $html_doc\n");
+	$self->logData("Table: $table_name\nAttribute: $attribute_name\nDocumentation: $html_doc\n");
 
 	my $verbose = $self->getCla->{verbose};
 
-#	$self->logData("Test: table name = $table_nm attribute name = $attribute_nm html documentation = $html_dc\n") if $verbose;
+	$self->logData("Test: table name = $table_nm attribute name = $attribute_nm html documentation = $html_dc\n") if $verbose;
 
 	my $db = $self->getDb;
         $db->setGlobalNoVersion(1);
@@ -124,25 +124,28 @@ sub process {
 	if ($db->checkTableExists($table_nm)){ # if table exists
 
 	    if ($db->getTable($table_nm)->isValidAttribute($attribute_nm)){ # if column exists
-		$doc->setTableId($doc->getTableIdFromTableName($table_nm)); #getTableId($table_nm)???
-#	        $doc->setTableId($doc->getTableId($table_nm));
+		$doc->setTableId($doc->getTableIdFromTableName($table_nm));
 	        $self->logVerbose("Set table ID\n\n");
-
 		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
 	        $self->logVerbose("Set attribute name\n\n");
-
-#		if ($doc->retrieveFromDB()){
-#		    print STDERR "Updating documentation for $table_nm -> $attribute_nm\n" if $verbose;
-#		} # end if
-
 		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
 		$countInserts++;
-
 	        $self->logVerbose("Set HTML Documentation\n\n");
-
 		$doc->submit();
 	        $self->logVerbose("Submit object to database\n\n");
-
+		$self->undefPointerCache();
+	        $self->logVerbose("UndefPointerCache()\n\n");
+	    }
+	    elsif ($attribute_nm == "NULL"){ #attribute name is null
+	      	$doc->setTableId($doc->getTableIdFromTableName($table_nm));
+	        $self->logVerbose("Set table ID\n\n");
+		$doc->setAttributeName($attribute_nm) unless $table_nm eq $attribute_nm;
+	        $self->logVerbose("Set attribute name\n\n");
+		$doc->setHtmlDocumentation($html_dc) unless $html_dc eq $doc->getHtmlDocumentation(); #only set if different
+		$countInserts++;
+	        $self->logVerbose("Set HTML Documentation\n\n");
+		$doc->submit();
+	        $self->logVerbose("Submit object to database\n\n");
 		$self->undefPointerCache();
 	        $self->logVerbose("UndefPointerCache()\n\n");
 	    }
