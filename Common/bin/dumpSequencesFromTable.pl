@@ -6,6 +6,7 @@
 ## Brian Brunk 01/05/2000
 
 use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
 use Getopt::Long;
 use GUS::ObjRelP::DbiDatabase;
 use CBIL::Bio::SequenceUtils;
