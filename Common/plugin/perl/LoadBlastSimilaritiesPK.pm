@@ -192,13 +192,13 @@ foreach my $file ( @{ $ctx->{ files } } ) {
 					} )
 			;
 
-		#CBIL::Util::CBIL::Util::Disp:: Display( $bs->{ parameters } );
+		#CBIL::Util::Disp::Display( $bs->{ parameters } );
 
 		# parse into objects and submit to db
 	SECTION_SCAN_LOOP:
 		while ( my $o = $bs->getSectionObjects($filter_ns, $filter_su, $filter_sp, $filter_limit) ) {
 			$n_queries++;
-			#CBIL::Util::CBIL::Util::Disp:: Display( $o );
+			#CBIL::Util::Disp::Display( $o );
 
 			$o->submit();
 

@@ -20,7 +20,7 @@ sub new {
 
 	return undef unless $A->ensure( qw( file query subject types ) );
 
-	my $m = bless A::e, $C;
+	my $m = bless CBIL::Util::A::e, $C;
 
 	$m->safeCopy( $A, qw( file query subject span summary types ) );
 

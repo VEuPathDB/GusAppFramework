@@ -39,15 +39,16 @@ sub initialize {
 	      'description', 'usage', 'easyCspOptions');
 
   foreach my $arg (@args) {
-    $self->_failinit($arg) unless $argsHashRef->{$arg};
+    $self->_failinit($arg) unless exists $argsHashRef->{$arg};
     $self->{$arg} = $argsHashRef->{$arg};
   }
 
   # check to see if cvs has substituted in revision and tag.
   # if not, the substitution macro will be intact.  we test for this
   # by generating the macro (to avoid it being substituted away!)
-  $self->{cvsRevision} = 'NO_REVISION' if $cvsver eq '$' . 'revision$';
-  $self->{cvsTag} = 'NO_TAG' if $cvsver eq '$'. 'name$';
+  $self->{cvsRevision} = 'NO_REVISION' 
+    if $self->{cvsRevision} eq '$' . 'revision$';
+  $self->{cvsTag} = 'NO_TAG' if $self->{cvsTag} eq '$'. 'name$';
 
   $self->_failinit('requiredDbVersion')
     unless (ref($self->{requiredDbVersion}) eq "HASH");
@@ -303,14 +304,13 @@ sub initName       {
 
   $M->{__gus__plugin__name} = $N;
   my $c = $N; $c =~ s/::/\//g; $c .= '.pm';
-  $M->setFile($INC{$c});
+  $M->_initFile($INC{$c});
 
   # RETURN
   $M
 }
 
 sub initCla        { $_[0]->{__gus__plugin__cla} = $_[1]; $_[0] }
-sub initFile       { $_[0]->{__gus__plugin__FILE} = $_[1]; $_[0] }
 sub initStatus     { $_[0]->{__gus__plugin__status} = $_[1]; $_[0] }
 sub initDb         { $_[0]->{__gus__plugin__db} = $_[1]; $_[0] }
 sub initSelfInv    { $_[0]->{__gus__plugin__self_inv} = $_[1]; $_[0] }
@@ -349,10 +349,13 @@ sub _initEasyCspOptions    {
   $M
 }
 
+sub _initFile       { $_[0]->{__gus__plugin__FILE} = $_[1]; $_[0] }
+
 sub _failinit {
   my ($self, $argname) = @_;
 
-  die "Plugin initialization failed: invalid argument $argname";
+  print STDERR "Plugin initialization failed: invalid argument '$argname'\n";
+  exit 1;
 }
 
 

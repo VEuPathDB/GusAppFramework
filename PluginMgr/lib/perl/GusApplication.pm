@@ -29,8 +29,9 @@ sub new {
 		  cvsTag => '$name$',
 		  name => ref($m),
 		  description => 'GusApplication',
-		  easyCspOptions => {}
-		 );
+		  easyCspOptions => {},
+		  usage => ""
+		 });
 
   return $m
 }
@@ -101,7 +102,7 @@ SQL
 
   # too many found
   elsif ( scalar @$imps > 1 ) {
-    $P->initStatus("Found more than one Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision cvsTag=$cvsTag");
+    $P->initStatus("Found more than one Core.AlgorithmImplementation found for exe=$e cvsRev=$cvsRevision");
     $P->log('ERROR-IMP', $M->getStatus);
     foreach (@$imps) {
       $P->log('ERROR-IMP', $_->{ALGORITHM_IMPLEMENTATION_ID}, $_->{EXECUTABLE_MD5},
@@ -112,7 +113,7 @@ SQL
 
   elsif ($M->getCla->{commit} &&
 	 $imps->[0]->{EXECUTABLE_MD5} ne $P->getCheckSum()) {
-    $P->initStatus("The md5 checksum of the plugin file (marked with cvs revision $cvsRevision) doesn't match the md5 checksum stored in the database for the plugin with cvs revision $cvsRevision.  It therefore seems that the plugin has been changed but not commited to cvs.  Please use cvs commit on the plugin file")
+    $P->initStatus("The md5 checksum of the plugin file (marked with cvs revision $cvsRevision) doesn't match the md5 checksum stored in the database for the plugin with cvs revision $cvsRevision.  It therefore seems that the plugin has been changed but not commited to cvs.  Please use cvs commit on the plugin file");
     $P->log('ERROR-IMP', $M->getStatus);
     $P->setOk(0);
   }
@@ -379,10 +380,11 @@ sub doMajorMode_Run {
 
   # get command line arguments from combined CBIL::Util::EasyCsp options structure
   my $ecd = {
-	     %{$pu->getGlobalEasyCspOptions},
+	     %{$M->getGlobalEasyCspOptions},
 	     %{$pu->getEasyCspOptions},
 	    };
   my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage);
+
   if ($cla) {
     $pu->initCla($cla);
     $M->initCla($cla);
@@ -720,7 +722,7 @@ sub create_or_update_implementation {
   my $apkt_cache = $M->load_AlgorithmParamKeyType_cache;
   CBIL::Util::Disp::Display($apkt_cache, '$apkt_cache') if FLAG_DEBUG;
   my $pu_ecd     = {
-		    %{$pu->getGlobalEasyCspOptions},
+		    %{$M->getGlobalEasyCspOptions},
 		    %{$pu->getEasyCspOptions},
 		   };
 
