@@ -162,22 +162,9 @@ push (@diffArray, $id);  }
   }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #figure out which DTs are not present in both arrays
  }
-}
+
 
 #need to have way to check for presence of id or DT. already marked fullLenghtCDS then if not have it marked
 
