@@ -32,7 +32,7 @@ use GUS::ObjRelP::Generator::JavaWrapperGenerator;
 # param tables: a list of tables to restrict generation to.  null = all
 sub new {
   my( $class, $db, $targetDir, $specialCasesFile, $superclassesLibDir,
-      $javaOrPerl, $schemas, $tables) = @_;
+      $javaOrPerl, $schemas, $tables, $makeImpTables) = @_;
 
   my $self = {};
   bless $self, $class;
@@ -49,6 +49,8 @@ sub new {
   $self->{tables} = $self->{db}->getTableAndViewNames()
     unless scalar(@{$self->{tables}});
   $self->{javaOrPerl} = $javaOrPerl;
+  $self->{makeImpTables} = 0 unless $makeImpTables == 0;
+
   if ($specialCasesFile) {
     die "Special cases file $specialCasesFile doesn't exist"
       unless -e $specialCasesFile;
@@ -76,8 +78,8 @@ sub generate {
 	
 	my ($schemaName, $tableName) = ($2, $3);
 	
-	if ($self->{javaOrPerl} eq "java"){
-	    next if ( $tableName =~ /Imp$/);
+	if ($self->{javaOrPerl} eq "java" && !$self->{makeImpTables}){
+	    next if ( $tableName =~ /Imp$/ || $schemaName eq "TESS");
 	}
 	next if (($self->{schemas} && !$self->{schemas}->{$schemaName})
 		 || $tableName =~ /Ver$/);

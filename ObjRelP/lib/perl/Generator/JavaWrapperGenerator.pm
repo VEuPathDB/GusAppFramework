@@ -53,6 +53,7 @@ import java.sql.*;
 import java.util.*;
 import java.math.*;
 import java.util.Date;
+import org.gusdb.objrelj.*;
 
 END_HEADER
     
@@ -64,10 +65,18 @@ sub _genConstructor {
     my $output = "";
     
     my $name = $self->{tableName};
-
     $output .= "public class $name extends $name"."_Row {\n\n";
-    $output .= "    // Constructor\n";
-    $output .= "    public $name () {}\n\n";
+    $output .= "    //Empty Constructor; used in GUSRow.createGUSRow()\n";
+    $output .= "    public " . $name . "(){};\n\n";
+    $output .= "    // Constructor that creates a new GUSRow that is not in the database but can be submitted there.\n";
+    $output .= "    public " . $name . "(ServerI server, String sessionId){\n";
+    $output .= "    \tsuper(server, sessionId);\n";
+    $output .= "    }\n\n";
+
+
+
+#    $output .= "    // Constructor\n";
+#    $output .= "    public $name () {}\n\n";
     return $output;
 }
 
