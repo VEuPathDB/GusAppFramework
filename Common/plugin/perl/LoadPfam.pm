@@ -53,9 +53,6 @@ use GUS::Model::DoTS::DbRefPfamEntry;
 use GUS::Model::SRes::DbRef;
 use GUS::Model::SRes::ExternalDatabase;
 
-
-use Data::Dumper; # DEBUG, please remove before committing to CVS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 # ----------------------------------------------------------
 # Configuration
 # ----------------------------------------------------------
@@ -108,12 +105,6 @@ sub new {
 
 sub run {
     my $self      = shift;
-
-    #my $ctx       = shift;
-    #my $flatFile  = $ctx->{'flatFile'};
-    #my $release   = $ctx->{'release'};
-    #my $parseOnly = $ctx->{'parseOnly'};
-
     my $flatFile  = $self->getCla->{'flat_file'};
     my $release   = $self->getCla->{'release'};
     my $parseOnly = $self->getCla->{'parse_only'};
@@ -300,56 +291,55 @@ sub run {
 			    my $ref;
 
 			    if ($db eq 'EXPERT') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'Pfam expert'), $id);
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'Pfam expert'), $id);
 			    }
 			    elsif ($db eq 'MIM') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'mim'), $id);
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'mim'), $id);
 			    }
 			    elsif ($db eq 'PFAMB') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'Pfam-B'), $id);
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'Pfam-B'), $id);
 			    }
 			    elsif ($db eq 'PRINTS') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'PRINTS'), $id);
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'PRINTS'), $id);
 			    }
 			    elsif (($db eq 'PROSITE') || ($db eq 'PROSITE_PROFILE')) {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'prosite'), $id);
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'prosite'), $id);
 			    }
 			    elsif ($db eq 'SCOP') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'SCOP'), $id, undef, $rest);
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'SCOP'), $id, undef, $rest);
 			    }
 			    elsif ($db eq 'PDB') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'pdb'), $id, undef, $rest);
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'pdb'), $id, undef, $rest);
 			    }
 			    elsif ($db eq 'SMART') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'SMART'), $id);
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'SMART'), $id);
 			    }
 			    elsif ($db eq 'URL') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'URL'), $id);
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'URL'), $id);
 			    }
 			    elsif ($db eq 'INTERPRO') {
-                                print STDERR "  \&getExtDbRelId(\$extDbs, 'INTERPRO') = ",&getExtDbRelId($extDbs, 'INTERPRO'), "\n";
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'INTERPRO'), $id);
-                                print STDERR "  INTERPRO ref = $ref\n";
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'INTERPRO'), $id);
 			    }
 			    elsif ($db eq 'MEROPS') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'MEROPS'), $id);
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'MEROPS'), $id);
 			    }
 			    elsif ($db eq 'HOMSTRAD') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'HOMSTRAD'), $id);
+				$ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'HOMSTRAD'), $id);
 			    }
 			    elsif ($db eq 'CAZY') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'CAZy'), $id);
+                                $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'CAZy'), $id);
 			    }
 			    elsif ($db eq 'LOAD') {
-				my $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'LOAD'), $id);
+                                $ref = $self->getDbRefId($dbrefSth, $parseOnly, &getExtDbRelId($extDbs, 'LOAD'), $id);
 			    }
 			    else {
 				print STDERR "WARNING - unrecognized database in external dbref: $db\n";
 			    }
 
 			    if (defined($ref)) {
-				my $link = DbRefPfamEntry->new({'pfam_entry_id' => $entryId,
-								'db_ref_id' => $ref});
+                                my $link =
+                                    GUS::Model::DoTS::DbRefPfamEntry->new({'pfam_entry_id' => $entryId,
+                                                                           'db_ref_id'     => $ref});
 
 				if (not(defined($links->{$ref}))) {
                                     print STDERR "  Submitting link for ",$ref->get('lowercase_secondary_id'),"\n";
@@ -495,7 +485,7 @@ sub getDbRefId {
     while (my($id) = $dbrefSth->fetchrow_array()) { push(@$ids, $id); }
     my $idCount = scalar(@$ids);
 
-    print STDERR "  getDbRefId: \$idCount = $idCount\n";
+    #print STDERR "  getDbRefId: \$idCount = $idCount\n";
 
     # Not in the database; create and add a new entry
     #
@@ -515,7 +505,7 @@ sub getDbRefId {
 
 	$dbRef->set('remark', $remark) if (defined($remark));
 
-        print STDERR "  Submitting DbRef where \$extDbRelId = $extDbRelId, \$primaryId = $primaryId, \$lcPrimaryId = $lcPrimaryId\n";
+        #print STDERR "  Submitting DbRef where \$extDbRelId = $extDbRelId, \$primaryId = $primaryId, \$lcPrimaryId = $lcPrimaryId\n";
 
 	if ($parseOnly) {
 	    return 1; 
