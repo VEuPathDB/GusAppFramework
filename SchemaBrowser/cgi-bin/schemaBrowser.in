@@ -29,17 +29,17 @@ my $url = '@CGI_BIN_URL@/schemaBrowser.pl';
 $| = 1;
 my %rq = &get_request();
 
-$rq{'db'} = '*' if (not(defined($rq{'db'})));
+$rq{'db'} = 'CBILBLD' if (not(defined($rq{'db'})));
 $rq{'table'} = '*' if (not(defined($rq{'table'})));
 
 my $logins = {
 
     # Oracle development databases on erebus
     #
-    'GUSdev' => 
-    {login => 'gusdevreadonly', 
-     password => 's7fp4erv',
-     dbi_str => 'dbi:Oracle:host=erebus.pcbi.upenn.edu;sid=gusdev',
+    'CBILBLD' => 
+    {login => 'guswebsite', 
+     password => 'XXXXXXX',
+     dbi_str => 'dbi:Oracle:host=cbilbld.pcbi.upenn.edu;sid=cbilbld',
      tableinfo => 1,
      documentation => 0,
      description => 'The "Genomics Unified Schema" development database (Oracle 8i).',
@@ -87,7 +87,7 @@ my $login = $$logins{$rq{'db'}};
 #
 if ((not defined($login)) && ($rq{'db'} ne '*')) {
     print "Content-type:text/html\n\n";
-    print "<HTML><TITLE>allgenes.org | Schema browser | Error</TITLE>";
+    print "<HTML><TITLE>gusdb.org | Schema browser | Error</TITLE>";
     print "<BODY BGCOLOR=\"#ffffff\">\n";
     print $rq{'db'}, " is not a supported database.\n";
     &pageFooter();
@@ -109,7 +109,7 @@ my $browser = GUS::SchemaBrowser::SchemaBrowser->new($url, \&pageHeader, \&pageF
 $browser->generatePage({db => $rq{'db'}, 
 			table => $rq{'table'}, 
 			path => $rq{'path'}, 
-			title => "allgenes.org | Schema browser | ",
+			title => "gusdb.org | Schema browser | ",
 			logins => $logins ,
 			loginsOrder => $loginsOrder});
 
