@@ -120,17 +120,6 @@ sub getExitIfAttNotRetrieved { my $self = shift; return $self->{exitIfAttNotRetr
 sub setPrintErrIfAttNotRetrieved { my($self,$val) = @_; $self->{printErrIfAttNotRetrieved} = $val; }
 sub getPrintErrIfAttNotRetrieved { my $self = shift; return $self->{printErrIfAttNotRetrieved}; }
 
-##for oracle...all uppercase dbName
-sub getDbOwner {
-  my $self = shift;
-  if (!$self->{'dbOwner'}) {
-    my $owner = $self->getDbName();
-    $owner =~ tr/a-z/A-Z/;
-    $self->{'dbOwner'} = $owner;
-  }
-  return $self->{'dbOwner'};
-}
-
 sub setDSN { 
   my ($self,$dsn) = @_;
   if ($dsn) {
