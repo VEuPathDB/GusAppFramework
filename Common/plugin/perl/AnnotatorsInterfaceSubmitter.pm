@@ -475,7 +475,7 @@ sub getAddedRNAObjects {
         print STDERR "Adding RNA to gene_id: ", $data2[1], "\n";
 
                                my $rna = GUS::Model::DoTS::RNA->new(\%loadHash);
-					$rna->retrieveFromDB(); # get existing RNA entry
+					$rna->retrieveFromDB(1); # get existing RNA entry
         #$rna->setTranscriptUnitId($transcript_unit_id); # update the tu id, no longer now need gene_id
          $rna->setGeneId ($gene_id);
 					push( @$rnas, $rna );
@@ -536,7 +536,7 @@ sub getGeneSynonymDeleteObjects {
 					my %loadHash;
           $loadHash{'gene_synonym_id'} = $id; 
           my $gs = GUS::Model::DoTS::GeneSynonym->new(\%loadHash);
-					$gs->retrieveFromDB();
+					$gs->retrieveFromDB(1);
 					push( @$gss, $gs );
 				}
 			} else {
