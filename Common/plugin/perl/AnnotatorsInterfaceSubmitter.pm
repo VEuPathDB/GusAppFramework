@@ -130,10 +130,10 @@ sub run {
 		    my $facts = $$all_facts{$attribute};
 		    foreach my $fact ( @$facts ) {
 			if ( $fact ) {
-			    if ($fact->getTargetId() < -9){
-				print STDERR "found factId for newly created instance: " . $fact->getTargetId() . "\n";
-				$fact->setTargetId(0);
-			    }
+			#    if ($fact->getTargetId() < -9){
+			#	print STDERR "found factId for newly created instance: " . $fact->getTargetId() . "\n";
+			#	$fact->setTargetId(0);
+			#    }
 			    #print STDERR "\t\tAdding fact: ", $fact->getClassName(), ", fact pk: ", $fact->getConcatPrimKey(), "\n";
 			    # was ignoring the similarity evidence cause throws error.
 			    if ($fact->getClassName() ne "GUS::Model::DoTS::Similarity"){
