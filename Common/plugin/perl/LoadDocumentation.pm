@@ -152,7 +152,7 @@ sub process {
 					    "." ."$attribute_nm NOT OVERWRITTEN!");
 			    return; # SKIP
 			} # end if same doc
-			else { ## SUBMIT if new documentation
+			elsif ($html ne $html_dc) { ## SUBMIT if new documentation
 			    ## bind table id to DatabaseDocumentation object
 			    $doc->setTableId($doc->getTableIdFromTableName($table_nm));
 			    $self->logVerbose("Set table ID");
