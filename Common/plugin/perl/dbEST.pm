@@ -3,7 +3,7 @@ package GUS::Common::Plugin::dbEST;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 use strict;
-my $DBEST_EXTDB_ID = 22; # global variable
+#my $DBEST_EXTDB_ID = 22; # global variable
 
 $| = 1;
 
@@ -109,6 +109,8 @@ sub run {
   $M->{taxon} = {};         # Taxonomy (est.organism) cache
   $M->{contact} = {};       # Contact info cache
   $M->setTableCaches();
+
+  $M->{dbest_ext_db_rel_id} = $M->getExternalDatabaseRelease();
   
   
   #####################################################################
@@ -374,9 +376,8 @@ sub insertEntry{
     ## This sequence entry does no0t exist. We must make it. 
     #####################################################################
 
-    my $externalDatabaseReleaseId = $M->getExternalDatabaseRelease();
     $seq = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $e->{gb_uid},
-                                                      'external_database_release_id' =>$externalDatabaseReleaseId });
+                                                      'external_database_release_id' => $M->{dbest_ext_db_rel_id}});
     $seq->retrieveFromDB();
     $M->checkExtNASeq($e,$seq);
     $est->setParent($seq);
@@ -397,41 +398,31 @@ sub insertEntry{
 sub getExternalDatabaseRelease{
 
   my $M = shift;
-  my $dbh = $M->getQueryHandle();
   
-  my $st = $dbh->prepare("select r.external_database_release_id 
-                          from sres.ExternalDatabase e, sres.ExternalDatabaseRelease r 
-                          where r.external_database_id = e.external_database_id 
-			  and r.version = 'continuous' and e.lowercase_name = 'dbest'");
-  $st->execute() || die $st->errstr;
+  my $name = 'dbEST';
+  my $lcname = lc $name;
   
-  my ($external_db_rel_id) = $st->fetchrow_array();
+  my $externalDatabase = GUS::Model::SRes::ExternalDatabase->new({"name" => $name,
+								  "lowercase_name" => $lcname});
+  $externalDatabase->retrieveFromDB();
   
-  $st->finish();
+  if (! $externalDatabase->getExternalDatabaseId()) {
+    $externalDatabase->submit();
+  }	
+  my $external_db_id = $externalDatabase->getExternalDatabaseId();
+  
+  my $version = 'continuous';	
+  
+  my $externalDatabaseRel = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'version'=>$version});
 
-  if ($external_db_rel_id) {
-    return $external_db_rel_id;
-  }
-  else {
-    my $name = 'dbEST';
-    my $lcname = lc $name;
-    
-    my $externalDatabase = GUS::Model::SRes::ExternalDatabase->new({"name" => $name,
-								    "lowercase_name" => $lcname});
-    $externalDatabase->retrieveFromDB();
-    
-    if (! $externalDatabase->getId()) {
-      $externalDatabase->submit();
-    }	
-    my $external_db_id = $externalDatabase->getId();
-    
-    my $version = 'continuous';	
-    
-    my $externalDatabaseRel = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'version'=>$version});
+  $externalDatabaseRel->retrieveFromDB();
+
+  if (! $externalDatabaseRel->getExternalDatabaseReleaseId()) {
     $externalDatabaseRel->submit();
-    $external_db_rel_id = $externalDatabaseRel->getExternalDatabaseReleaseId();
-    return $external_db_rel_id;
   }
+  $external_db_rel_id = $externalDatabaseRel->getExternalDatabaseReleaseId();
+  return $external_db_rel_id;
+
 }
 
 
@@ -497,8 +488,7 @@ sub populateEst {
   }else {
     # get from DB and cache
     my $c = GUS::Model::SRes::Contact->new({'source_id' => $e->{id_contact},
-                                            #'external_database_release_id' => $DBEST_EXTDB_ID, #dbEST
-                                          });
+                                            'external_database_release_id' => $M->{dbest_ext_db_rel_id}});
     unless ($c->retrieveFromDB()) {
       $M->newContact($e,$c);
     }
