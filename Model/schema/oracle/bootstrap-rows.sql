@@ -22,6 +22,8 @@ INSERT INTO @oracle_core@.AlgorithmImplementation VALUES(AlgorithmImplementation
 
 INSERT INTO @oracle_core@.AlgorithmInvocation VALUES(AlgorithmInvocation_sq.nextval, 1, SYSDATE, SYSDATE, NULL, NULL, NULL, 'Row(s) inserted', NULL, SYSDATE, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1);
 
+INSERT INTO  @oracle_core@.Machine VALUES(0, 'unknown', NULL, 1, 0, SYSDATE, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1); 
+
 COMMIT;
 
 /* 6 rows */
