@@ -1166,7 +1166,7 @@ sub getProperChildList {
      'GUS::Model::DoTS::RNAType' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
      'GUS::Model::DoTS::Repeats' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::DbRefNAFeature'],
      'GUS::Model::DoTS::Miscellaneous' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene','GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
-     'GUS::Model::DoTS::Immunoglobulin' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','NAFeatureNAGene', 'NAFeatureNAProtein','DbRefNAFeature'],
+     'GUS::Model::DoTS::Immunoglobulin' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
      'GUS::Model::DoTS::ProteinFeature' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
      'GUS::Model::DoTS::SeqVariation' =>  ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::NAFeatureNAGene', 'GUS::Model::DoTS::NAFeatureNAProtein','GUS::Model::DoTS::DbRefNAFeature'],
      'GUS::Model::DoTS::RNAStructure' => ['GUS::Model::DoTS::NAFeatureComment','GUS::Model::DoTS::NALocation','GUS::Model::DoTS::DbRefNAFeature','GUS::Model::DoTS::NAFeatureNAGene','GUS::Model::DoTS::NAFeatureNAProtein'],
