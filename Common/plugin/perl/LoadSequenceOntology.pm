@@ -27,15 +27,13 @@ sub new {
           { h => 'SOversion',
           t => 'int',
           o => 'so_version',
-
           },
 
           { h => 'SOcvsVersion',
           t => 'int',
           o => 'so_cvs_version',
-          },
 
-         }];
+         },];
 
      $self->initialize({requiredDbVersion => {Core => '3'},
                        cvsRevision => '$Revision$', #CVS fills this in
