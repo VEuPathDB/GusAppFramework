@@ -111,7 +111,7 @@ sub process {
 
 	my $verbose = $self->getCla->{verbose};
 
-#	$self->logData("Test: table name = $table_nm attribute name = $attribute_nm html documentation = $html_dc\n") if $verbose;
+
 
 	my $db = $self->getDb;
         $db->setGlobalNoVersion(1);
