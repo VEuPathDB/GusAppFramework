@@ -220,13 +220,13 @@ my $Evidence = GUS::Model::DoTS::Evidence->new({'target_id' => $target_id});
 
     if ($Evidence->retrieveFromDB()){
 
-      if ($Evidence->getAttributeName eq "full_length_CDS")
+      if ($Evidence->getAttributeName eq "full_length_CDS") {
 
         $Evidence->markDeleted(1);
         $Evidence->submit();
 
 
-  print STDERR  "DT.$target_id Evidence deleted\n";
+  print STDERR  "DT.$target_id Evidence deleted\n";  }
 
 $self->undefPointerCache();
 
