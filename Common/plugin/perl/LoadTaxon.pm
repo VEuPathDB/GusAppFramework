@@ -7,6 +7,8 @@ use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::GeneticCode;
 
+$| = 1;
+
 sub new {
   my ($class) = @_;
 
