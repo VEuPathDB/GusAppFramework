@@ -133,30 +133,26 @@ sub updateTaxonRow {
 
 sub updateTaxonAndChildRows {
   my ($self,$oldTaxon,$newTaxon)= @_;
-  my $newTaxon = GUS::Model::SRes::Taxon->new({'taxon_id'=>$newTaxon});
-  $newTaxon ->retrieveFromDB();
-  my $oldTaxon  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxon});
-  $oldTaxon ->retrieveFromDB();
-  my @children = $oldTaxon->getAllChildren(1);
+
+  my $newTaxonRow = GUS::Model::SRes::Taxon->new({'taxon_id'=>$newTaxon});
+  $newTaxonRow->retrieveFromDB();
+
+  my $oldTaxonRow  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxon});
+  $oldTaxonRow->retrieveFromDB();
+
+  my @children = $oldTaxonRow->getAllChildren(1);
+
+  $self->getSelfInv->manageTransaction(undef,'begin');
+  $newTaxonRow->submit(1,1);
   foreach my $child (@children) {
-    $child->removeParent($oldTaxon);
-    $child->setParent($newTaxon);
+    $child->removeParent($oldTaxonRow);
+    $child->setParent($newTaxonRow);
+    $child->submit(1,1);
   }
-  my $submit = $newTaxon->submit();
-  if ($submit == 1) {
-    print STDERR "Taxon_id = $oldTaxon merged with Taxon_id = $newTaxon\n";
-  }
-  else {
-    print STDERR "Taxon_id = $oldTaxon FAILED to merge with Taxon_id = $newTaxon\n";
-  }
-  $oldTaxon->markDeleted(); 
-  my $delete = $oldTaxon->submit();
-  if ($delete == 1) {
-    print STDERR "Taxon_id = $oldTaxon deleted\n";
-  }
-  else {
-    print STDERR "Taxon_id = $oldTaxon FAILED to delete\n";
-  }
+  $oldTaxonRow->markDeleted(); 
+  $oldTaxonRow->submit(1,1);
+  $self->getSelfInv->manageTransaction(undef,'commit');
+
   $self->undefPointerCache();
 }
 
