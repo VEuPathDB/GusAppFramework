@@ -152,7 +152,7 @@ sub error {
 #output message, write signal
 sub exitWithMessage {
     my ($self, $msg, $signal) = @_;
-
+    return if $self->startStep($msg, $signal);
     print STDERR $msg . "\n\n";
     $self->log($msg);
     unlink "$self->{pipelineDir}/signals/running";
@@ -338,8 +338,6 @@ sub _waitForFiles {
 
 sub _createPipelineDir {
     my ($self) = @_;
-
-    print "Creating pipeline dir $self->{pipelineDir}\n\n" unless -e $self->{pipelineDir};
 
     $self->runCmd("mkdir -p $self->{pipelineDir}/logs") unless -e "$self->{pipelineDir}/logs";
     $self->runCmd("mkdir -p $self->{pipelineDir}/signals") unless -e "$self->{pipelineDir}/signals";
