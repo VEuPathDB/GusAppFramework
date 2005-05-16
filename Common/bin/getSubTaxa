@@ -34,7 +34,7 @@ my $dbh = $db->getQueryHandle();
 my $sql = <<SQL;
   select taxon_id
   from SRes.Taxon
-  start with taxon_id = $taxon_id
+  start with taxon_id in ($taxon_id)
   connect by prior taxon_id = parent_id
 SQL
 
