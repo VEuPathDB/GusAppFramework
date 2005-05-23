@@ -32,7 +32,7 @@ sub copyTo {
           # buildDIr, release/speciesNickname, serverPath
   
     chdir $fromDir || $self->{mgr}->error("Can't chdir $fromDir\n" . __FILE__ . " line " . __LINE__ . "\n\n");
-    $self->{mgr}->error("origin directory $fromDir/$fromFile doesn't exist\n" . __FILE__ . " line " . __LINE__ . "\n\n") unless -e "$fromDir/$fromFile";
+    $self->{mgr}->error("origin directory $fromDir/$fromFile doesn't exist\n" . __FILE__ . " line " . __LINE__ . "\n\n") unless -e glob("$fromDir/$fromFile");
 
 
     my $user = "$self->{user}\@" if $self->{user};
@@ -58,7 +58,7 @@ sub copyFrom {
     $self->{mgr}->runCmd("ssh -2 $ssh_target 'cd $fromDir; tar cf - $fromFile | gzip -c' | gunzip -c | tar xf -");
 
 #    $self->runCmd("ssh $server 'cd $fromDir; tar cf - $fromFile' | tar xf -");
-    $self->{mgr}->error("$toDir/$fromFile wasn't successfully copied from liniac\n") unless -e "$toDir/$fromFile";
+    $self->{mgr}->error("$toDir/$fromFile wasn't successfully copied from liniac\n") unless -e glob("$toDir/$fromFile");
 }
 
 sub runCmdOnCluster {
