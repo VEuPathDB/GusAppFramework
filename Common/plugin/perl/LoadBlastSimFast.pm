@@ -94,7 +94,7 @@ PLUGIN_NOTES
 	      descr => 'A comma delimited list of row_alg_invocation_ids.  Queries in the input file which have rows in the Similarity table marked with one or more of these row_alg_invocation_ids will be ignored',
 	      reqd  => 0,
 	      constraintFunc=> undef,
-	      isList=>1,
+	      isList=> 0,
 	     }),
    integerArg({name  => 'subjectsLimit',
 	       descr => 'Maximum number of subjects to load per query',
@@ -179,11 +179,11 @@ sub run {
   my $algInv = $self->getAlgInvocation();
   my $dbh = $self->getDb()->getDbHandle();
 
-  $self->{queryTable}   = $args->getArg('queryTable');
-  $self->{subjectTable} = $args->getArg('subjectTable');
+  $self->{queryTable}   = $self->getArg('queryTable');
+  $self->{subjectTable} = $self->getArg('subjectTable');
 
-  my $query_tbl_id = $algInv->getTableIdFromTableName($args->getArg('queryTable'));
-  my $subj_tbl_id = $algInv->getTableIdFromTableName($args->getArg('subjectTable'));
+  my $query_tbl_id = $algInv->getTableIdFromTableName($self->getArg('queryTable'));
+  my $subj_tbl_id = $algInv->getTableIdFromTableName($self->getArg('subjectTable'));
 
   $self->{simSchemaName} = 'dots';   # tweak this to test by writing into a different schema
 
@@ -191,14 +191,14 @@ sub run {
   $self->logCommit();
   $self->logAlgInvocationId();
 
-  print "Testing on $args->getArg('testnumber') query sequences\n" if $args->getArg('testnumber');
+  print "Testing on $self->getArg('testnumber') query sequences\n" if $self->getArg('testnumber');
 
-  my %ignore = $self->handleRestart($args->getArg('restartAlgInvs'), $dbh);
+  my %ignore = $self->handleRestart($self->getArg('restartAlgInvs'), $dbh);
 
-  my $fh  = $args->getArg('file') =~ /\.gz$|\.Z$/ ?
-    FileHandle->new("zcat $args->getArg('file')|") : FileHandle->new("$args->getArg('file')");
+  my $fh  = $self->getArg('file') =~ /\.gz$|\.Z$/ ?
+    FileHandle->new('zcat ' . $self->getArg('file') . '|') : FileHandle->new($self->getArg('file'));
 
-  die "Can't open file $args->getArg('file')" unless $fh;
+  die "Can't open file " . $self->getArg('file') unless $fh;
 
   $self->{queryCount} = 0;
   $self->{subjectCount} = 0;
@@ -211,8 +211,8 @@ sub run {
   my $eof;
   while(!$eof) {
     my $subjects;
-    ($subjects, $eof) = $self->parseQueries($fh, $args->getArg('batchSize'), \%ignore, $args,
-					    $args->getArg('testnumber'));
+    ($subjects, $eof) = $self->parseQueries($fh, $self->getArg('batchSize'), \%ignore, $args,
+					    $self->getArg('testnumber'));
     $self->insertSubjects($self->getDb(), $subjects, $query_tbl_id, $subj_tbl_id);
   }
 }
@@ -426,8 +426,8 @@ sub insertSubjects {
 
   my $nextIdStmt = $db->getDbHandle()->prepare($nextvalSql);
 
-  my $verbose = $self->getArgs()->getArg('verbose');
-  my $noHSPs = $self->getArgs()->getArg('noHSPs');
+  my $verbose = $self->getArg('verbose');
+  my $noHSPs = $self->getArg('noHSPs');
 
   foreach my $s (@$subjects) {
 
@@ -513,7 +513,7 @@ sub insertSubjects {
   $self->log($summaryMessage);
   $self->setResultDescr($summaryMessage);
 
-  if ($self->getArgs()->getArg('commit')) {
+  if ($self->getArg('commit')) {
     print STDERR "Committing\n";
     $db->getDbHandle()->commit();
   } else {
