@@ -451,8 +451,8 @@ sub doMajorMode_RunOrReport {
       my $resultDescrip;
 
       $pu->logArgs();
-      $pu->logCommit();
-      $pu->logAlgInvocationId();
+      $Run && $pu->logCommit();
+      $Run && $pu->logAlgInvocationId();
 
       # include the args for legacy plugins
       $resultDescrip = $pu->run({ cla      => $pu->getCla,
