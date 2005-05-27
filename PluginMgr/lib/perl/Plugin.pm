@@ -2,7 +2,7 @@ package GUS::PluginMgr::Plugin;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(stringArg booleanArg fileArg integerArg floatArg tableNameArg);
+@EXPORT = qw(stringArg booleanArg fileArg globArg integerArg floatArg tableNameArg);
 
 use strict 'vars';
 
@@ -16,6 +16,7 @@ use GUS::Common::GusConfig;
 use GUS::PluginMgr::Args::StringArg;
 use GUS::PluginMgr::Args::BooleanArg;
 use GUS::PluginMgr::Args::FileArg;
+use GUS::PluginMgr::Args::GlobArg;
 use GUS::PluginMgr::Args::IntegerArg;
 use GUS::PluginMgr::Args::TableNameArg;
 use GUS::PluginMgr::Args::FloatArg;
@@ -24,6 +25,8 @@ use GUS::PluginMgr::Args::Arg;
 
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
+
+=pod
 
 =head1 Name
 
@@ -44,11 +47,15 @@ they are called like this:  C<< $self->my_instance_method(); >>
 # CLASS methods
 # ----------------------------------------------------------------------
 
+=pod
+
 =head2 Constructor
 
 =item C<new()>
 
-Construct a new Plugin.  This method I<must be overridden> by the plugin subclass.  That is, the subclass must have its own C<new> method which must:
+Construct a new Plugin.  This method I<must be overridden> by the
+plugin subclass.  That is, the subclass must have its own C<new>
+method which must:
 
 - create and C<bless> a C<$self>
 
@@ -74,17 +81,21 @@ sub new {
 # INSTANCE methods
 # ----------------------------------------------------------------------
 
+=pod
+
 =head2 Initialization
 
 =over 4
 
 =item C<initialize($argsHashRef)>
 
-Initialize the plugin.  This method is called in the plugin's C<new> method.
+Initialize the plugin.  This method is called in the plugin's C<new>
+method.
 
 B<Parameters>
 
-- argsHashRef (hash ref).  This argument is a hash ref which must contain the following key values pairs:
+- argsHashRef (hash ref).  This argument is a hash ref which must
+  contain the following key values pairs:
 
 =over 4
 
@@ -92,21 +103,36 @@ B<Parameters>
 
 =item * cvsRevision (string)
 
-The CVS revision number (eg 1.11) of the plugin.  The value for this key I<must> be specified using the CVS magic substitution format.  In particular, it must be: C<'$Revision$'>. CVS will substitute in the revision number, so that, after substitution, the value will be, eg, C<'$Revision$>'
+The CVS revision number (eg 1.11) of the plugin.  The value for this
+key I<must> be specified using the CVS magic substitution format.  In
+particular, it must be: C<'$Revision$'>. CVS will substitute in
+the revision number, so that, after substitution, the value will be,
+eg, C<'$Revision$>'
 
 =item * cvsTag (string)
 
-The CVS tag (ie, the software release it is from) of the plugin.  The value for this key I<must> be specified using the CVS magic substitution format.  In particular, it must be: C<'$Name$'>. CVS will substitute in the tag, so that, after substitution, the value will be, eg, C<'$Name$>'
+The CVS tag (ie, the software release it is from) of the plugin.  The
+value for this key I<must> be specified using the CVS magic
+substitution format.  In particular, it must be: C<'$Name$'>. CVS
+will substitute in the tag, so that, after substitution, the value
+will be, eg, C<'$Name$>'
 
 =item * name (string)
 
-The name of the plugin.  This value for this key I<must> be specified like this: C<ref($self)>.
+The name of the plugin.  This value for this key I<must> be specified
+like this: C<ref($self)>.
 
 =item * C<documentation> (I<hashref>)
 
-The documentation for this plugin (excluding the documentation for command line arguments which is covered by C<argsDeclaration>).  
+The documentation for this plugin (excluding the documentation for
+command line arguments which is covered by C<argsDeclaration>).
 
-The hashref may include only the following standard keys.  All string values (e.g., C<purpose>, C<notes>) may include embedded POD formatting directives.  If you use Perl's "here" document syntax (the << operator) to define your POD string, then you can use POD commands as you ordinarily would. Otherwise, precede and follow all commands (e.g., C<=item>) with C<\\n\\n>.
+The hashref may include only the following standard keys.  All string
+values (e.g., C<purpose>, C<notes>) may include embedded POD
+formatting directives.  If you use Perl's "here" document syntax (the
+<< operator) to define your POD string, then you can use POD commands
+as you ordinarily would. Otherwise, precede and follow all commands
+(e.g., C<=item>) with C<\\n\\n>.
 
 =over 4
 
@@ -116,12 +142,14 @@ The purpose of the plugin.  This should be as thorough as possible.
 
 =item * purposeBrief (string)
 
-A one sentence summary of the plugin's purpose.  This is displayed on the first line of the help page.  It is also written into the Core::Algorithm table as a description of the plugin.
+A one sentence summary of the plugin's purpose.  This is displayed on
+the first line of the help page.  It is also written into the
+Core::Algorithm table as a description of the plugin.
 
 =item * tablesAffected (listref of listrefs)
 
-A list of tables the plugin writes to (excluding the standard overhead tables).  
-For example:
+A list of tables the plugin writes to (excluding the standard overhead
+tables).  For example:
 
 C<my $tablesAffected = [
    ['DoTS::Assembly', 'Writes the finished assemblies here'],
@@ -130,7 +158,9 @@ C<my $tablesAffected = [
 
 =item * tablesDependedOn (listref of listrefs)
 
-A list of tables the plugin depends on (excluding the standard overhead tables).  This should include all controlled vocabulary tables that the data the plugin is generating depends upon.
+A list of tables the plugin depends on (excluding the standard
+overhead tables).  This should include all controlled vocabulary
+tables that the data the plugin is generating depends upon.
 
 The format is the same as that for C<tablesAffected>
 
@@ -163,11 +193,18 @@ Additional notes.  This should include the details of:
 
 =item * argsDeclaration (listref of C<GUS::PluginMgr::Args::Arg> subclasses)
 
-A declaration of the command line arguments expected by the plugin.  Each element of the list is an object which is a subclass of C<GUS::PluginMgr::Args::Arg>.  See the Argument Declaration Constructors (e.g. C<stringArg()>, C<fileArg>, etc).  These are methods which construct and return these objects.  
+A declaration of the command line arguments expected by the plugin.
+Each element of the list is an object which is a subclass of
+C<GUS::PluginMgr::Args::Arg>.  See the Argument Declaration
+Constructors (e.g. C<stringArg()>, C<fileArg>, etc).  These are
+methods which construct and return these objects.
 
 =item * revisionNotes (string)
 
-An explanation of what is new in this revision of the plugin.  This value is written into the description field of the Core.AlgorithmImplementation table when the plugin's registration is updated (by using ga +update).
+An explanation of what is new in this revision of the plugin.  This
+value is written into the description field of the
+Core.AlgorithmImplementation table when the plugin's registration is
+updated (by using ga +update).
 
 =item * easyCspOptions 
 
@@ -224,13 +261,17 @@ sub initialize {
 # Public Accessors
 # ----------------------------------------------------------------------
 
+=pod
+
 =head2 Setters
 
 =over 4
 
 =item C<setResultDescr($resultDescrip)>
 
-Set the result description.  This value is stored in the database in the AlgorithmInvocation table's result column after the plugin completes.
+Set the result description.  This value is stored in the database in
+the AlgorithmInvocation table's result column after the plugin
+completes.
 
 B<Params:>
 
@@ -257,13 +298,16 @@ sub setOracleDateFormat {
   $dbh->do("alter session set NLS_DATE_FORMAT='$oracleDateFormat'");
 }
 
+=pod
+
 =head2 Getters
 
 =over 4
 
 =item C<getUsage()>
 
-Get the plugin's usage.  This value is set by the C<initialize> method.
+Get the plugin's usage.  This value is set by the C<initialize>
+method.
 
 B<Return type:> C<string>
 
@@ -272,7 +316,8 @@ sub getUsage             { $_[0]->{usage} }
 
 =item C<getDocumentation()>
 
-Get a hashref holding the plugin's documentation.  This value is set by the C<initialize> method.
+Get a hashref holding the plugin's documentation.  This value is set
+by the C<initialize> method.
 
 B<Return type:> C<string>
 
@@ -281,7 +326,8 @@ sub getDocumentation { $_[0]->{documentation} }
 
 =item C<getRequiredDbVersion()>
 
-Get the plugin's required database version.  This value is set by the C<initialize> method.
+Get the plugin's required database version.  This value is set by the
+C<initialize> method.
 
 B<Return type:> C<string>
 
@@ -290,7 +336,8 @@ sub getRequiredDbVersion { $_[0]->{requiredDbVersion} }
 
 =item C<getCVSRevision()>
 
-Get the plugin's CVS revision number.  This value is set by the C<initialize> method.
+Get the plugin's CVS revision number.  This value is set by the
+C<initialize> method.
 
 B<Return type:> C<string>
 
@@ -315,7 +362,8 @@ sub getResultDescr{ $_[0]->{resultDescr}}
 
 =item C<getCVSTag()>
 
-Get the plugin's CVS tag.  This value is set by the C<initialize> method.
+Get the plugin's CVS tag.  This value is set by the C<initialize>
+method.
 
 B<Return type:> C<string>
 
@@ -328,7 +376,8 @@ sub getCVSTag {
 
 =item C<getRevisionNotes()>
 
-Get the plugin's revision notes.  This value is set by the C<initialize> method.
+Get the plugin's revision notes.  This value is set by the
+C<initialize> method.
 
 B<Return type:> C<string>
 
@@ -337,7 +386,8 @@ sub getRevisionNotes       { $_[0]->{revisionNotes} }
 
 =item C<getEasyCspOptions()>
 
-Get the plugin's EasyCsp options.  This value is set by the C<initialize> method.
+Get the plugin's EasyCsp options.  This value is set by the
+C<initialize> method.
 
 B<Return type:> C<string>
 
@@ -356,7 +406,8 @@ sub getEasyCspOptions {
 
 =item C<getArgsDeclaration()>
 
-Get the plugin's argument declaration.  This value is set by the C<initialize> method.
+Get the plugin's argument declaration.  This value is set by the
+C<initialize> method.
 
 B<Return type:> C<ref_to_list_of_Args>
 
@@ -374,7 +425,8 @@ sub getName       { $_[0]->{name} }
 
 =item C<getFile()>
 
-Get the full path of the file that contains the plugin, eg, /home/me/gushome/lib/perl/GUS/Common/Plugin/UpdateRow.pm
+Get the full path of the file that contains the plugin, eg,
+/home/me/gushome/lib/perl/GUS/Common/Plugin/UpdateRow.pm
 
 B<Return type:> C<string>
 
@@ -383,7 +435,8 @@ sub getFile       { $_[0]->{__gus__plugin__FILE} }
 
 =item C<getArgs()>
 
-Get the plugin's command line arguments.  To access these within the plugin, use: C<< $self->getArgs()->{arg_name} >>.
+Get the plugin's command line arguments.  To access these within the
+plugin, use: C<< $self->getArgs()->{arg_name} >>.
 
 B<Return type:> Hash reference
 
@@ -407,7 +460,8 @@ sub getArg {
 
 =item C<getDb()>
 
-Get the DbiDatabase object which represents the database this plugin accesses.
+Get the DbiDatabase object which represents the database this plugin
+accesses.
 
 B<Return type:> C<GUS::ObjRelP::DbiDatabase>
 
@@ -416,7 +470,8 @@ sub getDb         { $_[0]->{__gus__plugin__db} }
 
 =item C<getAlgInvocation()>
 
-Get the AlgorithmInvocation which tracks the running of this plugin in the database.
+Get the AlgorithmInvocation which tracks the running of this plugin in
+the database.
 
 B<Return type:> C<GUS::Model::Core::AlgorithmInvocation>
 
@@ -434,26 +489,28 @@ sub getQueryHandle    { $_[0]->getDb ? $_[0]->getDb->getQueryHandle : undef }
 
 =item C<getCheckSum()>
 
-Get an md5 digest checksum of the perl file which codes this plugin.  (This is used by GusApplication when registering the plugin in the database.)
+Get an md5 digest checksum of the perl file which codes this plugin.
+(This is used by GusApplication when registering the plugin in the
+database.)
 
 B<Return type:> C<string>
 
 =cut
 sub getCheckSum {
-  my $M = shift;
+  my $Self = shift;
 
-  if (!$M->{md5}) {
-    my $f = $M->getFile;
+  if (!$Self->{md5}) {
+    my $f = $Self->getFile;
 
     if (defined $f) {
-      $M->{md5} = &runCmd("$M->{md5sum_executable} $f");
-      chomp $M->{md5};
-      $M->{md5} =~ s/^(\S+).+/$1/;
+      $Self->{md5} = &runCmd("$Self->{md5sum_executable} $f");
+      chomp $Self->{md5};
+      $Self->{md5} =~ s/^(\S+).+/$1/;
     } else {
-      $M->error("Cannot find the plugin's executable file $M->getFile");
+      $Self->error("Cannot find the plugin's executable file $Self->getFile");
     }
   }
-  return $M->{md5};
+  return $Self->{md5};
 }
 
 =item C<getAlgorithm()>
@@ -478,19 +535,31 @@ sub getImplementation  { $_[0]->{__gus__plugin__implementation} }
 # Argument Declaration Constructors
 # ----------------------------------------------------------------------
 
+=pod
+
 =head2 Argument Declaration Constructors
 
-The Argument Declaration Constructors return Argument Declaration objects, as expected by the initialize() method in its C<argDeclaration> parameter.  Each arg declaration object specifies the details of a command line argument expected by the plugin.  The different constructors below are used to declare arguments of different types, such as string, int, file, etc.
+The Argument Declaration Constructors return Argument Declaration
+objects, as expected by the initialize() method in its
+C<argDeclaration> parameter.  Each arg declaration object specifies
+the details of a command line argument expected by the plugin.  The
+different constructors below are used to declare arguments of
+different types, such as string, int, file, etc.
 
-The argument declaration constructor methods each take a hashref as their sole parameter.  This hashref must include the required set of keys.
+The argument declaration constructor methods each take a hashref as
+their sole parameter.  This hashref must include the required set of
+keys.
 
-The following keys are standard and required for all the argument declaration constructors. (Additional non-standard keys are indicated below for each method as applicable.)
+The following keys are standard and required for all the argument
+declaration constructors. (Additional non-standard keys are indicated
+below for each method as applicable.)
 
 =over 4
 
 =item * name (string)
 
-The name of the argument (e.g., 'length' will expect a --length argument on the command line)
+The name of the argument (e.g., 'length' will expect a --length
+argument on the command line)
 
 =item * descr (string)
 
@@ -498,19 +567,26 @@ A description of the argument and what kinds of values are allowed.
 
 =item * reqd (0 or 1)
 
-Whether the user is required to provide this argument on the command line
+Whether the user is required to provide this argument on the command
+line
 
 =item * default
 
-The default value to use if the user doesn't supply one (or undef if none)
+The default value to use if the user doesn't supply one (or undef if
+none)
 
 =item * constraintFunc (method ref)
 
-The method to call to check the validity of the value the user has supplied (undef if none).  The method is called with two arugments: ($self, $argvalue) [where $self is the plugin object].  The method returns a string describing the problem with the value if there is one, or undef if there is no problem.
+The method to call to check the validity of the value the user has
+supplied (undef if none).  The method is called with two arugments:
+($self, $argvalue) [where $self is the plugin object].  The method
+returns a string describing the problem with the value if there is
+one, or undef if there is no problem.
 
 =item * isList (0 or 1)
 
-True if the argument expects a comma delimited list of values instead of a single value.
+True if the argument expects a comma delimited list of values instead
+of a single value.
 
 =back
 
@@ -522,7 +598,8 @@ Construct a string argument declaration.
 
 B<Parameters>
 
-- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above.
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which
+  must contain the standard keys described above.
 
 B<Return type:> C<GUS::PluginMgr::Args::StringArg>
 
@@ -538,7 +615,8 @@ Construct a integer argument declaration.
 
 B<Parameters>
 
-- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above.
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which
+  must contain the standard keys described above.
 
 B<Return type:> C<GUS::PluginMgr::Args::IntegerArg>
 
@@ -554,7 +632,9 @@ Construct a boolean argument declaration.
 
 B<Parameters>
 
-- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above with the exception of 'isList' and 'constraintFunc', which are not applicable.
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which
+  must contain the standard keys described above with the exception of
+  'isList' and 'constraintFunc', which are not applicable.
 
 B<Return type:> C<GUS::PluginMgr::Args::BooleanArg>
 
@@ -570,7 +650,8 @@ Construct a tableName argument declaration.
 
 B<Parameters>
 
-- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above.
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which
+  must contain the standard keys described above.
 
 B<Return type:> C<GUS::PluginMgr::Args::TableNameArg>
 
@@ -586,7 +667,8 @@ Construct a float argument declaration.
 
 B<Parameters>
 
-- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above.
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which
+  must contain the standard keys described above.
 
 B<Return type:> C<GUS::PluginMgr::Args::FloatArg>
 
@@ -595,6 +677,8 @@ sub floatArg {
   my ($paramsHashRef) = @_;
   return GUS::PluginMgr::Args::FloatArg->new($paramsHashRef);
 }
+
+# ----------------------------------------------------------------------
 
 =item C<fileArg($argDescriptorHashRef)>
 
@@ -617,14 +701,46 @@ The a description of the file's format
 B<Return type:> C<GUS::PluginMgr::Args::FileArg>
 
 =cut
+
 sub fileArg {
   my ($paramsHashRef) = @_;
   return GUS::PluginMgr::Args::FileArg->new($paramsHashRef);
 }
 
 # ----------------------------------------------------------------------
+
+=item C<globArg($argDescriptorHashRef)>
+
+Construct a glob argument declaration.
+
+B<Parameters>
+
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also
+
+over 4
+
+=item * mustExist (0 or 1)
+
+Whether the glob must match some existing files.
+
+=item * format (string)
+
+A description of the format of the files that match the glob.
+
+B<Return type:> C<GUS::PluginMgr::Args::GlobArg>
+
+=cut
+
+sub globArg {
+  my ($paramsHashRef) = @_;
+  return GUS::PluginMgr::Args::GlobArg->new($paramsHashRef);
+}
+
+# ----------------------------------------------------------------------
 # Public Utilities
 # ----------------------------------------------------------------------
+
+=pod
 
 =head2 Utilities
 
@@ -727,7 +843,14 @@ sub className2tableId {
 
 =item C<undefPointerCache()>
 
-Clear out the GUS Object Layer's cache of database objects.  The object cache holds 10000 objects by default.  (You can change its capacity by calling C<< $self->getDb()->setMaximumNumberOfObjects() >>.)  Typically a plugin may loop over a set of input, using a number of objects for each iteration through the loop.  Because the next time through the loop will not need those objects, it is good practice to call C<< $self->undefPointerCache() >> at the bottom of the loop to avoid filling the cache with objects that are not needed anymore.
+Clear out the GUS Object Layer's cache of database objects.  The
+object cache holds 10000 objects by default.  (You can change its
+capacity by calling C<< $self->getDb()->setMaximumNumberOfObjects()
+>>.)  Typically a plugin may loop over a set of input, using a number
+of objects for each iteration through the loop.  Because the next time
+through the loop will not need those objects, it is good practice to
+call C<< $self->undefPointerCache() >> at the bottom of the loop to
+avoid filling the cache with objects that are not needed anymore.
 
 =cut
 sub undefPointerCache {	$_[0]->getAlgInvocation->undefPointerCache }
@@ -737,13 +860,16 @@ sub undefPointerCache {	$_[0]->getAlgInvocation->undefPointerCache }
 # Documentation
 # ----------------------------------------------------------------------
 
+=pod
+
 =head2 Documentation
 
 =over 4
 
 =item C<printDocumentationText($synopsis, $argDetails)>
 
-Print documentation for this plugin in text format.  The documentation includes a synopsis, description, and argument details
+Print documentation for this plugin in text format.  The documentation
+includes a synopsis, description, and argument details
 
 B<Parameters>
 
@@ -761,7 +887,8 @@ sub printDocumentationText {
 
 =item C<printDocumentationHTML($synopsis, $argDetails)>
 
-Print documentation for this plugin in HTML format.  The documentation includes a synopsis, description, and argument details
+Print documentation for this plugin in HTML format.  The documentation
+includes a synopsis, description, and argument details
 
 B<Parameters>
 
@@ -777,6 +904,13 @@ sub printDocumentationHTML {
   close(POD);
 }
 
+sub Pod2Text {
+   my ($File) = @_;
+
+   my $command = "pod2text $File";
+   return `$command`;
+}
+
 sub _formatDocumentationPod {
   my ($self, $synopsis, $argDetails) = @_;
 
@@ -784,36 +918,36 @@ sub _formatDocumentationPod {
 
   my $s .= "\n=head1 NAME\n\n";
   $s .= "$self->{name} -  $doc->{purposeBrief} \n\n";
-  $s .= "=head1 SYNOPSIS\n\n";
+  $s .= "\n=head1 SYNOPSIS\n\n";
   $s .= "$synopsis\n\n";
-  $s .= "=head1 DESCRIPTION\n\n";
+  $s .= "\n=head1 DESCRIPTION\n\n";
   $s .= "$doc->{purpose}\n";
-  $s .= "=head1 TABLES AFFECTED\n\n";
+  $s .= "\n=head1 TABLES AFFECTED\n\n";
   my $tablesAffected = $self->_getTablesAffected();
   foreach my $tbl (@$tablesAffected) {
     my ($tblName, $descrip) = @$tbl;
-    $s .= "=item B<$tblName>\n\n=over 4\n\n$descrip\n\n=back\n\n";
+    $s .= "\n=item B<$tblName>\n\n=over 4\n\n$descrip\n\n=back\n\n";
   }
   $s .= "\n";
-  $s .= "=head1 TABLES DEPENDED ON\n\n";
+  $s .= "\n=head1 TABLES DEPENDED ON\n\n";
   my $tablesDependedOn = $self->_getTablesDependedOn();
   foreach my $tbl (@$tablesDependedOn) {
     my ($tblName, $descrip) = @$tbl;
-    $s .= "=item B<$tblName>\n\n=over 4\n\n$descrip\n\n=back\n\n";
+    $s .= "\n=item B<$tblName>\n\n=over 4\n\n$descrip\n\n=back\n\n";
   }
   $s .= "\n";
   if ($doc->{failureCases}) {
-    $s .= "=head1 FAILURE CASES\n\n";
+    $s .= "\n=head1 FAILURE CASES\n\n";
     $s .= "$doc->{failureCases}\n";
   }
   if ($doc->{howToRestart}) {
-    $s .= "=head1 RESTARTING\n\n";
+    $s .= "\n=head1 RESTARTING\n\n";
     $s .= "$doc->{howToRestart}\n";
   }
-  $s .= "=head1 ARGUMENTS IN DETAIL\n";
+  $s .= "\n=head1 ARGUMENTS IN DETAIL\n\n";
   $s .= "$argDetails\n";
   if ($doc->{notes}) {
-    $s .= "=head1 NOTES\n\n";
+    $s .= "\n=head1 NOTES\n\n";
     $s .= "$doc->{notes}\n";
   }
 
@@ -855,9 +989,12 @@ sub _getTablesDependedOn {
 	 ];
 }
 
+
 # ----------------------------------------------------------------------
 # Error Handling
 # ----------------------------------------------------------------------
+
+=pod
 
 =head2 Error handling
 
@@ -865,11 +1002,15 @@ sub _getTablesDependedOn {
 
 =item C<error($msg)>
 
-Handle a fatal error in a plugin.  This method terminates the plugin gracefully, writing the provided message to STDERR.  It also writes a stack trace showing where the error occurred.
+Handle a fatal error in a plugin.  This method terminates the plugin
+gracefully, writing the provided message to STDERR.  It also writes a
+stack trace showing where the error occurred.
 
-When the plugin is terminated, GusApplication will still catch the error and attempt to track the plugin's failure in the database.
+When the plugin is terminated, GusApplication will still catch the
+error and attempt to track the plugin's failure in the database.
 
-Do not use this method to report user errors such as invalid argument values (use C<userError> for that).
+Do not use this method to report user errors such as invalid argument
+values (use C<userError> for that).
 
 B<Parameters>
 
@@ -884,7 +1025,10 @@ sub error {
 
 =item C<userError($msg)>
 
-Handle a fatal user error in a plugin.  This method terminates the plugin gracefully, writing the provided message to STDERR.  It it intended only for errors made by the user of the plugin (such as incorrect argument values).
+Handle a fatal user error in a plugin.  This method terminates the
+plugin gracefully, writing the provided message to STDERR.  It it
+intended only for errors made by the user of the plugin (such as
+incorrect argument values).
 
 B<Parameters>
 
@@ -901,21 +1045,25 @@ sub userError{
 # Public Logging Methods
 # ----------------------------------------------------------------------
 
+=pod
+
 =head2 Logging
 
 =over 4
 
 =item C<log($msg1, $msg2, ...)>
 
-Write a date stamped tab delimited message to STDERR.  The messages supplied as arguments are joined with tabs in between.
+Write a date stamped tab delimited message to STDERR.  The messages
+supplied as arguments are joined with tabs in between.
 
 B<Parameters>
 
 - @messages (list of strings):  the error messages to write.
 
 =cut
+
 sub log {
-  my $M = shift;
+  my $Self = shift;
 
   my $time_stamp_s = localtime;
 
@@ -926,17 +1074,20 @@ sub log {
 
 =item C<logDebug($msg1, $msg2, ...)>
 
-Write a date stamped tab delimited debugging message to STDERR.  The messages supplied as arguments are joined with tabs in between.  It will only be written if the user specifies the C<--debug> argument.
+Write a date stamped tab delimited debugging message to STDERR.  The
+messages supplied as arguments are joined with tabs in between.  It
+will only be written if the user specifies the C<--debug> argument.
 
 B<Parameters>
 
 - @messages (list of strings):  the error messages to write.
 
 =cut
-sub logDebug {
-  my $M = shift;
 
-  return unless $M->getArgs()->{debug};
+sub logDebug {
+  my $Self = shift;
+
+  return unless $Self->getArgs()->{debug};
   my $msg = join("\t", @_);
 
   print STDERR "\n$msg\n";
@@ -944,7 +1095,9 @@ sub logDebug {
 
 =item C<logVerbose($msg1, $msg2, ...)>
 
-Write a date stamped tab delimited debugging message to STDERR.  The messages supplied as arguments are joined with tabs in between.  It will only be written if the user specifies the C<--verbose> argument.
+Write a date stamped tab delimited debugging message to STDERR.  The
+messages supplied as arguments are joined with tabs in between.  It
+will only be written if the user specifies the C<--verbose> argument.
 
 B<Parameters>
 
@@ -952,14 +1105,17 @@ B<Parameters>
 
 =cut
 sub logVerbose {
-  my $M = shift;
+  my $Self = shift;
 
-  $M->log(@_) if $M->getArgs()->{verbose};
+  $Self->log(@_) if $Self->getArgs()->{verbose};
 }
 
 =item C<logVeryVerbose($msg1, $msg2, ...)>
 
-Write a date stamped tab delimited debugging message to STDERR.  The messages supplied as arguments are joined with tabs in between.  It will only be written if the user specifies the C<--veryVerbose> argument.
+Write a date stamped tab delimited debugging message to STDERR.  The
+messages supplied as arguments are joined with tabs in between.  It
+will only be written if the user specifies the C<--veryVerbose>
+argument.
 
 B<Parameters>
 
@@ -967,14 +1123,15 @@ B<Parameters>
 
 =cut
 sub logVeryVerbose {
-  my $M = shift;
+  my $Self = shift;
 
-  $M->log(@_) if $M->getArgs()->{veryVerbose};
+  $Self->log(@_) if $Self->getArgs()->{veryVerbose};
 }
 
 =item C<logData($msg1, $msg2, ...)>
 
-Write a date stamped tab delimited debugging message to STDOUT.  The messages supplied as arguments are joined with tabs in between.
+Write a date stamped tab delimited debugging message to STDOUT.  The
+messages supplied as arguments are joined with tabs in between.
 
 B<Parameters>
 
@@ -982,7 +1139,7 @@ B<Parameters>
 
 =cut
 sub logData {
-  my $M = shift;
+  my $Self = shift;
   my $T = shift;
 
   my $time_stamp_s = localtime;
@@ -998,13 +1155,14 @@ sub logData {
 
 =item C<logAlgInvocationId()>
 
-Log to STDERR the id for the AlgorithmInvocation that represents this run of the plugin in the database.
+Log to STDERR the id for the AlgorithmInvocation that represents this
+run of the plugin in the database.
 
 =cut
 sub logAlgInvocationId {
-  my $M = shift;
+  my $Self = shift;
 
-  $M->log('ALGINVID', $M->getAlgInvocation->getId)
+  $Self->log('ALGINVID', $Self->getAlgInvocation->getId)
 }
 
 =item C<logCommit()>
@@ -1013,9 +1171,9 @@ Log to STDERR the state of the commit flag for this run of the plugin.
 
 =cut
 sub logCommit {
-  my $M = shift;
+  my $Self = shift;
 
-  $M->log('COMMIT', $M->getCla->{commit} ? 'commit on' : 'commit off');
+  $Self->log('COMMIT', $Self->getCla->{commit} ? 'commit on' : 'commit off');
 }
 
 =item C<logArgs()>
@@ -1025,16 +1183,28 @@ Log to STDERR the argument values used for this run of the plugin.
 =cut
 sub logArgs {
 
-  my $M = shift;
+  my $Self = shift;
 
-  foreach my $flag (sort keys %{$M->getCla}) {
-    my $value = $M->getCla->{$flag};
+  foreach my $flag (sort keys %{$Self->getCla}) {
+    my $value = $Self->getCla->{$flag};
     if (ref $value) {
-      $M->log('ARGS', $flag, @$value);
+      $Self->log('ARGS', $flag, @$value);
     } else {
-      $M->log('ARGS', $flag, $value);
+      $Self->log('ARGS', $flag, $value);
     }
   }
+}
+
+sub logWrap {
+   my $Self = shift;
+   my $Tag  = shift;
+   my $Text = shift;
+
+   my @lines = split(/\n/, $Text);
+
+   foreach (@lines) {
+      $Self->log($Tag, $_);
+   }
 }
 
 # ----------------------------------------------------------------------
@@ -1053,28 +1223,38 @@ B<Return type:> C<string>
 
 =cut
 sub sql_get_as_array {
-  my $M = shift;
-  my $Q = shift;		# SQL query
+  my $Self = shift;
+  my $Sql = shift;		# SQL query
   my $H = shift;		# handle and ...
-  my $B = shift;		# bind args hich are used only if SQL is not defined.
+  my $B = shift;		# bind args which are used only if SQL is not defined.
 
   my @RV;
 
   # get a statement handle.
   my $sh;
-  if (defined $Q) {
-    $sh = $M->getQueryHandle->prepareAndExecute($Q);
+  if (defined $Sql) {
+		 eval { $sh = $Self->getQueryHandle->prepareAndExecute($Sql) };
+		 if ($@) {
+				$Self->log('INFO', 'OffendingSqlStatement', $Sql);
+				die $@;
+		 }
   } else {
     $sh = $H;
     $sh->execute(@$B);
   }
 
   # collect results
-  while (my @row = $sh->fetchrow_array) {
-    push(@RV,@row);
-  }
-  $sh->finish;
+	eval {
+		 while (my @row = $sh->fetchrow_array) {
+				push(@RV,@row);
+		 }
+		 $sh->finish;
+	};
 
+	if ($@) {
+		 $Self->log('INFO', 'OffendingSqlStatement', $Sql) if $Sql;
+		 die $@;
+	}
   #CBIL::Util::Disp::Display(\@RV);
 
   # RETURN
@@ -1083,23 +1263,25 @@ sub sql_get_as_array {
 
 =item C<()>
 
-
-
 B<Return type:> C<string>
 
 =cut
 sub sql_get_as_array_refs {
-  my $M = shift;
-  my $Q = shift;		# SQL query
+  my $Self = shift;
+  my $Sql = shift;		# SQL query
   my $H = shift;		# handle and ...
-  my $B = shift;		# bind args hich are used only if SQL is not defined.
+  my $B = shift;		# bind args which are used only if SQL is not defined.
 
   my @RV;
 
   # get a statement handle.
   my $sh;
-  if (defined $Q) {
-    $sh = $M->getQueryHandle->prepareAndExecute($Q);
+  if (defined $Sql) {
+    eval { $sh = $Self->getQueryHandle->prepareAndExecute($Sql) };
+		 if ($@) {
+				$Self->log('INFO', 'OffendingSqlStatement', $Sql);
+				die $@;
+		 }
   } else {
     $sh = $H;
     $sh->execute(@$B);
@@ -1127,8 +1309,8 @@ B<Return type:> C<string>
 
 =cut
 sub sql_get_as_hash_refs {
-  my $M = shift;
-  my $Q = shift;
+  my $Self = shift;
+  my $Sql = shift;
   my $H = shift;
   my $B = shift;
 
@@ -1136,8 +1318,12 @@ sub sql_get_as_hash_refs {
 
   # get a statement handle.
   my $sh;
-  if (defined $Q) {
-    $sh = $M->getQueryHandle->prepareAndExecute($Q);
+  if (defined $Sql) {
+    eval { $sh = $Self->getQueryHandle->prepareAndExecute($Sql) };
+		 if ($@) {
+				$Self->log('INFO', 'OffendingSqlStatement', $Sql);
+				die $@;
+		 }
   } else {
     $sh = $H;
     $sh->execute(@$B);
@@ -1162,8 +1348,8 @@ B<Return type:> C<string>
 
 =cut
 sub sql_get_as_hash_refs_lc {
-  my $M = shift;
-  my $Q = shift;
+  my $Self = shift;
+  my $Sql = shift;
   my $H = shift;
   my $B = shift;
 
@@ -1171,8 +1357,12 @@ sub sql_get_as_hash_refs_lc {
 
   # get a statement handle.
   my $sh;
-  if (defined $Q) {
-    $sh = $M->getQueryHandle->prepareAndExecute($Q);
+  if (defined $Sql) {
+		 eval { $sh = $Self->getQueryHandle->prepareAndExecute($Sql) };
+		 if ($@) {
+				$Self->log('INFO', 'OffendingSqlStatement', $Sql);
+				die $@;
+		 }
   } else {
     $sh = $H;
     $sh->execute(@$B);
@@ -1190,36 +1380,36 @@ sub sql_get_as_hash_refs_lc {
 
 # ----------------------------------------------------------------------
 
-=item C<()>
-
-
+=item C<sql_translate()>
 
 B<Return type:> C<string>
 
 =cut
 sub sql_translate {
-  my $M  = shift;
+  my $Self  = shift;
   my $T  = shift;		# table
   my $Kc = shift;		# key column name
   my $Vc = shift;		# value column name
   my $V  = shift;		# value
 
   # load cache if we need to.
-  if (not defined $M->{__gus__plugin_sql_xlate_cache}->{$T}->{$Vc}) {
+  if (not defined $Self->{__gus__plugin_sql_xlate_cache}->{$T}->{$Vc}) {
     my $sql = "select $Vc,$Kc from $T";
-    my %cache = map {@$_} @{$M->sql_get_as_array_refs($sql)};
-    $M->{__gus__plugin_sql_xlate_cache}->{$T}->{$Vc} = \%cache;
+    my %cache = map {@$_} @{$Self->sql_get_as_array_refs($sql)};
+    $Self->{__gus__plugin_sql_xlate_cache}->{$T}->{$Vc} = \%cache;
     #CBIL::Util::Disp::Display(\%cache);
-    #CBIL::Util::Disp::Display([$T, $Kc,$Vc, $V, $M->{__gus__plugin_sql_xlate_cache}->{$T}->{$Vc}->{$V}] );
+    #CBIL::Util::Disp::Display([$T, $Kc,$Vc, $V, $Self->{__gus__plugin_sql_xlate_cache}->{$T}->{$Vc}->{$V}] );
   }
 
   # RETURN
-  $M->{__gus__plugin_sql_xlate_cache}->{$T}->{$Vc}->{$V}
+  $Self->{__gus__plugin_sql_xlate_cache}->{$T}->{$Vc}->{$V}
 }
 
 # ----------------------------------------------------------------------
 # Deprecated
 # ----------------------------------------------------------------------
+
+=pod
 
 =head2 Deprecated
 
@@ -1244,7 +1434,7 @@ sub getCla        { $_[0]->getArgs(); }
 Replaced by C<log>
 
 =cut
-sub logAlert      { my $M = shift; $M->log(@_); }
+sub logAlert      { my $Self = shift; $Self->log(@_); }
 
 =item C<getOk()>
 
@@ -1273,15 +1463,15 @@ sub logRAIID      {$_[0]->logAlgInvocationId(); }
 # ----------------------------------------------------------------------
 
 sub initName       {
-  my $M = shift;
+  my $Self = shift;
   my $N = shift;
 
-  $M->{__gus__plugin__name} = $N;
+  $Self->{__gus__plugin__name} = $N;
   my $c = $N; $c =~ s/::/\//g; $c .= '.pm';
-  $M->_initFile($INC{$c});
+  $Self->_initFile($INC{$c});
 
   # RETURN
-  $M
+  $Self
 }
 
 sub initMd5Executable {
@@ -1305,25 +1495,25 @@ sub initConfig {
 # Private Methods
 # ----------------------------------------------------------------------
 sub _initEasyCspOptions    {
-  my $M = shift;
+  my $Self = shift;
 
   my $args_n = scalar @_;
   my $type_s = ref $_[0];
 
   # list (of assumed hash refs)
   if ($args_n > 1) {
-    $M->{easyCspOptions} = { map {($_->{o},$_)} @_ };
+    $Self->{easyCspOptions} = { map {($_->{o},$_)} @_ };
   }
 
   # list ref (of assumed hash refs)
   # (this is the expected case, the others being legacy)
   elsif ($type_s eq 'ARRAY') {
-    $M->{easyCspOptions} = { map {($_->{o},$_)} @{$_[0]} };
+    $Self->{easyCspOptions} = { map {($_->{o},$_)} @{$_[0]} };
   }
 
   # direct hash ref
   else {
-    $M->{easyCspOptions} = $_[1];
+    $Self->{easyCspOptions} = $_[1];
   }
 
   my %types = ('id' => 1,
@@ -1337,13 +1527,13 @@ sub _initEasyCspOptions    {
 
   my $types = join (", ", keys(%types));
 
-  foreach my $argKey (keys %{$M->{easyCspOptions}}) {
-    my $arg = $M->{easyCspOptions}->{$argKey};
-    $M->error("EasyCspOption '$arg->{o}' has an invalid type '$arg->{t}'.  Valid types are: $types") unless $types{$arg->{t}};
+  foreach my $argKey (keys %{$Self->{easyCspOptions}}) {
+    my $arg = $Self->{easyCspOptions}->{$argKey};
+    $Self->error("EasyCspOption '$arg->{o}' has an invalid type '$arg->{t}'.  Valid types are: $types") unless $types{$arg->{t}};
   }
 
   # RETURN
-  $M
+  $Self
 }
 
 sub _initFile       { $_[0]->{__gus__plugin__FILE} = $_[1]; $_[0] }
@@ -1356,4 +1546,5 @@ sub _failinit {
 }
 
 1;
+
 
