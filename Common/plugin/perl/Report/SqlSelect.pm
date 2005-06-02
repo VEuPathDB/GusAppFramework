@@ -80,7 +80,7 @@ sub run {
       $Self->log('INFO', 'SqlFile', $sql_f);
 
       if (my $sql_fh = FileHandle->new("<$sql_f")) {
-         my $sql = join('', <$sql_fh>);
+         my $sql = join('', map { chomp; $_ } <$sql_fh>);
          $sql_fh->close();
 
          $Self->logWrap('SQL', $sql);

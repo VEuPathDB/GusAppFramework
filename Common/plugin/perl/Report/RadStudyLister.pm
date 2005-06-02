@@ -71,6 +71,8 @@ sub run {
 
 	 $Self->logArgs();
 
+	 my $description_fmt = "%s";
+
    my $sql = 'select max(length(name)) from SRes.ExternalDatabase';
    my ($w) = @{$Self->sql_get_as_array($sql)};
    my $name_fmt = "%-${w}.${w}s";
@@ -87,23 +89,30 @@ sub run {
 
       my $_study = GUS::Model::RAD3::Study->new
       ({ study_id => $study_id });
-      $_study->retrieveFromDB();
 
-#      foreach my $_studyr (sort { $a->getId() <=> $b->getId() }
-#                         $_study->getChildren('SRes::ExternalDatabaseRelease',1)
-#                        ) {
-#
-      $Self->log('STUDY',
-                 $_study->getId()           || 'study.id?',
-                 sprintf($name_fmt,    $_study->getName() || 'Study.name?'),
-                 sprintf($description_fmt,    $_study->getDescription() || 'Study.description?'),
-#
-#                    $_studyr->getId()          || 'Studyr.id?',
-#                    sprintf($version_fmt, $_studyr->getVersion()     || 'Studyr.ver?'),
-#                    sprintf('%-24.24s',   $_studyr->getReleaseDate() || 'Studyr.rd?'),
-#                    $_studyr->getDescription() || 'Studyr.descr?'
+			eval { $_study->retrieveFromDB(); };
+			if ($@) {
+				 $Self->log('STUDY', $_study->getId(), 'Protected');
+			}
+
+			else {
+
+				 #      foreach my $_studyr (sort { $a->getId() <=> $b->getId() }
+				 #                         $_study->getChildren('SRes::ExternalDatabaseRelease',1)
+				 #                        ) {
+				 #
+				 $Self->log('STUDY',
+										$_study->getId()           || 'study.id?',
+										sprintf($name_fmt,    $_study->getName() || 'Study.name?'),
+										sprintf($description_fmt,    $_study->getDescription() || 'Study.description?'),
+										#
+										#                    $_studyr->getId()          || 'Studyr.id?',
+										#                    sprintf($version_fmt, $_studyr->getVersion()     || 'Studyr.ver?'),
+										#                    sprintf('%-24.24s',   $_studyr->getReleaseDate() || 'Studyr.rd?'),
+										#                    $_studyr->getDescription() || 'Studyr.descr?'
                    );
-   }
+			}
+	 }
 }
 
 # ----------------------------------------------------------------------
