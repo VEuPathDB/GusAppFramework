@@ -97,7 +97,7 @@ sub getVersion {
 }
 
 sub parseWgetArg {
-  my ($arg) = @_;
+  my ($arg, $argsString) = @_;
 
   my @arg;
   if ($arg =~ /^(--[\w-]+)=(.*)$/) {
@@ -105,7 +105,7 @@ sub parseWgetArg {
   } elsif ($arg =~ /^(--[\w-]+)$/) {
     @arg = ($1, "");
   } else {
-    die "invalid wget argument name '$arg' (only long form of args is allowed)\n";
+    die "invalid wget argument name '$arg' in '$argsString'(only long form of args is allowed)\n";
   }
   return @arg;
 }
@@ -338,6 +338,9 @@ sub _findVersion {
 	$todayMonth = "0" . $todayMonth;
     }
     my $todayDay = $today[3];
+    if ($todayDay =~ /^\d$/){ #single digit; append 0
+	$todayDay= "0" . $todayDay;
+    }
     my $today = "${todayYear}-${todayMonth}-$todayDay";
 
     
