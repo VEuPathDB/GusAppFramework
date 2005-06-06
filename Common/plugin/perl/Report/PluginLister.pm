@@ -7,7 +7,6 @@ package GUS::Common::Plugin::Report::PluginLister;
 use strict;
 
 use FileHandle;
-use V;
 
 use GUS::PluginMgr::Plugin;
 
