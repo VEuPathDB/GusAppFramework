@@ -29,16 +29,19 @@ sub setManager {
 #  param fromFile - the basename of the file or directory to copy
 sub copyTo {
     my ($self, $fromDir, $fromFile, $toDir) = @_;
-          # buildDIr, release/speciesNickname, serverPath
-  
+    # buildDIr, release/speciesNickname, serverPath
+    
     chdir $fromDir || $self->{mgr}->error("Can't chdir $fromDir\n" . __FILE__ . " line " . __LINE__ . "\n\n");
-    $self->{mgr}->error("origin directory $fromDir/$fromFile doesn't exist\n" . __FILE__ . " line " . __LINE__ . "\n\n") unless -e glob("$fromDir/$fromFile");
-
-
+    
+    my @arr = glob("$fromFile");
+    $self->{mgr}->error("origin directory $fromDir/$fromFile doesn't exist\n" . __FILE__ . " line " . __LINE__ . "\n\n") unless (@arr >= 1);
+    
+    
     my $user = "$self->{user}\@" if $self->{user};
     my $ssh_to = "$user$self->{server}";
-
+    
     print STDERR "tar cf - $fromFile | gzip -c | ssh -2 $ssh_to 'cd $toDir; gunzip -c | tar xf -' \n" . __FILE__ . " line " . __LINE__ . "\n\n";
+    
     # workaround scp problems
     $self->{mgr}->runCmd("tar cf - $fromFile | gzip -c | ssh -2 $ssh_to 'cd $toDir; gunzip -c | tar xf -'");
 
