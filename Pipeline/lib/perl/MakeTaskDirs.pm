@@ -33,7 +33,7 @@ use CBIL::Util::Utils;
 
 sub makeRMDir {
     my ($datasetName, $pipelineName, $localPath, $serverPath, $nodePath, 
-	$taskSize, $rmOptions, $dangleMax, $rmPath) = @_;
+	$taskSize, $rmOptions, $dangleMax, $rmPath, $nodeClass) = @_;
     
     my $localBase = "$localPath/$pipelineName/repeatmask/$datasetName";
     my $serverBase = "$serverPath/$pipelineName/repeatmask/$datasetName"; 
@@ -41,21 +41,21 @@ sub makeRMDir {
     &runCmd("mkdir -p $inputDir");
     &makeControllerPropFile($inputDir, $serverBase, 2, $taskSize, 
 			    $nodePath, 
-			    "DJob::DistribJobTasks::RepeatMaskerTask");
+			    "DJob::DistribJobTasks::RepeatMaskerTask", $nodeClass);
     my $seqFileName = "$serverPath/$pipelineName/seqfiles/$datasetName.fsa"; 
     &makeRMTaskPropFile($inputDir, $seqFileName, $rmOptions, $rmPath,$dangleMax);
 }
 
 sub makeGenomeDir {
     my ($queryName, $targetName, $pipelineName, $localPath, $serverPath,
-	$nodePath, $taskSize, $gaOptions, $gaBinPath, $localGDir, $serverGDir) = @_;
+	$nodePath, $taskSize, $gaOptions, $gaBinPath, $localGDir, $serverGDir, $nodeClass) = @_;
     my $localBase = "$localPath/$pipelineName/genome/$queryName-$targetName";
     my $serverBase = "$serverPath/$pipelineName/genome/$queryName-$targetName";
     my $inputDir = "$localBase/input";
     &runCmd("mkdir -p $inputDir");
     &makeControllerPropFile($inputDir, $serverBase, 2, $taskSize, 
 			    $nodePath, 
-			    "DJob::DistribJobTasks::GenomeAlignTask");
+			    "DJob::DistribJobTasks::GenomeAlignTask", $nodeClass);
     my $seqFileName = "$serverPath/$pipelineName/repeatmask/$queryName/master/mainresult/blocked.seq";
     my $serverInputDir = "$serverBase/input";
     &makeGenomeTaskPropFile($inputDir, $serverInputDir, $seqFileName, $gaOptions, $gaBinPath,
@@ -81,7 +81,7 @@ sub makeGenomeReleaseXml {
 
 sub makeMatrixDir {
     my ($queryName, $subjectName, $pipelineName, $localPath, $serverPath, 
-	$nodePath, $taskSize, $blastBinPath) = @_;
+	$nodePath, $taskSize, $blastBinPath, $nodeClass) = @_;
     
     my $localBase = "$localPath/$pipelineName/matrix/$queryName-$subjectName";
     my $serverBase = "$serverPath/$pipelineName/matrix/$queryName-$subjectName"; 
@@ -89,7 +89,7 @@ sub makeMatrixDir {
     &runCmd("mkdir -p $inputDir");
     &makeControllerPropFile($inputDir, $serverBase, 2, $taskSize, 
 			    $nodePath, 
-			    "DJob::DistribJobTasks::BlastMatrixTask");
+			    "DJob::DistribJobTasks::BlastMatrixTask", $nodeClass);
     my $dbFileName = "$serverPath/$pipelineName/repeatmask/$subjectName/master/mainresult/blocked.seq"; 
     my $seqFileName = "$serverPath/$pipelineName/repeatmask/$queryName/master/mainresult/blocked.seq"; 
     &makeBMTaskPropFile($inputDir, $blastBinPath, $seqFileName, $dbFileName);
@@ -98,7 +98,7 @@ sub makeMatrixDir {
 sub makeSimilarityDir {
     my ($queryName, $subjectName, $pipelineName, $localPath, $serverPath, 
 	$nodePath, $taskSize, $blastBinPath,
-	$dbName, $dbPath, $queryFileName, $regex, $blast, $blastParams) = @_;
+	$dbName, $dbPath, $queryFileName, $regex, $blast, $blastParams, $nodeClass) = @_;
     
     my $localBase = "$localPath/$pipelineName/similarity/$queryName-$subjectName";
     my $serverBase = "$serverPath/$pipelineName/similarity/$queryName-$subjectName";
@@ -107,7 +107,7 @@ sub makeSimilarityDir {
 
     &runCmd("mkdir -p $inputDir");
     &makeControllerPropFile($inputDir, $serverBase, 1, $taskSize, 
-			    $nodePath, "DJob::DistribJobTasks::BlastSimilarityTask");
+			    $nodePath, "DJob::DistribJobTasks::BlastSimilarityTask", $nodeClass);
     my $dbFileName = "$dbPath/$dbName"; 
     my $seqFileName = "$serverPath/$pipelineName/seqfiles/$queryFileName";
     &makeBSTaskPropFile($inputDir, $blastBinPath, $seqFileName, $dbFileName, 
@@ -120,8 +120,10 @@ sub makeSimilarityDir {
 
 sub makeControllerPropFile {
     my ($inputDir, $baseDir, $slotsPerNode, $taskSize, $nodePath, 
-	$taskClass) = @_;
-
+	$taskClass, $nodeClass) = @_;
+    
+    $nodeClass = 'DJob::DistribJob::BprocNode' unless $nodeClass;
+    
     open(F, ">$inputDir/controller.prop") 
 	|| die "Can't open $inputDir/controller.prop for writing";
 
@@ -132,7 +134,7 @@ nodedir=$nodePath
 slotspernode=$slotsPerNode
 subtasksize=$taskSize
 taskclass=$taskClass
-nodeclass=DJob::DistribJob::BprocNode
+nodeclass=$nodeClass
 restart=no
 ";
     close(F);
