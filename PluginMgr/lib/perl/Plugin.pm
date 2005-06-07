@@ -701,9 +701,9 @@ sub enumArg {
   return GUS::PluginMgr::Args::EnumArg->new($paramsHashRef);
 }
 
-=item C<enumArg($argDescriptorHashRef)>
+=item C<controlledVocabMapArg($argDescriptorHashRef)>
 
-Construct a controlled vocab map argument declaration.  The value for this argument is a file containing a mapping from an input set of terms to a set of terms in a GUS controlled vocabulary table (such as SRes.ReviewStatus).  The value passed to the plugin is that vocabulary in hash form, with the key being the input term and the value being the GUS term.  If any GUS term in the file is not found in the database table, an error is thrown.  This is used for application or site specific CVs, not for stable standards.  It is intended to provide a flexible way for a plugin to use a CV developed in-house.
+Construct a controlled vocab map argument declaration.  The value for this argument is a file containing a mapping from an input set of terms to a set of terms in a GUS controlled vocabulary table (such as SRes.ReviewStatus).  The value returned to the plugin by getArg() is that vocabulary in hash form, with the key being the input term and the value being the GUS term.  If any GUS term in the file is not found in the database table, an error is thrown.  This is used for application or site specific CVs, not for stable standards.  It is intended to provide a flexible way for a plugin to use a CV developed in-house.
 
 B<Parameters>
 
