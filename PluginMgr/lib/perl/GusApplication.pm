@@ -397,6 +397,11 @@ sub doMajorMode_RunOrReport {
 
    my $pu = $Self->newFromPluginName($PluginClass);
 
+   # connect to the database
+   $Self->connect_to_database($pu);
+
+   $pu->setOracleDateFormat('YYYY-MM-DD HH24:MI:SS');
+
    my $argsHash;
    if ($pu->getArgsDeclaration) {
       my $argDecl = [@{$pu->getArgsDeclaration()},
@@ -425,18 +430,16 @@ sub doMajorMode_RunOrReport {
                 };
       $argsHash = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage) || die "\n";
    }
-   $pu->initArgs($argsHash);
-   $Self->initArgs($argsHash);
+
+   $pu->getDb()->setVerbose($Self->{sqlVerbose});
 
    # what versions does the plugin want?
    $Self->connect_to_database($Self);
 
+   $pu->initArgs($argsHash);
+   $Self->initArgs($argsHash);
+
    $Self->_check_schema_version_requirements($pu);
-
-   # connect to the database
-   $Self->connect_to_database($pu);
-
-   $pu->setOracleDateFormat('YYYY-MM-DD HH24:MI:SS');
 
    # get the algorithm
    $Run && $Self->findAlgorithm($pu);
@@ -1072,7 +1075,7 @@ sub connect_to_database {
 
    $PlugIn->initDb(new GUS::ObjRelP::DbiDatabase($dbiDsn,
                                                  $login,$password,
-                                                 $PlugIn->getArg('sqlVerbose'),0,1,
+                                                 0,0,1,
                                                  $core,
                                                  $oraDfltRbs));
    # return self.

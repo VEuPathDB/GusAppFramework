@@ -102,7 +102,7 @@ sub checkArgs {
       my @valueList = $arg->{isList}? @{$arg->{value}} : ($arg->{value});
 
       foreach my $value (@valueList) {
-	$problem = $arg->checkValue($value);
+	$problem = $arg->checkValue($value, $plugin);
 	$problem = $arg->runConstraintFunc($plugin, $arg->getValue()) unless $problem;
 	last if $problem;
       }

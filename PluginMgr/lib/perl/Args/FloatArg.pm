@@ -37,8 +37,10 @@ sub getPrimativeType {
 }
 
 sub checkValue {
-  my ($self, $value) = @_;
-  my $problem;
+  my ($self, $value, $plugin) = @_;
+  my $problem = undef;
+  $problem = "'$value' is not a valid float" 
+    if ($value && $value !~ /\d+(\.\d+)?/);
   return $problem;
 }
 
