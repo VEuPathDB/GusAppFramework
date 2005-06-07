@@ -62,6 +62,7 @@ sub formatLongPod {
   $s .= ">" unless $self->{isList};
   $s .= " (Required)" if $self->{reqd};
   $s .= "\n\n";
+  $s .= "Allowed values: $self->{enum}\n\n" if $self->{enum};
   $s .= "=over 4\n\n";
   $s .= "$self->{descr}\n\n";
   my $extraLine;
@@ -123,7 +124,7 @@ sub _getStandardAttrs {
   return @a
 }
 
-# will be overwritten
+# will be overridden.
 sub getAttrs {
   return ();
 }

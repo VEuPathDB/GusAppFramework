@@ -36,7 +36,7 @@ sub getPrimativeType {
 }
 
 sub checkValue {
-  my ($self, $value) = @_;
+  my ($self, $value, $plugin) = @_;
   my $problem;
   $problem = "must be in the form: 'schema::table'" unless $value =~ /\w+::\w+/;
 

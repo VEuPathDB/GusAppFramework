@@ -2,7 +2,7 @@ package GUS::PluginMgr::Plugin;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(stringArg booleanArg fileArg globArg integerArg floatArg tableNameArg);
+@EXPORT = qw(stringArg booleanArg fileArg integerArg floatArg globArg tableNameArg enumArg controlledVocabMapArg);
 
 use strict 'vars';
 
@@ -16,11 +16,12 @@ use GUS::Common::GusConfig;
 use GUS::PluginMgr::Args::StringArg;
 use GUS::PluginMgr::Args::BooleanArg;
 use GUS::PluginMgr::Args::FileArg;
+use GUS::PluginMgr::Args::EnumArg;
 use GUS::PluginMgr::Args::GlobArg;
 use GUS::PluginMgr::Args::IntegerArg;
 use GUS::PluginMgr::Args::TableNameArg;
 use GUS::PluginMgr::Args::FloatArg;
-use GUS::PluginMgr::Args::Arg;
+use GUS::PluginMgr::Args::ControlledVocabArg;
 use GUS::PluginMgr::Args::Arg;
 
 use GUS::Model::Core::DatabaseInfo;
@@ -384,26 +385,6 @@ B<Return type:> C<string>
 =cut
 sub getRevisionNotes       { $_[0]->{revisionNotes} }
 
-=item C<getEasyCspOptions()>
-
-Get the plugin's EasyCsp options.  This value is set by the
-C<initialize> method.
-
-B<Return type:> C<string>
-
-=cut
-sub getEasyCspOptions { 
-  my ($self) = @_;
-  if ($self->{argsDeclaration} && !$self->{easyCspOptions}) {
-    $self->{easyCspOptions} = {};
-    foreach my $arg (@{$self->{argsDeclaration}}) {
-      $self->{easyCspOptions}->{$arg->getName} = $arg->getEasyCsp();
-    }
-  }
-
-  return $self->{easyCspOptions};
-}
-
 =item C<getArgsDeclaration()>
 
 Get the plugin's argument declaration.  This value is set by the
@@ -432,17 +413,6 @@ B<Return type:> C<string>
 
 =cut
 sub getFile       { $_[0]->{__gus__plugin__FILE} }
-
-=item C<getArgs()>
-
-Get the plugin's command line arguments.  To access these within the
-plugin, use: C<< $self->getArgs()->{arg_name} >>.
-
-B<Return type:> Hash reference
-
-=cut
-sub getArgs        { $_[0]->{__gus__plugin__cla} }
-
 
 =item C<getArg($arg_name)>
 
@@ -696,7 +666,7 @@ Whether the file must exist
 
 =item * format (string)
 
-The a description of the file's format
+A description of the file's format
 
 B<Return type:> C<GUS::PluginMgr::Args::FileArg>
 
@@ -705,6 +675,60 @@ B<Return type:> C<GUS::PluginMgr::Args::FileArg>
 sub fileArg {
   my ($paramsHashRef) = @_;
   return GUS::PluginMgr::Args::FileArg->new($paramsHashRef);
+}
+
+
+=item C<enumArg($argDescriptorHashRef)>
+
+Construct an enum argument declaration.
+
+B<Parameters>
+
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also
+
+over 4
+
+=item * enum (a comma delimited list of terms)
+
+The allowed values for this arugment
+
+B<Return type:> C<GUS::PluginMgr::Args::EnumArg>
+
+=cut
+
+sub enumArg {
+  my ($paramsHashRef) = @_;
+  return GUS::PluginMgr::Args::EnumArg->new($paramsHashRef);
+}
+
+=item C<enumArg($argDescriptorHashRef)>
+
+Construct a controlled vocab map argument declaration.  The value for this argument is a file containing a mapping from an input set of terms to a set of terms in a GUS controlled vocabulary table (such as SRes.ReviewStatus).  The value passed to the plugin is that vocabulary in hash form, with the key being the input term and the value being the GUS term.  If any GUS term in the file is not found in the database table, an error is thrown.  This is used for application or site specific CVs, not for stable standards.  It is intended to provide a flexible way for a plugin to use a CV developed in-house.
+
+B<Parameters>
+
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also
+
+over 4
+
+=item * table (a table name in SRes.ReviewStatus format)
+
+The table in GUS in which this CV is stored
+
+=item * primaryKeyColumn (string)
+
+The column in that table that holds its primary key
+
+=item * termColumn (string)
+
+The column in that table that holds the CV term name
+
+B<Return type:> C<GUS::PluginMgr::Args::ControlledVocabArg>
+
+=cut
+sub controlledVocabMapArg {
+  my ($paramsHashRef) = @_;
+  return GUS::PluginMgr::Args::ControlledVocabArg->new($paramsHashRef);
 }
 
 # ----------------------------------------------------------------------
@@ -1415,6 +1439,30 @@ sub sql_translate {
 
 =over 4
 
+=item C<getEasyCspOptions()>
+
+Replaced by getArgsDeclaration()
+
+=cut
+sub getEasyCspOptions { 
+  my ($self) = @_;
+  if ($self->{argsDeclaration} && !$self->{easyCspOptions}) {
+    $self->{easyCspOptions} = {};
+    foreach my $arg (@{$self->{argsDeclaration}}) {
+      $self->{easyCspOptions}->{$arg->getName} = $arg->getEasyCsp();
+    }
+  }
+
+  return $self->{easyCspOptions};
+}
+
+=item C<getArgs()>
+
+Replaced by getArg()
+
+=cut
+sub getArgs        { $_[0]->{__gus__plugin__cla} }
+
 =item C<getSelfInv()>
 
 Replaced by C<getAlgInvocation>
@@ -1424,7 +1472,7 @@ sub getSelfInv    { $_[0]->getAlgInvocation(); }
 
 =item C<getCla()>
 
-Replaced by C<getArgs>
+Replaced by C<getArg>
 
 =cut
 sub getCla        { $_[0]->getArgs(); }

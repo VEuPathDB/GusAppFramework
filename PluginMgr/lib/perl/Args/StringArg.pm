@@ -37,7 +37,7 @@ sub getPrimativeType {
 }
 
 sub checkValue {
-  my ($self, $value) = @_;
+  my ($self, $value, $plugin) = @_;
   my $problem;
   return $problem;
 }
