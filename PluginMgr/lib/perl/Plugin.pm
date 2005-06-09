@@ -202,10 +202,7 @@ methods which construct and return these objects.
 
 =item * revisionNotes (string)
 
-An explanation of what is new in this revision of the plugin.  This
-value is written into the description field of the
-Core.AlgorithmImplementation table when the plugin's registration is
-updated (by using ga +update).
+Deprecated.  No longer useful.
 
 =item * easyCspOptions 
 
@@ -220,8 +217,7 @@ This has been B<deprecated>.  It is replaced by C<documentation>
 sub initialize {
   my ($self, $argsHashRef) = @_;
 
-  my @args = ('requiredDbVersion', 'cvsRevision', 'cvsTag', 'name',
-	      'revisionNotes');
+  my @args = ('requiredDbVersion', 'cvsRevision', 'cvsTag', 'name');
 
   foreach my $arg (@args) {
     $self->_failinit($arg) unless exists $argsHashRef->{$arg};
@@ -374,16 +370,6 @@ sub getCVSTag {
   $self->{cvsTag} =~ /Name: (.*)\$/ || die "Illegal cvs tag";
   return $1;
 }
-
-=item C<getRevisionNotes()>
-
-Get the plugin's revision notes.  This value is set by the
-C<initialize> method.
-
-B<Return type:> C<string>
-
-=cut
-sub getRevisionNotes       { $_[0]->{revisionNotes} }
 
 =item C<getArgsDeclaration()>
 
@@ -1182,6 +1168,8 @@ sub logData {
 Log to STDERR the id for the AlgorithmInvocation that represents this
 run of the plugin in the database.
 
+ Note:  this method is called automatically by ga, so you should not call it.
+
 =cut
 sub logAlgInvocationId {
   my $Self = shift;
@@ -1193,6 +1181,8 @@ sub logAlgInvocationId {
 
 Log to STDERR the state of the commit flag for this run of the plugin.
 
+ Note:  this method is called automatically by ga, so you should not call it.
+
 =cut
 sub logCommit {
   my $Self = shift;
@@ -1203,6 +1193,8 @@ sub logCommit {
 =item C<logArgs()>
 
 Log to STDERR the argument values used for this run of the plugin.
+
+ Note:  this method is called automatically by ga, so you should not call it.
 
 =cut
 sub logArgs {
@@ -1438,6 +1430,13 @@ sub sql_translate {
 =head2 Deprecated
 
 =over 4
+
+=item C<getRevisionNotes()>
+
+Not replaced with any method.  Functionality not needed.
+
+=cut
+sub getRevisionNotes       { $_[0]->{revisionNotes} }
 
 =item C<getEasyCspOptions()>
 
