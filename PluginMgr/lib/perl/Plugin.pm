@@ -110,14 +110,6 @@ particular, it must be: C<'$Revision$'>. CVS will substitute in
 the revision number, so that, after substitution, the value will be,
 eg, C<'$Revision$>'
 
-=item * cvsTag (string)
-
-The CVS tag (ie, the software release it is from) of the plugin.  The
-value for this key I<must> be specified using the CVS magic
-substitution format.  In particular, it must be: C<'$Name$'>. CVS
-will substitute in the tag, so that, after substitution, the value
-will be, eg, C<'$Name$>'
-
 =item * name (string)
 
 The name of the plugin.  This value for this key I<must> be specified
@@ -217,7 +209,7 @@ This has been B<deprecated>.  It is replaced by C<documentation>
 sub initialize {
   my ($self, $argsHashRef) = @_;
 
-  my @args = ('requiredDbVersion', 'cvsRevision', 'cvsTag', 'name');
+  my @args = ('requiredDbVersion', 'cvsRevision', 'name');
 
   foreach my $arg (@args) {
     $self->_failinit($arg) unless exists $argsHashRef->{$arg};
@@ -356,20 +348,6 @@ B<Return type:> C<string>
 =cut
 
 sub getResultDescr{ $_[0]->{resultDescr}}
-
-=item C<getCVSTag()>
-
-Get the plugin's CVS tag.  This value is set by the C<initialize>
-method.
-
-B<Return type:> C<string>
-
-=cut
-sub getCVSTag {
-  my ($self) = @_;
-  $self->{cvsTag} =~ /Name: (.*)\$/ || die "Illegal cvs tag";
-  return $1;
-}
 
 =item C<getArgsDeclaration()>
 

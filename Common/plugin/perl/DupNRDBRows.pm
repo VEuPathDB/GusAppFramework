@@ -76,7 +76,6 @@ PLUGIN_NOTES
 
   $self->initialize({requiredDbVersion => {},
 		     cvsRevision => '$Revision$', # cvs fills this in!
-		     cvsTag => '$Name$', # cvs fills this in!
 		     name => ref($self),
 		     revisionNotes => 'make consistent with GUS 3.0',
 		     argsDeclaration => $argsDeclaration,

@@ -163,7 +163,6 @@ sub new {
 
     $self->initialize({requiredDbVersion => {},
 		       cvsRevision => '$Revision$', # cvs fills this in!
-		     cvsTag => '$Name$', # cvs fills this in!
 		       name => ref($self),
 		       revisionNotes => 'refactored and optomized version; same functionality',
 		       argsDeclaration => $argsDeclaration,

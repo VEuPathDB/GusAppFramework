@@ -75,7 +75,6 @@ sub new {
   bless($self, $class);
   $self->initialize({requiredDbVersion => {},
 		     cvsRevision => '$Revision$ ', # keyword filled in by cvs
-		     cvsTag => '$Name$ ',             # keyword filled in by cvs
 		     name => ref($self),
 		     revisionNotes => 'first pass of plugin for GUS 3.0',
 		     easyCspOptions => $easycsp,

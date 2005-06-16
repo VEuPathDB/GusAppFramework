@@ -29,7 +29,6 @@ sub new {
    $self->initialize
    ({ requiredDbVersion => {},
       cvsRevision       => ' $Revision$ ',
-      cvsTag            => ' $Name$ ',
       name              => ref($self),
 
       # just expand
