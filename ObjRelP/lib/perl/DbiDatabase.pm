@@ -65,7 +65,7 @@ sub new {
 sub getDbHandle {
   my ($self) = @_;
   if ( ! exists $self->{'dbh'} ) { 
-    $self->{'dbh'} = $self->makeNewHandle($self->getDSN() =~ /sybase/i); 
+    $self->{'dbh'} = $self->makeNewHandle(0);
     $self->{'dbh'}->{'LongReadLen'} = 4000000;
   }
   return $self->{'dbh'};
@@ -103,16 +103,7 @@ sub getNoInsert { my ($self) = @_; return $self->{'noInsert'}; }
 sub setDefaultOracleRollbackSegment { my ($self, $rs) = @_; $self->{'defaultOracleRollbackSegment'} = $rs; }
 sub getDefaultOracleRollbackSegment { my ($self) = @_; return $self->{'defaultOracleRollbackSegment'}; }
 sub setDbName { my ($self,$dbn) = @_; $self->{'dbname'} = $dbn; }
-sub getDbName { 
-  my ($self,$dbh) = @_;
-  if (!$self->{'dbname'} && $self->getDSN =~ /sybase/i) {
-    $dbh = $dbh ? $dbh :  $self->getDbHandle();
-    #NOTE: this will have to be different for Oracle...perhaps when
-    #      Oracle is installed can make generic...SJD
-    $self->{'dbname'} = $dbh->selectrow_array('select db_name()');
-  }
-  return $self->{'dbname'};
-}
+sub getDbName {  my ($self,$dbh) = @_;  return $self->{'dbname'}; }
 
 sub setCoreName { my($self,$val) = @_; $self->{coreName} = $val; }
 sub getCoreName { my($self) = @_; return $self->{coreName}; }
@@ -189,18 +180,19 @@ sub getTable {
   $className = $self->getFullTableClassName($className);
 
   if ( ! $self->{'tables'}->{$className} ) {
-    my ($sc,$tb);
-    if($dbitable || $self->getUseDbiTableOnly()){
-      $self->{'tables'}->{$className} =
-	GUS::ObjRelP::DbiTable->new($className,$self);
-    }else{
-      my $tableName = $className . "_Table";
-      my $evalstmt = "require $tableName";
-      print STDERR "$evalstmt\n" if $debug;
-      eval($evalstmt);
-      $self->{'tables'}->{$className} = 
-	$tableName->new($className,$self);
-    }
+      my ($sc,$tb);
+      if($dbitable || $self->getUseDbiTableOnly()){
+	  $self->{'tables'}->{$className} =
+	      GUS::ObjRelP::DbiTable->new($className,$self);
+      }else{
+	  my $tableName = $className . "_Table";
+	  my $evalstmt = "require $tableName";
+	  print STDERR "$evalstmt\n" if $debug;
+	  print STDERR "dbitable: '$dbitable'\n" if $debug;
+	  eval($evalstmt);
+	  $self->{'tables'}->{$className} = 
+	      $tableName->new($className,$self);
+      }
   }
   return $self->{'tables'}->{$className};
 }
@@ -208,32 +200,6 @@ sub getTable {
 sub getDateFunction {
   my($self) = @_;
 	return $self->getDbPlatform->dateFunction();
-}
-
-
-sub begin_tran { 
-  my ($self) = @_;
-  if ($self->getDSN() =~ /Sybase/) {
-    $self->getDbHandle()->do('BEGIN TRAN'); 
-  }
-}
-
-sub commit_tran { 
-  my ($self) = @_; 
-  if ($self->getDSN() =~ /Sybase/) {
-    $self->getDbHandle()->do('COMMIT TRAN'); 
-  } else {
-    $self->getDbHandle()->commit();
-  }
-}
-
-sub rollback_tran { 
-  my ($self) = @_; 
-  if ($self->getDSN() =~ /Sybase/) {
-    $self->getDbHandle()->do('ROLLBACK TRAN'); 
-  } else {
-    $self->getDbHandle()->rollback();
-  }
 }
 
 sub tableHasSequenceId {
@@ -467,25 +433,14 @@ sub manageTransaction {
   if ($task =~ /begin/i) {
     $self->{transaction_id}++;  ##increment the transction_id for versioning purposes.
     ##oracle does not need this if autocommit == 0
-    if ($self->getDSN() =~ /sybase/i) {
-      $self->getDbHandle()->begin_tran();
-    }
     $self->getDbHandle()->setRollBack(0); 
   } elsif ($task =~ /commit/i) {
     if ($self->getCommitState() && !$self->getDbHandle()->getRollBack()) {
-      if ($self->getDSN() =~ /sybase/i) {
-        $self->getDbHandle()->commit_tran();
-      } else {
         $self->getDbHandle()->commit();
-      }
       $self->_setOracleRollbackSegment($self->getDbHandle());
     } elsif ($self->getDbHandle()->getRollBack() ) {
       print STDERR "ERROR: submit failed...rollBack = 1...being rolled back\n";
-      if ($self->getDSN() =~ /sybase/i) {
-        $self->getDbHandle()->rollback_tran();
-      } else {
         $self->getDbHandle()->rollback();
-      }
       $self->_setOracleRollbackSegment($self->getDbHandle());
       return 0;                 ##will cause the return value of submit to be 0
     }

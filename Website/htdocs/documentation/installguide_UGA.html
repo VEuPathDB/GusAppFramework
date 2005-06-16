@@ -994,7 +994,7 @@ $ga +meta +create
 
 <p>
 Help can be viewed by e.g.<br>
-ga GUS::Common::Plugin::LoadTaxon --help
+ga GUS::Supported::Plugin::LoadTaxon --help
 
 </p><p>
 Debugging can be done using --debug, --verbose or --veryVerbose options
@@ -1003,12 +1003,12 @@ and not using --commit option. By default --commit is set as off. </p><ol>
 
   </li><li> Download taxonomy file
 taxdump.tar.gz from ftp://ftp.ncbi.nih.gov/pub/taxonomy/
-b)ga +create GUS::Common::Plugin::LoadTaxon --commit c)ga
-GUS::Common::Plugin::LoadTaxon --gencode=/file-path/gencode.dmp
+b)ga +create GUS::Supported::Plugin::LoadTaxon --commit c)ga
+GUS::Supported::Plugin::LoadTaxon --gencode=/file-path/gencode.dmp
 --names=/file-path/names.dmp --nodes=/file-path/nodes.dmp --commit
 </li></ol>
 <p>
-NOTE: use all the three options of ga GUS::Common::Plugin::LoadTaxon --gencode, --names and --nodes at the same time/together
+NOTE: use all the three options of ga GUS::Supported::Plugin::LoadTaxon --gencode, --names and --nodes at the same time/together
 
 </p><p>
 2) GenBank
@@ -1016,7 +1016,7 @@ NOTE: use all the three options of ga GUS::Common::Plugin::LoadTaxon --gencode, 
 </p><ol>
   <li> Download nucleotide data from GenBank http://www.ncbi.nlm.nih.gov/Entrez/
 and for example say typed query is "trypanosoma cruzi", set limit without EST and then save the files.
-b)ga +create GUS::Common::Plugin::GBParser --commit 
+b)ga +create GUS::Supported::Plugin::GBParser --commit 
   </li><li>
 For loading GenBank data just needs one entry about the source database
 (e.g. GenBank) in sres.externaldatabase and
@@ -1081,7 +1081,7 @@ single stranded oligonucleotide ',SYSDATE,1,1,1,1,1,0,6,3,2,1);
   <li> Download the three gene ontology files located at
  ftp://ftp.geneontology.org/pub/go/ontology/
  They are named process.ontology, component.ontology, and function.ontology.
-  </li><li> ga +create GUS::Common::Plugin::LoadGoOntology --commit 
+  </li><li> ga +create GUS::Supported::Plugin::LoadGeneOntology --commit 
   </li><li>
 Use --createRelease option when running the plugin to automatically
 generate an External Database Release Id in

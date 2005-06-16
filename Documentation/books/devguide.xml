@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd" [
+<!ENTITY __copyright__e8xhkp98 SYSTEM "../pieces/copyright.xml">
+<!ENTITY __legalnotice__e8xhlkch SYSTEM "../pieces/legalnotice.xml">
+]>
+<book>
+  <title>GUS Developers Guide</title>
+
+  <bookinfo>
+    <date>May 19, 2005</date>
+
+    <releaseinfo>$Id: UsersGuide.xml,v 1.1.2.1 2005/05/05 20:18:59 msaffitz
+    Exp $</releaseinfo>
+
+    <author>
+      <surname>Saffitz</surname>
+
+      <firstname>Michael</firstname>
+
+      <email>msaffitz@pcbi.upenn.edu</email>
+    </author>
+
+    &__copyright__e8xhkp98;
+
+    &__legalnotice__e8xhlkch;
+  </bookinfo>
+
+  <chapter>
+    <title>GUS Development Overview</title>
+
+    <para></para>
+  </chapter>
+
+  <chapter>
+    <title>Developing Plugins</title>
+
+    <sect1>
+      <sect1info>
+        <editor>
+          <surname>Saffitz</surname>
+
+          <firstname>Michael</firstname>
+
+          <email>msaffitz@pcbi.upenn.edu</email>
+        </editor>
+
+        <authorgroup>
+          <author>
+            <surname>Robinson</surname>
+
+            <firstname>Ed</firstname>
+
+            <email>erobinso@uga.edu</email>
+          </author>
+        </authorgroup>
+      </sect1info>
+
+      <title>Plugin Overview</title>
+
+      <para>All GUS Plugins inherit from the common superclass,
+      <computeroutput>GUS::PluginMgr::Plugin</computeroutput>. The Plugin
+      superclass provides important administrative functionality to all
+      plugins, such as handling command line arguments, documentation, error
+      handling, logging, and other functions. Except when noted, all
+      superclass methods are instance methods (i.e. those called in the form
+      <computeroutput>$self-&gt;my_method_name</computeroutput>).</para>
+
+      <para>The Plugin superclass requires that all plugins implement the
+      <computeroutput>new</computeroutput> method. At a minimum, this method
+      must initialize the plugin.</para>
+    </sect1>
+  </chapter>
+</book>

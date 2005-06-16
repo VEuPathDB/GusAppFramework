@@ -47,6 +47,7 @@ sub run {
     my $version = $self->{repositoryEntry}->getVersion();
     my $signalBase = "${resource}_${version}";
 
+
     $self->_handleDatabaseInfo($mgr, $signalBase, $resource, $version);
     $self->_acquire($mgr, $signalBase, $resource, $version);
     $self->_loadData($mgr, $signalBase, $resource, $version);
@@ -60,14 +61,14 @@ sub _handleDatabaseInfo {
   my $dbPluginArgs = "--name \'$self->{extDbName}\' $self->{dbCommit}";
 
   $mgr->runPluginNoCommit("createDb_${signalBase}", 
-			  "GUS::Common::Plugin::InsertNewExternalDatabase",
+			  "GUS::Supported::Plugin::InsertExternalDatabase",
 			  $dbPluginArgs, 
 			  "Inserting/checking external database info for $self->{extDbName}");
   
   my $releasePluginArgs = "--database_name \'$self->{extDbName}\' --database_version \'$self->{extDbRlsVer}\' --description \'$self->{extDbRlsDescrip}\' $self->{dbCommit}";
   
   $mgr->runPluginNoCommit("createRelease_${signalBase}",
-			  "GUS::Common::Plugin::InsertNewExtDbRelease",
+			  "GUS::Supported::Plugin::InsertExternalDatabaseRls",
 			  $releasePluginArgs,
 			  "Inserting/checking external database release for $self->{extDbName} $self->{extDbRlsVer}");
 }
@@ -93,6 +94,7 @@ sub _acquire {
       }
 
       $mgr->endStep("acquire_${signalBase}");
+
     }
 }
 
@@ -101,8 +103,8 @@ sub _loadData {
 
     $self->_validatePluginDbArgs();
 
-    $self->{pluginArgs} =~ s/$DBNAME_MACRO/\"$self->{extDbName}\"/;
-    $self->{pluginArgs} =~ s/$DBVERSION_MACRO/\"$self->{extDbRlsVer}\"/;
+    $self->{pluginArgs} =~ s/$DBNAME_MACRO/\"$self->{extDbName}\"/g;
+    $self->{pluginArgs} =~ s/$DBVERSION_MACRO/\"$self->{extDbRlsVer}\"/g;
 
     ## handle commit ourselves
     $mgr->runPluginNoCommit("load_${signalBase}", $self->{plugin}, 

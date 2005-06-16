@@ -4,6 +4,7 @@ package GUS::ObjRelP::Generator::JavaTableGenerator;
 
 use strict;
 use GUS::ObjRelP::Generator::TableGenerator;
+use GUS::ObjRelP::Generator::GeneratorFunctions;
 
 my $tab = "    ";
 
@@ -184,7 +185,7 @@ sub _getTableAttributeInfo {
 	my $attInfo = $attHash->{$att};
 
 	# convert attribute oracle type to Java type
-	my $javaType = $self->_oracleTypeConverter( $attInfo, $att );
+	my $javaType = oracleTypeConverter( $attInfo, $att );
 	$addTableInfo .= $self->_createJavaTALine($att, $attInfo, $javaType);
     }    
     $output .= $self->_createJavaSetTAInfo($addTableInfo);
@@ -197,62 +198,6 @@ sub _getTableAttributeInfo {
 ####                    Private utility methods                         ####
 ############################################################################
 
-#Take oracle type and return Java equivalent
-sub _oracleTypeConverter {
-    my ($self, $attInfo, $att) = @_;
-    my $newType;
-    my $oraType = $attInfo->{'type'};
-    my $oraPrec = $attInfo->{'prec'};
-    my $oraScale = $attInfo->{'scale'};
-    my $oraLen = $attInfo->{'length'};
-        
-    if ($oraType eq "NUMBER") {
-	if ($oraScale <= 0) {         #integer
-	    if ($oraPrec == 1){
-		$newType .= "Boolean";}
-	    elsif ($oraPrec > 1 && $oraPrec <= 4){
-		$newType .= "Short";}
-	    elsif ($oraPrec > 4 && $oraPrec <= 9){
-		$newType .= "Integer";}
-	    elsif ($oraPrec > 9 && $oraPrec <= 19){
-		$newType .= "Long";}
-	    else {$newType .= "BigDecimal";}
-	}
-	else{                        #fraction
-	    if ($oraScale > 0 && $oraScale <= 7){    
-		$newType .= "Float";}
-	    elsif ($oraScale > 7 && $oraScale <= 16){
-		$newType .= "Double";}
-	    else {$newType .= "BigDecimal";} 
-	}
-    }
-    elsif ($oraType eq "DATE"){
-	if ($oraLen == 7){
-	    $newType .= "Date";}
-	elsif ($oraLen == 6){
-	    $newType .= "Time";}
-	else { $newType .= "Timestamp";}
-    }
-    elsif ($oraType eq "FLOAT"){
-	$newType .= "BigDecimal"}
-
-    elsif ($oraType eq "VARCHAR2" || $oraType eq "CHAR" || $oraType eq "LONG"){ 
-	$newType .= "String";}
-
-    elsif ($oraType eq "CLOB"){
-	$newType .= "Clob";}
-
-    elsif ($oraType eq "BLOB"){
-	$newType .= "Blob";}    
-
-    elsif ($oraType eq "RAW" || $oraType eq "LONGRAW"){
-	$newType .= "byte[]";}
-
-    else {$newType .= "notdefyet";}
-# print STDERR "name is $att type is $oraType, precision is $oraPrec, scale is $oraScale,  length  $oraLen, javatype is $newType\n" ;
-
-    return $newType;
-}
 
 sub _createJavaTALine {
     my ($self, $att, $attInfo, $javaType) = @_; #more?
@@ -268,7 +213,10 @@ sub _createJavaTALine {
     else {$prec = -1;}
     if ($scale){}
     else {$scale = -1;}
-    if ($javaType eq "BigDecimal") {
+    if ($len){}
+    else {$len = -1;}
+    
+   if ($javaType eq "BigDecimal") {
 	$line .= "	    ";
 	$line .= "tableAtts.put(\"$att\", new GUSTableAttribute(\"$att\", \"$oraType\", \"java.math.$javaType\", $prec, $len, $scale, false, false) );\n";
     } 

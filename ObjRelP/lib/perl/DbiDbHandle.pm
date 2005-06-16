@@ -159,27 +159,6 @@ sub sqlExec {
   return 1; 
 }
 
-#SJD begin_tran and commit_tran are for use with Sybase only. 
-#Oracle will only use commit, a DBI method. NOTE that if using
-#Sybase will need to change commit to commit_tran.  Should 
-#really just handle all this here, so can have consistent 
-#code - only need to know here where sybase or oracle. Add to to
-#do list!
-sub begin_tran { 
-  my ($dbh) = @_; 
-  $dbh->do("BEGIN TRAN"); 
-}
-
-sub commit_tran { 
-my ($dbh) = @_; 
-$dbh->do("COMMIT TRAN");
-} 
-
-sub rollback_tran { 
-my ($dbh) = @_; 
-$dbh->do("ROLLBACK TRAN");
-}
-
 sub death {
   my ($dbh, $msg) = @_; 
   if ($exitOnFailure) {

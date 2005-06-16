@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd" [
+<!ENTITY __copyright__e8xhhjby SYSTEM "../pieces/copyright.xml">
+<!ENTITY __legalnotice__e8xhi8xh SYSTEM "../pieces/legalnotice.xml">
+]>
+<book>
+  <title>GUS Users Guide</title>
+
+  <bookinfo>
+    <date>May 19, 2005</date>
+
+    <releaseinfo>$Id: UsersGuide.xml,v 1.1.2.1 2005/05/05 20:18:59 msaffitz
+    Exp $</releaseinfo>
+
+    <author>
+      <surname>Saffitz</surname>
+
+      <firstname>Michael</firstname>
+
+      <email>msaffitz@pcbi.upenn.edu</email>
+    </author>
+
+    &__copyright__e8xhhjby;
+
+    &__legalnotice__e8xhi8xh;
+  </bookinfo>
+
+  <appendix>
+    <title>Troubleshooting and Getting Help</title>
+
+    <para>log4j debug</para>
+  </appendix>
+
+  <appendix>
+    <title>Upgrading GUS</title>
+
+    <sect1>
+      <title>GUS 3.0 to 3.5</title>
+
+      <para></para>
+    </sect1>
+  </appendix>
+</book>

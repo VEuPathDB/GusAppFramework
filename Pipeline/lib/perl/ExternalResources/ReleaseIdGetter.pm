@@ -4,7 +4,7 @@ use strict;
 
 use Getopt::Long;
 use GUS::ObjRelP::DbiDatabase;
-use GUS::Common::GusConfig;
+use GUS::Supported::GusConfig;
 use GUS::Pipeline::ExternalResources::Loader;
 use GUS::Pipeline::ExternalResources::LoaderStep;
 use XML::Simple;
@@ -27,7 +27,7 @@ sub new {
 sub connectToDatabase{
  
     my ($self) = @_;
-    my $gusconfig = GUS::Common::GusConfig->new();
+    my $gusconfig = GUS::Supported::GusConfig->new();
     
     my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					    $gusconfig->getReadOnlyDatabaseLogin(),

@@ -1,4 +1,5 @@
 
+
 package GUS::PluginMgr::GusApplication;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
@@ -31,10 +32,9 @@ sub new {
 
    my $self = bless {}, $Class;
 
-   $self->initialize({requiredDbVersion => { Core => '3' },
+   $self->initialize({requiredDbVersion => '3.5',
                       cvsRevision       => '$Revision$',
                       name              => ref($self),
-                      revisionNotes     => 'update for GUS 3.0',
                       easyCspOptions    => {},
                       usage             => ""
                      });
@@ -229,13 +229,13 @@ ga [<mode>] <plugin-class-name> [<options>]
 
 For example,
 
-  ga GUS::Common::Plugin::UpdateGusFromXML --file my_new_data.xml --commit
+  ga GUS::Supported::Plugin::InsertGusXml --file my_new_data.xml --commit
 
 The legal options depend on the mode and plugin.  To get help use a command like this:
 
   ga +update --help
 
-  ga GUS::Common::Plugin::UpdateGusFromXML --help
+  ga GUS::Supported::Plugin::InsertGusXml --help
 
 USAGE
 
@@ -264,7 +264,7 @@ sub getConfig {
 
    if (!$self->{config}) {
       my $cla = $self->getArgs();
-      $self->{config} = GUS::Common::GusConfig->new($cla->{gusconfigfile});
+      $self->{config} = GUS::Supported::GusConfig->new($cla->{gusconfigfile});
    }
 
    $self->{config};
@@ -312,7 +312,7 @@ sub doMajorMode_Meta {
    $Self->connect_to_database($Self);
 
    # what versions does the plugin want?
-   $Self->_check_schema_version_requirements($Self);
+   $Self->_check_database_version_requirements($Self);
 
    # create/find a Core.Algorithm, Core.AlgorithmImplementation, and Core.AlgorithmInvocation
    my $alg_go = GUS::Model::Core::Algorithm
@@ -348,7 +348,6 @@ sub doMajorMode_Meta {
    my $now = $Self->getDb->getDateFunction();
    my $inv_go = GUS::Model::Core::AlgorithmInvocation->new({ start_time  => $now,
                                                              end_time    => $now,
-                                                             machine_id  => 0,
                                                              cpus_used   => 1,
                                                              result      => 'meta',
                                                            });
@@ -429,15 +428,15 @@ sub doMajorMode_RunOrReport {
       $argsHash = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage) || die "\n";
    }
 
-   $pu->getDb()->setVerbose($Self->{sqlVerbose});
-
    # what versions does the plugin want?
    $Self->connect_to_database($Self);
+
+   $Self->_check_database_version_requirements($pu);
 
    $pu->initArgs($argsHash);
    $Self->initArgs($argsHash);
 
-   $Self->_check_schema_version_requirements($pu);
+   $pu->getDb()->setVerbose($Self->getArg('sqlVerbose'));
 
    # get the algorithm
    $Run && $Self->findAlgorithm($pu);
@@ -695,7 +694,7 @@ sub create_or_update_implementation {
    $pu->initArgs($cla);
 
    # what versions does the plugin want?
-   $Self->_check_schema_version_requirements($pu);
+   $Self->_check_database_version_requirements($pu);
 
    # make an algorithminvocation for self
    # ......................................................................
@@ -704,7 +703,6 @@ sub create_or_update_implementation {
    ->new({ algorithm_implementation_id => $Self->getImplementation->getId,
            start_time                  => $Self->getDb->getDateFunction(),
            end_time                    => $Self->getDb->getDateFunction(),
-           machine_id                  => 0,
            cpus_used                   => 1,
            cpu_time                    => 0,
            result                      => 'pending',
@@ -955,7 +953,6 @@ sub openInvocation {
           algorithm_implementation_id => $PlugIn->getImplementation->getId,
           start_time                  => $PlugIn->getDb->getDateFunction(),
           end_time                    => $PlugIn->getDb->getDateFunction(),
-          machine_id                  => 0,
           cpus_used                   => 1,
           cpu_time                    => 0,
           result                      => 'pending',
@@ -1090,37 +1087,24 @@ sub disconnect_from_database {
 # Private functions
 # ----------------------------------------------------------------------
 
-sub _check_schema_version_requirements {
-   my $Self = shift;
-   my $PlugIn = shift;          # the plugin
+sub _check_database_version_requirements {
+    my $Self = shift;
+    my $PlugIn = shift;
 
-   my $ver_h = $PlugIn->getRequiredDbVersion();
-   my $sql   = "select count(database_id) from Core.DatabaseInfo where name = ? and version = ?";
-   my $sh    = $Self->getQueryHandle->prepare($sql);
+    my $version = $PlugIn->getRequiredDbVersion();
+    my $sql     = "select max(version) from Core.DatabaseVersion";
+    my $sh      = $Self->getQueryHandle->prepare($sql);
+    
+    $sh->execute();
+    my $dbVersion;
+    ($dbVersion) = $sh->fetchrow_array;
+    if ( $dbVersion == $version ) {
+	return;
+    }
 
-   my @bad_ones;
-
-   foreach my $schema (sort keys %$ver_h) {
-      $sh->execute($schema, $ver_h->{$schema});
-      my ($count_n) = $sh->fetchrow_array;
-      $sh->finish;
-      if ($count_n < 1) {
-         push(@bad_ones, $schema);
-      }
-   }
-
-   # let the user know what went wrong.
-   if (scalar @bad_ones) {
-      my $errMsg = 'Actual version does not match required version for these schemas:' . join (" ", @bad_ones) . "\n";
-
-      # report actual and requested versions
-      my $vers = $Self->sql_get_as_hash_refs('select name, version from Core.DatabaseInfo order by name');
-      $errMsg .= "\t#NAME\t#DB-VER\t#RQ-VER\n";
-      foreach my $schema (@$vers) {
-         $errMsg .= "\t$schema->{NAME}\t$schema->{VERSION}\t$ver_h->{$schema->{NAME}}\n";
-      }
-      $Self->error($errMsg);
-   }
+    my $errMsg = "Database version does not match required version for Plugin.\n";
+    $errMsg .= "Database Version: $dbVersion    Plugin Version: $version\n";
+    $Self->error($errMsg);
 }
 
 sub getStandardArgsDeclaration {

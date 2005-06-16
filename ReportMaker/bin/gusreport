@@ -6,7 +6,7 @@ use lib "$ENV{GUS_HOME}/lib/perl";
 
 use Getopt::Long;
 use GUS::ObjRelP::DbiDatabase;
-use GUS::Common::GusConfig;
+use GUS::Supported::GusConfig;
 
 my ($verbose, $sql, $dbLogin, $dbPassword, $configModule, $tempTableName,
     $requestedCols, $listColumns, $mappedToName, 
@@ -48,7 +48,7 @@ my @requestedColumnsList = split(/,\s*/, $requestedCols);
 
 $report->validateColumnsRequest(\@requestedColumnsList);
 
-my $gusconfig = GUS::Common::GusConfig->new();
+my $gusconfig = GUS::Supported::GusConfig->new();
 
 $dbLogin = $gusconfig->getDatabaseLogin() unless $dbLogin;
 $dbPassword = $gusconfig->getDatabasePassword() unless $dbPassword;

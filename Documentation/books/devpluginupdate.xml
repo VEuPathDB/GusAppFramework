@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD Simplified DocBook XML V1.0//EN"
+"http://www.oasis-open.org/docbook/xml/simple/1.0/sdocbook.dtd">
+<article>
+  <title>Updating Plugins for GUS 3.5</title>
+
+  <section>
+    <title>Introduction</title>
+
+    <para>This guide provides details and instructions for updating GUS
+    plugins to be compatible with the 3.5 release. To update a plugin for GUS
+    3.5, you should be familiar with GUS, the plugin architecture, and the
+    particular biological domain that the plugin represents.</para>
+
+    <para>GUS 3.5 will make the distinction between "supported" and
+    "community" plugins. Supported plugins have been reviewed and deemed to be
+    of sufficient quality and applicability to be included in the GUS
+    distribution. Community plugins will be available as a separate download
+    from the GUS release, and will not be supported at the same level as the
+    plugins included with GUS. 24 plugins have been identified as "supported"
+    for GUS 3.5; these plugins are listed below.</para>
+
+    <para>To update plugins for GUS 3.5, you should first install the GUS 3.5
+    CVS Branch. Once installed, it is highly recommended that you use CBIL's
+    dedicated GUS 3.5 plugin database for testing and development. You should
+    contact <email>msaffitz@pcbi.upenn.edu</email> to request an account
+    (please include the IP address you'll be connecting from in your email).
+    You should then identify a plugin you'd like to update from the list
+    below, confirm that it has not yet been updated by reviewing the contents
+    of the plugin and cvs logs, and update it. Once updated, you should commit
+    to cvs as soon as possible and test the plugin to ensure that it is
+    functioning properly.</para>
+
+    <para>Before continuing, please review the following notes and
+    warnings:</para>
+
+    <para><important>
+        <para>All GUS 3.5 Development work <emphasis>must</emphasis> be done
+        in the 3.5 CVS branches</para>
+      </important><important>
+        <para>When updating plugins, you should commit to cvs frequently,
+        using detailed log messages that include details on your overall
+        status on updating the plugin.</para>
+      </important></para>
+
+    <itemizedlist>
+      <title>GUS 3.5 Supported Plugins</title>
+
+      <listitem>
+        <para>InsertNewExtDbRelease.pm -- (Updated by Jennifer Dommer,
+        CBIL)</para>
+      </listitem>
+
+      <listitem>
+        <para>InsertNewExternalDatabase.pm -- (Updated by Jennifer Dommer,
+        CBIL)</para>
+      </listitem>
+
+      <listitem>
+        <para>InsertNewExternalSequences.pm</para>
+      </listitem>
+
+      <listitem>
+        <para>LoadTaxon.pm -- (Updated by Debbie Pinney, CBIL)</para>
+      </listitem>
+
+      <listitem>
+        <para>SubmitRow.pm -- (Updated by Mike Saffitz, CBIL)</para>
+      </listitem>
+
+      <listitem>
+        <para>UpdateGusFromXML.pm -- (Updated by Mike Saffitz, CBIL)</para>
+      </listitem>
+
+      <listitem>
+        <para>LoadNRDB.pm -- (Will be updated by Jennifer Dommer, CBIL)</para>
+      </listitem>
+
+      <listitem>
+        <para>LoadBlastSimFast.pm -- (Will be updated by Debbie Pinney,
+        CBIL)</para>
+      </listitem>
+
+      <listitem>
+        <para>LoadPfam.pm</para>
+      </listitem>
+
+      <listitem>
+        <para>LoadPhylogeneticProfiles.pm</para>
+      </listitem>
+
+      <listitem>
+        <para>Load2aryStruct.pm</para>
+      </listitem>
+
+      <listitem>
+        <para>LoadEnzymeDatabase.pm</para>
+      </listitem>
+
+      <listitem>
+        <para>dbEST.pm -- (Will be updated by Debbie Pinney, CBIL)</para>
+      </listitem>
+
+      <listitem>
+        <para>LoadAnnotated.pm</para>
+      </listitem>
+
+      <listitem>
+        <para>LoadSequenceOntology.pm</para>
+      </listitem>
+
+      <listitem>
+        <para>LoadGeneOntology.pm</para>
+      </listitem>
+
+      <listitem>
+        <para>LoadGoAssociation.pm</para>
+      </listitem>
+
+      <listitem>
+        <para>AnalysisResultLoader.pm -- (Will be updated by CBIL RAD
+        team)</para>
+      </listitem>
+
+      <listitem>
+        <para>ArrayLoader.pm -- (Will be updated by CBIL RAD team)</para>
+      </listitem>
+
+      <listitem>
+        <para>ArrayResultLoader.pm -- (Will be updated by CBIL RAD
+        team)</para>
+      </listitem>
+
+      <listitem>
+        <para>AssayControlLoader.pm -- (Will be updated by CBIL RAD
+        team)</para>
+      </listitem>
+
+      <listitem>
+        <para>ControlLoader.pm -- (Will be updated by CBIL RAD team)</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Installing the GUS 3.5 CVS Branch</title>
+
+    <note>
+      <para>You must have read/write access to the GUS cvs repository before
+      continuing.</para>
+    </note>
+
+    <itemizedlist>
+      <listitem>
+        <para>Create a directory to hold GUS 3.5:<screen>$ mkdir ~/gus35
+$ mkdir ~/gus35/gus_home
+$ mkdir ~/gus35/project_home</screen></para>
+      </listitem>
+
+      <listitem>
+        <para>Configure your environment:<screen>export GUS_HOME=/home/YOUR_USERNAME/gus35/gus_home
+export GUS_CONFIG_FILE=/home/YOUR_USERNAME/gus35/gus.properties
+export PROJECT_HOME=/home/YOUR_USERNAME/gus35/project_home</screen>and set
+        <computeroutput>PERL5LIB</computeroutput>,
+        <computeroutput>PATH</computeroutput> as you normally would (i.e.
+        referencing <computeroutput>$GUS_HOME</computeroutput>)</para>
+      </listitem>
+
+      <listitem>
+        <para>Checkout GUS from cvs:<screen>cvs -d sanger co -r rel_3_5 install
+cvs -d sanger co -r rel_3_5_branch GUS
+cvs -d /files/cbil/cvs/CBIL co CBIL</screen><note>
+            <para>There have been no 3.5 changes in the CBIL component. If you
+            are not at CBIL, this may be downloaded as a tar.gz file over the
+            web. See the GUS website for further details.</para>
+          </note></para>
+      </listitem>
+
+      <listitem>
+        <para>Configure GUS:</para>
+
+        <para><note>
+            <para>All config files, including
+            <computeroutput>$GUS_CONFIG_FILE</computeroutput>, are created
+            automatically based on the settings in the
+            <computeroutput>gus.config</computeroutput> file.</para>
+          </note><screen>cp $PROJECT_HOME/install/gus.config.sample $PROJECT_HOME/install/gus.config
+emacs $PROJECT_HOME/install/gus.config</screen>In the
+        <computeroutput>gus.config</computeroutput> file:</para>
+
+        <para><screen>dbVendor=Oracle
+dbiDsn=dbi:Oracle:host=cbildb;sid=plugdev;port=1521
+jdbcDsn=jdbc:oracle:thin:@cbildb:1521:plugdev
+databaseLogin=<replaceable>PUT_YOUR_USERNAME_HERE</replaceable>
+databasePassword=<replaceable>PUT_YOUR_PASSWORD_HERE</replaceable>
+userName=dba
+group=dba
+project=Database administration
+perl=/usr/bin/perl
+md5sum=/usr/bin/md5sum</screen></para>
+      </listitem>
+
+      <listitem>
+        <para>Proceed and build as usual:<screen>build GUS install -append</screen><note>
+            <para>You may need to run a second time with -skipJavaCompiling.
+            Don't do this the first time, or important Java pieces will be
+            missed.</para>
+          </note></para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section>
+    <title>Updating Plugins</title>
+
+    <para>The primary goal of updating plugins is to ensure compatibility with
+    the GUS 3.5 schema and application framework. The secondary goal is to
+    improve the quality and documentation of plugins. This section covers only
+    the minimum work required to ensure compatibility with GUS 3.5--
+    additional work towards improving plugin quality (including documentation)
+    is greatly appreciated.</para>
+
+    <para>Plugins should first be checked to ensure that they are not making
+    data assumptions by hard coding values. For example, explicitly setting an
+    <computeroutput>external_database_release_id</computeroutput> to 3
+    (presumably because 3 is the primary key of the intended record) is a
+    major issue that would need to be resolved. Instead, plugins should query
+    for the appropriate value. Similarly, plugins should not rely on external,
+    trivial, and non-standard controlled vocabularies.</para>
+
+    <para>Once hard-coded dependencies have been removed, plugins should be
+    checked to ensure compatibility with the GUS 3.5 schema. This may include
+    change table and attribute names, or remapping data due to deprecated
+    tables or previously incorrect usage.</para>
+
+    <note>
+      <para>Remember, the implementation for a plugin will define a standard
+      use of the schema shared by all users of GUS. If you have questions or
+      feel that a discussion is warranted over a particular implementation,
+      please do not hesitate to address it on the GUS list. A major goal of
+      GUS is to improve the system such that all installations use GUS in the
+      same fashion from a data loading and storage perspective.</para>
+    </note>
+
+    <para>Finally, plugins must be updated to support the GUS 3.5 API. To do
+    so, simply change the <computeroutput>requiredDbVersion</computeroutput>
+    in the plugin <computeroutput>initialize</computeroutput> method to be
+    3.5. For example:</para>
+
+    <programlisting>$self-&gt;initialize({ requiredDbVersion =&gt; 3.5,</programlisting>
+
+    <para>You should then fully test in a variety of conditions your updated
+    plugin. Once confident the plugin is complete, please commit it to CVS and
+    notify Mike Saffitz at <email>msaffitz@pcbi.upenn.edu</email>.</para>
+  </section>
+</article>

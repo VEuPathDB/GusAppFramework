@@ -124,21 +124,19 @@ sub closeQueryHandle {
 # methods for algorithm_invocation things..
 ##################################################
 
-sub createNewAlgorithmInvocation {
-  my($self,$algImpId,$machineId,$result,$tAlgInvoId) = @_;
-  my $algInvoId = $tAlgInvoId ? $tAlgInvoId : 1; ##1 is unknown...
-  my $res = $result ? $result : "pending";
-  my $machine_id = $machineId ? $machineId : 0; ## 0 is omphale
-  my $algTable = $self->getFullTableClassName($self->getDatabase()->getCoreName()."::AlgorithmInvocation");
-  eval("require $algTable");
-  return $algTable->new({'algorithm_imp_id' => $algImpId,
-                                   'start_time' => $self->getDatabase()->getDateFunction(),
-                                   'end_time' => '01/01/1900',
-                                   'machine_id' => $machine_id,
-                                   'row_alg_invocation_id' => $algInvoId,
-                                   'result' => $res},$self->getDatabase());
-
-}
+#sub createNewAlgorithmInvocation {
+#  my($self,$algImpId,$result,$tAlgInvoId) = @_;
+#  my $algInvoId = $tAlgInvoId ? $tAlgInvoId : 1; ##1 is unknown...
+#  my $res = $result ? $result : "pending";
+#  my $algTable = $self->getFullTableClassName($self->getDatabase()->getCoreName()."::AlgorithmInvocation");
+#  eval("require $algTable");
+#  return $algTable->new({'algorithm_imp_id' => $algImpId,
+#                                   'start_time' => $self->getDatabase()->getDateFunction(),
+#                                   'end_time' => '01/01/1900',
+#                                   'row_alg_invocation_id' => $algInvoId,
+#                                   'result' => $res},$self->getDatabase());
+#
+#}
 
 
 sub checkReadPermission {
