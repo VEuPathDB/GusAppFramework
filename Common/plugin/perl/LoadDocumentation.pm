@@ -40,7 +40,6 @@ sub new {
 	 }];
     $self->initialize({requiredDbVersion => {Core => '3'},
 		       cvsRevision => '$Revision$', #CVS fills this in
-		       cvsTag => '$Name$', #CVS fills this in
 		       name => ref($self),
 		       revisionNotes => 'make consistent with GUS 3.0',
 		       easyCspOptions => $easycsp,

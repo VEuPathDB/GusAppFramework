@@ -33,7 +33,6 @@ sub new {
 
    $self->initialize({requiredDbVersion => { Core => '3' },
                       cvsRevision       => '$Revision$',
-                      cvsTag            => '$Name$',
                       name              => ref($self),
                       revisionNotes     => 'update for GUS 3.0',
                       easyCspOptions    => {},
@@ -340,7 +339,6 @@ sub doMajorMode_Meta {
 
    my $imp_go = GUS::Model::Core::AlgorithmImplementation
    ->new({ cvs_revision   => $Self->getCVSRevision,
-           cvs_tag        => $Self->getCVSTag,
            executable     => $Self->getName,
            executable_md5 => $Self->getCheckSum,
            description    => $Self->getRevisionNotes,
@@ -728,7 +726,6 @@ sub create_or_update_implementation {
    $Self->findAlgorithm($pu);
    my $alg_gus = $pu->getAlgorithm;
    my $cvsRevision = $pu->getCVSRevision;
-   my $cvsTag = $pu->getCVSTag;
 
    # we want to create a new Algorithm
    if ($U ) {
@@ -814,7 +811,6 @@ sub create_or_update_implementation {
    # ......................................................................
 
    my $alg_imp_h = { cvs_revision        => $cvsRevision,
-                     cvs_tag             => $cvsTag,
                      description         => $imp_description,
                      executable          => $pu->getName,
                      executable_md5      => $pu->getCheckSum,
@@ -842,7 +838,7 @@ sub create_or_update_implementation {
          $apk_gus->setParent($alg_imp_gus);
       }
       $alg_gus->submit;
-      $Self->logData('INFO', "Plugin $plugin_name_s registered with cvs revision '$cvsRevision' and cvs tag '$cvsTag'");
+      $Self->logData('INFO', "Plugin $plugin_name_s registered with cvs revision '$cvsRevision'");
       $Self->logData('INFO', "...Just kidding: you didn't --commit")
       unless ($Self->getArgs->{commit});
    }

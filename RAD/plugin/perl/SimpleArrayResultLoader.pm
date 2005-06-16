@@ -230,7 +230,6 @@ my $argsDeclaration  =
 
   $self->initialize({requiredDbVersion => {RAD3 => '3', Core => '3'},
 		     cvsRevision => '$Revision$',
-		     cvsTag => '$Name$',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argsDeclaration,

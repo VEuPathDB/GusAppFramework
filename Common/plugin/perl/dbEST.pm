@@ -103,7 +103,6 @@ sub new {
                                          SRes => '3',
                                        },
                   cvsRevision => ' $Revision$ ', # cvs fills this in
-                  cvsTag => ' $Name$ ', # cvs fills this in!
                   name => ref($M),
                   revisionNotes => 'GUS 3.0 compliant',
                   easyCspOptions => $easycsp,
