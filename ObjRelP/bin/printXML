@@ -10,7 +10,7 @@ use lib "$ENV{GUS_HOME}/lib/perl";
 
 use Getopt::Long;
 use GUS::ObjRelP::DbiDatabase;
-use GUS::Common::GusConfig;
+use GUS::Supported::GusConfig;
 
 my ($table,$id,$deep,$verbose,$debug,$attHash,$group,$user);
 &GetOptions("table=s" => \$table,
@@ -30,7 +30,7 @@ if((!$id && !$attHash) || !$table){ die "usage: printXML --table <tablename> --i
 
 my $gusconfigfile = "$ENV{GUS_CONFIG_FILE}";
 
-my $gusconfig = GUS::Common::GusConfig->new($gusconfigfile);
+my $gusconfig = GUS::Supported::GusConfig->new($gusconfigfile);
 
 my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$gusconfig->getReadOnlyDatabaseLogin(),

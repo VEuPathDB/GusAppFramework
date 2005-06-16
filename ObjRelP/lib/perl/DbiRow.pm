@@ -609,24 +609,9 @@ sub insert {
   }
   my $dbh = $self->getDbHandle();
   my $numRows = 0;
-  ##here down is largely sybase...
-  if ($self->getDatabase()->getDSN() =~ /sybase/i) {
-    my $viewTab = $self->getViewsUnderlyingTable();
-    my $tab = ( $viewTab ? $viewTab : $self->getTable->getClassName());
-    my $identIns = $self->getTable()->pkIsIdentity() && $self->isIdentityInsertOn()
-      && $self->getId();
-    if ($identIns) {
-      $dbh->setIdentityInsertOn($tab);
-    }
-    $numRows = $self->quote_and_insert($self->getAttributes());
-    if ($identIns) {
-      $dbh->setIdentityInsertOff($tab);
-    } elsif ($self->getTable()->pkIsIdentity()) {
-      $self->setId($self->getLastIdInsert());
-    }
-  } else {
-    $numRows = $self->quote_and_insert($self->getAttributes());
-  }
+
+  $numRows = $self->quote_and_insert($self->getAttributes());
+
   $self->synch();
   return $numRows;
 }
@@ -653,7 +638,7 @@ sub quote_and_insert {
       $values_clause .= " $value,"; 
       $cacheKey .= $key;
     } elsif ($value eq '') {    ##oracle treats this like NULL but others may not..
-      $values_clause .= " '',";
+      $values_clause .= " null,";
       $cacheKey .= $key;
     } else {
       $values_clause .= ' ?,';

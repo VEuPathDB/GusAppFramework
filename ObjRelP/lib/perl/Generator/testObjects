@@ -7,12 +7,12 @@ use lib "$ENV{GUS_HOME}/lib/perl";
 use CBIL::Util::Disp;
 use GUS::ObjRelP::DbiDatabase;
 use GUS::ObjRelP::DbiDatabase;
-use GUS::Common::GusConfig;
+use GUS::Supported::GusConfig;
 
 my $targetDir = shift @ARGV;
 my @files = @ARGV;
 
-my $gusconfig = GUS::Common::GusConfig->new();
+my $gusconfig = GUS::Supported::GusConfig->new();
 
 my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$gusconfig->getReadOnlyDatabaseLogin(),

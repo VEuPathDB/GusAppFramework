@@ -2,6 +2,7 @@ package GUS::ObjRelP::Generator::JavaRowGenerator;
 
 @ISA = qw (GUS::ObjRelP::Generator::RowGenerator);
 use GUS::ObjRelP::Generator::RowGenerator;
+use GUS::ObjRelP::Generator::GeneratorFunctions;
 
 use strict;
 
@@ -53,11 +54,13 @@ sub _genHeader{
     $output .= "import java.sql.*;\n";   
     $output .= "import java.math.*;\n";
     $output .= "import java.util.Date;\n\n";
-    $output .= "import org.gusdb.model.DoTS.*;\n";
-    $output .= "import org.gusdb.model.Core.*;\n";
-    $output .= "import org.gusdb.model.SRes.*;\n";
+    $output .= "import org.gusdb.model.*;\n";
+#    $output .= "import org.gusdb.model.Core.*;\n";
+#    $output .= "import org.gusdb.model.SRes.*;\n";
 #    $output .= "import org.gusdb.model.TESS.*;\n";
-    $output .= "import org.gusdb.model.RAD3.*;\n\n";
+#    $output .= "import org.gusdb.model.RAD.*;\n\n";
+#    $output .= "import org.gusdb.model.PROT.*;\n\n";
+#    $output .= "import org.gusdb.model.Study.*;\n\n";
 
     $output .= $self->_genClassDeclaration();
     $output .= $self->_genConstructor();
@@ -166,7 +169,7 @@ sub _genPkAccessors{
     
     my $primaryKeyInfo = $attHash->{$primaryKeyName};
     
-    my $primKeyJavaType = $self->_oracleTypeConverter( $primaryKeyInfo, $primaryKeyName);
+    my $primKeyJavaType = oracleTypeConverter( $primaryKeyInfo, $primaryKeyName);
     my $valueMethod = $self->_getValueMethodFromJavaType($primKeyJavaType);
 
     my $output = $tab . "public long getPrimaryKeyValue(){\n";
@@ -210,7 +213,7 @@ sub _createAttributeAccessors{
 	my $attInfo = $attHash->{$att};
 
 	# convert attribute oracle type to Java type
-	my $javaType = $self->_oracleTypeConverter( $attInfo, $att );
+	my $javaType = oracleTypeConverter( $attInfo, $att );
 
 	# add line to setAttributesFromResultSet_aux
 	#$setAllAtts .= "	    ";                    # JC: these lines are in a 'try' block
@@ -269,24 +272,24 @@ sub _createChildAccessors{
     my $duplicateChildren = $self->_findDuplicateChildren($childHash);
     
     foreach my $childKey (keys %$childHash){
-	my ($childFkCol) = $childKey =~ /(\S+)\.\.\S+/;
-	my $fullChildTable = $childHash->{$childKey};
-	my ($childSchema, $childTable) = $self->_cutFullQualifiedName($fullChildTable);
-	next if $childSchema eq "TESS" || $childTable eq "ProjectLink";
-	my $instanceName = $self->_createChildInstanceVar($childFkCol, $fullChildTable, $duplicateChildren);
-	my $accessorName = $self->_createChildAccessorName($childFkCol, $fullChildTable, $duplicateChildren);
+		my ($childFkCol) = $childKey =~ /(\S+)\.\.\S+/;
+		my $fullChildTable = $childHash->{$childKey};
+		my ($childSchema, $childTable) = $self->_cutFullQualifiedName($fullChildTable);
+		next if $childSchema eq "TESS" || $childTable eq "ProjectLink";
+		my $instanceName = $self->_createChildInstanceVar($childFkCol, $fullChildTable, $duplicateChildren);
+		my $accessorName = $self->_createChildAccessorName($childFkCol, $fullChildTable, $duplicateChildren);
 
-	my $packageChildTable = $self->_formatPackageTableName($childSchema, $childTable);
+		my $packageChildTable = $self->_formatPackageTableName($childSchema, $childTable);
 
-	$output .= $tab . "public void add" . $accessorName . "(" . $packageChildTable . " " .
-	    lc($accessorName) ."){\n";
-	$output .= $tab . $tab . lc($accessorName) .  ".setParent(this, \"$childFkCol\");\n";
- 	$output .= $tab . "}\n";
-	$output .= $tab . "public Vector get" . $accessorName . "List(boolean localOnly)\n";
-	$output .= $tab . $tab . "throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException{\n";
-	$output .= $tab . $tab . "GUSTable table = GUSTable.getTableByName(\"$childSchema\", \"$childTable\");\n";
-	$output .= $tab . $tab ."return getChildren(\"$instanceName\", table, \"$childFkCol\", localOnly);\n";
-	$output .= $tab . "}\n\n";
+		$output .= $tab . "public void add" . $accessorName . "(" . $packageChildTable . " " .
+		    lc($accessorName) ."){\n";
+		$output .= $tab . $tab . lc($accessorName) .  ".setParent(this, \"$childFkCol\");\n";
+		$output .= $tab . "}\n";
+		$output .= $tab . "public Vector get" . $childSchema . $accessorName . "List(boolean localOnly)\n";
+		$output .= $tab . $tab . "throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException{\n";
+		$output .= $tab . $tab . "GUSTable table = GUSTable.getTableByName(\"$childSchema\", \"$childTable\");\n";
+		$output .= $tab . $tab ."return getChildren(\"$instanceName\", table, \"$childFkCol\", localOnly);\n";
+		$output .= $tab . "}\n\n";
     }
     return $output;
 }
@@ -336,11 +339,11 @@ sub _createChildAccessorName{
     my ($childSchema, $childTable) = $self->_cutFullQualifiedName($fullChildTable);
     my $accessorName = $childTable; #should put schema name here too  
     if ($duplicateChildren->{$fullChildTable}){
-	$accessorName = $self->_handleDuplicateChild($childFkCol, $childTable);
+		$accessorName = $self->_handleDuplicateChild($childFkCol, $childTable);
     }
     
     if (lc($accessorName) eq "abstract"){   #java keyword
-	$accessorName = "abstract_child";
+		$accessorName = "abstract_child";
     }
 
     return $accessorName;
@@ -384,11 +387,11 @@ sub _findDuplicateChildren{
     my $inverseChildHash;
     my $duplicateChildHash;
     foreach my $fkAtt (keys %$childHash){
-	my $fullChildTable = $childHash->{$fkAtt};
-	$inverseChildHash->{$fullChildTable}++;
-	if ($inverseChildHash->{$fullChildTable} > 1){
-	    $duplicateChildHash->{$fullChildTable} = 1;
-	}
+		my $fullChildTable = $childHash->{$fkAtt};
+		$inverseChildHash->{$fullChildTable}++;
+		if ($inverseChildHash->{$fullChildTable} > 1){
+			$duplicateChildHash->{$fullChildTable} = 1;
+		}
     }
     return $duplicateChildHash;
 }
@@ -469,71 +472,11 @@ sub _splitFksAndAttributes {
 sub _attributeToJavaName {
     my ($self, $fkAtt) = @_;
     my $finalName = $fkAtt;
-    if ($fkAtt =~ /(\S+)_id(\S*)/){
-
-	$finalName = $1 . "_" . $2;
+    if ($fkAtt =~ /(\S+)_id(\S*)/) {
+		$finalName = $1 . "_" . $2;
     }
     $finalName = $self->_capAttName($finalName);
     return $finalName;
-}
-
-
-
-#Take oracle type and return Java equivalent
-sub _oracleTypeConverter {
-    my ($self, $attInfo, $att) = @_;
-    my $newType;
-    my $oraType = $attInfo->{'type'};
-    my $oraPrec = $attInfo->{'prec'};
-    my $oraScale = $attInfo->{'scale'};
-    my $oraLen = $attInfo->{'length'};
-        
-    if ($oraType eq "NUMBER") {
-	if ($oraScale <= 0) {         #integer
-	    if ($oraPrec == 1){
-		$newType .= "Boolean";}
-	    elsif ($oraPrec > 1 && $oraPrec <= 4){
-		$newType .= "Short";}
-	    elsif ($oraPrec > 4 && $oraPrec <= 9){
-		$newType .= "Integer";}
-	    elsif ($oraPrec > 9 && $oraPrec <= 19){
-		$newType .= "Long";}
-	    else {$newType .= "BigDecimal";}
-	}
-	else{                        #fraction
-	    if ($oraScale > 0 && $oraScale <= 7){    
-		$newType .= "Float";}
-	    elsif ($oraScale > 7 && $oraScale <= 16){
-		$newType .= "Double";}
-	    else {$newType .= "BigDecimal";} 
-	}
-    }
-    elsif ($oraType eq "DATE"){
-	if ($oraLen == 7){
-	    $newType .= "Date";}
-	elsif ($oraLen == 6){
-	    $newType .= "Time";}
-	else { $newType .= "Timestamp";}
-    }
-    elsif ($oraType eq "FLOAT"){
-	$newType .= "BigDecimal"}
-
-    elsif ($oraType eq "VARCHAR2" || $oraType eq "CHAR" || $oraType eq "LONG"){ 
-	$newType .= "String";}
-
-    elsif ($oraType eq "CLOB"){
-	$newType .= "Clob";}
-
-    elsif ($oraType eq "BLOB"){
-	$newType .= "Blob";}    
-
-    elsif ($oraType eq "RAW" || $oraType eq "LONGRAW"){
-	$newType .= "byte[]";}
-
-    else {$newType .= "notdefyet";}
-# print STDERR "name is $att type is $oraType, precision is $oraPrec, scale is $oraScale,  length  $oraLen, javatype is $newType\n" ;
-
-    return $newType;
 }
 
 #creates one line that will go in the setAttributesFromResultSet method.
@@ -828,7 +771,7 @@ sub _addSuperSets{
 	my $sub_name = $self->_capAttName( $parentAtt );
 	my $set = "set" . $sub_name;
 	my $attInfo = $finalParentHash->{$parentAtt};
-	my $javaType = $self->_oracleTypeConverter ($attInfo, $parentAtt);
+	my $javaType = oracleTypeConverter ($attInfo, $parentAtt);
 
 #	if (!(($javaType eq "Clob") || ($javaType eq "Blob"))) {
 	    $output .= "	    ";  # JC: these lines are in a 'try' block

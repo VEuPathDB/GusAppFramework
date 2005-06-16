@@ -301,9 +301,9 @@ Now that GUS is initialized, we will perform a partial check of the database by
 registering the broadly useful plugin <tt>SubmitRow</tt>. We use <tt>ga</tt> 
 for this as follows
 <pre>
-   ga +create GUS::Common::Plugin::SubmitRow
+   ga +create GUS::Supported::Plugin::LoadRow
        ... check output and if looks okay, commit.
-   ga +create GUS::Common::Plugin::SubmitRow --commit
+   ga +create GUS::Supported::Plugin::LoadRow --commit
 </pre>
 The two stage approach for running <tt>ga</tt> allows one to check the output
 for problems without committing the changes to the database. 

@@ -35,7 +35,6 @@ use File::Basename;
 sub new {
   my ($class, $repositoryLocation, $resource, $version, $sourceUrl, $wgetArgs,
       $logFile) = @_;
-
   my $self = {};
   bless $self, $class;
 
@@ -337,13 +336,13 @@ sub _findVersion {
     if ($todayMonth =~ /^\d$/){ #single digit; append 0
 	$todayMonth = "0" . $todayMonth;
     }
+
     my $todayDay = $today[3];
     if ($todayDay =~ /^\d$/){ #single digit; append 0
 	$todayDay= "0" . $todayDay;
     }
     my $today = "${todayYear}-${todayMonth}-$todayDay";
 
-    
     my @files;
     if ($self->{storageManager}->dirExists($resourceDir)) {
       @files= $self->{storageManager}->listDir($resourceDir);

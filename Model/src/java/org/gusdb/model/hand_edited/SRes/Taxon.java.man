@@ -31,7 +31,7 @@ public class Taxon extends Taxon_Row {
     public String getTaxonName(ServerI server, String session, String name_class) {
 
 	try {
-	    Vector allTaxonNames = getTaxonNameList(false);
+	    Vector allTaxonNames = getSResTaxonNameList(false);
 	}
 	catch(Exception e){
 	    System.err.println(e.getMessage());
@@ -54,7 +54,7 @@ public class Taxon extends Taxon_Row {
 	Vector kids = null;
 	try {
 
-	    kids = this.getTaxonNameList(true);
+	    kids = this.getSResTaxonNameList(true);
 	}
 	catch (Exception e){
 	    System.err.println(e.getMessage());

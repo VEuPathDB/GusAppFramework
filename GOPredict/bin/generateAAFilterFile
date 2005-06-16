@@ -4,7 +4,7 @@ use strict;
 use lib "$ENV{GUS_HOME}/lib/perl";
 use GUS::ObjRelP::DbiDatabase;
 use Getopt::Long;
-use GUS::Common::GusConfig;
+use GUS::Supported::GusConfig;
 
 my ($tableId, $goDbRelId, $excludeIea, $ieaId, $directory);
 &GetOptions("table_id=i"=> \$tableId,

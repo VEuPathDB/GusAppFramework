@@ -258,16 +258,7 @@ sub getViewMapping {
     #		print STDERR "$sql\n";
     $sql =~ s/^.*?select\s+(.*?)\s+from\s+\S+Imp.*$/$1/i;
     #		print STDERR "  SQL: '$sql'\n";
-    if ($self->getDatabase->getDSN() =~ /sybase/i) {
-      foreach my $att (split(', *',$sql)) {
-        #			print STDERR "$att\n";
-        my($i,$v) = split(' +',$att);
-        $i =~ s/^.*?\.(\w+)$/$1/;
-        $v = $v ? $v : $i;
-        #			print STDERR "'$i' => '$v'\n";
-        $self->{'viewMapping'}->{$i} = $v;
-      }
-    } elsif ($self->getDatabase->getDSN() =~ /oracle/i) {
+    if ($self->getDatabase->getDSN() =~ /oracle/i) {
       foreach my $att (split(', *',$sql)) {
         #			print STDERR "$att\n";
         my($i,$v) = split(' as ',$att);
@@ -475,18 +466,10 @@ sub pkIsIdentity {
     if (!scalar(@keyList) == 1) { 
       return 0;
     }
-    if ($self->getDatabase()->getDSN() =~ /Sybase/) {
-      my $sql = "select ident= convert(bit, (status & 0x80)) from syscolumns "
-        .' where name = "'.$keyList[0].'" and id = object_id("'.$self->getTableName().'")';
-      my $sth = $self->getDbHandle()->prepareAndExecute($sql);
-      my $rows = $sth->fetchall_arrayref({ident=>1});
-      my $row = @$rows[0];
-      $self->{'pkIsIdentity'} = $row->{'ident'};
-    } else {
       #			print STDERR "DbiTable:pkIsIdentity is not implemented yet for Oracle.\n";
       return 0;
-    }
-	}
+
+  }
   return $self->{'pkIsIdentity'};
 }
 

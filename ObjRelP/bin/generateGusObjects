@@ -4,7 +4,7 @@ use strict;
 use lib "$ENV{GUS_HOME}/lib/perl";
 use GUS::ObjRelP::DbiDatabase;
 use GUS::ObjRelP::Generator::Generator;
-use GUS::Common::GusConfig;
+use GUS::Supported::GusConfig;
 use Getopt::Long;
 
 my($tables, $login, $database, $javaOrPerl, $type, $newOnly, $core, $schemas, $verbose,
@@ -46,7 +46,7 @@ if ($help) {
 my @tables = split(/,\s*/, $tables) if $tables;
 my @schemas = split(/,\s*/, $schemas) if $schemas;
 
-my $gusconfig = GUS::Common::GusConfig->new($gusconfigfile);
+my $gusconfig = GUS::Supported::GusConfig->new($gusconfigfile);
 
 my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 					$gusconfig->getReadOnlyDatabaseLogin(),

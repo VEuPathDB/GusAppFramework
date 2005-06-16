@@ -458,7 +458,7 @@ sub insertArabidopsis {
    my $args = "--table_name DoTS::ExternalAASequence --sequencefile $tairSeqFile --external_database_release_id $tairDB --regex_source_id \"$regex_src_id\"  --regex_name \"$regex_name\"  --regex_desc \"$regex_desc\" --writeFile tairSeqsFile  --log_frequency 500 --no_check";
     
     $mgr->runPlugin("insertArabidopsis", 
-	 	    "GUS::Common::Plugin::InsertNewExternalSequences", $args,
+	 	    "GUS::Supported::Plugin::LoadFastaSequences", $args,
 		    "Inserting Arabidopsis", 'insertArabidopsis');
 
 }
@@ -517,7 +517,7 @@ sub insertFly {
     my $args = "--verbose --table_name \"DoTS::ExternalAASequence\" --sequencefile \"$flySeqFile\" --external_database_release_id $flyDB --regex_source_id \"$regex_src_id\"  --regex_name \"$regex_name\"  --regex_secondary_id \"$regex_secondary_id\" --regex_desc \"$regex_desc\" --sequenceFile $flySeqFile  --log_frequency 500 --no_check ";
     
     $mgr->runPlugin("insertFly", 
-	 	    "GUS::Common::Plugin::InsertNewExternalSequences", $args,
+	 	    "GUS::Supported::Plugin::LoadFastaSequences", $args,
 		    "Inserting Fly", 'insertFly');
     
     
@@ -574,7 +574,7 @@ sub insertSwissprot {
     my $args = "--table_name DoTS::ExternalAASequence --sequencefile $spSeqFile --external_database_release_id $spDB --regex_source_id \"$regex_src_id\"  --regex_name \"$regex_name\"  --regex_desc \"$regex_desc\" --writeFile spSeqsFile  --log_frequency 500 --no_check";
     
     $mgr->runPlugin("insertSwissprot", 
-	 	    "GUS::Common::Plugin::InsertNewExternalSequences", $args,
+	 	    "GUS::Supported::Plugin::LoadFastaSequences", $args,
 		    "Inserting Swissprot", 'insertSwissprot');
 
 }
@@ -731,7 +731,7 @@ sub insertTREMBLSubset {
     my $args = "--table_name DoTS::ExternalAASequence --sequencefile $trSeqFile --external_database_release_id $trDB --regex_source_id \"$regex_src_id\"  --regex_name \"$regex_name\"  --regex_desc \"$regex_desc\" --writeFile trSeqsFile  --log_frequency 1000 --no_check ";
     
     $mgr->runPlugin("insertTrembl", 
-		    "GUS::Common::Plugin::InsertNewExternalSequences", $args,
+		    "GUS::Supported::Plugin::LoadFastaSequences", $args,
 		    "Inserting Trembl", 'insertTREMBL');
     
     
@@ -785,7 +785,7 @@ sub insertWorm {
     my $args = "--table_name DoTS::ExternalAASequence --sequencefile $fullWormSeqFile --external_database_release_id $wormDB --regex_source_id \"$regex_src_id\"  --regex_secondary_id \"$regex_secondary_id\" --regex_desc \"$regex_desc\" --writeFile wormSeqsFile  --no_check --log_frequency 500 ";
     
     $mgr->runPlugin("insertWorm", 
-	 	    "GUS::Common::Plugin::InsertNewExternalSequences", $args,
+	 	    "GUS::Supported::Plugin::LoadFastaSequences", $args,
 		    "Inserting Worm", 'insertWorm');
 
 }
@@ -839,7 +839,7 @@ sub insertYeast {
     my $args = "--table_name DoTS::ExternalAASequence --sequencefile $yeastSeqFile --external_database_release_id $yeastDB --regex_source_id \"$regex_src_id\" --regex_name \"$regex_name\"  --regex_secondary_id \"$regex_secondary_id\" --regex_desc \"$regex_desc\" --writeFile yeastSeqsFile  --log_frequency 500 --no_check";
     
     $mgr->runPlugin("insertYeast", 
-	 	    "GUS::Common::Plugin::InsertNewExternalSequences", $args,
+	 	    "GUS::Supported::Plugin::LoadFastaSequences", $args,
 		    "Inserting Yeast", 'insertYeast');
 
 }
@@ -1207,7 +1207,7 @@ sub insertExternalProteinSimilarities {
     my $args = "--file $file --verbose --restartAlgInvs $restart --queryTable DoTS::ExternalAASequence --subjectTable $subjectTable --subjectsLimit 50 --hspsLimit 10";
 
     $mgr->runPlugin("loadSims_$name", 
-		    "GUS::Common::Plugin::LoadBlastSimFast", $args,
+		    "GUS::Supported::Plugin::InsertBlastSimilarities", $args,
 		    "Loading $name similarities");
 }
 

@@ -2,7 +2,7 @@
 package GUS::Model::DoTS::VirtualSequence; # table name
 use strict;
 use GUS::Model::DoTS::VirtualSequence_Row;
-use GUS::Common::Sequence;
+use GUS::Supported::Sequence;
 
 use vars qw (@ISA);
 @ISA = qw (GUS::Model::DoTS::VirtualSequence_Row);

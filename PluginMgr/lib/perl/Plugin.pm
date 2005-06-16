@@ -12,7 +12,7 @@ use CBIL::Util::Disp;
 use CBIL::Util::Utils;
 
 use GUS::ObjRelP::DbiDatabase;
-use GUS::Common::GusConfig;
+use GUS::Supported::GusConfig;
 use GUS::PluginMgr::Args::StringArg;
 use GUS::PluginMgr::Args::BooleanArg;
 use GUS::PluginMgr::Args::FileArg;
@@ -194,7 +194,7 @@ methods which construct and return these objects.
 
 =item * revisionNotes (string)
 
-Deprecated.  No longer useful.
+This has been B<deprecated>.  It is not replaced by anything.
 
 =item * easyCspOptions 
 
@@ -237,10 +237,6 @@ sub initialize {
     $self->_failinit('argsDeclaration');
   }
 
-
-  $self->_failinit('requiredDbVersion')
-    unless (ref($self->{requiredDbVersion}) eq "HASH");
-
   $self->setOk(1); #assume all is well to start
 }
 
@@ -269,6 +265,17 @@ B<Params:>
 =cut
 sub setResultDescr {$_[0]->{resultDescr} = $_[1];}
 
+=item C<setPointerCacheSize()>
+
+The object cache holds 10000 objects by default. Use this method to change its
+capacity.
+
+=cut
+sub setPointerCacheSize {
+  my ($self, $size) = @_;
+  $self->getDb()->setMaximumNumberOfObjects($size);
+}
+
 =item C<setOracleDateFormat($oracleDateFormat)>
 
 Set Oracle's NLS_DATE_FORMAT for the duration of this plugin's run.  This is the format which oracle will allow for data of type 'Date.'  See Oracle's documentation to find valid formats.  The default format is 'YYYY-MM-DD HH24:MI:SS.'
@@ -282,9 +289,11 @@ B<Params:>
 sub setOracleDateFormat {
   my ($self, $oracleDateFormat) = @_;
   
+  my $dateSql = $self->getDb()->getDbPlatform->dateFormatSql($oracleDateFormat);
+
   my $dbh = $self->getDb()->getDbHandle();
 
-  $dbh->do("alter session set NLS_DATE_FORMAT='$oracleDateFormat'");
+  $dbh->do($dateSql);
 }
 
 =pod
@@ -361,7 +370,7 @@ sub getArgsDeclaration    { $_[0]->{argsDeclaration} }
 
 =item C<getName()>
 
-Get the name of the plugin, eg, C<GUS::Common::Plugin::UpdateRow>
+Get the name of the plugin, eg, C<GUS::Supported::Plugin::LoadRow>
 
 B<Return type:> C<string>
 
@@ -371,7 +380,7 @@ sub getName       { $_[0]->{name} }
 =item C<getFile()>
 
 Get the full path of the file that contains the plugin, eg,
-/home/me/gushome/lib/perl/GUS/Common/Plugin/UpdateRow.pm
+/home/me/gushome/lib/perl/GUS/Supported/Plugin/LoadRow.pm
 
 B<Return type:> C<string>
 
@@ -725,6 +734,35 @@ sub globArg {
 }
 
 # ----------------------------------------------------------------------
+
+=item C<globArg($argDescriptorHashRef)>
+
+Construct a glob argument declaration.
+
+B<Parameters>
+
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also
+
+over 4
+
+=item * mustExist (0 or 1)
+
+Whether the glob must match some existing files.
+
+=item * format (string)
+
+A description of the format of the files that match the glob.
+
+B<Return type:> C<GUS::PluginMgr::Args::GlobArg>
+
+=cut
+
+sub globArg {
+  my ($paramsHashRef) = @_;
+  return GUS::PluginMgr::Args::GlobArg->new($paramsHashRef);
+}
+
+# ----------------------------------------------------------------------
 # Public Utilities
 # ----------------------------------------------------------------------
 
@@ -774,15 +812,104 @@ sub getExtDbRlsId {
                and lower(e.name) = '$lcName'";
 
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
-    
+
     my ($releaseId) = $sth->fetchrow_array();
 
-    die "Couldn't find an external database release id for db '$dbName' version '$dbVersion'" unless $releaseId;
-    
+    die "Couldn't find an external database release id for db '$dbName' version '$dbVersion'.  Use the plugins InsertExternalDatabase and InsertExternalDatabaseRls to insert this information into the database" unless $releaseId;
+
     return $releaseId;
 }
 
+=item C<prepareAndExecute($sql)>
 
+Prepare an SQL statement and execute it.  This method is a convenience wrapper around $self->getQueryHandle()->prepareAndExecute().  In plugins, SQL is usually reserved for querying, not for writing to the database.  GUS objects do that work with better tracking and more easily.  For more complicated database operations see the file $PROJECT_HOME/OblRelP/lib/perl/DbiDbHandle.pm
+
+
+B<Parameters:>
+
+- sql (string): The SQL to prepare and execute.
+
+B<Return type:> C<statementHandle>
+
+=cut
+sub prepareAndExecute {
+  my ($self, $sql) = @_;
+  $self->getQueryHandle()->prepareAndExecute($sql);
+}
+
+=item C<getControlledVocabMapping($cvMappingFile, $cvTable, $cvTermColumn)>
+
+Read a file mapping input terms to a GUS CV.  Validate the GUS CV against
+the provided table.  If the GUS CV in the file is not entirely contained in the table, die.  If it is, return the CV as a hash with the input terms as key and the GUS CV as value.
+
+B<Parameters:>
+
+- cvMappingFile (string): The name of the file which contains the mapping.  It must be two columns tab delimited where the first column is the input terms and the second column is the GUS CV.
+
+- cvTable (string):  The name of the table in gus (in schema.table format) which contains the CV.
+
+- cvTermColumn (string):  The name of the column in cvTable that contains the terms.
+
+B<Return type:> C<hash reference>
+
+=cut
+sub getControlledVocabMapping {
+  my ($self, $cvMappingFile, $cvTable, $cvTermColumn) = @_;
+  my $sql = "select distinct $cvTermColumn from $cvTable";
+
+  my %gusHash;
+  my $sh = $self->prepareAndExecute($sql);
+
+  while (my ($gusTerm) = $sh->fetchrow_array) {
+    $gusHash{$gusTerm} = 1;
+  }
+  open(FILE, $cvMappingFile) || die "Can't open CV mapping file '$cvMappingFile'";
+
+  my @badGusTerms;
+  my %cvHash;
+  while (<FILE>) {
+    chomp;
+    if (/^(.+)\t(.+)$/) {
+      my $inputTerm = $1;
+      my $gusTerm = $2;
+      if ($gusHash{$gusTerm}) {
+	if ($cvHash{$inputTerm} && $cvHash{$inputTerm} ne $gusTerm) {
+	  die "CV mapping file '$cvMappingFile' has inconsistent mappings forinput term  '$inputTerm'"
+	}
+	$cvHash{$inputTerm} = $gusTerm;
+      } else {
+	push(@badGusTerms, $gusTerm);
+      }
+    } else {
+      die "line '$_' in file '$cvMappingFile' has incorrect format";
+    }
+  }
+  close(FILE);
+  if (scalar(@badGusTerms) != 0) {
+    die "CV mapping file '$cvMappingFile' has these terms that were not found in column '$cvTermColumn' of table '$cvTable': " . join(", ", @badGusTerms);
+  }
+  return \%cvHash;
+}
+
+=item C<getTotalInserts()>
+
+Get the total number of inserts.
+
+=cut
+sub getTotalInserts {
+  my ($self) = @_;
+  $self->getAlgInvocation()->getTotalInserts();
+}
+
+=item C<getTotalUpdates()>
+
+Get the total number of updates.
+
+=cut
+sub getTotalUpdates {
+  my ($self) = @_;
+  $self->getAlgInvocation()->getTotalUpdates();
+}
 
 =item C<className2tableId($className)>
 
@@ -791,6 +918,39 @@ Convert a perl style class name for a database object to a numerical table id su
 B<Parameters:>
 
 - className (string):  A class name in the form: Core::Algorithm
+
+B<Return type:> C<integer>
+
+=cut
+sub className2tableId {
+  my ($self, $className) = @_;
+  $self->getAlgInvocation()->getTableIdFromTableName($className);
+}
+
+=item C<getFullTableClassName($className)>
+
+If given a full class name or one in schema::table format (case insensitive in both cases), return the full class name w/ proper case, ie GUS::Model:Schema:Table or null if no such table
+
+B<Parameters:>
+ -
+
+- getFullTableClassName (string):  A class name in the form: Core::Algorithm (case insensitive)
+
+B<Return type:> C<string>
+
+=cut
+sub getFullTableClassName {
+  my ($self, $className) = @_;
+  $self->getDb()->getFullTableClassName($className);
+}
+
+=item C<className2tableId($className)>
+
+Convert a perl style class name for a database object to a numerical table id suitable for comparison to one of GUS's many table_id columns.  For example, convert Core::Algorithm to something like 34.
+
+B<Parameters:>
+
+- className (string):  A class name in the form: Core::Algorithm (case sensitive)
 
 B<Return type:> C<integer>
 
@@ -1146,8 +1306,6 @@ sub logData {
 Log to STDERR the id for the AlgorithmInvocation that represents this
 run of the plugin in the database.
 
- Note:  this method is called automatically by ga, so you should not call it.
-
 =cut
 sub logAlgInvocationId {
   my $Self = shift;
@@ -1159,8 +1317,6 @@ sub logAlgInvocationId {
 
 Log to STDERR the state of the commit flag for this run of the plugin.
 
- Note:  this method is called automatically by ga, so you should not call it.
-
 =cut
 sub logCommit {
   my $Self = shift;
@@ -1171,8 +1327,6 @@ sub logCommit {
 =item C<logArgs()>
 
 Log to STDERR the argument values used for this run of the plugin.
-
- Note:  this method is called automatically by ga, so you should not call it.
 
 =cut
 sub logArgs {
@@ -1409,13 +1563,6 @@ sub sql_translate {
 
 =over 4
 
-=item C<getRevisionNotes()>
-
-Not replaced with any method.  Functionality not needed.
-
-=cut
-sub getRevisionNotes       { $_[0]->{revisionNotes} }
-
 =item C<getEasyCspOptions()>
 
 Replaced by getArgsDeclaration()
@@ -1432,6 +1579,15 @@ sub getEasyCspOptions {
 
   return $self->{easyCspOptions};
 }
+
+=item C<getRevisionNotes()>
+
+No longer used.
+
+B<Return type:> C<string>
+
+=cut
+sub getRevisionNotes       { $_[0]->{revisionNotes} }
 
 =item C<getArgs()>
 
