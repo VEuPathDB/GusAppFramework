@@ -123,8 +123,8 @@ sub run {
 
     $self->makeTaxonEntry($rootAttArray, \$count);
     
-    if ($self->getArg->('restart') > 1) {
-	$self->getTaxonAtt($self->getArg->('restart'),$nodesHash,\$count);
+    if ($self->getArg('restart') > 1) {
+	$self->getTaxonAtt($self->getArg('restart'),$nodesHash,\$count);
     }
     else {
 	$self->getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 
