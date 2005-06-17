@@ -51,7 +51,7 @@ PLUGIN_FAILURE_CASES
 my $notes = <<PLUGIN_NOTES;
 Assumes that the \"Obsolete\" GO Term Ids (that is, the parent, in each branch, of all GO Terms that have become obsolete) have IDs that don't vary between releases of the ontology.  If this is not the case, the IDs must be updated below.
 The queries to SRes.GORelationshipType is case sensitive.  If you do not have the values 'isa' and 'partof' in all lowercase in the table they will be created by the plugin.
-There is a conditional requirement for this plugin:  you must provide either the (component, function, process)_ext_db_rel argument or set --create and provide the (component, function, process)_db_id argument.
+There is a conditional requirement for this plugin:  you must provide either the (component, function, process)ExtDbName argument or set --create and provide the (component, function, process)ExtDbName argument for every branch you are loading.
 PLUGIN_NOTES
 
 
