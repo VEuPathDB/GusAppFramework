@@ -48,7 +48,7 @@ my $tablesAffected = [
 my $tablesDependedOn = ['SRes.ExternalDatabase', 'SRes.ExternalDatabaseRelease','SRes.MGEDOntologyTerm', 'Core.TableInfo'];
 
 my $howToRestart = <<PLUGIN_RESTART;
-This plugin can be ??? restarted.  Before it submits a row into OntologEntry, it checks for its existence in the database, skipping it if it is already there.
+This plugin can be ??? restarted.  Before it submits a row into OntologyEntry, it checks for its existence in the database, skipping it if it is already there.
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -75,7 +75,7 @@ sub new {
     bless($self, $class);
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 2927 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -94,7 +94,6 @@ sub run {
     while (<OE_FILE>){
 	chomp;
 
-	#my ($t_name, $r_name, $p_name, $val, $def, $name, $cat, $ext_db_name, $ext_db_rel_version, $src_id) = split (/\t/, $_);
 	my @data = split (/\t/, $_);
 
         #Add checks for file format?
@@ -103,17 +102,6 @@ sub run {
 	$oeTerm->submit() unless $oeTerm->retrieveFromDB();
 
 	undef @data;
-
-#	undef $t_name;
-#	undef $r_name;
-#	undef $p_name;
-#	undef $val;
-#	undef $def;
-#	undef $name;
-#	undef $cat;
-#	undef $ext_db_name;
-#	undef $ext_db_rel_version;
-#	undef $src_id;
 	$count++
 	}
     return "Inserted $count terms into OntologyEntry";
@@ -133,23 +121,32 @@ sub makeOntologyEntry {
    my $ext_db_rel_version = @data[8];
    my $src_id = @data[9]; 
 
+   my $dbh = $self->getQueryHandle();
+
+   #Get external_database_release_id based on external database name and version
+   my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabase edb, sres.externaldatabaserelease edbr where edb.external_database_id=edbr.external_database_id and edb.name like '$ext_db_name' and edbr.version like '$ext_db_rel_version'");
+   $sth->execute();
+   my $ext_db_rel_id = $sth->fetchrow_array();
+
    #Get table_id based on table name
-   my $t_id = getTableId($t_name);
+   my $sth = $dbh->prepare("select table_id from core.tableinfo where name like '$t_name'");
+   $sth->execute();
+   my $t_id = $sth->fetchrow_array();
    
    #Get row_id based on name of term, need ext db version
-   
+   my $sth = $dbh->prepare("select ontology_term_id from sres.ontologyterm where name like '$r_name' and external_database_release_id='$ext_db_rel_id'");
+   $sth->execute();
+   my $r_id = $sth->fetchrow_array();
 
    #Get parent_id based on name of parent term, need ext db version
+   $sth = $dbh->prepare("select ontology_entry_id from study.ontologyentry where value like '$p_name'");
+   $sth->execute();
+   my $p_id = $sth->fetchrow_array();
    
-
-   #Get external_database_release_id based on external databaes name and version
-   my $ext_db_rel_id = getExternalDatabaseReleaseId($ext_db_name, $ext_db_rel_version);
-
-
    my $oeTerm = GUS::Model::Study::OntologyEntry->new({
        'table_id' => $t_id,
-       #'row_id' => $r_id;
-       #'parent_id' => $p_id,
+       'row_id' => $r_id,
+       'parent_id' => $p_id,
        'value' => $val,
        'name' => $name,
        'definition' => $def,
