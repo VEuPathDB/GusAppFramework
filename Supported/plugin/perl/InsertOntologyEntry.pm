@@ -34,7 +34,7 @@ my $argsDeclaration =
 
 
 my $purposeBrief = <<PURPOSEBRIEF;
-Populates the OntologyEntry table from a file that was generated as a dump of the table with the additional change of replaicing all the primary keys with a string to be used as an alternate key.
+Populates the OntologyEntry table from a file that was generated as a dump of the table with the additional change of replacing all the primary keys with a string to be used as an alternate key.
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
@@ -48,7 +48,7 @@ my $tablesAffected = [
 my $tablesDependedOn = ['SRes.ExternalDatabase', 'SRes.ExternalDatabaseRelease','SRes.MGEDOntologyTerm', 'Core.TableInfo'];
 
 my $howToRestart = <<PLUGIN_RESTART;
-This plugin can be ??? restarted.  Before it submits a row into OntologyEntry, it checks for its existence in the database, skipping it if it is already there.
+This plugin can be not be restarted.
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -56,7 +56,7 @@ unknown
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
-This plugin is sensitive to changes in the SO file format and should be checked for compatibility with each new so.definition release.  Currently we expect the entries to be in block format with term, SOid, Definition, and definition_reference newline delimited, with a blank line between each entry.  If this format changes, the plugin may need to be modified.
+This plugin takes in a tab-delimited file that represents the entries in the OntologyEntry table.  
 PLUGIN_NOTES
 
 my $documentation = {purposeBrief => $purposeBrief,
@@ -95,8 +95,6 @@ sub run {
 	chomp;
 
 	my @data = split (/\t/, $_);
-
-        #Add checks for file format?
 
 	my $oeTerm = $self->makeOntologyEntry(@data);
 	$oeTerm->submit() unless $oeTerm->retrieveFromDB();
