@@ -410,13 +410,8 @@ sub makeNRDBAndExternalAASequence {
     my $num_submit;
     my $restart_arg;
 
-# TODO: remove die once new API is implemented    
-    my $temp_login = $self->getArg('tempLogin') || 
-                     die "--tempLogin required to 
-                     load NRDBEntry and ExternalAASequence\n";
-
     my $dbh = $self->getQueryHandle();
-    my $st = $dbh->prepareAndExecute("select max(set_num) from $temp_login".".NRDBTemp");
+    my $st = $dbh->prepareAndExecute("select max(set_num) from NRDBTemp");
     my ($max_set_num) = $st->fetchrow_array;
     $st->finish();
 
