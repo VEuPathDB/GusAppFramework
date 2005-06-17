@@ -10,7 +10,7 @@ use strict;
 use FileHandle;
 use GUS::PluginMgr::Plugin;
 
-my $argumentDeclaration =
+my $argsDeclaration =
   [
 booleanArg({ name           => 'refresh',
 	     descr          => 'If true, update row (algorithm invocation, modification date) regardless of whether changes have occured.',
@@ -77,7 +77,7 @@ sub new {
       requiredDbVersion => 3.5,
       cvsRevision       => '$Revision$',            # Completed by CVS
       name              => ref($self),
-      argsDeclaration   => $arguments,
+      argsDeclaration   => $argsDeclaration,
       documentation     => $documentation
       });
 
@@ -115,7 +115,6 @@ sub run {
   close(XMLFILE);
 
   $self->process(\@xml) if scalar(@xml) > 1; ##must be at least 3 actually to be valid...
-  $fh->close;
 
   # write the parsable output (don't change this!!)
   $self->logData("INSERTED (non-overhead)", $self->getTotalInserts() - $overheadInsertCount);

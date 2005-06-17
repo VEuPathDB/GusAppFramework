@@ -199,12 +199,11 @@ sub run {
 # TODO: remove this once the new API is implemented  
   die "Supply the name of the nr protein file\n" unless $self->getArg('nrdbFile');
 
-  my $external_database_release_id;
-  my $failNum;
-  my $ext_db_name = $self->getArg('externalDatabaseName');
-  my $ext_db_rls_ver = $self->getArg('externalDatabaseVersion');
+  $self->{failNum} = 0;
 
-  $self->{'extDbRelId'} = $self->getExtDbRlsId($ext_db_name, $ext_db_rls_ver);
+  $self->{'extDbRelId'} =
+    $self->getExtDbRlsId($self->getArg('externalDatabaseName'),
+			 $self->getArg('externalDatabaseVersion'));
 
   my $dbHash = $self->getDB();
   my $taxonHash = $self->getTaxon ()if ($self->getArg('makeTemp') || $self->getArg('plugin'));
@@ -217,16 +216,18 @@ sub run {
       return $tempresults;
   }
 
-  my $entryresults = $self->makeNRDBAndExternalAASequence($taxonHash, $dbHash,$external_database_release_id,$failNum) 
-    if ($self->getArg('plugin'));       
-  
-  if (!$self->getArg('delete')){ 
+  my $entryresults = 
+    $self->makeNRDBAndExternalAASequence($taxonHash, $dbHash,
+					 $self->{'extDbRelId'}) 
+      if ($self->getArg('plugin'));
+
+  if (!$self->getArg('delete')){
     if ($tempresults) {
        my $entryresults .= $tempresults;
      }
-    return $entryresults;   
+    return $entryresults;
   }
-  
+
   my $nrdbdelete = $self->deleteFromNRDB ($dbHash) if ($self->getArg('delete'));
   my $aadelete = $self->deleteFromExtAASeq($dbHash) if ($self->getArg('delete'));
   my $results = "Processing completed:";
@@ -402,7 +403,7 @@ sub makeTempTable {
 # ---------------------------------------------------------------------
 
 sub makeNRDBAndExternalAASequence {
-    my ($self,$taxonHash, $dbHash,$external_database_release_id,$failNum) = @_;
+    my ($self,$taxonHash, $dbHash,$external_database_release_id) = @_;
     my $count = 0;
     my %EntryHash; 
     my $seq;
@@ -464,7 +465,9 @@ sub makeNRDBAndExternalAASequence {
 			eval {
 			    $newExtAASeq->submit();
 			};
-			$self->handleFailure($seq,$failNum,$@) if ($@); 
+
+			$self->handleFailure($seq,$@) if ($@); 
+
 			$num_submit++;
 		        $self->log("Submitted set number:$num_submit");
 			$newExtAASeq->undefPointerCache();
@@ -669,10 +672,11 @@ sub makeExtAASeq {
 # ---------------------------------------------------------------------
 
 sub handleFailure {
-  my ($self, $seq, $failNum, $errMessage) = @_;
-  $failNum++;
+  my ($self, $seq, $errMessage) = @_;
+  $self->{failNum}++;
+
   $self->log("$errMessage:\n$seq");
-  die "Number of failures exceeds 100" if ($failNum > 100);
+  die "Number of failures exceeds 100" if ($self->{failNum} > 100);
 }
   
 # ---------------------------------------------------------------------

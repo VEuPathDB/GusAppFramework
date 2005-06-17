@@ -2,6 +2,7 @@ package GUS::Supported::Plugin::LoadFastaSequences;
 
 @ISA = qw(GUS::PluginMgr::Plugin); 
 use strict;
+use GUS::PluginMgr::Plugin;
 
   my $purposeBrief = 'Insert or update sequences from a FASTA file or as set of FASTA files.';
 
@@ -50,7 +51,7 @@ my $argsDeclaration =
 	       reqd           => 0,
 	       constraintFunc => undef,
                mustExist => 0,
-               format =>""
+               format =>"",
                isList         => 0 }),
  
   stringArg({   name           => 'externalDatabaseName',
@@ -94,7 +95,7 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       descr          => 'The name of the FASTA file containing the input sequences',
 	       reqd           => 0,
                mustExist => 0,
-               format =>"FASTA"
+               format =>"FASTA",
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
@@ -102,7 +103,7 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       descr          => 'If set, treat all files in this directory as FASTA files and load them all',
 	       reqd           => 0,
                mustExist => 0,
-               format =>"Directory of FASTA files"
+               format =>"Directory of FASTA files",
 	       constraintFunc => undef,
 	       isList         => 0 }),
  

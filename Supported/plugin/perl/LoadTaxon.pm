@@ -8,6 +8,7 @@ use GUS::PluginMgr::Plugin;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::GeneticCode;
+use GUS::PluginMgr::Plugin;
 
 sub new {
   my ($class) = @_;
