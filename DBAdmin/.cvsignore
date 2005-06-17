@@ -1,5 +1,0 @@
-.DS_Store
-build
-*.bak.*
-src/java/org/gusdb/dba/model/*.java
-classes
