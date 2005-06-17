@@ -733,9 +733,8 @@ sub deleteFromNRDB {
   my $num_delete = 0;
   my $rel_list = join(',', values %{$dbHash});
   my $dbh = $self->getQueryHandle();
-  my $login = $self->getArg('tempLogin');
   my %nrdbId;
-  my $sql1 = "select n.nrdb_entry_id from dots.nrdbentry n, $login" . ".NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_db_rel_id";
+  my $sql1 = "select n.nrdb_entry_id from dots.nrdbentry n, NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_db_rel_id";
   my $st1 = $dbh->prepareAndExecute($sql1) || die "SQL failed: $sql1\n";
 
   while (my ($nrdb_entry_id) = $st1->fetchrow_array) {
