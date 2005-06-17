@@ -322,7 +322,7 @@ sub makeTempTable {
     if (!$self->getArg('restartTempTable')) { 
       $dbh->do("truncate table NRDBTemp");
       $dbh->do("drop table NRDBTemp");
-      $dbh->do("create table NRDBTemp (SOURCE_ID VARCHAR2(32) NOT NULL,EXTERNAL_DB_REL_ID NUMBER(5) NOT NULL,SEQUENCE_VERSION VARCHAR2(10),SET_NUM NUMBER(10) NOT NULL)");
+      $dbh->do("create table NRDBTemp (SOURCE_ID VARCHAR(32) NOT NULL,EXTERNAL_DB_REL_ID FLOAT(5) NOT NULL,SEQUENCE_VERSION VARCHAR(10),SET_NUM FLOAT(10) NOT NULL)");
       $dbh->do("grant select on NRDBTemp to public");
     }
 
