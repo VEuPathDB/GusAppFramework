@@ -186,7 +186,7 @@ sub new {
   my $self = {};
   bless($self,$class);
 
-  $self->initialize({requiredDbVersion => {},
+  $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision$', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
@@ -210,7 +210,7 @@ sub run {
 
   $self->log("Testing on " . $self->getArg('testnumber') . " queries") if $self->getArg('testnumber');
 
-  my %ignore = $self->handleRestart($self->getArg('restartAlgInvs'), $dbh);
+  my %ignore = $self->handleRestart($self->getArg('restartAlgInvs'));
 
   my $file = $self->getArg('file');
   my $fh  = $file =~ /\.gz$|\.Z$/ ?
@@ -239,14 +239,15 @@ sub run {
 }
 
 sub handleRestart {
-  my ($self, $restartAlgInvs, $dbh) = @_;
+  my ($self, $restartAlgInvs) = @_;
 
   my %ignore;
-  if ($restartAlgInvs) {
-    my $query = "select distinct query_id from dots.Similarity where row_alg_invocation_id in ($restartAlgInvs)";
+
+  if ($restartAlgInvs && scalar(@$restartAlgInvs)) {
+    my $restartStr = join(",", @$restartAlgInvs);
+    my $query = "select distinct query_id from dots.Similarity where row_alg_invocation_id in ($restartStr)";
     $self->log("Restarting: Querying for the ids to ignore\n$query");
-    my $stmt = $dbh->prepare($query);
-    $stmt->execute()|| die $stmt->errstr;
+    my $stmt = $self->prepareAndExecute($query);
     while ( my($id) = $stmt->fetchrow_array()) {
       $ignore{$id} = 1;
     }
@@ -468,7 +469,8 @@ sub insertSubjects {
     
     if (not $query_id =~ /^\d+$/) {
       # must be the sequence entry identifier, get the GUS PK then
-      my $queryobj = $queryTable->new ({'name' => $query_id});
+      my $fullQuerNm = "GUS::Model::" . $queryTable;
+      my $queryobj = $fullQuerNm->new ({'name' => $query_id});
       my $is_in = $queryobj->retrieveFromDB;
       
       if (! $is_in) {
@@ -487,7 +489,8 @@ sub insertSubjects {
     
     if (not $subject_id =~ /^\d+$/) {
       # must be the sequence entry identifier, get the GUS PK then
-      my $subjectobj = $subjectTable->new ({'name' => $subject_id});
+      my $fullSubjNm = "GUS::Model::" . $subjectTable;
+      my $subjectobj = $fullSubjNm->new ({'name' => $subject_id});
       my $is_in = $subjectobj->retrieveFromDB;
       
       if (! $is_in) {
