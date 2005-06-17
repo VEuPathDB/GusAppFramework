@@ -311,10 +311,10 @@ sub makeTempTable {
     my ($self,$dbHash, $taxonHash) = @_;
 
 # TODO: remove die statements once new API is implemented
-    my $login = $self->getArg('tempLogin') || die "must provide temp_login 
-                and temp_password for temp table\n";
+    my $login = $self->getArg('tempLogin') || die "must provide tempLogin 
+                and tempPassword for temp table\n";
     my $password = $self->getArg('tempPassword') || 
-                   die "must provide temp_login and temp_password for temp table\n";
+                   die "must provide tempLogin and tempPassword for temp table\n";
     my $DBI_STR = $self->getArg('dbiStr') || die "must provide server and sid for temp table\n";
     my $dbh = DBI->connect($DBI_STR, $login, $password);
 
@@ -411,7 +411,7 @@ sub makeNRDBAndExternalAASequence {
 
 # TODO: remove die once new API is implemented    
     my $temp_login = $self->getArg('tempLogin') || 
-                     die "--temp_login required to 
+                     die "--tempLogin required to 
                      load NRDBEntry and ExternalAASequence\n";
 
     my $dbh = $self->getQueryHandle();
