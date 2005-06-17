@@ -49,14 +49,14 @@ my $documentation = { purpose          => $purpose,
 		    };
 
 my $argsDeclaration =
-  [integerArg({name           => 'phylogenetic_profile_set_id',
-	       descr          => 'phylogenetic_profile_set_id',
+  [integerArg({name           => 'phylogeneticProfileSetId',
+	       descr          => '',
 	       reqd           => 1,
 	       constraintFunc => undef,
 	       isList         => 0, }),
 
    fileArg({name            => 'datafile',
-	    descr           => 'datafile',
+	    descr           => '',
 	    reqd            => 1,
 	    mustExist       => 1,
 	    format          =>
@@ -92,7 +92,7 @@ sub run {
   $self->logCommit;
 
   my $datafile = $self->getArg('datafile');
-  my $phylogeneticProfileSetId = $self->getArg('phylogenetic_profile_set_id');
+  my $phylogeneticProfileSetId = $self->getArg('phylogeneticProfileSetId');
 
   my $fh = FileHandle->new('<'.$datafile);
   if (! $fh) {
