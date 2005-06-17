@@ -42,14 +42,14 @@ my $argsDeclaration =
  stringArg({name => 'externalDatabaseName',
 	    descr => 'sres.externaldatabase.name for NRDB',
 	    constraintFunc => undef,
-	    reqd => 0,
+	    reqd => 1,
 	    isList => 0
 	    }),
  
  stringArg({name => 'externalDatabaseVersion',
 	    descr => 'sres.externaldatabaserelease.version for this instance of NRDB',
 	    constraintFunc => undef,
-	    reqd => 0,
+	    reqd => 1,
 	    isList => 0
 	    }),
 
@@ -71,7 +71,7 @@ my $argsDeclaration =
 	  format => 'Text'
          }),
 
- booleanArg({name => 'maketemp',
+ booleanArg({name => 'makeTemp',
              descr => 'option to create temp table',
              reqd => 0,
              default => 0
@@ -148,7 +148,7 @@ my $tablesDependedOn = [['GUS::Model::DoTS::NRDBEntry', 'pulls aa_sequence_id fr
 
 my $howToRestart = <<PLUGIN_RESTART;
 use 'restart' for restarting the interrupted plugin(use with plugin option), use number from last set number in log
-use 'restart_temp_table' indicates temp table insertion should be restarted because table already exits
+use 'restartTempTable' indicates temp table insertion should be restarted because table already exits
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -156,10 +156,8 @@ unknown
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
-For arguments, you must include either extDbRelId or extDbName AND extDbRlsVer,
-plugin and maketemp should be included if you want the plugin to create new entries in the NRDB and ExtAASeq databases,
-and to use plugin and maketemp, you must include the arguments temp_login, temp_password, and dbi_str.
-Note that none of these arguments are set to 'required' because they are only conditionally required (i.e. you only need one if you don't have another, or if you call something that requires it).
+For arguments,plugin and makeTemp should be included if you want the plugin to create new entries in the NRDB and ExtAASeq databases, and to use plugin and makeTemp, you must include the arguments tempLogin, tempPassword, and dbiStr.
+Note that none of these arguments are set to 'required' because they are only conditionally required (i.e. you only need them if you call something that requires them).
 PLUGIN_NOTES
 
 my $documentation = {purposeBrief => $purposeBrief,
@@ -206,12 +204,12 @@ sub run {
   my $ext_db_name = $self->getArg('externalDatabaseName');
   my $ext_db_rls_ver = $self->getArg('externalDatabaseVersion');
 
-  $self->{'extDbRelId'} = =$self->getExtDbRlsId($ext_db_name, $ext_db_rls_ver);
+  $self->{'extDbRelId'} = $self->getExtDbRlsId($ext_db_name, $ext_db_rls_ver);
 
   my $dbHash = $self->getDB();
-  my $taxonHash = $self->getTaxon ()if ($self->getArg('maketemp') || $self->getArg('plugin'));
+  my $taxonHash = $self->getTaxon ()if ($self->getArg('makeTemp') || $self->getArg('plugin'));
   my $tempresults = $self->makeTempTable($dbHash, $taxonHash) 
-                    if ($self->getArg('maketemp'));
+                    if ($self->getArg('makeTemp'));
 
 # there are cases where this if will execute and tempresults will not exist
   if (!$self->getArg('plugin') && !$self->getArg('delete')) {
@@ -466,7 +464,7 @@ sub makeNRDBAndExternalAASequence {
 			eval {
 			    $newExtAASeq->submit();
 			};
-			&handleFailure($seq,$failNum,$@) if ($@); 
+			$self->handleFailure($seq,$failNum,$@) if ($@); 
 			$num_submit++;
 		        $self->log("Submitted set number:$num_submit");
 			$newExtAASeq->undefPointerCache();
@@ -671,7 +669,7 @@ sub makeExtAASeq {
 # ---------------------------------------------------------------------
 
 sub handleFailure {
-  my ($seq, $failNum, $errMessage) = @_;
+  my ($self, $seq, $failNum, $errMessage) = @_;
   $failNum++;
   $self->log("$errMessage:\n$seq");
   die "Number of failures exceeds 100" if ($failNum > 100);
