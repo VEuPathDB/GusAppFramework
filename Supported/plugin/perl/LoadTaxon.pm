@@ -3,6 +3,8 @@ package GUS::Supported::Plugin::LoadTaxon;
 @ISA = qw(GUS::PluginMgr::Plugin);
 use strict;
 
+
+use GUS::PluginMgr::Plugin;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::GeneticCode;
