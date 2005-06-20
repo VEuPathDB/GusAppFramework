@@ -747,17 +747,11 @@ sub deleteFromNRDB {
 
   while (my ($nrdb_entry_id) = $st2->fetchrow_array) {
     if ($nrdbId{$nrdb_entry_id} != 1) {
-	print "in if $nrdb_entry_id\n";
       $num_delete++;
-	print "make new\n";
       my $newNRDBEntry = GUS::Model::DoTS::NRDBEntry->new ({'nrdb_entry_id'=>$nrdb_entry_id});
-	print "retrieve from DB\n";
       $newNRDBEntry->retrieveFromDB();
-	print "mark deleted\n";
       $newNRDBEntry->markDeleted();
-	print "submit\n";
       $newNRDBEntry->submit();
-	print "before new entry\n";
       $newNRDBEntry->undefPointerCache();
     }
   }
