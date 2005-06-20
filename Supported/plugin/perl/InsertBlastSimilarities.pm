@@ -507,7 +507,8 @@ sub insertSubjects {
     if (not $subject_id =~ /^\d+$/) {
       # must be the sequence entry identifier, get the GUS PK then
       my $fullSubjNm = "GUS::Model::" . $subjectTable;
-      my $subjectobj = $fullSubjNm->new ({'name' => $subject_id});
+      eval("require $fullSubjNm");
+      my $subjectobj = $fullSubjNm->new ({'source_id' => $subject_id});
       my $is_in = $subjectobj->retrieveFromDB;
       
       if (! $is_in) {
@@ -517,15 +518,17 @@ sub insertSubjects {
 	$s->{subject_id} = $subjectobj->getId;
       }
     }
-    
-    my @simVals = ($simPK, $s->{subject_id}, $s->{query_id},
-		   $s->{score}, undef,
-		   $s->{pvalue_mant}, $s->{pvalue_exp},
-		   $s->{min_subject_start}, $s->{max_subject_end},
-		   $s->{min_query_start}, $s->{max_query_end},
-		   $s->{number_of_matches}, $s->{total_match_length},
-		   $s->{number_identical}, $s->{number_positive},
-		   $s->{is_reversed}, $s->{reading_frame});
+
+    my @simVals = ($simPK, $s->{subject_id}, 
+		   $s->{query_id}, $s->{score}, 
+		   undef, 
+		   $s->{pvalue_mant}, 
+		   $s->{pvalue_exp}, $s->{min_subject_start}, 
+		   $s->{max_subject_end}, $s->{min_query_start}, 
+		   $s->{max_query_end}, $s->{number_of_matches}, 
+		   $s->{total_match_length}, $s->{number_identical},
+		   $s->{number_positive}, $s->{is_reversed}, 
+		   $s->{reading_frame});
 
     $simStmt->execute(@simVals) || die $simStmt->errstr;
     $self->log("Inserting Similarity: ", @simVals) if $verbose;
@@ -571,8 +574,9 @@ sub getInsertSubjStmt {
   my $rowGroupId = $self->getAlgInvocation()->getRowGroupId();
   my $rowProjectId = $self->getAlgInvocation()->getRowProjectId();
 
-  my $sql =
+  my $sql= 
 "insert into dots.Similarity Values " .
+# similarity_id, subject_id, query_id,
 "(?, $subj_tbl_id, ?, $query_tbl_id, ?, " .
 #score, bit_score_summary, pvalue_mant, pvalue_exp, min_subject_start,
 "?,     ?,                 ?,           ?,          ?, " .
@@ -580,7 +584,7 @@ sub getInsertSubjStmt {
 "?,               ?,               ?,             ?, " .
 #total_match_length, number_identical, number_positive, is_reversed, reading_fr
 "?,                  ?,                ?,               ?,           ?, ".
-" null, SYSDATE, 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
+" SYSDATE, 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
 
   return $dbh->prepare($sql);
 }
