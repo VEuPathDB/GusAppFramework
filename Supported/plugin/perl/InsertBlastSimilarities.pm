@@ -73,8 +73,25 @@ PLUGIN_NOTES
             reqd  => 1,
             isList => 0,
             mustExist => 1,
-            format => 'The format produced by the blastSimilarities command (one
- line per Subject hit, followed by one for each HSP)',
+            format => "The format produced by the blastSimilarities command (one
+ line per Subject hit, followed by one for each HSP)
+
+The format looks like this:
+
+>97336279 (2 subjects)\n
+   Sum: smart00177:270:2e-24:1:72:63:278:1:72:49:54:0:+3
+    HSP1: smart00177:49:54:72:270:2e-24:1:72:63:278:0:+3
+   Sum: pfam00025:85:4e-17:1:70:72:278:1:70:41:51:0:+3
+    HSP1: pfam00025:41:51:70:85:4e-17:1:70:72:278:0:+3
+>97336280 (1 subjects)
+  Sum: COG3228:70:2e-12:201:252:3:158:1:52:25:34:0:+3
+   HSP1: COG3228:25:34:52:70:2e-12:201:252:3:158:0:+3
+>97336342 (0 subjects)
+>97336344 (1 subjects)
+  Sum: COG5096:48:4e-06:65:99:257:361:1:35:20:28:0:+2
+   HSP1: COG5096:20:28:35:48:4e-06:65:99:257:361:0:+2
+
+",
            }),
 
    tableNameArg({name  => 'subjectTable',
