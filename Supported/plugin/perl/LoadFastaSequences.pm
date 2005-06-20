@@ -115,7 +115,7 @@ stringArg({   name           => 'externalDatabaseVersion',
 
  stringArg({   name           => 'regexSourceId',
 	       descr          => 'The regular expression to pick the source_id of the sequence from the defline',
-	       reqd           => 0,
+	       reqd           => 1,
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
@@ -357,7 +357,7 @@ sub processOneFile{
 	      $mol_wgt = $1; 
 	    }
 
-	    my $regexContainedSeqs = $self->getArg('regexContainedSeqs') if $self->getArg('regeContainedSeqs');
+	    my $regexContainedSeqs = $self->getArg('regexContainedSeqs') if $self->getArg('regexContainedSeqs');
 	    if ($regexContainedSeqs && /$regexContainedSeqs/) { 
 		$contained_seqs = $1; 
 	    }
@@ -430,7 +430,7 @@ sub createNewExternalSequence {
     $aas->set('secondary_identifier',$secondary_id);
   }
   if ($aas->isValidAttribute('sequence_type_id')) {
-    $aas->setSequenceTypeId($self->getArg('sequenceTypeId'));
+    $aas->setSequenceTypeId($self->{sequenceTypeId});
   }
   if ($seq_version && $aas->isValidAttribute('sequenceVersion')) {
     $aas->setSequenceVersion($seq_version);
@@ -547,11 +547,7 @@ sub fetchSequenceTypeId {
 
   $sequenceType->submit();
 
-  my $sequence_type_id = $sequenceType->getSequenceTypeId();
-
-  $sequenceType->undefPointerCache();
-
-  $self->getArg('sequenceTypeId') = $sequence_type_id;
+  $self->{sequenceTypeId} = $sequenceType->getSequenceTypeId();
 
 }
 
