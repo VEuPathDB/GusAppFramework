@@ -300,15 +300,16 @@ sub makeNewGoTerm{
     my ($self, $entry, $goGraph, $levelGraph, 
 	$obsoleteGoId, $extDbRelId, $ancestorGusId) = @_;
     my $entryId = $entry->getId();
+    print "entryID = $entryId\n";
     my $l = $levelGraph->{$entryId};
     my @levelList = sort { $a <=> $b} @$l;
     my $obsolete = 0;
     my $numberOfLevels = $self->distinctLevels(\@levelList);
-
+    print "before if\n";
     if ($goGraph->{childToParent}->{$entryId}->{"$obsoleteGoId"}){
 	$obsolete = 1
 	};
-    
+    print "my gusGoTerm\n";
     my $gusGoTerm = GUS::Model::SRes::GOTerm->new({
 	go_id  => $entry->getId(), 
 	external_database_release_id   => $extDbRelId,
@@ -321,10 +322,10 @@ sub makeNewGoTerm{
 	ancestor_go_term_id => $ancestorGusId,
 	is_obsolete => $obsolete,
        });
-    
+    print "submit\n";
     #submit new term
     $gusGoTerm->submit();
-
+    print "submitted\n";
     $self->logVeryVerbose("submitted new GO Term " . $gusGoTerm->toXML() . "\n");
     
     return $gusGoTerm;
