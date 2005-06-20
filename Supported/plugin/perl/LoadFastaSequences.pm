@@ -85,7 +85,7 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       constraintFunc => undef,
 	       isList         => 0 }),
  
- integerArg({   name           => 'ncbiTaxonId',
+ integerArg({   name           => 'ncbiTaxId',
 	       descr          => 'The taxon id from NCBI for these sequences',
 	       reqd           => 0,
 	       constraintFunc => undef,
@@ -233,8 +233,10 @@ sub run {
 
 
   # get primary key for table_name
-  $prim_key = $self->getAlgInvocation()->
-    getTablePKFromTableId($self->className2TableId($self->getArg('tableName')));
+  my $tableId = $self->className2TableId($self->getArg('tableName'));
+
+  print STDERR "LFS: '$tableId' '" .  $self->getArg('tableName') . "\n";
+  $prim_key = $self->getAlgInvocation()->getTablePKFromTableId($tableId);
 
   if ($self->getArg('writeFile')) {
     open(WF,">>" . $self->getArg('writeFile'));
@@ -556,7 +558,7 @@ sub fetchTaxonId {
 
   eval ("require GUS::Model::SRes::Taxon");
 
-  my $taxon = GUS::Model::SRes::Taxon->new({ncbi_tax_id=>$self->getArg('ncbi_tax_id')});
+  my $taxon = GUS::Model::SRes::Taxon->new({ncbi_tax_id=>$self->getArg('ncbiTaxId')});
 
   $taxon->retrieveFromDB || die "Require valid --ncbi_tax_id\n";
 
