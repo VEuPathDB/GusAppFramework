@@ -848,10 +848,9 @@ sub __loadGoGraph{
 
     my $sql = "
      select term.go_id, term.go_term_id, hier.child_term_id
-     from SRes.GOTerm term, SRes.GORelationship hier
+     from SRes.GOTerm term Left Outer Join SRes.GORelationship hier On term.go_term_id = hier.parent_term_id
      where term.external_database_release_id = $goVersion
      and term.name != 'Gene_Ontology'
-     and term.go_term_id = hier.parent_term_id (+) 
 ";
     my $sth = $self->prepareAndExecute($sql);
 
