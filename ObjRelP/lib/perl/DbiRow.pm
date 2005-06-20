@@ -580,7 +580,7 @@ sub removeFromDB {              ##Shouldn't this synch??? Where is deleted refer
     $whereHash = $self->getAttributes();
   }
   my $whereClause = $self->getTable()->makeWhereHavingClause($whereHash);
-  my $numRows = $self->getDbHandle()->sqlexecIns("DELETE ".$self->getTable()->getOracleTableName()." $whereClause");
+  my $numRows = $self->getDbHandle()->sqlexecIns("DELETE FROM ".$self->getTable()->getOracleTableName()." $whereClause");
   $self->{'deleted'} = 1;
   return $numRows;
 }
