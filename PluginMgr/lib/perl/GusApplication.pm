@@ -1030,7 +1030,11 @@ sub openInvocation {
 
       # an unexpected parameter, let the user know.
       else {
-         $PlugIn->error("The plugin is declaring an argument named '$param_name', but that argument was not present when the plugin was last registered.  Perhaps you need to do a 'ga +update'.");
+         $PlugIn->error("The plugin is declaring an argument named '$param_name', but that argument was not present when the plugin was last registered.  
+
+Perhaps you need to do a 'ga +update " . $PlugIn->getName() . " --commit'
+
+If you are developing the plugin, you may need to check it in to the repostory and do a build before running ga update.\n");
       }
    }
 }
