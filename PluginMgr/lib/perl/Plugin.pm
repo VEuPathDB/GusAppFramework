@@ -1168,7 +1168,7 @@ B<Parameters>
 sub error {
   my ($self, $msg) = @_;
 
-  die($msg);
+  die("\n$msg\n");
 }
 
 =item C<userError($msg)>
