@@ -75,8 +75,7 @@ PLUGIN_NOTES
             reqd  => 1,
             isList => 0,
             mustExist => 1,
-            format => "The format produced by the blastSimilarities command (one
- line per Subject hit, followed by one for each HSP)
+            format => "The format produced by the blastSimilarities command (a line describing the query, one line per Subject hit, followed by one for each HSP)
 
 The format looks like this:
 
@@ -93,6 +92,10 @@ The format looks like this:
   Sum: COG5096:48:4e-06:65:99:257:361:1:35:20:28:0:+2
    HSP1: COG5096:20:28:35:48:4e-06:65:99:257:361:0:+2
 
+
+Each line has an identifier.  If you provide the --queryTableSrcIdCol argument then the identifier on the query line is understood to be a source id that exists in that column in the query table.  Otherwise, it must be numeric, and must be a primary key into the query table.
+
+A parallel logic applies to the lines showing subjects. 
 ",
            }),
 
