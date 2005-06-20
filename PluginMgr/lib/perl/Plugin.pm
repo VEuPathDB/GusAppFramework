@@ -397,7 +397,7 @@ B<Return type:> scalar or list reference
 sub getArg {
   my ($self, $name) = @_;
   my $args = $self->getArgs();
-  &confess("Attempting to access command line argument '$name', but there is no such argument\n") unless exists($args->{$name});
+  die("Attempting to access command line argument '$name', but there is no such argument\n") unless exists($args->{$name});
   return $args->{$name};
 }
 
@@ -1168,7 +1168,7 @@ B<Parameters>
 sub error {
   my ($self, $msg) = @_;
 
-  confess("\nERROR: $msg\n\n--------------------------- STACK TRACE -------------------------\n");
+  die($msg);
 }
 
 =item C<userError($msg)>
