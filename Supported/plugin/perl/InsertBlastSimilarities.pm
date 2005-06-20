@@ -46,12 +46,14 @@ nalSequences plugin, and then to extract them into a file with the dumpSequences
 FromTable.pl command.  That command places the na_sequence_id of the sequence as
  the first thing in the definition line.
 
+
 The plugin assumes that all subject sequences are stored in the same table, and 
 that all query sequences are stored in the same table (but possibly different fr
 om the subject sequences).  The subjectTable and queryTable arguments indicate w
 hich tables the sequences are in, respectively.  (This is because the Similarity
  table forms similarities between table/rows in GUS; therefore, the plugin must 
 specify which tables the sequences are in.)
+
 PLUGIN_NOTES
 
 
@@ -101,10 +103,22 @@ mat, eg, DoTS::ExternalNaSequence)',
                  constraintFunc=> undef,
                  isList=>0,
            }),
+   stringArg({name  => 'subjectTableSrcIdCol',
+                 descr => 'The column in the subject table that holds the source id of the subject sequence.  If this is not set, then the plugin assumes that the id provided in the file for the subjects is a GUS primary key.',
+                 reqd  => 0,
+                 constraintFunc=> undef,
+                 isList=>0,
+           }),
    tableNameArg({name  => 'queryTable',
                  descr => 'Queries are taken from this table (schema::table form
 at, eg, DoTS::ExternalNaSequence)',
                  reqd  => 1,
+                 constraintFunc=> undef,
+                 isList=>0,
+           }),
+   stringArg({name  => 'queryTableSrcIdCol',
+                 descr => 'The column in the query table that holds the source id of the query sequence.  If this is not set, then the plugin assumes that the id provided in the file for the queryies is a GUS primary key.',
+                 reqd  => 0,
                  constraintFunc=> undef,
                  isList=>0,
            }),
@@ -197,6 +211,13 @@ more of these row_alg_invocation_ids will be ignored',
                isList=> 0,
               }),
   ];
+
+############################################################################
+#  Note for plugin developers:  this plugin inserts to the db with standard
+#  sql prepared statements instead of using the object layer.  It does this
+#  as an optimization.  This is generally discouraged as it is not as robust
+#  as using the object layer.
+############################################################################
 
 sub new {
   my ($class) = @_;
@@ -484,10 +505,12 @@ sub insertSubjects {
     # Get rid of the spaces
     $query_id =~ s/\s//g;
     
-    if (not $query_id =~ /^\d+$/) {
+    if ($self->getArg('queryTableSrcIdCol')) {
       # must be the sequence entry identifier, get the GUS PK then
       my $fullQuerNm = "GUS::Model::" . $queryTable;
-      my $queryobj = $fullQuerNm->new ({'name' => $query_id});
+      eval("require $fullQuerNm");
+      my $queryobj = $fullQuerNm->
+	new ({$self->getArg('queryTableSrcIdCol') => $query_id});
       my $is_in = $queryobj->retrieveFromDB;
       
       if (! $is_in) {
@@ -497,18 +520,22 @@ sub insertSubjects {
 	$s->{query_id} = $queryobj->getId;
       }
 	
+    } elsif ($query_id !~ /^\d+$/) {
+      $self->userError("You have not provided a --queryTableSrcIdCol which means the input file must provide GUS primary keys for the queriess.   But the input file has non-numeric values for the query's identifiers which cannot be primary keys.");
     }
+
     
     my $subject_id = $s->{subject_id};
     
     # Get rid of the spaces
     $subject_id =~ s/\s//g;
     
-    if (not $subject_id =~ /^\d+$/) {
+    if ($self->getArg('subjectTableSrcIdCol')) {
       # must be the sequence entry identifier, get the GUS PK then
       my $fullSubjNm = "GUS::Model::" . $subjectTable;
       eval("require $fullSubjNm");
-      my $subjectobj = $fullSubjNm->new ({'source_id' => $subject_id});
+      my $subjectobj = $fullSubjNm->
+	new ({$self->getArg('subjectTableSrcIdCol') => $subject_id});
       my $is_in = $subjectobj->retrieveFromDB;
       
       if (! $is_in) {
@@ -517,6 +544,8 @@ sub insertSubjects {
       else {
 	$s->{subject_id} = $subjectobj->getId;
       }
+    } elsif ($subject_id !~ /^\d+$/) {
+      $self->userError("You have not provided a --subjectTableSrcIdCol which means the input file must provide GUS primary keys for the subjects.   But the input file has non-numeric values for the subject's identifiers which cannot be primary keys.");
     }
 
     my @simVals = ($simPK, $s->{subject_id}, 
