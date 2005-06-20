@@ -242,20 +242,22 @@ sub loadOntology {
 
 	#make entry in SRes.GOTerm for each entry in the go file
 	foreach my $entryId(keys %$entries){
-	    
+	    print "entryID = $entryId\n";
 	    next if (($entryId eq $store->getBranchRoot())||($entryId eq $store->getRoot()));
 	    
 	    if ($processedEntries->{Term}->{$entryId}){
+		print "In processedEntries if\n";
 		$skipCount++;
 		next;
 	    }
-	    
+	    print "entryCount ++\n";
 	    $entryCount++;
 
 	    my $entry = $entries->{$entryId};
+	    print "Entry = $entry\n";
 	    my $gusGoTerm = $self->makeNewGoTerm($entry, $goGraph, $levelGraph, 
 						   $obsoleteGoId, $extDbRelId, $ancestorGusId);
-
+	    print "returned from makeNewGoTerm\n";
 	    #write to successfully processed id list
 	    $processedEntries->{Term}->{$entryId} = 1;
 
