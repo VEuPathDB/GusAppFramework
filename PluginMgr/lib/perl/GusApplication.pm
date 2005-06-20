@@ -4,7 +4,7 @@ package GUS::PluginMgr::GusApplication;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 use strict;
-
+#use vars (%SIG);
 use CBIL::Util::EasyCsp;
 
 use GUS::PluginMgr::Plugin;
@@ -446,6 +446,17 @@ sub doMajorMode_RunOrReport {
 
    # the application context
    $Run && $Self->openInvocation($pu);
+   
+   # this acts like a java final block.  clean up and show a stack trace.
+   { local
+
+   $SIG{__DIE__} = sub {
+     my ($err) = @_;
+
+     require Carp;
+     
+     die "\nERROR:\n$err\nSTACK TRACE:\n" . Carp::longmess() . "\n";
+   };
 
    eval {
       my $resultDescrip;
@@ -462,16 +473,14 @@ sub doMajorMode_RunOrReport {
          $pu->setResultDescr($resultDescrip);
       }
       $Self->logAlert("RESULT", $pu->getResultDescr());
-   };
+   };}
 
    my $err = $@;
-
-   # clean up.
    $Run && $Self->closeInvocation($pu, $err);
 
    $Self->disconnect_from_database($Self);
 
-   die "$err" if $err;
+   die $err if $err;
 }
 
 # ----------------------------------------------------------------------
