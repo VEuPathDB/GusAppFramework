@@ -234,7 +234,7 @@ public class PostgresWriter
     protected String getType(ColumnType type) {
 
         if (type == ColumnType.DATE) {
-            return "DATE";
+            return "TIMESTAMP";
         } else if (type == ColumnType.STRING) {
             return "VARCHAR";
         } else if (type == ColumnType.CLOB) {
