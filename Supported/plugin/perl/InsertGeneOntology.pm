@@ -242,27 +242,25 @@ sub loadOntology {
 
 	#make entry in SRes.GOTerm for each entry in the go file
 	foreach my $entryId(keys %$entries){
-	    print "entryID = $entryId\n";
 	    next if (($entryId eq $store->getBranchRoot())||($entryId eq $store->getRoot()));
 	    
 	    if ($processedEntries->{Term}->{$entryId}){
-		print "In processedEntries if\n";
 		$skipCount++;
 		next;
 	    }
-	    print "entryCount ++\n";
 	    $entryCount++;
 
 	    my $entry = $entries->{$entryId};
-	    print "Entry = $entry\n";
+
+
 	    my $gusGoTerm = $self->makeNewGoTerm($entry, $goGraph, $levelGraph, 
 						   $obsoleteGoId, $extDbRelId, $ancestorGusId);
-	    print "returned from makeNewGoTerm\n";
 	    #write to successfully processed id list
 	    $processedEntries->{Term}->{$entryId} = 1;
 
             # update translation tables between GO and GUS ids.
 	    $gus2go->{ $gusGoTerm->getId() } = $entry->getId();
+
 	    $go2gus->{ $entryId } = $gusGoTerm->getId();
 	    $self->undefPointerCache();
 	}
@@ -300,16 +298,13 @@ sub makeNewGoTerm{
     my ($self, $entry, $goGraph, $levelGraph, 
 	$obsoleteGoId, $extDbRelId, $ancestorGusId) = @_;
     my $entryId = $entry->getId();
-    print "entryID = $entryId\n";
     my $l = $levelGraph->{$entryId};
     my @levelList = sort { $a <=> $b} @$l;
     my $obsolete = 0;
     my $numberOfLevels = $self->distinctLevels(\@levelList);
-    print "before if\n";
     if ($goGraph->{childToParent}->{$entryId}->{"$obsoleteGoId"}){
 	$obsolete = 1
 	};
-    print "my gusGoTerm\n";
     my $gusGoTerm = GUS::Model::SRes::GOTerm->new({
 	go_id  => $entry->getId(), 
 	external_database_release_id   => $extDbRelId,
@@ -322,10 +317,10 @@ sub makeNewGoTerm{
 	ancestor_go_term_id => $ancestorGusId,
 	is_obsolete => $obsolete,
        });
-    print "submit\n";
+
     #submit new term
     $gusGoTerm->submit();
-    print "submitted\n";
+
     $self->logVeryVerbose("submitted new GO Term " . $gusGoTerm->toXML() . "\n");
     
     return $gusGoTerm;
