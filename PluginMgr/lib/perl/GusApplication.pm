@@ -395,6 +395,9 @@ sub doMajorMode_RunOrReport {
 
    my $pu = $Self->newFromPluginName($PluginClass);
 
+   # what versions does the plugin want?
+   $Self->connect_to_database($Self);
+
    # connect to the database
    $Self->connect_to_database($pu);
 
@@ -430,9 +433,6 @@ sub doMajorMode_RunOrReport {
    }
 
    $pu->getDb()->setVerbose($Self->{sqlVerbose});
-
-   # what versions does the plugin want?
-   $Self->connect_to_database($Self);
 
    $pu->initArgs($argsHash);
    $Self->initArgs($argsHash);
