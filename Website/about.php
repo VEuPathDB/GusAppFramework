@@ -2,60 +2,35 @@
 
 <h2>Overview</h2>
   <P>
-  With the availability of high-throughput sequence and
-  expression data, project-focused sequence databases are
-  envisioned for a wide range of model organisms,
-  pathogens and system-specific communities.  The Genomics
-  Unified Schema (GUS) platform offers these efforts a
-  sophisticated database system and user interface without
-  requiring them to commit the substantial overhead and
-  expertise required to build from scratch.  Individual
-  sites are responsible for developing site-specific
-  details.  Depending upon their needs and resources this
-  will range from web page programming and data loading to
-  large scale schema extensions, providing for templated
-  to highly distinctive installations.  An open source CVS
-  repository is used to incorporate modifications and
-  extensions introduced by the external developer
-  community.
-  </P>
+The Genomics Unified Schema (GUS) is an extensive relational database schema and associated application framework designed to store, integrate, analyze and present functional genomics data.  The GUS schema supports a wide range of data types including genomics, gene expression, transcript assemblies, proteomics and others.  It emphasizes standards-based ontologies and strong-typing.
+ </P>
+ <P>
+The GUS Application Framework offers an object-relational layer and a Plugin API used to rapidly create robust data loading programs for diverse data sources.  The GUS distribution includes plugins for standard data sources.  The GUS Web Development Kit (WDK) is a rich environment for efficiently designing sophisticated query-based websites with little programming required.
+ </P>
+		  
+<h2>Sites Using GUS</h2>
+    <ul>
+       <li><a href="http://www.plasmodb.org">PlasmoDB.org</a> -  A genomic database for the malaria-causing parasite Plasmodium falciparum.</li>
+       <li><a href="http://www.cryptodb.org">CryptoDB.org</a> - Cryptosporidium Genome Resources</li>
+       <li><a href="http://www.cbil.upenn.edu/EPConDB/">EPConDB</a> - The Endocrine Pancreas Consortium web site</li>
+       <li><a href="http://www.cbil.upenn.edu/RAD">RAD</a> - A gene expression database of array-based (microarrays, high-density oligo arrays, macroarrays) and non-array-based (e.g., SAGE) experiments</li>
+       <li><a href="http://www.allgenes.org/">Allgenes.org</a> - A human and mouse gene index derived from assembled ESTs and mRNAs</li>
+    </ul>
+       
 
-  <P>
-  GUS is based on an extensive strongly-typed
-  relational schema and includes the GUS Application
-  Framework to assist in development of data acquisition
-  and analysis programs and the GUS Web Development Kit to
-  assist in query-based website development.  The GUS
-  platform maximizes the utility of stored data by
-  warehousing it in a schema that integrates the genome,
-  transcriptome, and proteome of one or more organisms,
-  gene regulation and networks, ontologies and controlled
-  vocabularies, gene expression and inter-organism
-  comparisons.  The GUS relational database provides
-  scaleable high-performance access to large amounts of
-  data spread over hundreds of tables, and facilitates
-  complex queries not available in many other systems.  It
-  provides programmatic access via SQL and the GUS
-  Application Framework.
-  </P>
-	
-<h2>Projects</h2>
-	<p>The following sites are using GUS:
-	
-	<ul>
-		<li><a href="http://www.plasmodb.org">PlasmoDB.org</a> -  </li>
-		<li><a href="http://www.cryptodb.org">CryptoDB.org</a> -  </li>
-	</ul>
-</p>
- 
-<h2>Collaborators  </h2>
+<h2>Collaborators</h2>
 	<p>GUS is an open source project developed, maintained, and supported by:
 	
 	<ul>
 		<li><a href="http://www.cbil.upenn.edu">CBIL</a> -  The Computational Biology and Informatics Laboratory at The University of Pennsylvania's Center for Bioinformatics</li>
-		<li>uga</li>
-		
+		<li><a href="http://www.genetics.uga.edu/faculty/bio-kissinger.html">The Kissinger Lab</a> - CTEGD and the Department of Genetics, University of Georgia</li>
+                <li>Fidel Salas, Sucheta Tripathy and Tejal Karkhanisat the <a href="http://www.vbi.vt.edu/">Virginia Bioinformatics Institute</a></li>
 	</ul>
 </p>
+
+<h2>Related Projects</h2>
+   <ul>
+     <li><a href="http://www.gmod.org/">gmod.org</a> - Generic Model Organism Database</li>
+   </ul>
 
 <?php include("footer.php"); ?>

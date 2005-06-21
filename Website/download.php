@@ -1,11 +1,11 @@
 <?php include("header.php"); ?>
 
 <h2>Latest Stable Release</h2>
-<p>The latest stable release of GUS is 3.5.0, released 6/20/05.  You may
-download it at <a href="/download/">www.gusdb.org/download</a></p>
+<p>The latest stable release of GUS is 3.5.0, released 6/21/05.  You may
+download it at <a href="download/">www.gusdb.org/download</a></p>
 
 <h2>Latest Development Release</h2>
-<p>There are no development releaes available</p>
+<p>There are no development releases available</p>
 
 <h2>Source Repository</h2>
 <p>The GUS source is maintained in a Subversion-powered repository.  You
