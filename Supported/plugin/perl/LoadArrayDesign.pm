@@ -22,7 +22,7 @@
 #
 # $Revision$ $Date$ $Author$ 
 # ----------------------------------------------------------
-package GUS::Supported::Plugin::InsertArrayDesign;
+package GUS::Supported::Plugin::LoadArrayDesign;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 use strict;
@@ -81,13 +81,13 @@ FAILURE_CASES
 
 =head2 EXAMPLES
 
-ga GUS::Supported::Plugin::InsertArrayDesign B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file
+ga GUS::Supported::Plugin::LoadArrayDesign B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file
 
-ga GUS::Supported::Plugin::InsertArrayDesign B<[options]> B<--help>
+ga GUS::Supported::Plugin::LoadArrayDesign B<[options]> B<--help>
 
-ga GUS::Supported::Plugin::InsertArrayDesign B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file B<--manufacturer_id> manufacturer_id B<--technology_type_id> technology_type_id B<--substrate_type_id> substrate_type_id B<--debug> > logfile
+ga GUS::Supported::Plugin::LoadArrayDesign B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file B<--manufacturer_id> manufacturer_id B<--technology_type_id> technology_type_id B<--substrate_type_id> substrate_type_id B<--debug> > logfile
 
-ga GUS::Supported::Plugin::InsertArrayDesign B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file B<--manufacturer_id> manufacturer_id B<--technology_type_id>  technology_type_id B<--substrate_type_id> substrate_type_id B<--commit> > logfile
+ga GUS::Supported::Plugin::LoadArrayDesign B<[options]> B<--cfg_file> cfg_file B<--data_file> data_file B<--manufacturer_id> manufacturer_id B<--technology_type_id>  technology_type_id B<--substrate_type_id> substrate_type_id B<--commit> > logfile
 
 
 =head2 F<cfg_file>
