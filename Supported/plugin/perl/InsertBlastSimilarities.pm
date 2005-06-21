@@ -616,7 +616,7 @@ sub getInsertSubjStmt {
 "?,               ?,               ?,             ?, " .
 #total_match_length, number_identical, number_positive, is_reversed, reading_fr
 "?,                  ?,                ?,               ?,           ?, ".
-" SYSDATE, 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
+$self->getDb()->getDateFunction() . " , 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
 
   return $dbh->prepare($sql);
 }
@@ -643,7 +643,7 @@ sub getInsertSpanStmt {
 "?,             ?,           ?,           ?, " .
 #is_reversed, reading_frame
 "?,           ?, ".
-"SYSDATE, 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
+$self->getDb()->getDateFunction() . ", 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
   return $db->getDbHandle()->prepare($sql);
 }
 
