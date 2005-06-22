@@ -6,14 +6,14 @@
 ##
 #######################################################################
 
-package GUS::Supported::Plugin::InsertSequenceOntology;
+package GUS::Supported::Plugin::InsertOntologyTermType;
 @ISA = qw(GUS::PluginMgr::Plugin);
  
 use strict;
 
 use FileHandle;
 use GUS::ObjRelP::DbiDatabase;
-use GUS::Model::SRes::SequenceOntology;
+use GUS::Model::SRes::OntologyTermType;
 use GUS::PluginMgr::Plugin;
 
 $| = 1;
@@ -66,7 +66,6 @@ my $documentation = {purposeBrief => $purposeBrief,
 		     notes => $notes
 		    };
 
-
 sub new {
     my ($class) = @_;
     my $self = {};
@@ -78,7 +77,6 @@ sub new {
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
 		      });
-
     return $self;
 }
 
@@ -115,14 +113,11 @@ sub run {
 }
 
 sub makeOntologyTermType {
-
    my ($self, $term, $definition) = @_;
 
-   my $ontologyName = '';
-
-   my $term = GUS::Model::SRes::SequenceOntology->new({
+   my $term = GUS::Model::SRes::OntologyTermType->new({
        'name' => $term,
-       'definition' => $definition });
+       'description' => $definition });
    
    return $term;
 }
