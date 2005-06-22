@@ -10,14 +10,6 @@
     <releaseinfo>$Id: UsersGuide.xml,v 1.1.2.1 2005/05/05 20:18:59 msaffitz
     Exp $</releaseinfo>
 
-    <author>
-      <surname>Fischer</surname>
-
-      <firstname>Steve</firstname>
-
-      <email>sfischer@pcbi.upenn.edu</email>
-    </author>
-
     <legalnotice>
       <para>The Genomics Unified Schema and Application Framework are subject
       to various license terms and copyrights as outlined in the LICENSE file
@@ -26,6 +18,16 @@
   </bookinfo>
 
   <chapter>
+    <chapterinfo>
+      <author>
+        <surname>Fischer</surname>
+
+        <firstname>Steve</firstname>
+
+        <email>sfischer@pcbi.upenn.edu</email>
+      </author>
+    </chapterinfo>
+
     <title>Developing GUS Plugins</title>
 
     <sect1>
@@ -179,8 +181,8 @@
 }</screen>
             </example></para>
 
-          <para>The <computeroutput>$Revision$</computeroutput> string is
-          CVS or Subversion keyword. When the plugin is checked into source
+          <para>The <computeroutput>$Revision$</computeroutput> string
+          is CVS or Subversion keyword. When the plugin is checked into source
           control, the repository substitutes the file's revision into that
           keyword. The keywords must be in single quotes to prevent Perl from
           interpreting <computeroutput>$Revision$</computeroutput> as a
@@ -375,7 +377,7 @@ my $documentation = { purpose=&gt;$purpose,
         </sect3>
 
         <sect3>
-          <title>The <computeroutput>run()</computeroutput>Method </title>
+          <title>The <computeroutput>run()</computeroutput>Method</title>
 
           <para>Plugins are run by a command called
           <computeroutput>ga</computeroutput> (which stands for "GUS
@@ -461,8 +463,8 @@ my $documentation = { purpose=&gt;$purpose,
               </listitem>
 
               <listitem>
-                <para><emphasis>update</emphasis> if the plugin updates only
-                </para>
+                <para><emphasis>update</emphasis> if the plugin updates
+                only</para>
               </listitem>
 
               <listitem>
@@ -1022,6 +1024,187 @@ while (my ($primaryKey, $term) = $sth-&gt;fetchrow_array()) {
         <computeroutput>GUS::Supported::Plugin::InsertExternalDatabase</computeroutput>
         and
         <computeroutput>GUS::Supported::Plugin::InsertExternalDatabaseRls</computeroutput>.</para>
+      </sect2>
+    </sect1>
+  </chapter>
+
+  <chapter>
+    <chapterinfo>
+      <author>
+        <surname>Saffitz</surname>
+
+        <firstname>Michael</firstname>
+
+        <email>msaffitz@pcbi.upenn.edu</email>
+      </author>
+    </chapterinfo>
+
+    <title>Extending the Schema</title>
+
+    <para>The GUS Schema may be extended by adding new columns to existing
+    tables, or adding new tables and views. For the time being, adding new
+    Schemata to GUS is not supported.<important>
+        <para>Extensions to the GUS may interfere with your ability to upgrade
+        to future releases of GUS.</para>
+      </important></para>
+
+    <sect1>
+      <title>Creating New Objects in the Database</title>
+
+      <para>The first step to extending the Schema is to create the objects
+      within the database.</para>
+
+      <sect2>
+        <title>Adding New Columns to Existing Tables</title>
+
+        <para>When adding new columns to existing tables, it is important to
+        maintain the existing order of the columns, and only add new columns
+        between the existing columns and the housekeeping columns (eg before
+        the <computeroutput>modification_date</computeroutput> column). For
+        this reason, it will likely be necessary to rename the existing table;
+        create the modified table; and then migrate the date from the existing
+        table to the newly created table. As you perform this process, you
+        should ensure that all constraints (including both "incoming" and
+        "outgoing" foreign key constraints and primary key constraints) and
+        that indexes on the original table are created and applied on the
+        newly created table.</para>
+      </sect2>
+
+      <sect2>
+        <title>Adding New Tables</title>
+
+        <para>When creating new tables, it is important to include all
+        housekeeping columns at the "end" of the definition in the proper
+        order. All new tables should have a corresponding sequence created,
+        with the naming convention of:
+        <computeroutput><replaceable>TableSchemaName</replaceable>.<replaceable>TableName</replaceable>_SQ</computeroutput>
+        . All new tables must have a single column primary key constraint
+        defined.</para>
+      </sect2>
+
+      <sect2>
+        <title>Adding New Views</title>
+
+        <para>Only views created as "subclass" views against an implementation
+        table are supported. When creating new views, it is important to
+        include all superclass columns in the view definition, including the
+        housekeeping columns. Proper column ordering should be observed in the
+        views.</para>
+      </sect2>
+
+      <sect2>
+        <title>Updating GUS Version Objects</title>
+
+        <para>If you've changed an existing GUS table, or wish to have GUS
+        audit changes to your new tables and views, you must make the
+        corresponding changes and/or additions to the version ("ver") tables
+        and views. </para>
+      </sect2>
+
+      <sect2>
+        <title>Updating
+        <computeroutput>Core.TableInfo</computeroutput></title>
+
+        <para>GUS stores metadata for all tables and views in the
+        <computeroutput>Core.TableInfo</computeroutput> table. Whenever you
+        create a new table or view, you must add a corresponding row in this
+        table. The column descriptions are:<table>
+            <title><computeroutput>Core.TableInfo</computeroutput>
+            Description</title>
+
+            <tgroup cols="2">
+              <thead>
+                <row>
+                  <entry align="center">Column Name</entry>
+
+                  <entry align="center">Description</entry>
+                </row>
+              </thead>
+
+              <tbody>
+                <row>
+                  <entry><computeroutput>table_id</computeroutput></entry>
+
+                  <entry>The ID of this row, provided by the
+                  <computeroutput>com Core.TableInfo_SQ</computeroutput>
+                  sequence. </entry>
+                </row>
+
+                <row>
+                  <entry><computeroutput>name</computeroutput></entry>
+
+                  <entry>The name of the table. The case used here will be
+                  used at object-generation time.</entry>
+                </row>
+
+                <row>
+                  <entry><computeroutput>table_type</computeroutput></entry>
+
+                  <entry><computeroutput>Standard</computeroutput> or
+                  <computeroutput>Version</computeroutput>, depending on
+                  whether this is a normal table or a version table </entry>
+                </row>
+
+                <row>
+                  <entry><computeroutput>primary_key_column</computeroutput></entry>
+
+                  <entry>The name of the primary key column</entry>
+                </row>
+
+                <row>
+                  <entry><computeroutput>database_id</computeroutput></entry>
+
+                  <entry>The id of the schema, found in
+                  <computeroutput>Core.DatabaseInfo</computeroutput></entry>
+                </row>
+
+                <row>
+                  <entry><computeroutput>is_versioned</computeroutput></entry>
+
+                  <entry>1 if the table has a corresponding version table. 0
+                  otherwise.</entry>
+                </row>
+
+                <row>
+                  <entry><computeroutput>is_view</computeroutput></entry>
+
+                  <entry>1 if the "table" is a subclass view. 0
+                  otherwise.</entry>
+                </row>
+
+                <row>
+                  <entry><computeroutput>view_on_table_id</computeroutput></entry>
+
+                  <entry>If this "table" is a subclass view, the table id of
+                  the implementation table that this view is against.</entry>
+                </row>
+
+                <row>
+                  <entry><computeroutput>superclass_table_id</computeroutput></entry>
+
+                  <entry>If this "table" is a subclass view, the table id of
+                  the superclass view.</entry>
+                </row>
+
+                <row>
+                  <entry><computeroutput>is_updatable</computeroutput></entry>
+
+                  <entry>1 if the table is read/write, 0 if it is read
+                  only.</entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </table></para>
+      </sect2>
+
+      <sect2>
+        <title>Rebuilding Objects</title>
+
+        <para>After you have completed the steps above, you must rebuild your
+        objects. First, use the command below to signal that your table
+        definitions have changed:<screen>$ touch $PROJECT_HOME/Schema/gus_schema.xml</screen></para>
+
+        <para>Then, reinstall GUS:<screen>$ build GUS install -append</screen></para>
       </sect2>
     </sect1>
   </chapter>
