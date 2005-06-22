@@ -112,7 +112,7 @@ sub run {
     return "Inserted $count terms into OntologyRelationshipType";
 }
 
-sub makeOntologyTermType {
+sub makeOntologyRelType {
    my ($self, $term, $is_native) = @_;
 
    my $term = GUS::Model::SRes::OntologyRelationshipType->new({
