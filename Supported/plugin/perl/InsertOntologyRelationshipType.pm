@@ -2,7 +2,7 @@
 ##                   InsertOnotolgyRelationshipType.pm
 ##
 ## Plug-in to load OntologyRelationshipType from a tab delimited file.
-## $Id: $
+## $Id$
 ##
 #######################################################################
 
@@ -72,7 +72,7 @@ sub new {
     bless($self, $class);
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision:  $', #CVS fills this in
+		       cvsRevision =>  '$Revision$', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
