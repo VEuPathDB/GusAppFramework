@@ -35,161 +35,166 @@ sub new {
 
   my $easycsp =
       [{  o => 'action',
-	  h => 'one of: strip, get rid of extra psl headers; load, get alignments into db; setbest: set best alignment status, maybe delete unwanted alignments. Do all above if not set',
-	  t => 'string',
+       h => 'one of: strip, get rid of extra psl headers; load, get alignments into db; setbest: set best alignment status, maybe delete unwanted alignments. Do all above if not set',
+       t => 'string',
        },
        {  o => 'blat_dir',
-	  h => 'dir with files containing BLAT results in .psl format',
-	  t => 'string', 
+       h => 'dir with files containing BLAT results in .psl format',
+       t => 'string', 
        },
        {  o => 'blat_files',
-	  h => 'Files containing BLAT results in .psl format',
-	  t => 'string',
+       h => 'Files containing BLAT results in .psl format',
+       t => 'string',
        },
        {  o => 'reg_ex',
-	  h => 'Regular expression for finding source ID in defline',
-	  t => 'string',
+       h => 'Regular expression for finding source ID in defline',
+       t => 'string',
        },
        {
-	  o => 'file_list',
-	  h => 'File that contains a list of newline-separated BLAT files (used instead of --blat_files).',
-	  t => 'string',
-      },
-       {
-	   o => 'query_file',
-	   h => 'FASTA file that contains all of the BLAT query sequences.',
-	   t => 'string',
-	   r => 1,
+       o => 'file_list',
+       h => 'File that contains a list of newline-separated BLAT files (used instead of --blat_files).',
+       t => 'string',
        },
        {
-	   o => 'keep_best',
-	   h => 'keep how many alignments per query? (1: 1, 2: top 1%, o.w. all)',
-	   t => 'int',
+       o => 'query_file',
+       h => 'FASTA file that contains all of the BLAT query sequences.',
+       t => 'string',
+       r => 1,
        },
        {
-	   o => 'gap_table_space',
-	   h => 'table space where genomic gap info is stored',
-	   t => 'string',
+       o => 'keep_best',
+       h => 'keep how many alignments per query? (1: 1, 2: top 1%, o.w. all)',
+       t => 'int',
        },
        {
-	   o => 'previous_runs',
-	   h => 'Comma-separated list of algorithm_invocation_ids of previous runs; any duplicate results from these runs are ignored.',
-	   t => 'string',
+       o => 'gap_table_space',
+       h => 'table space where genomic gap info is stored',
+       t => 'string',
        },
        {
-	   o => 'report_interval',
-	   h => 'Print a progress message every report_interval entries processed',
-	   t => 'int',
-	   d => 5000,
+       o => 'previous_runs',
+       h => 'Comma-separated list of algorithm_invocation_ids of previous runs; any duplicate results from these runs are ignored.',
+       t => 'string',
        },
        {
-	   o => 'commit_interval',
-	   h => 'Commit after this number of entries have been inserted.',
-	   t => 'int',
-	   d => 5000,
+       o => 'report_interval',
+       h => 'Print a progress message every report_interval entries processed',
+       t => 'int',
+       d => 5000,
+       },
+       {
+       o => 'commit_interval',
+       h => 'Commit after this number of entries have been inserted.',
+       t => 'int',
+       d => 5000,
        },
        #####################################
        # BLAT run identification parameters
        #####################################
        {
-	   o => 'query_table_id',
-	   h => 'GUS table_id for the NASequence view that contains the BLAT query sequences.',
-	   t => 'int',
-	   d => 56,
+       o => 'query_table_id',
+       h => 'GUS table_id for the NASequence view that contains the BLAT query sequences.',
+       t => 'int',
+       d => 56,
        },
        {
-	   o => 'query_taxon_id',
-	   h => 'GUS taxon_id for the BLAT query sequences.',
-	   t => 'int',
-	   r => 1,
+       o => 'query_taxon_id',
+       h => 'GUS taxon_id for the BLAT query sequences.',
+       t => 'int',
+       r => 1,
        },
        {
-	   o => 'query_db_rel_id',
-	   h => 'GUS external_db_release_id for the BLAT query sequence',
-	   t => 'int',
+       o => 'query_db_rel_id',
+       h => 'GUS external_db_release_id for the BLAT query sequence',
+       t => 'int',
        },
        {
-	   o => 'target_table_id',
-	   h => 'GUS table_id for the NASequence view that contains the BLAT target sequences.',
-	   t => 'int',
-	   d => 245, # VirtualSequence
+       o => 'target_table_id',
+       h => 'GUS table_id for the NASequence view that contains the BLAT target sequences.',
+       t => 'int',
+       d => 245, # VirtualSequence
        },
        {
-	   o => 'target_taxon_id',
-	   h => 'GUS taxon_id for the BLAT target sequences.',
-	   t => 'int',
-	},
+       o => 'target_taxon_id',
+       h => 'GUS taxon_id for the BLAT target sequences.',
+       t => 'int',
+       },
        # 4792 = UCSC/NCBI 12/22/2001 release (human)
        # 5093 = UCSC Mm virtual chromosomes (February 2002 release)
        #
        {
-	   o => 'target_db_rel_id',
-	   t => 'int',
-	   h => 'GUS external_db_release_id for the BLAT target sequences (only required if using source_ids for target.)',
+       o => 'target_db_rel_id',
+       t => 'int',
+       h => 'GUS external_db_release_id for the BLAT target sequences.',
+       },
+       {
+       o => 'target_has_na_sequence_ids',
+       t => 'boolean',
+       h => 'Target sequences are identified by na_sequence_id. The default expects target source_ids which will be mapped to na_sequence_ids.)',
        },
        ######################################################
        # gate-keeping parameter to prevent loading everything
        ######################################################
        {
-	   o => 'min_query_pct',
-	   h => 'Minimum percentage of the query sequence that must align in order for an alignment to be loaded.',
-	   t => 'int',
-	   d => 10,
+       o => 'min_query_pct',
+       h => 'Minimum percentage of the query sequence that must align in order for an alignment to be loaded.',
+       t => 'int',
+       d => 10,
        },
        ##################################################
        # parameters for blat alignment quality assessment
        ##################################################
        {
-	   o => 'max_end_mismatch',
-	   h => 'Maximum mismatch, excluding polyA, at either end of the query sequence for a consistent alignment.',
-	   t => 'int',
-	   d => 10,
+       o => 'max_end_mismatch',
+       h => 'Maximum mismatch, excluding polyA, at either end of the query sequence for a consistent alignment.',
+       t => 'int',
+       d => 10,
        },
        {
-	   o => 'min_pct_id',
-	   h => 'Minimum percent identity for a consistent alignment.',
-	   t => 'int',
-	   d => 95,
+       o => 'min_pct_id',
+       h => 'Minimum percent identity for a consistent alignment.',
+       t => 'int',
+       d => 95,
        },
        {
-	   o => 'max_query_gap',
-	   h => 'Maximum size gap (unaligned segment) in the query sequence for a consistent alignment.',
-	   t => 'int',
-	   d => 5,
+       o => 'max_query_gap',
+       h => 'Maximum size gap (unaligned segment) in the query sequence for a consistent alignment.',
+       t => 'int',
+       d => 5,
        },
        {
-	   o => 'ok_internal_gap',
-	   h => 'Tolerated size of internal gap (unaligned segment) in the query sequence for a alignment quality assessment.',
-	   t => 'int',
-	   d => 15,
+       o => 'ok_internal_gap',
+       h => 'Tolerated size of internal gap (unaligned segment) in the query sequence for a alignment quality assessment.',
+       t => 'int',
+       d => 15,
        },
        {
-	   o => 'ok_end_gap',
-	   h => 'Tolerated size of end gap (unaligned segment) in the query sequence for a alignment quality assessment.',
-	   t => 'int',
-	   d => 50,
+       o => 'ok_end_gap',
+       h => 'Tolerated size of end gap (unaligned segment) in the query sequence for a alignment quality assessment.',
+       t => 'int',
+       d => 50,
        },
        {
-	   o => 'end_gap_factor',
-	   h => 'multiplication factor to be applied to the size of query end mismatch for the search of genomic gaps',
-	   t => 'int',
-	   d => 10,
+       o => 'end_gap_factor',
+       h => 'multiplication factor to be applied to the size of query end mismatch for the search of genomic gaps',
+       t => 'int',
+       d => 10,
        },
        {
-	   o => 'min_gap_pct',
-	   h => 'minimum size percentage of a genomic gap that seems to correspond to a query gap',
-	   t => 'int',
-	   d => 90,
+       o => 'min_gap_pct',
+       h => 'minimum size percentage of a genomic gap that seems to correspond to a query gap',
+       t => 'int',
+       d => 90,
        }
        ];
 
   $self->initialize({requiredDbVersion => {},
 		     cvsRevision => '$Revision$', # cvs fills this in!
-		     name => ref($self),
-		     revisionNotes => 'make consistent with GUS 3.0',
-		     easyCspOptions => $easycsp,
-		     usage => $usage
-		     });
+             name => ref($self),
+             revisionNotes => 'make consistent with GUS 3.0',
+             easyCspOptions => $easycsp,
+             usage => $usage
+             });
   return $self;
 }
 
@@ -221,30 +226,30 @@ sub run {
     my @allBlatFiles = &getBlatFiles($blatDir, $blatFiles, $fileList) unless $action eq 'setbest';
 
     if (!$action || $action eq 'strip') {
-	foreach my $file (@allBlatFiles) {
-	    $self->log("stripping extra headers in $file");
-	    &CBIL::Bio::BLAT::PSLDir::strip($file);
-	    if (&CBIL::Bio::BLAT::PSLDir::isFileEmpty($file)) {
-	      system("/bin/rm $file");
-	    } else {
-	      push @blatFiles, $file;
-	    }
-	}
+    foreach my $file (@allBlatFiles) {
+        $self->log("stripping extra headers in $file");
+        &CBIL::Bio::BLAT::PSLDir::strip($file);
+        if (&CBIL::Bio::BLAT::PSLDir::isFileEmpty($file)) {
+        system("/bin/rm $file");
+        } else {
+          push @blatFiles, $file;
+        }
+    }
     } else {
       @blatFiles = @allBlatFiles;
     }
 
     if (!$action || $action eq 'load') {
-	my $blatFiles = join(',', @blatFiles);
-	$self->log("Load alignments from raw BLAT output files $blatFiles ...");
-	my $qIndex = &maybeIndexQueryFile($queryFile, $regEx);
-print "DEBUGG made query index on file \"$queryFile\", using regEx \"$regEx\"\n";
-	$summary = $self->loadAlignments($blatFiles, $qIndex);
+    my $blatFiles = join(',', @blatFiles);
+    $self->log("Load alignments from raw BLAT output files $blatFiles ...");
+    my $qIndex = &maybeIndexQueryFile($queryFile, $regEx);
+#print "DEBUGG made query index on file \"$queryFile\", using regEx \"$regEx\"\n";
+    $summary = $self->loadAlignments($blatFiles, $qIndex);
     }
 
     if (!$action || $action eq 'setbest') {
-	$self->log("setting best alignment status, maybe remove unwanted entries...");
-	$summary .= $self->keepBestAlignments;
+    $self->log("setting best alignment status, maybe remove unwanted entries...");
+    $summary .= $self->keepBestAlignments;
     }
 
     return $summary;
@@ -278,13 +283,13 @@ sub loadAlignments {
     # Parameters used to assess alignments qualities
     #
     my $qualityParams = {
-	'maxEndMismatch' => $cla->{'max_end_mismatch'},
-	'minPctId' => $cla->{'min_pct_id'},
-	'maxQueryGap' => $cla->{'max_query_gap'},
-	'okInternalGap' => $cla->{'ok_internal_gap'},
-	'okEndGap' => $cla->{'ok_end_gap'},
-	'endGapFactor' => $cla->{'end_gap_factor'},
-	'minGapPct' => $cla->{'min_gap_pct'},
+    'maxEndMismatch' => $cla->{'max_end_mismatch'},
+    'minPctId' => $cla->{'min_pct_id'},
+    'maxQueryGap' => $cla->{'max_query_gap'},
+    'okInternalGap' => $cla->{'ok_internal_gap'},
+    'okEndGap' => $cla->{'ok_end_gap'},
+    'endGapFactor' => $cla->{'end_gap_factor'},
+    'minGapPct' => $cla->{'min_gap_pct'},
     };
 
     my @prevAlgInvIds = defined($prevRuns) ? split(/,|\s+/, $prevRuns): ();
@@ -292,8 +297,10 @@ sub loadAlignments {
     # 1. Read target source ids if requested
     #
     my $targetTable = &getTableNameFromTableId($dbh, $targetTableId);
-    my $targetIdHash = ($targetExtDbRelId =~ /\d+/) ?
-	&makeSourceIdHash($dbh, "$TPREF.$targetTable", $targetExtDbRelId) : undef;
+    my $targetIdHash = ($cla->{'target_has_na_sequence_ids'}) ?
+       undef : 
+       &makeSourceIdHash($dbh, "$TPREF.$targetTable", $targetExtDbRelId);
+
     # 2. Build hash of alignments that have already been loaded; we assume
     #    that an alignment can be uniquely identified by its coordinates.
     #
@@ -312,11 +319,11 @@ sub loadAlignments {
     my $nextvalVar = $self->getDb()->getDbPlatform()->nextVal("$TPREF.BLATAlignment");
 
     my $insertSql = ("INSERT INTO $TPREF.BLATAlignment VALUES (" .
-		     "$nextvalVar, " .
-		     "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " .
-		     "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " .
-		     "SYSDATE, 1, 1, 1, 1, 1, 0, " .
-		     "$userId, $groupId, $projectId, $algInvId)");
+             "$nextvalVar, " .
+             "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " .
+             "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " .
+             "SYSDATE, 1, 1, 1, 1, 1, 0, " .
+             "$userId, $groupId, $projectId, $algInvId)");
 
     #print STDERR "LoadBLATAlignments: insert sql = '$insertSql'\n";
 
@@ -326,39 +333,39 @@ sub loadAlignments {
     my $nTotalAlignsLoaded = 0;
 
     foreach my $blatFile (@files) {
-	print "LoadBLATAlignments: reading from $blatFile\n";
-	my $nAligns = 0;
-	my $nAlignsLoaded = 0;
+    print "LoadBLATAlignments: reading from $blatFile\n";
+    my $nAligns = 0;
+    my $nAlignsLoaded = 0;
 
-	my $psl = CBIL::Bio::BLAT::PSL->new($blatFile);
-	my $alignments = $psl->getAlignments();
+    my $psl = CBIL::Bio::BLAT::PSL->new($blatFile);
+    my $alignments = $psl->getAlignments();
 
-	print "LoadBLATAlignments: read ", $psl->getNumAlignments, " BLAT alignments from $blatFile\n";
+    print "LoadBLATAlignments: read ", $psl->getNumAlignments, " BLAT alignments from $blatFile\n";
 
-	foreach my $align (@$alignments) {
-	    ++$nAligns;
-	    ++$nTotalAligns;
+    foreach my $align (@$alignments) {
+        ++$nAligns;
+        ++$nTotalAligns;
 
-	    my $gapTab = ($gapTabPref ? "${gapTabPref}" . $align->get('t_name') . "_gap" : "");
-	    my $nl = &loadAlignment($dbh, $gapTab, $insertSql, $sth, $queryTableId, $queryTaxonId,
-				    $queryExtDbRelId, $targetTableId, $targetTaxonId, $targetExtDbRelId,
-				    $qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align,
-				    $minQueryPct);
+        my $gapTab = ($gapTabPref ? "${gapTabPref}" . $align->get('t_name') . "_gap" : "");
+        my $nl = &loadAlignment($dbh, $gapTab, $insertSql, $sth, $queryTableId, $queryTaxonId,
+                    $queryExtDbRelId, $targetTableId, $targetTaxonId, $targetExtDbRelId,
+                    $qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align,
+                    $minQueryPct);
 
-	    $nAlignsLoaded += $nl;
-	    $nTotalAlignsLoaded += $nl;
+        $nAlignsLoaded += $nl;
+        $nTotalAlignsLoaded += $nl;
 
-	    &progressMessage($reportInterval, $nTotalAligns, 'BLAT alignments processed.');
-	    &progressMessage($reportInterval, $nTotalAlignsLoaded, 'BLAT alignments loaded.') if ($nl > 0);
+        &progressMessage($reportInterval, $nTotalAligns, 'BLAT alignments processed.');
+        &progressMessage($reportInterval, $nTotalAlignsLoaded, 'BLAT alignments loaded.') if ($nl > 0);
 
-	    $dbh->commit() if (($nTotalAlignsLoaded % $commitInterval) == 0);
-	}
+        $dbh->commit() if (($nTotalAlignsLoaded % $commitInterval) == 0);
+    }
 
-	$dbh->commit();
+    $dbh->commit();
 
-	my $srcId = $1 if $blatFile =~ /([^\/])\.(fa|fasta)$/;
-	my $target_id = $targetIdHash->{$srcId};
-	print "LoadBLATAlignments: loaded $nAlignsLoaded/$nAligns BLAT alignments for $srcId ($target_id) from $blatFile.\n";
+    my $srcId = $1 if $blatFile =~ /([^\/])\.(fa|fasta)$/;
+    my $target_id = $targetIdHash->{$srcId};
+    print "LoadBLATAlignments: loaded $nAlignsLoaded/$nAligns BLAT alignments for $srcId ($target_id) from $blatFile.\n";
     }
 
     my $summary = "Loaded $nTotalAlignsLoaded/$nTotalAligns BLAT alignments from $nFiles file(s).\n";
@@ -382,11 +389,11 @@ sub getAlignmentGroups {
     my $targetExtDbRelId = $cla->{'target_db_rel_id'};
 
     my $sql = "select query_na_sequence_id, blat_alignment_id, score, percent_identity "
-	. "from DoTS.BlatAlignment "
+    . "from DoTS.BlatAlignment "
         . "where query_table_id = $queryTableId "
-	. "and query_taxon_id = $queryTaxonId "
-	. ($queryExtDbRelId ? "and query_external_db_release_id = $queryExtDbRelId " : "")
-	. "and target_table_id = $targetTableId "
+    . "and query_taxon_id = $queryTaxonId "
+    . ($queryExtDbRelId ? "and query_external_db_release_id = $queryExtDbRelId " : "")
+    . "and target_table_id = $targetTableId "
         . "and target_taxon_id = $targetTaxonId "
         . "and target_external_db_release_id = $targetExtDbRelId";
     my $sth = $dbh->prepare($sql) or die "bad sql $sql:!\n";
@@ -395,8 +402,8 @@ sub getAlignmentGroups {
 
     my %alnGrps;
     while (my ($sid, $bid, $score, $pct_id) = $sth->fetchrow_array) {
-	$alnGrps{$sid} = [] unless $alnGrps{$sid};
-	push @{ $alnGrps{$sid} }, [$bid, $score, $pct_id];
+    $alnGrps{$sid} = [] unless $alnGrps{$sid};
+    push @{ $alnGrps{$sid} }, [$bid, $score, $pct_id];
     }
     $sth->finish;
 
@@ -429,29 +436,32 @@ sub keepBestAlignments {
     my $tot_sq = scalar(keys %$alnGrps);
     my ($tot_al, $tot_bs) = (0,0);
     foreach my $sid (keys %$alnGrps) {
-	my @oneGrp = @{ $alnGrps->{$sid} };
-	my $grpSize = scalar(@oneGrp);
+    my @oneGrp = @{ $alnGrps->{$sid} };
+    my $grpSize = scalar(@oneGrp);
 
-	my $best_score = 0;
-	foreach (@oneGrp) {
-	    my ($bid, $score, $pct_id) = @$_;
-	    $best_score = $score if $score > $best_score;
-	    $tot_al++;
-	}
-	foreach (@oneGrp) {
-	    my ($bid, $score, $pct_id) = @$_;
+    my $best_score = 0;
+    foreach (@oneGrp) {
+        my ($bid, $score, $pct_id) = @$_;
+        $best_score = $score if $score > $best_score;
+        $tot_al++;
+    }
+    
+    my $updateSQL = "UPDATE DoTS.BlatAlignment SET is_best_alignment = 1 "
+                . "WHERE blat_alignment_id = ?";
+    my $updateh = $dbh->prepare($updateSQL);
+    foreach my $grp (@oneGrp) {
+        my ($bid, $score, $pct_id) = @{$grp};
 
-	    my $is_best = ($grpSize == 1 || $score >= 0.99 * $best_score);
-	    if ($is_best) {
-		$tot_bs++;
-		$dbh->do("update DoTS.BlatAlignment set is_best_alignment = 1 "
-			 . "where blat_alignment_id = $bid" );
-		if (($tot_bs % $commitInterval) == 0) {
-		    $dbh->commit();
-		    print "# $tot_bs alignments marked is_best_alignment = 1\n";
-		}
-	    }
-	}
+        my $is_best = ($grpSize == 1 || $score >= 0.99 * $best_score);
+        if ($is_best) {
+            $tot_bs++;
+            $updateh->execute($bid);
+            if (($tot_bs % $commitInterval) == 0) {
+                $dbh->commit();
+                print "# $tot_bs alignments marked is_best_alignment = 1\n";
+            }
+        }
+    }
     }
     $dbh->commit();
     $alnGrps = undef;
@@ -460,19 +470,19 @@ sub keepBestAlignments {
     print $summary;
 
     if ($keepBest == 1) {
-	print "# TODO: keep only one alignment per query\n";
+    print "# TODO: keep only one alignment per query\n";
     } elsif ($keepBest == 2) {
-	print "deleting non-top alignments ...\n";
-	my $sql = "delete DoTS.BlatAlignment "
-	    . "where query_table_id = $queryTableId "
-	    . "and query_taxon_id = $queryTaxonId "
-	    . "and target_table_id = $targetTableId "
+    print "deleting non-top alignments ...\n";
+    my $sql = "delete DoTS.BlatAlignment "
+        . "where query_table_id = $queryTableId "
+        . "and query_taxon_id = $queryTaxonId "
+        . "and target_table_id = $targetTableId "
             . "and target_taxon_id = $targetTaxonId "
             . "and target_external_db_release_id = $targetExtDbRelId "
             . "and (is_best_alignment is null or is_best_alignment = 0)";
-	$dbh->do($sql) or die "could not run $sql:!\n";
-	$dbh->commit();
-	$summary .= "(non-best alignments deleted from db)\n";
+    $dbh->do($sql) or die "could not run $sql:!\n";
+    $dbh->commit();
+    $summary .= "(non-best alignments deleted from db)\n";
     }
 
     return $summary;
@@ -491,25 +501,25 @@ sub maybeIndexQueryFile {
     my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
 
     my $idSub = sub {
-	my($defline) = @_;
+    my($defline) = @_;
 
-	if ($defline =~ /^>(DT\.\d+|THC\d+)/) {
-	    return $1;
-	} elsif ($defline =~ /^>(\d+)/) {
-	    return $1;
-	} elsif ($defline =~ /^>Pfa3D7\|(\d+)\|/) {
-	    return $1;
-	}
+    if ($defline =~ /^>(DT\.\d+|THC\d+)/) {
+        return $1;
+    } elsif ($defline =~ /^>(\d+)/) {
+        return $1;
+    } elsif ($defline =~ /^>Pfa3D7\|(\d+)\|/) {
+        return $1;
+    }
         # TODO: make this id regex a config item (below is for mchr5p celera genes)
         elsif ($defline =~ /^>(\S+)/) { return $1; }
 
-	print "Unable to parse $defline\n";	print "returning $1\n";
+    print "Unable to parse $defline\n"; print "returning $1\n";
     };
 
     if (!$qIndex->open()) {
-	$qIndex->createIndex(CBIL::Util::TO->new({get_key => $idSub}));
-	$qIndex = undef;
-	$qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
+    $qIndex->createIndex(CBIL::Util::TO->new({get_key => $idSub}));
+    $qIndex = undef;
+    $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
     }
     $qIndex;
 }
@@ -524,13 +534,13 @@ sub getBlatFiles {
     #
     my @files;
     if ($fileList && !$blatFiles) {
-	my $fl = `cat $fileList`;
-	@files = split(/[\s\n]+/,$fl);
+    my $fl = `cat $fileList`;
+    @files = split(/[\s\n]+/,$fl);
     }
 
     if ($blatDir && !$blatFiles) {
-	my $bd = CBIL::Bio::BLAT::PSLDir->new($blatDir);
-	@files = $bd->getPSLFiles;
+    my $bd = CBIL::Bio::BLAT::PSLDir->new($blatDir);
+    @files = $bd->getPSLFiles;
     }
 
     @files;
@@ -545,9 +555,9 @@ sub progressMessage {
     return if ($num == 0);
 
     if (($interval < 0) || ($num % $interval == 0)) {
-	my $date = `date`;
-	chomp($date);
-	print "LoadBLATAlignments: $date $num $what\n";
+    my $date = `date`;
+    chomp($date);
+    print "LoadBLATAlignments: $date $num $what\n";
     }
 }
 
@@ -571,20 +581,20 @@ sub makeSourceIdHash {
     my $hash = {};
 
     my $sql = ("select source_id, na_sequence_id " .
-	       "from $targetTable " .
-	       "where external_database_release_id = $targetDbId");
-    print "DEBUG: query in makeSourceIdHash: \"$sql\"\n";
+           "from $targetTable " .
+           "where external_database_release_id = $targetDbId");
+#    print "DEBUG: query in makeSourceIdHash: \"$sql\"\n";
     my $sth = $dbh->prepare($sql);
 
     $sth->execute();
     while (my @a = $sth->fetchrow_array()) {
-print "DEBUG:in mSIH: a0 = $a[0], a1 = $a[1]\n";
-	my $v = $hash->{$a[0]};
-	if (defined($v)) {
-	    print STDERR "LoadBLATAlignments: WARNING - duplicate source_id $a[0] in $targetTable\n";
-	} else {
-	    $hash->{$a[0]} = $a[1];
-	}
+#print "DEBUG:in mSIH: a0 = $a[0], a1 = $a[1]\n";
+    my $v = $hash->{$a[0]};
+    if (defined($v)) {
+        print STDERR "LoadBLATAlignments: WARNING - duplicate source_id $a[0] in $targetTable\n";
+    } else {
+        $hash->{$a[0]} = $a[1];
+    }
     }
     $sth->finish();
 
@@ -608,11 +618,11 @@ sub makeAlignmentHash {
     return $hash if (scalar(@$algInvIds) == 0);
 
     my $sql = (
-	       "select query_na_sequence_id, target_na_sequence_id, " .
-	       "       query_start, query_end, target_start, target_end " .
-	       "from $TPREF.BLATAlignment " .
-	       "where row_alg_invocation_id in ( " . join(",", @$algInvIds) . " )"
-	       );
+           "select query_na_sequence_id, target_na_sequence_id, " .
+           "       query_start, query_end, target_start, target_end " .
+           "from $TPREF.BLATAlignment " .
+           "where row_alg_invocation_id in ( " . join(",", @$algInvIds) . " )"
+           );
 
     print STDERR "LoadBLATAlignments: running '$sql'\n";
 
@@ -622,15 +632,15 @@ sub makeAlignmentHash {
     my $nRows = 0;
 
     while (my @a = $sth->fetchrow_array()) {
-	my $key = join(":", @a);
-	my $entry = $hash->{$key};
+    my $key = join(":", @a);
+    my $entry = $hash->{$key};
 
-	if (defined($entry)) {
-	    print STDERR "LoadBLATAlignments: WARNING - already seen an alignment for $key\n";
-	} else {
-	    $hash->{$key} = 1;
-	}
-	++$nRows;
+    if (defined($entry)) {
+        print STDERR "LoadBLATAlignments: WARNING - already seen an alignment for $key\n";
+    } else {
+        $hash->{$key} = 1;
+    }
+    ++$nRows;
     }
 
     $sth->finish();
@@ -655,13 +665,13 @@ sub loadAlignment {
     # Map target query name -> na_sequence_id if required
     #
     if (defined($targetIdHash)) {
-	my $srcId = $target_id;
-	$target_id = $targetIdHash->{$srcId};
+    my $srcId = $target_id;
+    $target_id = $targetIdHash->{$srcId};
 
-	if (!($target_id =~ /\d+/)) {
-	    print STDERR "LoadBLATALignments: ERROR - unable to resolve target source_id '$srcId'\n";
-	    return 0;
-	}
+    if (!($target_id =~ /\d+/)) {
+        print STDERR "LoadBLATALignments: ERROR - unable to resolve target source_id '$srcId'\n";
+        return 0;
+    }
     }
 
     # Convert external na seq source id to seq id, convert 'DT.blah' to 'blah' 
@@ -680,8 +690,8 @@ sub loadAlignment {
     my $loaded = $alreadyLoaded->{$key};
 
     if ($loaded == 1) {
-	print STDERR "LoadBLATAlignments: Already loaded alignment of $query_id vs $target_id\n";
-	return 0;
+    print STDERR "LoadBLATAlignments: Already loaded alignment of $query_id vs $target_id\n";
+    return 0;
     }
 
     # Check to see whether this alignment meets the $minQueryPct cutoff
@@ -701,8 +711,8 @@ sub loadAlignment {
     #
     my $querySeq = $qIndex->getSequence(CBIL::Util::TO->new({accno => $origQueryId, strip => 1}));
 
-print "DEBUGG: length(querySeq) = " . length($querySeq->{seq}) . " for accesion no. $origQueryId\n";
-print "DEBUGG: index_file = \"$qIndex->{index_file}\", seq_file = \"$qIndex->{seq_file}\"\n";
+# print "DEBUGG: length(querySeq) = " . length($querySeq->{seq}) . " for accesion no. $origQueryId\n";
+# print "DEBUGG: index_file = \"$qIndex->{index_file}\", seq_file = \"$qIndex->{seq_file}\"\n";
 
     # Disp::Display($querySeq);
 
@@ -714,38 +724,38 @@ print "DEBUGG: index_file = \"$qIndex->{index_file}\", seq_file = \"$qIndex->{se
     my $isConsist = ($qualityId == 1 ? 1 : 0);
 
     my @values = ($query_id,
-		  $target_id,
-		  $queryTableId,
-		  $queryTaxonId,
-		  $queryExtDbRelId,
-		  $targetTableId,
-		  $targetTaxonId,
-		  $targetExtDbRelId,
-		  $isConsist,
-		  0,
-		  $end3, $end5,
-		  $has3p, $has5p,
-		  $is3p, $is5p,
-		  $pctId,
-		  $maxQGap,
-		  $maxTGap,
-		  $numSpans,
-		  $qs, $qe,
-		  $ts, $te,
-		  ($strand eq '-') ? 1 : 0,
-		  $alignedBases,
-		  $align->get('rep_matches'),
-		  $align->get('num_ns'),
-		  sprintf("%3.3f", sqrt($pctId * $alignPct)),
-		  0,
-		  $qualityId,
-		  $align->getRaw('block_sizes'),
-		  $align->getRaw('q_starts'),
-		  $align->getRaw('t_starts')
-		  );
+          $target_id,
+          $queryTableId,
+          $queryTaxonId,
+          $queryExtDbRelId,
+          $targetTableId,
+          $targetTaxonId,
+          $targetExtDbRelId,
+          $isConsist,
+          0,
+          $end3, $end5,
+          $has3p, $has5p,
+          $is3p, $is5p,
+          $pctId,
+          $maxQGap,
+          $maxTGap,
+          $numSpans,
+          $qs, $qe,
+          $ts, $te,
+          ($strand eq '-') ? 1 : 0,
+          $alignedBases,
+          $align->get('rep_matches'),
+          $align->get('num_ns'),
+          sprintf("%3.3f", sqrt($pctId * $alignPct)),
+          0,
+          $qualityId,
+          $align->getRaw('block_sizes'),
+          $align->getRaw('q_starts'),
+          $align->getRaw('t_starts')
+          );
 
     $sth->execute(@values) 
-	or die "$sql failed with values: \n" . join(", ", @values)  . "\n";
+    or die "$sql failed with values: \n" . join(", ", @values)  . "\n";
     return 1;
 }
 
@@ -759,9 +769,9 @@ sub getQueryNaSeqId {
 
     my $sql;
     if ($queryTableId == 89) {
-	$sql = "select na_sequence_id from $TPREF.externalnasequence where source_id = '$qid'";
+    $sql = "select na_sequence_id from $TPREF.externalnasequence where source_id = '$qid'";
     } elsif ($queryTableId == 57) {
-	$sql = "select na_sequence_id from $TPREF.assemblysequence where assembly_sequence_id = $qid";
+    $sql = "select na_sequence_id from $TPREF.assemblysequence where assembly_sequence_id = $qid";
     }
     
     my $sth = $dbh->prepareAndExecute($sql);
@@ -776,7 +786,7 @@ sub getUcscGenomeVersion {
     my ($dbh, $ext_db_rel_id) = @_;
 
     my $sql = "select version from SRES.ExternalDatabaseRelease " .
-	      "where external_database_release_id = $ext_db_rel_id";
+          "where external_database_release_id = $ext_db_rel_id";
     my $sth = $dbh->prepare($sql) or die "bad sql $sql: $!";
     $sth->execute or die "could not run $sql: $!";
     my @vers;
@@ -786,9 +796,9 @@ sub getUcscGenomeVersion {
 
     my $v = $vers[0];
     if ($v =~ /^((hg|mm)\d+)/i) {
-	$v = $1;
+    $v = $1;
     } else {
-	die "can not parse UCSC genome version from \"$v\"\n";
+    die "can not parse UCSC genome version from \"$v\"\n";
     }
 
     $v;
