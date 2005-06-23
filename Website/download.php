@@ -1,7 +1,7 @@
 <?php include("header.php"); ?>
 
 <h2>Latest Stable Release</h2>
-<p>The latest stable release of GUS is 3.5.0, released 6/21/05.  You may
+<p>The latest stable release of GUS is 3.5, released 6/21/05.  You may
 download it at <a href="download/">www.gusdb.org/download</a></p>
 
 <h2>Latest Development Release</h2>

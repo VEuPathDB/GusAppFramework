@@ -1,6 +1,6 @@
 <?php include("header.php"); ?>
 
-<h2>GUS 3.5 Released - June 20, 2005</h2>
+<h2>GUS 3.5 Released - June 23, 2005</h2>
 <p>We're very pleased to announce the release of GUS 3.5.  The 3.5 release includes the introduction of
 proteomics support to the schema, PostgreSQL database compatability, improved documentation, and significant 
 additional schema and application layer fixes and enhancements.  For the first time, GUS is available as a 
