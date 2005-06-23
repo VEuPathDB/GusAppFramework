@@ -1,9 +1,18 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>GUS Installation Guide</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1" /></head><body><div class="book" lang="en" xml:lang="en"><div class="titlepage"><div><div><h1 class="title"><a id="id696301"></a>GUS Installation Guide</h1></div><div><div class="author"><h3 class="author"><span class="firstname">Michael</span> <span class="surname">Saffitz</span></h3><code class="email">&lt;<a href="mailto:msaffitz@pcbi.upenn.edu">msaffitz@pcbi.upenn.edu</a>&gt;</code></div></div><div><p class="releaseinfo">$Id: UsersGuide.xml,v 1.1.2.1 2005/05/05 20:18:59 msaffitz
-    Exp $</p></div></div><hr /></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="chapter"><a href="#id827637">1. GUS Overview</a></span></dt><dd><dl><dt><span class="sect1"><a href="#Overview">GUS Overview</a></span></dt><dt><span class="sect1"><a href="#Project">GUS Project</a></span></dt></dl></dd><dt><span class="chapter"><a href="#id827668">2. Installing GUS</a></span></dt><dd><dl><dt><span class="sect1"><a href="#id827687">System Requirements</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id827693">Hardware</a></span></dt><dt><span class="sect2"><a href="#id827728">Software</a></span></dt><dt><span class="sect2"><a href="#id827812">Preparing the RDBMS System</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id827863">Downloading GUS</a></span></dt><dt><span class="sect1"><a href="#id827924">Configuring and Preparing GUS</a></span></dt><dt><span class="sect1"><a href="#id828320">Installing GUS</a></span></dt><dt><span class="sect1"><a href="#id828386">Post-Installation Setup</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id828398">Database Privileges and Roles</a></span></dt><dt><span class="sect2"><a href="#id828498">Registering the GUS Application Framework</a></span></dt><dt><span class="sect2"><a href="#id828531">Creating users, groups, and projects</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id828580">Reinstallating the GUS Application Framework</a></span></dt><dt><span class="sect1"><a href="#id828624">Troubleshooting the Install Process</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id828630">Cleaning up after a failed installation</a></span></dt></dl></dd></dl></dd></dl></div><div class="list-of-examples"><p><b>List of Examples</b></p><dl><dt>2.1. <a href="#id827950">Configuring the Environment for GUS</a></dt><dt>2.2. <a href="#id828011">Configuring <code class="computeroutput">gus.config</code>
-          file</a></dt></dl></div><div class="chapter" lang="en" xml:lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id827637"></a>Chapter¬†1.¬†GUS Overview</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="#Overview">GUS Overview</a></span></dt><dt><span class="sect1"><a href="#Project">GUS Project</a></span></dt></dl></div><div class="sect1" lang="en" xml:lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="Overview"></a>GUS Overview</h2></div></div></div><p>This is a brief introduction to GUS</p></div><div class="sect1" lang="en" xml:lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="Project"></a>GUS Project</h2></div></div></div><p>Overview of GUS Project</p></div></div><div class="chapter" lang="en" xml:lang="en"><div class="titlepage"><div><div><h2 class="title"><a id="id827668"></a>Chapter¬†2.¬†Installing GUS</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="#id827687">System Requirements</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id827693">Hardware</a></span></dt><dt><span class="sect2"><a href="#id827728">Software</a></span></dt><dt><span class="sect2"><a href="#id827812">Preparing the RDBMS System</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id827863">Downloading GUS</a></span></dt><dt><span class="sect1"><a href="#id827924">Configuring and Preparing GUS</a></span></dt><dt><span class="sect1"><a href="#id828320">Installing GUS</a></span></dt><dt><span class="sect1"><a href="#id828386">Post-Installation Setup</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id828398">Database Privileges and Roles</a></span></dt><dt><span class="sect2"><a href="#id828498">Registering the GUS Application Framework</a></span></dt><dt><span class="sect2"><a href="#id828531">Creating users, groups, and projects</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id828580">Reinstallating the GUS Application Framework</a></span></dt><dt><span class="sect1"><a href="#id828624">Troubleshooting the Install Process</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id828630">Cleaning up after a failed installation</a></span></dt></dl></dd></dl></div><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>Before installing GUS, you should read and fully understand the
-      GUS architecture and its various components. See <a href="#Overview" title="GUS Overview">the section called ‚ÄúGUS Overview‚Äù</a></p></div><div class="sect1" lang="en" xml:lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id827687"></a>System Requirements</h2></div></div></div><div class="sect2" lang="en" xml:lang="en"><div class="titlepage"><div><div><h3 class="title"><a id="id827693"></a>Hardware</h3></div></div></div><p>While the GUS Application framework has primarily been developed
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>GUS Installation Guide</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="book" lang="en"><div class="titlepage"><div><div><h1 class="title"><a name="id694957"></a>GUS Installation Guide</h1></div><div><div class="author"><h3 class="author"><span class="firstname">Michael</span> <span class="surname">Saffitz</span></h3><code class="email">&lt;<a href="mailto:msaffitz@pcbi.upenn.edu">msaffitz@pcbi.upenn.edu</a>&gt;</code></div></div><div><p class="releaseinfo">$Id: UsersGuide.xml,v 1.1.2.1 2005/05/05 20:18:59 msaffitz
+    Exp $</p></div><div><div class="legalnotice"><a name="id826292"></a><p>The Genomics Unified Schema and Application Framework are subject
+      to various license terms and copyrights as outlined in the LICENSE file
+      provided with the software.</p></div></div></div><hr></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="chapter"><a href="#id826302">1. GUS Overview</a></span></dt><dd><dl><dt><span class="sect1"><a href="#Overview">GUS Overview</a></span></dt></dl></dd><dt><span class="chapter"><a href="#id826340">2. Installing GUS</a></span></dt><dd><dl><dt><span class="sect1"><a href="#id826345">System Requirements</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id826351">Hardware</a></span></dt><dt><span class="sect2"><a href="#id826378">Software</a></span></dt><dt><span class="sect2"><a href="#id826460">Preparing the RDBMS System</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id826529">Downloading GUS</a></span></dt><dt><span class="sect1"><a href="#id826590">Configuring and Preparing GUS</a></span></dt><dt><span class="sect1"><a href="#id826987">Installing GUS</a></span></dt><dt><span class="sect1"><a href="#id827053">Post-Installation Setup</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id827065">Database Privileges and Roles</a></span></dt><dt><span class="sect2"><a href="#id827165">Registering the GUS Application Framework</a></span></dt><dt><span class="sect2"><a href="#id827198">Creating users, groups, and projects</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id827246">Reinstalling the GUS Application Framework</a></span></dt></dl></dd></dl></div><div class="list-of-examples"><p><b>List of Examples</b></p><dl><dt>2.1. <a href="#id826617">Configuring the Environment for GUS</a></dt><dt>2.2. <a href="#id826678">Configuring <code class="computeroutput">gus.config</code>
+          file</a></dt></dl></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="id826302"></a>Chapter†1.†GUS Overview</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="#Overview">GUS Overview</a></span></dt></dl></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="Overview"></a>GUS Overview</h2></div></div></div><p>The Genomics Unified Schema (GUS) is an extensive relational
+      database schema and associated application framework designed to store,
+      integrate, analyze and present functional genomics data. The GUS schema
+      supports a wide range of data types including genomics, gene expression,
+      transcript assemblies, proteomics and others. It emphasizes
+      standards-based ontologies and strong-typing.</p><p>The GUS Application Framework offers an object-relational layer
+      and a Plugin API used to rapidly create robust data loading programs for
+      diverse data sources. The GUS distribution includes plugins for standard
+      data sources. The GUS Web Development Kit (WDK) is a rich environment
+      for efficiently designing sophisticated query-based websites with little
+      programming required.</p></div></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="id826340"></a>Chapter†2.†Installing GUS</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="#id826345">System Requirements</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id826351">Hardware</a></span></dt><dt><span class="sect2"><a href="#id826378">Software</a></span></dt><dt><span class="sect2"><a href="#id826460">Preparing the RDBMS System</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id826529">Downloading GUS</a></span></dt><dt><span class="sect1"><a href="#id826590">Configuring and Preparing GUS</a></span></dt><dt><span class="sect1"><a href="#id826987">Installing GUS</a></span></dt><dt><span class="sect1"><a href="#id827053">Post-Installation Setup</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id827065">Database Privileges and Roles</a></span></dt><dt><span class="sect2"><a href="#id827165">Registering the GUS Application Framework</a></span></dt><dt><span class="sect2"><a href="#id827198">Creating users, groups, and projects</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id827246">Reinstalling the GUS Application Framework</a></span></dt></dl></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id826345"></a>System Requirements</h2></div></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id826351"></a>Hardware</h3></div></div></div><p>While the GUS Application framework has primarily been developed
         on Linux, it should in principle run on any UNIX-based operating
         system, including Mac OS X, provided the software requirements below
         can be satisfied.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>Users have reported difficulty running GUS on Solaris.</p></div><p>As noted below, GUS requires the use of either Oracle or
@@ -25,11 +34,10 @@
         as a good basic machine. For parsing large datafiles, a 3.2Ghz Pentium
         with as much as 4GB of RAM may be more appropriate. For guidance
         specific to your situation, refer to the mailing list archives or post
-        a new message to the list (see <a href="#Project" title="GUS Project">the section called ‚ÄúGUS Project‚Äù</a> for more
-        details on GUS Resources).</p></div><div class="sect2" lang="en" xml:lang="en"><div class="titlepage"><div><div><h3 class="title"><a id="id827728"></a>Software</h3></div></div></div><p>GUS requires the following third party software packages:</p><div class="itemizedlist"><ul type="disc"><li><p>Perl 5.8.1 or above (<a href="http://www.perl.com" target="_top">www.perl.com</a>)</p></li><li><p>Perl Modules: DBI, DBI-Oracle and/or DB-Pg, Parse-Yapp,
+        a new message to the list.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id826378"></a>Software</h3></div></div></div><p>GUS requires the following third party software packages:</p><div class="itemizedlist"><ul type="disc"><li><p>Perl 5.8.1 or above (<a href="http://www.perl.com" target="_top">www.perl.com</a>)</p></li><li><p>Perl Modules: DBI, DBD-Oracle and/or DB-Pg, Parse-Yapp,
             XML-Simple, and XML-Parser or XML-SAX</p></li><li><p>Java 1.4.2 or above, including the SDK (<a href="http://java.sun.com" target="_top">java.sun.com</a>)</p></li><li><p>Oracle 9i or above (<a href="http://www.oracle.com" target="_top">www.oracle.com</a>) <span class="emphasis"><em>or
-            </em></span>PostgresSQL 7.4 or above (<a href="http://www.postgresql.org" target="_top">www.postgresql.org</a>)</p></li><li><p>Apache Ant 1.6.2 or above (<a href="http://ant.apache.org" target="_top">ant.apache.org</a>)</p></li></ul></div></div><div class="sect2" lang="en" xml:lang="en"><div class="titlepage"><div><div><h3 class="title"><a id="id827812"></a>Preparing the RDBMS System</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>If the GUS Schema has already been installed, you may skip
-          this step and proceed directly to <a href="#DownloadGUS">the section called ‚ÄúDownloading GUS‚Äù</a></p></div><p>Once you've satisfied the above software requirements and
+            </em></span>PostgresSQL 7.4 or above (<a href="http://www.postgresql.org" target="_top">www.postgresql.org</a>)</p></li><li><p>Apache Ant 1.6.2 or above (<a href="http://ant.apache.org" target="_top">ant.apache.org</a>)</p></li></ul></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id826460"></a>Preparing the RDBMS System</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>If the GUS Schema has already been installed in the RDBMS, you
+          may skip this step and proceed directly to <a href="#DownloadGUS">the section called &#8220;Downloading GUS&#8221;</a></p></div><p>Once you've satisfied the above software requirements and
         installed and configured your database system, you should create or
         identify an existing database to install GUS into. As part of this
         process, more advanced users of GUS may consider tuning various
@@ -46,30 +54,33 @@
         database or be granted all privileges on all objects within the
         database. For both database systems, the installer will connect as
         this user, and as this user create the necessary schemata, tables,
-        sequences, indexes, constraints, and the other objects that comprise
-        GUS.</p></div></div><div class="sect1" lang="en" xml:lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id827863"></a>Downloading GUS</h2></div></div></div><p>The most recent release of GUS is available from the GUS Project
+        sequences, indexes, constraints, and the other objects that compose
+        GUS.</p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>If you are using Oracle, you must set the
+          <code class="computeroutput">NLS_DATE_FORMAT</code> to
+          <code class="computeroutput">YYYY-MM-DD HH24:MI:SS</code></p></div></div></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id826529"></a>Downloading GUS</h2></div></div></div><p>The most recent release of GUS is available from the GUS Project
       website (<a href="http://www.gusdb.org" target="_top">www.gusdb.org</a>) as a
       single distributable. From time to time, the GUS Project website may
       also provide less stable development releases of GUS as a single
-      distributable. In addition, the GUS CVS repository is available for
-      "bleeding edge" releases.</p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>Since the 3.5 release of GUS, CVS is no longer the preferred
-          or recommended method for downloading GUS. The CVS repository
-          contains the most recent additions and changes to GUS, which may be
-          inconsistent with this and other documentation, and which may
-          include changed APIs that could cause data loss.</p></div><p>Once downloaded, the GUS distribution should be moved to the
+      distributable. In addition, the GUS source repository is available for
+      "bleeding edge" releases.</p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>Since the 3.5 release of GUS, the source repository is no
+          longer the preferred or recommended method for downloading GUS. The
+          source repository contains the most recent additions and changes to
+          GUS, which may be inconsistent with this and other documentation,
+          and which may include changed APIs that could cause data
+          loss.</p></div><p>Once downloaded, the GUS distribution should be moved to the
       location of your preference, and expanded:</p><pre class="screen">$ tar -zxvf gus-x.x.x.tar.gz</pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>Throughout this documentation, the dollar
           (<code class="computeroutput">$</code>) symbol will be used at the
-          begining of a line to denote the shell prompt. You should not type
-          the dollar symbol as part of your input.</p></div></div><div class="sect1" lang="en" xml:lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id827924"></a>Configuring and Preparing GUS</h2></div></div></div><p>Once you have downloaded and expanded the GUS distribution, you
+          beginning of a line to denote the shell prompt. You should not type
+          the dollar symbol as part of your input.</p></div></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id826590"></a>Configuring and Preparing GUS</h2></div></div></div><p>Once you have downloaded and expanded the GUS distribution, you
       must configure your environment. These settings are required for all
       uses of GUS, and as such is it highly recommended that you add them in
       such a manner that they be set upon creating a new session (i.e. in your
       <code class="computeroutput">.bash_profile</code> file). The following
       examples are for the Bash shell, and assume you have expanded the GUS
       distribution in the directory
-      <code class="computeroutput">/home/smith</code>:</p><div class="example"><a id="id827950"></a><p class="title"><b>Example¬†2.1.¬†Configuring the Environment for GUS</b></p><pre class="screen">$ export GUS_HOME=/home/smith/GUS/home
-$ export PROJECT_HOME=/home/smith/GUS/src
-$ export GUS_CONFIG_FILE=/home/smith/GUS/gus.properties
+      <code class="computeroutput">/home/smith</code>:</p><div class="example"><a name="id826617"></a><p class="title"><b>Example†2.1.†Configuring the Environment for GUS</b></p><pre class="screen">$ export GUS_HOME=/home/smith/GUS/gus_home
+$ export PROJECT_HOME=/home/smith/GUS/project_home
+$ export GUS_CONFIG_FILE=/home/smith/GUS/gus.properties 
 $ export PERL5LIB=$GUS_HOME/lib/perl
 $ export PATH=$GUS_HOME/bin:$PROJECT_HOME/install/bin:$PATH</pre></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>Throughout the rest of this document,
           <code class="computeroutput">$GUS_HOME</code>,
@@ -81,26 +92,26 @@ $ export PATH=$GUS_HOME/bin:$PROJECT_HOME/install/bin:$PATH</pre></div><div clas
       file to
       <code class="computeroutput">$PROJECT_HOME/install/gus.config</code>. Once
       copied, you must open this file and provide the necessary
-      values:</p><div class="example"><a id="id828011"></a><p class="title"><b>Example¬†2.2.¬†Configuring <code class="computeroutput">gus.config</code>
-          file</b></p><pre class="screen">dbVendor=<em class="replaceable"><code>Oracle_or_Postgres</code></em><a id="dbVendor"></a><img src="images/callouts/1.png" alt="1" border="0" />
-dbiDsn=<em class="replaceable"><code>perl_dbi_string</code></em><a id="dbiDsn"></a><img src="images/callouts/2.png" alt="2" border="0" />
+      values:</p><div class="example"><a name="id826678"></a><p class="title"><b>Example†2.2.†Configuring <code class="computeroutput">gus.config</code>
+          file</b></p><pre class="screen">dbVendor=<em class="replaceable"><code>Oracle_or_Postgres</code></em><a name="dbVendor"></a><img src="images/callouts/1.png" alt="1" border="0">
+dbiDsn=<em class="replaceable"><code>perl_dbi_string</code></em><a name="dbiDsn"></a><img src="images/callouts/2.png" alt="2" border="0">
 jdbcDsn=<em class="replaceable"><code>jdbc_conection_string</code></em>
-databaseLogin=<em class="replaceable"><code>database_username</code></em><a id="databaseLogin"></a><img src="images/callouts/3.png" alt="3" border="0" />
+databaseLogin=<em class="replaceable"><code>database_username</code></em><a name="databaseLogin"></a><img src="images/callouts/3.png" alt="3" border="0">
 databasePassword=<em class="replaceable"><code>database_password</code></em>
-userName=<em class="replaceable"><code>gus_username</code></em><a id="userName"></a><img src="images/callouts/4.png" alt="4" border="0" />
-group=<em class="replaceable"><code>gus_password</code></em>
+userName=<em class="replaceable"><code>gus_username</code></em><a name="userName"></a><img src="images/callouts/4.png" alt="4" border="0">
+group=<em class="replaceable"><code>gus_</code></em>group
 project=<em class="replaceable"><code>primary_gus_project</code></em>
-perl=<em class="replaceable"><code>path_to_perl_binary</code></em><a id="perl"></a><img src="images/callouts/5.png" alt="5" border="0" />
-md5sum=<em class="replaceable"><code>path_to_md5_or_md5sum_binary</code></em><a id="md5sum"></a><img src="images/callouts/6.png" alt="6" border="0" /></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><a href="#dbVendor"><img src="images/callouts/1.png" alt="1" border="0" /></a> </td><td valign="top" align="left"><p>The database system you are using. This must be either
+perl=<em class="replaceable"><code>path_to_perl_binary</code></em><a name="perl"></a><img src="images/callouts/5.png" alt="5" border="0">
+md5sum=<em class="replaceable"><code>path_to_md5_or_md5sum_binary</code></em><a name="md5sum"></a><img src="images/callouts/6.png" alt="6" border="0"></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><a href="#dbVendor"><img src="images/callouts/1.png" alt="1" border="0"></a> </td><td valign="top" align="left"><p>The database system you are using. This must be either
             <code class="computeroutput">Oracle</code> or
-            <code class="computeroutput">Postgres</code>. </p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#dbiDsn"><img src="images/callouts/2.png" alt="2" border="0" /></a> </td><td valign="top" align="left"><p><code class="computeroutput">dbiDsn</code> is the Perl DBI
+            <code class="computeroutput">Postgres</code>.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#dbiDsn"><img src="images/callouts/2.png" alt="2" border="0"></a> </td><td valign="top" align="left"><p><code class="computeroutput">dbiDsn</code> is the Perl DBI
             string for your database. For example,
             <code class="computeroutput">dbi:Oracle:mygus</code>.</p><p><code class="computeroutput">jdbcDsn</code> is the JDBC string
             for your database. For example,
-            <code class="computeroutput">jdbc:oracle:thin:@myserver:1521:mygus</code>.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#databaseLogin"><img src="images/callouts/3.png" alt="3" border="0" /></a> </td><td valign="top" align="left"><p><code class="computeroutput">databaseLogin</code> and
+            <code class="computeroutput">jdbc:oracle:thin:@myserver:1521:mygus</code>.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#databaseLogin"><img src="images/callouts/3.png" alt="3" border="0"></a> </td><td valign="top" align="left"><p><code class="computeroutput">databaseLogin</code> and
             <code class="computeroutput">databasePassword</code> are the username
             and password that the software will use to connect to your
-            database.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#userName"><img src="images/callouts/4.png" alt="4" border="0" /></a> </td><td valign="top" align="left"><p><code class="computeroutput">username</code>,
+            database.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#userName"><img src="images/callouts/4.png" alt="4" border="0"></a> </td><td valign="top" align="left"><p><code class="computeroutput">username</code>,
             <code class="computeroutput">group</code>, and
             <code class="computeroutput">project</code> are used within the GUS
             system for auditing and permissions purposes. For now, use
@@ -109,10 +120,10 @@ md5sum=<em class="replaceable"><code>path_to_md5_or_md5sum_binary</code></em><a 
             <code class="computeroutput">group</code> and
             <code class="computeroutput">Database administration</code> as the
             project. See the GUS User's Guide for more information about these
-            settings.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#perl"><img src="images/callouts/5.png" alt="5" border="0" /></a> </td><td valign="top" align="left"><p><code class="computeroutput">perl</code> is the full path to
-            your Perl executable.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#md5sum"><img src="images/callouts/6.png" alt="6" border="0" /></a> </td><td valign="top" align="left"><p><code class="computeroutput">md5sum</code> is the full path to
+            settings.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#perl"><img src="images/callouts/5.png" alt="5" border="0"></a> </td><td valign="top" align="left"><p><code class="computeroutput">perl</code> is the full path to
+            your Perl executable.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#md5sum"><img src="images/callouts/6.png" alt="6" border="0"></a> </td><td valign="top" align="left"><p><code class="computeroutput">md5sum</code> is the full path to
             your <code class="computeroutput">md5sum</code> or
-            <code class="computeroutput">md5</code> executable. </p></td></tr></table></div><div class="caution" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Caution</h3><p>Since GUS 3.5 the
+            <code class="computeroutput">md5</code> executable.</p></td></tr></table></div><div class="caution" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Caution</h3><p>Since GUS 3.5 the
         <code class="computeroutput">gus.properties</code>,
         <code class="computeroutput">install.prop</code>,
         <code class="computeroutput">schema.prop</code> and other various
@@ -122,35 +133,35 @@ md5sum=<em class="replaceable"><code>path_to_md5_or_md5sum_binary</code></em><a 
         the GUS installer whenever it us run. <span class="emphasis"><em>The gus.properties
         file will never be overwritten by the GUS installer. Care should be
         taken to understand at all times what values are specified in the
-        gus.properties file as it determines the database the the GUS system
-        will access.</em></span></p></div></div><div class="sect1" lang="en" xml:lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id828320"></a>Installing GUS</h2></div></div></div><p>You are now ready to install the GUS Schema and/or Application
+        gus.properties file as it determines the database the GUS system will
+        access.</em></span></p></div></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id826987"></a>Installing GUS</h2></div></div></div><p>You are now ready to install the GUS Schema and/or Application
       Framework. The Schema should only be installed once per GUS
       instance/database and most commonly will be shared by many users (each
-      with thier own installation of the Application Framework). To install
+      with their own installation of the Application Framework). To install
       <span class="emphasis"><em>both</em></span> the Schema and Application Framework, use the
       following command:</p><pre class="screen">$ build GUS install -append -installDBSchema</pre><p>If the Schema has already been installed, you should instead use
-      the following command: </p><pre class="screen">$ build GUS install -append</pre><p>The install process should take 5-30 minutes to complete,
+      the following command:</p><pre class="screen">$ build GUS install -append</pre><p>The install process should take 5-30 minutes to complete,
       depending on the speed of your system, your RDBMS, and the specific
       tasks required for your environment. When complete, you will see the
-      following on your screen:</p><pre class="screen">     [echo] Installation Complete</pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>You may at some point see <code class="computeroutput">[concat] No existing
+      following on your screen:</p><pre class="screen">[echo] Installation Complete</pre><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>You may at some point see <code class="computeroutput">[concat] No existing
         files and no nested text, doing nothing</code> as part of
         the install process. This is a normal message and does not indicate
-        that an error has occured. </p></div></div><div class="sect1" lang="en" xml:lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id828386"></a>Post-Installation Setup</h2></div></div></div><p>If you installed the GUS Schema in the previous step, you must now
+        that an error has occurred.</p></div></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id827053"></a>Post-Installation Setup</h2></div></div></div><p>If you installed the GUS Schema in the previous step, you must now
       address the issues in this section. If you only installed the
-      Application Framework, you may skip this section.</p><div class="sect2" lang="en" xml:lang="en"><div class="titlepage"><div><div><h3 class="title"><a id="id828398"></a>Database Privileges and Roles</h3></div></div></div><p>The GUS Application Framework includes support for using basic
+      Application Framework, you may skip this section.</p><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827065"></a>Database Privileges and Roles</h3></div></div></div><p>The GUS Application Framework includes support for using basic
         access permissions with a unix-based model of users, groups, and
-        "others" and thourgh the use of "projects". These permissions are not
+        "others" and through the use of "projects". These permissions are not
         meant as a robust solution to data security, and are easily
-        circumvented though use of direct database acess (i.e.
+        circumvented though use of direct database access (i.e.
         <code class="computeroutput">sqlplus</code> or
         <code class="computeroutput">psql</code>) or local modifications of the
         GUS Application Framework. As such, it is highly recommended that you
         carefully evaluate and implement a database-level privileges system
-        that makes sense to your confguration. Groups that need the highest
-        levels of security, including HIPAA compliance, should consider using
-        Oracle with the Virtual Private Database option and other RDBMS-based
-        technologies.</p><p>As an example, the Computational Biology and Informatics
-        Labarotory (CBIL) uses a privilege system that is based on two roles,
+        that makes sense to your configuration. Groups that need the highest
+        levels of security, such as HIPAA compliance, should consider using
+        Oracle with the Virtual Private Database option and/or other
+        RDBMS-based technologies.</p><p>As an example, the Computational Biology and Informatics
+        Laboratory (CBIL) uses a privilege system that is based on two roles,
         a read-only role, <code class="computeroutput">GUS_R</code>, and a write
         role, <code class="computeroutput">GUS_W</code>.
         <code class="computeroutput">GUS_R</code> has been granted the
@@ -162,14 +173,14 @@ md5sum=<em class="replaceable"><code>path_to_md5_or_md5sum_binary</code></em><a 
         Individual databases users are then granted the
         <code class="computeroutput">GUS_R</code> role and, as appropriate, the
         <code class="computeroutput">GUS_W</code> role. For finer control, this
-        model may be extended to individual schemata or sets of tables.</p></div><div class="sect2" lang="en" xml:lang="en"><div class="titlepage"><div><div><h3 class="title"><a id="id828498"></a>Registering the GUS Application Framework</h3></div></div></div><p>For auditing purposes, the GUS system requires that the
+        model may be extended to individual schemata or sets of tables.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827165"></a>Registering the GUS Application Framework</h3></div></div></div><p>For auditing purposes, the GUS system requires that the
         Application Framework and individual plugins be registered within the
         GUS Schema. To register the Application Framework in the GUS Schema,
         use the following command:</p><pre class="screen">$ ga +meta --commit</pre><p>It is only necessary to run this command once. Upon successfully
         running the command, you will see a stream of XML displayed on your
         screen.</p><p>Plugins will need to be registered in a similar fashion prior to
         use. For more information on registering plugins, please refer to the
-        GUS User's Guide.</p></div><div class="sect2" lang="en" xml:lang="en"><div class="titlepage"><div><div><h3 class="title"><a id="id828531"></a>Creating users, groups, and projects</h3></div></div></div><p>You may have noticed the
+        GUS User's Guide.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827198"></a>Creating users, groups, and projects</h3></div></div></div><p>You may have noticed the
         <code class="computeroutput">userName</code>,
         <code class="computeroutput">group</code>, and
         <code class="computeroutput">project</code> options specified in the
@@ -180,11 +191,11 @@ md5sum=<em class="replaceable"><code>path_to_md5_or_md5sum_binary</code></em><a 
         with the standard "DBA" entries. You may at this point wish to create
         more specific users, groups, and projects so that further work with
         GUS will be properly tracked.</p><p>For more information on creating users, groups, and projects
-        within GUS, please refer to the GUS User's Guide.</p></div></div><div class="sect1" lang="en" xml:lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id828580"></a>Reinstallating the GUS Application Framework</h2></div></div></div><p>From time to time it may be necessary to reinstall the GUS
-      application framework, either as part of an upgrade, or to propogate
+        within GUS, please refer to the GUS User's Guide.</p></div></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id827246"></a>Reinstalling the GUS Application Framework</h2></div></div></div><p>From time to time it may be necessary to reinstall the GUS
+      application framework, either as part of an upgrade, or to propagate
       changes you've made within the
       <code class="computeroutput">$PROJECT_HOME</code> directory to the
       <code class="computeroutput">$GUS_HOME</code> directory. If you wish to
-      force all objects to be rebuilt (for example, due to a change within the
-      schema), you should first run the command:</p><pre class="screen">$ touch $PROJECT_HOME/Schema/gus_schema.xml</pre><p>To reinstall the GUS application framework, simply run the build
-      command:</p><pre class="screen">$ build GUS install -append</pre></div><div class="sect1" lang="en" xml:lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="id828624"></a>Troubleshooting the Install Process</h2></div></div></div><div class="sect2" lang="en" xml:lang="en"><div class="titlepage"><div><div><h3 class="title"><a id="id828630"></a>Cleaning up after a failed installation</h3></div></div></div><p></p></div></div></div></div></body></html>
+      force all data model objects to be rebuilt (for example, due to a change
+      within the schema), you should first run the command:</p><pre class="screen">$ touch $PROJECT_HOME/Schema/gus_schema.xml</pre><p>To reinstall the GUS application framework, simply run the build
+      command:</p><pre class="screen">$ build GUS install -append</pre></div></div></div></body></html>
