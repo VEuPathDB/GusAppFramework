@@ -1,0 +1,56 @@
+Adrian-
+
+Angel and I have had a chance to meet and throw together our initial ideas about a JSP/Struts based WDK.
+
+My sense is that our thinking compliments what you layed out in your Struts Demo.  Basically, we are buying into the ideas you presented about how the display can work.  We are also interested in starting to nail down the design of the underlying machinery (somewhat along the lines of what you outlined in your conclusions section).  Much of our thinking is informed by the current WDK design.
+
+We drew up a quick list of big-ticket requirements items, some addressed by your proposal and some not:
+ - declarative specification of content, queries, dialogs.
+ - configurable styles
+ - site's standard s surrounding page specific stuff (ie, your tiles solution)
+ - JavaScript functionality
+ - calls to external resources (eg, processes) to provide stuff like graphics
+ - boolean queries
+ - history
+ - report maker
+ - batch submission
+ - connection pooling
+ - process pooling?
+ - result caching
+ - result paging
+ - error handling
+ - dialog validation
+ - logging
+
+We sketched the following top level Beans, which we see being configured in config files (XML is fine... not sure yet about Digester), and which do not specify any formatting information:
+ - Dialog  (eg, a form)
+ - QueryDialog (a subclass of Dialog)
+ - other subclasses of Dialog?
+ - Record (eg, an RNA page and/or detailed page)
+ - ResultSet (or is this just a record?)
+
+These guys have properties, which, are also beans, of types:
+ - Content
+ - SqlQuery
+ - Process
+
+And, SqlQuery and Process have as properties subclasses of Param, which is also a bean.
+
+The main difference between the beans we see for the new WDK and those in the old WDK is that the new ones don't include any formatting information.  I think that means that we can have siginificantly fewer classes, because the classes don't have to differentiate based on formatting implementations.
+
+Based on our still rudimentary understanding of JSP, we imagine these kind of pages and fragments, which are somehow parameterized by the beans:
+  - Dialog
+  - QueryDialog
+  - ResultSet
+  - Record
+  - Record Details
+  - Content
+
+Things we are assuming JSP can do (haven't read the book yet), and want to understand more about:
+ - bind beans to a JSP page
+ - simple control features like iterate across a list of results to display
+ - fetch JSP fragments to insert (eg, one per row of a result)
+
+As far as the config files are concerned, we agree that huge config files are not optimal.  We don't yet see how best to organize them, though we want to be able to re-use some of them across projects.  So, i think they will need to find there way into a directory structure of some kind.
+
+Steve

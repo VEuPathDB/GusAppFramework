@@ -1,0 +1,46 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter 2. Installing GUS</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"><link rel="start" href="index.html" title="GUS Installation Guide"><link rel="up" href="index.html" title="GUS Installation Guide"><link rel="prev" href="ch01.html" title="Chapter 1. GUS Overview"><link rel="next" href="ch02s02.html" title="Downloading GUS"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 2. Installing GUS</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch01.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch02s02.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="id837021"></a>Chapter 2. Installing GUS</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="ch02.html#id837027">System Requirements</a></span></dt><dd><dl><dt><span class="sect2"><a href="ch02.html#id837032">Hardware</a></span></dt><dt><span class="sect2"><a href="ch02.html#id837060">Software</a></span></dt><dt><span class="sect2"><a href="ch02.html#id837140">Preparing the RDBMS System</a></span></dt></dl></dd><dt><span class="sect1"><a href="ch02s02.html">Downloading GUS</a></span></dt><dt><span class="sect1"><a href="ch02s03.html">Configuring and Preparing GUS</a></span></dt><dt><span class="sect1"><a href="ch02s04.html">Installing GUS</a></span></dt><dt><span class="sect1"><a href="ch02s05.html">Post-Installation Setup</a></span></dt><dd><dl><dt><span class="sect2"><a href="ch02s05.html#id837745">Database Privileges and Roles</a></span></dt><dt><span class="sect2"><a href="ch02s05.html#id837845">Registering the GUS Application Framework</a></span></dt><dt><span class="sect2"><a href="ch02s05.html#id837878">Creating users, groups, and projects</a></span></dt></dl></dd><dt><span class="sect1"><a href="ch02s06.html">Reinstalling the GUS Application Framework</a></span></dt></dl></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id837027"></a>System Requirements</h2></div></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id837032"></a>Hardware</h3></div></div></div><p>While the GUS Application framework has primarily been developed
+        on Linux, it should in principle run on any UNIX-based operating
+        system, including Mac OS X, provided the software requirements below
+        can be satisfied.</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>Users have reported difficulty running GUS on Solaris.</p></div><p>As noted below, GUS requires the use of either Oracle or
+        PostgreSQL as a relational database management system (RDBMS).
+        PostgreSQL support is much more recent, and as such, Oracle is
+        recommended whenever practical. For installations with more than 3-5GB
+        of data, Oracle is highly recommended. PostgreSQL, however, is an open
+        source and freely available database system, and thus makes an
+        attractive option for smaller GUS installations, or where Oracle is
+        not economical. The choice of an RDBMS will affect your system and
+        hardware requirements. Refer to you RDBMS's documentation for further
+        details and specific requirements.</p><p>GUS's hardware requirements depend largely on the size and
+        complexity of the data you intend to load and analyze using GUS. Most
+        installations will have a separate server for the database management
+        system, for which you should refer to your RDBMS's documentation for
+        requirements. For the GUS Application framework, any modern desktop PC
+        satisfying the above architecture requirements should suffice. A
+        2.4Ghz Pentium with 512MB of RAM (or equivalent machine) would serve
+        as a good basic machine. For parsing large datafiles, a 3.2Ghz Pentium
+        with as much as 4GB of RAM may be more appropriate. For guidance
+        specific to your situation, refer to the mailing list archives or post
+        a new message to the list.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id837060"></a>Software</h3></div></div></div><p>GUS requires the following third party software packages:</p><div class="itemizedlist"><ul type="disc"><li><p>Perl 5.8.1 or above (<a href="http://www.perl.com" target="_top">www.perl.com</a>)</p></li><li><p>Perl Modules: DBI, DBD-Oracle and/or DB-Pg, Parse-Yapp,
+            XML-Simple, and XML-Parser or XML-SAX</p></li><li><p>Java 1.4.2 or above, including the SDK (<a href="http://java.sun.com" target="_top">java.sun.com</a>)</p></li><li><p>Oracle 9i or above (<a href="http://www.oracle.com" target="_top">www.oracle.com</a>) <span class="emphasis"><em>or
+            </em></span>PostgresSQL 7.4 or above (<a href="http://www.postgresql.org" target="_top">www.postgresql.org</a>)</p></li><li><p>Apache Ant 1.6.2 or above (<a href="http://ant.apache.org" target="_top">ant.apache.org</a>)</p></li></ul></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id837140"></a>Preparing the RDBMS System</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>If the GUS Schema has already been installed in the RDBMS, you
+          may skip this step and proceed directly to <a href="ch02s02.html#DownloadGUS">the section called &#8220;Downloading GUS&#8221;</a></p></div><p>Once you've satisfied the above software requirements and
+        installed and configured your database system, you should create or
+        identify an existing database to install GUS into. As part of this
+        process, more advanced users of GUS may consider tuning various
+        database settings such as a data block size and memory allocations, as
+        well as custom tablespace creation. Many of these settings will vary
+        greatly depending on your usage of GUS and database system; refer to
+        your RDBMS's documentation for further details and options.</p><p>Once the database to hold GUS has been created and configured,
+        you must create or identify a user that the GUS installer will use to
+        install the GUS Schema. When using Oracle, this user should be granted
+        the <code class="computeroutput">create session</code> and
+        <code class="computeroutput">dba</code> privileges for the duration of
+        the install (after installation these privileges may be revoked). For
+        PostgreSQL, it is recommended that this user be the owner of the
+        database or be granted all privileges on all objects within the
+        database. For both database systems, the installer will connect as
+        this user, and as this user create the necessary schemata, tables,
+        sequences, indexes, constraints, and the other objects that compose
+        GUS.</p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>If you are using Oracle, you must set the
+          <code class="computeroutput">NLS_DATE_FORMAT</code> to
+          <code class="computeroutput">YYYY-MM-DD HH24:MI:SS</code></p></div></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch01.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch02s02.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 1. GUS Overview </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Downloading GUS</td></tr></table></div></body></html>

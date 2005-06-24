@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
-"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd" [
-<!ENTITY __copyright__e8xhmm08 SYSTEM "../pieces/copyright.xml">
-<!ENTITY __legalnotice__e8xhm3n9 SYSTEM "../pieces/legalnotice.xml">
-]>
+"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
 <book>
   <title>GUS Installation Guide</title>
 
@@ -21,9 +18,11 @@
       <email>msaffitz@pcbi.upenn.edu</email>
     </author>
 
-    &__copyright__e8xhmm08;
-
-    &__legalnotice__e8xhm3n9;
+    <legalnotice>
+      <para>The Genomics Unified Schema and Application Framework are subject
+      to various license terms and copyrights as outlined in the LICENSE file
+      provided with the software.</para>
+    </legalnotice>
   </bookinfo>
 
   <chapter>
@@ -32,24 +31,24 @@
     <sect1 id="Overview">
       <title>GUS Overview</title>
 
-      <para>This is a brief introduction to GUS</para>
-    </sect1>
+      <para>The Genomics Unified Schema (GUS) is an extensive relational
+      database schema and associated application framework designed to store,
+      integrate, analyze and present functional genomics data. The GUS schema
+      supports a wide range of data types including genomics, gene expression,
+      transcript assemblies, proteomics and others. It emphasizes
+      standards-based ontologies and strong-typing.</para>
 
-    <sect1 id="Project">
-      <title>GUS Project</title>
-
-      <para>Overview of GUS Project</para>
+      <para>The GUS Application Framework offers an object-relational layer
+      and a Plugin API used to rapidly create robust data loading programs for
+      diverse data sources. The GUS distribution includes plugins for standard
+      data sources. The GUS Web Development Kit (WDK) is a rich environment
+      for efficiently designing sophisticated query-based websites with little
+      programming required.</para>
     </sect1>
   </chapter>
 
   <chapter>
     <title>Installing GUS</title>
-
-    <important>
-      <para>Before installing GUS, you should read and fully understand the
-      GUS architecture and its various components. See <xref
-      linkend="Overview" /></para>
-    </important>
 
     <sect1>
       <title>System Requirements</title>
@@ -87,8 +86,7 @@
         as a good basic machine. For parsing large datafiles, a 3.2Ghz Pentium
         with as much as 4GB of RAM may be more appropriate. For guidance
         specific to your situation, refer to the mailing list archives or post
-        a new message to the list (see <xref linkend="Project" /> for more
-        details on GUS Resources).</para>
+        a new message to the list.</para>
       </sect2>
 
       <sect2>
@@ -103,7 +101,7 @@
           </listitem>
 
           <listitem>
-            <para>Perl Modules: DBI, DBI-Oracle and/or DB-Pg, Parse-Yapp,
+            <para>Perl Modules: DBI, DBD-Oracle and/or DB-Pg, Parse-Yapp,
             XML-Simple, and XML-Parser or XML-SAX</para>
           </listitem>
 
@@ -130,8 +128,8 @@
         <title>Preparing the RDBMS System</title>
 
         <note>
-          <para>If the GUS Schema has already been installed, you may skip
-          this step and proceed directly to <xref
+          <para>If the GUS Schema has already been installed in the RDBMS, you
+          may skip this step and proceed directly to <xref
           linkend="DownloadGUS" /></para>
         </note>
 
@@ -154,8 +152,14 @@
         database or be granted all privileges on all objects within the
         database. For both database systems, the installer will connect as
         this user, and as this user create the necessary schemata, tables,
-        sequences, indexes, constraints, and the other objects that comprise
+        sequences, indexes, constraints, and the other objects that compose
         GUS.</para>
+
+        <important>
+          <para>If you are using Oracle, you must set the
+          <computeroutput>NLS_DATE_FORMAT</computeroutput> to
+          <computeroutput>YYYY-MM-DD HH24:MI:SS</computeroutput></para>
+        </important>
       </sect2>
     </sect1>
 
@@ -166,20 +170,21 @@
       website (<ulink url="http://www.gusdb.org">www.gusdb.org</ulink>) as a
       single distributable. From time to time, the GUS Project website may
       also provide less stable development releases of GUS as a single
-      distributable. In addition, the GUS CVS repository is available for
+      distributable. In addition, the GUS source repository is available for
       "bleeding edge" releases.<warning>
-          <para>Since the 3.5 release of GUS, CVS is no longer the preferred
-          or recommended method for downloading GUS. The CVS repository
-          contains the most recent additions and changes to GUS, which may be
-          inconsistent with this and other documentation, and which may
-          include changed APIs that could cause data loss.</para>
+          <para>Since the 3.5 release of GUS, the source repository is no
+          longer the preferred or recommended method for downloading GUS. The
+          source repository contains the most recent additions and changes to
+          GUS, which may be inconsistent with this and other documentation,
+          and which may include changed APIs that could cause data
+          loss.</para>
         </warning></para>
 
       <para>Once downloaded, the GUS distribution should be moved to the
       location of your preference, and expanded:<screen>$ tar -zxvf gus-x.x.x.tar.gz</screen><note>
           <para>Throughout this documentation, the dollar
           (<computeroutput>$</computeroutput>) symbol will be used at the
-          begining of a line to denote the shell prompt. You should not type
+          beginning of a line to denote the shell prompt. You should not type
           the dollar symbol as part of your input.</para>
         </note></para>
     </sect1>
@@ -197,9 +202,9 @@
       <computeroutput>/home/smith</computeroutput>:<example>
           <title>Configuring the Environment for GUS</title>
 
-          <screen>$ export GUS_HOME=/home/smith/GUS/home
-$ export PROJECT_HOME=/home/smith/GUS/src
-$ export GUS_CONFIG_FILE=/home/smith/GUS/gus.properties
+          <screen>$ export GUS_HOME=/home/smith/GUS/gus_home
+$ export PROJECT_HOME=/home/smith/GUS/project_home
+$ export GUS_CONFIG_FILE=/home/smith/GUS/gus.properties 
 $ export PERL5LIB=$GUS_HOME/lib/perl
 $ export PATH=$GUS_HOME/bin:$PROJECT_HOME/install/bin:$PATH</screen>
         </example><note>
@@ -228,7 +233,7 @@ databaseLogin=<replaceable>database_username</replaceable><co
               id="databaseLogin" />
 databasePassword=<replaceable>database_password</replaceable>
 userName=<replaceable>gus_username</replaceable><co id="userName" />
-group=<replaceable>gus_password</replaceable>
+group=<replaceable>gus_</replaceable>group
 project=<replaceable>primary_gus_project</replaceable>
 perl=<replaceable>path_to_perl_binary</replaceable><co id="perl" />
 md5sum=<replaceable>path_to_md5_or_md5sum_binary</replaceable><co id="md5sum" /></screen>
@@ -236,7 +241,7 @@ md5sum=<replaceable>path_to_md5_or_md5sum_binary</replaceable><co id="md5sum" />
           <callout arearefs="dbVendor">
             <para>The database system you are using. This must be either
             <computeroutput>Oracle</computeroutput> or
-            <computeroutput>Postgres</computeroutput>. </para>
+            <computeroutput>Postgres</computeroutput>.</para>
           </callout>
 
           <callout arearefs="dbiDsn">
@@ -277,7 +282,7 @@ md5sum=<replaceable>path_to_md5_or_md5sum_binary</replaceable><co id="md5sum" />
           <callout arearefs="md5sum">
             <para><computeroutput>md5sum</computeroutput> is the full path to
             your <computeroutput>md5sum</computeroutput> or
-            <computeroutput>md5</computeroutput> executable. </para>
+            <computeroutput>md5</computeroutput> executable.</para>
           </callout>
         </calloutlist></para>
 
@@ -292,8 +297,8 @@ md5sum=<replaceable>path_to_md5_or_md5sum_binary</replaceable><co id="md5sum" />
         the GUS installer whenever it us run. <emphasis>The gus.properties
         file will never be overwritten by the GUS installer. Care should be
         taken to understand at all times what values are specified in the
-        gus.properties file as it determines the database the the GUS system
-        will access.</emphasis></para>
+        gus.properties file as it determines the database the GUS system will
+        access.</emphasis></para>
       </caution>
     </sect1>
 
@@ -303,14 +308,14 @@ md5sum=<replaceable>path_to_md5_or_md5sum_binary</replaceable><co id="md5sum" />
       <para>You are now ready to install the GUS Schema and/or Application
       Framework. The Schema should only be installed once per GUS
       instance/database and most commonly will be shared by many users (each
-      with thier own installation of the Application Framework). To install
+      with their own installation of the Application Framework). To install
       <emphasis>both</emphasis> the Schema and Application Framework, use the
       following command:</para>
 
       <screen>$ build GUS install -append -installDBSchema</screen>
 
       <para>If the Schema has already been installed, you should instead use
-      the following command: </para>
+      the following command:</para>
 
       <screen>$ build GUS install -append</screen>
 
@@ -319,13 +324,13 @@ md5sum=<replaceable>path_to_md5_or_md5sum_binary</replaceable><co id="md5sum" />
       tasks required for your environment. When complete, you will see the
       following on your screen:</para>
 
-      <screen>     [echo] Installation Complete</screen>
+      <screen>[echo] Installation Complete</screen>
 
       <note>
         <para>You may at some point see <computeroutput>[concat] No existing
         files and no nested text, doing nothing</computeroutput> as part of
         the install process. This is a normal message and does not indicate
-        that an error has occured. </para>
+        that an error has occurred.</para>
       </note>
     </sect1>
 
@@ -341,20 +346,20 @@ md5sum=<replaceable>path_to_md5_or_md5sum_binary</replaceable><co id="md5sum" />
 
         <para>The GUS Application Framework includes support for using basic
         access permissions with a unix-based model of users, groups, and
-        "others" and thourgh the use of "projects". These permissions are not
+        "others" and through the use of "projects". These permissions are not
         meant as a robust solution to data security, and are easily
-        circumvented though use of direct database acess (i.e.
+        circumvented though use of direct database access (i.e.
         <computeroutput>sqlplus</computeroutput> or
         <computeroutput>psql</computeroutput>) or local modifications of the
         GUS Application Framework. As such, it is highly recommended that you
         carefully evaluate and implement a database-level privileges system
-        that makes sense to your confguration. Groups that need the highest
-        levels of security, including HIPAA compliance, should consider using
-        Oracle with the Virtual Private Database option and other RDBMS-based
-        technologies.</para>
+        that makes sense to your configuration. Groups that need the highest
+        levels of security, such as HIPAA compliance, should consider using
+        Oracle with the Virtual Private Database option and/or other
+        RDBMS-based technologies.</para>
 
         <para>As an example, the Computational Biology and Informatics
-        Labarotory (CBIL) uses a privilege system that is based on two roles,
+        Laboratory (CBIL) uses a privilege system that is based on two roles,
         a read-only role, <computeroutput>GUS_R</computeroutput>, and a write
         role, <computeroutput>GUS_W</computeroutput>.
         <computeroutput>GUS_R</computeroutput> has been granted the
@@ -409,15 +414,15 @@ md5sum=<replaceable>path_to_md5_or_md5sum_binary</replaceable><co id="md5sum" />
     </sect1>
 
     <sect1>
-      <title>Reinstallating the GUS Application Framework</title>
+      <title>Reinstalling the GUS Application Framework</title>
 
       <para>From time to time it may be necessary to reinstall the GUS
-      application framework, either as part of an upgrade, or to propogate
+      application framework, either as part of an upgrade, or to propagate
       changes you've made within the
       <computeroutput>$PROJECT_HOME</computeroutput> directory to the
       <computeroutput>$GUS_HOME</computeroutput> directory. If you wish to
-      force all objects to be rebuilt (for example, due to a change within the
-      schema), you should first run the command:</para>
+      force all data model objects to be rebuilt (for example, due to a change
+      within the schema), you should first run the command:</para>
 
       <screen>$ touch $PROJECT_HOME/Schema/gus_schema.xml</screen>
 
@@ -425,16 +430,6 @@ md5sum=<replaceable>path_to_md5_or_md5sum_binary</replaceable><co id="md5sum" />
       command:</para>
 
       <screen>$ build GUS install -append</screen>
-    </sect1>
-
-    <sect1>
-      <title>Troubleshooting the Install Process</title>
-
-      <sect2>
-        <title>Cleaning up after a failed installation</title>
-
-        <para></para>
-      </sect2>
     </sect1>
   </chapter>
 </book>

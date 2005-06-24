@@ -3,9 +3,12 @@ package GUS::Supported::Plugin::LoadTaxon;
 @ISA = qw(GUS::PluginMgr::Plugin);
 use strict;
 
+
+use GUS::PluginMgr::Plugin;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::GeneticCode;
+use GUS::PluginMgr::Plugin;
 
 sub new {
   my ($class) = @_;
@@ -120,8 +123,8 @@ sub run {
 
     $self->makeTaxonEntry($rootAttArray, \$count);
     
-    if ($self->getArg->('restart') > 1) {
-	$self->getTaxonAtt($self->getArg->('restart'),$nodesHash,\$count);
+    if ($self->getArg('restart') > 1) {
+	$self->getTaxonAtt($self->getArg('restart'),$nodesHash,\$count);
     }
     else {
 	$self->getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 

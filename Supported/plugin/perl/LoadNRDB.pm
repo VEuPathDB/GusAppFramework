@@ -42,14 +42,14 @@ my $argsDeclaration =
  stringArg({name => 'externalDatabaseName',
 	    descr => 'sres.externaldatabase.name for NRDB',
 	    constraintFunc => undef,
-	    reqd => 0,
+	    reqd => 1,
 	    isList => 0
 	    }),
  
  stringArg({name => 'externalDatabaseVersion',
 	    descr => 'sres.externaldatabaserelease.version for this instance of NRDB',
 	    constraintFunc => undef,
-	    reqd => 0,
+	    reqd => 1,
 	    isList => 0
 	    }),
 
@@ -71,7 +71,7 @@ my $argsDeclaration =
 	  format => 'Text'
          }),
 
- booleanArg({name => 'maketemp',
+ booleanArg({name => 'makeTemp',
              descr => 'option to create temp table',
              reqd => 0,
              default => 0
@@ -148,7 +148,7 @@ my $tablesDependedOn = [['GUS::Model::DoTS::NRDBEntry', 'pulls aa_sequence_id fr
 
 my $howToRestart = <<PLUGIN_RESTART;
 use 'restart' for restarting the interrupted plugin(use with plugin option), use number from last set number in log
-use 'restart_temp_table' indicates temp table insertion should be restarted because table already exits
+use 'restartTempTable' indicates temp table insertion should be restarted because table already exits
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -156,10 +156,8 @@ unknown
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
-For arguments, you must include either extDbRelId or extDbName AND extDbRlsVer,
-plugin and maketemp should be included if you want the plugin to create new entries in the NRDB and ExtAASeq databases,
-and to use plugin and maketemp, you must include the arguments temp_login, temp_password, and dbi_str.
-Note that none of these arguments are set to 'required' because they are only conditionally required (i.e. you only need one if you don't have another, or if you call something that requires it).
+For arguments,plugin and makeTemp should be included if you want the plugin to create new entries in the NRDB and ExtAASeq databases, and to use plugin and makeTemp, you must include the arguments tempLogin, tempPassword, and dbiStr.
+Note that none of these arguments are set to 'required' because they are only conditionally required (i.e. you only need them if you call something that requires them).
 PLUGIN_NOTES
 
 my $documentation = {purposeBrief => $purposeBrief,
@@ -201,17 +199,16 @@ sub run {
 # TODO: remove this once the new API is implemented  
   die "Supply the name of the nr protein file\n" unless $self->getArg('nrdbFile');
 
-  my $external_database_release_id;
-  my $failNum;
-  my $ext_db_name = $self->getArg('externalDatabaseName');
-  my $ext_db_rls_ver = $self->getArg('externalDatabaseVersion');
+  $self->{failNum} = 0;
 
-  $self->{'extDbRelId'} = =$self->getExtDbRlsId($ext_db_name, $ext_db_rls_ver);
+  $self->{'extDbRelId'} =
+    $self->getExtDbRlsId($self->getArg('externalDatabaseName'),
+			 $self->getArg('externalDatabaseVersion'));
 
   my $dbHash = $self->getDB();
-  my $taxonHash = $self->getTaxon ()if ($self->getArg('maketemp') || $self->getArg('plugin'));
+  my $taxonHash = $self->getTaxon ()if ($self->getArg('makeTemp') || $self->getArg('plugin'));
   my $tempresults = $self->makeTempTable($dbHash, $taxonHash) 
-                    if ($self->getArg('maketemp'));
+                    if ($self->getArg('makeTemp'));
 
 # there are cases where this if will execute and tempresults will not exist
   if (!$self->getArg('plugin') && !$self->getArg('delete')) {
@@ -219,16 +216,18 @@ sub run {
       return $tempresults;
   }
 
-  my $entryresults = $self->makeNRDBAndExternalAASequence($taxonHash, $dbHash,$external_database_release_id,$failNum) 
-    if ($self->getArg('plugin'));       
-  
-  if (!$self->getArg('delete')){ 
+  my $entryresults = 
+    $self->makeNRDBAndExternalAASequence($taxonHash, $dbHash,
+					 $self->{'extDbRelId'}) 
+      if ($self->getArg('plugin'));
+
+  if (!$self->getArg('delete')){
     if ($tempresults) {
        my $entryresults .= $tempresults;
      }
-    return $entryresults;   
+    return $entryresults;
   }
-  
+
   my $nrdbdelete = $self->deleteFromNRDB ($dbHash) if ($self->getArg('delete'));
   my $aadelete = $self->deleteFromExtAASeq($dbHash) if ($self->getArg('delete'));
   my $results = "Processing completed:";
@@ -313,17 +312,17 @@ sub makeTempTable {
     my ($self,$dbHash, $taxonHash) = @_;
 
 # TODO: remove die statements once new API is implemented
-    my $login = $self->getArg('tempLogin') || die "must provide temp_login 
-                and temp_password for temp table\n";
+    my $login = $self->getArg('tempLogin') || die "must provide tempLogin 
+                and tempPassword for temp table\n";
     my $password = $self->getArg('tempPassword') || 
-                   die "must provide temp_login and temp_password for temp table\n";
+                   die "must provide tempLogin and tempPassword for temp table\n";
     my $DBI_STR = $self->getArg('dbiStr') || die "must provide server and sid for temp table\n";
     my $dbh = DBI->connect($DBI_STR, $login, $password);
 
     if (!$self->getArg('restartTempTable')) { 
       $dbh->do("truncate table NRDBTemp");
       $dbh->do("drop table NRDBTemp");
-      $dbh->do("create table NRDBTemp (SOURCE_ID VARCHAR2(32) NOT NULL,EXTERNAL_DB_REL_ID NUMBER(5) NOT NULL,SEQUENCE_VERSION VARCHAR2(10),SET_NUM NUMBER(10) NOT NULL)");
+      $dbh->do("create table NRDBTemp (SOURCE_ID VARCHAR(32) NOT NULL,EXTERNAL_DB_REL_ID FLOAT(5) NOT NULL,SEQUENCE_VERSION VARCHAR(10),SET_NUM FLOAT(10) NOT NULL)");
       $dbh->do("grant select on NRDBTemp to public");
     }
 
@@ -404,20 +403,15 @@ sub makeTempTable {
 # ---------------------------------------------------------------------
 
 sub makeNRDBAndExternalAASequence {
-    my ($self,$taxonHash, $dbHash,$external_database_release_id,$failNum) = @_;
+    my ($self,$taxonHash, $dbHash,$external_database_release_id) = @_;
     my $count = 0;
     my %EntryHash; 
     my $seq;
     my $num_submit;
     my $restart_arg;
 
-# TODO: remove die once new API is implemented    
-    my $temp_login = $self->getArg('tempLogin') || 
-                     die "--temp_login required to 
-                     load NRDBEntry and ExternalAASequence\n";
-
     my $dbh = $self->getQueryHandle();
-    my $st = $dbh->prepareAndExecute("select max(set_num) from $temp_login".".NRDBTemp");
+    my $st = $dbh->prepareAndExecute("select max(set_num) from NRDBTemp");
     my ($max_set_num) = $st->fetchrow_array;
     $st->finish();
 
@@ -466,7 +460,9 @@ sub makeNRDBAndExternalAASequence {
 			eval {
 			    $newExtAASeq->submit();
 			};
-			&handleFailure($seq,$failNum,$@) if ($@); 
+
+			$self->handleFailure($seq,$@) if ($@); 
+
 			$num_submit++;
 		        $self->log("Submitted set number:$num_submit");
 			$newExtAASeq->undefPointerCache();
@@ -671,10 +667,11 @@ sub makeExtAASeq {
 # ---------------------------------------------------------------------
 
 sub handleFailure {
-  my ($seq, $failNum, $errMessage) = @_;
-  $failNum++;
+  my ($self, $seq, $errMessage) = @_;
+  $self->{failNum}++;
+
   $self->log("$errMessage:\n$seq");
-  die "Number of failures exceeds 100" if ($failNum > 100);
+  die "Number of failures exceeds 100" if ($self->{failNum} > 100);
 }
   
 # ---------------------------------------------------------------------
@@ -736,9 +733,8 @@ sub deleteFromNRDB {
   my $num_delete = 0;
   my $rel_list = join(',', values %{$dbHash});
   my $dbh = $self->getQueryHandle();
-  my $login = $self->getArg('tempLogin');
   my %nrdbId;
-  my $sql1 = "select n.nrdb_entry_id from dots.nrdbentry n, $login" . ".NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_db_rel_id";
+  my $sql1 = "select n.nrdb_entry_id from dots.nrdbentry n, NRDBTemp p where n.source_id = p.source_id and n.external_database_release_id = p.external_db_rel_id";
   my $st1 = $dbh->prepareAndExecute($sql1) || die "SQL failed: $sql1\n";
 
   while (my ($nrdb_entry_id) = $st1->fetchrow_array) {

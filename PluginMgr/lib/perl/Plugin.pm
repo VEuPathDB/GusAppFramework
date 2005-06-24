@@ -397,7 +397,7 @@ B<Return type:> scalar or list reference
 sub getArg {
   my ($self, $name) = @_;
   my $args = $self->getArgs();
-  &confess("Attempting to access command line argument '$name', but there is not such argument\n") unless exists($args->{$name});
+  die("Attempting to access command line argument '$name', but there is no such argument\n") unless exists($args->{$name});
   return $args->{$name};
 }
 
@@ -911,7 +911,7 @@ sub getTotalUpdates {
   $self->getAlgInvocation()->getTotalUpdates();
 }
 
-=item C<className2tableId($className)>
+=item C<className2TableId($className)>
 
 Convert a perl style class name for a database object to a numerical table id suitable for comparison to one of GUS's many table_id columns.  For example, convert Core::Algorithm to something like 34.
 
@@ -922,7 +922,7 @@ B<Parameters:>
 B<Return type:> C<integer>
 
 =cut
-sub className2tableId {
+sub className2TableId {
   my ($self, $className) = @_;
   $self->getAlgInvocation()->getTableIdFromTableName($className);
 }
@@ -1168,7 +1168,7 @@ B<Parameters>
 sub error {
   my ($self, $msg) = @_;
 
-  confess("\nERROR: $msg\n\n--------------------------- STACK TRACE -------------------------\n");
+  die("\n$msg\n");
 }
 
 =item C<userError($msg)>
