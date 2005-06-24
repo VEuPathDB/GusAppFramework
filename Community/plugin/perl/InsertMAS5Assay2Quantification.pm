@@ -1,4 +1,4 @@
-package GUS::RAD::Plugin::MAS5StudyModuleILoader;
+package GUS::Common::Plugin::InsertMAS5Assay2Quantification;
 @ISA = qw( GUS::PluginMgr::Plugin);
 
 use strict 'vars';

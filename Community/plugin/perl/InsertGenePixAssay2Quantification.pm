@@ -1,5 +1,4 @@
-package GUS::RAD::Plugin::GenePixStudyModuleILoader;
-
+package GUS::Common::Plugin::InsertGenePixAssay2Quantification;
 @ISA = qw( GUS::PluginMgr::Plugin);
 
 use strict 'vars';
