@@ -328,9 +328,7 @@ sub getQuantificationIds {
 
     my $quantification = $acquisition->getChild('GUS::Model::RAD::Quantification',1) ? $acquisition->getChild('GUS::Model::RAD::Quantification') : $self->makeQuantification($acquisition,$assayName,$tableId);
 
-    if (! $assay->retrieveFromDB()) {
-      $assay->submit();
-    }
+    $assay->submit();
 
     my $quantificationId = $quantification->getId();
 
@@ -351,6 +349,8 @@ sub getAssay {
   my ($self,$assayName,$arrayDesign,$contact) = @_;
 
   my $assay = GUS::Model::RAD::Assay->new({'name' => $assayName});
+
+  $assay->retrieveFromDB();
 
   $assay->setParent($arrayDesign);
 
@@ -473,6 +473,8 @@ sub insertSageTagResults {
 sub processLine {
   my ($self,$line,$arrayDesign,$quantificationIds,$num) = @_;
 
+  my $numQ = @$quantificationIds;
+
   my $arrayDesignId = $arrayDesign->get('array_design_id');
 
   for (my $i=1;$i < @$line;$i++) {
@@ -483,11 +485,11 @@ sub processLine {
       $self->userError("SAGE tag $line->[0] with array_design_id = $arrayDesignId not in db\n");
     } 
 
-    my $sageTagResult = GUS::Model::RAD::SAGETagResult->new({'subclass_view'=>"SAGETagResult", 'tag_count'=>$line->[$i],'quantification_id'=>$quantificationIds->[$i]});
+    my $sageTagResult = GUS::Model::RAD::SAGETagResult->new({'subclass_view'=>"SAGETagResult", 'quantification_id'=>$quantificationIds->[$i],'tag_count'=>$line->[$i]});
 
     $sageTagResult->setParent($sageTag);
 
-    $$num += $sageTagResult->submit() if (! $sageTagResult->retrieveFromDB());
+    $$num += $sageTagResult->submit();
   }
 
   $self->undefPointerCache();
