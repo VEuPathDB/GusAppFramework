@@ -51,7 +51,7 @@ PLUGIN_FAILURE_CASES
 my $notes = <<PLUGIN_NOTES;
 Assumes that the \"Obsolete\" GO Term Ids (that is, the parent, in each branch, of all GO Terms that have become obsolete) have IDs that don't vary between releases of the ontology.  If this is not the case, the IDs must be updated below.
 The queries to SRes.GORelationshipType is case sensitive.  If you do not have the values 'isa' and 'partof' in all lowercase in the table they will be created by the plugin.
-There is a conditional requirement for this plugin:  you must provide either the (component, function, process)_ext_db_rel argument or set --create and provide the (component, function, process)_db_id argument.
+There is a conditional requirement for this plugin:  you must provide either the (component, function, process)ExtDbName argument or set --create and provide the (component, function, process)ExtDbName argument for every branch you are loading.
 PLUGIN_NOTES
 
 
@@ -242,25 +242,25 @@ sub loadOntology {
 
 	#make entry in SRes.GOTerm for each entry in the go file
 	foreach my $entryId(keys %$entries){
-	    
 	    next if (($entryId eq $store->getBranchRoot())||($entryId eq $store->getRoot()));
 	    
 	    if ($processedEntries->{Term}->{$entryId}){
 		$skipCount++;
 		next;
 	    }
-	    
 	    $entryCount++;
 
 	    my $entry = $entries->{$entryId};
+
+
 	    my $gusGoTerm = $self->makeNewGoTerm($entry, $goGraph, $levelGraph, 
 						   $obsoleteGoId, $extDbRelId, $ancestorGusId);
-
 	    #write to successfully processed id list
 	    $processedEntries->{Term}->{$entryId} = 1;
 
             # update translation tables between GO and GUS ids.
 	    $gus2go->{ $gusGoTerm->getId() } = $entry->getId();
+
 	    $go2gus->{ $entryId } = $gusGoTerm->getId();
 	    $self->undefPointerCache();
 	}
@@ -302,11 +302,9 @@ sub makeNewGoTerm{
     my @levelList = sort { $a <=> $b} @$l;
     my $obsolete = 0;
     my $numberOfLevels = $self->distinctLevels(\@levelList);
-
     if ($goGraph->{childToParent}->{$entryId}->{"$obsoleteGoId"}){
 	$obsolete = 1
 	};
-    
     my $gusGoTerm = GUS::Model::SRes::GOTerm->new({
 	go_id  => $entry->getId(), 
 	external_database_release_id   => $extDbRelId,
@@ -319,7 +317,7 @@ sub makeNewGoTerm{
 	ancestor_go_term_id => $ancestorGusId,
 	is_obsolete => $obsolete,
        });
-    
+
     #submit new term
     $gusGoTerm->submit();
 

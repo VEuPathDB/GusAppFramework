@@ -18,6 +18,8 @@ package GUS::Supported::Plugin::InsertAssayControl;
 
 use strict;
 use IO::File;
+use CBIL::Util::Disp;
+use GUS::PluginMgr::Plugin;
 
 use GUS::Model::RAD::Control;
 use GUS::Model::RAD::AssayControl;
@@ -31,47 +33,103 @@ sub new {
 
 # call required inherited initialization methods
   my $usage = 'Loads data into AssayControl table in RAD database.';
+  my $purposeBrief = 'Loads data into AssayControl table in RAD database.';
+  my $purpose = <<PURPOSE;
+This is a plug-in that loads AssayControl information (spotted microarray and oligonucleotide array) data into control table. 
+PURPOSE
 
-# command line options  
-  my $easycsp = [
-    {
-      o => 'data_file',
-      t => 'string',
-      r => 1,
-      h => 'mandatory, name of the data file (give full path)',
-    }, 
-   {
-      o => 'noWarning',
-      t => 'boolean',
-      h => 'if specified, generate no warning messages',
-    },
-    {
-      o => 'assay_id',
-      t => 'int',
-      r => 1,
-      h => 'mandatory, RAD assay id, the entry in Assay table',
-    },
-    {
-      o => 'testnumber',
-      t => 'int',
-      h => 'optional, number of iterations for testing',	 
-    },
-    {
-      o => 'restart',
-      t => 'int',
-      h => 'optional,data file line number to start loading data from(start counting after the header)',
-    }
-	];
+  my $tablesAffected = [
+			['RAD::AssayControl',          'Enters here multiple rows']
+		       ];
+  my $tablesDependedOn = [
+			  ['Study::OntologyEntry',                'Holds the ontolgies for technology_type, substrate_type and control_type'],
+			  ['RAD::Assay',                'Holds assay information'], 
+			 ];
 
-  $self->initialize({requiredDbVersion => '3.5',
-		     cvsRevision => '$Revision$', # cvs fills this in!
-                     cvsTag => '$Name$', # cvs fills this in!
-                     name => ref($self),
-                     revisionNotes => 'make consistent with GUS 3.5',
-                     easyCspOptions => $easycsp,
-                     usage => $usage
-                 });
+  my $howToRestart = <<RESTART;
+Loading can be resumed using the I<--restart n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted).
+RESTART
 
+  my $failureCases = <<FAILURE_CASES;
+Files not in an appropriate format.
+FAILURE_CASES
+
+my $notes = <<NOTES;
+=head2 Example
+*For help
+ga GUS::Supported::Plugin::InsertAssayControl B<[options]> B<--help>
+*For loading data into AssayControl table
+ga GUS::Supported::Plugin::InsertAssayControl B<[options]> B<--data_file> data_file B<--assay_id> assay_id B<--debug> > logfile
+*For loading data into AssayControl table
+ga GUS::Supported::Plugin::InsertAssayControl B<[options]> B<--data_file> data_file B<--assay_id> assay_id B<--commit> > logfile 
+=head2 F<data_file>
+
+The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.
+
+* The header contains a list of attributes which are defined in the assaycontrol table including control__id, value, unit_type_id. 
+
+* All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.
+
+* Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.
+
+Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.
+=head2 SPECIAL NOTES
+Before you can run this plug-in you need to create the Perl objects for the views you will be loading, should these objects not exist yet. Based on the "build" system, this will involve two steps. First, check out the RAD, CBIL, GUS and Install modules from the cvs repository; secondly, build the GUS_HOME which the Perl objects reside in.
+The plug-in outputs a print statement to STDOUT (for possible redirection to a log file) which lists the number of data file lines read (counting empty lines, but not counting the header and the lines preceding it in the data file) and any warning statement(s) regarding data lines which have not been loaded into RAD.
+Make sure that the F<.gus.properties> file of the user contains the correct login name [RADrw]. Also, if the group and project differ from the default values in F<.gus.properties>, I<please specify the proper group and project name on the command line using --group and --project options respectively>. 
+=head1 AUTHOR
+Written by Junmin Liu.
+=head1 COPYRIGHT
+Copyright Trustees of University of Pennsylvania 2005.
+
+NOTES
+my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief, tablesAffected=>$tablesAffected, tablesDependedOn=>$tablesDependedOn, howToRestart=>$howToRestart, failureCases=>$failureCases, notes=>$notes};
+my $argsDeclaration  =
+  [
+   fileArg({name => 'data_file',
+	    descr => 'The full path of the data_file.',
+	    constraintFunc=> undef,
+	    reqd  => 1,
+	    isList => 0,
+	    mustExist => 1,
+	    format => 'See the NOTES for the format of this file'
+	   }),
+   
+integerArg({name  => 'assay_id',
+	       descr => 'RAD assay id, the entry in Assay table whose controls are being loaded.',
+	       constraintFunc=> undef,
+	       reqd  => 1,
+	       isList => 0,
+	      }),
+integerArg({name  => 'testnumber',
+	       descr => 'optional, number of iterations for testing',
+	       constraintFunc=> undef,
+	       reqd  => 0,
+	       isList => 0
+	      }),
+   integerArg({name  => 'restart',
+	       descr => 'optional,data file line number to start loading data from(start counting after the header)',
+	       constraintFunc=> undef,
+	       reqd  => 0,
+	       isList => 0
+	      }),
+   booleanArg({name  => 'noWarning',
+	       descr => 'if specified, generate no warning messages',
+	       constraintFunc=> undef,
+	       reqd  => 0,
+	       isList => 0,
+	       default => 0
+	      })
+];
+
+$self->initialize({requiredDbVersion => '3.5',
+		     cvsRevision => '$Revision$',
+#		     cvsTag => '$Name:  $',
+		     name => ref($self),
+		     revisionNotes => 'make consistent with GUS 3.5',
+		     argsDeclaration => $argsDeclaration,
+		     documentation => $documentation
+		    });
 # return the new object
 	return $self;
 }
@@ -476,103 +534,3 @@ sub updateAssayControl{
 
 1;
 
-
-__END__
-
-=head1 NAME
-
-GUS::Supported::Plugin::InsertAssayControl
-
-=head1 SYNOPSIS
-
-*For help
-
-ga GUS::Supported::Plugin::InsertAssayControl B<[options]> B<--help>
-
-*For loading data into AssayControl table
-
-ga GUS::Supported::Plugin::InsertAssayControl B<[options]> B<--data_file> data_file B<--assay_id> assay_id B<--debug> > logfile
-
-*For loading data into AssayControl table
-
-ga GUS::Supported::Plugin::InsertAssayControl B<[options]> B<--data_file> data_file B<--assay_id> assay_id B<--commit> > logfile 
-
-=head1 DESCRIPTION
-
-This is a plug-in that loads AssayControl information (spotted microarray and oligonucleotide array) data into control table. 
-
-=head1 ARGUMENTS
-
-B<--data_file> F<data_file>  [require the absolute pathname]
-
-    The file contains the values for attributes in Control.
-
-B<--assay_id> I<assay_id>  [require must be one of assay_id in RAD::AssayControl table]
-
-    set value of the assay_id in AssayControl table
-
-
-=head1 OPTIONS
-
-B<--debug>
-    Debugging output.
-
-B<--help>
-    Get usage; same as usage.
-
-B<--verbose>
-    Lots of output.
-
-B<--commit>   
-    Commit the data to database.
-
-B<--testnumber> I<NUM>   
-    Number of iterations for testing (B<in non-commit mode only>).  
-
-B<--restart> I<NUM>   
-    data file line number to start loading data from (start counting after the header)
-
-B<--user> I<STRING>
-    The user name, used to set value for row_user_id. The user must already be in Core::UserInfo table. [Default: from $HOME/.gus.properties file]
-
-B<--group> I<STRING>
-    The group name, used to set value for row_group_id. The group must already be in Core::GroupInfo table. [Default: from $HOME/.gus.properties file]
-
-B<--project> I<STRING>
-    The project name, used to set value for row_project_id. The project must already be in Core::ProjectInfo table. [Default: from $HOME/.gus.properties file]
-
-=head1 NOTES
-
-Before you can run this plug-in you need to create the Perl objects for the views you will be loading, should these objects not exist yet. Based on the "build" system, this will involve two steps. First, check out the RAD, CBIL, GUS and Install modules from the cvs repository; secondly, build the GUS_HOME which the Perl objects reside in.
-
-The plug-in outputs a print statement to STDOUT (for possible redirection to a log file) which lists the number of data file lines read (counting empty lines, but not counting the header and the lines preceding it in the data file) and any warning statement(s) regarding data lines which have not been loaded into RAD.
-
-Make sure that the F<.gus.properties> file of the user contains the correct login name [RADrw]. Also, if the group and project differ from the default values in F<.gus.properties>, I<please specify the proper group and project name on the command line using --group and --project options respectively>. 
-
-=head2 F<data_file>
-
-The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.
-
-* The header contains a list of attributes which are defined in the assaycontrol table including control__id, value, unit_type_id. 
-
-* All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.
-
-* Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.
-
-Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.
-
-=head2 I<restart>
-
-If you need to restart loading from your data file from a specific line (e.g. due to previous interruptions in data loading), give the line number of this line in the --restart option. You should start your line count from the line after the header line and include any empty lines. 
-
-=head2 I<testnumber>
-
-If you are testing the plug-in and want only to test n lines from your data file, use the --testnumber option. If you set this to n, it will test the plug-in on the first n data lines (counting empty lines) after the header or after --restart, if this is set. 
-
-=head1 AUTHOR
-
-Written by Junmin Liu.
-
-=head1 COPYRIGHT
-
-Copyright Trustees of University of Pennsylvania 2003.

@@ -10,8 +10,6 @@ use strict;
 use GUS::PluginMgr::Plugin;
 use GUS::Model::DoTS::SecondaryStructure;
 use GUS::Model::DoTS::SecondaryStructureCall;
-use GUS::Model::Core::DatabaseInfo;
-use GUS::Model::Core::TableInfo;
 use FileHandle;
 
   my $purposeBrief = "Load SAGE tag-count pairs from a file.";
@@ -30,9 +28,7 @@ PLUGIN_PURPOSE
     ];
 
   my $tablesDependedOn =
-    [ ['Core::DatabaseInfo', 'Look up table IDs by database/table names'],
-      ['Core::TableInfo', 'Look up table IDs by database/table names'],
-    ];
+    [];
 
   my $howToRestart = <<PLUGIN_RESTART;
 This plugin has no restart facility.
@@ -55,20 +51,20 @@ PLUGIN_NOTES
 my $argsDeclaration =
   [
 
-   integerArg({name           => 'aa_sequence_id',
-	       descr          => 'aa_sequence_id',
+   integerArg({name           => 'aaSequenceId',
+	       descr          => '',
 	       reqd           => 1,
 	       constraintFunc => undef,
 	       isList         => 0, }),
 
-   integerArg({name           => 'pred_alg_invocation_id',
-	       descr          => 'pred_alg_invocation_id',
+   integerArg({name           => 'predAlgInvocationId',
+	       descr          => '',
 	       reqd           => 1,
 	       constraintFunc => undef,
 	       isList         => 0, }),
 
    fileArg({name           => 'datafile',
-	    descr          => 'datafile',
+	    descr          => '',
 	    reqd           => 1,
 	    mustExist      => 1,
 	    format         =>
@@ -117,8 +113,8 @@ sub run {
   $self->logCommit;
 
   my $datafile = $self->getArg('datafile');
-  my $aa_sequence_id = $self->getArg('aa_sequence_id');
-  my $pred_alg_invocation_id = $self->getArg('pred_alg_invocation_id');
+  my $aa_sequence_id = $self->getArg('aaSequenceId');
+  my $pred_alg_invocation_id = $self->getArg('predAlgInvocationId');
 
   my $fh = FileHandle->new('<'.$datafile);
   if (! $fh) {

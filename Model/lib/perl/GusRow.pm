@@ -193,6 +193,12 @@ sub checkWritePermission {
     return 1;
   } 
   print STDERR "Insufficient permissions to update ".$self->getClassName()." ".$self->getId()."\n";
+  if ( $debug == 1 ) {
+      print STDERR "other_write: ".$self->get('other_write')."\n";
+      print STDERR "group_write: ".$self->get('group_write')." row_group_id: ".$self->get('row_group_id')." default_group_id: ".$self->getDefaultGroupId()."\n";
+      print STDERR "user_write: ".$self->get('user_write')." row_user_id: ".$self->get('row_user_id')." default_user_id: ".$self->getDefaultUserId()."\n";
+  }
+     
   return 0;
 }
 
@@ -1552,8 +1558,17 @@ sub isMarkedDeleted {
 
 sub allNonNullsSet {
   my($self) = @_;
-  foreach my $a (@{$self->getTable()->getAttributeInfo()}) {
-    ##		print STDERR $self->getClassName(),"::allNonNullsSet: $a->{'col'}, nullable = $a->{'Nulls'}, value=",$self->get("$a->{'col'}"),"\n";
+
+  my $table;
+  ## Check for Postgres Views, that don't properly have their nullability set
+  if ( $self->getDatabase()->getDSN() =~ /pg/i && $self->isValidAttribute('subclass_view') ) {
+      $table = $self->getDatabase()->getTable($self->getTable()->getRealTableName());
+  } else {
+      $table  = $self->getTable();  
+  }
+
+  foreach my $a (@{$table->getAttributeInfo()}) {
+    ##	print STDERR $self->getClassName(),"::allNonNullsSet: $a->{'col'}, nullable = $a->{'Nulls'}, value=",$self->get("$a->{'col'}"),"\n";
     if ($a->{'Nulls'} == 0 && (!defined $self->get("$a->{'col'}") || $self->get("$a->{'col'}") =~ /null/i)) {
       print STDERR "allNonNullsSet: $a->{'col'} not set... = '".$self->get("$a->{'col'}")."'\n" if $debug;
       return 0;
@@ -1651,7 +1666,9 @@ sub submit {
 		
     print STDERR $self->getClassName()."->Submit: All foreign keys are set...proceeding\n" if $debug;
 
-    if ($self->allNonNullsSet()) { ##all thenon nulls have been set so should be update...
+
+    ## If all the nonNulls are set, then this is an update.
+    if ( $self->allNonNullsSet() ) { 
       ##UPDATE			##from database so need to update
       print STDERR "Updating $self\n" if $debug;
       if ($self->isUpdateable() && $self->checkWritePermission()) {

@@ -165,9 +165,9 @@ sub _checkReqdDecl {
   my ($self) = @_;
 
   my $class = ref $self;
-  &confess("Argument declaration error for $class: 'reqd => $self->{reqd}' is invalid.  It must be either 0 or 1\n\n")
+  &confess("Argument declaration error for argument $self->{name}: 'reqd => $self->{reqd}' is invalid.  It must be either 0 or 1\n\n")
     unless $self->{reqd} eq '0' || $self->{reqd} eq '1';
-  &confess("Argument declaration error for $class: required args must have 'default => undef or omit default =>'\n\n")
+  &confess("Argument declaration error for argument $self->{name}: required args must have 'default => undef or omit default =>'\n\n")
     if $self->{reqd} && defined $self->{default};
 }
 

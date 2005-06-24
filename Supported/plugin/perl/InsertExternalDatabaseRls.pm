@@ -81,14 +81,14 @@ my $argsDeclaration =
 		}),
 	 
 	 #not using fileArg for this since file is not actually opened in this plugin
-	 stringArg({name => 'file_name',
+	 stringArg({name => 'fileName',
 		    descr => 'name of file representing this release, and if it exists, link to local location where file can be found',
 		    reqd => 0,
 		    constraintFunc => undef,
 		    isList => 0,
 		}),
 
-	 stringArg({name => 'file_md5',
+	 stringArg({name => 'fileMd5',
 		    descr => 'md5 checksum for verifying the file was downloaded successfully, and if it exists, link to local location where file can be found',
 		    reqd => 0,
 		    constraintFunc => undef,
@@ -116,12 +116,11 @@ Only one row is created, so if the plugin fails, restart by running it again wit
 PLUGIN_RESTART
     
 my $failureCases = <<PLUGIN_FAILURE_CASES;
-Neither the name of the database nor the database ID is required as input; however, if neither is provided, the plugin will fail.  Also, If there is already an entry in SRes.ExternalDatabaseRelease that has the same version number as the entry to be created, then no new row is submitted.  This is not a failure case per se, but will result in no change to the database where one might have been expected.  Finally, if including --releaseDate in the command line, the format of the date must be the same as that expected by the DATE datatype in your database instance.
+If there is already an entry in SRes.ExternalDatabaseRelease that has the same version number as the entry to be created, then no new row is submitted.  This is not a failure case per se, but will result in no change to the database where one might have been expected.  Also, if including --releaseDate in the command line, the format of the date must be the same as that expected by the DATE datatype in your database instance.
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
 Although currently SRes.ExternalDatabaseRelease contains attributes named blast_file and blast_file_md5, they are unpopulated in CBIL's instance and it is unclear what they are used for, so the ability to load data into them is not provided here.
-One of either --databaseName (as it appears in SRes.ExternalDatabase) or --databaseId must be provided as an argument to this plugin.  They are not listed as required because there is no way to specify conditional requirements.
 PLUGIN_NOTES
 
 my $documentation = { purpose=>$purpose,
@@ -162,7 +161,7 @@ sub run {
     my $dbVer = $self->getArg('databaseVersion'); 
     my $msg;
 
-    $dbId = $self->getExtDbId($dbName);
+    my $dbId = $self->getExtDbId($dbName);
 
     if ($self->releaseAlreadyExists($dbId)){
 	$msg = "Not creating a new release Id for $dbName as there is already one for $dbName version $dbVer";

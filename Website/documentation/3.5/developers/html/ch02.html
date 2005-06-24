@@ -1,0 +1,48 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter 2. Extending the Schema</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"><link rel="start" href="index.html" title="GUS Developer's Guide"><link rel="up" href="index.html" title="GUS Developer's Guide"><link rel="prev" href="ch01s02.html" title="The Plugin Standard"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 2. Extending the Schema</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch01s02.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> </td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="id856370"></a>Chapter 2. Extending the Schema</h2></div><div><div class="author"><h3 class="author"><span class="firstname">Michael</span> <span class="surname">Saffitz</span></h3><code class="email">&lt;<a href="mailto:msaffitz@pcbi.upenn.edu">msaffitz@pcbi.upenn.edu</a>&gt;</code></div></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="ch02.html#id856407">Creating New Objects in the Database</a></span></dt><dd><dl><dt><span class="sect2"><a href="ch02.html#id856418">Adding New Columns to Existing Tables</a></span></dt><dt><span class="sect2"><a href="ch02.html#id856438">Adding New Tables</a></span></dt><dt><span class="sect2"><a href="ch02.html#id856465">Adding New Views</a></span></dt><dt><span class="sect2"><a href="ch02.html#id856481">Updating GUS Version Objects</a></span></dt><dt><span class="sect2"><a href="ch02.html#id856495">Updating
+        <code class="computeroutput">Core.TableInfo</code></a></span></dt><dt><span class="sect2"><a href="ch02.html#id856722">Rebuilding Objects</a></span></dt></dl></dd></dl></div><p>The GUS Schema may be extended by adding new columns to existing
+    tables, or adding new tables and views. For the time being, adding new
+    Schemata to GUS is not supported.</p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>Extensions to the GUS may interfere with your ability to upgrade
+        to future releases of GUS.</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id856407"></a>Creating New Objects in the Database</h2></div></div></div><p>The first step to extending the Schema is to create the objects
+      within the database.</p><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id856418"></a>Adding New Columns to Existing Tables</h3></div></div></div><p>When adding new columns to existing tables, it is important to
+        maintain the existing order of the columns, and only add new columns
+        between the existing columns and the housekeeping columns (eg before
+        the <code class="computeroutput">modification_date</code> column). For
+        this reason, it will likely be necessary to rename the existing table;
+        create the modified table; and then migrate the date from the existing
+        table to the newly created table. As you perform this process, you
+        should ensure that all constraints (including both "incoming" and
+        "outgoing" foreign key constraints and primary key constraints) and
+        that indexes on the original table are created and applied on the
+        newly created table.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id856438"></a>Adding New Tables</h3></div></div></div><p>When creating new tables, it is important to include all
+        housekeeping columns at the "end" of the definition in the proper
+        order. All new tables should have a corresponding sequence created,
+        with the naming convention of:
+        <code class="computeroutput"><em class="replaceable"><code>TableSchemaName</code></em>.<em class="replaceable"><code>TableName</code></em>_SQ</code>
+        . All new tables must have a single column primary key constraint
+        defined.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id856465"></a>Adding New Views</h3></div></div></div><p>Only views created as "subclass" views against an implementation
+        table are supported. When creating new views, it is important to
+        include all superclass columns in the view definition, including the
+        housekeeping columns. Proper column ordering should be observed in the
+        views.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id856481"></a>Updating GUS Version Objects</h3></div></div></div><p>If you've changed an existing GUS table, or wish to have GUS
+        audit changes to your new tables and views, you must make the
+        corresponding changes and/or additions to the version ("ver") tables
+        and views. </p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id856495"></a>Updating
+        <code class="computeroutput">Core.TableInfo</code></h3></div></div></div><p>GUS stores metadata for all tables and views in the
+        <code class="computeroutput">Core.TableInfo</code> table. Whenever you
+        create a new table or view, you must add a corresponding row in this
+        table. The column descriptions are:</p><div class="table"><a name="id856516"></a><p class="title"><b>Table 2.1. <code class="computeroutput">Core.TableInfo</code>
+            Description</b></p><table summary="Core.TableInfo
+            Description" border="1"><colgroup><col><col></colgroup><thead><tr><th align="center">Column Name</th><th align="center">Description</th></tr></thead><tbody><tr><td><code class="computeroutput">table_id</code></td><td>The ID of this row, provided by the
+                  <code class="computeroutput">com Core.TableInfo_SQ</code>
+                  sequence. </td></tr><tr><td><code class="computeroutput">name</code></td><td>The name of the table. The case used here will be
+                  used at object-generation time.</td></tr><tr><td><code class="computeroutput">table_type</code></td><td><code class="computeroutput">Standard</code> or
+                  <code class="computeroutput">Version</code>, depending on
+                  whether this is a normal table or a version table </td></tr><tr><td><code class="computeroutput">primary_key_column</code></td><td>The name of the primary key column</td></tr><tr><td><code class="computeroutput">database_id</code></td><td>The id of the schema, found in
+                  <code class="computeroutput">Core.DatabaseInfo</code></td></tr><tr><td><code class="computeroutput">is_versioned</code></td><td>1 if the table has a corresponding version table. 0
+                  otherwise.</td></tr><tr><td><code class="computeroutput">is_view</code></td><td>1 if the "table" is a subclass view. 0
+                  otherwise.</td></tr><tr><td><code class="computeroutput">view_on_table_id</code></td><td>If this "table" is a subclass view, the table id of
+                  the implementation table that this view is against.</td></tr><tr><td><code class="computeroutput">superclass_table_id</code></td><td>If this "table" is a subclass view, the table id of
+                  the superclass view.</td></tr><tr><td><code class="computeroutput">is_updatable</code></td><td>1 if the table is read/write, 0 if it is read
+                  only.</td></tr></tbody></table></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id856722"></a>Rebuilding Objects</h3></div></div></div><p>After you have completed the steps above, you must rebuild your
+        objects. First, use the command below to signal that your table
+        definitions have changed:</p><pre class="screen">$ touch $PROJECT_HOME/Schema/gus_schema.xml</pre><p>Then, reinstall GUS:</p><pre class="screen">$ build GUS install -append</pre></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch01s02.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> </td></tr><tr><td width="40%" align="left" valign="top">The Plugin Standard </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> </td></tr></table></div></body></html>

@@ -1,0 +1,46 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Post-Installation Setup</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"><link rel="start" href="index.html" title="GUS Installation Guide"><link rel="up" href="ch02.html" title="Chapter 2. Installing GUS"><link rel="prev" href="ch02s04.html" title="Installing GUS"><link rel="next" href="ch02s06.html" title="Reinstalling the GUS Application Framework"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Post-Installation Setup</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch02s04.html">Prev</a> </td><th width="60%" align="center">Chapter 2. Installing GUS</th><td width="20%" align="right"> <a accesskey="n" href="ch02s06.html">Next</a></td></tr></table><hr></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id837733"></a>Post-Installation Setup</h2></div></div></div><p>If you installed the GUS Schema in the previous step, you must now
+      address the issues in this section. If you only installed the
+      Application Framework, you may skip this section.</p><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id837745"></a>Database Privileges and Roles</h3></div></div></div><p>The GUS Application Framework includes support for using basic
+        access permissions with a unix-based model of users, groups, and
+        "others" and through the use of "projects". These permissions are not
+        meant as a robust solution to data security, and are easily
+        circumvented though use of direct database access (i.e.
+        <code class="computeroutput">sqlplus</code> or
+        <code class="computeroutput">psql</code>) or local modifications of the
+        GUS Application Framework. As such, it is highly recommended that you
+        carefully evaluate and implement a database-level privileges system
+        that makes sense to your configuration. Groups that need the highest
+        levels of security, such as HIPAA compliance, should consider using
+        Oracle with the Virtual Private Database option and/or other
+        RDBMS-based technologies.</p><p>As an example, the Computational Biology and Informatics
+        Laboratory (CBIL) uses a privilege system that is based on two roles,
+        a read-only role, <code class="computeroutput">GUS_R</code>, and a write
+        role, <code class="computeroutput">GUS_W</code>.
+        <code class="computeroutput">GUS_R</code> has been granted the
+        <code class="computeroutput">select</code> privilege on all tables and
+        views in GUS, and <code class="computeroutput">GUS_W</code> has been
+        granted the <code class="computeroutput">update, insert, delete</code>
+        privileges on all tables and views and
+        <code class="computeroutput">select</code> on all sequences in GUS.
+        Individual databases users are then granted the
+        <code class="computeroutput">GUS_R</code> role and, as appropriate, the
+        <code class="computeroutput">GUS_W</code> role. For finer control, this
+        model may be extended to individual schemata or sets of tables.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id837845"></a>Registering the GUS Application Framework</h3></div></div></div><p>For auditing purposes, the GUS system requires that the
+        Application Framework and individual plugins be registered within the
+        GUS Schema. To register the Application Framework in the GUS Schema,
+        use the following command:</p><pre class="screen">$ ga +meta --commit</pre><p>It is only necessary to run this command once. Upon successfully
+        running the command, you will see a stream of XML displayed on your
+        screen.</p><p>Plugins will need to be registered in a similar fashion prior to
+        use. For more information on registering plugins, please refer to the
+        GUS User's Guide.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id837878"></a>Creating users, groups, and projects</h3></div></div></div><p>You may have noticed the
+        <code class="computeroutput">userName</code>,
+        <code class="computeroutput">group</code>, and
+        <code class="computeroutput">project</code> options specified in the
+        <code class="computeroutput">gus.config</code> file above. These values
+        are used for auditing changes to the database on an individual row
+        level, as well as part of the permissions system built into the GUS
+        Application Framework. Your instance of GUS should now be configured
+        with the standard "DBA" entries. You may at this point wish to create
+        more specific users, groups, and projects so that further work with
+        GUS will be properly tracked.</p><p>For more information on creating users, groups, and projects
+        within GUS, please refer to the GUS User's Guide.</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch02s04.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch02.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch02s06.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Installing GUS </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Reinstalling the GUS Application Framework</td></tr></table></div></body></html>

@@ -2,6 +2,7 @@ package GUS::Supported::Plugin::LoadFastaSequences;
 
 @ISA = qw(GUS::PluginMgr::Plugin); 
 use strict;
+use GUS::PluginMgr::Plugin;
 
   my $purposeBrief = 'Insert or update sequences from a FASTA file or as set of FASTA files.';
 
@@ -50,7 +51,7 @@ my $argsDeclaration =
 	       reqd           => 0,
 	       constraintFunc => undef,
                mustExist => 0,
-               format =>""
+               format =>"",
                isList         => 0 }),
  
   stringArg({   name           => 'externalDatabaseName',
@@ -84,17 +85,17 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       constraintFunc => undef,
 	       isList         => 0 }),
  
- integerArg({   name           => 'ncbiTaxonId',
-	       descr          => 'The taxon id from NCBI for these sequences',
+ integerArg({   name           => 'ncbiTaxId',
+	       descr          => 'The taxon id from NCBI for these sequences.  Not applicable for AASequences',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
- fileArg({   name           => 'sequencefile',
+ fileArg({   name           => 'sequenceFile',
 	       descr          => 'The name of the FASTA file containing the input sequences',
 	       reqd           => 0,
                mustExist => 0,
-               format =>"FASTA"
+               format =>"FASTA",
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
@@ -102,7 +103,7 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       descr          => 'If set, treat all files in this directory as FASTA files and load them all',
 	       reqd           => 0,
                mustExist => 0,
-               format =>"Directory of FASTA files"
+               format =>"Directory of FASTA files",
 	       constraintFunc => undef,
 	       isList         => 0 }),
  
@@ -114,7 +115,7 @@ stringArg({   name           => 'externalDatabaseVersion',
 
  stringArg({   name           => 'regexSourceId',
 	       descr          => 'The regular expression to pick the source_id of the sequence from the defline',
-	       reqd           => 0,
+	       reqd           => 1,
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
@@ -232,8 +233,10 @@ sub run {
 
 
   # get primary key for table_name
-  $prim_key = $self->getAlgInvocation()->
-    getTablePKFromTableId($self->className2TableId($self->getArg('tableName')));
+  my $tableId = $self->className2TableId($self->getArg('tableName'));
+
+  print STDERR "LFS: '$tableId' '" .  $self->getArg('tableName') . "\n";
+  $prim_key = $self->getAlgInvocation()->getTablePKFromTableId($tableId);
 
   if ($self->getArg('writeFile')) {
     open(WF,">>" . $self->getArg('writeFile'));
@@ -246,7 +249,9 @@ sub run {
       $self->fetchSequenceTypeId();
   }
 
-  $self->fetchTaxonId();
+  if ($self->getArg('ncbiTaxId')) {
+    $self->fetchTaxonId();
+  }
  
   my $oracleName = $self->className2oracleName($self->getArg('tableName'));
   $checkStmt = $self->getAlgInvocation()->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $self->{external_database_release_id}");
@@ -352,7 +357,7 @@ sub processOneFile{
 	      $mol_wgt = $1; 
 	    }
 
-	    my $regexContainedSeqs = $self->getArg('regexContainedSeqs') if $self->getArg('regeContainedSeqs');
+	    my $regexContainedSeqs = $self->getArg('regexContainedSeqs') if $self->getArg('regexContainedSeqs');
 	    if ($regexContainedSeqs && /$regexContainedSeqs/) { 
 		$contained_seqs = $1; 
 	    }
@@ -382,10 +387,10 @@ sub process {
 
 
   my $id;
-  $id = $self->checkIfHave($source_id) unless $self->getArg('no_check');
+  $id = $self->checkIfHave($source_id) unless $self->getArg('noCheck');
   my $aas;
   if ($id && $self->getArg('update')) {
-    my $className = "GUS::Model::" . $self->getArg('table_name');
+    my $className = "GUS::Model::" . $self->getArg('tableName');
     $aas = $className->new({$prim_key => $id});
     $aas->retrieveFromDB();
     $aas->setSecondaryIdentifier($secondary_id) unless !$secondary_id || $aas->getSecondaryIdentifier() eq $secondary_id;
@@ -402,7 +407,7 @@ sub process {
   }
 
   $aas->submit() if $aas->hasChangedAttributes();
-  $self->makeProjLink($aas) if $self->getArg('Project');
+  $self->makeProjLink($aas) if $self->getArg('project');
   if ($self->getArg('writeFile')) {
     print WF ">",$aas->getId()," $source_id $secondary_id $name $description\n$sequence\n";
   }
@@ -413,7 +418,7 @@ sub process {
 sub createNewExternalSequence {
   my($self, $source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence,$seq_version,) = @_;
 
-  my $className = "GUS::Model::" . $self->getArg('table_name');
+  my $className = "GUS::Model::" . $self->getArg('tableName');
   $className =~ /GUS::Model::\w+::(\w+)/ || die "can't parse className";
   my $tbl = $1;
 
@@ -425,22 +430,22 @@ sub createNewExternalSequence {
     $aas->set('secondary_identifier',$secondary_id);
   }
   if ($aas->isValidAttribute('sequence_type_id')) {
-    $aas->setSequenceTypeId($self->getArg('sequence_type_id'));
+    $aas->setSequenceTypeId($self->{sequenceTypeId});
   }
-  if ($seq_version && $aas->isValidAttribute('sequence_version')) {
+  if ($seq_version && $aas->isValidAttribute('sequenceVersion')) {
     $aas->setSequenceVersion($seq_version);
   }
   #if($self->getArg('taxon_id')){ $aas->setTaxonId($self->getArg('taxon_id'));}
-  if ($self->getArg('taxon_id')) { 
-    if ($aas->isValidAttribute('taxon_id')) {
-      $aas->setTaxonId($self->getArg('taxon_id'));
-    } elsif ($self->getArg('table_name') eq 'DoTS::ExternalAASequence') {
+  if ($self->{taxonId}) { 
+    if ($aas->isValidAttribute('taxonId')) {
+      $aas->setTaxonId($self->{taxonId});
+    } elsif ($self->getArg('tableName') eq 'DoTS::ExternalAASequence') {
       eval ("require GUS::Model::DoTS::AASequenceTaxon");
       my $aast =  GUS::Model::DoTS::AASequenceTaxon->
-	new({taxon_id => $self->getArg('taxon_id')});
+	new({taxon_id => $self->{taxonId}});
       $aas->addChild($aast);
     } else {
-      die "Cannot set taxon_id for table_name " . $self->getArg('table_name') . "\n";
+      die "Cannot set taxon_id for table_name " . $self->getArg('tableName') . "\n";
     }
   }
   if ($description) { 
@@ -460,7 +465,7 @@ sub createNewExternalSequence {
   if ($contained_seqs && $aas->isValidAttribute('number_of_contained_sequences')) { 
     $aas->setNumberOfContainedSequences($contained_seqs); 
   }
-  if ($sequence && !$self->getArg('no_sequence')) {
+  if ($sequence && !$self->getArg('noSequence')) {
     $aas->setSequence($sequence);
   }
   $self->logDebug($aas->toString());
@@ -504,7 +509,7 @@ sub makeProjLink {
 
 sub setProjId {
   my ($self) = @_;
-  my %project = ( name => $self->getArg('Project') );
+  my %project = ( name => $self->getArg('project') );
 
   eval ("require GUS::Model::Core::ProjectInfo");
   my $project_gus = GUS::Model::Core::ProjectInfo->new(\%project);
@@ -529,11 +534,11 @@ sub fetchSequenceTypeId {
   eval ("require GUS::Model::DoTS::SequenceType");
 
   if ($name) {
-    $self->getArg('sequence_type_name') = $name;
-    $self->getArg('nucleotide_type') = $name;
+    $self->getArg('sequenceTypeName') = $name;
+    $self->getArg('nucleotideType') = $name;
   }
 
-  my $sequenceType = GUS::Model::DoTS::SequenceType->new({name=>$self->getArg('sequence_type_name'), nucleotide_type=>$self->getArg('nucleotide_type')});
+  my $sequenceType = GUS::Model::DoTS::SequenceType->new({name=>$self->getArg('sequenceTypeName'), nucleotide_type=>$self->getArg('nucleotideType')});
 
   $sequenceType->retrieveFromDB;
 
@@ -542,11 +547,7 @@ sub fetchSequenceTypeId {
 
   $sequenceType->submit();
 
-  my $sequence_type_id = $sequenceType->getSequenceTypeId();
-
-  $sequenceType->undefPointerCache();
-
-  $self->getArg('sequence_type_id') = $sequence_type_id;
+  $self->{sequenceTypeId} = $sequenceType->getSequenceTypeId();
 
 }
 
@@ -555,16 +556,14 @@ sub fetchTaxonId {
 
   eval ("require GUS::Model::SRes::Taxon");
 
-  my $taxon = GUS::Model::SRes::Taxon->new({ncbi_tax_id=>$self->getArg('ncbi_tax_id')});
-
-  $taxon->retrieveFromDB || die "Require valid --ncbi_tax_id\n";
-
-  my $taxon_id = $taxon->getTaxonId();
-
-  $self->undefPointerCache();
-
-  $self->getArg('taxon_id') = $taxon_id;
+  my $ncbiTaxId = $self->getArg('ncbiTaxId'); 
+  my $taxon = GUS::Model::SRes::Taxon->new({ncbi_tax_id=>$ncbiTaxId});
+  
+  $taxon->retrieveFromDB || die "The NCBI tax ID '$ncbiTaxId' provided on the command line is not found in the database\n";
+  
+  $self->{taxonId} = $taxon->getTaxonId();
 }
+
 
 
 1;
