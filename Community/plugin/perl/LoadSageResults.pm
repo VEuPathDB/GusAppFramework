@@ -241,6 +241,11 @@ sub getContact {
     $self->userError("Unable to obtain contact object\n");
   }
 
+  if (! $contact->retrieveFromDB()) {
+
+    $contact->submit();
+  }
+
   return $contact
 }
 
@@ -478,11 +483,11 @@ sub processLine {
       $self->userError("SAGE tag $line->[0] with array_design_id = $arrayDesignId not in db\n");
     } 
 
-    my $sageTagResult = GUS::Model::RAD::SAGETagResult->new({'subclass_view'=>"SAGETagResult", 'quantification_id'=>$quantificationIds->[$i]});
+    my $sageTagResult = GUS::Model::RAD::SAGETagResult->new({'subclass_view'=>"SAGETagResult", 'tag_count'=>$line->[$i],'quantification_id'=>$quantificationIds->[$i]});
 
     $sageTagResult->setParent($sageTag);
 
-    $$num += $sageTagResult->submit();
+    $$num += $sageTagResult->submit() if (! $sageTagResult->retrieveFromDB());
   }
 
   $self->undefPointerCache();
