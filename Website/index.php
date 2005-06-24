@@ -2,7 +2,7 @@
 
 <h2>GUS 3.5 Released - June 23, 2005</h2>
 <p>We're very pleased to announce the release of GUS 3.5.  The 3.5 release includes the introduction of
-proteomics support to the schema, PostgreSQL database compatability, improved documentation, and significant 
+proteomics support to the schema, PostgreSQL database compatibility, improved documentation, and significant 
 additional schema and application layer fixes and enhancements.  For the first time, GUS is available as a 
 single distributable from the downloads area on this site.  Upgrade scripts will be available in the coming weeks for
 sites interested in moving from GUS 3.0 to 3.5 (note:  The GUS 3.5 application framework is not compatible with previous
