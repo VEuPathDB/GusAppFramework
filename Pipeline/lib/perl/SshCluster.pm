@@ -61,7 +61,8 @@ sub copyFrom {
     $self->{mgr}->runCmd("ssh -2 $ssh_target 'cd $fromDir; tar cf - $fromFile | gzip -c' | gunzip -c | tar xf -");
 
 #    $self->runCmd("ssh $server 'cd $fromDir; tar cf - $fromFile' | tar xf -");
-    $self->{mgr}->error("$toDir/$fromFile wasn't successfully copied from liniac\n") unless -e glob("$toDir/$fromFile");
+    my @arr = glob("$toDir/$fromFile");
+    $self->{mgr}->error("$toDir/$fromFile wasn't successfully copied from liniac\n") unless (@arr >= 1);
 }
 
 sub runCmdOnCluster {
