@@ -680,7 +680,9 @@ sub loadAlignment {
     # HACK
     $query_id = &getQueryNaSeqId($dbh, $query_id, $queryTableId);
     $query_id =~ s/[^0-9]//g;
-
+    
+    die "\nERROR: Could not find a valid na_sequence_id for query id $origQueryId in table  id $queryTableId.\n in " . __FILE__ . "\n\n" if ! $query_id;
+    
     # Check to see whether this alignment has already been loaded
     #
     my $qs = $align->get('q_start'); my $qe = $align->get('q_end');
