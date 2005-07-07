@@ -45,9 +45,6 @@ sub oracleTypeConverter {
 	    $newType .= "Time";}
 	else { $newType .= "Timestamp";}
     }
-    elsif (uc($oraType) eq "TIMESTAMP" ) {
-	$newType .= "Timestamp";
-    }
     elsif (uc($oraType) eq "FLOAT" || uc($oraType) eq "FLOAT8"){
 	$newType .= "BigDecimal"}
 
