@@ -65,7 +65,7 @@ sub _handleDatabaseInfo {
 			  $dbPluginArgs, 
 			  "Inserting/checking external database info for $self->{extDbName}");
   
-  my $releasePluginArgs = "--database_name \'$self->{extDbName}\' --database_version \'$self->{extDbRlsVer}\' --description \'$self->{extDbRlsDescrip}\' $self->{dbCommit}";
+  my $releasePluginArgs = "--databaseName \'$self->{extDbName}\' --databaseVersion \'$self->{extDbRlsVer}\' --description \'$self->{extDbRlsDescrip}\' $self->{dbCommit}";
   
   $mgr->runPluginNoCommit("createRelease_${signalBase}",
 			  "GUS::Supported::Plugin::InsertExternalDatabaseRls",
