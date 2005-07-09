@@ -510,11 +510,7 @@ sub parseLine {
 	if ($line =~ /gi\|(\d*)\|(\w*)\|(\S*?)\|\S*\s*(.*)/){
 	    my $secondary_id = $1; 
 	    my $external_db = $2;
-	    if ($external_db eq 'tpg') {
-		next;
-	    }
 	    my $source_id = $3;
-	    
 	    my $description = $4;
 	    $description =~ s/\"//g;
 # TODO: \g is not a valid escape character	   
