@@ -3,6 +3,7 @@ package org.gusdb.dbadmin.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -12,9 +13,11 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.ColumnType;
 import org.gusdb.dbadmin.model.Constraint;
+import org.gusdb.dbadmin.model.ConstraintType;
 import org.gusdb.dbadmin.model.GusColumn;
 import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
@@ -247,6 +250,24 @@ public class GusClassHierarchyConverter {
     public GusTable getImpTable() {
 
         return impTable;
+    }
+
+    /**
+     * Returns the collection of all columns (excluding housekeeping) across
+     * the collection of all tables provide.
+     * 
+     * @param tables     Collection of tables from which to return columns
+     * @return Collection of all columns from all tables provided
+     */
+    private Collection getAllColumns(Collection tables) {
+
+        Collection allColumns = new HashSet();
+
+        for (Iterator i = tables.iterator(); i.hasNext();) {
+            allColumns.add(((GusTable)i.next()).getColumns(false));
+        }
+
+        return allColumns;
     }
 
     /**
