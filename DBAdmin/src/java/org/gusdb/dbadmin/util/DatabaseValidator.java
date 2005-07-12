@@ -6,18 +6,17 @@ package org.gusdb.dbadmin.util;
 
 import java.util.Iterator;
 
-import org.gusdb.dbadmin.model.Database;
-import org.gusdb.dbadmin.model.Schema;
-import org.gusdb.dbadmin.model.GusSchema;
-import org.gusdb.dbadmin.model.Table;
-import org.gusdb.dbadmin.model.GusTable;
-import org.gusdb.dbadmin.model.Constraint;
-import org.gusdb.dbadmin.model.GusColumn;
-import org.gusdb.dbadmin.model.Column;
-import org.gusdb.dbadmin.model.Index;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.gusdb.dbadmin.model.Column;
+import org.gusdb.dbadmin.model.Constraint;
+import org.gusdb.dbadmin.model.Database;
+import org.gusdb.dbadmin.model.GusColumn;
+import org.gusdb.dbadmin.model.GusSchema;
+import org.gusdb.dbadmin.model.GusTable;
+import org.gusdb.dbadmin.model.Index;
+import org.gusdb.dbadmin.model.Schema;
+import org.gusdb.dbadmin.model.Table;
 
 
 /**
@@ -151,7 +150,7 @@ public class DatabaseValidator {
 				valid = checkFkCompatabilityBetween( (GusColumn) conCol[j], (GusColumn) refCol[j], fix );
 			}
 		}
-		return true;
+		return valid;
 	}
 
 
