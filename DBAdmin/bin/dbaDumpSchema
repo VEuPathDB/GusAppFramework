@@ -22,6 +22,6 @@ foreach my $arg (@ARGV) {
     $args .= ($arg =~ /\-/ ? " $arg" : " \"$arg\"");
 }
 
-my $cmd = "java -Xmx512m -DcmdName=dbaDumpSchema -Dlog4j.configuration=file:$PROJECT_HOME/install/log4j.properties -DPROPERTYFILE=$PROJECT_HOME/install/gus.config -classpath $CLASSPATH:$PROJECT_HOME/install/ org.gusdb.dbadmin.util.SchemaDumper $args";
+my $cmd = "java -Xmx512m -DcmdName=dbaDumpSchema -Dlog4j.configuration=file:$PROJECT_HOME/install/log4j.properties -DPROPERTYFILE=$PROJECT_HOME/install/gus.config -classpath $CLASSPATH:$PROJECT_HOME/install/ org.gusdb.dbadmin.cmd.SchemaDumper $args";
 
 system($cmd);
