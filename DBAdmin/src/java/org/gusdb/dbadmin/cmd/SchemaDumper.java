@@ -1,10 +1,9 @@
-package org.gusdb.dbadmin.util;
+package org.gusdb.dbadmin.cmd;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -17,7 +16,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Schema;
@@ -25,6 +23,7 @@ import org.gusdb.dbadmin.model.Table;
 import org.gusdb.dbadmin.reader.OracleReader;
 import org.gusdb.dbadmin.reader.SchemaReader;
 import org.gusdb.dbadmin.reader.XMLReader;
+import org.gusdb.dbadmin.util.GusClassHierarchyConverter;
 import org.gusdb.dbadmin.writer.OracleWriter;
 import org.gusdb.dbadmin.writer.PostgresWriter;
 import org.gusdb.dbadmin.writer.SchemaWriter;
@@ -76,7 +75,6 @@ public class SchemaDumper {
                                             properties.getProperty(
                                                     "databasePassword"));
             } else if (properties.getProperty("dbVendor").equals("Postgres")) {
-
                 // TODO: PostgresReader
                 System.err.println(
                         "Sorry, A PostgreSQL Reader does not yet exist.");
@@ -237,7 +235,6 @@ public class SchemaDumper {
      */
     private static void convertSubclasses(Database db) {
         Collection superClasses = new HashSet();
-        Collection newTables = new HashSet();
 
         for (Iterator i = db.getSchemas().iterator(); i.hasNext();) {
             Schema schema = (Schema)i.next();
