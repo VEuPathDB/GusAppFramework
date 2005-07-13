@@ -432,7 +432,7 @@ sub createNewExternalSequence {
   if ($aas->isValidAttribute('sequence_type_id')) {
     $aas->setSequenceTypeId($self->{sequenceTypeId});
   }
-  if ($seq_version && $aas->isValidAttribute('sequenceVersion')) {
+  if ($seq_version && $aas->isValidAttribute('sequence_version')) {
     $aas->setSequenceVersion($seq_version);
   }
   #if($self->getArg('taxon_id')){ $aas->setTaxonId($self->getArg('taxon_id'));}
