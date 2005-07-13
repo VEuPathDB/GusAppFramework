@@ -111,7 +111,7 @@ sub run {
 	my @data = split (/\t/, $_);
 
 	if (scalar(@data) != 11) { 
-	  die "Input file '$oeFile' does not have 12 tab delimited files";
+	  die "Input file '$oeFile' does not have 11 tab delimited files";
 	} 
 
 	my $id = @data[0];
@@ -157,16 +157,16 @@ sub submitOntologyEntryTree {
 sub makeOntologyEntry {
 
    my ($self, $id) = @_;
-   my $p_name =             $self->{rowsById}->{$id}->[0];
-   my $t_name =             $self->{rowsById}->{$id}->[1];
-   my $r_name =             $self->{rowsById}->{$id}->[2];
-   my $val =                $self->{rowsById}->{$id}->[3];
-   my $def =                $self->{rowsById}->{$id}->[4];
-   my $name =               $self->{rowsById}->{$id}->[5];
-   my $cat =                $self->{rowsById}->{$id}->[6];
-   my $ext_db_name =        $self->{rowsById}->{$id}->[7];
-   my $ext_db_rel_version = $self->{rowsById}->{$id}->[8];
-   my $src_id =             $self->{rowsById}->{$id}->[9];
+   my $p_name =             $self->{rowsById}->{$id}->[1];
+   my $t_name =             $self->{rowsById}->{$id}->[2];
+   my $r_name =             $self->{rowsById}->{$id}->[3];
+   my $val =                $self->{rowsById}->{$id}->[4];
+   my $def =                $self->{rowsById}->{$id}->[5];
+   my $name =               $self->{rowsById}->{$id}->[6];
+   my $cat =                $self->{rowsById}->{$id}->[7];
+   my $ext_db_name =        $self->{rowsById}->{$id}->[8];
+   my $ext_db_rel_version = $self->{rowsById}->{$id}->[9];
+   my $src_id =             $self->{rowsById}->{$id}->[10];
 
    my $dbh = $self->getQueryHandle();
 
