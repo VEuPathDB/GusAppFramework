@@ -4,21 +4,15 @@
  */
 package org.gusdb.dbadmin.reader;
 
-import java.io.Reader;
-
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.ColumnType;
@@ -78,7 +72,6 @@ public class OracleReader
     //    private Collection versionedViews      = new HashSet();
     private HashSet superClasses = new HashSet();
     private HashSet subClasses = new HashSet();
-    private HashMap viewSQL = new HashMap();
     private String dsn;
     private String username;
     private String password;
@@ -867,21 +860,6 @@ public class OracleReader
     /**
      * DOCUMENT ME!
      * 
-     * @param column DOCUMENT ME!
-     * @return DOCUMENT ME! 
-     */
-    private boolean isHousekeeping(Column column) {
-
-        if (getColumn(housekeepingColumns, column.getName()) == null)
-
-            return false;
-
-        return true;
-    }
-
-    /**
-     * DOCUMENT ME!
-     * 
      * @param name DOCUMENT ME!
      * @return DOCUMENT ME! 
      */
@@ -1021,77 +999,7 @@ public class OracleReader
 
         return false;
     }
-
-    /**
-     * DOCUMENT ME!
-     * 
-     * @param table DOCUMENT ME!
-     * @param name DOCUMENT ME!
-     * @return DOCUMENT ME! 
-     */
-    private String getImpName(GusTable table, String name) {
-
-        String viewSQL = getViewSQL(table.getSchema().getName(), 
-                                    table.getName());
-
-        if (viewSQL == null) {
-            log.warn("No SQL for view " + table.getSchema().getName() + "." + 
-                     table.getName() + " " + name);
-            return null;
-        }
-
-        Pattern p = Pattern.compile("\\s+(\\w+)\\s+as\\s+" + name + "\\s+", 
-                                    Pattern.CASE_INSENSITIVE + 
-                                    Pattern.DOTALL);
-        Matcher m = p.matcher(viewSQL);
-
-        if (m.matches()) {
-            return m.group(1);
-        }
-
-        return null;
-    }
-
-    /**
-     * DOCUMENT ME!
-     * 
-     * @param owner DOCUMENT ME!
-     * @param name DOCUMENT ME!
-     * @return DOCUMENT ME! 
-     * @throws RuntimeException DOCUMENT ME!
-     */
-    private String getViewSQL(String owner, String name) {
-
-        if (viewSQL.containsKey(owner + name)) {
-
-            return (String)viewSQL.get(owner + name);
-        }
-
-        try {
-
-            Statement st = connection.createStatement();
-            ResultSet rs = st.executeQuery(
-                                   "SELECT text FROM all_views WHERE owner=upper('" + 
-                                   owner + "') " + "AND view_name=upper('" + 
-                                   name + "')");
-
-            if (rs.next()) {
-
-                Reader text = rs.getCharacterStream("text");
-                viewSQL.put(owner + name, text.toString());
-
-                return rs.getString("text");
-            } else {
-                viewSQL.put(owner + name, null);
-
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error("Error getting SQL for view " + owner + "." + name, e);
-            throw new RuntimeException(e);
-        }
-    }
-
+ 
     /**
      * DOCUMENT ME!
      * 
