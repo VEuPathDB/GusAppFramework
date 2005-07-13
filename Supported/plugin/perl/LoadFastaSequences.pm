@@ -437,7 +437,7 @@ sub createNewExternalSequence {
   }
   #if($self->getArg('taxon_id')){ $aas->setTaxonId($self->getArg('taxon_id'));}
   if ($self->{taxonId}) { 
-    if ($aas->isValidAttribute('taxonId')) {
+    if ($aas->isValidAttribute('taxon_id')) {
       $aas->setTaxonId($self->{taxonId});
     } elsif ($self->getArg('tableName') eq 'DoTS::ExternalAASequence') {
       eval ("require GUS::Model::DoTS::AASequenceTaxon");
