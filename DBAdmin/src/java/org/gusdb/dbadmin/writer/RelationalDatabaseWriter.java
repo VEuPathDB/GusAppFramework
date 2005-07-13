@@ -5,9 +5,7 @@
 package org.gusdb.dbadmin.writer;
 
 import java.io.IOException;
-
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
@@ -16,8 +14,6 @@ import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.ColumnType;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.ConstraintType;
-import org.gusdb.dbadmin.model.Database;
-import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Index;
 import org.gusdb.dbadmin.model.Schema;
@@ -31,8 +27,7 @@ import org.gusdb.dbadmin.model.View;
  *          2005) $
  * @author msaffitz
  */
-public abstract class RelationalDatabaseWriter
-    extends SchemaWriter {
+public abstract class RelationalDatabaseWriter extends SchemaWriter {
 
     protected Random random;
     protected Collection written = new HashSet();
@@ -206,14 +201,10 @@ public abstract class RelationalDatabaseWriter
                          throws IOException {
 
         for (Iterator i = table.getIndexs().iterator(); i.hasNext();) {
-
             Index index = (Index)i.next();
-            Object[] col = index.getColumns().toArray();
-
             // If this index is for a PK or Unique Constraint,
             //     skip it-- it's implicitly created
             if (table.getConstraint(index.getName()) != null) {
-
                 continue;
             }
 
