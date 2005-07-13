@@ -110,7 +110,7 @@ sub run {
 	#split attributes, @data is one row from file
 	my @data = split (/\t/, $_);
 
-	if (scalar(@data) != 12) { 
+	if (scalar(@data) != 11) { 
 	  die "Input file '$oeFile' does not have 12 tab delimited files";
 	} 
 
