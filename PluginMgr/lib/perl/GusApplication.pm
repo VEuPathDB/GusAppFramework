@@ -473,6 +473,7 @@ sub doMajorMode_RunOrReport {
          $pu->setResultDescr($resultDescrip);
       }
       $Self->logAlert("RESULT", $pu->getResultDescr());
+      $pu->logCommit();
    };}
 
    my $err = $@;
