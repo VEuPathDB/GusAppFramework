@@ -1,12 +1,12 @@
 #######################################################################
-##                   InsertOnotolgyEntry.pm
+##                   InsertOntologyEntry.pm
 ##
 ## Plug-in to populate the OntologyEntry table from a tab delimited file.
 ## $Id$
 ##
 #######################################################################
 
-package GUS::Supported::Plugin::InsertOntologyEntry;
+package GUS::Community::Plugin::InsertOntologyEntry;
 @ISA = qw(GUS::PluginMgr::Plugin);
  
 use strict;
@@ -45,7 +45,7 @@ my $tablesAffected = [
 ['Study.OntologyEntry','Populate the OntologyEntry table']
 ];
 
-my $tablesDependedOn = ['SRes.ExternalDatabase', 'SRes.ExternalDatabaseRelease','SRes.MGEDOntologyTerm', 'Core.TableInfo'];
+my $tablesDependedOn = ['SRes.ExternalDatabase', 'SRes.ExternalDatabaseRelease','SRes.OntologyTerm', 'Core.TableInfo'];
 
 my $howToRestart = <<PLUGIN_RESTART;
 This plugin can be not be restarted.
@@ -91,33 +91,82 @@ sub run {
 
     open(OE_FILE, $oeFile) || die "Couldn't open file '$oeFile'\n";
     
+#declare our three major data structures
+
+    # a list of entries that have no parent
+    $self->{roots} = [];
+
+    # a hash with parentId as key and listref of its kids as values
+    $self->{parentChildTree} = {};
+
+    # a hash with entry id as key and listref of that complete row as values
+    $self->{rowsById} = {};
+
+
+    my $count;
     while (<OE_FILE>){
 	chomp;
 
+	#split attributes, @data is one row from file
 	my @data = split (/\t/, $_);
 
-	my $oeTerm = $self->makeOntologyEntry(@data);
-	$oeTerm->submit() unless $oeTerm->retrieveFromDB();
+	if (scalar(@data) != 12) { 
+	  die "Input file '$oeFile' does not have 12 tab delimited files";
+	} 
 
-	undef @data;
-	$count++
+	my $id = @data[0];
+	my $parentId = @data[1];
+
+	$self->{rowsById}->{$id} =\@data;
+
+	if (!$parentId) {
+	  push(@{$self->{roots}}, $id);
 	}
+	else {
+	  if (!defined $self->{parentChildTree}->{$parentId}) {
+	    $self->{parentChildTree}->{$parentId} = [];
+	  }
+	  push(@{$self->{parentChildTree}->{$parentId}},$id);
+	}
+
+	$count++
+      }
+
+    foreach my $root (@{$self->{roots}}) {
+      $self->submitOntologyEntryTree($root);
+    }
+
     return "Inserted $count terms into OntologyEntry";
+}
+
+
+sub submitOntologyEntryTree {
+  my ($self, $id) = @_;
+  
+  my $ontologyEntry = $self->makeOntologyEntry($id);
+  $ontologyEntry->submit();
+
+  # if i have kids, iterate through them, calling this method recursively
+  if ($self->{parentChildTree}->{$id}){
+    foreach my $childId (@{$self->{parentChildTree}->{$id}}) {
+      $self->submitOntologyEntryTree($childId);
+    }
+  }
 }
 
 sub makeOntologyEntry {
 
-   my ($self, @data) = @_;
-   my $t_name = @data[0];
-   my $r_name = @data[1];
-   my $p_name = @data[2];
-   my $val = @data[3];
-   my $def = @data[4]; 
-   my $name = @data[5];
-   my $cat = @data[6];
-   my $ext_db_name = @data[7];
-   my $ext_db_rel_version = @data[8];
-   my $src_id = @data[9]; 
+   my ($self, $id) = @_;
+   my $p_name =             $self->{rowsById}->{$id}->[0];
+   my $t_name =             $self->{rowsById}->{$id}->[1];
+   my $r_name =             $self->{rowsById}->{$id}->[2];
+   my $val =                $self->{rowsById}->{$id}->[3];
+   my $def =                $self->{rowsById}->{$id}->[4];
+   my $name =               $self->{rowsById}->{$id}->[5];
+   my $cat =                $self->{rowsById}->{$id}->[6];
+   my $ext_db_name =        $self->{rowsById}->{$id}->[7];
+   my $ext_db_rel_version = $self->{rowsById}->{$id}->[8];
+   my $src_id =             $self->{rowsById}->{$id}->[9];
 
    my $dbh = $self->getQueryHandle();
 
