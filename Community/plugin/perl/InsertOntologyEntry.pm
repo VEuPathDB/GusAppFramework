@@ -174,7 +174,7 @@ sub makeOntologyEntry {
    my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabase edb, sres.externaldatabaserelease edbr where edb.external_database_id=edbr.external_database_id and edb.name like '$ext_db_name' and edbr.version like '$ext_db_rel_version'");
    $sth->execute();
    my $ext_db_rel_id = $sth->fetchrow_array();
-
+   
    #Get table_id based on table name
    my $sth = $dbh->prepare("select table_id from core.tableinfo where name like '$t_name'");
    $sth->execute();
@@ -184,12 +184,13 @@ sub makeOntologyEntry {
    my $sth = $dbh->prepare("select ontology_term_id from sres.ontologyterm where name like '$r_name' and external_database_release_id='$ext_db_rel_id'");
    $sth->execute();
    my $r_id = $sth->fetchrow_array();
-
+      
    #Get parent_id based on name of parent term, need ext db version
    $sth = $dbh->prepare("select ontology_entry_id from study.ontologyentry where value like '$p_name'");
    $sth->execute();
    my $p_id = $sth->fetchrow_array();
-   
+   #print "VAL:$val\tPID:$p_id\n";
+
    my $oeTerm = GUS::Model::Study::OntologyEntry->new({
        'table_id' => $t_id,
        'row_id' => $r_id,
@@ -201,7 +202,9 @@ sub makeOntologyEntry {
        'external_database_release_id' => $ext_db_rel_id,
        'source_id' => $src_id 
        });
-   
+  
+   #print "TID:$t_id\tRID:$r_id\tPID:$p_id\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$ext_db_rel_id\tSRCID:$src_id\n";
+
    return $oeTerm;
 }
 
