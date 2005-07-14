@@ -1,4 +1,4 @@
-#######################################################################
+######################################################################
 ##                   InsertOntologyEntry.pm
 ##
 ## Plug-in to populate the OntologyEntry table from a tab delimited file.
@@ -116,6 +116,8 @@ sub run {
 	my $id = @data[0];
 	my $parentName = @data[1];
 
+	print "OEID:$id\tParentName:$parentName\n";
+
 	$self->{rowsById}->{$id} =\@data;
 
 	if (!$parentName) {
@@ -156,16 +158,19 @@ sub submitOntologyEntryTree {
 sub makeOntologyEntry {
 
    my ($self, $id) = @_;
-   my $pName =             $self->{rowsById}->{$id}->[1];
-   my $tName =             $self->{rowsById}->{$id}->[2];
-   my $rName =             $self->{rowsById}->{$id}->[3];
+   my $pName =              $self->{rowsById}->{$id}->[1];
+   my $tName =              $self->{rowsById}->{$id}->[2];
+   my $rName =              $self->{rowsById}->{$id}->[3];
    my $val =                $self->{rowsById}->{$id}->[4];
    my $def =                $self->{rowsById}->{$id}->[5];
    my $name =               $self->{rowsById}->{$id}->[6];
    my $cat =                $self->{rowsById}->{$id}->[7];
-   my $extDbName =        $self->{rowsById}->{$id}->[8];
-   my $extDbRelVersion = $self->{rowsById}->{$id}->[9];
-   my $srcId =             $self->{rowsById}->{$id}->[10];
+   my $extDbName =          $self->{rowsById}->{$id}->[8];
+   my $extDbRelVersion =    $self->{rowsById}->{$id}->[9];
+   my $srcId =              $self->{rowsById}->{$id}->[10];
+
+
+   print "pName:$pName\t$self->{rowsById}->{$id}->[1]\n";
 
    my $dbh = $self->getQueryHandle();
 
@@ -201,7 +206,7 @@ sub makeOntologyEntry {
        'source_id' => $srcId 
        });
   
-   print "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\n";
+   #print "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\n";
 
    return $oeTerm;
 }
