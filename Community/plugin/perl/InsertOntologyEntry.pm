@@ -91,8 +91,7 @@ sub run {
 
     open(OE_FILE, $oeFile) || die "Couldn't open file '$oeFile'\n";
     
-#declare our three major data structures
-
+    #declare our three major data structures
     # a list of entries that have no parent
     $self->{roots} = [];
 
@@ -102,18 +101,18 @@ sub run {
     # a hash with entry id as key and listref of that complete row as values
     $self->{rowsById} = {};
 
-
     my $count;
     while (<OE_FILE>){
 	chomp;
 
 	#split attributes, @data is one row from file
 	my @data = split (/\t/, $_);
-
+	
+	
 	if (scalar(@data) != 11) { 
-	  die "Input file '$oeFile' does not have 11 tab delimited files";
+	    die "Input file '$oeFile' does not have 11 tab delimited files";
 	} 
-
+	
 	my $id = @data[0];
 	my $parentId = @data[1];
 
@@ -157,50 +156,49 @@ sub submitOntologyEntryTree {
 sub makeOntologyEntry {
 
    my ($self, $id) = @_;
-   my $p_name =             $self->{rowsById}->{$id}->[1];
-   my $t_name =             $self->{rowsById}->{$id}->[2];
-   my $r_name =             $self->{rowsById}->{$id}->[3];
+   my $pName =             $self->{rowsById}->{$id}->[1];
+   my $tName =             $self->{rowsById}->{$id}->[2];
+   my $rName =             $self->{rowsById}->{$id}->[3];
    my $val =                $self->{rowsById}->{$id}->[4];
    my $def =                $self->{rowsById}->{$id}->[5];
    my $name =               $self->{rowsById}->{$id}->[6];
    my $cat =                $self->{rowsById}->{$id}->[7];
-   my $ext_db_name =        $self->{rowsById}->{$id}->[8];
-   my $ext_db_rel_version = $self->{rowsById}->{$id}->[9];
-   my $src_id =             $self->{rowsById}->{$id}->[10];
+   my $extDbName =        $self->{rowsById}->{$id}->[8];
+   my $extDbRelVersion = $self->{rowsById}->{$id}->[9];
+   my $srcId =             $self->{rowsById}->{$id}->[10];
 
    my $dbh = $self->getQueryHandle();
 
    #Get external_database_release_id based on external database name and version
-   my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabase edb, sres.externaldatabaserelease edbr where edb.external_database_id=edbr.external_database_id and edb.name like '$ext_db_name' and edbr.version like '$ext_db_rel_version'");
+   my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabase edb, sres.externaldatabaserelease edbr where edb.external_database_id=edbr.external_database_id and edb.name like '$extDbName' and edbr.version like '$extDbRelVersion'");
    $sth->execute();
-   my $ext_db_rel_id = $sth->fetchrow_array();
+   my $extDbRelId = $sth->fetchrow_array();
    
    #Get table_id based on table name
-   my $sth = $dbh->prepare("select table_id from core.tableinfo where name like '$t_name'");
+   my $sth = $dbh->prepare("select table_id from core.tableinfo where name like '$tName'");
    $sth->execute();
-   my $t_id = $sth->fetchrow_array();
+   my $tableId = $sth->fetchrow_array();
    
    #Get row_id based on name of term, need ext db version
-   my $sth = $dbh->prepare("select ontology_term_id from sres.ontologyterm where name like '$r_name' and external_database_release_id='$ext_db_rel_id'");
+   my $sth = $dbh->prepare("select ontology_term_id from sres.ontologyterm where name like '$rName' and external_database_release_id='$extDbRelId'");
    $sth->execute();
-   my $r_id = $sth->fetchrow_array();
+   my $rowId = $sth->fetchrow_array();
       
    #Get parent_id based on name of parent term, need ext db version
-   $sth = $dbh->prepare("select ontology_entry_id from study.ontologyentry where value like '$p_name'");
+   $sth = $dbh->prepare("select ontology_entry_id from study.ontologyentry where value like '$pName'");
    $sth->execute();
-   my $p_id = $sth->fetchrow_array();
-   #print "VAL:$val\tPID:$p_id\n";
-
+   my $parentId = $sth->fetchrow_array();
+   
    my $oeTerm = GUS::Model::Study::OntologyEntry->new({
-       'table_id' => $t_id,
-       'row_id' => $r_id,
-       'parent_id' => $p_id,
+       'table_id' => $tableId,
+       'row_id' => $rowId,
+       'parent_id' => $parentId,
        'value' => $val,
        'name' => $name,
        'definition' => $def,
        'category' => $cat,
-       'external_database_release_id' => $ext_db_rel_id,
-       'source_id' => $src_id 
+       'external_database_release_id' => $extDbRelId,
+       'source_id' => $srcId 
        });
   
    #print "TID:$t_id\tRID:$r_id\tPID:$p_id\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$ext_db_rel_id\tSRCID:$src_id\n";
