@@ -201,9 +201,10 @@ sub makeOntologyEntry {
        'source_id' => $srcId 
        });
   
-   #print "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\n";
+   print "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\n";
 
    return $oeTerm;
 }
 
 1;
+
