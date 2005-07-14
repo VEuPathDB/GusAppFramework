@@ -95,7 +95,7 @@ sub run {
     # a list of entries that have no parent
     $self->{roots} = [];
 
-    # a hash with parentId as key and listref of its kids as values
+    # a hash with parentName as key and listref of its kids as values
     $self->{parentChildTree} = {};
 
     # a hash with entry id as key and listref of that complete row as values
@@ -114,18 +114,18 @@ sub run {
 	} 
 	
 	my $id = @data[0];
-	my $parentId = @data[1];
+	my $parentName = @data[1];
 
 	$self->{rowsById}->{$id} =\@data;
 
-	if (!$parentId) {
+	if (!$parentName) {
 	  push(@{$self->{roots}}, $id);
 	}
 	else {
-	  if (!defined $self->{parentChildTree}->{$parentId}) {
-	    $self->{parentChildTree}->{$parentId} = [];
+	  if (!defined $self->{parentChildTree}->{$parentName}) {
+	    $self->{parentChildTree}->{$parentName} = [];
 	  }
-	  push(@{$self->{parentChildTree}->{$parentId}},$id);
+	  push(@{$self->{parentChildTree}->{$parentName}},$id);
 	}
 
 	$count++
@@ -201,7 +201,7 @@ sub makeOntologyEntry {
        'source_id' => $srcId 
        });
   
-   #print "TID:$t_id\tRID:$r_id\tPID:$p_id\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$ext_db_rel_id\tSRCID:$src_id\n";
+   #print "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\n";
 
    return $oeTerm;
 }
