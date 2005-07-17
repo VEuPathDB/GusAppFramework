@@ -104,7 +104,11 @@ SQL
       my $imps_again = $PlugIn->sql_get_as_hash_refs($sql);
 
       if (scalar @$imps_again == 0) {
-         $Self->userError("$e has never been registered.\nPlease use 'ga +create $e --commit'");
+	if ($e =~ /GusApplication/) {
+	  $Self->userError("ga has never been registered.\nPlease use 'ga +meta --commit'");
+	} else {
+	  $Self->userError("$e has never been registered.\nPlease use 'ga +create $e --commit'");
+	}
       } else {
          my $ga_cmd = "ga +update $e --commit";
          $ga_cmd = "ga +meta --commit" if $e eq "GUS::PluginMgr::GusApplication";
