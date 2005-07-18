@@ -156,10 +156,13 @@ public class OracleReader
 
         if (schema.getTables().size() == 0) {
 
+            Statement st = null;
+            ResultSet rs = null;
+
             try {
 
-                Statement st = connection.createStatement();
-                ResultSet rs = st.executeQuery(
+                st = connection.createStatement();
+                rs = st.executeQuery(
                                        "SELECT table_name, tablespace_name FROM all_tables WHERE owner=upper('" + 
                                        schema.getName() + "')");
 
@@ -181,7 +184,13 @@ public class OracleReader
             } catch (SQLException e) {
                 log.error("Error querying for all tables: " + e);
                 throw new RuntimeException(e);
+            } finally {
+                if (rs != null)
+                    try { rs.close(); } catch (SQLException ignored) { }
+                if (st != null)
+                    try { st.close(); } catch (SQLException ignored) { }
             }
+
         }
 
         for (Iterator i = schema.getTables().iterator(); i.hasNext();) {
@@ -204,10 +213,13 @@ public class OracleReader
     private void addSubclasses(GusTable table) {
         log.debug("adding subclasses to table: " + table.getName());
 
+        Statement st = null;
+        ResultSet rs = null;
+
         try {
 
-            Statement st = connection.createStatement();
-            ResultSet rs = st.executeQuery(
+            st = connection.createStatement();
+            rs = st.executeQuery(
                                    "SELECT subt.name FROM core.tableinfo subt, core.tableinfo supert, " + 
                                    "core.databaseinfo d " + 
                                    "WHERE upper(d.name)=upper('" + 
@@ -229,6 +241,11 @@ public class OracleReader
         } catch (SQLException e) {
             log.error("Error querying for subclasses: " + e);
             throw new RuntimeException(e);
+        } finally {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException ignored) { }
+            if (st != null)
+                try { st.close(); } catch (SQLException ignored) { }
         }
     }
 
@@ -263,11 +280,14 @@ public class OracleReader
             return;
         }
 
+        Statement st = null;
+        ResultSet rs = null;
+
         try {
 
-            Statement st = connection.createStatement();
+            st = connection.createStatement();
             String table_name = table.getName();
-            ResultSet rs = st.executeQuery(
+            rs = st.executeQuery(
                                    "SELECT column_name, data_type, data_length, data_scale, data_precision, nullable " + 
                                    "FROM all_tab_cols WHERE owner=upper('" + 
                                    table.getSchema().getName() + "') " + 
@@ -316,6 +336,11 @@ public class OracleReader
         } catch (SQLException e) {
             log.error("Error querying for all columns: " + e);
             throw new RuntimeException(e);
+        } finally {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException ignored) { }
+            if (st != null)
+                try { st.close(); } catch (SQLException ignored) { }
         }
     }
 
@@ -329,11 +354,13 @@ public class OracleReader
         log.debug("adding columns to index " + index.getName());
 
         Collection columns = index.getTable().getColumns();
+        Statement st = null;
+        ResultSet rs = null;
 
         try {
 
-            Statement st = connection.createStatement();
-            ResultSet rs = st.executeQuery(
+            st = connection.createStatement();
+            rs = st.executeQuery(
                                    "SELECT column_name, table_name FROM all_ind_columns WHERE index_owner=upper('" + 
                                    index.getTable().getSchema().getName() + 
                                    "') AND " + "index_name=upper('" + 
@@ -383,6 +410,11 @@ public class OracleReader
         } catch (SQLException e) {
             log.error("Error querying for index columns: " + e);
             throw new RuntimeException(e);
+        } finally {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException ignored) { }
+            if (st != null)
+                try { st.close(); } catch (SQLException ignored) { }
         }
     }
 
@@ -395,16 +427,19 @@ public class OracleReader
     private void addColumns(Constraint constraint) {
         log.debug("adding columns to constraint " + constraint.getName());
 
+        Statement st = null;
+        ResultSet rs = null;
+
         try {
 
-            Statement st = connection.createStatement();
+            st = connection.createStatement();
             String table_name = constraint.getConstrainedTable().getName();
 
             if (isSuperclass((GusTable)constraint.getConstrainedTable())) {
                 table_name += "IMP";
             }
 
-            ResultSet rs = st.executeQuery(
+            rs = st.executeQuery(
                                    "SELECT column_name FROM all_cons_columns WHERE owner=upper('" + 
                                    constraint.getConstrainedTable().getSchema()
                       .getName() + "') AND " + "constraint_name=upper('" + 
@@ -437,6 +472,11 @@ public class OracleReader
         } catch (SQLException e) {
             log.error("Error querying for constraint columns: " + e);
             throw new RuntimeException(e);
+        } finally {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException ignored) { }
+            if (st != null)
+                try { st.close(); } catch (SQLException ignored) { }
         }
     }
 
@@ -467,10 +507,13 @@ public class OracleReader
     private void addIndexes(GusSchema schema) {
         log.debug("adding indexes to schema: " + schema.getName());
 
+        Statement st = null;
+        ResultSet rs = null;
+
         try {
 
-            Statement st = connection.createStatement();
-            ResultSet rs = st.executeQuery(
+            st = connection.createStatement();
+            rs = st.executeQuery(
                                    "SELECT index_name, tablespace_name, table_name, table_owner, index_type, " + 
                                    "generated FROM all_indexes WHERE owner=upper('" + 
                                    schema.getName() + "')");
@@ -517,6 +560,11 @@ public class OracleReader
         } catch (SQLException e) {
             log.error("Error querying for index attributes: " + e);
             throw new RuntimeException(e);
+        } finally {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException ignored) { }
+            if (st != null)
+                try { st.close(); } catch (SQLException ignored) { }
         }
     }
 
@@ -530,16 +578,19 @@ public class OracleReader
         log.debug("adding local constraints to table: " + 
                   table.getSchema().getName() + "." + table.getName());
 
+        Statement st = null;
+        ResultSet rs = null;
+
         try {
 
-            Statement st = connection.createStatement();
+            st = connection.createStatement();
             String table_name = table.getName();
 
             if (isSuperclass(table)) {
                 table_name += "IMP";
             }
 
-            ResultSet rs = st.executeQuery(
+            rs = st.executeQuery(
                                    "SELECT constraint_name, constraint_type FROM all_constraints WHERE " + 
                                    "table_name=upper('" + table_name + 
                                    "') AND owner=upper('" + 
@@ -557,6 +608,11 @@ public class OracleReader
         } catch (SQLException e) {
             log.error("Error querying for local constriants " + e);
             throw new RuntimeException(e);
+        } finally {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException ignored) { }
+            if (st != null)
+                try { st.close(); } catch (SQLException ignored) { }
         }
     }
 
@@ -591,16 +647,19 @@ public class OracleReader
     private void addRemoteConstraints(GusTable table) {
         log.debug("adding remote constraints to table: " + table.getName());
 
+        Statement st = null;
+        ResultSet rs = null;
+
         try {
 
-            Statement st = connection.createStatement();
+            st = connection.createStatement();
             String table_name = table.getName();
 
             if (isSuperclass(table)) {
                 table_name += "IMP";
             }
 
-            ResultSet rs = st.executeQuery(
+            rs = st.executeQuery(
                                    "SELECT constraint_name, constraint_type, r_owner, r_constraint_name " + 
                                    "FROM all_constraints WHERE table_name=upper('" + 
                                    table_name + "') " + "AND owner=upper('" + 
@@ -643,6 +702,11 @@ public class OracleReader
         } catch (SQLException e) {
             log.error("Error querying for local constriants " + e);
             throw new RuntimeException(e);
+        } finally {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException ignored) { }
+            if (st != null)
+                try { st.close(); } catch (SQLException ignored) { }
         }
     }
 
@@ -677,10 +741,13 @@ public class OracleReader
         if (schema.getName() == null)
             log.warn("About to populate a gus schema without a name");
 
+        Statement st = null;
+        ResultSet rs = null;
+
         try {
 
-            Statement st = connection.createStatement();
-            ResultSet rs = st.executeQuery(
+            st = connection.createStatement();
+            rs = st.executeQuery(
                                    "SELECT description FROM " + CORE + 
                                    ".databaseinfo WHERE " + 
                                    "UPPER(name)=upper('" + schema.getName() + 
@@ -693,10 +760,14 @@ public class OracleReader
                 schema.setDocumentation(rs.getString("description"));
             }
 
-            st.close();
         } catch (SQLException e) {
             log.error("Error querying for Schema attributes: " + e);
             throw new RuntimeException(e);
+        } finally {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException ignored) { }
+            if (st != null)
+                try { st.close(); } catch (SQLException ignored) { }
         }
 
         for (Iterator i = schema.getTables().iterator(); i.hasNext();) {
@@ -716,10 +787,13 @@ public class OracleReader
         if (table.getName() == null)
             log.warn("About to populate a gus table without a name");
 
+        Statement st = null;
+        ResultSet rs = null;
+
         try {
 
-            Statement st = connection.createStatement();
-            ResultSet rs = st.executeQuery(
+            st = connection.createStatement();
+            rs = st.executeQuery(
                                    "SELECT t.is_updatable, d.html_documentation, is_versioned, t.name FROM " + 
                                    CORE + ".tableinfo t LEFT JOIN " + CORE + 
                                    ".databasedocumentation d ON t.table_id=d.table_id WHERE UPPER(t.name)=" + 
@@ -741,10 +815,14 @@ public class OracleReader
                 }
             }
 
-            st.close();
         } catch (SQLException e) {
             log.error("Error querying for Table attributes: " + e);
             throw new RuntimeException(e);
+        } finally {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException ignored) { }
+            if (st != null)
+                try { st.close(); } catch (SQLException ignored) { }
         }
 
         for (Iterator i = table.getColumns(false).iterator(); i.hasNext();) {
@@ -764,10 +842,13 @@ public class OracleReader
         if (column.getName() == null)
             log.warn("About to populate a column without a name");
 
+        Statement st = null;
+        ResultSet rs = null;
+
         try {
 
-            Statement st = connection.createStatement();
-            ResultSet rs = st.executeQuery(
+            st = connection.createStatement();
+            rs = st.executeQuery(
                                    "SELECT d.html_documentation FROM " + 
                                    CORE + ".tableinfo t, " + CORE + 
                                    ".databasedocumentation d " + 
@@ -782,6 +863,11 @@ public class OracleReader
         } catch (SQLException e) {
             log.error("Error querying for column documentation: " + e);
             throw new RuntimeException(e);
+        } finally {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException ignored) { }
+            if (st != null)
+                try { st.close(); } catch (SQLException ignored) { }
         }
     }
 
