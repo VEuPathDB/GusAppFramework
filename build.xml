@@ -79,9 +79,9 @@
       <property name="component" value="Schema"/>
     </ant>
     <taskdef name="InstallSchema"
-           classname="org.gusdb.schema.InstallSchemaTask">
+           classname="org.gusdb.util.InstallSchemaTask">
       <classpath>
-           <pathelement path="${projectsDir}/GUS/Schema/classes"/>
+           <pathelement path="${projectsDir}/GUS/DBAdmin/classes"/>
 		   <pathelement path="${projectsDir}/install"/>
            <fileset dir="${targetDir}/lib/java/">
              <include name="*.jar"/>
@@ -89,7 +89,7 @@
       </classpath>
     </taskdef>
     <InstallSchema projectHome="${projectsDir}"
-                   schema="${projectsDir}/GUS/Schema/gus_schema.xml"/>
+                   schema="${projectsDir}/GusSchema/Definition/config/gus_schema.xml"/>
   </target>	   
 
   <target name="GUS/Model-Installation" depends="ProjectTree, 
@@ -278,7 +278,7 @@
   <target name="checkPerlObjects">
     <uptodate property="perlObjectsAlreadyGenerated" 
               targetfile="${projectsDir}/GUS/Model/lib/perl/generated">
-       <srcfiles dir= "${projectsDir}/GUS/Schema" includes="gus_schema.xml"/>
+       <srcfiles dir= "${projectsDir}/GusSchema/Definition/config" includes="gus_schema.xml"/>
        <srcfiles dir= "${projectsDir}/GUS/Model/data" includes="modelSpecialCases.txt"/>
     </uptodate>
   </target>
@@ -286,7 +286,7 @@
   <target name="checkJavaObjects">
     <uptodate property="javaObjectsAlreadyGenerated" 
               targetfile="${projectsDir}/GUS/Model/src/java/org/gusdb/model/generated">
-       <srcfiles dir= "${projectsDir}/GUS/Schema" includes="gus_schema.xml"/>
+       <srcfiles dir= "${projectsDir}/GusSchema/Definition/config" includes="gus_schema.xml"/>
        <srcfiles dir= "${projectsDir}/GUS/Model/data" includes="modelSpecialCases.txt"/>
     </uptodate>
   </target>
