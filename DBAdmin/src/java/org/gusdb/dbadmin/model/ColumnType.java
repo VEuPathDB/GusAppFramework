@@ -9,6 +9,7 @@ public final class ColumnType {
 
     public static final ColumnType CHARACTER = new ColumnType( "CHARACTER" );
     public static final ColumnType CLOB      = new ColumnType( "CLOB" );
+    public static final ColumnType BLOB      = new ColumnType( "BLOB" );
     public static final ColumnType DATE      = new ColumnType( "DATE" );
     public static final ColumnType FLOAT     = new ColumnType( "FLOAT" );
     public static final ColumnType STRING    = new ColumnType( "STRING" );
@@ -30,6 +31,9 @@ public final class ColumnType {
         }
         else if ( id.compareToIgnoreCase( "CLOB" ) == 0 ) {
             return CLOB;
+        }
+        else if ( id.compareToIgnoreCase( "BLOB" ) == 0 ) {
+            return BLOB;
         }
         else if ( id.compareToIgnoreCase( "DATE" ) == 0 ) {
             return DATE;
