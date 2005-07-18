@@ -85,6 +85,12 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       constraintFunc => undef,
 	       isList         => 0 }),
  
+  stringArg({  name           => 'SOTermName',
+	       descr          => 'The Sequence Ontology term for the sequence type',
+	       reqd           => 0,
+	       constraintFunc => undef,
+	       isList         => 0 }),
+ 
  integerArg({   name           => 'ncbiTaxId',
 	       descr          => 'The taxon id from NCBI for these sequences.  Not applicable for AASequences',
 	       reqd           => 0,
@@ -246,7 +252,11 @@ sub run {
     $self->fetchSequenceTypeId("virtual");
   } 
   elsif ($self->getArg('sequenceTypeName') && $self->getArg('nucleotideType')) {
-      $self->fetchSequenceTypeId();
+    $self->fetchSequenceTypeId();
+  }
+
+  if ($self->getArg('SOTermName')) {
+    $self->fetchSequenceOntologyId();
   }
 
   if ($self->getArg('ncbiTaxId')) {
@@ -426,15 +436,23 @@ sub createNewExternalSequence {
     new({'external_database_release_id' => $self->{external_database_release_id},
 	 'source_id' => $source_id,
 	 'subclass_view' => $tbl });
+
   if ($secondary_id && $aas->isValidAttribute('name')) {
     $aas->set('secondary_identifier',$secondary_id);
   }
-  if ($aas->isValidAttribute('sequence_type_id')) {
+
+  if ($self->{sequenceTypeId} && $aas->isValidAttribute('sequence_type_id')) {
     $aas->setSequenceTypeId($self->{sequenceTypeId});
   }
+
+  if ($self->{sequenceOntologyId} && $aas->isValidAttribute('sequence_ontology_id')) {
+    $aas->setSequenceOntologyId($self->{sequenceOntologyId});
+  }
+
   if ($seq_version && $aas->isValidAttribute('sequence_version')) {
     $aas->setSequenceVersion($seq_version);
   }
+
   #if($self->getArg('taxon_id')){ $aas->setTaxonId($self->getArg('taxon_id'));}
   if ($self->{taxonId}) { 
     if ($aas->isValidAttribute('taxon_id')) {
@@ -538,8 +556,11 @@ sub fetchSequenceTypeId {
     $self->getArg('nucleotideType') = $name;
   }
 
-  my $sequenceType = GUS::Model::DoTS::SequenceType->new({name=>$self->getArg('sequenceTypeName'), nucleotide_type=>$self->getArg('nucleotideType')});
-
+  my $sequenceType =
+    GUS::Model::DoTS::SequenceType->new({ name => $self->getArg('sequenceTypeName'),
+					  nucleotide_type => $self->getArg('nucleotideType')
+					});
+  
   $sequenceType->retrieveFromDB;
 
   my $hierarchy = 1;
@@ -549,6 +570,18 @@ sub fetchSequenceTypeId {
 
   $self->{sequenceTypeId} = $sequenceType->getSequenceTypeId();
 
+}
+
+sub fetchSequenceOntologyId {
+  my ($self, $name) = @_;
+
+  eval ("require GUS::Model::SRES::SequenceOntology");
+
+  my $SOTerm = GUS::Model::SRES::SequenceOntology->new({ term_name => $name });
+
+  $SOTerm->retrieveFromDB;
+
+  $self->{sequenceOntologyId} = $SOTerm->getSequenceOntologyId();
 }
 
 sub fetchTaxonId {
