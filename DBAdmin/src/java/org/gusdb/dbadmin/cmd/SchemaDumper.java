@@ -29,6 +29,7 @@ import org.gusdb.dbadmin.writer.PostgresWriter;
 import org.gusdb.dbadmin.writer.SchemaWriter;
 import org.gusdb.dbadmin.writer.SimpleTextWriter;
 import org.gusdb.dbadmin.writer.XMLWriter;
+import org.gusdb.dbadmin.writer.HibernateMapWriter;
 
 
 /**
@@ -112,6 +113,10 @@ public class SchemaDumper {
             } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase(
                                "xml") == 0) {
                 dbWriter = new XMLWriter();
+            } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase(
+                                "hbm") == 0) {
+                dbWriter = new HibernateMapWriter(
+                                properties.getProperty("hibernate.basePkg"));
             } else {
                 System.err.println(
                         "Unknown targetType: " + 
@@ -187,7 +192,8 @@ public class SchemaDumper {
                 cmdLine.getOptionValue("targetType").compareToIgnoreCase(
                         "simple") != 0 && 
                 cmdLine.getOptionValue("targetType").compareToIgnoreCase("xml") != 0 && 
-                cmdLine.getOptionValue("targetType").compareToIgnoreCase("xml") != 0) {
+                cmdLine.getOptionValue("targetType").compareToIgnoreCase("xml") != 0 &&
+                cmdLine.getOptionValue("targetType").compareToIgnoreCase("hbm") != 0) {
                 throw new ParseException("Invalid targetType: " + 
                                          cmdLine.getOptionValue("targetType"));
             }
