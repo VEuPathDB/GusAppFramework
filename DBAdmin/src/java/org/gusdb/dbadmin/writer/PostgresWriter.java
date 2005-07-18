@@ -231,6 +231,8 @@ public class PostgresWriter
             return "VARCHAR";
         } else if (type == ColumnType.CLOB) {
             return "TEXT";
+        } else if (type == ColumnType.BLOB) {
+            return "BYTEA";
         } else if (type == ColumnType.CHARACTER) {
             return "CHAR";
         } else if (type == ColumnType.FLOAT) {

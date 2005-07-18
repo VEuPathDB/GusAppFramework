@@ -1118,6 +1118,8 @@ public class OracleReader
             return ColumnType.CHARACTER;
         else if (oracleType.equals("CLOB"))
             return ColumnType.CLOB;
+        else if (oracleType.equals("BLOB"))
+            return ColumnType.BLOB;
         else if (oracleType.equals("DATE"))
             return ColumnType.DATE;
         else if (oracleType.equals("FLOAT"))

@@ -191,6 +191,9 @@ public class OracleWriter extends RelationalDatabaseWriter {
 		else if ( type == ColumnType.CLOB ) {
 			return "CLOB";
 		}
+		else if ( type == ColumnType.BLOB ) {
+			return "BLOB";
+		}
 		else if ( type == ColumnType.CHARACTER ) {
 			return "CHAR";
 		}
