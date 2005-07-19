@@ -113,8 +113,8 @@ sub run {
 	    die "Input file '$oeFile' does not have 11 tab delimited files";
 	} 
 	
-	my $id = @data[0];
-	my $parentName = @data[1];
+	my $id = $data[0];
+	my $parentName = $data[1];
 
 	print "OEID:$id\tParentName:$parentName\n";
 
@@ -147,9 +147,10 @@ sub submitOntologyEntryTree {
   my $ontologyEntry = $self->makeOntologyEntry($id);
   $ontologyEntry->submit();
 
+  my $rowName = $ontologyEntry->getValue();
   # if i have kids, iterate through them, calling this method recursively
-  if ($self->{parentChildTree}->{$id}){
-    foreach my $childId (@{$self->{parentChildTree}->{$id}}) {
+  if (my $kids = $self->{parentChildTree}->{$rowName}){
+      foreach my $childId (@$kids) {
       $self->submitOntologyEntryTree($childId);
     }
   }
@@ -170,7 +171,7 @@ sub makeOntologyEntry {
    my $srcId =              $self->{rowsById}->{$id}->[10];
 
 
-   print "pName:$pName\t$self->{rowsById}->{$id}->[1]\n";
+   print "OE:$id\tpName:$pName\n\n";
 
    my $dbh = $self->getQueryHandle();
 
@@ -206,7 +207,7 @@ sub makeOntologyEntry {
        'source_id' => $srcId 
        });
   
-   #print "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\n";
+   print "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\n";
 
    return $oeTerm;
 }
