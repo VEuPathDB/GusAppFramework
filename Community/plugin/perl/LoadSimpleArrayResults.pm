@@ -1,5 +1,5 @@
 # ----------------------------------------------------------
-# SimpleArrayResultLoader.pm
+# LoadSimpleArrayResults.pm
 #
 # Loads data into ElementResultImp table (for cDNA data and 
 # provided with element_id mapping info),
@@ -18,16 +18,16 @@
 #
 # $Revision$ $Date$ $ Author: Junmin $
 # ----------------------------------------------------------
-package GUS::RAD::Plugin::SimpleArrayResultLoader;
+package GUS::Community::Plugin::LoadSimpleArrayResults;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 use strict;
 use IO::File;
 use CBIL::Util::Disp;
 use GUS::PluginMgr::Plugin;
-use GUS::Model::RAD3::Quantification;
-use GUS::Model::RAD3::Array;
-use GUS::Model::RAD3::ElementAnnotation;
+use GUS::Model::RAD::Quantification;
+use GUS::Model::RAD::ArrayDesign;
+use GUS::Model::RAD::ElementAnnotation;
 use GUS::Model::Core::TableInfo;
 
 sub new {

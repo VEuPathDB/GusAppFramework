@@ -1,15 +1,9 @@
-# ----------------------------------------------------------
-# BatchArrayResultLoader.pm
-#
-# A wrapper for loading data into ElementResultImp and CompositeElementResultImp,
-# from outputs from standard feature extraction softwares.
-# 
-# Created: Nov-21-2003
-# Elisabetta Manduchi and Hongxian He
-#
-# $Revision$Date: 2005/02/17 20:07:16 $ Author: Elisabetta, Hongxian
-# ----------------------------------------------------------
-package GUS::RAD::Plugin::BatchArrayResultLoader;
+##
+## LoadBatchArrayResults Plugin
+## $Id$
+##
+
+package GUS::Community::Plugin::LoadBatchArrayResults;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 use strict;
@@ -17,64 +11,16 @@ use IO::File;
 use CBIL::Util::Disp;
 use GUS::PluginMgr::Plugin;
 
-use GUS::RAD::FileTranslator;
-use GUS::RAD::Utils::InformationQueries;
+use GUS::Community::FileTranslator;
+use GUS::Community::Utils::InformationQueries;
 
-use GUS::Model::RAD3::RelatedQuantification;
+use GUS::Model::RAD::RelatedQuantification;
 
+# ----------------------------------------------------------------------
+# Arguments
+# ---------------------------------------------------------------------
 
-#--------
-sub new {
-#--------
-  my ($class) = @_;
-  my $self = {};
-  bless($self,$class);
-  my $purposeBrief = 'Loads into the appropriate view of RAD3.(Composite)ElementResultImp quantification data from a collection of files all having the same format.';
-  
-  my $purpose = <<PURPOSE;
-This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) an xml configuration file, and (iii) a quantification protocol or software (one of: I<MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, and MOID>). The plugin then uploads into the appropriate view of RAD3.(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. I<If any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded>.
-PURPOSE
-  
-  my $tablesAffected = [['RAD3::ElementResultImp', 'Enters the quantification results here, if the protocol is GenePix or ArrayVision'], ['RAD3::CompositeElementResultImp', 'Enters the quantification results here, if the protocol is MAS4.0, MAS5.0, RMAExpress, or MOID'], ['RAD3::RelatedQuantification', 'Inserts entries in this table for the quantifications at stake, if missing']];
-  
-  my $tablesDependedOn = [['RAD3::Study', 'The study, if study_id is passed in'], ['RAD3::StudyAssay', 'The table linking the assays to the study, if study_id is passed in'], ['RAD3::Assay', 'The assays passed in'], ['SRes::ExternalDatabaseRelease', 'The external database relase for the assays passed in'], ['RAD3::Array', 'The array(s) used in the assays passed in' ], ['RAD3::OntologyEntry', 'The platform and substrate information for the arrays involved'], ['RAD3::Acquisition', 'The acquisitions for the assays passed in'], ['RAD3::Quantification', 'The quantifications for the assays passed in'], ['RAD3::RelatedAcquisition', 'The associations between the acquisitions for the assays passed in'], ['RAD3::RelatedQuantification', 'The associations between the quantifications for the assays passed in'], ['RAD3::Channel', 'The channels for the acquisitions relative to the assays passed in'], ['RAD3::Protocol', 'The quantification protocol of interest']];
-  
-  my $howToRestart = <<RESTART;
-RESTART
-  
-  my $failureCases = <<FAILURE_CASES;
-FAILURE_CASES
-  
-  my $notes = <<NOTES;
-B<Only one of study_id or assay_id_file should be specified in the argument line.> 
-
-=head2 F<assay_id_file>
-
-To be used when either not all assays in a study should be considered or when assays from different studies should be considered. Their assay_ids should be provided through this text file. One assay_id per line, empty lines are ignored.
-
-=head2 F<cfg_file>
-
-This should be an xml file whose format should be that specified in GUS/RAD/config/FileTranslatorCfg.dtd.
-This is used to map headers in the software output files to attributes of the appropriate RAD view of (Composite)ElementResultImp as well as to RAD coordinates.
-
-=head2 F<Warning (for non-CBIL Instances)>
-
-For local installations of RAD which differ from the CBIL database,
-some lines of this plugin will need to be modified, to accomodate
-hard-coded information. You might need to modify any piece of code
-labelled as 'HARD-CODED' in the comments below.
-
-=head1 AUTHOR
-
-The following individuals have collaborated in the design and coding of this plugin and the Utils called by it: Hongxian He, Junmin Liu, Elisabetta Manduchi, Angel Pizarro, Trish Whetzel.
-
-=head1 COPYRIGHT
-
-Copyright CBIL, Trustees of University of Pennsylvania 2003. 
-NOTES
-
-  my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief,tablesAffected=>$tablesAffected,tablesDependedOn=>$tablesDependedOn,howToRestart=>$howToRestart,failureCases=>$failureCases,notes=>$notes};
-  
+sub getArgumentsDeclaration {
   my $argsDeclaration  =
     [
      integerArg({name  => 'study_id',
@@ -131,10 +77,77 @@ NOTES
 		 isList => 1
 		}),
     ];
+  return $argumentDeclaration;
+}
 
-  $self->initialize({requiredDbVersion => {RAD3 => '3', Core => '3'},
+# ----------------------------------------------------------------------
+# Documentation
+# ----------------------------------------------------------------------
+
+sub getDocumentation {
+  my $purposeBrief = 'Loads into the appropriate view of RAD::(Composite)ElementResultImp quantification data from a collection of files all having the same format.';
+
+  my $purpose = <<PURPOSE;
+This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) an xml configuration file, and (iii) a quantification protocol or software (one of: I<MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, and MOID>). The plugin then uploads into the appropriate view of RAD::(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. I<If any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded>.
+PURPOSE
+
+  my $tablesAffected = [['RAD::ElementResultImp', 'Enters the quantification results here, if the protocol is GenePix or ArrayVision'], ['RAD::CompositeElementResultImp', 'Enters the quantification results here, if the protocol is MAS4.0, MAS5.0, RMAExpress, or MOID'], ['RAD::RelatedQuantification', 'Inserts entries in this table for the quantifications at stake, if missing']];
+
+  my $tablesDependedOn = [['Study::Study', 'The study, if study_id is passed in'], ['RAD::StudyAssay', 'The table linking the assays to the study, if study_id is passed in'], ['RAD::Assay', 'The assays passed in'], ['SRes::ExternalDatabaseRelease', 'The external database relase for the assays passed in'], ['RAD::ArrayDesign', 'The array(s) used in the assays passed in' ], ['Study::OntologyEntry', 'The platform and substrate information for the arrays involved'], ['RAD::Acquisition', 'The acquisitions for the assays passed in'], ['RAD::Quantification', 'The quantifications for the assays passed in'], ['RAD::RelatedAcquisition', 'The associations between the acquisitions for the assays passed in'], ['RAD::RelatedQuantification', 'The associations between the quantifications for the assays passed in'], ['Study::OntologyEntry', 'The channels for the acquisitions relative to the assays passed in'], ['RAD::Protocol', 'The quantification protocol of interest']];
+
+  my $howToRestart = <<RESTART;
+RESTART
+
+  my $failureCases = <<FAILURE_CASES;
+FAILURE_CASES
+
+  my $notes = <<NOTES;
+B<Only one of study_id or assay_id_file should be specified in the argument line.>
+
+=head2 F<assay_id_file>
+
+To be used when either not all assays in a study should be considered or when assays from different studies should be considered. Their assay_ids should be provided through this text file. One assay_id per line, empty lines are ignored.
+
+=head2 F<cfg_file>
+
+This should be an xml file whose format should be that specified in GUS/Community/config/FileTranslatorCfg.dtd.
+This is used to map headers in the software output files to attributes of the appropriate RAD view of (Composite)ElementResultImp as well as to RAD coordinates.
+
+=head2 F<Warning (for non-CBIL Instances)>
+
+For local installations of RAD which differ from the CBIL database,
+some lines of this plugin will need to be modified, to accomodate
+hard-coded information. You might need to modify any piece of code
+labelled as 'HARD-CODED' in the comments below.
+
+=head1 AUTHORS
+
+The following individuals have collaborated in the design and coding of this plugin and the Utils called by it: Hongxian He, Junmin Liu, Elisabetta Manduchi, Angel Pizarro, Trish Whetzel.
+
+=head1 COPYRIGHT
+
+Copyright CBIL, Trustees of University of Pennsylvania 2003.
+NOTES
+
+  my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief,tablesAffected=>$tablesAffected,tablesDependedOn=>$tablesDependedOn,howToRestart=>$howToRestart,failureCases=>$failureCases,notes=>$notes};
+
+  return $documentation;
+}
+
+# ----------------------------------------------------------------------
+# create and initalize new plugin instance.
+# ----------------------------------------------------------------------
+
+sub new {
+  my ($class) = @_;
+  my $self = {};
+  bless($self,$class);
+
+  my $documentation = &getDocumentation();
+  my $argumentDeclaration    = &getArgumentsDeclaration();
+
+  $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision$',
-		     cvsTag => '$Name$',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argsDeclaration,
@@ -149,44 +162,44 @@ my $global_ref;
 # _BEGIN HARD-CODED: The hash values should be replaced with the corresponding RAD3.Protocol.protocol_id in your RAD instance
 $global_ref->{'software_name2id'} = 
   {
-   'mas4'=>303, 
-   'mas5'=>284, 
-   'genepix'=>15, 
-   'arrayvision'=>3, 
-   'rmaexpress'=>904, 
-   'cel4'=>926, 
+   'mas4'=>303,
+   'mas5'=>284,
+   'genepix'=>15,
+   'arrayvision'=>3,
+   'rmaexpress'=>904,
+   'cel4'=>926,
    'cel5'=>283,
    'moid' => 563,
   };
 # _END HARD-CODED
 
-$global_ref->{'array_subclass_view'} = 
+$global_ref->{'array_subclass_view'} =
   {
-   'mas4'=>'ShortOligoFamily', 
-   'mas5'=>'ShortOligoFamily', 
-   'genepix'=>'Spot', 
-   'arrayvision'=>'Spot', 
+   'mas4'=>'ShortOligoFamily',
+   'mas5'=>'ShortOligoFamily',
+   'genepix'=>'Spot',
+   'arrayvision'=>'Spot',
    'rmaexpress'=>'ShortOligoFamily',
    'moid' => 'ShortOligoFamily',
   };
 
-$global_ref->{'result_subclass_view'} = 
+$global_ref->{'result_subclass_view'} =
   {
-   'mas4'=>'AffymetrixMAS4', 
-   'mas5'=>'AffymetrixMAS5', 
-   'genepix'=>'GenePixElementResult', 
-   'arrayvision'=>'ArrayVisionElementResult', 
+   'mas4'=>'AffymetrixMAS4',
+   'mas5'=>'AffymetrixMAS5',
+   'genepix'=>'GenePixElementResult',
+   'arrayvision'=>'ArrayVisionElementResult',
    'rmaexpress'=>'RMAExpress',
    'moid' => 'MOIDResult',
   };
 
 my @SINGLE_CHANNEL = qw(mas4 mas5 rmaexpress moid);
 
-#--------
+
 sub run {
-#--------
+
   my ($self) = @_;
-  
+
   $self->logAlgInvocationId();
   $self->logCommit();
   $self->logArgs();
@@ -196,7 +209,7 @@ sub run {
 
   $global_ref->{'protocol_id'} = $global_ref->{'software_name2id'}->{$self->getArgs->{'software'}};
 
-  my $infoQ = GUS::RAD::Utils::InformationQueries->new($dbh);
+  my $infoQ = GUS::Community::Utils::InformationQueries->new($dbh);
 
   my $cfg_file = $self->getArgs->{'cfg_file'};
 
@@ -307,7 +320,7 @@ sub run {
 
 ###################################################################
 # isValidSoftware ($software)
-# Function: 
+# Function:
 # -- checks that the $software string is one of those specified in
 #    the usage
 ###################################################################
@@ -346,7 +359,7 @@ sub checkArgs {
   }
  if (defined($self->getArgs->{'study_id'})) {
    my $study_id = $self->getArgs->{'study_id'};
-   my $sth = $dbh->prepare("select count(*) from RAD3.Study where study_id=$study_id");
+   my $sth = $dbh->prepare("select count(*) from Study.Study where study_id=$study_id");
    $sth->execute();
    my ($count) = $sth->fetchrow_array();
    $sth->finish();
@@ -369,13 +382,13 @@ sub getAssayIds {
   my ($self, $dbh) = @_;
 
   if (defined($self->getArgs->{'study_id'})) {
-    my $infoQ = GUS::RAD::Utils::InformationQueries->new($dbh);
+    my $infoQ = GUS::Community::Utils::InformationQueries->new($dbh);
     my $study = $infoQ->getStudyInfo($self->getArgs->{'study_id'});
     return $study->{'assays'};
   }
   else {
     my @r;
-    my $sth = $dbh->prepare("select count(*) from RAD3.Assay where assay_id=?");
+    my $sth = $dbh->prepare("select count(*) from RAD.Assay where assay_id=?");
     my $file = $self->getArgs->{'assay_id_file'};
     my $fh = new IO::File;
     unless ($fh->open("<$file")) {
@@ -413,7 +426,7 @@ sub retrieveQuantifications{
 #-----------------------
   my ($self, $dbh, $assay_id) = @_;
   
-  my $infoQ = GUS::RAD::Utils::InformationQueries->new($dbh);
+  my $infoQ = GUS::RAD::Community::InformationQueries->new($dbh);
   my $assayInfo = $infoQ->getAssayInfo($assay_id);
   
   # get arrayInfo
@@ -522,7 +535,7 @@ sub checkRelatedQuantifications{
       my $rel_qid = $quantInfo->{'assoc_quantification_id}'};
       my $rel_channel = undef;
       if (defined $rel_qid) {
-	my $infoQ = GUS::RAD::Utils::InformationQueries->new($dbh);
+	my $infoQ = GUS::Community::Utils::InformationQueries->new($dbh);
 	my $relQ = $infoQ->getQuantificationInfo($rel_qid);
 	my $acq = $infoQ->getAcquisitionInfo($relQ->{'acquisition_id'});
 	$rel_channel = $acq->{'channel'};
@@ -629,11 +642,11 @@ sub relateQuantifications{
 #-------------------------
   my ($self, $qid_1, $qid_2) = @_;
 
-  my $rel_quant = GUS::Model::RAD3::RelatedQuantification->new({ 'quantification_id' => $qid_1, 'associated_quantification_id' => $qid_2});
+  my $rel_quant = GUS::Model::RAD::RelatedQuantification->new({ 'quantification_id' => $qid_1, 'associated_quantification_id' => $qid_2});
 
   if (!$rel_quant->retrieveFromDB()) {
     $rel_quant->submit();
-    $self->logData("RESULT","$qid_1 and $qid_2 are related. Inserted 1 entry in RAD3::RelatedQuantification.");
+    $self->logData("RESULT","$qid_1 and $qid_2 are related. Inserted 1 entry in RAD::RelatedQuantification.");
   }
 } #sub
 
@@ -642,7 +655,7 @@ sub runArrayResultLoader {
 #-------------------------
   my ($self, $dbh, $log_path, $data_file, $arrayInfo, $Rqid, $Gqid) = @_;
 
-  my $infoQ = GUS::RAD::Utils::InformationQueries->new($dbh);
+  my $infoQ = GUS::Community::Utils::InformationQueries->new($dbh);
   my $q = $infoQ->getQuantificationInfo($Rqid);
   my $project_name = $self->getArgs->{'project'} ? $self->getArgs->{project}: $q->{'project_name'};
   my $group_name =  $self->getArgs->{'group'} ?  $self->getArgs->{group} : $q->{'group_name'};
@@ -662,10 +675,10 @@ sub runArrayResultLoader {
   }
 
   if (!$global_ref->{'is_2channel'}) {
-     system("ga GUS::RAD::Plugin::SimpleArrayResultLoader --data_file $data_file --array_id $array_id --quantification_id $Rqid --array_subclass_view $array_subclass_view --result_subclass_view $result_subclass_view --project '$project_name' --group '$group_name' --log_path $log_path $testnumber_string $commit_string");
+     system("ga GUS::Community::Plugin::LoadSimpleArrayResults --data_file $data_file --array_id $array_id --quantification_id $Rqid --array_subclass_view $array_subclass_view --result_subclass_view $result_subclass_view --project '$project_name' --group '$group_name' --log_path $log_path $testnumber_string $commit_string");
    }
   else {
-    system("ga GUS::RAD::Plugin::SimpleArrayResultLoader --data_file $data_file --array_id $array_id --quantification_id $Rqid --rel_quantification_id $Gqid --array_subclass_view $array_subclass_view --result_subclass_view $result_subclass_view --project '$project_name' --group '$group_name' --log_path $log_path $testnumber_string $commit_string");
+    system("ga GUS::Community::Plugin::LoadSimpleArrayResults --data_file $data_file --array_id $array_id --quantification_id $Rqid --rel_quantification_id $Gqid --array_subclass_view $array_subclass_view --result_subclass_view $result_subclass_view --project '$project_name' --group '$group_name' --log_path $log_path $testnumber_string $commit_string");
   }
 }
 
@@ -677,7 +690,7 @@ sub checkExistingResults{
 #------------------------
   my ($self, $dbh, $qid) = @_;
 
-  my $sth = $dbh->prepare("select count(*) from RAD3.ElementResultImp where quantification_id=$qid");
+  my $sth = $dbh->prepare("select count(*) from RAD.ElementResultImp where quantification_id=$qid");
   $sth->execute();
   my ($count) = $sth->fetchrow_array();
   $sth->finish();
