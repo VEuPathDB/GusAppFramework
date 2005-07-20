@@ -1,13 +1,21 @@
 /*
- * Created on Dec 2, 2004
+ * $Id$
  */
 package org.gusdb.dbadmin.writer;
 
 import java.io.File;
 import java.io.Writer;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.ColumnType;
@@ -16,166 +24,449 @@ import org.gusdb.dbadmin.model.ConstraintType;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
+import org.gusdb.dbadmin.model.GusTable;
+import org.gusdb.dbadmin.model.VersionTable;
 
 /**
- * @author msaffitz
- * @version $Revision$ $Date$
+ * A <tt>SchemaWriter</tt> for writing a
+ * <a href="http://www.hibernate.org">hibernate</a> mapping for
+ * the GUS schema.
+ *
+ * Usually called using <tt>dbaDumpSchema</tt> with the
+ * <tt>-targetType hbm</tt> argument.
+ *
+ * @author $Author$
+ * @version $Revision$
  */
 public class HibernateMapWriter
 extends SchemaWriter
 {
+    /**
+     * The base package for all hibernate generated classes
+     * (default: org.gusdb.model).
+     */
     String basePackage;
 
+    /**
+     * Construct a HibernateMapWriter using the default base package.
+     */
     public HibernateMapWriter()
     {
         this(null);
     }
 
+    /**
+     * Construct a HibernateMapWriter using the specified base package.
+     * @param basePkg the package for all hibernate generated classes
+     */
     public HibernateMapWriter(String basePkg)
     {
         basePackage = (basePkg == null) ? "org.gusdb.model" : basePkg;
     }
 
+    /**
+     * Write the hibernate mapping for the specified database.
+     * @param db the database to write
+     */
     protected void writeDatabase(Database db)
     throws IOException
     {
         oStream.write("<?xml version=\"1.0\"?>\n");
         oStream.write("<!DOCTYPE hibernate-mapping PUBLIC\n");
-        oStream.write("\t\"-//Hibernate/Hibernate Mapping DTD 2.0//EN\"\n");
-        oStream.write("\t\"http://hibernate.sourceforge.net/" +
-                     "hibernate-mapping-2.0.dtd\">\n\n");
-        oStream.write("<hibernate-mapping>\n");
+        indent(oStream, 1);
+        oStream.write("\"-//Hibernate/Hibernate Mapping DTD 2.0//EN\"\n");
+        indent(oStream, 1);
+        oStream.write("\"http://hibernate.sourceforge.net/");
+        oStream.write("hibernate-mapping-2.0.dtd\">\n\n");
+        oStream.write("<hibernate-mapping");
+        oStream.write(" package=\"");
+        oStream.write(basePackage);
+        oStream.write("\"\n");
+        indent(oStream, 2);
+        oStream.write("auto-import=\"false\"");
+        oStream.write(" default-cascade=\"save-update\">\n");
+
         for (Iterator i = db.getSchemas().iterator(); i.hasNext(); ) {
             Schema schema = (Schema)i.next();
             for (Iterator j = schema.getTables().iterator(); j.hasNext(); ) {
                 Table table = (Table)j.next();
-                if (table.getSuperclass() == null)
+                if (!(table instanceof VersionTable) && !isSubclass(table))
                     writeClass(oStream, table);
             }
         }
+
         oStream.write("</hibernate-mapping>\n");
     }
 
+    /**
+     * Write a single class mapping, including subclasses.
+     * @param writer the output writer
+     * @param table the table to map
+     */
     private void writeClass(Writer writer, Table table)
     throws IOException
     {
-        boolean versioned =
-                    table.getName().toLowerCase().endsWith("ver");
-        writer.write("<class name=\"" + basePackage + "." +
-                     table.getSchema().getName() + "." +
-                     table.getName() + "\" table=\"" +
-                     table.getName() + "\">\n");
-        writeId(writer, table, versioned);
-        writeDiscriminator(writer, table);
-        if (!versioned)
-            writeTimestamp(writer, table);
-        writeProperties(writer, table);
-        writeSubclasses(writer, table);
-        writer.write("</class>\n");
+        writer.write("<class name=\"");
+        writer.write(basePackage);
+        writer.write(".");
+        writer.write(table.getSchema().getName());
+        writer.write(".");
+        writer.write(table.getName());
+        writer.write("\"\n");
+        indent(writer, 2);
+        writer.write("schema=\"");
+        writer.write(table.getSchema().getName());
+        writer.write("\" table=\"");
+        writer.write(table.getName());
+        writer.write("\">\n");
+        indent(writer, 1);
+        writer.write("<meta attribute=\"implement-equals\">true</meta>\n");
+        writeId(writer, table);
+        writeTimestamp(writer, table);
+        writeProperties(writer, table, 1);
+        writeComponents(writer, table, 1);
+        writeChildren(writer, table);
+        writeSubclasses(writer, table, 1);
+        writer.write("</class>\n\n");
     }
 
-    private void writeProperties(Writer writer, Table table)
+    /**
+     * Write the properties for a class mapping
+     * indented to the specified level.
+     * @param writer the output writer
+     * @param table the table containing the properties to write
+     * @param level the indentation level
+     */
+    private void writeProperties(Writer writer, Table table, int level)
     throws IOException
     {
         for (Iterator i = table.getColumns().iterator(); i.hasNext(); ) {
             Column column = (Column)i.next();
             if (isPrimaryKey(column) ||
-                    isModificationDate(column) || isDiscriminator(column)) {
+                    isModificationDate(column) ||
+                    isInternal(column) || isPermission(column)) {
                 continue;
             } else if (isForeignKey(column)) {
-                writeFKField(writer, column);
+                writeManyToOne(writer, column, level);
             } else {
-                writeProperty(writer, column);
+                writeProperty(writer, column, level);
             }
         }
     }
 
-    private void writeSubclasses(Writer writer, Table table)
+    /**
+     * Write collection mappings for all children of the specified table.
+     * @param writer the output writer
+     * @param table the parent table
+     * @see writeChild(Writer,String,Constraint)
+     * @see getCollectionName(Constraint,int)
+     */
+    private void writeChildren(Writer writer, Table table)
     throws IOException
     {
-        for (Iterator i = table.getSubclasses().iterator(); i.hasNext(); ) {
-            Table sub = (Table)i.next();
-            writer.write("<subclass name=\"" + basePackage + "." +
-                         sub.getSchema().getName() + "." +
-                         sub.getName() + "\" discriminator-value=\"" +
-                         sub.getName() + "\" extends=\"" +
-                         basePackage + "." +
-                         table.getSchema().getName() + "." +
-                         table.getName() +
-                         "\">\n");
-            writeProperties(writer, sub);
-            writer.write("</subclass>\n");
-            writeSubclasses(writer, sub);
-        }
-    }
+        if (!(table instanceof GusTable))
+            return;
 
-    private void writeId(Writer writer, Table table, boolean versioned)
-    throws IOException
-    {
-        for (Iterator i = table.getColumns().iterator(); i.hasNext(); ) {
-            Column column = (Column)i.next();
-            if (!isPrimaryKey(column) || isModificationDate(column))
-                continue;
+        Collection refs =
+            (Collection)((GusTable)table).getReferentialConstraints();
+        Map chldrn = new TreeMap();
 
-            if (!versioned) {
-                writer.write("\t<id name=\"" + getPropertyName(column) +
-                            "\" type=\"long\" column=\"" +
-                            column.getName() + "\">\n");
-                writer.write("\t\t<generator class=\"sequence\">\n");
-                writer.write("\t\t\t<param name=\"sequence\">" +
-                            column.getTable().getName().toUpperCase() +
-                            "_SQ</param>\n");
-                writer.write("\t\t</generator>\n");
-                writer.write("\t</id>\n");
-            } else {
-                writer.write("\t<composite-id>\n");
-                writer.write("\t\t<key-property name=\"" +
-                            getPropertyName(column) + 
-                            "\" type=\"long\" column=\"" +
-                            column.getName() + "\"/>\n");
-                writer.write("\t\t<key-property name=\"modificationDate\"" +
-                            " type=\"timestamp\"" +
-                            " column=\"MODIFICATION_DATE\"/>\n");
-                writer.write("\t</composite-id>\n");
+        /**
+         * various naming conflicts require multiple
+         * passes over the child tables, the first implementation
+         * attempted just had 5 very similar loops, is this better?
+         *
+         * pass 1: initializtion
+         * pass 2: resolve conflicts using pre/suffix
+         * pass 3: resolve conflicts using schema name
+         * pass 4: resolve conflicts using both previous methods
+         * pass 5: write the mappings
+         */
+        for (int pass = 0; pass < 5; pass++) {
+            for (Iterator i = refs.iterator(); i.hasNext(); ) {
+                Object next = i.next();
+                String name = (pass > 0) ? (String)next :
+                    getCollectionName((Constraint)next, pass);
+                List l = (List)chldrn.get(name);
+                switch (pass) {
+                    case 0:
+                        chldrn.put(name, (l = new ArrayList()));
+                        l.add(next);
+                        break;
+                    case 1:
+                    case 2:
+                    case 3:
+                        if (l.size() == 1)
+                            break;
+                        chldrn.remove(name);
+                        for (Iterator j = l.iterator(); j.hasNext(); ) {
+                            Constraint c = (Constraint)j.next();
+                            name = getCollectionName(c, pass);
+                            l = (List)chldrn.get(name);
+                            if (l == null)
+                                chldrn.put(name, (l = new ArrayList()));
+                            l.add(c);
+                        }
+                        break;
+                    case 4:
+                        writeChild(writer, name, (Constraint)l.get(0));
+                        break;
+                    default:
+                        break;
+                }
             }
+            refs = (Collection)((Map)((TreeMap)chldrn).clone()).keySet();
         }
     }
 
-
-    private void writeDiscriminator(Writer writer, Table table)
+    /**
+     * Write a collection mapping for a child table.
+     * @param writer the output writer
+     * @param name the name for the child collection
+     * @param c the constraint representing the child relationship
+     */
+    private void writeChild(Writer writer, String name, Constraint c)
     throws IOException
     {
-        writer.write("\t<discriminator column=\"SUBCLASS_VIEW\"" +
-                     " type=\"string\"/>\n");
+        Table ct = c.getConstrainedTable();
+        indent(writer, 1);
+        writer.write("<set name=\"");
+        writer.write(name);
+        writer.write("\" inverse=\"true\" lazy=\"true\">\n");
+        indent(writer, 2);
+        writer.write("<key>\n");
+        indent(writer, 3);
+        writer.write("<column name=\"");
+        writer.write(getCollectionKey(c));
+        writer.write("\"/>\n");
+        indent(writer, 2);
+        writer.write("</key>\n");
+        indent(writer, 2);
+        writer.write("<one-to-many class=\"");
+        writer.write(basePackage);
+        writer.write(".");
+        writer.write(ct.getSchema().getName());
+        writer.write(".");
+        writer.write(ct.getName());
+        writer.write("\"/>\n");
+        indent(writer, 1);
+        writer.write("</set>\n");
     }
 
+    /**
+     * Write the subclass elements for a class mapping.
+     *
+     * Subclassing is implemented using <tt>&lt;joined-subclass&gt;</tt>,
+     * <tt>&lt;union-subclass&gt;</tt> is probably a better choice, but
+     * will have to wait for hibernate 3 to become stable.
+     *
+     * @param writer the output write
+     * @param table the superclass table 
+     * @param level the indent level
+     */
+    private void writeSubclasses(Writer writer, Table table, int level)
+    throws IOException
+    {
+        for (Iterator it = table.getSubclasses().iterator(); it.hasNext(); ) {
+            Table sub = (Table)it.next();
+            Column column = getPrimaryKey(table);
+            indent(writer, level);
+            writer.write("<joined-subclass\n");
+            indent(writer, level + 2);
+            writer.write("name=\"");
+            writer.write(basePackage);
+            writer.write(".");
+            writer.write(sub.getSchema().getName());
+            writer.write(".");
+            writer.write(sub.getName());
+            writer.write("\"\n");
+            indent(writer, level + 2);
+            writer.write("extends=\"");
+            writer.write(basePackage);
+            writer.write(".");
+            writer.write(table.getSchema().getName());
+            writer.write(".");
+            writer.write(table.getName());
+            writer.write("\">\n");
+            indent(writer, level + 1);
+            writer.write("<key>\n");
+            indent(writer, level + 2);
+            writer.write("<column name=\"");
+            writer.write(column.getName());
+            writer.write("\"/>\n");
+            indent(writer, level + 1);
+            writer.write("</key>\n");
+            writeProperties(writer, sub, level + 1);
+            writeSubclasses(writer, sub, level + 1);
+            indent(writer, level);
+            writer.write("</joined-subclass>\n");
+        }
+    }
+
+    /**
+     * Write the id element for a class mapping.
+     * @param writer the output writer
+     * @param table the table being mapped
+     */
+    private void writeId(Writer writer, Table table)
+    throws IOException
+    {
+        Column column = getPrimaryKey(table);
+        indent(writer, 1);
+        writer.write("<id name=\"");
+        writer.write(getPropertyName(column));
+        writer.write("\" type=\"long\">\n");
+        writeColumn(writer, column, 2);
+        indent(writer, 2);
+        writer.write("<generator class=\"sequence\">\n");
+        indent(writer, 3);
+        writer.write("<param name=\"sequence\">\n");
+        indent(writer, 4);
+        writer.write(table.getSchema().getName().toUpperCase());
+        writer.write(".");
+        writer.write(table.getName().toUpperCase());
+        writer.write("_SQ\n");
+        indent(writer, 3);
+        writer.write("</param>\n");
+        indent(writer, 2);
+        writer.write("</generator>\n");
+        indent(writer, 1);
+        writer.write("</id>\n");
+    }
+
+    /**
+     * Write the timestamp element for a class mapping.
+     * @param writer the output writer
+     * @param table the table
+     */
     private void writeTimestamp(Writer writer, Table table)
     throws IOException
     {
-        writer.write("\t<timestamp name=\"modificationDate\"" +
-                     " column=\"MODIFICATION_DATE\"/>\n");
+        indent(writer, 1);
+        writer.write("<version type=\"timestamp\"");
+        writer.write(" name=\"modificationDate\"\n");
+        indent(writer, 3);
+        writer.write("column=\"MODIFICATION_DATE\"/>\n");
     }
 
-    private void writeFKField(Writer writer, Column column)
+    private void writeComponents(Writer writer, Table table, int level)
     throws IOException
     {
-        writer.write("\t<many-to-one name=\"" + getPropertyName(column) +
-                     "\" column=\"" + column.getName() + 
-                     "\" not-null=\"" + getNotNullable(column) +
-                     "\"\n\t\tclass=\"" + getClassName(column) + "\"/>\n");
+        indent(writer, level);
+        writer.write("<component name=\"rowInfo\"\n");
+        indent(writer, level + 2);
+        writer.write("class=\"");
+        writer.write(basePackage);
+        writer.write(".Core.RowInfo\">\n");
+        if (!hasUnique(table) && !isSubclass(table)) {
+            indent(writer, level + 1);
+            writer.write("<meta attribute=\"use-in-equals\">");
+            writer.write("true</meta>\n");
+        }
+        for (Iterator i = table.getColumns().iterator(); i.hasNext(); ) {
+            Column column = (Column)i.next();
+            if (isInternal(column) || isPermission(column))
+                writeProperty(writer, column, level + 1);
+        }
+        indent(writer, level);
+        writer.write("</component>\n");
     }
 
-    private void writeProperty(Writer writer, Column column)
+    /**
+     * Write a many-to-one element for a class mapping.
+     * @param writer the output writer
+     * @param column the column to be mapped
+     * @param level the indent level
+     */
+    private void writeManyToOne(Writer writer, Column column, int level)
     throws IOException
     {
-        writer.write("\t<property name=\"" + getPropertyName(column) +
-                     "\" column=\"" + column.getName() +
-                     "\"\n\t\ttype=\"" + getType(column) +
-                     "\" not-null=\"" + getNotNullable(column) +
-                     "\" unique=\"" + getUnique(column) + "\"/>\n");
+        /*
+        boolean meta = !isPermission(column) && !isInternal(column) &&
+                            (isUnique(column) || !hasUnique(column.getTable()));
+         */
+        boolean meta = !hasUnique(column.getTable()) || isUnique(column);
+        indent(writer, level);
+        writer.write("<many-to-one name=\"");
+        writer.write(getPropertyName(column));
+        writer.write("\"\n");
+        indent(writer, level + 2);
+        writer.write("outer-join=\"false\" access=\"field\"\n");
+        indent(writer, level + 2);
+        writer.write("class=\"");
+        writer.write(getClassName(column));
+        writer.write("\">\n");
+        if (meta && !isSubclass(column.getTable())) {
+            indent(writer, level + 1);
+            writer.write("<meta attribute=\"use-in-equals\">");
+            writer.write("true</meta>\n");
+        }
+        writeColumn(writer, column, level + 1);
+        indent(writer, level);
+        writer.write("</many-to-one>\n");
     }
 
-    private boolean isForeignKey(Column column )
+    /**
+     * Write a property element for a class mapping.
+     * @param writer the output writer
+     * @param column the column to be mapped
+     * @param level the indent level
+     */
+    private void writeProperty(Writer writer, Column column, int level)
+    throws IOException
+    {
+        /*
+        boolean meta = !isPermission(column) && !isInternal(column) &&
+                            (isUnique(column) || !hasUnique(column.getTable()));
+         */
+        boolean meta = !hasUnique(column.getTable()) ||
+            (!isPermission(column) && !isInternal(column) && isUnique(column));
+        indent(writer, level);
+        writer.write("<property name=\"");
+        writer.write(getPropertyName(column));
+        writer.write("\" access=\"field\" type=\"");
+        writer.write(getType(column));
+        writer.write("\">\n");
+        if (meta && !isSubclass(column.getTable())) {
+            indent(writer, level + 1);
+            writer.write("<meta attribute=\"use-in-equals\">");
+            writer.write("true</meta>\n");
+            indent(writer, level + 1);
+            writer.write("<meta attribute=\"use-in-tostring\">");
+            writer.write("true</meta>\n");
+        }
+        writeColumn(writer, column, level + 1);
+        indent(writer, level);
+        writer.write("</property>\n");
+    }
+
+    /**
+     * Write a column element for a class mapping
+     * @param writer the output writer
+     * @param column the column to write
+     * @param level the indent level
+     */
+    private void writeColumn(Writer writer, Column column, int level)
+    throws IOException
+    {
+        indent(writer, level);
+        writer.write("<column name=\"");
+        writer.write(column.getName());
+        writer.write("\"\n");
+        indent(writer, level + 2);
+        writer.write("not-null=\"");
+        writer.write((!column.isNullable() ? "true" : "false"));
+        writer.write("\" unique=\"");
+        writer.write((isUnique(column) ? "true" : "false"));
+        writer.write("\"/>\n");
+    }
+
+    /**
+     * Search a columns constraints for a foreign key constraint.
+     * @param column the column to test
+     * @return true if the column contains a foreign key constraint
+     */
+    private boolean isForeignKey(Column column)
     {
         for (Iterator i = column.getConstraints().iterator(); i.hasNext(); )
             if (((Constraint)i.next()).getType() == ConstraintType.FOREIGN_KEY)
@@ -183,6 +474,11 @@ extends SchemaWriter
         return false;
     }
 
+    /**
+     * Search a columns constraints for a primary key constraint.
+     * @param column the column to test
+     * @return true if the column contains a primary key constraint
+     */
     private boolean isPrimaryKey(Column column)
     {
         for (Iterator i = column.getConstraints().iterator(); i.hasNext(); )
@@ -191,12 +487,21 @@ extends SchemaWriter
         return false;
     }
 
+    /**
+     * Test if a column is the "modification_date" column.
+     * @param column the column to test
+     * @return true if the column name is "modification_date"
+     */
     private boolean isModificationDate(Column column)
     {
-        return new String("modification_date")
-                    .equalsIgnoreCase(column.getName());
+        return column.getName().equalsIgnoreCase("modification_date");
     }
 
+    /**
+     * Test if a column is a permission column.
+     * @param column the column to test
+     * @return true if the column is a permission column
+     */
     private boolean isPermission(Column column)
     {
         String c = column.getName();
@@ -208,6 +513,11 @@ extends SchemaWriter
             || c.equalsIgnoreCase("other_write");
     }
 
+    /**
+     * Test if a column is an internal column.
+     * @param column the column to test
+     * @return true if the column is a permission column
+     */
     private boolean isInternal(Column column)
     {
         String c = column.getName();
@@ -217,20 +527,34 @@ extends SchemaWriter
             || c.equalsIgnoreCase("row_alg_invocation_id");
     }
 
-    private boolean isDiscriminator(Column column)
+    /**
+     * Get the primary key column for a table
+     * @param table the table
+     * @return the primary key column
+     */
+    private Column getPrimaryKey(Table table)
     {
-        return column.getName().equalsIgnoreCase("subclass_view");
+        while (table.getSuperclass() != null)
+            table = table.getSuperclass();
+
+        for (Iterator i = table.getColumns().iterator(); i.hasNext(); ) {
+            Column column = (Column)i.next();
+            if (isPrimaryKey(column))
+                return column;
+        }
+
+        return null;
     }
 
-    private boolean isTableColumn(String table, Column column)
-    {
-        Table t = column.getTable();
-        return table.equalsIgnoreCase(t.getName())
-            || table.concat("Ver").equalsIgnoreCase(t.getName());
-    }
-
+    /**
+     * Convert the name of the specified column to
+     * an appropriate format for a property name.
+     * @param column the column to convert
+     * @return the converted string
+     */
     private String getPropertyName(Column column)
     {
+        Table table = column.getTable();
         StringBuffer sb = new StringBuffer(column.getName().length());
         StringTokenizer st = new StringTokenizer(
                                     column.getName().toLowerCase(), "_");
@@ -248,7 +572,7 @@ extends SchemaWriter
          * this should probably be somewhere more prominent
          * this table has a `new_id' which can't be shortened to `new'
          */
-        if (isTableColumn("MergeSplit", column) &&
+        if (tableNameEquals(table, "MergeSplit") &&
                 (sb.toString().equalsIgnoreCase("new") ||
                  sb.toString().equalsIgnoreCase("old"))) {
             sb.append("Id");
@@ -256,65 +580,206 @@ extends SchemaWriter
          * these tables have columns names <name> and <name>_id
          * so leave the id suffix
          */
-        } else if (isTableColumn("BibRefType", column) &&
+        } else if (tableNameEquals(table, "BibRefType") &&
                 sb.toString().equalsIgnoreCase("source")) {
             if (column.getName().toLowerCase().endsWith("id"))
                 sb.append("Id");
-        } else if ((isTableColumn("SequenceFeature", column) ||
-                    isTableColumn("BindingSiteFeature", column)) &&
+        } else if ((tableNameEquals(table, "SequenceFeature") ||
+                    tableNameEquals(table, "BindingSiteFeature")) &&
                 sb.toString().equalsIgnoreCase("model")) {
             if (column.getName().toLowerCase().endsWith("id"))
                 sb.append("Id");
         /*
          * this table has a `class' column
          */
-        } else if (isTableColumn("PhenotypeClass", column) &&
+        } else if (tableNameEquals(table, "PhenotypeClass") &&
                 sb.toString().equalsIgnoreCase("class")) {
             sb.setLength(0);
             sb.append("phenotypeClass");
         /*
          * and this one has an `abstract' column
          */
-        } else if (isTableColumn("Abstract", column) &&
+        } else if (tableNameEquals(table, "Abstract") &&
                 sb.toString().equalsIgnoreCase("abstract")) {
             sb.setLength(0);
             sb.append("abst");
         }
 
+        sb.setCharAt(0, Character.toLowerCase(sb.charAt(0)));
         return sb.toString();
     }
 
+    /**
+     * Compare (ignoring case) the name of the
+     * specified table to the specified string.
+     * @param table the table
+     * @param name the name
+     * @return true if the table name matches
+     */
+    private boolean tableNameEquals(Table table, String name)
+    {
+        return name.equalsIgnoreCase(table.getName());
+    }
+
+    /**
+     * Generate a string appropriate for naming a child collection.
+     *
+     * For the most part, the child table name is a reasonable name
+     * for the corresponding collection, however, in some cases, a child
+     * has multiple keys to a parent, or the child table name is not unique
+     * across all gus schemas.  This method will, depending on the conflict
+     * level specified make some attempt to pre/suffix the child table name
+     * with useful information from the constraint, such as the name of the
+     * column in the child table used in the constraint, or the schema name
+     * of the child table.
+     *
+     * @param c the constraint representing the child relationship
+     * @param conflict the number of conflict resolution methods to attempt
+     * @return the generated collection name
+     */
+    private String getCollectionName(Constraint c, int conflict)
+    {
+        Set parts = new TreeSet();
+        Table table = c.getConstrainedTable();
+        StringBuffer sb = new StringBuffer();
+        String child = table.getName();
+        String key = getPrimaryKey(c.getReferencedTable())
+                                .getName().toLowerCase();
+        String index = "";
+        String column = ((Column)c.getConstrainedColumns()
+                                .iterator().next()).getName().toLowerCase();
+
+        if (conflict > 1)
+            sb.append(table.getSchema().getName());
+
+        if (conflict == 1 || conflict > 2) {
+            for (StringTokenizer st =
+                    new StringTokenizer(key, "_"); st.hasMoreTokens(); )
+                parts.add(st.nextToken());
+
+            for (StringTokenizer st =
+                    new StringTokenizer(column, "_"); st.hasMoreTokens(); ) {
+                String s = st.nextToken();
+                try {
+                    Integer.parseInt(s);
+                    index = s;
+                } catch (NumberFormatException ignored) {
+                    if (!parts.contains(s)) {
+                        sb.append((sb.length() == 0) ? s :
+                            s.substring(0, 1).toUpperCase() + s.substring(1));
+                        parts.add(s);
+                    }
+                }
+            }
+        }
+
+        sb.append(child);
+        if (sb.toString().endsWith("nfo")) {
+            /* leave it alone */
+        } else if (sb.toString().endsWith("ay") ||
+                sb.toString().endsWith("s")) {
+            sb.append("es");
+        } else if (sb.toString().endsWith("ey")) {
+            sb.append("s");
+        } else if (sb.toString().endsWith("y")) {
+            sb.setLength(sb.length() - 1);
+            sb.append("ies");
+        } else {
+            sb.append("s");
+        }
+        sb.append(index);
+        return sb.toString();
+    }
+
+    /**
+     * Get the name of the key element for a collection mapping.
+     * @param c the constraint representing the child relationship
+     * @return a string to use for the name attribute of the key element
+     */
+    private String getCollectionKey(Constraint c)
+    {
+        Column column = (Column)c.getReferencedColumns().iterator().next();
+        return column.getName();
+    }
+
+    /**
+     * Get the string representing the hibernate type of a column.
+     * @param column the column
+     * @return a hibernate type name
+     */
     private String getType(Column column)
     { 
-        if ( isPermission(column) ) return "short";
-        if ( isInternal(column) ) return "long";
-        if ( column.getType() == ColumnType.STRING ) return "string";
-        if ( column.getType() == ColumnType.CHARACTER ) return "character";
-        if ( column.getType() == ColumnType.CLOB ) return "java.sql.Clob";
-        if ( column.getType() == ColumnType.DATE ) return "date";
-        if ( column.getType() == ColumnType.FLOAT ) return "float";
-        if ( column.getType() == ColumnType.NUMBER ) return "big_decimal";
+        if (isPermission(column)) return "boolean";
+        if (column.getType() == ColumnType.STRING) return "string";
+        if (column.getType() == ColumnType.CHARACTER) return "character";
+        if (column.getType() == ColumnType.CLOB) return "clob";
+        if (column.getType() == ColumnType.BLOB) return "blob";
+        if (column.getType() == ColumnType.DATE) return "date";
+        if (column.getType() == ColumnType.FLOAT) return "float";
+        if (column.getType() == ColumnType.NUMBER) return "long";
         log.debug("Unknown ColumnType: "+column.getType());
         throw new RuntimeException("Unknown ColumnType");
     }
 
-    private String getNotNullable(Column column)
+    /**
+     * Determine if a column has a unique constraint
+     * @param column the column
+     * @return true if the column has a unique constraint, false otherwise
+     */
+    private boolean isUnique(Column column)
     {
-        return (!column.isNullable()
-            || isInternal(column) || isPermission(column)) ? "true" : "false";
+        for (Iterator i = column.getConstraints().iterator(); i.hasNext(); ) {
+            Constraint c = (Constraint)i.next();
+            if (c.getType() == ConstraintType.UNIQUE &&
+                    c.getConstrainedColumns().size() == 1)
+                return true;
+        }
+
+        return false;
     }
 
-    private String getUnique(Column column)
+    /**
+     * Determine if a table represents a subclass
+     * @param table the table
+     * @return true if the table is a subclass, false otherwise
+     */
+    private boolean isSubclass(Table table)
     {
-        for (Iterator i = column.getConstraints().iterator(); i.hasNext(); )
-            if (((Constraint)i.next()).getType() == ConstraintType.UNIQUE)
-                return "true";
-
-        return "false";
+        return (table.getSuperclass() != null);
     }
 
+    /**
+     * Determine if a table contains column with a unique constraint
+     * @param table the table
+     * @return true if the table has a unique column, false otherwise
+     */
+    private boolean hasUnique(Table table)
+    {
+        for (Iterator i = table.getColumns(false).iterator(); i.hasNext(); )
+            if (isUnique((Column)i.next()))
+                return true;
+        return false;
+    }
+
+    /**
+     * Get the class attribute value of a column
+     * @param column the column
+     * @return a string representing the class name of a column
+     */
     private String getClassName(Column column)
     {
+        String name = column.getName();
+
+        if (name.equalsIgnoreCase("row_user_id")) {
+            return basePackage + ".Core.UserInfo";
+        } else if (name.equalsIgnoreCase("row_group_id")) {
+            return basePackage + ".Core.GroupInfo";
+        } else if (name.equalsIgnoreCase("row_project_id")) {
+            return basePackage + ".Core.ProjectInfo";
+        } else if (name.equalsIgnoreCase("row_alg_invocation_id")) {
+            return basePackage + ".Core.AlgorithmInvocation";
+        }
+
         for (Iterator i = column.getConstraints().iterator(); i.hasNext(); ) {
             Constraint c = (Constraint)i.next();
             if (c.getType() == ConstraintType.FOREIGN_KEY) {
@@ -327,10 +792,26 @@ extends SchemaWriter
         return "";
     }
 
+    /**
+     * Write the necessary spaces to indent a line
+     * to the specified level
+     * @param writer the output writer
+     * @param level the indent level
+     */
+    private void indent(Writer writer, int level)
+    throws IOException
+    {
+        for (int i = 0; i < level; i++)
+            writer.write("    ");
+    }
+
+    /**
+     * @see org.gusdb.dbadmin.writer.SchemaWriter#setUp()
+     */
     protected void setUp()
     { }
 
-    /* (non-Javadoc)
+    /**
      * @see org.gusdb.dbadmin.writer.SchemaWriter#tearDown()
      */
     protected void tearDown()
