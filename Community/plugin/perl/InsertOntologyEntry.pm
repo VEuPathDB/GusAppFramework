@@ -108,15 +108,13 @@ sub run {
 	#split attributes, @data is one row from file
 	my @data = split (/\t/, $_);
 	
-	
 	if (scalar(@data) != 11) { 
-	    die "Input file '$oeFile' does not have 11 tab delimited files";
+	    print join (", ", @data);
+	    die "Input file '$oeFile' does not have 11 tab delimited files.Please check file and run plugin again\n";
 	} 
 	
 	my $id = $data[0];
 	my $parentName = $data[1];
-
-	print "OEID:$id\tParentName:$parentName\n";
 
 	$self->{rowsById}->{$id} =\@data;
 
@@ -134,7 +132,7 @@ sub run {
       }
 
     foreach my $root (@{$self->{roots}}) {
-      $self->submitOntologyEntryTree($root);
+	$self->submitOntologyEntryTree($root);
     }
 
     return "Inserted $count terms into OntologyEntry";
@@ -143,12 +141,30 @@ sub run {
 
 sub submitOntologyEntryTree {
   my ($self, $id) = @_;
-  
+ 
   my $ontologyEntry = $self->makeOntologyEntry($id);
-  $ontologyEntry->submit();
+  
+  #check that entry does not already exist
+  my $dbh = $self->getQueryHandle();
+  my $category = $ontologyEntry->getCategory();
+  #print STDERR "CAT:$category\n";
+  my $value = $ontologyEntry->getValue();
+  #print STDERR "VAL:$value\n";
 
-  my $rowName = $ontologyEntry->getValue();
+  my $sth = $dbh->prepareAndExecute("select ontology_entry_id 
+                                from study.ontologyentry 
+                                where value like '$value' and category like '$category'");
+  my $isLoaded = $sth->fetchrow_array();
+  if(!$isLoaded)  {
+      $ontologyEntry->submit();
+      print STDERR "TERM LOADED - Value:$value\tCategory:$category\n\n";
+  }
+  else {
+      print STDERR "TERM NOT LOADED/ALREADY EXISTS - OEID:$isLoaded\tValue:$value\tCategory:$category\n\n";
+  }
+
   # if i have kids, iterate through them, calling this method recursively
+  my $rowName = $ontologyEntry->getValue();  
   if (my $kids = $self->{parentChildTree}->{$rowName}){
       foreach my $childId (@$kids) {
       $self->submitOntologyEntryTree($childId);
@@ -160,19 +176,16 @@ sub makeOntologyEntry {
 
    my ($self, $id) = @_;
    my $pName =              $self->{rowsById}->{$id}->[1];
-   my $tName =              $self->{rowsById}->{$id}->[2];
-   my $rName =              $self->{rowsById}->{$id}->[3];
-   my $val =                $self->{rowsById}->{$id}->[4];
-   my $def =                $self->{rowsById}->{$id}->[5];
-   my $name =               $self->{rowsById}->{$id}->[6];
-   my $cat =                $self->{rowsById}->{$id}->[7];
-   my $extDbName =          $self->{rowsById}->{$id}->[8];
-   my $extDbRelVersion =    $self->{rowsById}->{$id}->[9];
-   my $srcId =              $self->{rowsById}->{$id}->[10];
-
-
-   print "OE:$id\tpName:$pName\n\n";
-
+   my $extDbName =          $self->{rowsById}->{$id}->[2];
+   my $extDbRelVersion =    $self->{rowsById}->{$id}->[3];
+   my $srcId =              $self->{rowsById}->{$id}->[4];
+   my $tName =              $self->{rowsById}->{$id}->[5];
+   my $rName =              $self->{rowsById}->{$id}->[6];
+   my $val =                $self->{rowsById}->{$id}->[7];
+   my $def =                $self->{rowsById}->{$id}->[8];
+   my $name =               $self->{rowsById}->{$id}->[9];
+   my $cat =                $self->{rowsById}->{$id}->[10];
+  
    my $dbh = $self->getQueryHandle();
 
    #Get external_database_release_id based on external database name and version
@@ -207,7 +220,7 @@ sub makeOntologyEntry {
        'source_id' => $srcId 
        });
   
-   print "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\n";
+   #print STDERR "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\n";
 
    return $oeTerm;
 }
