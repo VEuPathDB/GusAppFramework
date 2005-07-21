@@ -692,7 +692,7 @@ sub modifyKeyValuePairs {
     $modifiedKey = "software version";
     $modifiedValue = $softwareVersion;
 
-  } elsif ($key eq "RatioFormulations") {
+  } elsif ($key =~ /^RatioFormulation/) {
 
       $modifiedKey = "ratio formulations"; 
 
