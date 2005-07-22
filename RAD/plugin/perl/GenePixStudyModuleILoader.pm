@@ -1,6 +1,6 @@
 package GUS::RAD::Plugin::GenePixStudyModuleILoader;
 
-@ISA = qw( GUS::PluginMgr::Plugin);
+@ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict 'vars';
 
@@ -267,21 +267,24 @@ sub run {
 
   $self->{propertySet} = CBIL::Util::PropertySet->new($self->getArg('cfg_file'), \@properties);
 
-  my $studyId = $self->{propertySet}->getProp("Study_ID");
+  my $insertedRelatedCnt = 0;
 
+  my $studyId = $self->{propertySet}->getProp("Study_ID");
   my ($insertedAssayCnt, $skippedAssayCnt, $totalAssayCnt) = $self->createAndSubmitGUSAssaysFromFiles($studyId);
-  my $insertedRelatedCnt = $self->populateRelatedTables($studyId); 
+  $insertedRelatedCnt = $self->populateRelatedTables($studyId) if ($self->getArgs->{commit});
 
   $self->log("STATUS","Inserted $insertedRelatedCnt rows in RAD3.RelatedAcquisition and RAD3.RelatedQuantification");
   $self->setResultDescr(
-   "Total assay/s: $totalAssayCnt; Assay/s inserted: $insertedAssayCnt; Assay/s skipped: $skippedAssayCnt"
-  );
+   "Total assay/s: $totalAssayCnt; Assay/s inserted: $insertedAssayCnt; Assay/s skipped: $skippedAssayCnt");
 }
 
 ###############################
 
 sub createAndSubmitGUSAssaysFromFiles {
   my ($self, $studyId) = @_;
+
+  $self->log("STATUS","DETECTED NON-COMMIT MODE: Nothing will be inserted in the database (although the log messages might say so)!") unless ($self->getArgs->{commit});
+  $self->log("STATUS","DETECTED NON-COMMIT MODE: Will skip checking related tables") unless ($self->getArgs->{commit});
 
   my $assayCnt = 0;
 
@@ -875,6 +878,7 @@ sub createGusQuantification {
     uri                 => $gprURI
   };
 
+  $gprQuantParameters->{'quantification_date'} = $quantDate if ( defined $GPRinfo->{"DateTime"} && $GPRinfo->{"DateTime"} ne "");
   $gprQuantParameters->{operator_id} = $quantOperatorId if (defined $quantOperatorId);
 
   my $acqNameCy5                 = "$assayName-Cy5-$tempAcqName-Genepix quantification"; # HARD-CODED. Replace by your name if necessary.
@@ -910,6 +914,8 @@ sub createGusQuantParams {
 
   foreach my $param (keys %$params) {
 
+    next if ( ! defined $GPRinfo->{$param} || $GPRinfo->{$param} eq ""); # skip undefined params
+
     my $protocolParamObject = GUS::Model::RAD3::ProtocolParam->new({
         protocol_id => $quantProtocolId,
         name        => $param
@@ -922,6 +928,7 @@ sub createGusQuantParams {
      name  => $param,
      value => $GPRinfo->{$param}
      });
+
     $quantParametersCy5->setParent($protocolParamObject); # protocolParam in only needed here, so set parent here
     push(@gusQuantParamsCy5, $quantParametersCy5);
     $quantParamKeywordCnt++;
