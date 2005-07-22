@@ -19,6 +19,7 @@ public class GusTable extends Table {
                                                              .getLog( GusTable.class );
 
     private String             documentation;
+    private String             category;
     private String             ref;
     private Collection         constraint            = new HashSet( );
     // of type Constraint
@@ -52,6 +53,14 @@ public class GusTable extends Table {
         this.documentation = documentation;
     }
 
+    public String getCategory() {
+            return category;
+    }
+    
+    public void setCategory(String category) {
+        this.category = category;
+    }
+    
     public String getRef( ) {
         return ref;
     }

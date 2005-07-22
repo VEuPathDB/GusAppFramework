@@ -116,6 +116,7 @@ public class XMLWriter extends SchemaWriter {
 		oStream.write( "housekeeping=\"" + table.isHousekeeping() + "\" " );
 		oStream.write( "versioned=\"" + table.isVersioned() + "\" " );
 		oStream.write( "tablespace=\"" + table.getTablespace() + "\" " );
+        oStream.write( "category=\"" + table.getCategory() + "\" " );
 		oStream.write( "updatable=\"" + table.isUpdatable() + "\">\n" );
 		indent++;
 		writeDocumentation( table.getDocumentation() );
