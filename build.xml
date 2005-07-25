@@ -313,7 +313,7 @@
     <!-- so objects can be generated without breaking              -->
 
     <replace dir="${targetDir}/bin" 
-             propertyFile="${targetDir}/config/install.prop" > 
+             propertyFile="${targetDir}/config/gus.config" > 
       <include name="**/*" />
       <replacefilter token="@perl@" property="perl"/>
     </replace> 
