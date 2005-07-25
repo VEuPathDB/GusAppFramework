@@ -874,12 +874,11 @@ sub createGusQuantification {
 
   my $gprQuantParameters = {
     protocol_id         => $quantProtocolId,
-    quantification_date => $quantDate,
     uri                 => $gprURI
   };
 
   $gprQuantParameters->{'quantification_date'} = $quantDate if ( defined $GPRinfo->{"DateTime"} && $GPRinfo->{"DateTime"} ne "");
-  $gprQuantParameters->{operator_id} = $quantOperatorId if (defined $quantOperatorId);
+  $gprQuantParameters->{'operator_id'} = $quantOperatorId if (defined $quantOperatorId);
 
   my $acqNameCy5                 = "$assayName-Cy5-$tempAcqName-Genepix quantification"; # HARD-CODED. Replace by your name if necessary.
   my $gprQuantParametersCy5      = $gprQuantParameters;
