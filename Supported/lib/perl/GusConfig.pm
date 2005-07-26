@@ -15,8 +15,8 @@ my @properties =
  ["dbiDsn",    "",  ""],
  ["databaseLogin",         "",  ""],
  ["databasePassword",   "",  ""],
- ["readOnlyDatabaseLogin",         "",  ""],
- ["readOnlyDatabasePassword",   "",  ""],
+# ["readOnlyDatabaseLogin",         "",  ""],
+# ["readOnlyDatabasePassword",   "",  ""],
  # JC: this is not optimal, but PropertySet won't accept an empty string here
  # without requiring that the user supply a value for the parameter
  ["oracleDefaultRollbackSegment",   "none", ""],  
@@ -30,8 +30,11 @@ sub new {
   my $self = {};
   bless($self, $class);
 
-  $gusConfigFile = $ENV{GUS_CONFIG_FILE} if (!$gusConfigFile);
-  $self->{propertySet} = CBIL::Util::PropertySet->new($gusConfigFile,\@properties);
+  if ( ! $gusConfigFile ) {
+      $gusConfigFile = $ENV{GUS_CONFIG_FILE} ? $ENV{GUS_CONFIG_FILE} : $ENV{GUS_HOME} . "/config/gus.config";
+  }
+  
+  $self->{propertySet} = CBIL::Util::PropertySet->new($gusConfigFile,\@properties,1);
   return $self;
 }
 
@@ -71,14 +74,16 @@ sub getDbiDsn {
   return $self->{propertySet}->getProp('dbiDsn');
 }
 
+# DEPRECATED!
 sub getReadOnlyDatabaseLogin {
   my ($self) = @_;
-  return $self->{propertySet}->getProp('readOnlyDatabaseLogin');
+  return $self->getDatabaseLogin();
 }
 
+# DEPRECATED!
 sub getReadOnlyDatabasePassword {
   my ($self) = @_;
-  return $self->{propertySet}->getProp('readOnlyDatabasePassword');
+  return $self->getDatabasePassword();
 }
 
 sub getOracleDefaultRollbackSegment {
