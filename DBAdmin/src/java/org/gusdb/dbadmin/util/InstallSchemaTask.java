@@ -1,7 +1,7 @@
 /*
  *  Created on Feb 3, 2005
  */
-package org.gusdb.schema;
+package org.gusdb.dbadmin.util;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,11 +27,11 @@ import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Index;
-import org.gusdb.dbadmin.reader.XMLReader
-;
-import org.gusdb.dbadmin.util.GusClassHierarchyConverter;
-import org.gusdb.dbadmin.util.JDBCStreamWriter;
-import org.gusdb.dbadmin.util.MetadataPopulator;
+import org.gusdb.dbadmin.reader.XMLReader;
+
+//import org.gusdb.dbadmin.util.GusClassHierarchyConverter;
+//import org.gusdb.dbadmin.util.JDBCStreamWriter;
+//import org.gusdb.dbadmin.util.MetadataPopulator;
 
 import org.gusdb.dbadmin.writer.PostgresWriter;
 import org.gusdb.dbadmin.writer.OracleWriter;
