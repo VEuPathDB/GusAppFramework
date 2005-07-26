@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN" 
+    "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping
+>
+    <class
+        name="org.gusdb.schemabrowser.model.Documentation"
+    >
+
+        <id
+            name="id"
+            column="id"
+            type="long"
+        >
+            <generator class="native">
+              <!--  
+                  To add non XDoclet generator parameters, create a file named 
+                  hibernate-generator-params-Documentation.xml 
+                  containing the additional parameters and place it in your merge dir. 
+              --> 
+            </generator>
+        </id>
+
+        <property
+            name="schemaName"
+            type="java.lang.String"
+            update="true"
+            insert="true"
+            column="schemaName"
+        />
+
+        <property
+            name="tableName"
+            type="java.lang.String"
+            update="true"
+            insert="true"
+            column="tableName"
+        />
+
+        <property
+            name="attributeName"
+            type="java.lang.String"
+            update="true"
+            insert="true"
+            column="attributeName"
+        />
+
+        <property
+            name="documentation"
+            type="java.lang.String"
+            update="true"
+            insert="true"
+            column="documentation"
+        />
+
+        <property
+            name="createdOn"
+            type="java.util.Date"
+            update="true"
+            insert="true"
+            column="createdOn"
+        />
+
+        <!--
+            To add non XDoclet property mappings, create a file named
+                hibernate-properties-Documentation.xml
+            containing the additional properties and place it in your merge dir.
+        -->
+
+    </class>
+
+</hibernate-mapping>
