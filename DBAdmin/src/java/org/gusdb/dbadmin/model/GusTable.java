@@ -15,18 +15,15 @@ import org.apache.commons.logging.LogFactory;
  */
 public class GusTable extends Table {
 
-    protected final static Log log                   = LogFactory
-                                                             .getLog( GusTable.class );
+    protected final static Log log                   = LogFactory.getLog( GusTable.class );
 
     private String             documentation;
-    private String             category;
+    private Category           category;
+    private String             categoryRef;   
     private String             ref;
     private Collection         constraint            = new HashSet( );
-    // of type Constraint
     private Collection         referentialConstraint = new HashSet( );
-    // of type Constraint
     private Collection         index                 = new HashSet( );
-    // of type Index
     private Sequence           sequence;
     private final String       sequenceSuffix        = "_SQ";
 
@@ -53,14 +50,27 @@ public class GusTable extends Table {
         this.documentation = documentation;
     }
 
-    public String getCategory() {
-            return category;
+    public Category getCategory( ) {
+        return category;
+    }
+
+    public void setCategory( Category category ) {
+        if ( this.category != category ) {
+            if ( this.category != null ) this.category.removeTable( this );
+            this.category = category;
+            if ( this.category != null ) this.category.addTable( this );
+        }
+    }
+        
+    public String getCategoryRef() {
+        if ( this.getCategory() != null ) return this.getCategory().getName();
+        return categoryRef;
     }
     
-    public void setCategory(String category) {
-        this.category = category;
+    public void setCategoryRef(String categoryRef) {
+        this.categoryRef = categoryRef;
     }
-    
+
     public String getRef( ) {
         return ref;
     }
@@ -167,22 +177,17 @@ public class GusTable extends Table {
             Constraint vPk = new Constraint( );
 
             if ( versionTable.getName( ).length( ) > 27 ) {
-                vPk
-                        .setName( versionTable.getName( ).substring( 0, 26 )
-                                + "_PK" );
+                vPk.setName( versionTable.getName( ).substring( 0, 26 ) + "_PK" );
             }
             else {
                 vPk.setName( versionTable.getName( ) + "_PK" );
             }
             vPk.setType( ConstraintType.PRIMARY_KEY );
-            for ( Iterator i = primaryKey.getConstrainedColumns( ).iterator( ); i
-                    .hasNext( ); ) {
-                vPk.addConstrainedColumn( versionTable.getColumn( ((Column) i
-                        .next( )).getName( ) ) );
+            for ( Iterator i = primaryKey.getConstrainedColumns( ).iterator( ); i.hasNext( ); ) {
+                vPk.addConstrainedColumn( versionTable.getColumn( ((Column) i.next( )).getName( ) ) );
             }
             if ( versionTable.getColumn( "MODIFICATION_DATE" ) != null ) {
-                vPk.addConstrainedColumn( versionTable
-                        .getColumn( "MODIFICATION_DATE" ) );
+                vPk.addConstrainedColumn( versionTable.getColumn( "MODIFICATION_DATE" ) );
             }
             versionTable.setPrimaryKey( vPk );
         }
@@ -211,8 +216,7 @@ public class GusTable extends Table {
     public void removeConstraint( Constraint constraint ) {
         boolean removed = false;
 
-        log.debug( "Removing constraint: '" + constraint.getName( )
-                + "' from Table: '" + getName( ) + "'" );
+        log.debug( "Removing constraint: '" + constraint.getName( ) + "' from Table: '" + getName( ) + "'" );
         if ( constraint.getType( ) == ConstraintType.PRIMARY_KEY ) {
             if ( getPrimaryKey( ) != null ) {
                 setPrimaryKey( null );
@@ -301,6 +305,11 @@ public class GusTable extends Table {
         }
     }
 
+    public void resolveCategoryReference() {
+        Database db = getSchema().getDatabase();
+        setCategory(db.getCategory(getCategoryRef()));
+    }
+    
     void resolveReferences( Database db ) {
         for ( Iterator i = getIndexs( ).iterator( ); i.hasNext( ); ) {
             ((Index) i.next( )).resolveReferences( db );
@@ -309,26 +318,21 @@ public class GusTable extends Table {
             Constraint con = (Constraint) i.next( );
 
             con.resolveReferences( db );
-            if ( con.getType( ) == ConstraintType.PRIMARY_KEY
-                    && this.getVersionTable( ) != null ) {
+            if ( con.getType( ) == ConstraintType.PRIMARY_KEY && this.getVersionTable( ) != null ) {
                 Constraint vPk = new Constraint( );
 
                 if ( versionTable.getName( ).length( ) > 27 ) {
-                    vPk.setName( versionTable.getName( ).substring( 0, 26 )
-                            + "_PK" );
+                    vPk.setName( versionTable.getName( ).substring( 0, 26 ) + "_PK" );
                 }
                 else {
                     vPk.setName( versionTable.getName( ) + "_PK" );
                 }
                 vPk.setType( ConstraintType.PRIMARY_KEY );
-                for ( Iterator j = con.getConstrainedColumns( ).iterator( ); j
-                        .hasNext( ); ) {
-                    vPk.addConstrainedColumn( versionTable
-                            .getColumn( ((Column) j.next( )).getName( ) ) );
+                for ( Iterator j = con.getConstrainedColumns( ).iterator( ); j.hasNext( ); ) {
+                    vPk.addConstrainedColumn( versionTable.getColumn( ((Column) j.next( )).getName( ) ) );
                 }
                 if ( versionTable.getColumn( "MODIFICATION_DATE" ) != null ) {
-                    vPk.addConstrainedColumn( versionTable
-                            .getColumn( "MODIFICATION_DATE" ) );
+                    vPk.addConstrainedColumn( versionTable.getColumn( "MODIFICATION_DATE" ) );
                 }
                 versionTable.setPrimaryKey( vPk );
             }
