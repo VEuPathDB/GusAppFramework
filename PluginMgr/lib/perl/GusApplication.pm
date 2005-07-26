@@ -39,11 +39,11 @@ sub new {
                       usage             => ""
                      });
 
-   my $configFile = "$ENV{GUS_HOME}/config/GUS-PluginMgr.prop";
+   my $configFile = "$ENV{GUS_HOME}/config/gus.config";
 
-   $self->userError("Config file $configFile does not exist.  Please copy $configFile.sample to $configFile and edit to reflect your configuration") unless -e $configFile;
+   $self->userError("Config file $configFile does not exist.  This file should have been installed during the GUS Installation.") unless -e $configFile;
 
-   $self->{propertySet}= CBIL::Util::PropertySet->new($configFile, \@properties);
+   $self->{propertySet}= CBIL::Util::PropertySet->new($configFile, \@properties, 1);
 
    $self->initName(ref $self);
    $self->initMd5Executable($self->{propertySet}->getProp('md5sum'));
