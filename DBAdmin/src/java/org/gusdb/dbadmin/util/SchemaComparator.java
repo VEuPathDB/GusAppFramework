@@ -16,7 +16,6 @@ import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.DatabaseObject;
 import org.gusdb.dbadmin.model.GusTable;
-import org.gusdb.dbadmin.model.Index;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
 
@@ -33,11 +32,11 @@ public class SchemaComparator {
     private Collection         leftIdenticalTables         = new Vector( );
 
     private HashMap            leftRenamedTables           = new HashMap( );
-    
-    private HashMap            leftColChangedTables           = new HashMap( );
-    private HashMap         leftIndChangedTables        = new HashMap();
-    private HashMap         leftConChangedTables        = new HashMap();
-    
+
+    private HashMap            leftColChangedTables        = new HashMap( );
+    private HashMap            leftIndChangedTables        = new HashMap( );
+    private HashMap            leftConChangedTables        = new HashMap( );
+
     private Collection         leftDroppedTables           = new Vector( );
 
     private Collection         rightAddedTables            = new Vector( );
@@ -97,7 +96,7 @@ public class SchemaComparator {
             if ( rightDatabase.getSchema( table.getSchema( ).getName( ) ) == null
                     || rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable( table.getName( ) ) == null ) continue;
             Table rightTable = rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable( table.getName( ) );
-            
+
             Collection colCompareResults = compareColumnSets( table.getColumnsExcludeSuperclass( false ), rightTable
                     .getColumnsExcludeSuperclass( false ) );
             if ( !colCompareResults.isEmpty( ) ) {
@@ -107,7 +106,7 @@ public class SchemaComparator {
         return leftColChangedTables;
     }
 
-    public HashMap findLeftIndChangedTables() {
+    public HashMap findLeftIndChangedTables( ) {
         if ( !leftIndChangedTables.isEmpty( ) ) return leftIndChangedTables;
         for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
             GusTable table = (GusTable) i.next( );
@@ -115,16 +114,17 @@ public class SchemaComparator {
             if ( findLeftRenamedTables( ).get( table ) != null ) continue;
             if ( rightDatabase.getSchema( table.getSchema( ).getName( ) ) == null
                     || rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable( table.getName( ) ) == null ) continue;
-            GusTable rightTable = (GusTable) rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable( table.getName( ) );
-            
-            if ( ! table.indexesEqual(rightTable) ) {
-                leftIndChangedTables.put( table, new Vector());
+            GusTable rightTable = (GusTable) rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable(
+                    table.getName( ) );
+
+            if ( !table.indexesEqual( rightTable ) ) {
+                leftIndChangedTables.put( table, new Vector( ) );
             }
         }
-       return leftIndChangedTables;
+        return leftIndChangedTables;
     }
-    
-    public HashMap findLeftConChangedTables() {
+
+    public HashMap findLeftConChangedTables( ) {
         if ( !leftConChangedTables.isEmpty( ) ) return leftConChangedTables;
         for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
             GusTable table = (GusTable) i.next( );
@@ -132,15 +132,16 @@ public class SchemaComparator {
             if ( findLeftRenamedTables( ).get( table ) != null ) continue;
             if ( rightDatabase.getSchema( table.getSchema( ).getName( ) ) == null
                     || rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable( table.getName( ) ) == null ) continue;
-            GusTable rightTable = (GusTable) rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable( table.getName( ) );
-            
-            if ( ! table.constraintsEqual(rightTable) ) {
-                leftConChangedTables.put( table, getConstraintDifferences(table, rightTable));
+            GusTable rightTable = (GusTable) rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable(
+                    table.getName( ) );
+
+            if ( !table.constraintsEqual( rightTable ) ) {
+                leftConChangedTables.put( table, getConstraintDifferences( table, rightTable ) );
             }
         }
         return leftConChangedTables;
     }
-    
+
     public Collection findLeftDroppedTables( ) {
         if ( !leftDroppedTables.isEmpty( ) ) return leftDroppedTables;
         for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
@@ -148,8 +149,8 @@ public class SchemaComparator {
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
             if ( findLeftRenamedTables( ).get( table ) != null ) continue;
             if ( findLeftColChangedTables( ).get( table ) != null ) continue;
-            if ( findLeftIndChangedTables().get(table ) != null ) continue;
-            if ( findLeftConChangedTables().get(table) != null ) continue;
+            if ( findLeftIndChangedTables( ).get( table ) != null ) continue;
+            if ( findLeftConChangedTables( ).get( table ) != null ) continue;
             leftDroppedTables.add( table );
         }
         return leftDroppedTables;
@@ -194,7 +195,7 @@ public class SchemaComparator {
         potentialRenameMatches.put( table, potentialMatches );
         return potentialMatches;
     }
-    
+
     public static boolean compareColumnSetNames( Collection leftColumns, Collection rightColumns ) {
         Object[] leftColumnsA = leftColumns.toArray( );
         Object[] rightColumnsA = rightColumns.toArray( );
@@ -204,7 +205,7 @@ public class SchemaComparator {
         while ( l < leftColumnsA.length && r < rightColumnsA.length ) {
             DatabaseObject leftColumn = (DatabaseObject) leftColumnsA[l];
             DatabaseObject rightColumn = (DatabaseObject) rightColumnsA[r];
-            if ( ! leftColumn.equals(rightColumn)) return false;
+            if ( !leftColumn.equals( rightColumn ) ) return false;
             l++;
             r++;
         }
@@ -232,14 +233,16 @@ public class SchemaComparator {
                 // Column attributes changed
                 if ( leftColumn.getName( ).compareToIgnoreCase( rightColumn.getName( ) ) == 0 ) {
                     String res = leftColumn.getName( ) + " changed: ";
-                    if ( leftColumn.getLength() != rightColumn.getLength( ) ) { 
-                        res = res.concat("length: " + leftColumn.getLength() + " to " + rightColumn.getLength() + " ");
+                    if ( leftColumn.getLength( ) != rightColumn.getLength( ) ) {
+                        res = res.concat( "length: " + leftColumn.getLength( ) + " to " + rightColumn.getLength( )
+                                + " " );
                     }
-                    if ( leftColumn.getPrecision() != leftColumn.getPrecision( ) ) {
-                        res = res.concat("precision: " + leftColumn.getPrecision() + " to " + rightColumn.getPrecision() + " ");
+                    if ( leftColumn.getPrecision( ) != leftColumn.getPrecision( ) ) {
+                        res = res.concat( "precision: " + leftColumn.getPrecision( ) + " to "
+                                + rightColumn.getPrecision( ) + " " );
                     }
-                    if ( leftColumn.getType() != leftColumn.getType( ) ) {
-                        res = res.concat("type: " + leftColumn.getType() + " to " + rightColumn.getType()); 
+                    if ( leftColumn.getType( ) != leftColumn.getType( ) ) {
+                        res = res.concat( "type: " + leftColumn.getType( ) + " to " + rightColumn.getType( ) );
                     }
                     results.add( res );
                     l++;
@@ -252,7 +255,7 @@ public class SchemaComparator {
                 }
                 // Testing for new right column:
                 else if ( leftColumn.getTable( ).getColumn( rightColumn.getName( ) ) == null ) {
-                    results.add( rightColumn.getName( ) + " added to table" );
+                    results.add( rightColumn.getName( ) + " added to table ( nullable: " + rightColumn.isNullable() + ")" );
                     r++;
                 }
                 else {
@@ -276,59 +279,61 @@ public class SchemaComparator {
         }
         return results;
     }
-    
-    private Collection getIndexDifferences( Index leftIndex, Index rightIndex) {
-        Collection differences = new Vector();
-        
-        if ( leftIndex.getType() != rightIndex.getType() ) {
-            differences.add("types differ");
+
+/*    private Collection getIndexDifferences( Index leftIndex, Index rightIndex ) {
+        Collection differences = new Vector( );
+
+        if ( leftIndex.getType( ) != rightIndex.getType( ) ) {
+            differences.add( "types differ" );
         }
-        if ( ! compareColumnSetNames( leftIndex.getColumns(), rightIndex.getColumns()) ) {
-            differences.add("column sets differ");
+        if ( !compareColumnSetNames( leftIndex.getColumns( ), rightIndex.getColumns( ) ) ) {
+            differences.add( "column sets differ" );
         }
         return differences;
     }
+*/
+    
+    private Collection getConstraintDifferences( GusTable leftTable, GusTable rightTable ) {
+        Collection results = new Vector( );
 
-    private Collection getConstraintDifferences( GusTable leftTable, GusTable rightTable) {
-        Collection results = new Vector();
-        
-        Object[] leftConstraints = new TreeSet(leftTable.getConstraints()).toArray();
-        Object[] rightConstraints = new TreeSet(rightTable.getConstraints()).toArray();
-        
+        Object[] leftConstraints = new TreeSet( leftTable.getConstraints( ) ).toArray( );
+        Object[] rightConstraints = new TreeSet( rightTable.getConstraints( ) ).toArray( );
+
         int l = 0;
         int r = 0;
 
         if ( leftConstraints.length != rightConstraints.length ) {
-            results.add(" constraint counts differ");
+            results.add( " constraint counts differ" );
             return results;
         }
-        
+
         while ( l < leftConstraints.length && r < rightConstraints.length ) {
             Constraint leftConstraint = (Constraint) leftConstraints[l];
             Constraint rightConstraint = (Constraint) rightConstraints[r];
 
-               if ( leftConstraint.getReferencedTable() != null && 
-                       rightConstraint.getReferencedTable() != null ) {
-                   if ( leftConstraint.getReferencedTable().equals(rightConstraint.getReferencedTable()) ) {
-                       results.add( leftConstraint.getName() + ": referenced tables differ");
-                   }
-                   if ( compareColumnSetNames( leftConstraint.getReferencedColumns(), rightConstraint.getReferencedColumns() )) {
-                       results.add( leftConstraint.getName() + ": referenced column sets differ");
-                   }
-               } else if ( leftConstraint.getReferencedTable() == null && 
-                       rightConstraint.getReferencedTable() == null ) {}
-               else {
-                   results.add( leftConstraint.getName() + ": one referenced table is null");
-               }
-               
-               if ( compareColumnSetNames( leftConstraint.getConstrainedColumns(), rightConstraint.getConstrainedColumns() )) {
-                   results.add( leftConstraint.getName() + ": constrained column sets differ");
-                   }
-               l++;
-               r++;
+            if ( leftConstraint.getReferencedTable( ) != null && rightConstraint.getReferencedTable( ) != null ) {
+                if ( leftConstraint.getReferencedTable( ).equals( rightConstraint.getReferencedTable( ) ) ) {
+                    results.add( leftConstraint.getName( ) + ": referenced tables differ" );
+                }
+                if ( compareColumnSetNames( leftConstraint.getReferencedColumns( ), rightConstraint
+                        .getReferencedColumns( ) ) ) {
+                    results.add( leftConstraint.getName( ) + ": referenced column sets differ" );
+                }
+            }
+            else if ( leftConstraint.getReferencedTable( ) == null && rightConstraint.getReferencedTable( ) == null ) {}
+            else {
+                results.add( leftConstraint.getName( ) + ": one referenced table is null" );
+            }
+
+            if ( compareColumnSetNames( leftConstraint.getConstrainedColumns( ), rightConstraint
+                    .getConstrainedColumns( ) ) ) {
+                results.add( leftConstraint.getName( ) + ": constrained column sets differ" );
+            }
+            l++;
+            r++;
         }
-        
+
         return results;
     }
-    
+
 }
