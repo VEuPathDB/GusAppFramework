@@ -32,8 +32,7 @@ sub getArrayInfo{
               oest.value as substrate_type, 
               a.array_dimensions, a.element_dimensions, a.num_array_rows,
               a.num_array_columns ,a.num_grid_rows, a.num_grid_columns,
-              a.num_sub_rows, a.num_sub_columns, a.num_array_rows, 
-              a.num_array_rows
+              a.num_sub_rows, a.num_sub_columns,
               from rad3.array a , rad3.ontologyentry oept, 
               rad3.ontologyentry oest
               where a.array_id = $id
