@@ -194,6 +194,7 @@ public class XMLWriter extends SchemaWriter {
 		oStream.write( "name=\"" + subclass.getName() + "\" " );
 		oStream.write( "versioned=\"" + subclass.isVersioned() + "\" " );
 		oStream.write( "tablespace=\"" + subclass.getTablespace() + "\" " );
+		oStream.write( "categoryRef=\"" + subclass.getCategoryRef() + "\" " );
 		oStream.write( "updatable=\"" + subclass.isUpdatable() + "\">\n" );
 		indent++;
 		writeDocumentation( subclass.getDocumentation() );
