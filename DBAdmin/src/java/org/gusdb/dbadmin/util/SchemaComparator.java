@@ -50,8 +50,9 @@ public class SchemaComparator {
     }
 
     public Collection findLeftIdenticalTables( ) {
-        if ( !leftIdenticalTables.isEmpty( ) ) return leftIdenticalTables;
-
+        if ( ! leftIdenticalTables.isEmpty( ) ) return leftIdenticalTables;
+        log.info("finding identical tables");
+        
         for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
             GusTable table = (GusTable) i.next( );
 
@@ -62,7 +63,7 @@ public class SchemaComparator {
 
             if ( !table.equals( rightTable ) ) continue;
             if ( !table.columnsEqual( rightTable ) ) continue;
-            if ( !table.subclassesEqual( rightTable ) ) continue;
+//          if ( !table.subclassesEqual( rightTable ) ) continue;
             if ( !table.constraintsEqual( rightTable ) ) continue;
             if ( !table.indexesEqual( rightTable ) ) continue;
             leftIdenticalTables.add( table );
@@ -72,6 +73,7 @@ public class SchemaComparator {
 
     public HashMap findLeftRenamedTables( ) {
         if ( !leftRenamedTables.isEmpty( ) ) return leftRenamedTables;
+        log.info("finding renamed tables");
         for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
             GusTable table = (GusTable) i.next( );
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
@@ -89,6 +91,7 @@ public class SchemaComparator {
 
     public HashMap findLeftColChangedTables( ) {
         if ( !leftColChangedTables.isEmpty( ) ) return leftColChangedTables;
+        log.info("finding tables with changed column sets");
         for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
             GusTable table = (GusTable) i.next( );
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
@@ -108,6 +111,7 @@ public class SchemaComparator {
 
     public HashMap findLeftIndChangedTables( ) {
         if ( !leftIndChangedTables.isEmpty( ) ) return leftIndChangedTables;
+        log.info("finding tables with changed indexes");
         for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
             GusTable table = (GusTable) i.next( );
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
@@ -126,6 +130,7 @@ public class SchemaComparator {
 
     public HashMap findLeftConChangedTables( ) {
         if ( !leftConChangedTables.isEmpty( ) ) return leftConChangedTables;
+        log.info("finding tables with changed constraints ");
         for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
             GusTable table = (GusTable) i.next( );
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
@@ -144,6 +149,7 @@ public class SchemaComparator {
 
     public Collection findLeftDroppedTables( ) {
         if ( !leftDroppedTables.isEmpty( ) ) return leftDroppedTables;
+        log.info("finding tables that have been dropped");
         for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
             GusTable table = (GusTable) i.next( );
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
@@ -159,6 +165,7 @@ public class SchemaComparator {
     public Collection findRightAddedTables( ) {
         // Need a side affect of this for below
         if ( !rightAddedTables.isEmpty( ) ) return rightAddedTables;
+        log.info("finding added tables");
         findLeftRenamedTables( );
         for ( Iterator i = rightDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
             GusTable table = (GusTable) i.next( );
@@ -255,7 +262,7 @@ public class SchemaComparator {
                 }
                 // Testing for new right column:
                 else if ( leftColumn.getTable( ).getColumn( rightColumn.getName( ) ) == null ) {
-                    results.add( rightColumn.getName( ) + " added to table ( nullable: " + rightColumn.isNullable() + ")" );
+                    results.add( rightColumn.getName( ) + " added to table ( nullable: " + rightColumn.isNullable() + " )" );
                     r++;
                 }
                 else {
