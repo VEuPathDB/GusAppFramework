@@ -20,7 +20,6 @@ import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.SuperCategory;
-import org.gusdb.dbadmin.reader.SchemaReader;
 import org.xml.sax.SAXException;
 
 /**
@@ -29,7 +28,7 @@ import org.xml.sax.SAXException;
  */
 public class CategoryReader {
 
-    protected static final Log log = LogFactory.getLog( SchemaReader.class );
+    protected static final Log log = LogFactory.getLog( CategoryReader.class );
 
     /**
      * @param db Database to populate
@@ -98,6 +97,7 @@ public class CategoryReader {
             throw new RuntimeException( e );
         }
 
+        log.debug("Read " + categories.size() + "supercatgories.");
         return categories;
     }
 
