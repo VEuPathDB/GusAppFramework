@@ -27,7 +27,7 @@
   </header>
  </inputs>
  <outputs>
-    <idmap function='coordGenePix2RAD'
+    <idmap function='coordArrayVision2RAD'
            output_header="array_row\tarray_column\tgrid_row\tgrid_column\tsub_row\tsub_column"
            mapkey='$coordinate'  >
       <in name='coordinate'/>
