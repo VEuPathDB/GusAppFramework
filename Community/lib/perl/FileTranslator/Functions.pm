@@ -1,6 +1,6 @@
 #  $Revision$   $Date$   $Author$
 
-package GUS::RAD::FileTranslator::Functions;
+package GUS::Community::FileTranslator::Functions;
 
 sub new {
   my ($M) = @_;
@@ -34,7 +34,7 @@ sub coordGenePix2RAD{
 sub coordArrayVision2RAD{
   my ($self, $n_ar, $n_ac, $n_gr, $n_gc, $n_sr, $n_sc) =@_;
   my $mapping;
-  
+
   if ($n_ar==1 && $n_ac==1 && $n_gr==1 && $n_gc==1) {
     for (my $sr=1; $sr<=$n_sr; $sr++) {
       for (my $sc=1; $sc<=$n_sc; $sc++) {
@@ -73,35 +73,33 @@ sub coordArrayVision2RAD{
       }
     }
   }
-  return $mapping;	
+  return $mapping;
 }
 
 1;
 __END__
 
-=head1 GUS::RAD::FileTranslator::Functions 
+=head1 GUS::Community::FileTranslator::Functions
 
 =head2 Methods
 
 =head3 sub new();
 
  Purpose:
-  Creates a new instance of GUS::RAD::FileTranslator::Functions 
+  Creates a new instance of GUS::Community::FileTranslator::Functions
  Returns:
-  GUS::RAD::FileTranslator::Functions object instance.
-
+  GUS::Community::FileTranslator::Functions object instance.
 
 =head3 sub coordGenePix2RAD($num_array_rows, $num_array_columns, $num_grid_rows, $num_grid_columns, $num_sub_rows, $num_sub_columns);
 
- Purpose: 
+ Purpose:
   Creates a hash for the mapping of GenePix coordinates (Block, Row, Columns) to RAD coordinates (array_row, array_column, grid_row, grid_column, sub_row, sub_column), using information on the array layout.
- Returns: 
+ Returns:
   A reference to a hash whose keys are tab-delimited triplets of GenePix coordinates and whose values are tab-delimited 6-ples of RAD coordinates.
-=head1 GUS::RAD::FileTranslator::Functions
 
 =head3 sub coordArrayVision2RAD($num_array_rows, $num_array_columns, $num_grid_rows, $num_grid_columns, $num_sub_rows, $num_sub_columns);
 
- Purpose: 
+ Purpose:
   Creates a hash for the mapping of ArrayVision Spot Labels column (with dashes and colons) to RAD coordinates (array_row, array_column, grid_row, grid_column, sub_row, sub_column), using information on the array layout.
- Returns: 
+ Returns:
   A reference to a hash whose keys are the strings in the Spot Labels column of an ArrayVision output file and whose values are tab-delimited 6-ples of RAD coordinates.
