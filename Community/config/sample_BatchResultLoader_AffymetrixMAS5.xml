@@ -6,7 +6,7 @@
 <cfg>
   <inputs qualifier_row_present='0'>
     <header>
-      <col header_val = 'Probe Set Name' req='1' name='probe_set_name' />
+      <col header_val ='Probe Set Name' req='1' name='probe_set_name' />
       <col header_val='Stat Pairs'  name='stat_pairs' />
       <col header_val='Stat Pairs Used'  name='stat_pairs_used' />
       <col header_val='Signal'  req='1' name='signal' />

@@ -3,10 +3,10 @@
 
 <!-- $Revision$ $Date$ $Author$ -->
 
-<cfg table='RAD3::AffymetrixMAS4'>
+<cfg>
   <inputs qualifier_row_present='0'>
     <row type="header" name='col_headers'>
-      <col header_val = 'Probe Set Name' req='1' name='probe_set_name' />
+      <col header_val ='Probe Set Name' req='1' name='probe_set_name' />
       <col header_val='Positive Pairs'  name='pos_pairs' />
       <col header_val='Negative Pairs'  name='neg_pairs' />
       <col header_val='Pairs Used'  name='pairs_used' />

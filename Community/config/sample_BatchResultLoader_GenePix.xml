@@ -3,7 +3,7 @@
 
 <!-- $Revision$ $Date$ $Author$ -->
 
-<cfg functions_class='GUS::RAD::FileTranslator::Functions'>
+<cfg functions_class='GUS::Community::FileTranslator::Functions'>
  <inputs qualifier_row_present='0'>
    <header >
     <col header_val='Block' req='1' name='block'/>
