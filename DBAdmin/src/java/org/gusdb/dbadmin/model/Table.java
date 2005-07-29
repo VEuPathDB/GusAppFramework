@@ -275,7 +275,7 @@ public abstract class Table extends DatabaseObject {
     public boolean equals( DatabaseObject o ) {
         Table other = (Table) o;
 
-        if ( !tablespace.equals( other.getTablespace( ) ) ) return false;
+//        if ( !tablespace.equals( other.getTablespace( ) ) ) return false;
         if ( housekeeping != other.isHousekeeping( ) ) return false;
         if ( updatable != other.isUpdatable( ) ) return false;
 
