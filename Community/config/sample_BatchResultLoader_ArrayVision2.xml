@@ -5,7 +5,7 @@
  $Revision$ $Date$ $Author$
 -->
 
-<cfg table='RAD3::ArrayVisionElementResult' >
+<cfg>
  <inputs qualifier_row_present='1' > 
   <row  name='col_headers' >
     <col name='R.foreground' header_val='Dens - Levels' qualifier='0' req='1' />
