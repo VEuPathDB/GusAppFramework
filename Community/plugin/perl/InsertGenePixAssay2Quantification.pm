@@ -918,7 +918,9 @@ sub submitSingleGusAssay {
 sub populateRelatedTables {
   my ($self, $studyId) = @_; 
 
-  # query db directly, since objects only return one value, and we need a list of assay IDs
+  # query db directly, since objects only return one value, 
+  # and we need a list of assay IDs
+
   my $dbh = $self->getQueryHandle();
   my $sth = $dbh->prepare("select assay_id from rad.studyassay where study_id = ?");
   $sth->execute("$studyId");
