@@ -20,7 +20,7 @@ use GUS::Model::RAD::RelatedQuantification;
 # ---------------------------------------------------------------------
 
 sub getArgumentsDeclaration {
-  my $argsDeclaration  =
+  my $argumentDeclaration  =
     [
      integerArg({name  => 'studyId',
 		 descr => 'The study whose quantification results (obtained with the specified protocol) should be loaded, if one desires to load results for all such quantifications in a study.',
