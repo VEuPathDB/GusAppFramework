@@ -703,14 +703,14 @@ sub createGusAcquisition {
   my $scanDate      = $EXPinfo->{"Scan Date"};
   my $channelDef    = $self->{propertySet}->getProp("ChannelDef");
 
-  my ($localFilePath, $tempDatURI, $datURI);
+  my $datURI;
   if ($self->{propertySet}->getProp("DATFilePath") eq "null") {
     $datURI = "";
 
   } else {
 
-    $tempDatURI = $self->{propertySet}->getProp("DATFilePath");
-    $tempDatURI .= "/" if ($tempDatURI !~ m/(.+)\/$/);
+    $datURI = $self->{propertySet}->getProp("DATFilePath");
+    $datURI .= "/" if ($datURI !~ m/(.+)\/$/);
     $datURI .= $assayName.".".$extensionHashRef->{"DATFile"};
   }
 
@@ -792,25 +792,25 @@ sub createGusAcquisitionParams {
 sub createGUSQuantification {
   my ($self, $assayName, $RPTinfo, $extensionHashRef) = @_;
 
-  my $tempCelURI         = $self->{propertySet}->getProp("CELFilePath");
-  my $tempChpURI         = $self->{propertySet}->getProp("MetricsFilePath");
+  my $celURI         = $self->{propertySet}->getProp("CELFilePath");
+  my $chpURI         = $self->{propertySet}->getProp("MetricsFilePath");
   my $acqProtocolId      = $self->{propertySet}->getProp("AcqProtocolID");
   my $celProtocolId      = $self->{propertySet}->getProp("CelProtocolID");
   my $chpProtocolId      = $self->{propertySet}->getProp("ChpProtocolID");
   my $celQuantOperatorId = $self->{propertySet}->getProp("CelQuantOperatorID");
   my $chpQuantOperatorId = $self->{propertySet}->getProp("ChpQuantOperatorID");
 
+
   $self->checkDatabaseEntry("GUS::Model::RAD::Protocol", "protocol_id", $celProtocolId);
   $self->checkDatabaseEntry("GUS::Model::RAD::Protocol", "protocol_id", $chpProtocolId);
   $self->checkDatabaseEntry("GUS::Model::SRes::Contact", "contact_id", $celQuantOperatorId);
   $self->checkDatabaseEntry("GUS::Model::SRes::Contact", "contact_id", $chpQuantOperatorId);
 
-  $tempCelURI .= "/" if ($tempCelURI !~ m/(.+)\/$/);
-  my $celURI .= $assayName.".".$extensionHashRef->{"CELFile"};
-  
-  $tempChpURI .= "/" if ($tempChpURI !~ m/(.+)\/$/);
-  ## note
-  my $chpURI .= $assayName."_Metrics.".$extensionHashRef->{"MetricsFile"};
+  $celURI .= "/" if ($celURI !~ m/(.+)\/$/);
+  $chpURI .= "/" if ($chpURI !~ m/(.+)\/$/);
+
+  $celURI .= $assayName.".".$extensionHashRef->{"CELFile"};
+  $chpURI .= $assayName."_Metrics.".$extensionHashRef->{"MetricsFile"};
 
   # modify quantification date, which is not in regular format
   my ($quantificationDate, $tempQuantificationDate);
