@@ -958,7 +958,7 @@ sub populateRelatedAcquisition {
   my ($self, $assayName, $assayId) = @_; 
 
   my $dbh = $self->getQueryHandle();
-  my $sth = $dbh->prepare("select acquisition_id, channel_id from rad3.acquisition where assay_id = ?");
+  my $sth = $dbh->prepare("select acquisition_id, channel_id from rad.acquisition where assay_id = ?");
   $sth->execute("$assayId");
 
   my (@acquisitionIds, @acquisitionChannels) = ();
