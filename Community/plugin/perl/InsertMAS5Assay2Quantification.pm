@@ -42,8 +42,8 @@ sub getDocumentation {
    ];
 
   my $tablesDependedOn = [
-    ['Study::Study',                'The particular study to which the assay belongs'],
-    ['RAD::ArrayDesign',                'Holds array information'], 
+    ['Study::Study',              'The particular study to which the assay belongs'],
+    ['RAD::ArrayDesign',          'Holds array information'], 
     ['RAD::Protocol',             'The hybridization, image_acquisition, and feature_extraction protocols used'], 
     ['RAD::ProtocolParam',        'Parameters for the protocol used'], 
     ['RAD::Contact',              'Information on researchers who performed the hybridization and the image analysis']
@@ -57,78 +57,95 @@ sub getDocumentation {
 
 =pod
 
-=head2 F<General Description>
+=head1 DESCRIPTION
 
-Plugin reads a config file with information about full paths of directories where files of 
-interest (.EXP, .RPT etc. ) are maintained.  Data from these files are then parsed and 
-entered into a database. The plugin can parse and load information from one or more data 
-files into the database at once, and therefore works in 'batch mode'.
+This plugin loads information about multiple assays into the database, in a batch mode.
+A config file containing information such as location of the EXP files is required by
+the plugin.
 
-This plugin requires two utilities, 'Disp' and 'PropertySet', which are are available with
-RAD, and also from the CBIL cvs at:
- http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/ 
+The plugin does contain some 'hard-coded' information, which is based on policies adopted
+by CBIL, and will be entered as such into RAD tables. This is mostly done to avoid handling
+the exponential number of combinations possible if differences are allowed. If you want to 
+change such hard-coded information, you will have to edit some of the plugin code. 
+
+Hierarchy of subroutines is as follows (should give you some idea of what the plugin does
+without looking into the code):
+
+ #+ getDocumentation {
+ #+ getArgumentsDeclaration {
+ #+ new {
+ #+ run {
+ #++ createPropertiesArray {
+ #++ checkPropertiesInConfigFile {
+ #++ createAndSubmitGUSAssaysFromFiles {
+ #++++ getFileExtensions {
+ #++++ findAssayNames {
+ #++++ createSingleGUSAssay {
+ #++++++ checkRequiredFilesExist {
+ #++++++ parseTabFile {
+ #++++++ createGusAssay {
+ #++++++++ checkDatabaseEntry {
+ #++++++++ modifyDate {
+ #++++++ createGusAssayParams {
+ #++++++ createGusAcquisition {
+ #++++++ createGusAcquisitionParams {
+ #++++++ createGUSQuantification {
+ #++++++ getQuantificationDate {
+ #++++++ createGUSQuantParams {
+ #++++ submitSingleGUSAssay {
+
+
 
 =head2 F<Config File (is mandatory)>
 
-Blank lines and comment lines (lines starting with '#') are ignored.
-The following keywords and their values are required:
+A config file is need for the plugin to run. Blank lines and comments (lines starting with
+'#') are ignored. The sample config file contains instructions and information about the
+keywords and their required values, and is maintained in:
+ \$PROJECT_HOME/GUS/Community/config/sample_InsertMAS5Assay2Quantification.cfg
 
- - SpecificEXPFilePath = full path to the dir where the EXP files are kept 
+All keywords are required. If no value is to be entered, please use the word 'null'
+(without the quotes) instead. The following keywords are used by the plugin (a value
+of 1 indicates that the keyword can never have a null value):
 
- - SpecificRPTFilePath = full path to the dir where the RPT files are kept 
 
- - SpecificCELFilePath = full path to the dir where the CEL files are kept 
+MaxObjectNumber               => 0, 
+DataRepositoryPath            => 1,
+ImageRepositoryPath           => 1,
+EXPFilePath                   => 1,
+RPTFilePath                   => 1,
+CELFilePath                   => 1,
+DATFilePath                   => 0,
+MetricsFilePath               => 1,
+HybProtocolID                 => 1,
+AcqProtocolID                 => 1,
+CelProtocolID                 => 1,
+ChpProtocolID                 => 1,
+HybOperatorID                 => 1,
+CelQuantOperatorID            => 1,
+ChpQuantOperatorID            => 1,
+StudyID                       => 1,
+ChannelDef                    => 1,
+Extensions                    => 1,
+FileTypes                     => 1,
+PrependToFluidicsKeyword      => 0,
+AppendToFluidicsKeyword       => 0,
+JoinFluidicsKeywordsWithSign  => 0,
+PixelSizeRepresentation       => 1,
+FilterRepresentation          => 1,
+NumberOfScansRepresentation   => 1,
+TGTValueRepresentation        => 1,
+SFValueRepresentation         => 1,
+Alpha1Representation          => 1,
+Alpha2Representation          => 1,
+TauRepresentation             => 1
 
- - SpecificDATFilePath** = full path to the dir where the DAT files are kept
-
- - SpecificMetricsFilePath = full path to the dir where the Metrics files are kept 
-
- - HybProtocolID = hybridization protocol id, should pre-exist in the 
-   RAD database 
-
- - AcqProtocolID = acquisition protocol id, should pre-exist in the RAD 
-   database 
-
- - CelProtocolID = cel quantification protocol id, should pre-exist in 
-   the RAD database 
-
- - ChpProtocolID = chp quantification protocol id, should pre-exist in 
-   the RAD database 
-
- - HybOperatorID = contact_id of the person who carried out the 
-   hybridization, should pre-exist in the RAD database 
-
- - CelQuantOperatorID** = contact_id of the person who carried out the 
-   cel quantification, should pre-exist in the RAD database 
-
- - ChpQuantOperatorID** = contact_id of the person who carried out the 
-   chp quantification, should pre-exist in the RAD database 
-
- - StudyID = the study identifier, should pre-exist in the RAD database
-
- - Extensions = the extensions for each file type (should be in the form: 
-   expFile|EXP;celFile|CEL; and so on)
-
-** These values are optional, i.e., the keywords should exist, but their the values can be 
-input as the word 'null', (without the single quotes) if no values exist.
-
-All keywords are required, and each should be on a separate line with the 
-keywords and values seperated by '='. A sample config file is maintained in 
- \$PROJECT_HOME/GUS/RAD/config/sample_MAS5StudyModuleILoader.cfg
-
-The 'Extensions' keyword can support multiple values, provided they are in the following
-form:
- EXPFile|EXP;RPTFile|RPT;CELFile|CEL;DATFile|DAT;MetricsFile|txt;
-
-This facilitates file extension specification for individual file types (the plugin
-will not tolerate spaces between the semi-colons after each file type).
 
 
 =head2 F<Database requirements>
 
 This plugin assumes that the following entries exist in your instance of the database:
 
- 1.  The study in RAD.Study
+ 1.  The study in Study.Study
  2.  The appropriate Affymetrix array in RAD.Array
  3.  The hybridization protocol, the acquisition protocol, the 
      quantification protocol in RAD.Protocol
@@ -137,31 +154,41 @@ This plugin assumes that the following entries exist in your instance of the dat
 
 If any of the above is missing, the plugin will report an error.
 
-=head2 F<Warning (for non-CBIL instances)>
-
-For local installations of RAD which differ from the CBIL database, some lines of this 
-plugin will need to be modified, to accomodate hard-coded information. Modify lines
-labelled 'HARD-CODED' based on information contained in your instance of RAD.
-
 
 =head1 EXAMPLES
 
-ga GUS::RAD::Plugin::MAS5StudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject
+ga GUS::Community::Plugin::InsertMAS5Assay2Quantification 
+ --cfg_file ~/test/testStudy/InsertMAS5Assay2Quantification.cfg 
+ --testnumber 1 
+ --group myPI_InRAD
+ --project 'myProjectInRAD'
 
-ga GUS::RAD::Plugin::MAS5StudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject --skip assay123456
 
-ga GUS::RAD::Plugin::MAS5StudyModuleILoader --cfg_file /somePath/configFile.cfg --group myPI --project myProject --skip assay123456,assay123457 --commit
+ga GUS::Community::Plugin::InsertMAS5Assay2Quantification 
+ --cfg_file ~/test/testStudy/InsertMAS5Assay2Quantification.cfg 
+ --skip assay12345, assay45678
+ --testnumber 5 
+ --group myPI_InRAD
+ --project 'myProjectInRAD'
+ --commit
+
+ga GUS::Community::Plugin::InsertMAS5Assay2Quantification 
+ --cfg_file ~/test/testStudy/InsertMAS5Assay2Quantification.cfg 
+ --skip assay12345, assay45678
+ --group myPI_InRAD
+ --project 'myProjectInRAD'
+ --commit
 
 
 =head1 REPORT BUGS TO
 
- svdate (AT) pcbi (dot) upenn (dot) edu
- OR
- rad3 (AT) pcbi (dot) upenn (dot) edu
+ rad (AT) pcbi.upenn.edu
+
 
 =head1 AUTHORS
 
 Shailesh Date, Hongxian He
+
 
 =head1 COPYRIGHT
 
@@ -482,7 +509,7 @@ sub checkRequiredFilesExist {
   my ($self, $dataRepositoryPath, $imageRepositoryPath, $assayName, $extensionHashRef) = @_;
 
 
-  $self->log("STATUS","CHECKING   For non-exsistant and empty files: assay $assayName");
+  $self->log("STATUS","CHECKING   For non-existent and empty files: assay $assayName");
 
   my @fileTypes = split /\;/, $self->{propertySet}->getProp("FileTypes");
 
