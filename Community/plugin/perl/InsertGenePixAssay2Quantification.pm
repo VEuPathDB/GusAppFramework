@@ -64,14 +64,16 @@ sub getDocumentation {
 
 =pod
 
-=head2 F<General Description>
+=head1 DESCRIPTION
 
-Plugin reads a config file with information about full paths of directories where files of interest (.gpr & .tif)
-are maintained.  Information is extracted from the '.gpr' files and entered into a database. 
+This plugin loads information about multiple assays into the database, in a batch mode.  
+A config file containing information such as location of the GPR files is required by the 
+plugin.
 
-This plugin requires two utilities, Disp and PropertySet, which are available with RAD, and also 
-from the CBIL cvs at:
- http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/ 
+The plugin does contain some ’hard-coded’ information, which is basedased on policies 
+adopted by CBIL, and will be entered as such into RAD tables. This is mostly done to avoid 
+handling the exponential number of combinations possible if differences are allowed. If you 
+want to change such hard-coded information, you will have to edit some of the plugin code.
 
 Since assay, acquisition and most quantification parameters are not readily available through the '.gpr' files,
 they cannot be added to the database through this plugin. They have to be added to the tables separately, 
@@ -82,56 +84,79 @@ The plugin also assumes the following parameters to be the same for all assays: 
 Hybridization Protocol ID, Hybridization Operator ID, Acquisition Protocol ID, Quantification Protocol 
 ID and Quantification Operator ID.
 
+Hierarchy of subroutines is as follows (should give you some idea of what the plugin does without 
+looking into the code):
+
+ #+ getDocumentation {
+ #+ getArgumentsDeclaration {
+ #+ new {
+ #+ run {
+ #++ createPropertiesArray {
+ #++ checkPropertiesInConfigFile {
+ #++ createAndSubmitGUSAssaysFromFiles {
+ #++++ findAssayNames {
+ #++++ getImageFileNames {
+ #++++ parseMultipleDescriptions {
+ #++++ createSingleGUSAssay {
+ #++++++ checkRequiredFilesExist {
+ #++++++ parseTabFile {
+ #++++++ modifyKeyValuePairs {
+ #++++++ createGusAssay {
+ #++++++++ checkDatabaseEntry {
+ #++++++ createGusAcquisition {
+ #++++++ createGusQuantification {
+ #++++++ createGusQuantParams {
+ #++++ submitSingleGusAssay {
+ #++ populateRelatedTables {
+ #++++ populateRelatedAcquisition {
+ #++++ populateRelatedQuantification {
+
+
+
+
 =head2 F<Config File (is mandatory)>
 
-Blank lines and comment lines (lines starting with '#') are ignored.
-The following keywords and their values are required (in cases where no value is to be specified, please
-use the words 'null' as the value):
+A config file is need for the plugin to run. Blank lines and comments (lines starting with '#') are ignored. 
+The sample config file contains instructions and information about the keywords and their required values, 
+and is maintained in:
+\$PROJECT_HOME/GUS/Community/config/sample_InsertGenePixAssay2Quantification.cfg
 
-  - SpecificGPRFilePath= full path to the dir where the gpR files are kept
-  - StudyID^ = the study identifier
-  - ArrayID^ = array type ID
- 
- ASSAY SECTION
+All keywords are required. If no value is to be entered, please use the word 'null' (without the quotes) 
+instead. The following keywords are used by the plugin (a value of 1 indicates that the keyword can never
+have a null value):
 
-  - BatchID** = the study identifier
-  - AllAssayDescriptionsSame** = requires a yes/no answer; if yes, then allAssayDescriptions 
-    will be read, else individualAssayDescriptions will be read
-  - AllAssayDescriptions** = description of the assay
-  - IndividualAssayDescriptions** = assayName|description;assayName|description;assayName|description;
-
- HYBRIDIZATION SECTION
-
-  - HybProtocolID^ = hybridization protocol id
-  - HybOperatorID^ = hybridization operator id
-  - AllHybDatesSame = requires a yes/no answer; if yes, then allHybDates will be read, 
-    else individual_HybDates will be read
-  - AllHybDates" = yyyy-mm-dd
-  - IndividualHybDates" = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;
-
- ACQUISITION SECTION
-
-  - AcqProtocolID^ = acquisition protocol id
-  - SpecificTiffFilePath = full path to the dir where the .tif files are kept
-  - AllScanDatesSame = requires a yes/no answer; if yes, then allScanDates will be read, 
-    else individual_Scan_Dates will be read
-  - AllScanDates" = yyyy-mm-dd
-  - IndividualScanDates" = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;
-
- QUANTIFICATION SECTION
-
-  - QuantOperatorID^** = quantification operator id
-
-
-  Footnotes:
-  ^ These values should pre-exist in various tables in the database
-  " All dates should be in the format: yyyy-mm-dd
- ** These values are optional, i.e., the keywords should exist, but their 
-    the values can be left blank.
-
-All keywords are required, and each should be on a separate line with the keywords and 
-values seperated by '='. A sample config file with some instructions is maintained in:
- \$PROJECT_HOME/GUS/Community/config/sample_InsertGenePixAssay2Quantification.cfg
+StudyID                      => 1,
+ArrayID                      => 1,
+BatchID                      => 0,
+GPRFileExtension             => 1,
+DataRepositoryPath           => 1,
+ImageRepositoryPath          => 1,
+GPRFilePath                  => 1,
+TiffFilePath                 => 1,
+CY5ChannelDef                => 1,
+CY3ChannelDef                => 1,
+Cy5Cy3FilesCombined          => 1,
+CombinedFileExtension        => 1,
+CY5FileExtension             => 1,
+CY3FileExtension             => 1,
+RatioFormulations            => 1,
+StandardDeviation            => 1,
+BackgroundDensityMeasure     => 1,
+SoftwareVersion              => 1,
+GenePixQuantification        => 1,
+HybProtocolID                => 1,
+AcqProtocolID                => 1,
+HybOperatorID                => 1,
+QuantOperatorID              => 0,
+AllAssayDescriptionsSame     => 0,
+AllAssayDescriptions         => 0,
+IndividualAssayDescriptions  => 0,
+AllHybDatesSame              => 1,
+AllHybDates                  => 1,
+IndividualHybDates           => 0,
+AllScanDatesSame             => 1,
+AllScanDates                 => 1,
+IndividualScanDates          => 0
 
 
 =head2 F<Database requirements>
@@ -146,27 +171,34 @@ This plugin assumes that the following entries exist in your instance of the dat
 If any of the above is missing, the plugin will report an error.
 
 
-=head2 F<Warning (for non-CBIL instances)>
-
-For local installations of RAD which differ from the CBIL database, some lines of this plugin 
-will need to be modified, to accomodate hard-coded information. Modify lines labelled 
-'HARD-CODED' based on information contained in your instance of RAD.
-
 
 =head1 EXAMPLES
 
-ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject
+ga GUS::Community::Plugin::InsertGenePixAssay2Quantification
+ --cfg_file /somePath/InsertGenePixAssay2Quantification.cfg
+ --testnumber 1 
+ --group myPI 
+ --project myProject
 
-ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject --skip assay123456
+ga GUS::Community::Plugin::InsertGenePixAssay2Quantification
+ --cfg_file /somePath/InsertGenePixAssay2Quantification.cfg
+ --skip assay12345 assay45678
+ --group myPI 
+ --project myProject
+ --commit
 
-ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --group myPI --project myProject --skip assay123456,assay123457 --commit
+ga GUS::Community::Plugin::InsertGenePixAssay2Quantification
+ --cfg_file /somePath/InsertGenePixAssay2Quantification.cfg
+ --skip assay12345 assay45678
+ --testnumber 5
+ --group myPI 
+ --project myProject
+ --commit
 
 
 =head1 REPORT BUGS TO
 
- svdate (AT) pcbi (dot) upenn (dot) edu
- OR
- rad3 (AT) pcbi (dot) upenn (dot) edu
+ rad (AT) pcbi.upenn.edu
 
 
 =head1 AUTHOR
