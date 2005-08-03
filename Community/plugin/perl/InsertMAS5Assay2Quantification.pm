@@ -182,7 +182,9 @@ ga GUS::Community::Plugin::InsertMAS5Assay2Quantification
 
 =head1 REPORT BUGS TO
 
- svdate (AT) pcbi.upenn.edu
+https://www.cbil.upenn.edu/tracker/enter_bug.cgi?product=GUS%20Application%20Framework
+
+(you will need an account to log in to the bug tracker)
 
 
 =head1 AUTHORS
