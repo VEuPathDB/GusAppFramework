@@ -182,7 +182,7 @@ ga GUS::Community::Plugin::InsertMAS5Assay2Quantification
 
 =head1 REPORT BUGS TO
 
- rad (AT) pcbi.upenn.edu
+ svdate (AT) pcbi.upenn.edu
 
 
 =head1 AUTHORS
