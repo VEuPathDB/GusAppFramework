@@ -198,7 +198,7 @@ ga GUS::Community::Plugin::InsertGenePixAssay2Quantification
 
 =head1 REPORT BUGS TO
 
- rad (AT) pcbi.upenn.edu
+ svdate (AT) pcbi.upenn.edu
 
 
 =head1 AUTHOR
