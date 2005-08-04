@@ -147,10 +147,8 @@ sub submitOntologyEntryTree {
   #check that entry does not already exist
   my $dbh = $self->getQueryHandle();
   my $category = $ontologyEntry->getCategory();
-  #print STDERR "CAT:$category\n";
   my $value = $ontologyEntry->getValue();
-  #print STDERR "VAL:$value\n";
-
+  
   my $sth = $dbh->prepareAndExecute("select ontology_entry_id 
                                 from study.ontologyentry 
                                 where value like '$value' and category like '$category'");
@@ -188,11 +186,17 @@ sub makeOntologyEntry {
   
    my $dbh = $self->getQueryHandle();
 
-   #Get external_database_release_id based on external database name and version
-   my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabase edb, sres.externaldatabaserelease edbr where edb.external_database_id=edbr.external_database_id and edb.name like '$extDbName' and edbr.version like '$extDbRelVersion'");
-   $sth->execute();
-   my $extDbRelId = $sth->fetchrow_array();
+   # The value of transformation_protocol_series must be loaded into the OntologyEntry table 
+   # since it is needed by the RAD Applications 
+   my $extDbRelId;
+   if ($val ne "transformation_protocol_series")  { 
+       #Get external_database_release_id based on external database name and version
+       my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabase edb, sres.externaldatabaserelease edbr where edb.external_database_id=edbr.external_database_id and edb.name like '$extDbName' and edbr.version like '$extDbRelVersion'");
+       $sth->execute();
+       $extDbRelId = $sth->fetchrow_array() || die "Value:$val - Either the entry for the MGED Ontology can not be found in SRes.ExternalDatabase OR the version of the MGED Ontology used in the input file can not be found in the SRes.ExternalDatabaseRelease table.\n";
+   }
    
+
    #Get table_id based on table name
    my $sth = $dbh->prepare("select table_id from core.tableinfo where name like '$tName'");
    $sth->execute();
