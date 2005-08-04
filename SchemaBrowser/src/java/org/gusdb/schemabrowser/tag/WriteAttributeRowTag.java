@@ -1,8 +1,9 @@
 /**
  * 
  */
-package org.gusdb.schemabrowser;
+package org.gusdb.schemabrowser.tag;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 import javax.servlet.jsp.JspWriter;
@@ -12,13 +13,15 @@ import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.ColumnType;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.ConstraintType;
+import org.gusdb.dbadmin.model.GusColumn;
 
 /**
  * @author msaffitz
  */
-public class ColumnTypeWriter extends TagSupport {
+public class WriteAttributeRowTag extends TagSupport {
 
     private Column column = null;
+    private boolean fromSuperclass = false;
 
     public void setColumn( Column column ) {
         this.column = column;
@@ -28,13 +31,21 @@ public class ColumnTypeWriter extends TagSupport {
         return this.column;
     }
 
+    public boolean isFromSuperclass() {
+        return fromSuperclass;
+    }
+    
+    public void setFromSuperclass(boolean fromSuperclass) {
+        this.fromSuperclass = fromSuperclass;
+    }
+    
     public int doStartTag( ) {
         try {
             JspWriter out = pageContext.getOut( );
-            out.println( writeType( getColumn( ) ) );
+            writeAttributeRow(out);
         }
-        catch ( Exception ex ) {
-            throw new Error( "All is not well in the world." );
+        catch ( IOException ex ) {
+            throw new Error( "Error writing attribute row." );
         }
         return SKIP_BODY;
     }
@@ -43,6 +54,32 @@ public class ColumnTypeWriter extends TagSupport {
         return SKIP_BODY;
     }
 
+    private void writeAttributeRow(JspWriter out) throws IOException {
+        String superRow = isFromSuperclass( ) ? " superRow" : "";
+
+        out.println("<tr class=\"tableRow attrRow" + superRow +  "\">");
+        
+        out.println("<td>" + getColumn().getName() + "</td>");
+
+        out.print("<td>");
+        if (! getColumn().isNullable() ) out.print("no");
+        out.println("</td>");
+        
+        out.print("<td>" + writeType(getColumn()) + "</td>");
+        
+        if ( getColumn().getClass() == GusColumn.class && 
+                ((GusColumn) getColumn()).getDocumentation() != null ) {
+            out.println("<td>" + ((GusColumn) getColumn()).getDocumentation());
+        } else {
+            out.println("<td> ");
+        }
+        out.print(" <small><a href=\"edit/edit.htm?schema=" + getColumn().getTable().getSchema().getName() );
+        out.println("&table=" + getColumn().getTable().getName() + "&attribute=" + getColumn().getName() + 
+                "\">Edit</a>");
+        
+        out.println("</small></td></tr>");
+    }
+    
     private String writeType( Column column ) {
         String trueType = writeTrueType( column );
         if ( !column.getConstraints( ).isEmpty( ) ) {

@@ -64,7 +64,26 @@ a:hover { color: white;
 	border-bottom: 1px dotted grey;
 }
 
+.superCatRow {
+	background-color: #FFCCCC;
+	font-size: 17px;
+}
+
+.catRow {
+	font-size: 14px;
+	background-color: #FFFFCC;
+}
+	
+
 .tableDocumentation {
 	border: 1px solid grey;
 	padding: 3px;
+}
+
+.attrRow { 
+	background-color: #dcdcdc;
+}
+
+.superRow {
+	background-color: #FFFFCC;
 }
