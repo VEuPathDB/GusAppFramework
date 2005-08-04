@@ -38,10 +38,9 @@ public class EditDocumentationController extends SimpleFormController {
         }
         log.info( "doing db stuff" );
         getDocumentationDAO( ).saveDocumentationObject( doc );
-        // TODO: Also update schema doc
-        if ( doc.getTableName( ) != null ) {
-            updateTableDocumentation( doc.getSchemaName( ), doc.getTableName( ) );
-        }
+        
+        updateTableDocumentation( doc.getSchemaName(), doc.getTableName(), doc.getAttributeName() ) ;
+        
         return new ModelAndView( new RedirectView( getSuccessView( ) ) );
     }
 
@@ -58,21 +57,26 @@ public class EditDocumentationController extends SimpleFormController {
         return doc;
     }
 
-    private void updateTableDocumentation( String schemaName, String tableName ) {
-        log.info( "Updating Table Documentation" );
+    private void updateTableDocumentation( String schemaName, String tableName, String attributeName ) {
+        log.info( "Updating Table Documentation: '" + schemaName + "' '" + tableName + "' '" + attributeName + "'" );
         Schema schema = getDatabaseFactory( ).getDatabase( ).getSchema( schemaName );
         if ( schema == null ) return;
-        GusTable table = (GusTable) schema.getTable( tableName );
-        if ( table == null ) return;
-        table.setDocumentation( getDocumentationDAO( )
-                .getDocumentation( table.getSchema( ).getName( ), table.getName( ) ) );
-        for ( Iterator j = table.getColumnsExcludeSuperclass( false ).iterator( ); j.hasNext( ); ) {
-            GusColumn col = (GusColumn) j.next( );
-            col.setDocumentation( getDocumentationDAO( ).getDocumentation( table.getSchema( ).getName( ),
-                    table.getName( ), col.getName( ) ) );
+        if ( tableName == null ) {
+            // TODO update schema doc
+        } else {
+            GusTable table = (GusTable) schema.getTable( tableName );
+            if ( table == null ) return;
+            if ( attributeName != null ) { 
+                GusColumn column = (GusColumn) table.getColumn( attributeName );
+                column.setDocumentation( getDocumentationDAO().getDocumentation( table.getSchema().getName(), 
+                        table.getName(), column.getName() ));
+            } else {
+                table.setDocumentation( getDocumentationDAO( ).getDocumentation( table.getSchema( ).getName( ), 
+                        table.getName( ) ) );
+            }
         }
     }
-
+    
     public DocumentationDAO getDocumentationDAO( ) {
         return this.docDAO;
     }

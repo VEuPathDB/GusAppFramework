@@ -1,8 +1,6 @@
 <%@ include file="/WEB-INF/jsp/header.jsp" %>
 
-<h1>Edit ${documentation.schemaName}
-<c:if test='${not empty documentation.tableName}'>::${documentation.tableName}
-<c:if test='${not empty documentation.attributeName}'>::${documentation.attributeName}
+<h1>Edit ${documentation.schemaName}<c:if test='${not empty documentation.tableName}'>::${documentation.tableName}<c:if test='${not empty documentation.attributeName}'>::${documentation.attributeName}
 
 </c:if></c:if>
 </h1>
@@ -20,12 +18,6 @@
 	<input type="hidden" name="table" value="${documentation.tableName}"/>
 	<input type="hidden" name="attribute" value="${documentation.attributeName}"/>
 
-	<spring:bind path="documentation.category">
-	<font color="red">${status.errorMessage}</font><br/>
-	<b>Category:</b> <input type="text" name="category" value="${status.value}"/>
-	</spring:bind>
-	<p/>
-	
 	<spring:bind path="documentation.documentation">
 	<b>Documentation:</b> <font color="red">${status.errorMessage}</font><br/>
 		<textarea rows="10" cols="80" name="documentation">${status.value}</textarea>

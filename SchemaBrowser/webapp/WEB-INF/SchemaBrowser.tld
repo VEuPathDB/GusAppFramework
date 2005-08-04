@@ -7,34 +7,77 @@
 	<tlib-version>2.0</tlib-version>
 	<jsp-version>1.2</jsp-version>
 	<short-name>SchemaBrowser</short-name>
-  <tag>
-    <name>WriteType</name>
-    <tag-class>org.gusdb.schemabrowser.ColumnTypeWriter</tag-class>
-    <body-content>empty</body-content>
-  <attribute>
-      <name>column</name>
-      <required>true</required>
-      <rtexprvalue>true</rtexprvalue>
-      <type>org.gusdb.dbadmin.model.Column</type>
-  </attribute>
-</tag>
-
-<tag>
-    <name>WriteRow</name>
-    <tag-class>org.gusdb.schemabrowser.RowWriter</tag-class>
-    <body-content>empty</body-content>
-  <attribute>
-      <name>table</name>
-      <required>true</required>
-      <rtexprvalue>true</rtexprvalue>
-      <type>org.gusdb.dbadmin.model.Table</type>
-  </attribute>
-   <attribute>
-      <name>number</name>
-      <required>true</required>
-      <rtexprvalue>true</rtexprvalue>
-      <type>int</type>
-  </attribute>
-</tag>
-
+	
+	<tag>
+  		<name>WriteName</name>
+  		<tag-class>org.gusdb.schemabrowser.tag.WriteNameTag</tag-class>
+	  	<body-content>empty</body-content>
+		<attribute>
+			<name>table</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>org.gusdb.dbadmin.model.Table</type>
+		</attribute>
+	</tag>	
+	<tag>
+  		<name>WriteSuperclass</name>
+  		<tag-class>org.gusdb.schemabrowser.tag.WriteSuperclassTag</tag-class>
+	  	<body-content>empty</body-content>
+		<attribute>
+			<name>table</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>org.gusdb.dbadmin.model.Table</type>
+		</attribute>
+	</tag>	
+	<tag>
+  		<name>WriteCategory</name>
+  		<tag-class>org.gusdb.schemabrowser.tag.WriteCategoryTag</tag-class>
+	  	<body-content>empty</body-content>
+		<attribute>
+			<name>table</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>org.gusdb.dbadmin.model.Table</type>
+		</attribute>
+	</tag>
+	<tag>
+  		<name>WriteAction</name>
+  		<tag-class>org.gusdb.schemabrowser.tag.WriteActionTag</tag-class>
+	  	<body-content>empty</body-content>
+		<attribute>
+			<name>table</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>org.gusdb.dbadmin.model.Table</type>
+		</attribute>
+	</tag>
+	<tag>
+  		<name>WriteDocumentation</name>
+  		<tag-class>org.gusdb.schemabrowser.tag.WriteDocumentationTag</tag-class>
+	  	<body-content>empty</body-content>
+		<attribute>
+			<name>table</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>org.gusdb.dbadmin.model.Table</type>
+		</attribute>
+	</tag>
+	<tag>
+		<name>WriteAttributeRow</name>
+		<tag-class>org.gusdb.schemabrowser.tag.WriteAttributeRowTag</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<name>column</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>org.gusdb.dbadmin.model.Column</type>
+		</attribute>
+		<attribute>
+			<name>fromSuperclass</name>
+			<required>false</required>
+			<rtexprvalue>true></rtexprvalue>
+			<type>boolean</type>
+		</attribute>
+	</tag>
 </taglib>

@@ -3,6 +3,7 @@
  */
 package org.gusdb.schemabrowser.dao;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +19,6 @@ import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 public class DocumentationDAO extends HibernateDaoSupport {
 
     private Log  log = LogFactory.getLog( HibernateDaoSupport.class );
-    // TODO REALLY USE STATIC?    
     private static HashMap docCache = new HashMap();
     
     public DocumentationDAO( ) {
@@ -31,19 +31,17 @@ public class DocumentationDAO extends HibernateDaoSupport {
     }
 
     public String getDocumentation( String schema, String table ) {
-        if ( getDocumentationObject(schema, null, null ) == null ) return null;
-        return getDocumentationObject(schema, null, null).getDocumentation();
+        if ( getDocumentationObject(schema, table, null ) == null ) return null;
+        return getDocumentationObject(schema, table, null).getDocumentation();
     }
 
     public String getDocumentation( String schema, String table, String attribute ) {
-        if ( getDocumentationObject(schema, null, null ) == null ) return null;
-        return getDocumentationObject(schema, null, null).getDocumentation();
+        if ( getDocumentationObject(schema, table, attribute ) == null ) return null;
+        return getDocumentationObject(schema, table, attribute).getDocumentation();
     }
 
     public Documentation getDocumentationObject( String schema, String table, String attribute ) {
-        if ( table == null ) { table = new String(); }
-        if ( attribute == null ) { attribute = new String(); }
-        String key = schema.toLowerCase() + table.toLowerCase() + attribute.toLowerCase();
+        String key = (schema + table + attribute).toLowerCase();
         
         if ( docCache.containsKey( key )) { 
             return (Documentation) docCache.get( key );
@@ -58,36 +56,36 @@ public class DocumentationDAO extends HibernateDaoSupport {
     public void saveDocumentationObject( Documentation doc ) {
         doc.setCreatedOn(new Date());
         getHibernateTemplate().save(doc);
-        fetchObject( doc.getSchemaName(), doc.getTableName(), doc.getAttributeName() );
+        cacheObject(doc);
     }
     
     private Documentation fetchObject( String schema, String table, String attribute ) {
-        return null;
-        /*
-        String[] values = new String[3];
+        ArrayList values = new ArrayList();
+        values.add(schema);
+        
         String query = "from Documentation where schemaname = ? ";
-        values[0] = schema;
 
-        if ( table != null ) {
+        if ( table != null && ! table.equalsIgnoreCase("null") ) {
             query = query.concat(" and tablename = ? ");
-            values[1] = table;
-            if ( schema != null ) {
-                query = query.concat( " and attributename = ?");
-                values[2] = attribute;
+            values.add(table);
+            if ( attribute != null && ! attribute.equalsIgnoreCase("null") ) {
+                query = query.concat( " and attributename = ? ");
+                values.add(attribute);
             }
         }
-        query = query.concat( " order by createdon desc");
-
-        List docColl = getHibernateTemplate().find(query, values);
+        
+        query = query.concat( "order by createdon desc");
+        log.info("running query: " + query + " with '" + values.subList(0,values.size()).toString() + "'");
+        
+        List docColl = getHibernateTemplate().find(query, values.subList(0,values.size()).toArray() );
         if ( docColl.size() == 0 ) return null;
         cacheObject((Documentation) docColl.get(0));
         return (Documentation) docColl.get(0);
-        */
     }
     
     private void cacheObject(Documentation doc) {
-        String key = doc.getSchemaName().toLowerCase() + doc.getTableName().toLowerCase() + 
-            doc.getAttributeName().toLowerCase();
+        String key = (doc.getSchemaName() + doc.getTableName() + doc.getAttributeName()).toLowerCase();
+        log.info("Caching: '" + key + "'");
         docCache.put(key, doc);
     }
 

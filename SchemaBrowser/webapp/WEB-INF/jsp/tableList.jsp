@@ -2,7 +2,9 @@
 
 <h1>GUS Schema Browser</h1>
 
-<a href="tableList.htm">Reset to Normal View</a><p/>
+<a href="tableList.htm">Table-Centric View</a> | <a href="categoryList.htm">Category-Centric View</a>
+
+<p/>
 
 <table id="tableDisplay">
 	<tr class="tableRow">
@@ -12,11 +14,19 @@
 		<td class="columnHead"></td>
 	</tr>
 
-<% int row = 0; %>
+<% String row = "odd"; %>
 
 <c:forEach items="${tables}" var="table">
-	<sb:WriteRow table="${table}" number="<%= row++ %>"/>
+	<tr class="tableRow <%= row %>">
+		<sb:WriteName table="${table}"/>
+		<sb:WriteSuperclass table="${table}"/>
+    		<sb:WriteCategory table="${table}"/>
+		<sb:WriteAction table="${table}"/>
+    	</tr>
+	<sb:WriteDocumentation table="${table}"/>			
+	<% row = row.equals("odd") ? "even" : "odd"; %>
 </c:forEach>
+
 </table>
 
 <%@ include file="/WEB-INF/jsp/footer.jsp" %>
