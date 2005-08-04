@@ -446,10 +446,12 @@ sub insertSubjects {
     
     if (not $query_id =~ /^\d+$/) {
       # must be the sequence entry identifier, get the GUS PK then
-      eval "require $queryTable";
-      my $queryobj = $queryTable->new ({'name' => $query_id});
+
+      my $require = "{require $queryTable; $queryTable->new ({'name' => $query_id})}";
+	  my $queryobj = eval $require;
+
       my $is_in = $queryobj->retrieveFromDB;
-      
+
       if (! $is_in) {
 	die "can't get the GUS entry for query, $query_id!\n";
       }
@@ -465,11 +467,14 @@ sub insertSubjects {
     $subject_id =~ s/\s//g;
     
     if (not $subject_id =~ /^\d+$/) {
+
       # must be the sequence entry identifier, get the GUS PK then
-      eval "require $subjectTable";
-      my $subjectobj = $subjectTable->new ({'name' => $subject_id});
+
+      my $require = "{require $subjectTable; $subjectTable->new ({'name' => $subject_id})}";
+	  my $subjectobj = eval $require;
+
       my $is_in = $subjectobj->retrieveFromDB;
-      
+
       if (! $is_in) {
 	die "can't get the GUS entry for subject, $subject_id!\n";
       }
