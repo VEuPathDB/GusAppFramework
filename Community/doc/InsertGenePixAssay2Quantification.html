@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>GUS::RAD::Plugin::GenePixStudyModuleILoader -  Creates assays, acquisitions and quantifications for GenePix assays en-batch.</title>
+<title>GUS::Community::Plugin::InsertGenePixAssay2Quantification -  Creates assays, acquisitions and quantifications for GenePix assays en-batch.</title>
 <link rev="made" href="mailto:root@localhost" />
 </head>
 
@@ -16,20 +16,17 @@
 	<li><a href="#name">NAME</a></li>
 	<li><a href="#synopsis">SYNOPSIS</a></li>
 	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#config_file_(is_mandatory)"><em>Config File (is mandatory)</em></a></li>
+		<li><a href="#database_requirements"><em>Database requirements</em></a></li>
+	</ul>
+
 	<li><a href="#tables_affected">TABLES AFFECTED</a></li>
 	<li><a href="#tables_depended_on">TABLES DEPENDED ON</a></li>
 	<li><a href="#failure_cases">FAILURE CASES</a></li>
 	<li><a href="#restarting">RESTARTING</a></li>
 	<li><a href="#arguments_in_detail">ARGUMENTS IN DETAIL</a></li>
-	<li><a href="#notes">NOTES</a></li>
-    <ul>
-
-		<li><a href="#general_description"><em>General Description</em></a></li>
-		<li><a href="#config_file_(is_mandatory)"><em>Config File (is mandatory)</em></a></li>
-		<li><a href="#database_requirements"><em>Database requirements</em></a></li>
-		<li><a href="#warning_(for_noncbil_instances)"><em>Warning (for non-CBIL instances)</em></a></li>
-	</ul>
-
 	<li><a href="#examples">EXAMPLES</a></li>
 	<li><a href="#report_bugs_to">REPORT BUGS TO</a></li>
 	<li><a href="#author">AUTHOR</a></li>
@@ -41,43 +38,137 @@
 <p>
 </p>
 <h1><a name="name">NAME</a></h1>
-<p>GUS::RAD::Plugin::GenePixStudyModuleILoader -  Creates assays, acquisitions and quantifications for GenePix assays en-batch.</p>
+<p>GUS::Community::Plugin::InsertGenePixAssay2Quantification -  Creates assays, acquisitions and quantifications for GenePix assays en-batch.</p>
 <p>
 </p>
 <hr />
 <h1><a name="synopsis">SYNOPSIS</a></h1>
-<p>ga GUS::RAD::Plugin::GenePixStudyModuleILoader --help</p>
-<p>ga GUS::RAD::Plugin::GenePixStudyModuleILoader --helpHTML</p>
-<p>ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file file [--skip string-list] [--testnumber integer] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
+<p>ga GUS::Community::Plugin::InsertGenePixAssay2Quantification --help</p>
+<p>ga GUS::Community::Plugin::InsertGenePixAssay2Quantification --helpHTML</p>
+<p>ga GUS::Community::Plugin::InsertGenePixAssay2Quantification --cfg_file file [--skip string-list] [--testnumber integer] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
 <p>
 </p>
 <hr />
 <h1><a name="description">DESCRIPTION</a></h1>
-<p>Create assays, acquisitions and quantifications for GenePix assays in RAD3 tables from multiple files in batch mode.
-=head1 TABLES AFFECTED</p>
+<p>This plugin loads information about multiple assays into the database, in a batch mode.  
+A config file containing information such as location of the GPR files is required by the 
+plugin.</p>
+<p>The plugin does contain some 'hard-coded' information, which is basedased on policies 
+adopted by CBIL, and will be entered as such into RAD tables. This is mostly done to avoid 
+handling the exponential number of combinations possible if differences are allowed. If you 
+want to change such hard-coded information, you will have to edit some of the plugin code.</p>
+<p>Since assay, acquisition and most quantification parameters are not readily available through the '.gpr' files,
+they cannot be added to the database through this plugin. They have to be added to the tables separately, 
+either directly or through the following forms in the RAD StudyAnnotator: Hybridization Parameters, Acquisition
+Parameters and Quantification Parameters.</p>
+<p>The plugin also assumes the following parameters to be the same for all assays: Array ID, Batch ID, 
+Hybridization Protocol ID, Hybridization Operator ID, Acquisition Protocol ID, Quantification Protocol 
+ID and Quantification Operator ID.</p>
+<p>Hierarchy of subroutines is as follows (should give you some idea of what the plugin does without 
+looking into the code):</p>
+<pre>
+ #+ getDocumentation {
+ #+ getArgumentsDeclaration {
+ #+ new {
+ #+ run {
+ #++ createPropertiesArray {
+ #++ checkPropertiesInConfigFile {
+ #++ createAndSubmitGUSAssaysFromFiles {
+ #++++ findAssayNames {
+ #++++ getImageFileNames {
+ #++++ parseMultipleDescriptions {
+ #++++ createSingleGUSAssay {
+ #++++++ checkRequiredFilesExist {
+ #++++++ parseTabFile {
+ #++++++ modifyKeyValuePairs {
+ #++++++ createGusAssay {
+ #++++++++ checkDatabaseEntry {
+ #++++++ createGusAcquisition {
+ #++++++ createGusQuantification {
+ #++++++ createGusQuantParams {
+ #++++ submitSingleGusAssay {
+ #++ populateRelatedTables {
+ #++++ populateRelatedAcquisition {
+ #++++ populateRelatedQuantification {</pre>
+<p>
+</p>
+<h2><a name="config_file_(is_mandatory)"><em>Config File (is mandatory)</em></a></h2>
+<p>A config file is need for the plugin to run. Blank lines and comments (lines starting with '#') are ignored. 
+The sample config file contains instructions and information about the keywords and their required values, 
+and is maintained in:
+$PROJECT_HOME/GUS/Community/config/sample_InsertGenePixAssay2Quantification.cfg</p>
+<p>All keywords are required. If no value is to be entered, please use the word 'null' (without the quotes) 
+instead. The following keywords are used by the plugin (a value of 1 indicates that the keyword can never
+have a null value):</p>
+<p>StudyID                   =&gt; 1,<br>
+ArrayID                      =&gt; 1,<br>
+BatchID                      =&gt; 0,<br>
+GPRFileExtension             =&gt; 1,<br>
+DataRepositoryPath           =&gt; 1,<br>
+ImageRepositoryPath          =&gt; 1,<br>
+GPRFilePath                  =&gt; 1,<br>
+TiffFilePath                 =&gt; 1,<br>
+CY5ChannelDef                =&gt; 1,<br>
+CY3ChannelDef                =&gt; 1,<br>
+Cy5Cy3FilesCombined          =&gt; 1,<br>
+CombinedFileExtension        =&gt; 1,<br>
+CY5FileExtension             =&gt; 1,<br>
+CY3FileExtension             =&gt; 1,<br>
+RatioFormulations            =&gt; 1,<br>
+StandardDeviation            =&gt; 1,<br>
+BackgroundDensityMeasure     =&gt; 1,<br>
+SoftwareVersion              =&gt; 1,<br>
+GenePixQuantification        =&gt; 1,<br>
+HybProtocolID                =&gt; 1,<br>
+AcqProtocolID                =&gt; 1,<br>
+HybOperatorID                =&gt; 1,<br>
+QuantOperatorID              =&gt; 0,<br>
+AllAssayDescriptionsSame     =&gt; 0,<br>
+AllAssayDescriptions         =&gt; 0,<br>
+IndividualAssayDescriptions  =&gt; 0,<br>
+AllHybDatesSame              =&gt; 1,<br>
+AllHybDates                  =&gt; 1,<br>
+IndividualHybDates           =&gt; 0,<br>
+AllScanDatesSame             =&gt; 1,<br>
+AllScanDates                 =&gt; 1,<br>
+IndividualScanDates          =&gt; 0</p>
+<p>
+</p>
+<h2><a name="database_requirements"><em>Database requirements</em></a></h2>
+<p>This plugin assumes that the following entries exist in your instance of the database:</p>
+<pre>
+ 1.  The study in RAD.Study
+ 2.  The appropriate GenePix array in RAD.Array
+ 3.  The hybridization protocol, the acquisition protocol, the quantification protocol in RAD.Protocol
+ 4.  Quantification parameters for quantification in RAD.ProtocolParam</pre>
+<p>If any of the above is missing, the plugin will report an error.</p>
+<p>
+</p>
+<hr />
+<h1><a name="tables_affected">TABLES AFFECTED</a></h1>
 <dl>
-<dt><strong><a name="item_rad3%3a%3astudy"><strong>RAD3::Study</strong></a></strong><br />
+<dt><strong><a name="item_study%3a%3astudy"><strong>Study::Study</strong></a></strong><br />
 </dt>
 <p>One row for the given study is entered</p>
-<dt><strong><a name="item_rad3%3a%3aassay"><strong>RAD3::Assay</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3aassay"><strong>RAD::Assay</strong></a></strong><br />
 </dt>
 <p>One row for each distinct assay is entered</p>
-<dt><strong><a name="item_rad3%3a%3astudyassay"><strong>RAD3::StudyAssay</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3astudyassay"><strong>RAD::StudyAssay</strong></a></strong><br />
 </dt>
 <p>One row linking the given study to each assay is entered</p>
-<dt><strong><a name="item_rad3%3a%3aacquisition"><strong>RAD3::Acquisition</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3aacquisition"><strong>RAD::Acquisition</strong></a></strong><br />
 </dt>
 <p>For each assay, two rows (2 acquisitions) are entered, one for each channel</p>
-<dt><strong><a name="item_rad3%3a%3aquantification"><strong>RAD3::Quantification</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3aquantification"><strong>RAD::Quantification</strong></a></strong><br />
 </dt>
 <p>For each assay, two rows (2 quantifications) are entered, one for each channel</p>
-<dt><strong><a name="item_rad3%3a%3aquantificationparam"><strong>RAD3::QuantificationParam</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3aquantificationparam"><strong>RAD::QuantificationParam</strong></a></strong><br />
 </dt>
 <p>Eight rows, four for each channel (Cy5 and Cy3), corresponding to four parameters per quantification, are entered</p>
-<dt><strong><a name="item_rad3%3a%3arelatedacquisition"><strong>RAD3::RelatedAcquisition</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3arelatedacquisition"><strong>RAD::RelatedAcquisition</strong></a></strong><br />
 </dt>
 <p>Two rows are entered for each assay, relating the two corresponding acquisitions</p>
-<dt><strong><a name="item_rad3%3a%3arelatedquantification"><strong>RAD3::RelatedQuantification</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3arelatedquantification"><strong>RAD::RelatedQuantification</strong></a></strong><br />
 </dt>
 <p>Two rows are entered for each assay, relating the two corresponding quantifications</p>
 <dt><strong><a name="item_core%3a%3aalgorithminvocation"><strong>Core::AlgorithmInvocation</strong></a></strong><br />
@@ -89,19 +180,19 @@
 <hr />
 <h1><a name="tables_depended_on">TABLES DEPENDED ON</a></h1>
 <dl>
-<dt><strong><strong>RAD3::Study</strong></strong><br />
+<dt><strong><strong>Study::Study</strong></strong><br />
 </dt>
 <p>Holds study information</p>
-<dt><strong><a name="item_rad3%3a%3aarray"><strong>RAD3::Array</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3aarraydesign"><strong>RAD::ArrayDesign</strong></a></strong><br />
 </dt>
 <p>Holds array information</p>
-<dt><strong><a name="item_rad3%3a%3achannel"><strong>RAD3::Channel</strong></a></strong><br />
+<dt><strong><a name="item_study%3a%3aontologyentry"><strong>Study::OntologyEntry</strong></a></strong><br />
 </dt>
 <p>Holds channel (Cy5 or Cy3 in this case) information</p>
-<dt><strong><a name="item_rad3%3a%3aprotocol"><strong>RAD3::Protocol</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3aprotocol"><strong>RAD::Protocol</strong></a></strong><br />
 </dt>
 <p>Holds hybridization, image acquisition and feature extraction protocol information</p>
-<dt><strong><a name="item_rad3%3a%3aprotocolparam"><strong>RAD3::ProtocolParam</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3aprotocolparam"><strong>RAD::ProtocolParam</strong></a></strong><br />
 </dt>
 <p>Holds protocol parameter information</p>
 <dt><strong><a name="item_sres%3a%3acontact"><strong>SRes::Contact</strong></a></strong><br />
@@ -124,11 +215,13 @@
 </p>
 <hr />
 <h1><a name="failure_cases">FAILURE CASES</a></h1>
-<p>Files not in an appropriate format.
+<p>Files not in an appropriate format.</p>
+<p>
 </p>
 <hr />
 <h1><a name="restarting">RESTARTING</a></h1>
-<p>Cannot be restarted.
+<p>Cannot be restarted.</p>
+<p>
 </p>
 <hr />
 <h1><a name="arguments_in_detail">ARGUMENTS IN DETAIL</a></h1>
@@ -215,7 +308,7 @@
 </dt>
 <p>The gus config file to use [note: the default is your $GUS_CONFIG_FILE]</p>
 <dl>
-<dt><strong><a name="item_default%3a_%2fhome%2fsvdate%2f%2egus%2eproperties">default: /home/svdate/.gus.properties</a></strong><br />
+<dt><strong><a name="item_default%3a_%2fhome%2fyourName%2f%2fgus%2fproject_home%2fgus%2eproper">default: /home/yourName/gus/project_home/gus.properties</a></strong><br />
 </dt>
 <dl>
 <dt><strong><a name="item_format%3a_gus_config_file_format">format: GUS config file format</a></strong><br />
@@ -237,102 +330,31 @@
 <p>
 </p>
 <hr />
-<h1><a name="notes">NOTES</a></h1>
-<p>
-</p>
-<h2><a name="general_description"><em>General Description</em></a></h2>
-<p>Plugin reads a config file with information about full paths of directories where files of interest (.gpr &amp; .tif)
-are maintained.  Information is extracted from the '.gpr' files and entered into a database.</p>
-<p>This plugin requires two utilities, Disp and PropertySet, which are available with RAD, and also 
-from the CBIL cvs at:
- <a href="http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/">http://cvs.cbil.upenn.edu/cgi-bin/cvsweb.cgi/CBIL/Util/lib/perl/</a></p>
-<p>Since assay, acquisition and most quantification parameters are not readily available through the '.gpr' files,
-they cannot be added to the database through this plugin. They have to be added to the tables separately, 
-either directly or through the following forms in the RAD StudyAnnotator: Hybridization Parameters, Acquisition
-Parameters and Quantification Parameters.</p>
-<p>The plugin also assumes the following parameters to be the same for all assays: Array ID, Batch ID, 
-Hybridization Protocol ID, Hybridization Operator ID, Acquisition Protocol ID, Quantification Protocol 
-ID and Quantification Operator ID.</p>
-<p>
-</p>
-<h2><a name="config_file_(is_mandatory)"><em>Config File (is mandatory)</em></a></h2>
-<p>Blank lines and comment lines (lines starting with '#') are ignored.
-The following keywords and their values are required (in cases where no value is to be specified, please
-use the words 'null' as the value):</p>
-<pre>
-  - gpr_File_Path= full path to the dir where the gpR files are kept
-  - Study_ID^ = the study identifier
-  - Array_ID^ = array type ID
- 
- ASSAY SECTION</pre>
-<pre>
-  - Batch_ID** = the study identifier
-  - All_Assay_Descriptions_Same** = requires a yes/no answer; if yes, then allAssayDescriptions 
-    will be read, else individualAssayDescriptions will be read
-  - All_Assay_Descriptions** = description of the assay
-  - Individual_Assay_Descriptions** = assayName|description;assayName|description;assayName|description;</pre>
-<pre>
- HYBRIDIZATION SECTION</pre>
-<pre>
-  - Hyb_Protocol_ID^ = hybridization protocol id
-  - Hyb_Operator_ID^ = hybridization operator id
-  - All_Hyb_Dates_Same = requires a yes/no answer; if yes, then allHybDates will be read, 
-    else individual_HybDates will be read
-  - All_Hyb_Dates&quot; = yyyy-mm-dd
-  - Individual_Hyb_Dates&quot; = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;</pre>
-<pre>
- ACQUISITION SECTION</pre>
-<pre>
-  - Acq_Protocol_ID^ = acquisition protocol id
-  - Tiff_File_Path = full path to the dir where the .tif files are kept
-  - All_Scan_Dates_Same = requires a yes/no answer; if yes, then allScanDates will be read, 
-    else individual_Scan_Dates will be read
-  - All_Scan_Dates&quot; = yyyy-mm-dd
-  - Individual_Scan_Dates&quot; = assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;assayName|yyyy-mm-dd;</pre>
-<pre>
- QUANTIFICATION SECTION</pre>
-<pre>
-  - Quant_Operator_ID^** = quantification operator id</pre>
-<pre>
-  Footnotes:
-  ^ These values should pre-exist in various tables in the database
-  &quot; All dates should be in the format: yyyy-mm-dd
- ** These values are optional, i.e., the keywords should exist, but their 
-    the values can be left blank.</pre>
-<p>All keywords are required, and each should be on a separate line with the keywords and 
-values seperated by '='. A sample config file with some instructions is maintained in:
- $PROJECT_HOME/GUS/RAD/config/sample_GenePixStudyModuleILoader.cfg</p>
-<p>
-</p>
-<h2><a name="database_requirements"><em>Database requirements</em></a></h2>
-<p>This plugin assumes that the following entries exist in your instance of the database:</p>
-<pre>
- 1.  The study in RAD3.Study
- 2.  The appropriate GenePix array in RAD3.Array
- 3.  The hybridization protocol, the acquisition protocol, the quantification protocol in RAD3.Protocol
- 4.  Quantification parameters for quantification in RAD3.ProtocolParam</pre>
-<p>If any of the above is missing, the plugin will report an error.</p>
-<p>
-</p>
-<h2><a name="warning_(for_noncbil_instances)"><em>Warning (for non-CBIL instances)</em></a></h2>
-<p>For local installations of RAD which differ from the CBIL database, some lines of this plugin 
-will need to be modified, to accomodate hard-coded information. Modify lines labelled 
-'HARD-CODED' based on information contained in your instance of RAD.</p>
-<p>
-</p>
-<hr />
 <h1><a name="examples">EXAMPLES</a></h1>
-<p>ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject</p>
-<p>ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --testnumber 1 --group myPI --project myProject --skip assay123456</p>
-<p>ga GUS::RAD::Plugin::GenePixStudyModuleILoader --cfg_file /somePath/configFile.cfg --group myPI --project myProject --skip assay123456,assay123457 --commit</p>
+<p>ga GUS::Community::Plugin::InsertGenePixAssay2Quantification
+ --cfg_file /somePath/InsertGenePixAssay2Quantification.cfg
+ --testnumber 1 
+ --group myPI 
+ --project myProject</p>
+<p>ga GUS::Community::Plugin::InsertGenePixAssay2Quantification
+ --cfg_file /somePath/InsertGenePixAssay2Quantification.cfg
+ --skip assay12345 assay45678
+ --group myPI 
+ --project myProject
+ --commit</p>
+<p>ga GUS::Community::Plugin::InsertGenePixAssay2Quantification
+ --cfg_file /somePath/InsertGenePixAssay2Quantification.cfg
+ --skip assay12345 assay45678
+ --testnumber 5
+ --group myPI 
+ --project myProject
+ --commit</p>
 <p>
 </p>
 <hr />
 <h1><a name="report_bugs_to">REPORT BUGS TO</a></h1>
-<pre>
- svdate (AT) pcbi (dot) upenn (dot) edu
- OR
- rad3 (AT) pcbi (dot) upenn (dot) edu</pre>
+<p><a href="https://www.cbil.upenn.edu/tracker/enter_bug.cgi?product=GUS%20Application%20Framework">https://www.cbil.upenn.edu/tracker/enter_bug.cgi?product=GUS%20Application%20Framework</a></p>
+<p>(you will need an account to log in to the bug tracker)</p>
 <p>
 </p>
 <hr />
