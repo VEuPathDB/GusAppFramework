@@ -447,8 +447,10 @@ sub insertSubjects {
     if (not $query_id =~ /^\d+$/) {
       # must be the sequence entry identifier, get the GUS PK then
 
-      my $require = "{require $queryTable; $queryTable->new ({'name' => $query_id})}";
+      my $require = "require $queryTable; $queryTable->new ({'name' => '$query_id'})";
 	  my $queryobj = eval $require;
+
+	  die "$@\n" if $@;
 
       my $is_in = $queryobj->retrieveFromDB;
 
@@ -470,7 +472,7 @@ sub insertSubjects {
 
       # must be the sequence entry identifier, get the GUS PK then
 
-      my $require = "{require $subjectTable; $subjectTable->new ({'name' => $subject_id})}";
+      my $require = "require $subjectTable; $subjectTable->new ({'name' => '$subject_id'})";
 	  my $subjectobj = eval $require;
 
       my $is_in = $subjectobj->retrieveFromDB;
