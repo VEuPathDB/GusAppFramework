@@ -51,7 +51,7 @@ public class DocumentationDAO extends HibernateDaoSupport {
     }
 
     /**
-     * @param doc
+     * @param doc Documentation object to be persisted
      */
     public void saveDocumentationObject( Documentation doc ) {
         doc.setCreatedOn(new Date());
@@ -75,7 +75,8 @@ public class DocumentationDAO extends HibernateDaoSupport {
         }
         
         query = query.concat( "order by createdon desc");
-        log.info("running query: " + query + " with '" + values.subList(0,values.size()).toString() + "'");
+
+        log.debug("running query: " + query + " with '" + values.subList(0,values.size()).toString() + "'");
         
         List docColl = getHibernateTemplate().find(query, values.subList(0,values.size()).toArray() );
         if ( docColl.size() == 0 ) return null;
@@ -85,7 +86,7 @@ public class DocumentationDAO extends HibernateDaoSupport {
     
     private void cacheObject(Documentation doc) {
         String key = (doc.getSchemaName() + doc.getTableName() + doc.getAttributeName()).toLowerCase();
-        log.info("Caching: '" + key + "'");
+        log.debug("Caching: '" + key + "'");
         docCache.put(key, doc);
     }
 
