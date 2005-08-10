@@ -39,8 +39,7 @@
                                            GUS/ObjRelP-Installation, 
                                            GUS/Pipeline-Installation, 
                                            GUS/PluginMgr-Installation, 
-                                           GUS/ReportMaker-Installation, 
-                                           GUS/SchemaBrowser-Installation">
+                                           GUS/ReportMaker-Installation">
     <ant target="defaultProjectInstall"/>
   </target>
 
@@ -388,13 +387,6 @@
     </ant>
   </target>
   
-  <target name="GUS/SchemaBrowser-Installation" depends="ProjectTree">
-    <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="SchemaBrowser"/>
-    </ant>
-  </target>  
-
  <target name="GUS/RAD-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
@@ -407,8 +399,7 @@
   <!-- oooooooooooooooooooooooo  Web Installation  oooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
 
-  <target name="GUS-WebInstallation" depends="GUS/DBAdmin-WebInstallation, 
-                                              GUS/SchemaBrowser-WebInstallation"/>
+  <target name="GUS-WebInstallation" depends="GUS/DBAdmin-WebInstallation"/>
 
 
   <target name="GUS/DBAdmin-WebInstallation" depends="ProjectTree">
@@ -418,12 +409,6 @@
     </ant>
   </target>  
 
-  <target name="GUS/SchemaBrowser-WebInstallation" depends="ProjectTree">
-    <ant target="defaultWebComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="SchemaBrowser"/>
-    </ant>
-  </target>  
 
   
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
