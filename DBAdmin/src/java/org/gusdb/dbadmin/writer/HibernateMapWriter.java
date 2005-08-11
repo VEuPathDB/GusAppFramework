@@ -676,10 +676,13 @@ extends SchemaWriter
         sb.append(child);
         if (sb.toString().endsWith("nfo")) {
             /* leave it alone */
-        } else if (sb.toString().endsWith("ay") ||
-                sb.toString().endsWith("s")) {
+        } else if (sb.toString().endsWith("sis")) {
+            sb.setLength(sb.length() - 2);
             sb.append("es");
-        } else if (sb.toString().endsWith("ey")) {
+        } else if (sb.toString().endsWith("s")) {
+            sb.append("es");
+        } else if (sb.toString().endsWith("ay") ||
+                    sb.toString().endsWith("ey")) {
             sb.append("s");
         } else if (sb.toString().endsWith("y")) {
             sb.setLength(sb.length() - 1);
