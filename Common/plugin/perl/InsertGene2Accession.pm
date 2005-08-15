@@ -91,7 +91,7 @@ my $argsDeclaration =
             })
  ];
 
-
+ 
 sub new {
   my ($class) = @_;
   my $self = {};
