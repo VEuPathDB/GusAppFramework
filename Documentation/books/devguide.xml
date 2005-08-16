@@ -18,6 +18,1089 @@
   </bookinfo>
 
   <chapter>
+    <title>PERL Object Layer for Oracle or Sybase Relational DBMS</title>
+
+    <sect1>
+      <title>Description</title>
+
+      <para>The perl object layer on a relational dbms is intended to simplify
+      database interactivity and manage relationships and submits. The query
+      capability is currently very limited. Functionality includes:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Retrieving objects from database.</para>
+        </listitem>
+
+        <listitem>
+          <para>Getting and Setting attribute values.</para>
+        </listitem>
+
+        <listitem>
+          <para>Managing parent-child relationships (determined via foreign
+          key constraints where the child is the object containing a foreign
+          key pointer to the parent). Objects can always retrieve their
+          parents and children.</para>
+
+          <note>
+            <para>CURRENTLY THE OBJECTS MAY HAVE ONLY ONE PARENT OF A
+            PARTICULAR TABLE/VIEW NAME. This means that the
+            getParet/getChildren methods do not work where the child has two
+            foreign key pointers back to the same table/view. The exception to
+            this is when the table is an imp table and the "parents" are
+            different views of that table. In this case, the specifics of the
+            relationships must be specified in a special cases file before
+            generating the objects.</para>
+          </note>
+        </listitem>
+
+        <listitem>
+          <para>Caching objects retrieved from Database so only one object for
+          any given tuple is present in memory at a time.</para>
+        </listitem>
+
+        <listitem>
+          <para>Managing submits (inserts,updates and deletes)</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Automatically determines type of submit.</para>
+            </listitem>
+
+            <listitem>
+              <para>Parents submit all their children recursively.</para>
+            </listitem>
+
+            <listitem>
+              <para>Children only submit parents if parent does not have a
+              primary key (is new object that has not been submitted). Then
+              parent is submitted but does not submit any children.</para>
+            </listitem>
+
+            <listitem>
+              <para>Versioning happens automatically by default.</para>
+            </listitem>
+
+            <listitem>
+              <para>Transaction management by default (methods to over-ride if
+              necessary).</para>
+            </listitem>
+
+            <listitem>
+              <para>Evidence and Similarity managed cleanly.</para>
+            </listitem>
+
+            <listitem>
+              <para>Sets "default" attributes if set
+              (row_user_id,row_alg_invocation_id,row_project_id,row_group_id
+              and permissions).</para>
+            </listitem>
+
+            <listitem>
+              <para>sequence_versions managed when new sequence string is
+              set.</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>XML functions for printing to XML and parsing XML into valid
+          objects.</para>
+        </listitem>
+
+        <listitem>
+          <para>Enforce read/write permissions on retrieval of parents and
+          children.</para>
+        </listitem>
+
+        <listitem>
+          <para>Provide functionality to set, get and submit Evidence.</para>
+        </listitem>
+
+        <listitem>
+          <para>Simple comparison operators to determine if attributes match
+          an object (or if an object has attributes that have been changed
+          from db).</para>
+        </listitem>
+
+        <listitem>
+          <para>Code generator to generate complete set of objects
+          corresponding to the database.</para>
+        </listitem>
+      </itemizedlist>
+
+      <note>
+        <para>There are many more methods in the superclasses including
+        methods for querying (DbiTable) and getting meta data from the
+        db.</para>
+      </note>
+    </sect1>
+
+    <sect1>
+      <title>Methods by functional groups</title>
+
+      <note>
+        <para>The most useful methods are indicated in bold. Most of the
+        others are convenience methods or could be considered private methods
+        of the objects.</para>
+      </note>
+
+      <sect2>
+        <title>DbiDatabase Methods: Establish logins, retrieve meta
+        information</title>
+
+        <para><emphasis role="bold">DbiDatabase is the module that is used to
+        create logins to the database and from which all the other objects are
+        generated.</emphasis> Thus, to start a session, you simply create a
+        new DbiDatabase and you are then able to use all the objects
+        representing specific tables in that database. DbiDatabase also has
+        methods for getting meta information relevant to that database (such
+        as getTables()) in addition to getTable(tableName) which returns a
+        DbiTable for tableName. This enables users to access meta information
+        for this specific table such as foreign key relationships, primary key
+        attributes, etc. These methods, however, will in most cases be
+        unecessary as the Table specific objects take care of all this for the
+        user.</para>
+
+        <screen>DbiDatabase-&gt;new( DBI_DSN, login,  password, verbose,  noInsert, default, dbName)</screen>
+
+        <para>This creates a DbiDatabase that allows the use of all the
+        following methods on specific objects. DBI_DSN is optional if you have
+        your environment variable of this same name set. login, password, and
+        dbname are required where dbname is case sensitive such as "GUSdev".
+        Verbose if true prints all SQL statements executed and noInsert if
+        true does not commit to the database although all sql is executed and
+        then rolled back. The objects manage these attributes of the Database
+        with setVerboseOn() and setCommitOff() (<xref
+        linkend="globalBehavior" />).</para>
+
+        <screen>DbiDatabase-&gt;logout()</screen>
+
+        <para>Ends this session and disconnects all the handles
+        generated.</para>
+
+        <para>Additional methods are available if needed to retrieve meta
+        information from the database such as a listing of all the
+        tables/views etc.</para>
+      </sect2>
+
+      <sect2>
+        <title>Constructor</title>
+
+        <screen>TableName-&gt;new($dbiTableHashRef, $primary_key_list, $dbhandle)</screen>
+
+        <para>This will create an object for TableName. All aguments are
+        optional. I normally only pass in the hash reference of attribute
+        values if I want to set some values this way. The primary key list is
+        only necessary if the table does not have a primary key defined (which
+        all GUS objects do) and dbhandle only if you are using a database that
+        is different than that logged into with the DbiDatabase constructor
+        which establishes the necessary database handles for the objects to
+        interact with the database.</para>
+      </sect2>
+
+      <sect2>
+        <title>Getting and Setting attribute values</title>
+
+        <para>Attribute values can be set in two ways. The first is by passing
+        in a hash ref of attribute =&gt; value pairs to the constructor. The
+        second is via set methods in each object of the form:</para>
+
+        <screen>setRowUserId($userId);This is for the attribute "row_user_id".</screen>
+
+        <para>Alternatively, one can use the set method in the super class
+        directly. NOTE: this is in general not a good idea as this bypasses
+        any specific functionality that may be associated with the set method
+        of the specific objects. For instance, the setSequence method of the
+        sequence objects removes returns, uppercases all characters and sets
+        the length attribute so there is a consistent representation in the
+        db.</para>
+
+        <screen>set('row_user_id',$userId);</screen>
+
+        <para>Get methods follow this same syntax except do not take in the
+        value but rather return it.</para>
+
+        <para><screen>getRowUserId()</screen></para>
+
+        <para><screen>get('row_user_id')</screen></para>
+
+        <para>Getting substrings from CLOB attribute types. This is
+        particularly useful if one hasn't retrieved the CLOB attribute (see
+        below) to save retrieving a very long sequence, for example, into
+        memory. The method is a generic one to allow retrieving substrings
+        from any CLOB attribute:</para>
+
+        <screen>getSubstrFromClob($attribute,$start,$length) </screen>
+
+        <note>
+          <para>the start here is indexed from 1. To retrieve a sequence
+          substring from a sequence object one would use <screen>$sequence-&gt;getSubstrFromClob('sequence',2334,1000)</screen>
+          which would retrieve 1000 characters from the sequence attribute
+          starting at position 2334.</para>
+        </note>
+      </sect2>
+
+      <sect2>
+        <title>Retrieving objects from the database</title>
+
+        <para>Enough attributes must be set to ensure a single row is
+        retrieved.</para>
+
+        <screen>retrieveFromDB(\@attributesToNotRetrieve,$replaceCache)</screen>
+
+        <para>Returns 1 if successful and populates the objects attribute
+        values from the database. If unsuccessful returns 0 and leaves object
+        unaffected. If multiple rows are returned then is considered
+        unsuccessful. The query to the database simply constrains all the
+        attributes that have been set. One can choose to NOT retrieve specific
+        attributes by passing in an array reference of attribute names that
+        should not be retrieved. This can be extremely useful for objects that
+        have very large atts such as sequence if one only wants other
+        attributes or just a substring from the sequence (see previous
+        command).</para>
+      </sect2>
+
+      <sect2>
+        <title>Managing Object Database Cache</title>
+
+        <para>Objects are cached when retrieved from the database either with
+        retrieveFromDB or getParent/Children methods. In the case of
+        getParent/Children, if an object is requested that is already in the
+        cache, the object in the cache is returned/added so that only a single
+        object representing the tuple is present at any given time.
+        RetrieveFromDB always retrieves the object from the database even if
+        there is already a copy in the cache and replaces the current cached
+        copy if the optional $replaceCache variable is used. Users should
+        check the cache to see if an object already exists before retrieving
+        from the db if there is a chance that they are constructing duplicate
+        objects.<note>
+            <para>The key of the cache is a concatenated string of the primary
+            key values. This is generated by the method getConcatPrimKey(). In
+            most cases (when there is a single primary key attribute) this
+            will be just the value of the identifier returned by
+            getId().</para>
+          </note></para>
+
+        <screen>addToDbCache($o,$replace)</screen>
+
+        <para>adds objects to cache...this is done automatically when objects
+        are retrieved from the database so shouldn't be called by
+        users.</para>
+
+        <screen>getFromDbCache($class,$key)</screen>
+
+        <para>returns the object if it exists else undef.</para>
+
+        <screen>isInDbCache($class,$key)</screen>
+
+        <para>returns 1 if in the cache and undef otherwise. Note for testing
+        purposes this is very similar to getFromDbCache.</para>
+
+        <screen>removeFromDbCache($object)</screen>
+
+        <para>removes the object ($object) from the dbCache.</para>
+      </sect2>
+
+      <sect2>
+        <title>Setting default values</title>
+
+        <para>These methods are used for setting default values which all
+        subsequent objects created in the application will inherit. On submit
+        these values will be set automatically.</para>
+
+        <screen>setDefaultProjectId($project_id) (default = 0 (GUS))
+getDefaultProjectId()
+setDefaultUserId($id)
+getDefaultUserId()
+setDefaultGroupId($id)  (default = CBIL)
+getDefaultGroupId()
+setDefaultAlgoInvoId($id)
+getDefaultAlgoInvoId()
+setDefaultUserRead($read)  (default = 1)
+getDefaultUserRead()
+setDefaultUserWrite($val)  (default = 1)
+getDefaultUserWrite()
+setDefaultGroupRead($val)  (default = 1)
+getDefaultGroupRead()
+setDefaultGroupWrite($val)  (default = 1)
+getDefaultGroupWrite()
+setDefaultOtherRead($val)  (default = 1)
+getDefaultOtherRead()
+setDefaultOtherWrite($val)  (default = 0)
+getDefaultOtherWrite()</screen>
+      </sect2>
+
+      <sect2>
+        <title>Increasing the maximum number of objects allowed in RAM at one
+        time (default is 10000)</title>
+
+        <para>This method is necessary to prevent memory leaks due to
+        forgetting to call undefPointerCache() in each loop to release objects
+        for garbage collection. Unless the user needs more than 10000 objects
+        at one time (which seems very unlikely) then these methods should be
+        uneccessary.</para>
+
+        <screen>setMaximumNumberOfObjects($num)
+getMaximumNumberOfObjects()</screen>
+      </sect2>
+
+      <sect2>
+        <title>Setting global NO version (default = 0)</title>
+
+        <para>While this functionality defies the initial design of GUS, it is
+        needed for dealing with things like draft sequence where one wants to
+        simply wipe the database of the current version and replace it with
+        something new. No objects are versioned.</para>
+
+        <screen>setGlobalNoVersion($val)
+getGlobalNoVersion()</screen>
+      </sect2>
+
+      <sect2>
+        <title>Instance level management of versioning and updating</title>
+
+        <para>Indvidual objects can be specified to be not versioned or not
+        updateable. Default is to version and allow updates for all
+        objects.</para>
+
+        <screen>setVersionable($v) (default = 1)
+isVersionable()
+setUpdateable($u) (default = 1)
+isUpdateable()</screen>
+      </sect2>
+
+      <sect2>
+        <title>Checking read and write permissions</title>
+
+        <para>Methods to check the read/write permissions based on the default
+        group and user. Enforced when retrieving from database or retrieving
+        children or parents.</para>
+
+        <screen>checkReadPermission()
+checkWritePermission()</screen>
+      </sect2>
+
+      <sect2>
+        <title>Managing global behavior of objects (commit, verbose,
+        debug)</title>
+
+        <para>These parameters (once set) take affect on all objects.
+        Defaults: commit = on, verbose = off, debug = off.</para>
+
+        <screen>setDebuggingOn()</screen>
+
+        <para>Reports debug statements for methods in RelationalRow.</para>
+
+        <screen>setDebuggingOff()
+getDebuggingState()</screen>
+
+        <screen>setVerboseOn()</screen>
+
+        <para>Turns on printing to stdout all SQL statements.</para>
+
+        <screen>setVerboseOff()
+getVerboseState()</screen>
+
+        <screen>setCommitOff()</screen>
+
+        <para>All submits will be rolled back rather than committed. Should
+        not be turned off except for testing on a few loops.</para>
+
+        <screen>setCommitOn()
+getCommitState()</screen>
+      </sect2>
+
+      <sect2>
+        <title>Managing memory (allowing garbage collection of objects that
+        are out of scope)</title>
+
+        <para>Necessary because of perls lack of a garbage collector that can
+        deal with circular references. Only method really necessary as all
+        others are automatically taken care of is undefPointerCache() which
+        must be called in each loop. Note that this removes all objects from
+        the pointer cache so all parent/child relationships are lost and must
+        be re-established if needed.</para>
+
+        <screen>removeAllChildPointers($recursive) </screen>
+
+        <para>If $recursive = 1 then will call method on all children
+        recursively.</para>
+
+        <screen>addToPointerCache($ob)</screen>
+
+        <para>Add objects to the pointer cache....done automatically when
+        objects are created rarely if ever needs to be called.</para>
+
+        <screen>getFromPointerCache($object_reference)</screen>
+
+        <para>Method to retrieve the object from the pointer cache.</para>
+
+        <screen>removeFromPointerCache($ob)</screen>
+
+        <para>Removes single object from the cache.</para>
+
+        <screen>undefPointerCache()</screen>
+
+        <para>MUST be called in each loop to allow garbage collection. Removes
+        all child and parent pointers so they can not be retrieved.</para>
+      </sect2>
+
+      <sect2>
+        <title>Managing valid parents/children (code generator takes care of
+        this)</title>
+
+        <para>The objects keep a list of valid parents and children. Assuming
+        the code generator is working correctly, these methods should not need
+        to be used.</para>
+
+        <screen>setChildList(@list)
+addToChildList(@list)
+getChildList()
+isValidChild($c)
+isOnChildList($className)
+getChildSelfColumn($className)
+getChildColumn($className)</screen>
+
+        <para>@list is an array of array references
+        [ChildTableName,My_primary_key,Childs_foreign_key_to_me]</para>
+
+        <screen>setParentList(@list)
+addToParentList(@list)
+getParentList()
+getParentSelfColumn($className)
+getParentColumn($className)
+isValidParent($p)
+isOnParentList($className)</screen>
+
+        <screen>set255ChildList(@list)
+addTo255ChildList(@list)
+get255ChildList()
+get255ChildListPkAtt($className)
+get255ChildListOrderAtt($className)
+get255ChildListStringAtt($className)
+isValid255ChildName($className)</screen>
+      </sect2>
+
+      <sect2>
+        <title>Managing Children (objects with my primary key as a foreign
+        key)</title>
+
+        <para>Methods for managing children including retrieving from the
+        database, getting (returning children) marking children deleted and
+        submitting.<note>
+            <para>Submitting children is automatically done whenever an object
+            is submitted and should be unecessary (in fact the methods for
+            managing the transaction may NOT work appropriately if one submits
+            children manually). Submitting self results in submitting self and
+            then all children within a single transaction.</para>
+          </note></para>
+
+        <para>getChildren or retrieveChildrenFromDB with one of the ImpClasses
+        will bring back the appropriate subclass children/parent of that
+        ImpClass. For example: getChildren('NAFeatureImp',1) will get any of
+        the NAFeature subclass children such as RNAFeature, GeneFeature,
+        ExonFeature etc. In this way, one can retrieve all the features
+        associated with a given NASequence entry.</para>
+
+        <screen>getChildren($className, $retrieveIfNoChildren, $getDeletedToo, $where,\@doNotRetrieveAttributes)</screen>
+
+        <para>Returns an array of children in classname. If
+        $retrieveIfNoChildren = 1 then it queries the DB for children of this
+        class. If $retrieveIfNoChildren is not set to 1, then will only
+        retrieve from the cache. If $getDeletedToo = 1 then will also return
+        children that have been marked deleted. $where is a hash ref where
+        children returned must meet all the attribute (key) =&gt; value
+        (value) pairs in the hashref. If the $className is one of the "Imp"
+        tables such as NASequenceImp, then the subclass objects of the correct
+        type are returned....ie ExternalNASequence, Assembly as appropriate.
+        The last argument is an array reference of attbibutes that should not
+        be retrieved should these children need to be retrieved from the
+        DB...ie $retrieveIfNoChildren = 1.</para>
+
+        <screen>getAllChildren($retrieve, $getDeletedToo, $where) </screen>
+
+        <para>Returns all children.</para>
+
+        <screen>getChild($className, $retIfNochildren, $getDeletedToo)</screen>
+
+        <para>Returns one child.<note>
+            <para>This is only useful if you know there is only one child as
+            returns the first one on the list if more than one.</para>
+          </note></para>
+
+        <screen>setChild($c)</screen>
+
+        <para>Replaces children in this childs class with this child. Should
+        use addChild for adding children.</para>
+
+        <screen>retrieveChildrenFromDB($className, $resetIfHave, $where,\@doNotRetrieveAttributes )</screen>
+
+        <para>Retrieves children in $className from the database. If
+        $resetIfHave = 1 will reset any children that you already have to the
+        values from the database. NOTE that any relationships established on
+        the children that are reset will be lost. $where hash ref as for
+        getChildren().<note>
+            <para>Using getChildren($className,1) will call
+            retrieveChildrenFromDB if they have not already been retrieved and
+            so save a step.</para>
+          </note></para>
+
+        <screen>resetChildrenToDB($className, $where)</screen>
+
+        <para>Removes all the children with this className and retrieves them
+        fresh from the db.</para>
+
+        <screen>retrieveAllChildrenFromDB($recursive, $resetIfHave)</screen>
+
+        <para>Retrieves all this objects children. If $recursive = 1 will do
+        this recursively.<note>
+            <para>This has the potential for retrieving a huge number of
+            objects if called from something like Group. $resetIfHave resets
+            children you already have to the database.</para>
+          </note></para>
+
+        <screen>resetAllChildrenToDB()</screen>
+
+        <para>Retrieves all children following removal of all existing
+        ones.</para>
+
+        <screen>addChild($c, $resetIfHave)</screen>
+
+        <para>Method of choice for adding a child.</para>
+
+        <screen>addChildren(@children)</screen>
+
+        <para>Adds an array of children.</para>
+
+        <screen>removeChild($c)</screen>
+
+        <para>Remove child from self.<note>
+            <para>This has NO impact on the database....simply removes pointer
+            between parent and child.</para>
+          </note></para>
+
+        <screen>removeChildren(@ch)
+
+removeChildrenInClass($className)
+
+removeAllChildren()</screen>
+      </sect2>
+
+      <sect2>
+        <title>Managing Parents</title>
+
+        <para>Similar to managing children. Difference is that can only have
+        one parent of each type.</para>
+
+        <screen>setParent($p)</screen>
+
+        <para>Sets this object as my parent. The parent likewise points to me
+        as its child. Thus calling $p-&gt;addChild($self) is equivalent to
+        $self-&gt;setParent($p)</para>
+
+        <screen>getParent($className, $retrieveIfNoParent ,\@doNotRetrieveAttributes)</screen>
+
+        <para>if $retrieveIfNoParent = 1 then calls retrieveParentFromDB if
+        does not have that parent. If the $className is one of the "Imp"
+        tables such as NASequenceImp, then the subclass objects of the correct
+        type are returned....ie ExternalNASequence, Assembly as
+        appropriate.</para>
+
+        <screen>getAllParents($retrieveIfNoParent,\@doNotRetrieveAttributes )
+
+retrieveParentFromDB($className ,\@doNotRetrieveAttributes)
+
+retrieveAllParentsFromDB()</screen>
+
+        <screen>setParentId($p) </screen>
+
+        <para>Sets my foreign key to be the Id of this parent. Note that this
+        occurs automatically upon submit to the database.</para>
+
+        <screen>removeParent($p)
+
+removeAllParents() </screen>
+      </sect2>
+
+      <sect2>
+        <title>Managing submits to database</title>
+
+        <para>Principal here is that the top level object (an object with only
+        children) should be submitted. That object following submitting
+        itself, will submit all its children recursively. Simple many-to-many
+        relationships are traversed in order to set the foreign keys of the
+        relation, however, the parent on the far side of the relation will not
+        submit any of its children. All objects submitting with a single
+        submit command are submitted in a single transaction so that if
+        something fails, all are rolled back together to mantain database
+        integrity. All tuples that are updated are versioned by default and
+        sequences are stored (and versioned) appropriately. Evidence and
+        Similarity facts are also submitted if they have been set (added).
+        Upon delete, all Evidence and Similarity tuples that relate to the
+        object are also deleted (and versioned of course!). Additionally,
+        objects can store other objects to be submitted after they have
+        submitted themselves and all their children via the method
+        addToSubmitList($object).<note>
+            <para>Submit and perhaps manage transaction are the only methods
+            in this group that need to be called by user. The others are
+            automatically taken care of appropriately.</para>
+          </note></para>
+
+        <screen>submit($notDeep, $noTran)</screen>
+
+        <para>Automatically submits inside a transaction. $notDeep = 1 only
+        submits self but not children. $noTran = 1 does not begin or (when
+        finished) commit a transaction. Used by all children so are submitted
+        in the initial objects transcation.</para>
+
+        <screen>manageTransaction($noTran, $task)</screen>
+
+        <para>This is dealt with automatically, However, if one wants to
+        submit several top level objects in a single transaction, you can use
+        manageTransaction to start and then commit a transaction and submit
+        with noTran the objects in between. $task is either 'commit' or
+        'begin'.</para>
+
+        <screen>addToSubmitList($object)</screen>
+
+        <para>Add $object to a submit list so that it gets submitted after I
+        submit myself and all children (in the same transaction). This is the
+        best way to submit objects on far side of a many-to-many relation that
+        have children and thus need to be submitted explicitly.</para>
+
+        <screen>setRollBack($rb)</screen>
+
+        <para>This can be used during an update/submit to force a roll back at
+        end of submit if errors are detected.</para>
+
+        <screen>submitEvidence($e, $notDeep, $noTran)
+
+submitAllEvidence($notDeep, $noTran)
+
+deleteAllEvidence($notDeep, $noTran)
+
+submitSimilarityFact($fact, $notDeep, $noTran)
+
+submitAllSimilarityFacts($notDeep, $noTran)
+
+deleteSimilarityFact($f, $notDeep, $noTran)</screen>
+
+        <screen>deleteAllSimilarityFacts($notDeep, $noTran) </screen>
+
+        <para>All similarity facts of an object are deleted upon submit if
+        that object has been marked deleted.</para>
+
+        <screen>submitAllChildren()
+
+submitChildren()
+
+submitChildrenInClass($className)
+
+setAllForeignKeys()
+
+allNonNullsSet()
+
+version()
+
+getVersionTableName()
+
+getRollBack() </screen>
+
+        <screen>setDefaultAttributes()</screen>
+
+        <para>Sets all the attributes for which defaults have been set.</para>
+      </sect2>
+
+      <sect2>
+        <title>Managing deletes</title>
+
+        <para>Deletes occur in two phases. Objects must first be marked for
+        deletion at wich time they can only be retrieved (with getChildren) if
+        one adds in the bit to getDeletedToo. Objects are deleted from the
+        database (and versioned) when submitted. Note that in order to delete
+        a tuple, all it's foreign key relations (children) must also be marked
+        deleted. The retrieveAllChildrenFromDB(1) and markDeleted(1) are
+        recursive to facillitate this process.</para>
+
+        <screen>markDeleted($doChildren)</screen>
+
+        <para>Mark self deleted. It $doChildren = 1 then does this
+        recursively.</para>
+
+        <screen>isMarkedDeleted()</screen>
+
+        <para>Returns 1 if object is marked deleted.</para>
+
+        <screen>markUnDeleted()</screen>
+
+        <screen>markChildDeleted($c)</screen>
+
+        <para>Mark this child deleted so will be removed from the database on
+        submit.</para>
+
+        <screen>markChildrenInClassDeleted($className)</screen>
+
+        <para>Mark all children in this class deleted.</para>
+
+        <screen>markChildrenDeleted(@ch)</screen>
+
+        <para>Mark each of these children deleted.</para>
+
+        <screen>markAllChildrenDeleted($recursive)</screen>
+
+        <para>Mark all the children I have deleted....recursively if
+        $recursive = 1.</para>
+
+        <screen>markChildUnDeleted($c)</screen>
+
+        <para>Undelete child previously marked deleted.</para>
+
+        <screen>markChildrenInClassUnDeleted($className)
+
+markChildrenUnDeleted(@ch)
+
+markAllChildrenUnDeleted()</screen>
+      </sect2>
+
+      <sect2>
+        <title>Evidence</title>
+
+        <para>Methods that allow setting and retrieving Evidence. Evidence
+        gets submitting automatically by "target" object.</para>
+
+        <screen>addEvidence($fact, $evidence_group_id, $attribute_name)</screen>
+
+        <para>$fact is a fact object. Can optionally pass in an evidence group
+        id to group relevant evidence such as for a gene model one might group
+        the evidence for all the exons. Also optional is the attribute_name if
+        the evidence is for a particular attribute of the target table such as
+        "name" or "description".</para>
+
+        <screen>getEvidence($factTableName, $retrieveUnlessHave)</screen>
+
+        <para>This method returns an array of Evidence objects. One can
+        retrieve the fact associated with each with
+        EvidenceObj-&gt;getEvidenceFact(1);<note>
+            <para>The optional argument 1 causes the fact object to be
+            retrieved from the database if this has not already been
+            done.</para>
+          </note></para>
+
+        <screen>getEvidenceByGroupId($factTableName, $retrieveUnlessHave)</screen>
+
+        <para>method untested.</para>
+
+        <screen>retrieveEvidenceFromDB($factTableName, $resetIfHave)</screen>
+
+        <screen>retrieveAllEvidenceFromDB($resetIfHave, $targetOrFact)</screen>
+
+        <para>Retrieves all the evidence for this object. It $targetOrFact
+        then will retrieve whether this object is the target table or fact
+        table. Default behaviour is to only retrieve evidence if target table.
+        Use getEvidence then to return an array of evidence ojbects.</para>
+
+        <screen>retrieveEvidenceFactsFromDB($evidence, $resetIfHave)
+
+getAllEvidence()</screen>
+      </sect2>
+
+      <sect2>
+        <title>Similarity facts for storing sequence similarities</title>
+
+        <para>Methods for dealing with Similarity facts generated by blast and
+        perhaps other sequence similarity algorithms.</para>
+
+        <screen>addSimilarityFact($fact, $resetIfHave)
+
+getSimilarityFacts($getIfDontHave)
+
+retrieveSimilarityFactsFromDB($subjectTableName, $getEitherWay, $resetIfHave)</screen>
+      </sect2>
+
+      <sect2>
+        <title>Methods for dealing with sequence</title>
+
+        <para>Get, set, and format sequence.</para>
+
+        <screen>getSequence()</screen>
+
+        <para>Returns the sequence as single string.</para>
+
+        <screen>setSequence($sequence)</screen>
+
+        <para>Takes sequence string, cleans it up a bit (removes returns and
+        non-sequence characters) and then sets.</para>
+
+        <screen>getFeatureSequence()</screen>
+
+        <para>All features support this method which retrieves the sequence
+        corresponding to that feature. Basically retrieves a substring from
+        the sequence to which the feature points corresponding to the span of
+        the feature on the sequence. RNAFeature generates the sequence from
+        the exons which make it up if it is predicted unless the actual
+        sequence is stored in SplicedNASequence. NOTE that this method
+        retrieves the sequence object to which it points without retrieving
+        the sequence attribute. getSubstrFromClob is then used to extract the
+        relevant substring, thus saving much memory in the case of very long
+        sequences.</para>
+
+        <screen>toFasta($type)</screen>
+
+        <para>Returns fasta formatted sequence. If $type = 1 the id used is
+        the na_sequence_id (or aa_sequence_id) otherwise it is the
+        source_id.</para>
+      </sect2>
+
+      <sect2>
+        <title>Printing</title>
+
+        <para>Facility for printing to a string format or to XML. Returns a
+        string that can be printed.</para>
+
+        <screen>toString()</screen>
+
+        <para>Returns in a simple string format the table object (does not
+        indicate parent or child relationshps).</para>
+
+        <screen>toXML($indent, $suppressDef, $doXmlIds, $family)</screen>
+
+        <para>If $suppressDef = 1 then the default attributes below
+        modification_date are suppressed. $doXmlIds = 1 will print XML ids in
+        the object tags. $family = 1 will print parent/child relationships in
+        object tags rather than nesting children (I think?).</para>
+      </sect2>
+
+      <sect2>
+        <title>Parsing XML into objects</title>
+
+        <screen>parseXML($xml)</screen>
+
+        <para>Objects parse the xml themselves... $xml is an array reference
+        where each line of the XML is an element.</para>
+
+        <screen>processXmlAttributes($xml_atts)
+
+getNextXmlId()
+
+getXmlId()
+
+setXmlId($id)
+
+getObjectFromXmlId($xml_id) </screen>
+      </sect2>
+
+      <sect2>
+        <title>Comparing attribute values</title>
+
+        <para>An object can do simple checks given a hash reference
+        (attributename =&gt; value) to see if all the values match ones in the
+        object. Likewise, an object can take in an object with the same (or a
+        subset of) atributes set and test for equivalence.</para>
+
+        <screen>compareValues($v1, $v2, $type)</screen>
+
+        <screen>testAttributeValues($href)</screen>
+
+        <para>Test to see if all attribute =&gt; value pairs of the hash
+        reference match my values.</para>
+
+        <screen>testObjectAttributeValues($ob)</screen>
+
+        <para>Self test to see if all attributes of $ob match values of self.
+        Returns 1 if successful.</para>
+
+        <screen>getAttributeDifferences($ob)</screen>
+
+        <para>For comparing two objects...pass in the smaller object and $self
+        will compare all attributes to see if values are same. Returns an
+        array of attribute names that are different.</para>
+      </sect2>
+
+      <sect2>
+        <title>Retrieving table ids and primary key attributes given
+        name</title>
+
+        <para>For getting the ids and table names from the Evidence and
+        Similarity (mongo many to many) tables.</para>
+
+        <screen>getTableNameHash()</screen>
+
+        <screen>getTableNameFromTableId($table_id)</screen>
+
+        <para>Returns the table name for $table_id.</para>
+
+        <screen>getTableIdFromTableName($tableName)</screen>
+
+        <para>Returns the table_id for $tableName.</para>
+
+        <screen>getTablePKFromTableId($table_id)</screen>
+
+        <para>Returns the primary key attribute for $table_id.</para>
+      </sect2>
+
+      <sect2>
+        <title>General methods for dealing with facts</title>
+
+        <para>Have NOT been tested and likely do not work...debug if you want
+        to use!!</para>
+
+        <screen>getFacts($factTableName)
+
+getAllFacts()
+
+addFact($fact)
+
+submitFact($fact, $notDeep, $noTran)
+
+submitAllFacts($notDeep, $noTran)</screen>
+      </sect2>
+
+      <sect2>
+        <title>Miscellaneous methods</title>
+
+        <screen>getClassName()</screen>
+
+        <para>Returns class name (table name) of self.</para>
+
+        <screen>getConcatPrimKey() </screen>
+
+        <para>Returns the values of the primary key attributes concatentated
+        into a string. Used by the dbCache as not all objects have a single
+        attribute primary key.</para>
+
+        <screen>haveAllPrimaryKeyValues()</screen>
+
+        <screen>isValidAttribute($att)</screen>
+
+        <para>Returns 1 if $att is a valid attribute of self.</para>
+
+        <screen>getDatabase()</screen>
+
+        <para>returns the DbiDatabase object from which one can get the extent
+        and instance handles (and thus do queries) with the methods:
+        getDbHandle() ##handle all objects use to interact with the DB.
+        getMetaDbHandle() ##handle that retrieve meta information from
+        DB.</para>
+
+        <screen>getQueryHandle($autocommit)</screen>
+
+        <para>Returns a Dbi database handle that does not interfere with the
+        objects as may be the case with the above methods. If $autocommit is
+        true, then the handle autocommits on submit to the db. You always get
+        the same handle as it is cached so if you need yet another handle you
+        can get it from DbiDatabase with:
+        getDatabase()-&gt;makeNewHandle($autocommit)</para>
+
+        <screen>getTotalUpdates()</screen>
+
+        <para>Returns the total number of rows updated in this session.</para>
+
+        <screen>getTotalInserts()</screen>
+
+        <para>Returns the total number of rows inserted in this
+        session.</para>
+
+        <screen>getTotalDeletes()</screen>
+
+        <para>Returns the total number of rows deleted in this session.</para>
+      </sect2>
+
+      <sect2>
+        <title>Hand coded objects with extra functionality</title>
+
+        <para>A number of the objects for GUS have been handcoded to have
+        extra functionality. A couple of these have been mentioned earlier.
+        For example, sequence objects (and all subclasses) have setSequence
+        methods that clean up the sequence on submit. Also, all Feature
+        objects have getFeatureSequence() methods.<note>
+            <para>only a few are mentioned</para>
+          </note></para>
+
+        <sect3>
+          <title>NASequence and all subclasses</title>
+
+          <screen>setSequence($sequenceString)</screen>
+
+          <para>Cleans up the sequence a bit before setting.</para>
+
+          <screen>toFasta($type)</screen>
+
+          <para>Returns the sequence in fasta format. It $type == 1, uses the
+          source_id for the primary identifier, otherwise uses the
+          na_sequence_id.</para>
+
+          <screen>toCAML()</screen>
+
+          <para>Returns the sequence entry in CAML format (from Paracel as
+          input into CAP4).</para>
+        </sect3>
+
+        <sect3>
+          <title>(NA|AA)Feature and all subclasses</title>
+
+          <screen>getFeatureSequence()</screen>
+
+          <para>Returns the sequence for the feature.</para>
+
+          <screen>getFeatureLocation()</screen>
+
+          <para>Gets the location of this feature as an array (startLocation,
+          endLocation, is_reversed)</para>
+        </sect3>
+
+        <sect3>
+          <title>Assembly and AssemblySequence</title>
+
+          <para>These objects have many methods for manipulating assemblies
+          and AssemblySequences from parsing cap2/cap4 output to
+          reverseComplementing and generating cap2 alignments. Also has
+          methods for computing/retrieving from the database putative SNPs.
+          Only a few will be indicated here...users should look at the object
+          (Objects/GUSdev/hand_edited/Assembly.pm) for more complete
+          info.</para>
+
+          <screen>Assembly-&gt;getCap2Alignment($idType,$suppressNumbers,$print)</screen>
+
+          <para>Returns a cap2 format alignment for the assembly object.
+          $idType if true uses source_ids for the assembly sequences rather
+          than assembly_sequence_ids. if $suppressNumbers, does not print the
+          locations on the right margin. If $print, prints to STDOUT the
+          alignment as it is being generated....useful for very large
+          assemblies as it starts printing very quickly.</para>
+
+          <screen>Assembly-&gt;getRNA($retrieve,$getDeletedToo)</screen>
+
+          <para>Returns the RNA associated with this assembly.</para>
+
+          <screen>Assembly-&gt;ge tTranslatedAASequences($retrieve,$getDeletedToo)</screen>
+
+          <para>Returns an array of TranslatedAASequences</para>
+        </sect3>
+
+        <sect3>
+          <title>Similarity</title>
+
+          <screen>setPValue($pValue)</screen>
+
+          <para>Sets the pvalue given the actual pvalue (separates it into
+          pvalue_mant and exp.</para>
+
+          <screen>getPValue()</screen>
+
+          <para>Returns the actual P Value.</para>
+
+          <screen>generateSimilarityAlignment($type)</screen>
+
+          <para>Returns an alignment for each HSP (SimilaritySpan) generated
+          using $type algorithm where the algorithm is ([blast]|fasta|sim4)
+          with blast being the default.</para>
+        </sect3>
+      </sect2>
+    </sect1>
+  </chapter>
+
+  <chapter>
     <chapterinfo>
       <author>
         <surname>Fischer</surname>
@@ -1098,7 +2181,7 @@ while (my ($primaryKey, $term) = $sth-&gt;fetchrow_array()) {
         <para>If you've changed an existing GUS table, or wish to have GUS
         audit changes to your new tables and views, you must make the
         corresponding changes and/or additions to the version ("ver") tables
-        and views. </para>
+        and views.</para>
       </sect2>
 
       <sect2>
@@ -1127,7 +2210,7 @@ while (my ($primaryKey, $term) = $sth-&gt;fetchrow_array()) {
 
                   <entry>The ID of this row, provided by the
                   <computeroutput>com Core.TableInfo_SQ</computeroutput>
-                  sequence. </entry>
+                  sequence.</entry>
                 </row>
 
                 <row>
@@ -1142,7 +2225,7 @@ while (my ($primaryKey, $term) = $sth-&gt;fetchrow_array()) {
 
                   <entry><computeroutput>Standard</computeroutput> or
                   <computeroutput>Version</computeroutput>, depending on
-                  whether this is a normal table or a version table </entry>
+                  whether this is a normal table or a version table</entry>
                 </row>
 
                 <row>
