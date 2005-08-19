@@ -18,82 +18,92 @@
   </bookinfo>
 
   <chapter>
-    <title>PERL Object Layer for Oracle or Sybase Relational DBMS</title>
+    <title>The GUS Object Layer (Perl)</title>
 
     <sect1>
       <title>Description</title>
 
-      <para>The perl object layer on a relational dbms is intended to simplify
-      database interactivity and manage relationships and submits. The query
-      capability is currently very limited. Functionality includes:</para>
+      <para>The GUS Perl object layer greatly simplifies loading data into a
+      GUS database. It provides a Perl class (.pm file) for each table and
+      view in GUS. Functionality includes:</para>
 
       <itemizedlist>
         <listitem>
-          <para>Retrieving objects from database.</para>
+          <para>Constructing new objects that can be written to the
+          database.</para>
         </listitem>
 
         <listitem>
-          <para>Getting and Setting attribute values.</para>
+          <para>Retrieving objects from the database so that they can be
+          updated</para>
         </listitem>
 
         <listitem>
-          <para>Managing parent-child relationships (determined via foreign
-          key constraints where the child is the object containing a foreign
-          key pointer to the parent). Objects can always retrieve their
-          parents and children.</para>
-
-          <note>
-            <para>CURRENTLY THE OBJECTS MAY HAVE ONLY ONE PARENT OF A
-            PARTICULAR TABLE/VIEW NAME. This means that the
-            getParet/getChildren methods do not work where the child has two
-            foreign key pointers back to the same table/view. The exception to
-            this is when the table is an imp table and the "parents" are
-            different views of that table. In this case, the specifics of the
-            relationships must be specified in a special cases file before
-            generating the objects.</para>
-          </note>
+          <para>Getting and setting attribute values on objects</para>
         </listitem>
 
         <listitem>
-          <para>Caching objects retrieved from Database so only one object for
-          any given tuple is present in memory at a time.</para>
+          <para>Managing parent-child relationships between objects. A
+          "parent" is defined as the object representing a row that is pointed
+          to by a foreign key. A "child" is defined as the object representing
+          a row that contains the foreign key. A parent may have more than one
+          type of child. A child may have more than one type of parent.</para>
         </listitem>
 
         <listitem>
-          <para>Managing submits (inserts,updates and deletes)</para>
+          <para>Caching objects retrieved from the database so that only one
+          object for any given row is present in memory at a time.</para>
+        </listitem>
+
+        <listitem>
+          <para>Managing submits:</para>
 
           <itemizedlist>
             <listitem>
-              <para>Automatically determines type of submit.</para>
+              <para>The type of submit (insert, update or delete) is
+              automatically determined</para>
             </listitem>
 
             <listitem>
-              <para>Parents submit all their children recursively.</para>
+              <para>When a parent is submited all its children are
+              automatically submitted, recursively.</para>
             </listitem>
 
             <listitem>
-              <para>Children only submit parents if parent does not have a
-              primary key (is new object that has not been submitted). Then
-              parent is submitted but does not submit any children.</para>
+              <para>When a child is submitted, any parent that represents a
+              new row in the database (does not yet have a primary key) is
+              automatically submitted. A parent submitted this way, however,
+              does not submit its children automatically (that could lead to
+              cycles).</para>
             </listitem>
 
             <listitem>
-              <para>Versioning happens automatically by default.</para>
+              <para>When a tree of parent-child objects is submitted, the
+              objects are all written as part of one transaction.</para>
             </listitem>
 
             <listitem>
-              <para>Transaction management by default (methods to over-ride if
-              necessary).</para>
+              <para>If the type of submit is an update or a delete, the row
+              modified in the database is copied to its table's version table.
+              (This is default behavior but can be overridden)</para>
             </listitem>
 
             <listitem>
-              <para>Evidence and Similarity managed cleanly.</para>
+              <para>Relationships to DoTS.Evidence and DoTS.Similarity are
+              managed automatically. In GUS, most relationships are
+              represented by foreign keys. However some, called "weak
+              relationships" are not. Instead of being constrained to point to
+              one table only, weak relationships can point to any table.
+              DoTS.Evidence and DoTS.Similarity offer those kind of
+              relationships. The object layer detects relationships to them
+              and correctly stores the weak relationship in the database. (See
+              those tables in the GUS schema browser.)</para>
             </listitem>
 
             <listitem>
-              <para>Sets "default" attributes if set
-              (row_user_id,row_alg_invocation_id,row_project_id,row_group_id
-              and permissions).</para>
+              <para>Automatically updates the GUS standard columns
+              (row_user_id, row_alg_invocation_id, row_project_id,
+              row_group_id and permissions).</para>
             </listitem>
 
             <listitem>
@@ -104,126 +114,120 @@
         </listitem>
 
         <listitem>
-          <para>XML functions for printing to XML and parsing XML into valid
-          objects.</para>
+          <para>Outputting an object tree to a simple GUS XML format and
+          parsing GUS XML into valid objects.</para>
         </listitem>
 
         <listitem>
-          <para>Enforce read/write permissions on retrieval of parents and
+          <para>Enforcing read/write permissions on retrieval of parents and
           children.</para>
         </listitem>
 
         <listitem>
-          <para>Provide functionality to set, get and submit Evidence.</para>
+          <para>Setting and getting DoTS.Evidence.</para>
         </listitem>
 
         <listitem>
-          <para>Simple comparison operators to determine if attributes match
-          an object (or if an object has attributes that have been changed
-          from db).</para>
-        </listitem>
-
-        <listitem>
-          <para>Code generator to generate complete set of objects
-          corresponding to the database.</para>
+          <para>Simple comparison operators to determine if an object matches
+          a set of attributes or if an object has attributes that have been
+          changed from the database.</para>
         </listitem>
       </itemizedlist>
-
-      <note>
-        <para>There are many more methods in the superclasses including
-        methods for querying (DbiTable) and getting meta data from the
-        db.</para>
-      </note>
     </sect1>
 
     <sect1>
-      <title>Methods by functional groups</title>
+      <title>Object packages</title>
 
-      <note>
-        <para>The most useful methods are indicated in bold. Most of the
-        others are convenience methods or could be considered private methods
-        of the objects.</para>
-      </note>
+      <para>The GUS objects reside in a set of packages, depending on which
+      schema they come from. The packages are:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>GUS::Model::Core</para>
+        </listitem>
+
+        <listitem>
+          <para>GUS::Model::DoTS</para>
+        </listitem>
+
+        <listitem>
+          <para>GUS::Model::Prot</para>
+        </listitem>
+
+        <listitem>
+          <para>GUS::Model::RAD</para>
+        </listitem>
+
+        <listitem>
+          <para>GUS::Model::Study</para>
+        </listitem>
+
+        <listitem>
+          <para>GUS::Model::SRes</para>
+        </listitem>
+
+        <listitem>
+          <para>GUS::Model::TESS</para>
+        </listitem>
+      </itemizedlist>
+
+      <para></para>
+    </sect1>
+
+    <sect1>
+      <title>Object methods</title>
+
+      <para>All GUS objects have methods to set and get attribute values,
+      retrieve and submit the object and set parent-child relationships, among
+      others. Taken together, these methods constitute the GUS Object Layer
+      API. This section describes these methods.</para>
+
+      <para><note>
+          <para>The examples in this section use the GUS::Model::DoTS::Gene
+          object and others. In your code you will use whatever objects are
+          appropriate. To discover what objects are available, see the GUS
+          Schema Browser available from the GUS website.</para>
+        </note></para>
 
       <sect2>
-        <title>DbiDatabase Methods: Establish logins, retrieve meta
-        information</title>
+        <title>Object constructor</title>
 
-        <para><emphasis role="bold">DbiDatabase is the module that is used to
-        create logins to the database and from which all the other objects are
-        generated.</emphasis> Thus, to start a session, you simply create a
-        new DbiDatabase and you are then able to use all the objects
-        representing specific tables in that database. DbiDatabase also has
-        methods for getting meta information relevant to that database (such
-        as getTables()) in addition to getTable(tableName) which returns a
-        DbiTable for tableName. This enables users to access meta information
-        for this specific table such as foreign key relationships, primary key
-        attributes, etc. These methods, however, will in most cases be
-        unecessary as the Table specific objects take care of all this for the
-        user.</para>
+        <screen>my $gene = GUS::Model::DoTS::Gene-&gt;new($attributesHashRef)</screen>
 
-        <screen>DbiDatabase-&gt;new( DBI_DSN, login,  password, verbose,  noInsert, default, dbName)</screen>
+        <para>This creates a Gene object. <code>$attributesHashRef</code> is a
+        reference to a hash containing attribute values to set in the new
+        object. The keys of the hash are the names of the attributes (i.e.,
+        the column names in the GUS table), and the values of the hash are the
+        values for those attributes. The hash may or may not contain key-value
+        pairs for all the object's attributes.</para>
 
-        <para>This creates a DbiDatabase that allows the use of all the
-        following methods on specific objects. DBI_DSN is optional if you have
-        your environment variable of this same name set. login, password, and
-        dbname are required where dbname is case sensitive such as "GUSdev".
-        Verbose if true prints all SQL statements executed and noInsert if
-        true does not commit to the database although all sql is executed and
-        then rolled back. The objects manage these attributes of the Database
-        with setVerboseOn() and setCommitOff() (<xref
-        linkend="globalBehavior" />).</para>
-
-        <screen>DbiDatabase-&gt;logout()</screen>
-
-        <para>Ends this session and disconnects all the handles
-        generated.</para>
-
-        <para>Additional methods are available if needed to retrieve meta
-        information from the database such as a listing of all the
-        tables/views etc.</para>
+        <para>The object created does not yet have any connection to a row in
+        the database. (see Retrieving Objects below and Submitting Objects
+        below).</para>
       </sect2>
 
       <sect2>
-        <title>Constructor</title>
+        <title>Setting attribute values</title>
 
-        <screen>TableName-&gt;new($dbiTableHashRef, $primary_key_list, $dbhandle)</screen>
+        <para>After an object is constructed, set an attribute value with the
+        attribute's "setter" method. The object has a setter method for each
+        column in its table. For example, to set a Gene's source Id,
+        use:</para>
 
-        <para>This will create an object for TableName. All aguments are
-        optional. I normally only pass in the hash reference of attribute
-        values if I want to set some values this way. The primary key list is
-        only necessary if the table does not have a primary key defined (which
-        all GUS objects do) and dbhandle only if you are using a database that
-        is different than that logged into with the DbiDatabase constructor
-        which establishes the necessary database handles for the objects to
-        interact with the database.</para>
+        <screen>$gene.setSourceId($sourceId)</screen>
       </sect2>
 
       <sect2>
-        <title>Getting and Setting attribute values</title>
+        <title>Getting attribute values</title>
 
-        <para>Attribute values can be set in two ways. The first is by passing
-        in a hash ref of attribute =&gt; value pairs to the constructor. The
-        second is via set methods in each object of the form:</para>
+        <para>Each object has "getter" methods for each of its attributes. Use
+        them like this:</para>
 
-        <screen>setRowUserId($userId);This is for the attribute "row_user_id".</screen>
+        <para><screen>my $sourceId = $gene.getSourceId()</screen></para>
 
-        <para>Alternatively, one can use the set method in the super class
-        directly. NOTE: this is in general not a good idea as this bypasses
-        any specific functionality that may be associated with the set method
-        of the specific objects. For instance, the setSequence method of the
-        sequence objects removes returns, uppercases all characters and sets
-        the length attribute so there is a consistent representation in the
-        db.</para>
+        <para></para>
 
-        <screen>set('row_user_id',$userId);</screen>
-
-        <para>Get methods follow this same syntax except do not take in the
-        value but rather return it.</para>
-
-        <para><screen>getRowUserId()</screen></para>
-
-        <para><screen>get('row_user_id')</screen></para>
+        <para></para>
 
         <para>Getting substrings from CLOB attribute types. This is
         particularly useful if one hasn't retrieved the CLOB attribute (see
@@ -1097,6 +1101,51 @@ submitAllFacts($notDeep, $noTran)</screen>
           with blast being the default.</para>
         </sect3>
       </sect2>
+
+      <sect2>
+        <title>DbiDatabase Methods: Establish logins, retrieve meta
+        information</title>
+
+        <para><emphasis role="bold">DbiDatabase is the module that is used to
+        create logins to the database and from which all the other objects are
+        generated.</emphasis> Thus, to start a session, you simply create a
+        new DbiDatabase and you are then able to use all the objects
+        representing specific tables in that database. DbiDatabase also has
+        methods for getting meta information relevant to that database (such
+        as getTables()) in addition to getTable(tableName) which returns a
+        DbiTable for tableName. This enables users to access meta information
+        for this specific table such as foreign key relationships, primary key
+        attributes, etc. These methods, however, will in most cases be
+        unecessary as the Table specific objects take care of all this for the
+        user.</para>
+
+        <screen>DbiDatabase-&gt;new( DBI_DSN, login,  password, verbose,  noInsert, default, dbName)</screen>
+
+        <para>This creates a DbiDatabase that allows the use of all the
+        following methods on specific objects. DBI_DSN is optional if you have
+        your environment variable of this same name set. login, password, and
+        dbname are required where dbname is case sensitive such as "GUSdev".
+        Verbose if true prints all SQL statements executed and noInsert if
+        true does not commit to the database although all sql is executed and
+        then rolled back. The objects manage these attributes of the Database
+        with setVerboseOn() and setCommitOff() (<xref
+        linkend="globalBehavior" />).</para>
+
+        <screen>DbiDatabase-&gt;logout()</screen>
+
+        <para>Ends this session and disconnects all the handles
+        generated.</para>
+
+        <para>Additional methods are available if needed to retrieve meta
+        information from the database such as a listing of all the
+        tables/views etc.</para>
+      </sect2>
+
+      <sect2>
+        <title></title>
+
+        <para></para>
+      </sect2>
     </sect1>
   </chapter>
 
@@ -1264,8 +1313,8 @@ submitAllFacts($notDeep, $noTran)</screen>
 }</screen>
             </example></para>
 
-          <para>The <computeroutput>$Revision$</computeroutput> string
-          is CVS or Subversion keyword. When the plugin is checked into source
+          <para>The <computeroutput>$Revision$</computeroutput> string is CVS
+          or Subversion keyword. When the plugin is checked into source
           control, the repository substitutes the file's revision into that
           keyword. The keywords must be in single quotes to prevent Perl from
           interpreting <computeroutput>$Revision$</computeroutput> as a
