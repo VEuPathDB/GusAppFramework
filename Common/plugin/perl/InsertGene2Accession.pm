@@ -59,13 +59,36 @@ my $documentation = {purposeBrief => $purposeBrief,
 my $argsDeclaration =
 [
 
- integerArg({name => 'externalDatabaseReleaseId',
-	     descr => 'SRes.externalDatabaseRelease.externalDatabaseReleaseId for this instance of gene2accession',
-	     constraintFunc => undef,
-	     reqd => 1,
-	     isList => 0
-	     }),
- 
+ stringArg({name => 'entrezExternalDatabaseName',
+            descr => 'sres.externaldatabase.name for gene2go',
+            constraintFunc => undef,
+            reqd => 1,
+            isList => 0
+            }),
+
+ stringArg({name => 'entrezExternalDatabaseVersion',
+            descr => 'sres.externaldatabaserelease.version for this instance of
+gene2go',
+            constraintFunc => undef,
+            reqd => 1,
+            isList => 0
+            }),
+
+ stringArg({name => 'refSeqExternalDatabaseName',
+            descr => 'sres.externaldatabase.name for gene2go',
+            constraintFunc => undef,
+            reqd => 1,
+            isList => 0
+            }),
+
+ stringArg({name => 'refSeqExternalDatabaseVersion',
+            descr => 'sres.externaldatabaserelease.version for this instance of
+gene2go',
+            constraintFunc => undef,
+            reqd => 1,
+            isList => 0
+            }),
+
  fileArg({name => 'gene2accession',
 	  descr => 'pathname for the gene2accession file',
 	  constraintFunc => undef,
@@ -85,7 +108,7 @@ my $argsDeclaration =
         }),
 
  booleanArg({name => 'restart',
-             descr => 'set this flag to 1 if you want to Restart the plugin; set the externalDatabaseReleaseID to be the same as the one for the run that failed',
+             descr => 'set this flag to 1 if you want to Restart the plugin; set the externalDatabaseReleaseIDs to be the same as the one for the run that failed',
              reqd => 0,
              default => 0
             })
@@ -200,13 +223,13 @@ sub makeMergedHash{
 # --------------------------------------------------------------------
 # makeRestartHash
 # creates a hash of entries already in the database for this
-# externalDatabaseReleaseId
+# entrez external database release ID
 # returns the hash
 # --------------------------------------------------------------------
 
 sub makeRestartHash{
     my ($self, $restartHash) = @_;
-    my $extDbRlsId = $self->getArg('externalDatabaseReleaseId');
+    my $extDbRlsId = $self->getExtDbRlsId($self->getArg('entrezExternalDatabaseName'), $self->getArg('entrezExternalDatabaseVersion'));
 
     my $sql = "select t.ncbi_tax_id, r.primary_identifier from SRes.DbRef r, SRes.Taxon t where r.external_database_release_id = $extDbRlsId and r.taxon_id = t.taxon_id";
 
@@ -309,7 +332,7 @@ sub loadData{
 
 sub makeDbRefEntry{
     my ($self, $gene_id, $taxon_id) = @_;
-    my $externalDatabaseRlsId = $self->getArg('externalDatabaseReleaseId');
+    my $externalDatabaseRlsId = $self->getExtDbRlsId($self->getArg('entrezExternalDatabaseName'), $self->getArg('entrezExternalDatabaseVersion'));
 
     my $newDbRef = GUS::Model::SRes::DbRef->new({
 		'external_database_release_id'=> $externalDatabaseRlsId,
@@ -331,7 +354,7 @@ sub makeDbRefEntry{
 
 sub makeNewNASeq{
     my ($self, $seqVer, $sequenceTypeId, $taxon_id, $sourceId) = @_;
-    my $externalDatabaseRlsId = $self->getArg('externalDatabaseReleaseId');
+    my $externalDatabaseRlsId = $self->getExtDbRlsId($self->getArg('refSeqExternalDatabaseName'), $self->getArg('refSeqExternalDatabaseVersion'));
     
     if(!$seqVer){
 	$seqVer = 0;
