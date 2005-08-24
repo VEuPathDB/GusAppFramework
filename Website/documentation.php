@@ -25,20 +25,20 @@
 	or view the <a href="http://sourceforge.net/mailarchive/forum.php?forum_id=9903">list archive</a>.
 
 <h2>GUS Schema Browser</h2>
-	<p>The <a href="http://www.gusdb.org/cgi-bin/schemaBrowser">GUS Schema Browser</a> 
+	<p>The <b>new</b> <a href="http://www.gusdb.org/SchemaBrowser">GUS Schema Browser</a> 
 	is available for reviewing the schema's tables and relationships.
 	</p>
 
 <h2>GUS Issue Tracker</h2>
 	<p>The GUS issue tracker allows for 
-<a href="https://www.cbil.upenn.edu/tracker/enter_bug.cgi?product=GUS">submission</a> and 
+<a href="https://www.cbil.upenn.edu/tracker/enter_bug.cgi">submission</a> and 
 <a href="https://www.cbil.upenn.edu/tracker/query.cgi">searching</a> of known and reported
 issues in the codebase.
 	</p>
 
 <h2>Other Resources</h2>
 	<p>Several <a href="http://www.cbil.upenn.edu/downloads/GUS/documentation">Informal notes and presentations</a> 
-        are also available online. You may also <a href="documentation/">browse older</a> documentation.
+        are also available online. You may also <a href="documentation/older/">browse older</a> documentation.
 	</p>
 	
 <?php include("footer.php"); ?>
