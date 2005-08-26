@@ -1,4 +1,4 @@
-package GUS::SupportedPlugin::InsertSequenceFeatures;
+package GUS::Supported::Plugin::InsertSequenceFeatures;
 
 @ISA = qw(GUS::PluginMgr::Plugin);
 
