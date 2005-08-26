@@ -51,16 +51,9 @@ use GUS::Model::DoTS::NAFeatureNAPT;
 use GUS::Model::DoTS::NAFeatureNAProtein;
 use GUS::Model::DoTS::DbRefNAFeature;
 
-
-
-#FROM MY NOTES
-# need chromosome in na sequence, not just source.
-
-#steve's requests
-#- improved error msg if bioperl parser fails (inlude the affected vars)
-#- handle failures from making Feature (eg, db xref not found)
-
 # future considerations....
+#
+# - need chromosome in na sequence, not just source.
 #
 # - handling dbxrefs (if we ever need this):
 #    - by default, use name from input as db name
@@ -80,49 +73,65 @@ use GUS::Model::DoTS::DbRefNAFeature;
 #
 # - handle the case of multiple tag values better... should be controlled by xml file
 
-  my $description = <<NOTES;
-This is the first version of this application, and it does not handle updates at this time.
-
-Also note that we need to move a couple more arguments to the command line!!
-
-Finally, it only handles four special cases that we encounter in the C.parvum and C.hominis GenBank Files.
-NOTES
-
   my $purpose = <<PURPOSE;
-This application will load any annotated sequence file into GUS via BioPerl's Bio::Seq interface so long as there is a valid Bioperl format module.
+Insert files containing NA sequence and features, that are in a format handled by bioperl's Bio::SeqIO parser package (eg, genbank, embl, TIGR). See that package for more details about what the bioperl parser can handle.  It also inserts files in GFF2 and GFF3 format.
+
+The argument --mapFile provides an XML file that describes the mapping between the feature and qualifier names in the input to those in GUS.
 PURPOSE
 
   my $purposeBrief = <<PURPOSEBRIEF;
-Load any and all annotated sequence data formats into GUS.
+Load files containing NA sequence and features.
 PURPOSEBRIEF
 
-  my $syntax = <<SYNTAX;
-ga GUS::Common::Plugin::LoadAnnotatedSeqs
---mapFile [xml file containg correct feature->gus feature mapping]
---seqFile [your data file]
---fileFormat [valid BioPerl name for the fprmat of your data file (e.g. genbank)
---db_rls_id=[The gus external database release id for this data set
---commit
-SYNTAX
-
   my $notes = <<NOTES;
-This is only in insert mode right now, and has only been tested for GenBank.  It is still a new plugin.
+The mapping XML file includes five "special cases."  These are cases in which some of the qualifiers are stored in tables other than the feature table.  The five special cases are: 'dbxref', 'product', 'note', 'gene', and 'aaseq'
 NOTES
 
-  my $tablesAffected = <<AFFECT;
-All views of NaFeatureImp, DbRefNaSequence, NAProtein, NaProteinNaFeature, NaSequenceImp
-AFFECT
+  my $tablesAffected =
+  [
+   ['SRes.Reference', ''],
+   ['SRes.SequenceOntology', ''],
+   ['DoTS.SequenceType', ''],
+   ['DoTS.NASequence', ''],
+   ['DoTS.ExternalNASequence', ''],
+   ['DoTS.VirtualSequence', ''],
+   ['DoTS.Assembly', ''],
+   ['DoTS.SplicedNASequence', ''],
+   ['DoTS.NAEntry', ''],
+   ['DoTS.SecondaryAccs', ''],
+   ['DoTS.NALocation', ''],
+   ['DoTS.NASequenceRef', ''],
+   ['DoTS.Keyword', ''],
+   ['DoTS.NAComment', ''],
+   ['DoTS.TranslatedAAFeature', ''],
+   ['DoTS.TranslatedAASequence', ''],
+   ['DoTS.NAGene', ''],
+   ['DoTS.NAProtein', ''],
+   ['DoTS.NAPrimaryTranscript', ''],
+   ['SRes.DbRef', ''],
+   ['DoTS.NAFeatureComment', ''],
+   ['DoTS.NASequenceOrganelle', ''],
+   ['DoTS.NASequenceKeyword', ''],
+   ['DoTS.NAFeatureNAGene', ''],
+   ['DoTS.NAFeatureNAPT', ''],
+   ['DoTS.NAFeatureNAProtein', ''],
+   ['DoTS.DbRefNAFeature', ''],
+  ];
 
-  my $tablesDependedOn = <<TABD;
-A whole bunch, I will have to go through this list soon.
-TABD
+
+  my $tablesDependedOn = 
+  [
+   ['SRes.TaxonName', ''],
+   ['SRes.SequenceOntology', ''],
+   ['SRes.ExternalDatabase', ''],
+   ['SRes.ExternalDatabaseRelease', ''],
+  ];
 
   my $howToRestart = <<RESTART;
-Kill and re-submit it.
+Restart is not supported quite yet.  Coming very soon.
 RESTART
 
   my $failureCases = <<FAIL;
-It just craps out and you figure out what you need to add.  Oy vey.
 FAIL
 
 my $documentation = { purpose=>$purpose, 
@@ -130,13 +139,14 @@ my $documentation = { purpose=>$purpose,
 		      tablesAffected=>$tablesAffected,
 		      tablesDependedOn=>$tablesDependedOn,
 		      howToRestart=>$howToRestart,
-		      failureCases=>$failureCases,notes=>$notes
+		      failureCases=>$failureCases,
+		      notes=>$notes
 		    };
 
 my $argsDeclaration  =
   [
    fileArg({name => 'mapFile',
-	    descr => 'XML file with mapping of Sequence Features from BioPerl to GUS',
+	    descr => 'XML file with mapping of Sequence Features from BioPerl to GUS.  For an example, see $GUS_HOME/config/genbank2gus.xml',
 	    constraintFunc=> undef,
 	    reqd  => 1,
 	    isList => 0,
@@ -194,7 +204,7 @@ my $argsDeclaration  =
 	     }),
 
    stringArg({name => 'fileFormat',
-	      descr => 'Format of external data being loaded.  See Bio::SeqIO::new() for allowed options.  GFF is an additional options',
+	      descr => 'Format of external data being loaded.  See Bio::SeqIO::new() for allowed options.  GFF2 and gff3 are an additional options',
 	      constraintFunc=> undef,
 	      reqd  => 1,
 	      isList => 0
