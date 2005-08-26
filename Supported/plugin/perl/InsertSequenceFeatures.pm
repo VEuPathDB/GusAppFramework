@@ -316,7 +316,7 @@ sub run{
   my ($self) = @_;
 
   $self->{mapperSet} =
-    ApiComplexa::DataLoad::BioperlFeatMapperSet->new($self->getArg('mapFile'));
+    GUS::Supported::BioperlFeatMapperSet->new($self->getArg('mapFile'));
 
   my $dbRlsId = $self->getExtDbRlsId($self->getArg('extDbName'),
 				     $self->getArg('extDbRlsVer'))
@@ -459,7 +459,7 @@ sub getSeqIO {
       push @seqs, $seq;
     }
 
-    $bioperlSeqIO = ApiComplexa::DataLoad::SequenceIterator->new(\@seqs);
+    $bioperlSeqIO = GUS::Supported::SequenceIterator->new(\@seqs);
 
   } else {
     $bioperlSeqIO = Bio::SeqIO->new(-format => $format,

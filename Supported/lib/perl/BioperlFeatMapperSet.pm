@@ -1,4 +1,4 @@
-package GUS::Suppported::BioperlFeatMapperSet;
+package GUS::Supported::BioperlFeatMapperSet;
 
 use strict;
 use GUS::Supported::BioperlFeatMapper;
@@ -40,7 +40,7 @@ sub _parseMapFile {
 
   while (my ($name, $feature) = each %{$mapperSet}) {
     $featureMappersByName{$name} = 
-      ApiComplexa::DataLoad::BioperlFeatMapper->new($name, $feature, $mapXml);
+      GUS::Supported::BioperlFeatMapper->new($name, $feature, $mapXml);
   }
 
   return \%featureMappersByName;
