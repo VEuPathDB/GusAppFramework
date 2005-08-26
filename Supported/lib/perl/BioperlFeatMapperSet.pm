@@ -1,7 +1,7 @@
 package GUS::Suppported::BioperlFeatMapperSet;
 
 use strict;
-use GUS::Suppported::BioperlFeatMapper;
+use GUS::Supported::BioperlFeatMapper;
 
 use XML::Simple;
 
