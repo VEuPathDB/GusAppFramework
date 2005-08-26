@@ -10,8 +10,8 @@ use Bio::Tools::GFF;
 use Bio::SeqFeature::Tools::Unflattener;
 
 use GUS::PluginMgr::Plugin;
-use GUS::Suppported::BioperlFeatMapperSet;
-use GUS::Suppported::SequenceIterator;
+use GUS::Supported::BioperlFeatMapperSet;
+use GUS::Supported::SequenceIterator;
 
 #GENERAL USAGE TABLES
 use GUS::Model::SRes::ExternalDatabase;
