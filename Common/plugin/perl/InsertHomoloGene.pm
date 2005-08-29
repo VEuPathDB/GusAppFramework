@@ -243,7 +243,7 @@ sub loadData{
 	    foreach my $gene_id (keys %{$homoloHash->{$hid}->{$tax_id}}){
 		foreach my $protein (@{$homoloHash->{$hid}->{$tax_id}->{$gene_id}}){
 		    unless($AASequenceId = $self->getAASequenceId($protein)){
-			print "There is no AA Seq $protein\n";
+			print "Skipping protein $protein because there is no entry for it in the database.\n";
 			$skippedCount ++;
 			next;
 		    }
