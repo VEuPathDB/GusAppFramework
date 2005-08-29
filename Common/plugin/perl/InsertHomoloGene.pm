@@ -181,7 +181,6 @@ sub makeRestartHash{
     my ($self, $restartHash, $orthologExp) = @_;
     my $releaseDate = $self->getArg('releaseDate');
     my $orthologExpId = $$orthologExp->getId();
-print "Ortholog Experiment id = $orthologExpId\n";
 
     my $sql = "select name from DoTS.OrthologGroup where sequence_group_experiment_id = $orthologExpId";
 
@@ -236,6 +235,7 @@ sub loadData{
     my $enteredCount = 0;
 
     foreach  my $hid (keys %$homoloHash){
+	print "Making entries for Ortholog Group $hid\n";
 	my $newOrthologGroup = $self->makeOrthologGroup($hid, $homoloHash);
 	$$newOrthologGroup->setParent($$orthologExp);
 
@@ -243,7 +243,6 @@ sub loadData{
 	    foreach my $gene_id (keys %{$homoloHash->{$hid}->{$tax_id}}){
 		foreach my $protein (@{$homoloHash->{$hid}->{$tax_id}->{$gene_id}}){
 		    unless($AASequenceId = $self->getAASequenceId($protein)){
-			print "Skipping protein $protein because there is no entry for it in the database.\n";
 			$skippedCount ++;
 			next;
 		    }
@@ -338,9 +337,6 @@ sub makeAASeqDbRef{
 	});
 
     $AASequence->retrieveFromDB();
-    my $aaSeqId = $AASequence->getId();
-
-    if($aaSeqId){print "The aa sequence $aaSeqId returned\n";}
 
     my $newAASeqDbRef = GUS::Model::DoTS::AASequenceDbRef->new({});
 
@@ -394,14 +390,11 @@ sub getAASequenceId{
     }
 
     my $nrdbId = $nrdbEntry->getId();
-    print "NRDB ID = $nrdbId, ";
 
     my $dbh = $self->getDb()->getDbHandle();
     my $st = $dbh->prepareAndExecute("select aa_sequence_id from DoTS.NRDBEntry where nrdb_entry_id = $nrdbId");
     my $AASequenceId = $st->fetchrow_array();
     $st->finish();
-
-    print "AAsequenceID = AASequenceId\n";
 
     return $AASequenceId;
 
