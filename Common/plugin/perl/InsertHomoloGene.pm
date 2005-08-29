@@ -242,9 +242,8 @@ sub loadData{
 	foreach my $tax_id (keys %{$homoloHash->{$hid}}){
 	    foreach my $gene_id (keys %{$homoloHash->{$hid}->{$tax_id}}){
 		foreach my $protein (@{$homoloHash->{$hid}->{$tax_id}->{$gene_id}}){
-		    print "protein $protein\n";
 		    unless($AASequenceId = $self->getAASequenceId($protein)){
-			print "There is no AA Seq $protein\n";
+			print "Skipping protein $protein because there is no entry for it in the database.\n";
 			$skippedCount ++;
 			next;
 		    }
@@ -339,9 +338,6 @@ sub makeAASeqDbRef{
 	});
 
     $AASequence->retrieveFromDB();
-    my $aaSeqId = $AASequence->getId();
-
-    if($aaSeqId){print "The aa sequence $aaSeqId returned\n";}
 
     my $newAASeqDbRef = GUS::Model::DoTS::AASequenceDbRef->new({});
 
@@ -395,14 +391,11 @@ sub getAASequenceId{
     }
 
     my $nrdbId = $nrdbEntry->getId();
-    print "NRDB ID = $nrdbId, ";
 
     my $dbh = $self->getDb()->getDbHandle();
     my $st = $dbh->prepareAndExecute("select aa_sequence_id from DoTS.NRDBEntry where nrdb_entry_id = $nrdbId");
     my $AASequenceId = $st->fetchrow_array();
     $st->finish();
-
-    print "AAsequenceID = AASequenceId\n";
 
     return $AASequenceId;
 
