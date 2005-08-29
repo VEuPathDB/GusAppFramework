@@ -180,7 +180,7 @@ sub makeHomoloHash{
 sub makeRestartHash{
     my ($self, $restartHash, $orthologExp) = @_;
     my $releaseDate = $self->getArg('releaseDate');
-    my $orthologExpId = $orthologExp->getId();
+    my $orthologExpId = $$orthologExp->getId();
 print "Ortholog Experiment id = $orthologExpId\n";
 
     my $sql = "select name from DoTS.OrthologGroup where sequence_group_experiment_id = $orthologExpId";
