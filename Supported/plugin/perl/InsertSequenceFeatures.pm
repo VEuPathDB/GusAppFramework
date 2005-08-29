@@ -387,7 +387,7 @@ sub getSeqIO {
 
   my $bioperlSeqIO;
 
-  # SDF: what does bioperl do on a parsing error?   does it die?   if so, 
+  # SDF: what does bioperl do on a parsing error?   does it die?   if so,
   # we probably want to catch that error, and add to it the filename we are
   # parsing, if they don't already state that
 
@@ -397,86 +397,118 @@ sub getSeqIO {
   # want to catch via a $SIG{__WARN__} handler
 
   if ($format =~ m/^gff$/i) {
-    # convert a GFF "features-referring-to-sequence" stream into a
-    # "sequences-with-features" stream; also aggregate grouped features.
-    my $gffIO = Bio::Tools::GFF->new(-file => $self->getArg('seqFile'),
-				     -gff_format => $self->getArg('gffFormat')
-				    );
-
-    my @aggregators =
-      map {
-	Feature::Aggregator->new($_, $self->getArg("gff2GroupTag"));
-      } qw(Bio::DB::GFF::Aggregator::processed_transcript);
-    
-    my %seqs; my @seqs;
-    while (my $feature = $gffIO->next_feature()) {
-      push @{$seqs{$feature->seq_id}}, $feature;
-    }
-
-    while (my ($seq_id, $features) = each %seqs) {
-      my $seq = Bio::Seq->new( -alphabet => 'dna',
-			       -display_id => $seq_id,
-			       -accession_number => $seq_id,
-			     );
-
-      if ($self->getArg('gffFormat') < 3) {
-	# GFF2 - use group aggregators to re-nest subfeatures
-	for my $aggregator (@aggregators) {
-	  $aggregator->aggregate($features);
-	}
-      } else {
-	# GFF3 - use explicit ID/Parent hierarchy to re-nest
-	# subfeatures
-	my %top; my %children; my @keep;
-
-	for my $feature (@$features) {
-	  my $id = 0;
-	  ($id) = $feature->each_tag_value("ID")
-	    if $feature->has_tag("ID");
-	  if ($feature->has_tag("Parent")) {
-	    for my $parent ($feature->each_tag_value("Parent")) {
-	      push @{$children{$parent}}, [$id, $feature];
-	    }
-	  } else {
-	    push @keep, $feature;
-	    $top{$id} = $feature if $id; # only features with IDs can
-                                         # have children
-	  }
-	}
-
-	# breadth-first tree reconstruction - uses a stack to avoid
-	# recursion.
-	while (my ($id, $feature) = each %top) {
-	  my @children =
-	    map {
-	      push @$_, $feature;
-	    } @{delete($children{$id}) || []};
-	  while (my $child = shift @children) {
-	    my ($id, $feature, $parent) = @$child;
-	    $parent->add_SubFeature($feature);
-	    push @children,
-	      map {
-		push @$_, $feature;
-	      } @{delete($children{$id}) || []};
-	  }
-	}
-
-	# replace original feature list with new nested versions:
-	@$features = @keep;
-      }
-
-      $seq->add_SeqFeature($_) for @$features;
-      push @seqs, $seq;
-    }
-
-    $bioperlSeqIO = GUS::Supported::SequenceIterator->new(\@seqs);
-
+    $bioperlSeqIO = $self->convertGFFStreamToSeqIO();
   } else {
     $bioperlSeqIO = Bio::SeqIO->new(-format => $format,
 				    -file   => $self->getArg('seqFile'));
   }
 
   return $bioperlSeqIO;
+}
+
+sub convertGFFStreamToSeqIO {
+
+  my $self = shift;
+
+  # convert a GFF "features-referring-to-sequence" stream into a
+  # "sequences-with-features" stream; also aggregate grouped features.
+  my $gffIO = Bio::Tools::GFF->new(-file => $self->getArg('seqFile'),
+				   -gff_format => $self->getArg('gffFormat')
+				  );
+
+  # a list of "standard" feature aggregator types for GFF2 support;
+  # only "processed_transcript" for now, but leaving room for others
+  # if necessary.
+  my @aggregators = qw(Bio::DB::GFF::Aggregator::processed_transcript);
+
+  # build Feature::Aggregator objects for each aggregator type:
+  @aggregators =
+    map {
+      Feature::Aggregator->new($_, $self->getArg("gff2GroupTag"));
+    } @aggregators;
+
+  my %seqs; my @seqs;
+  while (my $feature = $gffIO->next_feature()) {
+    push @{$seqs{$feature->seq_id}}, $feature;
+  }
+
+  while (my ($seq_id, $features) = each %seqs) {
+    my $seq = Bio::Seq->new( -alphabet => 'dna',
+			     -display_id => $seq_id,
+			     -accession_number => $seq_id,
+			   );
+
+    if ($self->getArg('gffFormat') < 3) {
+      # GFF2 - use group aggregators to re-nest subfeatures
+      for my $aggregator (@aggregators) {
+	$aggregator->aggregate($features);
+      }
+    } else {
+      # GFF3 - use explicit ID/Parent hierarchy to re-nest
+      # subfeatures
+
+      my %top;      # associative list of top-level features: $id => $feature
+      my %children; # mapping of parents to children:
+                    # $parent_id => [ [$child_id, $child],
+                    #                 [$child_id, $child],
+                    #               ]
+      my @keep;     # list of features to replace flat feature list.
+
+      # first, fill the datastructures we'll use to rebuild
+      for my $feature (@$features) {
+	my $id = 0;
+	($id) = $feature->each_tag_value("ID")
+	  if $feature->has_tag("ID");
+	if ($feature->has_tag("Parent")) {
+	  for my $parent ($feature->each_tag_value("Parent")) {
+	    push @{$children{$parent}}, [$id, $feature];
+	  }
+	} else {
+	  push @keep, $feature;
+	  $top{$id} = $feature if $id; # only features with IDs can
+	                               # have children
+	}
+      }
+
+      while (my ($id, $feature) = each %top) {
+	# build a stack of children to be associated with their
+	# parent feature:
+	# [$child_id, $child_feature, $parent_feature]
+	my @children =
+	  map {
+	    push @$_, $feature;
+	  } @{delete($children{$id}) || []};
+
+	# now iterate over the stack until empty:
+	while (my $child = shift @children) {
+	  my ($child_id, $child, $parent) = @$child;
+	  # make the association:
+	  $parent->add_SubFeature($child);
+
+	  # add to the stack any nested children of this child
+	  push @children,
+	    map {
+	      push @$_, $child;
+	    } @{delete($children{$child_id}) || []};
+	}
+      }
+
+      # the entire contents of %children should now have been
+      # processed:
+      if (keys %children) {
+	warn "Unassociated children features (missing parents):\n  ";
+	warn join("  \n", keys %children), "\n";
+      }
+
+      # replace original feature list with new nested versions:
+      @$features = @keep;
+    }
+
+    $seq->add_SeqFeature($_) for @$features;
+    push @seqs, $seq;
+  }
+
+  return GUS::Supported::SequenceIterator->new(\@seqs);
 }
 
 ###########################################################################
@@ -1093,7 +1125,7 @@ sub new {
   $self->{_matchsub} = $self->match_sub($agg);
   $self->{_main} = $agg->main_name;
   $self->{_grouptag} = $grouptag;
-  
+
   return $self;
 }
 
