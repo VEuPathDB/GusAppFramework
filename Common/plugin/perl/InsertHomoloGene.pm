@@ -81,6 +81,20 @@ my $argsDeclaration =
             isList => 0
             }),
 
+ stringArg({name => 'nrdbExternalDatabaseName',
+            descr => 'sres.externaldatabase.name for NRDB entries for the HomoloGene load',
+            constraintFunc => undef,
+            reqd => 1,
+            isList => 0
+            }),
+
+ stringArg({name => 'nrdbExternalDatabaseVersion',
+            descr => 'sres.externaldatabaserelease.version for the most recent load of NRDB for HomoloGene',
+            constraintFunc => undef,
+            reqd => 1,
+            isList => 0
+            }),
+
  fileArg({name => 'homoloGene',
 	  descr => 'pathname for the homologene file',
 	  constraintFunc => undef,
@@ -119,13 +133,13 @@ sub new {
 
 sub run{
     my ($self) = @_;
-    my $msg = "done\n";
+    my $msg;
 
     my $orthologExp = $self->makeOrthologExperiment();
 
     my $homoloHash = $self->makeHomoloHash($orthologExp);
 
-    $self->loadData($orthologExp, $homoloHash);
+    $msg = $self->loadData($orthologExp, $homoloHash);
 
     return $msg;
 }
@@ -233,6 +247,11 @@ sub loadData{
     my $AASequenceId;
     my $skippedCount = 0;
     my $enteredCount = 0;
+    my $nrdbExtDbRlsId = $self->getExtDbRlsId($self->getArg('nrdbExternalDatabaseName'), $self->getArg('nrdbExternalDatabaseVersion'));
+    my $sql = "select x.aa_sequence_id from DoTS.NRDBEntry n, DoTS.ExternalAASequence x where n.source_id = ? amd n.aa_sequence_id = x.aa_sequence_id and x.external_database_release_id = $nrdbExtDbRlsId";
+
+    my $dbh = $self->getDb()->getDbHandle();
+    my $sth = $dbh->prepare($sql);
 
     foreach  my $hid (keys %$homoloHash){
 	print "Making entries for Ortholog Group $hid\n";
@@ -242,7 +261,7 @@ sub loadData{
 	foreach my $tax_id (keys %{$homoloHash->{$hid}}){
 	    foreach my $gene_id (keys %{$homoloHash->{$hid}->{$tax_id}}){
 		foreach my $protein (@{$homoloHash->{$hid}->{$tax_id}->{$gene_id}}){
-		    unless($AASequenceId = $self->getAASequenceId($protein)){
+		    unless($AASequenceId = $self->getAASequenceId($protein, $sth)){
 			$skippedCount ++;
 			next;
 		    }
@@ -374,27 +393,20 @@ sub getSourceTableId{
 # --------------------------------------------------------------------
 
 sub getAASequenceId{
-    my ($self, $protein) = @_;
+    my ($self, $protein, $sth) = @_;
 
     my @proteinAccessArray = split(/\./, $protein);
 	   my $accession = $proteinAccessArray[0];
 	   my $version = $proteinAccessArray[1];
 
-    my $nrdbEntry = GUS::Model::DoTS::NRDBEntry->new({
-	'source_id' => $accession,
-	'sequence_version' => $version
-	});
+    $sth->execute($accession);
 
-    unless($nrdbEntry->retrieveFromDB()){
+    my $AASequenceId = $sth->fetchrow_array();
+    $sth->finish();
+
+    unless($AASequenceId){
 	return 0;
     }
-
-    my $nrdbId = $nrdbEntry->getId();
-
-    my $dbh = $self->getDb()->getDbHandle();
-    my $st = $dbh->prepareAndExecute("select aa_sequence_id from DoTS.NRDBEntry where nrdb_entry_id = $nrdbId");
-    my $AASequenceId = $st->fetchrow_array();
-    $st->finish();
 
     return $AASequenceId;
 
