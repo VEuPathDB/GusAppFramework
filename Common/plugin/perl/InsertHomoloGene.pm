@@ -248,7 +248,7 @@ sub loadData{
     my $skippedCount = 0;
     my $enteredCount = 0;
     my $nrdbExtDbRlsId = $self->getExtDbRlsId($self->getArg('nrdbExternalDatabaseName'), $self->getArg('nrdbExternalDatabaseVersion'));
-    my $sql = "select x.aa_sequence_id from DoTS.NRDBEntry n, DoTS.ExternalAASequence x where n.source_id = ? amd n.aa_sequence_id = x.aa_sequence_id and x.external_database_release_id = $nrdbExtDbRlsId";
+    my $sql = "select x.aa_sequence_id from DoTS.NRDBEntry n, DoTS.ExternalAASequence x where n.source_id = ? and n.aa_sequence_id = x.aa_sequence_id and x.external_database_release_id = $nrdbExtDbRlsId";
 
     my $dbh = $self->getDb()->getDbHandle();
     my $sth = $dbh->prepare($sql);
