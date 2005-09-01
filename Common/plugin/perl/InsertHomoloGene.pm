@@ -204,7 +204,7 @@ sub makeRestartHash{
     while(my ($hid) = $sth ->fetchrow_array()){
 	$restartHash->{$hid}=1;
     }
-
+    $sth->finish();
     return $self;
 
 }
@@ -248,10 +248,11 @@ sub loadData{
     my $skippedCount = 0;
     my $enteredCount = 0;
     my $nrdbExtDbRlsId = $self->getExtDbRlsId($self->getArg('nrdbExternalDatabaseName'), $self->getArg('nrdbExternalDatabaseVersion'));
+
     my $sql = "select x.aa_sequence_id from DoTS.NRDBEntry n, DoTS.ExternalAASequence x where n.source_id = ? and n.aa_sequence_id = x.aa_sequence_id and x.external_database_release_id = $nrdbExtDbRlsId";
 
-    my $dbh = $self->getDb()->getDbHandle();
-    my $sth = $dbh->prepare($sql);
+    my $queryHandle = $self->getQueryHandle();
+    my $sth = $queryHandle->prepare($sql);
 
     foreach  my $hid (keys %$homoloHash){
 	print "Making entries for Ortholog Group $hid\n";
@@ -261,7 +262,8 @@ sub loadData{
 	foreach my $tax_id (keys %{$homoloHash->{$hid}}){
 	    foreach my $gene_id (keys %{$homoloHash->{$hid}->{$tax_id}}){
 		foreach my $protein (@{$homoloHash->{$hid}->{$tax_id}->{$gene_id}}){
-		    unless($AASequenceId = $self->getAASequenceId($protein, $sth)){
+
+		    unless($AASequenceId = $self->getAASequenceId($protein, \$sth)){
 			$skippedCount ++;
 			next;
 		    }
@@ -399,14 +401,10 @@ sub getAASequenceId{
 	   my $accession = $proteinAccessArray[0];
 	   my $version = $proteinAccessArray[1];
 
-    $sth->execute($accession);
+    $$sth->execute($accession);
 
-    my $AASequenceId = $sth->fetchrow_array();
-    $sth->finish();
-
-    unless($AASequenceId){
-	return 0;
-    }
+    my $AASequenceId = $$sth->fetchrow_array();
+    $$sth->finish();
 
     return $AASequenceId;
 
