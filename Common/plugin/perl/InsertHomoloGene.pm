@@ -249,10 +249,10 @@ sub loadData{
     my $enteredCount = 0;
     my $nrdbExtDbRlsId = $self->getExtDbRlsId($self->getArg('nrdbExternalDatabaseName'), $self->getArg('nrdbExternalDatabaseVersion'));
 
-    my $sql = "select x.aa_sequence_id from DoTS.NRDBEntry n, DoTS.ExternalAASequence x where n.source_id = 'NP_592862' and n.aa_sequence_id = x.aa_sequence_id and x.external_database_release_id = $nrdbExtDbRlsId";
+    my $sql = "select x.aa_sequence_id from DoTS.NRDBEntry n, DoTS.ExternalAASequence x where n.source_id = ? and n.aa_sequence_id = x.aa_sequence_id and x.external_database_release_id = $nrdbExtDbRlsId";
     print "sql $sql\n";
     my $queryHandle = $self->getQueryHandle();
-    my $sth = $queryHandle->prepare($sql);
+    my $sth = $queryHandle->prepare($sql) or die "Can't prepare SQL $sql\n";
 
     foreach  my $hid (keys %$homoloHash){
 	print "Making entries for Ortholog Group $hid\n";
@@ -404,7 +404,7 @@ sub getAASequenceId{
 	   my $accession = $proteinAccessArray[0];
 	   my $version = $proteinAccessArray[1];
     print "accession = $accession\n";
-    $sth->execute();
+    $sth->execute($accession);
 
     my $AASequenceId = $sth->fetchrow_array();
     $sth->finish();
