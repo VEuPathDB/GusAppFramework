@@ -263,7 +263,7 @@ sub loadData{
 	    foreach my $gene_id (keys %{$homoloHash->{$hid}->{$tax_id}}){
 		foreach my $protein (@{$homoloHash->{$hid}->{$tax_id}->{$gene_id}}){
 
-		    unless($AASequenceId = $self->getAASequenceId($protein, \$sth)){
+		    unless($AASequenceId = $self->getAASequenceId($protein, $sth)){
 			$skippedCount ++;
 			next;
 		    }
@@ -405,10 +405,10 @@ sub getAASequenceId{
 	   my $accession = $proteinAccessArray[0];
 	   my $version = $proteinAccessArray[1];
 
-    $$sth->execute($accession);
+    $sth->execute($accession);
 
-    my $AASequenceId = $$sth->fetchrow_array();
-    $$sth->finish();
+    my $AASequenceId = $sth->fetchrow_array();
+    $sth->finish();
 
     return $AASequenceId;
 
