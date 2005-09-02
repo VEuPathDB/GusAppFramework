@@ -67,14 +67,14 @@ my $argsDeclaration =
             isList => 0
             }),
 
- stringArg({name => 'entrezExternalDatabaseName',
+ stringArg({name => 'entrezGeneExternalDatabaseName',
             descr => 'sres.externaldatabase.name for Entrez Gene entries for gene2accession',
             constraintFunc => undef,
             reqd => 1,
             isList => 0
             }),
 
- stringArg({name => 'entrezExternalDatabaseVersion',
+ stringArg({name => 'entrezGeneExternalDatabaseVersion',
             descr => 'sres.externaldatabaserelease.version for the most recent instance of gene2accession',
             constraintFunc => undef,
             reqd => 1,
@@ -250,7 +250,7 @@ sub loadData{
     my $nrdbExtDbRlsId = $self->getExtDbRlsId($self->getArg('nrdbExternalDatabaseName'), $self->getArg('nrdbExternalDatabaseVersion'));
 
     my $sql = "select x.aa_sequence_id from DoTS.NRDBEntry n, DoTS.ExternalAASequence x where n.source_id = ? and n.aa_sequence_id = x.aa_sequence_id and x.external_database_release_id = $nrdbExtDbRlsId";
-
+    print "sql $sql\n";
     my $queryHandle = $self->getQueryHandle();
     my $sth = $queryHandle->prepare($sql);
 
@@ -270,17 +270,21 @@ sub loadData{
 
 		    my $newSeqSeqEntry = $self->makeSequenceSequenceGroup($sourceTableId, $hid, $AASequenceId);
 
-		    $$newOrthologGroup->addChild($$newSeqSeqEntry);
+		    unless($$newSeqSeqEntry->retrieveFromDB()){
+			$$newOrthologGroup->addChild($$newSeqSeqEntry);
+		    }
 
 		    my $newAASeqDbRef = $self->makeAASeqDbRef($AASequenceId, $gene_id);
-		    $$newOrthologGroup->addToSubmitList($$newAASeqDbRef );
-		    $enteredCount ++;
+		    unless($$newAASeqDbRef->retrieveFromDB()){
+			$$newOrthologGroup->addToSubmitList($$newAASeqDbRef );
+		    }
 		}
 	    }
 	}
 
 
 	$$newOrthologGroup->submit();
+	$enteredCount ++;
 
 	$self->undefPointerCache();
     }
