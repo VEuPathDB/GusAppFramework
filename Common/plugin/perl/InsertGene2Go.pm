@@ -61,14 +61,14 @@ my $documentation = {purposeBrief => $purposeBrief,
 my $argsDeclaration =
 [
 
- stringArg({name => 'goExternalDatabaseName',
+ stringArg({name => 'goAssociationExternalDatabaseName',
             descr => 'sres.externaldatabase.name for gene2go',
             constraintFunc => undef,
             reqd => 1,
             isList => 0
             }),
 
- stringArg({name => 'goExternalDatabaseVersion',
+ stringArg({name => 'goAssociationExternalDatabaseVersion',
             descr => 'sres.externaldatabaserelease.version for this instance of
 gene2go',
             constraintFunc => undef,
@@ -76,14 +76,14 @@ gene2go',
             isList => 0
             }),
 
- stringArg({name => 'entrezExternalDatabaseName',
+ stringArg({name => 'entrezGeneExternalDatabaseName',
             descr => 'sres.externaldatabase.name for Entrez Gene entries for gene2accession',
             constraintFunc => undef,
             reqd => 1,
             isList => 0
             }),
 
- stringArg({name => 'entrezExternalDatabaseVersion',
+ stringArg({name => 'entrezGeneExternalDatabaseVersion',
             descr => 'sres.externaldatabaserelease.version for the most recent instance of gene2accession',
             constraintFunc => undef,
             reqd => 1,
@@ -228,22 +228,26 @@ sub loadData{
     my $loeId = $self->getLOEid();
     my $tableId = $self->getTableId();
     my $entriesCount = 0;
+    my $skippedCount = 0;
+    my $presentCount = 0;
 
     my $entrezExtDbRelId = $self->getExtDbRlsId($self->getArg('entrezExternalDatabaseName'), $self->getArg('entrezExternalDatabaseVersion'));
 
     my $goExtDbRelId = $self->getExtDbRlsId($self->getArg('goExternalDatabaseName'), $self->getArg('goExternalDatabaseVersion'));;
     
     foreach my $go_id (keys %$goHash){
+	print "Loading entries for GO ID $go_id into the database.\n";
 	foreach my $gene_id (keys %{$goHash->{$go_id}}){
 	
 	    my $newGOAssoc = $self->makeGOAssocEntry($go_id, $gene_id, $entrezExtDbRelId, $tableId);
 	    unless($newGOAssoc){
-		print "The gene $gene_id is not in DbRef. No new GO Association entry will be created for it.\n";
+		$skippedCount ++;
 		next;
 	    }#eo unless
 
 	    if($$newGOAssoc->retrieveFromDB()){
 		print "Gene $gene_id GO term $go_id pair already in database for this release\n";
+		$presentCount ++;
 		next;
 	    }
 
@@ -265,7 +269,7 @@ sub loadData{
 	}#eo inner foreach
     }#eo outer foreach
 
-    my $msg = "$entriesCount entries added to the database\n";
+    my $msg = "$entriesCount entries added to the database, $skippedCount skipped because they were not in DbRef, $presentCount skipped because they were already in the database for this release.\n";
 
     return $msg;
 }
@@ -299,7 +303,7 @@ sub makeGOAssocEntry{
 	return 0;
     }
 
-    my $newGOAssoc = GUS::Model::DoTS::GOAssociation->new({
+    my $newGOAssoc = GU::Model::DoTS::GOAssociation->new({
 		'table_id'=> $table_id,
 		'row_id' => $DbRef_id,
 		'go_term_id' => $go_term_id,
@@ -342,11 +346,11 @@ sub makeGOAssocInstEntry{
 sub getLOEid{
     my ($self) = @_;
     my $loe = GUS::Model::DoTS::GOAssociationInstanceLOE->new({
-	             'name' => 'mRNA'
+	             'name' => 'GOAssociation'
 		     });
 
     unless($loe->retrieveFromDB()){
-	print "Entry for mRNA automatically created in DoTS::GOAssociationInstanceLOE\n";
+	print "Entry for GOAssociation automatically created in DoTS::GOAssociationInstanceLOE\n";
 	$loe->submit();
     }
     my $loeId = $loe->getId();
