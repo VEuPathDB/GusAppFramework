@@ -403,7 +403,7 @@ sub getAASequenceId{
     my @proteinAccessArray = split(/\./, $protein);
 	   my $accession = $proteinAccessArray[0];
 	   my $version = $proteinAccessArray[1];
-
+    print "accession = $accession\n";
     $sth->execute($accession);
 
     my $AASequenceId = $sth->fetchrow_array();
