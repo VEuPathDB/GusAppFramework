@@ -60,7 +60,7 @@ my $argsDeclaration =
 [
 
  stringArg({name => 'entrezExternalDatabaseName',
-            descr => 'sres.externaldatabase.name for gene2go',
+            descr => 'sres.externaldatabase.name for gene2accession',
             constraintFunc => undef,
             reqd => 1,
             isList => 0
@@ -68,14 +68,14 @@ my $argsDeclaration =
 
  stringArg({name => 'entrezExternalDatabaseVersion',
             descr => 'sres.externaldatabaserelease.version for this instance of
-gene2go',
+gene2accession',
             constraintFunc => undef,
             reqd => 1,
             isList => 0
             }),
 
  stringArg({name => 'refSeqExternalDatabaseName',
-            descr => 'sres.externaldatabase.name for gene2go',
+            descr => 'sres.externaldatabase.name for gene2accession',
             constraintFunc => undef,
             reqd => 1,
             isList => 0
@@ -83,7 +83,7 @@ gene2go',
 
  stringArg({name => 'refSeqExternalDatabaseVersion',
             descr => 'sres.externaldatabaserelease.version for this instance of
-gene2go',
+gene2accession',
             constraintFunc => undef,
             reqd => 1,
             isList => 0
