@@ -348,7 +348,7 @@ sub makeSequenceSequenceGroup{
 
 sub makeAASeqDbRef{
     my ($self, $AASeqId, $gene_id) = @_;
-    my $extDbRlsId = $self->getExtDbRlsId($self->getArg('entrezExternalDatabaseName'), $self->getArg('entrezExternalDatabaseVersion'));
+    my $extDbRlsId = $self->getExtDbRlsId($self->getArg('entrezGeneExternalDatabaseName'), $self->getArg('entrezGeneExternalDatabaseVersion'));
     
     my $DbRef = GUS::Model::SRes::DbRef->new({
 	'primary_identifier' => $gene_id,
