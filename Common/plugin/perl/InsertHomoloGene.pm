@@ -270,9 +270,8 @@ sub loadData{
 
 		    my $newSeqSeqEntry = $self->makeSequenceSequenceGroup($sourceTableId, $hid, $AASequenceId);
 
-		    unless($$newSeqSeqEntry->retrieveFromDB()){
 			$$newOrthologGroup->addChild($$newSeqSeqEntry);
-		    }
+
 
 		    my $newAASeqDbRef = $self->makeAASeqDbRef($AASequenceId, $gene_id);
 		    unless($$newAASeqDbRef->retrieveFromDB()){
