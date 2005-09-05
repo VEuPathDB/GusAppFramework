@@ -1032,16 +1032,6 @@ sub buildTranslatedAAFeature {
   return $transAaFeat;
 }
 
-sub buildTranslatedAASequence {
-  my ($self, $sequence) = @_;
-
-  my $aaSeq = GUS::Model::DoTS::TranslatedAASequence->new({'sequence' => $sequence});
-  $aaSeq->submit();
-
-  my $aaSeqId = $aaSeq->getId();
-
-  return $aaSeqId;
-}
 
 ##############################################################################
 # Utilities
