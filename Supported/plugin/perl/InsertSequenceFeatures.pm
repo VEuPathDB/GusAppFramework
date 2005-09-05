@@ -84,7 +84,9 @@ Load files containing NA sequence and features.
 PURPOSEBRIEF
 
   my $notes = <<NOTES;
-The mapping XML file includes five "special cases."  These are cases in which some of the qualifiers are stored in tables other than the feature table.  The five special cases are: 'dbxref', 'product', 'note', 'gene', and 'aaseq'
+The bioperl parser includes an "unflattener" that analyzes feature locations of genes, rna, cds, etc and constructs gene feature trees of them (ie, gene models). (See the bioperl API documentation for Bio::SeqFeature::Tools::Unflattener.)  The plugin preserves these relationships (using the feature's parent_id to capture the tree).
+
+The mapping XML file includes five "special cases."  These are cases in which some of the qualifiers are stored in tables other than the feature table.  The five special cases are: 'dbxref', 'product', 'note', 'gene', and 'aaseq'.  The special cases are hard-coded in the pluglin.  To understand how the special cases each work, see the plugin code.
 NOTES
 
   my $tablesAffected =
