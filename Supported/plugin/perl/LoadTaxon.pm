@@ -322,9 +322,11 @@ sub makeTaxonEntry {
     
 
     
-    $newTaxon->submit();
-    my $submit = $self->undefPointerCache();
-    $self->log("Processed ncbi_tax_id : $tax_id\n") if ($submit ==1);
+    my $submit = $newTaxon->submit();
+    $self->undefPointerCache();
+    if ($submit ==1){
+	$self->log("Processed ncbi_tax_id : $tax_id\n");
+    }
     $$count++;
     if ($$count % 1000 == 0) {
 	$self->log("Number processed: $$count\n");
@@ -368,7 +370,7 @@ sub makeTaxonName {
   my %TaxonIdHash;
   my $num = 0;
   foreach my $tax_id (keys %$namesDmp) {
-    my $taxon_id = $self->getTaxon($tax_id);;
+    my $taxon_id = $self->getTaxon($tax_id);
     foreach my $name (keys %{$namesDmp->{$tax_id}}) {
       foreach my $name_class (keys %{$namesDmp->{$tax_id}->{$name}}) {
 	foreach my $unique_name_variant (keys %{$namesDmp->{$tax_id}->{$name}->{$name_class}}) {
