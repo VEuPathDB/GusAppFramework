@@ -14,7 +14,7 @@ sub new {
   bless $self, $class;
 
   $self->{sourceUrl} = $argsHash->{url};
-  $argsHash->{url} = undef;
+  delete $argsHash->{url};
   $self->{args} = $argsHash;
   return $self;
 }
