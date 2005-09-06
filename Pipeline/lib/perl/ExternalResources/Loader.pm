@@ -69,7 +69,6 @@ sub _parseXmlFile {
 sub _processResource {
   my ($self, $resource, $data, $commit, $dbCommit, $repositoryLogFile) = @_;
 
-
   # this perverse code is a workaround for a mysterious XML::Simple/Net::SFTP
   # bug that was detecting incorrect character encodings in strings
   # derived from the values parsed from the xml file
@@ -81,8 +80,21 @@ sub _processResource {
     substr($resource->{version},0,length($resource->{version}));
   my $downloadDir = 
     substr($data->{downloadDir},0,length($data->{downloadDir}));
-  my $wgetArgs = 
-    &_parseWgetArgs(substr($resource->{wgetArgs},0,length($resource->{wgetArgs})));
+  my $args;
+
+  my $usingWget = $resource->{wgetArgs} || $resource->{url};
+  if (($usingWget && $resource->{manualGet})
+      || (!$usingWget && !$resource->{manualGet})) {
+    die "Resource $resourceNm $version must provide either an url and <wgetArgs> or <manualGet> but not both\n";
+  }
+
+  if ($usingWget) {
+    $args = &_parseWgetArgs(substr($resource->{wgetArgs},0,
+				   length($resource->{wgetArgs})));
+    $args->{url} = $resource->{url};
+  } else {
+    $args = $resource->{manualGet};
+  }
 
   my $unpackers;
   if (ref($resource->{unpack}) eq 'ARRAY') {
@@ -98,7 +110,6 @@ sub _processResource {
 						      $version,
 						      $targetDir,
 						      $unpackers,
-						      $resource->{url},
 						      $resource->{plugin},
 						      $resource->{pluginArgs},
 						      $resource->{extDbName},
@@ -106,7 +117,7 @@ sub _processResource {
 						      $resource->{extDbRlsDescrip},
 						      $commit,
 						      $dbCommit,
-						      $wgetArgs,
+						      $args,
 						      $repositoryLogFile
 						     );
 
@@ -115,6 +126,8 @@ sub _processResource {
 
 sub _parseWgetArgs {
   my ($wgetArgsString) = @_;
+
+  return undef if (!$wgetArgsString);
 
   my @wgetArgs = split(/\s+/, $wgetArgsString);
   my %wgetArgs;

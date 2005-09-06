@@ -2,6 +2,7 @@ package GUS::Pipeline::ExternalResources::RepositoryEntry;
 
 use strict;
 use GUS::Pipeline::ExternalResources::RepositoryWget;
+use GUS::Pipeline::ExternalResources::RepositoryManualGet;
 use GUS::Pipeline::ExternalResources::FileSysManager;
 use GUS::Pipeline::ExternalResources::SftpManager;
 use File::Basename;
@@ -12,7 +13,8 @@ use File::Basename;
 # Each entry has:
 #   - a resource name (eg, NRDB, PFAM)
 #   - a version (eg, 1.1.2)
-#   - a set of wget args used to acquire it
+#   - a set of wget args used to acquire it, or the info describing a 
+#     manual get
 #   - the data.  the data is stored exactly as received from the source but
 #     tarred and gzipped
 #
@@ -29,12 +31,13 @@ use File::Basename;
 #############################################################################
 
 
-# wgetArgs is a hash of wget args.  
+# args is a hash of args.  
 #  - If the arg is a flag, the key is of the form "--name" and the value is "".
 #  - If the arg is value, the key is of the form "--name=" and the value is the value.
+# manualGet is a hash of values describing contact info and the file or dir
+# in which to find the resource
 sub new {
-  my ($class, $repositoryLocation, $resource, $version, $sourceUrl, $wgetArgs,
-      $logFile) = @_;
+  my ($class, $repositoryLocation, $resource, $version, $args, $logFile) = @_;
   my $self = {};
   bless $self, $class;
 
@@ -45,7 +48,11 @@ sub new {
   $self->{versionDir} = "$self->{resourceDir}/$self->{version}";
   $self->{logFile} = $logFile;
 
-  $self->{wget} = GUS::Pipeline::ExternalResources::RepositoryWget->new($sourceUrl, $wgetArgs);
+  if ($args->{url}) {
+    $self->{wget} = GUS::Pipeline::ExternalResources::RepositoryWget->new($args);
+  } else {
+    $self->{manualGet} = GUS::Pipeline::ExternalResources::RepositoryManualGet->new($args);
+  }
 
   return $self;
 }
@@ -166,17 +173,23 @@ sub _fileBaseName {
 
 sub _checkPrev {
   my ($self, $answerFile, $targetDir) = @_;
-    $self->_log("Found existing $self->{resource} $self->{version} in repository");
+  $self->_log("Found existing $self->{resource} $self->{version} in repository");
 
-    $self->_waitForUnlock();
+  $self->_waitForUnlock();
 
-    $self->{storageManager}->fileExists($answerFile)
-      || die "Previously attempted fetch did not produce expected file '$answerFile'\n";
+  $self->{storageManager}->fileExists($answerFile)
+    || die "Previously attempted fetch did not produce expected file '$answerFile'\n";
 
+  if ($self->{wget}) {
     my ($prevSourceUrl, $prevWgetArgs) = $self->_parseWgetArgs($targetDir);
     my $errMsg = $self->{wget}->argsMatch($prevSourceUrl, $prevWgetArgs);
     die("wget args disagree with those from previous fetch request:\n  $errMsg\n") if $errMsg;
+  } else {
+    my $manualGetArgs = $self->_parseManualGetArgs($targetDir);
+    my $errMsg = $self->{manualGet}->argsMatch($manualGetArgs);
+    die("manual get args disagree with those from previous fetch request:\n  $errMsg\n") if $errMsg;
 
+  }
 }
 
 sub _parseWgetArgs {
@@ -206,7 +219,37 @@ sub _parseWgetArgs {
   return ($url, \%args);
 }
 
+sub _parseManualGetArgs {
+  my ($self, $targetDir) = @_;
+
+  # get file into local tmp file
+  my $time = time;
+  my $manualGetFile = "$targetDir/tmp-$time-manualGet.args";
+  $self->{storageManager}->copyOut("$self->{versionDir}/manualGet.args", $manualGetFile);
+
+  open(MANUALGET, $manualGetFile) || die("Can't open $manualGetFile\n");
+
+  my %args;
+  while (<MANUALGET>) {
+    chomp;
+    /(.+)=(.+)/ || die "File $manualGetFile has an invalid property '$_'";
+    $args{$1} = $2;
+  }
+
+  close(MANUALGET);
+  unlink($manualGetFile) || die "Couldn't remove temp file '$manualGetFile'\n";
+  return \%args;
+}
+
 sub _acquire {
+  my ($self, $targetDir) = @_;
+
+  return $self->{wget}? 
+    $self->_acquireByWget($targetDir) :
+    $self->_acquireByManualGet($targetDir);
+}
+
+sub _acquireByWget {
   my ($self, $targetDir) = @_;
 
   $self->_lock();
@@ -228,20 +271,12 @@ sub _acquire {
 			   "$tmpDir/wget.log",
 			   "$tmpDir/wget.cmd");
 
-    $self->_log("Calling tar to package them for storage in the repository");
-    my $baseName = "$self->{resource}-$self->{version}";
-    my $tarCmd = "tar -cf $tmpDir/$baseName.tar .";
-    &runCmd($tarCmd);
-
-    $self->_log("Calling gzip to compress the package");
-    my $gzipCmd = "gzip $tmpDir/$baseName.tar";
-    &runCmd($gzipCmd);
-
+    my $baseName = $self->_tarAndZip($tmpDir);
     $self->{storageManager}->copyIn("$tmpDir/wget.log", 
 				    "$self->{versionDir}/wget.log");
     $self->{storageManager}->copyIn("$tmpDir/wget.cmd", 
 				    "$self->{versionDir}/wget.cmd");
-    $self->{storageManager}->copyIn("$tmpDir/$baseName.tar.gz", 
+    $self->{storageManager}->copyIn("$tmpDir/$baseName.tar.gz",
 				    "$self->{versionDir}/$baseName.tar.gz");
 
     chdir $targetDir || die "Could not cd to '$targetDir/'\n";
@@ -256,6 +291,56 @@ sub _acquire {
   die "$err\n" if $err;
 
 }
+
+sub _acquireByManualGet {
+  my ($self, $targetDir) = @_;
+
+  $self->_lock();
+
+  eval {
+    my $tmpDir = "$targetDir/tmp-" . time();
+    -e $tmpDir && die "Temp dir '$tmpDir' already exists.  Please remove it.\n";
+    mkdir $tmpDir || die "Could not make temp dir '$tmpDir'\n";
+    chdir $tmpDir || die "Could not cd to temp dir '$tmpDir/'\n";
+
+    $self->_writeManualGetArgs($targetDir);
+
+    $self->_log("Calling copy to acquire $self->{resource} $self->{version} files(s)");
+    $self->{manualGet}->execute($tmpDir);
+
+    my $baseName = $self->_tarAndZip($tmpDir);
+    $self->{storageManager}->copyIn("$tmpDir/$baseName.tar.gz",
+				    "$self->{versionDir}/$baseName.tar.gz");
+
+    chdir $targetDir || die "Could not cd to '$targetDir/'\n";
+
+    &runCmd("rm -rf $tmpDir");
+  };
+
+  my $err = $@;
+
+  # clean up.
+  $self->_unlock();
+
+  die "$err\n" if $err;
+
+}
+
+# return baseName
+sub _tarAndZip {
+  my ($self, $tmpDir) = @_;
+
+  $self->_log("Calling tar to package them for storage in the repository");
+  my $baseName = "$self->{resource}-$self->{version}";
+  my $tarCmd = "tar -cf $tmpDir/$baseName.tar .";
+  &runCmd($tarCmd);
+
+  $self->_log("Calling gzip to compress the package");
+  my $gzipCmd = "gzip $tmpDir/$baseName.tar";
+  &runCmd($gzipCmd);
+  return $baseName;
+}
+
 
 sub _lock {
   my ($self) = @_;
@@ -286,6 +371,21 @@ sub _writeWgetArgs {
   close(WGET);
   $self->{storageManager}->copyIn($wgetArgsFile, "$self->{versionDir}/wget.args");
   unlink($wgetArgsFile) || die "Couldn't remove temp file '$wgetArgsFile'\n";
+}
+
+sub _writeManualGetArgs {
+  my ($self, $targetDir) = @_;
+
+  my $time = time;
+  my $manualGetArgsFile = "$targetDir/tmp-$time-manualGet.args";
+  open(MANUALGET, ">$manualGetArgsFile") || die("Can't open $manualGetArgsFile for writing\n");
+  my $manualGetArgs = $self->{manualGet}->getArgs();
+  foreach my $arg (keys %{$manualGetArgs}) {
+    print MANUALGET "$arg=$manualGetArgs->{$arg}\n";
+  }
+  close(MANUALGET);
+  $self->{storageManager}->copyIn($manualGetArgsFile, "$self->{versionDir}/manualGet.args");
+  unlink($manualGetArgsFile) || die "Couldn't remove temp file '$manualGetArgsFile'\n";
 }
 
 sub _copyTo {
