@@ -136,6 +136,9 @@ sub run {
 
 	my $soTerm = $self->makeSequenceOntology($soId,$term,$definition);
 	$soTerm->submit() unless $soTerm->retrieveFromDB();
+	if($count % 100 == 0){
+	    $self->log("Submitted $count terms");
+	}
 
 	undef $soId;
 	undef $term;
