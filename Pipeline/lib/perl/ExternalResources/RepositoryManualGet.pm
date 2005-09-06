@@ -1,4 +1,4 @@
-package GUS::Pipeline::ExternalResources::RepositoryWget;
+package GUS::Pipeline::ExternalResources::RepositoryManualGet;
 
 use strict;
 
@@ -13,9 +13,8 @@ sub new {
   my $self = {};
   bless $self, $class;
 
-  $self->{sourceUrl} = $argsHash->{url};
-  $argsHash->{url} = undef;
-  $self->{args} = $argsHash;
+  $self->{args} = &_cleanArgs($argsHash);
+
   return $self;
 }
 
@@ -25,18 +24,8 @@ sub getArgs {
   return $self->{args};
 }
 
-sub getUrl {
-  my ($self) = @_;
-
-  return $self->{sourceUrl};
-}
-
-# returns a message if mismatch; undef if match
 sub argsMatch {
-  my ($self, $url, $argsHash) = @_;
-
-  return "Urls differ (previous url was: '$url')" 
-    if ($url ne $self->{sourceUrl});
+  my ($self, $argsHash) = @_;
 
   return "number of args differ"
     if (scalar keys %$argsHash) != (scalar keys %{$self->{args}});
@@ -52,22 +41,11 @@ sub argsMatch {
 }
 
 sub execute {
-  my ($self, $targetDir, $logFile, $cmdFile) = @_;
+  my ($self, $targetDir) = @_;
 
-  my $cmd = "wget --directory-prefix=$targetDir --output-file=$logFile";
-
-  foreach my $argName (keys %{$self->{args}}) {
-    ($argName eq "--directory-prefix=" 
-     || $argName eq "--output-file=")
-      && die "Do not provide the wget arg '$argName'.  It is handled internally.";
-    $cmd .= " ${argName}$self->{args}->{$argName}";
-  }
-
-  $cmd .= " $self->{sourceUrl}";
-
-  open(CMD, ">$cmdFile") || die "Cannot open wget command file '$cmdFile' for writing\n";
-  print CMD "$cmd\n";
-  close(CMD);
+  my $source = $self->{args}->{fileOrDir};
+  (-f $source || -d $source) || die "File or directory '$source' does not exist";
+  my $cmd = "cp -r $source $targetDir";
 
   system($cmd);
   my $status = $? >> 8;
@@ -77,7 +55,22 @@ sub execute {
   opendir(DIR, $targetDir) || die "Can't open directory '$targetDir': $!\n";
   my @files = grep !/^\./, readdir DIR;    # lose . and ..
   close(DIR);
-  die "wget failed to create any files.  Please see $logFile\n" if (scalar @files == 0);
+  die "manual get failed to create any files from '$source'\n" if (scalar @files == 0);
+}
+
+# if args are in wget format, convert to our format
+sub _cleanArgs {
+  my ($argsHash) = @_;
+
+  my %newHash;
+  foreach my $key (keys(%{$argsHash})) {
+    if ($key =~ /--(.*)=/) {
+      $newHash{$1} = $argsHash->{$key};
+    } else {
+      $newHash{$key} = $argsHash->{$key};
+    }
+  }
+  return \%newHash;
 }
 
 1;

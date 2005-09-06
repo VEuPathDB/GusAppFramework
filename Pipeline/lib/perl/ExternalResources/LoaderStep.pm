@@ -8,16 +8,15 @@ my $DBVERSION_MACRO = "\%EXT_DB_RLS_VER\%";
 
 sub new {
   my ($class, $repositoryDir, $resource, $version, $targetDir, $unpackers,
-      $url, $plugin, $pluginArgs, $extDbName, $extDbRlsVer, $extDbRlsDescrip, $commit, 
-      $dbCommit, $wgetArgs, $repositoryLogFile) = @_;
+      $plugin, $pluginArgs, $extDbName, $extDbRlsVer, $extDbRlsDescrip, 
+      $commit, $dbCommit, $args, $repositoryLogFile) = @_;
 
   my $self = {};
   $self->{repositoryEntry} = 
       GUS::Pipeline::ExternalResources::RepositoryEntry->new($repositoryDir,
 							     $resource,
 							     $version,
-							     $url,
-							     $wgetArgs,
+							     $args,
 							     $repositoryLogFile);
   
   $self->{extDbName} = $extDbName;
