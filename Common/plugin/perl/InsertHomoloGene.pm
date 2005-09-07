@@ -193,7 +193,6 @@ sub makeHomoloHash{
 
 sub makeRestartHash{
     my ($self, $restartHash, $orthologExp) = @_;
-    my $releaseDate = $self->getArg('releaseDate');
     my $orthologExpId = $$orthologExp->getId();
 
     my $sql = "select name from DoTS.OrthologGroup where sequence_group_experiment_id = $orthologExpId";
@@ -249,10 +248,10 @@ sub loadData{
     my $enteredCount = 0;
     my $nrdbExtDbRlsId = $self->getExtDbRlsId($self->getArg('nrdbExternalDatabaseName'), $self->getArg('nrdbExternalDatabaseVersion'));
 
-#    my $sql = "select x.aa_sequence_id from DoTS.NRDBEntry n, DoTS.ExternalAASequence x where n.source_id = ? and n.aa_sequence_id = x.aa_sequence_id and x.external_database_release_id = $nrdbExtDbRlsId";
+    my $sql = "select x.aa_sequence_id from DoTS.NRDBEntry n, DoTS.ExternalAASequence x where n.source_id = ? and n.aa_sequence_id = x.aa_sequence_id and x.external_database_release_id = $nrdbExtDbRlsId";
 
     my $queryHandle = $self->getQueryHandle();
-    my $sth = $queryHandle->prepare("select x.aa_sequence_id from DoTS.NRDBEntry n, DoTS.ExternalAASequence x where n.source_id = ? and n.aa_sequence_id = x.aa_sequence_id and x.external_database_release_id = $nrdbExtDbRlsId");
+    my $sth = $queryHandle->prepare($sql);
 
     foreach  my $hid (keys %$homoloHash){
 	print "Making entries for Ortholog Group $hid\n";
@@ -263,7 +262,7 @@ sub loadData{
 	    foreach my $gene_id (keys %{$homoloHash->{$hid}->{$tax_id}}){
 		foreach my $protein (@{$homoloHash->{$hid}->{$tax_id}->{$gene_id}}){
 
-		    unless($AASequenceId = $self->getAASequenceId($protein, $sth)){
+		    unless($AASequenceId = $self->getAASequenceId($protein, \$sth)){
 			$skippedCount ++;
 			next;
 		    }
@@ -348,24 +347,27 @@ sub makeSequenceSequenceGroup{
 sub makeAASeqDbRef{
     my ($self, $AASeqId, $gene_id) = @_;
     my $extDbRlsId = $self->getExtDbRlsId($self->getArg('entrezGeneExternalDatabaseName'), $self->getArg('entrezGeneExternalDatabaseVersion'));
-    
+    my $newAASeqDbRef;
+
     my $DbRef = GUS::Model::SRes::DbRef->new({
 	'primary_identifier' => $gene_id,
 	'external_database_release_id' => $extDbRlsId
 	});
 
     $DbRef->retrieveFromDB();
+    my $dbRefId = $DbRef->getId();
 
     my $AASequence = GUS::Model::DoTS::AASequence->new({
 	'aa_sequence_id' => $AASeqId
 	});
 
     $AASequence->retrieveFromDB();
+    my $aaSeqId = $AASequence->getId();
 
-    my $newAASeqDbRef = GUS::Model::DoTS::AASequenceDbRef->new({});
-
-    $newAASeqDbRef->setParent($AASequence);
-    $newAASeqDbRef->setParent($DbRef);
+    $newAASeqDbRef = GUS::Model::DoTS::AASequenceDbRef->new({
+	'aa_sequence_id' => $aaSeqId,
+	'db_ref_id' => $dbRefId
+	});
 
     return (\$newAASeqDbRef);
     
@@ -404,15 +406,14 @@ sub getAASequenceId{
 	   my $accession = $proteinAccessArray[0];
 	   my $version = $proteinAccessArray[1];
 
-    $accession = "'".$accession."'";
+    $$sth->execute($accession);
 
-    $sth->execute($accession);
-
-    my $AASequenceId = $sth->fetchrow_array();
-    $sth->finish();
+    my $AASequenceId = $$sth->fetchrow_array();
+    $$sth->finish();
 
     return $AASequenceId;
 
 }
+
 
 1;
