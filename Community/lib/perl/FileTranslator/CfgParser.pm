@@ -1,11 +1,11 @@
-package GUS::RAD::FileTranslator::CfgParser;
+package GUS::Community::FileTranslator::CfgParser;
 
 use strict;
 use XML::Simple;
 use Tie::IxHash;
 use Data::Dumper;
 
-use GUS::RAD::FileTranslator::FileReader;
+use GUS::Community::FileTranslator::FileReader;
 
 my @xmloptions = ('keyattr' =>  [],
                   'forcearray'=> 1,
@@ -142,7 +142,7 @@ the mandatory headers are present.
 sub  validate {
     my ($slf,$in_fh) = @_;
     print "VALIDATING $in_fh \n" if $slf->dbg;
-    return 0 unless (UNIVERSAL::isa($in_fh,'GUS::RAD::FileTranslator::FileReader'));
+    return 0 unless (UNIVERSAL::isa($in_fh,'GUS::Community::FileTranslator::FileReader'));
     
     my $mand_hdrs = $slf->mandatoryHeaders();
     print "Mandatory headers length = " . (values %$mand_hdrs) . "\n" if $slf->dbg;
