@@ -1,4 +1,4 @@
-package GUS::RAD::FileTranslator::FileReader;
+package GUS::Community::FileTranslator::FileReader;
 
 # GUS::RAD::FileTranslator::FileReader
 #
