@@ -17,18 +17,18 @@
 ##########################################################################
 
 
-package GUS::RAD::FileTranslator;
+package GUS::Community::FileTranslator;
 
 use strict 'vars';
 use FileHandle;
 
-use GUS::RAD::FileTranslator::FileReader;
-use GUS::RAD::FileTranslator::CfgParser;
+use GUS::Community::FileTranslator::FileReader;
+use GUS::Community::FileTranslator::CfgParser;
 
 
 =pod
 
-=head1 GUS::RAD::FileTranslator
+=head1 GUS::Community::FileTranslator
 
 
   Module to translate one tab-delimited format to another, basically
@@ -43,9 +43,9 @@ for parsing data and array design files.
 
 =head2 Methods
 
-=item $translator = GUS::RAD::FileTranslator->new($cfgfile)
+=item $translator = GUS::Community::FileTranslator->new($cfgfile)
 
-Constructor. Takes a an XML file defining a GUS::RAD::CfgFile object 
+Constructor. Takes a an XML file defining a GUS::Community::CfgFile object 
 as an argument. 
 
 =cut
@@ -60,7 +60,7 @@ sub new {
         die "ERR: Did not give config file\nFileTranslator->new(<cfg file path>)\n" ; 
     }
     eval {
-        $slf->cfg( GUS::RAD::FileTranslator::CfgParser->new($cfgfile,$dbg) );
+        $slf->cfg( GUS::Community::FileTranslator::CfgParser->new($cfgfile,$dbg) );
     };
     if ($@) {  
         $slf->fhlog->print("ERR: FileTranslator->new($cfgfile): Config file $cfgfile error: $@\n" );
@@ -203,7 +203,7 @@ sub validate {
   my ($slf,$file) = @_;
   my $in_fh;
   if ($file) {
-    $in_fh = GUS::RAD::FileTranslator::FileReader->new($file);
+    $in_fh = GUS::Community::FileTranslator::FileReader->new($file);
   }else {
     $in_fh = $slf->fhin();
   }
@@ -228,7 +228,7 @@ sub setInput {
   
   eval {
     $slf->inputfile( $in_file);
-    $slf->fhin( GUS::RAD::FileTranslator::FileReader->new($in_file));
+    $slf->fhin( GUS::Community::FileTranslator::FileReader->new($in_file));
   };
   $slf->fhlog()->print("ERR: Input file $in_file error: $@\n" ) if ($@);
   
