@@ -24,7 +24,7 @@ while (<FILE>) {
     if (!$features->{$currentFeature}) {
       $features->{$currentFeature} = {};
     }
-  } elsif (/^FT\s+\/(\w+)=/) {
+  } elsif (/^FT\s+\/(\w+)[=|\s]/) {
     $features->{$currentFeature}->{$1} = 1;
   }
 }
