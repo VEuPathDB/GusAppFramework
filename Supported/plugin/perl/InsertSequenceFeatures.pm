@@ -1,5 +1,11 @@
 package GUS::Supported::Plugin::InsertSequenceFeatures;
 
+# todo:
+#  - take seq taxon on cmdline
+#  - add logging info
+#  - break special cases into plugable modules
+#  - undo
+
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;
@@ -188,7 +194,6 @@ my $argsDeclaration  =
 	      constraintFunc=> undef,
 	      reqd  => 0,
 	      isList => 0,
-	      default => "DNA",
 	     }),
 
    stringArg({name => 'seqSoTerm',
@@ -285,6 +290,13 @@ my $argsDeclaration  =
 	      isList => 0
 	     }),
 
+   stringArg({name => 'defaultOrganism',
+	      descr => 'The organism name to use if a sequence in the input file does not provide organism information.  Eg "Plasmodium falciparum"',
+	      constraintFunc=> undef,
+	      reqd  => 0,
+	      isList => 0
+	     }),
+
    integerArg({name => 'restartPoint',
 	       descr => 'Point at which to restart submitting data.  Format = SEQ:[ID] or FEAT:[ID]',
 	       constraintFunc=> undef,
@@ -361,8 +373,11 @@ sub run{
 
     foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
       my $NAFeature = $self->makeFeature($bioperlFeatureTree, $naSequenceId);
+      if (!$NAFeature) { next; }
       $NAFeature->submit();
       $featureTreeCount++;
+      $self->log("Inserted $featureTreeCount feature trees") 
+	if $featureTreeCount % 100 == 0;
     }
     $self->undefPointerCache();
   }
@@ -701,6 +716,7 @@ sub makeNAEntry {
 sub makeFeature {
   my ($self, $bioperlFeature, $naSequenceId) = @_; 
 
+
   # there is an error in the bioperl unflattener such that there may be
   # exon-less rRNAs (eg, in C.parvum short contigs containing only rRNAs)
   # this method has extra logic to compensate for that problem.
@@ -708,14 +724,16 @@ sub makeFeature {
   # map the immediate bioperl feature into a gus feature
   my $feature = $self->makeImmediateFeature($bioperlFeature, $naSequenceId);
 
-  # call method to handle unflattener error of giving rRNAs no exon.
-  $self->handleExonlessRRNA($bioperlFeature, $feature, $naSequenceId);
+  if ($feature) {
+    # call method to handle unflattener error of giving rRNAs no exon.
+    $self->handleExonlessRRNA($bioperlFeature, $feature,$naSequenceId);
 
-  # recurse through the children
-  foreach my $bioperlChildFeature ($bioperlFeature->get_SeqFeatures()) {
-    my $childFeature =
-      $self->makeFeature($bioperlChildFeature, $naSequenceId);
-    $feature->addChild($childFeature);
+    # recurse through the children
+    foreach my $bioperlChildFeature ($bioperlFeature->get_SeqFeatures()) {
+      my $childFeature =
+	$self->makeFeature($bioperlChildFeature, $naSequenceId);
+      $feature->addChild($childFeature);
+    }
   }
   return $feature;
 }
@@ -728,6 +746,8 @@ sub makeImmediateFeature {
   my $tag = $bioperlFeature->primary_tag();
 
   my $featureMapper = $self->{mapperSet}->getMapperByFeatureName($tag);
+
+  return undef if $featureMapper->ignoreFeature();
 
   my $gusObjName = $featureMapper->getGusObjectName();
 
@@ -810,10 +830,15 @@ sub getSeqTypeId {
 sub getTaxonId {
   my ($self, $bioperlSeq) = @_;
 
-  my $spec = $bioperlSeq->species();
-  my $genName = $spec->genus();
-  my $spcName = $spec->species();
-  my $sciName = "$genName $spcName";
+  my $species = $bioperlSeq->species();
+  my $sciName;
+  if ($species) {
+    $sciName = $species->genus() . " " . $species->species();
+  } else {
+    $sciName = $self->getArg('defaultOrganism');
+    $sciName =~ /\w+ \w+/ || $self->userError("Command line argument --defaultOrganism is not in 'genus species' format");
+  }
+
 
   return $self->getIdFromCache('taxonIdCache',
 			       $sciName,
@@ -829,7 +854,7 @@ sub handleFeatureTag {
 
   #future suggestion: special not if then, special can also have a column value or be lost
 
-  return if ($featureMapper->isLost($tag));
+  return if ($featureMapper->ignoreTag($tag));
 
   if ($featureMapper->isSpecialCase($tag)) {
     my @tagValues = $bioperlFeature->get_tag_values($tag);
