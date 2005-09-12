@@ -36,15 +36,16 @@ sub new {
   bless($self,$Class); # configuration object...
 
 # call required inherited initialization methods
-  my $usage = 'Loads data into ElementResultImp, CompositeElementResultImp tables in RAD3 database. meanwhile it will set the value of result_table_id in Quantification table';
-  my $purposeBrief = 'Loads data into ElementResultImp, CompositeElementResultImp tables in RAD3 database. meanwhile it will set the value of result_table_id in Quantification table';
+
+  my $purposeBrief = 'Loads data into ElementResultImp, CompositeElementResultImp tables in RAD database. meanwhile it will set the value of result_table_id in Quantification table';
 
   my $purpose = <<PURPOSE;
 This is a plug-in that loads array  (spotted microarray and oligonucleotide array) result data into ElementResultImp and CompositeElementResultImp table, meanwhile it will set the value of result_table_id in Quantification table.
 PURPOSE
 
-  my $tablesAffected = [['RAD3::ElementResultImp', 'Enters the results of this ElementResult here'], ['RAD3::CompositeElementResultImp', 'Enters the results of this CompositeElementResult here']];
-  my $tablesDependedOn = [['RAD3::Array', 'The array used in the hybridization whose quantification result file is being loaded'], ['RAD3::Quantification', 'The quantifiction whose result file is being loaded' ]]; 
+  my $tablesAffected = [['RAD::ElementResultImp', 'Enters the results of this ElementResult here'], ['RAD::CompositeElementResultImp', 'Enters the results of this CompositeElementResult here']];
+
+  my $tablesDependedOn = [['RAD::Array', 'The array used in the hybridization whose quantification result file is being loaded'], ['RAD::Quantification', 'The quantifiction whose result file is being loaded' ]]; 
 
   my $howToRestart = <<RESTART;
 Loading can be resumed using the I<--restart n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted).
@@ -52,6 +53,7 @@ RESTART
 
   my $failureCases = <<FAILURE_CASES;
 FAILURE_CASES
+
   my $notes = <<NOTES;
 
 =head1 NOTES
@@ -60,7 +62,7 @@ Before you can run this plug-in you need to create the Perl objects for the view
 
 The plug-in outputs a print statement to STDOUT (for possible redirection to a log file) which lists the number of data file lines read (counting empty lines, but not counting the header and the lines preceding it in the data file) and any warning statement(s) regarding data lines which have not been loaded into RAD3.
 
-Make sure that the F<.gus.properties> file of the user contains the correct login name [RAD3rw]. Also, if the group and project differ from the default values in F<.gus.properties>, I<please specify the proper group and project name on the command line using --group and --project options respectively>. 
+Make sure that the F<.gus.properties> file of the user contains the correct login name [RADrw]. Also, if the group and project differ from the default values in F<.gus.properties>, I<please specify the proper group and project name on the command line using --group and --project options respectively>. 
 
 B<I<array_id>> [Mandatory]
 
@@ -68,7 +70,7 @@ The array used in the hybridization whose quantification result file is being lo
 
 B<I<quantification_id>> [Mandatory]
 
-The quantification_id (in RAD3.Quantification) of the quantifiction whose result file is being loaded. For Affymetrix platform, this will be the quantification associated with the chp data.
+The quantification_id (in RAD.Quantification) of the quantifiction whose result file is being loaded. For Affymetrix platform, this will be the quantification associated with the chp data.
 
 B<I<array_subclass_view>> [Optional]
 
@@ -140,16 +142,13 @@ The data file should be in tab-delimited text format with one header row and a r
 Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.
 
 =head1 AUTHOR
-
 Written by Junmin Liu.
-
 =head1 COPYRIGHT
-
 Copyright Trustees of University of Pennsylvania 2003.
+
 NOTES
 
 my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief,tablesAffected=>$tablesAffected,tablesDependedOn=>$tablesDependedOn,howToRestart=>$howToRestart,failureCases=>$failureCases,notes=>$notes};
-
 
 # modify the following line to add a new view for ElementResultImp/CompositeElementResultImp table
   my @rSubclassViewList=[qw (ArrayVisionElementResult GenePixElementResult SpotElementResult ScanAlyzeElementResult AffymetrixCEL GEMToolsElementResult AffymetrixMAS4 AffymetrixMAS5 MOIDResult)];
@@ -159,7 +158,7 @@ my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief,tablesAffect
 
   my @posOption=(1, 2, 3);
 
-my $argsDeclaration  =
+  my $argsDeclaration  =
     [
      stringArg({name => 'array_subclass_view',
 		descr => 'The name of the view of RAD3.ElementImp/RAD3.CompositeElementImp.',
@@ -228,9 +227,8 @@ my $argsDeclaration  =
 	     })
     ];
 
-  $self->initialize({requiredDbVersion => {RAD3 => '3', Core => '3'},
+  $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision$',
-		     cvsTag => '$Name$',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argsDeclaration,
@@ -296,8 +294,8 @@ sub run {
   }
 
 # require the elementimp and compositeelementimp view objects at running time
-  eval "require GUS::Model::RAD3::$M->getCla->{'array_subclass_view'}";
-  eval "require GUS::Model::RAD3::$M->getCla->{'result_subclass_view'}";
+  eval "require GUS::Model::RAD::$M->getCla->{'array_subclass_view'}";
+  eval "require GUS::Model::RAD::$M->getCla->{'result_subclass_view'}";
 
 # set the global array $positionList and require the view for CompositeElementImp at running time
   if($M->getCla->{array_subclass_view} eq 'ShortOligoFamily'){
@@ -548,8 +546,8 @@ sub loadData{
       $pk_name="element_id";
     }
 
-  eval "require GUS::Model::RAD3::$array_subclass_view";
-  eval "require GUS::Model::RAD3::$result_subclass_view";
+  eval "require GUS::Model::RAD::$array_subclass_view";
+  eval "require GUS::Model::RAD::$result_subclass_view";
 
 # the hash mapping position attributes to ids of spot or shortoligoFamily
    my $posListToId;
@@ -565,7 +563,7 @@ sub loadData{
        $posList .= ",";
        $posList .="$pos"; }
    }
-   my $posSQL="select $posList, $pk_name from RAD3.$array_subclass_view where array_id=$array_id";
+   my $posSQL="select $posList, $pk_name from RAD.$array_subclass_view where array_id=$array_id";
    my $st = $dbh->prepare($posSQL) or die "SQL= $posSQL\n", $dbh->errstr;
    if($st->execute()){
      while (my $row = $st->fetchrow_hashref('NAME_lc')){
@@ -587,7 +585,7 @@ sub loadData{
 
 # for querying ElementImp table to set the element_id or composite_element_id
    my $arrayClass;
-   $arrayClass="GUS::Model::RAD3::$array_subclass_view";
+   $arrayClass="GUS::Model::RAD::$array_subclass_view";
 
    while ($line = <$fh>) {
      $cfg_rv->{n}++;
@@ -747,7 +745,7 @@ sub updateQuantification{
   my ($result_table_id, $q_id )=@_;
   my $quan_hash;
   $quan_hash->{'quantification_id'}=$q_id;
-  my $quan=GUS::Model::RAD3::Quantification->new($quan_hash);
+  my $quan=GUS::Model::RAD::Quantification->new($quan_hash);
   $quan->retrieveFromDB();
   if( $quan->setResultTableId($result_table_id)){
       if($quan->submit()){
@@ -781,8 +779,8 @@ sub updateSpotFamResult{
 	$spot_fam_hash->{'quantification_id'} = $M->getCla->{quantification_id};
     }
  
-    my @spot_fam_attr=$M->getAttrArray("GUS::Model::RAD3::$cr_subclass_view");
-    my $spot_fam_attr_hashref=$M->getAttrHashRef("GUS::Model::RAD3::$cr_subclass_view");
+    my @spot_fam_attr=$M->getAttrArray("GUS::Model::RAD::$cr_subclass_view");
+    my $spot_fam_attr_hashref=$M->getAttrHashRef("GUS::Model::RAD::$cr_subclass_view");
     for (my $i=0; $i<@spot_fam_attr; $i++) {
 	my $attr;
 	$attr=$spot_fam_attr[$i];
@@ -796,7 +794,7 @@ sub updateSpotFamResult{
 	}
       }
  
-     my $SPOT_FAM_VIEW=join('::', 'GUS', 'Model', 'RAD3', $cr_subclass_view);
+     my $SPOT_FAM_VIEW=join('::', 'GUS', 'Model', 'RAD', $cr_subclass_view);
      my $spot_family = $SPOT_FAM_VIEW->new($spot_fam_hash);
 # check whether this row is already in the database
 # if it is, get its primary key
@@ -831,8 +829,8 @@ sub updateSpotResult{
     my $RV;
 
     my $er_subclass_view = $M->getCla->{result_subclass_view};
-    my @spot_attr=$M->getAttrArray("GUS::Model::RAD3::$er_subclass_view");
-    my $spot_attr_hashref=$M->getAttrHashRef("GUS::Model::RAD3::$er_subclass_view");
+    my @spot_attr=$M->getAttrArray("GUS::Model::RAD::$er_subclass_view");
+    my $spot_attr_hashref=$M->getAttrHashRef("GUS::Model::RAD::$er_subclass_view");
     my @attributesToNotRetrieve = ('modification_date', 'row_alg_invocation_id');     
     $spot_hash->{'element_id'} = $cfg_rv->{spot_or_sf_id};
     $spot_hash->{'subclass_view'} = $er_subclass_view;
@@ -864,7 +862,7 @@ sub updateSpotResult{
 	 }
     }
 
-   my $SPOT_VIEW=join('::', 'GUS', 'Model','RAD3', $er_subclass_view);
+   my $SPOT_VIEW=join('::', 'GUS', 'Model','RAD', $er_subclass_view);
    my $spotResult = $SPOT_VIEW->new($spot_hash);
    my $spot_result_id;
    my $spot_result_pk;
