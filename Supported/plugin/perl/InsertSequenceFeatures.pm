@@ -636,11 +636,10 @@ sub addReferences {
   my @bioperlReferences = $bioperlAnnotation->get_Annotations('reference');
 
   foreach my $bioperlReference (@bioperlReferences) {
-    my $bpReferenceHash = $bioperlReference->hash_tree();
     my $reference = GUS::Model::SRes::Reference->new() ;
-    $reference->setAuthor($bpReferenceHash->{'authors'});
-    $reference->setTitle($bpReferenceHash->{'title'});
-    $reference->setJournalOrBookName($bpReferenceHash->{'location'});
+    $reference->setAuthor($bioperlReference->authors());
+    $reference->setTitle($bioperlReference->title());
+    $reference->setJournalOrBookName($bioperlReference->location());
 
     unless ($reference->retrieveFromDB())  {
       $reference->submit();
@@ -662,7 +661,7 @@ sub addComments {
   my @bioperlComments = $bioperlAnnotation->get_Annotations('comment');
   foreach my $bioperlComment (@bioperlComments) {
     my $naComment = GUS::Model::DoTS::NAComment->
-      new({'comment_string'=>$bioperlComment->value()});
+      new({'comment_string'=>$bioperlComment->text()});
     $naSequence->addChild($naComment);
   }
 }
