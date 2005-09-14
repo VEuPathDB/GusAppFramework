@@ -1,8 +1,8 @@
 package GUS::Supported::Plugin::InsertSequenceFeatures;
 
 # todo:
+#  - handle seqVersion more robustly
 #  - add logging info
-#  - break special cases into plugable modules
 #  - undo
 
 @ISA = qw(GUS::PluginMgr::Plugin);
@@ -37,24 +37,12 @@ use GUS::Model::DoTS::SecondaryAccs;
 use GUS::Model::DoTS::NALocation;
 use GUS::Model::DoTS::NASequenceRef;
 use GUS::Model::DoTS::Keyword;
+use GUS::Model::DoTS::NASequenceKeyword;
 use GUS::Model::DoTS::NAComment;
 
 #USED BY TRANSCRIPT FEATURES TO LOAD THE TRANSLATED PROTEIN SEQ
 use GUS::Model::DoTS::TranslatedAAFeature;
 use GUS::Model::DoTS::TranslatedAASequence;
-
-#TABLES AND VIEWS USED IN SPECIAL CASES
-use GUS::Model::DoTS::NAGene;
-use GUS::Model::DoTS::NAProtein;
-use GUS::Model::DoTS::NAPrimaryTranscript;
-use GUS::Model::SRes::DbRef;
-use GUS::Model::DoTS::NAFeatureComment;
-use GUS::Model::DoTS::NASequenceOrganelle;
-use GUS::Model::DoTS::NASequenceKeyword;
-use GUS::Model::DoTS::NAFeatureNAGene;
-use GUS::Model::DoTS::NAFeatureNAPT;
-use GUS::Model::DoTS::NAFeatureNAProtein;
-use GUS::Model::DoTS::DbRefNAFeature;
 
 # future considerations....
 #
@@ -114,13 +102,10 @@ NOTES
    ['DoTS.TranslatedAASequence', ''],
    ['DoTS.NAGene', ''],
    ['DoTS.NAProtein', ''],
-   ['DoTS.NAPrimaryTranscript', ''],
    ['SRes.DbRef', ''],
    ['DoTS.NAFeatureComment', ''],
-   ['DoTS.NASequenceOrganelle', ''],
    ['DoTS.NASequenceKeyword', ''],
    ['DoTS.NAFeatureNAGene', ''],
-   ['DoTS.NAFeatureNAPT', ''],
    ['DoTS.NAFeatureNAProtein', ''],
    ['DoTS.DbRefNAFeature', ''],
   ];
@@ -326,7 +311,7 @@ sub new {
   bless($self, $class);
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: $',
+		     cvsRevision => '$Revision: 3411 $',
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
@@ -586,11 +571,11 @@ sub constructNASequence {
   my ($self, $bioperlSeq, $dbRlsId) = @_;
 
   if (!$bioperlSeq->seq()) {
-    die "No input sequence found for " . $bioperlSeq->accession_number() . "  If the input intentionally contains no sequence, please use --naSequenceSubclass and --seqIdColumn\n";
+    die "No input sequence found for accession '" . $bioperlSeq->accession_number() . "'.  If the input intentionally contains no sequence, please use --naSequenceSubclass and --seqIdColumn\n";
   }
   my $naSequence = GUS::Model::DoTS::ExternalNASequence->
     new({ external_database_release_id => $dbRlsId,
-	  source_id => $bioperlSeq->accession_number});
+	  source_id => $bioperlSeq->accession_number()});
 
   my $seqType = $self->getArg('seqType');
   if ($seqType) { 
@@ -602,9 +587,19 @@ sub constructNASequence {
   }
   my $taxId = $self->getTaxonId($bioperlSeq);
   $naSequence->setTaxonId($taxId);
-  $naSequence->setName($bioperlSeq->primary_id());
+
+  # workaround the bioperl embl parser's lack of an exception
+  # if it can't parse the ID line
+  my $displayId = $bioperlSeq->display_id();
+  if ($displayId eq "unknown id") {
+    $self->error("Sequence with accession '" . $bioperlSeq->accession_number() . "' does not have a parsable display id");
+  }
+
+  $naSequence->setName($displayId);
   $naSequence->setDescription($bioperlSeq->desc());
-  $naSequence->setSequenceVersion($bioperlSeq->seq_version());
+  my $seqVersion = $bioperlSeq->seq_version();
+  $seqVersion = 1 unless $seqVersion;
+  $naSequence->setSequenceVersion($seqVersion);
 
   if ($bioperlSeq->seq) {
       my $seqcount = Bio::Tools::SeqStats->count_monomers($bioperlSeq);
@@ -835,7 +830,11 @@ sub getTaxonId {
     $sciName = $species->genus() . " " . $species->species();
   } else {
     $sciName = $self->getArg('defaultOrganism');
-    $sciName =~ /\w+ \w+/ || $self->userError("Command line argument --defaultOrganism is not in 'genus species' format");
+    if (!$sciName) {
+      my $acc = $bioperlSeq->accession_number();
+      $self->userError("Sequence '$acc' does not have organism information, and, you have not supplied a --defaultOrganism argument on the command line");
+    }
+    $sciName =~ /\w+ \w+/ || $self->userError("Command line argument '--defaultOrganism $sciName' is not in 'genus species' format");
   }
 
 
@@ -850,27 +849,26 @@ sub getTaxonId {
 sub handleFeatureTag {
   my ($self, $bioperlFeature, $featureMapper, $feature, $tag) = @_;
 
-
-  #future suggestion: special not if then, special can also have a column value or be lost
-
   return if ($featureMapper->ignoreTag($tag));
 
+  # if special case, pass to special case handler
+  # it creates a set of child objects to add to the feature
+  # and optionally sets one or more columns in the feature
   if ($featureMapper->isSpecialCase($tag)) {
-    my @tagValues = $bioperlFeature->get_tag_values($tag);
-    foreach my $tagValue (@tagValues) {
-      my $specialCaseChild = $self->makeSpecialCaseChild($tag,
-						      $tagValue,
-						      $featureMapper,
-						      $bioperlFeature,
-						      #$featureMap);
-						      );
-      $feature->addChild($specialCaseChild);
-    }
+    my $handlerName = $featureMapper->getHandlerName($tag);
+    my $method = $featureMapper->getHandlerMethod($tag);
+    my $handler= $self->{mapperSet}->getHandler($handlerName);
+    my @children = $handler->$method($tag, $bioperlFeature, $feature);
 
+    foreach my $child (@children) {
+      $feature->addChild($child);
+    }
   }
 
+  # standard case handles a simple assignment of a single tag value to
+  # a column in the feature.  (multiple tag values must be a special 
+  # case because they require a child per value)
   else {
-    #my $gusColumnName = $featureMapper->getGusColumn($featureMap, $tag);
     my $gusColumnName = $featureMapper->getGusColumn($tag);
     if ($tag && !$gusColumnName) { die "invalid tag, No Mapping [$tag]\n"; }
 
@@ -881,8 +879,8 @@ sub handleFeatureTag {
       }
     }
     else {
-      #die "invalid tag: more than one value\n"; }
-      #snoRNA creates a bunch of empty values! Ignore and keep going.
+      my $featureName = $bioperlFeature->primary_tag();
+      $self->error("Feature '$featureName' has more than one value for tag '$tag'\nThe values are:\n\t" . join("\n\t", @tagValues) . "\n");
     }
   }
 }
@@ -904,159 +902,6 @@ sub handleExonlessRRNA {
 }
 
 
-# ----------------------------------------------------------
-# Handler for special cases
-# ----------------------------------------------------------
-
-sub makeSpecialCaseChild {
-  my ($self, $tag, $value, $featureMapper) = @_;
-
-  my $specialcase = $featureMapper->isSpecialCase($tag);
-
-  return $self->buildDbXRef($value) if ($specialcase eq 'dbxref');
-
-  return $self->buildProtein($value) if ($specialcase eq 'product');
-
-  return $self->buildNote($value) if ($specialcase eq 'note');
-
-  return $self->buildGene($value) if ($specialcase eq 'gene');
-
-  return $self->buildTranslatedAAFeature($value) if ($specialcase eq 'aaseq');
-
-  die "Unsupported Special Case: $specialcase";
-}
-
-
-#---------------------------------------
-# All special cases
-#---------------------------------------
-sub buildGene {
-  my ($self, $geneName) = @_;
-  my $geneID = $self->getNAGeneId($geneName);
-  my $gene = GUS::Model::DoTS::NAFeatureNAGene->new();
-  $gene->setNaGeneId($geneID);
-  return $gene;
-}
-
-sub getNAGeneId {   
-  my ($self, $geneName) = @_;
-  my $truncName = substr($geneName,0,300);
-  if (!$self->geneNameIds->{$truncName}) {
-    my $gene = GUS::Model::DoTS::NAGene->new({'name' => $truncName});
-    unless ($gene->retrieveFromDB()){
-      $gene->setIsVerified(0);
-      $gene->submit();
-    }
-    $self->geneNameIds->{$truncName} = $gene->getId();
-  }
-  return $self->geneNameIds->{$truncName};
-}
-
-
-sub buildDbXRef {
-  my ($self, $dbSpecifier) = @_;
-
-  my $dbRefNaFeature = GUS::Model::DoTS::DbRefNAFeature->new();
-  my $id = $self->getDbXRefId($dbSpecifier);
-  $dbRefNaFeature->setDbRefId($id);
-
-  ## If DbRef is outside of Genbank, then link directly to sequence
-  #if (!($value =~ /taxon|GI|pseudo|dbSTS|dbEST/i)) {
-  #  my $o2 = GUS::Model::DoTS::DbRefNASequence->new();
-  #  $o2->setDbRefId($id);
-  #}
-  #else {
-  # my $id = &getDbXRefId($value);}
-
-  return $dbRefNaFeature;
-
-}
-
-sub getDbXRefId {
-  my ($self, $dbSpecifier) = @_;
-
-  if (!$self->{dbXrefIds}->{$dbSpecifier}) {
-    my ($dbName, $id, $sid)= split(/\:/, $dbSpecifier);
-    my $extDbRlsId = $self->getExtDatabaseRlsId($dbName);
-    my $dbref = GUS::Model::SRes::DbRef->new({'external_database_release_id' => $extDbRlsId, 
-					      'primary_identifier' => $id});
-
-    if ($sid) {
-      $dbref->setSecondaryIdentifier($sid);
-    }
-    unless ($dbref->retrieveFromDB()) {
-      $dbref->submit();
-    }
-
-    $self->{dbXrefIds}->{$dbSpecifier} = $dbref->getId();
-  }
-
-  return $self->{dbXrefIds}->{$dbSpecifier};
-}
-
-sub getExtDatabaseRlsId {
-  my ($self, $name) = @_;
-
-  if (!$self->{extDbRlsIds}->{$name}) {
-    my $externalDatabase
-      = GUS::Model::SRes::ExternalDatabase->new({"name" => $name});
-
-    unless($externalDatabase->retrieveFromDB()) {
-      $externalDatabase->submit();
-    }
-
-    my $externalDatabaseRls = GUS::Model::SRes::ExternalDatabaseRelease->
-      new ({'external_database_id'=>$externalDatabase->getId(),
-	    'version'=>'unknown'});
-
-    unless($externalDatabaseRls->retrieveFromDB()) {
-      $externalDatabaseRls->submit();
-    }
-
-    $self->{extDbRlsIds}->{$name} = $externalDatabaseRls->getId();
-  }
-    return $self->{extDbRlsIds}->{$name};
-}
-
-
-sub buildNote {
-  my ($self, $comment) = @_;
-  my %note = ('comment_string' => substr($comment, 0, 4000));
-  return GUS::Model::DoTS::NAFeatureComment->new(\%note);
-}
-
-
-sub buildProtein {
-  my ($self, $proteinName) = @_;
-
-  my $nameTrunc = substr($proteinName,0,300);
-
-  my $naFeatureNaProtein = GUS::Model::DoTS::NAFeatureNAProtein->new();
-
-  my $protein = GUS::Model::DoTS::NAProtein->new({'name' => $nameTrunc});
-  unless ($protein->retrieveFromDB()){
-    $protein->setIsVerified(0);
-    $protein->submit();
-  }
-
-  $naFeatureNaProtein->setNaProteinId($protein->getId());
-
-  return $naFeatureNaProtein;
-}
-
-sub buildTranslatedAAFeature {
-  my ($self, $aaSequence) = @_;
-
-  my $transAaFeat = GUS::Model::DoTS::TranslatedAAFeature->new();
-  $transAaFeat->setIsPredicted(1);
-
-  my $aaSeq = GUS::Model::DoTS::TranslatedAASequence->
-    new({'sequence' => $aaSequence});
-  $aaSeq->addChild($transAaFeat);
-  $aaSeq->submit();
-
-  return $transAaFeat;
-}
 
 
 ##############################################################################
@@ -1066,22 +911,19 @@ sub buildTranslatedAAFeature {
 sub getIdFromCache {
   my ($self, $cacheName, $name, $type, $field) = @_;
 
-  my $id;
-
   if ($self->{$cacheName} == undef) {
     $self->{$cacheName}= {};
   }
 
-  $id = $self->{$cacheName}->{$name};
+  $name || die "Attempting to get id from cache with null name";
 
-  if (!$id && $name) {
+  if (!$self->{$cacheName}->{$name}) {
     my $obj = $type->new({$field => $name });
     $obj->retrieveFromDB() 
       || die "Failed to retrieve $type id for $field = '$name'";
-    my $id = $obj->getId();
-    $self->{cacheName}->{$name} = $id;
+    $self->{$cacheName}->{$name} = $obj->getId();
   }
-  return $id;
+  return $self->{$cacheName}->{$name};
 }
 
 # for all SO terms used, find the GUS primary key

@@ -2,6 +2,7 @@ package GUS::Supported::BioperlFeatMapperSet;
 
 use strict;
 use GUS::Supported::BioperlFeatMapper;
+use Data::Dumper;
 
 use XML::Simple;
 
@@ -13,9 +14,25 @@ sub new {
   bless($self, $class);
 
   $self->{mapXmlFile} = $mapXmlFile;
-  $self->{mappersByName} = $self->_parseMapFile($mapXmlFile);
+  $self->_parseMapFile($mapXmlFile);
 
   return $self;
+}
+
+sub getMapperByFeatureName {
+  my ($self, $featureName) = @_;
+
+  if (!$self->{mappersByName}->{$featureName}) {
+    die "Map XML file '$self->{mapXmlFile}' does not contain a <feature name=\"${featureName}\">, which is found in the input";
+  }
+
+  return $self->{mappersByName}->{$featureName};
+}
+
+sub getHandler {
+  my ($self, $name) = @_;
+
+  return $self->{qualifierHandlers}->{$name};
 }
 
 # return a list of all SO terms used in feature maps
@@ -34,26 +51,22 @@ sub _parseMapFile {
   my ($self, $mapXml) = @_;
 
   my $simple = XML::Simple->new();
-  my $mapperSet = $simple->XMLin($mapXml, forcearray => 0)->{feature};
-
-  my %featureMappersByName;
+  my $data = $simple->XMLin($mapXml, forcearray => 1);
+  my $mapperSet = $data->{feature};
+  my $qualifierHandlers = $data->{specialCaseQualifierHandler};
 
   while (my ($name, $feature) = each %{$mapperSet}) {
-    $featureMappersByName{$name} = 
+    $self->{mappersByName}->{$name} = 
       GUS::Supported::BioperlFeatMapper->new($name, $feature, $mapXml);
   }
 
-  return \%featureMappersByName;
-}
-
-sub getMapperByFeatureName {
-  my ($self, $featureName) = @_;
-
-  if (!$self->{mappersByName}->{$featureName}) {
-    die "Map XML file '$self->{mapXmlFile}' does not contain a <feature name=\"${featureName}\">, which is found in the input";
+  while (my ($name, $handler) = each %{$qualifierHandlers}) {
+    my $handlerClass = $handler->{class};
+    $self->{qualifierHandlers}->{$name} = 
+      eval "{require $handlerClass; $handlerClass->new()}";
+    if ($@) { die "Cannot import or construct new object for qualifier handler class '$handlerClass'\n $@"; }
   }
-
-  return $self->{mappersByName}->{$featureName};
 }
+
 
 1;
