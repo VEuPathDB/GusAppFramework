@@ -53,14 +53,32 @@ sub isSpecialCase {
   my ($self, $tag) = @_;
 
   $self->_checkTagExists($tag);
-  return $self->{'qualifier'}->{$tag}->{'specialcase'}; 
+  return $self->{'qualifier'}->{$tag}->{'handler'}; 
 }
 
-sub isLost {
+sub getHandlerName {
+  my ($self, $tag) = @_;
+
+  return $self->{'qualifier'}->{$tag}->{'handler'}
+}
+
+sub getHandlerMethod {
+  my ($self, $tag) = @_;
+
+  return $self->{'qualifier'}->{$tag}->{'method'}
+}
+
+sub ignoreFeature {
+  my ($self) = @_;
+
+  return $self->{'ignore'};
+}
+
+sub ignoreTag {
   my ($self, $tag) = @_;
 
   $self->_checkTagExists($tag);
-  return $self->{'qualifier'}->{$tag}->{'lost'}; 
+  return $self->{'qualifier'}->{$tag}->{'ignore'}; 
 }
 
 sub _checkTagExists {
