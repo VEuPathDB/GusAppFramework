@@ -20,6 +20,8 @@ sub new {
 sub run {
   my ($self) = @_;
 
+  $self->_makeUserProjectGroup();
+
   my $hadErr;
   foreach my $step (@{$self->{steps}}) {
     eval {
@@ -45,6 +47,26 @@ sub run {
 ##########################################################################
 #    private methods
 ##########################################################################
+
+sub _makeUserProjectGroup {
+  my ($self) = @_;
+
+  my $firstName = $self->{manager}->{propertySet}->getProp('firstName');
+
+  my $lastName = $self->{manager}->{propertySet}->getProp('lastName');
+
+  my $projectRelease = $self->{manager}->{propertySet}->getProp('projectRelease');
+
+  my $commit = $self->{manager}->{propertySet}->getProp('commit');
+
+  my $signal = "${lastName}UserProjectGroup";
+
+  return if $self->{manager}->startStep("Inserting userinfo,groupinfo,projectinfo for $lastName gus config file", $signal);
+
+  $self->{manager}->runCmd ("InsertUserProjectGroupFromGusConfig --firstName $firstName --lastName $lastName --projectRelease $projectRelease $commit");
+
+  $self->{manager}->endStep($signal);
+}
 
 sub _parseXmlFile {
   my ($self) = @_;
