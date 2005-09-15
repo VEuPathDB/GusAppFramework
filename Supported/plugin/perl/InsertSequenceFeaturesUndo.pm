@@ -130,6 +130,8 @@ sub run{
 
   $self->undoSequences();
 
+  $self->_deleteFromTable('Core.AlgorithmParam');
+
   $self->_deleteFromTable('Core.AlgorithmInvocation');
 
   $self->{'dbh'}->commit() if($self->getArgs('commit'));
@@ -140,7 +142,7 @@ sub undoFeatures{
 
    $self->undoSpecialCaseQualifiers();
 
-   $self->_deleteFromTable('DoTS.Location');
+   $self->_deleteFromTable('DoTS.NALocation');
 
    $self->setParentToNull();
 
@@ -150,10 +152,12 @@ sub undoFeatures{
 sub setParentToNull{
   my ($self) = @_;
 
+  my $algoInvocIds = join(', ', @{$self->{'algInvocationIds'}});
+
   my $sql =
 "UPDATE DoTS.NAFeature
 SET parent_id = NULL
-WHERE row_alg_invocation_id IN ($self->{algInvocationIds})";
+WHERE row_alg_invocation_id IN ($algoInvocIds)";
 
    $self->{'dbh'}->prepareAndExecute($sql);
 
