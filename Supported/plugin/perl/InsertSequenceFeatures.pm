@@ -40,9 +40,6 @@ use GUS::Model::DoTS::Keyword;
 use GUS::Model::DoTS::NASequenceKeyword;
 use GUS::Model::DoTS::NAComment;
 
-#USED BY TRANSCRIPT FEATURES TO LOAD THE TRANSLATED PROTEIN SEQ
-use GUS::Model::DoTS::TranslatedAAFeature;
-use GUS::Model::DoTS::TranslatedAASequence;
 
 # future considerations....
 #
