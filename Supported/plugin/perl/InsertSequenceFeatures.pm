@@ -67,9 +67,21 @@ use GUS::Model::DoTS::TranslatedAASequence;
 # - handle the case of multiple tag values better... should be controlled by xml file
 
   my $purpose = <<PURPOSE;
-Insert files containing NA sequence and features, that are in a format handled by bioperl's Bio::SeqIO parser package (eg, genbank, embl, TIGR). See that package for more details about what the bioperl parser can handle.  It also inserts files in GFF2 and GFF3 format.
+Insert files containing NA sequence and features, that are in a format handled by bioperl's Bio::SeqIO parser package (eg, genbank, embl, TIGR). See that package for more details about what the bioperl parser can handle.  Also supports files in GFF2 and GFF3 format.
 
-The argument --mapFile provides an XML file that describes the mapping between the feature and qualifier names in the input to those in GUS.
+(Note that, like all plugins that start with Insert, this plugin only inserts rows and never updates them.   This means that the plugin cannot be used to update an existing set of sequences in the database.  It assumes a database management strategy that rebuilds from scratch the set of sequences instead of attempting the much more difficult task of updating.  This strategy will work for most datasets, but, not for huge ones such as the human genome.)
+
+The sequence level attributes that are currently supported are: taxon, SO assignment, comments, keywords, secondary accessions and references.
+
+This plugin is designed to be flexible in its mapping from the features and qualifiers found in the input to the tables in GUS.  The flexibility is specified in the "XML mapping file" provided on the command line (--mapFile).
+
+A default mapping is provided as a reference  (see $GUS_HOME/config/genbank2gus.xml).  That file provides a mapping for the complete genbank feature table.
+
+It is often the case that your input may come from unofficial sources that, while conforming to one of the bioperl supported formats, invent features or qualifiers, and stuff unexpected values into already existing qualifiers.
+
+In that case, you will need to write your own mapping file.  Use the provided default as an example.  The main purpose of the file is to specify which subclass of NAFeature should store the input feature, and, which columns should store which qualifiers.
+
+There is an additional level of configurability provided by "plugable" qualifier handlers.  As you will see in the default XML file, some qualifiers do not fit neatly into a column in the feature table.  Those that don't are called "special cases."  In the XML file you can declare the availability of one or more special case qualifier handlers to handle those special cases   The default file declares one of these at the top of the file.  Your XML file can declare additional handlers that you write.  (See the code in the default handler to learn how to write your own.)  In the XML file, qualifiers that need special handling specify the name of the handler object and a method in it to call to handle the qualifier.
 PURPOSE
 
   my $purposeBrief = <<PURPOSEBRIEF;
@@ -79,7 +91,7 @@ PURPOSEBRIEF
   my $notes = <<NOTES;
 The bioperl parser includes an "unflattener" that analyzes feature locations of genes, rna, cds, etc and constructs gene feature trees of them (ie, gene models). (See the bioperl API documentation for Bio::SeqFeature::Tools::Unflattener.)  The plugin preserves these relationships (using the feature's parent_id to capture the tree).
 
-The mapping XML file includes five "special cases."  These are cases in which some of the qualifiers are stored in tables other than the feature table.  The five special cases are: 'dbxref', 'product', 'note', 'gene', and 'aaseq'.  The special cases are hard-coded in the pluglin.  To understand how the special cases each work, see the plugin code.
+To avoid memory problems with sequences that have huge numbers of features, the plugin submits the NASequence as one transaction, and each feature tree as one transation.
 NOTES
 
   my $tablesAffected =
@@ -120,7 +132,7 @@ NOTES
   ];
 
   my $howToRestart = <<RESTART;
-Restart is not supported quite yet.  Coming very soon.
+Restart is not supported.  Coming soon will be "undo," which will at least provide a way to back out failed results.
 RESTART
 
   my $failureCases = <<FAIL;
