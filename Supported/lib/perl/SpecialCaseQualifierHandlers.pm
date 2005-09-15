@@ -179,8 +179,10 @@ sub translation {
 
     my $aaSeq = GUS::Model::DoTS::TranslatedAASequence->
       new({'sequence' => $tagValue});
-    $aaSeq->addChild($transAaFeat);
+
     $aaSeq->submit();
+
+    $transAaFeat->setAaSequenceId($aaSeq->getId());
     push(@translatedAAFeatures, $transAaFeat);
   }
   return @translatedAAFeatures;
