@@ -9,6 +9,7 @@ use GUS::Model::DoTS::NAFeatureComment;
 use GUS::Model::DoTS::NAFeatureNAGene;
 use GUS::Model::DoTS::NAFeatureNAProtein;
 use GUS::Model::DoTS::DbRefNAFeature;
+use GUS::Supported::Plugin::InsertSequenceFeaturesUndo;
 
 # This is a pluggable module for GUS::Supported::Plugin::InsertSequenceFeatures 
 # It handles commonly seen qualifiers that need special case treatment (ie,
@@ -28,11 +29,11 @@ sub undoAll{
   $self->{'algInvocationIds'} = $algoInvocIds;
   $self->{'dbh'} = $dbh;
 
-  $self->_undoGene($algoInvocIds, $dbh);
-  $self->_undoDbXRef($algoInvocIds, $dbh);
-  $self->_undoNote($algoInvocIds, $dbh);
-  $self->_undoProtein($algoInvocIds, $dbh);
-  $self->_undoTranslation($algoInvocIds, $dbh);
+  $self->_undoGene();
+  $self->_undoDbXRef();
+  $self->_undoNote();
+  $self->_undoProtein();
+  $self->_undoTranslation();
 
 }
 
@@ -239,12 +240,9 @@ sub _undoTranslation{
 #################################################################
 
 sub _deleteFromTable{
-  my ($self, $tableName) = @_;
-  my $sql =
-"DELETE FROM $tableName
-WHERE row_alg_invocation_id IN ($algoInvocIds)";
+   my ($self, $tableName) = @_;
 
-   $dbh->prepareAndExecute($sql);
+  &GUS::Supported::Plugin::InsertSequenceFeaturesUndo::deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'});
 }
 
 1;
