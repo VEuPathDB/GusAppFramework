@@ -95,7 +95,7 @@ my $argsDeclaration  =
 	    format=>'XML'
 	   }),
 
-   stringArg({name => 'algoInvocationId',
+   stringArg({name => 'algInvocationId',
 	      descr => 'A comma delimited list of algorithm invocation ids to undo',
 	      constraintFunc=> undef,
 	      reqd  => 0,
@@ -121,7 +121,7 @@ sub new {
 
 sub run{
   my ($self) = @_;
-  $self->{'algoInvocationIds'} = $self->getArg('algoInvocationId');
+  $self->{'algInvocationIds'} = $self->getArg('algInvocationId');
   $self->{'dbh'} = $self->getQueryHandle();
 
   $self->{'dbh'}->{AutoCommit}=0;
@@ -153,7 +153,7 @@ sub setParentToNull{
   my $sql =
 "UPDATE DoTS.NAFeature
 SET parent_id = NULL
-WHERE row_alg_invocation_id IN ($self->{algoInvocationIds})";
+WHERE row_alg_invocation_id IN ($self->{algInvocationIds})";
 
    $self->{'dbh'}->prepareAndExecute($sql);
 
@@ -162,13 +162,12 @@ WHERE row_alg_invocation_id IN ($self->{algoInvocationIds})";
 sub undoSpecialCaseQualifiers{
   my ($self) = @_;
 
-  $self->{mapperSet} =
-    GUS::Supported::BioperlFeatMapperSet->new($self->getArg('mapFile'));
+  my $mapperSet = GUS::Supported::BioperlFeatMapperSet->new($self->getArg('mapFile'));
 
-  my $handlerName = $featureMapper->getHandlerName($tag);
-  my $handler= $self->{mapperSet}->getHandler($handlerName);
-  $handler->undoAll($self->{'algoInvocationIds'}, $self->{'dbh'});
-
+  my @handlers = $mapperSet->getAllHandlers();
+  foreach my $handler (@handlers){
+     $handler->undoAll($self->{'algInvocationIds'}, $self->{'dbh'});
+   }
 }
 
 sub undoSequences{
@@ -186,7 +185,7 @@ sub deleteFromTable{
   my ($self, $tableName) = @_;
   my $sql = 
 "DELETE FROM $tableName
-WHERE row_alg_invocation_id IN ($self->{algoInvocationIds})";
+WHERE row_alg_invocation_id IN ($self->{algInvocationIds})";
 
    $self->{'dbh'}->prepareAndExecute($sql);
 }
