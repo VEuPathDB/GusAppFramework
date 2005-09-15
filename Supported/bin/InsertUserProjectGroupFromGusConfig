@@ -1,0 +1,249 @@
+#!/usr/bin/perl
+use strict;
+use Getopt::Long;
+use GUS::Supported::GusConfig;
+use GUS::ObjRelP::DbiDatabase;
+
+
+my ($verbose,$gusConfigFile,$firstName,$lastName,$projectRelease,$commit);
+&GetOptions("verbose!"=> \$verbose,
+            "gusConfigFile=s" => \$gusConfigFile,
+	    "firstName=s" => \$firstName,
+	    "lastName=s" => \$lastName,
+	    "projectRelease=s" => \$projectRelease,
+	    "commit!" => \$commit);
+
+die "usage: InsertUserProjectGroupFromGusConfig --verbose --projectRelease --firstName(reqd) --lastName(reqd) --gusConfigFile [\$GUS_CONFIG_FILE] --commit\n" if (! $firstName || ! $lastName || ! $projectRelease);
+
+
+print STDERR "Establishing dbi login\n" if $verbose;
+
+my $gusconfig = GUS::Supported::GusConfig->new($gusConfigFile);
+
+my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
+                                        $gusconfig->getDatabaseLogin(),
+                                        $gusconfig->getDatabasePassword(),
+                                        $verbose,0,1,
+                                        $gusconfig->getCoreSchemaName());
+
+my $dbh = $db->getQueryHandle();
+
+my ($dbaRows) = &getDBARows($dbh);
+
+my $userId = &insertUserInfo($gusconfig,$firstName,$lastName,$dbh,$dbaRows,$commit);
+
+my $projectId = &insertProjectInfo($gusconfig,$projectRelease,$dbh,$dbaRows,$commit);
+
+my $groupId = &insertGroupInfo($gusconfig,$dbh,$dbaRows,$commit);
+
+&insertUserProject($userId,$projectId,$dbh,$dbaRows,$commit);
+
+&insertUserGroup($userId,$groupId,$dbh,$dbaRows,$commit);
+
+
+sub getDBARows {
+  my ($dbh) = @_;
+
+  my $sth = $dbh->prepareAndExecute("select user_id from core.userinfo where login = 'dba'");
+
+  my $userId = $sth->fetchrow_array() || die "No user_id for login = 'dba' - should have been inserted by installer\n";
+
+  $sth = $dbh->prepareAndExecute("select project_id from core.projectinfo where name = 'Database administration'");
+
+  my $projectId = $sth->fetchrow_array() || die "No project_id for name = 'Database administration' - should have been inserted by installer\n";;
+
+  $sth = $dbh->prepareAndExecute("select group_id from core.groupinfo where name = 'dba'");
+
+  my $groupId = $sth->fetchrow_array()- "No group_id for name = 'dba' - should have been inserted by installer\n";
+
+  my %dbaRows = ('user'=>$userId, 'project'=>$projectId, 'group'=>$groupId);
+
+  return \%dbaRows;
+}
+
+sub insertUserInfo {
+
+  my ($gusconfig,$firstName,$lastName,$dbh,$dbarows,$commit) = @_;
+
+  my $login = $gusconfig->getUserName();
+
+  my $sql = "select count(*) from core.UserInfo where login = '${login}'";
+
+  my $sth = $dbh->prepareAndExecute($sql);
+
+  my $rows = $sth->fetchrow_array();
+
+  die "There are $rows rows in core.UserInfo for $login. Delete all or all but one row.\n" if ($rows > 1);
+
+  if ($rows == 1) { 
+    print STDERR "core.UserInfo row exists for $login\n";
+  }
+  else {
+
+    print STDERR "Inserting core.userinfo row for userName = $login\n";
+
+    my $nextvalSql = $db->getDbPlatform()->nextVal("core.UserInfo");
+
+    $sql = "insert into core.userinfo (group_read, user_read, last_name, other_write, password, modification_date, row_group_id, user_write, e_mail, other_read, group_write, row_user_id, login, row_alg_invocation_id, row_project_id, user_id, first_name ) VALUES (1, 1, '${lastName}', 0, '${login}', SYSDATE, $dbaRows->{'group'}, 1, 'unknown', 1, 1, $dbaRows->{'user'}, '${login}', 1, $dbaRows->{'project'}, $nextvalSql, '${firstName}')";
+
+    print STDERR "sql: $sql\n" if $verbose;
+
+    $dbh->do($sql) || die "Couldn't execute the following sql:\n      $sql\n";
+
+    $dbh->commit if $commit;
+
+    print STDERR "Row inserted into core.UserInfo for $login\n" if $commit;
+  }
+
+    my $sth = $dbh->prepareAndExecute("select user_id from core.userinfo where login = '${login}'");
+
+    my $userId = $sth->fetchrow_array() || die "No user_id for login = $login\n";
+
+    return $userId;
+}
+
+sub insertProjectInfo {
+
+  my ($gusconfig,$projectRelease,$dbh,$dbaRows,$commit) = @_;
+
+  my $projectName =  $gusconfig->getProject();
+
+  my $sql = "select count(*) from core.projectinfo where name = '${projectName}' and release = '${projectRelease}'";
+
+  my $sth = $dbh->prepareAndExecute($sql);
+
+  my $rows = $sth->fetchrow_array();
+
+  die "There are $rows rows in core.ProjectInfo for $projectName with release $projectRelease. Delete all or all but one row.\n" if ($rows > 1);
+
+  if ($rows == 1) { 
+    print STDERR "core.ProjectInfo row exists for $projectName and release $projectRelease\n";
+  }
+  else {
+    print STDERR "Inserting core.ProjectInfo row for $projectName,$projectRelease\n";
+
+    my $nextvalSql = $db->getDbPlatform()->nextVal("core.ProjectInfo");
+
+    $sql = "INSERT INTO Core.ProjectInfo (group_write, other_read, group_read, name, release, user_read, row_user_id, other_write, modification_date, row_alg_invocation_id, row_project_id, row_group_id, user_write, project_id) VALUES (1, 1, 1, '${projectName}', '${projectRelease}', 1, $dbaRows->{'user'}, 0, SYSDATE, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1, $nextvalSql)";
+
+    $dbh->do($sql) || die "Couln't execute the following sql:\n      $sql\n";
+
+    $dbh->commit if $commit;
+
+    print STDERR "Row inserted into core.ProjectInfo for $projectName, $projectRelease\n" if $commit;
+  }
+
+  my $sth = $dbh->prepareAndExecute("select project_id from core.projectinfo where name = '${projectName}' and release = '${projectRelease}'");
+
+  my $projectId = $sth->fetchrow_array() || die "No project_id for name = $projectName and release = $projectRelease\n";
+
+  return $projectId;
+}
+
+sub insertGroupInfo {
+  my ($gusconfig,$dbh,$dbaRows,$commit) = @_;
+
+  my $groupName =  $gusconfig->getGroup();
+
+  my $sql = "select count(*) from core.GroupInfo where name = '${groupName}'";
+
+  my $sth = $dbh->prepareAndExecute($sql);
+
+  my $rows = $sth->fetchrow_array();
+
+  die "There are $rows rows in core.GroupInfo for $groupName. Delete all or all but one row.\n" if ($rows > 1);
+
+  if ($rows == 1) {
+    print STDERR "core.GroupInfo row exists for $groupName\n";
+  }
+  else {
+
+    print STDERR "Inserting core.GroupInfo row for $groupName\n";
+
+    my $nextvalSql = $db->getDbPlatform()->nextVal("core.GroupInfo");
+
+    $sql = "INSERT INTO Core.GroupInfo (  group_write, other_read, group_read, name, user_read, row_user_id, other_write, modification_date, group_id, row_alg_invocation_id, row_project_id, row_group_id, user_write ) VALUES (1, 1, 1,'${groupName}', 1, $dbaRows->{'user'}, 0, SYSDATE, $nextvalSql, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1)";
+
+    $dbh->do($sql) || die "Couln't execute the following sql:\n      $sql\n";
+
+
+    $dbh->commit() if $commit;
+
+    print STDERR "Row inserted into core.GroupInfo for $groupName\n" if $commit;
+  }
+
+  my $sth = $dbh->prepareAndExecute("select group_id from core.groupinfo where name = '${groupName}'");
+
+  my $groupId = $sth->fetchrow_array() || die "No group_id for name = $groupName\n";
+
+  return $groupId;
+
+}
+
+sub insertUserProject {
+  my ($userId,$projectId,$dbh,$dbaRows,$commit) = @_;
+
+  my $sql = "select count(*) from core.UserProject where user_id = $userId and project_id = $projectId";
+
+  my $sth = $dbh->prepareAndExecute($sql);
+
+  my $rows = $sth->fetchrow_array();
+
+  die "There are $rows rows in core.UserProject for user_id  = $userId and project_id = $projectId. Delete all or all but one row.\n" if ($rows > 1);
+
+  if ($rows == 1) {
+    print STDERR "core.UserProject row exists for user_id = $userId and project_id = $projectId\n";
+    return;
+  }
+  else {
+
+    print STDERR "Inserting core.UserProject row for user_id = $userId and project_id = $projectId\n";
+
+    my $nextvalSql = $db->getDbPlatform()->nextVal("core.UserProject");
+
+    $sql = "INSERT INTO Core.UserProject (group_write, other_read, group_read, user_id, user_read, row_user_id, other_write, modification_date, user_project_id, row_alg_invocation_id, row_project_id, row_group_id, user_write, project_id) VALUES (1, 1, 1,$userId , 1, $dbaRows->{'user'}, 0, SYSDATE, $nextvalSql, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1, $projectId )";
+
+    $dbh->do($sql) || die "Couln't execute the following sql:\n      $sql\n";
+
+
+    $dbh->commit() if $commit;
+
+    print STDERR "Row inserted into core.UserProject for user_id = $userId and project_id = $projectId\n" if $commit;
+  }
+}
+
+sub insertUserGroup {
+  my ($userId,$groupId,$dbh,$dbaRows,$commit) = @_;
+
+  my $sql = "select count(*) from core.UserGroup where user_id = $userId and group_id = $groupId";
+
+  my $sth = $dbh->prepareAndExecute($sql);
+
+  my $rows = $sth->fetchrow_array();
+
+  die "There are $rows rows in core.UserProject for user_id  = $userId and group_id = $groupId. Delete all or all but one row.\n" if ($rows > 1);
+
+  if ($rows == 1) {
+    print STDERR "core.Usergroup row exists for user_id = $userId and group_id = $groupId\n";
+    return;
+  }
+  else {
+
+    print STDERR "Inserting core.UserGroup row for user_id = $userId and group_id = $groupId\n";
+
+    my $nextvalSql = $db->getDbPlatform()->nextVal("core.UserGroup");
+
+    $sql = "INSERT INTO Core.UserGroup (group_write, other_read, group_read, user_id, user_read, row_user_id, other_write, modification_date, user_group_id, row_alg_invocation_id, row_project_id, row_group_id, user_write, group_id) VALUES (1, 1, 1,$userId , 1, $dbaRows->{'user'}, 0, SYSDATE, $nextvalSql, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1, $groupId )";
+
+    $dbh->do($sql) || die "Couln't execute the following sql:\n      $sql\n";
+
+
+    $dbh->commit() if $commit;
+
+    print STDERR "Row inserted into core.UserGroup for user_id = $userId and group_id = $groupId\n" if $commit;
+  }
+
+}
+
+
+$dbh->disconnect();
