@@ -22,6 +22,17 @@ sub new {
   return $self;
 }
 
+sub undoAll{
+  my ($self, $algoInvocIds, $dbh) = @_;
+
+  $self->_undoGene($algoInvocIds, $dbh);
+  $self->_undoDbXRef($algoInvocIds, $dbh);
+  $self->_undoNote($algoInvocIds, $dbh);
+  $self->_undoProtein($algoInvocIds, $dbh);
+  $self->_undoTranslation($algoInvocIds, $dbh);
+
+}
+
 ################ Gene ###############################3
 
 sub gene {
@@ -52,6 +63,13 @@ sub _getNAGeneId {
     $self->{geneNameIds}->{$truncName} = $gene->getId();
   }
   return $self->{geneNameIds}->{$truncName};
+}
+
+sub _undoGene{
+  my ($self, $algoInvocIds, $dbh) = @_;
+
+  $self->deleteFromTable('DoTS.NAFeatureNAGene');
+  $self->deleteFromTable('DoTS.NAGene');
 }
 
 ############### db Xrefs  #########################################
@@ -132,6 +150,14 @@ sub _getExtDatabaseRlsId {
     return $self->{extDbRlsIds}->{$name};
 }
 
+sub _undoDbXRef{
+  my ($self, $algoInvocIds, $dbh) = @_;
+  $self->deleteFromTable('DoTS.DbRefNAFeature');
+  $self->deleteFromTable('SRes.DbRef');
+  $self->deleteFromTable('SRes.ExternalDatabase');
+  $self->deleteFromTable('SRes.ExternalDatabaseRelease');
+}
+
 ################ Note ########################################
 sub note {
   my ($self, $tag, $bioperlFeature, $feature) = @_;
@@ -143,6 +169,11 @@ sub note {
 
   }
   return @notes;
+}
+
+sub _undoNote{
+  my ($self, $algoInvocIds, $dbh) = @_;
+  $self->deleteFromTable('DoTS.NAFeatureComment');
 }
 
 ############### Protein ##################################
@@ -167,6 +198,12 @@ sub protein {
   return @naFeatureNaProteins;
 }
 
+sub _undoProtein{
+  my ($self, $algoInvocIds, $dbh) = @_;
+  $self->deleteFromTable('DoTS.NAProtein');
+  $self->deleteFromTable('DoTS.NAFeatureNAProtein');
+}
+
 ############### TranslatedAAFeature  ###############################3
 
 sub translation {
@@ -186,6 +223,25 @@ sub translation {
     push(@translatedAAFeatures, $transAaFeat);
   }
   return @translatedAAFeatures;
+}
+
+sub _undoTranslation{
+  my ($self, $algoInvocIds, $dbh) = @_;
+
+  $self->deleteFromTable('DoTS.TranslatedAAFeature');
+  $self->deleteFromTable('DoTS.TranslatedAASequence');
+
+}
+
+#################################################################
+
+sub _deleteFromTable{
+  my ($self, $tableName, $algoInvocIds, $dbh) = @_;
+  my $sql =
+"DELETE FROM $tableName
+WHERE row_alg_invocation_id IN ($algoInvocIds)";
+
+   $dbh->prepareAndExecute($sql);
 }
 
 1;
