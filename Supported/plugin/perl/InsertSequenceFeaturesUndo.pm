@@ -130,7 +130,7 @@ sub run{
 
   $self->undoSequences();
 
-  $self->deleteFromTable('Core.AlgorithmInvocation');
+  $self->_deleteFromTable('Core.AlgorithmInvocation');
 
   $self->{'dbh'}->commit() if($self->getArgs('commit'));
 }
@@ -140,11 +140,11 @@ sub undoFeatures{
 
    $self->undoSpecialCaseQualifiers();
 
-   $self->deleteFromTable('DoTS.Location');
+   $self->_deleteFromTable('DoTS.Location');
 
    $self->setParentToNull();
 
-   $self->deleteFromTable('DoTS.NAFeature');
+   $self->_deleteFromTable('DoTS.NAFeature');
 }
 
 sub setParentToNull{
@@ -173,21 +173,30 @@ sub undoSpecialCaseQualifiers{
 sub undoSequences{
   my ($self) = @_;
 
-  $self->deleteFromTable('DoTS.NAEntry');
-  $self->deleteFromTable('DoTS.SecondaryAccs');
-  $self->deleteFromTable('DoTS.NASequenceRef');
-  $self->deleteFromTable('DoTS.Keyword');
-  $self->deleteFromTable('DoTS.NASequenceKeyword');
-  $self->deleteFromTable('DoTS.NAComment');
+  $self->_deleteFromTable('DoTS.NAEntry');
+  $self->_deleteFromTable('DoTS.SecondaryAccs');
+  $self->_deleteFromTable('DoTS.NASequenceRef');
+  $self->_deleteFromTable('DoTS.Keyword');
+  $self->_deleteFromTable('DoTS.NASequenceKeyword');
+  $self->_deleteFromTable('DoTS.NAComment');
+}
+
+sub _deleteFromTable{
+   my ($self, $tableName) = @_;
+
+  &deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'});
 }
 
 sub deleteFromTable{
-  my ($self, $tableName) = @_;
+  my ($tableName, $algInvocationIds, $dbh) = @_;
+
+  my $algoInvocIds = join(', ', @{$algInvocationIds});
+
   my $sql = 
 "DELETE FROM $tableName
-WHERE row_alg_invocation_id IN ($self->{algInvocationIds})";
+WHERE row_alg_invocation_id IN ($algoInvocIds)";
 
-   $self->{'dbh'}->prepareAndExecute($sql);
+   $dbh->prepareAndExecute($sql);
 }
 
 
