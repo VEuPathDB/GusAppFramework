@@ -35,6 +35,12 @@ sub getHandler {
   return $self->{qualifierHandlers}->{$name};
 }
 
+sub getAllHandlers{
+my ($self) = @_;
+
+  return values(%{$self->{qualifierHandlers}});
+}
+
 # return a list of all SO terms used in feature maps
 sub getAllSoTerms {
   my ($self) = @_;
