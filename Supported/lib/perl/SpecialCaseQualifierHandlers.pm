@@ -25,6 +25,9 @@ sub new {
 sub undoAll{
   my ($self, $algoInvocIds, $dbh) = @_;
 
+  $self->{'algInvocationIds'} = $algoInvocIds;
+  $self->{'dbh'} = $dbh;
+
   $self->_undoGene($algoInvocIds, $dbh);
   $self->_undoDbXRef($algoInvocIds, $dbh);
   $self->_undoNote($algoInvocIds, $dbh);
@@ -66,7 +69,7 @@ sub _getNAGeneId {
 }
 
 sub _undoGene{
-  my ($self, $algoInvocIds, $dbh) = @_;
+  my ($self) = @_;
 
   $self->_deleteFromTable('DoTS.NAFeatureNAGene');
   $self->_deleteFromTable('DoTS.NAGene');
@@ -151,7 +154,7 @@ sub _getExtDatabaseRlsId {
 }
 
 sub _undoDbXRef{
-  my ($self, $algoInvocIds, $dbh) = @_;
+  my ($self) = @_;
   $self->_deleteFromTable('DoTS.DbRefNAFeature');
   $self->_deleteFromTable('SRes.DbRef');
   $self->_deleteFromTable('SRes.ExternalDatabase');
@@ -172,7 +175,7 @@ sub note {
 }
 
 sub _undoNote{
-  my ($self, $algoInvocIds, $dbh) = @_;
+  my ($self) = @_;
   $self->_deleteFromTable('DoTS.NAFeatureComment');
 }
 
@@ -199,7 +202,7 @@ sub protein {
 }
 
 sub _undoProtein{
-  my ($self, $algoInvocIds, $dbh) = @_;
+  my ($self) = @_;
   $self->_deleteFromTable('DoTS.NAProtein');
   $self->_deleteFromTable('DoTS.NAFeatureNAProtein');
 }
@@ -226,7 +229,7 @@ sub translation {
 }
 
 sub _undoTranslation{
-  my ($self, $algoInvocIds, $dbh) = @_;
+  my ($self) = @_;
 
   $self->_deleteFromTable('DoTS.TranslatedAAFeature');
   $self->_deleteFromTable('DoTS.TranslatedAASequence');
@@ -236,7 +239,7 @@ sub _undoTranslation{
 #################################################################
 
 sub _deleteFromTable{
-  my ($self, $tableName, $algoInvocIds, $dbh) = @_;
+  my ($self, $tableName) = @_;
   my $sql =
 "DELETE FROM $tableName
 WHERE row_alg_invocation_id IN ($algoInvocIds)";
