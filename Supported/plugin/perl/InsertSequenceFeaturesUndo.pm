@@ -134,7 +134,9 @@ sub run{
 
   $self->_deleteFromTable('Core.AlgorithmInvocation');
 
-  $self->{'dbh'}->commit() if($self->getArgs('commit'));
+print STDERR "commit: " . $self->getArg('commit') ."\n";
+
+  $self->{'dbh'}->commit() if($self->getArg('commit'));
 }
 
 sub undoFeatures{
@@ -201,6 +203,7 @@ sub deleteFromTable{
 WHERE row_alg_invocation_id IN ($algoInvocIds)";
 
    $dbh->prepareAndExecute($sql);
+print "I've deleted from $tableName, using\n$sql\n";
 }
 
 
