@@ -75,7 +75,7 @@ The sequence level attributes that are currently supported are: taxon, SO assign
 
 This plugin is designed to be flexible in its mapping from the features and qualifiers found in the input to the tables in GUS.  The flexibility is specified in the "XML mapping file" provided on the command line (--mapFile).
 
-A default mapping is provided as a reference  (see $GUS_HOME/config/genbank2gus.xml).  That file provides a mapping for the complete genbank feature table.
+A default mapping is provided as a reference  (see \$GUS_HOME/config/genbank2gus.xml).  That file provides a mapping for the complete genbank feature table.
 
 It is often the case that your input may come from unofficial sources that, while conforming to one of the bioperl supported formats, invent features or qualifiers, and stuff unexpected values into already existing qualifiers.
 
