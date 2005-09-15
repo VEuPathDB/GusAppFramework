@@ -68,8 +68,8 @@ sub _getNAGeneId {
 sub _undoGene{
   my ($self, $algoInvocIds, $dbh) = @_;
 
-  $self->deleteFromTable('DoTS.NAFeatureNAGene');
-  $self->deleteFromTable('DoTS.NAGene');
+  $self->_deleteFromTable('DoTS.NAFeatureNAGene');
+  $self->_deleteFromTable('DoTS.NAGene');
 }
 
 ############### db Xrefs  #########################################
@@ -152,10 +152,10 @@ sub _getExtDatabaseRlsId {
 
 sub _undoDbXRef{
   my ($self, $algoInvocIds, $dbh) = @_;
-  $self->deleteFromTable('DoTS.DbRefNAFeature');
-  $self->deleteFromTable('SRes.DbRef');
-  $self->deleteFromTable('SRes.ExternalDatabase');
-  $self->deleteFromTable('SRes.ExternalDatabaseRelease');
+  $self->_deleteFromTable('DoTS.DbRefNAFeature');
+  $self->_deleteFromTable('SRes.DbRef');
+  $self->_deleteFromTable('SRes.ExternalDatabase');
+  $self->_deleteFromTable('SRes.ExternalDatabaseRelease');
 }
 
 ################ Note ########################################
@@ -173,7 +173,7 @@ sub note {
 
 sub _undoNote{
   my ($self, $algoInvocIds, $dbh) = @_;
-  $self->deleteFromTable('DoTS.NAFeatureComment');
+  $self->_deleteFromTable('DoTS.NAFeatureComment');
 }
 
 ############### Protein ##################################
@@ -200,8 +200,8 @@ sub protein {
 
 sub _undoProtein{
   my ($self, $algoInvocIds, $dbh) = @_;
-  $self->deleteFromTable('DoTS.NAProtein');
-  $self->deleteFromTable('DoTS.NAFeatureNAProtein');
+  $self->_deleteFromTable('DoTS.NAProtein');
+  $self->_deleteFromTable('DoTS.NAFeatureNAProtein');
 }
 
 ############### TranslatedAAFeature  ###############################3
@@ -228,8 +228,8 @@ sub translation {
 sub _undoTranslation{
   my ($self, $algoInvocIds, $dbh) = @_;
 
-  $self->deleteFromTable('DoTS.TranslatedAAFeature');
-  $self->deleteFromTable('DoTS.TranslatedAASequence');
+  $self->_deleteFromTable('DoTS.TranslatedAAFeature');
+  $self->_deleteFromTable('DoTS.TranslatedAASequence');
 
 }
 
