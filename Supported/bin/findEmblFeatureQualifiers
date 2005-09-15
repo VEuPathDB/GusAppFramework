@@ -3,21 +3,19 @@
 use strict;
 use lib "$ENV{GUS_HOME}/lib/perl";
 
-if (scalar(@ARGV) != 1) {
+if (scalar(@ARGV) != 0) {
   die
 "
 Report the features and qualifiers used in an embl file
 
-Usage: findEmblFeatureQualifers emblFile
+Usage: cat files | findEmblFeatureQualifers
 
 ";
 }
 
-open(FILE, $ARGV[0]) || die "Couldn't open embl file '$ARGV[0]' for reading\n";
-
 my $currentFeature;
 my $features = {};
-while (<FILE>) {
+while (<STDIN>) {
   next unless /^FT/;
   if (/^FT   (\w+)  /) {
     $currentFeature = $1;
