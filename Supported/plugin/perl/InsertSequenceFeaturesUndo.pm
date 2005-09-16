@@ -135,6 +135,7 @@ sub run{
   $self->_deleteFromTable('Core.AlgorithmInvocation');
 
   if ($self->getArg('commit')) {
+    print STDERR "committing\n";
     $self->{'dbh'}->commit()
       || die "Commit failed: " . $self->{'dbh'}->errstr() . "\n";
   }
@@ -203,8 +204,9 @@ sub deleteFromTable{
 "DELETE FROM $tableName
 WHERE row_alg_invocation_id IN ($algoInvocIds)";
 
-   $dbh->prepareAndExecute($sql);
-print "I've deleted from $tableName, using\n$sql\n";
+  my $rows = $dbh->do($sql) || die "Failed running sql:\n$sql\n";
+  $rows = 0 if $rows eq "0E0";
+  print STDERR "Deleted $rows rows from $tableName\n";
 }
 
 
