@@ -135,9 +135,13 @@ sub run{
   $self->_deleteFromTable('Core.AlgorithmInvocation');
 
   if ($self->getArg('commit')) {
-    print STDERR "committing\n";
+    print STDERR "Committing\n";
     $self->{'dbh'}->commit()
       || die "Commit failed: " . $self->{'dbh'}->errstr() . "\n";
+  } else {
+    print STDERR "Rolling back\n";
+    $self->{'dbh'}->rollback()
+      || die "Rollback failed: " . $self->{'dbh'}->errstr() . "\n";
   }
 }
 
