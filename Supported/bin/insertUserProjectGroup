@@ -16,7 +16,7 @@ my ($verbose,$gusConfigFile,$firstName,$lastName,$projectRelease,$commit);
 	    "projectRelease=s" => \$projectRelease,
 	    "commit!" => \$commit);
 
-die "usage: InsertUserProjectGroupFromGusConfig --verbose --projectRelease --firstName(reqd) --lastName(reqd) --gusConfigFile [\$GUS_CONFIG_FILE] --commit\n" if (! $firstName || ! $lastName || ! $projectRelease);
+die "script to enter rows into userinfo,projectinfo,groupinfo,userproject,usergroup from gus config file values and command line values - usage: InsertUserProjectGroup --verbose --projectRelease --firstName(reqd) --lastName(reqd) --gusConfigFile [\$GUS_CONFIG_FILE] --commit\n" if (! $firstName || ! $lastName || ! $projectRelease);
 
 
 print STDERR "Establishing dbi login\n" if $verbose;
