@@ -683,7 +683,7 @@ sub addKeywords {
 
     my @bioperlKeywords = $bioperlAnnotation->get_Annotations('keyword');
     foreach my $bioperlKeyword (@bioperlKeywords) {
-     unless ($bioperlKeyword->value() eq '')  {
+      next if $bioperlKeyword->value() eq '';
       my $keyword = 
 	GUS::Model::DoTS::Keyword->new({'keyword'=>$bioperlKeyword->value()});
 
@@ -696,7 +696,6 @@ sub addKeywords {
 	GUS::Model::DoTS::NASequenceKeyword->new({'keyword_id'=>$keyId});
 
       $naSequence->addChild($naSequenceKeyword);
-     }
     }
 }
 
