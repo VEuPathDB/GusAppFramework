@@ -371,6 +371,7 @@ sub run{
       $featureTreeCount++;
       $self->log("Inserted $featureTreeCount feature trees") 
 	if $featureTreeCount % 100 == 0;
+      $self->undefPointerCache();
     }
     $self->undefPointerCache();
   }
@@ -682,7 +683,7 @@ sub addKeywords {
 
     my @bioperlKeywords = $bioperlAnnotation->get_Annotations('keyword');
     foreach my $bioperlKeyword (@bioperlKeywords) {
-
+     unless ($bioperlKeyword->value() eq '')  {
       my $keyword = 
 	GUS::Model::DoTS::Keyword->new({'keyword'=>$bioperlKeyword->value()});
 
@@ -695,6 +696,7 @@ sub addKeywords {
 	GUS::Model::DoTS::NASequenceKeyword->new({'keyword_id'=>$keyId});
 
       $naSequence->addChild($naSequenceKeyword);
+     }
     }
 }
 
