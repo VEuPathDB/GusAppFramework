@@ -63,7 +63,7 @@ sub _makeUserProjectGroup {
 
   return if $self->{manager}->startStep("Inserting userinfo,groupinfo,projectinfo for $lastName gus config file", $signal);
 
-  $self->{manager}->runCmd ("InsertUserProjectGroupFromGusConfig --firstName $firstName --lastName $lastName --projectRelease $projectRelease $commit");
+  $self->{manager}->runCmd ("InsertUserProjectGroup --firstName $firstName --lastName $lastName --projectRelease $projectRelease $commit");
 
   $self->{manager}->endStep($signal);
 }
