@@ -134,9 +134,10 @@ sub run{
 
   $self->_deleteFromTable('Core.AlgorithmInvocation');
 
-print STDERR "commit: " . $self->getArg('commit') ."\n";
-
-  $self->{'dbh'}->commit() if($self->getArg('commit'));
+  if ($self->getArg('commit')) {
+    $self->{'dbh'}->commit()
+      || die "Commit failed: " . $self->{'dbh'}->errstr() . "\n";
+  }
 }
 
 sub undoFeatures{
