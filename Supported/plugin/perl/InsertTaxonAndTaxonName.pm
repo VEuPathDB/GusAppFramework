@@ -19,81 +19,85 @@ use GUS::PluginMgr::Plugin;
 
 $| = 1;
 
+sub getArgumentsDeclaration {
+  my $argsDeclaration =
+    [
 
-my $argsDeclaration =
-[
+     integerArg({name => 'parentNcbiTaxId',
+		 descr => 'ncbi_tax_id of the parent of the organism to be inserted in the taxonomic hierarchy ',
+		 constraintFunc => undef,
+		 reqd => 0,
+		 isList => 0
+		}),
 
- integerArg({name => 'parentNcbiTaxId',
-	     descr => 'ncbi_tax_id of the parent of the organism to be inserted in the taxonomic hierarchy ',
-	     constraintFunc => undef,
-	     reqd => 0,
-	     isList => 0
-	     }),
+     stringArg({name => 'parentRank',
+		descr => 'reqd if parentNcbiTaxId-taxonomic level such as order,family,species - should conform to ranks used by the NCBI taxonomy db - \see PLUGIN_NOTES',
+		constraintFunc => undef,
+		reqd => 0,
+		isList => 0
+	       }),
 
- stringArg({name => 'parentRank',
-            descr => 'reqd if parentNcbiTaxId-taxonomic level such as order,family,species - should conform to ranks used by the NCBI taxonomy db - \see PLUGIN_NOTES',
-            constraintFunc => undef,
-            reqd => 0,
-            isList => 0
-            }),
+     integerArg({name => 'ncbiTaxId',
+		 descr => 'ncbi_tax_id of the organism to be inserted',
+		 constraintFunc => undef,
+		 reqd => 0,
+		 isList => 0
+		}),
 
- integerArg({name => 'ncbiTaxId',
-	     descr => 'ncbi_tax_id of the organism to be inserted',
-	     constraintFunc => undef,
-	     reqd => 0,
-	     isList => 0
-	     }),
+     stringArg({name => 'rank',
+		descr => 'taxonomic level such as order,family,species - should conform to ranks used by the NCBI taxonomy db - see PLUGIN_NOTES',
+		constraintFunc => undef,
+		reqd => 1,
+		isList => 0
+	       }),
 
- stringArg({name => 'rank',
-	    descr => 'taxonomic level such as order,family,species - should conform to ranks used by the NCBI taxonomy db - see PLUGIN_NOTES',
-	    constraintFunc => undef,
-	    reqd => 1,
-	    isList => 0
-	    }),
+     stringArg({name => 'name',
+		descr => 'name for organism such as scientific name',
+		constraintFunc => undef,
+		reqd => 1,
+		isList => 0
+	       }),
 
- stringArg({name => 'name',
-	    descr => 'name for organism such as scientific name',
-	    constraintFunc => undef,
-	    reqd => 1,
-	    isList => 0
-	    }),
+     stringArg({name => 'nameClass',
+		descr => 'type of name such as scientific name, should conform to name_class used by the NCBI taxonomy db - see PLUGIN_NOTES',
+		constraintFunc => undef,
+		reqd => 1,
+		isList => 0,
+	       })
+    ];
 
- stringArg({name => 'nameClass',
-	  descr => 'type of name such as scientific name, should conform to name_class used by the NCBI taxonomy db - see PLUGIN_NOTES',
-	  constraintFunc => undef,
-	  reqd => 1,
-	  isList => 0,
-        })
- ];
+  return $argsDeclaration;
+}
 
+sub getDocumentation {
 
-my $purposeBrief = <<PURPOSEBRIEF;
+  my $purposeBrief = <<PURPOSEBRIEF;
 Plug_in to add a row into sres.Taxon and into sres.TaxonName.
 PURPOSEBRIEF
 
-my $purpose = <<PLUGIN_PURPOSE;
+  my $purpose = <<PLUGIN_PURPOSE;
 Plug_in that inserts a row into sres.Taxon and sres.TaxonName - adds rows not added by LoadTaxon plugin.
 PLUGIN_PURPOSE
 
-#check the documentation for this
-my $tablesAffected = [['GUS::Model::SRes::Taxon', 'A single row is added'],['GUS::Model::SRes::TaxonName', 'A single row is added']];
+  #check the documentation for this
+  my $tablesAffected = [['GUS::Model::SRes::Taxon', 'A single row is added'],['GUS::Model::SRes::TaxonName', 'A single row is added']];
 
-my $tablesDependedOn = [['GUS::Model::SRes::Taxon', 'If parent is invoked, parent taxon_id must exist']];
+  my $tablesDependedOn = [['GUS::Model::SRes::Taxon', 'If parent is invoked, parent taxon_id must exist']];
 
-my $howToRestart = <<PLUGIN_RESTART;
+  my $howToRestart = <<PLUGIN_RESTART;
 No explicit restart procedure.
 PLUGIN_RESTART
 
-my $failureCases = <<PLUGIN_FAILURE_CASES;
+  my $failureCases = <<PLUGIN_FAILURE_CASES;
 unknown
 PLUGIN_FAILURE_CASES
 
-my $notes = <<PLUGIN_NOTES;
+  my $notes = <<PLUGIN_NOTES;
 rank argument from the following list:suborder,subspecies,subphylum,species subgroup,class,forma,kingdom,superkingdom,genus,species group,parvorder,family,superfamily,infraclass,superphylum,no rank,phylum,varietas,subfamily,species,subclass,superclass,tribe,subtribe,infraorder,superorder,order,subgenus.
 nameClass argument from the following list:misnomer,misspelling,equivalent name,genbank synonym,anamorph,includes,teleomorph,genbank common name,synonym,scientific name,common name,blast name,in-part,genbank anamorph,genbank acronym,acronym.
 PLUGIN_NOTES
 
-my $documentation = {purposeBrief => $purposeBrief,
+  my $documentation = {purposeBrief => $purposeBrief,
 		     purpose => $purpose,
 		     tablesAffected => $tablesAffected,
 		     tablesDependedOn => $tablesDependedOn,
@@ -102,13 +106,16 @@ my $documentation = {purposeBrief => $purposeBrief,
 		     notes => $notes
 		    };
 
+  return $documentation;
+}
+
 sub new {
   my ($class) = @_;
   my $self = {};
   bless($self,$class);
 
   my $documentation = &getDocumentation();
-  my $argumentDeclaration = &getArgumentsDeclaration();
+  my $argsDeclaration = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision: 3057 $', # cvs fills this in!
