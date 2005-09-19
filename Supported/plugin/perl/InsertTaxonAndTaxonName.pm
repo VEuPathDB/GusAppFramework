@@ -165,17 +165,20 @@ sub run {
 sub checkForExistingRows {
   my ($self) = @_;
 
-  my $dbh = $self->getQueryHandle();
-
   my $name = $self->getArg('name');
 
   my $nameClass = $self->getArg('nameClass');
 
-  my $sth = $dbh->prepareAndExecute("select taxon_id from sres.taxonname where name = $name and name_class = $nameClass");
+  my $taxonName = GUS::Model::SRes::TaxonName->new({'name'=>$name,'name_class'=>$nameClass});
 
-  my $taxonId = $sth->fetchrow_array();
+  my $existing = $taxonName->retrieveFromDB();
 
-  $self->userError("There is already an entry in Taxon and in TaxonName for $name with name_class = $nameClass. The taxon_id = $taxonId") if $taxonId;
+  if ($existing) {
+
+    my $taxonId = $taxonName->getTaxonId();
+
+    $self->userError("There is already an entry in Taxon and in TaxonName for $name with name_class = $nameClass. The taxon_id = $taxonId");
+  }
 
 }
 
@@ -186,9 +189,15 @@ sub getTaxon {
 
     my $rank = $self->getArg('rank');
 
-    my $taxon = $self->getArg('ncbiTaxId') ? GUS::Model::SRes::Taxon->new ({'ncbi_tax_id'=>$ncbiTaxId}) : GUS::Model::SRes::Taxon->new ();
+    my $taxon;
 
-    $taxon->retrieveFromDB();
+    if ($self->getArg('ncbiTaxId')) {
+      $taxon = GUS::Model::SRes::Taxon->new ({'ncbi_tax_id'=>$ncbiTaxId});
+      $taxon->retrieveFromDB();
+    }
+    else {
+      $taxon = GUS::Model::SRes::Taxon->new();
+    }
 
     $taxon->setRank($rank) unless $taxon->getRank();
 
@@ -224,7 +233,7 @@ sub getTaxonName {
 
   my $name = $self->getArg('name');
 
-  my $name_class = $self->getArg('name_class');
+  my $name_class = $self->getArg('nameClass');
 
   my $taxonName = GUS::Model::SRes::TaxonName->new ({'name'=>$name,'name_class'=>$name_class});
 
