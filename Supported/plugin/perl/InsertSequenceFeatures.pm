@@ -735,7 +735,7 @@ sub makeFeature {
     foreach my $bioperlChildFeature ($bioperlFeature->get_SeqFeatures()) {
       my $childFeature =
 	$self->makeFeature($bioperlChildFeature, $naSequenceId);
-      $feature->addChild($childFeature);
+      if ($childFeature) { $feature->addChild($childFeature); }
     }
   }
   return $feature;
