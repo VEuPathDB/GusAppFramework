@@ -199,8 +199,8 @@ my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief,tablesAffect
 		 isList => 0
 		}),
 
-     integerArg({name  => 'array_id',
-		 descr => 'The RAD3 array id, the entry in Array table.',
+     integerArg({name  => 'array_design_id',
+		 descr => 'The RAD array design id, the entry in ArrayDesign table.',
 		 constraintFunc=> undef,
 		 reqd  => 1,
 		 isList => 0
@@ -244,9 +244,6 @@ my @positionList;
 
 sub run {
   my $M   = shift;
-  $M->logRAIID;
-  $M->logArgs;
-  $M->logCommit;
   $M->setOk(1);
 
   my $RV;
@@ -527,7 +524,7 @@ sub loadData{
 # holds the current number of rows being read including the emptry lines
    $cfg_rv->{n} = 0;
 # set all parameters
-   my $array_id = $M->getCla->{array_id};
+   my $array_id = $M->getCla->{array_design_id};
    my $array_subclass_view = $M->getCla->{array_subclass_view};
    my $result_subclass_view = $M->getCla->{result_subclass_view};
 
@@ -563,7 +560,7 @@ sub loadData{
        $posList .= ",";
        $posList .="$pos"; }
    }
-   my $posSQL="select $posList, $pk_name from RAD.$array_subclass_view where array_id=$array_id";
+   my $posSQL="select $posList, $pk_name from RAD.$array_subclass_view where array_design_id=$array_id";
    my $st = $dbh->prepare($posSQL) or die "SQL= $posSQL\n", $dbh->errstr;
    if($st->execute()){
      while (my $row = $st->fetchrow_hashref('NAME_lc')){
