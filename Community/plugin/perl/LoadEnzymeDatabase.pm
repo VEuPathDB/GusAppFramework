@@ -107,14 +107,14 @@ sub new {
    my $selfPod        = `$selfPodCommand`;
 
    $self->initialize
-   ({ requiredDbVersion => {},
+   ({ requiredDbVersion => 3.5,
       cvsRevision       => '$Revision$',
       cvsTag            => '$Name$',
       name              => ref($self),
 
       # just expand these
       revisionNotes     => '',
-      revisionNotes     => 'initial conversion to GUS3.0',
+      revisionNotes     => 'initial conversion to GUS3.5',
 
 			# documentation
 			documentation =>
@@ -157,25 +157,25 @@ sub new {
 										 constraintFunc => sub { CfIsDirectory(@_); },
 									 }),
 				stringArg ({ name    => 'Enzyme',
-										 descr   => 'lowercase_name,version of Enzyme database',
+										 descr   => 'name,version of Enzyme database',
 										 reqd    => 1,
 										 isList  => 1,
 										 constraintFunc => sub { CfIsAnything(@_); },
 									 }),
 				stringArg ({ name    => 'SwissProt',
-										 descr   => 'lowercase_name,version of SwissProt database',
+										 descr   => 'name,version of SwissProt database',
 										 reqd    => 0,
 										 isList  => 1,
 										 constraintFunc => sub { CfIsAnything(@_); },
 									 }),
 				stringArg ({ name    => 'Prosite',
-										 descr   => 'lowercase_name,version of Prosite database',
+										 descr   => 'name,version of Prosite database',
 										 reqd    => 0,
 										 isList  => 1,
 										 constraintFunc => sub { CfIsAnything(@_); },
 									 }),
 				stringArg ({ name    => 'Omim',
-										 descr   => 'lowercase_name,version of Omim database',
+										 descr   => 'name,version of Omim database',
 										 reqd    => 0,
 										 isList  => 1,
 										 constraintFunc => sub { CfIsAnything(@_); },
@@ -285,7 +285,7 @@ sub _getExtDbRelCache {
       my $db_ver = $Self->getCla()->{$db}->[1];
 
       my $_xdb = GUS::Model::SRes::ExternalDatabase->new
-      ({ lowercase_name => $db_lcn });
+      ({ name => $db_lcn });
       if ($_xdb->retrieveFromDB()) {
 
          my @allXdbrs = $_xdb->getChildren('SRes::ExternalDatabaseRelease',1);
