@@ -859,11 +859,11 @@ sub getTaxonId {
 }
 
 # handle feature tags.
-# also: return true to keep the feature;  return false to nuke it
+# also: return true to ignore the feature;  return false to keep it
 sub handleFeatureTag {
   my ($self, $bioperlFeature, $featureMapper, $feature, $tag) = @_;
 
-  return 1 if ($featureMapper->ignoreTag($tag));
+  return 0 if ($featureMapper->ignoreTag($tag));
 
   # if special case, pass to special case handler
   # it creates a set of child objects to add to the feature
@@ -874,7 +874,7 @@ sub handleFeatureTag {
     my $handler= $self->{mapperSet}->getHandler($handlerName);
     my $children = $handler->$method($tag, $bioperlFeature, $feature);
 
-    return 0 if (!defined($children));  # ignore entire feature
+    return 1 if (!defined($children));  # ignore entire feature
 
     foreach my $child (@{$children}) {
       $feature->addChild($child);
@@ -899,7 +899,7 @@ sub handleFeatureTag {
       $self->error("Feature '$featureName' has more than one value for tag '$tag'\nThe values are:\n\t" . join("\n\t", @tagValues) . "\n");
     }
   }
-  return 1;
+  return 0;
 }
 
 # compensate from error in unflattener that gives no exon to rRNAs sometimes
