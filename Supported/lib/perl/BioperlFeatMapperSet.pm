@@ -69,8 +69,9 @@ sub _parseMapFile {
   while (my ($name, $handler) = each %{$qualifierHandlers}) {
     my $handlerClass = $handler->{class};
     $self->{qualifierHandlers}->{$name} = 
-      eval "{require $handlerClass; $handlerClass->new($plugin)}";
+      eval "{require $handlerClass; $handlerClass->new()}";
     if ($@) { die "Cannot import or construct new object for qualifier handler class '$handlerClass'\n $@"; }
+    $self->{qualifierHandlers}->{$name}->setPlugin($plugin);
   }
 }
 

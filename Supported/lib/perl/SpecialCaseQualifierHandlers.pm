@@ -24,11 +24,16 @@ use GUS::Supported::Plugin::InsertSequenceFeaturesUndo;
 #     - undef to indicate that the entire feature should be ignored
 
 sub new {
-  my ($class, $plugin) = @_;
+  my ($class) = @_;
   my $self = {};
-  $self->{plugin} = $plugin;
   bless($self, $class);
   return $self;
+}
+
+sub setPlugin{
+  my ($self, $plugin) = @_;
+  $self->{plugin} = $plugin;
+
 }
 
 sub undoAll{
@@ -42,7 +47,7 @@ sub undoAll{
   $self->_undoNote();
   $self->_undoProtein();
   $self->_undoTranslation();
-  $self->_undoEstimatedGapLength{
+  $self->_undoEstimatedGapLength();
 
 }
 
@@ -136,10 +141,10 @@ sub _getDbXRefId {
       $dbref->submit();
     }
 
-    $self->{plugin}->{dbXrefIds}->{$dbSpecifier} = $dbref->getId();
+    $plugin->{dbXrefIds}->{$dbSpecifier} = $dbref->getId();
   }
 
-  return $self->{plugin}->{dbXrefIds}->{$dbSpecifier};
+  return $plugin->{dbXrefIds}->{$dbSpecifier};
 }
 
 # static subroutine
@@ -258,8 +263,9 @@ sub estimatedGapLength {
   my ($self, $tag, $bioperlFeature, $feature) = @_;
 
   my @emptyArray;
-  $feature->setMinSize($bioperlFeature->get_tag_values($tag)[0]);
-  $feature->setMaxSize($bioperlFeature->get_tag_values($tag)[0]);
+  my @tagValues = $bioperlFeature->get_tag_values($tag);
+  $feature->setMinSize($tagValues[0]);
+  $feature->setMaxSize($tagValues[0]);
   return \@emptyArray;
 }
 
