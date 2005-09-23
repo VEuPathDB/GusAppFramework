@@ -24,62 +24,62 @@ $| = 1;
 # ----------------------------------------------------------------------
 sub getArgumentsDeclaration {
 
-  my $argsDeclaration =>
+  my $argsDeclaration =
     [ booleanArg({ name   => 'Survey',
 		   descr  => 'just survey what is to be done',
 		   reqd   => 0,
 		   isList => 0,
-		   constraintFunc => undef
+		   constraintFunc => sub { CfIsAnything(@_); },
 		 }),
       booleanArg({ name   => 'Update',
 		   descr  => 'add some entries without creating new database',
 		   reqd   => 0,
 		   isList => 0,
-		   constraintFunc => undef
+		   constraintFunc => sub { CfIsAnything(@_); },
 		 }),
       stringArg ({ name    => 'InPath',
 		   descr   => 'find data files here',
 		   reqd    => 0,
 		   default => '.',
 		   isList  => 0,
-		   constraintFunc => undef
+		   constraintFunc => sub { CfIsDirectory(@_); },
 		 }),
       stringArg ({ name    => 'enzymeDbName',
 		   descr   => 'name in sres.externaldatabase.name for EnzymeDB',
 		   reqd    => 1,
 		   isList  => 0,
-		   constraintFunc => undef
+		   constraintFunc => sub { CfIsAnything(@_); },
 		 }),
       stringArg ({ name    => 'enzymeDbRlsVer',
 		   descr   => 'version in sres.externaldatabaserelease.version for EnzymeDB',
 		   reqd    => 1,
 		   isList  => 0,
-		   constraintFunc => undef
+		   constraintFunc => sub { CfIsAnything(@_); },
 		 }),
       stringArg ({ name    => 'SwissProt',
 		   descr   => 'name,version of SwissProt database',
 		   reqd    => 0,
 		   isList  => 1,
-		   constraintFunc => undef
+		   constraintFunc => sub { CfIsAnything(@_); },
 		 }),
       stringArg ({ name    => 'Prosite',
 		   descr   => 'name,version of Prosite database',
 		   reqd    => 0,
 		   isList  => 1,
-		   constraintFunc => undef
+		   constraintFunc => sub { CfIsAnything(@_); },
 		 }),
       stringArg ({ name    => 'Omim',
 		   descr   => 'name,version of Omim database',
 		   reqd    => 0,
 		   isList  => 1,
-		   constraintFunc => undef
+		   constraintFunc => sub { CfIsAnything(@_); },
 		 }),
       integerArg({ name    => 'EntriesN',
 		   descr   => 'process at most this many entries',
 		   reqd    => 0,
 		   default => 1_000_000_000,
 		   isList  => 0,
-		   constraintFunc => undef
+		   constraintFunc => sub { CfIsPositive(@_); },
 		 })
     ];
 
