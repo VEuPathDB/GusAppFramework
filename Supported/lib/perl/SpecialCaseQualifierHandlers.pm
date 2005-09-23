@@ -269,6 +269,15 @@ sub _undoEstimatedGapLength{
 
 }
 
+##################  Ignore entire feature #########################
+
+# the presence of the qualifer that uses this handler forces the entire
+# feature to be ignored
+sub ignoreFeature {
+  my ($self, $tag, $bioperlFeature, $feature) = @_;
+  return undef;
+}
+
 #################################################################
 
 sub _deleteFromTable{
