@@ -84,16 +84,18 @@ sub dbXRef {
 
   my @dbRefNaFeatures;
   foreach my $tagValue ($bioperlFeature->get_tag_values($tag)) {
-    push(@dbRefNaFeatures, $self->_buildDbXRef($tagValue));
+    push(@dbRefNaFeatures, &buildDbXRef($self->{plugin}, $tagValue));
   }
   return @dbRefNaFeatures;
 }
 
-sub _buildDbXRef {
-  my ($self, $dbSpecifier) = @_;
+# this static subroutine is public because it can be reused by other special
+# case handler modules that parse their dbSpecifiers in a different way
+sub buildDbXRef {
+  my ($plugin, $dbSpecifier) = @_;
 
   my $dbRefNaFeature = GUS::Model::DoTS::DbRefNAFeature->new();
-  my $id = $self->_getDbXRefId($dbSpecifier);
+  my $id = &_getDbXRefId($plugin, $dbSpecifier);
   $dbRefNaFeature->setDbRefId($id);
 
   ## If DbRef is outside of Genbank, then link directly to sequence
@@ -108,12 +110,14 @@ sub _buildDbXRef {
 
 }
 
+# static subroutine
+# store state in plugin so it can be reused by other special case handlers
 sub _getDbXRefId {
-  my ($self, $dbSpecifier) = @_;
+  my ($plugin, $dbSpecifier) = @_;
 
-  if (!$self->{dbXrefIds}->{$dbSpecifier}) {
+  if (!$plugin->{dbXrefIds}->{$dbSpecifier}) {
     my ($dbName, $id, $sid)= split(/\:/, $dbSpecifier);
-    my $extDbRlsId = $self->_getExtDatabaseRlsId($dbName);
+    my $extDbRlsId = &_getExtDatabaseRlsId($dbName);
     my $dbref = GUS::Model::SRes::DbRef->new({'external_database_release_id' => $extDbRlsId, 
 					      'primary_identifier' => $id});
 
@@ -124,17 +128,18 @@ sub _getDbXRefId {
       $dbref->submit();
     }
 
-    $self->{dbXrefIds}->{$dbSpecifier} = $dbref->getId();
+    $self->{plugin}->{dbXrefIds}->{$dbSpecifier} = $dbref->getId();
   }
 
-  return $self->{dbXrefIds}->{$dbSpecifier};
+  return $self->{plugin}->{dbXrefIds}->{$dbSpecifier};
 }
 
-
+# static subroutine
+# store state in plugin so it can be reused by other special case handlers
 sub _getExtDatabaseRlsId {
-  my ($self, $name) = @_;
+  my ($plugin, $name) = @_;
 
-  if (!$self->{extDbRlsIds}->{$name}) {
+  if (!$plugin->{extDbRlsIds}->{$name}) {
     my $externalDatabase
       = GUS::Model::SRes::ExternalDatabase->new({"name" => $name});
 
@@ -150,9 +155,9 @@ sub _getExtDatabaseRlsId {
       $externalDatabaseRls->submit();
     }
 
-    $self->{extDbRlsIds}->{$name} = $externalDatabaseRls->getId();
+    $plugin->{extDbRlsIds}->{$name} = $externalDatabaseRls->getId();
   }
-    return $self->{extDbRlsIds}->{$name};
+  return $plugin->{extDbRlsIds}->{$name};
 }
 
 sub _undoDbXRef{
