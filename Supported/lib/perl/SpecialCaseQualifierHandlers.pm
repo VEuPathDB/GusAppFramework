@@ -35,6 +35,7 @@ sub undoAll{
   $self->_undoNote();
   $self->_undoProtein();
   $self->_undoTranslation();
+  $self->_undoEstimatedGapLength{
 
 }
 
@@ -240,6 +241,24 @@ sub _undoTranslation{
 
   $self->_deleteFromTable('DoTS.TranslatedAAFeature');
   $self->_deleteFromTable('DoTS.TranslatedAASequence');
+
+}
+
+################ Estimated Gap Length ###############################
+
+# put estimated gap length of ScaffoldGapFeature into min and max lengths
+sub estimatedGapLength {
+  my ($self, $tag, $bioperlFeature, $feature) = @_;
+
+  my @emptyArray;
+  $feature->setMinSize($bioperlFeature->get_tag_values($tag)[0]);
+  $feature->setMaxSize($bioperlFeature->get_tag_values($tag)[0]);
+  return @emptyArray;
+}
+
+# nothing special to do
+sub _undoEstimatedGapLength{
+  my ($self) = @_;
 
 }
 
