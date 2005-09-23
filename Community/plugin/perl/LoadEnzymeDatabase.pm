@@ -22,7 +22,7 @@ use GUS::PluginMgr::PluginUtilities::ConstraintFunction;
 $| = 1;
 
 # ----------------------------------------------------------------------
-sub getArgumentDeclaration {
+sub getArgumentsDeclaration {
 
   my $argsDeclaration =>
     [ booleanArg({ name   => 'Survey',
@@ -180,7 +180,7 @@ sub new {
    bless ($self,$class);
 
    my $documentation = &getDocumentation();
-   my $argsDeclaration = &getArgumentDeclaration();
+   my $argsDeclaration = &getArgumentsDeclaration();
 
    $self->initialize({requiredDbVersion => 3.5,
 		      cvsRevision => '$Revision$', # cvs fills this in!
