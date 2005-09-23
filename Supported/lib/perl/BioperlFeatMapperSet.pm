@@ -7,14 +7,14 @@ use Data::Dumper;
 use XML::Simple;
 
 sub new {
-  my ($class, $mapXmlFile) = @_;
+  my ($class, $mapXmlFile, $plugin) = @_;
   $class = ref($class) || $class;
 
   my $self = {};
   bless($self, $class);
 
   $self->{mapXmlFile} = $mapXmlFile;
-  $self->_parseMapFile($mapXmlFile);
+  $self->_parseMapFile($mapXmlFile, $plugin);
 
   return $self;
 }
@@ -54,7 +54,7 @@ sub getAllSoTerms {
 # Static method
 # return the BioperlFeatMapper set in a hash keyed on feature name
 sub _parseMapFile {
-  my ($self, $mapXml) = @_;
+  my ($self, $mapXml, $plugin) = @_;
 
   my $simple = XML::Simple->new();
   my $data = $simple->XMLin($mapXml, forcearray => 1);
@@ -69,7 +69,7 @@ sub _parseMapFile {
   while (my ($name, $handler) = each %{$qualifierHandlers}) {
     my $handlerClass = $handler->{class};
     $self->{qualifierHandlers}->{$name} = 
-      eval "{require $handlerClass; $handlerClass->new()}";
+      eval "{require $handlerClass; $handlerClass->new($plugin)}";
     if ($@) { die "Cannot import or construct new object for qualifier handler class '$handlerClass'\n $@"; }
   }
 }

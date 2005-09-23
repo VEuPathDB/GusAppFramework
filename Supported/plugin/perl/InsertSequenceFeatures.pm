@@ -333,7 +333,7 @@ sub run{
   my ($self) = @_;
 
   $self->{mapperSet} =
-    GUS::Supported::BioperlFeatMapperSet->new($self->getArg('mapFile'));
+    GUS::Supported::BioperlFeatMapperSet->new($self->getArg('mapFile'), $self);
 
   my $dbRlsId = $self->getExtDbRlsId($self->getArg('extDbName'),
 				     $self->getArg('extDbRlsVer'))
