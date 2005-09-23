@@ -276,8 +276,8 @@ sub _getExtDbRelCache {
   my $ok = 1;
   foreach my $db ( qw( Enzyme SwissProt Prosite Omim ) ) {
 
-    my $db_lcn = $self->getArg($db)[0];
-    my $db_ver = $self->getArg($db)[1];
+    my $db_lcn = $self->getArg($db)->[0];
+    my $db_ver = $self->getArg($db)->[1];
 
     if ($db_lcn && $db_ver) {
       $self->userError("missing db name or db rls version in comma delimited list for $db") if (length ($db_lcn==0) || length ($db_ver==0));
