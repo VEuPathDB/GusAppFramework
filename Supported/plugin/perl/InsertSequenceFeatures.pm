@@ -767,7 +767,10 @@ sub makeImmediateFeature {
 					 $bioperlFeature->strand()));
 
   foreach my $tag ($bioperlFeature->get_all_tags()) {
-    $self->handleFeatureTag($bioperlFeature, $featureMapper, $feature, $tag);
+    my $ignoreFeature = $self->handleFeatureTag($bioperlFeature,
+						$featureMapper,
+						$feature, $tag);
+    return undef if $ignoreFeature;
   }
 
   $self->{immedFeatureCount}++;
@@ -855,10 +858,12 @@ sub getTaxonId {
 
 }
 
+# handle feature tags.
+# also: return true to keep the feature;  return false to nuke it
 sub handleFeatureTag {
   my ($self, $bioperlFeature, $featureMapper, $feature, $tag) = @_;
 
-  return if ($featureMapper->ignoreTag($tag));
+  return 1 if ($featureMapper->ignoreTag($tag));
 
   # if special case, pass to special case handler
   # it creates a set of child objects to add to the feature
@@ -867,9 +872,11 @@ sub handleFeatureTag {
     my $handlerName = $featureMapper->getHandlerName($tag);
     my $method = $featureMapper->getHandlerMethod($tag);
     my $handler= $self->{mapperSet}->getHandler($handlerName);
-    my @children = $handler->$method($tag, $bioperlFeature, $feature);
+    my $children = $handler->$method($tag, $bioperlFeature, $feature);
 
-    foreach my $child (@children) {
+    return 0 if (!defined($children));  # ignore entire feature
+
+    foreach my $child (@{$children}) {
       $feature->addChild($child);
     }
   }
@@ -892,6 +899,7 @@ sub handleFeatureTag {
       $self->error("Feature '$featureName' has more than one value for tag '$tag'\nThe values are:\n\t" . join("\n\t", @tagValues) . "\n");
     }
   }
+  return 1;
 }
 
 # compensate from error in unflattener that gives no exon to rRNAs sometimes
