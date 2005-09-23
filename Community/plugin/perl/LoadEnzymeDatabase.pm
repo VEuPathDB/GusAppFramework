@@ -180,7 +180,7 @@ sub new {
    bless ($self,$class);
 
    my $documentation = &getDocumentation();
-   my $argsDeclaration = &getArgumentsDeclaration();
+   my $argsDeclaration = &getArgumentDeclaration();
 
    $self->initialize({requiredDbVersion => 3.5,
 		      cvsRevision => '$Revision$', # cvs fills this in!
