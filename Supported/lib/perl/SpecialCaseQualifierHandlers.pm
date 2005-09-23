@@ -15,6 +15,12 @@ use GUS::Supported::Plugin::InsertSequenceFeaturesUndo;
 # It handles commonly seen qualifiers that need special case treatment (ie,
 # their values are not simply stuffed into a column of NAFeature or its 
 # subclasses
+#
+# Handlers must
+#  - provide a parallel undo method that is included in undoAll
+#  - return either
+#     - a (possibly empty) array of child objects to add to the feature
+#     - undef to indicate that the entire feature should be ignored
 
 sub new {
   my ($class, $plugin) = @_;
