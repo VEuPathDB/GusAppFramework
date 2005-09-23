@@ -19,7 +19,8 @@ use GUS::Supported::Plugin::InsertSequenceFeaturesUndo;
 # Handlers must
 #  - provide a parallel undo method that is included in undoAll
 #  - return either
-#     - a (possibly empty) array of child objects to add to the feature
+#     - a reference to a (possibly empty) array of child objects to add to the 
+#       feature
 #     - undef to indicate that the entire feature should be ignored
 
 sub new {
@@ -57,7 +58,7 @@ sub gene {
     $gene->setNaGeneId($geneID);
     push(@genes, $gene);
   }
-  return @genes;
+  return \@genes;
 }
 
 sub _getNAGeneId {   
@@ -93,7 +94,7 @@ sub dbXRef {
   foreach my $tagValue ($bioperlFeature->get_tag_values($tag)) {
     push(@dbRefNaFeatures, &buildDbXRef($self->{plugin}, $tagValue));
   }
-  return @dbRefNaFeatures;
+  return \@dbRefNaFeatures;
 }
 
 # this static subroutine is public because it can be reused by other special
@@ -185,7 +186,7 @@ sub note {
     push(@notes, GUS::Model::DoTS::NAFeatureComment->new($arg));
 
   }
-  return @notes;
+  return \@notes;
 }
 
 sub _undoNote{
@@ -212,7 +213,7 @@ sub protein {
     $naFeatureNaProtein->setNaProteinId($protein->getId());
     push(@naFeatureNaProteins, $naFeatureNaProtein);
   }
-  return @naFeatureNaProteins;
+  return \@naFeatureNaProteins;
 }
 
 sub _undoProtein{
@@ -239,7 +240,7 @@ sub translation {
     $transAaFeat->setAaSequenceId($aaSeq->getId());
     push(@translatedAAFeatures, $transAaFeat);
   }
-  return @translatedAAFeatures;
+  return \@translatedAAFeatures;
 }
 
 sub _undoTranslation{
@@ -259,7 +260,7 @@ sub estimatedGapLength {
   my @emptyArray;
   $feature->setMinSize($bioperlFeature->get_tag_values($tag)[0]);
   $feature->setMaxSize($bioperlFeature->get_tag_values($tag)[0]);
-  return @emptyArray;
+  return \@emptyArray;
 }
 
 # nothing special to do
