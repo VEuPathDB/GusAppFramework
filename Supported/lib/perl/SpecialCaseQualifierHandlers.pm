@@ -17,8 +17,9 @@ use GUS::Supported::Plugin::InsertSequenceFeaturesUndo;
 # subclasses
 
 sub new {
-  my $class = shift;
+  my ($class, $plugin) = @_;
   my $self = {};
+  $self->{plugin} = $plugin;
   bless($self, $class);
   return $self;
 }
