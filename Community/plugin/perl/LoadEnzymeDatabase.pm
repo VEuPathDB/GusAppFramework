@@ -2,83 +2,6 @@
 package GUS::Community::Plugin::LoadEnzymeDatabase;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
-=pod
-
-Here are some technical details that might be interesting.
-
-=head2 Finding an EC Flat File Distribution
-
-A flat file release of the EC database is available at
-http://www.expasy.org/enzyme/.  Use the 'Downloading ENZYME by FTP'
-link which links to http://tw.expasy.org/ftp/databases/enzyme.  You
-need to download only enzclass.txt and enzyme.dat.  They should be
-placed together in a directory.  Point the plugin to this directory
-using the --InPath option.
-
-=head2 Missing Entries
-
-We have observed that some of the parent nodes in the EC database are
-missing.  For example, if there is an EC entry 1.2.3.4, there should
-be a parent 1.2.3.-.  When a parent is missing, the plugin will create
-them as needed.
-
-=head2 Attributes
-
-The EC database has various class attributes that GUS does not
-structure, but does enter into the SRes.EnzymeClassAttribute table.
-These are:
-
-=over 4
-
-=item Alternate Name (AN lines),
-
-=item Catalytic Activity (CA lines),
-
-=item Comment (CC lines),
-
-=item Cofactor (CF lines),
-
-=item Database Reference (DR lines).
-
-=back
-
-=head3 GUS::Model::DoTS::AASequenceEnzymeClass
-
-This plugin also attempts to make links to DoTS.ExternalAASequences
-that are refered to in the EC release.  This is done via a
-DoTS.AASequenceEnzymeClass row.
-
-=head2 External Database Release Specification
-
-Several of the options of this plugin are specifications of a row in
-SRes.ExternalDatabaseRelease.  While this could be done using the
-external_database_release_id, we've tried to be a little more symbolic
-and use a comma-delimited list of the
-SRes.ExternalDatabase.lowercase_name and
-SRes.ExternalDatabaseRelease.version, e.g., 'swissprot,5.4'.
-
-The --Enzyme option must be used to set the
-SRes.ExternalDatabaseRelease for the SRes.EnzymeClass entries.  B<Make
-sure you have entries for your release of Enzyme in
-SRes.ExternalDatabase and SRes.ExternalDatabaseRelease.>
-
-=head2 Linking to Other Databases
-
-The ideal: The --Prosite, --SwissProt, and --Omim options let the user
-indicate which SRes.ExternalDatabaseRelease to link PROSITE,
-SWISSPROT, and OMIM references to.
-
-The actual: At the moment the --Omim flag is not used and all OMIM
-references are stored in SRes.EnzymeClassAttribute.
-
-Warnings will be issued for missing Prosite, SwissProt and Omim
-specifications, but they can be ignored.  Only the Enzyme link is
-required.
-
-=cut
-
-# ----------------------------------------------------------------------
-
 use strict;
 
 use CBIL::Util::Disp;
@@ -96,135 +19,204 @@ use GUS::PluginMgr::Plugin;
 use GUS::PluginMgr::PluginUtilities;
 use GUS::PluginMgr::PluginUtilities::ConstraintFunction;
 
+$| = 1;
+
 # ----------------------------------------------------------------------
+sub getArgumentDeclaration {
 
-sub new {
-   my $Class = shift;
+  my $argsDeclaration =>
+    [ booleanArg({ name   => 'Survey',
+		   descr  => 'just survey what is to be done',
+		   reqd   => 0,
+		   isList => 0,
+		   constraintFunc => sub { CfIsAnything(@_); },
+		 }),
+      booleanArg({ name   => 'Update',
+		   descr  => 'add some entries without creating new database',
+		   reqd   => 0,
+		   isList => 0,
+		   constraintFunc => sub { CfIsAnyting(@_); },
+		 }),
+      stringArg ({ name    => 'InPath',
+		   descr   => 'find data files here',
+		   reqd    => 0,
+		   default => '.',
+		   isList  => 0,
+		   constraintFunc => sub { CfIsDirectory(@_); },
+		 }),
+      stringArg ({ name    => 'enzymeDbName',
+		   descr   => 'name in sres.externaldatabase.name for EnzymeDB',
+		   reqd    => 1,
+		   isList  => 0,
+		   constraintFunc => sub { CfIsAnything(@_); },
+		 }),
+      stringArg ({ name    => 'enzymeDbRlsVer',
+		   descr   => 'version in sres.externaldatabaserelease.version for EnzymeDB',
+		   reqd    => 1,
+		   isList  => 0,
+		   constraintFunc => sub { CfIsAnything(@_); },
+		 }),
+      stringArg ({ name    => 'SwissProt',
+		   descr   => 'name,version of SwissProt database',
+		   reqd    => 0,
+		   isList  => 1,
+		   constraintFunc => sub { CfIsAnything(@_); },
+		 }),
+      stringArg ({ name    => 'Prosite',
+		   descr   => 'name,version of Prosite database',
+		   reqd    => 0,
+		   isList  => 1,
+		   constraintFunc => sub { CfIsAnything(@_); },
+		 }),
+      stringArg ({ name    => 'Omim',
+		   descr   => 'name,version of Omim database',
+		   reqd    => 0,
+		   isList  => 1,
+		   constraintFunc => sub { CfIsAnything(@_); },
+		 }),
+      integerArg({ name    => 'EntriesN',
+		   descr   => 'process at most this many entries',
+		   reqd    => 0,
+		   default => 1_000_000_000,
+		   isList  => 0,
+		   constraintFunc => sub { CfIsPositive(@_); },
+		 })
+    ];
 
-   my $self = bless {}, $Class;
+return $argsDeclaration;
 
-   my $selfPodCommand = 'pod2text '. __FILE__;
-   my $selfPod        = `$selfPodCommand`;
-
-   $self->initialize
-   ({ requiredDbVersion => 3.5,
-      cvsRevision       => '$Revision$',
-      cvsTag            => '$Name$',
-      name              => ref($self),
-
-      # just expand these
-      revisionNotes     => '',
-      revisionNotes     => 'initial conversion to GUS3.5',
-
-			# documentation
-			documentation =>
-			{ purpose        => 'loads data from Enzyme database',
-				purposeBrief   => 'loads data from Enzyme database',
-				tablesAffected => [
-													 [ 'SRes.EnzymeClass', '' ],
-													 [ 'SRes.EnzymeClassAttribute', '' ],
-													 [ 'DoTS.AASequenceEnzymeClass', '' ],
-													 [ 'SRes.DbRef', '' ],
-													],
-				tablesDependedOn => [
-														 [ 'SRes.ExternalDatabase', '' ],
-														 [ 'SRes.ExternalDatabaseRelease', '' ],
-													],
-        howToRestart     => 'do not know yet',
-        failureCases     => 'do not know yet',
-				notes            => $selfPod,
-			},
-
-			#
-			argsDeclaration =>
-			[ booleanArg({ name   => 'Survey',
-										 descr  => 'just survey what is to be done',
-										 reqd   => 0,
-										 isList => 0,
-										 constraintFunc => sub { CfIsAnything(@_); },
-									 }),
-				booleanArg({ name   => 'Update',
-										 descr  => 'add some entries without creating new database',
-										 reqd   => 0,
-										 isList => 0,
-										 constraintFunc => sub { CfIsAnyting(@_); },
-									 }),
-				stringArg ({ name    => 'InPath',
-										 descr   => 'find data files here',
-										 reqd    => 0,
-										 default => '.',
-										 isList  => 0,
-										 constraintFunc => sub { CfIsDirectory(@_); },
-									 }),
-				stringArg ({ name    => 'Enzyme',
-										 descr   => 'name,version of Enzyme database',
-										 reqd    => 1,
-										 isList  => 1,
-										 constraintFunc => sub { CfIsAnything(@_); },
-									 }),
-				stringArg ({ name    => 'SwissProt',
-										 descr   => 'name,version of SwissProt database',
-										 reqd    => 0,
-										 isList  => 1,
-										 constraintFunc => sub { CfIsAnything(@_); },
-									 }),
-				stringArg ({ name    => 'Prosite',
-										 descr   => 'name,version of Prosite database',
-										 reqd    => 0,
-										 isList  => 1,
-										 constraintFunc => sub { CfIsAnything(@_); },
-									 }),
-				stringArg ({ name    => 'Omim',
-										 descr   => 'name,version of Omim database',
-										 reqd    => 0,
-										 isList  => 1,
-										 constraintFunc => sub { CfIsAnything(@_); },
-									 }),
-				integerArg({ name    => 'EntriesN',
-										 descr   => 'process at most this many entries',
-										 reqd    => 0,
-										 default => 1_000_000_000,
-										 isList  => 0,
-										 constraintFunc => sub { CfIsPositive(@_); },
-									 }),
-			],
-
-    });
-
-   return $self;
 }
 
-# ----------------------------------------------------------------------
+sub getDocumentation {
+
+  my $purposeBrief = <<PURPOSEBRIEF;
+loads data from Enzyme database
+PURPOSEBRIEF
+
+  my $purpose = <<PLUGIN_PURPOSE;
+loads data from Enzyme database
+PLUGIN_PURPOSE
+
+  my $tablesAffected = [['GUS::Model::SRes::Taxon', 'A single row is added'],['GUS::Model::SRes::TaxonName', 'A single row is added']];
+
+  my $tablesDependedOn = [['GUS::Model::SRes::Taxon', 'If parent is invoked, parent taxon_id must exist']];
+
+  my $howToRestart = <<PLUGIN_RESTART;
+No explicit restart procedure.
+PLUGIN_RESTART
+
+  my $failureCases = <<PLUGIN_FAILURE_CASES;
+unknown
+PLUGIN_FAILURE_CASES
+
+  my $notes = <<PLUGIN_NOTES;
+A flat file release of the EC database is available at
+http://www.expasy.org/enzyme/.  Use the 'Downloading ENZYME by FTP'
+link which links to http://tw.expasy.org/ftp/databases/enzyme.  You
+need to download only enzclass.txt and enzyme.dat.  They should be
+placed together in a directory.  Point the plugin to this directory
+using the --InPath option.
+
+We have observed that some of the parent nodes in the EC database are
+missing.  For example, if there is an EC entry 1.2.3.4, there should
+be a parent 1.2.3.-.  When a parent is missing, the plugin will create
+them as needed.
+
+The EC database has various class attributes that GUS does not
+structure, but does enter into the SRes.EnzymeClassAttribute table.
+These are:
+Alternate Name (AN lines),
+Catalytic Activity (CA lines),
+Comment (CC lines),
+Cofactor (CF lines),
+Database Reference (DR lines).
+
+This plugin also attempts to make links to DoTS.ExternalAASequences
+that are refered to in the EC release.  This is done via a
+DoTS.AASequenceEnzymeClass row.
+
+Several of the options of this plugin are specifications of a row in
+SRes.ExternalDatabaseRelease.  While this could be done using the
+external_database_release_id, we've tried to be a little more symbolic
+and use a comma-delimited list of the
+SRes.ExternalDatabase.name and
+SRes.ExternalDatabaseRelease.version, e.g., 'swissprot,5.4'.
+
+The --Enzyme option must be used to set the
+SRes.ExternalDatabaseRelease for the SRes.EnzymeClass entries.Make
+sure you have entries for your release of Enzyme in
+SRes.ExternalDatabase and SRes.ExternalDatabaseRelease.
+
+The ideal: The --Prosite, --SwissProt, and --Omim options let the user
+indicate which SRes.ExternalDatabaseRelease to link PROSITE,
+SWISSPROT, and OMIM references to.
+
+The actual: At the moment the --Omim flag is not used and all OMIM
+references are stored in SRes.EnzymeClassAttribute.
+
+Warnings will be issued for missing Prosite, SwissProt and Omim
+specifications, but they can be ignored.  Only the Enzyme link is
+required.
+PLUGIN_NOTES
+
+  my $documentation = {purposeBrief => $purposeBrief,
+		     purpose => $purpose,
+		     tablesAffected => $tablesAffected,
+		     tablesDependedOn => $tablesDependedOn,
+		     howToRestart => $howToRestart,
+		     failureCases => $failureCases,
+		     notes => $notes
+		    };
+
+  return $documentation;
+}
+
+
+sub new {
+   my ($class) = @_;
+
+   my $self = {};
+
+   bless ($self,$class);
+
+   my $documentation = &getDocumentation();
+   my $argsDeclaration = &getArgumentsDeclaration();
+
+   $self->initialize({requiredDbVersion => 3.5,
+		      cvsRevision => '$Revision$', # cvs fills this in!
+		      name => ref($self),
+		      argsDeclaration   => $argsDeclaration,
+		      documentation     => $documentation
+		     });
+
+  return $self;
+}
 
 sub run {
-   my $Self = shift;
+   my ($self) = @_;
 
-   # make sure STDOUT is hot.
-   $| = 1;
-
-   # log stuff we always want to see.
-   $Self->logCommit();
-   $Self->logRAIID();
-	 $Self->logArgs();
+   $self->logAlgInvocationId();
+   $self->logCommit();
+   $self->logArgs();
 
    # RETURN
    my $RV = 'programmar did not set a message';
 
    # find external database objects;
-   my $db_cache = $Self->_getExtDbRelCache();
+   my $db_cache = $self->_getExtDbRelCache();
    return $@ if $@;
 
    # parse the input file.
    my $ezp = CBIL::Bio::Enzyme::Parser
-   ->new({ InPath => $Self->getCla()->{InPath},
+   ->new({ InPath => $self->getArg('InPath'),
          });
    $ezp->assemble;
    return $@ if $@;
 
    # make sure we can hold everything.
-   $Self->getSelfInv()->setMaximumNumberOfObjects(500_000);
+   $self->setPointerCacheSize(500_000);
 
-   if ($Self->getCla()->{Update}) {
+   if ($self->getArg('Update')) {
       my $enzymes = $ezp->getFileCache('enzymes')->getEntries();
       CBIL::Util::Disp::Display($enzymes);
    } else {
@@ -237,14 +229,14 @@ sub run {
 
       my $things_n = 0;
       foreach my $thing (values %$all_ec) {
-         $Self->_process($db_cache->{ENZYME},
+         $self->_process($db_cache->{ENZYME},
                          $all_ec,$all_gus,$thing
                         );
-         last if ++$things_n >= $Self->getCla()->{EntriesN};
+         last if ++$things_n >= $self->getArg('EntriesN');
       }
 
       # display tree of ECs
-      if ($Self->getCla()->{Survey}) {
+      if ($self->getArg('Survey')) {
          my $root_g = $all_gus->{'-.-.-.-'};
          print $root_g->toXML;
       } else {
@@ -253,7 +245,7 @@ sub run {
       }
    }
 
-   return $Self->_return_message;
+   return $self->_return_message;
 }
 
 # ----------------------------------------------------------------------
@@ -275,64 +267,69 @@ sub _getDbCache     { $_[0]->{_db_cache} }
 # ----------------------------------------------------------------------
 
 sub _getExtDbRelCache {
-   my $Self = shift;
-   my $RV;
+  my ($self) = @_;
+  my $RV;
 
-   my $ok = 1;
-   foreach my $db ( qw( Enzyme SwissProt Prosite Omim ) ) {
+  # cheat:  transform standard args into non-standard for legacy code compatibility
+  $self->getArgs()->{'Enzyme'} = $self->getArg('enzymeDbName') . "," . $self->getArg('enzymeDbRlsVer');
 
-      my $db_lcn = $Self->getCla()->{$db}->[0];
-      my $db_ver = $Self->getCla()->{$db}->[1];
+  my $ok = 1;
+  foreach my $db ( qw( Enzyme SwissProt Prosite Omim ) ) {
+
+    my $db_lcn = $self->getArg($db)[0];
+    my $db_ver = $self->getArg($db)[1];
+
+    if ($db_lcn && $db_ver) {
+      $self->userError("missing db name or db rls version in comma delimited list for $db") if (length ($db_lcn==0) || length ($db_ver==0));
 
       my $_xdb = GUS::Model::SRes::ExternalDatabase->new
-      ({ name => $db_lcn });
+	({ name => $db_lcn });
       if ($_xdb->retrieveFromDB()) {
 
-         my @allXdbrs = $_xdb->getChildren('SRes::ExternalDatabaseRelease',1);
-         my $the_xdbr;
-         foreach my $_xdbr (@allXdbrs) {
-            if ($_xdbr->getVersion() eq $db_ver) {
-               $the_xdbr = $_xdbr;
-               last;
-            }
-         }
+	my @allXdbrs = $_xdb->getChildren('SRes::ExternalDatabaseRelease',1);
+	my $the_xdbr;
+	foreach my $_xdbr (@allXdbrs) {
+	  if ($_xdbr->getVersion() eq $db_ver) {
+	    $the_xdbr = $_xdbr;
+	    last;
+	  }
+	}
 
-         if ($the_xdbr) {
-            $RV->{uc $db} = $the_xdbr;
-         } else {
-            $Self->log('WARN',
-                       sprintf("Could not locate release '%s' for database '%s' for %s",
-                               $db_ver, $db_lcn, $db
-                              )
-                      );
-            $ok = 0 if $db eq 'Enzyme';
-         }
+	if ($the_xdbr) {
+	  $RV->{uc $db} = $the_xdbr;
+	} else {
+	  $self->log('WARN',
+		     sprintf("Could not locate release '%s' for database '%s' for %s",
+			     $db_ver, $db_lcn, $db
+			    )
+		    );
+	  $ok = 0 if $db eq 'Enzyme';
+	}
 
-      } else {
-         $Self->log('WARN',
-                    sprintf("Could not locate database '%s' for %s",
-                            $db_lcn, $db
-                           )
-                   );
-         $ok = 0 if $db eq 'Enzyme';
       }
-   }
+      else {
+	$self->log('WARN',
+		   sprintf("Could not locate database '%s' for %s",
+			   $db_lcn, $db
+			  )
+		  );
+	$ok = 0 if $db eq 'Enzyme';
+      }
+    }
+  }
 
-   if ($ok) {
-      $Self->_setDbCache($RV)->_getDbCache();
-   } else {
-      die 'Could not locate all ExternalDatabaseReleases';
-   }
+  if ($ok) {
+    $self->_setDbCache($RV)->_getDbCache();
+  } 
+  else {
+    die 'Could not locate all ExternalDatabaseReleases';
+  }
 }
 
 # ----------------------------------------------------------------------
 
 sub _process {
-   my $Self        = shift;
-   my $ExDbRl      = shift;     # ExternalDatabase :
-   my $EnzCache    = shift;  # hash ref : all EC objects by id string.
-   my $GusCache    = shift; # hash ref : all GUS objects by id string.
-   my $EnzymeClass = shift;     # EC obj : the one to process
+   my ($self,$ExDbRl,$EnzCache,$GusCache,$EnzymeClass) = @_;
 
    # make a EnzymeClass with most columns set
    # ......................................................................
@@ -342,7 +339,7 @@ sub _process {
 
    return if $GusCache->{$ec_key};
 
-   $Self->log('INFO', '_process',  $Self->_getProcessCount(), $EnzymeClass->getDescription() );
+   $self->log('INFO', '_process',  $self->_getProcessCount(), $EnzymeClass->getDescription() );
 
    my $ez_class_h = { depth       => $ec->getDepth,
                       ec_number   => $ec->toString,
@@ -353,13 +350,13 @@ sub _process {
       $ez_class_h->{"ec_number_$i"} = $ec->getList->[$i-1];
    }
    my $ez_class_g = GUS::Model::SRes::EnzymeClass->new($ez_class_h);
-   $Self->_incEnzymeClass;
+   $self->_incEnzymeClass;
 
    # process attribues
-   $Self->_process_attributes($ez_class_g, $EnzymeClass);
+   $self->_process_attributes($ez_class_g, $EnzymeClass);
 
    # process DB refs
-   $Self->_process_dbrefs($ez_class_g, $EnzymeClass);
+   $self->_process_dbrefs($ez_class_g, $EnzymeClass);
 
    # store GUS object in cache.
    $GusCache->{$ec->toString} = $ez_class_g;
@@ -376,7 +373,7 @@ sub _process {
          # make sure we will find a parent if one is expected.
          my $parent_ec = $EnzymeClass->getParent;
          if ($ec->getDepth > 1 && not $parent_ec) {
-            print join("\t", ref $Self,
+            print join("\t", ref $self,
                        'no parent',
                        $ec->getDepth, $ec->toString
                       ), "\n";
@@ -391,7 +388,7 @@ sub _process {
 
          # not yet made, make it
          unless ($parent_gus) {
-            $Self->_process($ExDbRl,$EnzCache,$GusCache,$EnzCache->{$parent_id});
+            $self->_process($ExDbRl,$EnzCache,$GusCache,$EnzCache->{$parent_id});
             $parent_gus = $GusCache->{$parent_id};
          }
 
@@ -399,7 +396,7 @@ sub _process {
             $parent_gus->addChild($ez_class_g);
             #$ez_class_g->setParent($parent_gus);
          } else {
-            print join("\t", ref $Self,
+            print join("\t", ref $self,
                        'Could not make GUS parent',
                        $ec->toString
                       ), "\n";
@@ -407,7 +404,7 @@ sub _process {
       }
    }
 
-   #  if ($Self->getCla()->{Survey}) {
+   #  if ($self->getArg('Survey')) {
    #    print '-' x 70, "\n";
    #    print $ez_class_g->toXML;
    #  }
@@ -416,9 +413,7 @@ sub _process {
 # ----------------------------------------------------------------------
 
 sub _process_attributes {
-   my $Self = shift;
-   my $GusZyme = shift;
-   my $EnzymeClass = shift;
+   my ($self,$GusZyme,$EnzymeClass) = @_;
 
    # does not apply to ::Classes
    return unless ref $EnzymeClass eq 'CBIL::Bio::Enzyme::Enzyme';
@@ -459,8 +454,8 @@ sub _process_attributes {
    foreach my $ez_att_h (@ez_atts_h) {
       my $ez_att_g = GUS::Model::SRes::EnzymeClassAttribute->new($ez_att_h);
       $ez_att_g->setParent($GusZyme);
-      $Self->_incEnzymeClassAttribute;
-      #print $ez_att_g->toXML if $Self->getCla()->{Survey};
+      $self->_incEnzymeClassAttribute;
+      #print $ez_att_g->toXML if $self->getArg('Survey');
    }
 }
 
@@ -468,9 +463,7 @@ sub _process_attributes {
 # ----------------------------------------------------------------------
 
 sub _process_dbrefs {
-   my $Self = shift;
-   my $GusZyme = shift;         # GUSdev::Objects::EnzymeClass
-   my $EnzymeClass = shift;     # CBIL::Bio::Enzyme::DbRef
+   my ($self,$GusZyme,$EnzymeClass) = @_;
 
    return unless ref $EnzymeClass eq 'CBIL::Bio::Enzyme::Enzyme';
 
@@ -482,19 +475,19 @@ sub _process_dbrefs {
 			my $save_as_attribute = 1;
 
       # ExternalDatabase : by name
-      if (my $db_g = $Self->_getDbCache->{$db_c}) {
+      if (my $db_g = $self->_getDbCache->{$db_c}) {
 
          # sequence things
          if ($db_c eq 'PROSITE' || $db_c eq 'SWISSPROT' ) {
             #print '-' x 40, $GusZyme->getEcNumber, "\n";
-            #$Self->{C}->{self_inv}->setDebuggingOn;
+            #$self->{C}->{self_inv}->setDebuggingOn;
             $db_g->removeChildrenInClass('DoTS::ExternalAASequence');
             $db_g->retrieveChildrenFromDB('DoTS::ExternalAASequence',
                                           0,
                                           { source_id => $dbref->getPrimaryId },
                                          );
             my @eas_g = $db_g->getChildren('DoTS::ExternalAASequence');
-            #$Self->{C}->{self_inv}->setDebuggingOff;
+            #$self->{C}->{self_inv}->setDebuggingOff;
 
             # we got some sequences to annotate, make the links
             if (scalar @eas_g) {
@@ -504,7 +497,7 @@ sub _process_dbrefs {
                                  aa_sequence_id    => $eas_g->getId,
                                };
                   my $asec_g = GUS::Model::DoTS::AASequenceEnzymeClass->new($asec_h);
-                  $Self->_incAASequenceEnzymeClass;
+                  $self->_incAASequenceEnzymeClass;
                   $asec_g->setParent($GusZyme);
                }
                $save_as_attribute = 0;
@@ -521,7 +514,7 @@ sub _process_dbrefs {
 																								 ),
 										 };
 				 my $eca_g = GUS::Model::SRes::EnzymeClassAttribute->new($eca_h);
-				 $Self->_incEnzymeClassAttribute;
+				 $self->_incEnzymeClassAttribute;
 				 $eca_g->setParent($GusZyme);
 			}
    } # eo dbref list
@@ -530,17 +523,17 @@ sub _process_dbrefs {
 # ----------------------------------------------------------------------
 
 sub _return_message {
-   my $Self = shift;
+   my ($self) = @_;
 
    return sprintf(join(', ',
                        '%s %d EnzymeClass entries',
                        '%d EnzymeClassAttribute entries',
                        '%d AASequenceEnzymeClass entries',
                       ),
-									$Self->getArgs()->{Survey} ? 'Pretended to make' : 'Made',
-                  $Self->_getEnzymeClass,
-                  $Self->_getEnzymeClassAttribute,
-                  $Self->_getAASequenceEnzymeClass,
+		  $self->getArg('Survey') ? 'Pretended to make' : 'Made',
+                  $self->_getEnzymeClass,
+                  $self->_getEnzymeClassAttribute,
+                  $self->_getAASequenceEnzymeClass,
                  );
 }
 
