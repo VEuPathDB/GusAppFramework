@@ -7,7 +7,7 @@ use Bio::SeqIO;
 if (scalar(@ARGV) < 2 || scalar(@ARGV) > 3) {
   die
 "
-Report the features and qualifiers used in an sequence features file
+Report the features and qualifiers used in a sequence features file
 
 Usage: reportFeatureQualifers format fileOrDir [-xmlOutput]
 
