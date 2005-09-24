@@ -1,0 +1,80 @@
+#!@perl@
+
+use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
+use Bio::SeqIO;
+
+if (scalar(@ARGV) < 2 || scalar(@ARGV) > 3) {
+  die
+"
+Report the features and qualifiers used in an sequence features file
+
+Usage: reportFeatureQualifers format fileOrDir [-xmlOutput]
+
+where
+  format is embl, genbank, tigr (or any others supported by bioperl's SeqIO)
+  fileOrDir is a TIGR xml file, or a directory containing a set of TIGR xml files
+  -xmlOutput is true to output mapping file XML to use as a template for a mapping file used by the InsertSequenceFeatures plugin
+";
+}
+
+my $format = $ARGV[0];
+my $fileOrDir = $ARGV[1];
+my $xmlOutput = $ARGV[2];
+
+die "File or directory '$fileOrDir' does not exist\n" unless -e $fileOrDir;
+
+my @files;
+if (-d $fileOrDir) {
+  opendir(DIR, $fileOrDir) || die "Can't open directory '$fileOrDir'";
+  @files = readdir(DIR);
+} else {
+  $files[0] = $fileOrDir;
+}
+
+my $features = {};
+my %featureCounts;
+
+foreach my $file (@files) {
+  my $bioperlSeqIO = Bio::SeqIO->new(-format => $format,
+				     -file   => $file);
+  while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
+    foreach my $bioperlFeature ($bioperlSeq->get_SeqFeatures()) {
+      my $feature = $bioperlFeature->primary_tag();
+      $features->{$feature} = {} unless $features->{$feature};
+      $featureCounts{$feature}++;
+      foreach my $qualifier ($bioperlFeature->get_all_tags()) {
+	$features->{$feature}->{$qualifier}++;
+      }
+    }
+  }
+}
+
+if ($xmlOutput) {
+  my $header = <<HEADER;
+<mapping>
+
+  <specialCaseQualifierHandler name="standard" 
+           class="GUS::Supported::SpecialCaseQualifierHandlers"/>
+
+HEADER
+
+  print $header;
+  foreach my $feature (sort(keys %{$features})) {
+    print "  <feature name=\"$feature\" table=\"\" so=\"\">\n";
+    foreach my $qualifier (sort(keys %{$features->{$feature}})) {
+      print "    <qualifier name=\"$qualifier\"/>\n";
+    }
+    print "  </feature>\n\n";
+  }
+  print "</mapping>/n";
+} else {
+  foreach my $feature (sort(keys %{$features})) {
+    print "$feature ($featureCounts{$feature})\n";
+    foreach my $qualifier (sort(keys %{$features->{$feature}})) {
+      print "  $qualifier ($features->{$feature}->{$qualifier})\n";
+    }
+    print "\n";
+  }
+}
+
