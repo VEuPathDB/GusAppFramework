@@ -14,7 +14,8 @@ Usage: reportFeatureQualifers format fileOrDir [-xmlOutput]
 where
   format:      embl, genbank, tigr (or any format supported by bioperl's SeqIO)
   fileOrDir:   a seq/feature file, or a directory containing a set of them
-  -xmlOutput:  if present, the output is a template in 'mapping file XML' format as expected by the InsertSequenceFeatures plugin.
+  -xmlOutput:  if present, the output is a template in 'mapping file XML' 
+               format as expected by the InsertSequenceFeatures plugin.
 ";
 }
 
