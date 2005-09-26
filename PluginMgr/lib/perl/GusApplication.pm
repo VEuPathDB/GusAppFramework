@@ -465,6 +465,7 @@ sub doMajorMode_RunOrReport {
    eval {
       my $resultDescrip;
 
+      $pu->getDb()->setMeAsDefaultDatabase();
       $pu->logArgs();
       $Run && $pu->logCommit();
       $Run && $pu->logAlgInvocationId();
@@ -481,6 +482,7 @@ sub doMajorMode_RunOrReport {
    };}
 
    my $err = $@;
+   $self->getDb()->setMeAsDefaultDatabase();
    $Run && $Self->closeInvocation($pu, $err);
 
    $Self->disconnect_from_database($Self);

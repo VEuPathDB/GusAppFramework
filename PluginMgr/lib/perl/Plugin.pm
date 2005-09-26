@@ -401,6 +401,20 @@ sub getArg {
   return $args->{$name};
 }
 
+=item C<setArg($arg_name, $value)>
+
+Force the value of one of the plugin's command line arguments to be 
+the provided value.  (Caution: use this only if you know what you are
+doing)
+
+B<Return type:> none
+
+=cut
+sub setArg {
+  my ($self, $name, $value) = @_;
+  $self->{__gus__plugin__cla}->{$name} = $value;
+}
+
 =item C<getDb()>
 
 Get the DbiDatabase object which represents the database this plugin
