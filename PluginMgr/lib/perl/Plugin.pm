@@ -387,7 +387,7 @@ B<Return type:> C<string>
 =cut
 sub getFile       { $_[0]->{__gus__plugin__FILE} }
 
-=item C<getArg($arg_name)>
+=item C<getArg($name)>
 
 Get the value of one of the plugin's command line arguments.
 
@@ -401,7 +401,7 @@ sub getArg {
   return $args->{$name};
 }
 
-=item C<setArg($arg_name, $value)>
+=item C<setArg($name, $value)>
 
 Force the value of one of the plugin's command line arguments to be 
 the provided value.  (Caution: use this only if you know what you are
