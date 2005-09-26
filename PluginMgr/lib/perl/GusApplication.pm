@@ -482,7 +482,7 @@ sub doMajorMode_RunOrReport {
    };}
 
    my $err = $@;
-   $self->getDb()->setMeAsDefaultDatabase();
+   $Self->getDb()->setMeAsDefaultDatabase();
    $Run && $Self->closeInvocation($pu, $err);
 
    $Self->disconnect_from_database($Self);
