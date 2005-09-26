@@ -91,7 +91,15 @@ sub getQueryHandle {
 }
 
 
-sub getDefaultDatabase { my($self) = @_; return $defDbiDb; } # static
+sub getDefaultDatabase { return $defDbiDb; } # static
+sub setDefaultDatabase {  #static
+  my ($defaultDb) = @_;
+  $defDbiDb = $defaultDb;
+}
+sub setMeAsDefaultDatabase {
+  my ($self) = @_;
+  $defDbiDb = $self;
+}
 sub setLogin { my ($self,$lg) = @_; $self->{'login'} = $lg; }
 sub getLogin { my ($self) = @_; return $self->{'login'}; }
 sub setPassword { my ($self,$ps) = @_; $self->{'password'} = $ps; }
