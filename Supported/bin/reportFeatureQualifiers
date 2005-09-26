@@ -3,25 +3,23 @@
 use strict;
 use lib "$ENV{GUS_HOME}/lib/perl";
 use Bio::SeqIO;
+use Bio::SeqFeature::Tools::Unflattener;
 
-if (scalar(@ARGV) < 2 || scalar(@ARGV) > 3) {
-  die
-"
-Report the features and qualifiers used in a sequence features file
-
-Usage: reportFeatureQualifers format fileOrDir [-xmlOutput]
-
-where
-  format:      embl, genbank, tigr (or any format supported by bioperl's SeqIO)
-  fileOrDir:   a seq/feature file, or a directory containing a set of them
-  -xmlOutput:  if present, the output is a template in 'mapping file XML' 
-               format as expected by the InsertSequenceFeatures plugin.
-";
-}
+&usage if (scalar(@ARGV) < 2 || scalar(@ARGV) > 3);
 
 my $format = $ARGV[0];
 my $fileOrDir = $ARGV[1];
-my $xmlOutput = $ARGV[2];
+my $xmlOutput;
+my $unflatten = 1;
+if ($ARGV[2]) {
+  if ($ARGV[2] eq '-xmlOutput') {
+    $xmlOutput = 1;
+  } elsif ($ARGV[2] eq '-noUnflatten') {
+    $unflatten = 0;
+  } else {
+    &usage;
+  }
+}
 
 die "File or directory '$fileOrDir' does not exist\n" unless -e $fileOrDir;
 
@@ -36,10 +34,20 @@ if (-d $fileOrDir) {
 my $features = {};
 my %featureCounts;
 
+my $unflattener = Bio::SeqFeature::Tools::Unflattener->new();
+
 foreach my $file (@files) {
   my $bioperlSeqIO = Bio::SeqIO->new(-format => $format,
 				     -file   => $file);
+
   while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
+
+    if ($unflatten && ($format eq 'genbank') || ($format eq 'embl')) {
+
+      $unflattener->unflatten_seq(-seq => $bioperlSeq,
+				  -use_magic => 1);
+    }
+
     foreach my $bioperlFeature ($bioperlSeq->get_SeqFeatures()) {
       my $feature = $bioperlFeature->primary_tag();
       $features->{$feature} = {} unless $features->{$feature};
@@ -79,3 +87,20 @@ HEADER
   }
 }
 
+
+sub usage {
+  die
+"
+Report the features and qualifiers used in a sequence features file
+
+Usage: reportFeatureQualifers format fileOrDir [-xmlOutput -noUnflatten]
+
+where
+  format:       embl, genbank, tigr (or any format supported by bioperl's SeqIO)
+  fileOrDir:    a seq/feature file, or a directory containing a set of them
+  -xmlOutput:   if present, the output is a template in 'mapping file XML' 
+                format as expected by the InsertSequenceFeatures plugin.
+  -noUnflatten  if present, don't use bioperl's unflattener (only applicable
+                to genbank and embl)
+";
+}
