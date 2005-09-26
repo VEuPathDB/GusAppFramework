@@ -130,7 +130,7 @@ sub _getDbXRefId {
 
   if (!$plugin->{dbXrefIds}->{$dbSpecifier}) {
     my ($dbName, $id, $sid)= split(/\:/, $dbSpecifier);
-    my $extDbRlsId = &_getExtDatabaseRlsId($dbName);
+    my $extDbRlsId = &_getExtDatabaseRlsId($plugin, $dbName);
     my $dbref = GUS::Model::SRes::DbRef->new({'external_database_release_id' => $extDbRlsId, 
 					      'primary_identifier' => $id});
 
