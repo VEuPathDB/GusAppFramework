@@ -15,6 +15,7 @@ use GUS::Model::Core::AlgorithmImplementation;
 use GUS::Model::Core::AlgorithmInvocation;
 use GUS::Model::Core::AlgorithmParamKey;
 use GUS::Model::Core::AlgorithmParam;
+use GUS::Model::GusRow;
 
 use constant FLAG_DEBUG => 0;
 
@@ -400,6 +401,7 @@ sub doMajorMode_RunOrReport {
 
    # connect to the database
    $Self->connect_to_database($pu);
+   $Self->initDb($pu->getDb());
 
    $pu->setOracleDateFormat('YYYY-MM-DD HH24:MI:SS');
 
@@ -433,7 +435,7 @@ sub doMajorMode_RunOrReport {
    }
 
    # what versions does the plugin want?
-   $Self->connect_to_database($Self);
+#   $Self->connect_to_database($Self);
 
    $Self->_check_database_version_requirements($pu);
 
@@ -465,7 +467,6 @@ sub doMajorMode_RunOrReport {
    eval {
       my $resultDescrip;
 
-      $pu->getDb()->setMeAsDefaultDatabase();
       $pu->logArgs();
       $Run && $pu->logCommit();
       $Run && $pu->logAlgInvocationId();
@@ -482,7 +483,7 @@ sub doMajorMode_RunOrReport {
    };}
 
    my $err = $@;
-   $Self->getDb()->setMeAsDefaultDatabase();
+
    $Run && $Self->closeInvocation($pu, $err);
 
    $Self->disconnect_from_database($Self);
