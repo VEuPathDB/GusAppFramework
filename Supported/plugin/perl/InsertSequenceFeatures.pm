@@ -70,6 +70,8 @@ Insert files containing NA sequence and features, that are in a format handled b
 
 The sequence level attributes that are currently supported are: taxon, SO assignment, comments, keywords, secondary accessions and references.
 
+The sequence may be absent from the input file.  But, in that case it must have been loaded into GUS already.  (The seqIdColumn argument indicates which column of the subclass specified by the naSequenceSubclass argument should be matched against the input to locate the proper sequence in the database.)
+
 This plugin is designed to be flexible in its mapping from the features and qualifiers found in the input to the tables in GUS.  The flexibility is specified in the "XML mapping file" provided on the command line (--mapFile).
 
 A default mapping is provided as a reference  (see \$GUS_HOME/config/genbank2gus.xml).  That file provides a mapping for the complete genbank feature table.
@@ -158,14 +160,21 @@ my $argsDeclaration  =
 	    format=>'XML'
 	   }),
 
-   fileArg({name => 'seqFile',
-	    descr => 'Text file containing features and optionally sequence data',
+   fileArg({name => 'inputFileOrDir',
+	    descr => 'Text file containing features and optionally sequence data, or a directory containing such files',
 	    constraintFunc=> undef,
 	    reqd  => 1,
 	    isList => 0,
 	    mustExist => 1,
 	    format=>'Text'
 	   }),
+
+   stringArg({name => 'inputFileExtension',
+	      descr => 'The extension that input files must have (useful if you are providing a directory of input files, to filter out irrelevant files)',
+	      constraintFunc=> undef,
+	      reqd  => 0,
+	      isList => 0,
+	     }),
 
    enumArg({name => 'naSequenceSubclass',
 	    descr => 'If the input file does not include the sequence, the subclass of NASequence in which to find the sequence (which must already be in the database)',
@@ -345,43 +354,59 @@ sub run{
   $self->getSoPrimaryKeys(); ## pre-load into memory and validate
 
   $self->{immedFeatureCount} = 0;
-  my $featureTreeCount=0;
-  my $seqCount=0;
-  my $bioperlSeqIO = $self->getSeqIO();
+  my $format = $self->getArg('fileFormat');
+  my $totalFeatureCount=0;
+  my $totalFeatureTreeCount=0;
+  my $totalSeqCount=0;
+  my $fileCount = 0;
 
-  while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
+  my @inputFiles = $self->getInputFiles();
 
-    my $naSequence;
-    if ($self->getArg('naSequenceSubclass')) {
-      $naSequence = $self->retrieveNASequence($bioperlSeq);
-    } else {
-      $naSequence = $self->bioperl2NASequence($bioperlSeq);
-      $naSequence->submit();
-    }
+  foreach my $inputFile (@inputFiles) {
+    my $featureTreeCount=0;
+    my $seqCount=0;
 
-    # use id instead of object because object is zapped by undefPointerCache
-    my $naSequenceId = $naSequence->getNaSequenceId();
+   $self->log("Processing file '$inputFile'...");
 
-    $seqCount++;
+    my $bioperlSeqIO = $self->getSeqIO($inputFile);
+    while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
 
-    $self->unflatten($bioperlSeq)
-      unless ($self->getArg("fileFormat") =~ m/^gff$/i);
+      my $naSequence;
+      if ($self->getArg('naSequenceSubclass')) {
+	$naSequence = $self->retrieveNASequence($bioperlSeq);
+      } else {
+	$naSequence = $self->bioperl2NASequence($bioperlSeq);
+	$naSequence->submit();
+      }
 
-    foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
-      my $NAFeature = $self->makeFeature($bioperlFeatureTree, $naSequenceId);
-      if (!$NAFeature) { next; }
-      $NAFeature->submit();
-      $featureTreeCount++;
-      $self->log("Inserted $featureTreeCount feature trees") 
-	if $featureTreeCount % 100 == 0;
+      # use id instead of object because object is zapped by undefPointerCache
+      my $naSequenceId = $naSequence->getNaSequenceId();
+
+      $seqCount++;
+
+      $self->unflatten($bioperlSeq)
+	unless ($self->getArg("fileFormat") =~ m/^gff$/i);
+
+      foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
+	my $NAFeature = $self->makeFeature($bioperlFeatureTree, $naSequenceId);
+	if (!$NAFeature) {
+	  next;
+	}
+	$NAFeature->submit();
+	$featureTreeCount++;
+	$self->log("Inserted $featureTreeCount feature trees") 
+	  if $featureTreeCount % 100 == 0;
+	$self->undefPointerCache();
+      }
       $self->undefPointerCache();
     }
-    $self->undefPointerCache();
+
+    $self->setResultDescr("Processed $inputFile: $format \n\t Seqs Inserted: $seqCount \n\t Features Inserted: $self->{immedFeatureCount} \n\t Feature Trees Inserted: $featureTreeCount");
+    $totalFeatureCount += $self->{immedFeatureCount};
   }
 
-  my $filename = $self->getArg('seqFile');
-  my $format = $self->getArg('fileFormat');
-  $self->setResultDescr("Processed: $filename : $format \n\t Seqs Inserted: $seqCount \n\t Features Inserted: $self->{immedFeatureCount} \n\t Feature Trees Inserted: $featureTreeCount");
+  my $fileOrDir = $self->getArg('inputFileOrDir');
+  $self->setResultDescr("Processed $fileCount files from $fileOrDir: $format \n\t Total Seqs Inserted: $totalSeqCount \n\t Total Features Inserted: $totalFeatureCount \n\t Total Feature Trees Inserted: $totalFeatureTreeCount");
 }
 
 sub unflatten {
@@ -394,8 +419,31 @@ sub unflatten {
 			      -use_magic => 1);
 }
 
-sub getSeqIO {
+sub getInputFiles {
   my ($self) = @_;
+
+  my $fileOrDir = $self->getArg('inputFileOrDir');
+  my $seqFileExtension = $self->getArg('inputFileExtension');
+
+  my @inputFiles;
+  if (-d $fileOrDir) {
+    opendir(DIR, $fileOrDir) || die "Can't open directory '$fileOrDir'";
+    @files = readdir(DIR);
+    if ($seqFileExtension) {
+      foreach my $f (@files) {
+	if ($f =~ m/.*\.(.+)$/ && $1 eq $seqFileExtension) {
+	  push($f, @inputFiles) if ($f =~ m/.*\.(.+)$/);
+	}
+      }
+    } else { @inputFiles = @files }
+  } else {
+    $inputFiles[0] = $fileOrDir;
+  }
+  return @inputFiles;
+}
+
+sub getSeqIO {
+  my ($self, $inputFile) = @_;
 
   my $format = $self->getArg('fileFormat');
 
@@ -414,7 +462,7 @@ sub getSeqIO {
     $bioperlSeqIO = $self->convertGFFStreamToSeqIO();
   } else {
     $bioperlSeqIO = Bio::SeqIO->new(-format => $format,
-				    -file   => $self->getArg('seqFile'));
+				    -file   => $inputFile);
   }
 
   return $bioperlSeqIO;
