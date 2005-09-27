@@ -12,6 +12,13 @@
     </ant>
   </target>  
 
+  <target name="GusSchema-Installation" >
+    <ant antfile="../GusSchema/build.xml" target="GusSchema-Installation">
+      <property name="project" value="GusSchema"/>
+      <property name="version" value="3.5"/>
+    </ant>
+  </target>  
+
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooo  Distributable  ooooooooooooooooooooooooo -->
   <!-- oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo -->
@@ -34,7 +41,7 @@
                                            GUS/Community-Installation,
                                            GUS/DBAdmin-Installation, 
                                            GUS/GOPredict-Installation, 
-					   GUS/Schema-Installation,
+					   GusSchema-Installation,
                                            GUS/Model-Installation, 
                                            GUS/ObjRelP-Installation, 
                                            GUS/Pipeline-Installation, 
@@ -71,30 +78,9 @@
     </ant>
   </target>
 
-  <target name="GUS/Schema-Installation" depends="ProjectTree"
-                                         if="installDBSchema">
-    <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="Schema"/>
-    </ant>
-    <taskdef name="InstallSchema"
-           classname="org.gusdb.util.InstallSchemaTask">
-      <classpath>
-           <pathelement path="${projectsDir}/GUS/DBAdmin/classes"/>
-		   <pathelement path="${projectsDir}/install"/>
-           <fileset dir="${targetDir}/lib/java/">
-             <include name="*.jar"/>
-           </fileset>
-      </classpath>
-    </taskdef>
-    <InstallSchema projectHome="${projectsDir}"
-                   schema="${projectsDir}/GusSchema/Definition/config/gus_schema.xml"/>
-  </target>	   
-
   <target name="GUS/Model-Installation" depends="ProjectTree, 
                                                  PerlModel,
-                                                 JavaModel,
-                                                 schema">
+                                                 JavaModel">
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="Model"/>
@@ -290,18 +276,6 @@
     </uptodate>
   </target>
  
-
-  <target name="schemaConfigFile">
-    <ant target="configFile">
-      <property name="cFileName" value="schema.prop"/>
-      <property name="cFileSrcDir" value="${projectsDir}/GUS/Model/config"/>
-    </ant>
-  </target>
-
-  <target name="schema">
-    <mkdir dir="${targetDir}/schema"/>
-  </target>  
-
    <target name="GUS/ObjRelP-Installation" depends="ProjectTree">
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
