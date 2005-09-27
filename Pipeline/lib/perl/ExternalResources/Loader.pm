@@ -76,6 +76,7 @@ sub _parseXmlFile {
   my $xmlString = $self->_substituteMacros();
   my $xml = new XML::Simple;
   my $data = $xml->XMLin($xmlString);
+  print STDERR Dumper($data);
   my $repositoryLogFile = "$self->{manager}->{pipelineDir}/logs/repository.log";
   if (ref($data->{resource}) eq 'ARRAY') {
     foreach my $resource (@{$data->{resource}}) {
