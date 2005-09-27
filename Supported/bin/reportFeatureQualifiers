@@ -26,7 +26,8 @@ die "File or directory '$fileOrDir' does not exist\n" unless -e $fileOrDir;
 my @files;
 if (-d $fileOrDir) {
   opendir(DIR, $fileOrDir) || die "Can't open directory '$fileOrDir'";
-  @files = readdir(DIR);
+  my @noDotFiles = grep { $_ ne '.' && $_ ne '..' } readdir(DIR);
+  @files = map { "$fileOrDir/$_" } @noDotFiles;
 } else {
   $files[0] = $fileOrDir;
 }
