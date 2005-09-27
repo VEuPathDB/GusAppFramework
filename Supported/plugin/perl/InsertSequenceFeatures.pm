@@ -32,7 +32,6 @@ use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::VirtualSequence;
 use GUS::Model::DoTS::Assembly;
 use GUS::Model::DoTS::SplicedNASequence;
-use GUS::Model::DoTS::NAEntry;
 use GUS::Model::DoTS::SecondaryAccs;
 use GUS::Model::DoTS::NALocation;
 use GUS::Model::DoTS::NASequenceRef;
@@ -106,7 +105,6 @@ NOTES
    ['DoTS.VirtualSequence', ''],
    ['DoTS.Assembly', ''],
    ['DoTS.SplicedNASequence', ''],
-   ['DoTS.NAEntry', ''],
    ['DoTS.SecondaryAccs', ''],
    ['DoTS.NALocation', ''],
    ['DoTS.NASequenceRef', ''],
@@ -401,8 +399,11 @@ sub run{
       $self->undefPointerCache();
     }
 
-    $self->setResultDescr("Processed $inputFile: $format \n\t Seqs Inserted: $seqCount \n\t Features Inserted: $self->{immedFeatureCount} \n\t Feature Trees Inserted: $featureTreeCount");
+    $self->log("Processed $inputFile: $format \n\t Seqs Inserted: $seqCount \n\t Features Inserted: $self->{immedFeatureCount} \n\t Feature Trees Inserted: $featureTreeCount");
     $totalFeatureCount += $self->{immedFeatureCount};
+    $totalFeatureTreeCount += $featureTreeCount;
+    $totalSeqCount += $seqCount;
+    $fileCount++;
   }
 
   my $fileOrDir = $self->getArg('inputFileOrDir');
@@ -428,14 +429,9 @@ sub getInputFiles {
   my @inputFiles;
   if (-d $fileOrDir) {
     opendir(DIR, $fileOrDir) || die "Can't open directory '$fileOrDir'";
-    @files = readdir(DIR);
-    if ($seqFileExtension) {
-      foreach my $f (@files) {
-	if ($f =~ m/.*\.(.+)$/ && $1 eq $seqFileExtension) {
-	  push($f, @inputFiles) if ($f =~ m/.*\.(.+)$/);
-	}
-      }
-    } else { @inputFiles = @files }
+    my @noDotFiles = grep { $_ ne '.' && $_ ne '..' } readdir(DIR);
+    @inputFiles = map { "$fileOrDir/$_" } @noDotFiles;
+    @inputFiles = grep(/.*\.$seqFileExtension$/, @inputFiles) if $seqFileExtension;
   } else {
     $inputFiles[0] = $fileOrDir;
   }
@@ -608,11 +604,7 @@ sub bioperl2NASequence {
 
   my $naSequence = $self->constructNASequence($bioperlSeq, $dbRlsId);
 
-  my $naEntry = $self->makeNAEntry($bioperlSeq);
-
-  $naSequence->addChild($naEntry);
-
-  $self->addSecondaryAccs($bioperlSeq, $naEntry, $dbRlsId);
+  $self->addSecondaryAccs($bioperlSeq, $dbRlsId);
 
   $self->addReferences($bioperlSeq, $naSequence);
 
@@ -676,7 +668,7 @@ sub constructNASequence {
 }
 
 sub addSecondaryAccs{
-  my ($self, $bioperlSeq, $naEntry, $dbRlsId) = @_;
+  my ($self, $bioperlSeq, $dbRlsId) = @_;
 
   my @bioperlSecondaryAccs = $bioperlSeq->get_secondary_accessions();
 
@@ -685,7 +677,6 @@ sub addSecondaryAccs{
     $secondaryAccession->setSourceId($bioperlSeq->accession_number());
     $secondaryAccession->setSecondaryAccs($bioperlSecondaryAcc);
     $secondaryAccession->setExternalDatabaseReleaseId($dbRlsId);
-    $naEntry->addChild($secondaryAccession);
   }
 }
 
@@ -751,15 +742,6 @@ sub addKeywords {
 }
 
 
-sub makeNAEntry {
-  my ($self, $bioperlSeq) = @_;
-
-  my $NAEntry = GUS::Model::DoTS::NAEntry->new();
-  $NAEntry->setSourceId($bioperlSeq->accession_number());
-  $NAEntry->setDivision($bioperlSeq->division());
-  $NAEntry->setVersion($bioperlSeq->seq_version());
-  return $NAEntry;
-}
 
 
 
