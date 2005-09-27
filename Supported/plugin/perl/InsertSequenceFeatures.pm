@@ -345,13 +345,8 @@ sub run{
   $self->{mapperSet} =
     GUS::Supported::BioperlFeatMapperSet->new($self->getArg('mapFile'), $self);
 
-  my $dbRlsId = $self->getExtDbRlsId($self->getArg('extDbName'),
-				     $self->getArg('extDbRlsVer'))
-    or die "Couldn't retrieve external database!\n";
-
   $self->getSoPrimaryKeys(); ## pre-load into memory and validate
 
-  $self->{immedFeatureCount} = 0;
   my $format = $self->getArg('fileFormat');
   my $totalFeatureCount=0;
   my $totalFeatureTreeCount=0;
@@ -361,7 +356,8 @@ sub run{
   my @inputFiles = $self->getInputFiles();
 
   foreach my $inputFile (@inputFiles) {
-    my $featureTreeCount=0;
+    $self->{featureTreeCount} = 0;
+    $self->{immedFeatureCount} = 0;
     my $seqCount=0;
 
    $self->log("Processing file '$inputFile'...");
@@ -369,39 +365,19 @@ sub run{
     my $bioperlSeqIO = $self->getSeqIO($inputFile);
     while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
 
-      my $naSequence;
-      if ($self->getArg('naSequenceSubclass')) {
-	$naSequence = $self->retrieveNASequence($bioperlSeq);
-      } else {
-	$naSequence = $self->bioperl2NASequence($bioperlSeq);
-	$naSequence->submit();
-      }
-
       # use id instead of object because object is zapped by undefPointerCache
-      my $naSequenceId = $naSequence->getNaSequenceId();
+      my $naSequenceId = $self->processSequence($bioperlSeq);
 
       $seqCount++;
 
-      $self->unflatten($bioperlSeq)
-	unless ($self->getArg("fileFormat") =~ m/^gff$/i);
+      $self->processFeatureTrees($bioperlSeq, $naSequenceId);
 
-      foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
-	my $NAFeature = $self->makeFeature($bioperlFeatureTree, $naSequenceId);
-	if (!$NAFeature) {
-	  next;
-	}
-	$NAFeature->submit();
-	$featureTreeCount++;
-	$self->log("Inserted $featureTreeCount feature trees") 
-	  if $featureTreeCount % 100 == 0;
-	$self->undefPointerCache();
-      }
       $self->undefPointerCache();
     }
 
-    $self->log("Processed $inputFile: $format \n\t Seqs Inserted: $seqCount \n\t Features Inserted: $self->{immedFeatureCount} \n\t Feature Trees Inserted: $featureTreeCount");
+    $self->log("Processed $inputFile: $format \n\t Seqs Inserted: $seqCount \n\t Features Inserted: $self->{immedFeatureCount} \n\t Feature Trees Inserted: $self->{featureTreeCount}");
     $totalFeatureCount += $self->{immedFeatureCount};
-    $totalFeatureTreeCount += $featureTreeCount;
+    $totalFeatureTreeCount += $self->{featureTreeCount};
     $totalSeqCount += $seqCount;
     $fileCount++;
   }
@@ -573,12 +549,27 @@ sub convertGFFStreamToSeqIO {
 ########     sequence processing
 ###########################################################################
 
-# if the input does not include sequence, get it from the db
-sub retrieveNASequence {
+sub processSequence {
   my ($self, $bioperlSeq) = @_;
 
   my $dbRlsId = $self->getExtDbRlsId($self->getArg('extDbName'),
-				     $self->getArg('extDbRlsVer'));
+				     $self->getArg('extDbRlsVer'))
+    or die "Couldn't retrieve external database!\n";
+
+  my $naSequence;
+  if ($self->getArg('naSequenceSubclass')) {
+    $naSequence = $self->retrieveNASequence($bioperlSeq, $dbRlsId);
+  } else {
+    $naSequence = $self->bioperl2NASequence($bioperlSeq);
+    $naSequence->submit();
+  }
+
+  return $naSequence->getNaSequenceId();
+}
+
+# if the input does not include sequence, get it from the db
+sub retrieveNASequence {
+  my ($self, $bioperlSeq, $dbRlsId) = @_;
 
   my $naSequenceSubclass = $self->getArg('naSequenceSubclass');
   my $seqIdColumn = $self->getArg('seqIdColumn');
@@ -597,10 +588,7 @@ sub retrieveNASequence {
 
 # if the input does include sequence, make GUS NASequence from bioperlSeq
 sub bioperl2NASequence {
-  my ($self, $bioperlSeq) = @_;
-
-  my $dbRlsId = $self->getExtDbRlsId($self->getArg('extDbName'),
-				     $self->getArg('extDbRlsVer'));
+  my ($self, $bioperlSeq, $dbRlsId) = @_;
 
   my $naSequence = $self->constructNASequence($bioperlSeq, $dbRlsId);
 
@@ -749,6 +737,25 @@ sub addKeywords {
 ########     feature processing
 ###########################################################################
 
+sub processFeatureTrees {
+  my ($self, $bioperlSeq, $naSequenceId) = @_;
+
+  $self->unflatten($bioperlSeq)
+    unless ($self->getArg("fileFormat") =~ m/^gff$/i);
+
+  foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
+    my $NAFeature = $self->makeFeature($bioperlFeatureTree, $naSequenceId);
+    if (!$NAFeature) {
+      next;
+    }
+    $NAFeature->submit();
+    $self->{featureTreeCount}++;
+    $self->log("Inserted $self->{featureTreeCount} feature trees") 
+      if $self->{featureTreeCount} % 100 == 0;
+    $self->undefPointerCache();
+  }
+}
+
 sub makeFeature {
   my ($self, $bioperlFeature, $naSequenceId) = @_; 
 
@@ -842,17 +849,6 @@ sub makeLocation {
   $gus_location->setLocationType($location_type);
 
   return $gus_location;
-}
-
-sub getSoGusId {
-  my ($self, $SOname) = @_;
-
-  return $self->getIdFromCache('seqOntologyCache',
-			       $SOname,
-			       'GUS::Model::SRes::SequenceOntology',
-			       "so_id",
-			      );
-
 }
 
 sub getSeqTypeId {
