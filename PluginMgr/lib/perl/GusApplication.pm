@@ -486,8 +486,6 @@ sub doMajorMode_RunOrReport {
 
    $Run && $Self->closeInvocation($pu, $err);
 
-   $Self->disconnect_from_database($Self);
-
    die $err if $err;
 }
 
