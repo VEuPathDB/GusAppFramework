@@ -354,7 +354,7 @@ sub run{
   my $fileCount = 0;
 $self->log("getting input files...\n");
   my @inputFiles = $self->getInputFiles();
-$self->log("successfully retreived input files\n");
+
   foreach my $inputFile (@inputFiles) {
     $self->{featureTreeCount} = 0;
     $self->{immedFeatureCount} = 0;
@@ -364,12 +364,12 @@ $self->log("successfully retreived input files\n");
 $self->log("getting bioperlSeqIO\n");
     my $bioperlSeqIO = $self->getSeqIO($inputFile);
     while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
-$self->log("process bioperlSeq\n");
+
       # use id instead of object because object is zapped by undefPointerCache
       my $naSequenceId = $self->processSequence($bioperlSeq);
 
       $seqCount++;
-$self->log("Process Feature trees\n");
+
       $self->processFeatureTrees($bioperlSeq, $naSequenceId);
 
       $self->undefPointerCache();
@@ -739,16 +739,18 @@ sub addKeywords {
 
 sub processFeatureTrees {
   my ($self, $bioperlSeq, $naSequenceId) = @_;
-
+$self->log("unflattening sequence");
   $self->unflatten($bioperlSeq)
     unless ($self->getArg("fileFormat") =~ m/^gff$/i);
-
+$self->log("For each feature tree");
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
+$self->log("making feature for $naSequenceId");
     my $NAFeature = $self->makeFeature($bioperlFeatureTree, $naSequenceId);
     if (!$NAFeature) {
       next;
     }
     $NAFeature->submit();
+$self->log("submitted feature");
     $self->{featureTreeCount}++;
     $self->log("Inserted $self->{featureTreeCount} feature trees") 
       if $self->{featureTreeCount} % 100 == 0;
