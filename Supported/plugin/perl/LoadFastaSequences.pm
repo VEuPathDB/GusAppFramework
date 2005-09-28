@@ -169,7 +169,7 @@ stringArg({   name           => 'externalDatabaseVersion',
  
  tableNameArg({   name           => 'tableName',
 	       descr          => 'Table name to insert sequences into, in schema::table format.  Chose from: DoTS::ExternalNASequence DoTS::VirtualSequence DoTS::ExternalAASequence DoTS::MotifAASequence',
-	       reqd           => 0,
+	       reqd           => 1,
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
@@ -241,7 +241,6 @@ sub run {
   # get primary key for table_name
   my $tableId = $self->className2TableId($self->getArg('tableName'));
 
-  print STDERR "LFS: '$tableId' '" .  $self->getArg('tableName') . "\n";
   $prim_key = $self->getAlgInvocation()->getTablePKFromTableId($tableId);
 
   if ($self->getArg('writeFile')) {
@@ -314,6 +313,7 @@ sub processOneFile{
     my $count = 0;
     my $countGets = 0;
     my $start = 1;
+    my $irrelevantInsertsCount = $self->getTotalInserts();
     while (<F>) {
 	if (/^\>/) {                ##have a defline....need to process!
 
@@ -328,7 +328,7 @@ sub processOneFile{
 
 	    $self->process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq,$seq_version) if ($source_id);
 
-	    $self->log("$source_id, $secondary_id, $name, $description,  $count, $seq_version, \n $seq\ninserted ".($self->getTotalInserts() - 1)." and updated ".$self->getTotalUpdates() ." " . ($count % ($self->getArg('logFrequency') * 10) == 0 ? `date` : "\n")) if $count % $self->getArg('logFrequency') == 0;
+	    $self->log("Processed $count sequences.  At source ID: '$source_id',inserted ".($self->getTotalInserts() - $irrelevantInsertsCount)." and updated ".($self->getTotalUpdates() -0) ." " . ($count % ($self->getArg('logFrequency') * 10) == 0 ? `date` : "\n")) if $count % $self->getArg('logFrequency') == 0;
 
 	    ##now get the ids etc for this defline...
 
@@ -575,9 +575,9 @@ sub fetchSequenceTypeId {
 sub fetchSequenceOntologyId {
   my ($self, $name) = @_;
 
-  eval ("require GUS::Model::SRES::SequenceOntology");
+  eval ("require GUS::Model::SRes::SequenceOntology");
 
-  my $SOTerm = GUS::Model::SRES::SequenceOntology->new({ term_name => $name });
+  my $SOTerm = GUS::Model::SRes::SequenceOntology->new({ term_name => $name });
 
   $SOTerm->retrieveFromDB;
 
