@@ -3,6 +3,7 @@ package GUS::Supported::Plugin::LoadFastaSequences;
 @ISA = qw(GUS::PluginMgr::Plugin); 
 use strict;
 use GUS::PluginMgr::Plugin;
+use File::Basename;
 
   my $purposeBrief = 'Insert or update sequences from a FASTA file or as set of FASTA files.';
 
@@ -219,7 +220,6 @@ sub new() {
   return $self;
 }
 
-my $countInserts = 0;
 my $checkStmt;
 my $prim_key;
 $| = 1;
@@ -227,9 +227,12 @@ $| = 1;
 sub run {
   my $self  = shift;
 
-     $self->{external_database_release_id} = 
-       $self->getExtDbRlsId($self->getArg('externalDatabaseName'),
-			    $self->getArg('externalDatabaseVersion'));
+  $self->{totalCount} = 0;
+  $self->{skippedCount} = 0;
+
+  $self->{external_database_release_id} = 
+    $self->getExtDbRlsId($self->getArg('externalDatabaseName'),
+			 $self->getArg('externalDatabaseVersion'));
 
   $self->log("loading sequences with external database release id $self->{external_database_release_id}");
 
@@ -265,27 +268,26 @@ sub run {
   my $oracleName = $self->className2oracleName($self->getArg('tableName'));
   $checkStmt = $self->getAlgInvocation()->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $self->{external_database_release_id}");
 
-  my $count = 0;
-
   my $seqFileDir = $self->getArg('seqFileDir');
   if ($seqFileDir){
-      my $nextSeqFile;
-      opendir (DIR, $seqFileDir) or die "can't open directory $seqFileDir";
-      while ($nextSeqFile = readdir DIR){
-	  next if $nextSeqFile =~/^\./;
-	  my $fullSeqFile = $seqFileDir . "/" . $nextSeqFile;
-	  $count += $self->processOneFile($fullSeqFile, $oracleName, $checkStmt, $prim_key);
-      }
+    my $nextSeqFile;
+    opendir (DIR, $seqFileDir) or die "can't open directory $seqFileDir";
+    while ($nextSeqFile = readdir DIR){
+      next if $nextSeqFile =~/^\./;
+      my $fullSeqFile = $seqFileDir . "/" . $nextSeqFile;
+      $self->{fileCount}++;
+      $self->processOneFile($fullSeqFile, $oracleName, $checkStmt, $prim_key);
+    }
   }
   else {
 
       ##open sequence file
       my $seqFile = $self->getArg('sequenceFile');
-      $count = $self->processOneFile($seqFile, $oracleName, $checkStmt, $prim_key);
+      $self->{fileCount}++;
+      $self->processOneFile($seqFile, $oracleName, $checkStmt, $prim_key);
   }
 
-  my $res = "Run finished: Processed $count, inserted ".($self->getTotalInserts() - 1)." and updated ".$self->getTotalUpdates()." sequences from file " .  $self->getArg('sequenceFile');
-  $self->log("$res");
+  my $res = "Run finished: " . $self->getProgress();
   return $res;
 
 
@@ -310,34 +312,39 @@ sub processOneFile{
     my $contained_seqs;
     my $seq;
     my $seq_version = 1;
-    my $count = 0;
-    my $countGets = 0;
     my $start = 1;
-    my $irrelevantInsertsCount = $self->getTotalInserts();
+
     while (<F>) {
 	if (/^\>/) {                ##have a defline....need to process!
 
 	    ##following must be in loop to allow garbage collection...
 	    $self->undefPointerCache();
 
-	    last if($self->getArg('testnumber') && $count > $self->getArg('testnumber'));
+	    last if($self->getArg('testnumber') && $self->{totalCount} == $self->getArg('testnumber') - 1);
 
-	    $count++;
+	    if ($self->getArg('startAt') 
+		&& $self->{skippedCount} < $self->getArg('startAt')) {
+	      $self->{skippedCount}++;
+	      next;
+	    }
 
-	    next if ($self->getArg('startAt') && $count < $self->getArg('startAt'));
+	    if ($source_id) { 
+	      $self->process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq,$seq_version);
+	      $self->{totalCount}++;
+	    }
 
-	    $self->process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq,$seq_version) if ($source_id);
-
-	    $self->log("Processed $count sequences.  At source ID: '$source_id',inserted ".($self->getTotalInserts() - $irrelevantInsertsCount)." and updated ".($self->getTotalUpdates() -0) ." " . ($count % ($self->getArg('logFrequency') * 10) == 0 ? `date` : "\n")) if $count % $self->getArg('logFrequency') == 0;
+	    $self->log($self->getProgress()) 
+	      if $self->{totalCount} % $self->getArg('logFrequency') == 0;
 
 	    ##now get the ids etc for this defline...
 
 	    my $regexSource = $self->getArg('regexSourceId');
 
-	    if (/$regexSource/) { 
+	    if (/$regexSource/ && $1) { 
 		$source_id = $1; 
 	    } else {
-		die "ERROR: unable to parse source_id from $_"; $source_id = "";
+	      my $forgotParens = ($regexSource !~ /\(/)? "(Forgot parens?)" : "";
+	      $self->userError("Unable to parse source_id from $_ using regex '$regexSource' $forgotParens");
 	    }
 
 	    $secondary_id = ""; $name = ""; $description = ""; $mol_wgt = ""; $contained_seqs= ""; $chromosome=""; $seq_version = 1;##in case can't parse out of this defline...
@@ -384,17 +391,14 @@ sub processOneFile{
 	}
 
     }
-
+    $self->{totalCount}++;
     $self->process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq,$seq_version) if ($source_id);
-    $self->log("processed $count seqs in $seqFile");
-    return $count;
 }
 
 ##SUBS
 
 sub process {
   my($self, $source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$sequence,$seq_version) = @_;
-
 
   my $id;
   $id = $self->checkIfHave($source_id) unless $self->getArg('noCheck');
@@ -421,9 +425,15 @@ sub process {
   if ($self->getArg('writeFile')) {
     print WF ">",$aas->getId()," $source_id $secondary_id $name $description\n$sequence\n";
   }
-  $countInserts++;
 }
 
+sub getProgress {
+  my ($self) = @_;
+
+  my $skipped = $self->{skippedCount}? " Skipped $self->{skippedCount} " : "";
+
+  return "Processed $self->{fileCount} files. Processed $self->{totalCount} sequences$skipped.  Inserted " . $self->getTotalInserts() . " and updated ".$self->getTotalUpdates();
+}
 
 sub createNewExternalSequence {
   my($self, $source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence,$seq_version,) = @_;
