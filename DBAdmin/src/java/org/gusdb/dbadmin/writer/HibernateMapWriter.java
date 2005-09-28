@@ -381,10 +381,6 @@ extends SchemaWriter
     private void writeManyToOne(Writer writer, Column column, int level)
     throws IOException
     {
-        /*
-        boolean meta = !isPermission(column) && !isInternal(column) &&
-                            (isUnique(column) || !hasUnique(column.getTable()));
-         */
         boolean meta = !hasUnique(column.getTable()) || isUnique(column);
         indent(writer, level);
         writer.write("<many-to-one name=\"");
@@ -415,11 +411,7 @@ extends SchemaWriter
     private void writeProperty(Writer writer, Column column, int level)
     throws IOException
     {
-        /*
-        boolean meta = !isPermission(column) && !isInternal(column) &&
-                            (isUnique(column) || !hasUnique(column.getTable()));
-         */
-        boolean meta = !hasUnique(column.getTable()) ||
+        boolean meta = (!hasUnique(column.getTable()) && !isLarge(column)) ||
             (!isPermission(column) && !isInternal(column) && isUnique(column));
         indent(writer, level);
         writer.write("<property name=\"");
@@ -733,12 +725,24 @@ extends SchemaWriter
     {
         for (Iterator i = column.getConstraints().iterator(); i.hasNext(); ) {
             Constraint c = (Constraint)i.next();
-            if (c.getType() == ConstraintType.UNIQUE &&
-                    c.getConstrainedColumns().size() == 1)
+            if (c.getType() == ConstraintType.PRIMARY_KEY ||
+                    (c.getType() == ConstraintType.UNIQUE &&
+                        c.getConstrainedColumns().size() == 1))
                 return true;
         }
 
         return false;
+    }
+
+    /**
+     * Determine if a column represents a large object (lob)
+     * @param column the column
+     * @return true if the column is a large object, false otherwise
+     */
+    private boolean isLarge(Column column)
+    {
+        return (column.getType() == ColumnType.BLOB ||
+                column.getType() == ColumnType.CLOB);
     }
 
     /**
@@ -758,9 +762,20 @@ extends SchemaWriter
      */
     private boolean hasUnique(Table table)
     {
-        for (Iterator i = table.getColumns(false).iterator(); i.hasNext(); )
-            if (isUnique((Column)i.next()))
-                return true;
+        /* cannot use isUnique here, because we specifically
+         * want to know if a unique constraint exists, not
+         * just if the column is guaranteed unique (for example
+         * by a primary key constraint
+         */
+        for (Iterator i = table.getColumns(false).iterator(); i.hasNext(); ) {
+            Column c = (Column)i.next();
+            for (Iterator j = c.getConstraints().iterator(); j.hasNext(); ) {
+                Constraint cn = (Constraint)j.next();
+                if (cn.getType() == ConstraintType.UNIQUE &&
+                            cn.getConstrainedColumns().size() == 1)
+                    return true;
+            }
+        }
         return false;
     }
 
