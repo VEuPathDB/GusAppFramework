@@ -352,24 +352,24 @@ sub run{
   my $totalFeatureTreeCount=0;
   my $totalSeqCount=0;
   my $fileCount = 0;
-
+$self->log("getting input files...\n");
   my @inputFiles = $self->getInputFiles();
-
+$self->log("successfully retreived input files\n");
   foreach my $inputFile (@inputFiles) {
     $self->{featureTreeCount} = 0;
     $self->{immedFeatureCount} = 0;
     my $seqCount=0;
 
    $self->log("Processing file '$inputFile'...");
-
+$self->log("getting bioperlSeqIO\n");
     my $bioperlSeqIO = $self->getSeqIO($inputFile);
     while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
-
+$self->log("process bioperlSeq\n");
       # use id instead of object because object is zapped by undefPointerCache
       my $naSequenceId = $self->processSequence($bioperlSeq);
 
       $seqCount++;
-
+$self->log("Process Feature trees\n");
       $self->processFeatureTrees($bioperlSeq, $naSequenceId);
 
       $self->undefPointerCache();
