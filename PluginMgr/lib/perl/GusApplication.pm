@@ -1043,6 +1043,7 @@ Perhaps you need to do a 'ga +update " . $PlugIn->getName() . " --commit'
 If you are developing the plugin, you may need to check it in to the repostory and do a build before running ga update.\n");
       }
    }
+   $PlugIn->initIrrelevantCounts();
 }
 
 # ----------------------------------------------------------------------
