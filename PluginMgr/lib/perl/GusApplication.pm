@@ -61,33 +61,33 @@ sub setMode       { $_[0]->{__gus__plugin__mode} = $_[1]; $_[0] }
 # ----------------------------------------------------------------------
 
 sub findAlgorithm {
-   my $Self = shift;
-   my $PlugIn = shift;
+   my $self = shift;
+   my $plugin = shift;
 
-   my $alg_gus = GUS::Model::Core::Algorithm->new({ name => $PlugIn->getName });
+   my $alg_gus = GUS::Model::Core::Algorithm->new({ name => $plugin->getName });
    $alg_gus->retrieveFromDB;
 
-   $PlugIn->initAlgorithm($alg_gus->getId ? $alg_gus : undef)
+   $plugin->initAlgorithm($alg_gus->getId ? $alg_gus : undef)
 }
 
 # ----------------------------------------------------------------------
 
 sub findImplementation {
-   my $Self = shift;
-   my $PlugIn = shift;
+   my $self = shift;
+   my $plugin = shift;
 
-   my $implementation = $Self->findSomeImplementation($PlugIn);
-   $PlugIn->initImplementation($implementation) if $implementation;
+   my $implementation = $self->findSomeImplementation($plugin);
+   $plugin->initImplementation($implementation) if $implementation;
 
-   $PlugIn->logVerbose('DEBUG', ref $implementation) if FLAG_DEBUG;
+   $plugin->logVerbose('DEBUG', ref $implementation) if FLAG_DEBUG;
 }
 
 sub findSomeImplementation {
-   my $Self = shift;
-   my $PlugIn = shift;
+   my $self = shift;
+   my $plugin = shift;
 
-   my $pluginNm = $PlugIn->getName;
-   my $cvsRevision = $PlugIn->getCVSRevision;
+   my $pluginNm = $plugin->getName;
+   my $cvsRevision = $plugin->getCVSRevision;
 
    # can either be done in +create/+update mode as ga or in +run mode as plugin
    my $sql = <<SQL;
@@ -97,27 +97,27 @@ sub findSomeImplementation {
        AND cvs_revision    = '$cvsRevision'
 SQL
 
-   my $imps = $PlugIn->sql_get_as_hash_refs($sql);
+   my $imps = $plugin->sql_get_as_hash_refs($sql);
 
    if (scalar @$imps == 0) {
-     $Self->registerPlugin($PlugIn, $sql);  # try registering
+     $self->registerPlugin($plugin, $sql);  # try registering
 
      # try again
-     $imps = $PlugIn->sql_get_as_hash_refs($sql);
-     $Self->error("Failed registering plugin $pluginNm $cvsRevision")
+     $imps = $plugin->sql_get_as_hash_refs($sql);
+     $self->error("Failed registering plugin $pluginNm $cvsRevision")
        if scalar @$imps != 1;
    }
 
    elsif ( scalar @$imps > 1 ) {
-     $Self->tooManyImpsError($imps);
+     $self->tooManyImpsError($imps);
    }
 
-   elsif ($Self->getArgs->{commit} &&
-	    $imps->[0]->{EXECUTABLE_MD5} ne $PlugIn->getCheckSum()) {
-     $Self->wrongChecksumError($PlugIn);
+   elsif ($self->getArgs->{commit} &&
+	    $imps->[0]->{EXECUTABLE_MD5} ne $plugin->getCheckSum()) {
+     $self->wrongChecksumError($plugin);
    }
 
-   return $Self->makeImplementation($PlugIn, $imps->[0]);
+   return $self->makeImplementation($plugin, $imps->[0]);
 }
 
 sub registerPlugin {
@@ -193,7 +193,7 @@ sub makeImplementation {
 # ----------------------------------------------------------------------
 
 sub parseAndRun {
-   my $Self = shift;
+   my $self = shift;
    my $Args = shift;
 
    my $ga_mode_str;
@@ -238,17 +238,17 @@ sub parseAndRun {
    }
 
    if (defined $ga_mode_str) {
-      $Self->setMode($ga_mode_str);
-      $Self->doMajorMode($plugin_class_str)
+      $self->setMode($ga_mode_str);
+      $self->doMajorMode($plugin_class_str)
    } else {
-      $Self->showUsage;
+      $self->showUsage;
    }
 }
 
 # ----------------------------------------------------------------------
 
 sub showUsage {
-   my $Self = shift;
+   my $self = shift;
 
    print <<USAGE;
 
@@ -289,16 +289,16 @@ USAGE
 # ----------------------------------------------------------------------
 
 sub newFromPluginName {
-   my $Self = shift;
+   my $self = shift;
    my $PluginClass = shift;               # plugin-class name
 
    my $require_p = "{require $PluginClass; $PluginClass->new }";
    my $plugin = eval $require_p;
 
-   $Self->error($@) if $@;
+   $self->error($@) if $@;
 
    $plugin->initName($PluginClass);
-   $plugin->initMd5Executable($Self->{propertySet}->getProp('md5sum'));
+   $plugin->initMd5Executable($self->{propertySet}->getProp('md5sum'));
    return $plugin;
 }
 
@@ -320,22 +320,22 @@ sub getConfig {
 # ----------------------------------------------------------------------
 
 sub doMajorMode {
-   my $Self = shift;
+   my $self = shift;
    my @A = @_;
 
    my @modes    = qw( meta create update history run report );
    my $modes_rx = '^('. join('|',@modes). ')$'; # ' this quote is for emacs highlighting
 
-   if ($Self->getMode =~ /$modes_rx/) {
+   if ($self->getMode =~ /$modes_rx/) {
 
       # make method name and run
-      my $method = 'doMajorMode_'. ucfirst lc $Self->getMode;
-      $Self->$method(@A);
+      my $method = 'doMajorMode_'. ucfirst lc $self->getMode;
+      $self->$method(@A);
    }
 
    # bad mode or mood
    else {
-      $Self->userError($Self->getMode() . " is not a supported mode; should be one of" . join(', ', @modes));
+      $self->userError($self->getMode() . " is not a supported mode; should be one of" . join(', ', @modes));
    }
 
 }
@@ -346,18 +346,18 @@ sub doMajorMode {
 
 #! GA
 sub doMajorMode_Meta {
-   my $Self = shift;
+   my $self = shift;
 
-   my $ecd = { %{$Self->getGlobalEasyCspOptions} };
-   my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$Self->getUsage) || die "\n";
+   my $ecd = { %{$self->getGlobalEasyCspOptions} };
+   my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$self->getUsage) || die "\n";
 
-   $Self->initArgs($cla);
+   $self->initArgs($cla);
 
    # connect to the database
-   $Self->connect_to_database($Self);
+   $self->connect_to_database($self);
 
    # what versions does the plugin want?
-   $Self->_check_database_version_requirements($Self);
+   $self->_check_database_version_requirements($self);
 
    # create/find a Core.Algorithm, Core.AlgorithmImplementation, and Core.AlgorithmInvocation
    my $alg_go = GUS::Model::Core::Algorithm
@@ -366,8 +366,8 @@ sub doMajorMode_Meta {
          });
    $alg_go->retrieveFromDB;
 
-   my $name = $Self->getName();
-   my $cvsRevision = $Self->getCVSRevision();
+   my $name = $self->getName();
+   my $cvsRevision = $self->getCVSRevision();
 
    my $sql =
    "SELECT *
@@ -375,7 +375,7 @@ sub doMajorMode_Meta {
      WHERE executable = '$name'
      AND cvs_revision    = '$cvsRevision'";
 
-   my $imps = $Self->sql_get_as_hash_refs($sql);
+   my $imps = $self->sql_get_as_hash_refs($sql);
 
    if (scalar(@$imps) !=0) {
       print STDERR "Error: $name with CVS revision $cvsRevision is already registered.  You don't need to do a +meta.\n";
@@ -383,14 +383,14 @@ sub doMajorMode_Meta {
    }
 
    my $imp_go = GUS::Model::Core::AlgorithmImplementation
-   ->new({ cvs_revision   => $Self->getCVSRevision,
-           executable     => $Self->getName,
-           executable_md5 => $Self->getCheckSum,
-           description    => $Self->getRevisionNotes,
+   ->new({ cvs_revision   => $self->getCVSRevision,
+           executable     => $self->getName,
+           executable_md5 => $self->getCheckSum,
+           description    => $self->getRevisionNotes,
          });
    $imp_go->setParent($alg_go);
 
-   my $now = $Self->getDb->getDateFunction();
+   my $now = $self->getDb->getDateFunction();
    my $inv_go = GUS::Model::Core::AlgorithmInvocation->new({ start_time  => $now,
                                                              end_time    => $now,
                                                              cpus_used   => 1,
@@ -398,7 +398,7 @@ sub doMajorMode_Meta {
                                                            });
    $inv_go->setParent($imp_go);
 
-   $Self->set_defaults($alg_go);
+   $self->set_defaults($alg_go);
    $alg_go->submit;
 
    # update with invocation's newly set id and resubmit
@@ -408,9 +408,9 @@ sub doMajorMode_Meta {
 
    $alg_go->setGlobalNoVersion(1);
    $alg_go->submit;
-   $Self->logData('INFO', "ga registered with cvs revision '$cvsRevision'");
-   $Self->logData('INFO', "...Just kidding: you didn't --commit")
-	unless ($Self->getArgs->{commit});
+   $self->logData('INFO', "ga registered with cvs revision '$cvsRevision'");
+   $self->logData('INFO', "...Just kidding: you didn't --commit")
+	unless ($self->getArgs->{commit});
 
 }
 
@@ -420,36 +420,36 @@ sub doMajorMode_Meta {
 # ----------------------------------------------------------------------
 
 sub doMajorMode_Run {
-   my $Self        = shift;
+   my $self        = shift;
    my $PluginClass = shift;
 
-   $Self->doMajorMode_RunOrReport($PluginClass, 1);
+   $self->doMajorMode_RunOrReport($PluginClass, 1);
 }
 
 sub doMajorMode_Report {
-   my $Self        = shift;
+   my $self        = shift;
    my $PluginClass = shift;
 
-   $Self->doMajorMode_RunOrReport($PluginClass, 0);
+   $self->doMajorMode_RunOrReport($PluginClass, 0);
 }
 
 sub doMajorMode_RunOrReport {
-   my $Self        = shift;
+   my $self        = shift;
    my $PluginClass = shift;
    my $Run         = shift;
 
-   my $pu = $Self->newFromPluginName($PluginClass);
+   my $pu = $self->newFromPluginName($PluginClass);
 
    # connect to the database
-   $Self->connect_to_database($pu);
-   $Self->initDb($pu->getDb());
+   $self->connect_to_database($pu);
+   $self->initDb($pu->getDb());
 
    $pu->setOracleDateFormat('YYYY-MM-DD HH24:MI:SS');
 
    my $argsHash;
    if ($pu->getArgsDeclaration) {
       my $argDecl = [@{$pu->getArgsDeclaration()},
-                     @{$Self->getStandardArgsDeclaration()}
+                     @{$self->getStandardArgsDeclaration()}
                     ];
 
       my ($argList, $help) = GUS::PluginMgr::Args::ArgList->new
@@ -469,30 +469,30 @@ sub doMajorMode_RunOrReport {
    } else {
       # get command line arguments from combined CBIL::Util::EasyCsp options structure
       my $ecd = {
-                 %{$Self->getGlobalEasyCspOptions},
+                 %{$self->getGlobalEasyCspOptions},
                  %{$pu->getEasyCspOptions},
                 };
       $argsHash = CBIL::Util::EasyCsp::DoItAll($ecd,$pu->getUsage) || die "\n";
    }
 
    # what versions does the plugin want?
-#   $Self->connect_to_database($Self);
+#   $self->connect_to_database($self);
 
-   $Self->_check_database_version_requirements($pu);
+   $self->_check_database_version_requirements($pu);
 
    $pu->initArgs($argsHash);
-   $Self->initArgs($argsHash);
+   $self->initArgs($argsHash);
 
-   $pu->getDb()->setVerbose($Self->getArg('sqlVerbose'));
+   $pu->getDb()->setVerbose($self->getArg('sqlVerbose'));
 
    # get the algorithm
-   $Run && $Self->findAlgorithm($pu);
+   $Run && $self->findAlgorithm($pu);
 
    # get PI's version to find the AlgorithmImplementation.
-   $Run && $Self->findImplementation($pu);
+   $Run && $self->findImplementation($pu);
 
    # the application context
-   $Run && $Self->openInvocation($pu);
+   $Run && $self->openInvocation($pu);
    
    # this acts like a java final block.  clean up and show a stack trace.
    { local
@@ -519,13 +519,13 @@ sub doMajorMode_RunOrReport {
       if (!$pu->getResultDescr()) {
          $pu->setResultDescr($resultDescrip);
       }
-      $Self->logAlert("RESULT", $pu->getResultDescr());
+      $self->logAlert("RESULT", $pu->getResultDescr());
       $pu->logCommit();
    };}
 
    my $err = $@;
 
-   $Run && $Self->closeInvocation($pu, $err);
+   $Run && $self->closeInvocation($pu, $err);
 
    die $err if $err;
 }
@@ -534,30 +534,30 @@ sub doMajorMode_RunOrReport {
 
 #! GA
 sub doMajorMode_Create {
-   my $Self = shift;
+   my $self = shift;
    my $PluginClass = shift;
 
-   $Self->create_or_update_implementation(0,$PluginClass)
+   $self->create_or_update_implementation(0,$PluginClass)
 }
 
 # ----------------------------------------------------------------------
 
 #! GA
 sub doMajorMode_Update {
-   my $Self = shift;
+   my $self = shift;
    my $PluginClass = shift;
 
-   $Self->create_or_update_implementation(1,$PluginClass)
+   $self->create_or_update_implementation(1,$PluginClass)
 }
 
 # ----------------------------------------------------------------------
 
 #! GA
 sub doMajorMode_History {
-   my $Self        = shift;
+   my $self        = shift;
    my $PluginClass = shift;
 
-   my $p = $Self->newFromPluginName($PluginClass);
+   my $p = $self->newFromPluginName($PluginClass);
    my $plugin_name_s = $p->getName;
 
    # command line arguments
@@ -569,15 +569,15 @@ sub doMajorMode_History {
               ),
 
               # global options -- are they needed ?
-              %{$Self->getGlobalEasyCspOptions}
+              %{$self->getGlobalEasyCspOptions}
              );
    my $cla = CBIL::Util::EasyCsp::DoItAll(\%ecd,$usg) || die "\n";
-   $Self->initArgs($cla);
+   $self->initArgs($cla);
 
    # do preps
-   $Self->connect_to_database($Self);
+   $self->connect_to_database($self);
 
-   my $q = $Self->getQueryHandle;
+   my $q = $self->getQueryHandle;
 
    # what algorithm
    my $alg_sql = "select * from Core.Algorithm where name = '$plugin_name_s'";
@@ -640,7 +640,7 @@ SQL
       $algs_n++;
 
       # show columns for this algorithm
-      $Self->logData('ALG',
+      $self->logData('ALG',
                      ( map { $alg_h->{$_} } qw(ALGORITHM_ID NAME DESCRIPTION) ),
                     );
 
@@ -654,7 +654,7 @@ SQL
          $inv_n_sh->finish;
 
          # show columns for this implementation
-         $Self->logData('IMP',
+         $self->logData('IMP',
                         #$alg_h->{ALGORITHM_ID},
                         ( map {$imp_h->{$_}} qw(ALGORITHM_IMPLEMENTATION_ID CVS_REVISION CVS_TAG)),
                         $inv_n,
@@ -665,7 +665,7 @@ SQL
          $par_sh->execute($imp_h->{ALGORITHM_IMPLEMENTATION_ID});
          while (my $par_h = $par_sh->fetchrow_hashref) {
             $par_h->{IS_LIST_VALUED} = $par_h->{IS_LIST_VALUED} ? 'list  ' : 'scalar';
-            $Self->logData('PRMKEY',
+            $self->logData('PRMKEY',
                            #$alg_h->{ALGORITHM_ID},
                            #( map {$imp_h->{$_}} qw(ALGORITHM_IMPLEMENTATION_ID VERSION)),
                            sprintf('%8.8s %s : %-24.24s %s',
@@ -679,7 +679,7 @@ SQL
          # details of invocations
          $inv_sh->execute($imp_h->{ALGORITHM_IMPLEMENTATION_ID});
          while (my $inv_h = $inv_sh->fetchrow_hashref) {
-            $Self->logData('INV',
+            $self->logData('INV',
                            #$alg_h->{ALGORITHM_ID},
                            #$imp_h->{ALGORITHM_IMPLEMENTATION_ID},
                            ( map {$inv_h->{$_}} qw(ALGORITHM_INVOCATION_ID START_TIME END_TIME RESULT COMMENT_STRING)),
@@ -688,7 +688,7 @@ SQL
             # values of parameters
             $val_sh->execute($inv_h->{ALGORITHM_INVOCATION_ID});
             while (my $val_h = $val_sh->fetchrow_hashref) {
-               $Self->logData('PARVAL',
+               $self->logData('PARVAL',
                               sprintf('%24.24s', $val_h->{ALGORITHM_PARAM_KEY}),
                               ( map {$val_h->{$_}} qw(ORDER_NUM STRING_VALUE))
                              );
@@ -706,7 +706,7 @@ SQL
 
    # say something if we found no Algorithms
    if ($algs_n <= 0) {
-      $Self->logData('INFO', 'No Core.Algorithms were found for this plugin');
+      $self->logData('INFO', 'No Core.Algorithms were found for this plugin');
    }
 }
 
@@ -716,7 +716,7 @@ SQL
 
 #! GA
 sub create_or_update_implementation {
-   my $Self = shift;
+   my $self = shift;
    my $U = shift;               # allow update?
    my $PluginClass = shift;               # plugin class name
 
@@ -729,7 +729,7 @@ sub create_or_update_implementation {
 
    my $usg = "$what GUS::Model::Core::Algorithm-related entries for a plugin.";
    my %ecd = (
-              %{$Self->getGlobalEasyCspOptions},
+              %{$self->getGlobalEasyCspOptions},
               ( map {($_->{o},$_)}
                 ( { h => "just survery what would be done",
                     t => 'boolean',
@@ -739,33 +739,33 @@ sub create_or_update_implementation {
              );
    CBIL::Util::Disp::Display(\%ecd) if FLAG_DEBUG;
    my $cla = CBIL::Util::EasyCsp::DoItAll(\%ecd,$usg) || die "\n";
-   $Self->initArgs($cla);
+   $self->initArgs($cla);
 
    # do preps
-   $Self->connect_to_database($Self);
-   $Self->findImplementation($Self);
+   $self->connect_to_database($self);
+   $self->findImplementation($self);
 
    # create plugin
-   my $pu = $Self->newFromPluginName($PluginClass);
+   my $pu = $self->newFromPluginName($PluginClass);
    $pu->initArgs($cla);
 
    # what versions does the plugin want?
-   $Self->_check_database_version_requirements($pu);
+   $self->_check_database_version_requirements($pu);
 
    # make an algorithminvocation for self
    # ......................................................................
 
    my $alg_inv_gus = GUS::Model::Core::AlgorithmInvocation
-   ->new({ algorithm_implementation_id => $Self->getImplementation->getId,
-           start_time                  => $Self->getDb->getDateFunction(),
-           end_time                    => $Self->getDb->getDateFunction(),
+   ->new({ algorithm_implementation_id => $self->getImplementation->getId,
+           start_time                  => $self->getDb->getDateFunction(),
+           end_time                    => $self->getDb->getDateFunction(),
            cpus_used                   => 1,
            cpu_time                    => 0,
            result                      => 'pending',
            comment_string              => substr($cla->{comment},0,255),
          });
-   $Self->initAlgInvocation($alg_inv_gus);
-   $Self->set_defaults($alg_inv_gus);
+   $self->initAlgInvocation($alg_inv_gus);
+   $self->set_defaults($alg_inv_gus);
 
    # things we might need.
    # ......................................................................
@@ -777,7 +777,7 @@ sub create_or_update_implementation {
    # ......................................................................
 
    my $alg_h;
-   $Self->findAlgorithm($pu);
+   $self->findAlgorithm($pu);
    my $alg_gus = $pu->getAlgorithm;
    my $cvsRevision = $pu->getCVSRevision;
 
@@ -794,7 +794,7 @@ sub create_or_update_implementation {
        WHERE executable = '$plugin_name_s'
        AND cvs_revision    = '$cvsRevision'";
 
-      my $imps = $Self->sql_get_as_hash_refs($sql);
+      my $imps = $self->sql_get_as_hash_refs($sql);
 
       if (scalar(@$imps) !=0) {
          print STDERR "Error:   $plugin_name_s with CVS revision $cvsRevision is already registered.  You don't need to do a +update.\n";
@@ -808,7 +808,7 @@ sub create_or_update_implementation {
                            "$plugin_name_s is already registered.",
                            "Use '+update' if you need to register a new version."
                           ), "\n";
-         #      $Self->doMajorMode_History($PluginClass);
+         #      $self->doMajorMode_History($PluginClass);
          exit 0;
       }
 
@@ -837,10 +837,10 @@ sub create_or_update_implementation {
    my $host = hostname();
 
    # AlgorithmParamKeys
-   my $apkt_cache = $Self->load_AlgorithmParamKeyType_cache;
+   my $apkt_cache = $self->load_AlgorithmParamKeyType_cache;
    CBIL::Util::Disp::Display($apkt_cache, '$apkt_cache') if FLAG_DEBUG;
    my $pu_ecd     = {
-                     %{$Self->getGlobalEasyCspOptions},
+                     %{$self->getGlobalEasyCspOptions},
                      %{$pu->getEasyCspOptions},
                     };
 
@@ -892,9 +892,9 @@ sub create_or_update_implementation {
          $apk_gus->setParent($alg_imp_gus);
       }
       $alg_gus->submit;
-      $Self->logData('INFO', "Plugin $plugin_name_s registered with cvs revision '$cvsRevision'");
-      $Self->logData('INFO', "...Just kidding: you didn't --commit")
-	unless ($Self->getArgs->{commit});
+      $self->logData('INFO', "Plugin $plugin_name_s registered with cvs revision '$cvsRevision'");
+      $self->logData('INFO', "...Just kidding: you didn't --commit")
+	unless ($self->getArgs->{commit});
    }
 }
 
@@ -902,30 +902,30 @@ sub create_or_update_implementation {
 # ----------------------------------------------------------------------
 
 sub set_defaults {
-   my $Self = shift;
+   my $self = shift;
    my $OtherPlugIn = shift;
 
-   my $cla = $Self->getArgs;
+   my $cla = $self->getArgs;
 
-   CBIL::Util::Disp::Display($cla, 'cla:'.  ref$Self) if FLAG_DEBUG;
+   CBIL::Util::Disp::Display($cla, 'cla:'.  ref$self) if FLAG_DEBUG;
 
    # global parameters
-   $OtherPlugIn->setCommitOff()     unless $Self->getArg('commit');
-   $OtherPlugIn->setDebuggingOn()   if $Self->getArg('debug');
+   $OtherPlugIn->setCommitOff()     unless $self->getArg('commit');
+   $OtherPlugIn->setDebuggingOn()   if $self->getArg('debug');
 
    # default values for GUS overhead columns
-   $OtherPlugIn->setDefaultAlgoInvoId($Self->getArg('algoinvo'));
+   $OtherPlugIn->setDefaultAlgoInvoId($self->getArg('algoinvo'));
 
-   my $user    = $Self->getUser();
-   my $userId  = $Self->sql_translate('Core.UserInfo', 'user_id', 'login', $user);
+   my $user    = $self->getUser();
+   my $userId  = $self->sql_translate('Core.UserInfo', 'user_id', 'login', $user);
    die "No row Core.UserInfo has a login = '$user'.  This value was found in the userName= property of your .gus.properties file.  Please be sure it is correct and has been registered in the database" unless defined $userId;
 
-   my $group   = $Self->getGroup();
-   my $groupId = $Self->sql_translate('Core.GroupInfo', 'group_id', 'name',$group);
+   my $group   = $self->getGroup();
+   my $groupId = $self->sql_translate('Core.GroupInfo', 'group_id', 'name',$group);
    die "No row in Core.GroupInfo has a name = '$group'.  This value was found in the group= property of your .gus.properties file.  Please be sure it is correct and has been registered in the database" unless defined $groupId;
 
-   my $project = $Self->getProject();
-   my $projectId = $Self->sql_translate('Core.ProjectInfo',
+   my $project = $self->getProject();
+   my $projectId = $self->sql_translate('Core.ProjectInfo',
                                         'project_id',
                                         'name',$project);
    die "No row in Core.ProjectInfo has name = $project'.  This value was found in the project= property of your .gus.properties file.  Please be sure it is correct and has been registered in the database" unless defined $projectId;
@@ -938,37 +938,37 @@ sub set_defaults {
 # ----------------------------------------------------------------------
 
 sub getUser {
-   my $Self = shift;
+   my $self = shift;
 
-   my $cla = $Self->getArgs;
-   $cla->{user}? $cla->{user} : $Self->getConfig()->getUserName();
+   my $cla = $self->getArgs;
+   $cla->{user}? $cla->{user} : $self->getConfig()->getUserName();
 
 }
 
 sub getGroup {
-   my $Self = shift;
+   my $self = shift;
 
-   my $cla = $Self->getArgs;
-   $cla->{group}? $cla->{group} : $Self->getConfig()->getGroup();
+   my $cla = $self->getArgs;
+   $cla->{group}? $cla->{group} : $self->getConfig()->getGroup();
 
 }
 
 sub getProject {
-   my $Self = shift;
+   my $self = shift;
 
-   my $cla = $Self->getArgs;
-   $cla->{project}? $cla->{project} : $Self->getConfig()->getProject();
+   my $cla = $self->getArgs;
+   $cla->{project}? $cla->{project} : $self->getConfig()->getProject();
 
 }
 
 #! GA
 sub load_AlgorithmParamKeyType_cache {
-   my $Self = shift;
+   my $self = shift;
 
    my $RV;
 
    # if we don't have a db handle use these that I copied from the DB.
-   if (not defined $Self->getQueryHandle) {
+   if (not defined $self->getQueryHandle) {
       $RV = { 'str' => 0,
               'flo' => 1,
               'int' => 2,
@@ -981,7 +981,7 @@ sub load_AlgorithmParamKeyType_cache {
    # we have a db query handle, go for it.
    else {
       my $sql = 'select algorithm_param_key_type_id, type from Core.AlgorithmParamKeyType';
-      my $types = $Self->sql_get_as_array_refs($sql);
+      my $types = $self->sql_get_as_array_refs($sql);
       foreach (@$types) {
          $RV->{lc(substr($_->[1],0,3))} = $_->[0];
       }
@@ -996,27 +996,27 @@ sub load_AlgorithmParamKeyType_cache {
 
 # SOON: when alg inv. gets new 'status' attribute, this will set it to 'running'
 sub openInvocation {
-   my $Self = shift;
-   my $PlugIn = shift;          # the plugin
+   my $self = shift;
+   my $plugin = shift;          # the plugin
 
-   my $cla = $PlugIn->getArgs;
+   my $cla = $plugin->getArgs;
 
    # get implementation pointer for self.
    # ........................................
 
    my $alg_inv_gus = GUS::Model::Core::AlgorithmInvocation
    ->new({
-          algorithm_implementation_id => $PlugIn->getImplementation->getId,
-          start_time                  => $PlugIn->getDb->getDateFunction(),
-          end_time                    => $PlugIn->getDb->getDateFunction(),
+          algorithm_implementation_id => $plugin->getImplementation->getId,
+          start_time                  => $plugin->getDb->getDateFunction(),
+          end_time                    => $plugin->getDb->getDateFunction(),
           cpus_used                   => 1,
           cpu_time                    => 0,
           result                      => 'pending',
           comment_string              => substr($cla->{comment},0,255),
          });
-   $PlugIn->initAlgInvocation($alg_inv_gus);
+   $plugin->initAlgInvocation($alg_inv_gus);
 
-   $Self->set_defaults($alg_inv_gus);
+   $self->set_defaults($alg_inv_gus);
    $alg_inv_gus->submit();
    $alg_inv_gus->setDefaultAlgoInvoId($alg_inv_gus->getId);
 
@@ -1025,7 +1025,7 @@ sub openInvocation {
 
    # get children, then make a hash of algorithm_param_key => object
    my @param_keys = 
-   $PlugIn->getImplementation->getChildren('GUS::Model::Core::AlgorithmParamKey',1);
+   $plugin->getImplementation->getChildren('GUS::Model::Core::AlgorithmParamKey',1);
    my %key_to_obj = map { ($_->getAlgorithmParamKey,$_) } @param_keys;
 
    # note whether we had any problems.
@@ -1064,27 +1064,27 @@ sub openInvocation {
                             string_value            => $values[$v_i],
                             $typed_value_key        => $values[$v_i],
                             order_num               => $v_i,
-                            algorithm_invocation_id => $PlugIn->getAlgInvocation->getId,
+                            algorithm_invocation_id => $plugin->getAlgInvocation->getId,
                             is_default              => 0,
                           };
                my $ap_go = GUS::Model::Core::AlgorithmParam->new($ap_h);
                $ap_go->submit;
             }
          } else {
-            $PlugIn->error("No Core.AlgorithmParamKeyType");
+            $plugin->error("No Core.AlgorithmParamKeyType");
          }
       }
 
       # an unexpected parameter, let the user know.
       else {
-         $PlugIn->error("The plugin is declaring an argument named '$param_name', but that argument was not present when the plugin was last registered.  
+         $plugin->error("The plugin is declaring an argument named '$param_name', but that argument was not present when the plugin was last registered.  
 
-Perhaps you need to do a 'ga +update " . $PlugIn->getName() . " --commit'
+Perhaps you need to do a 'ga +update " . $plugin->getName() . " --commit'
 
 If you are developing the plugin, you may need to check it in to the repostory and do a build before running ga update.\n");
       }
    }
-   $PlugIn->initIrrelevantCounts();
+   $plugin->initIrrelevantCounts();
 }
 
 # ----------------------------------------------------------------------
@@ -1093,20 +1093,20 @@ If you are developing the plugin, you may need to check it in to the repostory a
 # 'succeeded' or 'failed' based on $failmsg;
 
 sub closeInvocation {
-   my $Self   = shift;
-   my $PlugIn = shift;
+   my $self   = shift;
+   my $plugin = shift;
 
    my $failmsg;
 
-   $PlugIn->setResultDescr($failmsg) if $failmsg; # until we add an errmsg attribute
+   $plugin->setResultDescr($failmsg) if $failmsg; # until we add an errmsg attribute
 
-   $PlugIn->getAlgInvocation->setGlobalNoVersion(1);
-   $PlugIn->getAlgInvocation->setResult($PlugIn->getResultDescr);
-   $PlugIn->getAlgInvocation->setEndTime($PlugIn->getAlgInvocation->getDatabase()->getDateFunction());
-   $PlugIn->getAlgInvocation->submit(1);
+   $plugin->getAlgInvocation->setGlobalNoVersion(1);
+   $plugin->getAlgInvocation->setResult($plugin->getResultDescr);
+   $plugin->getAlgInvocation->setEndTime($plugin->getAlgInvocation->getDatabase()->getDateFunction());
+   $plugin->getAlgInvocation->submit(1);
 
    ##logout
-   $Self->disconnect_from_database($PlugIn);
+   $self->disconnect_from_database($plugin);
 
    return undef;
 }
@@ -1116,31 +1116,31 @@ sub closeInvocation {
 # db and dbh attributes.
 
 sub connect_to_database {
-   my $Self = shift;
-   my $PlugIn = shift;          # active plugins
+   my $self = shift;
+   my $plugin = shift;          # active plugins
 
-   my $config      = $Self->getConfig();
+   my $config      = $self->getConfig();
 
-   my $login       = $Self->getConfig->getDatabaseLogin();
-   my $password    = $Self->getConfig->getDatabasePassword();
-   my $core        = $Self->getConfig->getCoreSchemaName();
-   my $dbiDsn      = $Self->getConfig->getDbiDsn();
-   my $oraDfltRbs  = $Self->getConfig->getOracleDefaultRollbackSegment();
+   my $login       = $self->getConfig->getDatabaseLogin();
+   my $password    = $self->getConfig->getDatabasePassword();
+   my $core        = $self->getConfig->getCoreSchemaName();
+   my $dbiDsn      = $self->getConfig->getDbiDsn();
+   my $oraDfltRbs  = $self->getConfig->getOracleDefaultRollbackSegment();
 
-   $PlugIn->initDb(new GUS::ObjRelP::DbiDatabase($dbiDsn,
+   $plugin->initDb(new GUS::ObjRelP::DbiDatabase($dbiDsn,
                                                  $login,$password,
                                                  0,0,1,
                                                  $core,
                                                  $oraDfltRbs));
    # return self.
-   $Self
+   $self
 }
 
 sub disconnect_from_database {
-   my $Self   = shift;
-   my $PlugIn = shift;
+   my $self   = shift;
+   my $plugin = shift;
 
-   $PlugIn->getDb()->logout();
+   $plugin->getDb()->logout();
 }
 
 
@@ -1149,12 +1149,12 @@ sub disconnect_from_database {
 # ----------------------------------------------------------------------
 
 sub _check_database_version_requirements {
-    my $Self = shift;
-    my $PlugIn = shift;
+    my $self = shift;
+    my $plugin = shift;
 
-    my $version = $PlugIn->getRequiredDbVersion();
+    my $version = $plugin->getRequiredDbVersion();
     my $sql     = "select max(version) from Core.DatabaseVersion";
-    my $sh      = $Self->getQueryHandle->prepare($sql);
+    my $sh      = $self->getQueryHandle->prepare($sql);
     
     $sh->execute();
     my $dbVersion;
@@ -1165,7 +1165,7 @@ sub _check_database_version_requirements {
 
     my $errMsg = "Database version does not match required version for Plugin.\n";
     $errMsg .= "Database Version: $dbVersion    Plugin Version: $version\n";
-    $Self->error($errMsg);
+    $self->error($errMsg);
 }
 
 sub getStandardArgsDeclaration {
@@ -1253,7 +1253,7 @@ sub getStandardArgsDeclaration {
 }
 
 sub getGlobalEasyCspOptions {
-   my $Self = shift;
+   my $self = shift;
 
    my $RV =
    {
