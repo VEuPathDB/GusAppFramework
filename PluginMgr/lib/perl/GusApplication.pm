@@ -89,6 +89,8 @@ sub findSomeImplementation {
    my $pluginNm = $PlugIn->getName;
    my $cvsRevision = $PlugIn->getCVSRevision;
 
+   print STDERR "fsi $pluginNm $cvsRevision\n";
+
    # can either be done in +create/+update mode as ga or in +run mode as plugin
    my $sql = <<SQL;
     SELECT *
@@ -401,9 +403,7 @@ sub doMajorMode_Meta {
    $inv_go->setParent($imp_go);
 
    $Self->set_defaults($alg_go);
-   #   print $alg_go->toXML(2);
    $alg_go->submit;
-   #  print $alg_go->toXML(2);
 
    # update with invocation's newly set id and resubmit
    $alg_go->setRowAlgInvocationId($inv_go->getId);
