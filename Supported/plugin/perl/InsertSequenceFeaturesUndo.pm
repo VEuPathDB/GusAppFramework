@@ -98,7 +98,7 @@ my $argsDeclaration  =
    stringArg({name => 'algInvocationId',
 	      descr => 'A comma delimited list of algorithm invocation ids to undo',
 	      constraintFunc=> undef,
-	      reqd  => 0,
+	      reqd  => 1,
 	      isList => 1,
 	     })
   ];
