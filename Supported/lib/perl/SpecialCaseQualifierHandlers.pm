@@ -265,8 +265,10 @@ sub gapLength {
 
   my @emptyArray;
   my @tagValues = $bioperlFeature->get_tag_values($tag);
-  $feature->setMinSize($tagValues[0]);
-  $feature->setMaxSize($tagValues[0]);
+  if ($tagValues[0] =~ /\d+/) {
+    $feature->setMinSize($tagValues[0]);
+    $feature->setMaxSize($tagValues[0]);
+  }
   return \@emptyArray;
 }
 
