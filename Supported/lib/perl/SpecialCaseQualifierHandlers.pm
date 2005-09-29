@@ -47,7 +47,7 @@ sub undoAll{
   $self->_undoNote();
   $self->_undoProtein();
   $self->_undoTranslation();
-  $self->_undoEstimatedGapLength();
+  $self->_undoGapLength();
 
 }
 
@@ -257,10 +257,10 @@ sub _undoTranslation{
 
 }
 
-################ Estimated Gap Length ###############################
+################ Gap Length ###############################
 
 # put estimated gap length of ScaffoldGapFeature into min and max lengths
-sub estimatedGapLength {
+sub gapLength {
   my ($self, $tag, $bioperlFeature, $feature) = @_;
 
   my @emptyArray;
@@ -271,7 +271,7 @@ sub estimatedGapLength {
 }
 
 # nothing special to do
-sub _undoEstimatedGapLength{
+sub _undoGapLength{
   my ($self) = @_;
 
 }
