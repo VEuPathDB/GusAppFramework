@@ -141,7 +141,7 @@ sub registerPlugin {
 sub runRegisterCmd {
   my ($self, $gaCmd, $pluginName) = @_;
 
-  $self->log("--------- Registering $pluginName -------------");
+  $self->log("---------- Registering $pluginName -------------");
   system($gaCmd);
   my $status = $? >> 8;
   $self->error("Failed running '$gaCmd' with stderr:\n $!") if ($status);
