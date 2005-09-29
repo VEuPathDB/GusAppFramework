@@ -401,9 +401,9 @@ sub doMajorMode_Meta {
    $inv_go->setParent($imp_go);
 
    $Self->set_defaults($alg_go);
-   print $alg_go->toXML(2);
+   #   print $alg_go->toXML(2);
    $alg_go->submit;
-   print $alg_go->toXML(2);
+   #  print $alg_go->toXML(2);
 
    # update with invocation's newly set id and resubmit
    $alg_go->setRowAlgInvocationId($inv_go->getId);
