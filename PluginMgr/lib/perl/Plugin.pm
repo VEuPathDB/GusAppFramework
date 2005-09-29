@@ -912,7 +912,8 @@ Get the total number of inserts.
 =cut
 sub getTotalInserts {
   my ($self) = @_;
-  $self->getAlgInvocation()->getTotalInserts()->$self->{irrelevantTotalInserts};
+  $self->getAlgInvocation()->getTotalInserts()
+    - $self->{irrelevantTotalInserts};
 }
 
 =item C<getTotalUpdates()>
@@ -922,7 +923,8 @@ Get the total number of updates.
 =cut
 sub getTotalUpdates {
   my ($self) = @_;
-  $self->getAlgInvocation()->getTotalUpdates()->$self->{irrelevantTotalUpdates};
+  $self->getAlgInvocation()->getTotalUpdates()
+    - $self->{irrelevantTotalUpdates};
 }
 
 sub initIrrelevantCounts {
