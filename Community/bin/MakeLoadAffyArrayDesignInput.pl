@@ -1,7 +1,7 @@
 #! /usr/bin/perl -w
 #
 # MakeLoadAffyArrayDesignInput.pl
-# Written by R. Gorsky upon a previous script by H. He.
+# Written by R. Gorski upon a previous script by H. He.
 # This script generates the data file that can be used by 
 # GUS::Supported::Plugin::LoadArrayDesign
 # to load Affymetrix chips into RAD. 
@@ -18,15 +18,15 @@ use GUS::Community::ArrayDesign;
 use Bio::Expression::FeatureGroup;
 
 my %opts = ();
-my $result = GetOptions(\%opts,'help|h', 'target_file=s','probe_tab_file=s','cdf_file=s','testnumber=i');
+my $result = GetOptions(\%opts,'help|h', 'target_file=s','probe_tab_file=s','cdf_file=s','genbank_ext_db_rel_id=s','refseq_ext_db_rel_id=s','element_type=s','testnumber=i');
 
 if ($opts{'help'}) {
-  print "Usage: perl generate-arrayload.pl --target target_file --probe probe_tab_file --cdf cdf_file [-testnumber n] > out_file\n";
+  print "Usage: perl generate-arrayload.pl --target target_file --probe probe_tab_file --cdf cdf_file --genbank_ext_db_rel_id external database release id for GenBank; can be found in SRes.ExternalDatabaseRelease --refseq_ext_db_rel_id external database release id for RefSeq; can be found in SRes.ExternalDatabaseRelease --element_type element_type_id for the elements (short oligos) on the Affymetrix chip; can be found in Study.OntologyEntry [-testnumber n] > out_file\n";
   exit;
 }
 
 #my $array = Bio::Expression::Microarray::Affymetrix::ArrayDesign->new();
-my $array = ArrayDesign->new();
+my $array =  GUS::Community::ArrayDesign->new();
 
 my $target_file = $opts{'target_file'} 
   || die "Please specify the target file for the Affymetrix chip by [-target_file target_file]\n";
@@ -34,6 +34,12 @@ my $probe_file = $opts{'probe_tab_file'}
   || die "Please specify the probe set file for the Affymetrix chip by [-probe_tab_file probe_tab_file]\n";
 my $cdf_file = $opts{'cdf_file'} 
   || die "Please specify the CDF file for the Affymetrix chip by [-cdf_file cdf_file]\n";
+my $genbank_ext_db_rel_id = $opts{'genbank_ext_db_rel_id'} 
+  || die "Please specify the current external database release id for GenBank by [-genbank_ext_db_rel_id external database release id for GenBank]\n";
+my $refseq_ext_db_rel_id = $opts{'refseq_ext_db_rel_id'} 
+  || die "Please specify the current external database release id for RefSeq by [-refseq_ext_db_rel_id external database release id for RefSeq]\n";
+my $ele_type_id = $opts{'element_type'} 
+  || die "Please specify the element_type_id for the elements on the Affymetrix chip by [-element_type element_type_id]\n";
 my $testnumber = $opts{'testnumber'};
 
 print STDERR "Please make sure the CDF file does not have ^M characters. Otherwise, run dos2unix to convert the file first!\n";
@@ -73,7 +79,6 @@ print $header, "\n";
 # need x, y, is_match information for each probe
 # sequence derived from PM (probe_tab_file) 
 
-my $ele_type_id = 2739;
 
 my @featuregroup = $array->each_featuregroup();
 my ($set, $name, $ftr);
@@ -90,12 +95,12 @@ foreach $set ($array->each_featuregroup) {
     my $probe_seq = $probe_map_ref->{$key} || "";
     my $gb = $gb_map_ref->{$name} || "";
  
-    my $ext_db_rel_id = 2; #GenBank
+    my $ext_db_rel_id = $genbank_ext_db_rel_id; #GenBank
 
     if ($gb eq "") {
       $ext_db_rel_id = "";
     } elsif ($gb =~ /^NM_/) {
-      $ext_db_rel_id = 992; #RefSeq
+      $ext_db_rel_id = $refseq_ext_db_rel_id; #RefSeq
     }
 
     print join "\t", $ftr->x, $ftr->y, $probe_seq, $ftr->is_match, $name, $ext_db_rel_id, $gb, $ele_type_id; 
