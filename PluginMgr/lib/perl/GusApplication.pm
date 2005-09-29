@@ -89,8 +89,6 @@ sub findSomeImplementation {
    my $pluginNm = $PlugIn->getName;
    my $cvsRevision = $PlugIn->getCVSRevision;
 
-   print STDERR "fsi $pluginNm $cvsRevision\n";
-
    # can either be done in +create/+update mode as ga or in +run mode as plugin
    my $sql = <<SQL;
     SELECT *
@@ -143,11 +141,9 @@ sub registerPlugin {
 sub runRegisterCmd {
   my ($self, $gaCmd, $pluginName) = @_;
 
-  $self->log("---------- Registering $pluginName -------------");
   system($gaCmd);
   my $status = $? >> 8;
   $self->error("Failed running '$gaCmd' with stderr:\n $!") if ($status);
-  $self->log("-----------------------------------");
 }
 
 sub tooManyImpsError {
