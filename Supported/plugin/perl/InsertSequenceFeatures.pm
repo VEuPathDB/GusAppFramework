@@ -431,8 +431,9 @@ sub getSeqIO {
   # want to catch via a $SIG{__WARN__} handler
 
   if ($format =~ m/^gff([2|3])$/i) {
-    $self->log("pre-processing GFF file");
+    $self->log("pre-processing GFF file...");
     $bioperlSeqIO = $self->convertGFFStreamToSeqIO($1);
+    $self->log("done pre-processing");
   } else {
     $bioperlSeqIO = Bio::SeqIO->new(-format => $format,
 				    -file   => $inputFile);
