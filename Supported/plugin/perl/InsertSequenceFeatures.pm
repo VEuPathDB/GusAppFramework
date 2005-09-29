@@ -214,7 +214,7 @@ my $argsDeclaration  =
 	     }),
 
    stringArg({name => 'fileFormat',
-	      descr => 'Format of external data being loaded.  See Bio::SeqIO::new() for allowed options.  GFF2 and gff3 are an additional options',
+	      descr => 'Format of external data being loaded.  See Bio::SeqIO::new() for allowed options.  gff2 and gff3 are additional options',
 	      constraintFunc=> undef,
 	      reqd  => 1,
 	      isList => 0
@@ -430,8 +430,9 @@ sub getSeqIO {
   # construction); it also can throw warnings which you might also
   # want to catch via a $SIG{__WARN__} handler
 
-  if ($format =~ m/^gff$/i) {
-    $bioperlSeqIO = $self->convertGFFStreamToSeqIO();
+  if ($format =~ m/^gff([2|3])$/i) {
+    $self->log("pre-processing GFF file");
+    $bioperlSeqIO = $self->convertGFFStreamToSeqIO($1);
   } else {
     $bioperlSeqIO = Bio::SeqIO->new(-format => $format,
 				    -file   => $inputFile);
@@ -442,12 +443,16 @@ sub getSeqIO {
 
 sub convertGFFStreamToSeqIO {
 
-  my $self = shift;
+  my ($self, $gffVersion) = @_;
 
   # convert a GFF "features-referring-to-sequence" stream into a
   # "sequences-with-features" stream; also aggregate grouped features.
-  my $gffIO = Bio::Tools::GFF->new(-file => $self->getArg('seqFile'),
-				   -gff_format => $self->getArg('gffFormat')
+
+  $self->userError("For now, gff formats only support a single file")
+    if (-d $self->getArg('inputFileOrDir'));
+
+  my $gffIO = Bio::Tools::GFF->new(-file => $self->getArg('inputFileOrDir'),
+				   -gff_format => $gffVersion
 				  );
 
   # a list of "standard" feature aggregator types for GFF2 support;
@@ -741,7 +746,7 @@ sub processFeatureTrees {
   my ($self, $bioperlSeq, $naSequenceId) = @_;
 
   $self->unflatten($bioperlSeq)
-    unless ($self->getArg("fileFormat") =~ m/^gff$/i);
+    unless ($self->getArg("fileFormat") =~ m/^gff\d$/i);
 
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
     my $NAFeature = $self->makeFeature($bioperlFeatureTree, $naSequenceId);
