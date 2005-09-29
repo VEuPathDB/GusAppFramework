@@ -161,7 +161,7 @@
   </feature>
 
   <feature name="gap" table="DoTS::Transcript" so="">
-    <qualifier name="estimated_length" ignore="true"/>
+    <qualifier name="estimated_length" handler="standard" method="gapLength"/>
     <qualifier name="map"/>
     <qualifier name="note" handler="standard" method="note"/>
   </feature>
