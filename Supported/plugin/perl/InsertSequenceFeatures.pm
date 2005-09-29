@@ -352,7 +352,7 @@ sub run{
   my $totalFeatureTreeCount=0;
   my $totalSeqCount=0;
   my $fileCount = 0;
-$self->log("getting input files...\n");
+
   my @inputFiles = $self->getInputFiles();
 
   foreach my $inputFile (@inputFiles) {
@@ -361,7 +361,7 @@ $self->log("getting input files...\n");
     my $seqCount=0;
 
    $self->log("Processing file '$inputFile'...");
-$self->log("getting bioperlSeqIO\n");
+
     my $bioperlSeqIO = $self->getSeqIO($inputFile);
     while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
 
@@ -768,25 +768,22 @@ sub makeFeature {
   # there is an error in the bioperl unflattener such that there may be
   # exon-less rRNAs (eg, in C.parvum short contigs containing only rRNAs)
   # this method has extra logic to compensate for that problem.
-$self->log("making Immediate Feature");
+
   # map the immediate bioperl feature into a gus feature
   my $feature = $self->makeImmediateFeature($bioperlFeature, $naSequenceId);
-$self->log("Immediate feature made");
+
   if ($feature) {
-$self->log("handling exonless rRNA");
+
     # call method to handle unflattener error of giving rRNAs no exon.
     $self->handleExonlessRRNA($bioperlFeature, $feature,$naSequenceId);
-$self->log("exonless rRNA handled, recursing through children");
+
     # recurse through the children
     foreach my $bioperlChildFeature ($bioperlFeature->get_SeqFeatures()) {
-$self->log("making child feature");
+
       my $childFeature =
 	$self->makeFeature($bioperlChildFeature, $naSequenceId);
-$self->log("child feature made");
-      if ($childFeature) { $self->log("adding child");
-$feature->addChild($childFeature); 
-$self->log("child added");
-}
+
+      if ($childFeature) { $feature->addChild($childFeature); }
     }
   }
   return $feature;
