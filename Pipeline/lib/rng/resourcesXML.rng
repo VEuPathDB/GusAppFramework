@@ -19,7 +19,7 @@
             <attribute name="extDbRlsVer"/>
             <attribute name="extDbName"/>
             <attribute name="extDbRlsDescrip"/>
-        </optional><
+        </optional>
         <choice>
             <element name="manualGet">
                 <attribute name="fileOrDir"/>
