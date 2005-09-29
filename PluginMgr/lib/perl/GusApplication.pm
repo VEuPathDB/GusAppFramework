@@ -113,7 +113,10 @@ SQL
       } else {
          my $ga_cmd = "ga +update $e --commit";
          $ga_cmd = "ga +meta --commit" if $e eq "GUS::PluginMgr::GusApplication";
-         $Self->userError("$e revision $cvsRevision has not been registered. \nPlease use '$ga_cmd'");
+	 system($ga_cmd);
+	 my $status = $? >> 8;
+	 $self->error("Failed running '$cmd' with stderr:\n $!") if ($status);
+#         $Self->userError("$e revision $cvsRevision has not been registered. \nPlease use '$ga_cmd'");
       }
    }
 
