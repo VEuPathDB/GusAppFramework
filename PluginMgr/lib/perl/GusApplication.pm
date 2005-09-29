@@ -86,70 +86,109 @@ sub findSomeImplementation {
    my $Self = shift;
    my $PlugIn = shift;
 
-   my $e = $PlugIn->getName;
+   my $pluginNm = $PlugIn->getName;
    my $cvsRevision = $PlugIn->getCVSRevision;
 
    # can either be done in +create/+update mode as ga or in +run mode as plugin
    my $sql = <<SQL;
     SELECT *
       FROM Core.AlgorithmImplementation
-     WHERE executable = '$e'
+     WHERE executable = '$pluginNm'
        AND cvs_revision    = '$cvsRevision'
-
 SQL
+
    my $imps = $PlugIn->sql_get_as_hash_refs($sql);
 
-   # none found
    if (scalar @$imps == 0) {
-      $sql = "select * from core.algorithmimplementation where executable = '$e'";
-      my $imps_again = $PlugIn->sql_get_as_hash_refs($sql);
+     $Self->registerPlugin($PlugIn, $sql);  # try registering
 
-      if (scalar @$imps_again == 0) {
-	if ($e =~ /GusApplication/) {
-	  $Self->userError("ga has never been registered.\nPlease use 'ga +meta --commit'");
-	} else {
-	  $Self->userError("$e has never been registered.\nPlease use 'ga +create $e --commit'");
-	}
-      } else {
-         my $ga_cmd = "ga +update $e --commit";
-         $ga_cmd = "ga +meta --commit" if $e eq "GUS::PluginMgr::GusApplication";
-	 system($ga_cmd);
-	 my $status = $? >> 8;
-	 $self->error("Failed running '$cmd' with stderr:\n $!") if ($status);
-#         $Self->userError("$e revision $cvsRevision has not been registered. \nPlease use '$ga_cmd'");
-      }
+     # try again
+     $imps = $PlugIn->sql_get_as_hash_refs($sql);
+     $Self->error("Failed registering plugin $pluginNm $cvsRevision")
+       if scalar @$imps != 1;
    }
 
-   # too many found
    elsif ( scalar @$imps > 1 ) {
-      my $err = "Found more than one Core.AlgorithmImplementation for exe=$e cvsRev=$cvsRevision:\n";
-      foreach (@$imps) {
-         $err .= "  algimp_id:$_->{ALGORITHM_IMPLEMENTATION_ID}  md5:$_->{EXECUTABLE_MD5}  rev:$_->{CVS_REVISION}  tag:$_->{CVS_TAG}\n";
-      }
-      $Self->userError($err);
-   } elsif ($Self->getArgs->{commit} &&
-            $imps->[0]->{EXECUTABLE_MD5} ne $PlugIn->getCheckSum()) {
+     $Self->tooManyImpsError($imps);
+   }
 
-      my $run = "ga +update $e";
-      $run = "ga +meta" if $e =~ /GusApplication/;
-      $Self->userError("The md5 checksum of ${e}'s executable file (cvs revision $cvsRevision) doesn't match the md5 checksum in the database for that plugin and revision. IE, the plugin has been changed but not commited and updated.  Please:
+   elsif ($Self->getArgs->{commit} &&
+	    $imps->[0]->{EXECUTABLE_MD5} ne $PlugIn->getCheckSum()) {
+     $Self->wrongChecksumError($PlugIn);
+   }
+
+   return $Self->makeImplementation($PlugIn, $imps->[0]);
+}
+
+sub registerPlugin {
+  my ($self, $plugin) = @_;
+
+  my $pluginNm = $plugin->getName;
+
+  my $sql = "select * from core.algorithmimplementation where executable = '$pluginNm'";
+  my $imps = $plugin->sql_get_as_hash_refs($sql);
+
+  my $gaCmd;
+  if ($pluginNm eq "GUS::PluginMgr::GusApplication") {
+    $gaCmd = "ga +meta --commit";
+  } else {
+    $gaCmd = "ga +update $pluginNm --commit";
+    $gaCmd = "ga +create $pluginNm --commit" if (scalar @$imps == 0);
+  }
+  $self->runRegisterCmd($gaCmd, $pluginNm);
+}
+
+sub runRegisterCmd {
+  my ($self, $gaCmd, $pluginName) = @_;
+
+  $self->log("-------- Registering $pluginName -------------");
+  system($gaCmd);
+  my $status = $? >> 8;
+  $self->error("Failed running '$gaCmd' with stderr:\n $!") if ($status);
+  $self->log("-----------------------------------");
+}
+
+sub tooManyImpsError {
+  my ($self, $imps, $plugin) = @_;
+
+  my $pluginNm = $plugin->getName;
+  my $cvsRevision = $plugin->getCVSRevision;
+
+  my $err = "Found more than one Core.AlgorithmImplementation for exe=$pluginNm cvsRev=$cvsRevision:\n";
+
+  foreach (@$imps) {
+    $err .= "  algimp_id:$_->{ALGORITHM_IMPLEMENTATION_ID}  md5:$_->{EXECUTABLE_MD5}  rev:$_->{CVS_REVISION}  tag:$_->{CVS_TAG}\n";
+  }
+  $self->userError($err);
+}
+
+sub wrongChecksumError {
+  my ($self, $plugin) = @_;
+
+  my $pluginNm = $plugin->getName;
+  my $cvsRevision = $plugin->getCVSRevision;
+
+  my $run = "ga +update $pluginNm";
+  $run = "ga +meta" if $pluginNm =~ /GusApplication/;
+  $self->userError("The md5 checksum of ${pluginNm}'s executable file (cvs revision $cvsRevision) doesn't match the md5 checksum in the database for that plugin and revision. IE, the plugin has been changed but not commited and updated.  Please:
                    - cvs commit the plugin file
                    - use the build system to install it
                    - run '$run --commit'\nAborting");
-   }
+}
 
-   # just right
-   else {
-      my $imp = GUS::Model::Core::AlgorithmImplementation
-      ->new({
-             algorithm_implementation_id => $imps->[0]->{ALGORITHM_IMPLEMENTATION_ID}
-            });
-      if (!$imp->retrieveFromDB) {
-         CBIL::Util::Disp::Display($imps->[0]);
-         $Self->error("findSomeImplementation failed retrieving from db");
-      }
-      return $imp;
-   }
+
+sub makeImplementation {
+  my ($self, $plugin, $impInfo) = @_;
+
+  my $imp = GUS::Model::Core::AlgorithmImplementation
+    ->new({
+	   algorithm_implementation_id => $impInfo->{ALGORITHM_IMPLEMENTATION_ID}
+	  });
+  if (!$imp->retrieveFromDB) {
+    CBIL::Util::Disp::Display($impInfo);
+    $self->error("findSomeImplementation failed retrieving from db");
+  }
+  return $imp;
 }
 
 
