@@ -92,10 +92,9 @@ PLUGIN_NOTES
      })
     ];
 
-  $self->initialize({requiredDbVersion => {},
+  $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision: 2892 $', # cvs fills this in!
 		     name => ref($self),
-		     revisionNotes => 'make consistent with GUS 3.5',
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
 		    });
@@ -208,8 +207,9 @@ sub processPrimerPair{
   my $aSequenceOntId = GUS::Model::SRes::SequenceOntology->new({ 'term_name' => $amplicon_ont });
   $aSequenceOntId->retrieveFromDB() || die "Unable to obtain sequence_ontology_id from sres.sequenceontology with term_name = $amplicon_ont";
   my $amplicon_seq_ontology_id= $aSequenceOntId->getId();
+  $desc=~s/\"//g;
 
-  print "amplicon:<$amplicon_seq_version>\t<$desc>\t<$amplicon_seq_type_id>\t<$amplicon_seq_ontology_id>\t<$taxon_id>\t<$amplicon_seq>\t<$amplicon_length>\t<$ext_db_rel_id>\t<$source_id>\n";
+  #print "amplicon:<$amplicon_seq_version>\t<$desc>\t<$amplicon_seq_type_id>\t<$amplicon_seq_ontology_id>\t<$taxon_id>\t<$amplicon_seq>\t<$amplicon_length>\t<$ext_db_rel_id>\t<$source_id>\n";
 
   my $amplicon = GUS::Model::DoTS::VirtualSequence->new
     ({'sequence_version'=>$amplicon_seq_version,
@@ -238,7 +238,7 @@ sub processPrimerPair{
   my $for_source_id = $source_id."_F";
   my $for_name = "forward primer for ".$source_id; #???
 
-  print "for_primer:<$primer_seq_version>\t<$for_desc>\t<$primer_seq_type_id>\t<$for_seq_ontology_id>\t<$taxon_id>\t<$for_primer>\t<$for_primer_length>\t<$ext_db_rel_id>\t<$for_source_id>\t<$for_name>\n";
+  #print "for_primer:<$primer_seq_version>\t<$for_desc>\t<$primer_seq_type_id>\t<$for_seq_ontology_id>\t<$taxon_id>\t<$for_primer>\t<$for_primer_length>\t<$ext_db_rel_id>\t<$for_source_id>\t<$for_name>\n";
 
   my $fprimer  = GUS::Model::DoTS::ExternalNASequence->new
     ({'sequence_version'=>$primer_seq_version,
@@ -261,10 +261,10 @@ sub processPrimerPair{
 
   my $rev_desc = "reverse primer for ".$desc; # ????
   my $rev_source_id = $source_id."_R";
-  my $rev_name = "reverse_primer for ".$source_id; #???
+  my $rev_name = "reverse primer for ".$source_id; #???
   my $rev_dist_from_left = ($amplicon_length - $rev_primer_length + 1); #???
 
-  print "rev_primer:<$primer_seq_version>\t<$rev_desc>\t<$primer_seq_type_id>\t<$rev_seq_ontology_id>\t<$taxon_id>\t<$rev_primer>\t<$rev_primer_length>\t<$ext_db_rel_id>\t<$rev_source_id>\t<$rev_name>\n";
+  #print "rev_primer:<$primer_seq_version>\t<$rev_desc>\t<$primer_seq_type_id>\t<$rev_seq_ontology_id>\t<$taxon_id>\t<$rev_primer>\t<$rev_primer_length>\t<$ext_db_rel_id>\t<$rev_source_id>\t<$rev_name>\n";
 
   my $rprimer  = GUS::Model::DoTS::ExternalNASequence->new
     ({'sequence_version'=>$primer_seq_version,
@@ -282,8 +282,8 @@ sub processPrimerPair{
   $fprimer->submit();
   $rprimer->submit();
   
-  print "fpiece:<$for_seq_order>\t<$for_dist_from_left>\t<$for_strand>\n";
-  print "rpiece:<$rev_seq_order>\t<$rev_dist_from_left>\t<$rev_strand>\n";
+  #print "fpiece:<$for_seq_order>\t<$for_dist_from_left>\t<$for_strand>\n";
+  #print "rpiece:<$rev_seq_order>\t<$rev_dist_from_left>\t<$rev_strand>\n";
 
   my $fpiece   = GUS::Model::DoTS::SequencePiece->new
     ({'virtual_na_sequence_id' => $amplicon->getId(),
@@ -303,7 +303,13 @@ sub processPrimerPair{
   $rpiece->submit();
 
   if ($self->getArg('writeFile')) {
-    print WF "$fprimer->getId()\t$rprimer->getId()\t$fpiece->getId()\t$rpiece->getId()\t$amplicon->getId()\n";
+    #print WF $fprimer->getId(),"\t" ,$rprimer->getId(),"\t", $fpiece->getId(),"\t", $rpiece->getId(),"\t", $amplicon->getId(),"\n";
+    print WF $fprimer->getId(), "\t$primer_seq_version\t$for_desc\t$primer_seq_type_id\t$for_seq_ontology_id\t$taxon_id\t$for_primer\t$for_primer_length\t$ext_db_rel_id\t$for_source_id\t$for_name\t";
+    print WF $rprimer->getId(), "\t$primer_seq_version\t$rev_desc\t$primer_seq_type_id\t$rev_seq_ontology_id\t$taxon_id\t$rev_primer\t$rev_primer_length\t$ext_db_rel_id\t$rev_source_id\t$rev_name\t";
+    print WF $fpiece->getId(), "\t$for_seq_order\t$for_dist_from_left\t$for_strand\t";
+    print WF $rpiece->getId(), "\t$rev_seq_order\t$rev_dist_from_left\t$rev_strand\t";
+    print WF $amplicon->getId(), "\t$amplicon_seq_version\t$desc\t$amplicon_seq_type_id\t$amplicon_seq_ontology_id\t$taxon_id\t$amplicon_seq\t$amplicon_length\t$ext_db_rel_id\t$source_id\n";
+
   }
 
 }
