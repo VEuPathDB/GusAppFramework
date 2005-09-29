@@ -412,6 +412,9 @@ sub doMajorMode_Meta {
 
    $alg_go->setGlobalNoVersion(1);
    $alg_go->submit;
+   $Self->logData('INFO', "ga registered with cvs revision '$cvsRevision'");
+   $Self->logData('INFO', "...Just kidding: you didn't --commit")
+	unless ($Self->getArgs->{commit});
 
 }
 
@@ -895,7 +898,7 @@ sub create_or_update_implementation {
       $alg_gus->submit;
       $Self->logData('INFO', "Plugin $plugin_name_s registered with cvs revision '$cvsRevision'");
       $Self->logData('INFO', "...Just kidding: you didn't --commit")
-      unless ($Self->getArgs->{commit});
+	unless ($Self->getArgs->{commit});
    }
 }
 
