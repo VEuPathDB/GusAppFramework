@@ -1,4 +1,4 @@
-package GUS::Suppported::SequenceIterator;
+package GUS::Supported::SequenceIterator;
 
 use strict;
 use vars qw(@ISA);
