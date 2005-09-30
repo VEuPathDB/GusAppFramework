@@ -888,10 +888,11 @@ sub getTaxonId {
   }
 
 
-  return $self->getIdFromCache('taxonIdCache',
+  return $self->getIdFromCache('taxonNameCache',
 			       $sciName,
 			       'GUS::Model::SRes::TaxonName',
 			       "name",
+			       "taxon_id"
 			      );
 
 }
@@ -964,7 +965,7 @@ sub handleExonlessRRNA {
 ##############################################################################
 
 sub getIdFromCache {
-  my ($self, $cacheName, $name, $type, $field) = @_;
+  my ($self, $cacheName, $name, $type, $field, $idColumn) = @_;
 
   if ($self->{$cacheName} == undef) {
     $self->{$cacheName}= {};
@@ -976,7 +977,11 @@ sub getIdFromCache {
     my $obj = $type->new({$field => $name });
     $obj->retrieveFromDB() 
       || die "Failed to retrieve $type id for $field = '$name'";
-    $self->{$cacheName}->{$name} = $obj->getId();
+    if ($idColumn) {
+      $self->{$cacheName}->{$name} = $obj->get($idColumn);
+    } else {
+      $self->{$cacheName}->{$name} = $obj->getId();
+    }
   }
   return $self->{$cacheName}->{$name};
 }
