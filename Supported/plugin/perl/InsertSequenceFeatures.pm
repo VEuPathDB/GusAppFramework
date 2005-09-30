@@ -220,21 +220,11 @@ my $argsDeclaration  =
 	      isList => 0
 	     }),
 
-   enumArg({name => 'gffFormat',
-	      descr => 'Format (version) of GFF, if GFF is the input format',
-	      constraintFunc=> undef,
-	      reqd  => 0,
-	      isList => 0,
-	      enum=>"2,3",
-              default => 2,
-	     }),
-
    stringArg({name => 'gff2GroupTag',
 	      descr => 'Name of the tag to be used for GFF2 grouping',
 	      constraintFunc=> undef,
 	      reqd  => 0,
 	      isList => 1,
-              default => "GenePrediction,Gene",
 	     }),
 
    stringArg({name => 'extDbName',
@@ -451,20 +441,11 @@ sub convertGFFStreamToSeqIO {
   $self->userError("For now, gff formats only support a single file")
     if (-d $self->getArg('inputFileOrDir'));
 
+  my @aggregators = $self->makeAggregators($gffVersion);
+
   my $gffIO = Bio::Tools::GFF->new(-file => $self->getArg('inputFileOrDir'),
 				   -gff_format => $gffVersion
 				  );
-
-  # a list of "standard" feature aggregator types for GFF2 support;
-  # only "processed_transcript" for now, but leaving room for others
-  # if necessary.
-  my @aggregators = qw(Bio::DB::GFF::Aggregator::processed_transcript);
-
-  # build Feature::Aggregator objects for each aggregator type:
-  @aggregators =
-    map {
-      Feature::Aggregator->new($_, $self->getArg("gff2GroupTag"));
-    } @aggregators;
 
   my %seqs; my @seqs;
   while (my $feature = $gffIO->next_feature()) {
@@ -477,7 +458,7 @@ sub convertGFFStreamToSeqIO {
 			     -accession_number => $seq_id,
 			   );
 
-    if ($self->getArg('gffFormat') < 3) {
+    if ($gffVersion < 3) {
       # GFF2 - use group aggregators to re-nest subfeatures
       for my $aggregator (@aggregators) {
 	$aggregator->aggregate($features);
@@ -548,6 +529,26 @@ sub convertGFFStreamToSeqIO {
   }
 
   return GUS::Supported::SequenceIterator->new(\@seqs);
+}
+
+sub makeAggregators {
+  my ($self, $gffVersion) = @_;
+
+  return undef if ($gffVersion != 2);
+
+  $self->userError("Must supply --gff2GroupTag if using GFF2 format") unless $self->getArg("gff2GroupTag");
+
+  # a list of "standard" feature aggregator types for GFF2 support;
+  # only "processed_transcript" for now, but leaving room for others
+  # if necessary.
+  my @aggregators = qw(Bio::DB::GFF::Aggregator::processed_transcript Bio::DB::GFF::Aggregator::transcript);
+
+  # build Feature::Aggregator objects for each aggregator type:
+  @aggregators =
+    map {
+      Feature::Aggregator->new($_, $self->getArg("gff2GroupTag"));
+    } @aggregators;
+  return @aggregators;
 }
 
 ###########################################################################
