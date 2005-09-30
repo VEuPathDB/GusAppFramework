@@ -26,19 +26,17 @@ else {
 
 
 while(<F>) {
-  if ($query) {
-    $_ =~ />(\S+)\s/;
-    push (@ids,$1);
+  if ($query && $_ =~ /^>(\S+)\s\((\d+)\ssubjects/) {
+    push (@ids,$1) if $2 >= 1;
   }
-  if ($subject) {
-   $_ =~ /Sum:\s(\S+):/;
+  if ($subject &&  $_ =~ /Sum:\s(\S+?):/) {
     push (@ids,$1);
   }
 }
 
 close (F);
 
-open (OUT,">>$outFile") || "Can't open $outFile for writing\n";
+open (OUT,">$outFile") || "Can't open $outFile for writing\n";
 
 foreach my $id (@ids) {
   print OUT "$id\n";
