@@ -23,7 +23,7 @@ sub getMapperByFeatureName {
   my ($self, $featureName) = @_;
 
   if (!$self->{mappersByName}->{$featureName}) {
-    die "Map XML file '$self->{mapXmlFile}' does not contain a <feature name=\"${featureName}\">, which is found in the input";
+    die "Map XML file '$self->{mapXmlFile}' does not contain a <feature name=\"${featureName}\">, which is found in the input\n";
   }
 
   return $self->{mappersByName}->{$featureName};
@@ -70,7 +70,7 @@ sub _parseMapFile {
     my $handlerClass = $handler->{class};
     $self->{qualifierHandlers}->{$name} = 
       eval "{require $handlerClass; $handlerClass->new()}";
-    if ($@) { die "Cannot import or construct new object for qualifier handler class '$handlerClass'\n $@"; }
+    if ($@) { die "Cannot import or construct new object for qualifier handler class '$handlerClass'\n $@\n"; }
     $self->{qualifierHandlers}->{$name}->setPlugin($plugin);
   }
 }
