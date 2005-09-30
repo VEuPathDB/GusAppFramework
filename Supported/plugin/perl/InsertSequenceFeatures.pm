@@ -335,7 +335,6 @@ sub new {
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
 		    });
-
   return $self;
 }
 
