@@ -16,7 +16,14 @@ if((!$blastSimFile || !$outFile || (!$query && !$subject)) || ($query && $subjec
 }
 
 my @ids;
-open (F,$blastSimFile) || die "Can't open $blastSimFile\n";
+
+if ($blastSimFile =~ /gz$/) {
+  open(F, "gunzip -c $blastSimFile |") || die "Can't open $blastSimFile\n";
+}
+else {
+  open(F,"$blastSimFile") || die "Can't open $blastSimFile\n";
+}
+
 
 while(<F>) {
   if ($query) {
