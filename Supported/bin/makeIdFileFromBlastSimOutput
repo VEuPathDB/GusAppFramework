@@ -1,0 +1,40 @@
+#!@perl@
+
+use strict;
+use Getopt::Long;
+
+
+my ($query,$subject,$blastSimFile,$outFile);
+&GetOptions("query!"=> \$query,
+            "subject!"=> \$subject, 
+            "blastSimFile=s" => \$blastSimFile,
+	    "outFile=s" => \$outFile);
+
+if((!$blastSimFile || !$outFile || (!$query && !$subject)) || ($query && $subject)){
+	die "extracts either (not both) the query or subject identifiers from a BLAST similarity output file
+             usage: --outFile --blastSimFile --query|--subject\n";
+}
+
+my @ids;
+open (F,$blastSimFile) || die "Can't open $blastSimFile\n";
+
+while(<F>) {
+  if ($query) {
+    $_ =~ />(\S+)\s/;
+    push (@ids,$1);
+  }
+  if ($subject) {
+   $_ =~ /Sum:\s(\S+):/;
+    push (@ids,$1);
+  }
+}
+
+close (F);
+
+open (OUT,">>$outFile") || "Can't open $outFile for writing\n";
+
+foreach my $id (@ids) {
+  print OUT "$id\n";
+}
+
+close (OUT);
