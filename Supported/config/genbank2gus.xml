@@ -160,7 +160,7 @@
     <qualifier name="db_xref" handler="standard" method="dbXRef"/>
   </feature>
 
-  <feature name="gap" table="DoTS::Transcript" so="">
+  <feature name="gap" table="DoTS::ScaffoldGapFeature" so="">
     <qualifier name="estimated_length" handler="standard" method="gapLength"/>
     <qualifier name="map"/>
     <qualifier name="note" handler="standard" method="note"/>
