@@ -241,47 +241,6 @@ my $argsDeclaration  =
 	      isList => 0
 	     }),
 
-   stringArg({name => 'downloadURL',
-	      descr => 'URL from whence this file came should include filename',
-	      constraintFunc=> undef,
-	      reqd  => 0,
-	      isList => 0
-	     }),
-
-   stringArg({name => 'extDbRlsDate',
-	      descr => 'Release date of external data source',
-	      constraintFunc=> undef,
-	      reqd  => 0,
-	      isList => 0
-	     }),
-
-   stringArg({name => 'filename',
-	      descr => 'Name of the file in the resource (including path)',
-	      constraintFunc=> undef,
-	      reqd  => 0,
-	      isList => 0
-	     }),
-
-   stringArg({name => 'description',
-	      descr => 'a quoted description of the resource, should include the download date',
-	      constraintFunc=> undef,
-	      reqd  => 0,
-	      isList => 0
-	     }),
-
-   stringArg({name => 'failDir',
-	      descr => 'where to place a failure log',
-	      constraintFunc=> undef,
-	      reqd  => 0,
-	      isList => 0
-	     }),
-
-   stringArg({name => 'projectName',
-	      descr => 'project this data belongs to - must in entered in GUS',
-	      constraintFunc=> undef,
-	      reqd  => 0,
-	      isList => 0
-	     }),
 
    stringArg({name => 'defaultOrganism',
 	      descr => 'The organism name to use if a sequence in the input file does not provide organism information.  Eg "Plasmodium falciparum"',
@@ -290,27 +249,20 @@ my $argsDeclaration  =
 	      isList => 0
 	     }),
 
-   integerArg({name => 'restartPoint',
-	       descr => 'Point at which to restart submitting data.  Format = SEQ:[ID] or FEAT:[ID]',
-	       constraintFunc=> undef,
-	       reqd  => 0,
-	       isList => 0
-	      }),
+   stringArg({name => 'handlerExternalDbs',
+	      descr => "A list of ExternalDatabase names and releases for use by any qualifier handler.  For example, a handler might want to use the EnzymeClass controlled vocab.  To do so, it must access it correctly with an external_database_rls_id.  It can get that using values provided by this argument.  The format is a list of Tag:Name:Release.  Eg, 'enzyme:Enzyme Database:2.1.0'.  The plugin makes the external_databse_rls_id available to the handler with a method getExternalDbRlsIdByTag(\$tag).  The handler must throw a userError() if the tag it expects is not found.  It is an error to provide in this argument a tag more than once.",
+	      constraintFunc=> undef,
+	      reqd  => 0,
+	      isList => 1
+	     }),
 
    integerArg({name => 'testNumber',
-	       descr => 'number of entries to do test on',
+	       descr => 'number of feature trees to do test on',
 	       constraintFunc=> undef,
 	       reqd  => 0,
 	       isList => 0
 	      }),
 
-   booleanArg({name => 'isUpdateMode',
-	       descr => 'whether this is an update mode',
-	       constraintFunc=> undef,
-	       reqd  => 0,
-	       isList => 0,
-	       default => 0,
-	      }),
   ];
 
 
@@ -328,7 +280,7 @@ sub new {
   return $self;
 }
 
-sub run{
+sub run {
   my ($self) = @_;
 
   $self->{mapperSet} =
@@ -336,20 +288,22 @@ sub run{
 
   $self->getSoPrimaryKeys(); ## pre-load into memory and validate
 
+  $self->initHandlerExternalDbs();
+
   my $format = $self->getArg('fileFormat');
-  my $totalFeatureCount=0;
-  my $totalFeatureTreeCount=0;
-  my $totalSeqCount=0;
+  my $self->{totalFeatureCount} = 0;
+  my $self->{totalFeatureTreeCount} = 0;
+  my $totalSeqCount = 0;
   my $fileCount = 0;
 
   my @inputFiles = $self->getInputFiles();
 
   foreach my $inputFile (@inputFiles) {
-    $self->{featureTreeCount} = 0;
-    $self->{immedFeatureCount} = 0;
+    $self->{fileFeatureCount} = 0;
+    $self->{fileFeatureTreeCount} = 0;
     my $seqCount=0;
 
-   $self->log("Processing file '$inputFile'...");
+    $self->log("Processing file '$inputFile'...");
 
     my $bioperlSeqIO = $self->getSeqIO($inputFile);
     while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
@@ -362,17 +316,18 @@ sub run{
       $self->processFeatureTrees($bioperlSeq, $naSequenceId);
 
       $self->undefPointerCache();
+
+      last if $self->checkTestNum();
     }
 
-    $self->log("Processed $inputFile: $format \n\t Seqs Inserted: $seqCount \n\t Features Inserted: $self->{immedFeatureCount} \n\t Feature Trees Inserted: $self->{featureTreeCount}");
-    $totalFeatureCount += $self->{immedFeatureCount};
-    $totalFeatureTreeCount += $self->{featureTreeCount};
+    $self->log("Processed $inputFile: $format \n\t Seqs Inserted: $seqCount \n\t Features Inserted: $self->{fileFeatureCount} \n\t Feature Trees Inserted: $self->{fileFeatureTreeCount}");
     $totalSeqCount += $seqCount;
     $fileCount++;
+    last if $self->checkTestNum();
   }
 
   my $fileOrDir = $self->getArg('inputFileOrDir');
-  $self->setResultDescr("Processed $fileCount files from $fileOrDir: $format \n\t Total Seqs Inserted: $totalSeqCount \n\t Total Features Inserted: $totalFeatureCount \n\t Total Feature Trees Inserted: $totalFeatureTreeCount");
+  $self->setResultDescr("Processed $fileCount files from $fileOrDir: $format \n\t Total Seqs Inserted: $totalSeqCount \n\t Total Features Inserted: $self->{totalFeatureCount} \n\t Total Feature Trees Inserted: $self->{totalFeatureTreeCount}");
 }
 
 sub unflatten {
@@ -755,10 +710,12 @@ sub processFeatureTrees {
       next;
     }
     $NAFeature->submit();
-    $self->{featureTreeCount}++;
-    $self->log("Inserted $self->{featureTreeCount} feature trees") 
-      if $self->{featureTreeCount} % 100 == 0;
+    $self->{fileFeatureTreeCount}++;
+    $self->{totalFeatureTreeCount}++;
+    $self->log("Inserted $self->{fileFeatureTreeCount} feature trees") 
+      if $self->{fileFeatureTreeCount} % 100 == 0;
     $self->undefPointerCache();
+    last if $self->checkTestNum();
   }
 }
 
@@ -822,7 +779,8 @@ sub makeImmediateFeature {
     return undef if $ignoreFeature;
   }
 
-  $self->{immedFeatureCount}++;
+  $self->{fileFeatureCount}++;
+  $self->{totalFeatureCount}++;
   return $feature;
 }
 
@@ -964,6 +922,13 @@ sub handleExonlessRRNA {
 # Utilities
 ##############################################################################
 
+sub checkTestNum {
+  my ($self) = @_;
+
+  return $self->getArg('testNum')
+    && $self->getArg('testNum') == $self->{totalFeatureTreeCount};
+}
+
 sub getIdFromCache {
   my ($self, $cacheName, $name, $type, $field, $idColumn) = @_;
 
@@ -1025,6 +990,33 @@ and so_cvs_version = '$soCvsVersion'
   my $mappingFile = $self->getArg('mapFile');
   (scalar(@badSoTerms) == 0) or $self->userError("Mapping file '$mappingFile' or cmd line args are using the following SO terms that are not found in the database for SO CVS version '$soCvsVersion': " . join(", ", @badSoTerms));
 }
+
+sub initHandlerExternalDbs {
+  my ($self) = @_;
+
+  $self->{handlerExternalDbRlsIds} = {};
+
+  return unless $self->getArg('handlerExternalDbs');
+
+  my @dbDescriptors = $self->getArg('handlerExternalDbs');
+
+  foreach my $dbDescriptor (@dbDescriptors) {
+    my @split = split(/\:/, $dbDescriptor);
+    $self->userError("Invalid argument to --handlerExternalDbs: '$dbDescriptor'") unless scalar(@split) == 3;
+    my ($tag, $dbName, $dbRelease) = @split;
+    $self->userError("Argument --handlerExternalDbs uses tag '$tag' more than once")
+      if $self->{handlerExternalDbRlsIds}->{$tag};
+    my $dbRlsId = $self->getExtDbRlsId($dbName, $dbRelease);
+    $self->{handlerExternalDbRlsIds}->{$tag} = $dbRlsId;
+  }
+}
+
+sub getExternalDbRlsIdByTag {
+  my ($self, $tag) = @_;
+
+  return $self->{handlerExternalDbRlsIds}->{$tag};
+}
+
 
 ############################################################################
 # Aggregator private class
