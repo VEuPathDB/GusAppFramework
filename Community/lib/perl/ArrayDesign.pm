@@ -247,7 +247,7 @@ sub load_data {
 	  $featureparams{index}  = 	$attrs[$cellHeader{QC_INDEX}];
 	}
 
-	my $feature = Bio::Expression::Microarray::Affymetrix::Feature->new( %featureparams );
+	my $feature = GUS::Community::Feature->new( %featureparams );
 	$self->matrix($attrs[$blockHeader{'UNIT_X'}],$attrs[$blockHeader{UNIT_Y}],\$feature);
 	$featuregroup->add_feature($feature);
   }
