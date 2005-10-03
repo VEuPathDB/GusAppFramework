@@ -38,7 +38,7 @@ issues in the codebase.
 
 <h2>Other Resources</h2>
 	<p>Several <a href="http://www.cbil.upenn.edu/downloads/GUS/documentation">Informal notes and presentations</a> 
-        are also available online. You may also <a href="documentation/older/">browse older</a> documentation.
+        are also available online. You may also <a href="documentation/older/">browse older</a> documentation.  Plugin authors should see the <a href="documentation/older/Plugin.html">Plugin API</a> documentation generated using pod.
 	</p>
 	
 <?php include("footer.php"); ?>
