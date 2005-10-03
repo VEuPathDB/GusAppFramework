@@ -1,0 +1,23 @@
+gusConfigFile=/home/pinney/gus35/gus.properties 
+pipelineDir=/files/cbil/data/cbil/toxoDb/1.0.0/pipeline
+downloadDir=/files/cbil/data/cbil/toxoDb/1.0.0/pipeline/downloads
+
+commit="--commit"
+dbcommit="--commit"
+
+ncbiTaxId=5811
+
+taxonomy.restart=1
+
+genomeSrcIdRegEx="^>(\S+)"
+
+project_name=toxoDB
+
+ToxoSageTags.3PrimeConfigFile=config/3PrimeConfigFile
+ToxoSageTags.5PrimeConfigFile=config/5PrimeConfigFile
+ToxoSageTags.Contact=",Michael,White"
+ToxoSageTags.OntologyEntryValue="SAGE"
+ToxoSageTagResults.arrayDesignName="T. gondii 3p SAGE tags from M. White lab"
+ToxoSageTagResults.arrayDesignVersion=1
+ToxoSageTagResults.studyName="T. gondii 3p SAGE tag frequencies"
+ToxoSageTagResults.studyDescription="T. gondii 3p SAGE tag frequencies from M. White lab"
