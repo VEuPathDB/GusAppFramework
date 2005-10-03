@@ -120,16 +120,22 @@ This file is where instance-specific information is specified. It should be in t
 This file should be as follows:
 
 mas4=<RAD::Protocol::protocol_id for the Affymetrix MAS 4.0 Probe Set quantification protocol in your instance>
-mas5=<RAD::Protocol::protocol_id for the Affymetrix MAS 5.0 Probe Set quantification protocol in your instance>
-cel4=<RAD::Protocol::protocol_id for the Affymetrix MAS 4.0 Probe Cell quantification protocol in your instance>
-cel5=<RAD::Protocol::protocol_id for the Affymetrix MAS 5.0 Probe Cell quantification protocol in your instance>
-rmaexpress=<RAD::Protocol::protocol_id for the RMAExpress quantification protocol in your instance>
-moid=<RAD::Protocol::protocol_id for the MOID quantification protocol in your instance>
-genepix=<RAD::Protocol::protocol_id for the GenePix quantification protocol in your instance>
-arrayvision=<RAD::Protocol::protocol_id for the ArrayVision quantification protocol in your instance>
-filePath=<The path on your server where the data files are stored>
 
-e.g. at CBIL the filePath might be "/files/cbil/data/cbil/RAD/"
+mas5=<RAD::Protocol::protocol_id for the Affymetrix MAS 5.0 Probe Set quantification protocol in your instance>
+
+cel4=<RAD::Protocol::protocol_id for the Affymetrix MAS 4.0 Probe Cell quantification protocol in your instance>
+
+cel5=<RAD::Protocol::protocol_id for the Affymetrix MAS 5.0 Probe Cell quantification protocol in your instance>
+
+rmaexpress=<RAD::Protocol::protocol_id for the RMAExpress quantification protocol in your instance>
+
+moid=<RAD::Protocol::protocol_id for the MOID quantification protocol in your instance>
+
+genepix=<RAD::Protocol::protocol_id for the GenePix quantification protocol in your instance>
+
+arrayvision=<RAD::Protocol::protocol_id for the ArrayVision quantification protocol in your instance>
+
+filePath=<The path on your server where the data files are stored>, e.g. at CBIL the filePath might be "/files/cbil/data/cbil/RAD/"
 
 =head2 F<xmlFile>
 
@@ -174,53 +180,7 @@ sub new {
 
 # global hash reference
 my $globalRef;
-my @properties =
-  (
-   ["mas4", "", ""],
-   ["mas5", "", ""],
-   ["genepix", "", ""],
-   ["arrayvision", "", ""],
-   ["rmaexpress", "", ""],
-   ["cel4", "", ""],
-   ["cel5", "", ""],
-   ["moid", "", ""]
-  ); 
-$self->{'propertySet'} = CBIL::Util::PropertySet->new($self->getArg('cfgFile'), \@properties);
-
-$globalRef->{'softwareName2Id'} =
-  {
-   'mas4'=>$self->{'propertySet'}->getProp("mas4"),
-   'mas5'=>$self->{'propertySet'}->getProp("mas5"),
-   'genepix'=>$self->{'propertySet'}->getProp("genepix"),
-   'arrayvision'=>$self->{'propertySet'}->getProp("arrayvision"),
-   'rmaexpress'=>$self->{'propertySet'}->getProp("rmaexpress"),
-   'cel4'=>$self->{'propertySet'}->getProp("cel4"),
-   'cel5'=>$self->{'propertySet'}->getProp("cel5"),
-   'moid' =>$self->{'propertySet'}->getProp("moid"),
-  };
-
-$globalRef->{'arraySubclassView'} =
-  {
-   'mas4'=>'ShortOligoFamily',
-   'mas5'=>'ShortOligoFamily',
-   'genepix'=>'Spot',
-   'arrayvision'=>'Spot',
-   'rmaexpress'=>'ShortOligoFamily',
-   'moid' => 'ShortOligoFamily',
-  };
-
-$globalRef->{'resultSubclassView'} =
-  {
-   'mas4'=>'AffymetrixMAS4',
-   'mas5'=>'AffymetrixMAS5',
-   'genepix'=>'GenePixElementResult',
-   'arrayvision'=>'ArrayVisionElementResult',
-   'rmaexpress'=>'RMAExpress',
-   'moid' => 'MOIDResult',
-  };
-
-my @SINGLE_CHANNEL = qw(mas4 mas5 rmaexpress moid);
-
+my @singleChannelSoftware = qw(mas4 mas5 rmaexpress moid);
 
 sub run {
   
@@ -232,8 +192,7 @@ sub run {
   
   my $dbh = $self->getQueryHandle();
   $self->checkArgs($dbh);
-  
-  $globalRef->{'protocolId'} = $globalRef->{'softwareName2Id'}->{$self->getArg('software')};
+  $self->initializeGlobalRef();
 
   my $infoQ = GUS::Community::Utils::InformationQueries->new($dbh);
 
@@ -248,7 +207,7 @@ sub run {
   my @assayIds = @{$self->getAssayIds($dbh)};
   
   # skip certain assays if specified
-  if ($self->getArgs('skip')) {
+  if ($self->getArg('skip')) {
     my @skipLists = @{$self->getArg('skip')};
     my $str = join ",", @skipLists;
     $self->log("STATUS","The following assays will be skipped for data loading: $str");
@@ -395,6 +354,60 @@ sub checkArgs {
  }
 }
 
+sub initializeGlobalRef {
+  my ($self) = @_;
+  
+  my @properties =
+    (
+     ["mas4", "", ""],
+     ["mas5", "", ""],
+     ["genepix", "", ""],
+     ["arrayvision", "", ""],
+     ["rmaexpress", "", ""],
+     ["cel4", "", ""],
+     ["cel5", "", ""],
+     ["moid", "", ""],
+     ["filePath", "", ""]
+    ); 
+  my $propertySet = CBIL::Util::PropertySet->new($self->getArg('cfgFile'), \@properties);
+  
+  $globalRef->{'filePath'} = $propertySet->getProp("filePath");
+  
+  $globalRef->{'softwareName2Id'} =
+  {
+   'mas4'=>$propertySet->getProp("mas4"),
+   'mas5'=>$propertySet->getProp("mas5"),
+   'genepix'=>$propertySet->getProp("genepix"),
+   'arrayvision'=>$propertySet->getProp("arrayvision"),
+   'rmaexpress'=>$propertySet->getProp("rmaexpress"),
+   'cel4'=>$propertySet->getProp("cel4"),
+   'cel5'=>$propertySet->getProp("cel5"),
+   'moid' =>$propertySet->getProp("moid")
+  };
+  
+  $globalRef->{'protocolId'} = $globalRef->{'softwareName2Id'}->{$self->getArg('software')};
+  
+  $globalRef->{'arraySubclassView'} =
+    {
+     'mas4'=>'ShortOligoFamily',
+     'mas5'=>'ShortOligoFamily',
+     'genepix'=>'Spot',
+     'arrayvision'=>'Spot',
+     'rmaexpress'=>'ShortOligoFamily',
+     'moid' => 'ShortOligoFamily',
+    };
+  
+  $globalRef->{'resultSubclassView'} =
+    {
+     'mas4'=>'AffymetrixMAS4',
+     'mas5'=>'AffymetrixMAS5',
+     'genepix'=>'GenePixElementResult',
+     'arrayvision'=>'ArrayVisionElementResult',
+     'rmaexpress'=>'RMAExpress',
+     'moid' => 'MOIDResult',
+    };
+}
+
 ###################################################################
 # getAssayIds ($dbh)
 # Function:
@@ -452,7 +465,7 @@ sub retrieveQuantifications{
 #-----------------------
   my ($self, $dbh, $assayId) = @_;
 
-  my $infoQ = GUS::RAD::Community::InformationQueries->new($dbh);
+  my $infoQ = GUS::Community::Utils::InformationQueries->new($dbh);
   my $assayInfo = $infoQ->getAssayInfo($assayId);
 
   # get arrayInfo
@@ -462,7 +475,7 @@ sub retrieveQuantifications{
   my @acqs = @{$assayInfo->{'acquisitions'}};
 
   # get quantifications
-  if (scalar(grep {$self->getArg('software') eq $_} @SINGLE_CHANNEL) ==1) {
+  if (scalar(grep {$self->getArg('software') eq $_} @singleChannelSoftware) ==1) {
     # if the quantification is from MAS4, MAS5, RMAExpress or MOID
     $globalRef->{'is2channel'} = 0;
 
@@ -705,7 +718,7 @@ sub runArrayResultLoader {
      system("ga GUS::Community::Plugin::LoadSimpleArrayResults --data_file $dataFile --array_design_id $arrayDesignId --quantification_id $Rqid --array_subclass_view $arraySubclassView --result_subclass_view $resultSubclassView --project '$projectName' --group '$groupName' --log_path $logPath $testnumberString $commitString");
    }
   else {
-    system("ga GUS::Community::Plugin::LoadSimpleArrayResults --data_file $dataFile --array_design_id $array_design_id --quantification_id $Rqid --rel_quantification_id $Gqid --array_subclass_view $arraySubclassView --result_subclass_view $resultSubclassView --project '$projectName' --group '$groupName' --log_path $logPath $testnumberString $commitString");
+    system("ga GUS::Community::Plugin::LoadSimpleArrayResults --data_file $dataFile --array_design_id $arrayDesignId --quantification_id $Rqid --rel_quantification_id $Gqid --array_subclass_view $arraySubclassView --result_subclass_view $resultSubclassView --project '$projectName' --group '$groupName' --log_path $logPath $testnumberString $commitString");
   }
 }
 
@@ -795,7 +808,7 @@ sub parseARlogs{
 sub createDataFile{
   #------------------
   my ($self, $dbh, $assayId, $quantInfo, $fileTranslator) = @_;
-  my $filePath = $self->{propertySet}->getProp("filePath");
+  my $filePath = $globalRef->{'filePath'};
   $filePath .= "/" if ($filePath !~ m/(.+)\/$/);
   
   # translate input file to output according to the mapping xmlFile
