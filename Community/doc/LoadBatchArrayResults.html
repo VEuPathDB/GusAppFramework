@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>GUS::RAD::Plugin::BatchArrayResultLoader -  Loads into the appropriate view of RAD3.ElementResultImp quantification data from a collection of files all having the same format.</title>
+<title>GUS::Community::Plugin::LoadBatchArrayResults -  Loads into the appropriate view of RAD::ElementResultImp quantification data from a collection of files all having the same format.</title>
 <link rev="made" href="mailto:root@localhost" />
 </head>
 
@@ -22,12 +22,12 @@
 	<li><a href="#notes">NOTES</a></li>
 	<ul>
 
-		<li><a href="#assay_id_file"><em>assay_id_file</em></a></li>
-		<li><a href="#cfg_file"><em>cfg_file</em></a></li>
-		<li><a href="#warning_(for_noncbil_instances)"><em>Warning (for non-CBIL Instances)</em></a></li>
+		<li><a href="#assayidfile"><em>assayIdFile</em></a></li>
+		<li><a href="#cfgfile"><em>cfgFile</em></a></li>
+		<li><a href="#xmlfile"><em>xmlFile</em></a></li>
 	</ul>
 
-	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
 	<li><a href="#copyright">COPYRIGHT</a></li>
 </ul>
 <!-- INDEX END -->
@@ -36,31 +36,31 @@
 <p>
 </p>
 <h1><a name="name">NAME</a></h1>
-<p>GUS::RAD::Plugin::BatchArrayResultLoader -  Loads into the appropriate view of RAD3.(Composite)ElementResultImp quantification data from a collection of files all having the same format.</p>
+<p>GUS::Community::Plugin::LoadBatchArrayResults -  Loads into the appropriate view of RAD::(Composite)ElementResultImp quantification data from a collection of files all having the same format.</p>
 <p>
 </p>
 <hr />
 <h1><a name="synopsis">SYNOPSIS</a></h1>
-<p>ga GUS::RAD::Plugin::BatchArrayResultLoader --help</p>
-<p>ga GUS::RAD::Plugin::BatchArrayResultLoader --helpHTML</p>
-<p>ga GUS::RAD::Plugin::BatchArrayResultLoader [--study_id integer] [--assay_id_file file] --cfg_file file --software string --log_path string [--test_num_line integer] [--test_num_assay integer] [--skip string-list] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
+<p>ga GUS::Community::Plugin::LoadBatchArrayResults --help</p>
+<p>ga GUS::Community::Plugin::LoadBatchArrayResults --helpHTML</p>
+<p>ga GUS::Community::Plugin::LoadBatchArrayResults [--studyId integer] [--assayIdFile file] --cfgFile file --xmlFile file --software string --logPath string [--testNumLine integer] [--testNumAssay integer] [--skip string-list] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
 <p>
 </p>
 <hr />
 <h1><a name="description">DESCRIPTION</a></h1>
-<p>This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) an xml configuration file, and (iii) a quantification protocol or software (one of: <em>MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, and MOID</em>). The plugin then uploads into the appropriate view of RAD3.(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. <em>If any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded</em>.</p>
+<p>This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) a property file, (iii) an xml configuration file, and (iv) a quantification protocol or software (one of: <em>MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, and MOID</em>). The plugin then uploads into the appropriate view of RAD::(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. <em>If any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded</em>.</p>
 <p>
 </p>
 <hr />
 <h1><a name="tables_affected">TABLES AFFECTED</a></h1>
 <dl>
-<dt><strong><a name="item_rad3%3a%3aelementresultimp"><strong>RAD3::ElementResultImp</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3aelementresultimp"><strong>RAD::ElementResultImp</strong></a></strong><br />
 </dt>
 <p>Enters the quantification results here, if the protocol is GenePix or ArrayVision</p>
-<dt><strong><a name="item_rad3%3a%3acompositeelementresultimp"><strong>RAD3::CompositeElementResultImp</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3acompositeelementresultimp"><strong>RAD::CompositeElementResultImp</strong></a></strong><br />
 </dt>
 <p>Enters the quantification results here, if the protocol is MAS4.0, MAS5.0, RMAExpress, or MOID</p>
-<dt><strong><a name="item_rad3%3a%3arelatedquantification"><strong>RAD3::RelatedQuantification</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3arelatedquantification"><strong>RAD::RelatedQuantification</strong></a></strong><br />
 </dt>
 <p>Inserts entries in this table for the quantifications at stake, if missing</p>
 <dt><strong><a name="item_core%3a%3aalgorithminvocation"><strong>Core::AlgorithmInvocation</strong></a></strong><br />
@@ -72,40 +72,37 @@
 <hr />
 <h1><a name="tables_depended_on">TABLES DEPENDED ON</a></h1>
 <dl>
-<dt><strong><a name="item_rad3%3a%3astudy"><strong>RAD3::Study</strong></a></strong><br />
+<dt><strong><a name="item_study%3a%3astudy"><strong>Study::Study</strong></a></strong><br />
 </dt>
-<p>The study, if study_id is passed in</p>
-<dt><strong><a name="item_rad3%3a%3astudyassay"><strong>RAD3::StudyAssay</strong></a></strong><br />
+<p>The study, if studyId is passed in</p>
+<dt><strong><a name="item_rad%3a%3astudyassay"><strong>RAD::StudyAssay</strong></a></strong><br />
 </dt>
-<p>The table linking the assays to the study, if study_id is passed in</p>
-<dt><strong><a name="item_rad3%3a%3aassay"><strong>RAD3::Assay</strong></a></strong><br />
+<p>The table linking the assays to the study, if studyId is passed in</p>
+<dt><strong><a name="item_rad%3a%3aassay"><strong>RAD::Assay</strong></a></strong><br />
 </dt>
 <p>The assays passed in</p>
 <dt><strong><a name="item_sres%3a%3aexternaldatabaserelease"><strong>SRes::ExternalDatabaseRelease</strong></a></strong><br />
 </dt>
 <p>The external database relase for the assays passed in</p>
-<dt><strong><a name="item_rad3%3a%3aarray"><strong>RAD3::Array</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3aarraydesign"><strong>RAD::ArrayDesign</strong></a></strong><br />
 </dt>
-<p>The <code>array(s)</code> used in the assays passed in</p>
-<dt><strong><a name="item_rad3%3a%3aontologyentry"><strong>RAD3::OntologyEntry</strong></a></strong><br />
+<p>The array <code>design(s)</code> used in the assays passed in</p>
+<dt><strong><a name="item_study%3a%3aontologyentry"><strong>Study::OntologyEntry</strong></a></strong><br />
 </dt>
-<p>The platform and substrate information for the arrays involved</p>
-<dt><strong><a name="item_rad3%3a%3aacquisition"><strong>RAD3::Acquisition</strong></a></strong><br />
+<p>The technology and substrate information for the arrays involved; also the channels for the acquisitions relative to the assays passed in</p>
+<dt><strong><a name="item_rad%3a%3aacquisition"><strong>RAD::Acquisition</strong></a></strong><br />
 </dt>
 <p>The acquisitions for the assays passed in</p>
-<dt><strong><a name="item_rad3%3a%3aquantification"><strong>RAD3::Quantification</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3aquantification"><strong>RAD::Quantification</strong></a></strong><br />
 </dt>
 <p>The quantifications for the assays passed in</p>
-<dt><strong><a name="item_rad3%3a%3arelatedacquisition"><strong>RAD3::RelatedAcquisition</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3arelatedacquisition"><strong>RAD::RelatedAcquisition</strong></a></strong><br />
 </dt>
 <p>The associations between the acquisitions for the assays passed in</p>
-<dt><strong><strong>RAD3::RelatedQuantification</strong></strong><br />
+<dt><strong><strong>RAD::RelatedQuantification</strong></strong><br />
 </dt>
 <p>The associations between the quantifications for the assays passed in</p>
-<dt><strong><a name="item_rad3%3a%3achannel"><strong>RAD3::Channel</strong></a></strong><br />
-</dt>
-<p>The channels for the acquisitions relative to the assays passed in</p>
-<dt><strong><a name="item_rad3%3a%3aprotocol"><strong>RAD3::Protocol</strong></a></strong><br />
+<dt><strong><a name="item_rad%3a%3aprotocol"><strong>RAD::Protocol</strong></a></strong><br />
 </dt>
 <p>The quantification protocol of interest</p>
 <dt><strong><a name="item_core%3a%3aalgorithm"><strong>Core::Algorithm</strong></a></strong><br />
@@ -126,10 +123,10 @@
 <hr />
 <h1><a name="arguments_in_detail">ARGUMENTS IN DETAIL</a></h1>
 <dl>
-<dt><strong><a name="item_%2d%2dstudy_id_integer">--study_id <em>integer</em></a></strong><br />
+<dt><strong><a name="item_%2d%2dstudyid_integer">--studyId <em>integer</em></a></strong><br />
 </dt>
 <p>The study whose quantification results (obtained with the specified protocol) should be loaded, if one desires to load results for all such quantifications in a study.</p>
-<dt><strong><a name="item_%2d%2dassay_id_file_file">--assay_id_file <em>file</em></a></strong><br />
+<dt><strong><a name="item_%2d%2dassayidfile_file">--assayIdFile <em>file</em></a></strong><br />
 </dt>
 <p>The (full path of the) file containing the list of assay_ids for all the assays whose quantification results (obtained with the specified protocol) should be loaded.</p>
 <dl>
@@ -137,9 +134,9 @@
 </dt>
 </dl>
 <dt></dt>
-<dt><strong><a name="item_file">--cfg_file <em>file</em> (Required)</a></strong><br />
+<dt><strong><a name="item_file">--cfgFile <em>file</em> (Required)</a></strong><br />
 </dt>
-<p>The full path of the cfg_file.</p>
+<p>The full path of the cfgFile.</p>
 <dl>
 <dt><strong>format: See the NOTES for the format of this file</strong><br />
 </dt>
@@ -149,16 +146,28 @@
 </dl>
 </dl>
 <dt></dt>
+<dt><strong>--xmlFile <em>file</em> (Required)</strong><br />
+</dt>
+<p>The full path of the xmlFile.</p>
+<dl>
+<dt><strong>format: See the NOTES for the format of this file</strong><br />
+</dt>
+<dl>
+<dt><strong>mustExist: 1</strong><br />
+</dt>
+</dl>
+</dl>
+<dt></dt>
 <dt><strong><a name="item_string">--software <em>string</em> (Required)</a></strong><br />
 </dt>
 <p>The quantification protocol for the quantifications that should be loaded. Should be one of 'mas4', 'mas5', 'genepix', 'arrayvision', 'rmaexpress', 'moid'.</p>
-<dt><strong>--log_path <em>string</em> (Required)</strong><br />
+<dt><strong>--logPath <em>string</em> (Required)</strong><br />
 </dt>
 <p>The absolute path of the directory where the log files and the data files will be created. The user should have write permission to that directory. This is also where the parsed data files go.</p>
-<dt><strong><a name="item_%2d%2dtest_num_line_integer">--test_num_line <em>integer</em></a></strong><br />
+<dt><strong><a name="item_%2d%2dtestnumline_integer">--testNumLine <em>integer</em></a></strong><br />
 </dt>
 <p>The number of lines in the data file for the first retrieved assay to be tested for loading.</p>
-<dt><strong><a name="item_%2d%2dtest_num_assay_integer">--test_num_assay <em>integer</em></a></strong><br />
+<dt><strong><a name="item_%2d%2dtestnumassay_integer">--testNumAssay <em>integer</em></a></strong><br />
 </dt>
 <p>The number of assays to be tested for loading.</p>
 <dt><strong><a name="item_list">--skip <em>string-list</em> (comma delimited)</a></strong><br />
@@ -228,7 +237,7 @@
 </dt>
 <p>The gus config file to use [note: the default is your $GUS_CONFIG_FILE]</p>
 <dl>
-<dt><strong><a name="item_default%3a_%2fhome%2fmanduchi%2f%2egus%2epropertie">default: /home/manduchi/.gus.properties</a></strong><br />
+<dt><strong><a name="item_default%3a_%2fhome%2fmanduchi%2fgus3%2e5%2f%2egus%">default: /home/manduchi/gus3.5/.gus.properties</a></strong><br />
 </dt>
 <dl>
 <dt><strong><a name="item_format%3a_gus_config_file_format">format: GUS config file format</a></strong><br />
@@ -251,28 +260,35 @@
 </p>
 <hr />
 <h1><a name="notes">NOTES</a></h1>
-<p><strong>Only one of study_id or assay_id_file should be specified in the argument line.</strong></p>
+<p><strong>Only one of studyId or assayIdFile should be specified in the argument line.</strong></p>
 <p>
 </p>
-<h2><a name="assay_id_file"><em>assay_id_file</em></a></h2>
+<h2><a name="assayidfile"><em>assayIdFile</em></a></h2>
 <p>To be used when either not all assays in a study should be considered or when assays from different studies should be considered. Their assay_ids should be provided through this text file. One assay_id per line, empty lines are ignored.</p>
 <p>
 </p>
-<h2><a name="cfg_file"><em>cfg_file</em></a></h2>
-<p>This should be an xml file whose format should be that specified in GUS/RAD/config/FileTranslatorCfg.dtd.
+<h2><a name="cfgfile"><em>cfgFile</em></a></h2>
+<p>This file is where instance-specific information is specified. It should be in the format name=value required by CBIL::Util::PropertySet.
+This file should be as follows:</p>
+<p>mas4=&lt;RAD::Protocol::protocol_id for the Affymetrix MAS 4.0 Probe Set quantification protocol in your instance&gt;</p>
+<p>mas5=&lt;RAD::Protocol::protocol_id for the Affymetrix MAS 5.0 Probe Set quantification protocol in your instance&gt;</p>
+<p>cel4=&lt;RAD::Protocol::protocol_id for the Affymetrix MAS 4.0 Probe Cell quantification protocol in your instance&gt;</p>
+<p>cel5=&lt;RAD::Protocol::protocol_id for the Affymetrix MAS 5.0 Probe Cell quantification protocol in your instance&gt;</p>
+<p>rmaexpress=&lt;RAD::Protocol::protocol_id for the RMAExpress quantification protocol in your instance&gt;</p>
+<p>moid=&lt;RAD::Protocol::protocol_id for the MOID quantification protocol in your instance&gt;</p>
+<p>genepix=&lt;RAD::Protocol::protocol_id for the GenePix quantification protocol in your instance&gt;</p>
+<p>arrayvision=&lt;RAD::Protocol::protocol_id for the ArrayVision quantification protocol in your instance&gt;</p>
+<p>filePath=&lt;The path on your server where the data files are stored&gt;, e.g. at CBIL the filePath might be ``/files/cbil/data/cbil/RAD/''</p>
+<p>
+</p>
+<h2><a name="xmlfile"><em>xmlFile</em></a></h2>
+<p>This should be an xml file whose format should be that specified in GUS/Community/config/FileTranslatorCfg.dtd.
 This is used to map headers in the software output files to attributes of the appropriate RAD view of (Composite)ElementResultImp as well as to RAD coordinates.</p>
 <p>
 </p>
-<h2><a name="warning_(for_noncbil_instances)"><em>Warning (for non-CBIL Instances)</em></a></h2>
-<p>For local installations of RAD which differ from the CBIL database,
-some lines of this plugin will need to be modified, to accomodate
-hard-coded information. You might need to modify any piece of code
-labelled as 'HARD-CODED' in the comments below.</p>
-<p>
-</p>
 <hr />
-<h1><a name="author">AUTHOR</a></h1>
-<p>The following individuals have collaborated in the design and coding of this plugin and the Utils called by it: Hongxian He, Junmin Liu, Elisabetta Manduchi, Angel Pizarro, Trish Whetzel.</p>
+<h1><a name="authors">AUTHORS</a></h1>
+<p>The following individuals have collaborated in the design and coding of this plugin and the file mapping utilities it calls: Hongxian He, Junmin Liu, Elisabetta Manduchi, Angel Pizarro, Trish Whetzel.</p>
 <p>
 </p>
 <hr />
