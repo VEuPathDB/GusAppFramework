@@ -32,8 +32,6 @@
 
 <h3>Workshop Agenda</h3>
 
-<p>Abstracts coming soon...</p>
-
 <strong>Wednesday, July 6 -- GUS Overview & Setting up GUS</strong>
 <table border="1" style="border-style: solid; border-collapse: collapse;" cellpadding="3" width="100%">
 <tr><th>Start Time</th><th>Title</th><th>Speaker</th></tr>
@@ -54,7 +52,7 @@
 <tr><th>9:00am</th><td>GUS Object Layer & Pipeline</td><td>Debbie Pinney, CBIL</td></tr>
 <tr><th>10:00am</th><td>Break</td><td></td></tr>
 <tr><th>10:15am</th><td>XML GUS Data Loading Tools</td><td>Josef Jurek, U. Chicago</td></tr>
-<tr><th>11:15am</th><td>Writing and using a GUS Plug-in</td><td>TBA</td></tr>
+<tr><th>11:00am</th><td>Writing and using a GUS Plug-in</td><td>Mike Saffitz, CBIL</td></tr>
 <tr><th>12:00pm</th><td>Lunch</td><td></td></tr>
 <tr><th>1:00pm</th><td><strong>GUS Implementation Workshop:</strong><br/>Loading Data with Plug-ins<br/>
 			Loading Data using a pipeline<br/>Writing a Plug-in</td><td>Workshop</td></tr>

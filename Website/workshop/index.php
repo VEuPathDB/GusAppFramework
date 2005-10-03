@@ -30,6 +30,8 @@
 
 <div class="body">
 
+<p><a href="slides/">Slides</a></p>
+
 <h3>Workshop Overview</h3>
 
 <p>
