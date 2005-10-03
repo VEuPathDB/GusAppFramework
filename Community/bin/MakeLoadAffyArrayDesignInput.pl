@@ -21,11 +21,10 @@ my %opts = ();
 my $result = GetOptions(\%opts,'help|h', 'target_file=s','probe_tab_file=s','cdf_file=s','genbank_ext_db_rel_id=s','refseq_ext_db_rel_id=s','element_type=s','testnumber=i');
 
 if ($opts{'help'}) {
-  print "Usage: perl generate-arrayload.pl --target target_file --probe probe_tab_file --cdf cdf_file --genbank_ext_db_rel_id external database release id for GenBank; can be found in SRes.ExternalDatabaseRelease --refseq_ext_db_rel_id external database release id for RefSeq; can be found in SRes.ExternalDatabaseRelease --element_type element_type_id for the elements (short oligos) on the Affymetrix chip; can be found in Study.OntologyEntry [-testnumber n] > out_file\n";
+  print "Usage: perl MakeLoadAffyArrayDesignInput.pl --target target_file --probe probe_tab_file --cdf cdf_file --genbank_ext_db_rel_id external database release id for GenBank; can be found in SRes.ExternalDatabaseRelease --refseq_ext_db_rel_id external database release id for RefSeq; can be found in SRes.ExternalDatabaseRelease --element_type element_type_id for the elements (short oligos) on the Affymetrix chip; can be found in Study.OntologyEntry [-testnumber n] > out_file\n";
   exit;
 }
 
-#my $array = Bio::Expression::Microarray::Affymetrix::ArrayDesign->new();
 my $array =  GUS::Community::ArrayDesign->new();
 
 my $target_file = $opts{'target_file'} 
