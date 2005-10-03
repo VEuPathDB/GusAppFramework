@@ -294,7 +294,7 @@ sub load_data {
 	  $featureparams{region}		= 	$attrs[$blockHeader{UNIT_REGION}];
 	}
 
-	my $feature = Bio::Expression::Microarray::Affymetrix::Feature->new( %featureparams );
+	my $feature =  GUS::Community::Feature->new( %featureparams );
 	$featuregroup->add_feature($feature);
 
 	$self->matrix($attrs[$blockHeader{UNIT_X}],$attrs[$blockHeader{UNIT_Y}],\$feature);
