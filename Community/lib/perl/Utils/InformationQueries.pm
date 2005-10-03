@@ -35,7 +35,7 @@ sub getArrayInfo{
                a.array_dimensions, a.element_dimensions,
                a.num_array_rows, a.num_array_columns,
                a.num_grid_rows, a.num_grid_columns,
-               a.num_sub_rows, a.num_sub_columns,
+               a.num_sub_rows, a.num_sub_columns
                from RAD.ArrayDesign a , Study.OntologyEntry oett,
                Study.OntologyEntry oest, Study.OntologyEntry oesft
                where a.array_design_id = $id
@@ -101,7 +101,7 @@ sub getAcquisitionInfo{
   my ($slf,$id) = @_;
   my $sql = qq[select a.acquisition_id, 
                ra.associated_acquisition_id as assoc_acquisition_id,
-               a.ontology_entry_id, oe.value as channel, a.uri,
+               a.channel_id, oe.value as channel, a.uri,
                q.quantification_id
                from RAD.Acquisition a, RAD.RelatedAcquisition ra, 
                Study.OntologyEntry oe, RAD.Quantification q
