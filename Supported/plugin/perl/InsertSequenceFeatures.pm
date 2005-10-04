@@ -291,8 +291,8 @@ sub run {
   $self->initHandlerExternalDbs();
 
   my $format = $self->getArg('fileFormat');
-  my $self->{totalFeatureCount} = 0;
-  my $self->{totalFeatureTreeCount} = 0;
+  $self->{totalFeatureCount} = 0;
+  $self->{totalFeatureTreeCount} = 0;
   my $totalSeqCount = 0;
   my $fileCount = 0;
 
@@ -925,8 +925,8 @@ sub handleExonlessRRNA {
 sub checkTestNum {
   my ($self) = @_;
 
-  return $self->getArg('testNum')
-    && $self->getArg('testNum') == $self->{totalFeatureTreeCount};
+  return $self->getArg('testNumber')
+    && $self->getArg('testNumber') == $self->{totalFeatureTreeCount};
 }
 
 sub getIdFromCache {
@@ -998,9 +998,9 @@ sub initHandlerExternalDbs {
 
   return unless $self->getArg('handlerExternalDbs');
 
-  my @dbDescriptors = $self->getArg('handlerExternalDbs');
+  my $dbDescriptors = $self->getArg('handlerExternalDbs');
 
-  foreach my $dbDescriptor (@dbDescriptors) {
+  foreach my $dbDescriptor (@{$dbDescriptors}) {
     my @split = split(/\:/, $dbDescriptor);
     $self->userError("Invalid argument to --handlerExternalDbs: '$dbDescriptor'") unless scalar(@split) == 3;
     my ($tag, $dbName, $dbRelease) = @split;
