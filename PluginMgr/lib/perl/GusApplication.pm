@@ -169,9 +169,13 @@ sub wrongChecksumError {
   my $run = "ga +update $pluginNm";
   $run = "ga +meta" if $pluginNm =~ /GusApplication/;
   $self->userError("The md5 checksum of ${pluginNm}'s executable file (cvs revision $cvsRevision) doesn't match the md5 checksum in the database for that plugin and revision. IE, the plugin has been changed but not commited and updated.  Please:
-                   - cvs commit the plugin file
+                   - svn commit the plugin file
+                   - confirm that the revision declared in the file is equal
+                     to its actual svn revision (use svn log)
+                   - (if it is not, that might be a minor svn error.  correct
+                     the value in the file)
                    - use the build system to install it
-                   - run '$run --commit'\nAborting");
+                      Aborting");
 }
 
 
