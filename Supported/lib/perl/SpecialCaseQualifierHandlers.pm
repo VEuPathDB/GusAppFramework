@@ -111,16 +111,7 @@ sub buildDbXRef {
   my $id = &_getDbXRefId($plugin, $dbSpecifier);
   $dbRefNaFeature->setDbRefId($id);
 
-  ## If DbRef is outside of Genbank, then link directly to sequence
-  #if (!($value =~ /taxon|GI|pseudo|dbSTS|dbEST/i)) {
-  #  my $o2 = GUS::Model::DoTS::DbRefNASequence->new();
-  #  $o2->setDbRefId($id);
-  #}
-  #else {
-  # my $id = &getDbXRefId($value);}
-
   return $dbRefNaFeature;
-
 }
 
 # static subroutine
@@ -129,7 +120,10 @@ sub _getDbXRefId {
   my ($plugin, $dbSpecifier) = @_;
 
   if (!$plugin->{dbXrefIds}->{$dbSpecifier}) {
-    my ($dbName, $id, $sid)= split(/\:/, $dbSpecifier);
+    my @split= split(/\:/, $dbSpecifier);
+    $plugin->error("Invalid db_xref: '$dbSpecifier'")
+      unless scalar(@split) == 2 || scalar(@split) == 3;
+    my ($dbName, $id, $sid)= @split;
     $id =~ s/^\s*//;
     my $extDbRlsId = &_getExtDatabaseRlsId($plugin, $dbName);
     my $dbref = GUS::Model::SRes::DbRef->new({'external_database_release_id' => $extDbRlsId, 
@@ -233,20 +227,20 @@ sub _undoProtein{
 sub translation {
   my ($self, $tag, $bioperlFeature, $feature) = @_;
 
-  my @translatedAAFeatures;
-  foreach my $tagValue ($bioperlFeature->get_tag_values($tag)) {
-    my $transAaFeat = GUS::Model::DoTS::TranslatedAAFeature->new();
-    $transAaFeat->setIsPredicted(1);
+  my @tags = $bioperlFeature->get_tag_values($tag);
+  die "Feature has more than one translation \n" if scalar(@tags) != 1;
 
-    my $aaSeq = GUS::Model::DoTS::TranslatedAASequence->
-      new({'sequence' => $tagValue});
+  my $transAaFeat = GUS::Model::DoTS::TranslatedAAFeature->new();
+  $transAaFeat->setIsPredicted(1);
 
-    $aaSeq->submit();
+  my $aaSeq = GUS::Model::DoTS::TranslatedAASequence->
+    new({'sequence' => $tags[0]});
 
-    $transAaFeat->setAaSequenceId($aaSeq->getId());
-    push(@translatedAAFeatures, $transAaFeat);
-  }
-  return \@translatedAAFeatures;
+  $aaSeq->submit();
+
+  $transAaFeat->setAaSequenceId($aaSeq->getId());
+
+  return [$transAaFeat];
 }
 
 sub _undoTranslation{
