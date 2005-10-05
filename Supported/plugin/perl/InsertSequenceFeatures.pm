@@ -132,7 +132,7 @@ NOTES
   ];
 
   my $howToRestart = <<RESTART;
-Restart is not supported.  Coming soon will be "undo," which will at least provide a way to back out failed results.
+Restart is not supported.  Use the GUS::Supported::Plugin::InsertSequenceFeaturesUndo plugin to back out failed runs.
 RESTART
 
   my $failureCases = <<FAIL;
