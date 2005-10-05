@@ -295,6 +295,7 @@ sub run {
   $self->{totalFeatureTreeCount} = 0;
   my $totalSeqCount = 0;
   my $fileCount = 0;
+  my $action = $self->getArg('seqIdColumn')? 'Processed' : 'Inserted';
 
   my @inputFiles = $self->getInputFiles();
 
@@ -320,14 +321,14 @@ sub run {
       last if $self->checkTestNum();
     }
 
-    $self->log("Processed $inputFile: $format \n\t Seqs Inserted: $seqCount \n\t Features Inserted: $self->{fileFeatureCount} \n\t Feature Trees Inserted: $self->{fileFeatureTreeCount}");
+    $self->log("Processed $inputFile: $format \n\t Seqs $action: $seqCount \n\t Features Inserted: $self->{fileFeatureCount} \n\t Feature Trees Inserted: $self->{fileFeatureTreeCount}");
     $totalSeqCount += $seqCount;
     $fileCount++;
     last if $self->checkTestNum();
   }
 
   my $fileOrDir = $self->getArg('inputFileOrDir');
-  $self->setResultDescr("Processed $fileCount files from $fileOrDir: $format \n\t Total Seqs Inserted: $totalSeqCount \n\t Total Features Inserted: $self->{totalFeatureCount} \n\t Total Feature Trees Inserted: $self->{totalFeatureTreeCount}");
+  $self->setResultDescr("Processed $fileCount files from $fileOrDir: $format \n\t Total Seqs $action: $totalSeqCount \n\t Total Features Inserted: $self->{totalFeatureCount} \n\t Total Feature Trees Inserted: $self->{totalFeatureTreeCount}");
 }
 
 sub unflatten {
