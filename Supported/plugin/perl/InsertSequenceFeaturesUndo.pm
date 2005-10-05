@@ -19,11 +19,13 @@ use GUS::Supported::BioperlFeatMapperSet;
 use GUS::Supported::SequenceIterator;
 
 my $purpose = <<PURPOSE;
+Undo one or more runs of GUS::Supported::Plugin::InsertSequenceFeatures.  Uses the algorithm_invocation_id to find the data to remove (find this the log of the plugin run).
 
+If the ISF plugin mapping file uses special case handlers, their undoAll() method is called as part of the undo process.   They are called in the order the handlers are declared in the mapping file.
 PURPOSE
 
   my $purposeBrief = <<PURPOSEBRIEF;
-
+Undo one or more runs of GUS::Supported::Plugin::InsertSequenceFeatures.
 PURPOSEBRIEF
 
   my $notes = <<NOTES;

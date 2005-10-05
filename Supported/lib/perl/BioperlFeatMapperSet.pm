@@ -38,7 +38,7 @@ sub getHandler {
 sub getAllHandlers{
 my ($self) = @_;
 
-  return values(%{$self->{qualifierHandlers}});
+  return @{$self->{qualifierHandlersList}};
 }
 
 # return a list of all SO terms used in feature maps
@@ -57,18 +57,28 @@ sub _parseMapFile {
   my ($self, $mapXml, $plugin) = @_;
 
   my $simple = XML::Simple->new();
-  my $data = $simple->XMLin($mapXml, forcearray => 1);
-  my $mapperSet = $data->{feature};
-  my $qualifierHandlers = $data->{specialCaseQualifierHandler};
 
-  while (my ($name, $feature) = each %{$mapperSet}) {
+  # use forcearray so elements with one child are still arrays
+  # and, use keyattr so that handlers are given as an ordered list
+  # rather than a hash with name as key.  the ordering is needed
+  # so that undo operations are ordered.  retian 'name' as key attr
+  # for qualifiers.
+  my $data = $simple->XMLin($mapXml,
+			    forcearray => 1,
+			    KeyAttr => {qualifier => 'name'});
+  my $mapperSet = $data->{feature};
+  $self->{qualifierHandlersList} = $data->{specialCaseQualifierHandler};
+
+  foreach my $feature (@{$mapperSet}) {
+    my $name = $feature->{name};
     $self->{mappersByName}->{$name} = 
       GUS::Supported::BioperlFeatMapper->new($name, $feature, $mapXml);
   }
 
-  while (my ($name, $handler) = each %{$qualifierHandlers}) {
+  foreach my $handler (@{$self->{qualifierHandlersList}}) {
     my $handlerClass = $handler->{class};
-    $self->{qualifierHandlers}->{$name} = 
+    my $name = $handler->{name};
+    $self->{qualifierHandlers}->{$name} =
       eval "{require $handlerClass; $handlerClass->new()}";
     if ($@) { die "Cannot import or construct new object for qualifier handler class '$handlerClass'\n $@\n"; }
     $self->{qualifierHandlers}->{$name}->setPlugin($plugin);
