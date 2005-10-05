@@ -245,7 +245,7 @@ sub translation {
 
 sub _undoTranslation{
   my ($self) = @_;
-  $self->_deleteFromTable('DoTS.AASequenceEnzymeClass');
+
   $self->_deleteFromTable('DoTS.TranslatedAAFeature');
   $self->_deleteFromTable('DoTS.TranslatedAASequence');
 
