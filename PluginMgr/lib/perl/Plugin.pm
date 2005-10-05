@@ -1334,7 +1334,7 @@ run of the plugin in the database.
 sub logAlgInvocationId {
   my $Self = shift;
 
-  $Self->log('ALGINVID', $Self->getAlgInvocation->getId)
+  $Self->log('AlgInvocationId', $Self->getAlgInvocation->getId)
 }
 
 =item C<logCommit()>
@@ -1360,9 +1360,9 @@ sub logArgs {
   foreach my $flag (sort keys %{$Self->getCla}) {
     my $value = $Self->getCla->{$flag};
     if (ref $value) {
-      $Self->log('ARGS', $flag, @$value);
+      $Self->log('ARG', $flag, @$value);
     } else {
-      $Self->log('ARGS', $flag, $value);
+      $Self->log('ARG', $flag, $value);
     }
   }
 }
