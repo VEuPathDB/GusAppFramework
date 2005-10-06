@@ -113,7 +113,15 @@ stringArg({   name           => 'externalDatabaseVersion',
                format =>"Directory of FASTA files",
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
+  fileArg({   name           => 'sourceIdsFile',
+	       descr          => 'A file containing a source IDs that should be loaded from the FASTA file',
+	       reqd           => 0,
+               mustExist => 1,
+               format =>"A newline delimited list of source IDs ",
+	       constraintFunc => undef,
+	       isList         => 0 }),
+
  booleanArg({   name           => 'noSequence',
 	       descr          => 'If true, do not write the actual sequence to the database.',
 	       reqd           => 0,
@@ -265,6 +273,10 @@ sub run {
     $self->fetchTaxonId();
   }
  
+  if ($self->getArg('sourceIdsFile')) {
+    $self->getGoodSourceIds();
+  }
+ 
   my $oracleName = $self->className2oracleName($self->getArg('tableName'));
   $checkStmt = $self->getAlgInvocation()->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $self->{external_database_release_id}");
 
@@ -322,16 +334,17 @@ sub processOneFile{
 
 	    last if($self->getArg('testnumber') && $self->{totalCount} == $self->getArg('testnumber') - 1);
 
-	    if ($self->getArg('startAt') 
+	    if ($self->getArg('startAt')
 		&& $self->{skippedCount} < $self->getArg('startAt')) {
 	      $self->{skippedCount}++;
 	      next;
 	    }
 
-	    if ($source_id) { 
-	      $self->process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq,$seq_version);
-	      $self->{totalCount}++;
-	    }
+	    if ($source_id) {
+	      $self->process($source_id,$secondary_id,$name,
+			       $description,$mol_wgt,$contained_seqs,
+			       $chromosome,$seq,$seq_version);
+      	    }
 
 	    $self->log($self->getProgress()) 
 	      if $self->{totalCount} % $self->getArg('logFrequency') == 0;
@@ -391,7 +404,7 @@ sub processOneFile{
 	}
 
     }
-    $self->{totalCount}++;
+
     $self->process($source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$seq,$seq_version) if ($source_id);
 }
 
@@ -399,6 +412,13 @@ sub processOneFile{
 
 sub process {
   my($self, $source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$sequence,$seq_version) = @_;
+
+  if ($self->{goodSourceIds} && !$self->{goodSourceIds}->{$source_id}) {
+    $self->{skippedCount}++;
+    return;
+  }
+
+  $self->{totalCount}++;
 
   my $id;
   $id = $self->checkIfHave($source_id) unless $self->getArg('noCheck');
@@ -510,6 +530,16 @@ sub checkIfHave {
     return $id;
   }
   return 0;
+}
+
+sub getGoodSourceIds {
+  my ($self) = @_;
+
+  open(SRC_IDS_FILE, $self->getArg('sourceIdsFile'));
+  while (<SRC_IDS_FILE>) {
+    s/\s+//;
+    $self->{goodSourceIds}->{$_} = 1;
+  }
 }
 
 sub makeProjLink {
