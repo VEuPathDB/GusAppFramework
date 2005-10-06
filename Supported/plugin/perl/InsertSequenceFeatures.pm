@@ -732,13 +732,11 @@ sub makeFeature {
   my $feature = $self->makeImmediateFeature($bioperlFeature, $naSequenceId);
 
   if ($feature) {
-
     # call method to handle unflattener error of giving rRNAs no exon.
     $self->handleExonlessRRNA($bioperlFeature, $feature,$naSequenceId);
 
     # recurse through the children
     foreach my $bioperlChildFeature ($bioperlFeature->get_SeqFeatures()) {
-
       my $childFeature =
 	$self->makeFeature($bioperlChildFeature, $naSequenceId);
 
