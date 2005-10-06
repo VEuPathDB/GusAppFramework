@@ -42,7 +42,7 @@ use strict;
 use Carp;
 
 sub runRepeatMask {
-    my ($pipelineDir, $name) = @_;
+    my ($pipelineDir, $numnodes, $name) = @_;
     
     print "\nRunning repeatmask on $name\n";
 
@@ -73,7 +73,7 @@ sub runRepeatMask {
 }
 
 sub runGenomeAlign {
-    my ($pipelineDir, $queryName, $subjectName) = @_;
+    my ($pipelineDir, $numnodes, $queryName, $subjectName) = @_;
     
     my $name = "$queryName-$subjectName";
     print "\nRunning alignment of $queryName against $name\n";
@@ -99,7 +99,7 @@ sub runGenomeAlign {
 
 
 sub runGeneTagAlign {
-    my ($pipelineDir, $queryName, $subjectName) = @_;
+    my ($pipelineDir, $numnodes, $queryName, $subjectName) = @_;
     
     my $name = "$queryName-$subjectName";
     print "\nRunning alignment of $queryName against $name\n";
@@ -126,7 +126,7 @@ sub runGeneTagAlign {
 }
 
 sub runMicerAlign {
-    my ($pipelineDir, $queryName, $subjectName) = @_;
+    my ($pipelineDir, $numnodes, $queryName, $subjectName) = @_;
     
     my $name = "$queryName-$subjectName";
     print "\nRunning alignment of $queryName against $name\n";
@@ -154,7 +154,7 @@ sub runMicerAlign {
 
 
 sub runMatrix {
-    my ($pipelineDir, $queryname, $subjectname) = @_;
+    my ($pipelineDir, $numnodes, $queryname, $subjectname) = @_;
     
     my $name = "$queryname-$subjectname";
     print "\nRunning blastmatrix on $name\n";
@@ -167,13 +167,14 @@ sub runMatrix {
     my $logFile = "$pipelineDir/logs/$name.matrix.log";
 
     my $valid = 
-      &runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile);
+      &runMatrixOrSimilarity($resultFile, $numnodes, $inputFile, $propFile, 
+			     $logFile);
 
     return $valid;
 }
 
 sub runSimilarity {
-    my ($pipelineDir, $queryname, $subjectname) = @_;
+    my ($pipelineDir, $numnodes, $queryname, $subjectname) = @_;
     
     my $name = "$queryname-$subjectname";
     print "\nRunning blastsimilarity on $name\n";
@@ -186,13 +187,14 @@ sub runSimilarity {
     my $logFile = "$pipelineDir/logs/$name.sim.log";
 
     my $valid = 
-      &runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile);
+      &runMatrixOrSimilarity($resultFile, $numnodes, $inputFile, $propFile, 
+			     $logFile);
 
     return $valid;
 }
 
 sub runMatrixOrSimilarity {
-    my ($resultFile, $inputFile, $propFile, $logFile) = @_;
+    my ($resultFile, $numnodes, $inputFile, $propFile, $logFile) = @_;
     
     my $valid = 0;
     if (-e $resultFile) {
@@ -216,7 +218,7 @@ sub runMatrixOrSimilarity {
     }
 
     if (!$valid) {
-	&runAndZip($propFile,$logFile, $resultFile);
+	&runAndZip($propFile, $numnodes, $logFile, $resultFile);
 	my $valid = &validateBM($inputFile, "${resultFile}.gz");
 	if  (!$valid) {
 	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
@@ -275,30 +277,23 @@ sub validateBM {
 }
 
 sub runAndZip {
-  my ($propFile, $logFile, $resultFile) = @_;
+  my ($propFile, $nummodes, $logFile, $resultFile) = @_;
 
-  my ($cmd, $status);
-
-  $cmd = "liniacjob $propFile >& $logFile";
-  $status = system($cmd);
-  &confess ("failed running '$cmd' with stderr:\n $!") if ($status >> 8);
+  &run($propFile, $nummodes, $logFile, $resultFile);
 
   print "  zipping $resultFile...\n";
-  
-  $cmd = "gzip $resultFile";
-  $status = system($cmd);
+
+  my $cmd = "gzip $resultFile";
+  my $status = system($cmd);
   die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
 }
 
 sub run {
-  my ($propFile, $logFile, $resultFile) = @_;
+  my ($propFile, $numnodes, $logFile, $resultFile) = @_;
 
-  my ($cmd, $status);
-
-  $cmd = "liniacjob $propFile >& $logFile";
-  $status = system($cmd);
+  my $cmd = "liniacjob $numnodes 100000 $propFile >& $logFile";
+  my $status = system($cmd);
   die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
-
 }
 
 sub countSeqs {
