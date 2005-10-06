@@ -347,7 +347,8 @@ sub processOneFile{
       	    }
 
 	    $self->log($self->getProgress()) 
-	      if $self->{totalCount} % $self->getArg('logFrequency') == 0;
+	      if ($self->{totalCount} + $self->{skippedCount})
+		% $self->getArg('logFrequency') == 0;
 
 	    ##now get the ids etc for this defline...
 
@@ -450,9 +451,9 @@ sub process {
 sub getProgress {
   my ($self) = @_;
 
-  my $skipped = $self->{skippedCount}? " Skipped $self->{skippedCount} " : "";
+  my $skipped = $self->{skippedCount}? " Skipped $self->{skippedCount}" : "";
 
-  return "Processed $self->{fileCount} files. Processed $self->{totalCount} sequences$skipped.  Inserted " . $self->getTotalInserts() . " and updated ".$self->getTotalUpdates();
+  return "Processed $self->{fileCount} file(s). Processed $self->{totalCount} sequence(s)$skipped.  Inserted " . $self->getTotalInserts() . " and Updated ".$self->getTotalUpdates();
 }
 
 sub createNewExternalSequence {
