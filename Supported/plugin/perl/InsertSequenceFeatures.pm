@@ -79,7 +79,7 @@ It is often the case that your input may come from unofficial sources that, whil
 
 In that case, you will need to write your own mapping file.  Use the provided default as an example.  The main purpose of the file is to specify which subclass of NAFeature should store the input feature, and, which columns should store which qualifiers.
 
-Another way to generate a template mapping file is by using the command reportFeatureQualifiers.  This command analyzes a set of input files, and report the feature/qualifier structure found in them.  It can output the report in simple text form, or in XML that is a template for the mapping file.
+Another way to generate a template mapping file is by using the command reportFeatureQualifiers.  This command analyzes a set of input files, and reports the feature/qualifier structure found in them.  It can output the report in simple text form, or in XML that is a template for the mapping file.
 
 There is an additional level of configurability provided by "plugable" qualifier handlers.  As you will see in the default XML file, some qualifiers do not fit neatly into a column in the feature table.  Those that don't are called "special cases."  In the XML file you can declare the availability of one or more special case qualifier handlers to handle those special cases   The default file declares one of these at the top of the file.  Your XML file can declare additional handlers that you write.  (See the code in the default handler to learn how to write your own.)  In the XML file, qualifiers that need special handling specify the name of the handler object and a method in it to call to handle the qualifier.
 
