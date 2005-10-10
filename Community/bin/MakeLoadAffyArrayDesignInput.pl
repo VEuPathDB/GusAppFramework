@@ -18,10 +18,10 @@ use GUS::Community::ArrayDesign;
 use Bio::Expression::FeatureGroup;
 
 my %opts = ();
-my $result = GetOptions(\%opts,'help|h', 'target_file=s','probe_tab_file=s','cdf_file=s','genbank_ext_db_rel_id=s','refseq_ext_db_rel_id=s','element_type=s','testnumber=i');
+my $result = GetOptions(\%opts,'help|h', 'target_file=s','probe_tab_file=s','cdf_file=s','genbank_ext_db_rel_id=s','refseq_ext_db_rel_id=s','design_element_type=s','testnumber=i');
 
 if ($opts{'help'}) {
-  print "Usage: perl MakeLoadAffyArrayDesignInput.pl --target target_file --probe probe_tab_file --cdf cdf_file --genbank_ext_db_rel_id external database release id for GenBank; can be found in SRes.ExternalDatabaseRelease --refseq_ext_db_rel_id external database release id for RefSeq; can be found in SRes.ExternalDatabaseRelease --element_type element_type_id for the elements (short oligos) on the Affymetrix chip; can be found in Study.OntologyEntry [-testnumber n] > out_file\n";
+  print "Usage: perl MakeLoadAffyArrayDesignInput.pl --target target_file --probe probe_tab_file --cdf cdf_file --genbank_ext_db_rel_id external database release id for GenBank; can be found in SRes.ExternalDatabaseRelease --refseq_ext_db_rel_id external database release id for RefSeq; can be found in SRes.ExternalDatabaseRelease --design_element_type design_element_type_id for the elements (short oligos) on the Affymetrix chip; can be found in Study.OntologyEntry [-testnumber n] > out_file\n";
   exit;
 }
 
@@ -37,8 +37,8 @@ my $genbank_ext_db_rel_id = $opts{'genbank_ext_db_rel_id'}
   || die "Please specify the current external database release id for GenBank by [-genbank_ext_db_rel_id external database release id for GenBank]\n";
 my $refseq_ext_db_rel_id = $opts{'refseq_ext_db_rel_id'} 
   || die "Please specify the current external database release id for RefSeq by [-refseq_ext_db_rel_id external database release id for RefSeq]\n";
-my $ele_type_id = $opts{'element_type'} 
-  || die "Please specify the element_type_id for the elements on the Affymetrix chip by [-element_type element_type_id]\n";
+my $ele_type_id = $opts{'design_element_type'} 
+  || die "Please specify the design_element_type_id for the elements on the Affymetrix chip by [-design_element_type design_element_type_id]\n";
 my $testnumber = $opts{'testnumber'};
 
 print STDERR "Please make sure the CDF file does not have ^M characters. Otherwise, run dos2unix to convert the file first!\n";
@@ -71,7 +71,7 @@ print STDERR "finished reading CDF file $cdf_file.\n";
 #     }
 #}
 
-my $header = join "\t","x_pos", "y_pos", "sequence", "match", "name", "ext_db_rel_id", "source_id", "element_type_id";
+my $header = join "\t","x_pos", "y_pos", "sequence", "match", "name", "ext_db_rel_id", "source_id", "design_element_type_id";
 print $header, "\n";
 
 # each featuregroup corresponds to a unique probe set
