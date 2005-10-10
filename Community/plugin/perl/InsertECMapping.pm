@@ -69,9 +69,9 @@ my $argsDeclaration =
 	  mustExist => 1,
 	  format => 'Two column tab delimited file in the order EC number, identifier'
         }),
-   stringArg({name => 'externalDatabase',
-	      descr => 'name of the external database',
-	      reqd => 0,
+   stringArg({name => 'evidenceCode',
+	      descr => 'the evidence code with which data should be entered into the AASequenceEnzymeClass table',
+	      reqd => 1,
 	      constraintFunc => undef,
 	      isList => 0,
 	     })
@@ -85,7 +85,7 @@ sub new {
 
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 3032 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 3839 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -113,6 +113,7 @@ sub getMapping {
   my %ids = ();
   my $enzymeClass;
   my $aaSeqId;
+  my $evidCode = $self->getArg('evidenceCode');
 
   open (ECMAP, "$mappingFile") ||
                     die ("Can't open the file $mappingFile.  Reason: $!\n");
@@ -147,10 +148,12 @@ print "The pairs found in the file are:\n";
 	my $newAASeqEnzClass =  GUS::Model::DoTS::AASequenceEnzymeClass->new({
 					    'aa_sequence_id' => $aaSeqId,
 					    'enzyme_class_id' => $enzymeClass,
-					    'evidence_code' => 'Hagai Ginsburg'
+					    'evidence_code' => $evidCode
 	});
 
-	$newAASeqEnzClass->submit();
+	unless (!$enzymeClass || !$aaSeqId){
+	  $newAASeqEnzClass->submit();
+	}
       }
 
   my $msg = "parsed EC Mapping file\n";
