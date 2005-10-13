@@ -1,5 +1,8 @@
 <?php include("header.php"); ?>
 
+<h2>Gus Schema, Schema Browser releases</h2>
+<p>GusSchema 3.5.1, a patch release is now available from the subversion repository for use with the latest install and GusAppFramework packages.  Upgrade scripts and instructions are included.  Also, a stand-alone SchemaBrowser written by Conrad Ibanez and collaborators at the University of Georgia is now available <a href="http://www.gusdb.org/download">for download</a>.</p>
+
 <h2>Schema Browser 2.0 Released - August 24, 2005</h2>
 <p>The first version of the next generation Schema Browser has been released, and is available at <a href="/SchemaBrowser">http://www.gusdb.org/SchemaBrowser</a>.  This release features tables organized by categories, sorting, filtering, and community-submitted documentation (you must have a Wiki username & password to submit documentation).  Any issues should be filed in the <a href="https://www.cbil.upenn.edu/tracker/enter_bug.cgi?product=SchemaBrowser">tracker</a>.
 </p>
