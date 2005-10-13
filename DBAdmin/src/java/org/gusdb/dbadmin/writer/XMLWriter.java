@@ -233,18 +233,18 @@ public class XMLWriter extends SchemaWriter {
 		oStream.write( "precision=\"" + column.getPrecision() + "\" " );
 		oStream.write( "type=\"" + column.getType() + "\"" );
 
-		if ( column.getClass() == GusColumn.class &&
-			( (GusColumn) column ).getDocumentation() != null ) {
-			oStream.write( ">\n" );
-			indent++;
-			writeDocumentation( ( (GusColumn) column ).getDocumentation() );
-			indent--;
-			indent();
-			oStream.write( "</column>\n" );
-		}
-		else {
+		//		if ( column.getClass() == GusColumn.class &&
+		//	( (GusColumn) column ).getDocumentation() != null ) {
+		//	oStream.write( ">\n" );
+		//	indent++;
+		//	writeDocumentation( ( (GusColumn) column ).getDocumentation() );
+		//	indent--;
+		//	indent();
+		//	oStream.write( "</column>\n" );
+		//}
+		//else {
 			oStream.write( "/>\n" );
-		}
+			//}
 		indent--;
 	}
 
@@ -362,7 +362,7 @@ public class XMLWriter extends SchemaWriter {
 			return;
 		}
 		indent();
-		oStream.write( "<documentation>![CDATA[" + documentation + "]]</documentation>\n" );
+		//		oStream.write( "<documentation>![CDATA[" + documentation + "]]</documentation>\n" );
 	}
 
 
