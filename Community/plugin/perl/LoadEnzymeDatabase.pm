@@ -271,16 +271,23 @@ sub _getExtDbRelCache {
   my $RV;
 
   # cheat:  transform standard args into non-standard for legacy code compatibility
-  $self->getArgs()->{'Enzyme'} = $self->getArg('enzymeDbName') . "," . $self->getArg('enzymeDbRlsVer');
+  $self->getArgs()->{'Enzyme'} = [$self->getArg('enzymeDbName'),$self->getArg('enzymeDbRlsVer')];
 
   my $ok = 1;
   foreach my $db ( qw( Enzyme SwissProt Prosite Omim ) ) {
 
+    #my @arg =$self->getArg($db);
+
+    next if (! $self->getArg($db));
+
     my $db_lcn = $self->getArg($db)->[0];
     my $db_ver = $self->getArg($db)->[1];
 
+    #my $db_lcn = $arg[0];
+    #my $db_ver = $arg[1];
+
     if ($db_lcn && $db_ver) {
-      $self->userError("missing db name or db rls version in comma delimited list for $db") if (length ($db_lcn==0) || length ($db_ver==0));
+      $self->userError("missing db name or db rls version in comma delimited list for $db") if (length ($db_lcn)==0 || length ($db_ver)==0);
 
       my $_xdb = GUS::Model::SRes::ExternalDatabase->new
 	({ name => $db_lcn });
@@ -316,7 +323,12 @@ sub _getExtDbRelCache {
 	$ok = 0 if $db eq 'Enzyme';
       }
     }
+
+    elsif ($db eq 'Enzyme') {
+      $self->userError("Must specify database name and release version for Enzyme");
+    }
   }
+
 
   if ($ok) {
     $self->_setDbCache($RV)->_getDbCache();
