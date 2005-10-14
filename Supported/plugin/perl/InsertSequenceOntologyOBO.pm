@@ -91,7 +91,7 @@ sub new {
     bless($self, $class);
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 3862 $',
+		       cvsRevision =>  '$Revision: 3863 $',
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -144,14 +144,12 @@ sub makeSequenceOntology {
    }
 
    my $definition = $obo->{'def'};
-print "def = '$definition'\n";
+
    if ($definition eq '') {$definition = ' '};
 
    $definition =~ s/\n//g;
    $obo->{'id'}=~ s/\n//g;
    $obo->{'name'}=~ s/\n//g;
-
-print "so_id $obo->{'id'}, term_name $obo->{'name'}, def $definition\n";
 
    my $soTerm = GUS::Model::SRes::SequenceOntology->
      new({'so_id' => $obo->{'id'},
