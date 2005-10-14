@@ -174,57 +174,55 @@ sub runMatrix {
 }
 
 sub runSimilarity {
-    my ($pipelineDir, $numnodes, $queryname, $subjectname) = @_;
-    
-    my $name = "$queryname-$subjectname";
-    print "\nRunning blastsimilarity on $name\n";
+  my ($pipelineDir, $queryname, $subjectname, $numNodes,$time) = @_;
 
-    my $resultFile = 
-	"$pipelineDir/similarity/$name/master/mainresult/blastSimilarity.out";
-    my $inputFile = 
-	"$pipelineDir/seqfiles/$queryname.fsa";
-    my $propFile = "$pipelineDir/similarity/$name/input/controller.prop";
-    my $logFile = "$pipelineDir/logs/$name.sim.log";
+  my $name = "$queryname-$subjectname";
+  print "\nRunning blastsimilarity on $name\n";
 
-    my $valid = 
-      &runMatrixOrSimilarity($resultFile, $numnodes, $inputFile, $propFile, 
-			     $logFile);
+  my $resultFile = 
+    "$pipelineDir/similarity/$name/master/mainresult/blastSimilarity.out";
+  my $inputFile = 
+    "$pipelineDir/seqfiles/$queryname.fsa";
+  my $propFile = "$pipelineDir/similarity/$name/input/controller.prop";
+  my $logFile = "$pipelineDir/logs/$name.sim.log";
 
-    return $valid;
+  my $valid = 
+    &runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time);
+
+  return $valid;
 }
 
 sub runMatrixOrSimilarity {
-    my ($resultFile, $numnodes, $inputFile, $propFile, $logFile) = @_;
-    
-    my $valid = 0;
-    if (-e $resultFile) {
-      print "  previous (unzipped) result found\n";
-      $valid = &validateBM($inputFile, $resultFile);
-      if (!$valid) {
-	print "  trying again...\n";
-      }
-    }
-
-    if (-e "${resultFile}.gz") {
-	print "  previous (zipped) result found\n";
-	$valid = &validateBM($inputFile, "${resultFile}.gz");
-	if (!$valid) {
-	  print "  trying again...\n";
-	  print "  unzipping ${resultFile}.gz\n";
-	  my $cmd = "gunzip ${resultFile}.gz";
-	  my $status = system($cmd);
-	  die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
-	}
-    }
-
+  my ($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time) = @_;
+ 
+  my $valid = 0;
+  if (-e $resultFile) {
+    print "  previous (unzipped) result found\n";
+    $valid = &validateBM($inputFile, $resultFile);
     if (!$valid) {
-	&runAndZip($propFile, $numnodes, $logFile, $resultFile);
-	my $valid = &validateBM($inputFile, "${resultFile}.gz");
-	if  (!$valid) {
-	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
-	}
+      print "  trying again...\n";
     }
+  }
 
+  if (-e "${resultFile}.gz") {
+    print "  previous (zipped) result found\n";
+    $valid = &validateBM($inputFile, "${resultFile}.gz");
+    if (!$valid) {
+      print "  trying again...\n";
+      print "  unzipping ${resultFile}.gz\n";
+      my $cmd = "gunzip ${resultFile}.gz";
+      my $status = system($cmd);
+      die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
+    }
+  }
+
+  if (!$valid) {
+    &runAndZip($propFile,$logFile, $resultFile, $numNodes, $time);
+    my $valid = &validateBM($inputFile, "${resultFile}.gz");
+    if  (!$valid) {
+      print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
+    }
+  }
 }
 
 sub validateRM {
@@ -277,23 +275,29 @@ sub validateBM {
 }
 
 sub runAndZip {
-  my ($propFile, $nummodes, $logFile, $resultFile) = @_;
+  my ($propFile, $logFile, $resultFile, $numNodes, $time) = @_;
 
-  &run($propFile, $nummodes, $logFile, $resultFile);
+  my ($cmd, $status);
+
+  $cmd = "liniacsubmit $numNodes $time $propFile >& $logFile";
+
+  $status = system($cmd);
+  &confess ("failed running '$cmd' with stderr:\n $!") if ($status >> 8);
 
   print "  zipping $resultFile...\n";
 
-  my $cmd = "gzip $resultFile";
-  my $status = system($cmd);
+  $cmd = "gzip $resultFile";
+  $status = system($cmd);
   die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
 }
 
 sub run {
-  my ($propFile, $numnodes, $logFile, $resultFile) = @_;
+  my ($propFile, $logFile, $numNodes, $time) = @_;
 
-  my $cmd = "liniacjob $numnodes 100000 $propFile >& $logFile";
-  my $status = system($cmd);
-  die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
+  my ($cmd, $status);
+
+  $cmd = "liniacsubmit $numNodes $time $propFile >& $logFile";
+  $status = system($cmd);
 }
 
 sub countSeqs {
