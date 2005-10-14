@@ -91,7 +91,7 @@ sub new {
     bless($self, $class);
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 3413 $',
+		       cvsRevision =>  '$Revision: 3862 $',
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -112,7 +112,7 @@ sub run {
     open(SO_FILE, $soFile);
 
     while (<SO_FILE>){
-      chomp;
+
       if (/^\n/) {
         unless ($type ne 'Term') {
            my $soTerm = $self->makeSequenceOntology($obo);
@@ -146,6 +146,10 @@ sub makeSequenceOntology {
    my $definition = $obo->{'def'};
 print "def = '$definition'\n";
    if ($definition eq '') {$definition = ' '};
+
+   $definition =~ s/\n//g;
+   $obo->{'id'}=~ s/\n//g;
+   $obo->{'name'}=~ s/\n//g;
 
 print "so_id $obo->{'id'}, term_name $obo->{'name'}, def $definition\n";
 
