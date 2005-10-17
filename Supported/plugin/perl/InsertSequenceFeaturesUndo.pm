@@ -180,8 +180,9 @@ sub undoSpecialCaseQualifiers{
 
   my @handlers = $mapperSet->getAllHandlers();
   foreach my $handler (@handlers){
-     $handler->undoAll($self->{'algInvocationIds'}, $self->{'dbh'});
-   }
+    no strict 'refs';
+    $handler->{class}->new->undoAll($self->{'algInvocationIds'}, $self->{'dbh'});
+  }
 }
 
 sub undoSequences{
