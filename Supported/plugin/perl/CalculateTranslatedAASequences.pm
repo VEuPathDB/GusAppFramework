@@ -5,7 +5,6 @@ use strict;
 use GUS::PluginMgr::Plugin;
 use base qw(GUS::PluginMgr::Plugin);
 
-use List::Utils qw(min max);
 use Bio::Tools::CodonTable;
 
 my $argsDeclaration =
@@ -95,7 +94,7 @@ sub run {
   my $extDbRlsId = $self->getExtDbRlsId($extDbRlsName, $extDbRlsVer);
 
   unless ($extDbRlsId) {
-    die "No such External Database Release / Version:\n $extDEbRlsName / $extDbRlsVer\n";
+    die "No such External Database Release / Version:\n $extDbRlsName / $extDbRlsVer\n";
   }
 
   my $codonTable = Bio::Tools::CodonTable->new();
@@ -123,7 +122,7 @@ EOSQL
 						{ external_database_release_id => $extDbRlsId }
 					       );
     if (@translatedAAFeats == 0) {
-      warn "skipping TranslatedAASequence, source_id: " . $aaSeq->getSourceId() . "\n":
+	warn "skipping TranslatedAASequence, source_id: " . $aaSeq->getSourceId() . "\n";
       next;
     } elsif (@translatedAAFeats > 1) {
       die "This situation not yet supported"
@@ -187,7 +186,7 @@ EOSQL
     my $translation;
 
     for my $exon (@exons) {
-      my ($exonStart, $exonStop, $exonIsReversed) = $exon->getFeatureLocation();
+      my ($exonStart, $exonEnd, $exonIsReversed) = $exon->getFeatureLocation();
 
       my $codingStart = $exon->getCodingStart();
       my $codingEnd = $exon->getCodingEnd();
@@ -202,11 +201,7 @@ EOSQL
       my $trim3 = $exonIsReversed ? $codingEnd - $exonStart : $exonEnd - $codingEnd;
       substr($chunk, -$trim3, $trim3, "") if $trim3 > 0;  
 
-      $exceptions->execute(min($codingStart, $codingEnd),
-			   max($codingStart, $codingEnd),
-			   $exonIsReversed,
-			   $exon->getNaSequenceId(),
-			   );
+      $exceptions->execute($exonStart, $exonEnd, $exonIsReversed, $exon->getNaSequenceId());
       
       while (my ($exceptionId) = $exceptions->fetchrow()) {
 	die "Sorry, translation expections not yet handled!\n";
