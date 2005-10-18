@@ -12,11 +12,15 @@ my $argsDeclaration =
 
    stringArg({ name => 'extDbRlsName',
 	       descr => 'External Database Release name of the transcripts to be translated',
+	       constraintFunc => undef,
+	       isList => 0,
 	       reqd => 1,
 	     }),
 
    stringArg({ name => 'extDbRlsVer',
 	       descr => 'External Database Release version of the transcripts to be translated',
+	       constraintFunc => undef,
+	       isList => 0,
 	       reqd => 1,
 	     }),
 
@@ -109,6 +113,10 @@ sub run {
 EOSQL
 
   $sth->execute($extDbRlsId);
+
+  unless ($sth->rows()) {
+    warn "No TranslatedAASequences with the specified External Database Release\n";
+  }
 
   while (my ($aaSeqId) = $sth->fetchrow()) {
 
