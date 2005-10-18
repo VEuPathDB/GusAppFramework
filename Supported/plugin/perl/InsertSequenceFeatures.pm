@@ -580,7 +580,7 @@ sub constructNASequence {
   }
   my $naSequence = GUS::Model::DoTS::ExternalNASequence->
     new({ external_database_release_id => $dbRlsId,
-	  source_id => $bioperlSeq->accession_number()});
+	  source_id => $bioperlSeq->accession_number() || $bioperlSeq->display_id()});
 
   my $seqType = $self->getArg('seqType');
   if ($seqType) { 
