@@ -524,8 +524,9 @@ sub doMajorMode_RunOrReport {
          $pu->setResultDescr($resultDescrip);
       }
       $self->logAlert("RESULT", $pu->getResultDescr());
-      $pu->logAlgInvocationId();
-      $pu->logCommit();
+
+      $Run && $pu->logAlgInvocationId();
+      $Run && $pu->logCommit();
    };}
 
    my $err = $@;
