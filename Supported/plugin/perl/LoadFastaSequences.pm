@@ -592,14 +592,17 @@ sub fetchSequenceTypeId {
 
   eval ("require GUS::Model::DoTS::SequenceType");
 
+  my $seqTypeName = $self->getArg('sequenceTypeName');
+  my $nuclType = $self->getArg('nucleotideType');
+
   if ($name) {
-    $self->getArg('sequenceTypeName') = $name;
-    $self->getArg('nucleotideType') = $name;
+    $seqTypeName = $name;
+    $nuclType = $name;
   }
 
   my $sequenceType =
-    GUS::Model::DoTS::SequenceType->new({ name => $self->getArg('sequenceTypeName'),
-					  nucleotide_type => $self->getArg('nucleotideType')
+    GUS::Model::DoTS::SequenceType->new({ name => $seqTypeName,
+					  nucleotide_type => $nuclType
 					});
   
   $sequenceType->retrieveFromDB;
