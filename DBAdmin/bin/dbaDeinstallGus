@@ -62,7 +62,9 @@ else { die("Unknown Database Vendor: ".$gusConfig->getDatabaseVendor()); }
 
 foreach my $schema ( @schemas ) {
     my $sql = "drop $modifier $schema cascade;";
-    print $sql . "\n";
+    print "Executing: $sql\n";
+    my $sth = $dbh->prepare($sql) or die("Could not prepare: $sql");
+    $sth->execute() or die("Could not execute: $sql");
 }
 
 
