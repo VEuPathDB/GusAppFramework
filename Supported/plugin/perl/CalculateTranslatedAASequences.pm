@@ -171,7 +171,7 @@ EOSQL
 
     my $exceptions = $dbh->prepare(<<EOSQL);
 
-  SELECT na_feature_id
+  SELECT na_feature_id, so.term
   FROM   DoTS.NAFeature naf,
          DoTS.NALocation nal,
          SRes.SequenceOntology so
@@ -183,16 +183,20 @@ EOSQL
 		     'minus_1_translational_frameshift',
 		     'four_bp_start_codon',
 		     '4bp_start_codon',
+		     'stop_codon_readthrough',
+		     'CTG_start_codon',
 		    )
   AND    nal.start BETWEEN ? AND ?
   AND    nal.is_reversed = ?
   AND    naf.na_sequence_id = ?
+ORDER BY CASE (nal.is_reversed) THEN nal.end_max ELSE nal.start_min END
 
 EOSQL
 
     my $cds;
     my $translation;
 
+    my @exceptions;
     for my $exon (@exons) {
       my ($exonStart, $exonEnd, $exonIsReversed) = $exon->getFeatureLocation();
 
@@ -203,20 +207,48 @@ EOSQL
 
       my $chunk = $exon->getFeatureSequence();
 
+      $exceptions->execute($exonStart, $exonEnd, $exonIsReversed, $exon->getNaSequenceId());
+
+      while (my ($exceptionId, $soTerm) = $exceptions->fetchrow()) {
+	if ($soTerm eq "stop_codon_redefinition_as_selenocysteine") {
+	  my $exception = GUS::Model::DoTS::NAFeature->new({ na_feature_id => $exceptionId });
+	  $exception->retrieveFromDB();
+
+	  my ($start, $end, $isReversed) = $exception->getFeatureLocation();
+	  push @exceptions, [ length($cds) + 1 + $isReversed ? $codingStart - $end : $start - $codingStart,
+			      length($cds) + 1 + $isReversed ? $codingStart - $start : $end - $codingStart,
+			      "TGA", "U"
+			    ];
+	} else {
+	  die "Sorry, translation expections for '$soTerm' not yet handled!\n";
+        }
+      }
+
       my $trim5 = $exonIsReversed ? $exonEnd - $codingStart : $codingStart - $exonStart;
       substr($chunk, 0, $trim5, "") if $trim5 > 0;  
 
       my $trim3 = $exonIsReversed ? $codingEnd - $exonStart : $exonEnd - $codingEnd;
       substr($chunk, -$trim3, $trim3, "") if $trim3 > 0;  
-
-      $exceptions->execute($exonStart, $exonEnd, $exonIsReversed, $exon->getNaSequenceId());
-      
-      while (my ($exceptionId) = $exceptions->fetchrow()) {
-	die "Sorry, translation expections not yet handled!\n";
-      }
     }
 
-    $translation .= $codonTable->translate($cds);
+    $translation = $codonTable->translate($cds);
+
+    for (my $i = 0 ; $i < @exceptions ; $i++) {
+      my ($start, $end, $codon, $residue) = @{$exceptions[$i]};
+      warn "changing codon @{[substr($cds, $start, $end - $start)]} to $codon ($residue)\n";
+      substr($cds, $start, $end - $start + 1, $codon);
+
+      substr($translation, int(($start-1) / 3), 1, $residue);
+
+      # adjust remaining coordinates, if necessary (e.g. 4 bp start codon)
+      unless (length($codon) == ($end - $start + 1)) {
+	my $delta = $end - $start + 1 - length($codon);
+	for (my $j = $i+1 ; $j < @exceptions ; $j++) {
+	  $exceptions[$i]->[0] += $delta;
+	  $exceptions[$i]->[1] += $delta;
+	}
+      }
+    }
 
     $translation =~ s/\*$//; # strip terminal stop codon, if present
 
