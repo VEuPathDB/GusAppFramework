@@ -20,6 +20,7 @@ my @properties =
  # JC: this is not optimal, but PropertySet won't accept an empty string here
  # without requiring that the user supply a value for the parameter
  ["oracleDefaultRollbackSegment",   "none", ""],  
+ ["dbVendor", "", ""],
 );
 
 # param gusConfigFile - an optional file of 'name=value'.
@@ -91,3 +92,7 @@ sub getOracleDefaultRollbackSegment {
   return $self->{propertySet}->getProp('oracleDefaultRollbackSegment');
 }
 
+sub getDatabaseVendor {
+    my ($self) = @_;
+    reutrn $self->{propertySet}->getProp('dbVendor');
+}
