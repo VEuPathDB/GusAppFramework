@@ -578,9 +578,14 @@ sub constructNASequence {
   if (!$bioperlSeq->seq()) {
     die "No input sequence found for accession '" . $bioperlSeq->accession_number() . "'.  If the input intentionally contains no sequence, please use --naSequenceSubclass and --seqIdColumn\n";
   }
+  
+  my $bioperlId = $bioperlSeq->accession_number();
+  $bioperlId = $bioperlSeq->display_id() if $bioperlId eq "unknown";
+
   my $naSequence = GUS::Model::DoTS::ExternalNASequence->
-    new({ external_database_release_id => $dbRlsId,
-	  source_id => $bioperlSeq->accession_number() || $bioperlSeq->display_id()});
+      new({ external_database_release_id => $dbRlsId,
+	    source_id => $bioperlId
+	 });
 
   my $seqType = $self->getArg('seqType');
   if ($seqType) { 
