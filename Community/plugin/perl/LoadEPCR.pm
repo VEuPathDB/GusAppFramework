@@ -94,9 +94,9 @@ PLUGIN_NOTES
 	      isList => 0,
 	      format => 'inserted info?'
      }),
-     tableNameArg({name => 'maptableid',
+     integerArg({name => 'maptableid',
 		   reqd => 1,
-		   descr => 'Id for mapping table, i.e. DoTS::VirtualSequence ',
+		   descr => 'Id for mapping table, i.e. 245 for DoTS::VirtualSequence ',
 		   constraintFunc => undef,
 		   isList => 0
      }),
@@ -145,15 +145,16 @@ sub run {
 	############################################################
 	# Put loop here...remember to undefPointerCache()!
 	############################################################
-	my ($fh,$dir,$file,$count,$log,$maptableid, $seqsubclassview,$is_reversed,$extDbRelId);
+	my ($fh,$dir,$file,$count,$log,$maptableid,$is_reversed,$extDbRelId);
 	#$idcol = $args->{ idcol };
 	$dir = $args->{ dir };
 	$file = $args->{ file };
 	$fh = new FileHandle("$file", "<") || die "File $dir$file not open";
 	$log = new FileHandle("$args->{ log }", ">") || die "Log not open";
         $maptableid = $args->{maptableid};
-	$seqsubclassview = $args->{seqsubclassview};	
-	my $oracleName = $self->className2oracleName($seqsubclassview);
+	my ($space, $subclassView) = split(/::/,$args->{seqsubclassview});	
+
+	my $oracleName = $self->className2oracleName($args->{seqsubclassview});
 	$extDbRelId = $args->{externalDatabaseReleaseId};	
 	while (my $l = $fh->getline()) {
 		$count++;
@@ -205,11 +206,11 @@ sub run {
 			next;
 		}
                 $sgm->setMapTableId($maptableid);
-		$sgm->setSeqSubclassView($seqsubclassview);
+		$sgm->setSeqSubclassView($subclassView);
 
 		## Submit entry
 		$log->print("SUBMITTED: $maptableid\t$map_id\t$is_reversed\t$locs[0]\t$locs[1]\t$naid\t$count\n");
-		#$sgm->submit();
+		$sgm->submit();
 
 		$algoInvo->undefPointerCache();
 		last if (defined $args->{testnumber} && $count >= $args->{testnumber});
