@@ -288,6 +288,10 @@ sub run {
   $self->{mapperSet} =
     GUS::Supported::BioperlFeatMapperSet->new($self->getArg('mapFile'), $self);
 
+  my $dbRlsId = $self->getExtDbRlsId($self->getArg('extDbName'),
+				     $self->getArg('extDbRlsVer'))
+      or die "Couldn't retrieve external database!\n";
+
   $self->getSoPrimaryKeys(); ## pre-load into memory and validate
 
   $self->initHandlerExternalDbs();
@@ -312,11 +316,11 @@ sub run {
     while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
 
       # use id instead of object because object is zapped by undefPointerCache
-      my $naSequenceId = $self->processSequence($bioperlSeq);
+      my $naSequenceId = $self->processSequence($bioperlSeq, $dbRlsId);
 
       $seqCount++;
 
-      $self->processFeatureTrees($bioperlSeq, $naSequenceId);
+      $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId);
 
       $self->undefPointerCache();
 
@@ -514,17 +518,13 @@ sub makeAggregators {
 ###########################################################################
 
 sub processSequence {
-  my ($self, $bioperlSeq) = @_;
-
-  my $dbRlsId = $self->getExtDbRlsId($self->getArg('extDbName'),
-				     $self->getArg('extDbRlsVer'))
-    or die "Couldn't retrieve external database!\n";
+  my ($self, $bioperlSeq, $dbRlsId) = @_;
 
   my $naSequence;
   if ($self->getArg('naSequenceSubclass')) {
     $naSequence = $self->retrieveNASequence($bioperlSeq, $dbRlsId);
   } else {
-    $naSequence = $self->bioperl2NASequence($bioperlSeq);
+    $naSequence = $self->bioperl2NASequence($bioperlSeq, $dbRlsId);
     $naSequence->submit();
   }
 
@@ -702,13 +702,13 @@ sub addKeywords {
 ###########################################################################
 
 sub processFeatureTrees {
-  my ($self, $bioperlSeq, $naSequenceId) = @_;
+  my ($self, $bioperlSeq, $naSequenceId, $dbRlsId) = @_;
 
   $self->unflatten($bioperlSeq)
     unless ($self->getArg("fileFormat") =~ m/^gff\d$/i);
 
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
-    my $NAFeature = $self->makeFeature($bioperlFeatureTree, $naSequenceId);
+    my $NAFeature = $self->makeFeature($bioperlFeatureTree, $naSequenceId, $dbRlsId);
     if (!$NAFeature) {
       next;
     }
@@ -723,7 +723,7 @@ sub processFeatureTrees {
 }
 
 sub makeFeature {
-  my ($self, $bioperlFeature, $naSequenceId) = @_; 
+  my ($self, $bioperlFeature, $naSequenceId, $dbRlsId) = @_; 
 
 
   # there is an error in the bioperl unflattener such that there may be
@@ -731,7 +731,7 @@ sub makeFeature {
   # this method has extra logic to compensate for that problem.
 
   # map the immediate bioperl feature into a gus feature
-  my $feature = $self->makeImmediateFeature($bioperlFeature, $naSequenceId);
+  my $feature = $self->makeImmediateFeature($bioperlFeature, $naSequenceId, $dbRlsId);
 
   if ($feature) {
     # call method to handle unflattener error of giving rRNAs no exon.
@@ -750,7 +750,7 @@ sub makeFeature {
 
 # make a feature itself without worrying about its children
 sub makeImmediateFeature {
-  my ($self, $bioperlFeature, $naSequenceId) = @_;
+  my ($self, $bioperlFeature, $naSequenceId, $dbRlsId) = @_;
 
 
   my $tag = $bioperlFeature->primary_tag();
@@ -765,6 +765,7 @@ sub makeImmediateFeature {
 
   $feature->setNaSequenceId($naSequenceId);
   $feature->setName($bioperlFeature->primary_tag());
+  $feature->setExternalDatabaseReleaseId($dbRlsId);
 
   my $soTerm = $featureMapper->getSoTerm();
   if ($soTerm) {
@@ -845,7 +846,6 @@ sub getTaxonId {
     }
     $sciName =~ /\w+ \w+/ || $self->userError("Command line argument '--defaultOrganism $sciName' is not in 'genus species' format");
   }
-
 
   return $self->getIdFromCache('taxonNameCache',
 			       $sciName,
