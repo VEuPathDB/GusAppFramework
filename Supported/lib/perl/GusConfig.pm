@@ -94,5 +94,5 @@ sub getOracleDefaultRollbackSegment {
 
 sub getDatabaseVendor {
     my ($self) = @_;
-    reutrn $self->{propertySet}->getProp('dbVendor');
+    return $self->{propertySet}->getProp('dbVendor');
 }
