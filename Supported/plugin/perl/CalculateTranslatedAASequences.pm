@@ -125,7 +125,7 @@ EOSQL
   while (my ($aaSeqId) = $sth->fetchrow()) {
 
     my $aaSeq = GUS::Model::DoTS::TranslatedAASequence->new({ aa_sequence_id => $aaSeqId });
-    unless ($aaSeq->retrieveFromDb()) {
+    unless ($aaSeq->retrieveFromDB()) {
       die "Not sure what happened: $aaSeqId was supposed to fetch a TranslatedAASequence, but couldn't\n";
     }
 
