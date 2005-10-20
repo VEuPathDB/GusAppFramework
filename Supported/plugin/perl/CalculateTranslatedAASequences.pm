@@ -7,7 +7,9 @@ use base qw(GUS::PluginMgr::Plugin);
 
 use Bio::Tools::CodonTable;
 
+use  GUS::Model::DoTS::TranslatedAASequence;
 
+use GUS::Model::DoTS::NAFeature;
 
 my $argsDeclaration =
   [
