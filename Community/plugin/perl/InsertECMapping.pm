@@ -85,7 +85,7 @@ sub new {
 
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 3839 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 3840 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -118,7 +118,7 @@ sub getMapping {
   open (ECMAP, "$mappingFile") ||
                     die ("Can't open the file $mappingFile.  Reason: $!\n");
 
-print "The pairs found in the file are:\n";
+#print "The pairs found in the file are:\n";
 
     while (<ECMAP>) {
 	chomp;
@@ -173,7 +173,7 @@ sub getEnzymeClass {
   $newEnzymeClass->retrieveFromDB();
   my $enzymeClass = $newEnzymeClass->getId();
 
-print "Enzyme Class = $enzymeClass\n";
+#print "Enzyme Class = $enzymeClass\n";
 
 $$ecHash{$ecNumber} = $enzymeClass;
 
@@ -184,7 +184,9 @@ $$ecHash{$ecNumber} = $enzymeClass;
 sub getAASeqId {
   my ($self, $locusTag, $aaIdHash) = @_;
 
-my $sql = "select s.aa_sequence_id from DoTS.TranslatedAAFeature s, (SELECT distinct na_feature_id FROM DoTS.GeneFeature WHERE row_project_id=61 AND (LOWER(source_id) LIKE LOWER(REPLACE(REPLACE('$locusTag',' ',''), '*', '%')) OR na_feature_id IN (SELECT na_feature_id FROM DoTS.NAFeatureNaGene fg, DoTS.NAGene g WHERE LOWER(g.name) LIKE LOWER(REPLACE(REPLACE('$locusTag',' ',''), '*', '%')) AND g.na_gene_id = fg.na_gene_id))) t where s.na_feature_id = t.na_feature_id";
+#my $sql = "select s.aa_sequence_id from DoTS.TranslatedAAFeature s, (SELECT distinct na_feature_id FROM DoTS.GeneFeature WHERE row_project_id=61 AND (LOWER(source_id) LIKE LOWER(REPLACE(REPLACE('$locusTag',' ',''), '*', '%')) OR na_feature_id IN (SELECT na_feature_id FROM DoTS.NAFeatureNaGene fg, DoTS.NAGene g WHERE LOWER(g.name) LIKE LOWER(REPLACE(REPLACE('$locusTag',' ',''), '*', '%')) AND g.na_gene_id = fg.na_gene_id))) t where s.na_feature_id = t.na_feature_id";
+
+my $sql = "select s.aa_sequence_id from DoTS.TranslatedAAFeature s, (SELECT distinct na_feature_id FROM DoTS.GeneFeature WHERE (LOWER(source_id) LIKE LOWER(REPLACE(REPLACE('$locusTag',' ',''), '*', '%')) OR na_feature_id IN (SELECT na_feature_id FROM DoTS.NAFeatureNaGene fg, DoTS.NAGene g WHERE LOWER(g.name) LIKE LOWER(REPLACE(REPLACE('$locusTag',' ',''), '*', '%')) AND g.na_gene_id = fg.na_gene_id))) t where s.na_feature_id = t.na_feature_id";
 
     my $queryHandle = $self->getQueryHandle();
     my $sth = $queryHandle->prepareAndExecute($sql);
@@ -192,7 +194,7 @@ my $sql = "select s.aa_sequence_id from DoTS.TranslatedAAFeature s, (SELECT dist
     my $aaSequenceId = $sth->fetchrow_array();
     $sth->finish();
 
-print "my aaSeqId = $aaSequenceId\n";
+#print "my aaSeqId = $aaSequenceId\n";
 
 $$aaIdHash{$locusTag} = $aaSequenceId;
 
