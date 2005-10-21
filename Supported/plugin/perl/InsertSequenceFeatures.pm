@@ -814,6 +814,17 @@ sub makeLocation {
   my $start = $f_location->start();
   my $end = $f_location->end();
 
+  if ($start > $end){
+    if ($strand == 1){
+      ($start, $end) = ($end, $start);
+      ($max_start, $min_end) = ($min_end, $max_start);
+      ($min_start, $max_end) = ($max_end, $min_start);
+    }
+    else{
+      $self->log("The start value $start is greater than the end value $end, but the feature is on the $strand strand.");
+    }
+  }
+
   my $gus_location = GUS::Model::DoTS::NALocation->new();
   $gus_location->setStartMax($max_start);
   $gus_location->setStartMin($min_start);
