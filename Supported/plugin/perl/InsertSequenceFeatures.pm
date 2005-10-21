@@ -821,7 +821,7 @@ sub makeLocation {
       ($min_start, $max_end) = ($max_end, $min_start);
     }
     else{
-      $self->log("The start value $start is greater than the end value $end, but the feature is on the $strand strand.");
+      $self->log("The start value $start is greater than the end value $end, but the feature is on the @{[$strand ? -1 : +1]} strand.");
     }
   }
 
