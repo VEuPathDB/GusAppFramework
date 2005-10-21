@@ -779,6 +779,8 @@ sub makeImmediateFeature {
   $feature->addChild($self->makeLocation($bioperlFeature->location(),
 					 $bioperlFeature->strand()));
 
+  $feature->submit();
+
   foreach my $tag ($bioperlFeature->get_all_tags()) {
     my $ignoreFeature = $self->handleFeatureTag($bioperlFeature,
 						$featureMapper,
