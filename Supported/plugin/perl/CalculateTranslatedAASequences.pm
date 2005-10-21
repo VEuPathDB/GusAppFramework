@@ -162,38 +162,41 @@ EOSQL
 
     $codonTable->id($taxon->getGeneticCodeId() || 1);
 
-    my @exons = $transcript->getChildren("DoTS::ExonFeature",
-					 1, 0,
-					 { external_database_release_id => $extDbRlsId }
-					);
+    my @exons = $transcript->getChildren("DoTS::ExonFeature",1);
+
+    #to be restored and substituted for the above
+     #my @exons = $transcript->getChildren("DoTS::ExonFeature",
+	#				 1, 0,
+		#			 { external_database_release_id => $extDbRlsId }
+			#		);
 
     unless (@exons) {
       die "Transcript had no exons: " . $transcript->getSourceId() . "\n";
     }
 
-    @exons = sort { $a->[0]->getOrderNumber <=> $b->[0]->getOrderNumber } @exons;
+    @exons = sort { $a->getOrderNumber <=> $b->getOrderNumber } @exons;
 
     my $exceptions = $dbh->prepare(<<EOSQL);
 
-  SELECT na_feature_id, so.term
+  SELECT naf.na_feature_id, so.term_name
   FROM   DoTS.NAFeature naf,
          DoTS.NALocation nal,
          SRes.SequenceOntology so
   WHERE  naf.sequence_ontology_id = so.sequence_ontology_id
   AND    nal.na_feature_id = naf.na_feature_id
-  AND    so.term in ('stop_codon_redefinition_as_selenocysteine',
+  AND    so.term_name in ('stop_codon_redefinition_as_selenocysteine',
 		     'stop_codon_redefinition_as_pyrrolysine',
 		     'plus_1_translational_frameshift',
 		     'minus_1_translational_frameshift',
 		     'four_bp_start_codon',
 		     '4bp_start_codon',
 		     'stop_codon_readthrough',
-		     'CTG_start_codon',
+		     'CTG_start_codon'
 		    )
-  AND    nal.start BETWEEN ? AND ?
+  AND    nal.start_min BETWEEN ? AND ?
   AND    nal.is_reversed = ?
   AND    naf.na_sequence_id = ?
-ORDER BY CASE (nal.is_reversed) THEN nal.end_max ELSE nal.start_min END
+ORDER BY CASE WHEN nal.is_reversed = 1 THEN nal.end_max ELSE nal.start_min END
 
 EOSQL
 
@@ -233,6 +236,8 @@ EOSQL
 
       my $trim3 = $exonIsReversed ? $codingEnd - $exonStart : $exonEnd - $codingEnd;
       substr($chunk, -$trim3, $trim3, "") if $trim3 > 0;  
+
+      $cds .= $chunk;
     }
 
     $translation = $codonTable->translate($cds);
@@ -262,6 +267,7 @@ EOSQL
     
     $aaSeq->setSequence($translation);
     $aaSeq->submit();
+    $self->undefPointerCache();
   }
 
   warn "Done.\n";
