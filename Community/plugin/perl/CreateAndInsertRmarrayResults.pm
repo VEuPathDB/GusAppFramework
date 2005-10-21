@@ -528,9 +528,8 @@ sub createLogicalGroup{
   my ($self, $dbh) = @_;      
 
   # retrieve study name
-  my $sql = "SELECT s.name, a.name FROM RAD.study s, rad.studyassay sa, rad.acquisition acq, rad.quantification q, rad.assay a
-            WHERE q.quantification_id = ? and q.acquisition_id=acq.acquisition_id and acq.assay_id=sa.assay_id and sa.study_id=s.study_id and 
-            acq.assay_id=a.assay_id";
+  my $sql = "SELECT s.name, a.name FROM study.study s, rad.studyassay sa, rad.acquisition acq, rad.quantification q, rad.assay a
+            WHERE q.quantification_id = ? and q.acquisition_id=acq.acquisition_id and acq.assay_id=sa.assay_id and sa.study_id=s.study_id and acq.assay_id=a.assay_id";
 
   my $sth = $dbh->prepare($sql);
   $sth->execute($cfg_rv->{quantification_id}->[0]);
@@ -654,9 +653,9 @@ sub writeAnalysisCfgFile {
     push @params, [$param_id, 'none'];
   } 
 
-  if ($self->getArg('smoothing_parameter')) {
+  if ($self->getArg('smoothing_param')) {
     $param_id =  $self->getProtocolParamId($norm_protocol_id, 'smoothing_param');
-    push @params, [$param_id, $self->getArg('smoothing_parameter')];
+    push @params, [$param_id, $self->getArg('smoothing_param')];
   }
   
   $param_id =  $self->getProtocolParamId($norm_protocol_id, 'numerator_channel');
