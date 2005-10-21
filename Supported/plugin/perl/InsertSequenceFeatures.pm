@@ -740,12 +740,12 @@ sub makeFeature {
 
   if ($feature) {
     # call method to handle unflattener error of giving rRNAs no exon.
-    $self->handleExonlessRRNA($bioperlFeature, $feature,$naSequenceId);
+    $self->handleExonlessRRNA($bioperlFeature, $feature,$naSequenceId, $dbRlsId);
 
     # recurse through the children
     foreach my $bioperlChildFeature ($bioperlFeature->get_SeqFeatures()) {
       my $childFeature =
-	$self->makeFeature($bioperlChildFeature, $naSequenceId);
+	$self->makeFeature($bioperlChildFeature, $naSequenceId, $dbRlsId);
 
       if ($childFeature) { $feature->addChild($childFeature); }
     }
@@ -918,12 +918,13 @@ sub handleFeatureTag {
 
 # compensate from error in unflattener that gives no exon to rRNAs sometimes
 sub handleExonlessRRNA {
-  my ($self, $bioperlFeature, $feature, $naSequenceId) = @_;
+  my ($self, $bioperlFeature, $feature, $naSequenceId, $dbRlsId) = @_;
 
   if ($bioperlFeature->primary_tag() eq 'rRNA'
       && (scalar($bioperlFeature->get_SeqFeatures()) == 0)) {
     my $exonFeature = GUS::Model::DoTS::ExonFeature->new();
     $exonFeature->setNaSequenceId($naSequenceId);
+    $exonFeature->setExternalDatabaseReleaseId($dbRlsId);
     $exonFeature->setName('Exon');
     $exonFeature->addChild($self->makeLocation($bioperlFeature->location(),
 					       $bioperlFeature->strand()));
