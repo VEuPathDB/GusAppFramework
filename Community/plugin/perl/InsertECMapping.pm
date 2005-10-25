@@ -129,6 +129,9 @@ $self->log("The pairs found in the file are:\n");
 	  next;
 	}
 
+	$locusTag =~ s/\s//g;
+	$ecNumber =~ s/\s//g;
+
 	$self->log("Processed Pfid: $locusTag, ECNumber: $ecNumber\n");
 
 	if ($ecNumbers{$ecNumber}){
@@ -191,11 +194,11 @@ SELECT s.aa_sequence_id
 FROM DoTS.TranslatedAAFeature s,
      (SELECT distinct na_feature_id
       FROM dots.transcript
-      WHERE (LOWER(source_id) LIKE LOWER(REPLACE(REPLACE('$locusTag','',''), '*', '%'))
+      WHERE (LOWER(source_id) LIKE LOWER('$locusTag')
       OR
       na_feature_id IN ( SELECT r.na_feature_id
         FROM dots.naFeatureNaGene fg, dots.naGene g, dots.transcript r
-        WHERE LOWER(g.name) LIKE LOWER(REPLACE(REPLACE('$locusTag',' ',''), '*', '%'))
+        WHERE LOWER(g.name) LIKE LOWER('$locusTag')
         AND g.na_gene_id = fg.na_gene_id AND fg.na_feature_id = r.parent_id))) t WHERE t.na_feature_id = s.na_feature_id
 EOSQL
 
