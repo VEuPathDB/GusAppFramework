@@ -85,7 +85,7 @@ sub new {
 
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 3937 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 3949 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -155,8 +155,10 @@ $self->log("The pairs found in the file are:\n");
 	});
 
 	unless (!$enzymeClass || !$aaSeqId){
-	  $self->log("submitted enzyme $enzymeClass, seq $aaSeqId\n");
-	  $newAASeqEnzClass->submit();
+	  if(!$newAASeqEnzClass->retrieveFromDB()){
+	    $self->log("submitted enzyme $enzymeClass, seq $aaSeqId\n");
+	    $newAASeqEnzClass->submit();
+	  }
 	}
       }
 
