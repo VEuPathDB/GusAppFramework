@@ -29,7 +29,7 @@ Creates new entries in table DoTS.AASequenceEnzymeClass to represent new aa sequ
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-Takes in a tab delimited file of the order EC number, identifier, and creates new entries in table DoTS.AASequenceEnzymeClass to represent new aa sequence/enzyme class associations.
+Takes in a tab delimited file of the order EC number, identifier, and creates new entries in table DoTS.AASequenceEnzymeClass to represent new aa sequence/enzyme class associations.  If the identifier is not the primary identifier, we will map the EC number to the primary identifier via the NAGene table, which houses gene aliases.  The mapping then will be NAGene to NAFeatureNAGene to Transcript.
 PLUGIN_PURPOSE
 
 my $tablesAffected =
@@ -85,7 +85,7 @@ sub new {
 
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 3912 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 3937 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -186,7 +186,18 @@ return $enzymeClass;
 sub getAASeqId {
   my ($self, $locusTag, $aaIdHash) = @_;
 
-my $sql = "select s.aa_sequence_id from DoTS.TranslatedAAFeature s, (SELECT distinct na_feature_id FROM dots.transcript WHERE (LOWER(source_id) LIKE LOWER(REPLACE(REPLACE('$locusTag','',''), '*', '%')) OR na_feature_id IN (SELECT na_feature_id FROM dots.naFeatureNaGene fg, dots.naGene g WHERE LOWER(g.name) LIKE LOWER(REPLACE(REPLACE('$locusTag',' ',''), '*', '%')) AND g.na_gene_id = fg.na_gene_id))) t where t.na_feature_id = s.na_feature_id";
+my $sql = <<EOSQL;
+SELECT s.aa_sequence_id
+FROM DoTS.TranslatedAAFeature s,
+     (SELECT distinct na_feature_id
+      FROM dots.transcript
+      WHERE (LOWER(source_id) LIKE LOWER(REPLACE(REPLACE('$locusTag','',''), '*', '%'))
+      OR
+      na_feature_id IN ( SELECT r.na_feature_id
+        FROM dots.naFeatureNaGene fg, dots.naGene g, dots.transcript r
+        WHERE LOWER(g.name) LIKE LOWER(REPLACE(REPLACE('$locusTag',' ',''), '*', '%'))
+        AND g.na_gene_id = fg.na_gene_id AND fg.na_feature_id = r.parent_id))) t WHERE t.na_feature_id = s.na_feature_id
+EOSQL
 
     my $queryHandle = $self->getQueryHandle();
     my $sth = $queryHandle->prepareAndExecute($sql);
