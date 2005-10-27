@@ -129,6 +129,10 @@ public class GusTable extends Table {
     }
 
     public TreeSet<Index> getIndexs( ) {
+        return getIndexes();
+    }
+    
+    public TreeSet<Index> getIndexes( ) {
         return index;
     }
 
@@ -205,6 +209,10 @@ public class GusTable extends Table {
         }
     }
 
+    public GusTable getSuperclass() {
+        return (GusTable) super.getSuperclass();
+    }
+    
     public TreeSet<GusTable> getSubclasses( ) {
         return (TreeSet<GusTable>) super.getSubclasses( );
     }
@@ -338,4 +346,5 @@ public class GusTable extends Table {
         if ( versioned != other.isVersioned( ) ) return false;
         return super.equals( o );
     }
+
 }

@@ -11,9 +11,7 @@ import java.util.Iterator;
 import java.util.Random;
 
 import org.gusdb.dbadmin.model.Column;
-import org.gusdb.dbadmin.model.ColumnType;
 import org.gusdb.dbadmin.model.Constraint;
-import org.gusdb.dbadmin.model.ConstraintType;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Index;
 import org.gusdb.dbadmin.model.Schema;
@@ -30,7 +28,7 @@ import org.gusdb.dbadmin.model.View;
 public abstract class RelationalDatabaseWriter extends SchemaWriter {
 
     protected Random random;
-    protected Collection written = new HashSet();
+    protected HashSet<Table> written = new HashSet<Table>();
 
     /**
      * DOCUMENT ME!
@@ -77,10 +75,10 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
 
         if (table.getClass() == GusTable.class) {
             writeIndexes((GusTable)table);
+            oStream.write("\n");
+            writePKConstraint((GusTable)table);
         }
 
-        oStream.write("\n");
-        writePKConstraint(table);
         oStream.write("\n");
     }
 
@@ -90,13 +88,9 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
      * @param schema DOCUMENT ME!
      * @throws IOException DOCUMENT ME!
      */
-    protected void writeViews(Schema schema)
-                       throws IOException {
-
-        for (Iterator i = schema.getViews().iterator(); i.hasNext();) {
-
-            View view = (View)i.next();
-            writeView(view);
+    protected void writeViews( Schema schema ) throws IOException {
+        for ( View view : schema.getViews() ) {
+            writeView( view );
         }
     }
 
@@ -106,16 +100,12 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
      * @param view DOCUMENT ME!
      * @throws IOException DOCUMENT ME!
      */
-    protected void writeView(View view)
-                      throws IOException {
-
+    protected void writeView(View view) throws IOException {
         if (written.contains(view)) {
-
             return;
         }
 
-        oStream.write(
-                "CREATE VIEW " + view.getSchema().getName() + "." + 
+        oStream.write("CREATE VIEW " + view.getSchema().getName() + "." + 
                 view.getName() + " AS \n");
         oStream.write(view.getSql());
         oStream.write("\n\n");
@@ -133,9 +123,7 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
 
         boolean first = true;
 
-        for (Iterator i = table.getColumns(true).iterator(); i.hasNext();) {
-
-            Column column = (Column)i.next();
+        for ( Column column : table.getColumnsExcludeSuperclass(true)) {
 
             if (!first) {
                 oStream.write(",\n");
@@ -149,12 +137,12 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
                     "\t " + column.getName() + " " + 
                     getType(column.getType()));
 
-            if (column.getType() == ColumnType.STRING || 
-                column.getType() == ColumnType.CHARACTER) {
+            if (column.getType() == Column.ColumnType.STRING || 
+                column.getType() == Column.ColumnType.CHARACTER) {
                 oStream.write("(" + column.getLength() + ") ");
             }
 
-            if (column.getType() == ColumnType.NUMBER && 
+            if (column.getType() == Column.ColumnType.NUMBER && 
                 column.getLength() != 0) {
                 oStream.write(
                         "(" + column.getLength() + "," + 
@@ -242,7 +230,7 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
      * @param table DOCUMENT ME!
      * @throws IOException DOCUMENT ME!
      */
-    protected void writePKConstraint(Table table)
+    protected void writePKConstraint(GusTable table)
                               throws IOException {
 
         Constraint constraint = table.getPrimaryKey();
@@ -275,7 +263,7 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
 
             Constraint constraint = (Constraint)i.next();
 
-            if (constraint.getType() == ConstraintType.UNIQUE) {
+            if (constraint.getType() == Constraint.ConstraintType.UNIQUE) {
                 writeUQConstraint(constraint);
             }
         }
@@ -314,7 +302,7 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
 
             Constraint constraint = (Constraint)i.next();
 
-            if (constraint.getType() == ConstraintType.FOREIGN_KEY) {
+            if (constraint.getType() == Constraint.ConstraintType.FOREIGN_KEY) {
                 writeFKConstraint(constraint);
             }
         }
@@ -369,7 +357,7 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
      * @param type The ColumnType for conversion
      * @return Corresponding RDBMS type 
      */
-    protected abstract String getType(ColumnType type);
+    protected abstract String getType(Column.ColumnType type);
 
     /**
      * @see org.gusdb.dbadmin.writer.SchemaWriter#setUp()

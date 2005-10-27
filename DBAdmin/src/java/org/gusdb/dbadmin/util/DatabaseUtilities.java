@@ -2,7 +2,7 @@
  */
 package org.gusdb.dbadmin.util;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.gusdb.dbadmin.model.Table;
@@ -25,10 +25,8 @@ public abstract class DatabaseUtilities {
      *@param  tableName   Description of the Parameter
      *@return             The tableFromCollection value
      */
-    public static Table getTableFromCollection( Collection tables, String schemaName, String tableName ) {
-        for ( Iterator i = tables.iterator(); i.hasNext();  ) {
-            Table table  = (Table) i.next();
-
+    public static Table getTableFromCollection( ArrayList<Table> tables, String schemaName, String tableName ) {
+        for ( Table table : tables ) {
             if ( table.getSchema().getName().equalsIgnoreCase( schemaName )
                  && table.getName().equalsIgnoreCase( tableName ) ) {
                 return table;
@@ -45,15 +43,12 @@ public abstract class DatabaseUtilities {
      *@param  tablespaceName  Tablespace name to set
      */
     public static void setTablespace( Database db, String tablespaceName ) {
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext();  ) {
-			for ( Iterator j = ((Schema) i.next()).getTables().iterator(); j.hasNext(); ) {
-				Table table = (Table) j.next();
-				table.setTablespace(tablespaceName);
+	    for ( Table table : db.getAllTables() ) {
+			table.setTablespace(tablespaceName);
 				
-				if ( table.getClass() == GusTable.class ) {
-					for ( Iterator k = ((GusTable)table).getIndexs().iterator(); k.hasNext(); ) {
-						((Index) k.next()).setTablespace(tablespaceName);
-					}
+			if ( table.getClass() == GusTable.class ) {
+                for ( Index i : ((GusTable) table).getIndexes() ) {
+					i.setTablespace(tablespaceName);
 				}
 			}
 		}	

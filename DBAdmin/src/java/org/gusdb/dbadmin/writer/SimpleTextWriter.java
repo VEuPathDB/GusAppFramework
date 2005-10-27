@@ -39,27 +39,17 @@ public class SimpleTextWriter extends SchemaWriter {
 			oStream.write( "__" + db.getName() + "__\n\n" );
 		}
 
-		TreeSet schemas  = new TreeSet( db.getSchemas() );
-
-		for ( Iterator i = schemas.iterator(); i.hasNext();  ) {
-		Schema schema  = (Schema) i.next();
-
-			if ( schema.getClass() == GusSchema.class ) {
-				oStream.write( "__" + schema.getName() + "__\n\n" );
-				writeTables( schema );
-				oStream.flush();
-			}
+        for ( GusSchema schema : db.getGusSchemas() ) {
+			oStream.write( "__" + schema.getName() + "__\n\n" );
+			writeTables( schema );
+			oStream.flush();
 		}
 		written = new HashSet();
 	}
 
 
-	private void writeTables( Schema schema ) throws IOException {
-		TreeSet tables  = new TreeSet( schema.getTables() );
-
-		for ( Iterator i = tables.iterator(); i.hasNext();  ) {
-			GusTable table  = (GusTable) i.next();
-
+	private void writeTables( GusSchema schema ) throws IOException {
+		for ( GusTable table : schema.getTables() ) {
 			writeTable( table );
 			oStream.flush();
 		}
@@ -97,10 +87,8 @@ public class SimpleTextWriter extends SchemaWriter {
 		written.add( table );
 
 		if ( ! table.getSubclasses().isEmpty() ) {
-			TreeSet subclasses  = new TreeSet( table.getSubclasses() );
-
-			for ( Iterator i = subclasses.iterator(); i.hasNext();  ) {
-				writeTable( (GusTable) i.next() );
+			for ( GusTable subclass : table.getSubclasses() ) {
+		        writeTable(subclass);
 			}
 		}
 	}
@@ -117,32 +105,27 @@ public class SimpleTextWriter extends SchemaWriter {
 
 
 	private void writeColumns( Table table ) throws IOException {
-		for ( Iterator i = table.getColumns( true ).iterator(); i.hasNext();  ) {
-			Column column  = (Column) i.next();
-
-			if ( column.getClass() != HousekeepingColumn.class ) {
-				oStream.write( "\t" + column.getName() );
-				writeSpace( column.getName() );
-				writeType( column );
-				if ( !column.isNullable() ) {
-					oStream.write( "\tNOT NULL" );
-				}
-				oStream.write( "\n" );
+        for ( Column column : table.getColumnsExcludeSuperclass(false)) {
+			oStream.write( "\t" + column.getName() );
+			writeSpace( column.getName() );
+		    writeType( column );
+			if ( !column.isNullable() ) {
+			    oStream.write( "\tNOT NULL" );
 			}
+			oStream.write( "\n" );
 		}
 		oStream.flush();
 	}
-
 
 	private void writeType( Column column ) throws IOException {
 		if ( !column.getConstraints().isEmpty() ) {
 			for ( Iterator i = column.getConstraints().iterator(); i.hasNext();  ) {
 			Constraint cons  = (Constraint) i.next();
 
-				if ( cons.getType() == ConstraintType.FOREIGN_KEY ) {
+				if ( cons.getType() == Constraint.ConstraintType.FOREIGN_KEY ) {
 					writeRefType( cons );
 				}
-				if ( cons.getType() == ConstraintType.PRIMARY_KEY ) {
+				if ( cons.getType() == Constraint.ConstraintType.PRIMARY_KEY ) {
 					writeTrueType( column );
 				}
 			}
@@ -156,11 +139,11 @@ public class SimpleTextWriter extends SchemaWriter {
 	private void writeTrueType( Column column ) throws IOException {
 		String type  = column.getType().toString();
 
-		if ( column.getType() == ColumnType.STRING ||
-			 column.getType() == ColumnType.CHARACTER ) {
+		if ( column.getType() == Column.ColumnType.STRING ||
+			 column.getType() == Column.ColumnType.CHARACTER ) {
 			type = type + "(" + column.getLength() + ") ";
 		}
-		if ( column.getType() == ColumnType.NUMBER &&
+		if ( column.getType() == Column.ColumnType.NUMBER &&
 			column.getLength() != 0 ) {
 			type = type + "(" + column.getLength() + ","
 				 + column.getPrecision() + ") ";

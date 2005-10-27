@@ -48,6 +48,10 @@ public class GusView extends View {
         return this.versionView;
     }
 
+    public GusTable getTable() {
+        return (GusTable) super.getTable();
+    }
+    
     public void setTable( GusTable table ) {
         super.setTable( table );
         if ( table.getVersionTable( ) != null && this.versionView != null ) {

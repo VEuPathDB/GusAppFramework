@@ -53,9 +53,7 @@ public class SchemaComparator {
         if ( ! leftIdenticalTables.isEmpty( ) ) return leftIdenticalTables;
         log.info("finding identical tables");
         
-        for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
-            GusTable table = (GusTable) i.next( );
-
+        for ( GusTable table : leftDatabase.getGusTables() ) {
             Schema rightSchema = rightDatabase.getSchema( table.getSchema( ).getName( ) );
             if ( rightSchema == null ) continue;
             GusTable rightTable = (GusTable) rightSchema.getTable( table.getName( ) );
@@ -74,8 +72,7 @@ public class SchemaComparator {
     public HashMap findLeftRenamedTables( ) {
         if ( !leftRenamedTables.isEmpty( ) ) return leftRenamedTables;
         log.info("finding renamed tables");
-        for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
-            GusTable table = (GusTable) i.next( );
+        for ( GusTable table : leftDatabase.getGusTables() ) {
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
             if ( rightDatabase.getSchema( table.getSchema( ).getName( ) ) != null
                     && rightDatabase.getSchema( table.getSchema( ).getName( ) ).getTable( table.getName( ) ) != null ) continue;
@@ -92,8 +89,7 @@ public class SchemaComparator {
     public HashMap findLeftColChangedTables( ) {
         if ( !leftColChangedTables.isEmpty( ) ) return leftColChangedTables;
         log.info("finding tables with changed column sets");
-        for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
-            GusTable table = (GusTable) i.next( );
+        for ( GusTable table : leftDatabase.getGusTables() ) {
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
             if ( findLeftRenamedTables( ).get( table ) != null ) continue;
             if ( rightDatabase.getSchema( table.getSchema( ).getName( ) ) == null
@@ -112,8 +108,7 @@ public class SchemaComparator {
     public HashMap findLeftIndChangedTables( ) {
         if ( !leftIndChangedTables.isEmpty( ) ) return leftIndChangedTables;
         log.info("finding tables with changed indexes");
-        for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
-            GusTable table = (GusTable) i.next( );
+        for ( GusTable table : leftDatabase.getGusTables() ) {
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
             if ( findLeftRenamedTables( ).get( table ) != null ) continue;
             if ( rightDatabase.getSchema( table.getSchema( ).getName( ) ) == null
@@ -131,8 +126,7 @@ public class SchemaComparator {
     public HashMap findLeftConChangedTables( ) {
         if ( !leftConChangedTables.isEmpty( ) ) return leftConChangedTables;
         log.info("finding tables with changed constraints ");
-        for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
-            GusTable table = (GusTable) i.next( );
+        for ( GusTable table : leftDatabase.getGusTables() ) {
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
             if ( findLeftRenamedTables( ).get( table ) != null ) continue;
             if ( rightDatabase.getSchema( table.getSchema( ).getName( ) ) == null
@@ -150,8 +144,7 @@ public class SchemaComparator {
     public Collection findLeftDroppedTables( ) {
         if ( !leftDroppedTables.isEmpty( ) ) return leftDroppedTables;
         log.info("finding tables that have been dropped");
-        for ( Iterator i = leftDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
-            GusTable table = (GusTable) i.next( );
+        for ( GusTable table : leftDatabase.getGusTables() ) {
             if ( findLeftIdenticalTables( ).contains( table ) ) continue;
             if ( findLeftRenamedTables( ).get( table ) != null ) continue;
             if ( findLeftColChangedTables( ).get( table ) != null ) continue;
@@ -167,8 +160,7 @@ public class SchemaComparator {
         if ( !rightAddedTables.isEmpty( ) ) return rightAddedTables;
         log.info("finding added tables");
         findLeftRenamedTables( );
-        for ( Iterator i = rightDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
-            GusTable table = (GusTable) i.next( );
+        for ( GusTable table : rightDatabase.getGusTables() ) {
             if ( leftDatabase.getSchema( table.getSchema( ).getName( ) ) != null
                     && leftDatabase.getSchema( table.getSchema( ).getName( ) ).getTable( table.getName( ) ) != null ) continue;
             if ( potentialRightRenameTargets.contains( table ) ) continue;
@@ -182,8 +174,7 @@ public class SchemaComparator {
 
         Collection potentialMatches = new Vector( );
 
-        for ( Iterator i = rightDatabase.getTables( true ).iterator( ); i.hasNext( ); ) {
-            Table targetTable = (Table) i.next( );
+        for ( GusTable targetTable : rightDatabase.getGusTables() ) {
             if ( targetTable.getSchema( ).getName( ) == table.getSchema( ).getName( )
                     && targetTable.getName( ) == table.getName( ) ) continue;
 

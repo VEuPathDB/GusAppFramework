@@ -12,11 +12,11 @@ import org.apache.commons.logging.LogFactory;
  */
 public class Constraint extends DatabaseObject {
 
-    protected final Log           log                  = LogFactory.getLog( Constraint.class );
+    protected final Log          log                  = LogFactory.getLog( Constraint.class );
 
     private ArrayList<String>    constrainedColumnRef = new ArrayList<String>( );
-    private String                constrainedTableRef;
-    private String                referencedTableRef;
+    private String               constrainedTableRef;
+    private String               referencedTableRef;
     private ArrayList<String>    referencedColumnRef  = new ArrayList<String>( );
     private ArrayList<GusColumn> referencedColumn     = new ArrayList<GusColumn>( );
     private ArrayList<Column>    constrainedColumn    = new ArrayList<Column>( );
@@ -27,7 +27,7 @@ public class Constraint extends DatabaseObject {
 
     private ConstraintType type;
     private GusTable       referencedTable;
-    private Table          constrainedTable;
+    private GusTable          constrainedTable;
 
     public ArrayList<GusColumn> getReferencedColumns( ) {
         return referencedColumn;
@@ -74,11 +74,11 @@ public class Constraint extends DatabaseObject {
         }
     }
 
-    public Table getConstrainedTable( ) {
+    public GusTable getConstrainedTable( ) {
         return constrainedTable;
     }
 
-    public void setConstrainedTable( Table table ) {
+    public void setConstrainedTable( GusTable table ) {
         if ( this.constrainedTable != table ) {
             String name = "null";
             if ( table != null ) name = table.getName( );
@@ -86,14 +86,12 @@ public class Constraint extends DatabaseObject {
                     + "'" );
 
             if ( this.constrainedTable != null && this.type != ConstraintType.PRIMARY_KEY ) {
-                ((GusTable) this.constrainedTable).removeConstraint( this );
+                this.constrainedTable.removeConstraint( this );
             }
-                    
 
             if ( this.constrainedTable != null && this.type == ConstraintType.PRIMARY_KEY ) {
                 this.constrainedTable.setPrimaryKey( null );
             }
-                    
 
             this.constrainedTable = table;
 
@@ -108,8 +106,8 @@ public class Constraint extends DatabaseObject {
     }
 
     public void setType( ConstraintType constraintType ) {
-        Table constrained = getConstrainedTable( );
-        if ( constrained != null ) setConstrainedTable( (Table) null );
+        GusTable constrained = getConstrainedTable( );
+        if ( constrained != null ) setConstrainedTable( (GusTable) null );
         this.type = constraintType;
         setConstrainedTable( constrained );
     }
