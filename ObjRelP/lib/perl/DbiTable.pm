@@ -252,6 +252,7 @@ sub getViewMapping {
     #		print STDERR "getting view mapping for ".$self->getTableName()."\n";
     ##retrieve from db...
     my $sql = $self->getViewSql();
+    $sql = "\L$sql";
     #    print STDERR "$sql\n";
     $sql =~ s/\s+/ /g;
     $sql =~ s/(\/\*.*?\*\/)//g;
