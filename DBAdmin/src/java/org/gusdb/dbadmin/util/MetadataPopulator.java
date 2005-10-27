@@ -57,9 +57,7 @@ public class MetadataPopulator {
 		if ( dbVendor == "Postgres" ) {
 			writer.write( "BEGIN;\n\n" );
 		}
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext();  ) {
-			Schema schema  = (Schema) i.next();
-
+        for ( Schema schema : db.getAllSchemas() ) {
 			schemaIDs.put( new Integer( schemaIDs.size() + 1 ), schema );
 			for ( Iterator j = schema.getTables().iterator(); j.hasNext();  ) {
 				tableAndViewIDs.put( new Integer( tableAndViewIDs.size() + 1 ), (Table) j.next() );
@@ -68,10 +66,10 @@ public class MetadataPopulator {
 				tableAndViewIDs.put( new Integer( tableAndViewIDs.size() + 1 ), (View) j.next() );
 			}
 		}
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext();  ) {
+		for ( Iterator i = db.getAllSchemas().iterator(); i.hasNext();  ) {
 			writeDatabaseInfo( (Schema) i.next() );
 		}
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext();  ) {
+		for ( Iterator i = db.getAllSchemas().iterator(); i.hasNext();  ) {
 			Schema schema  = (Schema) i.next();
 
 			for ( Iterator j = schema.getTables().iterator(); j.hasNext();  ) {
@@ -189,7 +187,8 @@ public class MetadataPopulator {
 		writer.flush();
 		writer.write( " VALUES (" );
 		writer.write( getTableID( table ) + ", '" + table.getName() + "', '" + getTableType( table ) + "', " );
-		writer.write( getPrimaryKey( table ) + ", " + getSchemaID( table.getSchema() ) + ", " );
+        String pk = ( table instanceof GusTable) ? getPrimaryKey((GusTable) table) : "null";
+        writer.write( pk + ", " + getSchemaID( table.getSchema() ) + ", " );
 		if ( table.getClass() == GusTable.class ) {
 			writer.write( b2i( ( (GusTable) table ).isVersioned() ) + "" );
 		}
@@ -226,7 +225,8 @@ public class MetadataPopulator {
 		writer.flush();
 		writer.write( " VALUES (" );
 		writer.write( getViewID( view ) + ", '" + view.getName() + "', '" + getTableType( view ) + "', " );
-		writer.write( getPrimaryKey( view ) + ", " + getSchemaID( view.getSchema() ) + ", " );
+		String pk = ( view instanceof GusView) ? getPrimaryKey((GusView) view) : "null";
+        writer.write( pk + ", " + getSchemaID( view.getSchema() ) + ", " );
 		if ( view.getClass() == GusView.class ) {
 			writer.write( b2i( ( (GusView) view ).isVersioned() ) + "" );
 		}
@@ -255,10 +255,7 @@ public class MetadataPopulator {
 		writer.flush();
 	}
 	
-	private String getPrimaryKey( Table table ) {
-		if ( table.getClass() == VersionTable.class ) {
-			return "NULL";
-		}
+	private String getPrimaryKey( GusTable table ) {
 		if ( table.getSuperclass() != null ) {
 			return getPrimaryKey( table.getSuperclass() );
 		}
@@ -272,7 +269,7 @@ public class MetadataPopulator {
 
 	
 
-	private String getPrimaryKey( View view ) {
+	private String getPrimaryKey( GusView view ) {
 		return getPrimaryKey( view.getTable() );
 	}
 

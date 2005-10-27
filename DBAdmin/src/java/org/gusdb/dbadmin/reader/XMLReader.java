@@ -54,12 +54,9 @@ public class XMLReader extends SchemaReader {
     }
 
     private void addHousekeeping( Database db ) {
-        for ( Iterator i = db.getSchemas( ).iterator( ); i.hasNext( ); ) {
-            for ( Iterator j = ((Schema) i.next( )).getTables( ).iterator( ); j.hasNext( ); ) {
-                Table table = (Table) j.next( );
-                if ( table.getClass( ) == VersionTable.class ) table.setHousekeepingColumns( verHousekeepingColumns );
-                else table.setHousekeepingColumns( housekeepingColumns );
-            }
+        for ( Table table : db.getAllTables() ) {
+            if ( table.getClass( ) == VersionTable.class ) table.setHousekeepingColumns( verHousekeepingColumns );
+            else table.setHousekeepingColumns( housekeepingColumns );
         }
     }
 

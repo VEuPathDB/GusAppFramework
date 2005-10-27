@@ -9,23 +9,22 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
 import org.gusdb.dbadmin.model.Column;
-import org.gusdb.dbadmin.model.ColumnType;
 import org.gusdb.dbadmin.model.Constraint;
-import org.gusdb.dbadmin.model.ConstraintType;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusColumn;
 import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.HousekeepingColumn;
 import org.gusdb.dbadmin.model.Index;
-import org.gusdb.dbadmin.model.IndexType;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
+import org.gusdb.dbadmin.model.VersionTable;
+import org.gusdb.dbadmin.util.DatabaseUtilities;
 
 /**
  * The OracleReader class connects to an existing Oracle database and uses the
@@ -58,17 +57,17 @@ import org.gusdb.dbadmin.model.Table;
  */
 public class OracleReader extends SchemaReader {
 
-    private Connection connection;
-    private String     CORE;
-    private Collection housekeepingColumns = new HashSet( );
-    private Collection generatedIndexes    = new HashSet( );
-    private Collection versionedTables     = new HashSet( );
+    private Connection                    connection;
+    private String                        CORE;
+    private ArrayList<HousekeepingColumn> housekeepingColumns = new ArrayList<HousekeepingColumn>( );
+    private ArrayList<Index>              generatedIndexes    = new ArrayList<Index>( );
+    private ArrayList<GusTable>           versionedTables     = new ArrayList<GusTable>( );
 
-    private HashSet    superClasses        = new HashSet( );
-    private HashSet    subClasses          = new HashSet( );
-    private String     dsn;
-    private String     username;
-    private String     password;
+    private ArrayList<Table>              superClasses        = new ArrayList<Table>( );
+    private ArrayList<Table>              subClasses          = new ArrayList<Table>( );
+    private String                        dsn;
+    private String                        username;
+    private String                        password;
 
     /**
      * Creates a new OracleReader object.
@@ -115,7 +114,7 @@ public class OracleReader extends SchemaReader {
     private void addSchemas( Database db ) {
         log.debug( "adding schemas to database: " + db.getName( ) );
 
-        if ( db.getSchemas( ).size( ) == 0 ) {
+        if ( db.getAllSchemas( ).size( ) == 0 ) {
             log.debug( "getting all schemas (from property file) for database: " + db.getName( ) );
 
             String[] schemas = properties.getProperty( "gusSchemas" ).split( "," );
@@ -127,11 +126,8 @@ public class OracleReader extends SchemaReader {
             }
         }
 
-        for ( Iterator i = db.getSchemas( ).iterator( ); i.hasNext( ); ) {
-            Schema schema = (Schema) i.next( );
-            if ( schema.getClass( ) == GusSchema.class ) {
-                addTables( (GusSchema) schema );
-            }
+        for ( GusSchema schema : db.getGusSchemas( ) ) {
+            addTables( (GusSchema) schema );
         }
     }
 
@@ -306,11 +302,7 @@ public class OracleReader extends SchemaReader {
                 col.setLength( length );
                 col.setPrecision( rs.getInt( "data_scale" ) );
 
-                // if ( isSubclass(table) ) {
-                // col.setImpName(getImpName(table, col.getName()));
-                // }
                 if ( table.isHousekeeping( ) ) {
-
                     if ( table.getClass( ) == GusTable.class ) {
                         table.setHousekeepingColumns( verHousekeepingColumns );
                     }
@@ -347,7 +339,7 @@ public class OracleReader extends SchemaReader {
     private void addColumns( Index index ) {
         log.debug( "adding columns to index " + index.getName( ) );
 
-        Collection columns = index.getTable( ).getColumns( );
+        ArrayList<GusColumn> columns = index.getTable( ).getColumnsExcludeSuperclass(false);
         Statement st = null;
         ResultSet rs = null;
 
@@ -483,14 +475,8 @@ public class OracleReader extends SchemaReader {
      */
     private void addIndexes( Database db ) {
         log.debug( "adding indexes to database " + db.getName( ) );
-
-        for ( Iterator i = db.getSchemas( ).iterator( ); i.hasNext( ); ) {
-
-            Schema schema = (Schema) i.next( );
-
-            if ( schema.getClass( ) == GusSchema.class ) {
-                addIndexes( (GusSchema) schema );
-            }
+        for ( GusSchema schema : db.getGusSchemas() ) {
+             addIndexes( (GusSchema) schema );
         }
     }
 
@@ -619,18 +605,9 @@ public class OracleReader extends SchemaReader {
      * @param db DOCUMENT ME!
      */
     private void addRemoteConstraints( Database db ) {
-
-        for ( Iterator i = db.getSchemas( ).iterator( ); i.hasNext( ); ) {
-
-            Schema schema = (Schema) i.next( );
-
-            for ( Iterator j = schema.getTables( ).iterator( ); j.hasNext( ); ) {
-
-                Table table = (Table) j.next( );
-
-                if ( table.getClass( ) == GusTable.class ) {
-                    addRemoteConstraints( (GusTable) table );
-                }
+        for ( GusSchema schema : db.getGusSchemas() ) {
+            for ( GusTable table : schema.getTables() ) {
+                addRemoteConstraints( (GusTable) table );
             }
         }
     }
@@ -676,13 +653,14 @@ public class OracleReader extends SchemaReader {
 
                 cons.setReferencedTable( getTableFromSchemaConstraint( r_owner, rs.getString( "r_constraint_name" ) ) );
 
-		if ( cons.getReferencedTable() == null ) {
-		    log.fatal( "Could not find referenced table for constraint: '" + rs.getString( "constraint_name" ) + "'");
-		}
+                if ( cons.getReferencedTable( ) == null ) {
+                    log.fatal( "Could not find referenced table for constraint: '" + rs.getString( "constraint_name" )
+                            + "'" );
+                }
 
                 Constraint r_constraint = cons.getReferencedTable( )
                         .getConstraint( rs.getString( "r_constraint_name" ) );
-                Collection r_columns = r_constraint.getConstrainedColumns( );
+                ArrayList<Column> r_columns = r_constraint.getConstrainedColumns( );
 
                 for ( Iterator i = r_columns.iterator( ); i.hasNext( ); ) {
 
@@ -718,14 +696,8 @@ public class OracleReader extends SchemaReader {
      * @param db DOCUMENT ME!
      */
     private void populate( Database db ) {
-
-        for ( Iterator i = db.getSchemas( ).iterator( ); i.hasNext( ); ) {
-
-            Schema schema = (Schema) i.next( );
-
-            if ( schema.getClass( ) == GusSchema.class ) {
-                populate( (GusSchema) schema );
-            }
+        for ( GusSchema schema : db.getGusSchemas() ) {
+            populate( (GusSchema) schema );
         }
     }
 
@@ -830,8 +802,8 @@ public class OracleReader extends SchemaReader {
             catch ( SQLException ignored ) {}
         }
 
-        for ( Iterator i = table.getColumns( false ).iterator( ); i.hasNext( ); ) {
-            populate( (GusColumn) i.next( ) );
+        for ( GusColumn col : table.getColumnsExcludeSuperclass(false)) {
+            populate(col);
         }
     }
 
@@ -893,30 +865,6 @@ public class OracleReader extends SchemaReader {
             GusTable table = (GusTable) i.next( );
 
             if ( table.getConstraint( consName ) != null ) {
-
-                return table;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * DOCUMENT ME!
-     * 
-     * @param tables DOCUMENT ME!
-     * @param name DOCUMENT ME!
-     * @param owner DOCUMENT ME!
-     * @return DOCUMENT ME!
-     */
-    private GusTable getTableFromCollection( Collection tables, String name, String owner ) {
-
-        for ( Iterator i = tables.iterator( ); i.hasNext( ); ) {
-
-            GusTable table = (GusTable) i.next( );
-
-            if ( table.getName( ).compareToIgnoreCase( name ) == 0
-                    && table.getSchema( ).getName( ).compareToIgnoreCase( owner ) == 0 ) {
 
                 return table;
             }
@@ -997,7 +945,7 @@ public class OracleReader extends SchemaReader {
             name = name.substring( 0, name.length( ) - 3 );
         }
 
-        if ( getTableFromCollection( superClasses, name, owner ) != null )
+        if ( DatabaseUtilities.getTableFromCollection( superClasses, name, owner ) != null )
 
         return true;
 
@@ -1023,11 +971,9 @@ public class OracleReader extends SchemaReader {
      * @return DOCUMENT ME!
      */
     private boolean isSubclass( String name, String owner ) {
-
-        if ( getTableFromCollection( subClasses, name, owner ) != null )
-
-        return true;
-
+        if ( DatabaseUtilities.getTableFromCollection( subClasses, name, owner ) != null ) {
+            return true;
+        }
         return false;
     }
 
@@ -1070,39 +1016,29 @@ public class OracleReader extends SchemaReader {
 
     /**
      * DOCUMENT ME!
-     * 
      * @param name DOCUMENT ME!
      * @param subclass DOCUMENT ME!
      * @return DOCUMENT ME!
      */
     private boolean isSuperclassColumn( String name, GusTable subclass ) {
-
         GusTable superclass = (GusTable) subclass.getSuperclass( );
-
-        for ( Iterator i = superclass.getColumns( false ).iterator( ); i.hasNext( ); ) {
-
-            if ( ((Column) i.next( )).getName( ).compareToIgnoreCase( name ) == 0 )
-
+        for ( Column col : superclass.getColumnsExcludeSuperclass(false)) {
+            if ( col.getName( ).compareToIgnoreCase( name ) == 0 )
             return true;
         }
-
         return false;
     }
 
     /**
-     * DOCUMENT ME!
-     * 
      * @param type DOCUMENT ME!
      * @param length DOCUMENT ME!
      * @param precision DOCUMENT ME!
      * @return DOCUMENT ME!
      */
-    private int getColumnLength( ColumnType type, int length, int precision ) {
-
-        if ( type == ColumnType.STRING || type == ColumnType.CHARACTER ) {
+    private int getColumnLength( Column.ColumnType type, int length, int precision ) {
+        if ( type == Column.ColumnType.STRING || type == Column.ColumnType.CHARACTER ) {
             return length;
         }
-
         return precision;
     }
 
@@ -1113,19 +1049,19 @@ public class OracleReader extends SchemaReader {
      * @return DOCUMENT ME!
      * @throws RuntimeException DOCUMENT ME!
      */
-    private ColumnType getColumnType( String oracleType ) {
+    private Column.ColumnType getColumnType( String oracleType ) {
         oracleType = oracleType.toUpperCase( );
 
-        if ( oracleType.equals( "CHAR" ) ) return ColumnType.CHARACTER;
-        else if ( oracleType.equals( "CLOB" ) ) return ColumnType.CLOB;
-        else if ( oracleType.equals( "BLOB" ) ) return ColumnType.BLOB;
-        else if ( oracleType.equals( "DATE" ) ) return ColumnType.DATE;
-        else if ( oracleType.equals( "FLOAT" ) ) return ColumnType.FLOAT;
-        else if ( oracleType.equals( "NUMBER" ) ) return ColumnType.NUMBER;
-        else if ( oracleType.equals( "VARCHAR2" ) ) return ColumnType.STRING;
+        if ( oracleType.equals( "CHAR" ) ) return Column.ColumnType.CHARACTER;
+        else if ( oracleType.equals( "CLOB" ) ) return Column.ColumnType.CLOB;
+        else if ( oracleType.equals( "BLOB" ) ) return Column.ColumnType.BLOB;
+        else if ( oracleType.equals( "DATE" ) ) return Column.ColumnType.DATE;
+        else if ( oracleType.equals( "FLOAT" ) ) return Column.ColumnType.FLOAT;
+        else if ( oracleType.equals( "NUMBER" ) ) return Column.ColumnType.NUMBER;
+        else if ( oracleType.equals( "VARCHAR2" ) ) return Column.ColumnType.STRING;
         else if ( oracleType.equals( "UNDEFINED" ) ) {
             log.error( "Undefined column type-- check for invalid view" );
-            return ColumnType.UNDEFINED;
+            return Column.ColumnType.UNDEFINED;
         }
         else {
             log.error( "Unknown column type: " + oracleType );
@@ -1140,15 +1076,11 @@ public class OracleReader extends SchemaReader {
      * @return DOCUMENT ME!
      * @throws RuntimeException DOCUMENT ME!
      */
-    private IndexType getIndexType( String oracleType ) {
+    private Index.IndexType getIndexType( String oracleType ) {
         oracleType = oracleType.toUpperCase( );
 
-        if ( oracleType.equals( "NORMAL" ) )
-
-        return IndexType.NORMAL;
-        else if ( oracleType.equals( "BITMAP" ) )
-
-        return IndexType.BITMAP;
+        if ( oracleType.equals( "NORMAL" ) ) return Index.IndexType.NORMAL;
+        else if ( oracleType.equals( "BITMAP" ) ) return Index.IndexType.BITMAP;
         else {
             log.error( "Unkown index type: " + oracleType );
             throw new RuntimeException( "Unknown index type: " + oracleType );
@@ -1162,18 +1094,12 @@ public class OracleReader extends SchemaReader {
      * @return DOCUMENT ME!
      * @throws RuntimeException DOCUMENT ME!
      */
-    private ConstraintType getConstraintType( String oracleType ) {
+    private Constraint.ConstraintType getConstraintType( String oracleType ) {
         oracleType = oracleType.toUpperCase( );
 
-        if ( oracleType.equals( "U" ) )
-
-        return ConstraintType.UNIQUE;
-        else if ( oracleType.equals( "R" ) )
-
-        return ConstraintType.FOREIGN_KEY;
-        else if ( oracleType.equals( "P" ) )
-
-        return ConstraintType.PRIMARY_KEY;
+        if ( oracleType.equals( "U" ) ) return Constraint.ConstraintType.UNIQUE;
+        else if ( oracleType.equals( "R" ) ) return Constraint.ConstraintType.FOREIGN_KEY;
+        else if ( oracleType.equals( "P" ) ) return Constraint.ConstraintType.PRIMARY_KEY;
         else {
             log.error( "Unkown constraint type: " + oracleType );
             throw new RuntimeException( "Unknown constraint type: " + oracleType );

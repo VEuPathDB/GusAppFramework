@@ -9,9 +9,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.ColumnType;
 import org.gusdb.dbadmin.model.Constraint;
-import org.gusdb.dbadmin.model.ConstraintType;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
@@ -46,47 +46,36 @@ public class OracleWriter extends RelationalDatabaseWriter {
 		}
 		oStream.write( "\n\n" );
 		oStream.write( "-- Schemata\n\n" );
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext();  ) {
-			Schema schema  = (Schema) i.next();
-
+		for ( Schema schema : db.getAllSchemas() ) {
 			oStream.write( "CREATE USER " + schema.getName() +
 				" IDENTIFIED BY temppass PASSWORD EXPIRE ACCOUNT LOCK " +
 				" QUOTA UNLIMITED ON USERS DEFAULT TABLESPACE USERS;\n" );
 		}
 		oStream.flush();
 		oStream.write( "\n-- Tables, Views, Indexes, and Primary Key Constraints\n\n" );
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext();  ) {
-			Schema schema  = (Schema) i.next();
-
+		for ( Schema schema : db.getAllSchemas() ) {
 			writeTables( schema );
 			writeViews( schema );
 		}
 		oStream.flush();
 		oStream.write( "\n-- Foreign Key Constraints\n\n" );
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext();  ) {
-			Schema schema  = (Schema) i.next();
-
-			if ( schema.getClass() == GusSchema.class ) {
-				for ( Iterator j = schema.getTables().iterator(); j.hasNext();  ) {
-					GusTable table = (GusTable) j.next();
-					writeFKConstraints( table );
-					writeUQConstraints( table );
-					oStream.write( "\n" );
-				}
-			}
+		for (GusSchema schema : db.getGusSchemas() ) {
+            for ( GusTable table : schema.getTables() ) {
+                if ( schema.getClass() == GusSchema.class ) {
+                    writeFKConstraints( table );
+                    writeUQConstraints( table );
+                    oStream.write( "\n" );
+                }
+            }
 		}
 		oStream.flush();
 		oStream.write( "\n-- Sequences\n\n" );
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext();  ) {
-			Schema schema  = (Schema) i.next();
+        for ( GusSchema schema : db.getGusSchemas() ) {
+			for ( Iterator j = schema.getTables().iterator(); j.hasNext();  ) {
+				GusTable table  = (GusTable) j.next();
 
-			if ( schema.getClass() == GusSchema.class ) {
-				for ( Iterator j = schema.getTables().iterator(); j.hasNext();  ) {
-					GusTable table  = (GusTable) j.next();
-
-					writeSequence( table.getSequence() );
-					oStream.write( "\n" );
-				}
+				writeSequence( table.getSequence() );
+				oStream.write( "\n" );
 			}
 		}
 		oStream.write( "\n\n--EOF\n" );
@@ -117,17 +106,15 @@ public class OracleWriter extends RelationalDatabaseWriter {
 		written.add( table );
 		if ( table.getClass() == GusTable.class ) {
 			writeIndexes( (GusTable) table );
+            oStream.write( "\n" );
+            writePKConstraint( table );
 		}
-		oStream.write( "\n" );
-		writePKConstraint( table );
 		oStream.write( "\n" );
 	}
 
 	protected void writeFKConstraints( GusTable table ) throws IOException {
-		for ( Iterator i = table.getConstraints().iterator(); i.hasNext();  ) {
-			Constraint constraint  = (Constraint) i.next();
-
-			if ( constraint.getType() == ConstraintType.FOREIGN_KEY ) {
+		for ( Constraint constraint : table.getConstraints() ) {
+			if ( constraint.getType() == Constraint.ConstraintType.FOREIGN_KEY ) {
 
 				if ( !tablePermissions.containsKey( table.getSchema().getName() +
 					constraint.getReferencedTable().getSchema().getName() +
@@ -181,31 +168,32 @@ public class OracleWriter extends RelationalDatabaseWriter {
 	}
 
 
-	protected String getType( ColumnType type ) {
-		if ( type == ColumnType.DATE ) {
+	protected String getType( Column.ColumnType type ) {
+		if ( type == Column.ColumnType.DATE ) {
 			return "DATE";
 		}
-		else if ( type == ColumnType.STRING ) {
+		else if ( type == Column.ColumnType.STRING ) {
 			return "VARCHAR2";
 		}
-		else if ( type == ColumnType.CLOB ) {
+		else if ( type == Column.ColumnType.CLOB ) {
 			return "CLOB";
 		}
-		else if ( type == ColumnType.BLOB ) {
+		else if ( type == Column.ColumnType.BLOB ) {
 			return "BLOB";
 		}
-		else if ( type == ColumnType.CHARACTER ) {
+		else if ( type == Column.ColumnType.CHARACTER ) {
 			return "CHAR";
 		}
-		else if ( type == ColumnType.FLOAT ) {
+		else if ( type == Column.ColumnType.FLOAT ) {
 			return "FLOAT";
 		}
-		else if ( type == ColumnType.NUMBER ) {
+		else if ( type == Column.ColumnType.NUMBER ) {
 			return "NUMBER";
 		}
 		log.error( "Unable to get Oracle type: " + type.toString() );
 		throw new RuntimeException( "Unable to get Oracle type: " + type.toString() );
 	}
+
 
 }
 

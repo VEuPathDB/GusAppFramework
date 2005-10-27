@@ -261,13 +261,13 @@ public class SchemaDumper {
     private static void convertSubclasses(Database db) {
         Collection superClasses = new HashSet();
 
-        for (Iterator i = db.getSchemas().iterator(); i.hasNext();) {
+        for (Iterator i = db.getAllSchemas().iterator(); i.hasNext();) {
             Schema schema = (Schema)i.next();
 
             for (Iterator j = schema.getTables().iterator(); j.hasNext();) {
                 Table table = (Table)j.next();
 
-                if (!table.getSubclasss().isEmpty() && 
+                if (!table.getSubclasses().isEmpty() && 
                     table.getClass() == GusTable.class) {
                     superClasses.add(table);
                 }

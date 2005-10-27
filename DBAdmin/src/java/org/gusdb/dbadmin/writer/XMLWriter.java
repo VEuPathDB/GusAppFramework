@@ -9,14 +9,11 @@ import java.util.TreeSet;
 
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
-import org.gusdb.dbadmin.model.ConstraintType;
 import org.gusdb.dbadmin.model.Database;
-import org.gusdb.dbadmin.model.GusColumn;
 import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.GusView;
 import org.gusdb.dbadmin.model.Index;
-import org.gusdb.dbadmin.model.Schema;
 
 /**
  *@author     msaffitz
@@ -49,20 +46,14 @@ public class XMLWriter extends SchemaWriter {
 
 
 	private void writeSchemas( Database db ) throws IOException {
-		if ( db.getSchemas().isEmpty() ) {
+		if ( db.getGusSchemas().isEmpty() ) {
 			return;
 		}
 		indent();
 		oStream.write( "<schemas>\n" );
 
-		TreeSet schemas  = new TreeSet( db.getSchemas() );
-
-		for ( Iterator i = schemas.iterator(); i.hasNext();  ) {
-		Schema schema  = (Schema) i.next();
-
-			if ( schema.getClass() == GusSchema.class ) {
-				writeSchema( (GusSchema) schema );
-			}
+        for ( GusSchema schema : db.getGusSchemas() ) {
+			writeSchema( (GusSchema) schema );
 		}
 		indent();
 		oStream.write( "</schemas>\n" );
@@ -168,16 +159,14 @@ public class XMLWriter extends SchemaWriter {
 
 
 	private void writeSubclasses( GusTable table ) throws IOException {
-		if ( table.getSubclasss().isEmpty() ) {
+		if ( table.getSubclasses().isEmpty() ) {
 			return;
 		}
 		indent();
 		oStream.write( "<subclasses>\n" );
 
-	TreeSet subclasses  = new TreeSet( table.getSubclasss() );
-
-		for ( Iterator i = subclasses.iterator(); i.hasNext();  ) {
-			writeSubclass( (GusTable) i.next() );
+        for ( GusTable subclass : table.getSubclasses() ) {
+            writeSubclass(subclass);
 			oStream.flush();
 		}
 		indent();
@@ -207,12 +196,12 @@ public class XMLWriter extends SchemaWriter {
 
 
 	private void writeColumns( GusTable table ) throws IOException {
-		if ( table.getColumns( false ).isEmpty() ) {
+		if ( table.getColumnsExcludeSuperclass( false ).isEmpty() ) {
 			return;
 		}
 		indent();
 		oStream.write( "<columns>\n" );
-		for ( Iterator i = table.getColumns( false ).iterator(); i.hasNext();  ) {
+		for ( Iterator i = table.getColumnsExcludeSuperclass( false ).iterator(); i.hasNext();  ) {
 			writeColumn( (Column) i.next() );
 			oStream.flush();
 		}
@@ -338,7 +327,7 @@ public class XMLWriter extends SchemaWriter {
 		indent--;
 		indent();
 		oStream.write( "</constrainedColumns>\n" );
-		if ( constraint.getType() == ConstraintType.FOREIGN_KEY ) {
+		if ( constraint.getType() == Constraint.ConstraintType.FOREIGN_KEY ) {
 			indent();
 			oStream.write( "<referencedTable idref=\"" + constraint.getReferencedTable().getSchema().getName() + "/" +
 				constraint.getReferencedTable().getName() + "\"/>\n" );

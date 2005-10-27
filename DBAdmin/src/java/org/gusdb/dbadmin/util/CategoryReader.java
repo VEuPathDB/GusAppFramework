@@ -59,8 +59,8 @@ public class CategoryReader {
                 nextLine = mapFile.readLine( );
             }
             mapFile.close( );
-            for ( Iterator i = db.getTables( true ).iterator( ); i.hasNext( ); ) {
-                ((GusTable) i.next( )).resolveCategoryReference( );
+            for ( GusTable table : db.getGusTables() ) {
+                table.resolveCategoryReference( );
             }
         }
         catch ( FileNotFoundException e ) {

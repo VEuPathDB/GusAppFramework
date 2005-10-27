@@ -86,7 +86,7 @@ extends SchemaWriter
         oStream.write("auto-import=\"false\"");
         oStream.write(" default-cascade=\"save-update\">\n");
 
-        for (Iterator i = db.getSchemas().iterator(); i.hasNext(); ) {
+        for (Iterator i = db.getAllSchemas().iterator(); i.hasNext(); ) {
             Schema schema = (Schema)i.next();
             for (Iterator j = schema.getTables().iterator(); j.hasNext(); ) {
                 Table table = (Table)j.next();
@@ -140,7 +140,7 @@ extends SchemaWriter
     private void writeProperties(Writer writer, Table table, int level)
     throws IOException
     {
-        for (Iterator i = table.getColumns().iterator(); i.hasNext(); ) {
+        for (Iterator i = table.getColumnsExcludeSuperclass( true ).iterator(); i.hasNext(); ) {
             Column column = (Column)i.next();
             if (isPrimaryKey(column) ||
                     isModificationDate(column) ||
@@ -363,7 +363,7 @@ extends SchemaWriter
             writer.write("<meta attribute=\"use-in-equals\">");
             writer.write("true</meta>\n");
         }
-        for (Iterator i = table.getColumns().iterator(); i.hasNext(); ) {
+        for (Iterator i = table.getColumnsExcludeSuperclass( true ).iterator(); i.hasNext(); ) {
             Column column = (Column)i.next();
             if (isInternal(column) || isPermission(column))
                 writeProperty(writer, column, level + 1);
@@ -461,7 +461,7 @@ extends SchemaWriter
     private boolean isForeignKey(Column column)
     {
         for (Iterator i = column.getConstraints().iterator(); i.hasNext(); )
-            if (((Constraint)i.next()).getType() == ConstraintType.FOREIGN_KEY)
+            if (((Constraint)i.next()).getType() == Constraint.ConstraintType.FOREIGN_KEY)
                 return true;
         return false;
     }
@@ -474,7 +474,7 @@ extends SchemaWriter
     private boolean isPrimaryKey(Column column)
     {
         for (Iterator i = column.getConstraints().iterator(); i.hasNext(); )
-            if (((Constraint)i.next()).getType() == ConstraintType.PRIMARY_KEY)
+            if (((Constraint)i.next()).getType() == Constraint.ConstraintType.PRIMARY_KEY)
                 return true;
         return false;
     }
@@ -529,7 +529,7 @@ extends SchemaWriter
         while (table.getSuperclass() != null)
             table = table.getSuperclass();
 
-        for (Iterator i = table.getColumns().iterator(); i.hasNext(); ) {
+        for (Iterator i = table.getColumnsExcludeSuperclass( true ).iterator(); i.hasNext(); ) {
             Column column = (Column)i.next();
             if (isPrimaryKey(column))
                 return column;
@@ -705,13 +705,13 @@ extends SchemaWriter
     private String getType(Column column)
     { 
         if (isPermission(column)) return "boolean";
-        if (column.getType() == ColumnType.STRING) return "string";
-        if (column.getType() == ColumnType.CHARACTER) return "character";
-        if (column.getType() == ColumnType.CLOB) return "clob";
-        if (column.getType() == ColumnType.BLOB) return "blob";
-        if (column.getType() == ColumnType.DATE) return "date";
-        if (column.getType() == ColumnType.FLOAT) return "float";
-        if (column.getType() == ColumnType.NUMBER) return "long";
+        if (column.getType() == Column.ColumnType.STRING) return "string";
+        if (column.getType() == Column.ColumnType.CHARACTER) return "character";
+        if (column.getType() == Column.ColumnType.CLOB) return "clob";
+        if (column.getType() == Column.ColumnType.BLOB) return "blob";
+        if (column.getType() == Column.ColumnType.DATE) return "date";
+        if (column.getType() == Column.ColumnType.FLOAT) return "float";
+        if (column.getType() == Column.ColumnType.NUMBER) return "long";
         log.debug("Unknown ColumnType: "+column.getType());
         throw new RuntimeException("Unknown ColumnType");
     }
@@ -725,8 +725,8 @@ extends SchemaWriter
     {
         for (Iterator i = column.getConstraints().iterator(); i.hasNext(); ) {
             Constraint c = (Constraint)i.next();
-            if (c.getType() == ConstraintType.PRIMARY_KEY ||
-                    (c.getType() == ConstraintType.UNIQUE &&
+            if (c.getType() == Constraint.ConstraintType.PRIMARY_KEY ||
+                    (c.getType() == Constraint.ConstraintType.UNIQUE &&
                         c.getConstrainedColumns().size() == 1))
                 return true;
         }
@@ -741,8 +741,8 @@ extends SchemaWriter
      */
     private boolean isLarge(Column column)
     {
-        return (column.getType() == ColumnType.BLOB ||
-                column.getType() == ColumnType.CLOB);
+        return (column.getType() == Column.ColumnType.BLOB ||
+                column.getType() == Column.ColumnType.CLOB);
     }
 
     /**
@@ -767,11 +767,11 @@ extends SchemaWriter
          * just if the column is guaranteed unique (for example
          * by a primary key constraint
          */
-        for (Iterator i = table.getColumns(false).iterator(); i.hasNext(); ) {
+        for (Iterator i = table.getColumnsExcludeSuperclass(false).iterator(); i.hasNext(); ) {
             Column c = (Column)i.next();
             for (Iterator j = c.getConstraints().iterator(); j.hasNext(); ) {
                 Constraint cn = (Constraint)j.next();
-                if (cn.getType() == ConstraintType.UNIQUE &&
+                if (cn.getType() == Constraint.ConstraintType.UNIQUE &&
                             cn.getConstrainedColumns().size() == 1)
                     return true;
             }
@@ -800,7 +800,7 @@ extends SchemaWriter
 
         for (Iterator i = column.getConstraints().iterator(); i.hasNext(); ) {
             Constraint c = (Constraint)i.next();
-            if (c.getType() == ConstraintType.FOREIGN_KEY) {
+            if (c.getType() == Constraint.ConstraintType.FOREIGN_KEY) {
                 Table t = c.getReferencedTable();
                 return basePackage + '.' +
                     t.getSchema().getName() + '.' + t.getName();

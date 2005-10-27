@@ -75,14 +75,10 @@ public class DatabaseValidator {
 	public static boolean fkSizeCompatability( Database db, boolean fix ) {
 		boolean valid = true;
 
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext();  ) {
-			Schema schema  = (Schema) i.next();
-			
-			if ( schema.getClass() == GusSchema.class ) {
-				log.debug( "Checking FK Compatability for Schema '" + schema.getName() + "'" );
-				for ( Iterator j = schema.getTables().iterator(); j.hasNext();  ) {
-					valid = checkFkCompatabilityTo( (GusTable) j.next(), fix );
-				}
+        for ( GusSchema schema : db.getGusSchemas() ) {
+			log.debug( "Checking FK Compatability for Schema '" + schema.getName() + "'" );
+			for ( GusTable table : schema.getTables() ) {
+				valid = checkFkCompatabilityTo( table, fix );
 			}
 		}
 		return valid;
@@ -96,12 +92,9 @@ public class DatabaseValidator {
 		
 		boolean valid = true;
 		
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext(); ) {
-			Schema schema = (Schema) i.next();
+        for ( GusSchema schema : db.getGusSchemas() ) {
 			valid = checkLength(schema.getName(), length);
-			
-			for ( Iterator j = schema.getTables().iterator(); j.hasNext(); ) {
-				Table table = (Table) j.next();
+			for ( GusTable table : schema.getTables() ) {
 				valid = checkLength(table.getName(), length);
 				if ( table.getPrimaryKey() != null ) {
 					valid = checkLength(table.getPrimaryKey().getName() , length );
@@ -117,8 +110,7 @@ public class DatabaseValidator {
 						valid = checkLength(index.getName(), length);
 					}
 				}
-				for ( Iterator k = table.getColumns().iterator(); k.hasNext(); ) {
-					Column col = (Column) k.next();
+                for ( Column col : table.getColumnsExcludeSuperclass(false) ) {
 					valid = checkLength(col.getName(), length);
 				}
 			}

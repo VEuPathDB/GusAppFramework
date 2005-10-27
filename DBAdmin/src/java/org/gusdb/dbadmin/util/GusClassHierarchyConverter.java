@@ -3,7 +3,6 @@ package org.gusdb.dbadmin.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -13,9 +12,7 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.gusdb.dbadmin.model.Column;
-import org.gusdb.dbadmin.model.ColumnType;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.GusColumn;
 import org.gusdb.dbadmin.model.GusSchema;
@@ -44,8 +41,8 @@ public class GusClassHierarchyConverter {
     private GusTable   impTable               = new GusTable( );
     private Collection superClassColumns;
     private Collection impGenericColumns;
-    private Collection housekeepingColumns    = new ArrayList( );
-    private Collection verHousekeepingColumns = new ArrayList( );
+    private ArrayList<HousekeepingColumn> housekeepingColumns    = new ArrayList<HousekeepingColumn>( );
+    private ArrayList<HousekeepingColumn> verHousekeepingColumns = new ArrayList<HousekeepingColumn>( );
     private Properties properties             = new Properties( );
     private final Log  log                    = LogFactory.getLog( GusClassHierarchyConverter.class );
 
@@ -65,7 +62,7 @@ public class GusClassHierarchyConverter {
         readProperties( );
         initHousekeeping( );
         this.superClassTable = superClassTable;
-        subClassTables = superClassTable.getSubclasss( );
+        subClassTables = superClassTable.getSubclasses( );
         impTable = new GusTable( );
         impTable.setName( superClassTable.getName( ) + "Imp" );
         impTable.setHousekeeping( superClassTable.isHousekeeping( ) );
@@ -89,7 +86,7 @@ public class GusClassHierarchyConverter {
      */
     public void convert( ) {
         log.debug( "Converting Hierarchy for table  " + superClassTable.getName( ) );
-        superClassColumns = superClassTable.getColumns( true );
+        superClassColumns = superClassTable.getColumnsExcludeSuperclass( true );
 
         if ( subClassTables.isEmpty( ) ) {
             log.error( "There are no subclasses for this table " + superClassTable.getName( ) );
@@ -266,18 +263,18 @@ public class GusClassHierarchyConverter {
     private Collection coalesceGenericColumns( Collection tables ) {
 
         HashMap columnCounts = new HashMap( );
-        columnCounts.put( ColumnType.CHARACTER, new Integer( 0 ) );
-        columnCounts.put( ColumnType.CLOB, new Integer( 0 ) );
-        columnCounts.put( ColumnType.DATE, new Integer( 0 ) );
-        columnCounts.put( ColumnType.FLOAT, new Integer( 0 ) );
-        columnCounts.put( ColumnType.NUMBER, new Integer( 0 ) );
-        columnCounts.put( ColumnType.STRING, new Integer( 0 ) );
+        columnCounts.put( Column.ColumnType.CHARACTER, new Integer( 0 ) );
+        columnCounts.put( Column.ColumnType.CLOB, new Integer( 0 ) );
+        columnCounts.put( Column.ColumnType.DATE, new Integer( 0 ) );
+        columnCounts.put( Column.ColumnType.FLOAT, new Integer( 0 ) );
+        columnCounts.put( Column.ColumnType.NUMBER, new Integer( 0 ) );
+        columnCounts.put( Column.ColumnType.STRING, new Integer( 0 ) );
 
         HashMap columnSizes = new HashMap( );
-        columnSizes.put( ColumnType.CHARACTER + "L", new Integer( 0 ) );
-        columnSizes.put( ColumnType.NUMBER + "L", new Integer( 0 ) );
-        columnSizes.put( ColumnType.NUMBER + "P", new Integer( 0 ) );
-        columnSizes.put( ColumnType.STRING + "L", new Integer( 0 ) );
+        columnSizes.put( Column.ColumnType.CHARACTER + "L", new Integer( 0 ) );
+        columnSizes.put( Column.ColumnType.NUMBER + "L", new Integer( 0 ) );
+        columnSizes.put( Column.ColumnType.NUMBER + "P", new Integer( 0 ) );
+        columnSizes.put( Column.ColumnType.STRING + "L", new Integer( 0 ) );
 
         Collection newColumns = new HashSet( );
 
@@ -287,7 +284,7 @@ public class GusClassHierarchyConverter {
 
             for ( Iterator j = columnCounts.keySet( ).iterator( ); j.hasNext( ); ) {
 
-                ColumnType type = (ColumnType) j.next( );
+                Column.ColumnType type = (Column.ColumnType) j.next( );
                 columnCounts.put( type, new Integer( Math.max( ((Integer) columnCounts.get( type )).intValue( ),
                         getMaxColumnType( t, type ) ) ) );
             }
@@ -295,7 +292,7 @@ public class GusClassHierarchyConverter {
             for ( Iterator j = columnSizes.keySet( ).iterator( ); j.hasNext( ); ) {
 
                 String key = (String) j.next( );
-                ColumnType type = ColumnType.getInstance( key.substring( 0, key.length( ) - 1 ) );
+                Column.ColumnType type = Column.ColumnType.valueOf( key.substring( 0, key.length( ) - 1 ) );
                 String sizeType = key.substring( key.length( ) - 1 );
 
                 if ( (Integer) columnSizes.get( type + sizeType ) != null ) {
@@ -307,7 +304,7 @@ public class GusClassHierarchyConverter {
 
         for ( Iterator i = columnCounts.keySet( ).iterator( ); i.hasNext( ); ) {
 
-            ColumnType type = (ColumnType) i.next( );
+            Column.ColumnType type = (Column.ColumnType) i.next( );
 
             for ( int j = 0; j < ((Integer) columnCounts.get( type )).intValue( ); j++ ) {
 
@@ -338,17 +335,13 @@ public class GusClassHierarchyConverter {
      * @param type DOCUMENT ME!
      * @return DOCUMENT ME!
      */
-    private int getMaxColumnType( GusTable table, ColumnType type ) {
-
+    private int getMaxColumnType( GusTable table, Column.ColumnType type ) {
         int count = 0;
-
-        for ( Iterator i = table.getColumns( false ).iterator( ); i.hasNext( ); ) {
-
-            if ( ((GusColumn) i.next( )).getType( ) == type ) {
+        for ( GusColumn column : table.getColumnsExcludeSuperclass(false)) {
+            if ( column.getType( ) == type ) {
                 count++;
             }
         }
-
         return count;
     }
 
@@ -361,11 +354,11 @@ public class GusClassHierarchyConverter {
      * @return DOCUMENT ME!
      * @throws RuntimeException DOCUMENT ME!
      */
-    private int getLargestColumnLength( GusTable table, ColumnType type, String subType ) {
+    private int getLargestColumnLength( GusTable table, Column.ColumnType type, String subType ) {
 
         int size = 0;
 
-        for ( Iterator i = table.getColumns( false ).iterator( ); i.hasNext( ); ) {
+        for ( Iterator i = table.getColumnsExcludeSuperclass( false ).iterator( ); i.hasNext( ); ) {
 
             GusColumn c = (GusColumn) i.next( );
 
@@ -498,7 +491,7 @@ public class GusClassHierarchyConverter {
 
         HashMap columnCounts = new HashMap( );
 
-        for ( Iterator i = table.getColumns( false ).iterator( ); i.hasNext( ); ) {
+        for ( Iterator i = table.getColumnsExcludeSuperclass( false ).iterator( ); i.hasNext( ); ) {
 
             GusColumn column = (GusColumn) i.next( );
 
@@ -574,7 +567,7 @@ public class GusClassHierarchyConverter {
             String[] columnSpecs = columnSpec.split( ",", 4 );
             HousekeepingColumn column = new HousekeepingColumn( );
             column.setName( housekeepingCols[i] );
-            column.setType( ColumnType.getInstance( columnSpecs[0] ) );
+            column.setType( Column.ColumnType.valueOf( columnSpecs[0] ) );
             column.setLength( (new Integer( columnSpecs[1] )).intValue( ) );
             column.setPrecision( (new Integer( columnSpecs[2] )).intValue( ) );
             array.add( column );

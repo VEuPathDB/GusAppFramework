@@ -7,33 +7,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
-
 import org.gusdb.dbadmin.model.Database;
-import org.gusdb.dbadmin.model.Schema;
-import org.gusdb.dbadmin.model.Table;
 import org.gusdb.dbadmin.model.GusTable;
-import org.gusdb.dbadmin.model.Index;
-
 import org.gusdb.dbadmin.reader.XMLReader;
-
-import org.gusdb.dbadmin.util.DatabaseUtilities;
-
-import org.gusdb.dbadmin.writer.PostgresWriter;
 import org.gusdb.dbadmin.writer.OracleWriter;
+import org.gusdb.dbadmin.writer.PostgresWriter;
 import org.gusdb.dbadmin.writer.SchemaWriter;
 
 
@@ -123,22 +111,15 @@ public class InstallSchemaTask extends Task {
 	}
 
 	private void convertSubclasses( Database db ) {
-		Collection superClasses  = new HashSet();
+		ArrayList<GusTable> superClasses  = new ArrayList<GusTable>();
 
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext();  ) {
-		Schema schema  = (Schema) i.next();
-
-			for ( Iterator j = schema.getTables().iterator(); j.hasNext();  ) {
-			Table table  = (Table) j.next();
-
-				if ( !table.getSubclasss().isEmpty() &&
-					table.getClass() == GusTable.class ) {
-					superClasses.add( table );
-				}
+        for ( GusTable table : db.getGusTables() ) {
+			if ( !table.getSubclasses().isEmpty() ) {
+				superClasses.add( table );
 			}
 		}
-		for ( Iterator i = superClasses.iterator(); i.hasNext();  ) {
-			GusClassHierarchyConverter converter  = new GusClassHierarchyConverter( (GusTable) i.next() );
+        for ( GusTable table : superClasses ) {
+			GusClassHierarchyConverter converter  = new GusClassHierarchyConverter( table );
 
 			converter.convert();
 		}

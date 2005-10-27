@@ -30,8 +30,8 @@ public abstract class SchemaReader {
 	protected final Log log = LogFactory.getLog(SchemaReader.class);
 	protected Properties properties = new Properties();
 	
-	protected Collection housekeepingColumns = new ArrayList();
-	protected Collection verHousekeepingColumns = new ArrayList();
+	protected ArrayList<HousekeepingColumn> housekeepingColumns = new ArrayList<HousekeepingColumn>();
+	protected ArrayList<HousekeepingColumn> verHousekeepingColumns = new ArrayList<HousekeepingColumn>();
 	
 	public final Database read() {
 		Database db = new Database();
@@ -95,8 +95,7 @@ public abstract class SchemaReader {
 	protected Schema getSchema(Database db, String name ) {
 		if ( name == null ) return null;
 		if ( db == null ) return null;
-		for (Iterator i = db.getSchemas().iterator(); i.hasNext(); ) {
-			Schema sch = (Schema) i.next();
+        for ( Schema sch : db.getAllSchemas() ) {
 			if ( sch.getName().compareToIgnoreCase(name) == 0 ) {
 				return sch;
 			}
@@ -121,7 +120,7 @@ public abstract class SchemaReader {
 			String[] columnSpecs = columnSpec.split(",", 4);
 			HousekeepingColumn column = new HousekeepingColumn();
 			column.setName(housekeepingCols[i]);
-			column.setType(ColumnType.getInstance(columnSpecs[0]));
+			column.setType(Column.ColumnType.valueOf(columnSpecs[0]));
 			column.setLength((new Integer(columnSpecs[1])).intValue());
 			column.setPrecision((new Integer(columnSpecs[2])).intValue());
 			array.add(column);			
