@@ -40,16 +40,5 @@ public class VersionSchema extends Schema {
     public void setGusSchema( GusSchema gusSchema ) {
         this.gusSchema = gusSchema;
     }
-    /*
-     * public boolean deepEquals(DatabaseObject o, Writer writer) throws
-     * IOException { if (o.getClass() != VersionSchema.class) return false; if
-     * (equals((VersionSchema) o, new HashSet(), writer)) return true; return
-     * false; } boolean equals(DatabaseObject o, HashSet seen, Writer writer)
-     * throws IOException { VersionSchema other = (VersionSchema) o; if
-     * (!super.equals(other, seen, writer)) return false; boolean equal = true;
-     * if (!gusSchema.equals(other.getGusSchema(), seen, writer)) equal = false;
-     * if (!equal) { log.debug("VersionSchema attributes vary"); return false; }
-     * return compareChildren(other, seen, writer); }
-     */
 
 }

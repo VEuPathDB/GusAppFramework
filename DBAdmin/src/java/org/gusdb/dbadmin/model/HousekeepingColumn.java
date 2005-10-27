@@ -10,17 +10,14 @@ import org.apache.commons.logging.LogFactory;
  */
 public class HousekeepingColumn extends Column {
 
-    protected static final Log log = LogFactory
-                                           .getLog( HousekeepingColumn.class );
+    protected static final Log log = LogFactory.getLog( HousekeepingColumn.class );
 
     public HousekeepingColumn( ) {}
 
     public void setTable( Table table ) {
         if ( getTable( ) != table ) {
-            if ( getTable( ) != null ) getTable( ).removeHousekeepingColumn(
-                    this );
-            log.debug( "Setting table: '" + table.getName( )
-                    + "' for HousekeepingColumn: '" + getName( ) + "'" );
+            if ( getTable( ) != null ) getTable( ).removeHousekeepingColumn( this );
+            log.debug( "Setting table: '" + table.getName( ) + "' for HousekeepingColumn: '" + getName( ) + "'" );
             this.table = table;
             if ( table != null ) table.addHousekeepingColumn( this );
         }
@@ -35,13 +32,5 @@ public class HousekeepingColumn extends Column {
         clone.setType( getType( ) );
         return clone;
     }
-    /***************************************************************************
-     * public boolean deepEquals(DatabaseObject o, Writer writer) throws
-     * IOException { if (o.getClass() != HousekeepingColumn.class) return false;
-     * if (equals((HousekeepingColumn) o, new HashSet(), writer)) return true;
-     * return false; } boolean equals(DatabaseObject other, HashSet seen, Writer
-     * writer) throws IOException { if (!super.equals(other, seen, writer))
-     * return false; return compareChildren(other, seen, writer); }
-     **************************************************************************/
 
 }

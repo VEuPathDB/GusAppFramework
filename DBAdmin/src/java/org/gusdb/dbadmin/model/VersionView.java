@@ -1,7 +1,5 @@
 package org.gusdb.dbadmin.model;
 
-import java.util.Iterator;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -22,11 +20,9 @@ public class VersionView extends View {
             setSchema( ((GusSchema) gusView.getSchema( )).getVersionSchema( ) );
         }
         if ( gusView.getSuperclass( ) != null ) {
-            setSuperclass( ((GusView) gusView.getSuperclass( ))
-                    .getVersionView( ) );
+            setSuperclass( ((GusView) gusView.getSuperclass( )).getVersionView( ) );
         }
-        for ( Iterator i = gusView.getSubclasss( ).iterator( ); i.hasNext( ); ) {
-            GusView subclass = (GusView) i.next( );
+        for ( GusView subclass : gusView.getSubclasses() ) {
             if ( subclass.getVersionView( ) != null ) {
                 addSubclass( subclass.getVersionView( ) );
             }
@@ -41,15 +37,4 @@ public class VersionView extends View {
     public void setGusView( GusView gusView ) {
         this.gusView = gusView;
     }
-    /*
-     * public boolean deepEquals(DatabaseObject o, Writer writer) throws
-     * IOException { if (o.getClass() != VersionView.class) return false; if
-     * (equals((VersionView) o, new HashSet(), writer)) return true; return
-     * false; } boolean equals(DatabaseObject o, HashSet seen, Writer writer)
-     * throws IOException { VersionView other = (VersionView) o; if
-     * (!super.equals(other, seen, writer)) return false; boolean equal = true;
-     * if (!gusView.equals(other.getGusView(), seen, writer)) equal = false; if
-     * (!equal) { log.debug("VersionView attributes vary"); return false; }
-     * return compareChildren(other, seen, writer); }
-     */
 }

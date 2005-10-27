@@ -1,9 +1,6 @@
 package org.gusdb.dbadmin.model;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
@@ -16,24 +13,18 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class Table extends DatabaseObject {
 
-    protected static final Log log                = LogFactory
-                                                          .getLog( Table.class );
+    protected static final Log            log                = LogFactory.getLog( Table.class );
 
-    private String             tablespace;
-    private boolean            housekeeping       = true;
-    private boolean            updatable          = true;
-    private Schema             schema;
-    private Collection         column             = new ArrayList( );            // of
-    // type
-    // Column
-    private Collection         housekeepingColumn = new ArrayList( );
-    private Collection         subclass           = new HashSet( );              // of
-    // type
-    // Table
-    private Table              superclass;
-    private Constraint         primaryKey;
+    private String                        tablespace;
+    private boolean                       housekeeping       = true;
+    private boolean                       updatable          = true;
+    private Schema                        schema;
+    private ArrayList<Column>             column             = new ArrayList<Column>( );
+    private ArrayList<HousekeepingColumn> housekeepingColumn = new ArrayList<HousekeepingColumn>( );
+    private TreeSet<Table>                subclass           = new TreeSet<Table>( );
+    private Table                         superclass;
 
-    protected final String     verSuffix          = "Ver";
+    protected final String                verSuffix          = "Ver";
 
     public Schema getSchema( ) {
         return schema;
@@ -48,56 +39,38 @@ public abstract class Table extends DatabaseObject {
     }
 
     /**
-     * Returns all columns in the table, including housekeeping,
-     * but not including columns from the superclass.  Kept for
-     * compatability as a bean, but really you should use
-     * getColumnsExcludeSuperclass
+     * Returns all columns in the table, including housekeeping, but not
+     * including columns from the superclass. Kept for compatability as a bean,
+     * but really you should use getColumnsExcludeSuperclass
      * 
      * @deprecated
      * @see getColumnsExplainSuperclass
      */
-    public Collection getColumns( ) {
+    private ArrayList<? extends Column> getColumns( ) {
         return getColumnsExcludeSuperclass( true );
     }
 
     /**
-     * @deprecated
-     * @param housekeeping true to include housekeeping columns
-     * @return
-     */
-    public Collection getColumns( boolean housekeeping ) {
-        ArrayList columns = new ArrayList( );
-        columns.addAll( column );
-        if ( housekeeping ) {
-            columns.addAll( housekeepingColumn );
-        }
-        return columns;
-    }
-    
-    /**
-     * 
      * @param housekeeping true to include housekeeping columns
      * @return collection of columns specific to this table
      */
-    public Collection getColumnsExcludeSuperclass( boolean housekeeping ) {
-        ArrayList columns = new ArrayList( );
+    public ArrayList<? extends Column> getColumnsExcludeSuperclass( boolean housekeeping ) {
+        ArrayList<Column> columns = new ArrayList<Column>( );
         columns.addAll( column );
         if ( housekeeping ) {
             columns.addAll( housekeepingColumn );
         }
         return columns;
     }
-    
+
     /**
-     * 
      * @param housekeeping true to include housekeeping columns
      * @return collection of columns including those from any superclasses
      */
-    
-    public Collection getColumnsIncludeSuperclass( boolean housekeeping ) {
-        ArrayList columns = new ArrayList( );
-        if ( getSuperclass() != null ) {
-            columns.addAll( getSuperclass().getColumnsIncludeSuperclass(false));
+    public ArrayList<? extends Column> getColumnsIncludeSuperclass( boolean housekeeping ) {
+        ArrayList<Column> columns = new ArrayList<Column>( );
+        if ( getSuperclass( ) != null ) {
+            columns.addAll( getSuperclass( ).getColumnsIncludeSuperclass( false ) );
         }
         columns.addAll( getColumnsExcludeSuperclass( housekeeping ) );
         return columns;
@@ -105,8 +78,8 @@ public abstract class Table extends DatabaseObject {
 
     public void addColumn( Column column ) {
         if ( !this.column.contains( column ) ) {
-            log.debug( "Adding Column: '" + column.getName( ) + "' to Table: '"
-                    + getName( ) + "' of Type: '" + column.getType( ) + "'" );
+            log.debug( "Adding Column: '" + column.getName( ) + "' to Table: '" + getName( ) + "' of Type: '"
+                    + column.getType( ) + "'" );
             this.column.add( column );
             column.setTable( this );
         }
@@ -117,26 +90,23 @@ public abstract class Table extends DatabaseObject {
         if ( removed ) column.setTable( null );
     }
 
-    public Collection getHousekeepingColumns( ) {
+    public ArrayList<HousekeepingColumn> getHousekeepingColumns( ) {
         return housekeepingColumn;
     }
 
     public void addHousekeepingColumn( HousekeepingColumn housekeepingColumn ) {
         if ( !this.housekeepingColumn.contains( housekeepingColumn ) ) {
-            log.debug( "Adding HousekeepingColumn: '"
-                    + housekeepingColumn.getName( ) + "' to Table: '"
-                    + getName( ) + "'" );
+            log.debug( "Adding HousekeepingColumn: '" + housekeepingColumn.getName( ) + "' to Table: '" + getName( )
+                    + "'" );
             this.housekeepingColumn.add( housekeepingColumn );
             housekeepingColumn.setTable( this );
         }
     }
 
-    public void setHousekeepingColumns( Collection housekeepingColumns ) {
-        log.debug( "Setting HousekeepingColumns for Table: '" + getName( )
-                + "'" );
+    public void setHousekeepingColumns( ArrayList<HousekeepingColumn> housekeepingColumns ) {
+        log.debug( "Setting HousekeepingColumns for Table: '" + getName( ) + "'" );
         this.housekeepingColumn.clear( );
-        for ( Iterator i = housekeepingColumns.iterator( ); i.hasNext( ); ) {
-            HousekeepingColumn col = (HousekeepingColumn) i.next( );
+        for ( HousekeepingColumn col : housekeepingColumns ) {
             addHousekeepingColumn( (HousekeepingColumn) col.clone( ) );
         }
     }
@@ -146,15 +116,16 @@ public abstract class Table extends DatabaseObject {
         if ( removed ) housekeepingColumn.setTable( null );
     }
 
-    public Collection getSubclasss( ) {
+    private TreeSet<Table> getSubclasss( ) {
         return subclass;
     }
 
     /**
      * Alias for getSubclasses()
+     * 
      * @return
      */
-    public Collection getSubclasses( ) {
+    public TreeSet<? extends Table> getSubclasses( ) {
         return getSubclasss( );
     }
 
@@ -176,44 +147,10 @@ public abstract class Table extends DatabaseObject {
 
     public void setSuperclass( Table table ) {
         if ( this.superclass != table ) {
-            log.debug( "Setting superclass: '" + table.getName( )
-                    + "' for Table: '" + getName( ) + "'" );
-            if ( this.superclass != null ) this.superclass
-                    .removeSubclass( this );
+            log.debug( "Setting superclass: '" + table.getName( ) + "' for Table: '" + getName( ) + "'" );
+            if ( this.superclass != null ) this.superclass.removeSubclass( this );
             this.superclass = table;
             if ( table != null ) table.addSubclass( this );
-        }
-    }
-
-    public String getPrimaryKeyName( ) {
-        if ( getPrimaryKey( ) == null ) return null;
-        if ( getPrimaryKey( ).getConstrainedColumns( ).isEmpty( ) ) return null;
-        ArrayList columns = (ArrayList) getPrimaryKey( )
-                .getConstrainedColumns( );
-        return ((Column) columns.get( 0 )).getName( );
-    }
-
-    public Constraint getPrimaryKey( ) {
-        return primaryKey;
-    }
-
-    public boolean removePrimaryKey( ) {
-        boolean removed = false;
-        Constraint pk = this.primaryKey;
-        if ( pk != null && pk.getConstrainedTable( ) != null ) {
-            this.primaryKey = null;
-            removed = true;
-        }
-        if ( removed ) pk.setConstrainedTable( null );
-        return removed;
-    }
-
-    public void setPrimaryKey( Constraint primaryKey ) {
-        if ( this.primaryKey != primaryKey ) {
-            log.debug( "Setting primary key for Table: '" + name + "'" );
-            removePrimaryKey( );
-            this.primaryKey = primaryKey;
-            if ( primaryKey != null ) primaryKey.setConstrainedTable( this );
         }
     }
 
@@ -227,8 +164,8 @@ public abstract class Table extends DatabaseObject {
 
     public Column getColumn( String name ) {
         if ( name == null ) return null;
-        for ( Iterator i = getColumnsIncludeSuperclass( true ).iterator( ); i.hasNext( ); ) {
-            Column column = (Column) i.next( );
+
+        for ( Column column : getColumnsIncludeSuperclass( true ) ) {
             if ( column.getName( ).compareToIgnoreCase( name ) == 0 ) {
                 return column;
             }
@@ -267,61 +204,54 @@ public abstract class Table extends DatabaseObject {
         return table;
     }
 
-    /**
-     * TreeSet getSortedChildren() { TreeSet children = new TreeSet();
-     * children.addAll(getColumns()); children.addAll(getHousekeepingColumns());
-     * children.addAll(getSubclasss()); return children; }
-     */
     public boolean equals( DatabaseObject o ) {
         Table other = (Table) o;
 
-//        if ( !tablespace.equals( other.getTablespace( ) ) ) return false;
         if ( housekeeping != other.isHousekeeping( ) ) return false;
         if ( updatable != other.isUpdatable( ) ) return false;
 
         return super.equals( o );
     }
-    
+
     public boolean columnsEqual( Table other ) {
-        if ( this.getColumnsExcludeSuperclass(false).size() != other.getColumnsExcludeSuperclass(false).size() ) return false;
-        for ( int i = 0; i < getColumnsExcludeSuperclass(false).size(); i++ ) {
-            Column leftCol = (Column) getColumnsExcludeSuperclass(false).toArray()[i];
-            Column rightCol = (Column) getColumnsExcludeSuperclass(false).toArray()[i];
-            if ( ! leftCol.equals(rightCol)) return false;
+        if ( this.getColumnsExcludeSuperclass( false ).size( ) != other.getColumnsExcludeSuperclass( false ).size( ) ) return false;
+
+        for ( int i = 0; i < getColumnsExcludeSuperclass( false ).size( ); i++ ) {
+            Column leftCol = (Column) getColumnsExcludeSuperclass( false ).toArray( )[i];
+            Column rightCol = (Column) other.getColumnsExcludeSuperclass( false ).toArray( )[i];
+            if ( !leftCol.equals( rightCol ) ) return false;
         }
         return true;
     }
-    
+
     public boolean subclassesEqual( Table other ) {
-        if ( getSubclasses().isEmpty() && other.getSubclasses().isEmpty() ) return true;
-        
-        Object[] leftSubclasses = (Object[]) ( new TreeSet(getSubclasses())).toArray();
-        Object[] rightSubclasses = (Object[]) ( new TreeSet(other.getSubclasses())).toArray();
-        
-        if ( this.getSubclasses().size() != other.getSubclasses().size() ) return false;
-        for ( int i = 0; i < getSubclasses().size(); i++ ) {
-            Table leftSubclass = (Table) leftSubclasses[i];
-            Table rightSubclass = (Table) rightSubclasses[i];
-            if ( ! leftSubclass.equals(rightSubclass) ) return false;
-            if ( ! leftSubclass.columnsEqual(rightSubclass) ) return false;
-            if ( ! leftSubclass.constraintsEqual(rightSubclass) ) return false;
-            if ( ! leftSubclass.indexesEqual(rightSubclass) ) return false;
+        if ( getSubclasses( ).isEmpty( ) && other.getSubclasses( ).isEmpty( ) ) return true;
+
+        ArrayList<Table> leftSubclasses = new ArrayList<Table>( getSubclasses( ) );
+        ArrayList<Table> rightSubclasses = new ArrayList<Table>( getSubclasses( ) );
+
+        if ( this.getSubclasses( ).size( ) != other.getSubclasses( ).size( ) ) return false;
+
+        for ( int i = 0; i < getSubclasses( ).size( ); i++ ) {
+            Table leftSubclass = leftSubclasses.get( i );
+            Table rightSubclass = rightSubclasses.get( i );
+            if ( !leftSubclass.equals( rightSubclass ) ) return false;
+            if ( !leftSubclass.columnsEqual( rightSubclass ) ) return false;
+            if ( !leftSubclass.constraintsEqual( rightSubclass ) ) return false;
+            if ( !leftSubclass.indexesEqual( rightSubclass ) ) return false;
         }
         return true;
     }
-    
+
     public boolean constraintsEqual( Table other ) {
         // TODO Implement
         return true;
     }
-    
+
     public boolean indexesEqual( Table other ) {
-       // Index[] leftIndexes = (Index[]) (TreeSet) getIndexes()).toArray();
-       // Index[] rightIndexes = (Index[]) ((TreeSet) getIndexes()).toArray();
-       // TODO Implement
-        
+        // TODO Implement
+
         return true;
     }
- 
-    
+
 }

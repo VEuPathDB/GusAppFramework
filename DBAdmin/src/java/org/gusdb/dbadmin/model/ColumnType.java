@@ -2,8 +2,8 @@ package org.gusdb.dbadmin.model;
 
 /**
  * @author msaffitz
- * @version $Revision$ $Date: 2005-06-16 16:35:04 -0400 (Thu, 16 Jun
- *          2005) $
+ * @deprecated
+ * @version $Revision$ $Date$
  */
 public final class ColumnType {
 

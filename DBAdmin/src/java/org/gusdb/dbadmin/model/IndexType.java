@@ -2,6 +2,7 @@ package org.gusdb.dbadmin.model;
 
 /**
  * @author msaffitz
+ * @deprecated
  * @version $Revision$ $Date: 2005-06-16 16:35:04 -0400 (Thu, 16 Jun
  *          2005) $
  */

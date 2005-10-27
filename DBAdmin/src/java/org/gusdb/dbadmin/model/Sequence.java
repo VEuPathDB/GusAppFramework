@@ -29,12 +29,6 @@ public class Sequence extends DatabaseObject {
         this.start = start;
     }
 
-    /**
-     * public boolean deepEquals(DatabaseObject o, Writer writer) throws
-     * IOException { if (o.getClass() != Sequence.class) return false; if
-     * (equals((Sequence) o) return true; return false; } /* TreeSet
-     * getSortedChildren() { return new TreeSet(); }
-     */
     public boolean equals( DatabaseObject o ) {
         Sequence other = (Sequence) o;
 

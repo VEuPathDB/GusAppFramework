@@ -16,14 +16,20 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
+
 import org.gusdb.dbadmin.reader.OracleReader;
 import org.gusdb.dbadmin.reader.SchemaReader;
 import org.gusdb.dbadmin.reader.XMLReader;
+
 import org.gusdb.dbadmin.util.GusClassHierarchyConverter;
+import org.gusdb.dbadmin.util.CategoryReader;
+import org.gusdb.dbadmin.util.DatabaseUtilities;
+
 import org.gusdb.dbadmin.writer.OracleWriter;
 import org.gusdb.dbadmin.writer.PostgresWriter;
 import org.gusdb.dbadmin.writer.SchemaWriter;
@@ -58,6 +64,7 @@ public class SchemaDumper {
 
         Options options = declareOptions();
         CommandLine cmdLine = parseOptions(cmdName, options, args);
+
         SchemaReader dbReader = null;
         SchemaWriter dbWriter = null;
 
@@ -71,26 +78,20 @@ public class SchemaDumper {
 			
             if (properties.getProperty("dbVendor").equals("Oracle")) {
                 dbReader = new OracleReader(properties.getProperty("jdbcDsn"), 
-                                            properties.getProperty(
-                                                    "databaseLogin"), 
-                                            properties.getProperty(
-                                                    "databasePassword"));
+                                            properties.getProperty("databaseLogin"), 
+                                            properties.getProperty("databasePassword"));
             } else if (properties.getProperty("dbVendor").equals("Postgres")) {
                 // TODO: PostgresReader
-                System.err.println(
-                        "Sorry, A PostgreSQL Reader does not yet exist.");
+                System.err.println("Sorry, A PostgreSQL Reader does not yet exist.");
                 System.exit(1);
             } else {
                 System.err.println("Unknown DB Vendor");
                 System.exit(1);
             }
-        } else if (cmdLine.getOptionValue("sourceType").compareToIgnoreCase(
-                           "xml") == 0) {
+        } else if (cmdLine.getOptionValue("sourceType").compareToIgnoreCase("xml") == 0) {
             dbReader = new XMLReader(cmdLine.getOptionValue("source"));
         } else {
-            System.err.println(
-                    "Unknown sourceType: " + 
-                    cmdLine.getOptionValue("sourceType"));
+            System.err.println("Unknown sourceType: " + cmdLine.getOptionValue("sourceType"));
             System.exit(1);
         }
 
@@ -99,29 +100,30 @@ public class SchemaDumper {
         // WRITE
         try {
 
-            if (cmdLine.getOptionValue("targetType").compareToIgnoreCase(
-                        "oracle") == 0) {
+            if (cmdLine.getOptionValue("targetType").compareToIgnoreCase("oracle") == 0) {
                 dbWriter = new OracleWriter();
                 convertSubclasses(db);
-            } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase(
-                               "postgres") == 0) {
+            } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase("postgres") == 0) {
                 dbWriter = new PostgresWriter();
                 convertSubclasses(db);
-            } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase(
-                               "simple") == 0) {
+            } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase("simple") == 0) {
                 dbWriter = new SimpleTextWriter();
-            } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase(
-                               "xml") == 0) {
+            } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase("xml") == 0) {
                 dbWriter = new XMLWriter();
-            } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase(
-                                "hbm") == 0) {
-                dbWriter = new HibernateMapWriter(
-                                properties.getProperty("hibernate.basePkg"));
+            } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase("hbm") == 0) {
+                dbWriter = new HibernateMapWriter(properties.getProperty("hibernate.basePkg"));
             } else {
-                System.err.println(
-                        "Unknown targetType: " + 
-                        cmdLine.getOptionValue("target"));
+                System.err.println("Unknown targetType: " + cmdLine.getOptionValue("target"));
                 System.exit(1);
+            }
+            
+            if ( cmdLine.getOptionValue("categoryFile") != null && 
+                 cmdLine.getOptionValue("categoryMapFile") != null ) {
+                db.setSuperCategories( CategoryReader.readCategories( cmdLine.getOptionValue( "categoryFile" ) ) );
+                CategoryReader.setCategories(db, cmdLine.getOptionValue("categoryMapFile"));
+            }
+            if ( cmdLine.getOptionValue("tablespace") != null ) {
+                DatabaseUtilities.setTablespace(db, cmdLine.getOptionValue("tablespace"));
             }
 
             FileWriter fw = new FileWriter(cmdLine.getOptionValue("target"));
@@ -144,8 +146,7 @@ public class SchemaDumper {
         sourceType.setRequired(true);
         options.addOption(sourceType);
 
-        Option inFile = new Option("source", true, 
-                                   "Full path to source XML File");
+        Option inFile = new Option("source", true, "Full path to source XML File");
         inFile.setRequired(false);
         options.addOption(inFile);
 
@@ -156,6 +157,18 @@ public class SchemaDumper {
         Option outFile = new Option("target", true, "Full path of output File");
         outFile.setRequired(true);
         options.addOption(outFile);
+        
+        Option catMapFile = new Option("categoryMapFile", true, "Full path to category mapping file");
+        catMapFile.setRequired(false);
+        options.addOption(catMapFile);
+        
+        Option catFile = new Option("categoryFile", true, "Full path to category XML file");
+        catFile.setRequired(false);
+        options.addOption(catFile);
+        
+        Option tblSpace = new Option("tablespace", true, "Name of the tablespace to use for all objects");
+        tblSpace.setRequired(false);
+        options.addOption(tblSpace);
 
         return options;
     }
@@ -185,12 +198,9 @@ public class SchemaDumper {
                                          cmdLine.getOptionValue("sourceType"));
             }
 
-            if (cmdLine.getOptionValue("targetType").compareToIgnoreCase(
-                        "oracle") != 0 && 
-                cmdLine.getOptionValue("targetType").compareToIgnoreCase(
-                        "postgres") != 0 && 
-                cmdLine.getOptionValue("targetType").compareToIgnoreCase(
-                        "simple") != 0 && 
+            if (cmdLine.getOptionValue("targetType").compareToIgnoreCase("oracle") != 0 && 
+                cmdLine.getOptionValue("targetType").compareToIgnoreCase("postgres") != 0 && 
+                cmdLine.getOptionValue("targetType").compareToIgnoreCase("simple") != 0 && 
                 cmdLine.getOptionValue("targetType").compareToIgnoreCase("xml") != 0 && 
                 cmdLine.getOptionValue("targetType").compareToIgnoreCase("xml") != 0 &&
                 cmdLine.getOptionValue("targetType").compareToIgnoreCase("hbm") != 0) {
@@ -202,6 +212,14 @@ public class SchemaDumper {
                 cmdLine.getOptionValue("source") == null) {
                 throw new ParseException("Missing source for XML sourceType");
             }
+            
+            if ( (cmdLine.getOptionValue("categoryMapFile") != null &&
+                  cmdLine.getOptionValue("categoryFile") == null ) ||
+                 (cmdLine.getOptionValue("categoryMapFile") == null &&
+                  cmdLine.getOptionValue("categoryFile") != null ) ) {
+                throw new ParseException("categoryMapFile and categoryFile not properly specified");
+            }
+                
         } catch (ParseException e) {
             System.err.println("");
             System.err.println("Parsing failed.  Reason: " + e.getMessage());
@@ -223,7 +241,8 @@ public class SchemaDumper {
         String newline = System.getProperty("line.separator");
         String cmdlineSyntax = cmdName + 
                                " -sourceType [db|xml] [-source file]" + 
-                               " -targetType [oracle|postgres|simple|xml] -target file ";
+                               " -targetType [oracle|postgres|simple|xml] -target file" +
+                               " [-categoryFile file -categoryMapFile file] [-tablespace name]";
         String header = newline + 
                         "Reads a database (either directly or in XML) and " + 
                         "outputs the schema as XML, DDL, or a simple text " + 

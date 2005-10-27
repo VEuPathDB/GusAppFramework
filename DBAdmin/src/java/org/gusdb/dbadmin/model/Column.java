@@ -1,7 +1,6 @@
 package org.gusdb.dbadmin.model;
 
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -14,31 +13,34 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class Column extends DatabaseObject {
 
-    protected final static Log log        = LogFactory.getLog( Column.class );
+    protected final static Log log = LogFactory.getLog( Column.class );
 
     private int                length;
     private int                precision;
     private boolean            nullable;
-    private ColumnType         type;
-    private Collection         constraint = new HashSet( );
-    protected Table            table;
 
-    public Collection getConstraints( ) {
+    public enum ColumnType {
+        CHARACTER, CLOB, BLOB, DATE, FLOAT, STRING, NUMBER, UNDEFINED
+    };
+
+    private ColumnType          type;
+    private TreeSet<Constraint> constraint = new TreeSet<Constraint>( );
+    protected Table             table;
+
+    public TreeSet<Constraint> getConstraints( ) {
         return constraint;
     }
 
     public void addConstraint( Constraint constraint ) {
         if ( !this.constraint.contains( constraint ) ) {
-            log.debug( "Adding constraint: '" + constraint.getName( )
-                    + "' to Column: '" + getName( ) + "'" );
+            log.debug( "Adding constraint: '" + constraint.getName( ) + "' to Column: '" + getName( ) + "'" );
             this.constraint.add( constraint );
             constraint.addConstrainedColumn( this );
         }
     }
 
     public void removeConstraint( Constraint constraint ) {
-        log.debug( "Removing constraint: '" + constraint.getName( )
-                + "' from Column: '" + getName( ) + "'" );
+        log.debug( "Removing constraint: '" + constraint.getName( ) + "' from Column: '" + getName( ) + "'" );
 
         boolean removed = this.constraint.remove( constraint );
 
@@ -92,24 +94,10 @@ public abstract class Column extends DatabaseObject {
     }
 
     public void setType( String type ) {
-        String name = "null";
-
-        if ( table != null ) {
-            name = table.getName( );
-        }
-        log.debug( "Setting Column Type: '" + type + "' for Table: '" + name
-                + "'" );
-        this.type = ColumnType.getInstance( type );
+        this.type = ColumnType.valueOf( type );
     }
 
     public void setType( ColumnType columnType ) {
-        String name = "null";
-
-        if ( table != null ) {
-            name = table.getName( );
-        }
-        log.debug( "Setting Column Type: '" + columnType + "' for Table: '"
-                + name + "'" );
         this.type = columnType;
     }
 
@@ -125,8 +113,8 @@ public abstract class Column extends DatabaseObject {
             Column column = table.getColumn( path[2] );
 
             if ( column == null ) {
-                throw new NullPointerException( "No column found. Table: '"
-                        + table.getName( ) + "', Column: '" + path[2] + "'" );
+                throw new NullPointerException( "No column found. Table: '" + table.getName( ) + "', Column: '"
+                        + path[2] + "'" );
             }
             log.debug( "Resolved Column: '" + column.getName( ) + "'" );
             return column;
