@@ -107,7 +107,7 @@ public class OracleWriter extends RelationalDatabaseWriter {
 		if ( table.getClass() == GusTable.class ) {
 			writeIndexes( (GusTable) table );
             oStream.write( "\n" );
-            writePKConstraint( table );
+            writePKConstraint( (GusTable) table );
 		}
 		oStream.write( "\n" );
 	}
