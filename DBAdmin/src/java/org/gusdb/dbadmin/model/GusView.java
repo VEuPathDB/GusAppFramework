@@ -1,5 +1,7 @@
 package org.gusdb.dbadmin.model;
 
+import java.util.ArrayList;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -74,6 +76,10 @@ public class GusView extends View {
         }
     }
 
+    public ArrayList<GusView> getSubclasses() {
+        return (ArrayList<GusView>) super.getSubclasses();
+    }
+    
     public void setSchema( GusSchema schema ) {
         super.setSchema( schema );
         if ( versionView != null ) {
@@ -87,12 +93,6 @@ public class GusView extends View {
             versionView.setName( name + verSuffix );
         }
     }
-
-    /*
-     * public boolean deepEquals(DatabaseObject o, Writer writer) throws
-     * IOException { if (o.getClass() != GusView.class) return false; if
-     * (equals((GusView) o, new HashSet(), writer)) return true; return false; }
-     */
 
     public boolean equals( DatabaseObject o ) {
         GusView other = (GusView) o;

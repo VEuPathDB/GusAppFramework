@@ -1,7 +1,6 @@
 package org.gusdb.dbadmin.model;
 
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -13,13 +12,12 @@ import org.apache.commons.logging.LogFactory;
  */
 public class GusColumn extends Column {
 
-    protected static final Log log                   = LogFactory
-                                                             .getLog( Column.class );
+    protected static final Log  log                   = LogFactory.getLog( Column.class );
 
-    private String             documentation;
-    private Collection         referentialConstraint = new HashSet( );
-    private Collection         index                 = new HashSet( );
-    private VersionColumn      versionColumn;
+    private String              documentation;
+    private TreeSet<Constraint> referentialConstraint = new TreeSet<Constraint>( );
+    private TreeSet<Index>      index                 = new TreeSet<Index>( );
+    private VersionColumn       versionColumn;
 
     public VersionColumn getVersionColumn( ) {
         return this.versionColumn;
@@ -37,7 +35,7 @@ public class GusColumn extends Column {
         this.documentation = documentation;
     }
 
-    public Collection getReferentialConstraints( ) {
+    public TreeSet<Constraint> getReferentialConstraints( ) {
         return referentialConstraint;
     }
 
@@ -56,8 +54,7 @@ public class GusColumn extends Column {
     public void setTable( GusTable table ) {
         super.setTable( table );
         if ( getVersionColumn( ) != null ) {
-            if ( table != null ) getVersionColumn( ).setTable(
-                    table.getVersionTable( ) );
+            if ( table != null ) getVersionColumn( ).setTable( table.getVersionTable( ) );
             else getVersionColumn( ).setTable( null );
         }
         else {
@@ -67,7 +64,7 @@ public class GusColumn extends Column {
         }
     }
 
-    public Collection getIndexs( ) {
+    public TreeSet<Index> getIndexs( ) {
         return index;
     }
 
@@ -90,20 +87,17 @@ public class GusColumn extends Column {
 
     public void setPrecision( int precision ) {
         super.setPrecision( precision );
-        if ( getVersionColumn( ) != null ) getVersionColumn( ).setPrecision(
-                precision );
+        if ( getVersionColumn( ) != null ) getVersionColumn( ).setPrecision( precision );
     }
 
     public void setLength( int length ) {
         super.setLength( length );
-        if ( getVersionColumn( ) != null ) getVersionColumn( ).setLength(
-                length );
+        if ( getVersionColumn( ) != null ) getVersionColumn( ).setLength( length );
     }
 
     public void setNullable( boolean nullable ) {
         super.setNullable( nullable );
-        if ( getVersionColumn( ) != null ) getVersionColumn( ).setNullable(
-                nullable );
+        if ( getVersionColumn( ) != null ) getVersionColumn( ).setNullable( nullable );
     }
 
     public void setType( String type ) {
@@ -113,8 +107,7 @@ public class GusColumn extends Column {
 
     public void setType( ColumnType columnType ) {
         super.setType( columnType );
-        if ( getVersionColumn( ) != null ) getVersionColumn( ).setType(
-                columnType );
+        if ( getVersionColumn( ) != null ) getVersionColumn( ).setType( columnType );
     }
 
     public Object clone( ) {
@@ -126,14 +119,5 @@ public class GusColumn extends Column {
         clone.setType( getType( ) );
         return clone;
     }
-
-    /*
-     * TreeSet getSortedChildren() { TreeSet children =
-     * super.getSortedChildren(); children.addAll(getReferentialConstraints());
-     * children.addAll(getIndexs()); return children; } public boolean
-     * deepEquals(DatabaseObject o, Writer writer) throws IOException { if
-     * (o.getClass() != GusColumn.class) return false; if (equals((GusColumn) o,
-     * new HashSet(), writer)) return true; return false; }
-     */
 
 }

@@ -4,7 +4,6 @@
 package org.gusdb.dbadmin.model;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 /**
  * @author msaffitz
@@ -12,7 +11,7 @@ import java.util.Iterator;
 public class SuperCategory {
 
     private Database  database;
-    private ArrayList categories = new ArrayList( );
+    private ArrayList<Category> categories = new ArrayList<Category>( );
     private String    name;
 
     public SuperCategory( ) {
@@ -40,7 +39,7 @@ public class SuperCategory {
         this.name = name;
     }
 
-    public ArrayList getCategories( ) {
+    public ArrayList<Category> getCategories( ) {
         return this.categories;
     }
 
@@ -57,8 +56,7 @@ public class SuperCategory {
     }
 
     public Category getCategory( String name ) {
-        for ( Iterator i = categories.iterator( ); i.hasNext( ); ) {
-            Category category = (Category) i.next( );
+        for ( Category category : categories ) {
             if ( category.getName( ).equalsIgnoreCase( name ) ) return category;
         }
         return null;

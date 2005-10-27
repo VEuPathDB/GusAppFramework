@@ -3,7 +3,6 @@
  */
 package org.gusdb.dbadmin.model;
 
-import java.util.Collection;
 import java.util.TreeSet;
 
 /**
@@ -11,9 +10,9 @@ import java.util.TreeSet;
  */
 public class Category {
 
-    private SuperCategory superCategory;
-    private Collection    tables = new TreeSet( );
-    private String        name;
+    private SuperCategory     superCategory;
+    private TreeSet<GusTable> tables = new TreeSet<GusTable>( );
+    private String            name;
 
     public Category( ) {}
 
@@ -29,7 +28,7 @@ public class Category {
         }
     }
 
-    public Collection getTables( ) {
+    public TreeSet<GusTable> getTables( ) {
         return tables;
     }
 
@@ -40,11 +39,11 @@ public class Category {
         }
     }
 
-    public void removeTable( GusTable table) {
+    public void removeTable( GusTable table ) {
         boolean removed = this.tables.remove( table );
         if ( removed ) table.setCategory( (Category) null );
     }
-    
+
     public String getName( ) {
         return name;
     }

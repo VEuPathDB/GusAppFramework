@@ -1,8 +1,6 @@
 package org.gusdb.dbadmin.model;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 
 /**
  * @author msaffitz
@@ -11,13 +9,18 @@ import java.util.Iterator;
  */
 public class Index extends DatabaseObject {
 
-    private String     tablespace;
-    private Collection columnRef = new ArrayList( ); // of type String
-    private Collection column    = new ArrayList( ); // of type GusColumn
-    private GusTable   table;
-    private IndexType  type;
+    private String               tablespace;
+    private ArrayList<String>    columnRef = new ArrayList<String>( );
+    private ArrayList<GusColumn> column    = new ArrayList<GusColumn>( );
+    private GusTable             table;
 
-    public Collection getColumns( ) {
+    public enum IndexType {
+        NORMAL, BITMAP
+    }
+
+    private IndexType type;
+
+    public ArrayList<GusColumn> getColumns( ) {
         return column;
     }
 
@@ -62,14 +65,14 @@ public class Index extends DatabaseObject {
     }
 
     public void setType( String _type ) {
-        this.type = IndexType.getInstance( _type );
+        this.type = IndexType.valueOf( _type );
     }
 
-    public Collection getColumnRefs( ) {
+    public ArrayList<String> getColumnRefs( ) {
         return columnRef;
     }
 
-    public void setColumnRefs( Collection _columnRef ) {
+    public void setColumnRefs( ArrayList<String> _columnRef ) {
         columnRef = _columnRef;
     }
 
@@ -82,18 +85,11 @@ public class Index extends DatabaseObject {
     }
 
     public void resolveReferences( Database db ) {
-        for ( Iterator i = getColumnRefs( ).iterator( ); i.hasNext( ); ) {
-            addColumn( (GusColumn) Column.getColumnFromRef( db, (String) i
-                    .next( ) ) );
+        for ( String ref : getColumnRefs() ) {
+            addColumn( (GusColumn) Column.getColumnFromRef( db, ref ) );
         }
     }
 
-    /**
-     * TreeSet getSortedChildren() { return new TreeSet(getColumns()); } public
-     * boolean deepEquals(DatabaseObject o, Writer writer) throws IOException {
-     * if (o.getClass() != Index.class) return false; if (equals((Index) o, new
-     * HashSet(), writer)) return true; return false; }
-     */
     public boolean equals( DatabaseObject o ) {
         Index other = (Index) o;
         if ( !tablespace.equals( other.getTablespace( ) ) ) return false;

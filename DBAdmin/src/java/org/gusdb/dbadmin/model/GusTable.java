@@ -1,8 +1,8 @@
 package org.gusdb.dbadmin.model;
 
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -15,26 +15,25 @@ import org.apache.commons.logging.LogFactory;
  */
 public class GusTable extends Table {
 
-    protected final static Log log                   = LogFactory.getLog( GusTable.class );
+    protected final static Log  log                   = LogFactory.getLog( GusTable.class );
 
-    private String             documentation;
-    private Category           category;
-    private String             categoryRef;   
-    private String             ref;
-    private Collection         constraint            = new HashSet( );
-    private Collection         referentialConstraint = new HashSet( );
-    private Collection         index                 = new HashSet( );
-    private Sequence           sequence;
-    private final String       sequenceSuffix        = "_SQ";
+    private String              documentation;
+    private Category            category;
+    private String              categoryRef;
+    private String              ref;
+    private TreeSet<Constraint> constraint            = new TreeSet<Constraint>( );
+    private TreeSet<Constraint> referentialConstraint = new TreeSet<Constraint>( );
+    private TreeSet<Index>      index                 = new TreeSet<Index>( );
+    private Sequence            sequence;
+    private final String        sequenceSuffix        = "_SQ";
+    private Constraint          primaryKey;
 
-    private boolean            versioned;
-    private VersionTable       versionTable;
+    private boolean             versioned;
+    private VersionTable        versionTable;
 
     public GusTable( ) {
         setSequence( new Sequence( ) );
-
         Integer start = new Integer( System.getProperty( "SEQUENCE_START" ) );
-
         sequence.setStart( start.intValue( ) );
     }
 
@@ -61,13 +60,13 @@ public class GusTable extends Table {
             if ( this.category != null ) this.category.addTable( this );
         }
     }
-        
-    public String getCategoryRef() {
-        if ( this.getCategory() != null ) return this.getCategory().getName();
+
+    public String getCategoryRef( ) {
+        if ( this.getCategory( ) != null ) return this.getCategory( ).getName( );
         return categoryRef;
     }
-    
-    public void setCategoryRef(String categoryRef) {
+
+    public void setCategoryRef( String categoryRef ) {
         this.categoryRef = categoryRef;
     }
 
@@ -79,7 +78,38 @@ public class GusTable extends Table {
         this.ref = ref;
     }
 
-    public Collection getReferentialConstraints( ) {
+    public String getPrimaryKeyName( ) {
+        if ( getPrimaryKey( ) == null ) return null;
+        if ( getPrimaryKey( ).getConstrainedColumns( ).isEmpty( ) ) return null;
+        ArrayList columns = (ArrayList) getPrimaryKey( ).getConstrainedColumns( );
+        return ((Column) columns.get( 0 )).getName( );
+    }
+
+    public Constraint getPrimaryKey( ) {
+        return primaryKey;
+    }
+
+    public boolean removePrimaryKey( ) {
+        boolean removed = false;
+        Constraint pk = this.primaryKey;
+        if ( pk != null && pk.getConstrainedTable( ) != null ) {
+            this.primaryKey = null;
+            removed = true;
+        }
+        if ( removed ) pk.setConstrainedTable( null );
+        return removed;
+    }
+
+    public void setPrimaryKey( Constraint primaryKey ) {
+        if ( this.primaryKey != primaryKey ) {
+            log.debug( "Setting primary key for Table: '" + name + "'" );
+            removePrimaryKey( );
+            this.primaryKey = primaryKey;
+            if ( primaryKey != null ) primaryKey.setConstrainedTable( this );
+        }
+    }    
+    
+    public TreeSet<Constraint> getReferentialConstraints( ) {
         return referentialConstraint;
     }
 
@@ -98,7 +128,7 @@ public class GusTable extends Table {
         }
     }
 
-    public Collection getIndexs( ) {
+    public TreeSet<Index> getIndexs( ) {
         return index;
     }
 
@@ -146,6 +176,14 @@ public class GusTable extends Table {
         }
     }
 
+    public ArrayList<GusColumn> getColumnsExcludeSuperclass( boolean housekeeping ) {
+        return (ArrayList<GusColumn>) super.getColumnsExcludeSuperclass( housekeeping );
+    }
+
+    public ArrayList<GusColumn> getColumnsIncludeSuperclass( boolean housekeeping ) {
+        return (ArrayList<GusColumn>) super.getColumnsIncludeSuperclass( housekeeping );
+    }
+
     public void addSubclass( GusTable table ) {
         super.addSubclass( table );
         if ( table.getVersionTable( ) != null && this.versionTable != null ) {
@@ -167,34 +205,12 @@ public class GusTable extends Table {
         }
     }
 
-    public void setPrimaryKey( Constraint primaryKey ) {
-        super.setPrimaryKey( primaryKey );
-        if ( this.versionTable != null && primaryKey == null ) {
-            versionTable.setPrimaryKey( null );
-            return;
-        }
-        else if ( this.versionTable != null ) {
-            Constraint vPk = new Constraint( );
-
-            if ( versionTable.getName( ).length( ) > 27 ) {
-                vPk.setName( versionTable.getName( ).substring( 0, 26 ) + "_PK" );
-            }
-            else {
-                vPk.setName( versionTable.getName( ) + "_PK" );
-            }
-            vPk.setType( ConstraintType.PRIMARY_KEY );
-            for ( Iterator i = primaryKey.getConstrainedColumns( ).iterator( ); i.hasNext( ); ) {
-                vPk.addConstrainedColumn( versionTable.getColumn( ((Column) i.next( )).getName( ) ) );
-            }
-            if ( versionTable.getColumn( "MODIFICATION_DATE" ) != null ) {
-                vPk.addConstrainedColumn( versionTable.getColumn( "MODIFICATION_DATE" ) );
-            }
-            versionTable.setPrimaryKey( vPk );
-        }
+    public TreeSet<GusTable> getSubclasses( ) {
+        return (TreeSet<GusTable>) super.getSubclasses( );
     }
 
-    public Collection getConstraints( ) {
-        Collection constraints = constraint;
+    public TreeSet<Constraint> getConstraints( ) {
+        TreeSet<Constraint> constraints = constraint;
 
         if ( getPrimaryKey( ) != null ) {
             constraints.add( getPrimaryKey( ) );
@@ -203,7 +219,7 @@ public class GusTable extends Table {
     }
 
     public void addConstraint( Constraint constraint ) {
-        if ( constraint.getType( ) == ConstraintType.PRIMARY_KEY ) {
+        if ( constraint.getType( ) == Constraint.ConstraintType.PRIMARY_KEY ) {
             setPrimaryKey( constraint );
             return;
         }
@@ -217,7 +233,7 @@ public class GusTable extends Table {
         boolean removed = false;
 
         log.debug( "Removing constraint: '" + constraint.getName( ) + "' from Table: '" + getName( ) + "'" );
-        if ( constraint.getType( ) == ConstraintType.PRIMARY_KEY ) {
+        if ( constraint.getType( ) == Constraint.ConstraintType.PRIMARY_KEY ) {
             if ( getPrimaryKey( ) != null ) {
                 setPrimaryKey( null );
                 removed = true;
@@ -288,9 +304,7 @@ public class GusTable extends Table {
         if ( !this.versioned && versioned ) {
             this.versioned = versioned;
             this.versionTable = new VersionTable( this );
-            for ( Iterator i = getColumns( false ).iterator( ); i.hasNext( ); ) {
-                GusColumn col = (GusColumn) i.next( );
-
+            for ( GusColumn col : getColumnsExcludeSuperclass( false ) ) {
                 if ( col.getVersionColumn( ) != null ) {
                     col.getVersionColumn( ).setTable( this.versionTable );
                 }
@@ -305,37 +319,17 @@ public class GusTable extends Table {
         }
     }
 
-    public void resolveCategoryReference() {
-        Database db = getSchema().getDatabase();
-        setCategory(db.getCategory(getCategoryRef()));
+    public void resolveCategoryReference( ) {
+        Database db = getSchema( ).getDatabase( );
+        setCategory( db.getCategory( getCategoryRef( ) ) );
     }
-    
+
     void resolveReferences( Database db ) {
-        for ( Iterator i = getIndexs( ).iterator( ); i.hasNext( ); ) {
-            ((Index) i.next( )).resolveReferences( db );
+        for ( Index i : getIndexs( ) ) {
+            i.resolveReferences( db );
         }
-        for ( Iterator i = getConstraints( ).iterator( ); i.hasNext( ); ) {
-            Constraint con = (Constraint) i.next( );
-
+        for ( Constraint con : getConstraints( ) ) {
             con.resolveReferences( db );
-            if ( con.getType( ) == ConstraintType.PRIMARY_KEY && this.getVersionTable( ) != null ) {
-                Constraint vPk = new Constraint( );
-
-                if ( versionTable.getName( ).length( ) > 27 ) {
-                    vPk.setName( versionTable.getName( ).substring( 0, 26 ) + "_PK" );
-                }
-                else {
-                    vPk.setName( versionTable.getName( ) + "_PK" );
-                }
-                vPk.setType( ConstraintType.PRIMARY_KEY );
-                for ( Iterator j = con.getConstrainedColumns( ).iterator( ); j.hasNext( ); ) {
-                    vPk.addConstrainedColumn( versionTable.getColumn( ((Column) j.next( )).getName( ) ) );
-                }
-                if ( versionTable.getColumn( "MODIFICATION_DATE" ) != null ) {
-                    vPk.addConstrainedColumn( versionTable.getColumn( "MODIFICATION_DATE" ) );
-                }
-                versionTable.setPrimaryKey( vPk );
-            }
         }
     }
 

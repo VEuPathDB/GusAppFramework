@@ -27,11 +27,10 @@ import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Index;
+
 import org.gusdb.dbadmin.reader.XMLReader;
 
-//import org.gusdb.dbadmin.util.GusClassHierarchyConverter;
-//import org.gusdb.dbadmin.util.JDBCStreamWriter;
-//import org.gusdb.dbadmin.util.MetadataPopulator;
+import org.gusdb.dbadmin.util.DatabaseUtilities;
 
 import org.gusdb.dbadmin.writer.PostgresWriter;
 import org.gusdb.dbadmin.writer.OracleWriter;
@@ -92,7 +91,7 @@ public class InstallSchemaTask extends Task {
 		FileWriter rows;
 
 		convertSubclasses( db );
-		setTablespace( db );
+		DatabaseUtilities.setTablespace( db, this.tablespace );
 		
 		try {
 			ddl = new FileWriter( projectHome + "/install/config/objects.sql" );
@@ -123,7 +122,6 @@ public class InstallSchemaTask extends Task {
 		}
 	}
 
-
 	private void convertSubclasses( Database db ) {
 		Collection superClasses  = new HashSet();
 
@@ -145,23 +143,6 @@ public class InstallSchemaTask extends Task {
 			converter.convert();
 		}
 	}
-
-	private void setTablespace( Database db ) {
-		log.info("Setting tablespaces to " + tablespace );
-		for ( Iterator i = db.getSchemas().iterator(); i.hasNext();  ) {
-			for ( Iterator j = ((Schema) i.next()).getTables().iterator(); j.hasNext(); ) {
-				Table table = (Table) j.next();
-				table.setTablespace(tablespace);
-				
-				if ( table.getClass() == GusTable.class ) {
-					for ( Iterator k = ((GusTable)table).getIndexs().iterator(); k.hasNext(); ) {
-						((Index) k.next()).setTablespace(tablespace);
-					}
-				}
-			}
-		}		
-	}
-	
 
 	private void initialize() throws BuildException {
 		System.setProperty( "XMLDATAFILE", schema );
@@ -187,7 +168,7 @@ public class InstallSchemaTask extends Task {
 		
 		try {
 			Class.forName( "org.postgresql.Driver" );
-			Class.forName( "oracle.jdbc.driver.OracleDriver" );
+			Class.forName( "oracle.jdbc.OracleDriver" );
 		}
 		catch ( ClassNotFoundException e ) {
 			log.fatal( "Unable to locate class", e );

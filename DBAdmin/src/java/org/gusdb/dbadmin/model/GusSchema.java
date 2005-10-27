@@ -1,6 +1,6 @@
 package org.gusdb.dbadmin.model;
 
-import java.util.Iterator;
+import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -21,6 +21,10 @@ public class GusSchema extends Schema {
         versionSchema = new VersionSchema( this );
     }
 
+    public TreeSet<GusTable> getTables() {
+        return (TreeSet<GusTable>) super.getTables();
+    }
+    
     public VersionSchema getVersionSchema( ) {
         return versionSchema;
     }
@@ -72,28 +76,14 @@ public class GusSchema extends Schema {
     }
 
     void resolveReferences( Database db ) {
-        for ( Iterator i = getTables( ).iterator( ); i.hasNext( ); ) {
-            ((GusTable) i.next( )).resolveReferences( db );
+        for ( GusTable table : (TreeSet<? extends GusTable>) getTables() ) {
+            table.resolveReferences( db );
         }
-        Object[] tables = getTables( ).toArray( );
-        for ( int i = 0; i < tables.length; i++ ) {
-            Table table = (Table) tables[i];
-            for ( Iterator j = table.getSubclasss( ).iterator( ); j.hasNext( ); ) {
-                ((GusTable) j.next( )).setSchema( this );
+        for ( Table table : getTables() ) {
+            for ( Table subclass : table.getSubclasses() ) {
+                subclass.setSchema(this);
             }
         }
     }
-    /*
-     * public boolean deepEquals(DatabaseObject o, Writer writer) throws
-     * IOException { if (o.getClass() != GusSchema.class) return false; if
-     * (equals((GusSchema) o, new HashSet(), writer)) return true; return false; }
-     * boolean equals(DatabaseObject o, HashSet seen, Writer writer) throws
-     * IOException { GusSchema other = (GusSchema) o; if (!super.equals(other,
-     * seen, writer)) return false; boolean equal = true; if
-     * (!documentation.equals(other.getDocumentation())) equal = false; if
-     * (!versionSchema.equals(other.getVersionSchema(), seen, writer)) equal =
-     * false; if (!equal) { log.debug("GusSchema attributes vary"); return
-     * false; } return compareChildren(other, seen, writer); }
-     */
 
 }

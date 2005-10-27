@@ -1,8 +1,6 @@
 package org.gusdb.dbadmin.model;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -14,20 +12,24 @@ import org.apache.commons.logging.LogFactory;
  */
 public class Constraint extends DatabaseObject {
 
-    protected final Log    log                  = LogFactory
-                                                        .getLog( Constraint.class );
+    protected final Log           log                  = LogFactory.getLog( Constraint.class );
 
-    private Collection     constrainedColumnRef = new ArrayList( );
-    private String         constrainedTableRef;
-    private String         referencedTableRef;
-    private Collection     referencedColumnRef  = new ArrayList( );
-    private Collection     referencedColumn     = new ArrayList( );
-    private Collection     constrainedColumn    = new ArrayList( );
+    private ArrayList<String>    constrainedColumnRef = new ArrayList<String>( );
+    private String                constrainedTableRef;
+    private String                referencedTableRef;
+    private ArrayList<String>    referencedColumnRef  = new ArrayList<String>( );
+    private ArrayList<GusColumn> referencedColumn     = new ArrayList<GusColumn>( );
+    private ArrayList<Column>    constrainedColumn    = new ArrayList<Column>( );
+
+    public enum ConstraintType {
+        UNIQUE, PRIMARY_KEY, FOREIGN_KEY
+    }
+
     private ConstraintType type;
     private GusTable       referencedTable;
     private Table          constrainedTable;
 
-    public Collection getReferencedColumns( ) {
+    public ArrayList<GusColumn> getReferencedColumns( ) {
         return referencedColumn;
     }
 
@@ -43,7 +45,7 @@ public class Constraint extends DatabaseObject {
         if ( removed ) column.removeReferentialConstraint( this );
     }
 
-    public Collection getConstrainedColumns( ) {
+    public ArrayList<Column> getConstrainedColumns( ) {
         return constrainedColumn;
     }
 
@@ -55,8 +57,7 @@ public class Constraint extends DatabaseObject {
     }
 
     public void removeConstrainedColumn( Column column ) {
-        log.debug( "Removing Column: '" + column.getName( )
-                + "' from Constraint: '" + getName( ) + "'" );
+        log.debug( "Removing Column: '" + column.getName( ) + "' from Constraint: '" + getName( ) + "'" );
         boolean removed = this.constrainedColumn.remove( column );
         if ( removed ) column.removeConstraint( this );
     }
@@ -67,8 +68,7 @@ public class Constraint extends DatabaseObject {
 
     public void setReferencedTable( GusTable table ) {
         if ( this.referencedTable != table ) {
-            if ( this.referencedTable != null ) this.referencedTable
-                    .removeReferentialConstraint( this );
+            if ( this.referencedTable != null ) this.referencedTable.removeReferentialConstraint( this );
             this.referencedTable = table;
             if ( table != null ) table.addReferentialConstraint( this );
         }
@@ -82,24 +82,24 @@ public class Constraint extends DatabaseObject {
         if ( this.constrainedTable != table ) {
             String name = "null";
             if ( table != null ) name = table.getName( );
-            log.debug( "Setting Table: '" + name + "' for Constraint: '"
-                    + getName( ) + "' of Type: '" + getType( ) + "'" );
+            log.debug( "Setting Table: '" + name + "' for Constraint: '" + getName( ) + "' of Type: '" + getType( )
+                    + "'" );
 
-            if ( this.constrainedTable != null
-                    && this.type != ConstraintType.PRIMARY_KEY ) ((GusTable) this.constrainedTable)
-                    .removeConstraint( this );
+            if ( this.constrainedTable != null && this.type != ConstraintType.PRIMARY_KEY ) {
+                ((GusTable) this.constrainedTable).removeConstraint( this );
+            }
+                    
 
-            if ( this.constrainedTable != null
-                    && this.type == ConstraintType.PRIMARY_KEY ) this.constrainedTable
-                    .setPrimaryKey( null );
+            if ( this.constrainedTable != null && this.type == ConstraintType.PRIMARY_KEY ) {
+                this.constrainedTable.setPrimaryKey( null );
+            }
+                    
 
             this.constrainedTable = table;
 
-            if ( table != null && this.type != ConstraintType.PRIMARY_KEY ) ((GusTable) table)
-                    .addConstraint( this );
+            if ( table != null && this.type != ConstraintType.PRIMARY_KEY ) ((GusTable) table).addConstraint( this );
 
-            if ( table != null && this.type == ConstraintType.PRIMARY_KEY ) table
-                    .setPrimaryKey( this );
+            if ( table != null && this.type == ConstraintType.PRIMARY_KEY ) table.setPrimaryKey( this );
         }
     }
 
@@ -115,14 +115,14 @@ public class Constraint extends DatabaseObject {
     }
 
     public void setType( String type ) {
-        setType( ConstraintType.getInstance( type ) );
+        setType( ConstraintType.valueOf( type ) );
     }
 
-    public Collection getReferencedColumnRefs( ) {
+    public ArrayList<String> getReferencedColumnRefs( ) {
         return referencedColumnRef;
     }
 
-    public void setReferencedColumnRefs( Collection referencedColumnRef ) {
+    public void setReferencedColumnRefs( ArrayList<String> referencedColumnRef ) {
         this.referencedColumnRef = referencedColumnRef;
     }
 
@@ -144,11 +144,11 @@ public class Constraint extends DatabaseObject {
         this.referencedColumnRef.remove( referencedColumnRef );
     }
 
-    public Collection getConstrainedColumnRefs( ) {
+    public ArrayList<String> getConstrainedColumnRefs( ) {
         return constrainedColumnRef;
     }
 
-    public void setConstrainedColumnRefs( Collection constrainedColumnRef ) {
+    public void setConstrainedColumnRefs( ArrayList<String> constrainedColumnRef ) {
         this.constrainedColumnRef = constrainedColumnRef;
     }
 
@@ -171,32 +171,18 @@ public class Constraint extends DatabaseObject {
     }
 
     void resolveReferences( Database db ) {
-        for ( Iterator i = getConstrainedColumnRefs( ).iterator( ); i.hasNext( ); ) {
-            addConstrainedColumn( Column.getColumnFromRef( db, (String) i
-                    .next( ) ) );
+        for ( String ref : getConstrainedColumnRefs( ) ) {
+            addConstrainedColumn( Column.getColumnFromRef( db, ref ) );
         }
         if ( getType( ) == ConstraintType.FOREIGN_KEY ) {
-            for ( Iterator i = getReferencedColumnRefs( ).iterator( ); i
-                    .hasNext( ); ) {
-                addReferencedColumn( (GusColumn) Column.getColumnFromRef( db,
-                        (String) i.next( ) ) );
+            for ( String ref : getReferencedColumnRefs( ) ) {
+                addReferencedColumn( (GusColumn) Column.getColumnFromRef( db, ref ) );
             }
-            if ( getReferencedTableRef( ) == null ) log.error( "Null ref for "
-                    + getName( ) );
-            setReferencedTable( (GusTable) Table.getTableFromRef( db,
-                    getReferencedTableRef( ) ) );
+            if ( getReferencedTableRef( ) == null ) log.error( "Null ref for " + getName( ) );
+            setReferencedTable( (GusTable) Table.getTableFromRef( db, getReferencedTableRef( ) ) );
         }
     }
 
-    /**
-     * TreeSet getSortedChildren() { TreeSet children = new TreeSet();
-     * children.addAll(getReferencedColumns());
-     * children.addAll(getConstrainedColumns()); return children; } public
-     * boolean deepEquals(DatabaseObject o, Writer writer) throws IOException {
-     * if (o.getClass() != Constraint.class) return false; if
-     * (equals((Constraint) o, new HashSet(), writer)) return true; return
-     * false; }
-     */
     public boolean equals( DatabaseObject o ) {
         Constraint other = (Constraint) o;
 

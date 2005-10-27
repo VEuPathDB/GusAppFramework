@@ -73,7 +73,7 @@ public class CategoryReader {
         }
 
     }
-
+    
     public static ArrayList readCategories( String categoryXMLFile ) {
         FileInputStream xmlFile;
         Digester digester = getDigester( );

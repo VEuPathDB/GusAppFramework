@@ -1,8 +1,6 @@
 package org.gusdb.dbadmin.model;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
 
 import org.gusdb.dbadmin.util.ColumnPair;
 
@@ -13,18 +11,18 @@ import org.gusdb.dbadmin.util.ColumnPair;
  */
 public abstract class View extends DatabaseObject implements Comparable {
 
-    private String     sql;
-    private boolean    materialized;
+    private String                sql;
+    private boolean               materialized;
 
-    private Schema     schema;
+    private Schema                schema;
 
-    private View       superclass;
-    private Collection subclass  = new HashSet( );
-    private Collection column    = new ArrayList( ); // Of type ColumnPair
+    private View                  superclass;
+    private ArrayList<View>       subclass  = new ArrayList<View>( );
+    private ArrayList<ColumnPair> column    = new ArrayList<ColumnPair>( );
 
-    private Table      table;
+    private Table                 table;
 
-    protected String   verSuffix = "Ver";
+    protected String              verSuffix = "Ver";
 
     public Table getTable( ) {
         return table;
@@ -40,14 +38,13 @@ public abstract class View extends DatabaseObject implements Comparable {
 
     public void setSuperclass( View superclass ) {
         if ( this.superclass != superclass ) {
-            if ( this.superclass != null ) this.superclass
-                    .removeSubclass( this );
+            if ( this.superclass != null ) this.superclass.removeSubclass( this );
             this.superclass = superclass;
             if ( superclass != null ) superclass.addSubclass( this );
         }
     }
 
-    public Collection getColumns( ) {
+    public ArrayList<ColumnPair> getColumns( ) {
         return column;
     }
 
@@ -61,7 +58,11 @@ public abstract class View extends DatabaseObject implements Comparable {
         this.column.remove( columnPair );
     }
 
-    public Collection getSubclasss( ) {
+    private ArrayList<View> getSubclasss( ) {
+        return subclass;
+    }
+
+    public ArrayList<? extends View> getSubclasses( ) {
         return subclass;
     }
 
@@ -115,12 +116,8 @@ public abstract class View extends DatabaseObject implements Comparable {
         return this.getName( ).compareTo( v.getName( ) );
     }
 
-    /**
-     * TreeSet getSortedChildren() { return new TreeSet(getSubclasss()); }
-     */
     public boolean equals( DatabaseObject o ) {
         View other = (View) o;
-
         if ( !sql.equals( other.getSql( ) ) ) return false;
         return super.equals( o );
     }

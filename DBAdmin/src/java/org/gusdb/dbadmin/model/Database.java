@@ -1,11 +1,7 @@
 package org.gusdb.dbadmin.model;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -17,25 +13,40 @@ import org.apache.commons.logging.LogFactory;
  */
 public class Database extends DatabaseObject {
 
-    protected final Log log             = LogFactory.getLog( Database.class );
-    private float       version;
-    private Collection  schema          = new HashSet( );
-    private ArrayList   superCategories = new ArrayList( );
+    protected final Log              log             = LogFactory.getLog( Database.class );
+    private float                    version;
+    private TreeSet<Schema>          schema          = new TreeSet<Schema>( );
+    private ArrayList<SuperCategory> superCategories = new ArrayList<SuperCategory>( );
 
-    public Collection getSchemas( ) {
+    /**
+     * @deprecated
+     * @return
+     */
+    private TreeSet<Schema> getSchemas( ) {
         return schema;
     }
 
-    public Collection getSchemas( boolean restrictVersion ) {
-        if ( !restrictVersion ) return getSchemas( );
-        Collection gusSchemas = new Vector( );
-        for ( Iterator i = getSchemas( ).iterator( ); i.hasNext( ); ) {
-            Schema s = (Schema) i.next( );
+    public TreeSet<Schema> getAllSchemas( ) {
+        return schema;
+    }
+
+    public TreeSet<GusSchema> getGusSchemas( ) {
+        TreeSet<GusSchema> gusSchemas = new TreeSet<GusSchema>( );
+        for ( Schema s : getAllSchemas( ) ) {
             if ( s.getClass( ) == GusSchema.class ) {
-                gusSchemas.add( s );
+                gusSchemas.add( (GusSchema) s );
             }
         }
         return gusSchemas;
+    }
+
+    /**
+     * @deprecated
+     * @return
+     */
+    private TreeSet getSchemas( boolean restrictVersion ) {
+        if ( !restrictVersion ) return getAllSchemas( );
+        else return getGusSchemas( );
     }
 
     public void addSchema( Schema schema ) {
@@ -55,10 +66,9 @@ public class Database extends DatabaseObject {
     public Schema getSchema( String name ) {
         if ( name == null ) return null;
 
-        for ( Iterator i = getSchemas( ).iterator( ); i.hasNext( ); ) {
-            Schema schema = (Schema) i.next( );
-            if ( schema.getName( ).compareToIgnoreCase( name ) == 0 ) {
-                return schema;
+        for ( Schema s : getAllSchemas( ) ) {
+            if ( s.getName( ).compareToIgnoreCase( name ) == 0 ) {
+                return s;
             }
         }
         return null;
@@ -72,37 +82,34 @@ public class Database extends DatabaseObject {
         this.version = version;
     }
 
-    public ArrayList getSuperCategories( ) {
+    public ArrayList<SuperCategory> getSuperCategories( ) {
         return this.superCategories;
     }
-    
-    public Category getCategory(String name) {
-        for ( Iterator i = getCategories().iterator(); i.hasNext(); ) {
-            Category cat = (Category) i.next();
-            if ( cat.getName() != null && 
-                    cat.getName().equalsIgnoreCase(name) ) return cat;
+
+    public Category getCategory( String name ) {
+        for ( Category cat : getCategories( ) ) {
+            if ( cat.getName( ) != null && cat.getName( ).equalsIgnoreCase( name ) ) return cat;
         }
         return null;
     }
-    
-    public Collection getCategories() {
-        Collection categories = new ArrayList();
-        for ( Iterator i = getSuperCategories().iterator(); i.hasNext(); ) {
-            SuperCategory superCat = (SuperCategory) i.next();
-            categories.addAll(superCat.getCategories());
+
+    public ArrayList<Category> getCategories( ) {
+        ArrayList<Category> categories = new ArrayList<Category>( );
+        for ( SuperCategory superCat : getSuperCategories( ) ) {
+            categories.addAll( superCat.getCategories( ) );
         }
         return categories;
     }
-    
-    public void setSuperCategories(ArrayList superCategories) {
-        for ( Iterator i = getSuperCategories().iterator(); i.hasNext(); ) {
-            removeSuperCategory((SuperCategory) i.next());
+
+    public void setSuperCategories( ArrayList superCategories ) {
+        for ( SuperCategory s : getSuperCategories( ) ) {
+            removeSuperCategory( s );
         }
-        for ( Iterator i = superCategories.iterator(); i.hasNext(); ) {
-            addSuperCategory((SuperCategory) i.next());
+        for ( SuperCategory s : getSuperCategories( ) ) {
+            addSuperCategory( s );
         }
     }
-    
+
     public void addSuperCategory( SuperCategory superCategory ) {
         if ( !this.superCategories.contains( superCategory ) ) {
             this.superCategories.add( superCategory );
@@ -116,14 +123,27 @@ public class Database extends DatabaseObject {
     }
 
     /**
+     * @depcreated
      * @param restrictVersion true to not include version tables
      * @return All tables in the database
      */
-    public Collection getTables( boolean restrictVersion ) {
-        Collection tables = new Vector( );
-        for ( Iterator i = getSchemas( restrictVersion ).iterator( ); i.hasNext( ); ) {
-            Schema schema = (Schema) i.next( );
-            tables.addAll( schema.getTables( ) );
+    private TreeSet<? extends Table> getTables( boolean restrictVersion ) {
+        if ( restrictVersion ) return getGusTables( );
+        else return getAllTables();
+    }
+
+    public TreeSet<Table> getAllTables( ) {
+        TreeSet<Table> tables = new TreeSet<Table>( );
+        for ( Schema s : getAllSchemas( ) ) {
+            tables.addAll( s.getTables( ) );
+        }
+        return tables;
+    }
+
+    public TreeSet<GusTable> getGusTables( ) {
+        TreeSet<GusTable> tables = new TreeSet<GusTable>( );
+        for ( GusSchema s : getGusSchemas( ) ) {
+            tables.addAll( s.getTables( ) );
         }
         return tables;
     }
@@ -131,11 +151,8 @@ public class Database extends DatabaseObject {
     public void resolveReferences( ) {
         log.info( "Resolving Database References" );
 
-        for ( Iterator i = getSchemas( ).iterator( ); i.hasNext( ); ) {
-            Schema schema = (Schema) i.next( );
-            if ( schema.getClass( ) == GusSchema.class ) {
-                ((GusSchema) schema).resolveReferences( this );
-            }
+        for ( GusSchema schema : getGusSchemas( ) ) {
+            ((GusSchema) schema).resolveReferences( this );
         }
     }
 
