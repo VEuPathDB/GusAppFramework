@@ -24,7 +24,7 @@ my @properties =
 );
 
 # param gusConfigFile - an optional file of 'name=value'.
-#                       default = $ENV{GUS_CONFIG_FILE}
+#                       default = $ENV{GUS_HOME}/config/gus.config
 sub new {
   my ($class, $gusConfigFile) = @_;
 
@@ -32,7 +32,7 @@ sub new {
   bless($self, $class);
 
   if ( ! $gusConfigFile ) {
-      $gusConfigFile = $ENV{GUS_CONFIG_FILE} ? $ENV{GUS_CONFIG_FILE} : $ENV{GUS_HOME} . "/config/gus.config";
+      $gusConfigFile = $ENV{GUS_HOME} . "/config/gus.config";
   }
   
   $self->{propertySet} = CBIL::Util::PropertySet->new($gusConfigFile,\@properties,1);

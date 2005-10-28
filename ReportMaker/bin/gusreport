@@ -179,7 +179,7 @@ Otherwise, the temp table will be used but not be created or dropped.
 The --dbLogin and --dbPassword args provide a login that can access both 
 the temp table (with create privileges if nec.) and the GUS tables the 
 report will get data from.  By default these values are found in 
-\$GUS_CONFIG_FILE
+\$GUS_HOME/config/gus.config
 
 The config module you provide with the --configModule arg is the full name 
 of a perl module that configures the report maker.  It specifies which 

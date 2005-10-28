@@ -28,7 +28,7 @@ $| = 1;
 
 if((!$id && !$attHash) || !$table){ die "usage: printXML --table <tablename> --id <identifier> --attHash '{\"att1\" => val}' --recursive (if you want to retrieve all children from the db)\n\teg: printXML --table DoTS::Gene --id 10 --recursive --user <user_id> --group <group_id>\n"; }
 
-my $gusconfigfile = "$ENV{GUS_CONFIG_FILE}";
+my $gusconfigfile = "$ENV{GUS_HOME}/config/gus.config";
 
 my $gusconfig = GUS::Supported::GusConfig->new($gusconfigfile);
 
