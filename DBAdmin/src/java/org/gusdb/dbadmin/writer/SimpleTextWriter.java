@@ -8,18 +8,13 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.TreeSet;
 
 import org.gusdb.dbadmin.model.Column;
-import org.gusdb.dbadmin.model.ColumnType;
 import org.gusdb.dbadmin.model.Constraint;
-import org.gusdb.dbadmin.model.ConstraintType;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
-import org.gusdb.dbadmin.model.HousekeepingColumn;
 import org.gusdb.dbadmin.model.Index;
-import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
 
 /**

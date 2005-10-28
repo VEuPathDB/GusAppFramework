@@ -13,16 +13,14 @@ import java.util.Iterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.gusdb.dbadmin.model.Column;
-import org.gusdb.dbadmin.model.Constraint;
-import org.gusdb.dbadmin.model.ConstraintType;
 import org.gusdb.dbadmin.model.Database;
+import org.gusdb.dbadmin.model.GusTable;
+import org.gusdb.dbadmin.model.GusView;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
-import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.VersionTable;
-import org.gusdb.dbadmin.model.View;
 import org.gusdb.dbadmin.model.VersionView;
-import org.gusdb.dbadmin.model.GusView;
+import org.gusdb.dbadmin.model.View;
 
 /**
  *@author     msaffitz
