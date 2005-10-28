@@ -19,7 +19,7 @@ my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength);
             "gusConfigFile=s" => \$gusConfigFile);
 
 if(!$idSQL || !$outFile){
-	die "usage: extractGusSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --gusConfigFile [\$GUS_CONFIG_FILE]\n";
+	die "usage: extractGusSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --gusConfigFile [\$GUS_HOME/config/gus.config]\n";
 }
 
 ##set the defaults

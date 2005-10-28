@@ -22,7 +22,7 @@ my $propertiesFile = $ARGV[1];
 my @properties = (
  ["clusterServer",      "none",  "full name of cluster server"],
  ["pipelineDir", "", ""],
- ["gusConfigFile", "$ENV{GUS_CONFIG_FILE}", ""],
+ ["gusConfigFile", "$ENV{GUS_HOME}/config/gus.config", ""],
  ["stopBefore",   "none",  "the step to stop before.  uses the signal name"],
  ["testNextPlugin", "false", "'true' to run in no-commit mode the first plugin not yet done and then exit"],
  ["downloadDir", "", "directory path for downloaded external resources"]

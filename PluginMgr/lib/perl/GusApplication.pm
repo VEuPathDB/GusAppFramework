@@ -1246,9 +1246,9 @@ sub getStandardArgsDeclaration {
                 isList=>0,
                }),
     fileArg   ({name  => 'gusconfigfile',
-                descr => 'The gus config file to use [note: the default is your $GUS_CONFIG_FILE]',
+                descr => 'The gus config file to use [note: the default is your $GUS_HOME/config/gus.config]',
                 reqd  => 0,
-                default=> "$ENV{GUS_CONFIG_FILE}",
+                default=> "$ENV{GUS_HOME}/config/gus.config",
                 constraintFunc=> undef,
                 isList=>0,
                 mustExist=> 1,
@@ -1306,10 +1306,10 @@ sub getGlobalEasyCspOptions {
        o => 'comment',
      },
 
-     { h => 'the gus config file to use [default is $GUS_CONFIG_FILE]',
+     { h => 'the gus config file to use [default is $GUS_HOME/config/gus.config]',
        t => 'string',
        o => 'gusconfigfile',
-       d => "$ENV{GUS_CONFIG_FILE}"
+       d => "$ENV{GUS_HOME}/config/gus.config",
      },
     )
    };
