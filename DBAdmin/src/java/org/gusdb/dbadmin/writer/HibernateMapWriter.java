@@ -3,12 +3,10 @@
  */
 package org.gusdb.dbadmin.writer;
 
-import java.io.File;
 import java.io.Writer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +16,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.gusdb.dbadmin.model.Column;
-import org.gusdb.dbadmin.model.ColumnType;
 import org.gusdb.dbadmin.model.Constraint;
-import org.gusdb.dbadmin.model.ConstraintType;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;

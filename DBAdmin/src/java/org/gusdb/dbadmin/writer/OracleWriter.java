@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import org.gusdb.dbadmin.model.Column;
-import org.gusdb.dbadmin.model.ColumnType;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusSchema;
