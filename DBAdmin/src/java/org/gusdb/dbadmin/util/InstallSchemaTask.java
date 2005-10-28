@@ -37,7 +37,7 @@ public class InstallSchemaTask extends Task {
 	private Database db;
 	private Connection conn;
 
-	private String projectHome;
+	private String gusHome;
 	private String schema;
 	private String dbVendor;
 	private String dbDsn;
@@ -45,8 +45,8 @@ public class InstallSchemaTask extends Task {
 	private String dbPassword;
 	private String tablespace;
 
-	public void setProjectHome( String projectHome ) {
-		this.projectHome = projectHome;
+	public void setGusHome( String gusHome ) {
+		this.gusHome = gusHome;
 	}
 
 
@@ -82,8 +82,8 @@ public class InstallSchemaTask extends Task {
 		DatabaseUtilities.setTablespace( db, this.tablespace );
 		
 		try {
-			ddl = new FileWriter( projectHome + "/install/config/objects.sql" );
-			rows = new FileWriter( projectHome + "/install/config/rows.sql" );
+			ddl = new FileWriter( gusHome + "/config/SchemaInstall-objects.sql" );
+			rows = new FileWriter( gusHome + "/config/SchemaInstall-rows.sql" );
 
 			JDBCStreamWriter rdbms  = new JDBCStreamWriter( conn );
 			MetadataPopulator mp    = new MetadataPopulator( rows, db, dbVendor);
@@ -127,7 +127,7 @@ public class InstallSchemaTask extends Task {
 
 	private void initialize() throws BuildException {
 		System.setProperty( "XMLDATAFILE", schema );
-		System.setProperty( "PROPERTYFILE", projectHome + "/install/gus.config" );
+		System.setProperty( "PROPERTYFILE", gusHome + "/config/gus.config" );
 
 		Properties props  = new Properties();
 
