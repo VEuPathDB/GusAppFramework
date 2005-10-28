@@ -977,15 +977,6 @@ sub getIdFromCache {
 sub getSoPrimaryKeys {
   my ($self) = @_;
 
-  my @soTerms = $self->{mapperSet}->getAllSoTerms();
-  my $seqSoTerm = $self->getArg('seqSoTerm');
-  if ($seqSoTerm) { push(@soTerms, $seqSoTerm); }
-
-  return if (scalar(@soTerms) == 0);
-
-  my $terms = join("', '", @soTerms);
-  $terms = "'$terms'";
-
   my $soCvsVersion = $self->getArg('soCvsVersion');
 
   $soCvsVersion or $self->userError("You are using Sequence Ontology terms but have not provided a --soCvsVersion on the command line");
@@ -994,8 +985,7 @@ sub getSoPrimaryKeys {
   my $sql = "
 select term_name, sequence_ontology_id
 from sres.SequenceOntology
-where term_name in ($terms)
-and so_cvs_version = '$soCvsVersion'
+where so_cvs_version = '$soCvsVersion'
 ";
   my $stmt = $dbh->prepareAndExecute($sql);
   while (my ($term, $pk) = $stmt->fetchrow_array()){
@@ -1003,7 +993,7 @@ and so_cvs_version = '$soCvsVersion'
   }
 
   my @badSoTerms;
-  foreach my $soTerm (@soTerms) {
+  foreach my $soTerm (keys %{$self->{soPrimaryKeys}}) {
     push(@badSoTerms, $soTerm) unless $self->{soPrimaryKeys}->{$soTerm};
   }
 
