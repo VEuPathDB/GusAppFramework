@@ -924,17 +924,17 @@ sub set_defaults {
 
    my $user    = $self->getUser();
    my $userId  = $self->sql_translate('Core.UserInfo', 'user_id', 'login', $user);
-   die "No row Core.UserInfo has a login = '$user'.  This value was found in the userName= property of your .gus.properties file.  Please be sure it is correct and has been registered in the database\n" unless defined $userId;
+   die "No row Core.UserInfo has a login = '$user'.  This value was found in the userName= property of your gus.config file.  Please be sure it is correct and has been registered in the database\n" unless defined $userId;
 
    my $group   = $self->getGroup();
    my $groupId = $self->sql_translate('Core.GroupInfo', 'group_id', 'name',$group);
-   die "No row in Core.GroupInfo has a name = '$group'.  This value was found in the group= property of your .gus.properties file.  Please be sure it is correct and has been registered in the database\n" unless defined $groupId;
+   die "No row in Core.GroupInfo has a name = '$group'.  This value was found in the group= property of your gus.config file.  Please be sure it is correct and has been registered in the database\n" unless defined $groupId;
 
    my $project = $self->getProject();
    my $projectId = $self->sql_translate('Core.ProjectInfo',
                                         'project_id',
                                         'name',$project);
-   die "No row in Core.ProjectInfo has name = $project'.  This value was found in the project= property of your .gus.properties file.  Please be sure it is correct and has been registered in the database\n" unless defined $projectId;
+   die "No row in Core.ProjectInfo has name = $project'.  This value was found in the project= property of your gus.config file.  Please be sure it is correct and has been registered in the database\n" unless defined $projectId;
 
    $OtherPlugIn->setDefaultUserId($userId);
    $OtherPlugIn->setDefaultGroupId($groupId);
