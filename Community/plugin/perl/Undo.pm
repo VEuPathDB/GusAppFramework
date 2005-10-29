@@ -19,7 +19,9 @@ The Undo plugin is very simple:
 
   - Undo also deletes from AlgorithmParam and AlgorithmInvocation.
 
-  - All deletes are performed as part of one transaction.  The deletes are only committed if Undo is run with --commit
+  - all deletes are performed as part of one transaction.  The deletes are only committed if Undo is run with --commit
+
+  - Undo does *not* write to the version tables.
 
 This is something of a use-at-your-own-risk plugin.  
 
@@ -28,6 +30,8 @@ The risks are:
   1. you will mistakenly undo an incorrect algorithm_invocation_id, thereby losing valuable data
 
   2. the undoTables() method in the target plugin could be written incorrectly such that it forgets some tables.  There is some protection against this because most tables that a plugin writes to are child tables.  It is not possible to forget those because that would cause a constraint violation.  It is only a problem if the Undo forgets to delete from tables that have no parents (or whose parents are also forgotten).
+
+  3. the data you are deleting is not versioned, and so is not recoverable.
 
 The advantages are:
 
