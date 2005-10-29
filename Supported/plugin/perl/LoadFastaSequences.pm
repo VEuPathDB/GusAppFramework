@@ -619,6 +619,8 @@ sub fetchSequenceTypeId {
 sub fetchSequenceOntologyId {
   my ($self, $name) = @_;
 
+  my $name = $self->getArg('SOTermName');
+
   eval ("require GUS::Model::SRes::SequenceOntology");
 
   my $SOTerm = GUS::Model::SRes::SequenceOntology->new({ term_name => $name });
@@ -626,6 +628,9 @@ sub fetchSequenceOntologyId {
   $SOTerm->retrieveFromDB;
 
   $self->{sequenceOntologyId} = $SOTerm->getSequenceOntologyId();
+
+  $self->{sequenceOntologyId} 
+    || $self->userError("Can't find SO term '$name' in database");
 }
 
 sub fetchTaxonId {
