@@ -154,11 +154,12 @@ sub undoFeatures{
 
    $self->_deleteFromTable('DoTS.NALocation');
 
-   $self->setParentToNull();
+#   $self->setParentToNull();
 
    $self->_deleteFromTable('DoTS.NAFeature');
 }
 
+# DELETE THIS METHOD.   NO LONGER NEEDED
 sub setParentToNull{
   my ($self) = @_;
 
