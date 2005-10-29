@@ -1,10 +1,5 @@
 package GUS::Community::Plugin::Undo;
 
-# todo:
-#  - handle seqVersion more robustly
-#  - add logging info
-#  - undo
-
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;
@@ -16,34 +11,27 @@ The Undo plugin is very simple:
 
   - it takes a plugin name and a list of algorithm_invocation_ids as arguments
 
-  - when it runs, it calls a method on the target plugin:   \$targetPlugin->undo(\$algInvIds, \$dbh)
+  - when it runs, it calls a method on the target plugin:   \$targetPlugin->undoTables()
 
   - if the target plugin has not defined such a method, Undo will fail.
 
-  - if it has, then that method is responsible for performing the undo.  
+  - if it has, then that method returns a list of tables to undo from.  Undo will remove from each of those tables any rows whose row_alg_invocation_id is in the list supplied on the command line.  The order of the tables in the list returned by undoTables() must be such that child tables come before parent tables.  Otherwise you will get constraint violations.
 
-  - it also provides a convenient method GUS::Community::Plugin::Undo::deleteFromTable(\$table, \$algInvIds, \$dbh).  This method removes from the specified table all rows with any of the specified algortithm_invocation_ids.
+  - Undo also deletes from AlgorithmParam and AlgorithmInvocation.
 
-
-The strategy of an plugin's undo method should be:
-
-  1. call deleteFromTable on every table that it writes rows into (either directly or indirectly)
-
-  2. do so in the proper order, so that children are deleted before parents (otherwise you'll get constraint violations)
-
-  3. some tables will need special processing.  For example, deleting from tables that have links to themselves (eg NAFeature) must either proceed from child to parent (which is tricky), or, if the links are nullable, must have those links deleted first, before the rows are deleted.
+  - All deletes are performed as part of one transaction.  The deletes are only committed if Undo is run with --commit
 
 This is something of a use-at-your-own-risk plugin.  
 
 The risks are:
 
-  1. you will mistakenly remove an incorrect algorithm_invocation_id, thereby losing valuable data
+  1. you will mistakenly undo an incorrect algorithm_invocation_id, thereby losing valuable data
 
-  2. the undo method in the target plugin could be written incorrectly such that it forgets to delete from some tables.  There is some protection against this because most tables that a plugin writes to are child tables.  It is not possible to forget those because that would cause a constraint violation.  It is only a problem if the Undo forgets to delete from tables that have no parents (or whose parents are also forgotten).
+  2. the undoTables() method in the target plugin could be written incorrectly such that it forgets some tables.  There is some protection against this because most tables that a plugin writes to are child tables.  It is not possible to forget those because that would cause a constraint violation.  It is only a problem if the Undo forgets to delete from tables that have no parents (or whose parents are also forgotten).
 
 The advantages are:
 
-  1. a correctly written undo() method is much more trustworthy than deleting by hand
+  1. a correctly written undoTables() method is much more trustworthy than deleting by hand
 
   2. undoing becomes doable
 PURPOSE
@@ -120,33 +108,40 @@ sub run{
 
   my $plugin = eval "require $pluginName; $pluginName->new()";
 
-  $self->error("'$pluginName' is not a valid plugin name") unless $plugin;
+  $self->error("Failed trying to create new plugin '$pluginName' with error '$@'") unless $plugin;
 
-  $plugin->undo($self->{algInvocationIds}, $self->{dbh});
+  my @tables = $plugin->undoTables();
+  foreach my $table (@tables) {
+    $self->deleteFromTable($table);
+  }
+
+  $self->deleteFromTable('Core.AlgorithmParam');
+
+  $self->deleteFromTable('Core.AlgorithmInvocation');
 
   if ($self->getArg('commit')) {
-    print STDERR "Committing\n";
+    $self->log("Committing");
     $self->{'dbh'}->commit()
       || die "Commit failed: " . $self->{'dbh'}->errstr() . "\n";
   } else {
-    print STDERR "Rolling back\n";
+    $self->log("Rolling back");
     $self->{'dbh'}->rollback()
       || die "Rollback failed: " . $self->{'dbh'}->errstr() . "\n";
   }
 }
 
 sub deleteFromTable{
-  my ($tableName, $algInvocationIds, $dbh) = @_;
+  my ($self, $tableName) = @_;
 
-  my $algoInvocIds = join(', ', @{$algInvocationIds});
+  my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
 
   my $sql = 
 "DELETE FROM $tableName
 WHERE row_alg_invocation_id IN ($algoInvocIds)";
 
-  my $rows = $dbh->do($sql) || die "Failed running sql:\n$sql\n";
+  my $rows = $self->{dbh}->do($sql) || die "Failed running sql:\n$sql\n";
   $rows = 0 if $rows eq "0E0";
-  print STDERR "Deleted $rows rows from $tableName\n";
+  $self->log("Deleted $rows rows from $tableName");
 }
 
 
