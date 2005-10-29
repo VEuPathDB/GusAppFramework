@@ -38,7 +38,7 @@ sub getHandler {
 sub getAllHandlers{
 my ($self) = @_;
 
-  return @{$self->{qualifierHandlersList}};
+  return @{$self->{qualifierHandlerObjectsList}};
 }
 
 # return a list of all SO terms used in feature maps
@@ -81,6 +81,8 @@ sub _parseMapFile {
     $self->{qualifierHandlers}->{$name} =
       eval "{require $handlerClass; $handlerClass->new()}";
     if ($@) { die "Cannot import or construct new object for qualifier handler class '$handlerClass'\n $@\n"; }
+    push(@{$self->{qualifierHandlerObjectsList}},
+	 $self->{qualifierHandlers}->{$name});
     $self->{qualifierHandlers}->{$name}->setPlugin($plugin);
   }
 }
