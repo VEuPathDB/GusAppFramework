@@ -181,7 +181,7 @@ sub undoSpecialCaseQualifiers{
   my @handlers = $mapperSet->getAllHandlers();
   foreach my $handler (@handlers){
     no strict 'refs';
-    $handler->{class}->new->undoAll($self->{'algInvocationIds'}, $self->{'dbh'});
+    $handler->undoAll($self->{'algInvocationIds'}, $self->{'dbh'});
   }
 }
 
