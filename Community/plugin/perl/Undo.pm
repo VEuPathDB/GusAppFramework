@@ -52,7 +52,7 @@ my $argsDeclaration  =
 	      descr => 'The name of the plugin that loaded the data to be undone',
 	      constraintFunc=> undef,
 	      reqd  => 1,
-	      isList => 1,
+	      isList => 0,
 	     }),
 
    stringArg({name => 'algInvocationId',
@@ -70,7 +70,7 @@ sub new {
   bless($self, $class);
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 3872 $',
+		     cvsRevision => '$Revision$',
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
