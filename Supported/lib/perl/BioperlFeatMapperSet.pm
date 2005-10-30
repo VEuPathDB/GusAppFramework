@@ -61,11 +61,11 @@ sub _parseMapFile {
   # use forcearray so elements with one child are still arrays
   # and, use keyattr so that handlers are given as an ordered list
   # rather than a hash with name as key.  the ordering is needed
-  # so that undo operations are ordered.  retian 'name' as key attr
-  # for qualifiers.
+  # so that undo operations are ordered.  also, the qualifiers retain
+  # the ordering found in the xml file.
   my $data = $simple->XMLin($mapXml,
 			    forcearray => 1,
-			    KeyAttr => {qualifier => 'name'});
+			    KeyAttr => {});
   my $mapperSet = $data->{feature};
   $self->{qualifierHandlersList} = $data->{specialCaseQualifierHandler};
 

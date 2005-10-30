@@ -9,6 +9,10 @@ sub new{
   my $self = $featureMapHashFromXmlSimple;
   $self->{'bioperlFeatureName'} = $bioperlFeatureName;
   $self->{'mapXmlFile'} = $mapXmlFile;
+  foreach my $qualifier (@{$self->{qualifier}}) {
+    $self->{qualifiers}->{$qualifier->{name}} = $qualifier;
+    push(@{$self->{qualifierNamesList}}, $qualifier->{name});
+  }
   bless($self, $class);
   return $self;
 }
@@ -18,11 +22,25 @@ sub getBioperlFeatureName {
   return $self->{'bioperlFeatureName'};
 }
 
+sub sortTags {
+  my ($self, @tags) = @_;
+  my %tags;
+  my @sortedTags;
+  foreach my $t (@tags) {
+    $self->_checkTagExists($t);
+    $tags{$t} = 1;
+  }
+  foreach my $q (@{$self->{qualifierNamesList}}) {
+    push(@sortedTags, $q) if $tags{$q};
+  }
+  return @sortedTags;
+}
+
 sub getGusColumn{
   my ($self, $tag) = @_;
   
   $self->_checkTagExists($tag);
-  my $gusColumnName = $self->{'qualifier'}->{$tag}->{'column'};
+  my $gusColumnName = $self->{'qualifiers'}->{$tag}->{'column'};
   if ($gusColumnName eq '') {return $tag;}
   else {return $gusColumnName;}
 }
@@ -53,19 +71,19 @@ sub isSpecialCase {
   my ($self, $tag) = @_;
 
   $self->_checkTagExists($tag);
-  return $self->{'qualifier'}->{$tag}->{'handler'}; 
+  return $self->{qualifiers}->{$tag}->{'handler'}; 
 }
 
 sub getHandlerName {
   my ($self, $tag) = @_;
 
-  return $self->{'qualifier'}->{$tag}->{'handler'}
+  return $self->{qualifiers}->{$tag}->{'handler'}
 }
 
 sub getHandlerMethod {
   my ($self, $tag) = @_;
 
-  return $self->{'qualifier'}->{$tag}->{'method'}
+  return $self->{qualifiers}->{$tag}->{'method'}
 }
 
 sub ignoreFeature {
@@ -78,13 +96,13 @@ sub ignoreTag {
   my ($self, $tag) = @_;
 
   $self->_checkTagExists($tag);
-  return $self->{'qualifier'}->{$tag}->{'ignore'}; 
+  return $self->{qualifiers}->{$tag}->{'ignore'}; 
 }
 
 sub _checkTagExists {
   my ($self, $tag) = @_;
   
-  if (!$self->{'qualifier'}->{$tag}) {
+  if (!$self->{qualifiers}->{$tag}) {
     die "In feature map XML file '$self->{mapXmlFile}' <feature name=\"$self->{bioperlFeatureName}\"> does not have a <qualifier> for '$tag', which is found in the input";
   }
 }

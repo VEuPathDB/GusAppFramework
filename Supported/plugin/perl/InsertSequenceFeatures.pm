@@ -85,6 +85,8 @@ There is an additional level of configurability provided by "plugable" qualifier
 
 You can also use a qualifier handler to modify or even ignore the feature that the qualifier belongs to.  An argument to the handler is \$feature, so if you need to modify it directly you can.  Also, if the handler returns undef, that is a signal to force the entire feature to be ignored.  An advanced use of the handler exploits the fact that the handler method is an instance method on a handler object that lives throughout the plugin run.  So, you can store state in the handler object during one call to a handler method, and that state will be available to other calls.  This is a way to combine data from more than one qualifier.
 
+The qualifiers of a feature are passed to the handler in the order found in the mapping file (not the order found in the input).
+
 PURPOSE
 
   my $purposeBrief = <<PURPOSEBRIEF;
@@ -781,7 +783,8 @@ sub makeImmediateFeature {
 
   $feature->submit();
 
-  foreach my $tag ($bioperlFeature->get_all_tags()) {
+  my @sortedTags = $featureMapper->sortTags($bioperlFeature->get_all_tags());
+  foreach my $tag (@sortedTags) {
     my $ignoreFeature = $self->handleFeatureTag($bioperlFeature,
 						$featureMapper,
 						$feature, $tag);
