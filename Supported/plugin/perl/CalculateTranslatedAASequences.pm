@@ -108,13 +108,13 @@ sub run {
   my $codonTable = Bio::Tools::CodonTable->new();
 
   my $dbh = $self->getQueryHandle();
-  my $sth = $dbh->prepare(<<EOSQL);
-
+  my $sql = <<EOSQL;
   SELECT aa_sequence_id
   FROM   DoTS.TranslatedAASequence
   WHERE  external_database_release_id = ?
-
 EOSQL
+  print STDERR "That SQL= $sql\n";
+  my $sth = $dbh->prepare($sql);
 
   $sth->execute($extDbRlsId);
 
@@ -162,13 +162,10 @@ EOSQL
 
     $codonTable->id($taxon->getGeneticCodeId() || 1);
 
-    my @exons = $transcript->getChildren("DoTS::ExonFeature",1);
-
-    #to be restored and substituted for the above
-     #my @exons = $transcript->getChildren("DoTS::ExonFeature",
-	#				 1, 0,
-		#			 { external_database_release_id => $extDbRlsId }
-			#		);
+    my @exons = $transcript->getChildren("DoTS::ExonFeature",
+					 1, 0,
+					 { external_database_release_id => $extDbRlsId }
+					);
 
     unless (@exons) {
       die "Transcript had no exons: " . $transcript->getSourceId() . "\n";
