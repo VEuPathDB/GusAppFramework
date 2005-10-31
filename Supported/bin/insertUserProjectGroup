@@ -53,15 +53,15 @@ sub getDBARows {
 
   my $sth = $dbh->prepareAndExecute("select user_id from core.userinfo where login = 'dba'");
 
-  my $userId = $sth->fetchrow_array() || die "No user_id for login = 'dba' - should have been inserted by installer\n";
+  my ($userId) = $sth->fetchrow_array() || die "No user_id for login = 'dba' - should have been inserted by installer\n";
 
   $sth = $dbh->prepareAndExecute("select project_id from core.projectinfo where name = 'Database administration'");
 
-  my $projectId = $sth->fetchrow_array() || die "No project_id for name = 'Database administration' - should have been inserted by installer\n";;
+  my ($projectId) = $sth->fetchrow_array() || die "No project_id for name = 'Database administration' - should have been inserted by installer\n";;
 
   $sth = $dbh->prepareAndExecute("select group_id from core.groupinfo where name = 'dba'");
 
-  my $groupId = $sth->fetchrow_array()- "No group_id for name = 'dba' - should have been inserted by installer\n";
+  my ($groupId) = $sth->fetchrow_array()- "No group_id for name = 'dba' - should have been inserted by installer\n";
 
   my %dbaRows = ('user'=>$userId, 'project'=>$projectId, 'group'=>$groupId);
 
