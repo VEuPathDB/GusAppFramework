@@ -33,6 +33,8 @@ The risks are:
 
   3. the data you are deleting is not versioned, and so is not recoverable.
 
+  4. it is possible that the list of tables supplied by undoTables() is true for the current version of the plugin, but not for the version that was run when the data was loaded (ie, the plugin has changed since).
+
 The advantages are:
 
   1. a correctly written undoTables() method is much more trustworthy than deleting by hand
