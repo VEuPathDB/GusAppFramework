@@ -16,7 +16,11 @@ my ($verbose,$gusConfigFile,$firstName,$lastName,$projectRelease,$commit);
 	    "projectRelease=s" => \$projectRelease,
 	    "commit!" => \$commit);
 
-die "script to enter rows into userinfo,projectinfo,groupinfo,userproject,usergroup from gus config file values and command line values - usage: InsertUserProjectGroup --verbose --projectRelease --firstName(reqd) --lastName(reqd) --gusConfigFile [\$GUS_HOME/config/gus.config] --commit\n" if (! $firstName || ! $lastName || ! $projectRelease);
+die "script to enter rows into userinfo,projectinfo,groupinfo,userproject,usergroup from gus config file values and command line values \n\n 
+     usage: InsertUserProjectGroup --verbose --projectRelease(reqd) --firstName(reqd) --lastName(reqd) --gusConfigFile [\$GUS_HOME/config/gus.config] --commit\n\n
+     where projectRelease: the release number of a specific project eg. 5.0.0.3 where project name is plasmoDB\n
+           firstName: the first name of the user for userinfo.first_name eg. John\n
+           lastName: the last name of the user for userinfo.last_name e.g. Doe\n" if (! $firstName || ! $lastName || ! $projectRelease);
 
 
 print STDERR "Establishing dbi login\n" if $verbose;
