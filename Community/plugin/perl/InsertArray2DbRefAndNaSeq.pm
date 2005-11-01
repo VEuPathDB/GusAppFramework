@@ -2,7 +2,6 @@
 ##                  InsertArray2DbRefAndNaSeq.pm
 ##
 ## $Id: $
-## Ghislain Bidaut
 #######################################################################
 
 package GUS::Community::Plugin::InsertArray2DbRefAndNaSeq;
@@ -33,15 +32,13 @@ stringArg({name => 'externalDbName',
 	   constraintFunc => undef,
 	   reqd => 1,
 	   isList => 0,
-	   mustExist => 1,
         }),
 
 stringArg({name => 'externalDbVersion',
 	    descr => 'version of the external database corresponding to the annotation file',
 	    constraintFunc => undef,
-	    reqd => 1,
+	    reqd => 0,
 	    isList => 0,
-            mustExist => 1,
 	   }),
 
 
@@ -50,16 +47,14 @@ stringArg({name => 'arrayDesignName',
 	    constraintFunc => undef,
 	    reqd => 1,
 	    isList => 0,
-            mustExist => 1,
 	   }),
 
 
 stringArg({name => 'arrayDesignVersion',
 	    descr => 'version of the array design correponding to the array to annotate',
 	    constraintFunc => undef,
-	    reqd => 1,
+	    reqd => 0,
 	    isList => 0,
-            mustExist => 1,
 	   }),
 
 integerArg({name => 'dbRefExternalDatabaseReleaseId',
@@ -83,11 +78,11 @@ enumArg({name => 'dataType',
 
 
 my $purposeBrief = <<PURPOSEBRIEF;
-Find mapping between DbRef and NaSeq and ShortOligoFamily or Spot from Affymetrix or PancChips annotations files.  Mappings are inserted in Rad.CompositeElementDbRef or RadElement.
+Populate mappings in Rad.ElementDbRef and Rad.CompositeElementsDbRef between SRes.DbRef and DoTs.NaSequence and Rad.ShortOligoFamily or Rad.Spot from Affymetrix or PancChips annotations file.
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-TODO
+Populate mappings between SRes.DbRef and DoTs.NaSequence and Rad.ShortOligoFamily or Rad.Spot from Affymetrix or PancChips annotations file.  Mappings are inserted in Rad.CompositeElementDbRef or Rad.ElementDbRef.
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
@@ -124,7 +119,7 @@ sub new {
     bless($self, $class);
     
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 3400 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 3956 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -167,10 +162,9 @@ sub run {
 }
 
 
-########################################################################
-# Sub Routines
-########################################################################
-
+################################
+# populate CompEleDbREf  table
+################################
 sub populateCompEleDbREf {
     my($self, $hash, $arrayDesignId) = @_;
     
@@ -182,6 +176,16 @@ sub populateCompEleDbREf {
     my $nDbRefIdNotFound=0;
 
     my $dbRefExtDbRelId = $self->getArg('dbRefExternalDatabaseReleaseId');
+    
+    $sql = "SELECT table_id from core.tableinfo where name ='CompositeElementDbRef'";
+    $queryHandle = $self->getQueryHandle();
+    $sth = $queryHandle->prepareAndExecute($sql);
+    my $targetTableId = $sth ->fetchrow_array();
+    
+    $sql = "SELECT table_id from core.tableinfo where name ='ExternalDatabaseRelease'";
+    $queryHandle = $self->getQueryHandle();
+    $sth = $queryHandle->prepareAndExecute($sql);
+    my $factTableId = $sth ->fetchrow_array();
     
     while (my ($probe, $geneId) = each(%$hash)) {
 	$sql = "SELECT composite_element_id FROM rad.shortoligofamily WHERE name = '$probe' and array_design_id = $arrayDesignId";
@@ -204,18 +208,30 @@ sub populateCompEleDbREf {
 	    $nDbRefIdNotFound++;
 	    next;
 	}
-    
+	
 	my $newCEDbRef = GUS::Model::RAD::CompositeElementDbRef->new({
-	'composite_element_id' => $compositeElementId,
-	'db_ref_id' => $dbRefId
-	});
+	    'composite_element_id' => $compositeElementId,
+	    'db_ref_id' => $dbRefId
+	    });
+	
+	my $newEvidence = GUS::Model::DoTs::Evidence->new({
+	    'target_table_id' => $targetTableId,
+	    'target_id' => $newCEDbRef,
+	    'fact_table_id' => $factTableId,
+	    'fact_id' => $dbRefExtDbRelId
+	    });
+	
 	$nProbePopulated++;
+	$self->undefPointerCache();
     }
     $self->log ("CompositeElement not found = $nCENotFound; DbRefId not found = $nDbRefIdNotFound; rows populated = $nProbePopulated");
     return $nProbePopulated;
 }
 
 
+##################################################
+# populate EleDbREf table
+##################################################
 sub populateEleDbREf {
     my($self, $hash, $arrayDesignId) = @_;
     
@@ -223,9 +239,21 @@ sub populateEleDbREf {
     
     my ($sql, $queryHandle, $sth, $elementId, $dbRefId);
     my $nProbePopulated = 0;
-    my $nCENotFound =0;
+    my $nENotFound =0;
     my $nDbRefIdNotFound=0;
-    #my @gc;
+    
+    
+    $sql = "SELECT table_id from core.tableinfo where name ='ElementDbRef'";
+    $queryHandle = $self->getQueryHandle();
+    $sth = $queryHandle->prepareAndExecute($sql);
+    my $targetTableId = $sth ->fetchrow_array();
+    
+    $sql = "SELECT table_id from core.tableinfo where name ='ExternalDatabaseRelease'";
+    $queryHandle = $self->getQueryHandle();
+    $sth = $queryHandle->prepareAndExecute($sql);
+    my $factTableId = $sth ->fetchrow_array();    
+    
+    my $dbRefExtDbRelId = $self->getArg('dbRefExternalDatabaseReleaseId');
     
     while (my ($geneLocation, $geneId) = each(%$hash)) {
 	
@@ -238,11 +266,12 @@ sub populateEleDbREf {
 	$elementId = $sth ->fetchrow_array();
 	
 	if(!$elementId) { 
-	    $nCENotFound++;
+	    $nENotFound++;
 	    next;
 	}
 	
-	$sql = "SELECT db_ref_id FROM sres.dbref WHERE primary_identifier = '$geneId'";
+	$sql = "SELECT db_ref_id FROM sres.dbref WHERE primary_identifier = '$geneId' and external_database_release_id =$dbRefExtDbRelId";
+	
 	
 	$queryHandle = $self->getQueryHandle();
 	$sth = $queryHandle->prepareAndExecute($sql);
@@ -258,12 +287,21 @@ sub populateEleDbREf {
 	'element_id' => $elementId,
 	'db_ref_id' => $dbRefId
 	});
+	
+	my $newEvidence = GUS::Model::DoTs::Evidence->new({
+	    'target_table_id' => $targetTableId,
+	    'target_id' => $newEDbRef,
+	    'fact_table_id' => $factTableId,
+	    'fact_id' => $dbRefExtDbRelId
+	    });
+	
 	$nProbePopulated++;
+	$self->undefPointerCache();
     }
-    $self->log ("CompositeElement not found = $nCENotFound; DbRefId not found = $nDbRefIdNotFound; rows populated = $nProbePopulated");
+    $self->log ("Element not found = $nENotFound; DbRefId not found = $nDbRefIdNotFound; rows populated = $nProbePopulated");
     return $nProbePopulated;
-
 }
+
 
 sub parseAffyFile {
      my($self, $fileName) = @_;
@@ -293,6 +331,9 @@ sub parseAffyFile {
 }
 
 
+#################################################
+# parser for pancChip files
+#################################################
 sub parsePancChipFile {
     my($self, $fileName) = @_;
     
@@ -305,10 +346,10 @@ sub parsePancChipFile {
     for(my $i=2; $i<scalar @content; $i++) {
 	
 	my @row = split(/\t/, $content[$i]);
-	if(defined $row[0] & defined $row[3]) {
+	if(defined $row[0] & defined $row[5]) {
 	    $row[0]=~s/\"//g;
-	    $row[3]=~s/\"//g;
-	    $hash{$row[0]} = $row[3];
+	    $row[5]=~s/\"//g;
+	    $hash{$row[0]} = $row[5];
 	}
     }
     close FILE;
@@ -320,12 +361,21 @@ sub parsePancChipFile {
 }
 
 
+######################################################
+# return arraydesignid from arrayDesignName
+# and arrayDesignVersion
+######################################################
 sub getArrayDesignId {
     my($self) = @_;
     my $arrayDesignName = $self->getArg('arrayDesignName');
     my $arrayDesignversion = $self->getArg('arrayDesignVersion');
-    
-    my $sql = "SELECT array_design_id FROM rad.arraydesign WHERE name='$arrayDesignName' and version ='$arrayDesignversion'";
+
+    if(defined $arrayDesignversion) {
+	my $sql = "SELECT array_design_id FROM rad.arraydesign WHERE name='$arrayDesignName' and version ='$arrayDesignversion'";
+    }
+    else {
+	my $sql = "SELECT array_design_id FROM rad.arraydesign WHERE name='$arrayDesignName'";
+    }
     
     my $queryHandle = $self->getQueryHandle();
     my $sth = $queryHandle->prepareAndExecute($sql);
@@ -338,13 +388,23 @@ sub getArrayDesignId {
     return $arrayDesignId;
 }
 
+
+######################################################
+# return getAnnotationFileName from externalDbName
+# and externalDbVersion
+######################################################
 sub getAnnotationFileName {
     my($self) = @_;
     
     my $externalDbName = $self->getArg('externalDbName');
     my $externalDbVersion = $self->getArg('externalDbVersion');
 
-    my $sql = "SELECT file_name FROM sres.externaldatabaserelease ed, sres.externaldatabase e WHERE e.name='$externalDbName' and ed.external_database_id=e.external_database_id and ed.version='$externalDbVersion'";
+    if(defined $externalDbVersion) {
+	my $sql = "SELECT file_name FROM sres.externaldatabaserelease ed, sres.externaldatabase e WHERE e.name='$externalDbName' and ed.external_database_id=e.external_database_id and ed.version='$externalDbVersion'";
+    }
+    else {
+	my $sql = "SELECT file_name FROM sres.externaldatabaserelease ed, sres.externaldatabase e WHERE e.name='$externalDbName' and ed.external_database_id=e.external_database_id";
+    }
     
     my $queryHandle = $self->getQueryHandle();
     my $sth = $queryHandle->prepareAndExecute($sql);
