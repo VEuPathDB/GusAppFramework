@@ -76,11 +76,14 @@ public class GusSchema extends Schema {
     }
 
     void resolveReferences( Database db ) {
-        for ( GusTable table : (TreeSet<? extends GusTable>) getTables() ) {
+        for ( GusTable table : getTables() ) {
             table.resolveReferences( db );
         }
-        for ( Table table : getTables() ) {
-            for ( Table subclass : table.getSubclasses() ) {
+        // This is clunky to avoid concurrent modification exception
+        Object[] tables = getTables().toArray();
+        for ( int i = 0; i < tables.length; i++ ) {
+            GusTable table = (GusTable) tables[i];
+            for ( GusTable subclass : table.getSubclasses() ) {
                 subclass.setSchema(this);
             }
         }
