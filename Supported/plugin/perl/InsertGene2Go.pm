@@ -231,9 +231,9 @@ sub loadData{
     my $skippedCount = 0;
     my $presentCount = 0;
 
-    my $entrezExtDbRelId = $self->getExtDbRlsId($self->getArg('entrezExternalDatabaseName'), $self->getArg('entrezExternalDatabaseVersion'));
+    my $entrezExtDbRelId = $self->getExtDbRlsId($self->getArg('entrezGeneExternalDatabaseName'), $self->getArg('entrezGeneExternalDatabaseVersion'));
 
-    my $goExtDbRelId = $self->getExtDbRlsId($self->getArg('goExternalDatabaseName'), $self->getArg('goExternalDatabaseVersion'));;
+    my $goExtDbRelId = $self->getExtDbRlsId($self->getArg('goAssociationExternalDatabaseName'), $self->getArg('goAssociationExternalDatabaseVersion'));;
     
     foreach my $go_id (keys %$goHash){
 	print "Loading entries for GO ID $go_id into the database.\n";
