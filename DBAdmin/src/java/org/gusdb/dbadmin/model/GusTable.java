@@ -122,7 +122,6 @@ public class GusTable extends Table {
 
     public void removeReferentialConstraint( Constraint constraint ) {
         boolean removed = this.referentialConstraint.remove( constraint );
-
         if ( removed ) {
             constraint.setReferencedTable( null );
         }
