@@ -4,6 +4,7 @@
  */
 package org.gusdb.dbadmin.util;
 
+import java.util.HashMap;
 import java.util.Iterator;
 
 import org.gusdb.dbadmin.model.Database;
@@ -59,6 +60,7 @@ public class DatabaseValidator {
 
 		valid = DatabaseValidator.fkSizeCompatability( db, fix ) || fatal;
 		valid = DatabaseValidator.identifierLengths( db );
+		valid = DatabaseValidator.checkStructure(db);
 
 		return valid;
 	}
@@ -84,6 +86,37 @@ public class DatabaseValidator {
 		return valid;
 	}
 
+    public static boolean checkStructure( Database db ) {
+        HashMap seen = new HashMap();
+        
+        for ( Schema schema : db.getAllSchemas() ) {
+            if ( seen.containsKey(schema) ) { continue; }
+            if ( schema.getName() == null ) { 
+                log.fatal("Schema name is null");
+                return false;
+            }
+            if ( schema.getDatabase() != db ) { 
+                log.fatal("Schema/Database connection issue: " + schema.getName());
+                return false;
+            }
+            if ( schema.getTables().size() == 0 ) { 
+                log.warn("Empty Schema: " + schema.getName());
+            }
+            
+            for ( Table table : schema.getTables() ) {
+                if ( table.getColumnsIncludeSuperclass(false).size() == 0 ) {
+                    log.fatal("Empty Table: " + table.getName() );
+                    return false;
+                }
+                if ( table.getSchema() != schema ) {
+                    log.fatal("Table/Schema connection issue:" + table.getName());
+                    return false;
+                }
+            }
+        }
+        return true;
+        
+    }
 
 	public static boolean identifierLengths( Database db ) {
 		int length = 30;
