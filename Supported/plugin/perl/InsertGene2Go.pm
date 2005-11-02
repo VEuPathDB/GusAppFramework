@@ -233,7 +233,7 @@ sub loadData{
 
     my $entrezExtDbRelId = $self->getExtDbRlsId($self->getArg('entrezGeneExternalDatabaseName'), $self->getArg('entrezGeneExternalDatabaseVersion'));
 
-    my $goExtDbRelId = $self->getExtDbRlsId($self->getArg('goAssociationExternalDatabaseName'), $self->getArg('goAssociationExternalDatabaseVersion'));;
+    my $goExtDbRelId = $self->getExtDbRlsId($self->getArg('goAssociationExternalDatabaseName'), $self->getArg('goAssociationExternalDatabaseVersion'));
     
     foreach my $go_id (keys %$goHash){
 	print "Loading entries for GO ID $go_id into the database.\n";
@@ -259,14 +259,16 @@ sub loadData{
 
 			my $newAssocEvidCode = $self->makeAssocInstEvidCode($evidCode);
 			$$newGOAssocInst->addChild($$newAssocEvidCode);
+			$self->undefPointerCache();
 		    }
 	    }
-
+	    
 	    $$newGOAssoc->addChild($$newGOAssocInst);
 	    $$newGOAssoc->submit();
 	    $self->undefPointerCache();
 	    $entriesCount ++;
 	}#eo inner foreach
+	   
     }#eo outer foreach
 
     my $msg = "$entriesCount entries added to the database, $skippedCount skipped because they were not in DbRef, $presentCount skipped because they were already in the database for this release.\n";
