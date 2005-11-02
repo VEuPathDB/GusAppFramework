@@ -66,13 +66,15 @@ foreach my $schema ( @schemas ) {
 
 if ( $gusConfig->getDatabaseVendor() =~ /Oracle/i ) {
     push(@sql,"drop role GUS_W");
-    push(@sql,"drop role GUS_W");
+    push(@sql,"drop role GUS_R");
 }
 
 foreach my $sql (@sql) {
     print "Executing: $sql\n";
     my $sth = $dbh->prepare($sql) or die("Could not prepare: $sql");
-    $sth->execute() or die("Could not execute: $sql");
+    if ( ! $sth->execute() ) {
+	print STDERR "WARNING: Could not execute: $sql\n";
+    }
 }
 
 print "\nDone.\n";
