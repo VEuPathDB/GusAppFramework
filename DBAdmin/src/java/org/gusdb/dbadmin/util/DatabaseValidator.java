@@ -110,6 +110,8 @@ public class DatabaseValidator {
                 }
                 if ( table.getSchema() != schema ) {
                     log.fatal("Table/Schema connection issue:" + table.getName());
+                    log.fatal("Schema is: " + schema.getName());
+                    log.fatal("Table schema is: " + table.getSchema().getName() );
                     return false;
                 }
             }
@@ -158,11 +160,7 @@ public class DatabaseValidator {
 	private static boolean checkFkCompatabilityTo( GusTable table, boolean fix ) {
 		log.debug( "Checking FK Compatability against '" + table.getName() + "'" );
 
-		boolean valid  = true;
-
-		for ( Iterator i = table.getReferentialConstraints().iterator(); i.hasNext();  ) {
-			Constraint c        = (Constraint) i.next();
-
+        for ( Constraint c : table.getReferentialConstraints() ) {
 			Object[] refCol  = c.getReferencedColumns().toArray();
 			Object[] conCol  = c.getConstrainedColumns().toArray();
 		
@@ -173,7 +171,7 @@ public class DatabaseValidator {
 			}
 
 			for ( int j = 0; j < refCol.length; j++ ) {
-				valid = checkFkCompatabilityBetween( (GusColumn) conCol[j], (GusColumn) refCol[j], fix );
+				checkFkCompatabilityBetween( (GusColumn) conCol[j], (GusColumn) refCol[j], fix );
 			}
 		}
 		return true;

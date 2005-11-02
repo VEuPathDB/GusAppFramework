@@ -336,7 +336,7 @@ public class OracleReader extends SchemaReader {
     private void addColumns( Index index ) {
         log.debug( "adding columns to index " + index.getName( ) );
 
-        ArrayList<GusColumn> columns = index.getTable( ).getColumnsExcludeSuperclass(false);
+        ArrayList<Column> columns = index.getTable( ).getColumnsExcludeSuperclass(false);
         Statement st = null;
         ResultSet rs = null;
 
@@ -799,8 +799,8 @@ public class OracleReader extends SchemaReader {
             catch ( SQLException ignored ) {}
         }
 
-        for ( GusColumn col : table.getColumnsExcludeSuperclass(false)) {
-            populate(col);
+        for ( Column col : table.getColumnsExcludeSuperclass(false)) {
+            populate((GusColumn)col);
         }
     }
 

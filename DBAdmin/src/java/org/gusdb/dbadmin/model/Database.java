@@ -127,21 +127,21 @@ public class Database extends DatabaseObject {
      * @param restrictVersion true to not include version tables
      * @return All tables in the database
      */
-    private TreeSet<? extends Table> getTables( boolean restrictVersion ) {
+    private ArrayList<? extends Table> getTables( boolean restrictVersion ) {
         if ( restrictVersion ) return getGusTables( );
         else return getAllTables();
     }
 
-    public TreeSet<Table> getAllTables( ) {
-        TreeSet<Table> tables = new TreeSet<Table>( );
+    public ArrayList<Table> getAllTables( ) {
+        ArrayList<Table> tables = new ArrayList<Table>( );
         for ( Schema s : getAllSchemas( ) ) {
             tables.addAll( s.getTables( ) );
         }
         return tables;
     }
 
-    public TreeSet<GusTable> getGusTables( ) {
-        TreeSet<GusTable> tables = new TreeSet<GusTable>( );
+    public ArrayList<GusTable> getGusTables( ) {
+        ArrayList<GusTable> tables = new ArrayList<GusTable>( );
         for ( GusSchema s : getGusSchemas( ) ) {
             tables.addAll( s.getTables( ) );
         }
@@ -155,7 +155,7 @@ public class Database extends DatabaseObject {
             ((GusSchema) schema).resolveReferences( this );
         }
     }
-
+   
     public boolean equals( DatabaseObject o ) {
         Database other = (Database) o;
 

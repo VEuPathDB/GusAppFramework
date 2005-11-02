@@ -54,7 +54,7 @@ public abstract class Table extends DatabaseObject {
      * @param housekeeping true to include housekeeping columns
      * @return collection of columns specific to this table
      */
-    public ArrayList<? extends Column> getColumnsExcludeSuperclass( boolean housekeeping ) {
+    public ArrayList<Column> getColumnsExcludeSuperclass( boolean housekeeping ) {
         ArrayList<Column> columns = new ArrayList<Column>( );
         columns.addAll( column );
         if ( housekeeping ) {
@@ -67,7 +67,7 @@ public abstract class Table extends DatabaseObject {
      * @param housekeeping true to include housekeeping columns
      * @return collection of columns including those from any superclasses
      */
-    public ArrayList<? extends Column> getColumnsIncludeSuperclass( boolean housekeeping ) {
+    public ArrayList<Column> getColumnsIncludeSuperclass( boolean housekeeping ) {
         ArrayList<Column> columns = new ArrayList<Column>( );
         if ( getSuperclass( ) != null ) {
             columns.addAll( getSuperclass( ).getColumnsIncludeSuperclass( false ) );
