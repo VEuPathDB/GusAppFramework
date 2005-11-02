@@ -56,17 +56,24 @@ my $dbh = DBI->connect($gusConfig->getDbiDsn(),
 
 my $modifier;
 
-if ( $gusConfig->getDatabaseVendor() =~ /Oracle/i ) { $modifier = "user"; } 
-elsif ( $gusConfig->getDatabaseVendor() =~ /Postgres/i ) { $modifier = "schema"; }
-else { die("Unknown Database Vendor: ".$gusConfig->getDatabaseVendor()); }
+my @sql;
 
 foreach my $schema ( @schemas ) {
-    my $sql = "drop $modifier $schema cascade;";
+    if ( $gusConfig->getDatabaseVendor() =~ /Oracle/i ) { push(@sql,"drop user $schema cascade"); }
+    elsif ( $gusConfig->getDatabaseVendor() =~ /Postgres/i ) { push(@sql,"drop schema $schema cascade;"); }
+    else { die("Unknown Database Vendor: ".$gusConfig->getDatabaseVendor()); }
+}
+
+if ( $gusConfig->getDatabaseVendor() =~ /Oracle/i ) {
+    push(@sql,"drop role GUS_W");
+    push(@sql,"drop role GUS_W");
+}
+
+foreach my $sql (@sql) {
     print "Executing: $sql\n";
     my $sth = $dbh->prepare($sql) or die("Could not prepare: $sql");
     $sth->execute() or die("Could not execute: $sql");
 }
-
 
 print "\nDone.\n";
 
