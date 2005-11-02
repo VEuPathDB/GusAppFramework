@@ -82,54 +82,55 @@ public class OracleWriter extends RelationalDatabaseWriter {
     }
 
     private void createRoles( ) throws IOException {
+        log.debug( "Creating Roles" );
         oStream.write( "CREATE ROLE GUS_W;\n" );
         oStream.write( "CREATE ROLE GUS_R;\n" );
         oStream.write( "\n" );
     }
 
-protected void writeTable( Table table ) throws IOException {
-		if ( written.contains( table ) ) {
-			return;
-		}
-		if ( table.getTablespace() != null &&
-			!tablespacePermissions.containsKey( table.getSchema().getName() +
-			table.getTablespace() ) ) {
-			grantTablespace( table.getSchema().getName(), table.getTablespace() );
-		}
-		if ( table.getSuperclass() != null &&
-			!written.contains( table.getSuperclass() ) ) {
-			writeTable( table.getSuperclass() );
-		}
-		oStream.write( "CREATE TABLE " + table.getSchema().getName() + "." + table.getName() + " (\n" );
-		writeColumns( table );
-		oStream.write( ") " );
-		if ( table.getTablespace() != null ) {
-			oStream.write( "TABLESPACE " + table.getTablespace() + " " );
-		}
-		oStream.write( ";\n\n" );
-        
-        oStream.write("GRANT SELECT ON " + table.getSchema().getName() + "." + table.getName() + " TO GUS_R;\n");
-        oStream.write("GRANT UPDATE,INSERT,DELETE ON " + table.getSchema().getName() + "." + table.getName() + " TO GUS_W;\n");
-        
-        oStream.write( "\n\n");
-		oStream.flush();
-		written.add( table );
-		if ( table.getClass() == GusTable.class ) {
-			writeIndexes( (GusTable) table );
+    protected void writeTable( Table table ) throws IOException {
+        if ( written.contains( table ) ) {
+            return;
+        }
+        log.debug( "Writing Table: " + table.getName( ) );
+        if ( table.getTablespace( ) != null
+                && !tablespacePermissions.containsKey( table.getSchema( ).getName( ) + table.getTablespace( ) ) ) {
+            grantTablespace( table.getSchema( ).getName( ), table.getTablespace( ) );
+        }
+        if ( table.getSuperclass( ) != null && !written.contains( table.getSuperclass( ) ) ) {
+            writeTable( table.getSuperclass( ) );
+        }
+        oStream.write( "CREATE TABLE " + table.getSchema( ).getName( ) + "." + table.getName( ) + " (\n" );
+        writeColumns( table );
+        oStream.write( ") " );
+        if ( table.getTablespace( ) != null ) {
+            oStream.write( "TABLESPACE " + table.getTablespace( ) + " " );
+        }
+        oStream.write( ";\n\n" );
+
+        oStream.write( "GRANT SELECT ON " + table.getSchema( ).getName( ) + "." + table.getName( ) + " TO GUS_R;\n" );
+        oStream.write( "GRANT UPDATE,INSERT,DELETE ON " + table.getSchema( ).getName( ) + "." + table.getName( )
+                + " TO GUS_W;\n" );
+
+        oStream.write( "\n\n" );
+        oStream.flush( );
+        written.add( table );
+        if ( table.getClass( ) == GusTable.class ) {
+            writeIndexes( (GusTable) table );
             oStream.write( "\n" );
             writePKConstraint( (GusTable) table );
-		}
-		oStream.write( "\n" );
-	}    protected void writeFKConstraints( GusTable table ) throws IOException {
+        }
+        oStream.write( "\n" );
+    }
+
+    protected void writeFKConstraints( GusTable table ) throws IOException {
         for ( Constraint constraint : table.getConstraints( ) ) {
             if ( constraint.getType( ) == Constraint.ConstraintType.FOREIGN_KEY ) {
-
                 if ( !tablePermissions.containsKey( table.getSchema( ).getName( )
                         + constraint.getReferencedTable( ).getSchema( ).getName( )
                         + constraint.getReferencedTable( ).getName( ) ) ) {
                     grantReferences( table.getSchema( ).getName( ), constraint.getReferencedTable( ) );
                 }
-
                 writeFKConstraint( constraint );
             }
         }
@@ -168,12 +169,14 @@ protected void writeTable( Table table ) throws IOException {
         oStream.flush( );
     }
 
-protected void writeSequence( Sequence sequence ) throws IOException {
-        super.writeSequence(sequence);
-        oStream.write("\nGRANT SELECT ON " + sequence.getTable().getSchema().getName() + "." +
-            sequence.getName() + " TO GUS_W;\n");
+    protected void writeSequence( Sequence sequence ) throws IOException {
+        super.writeSequence( sequence );
+        oStream.write( "\nGRANT SELECT ON " + sequence.getTable( ).getSchema( ).getName( ) + "." + sequence.getName( )
+                + " TO GUS_W;\n" );
         oStream.flush( );
-    }    protected String getType( Column.ColumnType type ) {
+    }
+
+    protected String getType( Column.ColumnType type ) {
         if ( type == Column.ColumnType.DATE ) {
             return "DATE";
         }

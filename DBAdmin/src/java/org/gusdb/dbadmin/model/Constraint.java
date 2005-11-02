@@ -12,7 +12,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class Constraint extends DatabaseObject {
 
-    protected final Log          log                  = LogFactory.getLog( Constraint.class );
+    protected final Log           log                  = LogFactory.getLog( Constraint.class );
 
     private ArrayList<String>    constrainedColumnRef = new ArrayList<String>( );
     private String               constrainedTableRef;
@@ -20,14 +20,14 @@ public class Constraint extends DatabaseObject {
     private ArrayList<String>    referencedColumnRef  = new ArrayList<String>( );
     private ArrayList<GusColumn> referencedColumn     = new ArrayList<GusColumn>( );
     private ArrayList<Column>    constrainedColumn    = new ArrayList<Column>( );
+    private ConstraintType       type;
+    private GusTable             referencedTable;
+    private GusTable             constrainedTable;
 
     public enum ConstraintType {
         UNIQUE, PRIMARY_KEY, FOREIGN_KEY
     }
 
-    private ConstraintType type;
-    private GusTable       referencedTable;
-    private GusTable          constrainedTable;
 
     public ArrayList<GusColumn> getReferencedColumns( ) {
         return referencedColumn;
@@ -86,17 +86,18 @@ public class Constraint extends DatabaseObject {
                     + "'" );
 
             if ( this.constrainedTable != null && this.type != ConstraintType.PRIMARY_KEY ) {
-                this.constrainedTable.removeConstraint( this );
+                ((GusTable) this.constrainedTable).removeConstraint( this );
             }
+                    
 
             if ( this.constrainedTable != null && this.type == ConstraintType.PRIMARY_KEY ) {
                 this.constrainedTable.setPrimaryKey( null );
             }
+                    
 
             this.constrainedTable = table;
 
             if ( table != null && this.type != ConstraintType.PRIMARY_KEY ) ((GusTable) table).addConstraint( this );
-
             if ( table != null && this.type == ConstraintType.PRIMARY_KEY ) table.setPrimaryKey( this );
         }
     }

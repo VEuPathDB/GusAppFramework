@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.apache.commons.digester.Digester;
 import org.gusdb.dbadmin.model.Constraint;
@@ -17,7 +16,6 @@ import org.gusdb.dbadmin.model.GusColumn;
 import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Index;
-import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
 import org.gusdb.dbadmin.model.VersionTable;
 

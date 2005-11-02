@@ -10,7 +10,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 
 import org.gusdb.dbadmin.model.Column;
@@ -21,9 +20,7 @@ import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.HousekeepingColumn;
 import org.gusdb.dbadmin.model.Index;
-import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
-import org.gusdb.dbadmin.model.VersionTable;
 import org.gusdb.dbadmin.util.DatabaseUtilities;
 
 /**

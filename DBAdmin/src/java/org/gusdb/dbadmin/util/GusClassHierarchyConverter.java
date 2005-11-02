@@ -34,17 +34,17 @@ import org.gusdb.dbadmin.model.Index;
  */
 public class GusClassHierarchyConverter {
 
-    private GusTable   superClassTable;
-    private Collection subClassTables;
-    private GusView    superClassView;
-    private Collection subClassViews;
-    private GusTable   impTable               = new GusTable( );
-    private Collection superClassColumns;
-    private Collection impGenericColumns;
+    private GusTable                      superClassTable;
+    private Collection                    subClassTables;
+    private GusView                       superClassView;
+    private Collection                    subClassViews;
+    private GusTable                      impTable               = new GusTable( );
+    private Collection                    superClassColumns;
+    private Collection                    impGenericColumns;
     private ArrayList<HousekeepingColumn> housekeepingColumns    = new ArrayList<HousekeepingColumn>( );
     private ArrayList<HousekeepingColumn> verHousekeepingColumns = new ArrayList<HousekeepingColumn>( );
-    private Properties properties             = new Properties( );
-    private final Log  log                    = LogFactory.getLog( GusClassHierarchyConverter.class );
+    private Properties                    properties             = new Properties( );
+    private final Log                     log                    = LogFactory.getLog( GusClassHierarchyConverter.class );
 
     /**
      * Prepares to converts the given superclass into a GUSClassHierarchy,
@@ -242,17 +242,17 @@ public class GusClassHierarchyConverter {
      * 
      * @param tables Collection of tables from which to return columns
      * @return Collection of all columns from all tables provided
+     */
     private Collection getAllColumns( Collection tables ) {
 
         Collection allColumns = new HashSet( );
 
         for ( Iterator i = tables.iterator( ); i.hasNext( ); ) {
-            allColumns.add( ((GusTable) i.next( )).getColumns( false ) );
+            allColumns.add( ((GusTable) i.next( )).getColumnsExcludeSuperclass( false ) );
         }
 
         return allColumns;
     }
-     */
 
     /**
      * DOCUMENT ME!
@@ -336,12 +336,16 @@ public class GusClassHierarchyConverter {
      * @return DOCUMENT ME!
      */
     private int getMaxColumnType( GusTable table, Column.ColumnType type ) {
+
         int count = 0;
-        for ( GusColumn column : table.getColumnsExcludeSuperclass(false)) {
-            if ( column.getType( ) == type ) {
+
+        for ( Iterator i = table.getColumnsExcludeSuperclass( false ).iterator( ); i.hasNext( ); ) {
+
+            if ( ((GusColumn) i.next( )).getType( ) == type ) {
                 count++;
             }
         }
+
         return count;
     }
 

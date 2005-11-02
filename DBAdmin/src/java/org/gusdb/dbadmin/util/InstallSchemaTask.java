@@ -1,5 +1,5 @@
 /*
- *  Created on Feb 3, 2005
+ * Created on Feb 3, 2005
  */
 package org.gusdb.dbadmin.util;
 
@@ -24,145 +24,142 @@ import org.gusdb.dbadmin.writer.OracleWriter;
 import org.gusdb.dbadmin.writer.PostgresWriter;
 import org.gusdb.dbadmin.writer.SchemaWriter;
 
-
 /**
- *@author     msaffitz
- *@created    May 2, 2005
- *@version    $Revision$ $Date$
+ * @author msaffitz
+ * @created May 2, 2005
+ * @version $Revision$ $Date: 2005-10-28 10:01:12 -0400 (Fri, 28 Oct
+ *          2005) $
  */
 public class InstallSchemaTask extends Task {
 
-	private static Log log      = LogFactory.getLog( InstallSchemaTask.class );
+    private static Log log = LogFactory.getLog( InstallSchemaTask.class );
 
-	private Database db;
-	private Connection conn;
+    private Database   db;
+    private Connection conn;
 
-	private String gusHome;
-	private String schema;
-	private String dbVendor;
-	private String dbDsn;
-	private String dbUsername;
-	private String dbPassword;
-	private String tablespace;
+    private String     gusHome;
+    private String     schema;
+    private String     dbVendor;
+    private String     dbDsn;
+    private String     dbUsername;
+    private String     dbPassword;
+    private String     tablespace;
 
-	public void setGusHome( String gusHome ) {
-		this.gusHome = gusHome;
-	}
+    public void setGusHome( String gusHome ) {
+        this.gusHome = gusHome;
+    }
 
+    public void setSchema( String schema ) {
+        this.schema = schema;
+    }
 
-	public void setSchema( String schema ) {
-		this.schema = schema;
-	}
+    public void execute( ) throws BuildException {
+        initialize( );
 
+        XMLReader xr = new XMLReader( schema );
+        SchemaWriter dbWriter = null;
 
-	public void execute() throws BuildException {
-		initialize();
+        if ( dbVendor.compareToIgnoreCase( "Postgres" ) == 0 ) {
+            dbWriter = new PostgresWriter( );
+        }
+        else if ( dbVendor.compareToIgnoreCase( "Oracle" ) == 0 ) {
+            dbWriter = new OracleWriter( );
+        }
+        else {
+            log.error( "Unknown DB Vendor: '" + dbVendor + "'" );
+            throw new BuildException( "Unknown DB Vendor: '" + dbVendor + "'" );
+        }
 
-		XMLReader xr           = new XMLReader( schema );
-		SchemaWriter dbWriter  = null;
+        log.info( "Reading database from " + schema );
+        db = xr.read( );
 
-		if ( dbVendor.compareToIgnoreCase( "Postgres" ) == 0 ) {
-			dbWriter = new PostgresWriter();
-		}
-		else if ( dbVendor.compareToIgnoreCase( "Oracle" ) == 0 ) {
-			dbWriter = new OracleWriter();
-		}
-		else {
-			log.error( "Unknown DB Vendor: '" + dbVendor + "'" );
-			throw new BuildException( "Unknown DB Vendor: '" + dbVendor + "'" );
-		}
+        FileWriter ddl;
+        FileWriter rows;
 
-		log.info( "Reading database from " + schema );
-		db = xr.read();
+        convertSubclasses( db );
+        DatabaseUtilities.setTablespace( db, this.tablespace );
 
-		FileWriter ddl;
-		FileWriter rows;
+        try {
+            ddl = new FileWriter( gusHome + "/config/SchemaInstall-objects.sql" );
+            rows = new FileWriter( gusHome + "/config/SchemaInstall-rows.sql" );
 
-		convertSubclasses( db );
-		DatabaseUtilities.setTablespace( db, this.tablespace );
-		
-		try {
-			ddl = new FileWriter( gusHome + "/config/SchemaInstall-objects.sql" );
-			rows = new FileWriter( gusHome + "/config/SchemaInstall-rows.sql" );
+            JDBCStreamWriter rdbms = new JDBCStreamWriter( conn );
+            MetadataPopulator mp = new MetadataPopulator( rows, db, dbVendor );
 
-			JDBCStreamWriter rdbms  = new JDBCStreamWriter( conn );
-			MetadataPopulator mp    = new MetadataPopulator( rows, db, dbVendor);
+            dbWriter.write( ddl, db );
+            dbWriter.write( rdbms, db );
 
-			dbWriter.write( ddl, db );
-			dbWriter.write( rdbms, db );
+            mp.writeDatabaseAndTableInfo( );
+            mp.writeBootstrapData( );
+            mp.writeDatabaseVersion( "3.5" );
 
-			mp.writeDatabaseAndTableInfo();
-			mp.writeBootstrapData();
-			mp.writeDatabaseVersion("3.5");
+            mp = new MetadataPopulator( rdbms, db, dbVendor );
 
-			mp = new MetadataPopulator( rdbms, db, dbVendor );
+            mp.writeDatabaseAndTableInfo( );
+            mp.writeBootstrapData( );
+            mp.writeDatabaseVersion( "3.5" );
 
-			mp.writeDatabaseAndTableInfo();
-			mp.writeBootstrapData();
-			mp.writeDatabaseVersion("3.5");
-			
-			rows.close();
-			ddl.close();
-			rdbms.close();
-		}
-		catch ( IOException e ) {
-			throw new BuildException( e );
-		}
-	}
+            rows.close( );
+            ddl.close( );
+            rdbms.close( );
+        }
+        catch ( IOException e ) {
+            throw new BuildException( e );
+        }
+    }
 
-	private void convertSubclasses( Database db ) {
-		ArrayList<GusTable> superClasses  = new ArrayList<GusTable>();
+    private void convertSubclasses( Database db ) {
+        ArrayList<GusTable> superClasses = new ArrayList<GusTable>( );
 
-        for ( GusTable table : db.getGusTables() ) {
-			if ( !table.getSubclasses().isEmpty() ) {
-				superClasses.add( table );
-			}
-		}
+        for ( GusTable table : db.getGusTables( ) ) {
+            if ( !table.getSubclasses( ).isEmpty( ) ) {
+                superClasses.add( table );
+            }
+        }
         for ( GusTable table : superClasses ) {
-			GusClassHierarchyConverter converter  = new GusClassHierarchyConverter( table );
+            GusClassHierarchyConverter converter = new GusClassHierarchyConverter( table );
 
-			converter.convert();
-		}
-	}
+            converter.convert( );
+        }
+    }
 
-	private void initialize() throws BuildException {
-		System.setProperty( "XMLDATAFILE", schema );
-		System.setProperty( "PROPERTYFILE", gusHome + "/config/gus.config" );
+    private void initialize( ) throws BuildException {
+        System.setProperty( "XMLDATAFILE", schema );
+        System.setProperty( "PROPERTYFILE", gusHome + "/config/gus.config" );
 
-		Properties props  = new Properties();
+        Properties props = new Properties( );
 
-		try {
-			File propertyFile  = new File( System.getProperty( "PROPERTYFILE" ) );
+        try {
+            File propertyFile = new File( System.getProperty( "PROPERTYFILE" ) );
 
-			props.load( new FileInputStream( propertyFile ) );
-		}
-		catch ( IOException e ) {
-			log.error( "Unable to get properties from gus.config", e );
-			throw new BuildException( "Unable to get properties from gus.config", e );
-		}
+            props.load( new FileInputStream( propertyFile ) );
+        }
+        catch ( IOException e ) {
+            log.error( "Unable to get properties from gus.config", e );
+            throw new BuildException( "Unable to get properties from gus.config", e );
+        }
 
-		this.dbVendor = props.getProperty( "dbVendor" );
-		this.dbDsn = props.getProperty( "jdbcDsn" );
-		this.dbUsername = props.getProperty( "databaseLogin" );
-		this.dbPassword = props.getProperty( "databasePassword" );
-		this.tablespace = props.getProperty( "tablespace" );
-		
-		try {
-			Class.forName( "org.postgresql.Driver" );
-			Class.forName( "oracle.jdbc.OracleDriver" );
-		}
-		catch ( ClassNotFoundException e ) {
-			log.fatal( "Unable to locate class", e );
-			throw new BuildException( "Unable to locate class", e );
-		}
-		try {
-			conn = DriverManager.getConnection( dbDsn, dbUsername, dbPassword );
-		}
-		catch ( SQLException e ) {
-			log.error( "Unable to connect to database.  DSN='" + dbDsn + "'", e );
-			throw new BuildException( "Unable to connect to database", e );
-		}
-	}
+        this.dbVendor = props.getProperty( "dbVendor" );
+        this.dbDsn = props.getProperty( "jdbcDsn" );
+        this.dbUsername = props.getProperty( "databaseLogin" );
+        this.dbPassword = props.getProperty( "databasePassword" );
+        this.tablespace = props.getProperty( "tablespace" );
+
+        try {
+            Class.forName( "org.postgresql.Driver" );
+            Class.forName( "oracle.jdbc.OracleDriver" );
+        }
+        catch ( ClassNotFoundException e ) {
+            log.fatal( "Unable to locate class", e );
+            throw new BuildException( "Unable to locate class", e );
+        }
+        try {
+            conn = DriverManager.getConnection( dbDsn, dbUsername, dbPassword );
+        }
+        catch ( SQLException e ) {
+            log.error( "Unable to connect to database.  DSN='" + dbDsn + "'", e );
+            throw new BuildException( "Unable to connect to database", e );
+        }
+    }
 
 }
-
