@@ -4,8 +4,8 @@
 package org.gusdb.dbadmin.writer;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 
 import org.gusdb.dbadmin.model.Column;
@@ -78,7 +78,7 @@ public class OracleWriter extends RelationalDatabaseWriter {
             }
         }
         oStream.write( "\n\n--EOF\n" );
-        written = new HashSet( );
+        written = new ArrayList<Table>( );
     }
 
     private void createRoles( ) throws IOException {

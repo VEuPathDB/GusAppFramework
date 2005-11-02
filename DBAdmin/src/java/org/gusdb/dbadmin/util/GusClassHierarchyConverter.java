@@ -4,11 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,12 +34,12 @@ import org.gusdb.dbadmin.model.Index;
 public class GusClassHierarchyConverter {
 
     private GusTable                      superClassTable;
-    private Collection                    subClassTables;
+    private TreeSet<GusTable>             subClassTables;
     private GusView                       superClassView;
-    private Collection                    subClassViews;
+    private TreeSet<GusView>              subClassViews;
     private GusTable                      impTable               = new GusTable( );
-    private Collection                    superClassColumns;
-    private Collection                    impGenericColumns;
+    private ArrayList<? extends Column>   superClassColumns;
+    private ArrayList<GusColumn>          impGenericColumns;
     private ArrayList<HousekeepingColumn> housekeepingColumns    = new ArrayList<HousekeepingColumn>( );
     private ArrayList<HousekeepingColumn> verHousekeepingColumns = new ArrayList<HousekeepingColumn>( );
     private Properties                    properties             = new Properties( );
@@ -90,23 +89,17 @@ public class GusClassHierarchyConverter {
 
         if ( subClassTables.isEmpty( ) ) {
             log.error( "There are no subclasses for this table " + superClassTable.getName( ) );
-
             return;
         }
 
         impGenericColumns = coalesceGenericColumns( subClassTables );
 
-        for ( Iterator i = superClassColumns.iterator( ); i.hasNext( ); ) {
-
-            Column oldCol = (Column) i.next( );
-
+        for ( Column oldCol : superClassColumns ) {
             if ( oldCol.getClass( ) == GusColumn.class ) {
-
                 GusColumn newCol = (GusColumn) ((GusColumn) oldCol).clone( );
                 impTable.addColumn( newCol );
             }
             else if ( oldCol.getClass( ) == HousekeepingColumn.class ) {
-
                 HousekeepingColumn newCol = (HousekeepingColumn) ((HousekeepingColumn) oldCol).clone( );
                 impTable.addHousekeepingColumn( newCol );
             }
@@ -115,8 +108,8 @@ public class GusClassHierarchyConverter {
             }
         }
 
-        for ( Iterator i = impGenericColumns.iterator( ); i.hasNext( ); ) {
-            impTable.addColumn( (GusColumn) i.next( ) );
+        for ( GusColumn c : impGenericColumns ) {
+            impTable.addColumn( c );
         }
 
         superClassView = buildSuperClassView( );
@@ -126,9 +119,7 @@ public class GusClassHierarchyConverter {
         parentSchema.addView( superClassView );
         superClassView.setTable( impTable );
 
-        for ( Iterator i = subClassViews.iterator( ); i.hasNext( ); ) {
-
-            GusView subClassView = (GusView) i.next( );
+        for ( GusView subClassView : subClassViews ) {
             parentSchema.addView( subClassView );
             subClassView.setTable( impTable );
             subClassView.setSuperclass( superClassView );
@@ -197,11 +188,9 @@ public class GusClassHierarchyConverter {
      * 
      * @return The views value
      */
-    public Collection getViews( ) {
-
-        Collection views = getSubClassViews( );
+    public TreeSet<GusView> getViews( ) {
+        TreeSet<GusView> views = getSubClassViews( );
         views.add( getSuperClassView( ) );
-
         return views;
     }
 
@@ -212,7 +201,6 @@ public class GusClassHierarchyConverter {
      * @return The superClassView value
      */
     public GusView getSuperClassView( ) {
-
         return superClassView;
     }
 
@@ -221,8 +209,7 @@ public class GusClassHierarchyConverter {
      * 
      * @return The subClassViews value
      */
-    public Collection getSubClassViews( ) {
-
+    public TreeSet<GusView> getSubClassViews( ) {
         return subClassViews;
     }
 
@@ -232,26 +219,7 @@ public class GusClassHierarchyConverter {
      * @return The impTable value
      */
     public GusTable getImpTable( ) {
-
         return impTable;
-    }
-
-    /**
-     * Returns the collection of all columns (excluding housekeeping) across the
-     * collection of all tables provide.
-     * 
-     * @param tables Collection of tables from which to return columns
-     * @return Collection of all columns from all tables provided
-     */
-    private Collection getAllColumns( Collection tables ) {
-
-        Collection allColumns = new HashSet( );
-
-        for ( Iterator i = tables.iterator( ); i.hasNext( ); ) {
-            allColumns.add( ((GusTable) i.next( )).getColumnsExcludeSuperclass( false ) );
-        }
-
-        return allColumns;
     }
 
     /**
@@ -260,9 +228,9 @@ public class GusClassHierarchyConverter {
      * @param tables DOCUMENT ME!
      * @return DOCUMENT ME!
      */
-    private Collection coalesceGenericColumns( Collection tables ) {
+    private ArrayList<GusColumn> coalesceGenericColumns( TreeSet<GusTable> tables ) {
 
-        HashMap columnCounts = new HashMap( );
+        HashMap<Column.ColumnType, Integer> columnCounts = new HashMap<Column.ColumnType, Integer>( );
         columnCounts.put( Column.ColumnType.CHARACTER, new Integer( 0 ) );
         columnCounts.put( Column.ColumnType.CLOB, new Integer( 0 ) );
         columnCounts.put( Column.ColumnType.DATE, new Integer( 0 ) );
@@ -270,42 +238,31 @@ public class GusClassHierarchyConverter {
         columnCounts.put( Column.ColumnType.NUMBER, new Integer( 0 ) );
         columnCounts.put( Column.ColumnType.STRING, new Integer( 0 ) );
 
-        HashMap columnSizes = new HashMap( );
+        HashMap<String, Integer> columnSizes = new HashMap<String, Integer>( );
         columnSizes.put( Column.ColumnType.CHARACTER + "L", new Integer( 0 ) );
         columnSizes.put( Column.ColumnType.NUMBER + "L", new Integer( 0 ) );
         columnSizes.put( Column.ColumnType.NUMBER + "P", new Integer( 0 ) );
         columnSizes.put( Column.ColumnType.STRING + "L", new Integer( 0 ) );
 
-        Collection newColumns = new HashSet( );
+        ArrayList<GusColumn> newColumns = new ArrayList<GusColumn>( );
 
-        for ( Iterator i = tables.iterator( ); i.hasNext( ); ) {
-
-            GusTable t = (GusTable) i.next( );
-
-            for ( Iterator j = columnCounts.keySet( ).iterator( ); j.hasNext( ); ) {
-
-                Column.ColumnType type = (Column.ColumnType) j.next( );
-                columnCounts.put( type, new Integer( Math.max( ((Integer) columnCounts.get( type )).intValue( ),
-                        getMaxColumnType( t, type ) ) ) );
+        for ( GusTable t : tables ) {
+            for ( Column.ColumnType type : columnCounts.keySet( ) ) {
+                columnCounts.put( type, new Integer( Math.max( columnCounts.get( type ).intValue( ), getMaxColumnType(
+                        t, type ) ) ) );
             }
-
-            for ( Iterator j = columnSizes.keySet( ).iterator( ); j.hasNext( ); ) {
-
-                String key = (String) j.next( );
+            for ( String key : columnSizes.keySet( ) ) {
                 Column.ColumnType type = Column.ColumnType.valueOf( key.substring( 0, key.length( ) - 1 ) );
                 String sizeType = key.substring( key.length( ) - 1 );
 
-                if ( (Integer) columnSizes.get( type + sizeType ) != null ) {
-                    columnSizes.put( type + sizeType, new Integer( Math.max( ((Integer) columnSizes.get( type
-                            + sizeType )).intValue( ), getLargestColumnLength( t, type, sizeType ) ) ) );
+                if ( columnSizes.get( type + sizeType ) != null ) {
+                    columnSizes.put( type + sizeType, new Integer( Math.max( columnSizes.get( type + sizeType )
+                            .intValue( ), getLargestColumnLength( t, type, sizeType ) ) ) );
                 }
             }
         }
 
-        for ( Iterator i = columnCounts.keySet( ).iterator( ); i.hasNext( ); ) {
-
-            Column.ColumnType type = (Column.ColumnType) i.next( );
-
+        for ( Column.ColumnType type : columnCounts.keySet( ) ) {
             for ( int j = 0; j < ((Integer) columnCounts.get( type )).intValue( ); j++ ) {
 
                 GusColumn newColumn = new GusColumn( );
@@ -314,11 +271,11 @@ public class GusClassHierarchyConverter {
                 newColumn.setNullable( true );
 
                 if ( columnSizes.containsKey( type + "L" ) ) {
-                    newColumn.setLength( ((Integer) columnSizes.get( type + "L" )).intValue( ) );
+                    newColumn.setLength( columnSizes.get( type + "L" ).intValue( ) );
                 }
 
                 if ( columnSizes.containsKey( type + "P" ) ) {
-                    newColumn.setPrecision( ((Integer) columnSizes.get( type + "P" )).intValue( ) );
+                    newColumn.setPrecision( columnSizes.get( type + "P" ).intValue( ) );
                 }
 
                 newColumns.add( newColumn );
@@ -336,12 +293,9 @@ public class GusClassHierarchyConverter {
      * @return DOCUMENT ME!
      */
     private int getMaxColumnType( GusTable table, Column.ColumnType type ) {
-
         int count = 0;
-
-        for ( Iterator i = table.getColumnsExcludeSuperclass( false ).iterator( ); i.hasNext( ); ) {
-
-            if ( ((GusColumn) i.next( )).getType( ) == type ) {
+        for ( Column c : table.getColumnsExcludeSuperclass( false ) ) {
+            if ( c.getType( ) == type ) {
                 count++;
             }
         }
@@ -362,10 +316,7 @@ public class GusClassHierarchyConverter {
 
         int size = 0;
 
-        for ( Iterator i = table.getColumnsExcludeSuperclass( false ).iterator( ); i.hasNext( ); ) {
-
-            GusColumn c = (GusColumn) i.next( );
-
+        for ( Column c : table.getColumnsExcludeSuperclass( false ) ) {
             if ( c.getType( ) == type ) {
 
                 if ( subType.equals( "L" ) ) {
@@ -388,7 +339,7 @@ public class GusClassHierarchyConverter {
      * 
      * @return The Superclass View based on the ImpTable
      */
-    private GusView buildSuperClassView( ) {
+private GusView buildSuperClassView( ) {
         log.debug( "Building superClassView for ImpTable: '" + impTable.getName( ) + "'" );
 
         GusView superClassView = new GusView( );
@@ -397,14 +348,10 @@ public class GusClassHierarchyConverter {
         boolean first = true;
 
         // Superclass Columns
-        for ( Iterator i = superClassColumns.iterator( ); i.hasNext( ); ) {
-
-            Column column = (Column) i.next( );
-
-            if ( column.getClass( ) == GusColumn.class ) {
-
+        for (Iterator i = superClassColumns.iterator(); i.hasNext();) {
+            Column column = (Column) i.next();
+            if (column.getClass() == GusColumn.class) {
                 if ( !first ) sql = sql.concat( ", " );
-
                 first = false;
                 sql = sql.concat( column.getName( ) );
                 superClassView.addColumn( new ColumnPair( column.getName( ), column.getName( ) ) );
@@ -416,9 +363,7 @@ public class GusClassHierarchyConverter {
             superClassView.setVersioned( true );
             verSql = sql.concat( " " );
 
-            for ( Iterator i = verHousekeepingColumns.iterator( ); i.hasNext( ); ) {
-
-                Column column = (Column) i.next( );
+            for ( Column column : verHousekeepingColumns ) {
                 verSql = verSql.concat( ", " + column.getName( ) );
                 superClassView.getVersionView( ).addColumn( new ColumnPair( column.getName( ), column.getName( ) ) );
             }
@@ -429,9 +374,7 @@ public class GusClassHierarchyConverter {
         }
 
         // Housekeeping Columns and complete for the Standard View
-        for ( Iterator i = housekeepingColumns.iterator( ); i.hasNext( ); ) {
-
-            Column column = (Column) i.next( );
+        for ( Column column : housekeepingColumns ) {
             sql = sql.concat( ", " + column.getName( ) );
             superClassView.addColumn( new ColumnPair( column.getName( ), column.getName( ) ) );
         }
@@ -443,7 +386,6 @@ public class GusClassHierarchyConverter {
 
         return superClassView;
     }
-
     /**
      * Using the Superclass provided at construction, iteratively calls {@link
      * buildSubClassView} on each subClassTable to assemble the complete set of
@@ -451,13 +393,13 @@ public class GusClassHierarchyConverter {
      * 
      * @return Collection of Subclass views for the internal Superclass
      */
-    private Collection buildSubClassViews( ) {
+    private TreeSet<GusView> buildSubClassViews( ) {
         log.debug( "Building subClassViews for ImpTable: '" + impTable.getName( ) + "'" );
 
-        Collection subClassViews = new HashSet( );
+        TreeSet<GusView> subClassViews = new TreeSet<GusView>( );
 
-        for ( Iterator i = subClassTables.iterator( ); i.hasNext( ); ) {
-            subClassViews.add( buildSubClassView( (GusTable) i.next( ) ) );
+        for ( GusTable table : subClassTables ) {
+            subClassViews.add( buildSubClassView( table ) );
         }
 
         log.debug( "Done building subClassViews" );
@@ -479,31 +421,24 @@ public class GusClassHierarchyConverter {
         String verSql;
         boolean first = true;
 
-        for ( Iterator i = superClassColumns.iterator( ); i.hasNext( ); ) {
-
-            Column column = (Column) i.next( );
-
-            if ( column.getClass( ) == GusColumn.class ) {
-
+        for (Iterator i = superClassColumns.iterator(); i.hasNext();) {
+            Column column = (Column) i.next();
+            if (column.getClass() == GusColumn.class) {
                 if ( !first ) sql = sql.concat( ", " );
-
                 first = false;
                 sql = sql.concat( column.getName( ) );
                 subClass.addColumn( new ColumnPair( column.getName( ), column.getName( ) ) );
             }
         }
 
-        HashMap columnCounts = new HashMap( );
+        HashMap<Column.ColumnType, Integer> columnCounts = new HashMap<Column.ColumnType, Integer>( );
 
-        for ( Iterator i = table.getColumnsExcludeSuperclass( false ).iterator( ); i.hasNext( ); ) {
-
-            GusColumn column = (GusColumn) i.next( );
-
+        for ( Column column : table.getColumnsExcludeSuperclass( false ) ) {
             if ( !columnCounts.containsKey( column.getType( ) ) ) {
                 columnCounts.put( column.getType( ), new Integer( 1 ) );
             }
 
-            int columnCount = ((Integer) columnCounts.get( column.getType( ) )).intValue( );
+            int columnCount = columnCounts.get( column.getType( ) ).intValue( );
             sql = sql.concat( ", " + column.getType( ).toString( ) + columnCount );
             sql = sql.concat( " AS " + column.getName( ) );
             subClass.addColumn( new ColumnPair( column.getName( ), column.getType( ).toString( ) + columnCount ) );
@@ -514,9 +449,7 @@ public class GusClassHierarchyConverter {
             subClass.setVersioned( true );
             verSql = sql.concat( " " );
 
-            for ( Iterator i = verHousekeepingColumns.iterator( ); i.hasNext( ); ) {
-
-                Column column = (Column) i.next( );
+            for ( Column column : verHousekeepingColumns ) {
                 verSql = verSql.concat( ", " + column.getName( ) );
                 subClass.getVersionView( ).addColumn( new ColumnPair( column.getName( ), column.getName( ) ) );
             }
@@ -527,9 +460,7 @@ public class GusClassHierarchyConverter {
             subClass.getVersionView( ).setSql( verSql );
         }
 
-        for ( Iterator i = housekeepingColumns.iterator( ); i.hasNext( ); ) {
-
-            Column column = (Column) i.next( );
+        for ( Column column : housekeepingColumns ) {
             sql = sql.concat( ", " + column.getName( ) );
             subClass.addColumn( new ColumnPair( column.getName( ), column.getName( ) ) );
         }
@@ -563,10 +494,9 @@ public class GusClassHierarchyConverter {
      * @param array DOCUMENT ME!
      * @param housekeepingCols DOCUMENT ME!
      */
-    private void initHousekeeping( Collection array, String[] housekeepingCols ) {
+    private void initHousekeeping( ArrayList<HousekeepingColumn> array, String[] housekeepingCols ) {
 
         for ( int i = 0; i < housekeepingCols.length; i++ ) {
-
             String columnSpec = properties.getProperty( "hkspec." + housekeepingCols[i] );
             String[] columnSpecs = columnSpec.split( ",", 4 );
             HousekeepingColumn column = new HousekeepingColumn( );

@@ -5,8 +5,7 @@
 package org.gusdb.dbadmin.writer;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.ArrayList;
 
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Database;
@@ -92,7 +91,7 @@ public class PostgresWriter extends RelationalDatabaseWriter {
 
         oStream.write( "\n\nCOMMIT;\n\n" );
         oStream.write( "--EOF\n" );
-        written = new HashSet<Table>( );
+        written = new ArrayList<Table>( );
     }
 
     /**

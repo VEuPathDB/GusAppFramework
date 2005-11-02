@@ -22,7 +22,7 @@ public class GusTable extends Table {
     private String              categoryRef;
     private String              ref;
     private TreeSet<Constraint> constraint            = new TreeSet<Constraint>( );
-    private TreeSet<Constraint> referentialConstraint = new TreeSet<Constraint>( );
+    private ArrayList<Constraint> referentialConstraint = new ArrayList<Constraint>( );
     private TreeSet<Index>      index                 = new TreeSet<Index>( );
     private Sequence            sequence;
     private final String        sequenceSuffix        = "_SQ";
@@ -109,7 +109,7 @@ public class GusTable extends Table {
         }
     }    
     
-    public TreeSet<Constraint> getReferentialConstraints( ) {
+    public ArrayList<Constraint> getReferentialConstraints( ) {
         return referentialConstraint;
     }
 
@@ -177,14 +177,6 @@ public class GusTable extends Table {
         if ( this.versionTable != null ) {
             versionTable.removeColumn( getColumn( column.getName( ) ) );
         }
-    }
-
-    public ArrayList<GusColumn> getColumnsExcludeSuperclass( boolean housekeeping ) {
-        return (ArrayList<GusColumn>) super.getColumnsExcludeSuperclass( housekeeping );
-    }
-
-    public ArrayList<GusColumn> getColumnsIncludeSuperclass( boolean housekeeping ) {
-        return (ArrayList<GusColumn>) super.getColumnsIncludeSuperclass( housekeeping );
     }
 
     public void addSubclass( GusTable table ) {
@@ -311,9 +303,12 @@ public class GusTable extends Table {
         if ( !this.versioned && versioned ) {
             this.versioned = versioned;
             this.versionTable = new VersionTable( this );
-            for ( GusColumn col : getColumnsExcludeSuperclass( false ) ) {
-                if ( col.getVersionColumn( ) != null ) {
-                    col.getVersionColumn( ).setTable( this.versionTable );
+            for ( Column col : getColumnsExcludeSuperclass(false) ) {
+                if ( col instanceof GusColumn ) {
+                    GusColumn col1 = (GusColumn) col;
+                    if ( col1.getVersionColumn( ) != null ) {
+                        col1.getVersionColumn( ).setTable( this.versionTable );
+                    }
                 }
             }
         }
@@ -345,5 +340,6 @@ public class GusTable extends Table {
         if ( versioned != other.isVersioned( ) ) return false;
         return super.equals( o );
     }
+    
 
 }
