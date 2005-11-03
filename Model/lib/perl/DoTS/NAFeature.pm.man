@@ -27,9 +27,16 @@ sub getFeatureSequence {
     ##use plsql substring method......sequence objects call this directly!!
     if ($stop) {                ##have a valid location
       print STDERR "Sequence complement: ".CBIL::Bio::SequenceUtils::reverseComplementSequence($seqob->getSubstrFromClob('sequence',$start,$length))."\n" if ($debug && $is_reversed);
-      $self->{'sequence'} = $seqob->{'didNotRetrieve'}->{sequence} ?
-        ( $is_reversed ? CBIL::Bio::SequenceUtils::reverseComplementSequence($seqob->getSubstrFromClob('sequence',$start,$length)) : $seqob->getSubstrFromClob('sequence',$start,$length)) :
-        ( $is_reversed ? CBIL::Bio::SequenceUtils::reverseComplementSequence(substr($seqob->getSequence(),$start-1,$length)) : substr($seqob->getSequence(),$start,$length) );
+
+      if ($seqob->{'didNotRetrieve'}->{sequence}) {
+	$self->{'sequence'} = $seqob->getSubstrFromClob('sequence', $start, $length);
+      } else {
+	$self->{'sequence'} = substr($seqob->getSequence(), $start-1, $length);
+      }
+      $self->{'sequence'} =
+	CBIL::Bio::SequenceUtils::reverseComplementSequence($self->{'sequence'})
+	    if $is_reversed;
+
     } else {
       print STDERR $self->getClassName(),"->getFeatureSequence: ERROR - Invalid location\n";
     }
