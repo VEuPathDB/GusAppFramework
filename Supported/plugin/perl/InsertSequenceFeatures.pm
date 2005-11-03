@@ -927,14 +927,19 @@ sub handleExonlessRRNA {
 
   if ($bioperlFeature->primary_tag() eq 'rRNA'
       && (scalar($bioperlFeature->get_SeqFeatures()) == 0)) {
-    my $exonFeature = GUS::Model::DoTS::ExonFeature->new();
-    $exonFeature->setNaSequenceId($naSequenceId);
-    $exonFeature->setExternalDatabaseReleaseId($dbRlsId);
-    $exonFeature->setName('Exon');
-    $exonFeature->addChild($self->makeLocation($bioperlFeature->location(),
-					       $bioperlFeature->strand()));
-    #exonFeature->setSequenceOntologyId();
-    $feature->addChild($exonFeature);
+    my $location = $bioperlFeature->location();
+    my @locations = $location->each_Location();
+      foreach my $loc (@locations) {
+         my $exonFeature = GUS::Model::DoTS::ExonFeature->new();
+         $exonFeature->setNaSequenceId($naSequenceId);
+         $exonFeature->setExternalDatabaseReleaseId($dbRlsId);
+         $exonFeature->setName('Exon');
+         #$exonFeature->addChild($self->makeLocation($bioperlFeature->location(),
+         $exonFeature->addChild($self->makeLocation($loc,
+					            $bioperlFeature->strand()));
+         #exonFeature->setSequenceOntologyId();
+         $feature->addChild($exonFeature);
+      }
   }
 }
 
