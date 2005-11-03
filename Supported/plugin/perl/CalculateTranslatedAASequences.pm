@@ -7,13 +7,13 @@ use base qw(GUS::PluginMgr::Plugin);
 
 use Bio::Tools::CodonTable;
 
-use  GUS::Model::DoTS::TranslatedAASequence;
-
+use GUS::Model::DoTS::TranslatedAASequence;
+use GUS::Model::DoTS::TranslatedAAFeature;
+use GUS::Model::DoTS::Transcript;
 use GUS::Model::DoTS::NAFeature;
 
 my $argsDeclaration =
   [
-
    stringArg({ name => 'extDbRlsName',
 	       descr => 'External Database Release name of the transcripts to be translated',
 	       constraintFunc => undef,
@@ -28,12 +28,18 @@ my $argsDeclaration =
 	       reqd => 1,
 	     }),
 
+   stringArg({ name => 'soCvsVersion',
+	       descr => 'CVS revision of Sequence Ontology',
+	       constraintFunc => undef,
+	       reqd => 1,
+	       isList => 0,
+	     }),
+
    booleanArg({ name => 'overwrite',
 		descr => 'whether to overwrite an existing translation or not; defaults to false',
 		reqd => 0,
 		default => 0,
 	      }),
-
   ];
 
 
@@ -49,17 +55,21 @@ my $tablesAffected =
   [
    ['DoTS.TranslatedAASequence' =>
     'Translations are deposited in the `sequence` field of DoTS.TranslatedAASequence'
-   ]
+   ],
+   ['DoTS.TranslatedAAFeature' =>
+    'TranslatedAASequences are associated with Transcripts by TranslatedAAFeatures'
+   ],
   ];
 
 my $tablesDependedOn = [];
 
 my $howToRestart = <<PLUGIN_RESTART;
-This plugin can be restarted, but unless --overwrite is set, previously calculated translations will not be overwritten.
+This plugin can be restarted, but unless --overwrite is set, any
+any previously calculated translations will not be overwritten.
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
-No known failure cases.
+Not all of the SO-defined translation expections have been implemented.
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
@@ -108,44 +118,87 @@ sub run {
   my $codonTable = Bio::Tools::CodonTable->new();
 
   my $dbh = $self->getQueryHandle();
-  my $sql = <<EOSQL;
-  SELECT aa_sequence_id
-  FROM   DoTS.TranslatedAASequence
-  WHERE  external_database_release_id = ?
+
+  my ($proteinSOTermId) = $dbh->selectrow_array(<<EOSQL, undef, "protein_coding_primary_transcript", $self->getArg("soCvsVersion"));
+  SELECT sequence_ontology_term_id
+  FROM   SRes.SequenceOntology
+  WHERE  term_name = ?
+    AND  so_cvs_version = ?
 EOSQL
-  print STDERR "That SQL= $sql\n";
-  my $sth = $dbh->prepare($sql);
 
-  $sth->execute($extDbRlsId);
-
-  unless ($sth->rows()) {
-    warn "No TranslatedAASequences with the specified External Database Release\n";
+  unless ($proteinSOTermId) {
+    die "Couldn't retrieve a SO Term id for protein_coding_primary_transcript\n";
   }
 
-  while (my ($aaSeqId) = $sth->fetchrow()) {
+  my $sql = <<EOSQL;
+  SELECT na_feature_id
+  FROM   DoTS.Transcript
+  WHERE  external_database_release_id = ?
+EOSQL
+
+  my $sth = $dbh->prepare($sql);
+  $sth->execute($extDbRlsId);
+
+  while (my ($transcriptId) = $sth->fetchrow()) {
+
+    my $transcript = GUS::Model::DoTS::Transcript->new({ na_feature_id => $transcriptId });
+
+    unless ($transcript->retrieveFromDB()) {
+      die "Not sure what happened: $transcriptId was supposed to fetch a Transcript, but couldn't\n";
+    }
+
+    my $transcriptSOTermId = $transcript->getSequenceOntologyTermId();
+    unless ($transcriptSOTermId) {
+      die "No SO term for transcript; how can I tell if this is protein-coding or not?\n";
+    }
+
+    if ($transcriptSOTermId != $proteinSOTermId) {
+      warn "Skipping transcript " . $transcript->getSourceId() . ", not a protein-coding transcript\n";
+    }
+
+    my @translatedAAFeatures = $transcript->getChildren("DoTS::TranslatedAAFeature", 1);
+
+    unless (@translatedAAFeatures) {
+      my $transAAFeat = GUS::Model::DoTS::TranslatedAAFeature->new();
+      $transAAFeat->setIsPredicted(0);
+
+      my $aaSeq = GUS::Model::DoTS::TranslatedAASequence->new();
+
+      $aaSeq->setSourceId($transcript->getSourceId());
+      $aaSeq->setDescription($transcript->getProduct());
+      $aaSeq->setExternalDatabaseReleaseId($transcript->getExternalDatabaseReleaseId());
+      $aaSeq->setSequenceOntologyId($self->{plugin}->{soPrimaryKeys}->{'polypeptide'});
+      
+      $aaSeq->submit();
+
+      $transAAFeat->setAaSequenceId($aaSeq->getId());
+      $transAAFeat->setNaFeatureId($transcript->getId());
+
+      $transAAFeat->submit();
+
+      push @translatedAAFeatures, $transAAFeat;
+    }
+
+    if (@translatedAAFeatures > 1) {
+      die "Transcript had more than one translated AA feature associated with it; what now?\n";
+    }
+
+    my $transAAFeature = shift @translatedAAFeatures;
+
+    my $aaSeqId = $transAAFeature->getAaSequenceId();
+
+    unless ($aaSeqId) {
+      die "Translated AA Feature did not have an Translated AA Sequence associated with it\n";
+    }
 
     my $aaSeq = GUS::Model::DoTS::TranslatedAASequence->new({ aa_sequence_id => $aaSeqId });
+
     unless ($aaSeq->retrieveFromDB()) {
-      die "Not sure what happened: $aaSeqId was supposed to fetch a TranslatedAASequence, but couldn't\n";
+      die "Could not retrieve translated AA sequence $aaSeqId\n";
     }
 
-    my @translatedAAFeats = $aaSeq->getChildren("DoTS::TranslatedAAFeature",
-						1, 0,
-						{ external_database_release_id => $extDbRlsId }
-					       );
-    if (@translatedAAFeats == 0) {
-	warn "skipping TranslatedAASequence, source_id: " . $aaSeq->getSourceId() . "\n";
-      next;
-    } elsif (@translatedAAFeats > 1) {
-      die "This situation not yet supported"
-    }
-
-    my $translatedAAFeat = shift @translatedAAFeats;
-
-    my $transcript = $translatedAAFeat->getParent("DoTS::Transcript", 1);
-
-    unless ($transcript) {
-      die "TranslatedAAFeature had no parent Transcript: " . $translatedAAFeat->getSourceId() . "\n";
+    if (!$self->getArg("overwrite") && $aaSeq->getSequence()) {
+      warn "Skipping transcript, already has a sequence.\n";
     }
 
     my $ntSeq = $transcript->getParent("DoTS::NASequence", 1);
@@ -160,12 +213,14 @@ EOSQL
       die "NASequence was not associated with an organism in SRes.Taxon: " . $ntSeq->getSourceId() . "\n";
     }
 
-    $codonTable->id($taxon->getGeneticCodeId() || 1);
+    my $geneticCode = $taxon->getParent("SRes::GeneticCode", 1);
+    unless ($geneticCode) {
+      die "No genetic code associated with taxon\n";
+    }
 
-    my @exons = $transcript->getChildren("DoTS::ExonFeature",
-					 1, 0,
-					 { external_database_release_id => $extDbRlsId }
-					);
+    $codonTable->id($geneticCode->getNcbiGeneticCodeId() || 1);
+
+    my @exons = $transcript->getChildren("DoTS::ExonFeature", 1);
 
     unless (@exons) {
       die "Transcript had no exons: " . $transcript->getSourceId() . "\n";
@@ -182,17 +237,18 @@ EOSQL
   WHERE  naf.sequence_ontology_id = so.sequence_ontology_id
   AND    nal.na_feature_id = naf.na_feature_id
   AND    so.term_name in ('stop_codon_redefinition_as_selenocysteine',
-		     'stop_codon_redefinition_as_pyrrolysine',
-		     'plus_1_translational_frameshift',
-		     'minus_1_translational_frameshift',
-		     'four_bp_start_codon',
-		     '4bp_start_codon',
-		     'stop_codon_readthrough',
-		     'CTG_start_codon'
-		    )
+                          'stop_codon_redefinition_as_pyrrolysine',
+		          'plus_1_translational_frameshift',
+		          'minus_1_translational_frameshift',
+		          'four_bp_start_codon',
+		          '4bp_start_codon',
+		          'stop_codon_readthrough',
+		          'CTG_start_codon'
+		         )
   AND    nal.start_min BETWEEN ? AND ?
   AND    nal.is_reversed = ?
   AND    naf.na_sequence_id = ?
+  AND    naf.external_database_release_id = ?
 ORDER BY CASE WHEN nal.is_reversed = 1 THEN nal.end_max ELSE nal.start_min END
 
 EOSQL
@@ -211,7 +267,7 @@ EOSQL
 
       my $chunk = $exon->getFeatureSequence();
 
-      $exceptions->execute($exonStart, $exonEnd, $exonIsReversed, $exon->getNaSequenceId());
+      $exceptions->execute($exonStart, $exonEnd, $exonIsReversed, $exon->getNaSequenceId(), $extDbRlsId);
 
       while (my ($exceptionId, $soTerm) = $exceptions->fetchrow()) {
 	if ($soTerm eq "stop_codon_redefinition_as_selenocysteine") {
