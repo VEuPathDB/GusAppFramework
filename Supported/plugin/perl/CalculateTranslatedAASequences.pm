@@ -120,7 +120,7 @@ sub run {
   my $dbh = $self->getQueryHandle();
 
   my ($proteinSOTermId) = $dbh->selectrow_array(<<EOSQL, undef, "protein_coding_primary_transcript", $self->getArg("soCvsVersion"));
-  SELECT sequence_ontology_term_id
+  SELECT sequence_ontology_id
   FROM   SRes.SequenceOntology
   WHERE  term_name = ?
     AND  so_cvs_version = ?
@@ -147,7 +147,7 @@ EOSQL
       die "Not sure what happened: $transcriptId was supposed to fetch a Transcript, but couldn't\n";
     }
 
-    my $transcriptSOTermId = $transcript->getSequenceOntologyTermId();
+    my $transcriptSOTermId = $transcript->getSequenceOntologyId();
     unless ($transcriptSOTermId) {
       die "No SO term for transcript; how can I tell if this is protein-coding or not?\n";
     }
@@ -197,7 +197,7 @@ EOSQL
       die "Could not retrieve translated AA sequence $aaSeqId\n";
     }
 
-    if (!$self->getArg("overwrite") && $aaSeq->getSequence()) {
+    if (!$self->getArg("overwrite") && $aaSeq->get('sequence')) {
       warn "Skipping transcript, already has a sequence.\n";
     }
 
