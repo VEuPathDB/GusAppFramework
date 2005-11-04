@@ -108,9 +108,9 @@ sub run {
 	#split attributes, @data is one row from file
 	my @data = split (/\t/, $_);
 	
-	if (scalar(@data) != 11) { 
+	if (scalar(@data) != 12) { 
 	    print join (", ", @data);
-	    die "Input file '$oeFile' does not have 11 tab delimited files.Please check file and run plugin again\n";
+	    die "Input file '$oeFile' does not have 12 tab delimited files.Please check file and run plugin again\n";
 	} 
 	
 	my $id = $data[0];
@@ -174,7 +174,7 @@ sub makeOntologyEntry {
 
    my ($self, $id) = @_;
    my $pName =              $self->{rowsById}->{$id}->[1];
-   my $extDbName =          $self->{rowsById}->{$id}->[2];
+   my $extDbUri =           $self->{rowsById}->{$id}->[2];
    my $extDbRelVersion =    $self->{rowsById}->{$id}->[3];
    my $srcId =              $self->{rowsById}->{$id}->[4];
    my $tName =              $self->{rowsById}->{$id}->[5];
@@ -183,15 +183,17 @@ sub makeOntologyEntry {
    my $def =                $self->{rowsById}->{$id}->[8];
    my $name =               $self->{rowsById}->{$id}->[9];
    my $cat =                $self->{rowsById}->{$id}->[10];
-  
+   my $uri =                $self->{rowsById}->{$id}->[11];
+
    my $dbh = $self->getQueryHandle();
 
-   # The value of transformation_protocol_series must be loaded into the OntologyEntry table 
+   # NOTE: The value of transformation_protocol_series must be loaded into the OntologyEntry table 
    # since it is needed by the RAD Applications 
+   
    my $extDbRelId;
    if ($val ne "transformation_protocol_series")  { 
-       #Get external_database_release_id based on external database name and version
-       my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabase edb, sres.externaldatabaserelease edbr where edb.external_database_id=edbr.external_database_id and edb.name like '$extDbName' and edbr.version like '$extDbRelVersion'");
+   #Get external_database_release_id based on external database uri and version
+       my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabase edb, sres.externaldatabaserelease edbr where edb.external_database_id=edbr.external_database_id and edbr.id_url like '$extDbUri' and edbr.version like '$extDbRelVersion'");
        $sth->execute();
        $extDbRelId = $sth->fetchrow_array() || die "Value:$val - Either the entry for the MGED Ontology can not be found in SRes.ExternalDatabase OR the version of the MGED Ontology used in the input file can not be found in the SRes.ExternalDatabaseRelease table.\n";
    }
@@ -221,10 +223,11 @@ sub makeOntologyEntry {
        'definition' => $def,
        'category' => $cat,
        'external_database_release_id' => $extDbRelId,
-       'source_id' => $srcId 
-       });
+       'source_id' => $srcId, 
+	'uri' =>  $uri   
+      });
   
-   #print STDERR "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\n";
+   #print STDERR "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\tURI:$uri\n";
 
    return $oeTerm;
 }
