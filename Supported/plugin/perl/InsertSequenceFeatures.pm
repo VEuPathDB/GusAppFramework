@@ -294,8 +294,6 @@ sub run {
 				     $self->getArg('extDbRlsVer'))
       or die "Couldn't retrieve external database!\n";
 
-  $self->getSoPrimaryKeys(); ## pre-load into memory and validate
-
   $self->initHandlerExternalDbs();
 
   my $format = $self->getArg('fileFormat');
@@ -595,7 +593,7 @@ sub constructNASequence {
   }
   my $soTerm = $self->getArg('seqSoTerm');
   if ($soTerm) {
-    $naSequence->setSequenceOntologyId($self->{soPrimaryKeys}->{$soTerm});
+    $naSequence->setSequenceOntologyId($self->getSOPrimaryKey($soTerm));
   }
   my $taxId = $self->getTaxonId($bioperlSeq);
   $naSequence->setTaxonId($taxId);
@@ -776,7 +774,7 @@ sub makeImmediateFeature {
 
   my $soTerm = $featureMapper->getSoTerm();
   if ($soTerm) {
-    $feature->setSequenceOntologyId($self->{soPrimaryKeys}->{$soTerm});
+    $feature->setSequenceOntologyId($self->getSOPrimaryKey($soTerm));
   }
   $feature->addChild($self->makeLocation($bioperlFeature->location(),
 					 $bioperlFeature->strand()));
@@ -979,34 +977,34 @@ sub getIdFromCache {
   return $self->{$cacheName}->{$name};
 }
 
-# for all SO terms used, find the GUS primary key
-# include in search all SO terms in the mapping file, and the seq SO term
-# from the cmd line
-sub getSoPrimaryKeys {
-  my ($self) = @_;
+sub getSOPrimaryKey {
+  my ($self, $soTerm) = @_;
 
-  my $soCvsVersion = $self->getArg('soCvsVersion');
+  if (!$self->{soPrimaryKeys}) {
+    my $soCvsVersion = $self->getArg('soCvsVersion');
 
-  $soCvsVersion or $self->userError("You are using Sequence Ontology terms but have not provided a --soCvsVersion on the command line");
+    $soCvsVersion or $self->userError("You are using Sequence Ontology terms but have not provided a --soCvsVersion on the command line");
 
-  my $dbh = $self->getQueryHandle();
-  my $sql = "
+    my $dbh = $self->getQueryHandle();
+    my $sql = "
 select term_name, sequence_ontology_id
 from sres.SequenceOntology
 where so_cvs_version = '$soCvsVersion'
 ";
-  my $stmt = $dbh->prepareAndExecute($sql);
-  while (my ($term, $pk) = $stmt->fetchrow_array()){
-    $self->{soPrimaryKeys}->{$term} = $pk;
-  }
+    my $stmt = $dbh->prepareAndExecute($sql);
+    while (my ($term, $pk) = $stmt->fetchrow_array()){
+      $self->{soPrimaryKeys}->{$term} = $pk;
+    }
 
-  my @badSoTerms;
-  foreach my $soTerm (keys %{$self->{soPrimaryKeys}}) {
-    push(@badSoTerms, $soTerm) unless $self->{soPrimaryKeys}->{$soTerm};
-  }
+    my @badSoTerms;
+    foreach my $soTerm (keys %{$self->{soPrimaryKeys}}) {
+      push(@badSoTerms, $soTerm) unless $self->{soPrimaryKeys}->{$soTerm};
+    }
 
-  my $mappingFile = $self->getArg('mapFile');
-  (scalar(@badSoTerms) == 0) or $self->userError("Mapping file '$mappingFile' or cmd line args are using the following SO terms that are not found in the database for SO CVS version '$soCvsVersion': " . join(", ", @badSoTerms));
+    my $mappingFile = $self->getArg('mapFile');
+    (scalar(@badSoTerms) == 0) or $self->userError("Mapping file '$mappingFile' or cmd line args are using the following SO terms that are not found in the database for SO CVS version '$soCvsVersion': " . join(", ", @badSoTerms));
+  }
+  return $self->{soPrimaryKeys}->{$soTerm};
 }
 
 sub initHandlerExternalDbs {
