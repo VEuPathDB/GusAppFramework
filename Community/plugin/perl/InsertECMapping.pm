@@ -85,7 +85,7 @@ sub new {
 
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 3949 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 3950 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -118,8 +118,6 @@ sub getMapping {
   open (ECMAP, "$mappingFile") ||
                     die ("Can't open the file $mappingFile.  Reason: $!\n");
 
-$self->log("The pairs found in the file are:\n");
-
     while (<ECMAP>) {
 	chomp;
 
@@ -132,7 +130,7 @@ $self->log("The pairs found in the file are:\n");
 	$locusTag =~ s/\s//g;
 	$ecNumber =~ s/\s//g;
 
-	$self->log("Processed Pfid: $locusTag, ECNumber: $ecNumber\n");
+	$self->log("Processing Pfid: $locusTag, ECNumber: $ecNumber\n");
 
 	if ($ecNumbers{$ecNumber}){
 	  $enzymeClass = $ecNumbers{$ecNumber};
@@ -162,7 +160,7 @@ $self->log("The pairs found in the file are:\n");
 	}
       }
 
-  my $msg = "parsed EC Mapping file\n";
+  my $msg = "Finished processing EC Mapping file\n";
 
   return $msg;
 }
@@ -178,8 +176,6 @@ sub getEnzymeClass {
 
   $newEnzymeClass->retrieveFromDB();
   my $enzymeClass = $newEnzymeClass->getId();
-
-$self->log("Enzyme Class = $enzymeClass\n");
 
 $$ecHash{$ecNumber} = $enzymeClass;
 
@@ -209,8 +205,6 @@ EOSQL
 
     my $aaSequenceId = $sth->fetchrow_array();
     $sth->finish();
-
-$self->log("my aaSeqId = $aaSequenceId\n");
 
 $$aaIdHash{$locusTag} = $aaSequenceId;
 
