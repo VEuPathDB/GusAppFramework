@@ -6,7 +6,7 @@
 ##
 #######################################################################
 
-package GUS::Community::Plugin::InsertOntologyEntry;
+package GUS::Supported::Plugin::InsertOntologyEntry;
 @ISA = qw(GUS::PluginMgr::Plugin);
  
 use strict;
