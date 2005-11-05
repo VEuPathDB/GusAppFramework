@@ -182,8 +182,8 @@ sub makeOntologyEntry {
    my $val =                $self->{rowsById}->{$id}->[7];
    my $def =                $self->{rowsById}->{$id}->[8];
    my $name =               $self->{rowsById}->{$id}->[9];
-   my $cat =                $self->{rowsById}->{$id}->[10];
-   my $uri =                $self->{rowsById}->{$id}->[11];
+   my $uri =                $self->{rowsById}->{$id}->[10];
+   my $cat =                $self->{rowsById}->{$id}->[11];
 
    my $dbh = $self->getQueryHandle();
 
@@ -195,7 +195,9 @@ sub makeOntologyEntry {
    #Get external_database_release_id based on external database uri and version
        my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabase edb, sres.externaldatabaserelease edbr where edb.external_database_id=edbr.external_database_id and edbr.id_url like '$extDbUri' and edbr.version like '$extDbRelVersion'");
        $sth->execute();
-       $extDbRelId = $sth->fetchrow_array() || die "Value:$val - Either the entry for the MGED Ontology can not be found in SRes.ExternalDatabase OR the version of the MGED Ontology used in the input file can not be found in the SRes.ExternalDatabaseRelease table.\n";
+       $extDbRelId = $sth->fetchrow_array(); 
+       # Do not die if external_database_release_id is not found
+       #|| die "Value:$val - Either the entry for the MGED Ontology can not be found in SRes.ExternalDatabase OR the version of the MGED Ontology used in the input file can not be found in the SRes.ExternalDatabaseRelease table.\n";
    }
    
 
