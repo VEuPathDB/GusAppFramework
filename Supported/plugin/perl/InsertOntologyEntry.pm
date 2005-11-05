@@ -8,7 +8,7 @@
 
 package GUS::Supported::Plugin::InsertOntologyEntry;
 @ISA = qw(GUS::PluginMgr::Plugin);
- 
+
 use strict;
 
 use FileHandle;
@@ -43,14 +43,14 @@ PLUGIN_PURPOSE
 
 my $tablesAffected = [
 ['Study.OntologyEntry','Populate the OntologyEntry table']
-];
+    ];
 
 my $tablesDependedOn = ['SRes.ExternalDatabase', 'SRes.ExternalDatabaseRelease','SRes.OntologyTerm', 'Core.TableInfo'];
 
 my $howToRestart = <<PLUGIN_RESTART;
 This plugin can be not be restarted.
 PLUGIN_RESTART
-
+    
 my $failureCases = <<PLUGIN_FAILURE_CASES;
 unknown
 PLUGIN_FAILURE_CASES
@@ -187,15 +187,14 @@ sub makeOntologyEntry {
 
    my $dbh = $self->getQueryHandle();
 
-   # NOTE: The value of transformation_protocol_series must be loaded into the OntologyEntry table 
-   # since it is needed by the RAD Applications 
+   # NOTE: The value of transformation_protocol_series must be loaded 
+   # into the OntologyEntry table since it is needed by the RAD Applications 
    
    my $extDbRelId;
    if ($extDbUri eq "http://mged.sourceforge.net/ontologies/MGEDOntology.daml")  {
        print STDERR "Term is from MO\n";
        if ($val ne "transformation_protocol_series")  { 
 	   #Get external_database_release_id based on external database uri and version
-	   print STDERR "extDb:$extDbUri\n";
 	   my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabase edb, sres.externaldatabaserelease edbr where edb.external_database_id=edbr.external_database_id and edbr.id_url like '$extDbUri' and edbr.version like '$extDbRelVersion'");
 	   $sth->execute();
 	   $extDbRelId = $sth->fetchrow_array() || die "Value:$val - Either the entry for the MGED Ontology can not be found in SRes.ExternalDatabase OR the version of the MGED Ontology used in the input file can not be found in the SRes.ExternalDatabaseRelease table.\n";
@@ -207,8 +206,6 @@ sub makeOntologyEntry {
        $sth->execute();
        $extDbRelId = $sth->fetchrow_array();
    }
-   
-   
    
    #Get table_id based on table name
    my $sth = $dbh->prepare("select table_id from core.tableinfo where name like '$tName'");
@@ -235,7 +232,7 @@ sub makeOntologyEntry {
        'category' => $cat,
        'external_database_release_id' => $extDbRelId,
        'source_id' => $srcId, 
-	'uri' =>  $uri   
+       'uri' =>  $uri   
       });
   
    #print STDERR "TID:$tableId\tRID:$rowId\tPID:$parentId\tVAL:$val\tNAME:$name\tDEF:$def\tCAT:$cat\tEDBR:$extDbRelId\tSRCID:$srcId\tURI:$uri\n";
