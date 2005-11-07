@@ -526,7 +526,7 @@ sub checkIfHave {
   my($self, $source_id) = @_;
   $checkStmt->execute($source_id);
   if (my($id) = $checkStmt->fetchrow_array()) {
-    die "Entry already inserted for '$source_id'\n" unless $self->getArg('update');
+    #die "Entry already inserted for '$source_id'\n" unless $self->getArg('update');
     $checkStmt->finish();
     return $id;
   }
