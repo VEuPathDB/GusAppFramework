@@ -580,7 +580,7 @@ sub insertSubjects {
 	$self->{spanCount} += 1;
       }
     }
-
+    $self->undefPointerCache();
   }
 
   # Sum it all up in a message for the log and AlgInv.result
