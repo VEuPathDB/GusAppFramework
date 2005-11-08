@@ -242,12 +242,14 @@ sub loadData{
 	    my $newGOAssoc = $self->makeGOAssocEntry($go_id, $gene_id, $entrezExtDbRelId, $tableId);
 	    unless($newGOAssoc){
 		$skippedCount ++;
+		$self->undefPointerCache();
 		next;
 	    }#eo unless
 
 	    if($$newGOAssoc->retrieveFromDB()){
 		print "Gene $gene_id GO term $go_id pair already in database for this release\n";
 		$presentCount ++;
+		$self->undefPointerCache();
 		next;
 	    }
 
@@ -305,7 +307,7 @@ sub makeGOAssocEntry{
 	return 0;
     }
 
-    my $newGOAssoc = GU::Model::DoTS::GOAssociation->new({
+    my $newGOAssoc = GUS::Model::DoTS::GOAssociation->new({
 		'table_id'=> $table_id,
 		'row_id' => $DbRef_id,
 		'go_term_id' => $go_term_id,
