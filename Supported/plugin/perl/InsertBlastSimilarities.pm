@@ -243,6 +243,8 @@ sub run {
 
   my $dbh = $self->getDb()->getDbHandle();
 
+  $self->setPointerCacheSize(150000);
+
   $self->{queryTable}   = $self->getArg('queryTable');
   $self->{subjectTable} = $self->getArg('subjectTable');
   
