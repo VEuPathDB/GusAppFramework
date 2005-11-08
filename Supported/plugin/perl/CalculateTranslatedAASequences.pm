@@ -154,6 +154,7 @@ EOSQL
 
     if ($transcriptSOTermId != $proteinSOTermId) {
       warn "Skipping transcript " . $transcript->getSourceId() . ", not a protein-coding transcript\n";
+      next;
     }
 
     my @translatedAAFeatures = $transcript->getChildren("DoTS::TranslatedAAFeature", 1);
@@ -199,6 +200,7 @@ EOSQL
 
     if (!$self->getArg("overwrite") && $aaSeq->get('sequence')) {
       warn "Skipping transcript, already has a sequence.\n";
+      next;
     }
 
     my $ntSeq = $transcript->getParent("DoTS::NASequence", 1);
