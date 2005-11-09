@@ -29,11 +29,12 @@ sub getArgsDeclaration {
 		 reqd => 1,
 	       }),
 
-     stringArg({ name => 'sequenceFile',
+     fileArg({ name => 'sequenceFile',
 		 descr => 'file for fasta formatted sequences',
 		 constraintFunc => undef,
 		 reqd => 1,
 		 isList => 0,
+	         mustExist => 0,
 	       })
     ];
 
