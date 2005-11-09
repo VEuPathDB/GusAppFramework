@@ -234,7 +234,7 @@ sub printSequences {
     my $seq = $sequences->{$id};
     my $length = length ($seq);
 
-    my $defline = "\>$id length = $length\n";
+    my $defline = "\>$id length=$length\n";
     print $fh ("$defline" . CBIL::Bio::SequenceUtils::breakSequence($seq,60));
   }
 }
