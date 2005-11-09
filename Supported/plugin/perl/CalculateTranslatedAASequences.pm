@@ -228,7 +228,10 @@ EOSQL
       die "Transcript had no exons: " . $transcript->getSourceId() . "\n";
     }
 
-    @exons = sort { $a->getOrderNumber <=> $b->getOrderNumber } @exons;
+    @exons = map { $_->[0] }
+      sort { $a->[3] ? $b->[1] <=> $a->[1] : $a->[1] <=> $b->[1] }
+	map { [ $_, $_->getFeatureLocation ]}
+	  @exons;
 
     my $exceptions = $dbh->prepare(<<EOSQL);
 
@@ -269,6 +272,7 @@ EOSQL
 
       my $chunk = $exon->getFeatureSequence();
 
+      warn $chunk;
       $exceptions->execute($exonStart, $exonEnd, $exonIsReversed, $exon->getNaSequenceId(), $extDbRlsId);
 
       while (my ($exceptionId, $soTerm) = $exceptions->fetchrow()) {
