@@ -1,6 +1,7 @@
 package GUS::Supported::Plugin::ExtractTranscriptSequences;
 @ISA = qw( GUS::PluginMgr::Plugin);
 
+use GUS::PluginMgr::Plugin;
 use GUS::Model::DoTS::Transcript;
 use GUS::Model::DoTS::ExonFeature;
 use GUS::Model::DoTS::NASequence;
