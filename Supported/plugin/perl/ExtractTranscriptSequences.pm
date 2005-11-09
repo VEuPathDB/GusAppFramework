@@ -4,7 +4,7 @@ package GUS::Supported::Plugin::ExtractTranscriptSequences;
 use GUS::Model::DoTS::Transcript;
 use GUS::Model::DoTS::ExonFeature;
 use GUS::Model::DoTS::NASequence;
-
+use CBIL::Bio::SequenceUtils;
 use FileHandle;
 use Carp;
 use lib "$ENV{GUS_HOME}/lib/perl";
@@ -137,7 +137,7 @@ sub run {
     $sequences{$id} = $transcriptSequence;
   }
 
-  $self->printSequences(\%sequences};
+  $self->printSequences(\%sequences);
 
   my $total = scalar (keys %sequences);
 
@@ -178,7 +178,7 @@ EOSQL
      push(@transcripts,$sourceId);
    }
 
-   return \@transcripIds;
+   return \@transcripts;
 }
 
 sub calculateTranscriptSequence {
@@ -221,15 +221,19 @@ sub calculateTranscriptSequence {
 }
 
 sub printSequences {
-  my ($self,$sequences} = @_;
+  my ($self,$sequences) = @_;
 
   my $sequenceFile = $self->getArg('sequenceFile');
 
   my $fh = FileHandle->new(">$sequenceFile") || $self->error("cannot open $sequenceFile for writing\n");
 
-  	my $defline = "\>".join(' ',@row)."\n";
-	print $fh ("$defline" . CBIL::Bio::SequenceUtils::breakSequence($sequence,60));
+  foreach my $id (keys %$sequences) {
+    my $seq = $sequences->{$id};
+    my $length = length ($seq);
 
+    my $defline = "\>$id length = $length\n";
+    print $fh ("$defline" . CBIL::Bio::SequenceUtils::breakSequence($seq,60));
+  }
 }
 
 1;
