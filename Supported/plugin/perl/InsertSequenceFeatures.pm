@@ -224,6 +224,13 @@ my $argsDeclaration  =
 	      isList => 0
 	     }),
 
+   stringArg({name => 'makeSourceids',
+	      descr => 'If this field is used, the plugin will create source_ids for entry into the GUS features tables.  The source_id will be a combination of the letters following the flag and a numbers in increments of 10.',
+	      constraintFunc=> undef,
+	      reqd  => 0,
+	      isList => 0
+	     }),
+
    stringArg({name => 'gff2GroupTag',
 	      descr => 'Name of the tag to be used for GFF2 grouping',
 	      constraintFunc=> undef,
@@ -709,10 +716,14 @@ sub addKeywords {
 sub processFeatureTrees {
   my ($self, $bioperlSeq, $naSequenceId, $dbRlsId) = @_;
 
+
   $self->unflatten($bioperlSeq)
     unless ($self->getArg("fileFormat") =~ m/^gff\d$/i);
 
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
+    if ($self->getArg('makeSourceids')) {
+       $self->incrementSourceId();
+    }
     my $NAFeature = $self->makeFeature($bioperlFeatureTree, $naSequenceId, $dbRlsId);
     if (!$NAFeature) {
       next;
@@ -767,6 +778,11 @@ sub makeImmediateFeature {
   my $gusObjName = $featureMapper->getGusObjectName();
 
   my $feature = eval "{require $gusObjName; $gusObjName->new()}";
+
+  if ($self->getArg('makeSourceids')) {
+     my $sourceId = $self->makeSourceId();
+     $feature->setSourceId($sourceId);
+  }
 
   $feature->setNaSequenceId($naSequenceId);
   $feature->setName($bioperlFeature->primary_tag());
@@ -943,6 +959,26 @@ sub handleExonlessRRNA {
 
 
 
+sub incrementSourceId {
+   my $self = shift;
+
+     my $sourceId = $self->{'makesourceid'};
+     my $newId = ($sourceId + 10);
+     $self->{'makesourceid'} = $newId ;
+
+return 1;
+}
+
+
+sub makeSourceId {
+   my $self = shift;
+
+     my $sourceVal = $self->{'makesourceid'};
+     my $sourceTxt = $self->getArg('makeSourceids');
+     my $sourceId = $sourceTxt . "_" . $sourceVal;
+
+return $sourceId;
+}
 
 ##############################################################################
 # Utilities
@@ -1106,4 +1142,6 @@ sub aggregate {
 }
 
 
+
 return 1;
+
