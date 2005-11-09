@@ -272,7 +272,6 @@ EOSQL
 
       my $chunk = $exon->getFeatureSequence();
 
-      warn $chunk;
       $exceptions->execute($exonStart, $exonEnd, $exonIsReversed, $exon->getNaSequenceId(), $extDbRlsId);
 
       while (my ($exceptionId, $soTerm) = $exceptions->fetchrow()) {
