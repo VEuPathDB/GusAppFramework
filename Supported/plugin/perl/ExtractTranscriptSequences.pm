@@ -111,7 +111,7 @@ sub new {
       my $args = &getArgsDeclaration();
 
       $self->initialize({requiredDbVersion => 3.5, 
-                 cvsRevision => '$Revision: 9540 $',
+                 cvsRevision => '$Revision:4078$',
                  cvsTag => '$Name:  $',
                  name => ref($self),
                  revisionNotes => '',
