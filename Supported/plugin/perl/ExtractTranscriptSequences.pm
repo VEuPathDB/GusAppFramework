@@ -11,6 +11,8 @@ use lib "$ENV{GUS_HOME}/lib/perl";
 use strict;
 
 
+$| = 1;
+
 sub getArgsDeclaration {
 
   my $argsDeclaration =
