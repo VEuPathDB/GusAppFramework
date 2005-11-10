@@ -853,10 +853,10 @@ sub prepareAndExecute {
   $self->getQueryHandle()->prepareAndExecute($sql);
 }
 
-=item C<getControlledVocabMapping($cvMappingFile, $cvTable, $cvTermColumn)>
+=item C<getControlledVocabMapping($cvMappingFile, $cvTable, $cvTermColumn, $cvTermPKColumn)>
 
 Read a file mapping input terms to a GUS CV.  Validate the GUS CV against
-the provided table.  If the GUS CV in the file is not entirely contained in the table, die.  If it is, return the CV as a hash with the input terms as key and the GUS CV as value.
+the provided table.  If the GUS CV in the file is not entirely contained in the table, die.  If it is, return the CV as a hash with the input terms as key and a reference to an array with tuple [gusTerm, gusPrimaryKey] as value.
 
 B<Parameters:>
 
@@ -866,45 +866,60 @@ B<Parameters:>
 
 - cvTermColumn (string):  The name of the column in cvTable that contains the terms.
 
+- cvTermPKColumn (string):  The name of the column in cvTable that contains its primary key.
+
 B<Return type:> C<hash reference>
 
 =cut
 sub getControlledVocabMapping {
-  my ($self, $cvMappingFile, $cvTable, $cvTermColumn) = @_;
-  my $sql = "select distinct $cvTermColumn from $cvTable";
+  my ($self, $cvMappingFile, $cvTable, $cvTermColumn, $cvTermPKColumn) = @_;
 
-  my %gusHash;
-  my $sh = $self->prepareAndExecute($sql);
+  -r $cvMappingFile
+    || $self->error("file '" . $cvMappingFile ."' cannot be open for reading");
 
-  while (my ($gusTerm) = $sh->fetchrow_array) {
-    $gusHash{$gusTerm} = 1;
+  # connect to db to read the cv from GUS
+  my $sql = 
+    "select $cvTermPKColumn, $cvTermColumn
+     from $cvTable";
+
+  my $queryHandle = $self->getQueryHandle();
+  my $sth = $queryHandle->prepareAndExecute($sql);
+
+  my %gusTerm2PrimaryKey;
+  while (my ($primaryKey, $term) = $sth->fetchrow_array()) {
+    $gusTerm2PrimaryKey{$term} = $primaryKey;
   }
-  open(FILE, $cvMappingFile) || die "Can't open CV mapping file '$cvMappingFile'";
 
-  my @badGusTerms;
-  my %cvHash;
-  while (<FILE>) {
-    chomp;
-    if (/^(.+)\t(.+)$/) {
-      my $inputTerm = $1;
-      my $gusTerm = $2;
-      if ($gusHash{$gusTerm}) {
-	if ($cvHash{$inputTerm} && $cvHash{$inputTerm} ne $gusTerm) {
-	  die "CV mapping file '$cvMappingFile' has inconsistent mappings forinput term  '$inputTerm'"
-	}
-	$cvHash{$inputTerm} = $gusTerm;
-      } else {
-	push(@badGusTerms, $gusTerm);
-      }
+  my %userTerm2PrimaryKey;
+  my %userTerm2GusTerm;
+  my %userTerm2GusTermAndPrimaryKey;
+  my @notReallyGusTerms;
+
+  open(MAPPING_FILE, $cvMappingFile) 
+    || $self->userError("can't open file '$cvMappingFile'");
+  while (<MAPPING_FILE>) {
+    /^(\w+)\t(\w+)\s*$/
+      || $self->userError("File '$cvMappingFile' is not in two column tab-delimited format: '$_'");
+    my $userTerm = $1;
+    my $inputGusTerm = $2;
+    if (!$gusTerm2PrimaryKey{$inputGusTerm}) {
+      push(@notReallyGusTerms, $inputGusTerm);
     } else {
-      die "line '$_' in file '$cvMappingFile' has incorrect format";
+      if ($userTerm2GusTerm{$userTerm}
+	  && $userTerm2GusTerm{$userTerm} ne $inputGusTerm) {
+	die "CV mapping file '$cvMappingFile' has inconsistent mappings forinput term  '$userTerm'"
+      }
+      $userTerm2GusTerm{$userTerm} = $inputGusTerm;
+      $userTerm2GusTermAndPrimaryKey{$userTerm} =
+	[$inputGusTerm, $gusTerm2PrimaryKey{$inputGusTerm}];
     }
   }
-  close(FILE);
-  if (scalar(@badGusTerms) != 0) {
-    die "CV mapping file '$cvMappingFile' has these terms that were not found in column '$cvTermColumn' of table '$cvTable': " . join(", ", @badGusTerms);
+
+  if (scalar @notReallyGusTerms > 0) {
+    $self->userError("The following terms found in file '$cvMappingFile' are not in GUS table $self->{table}: " . join(" ", @notReallyGusTerms));
   }
-  return \%cvHash;
+
+  return \%userTerm2GusTermAndPrimaryKey;
 }
 
 =item C<getTotalInserts()>
