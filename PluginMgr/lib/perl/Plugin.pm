@@ -27,6 +27,8 @@ use GUS::PluginMgr::Args::Arg;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 
+use Data::Dumper qw(Dumper);
+
 =pod
 
 =head1 Name
@@ -1353,14 +1355,17 @@ sub logCommit {
 Log to STDERR the argument values used for this run of the plugin.
 
 =cut
+
 sub logArgs {
 
   my $Self = shift;
 
   foreach my $flag (sort keys %{$Self->getCla}) {
     my $value = $Self->getCla->{$flag};
-    if (ref $value) {
+    if (ref($value) eq "ARRAY") {
       $Self->log('ARG', $flag, @$value);
+    } elsif (ref($value)) {
+      $Self->log('ARG', $flag, Dumper($value));
     } else {
       $Self->log('ARG', $flag, $value);
     }
