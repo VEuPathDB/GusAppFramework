@@ -17,7 +17,7 @@ use GUS::Model::DoTS::EST;
 use GUS::Model::DoTS::Clone;
 use GUS::Model::DoTS::Library;
 use GUS::Model::DoTS::ExternalNASequence;
-use GUS::Model::DoTS::SequenceType;
+use GUS::Model::SRes::SequenceOntology;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::Anatomy;
@@ -74,12 +74,12 @@ sub new {
                    o => 'restart_number',
                    r => 0,
                  },
-		 { h => 'Comma delimited list of ncbi tax ids',
+		 { h => 'Comma delimited list of ncbi tax ids, alternative to taxon_id_list',
 		   t => 'string',
 		   o => 'ncbiTaxId',
 		   r => 0,
 		 },
-                 { h => 'Comma delimited list of taxon_ids to load',
+                 { h => 'Comma delimited list of taxon_ids to load,alternative to taxon_id_list',
 		   t => 'string',
 		   o => 'taxon_id_list',
 		   r => 0,
@@ -100,6 +100,10 @@ sub new {
                  {h => 'dots.externaldatabaserelease.version',
                   t => 'string',
                   o => 'extDbRlsVer'
+                 },
+		 {h => 'version number used in sres.sequenceontology.so_version',
+                  t => 'string',
+                  o => 'soVer'
                  }
                  ];
   
@@ -864,11 +868,10 @@ sub setTableCaches {
   my $taxon_id_list = $M->getCla()->{taxon_id_list}; 
 
   if (! $taxon_id_list) {
-    my @ncbiTaxId = $M->getCla()->{ncbiTaxId};
+    my @ncbiTaxId = split(/,/,$M->getCla()->{ncbiTaxId});
     die "Supply taxon_id_list or ncbiTaxId list\n" unless @ncbiTaxId >= 1;
     my $dbh = $M->getQueryHandle();
     my $qTaxon = "select taxon_id from sres.taxon  where ncbi_tax_id in (?)";
-    print STDERR "running query: $qTaxon\n";
     my $st = $dbh->prepare($qTaxon);
     my @taxon_id_array;
     foreach my $taxId (@ncbiTaxId) {
@@ -900,25 +903,43 @@ Populates the attributes for a new DoTS.Library entry from dbEST.
 
 sub newLibrary {
   my ($M,$e,$l) = @_;
-  my $dbest_lib = $M->sql_get_as_hash_refs_lc("select * from dbest.library\@$M->{dblink} where id_lib = $e->{id_lib}")->[0];
-  my $atthash = {'id_lib' => 'dbest_id',
-                 'name' => 'dbest_name',
-                 'organism' => 'dbest_organism',
-                 'strain' => 'strain',
-                 'cultivar' => 'cultivar',
-                 'sex' => 'sex',
-                 'organ' => 'dbest_organ',
-                 'tissue_type' => 'tissue_type',
-                 'cell_type' => 'cell_type',
-                 'cell_line' => 'cell_line',
-                 'dev_stage' => 'stage',
-                 'lab_host' => 'host',
-                 'vector' => 'vector',
-                 'v_type' => 'vector_type',
-                 're_1' => 're_1',
-                 're_2' => 're_2',
-                 'description' => 'comment_string'
-                };
+  my $dbest_lib = $M->sql_get_as_hash_refs_lc("select id_lib,name,organism,strain,cultivar,sex,organ,tissue_type,cell_type,cell_line,dev_stage,lab_host,vector,v_type,re_1,re_2 from dbest.library\@$M->{dblink} where id_lib = $e->{id_lib}")->[0];
+   my $atthash = {'id_lib' => 'dbest_id',
+                  'name' => 'dbest_name',
+                  'organism' => 'dbest_organism',
+                  'strain' => 'strain',
+                  'cultivar' => 'cultivar',
+                  'sex' => 'sex',
+                  'organ' => 'dbest_organ',
+                  'tissue_type' => 'tissue_type',
+                  'cell_type' => 'cell_type',
+                  'cell_line' => 'cell_line',
+                  'dev_stage' => 'stage',
+                  'lab_host' => 'host',
+                  'vector' => 'vector',
+                  'v_type' => 'vector_type',
+                  're_1' => 're_1',
+                  're_2' => 're_2',
+                 };
+
+#  my $atthash = {'id_lib' => 'dbest_id',                 original list, abreviated for use with dblink
+#                  'name' => 'dbest_name',
+#                  'organism' => 'dbest_organism',
+#                  'strain' => 'strain',
+#                  'cultivar' => 'cultivar',
+#                  'sex' => 'sex',
+#                  'organ' => 'dbest_organ',
+#                  'tissue_type' => 'tissue_type',
+#                  'cell_type' => 'cell_type',
+#                  'cell_line' => 'cell_line',
+#                  'dev_stage' => 'stage',
+#                  'lab_host' => 'host',
+#                  'vector' => 'vector',
+#                  'v_type' => 'vector_type',
+#                  're_1' => 're_1',
+#                  're_2' => 're_2',
+#                  'description' => 'comment_string'
+#                 };
 
   ##truncate tissue_type to fit 
 
@@ -948,6 +969,7 @@ sub newLibrary {
   } else {
     $l->set('sex', '?');
   }
+
 
   ## Set the library's taxon
   if ($M->{taxon}->{$dbest_lib->{organism}}) {
@@ -1057,14 +1079,15 @@ sub checkExtNASeq {
   my ($M,$e,$seq) = @_;
 
   my $name = "EST";
-  my $sequenceType = GUS::Model::DoTS::SequenceType->new({"name" => $name});
-  $sequenceType->retrieveFromDB() || die "Unable to obtain sequence_type_id from dots.sequencetype with name = EST";
-  my $sequence_type_id= $sequenceType->getId();
+  my $soVer = $M->getArg('soVer');
+  my $sequenceOntology = GUS::Model::SRes::SequenceOntology->new({"term_name" => $name, "so_version" => $soVer});
+  $sequenceOntology->retrieveFromDB() || die "Unable to obtain sequence_ontology_id from sres.sequenceontology with term_name = EST";
+  my $sequence_ontology_id= $sequenceOntology->getId();
   
   my %seq_vals = ( 'taxon_id' => $M->{libs}->{$e->{id_lib}}->{taxon},
                    'sequence' => $e->{sequence},
                    'length' => length $e->{sequence},
-                   'sequence_type_id' =>  $sequence_type_id,
+                   'sequence_ontology_id' =>  $sequence_ontology_id,
                    'a_count' => (scalar($e->{sequence} =~ s/A/A/g)) || 0,
                    't_count' => (scalar($e->{sequence} =~ s/T/T/g)) || 0,
                    'c_count' => (scalar($e->{sequence} =~ s/C/C/g)) || 0,
