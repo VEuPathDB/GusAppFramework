@@ -45,6 +45,11 @@ sub new {
 
   $self->checkArgs($plugin);
 
+  # in case any Arg values are changed by the arg's check method which
+  # is a hack used in ControlledVocabArg
+  foreach my $arg (@{$self->{argsList}}) {
+    $self->{argsValueHash}->{$arg->getName()} = $arg->getValue();
+  }
   return ($self, 0);
 }
 
