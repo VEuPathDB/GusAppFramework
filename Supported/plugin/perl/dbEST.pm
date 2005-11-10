@@ -74,9 +74,9 @@ sub new {
                    o => 'restart_number',
                    r => 0,
                  },
-		 { h => 'Comma delimited list of scientific names to load',
+		 { h => 'Comma delimited list of ncbi tax ids',
 		   t => 'string',
-		   o => 'taxon_name_list',
+		   o => 'ncbiTaxId',
 		   r => 0,
 		 },
                  { h => 'Comma delimited list of taxon_ids to load',
@@ -864,17 +864,19 @@ sub setTableCaches {
   my $taxon_id_list = $M->getCla()->{taxon_id_list}; 
 
   if (! $taxon_id_list) {
-    my $taxon_name_list = $M->getCla()->{taxon_name_list};
-    die "Supply taxon_id_list or taxon_name_list\n" unless $taxon_name_list;
+    my @ncbiTaxId = $M->getCla()->{ncbiTaxId};
+    die "Supply taxon_id_list or ncbiTaxId list\n" unless @ncbiTaxId >= 1;
     my $dbh = $M->getQueryHandle();
-    my $qTaxonName = "select taxon_id from sres.taxonname  where name in ($taxon_name_list) and name_class = 'scientific name'";
-    print STDERR "running query: $qTaxonName\n";
-    my $st = $dbh->prepareAndExecute($qTaxonName);
+    my $qTaxon = "select taxon_id from sres.taxon  where ncbi_tax_id in (?)";
+    print STDERR "running query: $qTaxon\n";
+    my $st = $dbh->prepare($qTaxon);
     my @taxon_id_array;
-    while ( my $taxon = $st->fetchrow()) {
+    foreach my $taxId (@ncbiTaxId) {
+      $st->execute($taxId);
+      my ($taxon) = $st->fetchrow();
       push (@taxon_id_array,$taxon);
+      $st->finish();
     }
-    $st->finish();
     $taxon_id_list = join(',', @taxon_id_array);
   }
 
