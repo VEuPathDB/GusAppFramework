@@ -1,8 +1,8 @@
 package GUS::Supported::Plugin::dbEST;
 #package GUS::Common::Plugin::dbEST;
 
-
 @ISA = qw( GUS::PluginMgr::Plugin );
+use GUS::PluginMgr::Plugin;
 
 use strict;
 #my $DBEST_EXTDB_ID = 22; # global variable
@@ -174,7 +174,7 @@ sub run {
         my $l = $fh->getline();
         my ($eid) = split /\t/, $l;
 	next unless ($eid);
-        my $ests = $M->sql_get_as_hash_refs_lc("select * from dbest.est$M->{dblink} where id_est = $eid");
+        my $ests = $M->sql_get_as_hash_refs_lc("select * from dbest.est@$M->{dblink} where id_est = $eid");
         foreach my $est ( @{$ests}) {
           $e->{$est->{id_est}}->{e} = $est;
         }
@@ -185,7 +185,7 @@ sub run {
   }else {
         # get the absolute max id_est
     my $dbh = $M->getQueryHandle();
-    my $st = $dbh->prepareAndExecute("select max(id_est) from dbest.est$M->{dblink}");
+    my $st = $dbh->prepareAndExecute("select max(id_est) from dbest.est@$M->{dblink}");
     my ($abs_max) = $st->fetchrow_array();
     # get the min and max ids
     
@@ -202,7 +202,7 @@ sub run {
 
       my $ests;
       
-      $ests = $M->sql_get_as_hash_refs_lc("select est.* from dbest.est$M->{dblink} est, dbest.library$M->{dblink} library where est.id_est >= $min and est.id_est < $max and library.id_lib = est.id_lib and library.organism in ($nameStrings)");
+      $ests = $M->sql_get_as_hash_refs_lc("select est.* from dbest.est@$M->{dblink} est, dbest.library@$M->{dblink} library where est.id_est >= $min and est.id_est < $max and library.id_lib = est.id_lib and library.organism in ($nameStrings)");
 
      $M->logAlert("Processing id_est from $min to $max\n"); 
       my ($e);
@@ -221,7 +221,7 @@ sub run {
   # work that was done.
   ############################################################
   my $dbh = $M->getQueryHandle();
-  my $st1 = $dbh->prepareAndExecute("select count(est.id_est) from dbest.est$M->{dblink} est, dbest.library$M->{dblink} library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
+  my $st1 = $dbh->prepareAndExecute("select count(est.id_est) from dbest.est@$M->{dblink} est, dbest.library@$M->{dblink} library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
   my $numDbEST = $st1->fetchrow_array();
 
   # change to get taxon_id_list from cache or something
@@ -294,7 +294,7 @@ sub processEntries {
   # get the sequences only for most current entry
   my $ids = join "," , sort {$a <=> $b} keys %$e;
 
-  my $A = $M->sql_get_as_hash_refs_lc("select * from dbest.SEQUENCE$M->{dblink} where id_est in ($ids) order by id_est, local_id");
+  my $A = $M->sql_get_as_hash_refs_lc("select * from dbest.SEQUENCE@$M->{dblink} where id_est in ($ids) order by id_est, local_id");
   if ($A) {
     foreach my $s (@{$A}){
 	$e->{$s->{id_est}}->{e}->{sequence} .= $s->{data};
@@ -303,7 +303,7 @@ sub processEntries {
   
   # get the comments, if any
   $ids = join "," , keys %$e;
-  $A = $M->sql_get_as_hash_refs_lc("select * from dbest.CMNT$M->{dblink} where id_est in ($ids) order by id_est, local_id");
+  $A = $M->sql_get_as_hash_refs_lc("select * from dbest.CMNT@$M->{dblink} where id_est in ($ids) order by id_est, local_id");
   if ($A) {
     foreach my $c (@{$A}){
       $e->{$c->{id_est}}->{e}->{comment} .= $c->{data};
@@ -725,7 +725,7 @@ sub getMostRecentEntry {
   my ($M,$e,$R) = @_;
   $R->{new} = $e;
 
-  my $re = $M->sql_get_as_hash_refs_lc("select * from dbest.EST$M->{dblink} where id_est = $e->{replaced_by}")->[0];
+  my $re = $M->sql_get_as_hash_refs_lc("select * from dbest.est@$M->{dblink} where id_est = $e->{replaced_by}")->[0];
   # angel:2/20/2003: Found that sometimes replaced_by points to non-existent id_est
   # Account for this by inserting the most recent & *valid* entry and
   # log the id_est of the entry that eventually needs an update
@@ -897,7 +897,7 @@ Populates the attributes for a new DoTS.Library entry from dbEST.
 
 sub newLibrary {
   my ($M,$e,$l) = @_;
-  my $dbest_lib = $M->sql_get_as_hash_refs_lc("select * from dbest.library$M->{dblink} where id_lib = $e->{id_lib}")->[0];
+  my $dbest_lib = $M->sql_get_as_hash_refs_lc("select * from dbest.library@$M->{dblink} where id_lib = $e->{id_lib}")->[0];
   my $atthash = {'id_lib' => 'dbest_id',
                  'name' => 'dbest_name',
                  'organism' => 'dbest_organism',
@@ -1016,7 +1016,7 @@ sub newContact {
   my ($M,$e,$c)  = @_;
   
   my $q = qq[select * 
-             from dbest.contact$M->{dblink} 
+             from dbest.contact@$M->{dblink} 
              where id_contact = $e->{id_contact}];
   my $C = $M->sql_get_as_hash_refs_lc($q)->[0];
   $C->{lab} = "$C->{lab}; $C->{institution}";
