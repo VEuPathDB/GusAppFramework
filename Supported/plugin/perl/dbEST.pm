@@ -106,7 +106,7 @@ sub new {
   ## Initialize the plugin
   
   $M->initialize({requiredDbVersion => 3.5,
-                  cvsRevision => ' $Revision: 1.11 $ ', # cvs fills this in
+                  cvsRevision => ' $Revision$ ', # cvs fills this in
                   cvsTag => ' $Name:  $ ', # cvs fills this in!
                   name => ref($M),
                   revisionNotes => 'GUS 3.5 compliant',
@@ -182,6 +182,7 @@ sub run {
       $count += $M->processEntries($e);
       $M->undefPointerCache();
     }
+
   }else {
         # get the absolute max id_est
     my $dbh = $M->getQueryHandle();
