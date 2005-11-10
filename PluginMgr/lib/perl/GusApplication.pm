@@ -17,6 +17,8 @@ use GUS::Model::Core::AlgorithmParamKey;
 use GUS::Model::Core::AlgorithmParam;
 use GUS::Model::GusRow;
 
+use Data::Dumper qw(Dumper);
+
 use constant FLAG_DEBUG => 0;
 
 # ----------------------------------------------------------------------
@@ -1061,7 +1063,14 @@ sub openInvocation {
             # get a list of its values (list or not originally)
             my $typed_value_key = $type.'_value';
             my $param_value     = $cla->{$param_name};
-            my @values = ref $param_value ? @$param_value : ($param_value);
+            my @values;
+	    if (ref($param_value) eq "ARRAY") {
+	      @values = @$param_value;
+	    } elsif (ref($param_value)) {
+	      @values = Dumper($param_value);
+	    } else {
+	      @values = ($param_value);
+	    }
 
             # process each value for param in (posible) list.  Note that we
             # store value in string_value as well as its native type.
