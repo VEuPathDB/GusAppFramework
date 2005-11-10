@@ -53,31 +53,41 @@ sub checkValue {
   my $queryHandle = $plugin->getQueryHandle();
   my $sth = $queryHandle->prepareAndExecute($sql);
 
-  my %vocabFromDb;
+  my %gusTerm2PrimaryKey;
   while (my ($primaryKey, $term) = $sth->fetchrow_array()) {
-    $vocabFromDb{$term} = $primaryKey;
+    $gusTerm2PrimaryKey{$term} = $primaryKey;
   }
 
-  # validate the GUS values in the file against the db
+  my %userTerm2PrimaryKey;
+  my %userTerm2GusTerm;
+  my %userTerm2GusTermAndPrimaryKey;
+  my @notReallyGusTerms;
+
   open(MAPPING_FILE, $file) || return "can't open file '$value'";
-  my %controlledVocab;
-  my @termsNotInDb;
   while (<MAPPING_FILE>) {
-    if (!/^(\w+)\t(\w+)\s*$/) { die "Controlled vocab mapping file '$file' is not in the correct two column tab-delimited format";}
-    my $inputTerm = $1;
-    my $gusTerm = $2;
-    (defined $vocabFromDb{$gusTerm}) || push(@termsNotInDb, "'$gusTerm'");
-    
-    $controlledVocab{$inputTerm} = [$gusTerm, $vocabFromDb{$gusTerm}];
+    if (!/^(\w+)\t(\w+)\s*$/) { die "Controlled vocab mapping file '$file' is not in the correct two column tab-delimited format: '$_'";}
+      my $userTerm = $1;
+      my $inputGusTerm = $2;
+      if (!$gusTerm2PrimaryKey{$inputGusTerm}) {
+	push(@notReallyGusTerms, $inputGusTerm);
+      } else {
+	if ($userTerm2GusTerm{$userTerm}
+	    && $userTerm2GusTerm{$userTerm} ne $inputGusTerm) {
+	  die "CV mapping file '$file' has inconsistent mappings forinput term  '$userTerm'"
+	}
+	$userTerm2GusTerm{$userTerm} = $inputGusTerm;
+	$userTerm2GusTermAndPrimaryKey{$userTerm} =
+	  [$inputGusTerm, $gusTerm2PrimaryKey{$inputGusTerm}];
+      }
   }
 
   my $problem = undef;
-  if (scalar @termsNotInDb > 0) {
-    $problem = "The following terms found in file '$file' are not in GUS table $self->{table}: " . join(" ", @termsNotInDb);
+  if (scalar @notReallyGusTerms > 0) {
+    $problem = "The following terms found in file '$file' are not in GUS table $self->{table}: " . join(" ", @notReallyGusTerms);
   }
 
   # this is a bit nasty:  changing the value from a file name to a hash.
-  $self->{value} = \%controlledVocab;
+  $self->{value} = \%userTerm2GusTermAndPrimaryKey;
   return $problem;
 }
 
