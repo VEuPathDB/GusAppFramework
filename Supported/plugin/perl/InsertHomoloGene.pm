@@ -105,7 +105,7 @@ my $argsDeclaration =
         }),
 
  booleanArg({name => 'restart',
-             descr => 'set this flag to 1 if you want to Restart the plugin; set the entrez database name and version to be the same as the ones for the run that failed',
+             descr => 'set this flag to 1 if you want to Restart the plugin; set the entrez database name and version, and the release date to be the same as the ones for the run that failed',
              reqd => 0,
              default => 0
             })
