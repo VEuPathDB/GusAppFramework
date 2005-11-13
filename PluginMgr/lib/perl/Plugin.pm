@@ -2,7 +2,7 @@ package GUS::PluginMgr::Plugin;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(stringArg booleanArg fileArg integerArg floatArg globArg tableNameArg enumArg controlledVocabMapArg);
+@EXPORT = qw(stringArg booleanArg fileArg integerArg floatArg globArg tableNameArg enumArg);
 
 use strict 'vars';
 
@@ -21,7 +21,6 @@ use GUS::PluginMgr::Args::GlobArg;
 use GUS::PluginMgr::Args::IntegerArg;
 use GUS::PluginMgr::Args::TableNameArg;
 use GUS::PluginMgr::Args::FloatArg;
-use GUS::PluginMgr::Args::ControlledVocabArg;
 use GUS::PluginMgr::Args::Arg;
 
 use GUS::Model::Core::DatabaseInfo;
@@ -690,35 +689,6 @@ sub enumArg {
   return GUS::PluginMgr::Args::EnumArg->new($paramsHashRef);
 }
 
-=item C<controlledVocabMapArg($argDescriptorHashRef)>
-
-Construct a controlled vocab map argument declaration.  The value for this argument is a file containing a mapping from an input set of terms to a set of terms in a GUS controlled vocabulary table (such as SRes.ReviewStatus).  The value returned to the plugin by getArg() is that vocabulary in hash form, with the key being the input term and the value being the GUS term.  If any GUS term in the file is not found in the database table, an error is thrown.  This is used for application or site specific CVs, not for stable standards.  It is intended to provide a flexible way for a plugin to use a CV developed in-house.
-
-B<Parameters>
-
-- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also
-
-over 4
-
-=item * table (a table name in SRes.ReviewStatus format)
-
-The table in GUS in which this CV is stored
-
-=item * primaryKeyColumn (string)
-
-The column in that table that holds its primary key
-
-=item * termColumn (string)
-
-The column in that table that holds the CV term name
-
-B<Return type:> C<GUS::PluginMgr::Args::ControlledVocabArg>
-
-=cut
-sub controlledVocabMapArg {
-  my ($paramsHashRef) = @_;
-  return GUS::PluginMgr::Args::ControlledVocabArg->new($paramsHashRef);
-}
 
 # ----------------------------------------------------------------------
 
