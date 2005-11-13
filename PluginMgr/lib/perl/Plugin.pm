@@ -1564,7 +1564,7 @@ sub sql_translate {
   }
 
   # RETURN
-  $Self->{__gus__plugin_sql_xlate_cache}->{$T}->{$Vc}->{$V}
+  $Self->{__gus__plugin_sql_xlate_cache}->{$T}->{$Vc}->{$V};
 }
 
 # ----------------------------------------------------------------------
@@ -1608,7 +1608,13 @@ sub getRevisionNotes       { $_[0]->{revisionNotes} }
 Replaced by getArg()
 
 =cut
-sub getArgs        { $_[0]->{__gus__plugin__cla} }
+sub getArgs { 
+  my ($self, $nono) = @_;
+
+  $self->error("getArgs() is being called with an argument.  Use getArg() instead") if $nono;
+
+  return$self->{__gus__plugin__cla};
+}
 
 =item C<getSelfInv()>
 
