@@ -334,7 +334,7 @@ sub _loadTerms {
       my $uri;
 
       #Make the uri
-      if($term =~ /^http:/ || $term eq 'string' || $term eq 'Thing') {
+      if($term =~ /^http:/ || $term =~ /^ftp:/ || $term eq 'string' || $term eq 'Thing') {
 	$uri = '';
       }
       else {
@@ -345,7 +345,7 @@ sub _loadTerms {
       my $def = $termsHashRef->{$term};
       $def =~ s/\n//g;
 
-      print STDERR "Inserting:  SourceID #$term\n";
+      print STDERR "Inserting Term:  SourceID #$term\n";
 
       my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
 	new({ ontology_term_type_id => $termTypeId,
@@ -693,7 +693,7 @@ sub _loadRelationship {
 
   if(my ($relTypeId) = $sh->fetchrow_array()) {
 
-    print STDERR  "Inserting:  $subject\t$predicate\t$object\t$relType";
+    print STDERR  "Inserting Relationship:  $subject\n";
 
     my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->
       new({ subject_term_id => $ontologyIds->{$subject},
