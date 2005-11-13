@@ -118,8 +118,8 @@ sub run {
   my $numTerms = $self->_makeTerms($root);
   #$self->_makeRelationships($root);
 
-  #print "Loaded $numTerms Terms into SRes::OntologyTerm and
-  #       $numRelationships into SRes::OntologyRelationship\n";
+  print "Loaded $numTerms Terms into SRes::OntologyTerm and
+         $numRelationships into SRes::OntologyRelationship\n";
 
 }
 
