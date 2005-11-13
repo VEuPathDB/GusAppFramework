@@ -116,6 +116,7 @@ sub run {
   my $root = $tree->getDocumentElement;
 
   my $numTerms = $self->_makeTerms($root);
+
   $self->_makeRelationships($root);
 
   print "Loaded $numTerms Terms into SRes::OntologyTerm and
@@ -149,6 +150,14 @@ sub _makeTerms {
 
   my (%terms, $numTermsLoaded);
 
+  my $type = 'Datatype';
+  my $string = {string => ''};
+  $numTermsLoaded = $self->_loadTerms($type, $string) + $numTermsLoaded;
+
+  $type = 'Root';
+  my $thing = {Thing => ''};
+  $numTermsLoaded = $self->_loadTerms($type, $thing) + $numTermsLoaded;
+
   my $termTypes = ['Class', 'ObjectProperty', 'DatatypeProperty'];
 
   foreach my $type (@$termTypes) {
@@ -156,7 +165,7 @@ sub _makeTerms {
     $numTermsLoaded = $self->_loadTerms($type, $terms) + $numTermsLoaded;
   }
 
-  my $type = 'UniqueProperty';
+  $type = 'UniqueProperty';
   my $upTerms = $self->_getUniquePropertyTerms($root);
   $numTermsLoaded = $self->_loadTerms($type, $upTerms) + $numTermsLoaded;
 
@@ -322,8 +331,17 @@ sub _loadTerms {
 
   if(my ($termTypeId) = $ sh->fetchrow_array()) {
     foreach my $term (keys %$termsHashRef) {
-      my $uri = $uriArg.'#'.$term;
+      my $uri;
 
+      #Make the uri
+      if($term =~ /^http:/ || $term eq 'string' || $term eq 'Thing') {
+	$uri = '';
+      }
+      else {
+	$uri = $uriArg.'#'.$term;
+      }
+
+      #Clean out the newline chars from def
       my $def = $termsHashRef->{$term};
       $def =~ s/\n//g;
 
@@ -675,7 +693,7 @@ sub _loadRelationship {
 
   if(my ($relTypeId) = $sh->fetchrow_array()) {
 
-    print STDERR  "Inserting:  $subject\n";
+    print STDERR  "Inserting:  $subject\t$predicate\t$object\t$relType";
 
     my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->
       new({ subject_term_id => $ontologyIds->{$subject},
