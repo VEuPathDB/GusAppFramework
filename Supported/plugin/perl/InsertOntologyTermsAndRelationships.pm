@@ -308,7 +308,7 @@ sub _loadTerms {
       my $def = $termsHashRef->{$term};
       $def =~ s/\n//g;
 
-      #print "TermType=$termTypeId\tdbRel=$dbReleaseId\tSourceID=#$term\turi=$uri\tName=$term\tDef=$def\n";
+      print STDERR "Inserting:  SourceID #$term\tURI $uri\n";
 
       my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
 	new({ ontology_term_type_id => $termTypeId,
