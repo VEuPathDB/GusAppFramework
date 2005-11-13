@@ -116,7 +116,7 @@ sub run {
   my $root = $tree->getDocumentElement;
 
   my $numTerms = $self->_makeTerms($root);
-  #$self->_makeRelationships($root);
+  $self->_makeRelationships($root);
 
   print "Loaded $numTerms Terms into SRes::OntologyTerm and
          $numRelationships into SRes::OntologyRelationship\n";
@@ -157,10 +157,10 @@ sub _makeTerms {
   }
 
   my $type = 'UniqueProperty';
-  my $upTerms = $self->_getUniquePropertyTerms($type, $root);
+  my $upTerms = $self->_getUniquePropertyTerms($root);
   $numTermsLoaded = $self->_loadTerms($type, $upTerms) + $numTermsLoaded;
 
-  my $type = 'Instance';
+  $type = 'Instance';
   my $attrTerms = $self->_getTermsFromDescription($root);
   $numTermsLoaded = $self->_loadTerms($type, $attrTerms) + $numTermsLoaded;
 
@@ -168,20 +168,6 @@ sub _makeTerms {
 }
 
 # ----------------------------------------------------------------------
-
-sub _getUniquePropertyTerms {
-  my ($self, $type, $root) = @_;
-
-  my %terms;
-
-  foreach my $up ($root->findnodes('daml:UniqueProperty')) {
-    my $term = $up->getAttribute('about');
-    $term = $self->_nameFromHtml($term);
-
-    $terms{$term} = '';
-  }
-  return(\%terms);
-}
 
 =pod
 
@@ -204,17 +190,50 @@ key=term, value=def
 sub _getTermsFromNodes {
   my ($self, $type, $root) = @_;
 
-  my $element = "daml:".$type;
+  $type = "daml:".$type;
 
   my %rv;
 
-  foreach my $node ($root->findnodes($element)) {
+  foreach my $node ($root->findnodes($type)) {
     my $term = $node->findvalue('rdfs:label');
     my $def = $node->findvalue('rdfs:comment');
 
     $rv{$term} = $def if($term);
   }
   return(\%rv);
+}
+
+# ----------------------------------------------------------------------
+
+=pod
+
+=item C<_getUniquePropertyTerms>
+
+Unique Property terms have no Def.  Extract from Nodes...
+
+B<Parameters:>
+
+$type(string): Node Name ("daml:" Will be appended)
+$root(XML::LibXML::Element): The root node of the Document. 
+
+B<Return type:> C<hashRef> 
+
+key=term, value=def
+
+=cut
+
+sub _getUniquePropertyTerms {
+  my ($self, $root) = @_;
+
+  my %terms;
+
+  foreach my $up ($root->findnodes('daml:UniqueProperty')) {
+    my $term = $up->getAttribute('about');
+    $term = $self->_nameFromHtml($term);
+
+    $terms{$term} = '';
+  }
+  return(\%terms);
 }
 
 # ----------------------------------------------------------------------
@@ -308,7 +327,7 @@ sub _loadTerms {
       my $def = $termsHashRef->{$term};
       $def =~ s/\n//g;
 
-      print STDERR "Inserting:  SourceID #$term\tURI $uri\n";
+      print STDERR "Inserting:  SourceID #$term\n";
 
       my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
 	new({ ontology_term_type_id => $termTypeId,
@@ -348,25 +367,27 @@ B<Return type:> C<?>
 sub _makeRelationships {
   my ($self, $root) = @_;
 
+  my $ontologyIds = $self->_getOntologyTermIds();
+
   foreach my $class ($root->findnodes('daml:Class')) {
     my $className = $class->getAttribute('about');
     $className = $self->_nameFromHtml($className);
 
-    $self->_doClassData($class, $className);
+    $self->_doClassData($class, $className, $ontologyIds);
   }
 
   foreach my $objectProperty ($root->findnodes('daml:ObjectProperty')) {
     my $opName = $objectProperty->getAttribute('about');
     $opName = $self->_nameFromHtml($opName);
 
-    $self->_doObjectPropertyData($objectProperty, $opName);
+    $self->_doObjectPropertyData($objectProperty, $opName, $ontologyIds);
   }
 
   foreach my $description ($root->findnodes('rdf:Description')) {
     my $descName = $description->getAttribute('about');
     $descName = $self->_nameFromHtml($descName);
 
-    $self->_doInstanceData($description, $descName);
+    $self->_doInstanceData($description, $descName, $ontologyIds);
   }
 }
 
@@ -391,27 +412,27 @@ has Child Nodes
 =cut
 
 sub _doClassData {
-  my ($self, $node, $className) = @_;
+  my ($self, $node, $className, $ontologyIds) = @_;
 
   if(!$node->hasChildNodes()) {
     return(0);
   }
 
   if($node->nodeName eq 'rdfs:subClassOf') {
-    $self->_parseAndLoadSubClasses($node, $className);
+    $self->_parseAndLoadSubClasses($node, $className, $ontologyIds);
   }
 
   if($node->nodeName eq 'daml:Restriction') {
-    $self->_parseAndLoadHasClasses($node, $className);
+    $self->_parseAndLoadHasClasses($node, $className, $ontologyIds);
   }
 
   if($node->nodeName eq 'daml:first' || $node->nodeName eq 'daml:rest') {
-    $self->_parseAndLoadThings($node, $className);
+    $self->_parseAndLoadThings($node, $className, $ontologyIds);
   }
 
   # Recurse throught the nodes
   foreach my $child ($node->childNodes) {
-    $self->_doClassData($child, $className);
+    $self->_doClassData($child, $className, $ontologyIds);
   }
   return(1);
 }
@@ -436,14 +457,17 @@ B<Return type:> C<void>
 
 
 sub _parseAndLoadSubClasses {
-  my ($self, $node, $className) = @_;
+  my ($self, $node, $className, $ontologyIds) = @_;
+
+  my $relationshipType = 'subClassOf';
 
   my @subClasses =  $node->findnodes('daml:Class');
 
   foreach(@subClasses) {
     my $superClass = $_->getAttribute('about');
     $superClass = $self->_nameFromHtml($superClass);
-    print "CLASS=$className\t\t$superClass\tsubClassOf\n";
+
+    $self->_loadRelationship($className, '', $superClass, $relationshipType, $ontologyIds);
   }
 }
 
@@ -465,7 +489,9 @@ B<Return type:> C<void>
 =cut
 
 sub _parseAndLoadHasClasses {
-  my ($self, $node, $className) = @_;
+  my ($self, $node, $className, $ontologyIds) = @_;
+
+  my $relationshipType;
 
   my $onProperty =  $node->findnodes('daml:onProperty');
   my $hasClass =  $node->findnodes('daml:hasClass');
@@ -479,13 +505,20 @@ sub _parseAndLoadHasClasses {
     $property = $self->_nameFromHtml($property);
 
     if(my $resource = $hasClass->[$i]->getAttribute('resource')) {
-      print "CLASS=$className\t$property\tstring\thasDatatype\n";
+      $relationshipType = 'hasDatatype';
+
+      $self->_loadRelationship($className, $property, 'string', $relationshipType, $ontologyIds);
     }
     else {
+      $relationshipType = 'hasClass';
+
       foreach($hasClass->[$i]->findnodes('daml:Class')) {
 	my $filler = $_->getAttribute('about');
 	$filler = $self->_nameFromHtml($filler);
-	print "CLASS=$className\t$property\t$filler\tsubClassOf\n";
+
+	if($filler) {
+	  $self->_loadRelationship($className, $property, $filler, $relationshipType, $ontologyIds);
+	}
       }
     }
   }
@@ -509,13 +542,17 @@ B<Return type:> C<void>
 =cut
 
 sub _parseAndLoadThings {
-  my ($self, $node, $className) = @_;
+  my ($self, $node, $className, $ontologyIds) = @_;
 
-  my $resource;
+  my @resources;
+
+  my $relationshipType = 'oneOf';
 
   my @things = $node->childNodes();
   foreach(@things) {
     if($_->hasAttributes()) {
+      my $resource;
+
       my $filler = $_->getAttribute('about');
       $filler = $self->_nameFromHtml($filler);
 
@@ -525,10 +562,14 @@ sub _parseAndLoadThings {
       }
 
       foreach($parent->findnodes('daml:onProperty')) {
-	my $resource = $_->getAttribute('resource');
-	$resource = $self->_nameFromHtml($resource);
+	push(@resources, $_->getAttribute('resource'));
+	if(scalar @resources > 1) {
+	  die "Multiple onProps for $className";
+	}
+
+	$resources[0] = $self->_nameFromHtml($resources[0]);
       }
-      print "$className\t$filler\t$resource\toneOf\n";
+      $self->_loadRelationship($className, $resources[0], $filler, $relationshipType, $ontologyIds);
     }
   }
 }
@@ -551,7 +592,9 @@ B<Return type:> C<void>
 =cut
 
 sub _doObjectPropertyData {
-  my ($self, $objectProperty, $opName) = @_;
+  my ($self, $objectProperty, $opName, $ontologyIds) = @_;
+
+  my $relationshipType = 'domain';
 
   my $tmp = $objectProperty->getAttribute('about');
   my ($junk, $label) = split('#', $tmp);
@@ -560,7 +603,8 @@ sub _doObjectPropertyData {
     foreach my $class ($node->findnodes('daml:Class')) {
       my $domain = $class->getAttribute('about');
       $domain = $self->_nameFromHtml($domain);
-      print "$opName\t$domain\t\tdomain\n";
+
+      $self->_loadRelationship($opName, '', $domain, $relationshipType, $ontologyIds);
     }
   }
 }
@@ -571,7 +615,7 @@ sub _doObjectPropertyData {
 
 =item C<_doInstanceData>
 
-Parse Relationship of type 'instanceOf' 
+Parse Relationship of type 'instanceOf' or 'hasInstance'
 
 B<Parameters:>
 
@@ -583,16 +627,20 @@ B<Return type:> C<void>
 =cut
 
 sub _doInstanceData {
-  my ($self, $description, $descName) = @_;
+  my ($self, $description, $descName, $ontologyIds) = @_;
+
+  my $relationshipType = 'instanceOf';
 
   foreach my $node ($description->findnodes('rdf:type')) {
     foreach my $class ($node->findnodes('daml:Class')) {
       my $inst = $class->getAttribute('about');
       $inst = $self->_nameFromHtml($inst);
 
-      print "$descName\t$inst\t\tinstanceOf\n";
+      $self->_loadRelationship($descName, '', $inst, $relationshipType, $ontologyIds);
     }
   }
+
+  $relationshipType = 'hasInstance';
 
   foreach my $node ($description->childNodes) {
     if($node->nodeName =~ /^ns/ && $node->hasAttributes()) {
@@ -600,15 +648,14 @@ sub _doInstanceData {
       $resource = $self->_nameFromHtml($resource);
 
       my $prop = $self->_nameFromHtml($node->nodeName, ":");
-      print "$descName\t$prop\t$resource\thasInstance\n";
+      $self->_loadRelationship($descName, $prop, $resource, $relationshipType, $ontologyIds);
     }
     elsif($node->nodeName =~ /^ns/ && !$node->hasAttributes())  {
       foreach my $humRead ($node->findnodes('xsd:string')) {
 	my $prop = $self->_nameFromHtml($humRead->parentNode->nodeName, ":");
 
 	my $inst = $humRead->getAttribute('value');
-	print "$descName\t$prop\t$inst\thasInstance\n";
-
+	$self->_loadRelationship($descName, $prop, $inst, $relationshipType, $ontologyIds);
       }
     }
     else {}
@@ -619,9 +666,7 @@ sub _doInstanceData {
 
 
 sub _loadRelationship {
-  my ($self, $subject, $predicate, $object, $relType) = @_;
-
-  my $ontologyIds = $self->_getOntologyTermIds();
+  my ($self, $subject, $predicate, $object, $relType, $ontologyIds) = @_;
 
   my $sh = $self->getQueryHandle->prepare("SELECT ontology_relationship_type_id 
                                             FROM SRes.OntologyRelationshiptype
@@ -630,6 +675,8 @@ sub _loadRelationship {
 
   if(my ($relTypeId) = $sh->fetchrow_array()) {
 
+    print STDERR  "Inserting:  $subject\n";
+
     my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->
       new({ subject_term_id => $ontologyIds->{$subject},
 	    predicate_term_id => $ontologyIds->{$predicate},
@@ -637,6 +684,7 @@ sub _loadRelationship {
 	    ontology_relationship_type_id => $relTypeId,
 	  });
 
+    $ontologyRelationship->submit();
     $numRelationships++; #global var
   }
   else {
@@ -664,7 +712,7 @@ sub _getOntologyTermIds {
 
   while(my ($id, $name) = $sh->fetchrow_array ())  {
     $rowcount++;
-    rv{$name}=$id;
+    $rv{$name} = $id;
   }
   $sh->finish ();
 
@@ -705,28 +753,5 @@ sub _nameFromHtml {
 
   return($ar[scalar(@ar) - 1]);
 }
-
-
-=pod
-
-=head2 Subroutines
-
-=over 4
-
-=item C< >
-
-Query for sequence glob based on dbRelease Id and a source_id (accession).
-
-B<Parameters:>
-
-- ( ): 
-- ( ): 
-
-B<Return type:> C< >
-
-=cut
-
-
-
 
 1;
