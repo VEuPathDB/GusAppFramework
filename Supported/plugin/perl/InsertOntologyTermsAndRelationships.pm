@@ -331,26 +331,18 @@ sub _loadTerms {
 
   if(my ($termTypeId) = $ sh->fetchrow_array()) {
     foreach my $term (keys %$termsHashRef) {
-      my $uri;
-
-      #Make the uri
-      if($term =~ /^http:/ || $term =~ /^ftp:/ || $term eq 'string' || $term eq 'Thing') {
-	$uri = '';
-      }
-      else {
-	$uri = $uriArg.'#'.$term;
-      }
+      my ($source, $uri) = $self->_getSourceAndUri($term, $uriArg);
 
       #Clean out the newline chars from def
       my $def = $termsHashRef->{$term};
       $def =~ s/\n//g;
 
-      print STDERR "Inserting Term:  SourceID #$term\n";
+      print STDERR "Inserting Term:  SourceID $term\n";
 
       my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
 	new({ ontology_term_type_id => $termTypeId,
 	      external_database_release_id => $dbReleaseId,
-	      source_id => '#'.$term,
+	      source_id => $source,
 	      uri => $uri,
 	      name => $term,
 	      definition => $def,
@@ -364,6 +356,30 @@ sub _loadTerms {
     die "Term of Type $type not Defined: $!";
   }
   return($num);
+}
+
+# ----------------------------------------------------------------------
+
+sub _getSourceAndUri {
+  my ($self, $term, $uriArg) = @_;
+
+  my ($uri, $source);
+
+  if($term =~ /^http:/ || $term =~ /^ftp:/) {
+    $uri = '';
+    $source = $term;
+  }
+  elsif($term eq 'string' || $term eq 'Thing') {
+    $uri = '';
+    $source = '#'.$term;
+  }
+  else {
+    $uri = $uriArg.'#'.$term;
+    $source =  '#'.$term;
+  }
+
+return($source, $uri);
+
 }
 
 # ----------------------------------------------------------------------
