@@ -112,6 +112,18 @@ mat, eg, DoTS::ExternalNaSequence)',
                  constraintFunc=> undef,
                  isList=>0,
            }),
+   stringArg({name  => 'subjectExtDbRlsVer',
+                 descr => 'The version of external database from whence the subject sequence came - needed when using subjectTableSrcIdCol. Not needed if subjects are identified by a GUS primary key.',
+                 reqd  => 0,
+                 constraintFunc=> undef,
+                 isList=>0,
+           }),
+   stringArg({name  => 'subjectExtDbName',
+                 descr => 'The external database name from whence the subject sequence came - needed when using subjectTableSrcIdCol. Not needed if subjects are identified by a GUS primary key.',
+                 reqd  => 0,
+                 constraintFunc=> undef,
+                 isList=>0,
+           }),
    tableNameArg({name  => 'queryTable',
                  descr => 'Queries are taken from this table (schema::table form
 at, eg, DoTS::ExternalNaSequence)',
@@ -121,6 +133,18 @@ at, eg, DoTS::ExternalNaSequence)',
            }),
    stringArg({name  => 'queryTableSrcIdCol',
                  descr => 'The column in the query table that holds the source id of the query sequence.  If this is not set, then the plugin assumes that the id provided in the file for the queryies is a GUS primary key.',
+                 reqd  => 0,
+                 constraintFunc=> undef,
+                 isList=>0,
+           }),
+   stringArg({name  => 'queryExtDbRlsVer',
+                 descr => 'The version of external database from whence the query sequence came - needed when using queryTableSrcIdCol. Not needed if query sequences are identified by a GUS primary key.',
+                 reqd  => 0,
+                 constraintFunc=> undef,
+                 isList=>0,
+           }),
+   stringArg({name  => 'queryExtDbName',
+                 descr => 'The external database name from whence the query sequence came - needed when using queryTableSrcIdCol. Not needed if query sequences are identified by a GUS primary key.',
                  reqd  => 0,
                  constraintFunc=> undef,
                  isList=>0,
@@ -228,7 +252,7 @@ sub new {
   bless($self,$class);
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision$', # cvs fills this in!
+                     cvsRevision => '$Revision$', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
 		     documentation     => $documentation,
@@ -511,11 +535,24 @@ sub insertSubjects {
     $query_id =~ s/\s//g;
     
     if ($self->getArg('queryTableSrcIdCol')) {
+
+      ($self->getArg('queryExtDbName') && 
+       $self->getArg('queryExtDbRlsVer')) or 
+       $self->userError("You must provide  --queryExtDbName and --queryExtDbRlsVer values when using --subjectTableSrcIdCol.");
+        
       # must be the sequence entry identifier, get the GUS PK then
       my $fullQuerNm = "GUS::Model::" . $queryTable;
       eval("require $fullQuerNm");
+      
+      
+      my $dbRlsId = $self->getExtDbRlsId($self->getArg('queryExtDbName'),
+                    $self->getArg('queryExtDbRlsVer'))
+                    or die "Couldn't retrieve external database id! Check values for --queryExtDbName and --queryExtDbRlsVer.\n";
+
       my $queryobj = $fullQuerNm->
-	new ({$self->getArg('queryTableSrcIdCol') => $query_id});
+      new ({ external_database_release_id => $dbRlsId,
+             $self->getArg('queryTableSrcIdCol') => $query_id });
+
       my $is_in = $queryobj->retrieveFromDB;
       
       if (! $is_in) {
@@ -536,11 +573,23 @@ sub insertSubjects {
     $subject_id =~ s/\s//g;
     
     if ($self->getArg('subjectTableSrcIdCol')) {
+      
+      ($self->getArg('subjectExtDbName') && 
+       $self->getArg('subjectExtDbRlsVer')) or 
+       $self->userError("You must provide  --subjectExtDbName and --subjectExtDbRlsVer values when using --subjectTableSrcIdCol.");
+            
       # must be the sequence entry identifier, get the GUS PK then
       my $fullSubjNm = "GUS::Model::" . $subjectTable;
       eval("require $fullSubjNm");
+      
+      my $dbRlsId = $self->getExtDbRlsId($self->getArg('subjectExtDbName'),
+                    $self->getArg('subjectExtDbRlsVer'))
+                    or die "Couldn't retrieve external database id! Check values for --subjectExtDbName and --subjectExtDbRlsVer.\n";
+
       my $subjectobj = $fullSubjNm->
-	new ({$self->getArg('subjectTableSrcIdCol') => $subject_id});
+      new ({ external_database_release_id => $dbRlsId,
+             $self->getArg('subjectTableSrcIdCol') => $subject_id });
+           
       my $is_in = $subjectobj->retrieveFromDB;
       
       if (! $is_in) {
