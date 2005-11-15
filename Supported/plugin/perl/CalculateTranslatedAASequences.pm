@@ -1,6 +1,7 @@
 package GUS::Supported::Plugin::CalculateTranslatedAASequences;
 
 use strict;
+use warnings;
 
 use GUS::PluginMgr::Plugin;
 use base qw(GUS::PluginMgr::Plugin);
@@ -139,6 +140,31 @@ EOSQL
   my $sth = $dbh->prepare($sql);
   $sth->execute($extDbRlsId);
 
+  my $exceptions = $dbh->prepare(<<EOSQL);
+
+  SELECT naf.na_feature_id, so.term_name
+  FROM   DoTS.NAFeature naf,
+         DoTS.NALocation nal,
+         SRes.SequenceOntology so
+  WHERE  naf.sequence_ontology_id = so.sequence_ontology_id
+  AND    nal.na_feature_id = naf.na_feature_id
+  AND    so.term_name in ('stop_codon_redefinition_as_selenocysteine',
+                          'stop_codon_redefinition_as_pyrrolysine',
+		          'plus_1_translational_frameshift',
+		          'minus_1_translational_frameshift',
+		          'four_bp_start_codon',
+		          '4bp_start_codon',
+		          'stop_codon_readthrough',
+		          'CTG_start_codon'
+		         )
+  AND    nal.start_min BETWEEN ? AND ?
+  AND    nal.is_reversed = ?
+  AND    naf.na_sequence_id = ?
+  AND    naf.external_database_release_id = ?
+ORDER BY CASE WHEN nal.is_reversed = 1 THEN nal.end_max ELSE nal.start_min END
+
+EOSQL
+
   while (my ($transcriptId) = $sth->fetchrow()) {
 
     my $transcript = GUS::Model::DoTS::Transcript->new({ na_feature_id => $transcriptId });
@@ -233,32 +259,7 @@ EOSQL
 	map { [ $_, $_->getFeatureLocation ]}
 	  @exons;
 
-    my $exceptions = $dbh->prepare(<<EOSQL);
-
-  SELECT naf.na_feature_id, so.term_name
-  FROM   DoTS.NAFeature naf,
-         DoTS.NALocation nal,
-         SRes.SequenceOntology so
-  WHERE  naf.sequence_ontology_id = so.sequence_ontology_id
-  AND    nal.na_feature_id = naf.na_feature_id
-  AND    so.term_name in ('stop_codon_redefinition_as_selenocysteine',
-                          'stop_codon_redefinition_as_pyrrolysine',
-		          'plus_1_translational_frameshift',
-		          'minus_1_translational_frameshift',
-		          'four_bp_start_codon',
-		          '4bp_start_codon',
-		          'stop_codon_readthrough',
-		          'CTG_start_codon'
-		         )
-  AND    nal.start_min BETWEEN ? AND ?
-  AND    nal.is_reversed = ?
-  AND    naf.na_sequence_id = ?
-  AND    naf.external_database_release_id = ?
-ORDER BY CASE WHEN nal.is_reversed = 1 THEN nal.end_max ELSE nal.start_min END
-
-EOSQL
-
-    my $cds;
+    my $cds = "";
     my $translation;
 
     my @exceptions;
@@ -302,10 +303,10 @@ EOSQL
 
     for (my $i = 0 ; $i < @exceptions ; $i++) {
       my ($start, $end, $codon, $residue) = @{$exceptions[$i]};
-      warn "changing codon @{[substr($cds, $start, $end - $start)]} to $codon ($residue)\n";
-      substr($cds, $start, $end - $start + 1, $codon);
+      # warn "changing codon @{[substr($cds, $start-1, $end - $start + 1)]} to $codon ($residue)\n";
+      substr($cds, $start-1, $end - $start + 1, $codon);
 
-      substr($translation, int(($start-1) / 3), 1, $residue);
+      substr($translation, int(($start-1)/3), 1, $residue);
 
       # adjust remaining coordinates, if necessary (e.g. 4 bp start codon)
       unless (length($codon) == ($end - $start + 1)) {
