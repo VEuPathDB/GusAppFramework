@@ -23,21 +23,22 @@ use GUS::Model::RAD::ElementDbRef;
 
 $| = 1;
 
+#todo:restart, check if entry already there, multiple ids
 
 my $argsDeclaration =
 [
      
-stringArg({name => 'externalDbName',
-	   descr => 'name of the external database corresponding to the annotation file',
+stringArg({name => 'evidenceExternalDbName',
+	   descr => 'name of the external database corresponding to the annotation file used as evidence',
 	   constraintFunc => undef,
 	   reqd => 1,
 	   isList => 0,
         }),
 
-stringArg({name => 'externalDbVersion',
-	    descr => 'version of the external database corresponding to the annotation file',
+stringArg({name => 'evidenceExternalDbVersion',
+	    descr => 'version of the external database corresponding to the annotation file used as evidence',
 	    constraintFunc => undef,
-	    reqd => 0,
+	    reqd => 1,
 	    isList => 0,
 	   }),
 
@@ -57,32 +58,76 @@ stringArg({name => 'arrayDesignVersion',
 	    isList => 0,
 	   }),
 
-integerArg({name => 'dbRefExternalDatabaseReleaseId',
-	    descr => 'External Database Release ID of the Entrez Gene Database to link to',
+stringArg({name => 'dbRefOrNASeqVersion',
+	    descr => 'DBRef or NASeq database version',
 	    constraintFunc => undef,
 	    reqd => 1,
 	    isList => 0,
             mustExist => 1,
 	   }),
 
-enumArg({name => 'dataType',
-	    descr => 'data type to be used (PancChip or Affymetrix)',
+
+stringArg({name => 'dbRefOrNASeqName',
+	    descr => 'DBRef or NASeq database name',
 	    constraintFunc => undef,
 	    reqd => 1,
 	    isList => 0,
             mustExist => 1,
-            enum => "PancChip,Affymetrix",
+	   }),
+
+stringArg({name => 'separator',
+	    descr => 'Separator used in case of multiple IDs',
+	    constraintFunc => undef,
+	    reqd => 1,
+	    isList => 0,
+            mustExist => 1,
+	   }),
+
+stringArg({name => 'refIDColumnName',
+	    descr => 'reference ID column name (for example spot position or probe_id)',
+	    constraintFunc => undef,
+	    reqd => 1,
+	    isList => 0,
+            mustExist => 1,
+	   }),
+
+stringArg({name => 'annotationIDColumnName',
+	    descr => 'annotation ID column name',
+	    constraintFunc => undef,
+	    reqd => 1,
+	    isList => 0,
+            mustExist => 1,
+	   }),
+
+
+fileArg({name => 'annotationFileName',
+	 descr => 'annotation file name',
+	 constraintFunc => undef,
+	 reqd => 1,
+	 isList => 0,
+	 mustExist => 1,
+	 format => 'Text'
+        }),
+
+
+enumArg({name => 'databaseName',
+	    descr => 'Database to link the data to (DbRef or NASeq)',
+	    constraintFunc => undef,
+	    reqd => 1,
+	    isList => 0,
+            mustExist => 1,
+            enum => "DbRef,NASeq",
 	   }),
 
  ];
 
-
+# see insertradanalysis
 my $purposeBrief = <<PURPOSEBRIEF;
-Populate mappings in Rad.ElementDbRef and Rad.CompositeElementsDbRef between SRes.DbRef and DoTs.NaSequence and Rad.ShortOligoFamily or Rad.Spot from Affymetrix or PancChips annotations file.
+Populate mappings in RAD.ElementDbRef and RAD.CompositeElementsDbRef between SRes.DbRef and DoTs.NaSequence and RAD.ShortOligoFamily or RAD.Spot from Affymetrix or PancChips annotations file.
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-Populate mappings between SRes.DbRef and DoTs.NaSequence and Rad.ShortOligoFamily or Rad.Spot from Affymetrix or PancChips annotations file.  Mappings are inserted in Rad.CompositeElementDbRef or Rad.ElementDbRef.
+Populate mappings between SRes.DbRef and DoTs.NaSequence and RAD.ShortOligoFamily or RAD.Spot from Affymetrix or PancChips annotations file.  Mappings are inserted in RAD.CompositeElementDbRef or RAD.ElementDbRef.
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
@@ -136,24 +181,45 @@ sub new {
 
 sub run {
     my ($self) = @_;
-    
-    my $dataType = $self->getArg('dataType'),
     my $nrecords;
     
-    my $annotFileName = $self->getAnnotationFileName();
+    my $technologyType = $self->getTechnologicalType();
+    my $databaseName = $self->getArg('databaseName');
     my $arrayDesignId = $self->getArrayDesignId();
-        
-    if($dataType eq "Affymetrix") {
-	
-	my $hash_ref = $self->parseAffyFile($annotFileName);
-	$nrecords = $self->populateCompEleDbREf($hash_ref, $arrayDesignId);	
+    my $evidenceExternalDbId = $self->getEvidenceExternalDbId();
+    my $fileName = $self->getArg('annotationFileName');
+    my $separator = $self->getArg('separator');
+    my $refIDColumnName = $self->getArg('refIDColumnName');
+    my $annotIDColumnName = $self->getArg('annotationIDColumnName');
+    
+    my $hashRef = $self->parseAnnotationFile($fileName, $separator, my $refIDColumnName, my $annotIDColumnName);
+    
+    $self->log("$technologyType - $databaseName\n");
+    
+    if($technologyType =~ /in_situ/i) {
+	if($databaseName eq "DbRef") {
+	    $nrecords = $self->populateCompEleDbRef($hashRef, $arrayDesignId, $evidenceExternalDbId);	
+	}
+	elsif($databaseName eq "NaSeq")  {
+	    $nrecords = $self->populateCompEleNaSeq($hashRef, $arrayDesignId, $evidenceExternalDbId);
+	}
+	else {
+	    die("$databaseName is an undefined type\n");
+	}
     }
-    elsif($dataType eq "PancChip") {
-	my $hash_ref = $self->parsePancChipFile($annotFileName);
-	$nrecords = $self->populateEleDbREf($hash_ref, $arrayDesignId);
+    elsif($technologyType =~ /spot/i) {
+	if($databaseName eq "DbRef") {
+	    $nrecords = $self->populateEleDbRef($hashRef, $arrayDesignId, $evidenceExternalDbId);
+	}
+	elsif($databaseName eq "NaSeq")  {
+	    $nrecords = $self->populateEleNaSeq($hashRef, $arrayDesignId, $evidenceExternalDbId);
+	}
+	else {
+	    die("$databaseName is an undefined type\n");
+	}
     }
     else {
-	die("$self->getArg('dataType') is an undefined type\n");
+	die("$technologyType is an undefined type\n");
     }
     
     my $result = "$nrecords records created.";
@@ -162,11 +228,8 @@ sub run {
 }
 
 
-################################
-# populate CompEleDbREf  table
-################################
-sub populateCompEleDbREf {
-    my($self, $hash, $arrayDesignId) = @_;
+sub populateCompEleDbRef {
+    my($self, $hash, $arrayDesignId, $evidenceExternalDbId) = @_;
     
     my $n = scalar keys(%$hash);
     
@@ -174,35 +237,40 @@ sub populateCompEleDbREf {
     my $nProbePopulated = 0;
     my $nCENotFound =0;
     my $nDbRefIdNotFound=0;
-
+    
     my $dbRefExtDbRelId = $self->getArg('dbRefExternalDatabaseReleaseId');
     
-    $sql = "SELECT table_id from core.tableinfo where name ='CompositeElementDbRef'";
+    $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'CompositeElementDbRef' and d.name = 'RAD'";
+    
     $queryHandle = $self->getQueryHandle();
     $sth = $queryHandle->prepareAndExecute($sql);
-    my $targetTableId = $sth ->fetchrow_array();
+    my ($targetTableId) = $sth ->fetchrow_array();
+    if(!defined $targetTableId) { die "Cannot find RAD.CompositeElementDbRef' table\n"; }
     
-    $sql = "SELECT table_id from core.tableinfo where name ='ExternalDatabaseRelease'";
+    $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'ExternalDatabaseRelease' and d.name = 'SRes'";
+    
     $queryHandle = $self->getQueryHandle();
     $sth = $queryHandle->prepareAndExecute($sql);
-    my $factTableId = $sth ->fetchrow_array();
+    my ($factTableId) = $sth ->fetchrow_array();
     
-    while (my ($probe, $geneId) = each(%$hash)) {
-	$sql = "SELECT composite_element_id FROM rad.shortoligofamily WHERE name = '$probe' and array_design_id = $arrayDesignId";
+    if(!$factTableId) { die "Cannot find SRes.ExternalDatabaseRelease\n"; }
+    
+    while (my ($probe, $annotationId) = each(%$hash)) {
+	$sql = "SELECT composite_element_id FROM RAD.shortoligofamily WHERE name = '$probe' and array_design_id = $arrayDesignId";
 	$queryHandle = $self->getQueryHandle();
 	$sth = $queryHandle->prepareAndExecute($sql);
-	$compositeElementId = $sth ->fetchrow_array();
+	($compositeElementId) = $sth ->fetchrow_array();
 	
 	if(!$compositeElementId) {
 	    $nCENotFound++;
 	    next;
 	}
 	
-	$sql = "SELECT db_ref_id FROM sres.dbref WHERE primary_identifier = '$geneId' and external_database_release_id =$dbRefExtDbRelId";
+	$sql = "SELECT db_ref_id FROM sres.dbref WHERE primary_identifier = '$annotationId' and external_database_release_id =$dbRefExtDbRelId";
 	
 	$queryHandle = $self->getQueryHandle();
 	$sth = $queryHandle->prepareAndExecute($sql);
-	$dbRefId = $sth ->fetchrow_array();
+	($dbRefId) = $sth ->fetchrow_array();
 	
 	if(!$dbRefId) {
 	    $nDbRefIdNotFound++;
@@ -213,26 +281,30 @@ sub populateCompEleDbREf {
 	    'composite_element_id' => $compositeElementId,
 	    'db_ref_id' => $dbRefId
 	    });
+	$newCEDbRef->submit();
+	my $targetId = $newCEDbRef->getID();
 	
 	my $newEvidence = GUS::Model::DoTs::Evidence->new({
 	    'target_table_id' => $targetTableId,
-	    'target_id' => $newCEDbRef,
+	    'target_id' => $targetId,
 	    'fact_table_id' => $factTableId,
-	    'fact_id' => $dbRefExtDbRelId
+	    'fact_id' => $evidenceExternalDbId
 	    });
+	
+	$newEvidence->submit();
 	
 	$nProbePopulated++;
 	$self->undefPointerCache();
     }
+    # TODO
+    # generate a file with list of composite_ele_id/annotation_id not found
+
     $self->log ("CompositeElement not found = $nCENotFound; DbRefId not found = $nDbRefIdNotFound; rows populated = $nProbePopulated");
     return $nProbePopulated;
 }
 
 
-##################################################
-# populate EleDbREf table
-##################################################
-sub populateEleDbREf {
+sub populateEleDbRef {
     my($self, $hash, $arrayDesignId) = @_;
     
     my $n = scalar keys(%$hash);
@@ -243,42 +315,43 @@ sub populateEleDbREf {
     my $nDbRefIdNotFound=0;
     
     
-    $sql = "SELECT table_id from core.tableinfo where name ='ElementDbRef'";
+    $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'ElementDbRef' and d.name = 'RAD'";
     $queryHandle = $self->getQueryHandle();
     $sth = $queryHandle->prepareAndExecute($sql);
-    my $targetTableId = $sth ->fetchrow_array();
+    my ($targetTableId) = $sth ->fetchrow_array();
+    if(!$targetTableId) { die "Cannot find RAD.ElementDbRef\n"; }
     
-    $sql = "SELECT table_id from core.tableinfo where name ='ExternalDatabaseRelease'";
+    $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'ExternalDatabaseRelease' and d.name = 'SRes'";
     $queryHandle = $self->getQueryHandle();
     $sth = $queryHandle->prepareAndExecute($sql);
-    my $factTableId = $sth ->fetchrow_array();    
+    my ($factTableId) = $sth ->fetchrow_array();    
+    if(!$factTableId) { die "Cannot find SRes.ExternalDatabaseRelease\n"; }
     
     my $dbRefExtDbRelId = $self->getArg('dbRefExternalDatabaseReleaseId');
     
-    while (my ($geneLocation, $geneId) = each(%$hash)) {
+    while (my ($geneLocation, $annotationId) = each(%$hash)) {
 	
 	my @gc = split(/\./, $geneLocation);
 	
-	$sql = "SELECT element_id FROM rad.spot WHERE array_row=$gc[0] and array_column=$gc[1] and grid_row=$gc[2] and grid_column=$gc[3] and sub_row=$gc[4] and sub_column=$gc[5] and array_design_id = $arrayDesignId";
+	$sql = "SELECT element_id FROM RAD.spot WHERE array_row=$gc[0] and array_column=$gc[1] and grid_row=$gc[2] and grid_column=$gc[3] and sub_row=$gc[4] and sub_column=$gc[5] and array_design_id = $arrayDesignId";
 	
 	$queryHandle = $self->getQueryHandle();
 	$sth = $queryHandle->prepareAndExecute($sql);
-	$elementId = $sth ->fetchrow_array();
+	($elementId) = $sth ->fetchrow_array();
 	
 	if(!$elementId) { 
 	    $nENotFound++;
 	    next;
 	}
 	
-	$sql = "SELECT db_ref_id FROM sres.dbref WHERE primary_identifier = '$geneId' and external_database_release_id =$dbRefExtDbRelId";
-	
+	$sql = "SELECT db_ref_id FROM sres.dbref WHERE primary_identifier = '$annotationId' and external_database_release_id =$dbRefExtDbRelId";
 	
 	$queryHandle = $self->getQueryHandle();
 	$sth = $queryHandle->prepareAndExecute($sql);
-	$dbRefId = $sth ->fetchrow_array();
+	($dbRefId) = $sth ->fetchrow_array();
 	
 	if(!$dbRefId) {
-	    #$self->log("Cannot find db_ref_id for '$geneId'");
+	    #$self->log("Cannot find db_ref_id for '$annotationId'");
 	    $nDbRefIdNotFound++;
 	    next;
 	}
@@ -298,90 +371,90 @@ sub populateEleDbREf {
 	$nProbePopulated++;
 	$self->undefPointerCache();
     }
+    
     $self->log ("Element not found = $nENotFound; DbRefId not found = $nDbRefIdNotFound; rows populated = $nProbePopulated");
     return $nProbePopulated;
 }
 
 
-sub parseAffyFile {
-     my($self, $fileName) = @_;
-     
-     open(FILE, $fileName) || (die "could not open file '$fileName'\n");
-     
-     my %hash;
-     my @content = <FILE>;
-     chomp @content;
-     
-     for(my $i=1; $i<scalar @content; $i++) {
-	 
-	 my @row = split(/\",\"/, $content[$i]);
-	 
-	 if(defined $row[0] & defined $row[8]) {
-	     $row[0]=~s/\"//g;
-	     $row[8]=~s/\"//g;
-	     $hash{$row[0]} = $row[8];
-	 }
-     }
-          
-     close FILE;
-     
-     my $nRecords = scalar keys(%hash);
-     $self->log("$nRecords records found in $fileName");
-     return (\%hash);
-}
-
-
-#################################################
-# parser for pancChip files
-#################################################
-sub parsePancChipFile {
-    my($self, $fileName) = @_;
+sub parseAnnotationFile {
+    my $self = @_;
+    my $separator = $self->getArg('separator'),
+    my $columnRefIDName = $self->getArg('columnRefIDName'),
+    my $columnIDName = $self->getArg('columnIDName');
+    my $annotFile = $self->getArg('annotationFile');
     
-    open(FILE, $fileName) || (die "could not open file '$fileName'\n");
+    open (FILE, $annotFile) ||  die ("Can't open $annotFile\n");
     
     my %hash;
     my @content = <FILE>;
     chomp @content;
     
-    for(my $i=2; $i<scalar @content; $i++) {
-	
-	my @row = split(/\t/, $content[$i]);
-	if(defined $row[0] & defined $row[5]) {
-	    $row[0]=~s/\"//g;
-	    $row[5]=~s/\"//g;
-	    $hash{$row[0]} = $row[5];
+    my @header;
+    my $indexHeader;
+    
+    for (my $i=0; $i<10; $i++) {
+	if($content[$i] =~ /$columnIDName/ || $content[$i] =~ /$columnRefIDName/) {
+	    @header = split(/\",\"/, $content[$i]);
+	    $indexHeader = $i;
+	    last;
 	}
     }
+    
+    
+    my $columnRefID = -1;
+    my $columnID = -1;
+    for( my $i=0; $i<scalar @header; $i++) {
+	if( $columnRefIDName=~ /$header[$i]/i ) { $columnRefID = $i;}
+	if( $columnIDName=~ /$header[$i]/i ) { $columnID = $i; }
+    }
+    
+    if($columnRefID ==-1) {
+	die "Did not find $columnRefIDName in the file header\n";
+    }
+    
+    if($columnID ==-1) {
+	die "Did not find $columnIDName in the file header\n";
+    }
+    
+    for(my $i=$indexHeader+1; $i<scalar @content; $i++) {
+	
+	my @row = split(/\",\"/, $content[$i]);
+	
+	if(defined $row[$columnRefID] & defined $row[$columnID]) {
+	    $row[$columnRefID]=~s/\"//g;
+	    $row[$columnID]=~s/\"//g;
+	    $hash{$row[$columnRefID]} = $row[$columnID];
+	}
+    }
+    
     close FILE;
-    
+
+
     my $nRecords = scalar keys(%hash);
-    $self->log("$nRecords records found in $fileName");
-    
+    $self->log("$nRecords records found in $annotFile");
     return (\%hash);
 }
 
 
-######################################################
-# return arraydesignid from arrayDesignName
-# and arrayDesignVersion
-######################################################
 sub getArrayDesignId {
     my($self) = @_;
     my $arrayDesignName = $self->getArg('arrayDesignName');
     my $arrayDesignversion = $self->getArg('arrayDesignVersion');
-
+    my $sql;
+    
     if(defined $arrayDesignversion) {
-	my $sql = "SELECT array_design_id FROM rad.arraydesign WHERE name='$arrayDesignName' and version ='$arrayDesignversion'";
+	$sql = "SELECT array_design_id FROM RAD.arraydesign WHERE name='$arrayDesignName' and version ='$arrayDesignversion'";
     }
     else {
-	my $sql = "SELECT array_design_id FROM rad.arraydesign WHERE name='$arrayDesignName'";
+	$sql = "SELECT array_design_id FROM RAD.arraydesign WHERE name='$arrayDesignName'";
     }
     
     my $queryHandle = $self->getQueryHandle();
     my $sth = $queryHandle->prepareAndExecute($sql);
-    my $arrayDesignId = $sth ->fetchrow_array();
+    my ($arrayDesignId) = $sth ->fetchrow_array();
     
-    if(!$arrayDesignId) {
+    if(!defined $arrayDesignId) {
 	die("No ARRAY_DESIGN_ID corresponding to NAME '$arrayDesignName' (version '$arrayDesignversion')"); 
     }
     $self->log("array_design_id = $arrayDesignId"); 
@@ -389,34 +462,46 @@ sub getArrayDesignId {
 }
 
 
-######################################################
-# return getAnnotationFileName from externalDbName
-# and externalDbVersion
-######################################################
-sub getAnnotationFileName {
+sub getTechnologyType {
     my($self) = @_;
     
-    my $externalDbName = $self->getArg('externalDbName');
-    my $externalDbVersion = $self->getArg('externalDbVersion');
-
-    if(defined $externalDbVersion) {
-	my $sql = "SELECT file_name FROM sres.externaldatabaserelease ed, sres.externaldatabase e WHERE e.name='$externalDbName' and ed.external_database_id=e.external_database_id and ed.version='$externalDbVersion'";
+    my $arrayDesignName = $self->getArg('arrayDesignName');
+    my $arrayDesignversion = $self->getArg('arrayDesignVersion');
+    my $sql;
+    
+    if(defined $arrayDesignversion) {
+	$sql = "SELECT o.value FROM study.ontologyentry o, rad.arraydesign a  where o.category='TechnologyType' AND o.ontology_entry_id=a.technology_type_id AND a.name = '$arrayDesignName' AND a.version = '$arrayDesignversion'";
     }
     else {
-	my $sql = "SELECT file_name FROM sres.externaldatabaserelease ed, sres.externaldatabase e WHERE e.name='$externalDbName' and ed.external_database_id=e.external_database_id";
+	$sql = "SELECT o.value FROM study.ontologyentry o, rad.arraydesign a  where o.category='TechnologyType' AND o.ontology_entry_id=a.technology_type_id AND a.name = '$arrayDesignName'";
     }
     
     my $queryHandle = $self->getQueryHandle();
     my $sth = $queryHandle->prepareAndExecute($sql);
+    my ($techTypeID) = $sth ->fetchrow_array();
     
-    my $externalDbFileName = $sth ->fetchrow_array();
-    
-    if(!$externalDbFileName) {
-	die("No filename corresponding to database $externalDbName (release $externalDbVersion)"); 
+    if(!defined $techTypeID) {
+	die("No Technological Type ID corresponding to NAME '$arrayDesignName' (version '$arrayDesignversion')"); 
     }
-    
-    $self->log("file name = $externalDbFileName");
-    return $externalDbFileName;
+    $self->log("technological type = $techTypeID"); 
+    return $techTypeID;
 }
 
-1;
+sub getExternalDbId {
+    my($self) = @_;
+    
+    my $dbName = $self->getArg('evidenceExternalDbName');
+    my $dbVersion = $self->getArg('evidenceExternalDbVersion');
+    
+    my $sql = "SELECT i.external_database_release_id FROM SRes.externaldatabaserelease i, SRes.externaldatabase e where i.version = '$dbVersion' and e.name = '$dbName'";
+    
+    my $queryHandle = $self->getQueryHandle();
+    my $sth = $queryHandle->prepareAndExecute($sql);
+    my ($externalDbID) = $sth ->fetchrow_array();
+    
+    if(!defined $externalDbID) {
+	die("No Database External Release Id corresponding to NAME '$dbName' (version '$dbVersion')"); 
+    }
+    $self->log("evidence_external_db_id = $externalDbID"); 
+    return $externalDbID;
+}
