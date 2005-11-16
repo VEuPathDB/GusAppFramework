@@ -143,9 +143,9 @@ sub start_element{
   if($element->{Name} eq 'search_summary'){
     push @element_stack, 'search_summary' ;
 
-    my $engine=$searchSumHash->{search_engine};
+    my $engine=$element->{Attributes}->{search_engine};
     $self->setEngine($engine);
-    $self->insertQuantification($element->{Attributes});    
+$self->insertPROTocol($element->{Attributes});
     $self->insertQuantification($element->{Attributes});
   }
 
@@ -171,13 +171,13 @@ sub start_element{
 
   if($element->{Name} eq 'search_hit'){
     push @element_stack, 'search_hit';
-    $self->loadSeachHit($element->{Attributes});
+    $self->loadSearchHit($element->{Attributes});
   }
 
   if($element_stack[$#element_stack] eq 'search_hit'){
     if($element->{Name} eq 'search_score'){
       push @element_stack, 'search_hit.search_score';
-      $self->loadSeachScore($element->{Attributes});
+      $self->loadSearchScore($element->{Attributes});
     }
     if($element->{Name} eq 'peptideprophet_result'){
       push @element_stack, 'search_hit.peptideprophet_result';
@@ -187,7 +187,7 @@ sub start_element{
 
   if($element_stack[$#element_stack] eq 'search_hit.peptideprophet_result' && $element->{Name} eq 'parameter'){
     push @element_stack, 'search_hit.peptideprophet_result.parameter';
-    $self->loadSeachScore($element->{Attributes});
+    $self->loadSearchScore($element->{Attributes});
   }
 
 }
@@ -233,12 +233,12 @@ sub end_element{
 
 }
 
-sub setCurrentProtInstance{
+sub setCurrentPROTInstance{
   my ($self, $id) = @_;
   $storage->{protocol_instance_id}=$id;
 }
 
-sub getCurrentProtInstance{
+sub getCurrentPROTInstance{
   my ($self, $id) = @_;
   return $storage->{protocol_instance_id};
 }
@@ -254,17 +254,17 @@ sub getCurrentQuan{
 }
 
 
-sub setProtocolId{
+sub setPROTocolId{
   my ($self, $id) = @_;
   $storage->{protocol_id}=$id;
 }
 
-sub getProtocolId{
+sub getPROTocolId{
   my ($self, $id) = @_;
   return $storage->{protocol_id};
 }
 
-sub setScanProtocolId{
+sub setScanPROTocolId{
   my ($self, $id) = @_;
   $storage->{scan_protocol_id}=$id;
 }
@@ -290,18 +290,19 @@ sub getEngine{
 }
 
 
-sub insertProtocol{
+sub insertPROTocol{
   my ($self, $searchSumHash) = @_;
 
   my $engine=$self->getEngine;
 
-  my $oe=GUS::Model::Study::OntologyEntry->new({category=>"ExperimentalProtocolType", value=>$engine});
+  my $oe=GUS::Model::Study::OntologyEntry->new({category=>"ExperimentalPROTocolType", value=>$engine});
   $oe->submit unless ($oe->retrieveFromDB);
 
   my $file=$self->getFile;
   my $protocol=GUS::Model::PROT::Protocol->new({name=>"$engine search protocol used in $file", type_id=>$oe->getId});
   $protocol->submit unless $protocol->retrieveFromDB;
-  $self->setProtocolId($protocol->getId);
+  $self->setPROTocolId($protocol->getId);
+  print STDOUT $self->getPROTocolId;
 
 }
 
@@ -309,24 +310,27 @@ sub insertQuantification{
   my ($self, $searchSumHash) = @_;
   my $quanHash;
   $quanHash->{URI}=$searchSumHash->{base_name};
-  $quanHash->{name}=$self->getFile()." Search Id "$searchSumHash->{search_id};
+  $quanHash->{name}=$self->getFile()." Search Id ".$searchSumHash->{search_id};
   my $quan=GUS::Model::PROT::Quantification->new($quanHash);
 
-  my $protocolIns=GUS::Model::PROT::ProtocolInstance->new({deviation=>$self->getFile." protocol instance Id ".$searchSumHash->{search_id}, protocol_id=>$self->getProtocolId});
+  my $protocolIns=GUS::Model::PROT::ProtocolInstance->new({deviation=>$self->getFile." protocol instance Id ".$searchSumHash->{search_id}, Parameterizable_ID=>$self->getPROTocolId});
 
   $quan->setParent($protocolIns);
 
   $protocolIns->submit unless $protocolIns->retrieveFromDB;
 
-  $self->setCurrentProtInstance($protocolIns->getId);
+  $self->setCurrentPROTInstance($protocolIns->getId);
   $self->setCurrentQuan($quan->getId);
 
-  foreach $key(keys %$searchSumHash){
+  foreach my $key(keys %$searchSumHash){
     my $paramHash;
     my $paramInstanceHash;
-    $paramHash->{parameterizable_id}=$self->getProtocolId;
+    $paramHash->{parameterizable_id}=$self->getPROTocolId;
     $paramInstanceHash->{parameterizable_instance_id}=$protocolIns->getId;
     $paramHash->{Name}=$key;
+    #value_class_oe_id not nullable???    
+    $paramHash->{value_class_oe_id}=1964;
+    $paramInstanceHash->{value_ontology_entry_id}=1964;
     $paramInstanceHash->{value}=$searchSumHash->{$key};
     my $param=GUS::Model::PROT::Parameter->new($paramHash);
     $param->submit unless $param->retrieveFromDB;
@@ -339,17 +343,17 @@ sub insertQuantification{
 
 
 sub insertParamIns{
-  my ($self, $searchDbhash, $prefix) = @_;
+  my ($self, $searchDbHash, $prefix) = @_;
   my $quanHash;
 
-  my $protInsId=$self->setCurrentProtInstance();
+  my $protInsId=$self->setCurrentPROTInstance();
 
-  foreach $key(keys %$searchDbHash){
+  foreach my $key(keys %$searchDbHash){
     my $paramHash;
     my $paramInstanceHash;
-    $paramHash->{parameterizable_id}=$self->getProtocolId;
+    $paramHash->{parameterizable_id}=$self->getPROTocolId;
     $paramInstanceHash->{parameterizable_instance_id}=$protInsId;
-    if(isset($prefix)){
+    if(defined $prefix){
       $paramHash->{Name}=$prefix."_".$key;
     }
     else{
@@ -357,7 +361,11 @@ sub insertParamIns{
     }
 
     $paramInstanceHash->{value}=$searchDbHash->{$key};
-    my $param=GUS::Model::PROT::Parameter->new($paramHash);
+    #value_class_oe_id not nullable???    
+    $paramHash->{value_class_oe_id}=1964;
+    $paramInstanceHash->{value_ontology_entry_id}=1964;
+   
+   my $param=GUS::Model::PROT::Parameter->new($paramHash);
     $param->submit unless $param->retrieveFromDB;
 
     $paramInstanceHash->{"parameter_id"}=$param->getId;
@@ -369,11 +377,11 @@ sub insertParamIns{
 sub loadParam{
   my ($self, $phash, $prefix) = @_;
 
-  my $protInsId=$self->setCurrentProtInstance();
+  my $protInsId=$self->setCurrentPROTInstance();
 
   my $paramHash;
   my $paramInstanceHash;
-  $paramHash->{parameterizable_id}=$self->getProtocolId;
+  $paramHash->{parameterizable_id}=$self->getPROTocolId;
   $paramInstanceHash->{parameterizable_instance_id}=$protInsId;
   if(isset($prefix)){
     $paramHash->{Name}=$prefix."_".$phash->{name};
@@ -402,23 +410,24 @@ sub loadSpecQuery{
 }
 
 sub loadSearchHit{
-  my ($self, $seachHitHash) = @_;
+  my ($self, $searchHitHash) = @_;
   $elementResultHash->{"peptide"}=$searchHitHash->{peptide};
   $elementResultHash->{"protein_gi_id"}=$searchHitHash->{protein};
 
 }
 
 sub loadSearchScore{
-  my ($self, $seachScoreHash) = @_;
-  my %name2filed;
+  my ($self, $searchScoreHash) = @_;
+  my %name2field=();
   if($self->getEngine eq "MASCOT"){
-    %name2filed=(ionscore=>ionscore, identityscore=>id_score, homologyscore=>homology_score, ntt=>ntt, fval=>fval);
+    %name2field=(ionscore=>'ionscore', identityscore=>'id_score', homologyscore=>'homology_score', ntt=>'ntt', fval=>'fval');
   }
 
   if($self->getEngine eq "SEQUEST"){
-    %name2filed=(XCORR=>xcorr, deltacn=>deltacn, sprank=>sprank, sp=>sp, fval=>fval);
+    %name2field=(XCORR=>'xcorr', deltacn=>'deltacn', sprank=>'sprank', sp=>'sp', fval=>'fval');
   }
-  if(exist $name2field{$searchScoreHash->{name}}){  
+  my $name = $searchScoreHash->{name};
+  if( $name2field{$name}){  
     $elementResultHash->{$searchScoreHash->{name}}=$searchScoreHash->{value};
   }
 }
