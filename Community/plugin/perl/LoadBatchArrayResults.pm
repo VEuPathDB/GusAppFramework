@@ -135,7 +135,7 @@ genepix=<RAD::Protocol::protocol_id for the GenePix quantification protocol in y
 
 arrayvision=<RAD::Protocol::protocol_id for the ArrayVision quantification protocol in your instance>
 
-filePath=<The path on your server where the data files are stored>, e.g. at CBIL the filePath might be "/files/cbil/data/cbil/RAD/"
+filePath=<The path to the directory on your server where the data files are stored (possibly organized in subdirectories)>, e.g. at CBIL the filePath should be set to "/files/cbil/data/cbil/RAD/". For each quantification, this plugin concatenates this filePath with the uri specified in RAD.Quantification.uri, to retrieve the corresponding quantification file.
 
 =head2 F<xmlFile>
 
