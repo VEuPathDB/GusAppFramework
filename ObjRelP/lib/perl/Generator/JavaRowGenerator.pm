@@ -404,7 +404,11 @@ sub _createParentAccessors {
     #instance variable declarations
     my $setAllParentAtts = "";
     foreach my $fkAtt( keys %$parentHash){
+        $fkAtt || die "Null foreign key attribute for table '$self->{schemaName}::$self->{tableName}'.  Check permissions for that table and its constraints";
+
 	my $parentTableName = $parentHash->{$fkAtt};
+
+	$parentTableName || die "Can't find parentTableName for foreign key attribute '$fkAtt' of table '$self->{schemaName}::$self->{tableName}'";
 	my $accessorName = $self->_attributeToJavaName($fkAtt, 1);
 	#set method
 	$accessorOutput .= $tab . "public void set" . $accessorName . "(" . $parentTableName . " " . $fkAtt . "){\n";
