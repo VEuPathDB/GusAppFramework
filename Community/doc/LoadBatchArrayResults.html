@@ -235,9 +235,9 @@
 <dt></dt>
 <dt><strong><a name="item_%2d%2dgusconfigfile_file">--gusconfigfile <em>file</em></a></strong><br />
 </dt>
-<p>The gus config file to use [note: the default is your $GUS_CONFIG_FILE]</p>
+<p>The gus config file to use [note: the default is your $GUS_HOME/config/gus.config]</p>
 <dl>
-<dt><strong><a name="item_default%3a_%2fhome%2fmanduchi%2fgus3%2e5%2f%2egus%">default: /home/manduchi/gus3.5/.gus.properties</a></strong><br />
+<dt><strong><a name="item_default%3a_%2fhome%2fmanduchi%2fgus3%2e5%2fgus_hom">default: /home/manduchi/gus3.5/gus_home/config/gus.config</a></strong><br />
 </dt>
 <dl>
 <dt><strong><a name="item_format%3a_gus_config_file_format">format: GUS config file format</a></strong><br />
@@ -278,7 +278,7 @@ This file should be as follows:</p>
 <p>moid=&lt;RAD::Protocol::protocol_id for the MOID quantification protocol in your instance&gt;</p>
 <p>genepix=&lt;RAD::Protocol::protocol_id for the GenePix quantification protocol in your instance&gt;</p>
 <p>arrayvision=&lt;RAD::Protocol::protocol_id for the ArrayVision quantification protocol in your instance&gt;</p>
-<p>filePath=&lt;The path on your server where the data files are stored&gt;, e.g. at CBIL the filePath might be ``/files/cbil/data/cbil/RAD/''</p>
+<p>filePath=&lt;The path to the directory on your server where the data files are stored (possibly organized in subdirectories)&gt;, e.g. at CBIL the filePath should be set to ``/files/cbil/data/cbil/RAD/''. For each quantification, this plugin concatenates this filePath with the uri specified in RAD.Quantification.uri, to retrieve the corresponding quantification file.</p>
 <p>
 </p>
 <h2><a name="xmlfile"><em>xmlFile</em></a></h2>
