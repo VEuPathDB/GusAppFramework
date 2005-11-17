@@ -5,7 +5,7 @@
 
 <cfg>
   <inputs qualifier_row_present='0'>
-    <row type="header" name='col_headers'>
+    <header>
       <col header_val ='Probe Set Name' req='1' name='probe_set_name' />
       <col header_val='Positive Pairs'  name='pos_pairs' />
       <col header_val='Negative Pairs'  name='neg_pairs' />
@@ -14,40 +14,40 @@
       <col header_val='Log Avg Pos/Neg'  req='1' name='log_avg_ratio' />
       <col header_val='Ave Diff'  req='1'  name='avg_diff' />
       <col header_val='Abs Call'  req='1' name='abs_call' />
-    </row>
+    </header>
   </inputs>
 
   <outputs>
     <map name='name'>
-      <in col='probe_set_name' />
+      <in name='probe_set_name' />
       <do> $probe_set_name </do>
     </map>
     <map name='positive_probe_pairs'>
-      <in col='pos_pairs' />
+      <in name='pos_pairs' />
       <do> $pos_pairs </do>
     </map>
     <map name='negative_probe_pairs'>
-      <in col='neg_pairs' />
+      <in name='neg_pairs' />
       <do> $neg_pairs </do>
     </map>
      <map name='num_probe_pairs_used'>
-      <in col='pairs_used' />
+      <in name='pairs_used' />
       <do> $pairs_used </do>
     </map>
     <map name='pairs_in_average'>
-      <in col='pairs_inavg' />
+      <in name='pairs_inavg' />
       <do> $pairs_inavg </do>
     </map>
     <map name='log_average_ratio'>
-      <in col='log_avg_ratio' />
+      <in name='log_avg_ratio' />
       <do> $log_avg_ratio </do>
     </map>
     <map name='average_difference'>
-      <in col='avg_diff' />
+      <in name='avg_diff' />
       <do> $avg_diff </do>
     </map>
     <map name='absolute_call'>
-      <in col='abs_call' />
+      <in name='abs_call' />
       <do> $abs_call </do>
     </map>
   </outputs>
