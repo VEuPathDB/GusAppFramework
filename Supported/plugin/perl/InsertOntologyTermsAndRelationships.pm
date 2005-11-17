@@ -53,7 +53,7 @@ my $argsDeclaration =
 ];
 
 my $purpose = <<PURPOSE;
-The purpose of this plugin is to load Ontology Terms and Relationships.
+The purpose of this plugin is to parse a daml file and load the resulting Ontology Terms and Relationships.  
 PURPOSE
 
 my $purposeBrief = <<PURPOSE_BRIEF;
@@ -61,6 +61,7 @@ The purpose of this plugin is to load Ontology Terms and Relationships.
 PURPOSE_BRIEF
 
 my $notes = <<NOTES;
+This plugin depends on the perl module XML::LibXML.  
 NOTES
 
 my $tablesAffected = <<TABLES_AFFECTED;
