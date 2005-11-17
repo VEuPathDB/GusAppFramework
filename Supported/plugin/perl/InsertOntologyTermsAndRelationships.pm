@@ -170,7 +170,7 @@ sub _makeTerms {
   my $upTerms = $self->_getUniquePropertyTerms($root);
   $numTermsLoaded = $self->_loadTerms($type, $upTerms) + $numTermsLoaded;
 
-  $type = 'Instance';
+  $type = 'Individual';
   my $attrTerms = $self->_getTermsFromDescription($root);
   $numTermsLoaded = $self->_loadTerms($type, $attrTerms) + $numTermsLoaded;
 
