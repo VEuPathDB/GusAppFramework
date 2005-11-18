@@ -111,7 +111,7 @@ sub new {
       my $args = &getArgsDeclaration();
 
       $self->initialize({requiredDbVersion => 3.5, 
-                 cvsRevision => '$Revision: 4081 $',
+                 cvsRevision => '$Revision$',
                  cvsTag => '$Name:  $',
                  name => ref($self),
                  revisionNotes => '',
@@ -130,19 +130,17 @@ sub run {
   $self->logAlgInvocationId;
   $self->logCommit;
 
-  my $transcriptIds = $self->getTranscriptIds();
+  my $transcripts = $self->getTranscriptIds();
 
-  my %sequences;
+  foreach my $vals (@$transcripts) {
+    my $transcriptSequence = $self->calculateTranscriptSequence($vals->{'sourceId'});
 
-  foreach my $id (@$transcriptIds) {
-    my $transcriptSequence = $self->calculateTranscriptSequence($id);
-
-    $sequences{$id} = $transcriptSequence;
+    $vals->{'sequence'} = $transcriptSequence;
   }
 
-  $self->printSequences(\%sequences);
+  $self->printSequences($transcripts);
 
-  my $total = scalar (keys %sequences);
+  my $total = scalar (@$transcripts);
 
   my $resultDescrip = "$total = total number of transcript sequences\n";
 
@@ -168,7 +166,7 @@ sub run {
    my $dbh = $self->getQueryHandle();
 
    my $sql = <<EOSQL;
-  SELECT source_id
+  SELECT source_id,external_database_release_id,taxon_id
   FROM   DoTS.Transcript
   WHERE  external_database_release_id = ?
 EOSQL
@@ -177,8 +175,13 @@ EOSQL
 
    $sth->execute($extDbRlsId);
 
-   while (my ($sourceId) = $sth->fetchrow()) {
-     push(@transcripts,$sourceId);
+   while (my ($sourceId,$extDbRlsId,$TaxonId) = $sth->fetchrow()) {
+     my %vals=  (
+		 'sourceId' => $sourceId,
+		 'extDbRlsId' => $extDbRlsId,
+		 'taxonId' => $TaxonId
+		);
+     push(@transcripts,\%vals);
    }
 
    return \@transcripts;
@@ -224,17 +227,20 @@ sub calculateTranscriptSequence {
 }
 
 sub printSequences {
-  my ($self,$sequences) = @_;
+  my ($self,$transcripts) = @_;
 
   my $sequenceFile = $self->getArg('sequenceFile');
 
   my $fh = FileHandle->new(">$sequenceFile") || $self->error("cannot open $sequenceFile for writing\n");
 
-  foreach my $id (keys %$sequences) {
-    my $seq = $sequences->{$id};
+  foreach my $vals ($transcripts) {
+    my $id = $vals->{'sourceId'};
+    my $seq = $vals->{'sequence'};
     my $length = length ($seq);
+    my $taxonId = $vals->{'taxonId'};
+    my $extDbRlsId = $vals->{'extDbRlsId'};
 
-    my $defline = "\>$id length=$length\n";
+    my $defline = "\>$id $taxonId $extDbRlsId length=$length\n";
     print $fh ("$defline" . CBIL::Bio::SequenceUtils::breakSequence($seq,60));
   }
 }
