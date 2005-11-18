@@ -77,7 +77,7 @@ sub new {
   bless $self, $class;
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision =>  '$Revision: $',
+		      cvsRevision =>  '$Revision: 4147 $',
 		      name => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -118,6 +118,7 @@ EOSQL
 
   $sth->execute($extDbRlsId);
 
+  my $count = 0;
   while (my ($aaSeqId, $seq) = $sth->fetchrow_array()) {
     my $seq = Bio::PrimarySeq->new(-id => $aaSeqId,
 				   -seq => $seq,
@@ -129,9 +130,10 @@ EOSQL
     my $aveWt = sprintf("%d", ($minWt + $maxWt) / 2);
 
     $update->execute($aveWt, $aaSeqId);
+    $count++;
   }
 
-  warn "Done.\n";
+  warn "Done; updated $count sequences\n";
 }
 
 1;
