@@ -778,18 +778,31 @@ sub className2oracleName {
 
 Retrieve an external database release id from SRes::ExternalDatabaseRelease given the name of a database and the version corresponding to the release.  
 
+Whether provided as (name, version) or "name|version", the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease
+
 Die if none found.  (If you just want to test for its existence, call the method in an eval{} block.)
 
 B<Parameters:>
 
-    - dbName (string): Name of the database; must match an entry in SRes::ExternalDatabase
-    - dbVersion (string): Version of the database; matched against the version attribute in SRes::ExternalDatabaseRelease
+    - dbNameOrSpecifier (string): Either the name of the database (in which case the dbVersion argument is required) or a specifier (in which case the dbVersion argument must be undefined).  The specifier must be in the form: name|version.
+    - dbVersion (string): Version of the database.  Required only if the first parameter is a name not a specifier.
 
 B<Return type:> C<integer>
 
 =cut
 sub getExtDbRlsId {
-    my ($self, $dbName, $dbVersion) = @_;
+    my ($self, $dbNameOrSpecifier, $dbVersion) = @_;
+
+    my $dbName;
+    if ($dbNameOrSpecifier =~ /(.+)\|(.+)/) {
+      die "Can't provide a dbSpecifier and a dbVersion" if $dbVersion;
+      $dbName = $1;
+      $dbVersion = $2
+    } else {
+      die "Database specifier '$dbNameOrSpecifier' is not in 'name|version' format" unless $dbVersion;
+      $dbName = $dbNameOrSpecifier;
+    }
+
     my $lcName = lc($dbName);
     my $sql = "select ex.external_database_release_id
                from sres.externaldatabaserelease ex, sres.externaldatabase e
