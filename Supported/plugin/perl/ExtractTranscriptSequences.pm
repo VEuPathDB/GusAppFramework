@@ -154,7 +154,7 @@ sub run {
 
    my @transcripts;
 
-   my $extDbRlsName = $self->getArg("extDbRlsName");
+   my $extDbRlsName = $self->getArg("extDbName");
    my $extDbRlsVer = $self->getArg("extDbRlsVer");
 
    my $extDbRlsId = $self->getExtDbRlsId($extDbRlsName, $extDbRlsVer);
