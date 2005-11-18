@@ -61,7 +61,8 @@ The purpose of this plugin is to load Ontology Terms and Relationships.
 PURPOSE_BRIEF
 
 my $notes = <<NOTES;
-This plugin depends on the perl module XML::LibXML.  
+This plugin depends on the perl module XML::LibXML.  May fail in non-commit mode...must have terms loaded to 
+load Relationships. 
 NOTES
 
 my $tablesAffected = <<TABLES_AFFECTED;
@@ -752,7 +753,7 @@ sub _getOntologyTermIds {
   $sh->finish ();
 
   if(!$rowcount) {
-    die "No Ontology Terms Found:$!";
+    die "No Ontology Terms Found!  Perhaps you need to run with commit on.:$!";
   }
 
   return(\%rv);
