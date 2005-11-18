@@ -364,11 +364,15 @@ sub makeAASeqDbRef{
     $AASequence->retrieveFromDB();
     my $aaSeqId = $AASequence->getId();
 
-    $newAASeqDbRef = GUS::Model::DoTS::AASequenceDbRef->new({
-	'aa_sequence_id' => $aaSeqId,
-	'db_ref_id' => $dbRefId
-	});
-
+    if ($dbRefId && $aaSeqId){
+      $newAASeqDbRef = GUS::Model::DoTS::AASequenceDbRef->new({
+				    'aa_sequence_id' => $aaSeqId,
+				    'db_ref_id' => $dbRefId
+				   });
+    }
+    else {
+      $self->log("Missing either aa_sequence_id: $aaSeqId or db_ref_id: $dbRefIdfor gene ID $gene_id and sequence ID $AASeqId");
+    }
     return (\$newAASeqDbRef);
     
 }
