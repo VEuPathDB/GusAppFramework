@@ -18,8 +18,8 @@ sub getArgsDeclaration {
 
   my $argsDeclaration =
     [
-     stringArg({ name => 'extDbRlsName',
-		 descr => 'External Database Release name of the transcripts to be translated',
+     stringArg({ name => 'extDbName',
+		 descr => 'External Database name of the transcripts to be translated',
 		 constraintFunc => undef,
 		 isList => 0,
 		 reqd => 1,
@@ -166,7 +166,7 @@ sub run {
    my $dbh = $self->getQueryHandle();
 
    my $sql = <<EOSQL;
-  SELECT source_id,external_database_release_id
+  SELECT source_id
   FROM   DoTS.Transcript
   WHERE  external_database_release_id = ?
 EOSQL
@@ -176,10 +176,9 @@ EOSQL
    $sth->execute($extDbRlsId);
 
    while (my ($sourceId,$extDbRlsId) = $sth->fetchrow()) {
-     my %vals=  (
-		 'sourceId' => $sourceId,
-		 'extDbRlsId' => $extDbRlsId,
-		);
+     my %vals =  (
+		  'sourceId' => $sourceId,
+		 );
      push(@transcripts,\%vals);
    }
 
@@ -232,7 +231,7 @@ sub printSequences {
 
   my $fh = FileHandle->new(">$sequenceFile") || $self->error("cannot open $sequenceFile for writing\n");
 
-  foreach my $vals ($transcripts) {
+  foreach my $vals (@$transcripts) {
     my $id = $vals->{'sourceId'};
     my $seq = $vals->{'sequence'};
     my $length = length ($seq);
