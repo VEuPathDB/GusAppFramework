@@ -451,13 +451,20 @@ sub getTableId {
     if (my ($id) = $sth->fetchrow_array()) {
       $self->{table_id} = $id;
     } else {
-      print STDERR "ERROR: table_id for ".$self->getOracleTableName()." not found\n";
+      die "ERROR: table_id for ".$self->getOracleTableName()." not found";
     }
   }
   return $self->{table_id};
 }
 
-sub setTableId { my($self,$val) = @_; $self->{table_id} = $val; }
+# this method is not longer in service.  (it should be removed in time)
+# it was used to hard-code table ids as of the time of object creation
+# instead table ids are acquired dynamically in getTableId()
+# allowing object layers to move across instances with the same schema
+sub setTableId { 
+  my($self,$val) = @_; 
+#  $self->{table_id} = $val;
+}
 
 sub pkIsIdentity { 
   my ($self) = @_;
