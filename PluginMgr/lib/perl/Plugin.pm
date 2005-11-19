@@ -436,9 +436,18 @@ B<Return type:> C<GUS::Model::Core::AlgorithmInvocation>
 =cut
 sub getAlgInvocation    { $_[0]->{__gus__plugin__self_inv} }
 
+=item C<getDbHandle()>
+
+Get the DbiDbHandle which objects use to submit themselves to the database.  This handle obeys the --commit flag.
+
+B<Return type:> C<GUS::ObjRelP::DbiDbHandle>
+
+=cut
+sub getDbHandle    { $_[0]->getDb ? $_[0]->getDb->getDbHandle : undef }
+
 =item C<getQueryHandle()>
 
-Get the DbiDbHandle which this plugin uses to access the database.
+Get a DbiDbHandle that is distinct from that used by the objects, for querying purposes.  This handle ignores the --commit flag (auto commit is on by default).
 
 B<Return type:> C<GUS::ObjRelP::DbiDbHandle>
 
