@@ -63,7 +63,6 @@ sub _genDefaultParams {
     $s .= '  $self->setHasSequence('.($self->{table}->hasSequence() ? 1 : 0).");\n\n";
     my $pkeys = $self->{table}->getPrimaryKeyAttributes();
     $s .= '  $self->setPrimaryKeyList(\''.join("','",@{$pkeys})."');\n\n" if $pkeys;
-    $s .= '  $self->setTableId('.$self->{table}->getTableId().");\n\n";
     $s .= "}\n\n";
     return $s;
 }
