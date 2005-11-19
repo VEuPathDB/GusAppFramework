@@ -1,5 +1,5 @@
 package GUS::PluginMgr::Plugin;
-
+ 
 require Exporter;
 @ISA = qw(Exporter);
 @EXPORT = qw(stringArg booleanArg fileArg integerArg floatArg globArg tableNameArg enumArg);
