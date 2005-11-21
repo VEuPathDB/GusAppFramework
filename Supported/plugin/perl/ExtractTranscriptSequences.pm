@@ -234,10 +234,11 @@ sub calculateTranscriptSequence {
     }
     $transcriptSequence .= $chunk;
 
-    $self->undefPointerCache();
-
-    return $transcriptSequence;
   }
+
+  $self->undefPointerCache();
+
+  return $transcriptSequence;
 }
 
 sub printSequences {
