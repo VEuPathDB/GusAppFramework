@@ -371,7 +371,7 @@ sub makeAASeqDbRef{
 				   });
     }
     else {
-      $self->log("Missing either aa_sequence_id: $aaSeqId or db_ref_id: $dbRefIdfor gene ID $gene_id and sequence ID $AASeqId");
+      $self->log("Missing either aa_sequence_id: $aaSeqId or db_ref_id: $dbRefId for gene ID $gene_id and sequence ID $AASeqId");
     }
     return (\$newAASeqDbRef);
     
