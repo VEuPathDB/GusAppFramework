@@ -37,7 +37,13 @@ sub getArgsDeclaration {
 		 constraintFunc => undef,
 		 reqd => 1,
 		 isList => 0,
-	       })
+	       }),
+     booleanArg({ name => 'cds',
+                 descr => 'coding sequence only with UTRs removed, default is entire spliced transcript',
+                 constraintFunc => undef,
+                 reqd => 0,
+                 isList => 0,
+               })
     ];
 
   return $argsDeclaration;
@@ -206,22 +212,32 @@ sub calculateTranscriptSequence {
     self->error ("Transcript with source_id = $id had no exons\n");
   }
 
-   @exons = map { $_->[0] }
-      sort { $a->[3] ? $b->[1] <=> $a->[1] : $a->[1] <=> $b->[1] }
-	map { [ $_, $_->getFeatureLocation ]}
-	  @exons;
+  @exons = map { $_->[0] }
+    sort { $a->[3] ? $b->[1] <=> $a->[1] : $a->[1] <=> $b->[1] }
+      map { [ $_, $_->getFeatureLocation ]}
+	@exons;
 
   my $transcriptSequence;
 
   for my $exon (@exons) {
     my $chunk = $exon->getFeatureSequence();
 
+    if ($self->getArg('cds')) {
+      my ($exonStart, $exonEnd, $exonIsReversed) = $exon->getFeatureLocation();
+      my $codingStart = $exon->getCodingStart();
+      my $codingEnd = $exon->getCodingEnd();
+      next unless ($codingStart && $codingEnd);
+      my $trim5 = $exonIsReversed ? $exonEnd - $codingStart : $codingStart - $exonStart;
+      substr($chunk, 0, $trim5, "") if $trim5 > 0;
+      my $trim3 = $exonIsReversed ? $codingEnd - $exonStart : $exonEnd - $codingEnd;
+      substr($chunk, -$trim3, $trim3, "") if $trim3 > 0;
+    }
     $transcriptSequence .= $chunk;
+
+    $self->undefPointerCache();
+
+    return $transcriptSequence;
   }
-
-  $self->undefPointerCache();
-
-  return $transcriptSequence;
 }
 
 sub printSequences {
