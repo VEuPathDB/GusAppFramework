@@ -100,15 +100,21 @@ sub _acquire {
 sub _loadData {
   my ($self, $mgr, $signalBase, $resource, $version) = @_;
 
-    $self->_validatePluginDbArgs();
+  $self->_validatePluginDbArgs();
 
+  # provide backward compatibility for now.  remove soon
+  if ($self->{pluginArgs} =~ /$DBNAME_MACRO\|$DBVERSION_MACRO/) {
+    $self->{pluginArgs} =~ s/$DBNAME_MACRO/$self->{extDbName}/g;
+    $self->{pluginArgs} =~ s/$DBVERSION_MACRO/$self->{extDbRlsVer}/g;
+  } else {
     $self->{pluginArgs} =~ s/$DBNAME_MACRO/\"$self->{extDbName}\"/g;
     $self->{pluginArgs} =~ s/$DBVERSION_MACRO/\"$self->{extDbRlsVer}\"/g;
+  }
 
-    ## handle commit ourselves
-    $mgr->runPluginNoCommit("load_${signalBase}", $self->{plugin}, 
-			    "$self->{pluginArgs} $self->{commit}",
-			    "Loading $resource $version");
+  ## handle commit ourselves
+  $mgr->runPluginNoCommit("load_${signalBase}", $self->{plugin}, 
+			  "$self->{pluginArgs} $self->{commit}",
+			  "Loading $resource $version");
 }
 
 # make sure that plugin args contain necessary macros for 
