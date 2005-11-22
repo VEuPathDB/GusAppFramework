@@ -11,6 +11,7 @@ import java.util.Random;
 
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
+import org.gusdb.dbadmin.model.DatabaseObject;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Index;
 import org.gusdb.dbadmin.model.Schema;
@@ -26,7 +27,7 @@ import org.gusdb.dbadmin.model.View;
 public abstract class RelationalDatabaseWriter extends SchemaWriter {
 
     protected Random         random;
-    protected ArrayList<Table> written = new ArrayList<Table>( );
+    protected ArrayList<DatabaseObject> written = new ArrayList<DatabaseObject>( );
 
     /**
      * DOCUMENT ME!
@@ -102,6 +103,8 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
         oStream.write( view.getSql( ) );
         oStream.write( "\n\n" );
         oStream.flush( );
+        
+        written.add( view );
     }
 
     /**
