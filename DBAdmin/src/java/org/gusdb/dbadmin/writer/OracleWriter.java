@@ -11,8 +11,10 @@ import java.util.Iterator;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
+import org.gusdb.dbadmin.model.DatabaseObject;
 import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
+import org.gusdb.dbadmin.model.GusView;
 import org.gusdb.dbadmin.model.Index;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Sequence;
@@ -78,7 +80,7 @@ public class OracleWriter extends RelationalDatabaseWriter {
             }
         }
         oStream.write( "\n\n--EOF\n" );
-        written = new ArrayList<Table>( );
+        written = new ArrayList<DatabaseObject>( );
     }
 
     private void createRoles( ) throws IOException {
@@ -121,6 +123,20 @@ public class OracleWriter extends RelationalDatabaseWriter {
             writePKConstraint( (GusTable) table );
         }
         oStream.write( "\n" );
+    }
+    
+    protected void writeView( GusView view ) throws IOException {
+        if ( written.contains( view ) ) {
+            return;
+        }
+        super.writeView(view);
+        
+        oStream.write( "GRANT SELECT ON " + view.getSchema( ).getName( ) + "." + view.getName( ) + " TO GUS_R;\n" );
+        oStream.write( "GRANT UPDATE,INSERT,DELETE ON " + view.getSchema( ).getName( ) + "." + view.getName( )
+                + " TO GUS_W;\n" );
+
+        oStream.write( "\n\n" );
+        oStream.flush( );
     }
 
     protected void writeFKConstraints( GusTable table ) throws IOException {

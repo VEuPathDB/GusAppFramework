@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Database;
+import org.gusdb.dbadmin.model.DatabaseObject;
 import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.GusView;
@@ -91,7 +92,7 @@ public class PostgresWriter extends RelationalDatabaseWriter {
 
         oStream.write( "\n\nCOMMIT;\n\n" );
         oStream.write( "--EOF\n" );
-        written = new ArrayList<Table>( );
+        written = new ArrayList<DatabaseObject>( );
     }
 
     /**
@@ -102,6 +103,9 @@ public class PostgresWriter extends RelationalDatabaseWriter {
      * @throws IOException
      */
     protected void writeView( View view ) throws IOException {
+        if ( written.contains( view ) ) {
+            return;
+        }
         super.writeView( view );
         if ( view instanceof GusView ) {
             writeViewRules( (GusView) view );
