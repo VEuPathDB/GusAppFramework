@@ -7,7 +7,6 @@ package GUS::Community::Plugin::Report::ListXdbs;
 use strict;
 
 use FileHandle;
-use V;
 
 use GUS::PluginMgr::Plugin;
 
