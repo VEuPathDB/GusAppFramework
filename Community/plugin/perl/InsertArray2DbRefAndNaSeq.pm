@@ -23,8 +23,6 @@ use GUS::Model::RAD::ElementDbRef;
 
 $| = 1;
 
-#todo:restart, check if entry already there, multiple ids
-
 my $argsDeclaration =
 [
      
@@ -131,21 +129,21 @@ enumArg({name => 'databaseName',
 
 # TODO: see insertradanalysis
 my $purposeBrief = <<PURPOSEBRIEF;
-Populate mappings in RAD.ElementDbRef and RAD.CompositeElementsDbRef between SRes.DbRef and DoTs.NaSequence and RAD.ShortOligoFamily or RAD.Spot from Affymetrix or PancChips annotations file.
+Populate mappings in RAD.ElementDbRef and RAD.CompositeElementsDbRef between SRes.DbRef and DoTS.NaSequence and RAD.ShortOligoFamily or RAD.Spot from Affymetrix or PancChips annotations file.
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-Populate mappings between SRes.DbRef and DoTs.NaSequence and RAD.ShortOligoFamily or RAD.Spot from Affymetrix or PancChips annotations file.  Mappings are inserted in RAD.CompositeElementDbRef or RAD.ElementDbRef.
+Populate mappings between SRes.DbRef and DoTS.NaSequence and RAD.ShortOligoFamily or RAD.Spot from Affymetrix or PancChips annotations file.  Mappings are inserted in RAD.CompositeElementDbRef or RAD.ElementDbRef.
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
 ['RAD.CompositeElementDbRef','New entries are placed in this table', 'RAD.CompositeElementNaSequence', 'New entries are placed in this table', 'RAD.ElementDbRef', 'New entries are placed in this table', 'RAD.ElementNaSequence', 'New entries are placed in this table']
 ];
 
-my $tablesDependedOn = ['Sres.DbRef', 'Dots.NaSequence', 'Dots.Evidence'];
+my $tablesDependedOn = ['SRes.DbRef', 'DoTS.NASequence', 'DoTS.Evidence'];
 
 my $howToRestart = <<PLUGIN_RESTART;
-TODO
+TODO write this
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -153,7 +151,7 @@ unknown
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
-TODO
+TODO write this
 PLUGIN_NOTES
 
 my $documentation = {purposeBrief => $purposeBrief,
@@ -172,7 +170,7 @@ sub new {
     bless($self, $class);
     
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 4127 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 4134 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -193,26 +191,31 @@ sub run {
     
     my $technologyType = $self->getTechnologyType();
     my $databaseName = $self->getArg('databaseName');
-    my $arrayDesignId = $self->getArrayDesignId();
+    my $arrayDesignID = $self->getArrayDesignID();
 
-    my $evidenceExternalDbId = $self->getExternalDbId($self->getArg('evidenceExternalDbName'), $self->getArg('evidenceExternalDbVersion'));
-    my $dbRefOrNASeqExternalDbId = $self->getExternalDbId($self->getArg('evidenceExternalDbName'), $self->getArg('evidenceExternalDbVersion'));
+    my $evidenceExternalDbID = $self->getExternalDbID($self->getArg('evidenceExternalDbName'), $self->getArg('evidenceExternalDbVersion'));
+    my $dbRefOrNASeqExternalDbID = $self->getExternalDbID($self->getArg('evidenceExternalDbName'), $self->getArg('evidenceExternalDbVersion'));
     
     my $fileName = $self->getArg('annotationFileName');
     my $separator = $self->getArg('separator');
+    my $subSeparator = $self->getArg('subSeparator');
+    
     my $refIDColumnName = $self->getArg('refIDColumnName');
     my $annotIDColumnName = $self->getArg('annotationIDColumnName');
     
-    my $hashRef = $self->parseAnnotationFile($fileName, $separator, $refIDColumnName, $annotIDColumnName);
+    my $hashRef = $self->parseAnnotationFile($fileName, $separator, $subSeparator, $refIDColumnName, $annotIDColumnName);
+
+
+    my $logFile = "loadArray2DbRefAndNaSeq.log";
     
     $self->log("$technologyType - $databaseName\n");
     
     if($technologyType =~ /oligo/i) {
 	if($databaseName eq "DbRef") {
-	    $nrecords = $self->populateCompEleDbRef($hashRef, $arrayDesignId, $evidenceExternalDbId, $dbRefOrNASeqExternalDbId);
+	    $nrecords = $self->populateCompEleDbRef($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile);
 	}
 	elsif($databaseName eq "NaSeq")  {
-	    $nrecords = $self->populateCompEleNaSeq($hashRef, $arrayDesignId, $evidenceExternalDbId, $dbRefOrNASeqExternalDbId);
+	    $nrecords = $self->populateCompEleNaSeq($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile);
 	}
 	else {
 	    die("$databaseName is an undefined type\n");
@@ -220,10 +223,10 @@ sub run {
     }
     elsif($technologyType =~ /spot/i) {
 	if($databaseName eq "DbRef") {
-	    $nrecords = $self->populateEleDbRef($hashRef, $arrayDesignId, $evidenceExternalDbId, $dbRefOrNASeqExternalDbId);
+	    $nrecords = $self->populateEleDbRef($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID);
 	}
 	elsif($databaseName eq "NaSeq")  {
-	    $nrecords = $self->populateEleNaSeq($hashRef, $arrayDesignId, $evidenceExternalDbId, $dbRefOrNASeqExternalDbId);
+	    $nrecords = $self->populateEleNaSeq($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID);
 	}
 	else {
 	    die("$databaseName is an undefined type\n");
@@ -240,167 +243,411 @@ sub run {
 
 
 sub populateCompEleDbRef {
-    my($self, $hash, $arrayDesignId, $evidenceExternalDbId, $dbRefOrNASeqExternalDbId) = @_;
+    my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
     
     my $n = scalar keys(%$hash);
     
-    my ($sql, $queryHandle, $sth, $compositeElementId, $dbRefId);
+    my ($sql, $queryHandle, $sth, $compositeElementID, $dbRefID, $compEleID);
     my $nProbePopulated = 0;
     my $nCENotFound =0;
-    my $nDbRefIdNotFound=0;
-        
+    my $nDbRefIDNotFound=0;
+    
+    open(LOGFILE, ">$logFile") ||  die ("Can't open $logFile\n");
+    
     $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'CompositeElementDbRef' and d.name = 'RAD'";
     
     $queryHandle = $self->getQueryHandle();
     $sth = $queryHandle->prepareAndExecute($sql);
-    my ($targetTableId) = $sth ->fetchrow_array();
-    if(!defined $targetTableId) { die "Cannot find RAD.CompositeElementDbRef' table\n"; }
+    my ($targetTableID) = $sth ->fetchrow_array();
+    if(!defined $targetTableID) { die "Cannot find RAD.CompositeElementDbRef' table\n"; }
     
     $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'ExternalDatabaseRelease' and d.name = 'SRes'";
     
     $queryHandle = $self->getQueryHandle();
     $sth = $queryHandle->prepareAndExecute($sql);
-    my ($factTableId) = $sth ->fetchrow_array();
+    my ($factTableID) = $sth ->fetchrow_array();
     
-    if(!$factTableId) { die "Cannot find SRes.ExternalDatabaseRelease\n"; }
+    if(!$factTableID) { die "Cannot find SRes.ExternalDatabaseRelease\n"; }
     
     my $counter = 0;
-    while (my ($probe, $annotationId) = each(%$hash)) {
-		
-	$sql = "SELECT composite_element_id FROM RAD.shortoligofamily WHERE name = '$probe' and array_design_id = $arrayDesignId";
+    while (my ($probeID, $annotationListIDRef) = each(%$hash)) {
+	
+	$sql = "SELECT composite_element_id FROM RAD.shortoligofamily WHERE name = '$probeID' and array_design_id = $arrayDesignID";
 	$queryHandle = $self->getQueryHandle();
 	$sth = $queryHandle->prepareAndExecute($sql);
-	($compositeElementId) = $sth ->fetchrow_array();
+	($compositeElementID) = $sth ->fetchrow_array();
 	
-	if(defined $compositeElementId) {
-	    
-	    $sql = "SELECT db_ref_id FROM sres.dbref WHERE primary_identifier = '$annotationId' and external_database_release_id =$dbRefOrNASeqExternalDbId";
-	    
-	    $queryHandle = $self->getQueryHandle();
-	    $sth = $queryHandle->prepareAndExecute($sql);
-	    ($dbRefId) = $sth ->fetchrow_array();
-	    
-	    if(defined $dbRefId) {
+	if(defined $compositeElementID) {
+
+	    my @annotationListID = @$annotationListIDRef;
+	    foreach(@$annotationListIDRef) {
 		
-		my $newCEDbRef = GUS::Model::RAD::CompositeElementDbRef->new({
-		    'composite_element_id' => $compositeElementId,
-		    'db_ref_id' => $dbRefId
-		    });
-		$newCEDbRef->submit();
-		my $targetId = $newCEDbRef->getID();
+		my $annotationID= $_;
 		
-		my $newEvidence = GUS::Model::DoTs::Evidence->new({
-		    'target_table_id' => $targetTableId,
-		    'target_id' => $targetId,
-		    'fact_table_id' => $factTableId,
-		    'fact_id' => $evidenceExternalDbId
-		    });
+		$sql = "SELECT db_ref_id FROM SRes.dbref WHERE primary_identifier = '$annotationID' and external_database_release_id =$dbRefOrNASeqExternalDbID";
 		
-		$newEvidence->submit();
+		$queryHandle = $self->getQueryHandle();
+		$sth = $queryHandle->prepareAndExecute($sql);
+		($dbRefID) = $sth ->fetchrow_array();
 		
-		$nProbePopulated++;
-		$self->undefPointerCache();
-	    }
-	    else {
-		$self->log("Db Ref ID [$dbRefId] not found");
-		$nDbRefIdNotFound++;
+		if(defined $dbRefID) {
+		    
+		    $sql = "SELECT composite_element_db_ref_id FROM RAD.CompositeElementDbRef WHERE composite_element_id = $compositeElementID AND db_ref_id = $dbRefID";
+		    $queryHandle = $self->getQueryHandle();
+		    $sth = $queryHandle->prepareAndExecute($sql);
+		    ($compEleID) = $sth ->fetchrow_array();
+		    if(!defined $compEleID) {
+			
+			my $newCEDbRef = GUS::Model::RAD::CompositeElementDbRef->new({
+			    'composite_element_id' => $compositeElementID,
+			    'db_ref_id' => $dbRefID
+			    });
+			
+			$newCEDbRef->submit();
+			my $targetID = $newCEDbRef->getId();
+			
+			my $newEvidence = GUS::Model::DoTS::Evidence->new({
+			    'target_table_id' => $targetTableID,
+			    'target_id' => $targetID,
+			    'fact_table_id' => $factTableID,
+			    'fact_id' => $evidenceExternalDbID
+			    });
+			
+			$newEvidence->submit();
+			
+			$nProbePopulated++;
+			$self->undefPointerCache();
+		    }
+		}
+		else {
+		    $self->log("$annotationID not found in SRes.DBRef");
+		    print LOGFILE "$annotationID not found in SRes.DBRef\n";
+		    $nDbRefIDNotFound++;
+		}
 	    }
 	}
 	else {
-	    $self->log("CompositeElementID [$compositeElementId] not found");
+	    $self->log("$probeID not found in RAD.ShortOligoFamily");
+	    print LOGFILE "$probeID not found in RAD.ShortOligoFamily\n";
 	    $nCENotFound++;
 	}
 	
-	if($counter % 100 ==0 and $counter!=0) { $self->log("$counter entries populated in RAD.CompositeElementDbRef");}
 	$counter++;
+	if($counter % 100 ==0) { $self->log("$counter entries populated in RAD.CompositeElementDbRef");}
     }
-    # TODO
-    # generate a file with list of composite_ele_id/annotation_id not found
-
-    $self->log ("CompositeElement not found = $nCENotFound; DbRefId not found = $nDbRefIdNotFound; rows populated = $nProbePopulated");
+    close(LOGFILE);
+    $self->log ("CompositeElement not found = $nCENotFound; DbRefID not found = $nDbRefIDNotFound; rows populated = $nProbePopulated");
     return $nProbePopulated;
 }
 
 
 sub populateEleDbRef {
-    my($self, $hash, $arrayDesignId, $evidenceExternalDbId, $dbRefOrNASeqExternalDbId) = @_;
+    my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
     
     my $n = scalar keys(%$hash);
     
-    my ($sql, $queryHandle, $sth, $elementId, $dbRefId);
+    my ($sql, $queryHandle, $sth, $elementID, $dbRefID, $eleID);
     my $nProbePopulated = 0;
     my $nENotFound =0;
-    my $nDbRefIdNotFound=0;
+    my $nDbRefIDNotFound=0;
+
+    open(LOGFILE, ">$logFile") ||  die ("Can't open $logFile\n");
     
     $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'ElementDbRef' and d.name = 'RAD'";
     $queryHandle = $self->getQueryHandle();
     $sth = $queryHandle->prepareAndExecute($sql);
-    my ($targetTableId) = $sth ->fetchrow_array();
-    if(!$targetTableId) { die "Cannot find RAD.ElementDbRef\n"; }
+    my ($targetTableID) = $sth ->fetchrow_array();
+    if(!$targetTableID) { die "Cannot find RAD.ElementDbRef\n"; }
     
     $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'ExternalDatabaseRelease' and d.name = 'SRes'";
     $queryHandle = $self->getQueryHandle();
     $sth = $queryHandle->prepareAndExecute($sql);
-    my ($factTableId) = $sth ->fetchrow_array();    
-    if(!$factTableId) { die "Cannot find SRes.ExternalDatabaseRelease\n"; }
+    my ($factTableID) = $sth ->fetchrow_array();    
+    if(!$factTableID) { die "Cannot find SRes.ExternalDatabaseRelease\n"; }
     
     my $counter = 0;
 
-    while (my ($geneLocation, $annotationId) = each(%$hash)) {
+    while (my ($geneLocation, $annotationListIDRef) = each(%$hash)) {
 	
 	my @gc = split(/\./, $geneLocation);
 	
-	$sql = "SELECT element_id FROM RAD.spot WHERE array_row=$gc[0] and array_column=$gc[1] and grid_row=$gc[2] and grid_column=$gc[3] and sub_row=$gc[4] and sub_column=$gc[5] and array_design_id = $arrayDesignId";
+	$sql = "SELECT element_id FROM RAD.spot WHERE array_row=$gc[0] and array_column=$gc[1] and grid_row=$gc[2] and grid_column=$gc[3] and sub_row=$gc[4] and sub_column=$gc[5] and array_design_id = $arrayDesignID";
 	
 	$queryHandle = $self->getQueryHandle();
 	$sth = $queryHandle->prepareAndExecute($sql);
-	($elementId) = $sth ->fetchrow_array();
+	($elementID) = $sth ->fetchrow_array();
 	
-	if(!$elementId) { 
+	if(defined $elementID) {
 	    
-	    $sql = "SELECT db_ref_id FROM sres.dbref WHERE primary_identifier = '$annotationId' AND external_database_release_id =$dbRefOrNASeqExternalDbId";
+	    my @annotationListID = @$annotationListIDRef;
 	    
-	    $queryHandle = $self->getQueryHandle();
-	    $sth = $queryHandle->prepareAndExecute($sql);
-	    ($dbRefId) = $sth ->fetchrow_array();
-	    
-	    if(!$dbRefId) {
-
-		my $newEDbRef = GUS::Model::RAD::ElementDbRef->new({
-		    'element_id' => $elementId,
-		    'db_ref_id' => $dbRefId
-		    });
+	    foreach(@annotationListID) {
+		my $annotationID = $_;
 		
-		my $newEvidence = GUS::Model::DoTs::Evidence->new({
-		    'target_table_id' => $targetTableId,
-		    'target_id' => $newEDbRef,
-		    'fact_table_id' => $factTableId,
-		    'fact_id' => $dbRefOrNASeqExternalDbId
-		    });
+		$sql = "SELECT db_ref_id FROM SRes.dbref WHERE primary_identifier = '$annotationID' AND external_database_release_id =$dbRefOrNASeqExternalDbID";
+		$queryHandle = $self->getQueryHandle();
+		$sth = $queryHandle->prepareAndExecute($sql);
+		($dbRefID) = $sth ->fetchrow_array();
 		
-		$nProbePopulated++;
-		$self->undefPointerCache();
-	    }
-	    else {
-		$nDbRefIdNotFound++;	
+		if(defined $dbRefID) {
+		    
+		    $sql = "SELECT element_db_ref_id FROM RAD.ElementDbRef WHERE element_id = $elementID AND db_ref_id = $dbRefID";
+		    $queryHandle = $self->getQueryHandle();
+		    $sth = $queryHandle->prepareAndExecute($sql);
+		    ($eleID) = $sth ->fetchrow_array();
+		    
+		    if(!defined $eleID) {
+			
+			my $newEDbRef = GUS::Model::RAD::ElementDbRef->new({
+			    'element_id' => $elementID,
+			    'db_ref_id' => $dbRefID
+			    });
+			
+			$newEDbRef->submit();
+			my $targetID = $newEDbRef->getId();
+			
+			my $newEvidence = GUS::Model::DoTS::Evidence->new({
+			    'target_table_id' => $targetTableID,
+			    'target_id' => $targetID,
+			    'fact_table_id' => $factTableID,
+			    'fact_id' => $evidenceExternalDbID
+			    });
+			
+			$newEvidence->submit();
+			
+			$nProbePopulated++;
+			$self->undefPointerCache();
+		    }
+		}
+		else {
+		    $self->log("$annotationID not found in SRes.DBRef");
+		    print LOGFILE "$annotationID not found in SRes.DBRef\n";
+		    $nDbRefIDNotFound++;
+		}
 	    }
 	}
 	else {
+	    $self->log("$geneLocation not found in RAD.Spot");
+	    print LOGFILE "$geneLocation not found in RAD.Spot\n";
 	    $nENotFound++;
 	}
-	if($counter % 100 ==0) { $self->log("$counter entries populated in RAD.ElementDbRef");}
 	$counter++;
+	if($counter % 100 ==0) { $self->log("$counter entries populated in RAD.ElementDbRef");}
 	
     }
-
     
-    $self->log ("Element not found = $nENotFound; DbRefId not found = $nDbRefIdNotFound; rows populated = $nProbePopulated");
+    close LOGFILE;
+    
+    $self->log ("Element not found = $nENotFound; DbRefID not found = $nDbRefIDNotFound; rows populated = $nProbePopulated");
     return $nProbePopulated;
 }
 
 
+
+sub populateCompEleNASeq {
+    my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
+    
+    my $n = scalar keys(%$hash);
+    
+    my ($sql, $queryHandle, $sth, $compositeElementID, $naSeqID, $compEleID);
+    my $nProbePopulated = 0;
+    my $nCENotFound =0;
+    my $nNASeqIDNotFound=0;
+    
+    open(LOGFILE, ">$logFile") ||  die ("Can't open $logFile\n");
+    
+    $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'CompositeElementNASequence' and d.name = 'RAD'";
+    
+    $queryHandle = $self->getQueryHandle();
+    $sth = $queryHandle->prepareAndExecute($sql);
+    my ($targetTableID) = $sth ->fetchrow_array();
+    if(!defined $targetTableID) { die "Cannot find RAD.CompositeElementNASequence' table\n"; }
+    
+    $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'ExternalDatabaseRelease' and d.name = 'SRes'";
+    
+    $queryHandle = $self->getQueryHandle();
+    $sth = $queryHandle->prepareAndExecute($sql);
+    my ($factTableID) = $sth ->fetchrow_array();
+    
+    if(!$factTableID) { die "Cannot find SRes.ExternalDatabaseRelease\n"; }
+    
+    my $counter = 0;
+    while (my ($probeID, $annotationListIDRef) = each(%$hash)) {
+	
+	$sql = "SELECT composite_element_id FROM RAD.shortoligofamily WHERE name = '$probeID' and array_design_id = $arrayDesignID";
+	$queryHandle = $self->getQueryHandle();
+	$sth = $queryHandle->prepareAndExecute($sql);
+	($compositeElementID) = $sth ->fetchrow_array();
+	
+	if(defined $compositeElementID) {
+
+	    my @annotationListID = @$annotationListIDRef;
+	    foreach(@$annotationListIDRef) {
+		
+		my $annotationID= $_;
+		
+		$sql = "SELECT na_sequence_id FROM DoTS.NASeqence WHERE source_na_sequence_id = '$annotationID' and external_database_release_id =$dbRefOrNASeqExternalDbID";
+		
+		$queryHandle = $self->getQueryHandle();
+		$sth = $queryHandle->prepareAndExecute($sql);
+		($naSeqID) = $sth ->fetchrow_array();
+		
+		if(defined $naSeqID) {
+		    
+		    $sql = "SELECT composite_element_na_seq_id FROM RAD.CompositeElementNASeqence WHERE composite_element_id = $compositeElementID AND na_sequence_id = $naSeqID";
+		    $queryHandle = $self->getQueryHandle();
+		    $sth = $queryHandle->prepareAndExecute($sql);
+		    ($compEleID) = $sth ->fetchrow_array();
+		    if(!defined $compEleID) {
+			
+			my $newCENASeq = GUS::Model::RAD::CompositeElementNASequence->new({
+			    'composite_element_id' => $compositeElementID,
+			    'na_sequence_id' => $naSeqID
+			    });
+			
+			$newCENASeq->submit();
+			my $targetID = $newCENASeq->getId();
+			
+			my $newEvidence = GUS::Model::DoTS::Evidence->new({
+			    'target_table_id' => $targetTableID,
+			    'target_id' => $targetID,
+			    'fact_table_id' => $factTableID,
+			    'fact_id' => $evidenceExternalDbID
+			    });
+			
+			$newEvidence->submit();
+			
+			$nProbePopulated++;
+			$self->undefPointerCache();
+		    }
+		}
+		else {
+		    $self->log("$annotationID not found in DoTS.NASequence");
+		    print LOGFILE "$annotationID not found in DoTS.NASequence\n";
+		    $nNASeqIDNotFound++;
+		}
+	    }
+	}
+	else {
+	    $self->log("$probeID not found in RAD.ShortOligoFamily");
+	    print LOGFILE "$probeID not found in RAD.ShortOligoFamily\n";
+	    $nCENotFound++;
+	}
+	
+	$counter++;
+	if($counter % 100 ==0) { $self->log("$counter entries populated in RAD.CompositeElementNaSequence");}
+    }
+    close(LOGFILE);
+    $self->log ("CompositeElement not found = $nCENotFound; naSeqID not found = $nNASeqIDNotFound; rows populated = $nProbePopulated");
+    return $nProbePopulated;
+}
+
+
+sub populateEleNASeq {
+    my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
+    
+    my $n = scalar keys(%$hash);
+    
+    my ($sql, $queryHandle, $sth, $elementID, $naSeqID, $eleID);
+    my $nProbePopulated = 0;
+    my $nENotFound =0;
+    my $nNASeqIDNotFound=0;
+
+    open(LOGFILE, ">$logFile") ||  die ("Can't open $logFile\n");
+    
+    $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'ElementNASequence' and d.name = 'RAD'";
+    $queryHandle = $self->getQueryHandle();
+    $sth = $queryHandle->prepareAndExecute($sql);
+    my ($targetTableID) = $sth ->fetchrow_array();
+    if(!$targetTableID) { die "Cannot find RAD.ElementNASequence\n"; }
+    
+    $sql = "SELECT t.table_id from Core.tableinfo t, Core.databaseinfo d WHERE t.database_id= d.database_id and t.name = 'ExternalDatabaseRelease' and d.name = 'SRes'";
+    $queryHandle = $self->getQueryHandle();
+    $sth = $queryHandle->prepareAndExecute($sql);
+    my ($factTableID) = $sth ->fetchrow_array();    
+    if(!$factTableID) { die "Cannot find SRes.ExternalDatabaseRelease\n"; }
+    
+    my $counter = 0;
+
+    while (my ($geneLocation, $annotationListIDRef) = each(%$hash)) {
+	
+	my @gc = split(/\./, $geneLocation);
+	
+	$sql = "SELECT element_id FROM RAD.spot WHERE array_row=$gc[0] and array_column=$gc[1] and grid_row=$gc[2] and grid_column=$gc[3] and sub_row=$gc[4] and sub_column=$gc[5] and array_design_id = $arrayDesignID";
+	
+	$queryHandle = $self->getQueryHandle();
+	$sth = $queryHandle->prepareAndExecute($sql);
+	($elementID) = $sth ->fetchrow_array();
+	
+	if(defined $elementID) {
+	    
+	    my @annotationListID = @$annotationListIDRef;
+	    
+	    foreach(@annotationListID) {
+		my $annotationID = $_;
+		
+		$sql = "SELECT na_sequence_id FROM DoTS.NASequence WHERE source_na_sequence_id = '$annotationID' AND external_database_release_id =$dbRefOrNASeqExternalDbID";
+		$queryHandle = $self->getQueryHandle();
+		$sth = $queryHandle->prepareAndExecute($sql);
+		($naSeqID) = $sth ->fetchrow_array();
+		
+		if(defined $naSeqID) {
+		    
+		    $sql = "SELECT element_na_sequence_id FROM RAD.ElementNASequence WHERE element_id = $elementID AND na_sequence_id = $naSeqID";
+		    $queryHandle = $self->getQueryHandle();
+		    $sth = $queryHandle->prepareAndExecute($sql);
+		    ($eleID) = $sth ->fetchrow_array();
+		    
+		    if(!defined $eleID) {
+			
+			my $newENASeq = GUS::Model::RAD::ElementDbRef->new({
+			    'element_id' => $elementID,
+			    'na-sequence_id' => $naSeqID
+			    });
+			
+			$newENASeq->submit();
+			my $targetID = $newENASeq->getId();
+			
+			my $newEvidence = GUS::Model::DoTS::Evidence->new({
+			    'target_table_id' => $targetTableID,
+			    'target_id' => $targetID,
+			    'fact_table_id' => $factTableID,
+			    'fact_id' => $evidenceExternalDbID
+			    });
+			
+			$newEvidence->submit();
+			
+			$nProbePopulated++;
+			$self->undefPointerCache();
+		    }
+		}
+		else {
+		    $self->log("$annotationID not found in DBRef");
+		    print LOGFILE "$annotationID not found in DBRef\n";
+		    $nNASeqIDNotFound++;
+		}
+	    }
+	}
+	else {
+	    $self->log("$geneLocation not found in RAD.Spot");
+	    print LOGFILE "$geneLocation not found in RAD.Spot\n";
+	    $nENotFound++;
+	}
+	$counter++;
+	if($counter % 100 ==0) { $self->log("$counter entries populated in RAD.ElementNASequence");}
+	
+    }
+    
+    close LOGFILE;
+    
+    $self->log ("Element not found = $nENotFound; NASequenceID not found = $nNASeqIDNotFound; rows populated = $nProbePopulated");
+    return $nProbePopulated;
+}
+
+
+
 sub parseAnnotationFile {
-    my ($self, $annotFile, $separator, $columnRefIDName, $columnIDName)  = @_;
+    my ($self, $annotFile, $separator, $subSeparator, $columnRefIDName, $columnIDName)  = @_;
     
     open (FILE, $annotFile) ||  die ("Can't open $annotFile\n");
     
@@ -427,7 +674,7 @@ sub parseAnnotationFile {
 	die "Could not find header\n";
     }
 
-    print "indexheader = $indexHeader\n";
+    $self->log("header found at line = $indexHeader");
     my $columnRefID = -1;
     my $columnID = -1;
     for( my $i=0; $i<=scalar @header; $i++) {
@@ -443,30 +690,36 @@ sub parseAnnotationFile {
 	die "Did not find '$columnIDName' in the file header\n";
     }
     
-    print "ref col=$columnRefIDName  ref id = $columnIDName\n";
+    $self->log("ref col=$columnRefID  ref id = $columnID");
+    
     for(my $i=$indexHeader+1; $i<scalar @content; $i++) {
-	$content[$i] =~ s/\"//g;
 	
-	my @row = split(/$separator/, $content[$i]);
-	print "@row\n";
-	
-	print "data: $row[$columnRefID]  $row[$columnID]\n";
+	my @row = split(/\"$separator\"/, $content[$i]);
+	foreach(@row) { $_ =~s/\"//g; }
+	my $k=0;
+	#foreach (@row) {
+	 #   print "$k:$_\n";
+	 #   $k++;
+	#}
 	
 	if(defined $row[$columnRefID] & defined $row[$columnID]) {
-	    $hash{$row[$columnRefID]} = $row[$columnID];
+
+	    my @list = split(/$subSeparator/, $row[$columnID]);
+	    
+	    $hash{$row[$columnRefID]} = [ @list ];
 	}
     }
     
     close FILE;
-
-
+    
+    
     my $nRecords = scalar keys(%hash);
     $self->log("$nRecords records found in $annotFile");
     return (\%hash);
 }
 
 
-sub getArrayDesignId {
+sub getArrayDesignID {
     my($self) = @_;
     my $arrayDesignName = $self->getArg('arrayDesignName');
     my $arrayDesignversion = $self->getArg('arrayDesignVersion');
@@ -481,13 +734,13 @@ sub getArrayDesignId {
     
     my $queryHandle = $self->getQueryHandle();
     my $sth = $queryHandle->prepareAndExecute($sql);
-    my ($arrayDesignId) = $sth ->fetchrow_array();
+    my ($arrayDesignID) = $sth ->fetchrow_array();
     
-    if(!defined $arrayDesignId) {
+    if(!defined $arrayDesignID) {
 	die("No ARRAY_DESIGN_ID corresponding to NAME '$arrayDesignName' (version '$arrayDesignversion')"); 
     }
-    $self->log("array_design_id = $arrayDesignId"); 
-    return $arrayDesignId;
+    $self->log("array_design_id = $arrayDesignID"); 
+    return $arrayDesignID;
 }
 
 
@@ -516,7 +769,7 @@ sub getTechnologyType {
     return $techTypeID;
 }
 
-sub getExternalDbId {
+sub getExternalDbID {
     my($self, $dbName, $dbVersion) = @_;
     
     my $sql = "SELECT i.external_database_release_id FROM SRes.externaldatabaserelease i, SRes.externaldatabase e where i.version = '$dbVersion' and e.name = '$dbName'";
@@ -526,7 +779,7 @@ sub getExternalDbId {
     my ($externalDbID) = $sth ->fetchrow_array();
     
     if(!defined $externalDbID) {
-	die("No External Database Release Id corresponding to NAME '$dbName' (version '$dbVersion')"); 
+	die("No External Database Release ID corresponding to NAME '$dbName' (version '$dbVersion')"); 
     }
     $self->log("external_db_id = $externalDbID"); 
     return $externalDbID;
