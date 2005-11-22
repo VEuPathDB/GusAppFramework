@@ -274,7 +274,7 @@ sub loadData{
 
 		    my $newAASeqDbRef = $self->makeAASeqDbRef($AASequenceId, $gene_id);
 
-		    if(defined $newAASeqDbRef) {
+		    if(defined $$newAASeqDbRef) {
 			unless($$newAASeqDbRef->retrieveFromDB()){
 			    $$newOrthologGroup->addToSubmitList($$newAASeqDbRef );
 			}
