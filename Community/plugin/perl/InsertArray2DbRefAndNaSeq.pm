@@ -127,13 +127,13 @@ enumArg({name => 'databaseName',
 
  ];
 
-# TODO: see insertradanalysis
+
 my $purposeBrief = <<PURPOSEBRIEF;
-Populate mappings in RAD.ElementDbRef and RAD.CompositeElementsDbRef between SRes.DbRef and DoTS.NaSequence and RAD.ShortOligoFamily or RAD.Spot from Affymetrix or PancChips annotations file.
+Populate mappings in RAD.ElementDbRef and RAD.CompositeElementsDbRef between SRes.DbRef and DoTS.NaSequence and RAD.ShortOligoFamily or RAD.Spot from microarray annotations file.
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-Populate mappings between SRes.DbRef and DoTS.NaSequence and RAD.ShortOligoFamily or RAD.Spot from Affymetrix or PancChips annotations file.  Mappings are inserted in RAD.CompositeElementDbRef or RAD.ElementDbRef.
+Populate mappings between SRes.DbRef and DoTS.NaSequence and RAD.ShortOligoFamily or RAD.Spot from delimited microarray annotations file.  Mappings are inserted in RAD.CompositeElementDbRef or RAD.ElementDbRef.
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
@@ -143,7 +143,8 @@ my $tablesAffected = [
 my $tablesDependedOn = ['SRes.DbRef', 'DoTS.NASequence', 'DoTS.Evidence'];
 
 my $howToRestart = <<PLUGIN_RESTART;
-TODO write this
+This plugin is compliant with the undo API:
+Run the plugin GUS::Community::Plugin::Undo to delete all entries inserted by a specific call to this plugin. Then re-run this plugin from fresh
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -151,7 +152,6 @@ unknown
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
-TODO write this
 PLUGIN_NOTES
 
 my $documentation = {purposeBrief => $purposeBrief,
@@ -600,7 +600,7 @@ sub populateEleNASeq {
 		    
 		    if(!defined $eleID) {
 			
-			my $newENASeq = GUS::Model::RAD::ElementDbRef->new({
+			my $newENASeq = GUS::Model::RAD::ElementNASequence->new({
 			    'element_id' => $elementID,
 			    'na-sequence_id' => $naSeqID
 			    });
@@ -622,8 +622,8 @@ sub populateEleNASeq {
 		    }
 		}
 		else {
-		    $self->log("$annotationID not found in DBRef");
-		    print LOGFILE "$annotationID not found in DBRef\n";
+		    $self->log("$annotationID not found in DoTS.NASequence");
+		    print LOGFILE "$annotationID not found in DoTS.NASequence\n";
 		    $nNASeqIDNotFound++;
 		}
 	    }
@@ -784,3 +784,10 @@ sub getExternalDbID {
     $self->log("external_db_id = $externalDbID"); 
     return $externalDbID;
 }
+
+sub undoTables {
+    my ($self) = @_;
+
+    return ('RAD.CompositeElementNASequence', 'RAD.ElementNASequence', 'RAD.CompositeElementDBRef', 'RAD.ElementDbRef');
+}
+
