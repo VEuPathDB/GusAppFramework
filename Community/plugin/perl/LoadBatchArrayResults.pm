@@ -480,24 +480,28 @@ sub retrieveQuantifications{
     $globalRef->{'is2channel'} = 0;
 
     foreach my $acqId (@acqs) {
-      my $celQuantId = undef;
+      my $celQuantId;
+      my @setQuantIds;
+      my $celCount = 0;
       my $acqInfo =  $infoQ->getAcquisitionInfo($acqId);
 
       foreach my $quantId (@{$acqInfo->{quantifications}}) {
 	my $quantInfo = $infoQ->getQuantificationInfo($quantId);
 
-	if(!defined $celQuantId && ($quantInfo->{'protocol_id'} == $globalRef->{'softwareName2Id'}->{'cel4'} || $quantInfo->{'protocol_id'} == $globalRef->{'softwareName2Id'}->{'cel5'})) {
+	if($quantInfo->{'protocol_id'} == $globalRef->{'softwareName2Id'}->{'cel4'} || $quantInfo->{'protocol_id'} == $globalRef->{'softwareName2Id'}->{'cel5'}) {
 	  $celQuantId = $quantInfo->{'quantification_id'};
+	  $celCount++;
 	  next;
 	}
-
 	if($quantInfo->{'protocol_id'} == $globalRef->{'protocolId'}) {
-	  my $quantId =  $quantInfo->{'quantification_id'};
-	  push (@{$globalRef->{$assayId}->{'quantifications'}}, $quantId);
-	  # relate CEL and other quantifications if CEL exists
-	  $self->relateQuantifications($celQuantId, $quantId) if (defined $celQuantId);
-	  $self->relateQuantifications($quantId, $celQuantId) if (defined $celQuantId);
+	  push(@setQuantIds, $quantInfo->{'quantification_id'});
+	  push (@{$globalRef->{$assayId}->{'quantifications'}}, $quantInfo->{'quantification_id'});
 	}
+      }
+      # relate CEL and other quantifications if one CEL exists
+      foreach my $quantId (@setQuantIds) {
+	$self->relateQuantifications($celQuantId, $quantId) if ($celCount==1);
+	$self->relateQuantifications($quantId, $celQuantId) if ($celCount==1);
       }
     }
   }
