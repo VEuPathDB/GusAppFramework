@@ -3,7 +3,7 @@
 ## $Id$
 ##
 
-package GUS::Supported::Plugin::InsertPhylogeneticProfiles;
+package GUS::Community::Plugin::InsertPhylogeneticProfiles;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;
@@ -55,6 +55,13 @@ my $argsDeclaration =
 	       constraintFunc => undef,
 	       isList         => 0, }),
 
+ stringArg({ descr => 'Desciption of the PhylogeneticProfileSet',
+	     name  => 'ProfileSetDescription',
+	     isList    => 0,
+	     reqd  => 1,
+	     constraintFunc => undef,
+	   }),
+
    fileArg({name            => 'datafile',
 	    descr           => '',
 	    reqd            => 1,
@@ -92,7 +99,13 @@ sub run {
   $self->logCommit;
 
   my $datafile = $self->getArg('datafile');
-  my $phylogeneticProfileSetId = $self->getArg('phylogeneticProfileSetId');
+
+  my $phylogeneticProfileSet = GUS::Model::DoTS::PhylogeneticProfileSet->
+    new({DESCRIPTION => $self->getArg('ProfileSetDescription'),
+         PRED_ALG_INVOCATION_ID => $self->getAlgInvocationId()->getId(),
+         });
+
+  $phylogeneticProfileSet->submit();
 
   my $fh = FileHandle->new('<'.$datafile);
   if (! $fh) {
@@ -108,7 +121,9 @@ sub run {
       chomp;
 
       my ($geneDoc, $valueString) = split(/\t/, $_);
-      my $sourceId = (split(/\|/, $geneDoc))[3];
+      my $sourceId = (split(/\|/, $geneDoc))[1];
+
+      print STDERR "SourceId = $sourceId\n";
 
       my $sql = <<SQL;
       SELECT max(na_feature_id)
@@ -124,7 +139,7 @@ SQL
       }
 
       my $profile = GUS::Model::DoTS::PhylogeneticProfile->new({
-	  phylogenetic_profile_set_id => $phylogeneticProfileSetId,
+	  phylogenetic_profile_set_id => $phylogeneticProfileSet->getId(),
 	  na_feature_id => $naFeatureId,
       });
 
@@ -148,3 +163,5 @@ SQL
   $fh->close();
 
 }
+
+1;
