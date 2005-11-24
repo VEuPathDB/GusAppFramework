@@ -7,6 +7,7 @@ use GUS::PluginMgr::Plugin;
 use base qw(GUS::PluginMgr::Plugin);
 
 use Bio::Tools::SeqStats;
+use GUS::Model::DoTS::AASequence;
 
 my $argsDeclaration =
   [
@@ -77,7 +78,7 @@ sub new {
   bless $self, $class;
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision =>  '$Revision: 4147 $',
+		      cvsRevision =>  '$Revision: 4148 $',
 		      name => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -108,18 +109,12 @@ sub run {
 
 EOSQL
 
-  my $update = $dbh->prepare(<<EOSQL);
-
-  UPDATE @{[$self->getArg('seqTable')]}
-  SET    molecular_weight = ?
-  WHERE  aa_sequence_id = ?
-
-EOSQL
-
   $sth->execute($extDbRlsId);
 
   my $count = 0;
   while (my ($aaSeqId, $seq) = $sth->fetchrow_array()) {
+    my $aaSeq = GUS::Model::AASequence->new({ aa_sequence_id => $aaSeqId });
+
     my $seq = Bio::PrimarySeq->new(-id => $aaSeqId,
 				   -seq => $seq,
 				   -alphabet => "protein",
@@ -129,8 +124,11 @@ EOSQL
 
     my $aveWt = sprintf("%d", ($minWt + $maxWt) / 2);
 
-    $update->execute($aveWt, $aaSeqId);
+    $aaSeq->setMolecularWeight($aveWt);
+    $aaSeq->submit();
+
     $count++;
+    $self->undefPointerCache();
   }
 
   warn "Done; updated $count sequences\n";
