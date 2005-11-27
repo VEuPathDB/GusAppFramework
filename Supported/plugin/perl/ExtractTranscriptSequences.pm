@@ -252,6 +252,7 @@ sub printSequences {
     my $id = $vals->{'sourceId'};
     my $seq = $vals->{'sequence'};
     my $length = length ($seq);
+    next if (length == 0);
     my $extDbRlsId = $vals->{'extDbRlsId'};
 
     my $defline = "\>$id $extDbRlsId length=$length\n";
