@@ -532,7 +532,7 @@ sub doMajorMode_RunOrReport {
    my $err = $@;
 
    die "Plugin run() must return a string describing the result of the run"
-     unless $pu->getResultDescr();
+     unless $err || $pu->getResultDescr();
 
    $Run && $self->closeInvocation($pu, $err);
 
