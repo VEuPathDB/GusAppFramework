@@ -1,5 +1,3 @@
-
-
 package GUS::PluginMgr::GusApplication;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
@@ -522,9 +520,9 @@ sub doMajorMode_RunOrReport {
       $resultDescrip = $pu->run({ cla      => $pu->getCla,
                                   self_inv => $pu->getSelfInv,
                                 });
-      if (!$pu->getResultDescr()) {
-         $pu->setResultDescr($resultDescrip);
-      }
+
+      $pu->setResultDescr($resultDescrip) unless $pu->getResultDescr();
+
       $self->logAlert("RESULT", $pu->getResultDescr());
 
       $Run && $pu->logAlgInvocationId();
@@ -532,6 +530,9 @@ sub doMajorMode_RunOrReport {
    };}
 
    my $err = $@;
+
+   die "Plugin run() must return a string describing the result of the run"
+     unless $pu->getResultDescr();
 
    $Run && $self->closeInvocation($pu, $err);
 
