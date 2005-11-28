@@ -12,10 +12,11 @@ use GUS::Model::DoTS::PhylogeneticProfileSet;
 use GUS::Model::DoTS::PhylogeneticProfile;
 use GUS::Model::DoTS::PhylogeneticProfileMember;
 
-use FileHandle;
-use IO::gzip;
+use PlasmoDBData::Load::Util;
 
-  my $purposeBrief = "Load phylogenetic profiles from a file.";
+use FileHandle;
+
+my $purposeBrief = "Load phylogenetic profiles from a file.";
 
 my $purpose = <<PLUGIN_PURPOSE;
 This plugin loads phylogenetic profiles.  Each of these profiles describes
@@ -51,14 +52,22 @@ my $documentation = { purpose          => $purpose,
 		      notes            => $notes
 		    };
 
-my $argsDeclaration = [
+my $argsDeclaration = 
+  [
 
- stringArg({ descr => 'Desciption of the PhylogeneticProfileSet',
-	     name  => 'ProfileSetDescription',
-	     isList    => 0,
-	     reqd  => 1,
-	     constraintFunc => undef,
-	   }),
+   stringArg({ descr => 'Desciption of the PhylogeneticProfileSet',
+               name  => 'ProfileSetDescription',
+               isList    => 0,
+               reqd  => 1,
+               constraintFunc => undef,
+             }),
+
+   booleanArg ({name => 'tolerateMissingIds',
+                descr => 'Set this to tolerate (and log) source ids in the input that do not find an oligo or gene in the database.  
+                          If not set, will fail on that condition',
+                reqd => 0,
+                default =>0
+               }),
 
  fileArg({name           => 'headerFile',
 	  descr          => 'File containing Genbank Taxon Names',
@@ -113,6 +122,7 @@ sub run {
   $phylogeneticProfileSet->submit();
 
   my $datafile = $self->getArg('datafile');
+  my $fileName;
 
   if ($datafile =~ /(.*)\.gz$/){
     system("gunzip $datafile");
@@ -122,49 +132,50 @@ sub run {
     $fileName = $datafile;
   }
 
-  open(FILE, "< $filename") || die "Can't open datafile $filename";
+  open(FILE, "< $fileName") || die "Can't open datafile $fileName";
 
   my $taxonIdList = $self->_getTaxonIds();
 
   my ($cCalls, $hCalls, $eCalls, $aa_sequence_id);
-  while (<$fh>) {
+  while (<FILE>) {
       chomp;
 
       my ($geneDoc, $valueString) = split(/\t/, $_);
-      my $sourceId = (split(/\|/, $geneDoc))[1];
+      my $sourceId = (split(/\|/, $geneDoc))[3];
 
-      my $sql = <<SQL;
-      SELECT max(na_feature_id)
-	  FROM DoTS.geneFeature
-	  WHERE source_id='$sourceId'
-SQL
-      my $sth = $self->prepareAndExecute($sql);
-      my ($naFeatureId) = $sth->fetchrow_array();
+      print STDERR "sourceId:  $sourceId\n";
 
-      if (!$naFeatureId) {
-	  print die "Can't get na_feature_id for source_id $sourceId\n";
-	  next;
+      if(my $naFeatureId = PlasmoDBData::Load::Util::getGeneFeatureId($self, $sourceId)) {
+        my $profile = GUS::Model::DoTS::PhylogeneticProfile->
+          new({phylogenetic_profile_set_id => $phylogeneticProfileSet->getId(),
+               na_feature_id => $naFeatureId,
+              });
+
+        $profile->submit();
+
+        my @values = split(/ /, $valueString);
+
+        for (my $i=0; $i <= $#values; $i++) {
+
+	  my $profileMember = GUS::Model::DoTS::PhylogeneticProfileMember->
+            new({taxon_id => $taxonIdList->[$i],
+                 minus_log_e_value => $values[$i]*1000,
+                 PHYLOGENETIC_PROFILE_ID => $profile->getId()
+                });
+
+	  $profileMember->submit();
+        }
       }
-
-      my $profile = GUS::Model::DoTS::PhylogeneticProfile->new({
-	  phylogenetic_profile_set_id => $phylogeneticProfileSet->getId(),
-	  na_feature_id => $naFeatureId,
-      });
-
-      my @values = split(/ /, $valueString);
-      for (my $i=0; $i <= $#values; $i++) {
-
-	  my $profileMember = GUS::Model::DoTS::PhylogeneticProfileMember->new({
-	      taxon_id => $taxonIdList->[$i],
-	      minus_log_e_value => $values[$i]*1000,
-	  })->setParent($profile);
-
-	  $profile->submit();
+      elsif($self->getArgs()->{tolerateMissingIds}) {
+          $self->log("No na_Feature_id found for '$sourceId'");
+        }
+      else {
+        $self->userError("Can't find naFeatureId for source id '$sourceId'");
       }
-
-      $self->undefPointerCache();
-  }
-  $fh->close();
+  $self->undefPointerCache();
+    }
+  close(FILE);
+  system("gzip $fileName");
 
 }
 
@@ -182,20 +193,24 @@ sub _getTaxonIds {
     chomp($name);
     $count++;
 
-    my $sql = "SELECT taxon_id FROM SRes.TaxonName WHERE name = '$name'";
+    my $sql = "SELECT taxon_id, UNIQUE_NAME_VARIANT FROM SRes.TaxonName WHERE name = '$name'";
     my $sh = $self->getQueryHandle->prepare($sql);
     $sh->execute();
 
-    while(my ($taxonId) = $sh->fetchrow_array()) {
-      push(@rv, $taxonId);
+    while(my ($taxonId, $unv) = $sh->fetchrow_array()) {
+      #Buchnera sp is a special case
+      if($name eq 'Buchnera' && $unv ne 'Buchnera <proteobacteria>') {}
+      else {
+        push(@rv, $taxonId);
+      }
     }
   }
 
-  close(HEADER);
-
-  if($count =! scalar @rv) {
-    die "The number of taxonNames provided in the header file does not match the number of taxons found in the db\n";
+  if($count != scalar(@rv)) {
+    die "There are $count rows of Taxon names in the headerFile but ".scalar(@rv)." entries in the db";
   }
+
+  close(HEADER);
 
   return(\@rv);
 }
