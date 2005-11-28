@@ -89,6 +89,14 @@ PLUGIN_NOTES
 		isList => 0,
 		format => 'list of rows inserted into table'
 		
+     }),
+       stringArg({name => 'soCvsVersion',
+		descr => 'SequenceOntology cvs version currently used',
+		reqd => 1,
+		mustExist => 1,
+		constraintFunc => undef,
+		isList => 0
+
      })
     ];
 
@@ -125,7 +133,8 @@ sub run {
   my $count = 0;
 
   my $dataFile = $self->getArg('dataFile');
-  $count = $self->processPrimerPairFile($dataFile);
+  my $so_cvs_version = $self->getArg('soCvsVersion');
+  $count = $self->processPrimerPairFile($dataFile,$so_cvs_version);
 
   my $result = "Processed $count rows of datafile\n";
 
@@ -136,7 +145,7 @@ sub run {
 
 sub processPrimerPairFile{
 
-  my ($self, $dataFile) = @_;
+  my ($self, $dataFile, $so_cvs_version) = @_;
 
   open(F,"$dataFile") || die "Can't open $dataFile for reading";
 
@@ -173,7 +182,7 @@ sub processPrimerPairFile{
     die "Incorrect number of columns" 
       unless  (($external_db_rel_id)&&($source_id)&&($amplicon_desc)&&($for_primer)&&($rev_primer)&&($for_primer_length)&&($rev_primer_length)&&($amplicon_length)&&($amplicon_seq)&&($taxon_id));
 
-    $self->processPrimerPair($external_db_rel_id,$source_id,$amplicon_desc,$for_primer,$rev_primer,$for_primer_length,$rev_primer_length,$amplicon_length,$amplicon_seq,$taxon_id);
+    $self->processPrimerPair($external_db_rel_id,$source_id,$amplicon_desc,$for_primer,$rev_primer,$for_primer_length,$rev_primer_length,$amplicon_length,$amplicon_seq,$taxon_id,$so_cvs_version);
 
 	
   }
@@ -185,7 +194,7 @@ sub processPrimerPairFile{
 
 sub processPrimerPair{
 
-  my ($self,$ext_db_rel_id,$source_id,$desc,$for_primer,$rev_primer,$for_primer_length,$rev_primer_length,$amplicon_length,$amplicon_seq,$taxon_id) = @_;
+  my ($self,$ext_db_rel_id,$source_id,$desc,$for_primer,$rev_primer,$for_primer_length,$rev_primer_length,$amplicon_length,$amplicon_seq,$taxon_id,$so_cvs_version) = @_;
 
   my $amplicon_seq_version = 1;
   my $primer_seq_version = 1;
@@ -198,18 +207,21 @@ sub processPrimerPair{
   my $for_strand = "forward";
   my $rev_strand = "reverse";
 
+  #my $so_cvs_version = "1.35";
+
   my $amplicon_type = "ss-DNA";
   my $aSequenceType = GUS::Model::DoTS::SequenceType->new({'name' => $amplicon_type});
   $aSequenceType->retrieveFromDB() || die "Unable to obtain sequence_type_id from DoTS.sequencetype with name = $amplicon_type";
   my $amplicon_seq_type_id= $aSequenceType->getId();
 
   my $amplicon_ont = "PCR_product";
-  my $aSequenceOntId = GUS::Model::SRes::SequenceOntology->new({ 'term_name' => $amplicon_ont });
+  my $aSequenceOntId = GUS::Model::SRes::SequenceOntology->new({ 'term_name' => $amplicon_ont, 'so_cvs_version' => $so_cvs_version });
+  #my $aSequenceOntId = GUS::Model::SRes::SequenceOntology->new({ 'term_name' => $amplicon_ont });
   $aSequenceOntId->retrieveFromDB() || die "Unable to obtain sequence_ontology_id from sres.sequenceontology with term_name = $amplicon_ont";
   my $amplicon_seq_ontology_id= $aSequenceOntId->getId();
   $desc=~s/\"//g;
 
-  #print "amplicon:<$amplicon_seq_version>\t<$desc>\t<$amplicon_seq_type_id>\t<$amplicon_seq_ontology_id>\t<$taxon_id>\t<$amplicon_seq>\t<$amplicon_length>\t<$ext_db_rel_id>\t<$source_id>\n";
+  print "amplicon:<$amplicon_seq_version>\t<$desc>\t<$amplicon_seq_type_id>\t<$amplicon_seq_ontology_id>\t<$taxon_id>\t<$amplicon_seq>\t<$amplicon_length>\t<$ext_db_rel_id>\t<$source_id>\n";
 
   my $amplicon = GUS::Model::DoTS::VirtualSequence->new
     ({'sequence_version'=>$amplicon_seq_version,
@@ -230,7 +242,7 @@ sub processPrimerPair{
   my $primer_seq_type_id= $pSequenceType->getId();
 
   my $for_primer_ont = "forward_primer";
-  my $fSequenceOntId = GUS::Model::SRes::SequenceOntology->new({ 'term_name' => $for_primer_ont });
+  my $fSequenceOntId = GUS::Model::SRes::SequenceOntology->new({ 'term_name' => $for_primer_ont, 'so_cvs_version' => $so_cvs_version  });
   $fSequenceOntId->retrieveFromDB() || die "Unable to obtain sequence_ontology_id from sres.sequenceontology with term_name = $for_primer_ont";
   my $for_seq_ontology_id= $fSequenceOntId->getId();
 
@@ -255,7 +267,7 @@ sub processPrimerPair{
 
 
   my $rev_primer_ont = "reverse_primer";
-  my $rSequenceOntId = GUS::Model::SRes::SequenceOntology->new({ 'term_name' => $rev_primer_ont });
+  my $rSequenceOntId = GUS::Model::SRes::SequenceOntology->new({ 'term_name' => $rev_primer_ont, 'so_cvs_version' => $so_cvs_version  });
   $rSequenceOntId->retrieveFromDB() || die "Unable to obtain sequence_ontology_id from sres.sequenceontology with term_name = $rev_primer_ont";
   my $rev_seq_ontology_id= $rSequenceOntId->getId();
 
@@ -264,7 +276,7 @@ sub processPrimerPair{
   my $rev_name = "reverse primer for ".$source_id; #???
   my $rev_dist_from_left = ($amplicon_length - $rev_primer_length + 1); #???
 
-  #print "rev_primer:<$primer_seq_version>\t<$rev_desc>\t<$primer_seq_type_id>\t<$rev_seq_ontology_id>\t<$taxon_id>\t<$rev_primer>\t<$rev_primer_length>\t<$ext_db_rel_id>\t<$rev_source_id>\t<$rev_name>\n";
+  print "rev_primer:<$primer_seq_version>\t<$rev_desc>\t<$primer_seq_type_id>\t<$rev_seq_ontology_id>\t<$taxon_id>\t<$rev_primer>\t<$rev_primer_length>\t<$ext_db_rel_id>\t<$rev_source_id>\t<$rev_name>\n";
 
   my $rprimer  = GUS::Model::DoTS::ExternalNASequence->new
     ({'sequence_version'=>$primer_seq_version,
