@@ -101,7 +101,7 @@ PLUGIN_NOTES
     ];
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 4224 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 4233 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration => $argsDeclaration,
 		     documentation => $documentation
