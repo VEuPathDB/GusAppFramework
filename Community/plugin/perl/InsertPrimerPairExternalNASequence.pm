@@ -221,7 +221,7 @@ sub processPrimerPair{
   my $amplicon_seq_ontology_id= $aSequenceOntId->getId();
   $desc=~s/\"//g;
 
-  print "amplicon:<$amplicon_seq_version>\t<$desc>\t<$amplicon_seq_type_id>\t<$amplicon_seq_ontology_id>\t<$taxon_id>\t<$amplicon_seq>\t<$amplicon_length>\t<$ext_db_rel_id>\t<$source_id>\n";
+  #print "amplicon:<$amplicon_seq_version>\t<$desc>\t<$amplicon_seq_type_id>\t<$amplicon_seq_ontology_id>\t<$taxon_id>\t<$amplicon_seq>\t<$amplicon_length>\t<$ext_db_rel_id>\t<$source_id>\n";
 
   my $amplicon = GUS::Model::DoTS::VirtualSequence->new
     ({'sequence_version'=>$amplicon_seq_version,
@@ -276,7 +276,7 @@ sub processPrimerPair{
   my $rev_name = "reverse primer for ".$source_id; #???
   my $rev_dist_from_left = ($amplicon_length - $rev_primer_length + 1); #???
 
-  print "rev_primer:<$primer_seq_version>\t<$rev_desc>\t<$primer_seq_type_id>\t<$rev_seq_ontology_id>\t<$taxon_id>\t<$rev_primer>\t<$rev_primer_length>\t<$ext_db_rel_id>\t<$rev_source_id>\t<$rev_name>\n";
+  #print "rev_primer:<$primer_seq_version>\t<$rev_desc>\t<$primer_seq_type_id>\t<$rev_seq_ontology_id>\t<$taxon_id>\t<$rev_primer>\t<$rev_primer_length>\t<$ext_db_rel_id>\t<$rev_source_id>\t<$rev_name>\n";
 
   my $rprimer  = GUS::Model::DoTS::ExternalNASequence->new
     ({'sequence_version'=>$primer_seq_version,
