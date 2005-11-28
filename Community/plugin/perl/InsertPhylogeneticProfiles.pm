@@ -100,7 +100,7 @@ sub new {
   bless($self,$class);
 
   $self->initialize({requiredDbVersion => 3.5,
-                     cvsRevision       => '$Revision$', # cvs fills this in!
+                     cvsRevision       => '$Revision$',
                      name              => ref($self),
                      argsDeclaration   => $argsDeclaration,
                      documentation     => $documentation
@@ -193,11 +193,14 @@ sub _getTaxonIds {
     chomp($name);
     $count++;
 
+    print STDERR "\t\t\t$name\n";
+
     my $sql = "SELECT taxon_id, UNIQUE_NAME_VARIANT FROM SRes.TaxonName WHERE name = '$name'";
     my $sh = $self->getQueryHandle->prepare($sql);
     $sh->execute();
 
     while(my ($taxonId, $unv) = $sh->fetchrow_array()) {
+      print STDERR "$taxonId\n";
       #Buchnera sp is a special case
       if($name eq 'Buchnera' && $unv ne 'Buchnera <proteobacteria>') {}
       else {
