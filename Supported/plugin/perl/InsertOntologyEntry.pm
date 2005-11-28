@@ -195,14 +195,14 @@ sub makeOntologyEntry {
        print STDERR "Term is from MO\n";
        if ($val ne "transformation_protocol_series")  { 
 	   #Get external_database_release_id based on external database uri and version
-	   my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabaserelease edbr where edbr.id_url like '$extDbUri' and edbr.version like '$extDbRelVersion'");
+	   my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabaserelease edbr where edbr.download_url like '$extDbUri' and edbr.version like '$extDbRelVersion'");
 	   $sth->execute();
 	   $extDbRelId = $sth->fetchrow_array() || die "Value:$val - The entry for the MGED Ontology can not be found in the SRes.ExternalDatabaseRelease table for the version of the MGED Ontology used in the input file.\n";
        }
    }
    else {
        print STDERR "Term is not from the MGED Ontology\n";
-       my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabaserelease edbr where edbr.id_url like '$extDbUri' and edbr.version like '$extDbRelVersion'");
+       my $sth = $dbh->prepare("select external_database_release_id from sres.externaldatabaserelease edbr where edbr.download_url like '$extDbUri' and edbr.version like '$extDbRelVersion'");
        $sth->execute();
        $extDbRelId = $sth->fetchrow_array();
    }
