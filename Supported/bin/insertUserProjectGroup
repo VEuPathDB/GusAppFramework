@@ -8,19 +8,28 @@ use GUS::Supported::GusConfig;
 use GUS::ObjRelP::DbiDatabase;
 
 
-my ($verbose,$gusConfigFile,$firstName,$lastName,$projectRelease,$commit);
+my ($verbose,$gusConfigFile,$firstName,$lastName,$projectRelease,$userName,$project,$group,$commit);
 &GetOptions("verbose!"=> \$verbose,
             "gusConfigFile=s" => \$gusConfigFile,
 	    "firstName=s" => \$firstName,
 	    "lastName=s" => \$lastName,
 	    "projectRelease=s" => \$projectRelease,
+	    "userName=s" => \$userName,
+	    "projectName=s" => \$project,
+	    "groupName=s" => \$group,
 	    "commit!" => \$commit);
 
 die "script to enter rows into userinfo,projectinfo,groupinfo,userproject,usergroup from gus config file values and command line values \n\n 
-     usage: InsertUserProjectGroup --verbose --projectRelease(reqd) --firstName(reqd) --lastName(reqd) --gusConfigFile [\$GUS_HOME/config/gus.config] --commit\n\n
+     usage: InsertUserProjectGroup --verbose --projectRelease(reqd) --firstName(reqd) --lastName(reqd) --userName --gusConfigFile [\$GUS_HOME/config/gus.config] --commit\n\n
      where projectRelease: the release number of a specific project eg. 5.0.0.3 where project name is plasmoDB\n
            firstName: the first name of the user for userinfo.first_name eg. John\n
-           lastName: the last name of the user for userinfo.last_name e.g. Doe\n" if (! $firstName || ! $lastName || ! $projectRelease);
+           lastName: the last name of the user for userinfo.last_name e.g. Doe\n
+           userName: username exactly as found in users gus.config file, used as userinfo.login,default is from config\n
+           projectName: name of project exactly as found in users config file,default is from config file\n  
+           groupName: name of group exactly as foind in users config file, default from config file\n 
+           If entering rows for another individual, supply userName\n 
+           Supply projectName and groupName if different than those in operators config file\n" 
+           if (! $firstName || ! $lastName || ! $projectRelease);
 
 
 print STDERR "Establishing dbi login\n" if $verbose;
@@ -33,15 +42,15 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
                                         $verbose,0,1,
                                         $gusconfig->getCoreSchemaName());
 
-my $dbh = $db->getQueryHandle();
+my $dbh = $db->getQueryHandle(0);
 
 my ($dbaRows) = &getDBARows($dbh);
 
-my $userId = &insertUserInfo($gusconfig,$firstName,$lastName,$dbh,$dbaRows,$commit);
+my $userId = &insertUserInfo($gusconfig,$firstName,$lastName,$dbh,$dbaRows,$userName,$commit);
 
-my $projectId = &insertProjectInfo($gusconfig,$projectRelease,$dbh,$dbaRows,$commit);
+my $projectId = &insertProjectInfo($gusconfig,$projectRelease,$dbh,$dbaRows,$project,$commit);
 
-my $groupId = &insertGroupInfo($gusconfig,$dbh,$dbaRows,$commit);
+my $groupId = &insertGroupInfo($gusconfig,$dbh,$dbaRows,$group,$commit);
 
 &insertUserProject($userId,$projectId,$dbh,$dbaRows,$commit);
 
@@ -57,7 +66,7 @@ sub getDBARows {
 
   $sth = $dbh->prepareAndExecute("select project_id from core.projectinfo where name = 'Database administration'");
 
-  my ($projectId) = $sth->fetchrow_array() || die "No project_id for name = 'Database administration' - should have been inserted by installer\n";;
+  my ($projectId) = $sth->fetchrow_array() || die "No project_id for name = 'Database administration' - should have been inserted by installer\n";
 
   $sth = $dbh->prepareAndExecute("select group_id from core.groupinfo where name = 'dba'");
 
@@ -70,15 +79,15 @@ sub getDBARows {
 
 sub insertUserInfo {
 
-  my ($gusconfig,$firstName,$lastName,$dbh,$dbarows,$commit) = @_;
+  my ($gusconfig,$firstName,$lastName,$dbh,$dbarows,$userName,$commit) = @_;
 
-  my $login = $gusconfig->getUserName();
+  my $login = $userName ? $userName : $gusconfig->getUserName();
 
   my $sql = "select count(*) from core.UserInfo where login = '${login}'";
 
   my $sth = $dbh->prepareAndExecute($sql);
 
-  my $rows = $sth->fetchrow_array();
+  my ($rows) = $sth->fetchrow_array();
 
   die "There are $rows rows in core.UserInfo for $login. Delete all or all but one row.\n" if ($rows > 1);
 
@@ -104,22 +113,22 @@ sub insertUserInfo {
 
     my $sth = $dbh->prepareAndExecute("select user_id from core.userinfo where login = '${login}'");
 
-    my $userId = $sth->fetchrow_array() || die "No user_id for login = $login\n";
+    my ($userId) = $sth->fetchrow_array() || die "No user_id for login = $login\n";
 
     return $userId;
 }
 
 sub insertProjectInfo {
 
-  my ($gusconfig,$projectRelease,$dbh,$dbaRows,$commit) = @_;
+  my ($gusconfig,$projectRelease,$dbh,$dbaRows,$project,$commit) = @_;
 
-  my $projectName =  $gusconfig->getProject();
+  my $projectName =  $project ? $project : $gusconfig->getProject();
 
   my $sql = "select count(*) from core.projectinfo where name = '${projectName}' and release = '${projectRelease}'";
 
   my $sth = $dbh->prepareAndExecute($sql);
 
-  my $rows = $sth->fetchrow_array();
+  my ($rows) = $sth->fetchrow_array();
 
   die "There are $rows rows in core.ProjectInfo for $projectName with release $projectRelease. Delete all or all but one row.\n" if ($rows > 1);
 
@@ -142,21 +151,21 @@ sub insertProjectInfo {
 
   my $sth = $dbh->prepareAndExecute("select project_id from core.projectinfo where name = '${projectName}' and release = '${projectRelease}'");
 
-  my $projectId = $sth->fetchrow_array() || die "No project_id for name = $projectName and release = $projectRelease\n";
+  my ($projectId) = $sth->fetchrow_array() || die "No project_id for name = $projectName and release = $projectRelease\n";
 
   return $projectId;
 }
 
 sub insertGroupInfo {
-  my ($gusconfig,$dbh,$dbaRows,$commit) = @_;
+  my ($gusconfig,$dbh,$dbaRows,$group,$commit) = @_;
 
-  my $groupName =  $gusconfig->getGroup();
+  my $groupName =  $group ? $group : $gusconfig->getGroup();
 
   my $sql = "select count(*) from core.GroupInfo where name = '${groupName}'";
 
   my $sth = $dbh->prepareAndExecute($sql);
 
-  my $rows = $sth->fetchrow_array();
+  my ($rows) = $sth->fetchrow_array();
 
   die "There are $rows rows in core.GroupInfo for $groupName. Delete all or all but one row.\n" if ($rows > 1);
 
@@ -181,7 +190,7 @@ sub insertGroupInfo {
 
   my $sth = $dbh->prepareAndExecute("select group_id from core.groupinfo where name = '${groupName}'");
 
-  my $groupId = $sth->fetchrow_array() || die "No group_id for name = $groupName\n";
+  my ($groupId) = $sth->fetchrow_array() || die "No group_id for name = $groupName\n";
 
   return $groupId;
 
@@ -194,7 +203,7 @@ sub insertUserProject {
 
   my $sth = $dbh->prepareAndExecute($sql);
 
-  my $rows = $sth->fetchrow_array();
+  my ($rows) = $sth->fetchrow_array();
 
   die "There are $rows rows in core.UserProject for user_id  = $userId and project_id = $projectId. Delete all or all but one row.\n" if ($rows > 1);
 
@@ -226,7 +235,7 @@ sub insertUserGroup {
 
   my $sth = $dbh->prepareAndExecute($sql);
 
-  my $rows = $sth->fetchrow_array();
+  my ($rows) = $sth->fetchrow_array();
 
   die "There are $rows rows in core.UserProject for user_id  = $userId and group_id = $groupId. Delete all or all but one row.\n" if ($rows > 1);
 
