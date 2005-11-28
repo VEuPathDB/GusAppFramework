@@ -154,6 +154,9 @@ sub run {
         $profile->submit();
 
         my @values = split(/ /, $valueString);
+        if(scalar(@values) != scalar(@$taxonIdList)) {
+          die "There are ".scalar(@values)." values and ".scalar(@$taxonIdList)." TaxonNames";
+        }
 
         for (my $i=0; $i <= $#values; $i++) {
 
@@ -193,14 +196,11 @@ sub _getTaxonIds {
     chomp($name);
     $count++;
 
-    print STDERR "\t\t\t$name\n";
-
     my $sql = "SELECT taxon_id, UNIQUE_NAME_VARIANT FROM SRes.TaxonName WHERE name = '$name'";
     my $sh = $self->getQueryHandle->prepare($sql);
     $sh->execute();
 
     while(my ($taxonId, $unv) = $sh->fetchrow_array()) {
-      print STDERR "$taxonId\n";
       #Buchnera sp is a special case
       if($name eq 'Buchnera' && $unv ne 'Buchnera <proteobacteria>') {}
       else {
