@@ -54,6 +54,21 @@ my $documentation = { purpose          => $purpose,
 
 my $argsDeclaration = 
   [
+# TODO implement this...
+#   stringArg({ descr => 'User must provide SQL to map SourceIds to Na Features like...
+#                                 SELECT source_id, na_feature_id
+#                                  FROM Dots.GeneFeature
+#                                 UNION
+#                                 SELECT g.name, gf.na_feature_id
+#                                  FROM Dots.GeneFeature gf, Dots.NAFeatureNAGene nfng, Dots.NAGene g
+#                                  WHERE nfng.na_feature_id = gf.na_feature_id
+#                                  AND nfng.na_gene_id = g.na_gene_id',
+#               name  => 'SqlMapSourceIdToNaGeneFeature',
+#               isList    => 0,
+#               reqd  => 1,
+#               constraintFunc => undef,
+#             }),
+
 
    stringArg({ descr => 'Desciption of the PhylogeneticProfileSet',
                name  => 'ProfileSetDescription',
@@ -73,7 +88,7 @@ my $argsDeclaration =
 	  descr          => 'File containing Genbank Taxon Names',
 	  reqd           => 1,
 	  mustExist      => 1,
-	  format         => 'Each Line Contains a Taxon Names',
+	  format         => 'Each Line Contains a SRes.TaxonName.name and an optional SRes.TaxonName.unique_name_varient separated by tabs.  If the unique_name_varient is not provided for an entry it is expected that the name alone represents a unique identifier for this taxon.  The plugin will die if this is not the case.',
 	  constraintFunc => undef,
 	  isList         => 0, 
 	 }),
@@ -94,6 +109,8 @@ and the remaining values after the tab are presence-or-absence calls for homolog
 	    isList          => 0, }),
                       ];
 
+# ----------------------------------------------------------------------
+
 sub new {
   my ($class) = @_;
   my $self    = {};
@@ -109,6 +126,8 @@ sub new {
   return $self;
 }
 
+# ----------------------------------------------------------------------
+
 sub run {
   my ($self) = @_;
   $self->logAlgInvocationId;
@@ -120,6 +139,8 @@ sub run {
          });
 
   $phylogeneticProfileSet->submit();
+
+  my ($ppsLoaded, $ppLoaded, $ppmLoaded) = (1, 0, 0);
 
   my $datafile = $self->getArg('datafile');
   my $fileName;
@@ -152,6 +173,7 @@ sub run {
               });
 
         $profile->submit();
+        $ppLoaded++;
 
         my @values = split(/ /, $valueString);
         if(scalar(@values) != scalar(@$taxonIdList)) {
@@ -167,20 +189,44 @@ sub run {
                 });
 
 	  $profileMember->submit();
+          $ppmLoaded++;
         }
       }
       elsif($self->getArgs()->{tolerateMissingIds}) {
-          $self->log("No na_Feature_id found for '$sourceId'");
+          $self->log("WARN:  No na_Feature_id found for '$sourceId'");
         }
       else {
         $self->userError("Can't find naFeatureId for source id '$sourceId'");
       }
+
   $self->undefPointerCache();
     }
+
   close(FILE);
   system("gzip $fileName");
 
+  return("Inserted $ppsLoaded PhylogenicProfileSet, $ppLoaded PhylogenicProfiles, and $ppmLoaded PhylogenicProfileMembers\n");
 }
+
+# ----------------------------------------------------------------------
+
+=pod
+
+=head2 Subroutines
+
+=over 4
+
+=item C<_getTaxonIdst>
+
+Read Header file and retrieve SRes::TaxonId's from SRes::TaxonName.name's (and Optionally
+SRes::TaxonName.unique_name_varient's.  Checks that all rows from file are found in db 
+once and only once.
+
+B<Return type:> C<arrayref>
+
+array of taxon_ids
+
+=cut
 
 sub _getTaxonIds {
   my ($self) = @_;
@@ -192,8 +238,9 @@ sub _getTaxonIds {
   my @rv;
   my $count = 0;
 
-  while(my $name = <HEADER>) {
-    chomp($name);
+  while(<HEADER>) {
+    chomp($_);
+    my ($name, $unique) = split(/\t/, $_);
     $count++;
 
     my $sql = "SELECT taxon_id, UNIQUE_NAME_VARIANT FROM SRes.TaxonName WHERE name = '$name'";
@@ -201,10 +248,10 @@ sub _getTaxonIds {
     $sh->execute();
 
     while(my ($taxonId, $unv) = $sh->fetchrow_array()) {
-      #Buchnera sp is a special case
-      if($name eq 'Buchnera' && $unv ne 'Buchnera <proteobacteria>') {}
+      if($unique && $unique ne $unv) { }
       else {
         push(@rv, $taxonId);
+
       }
     }
   }
@@ -214,8 +261,9 @@ sub _getTaxonIds {
   }
 
   close(HEADER);
-
   return(\@rv);
 }
+
+# ----------------------------------------------------------------------
 
 1;
