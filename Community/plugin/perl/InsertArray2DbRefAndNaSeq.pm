@@ -170,7 +170,7 @@ sub new {
     bless($self, $class);
     
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 4134 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 4245 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -307,24 +307,14 @@ sub populateCompEleDbRef {
 			
 			$newCEDbRef->submit();
 			my $targetID = $newCEDbRef->getId();
-			
-			if(!defined $targetID) {
-			    die "target_id undefined";
-			}
-			if(!defined $evidenceExternalDbID) {
-			    die "evidenceExternalDbID  undefined";
-			}
-			
+						
 			my $newEvidence = GUS::Model::DoTS::Evidence->new({
 			    'target_table_id' => $targetTableID,
 			    'target_id' => $targetID,
 			    'fact_table_id' => $factTableID,
-			    'fact_id' => $evidenceExternalDbID
+			    'fact_id' => $evidenceExternalDbID,
+			    'evidence_group_id' => 1
 			    });
-			
-			if(!defined $newEvidence) {
-			    die "Evidence undefined";
-			}
 			
 			$newEvidence->submit();
 			
@@ -346,11 +336,11 @@ sub populateCompEleDbRef {
 	}
 	
 	$counter++;
-	if($counter % 100 ==0) { $self->log("$nProbePopulated entries populated in RAD.CompositeElementDbRef - $counter/$nToPopulate processed");}
-
+	if($counter % 100 ==0) { $self->log("$counter/$nToPopulate rows processed - $nProbePopulated entries populated");}
     }
+    
     close(LOGFILE);
-    $self->log ("CompositeElement not found = $nCENotFound; DbRefID not found = $nDbRefIDNotFound; rows populated = $nProbePopulated");
+    $self->log ("CompositeElement not found = $nCENotFound; DbRefID not found = $nDbRefIDNotFound; rows populated = $nProbePopulated in RAD.CompositeElementDbRef");
     return $nProbePopulated;
 }
 
@@ -424,7 +414,8 @@ sub populateEleDbRef {
 			    'target_table_id' => $targetTableID,
 			    'target_id' => $targetID,
 			    'fact_table_id' => $factTableID,
-			    'fact_id' => $evidenceExternalDbID
+			    'fact_id' => $evidenceExternalDbID,
+			    'evidence_group_id' => 1
 			    });
 			
 			$newEvidence->submit();
@@ -446,13 +437,13 @@ sub populateEleDbRef {
 	    $nENotFound++;
 	}
 	$counter++;
-	if($counter % 100 ==0) { $self->log("$nProbePopulated entries populated in RAD.ElementDbRef - $counter/$nToPopulate processed");}
+	if($counter % 100 ==0) { $self->log("$counter/$nToPopulate rows processed - nProbePopulated entries populated");}
 	
     }
     
     close LOGFILE;
     
-    $self->log ("Element not found = $nENotFound; DbRefID not found = $nDbRefIDNotFound; rows populated = $nProbePopulated");
+    $self->log ("Element not found = $nENotFound; DbRefID not found = $nDbRefIDNotFound; rows populated = $nProbePopulated in RAD.ElementDbRef");
     return $nProbePopulated;
 }
 
@@ -526,7 +517,8 @@ sub populateCompEleNASeq {
 			    'target_table_id' => $targetTableID,
 			    'target_id' => $targetID,
 			    'fact_table_id' => $factTableID,
-			    'fact_id' => $evidenceExternalDbID
+			    'fact_id' => $evidenceExternalDbID,
+			    'evidence_group_id' => 1
 			    });
 			
 			$newEvidence->submit();
@@ -549,10 +541,10 @@ sub populateCompEleNASeq {
 	}
 	
 	$counter++;
-	if($counter % 100 ==0) { $self->log("$nProbePopulated entries populated in RAD.CompositeElementNaSequence - $counter/$nToPopulate processed");}
+	if($counter % 100 ==0) { $self->log("$counter/$nToPopulate rows processed - $nProbePopulated entries populated");}
     }
     close(LOGFILE);
-    $self->log ("CompositeElement not found = $nCENotFound; naSeqID not found = $nNASeqIDNotFound; rows populated = $nProbePopulated");
+    $self->log ("CompositeElement not found = $nCENotFound; naSeqID not found = $nNASeqIDNotFound; rows populated = $nProbePopulated in RAD.CompositeElementNaSequence");
     return $nProbePopulated;
 }
 
@@ -626,7 +618,8 @@ sub populateEleNASeq {
 			    'target_table_id' => $targetTableID,
 			    'target_id' => $targetID,
 			    'fact_table_id' => $factTableID,
-			    'fact_id' => $evidenceExternalDbID
+			    'fact_id' => $evidenceExternalDbID,
+			    'evidence_group_id' => 1
 			    });
 			
 			$newEvidence->submit();
@@ -648,12 +641,12 @@ sub populateEleNASeq {
 	    $nENotFound++;
 	}
 	$counter++;
-	if($counter % 100 ==0) { $self->log("$nProbePopulated entries populated in RAD.ElementNaSequence - $counter/$nToPopulate processed");}
+	if($counter % 100 ==0) { $self->log("$counter/$nToPopulate rows processed - $nProbePopulated entries populated");}
     }
     
     close LOGFILE;
     
-    $self->log ("Element not found = $nENotFound; NASequenceID not found = $nNASeqIDNotFound; rows populated = $nProbePopulated");
+    $self->log ("Element not found = $nENotFound; NASequenceID not found = $nNASeqIDNotFound; rows populated = $nProbePopulated in RAD.ElementNaSequence");
     return $nProbePopulated;
 }
 
