@@ -216,4 +216,12 @@ sub getProfileIdHash {
   return %profileIdHash;
 }
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('DoTS.MutualInformationScore'
+	 );
+}
+
+
 1;
