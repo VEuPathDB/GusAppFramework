@@ -6,11 +6,14 @@ package GUS::Community::Plugin::LoadMutualInformationScores;
 use strict;
 use GUS::PluginMgr::Plugin;
 use GUS::Model::DoTS::PhylogeneticProfile;
+use GUS::Model::DoTS::PhylogeneticProfileSet;
 use GUS::Model::DoTS::PhylogeneticProfileMember;
 use GUS::Model::DoTS::MutualInformationScore;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 use FileHandle;
+use PlasmoDBData::Load::Util;
+
 #use Dump::Dumper;
 
 sub new {
@@ -57,26 +60,35 @@ PLUGIN_NOTES
 
   my $argsDeclaration =
     [
-# should be SQL
-     integerArg({name  => 'phylogenetic_profile_set_id',
-		 descr => 'phylogenetic_profile_set_id',  # talk about what SQL does
-		 reqd  => 1,
-		 constraintFunc=> undef,
-		 isList=> 0,
-		}),
-# should be fileArg -- use the "format" field to descript file format
-     stringArg({name  => 'datafile',
-		 descr => 'datafile',    # <- more descriptive
-		 reqd  => 1,
-		 constraintFunc=> undef,
-		 isList=> 0,
-		}),
+
+     stringArg({ descr => 'Desciption of the PhylogeneticProfileSet',
+                 name  => 'ProfileSetDescription',
+                 isList    => 0,
+                 reqd  => 1,
+                 constraintFunc => undef,
+               }),
+
+     fileArg({name           => 'dataFile',
+              descr          => 'File containing SourceIds and mutual information scores',
+              reqd           => 1,
+              mustExist      => 1,
+              format         => 'One line for each record separated by | ',
+              constraintFunc => undef,
+              isList         => 0, 
+	 }),
+
+     booleanArg ({name => 'tolerateMissingIds',
+                  descr => 'Set this to tolerate (and log) source ids in the input that do not find an oligo or gene in the database.  
+                          If not set, will fail on that condition',
+                  reqd => 0,
+                  default =>0
+                 }),
     ];
 
 
-  $self->initialize({requiredDbVersion => {},
-                     cvsRevision => '$Revision$', # cvs fills this in!
-                     cvsTag => '$Name$', # cvs fills this in!
+  $self->initialize({requiredDbVersion => 3.5,
+                     cvsRevision => '$Revision$', 
+                     cvsTag => '$Name$', 
                      name => ref($self),
                      revisionNotes => 'make consistent with GUS 3.0',
                      argsDeclaration => $argsDeclaration,
@@ -90,8 +102,8 @@ sub run {
   $self->logAlgInvocationId;
   $self->logCommit;
 
-  $self->loadMutualInformationFile($self->getArg('datafile'),
-				   $self->getArg('phylogenetic_profile_set_id'));
+  $self->loadMutualInformationFile($self->getArg('dataFile'),
+				   $self->getArg('ProfileSetDescription'));
 
   $self->logVerbose("Finished LoadMutualInformationScores.");
 }
@@ -100,65 +112,108 @@ sub run {
 # Given the name of a data file, read and load mutual information score data
 
 sub loadMutualInformationFile {
-  my ($self, $datafile, $phylogeneticProfileSetId) = @_;
+  my ($self, $datafile) = @_;
 
-  my $fh = FileHandle->new('<'.$datafile);
-  if (! $fh) {
-    die ("Can't open datafile $datafile");
+  my $fileName;
+
+  if ($datafile =~ /(.*)\.gz$/){
+    system("gunzip $datafile");
+    $fileName = $1;
+  }
+  else {
+    $fileName = $datafile;
   }
 
-  my %profileIdHash = $self->getProfileIdHash($phylogeneticProfileSetId);
+  open(FILE, "< $fileName") || die ("Can't open datafile $datafile");
+
+  my %profileIdHash = $self->getProfileIdHash();
   my $i;
 
-# loop in run(); subroutine to make object
-  while (<$fh>) {
+  while(<FILE>) {
     chomp;
 
     my ($primarySourceId, $secondarySourceId, $score) = (split(/\|/, $_));
 
-    my $primaryProfileId = $profileIdHash{$primarySourceId};
-    die("Can't find profile_id for source_id $primarySourceId")
-      if (!$primaryProfileId);
+    my $primaryNaFeatureId = PlasmoDBData::Load::Util::getGeneFeatureId($self, $primarySourceId);
+    my $secondaryNaFeatureId = PlasmoDBData::Load::Util::getGeneFeatureId($self, $secondarySourceId);
 
-    my $secondaryProfileId = $profileIdHash{$secondarySourceId};
-    die("Can't find profile_id for source_id $secondarySourceId")
-      if (!$secondaryProfileId);
+    if((!$primaryNaFeatureId || !$secondaryNaFeatureId) && $self->getArgs()->{tolerateMissingIds}) {
+      $self->log("No na_Feature_id found for '$primarySourceId' OR '$secondarySourceId'");
+    }
+    else {
+      my $primaryProfileId = $profileIdHash{$primaryNaFeatureId};
+      $self->userError("Can't find profile_id for source_id $primarySourceId")
+        if (!$primaryProfileId);
 
-    my $mi = GUS::Model::DoTS::MutualInformationScore->new
-      ( {
-	 primary_profile_id => $primaryProfileId,
-	 secondary_profile_id => $secondaryProfileId,
-	} );
+      my $secondaryProfileId = $profileIdHash{$secondaryNaFeatureId};
+      $self->userError("Can't find profile_id for source_id $secondarySourceId")
+        if (!$secondaryProfileId);
 
-#    $mi->retrieveFromDB();
-    $mi->setMutualInformationScore($score * 10000);
-    $mi->submit();
+      print STDERR "primaryId=$primaryProfileId\tsecondaryId=$secondaryProfileId\n";
 
+      my $mi = GUS::Model::DoTS::MutualInformationScore->
+        new( {primary_profile_id => $primaryProfileId,
+              secondary_profile_id => $secondaryProfileId,
+              mutual_information_score => $score * 10000
+             } );
+
+      $mi->submit();
+    }
     if ($i++ % 1000 == 0) {
       $self->undefPointerCache();
     }
   }
 
-  $fh->close();
+  close(FILE);
+  system("gzip $fileName");
+
+  my $rv = "Loaded $i rows into Dots.MutualInformationScore\n";
+  print STDERR $rv;
+  return($rv);
 }
 
+=pod
+
+=head2 Subroutines
+
+=over 4
+
+=item C<getProfileIdHash>
+
+Retrieve all Dots::phylogeneticprofile's where the Dots.PhylogeneticProfileSet matches
+the description argument.  
+
+B<Return type:> C<hashref>
+
+key of hash is the dots.na_feature_id and value is the profile id
+
+=cut
+
 sub getProfileIdHash {
-  my ($self, $phylogeneticProfileSetId) = @_;
+  my ($self) = @_;
 
   my %profileIdHash;
 
-  my $sql = <<SQL;
-    SELECT phylogenetic_profile_id, source_id
-    FROM plasmodb_42.plasmodb_genes gf, DoTS.PhylogeneticProfile pp
-    WHERE gf.na_feature_id = pp.na_feature_id
-      AND pp.phylogenetic_profile_set_id=$phylogeneticProfileSetId
-SQL
+  my $profileSet = GUS::Model::DoTS::PhylogeneticProfileSet->
+    new({description => $self->getArgs()->{ProfileSetDescription}});
 
-  my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+  if($profileSet->retrieveFromDB()) {
+    my $phylogeneticProfileSetId = $profileSet->getId();
 
-  while (my ($profileId, $sourceId) = $sth->fetchrow_array()) {
-    $profileIdHash{$sourceId} = $profileId;
+    my $sql = "SELECT phylogenetic_profile_id, NA_FEATURE_ID
+                FROM DoTS.PhylogeneticProfile
+                 WHERE phylogenetic_profile_set_id = $phylogeneticProfileSetId";
+
+    my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
+
+    while (my ($profileId, $naFeatureId) = $sth->fetchrow_array()) {
+      $profileIdHash{$naFeatureId} = $profileId;
+    }
   }
-
+  else {
+    die "The ProfileSetDescription provided does not match any in the db";
+  }
   return %profileIdHash;
 }
+
+1;
