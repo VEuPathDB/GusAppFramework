@@ -269,9 +269,9 @@ sub _getTaxonIds {
 sub undoTables {
   my ($self) = @_;
 
-  return ('DoTS.PhylogeneticProfileSet',
+  return ('DoTS.PhylogeneticProfileMember',
 	  'DoTS.PhylogeneticProfile',
-	  'DoTS.PhylogeneticProfileMember'
+	  'DoTS.PhylogeneticProfileSet'
 	 );
 }
 
