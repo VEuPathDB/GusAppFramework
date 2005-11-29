@@ -194,7 +194,7 @@ sub run {
     my $arrayDesignID = $self->getArrayDesignID();
 
     my $evidenceExternalDbID = $self->getExternalDbID($self->getArg('evidenceExternalDbName'), $self->getArg('evidenceExternalDbVersion'));
-    my $dbRefOrNASeqExternalDbID = $self->getExternalDbID($self->getArg('evidenceExternalDbName'), $self->getArg('evidenceExternalDbVersion'));
+    my $dbRefOrNASeqExternalDbID = $self->getExternalDbID($self->getArg('dbRefOrNASeqName'), $self->getArg('dbRefOrNASeqVersion'));
     
     my $fileName = $self->getArg('annotationFileName');
     my $separator = $self->getArg('separator');
@@ -208,7 +208,9 @@ sub run {
 
     my $logFile = "loadArray2DbRefAndNaSeq.log";
     
-    $self->log("$technologyType - $databaseName\n");
+    $self->log("evidenceExternalDbID = $evidenceExternalDbID\n");
+    $self->log("dbRefOrNASeqExternalDbID = $dbRefOrNASeqExternalDbID\n");
+    $self->log("techno type = $technologyType - dbname = $databaseName\n");
     
     if($technologyType =~ /oligo/i) {
 	if($databaseName eq "DbRef") {
@@ -245,7 +247,7 @@ sub run {
 sub populateCompEleDbRef {
     my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
     
-    my $n = scalar keys(%$hash);
+    my $nToPopulate = scalar keys(%$hash);
     
     my ($sql, $queryHandle, $sth, $compositeElementID, $dbRefID, $compEleID);
     my $nProbePopulated = 0;
@@ -306,12 +308,23 @@ sub populateCompEleDbRef {
 			$newCEDbRef->submit();
 			my $targetID = $newCEDbRef->getId();
 			
+			if(!defined $targetID) {
+			    die "target_id undefined";
+			}
+			if(!defined $evidenceExternalDbID) {
+			    die "evidenceExternalDbID  undefined";
+			}
+			
 			my $newEvidence = GUS::Model::DoTS::Evidence->new({
 			    'target_table_id' => $targetTableID,
 			    'target_id' => $targetID,
 			    'fact_table_id' => $factTableID,
 			    'fact_id' => $evidenceExternalDbID
 			    });
+			
+			if(!defined $newEvidence) {
+			    die "Evidence undefined";
+			}
 			
 			$newEvidence->submit();
 			
@@ -333,7 +346,8 @@ sub populateCompEleDbRef {
 	}
 	
 	$counter++;
-	if($counter % 100 ==0) { $self->log("$counter entries populated in RAD.CompositeElementDbRef");}
+	if($counter % 100 ==0) { $self->log("$nProbePopulated entries populated in RAD.CompositeElementDbRef - $counter/$nToPopulate processed");}
+
     }
     close(LOGFILE);
     $self->log ("CompositeElement not found = $nCENotFound; DbRefID not found = $nDbRefIDNotFound; rows populated = $nProbePopulated");
@@ -344,7 +358,7 @@ sub populateCompEleDbRef {
 sub populateEleDbRef {
     my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
     
-    my $n = scalar keys(%$hash);
+    my $nToPopulate = scalar keys(%$hash);
     
     my ($sql, $queryHandle, $sth, $elementID, $dbRefID, $eleID);
     my $nProbePopulated = 0;
@@ -432,7 +446,7 @@ sub populateEleDbRef {
 	    $nENotFound++;
 	}
 	$counter++;
-	if($counter % 100 ==0) { $self->log("$counter entries populated in RAD.ElementDbRef");}
+	if($counter % 100 ==0) { $self->log("$nProbePopulated entries populated in RAD.ElementDbRef - $counter/$nToPopulate processed");}
 	
     }
     
@@ -447,7 +461,7 @@ sub populateEleDbRef {
 sub populateCompEleNASeq {
     my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
     
-    my $n = scalar keys(%$hash);
+    my $nToPopulate = scalar keys(%$hash);
     
     my ($sql, $queryHandle, $sth, $compositeElementID, $naSeqID, $compEleID);
     my $nProbePopulated = 0;
@@ -535,7 +549,7 @@ sub populateCompEleNASeq {
 	}
 	
 	$counter++;
-	if($counter % 100 ==0) { $self->log("$counter entries populated in RAD.CompositeElementNaSequence");}
+	if($counter % 100 ==0) { $self->log("$nProbePopulated entries populated in RAD.CompositeElementNaSequence - $counter/$nToPopulate processed");}
     }
     close(LOGFILE);
     $self->log ("CompositeElement not found = $nCENotFound; naSeqID not found = $nNASeqIDNotFound; rows populated = $nProbePopulated");
@@ -546,7 +560,7 @@ sub populateCompEleNASeq {
 sub populateEleNASeq {
     my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
     
-    my $n = scalar keys(%$hash);
+    my $nToPopulate = scalar keys(%$hash);
     
     my ($sql, $queryHandle, $sth, $elementID, $naSeqID, $eleID);
     my $nProbePopulated = 0;
@@ -634,8 +648,7 @@ sub populateEleNASeq {
 	    $nENotFound++;
 	}
 	$counter++;
-	if($counter % 100 ==0) { $self->log("$counter entries populated in RAD.ElementNASequence");}
-	
+	if($counter % 100 ==0) { $self->log("$nProbePopulated entries populated in RAD.ElementNaSequence - $counter/$nToPopulate processed");}
     }
     
     close LOGFILE;
@@ -695,16 +708,15 @@ sub parseAnnotationFile {
     for(my $i=$indexHeader+1; $i<scalar @content; $i++) {
 	
 	my @row = split(/\"$separator\"/, $content[$i]);
+	foreach(@row) { $_ =~s/\ //g; }
 	foreach(@row) { $_ =~s/\"//g; }
 	my $k=0;
-	#foreach (@row) {
-	 #   print "$k:$_\n";
-	 #   $k++;
-	#}
 	
-	if(defined $row[$columnRefID] & defined $row[$columnID]) {
+	if(defined $row[$columnRefID] & defined $row[$columnID] & !($row[$columnID] eq "---") ) {
 
 	    my @list = split(/$subSeparator/, $row[$columnID]);
+	    foreach(@list) { $_ =~s/\ //g; }
+	    foreach(@list) { $_ =~s/\"//g; }
 	    
 	    $hash{$row[$columnRefID]} = [ @list ];
 	}
@@ -781,7 +793,6 @@ sub getExternalDbID {
     if(!defined $externalDbID) {
 	die("No External Database Release ID corresponding to NAME '$dbName' (version '$dbVersion')"); 
     }
-    $self->log("external_db_id = $externalDbID"); 
     return $externalDbID;
 }
 
