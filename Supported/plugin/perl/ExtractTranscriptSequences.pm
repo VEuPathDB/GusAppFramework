@@ -172,18 +172,19 @@ sub run {
    my $dbh = $self->getQueryHandle();
 
    my $sql = <<EOSQL;
-  SELECT source_id
-  FROM   DoTS.Transcript
-  WHERE  external_database_release_id = ?
+  SELECT t.source_id,g.product
+  FROM   DoTS.Transcript t, dots.genefeature g
+  WHERE  external_database_release_id = ? and t.parent_id = g.na_feature_id
 EOSQL
 
    my $sth = $dbh->prepare($sql);
 
    $sth->execute($extDbRlsId);
 
-   while (my ($sourceId,$extDbRlsId) = $sth->fetchrow()) {
+   while (my ($sourceId,$product) = $sth->fetchrow()) {
      my %vals =  (
 		  'sourceId' => $sourceId,
+		  'product' => $product
 		 );
      push(@transcripts,\%vals);
    }
@@ -250,12 +251,12 @@ sub printSequences {
 
   foreach my $vals (@$transcripts) {
     my $id = $vals->{'sourceId'};
+    my $product = $vals->{'product'};
     my $seq = $vals->{'sequence'};
     my $length = length ($seq);
     next if ($length == 0);
-    my $extDbRlsId = $vals->{'extDbRlsId'};
 
-    my $defline = "\>$id $extDbRlsId length=$length\n";
+    my $defline = "\>$id $product length=$length\n";
     print $fh ("$defline" . CBIL::Bio::SequenceUtils::breakSequence($seq,60));
   }
 }
