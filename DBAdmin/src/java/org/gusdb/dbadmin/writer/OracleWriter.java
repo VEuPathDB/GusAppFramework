@@ -19,6 +19,7 @@ import org.gusdb.dbadmin.model.Index;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Sequence;
 import org.gusdb.dbadmin.model.Table;
+import org.gusdb.dbadmin.model.View;
 
 /**
  * @author msaffitz
@@ -125,7 +126,7 @@ public class OracleWriter extends RelationalDatabaseWriter {
         oStream.write( "\n" );
     }
     
-    protected void writeView( GusView view ) throws IOException {
+    protected void writeView( View view ) throws IOException {
         if ( written.contains( view ) ) {
             return;
         }
