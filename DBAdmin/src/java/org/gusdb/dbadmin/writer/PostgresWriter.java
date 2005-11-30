@@ -15,7 +15,6 @@ import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.GusView;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Sequence;
-import org.gusdb.dbadmin.model.Table;
 import org.gusdb.dbadmin.model.View;
 import org.gusdb.dbadmin.util.ColumnPair;
 

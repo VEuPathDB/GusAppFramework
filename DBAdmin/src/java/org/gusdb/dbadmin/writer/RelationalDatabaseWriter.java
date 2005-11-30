@@ -98,12 +98,10 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
         if ( written.contains( view ) ) {
             return;
         }
-
         oStream.write( "CREATE VIEW " + view.getSchema( ).getName( ) + "." + view.getName( ) + " AS \n" );
         oStream.write( view.getSql( ) );
         oStream.write( "\n\n" );
         oStream.flush( );
-        
         written.add( view );
     }
 
