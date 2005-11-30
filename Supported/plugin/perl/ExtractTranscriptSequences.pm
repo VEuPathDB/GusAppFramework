@@ -174,7 +174,7 @@ sub run {
    my $sql = <<EOSQL;
   SELECT t.source_id,g.product
   FROM   DoTS.Transcript t, dots.genefeature g
-  WHERE  external_database_release_id = ? and t.parent_id = g.na_feature_id
+  WHERE  t.external_database_release_id = ? and t.parent_id = g.na_feature_id
 EOSQL
 
    my $sth = $dbh->prepare($sql);
