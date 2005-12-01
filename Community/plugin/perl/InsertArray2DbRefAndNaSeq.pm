@@ -16,7 +16,7 @@ use GUS::PluginMgr::Plugin;
 use GUS::Model::SRes::DbRef;
 use GUS::Model::SRes::ExternalDatabase;
 use GUS::Model::SRes::ExternalDatabaseRelease;
-use GUS::Model::DoTS::NASequence;
+use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::Evidence;
 use GUS::Model::RAD::CompositeElementDbRef;
 use GUS::Model::RAD::ElementDbRef;
@@ -24,99 +24,79 @@ use GUS::Model::RAD::ElementDbRef;
 $| = 1;
 
 my $argsDeclaration =
-[
-     
-stringArg({name => 'evidenceExternalDbName',
-	   descr => 'name of the external database corresponding to the annotation file used as evidence',
-	   constraintFunc => undef,
-	   reqd => 1,
-	   isList => 0,
-        }),
-
-stringArg({name => 'evidenceExternalDbVersion',
-	    descr => 'version of the external database corresponding to the annotation file used as evidence',
-	    constraintFunc => undef,
-	    reqd => 1,
-	    isList => 0,
-	   }),
-
-
-stringArg({name => 'arrayDesignName',
+[ 
+ stringArg({name  => 'evidenceExternalDatabaseSpec',
+	    descr => 'The name|version of the external database release corresponding to the annotation file used as evidence',
+	    constraintFunc=> undef,
+	    reqd  => 1,
+	    isList => 0
+	    }),
+ 
+  stringArg({name  => 'dbRefOrNASeqExternalDatabaseSpec',
+	     descr => 'The name|version of the external database release for RefSeq to point to',
+	     constraintFunc=> undef,
+	     reqd  => 1,
+	     isList => 0
+	     }),
+ 
+ stringArg({name => 'arrayDesignName',
 	    descr => 'name of the array design correponding to the array to annotate',
 	    constraintFunc => undef,
 	    reqd => 1,
 	    isList => 0,
-	   }),
-
-
-stringArg({name => 'arrayDesignVersion',
+	}),
+ 
+ stringArg({name => 'arrayDesignVersion',
 	    descr => 'version of the array design correponding to the array to annotate',
 	    constraintFunc => undef,
 	    reqd => 0,
 	    isList => 0,
-	   }),
-
-stringArg({name => 'dbRefOrNASeqVersion',
-	    descr => 'DBRef or NASeq database version',
-	    constraintFunc => undef,
-	    reqd => 1,
-	    isList => 0,
-            mustExist => 1,
-	   }),
-
-
-stringArg({name => 'dbRefOrNASeqName',
-	    descr => 'DBRef or NASeq database name',
-	    constraintFunc => undef,
-	    reqd => 1,
-	    isList => 0,
-            mustExist => 1,
-	   }),
-
-stringArg({name => 'separator',
+	}),
+ 
+ stringArg({name => 'separator',
 	    descr => 'File separator',
 	    constraintFunc => undef,
 	    reqd => 1,
 	    isList => 0,
             mustExist => 1,
-	   }),
-
-stringArg({name => 'subSeparator',
+	}),
+ 
+ stringArg({name => 'subSeparator',
 	    descr => 'Separator used in case of multiple IDs',
 	    constraintFunc => undef,
 	    reqd => 1,
 	    isList => 0,
             mustExist => 1,
-	   }),
-
-stringArg({name => 'refIDColumnName',
+	}),
+ 
+ stringArg({name => 'refIDColumnName',
 	    descr => 'reference ID column name (for example spot position or probe_id)',
 	    constraintFunc => undef,
 	    reqd => 1,
 	    isList => 0,
             mustExist => 1,
-	   }),
-
-stringArg({name => 'annotationIDColumnName',
+	}),
+ 
+ stringArg({name => 'annotationIDColumnName',
 	    descr => 'annotation ID column name',
 	    constraintFunc => undef,
 	    reqd => 1,
 	    isList => 0,
             mustExist => 1,
-	   }),
-
-
-fileArg({name => 'annotationFileName',
-	 descr => 'annotation file name',
-	 constraintFunc => undef,
-	 reqd => 1,
-	 isList => 0,
-	 mustExist => 1,
-	 format => 'Text'
+	}),
+ 
+ 
+ fileArg({name => 'annotationFileName',
+	  descr => 'annotation file name',
+	  constraintFunc => undef,
+	  reqd => 1,
+	  isList => 0,
+	  mustExist => 1,
+	  format => 'Text'
         }),
 
 
-enumArg({name => 'databaseName',
+enumArg({name => 'annotationType',
 	    descr => 'Database to link the data to (DbRef or NASeq)',
 	    constraintFunc => undef,
 	    reqd => 1,
@@ -129,22 +109,22 @@ enumArg({name => 'databaseName',
 
 
 my $purposeBrief = <<PURPOSEBRIEF;
-Populate mappings in RAD.ElementDbRef and RAD.CompositeElementsDbRef between SRes.DbRef and DoTS.NaSequence and RAD.ShortOligoFamily or RAD.Spot from microarray annotations file.
+Populate mappings in RAD.ElementDbRef and RAD.CompositeElementsDbRef between SRes.DbRef and DoTS.ExternalNaSequence and RAD.ShortOligoFamily or RAD.Spot from microarray annotations file.
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-Populate mappings between SRes.DbRef and DoTS.NaSequence and RAD.ShortOligoFamily or RAD.Spot from delimited microarray annotations file.  Mappings are inserted in RAD.CompositeElementDbRef or RAD.ElementDbRef.
+Populate mappings between SRes.DbRef and DoTS.ExternalNaSequence and RAD.ShortOligoFamily or RAD.Spot from microarray annotations file.  Mappings are inserted in RAD.CompositeElementDbRef or RAD.ElementDbRef.
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
 ['RAD.CompositeElementDbRef','New entries are placed in this table', 'RAD.CompositeElementNaSequence', 'New entries are placed in this table', 'RAD.ElementDbRef', 'New entries are placed in this table', 'RAD.ElementNaSequence', 'New entries are placed in this table']
 ];
 
-my $tablesDependedOn = ['SRes.DbRef', 'DoTS.NASequence', 'DoTS.Evidence'];
+my $tablesDependedOn = ['SRes.DbRef', 'DoTS.ExternalNASequence', 'DoTS.Evidence'];
 
 my $howToRestart = <<PLUGIN_RESTART;
 This plugin is compliant with the undo API:
-Run the plugin GUS::Community::Plugin::Undo to delete all entries inserted by a specific call to this plugin. Then re-run this plugin from fresh
+Run the plugin GUS::Community::Plugin::Undo to delete all entries inserted by a specific call to this plugin. Then re-run this plugin from fresh.
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -170,7 +150,7 @@ sub new {
     bless($self, $class);
     
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 4245 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 4247 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -192,9 +172,9 @@ sub run {
     my $technologyType = $self->getTechnologyType();
     my $databaseName = $self->getArg('databaseName');
     my $arrayDesignID = $self->getArrayDesignID();
-
-    my $evidenceExternalDbID = $self->getExternalDbID($self->getArg('evidenceExternalDbName'), $self->getArg('evidenceExternalDbVersion'));
-    my $dbRefOrNASeqExternalDbID = $self->getExternalDbID($self->getArg('dbRefOrNASeqName'), $self->getArg('dbRefOrNASeqVersion'));
+    
+    my $evidenceExternalDbID = $self->getExtDbRlsId($self->getArg('evidenceExternalDatabaseSpec'));
+    my $dbRefOrNASeqExternalDbID = $self->getExtDbRlsId($self->getArg('dbRefOrNASeqExternalDatabaseSpec'));
     
     my $fileName = $self->getArg('annotationFileName');
     my $separator = $self->getArg('separator');
@@ -528,8 +508,8 @@ sub populateCompEleNASeq {
 		    }
 		}
 		else {
-		    $self->log("$annotationID not found in DoTS.NASequence");
-		    print LOGFILE "$annotationID not found in DoTS.NASequence\n";
+		    $self->log("$annotationID not found in DoTS.ExternalNASequence");
+		    print LOGFILE "$annotationID not found in DoTS.ExternalNASequence\n";
 		    $nNASeqIDNotFound++;
 		}
 	    }
@@ -592,7 +572,7 @@ sub populateEleNASeq {
 	    foreach(@annotationListID) {
 		my $annotationID = $_;
 		
-		$sql = "SELECT na_sequence_id FROM DoTS.NASequence WHERE source_na_sequence_id = '$annotationID' AND external_database_release_id =$dbRefOrNASeqExternalDbID";
+		$sql = "SELECT na_sequence_id FROM DoTS.ExternalNASequence WHERE source_na_sequence_id = '$annotationID' AND external_database_release_id =$dbRefOrNASeqExternalDbID";
 		$queryHandle = $self->getQueryHandle();
 		$sth = $queryHandle->prepareAndExecute($sql);
 		($naSeqID) = $sth ->fetchrow_array();
@@ -629,8 +609,8 @@ sub populateEleNASeq {
 		    }
 		}
 		else {
-		    $self->log("$annotationID not found in DoTS.NASequence");
-		    print LOGFILE "$annotationID not found in DoTS.NASequence\n";
+		    $self->log("$annotationID not found in DoTS.ExternalNASequence");
+		    print LOGFILE "$annotationID not found in DoTS.ExternalNASequence\n";
 		    $nNASeqIDNotFound++;
 		}
 	    }
@@ -772,21 +752,6 @@ sub getTechnologyType {
     }
     $self->log("technological type = $techTypeID"); 
     return $techTypeID;
-}
-
-sub getExternalDbID {
-    my($self, $dbName, $dbVersion) = @_;
-    
-    my $sql = "SELECT i.external_database_release_id FROM SRes.externaldatabaserelease i, SRes.externaldatabase e where i.version = '$dbVersion' and e.name = '$dbName'";
-    
-    my $queryHandle = $self->getQueryHandle();
-    my $sth = $queryHandle->prepareAndExecute($sql);
-    my ($externalDbID) = $sth ->fetchrow_array();
-    
-    if(!defined $externalDbID) {
-	die("No External Database Release ID corresponding to NAME '$dbName' (version '$dbVersion')"); 
-    }
-    return $externalDbID;
 }
 
 sub undoTables {
