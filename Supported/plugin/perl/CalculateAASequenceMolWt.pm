@@ -115,7 +115,10 @@ EOSQL
   my $count = 0;
   while (my ($aaSeqId, $seq) = $sth->fetchrow_array()) {
     my $aaSeq = GUS::Model::DoTS::AASequence->new({ aa_sequence_id => $aaSeqId });
-
+    unless ($aaSeq->retrieveFromDB()) {
+      $self->error("aa_sequence_id $aaSeqId did not exist!?!");
+    }
+    
     my $seq = Bio::PrimarySeq->new(-id => $aaSeqId,
 				   -seq => $seq,
 				   -alphabet => "protein",
