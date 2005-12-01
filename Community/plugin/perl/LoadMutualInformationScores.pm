@@ -60,13 +60,19 @@ PLUGIN_NOTES
 
   my $argsDeclaration =
     [
-
      stringArg({ descr => 'Desciption of the PhylogeneticProfileSet',
                  name  => 'ProfileSetDescription',
                  isList    => 0,
                  reqd  => 1,
                  constraintFunc => undef,
                }),
+
+     floatArg({name  => 'threshold',
+		 descr => 'skip pairs with score below this threshold',  # talk about what SQL does
+		 reqd  => 1,
+		 constraintFunc=> undef,
+		 isList=> 0,
+		}),
 
      fileArg({name           => 'dataFile',
               descr          => 'File containing SourceIds and mutual information scores',
@@ -84,7 +90,6 @@ PLUGIN_NOTES
                   default =>0
                  }),
     ];
-
 
   $self->initialize({requiredDbVersion => 3.5,
                      cvsRevision => '$Revision$', 
@@ -127,39 +132,49 @@ sub loadMutualInformationFile {
   open(FILE, "< $fileName") || die ("Can't open datafile $datafile");
 
   my %profileIdHash = $self->getProfileIdHash();
-  my $i;
+  my $submitCount = 0;
+  my $skipCount = 0;
+  my $missingCount = 0;
+  my $threshold = $self->getArg('threshold');
 
   while(<FILE>) {
     chomp;
 
     my ($primarySourceId, $secondarySourceId, $score) = (split(/\|/, $_));
-
-    my $primaryNaFeatureId = PlasmoDBData::Load::Util::getGeneFeatureId($self, $primarySourceId);
-    my $secondaryNaFeatureId = PlasmoDBData::Load::Util::getGeneFeatureId($self, $secondarySourceId);
-
-    if((!$primaryNaFeatureId || !$secondaryNaFeatureId) && $self->getArgs()->{tolerateMissingIds}) {
-      $self->log("No na_Feature_id found for '$primarySourceId' OR '$secondarySourceId'");
+    if ($score < $threshold) {
+      $skipCount++;
+      next;
     }
-    else {
-      my $primaryProfileId = $profileIdHash{$primaryNaFeatureId};
-      $self->userError("Can't find profile_id for source_id $primarySourceId")
-        if (!$primaryProfileId);
 
-      my $secondaryProfileId = $profileIdHash{$secondaryNaFeatureId};
-      $self->userError("Can't find profile_id for source_id $secondarySourceId")
-        if (!$secondaryProfileId);
+    my $primaryNaFeatureId =
+      PlasmoDBData::Load::Util::getGeneFeatureId($self, $primarySourceId);
 
-      print STDERR "primaryId=$primaryProfileId\tsecondaryId=$secondaryProfileId\n";
+    my $secondaryNaFeatureId = 
+      PlasmoDBData::Load::Util::getGeneFeatureId($self, $secondarySourceId);
+    my $primaryProfileId = $profileIdHash{$primaryNaFeatureId};
 
-      my $mi = GUS::Model::DoTS::MutualInformationScore->
-        new( {primary_profile_id => $primaryProfileId,
-              secondary_profile_id => $secondaryProfileId,
-              mutual_information_score => $score * 10000
-             } );
+    my $secondaryProfileId = $profileIdHash{$secondaryNaFeatureId};
 
-      $mi->submit();
+    if (!$primaryProfileId || !$secondaryProfileId) {
+      my $msg = "Can't find either na_feature_id or profile_id for one or both of '$primarySourceId' and '$secondarySourceId'";
+      if ($self->getArgs()->{tolerateMissingIds}) {
+	$missingCount++;
+ 	$self->log($msg);
+	next;
+      } else {
+ 	$self->userError($msg);
+      }
     }
-    if ($i++ % 1000 == 0) {
+
+    my $mi = GUS::Model::DoTS::MutualInformationScore->
+      new( {primary_profile_id => $primaryProfileId,
+	    secondary_profile_id => $secondaryProfileId,
+	    mutual_information_score => $score * 10000
+	   } );
+    
+    $mi->submit();
+    if ($submitCount++ % 1000 == 0) {
+      $self->log("submitted $submitCount.  skipped $skipCount (below threshold).  skipped $missingCount (profile not found)");
       $self->undefPointerCache();
     }
   }
@@ -167,8 +182,7 @@ sub loadMutualInformationFile {
   close(FILE);
   system("gzip $fileName");
 
-  my $rv = "Loaded $i rows into Dots.MutualInformationScore\n";
-  print STDERR $rv;
+  my $rv = "submitted $submitCount.  skipped $skipCount (below threshold).  skipped $missingCount (profile not found)";
   return($rv);
 }
 
