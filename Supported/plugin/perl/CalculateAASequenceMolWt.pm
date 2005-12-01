@@ -113,7 +113,7 @@ EOSQL
 
   my $count = 0;
   while (my ($aaSeqId, $seq) = $sth->fetchrow_array()) {
-    my $aaSeq = GUS::Model::AASequence->new({ aa_sequence_id => $aaSeqId });
+    my $aaSeq = GUS::Model::DoTS::AASequence->new({ aa_sequence_id => $aaSeqId });
 
     my $seq = Bio::PrimarySeq->new(-id => $aaSeqId,
 				   -seq => $seq,
