@@ -1,9 +1,9 @@
 ##
-## InsertMAS5Assay2Quantification Plugin
-## $Id: InsertGCRMAAssay2Quantification.pm 3208 2005-08-03 15:15:19Z svdate $
+## InsertGcRMAAssay2Quantification Plugin
+## $Id: InsertGcRMAAssay2Quantification.pm 3208 2005-08-03 15:15:19Z svdate $
 ##
 
-package GUS::Community::Plugin::InsertGCRMAAssay2Quantification;
+package GUS::Community::Plugin::InsertGcRMAAssay2Quantification;
 @ISA = qw( GUS::PluginMgr::Plugin);
 
 use strict 'vars';
@@ -29,12 +29,12 @@ use GUS::Model::SRes::Contact;
 sub getDocumentation {
 
   my $purposeBrief = 'Plugin is BatchLoader, creates assays, acquisitions and quantifications for Affymetrix assays in RAD tables.';
-  my $purpose      = "Create assays, acquisitions and quantifications for Affymetrix assays in RAD tables from multiple files in batch mode.";
+  my $purpose      = "Create assays, acquisitions and quantifications for Affymetrix assays in RAD tables from multiple files in batch mode.  Data has been quantified with gcRMA (Bioconductor)";
   
   my $tablesAffected = [
     ['RAD::Assay',               'Enters as many rows as distinct assays found'],
     ['RAD::AssayParam',          'For each assay entered, enters here the values of the Fluidics protocol parameters as recorded in the corresponding .EXP file'],
-    ['RAD::Quantification',      'Enters here two quantifications, cel and chp, for each assay entered'],
+    ['RAD::Quantification',      'Enters here two quantifications, cel and gcRMA, for each assay entered'],
     ['RAD::QuantificationParam', 'For each assay entered, enters here the values for parameters recorded in the corresponding .RPT file'],
     ['RAD::Acquisition',         'Enters here one acquisition for each assay entered'],
     ['RAD::AcquisitionParam',    'For each assay entered, enters here the values for parameters recorded in the corresponding .EXP file'],
@@ -122,7 +122,7 @@ CelProtocolID                 => 1,
 gcRMAProtocolID               => 1,
 HybOperatorID                 => 1,
 CelQuantOperatorID            => 1,
-ChpQuantOperatorID            => 1,
+gcRMAQuantOperatorID          => 1,
 StudyID                       => 1,
 ChannelDef                    => 1,
 Extensions                    => 1,
@@ -140,7 +140,7 @@ gcRMAVersionRepresentation    => 1,
 KRepresentation               => 0,
 RVersionRepresentation        => 1,
 OpticalCorrectRepresentation  => 1,
-RhoRepresentation             => 0,
+RhoRepresentation             => 1,
 TypeRepresentation            => 1
 
 
@@ -295,7 +295,7 @@ my $requiredProperties = {
   "gcRMAProtocolID"              => 1,
   "HybOperatorID"                => 1,
   "CelQuantOperatorID"           => 1,
-  "ChpQuantOperatorID"           => 1,
+  "gcRMAQuantOperatorID"         => 1,
   "StudyID"                      => 1,
   "ChannelDef"                   => 1,
   "Extensions"                   => 1,
@@ -313,7 +313,7 @@ my $requiredProperties = {
   "KRepresentation"              => 0,
   "RVersionRepresentation"       => 1,
   "OpticalCorrectRepresentation" => 1,
-  "RhoRepresentation"            => 0,
+  "RhoRepresentation"            => 1,
   "TypeRepresentation"           => 1
 }; 
 
@@ -831,24 +831,24 @@ sub createGUSQuantification {
   my ($self, $assayName, $RPTinfo, $extensionHashRef) = @_;
 
   my $celURI         = $self->{propertySet}->getProp("CELFilePath");
-  my $chpURI         = $self->{propertySet}->getProp("gcRMAFilePath");
+  my $gcRMAURI         = $self->{propertySet}->getProp("gcRMAFilePath");
   my $acqProtocolId      = $self->{propertySet}->getProp("AcqProtocolID");
   my $celProtocolId      = $self->{propertySet}->getProp("CelProtocolID");
-  my $gcrmaProtocolId      = $self->{propertySet}->getProp("gcRMAProtocolID");
+  my $gcRMAProtocolId      = $self->{propertySet}->getProp("gcRMAProtocolID");
   my $celQuantOperatorId = $self->{propertySet}->getProp("CelQuantOperatorID");
-  my $chpQuantOperatorId = $self->{propertySet}->getProp("ChpQuantOperatorID");
+  my $gcRMAQuantOperatorId = $self->{propertySet}->getProp("gcRMAQuantOperatorID");
 
 
   $self->checkDatabaseEntry("GUS::Model::RAD::Protocol", "protocol_id", $celProtocolId);
-  $self->checkDatabaseEntry("GUS::Model::RAD::Protocol", "protocol_id", $gcrmaProtocolId);
+  $self->checkDatabaseEntry("GUS::Model::RAD::Protocol", "protocol_id", $gcRMAProtocolId);
   $self->checkDatabaseEntry("GUS::Model::SRes::Contact", "contact_id", $celQuantOperatorId);
-  $self->checkDatabaseEntry("GUS::Model::SRes::Contact", "contact_id", $chpQuantOperatorId);
+  $self->checkDatabaseEntry("GUS::Model::SRes::Contact", "contact_id", $gcRMAQuantOperatorId);
 
   $celURI .= "/" if ($celURI !~ m/(.+)\/$/);
-  $chpURI .= "/" if ($chpURI !~ m/(.+)\/$/);
+  $gcRMAURI .= "/" if ($gcRMAURI !~ m/(.+)\/$/);
 
   $celURI .= $assayName.".".$extensionHashRef->{"CELFile"};
-  $chpURI .= $assayName.".".$extensionHashRef->{"gcRMAFile"};
+  $gcRMAURI .= $assayName.".".$extensionHashRef->{"gcRMAFile"};
 
   # modify quantification date, which is not in regular format
   my ($quantificationDate, $tempQuantificationDate);
@@ -873,19 +873,19 @@ sub createGUSQuantification {
   $celQuantParameters->{operator_id} = $celQuantOperatorId if ( defined $celQuantOperatorId );
   my $celQuantification = GUS::Model::RAD::Quantification->new($celQuantParameters);
 
-  my $chpQuantParameters = {
-    protocol_id         => $gcrmaProtocolId,
+  my $gcRMAQuantParameters = {
+    protocol_id         => $gcRMAProtocolId,
     name                => $acqName."-Affymetrix GcRMA Absolute Expression Analysis", 
-    uri                 => $chpURI,
+    uri                 => $gcRMAURI,
     quantification_date => $quantificationDate
   };
-  $chpQuantParameters->{operator_id} = $chpQuantOperatorId if ( defined $chpQuantOperatorId );
-  my $chpQuantification = GUS::Model::RAD::Quantification->new($chpQuantParameters);
+  $gcRMAQuantParameters->{operator_id} = $gcRMAQuantOperatorId if ( defined $gcRMAQuantOperatorId );
+  my $gcRMAQuantification = GUS::Model::RAD::Quantification->new($gcRMAQuantParameters);
 
   my @gusQuantifications;
-  push (@gusQuantifications, $celQuantification, $chpQuantification);
+  push (@gusQuantifications, $celQuantification, $gcRMAQuantification);
 
-  $self->log("STATUS","Inserted 2 rows in table RAD.Quantification for CEL & CHP quantification");
+  $self->log("STATUS","Inserted 2 rows in table RAD.Quantification for CEL & gcRMA quantification");
 
   return \@gusQuantifications;
 }
@@ -925,18 +925,23 @@ sub getQuantificationDate {
 ###############################
 
 sub createGUSQuantParams {
-  my ($self, $RPTinfo) = @_;
+  my ($self) = @_;
 
-  my $gcrmaProtocolId = $self->{propertySet}->getProp("gcRMAProtocolID");
-  $self->checkDatabaseEntry("GUS::Model::RAD::Protocol", "protocol_id", $gcrmaProtocolId);
+  my $gcRMAProtocolId = $self->{propertySet}->getProp("gcRMAProtocolID");
+  $self->checkDatabaseEntry("GUS::Model::RAD::Protocol", "protocol_id", $gcRMAProtocolId);
 
   my $params = {
-    $self->{propertySet}->getProp("Alpha1Representation")   => 1,
-    $self->{propertySet}->getProp("Alpha2Representation")   => 1,
-    $self->{propertySet}->getProp("TauRepresentation")      => 1,
-    $self->{propertySet}->getProp("TGTValueRepresentation") => 1,
-    $self->{propertySet}->getProp("SFValueRepresentation")  => 1
+    'normalize'       => $self->{propertySet}->getProp("NormalizeRepresentation"),
+    'fast'            => $self->{propertySet}->getProp("FastRepresentation") ,
+    'grma version'    => $self->{propertySet}->getProp("gcRMAVersionRepresentation") ,
+    'R version'       => $self->{propertySet}->getProp("RVersionRepresentation"),
+    'optical.correct' => $self->{propertySet}->getProp("OpticalCorrectRepresentation"),
+    'rho'             => $self->{propertySet}->getProp("RhoRepresentation") ,
+    'type'            => $self->{propertySet}->getProp("TypeRepresentation")
   };
+
+  $params->{k} = $self->{propertySet}->getProp("KRepresentation") if (defined ($self->{propertySet}->getProp("KRepresentation") ));
+  $params->{bgversion} = $self->{propertySet}->getProp("BGVersionRepresentation") if (defined ($self->{propertySet}->getProp("BGVersionRepresentation")));
 
   my @gusQuantParams;
   my $quantParamKeywordCnt = 0;
@@ -944,22 +949,15 @@ sub createGUSQuantParams {
   foreach my $param (keys %$params) {
 
     my $protocolParam = GUS::Model::RAD::ProtocolParam->new({
-      protocol_id => $gcrmaProtocolId, 
+      protocol_id => $gcRMAProtocolId, 
       name        => $param
     });
 
     $self->error("Create object failed, name $param absent in table RAD::ProtocolParam")
       unless ($protocolParam->retrieveFromDB);
 
-    my $paramValue;
+    my $paramValue = $params->{$param};
 
-    # standard keywords as seen in .RPT files can be modified and stored in RAD
-	# HARD-CODED based on observed keywords in files
-    $paramValue = $RPTinfo->{"Alpha1:"}            if ($param eq $self->{propertySet}->getProp("Alpha1Representation"));
-    $paramValue = $RPTinfo->{"Alpha2:"}            if ($param eq $self->{propertySet}->getProp("Alpha2Representation"));
-    $paramValue = $RPTinfo->{"Tau:"}               if ($param eq $self->{propertySet}->getProp("TauRepresentation"));
-    $paramValue = $RPTinfo->{"TGT Value:"}         if ($param eq $self->{propertySet}->getProp("TGTValueRepresentation"));
-    $paramValue = $RPTinfo->{"Scale Factor (SF):"} if ($param eq $self->{propertySet}->getProp("SFValueRepresentation"));
 
     my $quantParameters = GUS::Model::RAD::QuantificationParam->new({
       name  => $param,
