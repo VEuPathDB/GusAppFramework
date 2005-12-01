@@ -1,5 +1,6 @@
 package GUS::Supported::Plugin::CalculateAASequenceMolWt;
 
+
 use strict;
 use warnings;
 
@@ -78,7 +79,7 @@ sub new {
   bless $self, $class;
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision =>  '$Revision: 4148 $',
+		      cvsRevision =>  '$Revision$',
 		      name => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
