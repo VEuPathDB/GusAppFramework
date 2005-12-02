@@ -1,6 +1,10 @@
 package GUS::PluginMgr::GusApplication;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
+# ========================================================================
+# ----------------------------- Declarations -----------------------------
+# ========================================================================
+
 use strict;
 #use vars (%SIG);
 use CBIL::Util::EasyCsp;
@@ -26,6 +30,12 @@ my @properties =
 (
  ["md5sum",         "",  "full path of md5sum executable (for check summing)"],
 );
+
+# ========================================================================
+# ----------------------- Create, Init, and Access -----------------------
+# ========================================================================
+
+# --------------------------------- new ----------------------------------
 
 sub new {
    my $Class = shift;
@@ -57,6 +67,10 @@ sub new {
 # what is the run mode
 sub getMode       { $_[0]->{__gus__plugin__mode} }
 sub setMode       { $_[0]->{__gus__plugin__mode} = $_[1]; $_[0] }
+
+# ========================================================================
+# --------------------- Methods to Find Stuff in GUS ---------------------
+# ========================================================================
 
 # ----------------------------------------------------------------------
 
@@ -119,6 +133,10 @@ SQL
 
    return $self->makeImplementation($plugin, $imps->[0]);
 }
+
+# ========================================================================
+# -------------------- Methods to Write Stuff in GUS ---------------------
+# ========================================================================
 
 sub registerPlugin {
   my ($self, $plugin) = @_;
@@ -192,7 +210,9 @@ sub makeImplementation {
   }
   return $imp;
 }
-
+# ========================================================================
+# ----------------------- Methods to Run in Modes ------------------------
+# ========================================================================
 
 # ----------------------------------------------------------------------
 
@@ -348,12 +368,21 @@ sub doMajorMode {
 # Create info for self
 # ----------------------------------------------------------------------
 
-#! GA
+=pod
+
+=head2 Meta Mode
+
+This mode (+meta) registers ga itself as an algorithm and updates the
+AlgorithmImplementation when the source code repository version has
+changed.
+
+=cut
+
 sub doMajorMode_Meta {
    my $self = shift;
 
    my $ecd = { %{$self->getGlobalEasyCspOptions} };
-   my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$self->getUsage) || die "\n";
+   my $cla = CBIL::Util::EasyCsp::DoItAll($ecd,$self->getUsage,['GUS::PluginMgr::GusApplication']) || die "\n";
 
    $self->initArgs($cla);
 
