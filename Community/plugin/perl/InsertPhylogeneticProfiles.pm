@@ -84,7 +84,13 @@ my $argsDeclaration =
                 default =>0
                }),
 
- fileArg({name           => 'headerFile',
+   booleanArg ({name => 'dontLoadScores',
+                descr => 'set this to skip loading the scores of the profiles (IE, do not write to DoTS.PhylogeneticProfileMember',
+                reqd => 0,
+                default =>0
+               }),
+
+  fileArg({name           => 'headerFile',
 	  descr          => 'File containing Genbank Taxon Names',
 	  reqd           => 1,
 	  mustExist      => 1,
@@ -180,26 +186,28 @@ sub run {
           die "There are ".scalar(@values)." values and ".scalar(@$taxonIdList)." TaxonNames";
         }
 
-        for (my $i=0; $i <= $#values; $i++) {
+	if (!$self->getArg('dontLoadScores')) {
 
-	  my $profileMember = GUS::Model::DoTS::PhylogeneticProfileMember->
-            new({taxon_id => $taxonIdList->[$i],
-                 minus_log_e_value => $values[$i]*1000,
-                 PHYLOGENETIC_PROFILE_ID => $profile->getId()
-                });
+	  for (my $i=0; $i <= $#values; $i++) {
 
-	  $profileMember->submit();
-          $ppmLoaded++;
-        }
+	    my $profileMember = GUS::Model::DoTS::PhylogeneticProfileMember->
+	      new({taxon_id => $taxonIdList->[$i],
+		   minus_log_e_value => $values[$i]*1000,
+		   PHYLOGENETIC_PROFILE_ID => $profile->getId()
+		  });
+
+	    $profileMember->submit();
+	    $ppmLoaded++;
+	  }
+	}
+      } elsif ($self->getArgs()->{tolerateMissingIds}) {
+	$self->log("WARN:  No na_Feature_id found for '$sourceId'");
       }
-      elsif($self->getArgs()->{tolerateMissingIds}) {
-          $self->log("WARN:  No na_Feature_id found for '$sourceId'");
-        }
       else {
         $self->userError("Can't find naFeatureId for source id '$sourceId'");
       }
 
-  $self->undefPointerCache();
+      $self->undefPointerCache();
     }
 
   close(FILE);
