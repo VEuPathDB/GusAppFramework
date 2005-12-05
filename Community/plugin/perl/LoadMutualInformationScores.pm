@@ -110,7 +110,8 @@ sub run {
   $self->loadMutualInformationFile($self->getArg('dataFile'),
 				   $self->getArg('ProfileSetDescription'));
 
-  $self->logVerbose("Finished LoadMutualInformationScores.");
+  my $msg = "Finished LoadMutualInformationScores.\n";
+  return $msg;
 }
 
 # ----------------------------------------------------------------------
