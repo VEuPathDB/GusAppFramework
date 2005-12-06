@@ -192,8 +192,8 @@ sub undoSequences{
   $self->_deleteFromTable('DoTS.NAEntry');
   $self->_deleteFromTable('DoTS.SecondaryAccs');
   $self->_deleteFromTable('DoTS.NASequenceRef');
-  $self->_deleteFromTable('DoTS.Keyword');
   $self->_deleteFromTable('DoTS.NASequenceKeyword');
+  $self->_deleteFromTable('DoTS.Keyword');
   $self->_deleteFromTable('DoTS.NAComment');
   $self->_deleteFromTable('DoTS.NASequence');
 }
