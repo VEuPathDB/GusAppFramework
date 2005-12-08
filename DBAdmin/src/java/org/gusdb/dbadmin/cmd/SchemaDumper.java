@@ -112,6 +112,8 @@ public class SchemaDumper {
                 dbWriter = new XMLWriter();
             } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase("hbm") == 0) {
                 dbWriter = new HibernateMapWriter(properties.getProperty("hibernate.basePkg"));
+            } else if (cmdLine.getOptionValue("targetType").compareToIgnoreCase("hbm3") == 0) {
+                dbWriter = new Hibernate3MapWriter(properties.getProperty("hibernate.basePkg"));
             } else {
                 System.err.println("Unknown targetType: " + cmdLine.getOptionValue("target"));
                 System.exit(1);
