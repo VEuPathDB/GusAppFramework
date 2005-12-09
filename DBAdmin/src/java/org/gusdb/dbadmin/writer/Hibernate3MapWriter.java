@@ -162,18 +162,18 @@ extends SchemaWriter
     throws IOException
     {
 	indent(writer, level);
-        writer.write("<property name=\"coreTableInfoId\" ");
+        writer.write("<property name=\"coreTableInfoId\" \n");
 	indent(writer, level + 2);
         writer.write("update=\"false\" insert=\"false\" \n");
+	indent(writer, level + 2);
 	writer.write("lazy=\"false\" access=\"field\" type=\"integer\" >\n");
 	indent(writer, level + 1);
 	writer.write("<formula>\n");
 	indent(writer, level + 2);
 	writer.write("select ti.table_id from core.tableinfo ti, core.databaseinfo di\n");
 	String tableNameClause = table.getSubclasses() != null
-	    ? "ti.name like sublcass_view" 
+	    ? "ti.name like subclass_view" 
 	    : "ti.name like \'" +  table.getName() + "\'" ;
-
 	indent(writer, level + 2);
 	writer.write("where " 
 		     + tableNameClause
@@ -336,6 +336,7 @@ extends SchemaWriter
             writer.write("\"/>\n");
             indent(writer, level + 1);
             writer.write("</key>\n");
+	    //writeCoreTableInfoIdProperty(writer, sub , level + 1);
             writeProperties(writer, sub, level + 1);
             writeSubclasses(writer, sub, level + 1);
             indent(writer, level);
