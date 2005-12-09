@@ -44,18 +44,18 @@ extends SchemaWriter
     String BASE_PKG;
 
     /**
-     * Construct a HibernateMapWriter using the default base package.
+     * Construct a Hibernate3MapWriter using the default base package.
      */
-    public HibernateMapWriter()
+    public Hibernate3MapWriter()
     {
         this(null);
     }
 
     /**
-     * Construct a HibernateMapWriter using the specified base package.
+     * Construct a Hibernate3MapWriter using the specified base package.
      * @param basePkg the package for all hibernate generated classes
      */
-    public HibernateMapWriter(String basePkg)
+    public Hibernate3MapWriter(String basePkg)
     {
         BASE_PKG = (basePkg == null) ? "org.gusdb.model" : basePkg;
     }
@@ -119,6 +119,7 @@ extends SchemaWriter
         writer.write("<meta attribute=\"implement-equals\">true</meta>\n");
         writeId(writer, table);
         writeTimestamp(writer, table);
+	writeCoreTableInfoIdProperty(writer, table, 1);
         writeProperties(writer, table, 1);
         writeComponents(writer, table, 1);
         writeChildren(writer, table);
@@ -148,6 +149,45 @@ extends SchemaWriter
                 writeProperty(writer, column, level);
             }
         }
+    }
+
+    /**
+     * Write the "static" properties for a class mapping
+     * indented to the specified level.
+     * @param writer the output writer
+     * @param table the table containing the properties to write
+     * @param level the indentation level
+     */
+    private void writeCoreTableInfoIdProperty(Writer writer, Table table, int level)
+    throws IOException
+    {
+	indent(writer, level);
+        writer.write("<property name=\"coreTableInfoId\" ");
+	indent(writer, level + 2);
+        writer.write("update=\"false\" insert=\"false\" \n");
+	writer.write("lazy=\"false\" access=\"field\" type=\"integer\" >\n");
+	indent(writer, level + 1);
+	writer.write("<formula>\n");
+	indent(writer, level + 2);
+	writer.write("select ti.table_id from core.tableinfo ti, core.databaseinfo di\n");
+	String tableNameClause = table.getSubclasses() != null
+	    ? "ti.name like sublcass_view" 
+	    : "ti.name like \'" +  table.getName() + "\'" ;
+
+	indent(writer, level + 2);
+	writer.write("where " 
+		     + tableNameClause
+		     +"\n");
+	indent(writer, level + 2);
+	writer.write("and di.name like '" 
+		     + table.getSchema().getName()
+		     + "' \n");
+	indent(writer, level + 2);
+	writer.write("and di.database_id = ti.database_id \n" );
+	indent(writer, level + 1);
+	writer.write("</formula>\n");
+	indent(writer, level);
+        writer.write("</property>\n");
     }
 
     /**
@@ -275,6 +315,10 @@ extends SchemaWriter
             writer.write(sub.getSchema().getName());
             writer.write(".");
             writer.write(sub.getName());
+            writer.write("\"\n");
+            indent(writer, level + 2);
+            writer.write("schema=\"");
+            writer.write(sub.getSchema().getName());
             writer.write("\"\n");
             indent(writer, level + 2);
             writer.write("extends=\"");
