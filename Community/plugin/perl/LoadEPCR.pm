@@ -121,7 +121,7 @@ PLUGIN_NOTES
     ];
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 3879 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 3889 $', # cvs fills this in!
 		     name => ref($self),
 		     revisionNotes => 'make consistent with GUS 3.5',
 		     argsDeclaration => $argsDeclaration,
