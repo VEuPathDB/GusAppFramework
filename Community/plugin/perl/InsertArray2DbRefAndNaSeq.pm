@@ -19,6 +19,7 @@ use GUS::Model::SRes::ExternalDatabaseRelease;
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::Evidence;
 use GUS::Model::RAD::CompositeElementDbRef;
+use GUS::Model::RAD::CompositeElementNASequence;
 use GUS::Model::RAD::ElementDbRef;
 
 $| = 1;
@@ -150,7 +151,7 @@ sub new {
     bless($self, $class);
     
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 4247 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 4267 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -170,7 +171,7 @@ sub run {
     my $nrecords;
     
     my $technologyType = $self->getTechnologyType();
-    my $databaseName = $self->getArg('databaseName');
+    my $annotationType = $self->getArg('annotationType');
     my $arrayDesignID = $self->getArrayDesignID();
     
     my $evidenceExternalDbID = $self->getExtDbRlsId($self->getArg('evidenceExternalDatabaseSpec'));
@@ -190,32 +191,33 @@ sub run {
     
     $self->log("evidenceExternalDbID = $evidenceExternalDbID\n");
     $self->log("dbRefOrNASeqExternalDbID = $dbRefOrNASeqExternalDbID\n");
-    $self->log("techno type = $technologyType - dbname = $databaseName\n");
+    $self->log("techno type = $technologyType\n");
+    $self->log("dbtype = $annotationType\n");
     
     if($technologyType =~ /oligo/i) {
-	if($databaseName eq "DbRef") {
+	if($annotationType eq "DbRef") {
 	    $nrecords = $self->populateCompEleDbRef($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile);
 	}
-	elsif($databaseName eq "NaSeq")  {
+	elsif($annotationType eq "NASeq")  {
 	    $nrecords = $self->populateCompEleNaSeq($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile);
 	}
 	else {
-	    die("$databaseName is an undefined type\n");
+	    die("$annotationType is an undefined type\n");
 	}
     }
     elsif($technologyType =~ /spot/i) {
-	if($databaseName eq "DbRef") {
+	if($annotationType eq "DbRef") {
 	    $nrecords = $self->populateEleDbRef($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID);
 	}
-	elsif($databaseName eq "NaSeq")  {
+	elsif($annotationType eq "NASeq")  {
 	    $nrecords = $self->populateEleNaSeq($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID);
 	}
 	else {
-	    die("$databaseName is an undefined type\n");
+	    die("$annotationType is an undefined annotation type\n");
 	}
     }
     else {
-	die("$technologyType is an undefined type\n");
+	die("$technologyType is not a techno type usable in this plugin\n");
     }
     
     my $result = "$nrecords records created.";
@@ -429,7 +431,7 @@ sub populateEleDbRef {
 
 
 
-sub populateCompEleNASeq {
+sub populateCompEleNaSeq {
     my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
     
     my $nToPopulate = scalar keys(%$hash);
@@ -469,9 +471,10 @@ sub populateCompEleNASeq {
 	    my @annotationListID = @$annotationListIDRef;
 	    foreach(@$annotationListIDRef) {
 		
-		my $annotationID= $_;
+		my @annot = split(/\./, $_);
+		my $annotationID = @annot[0];
 		
-		$sql = "SELECT na_sequence_id FROM DoTS.NASeqence WHERE source_na_sequence_id = '$annotationID' and external_database_release_id =$dbRefOrNASeqExternalDbID";
+		$sql = "SELECT na_sequence_id FROM DoTS.ExternalNASequence WHERE source_id = '$annotationID' and external_database_release_id =$dbRefOrNASeqExternalDbID";
 		
 		$queryHandle = $self->getQueryHandle();
 		$sth = $queryHandle->prepareAndExecute($sql);
@@ -479,7 +482,7 @@ sub populateCompEleNASeq {
 		
 		if(defined $naSeqID) {
 		    
-		    $sql = "SELECT composite_element_na_seq_id FROM RAD.CompositeElementNASeqence WHERE composite_element_id = $compositeElementID AND na_sequence_id = $naSeqID";
+		    $sql = "SELECT composite_element_na_seq_id FROM RAD.CompositeElementNASequence WHERE composite_element_id = $compositeElementID AND na_sequence_id = $naSeqID";
 		    $queryHandle = $self->getQueryHandle();
 		    $sth = $queryHandle->prepareAndExecute($sql);
 		    ($compEleID) = $sth ->fetchrow_array();
@@ -529,7 +532,7 @@ sub populateCompEleNASeq {
 }
 
 
-sub populateEleNASeq {
+sub populateEleNaSeq {
     my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
     
     my $nToPopulate = scalar keys(%$hash);
@@ -570,9 +573,11 @@ sub populateEleNASeq {
 	    my @annotationListID = @$annotationListIDRef;
 	    
 	    foreach(@annotationListID) {
-		my $annotationID = $_;
 		
-		$sql = "SELECT na_sequence_id FROM DoTS.ExternalNASequence WHERE source_na_sequence_id = '$annotationID' AND external_database_release_id =$dbRefOrNASeqExternalDbID";
+		my @annot = split(/\./, $_);
+		my $annotationID = @annot[0];
+		
+		$sql = "SELECT na_sequence_id FROM DoTS.ExternalNASequence WHERE source_id = '$annotationID' AND external_database_release_id =$dbRefOrNASeqExternalDbID";
 		$queryHandle = $self->getQueryHandle();
 		$sth = $queryHandle->prepareAndExecute($sql);
 		($naSeqID) = $sth ->fetchrow_array();
@@ -686,7 +691,6 @@ sub parseAnnotationFile {
 	my $k=0;
 	
 	if(defined $row[$columnRefID] & defined $row[$columnID] & !($row[$columnID] eq "---") ) {
-
 	    my @list = split(/$subSeparator/, $row[$columnID]);
 	    foreach(@list) { $_ =~s/\ //g; }
 	    foreach(@list) { $_ =~s/\"//g; }
