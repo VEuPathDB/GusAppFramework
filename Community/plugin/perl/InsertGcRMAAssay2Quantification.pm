@@ -111,7 +111,7 @@ of 1 indicates that the keyword can never have a null value):
 MaxObjectNumber               => 0, 
 DataRepositoryPath            => 1,
 ImageRepositoryPath           => 0,
-EXPFilePath                   => 0,
+EXPFilePath                   => 1,
 RPTFilePath                   => 0,
 CELFilePath                   => 0,
 DATFilePath                   => 0,
@@ -284,7 +284,7 @@ my $requiredProperties = {
   "MaxObjectNumber"              => 0,
   "DataRepositoryPath"           => 1,
   "ImageRepositoryPath"          => 0,
-  "EXPFilePath"                  => 0,
+  "EXPFilePath"                  => 1,
   "RPTFilePath"                  => 0,
   "CELFilePath"                  => 0,
   "DATFilePath"                  => 0,
@@ -404,6 +404,7 @@ sub createAndSubmitGUSAssaysFromFiles {
   my @gusAssays;
 
   $self->log("STATUS","Found $totalAssayCnt assays");
+  $self->log("STATUS","Found assays: @$assayNames");
   $self->log("STATUS","Skipping assay/s as defined: @skipAssayList") if (scalar @skipAssayList > 0);
 
   foreach my $assayName (@$assayNames) {
@@ -482,13 +483,13 @@ sub createSingleGUSAssay {
   $self->checkRequiredFilesExist($dataRepositoryPath, $imageRepositoryPath, $assayName, $extensionHashRef);
 
   my ($EXPinfo, $EXPfluidicsInfo) = $self->parseTabFile($dataRepositoryPath, $extensionHashRef->{"EXPFile"}, $assayName);
-  my ($RPTinfo, $RPTfluidicsInfo) = $self->parseTabFile($dataRepositoryPath, $extensionHashRef->{"RPTFile"}, $assayName);
+  #my ($RPTinfo, $RPTfluidicsInfo) = $self->parseTabFile($dataRepositoryPath, $extensionHashRef->{"RPTFile"}, $assayName);
   
   my $gusAssay               = $self->createGusAssay($assayName, $EXPinfo);
   my $gusAssayParams         = $self->createGusAssayParams($EXPinfo, $EXPfluidicsInfo);
   my $gusAcquisition         = $self->createGusAcquisition($assayName, $EXPinfo, $extensionHashRef);
   my $gusAcquistionParamsRef = $self->createGusAcquisitionParams($EXPinfo);
-  my $gusQuantificationsRef  = $self->createGUSQuantification($assayName, $RPTinfo, $extensionHashRef);
+  #my $gusQuantificationsRef  = $self->createGUSQuantification($assayName, $RPTinfo, $extensionHashRef);
 
   foreach my $gusAssayParam (@$gusAssayParams) { 
     $gusAssayParam->setParent($gusAssay); 
@@ -500,15 +501,15 @@ sub createSingleGUSAssay {
     $gusAcquisitionParam->setParent($gusAcquisition); 
   }
   
-  foreach my $gusQuantification (@$gusQuantificationsRef) { 
+  #foreach my $gusQuantification (@$gusQuantificationsRef) { 
 
-    $gusQuantification->setParent($gusAcquisition); 
-    next if ($gusQuantification == $gusQuantificationsRef->[0]); # skip cel quantification (not req.)
-    my $gusQuantParamsRef = $self->createGUSQuantParams($RPTinfo);
-    foreach my $gusQuantParam (@$gusQuantParamsRef) { 
-        $gusQuantParam->setParent($gusQuantification); 
-     }
-  }
+    #$gusQuantification->setParent($gusAcquisition); 
+    #next if ($gusQuantification == $gusQuantificationsRef->[0]); # skip cel quantification (not req.)
+    #my $gusQuantParamsRef = $self->createGUSQuantParams($RPTinfo);
+    #foreach my $gusQuantParam (@$gusQuantParamsRef) { 
+        #$gusQuantParam->setParent($gusQuantification); 
+     #}
+  #}
 
   return $gusAssay;
 }
@@ -526,6 +527,7 @@ sub checkRequiredFilesExist {
   foreach my $fileType (@fileTypes) {
 
     next if (( $fileType eq "DAT" ) && ($self->{propertySet}->getProp($fileType."FilePath") eq "null"));
+    next if (( $fileType eq "RPT" ) && ($self->{propertySet}->getProp($fileType."FilePath") eq "null"));
 
     my $filePath;
     $filePath = $dataRepositoryPath.$self->{propertySet}->getProp($fileType."FilePath") if $fileType ne "DAT";
@@ -536,7 +538,7 @@ sub checkRequiredFilesExist {
 
     # check this for hard coding
 	#$file = "$assayName"."_Metrics.".$extensionHashRef->{$fileType."File"} if ($fileType eq "Metrics");
-	$file = "$assayName".$extensionHashRef->{$fileType."File"} if ($fileType eq "gcRMA");
+	$file = "$assayName.".$extensionHashRef->{$fileType."File"} if ($fileType eq "gcRMA");
 
     $self->userError("Missing file: $file") if ( ! -e $filePath.$file ); 
     $self->userError("Empty file: $file") if ( -z $filePath.$file ); 
