@@ -110,8 +110,8 @@ of 1 indicates that the keyword can never have a null value):
 
 MaxObjectNumber               => 0, 
 DataRepositoryPath            => 1,
-ImageRepositoryPath           => 1,
-EXPFilePath                   => 1,
+ImageRepositoryPath           => 0,
+EXPFilePath                   => 0,
 RPTFilePath                   => 0,
 CELFilePath                   => 0,
 DATFilePath                   => 0,
@@ -283,8 +283,8 @@ sub new {
 my $requiredProperties = {
   "MaxObjectNumber"              => 0,
   "DataRepositoryPath"           => 1,
-  "ImageRepositoryPath"          => 1,
-  "EXPFilePath"                  => 1,
+  "ImageRepositoryPath"          => 0,
+  "EXPFilePath"                  => 0,
   "RPTFilePath"                  => 0,
   "CELFilePath"                  => 0,
   "DATFilePath"                  => 0,
