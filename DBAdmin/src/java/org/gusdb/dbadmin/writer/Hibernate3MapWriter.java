@@ -748,7 +748,7 @@ extends SchemaWriter
      */
     private String getType(Column column)
     { 
-        if (isPermission(column)) return "boolean";
+        if (isPermission(column)) return "byte";
         if (column.getType() == Column.ColumnType.STRING) return "string";
         if (column.getType() == Column.ColumnType.CHARACTER) return "character";
         if (column.getType() == Column.ColumnType.CLOB) return "clob";
