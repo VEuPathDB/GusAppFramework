@@ -21,6 +21,7 @@ use GUS::Model::DoTS::Evidence;
 use GUS::Model::RAD::CompositeElementDbRef;
 use GUS::Model::RAD::CompositeElementNASequence;
 use GUS::Model::RAD::ElementDbRef;
+use GUS::Model::RAD::ElementNASequence;
 
 $| = 1;
 
@@ -151,7 +152,7 @@ sub new {
     bless($self, $class);
     
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 4267 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 4323 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -207,10 +208,10 @@ sub run {
     }
     elsif($technologyType =~ /spot/i) {
 	if($annotationType eq "DbRef") {
-	    $nrecords = $self->populateEleDbRef($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID);
+	    $nrecords = $self->populateEleDbRef($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile);
 	}
 	elsif($annotationType eq "NASeq")  {
-	    $nrecords = $self->populateEleNaSeq($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID);
+	    $nrecords = $self->populateEleNaSeq($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile);
 	}
 	else {
 	    die("$annotationType is an undefined annotation type\n");
@@ -593,7 +594,7 @@ sub populateEleNaSeq {
 			
 			my $newENASeq = GUS::Model::RAD::ElementNASequence->new({
 			    'element_id' => $elementID,
-			    'na-sequence_id' => $naSeqID
+			    'na_sequence_id' => $naSeqID
 			    });
 			
 			$newENASeq->submit();
@@ -651,10 +652,11 @@ sub parseAnnotationFile {
     
     for (my $i=0; $i<10; $i++) {
 	
-	if($content[$i] =~ /"$columnIDName"/ || $content[$i] =~ /"$columnRefIDName"/) {
+	if($content[$i] =~ /$columnIDName/ || $content[$i] =~ /$columnRefIDName/) {
 	    
-	    $content[$i] =~ s/\"//g;
 	    @header = split(/$separator/, $content[$i]);
+	    
+	    foreach(@header) { $_ =~ s/\"//g; }
 	    
 	    $indexHeader = $i;
 	    last;
@@ -685,7 +687,7 @@ sub parseAnnotationFile {
     
     for(my $i=$indexHeader+1; $i<scalar @content; $i++) {
 	
-	my @row = split(/\"$separator\"/, $content[$i]);
+	my @row = split(/$separator/, $content[$i]);
 	foreach(@row) { $_ =~s/\ //g; }
 	foreach(@row) { $_ =~s/\"//g; }
 	my $k=0;
