@@ -171,9 +171,9 @@ extends SchemaWriter
 	writer.write("<formula>\n");
 	indent(writer, level + 2);
 	writer.write("select ti.table_id from core.tableinfo ti, core.databaseinfo di\n");
-	String tableNameClause = table.getSubclasses() != null
-	    ? "ti.name like subclass_view" 
-	    : "ti.name like \'" +  table.getName() + "\'" ;
+	String tableNameClause = (table.getSubclasses().isEmpty())
+	    ? "ti.name like \'" +  table.getName() + "\'" 
+	    : "ti.name like subclass_view" ;
 	indent(writer, level + 2);
 	writer.write("where " 
 		     + tableNameClause
