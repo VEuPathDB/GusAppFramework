@@ -134,7 +134,7 @@ JoinFluidicsKeywordsWithSign  => 0,
 PixelSizeRepresentation       => 1,
 FilterRepresentation          => 1,
 NumberOfScansRepresentation   => 1,
-BGVersionRepresentation       => 0,
+BGVersionRepresentation       => 1,
 NormalizeRepresentation       => 1,
 FastRepresentation            => 1,
 gcRMAVersionRepresentation    => 1,
@@ -308,7 +308,7 @@ my $requiredProperties = {
   "PixelSizeRepresentation"      => 1,
   "FilterRepresentation"         => 1,
   "NumberOfScansRepresentation"  => 1,
-  "BGVersionRepresentation"      => 0,
+  "BGVersionRepresentation"      => 1,
   "NormalizeRepresentation"      => 1,
   "FastRepresentation"           => 1,
   "gcRMAVersionRepresentation"   => 1,
@@ -923,7 +923,6 @@ sub createGUSQuantParams {
   };
 
   $params->{k} = $self->{propertySet}->getProp("KRepresentation") if ($self->{propertySet}->getProp("KRepresentation") ne "null");
-  #$params->{k} = $self->{propertySet}->getProp("KRepresentation") if (defined ($self->{propertySet}->getProp("KRepresentation") ));
 
   my @gusQuantParams;
   my $quantParamKeywordCnt = 0;
