@@ -265,7 +265,7 @@ sub new {
 
   $self->initialize({
     requiredDbVersion => 3.5,
-    cvsRevision       => '$Revision: 4346 $',
+    cvsRevision       => '$Revision: 4350 $',
     name              => ref($self),
     revisionNotes     => '',
     argsDeclaration   => $argsDeclaration,
@@ -501,6 +501,18 @@ sub createSingleGUSAssay {
   foreach my $gusAcquisitionParam (@$gusAcquistionParamsRef) { 
     $gusAcquisitionParam->setParent($gusAcquisition); 
   }
+
+  foreach my $gusQuantification (@$gusQuantificationsRef) { 
+
+    $gusQuantification->setParent($gusAcquisition); 
+    next if ($gusQuantification == $gusQuantificationsRef->[0]); # skip cel quantification (not req.)
+    #my $gusQuantParamsRef = $self->createGUSQuantParams($RPTinfo);
+    my $gusQuantParamsRef = $self->createGUSQuantParams();
+    foreach my $gusQuantParam (@$gusQuantParamsRef) { 
+        $gusQuantParam->setParent($gusQuantification); 
+     }
+  }
+
 
   return $gusAssay;
 }
@@ -902,7 +914,7 @@ sub createGUSQuantParams {
   my $params = {
     'normalize'       => $self->{propertySet}->getProp("NormalizeRepresentation"),
     'fast'            => $self->{propertySet}->getProp("FastRepresentation") ,
-    'grma version'    => $self->{propertySet}->getProp("gcRMAVersionRepresentation") ,
+    'gcrma version'   => $self->{propertySet}->getProp("gcRMAVersionRepresentation") ,
     'R version'       => $self->{propertySet}->getProp("RVersionRepresentation"),
     'optical.correct' => $self->{propertySet}->getProp("OpticalCorrectRepresentation"),
     'rho'             => $self->{propertySet}->getProp("RhoRepresentation") ,
