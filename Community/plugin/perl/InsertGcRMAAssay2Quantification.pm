@@ -913,6 +913,7 @@ sub createGUSQuantParams {
 
   my $params = {
     'normalize'       => $self->{propertySet}->getProp("NormalizeRepresentation"),
+    'bgversion'       => $self->{propertySet}->getProp("BGVersionRepresentation"),
     'fast'            => $self->{propertySet}->getProp("FastRepresentation") ,
     'gcrma version'   => $self->{propertySet}->getProp("gcRMAVersionRepresentation") ,
     'R version'       => $self->{propertySet}->getProp("RVersionRepresentation"),
@@ -921,8 +922,8 @@ sub createGUSQuantParams {
     'type'            => $self->{propertySet}->getProp("TypeRepresentation")
   };
 
-  $params->{k} = $self->{propertySet}->getProp("KRepresentation") if (defined ($self->{propertySet}->getProp("KRepresentation") ));
-  $params->{bgversion} = $self->{propertySet}->getProp("BGVersionRepresentation") if (defined ($self->{propertySet}->getProp("BGVersionRepresentation")));
+  $params->{k} = $self->{propertySet}->getProp("KRepresentation") if ($self->{propertySet}->getProp("KRepresentation") ne "null");
+  #$params->{k} = $self->{propertySet}->getProp("KRepresentation") if (defined ($self->{propertySet}->getProp("KRepresentation") ));
 
   my @gusQuantParams;
   my $quantParamKeywordCnt = 0;
