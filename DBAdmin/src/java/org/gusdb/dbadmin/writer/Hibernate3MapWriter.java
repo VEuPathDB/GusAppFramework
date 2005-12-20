@@ -170,7 +170,7 @@ extends SchemaWriter
 	indent(writer, level + 1);
 	writer.write("<formula>\n");
 	indent(writer, level + 2);
-	writer.write("select ti.table_id from core.tableinfo ti, core.databaseinfo di\n");
+	writer.write("( select ti.table_id from core.tableinfo ti, core.databaseinfo di\n");
 	String tableNameClause = (table.getSubclasses().isEmpty())
 	    ? "ti.name like \'" +  table.getName() + "\'" 
 	    : "ti.name like subclass_view" ;
@@ -183,7 +183,7 @@ extends SchemaWriter
 		     + table.getSchema().getName()
 		     + "' \n");
 	indent(writer, level + 2);
-	writer.write("and di.database_id = ti.database_id \n" );
+	writer.write("and di.database_id = ti.database_id ) \n" );
 	indent(writer, level + 1);
 	writer.write("</formula>\n");
 	indent(writer, level);
