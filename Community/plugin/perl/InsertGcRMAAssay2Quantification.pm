@@ -120,6 +120,7 @@ HybProtocolID                 => 1,
 AcqProtocolID                 => 1,
 CelProtocolID                 => 1,
 gcRMAProtocolID               => 1,
+gcRMAQuantDate                => 1,
 HybOperatorID                 => 1,
 CelQuantOperatorID            => 1,
 gcRMAQuantOperatorID          => 1,
@@ -296,6 +297,7 @@ my $requiredProperties = {
   "HybOperatorID"                => 1,
   "CelQuantOperatorID"           => 1,
   "gcRMAQuantOperatorID"         => 1,
+  "gcRMAQuantDate"               => 1,
   "StudyID"                      => 1,
   "ChannelDef"                   => 1,
   "Extensions"                   => 1,
@@ -483,13 +485,12 @@ sub createSingleGUSAssay {
   $self->checkRequiredFilesExist($dataRepositoryPath, $imageRepositoryPath, $assayName, $extensionHashRef);
 
   my ($EXPinfo, $EXPfluidicsInfo) = $self->parseTabFile($dataRepositoryPath, $extensionHashRef->{"EXPFile"}, $assayName);
-  #my ($RPTinfo, $RPTfluidicsInfo) = $self->parseTabFile($dataRepositoryPath, $extensionHashRef->{"RPTFile"}, $assayName);
   
   my $gusAssay               = $self->createGusAssay($assayName, $EXPinfo);
   my $gusAssayParams         = $self->createGusAssayParams($EXPinfo, $EXPfluidicsInfo);
   my $gusAcquisition         = $self->createGusAcquisition($assayName, $EXPinfo, $extensionHashRef);
   my $gusAcquistionParamsRef = $self->createGusAcquisitionParams($EXPinfo);
-  #my $gusQuantificationsRef  = $self->createGUSQuantification($assayName, $RPTinfo, $extensionHashRef);
+  my $gusQuantificationsRef  = $self->createGUSQuantification($assayName, $extensionHashRef);
 
   foreach my $gusAssayParam (@$gusAssayParams) { 
     $gusAssayParam->setParent($gusAssay); 
@@ -500,16 +501,6 @@ sub createSingleGUSAssay {
   foreach my $gusAcquisitionParam (@$gusAcquistionParamsRef) { 
     $gusAcquisitionParam->setParent($gusAcquisition); 
   }
-  
-  #foreach my $gusQuantification (@$gusQuantificationsRef) { 
-
-    #$gusQuantification->setParent($gusAcquisition); 
-    #next if ($gusQuantification == $gusQuantificationsRef->[0]); # skip cel quantification (not req.)
-    #my $gusQuantParamsRef = $self->createGUSQuantParams($RPTinfo);
-    #foreach my $gusQuantParam (@$gusQuantParamsRef) { 
-        #$gusQuantParam->setParent($gusQuantification); 
-     #}
-  #}
 
   return $gusAssay;
 }
@@ -653,6 +644,7 @@ sub modifyDate {
   my ($self, $inputDate) = @_;
 
   # eg: Hybridize Date  Apr 23 2004 10:58AM
+  # or Hybridize Date  02/05/02  19:18
   my @dateArray = split " ", $inputDate;  
 
   my $arrayLen = scalar @dateArray;
@@ -663,24 +655,48 @@ sub modifyDate {
     Jul => '07', Aug => '08', Sep => '09', Oct => '10', Nov => '11', Dec => '12'
   );
 
-  my $tempTime = pop @dateArray;    #get time 
-  my $time1 = chop $tempTime;       #get AM/PM
-  my $time2 = chop $tempTime;       #get AM/PM
-
-  my @hourMinArray = split /\:/,$tempTime;
-
   my $finalTime;
+  my $tempTime = pop @dateArray;    #get time 
 
-  if ($time2.$time1 eq "PM") {
+  if (($tempTime =~/am/i)||($tempTime=~/pm/i)){
+    my $time1 = chop $tempTime;       #get AM/PM
+    my $time2 = chop $tempTime;       #get AM/PM
 
-    $finalTime = ($hourMinArray[0] + 12).":$hourMinArray[1]:00" if ($hourMinArray[0] <= 11);
-    $finalTime = $hourMinArray[0].":$hourMinArray[1]:00" if ($hourMinArray[0] > 11);
+    my @hourMinArray = split /\:/,$tempTime;
+
+
+    if ($time2.$time1 eq "PM") {
+
+      $finalTime = ($hourMinArray[0] + 12).":$hourMinArray[1]:00" if ($hourMinArray[0] <= 11);
+      $finalTime = $hourMinArray[0].":$hourMinArray[1]:00" if ($hourMinArray[0] > 11);
+    }
+
+    $finalTime = "$tempTime:00" if ($time2.$time1 eq "AM");
+  }else{
+    $finalTime = "$tempTime:00";
   }
 
-  $finalTime = "$tempTime:00" if ($time2.$time1 eq "AM");
 
-  my $monthNum = $monthHash{$dateArray[0]};
-  my $finalDateTime = "$dateArray[2]-$monthNum-$dateArray[1]". " $finalTime";
+  #Date may be in number format or text
+  my $finalDateTime;
+  if ($dateArray[0] =~ /(\d+)\W+(\d+)\W+(\d+)/){
+    my $year;
+    if (length($3) < 4){
+      if(length($3) < 2){
+	$year = "200".$3;
+      }else{
+	$year = "20".$3;
+      }
+    }else{
+      $year = $3;
+    }
+    $finalDateTime = "$1-$2-$year". " $finalTime";
+  }else{
+    my $monthNum = $monthHash{$dateArray[0]};
+    $finalDateTime = "$dateArray[2]-$monthNum-$dateArray[1]". " $finalTime";
+  }
+
+  $self->error("Cannot parse date, cannot continue") if ($finalDateTime=~/--/);
 
   return $finalDateTime;
 }
@@ -830,7 +846,7 @@ sub createGusAcquisitionParams {
 ###############################
 
 sub createGUSQuantification {
-  my ($self, $assayName, $RPTinfo, $extensionHashRef) = @_;
+  my ($self, $assayName, $extensionHashRef) = @_;
 
   my $celURI         = $self->{propertySet}->getProp("CELFilePath");
   my $gcRMAURI         = $self->{propertySet}->getProp("gcRMAFilePath");
@@ -839,7 +855,7 @@ sub createGUSQuantification {
   my $gcRMAProtocolId      = $self->{propertySet}->getProp("gcRMAProtocolID");
   my $celQuantOperatorId = $self->{propertySet}->getProp("CelQuantOperatorID");
   my $gcRMAQuantOperatorId = $self->{propertySet}->getProp("gcRMAQuantOperatorID");
-
+  my $quantificationDate = $self->{propertySet}->getProp("gcRMAQuantDate");
 
   $self->checkDatabaseEntry("GUS::Model::RAD::Protocol", "protocol_id", $celProtocolId);
   $self->checkDatabaseEntry("GUS::Model::RAD::Protocol", "protocol_id", $gcRMAProtocolId);
@@ -851,14 +867,6 @@ sub createGUSQuantification {
 
   $celURI .= $assayName.".".$extensionHashRef->{"CELFile"};
   $gcRMAURI .= $assayName.".".$extensionHashRef->{"gcRMAFile"};
-
-  # modify quantification date, which is not in regular format
-  my ($quantificationDate, $tempQuantificationDate);
-  foreach my $key (keys %$RPTinfo) {
-    $tempQuantificationDate = $RPTinfo->{$key} if ($key =~ m/Date/);
-  }
-  my ($tempTime, $tempDate) = split " ", $tempQuantificationDate;
-  $quantificationDate = $self->getQuantificationDate($tempTime, $tempDate);
 
   my $protocol = GUS::Model::RAD::Protocol->new({protocol_id => $acqProtocolId});
   $self->error("Create object failed, $acqProtocolId absent in table RAD::Protocol") 
@@ -891,39 +899,6 @@ sub createGUSQuantification {
 
   return \@gusQuantifications;
 }
-###############################
-
-sub getQuantificationDate {
-  my ($self, $tempTime, $tempDate) = @_;
-
-  # this sub deals with quantification date only, since the quantification 
-  # date is in a different format than other dates in EXP files
-  # eg: 09:57PM 06/21/2004
-
-  my $time1 = chop $tempTime;       #get AM/PM
-  my $time2 = chop $tempTime;       #get AM/PM
-
-  my @hourMinArray = split /\:/,$tempTime;
-
-  my $finalTime;
-
-  if ($time2.$time1 eq "PM") {
-
-    $finalTime = ($hourMinArray[0] + 12).":$hourMinArray[1]:00" if ($hourMinArray[0] <= 11);
-    $finalTime = $hourMinArray[0].":$hourMinArray[1]:00" if ($hourMinArray[0] > 11);
-  } 
-
-  $finalTime = "$tempTime:00" if ($time2.$time1 eq "AM");
-
-  my @dateArray = split /\//, $tempDate;
-  my $finalDate = "$dateArray[2]-$dateArray[0]-$dateArray[1]";
-
-  my $finalDateTime = "$finalDate $finalTime";
-
-  return $finalDateTime;
-}
-
-
 ###############################
 
 sub createGUSQuantParams {
