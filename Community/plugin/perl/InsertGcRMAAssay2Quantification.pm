@@ -265,7 +265,7 @@ sub new {
 
   $self->initialize({
     requiredDbVersion => 3.5,
-    cvsRevision       => '$Revision: 4345 $',
+    cvsRevision       => '$Revision: 4346 $',
     name              => ref($self),
     revisionNotes     => '',
     argsDeclaration   => $argsDeclaration,
@@ -680,22 +680,14 @@ sub modifyDate {
   #Date may be in number format or text
   my $finalDateTime;
   if ($dateArray[0] =~ /(\d+)\W+(\d+)\W+(\d+)/){
-    my $year;
-    if (length($3) < 4){
-      if(length($3) < 2){
-	$year = "200".$3;
-      }else{
-	$year = "20".$3;
-      }
-    }else{
-      $year = $3;
-    }
-    $finalDateTime = "$1-$2-$year". " $finalTime";
+    my $year = $3;
+    $year = "20".$3 if (length($3) < 4);
+    $year = "200".$3  if(length($3) < 2);
+    $finalDateTime = "$year-$1-$2". " $finalTime";
   }else{
     my $monthNum = $monthHash{$dateArray[0]};
     $finalDateTime = "$dateArray[2]-$monthNum-$dateArray[1]". " $finalTime";
   }
-
   $self->error("Cannot parse date, cannot continue") if ($finalDateTime=~/--/);
 
   return $finalDateTime;
