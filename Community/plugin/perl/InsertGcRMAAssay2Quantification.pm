@@ -971,4 +971,13 @@ sub submitSingleGUSAssay {
   return $insertedAssayCnt;
 }
 
+###############################
+
+sub undoTables {
+  my ($self) = @_;
+
+return ('RAD.QuantificationParam','RAD.Quantification','RAD.AcquisitionParam','RAD.Acquisition','RAD.StudyAssay','RAD.AssayParam','RAD.Assay');
+
+}
+
 ############################### END
