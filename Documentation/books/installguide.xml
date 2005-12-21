@@ -72,14 +72,12 @@
         <title>Software</title>
 
         <para>GUS requires the use of either Oracle or PostgreSQL as a
-        relational database management system (RDBMS). PostgreSQL support is
-        much more recent, and as such, Oracle is recommended whenever
-        practical. For installations with more than 3-5GB of data, Oracle is
-        highly recommended. PostgreSQL, however, is an open source and freely
-        available database system, and thus makes an attractive option for
-        smaller GUS installations, or where Oracle is not economical. The
-        choice of an RDBMS will affect your system and hardware
-        requirements.</para>
+        relational database management system (RDBMS). For installations with
+        more than 3-5GB of data, Oracle is highly recommended. PostgreSQL,
+        however, is an open source and freely available database system, and
+        thus makes an attractive option for smaller GUS installations, or
+        where Oracle is not economical. The choice of an RDBMS will affect
+        your system and hardware requirements.</para>
       </sect2>
 
       <sect2>
@@ -149,17 +147,17 @@
         Oracle with the Virtual Private Database option and/or other
         RDBMS-based technologies.</para>
 
-        <para>As an example, the Computational Biology and Informatics
-        Laboratory (CBIL) uses a privilege system that is based on two roles,
-        a read-only role, <computeroutput>GUS_R</computeroutput>, and a write
-        role, <computeroutput>GUS_W</computeroutput>.
+        <para>GUS also includes a basic RDBMS-based privilege system that is
+        based on two roles, a read-only role,
+        <computeroutput>GUS_R</computeroutput>, and a write role,
+        <computeroutput>GUS_W</computeroutput>.
         <computeroutput>GUS_R</computeroutput> has been granted the
         <computeroutput>select</computeroutput> privilege on all tables and
         views in GUS, and <computeroutput>GUS_W</computeroutput> has been
         granted the <computeroutput>update, insert, delete</computeroutput>
         privileges on all tables and views and
         <computeroutput>select</computeroutput> on all sequences in GUS.
-        Individual databases users are then granted the
+        Individual database users are then granted the
         <computeroutput>GUS_R</computeroutput> role and, as appropriate, the
         <computeroutput>GUS_W</computeroutput> role. For finer control, this
         model may be extended to individual schemata or sets of tables.</para>
@@ -178,10 +176,6 @@
         <para>It is only necessary to run this command once. Upon successfully
         running the command, you will see a stream of XML displayed on your
         screen.</para>
-
-        <para>Plugins will need to be registered in a similar fashion prior to
-        use. For more information on registering plugins, please refer to the
-        GUS User's Guide.</para>
       </sect2>
 
       <sect2>
@@ -253,7 +247,7 @@
           </listitem>
 
           <listitem>
-            <para>Java 1.4.2 or above, including the SDK (<ulink
+            <para>Java 1.5 or above, including the SDK (<ulink
             url="http://java.sun.com">java.sun.com</ulink>)</para>
           </listitem>
 
@@ -316,29 +310,17 @@ $ export PROJECT_HOME=/home/smith/GUS/project_home
 $ export PERL5LIB=$GUS_HOME/lib/perl
 $ export PATH=$GUS_HOME/bin:$PROJECT_HOME/install/bin:$PATH</screen>
         </example><note>
-          <para>You may also wish to set
-          <computeroutput>$GUS_CONFIG_FILE</computeroutput> to the location of
-          your properties file. If
-          <computeroutput>$GUS_CONFIG_FILE</computeroutput> is not set, it
-          will default to
-          <computeroutput>$GUS_HOME/config/gus.config</computeroutput>. This
-          file is placed automatically from the
-          <computeroutput>$PROJECT_HOME/install/gus.config</computeroutput>
-          file. See below for more details. </para>
-        </note><note>
           <para>Throughout the rest of this document,
-          <computeroutput>$GUS_HOME</computeroutput>,
-          <computeroutput>$PROJECT_HOME</computeroutput>, and
-          <computeroutput>$GUS_CONFIG_FILE</computeroutput> will frequently be
+          <computeroutput>$GUS_HOME</computeroutput> and
+          <computeroutput>$PROJECT_HOME</computeroutput> will frequently be
           used to refer to the locations specified above.</para>
         </note></para>
 
       <para>After your environment has been configured for GUS, you must
       configure the GUS software itself. First, copy the
       <computeroutput>$PROJECT_HOME/install/gus.config.sample</computeroutput>
-      file to
-      <computeroutput>$PROJECT_HOME/install/gus.config</computeroutput>. Once
-      copied, you must open this file and provide the necessary
+      file to <computeroutput>$GUS_HOME/config/gus.config</computeroutput>.
+      Once copied, you must open this file and provide the necessary
       values:<example>
           <title>Configuring <computeroutput>gus.config</computeroutput>
           file</title>
@@ -405,11 +387,13 @@ md5sum=<replaceable>path_to_md5_or_md5sum_binary</replaceable><co id="md5sum" />
         </calloutlist></para>
 
       <note>
-        <para>Since GUS Application Framework 3.5.1, the
+        <para>Since GUS Application Framework 3.5, the
         <computeroutput>gus.properties</computeroutput>,
         <computeroutput>install.prop</computeroutput>,
         <computeroutput>schema.prop</computeroutput> configuration files have
-        been replaced by this single file.</para>
+        been replaced by this single file. Since GUS Application Framework
+        2.1, the <computeroutput>$GUS_CONFIG_FILE</computeroutput> setting is
+        no longer used. </para>
       </note>
     </sect1>
 
