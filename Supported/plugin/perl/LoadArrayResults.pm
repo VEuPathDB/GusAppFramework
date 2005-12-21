@@ -134,7 +134,7 @@ my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief, tablesAffec
 # modify the following line to add a new view for ElementImp table
  
   my $eSubclassViewList="ShortOligo,Spot,SAGETagMapping"; 
-  my $cSubclassViewList="ShortOligoFamily,SpotFamily,SAGETag, MPSSTag";  
+  my $cSubclassViewList="ShortOligoFamily,SpotFamily,SAGETag,MPSSTag";  
   my $posOption="1, 2, 3";
 
 my $argsDeclaration  =
