@@ -292,6 +292,10 @@ sub run {
 	@positionList = ('tag');
 	eval "require GUS::Model::RAD::SAGETag";
   }
+ if($M->getArgs->{c_subclass_view} eq 'MPSSTag' ){
+	@positionList = ('tag');
+	eval "require GUS::Model::RAD::MPSSTag";
+  }
 # set the global array $positionList and require the view for ElementImp at running time
   if($M->getArgs->{e_subclass_view} eq 'ShortOligo' ){
 	@positionList = ('x_position', 'y_position');
