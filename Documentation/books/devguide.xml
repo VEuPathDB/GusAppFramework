@@ -1313,8 +1313,8 @@ submitAllFacts($notDeep, $noTran)</screen>
 }</screen>
             </example></para>
 
-          <para>The <computeroutput>$Revision$</computeroutput> string is CVS
-          or Subversion keyword. When the plugin is checked into source
+          <para>The <computeroutput>$Revision$</computeroutput> string
+          is CVS or Subversion keyword. When the plugin is checked into source
           control, the repository substitutes the file's revision into that
           keyword. The keywords must be in single quotes to prevent Perl from
           interpreting <computeroutput>$Revision$</computeroutput> as a
@@ -2327,6 +2327,15 @@ while (my ($primaryKey, $term) = $sth-&gt;fetchrow_array()) {
               </tbody>
             </tgroup>
           </table></para>
+      </sect2>
+
+      <sect2>
+        <title>Applying Permission</title>
+
+        <para>After you have created the new objects in the RDBMS, but before
+        rebuilding the objects, you must be sure to grant the proper
+        permissions (select, update, insert, delete) to anyone that will be
+        using GUS. Otherwise, the rebuild process will fail.</para>
       </sect2>
 
       <sect2>
