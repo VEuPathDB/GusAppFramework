@@ -23,169 +23,261 @@ use CBIL::Bio::BLAT::Alignment;
 use CBIL::Bio::FastaIndex;
 use CBIL::Util::TO;
 use CBIL::Util::Disp;
+use GUS::PluginMgr::Plugin;
 
 my $VERSION = '$Revision$'; $VERSION =~ s/Revision://; $VERSION =~ s/\$//g; $VERSION =~ s/ //g; #'
+
+
+my $purposeBrief = <<PURPOSEBRIEF;
+Load a set of BLAT alignments into GUS.
+PURPOSEBRIEF
+
+my $purpose = <<PLUGIN_PURPOSE;
+Load a set of BLAT alignments into GUS.  Assumes that the query sequences are identified with GUS na_sequence_ids.  The subject (genomic) sequences may use either na_sequence_ids or source_ids (if the corresponding external_db_id is given)
+PLUGIN_PURPOSE
+
+#check the documentation for this
+my $tablesAffected = [
+    ['DoTS::BlatAlignment', '']
+];
+
+my $tablesDependedOn = [
+];
+
+my $howToRestart = <<PLUGIN_RESTART;
+PLUGIN_RESTART
+
+my $failureCases = <<PLUGIN_FAILURE_CASES;
+PLUGIN_FAILURE_CASES
+
+my $notes = <<PLUGIN_NOTES;
+PLUGIN_NOTES
+
+my $documentation = {
+             purposeBrief => $purposeBrief,
+		     purpose => $purpose,
+		     tablesAffected => $tablesAffected,
+		     tablesDependedOn => $tablesDependedOn,
+		     howToRestart => $howToRestart,
+		     failureCases => $failureCases,
+		     notes => $notes
+		    };
+
+my $argsDeclaration = [
+  stringArg({
+      name => 'action',
+      descr => 'one of: strip, get rid of extra psl headers; load, get alignments into db; setbest: set best alignment status, maybe delete unwanted alignments. Do all above if not set',
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0
+  }),
+  stringArg({
+      name => 'blat_dir',
+      descr => 'dir with files containing BLAT results in .psl format',
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  stringArg({
+      name => 'blat_files',
+      descr => 'Files containing BLAT results in .psl format',
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  stringArg({ 
+      name => 'file_list',
+      descr => 'File that contains a list of newline-separated BLAT files (used instead of --blat_files).',
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  stringArg({
+      name => 'query_file',
+      descr => 'FASTA file that contains all of the BLAT query sequences.',
+      constraintFunc=> undef,
+      reqd  => 1,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'keep_best',
+      descr => 'keep how many alignments per query? (1: 1, 2: top 1%, o.w. all)',
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  stringArg({
+      name => 'gap_table_space',
+      descr => 'table space where genomic gap info is stored',
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  stringArg({
+      name => 'previous_runs',
+      descr => 'Comma-separated list of algorithm_invocation_ids of previous runs; any duplicate results from these runs are ignored.',
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'report_interval',
+      descr => 'Print a progress message every report_interval entries processed',
+      default => 5000,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'commit_interval',
+      descr => 'Commit after this number of entries have been inserted.',
+      default => 5000,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  #####################################
+  # BLAT run identification parameters
+  #####################################
+  integerArg({
+      name => 'query_table_id',
+      descr => 'GUS table_id for the NASequence view that contains the BLAT query sequences.',
+      default => 56,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'query_taxon_id',
+      descr => 'GUS taxon_id for the BLAT query sequences.',
+      constraintFunc=> undef,
+      reqd  => 1,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'query_db_rel_id',
+      descr => 'GUS external_db_release_id for the BLAT query sequence',
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'target_table_id',
+      descr => 'GUS table_id for the NASequence view that contains the BLAT target sequences.',
+      default => 245, # VirtualSequence
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'target_taxon_id',
+      descr => 'GUS taxon_id for the BLAT target sequences.',
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  # 4792 = UCSC/NCBI 12/22/2001 release (human)
+  # 5093 = UCSC Mm virtual chromosomes (February 2002 release)
+  #
+  integerArg({
+      name => 'target_db_rel_id',
+      descr => 'GUS external_db_release_id for the BLAT target sequences (only required if using source_ids for target.)',
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  booleanArg({
+      name => 'target_has_na_sequence_ids',
+      descr => 'Target sequences are identified by na_sequence_id. The default expects target source_ids which will be mapped to na_sequence_ids.)',
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  ######################################################
+  # gate-keeping parameter to prevent loading everything
+  ######################################################
+  integerArg({
+      name => 'min_query_pct',
+      descr => 'Minimum percentage of the query sequence that must align in order for an alignment to be loaded.',
+      default => 10,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  ##################################################
+  # parameters for blat alignment quality assessment
+  ##################################################
+  integerArg({
+      name => 'max_end_mismatch',
+      descr => 'Maximum mismatch, excluding polyA, at either end of the query sequence for a consistent alignment.',
+      default => 10,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'min_pct_id',
+      descr => 'Minimum percent identity for a consistent alignment.',
+      default => 95,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'max_query_gap',
+      descr => 'Maximum size gap (unaligned segment) in the query sequence for a consistent alignment.',
+      default => 5,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'ok_internal_gap',
+      descr => 'Tolerated size of internal gap (unaligned segment) in the query sequence for a alignment quality assessment.',
+      default => 15,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'ok_end_gap',
+      descr => 'Tolerated size of end gap (unaligned segment) in the query sequence for a alignment quality assessment.',
+      default => 50,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'end_gap_factor',
+      descr => 'multiplication factor to be applied to the size of query end mismatch for the search of genomic gaps',
+      default => 10,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  }),
+  integerArg({
+      name => 'min_gap_pct',
+      descr => 'minimum size percentage of a genomic gap that seems to correspond to a query gap',
+      default => 90,
+      constraintFunc=> undef,
+      reqd  => 0,
+      isList => 0,
+  })
+];
 
 sub new {
   my ($class) = @_;
   my $self = {};
   bless($self,$class);
 
-  my $usage = "Load a set of BLAT alignments into GUS.  Assumes that the query sequences are identified with GUS na_sequence_ids.  The subject (genomic) sequences may use either na_sequence_ids or source_ids (if the corresponding external_db_id is given)";
-
-  my $easycsp =
-      [{  o => 'action',
-	  h => 'one of: strip, get rid of extra psl headers; load, get alignments into db; setbest: set best alignment status, maybe delete unwanted alignments. Do all above if not set',
-	  t => 'string',
-       },
-       {  o => 'blat_dir',
-	  h => 'dir with files containing BLAT results in .psl format',
-	  t => 'string', 
-      },
-       {  o => 'blat_files',
-	  h => 'Files containing BLAT results in .psl format',
-	  t => 'string', 
-      },
-      { 
-	  o => 'file_list',
-	  h => 'File that contains a list of newline-separated BLAT files (used instead of --blat_files).',
-	  t => 'string',
-      },
-       {
-	   o => 'query_file',
-	   h => 'FASTA file that contains all of the BLAT query sequences.',
-	   t => 'string',
-	   r => 1,
-       },
-       {
-	   o => 'keep_best',
-	   h => 'keep how many alignments per query? (1: 1, 2: top 1%, o.w. all)',
-	   t => 'int',
-       },
-       {
-	   o => 'gap_table_space',
-	   h => 'table space where genomic gap info is stored',
-	   t => 'string',
-       },
-       {
-	   o => 'previous_runs',
-	   h => 'Comma-separated list of algorithm_invocation_ids of previous runs; any duplicate results from these runs are ignored.',
-	   t => 'string',
-       },
-       {
-	   o => 'report_interval',
-	   h => 'Print a progress message every report_interval entries processed',
-	   t => 'int',
-	   d => 5000,
-       },
-       {
-	   o => 'commit_interval',
-	   h => 'Commit after this number of entries have been inserted.',
-	   t => 'int',
-	   d => 5000,
-       },
-       #####################################
-       # BLAT run identification parameters
-       #####################################
-       {
-	   o => 'query_table_id',
-	   h => 'GUS table_id for the NASequence view that contains the BLAT query sequences.',
-	   t => 'int',
-	   d => 56,
-       },
-       {
-	   o => 'query_taxon_id',
-	   h => 'GUS taxon_id for the BLAT query sequences.',
-	   t => 'int',
-	   r => 1,
-       },
-       {
-	   o => 'query_db_rel_id',
-	   h => 'GUS external_db_release_id for the BLAT query sequence',
-	   t => 'int',
-       },
-       {
-	   o => 'target_table_id',
-	   h => 'GUS table_id for the NASequence view that contains the BLAT target sequences.',
-	   t => 'int',
-	   d => 245, # VirtualSequence
-       },
-       {
-	   o => 'target_taxon_id',
-	   h => 'GUS taxon_id for the BLAT target sequences.',
-	   t => 'int',
-	},
-       # 4792 = UCSC/NCBI 12/22/2001 release (human)
-       # 5093 = UCSC Mm virtual chromosomes (February 2002 release)
-       #
-       {
-	   o => 'target_db_rel_id',
-	   t => 'int',
-	   h => 'GUS external_db_release_id for the BLAT target sequences (only required if using source_ids for target.)',
-       },
-       ######################################################
-       # gate-keeping parameter to prevent loading everything
-       ######################################################
-       {
-	   o => 'min_query_pct',
-	   h => 'Minimum percentage of the query sequence that must align in order for an alignment to be loaded.',
-	   t => 'int',
-	   d => 10,
-       },
-       ##################################################
-       # parameters for blat alignment quality assessment
-       ##################################################
-       {
-	   o => 'max_end_mismatch',
-	   h => 'Maximum mismatch, excluding polyA, at either end of the query sequence for a consistent alignment.',
-	   t => 'int',
-	   d => 10,
-       },
-       {
-	   o => 'min_pct_id',
-	   h => 'Minimum percent identity for a consistent alignment.',
-	   t => 'int',
-	   d => 95,
-       },
-       {
-	   o => 'max_query_gap',
-	   h => 'Maximum size gap (unaligned segment) in the query sequence for a consistent alignment.',
-	   t => 'int',
-	   d => 5,
-       },
-       {
-	   o => 'ok_internal_gap',
-	   h => 'Tolerated size of internal gap (unaligned segment) in the query sequence for a alignment quality assessment.',
-	   t => 'int',
-	   d => 15,
-       },
-       {
-	   o => 'ok_end_gap',
-	   h => 'Tolerated size of end gap (unaligned segment) in the query sequence for a alignment quality assessment.',
-	   t => 'int',
-	   d => 50,
-       },
-       {
-	   o => 'end_gap_factor',
-	   h => 'multiplication factor to be applied to the size of query end mismatch for the search of genomic gaps',
-	   t => 'int',
-	   d => 10,
-       },
-       {
-	   o => 'min_gap_pct',
-	   h => 'minimum size percentage of a genomic gap that seems to correspond to a query gap',
-	   t => 'int',
-	   d => 90,
-       }
-       ];
-
-  $self->initialize({requiredDbVersion => {},
+  $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision$', # cvs fills this in!
-		     cvsTag => '$Name$', # cvs fills this in!
 		     name => ref($self),
-		     revisionNotes => 'make consistent with GUS 3.0',
-		     easyCspOptions => $easycsp,
-		     usage => $usage
+		     argsDeclaration => $argsDeclaration,
+		     documentation => $documentation
 		     });
   return $self;
 }
