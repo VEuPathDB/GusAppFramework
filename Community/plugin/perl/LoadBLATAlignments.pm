@@ -13,7 +13,7 @@
 # $Revision$ $Date$ $Author$
 # ----------------------------------------------------------------------
 
-package GUS::Community::Plugin::LoadBLATAlignments;
+package GUS::Community::Plugin::LoadBLATAlignments; 
 
 @ISA = qw(GUS::PluginMgr::Plugin); 
 use strict;
@@ -296,11 +296,12 @@ sub run {
     my $queryTableId = $cla->{'query_table_id'};
     my $targetTableId = $cla->{'target_table_id'};
     my $action = $cla->{'action'};
+    my $dbh = $self->getQueryHandle();
 
     die "LoadBLATAlignments: query_file not defined" unless $queryFile;
-    die "LoadBLATAlignments: unrecognized query_table_id" if (!($queryTableId =~ /^56|57|89|245|339$/));
-    die "LoadBLATAlignments: unrecognized target_table_id" if (!($targetTableId =~ /^56|57|89|245|339$/));
-
+    die "LoadBLATAlignments: unrecognized query_table_id"  unless (&getTableNameFromTableId($dbh, $queryTableId) =~ /^(?:Assembly|AssemblySequence|ExternalNASequence|VirtualSequence|SplicedNASequence)$/i);
+    die "LoadBLATAlignments: unrecognized target_table_id" unless (&getTableNameFromTableId($dbh, $targetTableId) =~ /^(?:Assembly|AssemblySequence|ExternalNASequence|VirtualSequence|SplicedNASequence)$/i);
+ 
     my $summary;
 
     my @blatFiles = &getBlatFiles($blatDir, $blatFiles, $fileList) unless $action eq 'setbest';
@@ -343,9 +344,12 @@ sub loadAlignments {
     my $targetTableId = $cla->{'target_table_id'};
     my $targetTaxonId = $cla->{'target_taxon_id'};
     my $targetExtDbRelId = $cla->{'target_db_rel_id'};
-    my $ext_genome_ver = &getUcscGenomeVersion($dbh, $targetExtDbRelId);
     my $gapTabSpace = $cla->{'gap_table_space'};
-    my $gapTabPref = ($gapTabSpace ? "${gapTabSpace}.${ext_genome_ver}_" : "");
+    my $gapTabPref;
+    if ($gapTabSpace) {
+        my $ext_genome_ver = &getUcscGenomeVersion($dbh, $targetExtDbRelId);
+        $gapTabPref = "${gapTabSpace}.${ext_genome_ver}_";
+    }
 
     my $minQueryPct = $cla->{'min_query_pct'};
 
@@ -812,7 +816,6 @@ sub loadAlignment {
 		  $align->getRaw('q_starts'),
 		  $align->getRaw('t_starts')
 		  );
-
     $sth->execute(@values) 
 	or die "$sql failed with values: \n" . join(", ", @values)  . "\n";
     return 1;
@@ -822,14 +825,17 @@ sub loadAlignment {
 #
 sub getQueryNaSeqId {
     my ($dbh, $qid, $queryTableId) = @_;
-
-    return $qid if $queryTableId =~ /^56|339$/;
-    return $qid if $queryTableId == 89 && $qid =~ /^\d+$/;
+    
+    my $queryTableName = lc(&getTableNameFromTableId($dbh, $queryTableId));
+#    return $qid if $queryTableId =~ /^56|339$/;
+#    return $qid if $queryTableId == 89 && $qid =~ /^\d+$/;
+    return $qid if $queryTableName =~ /^(?:assembly|splicednasequence)$/;
+    return $qid if $queryTableName eq 'externalnasequence' && $qid =~ /^\d+$/;
 
     my $sql;
-    if ($queryTableId == 89) {
+    if ($queryTableName eq 'externalnasequence') {
 	$sql = "select na_sequence_id from $TPREF.externalnasequence where source_id = '$qid'";
-    } elsif ($queryTableId == 57) {
+    } elsif ($queryTableName eq 'assemblysequence') {
 	$sql = "select na_sequence_id from $TPREF.assemblysequence where assembly_sequence_id = $qid";
     }
     
