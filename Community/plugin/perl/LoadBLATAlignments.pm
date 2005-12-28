@@ -402,6 +402,8 @@ sub loadAlignments {
 
     my $nTotalAligns = 0;
     my $nTotalAlignsLoaded = 0;
+    
+    my $queryTableName = lc(&getTableNameFromTableId($dbh, $queryTableId));
 
     foreach my $blatFile (@files) {
 	print "LoadBLATAlignments: reading from $blatFile\n";
@@ -421,7 +423,7 @@ sub loadAlignments {
 	    my $nl = &loadAlignment($dbh, $gapTab, $insertSql, $sth, $queryTableId, $queryTaxonId,
 				    $queryExtDbRelId, $targetTableId, $targetTaxonId, $targetExtDbRelId,
 				    $qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align,
-				    $minQueryPct);
+				    $minQueryPct, $queryTableName);
 
 	    $nAlignsLoaded += $nl;
 	    $nTotalAlignsLoaded += $nl;
@@ -724,7 +726,7 @@ sub makeAlignmentHash {
 sub loadAlignment {
     my($dbh, $gapTable, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
        $targetTableId, $targetTaxonId, $targetExtDbRelId,$qIndex, $qualityParams,
-       $alreadyLoaded, $targetIdHash, $align, $minQueryPct) = @_;
+       $alreadyLoaded, $targetIdHash, $align, $minQueryPct, $queryTableName) = @_;
 
     my $query_id = $align->get('q_name');
     my $target_id = $align->get('t_name');
@@ -745,7 +747,7 @@ sub loadAlignment {
     #
     my $origQueryId = $query_id;
     # HACK
-    $query_id = &getQueryNaSeqId($dbh, $query_id, $queryTableId);
+    $query_id = &getQueryNaSeqId($dbh, $query_id, $queryTableName);
     $query_id =~ s/[^0-9]//g;
 
     # Check to see whether this alignment has already been loaded
@@ -824,9 +826,8 @@ sub loadAlignment {
 # Return the na_sequence_id for of a TIGR TC.
 #
 sub getQueryNaSeqId {
-    my ($dbh, $qid, $queryTableId) = @_;
+    my ($dbh, $qid, $queryTableName) = @_;
     
-    my $queryTableName = lc(&getTableNameFromTableId($dbh, $queryTableId));
 #    return $qid if $queryTableId =~ /^56|339$/;
 #    return $qid if $queryTableId == 89 && $qid =~ /^\d+$/;
     return $qid if $queryTableName =~ /^(?:assembly|splicednasequence)$/;
