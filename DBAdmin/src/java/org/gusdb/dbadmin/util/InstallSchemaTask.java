@@ -91,13 +91,13 @@ public class InstallSchemaTask extends Task {
 
             mp.writeDatabaseAndTableInfo( );
             mp.writeBootstrapData( );
-            mp.writeDatabaseVersion( "3.5" );
-
+            conditionalWriteVersion(mp, db);
+            
             mp = new MetadataPopulator( rdbms, db, dbVendor );
 
             mp.writeDatabaseAndTableInfo( );
             mp.writeBootstrapData( );
-            mp.writeDatabaseVersion( "3.5" );
+            conditionalWriteVersion(mp, db);
 
             rows.close( );
             ddl.close( );
@@ -105,6 +105,14 @@ public class InstallSchemaTask extends Task {
         }
         catch ( IOException e ) {
             throw new BuildException( e );
+        }
+    }
+    
+    private void conditionalWriteVersion( MetadataPopulator mp, Database db ) throws IOException {
+        if ( db.getVersion() == 0.0f ) {
+            log.error("Null version, skipping.  Note:  You will need to manually add a version number to the DB");
+        } else {
+            mp.writeDatabaseVersion( db.getVersion() );
         }
     }
 

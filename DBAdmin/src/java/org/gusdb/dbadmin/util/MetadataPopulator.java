@@ -90,7 +90,7 @@ public class MetadataPopulator {
 		// TODO implement me
 	}
 
-	public void writeDatabaseVersion( String version ) throws IOException {
+	public void writeDatabaseVersion( float version ) throws IOException {
 		writer.write("INSERT INTO core.databaseversion " + 
 			"(database_version_id, version, modification_date, user_read, user_write," + 
 			"group_read, group_write, other_read, other_write, row_user_id, " +
@@ -353,14 +353,6 @@ public class MetadataPopulator {
 		//	return addToMap(map, obj);
 		log.error( "Object does not exist in map" );
 		throw new RuntimeException( "Object does not exist in the map" );
-	}
-
-
-	private int addToMap( HashMap map, Object obj ) {
-	int id  = map.size() + 1;
-
-		map.put( new Integer( id ), obj );
-		return id;
 	}
 
 }

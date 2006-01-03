@@ -15,6 +15,7 @@ public class Database extends DatabaseObject {
 
     protected final Log              log             = LogFactory.getLog( Database.class );
     private float                    version;
+    private int                      patchLevel;
     private TreeSet<Schema>          schema          = new TreeSet<Schema>( );
     private ArrayList<SuperCategory> superCategories = new ArrayList<SuperCategory>( );
 
@@ -82,6 +83,14 @@ public class Database extends DatabaseObject {
         this.version = version;
     }
 
+    public int getPatchLevel( ) {
+        return patchLevel;
+    }
+
+    public void setPatchLevel( int patchLevel ) {
+        this.patchLevel = patchLevel;
+    }    
+    
     public ArrayList<SuperCategory> getSuperCategories( ) {
         return this.superCategories;
     }
