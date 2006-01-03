@@ -35,7 +35,8 @@ public class XMLWriter extends SchemaWriter {
 		indent();
 		oStream.write( "<?xml version=\"1.0\"?>\n" );
 		indent();
-		oStream.write( "<database name=\"" + db.getName() + "\">\n" );
+		oStream.write( "<database name=\"" + db.getName() + "\" version=\"" + db.getVersion() + 
+                "\" patchLevel=\"" + db.getPatchLevel() + "\">\n" );
 		indent++;
 		writeSchemas( (Database) db );
 		indent--;
