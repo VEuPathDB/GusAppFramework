@@ -152,7 +152,7 @@ sub new {
     bless($self, $class);
     
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 4323 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 4340 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -763,6 +763,6 @@ sub getTechnologyType {
 sub undoTables {
     my ($self) = @_;
 
-    return ('RAD.CompositeElementNASequence', 'RAD.ElementNASequence', 'RAD.CompositeElementDBRef', 'RAD.ElementDbRef');
+    return ('RAD.CompositeElementNASequence', 'RAD.ElementNASequence', 'RAD.CompositeElementDBRef', 'RAD.ElementDbRef', 'DoTS.Evidence');
 }
 
