@@ -777,17 +777,8 @@ sub loadData{
    }
 # if $e_subclass_view not set, querying CompositeElementImp table to set the  composite_element_id
    if(defined $c_subclass_view){
-       if($c_subclass_view=~ /^ShortOligoFamily$/){
-	   $spotFamilyClass="GUS::Model::RAD::ShortOligoFamily";
-       }
-       elsif($c_subclass_view=~ /^SpotFamily$/){
-	   $spotFamilyClass="GUS::Model::RAD::SpotFamily"; 
-       }
-       else{
-	   $spotFamilyClass="GUS::Model::RAD::SAGETag"; 
-       }
-
-   }
+       $spotFamilyClass = "GUS::Model::RAD::$c_subclass_view";
+     }
 
    while ($line = <$fh>) {
      
