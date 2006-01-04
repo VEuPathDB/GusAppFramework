@@ -29,86 +29,183 @@ use GUS::Model::RAD::Quantification;
 use GUS::Model::RAD::ArrayDesign;
 use GUS::Model::RAD::ElementAnnotation;
 
-sub new {
-  my $Class = shift;
-  my $self = {};
-  bless($self,$Class); # configuration object...
+sub getArgumentsDeclaration {
+  my $eSubclassViewList="Spot, RTPCRElement"; 
+  my $cSubclassViewList="ShortOligoFamily, SAGETag, MPSSTag";
+  my $posOption="1, 2, 3";
 
-# call required inherited initialization methods
-  my $usage = 'Loads data into ElementResultImp, CompositeElementResultImp tables in RAD database.';
-  my $purposeBrief = 'Loads data into ElementResultImp, CompositeElementResultImp tables in RAD database.';
+  my $argumentDeclaration =
+  [
+   fileArg({name => 'data_file',
+	    descr => 'The full path of the data_file.',
+	    constraintFunc=> undef,
+	    reqd => 1,
+	    isList => 0,
+	    mustExist => 1,
+	    format => 'See the NOTES for the format of this file'
+	   }),
+   enumArg({
+	    name => 'e_subclass_view',
+	    descr => 'The view of RAD.ElementImp to which the results refer. If this is provided, c_subclass_view and cr_subclass view should not be provided.',
+	    constraintFunc => undef,
+	    reqd => 0,
+	    isList => 0,
+	    enum => $eSubclassViewList,
+	   }),
+   enumArg({
+	    name => 'c_subclass_view',
+	    descr => 'The view of RAD.CompositeElementImp to which the results refer. If this is provided, e_subclass_view and er_subclass_view should not be provided',
+	    constraintFunc => undef, 
+	    reqd => 0,
+	    isList => 0, 
+	    enum => $cSubclassViewList
+	   }),
+   enumArg({
+	    name  => 'posOption',
+	    descr => 'Choice of identifier attributes for RAD.ShortOligoFamily data, default is 1.',
+	    constraintFunc=> undef,
+	    reqd  => 0,
+	    isList => 0,
+	    default => 1,
+	    enum => $posOption
+	   }),
+   integerArg({
+	       name => 'quantification_id',
+	       descr => 'RAD.Quantification.quantification_id to which the results refer (for 2-channel data, the quantification corresponding to channel1)',
+	       constraintFunc=> undef,
+	       reqd  => 1,
+	       isList => 0
+	      }),
+   integerArg({
+	       name  => 'rel_quantification_id',
+	       descr => 'RAD.Quantification.quantification_id for channel2, if the results refer to 2-channel data.',
+	       constraintFunc=> undef,
+	       reqd  => 0,
+	       isList => 0
+	      }),
+   integerArg({
+	       name  => 'cel_quantification_id',
+	       descr => 'If loading short-oligo probeset data, the RAD.Quantification.quantification_id of the corresponding probecell data. This is DIFFERENT FROM THE quantification_id of the results being loaded.',
+	       constraintFunc=> undef,
+	       reqd  => 0,
+	       isList => 0
+	      }),
+   integerArg({
+	       name  => 'array_design_id',
+	       descr => 'RAD.ArrayDesign.array_design_id for the array used.',
+	       constraintFunc => undef,
+	       reqd  => 1,
+	       isList => 0
+	      }),
+   booleanArg({
+	       name  => 'noWarning',
+	       descr => 'If provided, no warning messages will be generated.',
+	       constraintFunc=> undef,
+	       reqd  => 0,
+	       isList => 0
+	      }),
+   stringArg({
+	      name => 'cr_subclass_view',
+	      descr => 'The view of RAD.CompositeElementResultImp into which to load the results, if they refer to short-oligo (e.g. Affymetrix), SAGE, or MPSS technologies. If this is provided, e_subclass_view and er_subclass_view should not be provided',
+	      constraintFunc => undef,
+	      reqd => 0,
+	      isList => 0
+	     }),
+   stringArg({
+	      name => 'er_subclass_view',
+	      descr => 'The view of RAD.ElementResultImp into which to load the results, if they refer to spotted arrays, long-oligo arrays, or RT-PCR. If this is provided, c_subclass_view and cr_subclass_view should not be provided',
+	      constraintFunc => undef,
+	      reqd => 0,
+	      isList => 0
+	     }),
+   integerArg({
+	       name => 'testnumber',
+	       descr => 'Optional, number of iterations for testing',
+	       constraintFunc => undef,
+	       reqd  => 0,
+	       isList => 0
+	      }),
+   integerArg({
+	       name => 'restart',
+	       descr => 'Optional, data file line number to start loading data from (start counting after the header and include empty lines.)',
+	       constraintFunc=> undef,
+	       reqd => 0,
+	       isList => 0
+	      })
+  ];
+
+  return $argumentDeclaration;
+}
+
+sub getDocumentation {
+  my $purposeBrief = 'Loads data into views of RAD.ElementResultImp or RAD.CompositeElementResultImp.';
+
   my $purpose = <<PURPOSE;
-This is a plug-in that loads array  (spotted microarray and oligonucleotide array) result data into CompositeElementResultImp, ElementResultImp, set the value of result_table_id in Quantification table and if applicable, link the chp quantification_id with cel quantification_id in relatedQuantification table. 
+Each run of this plug-in can load one of the following: (i) quantification results for spotted, or long-oligo microarray data, or RT-PCR data into an appropriate view of RAD.ElementResultImp, (ii) quantification results (probe set level only) for short-oligo (e.g. Affymetrix), or SAGE, or MPSS data into an appropriate view of RAD.CompositeElementResultImp. Moreover, this plugin will also set the value of RAD.Quantification.result_table_id and, if applicable, link the probecell (e.g. cel) quantification_id with the probeset quantification_id in RAD.RelatedQuantification.
 PURPOSE
 
-my $tablesAffected = [
-    ['RAD::Quantification',               'Update the result_table_id for correponding quantification(s) in the RAD.Quantification table'],
-    ['RAD::RelatedQuantification',          'Insert two rows for the related quantifications in the RAD.RelatedQuantification table'],
-    ['RAD::ElementResultImp',      'Enters here many rows for each quantification'],
-    ['RAD::CompositeResultElementImp', 'Enters here many rows for each quantification']
+  my $tablesAffected = [
+    ['RAD::Quantification', 'Updates the result_table_id for the correponding quantification(s)'],
+    ['RAD::RelatedQuantification', 'Inserts two rows to link the probecell and the probeset quantifications, if applicable'],
+    ['RAD::ElementResultImp', 'Enters here the quantification results, for spotted, long-oligo and RT-PCR data'],
+    ['RAD::CompositeResultElementImp', 'Enters here the quantification results, for short-oligo, SAGE, and MPSS data']
    ];
 
   my $tablesDependedOn = [
-    ['Study::Quantification',                'Holds the corresponding quantification(s) that user loads the data for'],
-    ['RAD::ArrayDesign',                'Holds array information'], 
+    ['RAD::Quantification', 'The quantification(s) whose results need to be loaded'],
+    ['RAD::ArrayDesign', 'The array used'], 
   ];
 
   my $howToRestart = <<RESTART;
-Loading can be resumed using the I<--restart n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted).
+Run the plugin with the I<--restart n> argument, where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines ARE counted).
 RESTART
 
   my $failureCases = <<FAILURE_CASES;
-Files not in an appropriate format.
+Input file not in the appropriate format.
 FAILURE_CASES
 
-my $notes=<<NOTES;
-
-=head2 Examples
-
-*For help
-ga GUS::Supported::Plugin::LoadArrayResults B<[options]> B<--help>
-
-*For loading data into ElementResultImp table
-ga GUS::Supported::Plugin::LoadArrayResults B<[options]> B<--data_file> data_file B<--array_design_id> array_design_id B<--e_subclass_view> e_subclass_view B<--quantification_id> quantification_id B<--er_subclass_view> er_subclass_view B<--debug> > logfile
-
-*For loading data into CompositeElementResultImp table
-ga GUS::Supported::Plugin::LoadArrayResults B<[options]> B<--data_file> data_file B<--array_design_id> array_design_id B<--e_subclass_view> e_subclass_view B<--quantification_id> quantification_id B<--cr_subclass_view> cr_subclass_view B<--commit> > logfile 
-
-*For loading data into CompositeElementResultImp table such as loading Affymetrix Chp data
-ga  GUS::Supported::Plugin::LoadArrayResults B<[options]> B<--data_file> data_file B<--array_design_id> array_design_id B<--c_subclass_view> c_subclass_view  B<--quantification_id> quantification_id B<--cr_subclass_view> cr_subclass_view B<--debug> > logfile
-
-
-*For loading data into ElementResultImp and CompositeElementResultImp table
-ga  GUS::Supported::Plugin::LoadArrayResults B<[options]> B<--data_file> data_file B<--array_design_id> array_design_id B<--e_subclass_view> e_subclass_view  B<--quantification_id> quantification_id B<--er_subclass_view> er_subclass_view B<--cr_subclass_view> cr_subclass_view B<--rel_quantification_id> rel_quantification_id B<--debug> > logfile
-
-*For loading two-channel data into ElementResultImp and CompositeElementResultImp table
-ga  GUS::Supported::Plugin::LoadArrayResults B<[options]> B<--data_file> data_file B<--array_design_id> array_design_id B<--e_subclass_view> e_subclass_view  B<--quantification_id> quantification_id B<--er_subclass_view> er_subclass_view B<--cr_subclass_view> cr_subclass_view B<--rel_quantification_id> rel_quantification_id B<--commit> > logfile
-
-
-=head2 Specicial notes
-
-The plug-in outputs a print statement to STDOUT (for possible redirection to a log file) which lists the number of data file lines read (counting empty lines, but not counting the header and the lines preceding it in the data file) and any warning statement(s) regarding data lines which have not been loaded into RAD.
+  my $notes=<<NOTES;
+The plug-in outputs to STDOUT (for possible redirection to a log file): the number of data file lines read (counting empty lines, but not counting the header and the lines preceding it in the data file), any warning statement regarding data lines which have not been loaded into RAD.
 
 =head2 F<data_file>
 
-The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.
+* The data file should be in tab-delimited text format with one header row and one row for each element or composite_element. All rows should contain the same number of tabs/fields.
 
-* The header contains a list of attributes, which can be divided into two categories. One is position attributes which is used to identify the location of each element in array or compositeElement identifier such as probe set name. The other is view attributes which is defined in the view of ElementResultImp and CompositeElementResultImp.
+* The header for this file should contain "identifier attributes" to identify the (composite)element to which the result refer and "view attributes" corresponding to the fields in the view of RAD.(Composite)ElementResultImp to be filled in. These should be in lower case. See below for more details.
 
-* All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.
+* If the data file refers to 2-channel array data, a prefix like "channel1" or "channel2" should precede each view attribute: "channel1.attributeName" and "channel2.attributeName" will distinguish the values for the same field corresponding to the two different channels.
 
-* Every element for which the position attributes are available should have these stored in the database in order to determine the element_id and/or composite_element_id.
+------------------------------------------------------
 
-* Depending on array platform, the position attributes are different. If  the command line argument "e_subclass_view" is set to "Spot", then position attributes will be array_row, array_column, grid_row, grid_column, sub_row and sub_column. If  the command line argument "e_subclass_view" is set to "ShortOligo", then position attributes will be x_position and y_position. You will need to have these columns in the data file for each row.
+* The "identifier attributes" to be used depend on the technology. (The posOption argument is an additonal argument which allows for different identifier attributes to be used when dealing with short-oligo, e.g. Affymetrix, data.)
 
-* If you only load the compositeElementResult for affymetrix data, you have option to use probe set identifier to set the composite_element_id without using the position attributes of x_position and y_position. First, set command line argument "c_subclass_view" to "ShortOligoFamily", second, use the "posOption" to set the probe set identifier, its default is 1, which uses "name" as the probe set identifier; 2 means using "external_database_release_id"and "source_id" as the probe set identifier; 3 means using "external_database_release_id", "source_id" and "name" as the probe set identifier.
+ if c_subclass_view eq 'ShortOligoFamily' and posOption == 1 
+   then the identifier attribute provided in the data file is 'name' (as in RAD.ShortOligoFamily)
 
-* If the data file contains two-channel array data, then you can use "channel1.attributeName" and "channel2.attributeName" to denote each channel data.
+ if c_subclass_view eq 'ShortOligoFamily' and posOption == 2
+   then the identifier attributes provided in the data file are 'external_database_release_id' and 'source_id' (as in RAD.ShortOligoFamily)
+
+ if c_subclass_view eq 'ShortOligoFamily' and posOption == 3
+   then the identifier attributes provided in the data file are 'name', 'external_database_release_id', and 'source_id' (as in RAD.ShorgOligoFamily)
+
+ if c_subclass_view eq 'SAGETag'
+    then the identifier attribute provided in the data file must be 'tag' (as in RAD.SAGETag)
+
+ if c_subclass_view eq 'MPSSTag'
+     then the identifier attribute provided in the data file must be 'tag' (as in RAD.MPSSTag)
+
+ if e_subclass_view eq 'Spot'
+     then the identifier attributes provided in the data file must be 'array_row', 'array_column','grid_row', 'grid_column', 'sub_row', and 'sub_column' (as in RAD.Spot)
+
+------------------------------------------------------
+
+* The "view attributes" must match attributes from the view which the plugin will populate and be written in lower case.
 
 * Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.
 
-* If any values in data file larger than the maximum value or smaller than minimum value that corresponding field in database allows, then the plugin will reset the value to maximum or minimum value of that field.
-Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.
+* If any value in the data file is larger than the maximum value or smaller than minimum value allowed in the database for the corresponding field, then the plugin will reset the value to the maximum or minimum value for that field.
+
+* Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into multiple view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one view attribute, you will need to re-parse your data file and merge this information into one column.
 
 =head1 AUTHOR
 
@@ -120,118 +217,17 @@ Copyright Trustees of University of Pennsylvania 2003.
 
 NOTES
 
-my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief, tablesAffected=>$tablesAffected, tablesDependedOn=>$tablesDependedOn, howToRestart=>$howToRestart, failureCases=>$failureCases, notes=>$notes};
+  my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief, tablesAffected=>$tablesAffected, tablesDependedOn=>$tablesDependedOn, howToRestart=>$howToRestart, failureCases=>$failureCases, notes=>$notes};
+  return $documentation;
+}
 
-# modify the following line to add a new view for ElementResultImp table
+sub new {
+  my $Class = shift;
+  my $self = {};
+  bless($self,$Class); # configuration object...
+  my $documentation = &getDocumentation();
+  my $argsDeclaration  = &getArgumentsDeclaration();
 
-#  my $arrayRef=$m->sql_get_as_array_refs("select name from CORE.TABLEINFO where view_on_table_id = 2953");
-#  my @erSubclassViewList=@$arrayRef;
-#  print "@erSubclassViewList\n";
-
-#  my @erSubclassViewList=[qw (ArrayVisionElementResult GenePixElementResult SpotElementResult ScanAlyzeElementResult AffymetrixCEL GEMToolsElementResult AgilentElementResult QuantArrayElementResult)];
-# modify the following line to add a new view for CompositeElementResultImp table
-#  my @crSubclassViewList=[qw (AffymetrixMAS4 AffymetrixMAS5 SAGETagResult MOIDResult RMAExpress GNFAffymetrixResult)];
-# modify the following line to add a new view for ElementImp table
- 
-  my $eSubclassViewList="ShortOligo,Spot,SAGETagMapping"; 
-  my $cSubclassViewList="ShortOligoFamily,SpotFamily,SAGETag,MPSSTag";  
-  my $posOption="1, 2, 3";
-
-my $argsDeclaration  =
-  [
-   fileArg({name => 'data_file',
-	    descr => 'The full path of the data_file.',
-	    constraintFunc=> undef,
-	    reqd  => 1,
-	    isList => 0,
-	    mustExist => 1,
-	    format => 'See the NOTES for the format of this file'
-	   }),
-   enumArg({
-	    name           => 'e_subclass_view',
-	    descr          => 'view name of ElementImp table.',
-	    constraintFunc => undef,
-	    reqd           => 0,
-	    isList         => 0, 
-	    enum => $eSubclassViewList,
-	   }),
-   enumArg({
-	      name           => 'c_subclass_view',
-	      descr          => 'view name of CompositeElementImp table.',
-	      constraintFunc => undef, 
-	      reqd           => 0,
-	      isList         => 0, 
-	    enum => $cSubclassViewList,
-	     }),
-   enumArg({name  => 'posOption',
-	       descr => 'option choice of positionList of ShortOligoFamily table, default is 1.',
-	       constraintFunc=> undef,
-	       reqd  => 0,
-	       isList => 0, 
-	       default => 1,
-	       enum =>$posOption
-	      }),
-   integerArg({name  => 'quantification_id',
-	       descr => 'RAD quantification id, the entry in Quantification table.',
-	       constraintFunc=> undef,
-	       reqd  => 1,
-	       isList => 0,
-	      }),
-   integerArg({name  => 'rel_quantification_id',
-	       descr => 'for associated channel, RAD quantification id, the entry in Quantification table.',
-	       constraintFunc=> undef,
-	       reqd  => 0,
-	       isList => 0,
-	      }),
-   integerArg({name  => 'cel_quantification_id',
-	       descr => 'if load affymetrix .chp file, then relate the associated quantification_id for affymetrix cel file in the RelatedQuantification table.',
-	       constraintFunc=> undef,
-	       reqd  => 0,
-	       isList => 0,
-	      }),
-   integerArg({name  => 'array_design_id',
-	       descr => 'RAD array design id, the entry in ArrayDesign table.',
-	       constraintFunc=> undef,
-	       reqd  => 1,
-	       isList => 0,
-	      }),
-   booleanArg({name  => 'noWarning',
-	       descr => 'if specified, generate no warning messages.',
-	       constraintFunc=> undef,
-	       reqd  => 0,
-	       isList => 0,
-	      }),
-
-   stringArg({
-	      name           => 'cr_subclass_view',
-	      descr          => 'view name of CompositeElementResultImp table.',
-	      constraintFunc => undef,
-	      reqd           => 0,
-	      isList         => 0, 
-	     }),
-
-   stringArg({
-	      name           => 'er_subclass_view',
-	      descr          => 'view name of ElementResultImp table.',
-	      constraintFunc => undef,
-	      reqd           => 0,
-	      isList         => 0, 
-	     }),
-   integerArg({name  => 'testnumber',
-	       descr => 'optional, number of iterations for testing',
-	       constraintFunc=> undef,
-	       reqd  => 0,
-	       isList => 0
-	      }),
-   integerArg({name  => 'restart',
-	       descr => 'optional,data file line number to start loading data from(start counting after the header)',
-	       constraintFunc=> undef,
-	       reqd  => 0,
-	       isList => 0
-	      })
- ];
-
- 
   $self->initialize({requiredDbVersion => '3.5',
 		     cvsRevision => '$Revision$',
 #		     cvsTag => '$Name$',
