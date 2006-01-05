@@ -79,9 +79,14 @@ extends SchemaWriter
         oStream.write(BASE_PKG);
         oStream.write("\"\n");
         indent(oStream, 2);
-        oStream.write("auto-import=\"false\"");
+        oStream.write(" auto-import=\"false\"");
         oStream.write(" default-cascade=\"save-update\">\n");
 
+	// Uncomment this to create inheritence from a top-level class
+	// indent(oStream, 1);
+        // oStream.write(" <meta attribute=\"extends\">org.gusdb.model.GusRow</meta>\n");
+
+        indent(oStream, 1);
         for (Iterator i = db.getAllSchemas().iterator(); i.hasNext(); ) {
             Schema schema = (Schema)i.next();
             for (Iterator j = schema.getTables().iterator(); j.hasNext(); ) {
@@ -115,7 +120,6 @@ extends SchemaWriter
         writer.write("\" table=\"");
         writer.write(table.getName());
         writer.write("\">\n");
-        indent(writer, 1);
         writer.write("<meta attribute=\"implement-equals\">true</meta>\n");
         writeId(writer, table);
         writeTimestamp(writer, table);
@@ -403,6 +407,7 @@ extends SchemaWriter
             indent(writer, level + 1);
             writer.write("<meta attribute=\"use-in-equals\">");
             writer.write("true</meta>\n");
+
         }
         for (Iterator i = table.getColumnsExcludeSuperclass( true ).iterator(); i.hasNext(); ) {
             Column column = (Column)i.next();
