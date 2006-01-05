@@ -612,7 +612,7 @@ sub createGusAssay {
   } else {
     $arrayIdParams = GUS::Model::RAD::ArrayDesign->new({
       name    => "Affymetrix $arrayName",
-      version => "null"
+      version => ""
     });
   }
 
