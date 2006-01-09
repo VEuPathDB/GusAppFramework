@@ -768,16 +768,9 @@ sub loadData{
    my ($spotClass, $spotFamilyClass);
 
    if(defined $e_subclass_view){
-       if($e_subclass_view=~ /^ShortOligo$/){
-	   $spotClass="GUS::Model::RAD::ShortOligo";
-       }
-       elsif($e_subclass_view=~ /^Spot$/){
-	   $spotClass="GUS::Model::RAD::Spot"; 
-       }
-       else{
-	   $spotClass="GUS::Model::RAD::SAGETagMapping"; 
-       }
+	   $spotClass="GUS::Model::RAD::$e_subclass_view"; 
    }
+
 # if $e_subclass_view not set, querying CompositeElementImp table to set the  composite_element_id
    if(defined $c_subclass_view){
        $spotFamilyClass = "GUS::Model::RAD::$c_subclass_view";
