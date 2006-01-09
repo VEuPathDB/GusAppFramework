@@ -293,10 +293,10 @@ sub run {
 	eval "require GUS::Model::RAD::MPSSTag";
   }
 # set the global array $positionList and require the view for ElementImp at running time
-  if($M->getArgs->{e_subclass_view} eq 'ShortOligo' ){
-	@positionList = ('x_position', 'y_position');
-	eval "require GUS::Model::RAD::ShortOligo";
-  }
+#  if($M->getArgs->{e_subclass_view} eq 'ShortOligo' ){
+#	@positionList = ('x_position', 'y_position');
+#	eval "require GUS::Model::RAD::ShortOligo";
+#  }
   
   if($M->getArgs->{e_subclass_view} eq 'Spot'){
 	@positionList = ('array_row','array_column','grid_row','grid_column','sub_row','sub_column');
