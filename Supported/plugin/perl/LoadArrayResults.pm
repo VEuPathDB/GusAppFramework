@@ -197,6 +197,9 @@ The plug-in outputs to STDOUT (for possible redirection to a log file): the numb
  if e_subclass_view eq 'Spot'
      then the identifier attributes provided in the data file must be 'array_row', 'array_column','grid_row', 'grid_column', 'sub_row', and 'sub_column' (as in RAD.Spot)
 
+if e_subclass_view eq 'RTPCRElement'
+       then the identifier attributes provided in the data file are 'external_database_release_id' and 'source_id' (as in RAD.RTPCRElement)
+
 ------------------------------------------------------
 
 * The "view attributes" must match attributes from the view which the plugin will populate and be written in lower case.
@@ -309,6 +312,10 @@ sub run {
 	eval "require GUS::Model::RAD::SAGETagMapping";
   }
   
+  if($M->getArgs->{e_subclass_view} eq 'RTPCRElement' ){
+	@positionList = ('external_database_release_id', 'source_id');
+	eval "require GUS::Model::RAD::RTPCRElement";
+  }
 
 # self-defined subroutine, check the headers of data file if it provide the 
 # header matching with them provide in configuration file
