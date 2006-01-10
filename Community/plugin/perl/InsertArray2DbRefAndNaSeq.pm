@@ -115,7 +115,7 @@ Populate mappings in RAD.ElementDbRef and RAD.CompositeElementsDbRef between SRe
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-Populate mappings between SRes.DbRef and DoTS.ExternalNaSequence and RAD.ShortOligoFamily or RAD.Spot from microarray annotations file.  Mappings are inserted in RAD.CompositeElementDbRef or RAD.ElementDbRef.
+Populate mappings between SRes.DbRef and DoTS.ExternalNaSequence and RAD.ShortOligoFamily or RAD.Spot from microarray annotations file.  Mappings are inserted in RAD.CompositeElementDbRef or RAD.ElementDbRef. Element and CompositeElements re supported, including MPSS Tags.
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
@@ -197,10 +197,11 @@ sub run {
     
     if($technologyType =~ /oligo/i) {
 	if($annotationType eq "DbRef") {
-	    $nrecords = $self->populateCompEleDbRef($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile);
+	    $nrecords = $self->populateCompEleDbRef($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile, "RAD.ShortOligoFamiliy", "name");
 	}
 	elsif($annotationType eq "NASeq")  {
-	    $nrecords = $self->populateCompEleNaSeq($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile);
+	    $nrecords = $self->populateCompEleNaSeq($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile, "RAD.ShortOligoFamil\
+iy", "name");
 	}
 	else {
 	    die("$annotationType is an undefined type\n");
@@ -217,6 +218,17 @@ sub run {
 	    die("$annotationType is an undefined annotation type\n");
 	}
     }
+    elsif($technologyType =~ /mpss/i) {
+	if($annotationType eq "DbRef") {
+	    $nrecords = $self->populateCompEleDbRef($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile, "RAD.MPSSTag", "tag");
+	}
+	elsif($annotationType eq "NASeq")  {
+	    $nrecords = $self->populateCompEleNaSeq($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile, "RAD.MPSSTag", "tag");
+	}
+	else {
+	    die("$annotationType is an undefined annotation type\n");
+	}
+    }
     else {
 	die("$technologyType is not a techno type usable in this plugin\n");
     }
@@ -228,7 +240,7 @@ sub run {
 
 
 sub populateCompEleDbRef {
-    my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
+    my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile, $view, $identifier) = @_;
     
     my $nToPopulate = scalar keys(%$hash);
     
@@ -257,13 +269,13 @@ sub populateCompEleDbRef {
     my $counter = 0;
     while (my ($probeID, $annotationListIDRef) = each(%$hash)) {
 	
-	$sql = "SELECT composite_element_id FROM RAD.shortoligofamily WHERE name = '$probeID' and array_design_id = $arrayDesignID";
+	$sql = "SELECT composite_element_id FROM $view WHERE $identifier = '$probeID' and array_design_id = $arrayDesignID";
 	$queryHandle = $self->getQueryHandle();
 	$sth = $queryHandle->prepareAndExecute($sql);
 	($compositeElementID) = $sth ->fetchrow_array();
 	
 	if(defined $compositeElementID) {
-
+	    
 	    my @annotationListID = @$annotationListIDRef;
 	    foreach(@$annotationListIDRef) {
 		
@@ -433,7 +445,7 @@ sub populateEleDbRef {
 
 
 sub populateCompEleNaSeq {
-    my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile) = @_;
+    my($self, $hash, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile, $view, $identifier) = @_;
     
     my $nToPopulate = scalar keys(%$hash);
     
@@ -462,7 +474,7 @@ sub populateCompEleNaSeq {
     my $counter = 0;
     while (my ($probeID, $annotationListIDRef) = each(%$hash)) {
 	
-	$sql = "SELECT composite_element_id FROM RAD.shortoligofamily WHERE name = '$probeID' and array_design_id = $arrayDesignID";
+	$sql = "SELECT composite_element_id FROM $view WHERE $identifier = '$probeID' and array_design_id = $arrayDesignID";
 	$queryHandle = $self->getQueryHandle();
 	$sth = $queryHandle->prepareAndExecute($sql);
 	($compositeElementID) = $sth ->fetchrow_array();
