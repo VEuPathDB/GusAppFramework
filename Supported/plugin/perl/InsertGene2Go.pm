@@ -261,7 +261,7 @@ sub loadData{
 
 			my $newAssocEvidCode = $self->makeAssocInstEvidCode($evidCode);
 			$$newGOAssocInst->addChild($$newAssocEvidCode);
-			$self->undefPointerCache();
+#			$self->undefPointerCache();
 		    }
 	    }
 	    
