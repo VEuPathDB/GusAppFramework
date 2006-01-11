@@ -218,7 +218,7 @@ iy", "name");
 	    die("$annotationType is an undefined annotation type\n");
 	}
     }
-    elsif($technologyType =~ /mpss/i) {
+    elsif($technologyType =~ /MPSS/i) {
 	if($annotationType eq "DbRef") {
 	    $nrecords = $self->populateCompEleDbRef($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile, "RAD.MPSSTag", "tag");
 	}
