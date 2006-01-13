@@ -236,7 +236,7 @@ sub loadData{
     my $goExtDbRelId = $self->getExtDbRlsId($self->getArg('goAssociationExternalDatabaseName'), $self->getArg('goAssociationExternalDatabaseVersion'));
     
     foreach my $go_id (keys %$goHash){
-	print "Loading entries for GO ID $go_id into the database.\n";
+	$self->log("Loading entries for GO ID $go_id into the database.");
 	foreach my $gene_id (keys %{$goHash->{$go_id}}){
 	
 	    my $newGOAssoc = $self->makeGOAssocEntry($go_id, $gene_id, $entrezExtDbRelId, $tableId);
@@ -247,22 +247,25 @@ sub loadData{
 	    }#eo unless
 
 	    if($$newGOAssoc->retrieveFromDB()){
-		print "Gene $gene_id GO term $go_id pair already in database for this release\n";
-		$presentCount ++;
-		$self->undefPointerCache();
-		next;
+#		$self->log("Gene $gene_id GO term $go_id pair already in database for this release");
+	#	$presentCount ++;
+		#$self->undefPointerCache();
+		#next;
 	    }
 
 	    my $newGOAssocInst = $self->makeGOAssocInstEntry($loeId, $goExtDbRelId);
 	    my %seen = ();
 	    foreach my $evidCode (@{$goHash->{$go_id}->{$gene_id}}){
-		unless($seen{$evidCode}){
+		if($evidCode) {
+		    unless($seen{$evidCode}){
 			$seen{$evidCode} = 1;
-
+						
 			my $newAssocEvidCode = $self->makeAssocInstEvidCode($evidCode);
 			$$newGOAssocInst->addChild($$newAssocEvidCode);
+			
 #			$self->undefPointerCache();
 		    }
+		}
 	    }
 	    
 	    $$newGOAssoc->addChild($$newGOAssocInst);
@@ -354,7 +357,7 @@ sub getLOEid{
 		     });
 
     unless($loe->retrieveFromDB()){
-	print "Entry for GOAssociation automatically created in DoTS::GOAssociationInstanceLOE\n";
+	$self->log("Entry for GOAssociation automatically created in DoTS::GOAssociationInstanceLOE");
 	$loe->submit();
     }
     my $loeId = $loe->getId();
@@ -397,5 +400,21 @@ sub makeAssocInstEvidCode{
 
     return (\$newAssocEvidCode);
 }
+
+
+
+# --------------------------------------------------------------------
+# undoTables
+# return the list of tables to be used by the undo plugin
+# for data deleting
+# --------------------------------------------------------------------
+
+sub undoTables {
+    my ($self) = @_;
+    
+    return ('SRes.GOEvidenceCode', 'DoTS.GOAssocInstEvidCode', 'DoTS.GOAssociationInstanceLOE', 'DoTS.GOAssociationInstance', 'DoTS.GOAssociation');
+}
+
+
 
 1;
