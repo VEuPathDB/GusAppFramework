@@ -97,7 +97,15 @@ PLUGIN_NOTES
 		constraintFunc => undef,
 		isList => 0
 
-     })
+     }),
+       enumArg({name => 'AmpliconType',
+                descr => 'Dots::SequenceType.name for the PCR Products generated.  ss-DNA for spotted DNA microarrays.',
+                constraintFunc => undef,
+                reqd => 1,
+                isList => 0,
+                mustExist => 1,
+                enum => "ss-DNA, ds-DNA",
+     }),
     ];
 
   $self->initialize({requiredDbVersion => 3.5,
@@ -209,7 +217,8 @@ sub processPrimerPair{
 
   #my $so_cvs_version = "1.35";
 
-  my $amplicon_type = "ss-DNA";
+  #my $amplicon_type = "ss-DNA";
+  my $amplicon_type = $self->getArgs()->{AmpliconType};
   my $aSequenceType = GUS::Model::DoTS::SequenceType->new({'name' => $amplicon_type});
   $aSequenceType->retrieveFromDB() || die "Unable to obtain sequence_type_id from DoTS.sequencetype with name = $amplicon_type";
   my $amplicon_seq_type_id= $aSequenceType->getId();
