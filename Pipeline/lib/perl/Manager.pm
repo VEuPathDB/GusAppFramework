@@ -2,6 +2,7 @@ package GUS::Pipeline::Manager;
 
 use strict;
 use File::Basename;
+use GUS::Pipeline::StepDocumenter;
 use CBIL::Util::Utils;
 
 #############################################################################
@@ -9,7 +10,7 @@ use CBIL::Util::Utils;
 #############################################################################
 
 sub new {
-    my ($class, $pipelineDir, $propertySet, $propertiesFile, $cluster, $testNextPlugin) = @_;
+    my ($class, $pipelineDir, $propertySet, $propertiesFile, $cluster, $testNextPlugin, $justDocumenting) = @_;
 
     my $self = {};
     bless $self, $class;
@@ -18,8 +19,16 @@ sub new {
     $self->{propertiesFile} = $propertiesFile;
     $self->{program} = basename($0);
     $self->{cluster} = $cluster;
+    $self->{justDocumenting} = $justDocumenting;
     $cluster->setManager($self);
     $self->{testNextPlugin} = $testNextPlugin;
+
+    if ($justDocumenting) {
+      print STDERR "Generating XML documentation...\n";
+      GUS::Pipeline::StepDocumenter::start();
+      return $self;
+    }
+
     $self->_createPipelineDir();
 
     $self->_dieIfAlreadyRunning();
@@ -45,8 +54,11 @@ sub new {
 # param $doitProperty  - the name of a property which will have value 
 #                        "no" if this step should be skipped. undef means
 #                        don't skip
+# 
 sub startStep {
     my($self, $msg, $signal, $doitProperty) = @_;
+
+    return 1 if $self->{justDocumenting};
 
     my $stopBefore = $self->{propertySet}->getProp('stopBefore');
 
@@ -241,8 +253,13 @@ sub setGusConfigFile {
 # exit pipeline 
 sub goodbye {
     my ($self, $msg) = @_;
-    $self->log($msg);
-    unlink "$self->{pipelineDir}/signals/running";
+
+    if ($self->{justDocumenting}) {
+      GUS::Pipeline::StepDocumenter::end();
+    } else {
+      $self->log($msg);
+      unlink "$self->{pipelineDir}/signals/running";
+    }
     exit(0);
 }
 
@@ -358,6 +375,17 @@ ERROR:  Looks like '$self->{program} $self->{propertiesFile}' is already running
 ";
 	exit(1);
     }
+}
+
+sub documentStep {
+  my ($self, $signal, $documentInfo, $doitProperty) = @_;
+
+  return if (!$self->{justDocumenting}
+	     || ($doitProperty
+		 && $self->{propertySet}->getProp($doitProperty) eq "no"));
+
+  my $documenter = GUS::Pipeline::StepDocumenter->new($signal, $documentInfo);
+  $documenter->printXml();
 }
 
 1;

@@ -4,7 +4,10 @@ use strict;
 
 use lib "$ENV{GUS_HOME}/lib/perl";
 
-my $duh =
+# Document a pipeline step
+
+=pod
+This is what is supported
   { name => "Find transmembranes for P.f",
     input => "protein sequences",
     output => "transmembrane domains",
@@ -19,37 +22,6 @@ my $duh =
        },
       ]
     };
-
-
-use GUS::Pipeline::StepDocumenter;
-
-GUS::Pipeline::StepDocumenter->new('happy', $duh);
-
-# Document a pipeline step
-
-=pod
-This is what is supported
-{
-    name => "Find transmembranes for $species",
-    input => "protein sequences",
-    output => "transmembrane domains",
-    descrip => $docDescrip,
-    tools => [
-       { name => "tmhmm",
-         version => "1.0.0",
-         params => "-m -short -whatever",
-         url => "an URL if appropriate",
-         pubmedIds => [
-            "12345",
-            "223344"
-         ],
-         credits => [          # included if no references available
-           "Joe Schmoe, Univ. Penn.",
-           "josette Schmoe, UCSC"
-         ]
-       },
-      ]
-    };
 =cut
 
 sub new {
@@ -61,7 +33,6 @@ sub new {
   $self->{signal} = $signal;
 
   $self->validateInfo();
-  $self->printXml();
 
   return $self;
 }
@@ -127,7 +98,7 @@ XML
   my @tools = @{$self->{tools}};
 
   if (scalar(@tools)) {
-    $xml .= "\n    <table name=\"tools\">\n";
+    $xml .= "    <table name=\"tools\">\n";
     foreach my $tool (@tools) {
       $xml .= <<TABLE;
       <row>
@@ -140,9 +111,9 @@ XML
       </row>
 TABLE
     }
-    $xml .= "\n    </table>\n";
+    $xml .= "    </table>\n";
   }
-  $xml .= "\n  </record>\n";
+  $xml .= "  </record>\n\n";
   print $xml;
 }
 
@@ -152,3 +123,14 @@ sub error {
   print STDERR "Error documenting step '$self->{signal}': \n$msg\n";
   exit(1);
 }
+
+############ static methods  #########################3
+sub start {
+  print "<xmlAnswer>\n";
+}
+
+sub end {
+  print "</xmlAnswer>\n";
+}
+
+1;
