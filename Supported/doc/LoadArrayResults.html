@@ -299,8 +299,9 @@ Allowed values: 1, 2, 3
 <pre>
  if e_subclass_view eq 'Spot'
      then the identifier attributes provided in the data file must be 'array_row', 'array_column','grid_row', 'grid_column', 'sub_row', and 'sub_column' (as in RAD.Spot)</pre>
-<p>if e_subclass_view eq 'RTPCRElement'
-       then the identifier attributes provided in the data file are 'external_database_release_id' and 'source_id' (as in RAD.RTPCRElement)</p>
+<pre>
+ if e_subclass_view eq 'RTPCRElement'
+       then the identifier attributes provided in the data file are 'external_database_release_id' and 'source_id' (as in RAD.RTPCRElement)</pre>
 <p>------------------------------------------------------</p>
 <p>* The ``view attributes'' must match attributes from the view which the plugin will populate and be written in lower case.</p>
 <p>* Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.</p>
