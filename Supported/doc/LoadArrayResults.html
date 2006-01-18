@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>GUS::Supported::Plugin::LoadArrayResults -  Loads data into ElementResultImp, CompositeElementResultImp tables in RAD database.</title>
+<title>GUS::Supported::Plugin::LoadArrayResults -  Loads data into views of RAD.ElementResultImp or RAD.CompositeElementResultImp.</title>
 <link rev="made" href="mailto:root@localhost" />
 </head>
 
@@ -24,8 +24,6 @@
 	<li><a href="#notes">NOTES</a></li>
 	<ul>
 
-		<li><a href="#examples">Examples</a></li>
-		<li><a href="#specicial_notes">Specicial notes</a></li>
 		<li><a href="#data_file"><em>data_file</em></a></li>
 	</ul>
 
@@ -38,7 +36,7 @@
 <p>
 </p>
 <h1><a name="name">NAME</a></h1>
-<p>GUS::Supported::Plugin::LoadArrayResults -  Loads data into ElementResultImp, CompositeElementResultImp tables in RAD database.</p>
+<p>GUS::Supported::Plugin::LoadArrayResults -  Loads data into views of RAD.ElementResultImp or RAD.CompositeElementResultImp.</p>
 <p>
 </p>
 <hr />
@@ -50,7 +48,7 @@
 </p>
 <hr />
 <h1><a name="description">DESCRIPTION</a></h1>
-<p>This is a plug-in that loads array  (spotted microarray and oligonucleotide array) result data into CompositeElementResultImp, ElementResultImp, set the value of result_table_id in Quantification table and if applicable, link the chp quantification_id with cel quantification_id in relatedQuantification table.</p>
+<p>Each run of this plug-in can load one of the following: (i) quantification results for spotted, or long-oligo microarray data, or RT-PCR data into an appropriate view of RAD.ElementResultImp, (ii) quantification results (probe set level only) for short-oligo (e.g. Affymetrix), or SAGE, or MPSS data into an appropriate view of RAD.CompositeElementResultImp. Moreover, this plugin will also set the value of RAD.Quantification.result_table_id and, if applicable, link the probecell (e.g. cel) quantification_id with the probeset quantification_id in RAD.RelatedQuantification.</p>
 <p>
 </p>
 <hr />
@@ -58,16 +56,16 @@
 <dl>
 <dt><strong><a name="item_rad%3a%3aquantification"><strong>RAD::Quantification</strong></a></strong><br />
 </dt>
-<p>Update the result_table_id for correponding <code>quantification(s)</code> in the RAD.Quantification table</p>
+<p>Updates the result_table_id for the correponding <code>quantification(s)</code></p>
 <dt><strong><a name="item_rad%3a%3arelatedquantification"><strong>RAD::RelatedQuantification</strong></a></strong><br />
 </dt>
-<p>Insert two rows for the related quantifications in the RAD.RelatedQuantification table</p>
+<p>Inserts two rows to link the probecell and the probeset quantifications, if applicable</p>
 <dt><strong><a name="item_rad%3a%3aelementresultimp"><strong>RAD::ElementResultImp</strong></a></strong><br />
 </dt>
-<p>Enters here many rows for each quantification</p>
+<p>Enters here the quantification results, for spotted, long-oligo and RT-PCR data</p>
 <dt><strong><a name="item_rad%3a%3acompositeresultelementimp"><strong>RAD::CompositeResultElementImp</strong></a></strong><br />
 </dt>
-<p>Enters here many rows for each quantification</p>
+<p>Enters here the quantification results, for short-oligo, SAGE, and MPSS data</p>
 <dt><strong><a name="item_core%3a%3aalgorithminvocation"><strong>Core::AlgorithmInvocation</strong></a></strong><br />
 </dt>
 <p>The plugin manager (ga) inserts a row into this table describing the plugin and the parameter values used</p>
@@ -77,12 +75,12 @@
 <hr />
 <h1><a name="tables_depended_on">TABLES DEPENDED ON</a></h1>
 <dl>
-<dt><strong><a name="item_study%3a%3aquantification"><strong>Study::Quantification</strong></a></strong><br />
+<dt><strong><strong>RAD::Quantification</strong></strong><br />
 </dt>
-<p>Holds the corresponding <code>quantification(s)</code> that user loads the data for</p>
+<p>The <code>quantification(s)</code> whose results need to be loaded</p>
 <dt><strong><a name="item_rad%3a%3aarraydesign"><strong>RAD::ArrayDesign</strong></a></strong><br />
 </dt>
-<p>Holds array information</p>
+<p>The array used</p>
 <dt><strong><a name="item_core%3a%3aalgorithm"><strong>Core::Algorithm</strong></a></strong><br />
 </dt>
 <p>The algorithm (ie, this plugin) responsible for the update</p>
@@ -100,12 +98,12 @@
 </p>
 <hr />
 <h1><a name="failure_cases">FAILURE CASES</a></h1>
-<p>Files not in an appropriate format.</p>
+<p>Input file not in the appropriate format.</p>
 <p>
 </p>
 <hr />
 <h1><a name="restarting">RESTARTING</a></h1>
-<p>Loading can be resumed using the <em>--restart n</em> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted).</p>
+<p>Run the plugin with the <em>--restart n</em> argument, where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines ARE counted).</p>
 <p>
 </p>
 <hr />
@@ -126,22 +124,22 @@
 <dt><strong><a name="item_%2d%2de_subclass_view_enum">--e_subclass_view <em>enum</em></a></strong><br />
 </dt>
 <dd>
-Allowed values: ShortOligo,Spot,SAGETagMapping
+Allowed values: Spot, RTPCRElement
 </dd>
-<p>view name of ElementImp table.</p>
+<p>The view of RAD.ElementImp to which the results refer. If this is provided, c_subclass_view and cr_subclass view should not be provided.</p>
 <dl>
-<dt><strong><a name="item_enum%3a_shortoligo%2cspot%2csagetagmapping">enum: ShortOligo,Spot,SAGETagMapping</a></strong><br />
+<dt><strong><a name="item_enum%3a_spot%2c_rtpcrelement">enum: Spot, RTPCRElement</a></strong><br />
 </dt>
 </dl>
 <dt></dt>
 <dt><strong><a name="item_%2d%2dc_subclass_view_enum">--c_subclass_view <em>enum</em></a></strong><br />
 </dt>
 <dd>
-Allowed values: ShortOligoFamily,SpotFamily,SAGETag
+Allowed values: ShortOligoFamily, SAGETag, MPSSTag
 </dd>
-<p>view name of CompositeElementImp table.</p>
+<p>The view of RAD.CompositeElementImp to which the results refer. If this is provided, e_subclass_view and er_subclass_view should not be provided</p>
 <dl>
-<dt><strong><a name="item_enum%3a_shortoligofamily%2cspotfamily%2csagetag">enum: ShortOligoFamily,SpotFamily,SAGETag</a></strong><br />
+<dt><strong><a name="item_enum%3a_shortoligofamily%2c_sagetag%2c_mpsstag">enum: ShortOligoFamily, SAGETag, MPSSTag</a></strong><br />
 </dt>
 </dl>
 <dt></dt>
@@ -150,7 +148,7 @@ Allowed values: ShortOligoFamily,SpotFamily,SAGETag
 <dd>
 Allowed values: 1, 2, 3
 </dd>
-<p>option choice of positionList of ShortOligoFamily table, default is 1.</p>
+<p>Choice of identifier attributes for RAD.ShortOligoFamily data, default is 1.</p>
 <dl>
 <dt><strong><a name="item_default%3a_1">default: 1</a></strong><br />
 </dt>
@@ -162,31 +160,31 @@ Allowed values: 1, 2, 3
 <dt></dt>
 <dt><strong><a name="item_integer">--quantification_id <em>integer</em> (Required)</a></strong><br />
 </dt>
-<p>RAD quantification id, the entry in Quantification table.</p>
+<p>RAD.Quantification.quantification_id to which the results refer (for 2-channel data, the quantification corresponding to channel1)</p>
 <dt><strong><a name="item_%2d%2drel_quantification_id_integer">--rel_quantification_id <em>integer</em></a></strong><br />
 </dt>
-<p>for associated channel, RAD quantification id, the entry in Quantification table.</p>
+<p>RAD.Quantification.quantification_id for channel2, if the results refer to 2-channel data.</p>
 <dt><strong><a name="item_%2d%2dcel_quantification_id_integer">--cel_quantification_id <em>integer</em></a></strong><br />
 </dt>
-<p>if load affymetrix .chp file, then relate the associated quantification_id for affymetrix cel file in the RelatedQuantification table.</p>
+<p>If loading short-oligo probeset data, the RAD.Quantification.quantification_id of the corresponding probecell data. This is DIFFERENT FROM THE quantification_id of the results being loaded.</p>
 <dt><strong>--array_design_id <em>integer</em> (Required)</strong><br />
 </dt>
-<p>RAD array design id, the entry in ArrayDesign table.</p>
+<p>RAD.ArrayDesign.array_design_id for the array used.</p>
 <dt><strong><a name="item_%2d%2dnowarning">--noWarning <em></em></a></strong><br />
 </dt>
-<p>if specified, generate no warning messages.</p>
+<p>If provided, no warning messages will be generated.</p>
 <dt><strong><a name="item_%2d%2dcr_subclass_view_string">--cr_subclass_view <em>string</em></a></strong><br />
 </dt>
-<p>view name of CompositeElementResultImp table.</p>
+<p>The view of RAD.CompositeElementResultImp into which to load the results, if they refer to short-oligo (e.g. Affymetrix), SAGE, or MPSS technologies. If this is provided, e_subclass_view and er_subclass_view should not be provided</p>
 <dt><strong><a name="item_%2d%2der_subclass_view_string">--er_subclass_view <em>string</em></a></strong><br />
 </dt>
-<p>view name of ElementResultImp table.</p>
+<p>The view of RAD.ElementResultImp into which to load the results, if they refer to spotted arrays, long-oligo arrays, or RT-PCR. If this is provided, c_subclass_view and cr_subclass_view should not be provided</p>
 <dt><strong><a name="item_%2d%2dtestnumber_integer">--testnumber <em>integer</em></a></strong><br />
 </dt>
-<p>optional, number of iterations for testing</p>
+<p>Optional, number of iterations for testing</p>
 <dt><strong><a name="item_%2d%2drestart_integer">--restart <em>integer</em></a></strong><br />
 </dt>
-<p>optional,data file line number to start loading data from(start counting after the header)</p>
+<p>Optional, data file line number to start loading data from (start counting after the header and include empty lines.)</p>
 <dt><strong><a name="item_%2d%2dcommit">--commit <em></em></a></strong><br />
 </dt>
 <p>Actualy commit changes to the database</p>
@@ -249,9 +247,9 @@ Allowed values: 1, 2, 3
 <dt></dt>
 <dt><strong><a name="item_%2d%2dgusconfigfile_file">--gusconfigfile <em>file</em></a></strong><br />
 </dt>
-<p>The gus config file to use [note: the default is your $GUS_CONFIG_FILE]</p>
+<p>The gus config file to use [note: the default is your $GUS_HOME/config/gus.config]</p>
 <dl>
-<dt><strong><a name="item_default%3a_%2fhome%2fjunmin%2fgus35%2f%2egus%2epro">default: /home/junmin/gus35/.gus.properties</a></strong><br />
+<dt><strong><a name="item_default%3a_%2fhome%2fmanduchi%2fgus3%2e5%2fgus_hom">default: /home/manduchi/gus3.5/gus_home/config/gus.config</a></strong><br />
 </dt>
 <dl>
 <dt><strong><a name="item_format%3a_gus_config_file_format">format: GUS config file format</a></strong><br />
@@ -274,38 +272,40 @@ Allowed values: 1, 2, 3
 </p>
 <hr />
 <h1><a name="notes">NOTES</a></h1>
-<p>
-</p>
-<h2><a name="examples">Examples</a></h2>
-<p>*For help
-ga GUS::Supported::Plugin::LoadArrayResults <strong>[options]</strong> <strong>--help</strong></p>
-<p>*For loading data into ElementResultImp table
-ga GUS::Supported::Plugin::LoadArrayResults <strong>[options]</strong> <strong>--data_file</strong> data_file <strong>--array_design_id</strong> array_design_id <strong>--e_subclass_view</strong> e_subclass_view <strong>--quantification_id</strong> quantification_id <strong>--er_subclass_view</strong> er_subclass_view <strong>--debug</strong> &gt; logfile</p>
-<p>*For loading data into CompositeElementResultImp table
-ga GUS::Supported::Plugin::LoadArrayResults <strong>[options]</strong> <strong>--data_file</strong> data_file <strong>--array_design_id</strong> array_design_id <strong>--e_subclass_view</strong> e_subclass_view <strong>--quantification_id</strong> quantification_id <strong>--cr_subclass_view</strong> cr_subclass_view <strong>--commit</strong> &gt; logfile</p>
-<p>*For loading data into CompositeElementResultImp table such as loading Affymetrix Chp data
-ga  GUS::Supported::Plugin::LoadArrayResults <strong>[options]</strong> <strong>--data_file</strong> data_file <strong>--array_design_id</strong> array_design_id <strong>--c_subclass_view</strong> c_subclass_view  <strong>--quantification_id</strong> quantification_id <strong>--cr_subclass_view</strong> cr_subclass_view <strong>--debug</strong> &gt; logfile</p>
-<p>*For loading data into ElementResultImp and CompositeElementResultImp table
-ga  GUS::Supported::Plugin::LoadArrayResults <strong>[options]</strong> <strong>--data_file</strong> data_file <strong>--array_design_id</strong> array_design_id <strong>--e_subclass_view</strong> e_subclass_view  <strong>--quantification_id</strong> quantification_id <strong>--er_subclass_view</strong> er_subclass_view <strong>--cr_subclass_view</strong> cr_subclass_view <strong>--rel_quantification_id</strong> rel_quantification_id <strong>--debug</strong> &gt; logfile</p>
-<p>*For loading two-channel data into ElementResultImp and CompositeElementResultImp table
-ga  GUS::Supported::Plugin::LoadArrayResults <strong>[options]</strong> <strong>--data_file</strong> data_file <strong>--array_design_id</strong> array_design_id <strong>--e_subclass_view</strong> e_subclass_view  <strong>--quantification_id</strong> quantification_id <strong>--er_subclass_view</strong> er_subclass_view <strong>--cr_subclass_view</strong> cr_subclass_view <strong>--rel_quantification_id</strong> rel_quantification_id <strong>--commit</strong> &gt; logfile</p>
-<p>
-</p>
-<h2><a name="specicial_notes">Specicial notes</a></h2>
-<p>The plug-in outputs a print statement to STDOUT (for possible redirection to a log file) which lists the number of data file lines read (counting empty lines, but not counting the header and the lines preceding it in the data file) and any warning <code>statement(s)</code> regarding data lines which have not been loaded into RAD.</p>
+<p>The plug-in outputs to STDOUT (for possible redirection to a log file): the number of data file lines read (counting empty lines, but not counting the header and the lines preceding it in the data file), any warning statement regarding data lines which have not been loaded into RAD.</p>
 <p>
 </p>
 <h2><a name="data_file"><em>data_file</em></a></h2>
-<p>The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.</p>
-<p>* The header contains a list of attributes, which can be divided into two categories. One is position attributes which is used to identify the location of each element in array or compositeElement identifier such as probe set name. The other is view attributes which is defined in the view of ElementResultImp and CompositeElementResultImp.</p>
-<p>* All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.</p>
-<p>* Every element for which the position attributes are available should have these stored in the database in order to determine the element_id and/or composite_element_id.</p>
-<p>* Depending on array platform, the position attributes are different. If  the command line argument ``e_subclass_view'' is set to ``Spot'', then position attributes will be array_row, array_column, grid_row, grid_column, sub_row and sub_column. If  the command line argument ``e_subclass_view'' is set to ``ShortOligo'', then position attributes will be x_position and y_position. You will need to have these columns in the data file for each row.</p>
-<p>* If you only load the compositeElementResult for affymetrix data, you have option to use probe set identifier to set the composite_element_id without using the position attributes of x_position and y_position. First, set command line argument ``c_subclass_view'' to ``ShortOligoFamily'', second, use the ``posOption'' to set the probe set identifier, its default is 1, which uses ``name'' as the probe set identifier; 2 means using ``external_database_release_id''and ``source_id'' as the probe set identifier; 3 means using ``external_database_release_id'', ``source_id'' and ``name'' as the probe set identifier.</p>
-<p>* If the data file contains two-channel array data, then you can use ``channel1.attributeName'' and ``channel2.attributeName'' to denote each channel data.</p>
+<p>* The data file should be in tab-delimited text format with one header row and one row for each element or composite_element. All rows should contain the same number of tabs/fields.</p>
+<p>* The header for this file should contain ``identifier attributes'' to identify the (composite)element to which the result refer and ``view attributes'' corresponding to the fields in the view of RAD.(Composite)ElementResultImp to be filled in. These should be in lower case. See below for more details.</p>
+<p>* If the data file refers to 2-channel array data, a prefix like ``channel1'' or ``channel2'' should precede each view attribute: ``channel1.attributeName'' and ``channel2.attributeName'' will distinguish the values for the same field corresponding to the two different channels.</p>
+<p>------------------------------------------------------</p>
+<p>* The ``identifier attributes'' to be used depend on the technology. (The posOption argument is an additonal argument which allows for different identifier attributes to be used when dealing with short-oligo, e.g. Affymetrix, data.)</p>
+<pre>
+ if c_subclass_view eq 'ShortOligoFamily' and posOption == 1 
+   then the identifier attribute provided in the data file is 'name' (as in RAD.ShortOligoFamily)</pre>
+<pre>
+ if c_subclass_view eq 'ShortOligoFamily' and posOption == 2
+   then the identifier attributes provided in the data file are 'external_database_release_id' and 'source_id' (as in RAD.ShortOligoFamily)</pre>
+<pre>
+ if c_subclass_view eq 'ShortOligoFamily' and posOption == 3
+   then the identifier attributes provided in the data file are 'name', 'external_database_release_id', and 'source_id' (as in RAD.ShorgOligoFamily)</pre>
+<pre>
+ if c_subclass_view eq 'SAGETag'
+    then the identifier attribute provided in the data file must be 'tag' (as in RAD.SAGETag)</pre>
+<pre>
+ if c_subclass_view eq 'MPSSTag'
+     then the identifier attribute provided in the data file must be 'tag' (as in RAD.MPSSTag)</pre>
+<pre>
+ if e_subclass_view eq 'Spot'
+     then the identifier attributes provided in the data file must be 'array_row', 'array_column','grid_row', 'grid_column', 'sub_row', and 'sub_column' (as in RAD.Spot)</pre>
+<p>if e_subclass_view eq 'RTPCRElement'
+       then the identifier attributes provided in the data file are 'external_database_release_id' and 'source_id' (as in RAD.RTPCRElement)</p>
+<p>------------------------------------------------------</p>
+<p>* The ``view attributes'' must match attributes from the view which the plugin will populate and be written in lower case.</p>
 <p>* Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.</p>
-<p>* If any values in data file larger than the maximum value or smaller than minimum value that corresponding field in database allows, then the plugin will reset the value to maximum or minimum value of that field.
-Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.</p>
+<p>* If any value in the data file is larger than the maximum value or smaller than minimum value allowed in the database for the corresponding field, then the plugin will reset the value to the maximum or minimum value for that field.</p>
+<p>* Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into multiple view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one view attribute, you will need to re-parse your data file and merge this information into one column.</p>
 <p>
 </p>
 <hr />
