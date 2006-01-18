@@ -197,7 +197,7 @@ The plug-in outputs to STDOUT (for possible redirection to a log file): the numb
  if e_subclass_view eq 'Spot'
      then the identifier attributes provided in the data file must be 'array_row', 'array_column','grid_row', 'grid_column', 'sub_row', and 'sub_column' (as in RAD.Spot)
 
-if e_subclass_view eq 'RTPCRElement'
+ if e_subclass_view eq 'RTPCRElement'
        then the identifier attributes provided in the data file are 'external_database_release_id' and 'source_id' (as in RAD.RTPCRElement)
 
 ------------------------------------------------------
