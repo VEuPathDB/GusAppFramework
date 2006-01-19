@@ -1397,6 +1397,247 @@ sub logWrap {
 
 =head2 SQL utilities
 
+=head3 New Version
+
+The new version of these methods take a hash (ref) as an argument
+which can contain the following keys.
+
+  Sql    - string - an SQL statement to evaluate
+
+  Handle - statement handle - previously prepared
+  Bind   - array ref        - values to bind to Handle
+
+  Code   - code ref - a call back routine to process each row.
+         - string   - name of a plugin method to call with row as argument.
+
+Sql or Handle and Bind must be present.
+
+Code is optional.  If not supplied then all rows will be returned in
+an array (ref).  Fetching will stop when Code function returns a false
+value.
+
+For example
+
+  # get a list of user_ids from the database
+  my @ids = $Self->sqlAsArray( Sql => 'select user_id from SRes.UserInfo' );
+
+  # build up a dictionary of user ids
+  my %users = ();
+  $Self->sqlAsHashRef( Sql  => 'select user_id, last_name from SRes.UserInfo',
+                       Code => sub {
+                          my $Row = shift;
+                          $users{$Row->{user_id}} = $Row->{last_name}
+                          return 1;
+                       }
+                     );
+
+  #
+  $Self->sqlAsArray( Sql  => 'select user_id, last_name from SRes.UserInfo',
+                     Code => 'processUser'
+                   );
+  ...
+  sub processUser {
+     my $Self     = shift;
+     my $UserId   = shift;
+     my $LastName = shift;
+
+     # process
+     ...
+
+     return 1;
+  }
+
+  # as above, but more simply.
+  my $users = $Self->sqlAsDictionary( Sql  => 'select user_id, last_name from SRes.UserInfo' );
+
+
+=cut
+
+sub sqlDie {
+   my $Self = shift;
+   my $Sql  = shift;
+
+   $Self->log('INFO', 'OffendingSqlStatement', $Sql);
+   die $@;
+}
+
+sub sqlGetStatementHandle {
+   my $Self = shift;
+   my $Args = shift;
+
+   my $Rv;
+
+   if (defined $Args->{Sql}) {
+      eval { $Rv = $Self->getQueryHandle->prepareAndExecute($Args->{Sql}) };
+      $@ && $Self->sqlDie($Args->{Sql});
+   }
+   else {
+      $Rv = $Args->{Handle};
+      $Rv->execute(@{$Args->{Bind}});
+   }
+
+   return $Rv;
+}
+
+=pod
+
+=head4 sqlAsArray
+
+Fetches rows as arrays.  If there is no C<Code> supplied, then the
+rows are merged into one big array for the return value.  This is most
+useful when there is only one column or one row returned.
+
+=cut
+
+sub sqlAsArray {
+   my $Self = shift;
+   my $Args = ref $_[0] ? shift : {@_};
+
+   my @Rv;
+
+   my $sh = $Self->sqlGetStatementHandle($Args);
+
+   eval {
+
+      my $Code = $Args->{Code};
+
+      # code ref
+      if (ref $Code) {
+         while (my @row = $sh->fetchrow_array()) {
+            last unless $Code->(@row);
+         }
+      }
+
+      # method name
+      elsif ($Code) {
+         while (my @row = $sh->fetchrow_array()) {
+            last unless $Self->$Code(@row);
+         }
+      }
+
+      # push on list
+      else {
+         while (my @row = $sh->fetchrow_array()) {
+            push(@Rv, @row);
+         }
+      }
+
+      $sh->finish();
+   };
+
+   $@ && $Self->sqlDie($Args->{Sql});
+
+   return wantarray ? @Rv : \@Rv;
+}
+
+sub sqlAsArrayRefs {
+   my $Self = shift;
+   my $Args = ref $_[0] ? shift : {@_};
+
+   my @Rv;
+
+   my $sh = $Self->sqlGetStatementHandle($Args);
+
+   eval {
+
+      my $Code = $Args->{Code};
+
+      # code ref
+      if (ref $Code) {
+         while (my $row = $sh->fetchrow_arrayref()) {
+            last unless $Code->($row);
+         }
+      }
+
+      # method name
+      elsif ($Code) {
+         while (my $row = $sh->fetchrow_arrayref()) {
+            last unless $Self->$Code($row);
+         }
+      }
+
+      # push on list
+      else {
+         while (my $row = $sh->fetchrow_arrayref()) {
+            push(@Rv, $row);
+         }
+      }
+
+      $sh->finish();
+   };
+
+   $@ && $Self->sqlDie($Args->{Sql});
+
+   return wantarray ? @Rv : \@Rv;
+}
+
+sub sqlAsHashRefs {
+   my $Self = shift;
+   my $Args = ref $_[0] ? shift : {@_};
+
+   my @Rv;
+
+   my $sh = $Self->sqlGetStatementHandle($Args);
+
+   eval {
+
+      my $Code = $Args->{Code};
+
+      # code ref
+      if (ref $Code) {
+         while (my $row = $sh->fetchrow_hashref('NAME_lc')) {
+            last unless $Code->($row);
+         }
+      }
+
+      # method name
+      elsif ($Code) {
+         while (my $row = $sh->fetchrow_hashref('NAME_lc')) {
+            last unless $Self->$Code($row);
+         }
+      }
+
+      # push on list
+      else {
+         while (my $row = $sh->fetchrow_hashref('NAME_lc')) {
+            push(@Rv, $row);
+         }
+      }
+
+      $sh->finish();
+   };
+
+   $@ && $Self->sqlDie($Args->{Sql});
+
+   return wantarray ? @Rv : \@Rv;
+}
+
+=pod
+
+=head2 sqlAsDictionary
+
+Assumes the query has (at least) two columns.  It executes the query
+and uses the first column as the key and the second column as the
+value.  The results are put in a dictionary (hash) which is return as
+a ref or not depending on the context.
+
+=cut
+
+sub sqlAsDictionary {
+   my $Self = shift;
+   my $Args = ref $_[0] ? shift : {@_};
+
+   my %Rv;
+
+   my $args = { %$Args,
+                Code => sub { $Rv{$_[0]} = $_[1] }
+              };
+   $Self->sqlAsArrayRef($args);
+
+   return wantarray ? %Rv : \%Rv;
+}
+
+# ------------------------ Old Style SQL Support -------------------------
 =over 4
 
 =item C<sql_get_as_array()>
@@ -1406,6 +1647,7 @@ sub logWrap {
 B<Return type:> C<string>
 
 =cut
+
 sub sql_get_as_array {
   my $Self = shift;
   my $Sql = shift;		# SQL query
@@ -1455,6 +1697,7 @@ sub sql_get_as_array_refs {
   my $Sql = shift;		# SQL query
   my $H = shift;		# handle and ...
   my $B = shift;		# bind args which are used only if SQL is not defined.
+  my $CallBack = shift;
 
   my @RV;
 
