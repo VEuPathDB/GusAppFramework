@@ -48,6 +48,10 @@ public abstract class View extends DatabaseObject implements Comparable {
         return column;
     }
 
+    public void setColumns( ArrayList<ColumnPair> colpair) {
+        column = colpair;
+    }
+
     public void addColumn( ColumnPair columnPair ) {
         if ( !this.column.contains( columnPair ) ) {
             this.column.add( columnPair );
