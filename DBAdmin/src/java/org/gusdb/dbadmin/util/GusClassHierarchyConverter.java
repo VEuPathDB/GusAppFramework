@@ -363,6 +363,9 @@ private GusView buildSuperClassView( ) {
             superClassView.setVersioned( true );
             verSql = sql.concat( " " );
 
+	    // We need to add the superclass columns to the version view. 
+	    superClassView.getVersionView( ).setColumns((ArrayList<ColumnPair>) superClassView.getColumns().clone());
+
             for ( Column column : verHousekeepingColumns ) {
                 verSql = verSql.concat( ", " + column.getName( ) );
                 superClassView.getVersionView( ).addColumn( new ColumnPair( column.getName( ), column.getName( ) ) );
@@ -448,7 +451,8 @@ private GusView buildSuperClassView( ) {
         if ( impTable.isVersioned( ) ) {
             subClass.setVersioned( true );
             verSql = sql.concat( " " );
-
+	    // We need to add the subclass_view's columns 
+	    subClass.getVersionView( ).setColumns((ArrayList<ColumnPair>) subClass.getColumns().clone());
             for ( Column column : verHousekeepingColumns ) {
                 verSql = verSql.concat( ", " + column.getName( ) );
                 subClass.getVersionView( ).addColumn( new ColumnPair( column.getName( ), column.getName( ) ) );
