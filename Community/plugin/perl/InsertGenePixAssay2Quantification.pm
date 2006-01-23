@@ -490,7 +490,7 @@ sub getImageFileNames {
     my ($fileName, $extension) = $imageFile =~ /(.+)\.(\w+$)/;
     my ($assay, $type) = $fileName =~ /(.+)\_(.+)/;
 
-    if ($combinedFilesStatus eq "yes" && $type eq $combinedFilesExtension) {
+    if ($combinedFilesStatus eq "yes" && $extension eq $combinedFilesExtension) {
 
       $imageFilesLocationRef->{$assay."_$cy5ChannelDef"} = $imageRepositoryPath.$tiffFilesPath.$imageFile;
       $imageFilesLocationRef->{$assay."_$cy3ChannelDef"} = $imageRepositoryPath.$tiffFilesPath.$imageFile;
