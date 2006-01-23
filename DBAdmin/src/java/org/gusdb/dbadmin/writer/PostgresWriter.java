@@ -13,6 +13,7 @@ import org.gusdb.dbadmin.model.DatabaseObject;
 import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.GusView;
+import org.gusdb.dbadmin.model.VersionView;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Sequence;
 import org.gusdb.dbadmin.model.View;
@@ -108,6 +109,8 @@ public class PostgresWriter extends RelationalDatabaseWriter {
         super.writeView( view );
         if ( view instanceof GusView ) {
             writeViewRules( (GusView) view );
+        }else if ( view instanceof VersionView ) {
+            writeVersionViewRules( (VersionView) view );
         }
     }
 
@@ -115,8 +118,6 @@ public class PostgresWriter extends RelationalDatabaseWriter {
      * Since PostgreSQL doesn't support updatable views, this is a hack that
      * uses rules to mimick the updatable view functionality.
      * 
-     * TODO: Note that this means version views are now not updatable since they 
-     * don't have a PK.
      * 
      * @param view DOCUMENT ME!
      * @throws IOException DOCUMENT ME!
@@ -175,6 +176,46 @@ public class PostgresWriter extends RelationalDatabaseWriter {
         oStream.write( "CREATE SEQUENCE " + sequence.getTable( ).getSchema( ).getName( ) + "." );
         oStream.write( sequence.getName( ) + " START " + sequence.getStart( ) + ";\n" );
         oStream.flush( );
+    }
+
+
+    /**
+     * Since PostgreSQL doesn't support updatable views, this is a hack that
+     * uses rules to mimick the updatable view functionality.
+     * 
+     * Version views are now not updatable since they 
+     * don't have a PK, so we limit rules to insertion
+     * 
+     * @param view DOCUMENT ME!
+     * @throws IOException DOCUMENT ME!
+     */
+    private void writeVersionViewRules( VersionView view ) throws IOException {
+        oStream.write( "CREATE RULE " + view.getName( ) + "_" + random.nextInt( 100000 ) + " AS ON INSERT TO "
+                + view.getSchema( ).getName( ) + "." + view.getName( ) + " DO INSTEAD INSERT INTO  "
+                + view.getTable( ).getSchema( ).getName( ) + "." + view.getTable( ).getName( ) + " ( " );
+
+        boolean first = true;
+        for ( ColumnPair columnPair : view.getColumns() ) {
+            if ( !first ) {
+                oStream.write( ", " );
+            }
+            oStream.write( columnPair.getTableName( ) );
+            first = false;
+        }
+
+        oStream.write( " ) VALUES ( " );
+
+        first = true;
+        for ( ColumnPair columnPair : view.getColumns() ) {
+            if ( !first ) {
+                oStream.write( ", " );
+            }
+            oStream.write( "new." + columnPair.getViewName( ) );
+            first = false;
+        }
+
+        oStream.write( " );\n\n" );
+
     }
 
     /**
