@@ -115,7 +115,7 @@ Populate mappings in RAD.ElementDbRef and RAD.CompositeElementsDbRef between SRe
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-Populate mappings between SRes.DbRef and DoTS.ExternalNaSequence and RAD.ShortOligoFamily or RAD.Spot from microarray annotations file.  Mappings are inserted in RAD.CompositeElementDbRef or RAD.ElementDbRef. Element and CompositeElements re supported, including MPSS Tags.
+Populate mappings between SRes.DbRef and DoTS.ExternalNaSequence and RAD.ShortOligoFamily or RAD.Spot from microarray annotations file.  Mappings are inserted in RAD.CompositeElementDbRef or RAD.ElementDbRef. Element and CompositeElements re supported, including MPSS Tags and RT-PCR.
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
@@ -152,7 +152,7 @@ sub new {
     bless($self, $class);
     
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 4413 $', #CVS fills this in
+		       cvsRevision =>  '$Revision$', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
