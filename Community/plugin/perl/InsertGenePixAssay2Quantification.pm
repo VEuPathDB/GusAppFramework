@@ -167,6 +167,7 @@ This plugin assumes that the following entries exist in your instance of the dat
  2.  The appropriate GenePix array in RAD.Array
  3.  The hybridization protocol, the acquisition protocol, the quantification protocol in RAD.Protocol
  4.  Quantification parameters for quantification in RAD.ProtocolParam
+ 5.  Image files adhere to the following naming convention: name_label.ext (ex.test_Cy3.tif)
 
 If any of the above is missing, the plugin will report an error.
 
