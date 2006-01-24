@@ -468,8 +468,12 @@ sub createNewExternalSequence {
 	 'source_id' => $source_id,
 	 'subclass_view' => $tbl });
 
-  if ($secondary_id && $aas->isValidAttribute('name')) {
+  if ($secondary_id && $aas->isValidAttribute('secondary_identifier')) {
     $aas->set('secondary_identifier',$secondary_id);
+  }
+
+  if ($name && $aas->isValidAttribute('name')) {
+    $aas->set('name',$name);
   }
 
   if ($self->{sequenceTypeId} && $aas->isValidAttribute('sequence_type_id')) {
