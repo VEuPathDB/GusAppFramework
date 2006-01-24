@@ -72,7 +72,7 @@ sub validateInfo {
 
     foreach my $key (keys(%validToolsKeys)) {
       $self->error("'$key' is a required documentation field for a tool")
-	unless $tool->{$key};
+	unless defined($tool->{$key});
     }
 
 #  $self->error("in tool '$tool->{name}', tool->{pubmedIds} must be a ref to a (possibly empty) array of pubmed ids")
