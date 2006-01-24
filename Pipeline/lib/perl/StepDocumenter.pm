@@ -102,12 +102,12 @@ XML
     foreach my $tool (@tools) {
       $xml .= <<TABLE;
       <row>
-        <column name="name">$tool->{name}</column>
-        <column name="version">$tool->{version}</column>
-        <column name="params">$tool->{params}</column>
-        <column name="url">$tool->{url}</column>
-        <column name="pubmedIds">$tool->{pubmedIds}</column>
-        <column name="credits">$tool->{credits}</column>
+        <attribute name="name">$tool->{name}</attribute>
+        <attribute name="version">$tool->{version}</attribute>
+        <attribute name="params">$tool->{params}</attribute>
+        <attribute name="url">$tool->{url}</attribute>
+        <attribute name="pubmedIds">$tool->{pubmedIds}</attribute>
+        <attribute name="credits">$tool->{credits}</attribute>
       </row>
 TABLE
     }
