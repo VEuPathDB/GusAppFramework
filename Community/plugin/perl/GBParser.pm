@@ -5,6 +5,7 @@ package GUS::Community::Plugin::GBParser;
 use strict;
 use FileHandle;
 use DBI;
+use GUS::PluginMgr::Plugin;
 
 use CBIL::Bio::GenBank::Entry;
 use CBIL::Bio::GenBank::IoStream;
@@ -128,11 +129,13 @@ my $argsDeclaration =
 	     descr => 'Enter records starting from this ordinal number. For restart, start is N=xxxx + 1 in STDERR',
 	     constraintFunc => undef,
 	     reqd => 0,
+	     isList => 0
 	    }),
  integerArg({name => 'testnumber',
 	     descr => 'number of iterations for testing',
 	     constraintFunc => undef,
 	     reqd => 0,
+	     isList => 0
 	    }),
  stringArg({name => 'div',
 	    descr => 'Optional:Entries filtered on DIV in first line of GenBank record (ex:LOCUS ...PRI 29-OCT-2002,div=PRI',
@@ -143,7 +146,9 @@ my $argsDeclaration =
  integerArg({name => 'failTolerance',
 	     descr => 'number of entries that can fail before aborting',
 	     reqd => 0,
-	     default => '100'
+	     constraintFunc => undef,
+	     default => '100',
+	     isList => 0
 	    })
 ];
 
@@ -191,16 +196,18 @@ sub run {
 
   $self->setPointerCacheSize(50000);
   $self->setWholeTableCache();
-  my $fh  = $self->getArg('file') =~ /\.gz$|\.Z$/ ?
-    FileHandle->new( "zcat $self->getArg('file')|" )
-      : FileHandle->new( '<'. $self->getArg('file') );
-  
-  die "Can't open file $self->getArg('file')" unless $fh;
+  my $file = $self->getArg('file');
 
-  $self->logAlert("RELEASE", "$self->getArg('gbRel')\n");
-  $self->logAlert("FILE", "$self->getArg('file')\n");
+  my $fh  = $file =~ /\.gz$|\.Z$/ ?
+    FileHandle->new( "zcat $file |" )
+      : FileHandle->new( "< $file");
+
+  die "Can't open file" . $self->getArg('file') unless $fh;
+
+  $self->logAlert("RELEASE " . $self->getArg('gbRel') . "\n");
+  $self->logAlert("FILE " . $self->getArg('file') . "\n");
   if ($self->getArg('start')) {
-    $self->logAlert("START", "$self->getArg('start')\n");
+    $self->logAlert("START " . $self->getArg('start') . "\n");
   }
 
   $self->{entryCnt} = 0;
@@ -209,7 +216,9 @@ sub run {
   $self->{insertCnt} = 0;
   $self->{failCnt} = 0;
 
-  while ( my $entryLines = &getEntryLines($fh)) {
+  while ( my $entryLines = $self->getEntryLines($fh)) {
+    my $num = scalar (@$entryLines);
+
     last unless scalar (@$entryLines);
     $self->{entryCnt}++;
     my $entryStream = CBIL::Bio::GenBank::ArrayStream->new($entryLines);
@@ -225,7 +234,7 @@ sub run {
     $self->handleFailure($entryLines, $@) if ($@);
   }
   ## Close DBI handle
-  $self->closeQueryHandle();
+  #$self->closeQueryHandle();
 
 
   $self->log("Genbank entries inserted= $self->{insertCnt};  updated= $self->{updateCnt}; total #(inserted::updated::deleted)=" . $self->getTotalInserts() . "::" . $self->getTotalUpdates() . "::" . $self->getTotalDeletes() .  "\n");
@@ -268,7 +277,7 @@ sub processEntry {
   if ($chkdif && !$self->getArg('updateAll')) { 
     my $dbDate = ($naentry->getUpdateDate()) ? $naentry->getUpdateDate() : $naentry->getCreatedDate();
     $dbDate =~ s/^(\S+)\s+.+$/$1/;
-    return if( &dbDateMoreRecent($dbDate,$e->{LOCUS}->[0]->getDate()));
+    return if( $self->dbDateMoreRecent($dbDate,$e->{LOCUS}->[0]->getDate()));
   }
 
   ## Entry must either be new or need an update if we get to this point
@@ -383,7 +392,7 @@ sub buildNAEntry {
 	   'division' => $e->{LOCUS}->[0]->getDivision(),
 	   'version' => $e->{VERSION}->[0]->getSeqVersion(),
 	  ) ;
-  my $date = &formatDate($e->{LOCUS}->[0]->getDate());
+  my $date = $self->formatDate($e->{LOCUS}->[0]->getDate());
   if ($chkdif) { 
     $h{'update_date'} = $date;
     $h{'update_rel_ver'}  =  $self->getArg('gbRel');
@@ -396,7 +405,7 @@ sub buildNAEntry {
   my $o = GUS::Model::DoTS::NAEntry->new(\%h);
 
   if ($e->{ACCESSION}->[0]->getSecondaryAccession()) {
-    $o->addChild(&buildSecondaryAccs($e->{ACCESSION}->[0]));
+    $o->addChild($self->buildSecondaryAccs($e->{ACCESSION}->[0]));
   }
   return $o;
 }
@@ -617,7 +626,6 @@ sub buildComplexLoc {
       push @O,$o;
     }
   } elsif ($type =~ /^exact|midpoint|above|below/) {
-    print "********Building point location\n @$loc\n";
     $o =  $self->buildPointLoc($loc,$type,$debug,$isRev,$dbId,$remark,$order, $lit_seq);
     push @O,$o;	
   } elsif ($type eq 'replace') {
@@ -714,14 +722,11 @@ sub getStartPos {
   ## $l is an array_ref
   my @a;
   if ( @$l == 1) {		# this means a complicated span location
-    print "********GEtting loc complex   @$l\n";
     @a = ($l->[0]->[1]->[1],$l->[0]->[2]->[1],1);
   } else {
     if ($l->[0] eq 'below') {
-      print "\n\n********GEtting loc below", $l->[1],"\n\n";
       @a = (undef, $l->[1]);
     } elsif ( $l->[1] =~ /\((\d+)\.(\d+)/) {
-      print "********GEtting loc DOT $l->[1]\n";
       @a = ($1, $2, 1) ;
     } else {
       @a = ($l->[1],$l->[1], undef, 1);
@@ -826,15 +831,31 @@ sub getDbXRefId {
   my ($self,$k) = @_;
   if (!$DbRefCache{$k}) {
     my ($db,$id,$sid)= split /\:/, $k;
-    my $dbref = GUS::Model::SRes::DbRef->new({'external_database_release_id' => $self->getDbRelId($db),'primary_identifier' => $id});
+    my $dbRelId = $self->getDbRelId($db);
+    my $dbref = GUS::Model::SRes::DbRef->new({'external_database_release_id' => $dbRelId,'primary_identifier' => $id});
     if ($sid) {
       $dbref->set('secondary_identifier',$sid);
     }
-    unless ($dbref->retrieveFromDB()) {
+
+
+    my $dbh = $self->getDbHandle();
+  
+  ##setup global hash for ExternalDatabaseRelease
+    my $st = $dbh->prepare("select db_ref_id
+                          from sres.DbRef 
+                          where external_database_release_id = ? and primary_identifier = ?");
+    $st->execute($dbRelId,$id);
+
+    my $dbRefId = $st->fetchrow_array();
+
+    $st->finish();
+
+    unless ($dbRefId) {
       $dbref->submit();
     }
     ;
-    $DbRefCache{$k} = $dbref->getId();
+    $DbRefCache{$k} = $dbRefId ? $dbRefId : $dbref->getId();
+
   }
   return ($DbRefCache{$k});
 }
@@ -928,7 +949,7 @@ sub setWholeTableCache{
   my $dbh = $self->getQueryHandle();
   
   ##setup global hash for ExternalDatabaseRelease
-  my $st = $dbh->prepare("select e.lowercase_name, r.external_database_release_id 
+  my $st = $dbh->prepare("select e.name, r.external_database_release_id 
                           from sres.ExternalDatabase e, sres.ExternalDatabaseRelease r 
                           where r.external_database_id = e.external_database_id and r.version = 'unknown'");
   $st->execute() || die $st->errstr;
