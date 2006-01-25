@@ -7,7 +7,7 @@ package GUS::Community::Plugin::Report::ListSchema;
 use strict;
 
 use FileHandle;
-use V;
+use CBIL::Util::V;
 
 use GUS::PluginMgr::Plugin;
 
@@ -37,7 +37,19 @@ sub new {
 
       # ARGUMENTS
       argsDeclaration   =>
-      [
+      [ booleanArg({ name   => 'FromOracle',
+                     descr  => 'read Oracle tables for info',
+                     reqd   => 0,
+                     isList => 0,
+                     constraintFunc => sub { CfIsAnything(@_) },
+                   }),
+
+        booleanArg({ name   => 'FromGus',
+                     descr  => 'read Oracle tables for info',
+                     reqd   => 0,
+                     isList => 0,
+                     constraintFunc => sub { CfIsAnything(@_) },
+                   }),
       ],
 
       # DOCUMENTATION
@@ -71,6 +83,91 @@ sub run {
    my $Self       = shift;
 
    $Self->logArgs();
+
+   $Self->oracleDump() if $Self->getArg('FromOracle');
+   $Self->gusDump()    if $Self->getArg('FromGus');
+
+   return "That's all folks!";
+}
+
+# ------------------------------ oracleDump ------------------------------
+
+sub oracleDump {
+   my $Self = shift;
+
+   my @_tables = sort {
+      $a->{owner} cmp $b->{owner} ||
+      $a->{table_name} cmp $b->{table_name}
+   } $Self->sqlAsHashRefs( Sql => <<Sql );
+SELECT owner, table_name
+FROM   all_tables
+WHERE  owner in ('CORE', 'DOTS', 'PROT', 'RAD', 'SRES', 'STUDY', 'TESS')
+Sql
+
+   my $cols_sh = $Self->getQueryHandle()->prepare(<<Sql);
+SELECT column_name, data_type, data_precision, data_scale, column_id
+FROM   all_tab_columns
+WHERE  owner      = ?
+AND    table_name = ?
+Sql
+
+   my $ndx_sh = $Self->getQueryHandle()->prepare(<<Sql);
+SELECT index_name
+FROM   ALL_IND_COLUMNS
+WHERE  table_owner = ?
+AND    table_name  = ?
+AND    column_name = ?
+Sql
+
+   my $inRef_sh = $Self->getQueryHandle()->prepare(<<Sql);
+SELECT constraint_name, r_owner, r_constraint_name
+FROM   ALL_CONSTRAINTS
+WHERE  owner      = ?
+AND    table_name = ?
+AND    constraint_type = 'R'
+Sql
+
+  foreach my $_table (@_tables) {
+
+     print join("\t", $_table->{owner}, $_table->{table_name}), "\n";
+
+     my @_columns = sort {
+        $a->{column_id} <=> $b->{column_id}
+     } $Self->sqlAsHashRefs( Handle => $cols_sh,
+                             Bind   => [ $_table->{owner}, $_table->{table_name} ]
+                          );
+
+     my @_inRefs = $Self->sqlAsHashRefs( Handle => $inRef_sh,
+                                         Bind   => [ $_table->{owner}, $_table->{table_name} ]
+                                       );
+     foreach my $_inRef (@_inRefs) {
+        print join("\t",
+                   '<--',
+                   ( map { $_inRef->{$_} } qw( constraint_name r_owner r_constraint_name ) )
+                  ), "\n";
+     }
+
+     my $name_n = CBIL::Util::V::max(map { length $_->{column_name} } @_columns);
+     my $_fmt   =  '%-'.$name_n. '.'. $name_n. 's';
+
+     foreach my $_col (@_columns) {
+        my @row = ( '',
+                    sprintf($_fmt, lc $_col->{column_name}),
+                    map { $_col->{$_} } qw( data_type data_precision data_scale)
+                  );
+        my @indices = $Self->sqlAsArray( Handle => $ndx_sh,
+                                         Bind   => [ $_table->{owner}, $_table->{table_name}, $_col->{column_name} ]
+                                       );
+        push(@row, @indices);
+        print join("\t", @row), "\n";
+     }
+  }
+}
+
+# ------------------------------- gusDump --------------------------------
+
+sub gusDump {
+   my $Self = shift;
    
    # get maximum width of databasenames
    my ($table_w) = @{$Self->sql_get_as_array
