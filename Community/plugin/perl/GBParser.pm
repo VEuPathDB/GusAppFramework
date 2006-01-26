@@ -574,7 +574,12 @@ sub getProperQualifier {
 	   'country' => 'note',
 	   'pseudo' => 'is_pseudo',
 	   'partial' => 'is_partial',
-	   'estimated_length' => 'num'
+	   'estimated_length' => 'num',
+	   'mol_type' => 'sequenced_mol',
+	   'isolation_source' => 'isolate',
+	   'rpt_unit_seq' => 'rpt_unit',
+	   'experiment' => 'evidence',
+	   'rpt_unit_range' => 'map'
 	  );
 
   ($h{$t}) ? ($q->setTag($h{$t})) : ($q->setTag(lc $t)) ;
