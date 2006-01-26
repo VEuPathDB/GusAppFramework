@@ -17,6 +17,7 @@ use GUS::Model::DoTS::Clone;
 use GUS::Model::DoTS::Library;
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::SRes::SequenceOntology;
+use GUS::Model::DoTS::SequenceType;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
 use GUS::Model::SRes::Anatomy;
@@ -47,125 +48,113 @@ PURPOSE
 Copy mirrored dbEST data into GUS
 PURPOSE_BRIEF
 
-my $notes = <<NOTES;
+  my $notes = <<NOTES;
 Data is mapped from dbEST tables into GUS tables. Tables are mapped one to many.
 NOTES
 
-my $tablesAffected = <<TABLES_AFFECTED;
+  my $tablesAffected = <<TABLES_AFFECTED;
 TABLES_AFFECTED
 
-my $tablesDependedOn = <<TABLES_DEPENDED_ON;
+  my $tablesDependedOn = <<TABLES_DEPENDED_ON;
 TABLES_DEPENDED_ON
 
-my $howToRestart = <<RESTART;
+  my $howToRestart = <<RESTART;
+Plugin will not clobber the db but using restart will save time.Use restart_number option and the last id_est entered from mirrored dbEST or line number of last est entered if using update file.
 RESTART
 
-my $failureCases = <<FAIL_CASES;
+  my $failureCases = <<FAIL_CASES;
 FAIL_CASES
 
-my $documentation = { purpose          => $purpose,
-		      purposeBrief     => $purposeBrief,
-		      notes            => $notes,
-		      tablesAffected   => $tablesAffected,
-		      tablesDependedOn => $tablesDependedOn,
-		      howToRestart     => $howToRestart,
-		      failureCases     => $failureCases };
+  my $documentation = { purpose          => $purpose,
+			purposeBrief     => $purposeBrief,
+			notes            => $notes,
+			tablesAffected   => $tablesAffected,
+			tablesDependedOn => $tablesDependedOn,
+			howToRestart     => $howToRestart,
+			failureCases     => $failureCases };
 
 
-my $argsDeclaration = 
-[
- stringArg({name => 'gbRel',
-	    descr => 'Required:GenBank flat file release,ftp://ftp.ncbi.nih.gov/genbank/README.genbank',
-	    constraintFunc => undef,
-	    reqd => 1,
-	    isList => 0
-	   }),
- booleanArg({name => 'no_sequence_update',
-	     descr => 'No update of sequences in ExternalNASequence', 
-	     constraintFunc => undef,
-	     reqd => 0,
-	    }),
- stringArg({name => 'update_file',
-	    descr => 'An update file containing the EST entries that changed',
-	    constraintFunc => undef,
-	    reqd => 0,
-	    isList => 0
-	   }),
- integerArg({name => 'db_rel_id',
-	     descr => 'GUS SRes.ExternalDatabaseRelease id for GenBank',
-	     constraintFunc => undef,
-	     reqd => 1,
-	     isList => 0
- integerArg({name => 'restart_number',
-	     descr => 'line number if input is file, id_est if input is dbEST',
-	     constraintFunc => undef,
-	     reqd => 0,
-	     isList => 0
-	    }),
- integerArg({name => 'test_number',
-	     descr => 'number of iterations for testing',
-	     constraintFunc => undef,
-	     reqd => 0,
-	     isList => 0
-	    }),
- stringArg({name => 'log',
-	    descr => ' log file (path relative to current/working directory)',
-	    constraintFunc => undef,
-	    reqd => 0,
-	    default => 'DataLoad_dbEST.log',
-	    isList => 0
-	   }),
- integerArg({name => 'span',
-	     descr => 'number of entries in each batch to retieve from dbEST',
-	     reqd => 0,
-	     constraintFunc => undef,
-	     default => '100',
-	     isList => 0
-	    }),
- stringArg({ name => 'ncbiTaxId
-             description => 'Comma delimited list of ncbi tax ids, alternative to taxon_id_list',
-	     reqd => 0,
-             constraintFunc => udef,
-             isList => 0
-	    }),
- stringArg({ name => 'taxon_id_list',
-             description => 'Comma delimited list of taxon_ids to load,alternative to taxon_id_list',
-	     reqd => 0,
-             constraintFunc => undef,
-             isLiast => 0
-	    }),
- booleanArg({name => 'fullupdate',
-             description => 'flag indicating that atts should be checked for discrepensies',
-             reqd => 0,
-             constraintFunc => undef
-	    }),
- stringArg({ name => 'dblink',
-             description => 'the name of a dblink, if the dbEST mirror is a linked db',
-             reqd => 0,
-             constrintFunc => undef,
-             isList = 0
-            }),
- stringArg({ name = 'extDbName',
-             description => 'dots.externaldatabase.name',
-             reqd => 0,
-             constraintFunc => undef,
-             isLiast => 0
-                 },
-                 {h => 'dots.externaldatabaserelease.version',
-                  t => 'string',
-                  o => 'extDbRlsVer'
-                 },
-		 {h => 'version number used in sres.sequenceontology.so_version',
-                  t => 'string',
-                  o => 'soVer'
-                 }
-
-
-
-
-
-
-];
+  my $argsDeclaration = 
+    [
+     booleanArg({name => 'no_sequence_update',
+		 descr => 'No update of sequences in ExternalNASequence', 
+		 constraintFunc => undef,
+		 reqd => 0,
+		}),
+     stringArg({name => 'update_file',
+		descr => 'An update file containing the EST entries that changed',
+		constraintFunc => undef,
+		reqd => 0,
+		isList => 0
+	       }),
+     integerArg({name => 'restart_number',
+		 descr => 'line number if input is file, id_est if input is dbEST',
+		 constraintFunc => undef,
+		 reqd => 0,
+		 isList => 0
+		}),
+     integerArg({name => 'test_number',
+		 descr => 'number of iterations for testing',
+		 constraintFunc => undef,
+		 reqd => 0,
+		 isList => 0
+		}),
+     stringArg({name => 'log',
+		descr => 'log file (path relative to current/working directory)',
+		constraintFunc => undef,
+		reqd => 0,
+		default => 'DataLoad_dbEST.log',
+		isList => 0
+	       }),
+     integerArg({name => 'span',
+		 descr => 'number of entries in each batch to retieve from dbEST',
+		 reqd => 0,
+		 constraintFunc => undef,
+		 default => '100',
+		 isList => 0
+		}),
+     stringArg({ name => 'ncbiTaxId',
+		 descr => 'Comma delimited list of ncbi tax ids, alternative to taxon_id_list',
+		 reqd => 0,
+		 constraintFunc => undef,
+		 isList => 1
+	       }),
+     stringArg({ name => 'taxon_id_list',
+		 descr => 'Comma delimited list of taxon_ids to load,alternative to ncbiTaxId',
+		 reqd => 0,
+		 constraintFunc => undef,
+		 isList => 1
+	       }),
+     booleanArg({name => 'fullupdate',
+		 descr => 'flag indicating that atts should be checked for discrepensies',
+		 reqd => 0,
+		 constraintFunc => undef
+		}),
+     stringArg({ name => 'dblink',
+		 descr => 'the name of a dblink, if the dbEST mirror is a linked db',
+		 reqd => 0,
+		 constraintFunc => undef,
+		 isList => 0
+	       }),
+     stringArg({ name => 'extDbName',
+		 descr => 'dots.externaldatabase.name',
+		 reqd => 0,
+		 constraintFunc => undef,
+		 isList => 0
+	       }),
+     stringArg({name => 'extDbRlsVer',
+		descr => 'dots.externaldatabaserelease.version',
+		reqd => 0,
+		constraintFunc => undef,
+		isList => 0
+	       }),
+     stringArg({name => 'soVer',
+		descr => 'version number used in sres.sequenceontology.so_version',
+		reqd => 0,
+		constraintFunc => undef,
+		isList => 0
+	       })
+    ];
 
   $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision$',	# cvs fills this in!
@@ -177,83 +166,34 @@ my $argsDeclaration =
   return $self;
 }
 
-  
-
-
-		 { h => 'Comma delimited list of ncbi tax ids, alternative to taxon_id_list',
-		   t => 'string',
-		   o => 'ncbiTaxId',
-		   r => 0,
-		 },
-                 { h => 'Comma delimited list of taxon_ids to load,alternative to taxon_id_list',
-		   t => 'string',
-		   o => 'taxon_id_list',
-		   r => 0,
-		 },
-		 { h => 'flag indicating that atts should be checked for discrepensies',
-		   t => 'boolean',
-		   o => 'fullupdate'
-		 },
-                 {h => 'the name of a dblink, if the dbEST mirror is a linked db',
-                  t => 'string',
-                  o => 'dblink',
-                  r => 0,
-                 },
-                 {h => 'dots.externaldatabase.name',
-                  t => 'string',
-                  o => 'extDbName'
-                 },
-                 {h => 'dots.externaldatabaserelease.version',
-                  t => 'string',
-                  o => 'extDbRlsVer'
-                 },
-		 {h => 'version number used in sres.sequenceontology.so_version',
-                  t => 'string',
-                  o => 'soVer'
-                 }
-                 ];
-  
-  ## Initialize the plugin
-  
-  $M->initialize({requiredDbVersion => 3.5,
-                  cvsRevision => ' $Revision$ ', # cvs fills this in
-                  cvsTag => ' $Name:  $ ', # cvs fills this in!
-                  name => ref($M),
-                  revisionNotes => 'GUS 3.5 compliant',
-                  easyCspOptions => $easycsp,
-                  usage => 'Loads dbEST information into GUS',
-                });
-  
-  $M;
-}
 
 # ----------------------------------------------------------------------
 
 sub run {
-  my $M   = shift;
+  my ($self)   = shift;
 
-  $M->logRAIID;
-  $M->logCommit;
-  $M->logArgs;
+  $self->logAlgInvocationId;
+  $self->logCommit;
+  $self->logArgs;
 
   ## Set the log file
-  $M->getCla()->{log_fh}  = FileHandle->new(">" . $M->getCla->{log})
-    or die ("Log file " . $M->getCla->{log} . "not open\n");
-  $M->getCla()->{log_fh}->autoflush(1);
-  
-  ## Make a few cache tables for common info
-  $M->{libs} = {};          # dbEST library cache
-  $M->{anat} = {};          # Anatomy (tissue/organ) cache
-  $M->{taxon} = {};         # Taxonomy (est.organism) cache
-  $M->{contact} = {};       # Contact info cache
-  $M->setTableCaches();
-  
-  $M->{dbest_ext_db_rel_id} = $M->getExternalDatabaseRelease();
-  
-  my $nameStrings = $M->getNameStrings();
+  $self->{'log_fh'}  = FileHandle->new(">" . $self->getArg('log'))
+    or $self->userError("Log file " . $self->getArg('log') . "not open\n");
+  $self->{'log_fh'}->autoflush(1);
 
-  $M->{dblink} = $M->getArg('dblink');
-  
+  ## Make a few cache tables for common info
+  $self->{libs} = {};          # dbEST library cache
+  $self->{anat} = {};          # Anatomy (tissue/organ) cache
+  $self->{taxon} = {};         # Taxonomy (est.organism) cache
+  $self->{contact} = {};       # Contact info cache
+  $self->setTableCaches();
+
+  $self->{dbest_ext_db_rel_id} = $self->getExternalDatabaseRelease();
+
+  my $nameStrings = $self->getNameStrings();
+
+  $self->{dblink} =  $self->getArg('dblink') ? "@" . $self->getArg('dblink') : "";
+
   #####################################################################
   ## If an update file is given, use this as the basis 
   ## for an update. Otherwise query GUS for what needs to 
@@ -263,67 +203,68 @@ sub run {
   my $count = 0;
 
 	############################################################
-	# Put loop here...remember to $M->undefPointerCache()!
+	# Put loop here...remember to $self->undefPointerCache()!
 	############################################################
-  
-  if ($M->getCla->{update_file}) {
-    my $fh = FileHandle->new( "<" . $M->getCla->{update_file})  or 
-      die "Could not open update file ". $M->getCla->{update_file} . "\n";
-    
+
+  if ($self->getArg('update_file')) {
+    my $fh = FileHandle->new( "<" . $self->getArg('update_file'))  or 
+      $self->userError ("Could not open update file ". $self->getArg('update_file') . "\n");
+
     while (!$fh->eof()) {
       ## Testing condition 
-      last if ($M->getCla->{test_number} && $count > $M->getCla->{test_number});
+      last if ($self->getArg('test_number') && $count > $self->getArg('test_number'));
 
       ## Skip entries until we get to the restart point, if defined
-      next if ($M->getCla()->{restart_number} && $M->getCla()->{restart_number} > $fh->input_line_number);
+      next if ($self->getArg('restart_number') && $self->getArg('restart_number') > $fh->input_line_number);
       ## Main loop
       # A setof dbEST EST entries
       my ($e);
-      for (my $i = 0; $i < $M->getCla->{span}; $i++) {
+      for (my $i = 0; $i < $self->getArg('span'); $i++) {
 	last if $fh->eof();
         my $l = $fh->getline();
         my ($eid) = split /\t/, $l;
 	next unless ($eid);
-        my $ests = $M->sql_get_as_hash_refs_lc("select * from dbest.est\@$M->{dblink} where id_est = $eid");
+        my $ests = $self->sql_get_as_hash_refs_lc("select * from dbest.est$self->{dblink} where id_est = $eid");
         foreach my $est ( @{$ests}) {
           $e->{$est->{id_est}}->{e} = $est;
         }
       }
-      $count += $M->processEntries($e);
-      $M->undefPointerCache();
+      $count += $self->processEntries($e);
+      $self->undefPointerCache();
     }
 
-  }else {
-        # get the absolute max id_est
-    my $dbh = $M->getQueryHandle();
-    my $st = $dbh->prepareAndExecute("select max(id_est) from dbest.est\@$M->{dblink}");
+  }
+  else {
+    # get the absolute max id_est
+    my $dbh = $self->getQueryHandle();
+    my $st = $dbh->prepareAndExecute("select max(id_est) from dbest.est$self->{dblink}");
     my ($abs_max) = $st->fetchrow_array();
     # get the min and max ids
-    
+
     my $min = 0;
     # Set the restart entry id if defined
-    $min = $M->getCla()->{restart_number} ? $M->getCla()->{restart_number} : $min ;
-    
-    my $max = $min + $M->getCla->{span};
+    $min = $self->getArg('restart_number') ? $self->getArg('restart_number') : $min ;
+
+    my $max = $min + $self->getArg('span');
     while ($max <= $abs_max) {
       ## Testing condition 
-      last if ($M->getCla->{test_number} && $count > $M->getCla->{test_number});
-      
+      last if ($self->getArg('test_number') && $count > $self->getArg('test_number'));
+
       ## Main loop
 
       my $ests;
-      
-      $ests = $M->sql_get_as_hash_refs_lc("select est.* from dbest.est\@$M->{dblink} est, dbest.library\@$M->{dblink} library where est.id_est >= $min and est.id_est < $max and library.id_lib = est.id_lib and library.organism in ($nameStrings)");
 
-     $M->logAlert("Processing id_est from $min to $max\n"); 
+      $ests = $self->sql_get_as_hash_refs_lc("select est.* from dbest.est$self->{dblink} est, dbest.library$self->{dblink} library where est.id_est >= $min and est.id_est < $max and library.id_lib = est.id_lib and library.organism in ($nameStrings)");
+
+      $self->logAlert("Processing id_est from $min to $max\n"); 
       my ($e);
       foreach my $est ( @{$ests}) {
         $e->{$est->{id_est}}->{e} = $est;
       }
-      $count += $M->processEntries($e);
-      $M->undefPointerCache();
+      $count += $self->processEntries($e);
+      $self->undefPointerCache();
       $min = $max;
-      $max += $M->getCla()->{span};
+      $max += $self->getArg('span');
     }
   }
   ############################################################
@@ -331,17 +272,17 @@ sub run {
   # replace word "done" with meaningful return value/summary of the
   # work that was done.
   ############################################################
-  my $dbh = $M->getQueryHandle();
-  my $st1 = $dbh->prepareAndExecute("select count(est.id_est) from dbest.est\@$M->{dblink} est, dbest.library\@$M->{dblink} library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
+  my $dbh = $self->getQueryHandle();
+  my $st1 = $dbh->prepareAndExecute("select count(est.id_est) from dbest.est$self->{dblink} est, dbest.library$self->{dblink} library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
   my $numDbEST = $st1->fetchrow_array();
 
   # change to get taxon_id_list from cache or something
-  my $taxon_id_list = $M->{taxon_id_list};
+  my $taxon_id_list = $self->{taxon_id_list};
 
   my $st2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l where l.taxon_id in ($taxon_id_list) and l.library_id = e.library_id");
   my $finalNumGus = $st2->fetchrow_array();
   my $diff = ($numDbEST-$finalNumGus);
-  $M->logAlert("Total number id_est for taxon(s) $taxon_id_list in dbEST:$numDbEST\nTotal number id_est in dots.EST:$finalNumGus\nDifference dbEST and dots:$diff\n");
+  $self->logAlert("Total number id_est for taxon(s) $taxon_id_list in dbEST:$numDbEST\nTotal number id_est in dots.EST:$finalNumGus\nDifference dbEST and dots:$diff\n");
   return "Inserted/Updated $count dbEST est entries";
 }
 
@@ -377,9 +318,9 @@ entries that were updated/inserted into GUS.
 
 
 sub getNameStrings {
-  my ($M) = @_;
+  my ($self) = @_;
   my $nameStrings;
-  foreach my $name (keys %{$M->{taxon}}) {
+  foreach my $name (keys %{$self->{taxon}}) {
       $nameStrings .= " '$name',";
   }
   $nameStrings =~ s/\,$//;
@@ -387,13 +328,13 @@ sub getNameStrings {
 }
  
 sub processEntries {
-  my ($M, $e ) = @_;
+  my ($self, $e ) = @_;
   my $count = 0;
   return $count unless (keys %$e) ;
   # get the most recent entry 
   foreach my $id (sort {$a <=> $b} keys %$e) {
     if ($e->{$id}->{e}->{replaced_by}){
-      my $re =  $M->getMostRecentEntry($e->{$id}->{e});
+      my $re =  $self->getMostRecentEntry($e->{$id}->{e});
       #this entry is bogus, delete from insert hash
       delete $e->{$id};
       #enter the new entry into the insert hash
@@ -405,7 +346,7 @@ sub processEntries {
   # get the sequences only for most current entry
   my $ids = join "," , sort {$a <=> $b} keys %$e;
 
-  my $A = $M->sql_get_as_hash_refs_lc("select * from dbest.SEQUENCE\@$M->{dblink} where id_est in ($ids) order by id_est, local_id");
+  my $A = $self->sql_get_as_hash_refs_lc("select * from dbest.SEQUENCE$self->{dblink} where id_est in ($ids) order by id_est, local_id");
   if ($A) {
     foreach my $s (@{$A}){
 	$e->{$s->{id_est}}->{e}->{sequence} .= $s->{data};
@@ -414,7 +355,7 @@ sub processEntries {
   
   # get the comments, if any
   $ids = join "," , keys %$e;
-  $A = $M->sql_get_as_hash_refs_lc("select * from dbest.CMNT\@$M->{dblink} where id_est in ($ids) order by id_est, local_id");
+  $A = $self->sql_get_as_hash_refs_lc("select * from dbest.CMNT$self->{dblink} where id_est in ($ids) order by id_est, local_id");
   if ($A) {
     foreach my $c (@{$A}){
       $e->{$c->{id_est}}->{e}->{comment} .= $c->{data};
@@ -431,9 +372,9 @@ sub processEntries {
     # present.
     #####################################################################
     if ($e->{$id}->{old} && @{$e->{$id}->{old}} > 0) {
-      $count +=  $M->updateEntry($e->{$id});
+      $count +=  $self->updateEntry($e->{$id});
     }else {
-      $count += $M->insertEntry($e->{$id}->{e});
+      $count += $self->insertEntry($e->{$id}->{e});
     }
   }
   return $count;
@@ -451,7 +392,7 @@ Returns 1 if succesful update or 0 if not.
 =cut
 
 sub updateEntry {
-  my ($M,$e) = @_;
+  my ($self,$e) = @_;
 
   #####################################################################
   ## Go through the older entries and determine which is in GUS, if any.
@@ -465,11 +406,11 @@ sub updateEntry {
     
     if ($est->retrieveFromDB()) {
       # Entry present in the DB; UPDATE
-      return  $M->insertEntry($e->{e},$est);
+      return  $self->insertEntry($e->{e},$est);
     }
   }
   ## No historical entries; INSERT if not already present
-  return $M->insertEntry($e->{e});
+  return $self->insertEntry($e->{e});
 }
 
 
@@ -491,7 +432,7 @@ Returns 1 if successful insert or 0 if not.
 =cut
 
 sub insertEntry{
-  my ($M,$e,$est) = @_;
+  my ($self,$e,$est) = @_;
   my $needsUpdate = 0;
   #####################################################################
   ## Do a full update only if the dbest.id_est is not the same
@@ -505,21 +446,21 @@ sub insertEntry{
   
   if ($est->retrieveFromDB()){    
     # The entry exists in GUS. Must check to see if valid
-    if ($M->getCla()->{fullupdate} || $needsUpdate) {
+    if ($self->getArg('fullupdate') || $needsUpdate) {
       # Treat this as a new entry
-      $M->populateEst($e,$est);
+      $self->populateEst($e,$est);
       # check to see if clone information already exists
       # for this EST
-      $M->checkCloneInfo($e,$est);
+      $self->checkCloneInfo($e,$est);
     }
     # else this is already in the DB. Do Nothing.
     
   } else {
     # This is a new entry
-    $M->populateEst($e,$est);
+    $self->populateEst($e,$est);
     # check to see if clone information already exists
     # for this EST
-    $M->checkCloneInfo($e,$est);
+    $self->checkCloneInfo($e,$est);
   }
   
 
@@ -530,13 +471,13 @@ sub insertEntry{
 
   my $seq = $est->getParent('GUS::Model::DoTS::ExternalNASequence',1);
   if ((defined $seq) && $e->{sequence} ne $seq->getSequence()){
-    if (! $M->getCla->{no_sequence_update}) {
+    if (! $self->getArg('no_sequence_update')) {
       $seq->setSequence($e->{sequence});
       # set the ExtDBId to dbEST if not already so.
       #$seq->setExternalDatabaseReleaseId( $DBEST_EXTDB_ID);
       # log the change of sequence
-      $M->getCla->{log_fh}->print($M->logAlert('WARN: SEQ_UPDATE:', $seq->getId(),'\n'));
-      $M->logAlert('WARN: SEQ_UPDATE:', $seq->getId(),'\n');
+      $self->{'log_fh'}->print($self->logAlert('WARN: SEQ_UPDATE:', $seq->getId(),'\n'));
+      $self->logAlert('WARN: SEQ_UPDATE:', $seq->getId(),'\n');
     } else {
 
       #####################################################################
@@ -544,17 +485,17 @@ sub insertEntry{
       # Output a message to the log
       #####################################################################
 
-      $M->getCla->{log_fh}->print($M->logAlert('WARN: SEQ_NO_UPDATE: NA_SEQUENCE_ID=' , $seq->getId(), " DBEST_ID_EST=$e->{id_est}\n"));
-      $M->logAlert('WARN: SEQ_NO_UPDATE: NA_SEQUENCE_ID=' , $seq->getId(), " DBEST_ID_EST=$e->{id_est}\n");
+      $self->{'log_fh'}->print($self->logAlert('WARN: SEQ_NO_UPDATE: NA_SEQUENCE_ID=' , $seq->getId(), " DBEST_ID_EST=$e->{id_est}\n"));
+      $self->logAlert('WARN: SEQ_NO_UPDATE: NA_SEQUENCE_ID=' , $seq->getId(), " DBEST_ID_EST=$e->{id_est}\n");
     }
   }else {
     #####################################################################
     ## This sequence entry does no0t exist. We must make it. 
     #####################################################################
 
-    $seq = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $e->{gb_uid}, 'sequence_version' => 1, 'external_database_release_id' => $M->{dbest_ext_db_rel_id}});
+    $seq = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $e->{gb_uid}, 'sequence_version' => 1, 'external_database_release_id' => $self->{dbest_ext_db_rel_id}});
     $seq->retrieveFromDB();
-    $M->checkExtNASeq($e,$seq);
+    $self->checkExtNASeq($e,$seq);
     $est->setParent($seq);
   }
   
@@ -565,15 +506,15 @@ sub insertEntry{
   # submit the sequence and EST entry. Return the submit() result.
   my $result = $seq->submit();
   if ($result) {
-    $M->getCla->{log_fh}->print($M->logAlert('INSERT/UPDATE', $e->{id_est}),"\n");
+    $self->{'log_fh'}->print($self->logAlert('INSERT/UPDATE', $e->{id_est}),"\n");
   }
   return $result;
 }
 
 sub getExternalDatabaseRelease{
 
-  my $M = shift;
-  my $name = $M->getCla()->{extDbName};
+  my ($self) = @_;
+  my $name = $self->getArg('extDbName');
   if (! $name) {
     $name = 'dbEST';
   }
@@ -586,7 +527,7 @@ sub getExternalDatabaseRelease{
   }	
   my $external_db_id = $externalDatabase->getExternalDatabaseId();
   
-  my $version = $M->getCla()->{extDbRlsVer};
+  my $version = $self->getArg('extDbRlsVer');
   if (! $version) {
     $version = 'continuous';
   }
@@ -617,10 +558,10 @@ No return value.
 =cut
 
 sub populateEst {
-  my ($M,$e,$est) = @_;
+  my ($self,$e,$est) = @_;
   
   #parse the comment for hard to find information
-  $M->parseEntry($e);
+  $self->parseEntry($e);
   
   ## Mapping to dots.EST columns
   my %atthash = ('id_est' => 'dbest_id_est',
@@ -661,38 +602,38 @@ sub populateEst {
   }
   
   # Set the contact from the contact hash
-  if ($M->{contact}->{$e->{id_contact}}){
-    $est->setContactId($M->{contact}->{$e->{id_contact}});
+  if ($self->{contact}->{$e->{id_contact}}){
+    $est->setContactId($self->{contact}->{$e->{id_contact}});
   }else {
     # get from DB and cache
     my $c = GUS::Model::SRes::Contact->new({'source_id' => $e->{id_contact},
-                                            'external_database_release_id' => $M->{dbest_ext_db_rel_id}});
+                                            'external_database_release_id' => $self->{dbest_ext_db_rel_id}});
     unless ($c->retrieveFromDB()) {
-      $M->newContact($e,$c);
+      $self->newContact($e,$c);
     }
     # Add to cache
-    $M->{contact}->{$c->getSourceId()} = $c->getId();
+    $self->{contact}->{$c->getSourceId()} = $c->getId();
     # Set the parent-child relationship
     $est->setParent($c);
   }
 
   # Set the library information
-  if (exists $M->{libs}->{$e->{id_lib}}){
-    $est->setLibraryId($M->{libs}->{$e->{id_lib}}->{dots_lib});
+  if (exists $self->{libs}->{$e->{id_lib}}){
+    $est->setLibraryId($self->{libs}->{$e->{id_lib}}->{dots_lib});
   }else {
     # get from DB and cache
     my $l = GUS::Model::DoTS::Library->new({'dbest_id' => $e->{id_lib},
                                            });
     unless ($l->retrieveFromDB()) {
-      $M->newLibrary($e,$l);
+      $self->newLibrary($e,$l);
     }
     # Add to cache
-    $M->{libs}->{$l->getDbestId()}->{dots_lib} = $l->getId();
-    $M->{libs}->{$l->getDbestId()}->{taxon} = $l->getTaxonId();    
+    $self->{libs}->{$l->getDbestId()}->{dots_lib} = $l->getId();
+    $self->{libs}->{$l->getDbestId()}->{taxon} = $l->getTaxonId();    
     # set parent-child relationship
     $est->setParent($l);
   }
-  $M;
+  $self;
 }
 
 =pod
@@ -706,13 +647,13 @@ IMAGE Consortium, then the entry is processed.
 =cut
 
 sub checkCloneInfo {
-  my ($M,$e,$est) = @_;
+  my ($self,$e,$est) = @_;
   
   #####################################################################
   # It only makes sense to check clone entries if the EST comes from
   # WashU or IMAGE
   #####################################################################
-  return $M unless (($e->{is_image} && $e->{image_id}) 
+  return $self unless (($e->{is_image} && $e->{image_id}) 
                     || $e->{washu_name});
   
   # This is a clone. Try and grab the entry from GUS
@@ -727,7 +668,7 @@ sub checkCloneInfo {
     $c->retrieveFromDB();
     $est->setParent($c);
   }
-  $M->updateClone($e,$c);  
+  $self->updateClone($e,$c);  
 }
 
 =pod
@@ -742,7 +683,7 @@ already been done by this point.
 =cut
 
 sub updateClone {
-  my ($M, $e, $c) = @_;
+  my ($self, $e, $c) = @_;
   # Check the clone for updated attributes
   my %atthash = ('id_est' => 'dbest_id_est',
                  'id_gi'         => 'g_id'             ,
@@ -785,16 +726,16 @@ sub updateClone {
     }
   }
   # check the library information 
-  unless  (exists $M->{libs}->{$e->{id_lib}}->{dots_lib}){
+  unless  (exists $self->{libs}->{$e->{id_lib}}->{dots_lib}){
     # get from DB and cache
     my $l = GUS::Model::DoTS::Library->new({ 'dbest_id' => $e->{id_lib} });
     unless ($l->retrieveFromDB()) {
-      $M->newLibrary($e,$l);
+      $self->newLibrary($e,$l);
     }
     
     # Add to cache
-    $M->{libs}->{$l->getDbestId()}->{dots_lib} = $l->getDbestId();
-    $M->{libs}->{$l->getDbestId()}->{taxon} = $l->getTaxonId();    
+    $self->{libs}->{$l->getDbestId()}->{dots_lib} = $l->getDbestId();
+    $self->{libs}->{$l->getDbestId()}->{taxon} = $l->getTaxonId();    
   }
   
   ######################################################################
@@ -804,19 +745,19 @@ sub updateClone {
   ## After the first run of this plugin I will take out this test. 
   ## since it only need be done once.
   ######################################################################
-  if ($e->{is_image} && !$M->{libs}->{$e->{id_lib}}->{is_image}) {        
+  if ($e->{is_image} && !$self->{libs}->{$e->{id_lib}}->{is_image}) {        
     my $l = GUS::Model::DoTS::Library->new({'dbest_id' => $e->{id_lib}});
     $l->retrieveFromDB();
     $l->setIsImage(1);
     $l->submit();
-    $M->{libs}->{$e->{id_lib}}->{is_image} = 1;
+    $self->{libs}->{$e->{id_lib}}->{is_image} = 1;
   }
   
-  if ($c->getLibraryId() ne $M->{libs}->{$e->{id_lib}}->{dots_lib}){
-    $c->setLibraryId($M->{libs}->{$e->{id_lib}}->{dots_lib});
+  if ($c->getLibraryId() ne $self->{libs}->{$e->{id_lib}}->{dots_lib}){
+    $c->setLibraryId($self->{libs}->{$e->{id_lib}}->{dots_lib});
   }
   # RETURN 
-  $M;
+  $self;
 }
 
 =pod
@@ -833,10 +774,10 @@ Returns HASHREF{ new => newest entry,
 =cut
 
 sub getMostRecentEntry {
-  my ($M,$e,$R) = @_;
+  my ($self,$e,$R) = @_;
   $R->{new} = $e;
 
-  my $re = $M->sql_get_as_hash_refs_lc("select * from dbest.est\@$M->{dblink} where id_est = $e->{replaced_by}")->[0];
+  my $re = $self->sql_get_as_hash_refs_lc("select * from dbest.est$self->{dblink} where id_est = $e->{replaced_by}")->[0];
   # angel:2/20/2003: Found that sometimes replaced_by points to non-existent id_est
   # Account for this by inserting the most recent & *valid* entry and
   # log the id_est of the entry that eventually needs an update
@@ -846,10 +787,10 @@ sub getMostRecentEntry {
     $R->{new} = $re;
     push @{$R->{old}}, $e;
     if ($re->{replaced_by} ) {
-      $R = $M->getMostRecentEntry($re,$R);
+      $R = $self->getMostRecentEntry($re,$R);
     }
   }else {
-    $M->getCla->{log_fh}->print($M->logAlert("ERR:BOGUS REPLACED BY","ID_EST", $e->{id_est}, "REPLACED_BY=$e->{replaced_by}","\n"));
+    $self->{'log_fh'}->print($self->logAlert("ERR:BOGUS REPLACED BY","ID_EST", $e->{id_est}, "REPLACED_BY=$e->{replaced_by}","\n"));
   }
   return $R;
 }
@@ -866,7 +807,7 @@ sense in GUS to designate IMAGE and WashU clones as clones.
 =cut
 
 sub parseEntry {
-  my ($M,$e) = @_;
+  my ($self,$e) = @_;
 
   ## Parse for WashU atts
 
@@ -942,15 +883,15 @@ A method to set certain cache information to speed up the load.
 
 
 sub setTableCaches {
-  my $M = shift;
+  my ($self) = @_;
   
   # Library cache
   my $q = 'select dbest_id as dbest_lib_id, library_id, taxon_id, is_image from dots.Library';
-  my $A = $M->sql_get_as_array_refs($q);
+  my $A = $self->sql_get_as_array_refs($q);
   foreach my $r (@$A) {
-    $M->{libs}->{$r->[0]}->{dots_lib} = $r->[1];
-    $M->{libs}->{$r->[0]}->{taxon} = $r->[2];
-    $M->{libs}->{$r->[0]}->{is_image} = $r->[3];
+    $self->{libs}->{$r->[0]}->{dots_lib} = $r->[1];
+    $self->{libs}->{$r->[0]}->{taxon} = $r->[2];
+    $self->{libs}->{$r->[0]}->{is_image} = $r->[3];
   }
   
   # Contact info, get entries only from dbEST
@@ -960,9 +901,9 @@ sub setTableCaches {
           ];
           # and external_database_release_id = $DBEST_EXTDB_ID
 
-  $A = $M->sql_get_as_array_refs($q);
+  $A = $self->sql_get_as_array_refs($q);
   foreach my $r (@$A) {
-    $M->{contact}->{$r->[1]} = $r->[0];
+    $self->{contact}->{$r->[1]} = $r->[0];
   }
   
   # Anatomy cache is on-demand
@@ -971,12 +912,12 @@ sub setTableCaches {
   # changed to get all organism names for human and mouse
   # all else is on-demand cache
 
-  my $taxon_id_list = $M->getCla()->{taxon_id_list}; 
+  my $taxon_id_list = $self->getArg('taxon_id_list'); 
 
   if (! $taxon_id_list) {
-    my @ncbiTaxId = split(/,/,$M->getCla()->{ncbiTaxId});
+    my @ncbiTaxId = split(/,/,$self->getArg('ncbiTaxId'));
     die "Supply taxon_id_list or ncbiTaxId list\n" unless @ncbiTaxId >= 1;
-    my $dbh = $M->getQueryHandle();
+    my $dbh = $self->getQueryHandle();
     my $qTaxon = "select taxon_id from sres.taxon  where ncbi_tax_id in (?)";
     my $st = $dbh->prepare($qTaxon);
     my @taxon_id_array;
@@ -989,13 +930,13 @@ sub setTableCaches {
     $taxon_id_list = join(',', @taxon_id_array);
   }
 
-  $M->{taxon_id_list} = $taxon_id_list;
+  $self->{taxon_id_list} = $taxon_id_list;
 
   $q = "select name, taxon_id  from sres.TaxonName where taxon_id in ($taxon_id_list)";
 
-  $A = $M->sql_get_as_array_refs($q);
+  $A = $self->sql_get_as_array_refs($q);
   foreach my $r (@$A) {
-    $M->{taxon}->{$r->[0]} = $r->[1];
+    $self->{taxon}->{$r->[0]} = $r->[1];
   }
 }
 
@@ -1008,8 +949,8 @@ Populates the attributes for a new DoTS.Library entry from dbEST.
 =cut
 
 sub newLibrary {
-  my ($M,$e,$l) = @_;
-  my $dbest_lib = $M->sql_get_as_hash_refs_lc("select id_lib,name,organism,strain,cultivar,sex,organ,tissue_type,cell_type,cell_line,dev_stage,lab_host,vector,v_type,re_1,re_2 from dbest.library\@$M->{dblink} where id_lib = $e->{id_lib}")->[0];
+  my ($self,$e,$l) = @_;
+  my $dbest_lib = $self->sql_get_as_hash_refs_lc("select id_lib,name,organism,strain,cultivar,sex,organ,tissue_type,cell_type,cell_line,dev_stage,lab_host,vector,v_type,re_1,re_2 from dbest.library$self->{dblink} where id_lib = $e->{id_lib}")->[0];
    my $atthash = {'id_lib' => 'dbest_id',
                   'name' => 'dbest_name',
                   'organism' => 'dbest_organism',
@@ -1078,44 +1019,44 @@ sub newLibrary {
 
 
   ## Set the library's taxon
-  if ($M->{taxon}->{$dbest_lib->{organism}}) {
-    $l->setTaxonId($M->{taxon}->{$dbest_lib->{organism}});
+  if ($self->{taxon}->{$dbest_lib->{organism}}) {
+    $l->setTaxonId($self->{taxon}->{$dbest_lib->{organism}});
   } 
   #else {
   # my $taxon = GUS::Model::SRes::TaxonName->new({'name' => $dbest_lib->{organism}});
   # if ($taxon->retrieveFromDB()){
-  #   $M->{taxon}->{$dbest_lib->{organism}} = $taxon->getTaxonId();
+  #   $self->{taxon}->{$dbest_lib->{organism}} = $taxon->getTaxonId();
   #   $l->setTaxonId($taxon->getTaxonId());
   # }
   else{
-    my $dbh = $M->getQueryHandle();
+    my $dbh = $self->getQueryHandle();
     my $name = $dbest_lib->{organism};
     my $st = $dbh->prepareAndExecute("select taxon_id from sres.taxonname where name = '$name'");
     my $taxon_id = $st->fetchrow_array();
     $st->finish();
     if ($taxon_id) {
-      $M->{taxon}->{$dbest_lib->{organism}} = $taxon_id;
-      $l->setTaxonId($M->{taxon}->{$dbest_lib->{organism}});
+      $self->{taxon}->{$dbest_lib->{organism}} = $taxon_id;
+      $l->setTaxonId($self->{taxon}->{$dbest_lib->{organism}});
     }
     else {
       #Log the fact that we couldn't parse out a taxon
-      $M->logAlert('ERR:NEW LIBRARY: TAXON', ' LIB_ID:',  $l->getId(), ' DBEST_ID:',
+      $self->logAlert('ERR:NEW LIBRARY: TAXON', ' LIB_ID:',  $l->getId(), ' DBEST_ID:',
 		   $l->getDbestId(), ' ORGANISM:', $dbest_lib->{organism},"\n");
     }
   }
   
   
   ## parse out the anatomy of the library entry
-  if ($M->{anat}->{$dbest_lib->{organ}}) {
-    $l->setAnatomyId($M->{anat}->{$dbest_lib->{organ}});
+  if ($self->{anat}->{$dbest_lib->{organ}}) {
+    $l->setAnatomyId($self->{anat}->{$dbest_lib->{organ}});
   } else {
     my $anat = GUS::Model::SRes::Anatomy->new({'name' => $dbest_lib->{organ}});
     if ($anat->retrieveFromDB()){
-      $M->{anat}->{$dbest_lib->{organ}} = $anat->getId();
+      $self->{anat}->{$dbest_lib->{organ}} = $anat->getId();
       $l->setAnatomyId($anat->getId());
     }else {
       #Log the fact that we couldn't parse out an anatomy
-      $M->logAlert('ERR: NEW LIBRARY: ANATOMY', ' LIB_ID:',  $l->getId(), ' DBEST_ID:',
+      $self->logAlert('ERR: NEW LIBRARY: ANATOMY', ' LIB_ID:',  $l->getId(), ' DBEST_ID:',
               $l->getDbestId(), ' ORGAN:', $dbest_lib->{organ},"\n");
     }
   }
@@ -1130,7 +1071,7 @@ sub newLibrary {
   ## Submit the new library
   $l->submit();
   # return
-  $M;
+  $self;
 }
 
 =pod
@@ -1144,12 +1085,12 @@ Populate the attributes of a new SRes.Contact entry
   
 
 sub newContact {
-  my ($M,$e,$c)  = @_;
+  my ($self,$e,$c)  = @_;
   
   my $q = qq[select * 
-             from dbest.contact\@$M->{dblink} 
+             from dbest.contact$self->{dblink} 
              where id_contact = $e->{id_contact}];
-  my $C = $M->sql_get_as_hash_refs_lc($q)->[0];
+  my $C = $self->sql_get_as_hash_refs_lc($q)->[0];
   $C->{lab} = "$C->{lab}; $C->{institution}";
   my %atthash = ('id_conact' => 'source_id',
                  'name' => 'name',
@@ -1168,7 +1109,7 @@ sub newContact {
   #$c->setExternalDatabaseReleaseId($DBEST_EXTDB_ID);
   # submit the new contact to the DB
   $c->submit();
-  $M;
+  $self;
 }
 
 =pod 
@@ -1182,15 +1123,15 @@ is not given.
 =cut
 
 sub checkExtNASeq {
-  my ($M,$e,$seq) = @_;
+  my ($self,$e,$seq) = @_;
 
   my $name = "EST";
-  my $soVer = $M->getArg('soVer');
+  my $soVer = $self->getArg('soVer');
   my $sequenceOntology = GUS::Model::SRes::SequenceOntology->new({"term_name" => $name, "so_version" => $soVer});
   $sequenceOntology->retrieveFromDB() || die "Unable to obtain sequence_ontology_id from sres.sequenceontology with term_name = EST";
   my $sequence_ontology_id= $sequenceOntology->getId();
   
-  my %seq_vals = ( 'taxon_id' => $M->{libs}->{$e->{id_lib}}->{taxon},
+  my %seq_vals = ( 'taxon_id' => $self->{libs}->{$e->{id_lib}}->{taxon},
                    'sequence' => $e->{sequence},
                    'length' => length $e->{sequence},
                    'sequence_ontology_id' =>  $sequence_ontology_id,
@@ -1209,9 +1150,9 @@ sub checkExtNASeq {
       $getmethod .= ucfirst $a;
       $getmethod =~s/\_(\w)/uc $1/ge;
       if ($seq->$getmethod() ne $seq_vals{$a}) {
-        if ( $M->getCla()->{no_sequence_update}) {
+        if ( $self->getArg('no_sequence_update')) {
           # Log an entry 
-          $M->logAlert("WARN:", "ExternalNaSequence.$a not updated", $e->{id_est},"\n");
+          $self->logAlert("WARN:", "ExternalNaSequence.$a not updated", $e->{id_est},"\n");
         } else {
           $seq->$setmethod($seq_vals{$a});
         }
