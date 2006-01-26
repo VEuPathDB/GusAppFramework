@@ -1,11 +1,9 @@
 package GUS::Supported::Plugin::dbEST;
-#package GUS::Common::Plugin::dbEST;
 
 @ISA = qw( GUS::PluginMgr::Plugin );
 use GUS::PluginMgr::Plugin;
 
 use strict;
-#my $DBEST_EXTDB_ID = 22; # global variable
 
 $| = 1;
 
@@ -33,47 +31,154 @@ use FileHandle;
 # plugin.
 #####################################################################
 
-sub new {
-	my $Class = shift;
 
-	my $M = bless {}, $Class;
+sub new {
+  my ($class) = @_;
+
+  my $self = {};
+  bless($self,$class);
+
+  my $purpose = <<PURPOSE;
+Module used to copy data from a mirrored dbEST into GUS
+PURPOSE
+
+  my $purposeBrief = <<PURPOSE_BRIEF;
+Copy mirrored dbEST data into GUS
+PURPOSE_BRIEF
+
+my $notes = <<NOTES;
+Data is mapped from dbEST tables into GUS tables. Tables are mapped one to many.
+NOTES
+
+my $tablesAffected = <<TABLES_AFFECTED;
+TABLES_AFFECTED
+
+my $tablesDependedOn = <<TABLES_DEPENDED_ON;
+TABLES_DEPENDED_ON
+
+my $howToRestart = <<RESTART;
+RESTART
+
+my $failureCases = <<FAIL_CASES;
+FAIL_CASES
+
+my $documentation = { purpose          => $purpose,
+		      purposeBrief     => $purposeBrief,
+		      notes            => $notes,
+		      tablesAffected   => $tablesAffected,
+		      tablesDependedOn => $tablesDependedOn,
+		      howToRestart     => $howToRestart,
+		      failureCases     => $failureCases };
+
+
+my $argsDeclaration = 
+[
+ stringArg({name => 'gbRel',
+	    descr => 'Required:GenBank flat file release,ftp://ftp.ncbi.nih.gov/genbank/README.genbank',
+	    constraintFunc => undef,
+	    reqd => 1,
+	    isList => 0
+	   }),
+ booleanArg({name => 'no_sequence_update',
+	     descr => 'No update of sequences in ExternalNASequence', 
+	     constraintFunc => undef,
+	     reqd => 0,
+	    }),
+ stringArg({name => 'update_file',
+	    descr => 'An update file containing the EST entries that changed',
+	    constraintFunc => undef,
+	    reqd => 0,
+	    isList => 0
+	   }),
+ integerArg({name => 'db_rel_id',
+	     descr => 'GUS SRes.ExternalDatabaseRelease id for GenBank',
+	     constraintFunc => undef,
+	     reqd => 1,
+	     isList => 0
+ integerArg({name => 'restart_number',
+	     descr => 'line number if input is file, id_est if input is dbEST',
+	     constraintFunc => undef,
+	     reqd => 0,
+	     isList => 0
+	    }),
+ integerArg({name => 'test_number',
+	     descr => 'number of iterations for testing',
+	     constraintFunc => undef,
+	     reqd => 0,
+	     isList => 0
+	    }),
+ stringArg({name => 'log',
+	    descr => ' log file (path relative to current/working directory)',
+	    constraintFunc => undef,
+	    reqd => 0,
+	    default => 'DataLoad_dbEST.log',
+	    isList => 0
+	   }),
+ integerArg({name => 'span',
+	     descr => 'number of entries in each batch to retieve from dbEST',
+	     reqd => 0,
+	     constraintFunc => undef,
+	     default => '100',
+	     isList => 0
+	    }),
+ stringArg({ name => 'ncbiTaxId
+             description => 'Comma delimited list of ncbi tax ids, alternative to taxon_id_list',
+	     reqd => 0,
+             constraintFunc => udef,
+             isList => 0
+	    }),
+ stringArg({ name => 'taxon_id_list',
+             description => 'Comma delimited list of taxon_ids to load,alternative to taxon_id_list',
+	     reqd => 0,
+             constraintFunc => undef,
+             isLiast => 0
+	    }),
+ booleanArg({name => 'fullupdate',
+             description => 'flag indicating that atts should be checked for discrepensies',
+             reqd => 0,
+             constraintFunc => undef
+	    }),
+ stringArg({ name => 'dblink',
+             description => 'the name of a dblink, if the dbEST mirror is a linked db',
+             reqd => 0,
+             constrintFunc => undef,
+             isList = 0
+            }),
+ stringArg({ name = 'extDbName',
+             description => 'dots.externaldatabase.name',
+             reqd => 0,
+             constraintFunc => undef,
+             isLiast => 0
+                 },
+                 {h => 'dots.externaldatabaserelease.version',
+                  t => 'string',
+                  o => 'extDbRlsVer'
+                 },
+		 {h => 'version number used in sres.sequenceontology.so_version',
+                  t => 'string',
+                  o => 'soVer'
+                 }
+
+
+
+
+
+
+];
+
+  $self->initialize({requiredDbVersion => 3.5,
+		     cvsRevision => '$Revision$',	# cvs fills this in!
+		     name => ref($self),
+		     argsDeclaration   => $argsDeclaration,
+		     documentation     => $documentation});
+
+
+  return $self;
+}
+
   
-  my $easycsp = [{ h => 'number of iterations for testing',
-                   t => 'int',
-                   o => 'test_number',
-                   r => 0,
-                 },
-                 { h => 'The span of entries to retrieve in batches',
-                   t => 'int',
-                   o => 'span',
-                   d => 100,
-                   r => 0,
-                 },
-                 { h => 'A log file (path relative to current/working directory)',
-                   t => 'string',
-                   r => 0,
-                   d => 'DataLoad_dbEST.log',
-                   o => 'log',
-                 },
-                 { h => 'An update file containing the EST entries that changed,
-                         useful for incremental update ie. chron jobs',
-                   t => 'string',
-                   o => 'update_file',
-                   r => 0,
-                 },
-                 { h => 'Signifies that sequences in ExternalNASequence should NOT be updated, 
-                         regardless of discrepencies in dbEST-Used when reassembly is not going to occur.',
-                   t => 'boolean',
-                   o => 'no_sequence_update',
-                   r => 0,
-                 },
-                 {
-                   h=> 'Restart number. If input is a file, then the line number is given. 
-                        If from the DB then the id_est is given.',
-                   t=> 'int',
-                   o => 'restart_number',
-                   r => 0,
-                 },
+
+
 		 { h => 'Comma delimited list of ncbi tax ids, alternative to taxon_id_list',
 		   t => 'string',
 		   o => 'ncbiTaxId',
