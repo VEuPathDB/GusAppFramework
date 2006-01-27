@@ -130,6 +130,11 @@ FAIL_CASES
 		 reqd => 0,
 		 constraintFunc => undef
 		}),
+     booleanArg({name => 'logNaSeqId',
+		 descr => 'option to write all na_sequence_ids into a STDOUT file via logData',
+		 reqd => 0,
+		 constraintFunc => undef
+		}),
      stringArg({ name => 'dblink',
 		 descr => 'the name of a dblink, if the dbEST mirror is a linked db',
 		 reqd => 0,
@@ -469,7 +474,14 @@ sub insertEntry{
   # the no_sequence_update flag is given
   #####################################################################
 
+  my $name = "EST";
+  my $soVer = $self->getArg('soVer');
+  my $sequenceOntology = GUS::Model::SRes::SequenceOntology->new({"term_name" => $name, "so_version" => $soVer});
+  $sequenceOntology->retrieveFromDB() || $self->error ("Unable to obtain sequence_ontology_id from sres.sequenceontology with term_name = EST");
+  my $sequence_ontology_id= $sequenceOntology->getId();
+
   my $seq = $est->getParent('GUS::Model::DoTS::ExternalNASequence',1);
+
   if ((defined $seq) && $e->{sequence} ne $seq->getSequence()){
     if (! $self->getArg('no_sequence_update')) {
       $seq->setSequence($e->{sequence});
@@ -505,6 +517,11 @@ sub insertEntry{
   
   # submit the sequence and EST entry. Return the submit() result.
   my $result = $seq->submit();
+
+  my $naSeqId = $seq->getId();
+
+  $self->logData("na_sequence_id\t$naSeqId\n")if $self->getArg('logNaSeqId');
+
   if ($result) {
     $self->{'log_fh'}->print($self->logAlert('INSERT/UPDATE', $e->{id_est}),"\n");
   }
