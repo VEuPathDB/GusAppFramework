@@ -193,6 +193,8 @@ sub run {
   $self->{contact} = {};       # Contact info cache
   $self->setTableCaches();
 
+  $self->{sequence_ontology_id} = $self->getSequenceOntologyId();
+
   $self->{dbest_ext_db_rel_id} = $self->getExternalDatabaseRelease();
 
   my $nameStrings = $self->getNameStrings();
@@ -245,7 +247,7 @@ sub run {
     my $st = $dbh->prepareAndExecute("select max(id_est) from dbest.est$self->{dblink}");
     my ($abs_max) = $st->fetchrow_array();
     # get the min and max ids
-
+    $abs_max++;
     my $min = 0;
     # Set the restart entry id if defined
     $min = $self->getArg('restart_number') ? $self->getArg('restart_number') : $min ;
@@ -270,6 +272,7 @@ sub run {
       $self->undefPointerCache();
       $min = $max;
       $max += $self->getArg('span');
+      $max = $abs_max if $max > $abs_max;
     }
   }
   ############################################################
@@ -474,11 +477,7 @@ sub insertEntry{
   # the no_sequence_update flag is given
   #####################################################################
 
-  my $name = "EST";
-  my $soVer = $self->getArg('soVer');
-  my $sequenceOntology = GUS::Model::SRes::SequenceOntology->new({"term_name" => $name, "so_version" => $soVer});
-  $sequenceOntology->retrieveFromDB() || $self->error ("Unable to obtain sequence_ontology_id from sres.sequenceontology with term_name = EST");
-  my $sequence_ontology_id= $sequenceOntology->getId();
+  my $sequence_ontology_id = $self->{sequence_ontology_id};
 
   my $seq = $est->getParent('GUS::Model::DoTS::ExternalNASequence',1);
 
@@ -507,7 +506,7 @@ sub insertEntry{
 
     $seq = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $e->{gb_uid}, 'sequence_version' => 1, 'external_database_release_id' => $self->{dbest_ext_db_rel_id}});
     $seq->retrieveFromDB();
-    $self->checkExtNASeq($e,$seq);
+    $self->checkExtNASeq($e,$seq,$sequence_ontology_id);
     $est->setParent($seq);
   }
   
@@ -520,12 +519,28 @@ sub insertEntry{
 
   my $naSeqId = $seq->getId();
 
-  $self->logData("na_sequence_id\t$naSeqId\n")if $self->getArg('logNaSeqId');
+  $self->logData("na_sequence_id\t$naSeqId")if $self->getArg('logNaSeqId');
 
   if ($result) {
     $self->{'log_fh'}->print($self->logAlert('INSERT/UPDATE', $e->{id_est}),"\n");
   }
   return $result;
+}
+
+sub getSequenceOntologyId {
+  my ($self) = @_;
+
+  my $name = "EST";
+
+  my $soVer = $self->getArg('soVer');
+
+  my $sequenceOntology = GUS::Model::SRes::SequenceOntology->new({"term_name" => $name, "so_version" => $soVer});
+
+  $sequenceOntology->retrieveFromDB() || $self->error ("Unable to obtain sequence_ontology_id from sres.sequenceontology with term_name = EST");
+
+  my $sequence_ontology_id = $sequenceOntology->getId();
+
+  return $sequence_ontology_id;
 }
 
 sub getExternalDatabaseRelease{
@@ -1142,14 +1157,8 @@ is not given.
 =cut
 
 sub checkExtNASeq {
-  my ($self,$e,$seq) = @_;
+  my ($self,$e,$seq,$sequence_ontology_id) = @_;
 
-  my $name = "EST";
-  my $soVer = $self->getArg('soVer');
-  my $sequenceOntology = GUS::Model::SRes::SequenceOntology->new({"term_name" => $name, "so_version" => $soVer});
-  $sequenceOntology->retrieveFromDB() || die "Unable to obtain sequence_ontology_id from sres.sequenceontology with term_name = EST";
-  my $sequence_ontology_id= $sequenceOntology->getId();
-  
   my %seq_vals = ( 'taxon_id' => $self->{libs}->{$e->{id_lib}}->{taxon},
                    'sequence' => $e->{sequence},
                    'length' => length $e->{sequence},
