@@ -1629,10 +1629,9 @@ sub sqlAsDictionary {
 
    my %Rv;
 
-   my $args = { %$Args,
-                Code => sub { $Rv{$_[0]} = $_[1] }
-              };
-   $Self->sqlAsArrayRef($args);
+   $Self->sqlAsArray({ %$Args,
+                       Code => sub { $Rv{$_[0]} = $_[1]; return 1; }
+                     });
 
    return wantarray ? %Rv : \%Rv;
 }
