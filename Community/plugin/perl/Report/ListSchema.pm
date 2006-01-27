@@ -50,6 +50,13 @@ sub new {
                      isList => 0,
                      constraintFunc => sub { CfIsAnything(@_) },
                    }),
+        stringArg({  name    => 'OwnerRx',
+                     descr   => 'select owners that look like this regexp',
+                     reqd    => 0,
+                     default => '.',
+                     isList  => 0,
+                     constraintFunc => sub { CfIsAnything(@_) },
+                  }),
       ],
 
       # DOCUMENTATION
@@ -98,6 +105,8 @@ sub oracleDump {
    my @_tables = sort {
       $a->{owner} cmp $b->{owner} ||
       $a->{table_name} cmp $b->{table_name}
+   } grep {
+      $_->{owner} =~ $Self->getArg('OwnerRx')
    } $Self->sqlAsHashRefs( Sql => <<Sql );
 SELECT owner, table_name
 FROM   all_tables
@@ -127,38 +136,94 @@ AND    table_name = ?
 AND    constraint_type = 'R'
 Sql
 
+   # query handle to get foreign key constraints for a table.
+   my $outRef_sh = $Self->getQueryHandle()->prepare(<<Sql);
+select acc.constraint_name, accr.owner as r_owner, accr.column_name as r_column
+from   all_cons_columns acc
+,      all_constraints  ac
+,      all_cons_columns accr
+where  acc.owner           = ?
+and    acc.table_name      = ?
+and    acc.column_name     = ?
+and    acc.owner           = ac.owner
+and    acc.constraint_name = ac.constraint_name
+and    ac.constraint_type  = 'R'
+and    ac.r_owner           = accr.owner
+and    ac.r_constraint_name = accr.constraint_name
+Sql
+
+   # query handle to get table and column documentation
+   my $doc_sh = $Self->getQueryHandle()->prepare(<<Sql);
+select dd.attribute_name, dd.html_documentation
+from   core.databaseInfo          di
+,      core.tableInfo             ti
+,      core.databaseDocumentation dd
+where  di.name           = ?
+and    di.database_id    = ti.database_id
+and    lower(ti.name)    = lower(?)
+and    ti.table_id       = dd.table_id
+Sql
+
   foreach my $_table (@_tables) {
 
-     print join("\t", $_table->{owner}, $_table->{table_name}), "\n";
+     my @table_bind = ( $_table->{owner}, $_table->{table_name} );
 
      my @_columns = sort {
         $a->{column_id} <=> $b->{column_id}
      } $Self->sqlAsHashRefs( Handle => $cols_sh,
-                             Bind   => [ $_table->{owner}, $_table->{table_name} ]
-                          );
+                             Bind   => \@table_bind
+                           );
 
-     my @_inRefs = $Self->sqlAsHashRefs( Handle => $inRef_sh,
-                                         Bind   => [ $_table->{owner}, $_table->{table_name} ]
-                                       );
-     foreach my $_inRef (@_inRefs) {
-        print join("\t",
-                   '<--',
-                   ( map { $_inRef->{$_} } qw( constraint_name r_owner r_constraint_name ) )
-                  ), "\n";
+     my %doc_dict = $Self->sqlAsDictionary( Handle => $doc_sh,
+                                            Bind   => \@table_bind,
+                                          );
+     foreach (keys %doc_dict) {
+        $doc_dict{$_} =~ s/\s/ /g;
      }
 
      my $name_n = CBIL::Util::V::max(map { length $_->{column_name} } @_columns);
      my $_fmt   =  '%-'.$name_n. '.'. $name_n. 's';
 
+     print join("\t", @table_bind,
+                'Column', 'Type', 'P', 'S', 'Indices', 'Refs',
+                $doc_dict{''}
+               ), "\n";
+
      foreach my $_col (@_columns) {
-        my @row = ( '',
+
+        my @column_bind = ( @table_bind, $_col->{column_name} );
+
+        my @row = ( '', '',
                     sprintf($_fmt, lc $_col->{column_name}),
                     map { $_col->{$_} } qw( data_type data_precision data_scale)
                   );
+
+        # get indices this column participates in
         my @indices = $Self->sqlAsArray( Handle => $ndx_sh,
-                                         Bind   => [ $_table->{owner}, $_table->{table_name}, $_col->{column_name} ]
+                                         Bind   => \@column_bind
                                        );
-        push(@row, @indices);
+        push(@row, join('; ', @indices) || 'no indices');
+
+        # get references to other tables
+        my @_refs = $Self->sqlAsHashRefs( Handle => $outRef_sh,
+                                          Bind   => \@column_bind,
+                                        );
+        push(@row,
+             join('; ',
+                  map {
+                     sprintf('(%s)->%s.%s',
+                             $_->{constraint_name},
+                             $_->{r_owner},
+                             lc $_->{r_column}
+                            )
+                  } @_refs
+                 ) || 'no refs'
+            );
+
+        # add documentation for row
+        push(@row, $doc_dict{lc $_col->{column_name}} || 'no doc');
+
+        # print the row for the column
         print join("\t", @row), "\n";
      }
   }
