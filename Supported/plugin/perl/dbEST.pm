@@ -914,7 +914,7 @@ sub setTableCaches {
 
   my $taxon_id_list = $self->getArg('taxon_id_list'); 
 
-  my $taxonIds = join(',',@$$taxon_id_list) if $taxon_id_list;
+  my $taxonIds = join(',',@$taxon_id_list) if $taxon_id_list;
 
   if (! $taxon_id_list) {
     my @ncbiTaxId = split(/,/,$self->getArg('ncbiTaxId'));
