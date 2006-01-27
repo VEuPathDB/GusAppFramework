@@ -914,6 +914,8 @@ sub setTableCaches {
 
   my $taxon_id_list = $self->getArg('taxon_id_list'); 
 
+  my $taxonIds = join(',',@$$taxon_id_list) if $taxon_id_list;
+
   if (! $taxon_id_list) {
     my @ncbiTaxId = split(/,/,$self->getArg('ncbiTaxId'));
     die "Supply taxon_id_list or ncbiTaxId list\n" unless @ncbiTaxId >= 1;
@@ -927,12 +929,12 @@ sub setTableCaches {
       push (@taxon_id_array,$taxon);
       $st->finish();
     }
-    $taxon_id_list = join(',', @taxon_id_array);
+    $taxonIds = join(',', @taxon_id_array);
   }
 
-  $self->{taxon_id_list} = $taxon_id_list;
+  $self->{taxon_id_list} = $taxonIds;
 
-  $q = "select name, taxon_id  from sres.TaxonName where taxon_id in ($taxon_id_list)";
+  $q = "select name, taxon_id  from sres.TaxonName where taxon_id in ($taxonIds)";
 
   $A = $self->sql_get_as_array_refs($q);
   foreach my $r (@$A) {
