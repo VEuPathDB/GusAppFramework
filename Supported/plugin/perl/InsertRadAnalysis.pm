@@ -89,7 +89,7 @@ sub getDocumentation {
 
   my $tablesDependedOn = [['SRes::Contact', 'The researcher or organization who performed this analysis'], ['RAD::Protocol', 'The analysis protocol used'], ['RAD::ProtocolStep', 'The components of the analysis protocol used, if the latter is an ordered series of protocols'], ['Study::OntologyEntry', 'The protocol_type of the protocol used'], ['RAD::ProtocolParam', 'The parameters for the protocol used or for its components'], ['RAD::ProtocolQCParam', 'The quality control parameters for the protocol used or for its components'], ['RAD::LogicalGroup', 'The input group(s) to the analysis'], ['RAD::LogicalGroupLink', 'The members of the logical group(s) input into the analysis'],['Core::TableInfo', 'The table whose entries the analysis results refer to'], ['Core::DatabaseInfo', 'The name of the GUS space containing the table whose entries the analysis results refer to']]; 
 
-  my $howToRestart = "Loading can be resumed using the I<--restart n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted). If this argument is given then the I<analysis_id> argument should be given too.";
+  my $howToRestart = "Loading can be resumed using the I<--restart n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted). If this argument is given then the I<analysis_id> argument should be given too. Alternatively, one can use the plugin GUS::Community::Plugin::Undo to delete all entries inserted by a specific call to this plugin. Then this plugin can be re-run from fresh.";
 
   my $failureCases = "";
 
@@ -666,7 +666,7 @@ sub insertAnalysis {
   }
 
   $analysis->submit();
-  $resultDescrip .= "Entered $numAnalysisInput rows in RAD.AnalysisInput, $numAssayAnalysis rows in RAD.AssayAnalysis, $numAnalysisParam rows in RAD.AnalysisParam, $numAnalysisQcParam rows in RAD.AnalysisQCParam.";
+  $resultDescrip .= "Entered 1 row in RAD.Analysis, $numAnalysisInput rows in RAD.AnalysisInput, $numAssayAnalysis rows in RAD.AssayAnalysis, $numAnalysisParam rows in RAD.AnalysisParam, $numAnalysisQcParam rows in RAD.AnalysisQCParam.";
   $analysisId = $analysis->getId();
   return ($resultDescrip, $analysisId);
 }
@@ -703,6 +703,12 @@ sub insertAnalysisResults {
 
   $resultDescrip = "Entered $numResults rows in RAD.$subclassView.";
   return $resultDescrip;
+}
+
+sub undoTables {
+  my ($self) = @_;
+
+  return ('RAD.AnalysisResultImp', 'RAD.AnalysisQCParam', 'RAD.AnalysisParam', 'RAD.AnalysisInput', 'RAD.AssayAnalysis', 'RAD.Analysis');
 }
 
 1;
