@@ -113,6 +113,14 @@ FROM   all_tables
 WHERE  owner in ('CORE', 'DOTS', 'PROT', 'RAD', 'SRES', 'STUDY', 'TESS')
 Sql
 
+   # get a dictionary mapping (most) uppercase names to Camel-cased names
+   my %tableCamelCase_dict = $Self->sqlAsDictionary( Sql => <<Sql );
+   SELECT upper(ti.name), ti.name
+   FROM   core.DatabaseInfo di
+   ,      core.TableInfo    ti
+   WHERE  di.database_id = ti.database_id
+Sql
+
    my $cols_sh = $Self->getQueryHandle()->prepare(<<Sql);
 SELECT column_name, data_type, data_precision, data_scale, column_id
 FROM   all_tab_columns
@@ -168,6 +176,9 @@ Sql
 
      my @table_bind = ( $_table->{owner}, $_table->{table_name} );
 
+     my $camelTable
+     = $tableCamelCase_dict{$_table->{table_name}} || $_table->{table_name};
+
      my @_columns = sort {
         $a->{column_id} <=> $b->{column_id}
      } $Self->sqlAsHashRefs( Handle => $cols_sh,
@@ -184,8 +195,8 @@ Sql
      my $name_n = CBIL::Util::V::max(map { length $_->{column_name} } @_columns);
      my $_fmt   =  '%-'.$name_n. '.'. $name_n. 's';
 
-     print join("\t", @table_bind,
-                'Column', 'Type', 'P', 'S', 'Indices', 'Refs',
+     print join("\t", $_table->{owner}, $camelTable,
+                '', 'Type', 'P', 'S', 'Indices', 'Refs',
                 $doc_dict{''}
                ), "\n";
 
@@ -193,7 +204,7 @@ Sql
 
         my @column_bind = ( @table_bind, $_col->{column_name} );
 
-        my @row = ( '', '',
+        my @row = ( $_table->{owner}, $camelTable,
                     sprintf($_fmt, lc $_col->{column_name}),
                     map { $_col->{$_} } qw( data_type data_precision data_scale)
                   );
