@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>GUS::RAD::Plugin::AnalysisResultLoader -  Loads inputs, parameter settings, and results of gene expression data analyses into the appropriate group of RAD tables.</title>
+<title>GUS::Supported::Plugin::InsertRadAnalysis -  Loads inputs, parameter settings, and results of gene expression data analyses into the appropriate group of RAD tables.</title>
 <link rev="made" href="mailto:root@localhost" />
 </head>
 
@@ -36,14 +36,14 @@
 <p>
 </p>
 <h1><a name="name">NAME</a></h1>
-<p>GUS::RAD::Plugin::AnalysisResultLoader -  Loads inputs, parameter settings, and results of gene expression data analyses (pre-processing or down-stream) into the appropriate group of RAD tables.</p>
+<p>GUS::Supported::Plugin::InsertRadAnalysis -  Loads inputs, parameter settings, and results of gene expression data analyses (pre-processing or down-stream) into the appropriate group of RAD tables.</p>
 <p>
 </p>
 <hr />
 <h1><a name="synopsis">SYNOPSIS</a></h1>
-<p>ga GUS::RAD::Plugin::AnalysisResultLoader --help</p>
-<p>ga GUS::RAD::Plugin::AnalysisResultLoader --helpHTML</p>
-<p>ga GUS::RAD::Plugin::AnalysisResultLoader --subclass_view tablename --cfg_file file --data_file file [--restart integer] [--analysis_id integer] [--testnum integer] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
+<p>ga GUS::Supported::Plugin::InsertRadAnalysis --help</p>
+<p>ga GUS::Supported::Plugin::InsertRadAnalysis --helpHTML</p>
+<p>ga GUS::Supported::Plugin::InsertRadAnalysis --subclass_view tablename --cfg_file file --data_file file [--restart integer] [--analysis_id integer] [--testnum integer] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
 <p>
 </p>
 <hr />
@@ -128,7 +128,7 @@
 </p>
 <hr />
 <h1><a name="restarting">RESTARTING</a></h1>
-<p>Loading can be resumed using the <em>--restart n</em> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted). If this argument is given then the <em>analysis_id</em> argument should be given too.</p>
+<p>Loading can be resumed using the <em>--restart n</em> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted). If this argument is given then the <em>analysis_id</em> argument should be given too. Alternatively, one can use the plugin GUS::Community::Plugin::Undo to delete all entries inserted by a specific call to this plugin. Then this plugin can be re-run from fresh.</p>
 <p>
 </p>
 <hr />
@@ -232,9 +232,9 @@
 <dt></dt>
 <dt><strong><a name="item_%2d%2dgusconfigfile_file">--gusconfigfile <em>file</em></a></strong><br />
 </dt>
-<p>The gus config file to use [note: the default is your $GUS_CONFIG_FILE]</p>
+<p>The gus config file to use [note: the default is your $GUS_HOME/config/gus.config]</p>
 <dl>
-<dt><strong><a name="item_default%3a_%2fhome%2fmanduchi%2fgus35%2fgus%2eprop">default: /home/manduchi/gus35/gus.properties</a></strong><br />
+<dt><strong><a name="item_default%3a_%2fhome%2fmanduchi%2fgus3%2e5%2fgus_hom">default: /home/manduchi/gus3.5/gus_home/config/gus.config</a></strong><br />
 </dt>
 <dl>
 <dt><strong><a name="item_format%3a_gus_config_file_format">format: GUS config file format</a></strong><br />
