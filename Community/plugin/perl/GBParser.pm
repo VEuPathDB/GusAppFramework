@@ -321,6 +321,8 @@ sub processEntry {
     }
 
     $dbSeq->submit();
+    my $dbSeqId = $dbSeq->getId();
+    $self->log("na_sequence_id\t$dbSeqId");
     if ($dbSeq->getDbHandle()->getRollBack()) {
       $self->logAlert('FAILED ENTRY', "Acc:", $e->{ACCESSION}->[0]->getAccession());
       die "dbSeq submit caused a rollback";
@@ -330,6 +332,8 @@ sub processEntry {
     }
   } else {    
     $seqobj->submit();
+    my $seqobjId = $seqobj->getId();
+    $self->log("na_sequence_id\t$seqobjId");
     if ($seqobj->getDbHandle()->getRollBack()) {
       $self->logAlert('FAILED ENTRY', "Acc:", $e->{ACCESSION}->[0]->getAccession());
       die "seqobj submit caused a rollback";
