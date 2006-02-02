@@ -198,11 +198,11 @@ sub run {
     my @ar = ($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile);
 
     if($technologyType =~ /oligo/i && $annotationType eq "DbRef") {
-      $nrecords = $self->populateCompEleDbRef(@ar, "RAD.ShortOligoFamiliy", "name");
+      $nrecords = $self->populateCompEleDbRef(@ar, "RAD.ShortOligoFamily", "name");
     }
     
     elsif($technologyType =~ /oligo/i && $annotationType eq "NASeq")  {
-      $nrecords = $self->populateCompEleNaSeq(@ar, "RAD.ShortOligoFamiliy", "name");
+      $nrecords = $self->populateCompEleNaSeq(@ar, "RAD.ShortOligoFamily", "name");
     }
 
     elsif($technologyType =~ /spot/i && $annotationType eq "DbRef") {
