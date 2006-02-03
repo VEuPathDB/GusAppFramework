@@ -744,7 +744,7 @@ sub workOnArrayDesignAnnotation{
 
   foreach my $m (keys (%{$cfg_rv->{'arrayannotation_index'}})) {
     my $arrayannotation_hash;
-    $arrayannotation_hash->{'array_id'}= $cfg_rv->{'ArrayDesign_Id'};
+    $arrayannotation_hash->{'array_design_id'}= $cfg_rv->{'ArrayDesign_Id'};
 
     for (my $i=0; $i<@arrayannotation_key_attr; $i++) {
 
@@ -1079,12 +1079,18 @@ if(defined $cfg_rv->{'mapping'}->{'ElementImp.subclass_view'}){
 #      }
 
      for (my $i=0; $i<@spot_attr; $i++) {
-	 if (defined $mapping->{'ElementImp.'.$spot_attr[$i]}&& defined $pos->{$mapping->{'ElementImp.'.$spot_attr[$i]}} &&  $arr[$pos->{$mapping->{'ElementImp.'.$spot_attr[$i]}}] ne "") {
+       if(defined $mapping->{'ElementImp.'.$spot_attr[$i]}){
+	 if (defined $pos->{$mapping->{'ElementImp.'.$spot_attr[$i]}} &&  $arr[$pos->{$mapping->{'ElementImp.'.$spot_attr[$i]}}] ne "") {
 	     $spot_hash->{$spot_attr[$i]} = $arr[$pos->{$mapping->{'ElementImp.'.$spot_attr[$i]}}];
+	   }
+	 elsif(!defined $pos->{$mapping->{'ElementImp.'.$spot_attr[$i]}}){
+	   $spot_hash->{$spot_attr[$i]}=$mapping->{'ElementImp.'.$spot_attr[$i]};
+#	   print $spot_attr[$i],$spot_hash->{$spot_attr[$i]},"\n";
 	 }
-
+       }
 #      if($spot_attr[$i] =~ /^element_type_id$/ )
 #     $spot_hash->{'element_tye_id'}
+
 
 	 if ($spot_attr_hashref->{$spot_attr[$i]}=~ /^"Not Nullable"$/ && !defined $spot_hash->{$spot_attr[$i]}) {
 	     $warnings = "Data file line $n is missing attribute ElementImp.$spot_attr[$i], which is mandatory\nData from data line $n were not loaded.\nHere $n is the number of lines (including empty ones) after the header.\n\n";
