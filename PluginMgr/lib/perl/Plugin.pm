@@ -1392,6 +1392,75 @@ sub logWrap {
 }
 
 # ----------------------------------------------------------------------
+# Pod-based documentation
+# ----------------------------------------------------------------------
+
+=head2 Pod-based Documentation
+
+=cut
+
+sub extractDocumentationFromMyPod {
+   my $Self = shift;
+
+   my %Rv = ( purpose          => '',
+              purposeBrief     => '',
+              howToRestart     => '',
+              failureCases     => '',
+              notes            => '',
+            );
+
+   my $tag = 'notes';
+   my $pod_b;
+
+   my $class = ref($Self);
+   $class =~ s/::/\//g;
+   my $_f  = $INC{"$class.pm"};
+   my $_fh = FileHandle->new("<$_f")
+   || die "Can not open self in '$class' as '$_f' for pod documentation: $!";
+   while (<$_fh>) {
+      if (/^=pod/) {
+         $pod_b = 1;
+      }
+
+      elsif (/^=cut/) {
+         $pod_b = 0;
+      }
+
+      elsif ($pod_b) {
+         if (/^=head1 \s*(.+?)\s*$/) {
+            my $head1 = $1;
+            if ($head1 =~ /^Purpose$/i) {
+               $tag = 'purpose';
+            }
+            elsif ($head1 =~ /^Purpose Brief$/i) {
+               $tag = 'purposeBrief';
+            }
+            elsif ($head1 =~ /^How to Restart$/i) {
+               $tag = 'howToRestart';
+            }
+            elsif ($head1 =~ /^Failure Cases$/i) {
+               $tag = 'falilureCases';
+            }
+            elsif ($head1 =~ /^Notes$/i) {
+               $tag = 'notes';
+            }
+            else {
+               $tag = 'notes';
+               $Rv{$tag} .= $_;
+            }
+         }
+
+         elsif (defined $tag) {
+            $Rv{$tag} .= $_;
+         }
+      }
+   }
+   $_fh->close();
+
+   return wantarray ? %Rv : \%Rv;;
+}
+
+# ----------------------------------------------------------------------
 # Common SQL routines
 # ----------------------------------------------------------------------
 
