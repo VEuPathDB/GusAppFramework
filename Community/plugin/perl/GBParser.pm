@@ -847,23 +847,23 @@ sub getDbXRefId {
     }
 
 
-    my $dbh = $self->getDbHandle();
+     # my $dbh = $self->getDbHandle();
   
-  ##setup global hash for ExternalDatabaseRelease
-    my $st = $dbh->prepare("select db_ref_id
-                          from sres.DbRef 
-                          where external_database_release_id = ? and primary_identifier = ?");
-    $st->execute($dbRelId,$id);
+#    ##setup global hash for ExternalDatabaseRelease
+#      my $st = $dbh->prepare("select db_ref_id
+#                            from sres.DbRef 
+#                            where external_database_release_id = ? and primary_identifier = ?");
+#      $st->execute($dbRelId,$id);
 
-    my $dbRefId = $st->fetchrow_array();
+#      my $dbRefId = $st->fetchrow_array();
 
-    $st->finish();
+#     $st->finish();
 
-    unless ($dbRefId) {
+    unless ($dbref->retrieveFromDB()) {
       $dbref->submit();
     }
-    ;
-    $DbRefCache{$k} = $dbRefId ? $dbRefId : $dbref->getId();
+
+    $DbRefCache{$k} = $dbref->getId();
 
   }
   return ($DbRefCache{$k});
@@ -963,9 +963,13 @@ sub setWholeTableCache{
                           where r.external_database_id = e.external_database_id and r.version = 'unknown'");
   $st->execute() || die $st->errstr;
   
-  while (my ($lowercase_name, $external_db_rel_id) = $st->fetchrow_array()) {
-    $lowercase_name = lc $lowercase_name; ##just in case not real lowercase ;-))
-    $ExternalDatabaseRelHash{"$lowercase_name"} = $external_db_rel_id;
+  while (my ($name, $external_db_rel_id) = $st->fetchrow_array()) {
+    #$name = lc $name;
+    $ExternalDatabaseRelHash{"$name"} = $external_db_rel_id;
+  }
+
+  foreach my $k (keys %ExternalDatabaseRelHash) {
+    print STDERR "db rel hash : $k    $ExternalDatabaseRelHash{$k}\n";
   }
   
   ##setup global hash for SequenceType
@@ -988,17 +992,24 @@ sub getDbRelId
   {
     my ($self,$name) = @_;
 
-    my $lcname = lc $name;
-  
+    print STDERR "999999999999999999999999999  name = $name\n";
+
+    #my $lcname = lc $name;
+
     my $external_db_rel_id;
 
     my $external_db_id;
 
-    if ($ExternalDatabaseRelHash{"$lcname"}) {
-      $external_db_rel_id = $ExternalDatabaseRelHash{"$lcname"};
-    } else {
-      my $externalDatabaseRow = GUS::Model::SRes::ExternalDatabase->new({"name" => $name,
-									 "lowercase_name" => $lcname});
+    # if ($ExternalDatabaseRelHash{"$lcname"}) {
+#       $external_db_rel_id = $ExternalDatabaseRelHash{"$lcname"};
+#     } 
+    if ($ExternalDatabaseRelHash{"$name"}) {
+      $external_db_rel_id = $ExternalDatabaseRelHash{"$name"};
+      print STDERR "1011111111111111111111  name = $name, id = $external_db_rel_id\n";
+      
+    } 
+    else {
+      my $externalDatabaseRow = GUS::Model::SRes::ExternalDatabase->new({"name" => $name});
       $externalDatabaseRow->retrieveFromDB();
 
       if (! $externalDatabaseRow->getId()) {
@@ -1006,16 +1017,28 @@ sub getDbRelId
       }
 
       $external_db_id = $externalDatabaseRow->getId();
-      
+
+      print STDERR "********************************  $external_db_id   ************************\n";
+
       my $version = 'unknown';
 
       my $release_date = 'sysdate'; 
-      
+
       my $externalDatabaseRelRow = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'release_date'=>$release_date, 'version'=>$version});
-      $externalDatabaseRelRow->submit();
-      $external_db_rel_id = $externalDatabaseRelRow->getExternalDatabaseReleaseId();
-      
-      $ExternalDatabaseRelHash{"$lcname"} = $external_db_rel_id;
+
+      $externalDatabaseRelRow->retrieveFromDB();
+      #$externalDatabaseRelRow->submit();
+
+      if (! $externalDatabaseRelRow->getId()) {
+	$externalDatabaseRelRow->submit();
+      }
+
+      $external_db_rel_id = $externalDatabaseRelRow->getId();
+
+      #$external_db_rel_id = $externalDatabaseRelRow->getExternalDatabaseReleaseId();
+
+      #$ExternalDatabaseRelHash{"$lcname"} = $external_db_rel_id;
+      $ExternalDatabaseRelHash{"$name"} = $external_db_rel_id;
     }
 
     return $external_db_rel_id;
