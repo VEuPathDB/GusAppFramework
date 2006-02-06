@@ -500,12 +500,12 @@ sub getImageFileNames {
       $modifiedImageFileURI->{$assay."_$cy3ChannelDef"}  = $tiffFilesPath.$imageFile;
     }
 
-    if ($type eq $cy5FilesExtension) {
+    if ($type eq $cy5ChannelDef && $extension eq $cy5FilesExtension) {
       $imageFilesLocationRef->{$assay."_$cy5ChannelDef"} = $imageRepositoryPath.$tiffFilesPath.$imageFile;
       $modifiedImageFileURI->{$assay."_$cy5ChannelDef"}  = $tiffFilesPath.$imageFile;
 	}
 
-    if ($type eq $cy3FilesExtension) {
+    if ($type eq $cy3ChannelDef && $extension eq $cy3FilesExtension) {
       $imageFilesLocationRef->{$assay."_$cy3ChannelDef"} = $imageRepositoryPath.$tiffFilesPath.$imageFile;
       $modifiedImageFileURI->{$assay."_$cy3ChannelDef"}  = $tiffFilesPath.$imageFile;
 	}
