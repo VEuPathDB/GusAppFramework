@@ -1026,6 +1026,8 @@ sub newLibrary {
 
   $dbest_lib->{'tissue_type'} = substr($dbest_lib->{'tissue_type'},0,99);
 
+  $dbest_lib->{'name'} = substr($dbest_lib->{'name'},0,119);
+
   ## Set the easy of the attributes
 
   foreach my $a (keys %{$atthash}) {
