@@ -50,13 +50,22 @@ foreach my $file (@files) {
     }
 
     foreach my $bioperlFeature ($bioperlSeq->get_SeqFeatures()) {
-      my $feature = $bioperlFeature->primary_tag();
-      $features->{$feature} = {} unless $features->{$feature};
-      $featureCounts{$feature}++;
-      foreach my $qualifier ($bioperlFeature->get_all_tags()) {
-	$features->{$feature}->{$qualifier}++;
-      }
+      processFeature($bioperlFeature, "root");
     }
+  }
+}
+
+sub processFeature {
+  my ($bioperlFeature, $parent) = @_;
+
+  my $feature = $bioperlFeature->primary_tag();
+  $featureCounts{$feature}->{$parent}++;
+  foreach my $qualifier ($bioperlFeature->get_all_tags()) {
+    $features->{$feature}->{$parent}->{$qualifier}++;
+  }
+
+  for my $subFeature ($bioperlFeature->get_SeqFeatures()) {
+    processFeature($subFeature, $feature);
   }
 }
 
@@ -72,19 +81,23 @@ HEADER
   print $header;
   foreach my $feature (sort(keys %{$features})) {
     print "  <feature name=\"$feature\" table=\"\" so=\"\">\n";
-    foreach my $qualifier (sort(keys %{$features->{$feature}})) {
-      print "    <qualifier name=\"$qualifier\"/>\n";
+    foreach my $parent (sort(keys %{$features->{$feature}})) {
+      foreach my $qualifier (sort(keys %{$features->{$feature}->{$parent}})) {
+	print "    <qualifier name=\"$qualifier\" parent=\"$parent\"/>\n";
+      }
     }
     print "  </feature>\n\n";
   }
   print "</mapping>/n";
 } else {
   foreach my $feature (sort(keys %{$features})) {
-    print "$feature ($featureCounts{$feature})\n";
-    foreach my $qualifier (sort(keys %{$features->{$feature}})) {
-      print "  $qualifier ($features->{$feature}->{$qualifier})\n";
+    foreach my $parent (sort(keys %{$features->{$feature}})) {
+      print "$feature:$parent ($featureCounts{$feature}->{$parent})\n";
+      foreach my $qualifier (sort(keys %{$features->{$feature}->{$parent}})) {
+	print "  $qualifier ($features->{$feature}->{$parent}->{$qualifier})\n";
+      }
+      print "\n";
     }
-    print "\n";
   }
 }
 
