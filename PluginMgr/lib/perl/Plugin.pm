@@ -1428,7 +1428,8 @@ sub extractDocumentationFromMyPod {
 
       elsif ($pod_b) {
          if (/^=head1 \s*(.+?)\s*$/) {
-            my $head1 = $1;
+            my $head1 = $1; $head1 =~ s/\s+/ /g;
+
             if ($head1 =~ /^Purpose$/i) {
                $tag = 'purpose';
             }
