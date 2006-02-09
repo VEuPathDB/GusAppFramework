@@ -1,0 +1,243 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>GUS::Supported::Plugin::InsertAssayControl -  Loads data into AssayControl table in RAD database.</title>
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#tables_affected">TABLES AFFECTED</a></li>
+	<li><a href="#tables_depended_on">TABLES DEPENDED ON</a></li>
+	<li><a href="#failure_cases">FAILURE CASES</a></li>
+	<li><a href="#restarting">RESTARTING</a></li>
+	<li><a href="#arguments_in_detail">ARGUMENTS IN DETAIL</a></li>
+	<li><a href="#notes">NOTES</a></li>
+	<ul>
+
+		<li><a href="#example">Example</a></li>
+	</ul>
+
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>GUS::Supported::Plugin::InsertAssayControl -  Loads data into AssayControl table in RAD database.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>ga GUS::Supported::Plugin::InsertAssayControl --help</p>
+<p>ga GUS::Supported::Plugin::InsertAssayControl --helpHTML</p>
+<p>ga GUS::Supported::Plugin::InsertAssayControl --data_file file --assay_id integer [--testnumber integer] [--restart integer] [--noWarning ] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This is a plug-in that loads AssayControl information (spotted microarray and oligonucleotide array) data into control table.</p>
+<p>
+</p>
+<hr />
+<h1><a name="tables_affected">TABLES AFFECTED</a></h1>
+<dl>
+<dt><strong><a name="item_rad%3a%3aassaycontrol"><strong>RAD::AssayControl</strong></a></strong><br />
+</dt>
+<p>Enters here multiple rows</p>
+<dt><strong><a name="item_core%3a%3aalgorithminvocation"><strong>Core::AlgorithmInvocation</strong></a></strong><br />
+</dt>
+<p>The plugin manager (ga) inserts a row into this table describing the plugin and the parameter values used</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="tables_depended_on">TABLES DEPENDED ON</a></h1>
+<dl>
+<dt><strong><a name="item_study%3a%3aontologyentry"><strong>Study::OntologyEntry</strong></a></strong><br />
+</dt>
+<p>Holds the ontolgies for technology_type, substrate_type and control_type</p>
+<dt><strong><a name="item_rad%3a%3aassay"><strong>RAD::Assay</strong></a></strong><br />
+</dt>
+<p>Holds assay information</p>
+<dt><strong><a name="item_core%3a%3aalgorithm"><strong>Core::Algorithm</strong></a></strong><br />
+</dt>
+<p>The algorithm (ie, this plugin) responsible for the update</p>
+<dt><strong><a name="item_core%3a%3aalgorithmimplementation"><strong>Core::AlgorithmImplementation</strong></a></strong><br />
+</dt>
+<p>The specific implementation of it</p>
+<dt><strong><a name="item_core%3a%3aalgorithmparamkey"><strong>Core::AlgorithmParamKey</strong></a></strong><br />
+</dt>
+<p>The keys for the plugin's command line parameters</p>
+<dt><strong><a name="item_core%3a%3aalgorithmparamkeytype"><strong>Core::AlgorithmParamKeyType</strong></a></strong><br />
+</dt>
+<p>The data types of the parameters</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="failure_cases">FAILURE CASES</a></h1>
+<p>Files not in an appropriate format.</p>
+<p>
+</p>
+<hr />
+<h1><a name="restarting">RESTARTING</a></h1>
+<p>Loading can be resumed using the <em>--restart n</em> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted).</p>
+<p>
+</p>
+<hr />
+<h1><a name="arguments_in_detail">ARGUMENTS IN DETAIL</a></h1>
+<dl>
+<dt><strong><a name="item_file">--data_file <em>file</em> (Required)</a></strong><br />
+</dt>
+<p>The full path of the data_file.</p>
+<dl>
+<dt><strong><a name="item_format%3a_see_the_notes_for_the_format_of_this_fil">format: See the NOTES for the format of this file</a></strong><br />
+</dt>
+<dl>
+<dt><strong><a name="item_mustexist%3a_1">mustExist: 1</a></strong><br />
+</dt>
+</dl>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_integer">--assay_id <em>integer</em> (Required)</a></strong><br />
+</dt>
+<p>RAD assay id, the entry in Assay table whose controls are being loaded.</p>
+<dt><strong><a name="item_%2d%2dtestnumber_integer">--testnumber <em>integer</em></a></strong><br />
+</dt>
+<p>optional, number of iterations for testing</p>
+<dt><strong><a name="item_%2d%2drestart_integer">--restart <em>integer</em></a></strong><br />
+</dt>
+<p>optional,data file line number to start loading data from(start counting after the header)</p>
+<dt><strong><a name="item_%2d%2dnowarning">--noWarning <em></em></a></strong><br />
+</dt>
+<p>if specified, generate no warning messages</p>
+<dl>
+<dt><strong><a name="item_default%3a_0">default: 0</a></strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dcommit">--commit <em></em></a></strong><br />
+</dt>
+<p>Actualy commit changes to the database</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2ddebug">--debug <em></em></a></strong><br />
+</dt>
+<p>output extra debugging information to verify correct operation</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dsqlverbose">--sqlVerbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to switch on a log of SQL statements executed by Perl object layer.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dverbose">--verbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to enable output of logVerbose messages from the plugin.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dveryverbose">--veryVerbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to enable output of logVeryVerbose and logVerbose messages from the plugin.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2duser_string">--user <em>string</em></a></strong><br />
+</dt>
+<p>Set the user name in new or changed rows with this GUS user name (from Core.UserInfo table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dgroup_string">--group <em>string</em></a></strong><br />
+</dt>
+<p>Set the group name in new or changed rows with this GUS group name (from Core.GroupInfo table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dproject_string">--project <em>string</em></a></strong><br />
+</dt>
+<p>set the project name in new or changed rows with this GUS project name (from Core.Project table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dcomment_string">--comment <em>string</em></a></strong><br />
+</dt>
+<p>Set Core.AlgorithmInvocation.comment with this comment</p>
+<dt><strong><a name="item_%2d%2dalgoinvo_integer">--algoinvo <em>integer</em></a></strong><br />
+</dt>
+<p>Use this algorithm invocation id in the event that a new algorithm invocation id cannot be generated automatically</p>
+<dl>
+<dt><strong><a name="item_default%3a_1">default: 1</a></strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dgusconfigfile_file">--gusconfigfile <em>file</em></a></strong><br />
+</dt>
+<p>The gus config file to use [note: the default is your $GUS_CONFIG_FILE]</p>
+<dl>
+<dt><strong><a name="item_default%3a_%2fhome%2fjunmin%2fgus35%2f%2egus%2epro">default: /home/junmin/gus35/.gus.properties</a></strong><br />
+</dt>
+<dl>
+<dt><strong><a name="item_format%3a_gus_config_file_format">format: GUS config file format</a></strong><br />
+</dt>
+</dl>
+<dl>
+<dt><strong>mustExist: 1</strong><br />
+</dt>
+</dl>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dhelp">--help <em></em></a></strong><br />
+</dt>
+<p>Request long help</p>
+<dt><strong><a name="item_%2d%2dhelphtml">--helpHTML <em></em></a></strong><br />
+</dt>
+<p>Request help in HTML</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="notes">NOTES</a></h1>
+<p>
+</p>
+<h2><a name="example_*for_help_ga_gus::supported::plugin::insertassaycontrol_b<[options]>_b<help>_*for_loading_data_into_assaycontrol_table_ga_gus::supported::plugin::insertassaycontrol_b<[options]>_b<data_file>_data_file_b<assay_id>_assay_id_b<debug>_>_logfile_*for_loading_data_into_assaycontrol_table_ga_gus::supported::plugin::insertassaycontrol_b<[options]>_b<data_file>_data_file_b<assay_id>_assay_id_b<commit>_>_logfile_=head2_f<data_file>">Example
+*For help
+ga GUS::Supported::Plugin::InsertAssayControl <strong>[options]</strong> <strong>--help</strong>
+*For loading data into AssayControl table
+ga GUS::Supported::Plugin::InsertAssayControl <strong>[options]</strong> <strong>--data_file</strong> data_file <strong>--assay_id</strong> assay_id <strong>--debug</strong> &gt; logfile
+*For loading data into AssayControl table
+ga GUS::Supported::Plugin::InsertAssayControl <strong>[options]</strong> <strong>--data_file</strong> data_file <strong>--assay_id</strong> assay_id <strong>--commit</strong> &gt; logfile 
+=head2 <em>data_file</em></a></h2>
+<p>The data file should be in tab-delimited text format with one header row and a row for each element. All rows should contain the same number of tabs/fields.</p>
+<p>* The header contains a list of attributes which are defined in the assaycontrol table including control__id, value, unit_type_id.</p>
+<p>* All attributes in the header should be small case. View attributes should be the same as defined in the views of interest.</p>
+<p>* Empty lines in the data files are ignored. All quotes within a data line are removed by the plug-in.</p>
+<p>Please double-check that your data file has no inconsistencies before loading the data. If a column in your data file contains information which should be separated and stored into different table/view attributes, you will need to re-parse your file and separate this information into different columns before running the plug-in. Similarly, if information from different columns of your data file refers to one table/view attribute, you will need to re-parse your data file and merge this information into one column.
+=head2 SPECIAL NOTES
+Before you can run this plug-in you need to create the Perl objects for the views you will be loading, should these objects not exist yet. Based on the ``build'' system, this will involve two steps. First, check out the RAD, CBIL, GUS and Install modules from the cvs repository; secondly, build the GUS_HOME which the Perl objects reside in.
+The plug-in outputs a print statement to STDOUT (for possible redirection to a log file) which lists the number of data file lines read (counting empty lines, but not counting the header and the lines preceding it in the data file) and any warning <code>statement(s)</code> regarding data lines which have not been loaded into RAD.
+Make sure that the <em>.gus.properties</em> file of the user contains the correct login name [RADrw]. Also, if the group and project differ from the default values in <em>.gus.properties</em>, <em>please specify the proper group and project name on the command line using --group and --project options respectively</em>. 
+=head1 AUTHOR
+Written by Junmin Liu.
+=head1 COPYRIGHT
+Copyright Trustees of University of Pennsylvania 2005.</p>
+
+</body>
+
+</html>

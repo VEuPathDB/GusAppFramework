@@ -1,0 +1,357 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>GUS::Community::Plugin::InsertMAS5Assay2Quantification -  Plugin is BatchLoader, creates assays, acquisitions and quantifications for Affymetrix assays in RAD tables.</title>
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<ul>
+
+		<li><a href="#config_file_(is_mandatory)"><em>Config File (is mandatory)</em></a></li>
+		<li><a href="#database_requirements"><em>Database requirements</em></a></li>
+	</ul>
+
+	<li><a href="#tables_affected">TABLES AFFECTED</a></li>
+	<li><a href="#tables_depended_on">TABLES DEPENDED ON</a></li>
+	<li><a href="#failure_cases">FAILURE CASES</a></li>
+	<li><a href="#restarting">RESTARTING</a></li>
+	<li><a href="#arguments_in_detail">ARGUMENTS IN DETAIL</a></li>
+	<li><a href="#examples">EXAMPLES</a></li>
+	<li><a href="#report_bugs_to">REPORT BUGS TO</a></li>
+	<li><a href="#authors">AUTHORS</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>GUS::Community::Plugin::InsertMAS5Assay2Quantification -  Plugin is BatchLoader, creates assays, acquisitions and quantifications for Affymetrix assays in RAD tables.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>ga GUS::Community::Plugin::InsertMAS5Assay2Quantification --help</p>
+<p>ga GUS::Community::Plugin::InsertMAS5Assay2Quantification --helpHTML</p>
+<p>ga GUS::Community::Plugin::InsertMAS5Assay2Quantification --cfg_file file [--skip string-list] [--testnumber integer] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This plugin loads information about multiple assays into the database, in a batch mode.
+A config file containing information such as location of the EXP files is required by
+the plugin.</p>
+<p>The plugin does contain some 'hard-coded' information, which is based on policies adopted
+by CBIL, and will be entered as such into RAD tables. This is mostly done to avoid handling
+the exponential number of combinations possible if differences are allowed. If you want to 
+change such hard-coded information, you will have to edit some of the plugin code.</p>
+<p>Hierarchy of subroutines is as follows (should give you some idea of what the plugin does
+without looking into the code):</p>
+<pre>
+ #+ getDocumentation {
+ #+ getArgumentsDeclaration {
+ #+ new {
+ #+ run {
+ #++ createPropertiesArray {
+ #++ checkPropertiesInConfigFile {
+ #++ createAndSubmitGUSAssaysFromFiles {
+ #++++ getFileExtensions {
+ #++++ findAssayNames {
+ #++++ createSingleGUSAssay {
+ #++++++ checkRequiredFilesExist {
+ #++++++ parseTabFile {
+ #++++++ createGusAssay {
+ #++++++++ checkDatabaseEntry {
+ #++++++++ modifyDate {
+ #++++++ createGusAssayParams {
+ #++++++ createGusAcquisition {
+ #++++++ createGusAcquisitionParams {
+ #++++++ createGUSQuantification {
+ #++++++ getQuantificationDate {
+ #++++++ createGUSQuantParams {
+ #++++ submitSingleGUSAssay {</pre>
+<p>
+</p>
+<h2><a name="config_file_(is_mandatory)"><em>Config File (is mandatory)</em></a></h2>
+<p>A config file is need for the plugin to run. Blank lines and comments (lines starting with
+'#') are ignored. The sample config file contains instructions and information about the
+keywords and their required values, and is maintained in:
+ $PROJECT_HOME/GUS/Community/config/sample_InsertMAS5Assay2Quantification.cfg</p>
+<p>All keywords are required. If no value is to be entered, please use the word 'null'
+(without the quotes) instead. The following keywords are used by the plugin (a value
+of 1 indicates that the keyword can never have a null value):</p>
+<p>MaxObjectNumber            =&gt; 0, <br> 
+DataRepositoryPath            =&gt; 1, <br>
+ImageRepositoryPath           =&gt; 1, <br>
+EXPFilePath                   =&gt; 1, <br>
+RPTFilePath                   =&gt; 1, <br>
+CELFilePath                   =&gt; 1, <br>
+DATFilePath                   =&gt; 0, <br>
+MetricsFilePath               =&gt; 1, <br>
+HybProtocolID                 =&gt; 1, <br>
+AcqProtocolID                 =&gt; 1, <br>
+CelProtocolID                 =&gt; 1, <br>
+ChpProtocolID                 =&gt; 1, <br>
+HybOperatorID                 =&gt; 1, <br>
+CelQuantOperatorID            =&gt; 1, <br>
+ChpQuantOperatorID            =&gt; 1, <br>
+StudyID                       =&gt; 1, <br>
+ChannelDef                    =&gt; 1, <br>
+Extensions                    =&gt; 1, <br>
+FileTypes                     =&gt; 1, <br>
+PrependToFluidicsKeyword      =&gt; 0, <br>
+AppendToFluidicsKeyword       =&gt; 0, <br>
+JoinFluidicsKeywordsWithSign  =&gt; 0, <br>
+PixelSizeRepresentation       =&gt; 1, <br>
+FilterRepresentation          =&gt; 1, <br>
+NumberOfScansRepresentation   =&gt; 1, <br>
+TGTValueRepresentation        =&gt; 1, <br>
+SFValueRepresentation         =&gt; 1, <br>
+Alpha1Representation          =&gt; 1, <br>
+Alpha2Representation          =&gt; 1, <br>
+TauRepresentation             =&gt; 1</p>
+<p>
+</p>
+<h2><a name="database_requirements"><em>Database requirements</em></a></h2>
+<p>This plugin assumes that the following entries exist in your instance of the database:</p>
+<pre>
+ 1.  The study in Study.Study
+ 2.  The appropriate Affymetrix array in RAD.Array
+ 3.  The hybridization protocol, the acquisition protocol, the 
+     quantification protocol in RAD.Protocol
+ 4.  For each of the protocol entries in 3, all of its parameters 
+     in RAD.ProtocolParam</pre>
+<p>If any of the above is missing, the plugin will report an error.</p>
+<p>
+</p>
+<hr />
+<h1><a name="tables_affected">TABLES AFFECTED</a></h1>
+<dl>
+<dt><strong><a name="item_rad%3a%3aassay"><strong>RAD::Assay</strong></a></strong><br />
+</dt>
+<p>Enters as many rows as distinct assays found</p>
+<dt><strong><a name="item_rad%3a%3aassayparam"><strong>RAD::AssayParam</strong></a></strong><br />
+</dt>
+<p>For each assay entered, enters here the values of the Fluidics protocol parameters as recorded in the corresponding .EXP file</p>
+<dt><strong><a name="item_rad%3a%3aquantification"><strong>RAD::Quantification</strong></a></strong><br />
+</dt>
+<p>Enters here two quantifications, cel and chp, for each assay entered</p>
+<dt><strong><a name="item_rad%3a%3aquantificationparam"><strong>RAD::QuantificationParam</strong></a></strong><br />
+</dt>
+<p>For each assay entered, enters here the values for parameters recorded in the corresponding .RPT file</p>
+<dt><strong><a name="item_rad%3a%3aacquisition"><strong>RAD::Acquisition</strong></a></strong><br />
+</dt>
+<p>Enters here one acquisition for each assay entered</p>
+<dt><strong><a name="item_rad%3a%3aacquisitionparam"><strong>RAD::AcquisitionParam</strong></a></strong><br />
+</dt>
+<p>For each assay entered, enters here the values for parameters recorded in the corresponding .EXP file</p>
+<dt><strong><a name="item_rad%3a%3astudyassay"><strong>RAD::StudyAssay</strong></a></strong><br />
+</dt>
+<p>Row linking the given study to an assay is entered</p>
+<dt><strong><a name="item_core%3a%3aalgorithminvocation"><strong>Core::AlgorithmInvocation</strong></a></strong><br />
+</dt>
+<p>The plugin manager (ga) inserts a row into this table describing the plugin and the parameter values used</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="tables_depended_on">TABLES DEPENDED ON</a></h1>
+<dl>
+<dt><strong><a name="item_study%3a%3astudy"><strong>Study::Study</strong></a></strong><br />
+</dt>
+<p>The particular study to which the assay belongs</p>
+<dt><strong><a name="item_rad%3a%3aarraydesign"><strong>RAD::ArrayDesign</strong></a></strong><br />
+</dt>
+<p>Holds array information</p>
+<dt><strong><a name="item_rad%3a%3aprotocol"><strong>RAD::Protocol</strong></a></strong><br />
+</dt>
+<p>The hybridization, image_acquisition, and feature_extraction protocols used</p>
+<dt><strong><a name="item_rad%3a%3aprotocolparam"><strong>RAD::ProtocolParam</strong></a></strong><br />
+</dt>
+<p>Parameters for the protocol used</p>
+<dt><strong><a name="item_rad%3a%3acontact"><strong>RAD::Contact</strong></a></strong><br />
+</dt>
+<p>Information on researchers who performed the hybridization and the image analysis</p>
+<dt><strong><a name="item_core%3a%3aalgorithm"><strong>Core::Algorithm</strong></a></strong><br />
+</dt>
+<p>The algorithm (ie, this plugin) responsible for the update</p>
+<dt><strong><a name="item_core%3a%3aalgorithmimplementation"><strong>Core::AlgorithmImplementation</strong></a></strong><br />
+</dt>
+<p>The specific implementation of it</p>
+<dt><strong><a name="item_core%3a%3aalgorithmparamkey"><strong>Core::AlgorithmParamKey</strong></a></strong><br />
+</dt>
+<p>The keys for the plugin's command line parameters</p>
+<dt><strong><a name="item_core%3a%3aalgorithmparamkeytype"><strong>Core::AlgorithmParamKeyType</strong></a></strong><br />
+</dt>
+<p>The data types of the parameters</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="failure_cases">FAILURE CASES</a></h1>
+<p>Files not in an appropriate format.</p>
+<p>
+</p>
+<hr />
+<h1><a name="restarting">RESTARTING</a></h1>
+<p>Cannot be restarted.</p>
+<p>
+</p>
+<hr />
+<h1><a name="arguments_in_detail">ARGUMENTS IN DETAIL</a></h1>
+<dl>
+<dt><strong><a name="item_file">--cfg_file <em>file</em> (Required)</a></strong><br />
+</dt>
+<p>The full path of the cfg file.</p>
+<dl>
+<dt><strong><a name="item_format%3a_see_notes">format: See NOTES</a></strong><br />
+</dt>
+<dl>
+<dt><strong><a name="item_mustexist%3a_1">mustExist: 1</a></strong><br />
+</dt>
+</dl>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_list">--skip <em>string-list</em> (comma delimited)</a></strong><br />
+</dt>
+<p>The list of prefixes of the files in the specified directories that will be skipped for loading.</p>
+<dt><strong><a name="item_%2d%2dtestnumber_integer">--testnumber <em>integer</em></a></strong><br />
+</dt>
+<p>Number of assays to be loaded for testing</p>
+<dt><strong><a name="item_%2d%2dcommit">--commit <em></em></a></strong><br />
+</dt>
+<p>Actualy commit changes to the database</p>
+<dl>
+<dt><strong><a name="item_default%3a_0">default: 0</a></strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2ddebug">--debug <em></em></a></strong><br />
+</dt>
+<p>output extra debugging information to verify correct operation</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dsqlverbose">--sqlVerbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to switch on a log of SQL statements executed by Perl object layer.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dverbose">--verbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to enable output of logVerbose messages from the plugin.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dveryverbose">--veryVerbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to enable output of logVeryVerbose and logVerbose messages from the plugin.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2duser_string">--user <em>string</em></a></strong><br />
+</dt>
+<p>Set the user name in new or changed rows with this GUS user name (from Core.UserInfo table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dgroup_string">--group <em>string</em></a></strong><br />
+</dt>
+<p>Set the group name in new or changed rows with this GUS group name (from Core.GroupInfo table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dproject_string">--project <em>string</em></a></strong><br />
+</dt>
+<p>set the project name in new or changed rows with this GUS project name (from Core.Project table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dcomment_string">--comment <em>string</em></a></strong><br />
+</dt>
+<p>Set Core.AlgorithmInvocation.comment with this comment</p>
+<dt><strong><a name="item_%2d%2dalgoinvo_integer">--algoinvo <em>integer</em></a></strong><br />
+</dt>
+<p>Use this algorithm invocation id in the event that a new algorithm invocation id cannot be generated automatically</p>
+<dl>
+<dt><strong><a name="item_default%3a_1">default: 1</a></strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dgusconfigfile_file">--gusconfigfile <em>file</em></a></strong><br />
+</dt>
+<p>The gus config file to use [note: the default is your $GUS_CONFIG_FILE]</p>
+<dl>
+<dt><strong><a name="item_default%3a_%2fhome%2fyourName%2fgus%2f%2fproject_home%2fgus%2eproper">default: /home/yourName/gus/project_home/gus.properties</a></strong><br />
+</dt>
+<dl>
+<dt><strong><a name="item_format%3a_gus_config_file_format">format: GUS config file format</a></strong><br />
+</dt>
+</dl>
+<dl>
+<dt><strong>mustExist: 1</strong><br />
+</dt>
+</dl>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dhelp">--help <em></em></a></strong><br />
+</dt>
+<p>Request long help</p>
+<dt><strong><a name="item_%2d%2dhelphtml">--helpHTML <em></em></a></strong><br />
+</dt>
+<p>Request help in HTML</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="examples">EXAMPLES</a></h1>
+<p>ga GUS::Community::Plugin::InsertMAS5Assay2Quantification 
+ --cfg_file ~/test/testStudy/InsertMAS5Assay2Quantification.cfg 
+ --testnumber 1 
+ --group myPI_InRAD
+ --project 'myProjectInRAD'</p>
+<p>ga GUS::Community::Plugin::InsertMAS5Assay2Quantification 
+ --cfg_file ~/test/testStudy/InsertMAS5Assay2Quantification.cfg 
+ --skip assay12345, assay45678
+ --testnumber 5 
+ --group myPI_InRAD
+ --project 'myProjectInRAD'
+ --commit</p>
+<p>ga GUS::Community::Plugin::InsertMAS5Assay2Quantification 
+ --cfg_file ~/test/testStudy/InsertMAS5Assay2Quantification.cfg 
+ --skip assay12345, assay45678
+ --group myPI_InRAD
+ --project 'myProjectInRAD'
+ --commit</p>
+<p>
+</p>
+<hr />
+<h1><a name="report_bugs_to">REPORT BUGS TO</a></h1>
+<p><a href="https://www.cbil.upenn.edu/tracker/enter_bug.cgi?product=GUS%20Application%20Framework">https://www.cbil.upenn.edu/tracker/enter_bug.cgi?product=GUS%20Application%20Framework</a></p>
+<p>(you will need an account to log in to the bug tracker)</p>
+<p>
+</p>
+<hr />
+<h1><a name="authors">AUTHORS</a></h1>
+<p>Shailesh Date, Hongxian He</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright, Trustees of University of Pennsylvania 2003.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,95 @@
+
+/********* GLOBALS ***************/
+
+img { border: none; }
+
+p {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+a { text-decoration: underline; }
+
+h1, h2, h3 { 
+	font-family: "Lucida Grande", arial, sans-serif;
+	padding: 0;
+	color: #2F3F53;
+}
+
+h1 {
+  border-bottom: 0;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 10px 0px 0px 0px;
+}
+
+h2 {
+  font-size: 16px;
+  margin: 5px auto;
+}
+
+h3 {
+  font-size: 12px;
+  margin: 5px auto;
+}
+
+#Page {
+        margin: 0 auto;
+        text-align: left;
+        width: 750px;
+}
+
+.title {
+	margin: 20px 0px 0px 0px;
+	background-color: white;
+	text-align: center;
+	border: 1px solid grey;
+}
+
+.menu {
+	background-color: #2F3F53;
+	color: white;
+	height: 30px;
+}
+
+.menu a {
+	color: white;
+}
+
+.menuItem {
+	width: 230px;
+	float: left;
+	text-align: center;
+	padding: 5px 5px 5px 5px;
+}
+
+.body {
+	border: 1px solid grey;
+#	height: 500px;
+	padding: 10px 10px 10px 10px;
+}
+
+.Space { clear: both; }
+
+
+/********* PAGE LAYOUT ***********/
+
+body {
+  margin: 0 auto;
+  padding: 0;
+  font-family: "Lucida Grande", verdana, arial, helvetica, sans-serif;
+  color: #2F3F53;
+  background-color: white;
+  text-align: left;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.agenda {
+	border: 1px solid grey;
+	padding: 0px;
+}	
+
+.agenda td {
+	border: 1px solid grey;
+}

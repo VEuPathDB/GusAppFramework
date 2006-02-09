@@ -1,0 +1,213 @@
+<?xml version="1.0"  encoding="ISO-8859-1" ?>
+<!DOCTYPE cfg SYSTEM "FileTranslatorCfg.dtd" >
+
+<!-- $Revision$ $Date$ $Author$ -->
+
+<cfg functions_class='GUS::Community::FileTranslator::Functions'>
+ <inputs qualifier_row_present='0'>
+   <header >
+    <col header_val='Block' req='1' name='block'/>
+    <col header_val='Row' req='1' name='row'/>
+    <col header_val='Column' req='1' name='column'/>
+    <col header_val='F635 SD' name='r_f_sd' />
+    <col header_val='B635 SD' name='r_b_sd'/>
+    <col header_val='Dia.' name='diam'/>
+    <col header_val='F635 Mean' name='r_f_mean'/>
+    <col header_val='F635 Median' name='r_f_median'/>
+    <col header_val='B635 Mean' name='r_b_mean'/>
+    <col header_val='B635 Median' name='r_b_median'/>
+    <col header_val='% > B635+1SD' name='r_perc_overb_plus1'/>
+    <col header_val='% > B635+2SD' name='r_perc_overb_plus2'/>
+    <col header_val='F635 % Sat.' name='r_perc_sat'/>
+    <col header_val='Mean of Ratios' name='mean_of_ratios'/>
+    <col header_val='Median of Ratios' name='median_of_ratios'/>
+    <col header_val='Ratios SD' name='ratios_sd'/>
+    <col header_val='Rgn Ratio' name='rgn_ratio'/>
+    <col header_val='Rgn R²' name='rgn_rsq'/>
+    <col header_val='F Pixels' name='f_pix'/>
+    <col header_val='B Pixels' name='b_pix'/>
+    <col header_val='Flags' name='flag'/>
+    <col header_val='F532 SD' name='g_f_sd'/>
+    <col header_val='B532 SD' name='g_b_sd'/>
+    <col header_val='F532 Mean' name='g_f_mean'/>
+    <col header_val='F532 Median' name='g_f_median'/>
+    <col header_val='B532 Mean' name='g_b_mean'/>
+    <col header_val='B532 Median' name='g_b_median'/>
+    <col header_val='% > B532+1SD' name='g_perc_overb_plus1'/>
+    <col header_val='% > B532+2SD' name='g_perc_overb_plus2'/>
+    <col header_val='F532 % Sat.' name='g_perc_sat'/>
+    <col header_val='Circularity' name='circularity'/>
+    <col header_val='Autoflag' name='autoflag'/>
+   </header>
+ </inputs>
+
+ <outputs>
+    <idmap function='coordGenePix2RAD'
+           output_header="array_row\tarray_column\tgrid_row\tgrid_column\tsub_row\tsub_column"
+           mapkey='$block\t$row\t$column'  >
+      <in name='block'/>
+      <in name='row'/>
+      <in name='column'/>
+    </idmap>
+    <map name='R.foreground_sd'> 
+      <in name='r_f_sd'/>
+      <do>$r_f_sd</do>
+    </map>
+    <map name='R.background_sd'> 
+      <in name='r_b_sd'/>
+      <do>$r_b_sd</do>
+    </map>
+    <map name='R.spot_diameter'>
+      <in name='diam'/>
+      <do>$diam</do>
+     </map>
+    <map name='R.foreground_mean'> 
+      <in name='r_f_mean'/>
+      <do>$r_f_mean</do>
+    </map>
+    <map name='R.foreground_median'>
+      <in name='r_f_median'/>
+      <do>$r_f_median</do>
+    </map>
+    <map name='R.background_mean'>
+      <in name='r_b_mean'/>
+      <do>$r_b_mean</do>
+    </map>
+    <map name='R.background_median'>
+      <in name='r_b_median'/>
+      <do>$r_b_median</do>
+    </map>
+    <map name='R.percent_over_bg_plus_one_sd'>
+      <in name='r_perc_overb_plus1'/>
+      <do>$r_perc_overb_plus1</do>
+    </map>
+    <map name='R.percent_over_bg_plus_two_sds'>
+      <in name='r_perc_overb_plus2'/>
+      <do>$r_perc_overb_plus2</do>
+    </map>
+    <map name='R.percent_foreground_saturated'>
+      <in name='r_perc_sat'/>
+      <do>$r_perc_sat</do>
+    </map>
+    <map name='R.mean_of_ratios'>
+      <in name='mean_of_ratios'/>
+      <do>$mean_of_ratios</do>
+    </map>
+    <map name='R.median_of_ratios'>
+      <in name='median_of_ratios'/>
+      <do>$median_of_ratios</do>
+    </map>
+    <map name='R.ratios_sd'>
+      <in name='ratios_sd'/>
+      <do>$ratios_sd</do>
+    </map>
+    <map name='R.rgn_ratio'>
+      <in name='rgn_ratio'/>
+      <do>$rgn_ratio</do>
+    </map>
+    <map name='R.rgn_r_squared'>
+      <in name='rgn_rsq' />
+      <do>$rgn_rsq</do>
+    </map>
+    <map name='R.num_foreground_pixels'>
+      <in name='f_pix'/>
+      <do>$f_pix</do>
+    </map>
+    <map name='R.num_background_pixels'>
+      <in name='b_pix'/>
+      <do>$b_pix</do>
+    </map>
+    <map name='R.flag'>
+      <in name='flag'/>
+      <do>$flag</do>
+    </map>
+    <map name='R.circularity'>
+      <in name='circularity'/>
+      <do>$circularity</do>
+    </map>
+    <map name='R.autoflag'>
+      <in name='autoflag'/>
+      <do>$autoflag</do>
+    </map>
+    <map name='G.foreground_sd'>
+      <in name='g_f_sd'/>
+      <do>$g_f_sd</do>
+    </map>
+    <map name='G.background_sd'>
+      <in name='g_b_sd'/>
+      <do>$g_b_sd</do>
+    </map>
+    <map name='G.spot_diameter'>
+      <in name='diam'/>
+      <do>$diam</do>
+    </map>
+    <map name='G.foreground_mean'>
+      <in name='g_f_mean'/>
+      <do>$g_f_mean</do>
+    </map>
+    <map name='G.foreground_median'>
+      <in name='g_f_median'/>
+      <do>$g_f_median</do>
+    </map>
+    <map name='G.background_mean'>
+      <in name='g_b_mean'/>
+      <do>$g_b_mean</do>
+    </map>
+    <map name='G.background_median'>
+      <in name='g_b_median'/>
+      <do>$g_b_median</do>
+    </map>
+    <map name='G.percent_over_bg_plus_one_sd'> 
+      <in name='g_perc_overb_plus1'/>
+      <do>$g_perc_overb_plus1</do>
+    </map>
+    <map name='G.percent_over_bg_plus_two_sds'>
+      <in name='g_perc_overb_plus2'/>
+      <do>$g_perc_overb_plus2</do>
+    </map>
+    <map name='G.percent_foreground_saturated'>
+      <in name='g_perc_sat'/>
+      <do>$g_perc_sat</do>
+    </map>
+    <map name='G.mean_of_ratios'>
+      <in name='mean_of_ratios'/>
+      <do>$mean_of_ratios</do>
+    </map>
+    <map name='G.median_of_ratios'>
+      <in name='median_of_ratios'/>
+      <do>$median_of_ratios</do>
+    </map>
+    <map name='G.ratios_sd'>
+      <in name='ratios_sd'/>
+      <do>$ratios_sd</do>
+    </map>
+    <map name='G.rgn_ratio'>
+      <in name='rgn_ratio'/>
+      <do>$rgn_ratio</do>
+    </map>
+    <map name='G.rgn_r_squared'>
+      <in name='rgn_rsq'/>
+      <do>$rgn_rsq</do>
+    </map>
+    <map name='G.num_foreground_pixels'>
+      <in name='f_pix'/>
+      <do>$f_pix</do>
+    </map>
+    <map name='G.num_background_pixels'>
+      <in name='b_pix'/>
+      <do> $b_pix </do>
+    </map>
+    <map name='G.flag'>
+      <in name='flag'/>
+      <do>$flag</do>
+    </map>
+    <map name='G.circularity'>
+      <in name='circularity'/>
+      <do>$circularity</do>
+    </map>
+    <map name='G.autoflag'>
+      <in name='autoflag'/>
+      <do>$autoflag</do>
+    </map>
+ </outputs>
+</cfg>

@@ -1,0 +1,35 @@
+The kind of views we find in Allgenes
+
+Home Page
+  - a hand-coded assembledge of a bunch of stuff?
+
+Dialogs
+  - individual queries
+  - query dispatching
+  - parameters
+  - help
+
+Records
+  - Top Level Entity
+     - Eg, Type = "Transript" or Type = "Gene"
+     - They contain
+         - Heading
+         - A particular view, which is a set of subviews (vertically arranged)
+         - Subviews:
+            - typically fit into a table
+            - have columns that contain specific data types, 
+              which may be rendered accordingly, including specialized graphics
+         - Links to other available view pages
+  - Examples of subview
+      - Sequence
+      - alignment graphics (we have a bunch of these, with gifs generated
+        in perl and mouse overs controlled by java script)
+      - alignment textual display
+      - result set,including type-specific columns (eg, links)
+      - another example of a type-specific column is a column of percent 
+        values.  the view can be configured to show them as text or bargraph
+        
+
+  - ResultSets
+     - these hold columns as described above
+     - another example of this is the history display

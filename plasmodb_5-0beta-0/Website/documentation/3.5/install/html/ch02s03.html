@@ -1,0 +1,64 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Configuring and Preparing GUS</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"><link rel="start" href="index.html" title="GUS Installation Guide"><link rel="up" href="ch02.html" title="Chapter 2. Installing GUS"><link rel="prev" href="ch02s02.html" title="Downloading GUS"><link rel="next" href="ch02s04.html" title="Installing GUS"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Configuring and Preparing GUS</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch02s02.html">Prev</a> </td><th width="60%" align="center">Chapter 2. Installing GUS</th><td width="20%" align="right"> <a accesskey="n" href="ch02s04.html">Next</a></td></tr></table><hr></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id837270"></a>Configuring and Preparing GUS</h2></div></div></div><p>Once you have downloaded and expanded the GUS distribution, you
+      must configure your environment. These settings are required for all
+      uses of GUS, and as such is it highly recommended that you add them in
+      such a manner that they be set upon creating a new session (i.e. in your
+      <code class="computeroutput">.bash_profile</code> file). The following
+      examples are for the Bash shell, and assume you have expanded the GUS
+      distribution in the directory
+      <code class="computeroutput">/home/smith</code>:</p><div class="example"><a name="id837297"></a><p class="title"><b>Example 2.1. Configuring the Environment for GUS</b></p><pre class="screen">$ export GUS_HOME=/home/smith/GUS/gus_home
+$ export PROJECT_HOME=/home/smith/GUS/project_home
+$ export GUS_CONFIG_FILE=/home/smith/GUS/gus.properties 
+$ export PERL5LIB=$GUS_HOME/lib/perl
+$ export PATH=$GUS_HOME/bin:$PROJECT_HOME/install/bin:$PATH</pre></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>Throughout the rest of this document,
+          <code class="computeroutput">$GUS_HOME</code>,
+          <code class="computeroutput">$PROJECT_HOME</code>, and
+          <code class="computeroutput">$GUS_CONFIG_FILE</code> will frequently be
+          used to refer to the locations specified above.</p></div><p>After your environment has been configured for GUS, you must
+      configure the GUS software itself. First, copy the
+      <code class="computeroutput">$PROJECT_HOME/install/gus.config.sample</code>
+      file to
+      <code class="computeroutput">$PROJECT_HOME/install/gus.config</code>. Once
+      copied, you must open this file and provide the necessary
+      values:</p><div class="example"><a name="id837358"></a><p class="title"><b>Example 2.2. Configuring <code class="computeroutput">gus.config</code>
+          file</b></p><pre class="screen">dbVendor=<em class="replaceable"><code>Oracle_or_Postgres</code></em><a name="dbVendor"></a><img src="images/callouts/1.png" alt="1" border="0">
+dbiDsn=<em class="replaceable"><code>perl_dbi_string</code></em><a name="dbiDsn"></a><img src="images/callouts/2.png" alt="2" border="0">
+jdbcDsn=<em class="replaceable"><code>jdbc_conection_string</code></em>
+databaseLogin=<em class="replaceable"><code>database_username</code></em><a name="databaseLogin"></a><img src="images/callouts/3.png" alt="3" border="0">
+databasePassword=<em class="replaceable"><code>database_password</code></em>
+userName=<em class="replaceable"><code>gus_username</code></em><a name="userName"></a><img src="images/callouts/4.png" alt="4" border="0">
+group=<em class="replaceable"><code>gus_</code></em>group
+project=<em class="replaceable"><code>primary_gus_project</code></em>
+perl=<em class="replaceable"><code>path_to_perl_binary</code></em><a name="perl"></a><img src="images/callouts/5.png" alt="5" border="0">
+md5sum=<em class="replaceable"><code>path_to_md5_or_md5sum_binary</code></em><a name="md5sum"></a><img src="images/callouts/6.png" alt="6" border="0"></pre></div><div class="calloutlist"><table border="0" summary="Callout list"><tr><td width="5%" valign="top" align="left"><a href="#dbVendor"><img src="images/callouts/1.png" alt="1" border="0"></a> </td><td valign="top" align="left"><p>The database system you are using. This must be either
+            <code class="computeroutput">Oracle</code> or
+            <code class="computeroutput">Postgres</code>.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#dbiDsn"><img src="images/callouts/2.png" alt="2" border="0"></a> </td><td valign="top" align="left"><p><code class="computeroutput">dbiDsn</code> is the Perl DBI
+            string for your database. For example,
+            <code class="computeroutput">dbi:Oracle:mygus</code>.</p><p><code class="computeroutput">jdbcDsn</code> is the JDBC string
+            for your database. For example,
+            <code class="computeroutput">jdbc:oracle:thin:@myserver:1521:mygus</code>.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#databaseLogin"><img src="images/callouts/3.png" alt="3" border="0"></a> </td><td valign="top" align="left"><p><code class="computeroutput">databaseLogin</code> and
+            <code class="computeroutput">databasePassword</code> are the username
+            and password that the software will use to connect to your
+            database.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#userName"><img src="images/callouts/4.png" alt="4" border="0"></a> </td><td valign="top" align="left"><p><code class="computeroutput">username</code>,
+            <code class="computeroutput">group</code>, and
+            <code class="computeroutput">project</code> are used within the GUS
+            system for auditing and permissions purposes. For now, use
+            <code class="computeroutput">dba</code> as the
+            <code class="computeroutput">userName</code> and
+            <code class="computeroutput">group</code> and
+            <code class="computeroutput">Database administration</code> as the
+            project. See the GUS User's Guide for more information about these
+            settings.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#perl"><img src="images/callouts/5.png" alt="5" border="0"></a> </td><td valign="top" align="left"><p><code class="computeroutput">perl</code> is the full path to
+            your Perl executable.</p></td></tr><tr><td width="5%" valign="top" align="left"><a href="#md5sum"><img src="images/callouts/6.png" alt="6" border="0"></a> </td><td valign="top" align="left"><p><code class="computeroutput">md5sum</code> is the full path to
+            your <code class="computeroutput">md5sum</code> or
+            <code class="computeroutput">md5</code> executable.</p></td></tr></table></div><div class="caution" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Caution</h3><p>Since GUS 3.5 the
+        <code class="computeroutput">gus.properties</code>,
+        <code class="computeroutput">install.prop</code>,
+        <code class="computeroutput">schema.prop</code> and other various
+        configuration files are automatically created using the values
+        specified in the <code class="computeroutput">gus.config</code> file. All
+        of these files, except the gus.properties file, will be overwritten by
+        the GUS installer whenever it us run. <span class="emphasis"><em>The gus.properties
+        file will never be overwritten by the GUS installer. Care should be
+        taken to understand at all times what values are specified in the
+        gus.properties file as it determines the database the GUS system will
+        access.</em></span></p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch02s02.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="ch02.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch02s04.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Downloading GUS </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Installing GUS</td></tr></table></div></body></html>

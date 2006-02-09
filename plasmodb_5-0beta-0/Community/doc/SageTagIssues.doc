@@ -1,0 +1,25 @@
+These are some issues that came up when we updated the plugins that load SAGE
+data to work with GUS 3.0:
+
+1. The table DoTS.GeneFeatureSageTagLink seems to violate the spirit of GUS by
+being application-specific.  Should there be a general table for associating
+one NaFeature with another?
+
+2. The table RAD3.SageTagMapping exists only to link records in RAD3.SageTag
+with ones in DoTS.SageTagFeature.  There's a one-to-one relationship between
+the two.  SageTagMapping would be unnecessary if SageTagFeature had a
+composite_element_id field, which it doesn't because of the historical
+separation between RAD and DoTS.  Should we add one?  If we did, there should
+be a foreign-key relation from SageTagFeature to SageTag.  Problem:
+SageTagFeature is a view on NaFeatureImp, and other views do not need a
+composite_element_id.  Should we add a field with a nullable foreign key?
+
+3. As the schema stands now, there should be a foreign key relation from
+SageTagMapping to SageTagFeature, on the fields source_id and
+external_database_release_id.
+
+4. The fields source_id and external_database_release_id in DoTS.SageTagFeature
+constitute an alternate key, and should be constrained to be unique.
+
+5. The fields array_id and tag in RAD3.SageTag constitute an alternate key, and
+should be constrained to be unique.
