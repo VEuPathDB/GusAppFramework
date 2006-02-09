@@ -873,7 +873,6 @@
     <qualifier name="usedin"/>
     <qualifier name="variety"/>
     <qualifier name="virion"/>
-    <qualifier name="organelle" handler="standard" method="organelle"/>
     <qualifier name="db_xref" handler="standard" method="dbXRef"/>
   </feature>
 
