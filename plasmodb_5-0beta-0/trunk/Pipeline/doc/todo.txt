@@ -1,7 +1,0 @@
-add validation function as arg to runPlugin
-add -stop arg to dotsbuild
-and... delete stop signal on startup
-in copyTo/From liniac, combine fromDir and fromFile (and use basename)
-in exitToLiniac, lose the $logMsg
-remane makeRMDir makeRepeatMaskDir
-break pipeline specific properties out of dotsbuild and place in pipeline.

@@ -1,4 +1,0 @@
-PROTEIN_TABLE=180
-DOTS_URL=http://www.allgenes.org/allgenes/servlet?page=rna&id=\\$\\$source_id\\$\\$
-EST_URL=http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=search&db=nucleotide&term=\\$\\$source_id\\$\\$
-TAXON_URL=http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?name=\\$\\$taxon_name\\$\\$
