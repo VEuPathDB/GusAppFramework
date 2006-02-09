@@ -1,0 +1,113 @@
+package GUS::Model::DoTS::Gene; # table name
+use strict;
+use GUS::Model::DoTS::Gene_Row;
+
+
+use vars qw (@ISA);
+@ISA = qw (GUS::Model::DoTS::Gene_Row);
+
+my $debug = 0;
+
+##this is the set of RNA classes that will get submitted automatically upon cleanUp() or submit()
+my $rnaClasses = ['Assembly'];
+
+##each individual class will cache...should be quick enough to traverse to return
+## the $project variable takes in project_id and retrieves only those things with that project
+sub getRnaNASequences{
+	my($self,$rnaClass,$retrieve,$getDeletedToo,$where) = @_;
+	my @ass;
+	print STDERR "gene->getRNAs\($rnaClass,$retrieve,$getDeletedToo,$where\)\n" if $debug == 1;
+	foreach my $rna ($self->getRNAs($retrieve,$getDeletedToo,$where)){
+		my @tmp = $rna->getNASequences($rnaClass,$retrieve,$getDeletedToo,$where);
+		push(@ass,@tmp) if scalar(@tmp) > 0;
+	}
+	##add the rna to the rnaClass if have retrieve something that was not there...
+	if(scalar(@ass) > 0 && !grep(/$rnaClass/,@{$rnaClasses})){
+		push(@{$rnaClasses},$rnaClass);
+	}
+	return @ass;
+}
+
+##specific to DOTS....could put somewhere else??
+sub countAssembliesAndAssemblySequences {
+	my $self = shift;
+	my @tmp = $self->getRnaNASequences('Assembly');
+	my $ct = 0;
+	foreach my $a (@tmp){
+		$ct += $a->get('number_of_contained_sequences');
+	}
+	return (scalar(@tmp),$ct);
+}
+
+sub getRNAs {
+  my($self,$retrieve,$getDeletedToo,$where) = @_;
+  my @tmp;
+  foreach my $rna ($self->getChildren('DoTS::RNA',$retrieve,$getDeletedToo,$where)) {
+    print STDERR $rna->toString() if $debug == 1;
+    print STDERR $rna->getId()," $rna\n" if $debug == 2;
+    push(@tmp,$rna);
+  }
+  return @tmp;
+}
+
+sub countRNAs {
+	my $self = shift;
+	return scalar($self->getChildren('DoTS::RNA'));
+}
+
+## override submit so submits all merged genes...should add submit of all gene_nasequences as well!!
+sub submit{
+  my($self,$notDeep,$noTran) = @_;
+
+#	if($debug){
+		print STDERR "Submitting Gene: ".$self->getId().", deleted = '".$self->isMarkedDeleted()."'\n" if $debug;
+		foreach my $rna ($self->getRNAs(undef,1)){
+			print STDERR "  Containing RNA $rna: ".$rna->getId().", deleted = '".$rna->isMarkedDeleted()."' ".$rna->getDescription()."\n" if $debug;
+		}
+#	}
+
+	$self->manageTransaction($noTran,'begin');
+
+	##submit self using super then submit each assembly...
+	$self->SUPER::submit($notDeep,1); ##already in transaction..
+
+	##submit all merged genes....note that other things could be here as well such as MergeSplit entries
+	foreach my $g ($self->getAllMergedGenes()){
+		print STDERR "  Submitting merged gene $g: '".$g->getId()."'\n" if $debug;
+		$g->submit($notDeep,1);
+	}
+
+	$self->manageTransaction($noTran,'commit');
+
+}
+
+## Methods to keep trackof genes that have been merged into this one so can submit all together
+## in one transaction...
+## also am using for the MergeSplit entries.  Basically mechanism for submitting any set
+## of objects with this gene
+
+sub addMergedGene {
+	my($self,$g) = @_;
+	$self->{'mergedGene'}->{$g} = $g;
+}
+
+sub removeMergedGene {
+	my($self,$g) = @_;
+	delete $self->{'mergedGene'}->{$g};
+}
+
+sub getMergedGene {
+	my($self,$objref) = @_;
+	return $self->{'mergedGene'}->{$objref};
+}
+
+sub getAllMergedGenes {
+	my $self = shift;
+	my @tmp;
+	foreach my $id (keys%{$self->{'mergedGene'}}){
+		push(@tmp,$self->getMergedGene($id));
+	}
+	return @tmp;
+}
+
+1;

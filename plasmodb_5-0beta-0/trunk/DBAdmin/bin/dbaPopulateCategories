@@ -1,0 +1,10 @@
+#!/usr/bin/perl
+
+use GUS::DBAdmin::JavaCommandLineHelper;
+
+my $cli = GUS::DBAdmin::JavaCommandLineHelper->new( "org.gusdb.dbadmin.cmd.CategoryPopulator" );
+
+$cli->setCommandName( "dbaPopulateCategories" );
+$cli->setMaxMemory( "512m" );
+
+$cli->run;   

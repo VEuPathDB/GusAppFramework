@@ -1,0 +1,233 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Chapter 1. Developing GUS Plugins</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"><link rel="start" href="index.html" title="GUS Developer's Guide"><link rel="up" href="index.html" title="GUS Developer's Guide"><link rel="prev" href="index.html" title="GUS Developer's Guide"><link rel="next" href="ch01s02.html" title="The Plugin Standard"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 1. Developing GUS Plugins</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="index.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch01s02.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="id836971"></a>Chapter 1. Developing GUS Plugins</h2></div><div><div class="author"><h3 class="author"><span class="firstname">Steve</span> <span class="surname">Fischer</span></h3><code class="email">&lt;<a href="mailto:sfischer@pcbi.upenn.edu">sfischer@pcbi.upenn.edu</a>&gt;</code></div></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="ch01.html#id836992">GUS Plugins</a></span></dt><dd><dl><dt><span class="sect2"><a href="ch01.html#id837058">Supported versus Community Plugins</a></span></dt><dt><span class="sect2"><a href="ch01.html#id837152">The Plugin API</a></span></dt></dl></dd><dt><span class="sect1"><a href="ch01s02.html">The Plugin Standard</a></span></dt><dd><dl><dt><span class="sect2"><a href="ch01s02.html#id837847">Portability</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id837860">Plugin Naming</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id837985">GUS Primary Keys</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id837995">Application Specific Tables</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838008">Command Line Arguments</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838050">Documentation</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838068">Use of GUS Objects</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838112">Database Access</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838171">Logging</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838183">Standard Output</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838196">Commenting</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838224">Handling Errors</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838258">Failure Recovery and Restart</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838341">Opening Files</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838367">Caching to Minimize Database Access</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838412">Regular Expressions</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838440">Variable and Method Names</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838572">Methods</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838607">Syntax</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838664">Application Specific Controlled Vocabularies</a></span></dt><dt><span class="sect2"><a href="ch01s02.html#id838849">Assigning an External Database Release Id</a></span></dt></dl></dd></dl></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id836992"></a>GUS Plugins</h2></div></div></div><p>GUS plugins are Perl programs that load data into GUS. They are
+      written using the Plugin API (<a href="ch01.html#pluginapi">the section called &#8220;The Plugin API&#8221;</a>). You may use
+      plugins that are bundled with the GUS distribution or you may write your
+      own.</p><p>The standard GUS practice is to use only plugins, not straight SQL
+      or bulk loading, to load the database. The reason is that
+      plugins:</p><div class="itemizedlist"><ul type="disc"><li><p>track the data that is loaded</p></li><li><p>copy any updated or deleted rows to "version" tables that
+          store a history of the changes</p></li><li><p>are known programs that can be scrutinized and used
+          again</p></li><li><p>have a standard documentation process so that they are easily
+          understood</p></li><li><p>use the Plugin API and so are easier to write than regular
+          scripts.</p></li></ul></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id837058"></a>Supported versus Community Plugins</h3></div></div></div><p>The distribution of GUS comes with two types of
+        plugins:</p><div class="itemizedlist"><ul type="disc"><li><p><span class="emphasis"><em>Supported</em></span> plugins:</p><div class="itemizedlist"><ul type="circle"><li><p>are confirmed to work</p></li><li><p>are portable</p></li><li><p>are useful to sites other than the site that
+                    developed the plugin</p></li><li><p>meet the Plugin Standard described below</p></li></ul></div></li><li><p><span class="emphasis"><em>Community</em></span> plugins:</p><div class="itemizedlist"><ul type="circle"><li><p>are contributed by the staff at CBIL and any other
+                  plugin developers</p></li><li><p>have not been reviewed with respect to the criteria
+                  for being supported</p></li></ul></div></li></ul></div><p>When you begin writing your plugin, use as a guideline or as a
+        template an existing supported plugin. They are found in
+        <code class="computeroutput">$PROJECT_HOME/GUS/Supported/plugin/perl</code>.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id837152"></a>The Plugin API</h3></div></div></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id837161"></a><code class="computeroutput">Plugin.pm</code>: The Plugin
+          Superclass</h4></div></div></div><p>GUS plugins are subclasses of
+          <code class="computeroutput">GUS::PluginMgr::Plugin</code>. The public
+          subroutines in <code class="computeroutput">Plugin.pm</code> (private
+          ones begin with an underscore) constitute the Plugin API. GUS also
+          provides Perl objects for each table and view in the GUS schema.
+          These are also part of the API. (<a href="ch01.html#pluginapi">the section called &#8220;The Plugin API&#8221;</a>)</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id837198"></a>The plugin's package and @ISA statements</h4></div></div></div><p>All plugins must declare their package, using Perl's
+          <code class="computeroutput">package</code> statement. The package name
+          of a plugin is derived as follows:</p><pre class="screen"><em class="replaceable"><code>ProjectName</code></em>::<em class="replaceable"><code>ComponentName</code></em>::<code class="computeroutput">Plugin</code>::<em class="replaceable"><code>PluginName</code></em></pre><p>Plugins must also declare that they are subclasses of
+          <code class="computeroutput">Plugin.pm</code>, using Perl's
+          <code class="computeroutput">@ISA</code> array. The first lines of a
+          plugin will look like this:</p><pre class="screen">package GUS::Supported::Plugin::SubmitRow
+
+@ISA = qw(GUS::PluginMgr::Plugin)</pre></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id837258"></a>Plugin Initialization</h4></div></div></div><p>Plugins are objects and so must have a constructor. This
+          constructor is the <code class="computeroutput">new()</code> method.
+          The <code class="computeroutput">new()</code> method has exactly two
+          tasks to accomplish: constructing the object (and returning it), and
+          initializing it. Construction of the object follows standard Perl
+          practice. Initialization is handled by the
+          <code class="computeroutput">Plugin.pm</code> superclass method
+          <code class="computeroutput">initialize()</code>. <a href="ch01.html#pluginapi">the section called &#8220;The Plugin API&#8221;</a> for details about that method.</p><div class="example"><a name="samplenew"></a><p class="title"><b>Example 1.1. A Sample <code class="computeroutput">new()</code>
+              method</b></p><pre class="screen">sub new {
+    my ($class) = @_;
+    my $self = {};
+
+    bless($self,$class);
+
+    $self-&gt;initialize({
+        requiredDbVersion =&gt; 3.5,
+        cvsRevision =&gt; '$Revision: 3009 $',
+        name =&gt; ref($self),
+        argsDeclaration =&gt; $argsDeclaration,
+        documentation =&gt; $documentation
+    });
+
+    return $self;
+}</pre></div><p>The <code class="computeroutput">$Revision: 3009 $</code> string
+          is CVS or Subversion keyword. When the plugin is checked into source
+          control, the repository substitutes the file's revision into that
+          keyword. The keywords must be in single quotes to prevent Perl from
+          interpreting <code class="computeroutput">$Revision: 3009 $</code> as a
+          variable.</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id837354"></a>Keeping your Plugin Current as GUS Changes</h4></div></div></div><p>If you follow the pattern used by supported plugins, you will
+          only ever need to change one line in the
+          <code class="computeroutput">new()</code> method. As you can probably
+          tell, <code class="computeroutput">initialize()</code> takes one
+          argument, a reference to a hash that contains a set of parameter
+          values. The one you will need to change is
+          <code class="computeroutput">requiredDbVersion</code>. As the GUS
+          schema evolves, you will need to review your plugin to make sure it
+          is compatible with the latest version of GUS, upgrading it if not.
+          When it is compatible with the new version of GUS, update
+          <code class="computeroutput">requiredDbVersion</code> to that version
+          of GUS.</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id837398"></a>Declaring the plugin's command line
+          arguments</h4></div></div></div><p>In the example above (<a href="ch01.html#samplenew" title="Example 1.1. A Sample new()
+              method">Example 1.1, &#8220;A Sample <code class="computeroutput">new()</code>
+              method&#8221;</a>), the
+          line</p><pre class="screen">argsDeclaration =&gt; $argsDeclaration,</pre><p>provides to the
+          <code class="computeroutput">initialization()</code> method a reference
+          to an array, <code class="computeroutput">$argsDeclaration</code>, that
+          declares what command line arguments the plugin will offer. When you
+          look at a supported plugin you will see the
+          <code class="computeroutput">$argsDeclaration</code> variable being set
+          like this:</p><div class="example"><a name="id837447"></a><p class="title"><b>Example 1.2. Defining Command Line Arguments</b></p><pre class="screen">my $argsDeclaration = [
+   tableNameArg({name  =&gt; 'tablename',
+                 descr =&gt; 'Table to submit to, eg, Core::UserInfo',
+                 reqd  =&gt; 1,
+                 constraintFunc=&gt; undef,
+                 isList =&gt;0,
+   }),
+
+   stringArg({name  =&gt; 'attrlist',
+              descr =&gt; 'List of attributes to update (comma delimited)',
+              reqd  =&gt; 1,
+              constraintFunc =&gt; undef,
+              isList = &gt;1,
+  }),
+
+  enumArg({name  =&gt; 'type',
+           descr =&gt; 'Dimension of attributes (comma delimited)',
+           reqd  =&gt; 1,
+           constraintFunc =&gt; undef,
+           enum =&gt; "one, two, three",
+           isList =&gt; 1,
+  }),
+
+  fileArg({name  =&gt; 'matrixFile',
+           descr =&gt; 'File containing weight matrix',
+           reqd =&gt; 1,
+           constraintFunc=&gt; \&amp;checkFileFormat,
+           mustExist=&gt;0,
+           isList=&gt;0,
+  }),
+];</pre></div><p>If you look carefully at the list above you will notice that
+          each element of it is a call to a method such as
+          <code class="computeroutput">stringArg()</code>. These are methods of
+          <code class="computeroutput">Plugin.pm</code> and they all return
+          subclasses of
+          <code class="computeroutput">GUS::PluginMgr::Args::Arg</code>. In the
+          case of <code class="computeroutput">stringArg()</code>, it returns
+          <code class="computeroutput">GUS::PluginMgr::Args::StringArg</code>.
+          All you really need to know is that there are a set of methods
+          available for you to use when declaring your command line arguments.
+          That is, the <code class="computeroutput">argsDeclaration</code>
+          parameter of the <code class="computeroutput">initialize()</code>
+          method expects a list of <code class="computeroutput">Arg</code>
+          objects. You can learn about them in detail in the Plugin API (<a href="ch01.html#pluginapi">the section called &#8220;The Plugin API&#8221;</a>)</p><p>The <code class="computeroutput">Arg</code> objects are very
+          powerful. They parse the command line, validate the input, handle
+          list values, deal with optional arguments and default values and
+          provide for documentation of the arguments. There are two ways the
+          <code class="computeroutput">Arg</code> objects validate the input.
+          First, it applies its standard validation. For example, a
+          <code class="computeroutput">FileArg</code> confirms that the input is
+          a file, and throws an error otherwise. Second, if you provide a
+          <code class="computeroutput">constraintFunc</code>, it will run that as
+          well, throwing an error if the plugin value violates the
+          constraints.</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id837561"></a>Declaring the Plugin's Documentation</h4></div></div></div><p>In a way that parallels the declaration of command line
+          arguments, the initialize method also expects a reference to a hash
+          that provides standardized fields that document the plugin: (<a href="ch01.html#samplenew" title="Example 1.1. A Sample new()
+              method">Example 1.1, &#8220;A Sample <code class="computeroutput">new()</code>
+              method&#8221;</a>)</p><pre class="screen">documentation =&gt; $documentation,</pre><p>Here is a code snippet that demonstrates the standard way
+          <code class="computeroutput">$documentation</code> is set:</p><div class="example"><a name="id837599"></a><p class="title"><b>Example 1.3. Defining Plugin Documentation</b></p><pre class="screen">my $purposeBrief = &lt;&lt;PURPOSE_BRIEF;
+Load blast results from a condensed file format into the DoTS.Similarity table.
+PURPOSE_BRIEF
+
+my $purpose = &lt;&lt;PLUGIN_PURPOSE;
+Load a set of BLAST similarities from a file in the form generated by the blastSimilarity command.
+PLUGIN_PURPOSE
+
+my $tablesAffected = 
+    [ ['DoTS::Similarity', 'One row per similarity to a subject'],
+      ['DoTS::SimilaritySpan', 'One row per similarity span (HSP)'],
+    ];
+
+my $tablesDependedOn =
+    [
+    ];
+
+my $howToRestart = &lt;&lt;PLUGIN_RESTART;
+Use the restartAlgInvs argument to provide a list of algorithm_invocation_ids that represent 
+previous runs of loading these similarities. The algorithm_invocation_id of a run of this 
+plugin is logged to stderr. If you don't have that information for a previous run or runs,  
+you will have to poke around in the Core.AlgorithmInvocation table and others to find your 
+runs and their algorithm_invocation_ids.
+PLUGIN_RESTART
+
+my $failureCases = &lt;&lt;PLUGIN_FAILURE_CASES;
+PLUGIN_FAILURE_CASES
+
+my $notes = &lt;&lt;PLUGIN_NOTES;
+The definition lines of the sequences involved in the BLAST (both query and subject) must 
+begin with the na_sequence_ids of those sequences. The standard way to achieve that is to
+first load the sequences into GUS, using the InsertFastaSequences plugin, and then to 
+extract them into a file with the dumpSequencesFromTable.pl command. That command places 
+the na_sequence_id of the sequence as the first thing in the definition line.
+PLUGIN_NOTES
+
+my $documentation = { purpose=&gt;$purpose,
+                      purposeBrief=&gt;$purposeBrief,
+                      tablesAffected=&gt;$tablesAffected,
+                      tablesDependedOn=&gt;$tablesDependedOn,
+                      howToRestart=&gt;$howToRestart,
+                      failureCases=&gt;$failureCases,
+                      notes=&gt;$notes
+                     };</pre></div><p>When you look at this example, you will see that a bunch of
+          variables, such as <code class="computeroutput">$purposeBrief</code>
+          and <code class="computeroutput">$tablesAffected</code>, are being set.
+          They are used as values of the hash called
+          <code class="computeroutput">$documentation</code>.
+          <code class="computeroutput">$documentation</code> is in turn passed as
+          a value to the <code class="computeroutput">initialize()</code> method.
+          You will also notice that Perl's HEREDOC syntax is used. The setting
+          of the variables begins with, eg,
+          <code class="computeroutput">&lt;&lt;PLUGIN_PURPOSE</code> and ends
+          with, eg, <code class="computeroutput">PLUGIN_PURPOSE</code>. This is
+          Perl's way of allowing you to create paragraph-style strings without
+          worrying about quoting or metacharacters such as
+          <code class="computeroutput">\n</code>.</p><p>The documentation is shown to the user when he or she uses the
+          <code class="computeroutput">help</code> flag, or when he or she makes
+          a command line error.</p><p>The documentation is formatted using Perl's documentation
+          generation facility, pod. This means that you can include simple pod
+          directives in your documentation to, say, emphasize a word. Run the
+          command <code class="computeroutput">perldoc perlpod</code> for more
+          information</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id837695"></a>The <code class="computeroutput">run()</code>Method</h4></div></div></div><p>Plugins are run by a command called
+          <code class="computeroutput">ga</code> (which stands for "GUS
+          application"). <code class="computeroutput">ga</code> constructs the
+          plugin (by calling its <code class="computeroutput">new()</code>
+          method) and then runs the plugin by calling its
+          <code class="computeroutput">run()</code> method.</p><p>The purpose of the <code class="computeroutput">run()</code>
+          method is to provide at a glance the structure of the plugin. It
+          should be very concise and under no circumstances be longer than one
+          screen. A good practice, when reasonable, is for the
+          <code class="computeroutput">run()</code> method to call high level
+          methods that return the objects to be submitted to the database, and
+          then to submit them in the <code class="computeroutput">run()</code>
+          method. This way, a reader of the
+          <code class="computeroutput">run()</code> method will know just what is
+          being written to the database, which is the main purpose of a
+          plugin.</p><p>The <code class="computeroutput">run()</code> method is expected
+          to return a string describing the result of running the plugin. An
+          example would be "<code class="computeroutput">inserted 3432
+          sequences</code>".</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id837790"></a>The Pointer Cache</h4></div></div></div><p>The pointer cache is a somewhat infamous component of the GUS
+          object layer. It is a memory management facility that was designed
+          to steer around poor garbage collection in Perl (in 2000). Whether
+          or not is still needed is another matter because it is part of the
+          object layer for now. The pointer cache is a way for the plugin to
+          re-use objects that have been allocated but are no longer in active
+          use. Because Perl was not properly garbage collecting objects when
+          they were no longer referred to, the memory footprint of plugins was
+          getting huge.</p><p>As a plugin developer what you need to know is that at points
+          in your code where you no longer need any of the GUS objects that
+          you have created (typically at the bottom of your outermost loop,
+          you should call the <code class="computeroutput">Plugin.pm</code>
+          method <code class="computeroutput">undefPointerCache()</code>. This
+          method clears out the cache.</p><p>If the default capacity (10000) is not enough to hold all the
+          objects you are creating in one cycle through your logic, you can
+          augment its size with the <code class="computeroutput">Plugin.pm</code>
+          method
+          <code class="computeroutput">setPointerCacheSize()</code>.</p></div></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="index.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch01s02.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">GUS Developer's Guide </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> The Plugin Standard</td></tr></table></div></body></html>

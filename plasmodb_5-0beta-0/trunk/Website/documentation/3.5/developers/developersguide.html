@@ -1,0 +1,478 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>GUS Developer's Guide</title><meta name="generator" content="DocBook XSL Stylesheets V1.68.1"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="book" lang="en"><div class="titlepage"><div><div><h1 class="title"><a name="id694957"></a>GUS Developer's Guide</h1></div><div><p class="releaseinfo">$Id: UsersGuide.xml,v 1.1.2.1 2005/05/05 20:18:59 msaffitz
+    Exp $</p></div><div><div class="legalnotice"><a name="id826279"></a><p>The Genomics Unified Schema and Application Framework are subject
+      to various license terms and copyrights as outlined in the LICENSE file
+      provided with the software.</p></div></div></div><hr></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="chapter"><a href="#id826289">1. Developing GUS Plugins</a></span></dt><dd><dl><dt><span class="sect1"><a href="#id826311">GUS Plugins</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id826377">Supported versus Community Plugins</a></span></dt><dt><span class="sect2"><a href="#id826472">The Plugin API</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id827161">The Plugin Standard</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id827167">Portability</a></span></dt><dt><span class="sect2"><a href="#id827180">Plugin Naming</a></span></dt><dt><span class="sect2"><a href="#id827305">GUS Primary Keys</a></span></dt><dt><span class="sect2"><a href="#id827315">Application Specific Tables</a></span></dt><dt><span class="sect2"><a href="#id827328">Command Line Arguments</a></span></dt><dt><span class="sect2"><a href="#id827370">Documentation</a></span></dt><dt><span class="sect2"><a href="#id827388">Use of GUS Objects</a></span></dt><dt><span class="sect2"><a href="#id827432">Database Access</a></span></dt><dt><span class="sect2"><a href="#id827491">Logging</a></span></dt><dt><span class="sect2"><a href="#id827503">Standard Output</a></span></dt><dt><span class="sect2"><a href="#id827516">Commenting</a></span></dt><dt><span class="sect2"><a href="#id827544">Handling Errors</a></span></dt><dt><span class="sect2"><a href="#id827578">Failure Recovery and Restart</a></span></dt><dt><span class="sect2"><a href="#id827661">Opening Files</a></span></dt><dt><span class="sect2"><a href="#id827687">Caching to Minimize Database Access</a></span></dt><dt><span class="sect2"><a href="#id827732">Regular Expressions</a></span></dt><dt><span class="sect2"><a href="#id827760">Variable and Method Names</a></span></dt><dt><span class="sect2"><a href="#id827892">Methods</a></span></dt><dt><span class="sect2"><a href="#id827927">Syntax</a></span></dt><dt><span class="sect2"><a href="#id827984">Application Specific Controlled Vocabularies</a></span></dt><dt><span class="sect2"><a href="#id828169">Assigning an External Database Release Id</a></span></dt></dl></dd></dl></dd><dt><span class="chapter"><a href="#id828214">2. Extending the Schema</a></span></dt><dd><dl><dt><span class="sect1"><a href="#id828250">Creating New Objects in the Database</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id828261">Adding New Columns to Existing Tables</a></span></dt><dt><span class="sect2"><a href="#id828282">Adding New Tables</a></span></dt><dt><span class="sect2"><a href="#id828309">Adding New Views</a></span></dt><dt><span class="sect2"><a href="#id828324">Updating GUS Version Objects</a></span></dt><dt><span class="sect2"><a href="#id828338">Updating
+        <code class="computeroutput">Core.TableInfo</code></a></span></dt><dt><span class="sect2"><a href="#id828566">Rebuilding Objects</a></span></dt></dl></dd></dl></dd></dl></div><div class="list-of-tables"><p><b>List of Tables</b></p><dl><dt>2.1. <a href="#id828360"><code class="computeroutput">Core.TableInfo</code>
+            Description</a></dt></dl></div><div class="list-of-examples"><p><b>List of Examples</b></p><dl><dt>1.1. <a href="#samplenew">A Sample <code class="computeroutput">new()</code>
+              method</a></dt><dt>1.2. <a href="#id826767">Defining Command Line Arguments</a></dt><dt>1.3. <a href="#id826919">Defining Plugin Documentation</a></dt><dt>1.4. <a href="#id827452">Typical Database Access</a></dt><dt>1.5. <a href="#id827672">Properly Opening a File</a></dt></dl></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="id826289"></a>Chapter 1. Developing GUS Plugins</h2></div><div><div class="author"><h3 class="author"><span class="firstname">Steve</span> <span class="surname">Fischer</span></h3><code class="email">&lt;<a href="mailto:sfischer@pcbi.upenn.edu">sfischer@pcbi.upenn.edu</a>&gt;</code></div></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="#id826311">GUS Plugins</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id826377">Supported versus Community Plugins</a></span></dt><dt><span class="sect2"><a href="#id826472">The Plugin API</a></span></dt></dl></dd><dt><span class="sect1"><a href="#id827161">The Plugin Standard</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id827167">Portability</a></span></dt><dt><span class="sect2"><a href="#id827180">Plugin Naming</a></span></dt><dt><span class="sect2"><a href="#id827305">GUS Primary Keys</a></span></dt><dt><span class="sect2"><a href="#id827315">Application Specific Tables</a></span></dt><dt><span class="sect2"><a href="#id827328">Command Line Arguments</a></span></dt><dt><span class="sect2"><a href="#id827370">Documentation</a></span></dt><dt><span class="sect2"><a href="#id827388">Use of GUS Objects</a></span></dt><dt><span class="sect2"><a href="#id827432">Database Access</a></span></dt><dt><span class="sect2"><a href="#id827491">Logging</a></span></dt><dt><span class="sect2"><a href="#id827503">Standard Output</a></span></dt><dt><span class="sect2"><a href="#id827516">Commenting</a></span></dt><dt><span class="sect2"><a href="#id827544">Handling Errors</a></span></dt><dt><span class="sect2"><a href="#id827578">Failure Recovery and Restart</a></span></dt><dt><span class="sect2"><a href="#id827661">Opening Files</a></span></dt><dt><span class="sect2"><a href="#id827687">Caching to Minimize Database Access</a></span></dt><dt><span class="sect2"><a href="#id827732">Regular Expressions</a></span></dt><dt><span class="sect2"><a href="#id827760">Variable and Method Names</a></span></dt><dt><span class="sect2"><a href="#id827892">Methods</a></span></dt><dt><span class="sect2"><a href="#id827927">Syntax</a></span></dt><dt><span class="sect2"><a href="#id827984">Application Specific Controlled Vocabularies</a></span></dt><dt><span class="sect2"><a href="#id828169">Assigning an External Database Release Id</a></span></dt></dl></dd></dl></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id826311"></a>GUS Plugins</h2></div></div></div><p>GUS plugins are Perl programs that load data into GUS. They are
+      written using the Plugin API (<a href="#pluginapi">the section called &#8220;The Plugin API&#8221;</a>). You may use
+      plugins that are bundled with the GUS distribution or you may write your
+      own.</p><p>The standard GUS practice is to use only plugins, not straight SQL
+      or bulk loading, to load the database. The reason is that
+      plugins:</p><div class="itemizedlist"><ul type="disc"><li><p>track the data that is loaded</p></li><li><p>copy any updated or deleted rows to "version" tables that
+          store a history of the changes</p></li><li><p>are known programs that can be scrutinized and used
+          again</p></li><li><p>have a standard documentation process so that they are easily
+          understood</p></li><li><p>use the Plugin API and so are easier to write than regular
+          scripts.</p></li></ul></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id826377"></a>Supported versus Community Plugins</h3></div></div></div><p>The distribution of GUS comes with two types of
+        plugins:</p><div class="itemizedlist"><ul type="disc"><li><p><span class="emphasis"><em>Supported</em></span> plugins:</p><div class="itemizedlist"><ul type="circle"><li><p>are confirmed to work</p></li><li><p>are portable</p></li><li><p>are useful to sites other than the site that
+                    developed the plugin</p></li><li><p>meet the Plugin Standard described below</p></li></ul></div></li><li><p><span class="emphasis"><em>Community</em></span> plugins:</p><div class="itemizedlist"><ul type="circle"><li><p>are contributed by the staff at CBIL and any other
+                  plugin developers</p></li><li><p>have not been reviewed with respect to the criteria
+                  for being supported</p></li></ul></div></li></ul></div><p>When you begin writing your plugin, use as a guideline or as a
+        template an existing supported plugin. They are found in
+        <code class="computeroutput">$PROJECT_HOME/GUS/Supported/plugin/perl</code>.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id826472"></a>The Plugin API</h3></div></div></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id826481"></a><code class="computeroutput">Plugin.pm</code>: The Plugin
+          Superclass</h4></div></div></div><p>GUS plugins are subclasses of
+          <code class="computeroutput">GUS::PluginMgr::Plugin</code>. The public
+          subroutines in <code class="computeroutput">Plugin.pm</code> (private
+          ones begin with an underscore) constitute the Plugin API. GUS also
+          provides Perl objects for each table and view in the GUS schema.
+          These are also part of the API. (<a href="#pluginapi">the section called &#8220;The Plugin API&#8221;</a>)</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id826518"></a>The plugin's package and @ISA statements</h4></div></div></div><p>All plugins must declare their package, using Perl's
+          <code class="computeroutput">package</code> statement. The package name
+          of a plugin is derived as follows:</p><pre class="screen"><em class="replaceable"><code>ProjectName</code></em>::<em class="replaceable"><code>ComponentName</code></em>::<code class="computeroutput">Plugin</code>::<em class="replaceable"><code>PluginName</code></em></pre><p>Plugins must also declare that they are subclasses of
+          <code class="computeroutput">Plugin.pm</code>, using Perl's
+          <code class="computeroutput">@ISA</code> array. The first lines of a
+          plugin will look like this:</p><pre class="screen">package GUS::Supported::Plugin::SubmitRow
+
+@ISA = qw(GUS::PluginMgr::Plugin)</pre></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id826578"></a>Plugin Initialization</h4></div></div></div><p>Plugins are objects and so must have a constructor. This
+          constructor is the <code class="computeroutput">new()</code> method.
+          The <code class="computeroutput">new()</code> method has exactly two
+          tasks to accomplish: constructing the object (and returning it), and
+          initializing it. Construction of the object follows standard Perl
+          practice. Initialization is handled by the
+          <code class="computeroutput">Plugin.pm</code> superclass method
+          <code class="computeroutput">initialize()</code>. <a href="#pluginapi">the section called &#8220;The Plugin API&#8221;</a> for details about that method.</p><div class="example"><a name="samplenew"></a><p class="title"><b>Example 1.1. A Sample <code class="computeroutput">new()</code>
+              method</b></p><pre class="screen">sub new {
+    my ($class) = @_;
+    my $self = {};
+
+    bless($self,$class);
+
+    $self-&gt;initialize({
+        requiredDbVersion =&gt; 3.5,
+        cvsRevision =&gt; '$Revision: 3009 $',
+        name =&gt; ref($self),
+        argsDeclaration =&gt; $argsDeclaration,
+        documentation =&gt; $documentation
+    });
+
+    return $self;
+}</pre></div><p>The <code class="computeroutput">$Revision: 3009 $</code> string
+          is CVS or Subversion keyword. When the plugin is checked into source
+          control, the repository substitutes the file's revision into that
+          keyword. The keywords must be in single quotes to prevent Perl from
+          interpreting <code class="computeroutput">$Revision: 3009 $</code> as a
+          variable.</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id826674"></a>Keeping your Plugin Current as GUS Changes</h4></div></div></div><p>If you follow the pattern used by supported plugins, you will
+          only ever need to change one line in the
+          <code class="computeroutput">new()</code> method. As you can probably
+          tell, <code class="computeroutput">initialize()</code> takes one
+          argument, a reference to a hash that contains a set of parameter
+          values. The one you will need to change is
+          <code class="computeroutput">requiredDbVersion</code>. As the GUS
+          schema evolves, you will need to review your plugin to make sure it
+          is compatible with the latest version of GUS, upgrading it if not.
+          When it is compatible with the new version of GUS, update
+          <code class="computeroutput">requiredDbVersion</code> to that version
+          of GUS.</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id826718"></a>Declaring the plugin's command line
+          arguments</h4></div></div></div><p>In the example above (<a href="#samplenew" title="Example 1.1. A Sample new()
+              method">Example 1.1, &#8220;A Sample <code class="computeroutput">new()</code>
+              method&#8221;</a>), the
+          line</p><pre class="screen">argsDeclaration =&gt; $argsDeclaration,</pre><p>provides to the
+          <code class="computeroutput">initialization()</code> method a reference
+          to an array, <code class="computeroutput">$argsDeclaration</code>, that
+          declares what command line arguments the plugin will offer. When you
+          look at a supported plugin you will see the
+          <code class="computeroutput">$argsDeclaration</code> variable being set
+          like this:</p><div class="example"><a name="id826767"></a><p class="title"><b>Example 1.2. Defining Command Line Arguments</b></p><pre class="screen">my $argsDeclaration = [
+   tableNameArg({name  =&gt; 'tablename',
+                 descr =&gt; 'Table to submit to, eg, Core::UserInfo',
+                 reqd  =&gt; 1,
+                 constraintFunc=&gt; undef,
+                 isList =&gt;0,
+   }),
+
+   stringArg({name  =&gt; 'attrlist',
+              descr =&gt; 'List of attributes to update (comma delimited)',
+              reqd  =&gt; 1,
+              constraintFunc =&gt; undef,
+              isList = &gt;1,
+  }),
+
+  enumArg({name  =&gt; 'type',
+           descr =&gt; 'Dimension of attributes (comma delimited)',
+           reqd  =&gt; 1,
+           constraintFunc =&gt; undef,
+           enum =&gt; "one, two, three",
+           isList =&gt; 1,
+  }),
+
+  fileArg({name  =&gt; 'matrixFile',
+           descr =&gt; 'File containing weight matrix',
+           reqd =&gt; 1,
+           constraintFunc=&gt; \&amp;checkFileFormat,
+           mustExist=&gt;0,
+           isList=&gt;0,
+  }),
+];</pre></div><p>If you look carefully at the list above you will notice that
+          each element of it is a call to a method such as
+          <code class="computeroutput">stringArg()</code>. These are methods of
+          <code class="computeroutput">Plugin.pm</code> and they all return
+          subclasses of
+          <code class="computeroutput">GUS::PluginMgr::Args::Arg</code>. In the
+          case of <code class="computeroutput">stringArg()</code>, it returns
+          <code class="computeroutput">GUS::PluginMgr::Args::StringArg</code>.
+          All you really need to know is that there are a set of methods
+          available for you to use when declaring your command line arguments.
+          That is, the <code class="computeroutput">argsDeclaration</code>
+          parameter of the <code class="computeroutput">initialize()</code>
+          method expects a list of <code class="computeroutput">Arg</code>
+          objects. You can learn about them in detail in the Plugin API (<a href="#pluginapi">the section called &#8220;The Plugin API&#8221;</a>)</p><p>The <code class="computeroutput">Arg</code> objects are very
+          powerful. They parse the command line, validate the input, handle
+          list values, deal with optional arguments and default values and
+          provide for documentation of the arguments. There are two ways the
+          <code class="computeroutput">Arg</code> objects validate the input.
+          First, it applies its standard validation. For example, a
+          <code class="computeroutput">FileArg</code> confirms that the input is
+          a file, and throws an error otherwise. Second, if you provide a
+          <code class="computeroutput">constraintFunc</code>, it will run that as
+          well, throwing an error if the plugin value violates the
+          constraints.</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id826881"></a>Declaring the Plugin's Documentation</h4></div></div></div><p>In a way that parallels the declaration of command line
+          arguments, the initialize method also expects a reference to a hash
+          that provides standardized fields that document the plugin: (<a href="#samplenew" title="Example 1.1. A Sample new()
+              method">Example 1.1, &#8220;A Sample <code class="computeroutput">new()</code>
+              method&#8221;</a>)</p><pre class="screen">documentation =&gt; $documentation,</pre><p>Here is a code snippet that demonstrates the standard way
+          <code class="computeroutput">$documentation</code> is set:</p><div class="example"><a name="id826919"></a><p class="title"><b>Example 1.3. Defining Plugin Documentation</b></p><pre class="screen">my $purposeBrief = &lt;&lt;PURPOSE_BRIEF;
+Load blast results from a condensed file format into the DoTS.Similarity table.
+PURPOSE_BRIEF
+
+my $purpose = &lt;&lt;PLUGIN_PURPOSE;
+Load a set of BLAST similarities from a file in the form generated by the blastSimilarity command.
+PLUGIN_PURPOSE
+
+my $tablesAffected = 
+    [ ['DoTS::Similarity', 'One row per similarity to a subject'],
+      ['DoTS::SimilaritySpan', 'One row per similarity span (HSP)'],
+    ];
+
+my $tablesDependedOn =
+    [
+    ];
+
+my $howToRestart = &lt;&lt;PLUGIN_RESTART;
+Use the restartAlgInvs argument to provide a list of algorithm_invocation_ids that represent 
+previous runs of loading these similarities. The algorithm_invocation_id of a run of this 
+plugin is logged to stderr. If you don't have that information for a previous run or runs,  
+you will have to poke around in the Core.AlgorithmInvocation table and others to find your 
+runs and their algorithm_invocation_ids.
+PLUGIN_RESTART
+
+my $failureCases = &lt;&lt;PLUGIN_FAILURE_CASES;
+PLUGIN_FAILURE_CASES
+
+my $notes = &lt;&lt;PLUGIN_NOTES;
+The definition lines of the sequences involved in the BLAST (both query and subject) must 
+begin with the na_sequence_ids of those sequences. The standard way to achieve that is to
+first load the sequences into GUS, using the InsertFastaSequences plugin, and then to 
+extract them into a file with the dumpSequencesFromTable.pl command. That command places 
+the na_sequence_id of the sequence as the first thing in the definition line.
+PLUGIN_NOTES
+
+my $documentation = { purpose=&gt;$purpose,
+                      purposeBrief=&gt;$purposeBrief,
+                      tablesAffected=&gt;$tablesAffected,
+                      tablesDependedOn=&gt;$tablesDependedOn,
+                      howToRestart=&gt;$howToRestart,
+                      failureCases=&gt;$failureCases,
+                      notes=&gt;$notes
+                     };</pre></div><p>When you look at this example, you will see that a bunch of
+          variables, such as <code class="computeroutput">$purposeBrief</code>
+          and <code class="computeroutput">$tablesAffected</code>, are being set.
+          They are used as values of the hash called
+          <code class="computeroutput">$documentation</code>.
+          <code class="computeroutput">$documentation</code> is in turn passed as
+          a value to the <code class="computeroutput">initialize()</code> method.
+          You will also notice that Perl's HEREDOC syntax is used. The setting
+          of the variables begins with, eg,
+          <code class="computeroutput">&lt;&lt;PLUGIN_PURPOSE</code> and ends
+          with, eg, <code class="computeroutput">PLUGIN_PURPOSE</code>. This is
+          Perl's way of allowing you to create paragraph-style strings without
+          worrying about quoting or metacharacters such as
+          <code class="computeroutput">\n</code>.</p><p>The documentation is shown to the user when he or she uses the
+          <code class="computeroutput">help</code> flag, or when he or she makes
+          a command line error.</p><p>The documentation is formatted using Perl's documentation
+          generation facility, pod. This means that you can include simple pod
+          directives in your documentation to, say, emphasize a word. Run the
+          command <code class="computeroutput">perldoc perlpod</code> for more
+          information</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id827015"></a>The <code class="computeroutput">run()</code>Method</h4></div></div></div><p>Plugins are run by a command called
+          <code class="computeroutput">ga</code> (which stands for "GUS
+          application"). <code class="computeroutput">ga</code> constructs the
+          plugin (by calling its <code class="computeroutput">new()</code>
+          method) and then runs the plugin by calling its
+          <code class="computeroutput">run()</code> method.</p><p>The purpose of the <code class="computeroutput">run()</code>
+          method is to provide at a glance the structure of the plugin. It
+          should be very concise and under no circumstances be longer than one
+          screen. A good practice, when reasonable, is for the
+          <code class="computeroutput">run()</code> method to call high level
+          methods that return the objects to be submitted to the database, and
+          then to submit them in the <code class="computeroutput">run()</code>
+          method. This way, a reader of the
+          <code class="computeroutput">run()</code> method will know just what is
+          being written to the database, which is the main purpose of a
+          plugin.</p><p>The <code class="computeroutput">run()</code> method is expected
+          to return a string describing the result of running the plugin. An
+          example would be "<code class="computeroutput">inserted 3432
+          sequences</code>".</p></div><div class="sect3" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="id827110"></a>The Pointer Cache</h4></div></div></div><p>The pointer cache is a somewhat infamous component of the GUS
+          object layer. It is a memory management facility that was designed
+          to steer around poor garbage collection in Perl (in 2000). Whether
+          or not is still needed is another matter because it is part of the
+          object layer for now. The pointer cache is a way for the plugin to
+          re-use objects that have been allocated but are no longer in active
+          use. Because Perl was not properly garbage collecting objects when
+          they were no longer referred to, the memory footprint of plugins was
+          getting huge.</p><p>As a plugin developer what you need to know is that at points
+          in your code where you no longer need any of the GUS objects that
+          you have created (typically at the bottom of your outermost loop,
+          you should call the <code class="computeroutput">Plugin.pm</code>
+          method <code class="computeroutput">undefPointerCache()</code>. This
+          method clears out the cache.</p><p>If the default capacity (10000) is not enough to hold all the
+          objects you are creating in one cycle through your logic, you can
+          augment its size with the <code class="computeroutput">Plugin.pm</code>
+          method
+          <code class="computeroutput">setPointerCacheSize()</code>.</p></div></div></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id827161"></a>The Plugin Standard</h2></div></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827167"></a>Portability</h3></div></div></div><p>A supported plugin must be useful to sites other than the site
+        that developed it. It also must run at other sites without
+        modification.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827180"></a>Plugin Naming</h3></div></div></div><div class="itemizedlist"><ul type="disc"><li><p>Plugin names begin with one of four verbs:</p><div class="itemizedlist"><ul type="circle"><li><p><span class="emphasis"><em>insert</em></span> if the plugin inserts
+                only</p></li><li><p><span class="emphasis"><em>delete</em></span> if the plugin deletes
+                only</p></li><li><p><span class="emphasis"><em>update</em></span> if the plugin updates
+                only</p></li><li><p><span class="emphasis"><em>load</em></span> if the plugin does any two or
+                more of insert, delete or update</p></li></ul></div></li><li><p>Plugin names are concise</p><div class="itemizedlist"><ul type="circle"><li><p>for example, a plugin named InsertNewSequences is not
+                concise because Insert and New are redundant</p></li></ul></div></li><li><p>Plugin names are precise</p><div class="itemizedlist"><ul type="circle"><li><p>for example, a plugin named InsertData is way too
+                general. The name should reflect the type of data
+                inserted</p></li><li><p>if a Plugin expects exactly one file type, that file
+                type should be in the name. For example,
+                InsertFastaSequences.</p></li></ul></div></li><li><p>Plugin names are accurate</p><div class="itemizedlist"><ul type="circle"><li><p>for example, a plugin named InsertExternalSequences is
+                inaccurate if it can also insert internally generated
+                sequences. A better name would be InsertSequences.</p></li></ul></div></li></ul></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827305"></a>GUS Primary Keys</h3></div></div></div><p>Plugins never directly use (hard-code) GUS primary keys, either
+        in the body of the code or for command line argument values. Instead
+        they use semantically meaningful alternate keys. The reason that
+        plugins cannot use primary keys in their code is that doing so makes
+        the plugin site specific, not portable. The reason they cannot use
+        primary keys as values in their command line arguments is that plugins
+        are often incorporated as steps in a pipeline (using the GUS Pipeline
+        API described elsewhere). The pipelines should be semantically
+        transparent so that people both on site and externally who look at the
+        pipeline will understand it.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827315"></a>Application Specific Tables</h3></div></div></div><p>Some sites augment GUS with their own application specific
+        tables. These are not permitted in supported plugins.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827328"></a>Command Line Arguments</h3></div></div></div><div class="itemizedlist"><ul type="disc"><li><p>The name of the argument should be concise and
+            precise</p></li><li><p>The Plugin API provides a means for you to declare arguments
+            of different types, such integers, strings and files (<a href="#pluginarg">the section called &#8220;Declaring the plugin's command line
+          arguments&#8221;</a>). Use the most appropriate type. For
+            example, don't use a string for a file argument.</p></li><li><p>Use camel caps (eg matrixFile) not underscores (eg
+            matrix_file) in the names of the arguments.</p></li></ul></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827370"></a>Documentation</h3></div></div></div><p>The Plugin API provides a means for you to document the plugin
+        and its arguments. Be thorough in your documentation. <a href="#plugindoc">the section called &#8220;Declaring the Plugin's Documentation&#8221;</a></p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827388"></a>Use of GUS Objects</h3></div></div></div><p>The GUS object layer assists in writing clean plugin code. The
+        guidelines for their use are:</p><div class="itemizedlist"><ul type="disc"><li><p>When writing data to the database, use GUS objects when
+            possible. Avoid using SQL directly.</p></li><li><p>When forming a relationship between two objects, use the
+            <code class="computeroutput">setParent()</code> or
+            <code class="computeroutput">setChildren()</code> method. Do not
+            explicitly set the foreign keys of the objects.</p></li></ul></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827432"></a>Database Access</h3></div></div></div><p>The GUS objects are good at writing data to the database. That
+        is because they allow you to build up a tree structure of objects and
+        then to simply submit the root. However they are not as useful at
+        reading the database. You can only read one object at a time (more on
+        this in the Guide to GUS Objects). For this reason, you will need to
+        use SQL to efficiently read data from the database as needed by your
+        plugin.</p><p>This is how a typical database access looks:</p><div class="example"><a name="id827452"></a><p class="title"><b>Example 1.4. Typical Database Access</b></p><pre class="screen">my $sql = 
+  "SELECT $self-&gt;{primaryKeyColumn}, $self-&gt;{termColumn} 
+   FROM $self-&gt;{table}";
+
+my $queryHandle = $self-&gt;getQueryHandle();
+my $statementHandle = $queryHandle-&gt;prepareAndExecute($sql);
+
+my %vocabFromDb;
+
+while (my ($primaryKey, $term) = $sth-&gt;fetchrow_array()) {
+    $vocabFromDb{$term} = $primaryKey;
+}</pre></div><p>The SQL is formatted on multiple lines for clarity (Perl allows
+        this), and the SQL keywords are upper case. The Plugin API provides a
+        method to easily get a query handle, returning a
+        <code class="computeroutput">GUS::ObjRelP::DbiDbHandle</code>. That
+        object provides an easy-to-use method that prepares and executes the
+        SQL.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827491"></a>Logging</h3></div></div></div><p>The Plugin API offers a set of logging methods. They print to
+        standard error. Use these and no other means of writing out logging
+        messages.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827503"></a>Standard Output</h3></div></div></div><p>Do not write to standard output. If your plugin generates data
+        (such as a list of IDs already loaded, for restart) write it to a
+        file.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827516"></a>Commenting</h3></div></div></div><p>Less is more with commenting. Comment only the non-obvious. For
+        example, do not comment a method called
+        <code class="computeroutput">getSize()</code> with a comment
+        <code class="computeroutput"># gets the size</code>. Most methods should
+        need no commenting, as they should be self-explanatory. In many cases,
+        if you find that you need to comment because something non-obvious
+        needs explaining, that is a red flag indicating that your code might
+        need simplification.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827544"></a>Handling Errors</h3></div></div></div><p>There is only one permissible way to handle errors: call
+        <code class="computeroutput">die()</code>. Never log errors or write them
+        to standard error or standard out. Doing that masks the error (the
+        logs are not read reliably) so that what is really happening is the
+        plugin is failing silently. Causing the plugin to die forces the user
+        of the plugin or its developer to fix the problem.</p><p>When you call die, give it an informative message, including the
+        values of the suspicious variables. Surround the variables in single
+        quotes so that white space errors will be apparent. Provide enough
+        information so that the user can track down the source of the problem
+        in the input files.</p><p>If you would like your program to continue past errors, then
+        dedicate a file or directory which will house describing the errors.
+        The user will know that he or she must look there for a list of inputs
+        that caused problems. Typically you use this strategy if you expect
+        the input to be huge, and don't want to abort it because of a few
+        errors. You may want to include as a command line argument the number
+        of errors a user will tolerate before giving up and just
+        aborting.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827578"></a>Failure Recovery and Restart</h3></div></div></div><p>Plugins abort. They do so for many reasons. When they do, the
+        user must be able to recover from the failure, one way or
+        another.</p><p>A few strategies you could adopt are:</p><div class="itemizedlist"><ul type="disc"><li><p>If the plugin is inserting data (rather than inserting and
+              updating) the plugin can check if an object that is about to be
+              written to the database is already there. If so, it can skip
+              that object. Because this checking will slow the plugin down,
+              the plugin should offer a
+              <code class="computeroutput">restart</code> flag on the command
+              line that turns that check on.</p></li><li><p>If the plugin is updating it can include a command line
+              argument that takes a list of
+              <code class="computeroutput">row_alg_invocation_id</code>s, one per
+              each run of the plugin with this dataset. (Each table in GUS has
+              a <code class="computeroutput">row_alg_invocation_id</code> column
+              to store the identifier of the particular run of a plugin that
+              put data there. This is part of the automatic tracking that
+              plugins do.) The plugin can take the same approach as the
+              previous strategy, but, must additionally check that the object
+              has one of the provided
+              <code class="computeroutput">row_alg_invocation_id</code>s.</p></li><li><p>The plugin can store in dedicated file the identifiers of
+              the objects it has already loaded. In this case, the plugin
+              should offer a command line argument to ask for the name of the
+              file.</p></li></ul></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827661"></a>Opening Files</h3></div></div></div><p>A very common error is to open files without dying if the open
+        fails. The proper way to open a file is like this:</p><div class="example"><a name="id827672"></a><p class="title"><b>Example 1.5. Properly Opening a File</b></p><pre class="screen">open(FILE, $myFile) || die "could not open file '$myFile'\n");</pre></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827687"></a>Caching to Minimize Database Access</h3></div></div></div><p>One of the most time consuming operations in a plugin is
+        accessing the database. The typical flow of a plugin is that it reads
+        the input and as it goes it constructs and submits GUS objects to the
+        database. Some plugins additionally need to read data from the
+        database to do their work. While it is often impossible to avoid
+        writing to the database with each new input value, it is often
+        possible to avoid reading it.</p><p>If most of the values of a table (or tables) will be needed then
+        the plugin should read the table (or tables) outside the loop that
+        processes the input. It should store the values in a hash keyed on a
+        primary or alternate key. Storing multiple megabytes of data this way
+        in memory should not be a problem. Gigabytes may well be a
+        problem.</p><p>If only a few values from the table will be needed then an
+        alternative caching strategy may be appropriate. Wrap the access to
+        the values in a getter method, such as
+        <code class="computeroutput">getGeneType()</code>. This method stores
+        values it gets in a hash. When the method is called, it first looks in
+        the hash for the value. If the hash does not have it, then the method
+        reads the database and stores the value in the hash to optimize future
+        accesses.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827732"></a>Regular Expressions</h3></div></div></div><p>Complicated regular expressions should be accompanied by a
+        comment line that shows what the input string looks like. It is
+        otherwise often very difficult to figure out what the regular
+        expression is doing. Long regular expressions should be split into
+        multiple lines with embedded whitespace and comments using the
+        <code class="computeroutput">/x</code> modifier. See the "Readability"
+        section of <a href="http://www.perl.com/pub/a/2004/01/16/regexps.html" target="_top">Maintaining
+        Regular Expressions</a></p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827760"></a>Variable and Method Names</h3></div></div></div><p>Choosing good names for your variables and methods makes your
+        code much more understandable. To make your code clear:</p><div class="itemizedlist"><ul type="disc"><li><p>Variable and method names should start with a lower case
+              letter.</p></li><li><p>Use "camel caps"
+              (<code class="computeroutput">$sequenceLength</code>) for variable
+              names and method names, not underscores
+              (<code class="computeroutput">$sequence_length</code>).</p></li><li><p>Variable names should be named after the type of data they
+              hold (unless there are more than one variable for a given type,
+              in which case they are qualified). For example a good name for a
+              sequence would be
+              <code class="computeroutput">$sequence</code></p></li><li><p>In plugins, there are typically:</p><div class="itemizedlist"><ul type="circle"><li><p>strings parsed from the input</p></li><li><p>objects created from the input (if you are using an
+                  object based parser such as Bioperl)</p></li><li><p>GUS object layer objects</p></li></ul></div></li><li><p>Input objects or strings should be named with 'input' as a
+              prefix. For example:
+              <code class="computeroutput">$inputSequence</code></p></li><li><p>Object layer objects are named for their type, for example
+              <code class="computeroutput">$NASequence</code></p></li><li><p>Method names should be self-explanatory. A bad method name
+              would be <code class="computeroutput">process()</code> (what is
+              being processed?). Don't "save keystrokes" with short names. If
+              being self-explanatory requires using a long name, then use a
+              long name.</p></li></ul></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827892"></a>Methods</h3></div></div></div><p>Use "structured programming" when you create your
+        methods:</p><div class="itemizedlist"><ul type="disc"><li><p>No method should ever be longer than one screen. If it is,
+              refactor part of into its own method.</p></li><li><p>Never repeat code. Repeated code must be in a
+              method.</p></li></ul></div><p>Some methods in the API are marked as deprecated. Do not use
+        them. They are for backward compatibility only.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827927"></a>Syntax</h3></div></div></div><div class="itemizedlist"><ul type="disc"><li><p>Use C and Java like syntax. Do not use weird Perl specific
+            syntax.</p></li><li><p>Indenting must be spaces not tabs. Two or four spaces are
+            acceptable</p></li><li><p>Use <code class="computeroutput">$self</code> to refer to the
+            object itself</p></li><li><p>Declare method arguments using this syntax: </p><pre class="screen">my ($self, $sequence, $length) = @_;.</pre><p>Do
+            not use <code class="computeroutput">shift</code></p></li></ul></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id827984"></a>Application Specific Controlled Vocabularies</h3></div></div></div><p>A controlled vocabulary (CV) is a restricted set of terms that
+        are allowed values for a data type. They may be simple lists or they
+        may be complex trees, graphs or ontologies. In GUS the CVs fall into
+        two categories: standard CVs such as the Gene Ontology, and small
+        application specific CVs such as ReviewStatus.</p><p>The complete list of application specific CVs in the GUS 3.5
+        schema is:</p><div class="itemizedlist"><ul type="disc"><li><p>DoTS.BlatAlignmentQuality</p></li><li><p>DoTS.GOAssociationInstanceLOE</p></li><li><p>DoTS.GeneInstanceCategory</p></li><li><p>DoTS.InteractionType</p></li><li><p>DoTS.MotifRejectionReason</p></li><li><p>DoTS.ProteinCategory</p></li><li><p>DoTS.ProteinInstanceCategory</p></li><li><p>DoTS.ProteinProteinCategory</p></li><li><p>DoTS.ProteinPropertyType</p></li><li><p>DoTS.RNACategory</p></li><li><p>DoTS.RNAInstanceCategory</p></li><li><p>DoTS.RNARNACategory</p></li><li><p>DoTS.RepeatType</p></li><li><p>SRes.BibRefType</p></li><li><p>SRes.ReviewStatus</p></li></ul></div><p>Acquiring a standard CV typically involves downloading files
+        from the CV provider and running a plugin to load it.</p><p>Application specific CVs are handled by the plugin that will use
+        the CV. For example, a plugin that inserts bibliographic references
+        will use the SRes.BibRefType CV. It is these plugins that are
+        responsible for making sure that the CV they want to use is in the
+        database.</p><p>Plugins that use CVs fall into two categories:</p><div class="orderedlist"><ol type="1"><li><p>those that hard code the CV</p></li><li><p>those that do not hard code the CV, but, rather, get it
+              from the input</p></li></ol></div><p>In case 1, the plugin hard codes the CV in the Perl code.</p><p>In case 2, the plugin hard codes only a default. It also offers
+        an optional command line argument that takes a file that contains the
+        CV. If the user of the plugin determines that the input has an
+        different CV than the default, the user will provide such a
+        file.</p><p>In both cases, the plugin reads the table in GUS that contains
+        the CV and compares it to the CV it expects to use. If the expected
+        vocab is not found, the plugin updates the table.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id828169"></a>Assigning an External Database Release Id</h3></div></div></div><p>GUS is a data warehouse so it is very common for plugins to load
+        into GUS data from another source. Whether the source is external or
+        in-house, tracking its origin is often required. The tables in GUS
+        that handle this are SRes.ExternalDatabase and
+        SRes.ExternalDatabaseRelease. The former describes the database, eg,
+        PFam, and the latter describes the particular release of the database
+        that is being loaded, eg, 1.0.0. The data loaded will have a foreign
+        key to the database release, which in turn has a foreign key to the
+        database.</p><p>In order to create that relationship, the plugin must know the
+        primary key of the external database release. To accomplish this, the
+        plugin takes as command line arguments the name of the database and
+        its release. It does not take the primary key of the external database
+        release (that violates the plugin standard). The plugin passes that
+        information to the API subroutine
+        <code class="computeroutput">getExtDbRlsId($dbName,
+        $dbVersion)</code>.</p><p>If the plugin is inserting the dataset as opposed to updating
+        it, create new entries for the database and the release by using the
+        plugins
+        <code class="computeroutput">GUS::Supported::Plugin::InsertExternalDatabase</code>
+        and
+        <code class="computeroutput">GUS::Supported::Plugin::InsertExternalDatabaseRls</code>.</p></div></div></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="id828214"></a>Chapter 2. Extending the Schema</h2></div><div><div class="author"><h3 class="author"><span class="firstname">Michael</span> <span class="surname">Saffitz</span></h3><code class="email">&lt;<a href="mailto:msaffitz@pcbi.upenn.edu">msaffitz@pcbi.upenn.edu</a>&gt;</code></div></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="#id828250">Creating New Objects in the Database</a></span></dt><dd><dl><dt><span class="sect2"><a href="#id828261">Adding New Columns to Existing Tables</a></span></dt><dt><span class="sect2"><a href="#id828282">Adding New Tables</a></span></dt><dt><span class="sect2"><a href="#id828309">Adding New Views</a></span></dt><dt><span class="sect2"><a href="#id828324">Updating GUS Version Objects</a></span></dt><dt><span class="sect2"><a href="#id828338">Updating
+        <code class="computeroutput">Core.TableInfo</code></a></span></dt><dt><span class="sect2"><a href="#id828566">Rebuilding Objects</a></span></dt></dl></dd></dl></div><p>The GUS Schema may be extended by adding new columns to existing
+    tables, or adding new tables and views. For the time being, adding new
+    Schemata to GUS is not supported.</p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>Extensions to the GUS may interfere with your ability to upgrade
+        to future releases of GUS.</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="id828250"></a>Creating New Objects in the Database</h2></div></div></div><p>The first step to extending the Schema is to create the objects
+      within the database.</p><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id828261"></a>Adding New Columns to Existing Tables</h3></div></div></div><p>When adding new columns to existing tables, it is important to
+        maintain the existing order of the columns, and only add new columns
+        between the existing columns and the housekeeping columns (eg before
+        the <code class="computeroutput">modification_date</code> column). For
+        this reason, it will likely be necessary to rename the existing table;
+        create the modified table; and then migrate the date from the existing
+        table to the newly created table. As you perform this process, you
+        should ensure that all constraints (including both "incoming" and
+        "outgoing" foreign key constraints and primary key constraints) and
+        that indexes on the original table are created and applied on the
+        newly created table.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id828282"></a>Adding New Tables</h3></div></div></div><p>When creating new tables, it is important to include all
+        housekeeping columns at the "end" of the definition in the proper
+        order. All new tables should have a corresponding sequence created,
+        with the naming convention of:
+        <code class="computeroutput"><em class="replaceable"><code>TableSchemaName</code></em>.<em class="replaceable"><code>TableName</code></em>_SQ</code>
+        . All new tables must have a single column primary key constraint
+        defined.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id828309"></a>Adding New Views</h3></div></div></div><p>Only views created as "subclass" views against an implementation
+        table are supported. When creating new views, it is important to
+        include all superclass columns in the view definition, including the
+        housekeeping columns. Proper column ordering should be observed in the
+        views.</p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id828324"></a>Updating GUS Version Objects</h3></div></div></div><p>If you've changed an existing GUS table, or wish to have GUS
+        audit changes to your new tables and views, you must make the
+        corresponding changes and/or additions to the version ("ver") tables
+        and views. </p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id828338"></a>Updating
+        <code class="computeroutput">Core.TableInfo</code></h3></div></div></div><p>GUS stores metadata for all tables and views in the
+        <code class="computeroutput">Core.TableInfo</code> table. Whenever you
+        create a new table or view, you must add a corresponding row in this
+        table. The column descriptions are:</p><div class="table"><a name="id828360"></a><p class="title"><b>Table 2.1. <code class="computeroutput">Core.TableInfo</code>
+            Description</b></p><table summary="Core.TableInfo
+            Description" border="1"><colgroup><col><col></colgroup><thead><tr><th align="center">Column Name</th><th align="center">Description</th></tr></thead><tbody><tr><td><code class="computeroutput">table_id</code></td><td>The ID of this row, provided by the
+                  <code class="computeroutput">com Core.TableInfo_SQ</code>
+                  sequence. </td></tr><tr><td><code class="computeroutput">name</code></td><td>The name of the table. The case used here will be
+                  used at object-generation time.</td></tr><tr><td><code class="computeroutput">table_type</code></td><td><code class="computeroutput">Standard</code> or
+                  <code class="computeroutput">Version</code>, depending on
+                  whether this is a normal table or a version table </td></tr><tr><td><code class="computeroutput">primary_key_column</code></td><td>The name of the primary key column</td></tr><tr><td><code class="computeroutput">database_id</code></td><td>The id of the schema, found in
+                  <code class="computeroutput">Core.DatabaseInfo</code></td></tr><tr><td><code class="computeroutput">is_versioned</code></td><td>1 if the table has a corresponding version table. 0
+                  otherwise.</td></tr><tr><td><code class="computeroutput">is_view</code></td><td>1 if the "table" is a subclass view. 0
+                  otherwise.</td></tr><tr><td><code class="computeroutput">view_on_table_id</code></td><td>If this "table" is a subclass view, the table id of
+                  the implementation table that this view is against.</td></tr><tr><td><code class="computeroutput">superclass_table_id</code></td><td>If this "table" is a subclass view, the table id of
+                  the superclass view.</td></tr><tr><td><code class="computeroutput">is_updatable</code></td><td>1 if the table is read/write, 0 if it is read
+                  only.</td></tr></tbody></table></div></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="id828566"></a>Rebuilding Objects</h3></div></div></div><p>After you have completed the steps above, you must rebuild your
+        objects. First, use the command below to signal that your table
+        definitions have changed:</p><pre class="screen">$ touch $PROJECT_HOME/Schema/gus_schema.xml</pre><p>Then, reinstall GUS:</p><pre class="screen">$ build GUS install -append</pre></div></div></div></div></body></html>

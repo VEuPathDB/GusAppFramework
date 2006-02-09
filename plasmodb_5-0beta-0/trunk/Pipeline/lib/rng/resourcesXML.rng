@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grammar xmlns="http://relaxng.org/ns/structure/1.0">
+    <start>
+        <element name="resourcesPipeline">
+            <attribute name="repository"/>
+            <attribute name="downloadDir"/>
+            <zeroOrMore>
+                <ref name="resource"/>
+            </zeroOrMore>
+        </element>
+    </start>
+    <define name="resource">
+        <element name="resource">
+            <attribute name="resource"/>
+            <attribute name="version"/>
+            <attribute name="url"/>
+            <attribute name="dbCommit"/>
+            <attribute name="plugin"/>
+            <optional>
+                <attribute name="extDbRlsVer"/>
+                <attribute name="extDbName"/>
+                <attribute name="extDbRlsDescrip"/>
+            </optional>
+            <choice>
+                <element name="manualGet">
+                    <attribute name="fileOrDir"/>
+                    <attribute name="contact"/>
+                    <attribute name="email"/>
+                    <attribute name="institution"/>
+                </element>
+                <element name="wgetArgs">
+                    <text/>
+                </element>
+            </choice>
+            <zeroOrMore>
+                <element name="unpack">
+                    <text/>
+                </element>
+            </zeroOrMore>
+            <element name="pluginArgs">
+                <text/>
+            </element>
+        </element>
+    </define>
+</grammar>

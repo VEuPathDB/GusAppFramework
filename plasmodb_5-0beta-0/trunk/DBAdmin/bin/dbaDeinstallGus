@@ -1,0 +1,87 @@
+#!/usr/bin/perl
+# 
+# $Id:$
+# $Author:$
+# $Revision:$
+
+use strict;
+use GUS::Supported::GusConfig;
+use DBI;
+
+my @schemas = ( "DoTS", "Core", "Prot", "SRes", "TESS", "Study", "RAD",
+		"DoTSVer", "CoreVer", "ProtVer", "SResVer", "TESSVer", "StudyVer", 
+                "RADVER");
+
+my $configFile = "$ENV{GUS_HOME}/config/gus.config";
+my $gusConfig = GUS::Supported::GusConfig->new($configFile);
+
+my $dbi = $gusConfig->getDbiDsn();
+my $schemaList;
+my $dbLogin = $gusConfig->getDatabaseLogin();
+
+foreach my $schema ( @schemas ) {
+    $schemaList .= $schema . " ";
+}   
+
+print<<END;
+
+***************************************************************************
+***************************************************************************
+WARNING!  This script will deinstall an instance of GUS by dropping 
+(deleting) GUS schemas/users.  This will operate on:
+
+Username: $dbLogin
+
+Database: $dbi
+
+Schemas: $schemaList
+
+The user listed above must have dba privileges to continue
+
+***************************************************************************
+***************************************************************************
+
+END
+
+print "Type YES to continue.  All other input will cancel: ";
+
+my $response = <STDIN>;
+chomp($response);
+
+if ( $response ne "YES" ) {
+    print "\n\n Aborted. \n\n";
+    exit;
+}
+
+my $dbh = DBI->connect($gusConfig->getDbiDsn(),
+		       $gusConfig->getDatabaseLogin(),
+		       $gusConfig->getDatabasePassword())
+    or die("Unable to connect to the database");
+
+my $modifier;
+
+my @sql;
+
+foreach my $schema ( @schemas ) {
+    if ( $gusConfig->getDatabaseVendor() =~ /Oracle/i ) { push(@sql,"drop user $schema cascade"); }
+    elsif ( $gusConfig->getDatabaseVendor() =~ /Postgres/i ) { push(@sql,"drop schema $schema cascade;"); }
+    else { die("Unknown Database Vendor: ".$gusConfig->getDatabaseVendor()); }
+}
+
+if ( $gusConfig->getDatabaseVendor() =~ /Oracle/i ) {
+    push(@sql,"drop role GUS_W");
+    push(@sql,"drop role GUS_R");
+}
+
+foreach my $sql (@sql) {
+    print "Executing: $sql\n";
+    my $sth = $dbh->prepare($sql) or die("Could not prepare: $sql");
+    if ( ! $sth->execute() ) {
+	print STDERR "WARNING: Could not execute: $sql\n";
+    }
+}
+
+print "\nDone.\n";
+
+
+1;

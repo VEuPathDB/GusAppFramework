@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+"http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
+<book>
+  <title>GUS User's Guide</title>
+
+  <bookinfo>
+    <date>$Date$</date>
+
+    <releaseinfo>$Id: UsersGuide.xml,v 1.1.2.1 2005/05/05 20:18:59 msaffitz
+    Exp $</releaseinfo>
+
+    <author>
+      <surname>Saffitz</surname>
+
+      <firstname>Michael</firstname>
+
+      <email>msaffitz@pcbi.upenn.edu</email>
+    </author>
+
+    <legalnotice>
+      <para>The Genomics Unified Schema and Application Framework are subject
+      to various license terms and copyrights as outlined in the LICENSE file
+      provided with the software.</para>
+    </legalnotice>
+  </bookinfo>
+
+  <preface>
+    <title>Note</title>
+
+    <para>This document is in the early stages of development.</para>
+  </preface>
+
+  <chapter>
+    <title>Using GUS Plugins</title>
+
+    <sect1>
+      <title>Plugin Overview</title>
+
+      <para>Plugins are small programs that work with the GUS application to
+      load data. See the Developer's Guide for more information about the
+      Plugin API and writing plugins. GUS comes with two types of plugins:
+      <emphasis>Supported</emphasis> and <emphasis>Community</emphasis>.
+      Supported plugins have been tested in both Oracle and Postgres and have
+      been confirmed to work properly, are portable across any site with a
+      standard GUS installation, and widely useful, and meet the plugin
+      standard outlined in the Developer's Guide. Community plugins are
+      provided as part of GUS as well, but they fail to meet at least one of
+      these criteria and they should be reviewed prior to use. </para>
+    </sect1>
+
+    <sect1>
+      <title>Registering Plugins</title>
+
+      <para>GUS requires that all plugins be registered prior to use. This
+      allows for close auditing of the environment in which the plugin
+      operated and ensures that changes within a plugin do not go unnoticed.
+      When you attempt to use a plugin that has not been registered,
+      <computeroutput>ga</computeroutput> will respond with an error:<screen>USER ERROR: GUS::Supported::Plugin::InsertControl has never been registered.
+Please use 'ga +create GUS::Supported::Plugin::InsertControl --commit'</screen>
+      You must then use the command provided to register the plugin. In this
+      case:<screen>$ ga +create GUS::Supported::Plugin::InsertControl --commit</screen></para>
+
+      <para>If a plugin changes since being registered, you may receive a
+      similar error, requesting that you use the <computeroutput>ga +update
+      <replaceable>...</replaceable></computeroutput> command.</para>
+    </sect1>
+
+    <sect1>
+      <title>Running Plugins</title>
+
+      <para>Plugins are run using the <computeroutput>ga</computeroutput>
+      command with the full name of the plugin, as well as any command line
+      arguments: <screen>$ ga GUS::Supported::Plugin::<replaceable>PluginName</replaceable> --<replaceable>argumentName</replaceable>  <replaceable>argumentValue</replaceable> </screen></para>
+
+      <para>When you are ready to save the changes to the database, you must
+      add the <computeroutput>--commit</computeroutput> flag to the
+      <computeroutput>ga</computeroutput> command:<screen>$ ga GUS::Supported::Plugin::<replaceable>PluginName</replaceable> --<replaceable>argumentName</replaceable>  <replaceable>argumentValue</replaceable> --commit</screen></para>
+    </sect1>
+
+    <sect1>
+      <title>Creating new Plugins</title>
+
+      <para>For more information on how to create new plugins or modify
+      existing plugins, please see the GUS Developer's Guide.</para>
+    </sect1>
+  </chapter>
+
+  <chapter>
+    <title>Configuring GUS</title>
+
+    <sect1>
+      <title>Users, Groups, and Projects</title>
+
+      <para>GUS provides basic functionality for tracking changes and
+      controlling access by users, groups, and projects. To use this
+      functionality, you must first create User, Group, and Project entries in
+      the database. If you've just completed installing GUS, these will be
+      entered using the <computeroutput>dba</computeroutput> user and group,
+      and the <computeroutput>Database administration</computeroutput> project
+      (these three values are the default in every GUS installation). These
+      tables are populated with either the LoadRow or LoadGusXml generic
+      plugins. Examples are below.</para>
+
+      <example>
+        <title>Adding a User with LoadRow</title>
+
+        <screen>ga GUS::Supported::Plugin::LoadRow --tablename Core::UserInfo --attrlist \
+        "login,password,first_name,last_name,e_mail" \ 
+        --valuelist jsmith^^^p@ss^^^Jane^^^Smith^^^jsmith@example.org --commit</screen>
+      </example>
+
+      <example>
+        <title>Adding a Group with LoadRow</title>
+
+        <screen>ga GUS::Supported::Plugin::LoadRow --tablename Core::GroupInfo \
+        --attrlist name --valuelist samplegroup --commit</screen>
+      </example>
+
+      <example>
+        <title>Adding a Project with LoadGusXml</title>
+
+        <para>The XML to load is shown above, and is assumed to be named
+        <computeroutput>sampleproject.xml</computeroutput>. The command to
+        load the XML is shown below.</para>
+
+        <screen>&lt;Core::ProjectInfo&gt;
+     &lt;name&gt;Sample project&lt;/name&gt;
+     &lt;description&gt;A sample project&lt;/description&gt;
+&lt;/Core::ProjectInfo&gt;
+//</screen>
+
+        <screen>ga GUS::Supported::Plugin::LoadGusXml --filename sampleproject.xml --commit</screen>
+      </example>
+
+      <para>Once these tables have been populated, you must either update your
+      <computeroutput>$GUS_CONFIG_FILE</computeroutput> and
+      <computeroutput>gus.config</computeroutput> file (in the
+      <computeroutput>$PROJECT_HOME/install/</computeroutput> directory), or
+      use the values from the command line when running plugins with the
+      <computeroutput>--user</computeroutput>,
+      <computeroutput>--group</computeroutput>, and
+      <computeroutput>--project</computeroutput> flags.</para>
+    </sect1>
+
+    <sect1>
+      <title>External Databases</title>
+
+      <para>GUS supports tracking third party databases and third party data
+      releases through the
+      <computeroutput>SRes.ExternalDatabase</computeroutput>, and
+      <computeroutput>SRes.ExternalDatabaseRelease</computeroutput> tables.
+      These tables may be populated using the
+      <computeroutput>InsertExternalDatabase</computeroutput> and
+      <computeroutput>InsertExternalDatabaseRls</computeroutput> plugins.
+      </para>
+    </sect1>
+
+    <sect1>
+      <title>Table and Schema Metadata</title>
+
+      <para>Metadata for tables is held in
+      <computeroutput>Core.TableInfo</computeroutput>. Metadata for the
+      Schemata are held in <computeroutput>Core.DatabaseInfo</computeroutput>.
+      See the Developer's Guide for more information about extending GUS and
+      adding to these tables. </para>
+    </sect1>
+  </chapter>
+
+  <chapter>
+    <title>Building Websites with the WDK</title>
+
+    <para>The GUS Web Development Kit (WDK) provides a rich environment for
+    rapidly creating query-centric websites. For more information on using the
+    WDK, please see the <ulink
+    url="http://www.gusdb.org/wiki/index.php/GusWdk">online
+    documentation</ulink></para>
+  </chapter>
+
+  <appendix>
+    <title>Troubleshooting and Getting Help</title>
+
+    <sect1>
+      <title>Troubleshooting GUS</title>
+
+      <para>Plugins have several options for increasing the verbosity of log
+      messages. Add the <computeroutput>--help</computeroutput> flag to the
+      end of your call to <computeroutput>ga</computeroutput> to see options.
+      </para>
+    </sect1>
+
+    <sect1>
+      <title>Troubleshooting Resources</title>
+
+      <para>An active community of GUS users and developers is available on an
+      informal basis to assist with using GUS. Posting to the <ulink
+      url="http://lists.sourceforge.net/lists/listinfo/gusdev-gusdev">GUS
+      Mailing List</ulink> or searching the <ulink
+      url="http://sourceforge.net/mailarchive/forum.php?forum_id=9903">archives</ulink>
+      is the fastest way to get assistance. When posting to the list, you
+      should try to be as specific as possible, including the various command
+      line arguments and full error messages, as appropriate. There are
+      additional resources available on the <ulink
+      url="http://www.gusdb.org">GUS Website</ulink> and <ulink
+      url="http://www.gusdb.org/wiki">GUS Wiki</ulink>.</para>
+    </sect1>
+  </appendix>
+</book>

@@ -1,0 +1,9 @@
+Plugins to fix:
+  - InsertNewExternalAASequence
+        - needs re-writing for understandability
+        - needs correct error handling, eg, if regexs are not supplied
+
+  - LoadNRDB
+        - needs to be re-written
+
+  - SubmitRow is not handling updates

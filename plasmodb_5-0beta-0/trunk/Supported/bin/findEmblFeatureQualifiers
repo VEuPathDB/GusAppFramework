@@ -1,0 +1,36 @@
+#!@perl@
+
+use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
+
+if (scalar(@ARGV) != 0) {
+  die
+"
+Report the features and qualifiers used in an embl file
+
+Usage: cat files | findEmblFeatureQualifers
+
+";
+}
+
+my $currentFeature;
+my $features = {};
+while (<STDIN>) {
+  next unless /^FT/;
+  if (/^FT   (\w+)  /) {
+    $currentFeature = $1;
+    if (!$features->{$currentFeature}) {
+      $features->{$currentFeature} = {};
+    }
+  } elsif (/^FT\s+\/(\w+)[=|\s]/) {
+    $features->{$currentFeature}->{$1} = 1;
+  }
+}
+
+foreach my $feature (sort(keys %{$features})) {
+  print "$feature\n";
+  foreach my $qualifer (sort(keys %{$features->{$feature}})) {
+    print "  $qualifer\n";
+  }
+  print "\n";
+}

@@ -1,0 +1,120 @@
+#!@perl@
+
+use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
+use Bio::SeqIO;
+use Bio::SeqFeature::Tools::Unflattener;
+
+&usage if (scalar(@ARGV) < 2 || scalar(@ARGV) > 3);
+
+my $format = $ARGV[0];
+my $fileOrDir = $ARGV[1];
+my $xmlOutput;
+my $unflatten = 1;
+if ($ARGV[2]) {
+  if ($ARGV[2] eq '-xmlOutput') {
+    $xmlOutput = 1;
+  } elsif ($ARGV[2] eq '-noUnflatten') {
+    $unflatten = 0;
+  } else {
+    &usage;
+  }
+}
+
+die "File or directory '$fileOrDir' does not exist\n" unless -e $fileOrDir;
+
+my @files;
+if (-d $fileOrDir) {
+  opendir(DIR, $fileOrDir) || die "Can't open directory '$fileOrDir'";
+  my @noDotFiles = grep { $_ ne '.' && $_ ne '..' } readdir(DIR);
+  @files = map { "$fileOrDir/$_" } @noDotFiles;
+} else {
+  $files[0] = $fileOrDir;
+}
+
+my $features = {};
+my %featureCounts;
+
+my $unflattener = Bio::SeqFeature::Tools::Unflattener->new();
+
+foreach my $file (@files) {
+  my $bioperlSeqIO = Bio::SeqIO->new(-format => $format,
+				     -file   => $file);
+
+  while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
+
+    if ($unflatten && ($format eq 'genbank') || ($format eq 'embl')) {
+
+      $unflattener->unflatten_seq(-seq => $bioperlSeq,
+				  -use_magic => 1);
+    }
+
+    foreach my $bioperlFeature ($bioperlSeq->get_SeqFeatures()) {
+      processFeature($bioperlFeature, "root");
+    }
+  }
+}
+
+sub processFeature {
+  my ($bioperlFeature, $parent) = @_;
+
+  my $feature = $bioperlFeature->primary_tag();
+  $featureCounts{$feature}->{$parent}++;
+  foreach my $qualifier ($bioperlFeature->get_all_tags()) {
+    $features->{$feature}->{$parent}->{$qualifier}++;
+  }
+
+  for my $subFeature ($bioperlFeature->get_SeqFeatures()) {
+    processFeature($subFeature, $feature);
+  }
+}
+
+if ($xmlOutput) {
+  my $header = <<HEADER;
+<mapping>
+
+  <specialCaseQualifierHandler name="standard" 
+           class="GUS::Supported::SpecialCaseQualifierHandlers"/>
+
+HEADER
+
+  print $header;
+  foreach my $feature (sort(keys %{$features})) {
+    print "  <feature name=\"$feature\" table=\"\" so=\"\">\n";
+    foreach my $parent (sort(keys %{$features->{$feature}})) {
+      foreach my $qualifier (sort(keys %{$features->{$feature}->{$parent}})) {
+	print "    <qualifier name=\"$qualifier\" parent=\"$parent\"/>\n";
+      }
+    }
+    print "  </feature>\n\n";
+  }
+  print "</mapping>/n";
+} else {
+  foreach my $feature (sort(keys %{$features})) {
+    foreach my $parent (sort(keys %{$features->{$feature}})) {
+      print "$feature:$parent ($featureCounts{$feature}->{$parent})\n";
+      foreach my $qualifier (sort(keys %{$features->{$feature}->{$parent}})) {
+	print "  $qualifier ($features->{$feature}->{$parent}->{$qualifier})\n";
+      }
+      print "\n";
+    }
+  }
+}
+
+
+sub usage {
+  die
+"
+Report the features and qualifiers used in a sequence features file
+
+Usage: reportFeatureQualifers format fileOrDir [-xmlOutput -noUnflatten]
+
+where
+  format:       embl, genbank, tigr (or any format supported by bioperl's SeqIO)
+  fileOrDir:    a seq/feature file, or a directory containing a set of them
+  -xmlOutput:   if present, the output is a template in 'mapping file XML' 
+                format as expected by the InsertSequenceFeatures plugin.
+  -noUnflatten  if present, don't use bioperl's unflattener (only applicable
+                to genbank and embl)
+";
+}

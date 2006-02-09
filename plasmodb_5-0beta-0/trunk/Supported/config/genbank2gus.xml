@@ -1,0 +1,1143 @@
+<mapping>
+
+  <specialCaseQualifierHandler name="standard" 
+           class="GUS::Supported::SpecialCaseQualifierHandlers"/>
+
+  <feature name="attenuator" table="DoTS::DNARegulatory" so="attenuator">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="map"/>
+    <qualifier name="phenotype"/>
+    <qualifier name="usedin"/>
+    <qualifier name="note" handler="standard" method="note"/>
+  </feature>
+
+  <feature name="C_region" table="DoTS::Immunoglobulin" so="C_gene">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="map"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+    <qualifier name="note" handler="standard" method="note"/>
+  </feature>
+
+  <feature name="CAAT_signal" table="DoTS::DNARegulatory" so="CAAT_signal">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="map"/>
+    <qualifier name="usedin"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="CDS" table="DoTS::Transcript" so="CDS">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="codon"/>
+    <qualifier name="codon_start"/>
+    <qualifier name="EC_number"/>
+    <qualifier name="evidence"/>
+    <qualifier name="exception"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="number"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="protein_id"/>
+    <qualifier name="pseudo" column="is_pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="translation" handler="standard" method="translation"/>
+    <qualifier name="transl_except"/>
+    <qualifier name="transl_table"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="conflict" table="DoTS::SeqVariation" so="sequence_difference">
+    <qualifier name="citation"/>
+    <qualifier name="compare" ignore="true"/>
+    <qualifier name="allele"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="replace" column="Substitute"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="D-loop" table="DoTS::DNAStructure" so="D_loop">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="D_segment" table="DoTS::Immunoglobulin" so="" soId="SO:0000492">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="enhancer" table="DoTS::DNARegulatory" so="">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="bound_moiety" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="label"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="exon" table="DoTS::ExonFeature" so="exon">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="EC_number"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="number" column="Num"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product" handler="standard" method="product" note="everyone else puts it in product field"/>
+    <qualifier name="pseudo" column="is_pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="gap" table="DoTS::ScaffoldGapFeature" so="">
+    <qualifier name="estimated_length" handler="standard" method="gapLength"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+  </feature>
+
+  <feature name="GC_signal" table="DoTS::DnaRegulatory" so="GC_rich_region">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="gene" table="DoTS::GeneFeature" so="gene">
+    <qualifier name="allele"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo" column="is_pseudo"/>
+    <qualifier name="phenotype"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="iDNA" table="DoTS::Immunoglobulin" so="iDNA">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function" ignore="true"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="number" ignore="true"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="intron" table="DoTS::Transcript" so="intron">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="cons_splice"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="number" column="num"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="J_segment" table="DoTS::Immunoglobulin" so="J_gene_recombination_feature">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="LTR" table="DoTS::Repeat" so="long_terminal_repeat">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="mat_peptide" table="DoTS::ProteinFeature" so="mature_peptide">
+    <qualifier name="allele"/>
+    <qualifier name="citation"/>
+    <qualifier name="EC_number"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="misc_binding" table="DoTS::Miscellaneous" so="binding_site">
+    <qualifier name="bound_moiety"/>
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="misc_difference" table="DoTS::SeqVariation" so="sequence_difference">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="clone"/>
+    <qualifier name="compare" ignore="true"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="phenotype"/>
+    <qualifier name="replace" column="Substitute"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="misc_feature" table="DoTS::Miscellaneous" so="located_sequence_feature">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="number" column="Num"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="phenotype"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="misc_recomb" table="DoTS::SeqVariation" so="" soId="SO:0000298">
+    <qualifier name="insertion_seq" ignore="true"/>
+    <qualifier name="allele"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="organism"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="misc_RNA" table="DoTS::RNAStructure" so="transcript">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="misc_signal" table="DoTS::Miscellaneous" so="" soId="SO:0005836">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="phenotype"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="misc_structure" table="DoTS::Miscellaneous" so="sequence_secondary_structure">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="modified_base" table="DoTS::SeqVariation" so="modified_base_site">
+    <qualifier name="mod_base"/>
+    <qualifier name="allele"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="frequency"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="mRNA" table="DoTS::RNAType" so="mRNA">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo" column="is_pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="N_region" table="DoTS::Immunoglobulin" so= "" soId="SO:0000563">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="old_sequence" table="DoTS::SeqVariation">
+    <qualifier name="citation"/>
+    <qualifier name="compare" ignore="true"/>
+    <qualifier name="allele"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="replace" column="Substitute"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="operon" so="operon">
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation" ignore="true"/>
+    <qualifier name="evidence" ignore="true"/>
+    <qualifier name="function" ignore="true"/>
+    <qualifier name="label" ignore="true"/>
+    <qualifier name="map" ignore="true"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="phenotype" ignore="true"/>
+    <qualifier name="pseudo" ignore="true"/>
+    <qualifier name="standard_name" ignore="true"/>
+    <qualifier name="usedin" ignore="true"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="oriT" so="origin_of_transfer">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="bound_moiety" ignore="true"/>
+    <qualifier name="citation" ignore="true"/>
+    <qualifier name="direction" ignore="true"/>
+    <qualifier name="evidence" ignore="true"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label" ignore="true"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map" ignore="true"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="rpt_family" ignore="true"/>
+    <qualifier name="rpt_type" ignore="true"/>
+    <qualifier name="rpt_unit" ignore="true"/>
+    <qualifier name="standard_name" ignore="true"/>
+    <qualifier name="usedin" ignore="true"/>
+    <qualifier name="direction" ignore="true"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="polyA_signal" table="DoTS::Transcript" so="polyA_signal_sequence">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="polyA_site" table="DoTS::Transcript" so="polyA_site">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="precursor_RNA" table="DoTS::Transcript" so="primary_transcript">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="prim_transcript" table="DoTS::Transcript" so="primary_transcript">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="primer_bind" table="DoTS::DNAStructure" so="primer_binding_site">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="PCR_conditions"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="promoter" table="DoTS::DNARegulatory" so="promoter">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="bound_moiety" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="phenotype"/>
+    <qualifier name="pseudo" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="protein_bind" table="DoTS::Miscellaneous" so="protein_binding_site">
+    <qualifier name="bound_moiety"/>
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="RBS" table="DoTS::RNAStructure" so="ribosome_entry_site">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="repeat_region" table="DoTS::Repeats" so="repeat_region">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="insertion_seq" ignore="true"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="rpt_family"/>
+    <qualifier name="rpt_type"/>
+    <qualifier name="rpt_unit"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="transposon" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="repeat_unit" table="DoTS::Repeats">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="rpt_family"/>
+    <qualifier name="rpt_type"/>
+    <qualifier name="rpt_unit"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="rep_origin" table="DoTS::DNAStructure" so="origin_of_replication">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="direction"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="rRNA" table="DoTS::RNAType" so="rRNA">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo" column="is_pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="S_region" table="DoTS::Immunoglobulin">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="satellite" table="DoTS::Repeats" so="satellite_DNA">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="rpt_type"/>
+    <qualifier name="rpt_family"/>
+    <qualifier name="rpt_unit"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="scRNA" table="DoTS::RNAType" so="scRNA">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo" column="is_pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="sig_peptide" table="DoTS::ProteinFeature" so="signal_peptide">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="snRNA" table="DoTS::RNAType" so="snRNA">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo" column="is_pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="snoRNA" table="DoTS::RNAType" so="snoRNA">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo" column="is_pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="source" table="DoTS::Source" so="">
+    <qualifier name="record" ignore="true"/>
+    <qualifier name="organism"/>
+    <qualifier name="mol_type" ignore="true"/>
+    <qualifier name="cell_line"/>
+    <qualifier name="cell_type"/>
+    <qualifier name="chromosome"/>
+    <qualifier name="citation"/>
+    <qualifier name="clone"/>
+    <qualifier name="clone_lib"/>
+    <qualifier name="country" ignore="true"/>
+    <qualifier name="cultivar"/>
+    <qualifier name="dev_stage"/>
+    <qualifier name="ecotype" ignore="true"/>
+    <qualifier name="environmental_sample" ignore="true"/>
+    <qualifier name="focus"/>
+    <qualifier name="frequency"/>
+    <qualifier name="germline"/>
+    <qualifier name="haplotype"/>
+    <qualifier name="lab_host"/>
+    <qualifier name="isolate"/>
+    <qualifier name="isolation_source" ignore="true"/>
+    <qualifier name="label"/>
+    <qualifier name="macronuclear"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="organelle" handler="standard" method="organelle"/>
+    <qualifier name="plasmid"/>
+    <qualifier name="pop_variant"/>
+    <qualifier name="proviral"/>
+    <qualifier name="rearranged"/>
+    <qualifier name="segment" ignore="true"/>
+    <qualifier name="serotype"/>
+    <qualifier name="serovar" ignore="true"/>
+    <qualifier name="sex"/>
+    <qualifier name="specimen_voucher"/>
+    <qualifier name="specific_host"/>
+    <qualifier name="strain"/>
+    <qualifier name="sub_clone"/>
+    <qualifier name="sub_species"/>
+    <qualifier name="sub_strain"/>
+    <qualifier name="tissue_lib"/>
+    <qualifier name="tissue_type"/>
+    <qualifier name="transgenic" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="variety"/>
+    <qualifier name="virion"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="stem_loop" table="DoTS::Miscellaneous" so="stem_loop">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="STS" table="DoTS::STS" so="STS">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="TATA_signal" table="DoTS::DNARegulatory" so="TATA_box">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="terminator" table="DoTS::DNARegulatory" so="terminator">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="transit_peptide" table="DoTS::ProteinFeature" so="transit_peptide">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="tRNA" table="DoTS::RNAType" so="tRNA">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="anticodon"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo" column="is_pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="unsure" table="DoTS::Miscellaneous" so="">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="compare" ignore="true"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="replace" ignore="true"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="V_region" table="DoTS::Immunoglobulin" so="">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="V_segment" table="DoTS::Immunoglobulin" so="">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="product"/>
+    <qualifier name="pseudo"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="variation" table="DoTS::SeqVariation" so="sequence_variant">
+    <qualifier name="allele"/>
+    <qualifier name="citation"/>
+    <qualifier name="compare" ignore="true"/>
+    <qualifier name="evidence"/>
+    <qualifier name="frequency"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="phenotype"/>
+    <qualifier name="product"/>
+    <qualifier name="replace" column="Substitute"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="3'clip" table="DoTS::Transcript" so="three_prime_clip">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="3'UTR" table="DoTS::Transcript" so="three_prime_UTR">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="5'clip" table="DoTS::Transcript" so="five_prime_clip">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="5'UTR" table="DoTS::Transcript" so="five_prime_UTR">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="function"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="-10_signal" table="DoTS::DNARegulatory" so="minus_10_signal">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" ignore="true"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+
+  <feature name="-35_signal" table="DoTS::DNARegulatory" so="minus_35_signal">
+    <qualifier name="allele" ignore="true"/>
+    <qualifier name="citation"/>
+    <qualifier name="evidence"/>
+    <qualifier name="gene" handler="standard" method="gene"/>
+    <qualifier name="label"/>
+    <qualifier name="locus_tag" column="source_id"/>
+    <qualifier name="map"/>
+    <qualifier name="note" handler="standard" method="note"/>
+    <qualifier name="old_locus_tag" column="source_id"/>
+    <qualifier name="operon" ignore="true"/>
+    <qualifier name="standard_name"/>
+    <qualifier name="usedin"/>
+    <qualifier name="db_xref" handler="standard" method="dbXRef"/>
+  </feature>
+</mapping>
