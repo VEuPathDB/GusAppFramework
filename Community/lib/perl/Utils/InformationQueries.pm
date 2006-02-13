@@ -59,7 +59,7 @@ sub getArrayInfo{
     # This is spotted ds dna array, query RAD::ElementImp
     $table = 'RAD.ElementImp';
   }
-  elsif ($array->{platform_type} eq 'spotted_ss_oligo_features') {
+  elsif ($array->{technology_type} eq 'spotted_ss_oligo_features') {
     # This is spotted ss dna array, query RAD::ElementImp
     $table = 'RAD.ElementImp';
   }
