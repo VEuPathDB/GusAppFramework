@@ -42,7 +42,7 @@ use strict;
 use Carp;
 
 sub runRepeatMask {
-    my ($pipelineDir, $numnodes, $name) = @_;
+    my ($pipelineDir, $numnodes, $name, $time) = @_;
     
     print "\nRunning repeatmask on $name\n";
 
@@ -62,7 +62,7 @@ sub runRepeatMask {
 	}
     }
     if (!$valid) {
-	&run($propFile, "$pipelineDir/logs/$name.mask.log", $resultFile);
+	&run($propFile, "$pipelineDir/logs/$name.mask.log", $numnodes, $time);
 	$valid = &validateRM($inputFile, $resultFile, $errFile);
 	if  (!$valid) {
 	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
@@ -73,13 +73,12 @@ sub runRepeatMask {
 }
 
 sub runGenomeAlign {
-    my ($pipelineDir, $numnodes, $queryName, $subjectName) = @_;
+    my ($pipelineDir, $numnodes, $queryName, $subjectName, $time) = @_;
     
     my $name = "$queryName-$subjectName";
     print "\nRunning alignment of $queryName against $name\n";
 
-    my $resultDir = 
-	"$pipelineDir/genome/$name/master/mainresult/";
+    #my $resultDir = "$pipelineDir/genome/$name/master/mainresult/";
     # TODO: handle the case when query is not from repeatmask
     #       (i.e. final DoTS minus troublesome deflines)
     my $propFile = "$pipelineDir/genome/$name/input/controller.prop";
@@ -89,7 +88,7 @@ sub runGenomeAlign {
     # TODO: validate previous results
 
     if (!$valid) {
-	&run($propFile, $logFile);
+	&run($propFile, $logFile, $numnodes, $time);
 	# TODO: validate results
     }
 
