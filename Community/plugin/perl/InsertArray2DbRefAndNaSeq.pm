@@ -197,30 +197,30 @@ sub run {
 
     my @ar = ($hashRef, $arrayDesignID, $evidenceExternalDbID, $dbRefOrNASeqExternalDbID, $logFile);
 
-    if($technologyType =~ /oligo/i && $annotationType eq "DbRef") {
+    if($technologyType =~ /spot/i && $annotationType eq "DbRef") {
+      $nrecords = $self->populateEleDbRef(@ar, "RAD.Spot");
+    }
+
+    elsif($technologyType =~ /spot/i && $annotationType eq "NASeq")  {
+      $nrecords = $self->populateEleNaSeq(@ar, "RAD.Spot");
+    }
+
+    elsif($technologyType =~ /oligo/i && $annotationType eq "DbRef") {
       $nrecords = $self->populateCompEleDbRef(@ar, "RAD.ShortOligoFamily", "name");
     }
-    
+
     elsif($technologyType =~ /oligo/i && $annotationType eq "NASeq")  {
       $nrecords = $self->populateCompEleNaSeq(@ar, "RAD.ShortOligoFamily", "name");
     }
 
-    elsif($technologyType =~ /spot/i && $annotationType eq "DbRef") {
-      $nrecords = $self->populateEleDbRef(@ar, "RAD.Spot");
-    }
-    
-    elsif($technologyType =~ /spot/i && $annotationType eq "NASeq")  {
-      $nrecords = $self->populateEleNaSeq(@ar, "RAD.Spot");
-    }
-    
     elsif($technologyType =~ /MPSS/i && $annotationType eq "DbRef") {
       $nrecords = $self->populateCompEleDbRef(@ar, "RAD.MPSSTag", "tag");
     }
-    
+
     elsif($technologyType =~ /MPSS/i && $annotationType eq "NASeq")  {
       $nrecords = $self->populateCompEleNaSeq(@ar, "RAD.MPSSTag", "tag");
     }
-    
+
     elsif($technologyType =~ /RT-PCR/i && $annotationType eq "DbRef") {
       $nrecords = $self->populateEleDbRef(@ar, "RAD.RTPCRElement");
     }
