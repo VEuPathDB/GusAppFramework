@@ -48,7 +48,7 @@ sub makeRMDir {
 
 sub makeGenomeDir {
     my ($queryName, $targetName, $pipelineName, $localPath, $serverPath,
-	$nodePath, $taskSize, $gaOptions, $gaBinPath, $localGDir, $serverGDir,$nodeClass) = @_;
+	$nodePath, $taskSize, $gaOptions, $gaBinPath, $localGDir, $serverGDir,$nodeClass,$nodePort) = @_;
     my $localBase = "$localPath/$pipelineName/genome/$queryName-$targetName";
     my $serverBase = "$serverPath/$pipelineName/genome/$queryName-$targetName";
     my $inputDir = "$localBase/input";
@@ -58,8 +58,8 @@ sub makeGenomeDir {
 			    "DJob::DistribJobTasks::GenomeAlignTask",$nodeClass);
     my $seqFileName = "$serverPath/$pipelineName/repeatmask/$queryName/master/mainresult/blocked.seq";
     my $serverInputDir = "$serverBase/input";
-    &makeGenomeTaskPropFile($inputDir, $serverInputDir, $seqFileName, $gaOptions, $gaBinPath,
-			    $localGDir, $serverGDir);
+    &makeGenomeTaskPropFile($inputDir, $seqFileName, $gaBinPath,
+			    $serverGDir,$nodePort);
     &makeGenomeParamsPropFile($inputDir . '/params.prop', $serverGDir . '/11.ooc');
 }
 
@@ -155,19 +155,15 @@ dangleMax=$dangleMax
 }
 
 sub makeGenomeTaskPropFile {
-    my ($inputDir, $serverInputDir, $seqFileName, $gaOptions, $gaBinPath, $dbPath, $serverDir) = @_;
-
-    my $targetListFile = "$inputDir/target.lst";
-    my $serverTargetListFile = "$serverInputDir/target.lst";
-
-    &makeGenomeTargetListFile($dbPath, $targetListFile, $serverDir);
+    my ($inputDir, $seqFileName, $gaBinPath, $serverDir,$nodePort) = @_;
 
     open(F, ">$inputDir/task.prop")
 	|| die "Can't open $inputDir/task.prop for writing";
     print F
 "gaBinPath=$gaBinPath
-targetListPath=$serverTargetListFile
+targetDirPath=$serverDir
 queryPath=$seqFileName
+nodePort=$nodePort
 ";
     close(F);
 }
