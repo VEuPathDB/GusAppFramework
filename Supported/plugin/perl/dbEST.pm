@@ -254,6 +254,7 @@ sub run {
 
     my $max = $min + $self->getArg('span');
     while ($max <= $abs_max) {
+      last if ($min == $max);
       ## Testing condition 
       last if ($self->getArg('test_number') && $count > $self->getArg('test_number'));
 
