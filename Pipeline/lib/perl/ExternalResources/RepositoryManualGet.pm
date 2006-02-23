@@ -44,9 +44,16 @@ sub execute {
   my ($self, $targetDir) = @_;
 
   my $source = $self->{args}->{fileOrDir};
+  my $cmd;
+  if ($source =~ s|^rsync://||) {
+    system("rsync -e ssh $source &>/dev/null"); # test file's existence 
+    my $status = $? >> 8;
+    die "File or directory '$source' does not exist\n" if ($status);
+    $cmd = "rsync -ae ssh $source $targetDir";
+  } else {
   (-f $source || -d $source) || die "File or directory '$source' does not exist";
-  my $cmd = "cp -r $source $targetDir";
-
+    $cmd = "cp -r $source $targetDir";
+  }
   system($cmd);
   my $status = $? >> 8;
   die "Failed running '$cmd'\n.  Error: $!\n" if ($status);
