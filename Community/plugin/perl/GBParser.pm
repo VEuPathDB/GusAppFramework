@@ -247,6 +247,8 @@ sub run {
 sub processEntry {
   my($self, $ios) = @_;
 
+  $self->undefCache(\%DbRefCache);
+
   my $e = CBIL::Bio::GenBank::Entry->new( { ios => $ios } );
 
   if (!$e->getValidity()) {
@@ -322,7 +324,7 @@ sub processEntry {
 
     $dbSeq->submit();
     my $dbSeqId = $dbSeq->getId();
-    $self->log("na_sequence_id\t$dbSeqId");
+    $self->log("entered or updated na_sequence_id\t$dbSeqId");
     if ($dbSeq->getDbHandle()->getRollBack()) {
       $self->logAlert('FAILED ENTRY', "Acc:", $e->{ACCESSION}->[0]->getAccession());
       die "dbSeq submit caused a rollback";
@@ -342,8 +344,8 @@ sub processEntry {
       $self->{insertCnt}++;
     }
   }
-  #$self->undefCache(%DbRefCache);
-	    
+  #$self->undefCache(\%DbRefCache);
+
   $self->undefPointerCache();
 }
 
@@ -838,6 +840,7 @@ sub buildDbXRef {
 
 sub getDbXRefId {
   my ($self,$k) = @_;
+
   if (!$DbRefCache{$k}) {
     my ($db,$id,$sid)= split /\:/, $k;
     my $dbRelId = $self->getDbRelId($db);
@@ -847,25 +850,16 @@ sub getDbXRefId {
     }
 
 
-     # my $dbh = $self->getDbHandle();
-  
-#    ##setup global hash for ExternalDatabaseRelease
-#      my $st = $dbh->prepare("select db_ref_id
-#                            from sres.DbRef 
-#                            where external_database_release_id = ? and primary_identifier = ?");
-#      $st->execute($dbRelId,$id);
-
-#      my $dbRefId = $st->fetchrow_array();
-
-#     $st->finish();
-
     unless ($dbref->retrieveFromDB()) {
       $dbref->submit();
     }
 
+    my $dbh = $self->getDbHandle();
+
     $DbRefCache{$k} = $dbref->getId();
 
   }
+
   return ($DbRefCache{$k});
 }
 
@@ -968,10 +962,6 @@ sub setWholeTableCache{
     $ExternalDatabaseRelHash{"$name"} = $external_db_rel_id;
   }
 
-  foreach my $k (keys %ExternalDatabaseRelHash) {
-    print STDERR "db rel hash : $k    $ExternalDatabaseRelHash{$k}\n";
-  }
-  
   ##setup global hash for SequenceType
   $st = $dbh->prepare("select name, sequence_type_id from dots.SequenceType");
   $st->execute() || die $st->errstr;
@@ -992,8 +982,6 @@ sub getDbRelId
   {
     my ($self,$name) = @_;
 
-    print STDERR "999999999999999999999999999  name = $name\n";
-
     #my $lcname = lc $name;
 
     my $external_db_rel_id;
@@ -1005,9 +993,7 @@ sub getDbRelId
 #     } 
     if ($ExternalDatabaseRelHash{"$name"}) {
       $external_db_rel_id = $ExternalDatabaseRelHash{"$name"};
-      print STDERR "1011111111111111111111  name = $name, id = $external_db_rel_id\n";
-      
-    } 
+    }
     else {
       my $externalDatabaseRow = GUS::Model::SRes::ExternalDatabase->new({"name" => $name});
       $externalDatabaseRow->retrieveFromDB();
@@ -1018,27 +1004,26 @@ sub getDbRelId
 
       $external_db_id = $externalDatabaseRow->getId();
 
-      print STDERR "********************************  $external_db_id   ************************\n";
-
       my $version = 'unknown';
 
-      my $release_date = 'sysdate'; 
+      #my $release_date = 'sysdate'; 
 
-      my $externalDatabaseRelRow = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'release_date'=>$release_date, 'version'=>$version});
+      my $externalDatabaseRelRow = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'version'=>$version});
 
-      $externalDatabaseRelRow->retrieveFromDB();
-      #$externalDatabaseRelRow->submit();
-
-      if (! $externalDatabaseRelRow->getId()) {
+      unless ($externalDatabaseRelRow->retrieveFromDB()){
 	$externalDatabaseRelRow->submit();
       }
 
-      $external_db_rel_id = $externalDatabaseRelRow->getId();
+      #if (! $externalDatabaseRelRow->getId()) {
+#	$externalDatabaseRelRow->submit();
+      #}
 
-      #$external_db_rel_id = $externalDatabaseRelRow->getExternalDatabaseReleaseId();
+      #$external_db_rel_id = $externalDatabaseRelRow->getId();
+
+      $external_db_rel_id = $externalDatabaseRelRow->getExternalDatabaseReleaseId();
 
       #$ExternalDatabaseRelHash{"$lcname"} = $external_db_rel_id;
-      $ExternalDatabaseRelHash{"$name"} = $external_db_rel_id;
+      #$ExternalDatabaseRelHash{"$name"} = $external_db_rel_id;
     }
 
     return $external_db_rel_id;
@@ -1177,7 +1162,6 @@ sub processChildren {
   my ($self,$db_obj, $dbChildren, $newChildren) = @_;
   my($dbChild, $newChild,$atts,); # @matched, @unmatched, @new, @old
   foreach $dbChild (@$dbChildren) {
-    # print "Processing child: ", $dbChild->toString(), "\n";
     $newChild = $self->getMatch($dbChild, $newChildren);
     if ($newChild) {		#if child defined, update
       $self->updateObj($dbChild,$newChild);
@@ -1190,6 +1174,7 @@ sub processChildren {
 	}
       }
       $dbChild->markDeleted(1);
+
       $dbChild->submit();
     }				# end if ($newChild)
   }				#end foreach ($dbchildren)
@@ -1337,8 +1322,10 @@ sub checkObjectForReplace {
 }
 
 sub undefCache {
-  my ($self,%cache) = @_;
-  delete @cache{(keys %cache)};
+  my ($self,$cache) = @_;
+  foreach my $k (keys %$cache) {
+    delete $cache->{$k};
+  }
 }
 
 sub getEntryLines {
