@@ -122,7 +122,7 @@ B<I<protocol_id>> [Mandatory]
 
 The protocol_id (in RAD.Protocol) of the protocol for this analysis. If I<--subclass_view> is RAD::DataTransformationResult, then the type of this protocol should be in the DataTransformationProtocolType category. In all other cases, it should be in the HigherLevelAnalysisProtocolType category.
 
-B<I<analysis_date>> [Mandatory]
+B<I<analysis_date>>
 
 The date when the specific analysis was performed. The correct format is YYYY-MM-DD.
 
@@ -421,8 +421,8 @@ sub readCfgFile {
   if (!$tableGiven) {
     $self->userError->('The cfg_file must contain a value for table.');
   }
-  if (!defined($self->getArg('analysis_id')) && (!$protocolIdGiven || !$analysisDateGiven || !$logicalGroupIdGiven)) {
-    $self->userError('The cfg_file must contain values for protocol_id, analysis_date, and at least one logical_group_id.');
+  if (!defined($self->getArg('analysis_id')) && (!$protocolIdGiven || !$logicalGroupIdGiven)) {
+    $self->userError('The cfg_file must contain values for protocol_id and at least one logical_group_id.');
   }
   if (defined($cfgInfo->{'protocol_param_id'}) && defined($cfgInfo->{'protocol_param_value'}) && scalar(@{$cfgInfo->{'protocol_param_id'}}) != scalar(@{$cfgInfo->{'protocol_param_value'}})) {
     $self->userError("The number or protocol_param_id's given in the cfg_file does not match the number of protocol_param_value's.");
