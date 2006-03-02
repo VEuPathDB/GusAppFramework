@@ -90,7 +90,7 @@ sub run {
     
     open (FILE, ">" . $self->getArg('fileName'));
     
-    my $sql = "SELECT NAME,HIER_LEVEL,PARENT_ID FROM SRes.Anatomy ORDER By Hier_Level";
+    my $sql = "SELECT NAME,HIER_LEVEL,PARENT_ID,SOURCE,DESCRIPTION FROM SRes.Anatomy ORDER By Hier_Level";
     
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
     my $r=0;
@@ -100,6 +100,8 @@ sub run {
 	my $name = $arr[0];
 	my $hierLevel = $arr[1];
 	my $parentID = $arr[2];
+	my $source = $arr[3];
+	my $description = $arr[4];
 	
 	my @array;
 	
@@ -120,7 +122,7 @@ sub run {
 	for(my $i=$#finalarray; $i>0; $i--) {
 	    print FILE "$finalarray[$i];";
 	}
-	print FILE "$finalarray[0]\n";
+	print FILE "$finalarray[0]:$source:$description\n";
 	$r++;
     }
     
