@@ -16,21 +16,20 @@ use GUS::ObjRelP::DbiDatabase;
 use GUS::PluginMgr::Plugin;
 
 use GUS::Model::SRes::Anatomy;
-use GUS::Model::SRes::ExternalDatabaseRelease;
-use GUS::Model::SRes::ExternalDatabase;
 
 my $argsDeclaration = [
 		       stringArg({name  => 'fileName',
-				  descr => 'The name of the output file to write contents of table dump to',
+				  descr => 'The name of the output file in which SRes.Anatomy will be dumped',
 				  constraintFunc=> undef,
 				  reqd  => 1,
-				  isList => 0
+				  isList => 0,
+				  format => 'See the NOTES',
 				  })
 		       ];
 
 
 my $purposeBrief = <<PURPOSEBRIEF;
-Dump the content of SRes.Anatomy Table
+Dump the content of SRes.Anatomy Table.
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
@@ -50,7 +49,7 @@ unknown
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
-no notes
+The file format is the following: No ID is dumped in the file, just the full hierarchy for each entry of SRes.Anatomy, separated by semicolons, followed by source and descriptions, separated by colons.
 PLUGIN_NOTES
 
 my $documentation = {purposeBrief => $purposeBrief,
@@ -90,7 +89,7 @@ sub run {
     
     open (FILE, ">" . $self->getArg('fileName'));
     
-    my $sql = "SELECT NAME,HIER_LEVEL,PARENT_ID,SOURCE,DESCRIPTION FROM SRes.Anatomy ORDER By Hier_Level";
+    my $sql = "SELECT NAME,HIER_LEVEL,PARENT_ID,SOURCE,DESCRIPTION FROM SRes.Anatomy ORDER BY HIER_LEVEL";
     
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
     my $r=0;
@@ -133,17 +132,14 @@ sub run {
 sub getParent {
     my($self, $parentID, $arrayref) = @_;
     
-    my $sql ="SELECT NAME,HIER_LEVEL,PARENT_ID FROM SRes.Anatomy WHERE ANATOMY_ID = $parentID";
+    my $sql ="SELECT NAME,PARENT_ID FROM SRes.Anatomy WHERE ANATOMY_ID = $parentID";
     my $queryHandle = $self->getQueryHandle();
     my $sth = $queryHandle->prepareAndExecute($sql);
     my @arr = $sth ->fetchrow_array();
     
     my $name = $arr[0];
-    my $hierLevel = $arr[1];
-    my $parentID = $arr[2];
-    
-    #print "name = $name  hier level = $hierLevel\n";
-    
+    my $parentID = $arr[1];
+        
     push(@$arrayref, $name);
     
     if(defined $parentID) { return $self->getParent($parentID, $arrayref); }
