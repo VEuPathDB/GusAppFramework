@@ -252,6 +252,21 @@ my $argsDeclaration  =
 	      isList => 0
 	     }),
 
+   stringArg({name => 'seqExtDbName',
+	      descr => 'External database where sequences can be found',
+	      constraintFunc=> undef,
+	      reqd  => 0,
+	      isList => 0
+	     }),
+
+   stringArg({name => 'seqExtDbRlsVer',
+	      descr => 'Version of external database where sequences can be found',
+	      constraintFunc=> undef,
+	      reqd  => 0,
+	      isList => 0
+	     }),
+
+
 
    stringArg({name => 'defaultOrganism',
 	      descr => 'The organism name to use if a sequence in the input file does not provide organism information.  Eg "Plasmodium falciparum"',
@@ -301,6 +316,15 @@ sub run {
 				     $self->getArg('extDbRlsVer'))
       or die "Couldn't retrieve external database!\n";
 
+  
+  my $seqExtDbRlsId = $dbRlsId;
+
+  if ($self->getArg('seqExtDbName')) {
+      $seqExtDbRlsId = $self->getExtDbRlsId($self->getArg('seqExtDbName'),
+					    $self->getArg('seqExtDbRlsVer'))
+	  or die "Couldn't retrieve external database for sequences!\n";
+  }
+
   $self->initHandlerExternalDbs();
 
   my $format = $self->getArg('fileFormat');
@@ -323,7 +347,7 @@ sub run {
     while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
 
       # use id instead of object because object is zapped by undefPointerCache
-      my $naSequenceId = $self->processSequence($bioperlSeq, $dbRlsId);
+      my $naSequenceId = $self->processSequence($bioperlSeq, $seqExtDbRlsId);
 
       $seqCount++;
 
