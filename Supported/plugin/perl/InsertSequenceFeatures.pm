@@ -269,7 +269,14 @@ my $argsDeclaration  =
 
 
    stringArg({name => 'defaultOrganism',
-	      descr => 'The organism name to use if a sequence in the input file does not provide organism information.  Eg "Plasmodium falciparum"',
+	      descr => 'The organism name to use if a sequence in the input file does not provide organism information and the --organism parameter is not provided.  Eg "Plasmodium falciparum"',
+	      constraintFunc=> undef,
+	      reqd  => 0,
+	      isList => 0
+	     }),
+
+   stringArg({name => 'organism',
+	      descr => 'The organism name to use no matter what.  Eg "Plasmodium falciparum"',
 	      constraintFunc=> undef,
 	      reqd  => 0,
 	      isList => 0
@@ -893,21 +900,24 @@ sub getSeqTypeId {
 sub getTaxonId {
   my ($self, $bioperlSeq) = @_;
 
-  my $species = $bioperlSeq->species();
-  my $sciName;
-  if ($species) {
-    # for exotic taxa, common name is more likely to match in NCBI
-    # Taxonomy than whatever BioPerl guesses the genus/species names
-    # to be:
-    $sciName = $species->common_name();
-  } else {
-    $sciName = $self->getArg('defaultOrganism');
-    if (!$sciName) {
-      my $acc = $bioperlSeq->accession_number();
-      $self->userError("Sequence '$acc' does not have organism information, and, you have not supplied a --defaultOrganism argument on the command line");
+  my $sciName = $self->getArg('organism');
+  if (!$sciName){
+    my $species = $bioperlSeq->species();
+
+    if ($species) {
+      # for exotic taxa, common name is more likely to match in NCBI
+      # Taxonomy than whatever BioPerl guesses the genus/species names
+      # to be:
+      $sciName = $species->common_name();
+    } else {
+      $sciName = $self->getArg('defaultOrganism');
+      if (!$sciName) {
+	my $acc = $bioperlSeq->accession_number();
+	$self->userError("Sequence '$acc' does not have organism information, and, you have not supplied a --defaultOrganism argument on the command line");
+      }
+      # this is an invalid assumption, e.g. 'Blastocrithidia sp. ex Triatoma garciabesi':
+      # $sciName =~ /\w+ \w+/ || $self->userError("Command line argument '--defaultOrganism $sciName' is not in 'genus species' format");
     }
-    # this is an invalid assumption, e.g. 'Blastocrithidia sp. ex Triatoma garciabesi':
-    # $sciName =~ /\w+ \w+/ || $self->userError("Command line argument '--defaultOrganism $sciName' is not in 'genus species' format");
   }
 
   return $self->getIdFromCache('taxonNameCache',
