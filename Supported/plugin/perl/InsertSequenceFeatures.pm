@@ -358,6 +358,11 @@ sub run {
 
       $seqCount++;
 
+      $self->unflatten($bioperlSeq) 
+	unless ($self->getArg("fileFormat") =~ m/^gff\d$/i);
+
+      $self->{mapperSet}->preprocessBioperlSeq($bioperlSeq);
+
       $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId);
 
       $self->undefPointerCache();
@@ -747,9 +752,6 @@ sub addKeywords {
 sub processFeatureTrees {
   my ($self, $bioperlSeq, $naSequenceId, $dbRlsId) = @_;
 
-
-  $self->unflatten($bioperlSeq)
-    unless ($self->getArg("fileFormat") =~ m/^gff\d$/i);
 
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
     if ($self->getArg('makeSourceids')) {
