@@ -51,6 +51,16 @@ sub getAllSoTerms {
   return @terms
 }
 
+sub preprocessBioperlSeq {
+  my ($self, $bioperlSeq) = @_;
+  return unless $self->{bioperlSeqPreprocessor};
+  my $class = $self->{bioperlSeqPreprocessor}->{class};
+  my $method = "preprocessBioperlSeq";
+  eval "{require $class; ${class}::$method($bioperlSeq)}";
+  my $err = $@;
+  if ($err) { die "Can't run bioperlSeq preprocessor method '${class}::$method'.  Error:\n $err\n"; }
+}
+
 # Static method
 # return the BioperlFeatMapper set in a hash keyed on feature name
 sub _parseMapFile {
@@ -68,6 +78,7 @@ sub _parseMapFile {
 			    KeyAttr => {});
   my $mapperSet = $data->{feature};
   $self->{qualifierHandlersList} = $data->{specialCaseQualifierHandler};
+  ($self->{bioperlSeqPreprocessor}) = @{$data->{bioperlSeqPreprocessor}};
 
   foreach my $feature (@{$mapperSet}) {
     my $name = $feature->{name};
