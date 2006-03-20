@@ -103,7 +103,14 @@ sub _checkTagExists {
   my ($self, $tag) = @_;
   
   if (!$self->{qualifiers}->{$tag}) {
-    die "In feature map XML file '$self->{mapXmlFile}' <feature name=\"$self->{bioperlFeatureName}\"> does not have a <qualifier> for '$tag', which is found in the input";
+    die "In feature map XML file '$self->{mapXmlFile}' <feature name=\"$self->{bioperlFeatureName}\"> does not have a <qualifier> for '$tag', which is found in the input.
+
+Please edit file '$self->{mapXmlFile}', adding a <qualifer> tag under <feature name=\"$self->{bioperlFeatureName}\">.
+
+If you want to ignore the input data add <qualifier name=\"$tag\" ignore=\"true\"/>.
+
+If you want to handle the data, you will need to add a special case handler (please see the plugin documentation).
+";
   }
 }
 
