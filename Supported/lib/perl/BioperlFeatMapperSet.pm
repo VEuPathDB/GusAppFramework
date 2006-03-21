@@ -78,7 +78,9 @@ sub _parseMapFile {
 			    KeyAttr => {});
   my $mapperSet = $data->{feature};
   $self->{qualifierHandlersList} = $data->{specialCaseQualifierHandler};
-  ($self->{bioperlSeqPreprocessor}) = @{$data->{bioperlSeqPreprocessor}};
+  if($data->{bioperlSeqPreprocessor}){
+    ($self->{bioperlSeqPreprocessor}) = @{$data->{bioperlSeqPreprocessor}};
+  }
 
   foreach my $feature (@{$mapperSet}) {
     my $name = $feature->{name};
