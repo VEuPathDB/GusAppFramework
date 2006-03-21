@@ -12,6 +12,8 @@ use GUS::PluginMgr::PluginUtilities;
 use FileHandle;
 
 use GUS::Model::DoTS::TandemRepeatFeature;
+use GUS::Model::DoTS::NALocation;
+use GUS::Model::DoTS::ExternalNASequence;
 
 my $argsDeclaration =
 [
@@ -206,10 +208,36 @@ sub _loadTandemRepeat {
           consensus                      => $dataHash->{consensus},
         });
 
+  my $extNaSeq = GUS::Model::DoTS::ExternalNASequence->
+    new({'external_database_release_id'=>$dbReleaseId,
+	 'source_id'=>$seq
+	 });
+
+  $extNaSeq->retrieveFromDB();
+
+  $tandemRepeat->setParent($extNaSeq);
+
+  my $naLoc = $self->getNaLoc($dataHash->{start},$dataHash->{stop});
+
+  $tandemRepeat->addChild($naLoc);
+
   $tandemRepeat->submit();
   $tandomRepeatCount++;
 
   $self->undefPointerCache();
+}
+
+sub getNaLoc {
+  my ($self,$start,$stop) = @_;
+
+  my $naLoc = GUS::Model::DoTS::NALocation->
+    new({'start_min' => $start,
+	 'start_max' => $start,
+	 'end_min' => $stop,
+	 'end_max' => $stop
+	 });
+
+  return $naLoc;
 }
 
 1;
