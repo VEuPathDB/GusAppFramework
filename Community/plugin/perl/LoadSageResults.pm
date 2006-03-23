@@ -279,6 +279,7 @@ sub getAssayNames{
   my @assayNames;
 
   while(<FILE>) {
+    chomp;
     if ($_ =~ /tag/) {
       @assayNames = split (/\t/,$_);
     }
