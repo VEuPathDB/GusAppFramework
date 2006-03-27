@@ -41,6 +41,12 @@ my $argsDeclaration =
 		reqd => 0,
 		default => 0,
 	      }),
+   integerArg({ name => 'ncbiGeneticCodeId',
+		descr => 'ncbi genetic code id, alternative to the genetic code associated with the taxon, e.g. mitochondria',
+		constraintFunc => undef,
+		reqd => 0,
+		isList => 0
+		})
   ];
 
 
@@ -246,7 +252,7 @@ EOSQL
       die "No genetic code associated with taxon\n";
     }
 
-    $codonTable->id($geneticCode->getNcbiGeneticCodeId() || 1);
+    $codonTable->id($geneticCode->getNcbiGeneticCodeId() || $self->getArg('ncbiGeneticCodeId') || 1);
 
     my @exons = $transcript->getChildren("DoTS::ExonFeature", 1);
 
