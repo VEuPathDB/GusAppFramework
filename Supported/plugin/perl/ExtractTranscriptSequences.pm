@@ -43,6 +43,12 @@ sub getArgsDeclaration {
                  constraintFunc => undef,
                  reqd => 0,
                  isList => 0,
+               }),
+     booleanArg({ name => 'noReversed',
+                 descr => 'set this with the cds flag ONLY IF the exon features for reversed transcripts are not reversed with respect to the transcript feature',
+                 constraintFunc => undef,
+                 reqd => 0,
+                 isList => 0,
                })
     ];
 
@@ -228,10 +234,18 @@ sub calculateTranscriptSequence {
       my $codingStart = $exon->getCodingStart();
       my $codingEnd = $exon->getCodingEnd();
       next unless ($codingStart && $codingEnd);
-      my $trim5 = $exonIsReversed ? $exonEnd - $codingStart : $codingStart - $exonStart;
-      substr($chunk, 0, $trim5, "") if $trim5 > 0;
-      my $trim3 = $exonIsReversed ? $codingEnd - $exonStart : $exonEnd - $codingEnd;
-      substr($chunk, -$trim3, $trim3, "") if $trim3 > 0;
+      my $trim5;
+      my $trim3;
+      if ($self->getArg('noReversed')){
+	$trim5 = $codingStart - $exonStart;
+	$trim3 = $exonEnd - $codingEnd;
+      }
+      else{
+	$trim5 = $exonIsReversed ? $exonEnd - $codingStart : $codingStart - $exonStart;
+	$trim3 = $exonIsReversed ? $codingEnd - $exonStart : $exonEnd - $codingEnd;
+      }
+	substr($chunk, 0, $trim5, "") if $trim5 > 0;
+	substr($chunk, -$trim3, $trim3, "") if $trim3 > 0;
     }
     $transcriptSequence .= $chunk;
 
