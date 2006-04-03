@@ -19,10 +19,10 @@ my $argsDeclaration =
 [
 
  fileArg({name           => 'inFile',
-	  descr          => 'A daml file of MGED Ontology Terms and Relationships',
+	  descr          => 'A file of MGED Ontology Terms and Relationships',
 	  reqd           => 1,
 	  mustExist      => 1,
-	  format         => 'daml',
+	  format         => 'daml or owl',
 	  constraintFunc => undef,
 	  isList         => 0, 
 	 }),
@@ -53,7 +53,7 @@ my $argsDeclaration =
 ];
 
 my $purpose = <<PURPOSE;
-The purpose of this plugin is to parse a daml file and load the resulting Ontology Terms and Relationships.  
+The purpose of this plugin is to parse a daml or owl file and load the resulting Ontology Terms and Relationships.  
 PURPOSE
 
 my $purposeBrief = <<PURPOSE_BRIEF;
@@ -117,12 +117,21 @@ sub run {
   my $tree = $parser->parse_file($file);
   my $root = $tree->getDocumentElement;
 
-  my $numTerms = $self->_makeTerms($root);
+  my $ns;
+  foreach my $attr ($root->getAttributes()) {
+    my $fn = $attr->name;
+    $ns = $fn if($fn eq 'daml' || $fn eq 'owl');
+  }
+  if(!$ns) {
+    $self->userError('The file was not in the correct format.  Must be either daml or owl.');
+  }
 
-  $self->_makeRelationships($root);
+  my $numTerms = $self->_makeTerms($root, $ns);
 
-  print "Loaded $numTerms Terms into SRes::OntologyTerm and
-         $numRelationships into SRes::OntologyRelationship\n";
+  $self->_makeRelationships($root, $ns);
+
+  return("Loaded $numTerms Terms into SRes::OntologyTerm and
+         $numRelationships into SRes::OntologyRelationship");
 
 }
 
@@ -140,6 +149,7 @@ Terms are parsed out of xml Tree.
 B<Parameters:>
 
 $root(XML::LibXML::Element): The root node of the Document. 
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<int> 
 
@@ -148,10 +158,12 @@ Number of Rows Loaded into SRes::OntologyTerms
 =cut
 
 sub _makeTerms {
-  my ($self, $root) = @_;
+  my ($self, $root, $ns) = @_;
 
   my (%terms, $numTermsLoaded);
 
+  # Make String and Thing First
+  #------------------------------------------------------------------
   my $type = 'Datatype';
   my $string = {string => ''};
   $numTermsLoaded = $self->_loadTerms($type, $string) + $numTermsLoaded;
@@ -159,21 +171,36 @@ sub _makeTerms {
   $type = 'Root';
   my $thing = {Thing => ''};
   $numTermsLoaded = $self->_loadTerms($type, $thing) + $numTermsLoaded;
+  #------------------------------------------------------------------
 
-  my $termTypes = ['Class', 'ObjectProperty', 'DatatypeProperty'];
+  my $terms;
 
-  foreach my $type (@$termTypes) {
-    my $terms = $self->_getTermsFromNodes($type, $root);
+  my $termTypes = ['Class', 'ObjectProperty', 'DatatypeProperty', 
+                   'FunctionalProperty', 'UniqueProperty'];
+
+  if($ns  eq 'owl') {
+    push(@$termTypes, 'Individual', 'Thing');
+
+    foreach my $type (@$termTypes) {
+      $terms = $self->_getOwlTerms($root, $ns, $type);
+
+      $type = 'Individual' if($type eq 'Thing');
+      $numTermsLoaded = $self->_loadTerms($type, $terms);
+    }
+  }
+  elsif($ns eq 'daml') {
+    foreach my $type (@$termTypes) {
+      $terms = $self->_getTermsFromNodes($type, $root, $ns);
+      $numTermsLoaded = $self->_loadTerms($type, $terms) + $numTermsLoaded;
+    }
+
+    $type = 'Individual';
+    $terms = $self->_getTermsFromDescription($root);
     $numTermsLoaded = $self->_loadTerms($type, $terms) + $numTermsLoaded;
   }
-
-  $type = 'UniqueProperty';
-  my $upTerms = $self->_getUniquePropertyTerms($root);
-  $numTermsLoaded = $self->_loadTerms($type, $upTerms) + $numTermsLoaded;
-
-  $type = 'Individual';
-  my $attrTerms = $self->_getTermsFromDescription($root);
-  $numTermsLoaded = $self->_loadTerms($type, $attrTerms) + $numTermsLoaded;
+  else {
+    die "Unknown File Type: $ns";
+  }
 
   return($numTermsLoaded);
 }
@@ -189,8 +216,9 @@ and gets the label (term) and comment (def) values.
 
 B<Parameters:>
 
-$type(string): Node Name ("daml:" Will be appended)
+$type(string): Node Name ("$ns:" Will be appended)
 $root(XML::LibXML::Element): The root node of the Document. 
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<hashRef> 
 
@@ -199,52 +227,28 @@ key=term, value=def
 =cut
 
 sub _getTermsFromNodes {
-  my ($self, $type, $root) = @_;
-
-  $type = "daml:".$type;
+  my ($self, $type, $root, $ns) = @_;
 
   my %rv;
 
-  foreach my $node ($root->findnodes($type)) {
-    my $term = $node->findvalue('rdfs:label');
+  foreach my $node ($root->findnodes("$ns:$type")) {
+    my $term;
+
+    if(!($term = $node->getAttribute('ID'))) {
+      $term = $node->getAttribute('about');
+    }
+
+    if($ns eq 'daml' && $type ne 'UniqueProperty') {
+      $term = $node->findvalue('rdfs:label');
+    }
+
+    $term =~ s/#// if($ns eq 'owl');
+
     my $def = $node->findvalue('rdfs:comment');
 
     $rv{$term} = $def if($term);
   }
   return(\%rv);
-}
-
-# ----------------------------------------------------------------------
-
-=pod
-
-=item C<_getUniquePropertyTerms>
-
-Unique Property terms have no Def.  Extract from Nodes...
-
-B<Parameters:>
-
-$type(string): Node Name ("daml:" Will be appended)
-$root(XML::LibXML::Element): The root node of the Document. 
-
-B<Return type:> C<hashRef> 
-
-key=term, value=def
-
-=cut
-
-sub _getUniquePropertyTerms {
-  my ($self, $root) = @_;
-
-  my %terms;
-
-  foreach my $up ($root->findnodes('daml:UniqueProperty')) {
-    my $term = $up->getAttribute('about');
-    $term = $self->_nameFromHtml($term);
-
-    $terms{$term} = '';
-  }
-  return(\%terms);
 }
 
 # ----------------------------------------------------------------------
@@ -299,6 +303,34 @@ sub _getTermsFromDescription {
 
 # ----------------------------------------------------------------------
 
+sub _getOwlTerms {
+  my ($self, $root, $ns, $type) = @_;
+
+  my %terms;
+
+  # Loop through ALL Nodes
+  foreach my $node ($root->findnodes('//*')) {
+    my $term = $node->getAttribute('ID');
+
+    if($term && ($node->getName() eq "$ns:$type" || 
+                 ($node->getName() !~ /^$ns:/ && $type eq 'Individual'))) {
+
+      my $def = $node->findvalue('rdfs:comment');
+      $terms{$term} = $def;
+    }
+
+    my $nodeName = $node->nodeName;
+    if($type eq 'Individual' && $nodeName =~ 'has_(human|machine)_readable_URI') {
+      $term = $node->nodeValue;
+      $terms{$term} = '';
+    }
+
+  }
+  return(\%terms);
+}
+
+# ----------------------------------------------------------------------
+
 =pod
 
 =item C<_loadTerms>
@@ -339,8 +371,6 @@ sub _loadTerms {
       my $def = $termsHashRef->{$term};
       $def =~ s/\n//g;
 
-      print STDERR "Inserting Term:  SourceID $term\n";
-
       my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
 	new({ ontology_term_type_id => $termTypeId,
 	      external_database_release_id => $dbReleaseId,
@@ -349,7 +379,6 @@ sub _loadTerms {
 	      name => $term,
 	      definition => $def,
 	    });
-
       $ontologyTerm->submit();
       $num++;
     }
@@ -395,35 +424,36 @@ Parse Relationship data from root node.
 B<Parameters:>
 
 $root(XML::LibXML::Element): The root node of the Document. 
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
-B<Return type:> C<?> 
+B<Return type:> C<void> 
 
 =cut
 
 sub _makeRelationships {
-  my ($self, $root) = @_;
+  my ($self, $root, $ns) = @_;
 
   my $ontologyIds = $self->_getOntologyTermIds();
 
-  foreach my $class ($root->findnodes('daml:Class')) {
+  foreach my $class ($root->findnodes("$ns:Class")) {
     my $className = $class->getAttribute('about');
     $className = $self->_nameFromHtml($className);
 
-    $self->_doClassData($class, $className, $ontologyIds);
+    $self->_doClassData($class, $className, $ontologyIds, $ns);
   }
 
-  foreach my $objectProperty ($root->findnodes('daml:ObjectProperty')) {
+  foreach my $objectProperty ($root->findnodes("$ns:ObjectProperty")) {
     my $opName = $objectProperty->getAttribute('about');
     $opName = $self->_nameFromHtml($opName);
 
-    $self->_doObjectPropertyData($objectProperty, $opName, $ontologyIds);
+    $self->_doObjectPropertyData($objectProperty, $opName, $ontologyIds, $ns);
   }
 
   foreach my $description ($root->findnodes('rdf:Description')) {
     my $descName = $description->getAttribute('about');
     $descName = $self->_nameFromHtml($descName);
 
-    $self->_doInstanceData($description, $descName, $ontologyIds);
+    $self->_doInstanceData($description, $descName, $ontologyIds, $ns);
   }
 }
 
@@ -440,6 +470,7 @@ B<Parameters:>
 
 $node(XML::LibXML::Element): The node to be searched
 $className(string):  Name of the 'root' Class Node
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<boolean> 
 
@@ -448,27 +479,27 @@ has Child Nodes
 =cut
 
 sub _doClassData {
-  my ($self, $node, $className, $ontologyIds) = @_;
+  my ($self, $node, $className, $ontologyIds, $ns) = @_;
 
   if(!$node->hasChildNodes()) {
     return(0);
   }
 
   if($node->nodeName eq 'rdfs:subClassOf') {
-    $self->_parseAndLoadSubClasses($node, $className, $ontologyIds);
+    $self->_parseAndLoadSubClasses($node, $className, $ontologyIds, $ns);
   }
 
-  if($node->nodeName eq 'daml:Restriction') {
-    $self->_parseAndLoadHasClasses($node, $className, $ontologyIds);
+  if($node->nodeName eq "$ns:Restriction") {
+    $self->_parseAndLoadHasClasses($node, $className, $ontologyIds, $ns);
   }
 
-  if($node->nodeName eq 'daml:first' || $node->nodeName eq 'daml:rest') {
-    $self->_parseAndLoadThings($node, $className, $ontologyIds);
+  if($node->nodeName eq "$ns:first" || $node->nodeName eq "$ns:rest") {
+    $self->_parseAndLoadThings($node, $className, $ontologyIds, $ns);
   }
 
   # Recurse throught the nodes
   foreach my $child ($node->childNodes) {
-    $self->_doClassData($child, $className, $ontologyIds);
+    $self->_doClassData($child, $className, $ontologyIds, $ns);
   }
   return(1);
 }
@@ -486,6 +517,7 @@ B<Parameters:>
 
 $node(XML::LibXML::Element): The node of interest.
 $className(string):  Name of the Class Node
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<void> 
 
@@ -493,11 +525,11 @@ B<Return type:> C<void>
 
 
 sub _parseAndLoadSubClasses {
-  my ($self, $node, $className, $ontologyIds) = @_;
+  my ($self, $node, $className, $ontologyIds, $ns) = @_;
 
   my $relationshipType = 'subClassOf';
 
-  my @subClasses =  $node->findnodes('daml:Class');
+  my @subClasses =  $node->findnodes("$ns:Class");
 
   foreach(@subClasses) {
     my $superClass = $_->getAttribute('about');
@@ -519,18 +551,19 @@ B<Parameters:>
 
 $node(XML::LibXML::Element): The node of interest.
 $className(string):  Name of the Class Node
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<void> 
 
 =cut
 
 sub _parseAndLoadHasClasses {
-  my ($self, $node, $className, $ontologyIds) = @_;
+  my ($self, $node, $className, $ontologyIds, $ns) = @_;
 
   my $relationshipType;
 
-  my $onProperty =  $node->findnodes('daml:onProperty');
-  my $hasClass =  $node->findnodes('daml:hasClass');
+  my $onProperty =  $node->findnodes("$ns:onProperty");
+  my $hasClass =  $node->findnodes("$ns:hasClass");
 
   if(scalar @$onProperty != scalar @$hasClass) {
     die "Multiple props or subclasses\n";
@@ -548,7 +581,7 @@ sub _parseAndLoadHasClasses {
     else {
       $relationshipType = 'hasClass';
 
-      foreach($hasClass->[$i]->findnodes('daml:Class')) {
+      foreach($hasClass->[$i]->findnodes("$ns:Class")) {
 	my $filler = $_->getAttribute('about');
 	$filler = $self->_nameFromHtml($filler);
 
@@ -572,13 +605,14 @@ B<Parameters:>
 
 $node(XML::LibXML::Element): The node of interest.
 $className(string):  Name of the Class Node
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<void> 
 
 =cut
 
 sub _parseAndLoadThings {
-  my ($self, $node, $className, $ontologyIds) = @_;
+  my ($self, $node, $className, $ontologyIds, $ns) = @_;
 
   my @resources;
 
@@ -593,11 +627,11 @@ sub _parseAndLoadThings {
       $filler = $self->_nameFromHtml($filler);
 
       my $parent = $node->parentNode();
-      while($parent->nodeName ne 'daml:Restriction') {
+      while($parent->nodeName ne "$ns:Restriction") {
 	$parent = $parent->parentNode();
       }
 
-      foreach($parent->findnodes('daml:onProperty')) {
+      foreach($parent->findnodes("$ns:onProperty")) {
 	push(@resources, $_->getAttribute('resource'));
 	if(scalar @resources > 1) {
 	  die "Multiple onProps for $className";
@@ -622,13 +656,14 @@ B<Parameters:>
 
 $node(XML::LibXML::Element): The node of interest.
 $opName(string):  Name of the onProp
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<void> 
 
 =cut
 
 sub _doObjectPropertyData {
-  my ($self, $objectProperty, $opName, $ontologyIds) = @_;
+  my ($self, $objectProperty, $opName, $ontologyIds, $ns) = @_;
 
   my $relationshipType = 'domain';
 
@@ -636,7 +671,7 @@ sub _doObjectPropertyData {
   my ($junk, $label) = split('#', $tmp);
 
   foreach my $node ($objectProperty->findnodes('rdfs:domain')) {
-    foreach my $class ($node->findnodes('daml:Class')) {
+    foreach my $class ($node->findnodes("$ns:Class")) {
       my $domain = $class->getAttribute('about');
       $domain = $self->_nameFromHtml($domain);
 
@@ -657,18 +692,19 @@ B<Parameters:>
 
 $desc(XML::LibXML::Element): The node of interest.
 $descName(string):  Name of the Class Node
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<void> 
 
 =cut
 
 sub _doInstanceData {
-  my ($self, $description, $descName, $ontologyIds) = @_;
+  my ($self, $description, $descName, $ontologyIds, $ns) = @_;
 
   my $relationshipType = 'instanceOf';
 
   foreach my $node ($description->findnodes('rdf:type')) {
-    foreach my $class ($node->findnodes('daml:Class')) {
+    foreach my $class ($node->findnodes("$ns:Class")) {
       my $inst = $class->getAttribute('about');
       $inst = $self->_nameFromHtml($inst);
 
@@ -788,6 +824,15 @@ sub _nameFromHtml {
   my @ar = split($char, $string);
 
   return($ar[scalar(@ar) - 1]);
+}
+
+sub _isIncluded {
+  my ($self, $ar, $val) = @_;
+
+  foreach(@$ar) {
+    return(1) if($_ eq $val);
+  }
+  return(0);
 }
 
 1;
