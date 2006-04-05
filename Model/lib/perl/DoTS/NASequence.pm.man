@@ -16,7 +16,7 @@ sub getSequence {
     my $ss = $self->SUPER::getSequence();
 
     if (!defined($ss) && ($self->getSubclassView() eq 'VirtualSequence')) {
-        return &VirtualSequence::getSequence($self);
+        return &GUS::Model::DoTS::VirtualSequence::getSequence($self);
     }
     return $self->SUPER::getSequence();
 }
