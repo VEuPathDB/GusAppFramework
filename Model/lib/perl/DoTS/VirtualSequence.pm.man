@@ -12,7 +12,7 @@ sub getSequence {
 
     my $vNaSeqId = $self->getNaSequenceId();
     my $dbh = $self->getDatabase()->getQueryHandle();
-    my $sql = ("select * from SequencePiece " .
+    my $sql = ("select * from DoTS.SequencePiece " .
 	       "where virtual_na_sequence_id = $vNaSeqId " .
 	       "order by sequence_order asc ");
 
