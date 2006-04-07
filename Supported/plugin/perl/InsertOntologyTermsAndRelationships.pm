@@ -15,6 +15,8 @@ use FileHandle;
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologyRelationship;
 
+use Data::Dumper;
+
 my $argsDeclaration =
 [
 
@@ -128,7 +130,19 @@ sub run {
 
   my $numTerms = $self->_makeTerms($root, $ns);
 
-  $self->_makeRelationships($root, $ns);
+  if($ns eq 'daml') {
+    $self->_makeRelationships($root, $ns);
+  }
+  elsif($ns eq 'owl') {
+    $self->_makeOwlRelationships($root, $ns);
+  }
+  else {
+    die "File of Type $ns not supported: $!";
+  }
+
+  if(!$self->getArgs->{commit}) {
+    $self->log("WARNING:  To parse relationships must run with commit on.");
+  }
 
   return("Loaded $numTerms Terms into SRes::OntologyTerm and
          $numRelationships into SRes::OntologyRelationship");
@@ -185,7 +199,7 @@ sub _makeTerms {
       $terms = $self->_getOwlTerms($root, $ns, $type);
 
       $type = 'Individual' if($type eq 'Thing');
-      $numTermsLoaded = $self->_loadTerms($type, $terms);
+      $numTermsLoaded = $self->_loadTerms($type, $terms) + $numTermsLoaded;
     }
   }
   elsif($ns eq 'daml') {
@@ -199,7 +213,7 @@ sub _makeTerms {
     $numTermsLoaded = $self->_loadTerms($type, $terms) + $numTermsLoaded;
   }
   else {
-    die "Unknown File Type: $ns";
+    die "File of Type $ns not supported: $!";
   }
 
   return($numTermsLoaded);
@@ -303,6 +317,26 @@ sub _getTermsFromDescription {
 
 # ----------------------------------------------------------------------
 
+=pod
+
+=item C<_getOwlTerms>
+
+Loops through ALL the Nodes in the Document.  Any Node with and 
+Attribute of "ID" is considered a term.  Also, when looping through
+the Individual types the URI's are gotten.
+
+B<Parameters:>
+
+$root(XML::LibXML::Element): The root node of the Document. 
+$ns(string):  owl or daml
+$type(string):  Essentially an SRes.OntologyTermType value
+
+B<Return type:> C<hashRef> 
+
+key=term, value=def (in the case of uri terms there is no def)
+
+=cut
+
 sub _getOwlTerms {
   my ($self, $root, $ns, $type) = @_;
 
@@ -311,17 +345,31 @@ sub _getOwlTerms {
   # Loop through ALL Nodes
   foreach my $node ($root->findnodes('//*')) {
     my $term = $node->getAttribute('ID');
+    $term = $node->getAttribute('about') if(!$term);
+    $term = $self->_nameFromHtml($term);
 
     if($term && ($node->getName() eq "$ns:$type" || 
                  ($node->getName() !~ /^$ns:/ && $type eq 'Individual'))) {
 
       my $def = $node->findvalue('rdfs:comment');
-      $terms{$term} = $def;
+
+      if($terms{$term} && $def && $terms{$term} ne $def) {
+        print STDERR "Def1=$terms{$term}\nDef2=$def\n";
+        die "Term Defs do not match form term $term" ;
+      }
+      elsif(!$terms{$term}) {
+        $terms{$term} = $def;
+      }
+      elsif(!$def && $terms{$term}) {}
+      else {
+        die "def1=$terms{$term}\tdef2=$def\tterm=$term";
+      }
+
     }
 
     my $nodeName = $node->nodeName;
     if($type eq 'Individual' && $nodeName =~ 'has_(human|machine)_readable_URI') {
-      $term = $node->nodeValue;
+      $term = $node->textContent;
       $terms{$term} = '';
     }
 
@@ -386,6 +434,9 @@ sub _loadTerms {
   else {
     die "Term of Type $type not Defined: $!";
   }
+
+  $self->log("Inserted $num OntologyTerms of Type:  $type");
+
   return($num);
 }
 
@@ -419,12 +470,12 @@ return($source, $uri);
 
 =item C<_makeRelationships>
 
-Parse Relationship data from root node.
+Parse daml Relationship data from root node.
 
 B<Parameters:>
 
 $root(XML::LibXML::Element): The root node of the Document. 
-$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
+$ns(string): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<void> 
 
@@ -461,6 +512,61 @@ sub _makeRelationships {
 
 =pod
 
+=item C<_makeOwlRelationships>
+
+Parse owl Relationship data from root node.
+
+B<Parameters:>
+
+$root(XML::LibXML::Element): The root node of the Document. 
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
+
+B<Return type:> C<void> 
+
+=cut
+
+sub _makeOwlRelationships {
+  my ($self, $root, $ns) = @_;
+
+  my $ontologyIds = $self->_getOntologyTermIds();
+
+  foreach my $class ($root->findnodes("$ns:Class")) {
+    my $className = $class->getAttribute('ID');
+    $className = $class->getAttribute('about') if(!$className);
+
+    $className = $self->_nameFromHtml($className);
+
+    if(!$className) {
+      print STDERR $class->toString()."\n";
+      die "No Classname for above node: $!";
+    }
+    $self->_doClassData($class, $className, $ontologyIds, $ns);
+  }
+
+  foreach my $objectProperty ($root->findnodes("$ns:ObjectProperty")) {
+    my $opName = $objectProperty->getAttribute('about');
+    $opName = $objectProperty->getAttribute('ID') if(!$opName);
+
+    $opName = $self->_nameFromHtml($opName);
+    $self->_doObjectPropertyData($objectProperty, $opName, $ontologyIds, $ns);
+  }
+
+  foreach my $node ($root->findnodes('//*')) {
+    next if($node->getName() =~ /^$ns:/);
+
+    my $nodeName = $node->getAttribute('ID');
+    $nodeName = $self->_nameFromHtml($nodeName);
+
+    if($nodeName) {
+      $self->_doOwlInstanceData($node, $nodeName, $ontologyIds, $ns);
+    }
+  }
+}
+
+# ----------------------------------------------------------------------
+
+=pod
+
 =item C<_doClassData>
 
 Recursive Search through Class Nodes for certain nodes. 
@@ -470,6 +576,7 @@ B<Parameters:>
 
 $node(XML::LibXML::Element): The node to be searched
 $className(string):  Name of the 'root' Class Node
+$ontologyIds(hashRef):  key=SRes.OntologyTerm.name, value=SRes.OntologyTerm.ontology_term_id
 $ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<boolean> 
@@ -481,20 +588,20 @@ has Child Nodes
 sub _doClassData {
   my ($self, $node, $className, $ontologyIds, $ns) = @_;
 
-  if(!$node->hasChildNodes()) {
-    return(0);
-  }
-
   if($node->nodeName eq 'rdfs:subClassOf') {
     $self->_parseAndLoadSubClasses($node, $className, $ontologyIds, $ns);
   }
 
   if($node->nodeName eq "$ns:Restriction") {
-    $self->_parseAndLoadHasClasses($node, $className, $ontologyIds, $ns);
+    $self->_parseAndLoadRestrictions($node, $className, $ontologyIds, $ns);
   }
 
   if($node->nodeName eq "$ns:first" || $node->nodeName eq "$ns:rest") {
     $self->_parseAndLoadThings($node, $className, $ontologyIds, $ns);
+  }
+
+  if(!$node->hasChildNodes()) {
+    return(0);
   }
 
   # Recurse throught the nodes
@@ -517,6 +624,7 @@ B<Parameters:>
 
 $node(XML::LibXML::Element): The node of interest.
 $className(string):  Name of the Class Node
+$ontologyIds(hashRef):  key=SRes.OntologyTerm.name, value=SRes.OntologyTerm.ontology_term_id
 $ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<void> 
@@ -533,9 +641,16 @@ sub _parseAndLoadSubClasses {
 
   foreach(@subClasses) {
     my $superClass = $_->getAttribute('about');
-    $superClass = $self->_nameFromHtml($superClass);
+    $superClass = $_->getAttribute('ID') if(!$superClass);
 
+    $superClass = $self->_nameFromHtml($superClass);
     $self->_loadRelationship($className, '', $superClass, $relationshipType, $ontologyIds);
+  }
+
+  # This is for the owl format
+  if(my $resource = $node->getAttribute('resource')) {
+    $resource = $self->_nameFromHtml($resource);
+    $self->_loadRelationship($className, '', $resource, $relationshipType, $ontologyIds);
   }
 }
 
@@ -543,7 +658,7 @@ sub _parseAndLoadSubClasses {
 
 =pod
 
-=item C<_parseAndLoadHasClasses>
+=item C<_parseAndLoadRestrictions>
 
 Parse Relationship of type 'hasDatatype' or 'subClassOf'
 
@@ -551,45 +666,108 @@ B<Parameters:>
 
 $node(XML::LibXML::Element): The node of interest.
 $className(string):  Name of the Class Node
+$ontologyIds(hashRef):  key=SRes.OntologyTerm.name, value=SRes.OntologyTerm.ontology_term_id
 $ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<void> 
 
 =cut
 
-sub _parseAndLoadHasClasses {
+sub _parseAndLoadRestrictions {
   my ($self, $node, $className, $ontologyIds, $ns) = @_;
 
   my $relationshipType;
 
   my $onProperty =  $node->findnodes("$ns:onProperty");
+  my $someValuesFrom = $node->findnodes("$ns:someValuesFrom");
   my $hasClass =  $node->findnodes("$ns:hasClass");
 
-  if(scalar @$onProperty != scalar @$hasClass) {
-    die "Multiple props or subclasses\n";
+  if(scalar(@$onProperty) != scalar(@$someValuesFrom) &&
+     scalar(@$onProperty) != scalar(@$hasClass)) {
+    die "Number of onProperty must equal the number of either hasClass or someValuesFrom";
   }
 
-  foreach(my $i = 0; $i < length @$hasClass; $i++) {
-    my $property = $onProperty->[$i]->getAttribute('resource');
+  for(my $i = 0; $i < scalar(@$onProperty); $i++) {
+    my $op = $onProperty->[$i];
+
+    my $property = $op->getAttribute('resource');
+    $property = $op->childNodes->[1]->getAttribute('about') if(!$property);
+    $property = $op->childNodes->[1]->getAttribute('ID') if(!$property);
+
     $property = $self->_nameFromHtml($property);
 
-    if(my $resource = $hasClass->[$i]->getAttribute('resource')) {
+    if($ns eq 'daml' && $hasClass->[$i]->getAttribute('resource')) {
       $relationshipType = 'hasDatatype';
-
       $self->_loadRelationship($className, $property, 'string', $relationshipType, $ontologyIds);
     }
-    else {
+    elsif($ns eq 'daml') {
       $relationshipType = 'hasClass';
-
       foreach($hasClass->[$i]->findnodes("$ns:Class")) {
-	my $filler = $_->getAttribute('about');
-	$filler = $self->_nameFromHtml($filler);
-
-	if($filler) {
-	  $self->_loadRelationship($className, $property, $filler, $relationshipType, $ontologyIds);
-	}
+        if(my $filler = $_->getAttribute('about')) {
+          $filler = $self->_nameFromHtml($filler);
+          $self->_loadRelationship($className, $property, $filler, $relationshipType, $ontologyIds);
+        }
       }
     }
+    elsif($ns eq 'owl') {
+      my $filler;
+
+      if($op->childNodes->[1]->nodeName =~ /owl:DatatypeProperty/) {
+        $relationshipType = 'hasDatatype';
+      }
+      else {
+        $relationshipType = 'someValuesFrom';
+      }
+
+      unless ($filler = $someValuesFrom->[$i]->getAttribute('resource')) {
+        foreach($someValuesFrom->[$i]->findnodes("$ns:Class")) {
+          if($_->hasChildNodes) {
+            $self->_parseAndLoadOwlThings($_, $property, $className, $ontologyIds, $ns );
+          }
+          $filler = $_->getAttribute('ID');
+          $filler = $_->getAttribute('about') if(!$filler);
+        }
+      }
+      if($filler = $self->_nameFromHtml($filler)) {
+        $self->_loadRelationship($className, $property, $filler, $relationshipType, $ontologyIds);
+      }
+    }
+    else {
+      die "File of Type $ns not supported: $!";
+    }
+  }
+}
+
+# ----------------------------------------------------------------------
+
+=pod
+
+=item C<_parseAndLoadThings>
+
+Parse Relationship of type 'oneOf' from owl format
+
+B<Parameters:>
+
+$node(XML::LibXML::Element): The node of interest.
+$className(string):  Name of the Class Node
+$ontologyIds(hashRef):  key=SRes.OntologyTerm.name, value=SRes.OntologyTerm.ontology_term_id
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
+
+B<Return type:> C<void> 
+
+=cut
+
+sub _parseAndLoadOwlThings {
+  my ($self, $node, $property, $className, $ontologyIds, $ns) = @_;
+
+  my $relationshipType = 'oneOf';
+
+  foreach my $thingNode ($node->findnodes('owl:oneOf/*')) {
+    my $filler = $thingNode->getAttribute('ID');
+    $filler = $thingNode->getAttribute('about') if(!$filler);
+
+    $filler = $self->_nameFromHtml($filler);
+    $self->_loadRelationship($className, $property, $filler, $relationshipType, $ontologyIds);
   }
 }
 
@@ -605,6 +783,7 @@ B<Parameters:>
 
 $node(XML::LibXML::Element): The node of interest.
 $className(string):  Name of the Class Node
+$ontologyIds(hashRef):  key=SRes.OntologyTerm.name, value=SRes.OntologyTerm.ontology_term_id
 $ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<void> 
@@ -656,6 +835,7 @@ B<Parameters:>
 
 $node(XML::LibXML::Element): The node of interest.
 $opName(string):  Name of the onProp
+$ontologyIds(hashRef):  key=SRes.OntologyTerm.name, value=SRes.OntologyTerm.ontology_term_id
 $ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<void> 
@@ -667,15 +847,79 @@ sub _doObjectPropertyData {
 
   my $relationshipType = 'domain';
 
-  my $tmp = $objectProperty->getAttribute('about');
-  my ($junk, $label) = split('#', $tmp);
-
   foreach my $node ($objectProperty->findnodes('rdfs:domain')) {
-    foreach my $class ($node->findnodes("$ns:Class")) {
-      my $domain = $class->getAttribute('about');
-      $domain = $self->_nameFromHtml($domain);
+    my $domain;
 
-      $self->_loadRelationship($opName, '', $domain, $relationshipType, $ontologyIds);
+    if($ns eq 'daml') {
+      foreach my $class ($node->findnodes("$ns:Class")) {
+        $domain = $class->getAttribute('about');
+      }
+    }
+    elsif($ns eq 'owl') {
+      $domain = $node->getAttribute('resource');
+    }
+    else {
+      die "File of Type $ns not supported: $!";
+    }
+    $domain = $self->_nameFromHtml($domain);
+    $self->_loadRelationship($opName, '', $domain, $relationshipType, $ontologyIds);
+  }
+}
+
+# ----------------------------------------------------------------------
+
+=pod
+
+=item C<_doOwlInstanceData>
+
+Parse Relationship of type 'instanceOf' or 'hasInstance' for olw format
+
+B<Parameters:>
+
+$description(XML::LibXML::Element): The node of interest.
+$descName(string):  Name of the Class Node
+$ontologyIds(hashRef):  key=SRes.OntologyTerm.name, value=SRes.OntologyTerm.ontology_term_id
+$ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
+
+B<Return type:> C<void> 
+
+=cut
+
+
+sub _doOwlInstanceData {
+  my ($self, $description, $descName, $ontologyIds, $ns) = @_;
+
+  my $relationshipType = 'instanceOf';
+
+  foreach my $node ($description->findnodes('rdf:type')) {
+    my $inst = $node->getAttribute('resource');
+    $inst = $self->_nameFromHtml($inst);
+
+    $self->_loadRelationship($descName, '', $inst, $relationshipType, $ontologyIds);
+  }
+
+  $self->_loadRelationship($descName, '', $description->nodeName, $relationshipType, $ontologyIds);
+
+  $relationshipType = 'hasInstance';
+
+  foreach my $node ($description->findnodes('*')) {
+    my $name = $node->nodeName;
+
+    if($name !~ /rdf(s)?:/) {
+      my $uriNode = $node;
+
+      my $object = $uriNode->getAttribute('resource');
+      $object = $uriNode->textContent if(!$object);
+
+      foreach ($uriNode->findnodes('*')) {
+        if($_->hasAttributes()) {
+          $object = $_->getAttribute('ID');
+        }
+      }
+
+      $object = $self->_nameFromHtml($object);
+      my $predicate = $uriNode->nodeName;
+      $self->_loadRelationship($descName, $predicate, $object, $relationshipType, $ontologyIds);
     }
   }
 }
@@ -692,6 +936,7 @@ B<Parameters:>
 
 $desc(XML::LibXML::Element): The node of interest.
 $descName(string):  Name of the Class Node
+$ontologyIds(hashRef):  key=SRes.OntologyTerm.name, value=SRes.OntologyTerm.ontology_term_id
 $ns(scalar): The prefix of the NodeName (ie 'daml' or 'owl')
 
 B<Return type:> C<void> 
@@ -740,24 +985,34 @@ sub _doInstanceData {
 sub _loadRelationship {
   my ($self, $subject, $predicate, $object, $relType, $ontologyIds) = @_;
 
+  # TODO make this a global hash...
   my $sh = $self->getQueryHandle->prepare("SELECT ontology_relationship_type_id 
                                             FROM SRes.OntologyRelationshiptype
                                              WHERE name = '$relType'");
   $sh->execute ();
 
   if(my ($relTypeId) = $sh->fetchrow_array()) {
+    my $subjectOntologyId = $ontologyIds->{$subject};
+    my $objectOntologyId = $ontologyIds->{$object};
 
-    print STDERR  "Inserting Relationship:  $subject\n";
+    if($self->getArgs->{commit} && !$subjectOntologyId) {
+      $self->log("WARNING Subject Not found as existing ontology term: $subject");
+    }
+    if($self->getArgs->{commit} && !$objectOntologyId) {
+      $self->log("WARNING Object Not found as existing ontology term: $object");
+    }
 
-    my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->
-      new({ subject_term_id => $ontologyIds->{$subject},
-	    predicate_term_id => $ontologyIds->{$predicate},
-	    object_term_id => $ontologyIds->{$object},
-	    ontology_relationship_type_id => $relTypeId,
-	  });
+    if($subjectOntologyId && $objectOntologyId && $self->getArgs->{commit}) {
+      my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->
+        new({ subject_term_id => $ontologyIds->{$subject},
+              predicate_term_id => $ontologyIds->{$predicate},
+              object_term_id => $ontologyIds->{$object},
+              ontology_relationship_type_id => $relTypeId,
+            });
 
-    $ontologyRelationship->submit();
-    $numRelationships++; #global var
+      $ontologyRelationship->submit();
+      $numRelationships++; #global var
+    }
   }
   else {
     die "No RelationshipType Id for $relType: $!";
@@ -825,6 +1080,8 @@ sub _nameFromHtml {
 
   return($ar[scalar(@ar) - 1]);
 }
+
+# ----------------------------------------------------------------------
 
 sub _isIncluded {
   my ($self, $ar, $val) = @_;
