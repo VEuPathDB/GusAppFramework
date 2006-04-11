@@ -15,8 +15,6 @@ use FileHandle;
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologyRelationship;
 
-use Data::Dumper;
-
 my $argsDeclaration =
 [
 
@@ -552,10 +550,9 @@ sub _makeOwlRelationships {
   }
 
   foreach my $node ($root->findnodes('//*')) {
-    next if($node->getName() =~ /^$ns:/);
+    next if($node->getName() =~ /^$ns:/ && $node->getName() !~ /^$ns:Thing/);
 
     my $nodeName = $node->getAttribute('ID');
-    $nodeName = $self->_nameFromHtml($nodeName);
 
     if($nodeName) {
       $self->_doOwlInstanceData($node, $nodeName, $ontologyIds, $ns);
@@ -898,7 +895,9 @@ sub _doOwlInstanceData {
     $self->_loadRelationship($descName, '', $inst, $relationshipType, $ontologyIds);
   }
 
-  $self->_loadRelationship($descName, '', $description->nodeName, $relationshipType, $ontologyIds);
+  my $descNodeName = $description->nodeName;
+  $descNodeName = 'Thing' if($descNodeName eq 'owl:Thing');
+  $self->_loadRelationship($descName, '', $descNodeName, $relationshipType, $ontologyIds);
 
   $relationshipType = 'hasInstance';
 
