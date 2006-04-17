@@ -1,0 +1,24 @@
+
+TO DO:
+ -Deal with semantics of set/get methods for partially cached CLOB/BLOB values;
+  could also be an issue when submit() is called.
+ -Make sure that case-sensitivity assumptions are documented and
+  that the documented behavior is strictly adhered to.
+ -Correctly implement the equals() method for the various metadata
+  classes (e.g. GUSTable, GUSTableAttribute, GUSTableRelation).
+ -Check that tables are always identified by owner and table_name
+ -Implement the build system rules to generate javadocs
+ -Attribute lengths are being set incorrectly by the code generator in 
+  the Table subclasses; clobs are getting 4000 instead of 4 gig, 
+  varchar2 are getting length 2000 instead of 4000.
+ -Replace system.(out|err).println calls with a proper logging facility
+ -Make GUSRow more efficient, particularly in terms of space usage; 
+  four Hashtables and two ObjectCaches per row may be excessive.
+ -Move *all* of the SQL from JDBCDatabaseConnection into SQLutils
+
+DONE:
+ -Finish refactoring of ServerI, DatabaseConnectionI
+ -Get the code to compile!
+ -Change subclasses of GUSRow to use GUSTable.getTableByName()
+ -Implement sharing of GUSTableAttribute objects; shouldn't have to create
+  a new one for the "row_user_id" attribute in every table.

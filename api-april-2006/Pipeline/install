@@ -1,0 +1,34 @@
+#!/bin/ksh
+
+targetBin=$PWD/$1
+targetLibPerl=$PWD/$2
+targetTest=$PWD/$3
+checkoutFirst=$4
+
+if [ "$3" = "" ]; then
+  echo "usage: install targetBin targetLibPerl targetTest -checkoutfirst";
+  exit 1;
+fi
+
+mkdir -p $targetBin
+mkdir -p $targetLibPerl
+mkdir -p $targetTest
+
+cd $COMPONENTS_HOME
+
+if [ "$checkoutFirst" = "-checkoutfirst" ]; then
+  cvs co \
+  Pipeline \
+  perl/lib/Common
+fi
+
+# bin
+/bin/cp Pipeline/bin/!(CVS)                   $targetBin
+
+# perl lib
+/bin/rm -rf $targetLibPerl/Pipeline
+/bin/cp -r Pipeline/lib/perl/Pipeline         $targetLibPerl
+/bin/cp -r perl/lib/Common                    $targetLibPerl
+
+chmod +x $targetBin/*
+ 

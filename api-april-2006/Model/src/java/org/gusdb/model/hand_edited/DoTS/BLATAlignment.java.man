@@ -1,0 +1,62 @@
+package org.gusdb.model.DoTS;
+
+import java.sql.*;
+
+import org.biojava.bio.*;
+import org.biojava.bio.seq.*;
+import org.biojava.bio.seq.io.*;
+import org.biojava.bio.symbol.*;
+
+import java.util.*;
+
+import java.math.*;
+
+import java.util.Date;
+import org.gusdb.objrelj.*;
+
+/**
+ * BLATAlignment.java.man
+ *
+ * Wrapper class containing methods that return the BLAT output
+ * in a slightly more usable form.
+ *
+ * @author Dave Barkan
+ * @version $Revision$ $Date$ $Author$
+ */
+public class BLATAlignment extends BLATAlignment_Row {
+
+    // Constructor
+    public BLATAlignment (ServerI server, String sessionId) {
+	super(server, sessionId);
+	}
+    
+    public Vector getQstartsVector(){
+	String starts = getQstarts();
+	return parseString(starts);
+    }
+
+    public Vector getBlocksizesVector(){
+	String lengths = getBlocksizes();
+	return parseString(lengths);
+    }
+
+    public Vector getTstartsVector(){
+	String tStarts = getTstarts();
+	return parseString(tStarts);
+    }
+    
+    protected Vector parseString (String forParsing){
+	Vector parsedVector = new Vector();
+	int start = 0;
+	int nextComma = forParsing.indexOf(',');
+	while (nextComma != -1){
+	    Long nextStartV = new Long(forParsing.substring(start, nextComma));
+	    parsedVector.add(nextStartV);
+	    start = nextComma + 1;
+	    nextComma = forParsing.indexOf(',', nextComma + 1);
+	  
+	}
+	return parsedVector;
+    }
+
+} // BLATAlignment

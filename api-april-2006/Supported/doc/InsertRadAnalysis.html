@@ -1,0 +1,311 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>GUS::Supported::Plugin::InsertRadAnalysis -  Loads inputs, parameter settings, and results of gene expression data analyses into the appropriate group of RAD tables.</title>
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#tables_affected">TABLES AFFECTED</a></li>
+	<li><a href="#tables_depended_on">TABLES DEPENDED ON</a></li>
+	<li><a href="#restarting">RESTARTING</a></li>
+	<li><a href="#arguments_in_detail">ARGUMENTS IN DETAIL</a></li>
+	<li><a href="#notes">NOTES</a></li>
+	<ul>
+
+		<li><a href="#cfg_file"><em>cfg_file</em></a></li>
+		<li><a href="#data_file"><em>data_file</em></a></li>
+	</ul>
+
+	<li><a href="#author">AUTHOR</a></li>
+	<li><a href="#copyright">COPYRIGHT</a></li>
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>GUS::Supported::Plugin::InsertRadAnalysis -  Loads inputs, parameter settings, and results of gene expression data analyses (pre-processing or down-stream) into the appropriate group of RAD tables.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<p>ga GUS::Supported::Plugin::InsertRadAnalysis --help</p>
+<p>ga GUS::Supported::Plugin::InsertRadAnalysis --helpHTML</p>
+<p>ga GUS::Supported::Plugin::InsertRadAnalysis --subclass_view tablename --cfg_file file --data_file file [--restart integer] [--analysis_id integer] [--testnum integer] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This plugin reads a configuration file and a data file (representing the results of some gene expression data pre-processing or down-stream analysis) and inserts inputs, parameter settings, and results into the appropriate tables in RAD.</p>
+<p>
+</p>
+<hr />
+<h1><a name="tables_affected">TABLES AFFECTED</a></h1>
+<dl>
+<dt><strong><a name="item_rad%3a%3aanalysis"><strong>RAD::Analysis</strong></a></strong><br />
+</dt>
+<p>Enters a row representing this analysis here</p>
+<dt><strong><a name="item_rad%3a%3aassayanalysis"><strong>RAD::AssayAnalysis</strong></a></strong><br />
+</dt>
+<p>Enters rows here linking this analysis to all relevant assays, if the LogicalGroups input into the analysis consists of quantifications, or acquisitions, or assays</p>
+<dt><strong><a name="item_rad%3a%3aanalysisparam"><strong>RAD::AnalysisParam</strong></a></strong><br />
+</dt>
+<p>Enters the values of the protocol parameters for this analysis here</p>
+<dt><strong><a name="item_rad%3a%3aanalysisqcparam"><strong>RAD::AnalysisQCParam</strong></a></strong><br />
+</dt>
+<p>Enters the values of the protocol quality control parameters for this analysis here</p>
+<dt><strong><a name="item_rad%3a%3aanalysisinput"><strong>RAD::AnalysisInput</strong></a></strong><br />
+</dt>
+<p>Enters the <code>input(s)</code> of this analysis here</p>
+<dt><strong><a name="item_rad%3a%3aanalysisresultimp"><strong>RAD::AnalysisResultImp</strong></a></strong><br />
+</dt>
+<p>Enters the results of this analysis here</p>
+<dt><strong><a name="item_core%3a%3aalgorithminvocation"><strong>Core::AlgorithmInvocation</strong></a></strong><br />
+</dt>
+<p>The plugin manager (ga) inserts a row into this table describing the plugin and the parameter values used</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="tables_depended_on">TABLES DEPENDED ON</a></h1>
+<dl>
+<dt><strong><a name="item_sres%3a%3acontact"><strong>SRes::Contact</strong></a></strong><br />
+</dt>
+<p>The researcher or organization who performed this analysis</p>
+<dt><strong><a name="item_rad%3a%3aprotocol"><strong>RAD::Protocol</strong></a></strong><br />
+</dt>
+<p>The analysis protocol used</p>
+<dt><strong><a name="item_rad%3a%3aprotocolstep"><strong>RAD::ProtocolStep</strong></a></strong><br />
+</dt>
+<p>The components of the analysis protocol used, if the latter is an ordered series of protocols</p>
+<dt><strong><a name="item_study%3a%3aontologyentry"><strong>Study::OntologyEntry</strong></a></strong><br />
+</dt>
+<p>The protocol_type of the protocol used</p>
+<dt><strong><a name="item_rad%3a%3aprotocolparam"><strong>RAD::ProtocolParam</strong></a></strong><br />
+</dt>
+<p>The parameters for the protocol used or for its components</p>
+<dt><strong><a name="item_rad%3a%3aprotocolqcparam"><strong>RAD::ProtocolQCParam</strong></a></strong><br />
+</dt>
+<p>The quality control parameters for the protocol used or for its components</p>
+<dt><strong><a name="item_rad%3a%3alogicalgroup"><strong>RAD::LogicalGroup</strong></a></strong><br />
+</dt>
+<p>The input <code>group(s)</code> to the analysis</p>
+<dt><strong><a name="item_rad%3a%3alogicalgrouplink"><strong>RAD::LogicalGroupLink</strong></a></strong><br />
+</dt>
+<p>The members of the logical <code>group(s)</code> input into the analysis</p>
+<dt><strong><a name="item_core%3a%3atableinfo"><strong>Core::TableInfo</strong></a></strong><br />
+</dt>
+<p>The table whose entries the analysis results refer to</p>
+<dt><strong><a name="item_core%3a%3adatabaseinfo"><strong>Core::DatabaseInfo</strong></a></strong><br />
+</dt>
+<p>The name of the GUS space containing the table whose entries the analysis results refer to</p>
+<dt><strong><a name="item_core%3a%3aalgorithm"><strong>Core::Algorithm</strong></a></strong><br />
+</dt>
+<p>The algorithm (ie, this plugin) responsible for the update</p>
+<dt><strong><a name="item_core%3a%3aalgorithmimplementation"><strong>Core::AlgorithmImplementation</strong></a></strong><br />
+</dt>
+<p>The specific implementation of it</p>
+<dt><strong><a name="item_core%3a%3aalgorithmparamkey"><strong>Core::AlgorithmParamKey</strong></a></strong><br />
+</dt>
+<p>The keys for the plugin's command line parameters</p>
+<dt><strong><a name="item_core%3a%3aalgorithmparamkeytype"><strong>Core::AlgorithmParamKeyType</strong></a></strong><br />
+</dt>
+<p>The data types of the parameters</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="restarting">RESTARTING</a></h1>
+<p>Loading can be resumed using the <em>--restart n</em> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted). If this argument is given then the <em>analysis_id</em> argument should be given too. Alternatively, one can use the plugin GUS::Community::Plugin::Undo to delete all entries inserted by a specific call to this plugin. Then this plugin can be re-run from fresh.</p>
+<p>
+</p>
+<hr />
+<h1><a name="arguments_in_detail">ARGUMENTS IN DETAIL</a></h1>
+<dl>
+<dt><strong><a name="item_tablename">--subclass_view <em>tablename</em> (Required)</a></strong><br />
+</dt>
+<p>The name of the view of RAD.AnalysisResultImp in which the results of the analysis should be loaded. Format should be RAD::viewname.</p>
+<dt><strong><a name="item_file">--cfg_file <em>file</em> (Required)</a></strong><br />
+</dt>
+<p>The full path of the cfg_file.</p>
+<dl>
+<dt><strong><a name="item_format%3a_see_the_notes_for_the_format_of_this_fil">format: See the NOTES for the format of this file</a></strong><br />
+</dt>
+<dl>
+<dt><strong><a name="item_mustexist%3a_1">mustExist: 1</a></strong><br />
+</dt>
+</dl>
+</dl>
+<dt></dt>
+<dt><strong>--data_file <em>file</em> (Required)</strong><br />
+</dt>
+<p>The full path of the data_file.</p>
+<dl>
+<dt><strong>format: See the NOTES for the format of this file</strong><br />
+</dt>
+<dl>
+<dt><strong>mustExist: 1</strong><br />
+</dt>
+</dl>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2drestart_integer">--restart <em>integer</em></a></strong><br />
+</dt>
+<p>Line number in data_file from which loading should be resumed (line 1 is the first line after the header, empty lines are counted). If this argument is given the analysis_id should also be given.</p>
+<dt><strong><a name="item_%2d%2danalysis_id_integer">--analysis_id <em>integer</em></a></strong><br />
+</dt>
+<p>The analysis_id of the analysis whose results loading should be resumed with the --restart option. This argument should be provided if and only if the restart option is used.</p>
+<dt><strong><a name="item_%2d%2dtestnum_integer">--testnum <em>integer</em></a></strong><br />
+</dt>
+<p>The number of data lines to read when testing this plugin. Not to be used in commit mode.</p>
+<dt><strong><a name="item_%2d%2dcommit">--commit <em></em></a></strong><br />
+</dt>
+<p>Actualy commit changes to the database</p>
+<dl>
+<dt><strong><a name="item_default%3a_0">default: 0</a></strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2ddebug">--debug <em></em></a></strong><br />
+</dt>
+<p>output extra debugging information to verify correct operation</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dsqlverbose">--sqlVerbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to switch on a log of SQL statements executed by Perl object layer.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dverbose">--verbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to enable output of logVerbose messages from the plugin.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dveryverbose">--veryVerbose <em></em></a></strong><br />
+</dt>
+<p>Use this flag to enable output of logVeryVerbose and logVerbose messages from the plugin.</p>
+<dl>
+<dt><strong>default: 0</strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2duser_string">--user <em>string</em></a></strong><br />
+</dt>
+<p>Set the user name in new or changed rows with this GUS user name (from Core.UserInfo table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dgroup_string">--group <em>string</em></a></strong><br />
+</dt>
+<p>Set the group name in new or changed rows with this GUS group name (from Core.GroupInfo table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dproject_string">--project <em>string</em></a></strong><br />
+</dt>
+<p>set the project name in new or changed rows with this GUS project name (from Core.Project table) [default is value in gus config file]</p>
+<dt><strong><a name="item_%2d%2dcomment_string">--comment <em>string</em></a></strong><br />
+</dt>
+<p>Set Core.AlgorithmInvocation.comment with this comment</p>
+<dt><strong><a name="item_%2d%2dalgoinvo_integer">--algoinvo <em>integer</em></a></strong><br />
+</dt>
+<p>Use this algorithm invocation id in the event that a new algorithm invocation id cannot be generated automatically</p>
+<dl>
+<dt><strong><a name="item_default%3a_1">default: 1</a></strong><br />
+</dt>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dgusconfigfile_file">--gusconfigfile <em>file</em></a></strong><br />
+</dt>
+<p>The gus config file to use [note: the default is your $GUS_HOME/config/gus.config]</p>
+<dl>
+<dt><strong><a name="item_default%3a_%2fhome%2fmanduchi%2fgus3%2e5%2fgus_hom">default: /home/manduchi/gus3.5/gus_home/config/gus.config</a></strong><br />
+</dt>
+<dl>
+<dt><strong><a name="item_format%3a_gus_config_file_format">format: GUS config file format</a></strong><br />
+</dt>
+</dl>
+<dl>
+<dt><strong>mustExist: 1</strong><br />
+</dt>
+</dl>
+</dl>
+<dt></dt>
+<dt><strong><a name="item_%2d%2dhelp">--help <em></em></a></strong><br />
+</dt>
+<p>Request long help</p>
+<dt><strong><a name="item_%2d%2dhelphtml">--helpHTML <em></em></a></strong><br />
+</dt>
+<p>Request help in HTML</p>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="notes">NOTES</a></h1>
+<p>
+</p>
+<h2><a name="cfg_file"><em>cfg_file</em></a></h2>
+<p>This should be a tab-delimited text file with 2 columns: <em>name</em> and <em>value</em>.
+The names should be spelled exactly as described below. The order of the rows is not important.</p>
+<p>See the sample config file <em>sample_AnalysisResultLoader.cfg</em> in the GUS/RAD/config directory.</p>
+<p>Empty lines are ignored.</p>
+<p>Each (non-empty) line should contain <strong>exactly one</strong> tab.</p>
+<p>Do not use special symbols (like NA or similar) for empty fields: either leave the field empty or delete the entire line.</p>
+<p>The names of each field and instructions for their values are as follows:</p>
+<p><strong><em>table</em></strong> [Mandatory]</p>
+<p>The table (or view) whose entries the analysis results refer to. The format should be <em>space.name</em>, e.g. RAD.SpotFamily. Both <em>space</em> and <em>name</em> must be spelled <strong>exactly</strong> (case sensitive) as spelled in Core.DatabaseInfo.name and Core.TableInfo.name.</p>
+<p><strong><em>operator_id</em></strong></p>
+<p>The contact_id (in SRes.Contact) of the researcher or organization who performed this analysis.</p>
+<p><strong><em>protocol_id</em></strong> [Mandatory]</p>
+<p>The protocol_id (in RAD.Protocol) of the protocol for this analysis. If <em>--subclass_view</em> is RAD::DataTransformationResult, then the type of this protocol should be in the DataTransformationProtocolType category. In all other cases, it should be in the HigherLevelAnalysisProtocolType category.</p>
+<p><strong><em>analysis_date</em></strong></p>
+<p>The date when the specific analysis was performed. The correct format is YYYY-MM-DD.</p>
+<p><strong><em>protocol_param_idN</em></strong></p>
+<p>The protocol_parameter_id (in RAD.ProtocolParam) of the <em>N</em>th parameter whose value is being assigned (possibly overwriting a specified default value). Start with <em>N</em>=1, for the first parameter you want to set, and continue up to the number of parameters you want to set.</p>
+<p><strong><em>protocol_param_valueN</em></strong></p>
+<p>The value to be assigned to the <em>N</em>th parameter, whose id is specified by <em>protocol_param_idN</em>.</p>
+<p><strong><em>protocol_qc_param_idN</em></strong></p>
+<p>The protocol_qc_parameter_id (in RAD.ProtocolQCParam) of the <em>N</em>th quality control parameter whose value is being assigned (possibly overwriting a specified default value). Start with <em>N</em>=1, for the first qc parameter you want to set, and continue up to the number of qc parameters you want to set.</p>
+<p><strong><em>protocol_qc_param_valueN</em></strong></p>
+<p>The value to be assigned to the <em>N</em>th quality control parameter, whose id is specified by <em>protocol_qc_param_idN</em>.</p>
+<p><strong><em>logical_group_idN</em></strong></p>
+<p>The logical_group_id (in RAD.LogicalGroup) of the <em>N</em>th input group to this analysis. Start with <em>N</em>=1, for the first input group, and continue up to the number of input groups. <strong>At least one</strong> logical group id should be provided.</p>
+<p>
+</p>
+<h2><a name="data_file"><em>data_file</em></a></h2>
+<p>The data file should be in tab-delimited text format with one header line and a line for each result to be entered in the appropriate view of AnalysisResultImp.
+All lines should contain the same number of tab/fields. Empty lines will be ignored.</p>
+<p>The header should contain a field called <em>row_id</em>, to hold the primary keys
+(in the table <em>table</em>, given in the <em>cfg_file</em>), for the entries the results refer to.</p>
+<p>The other fields should have <strong>lower case</strong> names spelled <strong>exactly</strong> as the field names in the view specified by the <em>--subclass_view</em> argument.</p>
+<p>The fields <em>subclass_view</em>, <em>analysis_id</em>, and <em>table_id</em> do not have to be specified in the <em>data_file</em>, as this plugin derives their values from its arguments (including the <em>cfg_file</em>).</p>
+<p>Missing values in a field can be left empty or set to na or NA or n/a or N/A. If all (non row_id) values for a row are missing, that row is not entered.</p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Written by Elisabetta Manduchi.</p>
+<p>
+</p>
+<hr />
+<h1><a name="copyright">COPYRIGHT</a></h1>
+<p>Copyright Elisabetta Manduchi, Trustees of University of Pennsylvania 2003.</p>
+
+</body>
+
+</html>

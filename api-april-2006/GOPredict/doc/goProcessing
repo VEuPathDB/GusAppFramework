@@ -1,0 +1,243 @@
+Cached instance utils
+0. Strip off cached instances 
+6. Redo caching of instances
+
+Evolution*
+1. Evolve to new GO Hierarchy 
+
+CBIL Predictor*
+2. Clean Associations -- deprecate all CBIL-predicted instances
+3. Apply rules to create new Associations
+
+scrubber:
+4. Set Is not
+5. Set Defining
+
+* use cached instance utils
+
+
+7. Re-review plugins
+
+reasons for re-review:
+a. manually reviewed obsolete descendant
+b. protein change
+c. motif changed
+d. rule changed
+e. was is but forced to be is not by hierarchy change
+f. 
+
+schema changes
+a. Instance gets isPrimary field (loses 'defining' field)
+b. Instance gets deprecated field
+c. 'needs review' table
+
+misc:
+a. separate static, private methods
+b. rename is_not
+c. review status id configurable
+d. evidence
+e. change all 'strength' guys to primary
+f. LOE stuff--make new entry for 'graph scrubber'
+
+
+reasons not to make our objects = gus objects
+1. too much code for hand-edited stuff
+2. getParents/getChildren issues
+3. local data structures of instances, etc. get messy
+4. application specific code--multiple applications using gus objects will get confused
+
+reasons for not being isa gus object
+1. in-memory process, don't want database interaction
+2. all reasons above
+
+questions:
+Propogate manually reviewed status up when calling growGraph()? (currently no)
+Make instance if set is_not because forced by hierarchy change but not manually reviewed? (currently yes if already primary)
+	What LOEId to give to this instance?
+note: may have entire branches with no defining guys set.
+What do we do with old parent associations who are no longer 'valid' because their children do not set them in new build?
+
+Friday database thoughts:
+
+Have plugin to apply rules
+	Plugin creates an object of type 'GO Engine', which caches rule set
+		either plugin runs query to get rule sets and gives them to GO engine
+		or go Engine does it all itself
+	Plugin runs big query that gets existing associations, using normal association Graph & gus-model mapping logic
+	Plugin runs big query that returns (protein, similarity score, motif, other info if necessary)	
+		For each result of this query
+			Get a rule/go term for the protein using Go Engine
+			make new association for this info (using latest association constructor, see below)
+			add association to list
+			call graph->addAssocList
+		submit graph to db
+
+New association constructors 
+1.	association->new(proteinId, goTerm, rule/evidence) 
+		Two options: either assume this is always being called by cbil prediction algorithm
+			and set bits (loe, is primary, etc.) accordingly.
+			Or we could have the plugin set all those bits since it knows it is the 
+			prediction algorithm.  Plugin would also have to deal with instance and evidence stuff
+		note that sometimes can just get the go term from the rule but still pass both in
+
+2.	association->new(GUS.Association, goGraph)
+		sets the GOTerm using the gusId, goGraph
+		sets bits using fields of GUS.Association
+		sets Association.pm's contained GUS.association to be the one passed in
+		foreach $instance(GUS.Association->getChildren(DoTS::GOAssociationInstance)
+			Instance.pm->new($instance) (sets instance bits and contained instance)
+			Association.pm->addInstance($instance)
+
+
+
+gus-model mapping (where model=our stuff)--generic
+	Run big query to get existing associations for all proteins
+	for each protein	
+		for each association id with that protein
+			retrieve GUS.association from db using id, and its db children (instances)
+			make Association.pm, pass in GUS.Association and goGraph, refer to constructor above
+			
+
+Extent
+	Whenever we get a GUS.Association object from the database, put it in the extent, which is owned by the protein
+	Key the gus object according to its go id
+	When it comes time to submit an association, one of three cases
+		--have my own gus object with gus id, do not check extent (primary guy who existed already in db and was updated)
+		--have my own gus object but no gus id, check extent to get gus id but keep other values for gus object.
+		  Might not return any gus Id, in which case submit to get new.
+			(primary guy who is newly created, maybe parent? same logic in each case)
+		--do not have my own gus object.  Check extent for my go term to get the gus object and update if necessary
+			 (parent guy who used to exist, got broken off because he wasn't strong, and recreated with same go term).
+
+
+0. Create new field in AssociationInstance: Is_predicted (or something)
+   indicating that the association for this instance was originally
+   made because of the CBIL prediction algorithm (or some other algorithm
+   as they become available)
+
+0.1 Create new field in Association: is_deprecated indicating that this was a predicted
+	Association in a previous run of the GO Prediction algorithm and never manually
+	reviewed	
+
+0.2 Set Associations to be defining with algorithm in 5 to make sure input is correct
+
+1. Evolve to new GO Hierarchy and apply
+	1.1 Make mapping M from GUS Id's for old GO to GUS Id's for new GO
+	1.2 For each GO Association A between Protein P and old GO term G
+		1.2.1 If M:G->G', G' is obsolete, A.is_not = false
+			1.2.1.1 Find the first of Gs parents not obselete (needs better definition)
+				1.2.1.1.1 For each parent Gp
+					1.2.1.1.1.1 Make new AssociationInstance between P and Gp, 
+						    set is_predicted = 1, 
+						    Evidence indicating 'because of obsolete descendant', 
+						    manually reviewed = 'needs re-review', 
+						    is not = false
+					1.2.1.1.1.2 Set old Association A between P and Gp 
+						    defining = true, 
+						    manually reviewd = 'needs re-review'; 
+						    keep track of A for 1.3.3 below
+	1.3 For each GO Association A between P and old GO term G
+		1.3.1 Determine if A gets a 'hat' (note: keep hat as official term).  Criteria:
+			1.3.1.1 Has AssociationInstance Is_predicted = 1
+			1.3.1.2 Has AssociationInstance review status id = manually reviewed, needs re-review
+		1.3.2 If A gets a hat
+			1.3.2.1 Find G' for M:G->G'
+			1.3.2.2 Set GO Term in A to G' (overwriting G)
+			1.3.2.3 Keep track of A
+		1.3.3 For each A with hat and its Protein P
+			1.3.3.1 Get Ancestors of G'
+			1.3.3.2 For each ancestor Gp
+				1.3.3.2.0 Skip if tracked in 1.3.2.3 or 1.3.3.2.1.3
+				1.3.3.2.1 Make Association Ap between Gp and P
+					1.3.3.2.1.1 Set review_status_id = manually reviewed 
+					1.3.3.2.1.2 If A.'is_not' = true, set Ap.'is_not' = true
+						    unless should be 'is' from another descendant
+						    (takes some additional logic)
+					1.3.3.2.1.3 Track Ap
+				1.3.3.2.2 Make AssociationInstance pointing to AP
+					1.3.3.2.1.1 Set is_predicted = false
+					1.3.3.2.1.2 Set review_status_id = unreviewed (?)
+					1.3.3.2.1.3 Set is_not = false (?)
+				1.3.3.2.2 Make Evidence pointing to this AssociationInstance and A
+				  
+
+2. Create Associations
+	
+	2.1 For each Association A between P and G which rule says you should make
+		2.1.1 If not found 
+			2.1.1.1 Make A
+				2.1.1.1.1 Set is_not = false 
+				2.1.1.1.2 Set review status = unreviewed
+		2.1.2 Make AssociationInstance AI pointing to A
+			2.1.1.1 Set review_status to 'not reviewed'
+			2.1.1.2 Set is_predicted to 'true'
+			2.1.1.3 Set is_not to be what rule predicted
+		2.1.3 Make Evidence E1 pointing to the rule and the AI
+		2.1.4 For each parent GO Term Gp
+			2.1.4.1 If !(exists Pa between P and Gp)
+				2.1.4.1.1 Make Association Pa
+			2.1.4.2 Make AssociationInstance Pai
+				2.1.4.2.1 Set is_predicted = false
+				2.1.4.2.2 Set manually_reviewed = false 
+				2.1.4.2.3 Set is_not to be what rule predicted 
+			2.1.4.3 Make Evidence pointing to rule and Pai 	
+			
+3. Clean Associations
+	
+	3.1 For each Association A between P and G
+		3.1.1 If A has one AssociationInstance where manually_reviewed != unreviewed		
+			3.1.1.1 Do not deprecate
+		3.1.2 Else if A has one AssociationInstance created by current algorithm invocation
+			3.1.2.1 Do not deprecate
+		3.1.3 Else Deprecate
+			
+4. Set Is Nots
+
+	4.1 For each Protein P with Associations {A}
+		4.1.1 Create local GO Term Graph of Associations
+		4.1.2 Perform depth-first search, starting at root of graph
+			4.1.2.1 If current Association A 'is'
+				4.1.2.1.1 set local variable 'on_is_path' for A to true
+				4.1.2.1.2 next node in depth first search
+			4.1.2.2 Else if current Association A 'is_not'
+				4.1.2.2.1 return from this node (i.e. do not process children)
+		4.1.3 Perform depth-first search, starting at root of graph
+		
+			AMENDMENT: do all 4.1.2 and then the rest of this but only set is_not if 
+					the association has instances -- i.e. is primary
+
+			4.1.3.1 If current Association A 'on_is_path' = true
+				4.1.3.1.1 next node in depth first search
+			4.1.3.2 Else if current node 'on_is_path' = false/undefined
+				4.1.3.2.1 If review_status_id != unreviewed
+					4.1.3.2.1.1 Set review_status_id = 'needs rereview'
+				4.1.3.2.2 Else
+					4.1.3.2.1.2 Set is_not = true
+				if (not already is_not){
+				4.1.3.2.3 Make AssociationInstance for current Association 
+					4.1.3.2.3.1 Set is_not = true
+					4.1.3.2.3.2 Set is_predicted = 'false' (?)
+					4.1.3.2.3.3 Set review_status_id = 'unreviewed' (?)
+				4.1.3.2.4 Make Evidence, point to AssociationInstance and Ancestor that 
+					  necessitated the change  }	
+
+5. Set Defining
+	
+	5.1 For each Protein P with Associations {A}
+		5.1.1 Create local GO Term Graph of Associations
+		5.1.2 Depth first search to hit all A e {A}
+			5.1.2.1 If A is lowest ++ !is not ++ has one non deprecated instance
+				5.1.2.1.1 Set A.defining = true
+			
+
+	algorithm:
+		isOnDefiningPath()
+		if all my children return false
+		return false if I am deprecated or is_not
+		else set defining for myself and return true
+	
+
+
+6. Caching notes:
+	Do not cache my instances if I am is_not
+	Do not cache my instances to ancestors who are is_not

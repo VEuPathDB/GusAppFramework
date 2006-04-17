@@ -1,0 +1,24 @@
+<?xml version="1.0"  encoding="ISO-8859-1" ?>
+<!DOCTYPE cfg SYSTEM "FileTranslatorCfg.dtd" >
+
+<!-- $Revision$ $Date$ $Author$ -->
+
+<cfg>
+  <inputs qualifier_row_present='0'>
+    <header type="header" name='col_headers'>
+      <col header_val = 'Probesets' req='1' name='probe_set_name' />
+      <col header_val='file.CEL'  req = '1' name='value' />
+    </header>
+  </inputs>
+
+  <outputs>
+    <map name='name'>
+      <in name='probe_set_name' />
+      <do> $probe_set_name </do>
+    </map>
+    <map name='rma_expression_measure'>
+      <in name='value' />
+      <do> $value </do>
+    </map>
+  </outputs>
+</cfg>

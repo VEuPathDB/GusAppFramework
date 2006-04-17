@@ -1,0 +1,1035 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>/home/msaffitz/gusTrunk/gus_home/lib/perl/GUS/PluginMgr/Plugin.pm</title>
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">Name</a></li>
+	<li><a href="#description">Description</a></li>
+	<li><a href="#methods">Methods</a></li>
+	<ul>
+
+		<li><a href="#constructor">Constructor</a></li>
+		<li><a href="#initialization">Initialization</a></li>
+		<li><a href="#setters">Setters</a></li>
+		<li><a href="#getters">Getters</a></li>
+		<li><a href="#argument_declaration_constructors">Argument Declaration Constructors</a></li>
+		<li><a href="#utilities">Utilities</a></li>
+		<li><a href="#documentation">Documentation</a></li>
+		<li><a href="#error_handling">Error handling</a></li>
+		<li><a href="#logging">Logging</a></li>
+		<li><a href="#sql_utilities">SQL utilities</a></li>
+		<li><a href="#deprecated">Deprecated</a></li>
+	</ul>
+
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<hr />
+<h1><a name="name">Name</a></h1>
+<p><code>GUS::PluginMgr::Plugin</code></p>
+<p>
+</p>
+<hr />
+<h1><a name="description">Description</a></h1>
+<p><code>GUS::PluginMgr::Plugin</code> is the superclass of all GusApplication plugins.</p>
+<p>Unless otherwise noted, all of its methods are <em>instance</em> methods.  That is,
+they are called like this:  <code>$self-&gt;my_instance_method();</code></p>
+<p>
+</p>
+<hr />
+<h1><a name="methods">Methods</a></h1>
+<p>
+</p>
+<h2><a name="constructor">Constructor</a></h2>
+<dl>
+<dt><strong><a name="item_new"><code>new()</code></a></strong><br />
+</dt>
+<dd>
+Construct a new Plugin.  This method <em>must be overridden</em> by the
+plugin subclass.  That is, the subclass must have its own <a href="#item_new"><code>new</code></a>
+method which must:
+</dd>
+<dd>
+<p>- create and <code>bless</code> a <code>$self</code></p>
+</dd>
+<dd>
+<p>- call the <a href="#item_initialize"><code>initialize</code></a> method described below</p>
+</dd>
+<dd>
+<p>- return <code>$self</code></p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> hash ref</p>
+</dd>
+<p></p></dl>
+<p>
+</p>
+<h2><a name="initialization">Initialization</a></h2>
+<dl>
+<dt><strong><a name="item_initialize"><code>initialize($argsHashRef)</code></a></strong><br />
+</dt>
+<dd>
+Initialize the plugin.  This method is called in the plugin's <a href="#item_new"><code>new</code></a>
+method.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- argsHashRef (hash ref).  This argument is a hash ref which must
+  contain the following key values pairs:</p>
+</dd>
+<ul>
+<li><strong><a name="item_requireddbversion">requiredDbVersion (string)</a></strong><br />
+</li>
+<li><strong><a name="item_cvsrevision">cvsRevision (string)</a></strong><br />
+</li>
+The CVS revision number (eg 1.11) of the plugin.  The value for this
+key <em>must</em> be specified using the CVS magic substitution format.  In
+particular, it must be: <code>'$Revision: 3032 $'</code>. CVS will substitute in
+the revision number, so that, after substitution, the value will be,
+eg, <code>'$Revision: 3032 $</code>'
+<p></p>
+<li><strong><a name="item_name">name (string)</a></strong><br />
+</li>
+The name of the plugin.  This value for this key <em>must</em> be specified
+like this: <code>ref($self)</code>.
+<p></p>
+<li><strong><a name="item_documentation"><code>documentation</code> (<em>hashref</em>)</a></strong><br />
+</li>
+The documentation for this plugin (excluding the documentation for
+command line arguments which is covered by <a href="#item_argsdeclaration"><code>argsDeclaration</code></a>).
+<p>The hashref may include only the following standard keys.  All string
+values (e.g., <a href="#item_purpose"><code>purpose</code></a>, <a href="#item_notes"><code>notes</code></a>) may include embedded POD
+formatting directives.  If you use Perl's ``here'' document syntax (the
+&lt;&lt; operator) to define your POD string, then you can use POD commands
+as you ordinarily would. Otherwise, precede and follow all commands
+(e.g., <code>=item</code>) with <code>\\n\\n</code>.</p>
+<ul>
+<li><strong><a name="item_purpose">purpose (string)</a></strong><br />
+</li>
+The purpose of the plugin.  This should be as thorough as possible.
+<p></p>
+<li><strong><a name="item_purposebrief">purposeBrief (string)</a></strong><br />
+</li>
+A one sentence summary of the plugin's purpose.  This is displayed on
+the first line of the help page.  It is also written into the
+Core::Algorithm table as a description of the plugin.
+<p></p>
+<li><strong><a name="item_tablesaffected">tablesAffected (listref of listrefs)</a></strong><br />
+</li>
+A list of tables the plugin writes to (excluding the standard overhead
+tables).  For example:
+<p><code></code>my $tablesAffected = [
+   ['DoTS::Assembly', 'Writes the finished assemblies here'],
+   ['DoTS::Similarity', 'Writes its similarity here'],
+];</p>
+<p></p>
+<li><strong><a name="item_tablesdependedon">tablesDependedOn (listref of listrefs)</a></strong><br />
+</li>
+A list of tables the plugin depends on (excluding the standard
+overhead tables).  This should include all controlled vocabulary
+tables that the data the plugin is generating depends upon.
+<p>The format is the same as that for <a href="#item_tablesaffected"><code>tablesAffected</code></a></p>
+<p></p>
+<li><strong><a name="item_howtorestart">howToRestart (string)</a></strong><br />
+</li>
+The details of how to restart the plugin.
+<p></p>
+<li><strong><a name="item_failurecases">failureCases (string)</a></strong><br />
+</li>
+Known types of failure cases and what to do about them.
+<p></p>
+<li><strong><a name="item_notes">notes (string)</a></strong><br />
+</li>
+Additional notes.  This should include the details of:
+<ul>
+<li><strong><a name="item_file_formats_used_as_input%2c_and_how_they_are_pro">file formats used as input, and how they are produced</a></strong><br />
+</li>
+<li><strong><a name="item_file_formats_used_as_output%2e">file formats used as output.</a></strong><br />
+</li>
+<li><strong><a name="item_other_plugins_that_must_be_run_first%2e">other plugins that must be run first.</a></strong><br />
+</li>
+</ul>
+</ul>
+<dt></dt>
+<li><strong><a name="item_argsdeclaration">argsDeclaration (listref of <code>GUS::PluginMgr::Args::Arg</code> subclasses)</a></strong><br />
+</li>
+A declaration of the command line arguments expected by the plugin.
+Each element of the list is an object which is a subclass of
+<code>GUS::PluginMgr::Args::Arg</code>.  See the Argument Declaration
+Constructors (e.g. <a href="#item_stringarg"><code>stringArg()</code></a>, <a href="#item_filearg"><code>fileArg</code></a>, etc).  These are
+methods which construct and return these objects.
+<p></p>
+<li><strong><a name="item_revisionnotes">revisionNotes (string)</a></strong><br />
+</li>
+This has been <strong>deprecated</strong>.  It is not replaced by anything.
+<p></p>
+<li><strong><a name="item_easycspoptions">easyCspOptions</a></strong><br />
+</li>
+This has been <strong>deprecated</strong>.  It is replaced by <a href="#item_argsdeclaration"><code>argsDeclaration</code></a>
+<p></p>
+<li><strong><a name="item_usage">usage</a></strong><br />
+</li>
+This has been <strong>deprecated</strong>.  It is replaced by <a href="#item_documentation"><code>documentation</code></a>
+<p></p></ul>
+</dl>
+<p>
+</p>
+<h2><a name="setters">Setters</a></h2>
+<dl>
+<dt><strong><a name="item_setresultdescr"><code>setResultDescr($resultDescrip)</code></a></strong><br />
+</dt>
+<dd>
+Set the result description.  This value is stored in the database in
+the AlgorithmInvocation table's result column after the plugin
+completes.
+</dd>
+<dd>
+<p><strong>Params:</strong></p>
+</dd>
+<dd>
+<p>- resultDescrip: a description of the plugin's main result for posterity.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_setpointercachesize"><code>setPointerCacheSize()</code></a></strong><br />
+</dt>
+<dd>
+The object cache holds 10000 objects by default. Use this method to change its
+capacity.
+</dd>
+<p></p>
+<dt><strong><a name="item_setoracledateformat"><code>setOracleDateFormat($oracleDateFormat)</code></a></strong><br />
+</dt>
+<dd>
+Set Oracle's NLS_DATE_FORMAT for the duration of this plugin's run.  This is the format which oracle will allow for data of type 'Date.'  See Oracle's documentation to find valid formats.  The default format is 'YYYY-MM-DD HH24:MI:SS.'
+</dd>
+<dd>
+<p><strong>Params:</strong></p>
+</dd>
+<dd>
+<p>- oracleDateFormat: a string specifying a valid Oracle date format</p>
+</dd>
+<p></p></dl>
+<p>
+</p>
+<h2><a name="getters">Getters</a></h2>
+<dl>
+<dt><strong><a name="item_getusage"><code>getUsage()</code></a></strong><br />
+</dt>
+<dd>
+Get the plugin's usage.  This value is set by the <a href="#item_initialize"><code>initialize</code></a>
+method.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>string</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getdocumentation"><code>getDocumentation()</code></a></strong><br />
+</dt>
+<dd>
+Get a hashref holding the plugin's documentation.  This value is set
+by the <a href="#item_initialize"><code>initialize</code></a> method.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>string</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getrequireddbversion"><code>getRequiredDbVersion()</code></a></strong><br />
+</dt>
+<dd>
+Get the plugin's required database version.  This value is set by the
+<a href="#item_initialize"><code>initialize</code></a> method.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>string</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getcvsrevision"><code>getCVSRevision()</code></a></strong><br />
+</dt>
+<dd>
+Get the plugin's CVS revision number.  This value is set by the
+<a href="#item_initialize"><code>initialize</code></a> method.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>string</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getresultdescr"><code>getResultDescr</code></a></strong><br />
+</dt>
+<dd>
+Get the result description.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>string</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getargsdeclaration"><code>getArgsDeclaration()</code></a></strong><br />
+</dt>
+<dd>
+Get the plugin's argument declaration.  This value is set by the
+<a href="#item_initialize"><code>initialize</code></a> method.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>ref_to_list_of_Args</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getname"><code>getName()</code></a></strong><br />
+</dt>
+<dd>
+Get the name of the plugin, eg, <code>GUS::Supported::Plugin::LoadRow</code>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>string</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getfile"><code>getFile()</code></a></strong><br />
+</dt>
+<dd>
+Get the full path of the file that contains the plugin, eg,
+/home/me/gushome/lib/perl/GUS/Supported/Plugin/LoadRow.pm
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>string</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getarg"><code>getArg($arg_name)</code></a></strong><br />
+</dt>
+<dd>
+Get the value of one of the plugin's command line arguments.
+</dd>
+<dd>
+<p><strong>Return type:</strong> scalar or list reference</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getdb"><code>getDb()</code></a></strong><br />
+</dt>
+<dd>
+Get the DbiDatabase object which represents the database this plugin
+accesses.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>GUS::ObjRelP::DbiDatabase</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getalginvocation"><code>getAlgInvocation()</code></a></strong><br />
+</dt>
+<dd>
+Get the AlgorithmInvocation which tracks the running of this plugin in
+the database.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>GUS::Model::Core::AlgorithmInvocation</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getqueryhandle"><code>getQueryHandle()</code></a></strong><br />
+</dt>
+<dd>
+Get the DbiDbHandle which this plugin uses to access the database.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>GUS::ObjRelP::DbiDbHandle</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getchecksum"><code>getCheckSum()</code></a></strong><br />
+</dt>
+<dd>
+Get an md5 digest checksum of the perl file which codes this plugin.
+(This is used by GusApplication when registering the plugin in the
+database.)
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>string</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getalgorithm"><code>getAlgorithm()</code></a></strong><br />
+</dt>
+<dd>
+Get the Algorithm that represents this plugin in the database.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>GUS::Model::Core::Algorithm</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getimplementation"><code>getImplementation()</code></a></strong><br />
+</dt>
+<dd>
+Get the AlgorithmImplementation that represents this version of this plugin in the database.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>GUS::Model::Core::AlgorithmImplementation</code></p>
+</dd>
+<p></p></dl>
+<p>
+</p>
+<h2><a name="argument_declaration_constructors">Argument Declaration Constructors</a></h2>
+<p>The Argument Declaration Constructors return Argument Declaration
+objects, as expected by the <a href="#item_initialize"><code>initialize()</code></a> method in its
+<code>argDeclaration</code> parameter.  Each arg declaration object specifies
+the details of a command line argument expected by the plugin.  The
+different constructors below are used to declare arguments of
+different types, such as string, int, file, etc.</p>
+<p>The argument declaration constructor methods each take a hashref as
+their sole parameter.  This hashref must include the required set of
+keys.</p>
+<p>The following keys are standard and required for all the argument
+declaration constructors. (Additional non-standard keys are indicated
+below for each method as applicable.)</p>
+<ul>
+<li><strong>name (string)</strong><br />
+</li>
+The name of the argument (e.g., 'length' will expect a --length
+argument on the command line)
+<p></p>
+<li><strong><a name="item_descr">descr (string)</a></strong><br />
+</li>
+A description of the argument and what kinds of values are allowed.
+<p></p>
+<li><strong><a name="item_reqd">reqd (0 or 1)</a></strong><br />
+</li>
+Whether the user is required to provide this argument on the command
+line
+<p></p>
+<li><strong><a name="item_default">default</a></strong><br />
+</li>
+The default value to use if the user doesn't supply one (or undef if
+none)
+<p></p>
+<li><strong><a name="item_constraintfunc">constraintFunc (method ref)</a></strong><br />
+</li>
+The method to call to check the validity of the value the user has
+supplied (undef if none).  The method is called with two arugments:
+($self, $argvalue) [where $self is the plugin object].  The method
+returns a string describing the problem with the value if there is
+one, or undef if there is no problem.
+<p></p>
+<li><strong><a name="item_islist">isList (0 or 1)</a></strong><br />
+</li>
+True if the argument expects a comma delimited list of values instead
+of a single value.
+<p></p></ul>
+<dl>
+<dt><strong><a name="item_stringarg"><code>stringArg($argDescriptorHashRef)</code></a></strong><br />
+</dt>
+<dd>
+Construct a string argument declaration.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- argDescriptorHashRef (hash ref).  This argument is a hash ref which
+  must contain the standard keys described above.</p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>GUS::PluginMgr::Args::StringArg</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_integerarg"><code>integerArg($argDescriptorHashRef)</code></a></strong><br />
+</dt>
+<dd>
+Construct a integer argument declaration.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- argDescriptorHashRef (hash ref).  This argument is a hash ref which
+  must contain the standard keys described above.</p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>GUS::PluginMgr::Args::IntegerArg</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_booleanarg"><code>booleanArg($argDescriptorHashRef)</code></a></strong><br />
+</dt>
+<dd>
+Construct a boolean argument declaration.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- argDescriptorHashRef (hash ref).  This argument is a hash ref which
+  must contain the standard keys described above with the exception of
+  'isList' and 'constraintFunc', which are not applicable.</p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>GUS::PluginMgr::Args::BooleanArg</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_tablenamearg"><code>tableNameArg($argDescriptorHashRef)</code></a></strong><br />
+</dt>
+<dd>
+Construct a tableName argument declaration.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- argDescriptorHashRef (hash ref).  This argument is a hash ref which
+  must contain the standard keys described above.</p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>GUS::PluginMgr::Args::TableNameArg</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_floatarg"><code>floatArg($argDescriptorHashRef)</code></a></strong><br />
+</dt>
+<dd>
+Construct a float argument declaration.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- argDescriptorHashRef (hash ref).  This argument is a hash ref which
+  must contain the standard keys described above.</p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>GUS::PluginMgr::Args::FloatArg</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_filearg"><code>fileArg($argDescriptorHashRef)</code></a></strong><br />
+</dt>
+<dd>
+Construct a file argument declaration.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also</p>
+</dd>
+<dd>
+<p>over 4</p>
+</dd>
+<p></p>
+<li><strong><a name="item_mustexist">mustExist (0 or 1)</a></strong><br />
+</li>
+Whether the file must exist
+<p></p>
+<li><strong><a name="item_format">format (string)</a></strong><br />
+</li>
+A description of the file's format
+<p><strong>Return type:</strong> <code>GUS::PluginMgr::Args::FileArg</code></p>
+<p></p>
+<dt><strong><a name="item_enumarg"><code>enumArg($argDescriptorHashRef)</code></a></strong><br />
+</dt>
+<dd>
+Construct an enum argument declaration.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also</p>
+</dd>
+<dd>
+<p>over 4</p>
+</dd>
+<p></p>
+<li><strong><a name="item_enum">enum (a comma delimited list of terms)</a></strong><br />
+</li>
+The allowed values for this arugment
+<p><strong>Return type:</strong> <code>GUS::PluginMgr::Args::EnumArg</code></p>
+<p></p>
+<dt><strong><a name="item_controlledvocabmaparg"><code>controlledVocabMapArg($argDescriptorHashRef)</code></a></strong><br />
+</dt>
+<dd>
+Construct a controlled vocab map argument declaration.  The value for this argument is a file containing a mapping from an input set of terms to a set of terms in a GUS controlled vocabulary table (such as SRes.ReviewStatus).  The value returned to the plugin by <a href="#item_getarg"><code>getArg()</code></a> is that vocabulary in hash form, with the key being the input term and the value being the GUS term.  If any GUS term in the file is not found in the database table, an error is thrown.  This is used for application or site specific CVs, not for stable standards.  It is intended to provide a flexible way for a plugin to use a CV developed in-house.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also</p>
+</dd>
+<dd>
+<p>over 4</p>
+</dd>
+<p></p>
+<li><strong><a name="item_table">table (a table name in SRes.ReviewStatus format)</a></strong><br />
+</li>
+The table in GUS in which this CV is stored
+<p></p>
+<li><strong><a name="item_primarykeycolumn">primaryKeyColumn (string)</a></strong><br />
+</li>
+The column in that table that holds its primary key
+<p></p>
+<li><strong><a name="item_termcolumn">termColumn (string)</a></strong><br />
+</li>
+The column in that table that holds the CV term name
+<p><strong>Return type:</strong> <code>GUS::PluginMgr::Args::ControlledVocabArg</code></p>
+<p></p>
+<dt><strong><a name="item_globarg"><code>globArg($argDescriptorHashRef)</code></a></strong><br />
+</dt>
+<dd>
+Construct a glob argument declaration.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also</p>
+</dd>
+<dd>
+<p>over 4</p>
+</dd>
+<p></p>
+<li><strong>mustExist (0 or 1)</strong><br />
+</li>
+Whether the glob must match some existing files.
+<p></p>
+<li><strong>format (string)</strong><br />
+</li>
+A description of the format of the files that match the glob.
+<p><strong>Return type:</strong> <code>GUS::PluginMgr::Args::GlobArg</code></p>
+<p></p>
+<dt><strong><code>globArg($argDescriptorHashRef)</code></strong><br />
+</dt>
+<dd>
+Construct a glob argument declaration.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also</p>
+</dd>
+<dd>
+<p>over 4</p>
+</dd>
+<p></p>
+<li><strong>mustExist (0 or 1)</strong><br />
+</li>
+Whether the glob must match some existing files.
+<p></p>
+<li><strong>format (string)</strong><br />
+</li>
+A description of the format of the files that match the glob.
+<p><strong>Return type:</strong> <code>GUS::PluginMgr::Args::GlobArg</code></p>
+<p></p></dl>
+<p>
+</p>
+<h2><a name="utilities">Utilities</a></h2>
+<dl>
+<dt><strong><a name="item_classname2oraclename"><code>className2oracleName($className)</code></a></strong><br />
+</dt>
+<dd>
+Convert a perl style class name for a database object to the form required in an SQL statement.  For example, convert Core::Algorithm to core.algorithm
+</dd>
+<dd>
+<p><strong>Parameters:</strong></p>
+</dd>
+<dd>
+<p>- className (string):  A class name in the form: GUS::Model::Core::Algorithm or Core::Algorithm</p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>string</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getextdbrlsid"><code>getExtDbRlsId($dbName, $dbVersion)</code></a></strong><br />
+</dt>
+<dd>
+Retrieve an external database release id from SRes::ExternalDatabaseRelease given the name of a database and the version corresponding to the release.
+</dd>
+<dd>
+<p>Die if none found.  (If you just want to test for its existence, call the method in an eval{} block.)</p>
+</dd>
+<dd>
+<p><strong>Parameters:</strong></p>
+</dd>
+<dd>
+<pre>
+    - dbName (string): Name of the database; must match an entry in SRes::ExternalDatabase
+    - dbVersion (string): Version of the database; matched against the version attribute in SRes::ExternalDatabaseRelease</pre>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>integer</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_prepareandexecute"><code>prepareAndExecute($sql)</code></a></strong><br />
+</dt>
+<dd>
+Prepare an SQL statement and execute it.  This method is a convenience wrapper around $self-&gt;getQueryHandle()-&gt;prepareAndExecute().  In plugins, SQL is usually reserved for querying, not for writing to the database.  GUS objects do that work with better tracking and more easily.  For more complicated database operations see the file $PROJECT_HOME/OblRelP/lib/perl/DbiDbHandle.pm
+</dd>
+<dd>
+<p><strong>Parameters:</strong></p>
+</dd>
+<dd>
+<p>- sql (string): The SQL to prepare and execute.</p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>statementHandle</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getcontrolledvocabmapping"><code>getControlledVocabMapping($cvMappingFile, $cvTable, $cvTermColumn)</code></a></strong><br />
+</dt>
+<dd>
+Read a file mapping input terms to a GUS CV.  Validate the GUS CV against
+the provided table.  If the GUS CV in the file is not entirely contained in the table, die.  If it is, return the CV as a hash with the input terms as key and the GUS CV as value.
+</dd>
+<dd>
+<p><strong>Parameters:</strong></p>
+</dd>
+<dd>
+<p>- cvMappingFile (string): The name of the file which contains the mapping.  It must be two columns tab delimited where the first column is the input terms and the second column is the GUS CV.</p>
+</dd>
+<dd>
+<p>- cvTable (string):  The name of the table in gus (in schema.table format) which contains the CV.</p>
+</dd>
+<dd>
+<p>- cvTermColumn (string):  The name of the column in cvTable that contains the terms.</p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>hash reference</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_gettotalinserts"><code>getTotalInserts()</code></a></strong><br />
+</dt>
+<dd>
+Get the total number of inserts.
+</dd>
+<p></p>
+<dt><strong><a name="item_gettotalupdates"><code>getTotalUpdates()</code></a></strong><br />
+</dt>
+<dd>
+Get the total number of updates.
+</dd>
+<p></p>
+<dt><strong><a name="item_classname2tableid"><code>className2TableId($className)</code></a></strong><br />
+</dt>
+<dd>
+Convert a perl style class name for a database object to a numerical table id suitable for comparison to one of GUS's many table_id columns.  For example, convert Core::Algorithm to something like 34.
+</dd>
+<dd>
+<p><strong>Parameters:</strong></p>
+</dd>
+<dd>
+<p>- className (string):  A class name in the form: Core::Algorithm</p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>integer</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getfulltableclassname"><code>getFullTableClassName($className)</code></a></strong><br />
+</dt>
+<dd>
+If given a full class name or one in schema::table format (case insensitive in both cases), return the full class name w/ proper case, ie GUS::Model:Schema:Table or null if no such table
+</dd>
+<dd>
+<p><strong>Parameters:</strong>
+ -</p>
+</dd>
+<dd>
+<p>- getFullTableClassName (string):  A class name in the form: Core::Algorithm (case insensitive)</p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>string</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_classname2tableid"><code>className2tableId($className)</code></a></strong><br />
+</dt>
+<dd>
+Convert a perl style class name for a database object to a numerical table id suitable for comparison to one of GUS's many table_id columns.  For example, convert Core::Algorithm to something like 34.
+</dd>
+<dd>
+<p><strong>Parameters:</strong></p>
+</dd>
+<dd>
+<p>- className (string):  A class name in the form: Core::Algorithm (case sensitive)</p>
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>integer</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_undefpointercache"><code>undefPointerCache()</code></a></strong><br />
+</dt>
+<dd>
+Clear out the GUS Object Layer's cache of database objects.  The
+object cache holds 10000 objects by default.  (You can change its
+capacity by calling <a href="#item_getdb"><code>$self-&gt;getDb()-&gt;setMaximumNumberOfObjects()
+&gt;&gt;.)  Typically a plugin may loop over a set of input, using a number
+of objects for each iteration through the loop.  Because the next time
+through the loop will not need those objects, it is good practice to
+call C&lt;&lt; $self-&gt;undefPointerCache() &gt;&gt;</code></a> at the bottom of the loop to
+avoid filling the cache with objects that are not needed anymore.
+</dd>
+<p></p></dl>
+<p>
+</p>
+<h2><a name="documentation">Documentation</a></h2>
+<dl>
+<dt><strong><a name="item_printdocumentationtext"><code>printDocumentationText($synopsis, $argDetails)</code></a></strong><br />
+</dt>
+<dd>
+Print documentation for this plugin in text format.  The documentation
+includes a synopsis, description, and argument details
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- $synopsis (string):  text providing a synopsis.
+- $argDetails (string):  text providing details of the arguments.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_printdocumentationhtml"><code>printDocumentationHTML($synopsis, $argDetails)</code></a></strong><br />
+</dt>
+<dd>
+Print documentation for this plugin in HTML format.  The documentation
+includes a synopsis, description, and argument details
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- $synopsis (string):  text providing a synopsis.
+- $argDetails (string):  text providing details of the arguments.</p>
+</dd>
+<p></p></dl>
+<p>
+</p>
+<h2><a name="error_handling">Error handling</a></h2>
+<dl>
+<dt><strong><a name="item_error"><code>error($msg)</code></a></strong><br />
+</dt>
+<dd>
+Handle a fatal error in a plugin.  This method terminates the plugin
+gracefully, writing the provided message to STDERR.  It also writes a
+stack trace showing where the error occurred.
+</dd>
+<dd>
+<p>When the plugin is terminated, GusApplication will still catch the
+error and attempt to track the plugin's failure in the database.</p>
+</dd>
+<dd>
+<p>Do not use this method to report user errors such as invalid argument
+values (use <a href="#item_usererror"><code>userError</code></a> for that).</p>
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- msg (string):  the error message to write.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_usererror"><code>userError($msg)</code></a></strong><br />
+</dt>
+<dd>
+Handle a fatal user error in a plugin.  This method terminates the
+plugin gracefully, writing the provided message to STDERR.  It it
+intended only for errors made by the user of the plugin (such as
+incorrect argument values).
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- msg (string):  the error message to write.</p>
+</dd>
+<p></p></dl>
+<p>
+</p>
+<h2><a name="logging">Logging</a></h2>
+<dl>
+<dt><strong><a name="item_log"><code>log($msg1, $msg2, ...)</code></a></strong><br />
+</dt>
+<dd>
+Write a date stamped tab delimited message to STDERR.  The messages
+supplied as arguments are joined with tabs in between.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- @messages (list of strings):  the error messages to write.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_logdebug"><code>logDebug($msg1, $msg2, ...)</code></a></strong><br />
+</dt>
+<dd>
+Write a date stamped tab delimited debugging message to STDERR.  The
+messages supplied as arguments are joined with tabs in between.  It
+will only be written if the user specifies the <code>--debug</code> argument.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- @messages (list of strings):  the error messages to write.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_logverbose"><code>logVerbose($msg1, $msg2, ...)</code></a></strong><br />
+</dt>
+<dd>
+Write a date stamped tab delimited debugging message to STDERR.  The
+messages supplied as arguments are joined with tabs in between.  It
+will only be written if the user specifies the <code>--verbose</code> argument.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- @messages (list of strings):  the error messages to write.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_logveryverbose"><code>logVeryVerbose($msg1, $msg2, ...)</code></a></strong><br />
+</dt>
+<dd>
+Write a date stamped tab delimited debugging message to STDERR.  The
+messages supplied as arguments are joined with tabs in between.  It
+will only be written if the user specifies the <code>--veryVerbose</code>
+argument.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- @messages (list of strings):  the error messages to write.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_logdata"><code>logData($msg1, $msg2, ...)</code></a></strong><br />
+</dt>
+<dd>
+Write a date stamped tab delimited debugging message to STDOUT.  The
+messages supplied as arguments are joined with tabs in between.
+</dd>
+<dd>
+<p><strong>Parameters</strong></p>
+</dd>
+<dd>
+<p>- @messages (list of strings):  the error messages to write.</p>
+</dd>
+<p></p>
+<dt><strong><a name="item_logalginvocationid"><code>logAlgInvocationId()</code></a></strong><br />
+</dt>
+<dd>
+Log to STDERR the id for the AlgorithmInvocation that represents this
+run of the plugin in the database.
+</dd>
+<p></p>
+<dt><strong><a name="item_logcommit"><code>logCommit()</code></a></strong><br />
+</dt>
+<dd>
+Log to STDERR the state of the commit flag for this run of the plugin.
+</dd>
+<p></p>
+<dt><strong><a name="item_logargs"><code>logArgs()</code></a></strong><br />
+</dt>
+<dd>
+Log to STDERR the argument values used for this run of the plugin.
+</dd>
+<p></p></dl>
+<p>
+</p>
+<h2><a name="sql_utilities">SQL utilities</a></h2>
+<dl>
+<dt><strong><a name="item_sql_get_as_array"><code>sql_get_as_array()</code></a></strong><br />
+</dt>
+<dd>
+<strong>Return type:</strong> <code>string</code>
+</dd>
+<p></p>
+<dt><strong><a name="item_%28%29"><code>()</code></a></strong><br />
+</dt>
+<dd>
+<strong>Return type:</strong> <code>string</code>
+</dd>
+<p></p>
+<dt><strong><code>()</code></strong><br />
+</dt>
+<dd>
+<strong>Return type:</strong> <code>string</code>
+</dd>
+<p></p>
+<dt><strong><code>()</code></strong><br />
+</dt>
+<dd>
+<strong>Return type:</strong> <code>string</code>
+</dd>
+<p></p>
+<dt><strong><a name="item_sql_translate"><code>sql_translate()</code></a></strong><br />
+</dt>
+<dd>
+<strong>Return type:</strong> <code>string</code>
+</dd>
+<p></p></dl>
+<p>
+</p>
+<h2><a name="deprecated">Deprecated</a></h2>
+<dl>
+<dt><strong><a name="item_geteasycspoptions"><code>getEasyCspOptions()</code></a></strong><br />
+</dt>
+<dd>
+Replaced by <a href="#item_getargsdeclaration"><code>getArgsDeclaration()</code></a>
+</dd>
+<p></p>
+<dt><strong><a name="item_getrevisionnotes"><code>getRevisionNotes()</code></a></strong><br />
+</dt>
+<dd>
+No longer used.
+</dd>
+<dd>
+<p><strong>Return type:</strong> <code>string</code></p>
+</dd>
+<p></p>
+<dt><strong><a name="item_getargs"><code>getArgs()</code></a></strong><br />
+</dt>
+<dd>
+Replaced by <a href="#item_getarg"><code>getArg()</code></a>
+</dd>
+<p></p>
+<dt><strong><a name="item_getselfinv"><code>getSelfInv()</code></a></strong><br />
+</dt>
+<dd>
+Replaced by <a href="#item_getalginvocation"><code>getAlgInvocation</code></a>
+</dd>
+<p></p>
+<dt><strong><a name="item_getcla"><code>getCla()</code></a></strong><br />
+</dt>
+<dd>
+Replaced by <a href="#item_getarg"><code>getArg</code></a>
+</dd>
+<p></p>
+<dt><strong><a name="item_logalert"><code>logAlert()</code></a></strong><br />
+</dt>
+<dd>
+Replaced by <a href="#item_log"><code>log</code></a>
+</dd>
+<p></p>
+<dt><strong><a name="item_getok"><code>getOk()</code></a></strong><br />
+</dt>
+<dd>
+This method is replaced by the <code>die/eval</code> facilities of perl.  Instead of using <code>setOK(0)</code>, use <code>die</code>.
+</dd>
+<p></p>
+<dt><strong><a name="item_setok"><code>setOk()</code></a></strong><br />
+</dt>
+<dd>
+This method is replaced by the <code>die/eval</code> facilities of perl.  Instead of using <code>getOK()</code>, use <code>eval</code>.
+</dd>
+<p></p>
+<dt><strong><a name="item_lograiid"><code>logRAIID()</code></a></strong><br />
+</dt>
+<dd>
+Replaced by <a href="#item_logalginvocationid"><code>logAlgInvocationId</code></a>
+</dd>
+</dl>
+
+</body>
+
+</html>
