@@ -65,13 +65,13 @@ sub startStep {
     if ($stopBefore eq $signal) {
 	$self->log("Property 'stopBefore' set to $signal.  Stopping.\n\n");
 	unlink "$self->{pipelineDir}/signals/running";
-	exit(0);
+	$self->_cleanup(1);
     }
 
     if ($self->_getSignal('stop')) {
 	$self->log("Found 'stop' signal.  Stopping.\n\n");
 	unlink "$self->{pipelineDir}/signals/running";
-	exit(0);
+	$self->_cleanup(1);
     }
 
     if ($doitProperty && $self->{propertySet}->getProp($doitProperty) eq "no") {
@@ -171,7 +171,7 @@ sub exitWithMessage {
 
     $self->endStep($signal);
 
-    exit(0);
+    $self->_cleanup(1);
 }    
 
 
@@ -199,7 +199,7 @@ sub exitToCluster {
     print STDERR $msg;
     $self->log($msg);
     unlink "$self->{pipelineDir}/signals/running";
-    exit(0);
+    $self->_cleanup(1);
 }    
 
 # Write out a message telling user what to wait for on cluster, then exit
@@ -221,7 +221,7 @@ sub waitForCluster {
     $self->log($msg);
     $self->endStep($signal);
     unlink "$self->{pipelineDir}/signals/running";
-    exit(0);
+    $self->_cleanup(1);
 }     
 
 sub manualTask {
@@ -239,7 +239,7 @@ sub manualTask {
   $self->log($msg);
   $self->endStep($signal);
   unlink "$self->{pipelineDir}/signals/running";
-  exit(0);
+  $self->_cleanup(1);
 }
 
 sub setGusConfigFile {
@@ -250,6 +250,11 @@ sub setGusConfigFile {
   $self->{gusConfigFile} = $gusConfigFile;
 }
 
+sub addCleanupCommand {
+  my ($self, $cmd) = @_;
+  push(@{$self->{cleanupCommands}}, $cmd);
+}
+
 # exit pipeline 
 sub goodbye {
     my ($self, $msg) = @_;
@@ -257,6 +262,7 @@ sub goodbye {
     if ($self->{justDocumenting}) {
       GUS::Pipeline::StepDocumenter::end();
     } else {
+      $self->_cleanup(0);
       $self->log($msg);
       unlink "$self->{pipelineDir}/signals/running";
     }
@@ -296,7 +302,7 @@ sub _runPlugin {
     $self->runCmd($cmd);
     if ($self->{testNextPlugin} eq "true"){
 	print STDERR "Tested next plugin.  Check $self->{pipelineDir}/logs/$signal" . ".err and $signal" . ".out for results\n\n";
-	exit(0);
+	$self->_cleanup(1);
     }
     else{
 	$self->endStep($signal);
@@ -375,6 +381,22 @@ ERROR:  Looks like '$self->{program} $self->{propertiesFile}' is already running
 ";
 	exit(1);
     }
+}
+
+sub _cleanup {
+  my ($self, $exit) = @_;
+
+  foreach my $cleanupCmd (@$self->{cleanupCmds}) {
+    $self->log("Running cleanup command: '$cleanupCmd'\n");
+    system ($cleanupCmd);
+    if ($? >> 8){
+      print STDERR "Failed running: \n$cleanupCmd\n\n";
+      $self->log("FAILED\n\n");
+    } else { 
+      $self->log("\n");
+    }
+  }
+  exit(0) if $exit;
 }
 
 sub documentStep {
