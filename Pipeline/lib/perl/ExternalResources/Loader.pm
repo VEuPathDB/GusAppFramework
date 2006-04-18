@@ -37,6 +37,20 @@ sub run {
       $hadErr = 1;
     }
   }
+
+  # run cleanup commands, if any
+  foreach my $cleanup (@{$self->{cleanups}}) {
+    $self->{manager}->log("Running cleanup command: '$cleanup'\n");
+    system ($cleanup);
+    if ($? >> 8){
+      print STDERR "Failed running: \n$cleanup\n\n";
+      $self->{manager}->log("FAILED\n\n");
+      $hadErr = 1;
+    } else { 
+      $self->{manager}->log("\n");
+    }
+  }
+
   if ($hadErr) {
     $self->{manager}->goodbye("Pipeline had failures.  NOT complete!\n");
   } else {
@@ -78,6 +92,7 @@ sub _parseXmlFile {
   my $data = $xml->XMLin($xmlString);
   print STDERR Dumper($data);
   my $repositoryLogFile = "$self->{manager}->{pipelineDir}/logs/repository.log";
+  # handle resources
   if (ref($data->{resource}) eq 'ARRAY') {
     foreach my $resource (@{$data->{resource}}) {
       $self->_processResource($resource, $data, $commit, $dbCommit,
@@ -87,6 +102,10 @@ sub _parseXmlFile {
       $self->_processResource($data->{resource}, $data, $commit, $dbCommit,
 			      $repositoryLogFile);
   }
+
+  # handle cleanUps
+  $self->{cleanups} = ref($data->{cleanup}) eq 'ARRAY'?
+    $data->{cleanup} : [$data->{cleanup}];
 }
 
 sub _processResource {
