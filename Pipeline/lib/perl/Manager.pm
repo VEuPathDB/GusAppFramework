@@ -386,7 +386,7 @@ ERROR:  Looks like '$self->{program} $self->{propertiesFile}' is already running
 sub _cleanup {
   my ($self, $exit) = @_;
 
-  foreach my $cleanupCmd (@$self->{cleanupCmds}) {
+  foreach my $cleanupCmd (@{$self->{cleanupCommands}}) {
     $self->log("Running cleanup command: '$cleanupCmd'\n");
     system ($cleanupCmd);
     if ($? >> 8){
