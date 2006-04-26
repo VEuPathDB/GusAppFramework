@@ -36,7 +36,7 @@ package GUS::Pipeline::TaskRunAndValidate;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGeneTagAlign runMicerAlign); 
+@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGeneTagAlign runMicerAlign runPfam); 
 
 use strict;
 use Carp;
@@ -151,104 +151,31 @@ sub runMicerAlign {
     return $valid;
 }
 
+sub runPfam {
+    my ($pipelineDir, $queryFile, $subjectFile, $numNodes, $time) = @_;
 
-sub runMatrix {
-    my ($pipelineDir, $numnodes, $queryname, $subjectname) = @_;
+    my $query = $queryFile;
+    my $subject = $subjectFile;
     
-    my $name = "$queryname-$subjectname";
-    print "\nRunning blastmatrix on $name\n";
+    $query =~ s/\.\w+//g;
 
-    my $resultFile = 
-	"$pipelineDir/matrix/$name/master/mainresult/blastMatrix.out";
-    my $inputFile = 
-	"$pipelineDir/repeatmask/$queryname/master/mainresult/blocked.seq";
-    my $propFile = "$pipelineDir/matrix/$name/input/controller.prop";
-    my $logFile = "$pipelineDir/logs/$name.matrix.log";
+    $subject =~ s/\.\w+//g;
 
-    my $valid = 
-      &runMatrixOrSimilarity($resultFile, $numnodes, $inputFile, $propFile, 
-			     $logFile);
+    my $name = "$query-$subject";
+    print "\nRunning alignment of $queryFile against $subjectFile\n";
 
+    my $resultFile =
+        "$pipelineDir/pfam/$name/master/mainresult/hmmpfam.out";                                                                                                                                                     
+    my $propFile = "$pipelineDir/pfam/$name/input/controller.prop";
+    my $logFile = "$pipelineDir/logs/$name.log";
+
+    my $valid = 0;
+    # TODO: validate previous results                                                                                               
+    if (!$valid) {
+        &run($propFile, $logFile,$numNodes,$time);
+        # TODO: validate results
+    }
     return $valid;
-}
-
-sub runSimilarity {
-  my ($pipelineDir, $queryname, $subjectname, $numNodes,$time) = @_;
-
-  my $name = "$queryname-$subjectname";
-  print "\nRunning blastsimilarity on $name\n";
-
-  my $resultFile = 
-    "$pipelineDir/similarity/$name/master/mainresult/blastSimilarity.out";
-  my $inputFile = 
-    "$pipelineDir/seqfiles/$queryname.fsa";
-  my $propFile = "$pipelineDir/similarity/$name/input/controller.prop";
-  my $logFile = "$pipelineDir/logs/$name.sim.log";
-
-  my $valid = 
-    &runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time);
-
-  return $valid;
-}
-
-sub runMatrixOrSimilarity {
-  my ($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time) = @_;
- 
-  my $valid = 0;
-  if (-e $resultFile) {
-    print "  previous (unzipped) result found\n";
-    $valid = &validateBM($inputFile, $resultFile);
-    if (!$valid) {
-      print "  trying again...\n";
-    }
-  }
-
-  if (-e "${resultFile}.gz") {
-    print "  previous (zipped) result found\n";
-    $valid = &validateBM($inputFile, "${resultFile}.gz");
-    if (!$valid) {
-      print "  trying again...\n";
-      print "  unzipping ${resultFile}.gz\n";
-      my $cmd = "gunzip ${resultFile}.gz";
-      my $status = system($cmd);
-      die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
-    }
-  }
-
-  if (!$valid) {
-    &runAndZip($propFile,$logFile, $resultFile, $numNodes, $time);
-    my $valid = &validateBM($inputFile, "${resultFile}.gz");
-    if  (!$valid) {
-      print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
-    }
-  }
-}
-
-sub validateRM {
-    my ($inputFile, $blockedFile, $errFile) = @_;
-
-    print "  validating...\n";
-
-    if (! -e $blockedFile) {
-	print "  INVALID  ($blockedFile not found)\n";
-	return 0;
-    }
-
-    if (! -e $errFile) {
-	print "  INVALID  ($errFile not found)\n";
-	return 0;
-    }
-
-    my $blockedCount = &countSeqs($blockedFile);
-    my $errCount = &countSeqs($errFile);
-    my $inputCount = &countSeqs($inputFile);
-    my $missing = $inputCount - ($blockedCount + $errCount);
-    if ($missing) {
-	print "  INVALID (in: $inputCount blocked: $blockedCount reject: $errCount diff: $missing)\n";
-	return 0;
-    }
-    print "  valid\n";
-    return 1;
 }
 
 sub validateBM {
