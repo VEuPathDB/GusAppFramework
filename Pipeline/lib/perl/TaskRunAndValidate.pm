@@ -42,7 +42,7 @@ use strict;
 use Carp;
 
 sub runRepeatMask {
-    my ($pipelineDir, $numnodes, $name, $time) = @_;
+    my ($pipelineDir, $numnodes, $name, $time,$queue) = @_;
     
     print "\nRunning repeatmask on $name\n";
 
@@ -62,7 +62,7 @@ sub runRepeatMask {
 	}
     }
     if (!$valid) {
-	&run($propFile, "$pipelineDir/logs/$name.mask.log", $numnodes, $time);
+	&run($propFile, "$pipelineDir/logs/$name.mask.log", $numnodes, $time, $queue);
 	$valid = &validateRM($inputFile, $resultFile, $errFile);
 	if  (!$valid) {
 	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
@@ -73,7 +73,7 @@ sub runRepeatMask {
 }
 
 sub runGenomeAlign {
-    my ($pipelineDir, $numnodes, $queryName, $subjectName, $time) = @_;
+    my ($pipelineDir, $numnodes, $queryName, $subjectName, $time, $queue) = @_;
     
     my $name = "$queryName-$subjectName";
     print "\nRunning alignment of $queryName against $name\n";
@@ -88,7 +88,7 @@ sub runGenomeAlign {
     # TODO: validate previous results
 
     if (!$valid) {
-	&run($propFile, $logFile, $numnodes, $time);
+	&run($propFile, $logFile, $numnodes, $time, $queue);
 	# TODO: validate results
     }
 
@@ -152,7 +152,7 @@ sub runMicerAlign {
 }
 
 sub runPfam {
-    my ($pipelineDir, $queryFile, $subjectFile, $numNodes, $time) = @_;
+    my ($pipelineDir, $queryFile, $subjectFile, $numNodes, $time, $queue) = @_;
 
     my $query = $queryFile;
     my $subject = $subjectFile;
@@ -165,14 +165,14 @@ sub runPfam {
     print "\nRunning alignment of $queryFile against $subjectFile\n";
 
     my $resultFile =
-        "$pipelineDir/pfam/$name/master/mainresult/hmmpfam.out";                                                                                                                                                     
+        "$pipelineDir/pfam/$name/master/mainresult/hmmpfam.out";
     my $propFile = "$pipelineDir/pfam/$name/input/controller.prop";
     my $logFile = "$pipelineDir/logs/$name.log";
 
     my $valid = 0;
-    # TODO: validate previous results                                                                                               
+    # TODO: validate previous results
     if (!$valid) {
-        &run($propFile, $logFile,$numNodes,$time);
+        &run($propFile, $logFile,$numNodes,$time,$queue);
         # TODO: validate results
     }
     return $valid;
@@ -201,11 +201,11 @@ sub validateBM {
 }
 
 sub runAndZip {
-  my ($propFile, $logFile, $resultFile, $numNodes, $time) = @_;
+  my ($propFile, $logFile, $resultFile, $numNodes, $time, $queue) = @_;
 
   my ($cmd, $status);
 
-  $cmd = "liniacsubmit $numNodes $time $propFile >& $logFile";
+  $cmd = "liniacsubmit $numNodes $time $propFile $queue >& $logFile";
 
   $status = system($cmd);
   &confess ("failed running '$cmd' with stderr:\n $!") if ($status >> 8);
@@ -218,11 +218,11 @@ sub runAndZip {
 }
 
 sub run {
-  my ($propFile, $logFile, $numNodes, $time) = @_;
+  my ($propFile, $logFile, $numNodes, $time, $queue) = @_;
 
   my ($cmd, $status);
 
-  $cmd = "liniacsubmit $numNodes $time $propFile >& $logFile";
+  $cmd = "liniacsubmit $numNodes $time $propFile $queue >& $logFile";
   $status = system($cmd);
 }
 
