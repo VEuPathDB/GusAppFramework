@@ -14,6 +14,7 @@ use FileHandle;
 use GUS::Model::DoTS::TandemRepeatFeature;
 use GUS::Model::DoTS::NALocation;
 use GUS::Model::DoTS::ExternalNASequence;
+use GUS::Model::DoTS::VirtualSequence;
 
 my $argsDeclaration =
 [
@@ -40,6 +41,13 @@ my $argsDeclaration =
 	     reqd  => 1,
 	     constraintFunc => undef,
 	   }),
+ enumArg({ descr => 'Table in which to find sequences: DoTS::ExternalNASequence or DoTS::VirtualSequence',
+           name  => 'seqTable',
+           isList    => 0,
+           reqd  => 1,
+           constraintFunc => undef,
+           enum => "DoTS::ExternalNASequence, DoTS::VirtualSequence",
+           }),
 ];
 
 my $purpose = <<PURPOSE;
@@ -174,6 +182,9 @@ sub run {
 sub _loadTandemRepeat {
   my ($self, $seq, $param, $dat, $expected, $dbReleaseId) = @_;
 
+  my ($table) = $self->getArg("seqTable");
+  $table = "GUS::Model::$table";
+
   my $dataHash = {};
   my @data = split(' ', $dat);
 
@@ -208,7 +219,7 @@ sub _loadTandemRepeat {
           consensus                      => $dataHash->{consensus},
         });
 
-  my $extNaSeq = GUS::Model::DoTS::ExternalNASequence->
+  my $extNaSeq = $table->
     new({'external_database_release_id'=>$dbReleaseId,
 	 'source_id'=>$seq
 	 });
