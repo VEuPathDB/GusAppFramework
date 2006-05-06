@@ -41,13 +41,13 @@ my $argsDeclaration =
 	     reqd  => 1,
 	     constraintFunc => undef,
 	   }),
- enumArg({ descr => 'Table in which to find sequences: DoTS::ExternalNASequence or DoTS::VirtualSequence',
-           name  => 'seqTable',
-           isList    => 0,
-           reqd  => 1,
-           constraintFunc => undef,
-           enum => "DoTS::ExternalNASequence, DoTS::VirtualSequence",
-           }),
+# enumArg({ descr => 'Table in which to find sequences: DoTS::ExternalNASequence or DoTS::VirtualSequence',
+#           name  => 'seqTable',
+#           isList    => 0,
+#           reqd  => 1,
+#           constraintFunc => undef,
+#           enum => "DoTS::ExternalNASequence, DoTS::VirtualSequence",
+#           }),
 ];
 
 my $purpose = <<PURPOSE;
@@ -182,8 +182,8 @@ sub run {
 sub _loadTandemRepeat {
   my ($self, $seq, $param, $dat, $expected, $dbReleaseId) = @_;
 
-  my ($table) = $self->getArg("seqTable");
-  $table = "GUS::Model::$table";
+  #my ($table) = $self->getArg("seqTable");
+  #$table = "GUS::Model::$table";
 
   my $dataHash = {};
   my @data = split(' ', $dat);
@@ -219,12 +219,18 @@ sub _loadTandemRepeat {
           consensus                      => $dataHash->{consensus},
         });
 
-  my $extNaSeq = $table->
-    new({'external_database_release_id'=>$dbReleaseId,
-	 'source_id'=>$seq
-	 });
+  my $seqArgs = {external_database_release_id => $dbReleaseId,
+                 source_id =>$seq};
 
-  $extNaSeq->retrieveFromDB();
+  my $extNaSeq = GUS::Model::DoTS::ExternalNASequence->new($seqArgs);
+
+  #Try to get a Virtual Sequence if there is no ExternalNASequence
+  if(!$extNaSeq->retrieveFromDB()) {
+    $extNaSeq = GUS::Model::DoTS::VirtualSequence->new($seqArgs);
+    if(!$extNaSeq->retrieveFromDB()) {
+      die "Cannot Retrieve NASequence with source_id $seq and extdbrel_id $dbReleaseId";
+    }
+  }
 
   $tandemRepeat->setParent($extNaSeq);
 
