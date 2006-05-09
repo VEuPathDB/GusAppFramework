@@ -36,7 +36,7 @@ package GUS::Pipeline::TaskRunAndValidate;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGeneTagAlign runMicerAlign runPfam); 
+@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGeneTagAlign runMicerAlign runPfam runTRNAscan); 
 
 use strict;
 use Carp;
@@ -168,6 +168,27 @@ sub runPfam {
         "$pipelineDir/pfam/$name/master/mainresult/hmmpfam.out";
     my $propFile = "$pipelineDir/pfam/$name/input/controller.prop";
     my $logFile = "$pipelineDir/logs/$name.log";
+
+    my $valid = 0;
+    # TODO: validate previous results
+    if (!$valid) {
+        &run($propFile, $logFile,$numNodes,$time,$queue);
+        # TODO: validate results
+    }
+    return $valid;
+}
+
+sub runTRNAscan {
+    my ($pipelineDir, $subjectFile, $numNodes, $time, $queue) = @_;
+
+    $subjectFile =~ s/\.\w+\b//;
+
+    print "\nRunning tRNAscan for $subjectFile\n";
+
+    my $resultFile =
+        "$pipelineDir/tRNAscan/$subjectFile/master/mainresult/trnascan.out";
+    my $propFile = "$pipelineDir/tRNAscan/$subjectFile/input/controller.prop";
+    my $logFile = "$pipelineDir/logs/$subjectFileTRNAscan.log";
 
     my $valid = 0;
     # TODO: validate previous results
