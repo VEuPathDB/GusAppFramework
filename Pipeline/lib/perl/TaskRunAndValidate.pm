@@ -188,7 +188,7 @@ sub runTRNAscan {
     my $resultFile =
         "$pipelineDir/tRNAscan/$subjectFile/master/mainresult/trnascan.out";
     my $propFile = "$pipelineDir/tRNAscan/$subjectFile/input/controller.prop";
-    my $logFile = "$pipelineDir/logs/$subjectFileTRNAscan.log";
+    my $logFile = "$pipelineDir/logs/${subjectFile}TRNAscan.log";
 
     my $valid = 0;
     # TODO: validate previous results
