@@ -96,6 +96,11 @@ The format looks like this:
 Each line has an identifier.  If you provide the --queryTableSrcIdCol argument then the identifier on the query line is understood to be a source id that exists in that column in the query table.  Otherwise, it must be numeric, and must be a primary key into the query table.
 
 A parallel logic applies to the lines showing subjects. 
+
+Example
+>querySourceId (# subjects)
+  SUM: subjectSourceId:score:pValue:minSubjectStart:maxSubjectEnd:minQueryStart:maxQueryEnd:numberOfMatches:totalMatchLength:numberIdentical:numberPositive:isReversed:readingFrame
+   HSP: subjectSourceId:numberIdentical:numberPositive:matchLength:score:pvalue:subjectStart:subjectEnd:queryStart:queryEnd:isReversed:readingFrame
 ",
            }),
 
