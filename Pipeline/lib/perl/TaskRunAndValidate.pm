@@ -186,8 +186,8 @@ sub runTRNAscan {
     print "\nRunning tRNAscan for $subjectFile\n";
 
     my $resultFile =
-        "$pipelineDir/tRNAscan/$subjectFile/master/mainresult/trnascan.out";
-    my $propFile = "$pipelineDir/tRNAscan/$subjectFile/input/controller.prop";
+        "$pipelineDir/trnascan/$subjectFile/master/mainresult/trnascan.out";
+    my $propFile = "$pipelineDir/trnascan/$subjectFile/input/controller.prop";
     my $logFile = "$pipelineDir/logs/${subjectFile}TRNAscan.log";
 
     my $valid = 0;
