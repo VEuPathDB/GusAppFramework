@@ -151,6 +151,57 @@ sub runMicerAlign {
     return $valid;
 }
 
+sub runSimilarity {
+  my ($pipelineDir, $queryname, $subjectname, $numNodes,$time,$queue) = @_;
+
+  my $name = "$queryname-$subjectname";
+
+  print "\nRunning blastsimilarity on $name\n";
+
+  my $resultFile = "$pipelineDir/similarity/$name/master/mainresult/blastSimilarity.out";
+
+  my $inputFile =  "$pipelineDir/seqfiles/$queryname.fsa";
+
+  my $propFile = "$pipelineDir/similarity/$name/input/controller.prop";
+
+  my $logFile = "$pipelineDir/logs/$name.sim.log";
+
+  my $valid =   &runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time,$queue);
+
+  return $valid;
+}
+
+sub runMatrixOrSimilarity {
+  my ($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time,$queue) = @_;
+
+  my $valid = 0;
+
+  if (-e $resultFile) {
+    print "  previous (unzipped) result found\n";
+    $valid = &validateBM($inputFile, $resultFile);
+    if (!$valid) {
+      print "  trying again...\n";
+    }
+  }
+  if (-e "${resultFile}.gz") {
+    print "  previous (zipped) result found\n";
+    $valid = &validateBM($inputFile, "${resultFile}.gz");
+    if (!$valid) {
+      print "  trying again...\n";
+      print "  unzipping ${resultFile}.gz\n";
+      my $cmd = "gunzip ${resultFile}.gz";
+      my $status = system($cmd);
+      die "failed running '$cmd' with stderr:\n $!" if ($status >> 8);
+    }
+  }
+  if (!$valid) {
+    &runAndZip($propFile,$logFile, $resultFile, $numNodes, $time,$queue);
+    my $valid = &validateBM($inputFile, "${resultFile}.gz");
+    if  (!$valid) {
+      print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
+    }
+  }
+}
 sub runPfam {
     my ($pipelineDir, $queryFile, $subjectFile, $numNodes, $time, $queue) = @_;
 
