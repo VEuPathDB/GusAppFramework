@@ -36,7 +36,7 @@ package GUS::Pipeline::TaskRunAndValidate;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGeneTagAlign runMicerAlign runPfam runTRNAscan); 
+@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGeneTagAlign runMicerAlign runPfam runTRNAscan runPsipred); 
 
 use strict;
 use Carp;
@@ -151,6 +151,26 @@ sub runMicerAlign {
     return $valid;
 }
 
+sub runPsipred {
+  my ($pipelineDir, $queryFile, $subjectFile, $numNodes, $time, $queue) = @_;
+
+  die "Build dir $pipelineDir doesn't exist" unless -d $pipelineDir;
+  my $name = "$queryFile-$subjectFile";
+
+  my $propFile = "$pipelineDir/psipred/$name/input/controller.prop";
+  die "PropFile $propFile doesn't exist" unless -e $propFile;
+
+  my $logFile = "$pipelineDir/psipred/$name/logs/$name.log";
+
+  print "\nRunning psipred on $name\n";
+
+  my $valid = 0;
+
+  &run($propFile, $logFile, $numNodes, $time, $queue);
+
+  return($valid);
+}
+
 sub runSimilarity {
   my ($pipelineDir, $queryname, $subjectname, $numNodes,$time,$queue) = @_;
 
@@ -202,6 +222,7 @@ sub runMatrixOrSimilarity {
     }
   }
 }
+
 sub runPfam {
     my ($pipelineDir, $queryFile, $subjectFile, $numNodes, $time, $queue) = @_;
 
@@ -218,7 +239,7 @@ sub runPfam {
     my $resultFile =
         "$pipelineDir/pfam/$name/master/mainresult/hmmpfam.out";
     my $propFile = "$pipelineDir/pfam/$name/input/controller.prop";
-    my $logFile = "$pipelineDir/logs/$name.log";
+    my $logFile = "$pipelineDir/$name.log";
 
     my $valid = 0;
     # TODO: validate previous results
