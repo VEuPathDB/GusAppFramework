@@ -160,7 +160,7 @@ sub runPsipred {
   my $propFile = "$pipelineDir/psipred/$name/input/controller.prop";
   die "PropFile $propFile doesn't exist" unless -e $propFile;
 
-  my $logFile = "$pipelineDir/psipred/$name/logs/$name.log";
+  my $logFile = "$pipelineDir/psipred/$name/$name.log";
 
   print "\nRunning psipred on $name\n";
 
