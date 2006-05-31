@@ -317,7 +317,21 @@ sub handleRestart {
 
   if ($restartAlgInvs && scalar(@$restartAlgInvs)) {
     my $restartStr = join(",", @$restartAlgInvs);
+
     my $query = "select distinct query_id from dots.Similarity where row_alg_invocation_id in ($restartStr)";
+
+    if ($self->getArg('queryTableSrcIdCol')) {
+      my $srcId = $self->getArg('queryTableSrcIdCol');
+      my $queryTable   = $self->{queryTable};
+
+      my $tableId = $self->className2TableId($queryTable);
+
+      my $pkName = $self->getAlgInvocation()->getTablePKFromTableId($tableId);
+
+      $queryTable =~ s/::/\./;
+      $query = "select distinct t.$srcId from dots.Similarity s, $queryTable t where s.row_alg_invocation_id in ($restartStr) and s.query_id = t.$pkName";
+    }
+
     $self->log("Restarting: Querying for the ids to ignore\n$query");
     my $stmt = $self->prepareAndExecute($query);
     while ( my($id) = $stmt->fetchrow_array()) {
