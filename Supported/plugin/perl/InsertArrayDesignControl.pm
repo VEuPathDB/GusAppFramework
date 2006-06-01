@@ -15,6 +15,7 @@
 #  
 # $Revision$ $Date$ $Author$
 # ----------------------------------------------------------
+
 package GUS::Supported::Plugin::InsertArrayDesignControl;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
