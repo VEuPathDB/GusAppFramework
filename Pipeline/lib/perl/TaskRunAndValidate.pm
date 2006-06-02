@@ -298,7 +298,7 @@ sub runAndZip {
 
   my ($cmd, $status);
 
-  $queue = "--q $queue" if ($queue);
+  $queue = "--q $queue" if ($queue !~ /--q/ || $queue !~ /--queue/);
 
   $cmd = "liniacsubmit $numNodes $time $propFile $queue >& $logFile";
 
@@ -317,7 +317,7 @@ sub run {
 
   my ($cmd, $status);
 
-  $queue = "--q $queue" if ($queue);
+  $queue = "--q $queue" if ($queue !~ /--q/ || $queue !~ /--queue/);
 
   $cmd = "liniacsubmit $numNodes $time $propFile $queue >& $logFile";
   $status = system($cmd);
