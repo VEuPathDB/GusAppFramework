@@ -160,14 +160,21 @@ sub runPsipred {
   my $propFile = "$pipelineDir/psipred/$name/input/controller.prop";
   die "PropFile $propFile doesn't exist" unless -e $propFile;
 
-  my $logFile = "$pipelineDir/psipred/$name/$name.log";
+  my $logFile = "$pipelineDir/logs/$name.log";
+
+  my $inputFile = "$pipelineDir/seqfiles/$queryFile";
+  die "queryFile $inputFile doesn't exist" unless -e $inputFile;
+
+  my $resultDir = "$pipelineDir/psipred/$name/master/mainresult";
 
   print "\nRunning psipred on $name\n";
 
-  my $valid = 0;
-
   &run($propFile, $logFile, $numNodes, $time, $queue);
 
+  my $valid = &validatePsipred($inputFile, $resultDir);
+  if  (!$valid) {
+    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
+  }
   return($valid);
 }
 
@@ -291,6 +298,30 @@ sub validateBM {
     }
     print "  valid\n";
     return 1;
+}
+
+sub validatePsipred {
+  my ($inputFile, $resultDir) = @_;
+
+  my $fileCount;
+  die "MainResult Directory $resultDir doesn't exist" unless -d $resultDir;
+
+  opendir(DIR, $resultDir) || die "Cannot open directory $resultDir for reading: $!";
+
+  while(readdir(DIR)) {
+    $fileCount++ if(/\.ss2$/);
+  }
+  closedir(DIR);
+
+  my $inputCount = &countSeqs($inputFile);
+  my $missing = $inputCount - $fileCount;
+
+  if ($missing) {
+    print "  INVALID (in: $inputCount result: $fileCount diff: $missing)\n";
+    return 0;
+  }
+  print "  valid\n";
+  return 1;
 }
 
 sub runAndZip {
