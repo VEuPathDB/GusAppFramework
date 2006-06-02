@@ -298,6 +298,8 @@ sub runAndZip {
 
   my ($cmd, $status);
 
+  $queue = "--q $queue" if ($queue);
+
   $cmd = "liniacsubmit $numNodes $time $propFile $queue >& $logFile";
 
   $status = system($cmd);
@@ -314,6 +316,8 @@ sub run {
   my ($propFile, $logFile, $numNodes, $time, $queue) = @_;
 
   my ($cmd, $status);
+
+  $queue = "--q $queue" if ($queue);
 
   $cmd = "liniacsubmit $numNodes $time $propFile $queue >& $logFile";
   $status = system($cmd);
