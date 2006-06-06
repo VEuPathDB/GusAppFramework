@@ -20,7 +20,7 @@ my $argsDeclaration =
 
    stringArg({name           => 'AlgorithmDescription',
               descr          => 'Unique Name for the Core::Algorithm',
-              reqd           => 1,
+              reqd           => 0,
               constraintFunc => undef,
               isList         => 0, }),
 
@@ -198,7 +198,6 @@ sub _getAlgorithmImplementation {
 
   my $algImp = GUS::Model::Core::AlgorithmImplementation->
     new({ VERSION => $algImpVersion });
-  $algImpCount++;
 
   $algImp->setParent($alg);
 
@@ -209,6 +208,8 @@ sub _getAlgorithmImplementation {
     $algImp->setExecutable($algImpExecutable);
     $algImp->setExecutableMd5($algImpExecutableMD5);
     $algImp->setDescription($algImpDescription);
+
+    $algImpCount++;
   }
 
   return($algImp);
