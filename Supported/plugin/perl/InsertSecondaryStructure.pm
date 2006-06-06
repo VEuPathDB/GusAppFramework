@@ -7,9 +7,12 @@ package GUS::Supported::Plugin::InsertSecondaryStructure;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;
+
 use GUS::PluginMgr::Plugin;
+
 use GUS::Model::DoTS::SecondaryStructure;
 use GUS::Model::DoTS::SecondaryStructureCall;
+
 use FileHandle;
 
   my $purposeBrief = "Load SAGE tag-count pairs from a file.";
@@ -61,9 +64,27 @@ my $argsDeclaration =
 
    integerArg({name           => 'predAlgInvocationId',
 	       descr          => '',
-	       reqd           => 1,
+	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0, }),
+
+   stringArg({name           => 'predAlgName',
+              descr          => 'The Core::Algorithm Name for the Prediction',
+              reqd           => 0,
+              constraintFunc => undef,
+              isList         => 0, }),
+
+   stringArg({name           => 'predAlgImpVersion',
+              descr          => 'The Core::AlgorithmImplementation Version for the Prediction',
+              reqd           => 0,
+              constraintFunc => undef,
+              isList         => 0, }),
+
+   stringArg({name           => 'predAlgInvStart',
+              descr          => 'The Core::AlgorithmInvocation StartTime for the Prediction (yyyy-mm-dd)',
+              reqd           => 0,
+              constraintFunc => undef,
+              isList         => 0, }),
 
    fileArg({name           => 'datafile',
 	    descr          => 'ss2 file. See Notes...',
@@ -129,6 +150,15 @@ sub run {
   my $aa_sequence_id = $self->getArg('aaSequenceId');
   my $pred_alg_invocation_id = $self->getArg('predAlgInvocationId');
   my $dirname = $self->getArg('directory');
+
+  my $algInvId = $self->getArg('predAlgInvocationId');
+  my $algName = $self->getArg('predAlgName');
+
+  if($algInvId && $algName) {
+    $self->userError("Must provide either predAlgInvocationId or predAlgName");
+  }
+
+  $algInvId = $self->getAlgInvocationId($algName) if(!$algInvId);
 
   if($dirname && (!$aa_sequence_id && !$datafile)) {
     opendir(DIR, $dirname) || die "Cannot open directory $dirname for reading";
@@ -212,6 +242,35 @@ sub makeSecondaryStructureCall {
   $call->setCallConfidence($calls);
 
   $sscCount++;
+}
+
+sub getAlgInvocationId {
+  my ($self, $algName) = @_;
+
+  if(!$algName) {
+    $self->userError("Must provied either a predAlgInvocationId or predAlgName");
+  }
+
+  my $algImpVersion = $self->getArg('predAlgImpVersion');
+  my $algInvStart = $self->getArg('predAlgInvStart');
+
+  my $sql = "select algorithm_invocation_id 
+             from Core.ALGORITHM a, Core.ALGORITHMIMPLEMENTATION imp, Core.ALGORITHMINVOCATION inv
+             where a.algorithm_id = imp.algorithm_id 
+              and imp.algorithm_implementation_id = inv.algorithm_implementation_id
+              and a.name = '$algName'
+              and imp.version = '$algImpVersion'
+              and inv.start_time = to_date('$algInvStart', 'yyyy-mm-dd')";
+
+  my @algInvIds = $self->sqlAsArray(Sql => $sql);
+
+  if(scalar(@algInvIds) > 1) {
+    $self->userError("Many AlgorithmInvocation rows Found with start=$algInvStart, version=$algImpVersion, and name=$algName"); 
+  }
+  if(!$algInvIds[0]) {
+    $self->userError("No AlgorithmInvocation row Found with start=$algInvStart, version=$algImpVersion, and name=$algName"); 
+  }
+  return($algInvIds[0]);
 }
 
 1;
