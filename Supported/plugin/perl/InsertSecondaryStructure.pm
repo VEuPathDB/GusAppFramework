@@ -226,6 +226,8 @@ sub _processFile {
 
   $secondaryStructure->submit();
   $ssCount++;
+
+  $self->undefPointerCache();
 }
 
 
