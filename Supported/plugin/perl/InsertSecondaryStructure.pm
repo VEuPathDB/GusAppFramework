@@ -151,14 +151,13 @@ sub run {
   my $pred_alg_invocation_id = $self->getArg('predAlgInvocationId');
   my $dirname = $self->getArg('directory');
 
-  my $algInvId = $self->getArg('predAlgInvocationId');
   my $algName = $self->getArg('predAlgName');
 
-  if($algInvId && $algName) {
+  if($pred_alg_invocation_id && $algName) {
     $self->userError("Must provide either predAlgInvocationId or predAlgName");
   }
 
-  $algInvId = $self->getAlgInvocationId($algName) if(!$algInvId);
+  $pred_alg_invocation_id = $self->getAlgInvocationId($algName) if(!$pred_alg_invocation_id);
 
   if($dirname && (!$aa_sequence_id && !$datafile)) {
     opendir(DIR, $dirname) || die "Cannot open directory $dirname for reading";
