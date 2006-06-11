@@ -176,7 +176,7 @@ sub run {
         $self->log("WARNING:  No aa_sequence_id found for source_id $sourceId");
         next;
       }
-      $self->_processFile($fn, $aaSeqs[0], $pred_alg_invocation_id);
+      $self->_processFile("$dirname/$fn", $aaSeqs[0], $pred_alg_invocation_id);
     }
     closedir(DIR);
   }
