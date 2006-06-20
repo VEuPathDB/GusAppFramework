@@ -34,7 +34,7 @@ sub Pod2Text { GUS::PluginMgr::Plugin::Pod2Text(@_) }
 
 sub new {
    my $Class = shift;
-   my $Args  = shift || {};
+   my $Args  = ref $_[0] ? shift : {@_} ;
 
    my $self = bless {}, $Class;
 
@@ -61,6 +61,23 @@ sub setPlugin               { $_[0]->{'Plugin'                      } = $_[1]; $
 
 # ----------------------------------------------------------------------
 
+# -------------------------------- Notes -------------------------------
+
+# The default note method returns the source code of the method which
+# should contain pod text.
+
+sub Notes {
+   my $Self = shift;
+
+   my $Rv;
+
+   if (my $_f = $INC{ref($Self). '.pm'}) {
+      $Rv = `cat $_f`;
+   }
+
+   return $Rv
+}
+
 # ----------------------------------------------------------------------
 
 sub AUTOLOAD {
@@ -80,7 +97,7 @@ sub AUTOLOAD {
             else {
                die join("\t",
                         ref $Self,
-                        "Request for an unsupported method '$method' ($AUTOLOAD)"
+                        "Request for a method '$method' ($AUTOLOAD) that a plugin can not do."
                        );
             }
          }
