@@ -1,237 +1,309 @@
+
 package GUS::Community::Plugin::LoadEPCR;
 
+=pod
 
-@ISA = qw(GUS::PluginMgr::Plugin);
+=head1 Purpose Brief
+
+Insert new EPCR results in to GUS from a file.
+
+=head1 Purpose
+
+This plugin reads through a file in the output format of me-PCR. It
+parses each line and inserts a row for an EPCR result.  See Notes for
+the format of the file.  Sequence identifiers are assumed to be
+C<source_ids> and are loooked up on the fly as the file is processed.
+
+=head1 How to Restart
+
+Use the C<--startLine> option to indicate how many lines of the input
+file to skip.
+
+=head1 Failure Cases
+
+A row will not be inserted if a matching sequence can not be found for
+either the target or primer pair source ids (in the proper table with
+the proper external_database_release_id(s)).
+
+=head1 Notes
+
+The data file should be in tab-delimited format.  The columns should
+be in the following order:
+
+=over 4
+
+=item seq_id
+
+  source id of the target sequences, e.g., the chromosome name for
+  genomic sequence.
+
+=item location
+
+  Location on the target in FROM..TO format.
+
+=item primer pair source_id
+
+  This will be used to find the na_sequence_id for the primer pair
+  which will then be used as the map_id in the C<DoTS.EPCR> table.
+
+=item orientation
+
+  Orientation of primer pair on the target sequence.  Either '(-)' or
+  '(+)' format.
+
+=back
+
+=cut
+
+# ========================================================================
+# ----------------------------- Declarations -----------------------------
+# ========================================================================
+
 use strict;
-use GUS::Model::DoTS::EPCR;
-use GUS::PluginMgr::Plugin;
-use GUS::PluginMgr::PluginUtilities;
+use vars qw( @ISA );
+@ISA = qw(GUS::PluginMgr::Plugin);
+
 use FileHandle;
 use DirHandle;
 
+use GUS::Model::DoTS::EPCR;
+use GUS::PluginMgr::Plugin;
+use GUS::PluginMgr::PluginUtilities;
+
+# ========================================================================
+# --------------------------- Required Methods ---------------------------
+# ========================================================================
+
+# --------------------------------- new ----------------------------------
+
 sub new {
-  my ($class) = @_;
+   my ($Class) = @_;
 
-  my $self = {};
-  bless($self,$class);
+   my $self = bless {}, $Class;
 
+   $self->initialize
+   ({ requiredDbVersion    => '3.5',
+      cvsRevision          => "\$ Revision: 3889 \$ a",
+      cvsTag               => "\$ Name: \$",
+      name                 => ref($self),
 
+      revisionNotes        => '',
+      revisionNotes        => 'code cleanup',
 
-  my $purposeBrief = 'insert new Primer pairs using a  datafile';
+      documentation        => 
+      { $self->extractDocumentationFromMyPod(),
+        tablesAffected   => [ ['DoTS::EPCR','One row for a primer pair EPCR result']
+                            ],
+        tablesDependedOn => [ ],
+      },
 
-  my $purpose = <<PLUGIN_PURPOSE;
-This plugin parses and inserts a row for an EPCR result.  It uses a datafile in specified format, see NOTES.
-PLUGIN_PURPOSE
+      argsDeclaration    =>
+      [ fileArg
+        ({name           => 'epcrFile',
+          reqd           => 1,
+          descr          => 'File name to load data from',
+          constraintFunc => undef,
+          mustExist      => 1,
+          isList         => 0,
+          format         => 'see NOTES for requirements',
+         }),
 
-  my $tablesAffected = 
-    [['DoTS::EPCR','One row for a primer pair EPCR result']
-    ];
+        fileArg
+        ({name           => 'logFile',
+          reqd           => 0,
+          descr          => 'log progress to this file',
+          constraintFunc => undef,
+          mustExist      => 0,
+          isList         => 0,
+          format         => 'inserted info?'
+         }),
 
-  my $tablesDependedOn =
-    [
-    ];
+        integerArg
+        ({name           => 'genomeXdbrId',
+          reqd           => 1,
+          descr          => 'external_database_release_id for genome and genome version used for epcr target',
+          constraintFunc => undef,
+          isList         => 0
+         }),
 
-  my $howToRestart = <<PLUGIN_RESTART;
-PLUGIN_RESTART
+        tableNameArg
+        ({name           => 'genomeSubclassView',
+          descr          => 'subclass view for (genome) target sequences',
+          reqd           => 0,
+          default        => 'DoTS::VirtualSequence',
+          constraintFunc => undef,
+          isList         => 0
+         }),
 
-  my $failureCases = <<PLUGIN_FAILURE_CASES;
-PLUGIN_FAILURE_CASES
+        stringArg
+        ({ name           => 'primerPairXdbrIds',
+           reqd           => 1,
+           descr          => 'list of external_database_release_ids for primer pairs',
+           constraintFunc => undef,
+           isList         => 1,
+         }),
 
-my $notes = <<PLUGIN_NOTES;
-=head2 <data_file>
-The data file should be in tab-delimited format.  The columns should be in the following order:
-seq_id: chromosome
-location: on chromosome
-map_id: id in maptableid
-source_id
-order: orientation on chromosome
+        tableNameArg
+        ({name           => 'primerPairSubclassView',
+          descr          => 'Subclass view for primer pairs',
+          reqd           => 0,
+          default        => 'DoTS::VirtualSequence',
+          constraintFunc => undef,
+          isList         => 0
+         }),
 
-PLUGIN_NOTES
+        integerArg
+        ({name           => 'testNumber',
+          reqd           => 0,
+          descr          => 'number of lines to process when testing',
+          constraintFunc => undef,
+          isList         => 0
+         }),
 
-  my $documentation = { purpose=>$purpose,
-			purposeBrief=>$purposeBrief,
-			tablesAffected=>$tablesAffected,
-			tablesDependedOn=>$tablesDependedOn,
-			howToRestart=>$howToRestart,
-			failureCases=>$failureCases,
-			notes=>$notes
-		      };
+        integerArg
+        ({name           => 'startLine',
+          reqd           => 0,
+          descr          => 'Line number to start entering from',
+          constraintFunc => undef,
+          isList          => 0,
+          default         => 0,
+         }),
+      ]
+    });
 
-
-  my $argsDeclaration =
-    [
-     #stringArg({name => 'idcol',
-		#descr => 'Name of column from NASequenceImp to search for external ids',
-		#reqd => 1,	
-		#constraintFunc => undef,
-		#isList => 0,
-     #}),
-     fileArg({name => 'file',
-	      reqd => 1,
-	      descr => 'File name to load data from',
-	      constraintFunc => undef,
-	      mustExist =>1,
-	      isList => 0,
-	      format => 'see NOTES for requirements',
-     }),
-     integerArg({name => 'externalDatabaseReleaseId',
-		 reqd => 1,
-		 descr => 'external_database_release_id for genome and genome version used for epcr',
-		 constraintFunc => undef,
-		 isList => 0
-     }),
-     stringArg({name => 'dir',
-		reqd => 1,	
-		descr => 'Working directory',
-		constraintFunc => undef,
-		isList => 0
-     }),
-     fileArg({name => 'log',
-	      reqd => 0,
-	      descr => 'Log file location (full path).',
-	      constraintFunc => undef,
-	      mustExist =>0,
-	      isList => 0,
-	      format => 'inserted info?'
-     }),
-     integerArg({name => 'maptableid',
-		   reqd => 1,
-		   descr => 'Id for mapping table, i.e. 245 for DoTS::VirtualSequence ',
-		   constraintFunc => undef,
-		   isList => 0
-     }),
-     tableNameArg({name => 'seqsubclassview',
-		   descr =>  'Subclass view: Assembly for DoTS, ExternalNASequence or VirtualSequence for others',
-		   reqd => 1,
-		   constraintFunc => undef,
-		   isList => 0
-     }),
-     integerArg({name => 'testnumber',
-		 reqd => 0,
-		 descr => 'number of iterations for testing',
-		 constraintFunc => undef,
-		 isList => 0
-     }),
-     integerArg({name => 'start',
-		 reqd => 0,
-		 descr => 'Line number to start entering from',
-		 constraintFunc => undef,
-		 isList => 0
-     }),
-    ];
-
-  $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 3889 $', # cvs fills this in!
-		     name => ref($self),
-		     revisionNotes => 'make consistent with GUS 3.5',
-		     argsDeclaration => $argsDeclaration,
-		     documentation => $documentation
-		    });
-
-
-  return $self;
+   return $self;
 }
 
-my $debug = 0;
+# --------------------------------- run ----------------------------------
 
 sub run {
-	my $self   = shift;
-	my $args = $self->getArgs;
-	my $algoInvo = $self->getAlgInvocation;
+   my $Self     = shift;
 
-  print $args->{'commit'} ? "***COMMIT ON***\n" : "***COMMIT TURNED OFF***\n";
-  print "Testing on $args->{'testnumber'}\n" if $args->{'testnumber'};
+   # ------------- open files and get easy access to variables --------------
 
-	############################################################
-	# Put loop here...remember to undefPointerCache()!
-	############################################################
-	my ($fh,$dir,$file,$count,$log,$maptableid,$is_reversed,$extDbRelId);
-	#$idcol = $args->{ idcol };
-	$dir = $args->{ dir };
-	$file = $args->{ file };
-	$fh = new FileHandle("$file", "<") || die "File $dir$file not open";
-	$log = new FileHandle("$args->{ log }", ">") || die "Log not open";
-        $maptableid = $args->{maptableid};
-	my ($space, $subclassView) = split(/::/,$args->{seqsubclassview});	
+   my $epcr_f       = $Self->getArg('epcrFile');
+   my $epcr_fh      = FileHandle->new("<$epcr_f") || die "File $epcr_f not opened: $!";
 
-	my $oracleName = $self->className2oracleName($args->{seqsubclassview});
-	$extDbRelId = $args->{externalDatabaseReleaseId};	
-	while (my $l = $fh->getline()) {
-		$count++;
+   my $log_f        = $Self->getArg('logFile');
+   my $log_fh       = FileHandle->new(">$log_f") || die "File '$log_f' not opened: $!";
 
-		## Start seq_id; parese file until it is reached
-		next if (defined $args->{ start } && $args->{ start } > $count);
+   my $genomeSv     = $Self->className2oracleName($Self->getArg('genomeSubclassView'));
+   my $genomeXdbrId = $Self->getArg('genomeXdbrId');
 
-		## Only interested sequence id, location, position, and map id 
-		#my ($seq_id, $loc, $order, $map_id) = split(/\s+/,$l);  #old version of plugin
-		my ($seq_id, $loc, $map_id, $source_id, $order) = split(/\s+/,$l); 
-		$order =~ s/\(|\)//g;
-                if ($order eq "+")
-		{
-		$is_reversed = 0;
-		}
-		else {
-		$is_reversed = 1;
-		}
-	
-		## Split location into start and stop
-		my @locs = split /\.\./, $loc;
-                
+   my $ppSv         = $Self->className2oracleName($Self->getArg('primerPairSubclassView'));
+   my $ppXdbrIds    = join(',', @{$Self->getArg('primerPairXdbrIds')});
+   my $mapTableId   = $Self->className2tableId($ppSv);
 
-		## Build entry
-		my $sgm = GUS::Model::DoTS::EPCR->new( {'start_pos' => $locs[0], 'stop_pos' => $locs[1]});
-			$sgm->setIsReversed($is_reversed);
-			$sgm->setMapId($map_id);
-		
-		## Grab na_sequence_id
-		my $naid;
-		$seq_id =~ s/^DT\.//;
-		$seq_id="'".$seq_id."'";
-		# get na_sequence_id from seq_subclass_view
+   # line counter
+   my $lines_n      = 0;
 
-		my $sql = qq[SELECT distinct sv.na_sequence_id FROM $oracleName sv
-			     WHERE sv.external_database_release_id  = $extDbRelId
-			     AND sv.source_id = $seq_id];
+   # --------- SQL statement handles for looking stuff up as we go ----------
 
+   # na_sequence_id for target sequence
+   my $naid_sh = $Self->getQueryHandle()->prepare(<<ChromosomeSql);
+     SELECT distinct sv.na_sequence_id
+     FROM   $genomeSv sv
+		 WHERE  sv.source_id = ?
+     AND    sv.external_database_release_id = $genomeXdbrId
+ChromosomeSql
 
-		my @na_seq_id = @{$self->sql_get_as_array($sql)};
-		$naid = $na_seq_id[0];
+   # na_sequence_id for primer pair
+   my $map_sh  = $Self->getQueryHandle()->prepare(<<MapIdSql);
+     SELECT na_sequence_id
+     FROM   $ppSv sv
+     WHERE  sv.source_id                    = ?
+     AND    sv.external_database_release_id in ($ppXdbrIds)
+MapIdSql
 
+   # -------------------------- file reading loop ---------------------------
 
-		if (defined $naid){
-			$sgm->setNaSequenceId($naid);
-		}else {
-			$log->print("No na_seq_id: $l\n");
-			$algoInvo->undefPointerCache();
-			next;
-		}
-                $sgm->setMapTableId($maptableid);
-		$sgm->setSeqSubclassView($subclassView);
+   while (<$epcr_fh>) {
 
-		## Submit entry
-		$log->print("SUBMITTED: $maptableid\t$map_id\t$is_reversed\t$locs[0]\t$locs[1]\t$naid\t$count\n");
-		$sgm->submit();
+      # skip lines until we reach the part we want to process.
+      $lines_n++;
+      next if $lines_n < $Self->getArg('startLine');
 
-		$algoInvo->undefPointerCache();
-		last if (defined $args->{testnumber} && $count >= $args->{testnumber});
-		print STDERR "ENTERED: $count \n" if ($count % 1000 == 0);
-	} #end while()
+      # assume we'll be ok.
+      my $error_b = 0;
 
-	print STDERR "ENTERED: $count\n";
-	return "Entered $count.";
+      # parse line
+      my @cols = split /\s+/;
+
+      my ( $seq_id, $loc, $source_id, $orientation ) = @cols;
+      my $is_reversed_b    = $orientation eq '(-)' ? 1 : 0;
+      my @locs             = split /\.\./, $loc;
+
+      # get the map id for the primer pair.
+      my ($map_id)         = $Self->sqlAsArray( Handle => $map_sh,  Bind => [ $source_id ]);
+
+      # check for DTs, but otherwise look this up.
+      my $na_sequence_id;
+      if ($seq_id =~ /^DT\.(\d+)$/) {
+         $na_sequence_id = $1;
+      }
+
+      else {
+         ($na_sequence_id) = $Self->sqlAsArray( Handle => $naid_sh, Bind => [ $seq_id ]);
+      }
+
+      # error checking
+      if (!defined $na_sequence_id) {
+         $Self->log('ERROR', $lines_n, 'bad sequence source_id', $seq_id);
+         $error_b = 1;
+      }
+
+      if (!defined $map_id) {
+         $Self->log('ERROR', $lines_n, 'bad tile source_id', $source_id);
+         $error_b = 1;
+      }
+
+      # proceed if no errors.
+      if (!$error_b) {
+         my %_epcr = ( map_table_id      => $mapTableId,
+                       map_id            => $map_id,
+                       na_sequence_id    => $na_sequence_id,
+                       seq_subclass_view => $ppSv,
+                       start_pos         => $locs[0],
+                       stop_pos          => $locs[1],
+                       is_reversed       => $is_reversed_b,
+                     );
+         print $log_fh join("\t", 'SUBMITTED', $lines_n,
+                            map { $_epcr{$_} } sort keys %_epcr
+                           ), "\n";
+
+         my $_epcr = GUS::Model::DoTS::EPCR->new(\%_epcr);
+         $_epcr->submit();
+
+         $Self->undefPointerCache();
+      }
+
+      last if (defined $Self->getArg('testNumber') && $lines_n >= $Self->getArg('testNumber'));
+
+      $Self->log('ENTERED', $lines_n) if ($lines_n % 1000 == 0);
+   } #end while()
+
+   $Self->log('ENTERED', $lines_n);
+
+   return "Entered $lines_n.";
 }
 
-
+# ========================================================================
+# ---------------------------- End of Package ----------------------------
+# ========================================================================
 
 1;
 
 __END__
 
 =pod
-=head1 Description
-B<LoadEPCR> - Parses epcr output files for EPCR table in GUS. No notion of updates currently
 
-=head1 Purpose
-Parses epcr output files for EPCR table in GUS. No notion of updates currently
+=head1 Obsoleted Arguments
+
+        stringArg({name => 'dir',
+                   reqd => 1,	
+                   descr => 'Working directory',
+                   constraintFunc => undef,
+                   isList => 0
+                  }),
 
 =cut
