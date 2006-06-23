@@ -98,6 +98,14 @@ sub new {
          }),
 
         stringArg
+        ({ name    => 'source_id_value',
+           reqd    => 0,
+           descr   => 'use this source id; should be only one sequence in the --fasta_file',
+           isList  => 0,
+           constraintFunc => undef,
+         }),
+
+        stringArg
         ({ name    => 'source_id_regex',
            reqd    => 0,
            descr   => 'Regular expression for the parsing of source ids from FASTA headers.',
@@ -136,6 +144,7 @@ sub run {
    my $fileList = $cla->{'file_list'};
    my @fastaFiles = &getFastaFilesArray($fastaFiles, $fileList);
    my $extDbRelId = $cla->{'external_database_release_id'};
+   my $srcid_value = $cla->{'source_id_value'};
    my $srcid_regex = $cla->{'source_id_regex'};
    my $srcid_lookup_table = $cla->{'source_id_lookup_table'};
 
@@ -183,7 +192,20 @@ sub run {
             }
 		
             $defline = $line;
-            if ($line =~ /$srcid_regex/) {
+
+            # use fixed source id
+            if (defined $srcid_value) {
+               $srcId = $srcid_value;
+               $naSeqId = &lookupNASeq($seqLookup, $srcId);
+               die "Unable to find $srcId" if (!defined($naSeqId));
+		    
+               $charsWritten = 0;
+               $charsBuffered = 0;
+               $seqBuffer = '';
+            }
+
+            # parse from defline
+            elsif ($line =~ /$srcid_regex/) {
                $srcId = $1;
 		    
                # Look up this sequence using the provided SQL statement
