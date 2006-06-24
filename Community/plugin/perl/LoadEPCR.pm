@@ -83,7 +83,7 @@ sub new {
 
    $self->initialize
    ({ requiredDbVersion    => '3.5',
-      cvsRevision          => "\$ Revision: 3889 \$",
+      cvsRevision          => "\$ Revision: 4885 \$",
       cvsTag               => "\$ Name: \$",
       name                 => ref($self),
 
@@ -188,12 +188,13 @@ sub run {
    my $log_f        = $Self->getArg('logFile');
    my $log_fh       = FileHandle->new(">$log_f") || die "File '$log_f' not opened: $!";
 
-   my $genomeSv     = $Self->className2oracleName($Self->getArg('genomeSubclassView'));
+   my $genomeSv     = $Self->getArg('genomeSubclassView');  $genomeSv =~ s/::/./;
    my $genomeXdbrId = $Self->getArg('genomeXdbrId');
 
-   my $ppSv         = $Self->className2oracleName($Self->getArg('primerPairSubclassView'));
+   my $ppSv         = $Self->getArg('primerPairSubclassView');
    my $ppXdbrIds    = join(',', @{$Self->getArg('primerPairXdbrIds')});
    my $mapTableId   = $Self->className2tableId($ppSv);
+   $ppSv =~ s/::/./;
 
    # line counter
    my $lines_n      = 0;
@@ -201,20 +202,14 @@ sub run {
    # --------- SQL statement handles for looking stuff up as we go ----------
 
    # na_sequence_id for target sequence
-   my $naid_sh = $Self->getQueryHandle()->prepare(<<ChromosomeSql);
-     SELECT distinct sv.na_sequence_id
-     FROM   $genomeSv sv
-		 WHERE  sv.source_id = ?
-     AND    sv.external_database_release_id = $genomeXdbrId
-ChromosomeSql
+   my $naid_sql = "SELECT distinct sv.na_sequence_id FROM $genomeSv sv WHERE sv.source_id = ? AND sv.external_database_release_id = $genomeXdbrId";
+   $Self->log('SQL', 'TargetLookup', $naid_sql);
+   my $naid_sh = $Self->getQueryHandle()->prepare($naid_sql);
 
    # na_sequence_id for primer pair
-   my $map_sh  = $Self->getQueryHandle()->prepare(<<MapIdSql);
-     SELECT na_sequence_id
-     FROM   $ppSv sv
-     WHERE  sv.source_id                    = ?
-     AND    sv.external_database_release_id in ($ppXdbrIds)
-MapIdSql
+   my $map_sql = "SELECT na_sequence_id FROM $ppSv sv WHERE sv.source_id = ? AND sv.external_database_release_id in ($ppXdbrIds)";
+   $Self->log('SQL', 'PrimerLookup', $map_sql);
+   my $map_sh  = $Self->getQueryHandle()->prepare($map_sql);
 
    # -------------------------- file reading loop ---------------------------
 
