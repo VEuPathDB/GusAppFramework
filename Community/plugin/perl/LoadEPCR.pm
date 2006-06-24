@@ -92,9 +92,10 @@ sub new {
 
       documentation        => 
       { $self->extractDocumentationFromMyPod(),
-        tablesAffected   => [ ['DoTS::EPCR','One row for a primer pair EPCR result']
+        tablesAffected   => [ [ 'DoTS::EPCR','One row for a primer pair EPCR result' ]
                             ],
-        tablesDependedOn => [ ],
+        tablesDependedOn => [ [ 'DoTS::NaSequence', 'look for source ids in (views on) this table' ],
+                            ],
       },
 
       argsDeclaration    =>
