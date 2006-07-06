@@ -50,7 +50,7 @@ score.  In the example above, where i=1, the 1st character
 of the C call is 8, the 1st character of the H call is 0,
 and the 1st character of the E call is 1.
 
-Either the directory arg must be provided OR BOTH aaSequenceId and datafile.  
+Either the directory arg must be provided OR BOTH aaSequenceId and datafile.
 PLUGIN_NOTES
 
 my $argsDeclaration =
@@ -112,6 +112,12 @@ C is the highest-confidence secondary structure call
 	    format         => 'The file names in this directory MUST be in the format sourceId.ss2',
             constraintFunc => undef,
 	    isList         => 0, }),
+
+   booleanArg({name => 'setPercentages',
+	       descr => 'Calculate percent-coverage of each secondary structure call',
+	       constraintFunc => undef,
+	       reqd => 0,
+	      }),
   ];
 
 my $documentation = { purpose          => $purpose,
@@ -125,6 +131,7 @@ my $documentation = { purpose          => $purpose,
 
 my $ssCount;
 my $sscCount;
+my $setPercentages;
 
 sub new {
   my ($class) = @_;
@@ -150,6 +157,7 @@ sub run {
   my $aa_sequence_id = $self->getArg('aaSequenceId');
   my $pred_alg_invocation_id = $self->getArg('predAlgInvocationId');
   my $dirname = $self->getArg('directory');
+  my $setPercentages = $self->getArg('setPercentages');
 
   my $algName = $self->getArg('predAlgName');
 
@@ -196,7 +204,9 @@ sub _processFile {
     die ("Can't open datafile $datafile");
   }
 
-  my ($cCalls, $hCalls, $eCalls);
+  my ($cCalls, $hCalls, $eCalls,
+      $cConf, $hConf, $eConf,
+      $cCount, $hCount, $eCount, aaCount);
 
   while (<$fh>) {
     chomp;
@@ -204,9 +214,23 @@ sub _processFile {
     next if(!$_);
     next if(/^#/);
 
-    $cCalls .= substr($_, 13,1);
-    $hCalls .= substr($_, 20,1);
-    $eCalls .= substr($_, 27,1);
+    aaCount++;
+
+    $cConf = substr($_, 13, 5);
+    $hConf = substr($_, 20, 5);
+    $eConf = substr($_, 27, 5);
+
+    $cCalls .= substr($cConf, 1, 1);
+    $hCalls .= substr($hConf, 1, 1);
+    $eCalls .= substr($eConf, 1, 1);
+
+    if ($cConf > $hConf && $cConf > $eConf) {
+       $cCount++;
+     } elsif ($hConf > $eConf) {
+       $hCount++;
+     } else {
+       $eCount++;
+     }
   }
 
   $fh->close();
@@ -220,9 +244,13 @@ sub _processFile {
       pred_alg_invocation_id => $pred_alg_invocation_id,
   });
 
-  makeSecondaryStructureCall($secondaryStructure, 'C', $cCalls);
-  makeSecondaryStructureCall($secondaryStructure, 'H', $hCalls);
-  makeSecondaryStructureCall($secondaryStructure, 'E', $eCalls);
+  my $cPct = $cCount * 100 / $aaCount;
+  my $hPct = $hCount * 100 / $aaCount;
+  my $ePct = $eCount * 100 / $aaCount;
+
+  makeSecondaryStructureCall($secondaryStructure, 'C', $cCalls, $cPct);
+  makeSecondaryStructureCall($secondaryStructure, 'H', $hCalls, $hPct);
+  makeSecondaryStructureCall($secondaryStructure, 'E', $eCalls, $ePct);
 
   $secondaryStructure->submit();
   $ssCount++;
@@ -233,7 +261,7 @@ sub _processFile {
 
 sub makeSecondaryStructureCall {
 
-  my ($secondaryStructure, $structureType, $calls) = @_;
+  my ($secondaryStructure, $structureType, $calls, $pct) = @_;
 
   my $call = GUS::Model::DoTS::SecondaryStructureCall->new({
       structure_type => $structureType,
@@ -241,6 +269,10 @@ sub makeSecondaryStructureCall {
 
   $call->setParent($secondaryStructure);
   $call->setCallConfidence($calls);
+
+  if (setPercentages) {
+    $call->setPercentage($pct);
+  }
 
   $sscCount++;
 }
