@@ -270,7 +270,7 @@ sub makeSecondaryStructureCall {
   $call->setParent($secondaryStructure);
   $call->setCallConfidence($calls);
 
-  if (setPercentages) {
+  if ($setPercentages) {
     $call->setPercentage($pct);
   }
 
