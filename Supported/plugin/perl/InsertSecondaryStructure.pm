@@ -206,7 +206,7 @@ sub _processFile {
 
   my ($cCalls, $hCalls, $eCalls,
       $cConf, $hConf, $eConf,
-      $cCount, $hCount, $eCount, aaCount);
+      $cCount, $hCount, $eCount, $aaCount);
 
   while (<$fh>) {
     chomp;
