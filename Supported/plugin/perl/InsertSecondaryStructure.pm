@@ -214,7 +214,7 @@ sub _processFile {
     next if(!$_);
     next if(/^#/);
 
-    aaCount++;
+    $aaCount++;
 
     $cConf = substr($_, 13, 5);
     $hConf = substr($_, 20, 5);
