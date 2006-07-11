@@ -220,9 +220,9 @@ sub _processFile {
     $hConf = substr($_, 20, 5);
     $eConf = substr($_, 27, 5);
 
-    $cCalls .= substr($cConf, 1, 1);
-    $hCalls .= substr($hConf, 1, 1);
-    $eCalls .= substr($eConf, 1, 1);
+    $cCalls = substr($cConf, 0, 1);
+    $hCalls = substr($hConf, 0, 1);
+    $eCalls = substr($eConf, 0, 1);
 
     if ($cConf > $hConf && $cConf > $eConf) {
        $cCount++;
