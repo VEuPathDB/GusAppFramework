@@ -247,7 +247,7 @@ sub new {
   bless($self,$class);
 
   $self->initialize({requiredDbVersion => 3.5,
-                     cvsRevision       => '$Revision: 1 $',
+                     cvsRevision       => '$Revision$',
                      name              => ref($self),
                      argsDeclaration   => $argsDeclaration,
                      documentation     => $documentation
@@ -296,7 +296,9 @@ sub run {
 
   $self->_relateAcquisitionsAndQuantifications();
 
-  return("Finished...");
+  my $summaryString = $self->_getSummary();
+
+  return($summaryString);
 
 }
 
@@ -895,6 +897,29 @@ sub _isIncluded {
       return(1) if(/$val/i);
   }
   return(0);
+}
+
+# ----------------------------------------------------------------------
+
+sub _getSummary {
+  my ($self) = @_;
+
+  my @tables = $self->undoTables();
+  my $algInvoc = $self->getAlgInvocation();
+  my $algInvocId = $algInvoc->getId();
+
+  my @counts;
+
+  foreach $t (@tables) {
+    my ($count) = $self->sqlAsArray( Sql => "select count(*) from $t where row_alg_invocation_id = $algInvocId" );
+
+    $count = 0 unless($count);
+    push(@counts, $count);
+  }
+
+  my $rv = "Tables:  " . join(',', @tables) . " Inserted rows:  " . join(',', @counts);
+
+  return($rv);
 }
 
 # ----------------------------------------------------------------------
