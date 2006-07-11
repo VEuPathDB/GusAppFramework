@@ -910,7 +910,7 @@ sub _getSummary {
 
   my @counts;
 
-  foreach $t (@tables) {
+  foreach my $t (@tables) {
     my ($count) = $self->sqlAsArray( Sql => "select count(*) from $t where row_alg_invocation_id = $algInvocId" );
 
     $count = 0 unless($count);
