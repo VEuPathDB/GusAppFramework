@@ -237,6 +237,13 @@ my $argsDeclaration =
                isList => 0
               }),
 
+   booleanArg ({name => 'RelateQuantifications',
+                descr => 'Acquisitions are related automatically... see notes ',
+                reqd => 0,
+                default => 0
+               }),
+
+
                        ];
 
 # ----------------------------------------------------------------------
@@ -290,16 +297,13 @@ sub run {
     my $assay = $self->_makeAssay(\%data, $study);
     $assay->submit();
 
+    $self->_relateAcquisitionsAndQuantifications(\%data, $assay);
     $self->undefPointerCache();
   }
   close(FILE);
 
-  $self->_relateAcquisitionsAndQuantifications();
-
   my $summaryString = $self->_getSummary();
-
   return($summaryString);
-
 }
 
 # ----------------------------------------------------------------------
@@ -828,44 +832,49 @@ sub _makeQuantification {
 # ----------------------------------------------------------------------
 
 sub _relateAcquisitionsAndQuantifications {
-  my ($self) = @_;
+  my ($self, $data, $assay) = @_;
 
-  my $studyId = $self->getArgs()->{StudyId};
+  my $assayId = $assay->getId();
+  my $assayName = $data->{assay_name};
 
-  my @assays = $self->sqlAsArray( Sql => "select assay_id from Rad.StudyAssay where study_id = $studyId" );
+  my $acquisitions = $self->sqlAsDictionary( Sql => "select a.acquisition_id, o.value from Rad.Acquisition a, Study.ONTOLOGYENTRY o where a.channel_id = o.ontology_entry_id and a.assay_id = $assayId" );
 
-  foreach my $assay (@assays) {
-    my @acquisitions = $self->sqlAsArray( Sql => "select acquisition_id from Rad.Acquisition where assay_id = $assay" );
+  foreach my $acquisition (keys %$acquisitions) {
+    foreach my $related (keys %$acquisitions) {
+      next if($acquisition == $related);
 
-    foreach my $acquisition (@acquisitions) {
-      foreach my $related (@acquisitions) {
-        next if($acquisition == $related);
+      my $relatedAcquisition = GUS::Model::RAD::RelatedAcquisition->
+        new({ACQUISITION_ID => $acquisition,
+             ASSOCIATED_ACQUISITION_ID => $related,
+             NAME => $assayName,
+             DESIGNATION => $acquisitions->{$acquisition},
+             ASSOCIATED_DESIGNATION => $acquisitions->{$related},
+            });
 
-        my $relatedAcquisition = GUS::Model::RAD::RelatedAcquisition->
-          new({ACQUISITION_ID => $acquisition,
-               ASSOCIATED_ACQUISITION_ID => $related,
-              });
-
-        $relatedAcquisition->submit();
-      }
-
-      my @quantifications = $self->sqlAsArray( Sql => "select quantification_id from Rad.quantification where acquisition_id = $acquisition" );
-
-      foreach my $quant (@quantifications) {
-        foreach my $relatedQuant (@quantifications) {
-          next if($quant == $relatedQuant);
-
-          my $relatedQuantification = GUS::Model::RAD::RelatedQuantification->
-            new({Quantification_ID => $quant,
-                 ASSOCIATED_quantification_ID => $relatedQuant,
-                });
-
-          $relatedQuantification->submit();
-        }
-      }
-
+      $relatedAcquisition->submit();
     }
   }
+
+  return(1) unless($self->getArgs()->{RelateQuantifications});
+
+  my $quantifications = $self->sqlAsDictionary( Sql => "select q.quantification_id, o.value from Rad.Acquisition a, Study.ONTOLOGYENTRY o, Rad.QUANTIFICATION q where q.acquisition_id = a.acquisition_id and a.channel_id = o.ontology_entry_id and a.assay_id = $assayId" );
+
+  foreach my $quant (keys %$quantifications) {
+    foreach my $relatedQuant (keys %$quantifications) {
+      next if($quant == $relatedQuant);
+
+      my $relatedQuantification = GUS::Model::RAD::RelatedQuantification->
+        new({Quantification_ID => $quant,
+             ASSOCIATED_quantification_ID => $relatedQuant,
+             NAME => $assayName,
+             DESIGNATION => $quantifications->{$quant},
+             ASSOCIATED_DESIGNATION => $quantifications->{$relatedQuant},
+            });
+
+      $relatedQuantification->submit();
+    }
+  }
+  return(1);
 }
 
 # ----------------------------------------------------------------------
