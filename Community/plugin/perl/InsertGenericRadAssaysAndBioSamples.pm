@@ -238,7 +238,7 @@ my $argsDeclaration =
               }),
 
    booleanArg ({name => 'RelateQuantifications',
-                descr => 'Acquisitions are related automatically... see notes ',
+                descr => 'Acquisitions are always related automatically... see notes ',
                 reqd => 0,
                 default => 0
                }),
@@ -270,12 +270,14 @@ sub run {
 
   my $study = GUS::Model::Study::Study->
     new({ study_id => $self->getArgs()->{StudyId}, });
-  die "Could not retrieve StudyId from DB" if(!$study->retrieveFromDB());
+  die "Could not retrieve StudyId from DB" unless($study->retrieveFromDB());
 
   my ($protocolCounts, $colNames) = $self->_readTabFile();
-  #my $radProtocols = $self->_readBioMaterialFile();
 
-  #my $biomaterials = $self->_makeBioMaterials($protocolCounts, $radProtocols, $study);
+  my $radProtocols = $self->_readBioMaterialFile();
+
+  my $linkingNameToLexHash = $self->_makeBioMaterials($protocolCounts, $radProtocols, $study);
+  exit(1);
 
   my $fn = $self->getArgs()->{DataFile};
   open(FILE, $fn) || die "Cannot open file $fn for reading: $!";
@@ -349,9 +351,11 @@ sub _readTabFile {
     chomp;
 
     my @ar = split(/\t/, $_);
-    my $protocolName = $ar[$index];
+    my @protocolNames = split(',', $ar[$index]);
 
-    $protocolCounts{$protocolName}++;
+    foreach my $protocolName (@protocolNames) {
+      $protocolCounts{$protocolName}++;
+    }
   }
   close(FILE);
 
@@ -382,7 +386,7 @@ sub _readBioMaterialFile {
   push(@rv, _RadProtocol->new({ }));
 
   my $seenProt = -1;
-  my $wasBioPrev;
+  my ($wasBioPrev, $protocolName, $treatmentProtocolId);
 
   while(<FILE>) {
     chomp;
@@ -421,20 +425,33 @@ sub _readBioMaterialFile {
       $i++;
       $seenProt = -1;
       $wasBioPrev = 0;
+      $protocolName = undef;
+      $treatmentProtocolId = undef;
     }
-    elsif($id eq 'Protocol_Id|Number') {
+    elsif($id eq 'Protocol|Number') {
       die "Error in protocol file on line: $_" if(!$wasBioPrev);
-      $seenProt = $val;
+      my ($p, $n) = split(/\|/, $val);
+
+      my $sql = "select protocol_id from Rad.Protocol where name = '$p'";
+      ($seenProt) = $self->sqlAsArray(Sql => $sql );
+
+      $sql = defined($seenProt) 
+        ? "select protocol_type_id from Rad.Protocol where protocol_id = $seenProt"
+          : "select ontology_entry_id from Study.OntologyEntry where value = '$p' and category = 'ComplexAction'";
+
+      ($treatmentProtocolId) = $self->sqlAsArray(Sql => $sql);
+      $protocolName = $p;
+      $seenProt = $seenProt . "|" . $n;
       $wasBioPrev = 0;
     }
     elsif($id eq 'Name|MaterialType|Description') {
       die "Error in protocol file on line: $_" if($wasBioPrev);
       $wasBioPrev = 1;
 
-      my $step = { protocol_id => $seenProt, bm_name => $val };
+      my $step = { protocol_id => $seenProt, bm_name => $val, protocol_nm => $protocolName, treatment_type_id => $treatmentProtocolId};
       my ($bmName, $mt, $bmDescription) = split(/\|/, $step->{bm_name});
 
-      my $sql = "select ontololgy_entry_id from study.ontologyEntry where value = '$mt' and category = 'MaterialType'";
+      my $sql = "select ontology_entry_id from study.ontologyEntry where value = '$mt' and category = 'MaterialType'";
       my ($oeId) = $self->sqlAsArray(Sql => $sql );
 
       $rv[$i]->addProtocolStep($step, $oeId);
@@ -485,6 +502,9 @@ sub setProviderId              { $_[0]->{provider_id} = $_[1] }
 sub getProtocolId              { $_[0]->{protocol_id} }
 sub setProtocolId              { $_[0]->{protocol_id} = $_[1] }
 
+sub getProtocolNm              { $_[0]->{protocol_nm} }
+sub setProtocolNm              { $_[0]->{protocol_nm} = $_[1] }
+
 sub getLabelMethodId           { $_[0]->{label_method_id} }
 sub setLabelMethodId           { $_[0]->{label_method_id} = $_[1] }
 
@@ -496,6 +516,8 @@ sub setDescription             { $_[1]->{description} = $_[1] }
 
 sub getMaterialTypeOntologyId  { $_[0]->{material_type_ontology_id} }
 sub setMaterialTypeOntologyId  { $_[0]->{material_type_ontology_id} = $_[1] }
+
+sub getTreatmentTypeId         { $_[0]->{treatment_type_id} }
 
 sub getProtocolSeries          { $_[0]->{protocol_series} }
 
@@ -509,11 +531,9 @@ sub addProtocolStep {
   if(!$step->{protocol_id} || !$step->{bm_name}) {
     die "A Protocol Step must specifiy both: protocol_id and bm_name";
   }
-
   my ($pId, $n) = split(/\|/, $step->{protocol_id});
 
   if($step->{protocol_id} == -1) {
-    $pId = undef;
     $n = $self->getBioMaterialNumber();
   }
   die "Each Protocol Must also provide The number of Output BioMaterials" if(!$n);
@@ -527,6 +547,8 @@ sub addProtocolStep {
           description => $bmDescription,
           material_type_ontology_id => $oeId,
           material_type => $matType,
+          protocol_name => $step->{protocol_nm},
+          treatment_type_id => $step->{treatment_type_id},
         });
 
   push(@{$self->getProtocolSeries()}, $protocolStep);
@@ -567,35 +589,42 @@ sub _makeBioMaterials {
       die "Protocol $linkingName not found in data file";
     }
 
-    my @protocolSeries = $protocol->getProtocolSeries();
-    my @parentBioMaterials; #These are the bioSources which will be submitted
+    my $protocolSeries = $protocol->getProtocolSeries();
+    my @parentBioMaterials;
 
     my $prevBioMaterials = [];
-    for(my $i = 0; $i < scalar(@protocolSeries); $i++) {
+    for(my $i = 0; $i < scalar(@$protocolSeries); $i++) {
 
       if($i == 0) {
-        my $bioSources = $self->_makeBioSources($protocol, $protocolSeries[$i]);
+        my $bioSources = $self->_makeBioSources($protocol, $protocolSeries->[$i], $study);
 
         push(@parentBioMaterials, @$bioSources);
-        push(@$prevBioMaterials, @$bioSources);
+        $prevBioMaterials = $bioSources;
       }
-      elsif($i == scalar(@protocolSeries)) {
-        my $labeledExtracts = $self->_makeLabeledExtracts($protocolSeries[$i], $prevBioMaterials);
 
-        #push(@{$rv{$name}}, @$labeledExtracts);
+      elsif($i == scalar(@$protocolSeries)) {
+        my $expectedLabelMethodId = $protocol->getLabelMethodId();
+        my $labeledExtracts = $self->_makeLabeledExtracts($protocolSeries->[$i], $prevBioMaterials, $expectedLabelMethodId, $study);
+
+        push(@{$rv{$linkingName}}, @$labeledExtracts);
       }
 
       else {
-        my $bioSamples = $self->_makeBioSamples();
+        $prevBioMaterials = $self->_makeBioSamples($protocolSeries->[$i], $prevBioMaterials, $study);
       }
+
+      map { $_->submit() } @parentBioMaterials;
+      $self->undefPointerCache();
     }
   }
+  exit(1);
+  return(\%rv);
 }
 
 # ----------------------------------------------------------------------
 
 sub _makeBioSources {
-  my ($self, $protocol, $step) = @_;
+  my ($self, $protocol, $step, $study) = @_;
 
   my $n = $step->getBioMaterialNumber();
   my @rv;
@@ -603,13 +632,18 @@ sub _makeBioSources {
   foreach(1..$n) {
     my $nm = $step->getName() . " $_";
 
-    my $biosource = GUS::Model::Study::BioSource->
+    my $biosource = GUS::Model::Study::BioSource-> 
       new({ taxon_id => $protocol->getTaxonId(),
             bio_source_provider_id => $protocol->getProviderId(),
-            bio_material_type_id => $step->getMaterialType(),
+            bio_material_type_id => $step->getMaterialTypeOntologyId(),
             name => $nm,
             description => $step->getDescription(),
           });
+
+    my $studyBioMaterial = GUS::Model::RAD::StudyBioMaterial->
+      new({study_id => $study->getId()});
+    $studyBioMaterial->setParent($biosource);
+
     push(@rv, $biosource);
   }
   return(\@rv);
@@ -618,69 +652,118 @@ sub _makeBioSources {
 # ----------------------------------------------------------------------
 
 sub _makeBioSamples {
-  my ($self, $step, $prevBioSamples) = @_;
+  my ($self, $step, $prevBioSamples, $study) = @_;
+
+  my $sql = "select value, ontology_entry_id from STudy.ONTOLOGYENTRY where value in ('split', 'pool')";
+  my $splitPoolOntologyIds = $self->sqlAsDictionary(Sql => $sql);
 
   my @rv;
 
   my $n = $step->getBioMaterialNumber();
-  my $protId = $step->getProtocolId();
+  my $treatId = $step->getTreatmentTypeId();
+  my $nm = $step->getName();
 
-  my $sql = "select name from Rad.protocol where protocol_id = $protId";
-  my ($protName) = $self->sqlAsArray( Sql => $sql );
+  die "Pooling Protocols Not supported yet" if($treatId == $splitPoolOntologyIds->{pool});
 
-  if($protName eq 'pool') {
-    if(scalar(@$prevBioSamples) % $n == 0) {
-      die "Error in the number of samples to be pooled";
-    }
-    my $numberToPool = scalar(@$prevBioSamples) / $n;
+  my $multiple = 1;
+  if($treatId == $splitPoolOntologyIds->{split}) {
+    my $prevNumber = scalar(@$prevBioSamples);
+    die "Splitting protocol chosen but same number of prevBioSamples as current $n" if($n == $prevNumber);
 
-    while(@$prevBioSamples) {
-      my @tmp;
-      for(1..$numberToPool) {
-        push(@tmp, pop(@$prevBioSamples));
-      }
-      push(@rv, $self->_makeBioSampleObjects());
-    }
+    die "Inncorrect Number of biosamples $n not divisible by $prevNumber for protocol $nm" if($n % $prevNumber != 0);
+    $multiple = $n / $prevNumber;
   }
 
-  else {
-    foreach my $prev (@$prevBioSamples) {
-      foreach(1..$n) {
+  my $count = 1;
+  foreach my $prevBM (@$prevBioSamples) {
+    foreach(1..$multiple) {
 
-        my $nm = $step->getName();
-        $nm = $nm . " $_" if($_ > 1);
+      my $name = "$nm $count";
 
-        my $bioSample = GUS::Model::Study::BioSample->
-          new({});
+      my $bioSample = GUS::Model::Study::BioSample->
+        new({BIO_MATERIAL_TYPE_ID => $step->getMaterialTypeOntologyId(),
+             NAME => $name,
+             DESCRIPTION => $step->getDescription,
+            });
 
-        my $treatment = GUS::Model::RAD::Treatment->
-          new({});
+      my $studyBioMaterial = GUS::Model::RAD::StudyBioMaterial->
+        new({study_id => $study->getId()});
 
-        my $bmMeasurement = GUS::Model::RAD::BioMaterialMeasurement->
-          new({});
-      }
+      $studyBioMaterial->setParent($bioSample);
+
+      my $treatment = GUS::Model::RAD::Treatment->
+        new({order_num => 1,
+             TREATMENT_TYPE_ID => $treatId,
+             PROTOCOL_ID => $step->getProtocolId,
+             NAME => $step->getProtocolNm(),
+            });
+
+      $treatment->setParent($bioSample);
+
+      my $bmMeasurement = GUS::Model::RAD::BioMaterialMeasurement->new({});
+
+      $bmMeasurement->setParent($prevBM);
+      $bmMeasurement->setParent($treatment);
+
+      push(@rv, $bioSample);
+      $count++;
     }
   }
-
-  #TODO Set all parents Correctly
+  return(\@rv);
 }
 
 # ----------------------------------------------------------------------
 
 sub _makeLabeledExtracts {
-          #assert that this is a labeling protocol!!!
-        my $labeledExtract = GUS::Model::Study::LabeledExtract->
-          new({});
+  my ($self, $step, $prevBioSamples, $labelMethodId, $study) = @_;
 
-        my $treatment = GUS::Model::RAD::Treatment->
-          new({});
+  my @rv;
 
-        my $bmMeasurement = GUS::Model::RAD::BioMaterialMeasurement->
-          new({});
+  my $sql = "select protocol_id from Rad.LABELMETHOD where label_method_id  = $labelMethodId";
+  my ($expectedProtocolId) = $self->sqlAsArray(Sql => $sql);
 
-        #TODO Set all parents Correctly
+  my $protocolId = $step->getProtocolId();
+  my $nm = $step->getName();
 
+  if($expectedProtocolId != $protocolId) {
+    die "Mismatch in protocolIds for Labeled extract $expectedProtocolId and $protocolId";
+  }
 
+  my $count;
+  foreach my $prevBM (@$prevBioSamples) {
+
+    my $name = "$nm $count";
+
+    my $labeledExtract = GUS::Model::Study::LabeledExtract->
+          new({BIO_MATERIAL_TYPE_ID => $step->getMaterialTypeOntologyId(),	
+               LABEL_METHOD_ID => $labelMethodId,
+               NAME => $name,
+               DESCRIPTION => $step->getDescription()
+              });
+
+    my $studyBioMaterial = GUS::Model::RAD::StudyBioMaterial->
+      new({study_id => $study->getId()});
+
+    $studyBioMaterial->setParent($labeledExtract);
+
+    my $treatment = GUS::Model::RAD::Treatment->
+      new({order_num => 1,
+           TREATMENT_TYPE_ID => $step->getTreatmentTypeId(),
+           PROTOCOL_ID => $step->getProtocolId,
+           NAME => $step->getProtocolNm(),
+          });
+
+    $treatment->setParent($labeledExtract);
+
+    my $bmMeasurement = GUS::Model::RAD::BioMaterialMeasurement->new({});
+
+    $bmMeasurement->setParent($prevBM);
+    $bmMeasurement->setParent($treatment);
+
+    push(@rv, $labeledExtract);
+    $count++;
+  }
+  return(\@rv);
 }
 
 # ----------------------------------------------------------------------
@@ -934,7 +1017,13 @@ sub _getSummary {
 # ----------------------------------------------------------------------
 
 sub undoTables {
-  return ('RAD.RelatedQuantification',
+  return ('RAD.BioMaterialMeasurement',
+          'RAD.Treatment',
+          'RAD.StudyBioMaterial',
+          'Study.LabeledExtract',
+          'Study.BioSample',
+          'Study.BioSource',
+          'RAD.RelatedQuantification',
           'RAD.Quantification',
           'RAD.RelatedAcquisition',
           'RAD.Acquisition',
