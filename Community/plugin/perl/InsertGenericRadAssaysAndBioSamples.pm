@@ -226,7 +226,7 @@ my $argsDeclaration =
                name  => 'AcquDirPrefix',
                isList    => 0,
                reqd  => 0,
-               default => "/files/cbil/data/cbil/RAD_Images/",
+               default => "/files/cbil/data/cbil/RAD_images/",
                constraintFunc => undef,
              }),
 
@@ -268,8 +268,9 @@ sub new {
 sub run {
   my ($self) = @_;
 
-  my $study = GUS::Model::Study::Study->
-    new({ study_id => $self->getArgs()->{StudyId}, });
+  my $studyId = $self->getArgs()->{StudyId};
+
+  my $study = GUS::Model::Study::Study->new({ study_id => $studyId });
   die "Could not retrieve StudyId from DB" unless($study->retrieveFromDB());
 
   my ($protocolCounts, $colNames) = $self->_readTabFile();
@@ -277,7 +278,6 @@ sub run {
   my $radProtocols = $self->_readBioMaterialFile();
 
   my $linkingNameToLexHash = $self->_makeBioMaterials($protocolCounts, $radProtocols, $study);
-  exit(1);
 
   my $fn = $self->getArgs()->{DataFile};
   open(FILE, $fn) || die "Cannot open file $fn for reading: $!";
@@ -304,8 +304,8 @@ sub run {
   }
   close(FILE);
 
-  my $summaryString = $self->_getSummary();
-  return($summaryString);
+  $self->_printSummary();
+  return("Inserted AssayToBioMaterial rows for studyId $studyId");
 }
 
 # ----------------------------------------------------------------------
@@ -602,7 +602,7 @@ sub _makeBioMaterials {
         $prevBioMaterials = $bioSources;
       }
 
-      elsif($i == scalar(@$protocolSeries)) {
+      elsif($i == scalar(@$protocolSeries) - 1) {
         my $expectedLabelMethodId = $protocol->getLabelMethodId();
         my $labeledExtracts = $self->_makeLabeledExtracts($protocolSeries->[$i], $prevBioMaterials, $expectedLabelMethodId, $study);
 
@@ -617,7 +617,6 @@ sub _makeBioMaterials {
       $self->undefPointerCache();
     }
   }
-  exit(1);
   return(\%rv);
 }
 
@@ -654,19 +653,30 @@ sub _makeBioSources {
 sub _makeBioSamples {
   my ($self, $step, $prevBioSamples, $study) = @_;
 
+  my @rv;
+
   my $sql = "select value, ontology_entry_id from STudy.ONTOLOGYENTRY where value in ('split', 'pool')";
   my $splitPoolOntologyIds = $self->sqlAsDictionary(Sql => $sql);
 
-  my @rv;
+  my %splitPoolOntologyIds;
+
+  my $processRows =  sub {
+    my $row = shift;
+    push(@{$splitPoolOntologyIds{$row->{value}}}, $row->{ontology_entry_id});
+  };
+
+  $self->sqlAsHashRefs(Sql => $sql, Code => $processRows);
 
   my $n = $step->getBioMaterialNumber();
   my $treatId = $step->getTreatmentTypeId();
   my $nm = $step->getName();
 
-  die "Pooling Protocols Not supported yet" if($treatId == $splitPoolOntologyIds->{pool});
+  if($self->_isIncluded($treatId, $splitPoolOntologyIds{pool})) {
+    die "Pooling Protocols Not supported yet";
+  }
 
   my $multiple = 1;
-  if($treatId == $splitPoolOntologyIds->{split}) {
+  if($self->_isIncluded($treatId, $splitPoolOntologyIds{split})) {
     my $prevNumber = scalar(@$prevBioSamples);
     die "Splitting protocol chosen but same number of prevBioSamples as current $n" if($n == $prevNumber);
 
@@ -993,25 +1003,21 @@ sub _isIncluded {
 
 # ----------------------------------------------------------------------
 
-sub _getSummary {
+sub _printSummary {
   my ($self) = @_;
 
   my @tables = $self->undoTables();
   my $algInvoc = $self->getAlgInvocation();
   my $algInvocId = $algInvoc->getId();
 
-  my @counts;
-
+  print STDERR "Table\tCount\n";
   foreach my $t (@tables) {
     my ($count) = $self->sqlAsArray( Sql => "select count(*) from $t where row_alg_invocation_id = $algInvocId" );
 
     $count = 0 unless($count);
-    push(@counts, $count);
+    print STDERR "$t\t$count\n";
   }
-
-  my $rv = "Tables:  " . join(',', @tables) . " Inserted rows:  " . join(',', @counts);
-
-  return($rv);
+  return(1);
 }
 
 # ----------------------------------------------------------------------
