@@ -66,11 +66,11 @@ File which contains the "ModuleI" data to be loaded.  All Column Headers must ex
 
 =item *
 
-The Header is checked but the values are not...ex. assay_operator_id is required by the db schema but currently it is not checked for in the plugin.
+The Header is checked but the values are not...ex. assay_operator_id is required by the db schema but currently it is not checked for in the plugin.  (If you leave it null the plugin will fail with an sql error)
 
 =item *
 
-Any date must be in the format "year-month-date' ex: 2004-10-04
+Any date must be in the format "yyyy-mm-dd' ex: 2004-10-04
 
 =item *
 
@@ -111,7 +111,7 @@ This is a machine readable config file.  It's SeriesName is used to link to the 
  LabelMethodId=
  Name|MaterialType|Description=
 
- Protocol_Id|Number=
+ Protocol|Number=
  Name|MaterialType|Description=
 
  ...
@@ -123,7 +123,7 @@ This is a machine readable config file.  It's SeriesName is used to link to the 
 
 =item *
 
-The Last Protocol_Id in the Series must be a labeling protocol.
+The Last Protocol in the Series must be a labeling protocol.
 
 =item *
 
@@ -1080,6 +1080,8 @@ sub undoTables {
   return ('RAD.BioMaterialMeasurement',
           'RAD.Treatment',
           'RAD.StudyBioMaterial',
+          'RAD.AssayBioMaterial',
+          'RAD.AssayLabeledExtract',
           'Study.LabeledExtract',
           'Study.BioSample',
           'Study.BioSource',
