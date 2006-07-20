@@ -300,6 +300,10 @@ sub run {
     $assay->submit();
 
     $self->_relateAcquisitionsAndQuantifications(\%data, $assay);
+
+    if($self->getArgs->{commit}) {
+      $self->_linkAssayToLex($assay, $linkingNameToLexHash, $data{protocol_series_nm}, $studyId);
+    }
     $self->undefPointerCache();
   }
   close(FILE);
@@ -502,8 +506,8 @@ sub setProviderId              { $_[0]->{provider_id} = $_[1] }
 sub getProtocolId              { $_[0]->{protocol_id} }
 sub setProtocolId              { $_[0]->{protocol_id} = $_[1] }
 
-sub getProtocolNm              { $_[0]->{protocol_nm} }
-sub setProtocolNm              { $_[0]->{protocol_nm} = $_[1] }
+sub getProtocolNm              { $_[0]->{protocol_name} }
+sub setProtocolNm              { $_[0]->{protocol_name} = $_[1] }
 
 sub getLabelMethodId           { $_[0]->{label_method_id} }
 sub setLabelMethodId           { $_[0]->{label_method_id} = $_[1] }
@@ -652,7 +656,6 @@ sub _makeBioSamples {
   my @rv;
 
   my $sql = "select value, ontology_entry_id from STudy.ONTOLOGYENTRY where value in ('split', 'pool')";
-  my $splitPoolOntologyIds = $self->sqlAsDictionary(Sql => $sql);
 
   my %splitPoolOntologyIds;
 
@@ -968,6 +971,57 @@ sub _relateAcquisitionsAndQuantifications {
     }
   }
   return(1);
+}
+
+# ----------------------------------------------------------------------
+
+sub _linkAssayToLex {
+  my ($self, $assay, $link, $nm, $studyId) = @_;
+
+  my $sql = "select b.bio_material_id as old, t.bio_material_id as new 
+              from Rad.Treatment t, Rad.BioMaterialMeasurement b 
+              where t.treatment_id = b.treatment_id 
+               and t.bio_material_id in (select bio_material_id from Rad.StudyBioMaterial where study_id = $studyId)";
+
+  my %bmMap;
+  my $processRows =  sub {
+    $bmMap{$_[0]->{new}} =  $_[0]->{old};
+  };
+
+  $self->sqlAsHashRefs(Sql => $sql, Code => $processRows);
+
+  my @names = split(',', $nm);
+
+  foreach(@names) {
+    my $lex = pop(@{$link->{$_}});
+
+    my $bmId = $lex->getId();
+
+    my $sql = "select lm.channel_id 
+               from Study.LABELEDEXTRACT lex, Rad.LABELMETHOD lm 
+               where lex.label_method_id = lm.label_method_id  and bio_material_id = $bmId";
+
+    my ($channelId) = $self->sqlAsArray(Sql => $sql);
+
+    my $assayLex = GUS::Model::RAD::AssayLabeledExtract->
+      new({ channel_id => $channelId });
+
+    $assayLex->setParent($assay);
+    $assayLex->setParent($lex);
+
+    $assayLex->submit();
+
+    my $key = $lex->getId();
+
+    do {
+      my $assayBioMaterial = GUS::Model::RAD::AssayBioMaterial->
+        new({bio_material_id => $key});
+
+      $assayBioMaterial->setParent($assay);
+      $assayBioMaterial->submit();
+
+    } while($key = $bmMap{$key})
+  }
 }
 
 # ----------------------------------------------------------------------
