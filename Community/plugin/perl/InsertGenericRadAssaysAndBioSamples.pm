@@ -590,16 +590,12 @@ sub _makeBioMaterials {
     }
 
     my $protocolSeries = $protocol->getProtocolSeries();
-    my @parentBioMaterials;
 
     my $prevBioMaterials = [];
     for(my $i = 0; $i < scalar(@$protocolSeries); $i++) {
 
       if($i == 0) {
-        my $bioSources = $self->_makeBioSources($protocol, $protocolSeries->[$i], $study);
-
-        push(@parentBioMaterials, @$bioSources);
-        $prevBioMaterials = $bioSources;
+        $prevBioMaterials = $self->_makeBioSources($protocol, $protocolSeries->[$i], $study);
       }
 
       elsif($i == scalar(@$protocolSeries) - 1) {
@@ -613,7 +609,6 @@ sub _makeBioMaterials {
         $prevBioMaterials = $self->_makeBioSamples($protocolSeries->[$i], $prevBioMaterials, $study);
       }
     }
-    map { $_->submit() } @parentBioMaterials;
   }
   return(\%rv);
 }
@@ -629,6 +624,8 @@ sub _makeBioSources {
   foreach(1..$n) {
     my $nm = $step->getName() . " $_";
 
+    print STDERR "Working on BioSource $nm\n";
+
     my $biosource = GUS::Model::Study::BioSource-> 
       new({ taxon_id => $protocol->getTaxonId(),
             bio_source_provider_id => $protocol->getProviderId(),
@@ -641,6 +638,7 @@ sub _makeBioSources {
       new({study_id => $study->getId()});
     $studyBioMaterial->setParent($biosource);
 
+    $biosource->submit();
     push(@rv, $biosource);
   }
   return(\@rv);
@@ -687,6 +685,7 @@ sub _makeBioSamples {
     foreach(1..$multiple) {
 
       my $name = "$nm $count";
+      print STDERR "Working on BioSample $name\n";
 
       my $bioSample = GUS::Model::Study::BioSample->
         new({BIO_MATERIAL_TYPE_ID => $step->getMaterialTypeOntologyId(),
@@ -713,6 +712,7 @@ sub _makeBioSamples {
       $bmMeasurement->setParent($prevBM);
       $bmMeasurement->setParent($treatment);
 
+      $bioSample->submit();
       push(@rv, $bioSample);
       $count++;
     }
@@ -737,10 +737,11 @@ sub _makeLabeledExtracts {
     die "Mismatch in protocolIds for Labeled extract $expectedProtocolId and $protocolId";
   }
 
-  my $count;
+  my $count = 1;
   foreach my $prevBM (@$prevBioSamples) {
 
     my $name = "$nm $count";
+    print STDERR "Working on LabeledExtract $name\n";
 
     my $labeledExtract = GUS::Model::Study::LabeledExtract->
           new({BIO_MATERIAL_TYPE_ID => $step->getMaterialTypeOntologyId(),	
@@ -768,6 +769,7 @@ sub _makeLabeledExtracts {
     $bmMeasurement->setParent($prevBM);
     $bmMeasurement->setParent($treatment);
 
+    $labeledExtract->submit();
     push(@rv, $labeledExtract);
     $count++;
   }
