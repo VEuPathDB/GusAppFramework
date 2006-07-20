@@ -612,10 +612,8 @@ sub _makeBioMaterials {
       else {
         $prevBioMaterials = $self->_makeBioSamples($protocolSeries->[$i], $prevBioMaterials, $study);
       }
-
-      map { $_->submit() } @parentBioMaterials;
-      $self->undefPointerCache();
     }
+    map { $_->submit() } @parentBioMaterials;
   }
   return(\%rv);
 }
