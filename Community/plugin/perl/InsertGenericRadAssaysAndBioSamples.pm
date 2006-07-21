@@ -35,9 +35,20 @@ Load rows in RAD corresponding to ModuleI and ModuleIII of the RADSA Forms.  Thi
 PLUGIN_PURPOSE
 
 my $tablesAffected = [ ['RAD::Assay', 'One Row for each row of Tab Data file'],
-                       ['RAD::StudyAssay', 'One row for each row of Tab Data File'],
+                       ['RAD::StudyAssay', 'Linking table'],
                        ['RAD::Acquisition', 'At least one row for each row of Tab Data File'],
-                       ['RAD::Quantification', 'At least one row for each row of Tab Data File'], ];
+                       ['RAD::Quantification', 'At least one row for each row of Tab Data File'],
+                       ['RAD::RelatedAcquisition', 'Acquisitions are related automatically if needed'],
+                       ['RAD::RelatedQuantification', 'There is a boolean Arg for Relating Quantifications'],
+                       ['RAD::StudyBioMaterial', 'Linking table'],
+                       ['RAD::AssayBioMaterial', 'Linking table'],
+                       ['RAD::AssayLabeledExtract', 'Linking table'],
+                       ['RAD::Treatment', 'One row for each protocol step'],
+                       ['RAD::BioMaterialMeasurement', 'One row for each protocol step'],
+                       ['Study::BioSource', 'One row for each initial biomaterial'],
+                       ['Study::BioSample', 'The number populated depends on the number of previous biomaterials'],
+                       ['Study::LabeledExtract', 'The number populated depends on the number of previous biomaterials.  Must match the number expected from tab file'],
+                     ];
 
 my $tablesDependedOn =[ ['RAD::Study', 'Study provided as Arg must exist'],
                         ['SRes::Contact', 'Used for BioSource Provider'],
@@ -905,7 +916,7 @@ sub _makeQuantification {
       $quantificationName = 'Quantification';
     }
 
-    my $qName = $data->{assay_name} . "-". $quantificationName;
+    my $qName = $data->{assay_name} . "-". $quantificationName . "-" . $channel;
 
     # TODO:  This if statement should come out eventually...The quant files would need to have a naming convention though
     if($fn =~ /notnorm/) {
