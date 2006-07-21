@@ -319,10 +319,6 @@ sub run {
   }
   close(FILE);
 
-  foreach(keys %$linkingNameToLexHash) {
-    $self->log("WARNING:  BioMaterials Were not linked to an Assay for $_") if($linkingNameToLexHash->{$_});
-  }
-
   $self->_printSummary();
   return("Inserted AssayToBioMaterial rows for studyId $studyId");
 }
@@ -1008,7 +1004,7 @@ sub _linkAssayToLex {
 
   my %bmMap;
   my $processRows =  sub {
-    $bmMap{$_[0]->{new}} =  $_[0]->{old};
+    push(@{$bmMap{$_[0]->{new}}}, $_[0]->{old});
   };
 
   $self->sqlAsHashRefs(Sql => $sql, Code => $processRows);
@@ -1036,16 +1032,27 @@ sub _linkAssayToLex {
 
     my $key = $lex->getId();
 
-    do {
-      my $assayBioMaterial = GUS::Model::RAD::AssayBioMaterial->
-        new({bio_material_id => $key});
-
-      $assayBioMaterial->setParent($assay);
-      $assayBioMaterial->submit();
-
-    } while($key = $bmMap{$key})
+    $self->_linkAssayBioMaterials($key, \%bmMap, $assay);
   }
 }
+
+# ----------------------------------------------------------------------
+
+sub _linkAssayBioMaterials {
+  my ($self, $node, $map, $assay) = @_;
+
+  my $assayBioMaterial = GUS::Model::RAD::AssayBioMaterial->
+    new({bio_material_id => $node});
+
+  $assayBioMaterial->setParent($assay);
+  $assayBioMaterial->submit();
+
+  foreach(@{$map->{$node}}) {
+    $self->_linkAssayBioMaterial($_, $map, $assay);
+  }
+  return(1);
+}
+
 
 # ----------------------------------------------------------------------
 
