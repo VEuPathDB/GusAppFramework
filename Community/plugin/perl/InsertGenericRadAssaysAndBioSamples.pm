@@ -1048,7 +1048,7 @@ sub _linkAssayBioMaterials {
   $assayBioMaterial->submit();
 
   foreach(@{$map->{$node}}) {
-    $self->_linkAssayBioMaterial($_, $map, $assay);
+    $self->_linkAssayBioMaterials($_, $map, $assay);
   }
   return(1);
 }
