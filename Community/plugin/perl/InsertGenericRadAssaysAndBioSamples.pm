@@ -319,6 +319,10 @@ sub run {
   }
   close(FILE);
 
+  foreach(keys %$linkingNameToLexHash) {
+    $self->log("WARNING:  BioMaterials Were not linked to an Assay for $_") if($linkingNameToLexHash->{$_});
+  }
+
   $self->_printSummary();
   return("Inserted AssayToBioMaterial rows for studyId $studyId");
 }
@@ -680,23 +684,27 @@ sub _makeBioSamples {
   my $n = $step->getBioMaterialNumber();
   my $treatId = $step->getTreatmentTypeId();
   my $nm = $step->getName();
+  my $prevNumber = scalar(@$prevBioSamples);
 
+  my $numberToPool = 1;
   if($self->_isIncluded($treatId, $splitPoolOntologyIds{pool})) {
-    die "Pooling Protocols Not supported yet";
+    die "Pooling protocol chosen but same number of prevBioSamples as current $n" if($n == $prevNumber);
+    die "Inncorrect Number of biosamples for pooling:  $prevNumber not divisible by $n for protocol $nm" if($prevNumber % $n != 0);
+
+    $numberToPool = $prevNumber / $n;
   }
 
-  my $multiple = 1;
+  my $numberToSplit = 1;
   if($self->_isIncluded($treatId, $splitPoolOntologyIds{split})) {
-    my $prevNumber = scalar(@$prevBioSamples);
     die "Splitting protocol chosen but same number of prevBioSamples as current $n" if($n == $prevNumber);
+    die "Inncorrect Number of biosamples for splitting:  $n not divisible by $prevNumber for protocol $nm" if($n % $prevNumber != 0);
 
-    die "Inncorrect Number of biosamples $n not divisible by $prevNumber for protocol $nm" if($n % $prevNumber != 0);
-    $multiple = $n / $prevNumber;
+    $numberToSplit = $n / $prevNumber;
   }
 
   my $count = 1;
-  foreach my $prevBM (@$prevBioSamples) {
-    foreach(1..$multiple) {
+  while(my $prevBM = pop(@$prevBioSamples)) {
+    foreach(1..$numberToSplit) {
 
       my $name = "$nm $count";
       print STDERR "Working on BioSample $name\n";
@@ -721,10 +729,14 @@ sub _makeBioSamples {
 
       $treatment->setParent($bioSample);
 
-      my $bmMeasurement = GUS::Model::RAD::BioMaterialMeasurement->new({});
+      foreach my $poolCount (1..$numberToPool) {
+        $prevBM = pop(@$prevBioSamples) unless($poolCount == 1);
 
-      $bmMeasurement->setParent($prevBM);
-      $bmMeasurement->setParent($treatment);
+        my $bmMeasurement = GUS::Model::RAD::BioMaterialMeasurement->new({});
+
+        $bmMeasurement->setParent($prevBM);
+        $bmMeasurement->setParent($treatment);
+      }
 
       $bioSample->submit();
       push(@rv, $bioSample);
