@@ -132,7 +132,7 @@ nodedir=$nodePath
 slotspernode=$slotsPerNode
 subtasksize=$taskSize
 taskclass=$taskClass
-nodeclass=DJob::DistribJob::,$nodeClass
+nodeclass=DJob::DistribJob::$nodeClass
 restart=no
 ";
     close(F);
