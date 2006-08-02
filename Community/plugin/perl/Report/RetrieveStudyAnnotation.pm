@@ -43,8 +43,20 @@ sub getArgumentsDeclaration {
 		constraintFunc => undef,
 		isList => 1
 	       }),
+     stringArg({name  => 'filterProjectList',
+		descr => 'Comma-separated list of project names. If given, studies within these projects will be discarded.',
+		reqd  => 0,
+		constraintFunc => undef,
+		isList => 1
+	       }),
      stringArg({name  => 'groupList',
 		descr => 'Comma-separated list of group names. If given, only studies within these projects will be considered.',
+		reqd  => 0,
+		constraintFunc => undef,
+		isList => 1
+	       }),
+     stringArg({name  => 'filterGroupList',
+		descr => 'Comma-separated list of group names. If given, studies within these groups will be discarded.',
 		reqd  => 0,
 		constraintFunc => undef,
 		isList => 1
@@ -78,7 +90,7 @@ sub getDocumentation {
   my $purpose = "For each study in the specified collection this plugin retrievs both 'intent' and 'context' information. Intent information consists of its study_design_type (category and value) list and its study_factor_type (category and value) list. Context information consist of: taxon list, biomaterial characteristic (category and value) list, and treatment_type list.";
 
   my $tablesAffected = [];
-  my $tablesDependedOn = [['Study::Study', 'The studies to consider'], ['Core::ProjectInfo', 'The projects whose studies should be considered, if specified'], ['Core::GroupInfo', 'The groups whose studies should be considered, if specified'], ['Study::OntologyEntry', 'Retrieved categories and values'], ['Study::StudyDesign', 'The study designs for the studies under consideration'], ['Study::StudyDesignType', 'The study design types for the studies under consideration'], ['Study::Factor', 'The study factors for the studies under consideration'], ['SRes::TaxonName', 'The preferred common names of the taxons for the studies under consideration'], ['SRes::Taxon', 'The taxons for the studies under consideration'], ['Study::BioMaterialImp', 'The biomaterials utilized in the studies under consideration'], ['RAD::StudyBioMaterial', 'Retrieves all biomaterials for each study under consideration'], ['Study::BioMaterialCharacteristic', 'The biomaterial characteristics for the biomaterials involved in the studies under consideration'], ['RAD::Treatment', 'The treatments employed in the studies under consideration']];
+  my $tablesDependedOn = [['Study::Study', 'The studies to consider'], ['Core::ProjectInfo', 'The projects whose studies should be considered or discarded, if specified'], ['Core::GroupInfo', 'The groups whose studies should be considered or discarded, if specified'], ['Study::OntologyEntry', 'Retrieved categories and values'], ['Study::StudyDesign', 'The study designs for the studies under consideration'], ['Study::StudyDesignType', 'The study design types for the studies under consideration'], ['Study::Factor', 'The study factors for the studies under consideration'], ['SRes::TaxonName', 'The preferred common names of the taxons for the studies under consideration'], ['SRes::Taxon', 'The taxons for the studies under consideration'], ['Study::BioMaterialImp', 'The biomaterials utilized in the studies under consideration'], ['RAD::StudyBioMaterial', 'Retrieves all biomaterials for each study under consideration'], ['Study::BioMaterialCharacteristic', 'The biomaterial characteristics for the biomaterials involved in the studies under consideration'], ['RAD::Treatment', 'The treatments employed in the studies under consideration']];
   my $howToRestart = "No restart option.";
   my $failureCases = "";
   my $notes = "";
@@ -184,6 +196,24 @@ sub retrieveStudiesAllTaxons {
     $query .= "row_project_id in $projectIdList";
     $whereUsed = 1;   
   }
+  if (defined $self->getArg('filterProjectList')) { 
+    my $filterProjectList = "(\'" . $self->getArg('filterProjectList')->[0] . "\'" ;
+    foreach (my $i=1; $i<@{$self->getArg('filterProjectList')}; $i++) {
+      $filterProjectList .= ", \'" . $self->getArg('filterProjectList')->[$i] . "\'";
+    }
+    $filterProjectList .= ")";
+    my $sth = $dbh->prepare("select project_id from Core.ProjectInfo where name in $filterProjectList");
+    $sth->execute();
+    my @filterProjectIds;
+    while (my ($projectId)=$sth->fetchrow_array()) {
+      push(@filterProjectIds, $projectId);
+    }
+    $sth->finish();
+    my $filterProjectIdList = "(" . join(",", @filterProjectIds) . ")";   
+    $query .= $whereUsed ? " and " : " where "; 
+    $query .= "row_project_id not in $filterProjectIdList";
+    $whereUsed = 1;   
+  }
   if (defined $self->getArg('groupList')) { 
     my $groupList = "(\'" . $self->getArg('groupList')->[0] . "\'" ;
     foreach (my $i=1; $i<@{$self->getArg('groupList')}; $i++) {
@@ -202,7 +232,24 @@ sub retrieveStudiesAllTaxons {
     $query .= "row_group_id in $groupIdList";
     $whereUsed = 1;   
   }
-
+  if (defined $self->getArg('filterGroupList')) { 
+    my $filterGroupList = "(\'" . $self->getArg('filterGroupList')->[0] . "\'" ;
+    foreach (my $i=1; $i<@{$self->getArg('filterGroupList')}; $i++) {
+      $filterGroupList .= ", \'" . $self->getArg('filterGroupList')->[$i] . "\'";
+    }
+    $filterGroupList .= ")";
+    my $sth = $dbh->prepare("select group_id from Core.GroupInfo where name in $filterGroupList");
+    $sth->execute();
+    my @filterGroupIds;
+    while (my ($groupId)=$sth->fetchrow_array()) {
+      push(@filterGroupIds, $groupId);
+    }
+    $sth->finish();
+    my $filterGroupIdList = "(" . join(",", @filterGroupIds) . ")";   
+    $query .= $whereUsed ? " and " : " where "; 
+    $query .= "row_group_id not in $filterGroupIdList";
+    $whereUsed = 1;   
+  }
   $query .= " order by study_id";
   $self->logDebug($query);
   my $sth = $dbh->prepare($query);
