@@ -72,6 +72,42 @@ sub runRepeatMask {
     return $valid;
 }
 
+sub validateRM {
+    my ($inputFile, $blockedFile, $errFile) = @_;
+
+    print "  validating...\n";
+
+    if (! -e $blockedFile) {
+        print "  INVALID  ($blockedFile not found)\n";
+        return 0;
+    }
+
+    if (! -e $errFile) {
+        print "  INVALID  ($errFile not found)\n";
+        return 0;
+    }
+
+    my $blockedCount = &countSeqs($blockedFile);
+    my $errCount = &countSeqs($errFile);
+    my $inputCount = &countSeqs($inputFile);
+    my $missing = $inputCount - ($blockedCount + $errCount);
+    if ($missing) {
+        print "  INVALID (in: $inputCount blocked: $blockedCount reject: $errCount diff: $missing)\n";
+        return 0;
+    }
+    
+    my $blockedCount = &countSeqs($blockedFile);
+    my $errCount = &countSeqs($errFile);
+    my $inputCount = &countSeqs($inputFile);
+    my $missing = $inputCount - ($blockedCount + $errCount);
+    if ($missing) {
+        print "  INVALID (in: $inputCount blocked: $blockedCount reject: $errCount diff: $missing)\n";
+        return 0;
+    }
+    print "  valid\n";
+    return 1;
+}
+
 sub runGenomeAlign {
     my ($pipelineDir, $numnodes, $queryName, $subjectName, $time, $queue) = @_;
     
@@ -246,7 +282,7 @@ sub runPfam {
     my $resultFile =
         "$pipelineDir/pfam/$name/master/mainresult/hmmpfam.out";
     my $propFile = "$pipelineDir/pfam/$name/input/controller.prop";
-    my $logFile = "$pipelineDir/$name.log";
+    my $logFile = "$pipelineDir/logs/$name.log";
 
     my $valid = 0;
     # TODO: validate previous results
