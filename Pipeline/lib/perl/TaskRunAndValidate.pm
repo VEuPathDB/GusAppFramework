@@ -83,8 +83,8 @@ sub validateRM {
     }
 
     if (! -e $errFile) {
-        print "  INVALID  ($errFile not found)\n";
-        return 0;
+	print "  INVALID  ($errFile not found)\n";
+	return 0;
     }
 
     my $blockedCount = &countSeqs($blockedFile);
@@ -96,14 +96,6 @@ sub validateRM {
         return 0;
     }
     
-    my $blockedCount = &countSeqs($blockedFile);
-    my $errCount = &countSeqs($errFile);
-    my $inputCount = &countSeqs($inputFile);
-    my $missing = $inputCount - ($blockedCount + $errCount);
-    if ($missing) {
-        print "  INVALID (in: $inputCount blocked: $blockedCount reject: $errCount diff: $missing)\n";
-        return 0;
-    }
     print "  valid\n";
     return 1;
 }
