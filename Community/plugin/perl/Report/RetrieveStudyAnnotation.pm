@@ -375,7 +375,7 @@ sub writeResults {
 
   $self->logDebug(scalar(@{$studies}));
   for (my $i=0; $i<@{$studies}; $i++) {
-    my $taxons = $studies->[$i]->{'taxons'} ? join(",", @{$studies->[$i]->{'taxons'}}) : "not specified";
+    my $taxons = $studies->[$i]->{'taxons'} ? join(",", @{$studies->[$i]->{'taxons'}}) : "";
     $fh->print("$studies->[$i]->{'studyId'}\t$studies->[$i]->{'studyName'}\t$studies->[$i]->{'studyDesignTypes'}\t$studies->[$i]->{'studyFactorTypes'}\t$taxons\t$studies->[$i]->{'bioMaterialCharacteristics'}\t$studies->[$i]->{'treatmentTypes'}\n");
   } 
   $fh->close();
