@@ -451,7 +451,7 @@ sub _readBioMaterialFile {
       ($seenProt) = $self->sqlAsArray(Sql => $sql );
 
       $sql = defined($seenProt) 
-        ? "select protocol_type_id from Rad.Protocol where protocol_id = $seenProt"
+        ? "select oc.ontology_entry_id from Rad.Protocol p, Study.ONTOLOGYENTRY op, Study.ONTOLOGYENTRY oc where op.ontology_entry_id = p.protocol_type_id and oc.value = op.value and oc.category = 'ComplexAction' and p.protocol_id = $seenProt"
           : "select ontology_entry_id from Study.OntologyEntry where value = '$p' and category = 'ComplexAction'";
 
       ($treatmentProtocolId) = $self->sqlAsArray(Sql => $sql);
