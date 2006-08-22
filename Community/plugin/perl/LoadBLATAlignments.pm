@@ -265,7 +265,14 @@ my $argsDeclaration = [
       constraintFunc=> undef,
       reqd  => 0,
       isList => 0,
-  })
+  }),
+  stringArg({
+      name => 'queryRegex',
+      descr => 'regex used to extract identifier for query sequences from defline',
+      constraintFunc=> undef,
+      reqd  => 1,
+      isList => 0,
+  }),
 ];
 
 sub new {
@@ -288,14 +295,13 @@ sub run {
     my $self = shift;
     $| = 1;
 
-    my $cla = $self->getCla();
-    my $blatDir = $cla->{'blat_dir'};
-    my $blatFiles = $cla->{'blat_files'};
-    my $fileList =  $cla->{'file_list'};
-    my $queryFile = $cla->{'query_file'};
-    my $queryTableId = $cla->{'query_table_id'};
-    my $targetTableId = $cla->{'target_table_id'};
-    my $action = $cla->{'action'};
+    my $blatDir = $self->getArg('blat_dir');
+    my $blatFiles = $self->getArg('blat_files');
+    my $fileList =  $self->getArg('file_list');
+    my $queryFile = $self->getArg('query_file');
+    my $queryTableId = $self->getArg('query_table_id');
+    my $targetTableId = $self->getArg('target_table_id');
+    my $action = $self->getArg('action');
     my $dbh = $self->getQueryHandle();
 
     die "LoadBLATAlignments: query_file not defined" unless $queryFile;
@@ -332,37 +338,36 @@ sub loadAlignments {
     my ($self, $blatFiles, $qIndex) = @_;
     
     my $dbh = $self->getQueryHandle();
-    my $cla = $self->getCla();
 
-    my $reportInterval = $cla->{'report_interval'};
-    my $commitInterval = $cla->{'commit_interval'};
-    my $prevRuns = $cla->{'previous_runs'};
+    my $reportInterval = $self->getArg('report_interval');
+    my $commitInterval = $self->getArg('commit_interval');
+    my $prevRuns = $self->getArg('previous_runs');
 
-    my $queryTableId = $cla->{'query_table_id'};
-    my $queryTaxonId = $cla->{'query_taxon_id'};
-    my $queryExtDbRelId = $cla->{'query_db_rel_id'};
-    my $targetTableId = $cla->{'target_table_id'};
-    my $targetTaxonId = $cla->{'target_taxon_id'};
-    my $targetExtDbRelId = $cla->{'target_db_rel_id'};
-    my $gapTabSpace = $cla->{'gap_table_space'};
+    my $queryTableId = $self->getArg('query_table_id');
+    my $queryTaxonId = $self->getArg('query_taxon_id');
+    my $queryExtDbRelId = $self->getArg('query_db_rel_id');
+    my $targetTableId = $self->getArg('target_table_id');
+    my $targetTaxonId = $self->getArg('target_taxon_id');
+    my $targetExtDbRelId = $self->getArg('target_db_rel_id');
+    my $gapTabSpace = $self->getArg('gap_table_space');
     my $gapTabPref;
     if ($gapTabSpace) {
         my $ext_genome_ver = &getUcscGenomeVersion($dbh, $targetExtDbRelId);
         $gapTabPref = "${gapTabSpace}.${ext_genome_ver}_";
     }
 
-    my $minQueryPct = $cla->{'min_query_pct'};
+    my $minQueryPct = $self->getArg('min_query_pct');
 
     # Parameters used to assess alignments qualities
     #
     my $qualityParams = {
-	'maxEndMismatch' => $cla->{'max_end_mismatch'},
-	'minPctId' => $cla->{'min_pct_id'},
-	'maxQueryGap' => $cla->{'max_query_gap'},
-	'okInternalGap' => $cla->{'ok_internal_gap'},
-	'okEndGap' => $cla->{'ok_end_gap'},
-	'endGapFactor' => $cla->{'end_gap_factor'},
-	'minGapPct' => $cla->{'min_gap_pct'},
+	'maxEndMismatch' => $self->getArg('max_end_mismatch'),
+	'minPctId' => $self->getArg('min_pct_id'),
+	'maxQueryGap' => $self->getArg('max_query_gap'),
+	'okInternalGap' => $self->getArg('ok_internal_gap'),
+	'okEndGap' => $self->getArg('ok_end_gap'),
+	'endGapFactor' => $self->getArg('end_gap_factor'),
+	'minGapPct' => $self->getArg('min_gap_pct'),
     };
 
     my @prevAlgInvIds = defined($prevRuns) ? split(/,|\s+/, $prevRuns): ();
@@ -382,7 +387,7 @@ sub loadAlignments {
     my @files = split(/,|\s+/, $blatFiles);
     my $nFiles = scalar(@files);
 
-    my $userId = $self->getDb()->getDefaultUserId();  # used to be $cla->{'user_id'};
+    my $userId = $self->getDb()->getDefaultUserId();
     my $groupId = $self->getDb()->getDefaultGroupId(); 
     my $projectId = $self->getDb()->getDefaultProjectId();
     my $algInvId = $self->getAlgInvocation()->getId();
@@ -451,15 +456,14 @@ sub getAlignmentGroups {
     my ($self) = @_;
 
     my $dbh = $self->getQueryHandle();
-    my $cla = $self->getCla();
 
-    my $keepBest = $cla->{'keep_best'};
-    my $queryTableId = $cla->{'query_table_id'};
-    my $queryTaxonId = $cla->{'query_taxon_id'};
-    my $queryExtDbRelId = $cla->{'query_db_rel_id'};
-    my $targetTableId = $cla->{'target_table_id'};
-    my $targetTaxonId = $cla->{'target_taxon_id'};
-    my $targetExtDbRelId = $cla->{'target_db_rel_id'};
+    my $keepBest = $self->getArg('keep_best');
+    my $queryTableId = $self->getArg('query_table_id');
+    my $queryTaxonId = $self->getArg('query_taxon_id');
+    my $queryExtDbRelId = $self->getArg('query_db_rel_id');
+    my $targetTableId = $self->getArg('target_table_id');
+    my $targetTaxonId = $self->getArg('target_taxon_id');
+    my $targetExtDbRelId = $self->getArg('target_db_rel_id');
 
     my $sql = "select query_na_sequence_id, blat_alignment_id, score, percent_identity "
 	. "from DoTS.BlatAlignment "
@@ -487,16 +491,15 @@ sub keepBestAlignments {
     my ($self) = @_;
 
     my $dbh = $self->getQueryHandle();
-    my $cla = $self->getCla();
 
-    my $keepBest = $cla->{'keep_best'};
-    my $queryTableId = $cla->{'query_table_id'};
-    my $queryTaxonId = $cla->{'query_taxon_id'};
-    my $queryExtDbRelId = $cla->{'query_db_rel_id'};
-    my $targetTableId = $cla->{'target_table_id'};
-    my $targetTaxonId = $cla->{'target_taxon_id'};
-    my $targetExtDbRelId = $cla->{'target_db_rel_id'};
-    my $commitInterval = $cla->{'commit_interval'};
+    my $keepBest = $self->getArg('keep_best');
+    my $queryTableId = $self->getArg('query_table_id');
+    my $queryTaxonId = $self->getArg('query_taxon_id');
+    my $queryExtDbRelId = $self->getArg('query_db_rel_id');
+    my $targetTableId = $self->getArg('target_table_id');
+    my $targetTaxonId = $self->getArg('target_taxon_id');
+    my $targetExtDbRelId = $self->getArg('target_db_rel_id');
+    my $commitInterval = $self->getArg('commit_interval');
 
     # get alignment groups by query
     #
@@ -570,18 +573,14 @@ sub maybeIndexQueryFile {
     #
     my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
 
+    my $regex = $self->getArg('queryRegex');
+
     my $idSub = sub {
 	my($defline) = @_;
 
-	if ($defline =~ /^>(DT\.\d+|THC\d+)/) {
-	    return $1;
-	} elsif ($defline =~ /^>(\d+)\s+/) {
-	    return $1;
-	} elsif ($defline =~ /^>Pfa3D7\|(\d+)\|/) {
-	    return $1;
+	if ($defline =~ /$regex/) {
+	  return $1;
 	}
-        # TODO: make this id regex a config item (below is for mchr5p celera genes)
-        elsif ($defline =~ /^>(\S+)/) { return $1; }
 
 	print "Unable to parse $defline\n";	print "returning $1\n";
     };
@@ -846,26 +845,21 @@ sub getQueryNaSeqId {
     return $sid;
 }
 
-# Return the (UCSC) genome version for given external databaser release id
+# Return the genome version for given external databaser release id
 #
 sub getUcscGenomeVersion {
     my ($dbh, $ext_db_rel_id) = @_;
 
     my $sql = "select version from SRES.ExternalDatabaseRelease " .
-	      "where external_database_release_id = $ext_db_rel_id";
+	      "where external_database_release_id = ?";
     my $sth = $dbh->prepare($sql) or die "bad sql $sql: $!";
-    $sth->execute or die "could not run $sql: $!";
+    $sth->execute($ext_db_rel_id) or die "could not run $sql: $!";
     my @vers;
     while (my ($v) = $sth->fetchrow_array) { push @vers, $v; }
     my $c = $#vers+1;
     die "expected 1 entry but got $c\n" unless $c == 1;
 
     my $v = $vers[0];
-    if ($v =~ /^((hg|mm)\d+)/i) {
-	$v = $1;
-    } else {
-	die "can not parse UCSC genome version from \"$v\"\n";
-    }
 
     $v;
 }
