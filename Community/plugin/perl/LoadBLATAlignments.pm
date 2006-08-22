@@ -305,12 +305,12 @@ sub run {
     my $dbh = $self->getQueryHandle();
 
     die "LoadBLATAlignments: query_file not defined" unless $queryFile;
-    die "LoadBLATAlignments: unrecognized query_table_id"  unless (&getTableNameFromTableId($dbh, $queryTableId) =~ /^(?:Assembly|AssemblySequence|ExternalNASequence|VirtualSequence|SplicedNASequence)$/i);
-    die "LoadBLATAlignments: unrecognized target_table_id" unless (&getTableNameFromTableId($dbh, $targetTableId) =~ /^(?:Assembly|AssemblySequence|ExternalNASequence|VirtualSequence|SplicedNASequence)$/i);
+    die "LoadBLATAlignments: unrecognized query_table_id"  unless ($self->getTableNameFromTableId($dbh, $queryTableId) =~ /^(?:Assembly|AssemblySequence|ExternalNASequence|VirtualSequence|SplicedNASequence)$/i);
+    die "LoadBLATAlignments: unrecognized target_table_id" unless ($self->getTableNameFromTableId($dbh, $targetTableId) =~ /^(?:Assembly|AssemblySequence|ExternalNASequence|VirtualSequence|SplicedNASequence)$/i);
  
     my $summary;
 
-    my @blatFiles = &getBlatFiles($blatDir, $blatFiles, $fileList) unless $action eq 'setbest';
+    my @blatFiles = $self->getBlatFiles($blatDir, $blatFiles, $fileList) unless $action eq 'setbest';
 
     if (!$action || $action eq 'strip') {
 	foreach my $file (@blatFiles) {
@@ -322,7 +322,7 @@ sub run {
     if (!$action || $action eq 'load') {
 	my $blatFiles = join(',', @blatFiles);
 	$self->log("Load alignments from raw BLAT output files $blatFiles ...");
-	my $qIndex = &maybeIndexQueryFile($queryFile);
+	my $qIndex = $self->maybeIndexQueryFile($queryFile);
 	$summary = $self->loadAlignments($blatFiles, $qIndex);
     }
 
@@ -352,7 +352,7 @@ sub loadAlignments {
     my $gapTabSpace = $self->getArg('gap_table_space');
     my $gapTabPref;
     if ($gapTabSpace) {
-        my $ext_genome_ver = &getUcscGenomeVersion($dbh, $targetExtDbRelId);
+        my $ext_genome_ver = $self->getGenomeVersion($dbh, $targetExtDbRelId);
         $gapTabPref = "${gapTabSpace}.${ext_genome_ver}_";
     }
 
@@ -374,13 +374,13 @@ sub loadAlignments {
 
     # 1. Read target source ids if requested
     #
-    my $targetTable = &getTableNameFromTableId($dbh, $targetTableId);
+    my $targetTable = $self->getTableNameFromTableId($dbh, $targetTableId);
     my $targetIdHash = ($targetExtDbRelId =~ /\d+/) ?
-	&makeSourceIdHash($dbh, "$TPREF.$targetTable", $targetExtDbRelId) : undef;
+	$self->makeSourceIdHash($dbh, "$TPREF.$targetTable", $targetExtDbRelId) : undef;
     # 2. Build hash of alignments that have already been loaded; we assume
     #    that an alignment can be uniquely identified by its coordinates.
     #
-    my $alreadyLoaded = &makeAlignmentHash($dbh, \@prevAlgInvIds, $queryTableId, $targetTableId);
+    my $alreadyLoaded = $self->makeAlignmentHash($dbh, \@prevAlgInvIds, $queryTableId, $targetTableId);
 
     # 3. Load BLAT alignments into BLATAlignment
     #
@@ -408,7 +408,7 @@ sub loadAlignments {
     my $nTotalAligns = 0;
     my $nTotalAlignsLoaded = 0;
     
-    my $queryTableName = lc(&getTableNameFromTableId($dbh, $queryTableId));
+    my $queryTableName = lc($self->getTableNameFromTableId($dbh, $queryTableId));
 
     foreach my $blatFile (@files) {
 	print "LoadBLATAlignments: reading from $blatFile\n";
@@ -425,7 +425,7 @@ sub loadAlignments {
 	    ++$nTotalAligns;
 
 	    my $gapTab = ($gapTabPref ? "${gapTabPref}" . $align->get('t_name') . "_gap" : "");
-	    my $nl = &loadAlignment($dbh, $gapTab, $insertSql, $sth, $queryTableId, $queryTaxonId,
+	    my $nl = $self->loadAlignment($dbh, $gapTab, $insertSql, $sth, $queryTableId, $queryTaxonId,
 				    $queryExtDbRelId, $targetTableId, $targetTaxonId, $targetExtDbRelId,
 				    $qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align,
 				    $minQueryPct, $queryTableName);
@@ -433,8 +433,8 @@ sub loadAlignments {
 	    $nAlignsLoaded += $nl;
 	    $nTotalAlignsLoaded += $nl;
 
-	    &progressMessage($reportInterval, $nTotalAligns, 'BLAT alignments processed.');
-	    &progressMessage($reportInterval, $nTotalAlignsLoaded, 'BLAT alignments loaded.') if ($nl > 0);
+	    $self->progressMessage($reportInterval, $nTotalAligns, 'BLAT alignments processed.');
+	    $self->progressMessage($reportInterval, $nTotalAlignsLoaded, 'BLAT alignments loaded.') if ($nl > 0);
 
 	    $dbh->commit() if (($nTotalAlignsLoaded % $commitInterval) == 0);
 	}
@@ -568,7 +568,7 @@ sub keepBestAlignments {
 # maybe index query sequence file
 #
 sub maybeIndexQueryFile {
-    my ($queryFile) = @_;
+    my ($self,$queryFile) = @_;
     # Make sure that query_file is indexed
     #
     my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
@@ -594,7 +594,7 @@ sub maybeIndexQueryFile {
 }
 
 sub getBlatFiles {
-    my ($blatDir, $blatFiles, $fileList) = @_;
+    my ($self,$blatDir, $blatFiles, $fileList) = @_;
     die "LoadBLATAlignments: blat files not defined" unless $blatDir || $blatFiles || $fileList;
 
     return split(/,/, $blatFiles) if $blatFiles;
@@ -618,7 +618,7 @@ sub getBlatFiles {
 # Print a progress message if appropriate
 #
 sub progressMessage {
-    my($interval, $num, $what) = @_;
+    my($self,$interval, $num, $what) = @_;
 
     return if (not defined($interval));
     return if ($num == 0);
@@ -633,7 +633,7 @@ sub progressMessage {
 # Return the name of a table given its GUS table_id.
 #
 sub getTableNameFromTableId {
-    my($dbh, $tid) = @_;
+    my($self,$dbh, $tid) = @_;
 
     my $sth = $dbh->prepareAndExecute("select distinct name from core.TableInfo where table_id = $tid");
     my($name) =  $sth->fetchrow_array();
@@ -646,7 +646,7 @@ sub getTableNameFromTableId {
 # user has supplied an external_db_id for the target sequences.
 #
 sub makeSourceIdHash {
-    my($dbh, $targetTable, $targetDbId) = @_;
+    my($self,$dbh, $targetTable, $targetDbId) = @_;
     my $hash = {};
 
     my $sql = ("select source_id, na_sequence_id " .
@@ -678,7 +678,7 @@ sub makeSourceIdHash {
 # identifier.
 #
 sub makeAlignmentHash {
-    my($dbh, $algInvIds, $queryTableId, $targetTableId) = @_;
+    my($self,$dbh, $algInvIds, $queryTableId, $targetTableId) = @_;
 
     print STDERR "LoadBLATAlignments: Building hash using alg_inv_ids: [", join(", ", @$algInvIds), "]\n";
 
@@ -723,7 +723,7 @@ sub makeAlignmentHash {
 # of alignments (0 or 1) actually loaded.
 #
 sub loadAlignment {
-    my($dbh, $gapTable, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
+    my($self,$dbh, $gapTable, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
        $targetTableId, $targetTaxonId, $targetExtDbRelId,$qIndex, $qualityParams,
        $alreadyLoaded, $targetIdHash, $align, $minQueryPct, $queryTableName) = @_;
 
@@ -746,7 +746,7 @@ sub loadAlignment {
     #
     my $origQueryId = $query_id;
     # HACK
-    $query_id = &getQueryNaSeqId($dbh, $query_id, $queryTableName);
+    $query_id = $self->getQueryNaSeqId($dbh, $query_id, $queryTableName);
     $query_id =~ s/[^0-9]//g;
 
     # Check to see whether this alignment has already been loaded
@@ -825,7 +825,7 @@ sub loadAlignment {
 # Return the na_sequence_id for of a TIGR TC.
 #
 sub getQueryNaSeqId {
-    my ($dbh, $qid, $queryTableName) = @_;
+    my ($self,$dbh, $qid, $queryTableName) = @_;
     
 #    return $qid if $queryTableId =~ /^56|339$/;
 #    return $qid if $queryTableId == 89 && $qid =~ /^\d+$/;
@@ -847,8 +847,8 @@ sub getQueryNaSeqId {
 
 # Return the genome version for given external databaser release id
 #
-sub getUcscGenomeVersion {
-    my ($dbh, $ext_db_rel_id) = @_;
+sub getGenomeVersion {
+    my ($self,$dbh, $ext_db_rel_id) = @_;
 
     my $sql = "select version from SRES.ExternalDatabaseRelease " .
 	      "where external_database_release_id = ?";
