@@ -573,22 +573,20 @@ sub maybeIndexQueryFile {
     #
     my $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
 
-    my $regex = $self->getArg('queryRegex');
-
-    my $idSub = sub {
+    if (!$qIndex->open()) {
+      my $regex = $self->getArg('queryRegex');
+      my $idSub = sub {
 	my($defline) = @_;
 
 	if ($defline =~ /$regex/) {
 	  return $1;
 	}
 
-	print "Unable to parse $defline\n";	print "returning $1\n";
-    };
-
-    if (!$qIndex->open()) {
-	$qIndex->createIndex(CBIL::Util::TO->new({get_key => $idSub}));
-	$qIndex = undef;
-	$qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
+	$self->error ("Unable to parse $defline with regex = '$regex'");
+      };
+      $qIndex->createIndex(CBIL::Util::TO->new({get_key => $idSub}));
+      $qIndex = undef;
+      $qIndex = new CBIL::Bio::FastaIndex(CBIL::Util::TO->new({seq_file => $queryFile, open => 1}));
     }
     $qIndex;
 }
