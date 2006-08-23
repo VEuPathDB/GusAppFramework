@@ -24,6 +24,7 @@ use CBIL::Bio::FastaIndex;
 use CBIL::Util::TO;
 use CBIL::Util::Disp;
 use GUS::PluginMgr::Plugin;
+use FileHandle;
 
 my $VERSION = '$Revision$'; $VERSION =~ s/Revision://; $VERSION =~ s/\$//g; $VERSION =~ s/ //g; #'
 
@@ -407,43 +408,44 @@ sub loadAlignments {
 
     my $nTotalAligns = 0;
     my $nTotalAlignsLoaded = 0;
-    
+
     my $queryTableName = lc($self->getTableNameFromTableId($dbh, $queryTableId));
 
     foreach my $blatFile (@files) {
-	print "LoadBLATAlignments: reading from $blatFile\n";
-	my $nAligns = 0;
-	my $nAlignsLoaded = 0;
+      print "LoadBLATAlignments: reading from $blatFile\n";
 
-	my $psl = CBIL::Bio::BLAT::PSL->new($blatFile);
-	my $alignments = $psl->getAlignments();
+      my $fh = FileHandle->new();
+      $fh->open($blatFile, "r");
 
-	print "LoadBLATAlignments: read ", $psl->getNumAlignments, " BLAT alignments from $blatFile\n";
+      my $nAligns = 0;
+      my $nAlignsLoaded = 0; 
 
-	foreach my $align (@$alignments) {
-	    ++$nAligns;
-	    ++$nTotalAligns;
+      while (<$fh>) {
+	my $align = CBIL::Bio::BLAT::Alignment->new($_);
 
-	    my $gapTab = ($gapTabPref ? "${gapTabPref}" . $align->get('t_name') . "_gap" : "");
-	    my $nl = $self->loadAlignment($dbh, $gapTab, $insertSql, $sth, $queryTableId, $queryTaxonId,
-				    $queryExtDbRelId, $targetTableId, $targetTaxonId, $targetExtDbRelId,
-				    $qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align,
-				    $minQueryPct, $queryTableName);
+	++$nAligns;
+	++$nTotalAligns;
 
-	    $nAlignsLoaded += $nl;
-	    $nTotalAlignsLoaded += $nl;
+	my $gapTab = ($gapTabPref ? "${gapTabPref}" . $align->get('t_name') . "_gap" : "");
+	my $nl = $self->loadAlignment($dbh, $gapTab, $insertSql, $sth, $queryTableId, $queryTaxonId,
+				      $queryExtDbRelId, $targetTableId, $targetTaxonId, $targetExtDbRelId,
+				      $qIndex, $qualityParams, $alreadyLoaded, $targetIdHash, $align,
+				      $minQueryPct, $queryTableName);
 
-	    $self->progressMessage($reportInterval, $nTotalAligns, 'BLAT alignments processed.');
-	    $self->progressMessage($reportInterval, $nTotalAlignsLoaded, 'BLAT alignments loaded.') if ($nl > 0);
+	$nAlignsLoaded += $nl;
+	$nTotalAlignsLoaded += $nl;
 
-	    $dbh->commit() if (($nTotalAlignsLoaded % $commitInterval) == 0);
-	}
+	$self->progressMessage($reportInterval, $nTotalAligns, 'BLAT alignments processed.');
+	$self->progressMessage($reportInterval, $nTotalAlignsLoaded, 'BLAT alignments loaded.') if ($nl > 0);
 
-	$dbh->commit();
+	$dbh->commit() if (($nTotalAlignsLoaded % $commitInterval) == 0);
+      }
 
-	my $srcId = $1 if $blatFile =~ /(chr\S+?)\./;
-	my $target_id = $targetIdHash->{$srcId};
-	print "LoadBLATAlignments: loaded $nAlignsLoaded/$nAligns BLAT alignments for $srcId ($target_id) from $blatFile.\n";
+      $dbh->commit();
+
+      print "LoadBLATAlignments: loaded $nAlignsLoaded/$nAligns BLAT alignments from $blatFile.\n";
+
+      $fh->close();
     }
 
     my $summary = "Loaded $nTotalAlignsLoaded/$nTotalAligns BLAT alignments from $nFiles file(s).\n";
