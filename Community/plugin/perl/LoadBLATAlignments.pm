@@ -756,11 +756,11 @@ C<loadAlignment> checks if it is not already present in $alreadyLoaded
 and it meets the minimum query percent alignment cutoff.  Returns the
 number of alignments (0 or 1) actually loaded.
 
-=pod
+=cut
 
 sub loadAlignment {
-   my($self,$dbh, $gapTable, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
-      $targetTableId, $targetTaxonId, $targetExtDbRelId,$qIndex, $qualityParams,
+   my ($self,$dbh, $gapTable, $sql, $sth, $queryTableId, $queryTaxonId, $queryExtDbRelId,
+       $targetTableId, $targetTaxonId, $targetExtDbRelId,$qIndex, $qualityParams,
       $alreadyLoaded, $targetIdHash, $align, $minQueryPct, $queryTableName) = @_;
 
    my $query_id  = $align->get('q_name');
