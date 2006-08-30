@@ -1,0 +1,100 @@
+#!@perl@
+
+## unloads flat files for keyword search to grep through
+
+use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
+use Getopt::Long;
+use GUS::ObjRelP::DbiDatabase;
+use CBIL::Bio::SequenceUtils;
+use GUS::Supported::GusConfig;
+
+my ($outDir, $justComments, $gusConfigFile, $debug, $verbose);
+&GetOptions("outputDir=s" => \$outDir,
+            "justComments!" => $justComments,
+            "verbose!"=> \$verbose,
+            "debug!" => \$debug,
+            "gusConfigFile=s" => \$gusConfigFile);
+            
+
+if (!$outDir){
+	die "usage: $0 --outputDir <outputDirectory> --verbose --debug --gusConfigFile [\$GUS_HOME/config/gus.config]\n";
+}
+
+print STDERR "Establishing dbi login\n" if $verbose;
+my $gusconfig = GUS::Supported::GusConfig->new($gusConfigFile);
+
+my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
+					$gusconfig->getReadOnlyDatabaseLogin(),
+					$gusconfig->getReadOnlyDatabasePassword,
+					$verbose,0,1,
+					$gusconfig->getCoreSchemaName,
+					$gusconfig->getOracleDefaultRollbackSegment());
+
+my $dbh = $db->getQueryHandle();
+
+$dbh->{LongReadLen} = 8192 * 1024;
+my $sql;
+
+# comments
+$sql = <<SQL;
+SELECT '', gf.source_id, to_char(nfc.comment_string)
+FROM dots.naFeatureComment nfc, dots.GeneFeature gf
+WHERE nfc.na_feature_id = gf.na_feature_id
+ORDER BY gf.source_id, to_char(nfc.comment_string)
+SQL
+
+&extractFile($dbh, $outDir . "/comments.txt", $sql);
+
+exit if $justComments;
+
+# gene product
+$sql = <<SQL;
+SELECT '', gf.source_id, gf.product
+FROM dots.GeneFeature gf
+WHERE gf.source_id IS NOT NULL
+ORDER BY gf.source_id, gf.product
+SQL
+
+&extractFile($dbh, $outDir . "/product.txt", $sql);
+
+
+# BLAST files
+$sql = <<SQL;
+SELECT s.pvalue_exp, tas.source_id, eas.description
+FROM core.tableInfo subject, dots.similarity s, core.tableInfo query,
+     dots.ExternalAaSequence eas, dots.TranslatedAaSequence tas
+WHERE s.query_table_id = query.table_id
+  AND s.subject_table_id = subject.table_id
+  AND subject.name = 'ExternalAASequence'
+  AND s.subject_id = eas.aa_sequence_id
+  AND eas.description is not null
+  AND query.name = 'TranslatedAASequence'
+  AND s.query_id = tas.aa_sequence_id
+ORDER BY pvalue_exp, tas.source_id, eas.description
+SQL
+
+&extractFile($dbh, $outDir . "/blast.txt", $sql);
+
+sub extractFile {
+  my ($dbh, $outFile, $sql) = @_;
+
+  print STDERR "SQL: $sql\n" if $verbose;
+
+  my $count = 0;
+  my $statement = $dbh->prepare($sql);
+  $statement->execute();
+  my @ids;
+
+  print "outFile: $outFile\n" if $verbose;
+  open(OUT,">$outFile");
+
+  while(my @row = $statement->fetchrow_array()){
+    $count++;
+    print STDERR "Processing record $count\n" if $verbose && $count % 10000 == 0;
+    print OUT join("\t", @row), "\n";
+  }
+
+  close(OUT);
+  $statement->finish();
+}
