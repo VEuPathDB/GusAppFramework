@@ -1,0 +1,24 @@
+#!@perl@
+
+## takes a tab-delimited data from stdin, in which the first field is a number,
+## together with a cutoff value, and outputs all but the first field
+## for records whose number is less than or equal to the cutoff
+## assumes file is sorted ascending
+
+use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
+use Getopt::Long;
+use GUS::Supported::GusConfig;
+
+my $cutoff = $ARGV[0];
+
+if (!$cutoff){
+	die "usage: $0 <cutoff>\n";
+}
+
+while (my $line = <STDIN>) {
+	chomp $line;
+	my @fields = split /\t/, $line, 2;
+        last if ($fields[0] && $fields[0] > $cutoff);
+        print "$fields[1]\n";
+}
