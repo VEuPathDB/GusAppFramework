@@ -1,12 +1,27 @@
 package GUS::PluginMgr::GusApplication;
-@ISA = qw( GUS::PluginMgr::Plugin );
+
+=pod
+
+=head1 Description
+
+C<GUS::PluginMgr::GusApplication> implements the basic support for
+most GUS-related applications via the notion of plugins.  Each
+'application' is actually a plugin package which is run by this
+package.  C<GUS::PluginMgr::GusApplication> has a few different run
+modes that affect whether the plugin application is actually run, or
+if meta data about the application is updated or displayed.
+
+=cut
 
 # ========================================================================
 # ----------------------------- Declarations -----------------------------
 # ========================================================================
 
 use strict;
-#use vars (%SIG);
+use vars qw( @ISA );
+
+@ISA = qw( GUS::PluginMgr::Plugin );
+
 use CBIL::Util::EasyCsp;
 
 use GUS::PluginMgr::Plugin;
