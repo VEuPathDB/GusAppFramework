@@ -1246,9 +1246,9 @@ B<Parameters>
 sub log {
   my $Self = shift;
 
-  my $time_stamp_s = localtime;
+  my $time_stamp_ = localtime;
 
-  my $msg = join("\t", $time_stamp_s, @_);
+  my $msg = join("\t", $time_stamp_, @_);
 
   print STDERR "$msg\n";
 }
@@ -1323,9 +1323,9 @@ sub logData {
   my $Self = shift;
   my $T = shift;
 
-  my $time_stamp_s = localtime;
+  my $time_stamp_ = localtime;
 
-  my $msg = join("\t", $time_stamp_s, $T, @_);
+  my $msg = join("\t", $time_stamp_, $T, @_);
 
   print "$msg\n";
 
@@ -1376,6 +1376,27 @@ sub logArgs {
     } else {
       $Self->log('ARG', $flag, $value);
     }
+  }
+}
+
+=item C<logRowsInserted()>
+
+Log to STDERR a report, by table, of the count of rows actually written
+with the run's algorithm invocation id.  (only possible if the plugin has a
+undoTables() method)
+
+=cut
+
+sub logRowsInserted {
+  my ($self) = @_;
+
+  if ($self->can(undoTables)) {  # test for existance of undoTables method
+    my @tables = $self->undoTables();
+    foreach my $table (@tables) {
+      $self->_logMyRows($table);
+    }
+  } else {
+    $self->log('Rows Written', "N/A (plugin has no 'undoTables()' method)");
   }
 }
 
@@ -2029,6 +2050,20 @@ sub initConfig {
 # ----------------------------------------------------------------------
 # Private Methods
 # ----------------------------------------------------------------------
+sub _logMyRows {
+  my ($self, $tableName) = @_;
+
+  my $raii = $self->getAlgInvocation()->getId();
+  my $sql =
+"SELECT count(*) from $tableName
+WHERE row_alg_invocation_id = $raii";
+
+  my $stmt = $self->getQueryHandle->prepareAndExecute($sql);
+
+  my ($count) = $stmt->fetchrow_array();
+  $self->log('Rows Written', "$tableName: $count");
+}
+
 sub _initEasyCspOptions    {
   my $Self = shift;
 
