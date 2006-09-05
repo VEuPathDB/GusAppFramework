@@ -38,10 +38,15 @@ my $sql;
 
 # comments
 $sql = <<SQL;
-SELECT '', gf.source_id, to_char(nfc.comment_string)
-FROM dots.naFeatureComment nfc, dots.GeneFeature gf
+SELECT '', substr(tn.name, 1, instr(tn.name || '  ', ' ', 1, 2)-1),
+       gf.source_id, to_char(nfc.comment_string)
+FROM dots.naFeatureComment nfc, dots.GeneFeature gf, dots.NaSequence ns,
+     sres.TaxonName tn
 WHERE nfc.na_feature_id = gf.na_feature_id
-ORDER BY gf.source_id, to_char(nfc.comment_string)
+  AND gf.na_sequence_id = ns.na_sequence_id
+  AND ns.taxon_id = tn.taxon_id
+  AND tn.name_class = 'scientific name'
+ORDER BY tn.name, gf.source_id, to_char(nfc.comment_string)
 SQL
 
 &extractFile($dbh, $outDir . "/comments.txt", $sql);
@@ -50,10 +55,15 @@ exit if $justComments;
 
 # gene product
 $sql = <<SQL;
-SELECT '', gf.source_id, gf.product
-FROM dots.GeneFeature gf
+SELECT '', substr(tn.name, 1, instr(tn.name || '  ', ' ', 1, 2)-1),
+       gf.source_id, gf.product
+FROM dots.GeneFeature gf, dots.NaSequence ns,
+     sres.TaxonName tn
 WHERE gf.source_id IS NOT NULL
-ORDER BY gf.source_id, gf.product
+  AND gf.na_sequence_id = ns.na_sequence_id
+  AND ns.taxon_id = tn.taxon_id
+  AND tn.name_class = 'scientific name'
+ORDER BY tn.name, gf.source_id, gf.product
 SQL
 
 &extractFile($dbh, $outDir . "/product.txt", $sql);
@@ -61,9 +71,12 @@ SQL
 
 # BLAST files
 $sql = <<SQL;
-SELECT s.pvalue_exp, tas.source_id, eas.description
+
+SELECT s.pvalue_exp, substr(tn.name, 1, instr(tn.name || '  ', ' ', 1, 2)-1),
+       tas.source_id, eas.description
 FROM core.tableInfo subject, dots.similarity s, core.tableInfo query,
-     dots.ExternalAaSequence eas, dots.TranslatedAaSequence tas
+     dots.ExternalAaSequence eas, dots.TranslatedAaSequence tas,
+     sres.TaxonName tn
 WHERE s.query_table_id = query.table_id
   AND s.subject_table_id = subject.table_id
   AND subject.name = 'ExternalAASequence'
@@ -71,7 +84,9 @@ WHERE s.query_table_id = query.table_id
   AND eas.description is not null
   AND query.name = 'TranslatedAASequence'
   AND s.query_id = tas.aa_sequence_id
-ORDER BY pvalue_exp, tas.source_id, eas.description
+  AND tas.taxon_id = tn.taxon_id
+  AND tn.name_class = 'scientific name'
+ORDER BY pvalue_exp, tn.name, tas.source_id, eas.description
 SQL
 
 &extractFile($dbh, $outDir . "/blast.txt", $sql);
