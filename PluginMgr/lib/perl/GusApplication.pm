@@ -578,6 +578,7 @@ sub doMajorMode_RunOrReport {
 
       $self->logAlert("RESULT", $pu->getResultDescr());
 
+      $Run && $pu->logRowsInserted();
       $Run && $pu->logAlgInvocationId();
       $Run && $pu->logCommit();
    };}
