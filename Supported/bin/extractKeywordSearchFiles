@@ -39,7 +39,7 @@ my $sql;
 # comments
 $sql = <<SQL;
 SELECT '', substr(tn.name, 1, instr(tn.name || '  ', ' ', 1, 2)-1),
-       gf.source_id, to_char(nfc.comment_string)
+       gf.source_id, regexp_replace(nfc.comment_string, '[[:space:]]', ' ')
 FROM dots.naFeatureComment nfc, dots.GeneFeature gf, dots.NaSequence ns,
      sres.TaxonName tn
 WHERE nfc.na_feature_id = gf.na_feature_id
@@ -56,7 +56,7 @@ exit if $justComments;
 # gene product
 $sql = <<SQL;
 SELECT '', substr(tn.name, 1, instr(tn.name || '  ', ' ', 1, 2)-1),
-       gf.source_id, gf.product
+       gf.source_id, regexp_replace(gf.product, '[[:space:]]', ' ')
 FROM dots.GeneFeature gf, dots.NaSequence ns,
      sres.TaxonName tn
 WHERE gf.source_id IS NOT NULL
@@ -73,7 +73,7 @@ SQL
 $sql = <<SQL;
 
 SELECT s.pvalue_exp, substr(tn.name, 1, instr(tn.name || '  ', ' ', 1, 2)-1),
-       tas.source_id, eas.description
+       tas.source_id, regexp_replace(eas.description, '[[:space:]]', ' ')
 FROM core.tableInfo subject, dots.similarity s, core.tableInfo query,
      dots.ExternalAaSequence eas, dots.TranslatedAaSequence tas,
      sres.TaxonName tn
