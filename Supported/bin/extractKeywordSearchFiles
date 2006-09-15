@@ -11,7 +11,7 @@ use GUS::Supported::GusConfig;
 
 my ($outDir, $justComments, $gusConfigFile, $debug, $verbose);
 &GetOptions("outputDir=s" => \$outDir,
-            "justComments!" => $justComments,
+            "justComments!" => \$justComments,
             "verbose!"=> \$verbose,
             "debug!" => \$debug,
             "gusConfigFile=s" => \$gusConfigFile);
@@ -38,15 +38,19 @@ my $sql;
 
 # comments
 $sql = <<SQL;
-SELECT '', substr(tn.name, 1, instr(tn.name || '  ', ' ', 1, 2)-1),
-       gf.source_id, regexp_replace(nfc.comment_string, '[[:space:]]', ' ')
-FROM dots.naFeatureComment nfc, dots.GeneFeature gf, dots.NaSequence ns,
-     sres.TaxonName tn
-WHERE nfc.na_feature_id = gf.na_feature_id
+SELECT DISTINCT '', substr(tn.name, 1, instr(tn.name || '  ', ' ', 1, 2)-1),
+       gf.source_id, regexp_replace(c.content, '[[:space:]]', ' ')
+FROM logins.users u, comments.comments c, dots.GeneFeature gf,
+     dots.NaSequence ns, sres.TaxonName tn
+WHERE u.email = c.email
+  AND c.comment_target_id='gene'
+  AND c.stable_id = gf.source_id
+  AND c.review_status_id != 'rejected'
   AND gf.na_sequence_id = ns.na_sequence_id
   AND ns.taxon_id = tn.taxon_id
   AND tn.name_class = 'scientific name'
-ORDER BY tn.name, gf.source_id, to_char(nfc.comment_string)
+ORDER BY substr(tn.name, 1, instr(tn.name || '  ', ' ', 1, 2)-1), gf.source_id,
+         regexp_replace(c.content, '[[:space:]]', ' ')
 SQL
 
 &extractFile($dbh, $outDir . "/comments.txt", $sql);
