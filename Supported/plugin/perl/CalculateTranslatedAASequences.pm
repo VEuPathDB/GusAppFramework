@@ -12,6 +12,7 @@ use GUS::Model::DoTS::TranslatedAASequence;
 use GUS::Model::DoTS::TranslatedAAFeature;
 use GUS::Model::DoTS::Transcript;
 use GUS::Model::DoTS::NAFeature;
+use GUS::Model::SRes::GeneticCode;
 
 my $argsDeclaration =
   [
@@ -247,10 +248,16 @@ EOSQL
       die "NASequence was not associated with an organism in SRes.Taxon: " . $ntSeq->getSourceId() . "\n";
     }
 
-    my $geneticCode = $taxon->getParent("SRes::GeneticCode", 1);
+    my $geneticCodeId = $taxon->getGeneticCodeId();
+
+    my $geneticCode = GUS::Model::SRes::GeneticCode->new({'genetic_code_id' => $geneticCodeId});
+
+
     unless ($geneticCode) {
       die "No genetic code associated with taxon\n";
     }
+
+    $geneticCode->retrieveFromDB();
 
     $codonTable->id($geneticCode->getNcbiGeneticCodeId() || $self->getArg('ncbiGeneticCodeId') || 1);
 
@@ -329,8 +336,8 @@ EOSQL
     if ($translation =~ m/\*/ && !$transcript->getIsPseudo) {
       warn "Warning: translation for " . $transcript->getSourceId() . " contains stop codons:\n$translation\n";
     }
-    
-    $aaSeq->setSequence($translation);
+
+    $aaSeq->setSequence($translation) if $translation ne $aaSeq->getSequence();
     $aaSeq->submit();
     $self->undefPointerCache();
   }
