@@ -244,18 +244,14 @@ EOSQL
 
     my $taxon = $ntSeq->getParent("SRes::Taxon", 1);
 
+
     unless ($taxon) {
       die "NASequence was not associated with an organism in SRes.Taxon: " . $ntSeq->getSourceId() . "\n";
     }
 
-    my $geneticCodeId = $taxon->getGeneticCodeId();
+    my $geneticCodeId = $taxon->getGeneticCodeId() || $self->log("there is no genetic_code_id associated with taxon_id " . $taxon->getId());
 
     my $geneticCode = GUS::Model::SRes::GeneticCode->new({'genetic_code_id' => $geneticCodeId});
-
-
-    unless ($geneticCode) {
-      die "No genetic code associated with taxon\n";
-    }
 
     $geneticCode->retrieveFromDB();
 
