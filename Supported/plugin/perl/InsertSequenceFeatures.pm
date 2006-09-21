@@ -877,6 +877,22 @@ sub makeLocation {
     }
   }
 
+  unless ($min_start && $max_start) {
+    if (!$min_start){
+      $min_start = $max_start;
+    }else{
+      $max_start = $min_start;
+    }
+  }
+
+  unless ($min_end && $max_end) {
+    if (!$min_end){
+      $min_end = $max_end;
+    }else{
+      $max_end = $min_end;
+    }
+  }
+
   my $gus_location = GUS::Model::DoTS::NALocation->new();
   $gus_location->setStartMax($max_start);
   $gus_location->setStartMin($min_start);
