@@ -123,7 +123,16 @@ sub runGenomeAlign {
     return $valid;
 }
 
+sub runIprScan {
+  my ($pipelineDir, $proteinFile, $numnodes, $time, $queue) = @_;
 
+  my $propFile = "$pipelineDir/iprscan/$proteinFile/input/controller.prop";
+  my $logFile = "$pipelineDir/logs/${proteinFile}_Iprscan.log";
+
+  &run($propFile, $logFile, $numnodes, $time, $queue);
+
+  return 1;
+}
 
 sub runGeneTagAlign {
     my ($pipelineDir, $numnodes, $queryName, $subjectName) = @_;
