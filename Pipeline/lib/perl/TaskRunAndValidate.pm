@@ -36,7 +36,7 @@ package GUS::Pipeline::TaskRunAndValidate;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGeneTagAlign runMicerAlign runPfam runTRNAscan runPsipred); 
+@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGeneTagAlign runMicerAlign runPfam runTRNAscan runPsipred runIprScan); 
 
 use strict;
 use Carp;
