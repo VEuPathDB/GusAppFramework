@@ -100,8 +100,8 @@ sub getNamesHash {$_[0]->{names_hash}}
 sub setRelationshipQueryHandle {$_[0]->{relationship_query_handle} = $_[1]}
 sub getRelationshipQueryHandle {$_[0]->{relationship_query_handle}}
 
-sub setExtDbRlsId {$_[0]->{ext_db_rls_id} = $_[1]}
-sub getExtDbRlsId {$_[0]->{ext_db_rls_id}}
+sub setExternalDatabaseReleaseId {$_[0]->{external_database_release_id} = $_[1]}
+sub getExternalDatabaseReleaseId {$_[0]->{external_database_release_id}}
 
 sub getOntologyTermTableId {$_[0]->{ontology_term_table_id}}
 
@@ -152,7 +152,8 @@ sub run {
 
   my $dbRlsId = $self->getExtDbRlsId($self->getArg('externalDatabase'),
 				     $self->getArg('externalDatabaseRls'));
-  $self->setExtDbRlsId($dbRlsId);
+
+  $self->setExternalDatabaseReleaseId($dbRlsId);
 
   $self->setOntologyTermTableId();
 
@@ -259,10 +260,10 @@ sub processOntologyRelationships {
   my $parentName;
 
   my $term = GUS::Model::SRes::OntologyTerm->
-    new({name => $name, external_database_release_id => $self->getExtDbRlsId() });
+    new({name => $name, external_database_release_id => $self->getExternalDatabaseReleaseId() });
 
   unless($term->retrieveFromDB()) {
-    $self->error("Could not retrieve a recored for ontology_term $term");
+    $self->error("Could not retrieve a recored for ontology_term $name");
   }
 
   my $existingTermName = $self->getNamesHash()->{$name};
@@ -285,8 +286,8 @@ sub processOntologyRelationships {
   $self->updateOntologyEntry($ontologyEntry, $term,  $parentOntologyEntry);
 
   my $sh = $self->getRelationshipQueryHandle();
-  my $bindValues = [$self->getExtDbRlsId(),
-                    $self->getExtDbRlsId(),
+  my $bindValues = [$self->getExternalDatabaseReleaseId(),
+                    $self->getExternalDatabaseReleaseId(),
                     $term->getName()];
 
   my @children = $self->sqlAsArray( Handle => $sh, Bind => $bindValues );
@@ -318,6 +319,7 @@ sub updateOntologyEntry {
   my ($self, $ontologyEntry, $term, $parentOntologyEntry) = @_;
 
   my $value = $term->getName();
+
   my $definition = $term->getDefinition();
   my $externalDatabaseReleaseId =  $term->getExternalDatabaseReleaseId();
   my $rowId = $term->getId();
@@ -328,7 +330,7 @@ sub updateOntologyEntry {
 
   my ($parentId, $category);
 
-  if($value = 'MGEDOntology') {
+  if($value eq 'MGEDOntology') {
     $category = 'thing';
   }
   else {
