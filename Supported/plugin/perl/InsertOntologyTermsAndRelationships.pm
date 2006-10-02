@@ -50,6 +50,15 @@ my $argsDeclaration =
 	     constraintFunc => undef,
 	   }),
 
+ enumArg({  name => 'fileType',
+	    descr => 'is this a daml or owl file',
+	    constraintFunc => undef,
+	    reqd => 1,
+	    isList => 0,
+	    enum => 'daml,owl'
+	   }),
+
+
 ];
 
 my $purpose = <<PURPOSE;
@@ -117,14 +126,7 @@ sub run {
   my $tree = $parser->parse_file($file);
   my $root = $tree->getDocumentElement;
 
-  my $ns;
-  foreach my $attr ($root->getAttributes()) {
-    my $fn = $attr->name;
-    $ns = $fn if($fn eq 'daml' || $fn eq 'owl');
-  }
-  if(!$ns) {
-    $self->userError('The file was not in the correct format.  Must be either daml or owl.');
-  }
+  my $ns = $self->getArg('fileType');
 
   my $numTerms = $self->_makeTerms($root, $ns);
 
