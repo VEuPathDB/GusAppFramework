@@ -9,7 +9,6 @@ use GUS::Model::SRes::OntologyRelationship;
 
 use GUS::PluginMgr::Plugin;
 
-
 my $argsDeclaration = 
   [ fileArg({name => 'nameChangesFile',
              descr => 'Any time a something is renamed since the previous version of MO.  This can also be use_def terms upgraded to official terms.  OldName<TAB>NewName',
@@ -267,15 +266,13 @@ sub setNamesHashFromConfigFile {
 
   return unless($fn);
 
-  my $names = $self->getNamesHash();
-
   open(FILE, $fn) or die "Cannot open file $fn for reading: $!";
 
   while(my $line = readline(*FILE)) {
     chomp($line);
 
-    my ($prevName, $newName) = split(\/t/, $line);
-    $names->{$newName} = $prevName;
+    my ($prevName, $newName) = split(/\t/, $line);
+    $self->getNamesHash()->{$newName} = $prevName;
   }
 }
 
