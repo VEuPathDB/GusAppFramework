@@ -247,9 +247,9 @@ sub load_data {
 	  $featureparams{index}  = 	$attrs[$cellHeader{QC_INDEX}];
 	}
 
-	my $feature = GUS::Community::Feature->new( %featureparams );
+	my $featureParam = GUS::Community::Feature->new( %featureparams );
 	$self->matrix($attrs[$blockHeader{'UNIT_X'}],$attrs[$blockHeader{UNIT_Y}],\$feature);
-	$featuregroup->add_feature($feature);
+	$featuregroup->add_feature($featureParam);
   }
   elsif($self->mode =~ /^Unit(\d+)_Block/){
 	return if /^Block|Num|Start|Stop|CellHeader/;
@@ -294,8 +294,8 @@ sub load_data {
 	  $featureparams{region}		= 	$attrs[$blockHeader{UNIT_REGION}];
 	}
 
-	my $feature =  GUS::Community::Feature->new( %featureparams );
-	$featuregroup->add_feature($feature);
+	my $featureParam =  GUS::Community::Feature->new( %featureparams );
+	$featuregroup->add_feature($featureParam);
 
 	$self->matrix($attrs[$blockHeader{UNIT_X}],$attrs[$blockHeader{UNIT_Y}],\$feature);
 
