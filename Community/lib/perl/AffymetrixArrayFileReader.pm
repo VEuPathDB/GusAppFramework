@@ -137,7 +137,11 @@ sub readTargetFasta {
 
     if ($source =~ /^gb\|([\w\_]+)(\.\d)?$/) {
       $gb = $1; # if source_id has version number, e.g., gb|NM_030770.1, trim it off
-    } else {
+    } 
+    elsif ($source =~ /^source_id\|(.+)/) {
+      $gb = $1 # This is a hack to create a target file which mimicks the affy format but has non genbank source ids
+    }
+    else {
        if ($res =~ /gb:([\w\_]+)(\.\d)?\s/) {
          $gb = $1;
        } elsif ($res =~ /^\"?([A-Z]+\d+)\s/) {
