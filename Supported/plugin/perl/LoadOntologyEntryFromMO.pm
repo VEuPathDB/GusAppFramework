@@ -12,7 +12,7 @@ use GUS::PluginMgr::Plugin;
 
 my $argsDeclaration = 
   [ fileArg({name => 'nameChangesFile',
-             descr => 'Any time a something is renamed since the previous version of MO.  This can also be use_def terms upgraded to official terms.  NewName<TAB>OldName',
+             descr => 'Any time a something is renamed since the previous version of MO.  This can also be use_def terms upgraded to official terms.  OldName<TAB>NewName',
              constraintFunc => undef,
              reqd => 0,
              isList => 0,
