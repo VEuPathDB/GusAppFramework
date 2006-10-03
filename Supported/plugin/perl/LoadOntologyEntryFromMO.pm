@@ -21,14 +21,14 @@ my $argsDeclaration =
             }),
 
     stringArg({name => 'externalDatabase',
-               descr => 'External database from whence this data came',
+               descr => 'External database for the MO Terms',
                constraintFunc=> undef,
                reqd  => 1,
                isList => 0
               }),
 
     stringArg({name => 'externalDatabaseRls',
-               descr => 'Version of external database from whence this data came',
+               descr => 'Version of external database for the NEW Release existing in SRes::OntologyTerm which we will be updating in Study::OntologyEntry',
                constraintFunc=> undef,
                reqd  => 1,
                isList => 0
@@ -71,7 +71,9 @@ my $documentation = {purposeBrief => $purposeBrief,
 
 sub new {
     my ($class) = @_;
-    my $self = { names_hash => {} };
+    my $self = { names_hash => {},
+                 number_processed => 0,
+                 seen_ontology_entry => {},};
 
     bless($self, $class);
 
@@ -103,6 +105,31 @@ sub getRelationshipQueryHandle {$_[0]->{relationship_query_handle}}
 sub setExternalDatabaseReleaseId {$_[0]->{external_database_release_id} = $_[1]}
 sub getExternalDatabaseReleaseId {$_[0]->{external_database_release_id}}
 
+sub getCount { $_[0]->{number_processed} }
+sub addToCount {$_[0]->{number_processed}++ }
+
+sub getSeenOntologyEntry {$_[0]->{seen_ontology_entry} }
+
+=pod
+
+=item C<hasSeenOntologyEntry>
+
+Returns true is the combination of parent and child have been seen
+and adds the name/parentName combination to the hash
+
+=cut
+
+sub hasSeenOntologyEntry {
+  my ($self, $name, $parentName) = @_;
+
+  my $parents = $self->getSeenOntologyEntry()->{$name};
+  my $hasSeen = $self->isIncluded($parents, $parentName);
+
+  push(@{$self->getSeenOntologyEntry()->{$name}}, $parentName);
+  return($hasSeen);
+
+}
+
 sub getOntologyTermTableId {$_[0]->{ontology_term_table_id}}
 
 =pod
@@ -128,13 +155,30 @@ sub setOntologyTermTableId {
   $self->{ontology_term_table_id} = $tableId;
 }
 
+=pod
+
+=item C<isIncluded>
+
+Loop through an arrayref and return true if the value is somewhere in the array.
+
+=cut
+
+sub isIncluded {
+  my ($self, $ar, $val) = @_;
+
+  foreach(@$ar) {
+    return(1) if($_ eq $val);
+  }
+  return(0);
+}
+
 #-------------------------------------------------------------------------------
 
 =pod
 
 =item C<run>
 
-Read the config file, use args to set instance variables and load OntologyEntr rows
+Read the config file, use args to set instance variables and load OntologyEntry rows
 
 B<Return type:> C<scalar> 
 
@@ -195,7 +239,7 @@ sub _createAndPrepareSql {
                           and rt.ontology_relationship_type_id = r.ontology_relationship_type_id
                           and o.external_database_release_id = ?
                           and s.external_database_release_id = ?
-                          and o.name = ? ";
+                          and o.name = ?";
 
   return($self->getQueryHandle()->prepare($relationshipSql));
 }
@@ -266,13 +310,13 @@ sub processOntologyRelationships {
     $self->error("Could not retrieve a recored for ontology_term $name");
   }
 
-  my $existingTermName = $self->getNamesHash()->{$name};
+  my $existingName = $self->getNamesHash()->{$name};
 
-  if($existingTermName) {
-    $name = $existingTermName;
+  unless($existingName) {
+    $existingName = $name;
   }
 
-  if($name eq 'MGEDOntology') {
+  if($existingName eq 'MGEDOntology') {
     $parentName = 'thing';
   }
   else {
@@ -280,9 +324,12 @@ sub processOntologyRelationships {
   }
 
   my $ontologyEntry = GUS::Model::Study::OntologyEntry->
-    new({value => $name, category => $parentName});
+    new({value => $existingName, category => $parentName});
 
-  $ontologyEntry->retrieveFromDB();
+  if($ontologyEntry->retrieveFromDB() && $existingName ne $name) {
+    $self->log("Updating term $existingName to $name");
+  }
+
   $self->updateOntologyEntry($ontologyEntry, $term,  $parentOntologyEntry);
 
   my $sh = $self->getRelationshipQueryHandle();
@@ -338,6 +385,9 @@ sub updateOntologyEntry {
     $category = $parentOntologyEntry->getValue();
   }
 
+  # Don't process the same term with the same parent twice
+  return if($self->hasSeenOntologyEntry($value, $category));
+
   $ontologyEntry->setValue($value);
   $ontologyEntry->setDefinition($definition);
   $ontologyEntry->setExternalDatabaseReleaseId($externalDatabaseReleaseId);
@@ -349,6 +399,11 @@ sub updateOntologyEntry {
   $ontologyEntry->set('parent_id', $parentId);
 
   $ontologyEntry->submit();
+
+  if($self->addToCount % 100 == 0) {
+    my $count = $self->getCount();
+    $self->log("Processed $count Study::OntologyEntry Rows");
+  }
 }
 
 
