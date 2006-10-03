@@ -26,6 +26,8 @@ use GUS::PluginMgr::Args::Arg;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 
+use GUS::PluginMgr::PluginError;
+
 use Data::Dumper qw(Dumper);
 
 =pod
@@ -1201,7 +1203,8 @@ B<Parameters>
 sub error {
   my ($self, $msg) = @_;
 
-  die("\n$msg\n");
+  my $error = GUS::PluginMgr::PluginError->new($msg);
+  $error->throw();
 }
 
 =item C<userError($msg)>
@@ -1219,7 +1222,8 @@ B<Parameters>
 sub userError{
   my ($self, $msg) = @_;
 
-  die "\nUSER ERROR: $msg\n";
+  my $error = GUS::PluginMgr::PluginUserError->new($msg);
+  $error->throw();
 }
 
 # ----------------------------------------------------------------------
