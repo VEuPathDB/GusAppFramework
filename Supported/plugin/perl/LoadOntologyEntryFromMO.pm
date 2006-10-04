@@ -32,6 +32,13 @@ my $argsDeclaration =
                reqd  => 1,
                isList => 0
               }),
+
+    stringArg({name => 'logFile',
+               descr => 'Full path to the output log file name',
+               constraintFunc=> undef,
+               reqd  => 1,
+               isList => 0
+              }),
   ];
 
 my $purposeBrief = <<PURPOSEBRIEF;
@@ -39,7 +46,7 @@ Update Study::OntologyEntry based on a new release of MGED Ontology loaded into 
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-Updates or Inserts into Study::OntologyEntry.
+Update Study::OntologyEntry based on a new release of MGED Ontology loaded into SRes Tables.  It is VERY IMPORTANT to carefully create the nameChangesFile.  Any term which is deprecated and renamed or is a user_defined term and has been upgraded to an official term should be put in this file.  You must go through all the changes in MO since the last version of MO that you have installed.  
 PLUGIN_PURPOSE
 
 my $tablesAffected = [['Study.OntologyEntry','Populate the OntologyEntry table']];
@@ -47,7 +54,7 @@ my $tablesAffected = [['Study.OntologyEntry','Populate the OntologyEntry table']
 my $tablesDependedOn = ['SRes.ExternalDatabase', 'SRes.ExternalDatabaseRelease','SRes.OntologyTerm', 'SRes.OntologyRelationship','Core.TableInfo'];
 
 my $howToRestart = <<PLUGIN_RESTART;
-This plugin can be not be restarted.
+This plugin can not be restarted.
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -100,6 +107,9 @@ sub getNamesHash {$_[0]->{names_hash}}
 
 sub setRelationshipQueryHandle {$_[0]->{relationship_query_handle} = $_[1]}
 sub getRelationshipQueryHandle {$_[0]->{relationship_query_handle}}
+
+sub setLogFilehandle {$_[0]->{log_file_handle} }
+sub getLogFilehandle {$_[0]->{log_file_handle} = $_[1] }
 
 sub setExternalDatabaseReleaseId {$_[0]->{external_database_release_id} = $_[1]}
 sub getExternalDatabaseReleaseId {$_[0]->{external_database_release_id}}
@@ -196,8 +206,11 @@ sub run {
   my $dbRlsId = $self->getExtDbRlsId($self->getArg('externalDatabase'),
 				     $self->getArg('externalDatabaseRls'));
 
-  $self->setExternalDatabaseReleaseId($dbRlsId);
+  my $logFile = $self->getArg('logFile');
+  open(LOG, "> $logFile") or $self->userError("Could not open logfile $logFile for writing.");
 
+  $self->setLogFilehandle(\*LOG);
+  $self->setExternalDatabaseReleaseId($dbRlsId);
   $self->setOntologyTermTableId();
 
   my $sh = $self->_createAndPrepareSql();
@@ -205,6 +218,8 @@ sub run {
 
   # Give it the Root node and let it read the Ontology as a Tree
   $self->processOntologyRelationships('MGEDOntology', undef);
+
+  close($self->getLogFilehandle());
 
   my $insertCount = $self->getTotalInserts() - $coreInserts;
   my $updateCount = $self->getTotalUpdates() || 0;
@@ -304,7 +319,7 @@ sub processOntologyRelationships {
     new({name => $name, external_database_release_id => $self->getExternalDatabaseReleaseId() });
 
   unless($term->retrieveFromDB()) {
-    $self->error("Could not retrieve a recored for ontology_term $name");
+    $self->error("Could not retrieve a record for ontology_term $name");
   }
 
   my $existingName = $self->getNamesHash()->{$name};
@@ -325,9 +340,12 @@ sub processOntologyRelationships {
 
   if($ontologyEntry->retrieveFromDB() && $existingName ne $name) {
     $self->log("Updating term $existingName to $name");
+
+    my $message = "name_change";
+    $self->printToLog($name, $existingName, $message);
   }
 
-  $self->updateOntologyEntry($ontologyEntry, $term,  $parentOntologyEntry);
+  $self->loadOntologyEntry($ontologyEntry, $term,  $parentOntologyEntry);
 
   my $sh = $self->getRelationshipQueryHandle();
   my $bindValues = [$self->getExternalDatabaseReleaseId(),
@@ -345,7 +363,7 @@ sub processOntologyRelationships {
 
 =pod
 
-=item C<updateOntologyEntry>
+=item C<loadOntologyEntry>
 
 Every ontologyEntry which has a name in MO or is in the config file is updated
 
@@ -359,28 +377,28 @@ B<Return type:> C<undef>
 
 =cut
 
-sub updateOntologyEntry {
+sub loadOntologyEntry {
   my ($self, $ontologyEntry, $term, $parentOntologyEntry) = @_;
 
   my $value = $term->getName();
-
   my $definition = $term->getDefinition();
   my $externalDatabaseReleaseId =  $term->getExternalDatabaseReleaseId();
   my $rowId = $term->getId();
   my $sourceId = $term->getSourceId();
   my $uri = $term->getUri();
 
+  my $oeName = $ontologyEntry->getName();
+
+  if($oeName eq 'user_defined') {
+    $ontologyEntry->setName('');
+
+    my $message = "upgraded_user_defined_term";
+    $self->printToLog($value, $ontologyEntry->getValue(), $message);
+  }
+
   my $tableId = $self->getOntologyTermTableId();
 
-  my ($parentId, $category);
-
-  if($value eq 'MGEDOntology') {
-    $category = 'thing';
-  }
-  else {
-    $parentId = $parentOntologyEntry->getId();
-    $category = $parentOntologyEntry->getValue();
-  }
+  my ($parentId, $category) = $self->getParentInfo($value, $parentOntologyEntry, $ontologyEntry);
 
   # Don't process the same term with the same parent twice
   return if($self->hasSeenOntologyEntry($value, $category));
@@ -401,6 +419,43 @@ sub updateOntologyEntry {
     my $count = $self->getCount();
     $self->log("Processed $count Study::OntologyEntry Rows");
   }
+}
+
+#-------------------------------------------------------------------------------
+
+sub getParentInfo {
+  my ($self, $value, $parentOntologyEntry, $ontologyEntry) = @_;
+
+  my ($parentId, $category);
+
+  if($value eq 'MGEDOntology') {
+    $category = 'thing';
+  }
+  elsif($parentOntologyEntry->getValue() eq 'DeprecatedTerms') {
+    $parentId = $ontologyEntry->get('parent_id');
+
+    my $parentCategory = $ontologyEntry->getCategory();
+    $category = "DeprecatedTerms_$parentCategory";
+
+    my $message = "deprecated_term";
+    $self->printToLog($value, $ontologyEntry->getValue(), $message);
+  }
+  else {
+    $parentId = $parentOntologyEntry->getId();
+    $category = $parentOntologyEntry->getValue();
+  }
+
+  return($parentId, $category);
+}
+
+#-------------------------------------------------------------------------------
+
+sub printToLog {
+  my ($self, $value, $oldValue, $m) = @_;
+
+  my $fh = $self->getFilehandle();
+
+  print $fh "$value\texisting_name=$oldValue\t$m\n";
 }
 
 
