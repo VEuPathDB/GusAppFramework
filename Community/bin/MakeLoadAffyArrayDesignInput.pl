@@ -18,7 +18,7 @@ use Bio::Expression::FeatureGroup;
 
 use GUS::Community::AffymetrixArrayFileReader;
 
-my ($target_file, $probe_file, $cdf_file, $genbank_ext_db_rel_id, $refseq_ext_db_rel_id, $ele_type_id, $polymer_type, $phys_bioseq_type, $help);
+my ($target_file, $probe_file, $cdf_file, $genbank_ext_db_rel_id, $refseq_ext_db_rel_id, $ele_type_id, $polymer_type, $phys_bioseq_type, $requireSourceAndAffyName, $verbose, $help);
 
 &GetOptions('help|h' => \$help, 
             'target_file=s' => \$target_file,
@@ -28,7 +28,9 @@ my ($target_file, $probe_file, $cdf_file, $genbank_ext_db_rel_id, $refseq_ext_db
             'refseq_ext_db_rel_id=s' => \$refseq_ext_db_rel_id,
             'design_element_type=s' => \$ele_type_id,
             'polymer_type_id=s' => \$polymer_type, 
-            'physical_biosequence_type_id=s' => \$phys_bioseq_type
+            'physical_biosequence_type_id=s' => \$phys_bioseq_type,
+            'require_source_and_affy_name' => \$requireSourceAndAffyName,
+            'verbose' => \$verbose,
            );
 
 if ($help) {
@@ -75,7 +77,15 @@ foreach $set ($array->each_featuregroup) {
       $ext_db_rel_id = $refseq_ext_db_rel_id; #RefSeq
     }
 
-    print join "\t", $ftr->x, $ftr->y, $probe_seq, $ftr->is_match, $name, $ext_db_rel_id, $gb, $ele_type_id, $polymer_type, $phys_bioseq_type; 
+    my $xpos = $ftr->x;
+    my $ypos = $ftr->y;
+
+    if($requireSourceAndAffyName && (!$gb || !$name)) {
+      print STDERR "$name\t$xpos\t$ypos\t$probe_seq\t$gb\n" if($verbose);
+      next;
+    }
+
+    print join "\t", $xpos, $ypos, $probe_seq, $ftr->is_match, $name, $ext_db_rel_id, $gb, $ele_type_id, $polymer_type, $phys_bioseq_type; 
     print "\n";
   }
 }
