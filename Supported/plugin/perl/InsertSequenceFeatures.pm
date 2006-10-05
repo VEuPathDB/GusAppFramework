@@ -38,7 +38,7 @@ use GUS::Model::DoTS::NASequenceRef;
 use GUS::Model::DoTS::Keyword;
 use GUS::Model::DoTS::NASequenceKeyword;
 use GUS::Model::DoTS::NAComment;
-
+use GUS::Model::DoTS::ExonFeature;
 
 # future considerations....
 #
