@@ -1,4 +1,4 @@
-package GUS::Supported::Plugin::dbEST;
+ package GUS::Supported::Plugin::dbEST;
 
 @ISA = qw( GUS::PluginMgr::Plugin );
 use GUS::PluginMgr::Plugin;
@@ -223,13 +223,14 @@ sub run {
     $count = $self->updateAllEST($estDbh,$nameStrings);
   }
 
-  my $sth = $estDbh->prepareAndExecute("select count(est.id_est) from dbest.est est, dbest.library library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
+  my $sth = $estDbh->prepare("select count(est.id_est) from dbest.est est, dbest.library library where library.id_lib = est.id_lib and library.organism in ($nameStrings)and est.replaced_by is null");
+  $sth->execute();
   my ($numDbEST) = $sth->fetchrow_array();
 
   # change to get taxon_id_list from cache or something
-  my $taxon_id_list = $self->{taxon_id_list};
+  my $taxon_id_list = $self->getArg('taxon_id_list');
 
-  my $ncbiTaxIdList = $self->{'ncbiTaxId'};
+  my $ncbiTaxIdList = $self->getArg('ncbiTaxId');
 
   my $dbh = $self->getQueryHandle();
 
@@ -297,7 +298,7 @@ sub updateESTsInFile {
     my @ests;
 
     while (my $hsh_ref = $sth->fetchrow_hashref('NAME_lc')) {
-      push (@ests, %{$hsh_ref});
+      push (@ests, {%$hsh_ref});
     }
     foreach my $est ( @ests) {
       $e->{$est->{id_est}}->{e} = $est;
@@ -320,7 +321,8 @@ sub updateAllEST {
   my $count = 0;
 
   # get the absolute max id_est
-  my $sth = $estDbh->prepareAndExecute("select max(id_est) from dbest.est");
+  my $sth = $estDbh->prepare("select max(id_est) from dbest.est");
+  $sth->execute();
   my ($abs_max) = $sth->fetchrow_array();
   $sth->finish();
 
@@ -342,7 +344,7 @@ sub updateAllEST {
     $sth->execute($min,$max);
 
     while (my $hsh_ref = $sth->fetchrow_hashref('NAME_lc')) {
-      push (@ests, %{$hsh_ref});
+      push (@ests, {%$hsh_ref});
     }
 
     my ($e);
@@ -393,10 +395,11 @@ sub processEntries {
   # get the sequences only for most current entry
   my $ids = join "," , sort {$a <=> $b} keys %$e;
 
-  my $sth = $estDbh->prepareAndExecute("select * from dbest.SEQUENCE where id_est in ($ids) order by id_est, local_id");
+  my $sth = $estDbh->prepare("select * from dbest.SEQUENCE where id_est in ($ids) order by id_est, local_id");
+  $sth->execute();
   my @A;
   while (my $hsh_ref = $sth->fetchrow_hashref('NAME_lc')) {
-    push (@A, %{$hsh_ref});
+    push (@A, {%$hsh_ref});
   }
   if (@A) {
     foreach my $s (@A){
@@ -406,10 +409,10 @@ sub processEntries {
 
   # get the comments, if any
   $ids = join "," , keys %$e;
-  $sth = $estDbh->prepareAndExecute("select * from dbest.CMNT where id_est in ($ids) order by id_est, local_id");
-
+  $sth = $estDbh->prepare("select * from dbest.CMNT where id_est in ($ids) order by id_est, local_id");
+  $sth->execute();
   while (my $hsh_ref = $sth->fetchrow_hashref('NAME_lc')) {
-    push (@A, %{$hsh_ref});
+    push (@A, {%$hsh_ref});
   }
 
   if (@A) {
@@ -430,7 +433,7 @@ sub processEntries {
     if ($e->{$id}->{old} && @{$e->{$id}->{old}} > 0) {
       $count +=  $self->updateEntry($e->{$id},$estDbh);
     }else {
-      $count += $self->insertEntry($e->{$id}->{e});
+      $count += $self->insertEntry($e->{$id}->{e},$estDbh);
     }
   }
   return $count;
@@ -504,7 +507,7 @@ sub insertEntry{
     # The entry exists in GUS. Must check to see if valid
     if ($self->getArg('fullupdate') || $needsUpdate) {
       # Treat this as a new entry
-      $self->populateEst($e,$est);
+      $self->populateEst($e,$est,$estDbh);
       # check to see if clone information already exists
       # for this EST
       $self->checkCloneInfo($e,$est,$estDbh);
@@ -513,7 +516,7 @@ sub insertEntry{
     
   } else {
     # This is a new entry
-    $self->populateEst($e,$est);
+    $self->populateEst($e,$est,$estDbh);
     # check to see if clone information already exists
     # for this EST
     $self->checkCloneInfo($e,$est,$estDbh);
@@ -638,7 +641,7 @@ No return value.
 =cut
 
 sub populateEst {
-  my ($self,$e,$est) = @_;
+  my ($self,$e,$est,$estDbh) = @_;
   
   #parse the comment for hard to find information
   $self->parseEntry($e);
@@ -689,7 +692,7 @@ sub populateEst {
     my $c = GUS::Model::SRes::Contact->new({'source_id' => $e->{id_contact},
                                             'external_database_release_id' => $self->{dbest_ext_db_rel_id}});
     unless ($c->retrieveFromDB()) {
-      $self->newContact($e,$c);
+      $self->newContact($e,$c,$estDbh);
     }
     # Add to cache
     $self->{contact}->{$c->getSourceId()} = $c->getId();
@@ -705,7 +708,7 @@ sub populateEst {
     my $l = GUS::Model::DoTS::Library->new({'dbest_id' => $e->{id_lib},
                                            });
     unless ($l->retrieveFromDB()) {
-      $self->newLibrary($e,$l);
+      $self->newLibrary($e,$l,$estDbh);
     }
     # Add to cache
     $self->{libs}->{$l->getDbestId()}->{dots_lib} = $l->getId();
@@ -738,7 +741,6 @@ sub checkCloneInfo {
     elsif ($e->{washu_name}) {
       $c->setWashuName($e->{washu_name});
     }
-    $c->retrieveFromDB();
     $est->setParent($c);
   }
   $self->updateClone($e,$c,$estDbh);  
@@ -844,12 +846,12 @@ sub getMostRecentEntry {
   my ($self,$e,$R, $estDbh) = @_;
   $R->{new} = $e;
 
-  my $sth = $estDbh->prepareAndExecute("select * from dbest.est where id_est = $e->{replaced_by}");
-
+  my $sth = $estDbh->prepare("select * from dbest.est where id_est = $e->{replaced_by}");
+  $sth->execute();
   my $re;
 
   my $re = $sth->fetchrow_hashref('NAME_lc');
-
+  $sth->finish();
   #my $re = $self->sql_get_as_hash_refs_lc("select * from dbest.est$self->{dblink} where id_est = $e->{replaced_by}")->[0];
   # saved this line in case needed
   # angel:2/20/2003: Found that sometimes replaced_by points to non-existent id_est
@@ -857,7 +859,7 @@ sub getMostRecentEntry {
   # log the id_est of the entry that eventually needs an update
 
   if ($re) {
-    print STDERR "Recent Entry=$re;\n" ;
+    print STDERR "Recent Entry=$re->{id_est};\n" ;
     $R->{new} = $re;
     push @{$R->{old}}, $e;
     if ($re->{replaced_by} ) {
@@ -990,13 +992,13 @@ sub setTableCaches {
   my $taxonIds = join(',',@$taxon_id_list) if $taxon_id_list;
 
   if (! $taxon_id_list) {
-    my @ncbiTaxId = split(/,/,$self->getArg('ncbiTaxId'));
-    die "Supply taxon_id_list or ncbiTaxId list\n" unless @ncbiTaxId >= 1;
+    my $ncbiTaxId = $self->getArg('ncbiTaxId');
+    die "Supply taxon_id_list or ncbiTaxId list\n" unless @$ncbiTaxId >= 1;
     my $dbh = $self->getQueryHandle();
     my $qTaxon = "select taxon_id from sres.taxon  where ncbi_tax_id in (?)";
     my $st = $dbh->prepare($qTaxon);
     my @taxon_id_array;
-    foreach my $taxId (@ncbiTaxId) {
+    foreach my $taxId (@$ncbiTaxId) {
       $st->execute($taxId);
       my ($taxon) = $st->fetchrow();
       push (@taxon_id_array,$taxon);
@@ -1026,8 +1028,8 @@ Populates the attributes for a new DoTS.Library entry from dbEST.
 sub newLibrary {
   my ($self,$e,$l,$estDbh) = @_;
 
-  my $sth = $estDbh->prepareAndExecute("select id_lib,name,organism,strain,cultivar,sex,organ,tissue_type,cell_type,cell_line,dev_stage,lab_host,vector,v_type,re_1,re_2 from dbest.library where id_lib = $e->{id_lib}");
-
+  my $sth = $estDbh->prepare("select id_lib,name,organism,strain,cultivar,sex,organ,tissue_type,cell_type,cell_line,dev_stage,lab_host,vector,v_type,re_1,re_2 from dbest.library where id_lib = $e->{id_lib}");
+  $sth->execute();
 
   my $dbest_lib = $sth->fetchrow_hashref('NAME_lc');
 
@@ -1151,9 +1153,13 @@ Populate the attributes of a new SRes.Contact entry
 sub newContact {
   my ($self,$e,$c,$estDbh)  = @_;
 
-  my $sth = $estDbh->prepareAndSelect("select * from dbest.contact where id_contact = $e->{id_contact}");
+  my $sth = $estDbh->prepare("select * from dbest.contact where id_contact = $e->{id_contact}");
+
+  $sth->execute();
 
   my $C = $sth->fetchrow_hashref('NAME_lc');
+
+  $sth->finish();
 
   $C->{lab} = "$C->{lab}; $C->{institution}";
 
