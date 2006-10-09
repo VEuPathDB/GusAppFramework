@@ -9,14 +9,15 @@ use Getopt::Long;
 use GUS::ObjRelP::DbiDatabase;
 use GUS::Supported::GusConfig;
 
-my ($verbose,$taxon_id,$gusConfigFile);
+my ($verbose,$ncbiTaxId,$outputFile,$gusConfigFile);
 &GetOptions("verbose!"=> \$verbose,
-            "taxon_id=s" => \$taxon_id,
+            "ncbiTaxId=s" => \$ncbiTaxId,
+	    "outputFile=s" => \$outputFile,
             "gusConfigFile=s" => \$gusConfigFile);
 
-my $usage = "usage: getSubTaxa --taxon_id --verbose " .
+my $usage = "usage: getSubTaxa --ncbiTaxId --outputFile --verbose " .
              "--gusConfigFile [\$GUS_CONFIG_FILE]\n";
-die $usage unless $taxon_id;
+die $usage unless $ncbiTaxId && $outputFile;
 
 print STDERR "Establishing dbi login\n" if $verbose;
 
@@ -34,19 +35,42 @@ my $dbh = $db->getQueryHandle();
 my $sql = <<SQL;
   select taxon_id
   from SRes.Taxon
-  start with taxon_id in ($taxon_id)
-  connect by prior taxon_id = parent_id
+  where ncbi_tax_id in ($ncbiTaxId)
 SQL
 
 print STDERR "Query: $sql\n" if $verbose;
 
 my $stmt = $dbh->prepareAndExecute($sql);
 
+my @taxon;
+while(my($currentTaxon) = $stmt->fetchrow_array()){
+  push(@taxon, $currentTaxon);
+}
+
+my $taxon_id = join(',', @taxon);
+
+$stmt->finish();
+
+$sql = <<SQL;
+  select taxon_id
+  from SRes.Taxon
+  start with taxon_id in ($taxon_id)
+  connect by prior taxon_id = parent_id
+SQL
+
+print STDERR "Query: $sql\n" if $verbose;
+
+$stmt = $dbh->prepareAndExecute($sql);
+
 my @taxa;
 while(my($currentTaxon) = $stmt->fetchrow_array()){
   push(@taxa, $currentTaxon);
 }
 
-print join(',', @taxa), "\n";
+$stmt->finish();
+
+open (FILE, ">$outputFile") or die "Can't open $outputFile for writing\n";
+
+print FILE join(',', @taxa), "\n";
 
 $db->logout();
