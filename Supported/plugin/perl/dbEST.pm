@@ -2,6 +2,7 @@
 
 @ISA = qw( GUS::PluginMgr::Plugin );
 use GUS::PluginMgr::Plugin;
+use CBIL::Util::PropertySet;
 
 use strict;
 
@@ -120,6 +121,20 @@ FAIL_CASES
 		 constraintFunc => undef,
 		 isList => 1
 	       }),
+     fileArg({ name => 'taxonFile',
+               descr => 'alternative to taxon_id_list or ncbiTaxId list, file containing a comma delimited list of taxon_ids used to load ESTs',
+               reqd           => 0,
+               mustExist => 0,
+               format =>"comma delimited list all on one line",
+               constraintFunc => undef,
+               isList         => 0 }),
+     fileArg({ name           => 'dbESTConnectFile',
+               descr          => 'file containing the connection string for the mirrored dbEST site, Ex: dbi:Oracle',
+               reqd           => 0,
+               mustExist => 0,
+               format =>"Directory of FASTA files",
+               constraintFunc => undef,
+               isList         => 0 }),
      booleanArg({name => 'fullupdate',
 		 descr => 'flag indicating that atts should be checked for discrepensies',
 		 reqd => 0,
@@ -148,21 +163,21 @@ FAIL_CASES
 		constraintFunc => undef,
 		isList => 0
 	       }),
-     stringArg({name => 'dbestConnect',
-		descr => 'connection string used for dbest Ex. dbi:oracle:musbld',
-		reqd => 1,
+     stringArg({name => 'dbestLoginFile',
+		descr => 'file with property=value pairs for dbestLogin and dbestPswd, alternative to the dbestPswd and dbestLogin arguments',
+		reqd => 0,
 		constraintFunc => undef,
 		isList => 0
 		}),
      stringArg({name => 'dbestLogin',
 		descr => 'login used for dbest mirror',
-		reqd => 1,
+		reqd => 0,
 		constraintFunc => undef,
 		isList => 0
 	       }),
      stringArg({name => 'dbestPswd',
 		descr => 'password  used for dbest mirror',
-		reqd => 1,
+		reqd => 0,
 		constraintFunc => undef,
 		isList => 0
 	       })
@@ -208,9 +223,9 @@ sub run {
 
   my  $dbestConnect = $self->getArg('dbestConnect');
 
-  my  $dbestLogin = $self->getArg('dbestLogin');
+  my  ($dbestLogin,$dbestPswd) = $self->getArg('dbestLogin') ? $self->getArg('dbestLogin') : $self->getDbESTLogin();
 
-  my  $dbestPswd = $self->getArg('dbestPswd');
+  $dbestPswd = $self->getArg('dbestPswd') unless $dbestPswd;
 
   my $estDbh = DBI->connect("$dbestConnect","$dbestLogin","$dbestPswd") || die "Can't connect to database: $DBI::errstr\n";
 
@@ -375,6 +390,45 @@ sub getNameStrings {
   $nameStrings =~ s/\,$//;
   return $nameStrings;
 }
+
+sub getTaxonIdListFromFile {
+  my ($self) = @_;
+
+  my $taxonFile = $self->getArg('taxonFile');
+
+  die "$taxonFile is empty\n" if (-z $taxonFile);
+
+  open (TAXONS, "$taxonFile") or die "Can't open $taxonFile for reading\n";
+
+  my $taxonList;
+
+  while (<TAXONS>) {
+    chomp;
+    next if $_ =~ /^$/;
+    $taxonList =~ s/,$//;
+    $taxonList .= "," if $taxonList;
+    $taxonList .+ $_;
+  }
+
+  return $taxonList;
+}
+
+sub getDbESTLogin {
+  my ($self) = @_;
+
+  my $propertiesFile = $self->getArg('dbestLoginFile');
+
+  my @properties = (["dbestLogin",   "",  "login to access dbEST mirror"],["dbestPswd",   "",  "password to access dbEST mirror"]);
+
+  my $propertySet = CBIL::Util::PropertySet->new($propertiesFile, \@properties, 1);
+
+  my $login = $propertySet->getProp('dbestLogin');
+
+  my $pswd = $propertySet->getProp('dbestPswd');
+
+  return ($login,$pswd);
+}
+
 
 sub processEntries {
   my ($self, $e , $estDbh) = @_;
@@ -987,7 +1041,9 @@ sub setTableCaches {
   # changed to get all organism names for human and mouse
   # all else is on-demand cache
 
-  my $taxon_id_list = $self->getArg('taxon_id_list'); 
+  my $taxon_id_list = $self->getArg('taxon_id_list');
+
+  $taxon_id_list = $self->getTaxonIdListFromFile()  if (! $taxon_id_list && $self->getArg('taxonFile'));
 
   my $taxonIds = join(',',@$taxon_id_list) if $taxon_id_list;
 
