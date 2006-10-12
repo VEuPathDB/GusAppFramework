@@ -241,20 +241,15 @@ sub run {
   $sth->execute();
   my ($numDbEST) = $sth->fetchrow_array();
 
-  # change to get taxon_id_list from cache or something
-  my $taxon_id_list = $self->getArg('taxon_id_list');
-
-  my $ncbiTaxIdList = $self->getArg('ncbiTaxId');
-
   my $dbh = $self->getQueryHandle();
 
-  my $sth2 = $self->{taxon_id_list} ? $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l where l.taxon_id in ($taxon_id_list) and l.library_id = e.library_id") : dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l, sres.taxon t where l.taxon_id = t.taxon_id and l.library_id = e.library_id and t.ncbi_tax_id in ($ncbiTaxIdList)");
+  my $sth2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l, sres.taxonname t where l.taxon_id = t.taxon_id and t.name in ($nameStrings) and l.library_id = e.library_id");
 
   my ($finalNumGus) = $sth2->fetchrow_array();
 
   my $diff = ($numDbEST-$finalNumGus);
 
-  $self->logAlert("Total number id_est for taxon(s) $taxon_id_list in dbEST:$numDbEST\nTotal number id_est in dots.EST:$finalNumGus\nDifference dbEST and dots:$diff\n");
+  $self->logAlert("Number id_est for these taxon(s) in dbEST:$numDbEST\nTotal number id_est in dots.EST:$finalNumGus\nDifference dbEST and dots:$diff\n");
 
   return "Inserted/Updated $count dbEST est entries";
 }
@@ -404,10 +399,15 @@ sub getTaxonIdListFromFile {
   while (<TAXONS>) {
     chomp;
     next if $_ =~ /^$/;
+    $taxonList = $_;
     $taxonList =~ s/,$//;
     $taxonList .= "," if $taxonList;
     $taxonList .+ $_;
   }
+
+  $taxonList =~ s/,$//;
+
+  print STDOUT "The taxons being processed: Taxon List: $taxonList\n";
 
   return $taxonList;
 }
@@ -1042,23 +1042,22 @@ sub setTableCaches {
 
   my $taxon_id_list = $self->getArg('taxon_id_list');
 
-  $taxon_id_list = $self->getTaxonIdListFromFile()  if (! $taxon_id_list && $self->getArg('taxonFile'));
-
   my $taxonIds = join(',',@$taxon_id_list) if $taxon_id_list;
 
-  if (! $taxon_id_list) {
-    my $ncbiTaxId = $self->getArg('ncbiTaxId');
-    die "Supply taxon_id_list or ncbiTaxId list\n" unless @$ncbiTaxId >= 1;
+  $taxonIds = $self->getTaxonIdListFromFile()  if (! $taxonIds && $self->getArg('taxonFile'));
+
+  if (! $taxonIds) {
+    my $ncbi_tax_id = $self->getArg('ncbiTaxId');
+    my $ncbiTaxId = join(',',@$ncbi_tax_id);
+    die "Supply taxon_id_list or ncbiTaxId list\n" unless $ncbiTaxId;
     my $dbh = $self->getQueryHandle();
-    my $qTaxon = "select taxon_id from sres.taxon  where ncbi_tax_id in (?)";
-    my $st = $dbh->prepare($qTaxon);
+    my $qTaxon = "select taxon_id from sres.taxon  where ncbi_tax_id in ($ncbiTaxId)";
+    my $st = $dbh->prepareAndExecute($qTaxon);
     my @taxon_id_array;
-    foreach my $taxId (@$ncbiTaxId) {
-      $st->execute($taxId);
-      my ($taxon) = $st->fetchrow();
+    while (my ($taxon) = $st->fetchrow_array()) {
       push (@taxon_id_array,$taxon);
-      $st->finish();
     }
+    $st->finish();
     $taxonIds = join(',', @taxon_id_array);
   }
 
