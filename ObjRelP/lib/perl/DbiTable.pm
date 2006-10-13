@@ -707,12 +707,6 @@ sub addToChildList{
     }
 		}
 
-sub confess{
-  my ($m) = @_;
-
-  print STDERR "$m\n";
-}
-
 sub getChildList{
     my $self = shift;
     return keys %{$self->{'childList'}};
