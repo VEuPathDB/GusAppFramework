@@ -34,6 +34,8 @@ sub new {
   my ($class,$className,$dbiDbObj) = @_;
   my $self = {};
   bless $self, $class;
+
+
   $self->{'database'} = $dbiDbObj;
   $className = $class unless $className;
   $className = $self->getFullClassName($className);
@@ -697,12 +699,19 @@ sub setChildList{
 
 sub addToChildList{
     my($self,@list) = @_;
+    chomp(my $selfName = ref($self)."\n");
     foreach my $i (@list) {
 	my $childFullName = $self->getFullClassName($i->[0]);
-	&confess("Invalid child name: '$i->[0]'") unless $childFullName;
+	&confess("Invalid child name for Table $selfName: '$i->[0]'") unless $childFullName;
 	@{$self->{'childList'}->{$childFullName}} = ($i->[1],$i->[2]);
     }
 		}
+
+sub confess{
+  my ($m) = @_;
+
+  print STDERR "$m\n";
+}
 
 sub getChildList{
     my $self = shift;
