@@ -43,7 +43,6 @@ sub run {
 }
 
 
-
 sub createReader {
   my ($self, $docType) = @_;
 
@@ -71,6 +70,7 @@ sub map2GUSObjTree {
  my @radAssays;
  my @radProtocols;
  my @radBioMaterials;
+ my @radTreatments;
 
 
  $self->createRadAffiliations($docRoot->affiliationVOs(), \@radAffiliations);
@@ -91,10 +91,9 @@ sub map2GUSObjTree {
 
  $self->createRadAssays($docRoot->getAssayVOs, \@radAssays);
 
+ $self->createRadBioMaterials($docRoot->getBioMaterialVOs, \@radBioMaterials, \@radProtocols);
 
-
-
-#.......
+ $self->createRadTreatments($docRoot->getTreatmentVOs, \@radTreatments, \@radProtocols, \@radBioMaterials);
 
  return $radStudy;
 }
@@ -268,7 +267,7 @@ sub createRadQuantifications{
 }
 
 sub createRadBioMaterials{
-  my ($self, $mageBioMaterials, $radBioMaterials) = @_;
+  my ($self, $mageBioMaterials, $radBioMaterials, $radProtocols) = @_;
   foreach my $mageBM(@ $mageBioMaterials){
     my %h;
     $h{name} = $mageBM->getName if $mageBM->getName;
@@ -277,13 +276,35 @@ sub createRadBioMaterials{
 
     my $radBM = GUS::Model::Study::BioMaterial->new(%h);
 
-    $radBM->setParent($self->createRadOE($mageBM->getBioMaterialType, "biomaterial")) if $magePP->getBioMaterialType;
+    $radBM->setParent($self->createRadOE($mageBM->getBioMaterialType, "biomaterial")) if $mageBM->getBioMaterialType;
 
-    $radBM->setParent($self->searchObjArrayByObjName(\@radProtocols), $magePP->getLabelMethod->getName) if $magePP->getLabelMethod;
+    $radBM->setParent($self->searchObjArrayByObjName($radProtocols), $mageBM->getLabelMethod->getName) if $mageBM->getLabelMethod->getName;
   }
 }
 
+sub createRadTreatments{
+  my ($self, $mageTreatments, $radTreatments, $radProtocols, $radBioMaterials) = @_;
+  foreach my $mageTrt(@ $mageTreatments){
+    my %h;
+    $h{name} = $mageTrt->getName if $mageTrt->getName;
+    $h{order_num} = $mageTrt->getOrderNum if $mageTrt->getOrderNum;
+ 
+    my $radTrt = GUS::Model::RAD::Treatment->new(%h);
 
+    $radTrt->setParent($self->createRadOE($mageTrt->getTreatmentType, "treatment")) if $mageTrt->getTreatmentType;
+
+    $radTrt->setParent($self->searchObjArrayByObjName($radProtocols, $mageTrt->getProtocol->getName)) if $mageTrt->getProtocol->getName;
+
+    $radTrt->setParent($self->searchObjArrayByObjName($radBioMaterials, $mageTrt->getOutputBM->getName)) if $mageTrt->getOutputBM->getName;
+
+    my %hh;
+    $hh{value} = $mageTrt->getInputBMM->getValue;
+    my $radBMM = GUS::Model::RAD::BioMaterialMeasurement->new(%hh);
+    $radBMM->setParent($radTrt) if $mageTrt->getInputBMM;
+    $radBMM->setParent($self->searchObjArrayByObjName($radBioMaterials, $mageTrt->getInputBMM->getBioMaterial->getName)) if $mageTrt->getInputBMM->getBioMaterial->getName;
+    $radBMM->setParent($self->createRadOE($mageTrt->getInputBMM->getUnitType, "unit")) if $mageTrt->getInputBMM->getUnitType;
+  }
+}
 
 # we have to assume OE is already in RAD
 sub createRadOE{
