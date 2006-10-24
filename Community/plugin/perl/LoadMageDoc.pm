@@ -95,8 +95,12 @@ sub map2GUSObjTree {
 
  $self->createRadTreatments($docRoot->getTreatmentVOs, \@radTreatments, \@radProtocols, \@radBioMaterials);
 
+ $self->linkRadStudyAssay($radStudy, \@radAssays);
+ $self->linkRadStudyBioMaterial($radStudy, \@radBioMaterials);
+
  return $radStudy;
 }
+
 
 
 sub createRadAffiliations{
@@ -182,9 +186,7 @@ sub createRadStudyDesignAndFactors{
    $radSDType->setParent($self->createRadOE($mageSD->getType, "studyDesign"));
 
    $self->createRadStudyFactors($mageSD->getFactors, $radSD);
-
  }
-
 }
 
 sub createRadStudyFactors{
@@ -325,6 +327,23 @@ sub createRadOE{
   }
 }
 
+sub linkRadStudyAssay{
+  my ($self, $radStudy, $radAssays) = @_;
+  foreach my $radAssay (@$radAssays){
+    my $radStudyAssay = GUS::Model::RAD::StudyAssay->new();
+    $radStudyAssay->setParent($radAssay);
+    $radStudyAssay->setParent($radStudy);
+  }
+}
+
+sub linkRadStudyBioMaterial{
+ my ($self, $radStudy, $radBioMaterials) = @_;
+  foreach my $radBioMaterial (@$radBioMaterials){
+    my $radStudyBioMaterial = GUS::Model::RAD::StudyBioMaterial->new();
+    $radStudyBioMaterial->setParent($radBioMaterial);
+    $radStudyBioMaterial->setParent($radStudy);
+  }
+}
 
 #Util methods
 sub searchObjArrayByObjName{
