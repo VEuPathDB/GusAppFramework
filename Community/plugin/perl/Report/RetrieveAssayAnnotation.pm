@@ -99,10 +99,10 @@ sub getArgumentsDeclaration {
 sub getDocumentation {
   my $purposeBrief = "Retrieves annotation data for a collection of assays in RAD.";
 
-  my $purpose = "For each assay in the specified collection this plugin retrievs 'context' information for each of its channels. This includes Taxon, and most Biomaterial Characteristics and Protocol Types and Descriptions";
+  my $purpose = "For each assay in the specified collection this plugin retrievs 'context' information for each of its channels. This includes Taxon, Study Factor Values, and most Biomaterial Characteristics and Protocol Types and Descriptions";
 
   my $tablesAffected = [];
-  my $tablesDependedOn = [['Study::Study', 'The studies to consider'], ['RAD::StudyAssay', 'The assays and studies to consider'], ['Core::ProjectInfo', 'The projects whose studies should be considered or discarded, if specified'], ['Core::GroupInfo', 'The groups whose studies should be considered or discarded, if specified'], ['Study::OntologyEntry', 'Retrieved categories and values'], ['SRes::TaxonName', 'The preferred common names of the taxons for the assays under consideration'], ['SRes::Taxon', 'The taxons for the assays under consideration'], ['Study::BioMaterialImp', 'The biomaterials utilized in the assays under consideration'], ['RAD::AssayBioMaterial', 'Retrieves all biomaterials for each assay under consideration'], ['Study::BioMaterialCharacteristic', 'The biomaterial characteristics for the biomaterials involved in the assays under consideration'], ['RAD::Treatment', 'The treatments employed in the assays under consideration'], ['RAD::Protocol', 'The protocols employed in the assays under consideration'], ['RAD::Assay', 'The assays to consider'], ['RAD::Acquisition', 'The acquisition(s) for the assays under consideration']];
+  my $tablesDependedOn = [['Study::Study', 'The studies to consider or discard, if specified'], ['RAD::StudyAssay', 'The assays in the studies to consider'], ['Core::ProjectInfo', 'The projects whose studies should be considered or discarded, if specified'], ['Core::GroupInfo', 'The groups whose studies should be considered or discarded, if specified'], ['Study::OntologyEntry', 'Retrieved categories and values'], ['SRes::TaxonName', 'The preferred common names of the taxons for the assays under consideration'], ['SRes::Taxon', 'The taxons for the assays under consideration'], ['Study::BioMaterialImp', 'The biomaterials utilized in the assays under consideration'], ['RAD::AssayLabeledExtract', 'Retrieves all labeled extracts for each assays under consideration'], ['RAD::AssayBioMaterial', 'Retrieves all biomaterials for each assay under consideration'], ['Study::BioMaterialCharacteristic', 'The biomaterial characteristics for the biomaterials involved in the assays under consideration'], ['RAD::Treatment', 'The treatments employed in the assays under consideration'], ['RAD::TreatmentParam', 'The treatment params for the assays under consideration'], ['RAD::Protocol', 'The protocols employed in the assays under consideration'], ['RAD::ProtocolParam', 'The protocol params for the assays under consideration'], ['RAD::Assay', 'The assays to consider, if specified'], ['RAD::Acquisition', 'The acquisition(s) for the assays under consideration'], ['Study::StudyFactor', 'The study factors for the studies under consideration'], ['RAD::StudyFactorValue', 'The values for the given study factors in the assays under consideration']];
   my $howToRestart = "No restart option.";
   my $failureCases = "";
   my $notes = "";
@@ -160,6 +160,9 @@ sub run {
 
   $self->logData("Retrieving Protocols");   
   $self->retrieveProtocols($dbh, $assays);
+
+  $self->logData("Retrieving StudyFactorValues");   
+  $self->retrieveStudyFactorValues($dbh, $assays);
 
   $self->logData("Writing output");   
   $self->writeResults($assays);
@@ -346,6 +349,9 @@ sub retrieveBioMaterialCharacteristics {
 	  $sth->execute($assays->[$i]->{'bioMaterials'}->[$k]->[$h], $categories[$j]);
 	  while (my ($category, $name, $term, $value)=$sth->fetchrow_array()) {
 	    if ($name ne 'null' && $name ne 'NULL' && $name ne "") {
+	      if ($h>0 && $name eq 'InitialTimePoint') {
+		$name = "|" . $name;
+	      }
 	      $term = $name . "." . $term;
 	    }
 	    if ($value ne 'null' && $value ne 'NULL' && $value ne "") {
@@ -366,23 +372,61 @@ sub retrieveBioMaterialCharacteristics {
 
 sub retrieveProtocols {
   my ($self, $dbh, $assays) = @_;
-  my $sth = $dbh->prepare("select distinct t.order_num, oe.category, oe.value, p.protocol_description from Study.OntologyEntry oe, RAD.Treatment t, RAD.Protocol p where t.bio_material_id=? and t.protocol_id=p.protocol_id and p.protocol_type_id=oe.ontology_entry_id and oe.value not in ('labeling', 'dissect', 'nucleic_acid_extraction', 'linear_amplification', 'PCR_amplification', 'split', 'pool' ) order by t.order_num");
+  my $sth1 = $dbh->prepare("select distinct t.treatment_id, t.order_num, oe.category, oe.value, p.name, p.protocol_description from Study.OntologyEntry oe, RAD.Treatment t, RAD.Protocol p where t.bio_material_id=? and t.protocol_id=p.protocol_id and p.protocol_type_id=oe.ontology_entry_id and oe.value not in ('labeling', 'dissect', 'nucleic_acid_extraction', 'linear_amplification', 'PCR_amplification', 'split', 'pool' ) order by t.order_num");
+  my $sth2 = $dbh->prepare("select distinct pp.name, tp.value, oe.value from RAD.TreatmentParam tp, RAD.Treatment t, RAD.ProtocolParam pp, Study.OntologyEntry oe where t.treatment_id=? and tp.treatment_id=t.treatment_id and t.protocol_id=pp.protocol_id and pp.unit_type_id=oe.ontology_entry_id(+)");
 
   for (my $i=0; $i<@{$assays}; $i++) {
     for (my $j=0; $j<@{$assays->[$i]->{'lex'}}; $j++) {
       my %isIn;
       for (my $k=0; $k<@{$assays->[$i]->{'bioMaterials'}->[$j]}; $k++) {
-	$sth->execute($assays->[$i]->{'bioMaterials'}->[$j]->[$k]);
-	while (my ($order, $category, $value, $description)=$sth->fetchrow_array()) {
-	  my $result = $value . ":: '$description'";
+	$sth1->execute($assays->[$i]->{'bioMaterials'}->[$j]->[$k]);
+	while (my ($treatment, $order, $category, $value, $name, $description)=$sth1->fetchrow_array()) {
+	  $sth2->execute($treatment);
+	  my @params;
+	  while (my ($pName, $pValue, $pUnit)=$sth2->fetchrow_array()) {
+	    push(@params, "$pName: $pValue $pUnit");
+	  }
+	  $sth2->finish;
+	  my $result = "TYPE: $value|NAME: $name|DESCR: $description|PARAMS: " . join("::", @params);
 	  if (!$isIn{$result}) {
 	    push(@{$assays->[$i]->{'protocols'}->[$j]}, $result);
 	    $isIn{$result} = 1;
 	  }
 	}
-	$sth->finish();
+	$sth1->finish();
       }
     }
+  }
+}
+
+sub retrieveStudyFactorValues {
+  my ($self, $dbh, $assays) = @_;
+  my $sth = $dbh->prepare("select distinct oe1.value, sf.name, oe2.value, sfv.string_value, oe3.value, oe4.value from Study.StudyFactor sf, RAD.StudyFactorValue sfv, Study.OntologyEntry oe1, Study. OntologyEntry oe2, Study.OntologyEntry oe3, Study.OntologyEntry oe4 where sf.study_factor_type_id=oe1.ontology_entry_id and sf.study_factor_id=sfv.study_factor_id and sfv.assay_id=? and sfv.value_ontology_entry_id=oe2.ontology_entry_id(+) and sfv.measurement_unit_oe_id=oe3.ontology_entry_id(+) and sfv.channel_id=oe4.ontology_entry_id(+)");
+  for (my $i=0; $i<@{$assays}; $i++) {
+    $sth->execute($assays->[$i]->{'assayId'});
+    while (my ($type, $name, $term, $string, $unit, $channel)=$sth->fetchrow_array()) {
+      my $result;
+      my $value;
+      if ($term ne "") {
+	$value = "OE." . $term;
+      }
+      else {
+	$value = $string;
+      }  
+      $result = "TYPE: $type|NAME: $name|VALUE: $value";
+      if ($unit ne "") {
+	$result .= " MES." . $unit;
+      }
+      if ($channel ne "") {
+	push(@{$assays->[$i]->{'sfv'}->{$channel}}, $result);
+      }
+      else {
+	for (my $j=0; $j<@{$assays->[$i]->{'channels'}}; $j++) {
+	  push(@{$assays->[$i]->{'sfv'}->{$assays->[$i]->{'channels'}->[$j]}}, $result);
+	}
+      }
+    }
+    $sth->finish();
   }
 }
 
@@ -394,7 +438,7 @@ sub writeResults {
   }
   my $file = $self->getArg('outFile');
   my $fh = IO::File->new(">$file") || die "Cannot write file '$file': $!";
-  $fh->print("Study\tAssayId\tAssayName\tChannel\tTaxons\tAge\tDevelopmentalStage\tStrainOrLine\tGenotype\tGeneticModification\tCellLine\tCellType\tOrganismPart\tSex\tDiseaseState\tDiseaseStaging\tProtocols\n");
+  $fh->print("Study\tAssayId\tAssayName\tChannel\tTaxons\tAge\tDevelopmentalStage\tStrainOrLine\tGenotype\tGeneticModification\tCellLine\tCellType\tOrganismPart\tSex\tDiseaseState\tDiseaseStaging\tProtocols\tStudyFactorValues\n");
 
   $self->logDebug("num assays: " . scalar(@{$assays}));
   for (my $i=0; $i<@{$assays}; $i++) {
@@ -402,21 +446,21 @@ sub writeResults {
       if (defined $channels[$i] && $assays->[$i]->{'channels'}->[$j] ne $channels[$i]) {
 	next;
       }
-      my $taxons = defined($assays->[$i]->{'taxons'}->[$j]) ? join(",", @{$assays->[$i]->{'taxons'}->[$j]}) : "";
-      my $ages = defined($assays->[$i]->{'Age'}->[$j]) ? join(",", @{$assays->[$i]->{'Age'}->[$j]}) : "";
-      my $devStages = defined($assays->[$i]->{'DevelopmentalStage'}->[$j]) ? join(",", @{$assays->[$i]->{'DevelopmentalStage'}->[$j]}) : "";
-      my $strainLines = defined($assays->[$i]->{'StrainOrLine'}->[$j]) ? join(",", @{$assays->[$i]->{'StrainOrLine'}->[$j]}) : "";
-      my $genotypes = defined($assays->[$i]->{'Genotype'}->[$j]) ? join(",", @{$assays->[$i]->{'Genotype'}->[$j]}) : "";
-      my $geneticModifications = defined($assays->[$i]->{'GeneticModifications'}->[$j]) ? join(",", @{$assays->[$i]->{'GeneticModifications'}->[$j]}) : "";
-      my $cellLines = defined($assays->[$i]->{'CellLine'}->[$j]) ? join(",", @{$assays->[$i]->{'CellLine'}->[$j]}) : "";
-      my $cellTypes = defined($assays->[$i]->{'CellTypes'}->[$j]) ? join(",", @{$assays->[$i]->{'CellTypes'}->[$j]}) : "";
-      my $organismParts = defined($assays->[$i]->{'OrganismPart'}->[$j]) ? join(",", @{$assays->[$i]->{'OrganismPart'}->[$j]}) : "";
-      my $sex = defined($assays->[$i]->{'Sex'}->[$j]) ? join(",", @{$assays->[$i]->{'Sex'}->[$j]}) : "";
-      my $diseaseStates = defined($assays->[$i]->{'DiseaseState'}->[$j]) ? join(",", @{$assays->[$i]->{'DiseaseState'}->[$j]}) : "";
-      my $diseaseStagings = defined($assays->[$i]->{'DiseaseStaging'}->[$j]) ? join(",", @{$assays->[$i]->{'DiseaseStaging'}->[$j]}) : "";
-      my $protocols = defined($assays->[$i]->{'protocols'}->[$j]) ? join(",", @{$assays->[$i]->{'protocols'}->[$j]}) : "";
-
-      $fh->print("$assays->[$i]->{'study'}\t$assays->[$i]->{'assayId'}\t$assays->[$i]->{'assayName'}\t$assays->[$i]->{'channels'}->[$j]\t$taxons\t$ages\t$devStages\t$strainLines\t$genotypes\t$geneticModifications\t$cellLines\t$cellTypes\t$organismParts\t$sex\t$diseaseStates\t$diseaseStagings\t$protocols\n");   
+      my $taxons = defined($assays->[$i]->{'taxons'}->[$j]) ? join("||", @{$assays->[$i]->{'taxons'}->[$j]}) : "";
+      my $ages = defined($assays->[$i]->{'Age'}->[$j]) ? join("|", @{$assays->[$i]->{'Age'}->[$j]}) : "";
+      my $devStages = defined($assays->[$i]->{'DevelopmentalStage'}->[$j]) ? join("||", @{$assays->[$i]->{'DevelopmentalStage'}->[$j]}) : "";
+      my $strainLines = defined($assays->[$i]->{'StrainOrLine'}->[$j]) ? join("||", @{$assays->[$i]->{'StrainOrLine'}->[$j]}) : "";
+      my $genotypes = defined($assays->[$i]->{'Genotype'}->[$j]) ? join("||", @{$assays->[$i]->{'Genotype'}->[$j]}) : "";
+      my $geneticModifications = defined($assays->[$i]->{'GeneticModifications'}->[$j]) ? join("||", @{$assays->[$i]->{'GeneticModifications'}->[$j]}) : "";
+      my $cellLines = defined($assays->[$i]->{'CellLine'}->[$j]) ? join("||", @{$assays->[$i]->{'CellLine'}->[$j]}) : "";
+      my $cellTypes = defined($assays->[$i]->{'CellTypes'}->[$j]) ? join("||", @{$assays->[$i]->{'CellTypes'}->[$j]}) : "";
+      my $organismParts = defined($assays->[$i]->{'OrganismPart'}->[$j]) ? join("||", @{$assays->[$i]->{'OrganismPart'}->[$j]}) : "";
+      my $sex = defined($assays->[$i]->{'Sex'}->[$j]) ? join("||", @{$assays->[$i]->{'Sex'}->[$j]}) : "";
+      my $diseaseStates = defined($assays->[$i]->{'DiseaseState'}->[$j]) ? join("||", @{$assays->[$i]->{'DiseaseState'}->[$j]}) : "";
+      my $diseaseStagings = defined($assays->[$i]->{'DiseaseStaging'}->[$j]) ? join("||", @{$assays->[$i]->{'DiseaseStaging'}->[$j]}) : "";
+      my $protocols = defined($assays->[$i]->{'protocols'}->[$j]) ? join("||", @{$assays->[$i]->{'protocols'}->[$j]}) : "";
+      my $sfv = defined($assays->[$i]->{'sfv'}->{$assays->[$i]->{'channels'}->[$j]}) ? join("||", @{$assays->[$i]->{'sfv'}->{$assays->[$i]->{'channels'}->[$j]}}) : "";
+      $fh->print("$assays->[$i]->{'study'}\t$assays->[$i]->{'assayId'}\t$assays->[$i]->{'assayName'}\t$assays->[$i]->{'channels'}->[$j]\t$taxons\t$ages\t$devStages\t$strainLines\t$genotypes\t$geneticModifications\t$cellLines\t$cellTypes\t$organismParts\t$sex\t$diseaseStates\t$diseaseStagings\t$protocols\t$sfv\n");   
     } 
   }
   $fh->close();
