@@ -401,10 +401,10 @@ sub retrieveProtocols {
 
 sub retrieveStudyFactorValues {
   my ($self, $dbh, $assays) = @_;
-  my $sth = $dbh->prepare("select distinct oe1.value, sf.name, oe2.value, sfv.string_value, oe3.value, oe4.value from Study.StudyFactor sf, RAD.StudyFactorValue sfv, Study.OntologyEntry oe1, Study. OntologyEntry oe2, Study.OntologyEntry oe3, Study.OntologyEntry oe4 where sf.study_factor_type_id=oe1.ontology_entry_id and sf.study_factor_id=sfv.study_factor_id and sfv.assay_id=? and sfv.value_ontology_entry_id=oe2.ontology_entry_id(+) and sfv.measurement_unit_oe_id=oe3.ontology_entry_id(+) and sfv.channel_id=oe4.ontology_entry_id(+)");
+  my $sth = $dbh->prepare("select distinct oe1.category, oe1.value, sf.name, oe2.value, sfv.string_value, oe3.value, oe4.value from Study.StudyFactor sf, RAD.StudyFactorValue sfv, Study.OntologyEntry oe1, Study. OntologyEntry oe2, Study.OntologyEntry oe3, Study.OntologyEntry oe4 where sf.study_factor_type_id=oe1.ontology_entry_id and sf.study_factor_id=sfv.study_factor_id and sfv.assay_id=? and sfv.value_ontology_entry_id=oe2.ontology_entry_id(+) and sfv.measurement_unit_oe_id=oe3.ontology_entry_id(+) and sfv.channel_id=oe4.ontology_entry_id(+)");
   for (my $i=0; $i<@{$assays}; $i++) {
     $sth->execute($assays->[$i]->{'assayId'});
-    while (my ($type, $name, $term, $string, $unit, $channel)=$sth->fetchrow_array()) {
+    while (my ($category, $type, $name, $term, $string, $unit, $channel)=$sth->fetchrow_array()) {
       my $result;
       my $value;
       if ($term ne "") {
@@ -413,7 +413,7 @@ sub retrieveStudyFactorValues {
       else {
 	$value = $string;
       }  
-      $result = "TYPE: $type|NAME: $name|VALUE: $value";
+      $result = "TYPE: $category." . "$type|NAME: $name|VALUE: $value";
       if ($unit ne "") {
 	$result .= " MES." . $unit;
       }
