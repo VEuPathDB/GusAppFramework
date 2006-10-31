@@ -3,6 +3,7 @@ package GUS::Community::Plugin::LoadMageDoc;
 
 use strict;
 use GUS::PluginMgr::Plugin;
+use Error qw(:try);
 
 my $documentation = {};
 
@@ -33,11 +34,15 @@ sub new {
 sub run {
   my ($self) = @_;
   my $docType;
-  my $reader = $self->createReader($docType);
 
+  my $reader = $self->createReader($docType);
   my $docRoot = $reader->parse();
 
-  my $study = $self->map2GUSObjTree($docRoot);
+  my $rules;
+  my $validator = $self->createValidator($rules);
+  my $ok = $validator->check($docRoot);
+
+  my $study = $self->map2GUSObjTree($docRoot) if $ok;
 
   $study->submit;
 }
@@ -54,10 +59,41 @@ sub createReader {
   my $require_p = "{require $readerClass; $readerClass->new }";
   my $reader = eval $require_p;
 
-  RAD::MR_T::MageImport::MageImportReaderNotCreatedError->new($self."->createReader: ".$require_p)->throw() if $@;
+  RAD::MR_T::MageImport::MageImportReaderNotCreatedError->new(ref($self)."->createReader: ".$require_p)->throw() if $@;
 
   return $reader;
-  
+}
+
+
+sub createValidator {
+  my ($self, $rules) = @_;
+
+  my $validatorClass = "RAD::MR_T::MageImport::Service::Validator";
+  my $require_p = "{require $validatorClass; $validatorClass->new }";
+  my $validator = eval $require_p;
+  RAD::MR_T::MageImport::MageImportValidatorNotCreatedError->new(ref($self)."->createValidator: ".$require_p)->throw() if $@;
+
+  if($rules){
+    foreach $rule (@rules){
+      try{
+	$self->decoValidator($rule, $validator);
+      }
+	catch RAD::MR_T::MageImport::MageImportValidatorNotCreatedError with {
+	  print STDOUT "\n***WARNING: problem with adding rule $rule, it is not added into validator\n"; 
+	}
+    }
+  }
+
+  return $validator;
+}
+
+sub decoValidator {
+  my ($self, $rule, $validator) = @_;
+  my $ruleClass = "RAD::MR_T::MageImport::Service::ValidatorRule::$rule";
+  my $require_p = "{require $ruleClass; $ruleClass->new($validator) }";
+  my $decoValidator = eval $require_p;
+  RAD::MR_T::MageImport::MageImportValidatorNotCreatedError->new(ref($self)."->decoValidator: ".$require_p)->throw() if $@;
+  return $decoValidator;
 }
 
 sub map2GUSObjTree {
@@ -152,7 +188,7 @@ sub createRadExternalDatabases{
     }
 
     $radDbRel->setParent($radDb);
-    RAD::MR_T::MageImport::MageImportExtDbNotFoundError->new($self."->createRadExternalDatabases")->throw() unless $radDbRel->retrieveFromDB;
+    RAD::MR_T::MageImport::MageImportExtDbNotFoundError->new(ref($self)."->createRadExternalDatabases")->throw() unless $radDbRel->retrieveFromDB;
     push @$radExtDbs, $radDbRel;
   }
 }
@@ -318,7 +354,7 @@ sub createRadOE{
   if ($type =~ /$modes_rx/) {
     my $radOE = GUS::Model::Study::OntologyEntry->new({value=>$mageOE->getValue, category=>$mageOE->getCategory});
     RAD::MR_T::MageImport::MageImportOENotFoundError->new(
-							  $self."->createRadOE: OntologyEntry value: ".$mageOE->getValue."category: ".$mageOE->getCategory
+							  ref($self)."->createRadOE: OntologyEntry value: ".$mageOE->getValue."category: ".$mageOE->getCategory
 							 )->throw() unless $radOE->retrieveFromDB;
     return $radOE;
   }
