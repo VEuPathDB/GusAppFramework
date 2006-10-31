@@ -2,14 +2,22 @@ package GUS::Community::Plugin::LoadMageDoc;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;
-use GUS::PluginMgr::Plugin;
 use Error qw(:try);
+use Config::General;
+
+use GUS::PluginMgr::Plugin;
+
+use RAD::MR_T::MageImport::ServiceFactory;
 
 my $documentation = {};
 
 my $argsDeclaration 
   =[
     fileArg({name           => 'magefile',
+	     reqd           => 1,
+	     mustExist      => 1,
+	    }),
+    fileArg({name           => 'configfile',
 	     reqd           => 1,
 	     mustExist      => 1,
 	    })
@@ -31,69 +39,38 @@ sub new {
   return $self;
 }
 
+# need to refactor out some of the methods into ServiceFactory, ObjMapper class
+
 sub run {
   my ($self) = @_;
-  my $docType;
 
-  my $reader = $self->createReader($docType);
+  my %config = ParseConfig((-ConfigFile => $self->getArgs('configfile'), -AutoTrue => 1));
+
+  my $serviceFactory = RAD::MR_T::MageImport::ServiceFactory->new(\%config);
+
+  #  my $docType = $config{docType};
+  #  my $reader = $self->createReader($docType);
+
+  my $reader =  $serviceFactory->getServiceByName('reader');
   my $docRoot = $reader->parse();
 
-  my $rules;
-  my $validator = $self->createValidator($rules);
-  my $ok = $validator->check($docRoot);
+  if($config{modules}){
+    my @pModules = split(/,/, $config{modules});
+    #  my $processor = $self->createProcessor(\@pModules);
+    my $processor = $serviceFactory->getServiceByName('processor');;
+    $processor->process($docRoot);
+  }
 
-  my $study = $self->map2GUSObjTree($docRoot) if $ok;
+  if($config{rules}){
+    my @rules = split(/,/, $config{rules});
+    #  my $validator = $self->createValidator(\@rules);
+    my $validator = $serviceFactory->getServiceByName('validator');;
+    $validator->check($docRoot);
+  }
+
+  my $study = $self->map2GUSObjTree($docRoot);
 
   $study->submit;
-}
-
-
-sub createReader {
-  my ($self, $docType) = @_;
-
-  unless ($docType){
-    return RAD::MR_T::MageImport::Service::MockReader->new();
-  }
-
-  my $readerClass = "RAD::MR_T::MageImport::Service::".$docType."Reader";
-  my $require_p = "{require $readerClass; $readerClass->new }";
-  my $reader = eval $require_p;
-
-  RAD::MR_T::MageImport::MageImportReaderNotCreatedError->new(ref($self)."->createReader: ".$require_p)->throw() if $@;
-
-  return $reader;
-}
-
-
-sub createValidator {
-  my ($self, $rules) = @_;
-
-  my $validatorClass = "RAD::MR_T::MageImport::Service::Validator";
-  my $require_p = "{require $validatorClass; $validatorClass->new }";
-  my $validator = eval $require_p;
-  RAD::MR_T::MageImport::MageImportValidatorNotCreatedError->new(ref($self)."->createValidator: ".$require_p)->throw() if $@;
-
-  if($rules){
-    foreach $rule (@rules){
-      try{
-	$self->decoValidator($rule, $validator);
-      }
-	catch RAD::MR_T::MageImport::MageImportValidatorNotCreatedError with {
-	  print STDOUT "\n***WARNING: problem with adding rule $rule, it is not added into validator\n"; 
-	}
-    }
-  }
-
-  return $validator;
-}
-
-sub decoValidator {
-  my ($self, $rule, $validator) = @_;
-  my $ruleClass = "RAD::MR_T::MageImport::Service::ValidatorRule::$rule";
-  my $require_p = "{require $ruleClass; $ruleClass->new($validator) }";
-  my $decoValidator = eval $require_p;
-  RAD::MR_T::MageImport::MageImportValidatorNotCreatedError->new(ref($self)."->decoValidator: ".$require_p)->throw() if $@;
-  return $decoValidator;
 }
 
 sub map2GUSObjTree {
