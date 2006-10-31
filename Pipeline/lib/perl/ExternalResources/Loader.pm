@@ -89,7 +89,8 @@ sub _parseXmlFile {
   my $dbCommit = $self->{manager}->{propertySet}->getProp('dbcommit');
   my $xmlString = $self->_substituteMacros();
   my $xml = new XML::Simple;
-  my $data = $xml->XMLin($xmlString);
+  my $data = eval{ $xml->XMLin($xmlString) };
+  die "$@\n$xmlString\n" if($@);
   print STDERR Dumper($data);
   my $repositoryLogFile = "$self->{manager}->{pipelineDir}/logs/repository.log";
   # handle resources
