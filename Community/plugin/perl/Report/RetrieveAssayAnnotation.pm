@@ -438,7 +438,7 @@ sub writeResults {
   }
   my $file = $self->getArg('outFile');
   my $fh = IO::File->new(">$file") || die "Cannot write file '$file': $!";
-  $fh->print("Study\tAssayId\tAssayName\tChannel\tTaxons\tAges\tDevelopmentalStages\tStrainsOrLines\tGenotypes\tGeneticModifications\tCellLines\tCellTypes\tOrganismParts\tSex\tDiseaseStates\tDiseaseStagings\tProtocols\tStudyFactorValues\n");
+  $fh->print("Study\tAssayId\tAssayName\tChannel\tTaxons\tAges\tDevelopmentalStages\tStrainsOrLines\tGenotypes\tGeneticModifications\tCellLines\tCellTypes\tOrganismParts\tSexes\tDiseaseStates\tDiseaseStagings\tProtocols\tStudyFactorValues\n");
 
   $self->logDebug("num assays: " . scalar(@{$assays}));
   for (my $i=0; $i<@{$assays}; $i++) {
