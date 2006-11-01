@@ -39,7 +39,26 @@ sub new {
   return $self;
 }
 
-# need to refactor out some of the methods into ServiceFactory, ObjMapper class
+=head plugin classes
+
+=cut
+
+=item run method
+
+this is the main method
+
+to-dos:  need to refactor out some of the methods into ServiceFactory, ObjectMapper class
+         definetly need configuration checks
+
+config file example:
+         service=reader,validator,processor
+         service.docType = Mageml
+         validator.rules = BlankRule,BlankRule
+         processor.modules = BlankModule
+
+the idea here is to have serviceFactory to read this config file and automatically not statically create service classes
+
+=cut
 
 sub run {
   my ($self) = @_;
@@ -52,7 +71,7 @@ sub run {
   #  my $reader = $self->createReader($docType);
 
   my $reader =  $serviceFactory->getServiceByName('reader');
-  my $docRoot = $reader->parse();
+  my $docRoot = $reader->parse($self->getArgs('magefile'));
 
   if($config{modules}){
     my @pModules = split(/,/, $config{modules});
@@ -73,6 +92,7 @@ sub run {
   $study->submit;
 }
 
+# this method can move to a new class ObjectMapper
 sub map2GUSObjTree {
  my ($self, $docRoot) = @_;
 
