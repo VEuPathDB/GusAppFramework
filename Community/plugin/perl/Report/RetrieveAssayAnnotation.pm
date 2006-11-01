@@ -405,6 +405,9 @@ sub retrieveStudyFactorValues {
   for (my $i=0; $i<@{$assays}; $i++) {
     $sth->execute($assays->[$i]->{'assayId'});
     while (my ($category, $type, $name, $term, $string, $unit, $channel)=$sth->fetchrow_array()) {
+      if ($category eq 'BioMaterialCharacteristicCategory') {
+	next;
+      }
       my $result;
       my $value;
       if ($term ne "") {
@@ -460,7 +463,7 @@ sub writeResults {
       my $diseaseStagings = defined($assays->[$i]->{'DiseaseStaging'}->[$j]) ? join("||", @{$assays->[$i]->{'DiseaseStaging'}->[$j]}) : "";
       my $protocols = defined($assays->[$i]->{'protocols'}->[$j]) ? join("||", @{$assays->[$i]->{'protocols'}->[$j]}) : "";
       my $sfv = defined($assays->[$i]->{'sfv'}->{$assays->[$i]->{'channels'}->[$j]}) ? join("||", @{$assays->[$i]->{'sfv'}->{$assays->[$i]->{'channels'}->[$j]}}) : "";
-      $fh->print("$assays->[$i]->{'study'}\t$assays->[$i]->{'assayId'}\t$assays->[$i]->{'assayName'}\t$assays->[$i]->{'channels'}->[$j]\t$taxons\t$ages\t$devStages\t$strainLines\t$genotypes\t$geneticModifications\t$cellLines\t$cellTypes\t$organismParts\t$sex\t$diseaseStates\t$diseaseStagings\t$protocols\t$sfv\n");   
+      $fh->print("$assays->[$i]->{'study'}\t$assays->[$i]->{'assayId'}\t$assays->[$i]->{'assayName'}\t$assays->[$i]->{'channels'}->[$j]\t$taxons\t$ages\t$devStages\t$strainLines\t$genotypes\t$geneticModifications\t$cellLines\t$cellTypes\t$organismParts\t$sex\t$diseaseStates\t$diseaseStagings\t$sfv\t$protocols\n");   
     } 
   }
   $fh->close();
