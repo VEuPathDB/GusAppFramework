@@ -93,7 +93,7 @@ sub getQueryHandle {
 
 sub getDefaultDatabase { return $defDbiDb; } # static
 sub setDefaultDatabase {  #static
-  my ($defaultDb) = @_;
+  my ($class, $defaultDb) = @_;
   $defDbiDb = $defaultDb;
 }
 sub setMeAsDefaultDatabase {
