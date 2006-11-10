@@ -349,18 +349,18 @@ sub retrieveBioMaterialCharacteristics {
 	  $sth->execute($assays->[$i]->{'bioMaterials'}->[$k]->[$h], $categories[$j]);
 	  while (my ($category, $name, $term, $value)=$sth->fetchrow_array()) {
 	    if ($name ne 'null' && $name ne 'NULL' && $name ne "") {
-	      if ($h>0 && $name eq 'InitialTimePoint') {
-		$name = "|" . $name;
-	      }
 	      $term = $name . "." . $term;
 	    }
 	    if ($value ne 'null' && $value ne 'NULL' && $value ne "") {
 	      $term .= "." . $value;
 	    }
 	    if (!$isIn{$term}) {
+	      $isIn{$term} = 1;
+	      if ($h>0 && $name eq 'InitialTimePoint') {
+		$term = "|" . $term;
+	      }
 	      push(@{$assays->[$i]->{$categories[$j]}->[$k]}, "$term");
 	    }
-	    $isIn{$term} = 1;
 	  }
 	  $sth->finish();
 	}
