@@ -9,7 +9,52 @@ use GUS::PluginMgr::Plugin;
 use RAD::MR_T::MageImport::ServiceFactory;
 use RAD::MR_T::MageImport::Service::Translator::VoToGusTranslator;
 
-my $documentation = {};
+my $notes = <<PLUGIN_NOTES;
+=pod
+
+=head1 DISCLAIMER
+
+This plugin will handle the one channel microarray data for now.
+
+=over
+
+=head1 Config XML file
+
+This is plugin only takes one configuration xml file. The example will be:
+
+<plugin>
+  <property name="sqltesting" value="1"/>
+  <property name="reporting" value="1"/>
+  <property name="processing" value="1"/>
+  <property name="validating" value="1"/>
+
+<service id="reader" class="RAD::MR_T::MageImport::Service::Reader::MagemlReader">
+  <property name="magemlfile" value="test.xml"/>
+  <property name="two-dye" value="0"/>
+</service>
+
+<service id="translator" class="RAD::MR_T::MageImport::Service::Translator::VoToGusTranslator">
+  <property name="retrieveOEFromDB" value="1"/>
+  <property name="retrieveExtDBFromDB" value="1"/>
+  <property name="retrieveProtocolFromDB" value="0"/>
+  <property name="retrievePersonFromDB" value="0"/>
+</service>
+
+<service id="validator" baseClass="RAD::MR_T::MageImport::Service::Validator">
+  <decorProperties name="rules" value="BlankRule"/>
+</service>
+
+<service id="sqlTester" baseClass="RAD::MR_T::MageImport::Service::SqlTester">
+  <property name="sqlTestingFile" value="sqlTest.txt"/>
+</service>
+
+</plugin>
+
+
+=cut
+
+PLUGIN_NOTES
+
 
 sub getArgumentsDeclaration { 
  return [ fileArg({name           => 'configfile',
@@ -26,19 +71,21 @@ sub getArgumentsDeclaration {
 
 sub getDocumentation {
   # TODO:  Fill all this in
-  my $purposeBrief = "";
+  my $purposeBrief = "Load MAGE documents into RAD";
 
   my $purpose = "";
 
-  my $tablesAffected;
+  my $tablesAffected = ['Many tables in RAD, STUDY AND SRES SCHEMA'];
 
-  my $tablesDependedOn;
+  my $tablesDependedOn = [
+			  ['SRes::Contact', 'Used for BioSource Provider'],
+			  ['Study::OntologyEntry', 'Used multiple times'],
+			  ['RAD::Protocol', 'Protocol ids taken from config file']
+			 ];
 
-  my $howToRestart = "";
+  my $howToRestart = "This plugin has no restart facility.";
 
   my $failureCases = "";
-
-  my $notes = "";
 
   my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief, tablesAffected=>$tablesAffected, tablesDependedOn=>$tablesDependedOn, howToRestart=>$howToRestart, failureCases=>$failureCases,notes=>$notes};
 
@@ -51,8 +98,7 @@ sub getDocumentation {
 
 sub new {
   my ($class) = @_;
-  my $self = {na_sequences => []
-             };
+  my $self = {};
   bless($self,$class);
 
   my $documentation = &getDocumentation();
@@ -71,19 +117,9 @@ sub new {
 
 
 
-=head plugin classes
-
-=cut
-
 =item run method
 
 this is the main method
-
-config file example:
-         service=reader,validator,processor
-         service.docType = Mageml
-         validator.rules = BlankRule,BlankRule
-         processor.modules = BlankModule
 
 the idea here is to have serviceFactory to read this config file and automatically not statically create service classes
 
