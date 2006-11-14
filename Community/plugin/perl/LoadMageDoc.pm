@@ -20,7 +20,7 @@ This plugin will handle the one channel microarray data for now.
 
 =over
 
-=head1 Config XML file
+=head1  Config XML file
 
 This is plugin only takes one configuration xml file. The example will be:
 
@@ -52,6 +52,15 @@ This is plugin only takes one configuration xml file. The example will be:
 
 </plugin>
 
+=head1 Argurments
+
+=cut
+
+=item --configfile
+
+ only take one command line arguement
+
+=cut
 
 =cut
 
@@ -115,7 +124,7 @@ sub new {
 
   $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision: 2924 $', # cvs fills this in!
-		     cvsTag => '$Name$', # cvs fills this in!
+		     cvsTag => '$Name: $', # cvs fills this in!
                      name => ref($self),
                      revisionNotes => '',
                      argsDeclaration => $argumentDeclaration,
