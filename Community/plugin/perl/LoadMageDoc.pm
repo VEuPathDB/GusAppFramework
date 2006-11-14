@@ -183,7 +183,7 @@ sub run {
 
 =item checkConfig(\%config)
 
-this is a very simple check config xml method, we should blow it up into a ConfigManager class
+this is a very simple check config xml method, we should blow it up into a ConfigManager class,Note: for the case there is only one service, the config hash will be totally different
 
 =cut
 
@@ -201,6 +201,8 @@ sub checkConfig{
        $reader = 1 if $service eq 'reader';
        $translator = 1 if $service eq 'translator';
   }
+
+  $reader = 1 if $services->{id} && $services->{id} eq 'reader';
 
   $mLogger->fatal("You must provide a reader in the configuration xml") unless $reader;
   $mLogger->fatal("You must provide a translator in the configuration xml") unless $translator;
