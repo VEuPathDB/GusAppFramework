@@ -14,6 +14,8 @@ use  GUS::ObjRelP::DbiDatabase;
 use GUS::Supported::GusConfig;
 
 use GUS::Model::Study::Study;
+use GUS::Model::RAD::StudyAssay;
+use GUS::Model::RAD::Assay;
 
 use Data::Dumper;
 
@@ -136,3 +138,56 @@ sub test_run {
   $sh->finish();
 
 }
+
+sub test_run2 {
+  my $self = shift;
+
+  my $study = GUS::Model::Study::Study->new({name => 'test_study2',
+                                            contact_id => 9
+                                            }); 
+
+
+  my $assay1 = GUS::Model::RAD::Assay->new({name => 'test_assay1',
+                                            array_design_id => 9,
+                                            operator_id => 9,
+                                            });
+
+  my $assay2 = GUS::Model::RAD::Assay->new({name => 'test_assay2',
+                                            array_design_id => 9,
+                                            operator_id => 9,
+                                            });
+
+  my $sa = GUS::Model::RAD::StudyAssay->new();
+
+  $sa->setParent($study);
+  $sa->setParent($assay1);
+  $sa->setParent($assay2);
+
+  $study->submit();
+
+
+  my $sql = "select name from Study.study where contact_id = 9";
+
+  my $sh = $self->{_dbi_database}->getDbHandle()->prepare($sql);
+  $sh->execute();
+
+  while(my ($name) = $sh->fetchrow_array()) {
+    print "Study NAME=$name\n";
+  }
+
+  $sh->finish();
+
+  my $sql2 = "select name from RAD.assay where operator_id = 9";
+
+  $sh = $self->{_dbi_database}->getDbHandle()->prepare($sql2);
+  $sh->execute();
+
+  while(my ($name) = $sh->fetchrow_array()) {
+    print "Assay NAME=$name\n" if $name eq "test_assay1" or $name eq "test_assay2";
+  }
+  $sh->finish();
+
+}
+
+
+
