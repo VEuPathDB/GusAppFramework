@@ -3,6 +3,8 @@ package GUS::Community::Plugin::LoadMageDoc;
 
 use strict;
 use Error qw(:try);
+use Log::Log4perl qw(get_logger :levels);
+use XML::Simple;
 
 use GUS::PluginMgr::Plugin;
 
@@ -125,32 +127,36 @@ the idea here is to have serviceFactory to read this config file and automatical
 
 =cut
 
-sub _run {
+sub run {
   my ($self) = @_;
 
-  my %config = ParseConfig((-ConfigFile => $self->getArgs('configfile'), -AutoTrue => 1));
+  Log::Log4perl->init_once("$ENV{GUS_HOME}/config/log4perl.config");
+  my $mLogger = get_logger("RAD::MR_T::MageImport");
 
-  my $serviceFactory = RAD::MR_T::MageImport::ServiceFactory->new(\%config);
+  $mLogger->info("parse the config xml file", $self->getArgs('configfile'));
+
+  my $config = XMLin($self->getArgs('configfile'));
+
+  $mLogger->info("create service factory and make the services");
+
+  my $serviceFactory = RAD::MR_T::MageImport::ServiceFactory->new($config);
 
   my $reader =  $serviceFactory->getServiceByName('reader');
-  my $docRoot = $reader->parse($self->getArgs('magefile'));
 
-  if($config{modules}){
-    my @pModules = split(/,/, $config{modules});
+  $mLogger->info("parse the mage file", $config->{service}->{reader}->{property}->{value});
+  my $docRoot = $reader->parse();
 
-    my $processor = $serviceFactory->getServiceByName('processor');;
-    $processor->process($docRoot);
-  }
+  my $validator = $serviceFactory->getServiceByName('validator');;
 
-  if($config{rules}){
-    my @rules = split(/,/, $config{rules});
-
-    my $validator = $serviceFactory->getServiceByName('validator');;
-    $validator->check($docRoot);
-  }
+  $mLogger->info("validate the value objects using ", ref($validator));
+  $validator->check($docRoot);
 
   my $translator = $serviceFactory->getServiceByName('translator');
+  $mLogger->info("translate the value objects to GUS objects using ", ref($translator));
   my $study = $translator->mapAll($docRoot);
+
+  $mLogger->info("submit GUS objects");
+
 
   $study->submit;
 
