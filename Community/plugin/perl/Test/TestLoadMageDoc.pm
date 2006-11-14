@@ -11,7 +11,12 @@ use GUS::Community::Plugin::LoadMageDoc;
 
 use  GUS::ObjRelP::DbiDatabase;
 
+use RAD::MR_T::MageImport::Service::Reader::MockReader;
+use RAD::MR_T::MageImport::Service::Translator::VoToGusTranslator;
+
 use GUS::Supported::GusConfig;
+
+use GUS::ObjRelP::DbiDatabase;
 
 use GUS::Model::Study::Study;
 use GUS::Model::RAD::StudyAssay;
@@ -97,7 +102,7 @@ sub set_up {
   $database->setDefaultProjectId($val);
   $database->setDefaultUserId($val);
   $database->setDefaultGroupId($val);
-  $database->setDefaultAlgoInvoId($val);
+  $database->setDefaultAlgoInvoId(-99);
 
   $database->setDefaultUserRead($val);
   $database->setDefaultUserWrite($val);
@@ -105,8 +110,6 @@ sub set_up {
   $database->setDefaultGroupWrite($val);
   $database->setDefaultOtherRead($val);
   $database->setDefaultOtherWrite($val);
-
-  $database->manageTransaction(0, 'begin');
 }
 
 #--------------------------------------------------------------------------------
@@ -117,12 +120,11 @@ sub tear_down {
   $testCount--;
 
   my $database = GUS::ObjRelP::DbiDatabase->getDefaultDatabase();
-  $database->manageTransaction(0, 'commit');
   $database->{'dbh'}->rollback();
 
   # LOG OUT AFTER ALL TESTS ARE FINISHED
   if($testCount <= 0) {
-    $database->{'dbh'}->disconnect();
+    $database->logout();
     print STDERR "LOGGING OUT FROM DBI DATABASE\n";
   }
 }
@@ -199,6 +201,33 @@ sub test_run2 {
 }
 
 #--------------------------------------------------------------------------------
+
+sub test_run3 {
+  my $self = shift;
+
+  my $reader = RAD::MR_T::MageImport::Service::Reader::MockReader->new();
+  my $docRoot = $reader->parse();
+
+  my $translator =  RAD::MR_T::MageImport::Service::Translator::VoToGusTranslator->new();
+  my $study = $translator->mapAll($docRoot);
+
+  $study->submit();
+
+  my $sqls = [join("\t", '1', 'select count(*) from study.study where row_alg_invocation_id = -99', ''),
+              join("\t", '\d+', 'select study_id from study.study where row_alg_invocation_id = -99', 'study_id'),
+              join("\t", 'study', 'select name from study.study where study_id = $$study_id$$', ''),
+              join("\t", '1', 'select count(*)  from study.studydesign where row_alg_invocation_id = -99 and study_id = $$study_id$$', ''),
+              join("\t", '\d+', 'select study_design_id from study.studydesign where row_alg_invocation_id = -99', 'study_design_id'),
+              join("\t", '2', 'select count(*) from study.studyfactor where row_alg_invocation_id = -99 and study_design_id = $$study_design_id$$', ''),
+             ];
+
+  my $fn = "dummyFile";
+  my $handle = GUS::ObjRelP::DbiDatabase->getDefaultDatabase()->getDbHandle();
+
+  my $tester = RAD::MR_T::MageImport::Service::Tester::SqlTester->new($fn, $handle);
+  $tester->{_lines_array} = $sqls;
+
+}
 
 sub fetchArray {
   my ($self, $sql, $bindValues) = @_;
