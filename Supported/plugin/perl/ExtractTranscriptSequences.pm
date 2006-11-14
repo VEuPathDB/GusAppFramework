@@ -32,6 +32,20 @@ sub getArgsDeclaration {
 		 reqd => 1,
 	       }),
 
+     stringArg({ name => 'seqExtDbName',
+		 descr => 'External Database name of the sequence where transcript feature is found',
+		 constraintFunc => undef,
+		 isList => 0,
+		 reqd => 0,
+	       }),
+
+     stringArg({ name => 'seqExtDbRlsVer',
+		 descr => 'Extexrnal Database Release version of the sequence where transcript feature is found',
+		 constraintFunc => undef,
+		 isList => 0,
+		 reqd => 0,
+	       }),
+
      stringArg({ name => 'sequenceFile',
 		 descr => 'file for fasta formatted sequences',
 		 constraintFunc => undef,
@@ -165,6 +179,11 @@ sub run {
 
    my $extDbRlsId = $self->getExtDbRlsId($extDbRlsName, $extDbRlsVer);
 
+   my $seqExtDbRlsName = $self->getArg("seqExtDbName") if $self->getArg("seqExtDbName");
+   my $seqExtDbRlsVer = $self->getArg("seqExtDbRlsVer") if $self->getArg("seqExtDbRlsVer");
+
+   my $seqExtDbRlsId = $self->getExtDbRlsId($seqExtDbRlsName, $seqExtDbRlsVer) if ($seqExtDbRlsName && $seqExtDbRlsVer);
+
    unless ($extDbRlsId) {
      $self->error ("No such External Database Release / Version:\n $extDbRlsName / $extDbRlsVer\n");
    }
@@ -173,9 +192,11 @@ sub run {
 
    my $sql = <<EOSQL;
   SELECT t.source_id,g.product
-  FROM   DoTS.Transcript t, dots.genefeature g
+  FROM   DoTS.Transcript t, dots.genefeature g, dots.nasequence n
   WHERE  t.external_database_release_id = ? and t.parent_id = g.na_feature_id
 EOSQL
+
+   $sql .= " and t.na_sequence_id = n.na_sequence_id and n.external_database_release_id = $seqExtDbRlsId" if $seqExtDbRlsId;
 
    my $sth = $dbh->prepare($sql);
 
