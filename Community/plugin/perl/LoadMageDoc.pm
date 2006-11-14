@@ -94,9 +94,15 @@ sub getDocumentation {
   return $documentation;
 }
 
-# ----------------------------------------------------------------------
-# create and initalize new plugin instance.
-# ----------------------------------------------------------------------
+=head1 Class methods
+
+=over
+
+=item new 
+
+ create and initalize new plugin instance.
+
+=cut
 
 sub new {
   my ($class) = @_;
@@ -123,7 +129,7 @@ sub new {
 
 this is the main method
 
-the idea here is to have serviceFactory to read this config file and automatically not statically create service classes
+the idea here is to have serviceFactory to read the config file and automagically create service classes
 
 =cut
 
@@ -133,12 +139,15 @@ sub run {
   Log::Log4perl->init_once("$ENV{GUS_HOME}/config/log4perl.config");
   my $mLogger = get_logger("RAD::MR_T::MageImport");
 
-  $mLogger->info("parse the config xml file", $self->getArgs('configfile'));
+  $self->setLogger($mLogger);
 
+  $mLogger->info("parse the config xml file", $self->getArgs('configfile'));
   my $config = XMLin($self->getArgs('configfile'));
 
-  $mLogger->info("create service factory and make the services");
+  $mLogger->info("check the config xml file");
+  $self->checkConfig($config);
 
+  $mLogger->info("create service factory and make the services");
   my $serviceFactory = RAD::MR_T::MageImport::ServiceFactory->new($config);
 
   my $reader =  $serviceFactory->getServiceByName('reader');
@@ -152,19 +161,80 @@ sub run {
   $validator->check($docRoot);
 
   my $translator = $serviceFactory->getServiceByName('translator');
+
   $mLogger->info("translate the value objects to GUS objects using ", ref($translator));
   my $study = $translator->mapAll($docRoot);
 
   $mLogger->info("submit GUS objects");
-
-
-  $study->submit;
+  $self->submit($study);
 
   # Sql Tester
 }
 
+=item checkConfig(\%config)
 
+this is a very simple check config xml method, we should blow it up into a ConfigManager class
 
+=cut
 
+sub checkConfig{
+  my ($self, $config) = @_;
 
+  my $mLogger = $self->getLogger;
+
+  my $services = $config->{service};
+
+  my $reader = 0;
+  my $translator = 0;
+
+  foreach my $service ( keys %$services){
+       $reader = 1 if $service eq 'reader';
+       $translator = 1 if $service eq 'translator';
+  }
+
+  $mLogger->fatal("You must provide a reader in the configuration xml") unless $reader;
+  $mLogger->fatal("You must provide a translator in the configuration xml") unless $translator;
+  $mLogger->fatal("You must provide a mage doc inside the reader block in the configuration xml") unless $config->{service}->{reader}->{property}->{value};
+
+}
+
+=item submit(Study)
+
+Because "Children only submit parents if parent does not have a primary key (is new object that has not been submitted).  Then parent is submitted but does not submit any children.", we have submit those parent manually 
+
+=cut
+
+sub submit{
+  my ($self, $study) = @_;
+
+#this will submit study, studydesign, studyfactor and assays if studyAssays are set
+  if(my @studyAssay = $study->getChildren("GUS::Model::RAD::StudyAssay")){
+
+    foreach $studyAssay (@studyAssay){
+      my $assay = $studyAssay->getParent("GUS::Model::RAD::Assay");
+      $study->addToSubmitList($assay);
+    }
+  }
+
+  if(my @studyBioMaterial = $study->getChildren("GUS::Model::RAD::StudyBioMaterial")){
+    foreach $studyBioMaterial (@studyBioMaterial){
+      my $biomat = $studyBioMaterial->getParent("GUS::Model::RAD::BioMaterialImp");
+      $study->addToSubmitList($biomat);
+    }
+  }
+
+  $study->submit;
+}
+
+=item setLogger(logger)
+
+=cut
+
+sub setLogger {$_[0]->{_logger} = $_[1]}
+
+=item getLogger():logger
+
+=cut
+
+sub getLogger {$_[0]->{_logger}}
 1;
