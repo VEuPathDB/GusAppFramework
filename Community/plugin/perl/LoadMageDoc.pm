@@ -210,14 +210,14 @@ sub submit{
 #this will submit study, studydesign, studyfactor and assays if studyAssays are set
   if(my @studyAssay = $study->getChildren("GUS::Model::RAD::StudyAssay")){
 
-    foreach $studyAssay (@studyAssay){
+    foreach my $studyAssay (@studyAssay){
       my $assay = $studyAssay->getParent("GUS::Model::RAD::Assay");
       $study->addToSubmitList($assay);
     }
   }
 
   if(my @studyBioMaterial = $study->getChildren("GUS::Model::RAD::StudyBioMaterial")){
-    foreach $studyBioMaterial (@studyBioMaterial){
+    foreach my $studyBioMaterial (@studyBioMaterial){
       my $biomat = $studyBioMaterial->getParent("GUS::Model::RAD::BioMaterialImp");
       $study->addToSubmitList($biomat);
     }
