@@ -103,6 +103,8 @@ sub set_up {
   $database->setDefaultOtherRead($val);
   $database->setDefaultOtherWrite($val);
 
+$database->manageTransaction(0, 'begin');
+
 }
 
 sub tear_down {
@@ -110,6 +112,7 @@ sub tear_down {
 
   $testCount--;
 
+   GUS::ObjRelP::DbiDatabase->getDefaultDatabase()->manageTransaction(0, 'commit');
   # LOG OUT AFTER ALL TESTS ARE FINISHED
   if($testCount <= 0) {
     GUS::ObjRelP::DbiDatabase->getDefaultDatabase()->logout();
