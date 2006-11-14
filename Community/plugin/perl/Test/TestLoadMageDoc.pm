@@ -30,6 +30,8 @@ my ($loadMageDoc, $testCount);
 
 #my $ga = GUS::PluginMgr::GusApplication->new();
 
+#--------------------------------------------------------------------------------
+
 sub new {
   my $self = shift()->SUPER::new(@_);
 
@@ -63,6 +65,7 @@ sub new {
   return $self;
 }
 
+#--------------------------------------------------------------------------------
 
 sub set_up {
   my ($self) = @_;
@@ -103,23 +106,28 @@ sub set_up {
   $database->setDefaultOtherRead($val);
   $database->setDefaultOtherWrite($val);
 
-$database->manageTransaction(0, 'begin');
-
+  $database->manageTransaction(0, 'begin');
 }
+
+#--------------------------------------------------------------------------------
 
 sub tear_down {
   my $self = shift;
 
   $testCount--;
 
-   GUS::ObjRelP::DbiDatabase->getDefaultDatabase()->manageTransaction(0, 'commit');
+  my $database = GUS::ObjRelP::DbiDatabase->getDefaultDatabase();
+  $database->manageTransaction(0, 'commit');
+  $database->{'dbh'}->rollback();
+
   # LOG OUT AFTER ALL TESTS ARE FINISHED
   if($testCount <= 0) {
-    GUS::ObjRelP::DbiDatabase->getDefaultDatabase()->logout();
+    $database->{'dbh'}->disconnect();
     print STDERR "LOGGING OUT FROM DBI DATABASE\n";
-  }  
-
+  }
 }
+
+#--------------------------------------------------------------------------------
 
 sub test_run {
   my $self = shift;
@@ -132,15 +140,13 @@ sub test_run {
 
   my $sql = "select name from Study.study where contact_id = 9";
 
-  my $sh = $self->{_dbi_database}->getDbHandle()->prepare($sql);
-  $sh->execute();
+  my @names = $self->fetchArray($sql, []);
 
-  while(my ($name) = $sh->fetchrow_array()) {
-    print "NAME=$name\n";
-  }
-  $sh->finish();
-
+  $self->assert_equals(1, scalar(@names));
+  $self->assert_equals('test_study', $names[0]);
 }
+
+#--------------------------------------------------------------------------------
 
 sub test_run2 {
   my $self = shift;
@@ -160,37 +166,57 @@ sub test_run2 {
                                             operator_id => 9,
                                             });
 
-  my $sa = GUS::Model::RAD::StudyAssay->new();
+  my $sa1 = GUS::Model::RAD::StudyAssay->new();
+  my $sa2 = GUS::Model::RAD::StudyAssay->new();
 
-  $sa->setParent($study);
-  $sa->setParent($assay1);
-  $sa->setParent($assay2);
+  $sa1->setParent($study);
+  $sa1->setParent($assay1);
+
+  $sa2->setParent($study);
+  $sa2->setParent($assay2);
 
   $study->submit();
 
+  my $bindValues = [];
 
   my $sql = "select name from Study.study where contact_id = 9";
 
+  my @studyNames = $self->fetchArray($sql, $bindValues);
+
+  $self->assert_equals(1, scalar(@studyNames));
+  $self->assert_equals('test_study2', $studyNames[0]);
+
+  my $sql2 = "select name from RAD.assay where assay_id in 
+                (select assay_id from Rad.StudyAssay where study_id in
+                 (Select study_id from Study.study where contact_id = 9))";
+
+
+  my @assayNames = $self->fetchArray($sql2, $bindValues);
+
+  foreach my $name (@assayNames) {
+    $self->assert_matches(qr/test_assay/, $name);
+  }
+}
+
+#--------------------------------------------------------------------------------
+
+sub fetchArray {
+  my ($self, $sql, $bindValues) = @_;
+
+  my @rv;
+
   my $sh = $self->{_dbi_database}->getDbHandle()->prepare($sql);
-  $sh->execute();
+  $sh->execute(@$bindValues);
 
-  while(my ($name) = $sh->fetchrow_array()) {
-    print "Study NAME=$name\n";
-  }
-
-  $sh->finish();
-
-  my $sql2 = "select name from RAD.assay where operator_id = 9";
-
-  $sh = $self->{_dbi_database}->getDbHandle()->prepare($sql2);
-  $sh->execute();
-
-  while(my ($name) = $sh->fetchrow_array()) {
-    print "Assay NAME=$name\n" if $name eq "test_assay1" or $name eq "test_assay2";
+  while(my @vals = $sh->fetchrow_array()) {
+    push(@rv, @vals);
   }
   $sh->finish();
 
+  return wantarray ?  @rv : \@rv;
 }
 
 
+#--------------------------------------------------------------------------------
 
+1;
