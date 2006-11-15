@@ -230,7 +230,7 @@ sub submit{
 
   if(my @studyBioMaterial = $study->getChildren("GUS::Model::RAD::StudyBioMaterial")){
     foreach my $studyBioMaterial (@studyBioMaterial){
-      my $biomat = $studyBioMaterial->getParent("GUS::Model::RAD::BioMaterialImp");
+      my $biomat = $studyBioMaterial->getParent("GUS::Model::Study::BioMaterialImp");
       $study->addToSubmitList($biomat);
     }
   }
