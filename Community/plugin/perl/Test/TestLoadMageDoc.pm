@@ -286,6 +286,56 @@ sub test_run4 {
 
 }
 
+sub test_run5 {
+  my $self = shift;
+
+  my $reader = RAD::MR_T::MageImport::Service::Reader::MockReader->new();
+  my $docRoot = $reader->parse();
+
+  my $translator =  RAD::MR_T::MageImport::Service::Translator::VoToGusTranslator->new();
+  my $study = $translator->mapAll($docRoot);
+
+  if(my @studyBioMaterial = $study->getChildren("GUS::Model::RAD::StudyBioMaterial")){
+    foreach my $studyBioMaterial (@studyBioMaterial){
+      my $biomat = $studyBioMaterial->getParent("GUS::Model::RAD::BioMaterialImp");
+      $study->addToSubmitList($biomat);
+    }
+  }
+
+  $study->submit();
+
+  my $sqls = [
+	      join("\t", '1', 'select count(*) from study.study where row_alg_invocation_id = -99', ''),
+              join("\t", '\d+', 'select study_id from study.study where row_alg_invocation_id = -99', 'study_id'),
+              join("\t", 'study', 'select name from study.study where study_id = $$study_id$$', ''),
+              join("\t", '1', 'select count(*)  from study.studydesign where row_alg_invocation_id = -99 and study_id = $$study_id$$', ''),
+              join("\t", '\d+', 'select study_design_id from study.studydesign where row_alg_invocation_id = -99', 'study_design_id'),
+              join("\t", '2', 'select count(*) from study.studyfactor where row_alg_invocation_id = -99 and study_design_id = $$study_design_id$$', ''),
+	      join("\t", '2', 'select count(*) from rad.studyassay where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
+	      join("\t", '2', 'select count(*) from rad.assay where row_alg_invocation_id = -99', ''),
+	      join("\t", '3', 'select count(*) from rad.STUDYBIOMATERIAL where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
+	      join("\t", '3', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99', ''),
+	      join("\t", '4', 'select count(*) from rad.treatment where row_alg_invocation_id = -99', ''),
+	      join("\t", '5', 'select count(*) from rad.biomaterialmeasurement where row_alg_invocation_id = -99', ''),
+
+	      join("\t", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and name=\'bioSource\'', 'bio_source_id'),
+	      join("\t", '2', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99 and name=\'bioSample\'', ''),
+	      join("\t", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and name=\'bioSample\'', 'bio_sample_id'),
+	      join("\t", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and name=\'labeledExtract\'', 'labeled_extract_id'),
+	      join("\t", '0', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99', ''),
+
+
+             ];
+
+  my $fn = "dummyFile";
+  my $handle = GUS::ObjRelP::DbiDatabase->getDefaultDatabase()->getDbHandle();
+
+  my $tester = RAD::MR_T::MageImport::Service::Tester::SqlTester->new($fn, $handle);
+  $tester->{_lines_array} = $sqls;
+  $sLogger->debug("****Dump the sqlTester return****", sub {Dumper($tester->parseLines())});
+
+}
+
 
 sub fetchArray {
   my ($self, $sql, $bindValues) = @_;
