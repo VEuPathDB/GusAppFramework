@@ -114,13 +114,25 @@ sub tear_down {
   $testCount--;
 
   my $database = GUS::ObjRelP::DbiDatabase->getDefaultDatabase();
-  $database->{'dbh'}->rollback();
+  $database->{'dbh'}->rollback() if $database->{'dbh'};
 
   # LOG OUT AFTER ALL TESTS ARE FINISHED
   if($testCount <= 0) {
     $database->logout();
     print STDERR "LOGGING OUT FROM DBI DATABASE\n";
   }
+}
+
+#----------------------------------------------------------------------
+#dummy test
+sub t1est_run{
+  my $self = shift;
+  $self->assert(qr/^^\d+$$/, 23);
+
+  $self->assert(qr/\w+/, 23);
+
+  $self->assert(qr/^^\d+$$/, 23);
+  $self->assert(qr/232/, 23);
 }
 
 #--------------------------------------------------------------------------------
@@ -144,6 +156,8 @@ sub t1est_run {
 }
 
 #--------------------------------------------------------------------------------
+
+
 
 sub t1est_run2 {
   my $self = shift;
@@ -399,6 +413,17 @@ sub test_run6 {
   $tester->{_lines_array} = $sqls;
   $sLogger->debug("****Dump the sqlTester return****", sub {Dumper($tester->parseLines())});
 
+#   my $testHash = $tester->parseLines();
+
+#   foreach my $test (keys %$testHash){
+#     my $match = $testHash->{$test}->{expected};
+#     my $actual = $testHash->{$test}->{actual};
+#     $sLogger->debug("the match: ",  $match, "the actual: ",  $actual);
+#   #  $self->assert(qr/$match/, $testHash->{$test}->{actual});
+#   }
+
+  $tester->setLogger($sLogger);
+  $self->assert($tester->test());
 }
 
 
