@@ -123,18 +123,6 @@ sub tear_down {
   }
 }
 
-#----------------------------------------------------------------------
-#dummy test
-sub t1est_run{
-  my $self = shift;
-  $self->assert(qr/^^\d+$$/, 23);
-
-  $self->assert(qr/\w+/, 23);
-
-  $self->assert(qr/^^\d+$$/, 23);
-  $self->assert(qr/232/, 23);
-}
-
 #--------------------------------------------------------------------------------
 
 sub t1est_run {
@@ -223,19 +211,19 @@ sub t1est_run3 {
   $study->submit();
 
   my $sqls = [
-	      join("\t", '1', 'select count(*) from study.study where row_alg_invocation_id = -99', ''),
-              join("\t", '\d+', 'select study_id from study.study where row_alg_invocation_id = -99', 'study_id'),
-              join("\t", 'study', 'select name from study.study where study_id = $$study_id$$', ''),
-              join("\t", '1', 'select count(*)  from study.studydesign where row_alg_invocation_id = -99 and study_id = $$study_id$$', ''),
-              join("\t", '\d+', 'select study_design_id from study.studydesign where row_alg_invocation_id = -99', 'study_design_id'),
-              join("\t", '2', 'select count(*) from study.studyfactor where row_alg_invocation_id = -99 and study_design_id = $$study_design_id$$', ''),
-	      join("\t", '2', 'select count(*) from rad.studyassay where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
-	      join("\t", '2', 'select count(*) from rad.assay where row_alg_invocation_id = -99', ''),
-	      join("\t", '3', 'select count(*) from rad.STUDYBIOMATERIAL where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
-	      join("\t", '3', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99', ''),
+	      join("!", '1', 'select count(*) from study.study where row_alg_invocation_id = -99', ''),
+              join("!", '\d+', 'select study_id from study.study where row_alg_invocation_id = -99', 'study_id'),
+              join("!", 'study', 'select name from study.study where study_id = $$study_id$$', ''),
+              join("!", '1', 'select count(*)  from study.studydesign where row_alg_invocation_id = -99 and study_id = $$study_id$$', ''),
+              join("!", '\d+', 'select study_design_id from study.studydesign where row_alg_invocation_id = -99', 'study_design_id'),
+              join("!", '2', 'select count(*) from study.studyfactor where row_alg_invocation_id = -99 and study_design_id = $$study_design_id$$', ''),
+	      join("!", '2', 'select count(*) from rad.studyassay where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
+	      join("!", '2', 'select count(*) from rad.assay where row_alg_invocation_id = -99', ''),
+	      join("!", '3', 'select count(*) from rad.STUDYBIOMATERIAL where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
+	      join("!", '3', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99', ''),
 
-	      join("\t", '0', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99', ''),
-	      join("\t", '0', 'select count(*) from rad.treatment where row_alg_invocation_id = -99', ''),
+	      join("!", '0', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99', ''),
+	      join("!", '0', 'select count(*) from rad.treatment where row_alg_invocation_id = -99', ''),
 
 
              ];
@@ -269,24 +257,24 @@ sub t1est_run4 {
   $study->submit();
 
   my $sqls = [
-	      join("\t", '1', 'select count(*) from study.study where row_alg_invocation_id = -99', ''),
-              join("\t", '\d+', 'select study_id from study.study where row_alg_invocation_id = -99', 'study_id'),
-              join("\t", 'study', 'select name from study.study where study_id = $$study_id$$', ''),
-              join("\t", '1', 'select count(*)  from study.studydesign where row_alg_invocation_id = -99 and study_id = $$study_id$$', ''),
-              join("\t", '\d+', 'select study_design_id from study.studydesign where row_alg_invocation_id = -99', 'study_design_id'),
-              join("\t", '2', 'select count(*) from study.studyfactor where row_alg_invocation_id = -99 and study_design_id = $$study_design_id$$', ''),
-	      join("\t", '2', 'select count(*) from rad.studyassay where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
-	      join("\t", '2', 'select count(*) from rad.assay where row_alg_invocation_id = -99', ''),
-	      join("\t", '3', 'select count(*) from rad.STUDYBIOMATERIAL where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
-	      join("\t", '3', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99', ''),
+	      join("!", '1', 'select count(*) from study.study where row_alg_invocation_id = -99', ''),
+              join("!", '\d+', 'select study_id from study.study where row_alg_invocation_id = -99', 'study_id'),
+              join("!", 'study', 'select name from study.study where study_id = $$study_id$$', ''),
+              join("!", '1', 'select count(*)  from study.studydesign where row_alg_invocation_id = -99 and study_id = $$study_id$$', ''),
+              join("!", '\d+', 'select study_design_id from study.studydesign where row_alg_invocation_id = -99', 'study_design_id'),
+              join("!", '2', 'select count(*) from study.studyfactor where row_alg_invocation_id = -99 and study_design_id = $$study_design_id$$', ''),
+	      join("!", '2', 'select count(*) from rad.studyassay where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
+	      join("!", '2', 'select count(*) from rad.assay where row_alg_invocation_id = -99', ''),
+	      join("!", '3', 'select count(*) from rad.STUDYBIOMATERIAL where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
+	      join("!", '3', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99', ''),
 
-	      join("\t", '\d+', 'select assay_id from rad.assay where row_alg_invocation_id = -99 and rownum<2', 'assay_id'),
-	      join("\t", '4', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99', ''),
-	      join("\t", '2', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99 and assay_id=$$assay_id$$', ''),
-	      join("\t", '\d+', 'select acquisition_id from rad.acquisition where row_alg_invocation_id = -99 and assay_id=$$assay_id$$ and rownum<2', 'acquisition_id'),
-	      join("\t", '8', 'select count(*) from rad.quantification where row_alg_invocation_id = -99', ''),
-	      join("\t", '2', 'select count(*) from rad.quantification where row_alg_invocation_id = -99 and acquisition_id=$$acquisition_id$$', ''),
-	      join("\t", '0', 'select count(*) from rad.treatment where row_alg_invocation_id = -99', ''),
+	      join("!", '\d+', 'select assay_id from rad.assay where row_alg_invocation_id = -99 and rownum<2', 'assay_id'),
+	      join("!", '4', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99', ''),
+	      join("!", '2', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99 and assay_id=$$assay_id$$', ''),
+	      join("!", '\d+', 'select acquisition_id from rad.acquisition where row_alg_invocation_id = -99 and assay_id=$$assay_id$$ and rownum<2', 'acquisition_id'),
+	      join("!", '8', 'select count(*) from rad.quantification where row_alg_invocation_id = -99', ''),
+	      join("!", '2', 'select count(*) from rad.quantification where row_alg_invocation_id = -99 and acquisition_id=$$acquisition_id$$', ''),
+	      join("!", '0', 'select count(*) from rad.treatment where row_alg_invocation_id = -99', ''),
 
 
              ];
@@ -306,7 +294,7 @@ sub t1est_run5 {
   my $reader = RAD::MR_T::MageImport::Service::Reader::MockReader->new();
   my $docRoot = $reader->parse();
 
-  my $translator =  RAD::MR_T::MageImport::Service::Translator::VoToGusTranslator->new();
+  my $translator =  RAD::MR_T::MageImport::Service::Translator::VoToGusTranslator->new("new");
   my $study = $translator->mapAll($docRoot);
 
   if(my @studyBioMaterial = $study->getChildren("GUS::Model::RAD::StudyBioMaterial")){
@@ -319,24 +307,24 @@ sub t1est_run5 {
   $study->submit();
 
   my $sqls = [
-	      join("\t", '1', 'select count(*) from study.study where row_alg_invocation_id = -99', ''),
-              join("\t", '\d+', 'select study_id from study.study where row_alg_invocation_id = -99', 'study_id'),
-              join("\t", 'study', 'select name from study.study where study_id = $$study_id$$', ''),
-              join("\t", '1', 'select count(*)  from study.studydesign where row_alg_invocation_id = -99 and study_id = $$study_id$$', ''),
-              join("\t", '\d+', 'select study_design_id from study.studydesign where row_alg_invocation_id = -99', 'study_design_id'),
-              join("\t", '2', 'select count(*) from study.studyfactor where row_alg_invocation_id = -99 and study_design_id = $$study_design_id$$', ''),
-	      join("\t", '2', 'select count(*) from rad.studyassay where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
-	      join("\t", '2', 'select count(*) from rad.assay where row_alg_invocation_id = -99', ''),
-	      join("\t", '3', 'select count(*) from rad.STUDYBIOMATERIAL where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
-	      join("\t", '3', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99', ''),
-	      join("\t", '4', 'select count(*) from rad.treatment where row_alg_invocation_id = -99', ''),
-	      join("\t", '5', 'select count(*) from rad.biomaterialmeasurement where row_alg_invocation_id = -99', ''),
+	      join("!", '1', 'select count(*) from study.study where row_alg_invocation_id = -99', ''),
+              join("!", '\d+', 'select study_id from study.study where row_alg_invocation_id = -99', 'study_id'),
+              join("!", 'study', 'select name from study.study where study_id = $$study_id$$', ''),
+              join("!", '1', 'select count(*)  from study.studydesign where row_alg_invocation_id = -99 and study_id = $$study_id$$', ''),
+              join("!", '\d+', 'select study_design_id from study.studydesign where row_alg_invocation_id = -99', 'study_design_id'),
+              join("!", '2', 'select count(*) from study.studyfactor where row_alg_invocation_id = -99 and study_design_id = $$study_design_id$$', ''),
+	      join("!", '2', 'select count(*) from rad.studyassay where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
+	      join("!", '2', 'select count(*) from rad.assay where row_alg_invocation_id = -99', ''),
+	      join("!", '3', 'select count(*) from rad.STUDYBIOMATERIAL where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
+	      join("!", '3', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99', ''),
+	      join("!", '4', 'select count(*) from rad.treatment where row_alg_invocation_id = -99', ''),
+	      join("!", '5', 'select count(*) from rad.biomaterialmeasurement where row_alg_invocation_id = -99', ''),
 
-	      join("\t", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSource\'', 'bio_source_id'),
-	      join("\t", '2', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSample\'', ''),
-	      join("\t", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSample\'', 'bio_sample_id'),
-	      join("\t", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'labeledExtract\'', 'labeled_extract_id'),
-	      join("\t", '0', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99', ''),
+	      join("!", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSource\'', 'bio_source_id'),
+	      join("!", '2', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSample\'', ''),
+	      join("!", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSample\'', 'bio_sample_id'),
+	      join("!", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'labeledExtract\'', 'labeled_extract_id'),
+	      join("!", '0', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99', ''),
 
 
              ];
@@ -353,6 +341,7 @@ sub t1est_run5 {
 sub test_run6 {
   my $self = shift;
 
+  $sLogger->debug("test_run6");
   my $reader = RAD::MR_T::MageImport::Service::Reader::MockReader->new();
   my $docRoot = $reader->parse();
 
@@ -376,40 +365,41 @@ sub test_run6 {
   $study->submit();
 
   my $sqls = [
-	      join("\t", '1', 'select count(*) from study.study where row_alg_invocation_id = -99', ''),
-              join("\t", '\d+', 'select study_id from study.study where row_alg_invocation_id = -99', 'study_id'),
-              join("\t", 'study', 'select name from study.study where study_id = $$study_id$$', ''),
-              join("\t", '1', 'select count(*)  from study.studydesign where row_alg_invocation_id = -99 and study_id = $$study_id$$', ''),
-              join("\t", '\d+', 'select study_design_id from study.studydesign where row_alg_invocation_id = -99', 'study_design_id'),
-              join("\t", '2', 'select count(*) from study.studyfactor where row_alg_invocation_id = -99 and study_design_id = $$study_design_id$$', ''),
-	      join("\t", '2', 'select count(*) from rad.studyassay where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
-	      join("\t", '2', 'select count(*) from rad.assay where row_alg_invocation_id = -99', ''),
+	      join("|", '1', 'select count(*) from study.study where row_alg_invocation_id = -99', ''),
+              join("|", '\d+', 'select study_id from study.study where row_alg_invocation_id = -99', 'study_id'),
+              join("|", 'study', 'select name from study.study where study_id = $$study_id$$', ''),
+              join("|", '1', 'select count(*)  from study.studydesign where row_alg_invocation_id = -99 and study_id = $$study_id$$', ''),
+              join("|", '\d+', 'select study_design_id from study.studydesign where row_alg_invocation_id = -99', 'study_design_id'),
+              join("|", '2', 'select count(*) from study.studyfactor where row_alg_invocation_id = -99 and study_design_id = $$study_design_id$$', ''),
+	      join("|", '2', 'select count(*) from rad.studyassay where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
+	      join("|", '2', 'select count(*) from rad.assay where row_alg_invocation_id = -99', ''),
 
-	      join("\t", '3', 'select count(*) from rad.STUDYBIOMATERIAL where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
-	      join("\t", '3', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99', ''),
+	      join("|", '3', 'select count(*) from rad.STUDYBIOMATERIAL where row_alg_invocation_id = -99 and study_id=$$study_id$$', ''),
+	      join("|", '3', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99', ''),
 
-	      join("\t", '\d+', 'select assay_id from rad.assay where row_alg_invocation_id = -99 and rownum<2', 'assay_id'),
-	      join("\t", '4', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99', ''),
-	      join("\t", '2', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99 and assay_id=$$assay_id$$', ''),
-	      join("\t", '\d+', 'select acquisition_id from rad.acquisition where row_alg_invocation_id = -99 and assay_id=$$assay_id$$ and rownum<2', 'acquisition_id'),
-	      join("\t", '8', 'select count(*) from rad.quantification where row_alg_invocation_id = -99', ''),
-	      join("\t", '2', 'select count(*) from rad.quantification where row_alg_invocation_id = -99 and acquisition_id=$$acquisition_id$$', ''),
+	      join("|", '\d+', 'select assay_id from rad.assay where row_alg_invocation_id = -99 and rownum<2', 'assay_id'),
+	      join("|", '4', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99', ''),
+	      join("|", '2', 'select count(*) from rad.acquisition where row_alg_invocation_id = -99 and assay_id=$$assay_id$$', ''),
+	      join("|", '\d+', 'select acquisition_id from rad.acquisition where row_alg_invocation_id = -99 and assay_id=$$assay_id$$ and rownum<2', 'acquisition_id'),
+	      join("|", '8', 'select count(*) from rad.quantification where row_alg_invocation_id = -99', ''),
+	      join("|", '2', 'select count(*) from rad.quantification where row_alg_invocation_id = -99 and acquisition_id=$$acquisition_id$$', ''),
 
 
-	      join("\t", '4', 'select count(*) from rad.treatment where row_alg_invocation_id = -99', ''),
-	      join("\t", '5', 'select count(*) from rad.biomaterialmeasurement where row_alg_invocation_id = -99', ''),
-	      join("\t", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSource\'', 'bio_source_id'),
-	      join("\t", '1', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSample\'', ''),
-	      join("\t", '1', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSource\'', ''),
-	      join("\t", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSample\'', 'bio_sample_id'),
-	      join("\t", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'labeledExtract\'', 'labeled_extract_id'),
+	      join("|", '4', 'select count(*) from rad.treatment where row_alg_invocation_id = -99', ''),
+	      join("|", '5', 'select count(*) from rad.biomaterialmeasurement where row_alg_invocation_id = -99', ''),
+	      join("|", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSource\'', 'bio_source_id'),
+	      join("|", '1', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSample\'', ''),
+	      join("|", '1', 'select count(*) from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSource\'', ''),
+	      join("|", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'bioSample\'', 'bio_sample_id'),
+	      join("|", '\d+', 'select bio_material_id from study.biomaterialimp where row_alg_invocation_id = -99 and string1=\'labeledExtract\'', 'labeled_extract_id'),
 
              ];
-
+ 
   my $fn = "dummyFile";
   my $handle = GUS::ObjRelP::DbiDatabase->getDefaultDatabase()->getDbHandle();
 
   my $tester = RAD::MR_T::MageImport::Service::Tester::SqlTester->new($fn, $handle);
+  $tester->setLogger($sLogger);
   $tester->{_lines_array} = $sqls;
   $sLogger->debug("****Dump the sqlTester return****", sub {Dumper($tester->parseLines())});
 
@@ -422,7 +412,7 @@ sub test_run6 {
 #   #  $self->assert(qr/$match/, $testHash->{$test}->{actual});
 #   }
 
-  $tester->setLogger($sLogger);
+
   $self->assert($tester->test());
 }
 
