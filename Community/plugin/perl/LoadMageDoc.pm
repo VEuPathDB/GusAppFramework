@@ -210,7 +210,7 @@ sub run {
   my $insertCount = $self->getTotalInserts() - $coreInserts;
   my $updateCount = $self->getTotalUpdates() || 0;
 
-  my $msg = "Inserted $insertCount and Updated $updateCount for Study::OntologyEntry";
+  my $msg = "Inserted $insertCount and Updated $updateCount";
 
   return($msg);
 }
