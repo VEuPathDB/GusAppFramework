@@ -565,6 +565,8 @@ sub doMajorMode_RunOrReport {
    eval {
       my $resultDescrip;
 
+      my $startTime = time;
+      $pu->logPluginName();
       $pu->logArgs();
       $Run && $pu->logAlgInvocationId();
       $Run && $pu->logCommit();
@@ -573,14 +575,15 @@ sub doMajorMode_RunOrReport {
       $resultDescrip = $pu->run({ cla      => $pu->getCla,
                                   self_inv => $pu->getSelfInv,
                                 });
-
       $pu->setResultDescr($resultDescrip) unless $pu->getResultDescr();
 
+      $self->logTime($startTime, $pu);
       $self->logAlert("RESULT", $pu->getResultDescr());
 
       $Run && $pu->logRowsInserted();
       $Run && $pu->logAlgInvocationId();
       $Run && $pu->logCommit();
+
    };}
 
    my $err = $@;
@@ -591,6 +594,20 @@ sub doMajorMode_RunOrReport {
    $Run && $self->closeInvocation($pu, $err);
 
    die $err if $err;
+}
+
+sub logTime {
+  my ($self, $startTime, $pu) = @_;
+
+  my $seconds = time - $startTime;
+  my $hours = int ($seconds/3600);
+  my $minutes = int(($seconds % 3600) / 60);
+  my $secs = $seconds % 60;
+  $minutes = "0$minutes" if $minutes < 10;
+  $secs = "0$secs" if $secs < 10;
+
+  $seconds = "< 1" if $seconds == 0;
+  $pu->log('TIME', "$seconds sec  ($hours:$minutes:$secs)");
 }
 
 # ----------------------------------------------------------------------

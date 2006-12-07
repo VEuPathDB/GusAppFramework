@@ -1383,6 +1383,20 @@ sub logArgs {
   }
 }
 
+=item C<logArgs()>
+
+Log to STDERR the argument values used for this run of the plugin.
+
+=cut
+
+sub logPluginName {
+
+  my $Self = shift;
+
+  my $name = ref($Self);
+  $Self->log('PLUGIN', $name);
+}
+
 =item C<logRowsInserted()>
 
 Log to STDERR a report, by table, of the count of rows actually written
