@@ -146,6 +146,11 @@ the idea here is to have serviceFactory to read the config file and automagicall
 sub run {
   my ($self) = @_;
 
+  my $coreInserts = $self->getTotalInserts();
+
+  my $dbh = $self->getDbHandle();
+  $dbh->{AutoCommit}=0;
+
   Log::Log4perl->init_once("$ENV{GUS_HOME}/config/log4perl.config");
   my $mLogger = get_logger("RAD::MR_T::MageImport");
 
@@ -178,7 +183,30 @@ sub run {
   $mLogger->info("submit GUS objects");
   $self->submit($study);
 
-  # Sql Tester
+  if(my $tester = $serviceFactory->getServiceByName('tester')) {
+    my $passedTest = $tester->test();
+
+    unless($passedTest) {
+      $mLogger->fatal("Rolling Back DB");
+      $dbh->rollback() or $self->error("Rollback failed: " . $self->{'dbh'}->errstr());
+
+      $self->error("SQL TEST FAILURE!!");
+    }
+  }
+
+  if(my $reporter = $serviceFactory->getServiceByName('reporter')) {
+    $reporter->report();
+  }
+
+  $mLogger->fatal("Committing");
+  $dbh->commit() or $self->error("Commit failed: " . $self->{'dbh'}->errstr());
+
+  my $insertCount = $self->getTotalInserts() - $coreInserts;
+  my $updateCount = $self->getTotalUpdates() || 0;
+
+  my $msg = "Inserted $insertCount and Updated $updateCount for Study::OntologyEntry";
+
+  return($msg);
 }
 
 =item checkConfig(\%config)
@@ -249,4 +277,42 @@ sub setLogger {$_[0]->{_logger} = $_[1]}
 =cut
 
 sub getLogger {$_[0]->{_logger}}
+
+
+
+sub undoTables {
+  return ('RAD.BioMaterialMeasurement',
+          'RAD.Treatment',
+          'RAD.StudyBioMaterial',
+          'RAD.AssayBioMaterial',
+          'RAD.AssayLabeledExtract',
+          'Study.BioMaterialCharacteristic',
+          'Study.LabeledExtract',
+          'Study.BioSample',
+          'Study.BioSource',
+          'RAD.RelatedQuantification',
+          'RAD.QuantificationParam',
+          'RAD.Quantification',
+          'RAD.RelatedAcquisition',
+          'RAD.AcquisitionParam',
+          'RAD.Acquisition',
+          'RAD.StudyAssay',
+          'RAD.AssayParam',
+          'RAD.StudyDesignAssay',
+          'RAD.Assay',
+          'RAD.StudyFactorValue',
+          'Study.StudyFactor',
+          'Study.StudyDesignType',
+          'Study.StudyDesignDescription',
+          'Study.StudyDesign',
+          'Study.Study',
+          'RAD.ProtocolParam',
+          'RAD.Protocol',
+          'SRes.Abstract',
+          'SRes.BibliographicReference',
+          'SRes.Contact',
+          'SRes.ExternalDatabaseRelease',
+          'SRes.ExternalDatabase',
+         );
+}
 1;
