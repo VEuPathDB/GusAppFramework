@@ -198,8 +198,14 @@ sub run {
     $reporter->report();
   }
 
-  $mLogger->fatal("Committing");
-  $dbh->commit() or $self->error("Commit failed: " . $self->{'dbh'}->errstr());
+  if ($self->getArg('commit')) {
+    $mLogger->fatal("Committing");
+    $dbh->commit() or $self->error("Commit failed: " . $self->{'dbh'}->errstr());
+  }
+  else {
+    $mLogger->fatal("Rolling Back DB");
+    $dbh->rollback() or $self->error("Rollback failed: " . $self->{'dbh'}->errstr());
+  }
 
   my $insertCount = $self->getTotalInserts() - $coreInserts;
   my $updateCount = $self->getTotalUpdates() || 0;
