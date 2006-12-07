@@ -156,8 +156,8 @@ sub run {
 
   $self->setLogger($mLogger);
 
-  $mLogger->info("parse the config xml file", $self->getArgs('configfile'));
-  my $config = XMLin($self->getArgs('configfile'));
+  $mLogger->info("parse the config xml file", $self->getArg('configfile'));
+  my $config = XMLin($self->getArg('configfile'));
 
   $mLogger->info("check the config xml file");
   $self->checkConfig($config);
