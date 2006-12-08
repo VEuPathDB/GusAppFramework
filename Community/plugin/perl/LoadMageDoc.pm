@@ -185,7 +185,7 @@ sub run {
 
   if(my $tester = $serviceFactory->getServiceByName('tester')) {
     my $passedTest = $tester->test();
-
+    $mLogger->info("Please see log file for test report");
     unless($passedTest) {
       $mLogger->fatal("Rolling Back DB");
       $dbh->rollback() or $self->error("Rollback failed: " . $self->{'dbh'}->errstr());
@@ -196,6 +196,7 @@ sub run {
 
   if(my $reporter = $serviceFactory->getServiceByName('reporter')) {
     $reporter->report();
+    $mLogger->info("Please see log file for sql report");
   }
 
   if ($self->getArg('commit')) {
