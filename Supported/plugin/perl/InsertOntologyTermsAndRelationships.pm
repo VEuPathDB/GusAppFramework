@@ -9,6 +9,8 @@ use strict;
 use GUS::PluginMgr::Plugin;
 use GUS::PluginMgr::PluginUtilities;
 
+use UNIVERSAL qw(isa);
+
 use XML::LibXML;
 use FileHandle;
 
@@ -687,9 +689,22 @@ sub _parseAndLoadRestrictions {
   my $someValuesFrom = $node->findnodes("$ns:someValuesFrom");
   my $hasClass =  $node->findnodes("$ns:hasClass");
 
-  if(scalar(@$onProperty) != scalar(@$someValuesFrom) &&
-     scalar(@$onProperty) != scalar(@$hasClass)) {
-    die "Number of onProperty must equal the number of either hasClass or someValuesFrom";
+  my $numOnProperty = $onProperty->size();
+  my $numSomeValuesFrom = $someValuesFrom->size();
+  my $numHasClass = $hasClass->size();
+
+  # The onProperties should be either someValuesFrom or hasClass
+  if($numOnProperty != $numSomeValuesFrom && $numOnProperty != $numHasClass) {
+    foreach my $node ($onProperty->get_nodelist()) {
+      my $string = $node->toString();
+      $string =~ s/\s//g;
+
+      $self->log("WARN:  **** Skipping onProperty\n$string");
+
+      my $parent = $node->parentNode();
+      print STDERR $parent->toString . "\n" if($self->getArg('debug'));
+    }
+    return;
   }
 
   for(my $i = 0; $i < scalar(@$onProperty); $i++) {
@@ -1098,5 +1113,6 @@ sub _isIncluded {
   }
   return(0);
 }
+
 
 1;
