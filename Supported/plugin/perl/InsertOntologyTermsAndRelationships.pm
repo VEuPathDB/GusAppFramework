@@ -12,6 +12,8 @@ use GUS::PluginMgr::PluginUtilities;
 use XML::LibXML;
 use FileHandle;
 
+use Data::Dumper;
+
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologyRelationship;
 
@@ -128,7 +130,12 @@ sub run {
 
   my $ns = $self->getArg('fileType');
 
+  if(!$self->getArgs->{commit}) {
+    $self->log("WARNING:  To parse relationships must run with commit on.");
+  }
+
   my $numTerms = $self->_makeTerms($root, $ns);
+  $self->log("Finished Loading Terms...");
 
   if($ns eq 'daml') {
     $self->_makeRelationships($root, $ns);
@@ -138,10 +145,6 @@ sub run {
   }
   else {
     die "File of Type $ns not supported: $!";
-  }
-
-  if(!$self->getArgs->{commit}) {
-    $self->log("WARNING:  To parse relationships must run with commit on.");
   }
 
   return("Loaded $numTerms Terms into SRes::OntologyTerm and
@@ -370,9 +373,10 @@ sub _getOwlTerms {
     my $nodeName = $node->nodeName;
     if($type eq 'Individual' && $nodeName =~ 'has_(human|machine)_readable_URI') {
       $term = $node->textContent;
+
+      next unless $term;
       $terms{$term} = '';
     }
-
   }
   return(\%terms);
 }
@@ -398,6 +402,8 @@ number of rows loaded
 
 sub _loadTerms {
   my ($self, $type, $termsHashRef) = @_;
+
+  $self->log("Working on Loading terms of type: $type");
 
   my $num = 0;
 
