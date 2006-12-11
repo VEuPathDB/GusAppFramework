@@ -83,7 +83,7 @@ sub new {
     
     $self->initialize(
 		      {requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 4495 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 5215 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation,
@@ -181,7 +181,7 @@ sub readFile {
 	    if($hierLevel != 0) {
 		for(my $i=1; $i<scalar @ids; $i++) {
 		    my $attributeName = "level_$i";
-		    $newAnatomy->set($attributeName, '$ids[$i]');
+		    $newAnatomy->set($attributeName, "$ids[$i]");
 		}
 	    }
 	    
