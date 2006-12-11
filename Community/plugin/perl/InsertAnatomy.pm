@@ -83,7 +83,7 @@ sub new {
     
     $self->initialize(
 		      {requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 5215 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 5216 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation,
@@ -99,9 +99,9 @@ sub new {
 sub run {
     my ($self) = @_;
            
-    $self->readFile($self->getArg('inputFile'));
+    my $n = $self->readFile($self->getArg('inputFile'));
     
-    my $msg = "done";
+    my $msg = "$n entries populated";
     return $msg;
 }
 
@@ -116,6 +116,8 @@ sub readFile {
     close(FILE);
     
     print "parsing data file...\n";
+
+    my $inserted=0;
     
     foreach(@data) {
 	my @cur = split(/\:/, $_);
@@ -186,10 +188,11 @@ sub readFile {
 	    }
 	    
 	    $newAnatomy->submit();
-	    
+	    $inserted++;
 	}
 	else {
 	    $self->log("term '$currentID' already in DB\n");
 	}
     }
+    return $inserted;
 }
