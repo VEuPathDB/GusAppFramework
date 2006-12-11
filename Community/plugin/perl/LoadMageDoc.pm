@@ -170,7 +170,12 @@ sub run {
   $mLogger->info("parse the mage file", $config->{service}->{reader}->{property}->{value});
   my $docRoot = $reader->parse();
 
-  my $validator = $serviceFactory->getServiceByName('validator');;
+  if (my $processor = $serviceFactory->getServiceByName('processor')){
+    $mLogger->info("process the value objects using ", ref($processor));
+    $processor->process($docRoot);
+  }
+
+  my $validator = $serviceFactory->getServiceByName('validator');
 
   $mLogger->info("validate the value objects using ", ref($validator));
   $validator->check($docRoot);
