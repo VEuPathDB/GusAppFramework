@@ -16,7 +16,7 @@ use GUS::Model::SRes::ExternalDatabaseRelease;
 use GUS::Model::SRes::ExternalDatabase;
 
 my $purposeBrief = <<PURPOSEBRIEF;
-Loads Anatomy Terms into GUS and creates relationships among them.
+Loads Anatomy Terms into DB and creates relationships among them.
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
@@ -129,7 +129,7 @@ sub readFile {
 	
 	$self->log("cur element = $currentID (her level = $hierLevel)");
 	
-        # test is this  already in the db ?
+        # test if this term is already in the db
 	
 	my $sql = "SELECT * FROM SRes.Anatomy WHERE NAME = '$currentID' AND HIER_LEVEL = $hierLevel";
 	if($hierLevel != 0) {
@@ -144,7 +144,7 @@ sub readFile {
 	my ($result) = $sth->fetchrow_array();
 	
 	if(!defined $result) {
-	    # not in the db, so populate the db
+	    $self->log("term '$currentID' not in the db, so populate the db\n");
 	    
 	    # check if the immediate parent is in the db and get its id
 	    my $parentID;
@@ -173,7 +173,7 @@ sub readFile {
 	    my $newAnatomy = GUS::Model::SRes::Anatomy->new({
 		'name'        => $currentID,
 		'hier_level'  => $hierLevel,
-		'parentID'    => $parentID,
+		'parent_ID'    => $parentID,
 		'source'      => $source,
 		'description'  => $description,
 	    });
@@ -185,9 +185,11 @@ sub readFile {
 		}
 	    }
 	    
-	    #$newAnatomy_>submit();
+	    $newAnatomy->submit();
 	    
 	}
-	$self->log("term $currentID Already in the Db\n");
+	else {
+	    $self->log("term '$currentID' already in DB\n");
+	}
     }
 }
