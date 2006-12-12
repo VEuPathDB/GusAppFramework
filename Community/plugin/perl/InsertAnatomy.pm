@@ -83,7 +83,7 @@ sub new {
     
     $self->initialize(
 		      {requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 5219 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 5223 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation,
@@ -110,8 +110,6 @@ sub readFile {
     my ($self, $fileName) = @_;
     
     open (FILE, "<$fileName") || die "Cannot open inout File $fileName: $!";
-
-    open(LOGF, ">logfile.txt") || die "cannot open logfile.txt"; 
     
     my @data = <FILE>;
     chomp @data;
@@ -127,15 +125,10 @@ sub readFile {
 	my $source = $cur[1];
 	my $description = $cur[2];
 	
-	print "currentID = [@ids] source=$source desc=$description\n";
 	my $currentID = $ids[$#ids];
-
-	print LOGF "$currentID\n";
 	
 	my $hierLevel = $#ids;
 	
-	#$self->log("cur element = $currentID (her level = $hierLevel)");
-       	
         # test if this term is already in the db
 	
 	my $sql = "SELECT * FROM SRes.Anatomy WHERE NAME = '$currentID' AND HIER_LEVEL = $hierLevel";
@@ -144,15 +137,13 @@ sub readFile {
 		$sql = $sql." AND LEVEL_$i = '$ids[$i]'";
 	    }
 	}
-	
-	print LOGF "**** Query = $sql\n";
-	
+		
 	my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
 	my ($result) = $sth->fetchrow_array();
 	
 	if(!defined $result) {
-	    #$self->log("term '$currentID' not in the db, so populate the db\n");
 	    
+	    # term '$currentID' not in the db, so populate the db
 	    # check if the immediate parent is in the db and get its id
 	    my $parentID;
 	    
@@ -167,7 +158,6 @@ sub readFile {
 		    }
 		}
 		
-		#print "**** Parent Query = $sql\n";
 		my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
 		$parentID = $sth->fetchrow_array();
 		
@@ -195,11 +185,11 @@ sub readFile {
 	    $newAnatomy->submit();
 	    $inserted++;
 	}
+	
 	else {
-	    print LOGF "term '$currentID' already in DB\n";
+	    $self->log("term '$currentID' already in DB");
 	}
     }
-
-    close LOGF;
+    
     return $inserted;
 }
