@@ -83,7 +83,7 @@ sub new {
     
     $self->initialize(
 		      {requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 5217 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 5219 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation,
@@ -109,28 +109,33 @@ sub run {
 sub readFile {
     my ($self, $fileName) = @_;
     
-    open (FILE, "<$fileName"); 
+    open (FILE, "<$fileName") || die "Cannot open inout File $fileName: $!";
+
+    open(LOGF, ">logfile.txt") || die "cannot open logfile.txt"; 
     
     my @data = <FILE>;
     chomp @data;
     close(FILE);
     
     $self->log("parsing data file...\n");
-
+    
     my $inserted=0;
     
     foreach(@data) {
-	my @cur = split(/\:/, $_);
-	my @ids = split(/\;/, $cur[0]);
+	my @cur = split(/\t/, $_);
+	my @ids = split(/\;\;/, $cur[0]);
 	my $source = $cur[1];
 	my $description = $cur[2];
 	
-	#print "currentID = [@ids] source=$source desc=$description\n";
+	print "currentID = [@ids] source=$source desc=$description\n";
 	my $currentID = $ids[$#ids];
+
+	print LOGF "$currentID\n";
+	
 	my $hierLevel = $#ids;
 	
 	#$self->log("cur element = $currentID (her level = $hierLevel)");
-	
+       	
         # test if this term is already in the db
 	
 	my $sql = "SELECT * FROM SRes.Anatomy WHERE NAME = '$currentID' AND HIER_LEVEL = $hierLevel";
@@ -140,7 +145,7 @@ sub readFile {
 	    }
 	}
 	
-	#print "**** Query = $sql\n";
+	print LOGF "**** Query = $sql\n";
 	
 	my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
 	my ($result) = $sth->fetchrow_array();
@@ -175,9 +180,9 @@ sub readFile {
 	    my $newAnatomy = GUS::Model::SRes::Anatomy->new({
 		'name'        => $currentID,
 		'hier_level'  => $hierLevel,
-		'parent_ID'    => $parentID,
+		'parent_ID'   => $parentID,
 		'source'      => $source,
-		'description'  => $description,
+		'description' => $description,
 	    });
 	    
 	    if($hierLevel != 0) {
@@ -191,8 +196,10 @@ sub readFile {
 	    $inserted++;
 	}
 	else {
-	    #$self->log("term '$currentID' already in DB\n");
+	    print LOGF "term '$currentID' already in DB\n";
 	}
     }
+
+    close LOGF;
     return $inserted;
 }
