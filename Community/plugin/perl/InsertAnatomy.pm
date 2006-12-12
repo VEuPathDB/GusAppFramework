@@ -83,7 +83,7 @@ sub new {
     
     $self->initialize(
 		      {requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 5223 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 5224 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation,
@@ -154,7 +154,7 @@ sub readFile {
 		my $sql = "SELECT ANATOMY_ID FROM SRes.Anatomy WHERE NAME = '$parentName' AND HIER_LEVEL = $parentHierLevel";
 		if($parentHierLevel>0) {
 		    for(my $i=1; $i<scalar @ids-1; $i++) {
-			$sql = $sql." AND LEVEL_$i = '$ids[$i]'";
+			$sql = $sql." AND LEVEL_$i = \'$ids[$i]\'";
 		    }
 		}
 		
@@ -192,4 +192,11 @@ sub readFile {
     }
     
     return $inserted;
+}
+
+
+sub undoTables {
+    my ($self) = @_;
+
+    return ('SRes.Anatomy', 'SRes.ExternalDatabaseRelease', 'SRes.ExternalDatabase');
 }
