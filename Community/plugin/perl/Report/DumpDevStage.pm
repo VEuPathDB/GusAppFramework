@@ -120,9 +120,9 @@ sub run {
 	my @finalarray = @$arrayref;
 	
 	for(my $i=$#finalarray; $i>0; $i--) {
-	    print FILE "$finalarray[$i];";
+	    print FILE "$finalarray[$i];;";
 	}
-	print FILE "$finalarray[0]:$taxonID:$source:$definition\n";
+	print FILE "$finalarray[0]\t$taxonID\t$source\t$definition\n";
 	$r++;
     }
     
