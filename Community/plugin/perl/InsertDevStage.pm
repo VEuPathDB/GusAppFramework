@@ -191,10 +191,11 @@ sub readFile {
 	    }
 	    
 	    $newDevStage->submit();
-	    
+	    $ninserted++;
 	}
 	else {
 	    $self->log("term $currentID already in DB\n");
 	}
     }
+    return $ninserted;
 }
