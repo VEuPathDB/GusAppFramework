@@ -66,38 +66,39 @@ PLUGIN_NOTES
   my $argsDeclaration =
       [
        integerArg({name => 'testnumber',
-		   descr => 'number of iterations for testing',
-		   reqd => 0,
-		   constraintFunc => undef,
-		   isList => 0
-    }),
+                   descr => 'number of iterations for testing',
+                   reqd => 0,
+                   constraintFunc => undef,
+                   isList => 0
+                  }),
       
        fileArg({name => 'dataFile',
-		descr => 'Data file',
-		reqd => 1,
-		mustExist => 1,
-		constraintFunc => undef,
-		isList => 0,
-		format => 'see NOTES for format requirements of the datafile'
+                descr => 'Data file',
+                reqd => 1,
+                mustExist => 1,
+                constraintFunc => undef,
+                isList => 0,
+                format => 'see NOTES for format requirements of the datafile'
 
-     }),
+               }),
+
        fileArg({name => 'writeFile',
-		descr => 'records new entries',
-		reqd => 0,
-		mustExist => 0,
-		constraintFunc => undef,
-		isList => 0,
-		format => 'list of rows inserted into table'
-		
-     }),
-       stringArg({name => 'soCvsVersion',
-		descr => 'SequenceOntology cvs version currently used',
-		reqd => 1,
-		mustExist => 1,
-		constraintFunc => undef,
-		isList => 0
+                descr => 'records new entries',
+                reqd => 0,
+                mustExist => 0,
+                constraintFunc => undef,
+                isList => 0,
+                format => 'list of rows inserted into table'
+               }),
 
-     }),
+       stringArg({name => 'soCvsVersion',
+                  descr => 'SequenceOntology cvs version currently used',
+                  reqd => 1,
+                  mustExist => 1,
+                  constraintFunc => undef,
+                  isList => 0
+                 }),
+
        enumArg({name => 'AmpliconType',
                 descr => 'Dots::SequenceType.name for the PCR Products generated.  ss-DNA for spotted DNA microarrays.',
                 constraintFunc => undef,
@@ -105,15 +106,15 @@ PLUGIN_NOTES
                 isList => 0,
                 mustExist => 1,
                 enum => "ss-DNA, ds-DNA",
-     }),
-    ];
+               }),
+      ];
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 4233 $', # cvs fills this in!
-		     name => ref($self),
-		     argsDeclaration => $argsDeclaration,
-		     documentation => $documentation
-		    });
+                     cvsRevision => '$Revision: 4233 $', # cvs fills this in!
+                     name => ref($self),
+                     argsDeclaration => $argsDeclaration,
+                     documentation => $documentation
+                    });
   return $self;
 }
 
