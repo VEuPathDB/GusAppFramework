@@ -119,9 +119,9 @@ sub run {
 	my @finalarray = @$arrayref;
 	
 	for(my $i=$#finalarray; $i>0; $i--) {
-	    print FILE "$finalarray[$i];";
+	    print FILE "$finalarray[$i];;";
 	}
-	print FILE "$finalarray[0]:$source:$description\n";
+	print FILE "$finalarray[0]\t$source\t$description\n";
 	$r++;
     }
     
