@@ -83,7 +83,7 @@ sub new {
     
     $self->initialize(
 		      {requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 5230 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 5231 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation,
