@@ -83,7 +83,7 @@ sub new {
     
     $self->initialize(
 		      {requiredDbVersion => 3.5,
-		       cvsRevision =>  '$Revision: 5228 $', #CVS fills this in
+		       cvsRevision =>  '$Revision: 5230 $', #CVS fills this in
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation,
@@ -139,7 +139,7 @@ sub readFile {
 	my $sql = "SELECT * FROM SRes.DevelopmentalStage WHERE NAME = '$currentID'";
 	if($hierLevel != 0) {
 	    for(my $i=1; $i<scalar @ids; $i++) {
-		$sql = $sql." AND LEVEL_$i = '$ids[$i]'";
+		$sql = $sql." AND LEVEL_$i = \'$ids[$i]\'";
 	    }
 	}
 	
@@ -198,4 +198,11 @@ sub readFile {
 	}
     }
     return $ninserted;
+}
+
+
+sub undoTables {
+    my ($self) = @_;
+
+    return ('SRes.DevelopmentalStage', 'SRes.ExternalDatabaseRelease', 'SRes.ExternalDatabase');
 }
