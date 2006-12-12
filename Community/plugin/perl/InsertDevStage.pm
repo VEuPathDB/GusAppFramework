@@ -11,7 +11,7 @@ use strict;
 
 use FileHandle;
 use GUS::PluginMgr::Plugin;
-use GUS::Model::SRes::DevelopmentalStages;
+use GUS::Model::SRes::DevelopmentalStage;
 use GUS::Model::SRes::ExternalDatabaseRelease;
 use GUS::Model::SRes::ExternalDatabase;
 
@@ -134,7 +134,7 @@ sub readFile {
 	
         # test if this term is already in the db ?
 	
-	my $sql = "SELECT * FROM SRes.DevelopmentalStages WHERE NAME = '$currentID'";
+	my $sql = "SELECT * FROM SRes.DevelopmentalStage WHERE NAME = '$currentID'";
 	if($hierLevel != 0) {
 	    for(my $i=1; $i<scalar @ids; $i++) {
 		$sql = $sql." AND LEVEL_$i = '$ids[$i]'";
@@ -156,7 +156,7 @@ sub readFile {
 		my $parentName = $ids[$#ids-1];
 		my $parentHierLevel = $#ids-1;
 		
-		my $sql = "SELECT DEVELOPMENTALSTAGE_ID FROM SRes.DevelopmentalStage WHERE NAME = '$parentName'";
+		my $sql = "SELECT DEVELOPMENTAL_STAGE_ID FROM SRes.DevelopmentalStage WHERE NAME = '$parentName'";
 		if($parentHierLevel>0) {
 		    for(my $i=1; $i<scalar @ids-1; $i++) {
 			$sql = $sql." AND LEVEL_$i = '$ids[$i]'";
@@ -176,7 +176,7 @@ sub readFile {
 	    my $newDevStage = GUS::Model::SRes::DevelopmentalStage->new({
 		'name'        => $currentID,
 		'parent_ID'   => $parentID,
-		'taxon_ID'    => $taxonID;
+		'taxon_ID'    => $taxonID,
 		'source'      => $source,
 		'definition'  => $definition,
 	    });
@@ -191,6 +191,8 @@ sub readFile {
 	    $newDevStage->submit();
 	    
 	}
-	$self->log("term $currentID already in DB\n");
+	else {
+	    $self->log("term $currentID already in DB\n");
+	}
     }
 }
