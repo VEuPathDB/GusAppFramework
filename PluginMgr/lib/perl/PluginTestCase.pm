@@ -119,7 +119,8 @@ sub set_up {
     $ga->connect_to_database($plugin);
   }
 
-  $self->{_dbi_database} = $self->setupDatabase(GUS::ObjRelP::DbiDatabase->getDefaultDatabase());
+  my $dbiDatabase = $self->setupDatabase(GUS::ObjRelP::DbiDatabase->getDefaultDatabase());
+  $self->{_dbi_database} = $dbiDatabase;
 
   # Setup the Plugin Args
   my $argDecl = [@{$plugin->getArgsDeclaration()},
@@ -135,6 +136,7 @@ sub set_up {
   }
 
   $plugin->initArgs($pluginArgsHashRef);
+  $plugin->initDb($dbiDatabase);
 
   $self->{_plugin} = $plugin;
 
