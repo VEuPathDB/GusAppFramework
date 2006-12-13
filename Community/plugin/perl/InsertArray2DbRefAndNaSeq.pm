@@ -72,7 +72,7 @@ my $argsDeclaration =
 	}),
  
  stringArg({name => 'refIDColumnName',
-	    descr => 'reference ID column name (can be arrays spot positions formatted as follows:1.2.1.1.10.12; or probe_id)',
+	    descr => 'reference ID column name (can be spot positions formatted as follows:1.2.1.1.10.12; or probe_id)',
 	    constraintFunc => undef,
 	    reqd => 1,
 	    isList => 0,
