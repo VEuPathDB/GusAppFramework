@@ -304,6 +304,11 @@ sub makeStringThing {
 sub parseRelationships {
   my ($self, $terms, $lines, $relationshipTypes) = @_;
 
+  my $file = $self->getArg('inFile');
+  my $log = $file . ".log";
+
+  open(LOG, "> $log") or $self->error("Could Not open file $log for reading: $!");
+
   my @relationships;
   my $skipCount = 0;
 
@@ -340,11 +345,12 @@ sub parseRelationships {
 
     }
     else {
-      print STDERR "Skipping Relationship on line: $subject|$predicate|$object|$type\n" if($self->getArg('debug'));
+      print LOG "SKIPPED: $subject|$predicate|$object|$type\n";
       $skipCount++;
     }
   }
 
+  close(LOG);
   $self->log("WARN:  Skipped $skipCount Lines");
 
   return \@relationships;
