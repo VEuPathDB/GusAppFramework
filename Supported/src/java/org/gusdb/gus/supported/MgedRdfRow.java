@@ -1,5 +1,12 @@
 package org.gusdb.gus.supported;
 
+import com.hp.hpl.jena.rdf.model.Literal;
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+
 /**
  * Store the Strings which make up an Owl RDF statment as instance variables.  
  * Convert these to the appropriate output strings which can easily be 
@@ -9,6 +16,8 @@ package org.gusdb.gus.supported;
  *
  */
 public class MgedRdfRow implements GusRdfRow {
+
+    private Statement statement;
 	
     private String subject = "";
     private String predicate = "";
@@ -18,12 +27,58 @@ public class MgedRdfRow implements GusRdfRow {
     private String propType = "";
     private String propObject = "";
 	
-    public MgedRdfRow (String subject, String predicate, String object) {
-        this.subject = subject;
-        this.predicate = predicate;
-        this.object = object;
+    public MgedRdfRow (Statement statement) {
+        this.statement = statement;
     }
-	
+
+    public void parse () {
+
+        Resource  subjectObj   = statement.getSubject();
+        Property  predicateObj = statement.getPredicate();
+        RDFNode   objectObj    = statement.getObject();
+
+        this.subject  = subjectObj.getLocalName();
+        this.predicate = predicateObj.getLocalName();
+        this.object = getObjectString(objectObj);
+			
+        if (this.object == null && objectObj instanceof Resource) {
+            Resource r = (Resource) objectObj;
+            StmtIterator properties = r.listProperties();
+
+            while (properties.hasNext()) {
+                Statement propStatement = properties.nextStatement();
+		
+                RDFNode propObject = propStatement.getObject();
+                Property propPredicate = propStatement.getPredicate();
+                
+                String propObjString = getObjectString(propObject);
+                String propPredString = propPredicate.getLocalName();
+		
+                parsePropertyStatement(propObjString, propPredString);
+            }
+        }
+    }
+
+    /**
+     * The <code>RDFNode</code> object can either be a <code>Resource</code>
+     * or a <code>Literal</code>.  Gets the String representation either way.
+     * 
+     * @param object
+     * @return
+     *     The String representation of the <code>RDFNode</code>
+     */
+    private static String getObjectString (RDFNode object) {
+        if (object instanceof Resource) {
+            Resource r = (Resource) object;
+            return r.getLocalName();
+        }
+        else {
+            Literal objectLiteral = (Literal) object;
+            return objectLiteral.getValue().toString();
+        }
+    }
+
+
     /**
      * Skip some stuff which definetly won't be read into GUS...
      * 

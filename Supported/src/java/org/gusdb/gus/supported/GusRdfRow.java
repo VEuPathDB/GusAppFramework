@@ -1,5 +1,6 @@
 package org.gusdb.gus.supported;
 
+
 /**
  * All owl parsers should subclass this class and override all its methods
  * 
@@ -35,6 +36,6 @@ public interface GusRdfRow {
      * @param ps
      *     oen of the property predicate strings
      */
-    public abstract void parsePropertyStatement (String os, String ps);
+    public abstract void parse ();
 
 }
