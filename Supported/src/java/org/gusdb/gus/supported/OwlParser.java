@@ -22,7 +22,7 @@ import java.io.Writer;
  */
 public class OwlParser {
 	
-    private static String defaultFileName = "/home/jbrestel/data/RAD_data/MGED_Ontology/MGEDOntology.1.3.1.owl";
+    private static String defaultFileName = "C:/MGED.owl";
     private static String defaultParser = "MgedRdfRow";
 	
     private final static boolean debug = false;
@@ -128,6 +128,10 @@ public class OwlParser {
      */
     private void writeTermOrRelationship (GusRdfRow rdf) {
         String output = rdf.getOutputString();
+
+		if(debug) {
+			System.out.println(output);
+		}	
 
         try {
             writer.write(output + "\n");
