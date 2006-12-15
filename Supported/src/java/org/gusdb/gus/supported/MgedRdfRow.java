@@ -89,7 +89,7 @@ public class MgedRdfRow implements GusRdfRow {
         if(subject == "" || subject == null) {
             return false;
         }
-
+		
         if(subject.equals("MGEDOntology.owl")) {
             return false;
         }
@@ -125,12 +125,13 @@ public class MgedRdfRow implements GusRdfRow {
 		
         // If the object is null... that means it is someValuesFrom or hasDataType
         if(object == null || object == "") {
-            
-            // Change for hasDataType
-            if((propType.equals("someValuesFrom") || propType.equals("hasClass")) && propObject.equals("string")) {
-                propObject = "hasDataType";
+  
+            // Change for thing somevaluesfrom
+            if(propType.equals("someValuesFrom") && propObject.equals("string")) {
+				propObject = "Thing";
             }
-            out = subject + "\t" + propPredicate + "\t" + propObject + "\t" + propType;
+			
+            out = subject +  "\t" + propPredicate + "\t" + propObject + "\t" + propType;
         }
         // Need to shift the values around for these...
         else if(predicate.equals("subClassOf") || predicate.equals("domain")) {
