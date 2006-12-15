@@ -67,7 +67,7 @@ sub _checkEnum {
 
   my @enum = split(/,\s*/, $self->{enum});
 
-  if (scalar @enum < 2) {
+  if (scalar @enum < 1) {
     return "The plugin author must provide a comma delimited list of choices for this enum argument";
   }
   $self->{enumArray} = \@enum;
