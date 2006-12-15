@@ -222,6 +222,8 @@ sub parseTerms {
   my $definitions = $self->getObjectStringFromType($lines, 'definition');
   my $types = $self->getObjectStringFromType($lines, 'instanceOf');
 
+  my $count = 2;
+
   foreach my $termName (keys %$definitions) {
     my $source = "#$termName";
     my $termUri =  $uri . $source;
@@ -247,8 +249,11 @@ sub parseTerms {
             });
 
       push(@ontologyTerms, $ontologyTerm);
+      $count++;
     }
   }
+
+  $self->log("Inserted $count SRes::OntologyTerms");
 
   return \@ontologyTerms;
 }
@@ -302,6 +307,8 @@ sub parseRelationships {
   my @relationships;
   my $skipCount = 0;
 
+  my $count = 0;
+
   foreach my $line (@$lines) {
     my ($subject, $predicate, $object, $type) = split(/\t/, $line);
 
@@ -325,6 +332,12 @@ sub parseRelationships {
 
     if($subjectTermId && $objectTermId && $relationshipTypeId) {
       push(@relationships, $relationship);
+
+      $count++;
+      if($count % 250 == 0) {
+        $self->log("Inserted $count SRes::OntologyRelationships");
+      }
+
     }
     else {
       print STDERR "Skipping Relationship on line: $subject|$predicate|$object|$type\n" if($self->getArg('debug'));
