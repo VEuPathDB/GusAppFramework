@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<rdf:RDF
+    xmlns:protege="http://protege.stanford.edu/plugins/owl/protege#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:daml="http://www.daml.org/2001/03/daml+oil#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:p2="http://www.owl-ontologies.com/assert.owl#"
+    xmlns="http://mged.sourceforge.net/ontologies/MGEDOntology.owl#"
+  xml:base="http://mged.sourceforge.net/ontologies/MGEDOntology.owl">
+  <owl:Ontology rdf:about="">
+    <dc:title rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >The MGED Ontology</dc:title>
+    <dc:creator rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >Chris Stoeckert, Helen Parkinson, Trish Whetzel, Paul Spellman, Catherine A. Ball, Joseph White, John Matese, Liju Fan, Gilberto Fragoso, Mervi Heiskanen, Susanna Sansone, Helen Causton, Laurence Game, Chris Taylor</dc:creator>
+    <dc:description rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >Concepts, definitions, terms, and resources for standardized description of a microarray experiment in support of MAGE v.1. The MGED ontology is divided into the MGED Core ontology which is intended to be stable and in synch with MAGE v.1; and the MGED Extended ontology which adds further associations and classes not found in MAGE v.1</dc:description>
+    <dc:date rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >November 8, 2006</dc:date>
+    <owl:imports rdf:resource="http://protege.stanford.edu/plugins/owl/protege"/>
+    <owl:versionInfo rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >1.3.1</owl:versionInfo>
+    <owl:imports rdf:resource="http://purl.org/dc/elements/1.1/"/>
+    <dc:subject rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >An ontology for microarray experiments in support of MAGE v.1.</dc:subject>
+  </owl:Ontology>
+
+  <owl:Class rdf:about="#MGEDOntology">
+    <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+    <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >The MGED Ontology is a top level container for the MGEDCoreOntology and the MGEDExtendedOntology. The MGED ontology describes microarray experiments and is split into the MGEDCoreOntology, which supports MAGE-OM v1.0 and is organized consistently with MAGE, and the MGEDExtendedOntology, which expands MAGE v1.0 and contains concepts and relationships which are not included in MAGE. </rdfs:comment>
+    <unique_identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >MO_174</unique_identifier>
+    <class_role rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >abstract</class_role>
+    <class_source rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >ontology</class_source>
+  </owl:Class>
+
+  <owl:DatatypeProperty rdf:about="#has_ID">
+    <unique_identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >MO_323</unique_identifier>
+    <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >property indicating that the class has an identifier</rdfs:comment>
+  </owl:DatatypeProperty>
+
+  <owl:Class rdf:about="#MGEDCoreOntology">
+    <unique_identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >MO_57</unique_identifier>
+    <class_source rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >ontology</class_source>
+    <rdfs:subClassOf>
+      <owl:Class rdf:ID="MGEDOntology"/>
+    </rdfs:subClassOf>
+    <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >An ontology developed by the Microarray Gene Expression Data (MGED) Society to provide descriptors required for MAGE v.1 documents. </rdfs:comment>
+    <class_role rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >abstract</class_role>
+    <rdfs:subClassOf>
+      <owl:Restriction>
+        <owl:onProperty>
+          <owl:DatatypeProperty rdf:ID="has_ID"/>
+        </owl:onProperty>
+        <owl:someValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+      </owl:Restriction>
+    </rdfs:subClassOf>
+  </owl:Class>
+
+  <owl:Class rdf:about="#DescriptionPackage">
+    <class_role rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >abstract</class_role>
+    <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >MAGE package for description of annotations and references to annotations.</rdfs:comment>
+    <class_source rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >mage</class_source>
+    <unique_identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >MO_167</unique_identifier>
+    <rdfs:subClassOf rdf:resource="#MGEDCoreOntology"/>
+  </owl:Class>
+
+  <owl:Class rdf:about="#PublicationType">
+    <class_role rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >concrete</class_role>
+    <rdfs:subClassOf rdf:resource="#DescriptionPackage"/>
+    <class_source rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >ontology</class_source>
+    <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >Controlled terms for descriptors of the type of publication such as those used by Medline (review, book, etc.).</rdfs:comment>
+    <unique_identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >MO_208</unique_identifier>
+  </owl:Class>
+
+  <PublicationType rdf:ID="book">
+    <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >A publication type which has an ISBN.</rdfs:comment>
+    <unique_identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >MO_627</unique_identifier>
+  </PublicationType>
+</rdf:RDF>
+
+<!-- Created with Protege (with OWL Plugin 2.2, Build 339)  http://protege.stanford.edu -->
