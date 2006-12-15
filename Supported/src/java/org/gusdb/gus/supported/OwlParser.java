@@ -1,11 +1,7 @@
 package org.gusdb.gus.supported;
 
-import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.Property;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.util.FileManager;
@@ -87,9 +83,9 @@ public class OwlParser {
         }
     }
 	
-    public GusRdfRow gusRdfFromParserType(String s, String p, String o) {
+    public GusRdfRow gusRdfFromParserType(Statement s) {
         if(parserType.equals("MgedRdfRow")) {
-            return new MgedRdfRow(s, p, o);
+            return new MgedRdfRow(s);
         }
         // We currently don't have any other parsers
         else {
@@ -108,34 +104,13 @@ public class OwlParser {
         StmtIterator si = owlModel.listStatements();
 		
         while(si.hasNext()) {
+
             Statement s = si.nextStatement();
-			
-            Resource  subject   = s.getSubject();
-            Property  predicate = s.getPredicate();
-            RDFNode   object    = s.getObject();
 
-            String subjectString = subject.getLocalName();
-            String predicateString = predicate.getLocalName();
-            String objectString = getObjectString(object);
-			
-            GusRdfRow gusRdf = gusRdfFromParserType(subjectString, predicateString, objectString);
-			
-            if (objectString == null && object instanceof Resource) {
-                Resource r = (Resource) object;
-                StmtIterator properties = r.listProperties();
+            GusRdfRow gusRdf = gusRdfFromParserType(s);
 
-                while (properties.hasNext()) {
-                    Statement propStatement = properties.nextStatement();
-					
-                    RDFNode propObject = propStatement.getObject();
-                    Property propPredicate = propStatement.getPredicate();
+            gusRdf.parse();
 
-                    String propObjString = getObjectString(propObject);
-                    String propPredString = propPredicate.getLocalName();
-					
-                    gusRdf.parsePropertyStatement(propObjString, propPredString);
-                }
-            }
             if (gusRdf.isValid()) {
                 writeTermOrRelationship(gusRdf);
             }
@@ -163,25 +138,6 @@ public class OwlParser {
     }
 	
 
-    /**
-     * The <code>RDFNode</code> object can either be a <code>Resource</code>
-     * or a <code>Literal</code>.  Gets the String representation either way.
-     * 
-     * @param object
-     * @return
-     *     The String representation of the <code>RDFNode</code>
-     */
-    private static String getObjectString (RDFNode object) {
-        if (object instanceof Resource) {
-            Resource r = (Resource) object;
-            return r.getLocalName();
-        }
-        else {
-            Literal objectLiteral = (Literal) object;
-            return objectLiteral.getValue().toString();
-        }
-    }
-	
     /**
      * Read in the model from the File name.  
      * 
