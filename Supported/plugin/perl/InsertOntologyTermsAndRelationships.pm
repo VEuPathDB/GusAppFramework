@@ -224,7 +224,7 @@ sub parseTerms {
 
   foreach my $termName (keys %$definitions) {
     my $source = "#$termName";
-    $uri = $uri . $source;
+    my $termUri =  $uri . $source;
 
     my $def = $definitions->{$termName};
     my $type = $types->{$termName};
@@ -242,7 +242,7 @@ sub parseTerms {
              source_id => $source,
              ontology_term_type_id => $typeId,
              external_database_release_id => $extDbRlsId,
-             uri => $uri,
+             uri => $termUri,
              definition => $def,
             });
 
