@@ -202,6 +202,7 @@ sub run {
   push(@terms, @$irregularTerms);
 
   $self->submitObjectList(\@terms);
+  $self->log("Inserted ", scalar(@terms), " SRes::OntologyTerms");
 
   my $relationships = $self->parseRelationships(\@terms, $lines, $relationshipTypes);
   $self->submitObjectList($relationships);
@@ -289,25 +290,19 @@ sub parseTerms {
     my $def = $definitions->{$termName};
     my $type = $types->{$termName};
 
-    my $typeId;
-    if(!$type) {
-      $self->log("WARN Skipping:  No type found for subject $termName");
-    }
-    else {
-      $typeId = $termTypes->{$type};
-      $typeId = $termTypes->{Individual} unless($typeId);
+    my $typeId = $termTypes->{$type};
+    $typeId = $termTypes->{Individual} unless($typeId);
 
-      my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
-        new({name => $termName,
-             source_id => $source,
-             ontology_term_type_id => $typeId,
-             external_database_release_id => $extDbRlsId,
-             uri => $termUri,
-             definition => $def,
-            });
+    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
+      new({name => $termName,
+           source_id => $source,
+           ontology_term_type_id => $typeId,
+           external_database_release_id => $extDbRlsId,
+           uri => $termUri,
+           definition => $def,
+          });
 
-      push(@ontologyTerms, $ontologyTerm);
-    }
+    push(@ontologyTerms, $ontologyTerm);
   }
 
   return \@ontologyTerms;
