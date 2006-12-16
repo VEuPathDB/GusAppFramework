@@ -89,11 +89,12 @@ public class MgedRdfRow implements GusRdfRow {
         if(subject == "" || subject == null) {
             return false;
         }
-		
+ 		
         if(subject.equals("MGEDOntology.owl")) {
             return false;
         }
-        if(predicate.equals("class_role") || predicate.equals("class_source") || predicate.equals("unique_identifier") || predicate.equals("synonym")) {
+        if(predicate.equals("class_role") || predicate.equals("class_source") || predicate.equals("unique_identifier") 
+           || predicate.equals("synonym") || predicate.equals("deprecation_old_restriction")) {
             return false;
         }
         if(predicate.equals("DataRange") && object.equals("oneOf")) {
