@@ -48,6 +48,7 @@ sub setExampleFileLines {
                 "test_subject_2|test_predicate|test_object_2|test_type",
                 "term_subject|term_predicate_type|DataTypeProperty|instanceOf",
                 "test_subject_3|test_predicate|test_object_3|test_type",
+                "term_subject||irregular_term|test_type",
                ];
 
   # Replace the bar with tabs...
@@ -101,8 +102,8 @@ sub test_run {
 
   # READ:  (Expect 8), (Actual = select count(*) from SRes.OntologyTerm...), optionalParam
   # READ:  (Expect 5), (Actual = select count(*) from SRes.OntologyRelationship...), optionalParam
-  my $sqlList = [ ['8', 'select count(*) from SRes.OntologyTerm where row_alg_invocation_id = $$row_alg_invocation_id$$'],
-                  ['6', 'Select count(*) from SRes.OntologyRelationship where row_alg_invocation_id = $$row_alg_invocation_id$$'],
+  my $sqlList = [ ['9', 'select count(*) from SRes.OntologyTerm where row_alg_invocation_id = $$row_alg_invocation_id$$'],
+                  ['7', 'Select count(*) from SRes.OntologyRelationship where row_alg_invocation_id = $$row_alg_invocation_id$$'],
                   ['\d+', 'select ontology_term_id from sres.ontologyterm where row_alg_invocation_id  = $$row_alg_invocation_id$$ and name = \'book\'', 'ontology_term_id'],
                   ['^A publication type', 'select definition from sres.ontologyterm where ontology_term_id = $$ontology_term_id$$'],
                 ];
@@ -121,15 +122,15 @@ sub test_parseTerms {
 
   my $terms = $plugin->parseTerms($exampleFileLines, $nameToOntologyTermTypeMap);
 
-  # Test the number of terms made... (string, thing, and term_subject)
-  $self->assert_equals(3, scalar(@$terms));
+  # Test the number of terms made... 
+  $self->assert_equals(1, scalar(@$terms));
 
   # Test the object is the correct type
   foreach(@$terms) {
     $self->assert_equals('GUS::Model::SRes::OntologyTerm', ref($_));
   }
 
-  my $testTerm = $terms->[2];
+  my $testTerm = $terms->[0];
 
   $self->assert_equals(-99, $testTerm->getExternalDatabaseReleaseId());
   $self->assert_equals('#term_subject', $testTerm->getSourceId());
@@ -239,11 +240,12 @@ sub test_getObjectStringFromType {
 
   my $subObj = $plugin->getObjectStringFromType($exampleFileLines, 'test_type');
 
-  $self->assert_equals(3, scalar(keys %$subObj));
+  $self->assert_equals(4, scalar(keys %$subObj));
 
   $self->assert_equals('test_object_1', $subObj->{test_subject_1});
   $self->assert_equals('test_object_2', $subObj->{test_subject_2});
   $self->assert_equals('test_object_3', $subObj->{test_subject_3});
+  $self->assert_equals('irregular_term', $subObj->{term_subject});
 }
 
 #--------------------------------------------------------------------------------

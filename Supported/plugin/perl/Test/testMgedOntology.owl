@@ -93,6 +93,8 @@
   </owl:Class>
 
   <PublicationType rdf:ID="book">
+    <has_machine_readable_URI rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+    >http://THIS is a test</has_machine_readable_URI>
     <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
     >A publication type which has an ISBN.</rdfs:comment>
     <unique_identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
