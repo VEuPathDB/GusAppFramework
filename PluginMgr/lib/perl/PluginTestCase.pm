@@ -9,6 +9,8 @@ use GUS::Supported::GusConfig;
 
 use GUS::PluginMgr::GusApplication;
 
+use Data::Dumper;
+
 =head1 NAME
 
  GUS::PluginMgr::PluginTestCase
@@ -59,7 +61,7 @@ use GUS::PluginMgr::GusApplication;
 
    # use row_alg_invocation_id to test submits with a regular expression.
    # Default is row alg_invocation_id is -99 ... All Transactions are rolled back
-   my $sqlList = [ ['\d+', 'select contact_id from SRes.CONTACT where row_alg_invocation_id = -99,  'contact_id'],
+   my $sqlList = [ ['\d+', 'select contact_id from SRes.CONTACT where row_alg_invocation_id = $$row_alg_invocation_id$$,  'contact_id'],
                    ['^Brestelli$', 'Select last from SRes.Contact where contact_id = $$contact_id$$'] ];
 
    $self->sqlStatmentsTest($sqlList);
@@ -138,6 +140,22 @@ sub set_up {
   $plugin->initArgs($pluginArgsHashRef);
   $plugin->initDb($dbiDatabase);
 
+
+  $ga->findAlgorithm($plugin);
+
+  $ga->findImplementation($plugin);
+
+  my $alg_inv_gus = GUS::Model::Core::AlgorithmInvocation->
+    new({ algorithm_implementation_id => $plugin->getImplementation->getId,
+          start_time                  => $plugin->getDb->getDateFunction(),
+          end_time                    => $plugin->getDb->getDateFunction(),
+          cpus_used                   => 1,
+          cpu_time                    => 0,
+          result                      => 'pending',
+        });
+
+   $plugin->initAlgInvocation($alg_inv_gus);
+
   $self->{_plugin} = $plugin;
 
   return $plugin;
@@ -189,7 +207,7 @@ sub setupDatabase {
 
 #--------------------------------------------------------------------------------
 
-sub sqlStatmentsTest {
+sub sqlStatementsTest {
   my ($self, $sqlList) = @_;
 
   my $testHash = $self->_parseLines($sqlList);
@@ -210,6 +228,8 @@ sub _parseLines {
   my @lines = @$sqlList;
 
   my (%params, %sqlAsserts);
+
+  $params{row_alg_invocation_id} = -99;
 
   foreach my $line (@lines) {
     next unless $line;
