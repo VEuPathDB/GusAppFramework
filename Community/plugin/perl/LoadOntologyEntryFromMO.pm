@@ -1,4 +1,4 @@
-package GUS::Supported::Plugin::LoadOntologyEntryFromMO;
+package GUS::Community::Plugin::LoadOntologyEntryFromMO;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;
@@ -8,6 +8,8 @@ use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologyRelationship;
 
 use GUS::PluginMgr::Plugin;
+
+use Data::Dumper;
 
 my $argsDeclaration = 
   [ fileArg({name => 'nameChangesFile',
@@ -91,6 +93,13 @@ select s.name
    and o.name = ?
 Sql
 
+my $soExternalDatabaseReleaseSql = <<Sql;
+select r.external_database_release_id
+from SRes.EXTERNALDATABASERELEASE r, SRes.EXTERNALDATABASE d
+where d.external_database_id = r.external_database_id
+and d.name = 'SequenceOntology'
+Sql
+
 #-------------------------------------------------------------------------------
 
 sub new {
@@ -108,31 +117,10 @@ sub new {
                      documentation     => $documentation
                     });
 
-  $self->setRootNode('MGEDOntology');
-
-  my $thing = GUS::Model::Study::OntologyEntry->new({value => 'thing'});
-  $self->setRootParent($thing);
-
-  my $nameChanges = $self->getArg('nameChangesFile');
-  $self->setNamesHashFromConfigFile($nameChanges);
-
-  my $dbRlsId = $self->getExtDbRlsId($self->getArg('externalDatabase'),
-                                     $self->getArg('externalDatabaseRls'));
-
-  $self->setExternalDatabaseReleaseId($dbRlsId);
-  $self->setOntologyTermTableId($ontologyTermTableIdSql);
-
-  my $dbh = $self->getQueryHandle();
-  my $sh = $dbh->prepare($ontologyTermChildrenSql);
-
-  $self->setRelationshipQueryHandle($sh);
-
   return $self;
 }
 
 #-------------------------------------------------------------------------------
-
-=pod
 
 =head2 Subroutines
 
@@ -145,8 +133,8 @@ sub getNamesHash {$_[0]->{names_hash}}
 sub getRootNode {$_[0]->{root_node}}
 sub setRootNode {$_[0]->{root_node} = $_[1]}
 
-sub getRootParent {$_[0]->{root_parent}}
-sub setRootParent {$_[0]->{root_parent} = $_[1]}
+sub getRootParent { $_[0]->{root_parent}}
+sub setRootParent { $_[0]->{root_parent} = $_[1]}
 
 sub setRelationshipQueryHandle {$_[0]->{relationship_query_handle} = $_[1]}
 sub getRelationshipQueryHandle {$_[0]->{relationship_query_handle}}
@@ -157,9 +145,12 @@ sub getExternalDatabaseReleaseId {$_[0]->{external_database_release_id}}
 sub getCount { $_[0]->{number_processed} }
 sub addToCount {$_[0]->{number_processed}++ }
 
-sub getSeenOntologyEntry {$_[0]->{seen_ontology_entry} }
+sub getSeenOntologyEntry {$_[0]->{seen_ontology_entry}}
 
-=pod
+sub getOntologyTermTableIdSql {return $ontologyTermTableIdSql}
+sub getOntologyTermChildrenSql {return  $ontologyTermChildrenSql}
+sub getSoExternalDatabaseReleaseSql {return $soExternalDatabaseReleaseSql}
+
 
 =item C<hasSeenOntologyEntry>
 
@@ -172,16 +163,13 @@ sub hasSeenOntologyEntry {
   my ($self, $name, $parentName) = @_;
 
   my $parents = $self->getSeenOntologyEntry()->{$name};
+
   my $hasSeen = $self->isIncluded($parents, $parentName);
 
   push(@{$self->getSeenOntologyEntry()->{$name}}, $parentName);
   return($hasSeen);
 
 }
-
-sub getOntologyTermTableId {$_[0]->{ontology_term_table_id}}
-
-=pod
 
 =item C<_setOntologyTermTableId>
 
@@ -190,14 +178,32 @@ Retrieve the core.tableInfo table_id for SRes::OntologyTerm and set the instance
 =cut
 
 sub setOntologyTermTableId {
-  my ($self, $sql) = @_;
+  my ($self) = @_;
 
-  my ($tableId) = $self->sqlAsArray( Sql => $sql );
+  my ($tableId) = $self->sqlAsArray( Sql =>  $ontologyTermTableIdSql );
 
   $self->{ontology_term_table_id} = $tableId;
 }
 
-=pod
+sub getOntologyTermTableId {$_[0]->{ontology_term_table_id}}
+
+=item C<_setOntologyTermTableId>
+
+Retrieve the SequenceOntology ExternalDatabaseReleaseId's 
+
+Will skip even if value and category match.
+
+=cut
+
+sub setSoExternalDatabaseRelease {
+  my ($self) = @_;
+
+  my @ids = $self->sqlAsArray( Sql =>  $soExternalDatabaseReleaseSql );
+
+  $self->{so_external_database_release_list} = \@ids;
+}
+
+sub getSoExternalDatabaseRelease {$_[0]->{so_external_database_release_list}}
 
 =item C<isIncluded>
 
@@ -216,8 +222,6 @@ sub isIncluded {
 
 #-------------------------------------------------------------------------------
 
-=pod
-
 =item C<run>
 
 Read the config file, use args to set instance variables and load OntologyEntry rows
@@ -233,12 +237,19 @@ sub run {
 
   my $coreInserts = $self->getTotalInserts();
 
+  my ($package, $file, $line) = caller;
+
+  unless($package eq "GUS::Community::Plugin::Test::TestLoadOntologyEntryFromMO") {
+    $self->setupInstanceStuff();
+  }
+
   # Give it the Root node and let it read the Ontology as a Tree
   my $root = $self->getRootNode();
   my $rootParent = $self->getRootParent();
 
   $self->processOntologyRelationships($root, $rootParent);
 
+  my $coreInserts = 0;
   my $insertCount = $self->getTotalInserts() - $coreInserts;
   my $updateCount = $self->getTotalUpdates() || 0;
 
@@ -249,7 +260,31 @@ sub run {
 
 #-------------------------------------------------------------------------------
 
-=pod
+sub setupGlobalInstanceVars {
+  my ($self) = @_;
+
+  $self->setRootNode('MGEDOntology');
+
+  my $thing = GUS::Model::Study::OntologyEntry->new({value => 'thing'});
+  $self->setRootParent($thing);
+
+  my $nameChanges = $self->getArg('nameChangesFile');
+  $self->setNamesHashFromConfigFile($nameChanges);
+
+  my $dbRlsId = $self->getExtDbRlsId($self->getArg('externalDatabase'),
+                                     $self->getArg('externalDatabaseRls'));
+
+  $self->setExternalDatabaseReleaseId($dbRlsId);
+  $self->setOntologyTermTableId();
+  $self->setSoExternalDatabaseRelease();
+
+  my $dbh = $self->getQueryHandle();
+  my $sh = $dbh->prepare($ontologyTermChildrenSql);
+
+  $self->setRelationshipQueryHandle($sh);
+}
+
+#-------------------------------------------------------------------------------
 
 =item C<_setNamesHashFromConfigFile>
 
@@ -278,11 +313,10 @@ sub setNamesHashFromConfigFile {
     my ($prevName, $newName) = split(/\t/, $line);
     $self->getNamesHash()->{$newName} = $prevName;
   }
+  return $self->getNamesHash();
 }
 
 #-------------------------------------------------------------------------------
-
-=pod
 
 =item C<_processOntologyRelationships>
 
@@ -301,6 +335,8 @@ B<Return type:> C<undef>
 
 sub processOntologyRelationships {
   my ($self, $name, $parentOntologyEntry) = @_;
+
+  print STDERR $name . "|" . $parentOntologyEntry->getValue() . "\n" if($self->getArg('debug'));
 
   my $term = GUS::Model::SRes::OntologyTerm->
     new({name => $name, external_database_release_id => $self->getExternalDatabaseReleaseId() });
@@ -321,8 +357,8 @@ sub processOntologyRelationships {
     new({value => $existingName, category => $parentName});
 
   if($ontologyEntry->retrieveFromDB() && $existingName ne $name) {
-    my $message = "[Updating term $existingName to $name]";
-    $self->printToLog($name, $existingName, $message);
+    my $message = "[Updating oe $existingName to $name]";
+    $self->log($message);
   }
 
   $self->loadOntologyEntry($ontologyEntry, $term,  $parentOntologyEntry);
@@ -340,8 +376,6 @@ sub processOntologyRelationships {
 }
 
 #-------------------------------------------------------------------------------
-
-=pod
 
 =item C<loadOntologyEntry>
 
@@ -369,21 +403,26 @@ sub loadOntologyEntry {
   my $sourceId = $term->getSourceId();
   my $uri = $term->getUri();
 
-  # Dont process if it doesn't exist in the database AND is a deprecated term
-  return if($parentOntologyEntry->getValue eq 'DeprecatedTerms' && !$ontologyEntry->getId);
+
+  # Don't process if the ExternalDatabaseReleaseId is not an MGED one
+  return 0  if($self->isIncluded($self->getSoExternalDatabaseRelease(), $ontologyEntry->getExternalDatabaseReleaseId()));
+
+  # Don't process if it doesn't exist in the database AND is a deprecated term
+  return 0 if($parentOntologyEntry->getValue eq 'DeprecatedTerms' && !$ontologyEntry->getId);
 
   my ($parentId, $category) = $self->getParentInfo($value, $parentOntologyEntry, $ontologyEntry);
 
   # Don't process the same term with the same parent twice
-  return if($self->hasSeenOntologyEntry($value, $category));
+  return 0 if($self->hasSeenOntologyEntry($value, $category));
 
   my $oeName = $ontologyEntry->getName();
 
   if($oeName eq 'user_defined') {
     $ontologyEntry->setName('');
 
-    my $message = "[upgraded user_defined_term]";
-    $self->printToLog($value, $ontologyEntry->getValue(), $message);
+    my $newValue = $ontologyEntry->getValue();
+    my $message = "[upgraded user_defined oe $value to $newValue]";
+    $self->log($message);
   }
 
   my $tableId = $self->getOntologyTermTableId();
@@ -400,10 +439,13 @@ sub loadOntologyEntry {
 
   $ontologyEntry->submit();
 
-  if($self->addToCount % 100 == 0) {
+  my $count = $self->addToCount();
+  if($count > 1 && $count % 100 == 0) {
     my $count = $self->getCount();
     $self->log("Processed $count Study::OntologyEntry Rows");
   }
+
+  return 1;
 }
 
 #-------------------------------------------------------------------------------
@@ -419,8 +461,8 @@ sub getParentInfo {
     my $parentCategory = $ontologyEntry->getCategory();
     $category = "DeprecatedTerms_$parentCategory";
 
-    my $message = "[deprecated_term]";
-    $self->printToLog($value, $ontologyEntry->getValue(), $message);
+    my $message = "[deprecated_term:  $value]";
+    $self->log($message);
   }
   else {
     $parentId = $parentOntologyEntry->getId();
@@ -432,11 +474,6 @@ sub getParentInfo {
 
 #-------------------------------------------------------------------------------
 
-sub printToLog {
-  my ($self, $value, $oldValue, $m) = @_;
-
-  $self->log("new_value=$value\told_value=$oldValue\t$m");
-}
 
 
 1;
