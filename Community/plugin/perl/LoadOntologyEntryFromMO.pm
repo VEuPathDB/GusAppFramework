@@ -240,7 +240,7 @@ sub run {
   my ($package, $file, $line) = caller;
 
   unless($package eq "GUS::Community::Plugin::Test::TestLoadOntologyEntryFromMO") {
-    $self->setupInstanceStuff();
+    $self->setupGlobalInstanceVars();
   }
 
   # Give it the Root node and let it read the Ontology as a Tree
@@ -405,10 +405,16 @@ sub loadOntologyEntry {
 
 
   # Don't process if the ExternalDatabaseReleaseId is not an MGED one
-  return 0  if($self->isIncluded($self->getSoExternalDatabaseRelease(), $ontologyEntry->getExternalDatabaseReleaseId()));
+  if($self->isIncluded($self->getSoExternalDatabaseRelease(), $ontologyEntry->getExternalDatabaseReleaseId())) {
+    $self->log("[SKIP $value Invalid ExternalDatabaseRelease]");
+    return 0;
+  }
 
   # Don't process if it doesn't exist in the database AND is a deprecated term
-  return 0 if($parentOntologyEntry->getValue eq 'DeprecatedTerms' && !$ontologyEntry->getId);
+  if($parentOntologyEntry->getValue eq 'DeprecatedTerms' && !$ontologyEntry->getId) {
+    $self->log("[SKIP $value:  NEW Deprecated Term]");
+    return 0;
+  }
 
   my ($parentId, $category) = $self->getParentInfo($value, $parentOntologyEntry, $ontologyEntry);
 
