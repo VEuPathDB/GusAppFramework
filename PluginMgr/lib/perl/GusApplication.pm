@@ -126,6 +126,7 @@ sub findSomeImplementation {
        AND cvs_revision    = '$cvsRevision'
 SQL
 
+
    my $imps = $plugin->sql_get_as_hash_refs($sql);
 
    if (scalar @$imps == 0) {
@@ -141,9 +142,10 @@ SQL
      $self->tooManyImpsError($imps);
    }
 
-   elsif ($self->getArgs->{commit} &&
+   elsif ($plugin->getArgs->{commit} &&
 	    $imps->[0]->{EXECUTABLE_MD5} ne $plugin->getCheckSum()) {
      $self->wrongChecksumError($plugin);
+
    }
 
    return $self->makeImplementation($plugin, $imps->[0]);
