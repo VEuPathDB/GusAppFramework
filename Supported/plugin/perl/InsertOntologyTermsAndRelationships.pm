@@ -207,7 +207,7 @@ sub run {
   my $relationships = $self->parseRelationships(\@terms, $lines, $relationshipTypes);
   $self->submitObjectList($relationships);
 
-  my $termCount = scalar(\@terms);
+  my $termCount = scalar(@terms);
   my $relationshipCount = scalar(@$relationships);
 
   return "Inserted $termCount SRes::OntologyTerms and $relationshipCount SRes::OntologyRelationships";
