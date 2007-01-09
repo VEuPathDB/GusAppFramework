@@ -545,10 +545,12 @@ sub doMajorMode_RunOrReport {
    $pu->getDb()->setVerbose($self->getArg('sqlVerbose'));
 
    # get the algorithm
-   $Run && $self->findAlgorithm($pu);
+   #$Run && $self->findAlgorithm($pu);
+   $self->findAlgorithm($pu);
 
    # get PI's version to find the AlgorithmImplementation.
-   $Run && $self->findImplementation($pu);
+   #$Run && $self->findImplementation($pu);
+   $self->findImplementation($pu);
 
    # the application context
    $Run && $self->openInvocation($pu);
