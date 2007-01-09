@@ -157,7 +157,7 @@ sub run {
   $self->setLogger($mLogger);
 
   $mLogger->info("parse the config xml file", $self->getArg('configfile'));
-  my $config = XMLin($self->getArg('configfile'));
+  my $config = XMLin($self->getArg('configfile'),  'ForceArray' => 1);
 
   $mLogger->info("check the config xml file");
   $self->checkConfig($config);
@@ -246,7 +246,7 @@ sub checkConfig{
 
   $mLogger->fatal("You must provide a reader in the configuration xml") unless $reader;
   $mLogger->fatal("You must provide a translator in the configuration xml") unless $translator;
-  $mLogger->fatal("You must provide a mage doc inside the reader block in the configuration xml") unless $config->{service}->{reader}->{property}->{value};
+#  $mLogger->fatal("You must provide a mage doc inside the reader block in the configuration xml") unless $config->{service}->{reader}->{property};
 
 }
 
@@ -318,6 +318,7 @@ sub undoTables {
           'Study.StudyDesignDescription',
           'Study.StudyDesign',
           'Study.Study',
+          'RAD.LabelMethod',
           'RAD.ProtocolParam',
           'RAD.Protocol',
           'SRes.Abstract',
