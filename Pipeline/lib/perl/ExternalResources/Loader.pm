@@ -134,6 +134,22 @@ sub _processResource {
   if ($usingWget) {
     $args = &_parseWgetArgs(substr($resource->{wgetArgs},0,
 				   length($resource->{wgetArgs})));
+	
+    my $moreWgetArgs;
+    if (ref($resource->{wgetArg}) eq 'ARRAY') {
+        $moreWgetArgs = $resource->{wgetArg};
+    } else {
+        $moreWgetArgs = [$resource->{wgetArg}];
+    }
+
+    if ($resource->{wgetArg} && (scalar (@{$moreWgetArgs}) > 0)) {
+      foreach my $arg (@{$moreWgetArgs}) {
+	  	  my ($argName, $argValue) = split (/=/, $arg, 2);
+		  $args->{$argName . '='} = $argValue;
+      }
+    }
+
+    my $targetDir = "$downloadDir/$resourceNm";
     $args->{url} = $resource->{url};
   } else {
     $args = $resource->{manualGet};
