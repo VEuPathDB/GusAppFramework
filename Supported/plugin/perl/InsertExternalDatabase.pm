@@ -84,7 +84,7 @@ sub new {
 #######################################################################
 
 sub run {
-    my $self = shift;
+    my ($self) = @_;
     my $dbName = $self->getArg('name');
     my $msg;
 
