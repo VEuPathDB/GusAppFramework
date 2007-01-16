@@ -55,10 +55,21 @@ sub preprocessBioperlSeq {
   my ($self, $bioperlSeq) = @_;
   return unless $self->{bioperlSeqPreprocessor};
   my $class = $self->{bioperlSeqPreprocessor}->{class};
-  my $method = "preprocessBioperlSeq";
-  eval "{require $class; ${class}::$method($bioperlSeq)}";
+
+  eval {
+    no strict "refs";
+    eval "require $class";
+    my $method = "${class}::preprocess";
+    &$method($bioperlSeq);
+  };
+
   my $err = $@;
-  if ($err) { die "Can't run bioperlSeq preprocessor method '${class}::$method'.  Error:\n $err\n"; }
+  if ($err) { die "Can't run bioperlSeq preprocessor method '${class}::preprocess'.  Error:\n $err\n"; }
+}
+
+sub getGusSkeletonMakerClassName {
+  my ($self) = @_;
+  return $self->{gusSkeletonMaker}->{class};
 }
 
 # Static method
@@ -78,8 +89,13 @@ sub _parseMapFile {
 			    KeyAttr => {});
   my $mapperSet = $data->{feature};
   $self->{qualifierHandlersList} = $data->{specialCaseQualifierHandler};
+
   if($data->{bioperlSeqPreprocessor}){
     ($self->{bioperlSeqPreprocessor}) = @{$data->{bioperlSeqPreprocessor}};
+  }
+
+  if($data->{gusSkeletonMaker}){
+    ($self->{gusSkeletonMaker}) = @{$data->{gusSkeletonMaker}};
   }
 
   foreach my $feature (@{$mapperSet}) {
