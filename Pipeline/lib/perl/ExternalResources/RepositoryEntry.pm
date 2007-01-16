@@ -44,7 +44,7 @@ sub new {
   $self->{storageManager} = _makeStorageManager($repositoryLocation);
   $self->{resource} = $resource;
   $self->{resourceDir} = $self->{resource};
-  $self->{version} = $self->_findVersion($version, $self->{resourceDir});
+  $self->{version} = $self->_findVersion($version, $self->{resourceDir}, $resource);
   $self->{versionDir} = "$self->{resourceDir}/$self->{version}";
   $self->{logFile} = $logFile;
 
@@ -421,7 +421,7 @@ sub _log {
 }
 
 sub _findVersion {
-  my ($self, $requestedVersion, $resourceDir) = @_;
+  my ($self, $requestedVersion, $resourceDir, $resource) = @_;
 
   my $version = $requestedVersion;
 
@@ -469,7 +469,7 @@ sub _findVersion {
       && $requestedVersion !~ /\d+\.\d+\.\d+/
       && $requestedVersion !~ /\d+\.\d+\.\d+\.\d+/) {
 
-    die "Invalid version number '$requestedVersion'\n";
+    die "Invalid version number '$requestedVersion' for '$resource'";
   }
   return $version;
 }
