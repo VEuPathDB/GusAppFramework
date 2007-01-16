@@ -150,7 +150,12 @@ sub run{
 sub undoFeatures{
    my ($self) = @_;
 
-   $self->undoSpecialCaseQualifiers();
+  my $mapperSet = 
+    GUS::Supported::BioperlFeatMapperSet->new($self->getArg('mapFile'));
+
+   $self->undoSpecialCaseQualifiers($mapperSet);
+
+   $self->undoFeatureSkeleton($mapperSet);
 
    $self->_deleteFromTable('DoTS.NALocation');
 
@@ -175,14 +180,32 @@ WHERE row_alg_invocation_id IN ($algoInvocIds)";
 }
 
 sub undoSpecialCaseQualifiers{
-  my ($self) = @_;
-
-  my $mapperSet = GUS::Supported::BioperlFeatMapperSet->new($self->getArg('mapFile'));
+  my ($self, $mapperSet) = @_;
 
   my @handlers = $mapperSet->getAllHandlers();
   foreach my $handler (@handlers){
     no strict 'refs';
     $handler->undoAll($self->{'algInvocationIds'}, $self->{'dbh'});
+  }
+}
+
+sub undoFeatureSkeleton {
+  my ($self, $mapperSet) = @_;
+
+  my $gusSkeletonMakerClassName = $mapperSet->getGusSkeletonMakerClassName();
+
+  if ($gusSkeletonMakerClassName) {
+    eval {
+      no strict "refs";
+      eval "require $gusSkeletonMakerClassName";
+      my $method = "${gusSkeletonMakerClassName}::undoTables";
+      my @tableNames = &$method();
+      foreach my $tableName (@tableNames) {
+	deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'});
+      }
+    };
+    my $err = $@;
+    if ($err) { die "Can't run skeleton undoTables method '${gusSkeletonMakerClassName}::undoTables'.  Error:\n $err\n"; }
   }
 }
 

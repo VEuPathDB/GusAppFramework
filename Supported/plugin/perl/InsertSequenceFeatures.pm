@@ -8,6 +8,7 @@ package GUS::Supported::Plugin::InsertSequenceFeatures;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;
+use Data::Dumper;
 
 use Bio::SeqIO;
 use Bio::Tools::SeqStats;
@@ -358,10 +359,7 @@ sub run {
 
       $seqCount++;
 
-      $self->unflatten($bioperlSeq) 
-	unless ($self->getArg("fileFormat") =~ m/^gff\d$/i);
-
-      $self->{mapperSet}->preprocessBioperlSeq($bioperlSeq);
+      $self->{mapperSet}->preprocessBioperlSeq($bioperlSeq, $self);
 
       $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId);
 
@@ -378,16 +376,6 @@ sub run {
 
   my $fileOrDir = $self->getArg('inputFileOrDir');
   $self->setResultDescr("Processed $fileCount files from $fileOrDir: $format \n\t Total Seqs $action: $totalSeqCount \n\t Total Features Inserted: $self->{totalFeatureCount} \n\t Total Feature Trees Inserted: $self->{totalFeatureTreeCount}");
-}
-
-sub unflatten {
-  my ($self, $seq) = @_;
-
-  my $unflattener =
-    $self->{_unflattener} ||= Bio::SeqFeature::Tools::Unflattener->new();
-
-  $unflattener->unflatten_seq(-seq => $seq,
-			      -use_magic => 1);
 }
 
 sub getInputFiles {
@@ -752,15 +740,19 @@ sub addKeywords {
 sub processFeatureTrees {
   my ($self, $bioperlSeq, $naSequenceId, $dbRlsId) = @_;
 
-
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
-    if ($self->getArg('makeSourceids')) {
-       $self->incrementSourceId();
-    }
-    my $NAFeature = $self->makeFeature($bioperlFeatureTree, $naSequenceId, $dbRlsId);
-    if (!$NAFeature) {
-      next;
-    }
+    $self->defaultPrintFeatureTree($bioperlFeatureTree, "");
+
+    # traverse bioperl tree to make gus skeleton (linked to bioperl objects)
+    my $NAFeature =
+      $self->makeGusFeatureSkeleton($bioperlFeatureTree, $bioperlSeq,
+				    $naSequenceId, $dbRlsId);
+
+    next unless $NAFeature;    # if we're supposed to ignore this type of feat
+
+    # traverse bioperl tree again, applying qualifiers to the gus skeleton
+    $self->applyQualifiers($bioperlFeatureTree);
+
     $NAFeature->submit();
     $self->{fileFeatureTreeCount}++;
     $self->{totalFeatureTreeCount}++;
@@ -771,36 +763,10 @@ sub processFeatureTrees {
   }
 }
 
-sub makeFeature {
-  my ($self, $bioperlFeature, $naSequenceId, $dbRlsId) = @_; 
-
-
-  # there is an error in the bioperl unflattener such that there may be
-  # exon-less rRNAs (eg, in C.parvum short contigs containing only rRNAs)
-  # this method has extra logic to compensate for that problem.
-
-  # map the immediate bioperl feature into a gus feature
-  my $feature = $self->makeImmediateFeature($bioperlFeature, $naSequenceId, $dbRlsId);
-
-  if ($feature) {
-    # call method to handle unflattener error of giving rRNAs no exon.
-    $self->handleExonlessRRNA($bioperlFeature, $feature,$naSequenceId, $dbRlsId);
-
-    # recurse through the children
-    foreach my $bioperlChildFeature ($bioperlFeature->get_SeqFeatures()) {
-      my $childFeature =
-	$self->makeFeature($bioperlChildFeature, $naSequenceId, $dbRlsId);
-
-      if ($childFeature) { $feature->addChild($childFeature); }
-    }
-  }
-  return $feature;
-}
-
-# make a feature itself without worrying about its children
-sub makeImmediateFeature {
-  my ($self, $bioperlFeature, $naSequenceId, $dbRlsId) = @_;
-
+# make the gus feature tree in skeletal form, ie, with only the parent-child
+# relations set, not attributes
+sub makeGusFeatureSkeleton {
+  my ($self, $bioperlFeature, $bioperlSeq,  $naSequenceId, $dbRlsId) = @_;
 
   my $tag = $bioperlFeature->primary_tag();
 
@@ -808,39 +774,100 @@ sub makeImmediateFeature {
 
   return undef if $featureMapper->ignoreFeature();
 
+  my $gusSkeletonMakerClassName
+    = $self->{mapperSet}->getGusSkeletonMakerClassName();
+
+  my $gusSkeleton;
+  if ($gusSkeletonMakerClassName) {
+    eval {
+      no strict "refs";
+      eval "require $gusSkeletonMakerClassName";
+      my $method = "${gusSkeletonMakerClassName}::makeGusSkeleton";
+      my $taxonId = $self->getTaxonId($bioperlSeq);
+      $gusSkeleton =
+	&$method($self, $bioperlFeature, $naSequenceId, $dbRlsId, $taxonId);
+    };
+
+    my $err = $@;
+    if ($err) { die "Can't run gus skeleton maker method '${gusSkeletonMakerClassName}::makeGusSkeleton'.  Error:\n $err\n"; }
+  } else {
+    $gusSkeleton = 
+      $self->defaultGusSkeletonMaker($bioperlFeature, $naSequenceId, $dbRlsId);
+  }
+  return $gusSkeleton;
+}
+
+sub defaultGusSkeletonMaker {
+  my ($self, $bioperlFeature, $naSequenceId, $dbRlsId) = @_; 
+
+  my $tag = $bioperlFeature->primary_tag();
+
+  my $featureMapper = $self->{mapperSet}->getMapperByFeatureName($tag);
+
   my $gusObjName = $featureMapper->getGusObjectName();
+
+  return undef if $featureMapper->ignoreFeature();
+
+  my $soTerm = $featureMapper->getSoTerm();
+
+  my $feature = $self->makeSkeletalGusFeature($bioperlFeature, $naSequenceId,
+					      $dbRlsId, $gusObjName, $soTerm);
+  $bioperlFeature->{gusFeature} = $feature;
+
+  if ($feature) {
+    # recurse through the children
+    foreach my $bioperlChildFeature ($bioperlFeature->get_SeqFeatures()) {
+      my $childFeature = $self->defaultGusSkeletonMaker($bioperlChildFeature,
+							$naSequenceId,
+							$dbRlsId);
+
+      if ($childFeature) { $feature->addChild($childFeature); }
+    }
+  }
+  return $feature;
+}
+
+# make a bare bones gus feature object, setting only its absolute minimum state
+sub makeSkeletalGusFeature {
+  my ($self, $bioperlFeature, $naSequenceId, $dbRlsId, $gusObjName, $soTerm) = @_;
 
   my $feature = eval "{require $gusObjName; $gusObjName->new()}";
 
-  if ($self->getArg('makeSourceids')) {
-     my $sourceId = $self->makeSourceId();
-     $feature->setSourceId($sourceId);
-  }
-
   $feature->setNaSequenceId($naSequenceId);
-  $feature->setName($bioperlFeature->primary_tag());
   $feature->setExternalDatabaseReleaseId($dbRlsId);
 
-  my $soTerm = $featureMapper->getSoTerm();
+  $bioperlFeature->{gusFeature} = $feature;
+
   if ($soTerm) {
     $feature->setSequenceOntologyId($self->getSOPrimaryKey($soTerm));
+    $feature->setName($bioperlFeature->primary_tag());
+  } else {
+    $feature->setName($bioperlFeature->primary_tag());
   }
   $feature->addChild($self->makeLocation($bioperlFeature->location(),
 					 $bioperlFeature->strand()));
+  #  $feature->submit();
+  return $feature;
+}
 
-  $feature->submit();
+sub applyQualifiers {
+  my ($self, $bioperlFeature) = @_;
+
+  my $tag = $bioperlFeature->primary_tag();
+
+  my $featureMapper = $self->{mapperSet}->getMapperByFeatureName($tag);
 
   my @sortedTags = $featureMapper->sortTags($bioperlFeature->get_all_tags());
   foreach my $tag (@sortedTags) {
-    my $ignoreFeature = $self->handleFeatureTag($bioperlFeature,
-						$featureMapper,
-						$feature, $tag);
-    return undef if $ignoreFeature;
+    my $gusFeature = $bioperlFeature->{gusFeature};
+    $self->handleFeatureTag($bioperlFeature, $featureMapper, $gusFeature,$tag);
   }
 
+  foreach my $bioperlChildFeature ($bioperlFeature->get_SeqFeatures()) {
+    $self->applyQualifiers($bioperlChildFeature);
+  }
   $self->{fileFeatureCount}++;
   $self->{totalFeatureCount}++;
-  return $feature;
 }
 
 sub makeLocation {
@@ -912,7 +939,6 @@ sub getSeqTypeId {
 			       'GUS::Model::DoTS::SequenceType',
 			       "name",
 			      );
-
 }
 
 sub getTaxonId {
@@ -1013,27 +1039,35 @@ sub handleExonlessRRNA {
   }
 }
 
+# inidvidual preprocessors can provide their own printer.  use this if none
+sub defaultPrintFeatureTree {
+  my ($self, $bioperlFeatureTree, $indent) = @_;
 
+  print "\n" unless $indent;
+  my $type = $bioperlFeatureTree->primary_tag();
+  print "$indent < $type >\n";
+  my @locations = $bioperlFeatureTree->location()->each_Location();
+  foreach my $location (@locations) {
+    my $seqId =  $location->seq_id();
+    my $start = $location->start();
+    my $end = $location->end();
+    my $strand = $location->strand();
+    print "$indent $seqId $start-$end strand:$strand\n";
+  }
+  my @tags = $bioperlFeatureTree->get_all_tags();
+  foreach my $tag (@tags) {
+    my @annotations = $bioperlFeatureTree->get_tag_values($tag);
+    foreach my $annotation (@annotations) {
+      if (length($annotation) > 50) {
+	$annotation = substr($annotation, 0, 50) . "...";
+      }
+      print "$indent $tag: $annotation\n";
+    }
+  }
 
-sub incrementSourceId {
-   my $self = shift;
-
-     my $sourceId = $self->{'makesourceid'};
-     my $newId = ($sourceId + 10);
-     $self->{'makesourceid'} = $newId ;
-
-return 1;
-}
-
-
-sub makeSourceId {
-   my $self = shift;
-
-     my $sourceVal = $self->{'makesourceid'};
-     my $sourceTxt = $self->getArg('makeSourceids');
-     my $sourceId = $sourceTxt . "_" . $sourceVal;
-
-return $sourceId;
+  foreach my $bioperlChildFeature ($bioperlFeatureTree->get_SeqFeatures()) {
+    $self->defaultPrintFeatureTree($bioperlChildFeature, "  $indent");
+  }
 }
 
 ##############################################################################
@@ -1096,6 +1130,8 @@ where so_cvs_version = '$soCvsVersion'
     my $mappingFile = $self->getArg('mapFile');
     (scalar(@badSoTerms) == 0) or $self->userError("Mapping file '$mappingFile' or cmd line args are using the following SO terms that are not found in the database for SO CVS version '$soCvsVersion': " . join(", ", @badSoTerms));
   }
+  $self->error("Can't find primary key for SO term '$soTerm'")
+    unless $self->{soPrimaryKeys}->{$soTerm};
   return $self->{soPrimaryKeys}->{$soTerm};
 }
 

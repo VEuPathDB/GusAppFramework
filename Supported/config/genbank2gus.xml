@@ -1,5 +1,8 @@
 <mapping>
 
+  <bioperlSeqPreprocessor
+           class="GUS::Supported::UnflattenBioperlFeatures"/>
+
   <specialCaseQualifierHandler name="standard" 
            class="GUS::Supported::SpecialCaseQualifierHandlers"/>
 
