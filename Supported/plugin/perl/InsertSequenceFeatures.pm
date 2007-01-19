@@ -741,7 +741,8 @@ sub processFeatureTrees {
   my ($self, $bioperlSeq, $naSequenceId, $dbRlsId) = @_;
 
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
-    $self->defaultPrintFeatureTree($bioperlFeatureTree, "");
+
+    $self->defaultPrintFeatureTree($bioperlFeatureTree, "") if($self->getArg('debug'));
 
     # traverse bioperl tree to make gus skeleton (linked to bioperl objects)
     my $NAFeature =
@@ -774,11 +775,17 @@ sub makeGusFeatureSkeleton {
 
   return undef if $featureMapper->ignoreFeature();
 
+  my $tableName = $featureMapper->getGusTable();
+
   my $gusSkeletonMakerClassName
     = $self->{mapperSet}->getGusSkeletonMakerClassName();
 
   my $gusSkeleton;
-  if ($gusSkeletonMakerClassName) {
+
+  if ($tableName) {
+    $gusSkeleton = $self->defaultGusSkeletonMaker($bioperlFeature, $naSequenceId, $dbRlsId);
+  }
+  else {
     eval {
       no strict "refs";
       eval "require $gusSkeletonMakerClassName";
@@ -790,10 +797,8 @@ sub makeGusFeatureSkeleton {
 
     my $err = $@;
     if ($err) { die "Can't run gus skeleton maker method '${gusSkeletonMakerClassName}::makeGusSkeleton'.  Error:\n $err\n"; }
-  } else {
-    $gusSkeleton = 
-      $self->defaultGusSkeletonMaker($bioperlFeature, $naSequenceId, $dbRlsId);
   }
+
   return $gusSkeleton;
 }
 
