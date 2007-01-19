@@ -3,6 +3,7 @@ rel GUS::Model::DoTS::AssemblySequence GUS::Model::DoTS::Assembly assembly_na_se
 rel GUS::Model::DoTS::AssemblySequence GUS::Model::DoTS::ExternalNASequence na_sequence_id na_sequence_id
 rel GUS::Model::DoTS::SequencePiece GUS::Model::DoTS::VirtualSequence virtual_na_sequence_id na_sequence_id
 rel GUS::Model::DoTS::SequencePiece GUS::Model::DoTS::NASequence piece_na_sequence_id na_sequence_id
+rel GUS::Model::DoTS::RNAFeatureExon GUS::Model::DoTS::Transcript rna_feature_id na_feature_id
 rel GUS::Model::DoTS::RNAFeatureExon GUS::Model::DoTS::RNAFeature rna_feature_id na_feature_id
 rel GUS::Model::DoTS::RNAFeatureExon GUS::Model::DoTS::ExonFeature exon_feature_id na_feature_id
 rel GUS::Model::Core::UserGroup GUS::Model::Core::UserInfo user_id user_id
