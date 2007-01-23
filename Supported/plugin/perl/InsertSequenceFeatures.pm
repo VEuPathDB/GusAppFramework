@@ -297,6 +297,15 @@ my $argsDeclaration  =
 	       isList => 0
 	      }),
 
+   enumArg({name => 'printBioperlTrees',
+	    descr => 'print Bioperl trees (after reshaping).  if "only", do not write to db',
+	    constraintFunc=> undef,
+            reqd  => 0,
+            isList => 0,
+            default => 0,
+	    enum => "no, yes, only",
+           }),
+
   ];
 
 
@@ -742,7 +751,12 @@ sub processFeatureTrees {
 
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
 
-    $self->defaultPrintFeatureTree($bioperlFeatureTree, "") if($self->getArg('debug'));
+    my $printBioperlTrees = $self->getArg('printBioperlTrees');
+
+    $self->defaultPrintFeatureTree($bioperlFeatureTree, "")
+      if $printBioperlTrees ne 'no';
+
+    next if $printBioperlTrees eq 'only';
 
     # traverse bioperl tree to make gus skeleton (linked to bioperl objects)
     my $NAFeature =
