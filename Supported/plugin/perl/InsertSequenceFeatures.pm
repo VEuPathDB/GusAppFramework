@@ -766,7 +766,9 @@ sub processFeatureTrees {
     next unless $NAFeature;    # if we're supposed to ignore this type of feat
 
     # traverse bioperl tree again, applying qualifiers to the gus skeleton
-    $self->applyQualifiers($bioperlFeatureTree);
+    my $ignoreFeature = $self->applyQualifiers($bioperlFeatureTree);
+
+    next if $ignoreFeature;
 
     $NAFeature->submit();
     $self->{fileFeatureTreeCount}++;
@@ -869,6 +871,7 @@ sub makeSkeletalGusFeature {
   return $feature;
 }
 
+# return 1 if we should ignore the whole feature
 sub applyQualifiers {
   my ($self, $bioperlFeature) = @_;
 
@@ -877,9 +880,12 @@ sub applyQualifiers {
   my $featureMapper = $self->{mapperSet}->getMapperByFeatureName($tag);
 
   my @sortedTags = $featureMapper->sortTags($bioperlFeature->get_all_tags());
+  my $ignoreFeature;
   foreach my $tag (@sortedTags) {
     my $gusFeature = $bioperlFeature->{gusFeature};
-    $self->handleFeatureTag($bioperlFeature, $featureMapper, $gusFeature,$tag);
+    my $ignoreFeature =
+      $self->handleFeatureTag($bioperlFeature, $featureMapper, $gusFeature,$tag);
+    return 1 if $ignoreFeature;
   }
 
   foreach my $bioperlChildFeature ($bioperlFeature->get_SeqFeatures()) {
@@ -887,6 +893,7 @@ sub applyQualifiers {
   }
   $self->{fileFeatureCount}++;
   $self->{totalFeatureCount}++;
+  return 0;
 }
 
 sub makeLocation {
