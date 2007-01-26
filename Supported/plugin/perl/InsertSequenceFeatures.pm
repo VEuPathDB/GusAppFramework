@@ -755,7 +755,7 @@ sub processFeatureTrees {
 
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
 
-    $self->defaultPrintFeatureTree($btFh, $bioperlTreeFile, "");
+    $self->defaultPrintFeatureTree($btFh, $bioperlFeatureTree, "");
 
     # traverse bioperl tree to make gus skeleton (linked to bioperl objects)
     my $NAFeature =
@@ -1070,16 +1070,16 @@ sub defaultPrintFeatureTree {
 
   return unless $btFh;
 
-  print $btFh "\n" unless $indent;
+  $btFh->print("\n") unless $indent;
   my $type = $bioperlFeatureTree->primary_tag();
-  print $btFh "$indent < $type >\n";
+  $btFh->print("$indent< $type >\n");
   my @locations = $bioperlFeatureTree->location()->each_Location();
   foreach my $location (@locations) {
     my $seqId =  $location->seq_id();
     my $start = $location->start();
     my $end = $location->end();
     my $strand = $location->strand();
-    print $btFh "$indent $seqId $start-$end strand:$strand\n";
+    $btFh->print("$indent$seqId $start-$end strand:$strand\n");
   }
   my @tags = $bioperlFeatureTree->get_all_tags();
   foreach my $tag (@tags) {
@@ -1088,12 +1088,12 @@ sub defaultPrintFeatureTree {
       if (length($annotation) > 50) {
 	$annotation = substr($annotation, 0, 50) . "...";
       }
-      print $btFh "$indent $tag: $annotation\n";
+      $btFh->print("$indent$tag: $annotation\n");
     }
   }
 
   foreach my $bioperlChildFeature ($bioperlFeatureTree->get_SeqFeatures()) {
-    $self->defaultPrintFeatureTree($bioperlChildFeature, "  $indent");
+    $self->defaultPrintFeatureTree($btFh, $bioperlChildFeature, "  $indent");
   }
 }
 
