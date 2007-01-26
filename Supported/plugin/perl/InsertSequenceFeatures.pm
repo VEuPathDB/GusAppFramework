@@ -9,6 +9,7 @@ package GUS::Supported::Plugin::InsertSequenceFeatures;
 
 use strict;
 use Data::Dumper;
+use FileHandle;
 
 use Bio::SeqIO;
 use Bio::Tools::SeqStats;
@@ -290,13 +291,14 @@ my $argsDeclaration  =
 	       isList => 0
 	      }),
 
-   enumArg({name => 'printBioperlTrees',
-	    descr => 'print Bioperl trees (after reshaping).  if "only", do not write to db',
+   fileArg({name => 'bioperlTreeOutput',
+	    descr => 'print Bioperl trees (after reshaping) to this file',
 	    constraintFunc=> undef,
             reqd  => 0,
             isList => 0,
             default => 0,
-	    enum => "no, yes, only",
+	    mustExist => 0,
+	    format=>'XML'
            }),
 
   ];
@@ -742,14 +744,18 @@ sub addKeywords {
 sub processFeatureTrees {
   my ($self, $bioperlSeq, $naSequenceId, $dbRlsId) = @_;
 
+  my $bioperlTreeFile = $self->getArg('bioperlTreeOutput');
+
+  my $btFh;
+  if ($bioperlTreeFile) {
+    $btFh = FileHandle->new();
+    $btFh->open(">$bioperlTreeFile")
+      || die "can't open bioperlTreeFile '$bioperlTreeFile'";
+  }
+
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
 
-    my $printBioperlTrees = $self->getArg('printBioperlTrees');
-
-    $self->defaultPrintFeatureTree($bioperlFeatureTree, "")
-      if $printBioperlTrees ne 'no';
-
-    next if $printBioperlTrees eq 'only';
+    $self->defaultPrintFeatureTree($btFh, $bioperlTreeFile, "");
 
     # traverse bioperl tree to make gus skeleton (linked to bioperl objects)
     my $NAFeature =
@@ -1060,18 +1066,20 @@ sub handleExonlessRRNA {
 
 # inidvidual preprocessors can provide their own printer.  use this if none
 sub defaultPrintFeatureTree {
-  my ($self, $bioperlFeatureTree, $indent) = @_;
+  my ($self, $btFh, $bioperlFeatureTree, $indent) = @_;
 
-  print STDERR "\n" unless $indent;
+  return unless $btFh;
+
+  print $btFh "\n" unless $indent;
   my $type = $bioperlFeatureTree->primary_tag();
-  print STDERR"BFT$indent < $type >\n";
+  print $btFh "$indent < $type >\n";
   my @locations = $bioperlFeatureTree->location()->each_Location();
   foreach my $location (@locations) {
     my $seqId =  $location->seq_id();
     my $start = $location->start();
     my $end = $location->end();
     my $strand = $location->strand();
-    print STDERR "BFT$indent $seqId $start-$end strand:$strand\n";
+    print $btFh "$indent $seqId $start-$end strand:$strand\n";
   }
   my @tags = $bioperlFeatureTree->get_all_tags();
   foreach my $tag (@tags) {
@@ -1080,7 +1088,7 @@ sub defaultPrintFeatureTree {
       if (length($annotation) > 50) {
 	$annotation = substr($annotation, 0, 50) . "...";
       }
-      print "BFT$indent $tag: $annotation\n";
+      print $btFh "$indent $tag: $annotation\n";
     }
   }
 
