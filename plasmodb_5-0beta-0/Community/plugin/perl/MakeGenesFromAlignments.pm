@@ -69,7 +69,7 @@ sub new {
     bless($self,$class);
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 5297 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 5298 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -169,6 +169,8 @@ SQL
 	      });
 	$geneFeature->addChild($geneLocation);
 	$geneFeature->submit();
+
+	$self->undefPointerCache();
     }
 
     return "MakeGenesFromAlignments completed";
