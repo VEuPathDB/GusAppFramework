@@ -225,13 +225,6 @@ my $argsDeclaration  =
 	      isList => 0
 	     }),
 
-   stringArg({name => 'makeSourceids',
-	      descr => 'If this field is used, the plugin will create source_ids for entry into the GUS features tables.  The source_id will be a combination of the letters following the flag and a numbers in increments of 10.',
-	      constraintFunc=> undef,
-	      reqd  => 0,
-	      isList => 0
-	     }),
-
    stringArg({name => 'gff2GroupTag',
 	      descr => 'Name of the tag to be used for GFF2 grouping',
 	      constraintFunc=> undef,
@@ -1069,16 +1062,16 @@ sub handleExonlessRRNA {
 sub defaultPrintFeatureTree {
   my ($self, $bioperlFeatureTree, $indent) = @_;
 
-  print "\n" unless $indent;
+  print STDERR "\n" unless $indent;
   my $type = $bioperlFeatureTree->primary_tag();
-  print "$indent < $type >\n";
+  print STDERR"BFT$indent < $type >\n";
   my @locations = $bioperlFeatureTree->location()->each_Location();
   foreach my $location (@locations) {
     my $seqId =  $location->seq_id();
     my $start = $location->start();
     my $end = $location->end();
     my $strand = $location->strand();
-    print "$indent $seqId $start-$end strand:$strand\n";
+    print STDERR "BFT$indent $seqId $start-$end strand:$strand\n";
   }
   my @tags = $bioperlFeatureTree->get_all_tags();
   foreach my $tag (@tags) {
@@ -1087,7 +1080,7 @@ sub defaultPrintFeatureTree {
       if (length($annotation) > 50) {
 	$annotation = substr($annotation, 0, 50) . "...";
       }
-      print "$indent $tag: $annotation\n";
+      print "BFT$indent $tag: $annotation\n";
     }
   }
 
