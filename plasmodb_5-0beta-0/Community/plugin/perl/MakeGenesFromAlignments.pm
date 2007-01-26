@@ -69,7 +69,7 @@ sub new {
     bless($self,$class);
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 5295 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 5296 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -101,7 +101,7 @@ SQL
 
     my $sth = $self->prepareAndExecute($sql);
     while (my ($sourceId, $product, $label, $dbRlsId, $naSequenceId, $tStarts,
-               $blockSizes, $isReversed, $numberOfExons)
+               $blockSizes, $score, $isReversed, $numberOfExons)
               = $sth->fetchrow_array()) {
 
 	my $geneFeature = GUS::Model::DoTS::GeneFeature->
@@ -115,13 +115,15 @@ SQL
 
 	my $exonsMade = 0;
 	my @starts = split(chop($tStarts), ',');
-	foreach my $blockSize ( split(chop($blockSizes), ',')) {
+	chop($blockSizes);
+	foreach my $blockSize ( split($blockSizes, ',')) {
 	    $exonsMade++;
 	    my $start = pop(@starts);
 
 	    my $exonFeature = GUS::Model::DoTS::ExonFeature->
 		new({ source_id => $sourceId,
 		      na_sequence_id => $naSequenceId,
+		      name => 'exon',
 		      external_database_release_id => $dbRlsId,
 		  });
 
@@ -139,6 +141,8 @@ SQL
 
 	    $geneEnd = $start + $blockSize;
 	}
+	print "ERROR: $numberOfExons in DB, $exonsMade calculated for gene $sourceId\n"
+	    if ($numberOfExons != $exonsMade);
 
 	my $geneLocation = GUS::Model::DoTS::NALocation->
 	    new({ start_min => $starts[0],
