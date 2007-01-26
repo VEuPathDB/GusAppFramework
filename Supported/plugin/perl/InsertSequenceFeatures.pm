@@ -348,6 +348,8 @@ sub run {
 
   my @inputFiles = $self->getInputFiles();
 
+  my $btFh = $self->openBioperlTreeFile();
+
   foreach my $inputFile (@inputFiles) {
     $self->{fileFeatureCount} = 0;
     $self->{fileFeatureTreeCount} = 0;
@@ -365,7 +367,7 @@ sub run {
 
       $self->{mapperSet}->preprocessBioperlSeq($bioperlSeq, $self);
 
-      $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId);
+      $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh);
 
       $self->undefPointerCache();
 
@@ -380,6 +382,19 @@ sub run {
 
   my $fileOrDir = $self->getArg('inputFileOrDir');
   $self->setResultDescr("Processed $fileCount files from $fileOrDir: $format \n\t Total Seqs $action: $totalSeqCount \n\t Total Features Inserted: $self->{totalFeatureCount} \n\t Total Feature Trees Inserted: $self->{totalFeatureTreeCount}");
+}
+
+sub openBioperlTreeFile {
+  my ($self) = @_;
+
+  my $bioperlTreeFile = $self->getArg('bioperlTreeOutput');
+  my $btFh;
+  if ($bioperlTreeFile) {
+    $btFh = FileHandle->new();
+    $btFh->open(">$bioperlTreeFile")
+      || die "can't open bioperlTreeFile '$bioperlTreeFile'";
+  }
+  return $btFh;
 }
 
 sub getInputFiles {
@@ -742,16 +757,7 @@ sub addKeywords {
 ###########################################################################
 
 sub processFeatureTrees {
-  my ($self, $bioperlSeq, $naSequenceId, $dbRlsId) = @_;
-
-  my $bioperlTreeFile = $self->getArg('bioperlTreeOutput');
-
-  my $btFh;
-  if ($bioperlTreeFile) {
-    $btFh = FileHandle->new();
-    $btFh->open(">$bioperlTreeFile")
-      || die "can't open bioperlTreeFile '$bioperlTreeFile'";
-  }
+  my ($self, $bioperlSeq, $naSequenceId, $dbRlsId, $btFh) = @_;
 
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
 
