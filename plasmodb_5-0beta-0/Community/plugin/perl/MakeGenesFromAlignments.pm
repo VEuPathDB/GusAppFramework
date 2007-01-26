@@ -69,7 +69,7 @@ sub new {
     bless($self,$class);
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 5296 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 5297 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -94,10 +94,25 @@ SELECT query.source_id, query.description, query.secondary_identifier,
 FROM dots.ExternalNaSequence query, dots.BlatAlignment ba, core.TableInfo ti
 WHERE query.source_id NOT IN (SELECT source_id from dots.GeneFeature)
   AND ba.query_na_sequence_id = query.na_sequence_id
+  AND ba.is_best_alignment = 1
   AND ba.query_table_id = ti.table_id
   AND ba.target_table_id = ti.table_id
   AND ti.name = 'ExternalNASequence'
 SQL
+
+# for debugging
+#    $sql = <<SQL;
+#SELECT query.source_id, query.description, query.secondary_identifier,
+#       query.external_database_release_id, ba.target_na_sequence_id,
+#       ba.tstarts, ba.blocksizes, ba.score, ba.is_reversed, ba.number_of_spans
+#FROM dots.ExternalNaSequence query, dots.BlatAlignment ba, core.TableInfo ti
+#WHERE query.source_id = 'TP04_0461'
+#  AND ba.query_na_sequence_id = query.na_sequence_id
+#  AND ba.is_best_alignment = 1
+#  AND ba.query_table_id = ti.table_id
+#  AND ba.target_table_id = ti.table_id
+#  AND ti.name = 'ExternalNASequence'
+# SQL
 
     my $sth = $self->prepareAndExecute($sql);
     while (my ($sourceId, $product, $label, $dbRlsId, $naSequenceId, $tStarts,
@@ -114,9 +129,10 @@ SQL
 		  });
 
 	my $exonsMade = 0;
-	my @starts = split(chop($tStarts), ',');
+	my @starts = split(',', chop($tStarts));
 	chop($blockSizes);
-	foreach my $blockSize ( split($blockSizes, ',')) {
+	my @blocks = split(',', $blockSizes);
+	foreach my $blockSize (@blocks) {
 	    $exonsMade++;
 	    my $start = pop(@starts);
 
