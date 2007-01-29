@@ -69,7 +69,7 @@ sub new {
     bless($self,$class);
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 5298 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 5300 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -85,7 +85,7 @@ sub new {
 sub run {
     my $self = shift;
     my ($geneCount, $exonCount);
-    my $geneEnd;
+    my ($geneEnd, $geneStart);
 
     my $sql = <<SQL;
 SELECT query.source_id, query.description, query.secondary_identifier,
@@ -112,7 +112,7 @@ SQL
 #  AND ba.query_table_id = ti.table_id
 #  AND ba.target_table_id = ti.table_id
 #  AND ti.name = 'ExternalNASequence'
-# SQL
+#SQL
 
     my $sth = $self->prepareAndExecute($sql);
     while (my ($sourceId, $product, $label, $dbRlsId, $naSequenceId, $tStarts,
@@ -129,7 +129,10 @@ SQL
 		  });
 
 	my $exonsMade = 0;
-	my @starts = split(',', chop($tStarts));
+        chop($tStarts);
+	my @starts = split(',', $tStarts);
+	$geneStart = $starts[0];
+
 	chop($blockSizes);
 	my @blocks = split(',', $blockSizes);
 	foreach my $blockSize (@blocks) {
@@ -147,12 +150,12 @@ SQL
 		new({ start_min => $start,
                       start_max => $start,
                       end_min => $start + $blockSize,
-                      end_min => $start + $blockSize,
+                      end_max => $start + $blockSize,
 		      is_reversed => $isReversed,
 		  });
 
 	    $exonFeature->addChild($exonLocation);
-	    $exonFeature->submit();
+# can the gene submit do it all?	    $exonFeature->submit();
 	    $geneFeature->addChild($exonFeature);
 
 	    $geneEnd = $start + $blockSize;
@@ -161,10 +164,10 @@ SQL
 	    if ($numberOfExons != $exonsMade);
 
 	my $geneLocation = GUS::Model::DoTS::NALocation->
-	    new({ start_min => $starts[0],
-		  start_max => $starts[0],
+	    new({ start_min => $geneStart,
+		  start_max => $geneStart,
 		  end_min => $geneEnd,
-		  end_min => $geneEnd,
+		  end_max => $geneEnd,
 		  is_reversed => $isReversed,
 	      });
 	$geneFeature->addChild($geneLocation);
