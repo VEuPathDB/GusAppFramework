@@ -69,7 +69,7 @@ sub new {
     bless($self,$class);
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 5307 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 5310 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -149,8 +149,8 @@ SQL
 	    my $exonLocation = GUS::Model::DoTS::NALocation->
 		new({ start_min => $start,
                       start_max => $start,
-                      end_min => $start + $blockSize,
-                      end_max => $start + $blockSize,
+                      end_min => $start + $blockSize - 1,
+                      end_max => $start + $blockSize - 1,
 		      is_reversed => $isReversed,
 		  });
 
@@ -158,7 +158,7 @@ SQL
 # can the gene submit do it all?	    $exonFeature->submit();
 	    $geneFeature->addChild($exonFeature);
 
-	    $geneEnd = $start + $blockSize;
+	    $geneEnd = $start + $blockSize - 1;
 	}
 	print "ERROR: $numberOfExons in DB, $exonsMade calculated for gene $sourceId\n"
 	    if ($numberOfExons != $exonsMade);
