@@ -69,7 +69,7 @@ sub new {
     bless($self,$class);
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 5300 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 5307 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -137,7 +137,7 @@ SQL
 	my @blocks = split(',', $blockSizes);
 	foreach my $blockSize (@blocks) {
 	    $exonsMade++;
-	    my $start = pop(@starts);
+	    my $start = shift(@starts);
 
 	    my $exonFeature = GUS::Model::DoTS::ExonFeature->
 		new({ source_id => $sourceId,
