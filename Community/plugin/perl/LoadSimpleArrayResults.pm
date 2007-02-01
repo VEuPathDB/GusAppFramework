@@ -308,7 +308,15 @@ sub run {
   }
 
   if($M->getCla->{array_subclass_view} eq 'Spot'){
-	@positionList = ('array_row','array_column','grid_row','grid_column','sub_row','sub_column');
+    if( $M->getCla->{posOption} == 1){
+      @positionList = ('array_row','array_column','grid_row','grid_column','sub_row','sub_column');
+    }
+    if( $M->getCla->{posOption} == 2){
+      @positionList = ('name');
+    }
+    if( $M->getCla->{posOption} == 3){
+      $M->userError("posOption [3] Not Supported For 'Spot' Data");
+    }
   }
 
 
