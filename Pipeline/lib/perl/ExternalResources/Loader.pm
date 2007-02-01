@@ -40,6 +40,7 @@ sub run {
 
   # run cleanup commands, if any
   foreach my $cleanup (@{$self->{cleanups}}) {
+    next if ($cleanup =~ m/^\s*$/);
     $self->{manager}->log("Running cleanup command: '$cleanup'\n");
     system ($cleanup);
     if ($? >> 8){
@@ -88,7 +89,7 @@ sub _parseXmlFile {
   my $commit = $self->{manager}->{propertySet}->getProp('commit');
   my $dbCommit = $self->{manager}->{propertySet}->getProp('dbcommit');
   my $xmlString = $self->_substituteMacros();
-  my $xml = new XML::Simple;
+  my $xml = new XML::Simple(SuppressEmpty => undef);
   my $data = eval{ $xml->XMLin($xmlString) };
   die "$@\n$xmlString\n" if($@);
   print STDERR Dumper($data);
@@ -105,8 +106,8 @@ sub _parseXmlFile {
   }
 
   # handle cleanUps
-  $self->{cleanups} = ref($data->{cleanup}) eq 'ARRAY'?
-    $data->{cleanup} : [$data->{cleanup}];
+  $self->{cleanups} = ref($data->{cleanups}->{cleanup}) eq 'ARRAY'?
+    $data->{cleanups}->{cleanup} : [$data->{cleanups}->{cleanup}];
 }
 
 sub _processResource {
