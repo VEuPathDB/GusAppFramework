@@ -69,7 +69,7 @@ sub new {
     bless($self,$class);
 
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 5310 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 5311 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -143,6 +143,7 @@ SQL
 		new({ source_id => $sourceId,
 		      na_sequence_id => $naSequenceId,
 		      name => 'exon',
+		      score => $score,
 		      external_database_release_id => $dbRlsId,
 		  });
 
