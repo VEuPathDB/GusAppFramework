@@ -14,7 +14,6 @@ use FileHandle;
 use Bio::SeqIO;
 use Bio::Tools::SeqStats;
 use Bio::Tools::GFF;
-use Bio::SeqFeature::Tools::Unflattener;
 
 use GUS::PluginMgr::Plugin;
 use GUS::Supported::BioperlFeatMapperSet;
@@ -1048,27 +1047,6 @@ sub handleFeatureTag {
   return 0;
 }
 
-# compensate from error in unflattener that gives no exon to rRNAs sometimes
-sub handleExonlessRRNA {
-  my ($self, $bioperlFeature, $feature, $naSequenceId, $dbRlsId) = @_;
-
-  if ($bioperlFeature->primary_tag() eq 'rRNA'
-      && (scalar($bioperlFeature->get_SeqFeatures()) == 0)) {
-    my $location = $bioperlFeature->location();
-    my @locations = $location->each_Location();
-      foreach my $loc (@locations) {
-         my $exonFeature = GUS::Model::DoTS::ExonFeature->new();
-         $exonFeature->setNaSequenceId($naSequenceId);
-         $exonFeature->setExternalDatabaseReleaseId($dbRlsId);
-         $exonFeature->setName('Exon');
-         #$exonFeature->addChild($self->makeLocation($bioperlFeature->location(),
-         $exonFeature->addChild($self->makeLocation($loc,
-					            $bioperlFeature->strand()));
-         #exonFeature->setSequenceOntologyId();
-         $feature->addChild($exonFeature);
-      }
-  }
-}
 
 # inidvidual preprocessors can provide their own printer.  use this if none
 sub defaultPrintFeatureTree {
