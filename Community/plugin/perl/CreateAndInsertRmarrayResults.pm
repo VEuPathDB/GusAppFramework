@@ -378,7 +378,7 @@ sub readArrayInfo{
 sub retrieveElementResult{
   my ($self, $dbh)  = @_;
     
-  my $num_flags = scalar @{$cfg_rv->{flag_index}};
+  my $num_flags = defined(@{$cfg_rv->{flag_index}}) ? scalar @{$cfg_rv->{flag_index}} : 0;
     
   my $sql;
   if ($cfg_rv->{bg}) {
