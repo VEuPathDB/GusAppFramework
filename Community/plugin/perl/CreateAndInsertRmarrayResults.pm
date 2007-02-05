@@ -201,7 +201,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
   
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 3930 $',
+		     cvsRevision => '$Revision: 5315 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -340,7 +340,7 @@ sub readArrayInfo{
     my $channel = GUS::Model::Study::OntologyEntry->new({ontology_entry_id => $channel_id});
 
     if ($channel->retrieveFromDB){
-      $cfg_rv->{channel}->[$k] = $channel->getName();
+      $cfg_rv->{channel}->[$k] = $channel->getValue();
     } 
   }
 
