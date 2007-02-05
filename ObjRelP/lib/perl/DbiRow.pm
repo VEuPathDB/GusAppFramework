@@ -49,6 +49,9 @@ sub new {                       # constructor using DbiDatabase
 #                  Get and Set Methods
 ############################################################
 
+sub setNumberOfDatabaseRows {$_[0]->{_number_of_database_rows} = $_[1]}
+sub getNumberOfDatabaseRows {$_[0]->{_number_of_database_rows}}
+
 #-----------------------------------------------------------
 # TableName
 #-----------------------------------------------------------
@@ -265,10 +268,14 @@ sub retrieveFromDB {
     $self->setAttributes($attributeHash);
     $self->synch();
   } elsif ($exists > 1) {
-    print STDERR "\nERROR ".$self->getTableName().": retrieveFromDB: $sql\t$exists rows returned!\n";
+    #print STDERR "\nERROR ".$self->getTableName().": retrieveFromDB: $sql\t$exists rows returned!\n";
   }
+
+  $self->setNumberOfDatabaseRows($exists);
+
   return $exists == 1 ? $exists : 0;
 }
+
 
 #-----------------------------------------------------------
 # add - set each of the attributes in $attributeHash.
