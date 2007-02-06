@@ -178,8 +178,6 @@ sub _undoDbXRef{
   my ($self) = @_;
   $self->_deleteFromTable('DoTS.DbRefNAFeature');
   $self->_deleteFromTable('SRes.DbRef');
-  $self->_deleteFromTable('SRes.ExternalDatabaseRelease');
-  $self->_deleteFromTable('SRes.ExternalDatabase');
 }
 
 ################ Note ########################################
