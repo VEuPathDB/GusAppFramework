@@ -362,7 +362,7 @@ sub _writeWgetArgs {
 
   my $time = time;
   my $wgetArgsFile = "$targetDir/tmp-$time-wget.args";
-  open(WGET, ">$wgetArgsFile") || die("Can't open $wgetArgsFile for writing\n");
+  open(WGET, ">$wgetArgsFile") || die("Can't open $wgetArgsFile for writing");
   print WGET $self->{wget}->getUrl() . "\n";
   my $wgetArgs = $self->{wget}->getArgs();
   foreach my $arg (keys %{$wgetArgs}) {
@@ -370,7 +370,8 @@ sub _writeWgetArgs {
   }
   close(WGET);
   $self->{storageManager}->copyIn($wgetArgsFile, "$self->{versionDir}/wget.args");
-  unlink($wgetArgsFile) || die "Couldn't remove temp file '$wgetArgsFile'\n";
+  unlink($wgetArgsFile) || die "Couldn't remove temp file '$wgetArgsFile'";
+  $self->_writeAcquiredDate($targetDir);
 }
 
 sub _writeManualGetArgs {
@@ -378,14 +379,28 @@ sub _writeManualGetArgs {
 
   my $time = time;
   my $manualGetArgsFile = "$targetDir/tmp-$time-manualGet.args";
-  open(MANUALGET, ">$manualGetArgsFile") || die("Can't open $manualGetArgsFile for writing\n");
+  open(MANUALGET, ">$manualGetArgsFile") || die("Can't open $manualGetArgsFile for writing");
   my $manualGetArgs = $self->{manualGet}->getArgs();
   foreach my $arg (keys %{$manualGetArgs}) {
     print MANUALGET "$arg=$manualGetArgs->{$arg}\n";
   }
   close(MANUALGET);
   $self->{storageManager}->copyIn($manualGetArgsFile, "$self->{versionDir}/manualGet.args");
-  unlink($manualGetArgsFile) || die "Couldn't remove temp file '$manualGetArgsFile'\n";
+  unlink($manualGetArgsFile) || die "Couldn't remove temp file '$manualGetArgsFile'";
+  $self->_writeAcquiredDate($targetDir);
+}
+
+sub _writeAcquiredDate {
+  my ($self, $targetDir) = @_;
+
+  my $time = time;
+  my $tmpFile = "$targetDir/tmp-$time-acquired.txt";
+  open(FILE, ">$tmpFile") || die("Can't open temp file '$tmpFile' for writing");
+  my $timestamp = localtime;
+  print FILE "$timestamp\n";
+  close(FILE);
+  $self->{storageManager}->copyIn($tmpFile, "$self->{versionDir}/acquiredDate.txt");
+  unlink($tmpFile) || die "Couldn't remove temp file '$tmpFile'";
 }
 
 sub _copyTo {
@@ -425,45 +440,10 @@ sub _findVersion {
 
   my $version = $requestedVersion;
 
-  if ($requestedVersion =~ /(\d\d\d\d)-(\d\d)-(\d\d)/){
-    my $requestedY = $1;
-    my $requestedM = $2;
-    my $requestedD = $3;
 
-    my @today = localtime(time);
-    my $todayYear = $today[5] + 1900;
-    my $todayMonth = $today[4] + 1;
-    if ($todayMonth =~ /^\d$/){ #single digit; append 0
-	$todayMonth = "0" . $todayMonth;
-    }
-
-    my $todayDay = $today[3];
-    if ($todayDay =~ /^\d$/){ #single digit; append 0
-	$todayDay= "0" . $todayDay;
-    }
-    my $today = "${todayYear}-${todayMonth}-$todayDay";
-
-    my @files;
-    if ($self->{storageManager}->dirExists($resourceDir)) {
-      @files= $self->{storageManager}->listDir($resourceDir);
-    }
-    my $found;
-    foreach my $file (sort @files) {
-      if ($file =~ /(\d\d\d\d)-(\d\d)-(\d\d)/){
-	my $y = $1;
-	my $m = $2;
-	my $d = $3;
-	if ($y > $requestedY
-	    || ($y == $requestedY && $m > $requestedM)
-	    || ($y == $requestedY && $m == $requestedM && $d >= $requestedD)) {
-	  $version = $file;
-	  $found = 1;
-	  last;
-	}
-      }
-    }
-    $version = $today unless $found;
-
+  if ($requestedVersion =~ /(\d\d\d\d)-(\d\d)-(\d\d)/) {
+    # WE USED TO CHANGE THE VERSION TO TODAY'S DATE IF IN DATE FORMAT AND NOT FOUND.
+    # NOW, INSTEAD WE JUST LOG A FILE SAVING WHEN THE RESOURCE WAS ACTUALLY ACQUIRED
   } elsif ($requestedVersion !~ /\d+/
       && $requestedVersion !~ /\d+\.\d+/
       && $requestedVersion !~ /\d+\.\d+\.\d+/
