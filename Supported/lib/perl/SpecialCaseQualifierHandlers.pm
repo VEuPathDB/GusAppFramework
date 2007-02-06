@@ -36,11 +36,17 @@ sub setPlugin{
 
 }
 
-sub undoAll{
+sub initUndo{
   my ($self, $algoInvocIds, $dbh) = @_;
 
   $self->{'algInvocationIds'} = $algoInvocIds;
   $self->{'dbh'} = $dbh;
+}
+
+sub undoAll{
+  my ($self, $algoInvocIds, $dbh) = @_;
+
+  $self->initUndo($algoInvocIds, $dbh);
 
   $self->_undoGene();
   $self->_undoDbXRef();
