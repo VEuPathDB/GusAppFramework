@@ -74,7 +74,14 @@ my $argsDeclaration =
 	      reqd => 1,
 	      constraintFunc => undef,
 	      isList => 0,
+	     }), 
+   stringArg({name => 'aaSeqLocusTagMappingSql',
+	      descr => 'sql which returns the aa_sequence_id for a given "$locusTag"',
+	      reqd => 1,
+	      constraintFunc => undef,
+	      isList => 0,
 	     })
+
   ];
 
 
@@ -187,29 +194,16 @@ return $enzymeClass;
 sub getAASeqId {
   my ($self, $locusTag, $aaIdHash) = @_;
 
-my $sql = <<EOSQL;
-SELECT s.aa_sequence_id
-FROM DoTS.TranslatedAAFeature s,
-     (SELECT distinct na_feature_id
-      FROM dots.transcript
-      WHERE (LOWER(source_id) LIKE LOWER('$locusTag')
-      OR
-      na_feature_id IN ( SELECT r.na_feature_id
-        FROM dots.naFeatureNaGene fg, dots.naGene g, dots.transcript r
-        WHERE LOWER(g.name) LIKE LOWER('$locusTag')
-        AND g.na_gene_id = fg.na_gene_id AND fg.na_feature_id = r.parent_id))) t WHERE t.na_feature_id = s.na_feature_id
-EOSQL
+  my $sql = $self->getArg('');
+  my $queryHandle = $self->getQueryHandle();
+  my $sth = $queryHandle->prepareAndExecute($sql);
 
-    my $queryHandle = $self->getQueryHandle();
-    my $sth = $queryHandle->prepareAndExecute($sql);
+  my $aaSequenceId = $sth->fetchrow_array();
+  $sth->finish();
 
-    my $aaSequenceId = $sth->fetchrow_array();
-    $sth->finish();
+  $$aaIdHash{$locusTag} = $aaSequenceId;
 
-$$aaIdHash{$locusTag} = $aaSequenceId;
-
-return $aaSequenceId;
-
+  return $aaSequenceId;
 }
 
 
