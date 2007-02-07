@@ -174,6 +174,8 @@ sub _getExtDatabaseRlsId {
   return $plugin->{extDbRlsIds}->{$name};
 }
 
+# note: do not delete from ExternalDatabase and ExternalDatabaseRelease.
+# these are handled by ISF itself
 sub _undoDbXRef{
   my ($self) = @_;
   $self->_deleteFromTable('DoTS.DbRefNAFeature');
