@@ -95,8 +95,6 @@ Load files containing NA sequence and features.
 PURPOSEBRIEF
 
   my $notes = <<NOTES;
-The bioperl parser includes an "unflattener" that analyzes feature locations of genes, rna, cds, etc and constructs gene feature trees of them (ie, gene models). (See the bioperl API documentation for Bio::SeqFeature::Tools::Unflattener.)  The plugin preserves these relationships (using the feature's parent_id to capture the tree).
-
 To avoid memory problems with sequences that have huge numbers of features, the plugin submits the NASequence as one transaction, and each feature tree as one transation.
 NOTES
 
