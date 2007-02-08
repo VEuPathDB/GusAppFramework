@@ -76,7 +76,7 @@ my $argsDeclaration =
 	      isList => 0,
 	     }), 
    stringArg({name => 'aaSeqLocusTagMappingSql',
-	      descr => 'sql which returns the aa_sequence_id for a given locus tag.  use LOCUS_TAG as a macro for where the locus tag should be interpolated into the sql string,
+	      descr => 'sql which returns the aa_sequence_id for a given locus tag.  use LOCUS_TAG as a macro for where the locus tag should be interpolated into the sql string',
 	      reqd => 1,
 	      constraintFunc => undef,
 	      isList => 0,
