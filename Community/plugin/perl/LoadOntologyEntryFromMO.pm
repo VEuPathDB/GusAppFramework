@@ -105,6 +105,7 @@ Sql
 sub new {
   my ($class) = @_;
   my $self = { names_hash => {},
+               deprecated_values => [],
                number_processed => 0,
                seen_ontology_entry => {},};
 
@@ -127,6 +128,14 @@ sub new {
 =over 4
 
 =cut
+
+sub addDeprecatedValues {
+  my $self = shift;
+
+  push(@{$self->{deprecated_values}}, @_);
+}
+
+sub getDeprecatedValues {$_[0]->{deprecated_values}}
 
 sub getNamesHash {$_[0]->{names_hash}}
 
@@ -249,6 +258,8 @@ sub run {
 
   $self->processOntologyRelationships($root, $rootParent);
 
+  $self->updateOntologyEntryForDeprecatedTerms();
+
   my $coreInserts = 0;
   my $insertCount = $self->getTotalInserts() - $coreInserts;
   my $updateCount = $self->getTotalUpdates() || 0;
@@ -256,6 +267,40 @@ sub run {
   my $msg = "Inserted $insertCount and Updated $updateCount for Study::OntologyEntry";
 
   return($msg);
+}
+
+#-------------------------------------------------------------------------------
+
+sub updateOntologyEntryForDeprecatedTerms {
+  my ($self) = @_;
+
+  my $deprecatedValues = $self->getDeprecatedTerms();
+
+  # Don't use the query handle here because I need stuff that I just submitted
+  my $dbh =  $self->getDbHandle();
+  my $sh = $dbh->prepare("select distinct category from Study.OntologyEntry where value = ?");
+
+  foreach my $deprecatedValue (@$deprecatedValues) {
+    $sh->execute($deprecatedValue);
+
+    while(my ($category) = $sh->fetchrow_array()) {
+      my $oe = GUS::Model::Study::OntologyEntry->new({value => $value, category => $category});
+      unless($oe->retrieveFromDB()) {
+        $self->error("Should have been able to retrieveFromDB OntologyEntry\n" . $oe->toString());
+      }
+
+      my $message = "[deprecated_term:  [$value] with category [$category]]";
+      $category = "DeprecatedTerms_$category";
+
+      # Only Don't update those with some other ExtDbRelease (like SO for example)!!
+      if($oe->getExternalDatabaseReleaseId() == $self->getExternalDatabaseReleaseId()) {
+        $self->log($message);
+        $oe->setCategory($category);
+        $oe->submit();
+      }
+    }
+    $sh->finish();
+  }
 }
 
 #-------------------------------------------------------------------------------
@@ -403,6 +448,16 @@ sub loadOntologyEntry {
   my $sourceId = $term->getSourceId();
   my $uri = $term->getUri();
 
+  my ($parentId, $category) = $self->getParentInfo($value, $parentOntologyEntry, $ontologyEntry);
+
+  # Don't process the same term with the same parent twice
+  return 0 if($self->hasSeenOntologyEntry($value, $category));
+
+  # Make a running list of the values of DeprecatedTerms
+  if($parentOntologyEntry->getValue eq 'DeprecatedTerms') {
+    my $deprecatedValues = $self->getDeprecatedValues();
+    $self->addDeprecatedValues($value) unless($self->isIncluded($deprecatedValues, $value));
+  }
 
   # Don't process if the ExternalDatabaseReleaseId is not an MGED one
   if($self->isIncluded($self->getSoExternalDatabaseRelease(), $ontologyEntry->getExternalDatabaseReleaseId())) {
@@ -415,11 +470,6 @@ sub loadOntologyEntry {
     $self->log("[SKIP $value:  NEW Deprecated Term]");
     return 0;
   }
-
-  my ($parentId, $category) = $self->getParentInfo($value, $parentOntologyEntry, $ontologyEntry);
-
-  # Don't process the same term with the same parent twice
-  return 0 if($self->hasSeenOntologyEntry($value, $category));
 
   my $oeName = $ontologyEntry->getName();
 
@@ -457,23 +507,12 @@ sub loadOntologyEntry {
 #-------------------------------------------------------------------------------
 
 sub getParentInfo {
-  my ($self, $value, $parentOntologyEntry, $ontologyEntry) = @_;
+  my ($self, $parentOntologyEntry) = @_;
 
   my ($parentId, $category);
 
-  if($parentOntologyEntry->getValue() eq 'DeprecatedTerms') {
-    $parentId = $ontologyEntry->get('parent_id');
-
-    my $parentCategory = $ontologyEntry->getCategory();
-    $category = "DeprecatedTerms_$parentCategory";
-
-    my $message = "[deprecated_term:  $value]";
-    $self->log($message);
-  }
-  else {
-    $parentId = $parentOntologyEntry->getId();
-    $category = $parentOntologyEntry->getValue();
-  }
+  $parentId = $parentOntologyEntry->getId();
+  $category = $parentOntologyEntry->getValue();
 
   return($parentId, $category);
 }
