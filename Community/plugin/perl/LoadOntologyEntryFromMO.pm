@@ -448,7 +448,7 @@ sub loadOntologyEntry {
   my $sourceId = $term->getSourceId();
   my $uri = $term->getUri();
 
-  my ($parentId, $category) = $self->getParentInfo($value, $parentOntologyEntry, $ontologyEntry);
+  my ($parentId, $category) = $self->getParentInfo($parentOntologyEntry);
 
   # Don't process the same term with the same parent twice
   return 0 if($self->hasSeenOntologyEntry($value, $category));
