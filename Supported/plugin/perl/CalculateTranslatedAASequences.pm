@@ -129,16 +129,7 @@ sub run {
 
   my $transcriptExonsHash = $self->_makeTranscriptExonsHash();
 
-  my ($proteinSOTermId) = $dbh->selectrow_array(<<EOSQL, undef, "protein_coding", $self->getArg("soCvsVersion"));
-  SELECT sequence_ontology_id
-  FROM   SRes.SequenceOntology
-  WHERE  term_name = ?
-    AND  so_cvs_version = ?
-EOSQL
-
-  unless ($proteinSOTermId) {
-    die "Couldn't retrieve a SO Term id for protein_coding\n";
-  }
+  my $transcriptTypeHash = $self->_makeTranscriptTypeHash();
 
   my $sql = <<EOSQL;
   SELECT na_feature_id
@@ -182,12 +173,12 @@ EOSQL
       die "Not sure what happened: $transcriptId was supposed to fetch a Transcript, but couldn't\n";
     }
 
-    my $transcriptSOTermId = $transcript->getSequenceOntologyId();
-    unless ($transcriptSOTermId) {
+    my $transcriptSOTerm = $transcriptTypeHash->{$transcript->getId()};
+    unless ($transcriptSOTerm) {
       die "No SO term for transcript; how can I tell if this is protein-coding or not?\n";
     }
 
-    if ($transcriptSOTermId != $proteinSOTermId) {
+    if ($transcriptSOTerm ne 'protein_coding') {
       warn "Skipping transcript " . $transcript->getSourceId() . ", not a protein-coding transcript\n";
       next;
     }
@@ -343,6 +334,28 @@ EOSQL
   warn "Done.\n";
 }
 
+
+sub _makeTranscriptTypeHash {
+  my ($self) = @_;
+
+  my $sql = "
+SELECT s.name, t.na_feature_id
+FROM dots.Transcript t,
+     dots.GeneFeature g,
+     sres.SequenceOntology
+WHERE 'protein_coding' = s.name
+AND s.sequence_ontology_id = g.sequence_ontology_id
+AND g.na_feature_id = t.na_feature_id
+";
+
+  my $sth = $self->prepareAndExecute($sql);
+
+  my %transcriptTypeHash;
+  while (my ($soTerm, $transFeatId) = $sth->fetchrow()) {
+    $transcriptTypeHash{$transFeatId} = $soTerm;
+  }
+  return \%transcriptTypeHash;
+}
 
 sub _makeTranscriptExonsHash {
   my ($self) = @_;
