@@ -129,7 +129,7 @@ sub run {
 
   my $transcriptExonsHash = $self->_makeTranscriptExonsHash();
 
-  my ($proteinSOTermId) = $dbh->selectrow_array(<<EOSQL, undef, "protein_coding_primary_transcript", $self->getArg("soCvsVersion"));
+  my ($proteinSOTermId) = $dbh->selectrow_array(<<EOSQL, undef, "protein_coding", $self->getArg("soCvsVersion"));
   SELECT sequence_ontology_id
   FROM   SRes.SequenceOntology
   WHERE  term_name = ?
@@ -137,7 +137,7 @@ sub run {
 EOSQL
 
   unless ($proteinSOTermId) {
-    die "Couldn't retrieve a SO Term id for protein_coding_primary_transcript\n";
+    die "Couldn't retrieve a SO Term id for protein_coding\n";
   }
 
   my $sql = <<EOSQL;
@@ -259,7 +259,7 @@ EOSQL
 
     $codonTable->id($geneticCode->getNcbiGeneticCodeId() || $self->getArg('ncbiGeneticCodeId') || 1);
 
-    my @exons = $transcriptExonsHash->{$transcript->getId()};
+    my @exons = $self->exonIds2ExonObjects($transcriptExonsHash->{$transcript->getId()});
 
     unless (@exons) {
       die "Transcript had no exons: " . $transcript->getSourceId() . "\n";
@@ -349,30 +349,45 @@ sub _makeTranscriptExonsHash {
 
   my $sql = "
 SELECT t.source_id, e.na_feature_id
-FROM dots.Transcript t, 
+FROM dots.Transcript t,
      dots.RnaFeatureExon rfe,
      dots.ExonFeature e
 WHERE t.na_feature_id = rfe.rna_feature_id
 AND e.na_feature_id = rfe.exon_feature_id
+ORDER BY t.source_id
 ";
 
   my $sth = $self->prepareAndExecute($sql);
 
   my %transcriptExonsHash;
-  my $curTranscriptSrcId = -1;
+  my $curTranscriptSrcId = "-1";
   while (my ($transcriptSrcId, $exonFeatId) = $sth->fetchrow()) {
-    if ($transcriptSrcId != $curTranscriptSrcId) {
+    if ($transcriptSrcId ne $curTranscriptSrcId) {
       $transcriptExonsHash{$transcriptSrcId} = [];
       $curTranscriptSrcId = $transcriptSrcId;
     }
 
-    my $exon =
-      GUS::Model::DoTS::ExonFeature->new({na_feature_id => $exonFeatId});
-
-    $exon->retrieveFromDB();
-    push(@{$transcriptExonsHash{$transcriptSrcId}}, $exon);
+    push(@{$transcriptExonsHash{$transcriptSrcId}}, $exonFeatId);
   }
   return \%transcriptExonsHash;
 }
+
+sub exonIds2ExonObjects{
+  my ($self, $exonIds) = @_;
+  my @exonObjs;
+
+  foreach my $exonId (@{$exonIds}){
+    my $exon =
+      GUS::Model::DoTS::ExonFeature->new({na_feature_id => $exonId});
+
+    $exon->retrieveFromDB();
+
+    push(@exonObjs, $exon);
+
+  }
+
+  return \@exonObjs;
+}
+
 
 1;
