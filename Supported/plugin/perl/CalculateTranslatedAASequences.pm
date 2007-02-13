@@ -127,6 +127,8 @@ sub run {
 
   my $dbh = $self->getQueryHandle();
 
+  my $transcriptExonsHash = $self->_makeTranscriptExonsHash();
+
   my ($proteinSOTermId) = $dbh->selectrow_array(<<EOSQL, undef, "protein_coding_primary_transcript", $self->getArg("soCvsVersion"));
   SELECT sequence_ontology_id
   FROM   SRes.SequenceOntology
@@ -257,7 +259,7 @@ EOSQL
 
     $codonTable->id($geneticCode->getNcbiGeneticCodeId() || $self->getArg('ncbiGeneticCodeId') || 1);
 
-    my @exons = $transcript->getChildren("DoTS::ExonFeature", 1);
+    my @exons = $transcriptExonsHash->{$transcript->getId()};
 
     unless (@exons) {
       die "Transcript had no exons: " . $transcript->getSourceId() . "\n";
@@ -339,6 +341,38 @@ EOSQL
   }
 
   warn "Done.\n";
+}
+
+
+sub _makeTranscriptExonsHash {
+  my ($self) = @_;
+
+  my $sql = "
+SELECT t.source_id, e.na_feature_id
+FROM dots.Transcript t, 
+     dots.RnaFeatureExon rfe,
+     dots.ExonFeature e
+WHERE t.na_feature_id = rfe.rna_feature_id
+AND e.na_feature_id = rfe.exon_feature_id
+";
+
+  my $sth = $self->prepareAndExecute($sql);
+
+  my %transcriptExonsHash;
+  my $curTranscriptSrcId = -1;
+  while (my ($transcriptSrcId, $exonFeatId) = $sth->fetchrow()) {
+    if ($transcriptSrcId != $curTranscriptSrcId) {
+      $transcriptExonsHash{$transcriptSrcId} = [];
+      $curTranscriptSrcId = $transcriptSrcId;
+    }
+
+    my $exon =
+      GUS::Model::DoTS::ExonFeature->new({na_feature_id => $exonFeatId});
+
+    $exon->retrieveFromDB();
+    push(@{$transcriptExonsHash{$transcriptSrcId}}, $exon);
+  }
+  return \%transcriptExonsHash;
 }
 
 1;
