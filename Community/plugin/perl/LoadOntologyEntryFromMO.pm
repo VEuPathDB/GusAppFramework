@@ -284,12 +284,12 @@ sub updateOntologyEntryForDeprecatedTerms {
     $sh->execute($deprecatedValue);
 
     while(my ($category) = $sh->fetchrow_array()) {
-      my $oe = GUS::Model::Study::OntologyEntry->new({value => $value, category => $category});
+      my $oe = GUS::Model::Study::OntologyEntry->new({value => $deprecatedValue, category => $category});
       unless($oe->retrieveFromDB()) {
         $self->error("Should have been able to retrieveFromDB OntologyEntry\n" . $oe->toString());
       }
 
-      my $message = "[deprecated_term:  [$value] with category [$category]]";
+      my $message = "[deprecated_term:  [$deprecatedValue] with category [$category]]";
       $category = "DeprecatedTerms_$category";
 
       # Only Don't update those with some other ExtDbRelease (like SO for example)!!
