@@ -274,7 +274,7 @@ sub run {
 sub updateOntologyEntryForDeprecatedTerms {
   my ($self) = @_;
 
-  my $deprecatedValues = $self->getDeprecatedTerms();
+  my $deprecatedValues = $self->getDeprecatedValues();
 
   # Don't use the query handle here because I need stuff that I just submitted
   my $dbh =  $self->getDbHandle();
