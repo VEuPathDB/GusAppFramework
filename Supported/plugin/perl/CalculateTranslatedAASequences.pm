@@ -195,7 +195,7 @@ EOSQL
       $aaSeq->setDescription($transcript->getProduct());
       $aaSeq->setExternalDatabaseReleaseId($transcript->getExternalDatabaseReleaseId());
       $aaSeq->setSequenceOntologyId($self->{plugin}->{soPrimaryKeys}->{'polypeptide'});
-      
+
       $aaSeq->submit();
 
       $transAAFeat->setAaSequenceId($aaSeq->getId());
@@ -339,13 +339,13 @@ sub _makeTranscriptTypeHash {
   my ($self) = @_;
 
   my $sql = "
-SELECT s.name, t.na_feature_id
+SELECT s.term_name, t.na_feature_id
 FROM dots.Transcript t,
      dots.GeneFeature g,
-     sres.SequenceOntology
-WHERE 'protein_coding' = s.name
+     sres.SequenceOntology s
+WHERE 'protein_coding' = s.term_name
 AND s.sequence_ontology_id = g.sequence_ontology_id
-AND g.na_feature_id = t.na_feature_id
+AND g.na_feature_id = t.parent_id
 ";
 
   my $sth = $self->prepareAndExecute($sql);
