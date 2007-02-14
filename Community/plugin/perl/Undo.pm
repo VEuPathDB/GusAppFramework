@@ -162,7 +162,9 @@ sub deleteFromTable{
    my $sql = 
    "DELETE FROM $tableName
 WHERE row_alg_invocation_id IN ($algoInvocIds)";
-
+   
+   warn "\n$sql\n" if $self->getArg('verbose');
+   
    my $rows = $self->{dbh}->do($sql) || die "Failed running sql:\n$sql\n";
    $rows = 0 if $rows eq "0E0";
    $self->log("Deleted $rows rows from $tableName");
