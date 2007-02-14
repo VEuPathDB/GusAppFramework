@@ -417,6 +417,16 @@ sub deleteTaxonName {
   }
   $self->log("$num TaxonName entries deleted\n");
 }
+
+sub undoTables {
+   qw(
+   SRes.TaxonName
+   SRes.Taxon
+   SRes.GeneticCode
+   );
+}
+
+
 1;
 
 __END__
