@@ -12,7 +12,7 @@ use GUS::Model::DoTS::MutualInformationScore;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 use FileHandle;
-use PlasmoDBData::Load::Util;
+use ApiCommonData::Load::Util;
 
 #use Dump::Dumper;
 
@@ -148,10 +148,10 @@ sub loadMutualInformationFile {
     }
 
     my $primaryNaFeatureId =
-      PlasmoDBData::Load::Util::getGeneFeatureId($self, $primarySourceId);
+      ApiCommonData::Load::Util::getGeneFeatureId($self, $primarySourceId);
 
     my $secondaryNaFeatureId = 
-      PlasmoDBData::Load::Util::getGeneFeatureId($self, $secondarySourceId);
+      ApiCommonData::Load::Util::getGeneFeatureId($self, $secondarySourceId);
     my $primaryProfileId = $profileIdHash{$primaryNaFeatureId};
 
     my $secondaryProfileId = $profileIdHash{$secondaryNaFeatureId};
