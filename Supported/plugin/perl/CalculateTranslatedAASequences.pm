@@ -399,7 +399,7 @@ sub exonIds2ExonObjects{
 
   }
 
-  return \@exonObjs;
+  return @exonObjs;
 }
 
 
