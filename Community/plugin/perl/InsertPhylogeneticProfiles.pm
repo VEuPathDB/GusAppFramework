@@ -12,7 +12,7 @@ use GUS::Model::DoTS::PhylogeneticProfileSet;
 use GUS::Model::DoTS::PhylogeneticProfile;
 use GUS::Model::DoTS::PhylogeneticProfileMember;
 
-use PlasmoDBData::Load::Util;
+use ApiCommonData::Load::Util;
 
 use FileHandle;
 
@@ -172,7 +172,7 @@ sub run {
 
       print STDERR "sourceId:  $sourceId\n";
 
-      if(my $naFeatureId = PlasmoDBData::Load::Util::getGeneFeatureId($self, $sourceId)) {
+      if(my $naFeatureId = ApiCommonData::Load::Util::getGeneFeatureId($self, $sourceId)) {
         my $profile = GUS::Model::DoTS::PhylogeneticProfile->
           new({phylogenetic_profile_set_id => $phylogeneticProfileSet->getId(),
                na_feature_id => $naFeatureId,
