@@ -12,6 +12,7 @@ use GUS::Model::DoTS::TranslatedAASequence;
 use GUS::Model::DoTS::TranslatedAAFeature;
 use GUS::Model::DoTS::Transcript;
 use GUS::Model::DoTS::NAFeature;
+use GUS::Model::DoTS::ExonFeature;
 use GUS::Model::SRes::GeneticCode;
 
 my $argsDeclaration =
@@ -250,7 +251,7 @@ EOSQL
 
     $codonTable->id($geneticCode->getNcbiGeneticCodeId() || $self->getArg('ncbiGeneticCodeId') || 1);
 
-    my @exons = $self->exonIds2ExonObjects($transcriptExonsHash->{$transcript->getId()});
+    my @exons = $self->exonIds2ExonObjects($transcriptExonsHash->{$transcript->getSourceId()});
 
     unless (@exons) {
       die "Transcript had no exons: " . $transcript->getSourceId() . "\n";
