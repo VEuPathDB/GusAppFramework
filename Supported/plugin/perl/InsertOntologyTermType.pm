@@ -54,7 +54,7 @@ unknown
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
-This plugin takes in a two-column tab-delimited file.
+The input file for this plugin is a two-column tab-delimited file that contains the field name and description.  This file is generated as a table dump from SRes.OntologyTermType.
 PLUGIN_NOTES
 
 my $documentation = {purposeBrief => $purposeBrief,
@@ -97,18 +97,23 @@ sub run {
 	my @data = split (/\t/, $_);
 	if (scalar(@data) != 2)  {
 	    die "inputFile $termTypeFile does not contain 2 columns."
-	}
+	    }
 	
 	my $term = $data[0];
 	my $definition = $data[1];
 	
-	my $termType = $self->makeOntologyTermType($term,$definition);
-	$termType->submit() unless $termType->retrieveFromDB();
+	my $termType = $self->makeOntologyTermType($term, $definition);
+	#$termType->submit() unless $termType->retrieveFromDB();
+	if (!$termType->retrieveFromDB($term, $definition)) {
+	    $termType->submit();
+	    $count++;
+	}
 	
 	undef $term;
 	undef $definition;
-	$count++
-	}  
+	#$count++;
+    } 
+    
     return "Inserted $count terms into OntologyTermType";
 }
 
