@@ -1,7 +1,7 @@
 package GUS::Supported::Plugin::CalculateTranslatedAASequences;
 
 use strict;
-use warnings;
+#use warnings;
 
 use GUS::PluginMgr::Plugin;
 use base qw(GUS::PluginMgr::Plugin);
@@ -213,6 +213,10 @@ EOSQL
 
     my $transAAFeature = shift @translatedAAFeatures;
 
+    ## want to die if is_simple is equal to 0 because can't do a simple translation
+    ## uncomment when actually populate the is_simple field.
+    ## die "Translation is not simple for ".$transcript->getSourceId()."\n" if $transAAFeature->getIsSimple() == 0;
+
     my $aaSeqId = $transAAFeature->getAaSequenceId();
 
     unless ($aaSeqId) {
@@ -327,7 +331,7 @@ EOSQL
       warn "Warning: translation for " . $transcript->getSourceId() . " contains stop codons:\n$translation\n";
     }
 
-    $aaSeq->setSequence($translation) if $translation ne $aaSeq->getSequence();
+    $aaSeq->setSequence($translation) if ($translation ne $aaSeq->get('sequence'));
     $aaSeq->submit();
     $self->undefPointerCache();
   }
@@ -344,8 +348,7 @@ SELECT s.term_name, t.na_feature_id
 FROM dots.Transcript t,
      dots.GeneFeature g,
      sres.SequenceOntology s
-WHERE 'protein_coding' = s.term_name
-AND s.sequence_ontology_id = g.sequence_ontology_id
+WHERE s.sequence_ontology_id = g.sequence_ontology_id
 AND g.na_feature_id = t.parent_id
 ";
 
