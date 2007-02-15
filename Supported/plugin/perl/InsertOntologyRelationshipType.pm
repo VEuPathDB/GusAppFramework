@@ -54,7 +54,7 @@ unknown
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
-This plugin takes in a two-column tab-delimited file.
+The input file to this plugin is a two-column tab-delimited file.  The first column is the field name and the second column is the field is_native.  The input file for this plugin is generated as a table dump from SRes.OntologyRelationshipType by selecting the above two columns.
 PLUGIN_NOTES
 
 my $documentation = {purposeBrief => $purposeBrief,
