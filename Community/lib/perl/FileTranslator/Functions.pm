@@ -2,6 +2,8 @@
 
 package GUS::Community::FileTranslator::Functions;
 
+use strict;
+
 sub new {
   my ($M) = @_;
   my $self = {};
@@ -10,8 +12,45 @@ sub new {
   return $self;
 }
 
+sub nameToCompositeElementId {
+  my ($self, $hash) = @_;
+
+  my %mapping;
+
+  unless($hash->{dbh}) {
+    die "Function [nameToCompositeElementId] must give a database handle";
+  }
+
+  unless($hash->{arrayDesignName}) {
+    die "Function [nameTOCompositeElementId] must give an arrayDesignName";
+  }
+
+  my $sql = "select s.name, s.composite_element_id 
+             from  Rad.ShortOligoFamily s, Rad.ArrayDesign a
+             where s.array_design_id = a.array_design_id
+              and a.name = ?";
+
+  my $sh = $hash->{dbh}->prepare($sql);
+  $sh->execute($hash->{arrayDesignName});
+
+  while(my ($name, $id) = $sh->fetchrow_array()) {
+    $mapping{$name} = $id;
+  }
+  $sh->finish();
+
+  return \%mapping;
+}
+
 sub coordGenePix2RAD{
-  my ($self, $n_ar, $n_ac, $n_gr, $n_gc, $n_sr, $n_sc) = @_;
+  my ($self, $hash) = @_;
+
+  my $n_ar = $hash->{num_array_rows};
+  my $n_ac = $hash->{num_array_columns};
+  my $n_gr = $hash->{num_grid_rows};
+  my $n_gc = $hash->{num_grid_columns};
+  my $n_sr = $hash->{num_sub_rows};
+  my $n_sc = $hash->{num_sub_columns};
+
   my $mapping;
   
   for (my $ar=1; $ar<=$n_ar; $ar++) {
@@ -32,7 +71,15 @@ sub coordGenePix2RAD{
 }
 
 sub coordArrayVision2RAD{
-  my ($self, $n_ar, $n_ac, $n_gr, $n_gc, $n_sr, $n_sc) =@_;
+  my ($self, $hash) = @_;
+
+  my $n_ar = $hash->{num_array_rows};
+  my $n_ac = $hash->{num_array_columns};
+  my $n_gr = $hash->{num_grid_rows};
+  my $n_gc = $hash->{num_grid_columns};
+  my $n_sr = $hash->{num_sub_rows};
+  my $n_sc = $hash->{num_sub_columns};
+
   my $mapping;
 
   if ($n_ar==1 && $n_ac==1 && $n_gr==1 && $n_gc==1) {
