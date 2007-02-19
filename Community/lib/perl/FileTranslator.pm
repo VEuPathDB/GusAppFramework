@@ -82,7 +82,7 @@ which defaults to appending ".out" to the input file\'s name
 =cut
 
 sub translate {
-    my ($slf,$array_inf,$in,$out) = @_;
+    my ($slf,$functionSpecificHash, $in, $out) = @_;
     
     if ($in) {
         $slf->setInput($in,$out) ;
@@ -116,18 +116,11 @@ sub translate {
         my $funcclass =  $slf->cfg->functionsClass();
         $funcclass =~ s/\:\:/\//g;
         $funcclass .= ".pm";
-        my $evalstr = q[require  $funcclass;
-                    my $f = $slf->cfg->functionsClass()->new(); 
-                    $idmaphash  = $f->$idfunc($array_inf->{num_array_rows},
-                                              $array_inf->{num_array_columns},
-                                              $array_inf->{num_grid_rows},
-                                              $array_inf->{num_grid_columns},
-                                              $array_inf->{num_sub_rows},
-                                              $array_inf->{num_sub_columns});
-                    return $idmaphash;
-                    ];
-        $idmaphash = eval($evalstr);
-    
+        $idmaphash = eval {require  $funcclass;
+                           my $f = $slf->cfg->functionsClass()->new(); 
+                           $idmaphash  = $f->$idfunc($functionSpecificHash);
+                           return $idmaphash;
+                          };
         if ($@) {
             $slf->fhlog()->print("ERR: sub=translate: $@\n");
             die "ERR: FileTranslator->translate() : $@\n" ;
