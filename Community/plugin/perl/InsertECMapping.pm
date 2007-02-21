@@ -186,6 +186,8 @@ sub getEnzymeClass {
 
 $$ecHash{$ecNumber} = $enzymeClass;
 
+print "EC NUMBER: $enzymeClass\n";
+
 return $enzymeClass;
 }
 
@@ -195,14 +197,19 @@ sub getAASeqId {
   my ($self, $locusTag, $aaIdHash) = @_;
 
   my $sql = $self->getArg('aaSeqLocusTagMappingSql');
+print "SQL: $sql\n";
+
   my $queryHandle = $self->getQueryHandle();
-  $sql =~ s/$locusTag/LOCUS_TAG/g;
-  my $sth = $queryHandle->prepareAndExecute($sql);
+
+  my $sth = $queryHandle->prepare($sql);
+  $sth->execute($locusTag);
 
   my $aaSequenceId = $sth->fetchrow_array();
   $sth->finish();
 
   $$aaIdHash{$locusTag} = $aaSequenceId;
+
+print "AA SEQ ID: $aaSequenceId\n";
 
   return $aaSequenceId;
 }
