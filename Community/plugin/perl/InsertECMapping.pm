@@ -6,7 +6,7 @@
 ## $Id$
 ##
 #######################################################################
- 
+
 package GUS::Community::Plugin::InsertECMapping;
 @ISA = qw( GUS::PluginMgr::Plugin);
 
