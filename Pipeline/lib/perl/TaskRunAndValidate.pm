@@ -366,7 +366,7 @@ sub runAndZip {
 
   my ($cmd, $status);
 
-  $cmd = "liniacsubmit $numNodes $time $propFile $queue ".$ppn ? "--ppn $ppn " : "".">& $logFile";
+  $cmd = "liniacsubmit $numNodes $time $propFile $queue ".($ppn ? "--ppn $ppn " : "").">& $logFile";
 
   $status = system($cmd);
   &confess ("failed running '$cmd' with stderr:\n $!") if ($status >> 8);
@@ -383,7 +383,7 @@ sub run {
 
   my ($cmd, $status);
 
-  $cmd = "liniacsubmit $numNodes $time $propFile $queue ".$ppn ? "--ppn $ppn " : "".">& $logFile";
+  $cmd = "liniacsubmit $numNodes $time $propFile $queue ".($ppn ? "--ppn $ppn " : "").">& $logFile";
 
   print "$cmd\n";
   $status = system($cmd);
