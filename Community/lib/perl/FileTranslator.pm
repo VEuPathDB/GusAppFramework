@@ -26,6 +26,8 @@ use GUS::Community::FileTranslator::FileReader;
 use GUS::Community::FileTranslator::CfgParser;
 
 
+use Data::Dumper;
+
 =pod
 
 =head1 GUS::Community::FileTranslator
@@ -108,7 +110,7 @@ sub translate {
     # while we are at it, might as well set get the 
     # idmap hash from the function 
     my $idmaphash;
-    
+
     if ($slf->cfg->idMap()) {
         my @idh = split /\\t/ , $slf->cfg->idMap()->{output_header};
         $slf->fhout->print(  (join "\t" , @idh ) . "\t" );
@@ -158,7 +160,14 @@ sub translate {
                     }
                 }
             }
-            $slf->fhout->print($idmaphash->{ join "\t", @V } . "\t");
+
+            # Allow the Funtion to give a coderef instead of hashref 
+            if(ref($idmaphash) eq 'CODE') {
+              $slf->fhout->print($idmaphash->( join "\t", @V ) . "\t");
+            }
+            else {
+              $slf->fhout->print($idmaphash->{ join "\t", @V } . "\t");
+            }
         }
     
         # rest of MAPS
