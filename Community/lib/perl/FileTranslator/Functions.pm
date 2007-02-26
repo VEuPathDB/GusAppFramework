@@ -12,6 +12,78 @@ sub new {
   return $self;
 }
 
+
+sub maxConfAndFoldChange {
+
+  my $maxConfAndFc; $maxConfAndFc = sub {
+    my $valuesString = shift;
+
+    my ($conf0, $conf1, $mean0, $mean1) = split(/\t/, $valuesString);
+
+    my $max = $conf0 >= $conf1 ? $conf0 : $conf1;
+
+    my $foldChange;
+    unless($max == 0) {
+      $foldChange = $mean0 >= $mean1 ? $mean0/$mean1 : -($mean1/$mean0);
+    }
+
+    return "$max\t$foldChange";
+  };
+
+  return $maxConfAndFc;
+}
+
+
+# Why does the mapping need to be a hash??  Why not give it a subroutine
+# to calculate a value?
+#--------------------------------------------------------------------------------
+
+sub max {
+
+  my $findMax; $findMax = sub {
+    my $valuesString = shift;
+
+    my @values = split(/\t/, $valuesString);
+
+    my $max = shift(@values);
+
+    foreach(@values) {
+      $max = $_ if $max < $_;
+    }
+    return $max;
+  };
+
+  return $findMax;
+}
+
+
+#--------------------------------------------------------------------------------
+
+sub foldChange {
+  my ($self, $hash) = @_;
+
+  if($hash->{numberOfChannels} != 1) {
+    die "Only One channel data currently can calculate fold change";
+  }
+
+  my $fc; $fc = sub {
+    my $valuesString = shift;
+
+    my ($mean0, $mean1) = split(/\t/, $valuesString);
+
+    if($mean0 >= $mean1) {
+      return $mean0/$mean1;
+    }
+
+    return -($mean1/$mean0);
+  };
+
+  return $fc;
+}
+
+
+#--------------------------------------------------------------------------------
+
 sub nameToCompositeElementId {
   my ($self, $hash) = @_;
 
@@ -40,6 +112,8 @@ sub nameToCompositeElementId {
 
   return \%mapping;
 }
+
+#--------------------------------------------------------------------------------
 
 sub coordGenePix2RAD{
   my ($self, $hash) = @_;
