@@ -216,7 +216,7 @@ sub runPsipred {
 }
 
 sub runSimilarity {
-  my ($pipelineDir, $queryname, $subjectname, $numNodes,$time,$queue) = @_;
+  my ($pipelineDir, $queryname, $subjectname, $numNodes,$time,$queue, $ppn) = @_;
 
   my $name = "$queryname-$subjectname";
 
@@ -230,13 +230,13 @@ sub runSimilarity {
 
   my $logFile = "$pipelineDir/logs/$name.sim.log";
 
-  my $valid =   &runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time,$queue);
+  my $valid =   &runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time,$queue, $ppn);
 
   return $valid;
 }
 
 sub runMatrixOrSimilarity {
-  my ($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time,$queue) = @_;
+  my ($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time,$queue, $ppn) = @_;
 
   my $valid = 0;
 
@@ -259,7 +259,7 @@ sub runMatrixOrSimilarity {
     }
   }
   if (!$valid) {
-    &runAndZip($propFile,$logFile, $resultFile, $numNodes, $time,$queue);
+    &runAndZip($propFile,$logFile, $resultFile, $numNodes, $time,$queue, $ppn);
     my $valid = &validateBM($inputFile, "${resultFile}.gz");
     if  (!$valid) {
       print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
@@ -362,11 +362,11 @@ sub validatePsipred {
 }
 
 sub runAndZip {
-  my ($propFile, $logFile, $resultFile, $numNodes, $time, $queue) = @_;
+  my ($propFile, $logFile, $resultFile, $numNodes, $time, $queue, $ppn) = @_;
 
   my ($cmd, $status);
 
-  $cmd = "liniacsubmit $numNodes $time $propFile $queue >& $logFile";
+  $cmd = "liniacsubmit $numNodes $time $propFile $queue ".$ppn ? "--ppn $ppn " : "".">& $logFile";
 
   $status = system($cmd);
   &confess ("failed running '$cmd' with stderr:\n $!") if ($status >> 8);
@@ -379,11 +379,11 @@ sub runAndZip {
 }
 
 sub run {
-  my ($propFile, $logFile, $numNodes, $time, $queue) = @_;
+  my ($propFile, $logFile, $numNodes, $time, $queue, $ppn) = @_;
 
   my ($cmd, $status);
 
-  $cmd = "liniacsubmit $numNodes $time $propFile $queue >& $logFile";
+  $cmd = "liniacsubmit $numNodes $time $propFile $queue ".$ppn ? "--ppn $ppn " : "".">& $logFile";
 
   print "$cmd\n";
   $status = system($cmd);
