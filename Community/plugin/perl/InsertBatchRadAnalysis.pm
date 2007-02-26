@@ -3,7 +3,15 @@ use base qw(GUS::Supported::Plugin::InsertRadAnalysis);
 
 use strict;
 
+use GUS::PluginMgr::Plugin;
+
+use GUS::Community::RadAnalysis::RadAnalysisError;
+
 use XML::Simple;
+
+use  GUS::ObjRelP::DbiDatabase;
+
+use Data::Dumper;
 
 my $purposeBrief = <<BRIEF;
 The purpose of this plugin is to run some process and capture the Result
@@ -68,6 +76,8 @@ my $argsDeclaration =
             reqd           => 1,
             constraintFunc => undef,
             isList         => 0, 
+            format         => undef,
+            mustExist      => 1,
            }),
 
   ];
@@ -108,11 +118,13 @@ sub run {
       $args->{$property} = $properties->{$property}->{value};
     }
 
+    eval "require $class";
+
     my $processer = eval {
       $class->new($args);
     };
     if($@) {
-      $self->error("Could not insantiate class [$class]");
+      $self->error("Could not insantiate class [$class]:  $@");
     }
 
     my $results = $processer->process();
@@ -136,6 +148,10 @@ sub run {
       $self->setArg('cfg_file', $configFile);
       $self->setArg('data_file', $dataFile);
 
+      $self->setArg('restart', undef);
+      $self->setArg('analysis_id', undef);
+      $self->setArg('testnum', undef);
+
       # Call the Run Method from the Superclass
       $self->SUPER::run();
     }
@@ -146,26 +162,42 @@ sub run {
   return "Completed $processNum Process Modules consisting of $analysisCount analyses";
 }
 
-sub undoTables {
+#--------------------------------------------------------------------------------
+# this undo is a little tricky because the subclass_view of AnalysisResultImp may be different 
+# across db instances.
+sub _undoTables {
   my ($self) = @_;
 
-  return ('RAD.DataTransformationResult',
-          'RAD.PaGE',
-          'RAD.SpliceArrayAnalysisResult',
-          'RAD.AnalysisResult',
-          'RAD.ArrayStatTwoConditions',
-          'RAD.HQSpecificity',
-          'RAD.SAM',
-          'RAD.DataTransformationResult',
-          'RAD.LogicalGroupLink',
-          'RAD.AnalysisInput',
-          'RAD.AnalysisParam',
-          'RAD.AnalysisQCParam',
-          'RAD.AssayAnalysis',
-          'RAD.Analysis',
-          'RAD.LogicalGroupLink',
-          'RAD.LogicalGroup',
-	 );
+  my $database;
+  unless($database = GUS::ObjRelP::DbiDatabase->getDefaultDatabase()) {
+    $self->error("Must provide a Default DbiDatabase to run this Undo()");
+  }
+
+  my $dbh = $database->getQueryHandle();
+  my $sql = "select distinct subclass_view from Rad.ANALYSISRESULTIMP";
+
+  my $sh = $dbh->prepare($sql);
+  $sh->execute();
+
+  my @tables;
+
+  while(my ($view) = $sh->fetchrow_array()) {
+    push @tables, "RAD.$view";
+  }
+
+  $sh->finish();
+
+  my @rest = ( 'RAD.LogicalGroupLink',
+               'RAD.AnalysisInput',
+               'RAD.AnalysisParam',
+               'RAD.AnalysisQCParam',
+               'RAD.AssayAnalysis',
+               'RAD.Analysis',
+               'RAD.LogicalGroupLink',
+               'RAD.LogicalGroup',
+             );
+
+  return @tables, @rest;
 }
 
 
