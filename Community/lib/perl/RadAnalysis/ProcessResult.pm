@@ -236,7 +236,7 @@ sub writeAnalysisConfigFile {
     my $lgId = $logicalGroups->[$i]->getId();
     my $index = $i + 1;
 
-    push(@logicalGroupIds, "logical_group$index\t$lgId");
+    push(@logicalGroupIds, "logical_group_id$index\t$lgId");
   }
 
   my $logicalGroupString = join("\n", @logicalGroupIds);
