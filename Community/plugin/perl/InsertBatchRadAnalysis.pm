@@ -90,7 +90,7 @@ sub new {
   bless($self, $class);
 
   $self->initialize({requiredDbVersion => 3.5,
-                     cvsRevision       => '$Revision: 4281 $',
+                     cvsRevision       => '$Revision:  5367 $',
                      name              => ref($self),
                      argsDeclaration   => $argsDeclaration,
                      documentation     => $documentation
@@ -159,47 +159,32 @@ sub run {
 
   my $processNum = scalar(@{$xml->{process}});
 
-  return "Completed $processNum Process Modules consisting of $analysisCount analyses";
+  my $description = "Completed $processNum Process Modules consisting of $analysisCount analyses\n" . $self->getResultDescr();
+
+  return $description;
 }
 
 #--------------------------------------------------------------------------------
-# this undo is a little tricky because the subclass_view of AnalysisResultImp may be different 
-# across db instances.
-sub _undoTables {
+
+sub undoTables {
   my ($self) = @_;
 
-  my $database;
-  unless($database = GUS::ObjRelP::DbiDatabase->getDefaultDatabase()) {
-    $self->error("Must provide a Default DbiDatabase to run this Undo()");
-  }
-
-  my $dbh = $database->getQueryHandle();
-  my $sql = "select distinct subclass_view from Rad.ANALYSISRESULTIMP";
-
-  my $sh = $dbh->prepare($sql);
-  $sh->execute();
-
-  my @tables;
-
-  while(my ($view) = $sh->fetchrow_array()) {
-    push @tables, "RAD.$view";
-  }
-
-  $sh->finish();
-
-  my @rest = ( 'RAD.LogicalGroupLink',
-               'RAD.AnalysisInput',
-               'RAD.AnalysisParam',
-               'RAD.AnalysisQCParam',
-               'RAD.AssayAnalysis',
-               'RAD.Analysis',
-               'RAD.LogicalGroupLink',
-               'RAD.LogicalGroup',
-             );
-
-  return @tables, @rest;
+  return ('RAD.AnalysisResultImp', 
+          'RAD.AnalysisQCParam', 
+          'RAD.AnalysisParam', 
+          'RAD.AnalysisInput', 
+          'RAD.AssayAnalysis', 
+          'RAD.Analysis',
+          'RAD.LogicalGroupLink',
+          'RAD.AnalysisInput',
+          'RAD.AnalysisParam',
+          'RAD.AnalysisQCParam',
+          'RAD.AssayAnalysis',
+          'RAD.Analysis',
+          'RAD.LogicalGroupLink',
+          'RAD.LogicalGroup',
+         );
 }
-
 
 1;
 
