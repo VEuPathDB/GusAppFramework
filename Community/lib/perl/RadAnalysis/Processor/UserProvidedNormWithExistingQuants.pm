@@ -1,5 +1,5 @@
-package GUS::Community::RadAnalysis::Processer::UserProvidedNormWithExistingQuants;
-use base qw(GUS::Community::RadAnalysis::AbstractProcesser);
+package GUS::Community::RadAnalysis::Processor::UserProvidedNormWithExistingQuants;
+use base qw(GUS::Community::RadAnalysis::AbstractProcessor);
 
 use strict;
 
@@ -22,7 +22,7 @@ use Data::Dumper;
 
 =head1 NAME
 
-GUS::Community::RadAnalysis::Processer::UserProvidedNormWithExistingQuants
+GUS::Community::RadAnalysis::Processor::UserProvidedNormWithExistingQuants
 
 =head1 SYNOPSIS
 
@@ -123,7 +123,7 @@ sub process {
 
   my $database;
   unless($database = GUS::ObjRelP::DbiDatabase->getDefaultDatabase()) {
-    GUS::Community::RadAnalysis::ProcesserError->new("Package [UserProvidedNorm] Requires Default DbiDatabase")->throw();
+    GUS::Community::RadAnalysis::ProcessorError->new("Package [UserProvidedNorm] Requires Default DbiDatabase")->throw();
   }
 
   my @results;
