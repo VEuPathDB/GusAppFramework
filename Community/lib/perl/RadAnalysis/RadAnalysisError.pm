@@ -28,12 +28,12 @@ sub new {
 
 #--------------------------------------------------------------------------------
 
-package GUS::Community::RadAnalysis::ProcesserError;
+package GUS::Community::RadAnalysis::ProcessorError;
 use base qw(GUS::Community::RadAnalysis::RadAnalysisError);
 1;
 
 package GUS::Community::RadAnalysis::SqlError;
-use base qw(GUS::Community::RadAnalysis::ProcesserError);
+use base qw(GUS::Community::RadAnalysis::ProcessorError);
 1;
 
 #--------------------------------------------------------------------------------
