@@ -1,4 +1,4 @@
-package GUS::Community::RadAnalysis::AbstractProcesser;
+package GUS::Community::RadAnalysis::AbstractProcessor;
 
 use strict;
 
@@ -12,9 +12,9 @@ use Data::Dumper;
 sub new {
   my $class = shift;
 
-  if(ref($class) eq 'AbstractProcesser') {
-    GUS::Community::RadAnalysis::ProcesserError->
-        new("try to instantiate an abstract class AbstractProcesser")->throw();
+  if(ref($class) eq 'AbstractProcessor') {
+    GUS::Community::RadAnalysis::ProcessorError->
+        new("try to instantiate an abstract class AbstractProcessor")->throw();
   }
 
   bless {}, $class; 
