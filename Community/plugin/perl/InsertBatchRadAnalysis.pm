@@ -120,14 +120,14 @@ sub run {
 
     eval "require $class";
 
-    my $processer = eval {
+    my $processor = eval {
       $class->new($args);
     };
     if($@) {
       $self->error("Could not insantiate class [$class]:  $@");
     }
 
-    my $results = $processer->process();
+    my $results = $processor->process();
     $analysisCount = $analysisCount + scalar(@$results);
 
     # Each Process Result is an analysis
@@ -174,12 +174,6 @@ sub undoTables {
           'RAD.AnalysisParam', 
           'RAD.AnalysisInput', 
           'RAD.AssayAnalysis', 
-          'RAD.Analysis',
-          'RAD.LogicalGroupLink',
-          'RAD.AnalysisInput',
-          'RAD.AnalysisParam',
-          'RAD.AnalysisQCParam',
-          'RAD.AssayAnalysis',
           'RAD.Analysis',
           'RAD.LogicalGroupLink',
           'RAD.LogicalGroup',
