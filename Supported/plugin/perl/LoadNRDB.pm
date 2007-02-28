@@ -319,7 +319,7 @@ sub makeTempTable {
     my $DBI_STR = $self->getArg('dbiStr') || die "must provide server and sid for temp table\n";
     my $dbh = DBI->connect($DBI_STR, $login, $password);
 
-    if ($self->getArg('restartTempTable')) { 
+    if (! $self->getArg('restartTempTable')) { 
       $dbh->do("truncate table NRDBTemp");
       $dbh->do("drop table NRDBTemp");
       $dbh->do("create table NRDBTemp (SOURCE_ID VARCHAR(32) NOT NULL,EXTERNAL_DB_REL_ID FLOAT(5) NOT NULL,SEQUENCE_VERSION VARCHAR(10),SET_NUM FLOAT(10) NOT NULL)");
