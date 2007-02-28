@@ -28,28 +28,14 @@ sub new {
 sub isValid {
   my ($self) = @_;
 
-  my $arrayTable = $self->getArrayTable();
-  my $arrayDesignName = $self->getArrayDesignName();
   my $resultFile = $self->getResultFile();
   my $resultView = $self->getResultView();
-  my $xmlTranslator = $self->getXmlTranslator();
   my $protocol = $self->getProtocol();
   my $logicalGroups = $self->getLogicalGroups();
 
-  unless($arrayTable) {
-    GUS::Community::RadAnalysis::InputError->new("ArrayTable was not defined")->throw();;
-  }
 
   unless($resultView) {
     GUS::Community::RadAnalysis::InputError->new("ResultView was not defined")->throw();;
-  }
-
-  unless($arrayDesignName) {
-    GUS::Community::RadAnalysis::InputError->new("ArrayDesignName was not defined")->throw();;
-  }
-
-  unless($xmlTranslator) {
-    GUS::Community::RadAnalysis::InputError->new("XmlTranslator was not defined")->throw();;
   }
 
   unless($resultFile) {
@@ -98,7 +84,7 @@ sub setResultFile {
 }
 
 #--------------------------------------------------------------------------------
-
+# TODO... For checking, should we retrieve these from the DB??
 sub getResultView {$_[0]->{_result_view}}
 sub setResultView {
   my ($self, $view) = @_;
@@ -108,6 +94,7 @@ sub setResultView {
                  'RAD::PaGE',
                  'RAD::SAM',
                  'RAD::DifferentialExpression',
+                 'RAD::ExpressionProfile',
                 ];
 
   foreach(@$allowed) {
@@ -266,26 +253,25 @@ sub writeAnalysisDataFile {
   my $resultFile = $self->getResultFile();
 
   my $logFile = "$resultFile.log";
-  my $dataFile = "$resultFile.data";
 
-  my $xmlFile = $self->getXmlTranslator();
-  my $processResultFile = $self->getResultFile();
+  if(my $xmlFile = $self->getXmlTranslator()) {
+    my $dataFile = "$resultFile.data";
 
-  # This should be moved to an instance var somehow???
-  my $functionArgs = $self->getTranslatorFunctionArgs();
+    my $functionArgs = $self->getTranslatorFunctionArgs();
 
-  my $fileTranslator = eval { 
-    GUS::Community::FileTranslator->new($xmlFile, $logFile);
-  };
+    my $fileTranslator = eval { 
+      GUS::Community::FileTranslator->new($xmlFile, $logFile);
+    };
 
-  if ($@) {
-     GUS::Community::RadAnalysis::RadAnalysisError->
-         new("The mapping configuration file '$xmlFile' failed the validation. Please see the log file $logFile")->throw();
-  };
+    if ($@) {
+      GUS::Community::RadAnalysis::RadAnalysisError->
+          new("The mapping configuration file '$xmlFile' failed the validation. Please see the log file $logFile")->throw();
+    };
 
-  my $dataFile = $fileTranslator->translate($functionArgs, $resultFile, $dataFile);
+    return $fileTranslator->translate($functionArgs, $resultFile, $dataFile);
+  }
 
-  return $dataFile;
+  return $resultFile;
 }
 
 #--------------------------------------------------------------------------------
