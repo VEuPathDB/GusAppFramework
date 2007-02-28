@@ -242,5 +242,38 @@ sub queryForTable {
 
 #--------------------------------------------------------------------------------
 
+sub createDataMatrixFromLogicalGroups {
+  my ($self, $logicalGroups, $quantView, $analysisView, $dbh) = @_;
+
+  foreach my $lg (@$logicalGroups) {
+    my $name = $lg->getName();
+    my $category = $lg->getCategory();
+
+    my @links = $lg->getChildren('RAD::LogicalGroupLink');
+
+    my @orderedLinks  = map { $_->[0] }
+      sort { $a->[1] <=> $b->[1] }
+        map { [$_, $_->getOrderNum()] } @links;
+
+    foreach my $link (@orderedLinks) {
+      my $id = $link->getRowId();
+
+      if($category eq 'quantification') {
+        $self->addElementData($name, $id, $quantView, $dbh);
+      }
+      elsif($category eq 'analysis') {
+        $self->addElementData($name, $id, $analysisView, $dbh);
+      }
+      else {
+        GUS::Community::RadAnalysis::ProcessorError->new("Only Categories of analysis or quantification are allowed")->throw();
+      }
+    }
+  }
+  return $self->getElementData();
+}
+
+
+#--------------------------------------------------------------------------------
+
 1;
 
