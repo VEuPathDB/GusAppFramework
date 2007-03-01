@@ -349,7 +349,7 @@ sub readCfgFile {
 	    $self->userError("You are trying to load into the view RAD::DataTransformationResult, but the protocol type for the protocol_id provided in the cfg_file is not in the DataTransformationProtocolType category.");
 	  }
 	  if ($self->getArg('subclass_view') ne 'RAD::DataTransformationResult' && $oe->get('category') ne 'HigherLevelAnalysisProtocolType') {
-	    $self->userError("The protocol type for the protocol_id provided in the cfg_file is not in the HigherLevelAnalysisProtocolType category.");
+	    $self->log("WARNING:  The protocol type for the protocol_id provided in the cfg_file is not in the HigherLevelAnalysisProtocolType category.");
 	  }
 	  $cfgInfo->{'protocol_id'} = $value;
 	  $protocolIdGiven = 1;
