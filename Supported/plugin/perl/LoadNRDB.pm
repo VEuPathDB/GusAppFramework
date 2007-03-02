@@ -317,7 +317,7 @@ sub makeTempTable {
     my $password = $self->getArg('tempPassword') || 
                    die "must provide tempLogin and tempPassword for temp table\n";
     my $DBI_STR = $self->getArg('dbiStr') || die "must provide server and sid for temp table\n";
-    my $dbh = DBI->connect($DBI_STR, $login, $password,{AutoCommit=>1}) || die "Can't connect to db with DBI\n";
+    my $dbh = DBI->connect($DBI_STR, $login, $password) || die "Can't connect to db with DBI\n";
 
     if (! $self->getArg('restartTempTable')) { 
       $dbh->do("truncate table NRDBTemp");
@@ -387,9 +387,11 @@ sub makeTempTable {
 	    if ($set_num%1000 == 0) {
 		$self->log("$set_num sets have been processed 
                                and put in the NRDBTemp table\n");
+		$dbh->commit();
 	    }
 	}
     }
+    $dbh->commit();
     my $tempresults = "$set_num total entries have been made 
                     into the NRDBTemp table";
     $self->log("$tempresults\n");
