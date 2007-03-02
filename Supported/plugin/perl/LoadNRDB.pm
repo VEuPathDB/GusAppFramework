@@ -317,7 +317,7 @@ sub makeTempTable {
     my $password = $self->getArg('tempPassword') || 
                    die "must provide tempLogin and tempPassword for temp table\n";
     my $DBI_STR = $self->getArg('dbiStr') || die "must provide server and sid for temp table\n";
-    my $dbh = DBI->connect($DBI_STR, $login, $password) || die "Can't connect to db with DBI\n";
+    my $dbh = DBI->connect($DBI_STR, $login, $password,{AutoCommit => 0}) || die "Can't connect to db with DBI\n";
 
     if (! $self->getArg('restartTempTable')) { 
       $dbh->do("truncate table NRDBTemp");
