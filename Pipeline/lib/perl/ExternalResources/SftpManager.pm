@@ -1,8 +1,6 @@
 package GUS::Pipeline::ExternalResources::SftpManager;
 
-use Net::SFTP;
-use Net::SFTP::Util;
-use Net::SFTP::Attributes;
+_loadSftpModule();
 use File::Basename;
 use strict;
 
@@ -190,5 +188,19 @@ sub _runCmd {
   my $status = $? >> 8;
   die("Failed with status $status running '$cmd': $!\n") if ($status);
 }
+
+
+# supplant default Net::SFTP with faster Net::SFTP::Foreign, if available
+sub _loadSftpModule {
+  eval { require Net::SFTP::Foreign::Compat };
+  if (! $@ ) {
+    import Net::SFTP::Foreign::Compat ':supplant';
+  } else {
+    eval { require Net::SFTP };
+    eval { require Net::SFTP::Util };
+    eval { require Net::SFTP::Attributes };
+  }
+}
+
 
 1;
