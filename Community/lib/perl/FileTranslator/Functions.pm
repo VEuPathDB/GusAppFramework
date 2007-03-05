@@ -12,6 +12,20 @@ sub new {
   return $self;
 }
 
+#--------------------------------------------------------------------------------
+
+sub qPercentToConfidence {
+
+  my $qPercent2Conf; $qPercent2Conf = sub {
+    my $confidence = shift;
+
+    return (100 - $confidence) / 100;
+  };
+
+  return $qPercent2Conf;
+}
+
+#--------------------------------------------------------------------------------
 
 sub maxConfAndFoldChange {
 
