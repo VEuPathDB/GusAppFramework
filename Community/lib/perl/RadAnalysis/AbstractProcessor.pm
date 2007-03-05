@@ -99,21 +99,21 @@ sub addElementData {
   my ($self, $name, $queryParam, $queryTable, $dbh) = @_;
 
   my $elements = $self->getElements();
-  unless($elements) {
-    die "";
-  }
 
   my $sh = $self->getSqlHandle($queryTable, $dbh);
+  $sh->execute($queryParam);
 
-  foreach my $element (@$elements) {
-    $sh->execute($queryParam, $element);
-
-    my ($data) = $sh->fetchrow_array();
-    $data = $data ? $data : 'NA';
-
-    push @{$self->{_element_data}->{$element}->{$name}}, $data;
+  my %data;
+  while(my ($id, $data) = $sh->fetchrow_array()) {
+    $data{$id} = $data;
   }
   $sh->finish();
+
+  foreach my $element (@$elements) {
+    my $data = $data{$element} ? $data{$element} : 'NA';
+
+    push @{$self->{_element_data}->{$element}->{$name}}, $data;    
+  }
 
   return $self->getElementData();
 }
@@ -124,20 +124,19 @@ sub getSqlHandle {
   my ($self, $table, $dbh) = @_;
 
     my %allSql = ('RMAExpress' => <<Sql,
-select rma_expression_measure
+select composite_element_id, rma_expression_measure
 from Rad.RMAExpress 
 where quantification_id = ?
- and composite_element_id = ?
 Sql
                   'DataTransformationResult' => <<Sql
-select float_value
+select element_id, float_value
 from Rad.DataTransformationResult
 where analysis_id = ?
- and row_id = ?
 Sql
                );
 
   my $sql = $allSql{$table};
+
   my $sh = $dbh->prepare($sql);
 
   return $sh;
