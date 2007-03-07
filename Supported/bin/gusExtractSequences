@@ -12,18 +12,22 @@ use GUS::ObjRelP::DbiDatabase;
 use CBIL::Bio::SequenceUtils;
 use GUS::Supported::GusConfig;
 
-my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength);
+my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength, $maxStopCodonPercent);
 &GetOptions("verbose!"=> \$verbose,
             "outputFile=s" => \$outFile,"idSQL=s" => \$idSQL, 
             "minLength=i" => \$minLength,"debug!" => \$debug,
+            "maxStopCodonPercent=i" => \$mscPercent,
             "gusConfigFile=s" => \$gusConfigFile);
 
 if(!$idSQL || !$outFile){
-	die "usage: gusExtractSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --gusConfigFile [\$GUS_HOME/config/gus.config]\n";
+	die "usage: gusExtractSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --mscPercent <maxium multiple-stop-codons per 100 AA sequences [100]> --gusConfigFile [\$GUS_HOME/config/gus.config]\n";
 }
 
 ##set the defaults
 $minLength = $minLength ? $minLength : 1;
+
+#It is optimal if we don't set the default, but filter only if this is set.
+#$mscPercent = $mscPercent ? $mscPercent : 100;
 
 print STDERR "Establishing dbi login\n" if $verbose;
 my $gusconfig = GUS::Supported::GusConfig->new($gusConfigFile);
@@ -74,7 +78,20 @@ sub printSequence{
     print STDERR "ERROR: $row[0] too short: ",length($sequence),"\n";
     return;
   }
+
+  if ($mscPercent) {
+	  my $aaLength = length ($sequence);	
+	  my $aaCount = ($sequence =~ tr/[^A-Za-z]//);
+	  my $aaStopCodonPercent = (($aaLength - $aaCount)/($aaLength)) * 100;
+	  if ($aaStopCodonPercent > $maxStopCodonPercent) {
+  		print STDER "ERROR: $row[0] has $aaStopCodonPercent\% stop codons\n";
+		return;
+	  }
+  }
+
 	my $defline = "\>".join(' ',@row)."\n";
 	print OUT $defline . CBIL::Bio::SequenceUtils::breakSequence($sequence,60);
 }
+
+
 
