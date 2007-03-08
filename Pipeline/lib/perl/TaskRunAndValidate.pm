@@ -36,7 +36,7 @@ package GUS::Pipeline::TaskRunAndValidate;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGeneTagAlign runMicerAlign runPfam runTRNAscan runPsipred runIprScan); 
+@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGenomeAlignWithGfClient runGeneTagAlign runMicerAlign runPfam runTRNAscan runPsipred runIprScan); 
 
 use strict;
 use Carp;
@@ -118,6 +118,30 @@ sub runGenomeAlign {
     if (!$valid) {
 	&run($propFile, $logFile, $numnodes, $time, $queue);
 	# TODO: validate results
+    }
+
+    return $valid;
+}
+
+
+sub runGenomeAlignWithGfClient {
+    my ($pipelineDir, $numnodes, $queryName, $subjectName, $time, $queue) = @_;
+
+    my $name = "$queryName-$subjectName";
+    print "\nRunning alignment of $queryName against $name\n";
+
+    #my $resultDir = "$pipelineDir/genome/$name/master/mainresult/";                                                                
+    # TODO: handle the case when query is not from repeatmask                                                                       
+    #       (i.e. final DoTS minus troublesome deflines)                                                                            
+    my $propFile = "$pipelineDir/genome/$name/input/controller.prop";
+    my $logFile = "$pipelineDir/logs/$name.genomealign.log";
+
+    my $valid = 0;
+    # TODO: validate previous results                                                                                               
+
+    if (!$valid) {
+        &run($propFile, $logFile, $numnodes, $time, $queue);
+        # TODO: validate results                                                                                                    
     }
 
     return $valid;
@@ -214,6 +238,29 @@ sub runPsipred {
   }
   return($valid);
 }
+
+
+sub runMatrix {
+    my ($pipelineDir, $numnodes, $queryname, $subjectname, $time, $queue) = @_;
+
+    my $name = "$queryname-$subjectname";
+    print "\nRunning blastmatrix on $name\n";
+
+    my $resultFile =
+        "$pipelineDir/matrix/$name/master/mainresult/blastMatrix.out";
+    my $inputFile =
+        "$pipelineDir/repeatmask/$queryname/master/mainresult/blocked.seq";
+    my $propFile = "$pipelineDir/matrix/$name/input/controller.prop";
+    my $logFile = "$pipelineDir/logs/$name.matrix.log";
+
+    my $valid =
+	&runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile, $numnodes, $time, $queue);
+
+    return $valid;
+}
+
+
+
 
 sub runSimilarity {
   my ($pipelineDir, $queryname, $subjectname, $numNodes,$time,$queue, $ppn) = @_;
