@@ -74,6 +74,8 @@ $dbh->disconnect();
 
 sub checkArgs {
 
+  &usage() if($help);
+
   unless($targetFile && $probeFile && $cdfFile && $out) {
     &usage();
   }
