@@ -248,13 +248,12 @@ sub createStudy {
   $mLogger->info("translate the value objects to GUS objects using ", ref($translator));
   my $study = $translator->mapAll($docRoot);
 
-  my $extDbRlsSpec = $self->getArg('extDbRlsSpec');
-  my $sourceId = $self->getArg('sourceId');
-
-  if($extDbRlsSpec && $sourceId) {
+  if(my $extDbRlsSpec = $self->getArg('extDbRlsSpec')) {
     my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
-
     $study->setExternalDatabaseReleaseId($extDbRlsId);
+  }
+
+  if(my $sourceId = $self->getArg('sourceId')) {
     $study->setSourceId($sourceId);
   }
 
