@@ -68,15 +68,27 @@ PLUGIN_NOTES
 
 
 sub getArgumentsDeclaration { 
- return [ fileArg({name           => 'configfile',
-                   format         => '',
-                   descr          => '', 
-                   reqd           => 1,
-                   mustExist      => 1,
-                   constraintFunc => undef,
-                   isList => '',
-                  })
-        ];
+  return [ fileArg({name           => 'configfile',
+                    format         => '',
+                    descr          => '', 
+                    reqd           => 1,
+                    mustExist      => 1,
+                    constraintFunc => undef,
+                    isList => '',
+                   }),
+           stringArg({ name           => 'extDbRlsSpec',
+                       descr          => 'external database name for the Study',
+                       reqd           => 0,
+                       constraintFunc => undef,
+                       isList         => 0,
+                     }),
+           stringArg({ name           => 'sourceId',
+                       descr          => 'source identifier for this Study',
+                       reqd           => 0,
+                       constraintFunc => undef,
+                       isList         => 0,
+                     }),
+         ];
 }
 
 
@@ -156,14 +168,65 @@ sub run {
 
   $self->setLogger($mLogger);
 
-  $mLogger->info("parse the config xml file", $self->getArg('configfile'));
-  my $config = XMLin($self->getArg('configfile'),  'ForceArray' => 1);
+  my $config = $self->parseAndCheckConfig();
 
-  $mLogger->info("check the config xml file");
-  $self->checkConfig($config);
-
-  $mLogger->info("create service factory and make the services");
   my $serviceFactory = RAD::MR_T::MageImport::ServiceFactory->new($config);
+
+  my $study = $self->createStudy($config, $serviceFactory);
+
+  $self->submit($study);
+
+  $self->testAndReport($serviceFactory, $dbh);
+
+  if ($self->getArg('commit')) {
+    $mLogger->fatal("Committing");
+    $dbh->commit() or $self->error("Commit failed: " . $self->{'dbh'}->errstr());
+  }
+  else {
+    $mLogger->fatal("Rolling Back DB");
+    $dbh->rollback() or $self->error("Rollback failed: " . $self->{'dbh'}->errstr());
+  }
+
+  my $insertCount = $self->getTotalInserts() - $coreInserts;
+  my $updateCount = $self->getTotalUpdates() || 0;
+
+  my $msg = "Inserted $insertCount and Updated $updateCount";
+
+  return($msg);
+}
+
+#--------------------------------------------------------------------------------
+
+sub testAndReport {
+  my ($self, $serviceFactory, $dbh) = @_;
+
+  my $mLogger = $self->getLogger;
+
+  if(my $tester = $serviceFactory->getServiceByName('tester')) {
+    my $passedTest = $tester->test();
+    $mLogger->info("Please see log file for test report");
+    unless($passedTest) {
+      $mLogger->fatal("Rolling Back DB");
+      $dbh->rollback() or $self->error("Rollback failed: " . $self->{'dbh'}->errstr());
+
+      $self->error("SQL TEST FAILURE!!");
+    }
+  }
+
+  if(my $reporter = $serviceFactory->getServiceByName('reporter')) {
+    $reporter->report();
+    $mLogger->info("Please see log file for sql report");
+  }
+
+}
+
+
+#--------------------------------------------------------------------------------
+
+sub createStudy {
+  my ($self, $config, $serviceFactory) = @_;
+
+  my $mLogger = $self->getLogger;
 
   my $reader =  $serviceFactory->getServiceByName('reader');
 
@@ -185,41 +248,36 @@ sub run {
   $mLogger->info("translate the value objects to GUS objects using ", ref($translator));
   my $study = $translator->mapAll($docRoot);
 
-  $mLogger->info("submit GUS objects");
-  $self->submit($study);
+  my $extDbRlsSpec = $self->getArg('extDbRlsSpec');
+  my $sourceId = $self->getArg('sourceId');
 
-  if(my $tester = $serviceFactory->getServiceByName('tester')) {
-    my $passedTest = $tester->test();
-    $mLogger->info("Please see log file for test report");
-    unless($passedTest) {
-      $mLogger->fatal("Rolling Back DB");
-      $dbh->rollback() or $self->error("Rollback failed: " . $self->{'dbh'}->errstr());
+  if($extDbRlsSpec && $sourceId) {
+    my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
 
-      $self->error("SQL TEST FAILURE!!");
-    }
+    $study->setExternalDatabaseReleaseId($extDbRlsId);
+    $study->setSourceId($sourceId);
   }
 
-  if(my $reporter = $serviceFactory->getServiceByName('reporter')) {
-    $reporter->report();
-    $mLogger->info("Please see log file for sql report");
-  }
-
-  if ($self->getArg('commit')) {
-    $mLogger->fatal("Committing");
-    $dbh->commit() or $self->error("Commit failed: " . $self->{'dbh'}->errstr());
-  }
-  else {
-    $mLogger->fatal("Rolling Back DB");
-    $dbh->rollback() or $self->error("Rollback failed: " . $self->{'dbh'}->errstr());
-  }
-
-  my $insertCount = $self->getTotalInserts() - $coreInserts;
-  my $updateCount = $self->getTotalUpdates() || 0;
-
-  my $msg = "Inserted $insertCount and Updated $updateCount";
-
-  return($msg);
+  return $study;
 }
+
+#--------------------------------------------------------------------------------
+
+sub parseAndCheckConfig {
+  my ($self) = @_;
+
+  my $mLogger = $self->getLogger;
+
+  $mLogger->info("parse the config xml file", $self->getArg('configfile'));
+  my $config = XMLin($self->getArg('configfile'),  'ForceArray' => 1);
+
+  $mLogger->info("check the config xml file");
+  $self->checkConfig($config);
+
+  return $config;
+}
+
+#--------------------------------------------------------------------------------
 
 =item checkConfig(\%config)
 
@@ -258,6 +316,9 @@ Because "Children only submit parents if parent does not have a primary key (is 
 
 sub submit{
   my ($self, $study) = @_;
+
+  my $mLogger = $self->getLogger;
+  $mLogger->info("submit GUS objects");
 
 #this will submit study, studydesign, studyfactor and assays if studyAssays are set
   if(my @studyAssay = $study->getChildren("GUS::Model::RAD::StudyAssay")){
