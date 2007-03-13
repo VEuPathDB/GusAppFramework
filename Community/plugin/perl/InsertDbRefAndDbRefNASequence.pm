@@ -3,6 +3,7 @@ package GUS::Community::Plugin::InsertDbRefAndDbRefNASequence;
 @ISA = qw(GUS::PluginMgr::Plugin);
  
 use strict;
+use GUS::PluginMgr::Plugin;
 
 use GUS::Model::SRes::DbRef;
 use GUS::Model::DoTS::DbRefNASequence;
