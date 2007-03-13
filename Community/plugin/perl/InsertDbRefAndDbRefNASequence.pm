@@ -8,58 +8,110 @@ use GUS::Model::SRes::DbRef;
 use GUS::Model::DoTS::DbRefNASequence;
 
 sub new {
-  my $class = shift;
+  my ($class) = @_;
 
   my $self = {};
   bless($self,$class);
 
-  my $usage = 'Maps assemblies to other entities by inserting rows into DbRef and
-          DbRefNASequence';
+my $purpose = <<PURPOSE;
+Maps assemblies or other na sequences to data from external sources whose sequences are not stored in GUS
+PURPOSE
 
-  my $easycsp =
-    [{o => 'testnumber',
-      t => 'int',
-      h => 'number of iterations for testing',
-     },
-     {o => 'mappingfiles',
-      t => 'string', 
-      h => 'mapping files of DoTS assemblies to ids from 
-            external source, file names delimited by commas',
-     },
-     {o => 'db_rel_id',
-      t => 'int',
-      h => 'external_database_release_id for external source of ids',
-     },
-     {o => 'db_id',
-      t => 'int',
-      h => 'external_database_id for external source of ids',
-     },
-     {o => 'pattern1',
-      t => 'string',
-      h => 'source identifier pattern with parenthesis around the id to be stored, e.g. ^(MGI:\d+)',
-     },
-     {o => 'pattern2',
-      t => 'string',
-      h => 'identifier pattern for the na_sequence_id stored in the DbRefNASequence table, with parenthesis, e.g. \s+DT.(\d+)',
-     },
-     {o => 'delete',
-      t => 'boolean',
-      h => 'option to delete entries in dbref that are not in the current mapping',
-     },
-     {o => 'mapToCurrentAssembly',
-      t => 'boolean',
-      h => 'option to map assembly a current assembly',
-     }
+my $purposeBrief = <<PURPOSE_BRIEF;
+Maps na sequences stored in GUS to other entities
+PURPOSE_BRIEF
+
+my $notes = <<NOTES;
+NOTES
+
+my $tablesAffected = <<TABLES_AFFECTED;
+    [ ['DoTS::DbRef', ''],
+      ['DoTS::DbRefNASequence', '']
     ];
+TABLES_AFFECTED
+
+my $tablesDependedOn = <<TABLES_DEPENDED_ON;
+  [ ['DoTS::NASequenceImp','']];
+TABLES_DEPENDED_ON
+
+my $howToRestart = <<RESTART;
+RESTART
+
+my $failureCases = <<FAIL_CASES;
+FAIL_CASES
+
+my $documentation = { purpose          => $purpose,
+		      purposeBrief     => $purposeBrief,
+		      notes            => $notes,
+		      tablesAffected   => $tablesAffected,
+		      tablesDependedOn => $tablesDependedOn,
+		      howToRestart     => $howToRestart,
+		      failureCases     => $failureCases };
+
+
+my $argsDeclaration = 
+[
+ integerArg({name  => 'testnumber',
+            descr => 'number of iterations for testing',
+            reqd  => 0,
+            constraintFunc=> undef,
+            isList=> 0,
+            default=> 0
+            }),
+ stringArg({name => 'mappingfiles',
+            descr => 'mapping files of DoTS assemblies to ids from 
+            external source, file names delimited by commas',
+            reqd  => 1,
+            constraintFunc=> undef,
+            isList=> 1,
+            default=> 0
+            }),
+ integerArg({name  => 'db_rel_id',
+            descr => 'external_database_release_id for external source of ids',
+            reqd  => 1,
+            constraintFunc=> undef,
+            isList=> 0,
+            default=> 0
+            }),
+ integerArg({name  => 'db_id',
+            descr => 'external_database_id for external source of ids',
+            reqd  => 1,
+            constraintFunc=> undef,
+            isList=> 0,
+            default=> 0
+            }),
+ stringArg({name => 'pattern1',
+            descr => 'source identifier pattern with parenthesis around the id to be stored, e.g. ^(MGI:\d+)',
+            reqd  => 1,
+            constraintFunc=> undef,
+            isList=> 0,
+            default=> 0
+            }),
+ stringArg({name => 'pattern2',
+            descr => 'identifier pattern for the na_sequence_id stored in the DbRefNASequence table, with parenthesis, e.g. \s+DT.(\d+)',
+            reqd  => 1,
+            constraintFunc=> undef,
+            isList=> 0,
+            default=> 0
+            }),
+ booleanArg({name => 'delete',
+             descr => 'option to delete entries in dbref that are not in the current mapping',
+             reqd => 0,
+             default => 0
+            }),
+ booleanArg({name => 'mapToCurrentAssembly',
+             descr => 'option to map assembly a current assembly',
+             reqd => 0,
+             default => 0
+            })
+];
 
   $self->initialize({requiredDbVersion => 3.5,
-		  cvsRevision => '$Revision$', # cvs fills this in!
-		  cvsTag => '$Name$', # cvs fills this in!
-		  name => ref($self),
-		  revisionNotes => 'make consistent with GUS 3.0',
-		  easyCspOptions => $easycsp,
-		  usage => $usage
-		 });
+		     cvsRevision => '$Revision$', # cvs fills this in!
+		     name => ref($self),
+		     argsDeclaration   => $argsDeclaration,
+		     documentation     => $documentation});
+
 
   return $self;
 }
@@ -71,27 +123,17 @@ sub run {
 
   my $self   = shift;
 
-  die "Supply: --mappingfiles=s \n" unless ($self->getArgs()->{mappingfiles});
-  die "Supply: --db_rel_id \n" unless ($self->getArgs()->{db_rel_id});
-  die "Supply: --pattern1 \n" unless ($self->getArgs()->{pattern1});
-  die "Supply: --pattern2 \n" unless ($self->getArgs()->{pattern2});
-  die "Supply: --db_id \n" unless ($self->getArgs()->{db_id});
+  my ($sourceIdHash, $mapHash) = $self->getSourceIdsAndMap();
 
-  print STDERR $self->getArgs()->{'commit'} ? "COMMIT ON\n" : "COMMIT TURNED OFF\n";
-  print STDERR "Testing on ". $self->getArgs()->{'testnumber'}."\n" 
-                if $self->getArgs()->{'testnumber'};
+  my $dbRefHash = $self->insertDbRef($sourceIdHash);
 
-  my ($sourceIdHash, $mapHash) = $self->getSourceIdsAndMap();  
+  $self->getCurrentAssemblyId($mapHash) if $self->getArg('mapToCurrentAssembly');
 
-  my $dbRefHash = $self->insertDbRef($sourceIdHash); 
-
-  $self->getCurrentAssemblyId($mapHash) if $self->getArgs()->{'mapToCurrentAssembly'}; 
-
-  my ($sourceIdDbrefHash) = $self->readDBRefs(); 
+  my ($sourceIdDbrefHash) = $self->readDBRefs();
 
   $self->insertDBRefNASeq($sourceIdDbrefHash,$mapHash); 
 
-  $self->deleteDbRef($dbRefHash) if $self->getArgs()->{'delete'};
+  $self->deleteDbRef($dbRefHash) if $self->getArg('delete');
 }
 
 sub getSourceIdsAndMap {
@@ -100,9 +142,9 @@ sub getSourceIdsAndMap {
   
   my (%sourceIdHash, %mapHash); 
   
-  my @files = split(",", $self->getArgs()->{mappingfiles});
-  my $pattern1 = $self->getArgs()->{pattern1};
-  my $pattern2 = $self->getArgs()->{pattern2};
+  my @files = split(",", $self->getArg('mappingfiles'));
+  my $pattern1 = $self->getArg('pattern1');
+  my $pattern2 = $self->getArg('pattern2');
   my $nLinks = 0;
   
   foreach my $file (@files) {
@@ -110,7 +152,7 @@ sub getSourceIdsAndMap {
     while (<F>) {
       chomp;
       
-      if ($self->getArgs()->{testnumber} && $nLinks >= $self->getArgs()->{testnumber}) {
+      if ($self->getArg('testnumber') && $nLinks >= $self->getArg('testnumber')) {
 	print STDERR "testing on $nLinks samples\n";
 	last;
       }
@@ -144,11 +186,11 @@ sub insertDbRef {
   
   my %dbRefHash;
   
-  my $db_rel_id = $self->getArgs()->{db_rel_id};
+  my $db_rel_id = $self->getArg('db_rel_id');
 
   print "$db_rel_id   db_rel_id\n";
   
-  my $db_id = $self->getArgs()->{db_id};
+  my $db_id = $self->getArg('db_id');
 
   my $sql = "select external_database_release_id from sres.externaldatabaserelease 
                where external_database_id = $db_id"; 
@@ -234,7 +276,7 @@ sub readDBRefs {
   
   my %sourceIdDbrefHash;
   
-  my $db_rel_id = $self->getArgs()->{db_rel_id};
+  my $db_rel_id = $self->getArg('db_rel_id');
   
   my $sql = "select primary_identifier,db_ref_id from sres.dbref where external_database_release_id=$db_rel_id";
 
@@ -286,7 +328,7 @@ sub deleteDbRef {
   my ($self,$dbRefHash) = @_;
 
   my $dbh = $self->getQueryHandle();
-  my $db_rel_id = $self->getArgs()->{db_rel_id};
+  my $db_rel_id = $self->getArg('db_rel_id');
   my $sql = "select db_ref_id from sres.dbref where external_database_release_id = $db_rel_id and db_ref_id not in (select db_ref_id from dots.dbrefnasequence)";
   my $num;
   my $stmt = $dbh->prepareAndExecute($sql);
