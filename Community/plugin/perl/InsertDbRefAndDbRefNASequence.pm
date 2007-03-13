@@ -50,49 +50,42 @@ my $documentation = { purpose          => $purpose,
 
 
 my $argsDeclaration = 
-[
- integerArg({name  => 'testnumber',
+[integerArg({name  => 'testnumber',
             descr => 'number of iterations for testing',
             reqd  => 0,
             constraintFunc=> undef,
-            isList=> 0,
-            default=> 0
+            isList=> 0
             }),
  stringArg({name => 'mappingfiles',
             descr => 'mapping files of DoTS assemblies to ids from 
             external source, file names delimited by commas',
             reqd  => 1,
             constraintFunc=> undef,
-            isList=> 1,
-            default=> 0
+            isList=> 1
             }),
  integerArg({name  => 'db_rel_id',
             descr => 'external_database_release_id for external source of ids',
             reqd  => 1,
             constraintFunc=> undef,
-            isList=> 0,
-            default=> 0
+            isList=> 0
             }),
  integerArg({name  => 'db_id',
             descr => 'external_database_id for external source of ids',
             reqd  => 1,
             constraintFunc=> undef,
-            isList=> 0,
-            default=> 0
+            isList=> 0
             }),
  stringArg({name => 'pattern1',
             descr => 'source identifier pattern with parenthesis around the id to be stored, e.g. ^(MGI:\d+)',
             reqd  => 1,
             constraintFunc=> undef,
-            isList=> 0,
-            default=> 0
+            isList=> 0
             }),
  stringArg({name => 'pattern2',
             descr => 'identifier pattern for the na_sequence_id stored in the DbRefNASequence table, with parenthesis, e.g. \s+DT.(\d+)',
             reqd  => 1,
             constraintFunc=> undef,
-            isList=> 0,
-            default=> 0
+            isList=> 0
             }),
  booleanArg({name => 'delete',
              descr => 'option to delete entries in dbref that are not in the current mapping',
