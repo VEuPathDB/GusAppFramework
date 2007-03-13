@@ -50,18 +50,19 @@ my $documentation = { purpose          => $purpose,
 
 
 my $argsDeclaration = 
-[integerArg({name  => 'testnumber',
-            descr => 'number of iterations for testing',
-            reqd  => 0,
-            constraintFunc=> undef,
-            isList=> 0
-            }),
+[
  stringArg({name => 'mappingfiles',
             descr => 'mapping files of DoTS assemblies to ids from 
             external source, file names delimited by commas',
             reqd  => 1,
             constraintFunc=> undef,
             isList=> 1
+            }),
+ integerArg({name  => 'testnumber',
+            descr => 'number of iterations for testing',
+            reqd  => 0,
+            constraintFunc=> undef,
+            isList=> 0
             }),
  integerArg({name  => 'db_rel_id',
             descr => 'external_database_release_id for external source of ids',
