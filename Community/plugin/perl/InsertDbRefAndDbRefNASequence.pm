@@ -129,6 +129,10 @@ sub run {
   $self->insertDBRefNASeq($sourceIdDbrefHash,$mapHash); 
 
   $self->deleteDbRef($dbRefHash) if $self->getArg('delete');
+
+  my $num = scalar (keys %{$sourceIdHash});
+
+  return "entered DbRef and DbRefNASequence rows for $num source ids";
 }
 
 sub getSourceIdsAndMap {
