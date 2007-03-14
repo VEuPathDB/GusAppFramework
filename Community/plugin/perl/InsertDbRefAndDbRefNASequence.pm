@@ -169,7 +169,7 @@ sub getSourceIdsAndMap {
 
   my (%sourceIdHash, %mapHash); 
 
-  my @files = split(",", $self->getArg('mappingfiles'));
+  my @files = $self->getArg('mappingfiles');
   my $pattern1 = $self->getArg('pattern1');
   my $pattern2 = $self->getArg('pattern2');
   my $nLinks = 0;
