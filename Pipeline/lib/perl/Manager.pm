@@ -10,7 +10,7 @@ use CBIL::Util::Utils;
 #############################################################################
 
 sub new {
-    my ($class, $pipelineDir, $propertySet, $propertiesFile, $cluster, $testNextPlugin, $justDocumenting) = @_;
+    my ($class, $pipelineDir, $propertySet, $propertiesFile, $cluster, $testNextPlugin, $justDocumenting, $skipCleanup) = @_;
 
     my $self = {};
     bless $self, $class;
@@ -386,14 +386,18 @@ ERROR:  Looks like '$self->{program} $self->{propertiesFile}' is already running
 sub _cleanup {
   my ($self, $exit) = @_;
 
-  foreach my $cleanupCmd (@{$self->{cleanupCommands}}) {
-    $self->log("Running cleanup command: '$cleanupCmd'\n");
-    system ($cleanupCmd);
-    if ($? >> 8){
-      print STDERR "Failed running: \n$cleanupCmd\n\n";
-      $self->log("FAILED\n\n");
-    } else { 
-      $self->log("\n");
+  if ($self->{skipCleanup}) {
+    $self->log("*** Skipping Cleanup Commands ***");
+  } else {
+    foreach my $cleanupCmd (@{$self->{cleanupCommands}}) {
+      $self->log("Running cleanup command: '$cleanupCmd'\n");
+      system ($cleanupCmd);
+      if ($? >> 8){
+	print STDERR "Failed running: \n$cleanupCmd\n\n";
+	$self->log("FAILED\n\n");
+      } else { 
+	$self->log("\n");
+      }
     }
   }
   exit(0) if $exit;
