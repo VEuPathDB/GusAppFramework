@@ -65,18 +65,18 @@ my $argsDeclaration =
             constraintFunc=> undef,
             isList=> 0
             }),
- integerArg({name  => 'db_rel_id',
-            descr => 'external_database_release_id for external source of ids',
-            reqd  => 1,
-            constraintFunc=> undef,
-            isList=> 0
-            }),
- integerArg({name  => 'db_id',
-            descr => 'external_database_id for external source of ids',
-            reqd  => 1,
-            constraintFunc=> undef,
-            isList=> 0
-            }),
+ stringArg({ name => 'extDbName',
+		 descr => 'dots.externaldatabase.name',
+		 reqd => 1,
+		 constraintFunc => undef,
+		 isList => 0
+	       }),
+ stringArg({name => 'extDbRlsVer',
+		descr => 'dots.externaldatabaserelease.version',
+		reqd => 1,
+		constraintFunc => undef,
+		isList => 0
+	       }),
  stringArg({name => 'pattern1',
             descr => 'source identifier pattern with parenthesis around the id to be stored, e.g. ^(MGI:\d+)',
             reqd  => 1,
@@ -135,27 +135,54 @@ sub run {
   return "entered DbRef and DbRefNASequence rows for $num source ids";
 }
 
+sub getExternalDatabaseRelease{
+
+  my ($self) = @_;
+  my $name = $self->getArg('extDbName');
+
+  my $externalDatabase = GUS::Model::SRes::ExternalDatabase->new({"name" => $name});
+  $externalDatabase->retrieveFromDB();
+
+  if (! $externalDatabase->getExternalDatabaseId()) {
+    $externalDatabase->submit();
+  }
+  my $external_db_id = $externalDatabase->getExternalDatabaseId();
+
+  my $version = $self->getArg('extDbRlsVer');
+
+  my $externalDatabaseRel = GUS::Model::SRes::ExternalDatabaseRelease->new ({'external_database_id'=>$external_db_id,'version'=>$version});
+
+  $externalDatabaseRel->retrieveFromDB();
+
+  if (! $externalDatabaseRel->getExternalDatabaseReleaseId()) {
+    $externalDatabaseRel->submit();
+  }
+  my $external_db_rel_id = $externalDatabaseRel->getExternalDatabaseReleaseId();
+
+  return ($external_db_id,$external_db_rel_id);
+
+}
+
 sub getSourceIdsAndMap {
 
   my ($self) = @_;
-  
+
   my (%sourceIdHash, %mapHash); 
-  
+
   my @files = split(",", $self->getArg('mappingfiles'));
   my $pattern1 = $self->getArg('pattern1');
   my $pattern2 = $self->getArg('pattern2');
   my $nLinks = 0;
-  
+
   foreach my $file (@files) {
-    open (F,$file);
+    open (F,$file) || die "Can't open $file for reading\n";
     while (<F>) {
       chomp;
-      
       if ($self->getArg('testnumber') && $nLinks >= $self->getArg('testnumber')) {
 	print STDERR "testing on $nLinks samples\n";
 	last;
       }
-      
+
       if (/$pattern1/) {
 	my $MappedFrom = $1;
 	if (/$pattern2/) {
@@ -164,10 +191,13 @@ sub getSourceIdsAndMap {
 	  push (@{$mapHash{$MappedFrom}},$MappedTo);
 	  ++$nLinks;
 	}
+	else {
+	  die "Unable to parse $_ for $pattern2\n";
+	}
       }
-      
+
       else {
-	die "Unable to parse $_";
+	die "Unable to parse $_ for $pattern1\n";
       }
     }
   }
@@ -181,29 +211,29 @@ sub insertDbRef {
 
   my ($self,$sourceIdHash) = @_;
 
-  my $dbh = $self->getQueryHandle();
-  
+  my ($db_id,$db_rel_id) = $self->getExternalDatabaseRelease();
+
   my %dbRefHash;
-  
-  my $db_rel_id = $self->getArg('db_rel_id');
 
   print "$db_rel_id   db_rel_id\n";
-  
-  my $db_id = $self->getArg('db_id');
+
+  my $dbh = $self->getQueryHandle();
 
   my $sql = "select external_database_release_id from sres.externaldatabaserelease 
                where external_database_id = $db_id"; 
-  
+
   my $stmt = $dbh->prepareAndExecute($sql);
-  
+
   my @relArray;
-  
+
   while (my $old_rel_id = $stmt->fetchrow_array()) {
     push (@relArray, $old_rel_id);
-  } 
-  
+  }
+
+  $stmt->finish();
+
   my $num =0;
-  
+
   foreach my $id (keys %$sourceIdHash) {
     my $lowercase_primary_id = lc ($id);
     foreach my $old_rel_id (@relArray) {
