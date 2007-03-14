@@ -15,9 +15,11 @@ umask 002;
 
 my $xmlFile = $ARGV[0];
 my $propertiesFile = $ARGV[1];
+my $skipCleanup = $ARGV[2];
 
 &usage unless -e $xmlFile;
 &usage unless -e $propertiesFile;
+&usage if ($skipCleanup && $skipCleanup ne '-skipCleanup');
 
 # [name, default (or null if reqd), comment]
 my @properties = (
@@ -42,7 +44,9 @@ if ($propertySet->getProp('clusterServer') ne "none") {
 my $mgr = GUS::Pipeline::Manager->new($propertySet->getProp('pipelineDir'),
 				      $propertySet, 
 				      $propertiesFile, $cluster, 
-				      $propertySet->getProp('testNextPlugin'));
+				      $propertySet->getProp('testNextPlugin'),
+				      0,
+				      $skipCleanup);
 
 $mgr->setGusConfigFile($propertySet->getProp('gusConfigFile'));
 
@@ -59,7 +63,7 @@ $loader->run();
 sub usage {
   my $prog = `basename $0`;
   chomp $prog;
-  print STDERR "usage: $prog xmlfile propertiesfile\n";
+  print STDERR "usage: $prog xmlfile propertiesfile [-skipCleanup]\n";
   exit 1;
 }
 
