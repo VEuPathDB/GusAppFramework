@@ -122,15 +122,17 @@ sub run {
 
   my ($sourceIdHash, $mapHash) = $self->getSourceIdsAndMap();
 
-  my $dbRefHash = $self->insertDbRef($sourceIdHash);
+  my ($db_id,$db_rel_id) = $self->getExternalDatabaseRelease();
+
+  my $dbRefHash = $self->insertDbRef($sourceIdHash,$db_id,$db_rel_id);
 
   $self->getCurrentAssemblyId($mapHash) if $self->getArg('mapToCurrentAssembly');
 
-  my ($sourceIdDbrefHash) = $self->readDBRefs();
+  my ($sourceIdDbrefHash) = $self->readDBRefs($db_rel_id);
 
-  $self->insertDBRefNASeq($sourceIdDbrefHash,$mapHash); 
+  $self->insertDBRefNASeq($sourceIdDbrefHash,$mapHash);
 
-  $self->deleteDbRef($dbRefHash) if $self->getArg('delete');
+  $self->deleteDbRef($dbRefHash,$db_rel_id) if $self->getArg('delete');
 
   my $num = scalar (keys %{$sourceIdHash});
 
@@ -211,9 +213,7 @@ sub getSourceIdsAndMap {
 
 sub insertDbRef {
 
-  my ($self,$sourceIdHash) = @_;
-
-  my ($db_id,$db_rel_id) = $self->getExternalDatabaseRelease();
+  my ($self,$sourceIdHash,$db_id,$db_rel_id) = @_;
 
   my %dbRefHash;
 
@@ -301,29 +301,27 @@ sub getCurrentAssemblyId {
 }
 
 sub readDBRefs {
-  my ($self) = @_;
+  my ($self,$db_rel_id) = @_;
 
   my $dbh = $self->getQueryHandle();
-  
+
   my %sourceIdDbrefHash;
-  
-  my $db_rel_id = $self->getArg('db_rel_id');
-  
+
   my $sql = "select primary_identifier,db_ref_id from sres.dbref where external_database_release_id=$db_rel_id";
 
-    my $st = $dbh->prepareAndExecute($sql);
+  my $st = $dbh->prepareAndExecute($sql);
 
-    while (my @a = $st->fetchrow_array()) {
-	my $lowercase_source_id = lc ($a[0]);
-	$sourceIdDbrefHash{$lowercase_source_id} = $a[1];
-    }
-    $st->finish();
+  while (my @a = $st->fetchrow_array()) {
+    my $lowercase_source_id = lc ($a[0]);
+    $sourceIdDbrefHash{$lowercase_source_id} = $a[1];
+  }
+  $st->finish();
 
   my $size = scalar keys %sourceIdDbrefHash;
 
   print "size of hash : $size\n";
-    
-    return \%sourceIdDbrefHash;
+
+  return \%sourceIdDbrefHash;
 }
 
 sub  insertDBRefNASeq {
@@ -356,10 +354,10 @@ sub  insertDBRefNASeq {
 }
 
 sub deleteDbRef {
-  my ($self,$dbRefHash) = @_;
+  my ($self,$dbRefHash,$db_rel_id) = @_;
 
   my $dbh = $self->getQueryHandle();
-  my $db_rel_id = $self->getArg('db_rel_id');
+
   my $sql = "select db_ref_id from sres.dbref where external_database_release_id = $db_rel_id and db_ref_id not in (select db_ref_id from dots.dbrefnasequence)";
   my $num;
   my $stmt = $dbh->prepareAndExecute($sql);
