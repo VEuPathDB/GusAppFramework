@@ -169,12 +169,12 @@ sub getSourceIdsAndMap {
 
   my (%sourceIdHash, %mapHash); 
 
-  my @files = $self->getArg('mappingfiles');
+  my $files = $self->getArg('mappingfiles');
   my $pattern1 = $self->getArg('pattern1');
   my $pattern2 = $self->getArg('pattern2');
   my $nLinks = 0;
 
-  foreach my $file (@files) {
+  foreach my $file (@{$files}) {
     open (F,$file) || die "Can't open $file for reading\n";
     while (<F>) {
       chomp;
