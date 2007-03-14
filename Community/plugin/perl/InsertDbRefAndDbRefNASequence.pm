@@ -7,6 +7,8 @@ use GUS::PluginMgr::Plugin;
 
 use GUS::Model::SRes::DbRef;
 use GUS::Model::DoTS::DbRefNASequence;
+use GUS::Model::SRes::ExternalDatabase;
+use GUS::Model::SRes::ExternalDatabaseRelease;
 
 sub new {
   my ($class) = @_;
