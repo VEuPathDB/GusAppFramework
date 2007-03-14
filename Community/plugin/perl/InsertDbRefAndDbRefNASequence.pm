@@ -334,7 +334,7 @@ sub  insertDBRefNASeq {
       my $lowercase_Id = lc ($Id);
       my $db_ref_id = $sourceIdDbrefHash->{$lowercase_Id};
 
-      my $newDbRefNASeq = GUS::Model::DoTS::DbRefNASequence->new ({'db_ref_id'=>$db_ref_id, 'na_sequence_id'=>$assemblyId});
+      my $newDbRefNASeq = GUS::Model::DoTS::DbRefNASequence->new ({'db_ref_id'=>$db_ref_id, 'na_sequence_id'=>$na_sequence_id});
 
       $num += $newDbRefNASeq->submit() 
 	unless $newDbRefNASeq->retrieveFromDB();
