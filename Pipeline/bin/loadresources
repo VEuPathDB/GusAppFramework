@@ -11,6 +11,7 @@ use CBIL::Util::PropertySet;
 $| = 1;
 umask 002;
 
+## making trivial change for testing
 
 my $xmlFile = $ARGV[0];
 my $propertiesFile = $ARGV[1];
