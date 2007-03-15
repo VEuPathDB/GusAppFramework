@@ -388,7 +388,7 @@ sub _cleanup {
   my ($self, $exit) = @_;
 
   if ($self->{skipCleanup}) {
-    $self->log("*** Skipping Cleanup Commands ***");
+    $self->log("*** Skipping Cleanup Commands ***\n\n");
   } else {
     foreach my $cleanupCmd (@{$self->{cleanupCommands}}) {
       $self->log("Running cleanup command: '$cleanupCmd'\n");
