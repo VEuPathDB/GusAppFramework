@@ -67,6 +67,12 @@ my $argsDeclaration =
             constraintFunc=> undef,
             isList=> 0
             }),
+ integerArg({name  => 'tableId',
+            descr => 'table_id of sequences to which the external data are mapped',
+            reqd  => 1,
+            constraintFunc=> undef,
+            isList=> 0
+            }),
  stringArg({ name => 'extDbName',
 		 descr => 'dots.externaldatabase.name',
 		 reqd => 1,
@@ -269,6 +275,7 @@ sub getCurrentAssemblyId {
   my $dbh = $self->getQueryHandle();
   my $sth = $dbh->prepare("select count(*) from dots.nasequenceimp where na_sequence_id = ?");
   my $num = 0;
+  my $tableId = $self->getArg('tableId');
   
   foreach my $sourceId (keys %$mapHash) {
     my $length = scalar(@{$mapHash->{$sourceId}});
@@ -281,7 +288,7 @@ sub getCurrentAssemblyId {
       $sth->finish();
 
       if ($count > 0) {
-	my $st = $dbh->prepare("select new_id from dots.MergeSplit where old_id = ? and table_id = 56");
+	my $st = $dbh->prepare("select new_id from dots.MergeSplit where old_id = ? and table_id = $tableId");
 	$st->execute($assemblyId);
         my ($newId) = $st->fetchrow_array();
 	$st->finish();
