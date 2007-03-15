@@ -199,7 +199,7 @@ sub _loadTandemRepeat {
     $dataHash->{$nm} = $value;
   }
 
-  my $name = "TR source_id: $seq";
+  my $name = "TR: $seq";
 
   my $tandemRepeat = GUS::Model::DoTS::TandemRepeatFeature->
     new({ name                           => $name,
