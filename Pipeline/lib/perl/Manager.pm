@@ -20,6 +20,7 @@ sub new {
     $self->{program} = basename($0);
     $self->{cluster} = $cluster;
     $self->{justDocumenting} = $justDocumenting;
+    $self->{skipCleanup} = $skipCleanup;
     $cluster->setManager($self);
     $self->{testNextPlugin} = $testNextPlugin;
 
