@@ -72,6 +72,11 @@ sub getGusSkeletonMakerClassName {
   return $self->{gusSkeletonMaker}->{class};
 }
 
+sub getGusSkeletonMakerMethodName {
+  my ($self) = @_;
+  return $self->{gusSkeletonMaker}->{method};
+}
+
 # Static method
 # return the BioperlFeatMapper set in a hash keyed on feature name
 sub _parseMapFile {
