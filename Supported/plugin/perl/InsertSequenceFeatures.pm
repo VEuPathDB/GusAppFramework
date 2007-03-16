@@ -798,6 +798,9 @@ sub makeGusFeatureSkeleton {
   my $gusSkeletonMakerClassName
     = $self->{mapperSet}->getGusSkeletonMakerClassName();
 
+  my $gusSkeletonMakerMethodName
+    = $self->{mapperSet}->getGusSkeletonMakerMethodName();
+
   my $gusSkeleton;
 
   if ($tableName) {
@@ -807,7 +810,7 @@ sub makeGusFeatureSkeleton {
     eval {
       no strict "refs";
       eval "require $gusSkeletonMakerClassName";
-      my $method = "${gusSkeletonMakerClassName}::makeGusSkeleton";
+      my $method = "${gusSkeletonMakerClassName}::$gusSkeletonMakerMethodName";
       my $taxonId = $self->getTaxonId($bioperlSeq);
       $gusSkeleton =
 	&$method($self, $bioperlFeature, $naSequenceId, $dbRlsId, $taxonId);
