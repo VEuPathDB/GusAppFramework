@@ -33,6 +33,11 @@ my @properties = (
 
 my $propertySet  = CBIL::Util::PropertySet->new($propertiesFile, \@properties, 1);
 
+$SIG{INT}  = sub { 
+  unlink $propertySet->getProp('pipelineDir').'/signals/running';
+  exit(1);
+};
+
 my $cluster;
 if ($propertySet->getProp('clusterServer') ne "none") {
   $cluster = GUS::Pipeline::SshCluster->new($propertySet->getProp('clusterServer'),
