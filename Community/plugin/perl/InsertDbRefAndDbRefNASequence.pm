@@ -235,14 +235,15 @@ sub insertDbRef {
   my @relArray;
 
   while (my $old_rel_id = $stmt->fetchrow_array()) {
+    next if ($old_rel_id = $db_rel_id);
     push (@relArray, $old_rel_id);
   }
-
+  push (@relArray, $db_rel_id) if @relArray == 0;
   $stmt->finish();
 
   my $num =0;
 
-  foreach my $id (keys %$sourceIdHash) {
+ OUTER: foreach my $id (keys %$sourceIdHash) {
     my $lowercase_primary_id = lc ($id);
     foreach my $old_rel_id (@relArray) {
       my $newDbRef = GUS::Model::SRes::DbRef -> new ({'lowercase_primary_identifier'=>$lowercase_primary_id, 'external_database_release_id'=>$old_rel_id});
@@ -262,6 +263,7 @@ sub insertDbRef {
       $dbRefHash{$dbRefId} = 1;
       
       $newDbRef->undefPointerCache();
+      next OUTER;
     }
   }
   
