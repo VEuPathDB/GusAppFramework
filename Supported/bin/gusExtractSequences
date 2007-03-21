@@ -16,11 +16,11 @@ my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength, $mscPercent);
 &GetOptions("verbose!"=> \$verbose,
             "outputFile=s" => \$outFile,"idSQL=s" => \$idSQL, 
             "minLength=i" => \$minLength,"debug!" => \$debug,
-            "maxStopCodonPercent=i" => \$mscPercent,
+            "maxStopCodonPercent=i" => \$maxStopCodonPercent,
             "gusConfigFile=s" => \$gusConfigFile);
 
 if(!$idSQL || !$outFile){
-	die "usage: gusExtractSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --mscPercent <maxium multiple-stop-codons per 100 AA sequences [100]> --gusConfigFile [\$GUS_HOME/config/gus.config]\n";
+	die "usage: gusExtractSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --maxStopCodonPercent <maxium multiple-stop-codons per 100 AA sequences [100]> --gusConfigFile [\$GUS_HOME/config/gus.config]\n";
 }
 
 ##set the defaults
@@ -65,7 +65,8 @@ $idStmt->execute();
 my @ids;
 while(my (@row) = $idStmt->fetchrow_array()){
   $count++;
-  print STDERR "Getting id for $count\n" if $verbose && $count % 10000 == 0;
+  my $time = localtime(time());
+  print STDERR "[$time] Getting id for $count\n" if $verbose && $count % 10000 == 0;
   next if exists $done{$row[0]};  ##don't put into hash if already have...
   &printSequence(@row)
 }
@@ -75,16 +76,16 @@ sub printSequence{
 #	print STDERR "$gene_id,$na_id,$description,$number,$taxon,$assembly_id,$length,$seq_ver\n";
   my $sequence = pop(@row);
   if(length($sequence) < $minLength){
-    print STDERR "ERROR: $row[0] too short: ",length($sequence),"\n";
+    print STDERR "Skipping: $row[0] too short: ",length($sequence),"\n";
     return;
   }
 
-  if ($mscPercent) {
+  if ($maxStopCodonPercent) {
 	  my $aaLength = length ($sequence);	
 	  my $aaCount = ($sequence =~ tr/[^A-Za-z]//);
 	  my $aaStopCodonPercent = (($aaLength - $aaCount)/($aaLength)) * 100;
 	  if ($aaStopCodonPercent > $maxStopCodonPercent) {
-  		print STDER "ERROR: $row[0] has $aaStopCodonPercent\% stop codons\n";
+  		print STDERR "Skipping: $row[0] has $aaStopCodonPercent\% stop codons\n";
 		return;
 	  }
   }
