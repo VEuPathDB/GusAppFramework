@@ -12,11 +12,11 @@ use GUS::ObjRelP::DbiDatabase;
 use CBIL::Bio::SequenceUtils;
 use GUS::Supported::GusConfig;
 
-my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength, $mscPercent);
+my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength,$mscPercent);
 &GetOptions("verbose!"=> \$verbose,
             "outputFile=s" => \$outFile,"idSQL=s" => \$idSQL, 
             "minLength=i" => \$minLength,"debug!" => \$debug,
-            "maxStopCodonPercent=i" => \$maxStopCodonPercent,
+            "maxStopCodonPercent=i" => \$mscPercent,
             "gusConfigFile=s" => \$gusConfigFile);
 
 if(!$idSQL || !$outFile){
@@ -80,11 +80,11 @@ sub printSequence{
     return;
   }
 
-  if ($maxStopCodonPercent) {
+  if ($mscPercent) {
 	  my $aaLength = length ($sequence);	
 	  my $aaCount = ($sequence =~ tr/[^A-Za-z]//);
 	  my $aaStopCodonPercent = (($aaLength - $aaCount)/($aaLength)) * 100;
-	  if ($aaStopCodonPercent > $maxStopCodonPercent) {
+	  if ($aaStopCodonPercent > $mscPercent) {
   		print STDERR "Skipping: $row[0] has $aaStopCodonPercent\% stop codons\n";
 		return;
 	  }
