@@ -1,0 +1,22 @@
+#!@perl@ 
+
+# log in to database as defined in GUS_HOME gus.config 
+# Currently uses sqlplus client and therefore only good for Oracle DBs.
+
+use strict;
+use DBI 1.43;
+use GUS::Supported::GusConfig;
+
+my $gusconfig = GUS::Supported::GusConfig->new(
+    "$ENV{GUS_HOME}/config/gus.config");
+
+my ($scheme, $driver, $attr_string, 
+    $attr_hash, $driver_dsn) = DBI->parse_dsn($gusconfig->getDbiDsn());
+
+exec <<"EOF";
+$ENV{ORACLE_HOME}/bin/sqlplus \\
+@{[$gusconfig->getReadOnlyDatabaseLogin()]}/\\
+@{[$gusconfig->getReadOnlyDatabasePassword()]}\\
+\@$driver_dsn
+EOF
+
