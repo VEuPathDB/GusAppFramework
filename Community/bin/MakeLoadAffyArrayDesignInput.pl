@@ -103,7 +103,9 @@ sub checkArgs {
 sub setupExtDbStuff {
   my ($reader) = @_;
 
-  if(!$customTarget && (!$genbankExtDbRelId || !$refseqExtDbRelId)) {
+  return if($customTarget);
+
+  if(!$genbankExtDbRelId || !$refseqExtDbRelId) {
     $genbankExtDbRelId = $reader->retrieveExtDbRlsIdFromSpec($genbankExtDbSpec);
     $refseqExtDbRelId = $reader->retrieveExtDbRlsIdFromSpec($refseqExtDbSpec);
   }
