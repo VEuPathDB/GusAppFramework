@@ -570,6 +570,7 @@ sub doMajorMode_RunOrReport {
       my $resultDescrip;
 
       my $startTime = time;
+      $pu->logDsn();
       $pu->logPluginName();
       $pu->logArgs();
       $Run && $pu->logAlgInvocationId();

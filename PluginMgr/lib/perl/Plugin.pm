@@ -1338,6 +1338,16 @@ sub logData {
 
 }
 
+=item C<logDsn()>
+
+Log to STDERR the Data Source Name used for this run of the plugin.
+
+=cut
+sub logDsn {
+    my $Self = shift;
+    $Self->log('DSN', $Self->getDb->getDSN);
+}
+
 =item C<logAlgInvocationId()>
 
 Log to STDERR the id for the AlgorithmInvocation that represents this
