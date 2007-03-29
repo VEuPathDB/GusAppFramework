@@ -116,7 +116,14 @@ my $argsDeclaration = [
                                  }),
                        integerArg({
                                    name => 'keep_best',
-                                   descr => 'keep how many alignments per query? (1: 1, 2: top 1%, o.w. all)',
+                                   descr => 'keep how many alignments per query? (1: 1, 2: top 1%,3: all top, o.w. all)',
+                                   constraintFunc=> undef,
+                                   reqd  => 0,
+                                   isList => 0,
+                                  }),
+		       integerArg({
+                                   name => 'withinPercentTop',
+                                   descr => 'set is_best to 1 for scores within this percent of the top, e.g. 0 = only the top,otherwise .99',
                                    constraintFunc=> undef,
                                    reqd  => 0,
                                    isList => 0,
@@ -530,7 +537,7 @@ sub keepBestAlignments {
    my $targetTaxonId = $self->getArg('target_taxon_id');
    my $targetExtDbRelId = $self->getArg('target_db_rel_id');
    my $commitInterval = $self->getArg('commit_interval');
-
+   my $withinPercentTop = $self->getArg('withinPercentTop') ? 1 - ($self->getArg('withinPercentTop')) / 100 : 0.99;
    # get alignment groups by query
    #
    print "# grouping alignments by query (DT)...\n";
@@ -554,7 +561,7 @@ sub keepBestAlignments {
       foreach (@oneGrp) {
          my ($bid, $score, $pct_id) = @$_;
 
-         my $is_best = ($grpSize == 1 || $score >= 0.99 * $best_score);
+         my $is_best = ($grpSize == 1 || $score >= $withinPercentTop * $best_score);
          if ($is_best) {
             $tot_bs++;
             $dbh->do("update DoTS.BlatAlignment set is_best_alignment = 1 "
