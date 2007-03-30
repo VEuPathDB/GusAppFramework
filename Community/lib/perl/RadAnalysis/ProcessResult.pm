@@ -15,7 +15,6 @@ sub new {
          _result_file => [],
          _xml_translator => undef,
          _result_view => undef,
-         _array_design_name => undef,
          _protocol => undef,
          _param_values => {},
          _translator_function_args => {},
@@ -52,11 +51,6 @@ sub isValid {
 
   return 1;
 }
-
-#--------------------------------------------------------------------------------
-
-sub getArrayDesignName {$_[0]->{array_design_name}}
-sub setArrayDesignName {$_[0]->{array_design_name} = $_[1]}
 
 #--------------------------------------------------------------------------------
 
