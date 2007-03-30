@@ -32,6 +32,40 @@ sub getElements {$_[0]->{_elements}}
 
 #--------------------------------------------------------------------------------
 
+sub standardParameterValues {
+  my ($self, $input)  = @_;
+
+  return unless($input);
+
+  my %rv;
+
+  foreach my $param (@$input) {
+    my ($name, $value) = split(/\|/, $param);
+    $rv{$name} = $value;
+  }
+
+  return \%rv;
+}
+
+#--------------------------------------------------------------------------------
+
+# [LGName|QuantUri, ...] or [LGName|AnalysisName]
+sub standardLogicalGroupInputs {
+  my ($self, $input) = @_;
+
+  my %rv;
+
+  foreach my $lg (@$input) {
+    my ($name, $link) = split(/\|/, $lg);
+
+    push @{$rv{$name}}, $link;
+  }
+
+  return \%rv;
+}
+
+#--------------------------------------------------------------------------------
+
 sub queryForArrayTable {
   my ($self, $dbh, $arrayDesignName) = @_;
 
@@ -180,7 +214,7 @@ where q.acquisition_id = a.acquisition_id
  and a.assay_id = sa.assay_id
  and sa.study_id = s.study_id
  and s.name = ?
- and q.uri = ?
+ and (q.uri = ? OR q.name = ?)
 Sql
                 analysis => <<Sql,
 Sql
@@ -194,7 +228,7 @@ Sql
   my $orderNum = 1;
 
   foreach my $name (@$names) {
-    $sh->execute($studyName, $name);
+    $sh->execute($studyName, $name, $name);
 
     my ($id) = $sh->fetchrow_array();
     $sh->finish();
