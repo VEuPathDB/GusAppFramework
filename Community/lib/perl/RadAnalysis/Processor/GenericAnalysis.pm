@@ -102,7 +102,7 @@ sub getArrayDesignName {$_[0]->{arrayDesignName}}
 sub getDataFile {$_[0]->{dataFile}}
 sub getStudyName {$_[0]->{studyName}}
 sub getFileTranslatorName {$_[0]->{fileTranslatorName}}
-sub getResultView {$_[0]->{result_view}}
+sub getResultView {$_[0]->{resultView}}
 sub getQuantificationInputs {$_[0]->{quantificationInputs}}
 sub getProtocolName {$_[0]->{protocolName}}
 sub getTranslatorArgs {$_[0]->{translatorArgs}}
@@ -143,10 +143,8 @@ sub process {
   # TODO Add any other translator Args...
   $result->addToTranslatorFunctionArgs({dbh => $dbh, arrayDesignName => $arrayDesignName});
 
-  my $paramValues = $self->setupParamValues($self->getParamValues());
+  my $paramValues = $self->standardParameterValues($self->getParamValues());
   $result->addToParamValuesHashRef($paramValues);
-
-  #TODO:  Generic Parameter values for the Retrieved Protocol ...
 
   $result->addLogicalGroups(@$logicalGroups);
 
