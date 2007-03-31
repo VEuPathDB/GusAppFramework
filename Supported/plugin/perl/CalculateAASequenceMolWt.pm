@@ -118,6 +118,10 @@ EOSQL
     unless ($aaSeq->retrieveFromDB()) {
       $self->error("aa_sequence_id $aaSeqId did not exist!?!");
     }
+
+    # J is valid IUPAC for leucine/isoleucine ambiguity but apparently
+    # Bio::Tools::SeqStats didn't get the memo - J is not allowed.
+    $seq =~ s/J/L/g;
     
     my $seq = Bio::PrimarySeq->new(-id => $aaSeqId,
 				   -seq => $seq,
