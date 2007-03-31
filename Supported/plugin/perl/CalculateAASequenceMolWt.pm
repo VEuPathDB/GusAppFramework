@@ -1,6 +1,5 @@
 package GUS::Supported::Plugin::CalculateAASequenceMolWt;
 
-
 use strict;
 use warnings;
 
