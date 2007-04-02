@@ -1,6 +1,6 @@
 package GUS::Supported::Plugin::LoadFastaSequences;
 
-@ISA = qw(GUS::PluginMgr::Plugin); 
+@ISA = qw(GUS::PluginMgr::Plugin);
 use strict;
 use GUS::PluginMgr::Plugin;
 use File::Basename;
@@ -8,10 +8,10 @@ use File::Basename;
   my $purposeBrief = 'Insert or update sequences from a FASTA file or as set of FASTA files.';
 
   my $purpose = <<PLUGIN_PURPOSE;
-Insert or update sequences from a FASTA file or as set of FASTA files.  A set of regular expressions provided on the command line extract from the definition lines of the input sequences various information to stuff into the database.  
+Insert or update sequences from a FASTA file or as set of FASTA files.  A set of regular expressions provided on the command line extract from the definition lines of the input sequences various information to stuff into the database.
 PLUGIN_PURPOSE
 
-  my $tablesAffected = 
+  my $tablesAffected =
   [
     ];
 
@@ -39,7 +39,7 @@ PLUGIN_NOTES
                         notes=>$notes
                       };
 
-my $argsDeclaration = 
+my $argsDeclaration =
 [
  integerArg({  name           => 'testnumber',
 	       descr          => 'For testing: stop after this number of iterations',
@@ -54,13 +54,13 @@ my $argsDeclaration =
                mustExist => 0,
                format =>"",
                isList         => 0 }),
- 
+
   stringArg({   name           => 'externalDatabaseName',
 	       descr          => 'The name of the ExternalDatabase from which the input sequences have come',
 	       reqd           => 1,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
 stringArg({   name           => 'externalDatabaseVersion',
 	       descr          => 'The version of the ExternalDatabaseRelease from whith the input sequences have come',
 	       reqd           => 1,
@@ -79,21 +79,21 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
  stringArg({   name           => 'nucleotideType',
 	       descr          => 'The nucleotide type from the SequenceType table for these sequences, e.g. RNA',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
   stringArg({  name           => 'SOTermName',
 	       descr          => 'The Sequence Ontology term for the sequence type',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
  integerArg({   name           => 'ncbiTaxId',
-	       descr          => 'The taxon id from NCBI for these sequences.  Not applicable for AASequences',
+	       descr          => 'The taxon id from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName flag.',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
@@ -134,48 +134,54 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
-  stringArg({   name           => 'regexSecondaryId',
+ stringArg({   name           => 'regexSecondaryId',
 	       descr          => 'The regular expression to pick the secondary id of the sequence from the defline',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
+ stringArg({   name           => 'regexTaxonName',
+	       descr          => 'The regular expression to pick the taxon name from the defline. Do not use this flag if using the ncbiTaxId flag.',
+	       reqd           => 0,
+	       constraintFunc => undef,
+	       isList         => 0 }),
+
  stringArg({   name           => 'regexName',
 	       descr          => 'The regular expression to pick the name of the sequence from the defline',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
  stringArg({   name           => 'regexDesc',
 	       descr          => 'The regular expression to pick the description of the sequence from the defline',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
  stringArg({   name           => 'regexChromosome',
 	       descr          => 'The regular expression to pick the chromosome from the defline',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
  stringArg({   name           => 'regexMolWgt',
 	       descr          => 'Theregular expression to pick the molecular weight of the sequence from the defline',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
  stringArg({   name           => 'regexContainedSeqs',
 	       descr          => 'The regular expression to pick the number of contained sequences from the defline',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
  stringArg({   name           => 'regexSeqVersion',
 	       descr          => 'The regular expression to pick the sequence version e.g. >\S+\.(\d+) for >NM_47654.1',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
  tableNameArg({   name           => 'tableName',
 	       descr          => 'Table name to insert sequences into, in schema::table format.  Chose from: DoTS::ExternalNASequence DoTS::VirtualSequence DoTS::ExternalAASequence DoTS::MotifAASequence',
 	       reqd           => 1,
@@ -210,7 +216,7 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
- 
+
 ];
 
 
@@ -218,7 +224,7 @@ sub new() {
   my ($class) = @_;
   my $self = {};
   bless($self,$class);
-  
+
   $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision$', # cvs fills this in!
 		     name => ref($self),
@@ -235,10 +241,12 @@ $| = 1;
 sub run {
   my $self  = shift;
 
+  die "Do not use both 'ncbiTaxId' and 'getTaxonFromFile'. Use one or the other, use the --help flag for more information." if ($self->getArg('ncbiTaxId') && $self->getArg('getTaxonFromFile'));
+
   $self->{totalCount} = 0;
   $self->{skippedCount} = 0;
 
-  $self->{external_database_release_id} = 
+  $self->{external_database_release_id} =
     $self->getExtDbRlsId($self->getArg('externalDatabaseName'),
 			 $self->getArg('externalDatabaseVersion'));
 
@@ -260,7 +268,7 @@ sub run {
 
   if ($self->getArg('tableName') eq 'DoTS::VirtualSequence') {
     $self->fetchSequenceTypeId("virtual");
-  } 
+  }
   elsif ($self->getArg('sequenceTypeName') && $self->getArg('nucleotideType')) {
     $self->fetchSequenceTypeId();
   }
@@ -272,11 +280,11 @@ sub run {
   if ($self->getArg('ncbiTaxId')) {
     $self->fetchTaxonId();
   }
- 
+
   if ($self->getArg('sourceIdsFile')) {
     $self->getGoodSourceIds();
   }
- 
+
   my $oracleName = $self->className2oracleName($self->getArg('tableName'));
   $checkStmt = $self->getAlgInvocation()->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $self->{external_database_release_id}");
 
@@ -325,6 +333,7 @@ sub processOneFile{
     my $seq;
     my $seq_version = 1;
     my $start = 1;
+    my $taxonName;
 
     while (<F>) {
 	if (/^\>/) {                ##have a defline....need to process!
@@ -346,7 +355,7 @@ sub processOneFile{
 			       $chromosome,$seq,$seq_version);
       	    }
 
-	    $self->log($self->getProgress()) 
+	    $self->log($self->getProgress())
 	      if ($self->{totalCount} + $self->{skippedCount})
 		% $self->getArg('logFrequency') == 0;
 
@@ -354,8 +363,8 @@ sub processOneFile{
 
 	    my $regexSource = $self->getArg('regexSourceId');
 
-	    if (/$regexSource/ && $1) { 
-		$source_id = $1; 
+	    if (/$regexSource/ && $1) {
+		$source_id = $1;
 	    } else {
 	      my $forgotParens = ($regexSource !~ /\(/)? "(Forgot parens?)" : "";
 	      $self->userError("Unable to parse source_id from $_ using regex '$regexSource' $forgotParens");
@@ -373,6 +382,12 @@ sub processOneFile{
 	      $name = $1;
 	    }
 
+	    my $regex_taxon_name = $self->getArg('regexTaxonName') if $self->getArg('regexTaxonName');
+	    if ($regex_taxon_name && /$regex_taxon_name/) {
+	      $taxonName = $1;
+	      $self->fetchTaxonIdFromName($taxonName);
+	    }
+
 	    my $regexChromosome = $self->getArg('regexChromosome') if $self->getArg('regexChromosome');
 	    if ($regexChromosome && /$regexChromosome/) {
 	      $chromosome = $1;
@@ -384,18 +399,18 @@ sub processOneFile{
 	    }
 
 	    my $regexMolWgt = $self->getArg('regexMolWgt') if $self->getArg('regexMolWgt');
-	    if ($regexMolWgt && /$regexMolWgt/) { 
-	      $mol_wgt = $1; 
+	    if ($regexMolWgt && /$regexMolWgt/) {
+	      $mol_wgt = $1;
 	    }
 
 	    my $regexContainedSeqs = $self->getArg('regexContainedSeqs') if $self->getArg('regexContainedSeqs');
-	    if ($regexContainedSeqs && /$regexContainedSeqs/) { 
-		$contained_seqs = $1; 
+	    if ($regexContainedSeqs && /$regexContainedSeqs/) {
+		$contained_seqs = $1;
 	    }
 
 	    my $regexSeqVersion = $self->getArg('regexSeqVersion') if $self->getArg('regexSeqVersion');
-	    if ($regexSeqVersion && /$regexSeqVersion/) { 
-		$seq_version = $1; 
+	    if ($regexSeqVersion && /$regexSeqVersion/) {
+		$seq_version = $1;
 	    }
 
 	    ##reset the sequence..
@@ -503,20 +518,20 @@ sub createNewExternalSequence {
   }
   if ($description) { 
     $description =~ s/\"//g; $description =~ s/\'//g;
-    $aas->set('description',substr($description,0,255)); 
+    $aas->set('description',substr($description,0,255));
   }
-  if ($name && $aas->isValidAttribute('name') ) { 
+  if ($name && $aas->isValidAttribute('name') ) {
     $name =~ s/\"//g; $name =~ s/\'//g;
     $aas->set('name',$name);
   }
-  if ($chromosome && $aas->isValidAttribute('chromosome') ) { 
+  if ($chromosome && $aas->isValidAttribute('chromosome') ) {
     $aas->setChromosome($chromosome);
   }
-  if ($mol_wgt && $aas->isValidAttribute('molecular_weight')) { 
-    $aas->setMolecularWeight($mol_wgt); 
+  if ($mol_wgt && $aas->isValidAttribute('molecular_weight')) {
+    $aas->setMolecularWeight($mol_wgt);
   }
-  if ($contained_seqs && $aas->isValidAttribute('number_of_contained_sequences')) { 
-    $aas->setNumberOfContainedSequences($contained_seqs); 
+  if ($contained_seqs && $aas->isValidAttribute('number_of_contained_sequences')) {
+    $aas->setNumberOfContainedSequences($contained_seqs);
   }
   if ($sequence && !$self->getArg('noSequence')) {
     $aas->setSequence($sequence);
@@ -525,7 +540,7 @@ sub createNewExternalSequence {
   return $aas;
 }
 
- 
+
 sub checkIfHave {
   my($self, $source_id) = @_;
   $checkStmt->execute($source_id);
@@ -587,7 +602,7 @@ sub setProjId {
 
 sub getProjId {
   my ($self) = @_;
-  
+
   return ($self->setProjId());
 }
 
@@ -608,7 +623,7 @@ sub fetchSequenceTypeId {
     GUS::Model::DoTS::SequenceType->new({ name => $seqTypeName,
 					  nucleotide_type => $nuclType
 					});
-  
+
   $sequenceType->retrieveFromDB;
 
   my $hierarchy = 1;
@@ -633,7 +648,7 @@ sub fetchSequenceOntologyId {
 
   $self->{sequenceOntologyId} = $SOTerm->getSequenceOntologyId();
 
-  $self->{sequenceOntologyId} 
+  $self->{sequenceOntologyId}
     || $self->userError("Can't find SO term '$name' in database");
 }
 
@@ -642,14 +657,26 @@ sub fetchTaxonId {
 
   eval ("require GUS::Model::SRes::Taxon");
 
-  my $ncbiTaxId = $self->getArg('ncbiTaxId'); 
+  my $ncbiTaxId = $self->getArg('ncbiTaxId');
   my $taxon = GUS::Model::SRes::Taxon->new({ncbi_tax_id=>$ncbiTaxId});
-  
+
   $taxon->retrieveFromDB || die "The NCBI tax ID '$ncbiTaxId' provided on the command line is not found in the database\n";
-  
+
   $self->{taxonId} = $taxon->getTaxonId();
 }
 
+
+sub fetchTaxonIdFromName {
+  my ($self, $taxonName) = @_;
+
+  eval ("require GUS::Model::SRes::Taxon");
+
+  my $taxon = GUS::Model::SRes::Taxon->new({name=>$taxonName});
+
+  $taxon->retrieveFromDB || die "The taxon name '$taxonName' provided in the file is not found in the database\n";
+
+  $self->{taxonId} = $taxon->getTaxonId();
+}
 
 
 1;
