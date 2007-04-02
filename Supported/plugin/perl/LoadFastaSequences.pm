@@ -669,9 +669,9 @@ sub fetchTaxonId {
 sub fetchTaxonIdFromName {
   my ($self, $taxonName) = @_;
 
-  eval ("require GUS::Model::SRes::Taxon");
+  eval ("require GUS::Model::SRes::TaxonName");
 
-  my $taxon = GUS::Model::SRes::Taxon->new({name=>$taxonName});
+  my $taxon = GUS::Model::SRes::TaxonName->new({name=>$taxonName});
 
   $taxon->retrieveFromDB || die "The taxon name '$taxonName' provided in the file is not found in the database\n";
 
