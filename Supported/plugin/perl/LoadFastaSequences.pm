@@ -241,7 +241,7 @@ $| = 1;
 sub run {
   my $self  = shift;
 
-  die "Do not use both 'ncbiTaxId' and 'getTaxonFromFile'. Use one or the other, use the --help flag for more information." if ($self->getArg('ncbiTaxId') && $self->getArg('getTaxonFromFile'));
+  die "Do not use both 'ncbiTaxId' and 'regexTaxonName'. Use one or the other, use the --help flag for more information." if ($self->getArg('ncbiTaxId') && $self->getArg('regexTaxonName'));
 
   $self->{totalCount} = 0;
   $self->{skippedCount} = 0;
