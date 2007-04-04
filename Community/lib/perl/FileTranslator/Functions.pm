@@ -37,10 +37,13 @@ sub maxConfAndFoldChange {
     my $max = $conf0 >= $conf1 ? $conf0 : $conf1;
 
     my $foldChange;
-    unless($max == 0) {
+    if($max == 0) { }
+    elsif(!$mean1) {
+      $foldChange = $mean0 < 1 ? -(1/$mean0) : $mean0;
+    }
+    else {
       $foldChange = $mean0 >= $mean1 ? $mean0/$mean1 : -($mean1/$mean0);
     }
-
     return "$max\t$foldChange";
   };
 
