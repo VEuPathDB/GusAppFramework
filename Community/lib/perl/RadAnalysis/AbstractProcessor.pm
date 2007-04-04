@@ -163,7 +163,7 @@ from Rad.RMAExpress
 where quantification_id = ?
 Sql
                   'DataTransformationResult' => <<Sql
-select element_id, float_value
+select row_id, float_value
 from Rad.DataTransformationResult
 where analysis_id = ?
 Sql
@@ -217,6 +217,13 @@ where q.acquisition_id = a.acquisition_id
  and (q.uri = ? OR q.name = ?)
 Sql
                 analysis => <<Sql,
+select ap.analysis_id
+from Rad.ANALYSISPARAM ap, Rad.ASSAYANALYSIS aa,
+     Rad.STUDYASSAY sa, Study.Study s
+where ap.analysis_id = aa.analysis_id
+ and aa.assay_id = sa.assay_id
+ and s.name = ?
+ and (ap.value = ? or ap.value = ?)
 Sql
                 );
 
@@ -305,8 +312,43 @@ sub createDataMatrixFromLogicalGroups {
   return $self->getElementData();
 }
 
+#--------------------------------------------------------------------------------
+# Will try to retrieve a protocol and set all existing param children for 
+#  regular protocol and for a series
+sub retrieveProtocolFromName {
+  my ($self, $name) = @_;
+
+  my $protocol = GUS::Model::RAD::Protocol->new({name => $name});
+
+  unless($protocol->retrieveFromDB) {
+    return undef;
+  }
+
+  $self->setProtocolParameters($protocol);
+
+  return $protocol;
+}
 
 #--------------------------------------------------------------------------------
+
+sub setProtocolParams {
+  my ($self, $protocol) = @_;
+
+  my @protocolQcParams = $protocol->getChildren('RAD::ProtocolQCParam', 1);
+
+  foreach my $paramQc (@protocolQcParams) {
+    $paramQc->setParent($protocol);
+  }
+
+  my @protocolParams = $protocol->getChildren('RAD::ProtocolParam', 1);
+
+  foreach my $param (@protocolParams) {
+    $param->setParent($protocol);
+  }
+
+  return $protocol;
+}
+
 
 1;
 
