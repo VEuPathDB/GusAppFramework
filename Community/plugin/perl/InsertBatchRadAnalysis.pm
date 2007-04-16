@@ -131,11 +131,11 @@ sub run {
         $self->error("The Process Did NOT yield a valid result\n");
       }
 
+      $result->submit();
+
       my $dataFile = $result->writeAnalysisDataFile();
       my $configFile = $result->writeAnalysisConfigFile();
       my $resultView = $result->getResultView(); 
-
-      $result->submit();
 
       # set the Args for the Superclass
       $self->setArg('subclass_view', $resultView);
