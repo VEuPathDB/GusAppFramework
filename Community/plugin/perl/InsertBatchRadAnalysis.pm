@@ -104,19 +104,13 @@ sub new {
 sub run {
   my ($self) = @_;
 
-  my $config = $self->getArg('configFile');
-  my $xml = XMLin($config,  'ForceArray' => 1);
+  my $analyses = $self->parseConfig();
 
   my $analysisCount;
 
-  foreach my $process (@{$xml->{process}}) {
-    my $class = $process->{class};
-    my $properties = $process->{property};
-
-    my $args = {};
-    foreach my $property (keys %$properties) {
-      $args->{$property} = $properties->{$property}->{value};
-    }
+  foreach my $analysis (@$analyses) {
+    my $class = $analysis->{class};
+    my $args = $analysis->{arguments};
 
     eval "require $class";
 
@@ -157,11 +151,48 @@ sub run {
     }
   }
 
-  my $processNum = scalar(@{$xml->{process}});
+  my $processNum = scalar(@$analyses);
 
   my $description = "Completed $processNum Process Modules consisting of $analysisCount analyses\n" . $self->getResultDescr();
 
   return $description;
+}
+
+#--------------------------------------------------------------------------------
+
+sub parseConfig {
+  my ($self) = @_;
+
+  my $config = $self->getArg('configFile');
+  my $xml = XMLin($config,  'ForceArray' => 1);
+
+  my $defaults = $xml->{defaultArguments}->[0]->{property};
+  my $analyses = $xml->{process};
+
+  foreach my $analysis (@$analyses) {
+    my $args = {};
+
+    foreach my $default (keys %$defaults) {
+      $args->{$default} = $defaults->{$default}->{value};
+    }
+
+    my $properties = $analysis->{property};
+
+    foreach my $property (keys %$properties) {
+      my $value = $properties->{$property}->{value};
+ 
+     if(ref($value) eq 'ARRAY') {
+        push(@{$args->{$property}}, @$value);
+      }
+      else {
+        $args->{$property} = $value;
+      }
+    }
+
+    $analysis->{arguments} = $args;
+  }
+
+  return $analyses;
 }
 
 #--------------------------------------------------------------------------------
