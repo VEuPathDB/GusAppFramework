@@ -73,11 +73,11 @@ sub queryForArrayTable {
 select oe.value
 from study.ontologyentry oe, Rad.ARRAYDESIGN a
 where a.technology_type_id = oe.ontology_entry_id
-and a.name = ?
+and (a.name = ? or a.source_id = ?)
 Sql
 
   my $sh = $dbh->prepare($sql);
-  $sh->execute($arrayDesignName);  
+  $sh->execute($arrayDesignName, $arrayDesignName);  
 
   my ($type) = $sh->fetchrow_array();
   $sh->finish();
