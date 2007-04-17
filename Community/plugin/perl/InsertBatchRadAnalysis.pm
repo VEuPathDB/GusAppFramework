@@ -173,7 +173,15 @@ sub parseConfig {
     my $args = {};
 
     foreach my $default (keys %$defaults) {
-      $args->{$default} = $defaults->{$default}->{value};
+      my $defaultValue = $defaults->{$default}->{value};
+
+      if(ref($defaultValue) eq 'ARRAY') {
+        my @ar = @$defaultValue;
+        $args->{$default} = \@ar;
+      }
+      else {
+        $args->{$default} = $defaultValue;
+      }
     }
 
     my $properties = $analysis->{property};
