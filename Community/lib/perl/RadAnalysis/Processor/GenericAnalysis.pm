@@ -15,11 +15,11 @@ use Data::Dumper;
 
 =head1 NAME
 
-GUS::Community::RadAnalysis::Processor::UserProvidedNormWithExistingQuants
+GUS::Community::RadAnalysis::Processor::GenericAnalysis
 
 =head1 SYNOPSIS
 
-Create ProcessResult for Files Which Have been Normalized by an outside User.
+Create ProcessResult for files which have already had some analysis applied to them.
 
 =head1 CONFIG ARGS
 
@@ -65,8 +65,8 @@ sub new {
 
   my $args = ref($argsHash) eq 'HASH' ? $argsHash : {};
 
-  unless($args->{arrayDesignName}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [arrayDesignName] is missing in the config file")->throw();
+  unless($args->{arrayDesignName} || $args->{arrayDesign}) {
+    GUS::Community::RadAnalysis::InputError->new("Parameter [arrayDesign] is missing in the config file")->throw();
   }
 
   unless($args->{dataFile}) {
@@ -75,10 +75,6 @@ sub new {
 
   unless($args->{studyName}) {
     GUS::Community::RadAnalysis::InputError->new("Parameter [studyName] is missing in the config file")->throw();
-  }
-
-  unless($args->{fileTranslatorName}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [fileTranslatorName] is missing in the config file")->throw();
   }
 
   unless($args->{resultView}) {
@@ -98,16 +94,23 @@ sub new {
 
 #--------------------------------------------------------------------------------
 
-sub getArrayDesignName {$_[0]->{arrayDesignName}}
+sub getArrayDesignName {
+  my $self = shift;
+
+  if(my $ad = $self->{arrayDesign}) {
+    return $ad;
+  }
+  else {
+    return $self->{arrayDesignName};
+  }
+}
 sub getDataFile {$_[0]->{dataFile}}
 sub getStudyName {$_[0]->{studyName}}
 sub getFileTranslatorName {$_[0]->{fileTranslatorName}}
 sub getResultView {$_[0]->{resultView}}
 sub getQuantificationInputs {$_[0]->{quantificationInputs}}
 sub getProtocolName {$_[0]->{protocolName}}
-sub getTranslatorArgs {$_[0]->{translatorArgs}}
 sub getParamValues {$_[0]->{paramValues}}
-
 
 #--------------------------------------------------------------------------------
 
@@ -121,15 +124,15 @@ sub process {
 
   my $dbh = $database->getQueryHandle();
 
+  # TODO:  analysis as input lg hash ??
   my $quantLgHash = $self->standardLogicalGroupInputs($self->getQuantificationInputs);
-  # TODO:  analysis lg hash ??
 
+  #TODO:  add analysis as input stuff
   my $logicalGroups = $self->setupLogicalGroups($dbh, $quantLgHash);
 
   my $arrayDesignName = $self->getArrayDesignName();
   my $arrayTable = $self->queryForArrayTable($dbh, $arrayDesignName);
 
-  # make the Process Result
   my $result = GUS::Community::RadAnalysis::ProcessResult->new();
 
   $result->setArrayTable($arrayTable);
@@ -137,10 +140,9 @@ sub process {
   $result->setResultView($self->getResultView);
   $result->setXmlTranslator($self->getFileTranslatorName());
 
-  my $protocol = $self->setupProtocol();
+  my $protocol = $self->setupProtocol($dbh);
   $result->setProtocol($protocol);
 
-  # TODO Add any other translator Args...
   $result->addToTranslatorFunctionArgs({dbh => $dbh, arrayDesignName => $arrayDesignName});
 
   my $paramValues = $self->standardParameterValues($self->getParamValues());
@@ -174,7 +176,7 @@ sub setupLogicalGroups {
 #--------------------------------------------------------------------------------
 
 sub setupProtocol {
-  my ($self) = @_;
+  my ($self, $dbh) = @_;
 
   my $protocolName = $self->getProtocolName();
 
@@ -185,6 +187,26 @@ sub setupProtocol {
   }
 
   my @params = $protocol->getChildren('RAD::ProtocolParam', 1);
+  my @qcParams = $protocol->getChildren('RAD::ProtocolQcParam', 1);
+
+  # Treat everything as a protocol Series
+  my $sql = "select child_protocol_id from Rad.PROTOCOLSTEP where parent_protocol_id = ?";
+
+  my $sh = $dbh->prepare($sql);
+  $sh->execute($protocol->getId());
+
+  while(my ($childId) = $sh->fetchrow_array()) {
+
+    my $child = GUS::Model::RAD::Protocol->new({protocol_id => $childId});
+    unless($child->retrieveFromDB) {
+      GUS::Community::RadAnalysis::ProcessorError->new("Could not Retrieve RAD::Protocol ID [$childId]")->throw();
+    }
+
+    push(@params, $child->getChildren('RAD::ProtocolParam', 1));
+    push(@qcParams, $child->getChildren('RAD::ProtocolQcParam', 1));
+  }
+
+  $sh->finish();
 
   my $seenAnalysisName;
 
