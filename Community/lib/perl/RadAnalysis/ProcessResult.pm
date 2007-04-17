@@ -106,6 +106,8 @@ sub getXmlTranslator {$_[0]->{_xml_translator}}
 sub setXmlTranslator {
   my ($self, $xmlTranslator) = @_;
 
+  return unless($xmlTranslator);
+
   unless($xmlTranslator =~ /\.xml$/) {
     $xmlTranslator = $ENV{GUS_HOME} . "/config/" . $xmlTranslator . ".xml";
   }
@@ -202,7 +204,7 @@ sub writeAnalysisConfigFile {
 
   my $paramIndex;
   foreach my $paramName (keys %$paramValues) {
-    my $matchingParam = &findFromName(\@protocolParams, $paramName);
+    my $matchingParam = &findFromName(\@protocolParams, $paramName, 'paramValues');
     my $paramId = $matchingParam->getId();
 
     my $value = $paramValues->{$paramName};
@@ -275,11 +277,14 @@ sub submit {
 
   my $logicalGroups = $self->getLogicalGroups();
   my $protocol = $self->getProtocol();
+  my $protocolName = $protocol->getName();
 
-  $protocol->submit();
+  unless($protocolName =~ /^DTPT series: /) {
+    $protocol->submit();
+  }
 
   foreach(@$logicalGroups) {
-    $_->submit();
+    $_->submit() unless($_->getId());
   }
 }
 
@@ -317,12 +322,12 @@ sub toString {
 #--------------------------------------------------------------------------------
 
 sub findFromName {
-  my ($ar, $name) = @_;
+  my ($ar, $name, $type) = @_;
 
   foreach(@$ar) {
     return $_ if($_->getName eq $name);
   }
-  GUS::Community::RadAnalysis::RadAnalysisError->new("Name [$name] not found in Array")->throw();
+  GUS::Community::RadAnalysis::RadAnalysisError->new("Name [$name] not found in [$type]")->throw();
 }
 
 
