@@ -6,6 +6,8 @@ use GUS::Community::RadAnalysis::RadAnalysisError;
 
 use GUS::Community::FileTranslator;
 
+use Data::Dumper;
+
 #--------------------------------------------------------------------------------
 
 sub new {
@@ -17,6 +19,7 @@ sub new {
          _result_view => undef,
          _protocol => undef,
          _param_values => {},
+         _qc_param_values => {},
          _translator_function_args => {},
          _logical_groups => [],
         }, $class;
@@ -181,6 +184,23 @@ sub addToParamValuesHashRef {
 }
 
 #--------------------------------------------------------------------------------
+
+sub getQcParamValues {$_[0]->{_qc_param_values}}
+sub addToQcParamValuesHashRef {
+  my ($self, $hashRef) = @_;
+
+  my $paramValues = $self->getQcParamValues();
+
+  foreach(keys %$hashRef) {
+    if($paramValues->{$_}) {
+      print STDERR "WARNING:  Will Overwrite Multiple QcParamValues for Parameter [$_]\n";
+    }
+    $paramValues->{$_} = $hashRef->{$_};
+  }
+}
+
+#--------------------------------------------------------------------------------
+
 # TODO:  QC Protocol params
 sub writeAnalysisConfigFile {
   my ($self) = @_;
@@ -194,13 +214,16 @@ sub writeAnalysisConfigFile {
   my $table = $self->getArrayTable();
   my $protocol = $self->getProtocol();
   my $paramValues = $self->getParamValues();
+  my $qcParamValues = $self->getQcParamValues();
+
   my $logicalGroups = $self->getLogicalGroups();
 
   my $protocolId = $protocol->getId();
 
   my @protocolParams = $protocol->getChildren('RAD::ProtocolParam');
+  my @protocolQcParams = $protocol->getChildren('RAD::ProtocolQcParam');
 
-  my (@logicalGroupIds, @paramValues);
+  my (@logicalGroupIds, @paramValues, @qcParamValues);
 
   my $paramIndex;
   foreach my $paramName (keys %$paramValues) {
@@ -215,6 +238,19 @@ sub writeAnalysisConfigFile {
     push(@paramValues, "protocol_param_value$paramIndex\t$value");
   }
 
+  my $qcParamIndex;
+  foreach my $paramName (keys %$qcParamValues) {
+    my $matchingParam = &findFromName(\@protocolQcParams, $paramName, 'qcParamValues');
+    my $paramId = $matchingParam->getId();
+
+    my $value = $qcParamValues->{$paramName};
+
+    $qcParamIndex ++;
+
+    push(@qcParamValues, "protocol_qc_param_id$paramIndex\t$paramId");
+    push(@qcParamValues, "protocol_qc_param_value$paramIndex\t$value");
+  }
+
   for(my $i = 0; $i < scalar(@$logicalGroups); $i++) {
     my $lgId = $logicalGroups->[$i]->getId();
     my $index = $i + 1;
@@ -224,11 +260,13 @@ sub writeAnalysisConfigFile {
 
   my $logicalGroupString = join("\n", @logicalGroupIds);
   my $protocolParamString = join("\n", @paramValues);
+  my $protocolQcParamString = join("\n", @qcParamValues);
 
   my $simpleConfig = <<Config;
 table\t$table
 protocol_id\t$protocolId
 $protocolParamString
+$protocolQcParamString
 analysis_date\t$analysisDate
 $logicalGroupString
 Config
