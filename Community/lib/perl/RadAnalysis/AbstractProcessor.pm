@@ -66,6 +66,31 @@ sub standardLogicalGroupInputs {
 
 #--------------------------------------------------------------------------------
 
+sub makeStandardLogicalGroups {
+  my ($self, $dbh, $quantLgHash, $analysisLgHash, $studyName) = @_;
+
+  my @logicalGroups;
+
+  foreach my $lgName (keys %$quantLgHash) {
+    my $linkNames = $quantLgHash->{$lgName};
+
+    my $logicalGroup = $self->makeLogicalGroup($lgName, '', 'quantification', $linkNames, $studyName, $dbh);
+
+    push(@logicalGroups, $logicalGroup);
+  }
+
+  foreach my $lgName (keys %$analysisLgHash) {
+    my $ids = $analysisLgHash->{$lgName};
+
+    my $logicalGroup = $self->makeLogicalGroup($lgName, '', 'analysis', $ids, $studyName, $dbh);
+
+    push(@logicalGroups, $logicalGroup);
+  }
+  return \@logicalGroups;
+}
+
+#--------------------------------------------------------------------------------
+
 sub queryForArrayTable {
   my ($self, $dbh, $arrayDesignName) = @_;
 
@@ -100,20 +125,20 @@ sub queryForElements {
 select composite_element_id 
 from $arrayTable e, Rad.ARRAYDESIGN a
 where a.array_design_id = e.array_design_id
- and a.name = ?
+ and (a.name = ? or a.source_id = ?)
 Sql
                 'RAD.Spot' => <<Sql,
 select element_id 
 from $arrayTable e, Rad.ARRAYDESIGN a
 where a.array_design_id = e.array_design_id
- and a.name = ?
+ and (a.name = ? or a.source_id = ?)
 Sql
                 );
 
   my $sql = $allSql{$arrayTable};
 
   my $sh = $dbh->prepare($sql);
-  $sh->execute($arrayDesignName);
+  $sh->execute($arrayDesignName, $arrayDesignName);
 
   my @elementIds;
 
@@ -123,6 +148,10 @@ Sql
   $sh->finish();
 
   $self->{_elements} = \@elementIds;
+
+  unless(scalar(@elementIds) > 0) {
+    GUS::Community::RadAnalysis::SqlError->new("Query did not retrieve any values\n$sql\n")->throw();
+  }
 
   return \@elementIds;
 }
@@ -217,18 +246,30 @@ where q.acquisition_id = a.acquisition_id
  and (q.uri = ? OR q.name = ?)
 Sql
                 analysis => <<Sql,
-select ap.analysis_id
-from Rad.ANALYSISPARAM ap, Rad.ASSAYANALYSIS aa,
-     Rad.STUDYASSAY sa, Study.Study s
-where ap.analysis_id = aa.analysis_id
- and aa.assay_id = sa.assay_id
+select distinct aa.analysis_id
+from Rad.STUDYASSAY sa, Study.Study s,
+     Rad.ASSAYANALYSIS aa LEFT JOIN Rad.ANALYSISPARAM ap on ap.analysis_id = aa.analysis_id
+where aa.assay_id = sa.assay_id
  and s.name = ?
- and (ap.value = ? or ap.value = ?)
+ and (aa.analysis_id = ? OR aa.analysis_id = ?)
+Sql
+                analysis_param_value => <<Sql,
+select distinct aa.analysis_id
+from Rad.STUDYASSAY sa, Study.Study s,
+     Rad.ASSAYANALYSIS aa LEFT JOIN Rad.ANALYSISPARAM ap on ap.analysis_id = aa.analysis_id
+where aa.assay_id = sa.assay_id
+ and s.name = ?
+ and (ap.value = ? OR ap.value = ?)";
 Sql
                 );
 
-  my $sql = $allSql{$type};
+  my $key = $type;
+  if($key = 'analysis' && $key =~ /\D/) {
+    $key = $key . "_param_value";
+  }
 
+  my $sql = $allSql{$type};
+ 
   my $sh = $dbh->prepare($sql);
 
   my @links;
