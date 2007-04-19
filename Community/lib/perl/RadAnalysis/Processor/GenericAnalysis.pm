@@ -25,13 +25,13 @@ Create ProcessResult for files which have already had some analysis applied to t
 
 =over 4
 
-=item C<arrayDesignName>
+=item C<arrayDesignName> or C<arrayDesign>
 
-Exactly as it appears in RAD::ArrayDesign
+Exactly as it appears in RAD::ArrayDesign name or source_id
 
 =item C<dataFile>
 
-The Analysis Is already done... this is the file to be loaded
+The Analysis Is already done... this is the file which has the data
 
 =item C<studyName>
 
@@ -39,7 +39,7 @@ Study::Study.Name
 
 =item C<fileTranslatorName>
 
-File Name (NOT full Path) for the FileTranslator (GUS/Community/config)
+File Name (Full Path) or a name for one in the config directory of your gus_home (minus the .xml) for the FileTranslator
 
 =item C<resultView>
 
@@ -48,6 +48,14 @@ View of RAD::AnalysisResultImp
 =item C<protocolName>
 
 RAD::Protocol name for this analysis
+
+=item C<paramValues>
+
+list of Rad.ProtocolParam.name|value
+
+=item C<quantificationInputs>
+
+list of LogicalGroupName|QuantificationName
 
 =back
 
