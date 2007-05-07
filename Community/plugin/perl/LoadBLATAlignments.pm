@@ -486,13 +486,44 @@ sub loadAlignments {
 }
 
 # -------------------------- getAlignmentGroups --------------------------
+sub getBlatAlignmentIds {
+  my ($self) = @_;
+
+  my $dbh = $self->getQueryHandle();
+
+  my $queryTableId = $self->getArg('query_table_id');
+  my $queryTaxonId = $self->getArg('query_taxon_id');
+  my $queryExtDbRelId = $self->getArg('query_db_rel_id');
+  my $targetTableId = $self->getArg('target_table_id');
+  my $targetTaxonId = $self->getArg('target_taxon_id');
+  my $targetExtDbRelId = $self->getArg('target_db_rel_id');
+
+   my $sql = "select distinct (query_na_sequence_id) "
+   . "from DoTS.BlatAlignment "
+   . "where query_table_id = $queryTableId "
+   . "and query_taxon_id = $queryTaxonId "
+   . ($queryExtDbRelId ? "and query_external_db_release_id = $queryExtDbRelId " : "")
+   . "and target_table_id = $targetTableId "
+   . "and target_taxon_id = $targetTaxonId "
+   . "and target_external_db_release_id = $targetExtDbRelId";
+   my $sth = $dbh->prepare($sql) or die "bad sql $sql:!\n";
+   print "# running $sql...\n";
+   $sth->execute or die "could not run $sql: $!";
+
+  my @blatIds;
+  while (my ($id) = $sth->fetchrow_array) {
+    push (@blatIds, $id);
+  }
+  $sth->finish;
+
+  \@blatIds;
+}
 
 sub getAlignmentGroups {
-   my ($self) = @_;
+   my ($self, $queryId) = @_;
 
    my $dbh = $self->getQueryHandle();
 
-   my $keepBest = $self->getArg('keep_best');
    my $queryTableId = $self->getArg('query_table_id');
    my $queryTaxonId = $self->getArg('query_taxon_id');
    my $queryExtDbRelId = $self->getArg('query_db_rel_id');
@@ -507,7 +538,7 @@ sub getAlignmentGroups {
    . ($queryExtDbRelId ? "and query_external_db_release_id = $queryExtDbRelId " : "")
    . "and target_table_id = $targetTableId "
    . "and target_taxon_id = $targetTaxonId "
-   . "and target_external_db_release_id = $targetExtDbRelId";
+   . "and target_external_db_release_id = $targetExtDbRelId and query_na_sequence_id = $queryId";
    my $sth = $dbh->prepare($sql) or die "bad sql $sql:!\n";
    print "# running $sql...\n";
    $sth->execute or die "could not run $sql: $!";
@@ -541,40 +572,44 @@ sub keepBestAlignments {
    # get alignment groups by query
    #
    print "# grouping alignments by query (DT)...\n";
-   my $alnGrps = $self->getAlignmentGroups();
+   my $blatIds = $self->getBlatAlignmentIds();
 
    # process result
    #
    print "# setting is_best_alignment status for each group...\n";
-   my $tot_sq = scalar(keys %$alnGrps);
+   my $tot_sq = @$blatIds;
    my ($tot_al, $tot_bs) = (0,0);
-   foreach my $sid (keys %$alnGrps) {
-      my @oneGrp = @{ $alnGrps->{$sid} };
-      my $grpSize = scalar(@oneGrp);
 
-      my $best_score = 0;
-      foreach (@oneGrp) {
-         my ($bid, $score, $pct_id) = @$_;
-         $best_score = $score if $score > $best_score;
-         $tot_al++;
-      }
-      foreach (@oneGrp) {
-         my ($bid, $score, $pct_id) = @$_;
+   foreach my $sid (@$blatIds) {
+     my $alnGrps = $self->getAlignmentGroups($sid);
+     my @oneGrp = @{ $alnGrps->{$sid} };
+     my $grpSize = scalar(@oneGrp);
 
-         my $is_best = ($grpSize == 1 || $score >= $percentTop * $best_score);
-         if ($is_best) {
-            $tot_bs++;
-            $dbh->do("update DoTS.BlatAlignment set is_best_alignment = 1 "
-                     . "where blat_alignment_id = $bid" );
-            if (($tot_bs % $commitInterval) == 0) {
-               $dbh->commit();
-               print "# $tot_bs alignments marked is_best_alignment = 1\n";
-            }
-         }
-      }
+<<<<<<< .mine
+     my $best_score = 0;
+     foreach (@oneGrp) {
+       my ($bid, $score, $pct_id) = @$_;
+       $best_score = $score if $score > $best_score;
+       $tot_al++;
+     }
+     foreach (@oneGrp) {
+       my ($bid, $score, $pct_id) = @$_;
+
+       my $is_best = ($grpSize == 1 || $score >= 0.99 * $best_score);
+       if ($is_best) {
+	 $tot_bs++;
+	 $dbh->do("update DoTS.BlatAlignment set is_best_alignment = 1 "
+		  . "where blat_alignment_id = $bid" );
+	 if (($tot_bs % $commitInterval) == 0) {
+	   $dbh->commit();
+	   print "# $tot_bs alignments marked is_best_alignment = 1\n";
+	 }
+       }
+     }
+     $dbh->commit();
    }
-   $dbh->commit();
-   $alnGrps = undef;
+
+   @$blatIds = ();
 
    my $summary = "$tot_sq DoTS with $tot_al ($tot_bs) alignments (that are bests)\n";
    print $summary;
