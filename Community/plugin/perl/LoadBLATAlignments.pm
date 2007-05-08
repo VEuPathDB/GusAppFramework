@@ -585,7 +585,6 @@ sub keepBestAlignments {
      my @oneGrp = @{ $alnGrps->{$sid} };
      my $grpSize = scalar(@oneGrp);
 
-<<<<<<< .mine
      my $best_score = 0;
      foreach (@oneGrp) {
        my ($bid, $score, $pct_id) = @$_;
