@@ -453,6 +453,9 @@ sub loadAlignments {
       my $nAlignsLoaded = 0;
 
       while (<$fh>) {
+
+         next unless /^\d/;
+
          my $align = CBIL::Bio::BLAT::Alignment->new($_);
 
          ++$nAligns;
@@ -507,7 +510,7 @@ sub getBlatAlignmentIds {
    . "and target_taxon_id = $targetTaxonId "
    . "and target_external_db_release_id = $targetExtDbRelId";
    my $sth = $dbh->prepare($sql) or die "bad sql $sql:!\n";
-   print "# running $sql...\n";
+   $self->logVerbose("# running $sql...");
    $sth->execute or die "could not run $sql: $!";
 
   my @blatIds;
@@ -540,7 +543,7 @@ sub getAlignmentGroups {
    . "and target_taxon_id = $targetTaxonId "
    . "and target_external_db_release_id = $targetExtDbRelId and query_na_sequence_id = $queryId";
    my $sth = $dbh->prepare($sql) or die "bad sql $sql:!\n";
-   print "# running $sql...\n";
+   $self->logVerbose("# running $sql...");
    $sth->execute or die "could not run $sql: $!";
 
    my %alnGrps;
