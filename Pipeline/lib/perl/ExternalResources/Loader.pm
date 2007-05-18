@@ -162,7 +162,10 @@ sub _processResource {
   } else {
     $unpackers = [$resource->{unpack}];
   }
-
+  
+  map { _formatForCLI($_) } @$unpackers;
+  _formatForCLI($resource->{pluginArgs});
+  
   my $targetDir = "$downloadDir/$resourceNm";
   my $loaderStep =
     GUS::Pipeline::ExternalResources::LoaderStep->new($repositoryDir,
@@ -189,9 +192,12 @@ sub _parseWgetArgs {
 
   return undef if (!$wgetArgsString);
 
+  _formatForCLI($wgetArgsString);
+
   my @wgetArgs = split(/\s+/, $wgetArgsString);
   my %wgetArgs;
   foreach my $arg (@wgetArgs) {
+    next if $arg =~ /^\s*$/;
     my ($k, $v) = 
       &GUS::Pipeline::ExternalResources::RepositoryEntry::parseWgetArg($arg);
     $wgetArgs{$k} = $v;
@@ -218,6 +224,13 @@ sub _substituteMacros {
   }
   return $xmlString;
 }
+
+# remove line wrappings for command line processing
+sub _formatForCLI {
+    $_[0] =~ s/\\$//gm;
+    $_[0] =~ s/[\n\r]+/ /gm;
+}
+
 
 1;
 
