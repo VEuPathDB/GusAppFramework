@@ -598,6 +598,20 @@ sub checkRelatedQuantifications{
 	}
 	push (@relatedGreenChannels, $relQid);
       }
+      elsif ($channel eq "alexa_532") {
+	push (@greenChannels, $qid);
+	if (defined($relChannel) && $relChannel ne 'alexa_633') {
+	  $self->error("DATABASE: quantifications (alexa_532) $qid and $relQid are related but the latter is not for channel alexa_633.");
+	}
+	push (@relatedGreenChannels, $relQid);
+      }
+      elsif ($channel eq "alexa_633") {
+	push (@redChannels, $qid);
+	if (defined($relChannel) && $relChannel ne 'alexa_532') {
+	  $self->error("DATABASE: quantifications (alexa_633) $qid and $relQid are related but the latter is not for channel alexa_532.");
+	}
+	push (@relatedRedChannels, $relQid);
+      }
     }
   }
 
