@@ -13,6 +13,9 @@ use GUS::Model::RAD::LogicalGroup;
 use GUS::Model::RAD::LogicalGroupLink;
 
 use GUS::Model::Core::TableInfo;
+use GUS::Model::Core::UserInfo;
+
+use GUS::Model::SRes::Contact;
 
 use  GUS::ObjRelP::DbiDatabase;
 
@@ -106,7 +109,9 @@ Query Database to create a PageInput file and then Run Page.
 
 my $RESULT_VIEW = 'RAD::PaGE';
 my $PAGE = 'PaGE_5.1.6_modifiedConfOutput.pl';
+my $PAGE_VERSION = '5.1.6';
 my $MISSING_VALUE = 'NA';
+my $USE_LOGGED_DATA = 1;
 
 #--------------------------------------------------------------------------------
 
@@ -117,32 +122,20 @@ sub new {
     GUS::Community::RadAnalysis::InputError->new("Must provide a hashref to the constructor of TwoClassPage")->throw();
   }
 
+  my $requiredParams = ['arrayDesignName',
+                        'studyName',
+                        'logDir',
+                        'numberOfChannels',
+                        'levelConfidence',
+                        'minPrescence',
+                        'statistic',
+                       ];
+
+  my $self = $class->SUPER::new($args, $requiredParams);
+
   $args->{quantificationInputs} = [] unless($args->{quantificationInputs});
   $args->{analysisInputs} = [] unless($args->{analysisInputs});
 
-  unless($args->{arrayDesignName}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [arrayDesignName] is missing in the config file")->throw();
-  }
-
-  unless($args->{studyName}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [studyName] is missing in the config file")->throw();
-  }
-
-  unless($args->{logDir}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [logDir] is missing in the config file")->throw();
-  }
-
-  unless($args->{numberOfChannels}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [numberOfChannels] is missing in the config file")->throw();
-  }
-
-  unless($args->{levelConfidence}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [levelConfidence] is missing in the config file")->throw();
-  }
-
-  unless($args->{minPrescence}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [minPrescence] is missing in the config file")->throw();
-  }
 
   unless($args->{isDataLogged} == 1 || $args->{isDataLogged} == 0) {
     GUS::Community::RadAnalysis::InputError->new("Parameter [isDataLogged] is missing in the config file")->throw();
@@ -156,7 +149,7 @@ sub new {
     GUS::Community::RadAnalysis::InputError->new("Parameter [design] must be given (R|D) when specifying 2 channel data.")->throw();
   }
 
-  bless $args, $class;
+  return $self;
 }
 
 #--------------------------------------------------------------------------------
@@ -172,12 +165,13 @@ sub getIsDataPaired {$_[0]->{isDataPaired}}
 sub getDesign {$_[0]->{design}}
 sub getMinPrescence {$_[0]->{minPrescence}}
 sub getLevelConfidence {$_[0]->{levelConfidence}}
+sub getStatistic {$_[0]->{statistic}}
 
 sub getQuantificationView {$_[0]->{quantificationView}}
 sub getQuantificationInputs {$_[0]->{quantificationInputs}}
 
 sub getAnalysisView {$_[0]->{analysisView}}
-sub getAnalysisInputs {$_[0]->{analysisView}}
+sub getAnalysisInputs {$_[0]->{analysisInputs}}
 
 sub getReferenceCondition {$_[0]->{referenceCondition}}
 sub setReferenceCondition {$_[0]->{referenceCondition} = $_[1]}
@@ -199,12 +193,15 @@ sub process {
     GUS::Community::RadAnalysis::ProcessorError->new("Package ".  __PACKAGE__ . " Requires Default DbiDatabase")->throw();
   }
 
+  my $userId = $database->getDefaultUserId;
+  my $contact = $self->getContactFromUserId($userId);
+
   my $dbh = $database->getQueryHandle();
 
   my $quantLgHash = $self->standardLogicalGroupInputs($self->getQuantificationInputs);
   my $analysisLgHash = $self->standardLogicalGroupInputs($self->getAnalysisInputs);
 
-  my $logicalGroups = $self->makeStandardLogicalGroups($dbh, $quantLgHash, $analysisLgHash, $self->getStudyName);
+  my $logicalGroups = $self->makeStandardLogicalGroups($dbh, $quantLgHash, $analysisLgHash, $self->getStudyName(), $self->getIsDataPaired());
   $self->setReferenceConditionFromLogicalGroups($logicalGroups);
 
   # Get all the elements for an ArrayDesign
@@ -225,8 +222,12 @@ sub process {
   my $pageResultsArray = $self->readRawPageResults($pageRawOutputFile);
   my $resultFile = $self->writeResultFile($pageResultsArray, $pageRawOutputFile);
 
+  $self->prependStudyNameToLogicalGroups($logicalGroups);
+
   # make the Process Result
   my $result = GUS::Community::RadAnalysis::ProcessResult->new();
+
+  $result->setContact($contact) if($contact);
 
   $result->setArrayTable($arrayTable);
   $result->setResultFile($resultFile);
@@ -253,6 +254,23 @@ sub process {
 
 #--------------------------------------------------------------------------------
 
+sub prependStudyNameToLogicalGroups {
+  my ($self, $logicalGroups) = @_;
+
+  my $studyName = $self->getStudyName();
+
+  foreach my $lg (@$logicalGroups) {
+    my $name = $lg->getName();
+
+    my $fullName = "$studyName: $name";
+    $lg->setName($fullName);
+  }
+
+  return $logicalGroups;
+}
+
+#--------------------------------------------------------------------------------
+
 sub setReferenceConditionFromLogicalGroups {
   my ($self, $logicalGroups) = @_;
 
@@ -272,14 +290,17 @@ sub setReferenceConditionFromLogicalGroups {
 sub setupParamValues {
   my ($self) = @_;
 
+  my $useLoggedData = $USE_LOGGED_DATA ? 'TRUE' : 'FALSE';
+
   my $values = { level_confidence_list => $self->getLevelConfidence,
                  min_presence_list => $self->getMinPrescence,
                  data_is_logged => $self->getIsDataLogged(),
                  paired => $self->getIsDataPaired(),
-                 use_logged_data => 'TRUE',
-                 software_version => $PAGE,
-                 software_language => 'perl',
+                 use_logged_data => $useLoggedData,
+                 software_version => $PAGE_VERSION,
+                 software_language => 'Perl',
                  num_channels => $self->getNumberOfChannels(),
+                 statistic => $self->getStatistic(),
                };
 
   if(my $design = $self->getDesign()) {
@@ -353,12 +374,12 @@ sub parseQcParamValues {
     my($pageLowerCutRatioList, $pageUpperCutRatioList, $pageStatisticMinList, $pageStatisticMaxList, $pageTStatUp, $pageTStatDown);
 
     foreach my $row(@$pageData) {    
-	if($row =~ /^Lower cutratio for group (\d+): (.+)/i ) {
+	if($row =~ /^Lower cutratio for group (\d+): (.+).$/i ) {
 	    #print "lower_cutratio_list = $2\n";
 	    $pageLowerCutRatioList = $2;
 	}
 	
-	if($row =~ /^Upper cutratio for group (\d+): (.+)/i ) {
+	if($row =~ /^Upper cutratio for group (\d+): (.+).$/i ) {
 	    #print "upper_cutratio_list = $2\n";
 	    $pageUpperCutRatioList = $2;
 	}
@@ -404,7 +425,15 @@ sub runPage {
   my $isLoggedArg = $isLogged ? "--data_is_logged" : "--data_not_logged";
   my $isPairedArg = $isPaired ? "--paired" : "--unpaired";
 
-  my $pageCommand = "$PAGE --infile $pageIn --outfile $pageOut --output_gene_confidence_list --output_text --num_channels $channels $isLoggedArg $isPairedArg --level_confidence $levelConfidence --use_logged_data --tstat --min_presence $minPrescence --missing_value $MISSING_VALUE $design";
+  my $statistic = '--' . $self->getStatistic();
+  my $useLoggedData = $USE_LOGGED_DATA ? '--use_logged_data' : '--use_unlogged_data';
+
+  my $whichR = `which PaGE_5.1.6_modifiedConfOutput.pl`;
+  if ($whichR =~ /Not Found/) {
+    GUS::Community::RadAnalysis::ProcessorError->new("PaGE_5.1.6_modifiedConfOutput.pl is needed to run this plug-in. Set your PATH varible to include this script")->throw();
+  }
+
+  my $pageCommand = "$PAGE --infile $pageIn --outfile $pageOut --output_gene_confidence_list --output_text --num_channels $channels $isLoggedArg $isPairedArg --level_confidence $levelConfidence $useLoggedData $statistic --min_presence $minPrescence --missing_value $MISSING_VALUE $design";
 
   my $systemResult = system($pageCommand);
 
@@ -585,21 +614,16 @@ sub setupProtocolQCParams {
 sub setupProtocolParams {
   my ($self, $protocol, $oeHash) = @_;
 
-  my %params = (tstat_tuning_parameter => 'nonnegative_float',
-                level_confidence_list => 'list_of_nonnegative_floats', 
+  my %params = (level_confidence_list => 'list_of_nonnegative_floats', 
                 min_presence_list => 'list_of_positive_integers',
-                'shift' => 'float',
                 data_is_logged => 'boolean',
                 paired => 'boolean',
                 use_logged_data => 'boolean',
                 reference_condition => 'string_datatype',
-                filtering_criterion => 'string_datatype',
                 design => 'string_datatype',
                 software_version => 'string_datatype',
                 software_language => 'string_datatype',
                 statistic => 'string_datatype',
-                num_permutations => 'positive_integer',
-                num_bins => 'positive_integer',
                 num_channels => 'positive_integer',
                );
 
@@ -626,6 +650,29 @@ sub setupProtocolParams {
   }
 
   return \@protocolParams;
+}
+
+#--------------------------------------------------------------------------------
+# Should Refactor this to the superclass??
+sub getContactFromUserId {
+  my ($self, $userId) = @_;
+
+  my $userInfo = GUS::Model::Core::UserInfo->new({user_id => $userId});
+
+  unless($userInfo->retrieveFromDB()) {
+    GUS::Community::RadAnalysis::SqlError->new("User Id [$userId] is not valid")->throw();
+  }
+
+  my $contact;
+  if(my $contactId = $userInfo->getContactId()) {
+    $contact = GUS::Model::SRes::Contact->new({contact_id => $contactId});
+
+    unless($contact->retrieveFromDB()) {
+      GUS::Community::RadAnalysis::SqlError->new("Contact Id [$contactId] is not valid")->throw();
+    }
+  }
+
+  return $contact;
 }
 
 #--------------------------------------------------------------------------------
