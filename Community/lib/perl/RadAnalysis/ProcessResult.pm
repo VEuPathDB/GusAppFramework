@@ -22,6 +22,7 @@ sub new {
          _qc_param_values => {},
          _translator_function_args => {},
          _logical_groups => [],
+         _contact => undef,
         }, $class;
 }
 
@@ -53,6 +54,19 @@ sub isValid {
   }
 
   return 1;
+}
+
+#--------------------------------------------------------------------------------
+
+sub getContact {$_[0]->{_contact}}
+sub setContact {
+  my ($self, $contact) = @_;
+
+  unless(ref($contact) eq 'GUS::Model::SRes::Contact') {
+    GUS::Community::RadAnalysis::InputError->new("Expected SRes::Contact but found: ". ref($contact))->throw();;
+  }
+
+  $self->{_contact} = $contact;
 }
 
 #--------------------------------------------------------------------------------
@@ -216,6 +230,12 @@ sub writeAnalysisConfigFile {
   my $paramValues = $self->getParamValues();
   my $qcParamValues = $self->getQcParamValues();
 
+  my $operatorString;
+  if(my $contact = $self->getContact()) {
+    my $contactId = $contact->getId();
+    $operatorString = "operator_id\t$contactId";
+  }
+
   my $logicalGroups = $self->getLogicalGroups();
 
   my $protocolId = $protocol->getId();
@@ -247,8 +267,8 @@ sub writeAnalysisConfigFile {
 
     $qcParamIndex ++;
 
-    push(@qcParamValues, "protocol_qc_param_id$paramIndex\t$paramId");
-    push(@qcParamValues, "protocol_qc_param_value$paramIndex\t$value");
+    push(@qcParamValues, "protocol_qc_param_id$qcParamIndex\t$paramId");
+    push(@qcParamValues, "protocol_qc_param_value$qcParamIndex\t$value");
   }
 
   for(my $i = 0; $i < scalar(@$logicalGroups); $i++) {
@@ -269,6 +289,7 @@ $protocolParamString
 $protocolQcParamString
 analysis_date\t$analysisDate
 $logicalGroupString
+$operatorString
 Config
 
   print OUT $simpleConfig;
@@ -282,7 +303,7 @@ Config
 
 
 sub writeAnalysisDataFile {
-  my ($self, $dbh) = @_;
+  my ($self) = @_;
 
   my $resultFile = $self->getResultFile();
 
