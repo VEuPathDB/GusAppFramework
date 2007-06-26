@@ -10,14 +10,22 @@ use GUS::Model::RAD::LogicalGroupLink;
 use Data::Dumper;
 
 sub new {
-  my $class = shift;
+  my ($class, $args, $expectedArrayRef) = @_;
 
   if(ref($class) eq 'AbstractProcessor') {
     GUS::Community::RadAnalysis::ProcessorError->
         new("try to instantiate an abstract class AbstractProcessor")->throw();
   }
 
-  bless {}, $class; 
+  if($expectedArrayRef) {
+    foreach my $param (@$expectedArrayRef) {
+      unless($args->{$param}) {
+        GUS::Community::RadAnalysis::InputError->new("Parameter [$param] is missing in the config file")->throw();
+      }
+    }
+  }
+  
+  bless $args, $class; 
 }
 
 #================================================================================
@@ -58,7 +66,7 @@ sub standardLogicalGroupInputs {
   foreach my $lg (@$input) {
     my ($name, $link) = split(/\|/, $lg);
 
-    push @{$rv{$name}}, $link;
+    unshift @{$rv{$name}}, $link;
   }
 
   return \%rv;
@@ -67,14 +75,14 @@ sub standardLogicalGroupInputs {
 #--------------------------------------------------------------------------------
 
 sub makeStandardLogicalGroups {
-  my ($self, $dbh, $quantLgHash, $analysisLgHash, $studyName) = @_;
+  my ($self, $dbh, $quantLgHash, $analysisLgHash, $studyName, $isPaired) = @_;
 
   my @logicalGroups;
 
   foreach my $lgName (keys %$quantLgHash) {
     my $linkNames = $quantLgHash->{$lgName};
 
-    my $logicalGroup = $self->makeLogicalGroup($lgName, '', 'quantification', $linkNames, $studyName, $dbh);
+    my $logicalGroup = $self->makeLogicalGroup($lgName, '', 'quantification', $linkNames, $studyName, $dbh, $isPaired);
 
     push(@logicalGroups, $logicalGroup);
   }
@@ -82,7 +90,7 @@ sub makeStandardLogicalGroups {
   foreach my $lgName (keys %$analysisLgHash) {
     my $ids = $analysisLgHash->{$lgName};
 
-    my $logicalGroup = $self->makeLogicalGroup($lgName, '', 'analysis', $ids, $studyName, $dbh);
+    my $logicalGroup = $self->makeLogicalGroup($lgName, '', 'analysis', $ids, $studyName, $dbh, $isPaired);
 
     push(@logicalGroups, $logicalGroup);
   }
@@ -115,22 +123,37 @@ Sql
 }
 
 #--------------------------------------------------------------------------------
-
+# Currently excludes all Controls (RAD.Control)
 sub queryForElements {
   my ($self, $dbh, $arrayDesignName) = @_;
 
   my $arrayTable = $self->queryForArrayTable($dbh, $arrayDesignName);
+  my $coreTableHash = $self->queryForTable();
+
+  my $tableId;
+  if($arrayTable eq 'RAD.Spot') {
+    $tableId = $coreTableHash->{spot};
+  }
+  elsif($arrayTable eq 'RAD.ShortOligoFamily') {
+    $tableId = $coreTableHash->{shortoligofamily};
+  }
+  else {
+    GUS::Community::RadAnalysis::ProcessorError->new("Illegal ArrayTable [$arrayTable].")->throw();
+  }
 
   my %allSql = ('RAD.ShortOligoFamily' => <<Sql,
-select composite_element_id 
-from $arrayTable e, Rad.ARRAYDESIGN a
-where a.array_design_id = e.array_design_id
+select e.composite_element_id
+from  Rad.ARRAYDESIGN a, $arrayTable e left join Rad.Control c on c.row_id = e.composite_element_id and c.table_id = $tableId 
+where c.control_id is null 
+ and a.array_design_id = e.array_design_id 
+ and e.name not like 'AFFX%'
  and (a.name = ? or a.source_id = ?)
 Sql
                 'RAD.Spot' => <<Sql,
-select element_id 
-from $arrayTable e, Rad.ARRAYDESIGN a
-where a.array_design_id = e.array_design_id
+select e.element_id
+from  Rad.ARRAYDESIGN a, $arrayTable e left join Rad.Control c on c.row_id = e.element_id and c.table_id = $tableId 
+where c.control_id is null 
+ and a.array_design_id = e.array_design_id
  and (a.name = ? or a.source_id = ?)
 Sql
                 );
@@ -191,10 +214,15 @@ select composite_element_id, rma_expression_measure
 from Rad.RMAExpress 
 where quantification_id = ?
 Sql
-                  'DataTransformationResult' => <<Sql
+                  'DataTransformationResult' => <<Sql,
 select row_id, float_value
 from Rad.DataTransformationResult
 where analysis_id = ?
+Sql
+                  'AffymetrixMAS5' => <<Sql,
+select composite_element_id, signal
+from Rad.AffymetrixMas5
+where quantification_id = ?
 Sql
                );
 
@@ -208,7 +236,7 @@ Sql
 #--------------------------------------------------------------------------------
 
 sub makeLogicalGroup {
-  my ($self, $name, $description, $category, $queryLinkNames, $studyName, $dbh) = @_;
+  my ($self, $name, $description, $category, $queryLinkNames, $studyName, $dbh, $isPaired) = @_;
 
   my $logicalGroup = GUS::Model::RAD::LogicalGroup->new({name => $name,
                                                          category => $category,
@@ -221,7 +249,7 @@ sub makeLogicalGroup {
     map { $_->setParent($logicalGroup) } @links;
   }
   else {
-    $self->makeLogicalGroupLinks($logicalGroup, $queryLinkNames, $category, $studyName, $dbh);
+    $self->makeLogicalGroupLinks($logicalGroup, $queryLinkNames, $category, $studyName, $dbh, $isPaired);
   }
 
   return $logicalGroup;
@@ -231,7 +259,7 @@ sub makeLogicalGroup {
 #--------------------------------------------------------------------------------
 
 sub makeLogicalGroupLinks {
-  my ($self, $lg, $names, $type, $studyName, $dbh) = @_;
+  my ($self, $lg, $names, $type, $studyName, $dbh, $isPaired) = @_;
 
   my $coreHash = $self->queryForTable($dbh);
 
@@ -273,9 +301,11 @@ Sql
   my $sh = $dbh->prepare($sql);
 
   my @links;
-  my $orderNum = 1;
+  my $orderNum;
 
   foreach my $name (@$names) {
+    $orderNum++ if($isPaired);
+
     $sh->execute($studyName, $name, $name);
 
     my ($id) = $sh->fetchrow_array();
@@ -290,8 +320,6 @@ Sql
                                                        row_id => $id,
                                                       });
     $link->setParent($lg);
-
-    $orderNum++;
   }
 
   return \@links;
@@ -303,12 +331,16 @@ Sql
 sub queryForTable {
   my ($self, $dbh) = @_;
 
+  if(my $cth = $self->{_core_table_hashref}) {
+    return $cth;
+  }
+
   my %rv;
 
   my $sql = "select lower(t.name), t.table_id from Core.TableInfo t, Core.DATABASEINFO d
              where t.database_id = d.database_id
               and d.name = 'RAD'
-              and t.name in ('Quantification', 'Analysis')";
+              and t.name in ('Quantification', 'Analysis','Spot', 'ShortOligoFamily')";
 
   my $sh = $dbh->prepare($sql);
   $sh->execute();
@@ -317,6 +349,8 @@ sub queryForTable {
     $rv{$name} = $id;
   }
   $sh->finish();
+
+  $self->{_core_table_hashref} = \%rv;
 
   return \%rv;
 }
