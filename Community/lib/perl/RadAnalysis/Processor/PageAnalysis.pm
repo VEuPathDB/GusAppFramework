@@ -307,7 +307,7 @@ sub setupParamValues {
                  software_version => $PAGE_VERSION,
                  software_language => 'Perl',
                  num_channels => $self->getNumberOfChannels(),
-                 statistic => 
+                 statistic => $statistic,
                };
 
   if(my $design = $self->getDesign()) {
