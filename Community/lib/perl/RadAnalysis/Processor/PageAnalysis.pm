@@ -291,11 +291,13 @@ sub setupParamValues {
   my ($self) = @_;
 
   my $useLoggedData = $USE_LOGGED_DATA ? 'TRUE' : 'FALSE';
+  my $dataIsLogged = $self->getIsDataLogged() ? 'TRUE' : 'FALSE';
+  my $dataIsPaired = $self->getIsDataPaired() ? 'TRUE' : 'FALSE';
 
   my $values = { level_confidence_list => $self->getLevelConfidence,
                  min_presence_list => $self->getMinPrescence,
-                 data_is_logged => $self->getIsDataLogged(),
-                 paired => $self->getIsDataPaired(),
+                 data_is_logged => $dataIsLogged,
+                 paired => $dataIsPaired,
                  use_logged_data => $useLoggedData,
                  software_version => $PAGE_VERSION,
                  software_language => 'Perl',
