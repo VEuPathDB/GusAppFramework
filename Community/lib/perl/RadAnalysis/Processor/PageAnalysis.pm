@@ -294,6 +294,11 @@ sub setupParamValues {
   my $dataIsLogged = $self->getIsDataLogged() ? 'TRUE' : 'FALSE';
   my $dataIsPaired = $self->getIsDataPaired() ? 'TRUE' : 'FALSE';
 
+  my $statistic = $self->getStatistic();
+  if($statistic eq 'tstat') {
+    $statistic = 't-statistic';
+  }
+
   my $values = { level_confidence_list => $self->getLevelConfidence,
                  min_presence_list => $self->getMinPrescence,
                  data_is_logged => $dataIsLogged,
@@ -302,7 +307,7 @@ sub setupParamValues {
                  software_version => $PAGE_VERSION,
                  software_language => 'Perl',
                  num_channels => $self->getNumberOfChannels(),
-                 statistic => $self->getStatistic(),
+                 statistic => 
                };
 
   if(my $design = $self->getDesign()) {
