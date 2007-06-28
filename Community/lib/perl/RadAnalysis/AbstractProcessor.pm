@@ -2,6 +2,8 @@ package GUS::Community::RadAnalysis::AbstractProcessor;
 
 use strict;
 
+use Tie::IxHash;
+
 use GUS::Community::RadAnalysis::RadAnalysisError;
 
 use GUS::Model::RAD::LogicalGroup;
@@ -62,6 +64,7 @@ sub standardLogicalGroupInputs {
   my ($self, $input) = @_;
 
   my %rv;
+  tie %rv, "Tie::IxHash";
 
   foreach my $lg (@$input) {
     my ($name, $link) = split(/\|/, $lg);
@@ -75,12 +78,14 @@ sub standardLogicalGroupInputs {
 #--------------------------------------------------------------------------------
 
 sub makeStandardLogicalGroups {
-  my ($self, $dbh, $quantLgHash, $analysisLgHash, $studyName, $isPaired) = @_;
+  my ($self, $dbh, $quantLgHash, $analysisLgHash, $studyName, $isPaired, $prependStudyName) = @_;
 
   my @logicalGroups;
 
   foreach my $lgName (keys %$quantLgHash) {
     my $linkNames = $quantLgHash->{$lgName};
+
+    $lgName = "$studyName: $lgName" if($prependStudyName); 
 
     my $logicalGroup = $self->makeLogicalGroup($lgName, '', 'quantification', $linkNames, $studyName, $dbh, $isPaired);
 
@@ -89,6 +94,8 @@ sub makeStandardLogicalGroups {
 
   foreach my $lgName (keys %$analysisLgHash) {
     my $ids = $analysisLgHash->{$lgName};
+
+    $lgName = "$studyName: $lgName" if($prependStudyName); 
 
     my $logicalGroup = $self->makeLogicalGroup($lgName, '', 'analysis', $ids, $studyName, $dbh, $isPaired);
 
@@ -128,7 +135,7 @@ sub queryForElements {
   my ($self, $dbh, $arrayDesignName) = @_;
 
   my $arrayTable = $self->queryForArrayTable($dbh, $arrayDesignName);
-  my $coreTableHash = $self->queryForTable();
+  my $coreTableHash = $self->queryForTable($dbh);
 
   my $tableId;
   if($arrayTable eq 'RAD.Spot') {
@@ -367,8 +374,8 @@ sub createDataMatrixFromLogicalGroups {
     my @links = $lg->getChildren('RAD::LogicalGroupLink');
 
     my @orderedLinks  = map { $_->[0] }
-      sort { $a->[1] <=> $b->[1] }
-        map { [$_, $_->getOrderNum()] } @links;
+      sort { $a->[1] ? $a->[1] <=> $b->[1] : $a->[2] <=> $b->[2] }
+        map { [$_, $_->getOrderNum(), $_->getRowId()] } @links;
 
     foreach my $link (@orderedLinks) {
       my $id = $link->getRowId();
