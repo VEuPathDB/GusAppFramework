@@ -201,8 +201,10 @@ sub process {
   my $quantLgHash = $self->standardLogicalGroupInputs($self->getQuantificationInputs);
   my $analysisLgHash = $self->standardLogicalGroupInputs($self->getAnalysisInputs);
 
-  my $logicalGroups = $self->makeStandardLogicalGroups($dbh, $quantLgHash, $analysisLgHash, $self->getStudyName(), $self->getIsDataPaired());
-  $self->setReferenceConditionFromLogicalGroups($logicalGroups);
+  my @shortLgNames = (keys %$quantLgHash, keys %$analysisLgHash);
+  $self->setReferenceCondition($shortLgNames[0]) unless($self->getReferenceCondition());
+
+  my $logicalGroups = $self->makeStandardLogicalGroups($dbh, $quantLgHash, $analysisLgHash, $self->getStudyName(), $self->getIsDataPaired(), 1);
 
   # Get all the elements for an ArrayDesign
   my $arrayDesignName = $self->getArrayDesignName();
@@ -221,8 +223,6 @@ sub process {
   my $pageRawOutputFile = $self->runPage($inputFileName);
   my $pageResultsArray = $self->readRawPageResults($pageRawOutputFile);
   my $resultFile = $self->writeResultFile($pageResultsArray, $pageRawOutputFile);
-
-  $self->prependStudyNameToLogicalGroups($logicalGroups);
 
   # make the Process Result
   my $result = GUS::Community::RadAnalysis::ProcessResult->new();
@@ -250,39 +250,6 @@ sub process {
   $result->addLogicalGroups(@$logicalGroups);
 
   return [$result];
-}
-
-#--------------------------------------------------------------------------------
-
-sub prependStudyNameToLogicalGroups {
-  my ($self, $logicalGroups) = @_;
-
-  my $studyName = $self->getStudyName();
-
-  foreach my $lg (@$logicalGroups) {
-    my $name = $lg->getName();
-
-    my $fullName = "$studyName: $name";
-    $lg->setName($fullName);
-  }
-
-  return $logicalGroups;
-}
-
-#--------------------------------------------------------------------------------
-
-sub setReferenceConditionFromLogicalGroups {
-  my ($self, $logicalGroups) = @_;
-
-  if(scalar(@$logicalGroups) == 1 && !$self->getReferenceCondition()) {
-    GUS::Community::RadAnalysis::ProcessorError->new("One Class Data Requires an Argument for [referenceCondition]")->throw();
-  }
-  elsif(scalar(@$logicalGroups) == 1 && $self->getReferenceCondition()) { }
-  else {
-    $self->setReferenceCondition($logicalGroups->[0]->getName());
-  }
-
-  return $self->getReferenceCondition();
 }
 
 #--------------------------------------------------------------------------------
@@ -459,7 +426,7 @@ sub writePageInputFile {
 
   my @header;
 
-  my $pageIn = $self->getLogDir() . "/" . $logicalGroups->[0]->getName() . ".in";
+  my $pageIn = $self->getLogDir() . "/" . $self->getReferenceCondition() . ".in";
   $pageIn =~ s/ //g;
 
   open(PAGE, "> $pageIn") or die "Cannot open file [$pageIn] for writing: $!";
