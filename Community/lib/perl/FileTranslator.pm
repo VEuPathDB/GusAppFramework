@@ -68,6 +68,7 @@ sub new {
         $slf->fhlog->print("ERR: FileTranslator->new($cfgfile): Config file $cfgfile error: $@\n" );
         die "ERR:\tGUS::RAD::FileTranslator->new($cfgfile)Config file $cfgfile error: $@\n" ;
     }
+
     $slf;
 }
 
@@ -84,108 +85,151 @@ which defaults to appending ".out" to the input file\'s name
 =cut
 
 sub translate {
-    my ($slf,$functionSpecificHash, $in, $out) = @_;
-    
-    if ($in) {
-        $slf->setInput($in,$out) ;
-    }
-    
-    $slf->fhlog->print ("#######################################\n");
-    $slf->fhlog->print ("Translating file $in\n");
-    $slf->fhlog->print ("#######################################\n");
-    #first make sure we have a file to parse & someplace to write
-    return undef unless (defined $slf->fhin);
-    return undef unless (defined $slf->fhout);
-    unless ($slf->validate()) {
-        $slf->fhlog->print( "WARN: FileTransalator->translate(): Invalid input file " . $slf->inputfile() . " \n");
-        return -1;
-    }
-    
-    # header line(s)
-    my @QUALHDRS = split "\t" , $slf->fhin->prevline();
-    my @HDRS =  split "\t" , $slf->fhin->currline();
-    my $num_hdrs = scalar @HDRS;
-    # output the header line
-    # optional ID MAP
-    # while we are at it, might as well set get the 
-    # idmap hash from the function 
-    my $idmaphash;
+  my ($slf,$functionArgs, $in, $out) = @_;
 
-    if ($slf->cfg->idMap()) {
-        my @idh = split /\\t/ , $slf->cfg->idMap()->{output_header};
-        $slf->fhout->print(  (join "\t" , @idh ) . "\t" );
-        my $idfunc = $slf->cfg->idMap()->{function};
-        my $funcclass =  $slf->cfg->functionsClass();
-        $funcclass =~ s/\:\:/\//g;
-        $funcclass .= ".pm";
-        $idmaphash = eval {require  $funcclass;
-                           my $f = $slf->cfg->functionsClass()->new(); 
-                           $idmaphash  = $f->$idfunc($functionSpecificHash);
-                           return $idmaphash;
-                          };
-        if ($@) {
-            $slf->fhlog()->print("ERR: sub=translate: $@\n");
-            die "ERR: FileTranslator->translate() : $@\n" ;
-        } 
+  $slf->setInput($in,$out) ;
+
+  my $config = $slf->cfg();
+  my $idMaps = $config->idMap();
+
+  my $fileReader = $slf->fhin();
+  my $writer = $slf->fhout();
+  my $log = $slf->fhlog();
+
+  unless ($slf->validate()) {
+    $log->print( "WARN: FileTransalator->translate(): Invalid input file " . $slf->inputfile() . " \n");
+    return -1
+  }
+
+  $log->print ("#######################################\n");
+  $log->print ("Translating file $in\n");
+  $log->print ("#######################################\n");
+
+  my @rawHeaders =  split "\t" , $fileReader->currline();
+  my $num_hdrs = scalar(@rawHeaders);
+
+  my $functions = $idMaps ? $slf->createMapFunctions($config, $idMaps, $functionArgs) : undef;
+
+  my $headerValues = $slf->makeHeaderArrayRef($config, $idMaps);
+
+  $writer->print(join("\t", @$headerValues) . "\n");
+
+  while ((!$fileReader->eof())) {
+    my $line = $fileReader->getline();
+    #dos2unix 
+    $line =~ s/\r\n/\n/g;
+
+    my @A = split /\t/, $line;
+    chomp @A;
+
+    if ($num_hdrs !=  scalar @A) {
+      $slf->fhlog->print("WARNING: The following line does not have same number of columns as header (line=" . scalar @A .", header=$num_hdrs)\n");
+      $slf->fhlog->print("LN=" . $slf->fhin()->linenum() . ":\t$line\n");
     }
+
+    if ($idMaps) {
+
+      for(my $i = 0; $i < scalar(@$idMaps); $i++) {
+        my $idMap = $idMaps->[$i];
+        my $function = $functions->[$i];
+
+        my $mapkey = $idMap->{mapkey};
+        my $values = $slf->translateMapKey(\@A, $mapkey, $idMap, $config);
+
+        # Allow the Funtion to give a coderef OR hashref 
+        if(ref($function) eq 'CODE') {
+          $writer->print($function->( join "\t", @$values ) . "\t");
+        }
+        else {
+          $writer->print($function->{ join "\t", @$values } . "\t");
+        }
+      }
+    }
+    
     # rest of MAPS
-    $slf->fhout->print( (join "\t", $slf->cfg->mappings()->Keys) . "\n");
-  
-    # now do the row translation 
-    
-    while ((!$slf->fhin->eof())) {
-        my $line = $slf->fhin->getline();
-        #dos2unix 
-        $line =~ s/\r\n/\n/g;
-        # split columns
-        my @A = split /\t/, $line;
-        chomp @A;
+    my @V ;
 
-        if ($num_hdrs !=  scalar @A) {
-            $slf->fhlog->print("WARNING: The following line does not have same number of columns as header (line=" . scalar @A .", header=$num_hdrs)\n");
-            $slf->fhlog->print("LN=" . $slf->fhin()->linenum() . ":\t$line\n");
-            # next;
-        }
-        
-        # optional ID MAP
-        if ($slf->cfg->idMap()) {
-            my $mapkey = $slf->cfg->idMap->{mapkey};
-            $mapkey =~ s/\$//g; # replace all dollar signs
-            my @MK = split /\\t/, $mapkey ;
-            my @V ;
-            foreach my $k (@MK) {
-                foreach my $in (@{ $slf->cfg->idMap->{in} } ) {
-                    if ($in  eq $k ) {
-                        push @V, $A[$slf->cfg->header($in)->{idx}];
-                    }
-                }
-            }
-
-            # Allow the Funtion to give a coderef instead of hashref 
-            if(ref($idmaphash) eq 'CODE') {
-              $slf->fhout->print($idmaphash->( join "\t", @V ) . "\t");
-            }
-            else {
-              $slf->fhout->print($idmaphash->{ join "\t", @V } . "\t");
-            }
-        }
-    
-        # rest of MAPS
-        my @V ;
-        foreach my $mapkey ($slf->cfg->mappings()->Keys) {
-            # we can take a shortcut, cause I know that all the other maps are simple.
-            my $input = $slf->cfg->mappings()->FETCH($mapkey)->{in}->[0];
-            my $val = "" ;
-            if (exists $slf->cfg->header($input)->{idx}) {
-                $val = $A[$slf->cfg->header($input)->{idx}];
-            }
-            push @V, $val ;
-        }
-        $slf->fhout->print( (join "\t" , @V) . "\n" );
+    foreach my $mapkey ($config->mappings()->Keys) {
+      my $input = $config->mappings()->FETCH($mapkey)->{in}->[0];
+      my $val = "" ;
+      if (exists $config->header($input)->{idx}) {
+        $val = $A[$config->header($input)->{idx}];
+      }
+      push @V, $val ;
     }
-    # all parsing successful 
-    $slf->fhlog->print("File translated to " . $slf->outputfile . " \n\n");
-    return $slf->outputfile;
+
+    $writer->print( (join "\t" , @V) . "\n" );
+  }
+  # all parsing successful 
+  $log->print("File translated to " . $slf->outputfile . " \n\n");
+
+  return $slf->outputfile;
+}
+
+sub translateMapKey {
+  my ($slf, $A, $mapkey, $idMap, $config) = @_;
+
+  my @V ;
+
+  $mapkey =~ s/\$//g;
+  my @MK = split /\\t/, $mapkey ;
+
+  foreach my $k (@MK) {
+    foreach my $in (@{ $idMap->{in} } ) {
+      if ($in  eq $k ) {
+        push @V, $A->[$config->header($in)->{idx}];
+      }
+    }
+  }
+  return \@V;
+}
+
+
+sub createMapFunctions {
+  my ($slf, $config, $idMaps, $functionArgs) = @_;
+
+  my @functions;
+
+  my $log = $slf->fhlog();
+
+  foreach my $idmap(@$idMaps) {
+    my $idfunc = $idmap->{function};
+
+    my $functionClassName =  $config->functionsClass();
+
+    eval "require $functionClassName";
+
+    my $function = eval {my $functionClass = $functionClassName->new(); 
+                         $functionClass->$idfunc($functionArgs);
+                       };
+    if ($@) {
+      $log->print("ERR: sub=translate: $@\n");
+      die "ERR: FileTranslator->translate() : $@\n" ;
+    } 
+
+    push(@functions, $function);
+  }
+  return \@functions;
+}
+
+
+
+sub makeHeaderArrayRef {
+  my ($slf, $config, $idMaps) = @_;
+
+  my @headers;
+
+  if ($idMaps) {
+
+    foreach my $idMap (@$idMaps) {
+      my @idh = split /\\t/ , $idMap->{output_header};
+      push(@headers, @idh); 
+    }
+  }
+
+  push(@headers, $config->mappings()->Keys);
+
+  return \@headers;
 }
 
 
@@ -198,7 +242,7 @@ Validates the input file against the mapping configuration file.
 For now, the only check is that the mandatory headers are present. 
 If a file is given as an argument, it will validate this file
 BUT NOT set it as the input file!
- 
+
 =cut
 
 sub validate {
@@ -219,7 +263,7 @@ sub validate {
 Opens C<$input_filename_path> in a FileReader buffer.
 Optional  C<$output_filename_path> if given sets the output file,
 which defaults to appending ".out" to C<$input_filename_path> .
- 
+
 =cut
 
 sub setInput {
