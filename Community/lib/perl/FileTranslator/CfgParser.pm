@@ -83,8 +83,8 @@ sub initializeOutputs {
     my $slf = shift ;
     # the optional IDMAP
     if ($slf->cfg->{outputs}->[0]->{idmap}) {
-        my $idmap = $slf->cfg->{outputs}->[0]->{idmap}->[0];
-        $slf->idMap($idmap);
+        my $idmap = $slf->cfg->{outputs}->[0]->{idmap};
+        $slf->initializeIdMap($idmap);
     }
     # other MAPS
     my @maps = @{$slf->cfg->{outputs}->[0]->{map}};
@@ -97,18 +97,25 @@ sub initializeOutputs {
     $slf;
 }
 
-sub idMap {
-    my ($slf,$idmap) =@_;
-    if ($idmap) {
-        $slf->{IDMAP} = { function => $idmap->{function},
-                          mapkey => $idmap->{mapkey},
-                          output_header => $idmap->{output_header},
-                          in => [],
-                      };
+sub initializeIdMap {
+    my ($slf,$idmaps) =@_;
+
+    if ($idmaps) {
+
+      foreach my $idmap (@$idmaps) {
+        my $tempMap =  { function => $idmap->{function},
+                         mapkey => $idmap->{mapkey},
+                         output_header => $idmap->{output_header},
+                         in => [],
+                       };
         foreach my $in (@{ $idmap->{in} } ) {
-            push @{ $slf->{IDMAP}->{in} } , $in->{name};
+          push @{ $tempMap->{in} } , $in->{name};
         }
+
+        push @{$slf->{IDMAP}}, $tempMap;
+      }
     }
+
     return $slf->{IDMAP};
 }
 
@@ -208,9 +215,11 @@ sub mappings {
 sub idmap {
   my ($slf, $h ) = @_;
   $slf->{IDMAP} = $h  if (defined $h);
-  $slf->{IDMAP};
+
+  return $slf->{IDMAP};
 }
 
+sub idMap { shift()->idmap(@_); }
 
 sub headerMap {
     my ($slf, $key, $val) = @_;
