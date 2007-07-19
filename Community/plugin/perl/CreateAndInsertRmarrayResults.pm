@@ -201,7 +201,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
   
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 5315 $',
+		     cvsRevision => '$Revision: 5318 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -506,9 +506,10 @@ sub runLoessFromR{
 
   my $cmd;
   if ($self->getArg('print_tip')) {	
-    $cmd = "$Rcmd CMD BATCH --slave --no-save --input_file=$inFile --output_file=$outFile --smoothing_param=$sm_param --ngr=$cfg_rv->{ngr} --ngc=$cfg_rv->{ngc} --nsr=$cfg_rv->{nsr} --nsc=$cfg_rv->{nsc} --print_tip_loess < $Rscript";    
-  } else {
-    $cmd = "$Rcmd CMD BATCH --slave --no-save --input_file=$inFile --output_file=$outFile --smoothing_param=$sm_param --ngr=$cfg_rv->{ngr} --ngc=$cfg_rv->{ngc} --nsr=$cfg_rv->{nsr} --nsc=$cfg_rv->{nsc} < $Rscript";
+    $cmd = "echo 'inputFile=\"$inFile\";outputFile=\"$outFile\";smoothingParam=$sm_param;ngr=$cfg_rv->{ngr};ngc=$cfg_rv->{ngc};nsr=$cfg_rv->{nsr};nsc=$cfg_rv->{nsc};printTip=T' | cat - $Rscript | $Rcmd --slave --no-save";  
+  } 
+  else {
+    $cmd = "echo 'inputFile=\"$inFile\";outputFile=\"$outFile\";smoothingParam=$sm_param;ngr=$cfg_rv->{ngr};ngc=$cfg_rv->{ngc};nsr=$cfg_rv->{nsr};nsc=$cfg_rv->{nsc};printTip=F' | cat - $Rscript | $Rcmd --slave --no-save"; 
   }
    
   $self->logData('INFO',"loess normalizing data...");
