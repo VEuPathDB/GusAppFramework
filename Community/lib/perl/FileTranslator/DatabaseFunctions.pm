@@ -12,6 +12,32 @@ sub new {
 
 #--------------------------------------------------------------------------------
 
+sub controlTypeOntologyEntryId {
+  my ($self, $hash) = @_;
+
+  my %mapping;
+
+  unless($hash->{dbh}) {
+    die "Function [nameToCompositeElementId] must give a database handle";
+  }
+
+  my $sql = "select value, ontology_entry_id 
+             from Study.ONTOLOGYENTRY 
+             where category = 'ControlType'";
+
+  my $sh = $hash->{dbh}->prepare($sql);
+  $sh->execute();
+
+  while(my ($value, $id) = $sh->fetchrow_array()) {
+    $mapping{$value} = $id;
+  }
+  $sh->finish();
+
+  return \%mapping;
+}
+
+#--------------------------------------------------------------------------------
+
 sub physicalBioSequenceTypeOntologyEntryId {
   my ($self, $hash) = @_;
 
