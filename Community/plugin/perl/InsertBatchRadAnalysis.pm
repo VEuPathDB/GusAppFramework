@@ -79,6 +79,14 @@ my $argsDeclaration =
             format         => undef,
             mustExist      => 1,
            }),
+   fileArg({name           => 'pathToExecutable',
+            descr          => 'Path which is passed to the AbstractProcessor.  It becomes the responsibliity of the individual modules to use this',
+            reqd           => 0,
+            constraintFunc => undef,
+            isList         => 0, 
+            format         => undef,
+            mustExist      => 1,
+           }),
 
   ];
 
@@ -119,6 +127,10 @@ sub run {
     };
     if($@) {
       $self->error("Could not insantiate class [$class]:  $@");
+    }
+
+    if(my $pathToExecutable = $self->getArg('pathToExecutable')) {
+      $processor->setPathToExecutable($pathToExecutable);
     }
 
     my $results = $processor->process();
