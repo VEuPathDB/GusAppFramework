@@ -91,8 +91,11 @@ my $argsDeclaration =
               reqd           => 0,
               constraintFunc => undef,
               isList         => 0, }),
-
-
+   stringArg({name           => 'predAlgInvResult',
+              descr          => 'The Core::AlgorithmInvocation result for the Prediction (yyyy-mm-dd)',
+              reqd           => 0,
+              constraintFunc => undef,
+              isList         => 0, }),
    fileArg({name           => 'datafile',
 	    descr          => 'ss2 file. See Notes...',
 	    reqd           => 0,
@@ -294,6 +297,7 @@ sub getAlgInvocationId {
   my $algImpVersion = $self->getArg('predAlgImpVersion');
   my $algInvStart = $self->getArg('predAlgInvStart');
   my $algInvEnd = $self->getArg('predAlgInvEnd');
+  my $algInvResult = $self->getArg('predAlgInvResult');
 
   my $sql = "select algorithm_invocation_id 
              from Core.ALGORITHM a, Core.ALGORITHMIMPLEMENTATION imp, Core.ALGORITHMINVOCATION inv
@@ -304,15 +308,17 @@ sub getAlgInvocationId {
               and inv.start_time = to_date('$algInvStart', 'yyyy-mm-dd')
               and inv.end_time = to_date('$algInvEnd', 'yyyy-mm-dd')";
 
-  my @algInvIds = $self->sqlAsArray(Sql => $sql);
+$sql .= " and inv.result = '$algInvResult'" if ($algInvResult);
+print "SQL: '$sql'\n";
+#  my @algInvIds = $self->sqlAsArray(Sql => $sql);
 
-  if(scalar(@algInvIds) > 1) {
-    $self->userError("Many AlgorithmInvocation rows Found with start=$algInvStart, version=$algImpVersion, and name=$algName"); 
-  }
-  if(!$algInvIds[0]) {
-    $self->userError("No AlgorithmInvocation row Found with start=$algInvStart, version=$algImpVersion, and name=$algName"); 
-  }
-  return($algInvIds[0]);
+#  if(scalar(@algInvIds) > 1) {
+#    $self->userError("Many AlgorithmInvocation rows Found with start=$algInvStart, version=$algImpVersion, and name=$algName"); 
+#  }
+#  if(!$algInvIds[0]) {
+#    $self->userError("No AlgorithmInvocation row Found with start=$algInvStart, version=$algImpVersion, and name=$algName"); 
+#  }
+#  return($algInvIds[0]);
 }
 
 1;
