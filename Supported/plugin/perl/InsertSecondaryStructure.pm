@@ -309,16 +309,16 @@ sub getAlgInvocationId {
               and inv.end_time = to_date('$algInvEnd', 'yyyy-mm-dd')";
 
 $sql .= " and inv.result = '$algInvResult'" if ($algInvResult);
-print "SQL: '$sql'\n";
-#  my @algInvIds = $self->sqlAsArray(Sql => $sql);
 
-#  if(scalar(@algInvIds) > 1) {
-#    $self->userError("Many AlgorithmInvocation rows Found with start=$algInvStart, version=$algImpVersion, and name=$algName"); 
-#  }
-#  if(!$algInvIds[0]) {
-#    $self->userError("No AlgorithmInvocation row Found with start=$algInvStart, version=$algImpVersion, and name=$algName"); 
-#  }
-#  return($algInvIds[0]);
+  my @algInvIds = $self->sqlAsArray(Sql => $sql);
+
+  if(scalar(@algInvIds) > 1) {
+    $self->userError("Many AlgorithmInvocation rows Found with start=$algInvStart, version=$algImpVersion, and name=$algName"); 
+  }
+  if(!$algInvIds[0]) {
+    $self->userError("No AlgorithmInvocation row Found with start=$algInvStart, version=$algImpVersion, and name=$algName"); 
+  }
+  return($algInvIds[0]);
 }
 
 1;
