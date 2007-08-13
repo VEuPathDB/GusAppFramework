@@ -40,12 +40,19 @@ sub getElementData {$_[0]->{_element_data}}
 
 sub getElements {$_[0]->{_elements}}
 
+sub setPathToExecutable {$_[0]->{_path_to_executable} = $_[1]}
+sub getPathToExecutable {$_[0]->{_path_to_executable}}
+
 #--------------------------------------------------------------------------------
 
 sub standardParameterValues {
   my ($self, $input)  = @_;
 
   return unless($input);
+
+  unless(ref($input) eq 'ARRAY') {
+    GUS::Community::RadAnalysis::InputError->new("Illegal param to method call [standardParameterValues].  Expected ARRAYREF")->throw();
+  }
 
   my %rv;
 
@@ -66,11 +73,22 @@ sub standardLogicalGroupInputs {
   my %rv;
   tie %rv, "Tie::IxHash";
 
+  return \%rv unless($input);
+
+  unless(ref($input) eq 'ARRAY') {
+    GUS::Community::RadAnalysis::InputError->new("Illegal param to method call [standardParameterValues].  Expected ARRAYREF")->throw();
+  }
+
+  print STDERR Dumper $input;
+
   foreach my $lg (@$input) {
     my ($name, $link) = split(/\|/, $lg);
 
-    unshift @{$rv{$name}}, $link;
+    push @{$rv{$name}}, $link;
   }
+
+  print STDERR Dumper \%rv;
+  exit;
 
   return \%rv;
 }
