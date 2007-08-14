@@ -305,9 +305,9 @@ sub getAlgInvocationId {
               and imp.algorithm_implementation_id = inv.algorithm_implementation_id
               and a.name = '$algName'
               and imp.version = '$algImpVersion'
-              and inv.start_time = to_date('$algInvStart', 'yyyy-mm-dd')
-              and inv.end_time = to_date('$algInvEnd', 'yyyy-mm-dd')";
+              and inv.start_time = to_date('$algInvStart', 'yyyy-mm-dd')";
 
+$sql .= " and inv.end_time = to_date('$algInvEnd', 'yyyy-mm-dd')" if ($algInvEnd);
 $sql .= " and inv.result = '$algInvResult'" if ($algInvResult);
 
   my @algInvIds = $self->sqlAsArray(Sql => $sql);
