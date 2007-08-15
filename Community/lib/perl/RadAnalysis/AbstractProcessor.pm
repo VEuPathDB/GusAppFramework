@@ -79,16 +79,11 @@ sub standardLogicalGroupInputs {
     GUS::Community::RadAnalysis::InputError->new("Illegal param to method call [standardParameterValues].  Expected ARRAYREF")->throw();
   }
 
-  print STDERR Dumper $input;
-
   foreach my $lg (@$input) {
     my ($name, $link) = split(/\|/, $lg);
 
     push @{$rv{$name}}, $link;
   }
-
-  print STDERR Dumper \%rv;
-  exit;
 
   return \%rv;
 }
