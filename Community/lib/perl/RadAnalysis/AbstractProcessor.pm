@@ -307,16 +307,16 @@ from Rad.STUDYASSAY sa, Study.Study s,
      Rad.ASSAYANALYSIS aa LEFT JOIN Rad.ANALYSISPARAM ap on ap.analysis_id = aa.analysis_id
 where aa.assay_id = sa.assay_id
  and s.name = ?
- and (ap.value = ? OR ap.value = ?)";
+ and (ap.value = ? OR ap.value = ?)
 Sql
                 );
 
   my $key = $type;
-  if($key = 'analysis' && $key =~ /\D/) {
+  if($key eq 'analysis' && $key =~ /\D/) {
     $key = $key . "_param_value";
   }
 
-  my $sql = $allSql{$type};
+  my $sql = $allSql{$key};
  
   my $sh = $dbh->prepare($sql);
 
