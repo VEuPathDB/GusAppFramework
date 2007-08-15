@@ -137,17 +137,16 @@ sub new {
   $args->{analysisInputs} = [] unless($args->{analysisInputs});
 
 
-  unless($args->{isDataLogged} == 1 || $args->{isDataLogged} == 0) {
+  unless(defined($args->{isDataLogged})) {
     GUS::Community::RadAnalysis::InputError->new("Parameter [isDataLogged] is missing in the config file")->throw();
   }
 
-  if(($args->{isDataPaired} == 1 || $args->{isDataPaired} == 0) && $args->{design} eq 'D') {
+  if($args->{design} eq 'D' && defined($args->{isDataPaired})) {
     GUS::Community::RadAnalysis::InputError->new("Parameter [isDataPaired] should not be specified with Dye swap design")->throw();
   }
-  else {
-    unless($args->{isDataPaired} == 1 || $args->{isDataPaired} == 0) {
-      GUS::Community::RadAnalysis::InputError->new("Parameter [isDataPaired] is missing from the config file")->throw();
-    }
+
+  if($args->{design} ne 'D' && !defined($args->{isDataPaired})) {
+    GUS::Community::RadAnalysis::InputError->new("Parameter [isDataPaired] is missing from the config file")->throw();
   }
 
   if($args->{numberOfChannels} == 2 && !($args->{design} eq 'R' || $args->{design} eq 'D') ) {
