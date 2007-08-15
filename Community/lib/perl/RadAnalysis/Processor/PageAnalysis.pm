@@ -141,8 +141,13 @@ sub new {
     GUS::Community::RadAnalysis::InputError->new("Parameter [isDataLogged] is missing in the config file")->throw();
   }
 
-  unless($args->{isDataPaired} == 1 || $args->{isDataPaired} == 0) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [isDataPaired] is missing in the config file")->throw();
+  if(($args->{isDataPaired} == 1 || $args->{isDataPaired} == 0) && $args->{design} eq 'D') {
+    GUS::Community::RadAnalysis::InputError->new("Parameter [isDataPaired] should not be specified with Dye swap design")->throw();
+  }
+  else {
+    unless($args->{isDataPaired} == 1 || $args->{isDataPaired} == 0) {
+      GUS::Community::RadAnalysis::InputError->new("Parameter [isDataPaired] is missing from the config file")->throw();
+    }
   }
 
   if($args->{numberOfChannels} == 2 && !($args->{design} eq 'R' || $args->{design} eq 'D') ) {
@@ -175,6 +180,9 @@ sub getAnalysisInputs {$_[0]->{analysisInputs}}
 
 sub getReferenceCondition {$_[0]->{referenceCondition}}
 sub setReferenceCondition {$_[0]->{referenceCondition} = $_[1]}
+
+sub getFilteringCriterion {$_[0]->{filteringCriterion}}
+sub setFilteringCriterion {$_[0]->{filteringCriterion} = $_[1]}
 
 #--------------------------------------------------------------------------------
 
@@ -261,6 +269,10 @@ sub setupParamValues {
   my $dataIsLogged = $self->getIsDataLogged() ? 'TRUE' : 'FALSE';
   my $dataIsPaired = $self->getIsDataPaired() ? 'TRUE' : 'FALSE';
 
+  my $referenceCondition = $self->getReferenceCondition();
+  my $design = $self->getDesign();
+  my $filter = $self->getFilteringCriterion();
+
   my $statistic = $self->getStatistic();
   if($statistic eq 'tstat') {
     $statistic = 't-statistic';
@@ -269,7 +281,6 @@ sub setupParamValues {
   my $values = { level_confidence_list => $self->getLevelConfidence,
                  min_presence_list => $self->getMinPrescence,
                  data_is_logged => $dataIsLogged,
-                 paired => $dataIsPaired,
                  use_logged_data => $useLoggedData,
                  software_version => $PAGE_VERSION,
                  software_language => 'Perl',
@@ -277,12 +288,20 @@ sub setupParamValues {
                  statistic => $statistic,
                };
 
-  if(my $design = $self->getDesign()) {
+  if($filter) {
+    $values->{filtering_criterion} = $filter;
+  }
+
+  if($design) {
     $values->{design} = $design;
   }
 
-  if(my $ref = $self->getReferenceCondition()) {
-    $values->{reference_condition} = $ref;
+  if($referenceCondition) {
+    $values->{reference_condition} = $referenceCondition;
+  }
+
+  unless($design eq 'D') {
+    $values->{paired} = $dataIsPaired;
   }
 
   return $values;
@@ -599,6 +618,7 @@ sub setupProtocolParams {
                 software_language => 'string_datatype',
                 statistic => 'string_datatype',
                 num_channels => 'positive_integer',
+                filtering_criterion => 'string_datatype', 
                );
 
   my @protocolParams = $protocol->getChildren('RAD::ProtocolParam', 1);
