@@ -11,6 +11,8 @@ use XML::Simple;
 
 use  GUS::ObjRelP::DbiDatabase;
 
+use Error qw (:try);
+
 use Data::Dumper;
 
 my $purposeBrief = <<BRIEF;
@@ -133,7 +135,14 @@ sub run {
       $processor->setPathToExecutable($pathToExecutable);
     }
 
-    my $results = $processor->process();
+    try {
+      my $results = $processor->process();
+    } catch GUS::Community::RadAnalysis::DataFileEmptyError with {
+      my $e = shift;
+      $self->log($e->text());
+      next;
+    };
+
     $analysisCount = $analysisCount + scalar(@$results);
 
     # Each Process Result is an analysis
