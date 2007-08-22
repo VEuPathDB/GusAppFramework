@@ -312,12 +312,12 @@ Sql
                 );
 
   my $key = $type;
-  if($key eq 'analysis' && $key =~ /\D/) {
+  if($key eq 'analysis' && $names->[0] =~ /\D/) {
     $key = $key . "_param_value";
   }
 
   my $sql = $allSql{$key};
- 
+
   my $sh = $dbh->prepare($sql);
 
   my @links;
