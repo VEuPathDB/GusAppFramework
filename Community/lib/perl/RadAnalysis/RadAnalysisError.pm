@@ -36,6 +36,10 @@ package GUS::Community::RadAnalysis::SqlError;
 use base qw(GUS::Community::RadAnalysis::ProcessorError);
 1;
 
+package GUS::Community::RadAnalysis::DataFileEmptyError;
+use base qw(GUS::Community::RadAnalysis::ProcessorError);
+1;
+
 #--------------------------------------------------------------------------------
 
 package GUS::Community::RadAnalysis::InputError;
