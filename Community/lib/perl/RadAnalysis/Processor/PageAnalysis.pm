@@ -354,7 +354,7 @@ sub writeResultFile {
 
   #print STDERR "There are [$count] lines of differentially expressed genes in the result file\n";
   unless($count) {
-    GUS::Community::RadAnalysis::ProcessorError->new("The datafile [$fileName] has no rows")->throw();
+    GUS::Community::RadAnalysis::DataFileEmptyError->new("The datafile [$fileName] has no rows")->throw();
   }
   return $fileName;
 }
@@ -454,7 +454,7 @@ sub writePageInputFile {
     my $dirName = dirname($pageIn);
 
     print STDERR "WARNING:  File [$pageIn] exists...";
-    my $digit = $baseName =~ /^(\d+)_/;
+    my ($digit) = $baseName =~ /^(\d+)_/;
 
     if($digit) {
       $digit++;
