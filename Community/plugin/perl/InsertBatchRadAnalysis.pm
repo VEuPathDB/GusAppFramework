@@ -137,39 +137,38 @@ sub run {
 
     try {
       my $results = $processor->process();
+
+      $analysisCount = $analysisCount + scalar(@$results);
+
+      # Each Process Result is an analysis
+      foreach my $result (@$results) {
+        unless($result->isValid()) {
+          log($result->toString()) if($self->getArg('debug'));
+          $self->error("The Process Did NOT yield a valid result\n");
+        }
+
+        $result->submit();
+
+        my $dataFile = $result->writeAnalysisDataFile();
+        my $configFile = $result->writeAnalysisConfigFile();
+        my $resultView = $result->getResultView(); 
+
+        # set the Args for the Superclass
+        $self->setArg('subclass_view', $resultView);
+        $self->setArg('cfg_file', $configFile);
+        $self->setArg('data_file', $dataFile);
+
+        $self->setArg('restart', undef);
+        $self->setArg('analysis_id', undef);
+        $self->setArg('testnum', undef);
+
+        # Call the Run Method from the Superclass
+        $self->SUPER::run();
+      }
     } catch GUS::Community::RadAnalysis::DataFileEmptyError with {
       my $e = shift;
       $self->log($e->text());
-      next;
     };
-
-    $analysisCount = $analysisCount + scalar(@$results);
-
-    # Each Process Result is an analysis
-    foreach my $result (@$results) {
-      unless($result->isValid()) {
-        log($result->toString()) if($self->getArg('debug'));
-        $self->error("The Process Did NOT yield a valid result\n");
-      }
-
-      $result->submit();
-
-      my $dataFile = $result->writeAnalysisDataFile();
-      my $configFile = $result->writeAnalysisConfigFile();
-      my $resultView = $result->getResultView(); 
-
-      # set the Args for the Superclass
-      $self->setArg('subclass_view', $resultView);
-      $self->setArg('cfg_file', $configFile);
-      $self->setArg('data_file', $dataFile);
-
-      $self->setArg('restart', undef);
-      $self->setArg('analysis_id', undef);
-      $self->setArg('testnum', undef);
-
-      # Call the Run Method from the Superclass
-      $self->SUPER::run();
-    }
   }
 
   my $processNum = scalar(@$analyses);
