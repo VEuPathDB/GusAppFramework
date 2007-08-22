@@ -19,6 +19,8 @@ use GUS::Model::SRes::Contact;
 
 use  GUS::ObjRelP::DbiDatabase;
 
+use File::Basename;
+
 use Data::Dumper;
 
 =head1 NAME
@@ -446,6 +448,25 @@ sub writePageInputFile {
 
   my $pageIn = $self->getLogDir() . "/" . $self->getReferenceCondition() . ".in";
   $pageIn =~ s/ //g;
+
+  while(-e $pageIn) {
+    my $baseName = basename($pageIn);
+    my $dirName = dirname($pageIn);
+
+    print STDERR "WARNING:  File [$pageIn] exists...";
+    my $digit = $baseName =~ /^(\d+)_/;
+
+    if($digit) {
+      $digit++;
+      $baseName =~ s/^\d+/$digit/;
+    }
+    else {
+      $baseName = "1_" . $baseName;
+    }
+
+    $pageIn = $dirName . "/" .  $baseName;
+    print STDERR "Write to file [$pageIn]\n";
+  }
 
   open(PAGE, "> $pageIn") or die "Cannot open file [$pageIn] for writing: $!";
 
