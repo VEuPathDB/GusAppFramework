@@ -1,167 +1,418 @@
+
 package GUS::Community::Plugin::LoadGenomicSageData;
-@ISA = qw(GUS::PluginMgr::Plugin);
+
+=pod
+
+=head1 Purpose Brief
+
+Generate SAGE data from sequences and genes or from saco-matic
+(trp-compare) output.
+
+=head1 Purpose
+
+This plugin generates SAGE data from genomic data.  Specifically, it
+finds SAGE tags in ExternalNaSequences, and creates
+GeneFeatureSageTagLinks to associate SAGE tags with genes.  These
+associations are made by the findLinks method.  This method, written
+by Jonathan Crabtree for an earlier version of this plugin, links each
+SAGE tag to any genes found within a given distance (by default, 1000
+bp).
+
+A recent additional mode C<--load_saco_tags> reads through a file in
+the saco-matic format and adds any of the tags in the file as
+necessary.
+
+=head1 Failure Cases
+
+=head1 How to Restart
+
+This plugin has no restart facility.
+
+=head1 Notes
+
+Plugin is currently hardwired for the NlaIII restriction enzyme.
+However, the hardwiring is done in such a way that it can be upgraded
+easy.
+
+=head2 SA (SAGE/SACO) Arrays
+
+These arrays are handled in a somewhat odd way in GUS.  The array is
+defined by the tuple of genome, restriction enzyme, and tag length.
+The number of potential tags in a genome is quite large and in
+addition an experiment may yield tags not present in the genome.  Thus
+we do not pre-define all of the 'spots', i.e., tags, in a SA array.
+Rather we add them, uniquely, as they are encountered in an experiment
+that uses the array.
+
+Thus in this plugin, code that locates a C<RAD.SageTag> must try to
+retrieve the tag from the database before submitting the object.  This
+will ensure that the plugin reuses exising tags.
+
+=cut
+
+# ========================================================================
+# ----------------------------- Declarations -----------------------------
+# ========================================================================
 
 use strict;
+
+use vars qw( @ISA );
+
+@ISA = qw(GUS::PluginMgr::Plugin);
+
 use GUS::PluginMgr::Plugin;
 use GUS::Model::DoTS::SAGETagFeature;
 use GUS::Model::DoTS::GeneFeature;
 use GUS::Model::DoTS::GeneFeatureSAGETagLink;
 use GUS::Model::DoTS::NALocation;
 use GUS::Model::DoTS::ExternalNASequence;
-use GUS::Model::RAD3::SAGETag;
-use GUS::Model::RAD3::SAGETagMapping;
+use GUS::Model::RAD::SAGETag;
+use GUS::Model::RAD::SAGETagMapping;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 
+# ========================================================================
+# -------------------------- Required Methodsa ---------------------------
+# ========================================================================
+
+# --------------------------------- new ----------------------------------
+
 sub new {
-  my ($class) = @_;
-  my $self = {};
-  bless($self,$class);
+   my ($class) = @_;
 
-  my $purposeBrief = "Generate SAGE data from sequences and genes.";
+   my $Self = bless {}, $class;
 
-  my $purpose = <<PLUGIN_PURPOSE;
-This plugin generates SAGE data from genomic data.  Specifically, it finds SAGE
-tags in ExternalNaSequences, and creates GeneFeatureSageTagLinks to associate
-SAGE tags with genes.  These associations are made by the findLinks method.
-This method, written by Jonathan Crabtree for an earlier version of this
-plugin, links each SAGE tag to any genes found within a given distance (by
-default, 1000 bp).
-PLUGIN_PURPOSE
+   $Self->initialize
+   ({ requiredDbVersion    => '3.5',
+      cvsRevision          => "\$ Revision: js-test-b \$",
+      cvsTag               => "\$ Name: \$",
+      name                 => ref($Self),
 
-  my $tablesAffected =
-    [ ['DoTS::GeneFeatureSAGETagLink',
-       'Insert a record for each predicted link'],
-      ['DoTS::SAGETagFeature',
-       'Insert a record for each predicted SAGE tag feature'],
-      ['DoTS::NALocation', 'Insert three records for each predicted tag'],
-      ['RAD3::SAGETag', 'Insert a record for any novel tag sequence'],
-      ['RAD3::SAGETagMapping',
-       'Map DoTS sourceId-ExtDbRelId to RAD CompositeElementId'],
-    ];
+      revisionNotes        => '',
+      revisionNotes        => 'code cleanup and support for SACO tags',
 
-  my $tablesDependedOn =
-    [ ['DoTS::ProjectLink', 'Identify sequences to scan for tags'],
-      ['DoTS::ExternalNASequence',
-       'Get sequences to scan for SAGE tag features'],
-      ['DoTS::SAGETagFeature', 'Get SAGE tag features to link'],
-      ['DoTS::GeneFeature', 'Get gene features to link'],
-      ['DoTS::NALocation',
-       'Get locations within ExternalNaSequence of SAGE tags and genes'],
-      ['Core::DatabaseInfo', 'Look up table IDs by database/table names'],
-      ['Core::TableInfo', 'Look up table IDs by database/table names'],
-    ];
+      documentation        => 
+      { $Self->extractDocumentationFromMyPod(),
+        tablesAffected   =>  [ ['DoTS::GeneFeatureSAGETagLink', 'Insert a record for each predicted link'],
+                               ['DoTS::SAGETagFeature',         'Insert a record for each predicted SAGE tag feature'],
+                               ['DoTS::NALocation',             'Insert three records for each predicted tag'],
+                               ['RAD::SAGETag',                'Insert a record for any novel tag sequence'],
+                               ['RAD::SAGETagMapping',         'Map DoTS sourceId-ExtDbRelId to RAD CompositeElementId'],
+                             ],
 
-  my $howToRestart = <<PLUGIN_RESTART;
-This plugin has no restart facility.
-PLUGIN_RESTART
+        tablesDependedOn => [ ['DoTS::ProjectLink',             'Identify sequences to scan for tags'],
+                              ['DoTS::ExternalNASequence',      'Get sequences to scan for SAGE tag features'],
+                              ['DoTS::SAGETagFeature',          'Get SAGE tag features to link'],
+                              ['DoTS::GeneFeature',             'Get gene features to link'],
+                              ['DoTS::NALocation',              'Get locations within ExternalNaSequence of SAGE tags and genes'],
+                              ['Core::DatabaseInfo',            'Look up table IDs by database/table names'],
+                              ['Core::TableInfo',               'Look up table IDs by database/table names'],
+                            ],
+      },
 
-  my $failureCases = <<PLUGIN_FAILURE_CASES;
-PLUGIN_FAILURE_CASES
+      argsDeclaration    =>
+      [
+       # common arguments
+       integerArg({ name  => 'project_id',
+                    descr => 'project_id',
+                    reqd  => 0,
+                    constraintFunc=> undef,
+                    isList=> 0,
+                  }),
+       integerArg({ descr => 'sres.externalDatabaseRelease_id for genome sequences',
+                    name  => 'sequence_edrid',  reqd  => 0,  constraintFunc=> undef, isList=> 0,
+                  }),
+       integerArg({ name  => 'taxon_id',
+                    descr => 'taxon_id',
+                    reqd  => 1,
+                    constraintFunc=> undef,
+                    isList=> 0,
+                  }),
+       integerArg({ name  => 'array_design_id',
+                    descr => 'array_design_id',
+                    reqd  => 0,
+                    constraintFunc=> undef,
+                    isList=>0,
+                  }),
+       stringArg({ name  => 'enzymeName',
+                   descr => 'name of restriction enzyme used to cut DNA',
+                   reqd  => 0,
+                   default => 'NlaIII',
+                   constraintFunc => undef,
+                   isList => 0,
+                 }),
 
-  my $notes = <<PLUGIN_NOTES;
-PLUGIN_NOTES
+       stringArg({ name    => 'enzymeCutSite',
+                   descr   => 'sequence at which the enyzme cuts',
+                   reqd    => 0,
+                   default => 'CATG',
+                   constraintFunc => undef,
+                   isList => 0,
+                 }),
 
-  my $documentation = { purpose=>$purpose,
-                        purposeBrief=>$purposeBrief,
-                        tablesAffected=>$tablesAffected,
-                        tablesDependedOn=>$tablesDependedOn,
-                        howToRestart=>$howToRestart,
-                        failureCases=>$failureCases,
-                        notes=>$notes
-                      };
+       # finding tags arguments
+       booleanArg({ name  => 'find_tags',
+                    descr => 'find_tags',
+                    reqd  => 0,
+                    constraintFunc=> undef,
+                    isList=> 0,
+                  }),
 
-  my $argsDeclaration =
-    [
-     integerArg({name  => 'project_id',
-		 descr => 'project_id',
-		 reqd  => 1,
-		 constraintFunc=> undef,
-		 isList=> 0,
-		}),
-     integerArg({name  => 'taxon_id',
-		 descr => 'taxon_id',
-		 reqd  => 1,
-		 constraintFunc=> undef,
-		 isList=> 0,
-		}),
-     integerArg({name  => 'array_id',
-		 descr => 'array_id',
-		 reqd  => 0,
-		 constraintFunc=> undef,
-		 isList=>0,
-		}),
-     integerArg({name  => 'max_distance',
-		 descr => 'max_distance',
-		 reqd  => 0,
-		 default  => 1000,
-		 constraintFunc=> undef,
-		 isList=> 0,
-		}),
-     booleanArg({name  => 'find_tags',
-		 descr => 'find_tags',
-		 reqd  => 0,
-		 constraintFunc=> undef,
-		 isList=> 0,
-		}),
-     booleanArg({name  => 'find_links',
-		 descr => 'find_links',
-		 reqd  => 0,
-		 constraintFunc=> undef,
-		 isList=> 0,
-		}),
-    ];
+       # gene linking arguments
+       booleanArg({ name  => 'find_links',
+                    descr => 'find_links',
+                    reqd  => 0,
+                    constraintFunc=> undef,
+                    isList=> 0,
+                  }),
+        integerArg({ name  => 'max_distance',
+                     descr => 'max_distance',
+                     reqd  => 0,
+                     default  => 1000,
+                     constraintFunc=> undef,
+                     isList=> 0,
+                   }),
 
+       # saco-mode args.
+       booleanArg({ name  => 'load_saco_tags',
+                    descr => 'load tags from a file',
+                    reqd  => 0,
+                    constraintFunc => undef,
+                    isList         => 0,
+                   }),
+       stringArg({ name   => 'saco_file',
+                   descr  => 'load tags from this file',
+                   reqd   => 0,
+                   format => 'sacomatic trp-compare',
+                   mustExist => 1,
+                   constraintFunc => undef,
+                   isList         => 0,
+                 }),
 
-  $self->initialize({requiredDbVersion => {},
-                     cvsRevision => '$Revision$', # cvs fills this in!
-                     cvsTag => '$Name$', # cvs fills this in!
-                     name => ref($self),
-                     revisionNotes => 'make consistent with GUS 3.0',
-                     argsDeclaration => $argsDeclaration,
-                     documentation => $documentation
-                    });
-  return $self;
+       # saco-cluster-mode args.
+       booleanArg({ name  => 'load_saco_clusters',
+                    descr => 'load SACO tag clusters from a file',
+                    reqd  => 0,
+                    constraintFunc => undef,
+                    isList         => 0,
+                   }),
+       stringArg({ name   => 'saco_cluster_file',
+                   descr  => 'load clusters from this file',
+                   reqd   => 0,
+                   format => 'cluster.pl clusters',
+                   mustExist => 1,
+                   constraintFunc => undef,
+                   isList         => 0,
+                 }),
+
+      ]
+    });
+
+   return $Self;
 }
 
+# ------------------------------ undoTables ------------------------------
+
+sub undoTables {
+   return qw( RAD::SAGETagMapping DoTS::NALocation DoTS::SAGETagFeature RAD::SAGETag );
+}
+
+# --------------------------------- run ----------------------------------
+
 sub run {
-  my ($self) = @_;
-  $self->logAlgInvocationId;
-  $self->logCommit;
+   my ($Self) = @_;
 
-  # validate command-line arguments
-  if (!($self->getArg('find_tags') || $self->getArg('find_links'))) {
-    $self->userError('--find_tags or --find_links must be specified');
-  }
+   #$Self->logAlgInvocationId;
+   #$Self->logCommit;
 
-  if ($self->getArg('find_tags')) {
-    if (!$self->getArg('array_id')) {
-      $self->userError('an array_id must be specified to find tags');
-    }
-    $self->{tagsFound} = 0;
-  }
+   # ................... validate command line arguments ....................
 
-  if ($self->getArg('find_links')) {
-    $self->{linksFound} = 0;
-  }
+   if (!( $Self->getArg('find_tags') ||
+          $Self->getArg('find_links') ||
+          $Self->getArg('load_saco_tags')
+        )
+      ) {
+      $Self->userError('--find_tags or --find_links or --load_saco_tags must be specified');
+   }
 
-  # if we're finding tag-gene links, prepare the query that runs
-  # against each sequence
-  if ($self->getArg('find_links')) {
-    $self->prepareQuery($self->getArg('max_distance'));
-  }
+   if ($Self->getArg('find_tags') || $Self->getArg('load_saco_tags')) {
+      if (!$Self->getArg('array_design_id')) {
+         $Self->userError('an array_design_id must be specified to find or load tags');
+      }
+      $Self->{tagsN}  = 0;
+   }
 
-  $self->processSequencesByProjectId($self->getArg('project_id'),
-				     $self->getArg('taxon_id'));
+   if ($Self->getArg('find_links')) {
+      $Self->{linksFound} = 0;
+   }
 
-  my $logString = "LoadGenomicSageData finished.";
-  if ($self->getArg('find_tags')) {
-    $logString = $logString . " " . $self->{tagsFound} . " tags found.";
-  }
-  if ($self->getArg('find_links')) {
-    $logString = $logString . " " . $self->{linksFound} . " links found.";
-  }
-  $self->log($logString);
+   # ............................. do the work ..............................
+
+   if ($Self->getArg('find_links')) {
+      $Self->prepareQuery($Self->getArg('max_distance'));
+   }
+
+   if ($Self->getArg('load_saco_tags')) {
+      $Self->loadSacomaticTags();
+   } else {
+      $Self->processSequencesByProjectId($Self->getArg('project_id'),
+                                         $Self->getArg('taxon_id')
+                                        );
+   }
+
+   # ....................... generate status message ........................
+
+   my $logString = "LoadGenomicSageData finished.";
+   if ($Self->getArg('load_saco_tags')) {
+      $logString = $logString . " " . $Self->{tagsN} . " tags loaded.";
+   } else {
+      if ($Self->getArg('find_tags')) {
+         $logString = $logString . " " . $Self->{tagsN} . " tags found.";
+      }
+      if ($Self->getArg('find_links')) {
+         $logString = $logString . " " . $Self->{linksFound} . " links found.";
+      }
+   }
+
+   $Self->log($logString);
+}
+
+# ========================================================================
+# --------------------------- Support Methods ----------------------------
+# ========================================================================
+
+# -------------------------- loadSacomaticTags ---------------------------
+
+=pod
+
+=head1 Processing SACO-matic Tags
+
+Tags are extracted from a file generated by trp-compare.
+
+=head2 trp-compare Format
+
+The first four colums of each row are the observed tag, its abundance,
+number of exact matches and number of inexact matches.  The rest of
+the row are the matches to the genome which are specified in 4-tuples
+of the genomic tag, the cut site location, strand of the tag and
+chromosome.
+
+=cut
+
+sub loadSacomaticTags {
+   my $Self = shift;
+
+   # this is a work-around until the version table schema is fixed.
+   $Self->getDb()->setGlobalNoVersion(1);
+
+   my $saco_f = $Self->getArg('saco_file');
+   if (my $saco_fh = FileHandle->new("<$saco_f")) {
+
+      my $chrToGus_dict = $Self->findSequencesByEdrId();
+
+      while (<$saco_fh>) {
+         my ($tag, $abund, $exact_n, $inexact_n, @_matches) = my @cols = split /\s+/;
+
+         # is a real tag, not header junk
+         if ($tag =~ /^[a-z]+$/i) {
+
+            # make a tag for the exact observed tag
+            my $_sageTag = GUS::Model::RAD::SAGETag->new({ tag             => $tag,
+                                                           array_design_id => $Self->getArg('array_design_id'),
+                                                         });
+            if (!$_sageTag->retrieveFromDB()) {
+               $_sageTag->submit();
+            }
+
+            # make sure counts are acceptable for processing matches
+            if ($Self->isaLoadableTag($exact_n, $inexact_n)) {
+
+               # process each match
+               for (my $match_i = 0; $match_i < @_matches; $match_i += 4) {
+
+                  my ($gtag, $location, $strand, $chromosome) = @_matches[$match_i .. $match_i+3];
+
+                  # get the genomic sequence entry
+                  my $_vs   = $chrToGus_dict->{$chromosome}
+                  || die "Can not find a dots.virtualSequence chromosome for '$chromosome'.";
+
+                  # create the arguments
+                  $Self->createSageObjects( enzymeName       => $Self->getArg('enzymeName'),
+                                            sequenceSourceId => $chromosome,
+                                            sequenceObject   => $_vs,
+                                            leftEnd          => $location,
+                                            rightEnd         => $location + length($Self->getArg('enzymeCutSite')) - 1,
+                                            isReversed       => $strand eq 'f' ? 0 : 1,
+                                            sense            => $strand,
+                                            tag              => $tag,
+                                            tagSize          => length($tag),
+                                            trailerSize      => 0,
+                                            gtag             => $gtag,
+                                            radTag           => $_sageTag,
+                                          );
+               }
+
+               $Self->undefPointerCache();
+            }
+         }
+      }
+
+      $saco_fh->close();
+   }
+
+   #
+   else {
+      die "Can not open saco file '$saco_f': $!";
+   }
+}
+
+# ------------------------- processSacoTagMatch --------------------------
+
+=pod
+
+=head2 Processing a SACO Tag Match
+
+
+
+=cut
+
+sub processSacoTagMatch {
+   my $Self = shift;
+   my $Dict = shift;
+   my $Obs  = shift;
+   my $Gtag = shift;
+
+}
+
+# ---------------------------- isaLoadableTag ----------------------------
+
+=pod
+
+=head2 Loadable Tags
+
+Tags are loaded only if the number of exact and inexact matches meet
+certain criteria.
+
+Here they are:
+
+  ExactN  InexactN  Class
+    0        0      no matches anyway
+    1       <5      exact match and not too many inexact matches
+    0        1      no exact match but a likely inexact match
+
+=cut
+
+sub isaLoadableTag {
+   my $Self     = shift;
+   my $ExactN   = shift;
+   my $InexactN = shift;
+
+   my $Rv = ( $ExactN == 0 && $InexactN == 0 ||
+              $ExactN == 1 && $InexactN < 5  ||
+              $ExactN == 0 && $InexactN == 1
+            );
+
+   return $Rv;
 }
 
 # ----------------------------------------------------------------------
@@ -169,11 +420,11 @@ sub run {
 # the correspoding ExternalNaSequences
 
 sub processSequencesByProjectId {
-  my ($self, $project_id, $taxon_id) = @_;
+   my ($Self, $project_id, $taxon_id) = @_;
 
-  my $table_id = getTableId('DoTS', 'ExternalNASequence');
+   my $table_id = getTableId('DoTS', 'ExternalNASequence');
 
-  my $sql = <<SQL;
+   my $sql = <<SQL;
     select pl.id
     from DoTS.ProjectLink pl, DoTS.ExternalNaSequence ens
     where pl.project_id = $project_id
@@ -182,16 +433,42 @@ sub processSequencesByProjectId {
       and ens.taxon_id = $taxon_id
 SQL
 
-  $self->logVerbose($sql);
+   $Self->logVerbose($sql);
 
-  my $dbh = $self->getQueryHandle();
-  $self->logVerbose("preparingAndExecuting sequenceId query");
-  my $stmt = $dbh->prepareAndExecute($sql);
-  $self->logVerbose("finished prepareAndExecute()");
+   my $dbh = $Self->getQueryHandle();
+   $Self->logVerbose("preparingAndExecuting sequenceId query");
+   my $stmt = $dbh->prepareAndExecute($sql);
+   $Self->logVerbose("finished prepareAndExecute()");
 
-  while (my ($na_sequence_id) = $stmt->fetchrow_array()) {
-    $self->processSequence($na_sequence_id);
-  }
+   while (my ($na_sequence_id) = $stmt->fetchrow_array()) {
+      $Self->processSequence($na_sequence_id);
+   }
+}
+
+sub findSequencesByEdrId {
+   my $Self = shift;
+
+   my %Rv;
+
+   my $edr_id = $Self->getArg('sequence_edrid');
+
+   # get a dictionary of source_id -> na_sequence_id
+   my $_dict  = $Self->sqlAsDictionary( Sql => <<Sql );
+
+     select vs.source_id
+     ,      vs.na_sequence_id
+     from   dots.VirtualSequence vs
+     where  vs.external_database_release_id = $edr_id
+
+Sql
+
+   # convert na_sequence_id to object.
+   foreach my $source_id (keys %$_dict) {
+      $Rv{$source_id} = GUS::Model::DoTS::VirtualSequence->new({ na_sequence_id => $_dict->{$source_id} });
+      $Rv{$source_id}->retrieveFromDB(['sequence']);
+   }
+
+   return wantarray ? %Rv : \%Rv;
 }
 
 # ----------------------------------------------------------------------
@@ -199,219 +476,286 @@ SQL
 # (i.e. find its SageTagFeatures or link them to Gene features)
 
 sub processSequence {
-  my ($self, $na_sequence_id) = @_;
-  $self->logVerbose("processing NaSequenceId $na_sequence_id");
+   my ($Self, $na_sequence_id) = @_;
+   $Self->logVerbose("processing NaSequenceId $na_sequence_id");
 
-  if ($self->getArg('find_tags')) {
-    $self->findTags($na_sequence_id);
-  }
+   if ($Self->getArg('find_tags')) {
+      $Self->findTags($na_sequence_id);
+   }
 
-  if ($self->getArg('find_links')) {
-    $self->findLinks($na_sequence_id);
-  }
+   if ($Self->getArg('find_links')) {
+      $Self->findLinks($na_sequence_id);
+   }
 
-  $self->undefPointerCache();
+   $Self->undefPointerCache();
 }
-# ---------------------------------------------------------------------------
-# scan the given sequence for restriction sites, and record the adjacent tags
+
+# ========================================================================
+# ----------------------------- Finding Tags -----------------------------
+# ========================================================================
+
+# ------------------------------- findTags -------------------------------
+
+=pod
+
+=head1 Finding Tags in the Genome
+
+This mode retrieves each sequence for the genome, then performs an in
+silico digest and records the tags that it finds.
+
+Since it retrieves the entire sequence, it should not be used for
+large mammalian genomes.
+
+This code assumes the restriction site is symmetric and generates tags
+in both directions from the restriction site.
+
+=cut
 
 sub findTags {
-  my ($self, $na_sequence_id) = @_;
+   my ($Self, $na_sequence_id) = @_;
 
-  my $externalNaSequence =
-    GUS::Model::DoTS::ExternalNASequence->new
-	( {
-	   na_sequence_id => $na_sequence_id
-	  } );
-  $externalNaSequence->retrieveFromDB();
+   my $externalNaSequence = GUS::Model::DoTS::ExternalNASequence->new
+     ({ na_sequence_id => $na_sequence_id
+      });
+   $externalNaSequence->retrieveFromDB();
 
-  my $sequence = $externalNaSequence->getSequence();
-  my $sourceId = $externalNaSequence->getSourceId();
+   my $sequence = $externalNaSequence->getSequence();
+   my $sourceId = $externalNaSequence->getSourceId();
 
-  my $rightEnd;
-  my $leftEnd;
+   # previously hardwired for the restriction enzyme NlaIII, which recognizes CATG
+   my $enzymeName  = $Self->getArg('enzymeName');   # 'NlaIII';
+   my $recogSeq    = $Self->getArg('enzymCutSite'); # 'CATG';
+   my $recogLength = length($recogSeq);
 
-  # hardwired for the restriction enzyme NlaIII, which recognizes CATG
-  my $recogSeq = 'CATG';
-  my $recogLength = 4;
-  my $enzymeName = 'NlaIII';
+   my $siteCount = 0;
 
-  my $siteCount = 0;
+   while ($sequence =~ m/($recogSeq)/ig) {
 
-  while ($sequence =~ m/(CATG)/ig) {
+      # these are coordinates of binding site in 1-based system
+      my $rightEnd = pos ($sequence);
+      my $leftEnd  = $rightEnd - $recogLength + 1;
 
-    # these are coordinates of binding site in 1-based system
-    $rightEnd = pos ($sequence);
-    $leftEnd  = $rightEnd - $recogLength + 1;
+      # since the enzyme recognition sequence is its own reverse complement
+      # (which it is, at least, for NlaIII) each site makes two tags.
 
-    # since the enzyme recognition sequence is its own reverse complement
-    # (which it is, at least, for NlaIII) each site makes two tags.
-    $self->createSageObjects( { sequenceSourceId => $sourceId,
-			     rightEnd => $rightEnd,
-			     leftEnd => $leftEnd,
-			     isReversed => 0,
-			     enzymeName => $enzymeName,
-			     sequenceObject => $externalNaSequence,
-			     sequenceString => \$sequence,
-			   } );
-    $self->createSageObjects( { sequenceSourceId => $sourceId,
-			     rightEnd => $rightEnd,
-			     leftEnd => $leftEnd,
-			     isReversed => 1,
-			     enzymeName => $enzymeName,
-			     sequenceObject => $externalNaSequence,
-			     sequenceString => \$sequence,
-			   } );
+      my %common = ( rightEnd         => $rightEnd,
+                     leftEnd          => $leftEnd,
+                     enzymeName       => $enzymeName,
+                     sequenceObject   => $externalNaSequence,
+                     sequenceString   => \$sequence,
+                     tagSize          => 10,
+                     trailerSize      => 4,
+                     sequenceSourceId => $sourceId,
+                   );
 
-    if ( 20 * $siteCount++ >= 10000 ) {
-      $self->undefPointerCache();
-      $siteCount = 0;
-    }
-  }
+      $Self->createSageObjects( { isReversed => 0, sense => 'G', %common } );
+      $Self->createSageObjects( { isReversed => 1, sense => 'g', %common } );
+
+      if ( 20 * $siteCount++ >= 10000 ) {
+         $Self->undefPointerCache();
+         $siteCount = 0;
+      }
+   }
 }
 
-# ----------------------------------------------------------------------
-# Create SageTagFeature and NaLocation objects, and call updateRad()
-# to create RAD schema objects.
+# -------------------------- createSageObjects ---------------------------
+
+=pod
+
+=head1 Creating SageTagFeatures
+
+A C<dots.sageTagFeature> has three locations: the restriction size,
+the adjacent tag, and a flanking 'trailer'.
+
+The source_id of the tag is the concatenation of the chromosome source
+id, genome release id, tag start, tag end, and a sense indicator.
+
+The name is similar to the source id, but need not be unique so we
+only use the chromosome, start, end, and sense.  In addition we
+truncate this to 30 chars.
+
+We make the SAGETagFeature.
+
+We make the binding NALocation and point it at the SAGETagFeature.
+
+We make the tag NALocation and point it at the SAGETagFeature.  If the
+caller has supplied a genomic_tag value, then this is set in the
+literal_sequence attribute of the NALocation.  The point of this is to
+indicate whether this is an exact or inexact match to the observed
+tag.
+
+We make the trailer NALocation if its length is non-zero.
+
+We submit the SAGETagFeature to get its primary key, and more
+importantly the primary keys of the NALocations.  We then poke these
+in to the SAGETagFeature which points at them.
+
+We finally make a C<rad.sageTag> if is has not been passed in from the
+beginning.
+
+=cut
 
 sub createSageObjects {
-  my ($self, $argHash) = @_;
+   my $Self = shift;
+   my $Args = ref $_[0] ? shift : {@_};
 
-  my $bind_start = $argHash->{leftEnd};
-  my $bind_end   = $argHash->{rightEnd};
+   my $bind_start    = $Args->{leftEnd};
+   my $bind_end      = $Args->{rightEnd};
 
-  my $tag_start  = $argHash->{isReversed} ? $bind_start - 10 : $bind_end + 1 ;
-  my $tag_end    = $argHash->{isReversed} ? $bind_start - 1  : $bind_end + 10;
+   my $tag_start     = $Args->{isReversed} ? $bind_start - $Args->{tagSize} : $bind_end + 1 ;
+   my $tag_end       = $Args->{isReversed} ? $bind_start - 1  : $bind_end + $Args->{tagSize};
 
-  my $trailer_start = $argHash->{isReversed} ? $bind_start - 16 : $bind_end+ 11 ;
-  my $trailer_end   = $argHash->{isReversed} ? $bind_start - 11 : $bind_end + 16 ;
+   my $trailer_start = $Args->{isReversed}
+   ? $bind_start - ($Args->{tagSize} + $Args->{trailerSize})
+   : $bind_end   + ($Args->{tagSize} + 1);
+   my $trailer_end   = $Args->{isReversed}
+   ? $bind_start - ($Args->{tagSize} + 1)
+   : $bind_end   + ($Args->{tagSize} + $Args->{trailerSize});
 
-  my $sense_g_s     = $argHash->{isReversed} ? 'g' : 'G';
+   my $senseChar          = $Args->{sense};
 
-  my $externalNaSequence = $argHash->{sequenceObject};
+   my $externalNaSequence = $Args->{sequenceObject};
 
-  # Make source_id unique, even if the same NaSequence.SourceId occurs
-  # in two different ExternalDatabaseReleases
-  my $sourceId = sprintf('%s-%d-%d-%d-%s',
-			 $argHash->{sequenceSourceId},
-			 $externalNaSequence->getExternalDatabaseReleaseId(),
-			 $tag_start,
-			 $tag_end,
-			 $sense_g_s,
-			);
+   # Make source_id unique, even if the same NaSequence.SourceId occurs
+   # in two different ExternalDatabaseReleases
+   my $sourceId = join('-',
+                       $Args->{sequenceSourceId},
+                       $externalNaSequence->getExternalDatabaseReleaseId(),
+                       $tag_start,
+                       $tag_end,
+                       $senseChar,
+                       $Args->{'enzymeName'},
+                      );
 
-  # Name should be in the same familiar format, but needn't be unique
-  my $name = sprintf('%s-%d-%d-%s',
-		     $argHash->{sequenceSourceId},
-		     $tag_start,
-		     $tag_end,
-		     $sense_g_s,
-		    );
-  $name = substr($name, 0, 30);
+   # Name should be in the same familiar format, but needn't be unique
+   my $name = join('-',
+                   $Args->{sequenceSourceId},
+                   $tag_start,
+                   $tag_end,
+                   $senseChar,
+                  );
+   $name = substr($name, 0, 30);
 
-  # make the database entries.
-  my $sageTagFeature =
-    GUS::Model::DoTS::SAGETagFeature->new
-	( {
-	   name => $name,
-	   source_id          => $sourceId,
-	   is_predicted       => 1,
-	   restriction_enzyme => $argHash->{enzymeName},
-	  } );
-  $sageTagFeature->setParent($argHash->{sequenceObject});
+   # make the database entries.
+   my $sageTagFeature = GUS::Model::DoTS::SAGETagFeature->new
+   ({ name               => $name,
+      source_id          => $sourceId,
+      is_predicted       => 1,
+      restriction_enzyme => $Args->{enzymeName},
+    });
+   $sageTagFeature->setParent($Args->{sequenceObject});
 
-  my $tag_nalg =
-    GUS::Model::DoTS::NALocation->new
-	( {
-	   na_feature_id  => $argHash->{sequenceSourceId},
-	   start_min      => $tag_start,
-	   start_max      => $tag_start,
-	   end_min        => $tag_end,
-	   end_max        => $tag_end,
-	   is_reversed    => $argHash->{isReversed},
-	  } );
-  $tag_nalg->setParent( $sageTagFeature );
+   my $bnd_nalg = GUS::Model::DoTS::NALocation->new
+   ({ start_min      => $bind_start,
+      start_max      => $bind_start,
+      end_min        => $bind_end,
+      end_max        => $bind_end,
+      is_reversed    => $Args->{isReversed},
+      #na_feature_id  => $Args->{sequenceSourceId},
+    });
+   $bnd_nalg->setParent( $sageTagFeature );
 
-  my $trl_nalg =
-    GUS::Model::DoTS::NALocation->new
-	( {
-	   na_feature_id  => $argHash->{sequenceSourceId},
-	   start_min      => $trailer_start,
-	   start_max      => $trailer_start,
-	   end_min        => $trailer_end,
-	   end_max        => $trailer_end,
-	   is_reversed    => $argHash->{isReversed},
-	  } );
-  $trl_nalg->setParent( $sageTagFeature );
+   my $tag_nalg = GUS::Model::DoTS::NALocation->new
+   ({ start_min      => $tag_start,
+      start_max      => $tag_start,
+      end_min        => $tag_end,
+      end_max        => $tag_end,
+      is_reversed    => $Args->{isReversed},
+      $Args->{gtag} ? ( literal_sequence => $Args->{gtag} ) : (),
+      #na_feature_id  => $Args->{sequenceSourceId},
+    });
+   $tag_nalg->setParent( $sageTagFeature );
 
-  my $bnd_nalg =
-    GUS::Model::DoTS::NALocation->new
-	( {
-	   na_feature_id  => $argHash->{sequenceSourceId},
-	   start_min      => $bind_start,
-	   start_max      => $bind_start,
-	   end_min        => $bind_end,
-	   end_max        => $bind_end,
-	   is_reversed    => $argHash->{isReversed},
-	  } );
-  $bnd_nalg->setParent( $sageTagFeature );
+   my $trl_nalg = $Args->{trailerSize} > 0
+   ? GUS::Model::DoTS::NALocation->new
+   ({ start_min      => $trailer_start,
+      start_max      => $trailer_start,
+      end_min        => $trailer_end,
+      end_max        => $trailer_end,
+      is_reversed    => $Args->{isReversed},
+      #na_feature_id  => $Args->{sequenceSourceId},
+    })
+   : undef ;
+   $trl_nalg && $trl_nalg->setParent( $sageTagFeature );
 
-  $sageTagFeature->submit();
+   $sageTagFeature->submit();
 
-  $self->{tagsFound} += 1;
+   $Self->{tagsN} += 1;
 
-  $sageTagFeature->setTagLocationId($tag_nalg->getId());
-  $sageTagFeature->setTrailerLocationId($trl_nalg->getId());
-  $sageTagFeature->setBindingLocationId($bnd_nalg->getId());
+   $sageTagFeature->setBindingLocationId($bnd_nalg->getId());
+   $sageTagFeature->setTagLocationId($tag_nalg->getId());
+   $trl_nalg && $sageTagFeature->setTrailerLocationId($trl_nalg->getId());
 
-  $sageTagFeature->submit();
+   $sageTagFeature->submit();
 
-  my $tag = substr(${$argHash->{sequenceString}}, $tag_start - 1, 10 );
-  $tag = reverseComplement($tag) if $argHash->{isReversed};
-  $tag = uc($tag);
-  $self->updateRad($tag, $sageTagFeature);
+   if ($Args->{radTag}) {
+      $Self->updateRad($Args->{radTag}, $sageTagFeature);
+   }
+   else {
+      my $tag = $Args->{tag} || substr(${$Args->{sequenceString}}, $tag_start - 1, $Args->{tagSize} );
+      $tag = reverseComplement($tag) if $Args->{isReversed};
+      $tag = uc($tag);
+      $Self->updateRad($tag, $sageTagFeature);
+   }
+
+   $Self->log('TAG', $Self->{tagsN}, $Args->{tag} || 'tag', $sourceId);
 }
 
-# ----------------------------------------------------------------------
-# Given a SageTagFeature and tag sequence, find or create
-# a SageTag object for the tag, and link them with a
-# new SageTagMapping object
+# ------------------------------ updateRad -------------------------------
+
+=pod
+
+=head1 Updating RAD
+
+This plugin also connects the C<dots.sageTagFeature> to C<rad.sageTag>
+via C<rad.sageTagMapping>.
+
+Depending on the context, we may already have a C<rad.sageTag> or may
+just have the tag sequence.
+
+If we just have the tag sequence, we create/retrieve a new/old object
+from the database.
+
+=cut
 
 sub updateRad {
-  my ($self, $tag, $sageTagFeature) = @_;
+   my ($Self, $tag, $sageTagFeature) = @_;
 
-  my $sageTag =
-    GUS::Model::RAD3::SAGETag->new
-	( {
-	   tag => $tag,
-	   array_id => $self->getArg('array_id')
-	  } );
+   my $sageTag;
 
-  if (!$sageTag->retrieveFromDB()) {
-    $sageTag->submit();
-  }
+   # use existing object
+   if (ref $tag) {
+      $sageTag = $tag;
+   }
 
-  my $sageTagMapping =
-    GUS::Model::RAD3::SAGETagMapping->new
-	( {
-	   composite_element_id =>
-	   $sageTag->getCompositeElementId(),
-	   array_id => $sageTag->getArrayId(),
-	   source_id =>
-	   $sageTagFeature->getSourceId()
-	  } );
-  $sageTagMapping->submit();
+   # create/retrieve object
+   else {
+      $sageTag = GUS::Model::RAD::SAGETag->new({ tag             => $tag,
+                                                 array_design_id => $Self->getArg('array_design_id'),
+                                               });
+      if (!$sageTag->retrieveFromDB()) {
+         $sageTag->submit();
+      }
+   }
+
+   my $sageTagMapping = GUS::Model::RAD::SAGETagMapping->new
+   ({ composite_element_id => $sageTag->getCompositeElementId(),
+      array_design_id      => $sageTag->getArrayDesignId(),
+      source_id            => $sageTagFeature->getSourceId()
+    });
+
+   $sageTagMapping->submit();
 }
 
 # ----------------------------------------------------------------------
 # returns the reverse complement of a nucleic acid sequence
 
 sub reverseComplement {
-  my $s = $_[0];
-  $s =~ tr/ACGT/TGCA/;
-  my $rs = reverse $s;
+   my $s = $_[0];
+   $s =~ tr/ACGT/TGCA/;
+   my $rs = reverse $s;
 
-  return $rs;
+   return $rs;
 }
 # ----------------------------------------------------------------------
 # prepares a query to find linked genes and tags on a given NaSequence
@@ -419,13 +763,13 @@ sub reverseComplement {
 #  for each NaSequenceId in the big loop)
 
 sub prepareQuery {
-  my ($self, $maxDistance) = @_;
+   my ($Self, $maxDistance) = @_;
 
-  # This join gets ids and locations for close pairs of features.
-  # The ugly expression that gets selected as "same_strand" should be
-  # 1 if both records have the same value in "is_reversed", 0 otherwise.
+   # This join gets ids and locations for close pairs of features.
+   # The ugly expression that gets selected as "same_strand" should be
+   # 1 if both records have the same value in "is_reversed", 0 otherwise.
 
-  my $sql = <<SQL;
+   my $sql = <<SQL;
         select tf.na_feature_id as tag_id,
                gf.na_feature_id as gene_id,
                tfl.start_min,
@@ -451,10 +795,10 @@ sub prepareQuery {
 	     or (gfl.start_max <= tfl.end_min and gfl.end_min >= tfl.start_max))
 SQL
 
-  $self->logVerbose($sql);
+   $Self->logVerbose($sql);
 
-  my $dbh = $self->getQueryHandle();
-  $self->{geneTagLinksQuery} = $dbh->prepare($sql);
+   my $dbh = $Self->getQueryHandle();
+   $Self->{geneTagLinksQuery} = $dbh->prepare($sql);
 }
 
 # ----------------------------------------------------------------------
@@ -463,104 +807,108 @@ SQL
 # of this plugin, modified to work with GUS v. 3 objects.
 
 sub findLinks {
-  my ($self, $na_sequence_id) = @_;
+   my ($Self, $na_sequence_id) = @_;
 
-  $self->logVerbose("finding links for NaSequenceId $na_sequence_id");
+   $Self->logVerbose("finding links for NaSequenceId $na_sequence_id");
 
-  my $queryHandle = $self->{geneTagLinksQuery};
-  $queryHandle->execute($na_sequence_id);
+   my $queryHandle = $Self->{geneTagLinksQuery};
+   $queryHandle->execute($na_sequence_id);
 
-  while (my($tagId, $geneId, $tagStart, $tagEnd, $tagIsReversed, $geneStart,
-	    $geneEnd, $geneIsReversed, $sameStrand)
-	 = $queryHandle->fetchrow_array()) {
+   while (my($tagId, $geneId, $tagStart, $tagEnd, $tagIsReversed, $geneStart,
+             $geneEnd, $geneIsReversed, $sameStrand)
+          = $queryHandle->fetchrow_array()) {
 
-    $self->logVerbose("linking GeneFeatureId " . $geneId
-		      . " to SageTagFeatureId " . $tagId);
-    my($tt5p, $tt3p);
+      $Self->logVerbose("linking GeneFeatureId " . $geneId
+                        . " to SageTagFeatureId " . $tagId);
+      my($tt5p, $tt3p);
 
-    if (!$geneIsReversed) {
-      if (($tagStart <= $geneStart) && ($tagEnd >= $geneStart)) {
-	$tt5p = 0;
+      if (!$geneIsReversed) {
+         if (($tagStart <= $geneStart) && ($tagEnd >= $geneStart)) {
+            $tt5p = 0;
+         } else {
+            $tt5p = ($tagEnd <= $geneStart)
+            ? $geneStart - $tagEnd
+            : $geneStart - $tagStart;
+         }
+         if (($tagStart <= $geneStart) && ($tagEnd >= $geneStart)) {
+            $tt3p = 0;
+         } else {
+            $tt3p = ($tagStart >= $geneEnd)
+            ? $tagStart - $geneEnd
+            : $tagEnd - $geneEnd;
+         }
       } else {
-	$tt5p = ($tagEnd <= $geneStart)
-	  ? $geneStart - $tagEnd
-	    : $geneStart - $tagStart;
+         if (($tagStart <= $geneEnd) && ($tagEnd >= $geneEnd)) {
+            $tt5p = 0;
+         } else {
+            $tt5p = ($tagStart >= $geneEnd)
+            ? $tagStart - $geneEnd
+            : $tagEnd - $geneEnd;
+         }
+         if (($tagStart <= $geneEnd) && ($tagEnd >= $geneEnd)) {
+            $tt3p = 0;
+         } else {
+            $tt3p = ($tagEnd <= $geneStart)
+            ? $geneStart - $tagEnd
+            : $geneStart - $tagStart;
+         }
       }
-      if (($tagStart <= $geneStart) && ($tagEnd >= $geneStart)) {
-	$tt3p = 0;
-      } else {
-	$tt3p = ($tagStart >= $geneEnd)
-	  ? $tagStart - $geneEnd
-	    : $tagEnd - $geneEnd;
-      }
-    } else {
-      if (($tagStart <= $geneEnd) && ($tagEnd >= $geneEnd)) {
-	$tt5p = 0;
-      } else {
-	$tt5p = ($tagStart >= $geneEnd)
-	  ? $tagStart - $geneEnd
-	    : $tagEnd - $geneEnd;
-      }
-      if (($tagStart <= $geneEnd) && ($tagEnd >= $geneEnd)) {
-	$tt3p = 0;
-      } else {
-	$tt3p = ($tagEnd <= $geneStart)
-	  ? $geneStart - $tagEnd
-	    : $geneStart - $tagStart;
-      }
-    }
 
-    my $geneFeatureSageTagLink =
+      my $geneFeatureSageTagLink =
       GUS::Model::DoTS::GeneFeatureSAGETagLink->new
-	  ( {
-	     genomic_na_sequence_id => $na_sequence_id,
-	     gene_na_feature_id => $geneId,
-	     tag_na_feature_id => $tagId,
-	     five_prime_tag_offset => $tt5p,
-	     three_prime_tag_offset => $tt3p,
-	     same_strand => $sameStrand,
-	     experimentally_verified => 0
-	    } );
+        ( {
+           genomic_na_sequence_id => $na_sequence_id,
+           gene_na_feature_id => $geneId,
+           tag_na_feature_id => $tagId,
+           five_prime_tag_offset => $tt5p,
+           three_prime_tag_offset => $tt3p,
+           same_strand => $sameStrand,
+           experimentally_verified => 0
+          } );
 
-    if ($geneFeatureSageTagLink->retrieveFromDB()) {
-      die("SageTagLink already exists between geneFeature " . $geneId .
-	  " and sageTagFeature " . $tagId);
-    }
-    $geneFeatureSageTagLink->submit();
-    $self->undefPointerCache();
+      if ($geneFeatureSageTagLink->retrieveFromDB()) {
+         die("SageTagLink already exists between geneFeature " . $geneId .
+             " and sageTagFeature " . $tagId);
+      }
+      $geneFeatureSageTagLink->submit();
+      $Self->undefPointerCache();
 
-    $self->{linksFound} += 1;
-  }
-  $queryHandle->finish();
+      $Self->{linksFound} += 1;
+   }
+   $queryHandle->finish();
 }
 
 # ----------------------------------------------------------------------
 # look up tableId by database/table name
 
 sub getTableId {
-  my ($dbName, $tableName) = @_;
+   my ($dbName, $tableName) = @_;
 
-  my $db =
-    GUS::Model::Core::DatabaseInfo->new( { name => $dbName } );
-  $db->retrieveFromDB();
+   my $db =
+   GUS::Model::Core::DatabaseInfo->new( { name => $dbName } );
+   $db->retrieveFromDB();
 
-  my $table =
-    GUS::Model::Core::TableInfo->new
-	( {
-	   name => $tableName,
-	   database_id => $db->getDatabaseId()
-	  } );
+   my $table =
+   GUS::Model::Core::TableInfo->new
+     ( {
+        name => $tableName,
+        database_id => $db->getDatabaseId()
+       } );
 
-  $table->retrieveFromDB();
+   $table->retrieveFromDB();
 
-  my $id = $table->getTableId();
+   my $id = $table->getTableId();
 
-  if (! $id ) {
-    die("can't get tableId for '$dbName\.$tableName'");
-  }
+   if (! $id ) {
+      die("can't get tableId for '$dbName\.$tableName'");
+   }
 
-  return $id;
+   return $id;
 
 }
+
+# ========================================================================
+# ---------------------------- End of Package ----------------------------
+# ========================================================================
 
 1;
