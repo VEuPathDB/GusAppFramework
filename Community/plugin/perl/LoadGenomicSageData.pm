@@ -60,6 +60,9 @@ use vars qw( @ISA );
 
 @ISA = qw(GUS::PluginMgr::Plugin);
 
+use CBIL::Util::Files;
+use CBIL::Util::V;
+
 use GUS::PluginMgr::Plugin;
 use GUS::Model::DoTS::SAGETagFeature;
 use GUS::Model::DoTS::GeneFeature;
@@ -70,6 +73,10 @@ use GUS::Model::RAD::SAGETag;
 use GUS::Model::RAD::SAGETagMapping;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
+
+use GUS::Model::DoTS::NAFeatureRelationship;
+use GUS::Model::DoTS::Miscellaneous;
+use GUS::Model::DoTS::NAFeatRelationshipType;
 
 # ========================================================================
 # -------------------------- Required Methodsa ---------------------------
@@ -84,8 +91,8 @@ sub new {
 
    $Self->initialize
    ({ requiredDbVersion    => '3.5',
-      cvsRevision          => "\$ Revision: js-test-b \$",
-      cvsTag               => "\$ Name: \$",
+      cvsRevision          => "$ Revision: js-test-g $ ",
+      cvsTag               => "$ Name: $ ",
       name                 => ref($Self),
 
       revisionNotes        => '',
@@ -95,9 +102,11 @@ sub new {
       { $Self->extractDocumentationFromMyPod(),
         tablesAffected   =>  [ ['DoTS::GeneFeatureSAGETagLink', 'Insert a record for each predicted link'],
                                ['DoTS::SAGETagFeature',         'Insert a record for each predicted SAGE tag feature'],
-                               ['DoTS::NALocation',             'Insert three records for each predicted tag'],
-                               ['RAD::SAGETag',                'Insert a record for any novel tag sequence'],
-                               ['RAD::SAGETagMapping',         'Map DoTS sourceId-ExtDbRelId to RAD CompositeElementId'],
+                               ['DoTS::NALocation',             'Insert three records for each predicted tag or one for each cluster'],
+                               ['RAD::SAGETag',                 'Insert a record for any novel tag sequence'],
+                               ['RAD::SAGETagMapping',          'Map DoTS sourceId-ExtDbRelId to RAD CompositeElementId'],
+                               ['DoTS::Miscellaneous',          'Inserts clusters here', ],
+                               ['DoTS::NAFeatureRelationship',  'Inserts connection between clusters and tags here', ],
                              ],
 
         tablesDependedOn => [ ['DoTS::ProjectLink',             'Identify sequences to scan for tags'],
@@ -204,6 +213,13 @@ sub new {
                    constraintFunc => undef,
                    isList         => 0,
                  }),
+       integerArg({ descr => 'minimum abundance for loadable clusters',
+                    name  => 'saco_cluster_abundance',
+                    reqd  => 0,
+                    default => 1,
+                    constraintFunc=> undef,
+                    isList => 0,
+                  }),
 
       ]
     });
@@ -214,7 +230,7 @@ sub new {
 # ------------------------------ undoTables ------------------------------
 
 sub undoTables {
-   return qw( RAD::SAGETagMapping DoTS::NALocation DoTS::SAGETagFeature RAD::SAGETag );
+   return qw( DoTS.NAFeatureRelationship DoTS.NALocation DoTS.Miscellaneous RAD.SAGETagMapping DoTS.SAGETagFeature RAD.SAGETag );
 }
 
 # --------------------------------- run ----------------------------------
@@ -229,10 +245,11 @@ sub run {
 
    if (!( $Self->getArg('find_tags') ||
           $Self->getArg('find_links') ||
-          $Self->getArg('load_saco_tags')
+          $Self->getArg('load_saco_tags') ||
+          $Self->getArg('load_saco_clusters')
         )
       ) {
-      $Self->userError('--find_tags or --find_links or --load_saco_tags must be specified');
+      $Self->userError('--find_tags, --find_links, --load_saco_tags or --load_saco_clusters must be specified');
    }
 
    if ($Self->getArg('find_tags') || $Self->getArg('load_saco_tags')) {
@@ -252,9 +269,15 @@ sub run {
       $Self->prepareQuery($Self->getArg('max_distance'));
    }
 
-   if ($Self->getArg('load_saco_tags')) {
+   if ($Self->getArg('load_saco_clusters')) {
+      $Self->loadSacoClusters();
+   }
+
+   elsif ($Self->getArg('load_saco_tags')) {
       $Self->loadSacomaticTags();
-   } else {
+   }
+
+   else {
       $Self->processSequencesByProjectId($Self->getArg('project_id'),
                                          $Self->getArg('taxon_id')
                                         );
@@ -264,7 +287,9 @@ sub run {
 
    my $logString = "LoadGenomicSageData finished.";
    if ($Self->getArg('load_saco_tags')) {
-      $logString = $logString . " " . $Self->{tagsN} . " tags loaded.";
+      $logString = "$logString $Self->{tagsN} tags loaded.";
+   } elsif ($Self->getArg('load_saco_clusters')) {
+      $logString = "$logString  $Self->{clustersN} clusters of $Self->{tagsN} tags loaded.";
    } else {
       if ($Self->getArg('find_tags')) {
          $logString = $logString . " " . $Self->{tagsN} . " tags found.";
@@ -310,6 +335,9 @@ sub loadSacomaticTags {
 
       my $chrToGus_dict = $Self->findSequencesByEdrId();
 
+      # track tags we've seen so that we don't double map them (these are from mismatches).
+      my %seen_b;
+
       while (<$saco_fh>) {
          my ($tag, $abund, $exact_n, $inexact_n, @_matches) = my @cols = split /\s+/;
 
@@ -330,26 +358,37 @@ sub loadSacomaticTags {
                # process each match
                for (my $match_i = 0; $match_i < @_matches; $match_i += 4) {
 
-                  my ($gtag, $location, $strand, $chromosome) = @_matches[$match_i .. $match_i+3];
+                  my ($gtag, $location, $strand, $chromosome)
+                  = my @_match
+                  = @_matches[$match_i .. $match_i+3];
 
-                  # get the genomic sequence entry
-                  my $_vs   = $chrToGus_dict->{$chromosome}
-                  || die "Can not find a dots.virtualSequence chromosome for '$chromosome'.";
+                  my $key = join('-', @_match);
 
-                  # create the arguments
-                  $Self->createSageObjects( enzymeName       => $Self->getArg('enzymeName'),
-                                            sequenceSourceId => $chromosome,
-                                            sequenceObject   => $_vs,
-                                            leftEnd          => $location,
-                                            rightEnd         => $location + length($Self->getArg('enzymeCutSite')) - 1,
-                                            isReversed       => $strand eq 'f' ? 0 : 1,
-                                            sense            => $strand,
-                                            tag              => $tag,
-                                            tagSize          => length($tag),
-                                            trailerSize      => 0,
-                                            gtag             => $gtag,
-                                            radTag           => $_sageTag,
-                                          );
+                  # process novel matches.
+                  if ($seen_b{$key}++ == 0) {
+
+                     # get the genomic sequence entry
+                     my $_vs   = $chrToGus_dict->{$chromosome}
+                     || die "Can not find a dots.virtualSequence chromosome for '$chromosome'.";
+
+                     # create the arguments
+                     $Self->createSageObjects( enzymeName       => $Self->getArg('enzymeName'),
+                                               sequenceSourceId => $chromosome,
+                                               sequenceObject   => $_vs,
+                                               leftEnd          => $location,
+                                               rightEnd         => $location + length($Self->getArg('enzymeCutSite')) - 1,
+                                               isReversed       => $strand eq 'f' ? 0 : 1,
+                                               sense            => $strand,
+                                               tag              => $tag,
+                                               tagSize          => length($tag),
+                                               trailerSize      => 0,
+                                               gtag             => $gtag,
+                                               radTag           => $_sageTag,
+                                             );
+                  }
+                  else {
+                     $Self->log('SEEN', $key);
+                  }
                }
 
                $Self->undefPointerCache();
@@ -414,6 +453,291 @@ sub isaLoadableTag {
 
    return $Rv;
 }
+
+# ========================================================================
+# ------------------------ Loading SACO Clusters -------------------------
+# ========================================================================
+
+=pod
+
+=head1 Loading SACO Clusters
+
+A cluster is a group of SACO tags that are thought to represent the
+same biological event.  The clusters are defined with an external
+program.  They are defined in terms of tags that must already be
+loaded (e.g., using C<load_saco_tags>.
+
+A cluster is represented by a C<GUS::Model::DoTS::Miscellaneous>
+feature.  Details are provided by
+C<GUS::Model::DoTS::NAFeatureRelationship> links to the consituent
+C<GUS::Model::DoTS::SageTagFeature> rows.
+
+Information (abundances) about the clusters is logged to a
+tab-delimited file so that it can be loaded into a view of
+C<RAD::AnalysisResultImp>.
+
+=cut
+
+sub loadSacoClusters {
+   my $Self = shift;
+
+   my $cluster_f  = $Self->getArg('saco_cluster_file') || die "The --saco_cluster_file must be specified.";
+   my $cluster_fh = CBIL::Util::Files::SmartOpenForRead($cluster_f);
+
+   my $naFeatRelType_id = $Self->findOrCreateRelationType();
+
+   while (my $_cluster = $Self->nextCluster($cluster_fh)) {
+
+      next if $_cluster->{abund_n} < $Self->getArg('saco_cluster_abundance');
+
+      my @_tags = @{$_cluster->{tags}};
+
+      my @_info = eval { map { $Self->findSacoTag($_cluster, $_) } @_tags };
+
+      if ($@) {
+         $Self->logData('ERROR',
+                        $_cluster->{ord}, $@
+                       );
+      }
+
+      else {
+         my $feature_gus = GUS::Model::DoTS::Miscellaneous->new
+         ({ });
+
+         # location of cluster, ready for min/max updates
+         my $beg = 1e10;
+         my $end = -1e10;
+         my $na_seq_id;
+
+         # store relations here for later attachment to the cluster.
+         my @relationships_gus = ();
+
+         # process each tag
+         for (my $tag_i = 0; $tag_i < scalar @_tags; $tag_i++) {
+            my $_tag  = $_tags[$tag_i];
+            my $_info = $_info[$tag_i];
+
+            # find the corresponding feature.
+            my $_info = $Self->findSacoTag($_cluster, $_tag);
+
+            # track the chromosomal sequence and make sure it's consistent.
+            if (not defined $na_seq_id) {
+               $na_seq_id = $_info->{na_sequence_id};
+            }
+            elsif ($na_seq_id != $_info->{na_sequence_id}) {
+               die "Tag for cluster $_cluster->{ord} not located on same sequence as rest of cluster.";
+            }
+
+            # make the relationship
+            my $relation_gus = GUS::Model::DoTS::NAFeatureRelationship->new
+            ({ child_na_feature_id          => $_info->{na_feature_id},
+               ordinal                      => $_tag->{ord},
+               na_feat_relationship_type_id => $naFeatRelType_id,
+             });
+
+            $beg = CBIL::Util::V::min($beg, $_info->{start_min});
+            $end = CBIL::Util::V::max($end, $_info->{end_min});
+
+            push(@relationships_gus, $relation_gus);
+         }
+
+
+         # update cluster with name now that we know the boundaries
+         my $name      = join('-',
+                              $_cluster->{chr},
+                              $beg,
+                              $end,
+                              'x',
+                             );
+         $name = substr($name, 0, 30);
+
+         my $source_id = join('-',
+                              $_cluster->{chr},
+                              $Self->getArg('sequence_edrid'),
+                              $beg,
+                              $end,
+                              'x',
+                              $Self->getArg('enzymeName'),
+                             );
+         $feature_gus->setName($name);
+         $feature_gus->setSourceId($source_id);
+
+         # create and attach cluster location.
+         my $location_gus = GUS::Model::DoTS::NALocation->new
+         ({ start_min => $beg,
+            start_max => $beg,
+            end_min   => $end,
+            end_max   => $end,
+          });
+
+         $location_gus->setParent($feature_gus);
+
+         # submit cluster feature.
+         $feature_gus->submit();
+
+         # connect and submit relationships
+         foreach (@relationships_gus) {
+            $_->setParentNaFeatureId($feature_gus->getId());
+            $_->submit();
+         }
+
+         # add to log for RAD loading.
+         $Self->logData('CLUSTER',
+                        $_cluster->{ord},
+                        $feature_gus->getId(), $feature_gus->getSourceId(),
+                        $_cluster->{tags_n}, $_cluster->{abund_n}
+                       );
+
+         $Self->undefPointerCache();
+      }
+   }
+
+   $cluster_fh->close();
+
+}
+
+# ----------------------- findOrCreateRelationType -----------------------
+
+=pod
+
+=head2 NAFeatRelationshipType
+
+The plugin finds or creates a C<ClusterMember> entry in
+C<GUS::Model::DoTS::NAFeatRelationshipType>.  Description must
+match as well.
+
+=cut
+
+sub findOrCreateRelationType {
+   my $Self = shift;
+
+   my $Rv;
+
+   my $_gus = GUS::Model::DoTS::NAFeatRelationshipType->new
+   ({ name        => 'ClusterMember' });
+
+   if (!$_gus->retrieveFromDB()) {
+      $_gus->setDescription('Membership of child feature in parent feature by clustering, i.e., parent is a cluster of child features.');
+      $_gus->submit();
+   }
+
+   $Rv = $_gus->getId();
+
+   return $Rv;
+}
+
+# ----------------------------- nextCluster ------------------------------
+
+=pod
+
+=head2 Cluster File Format
+
+=cut
+
+sub nextCluster {
+   my $Self = shift;
+   my $Fh   = shift;
+
+   my $Rv;
+
+   if (my $line = <$Fh>) {
+      chomp $line;
+      ($Rv->{cluster_kw}, $Rv->{ord},
+       $Rv->{chr}, $Rv->{chr_n}, $Rv->{beg}, $Rv->{end},
+       $Rv->{tags_n}, $Rv->{abund_n}, $Rv->{size}
+      ) = my @_cluster = split /\t/, $line;
+
+      for (my $tag_i = 0; $tag_i < $Rv->{tags_n}; $tag_i++) {
+         my $line = <$Fh>;
+         chomp $line;
+         my %_tag;
+         ($_tag{hit_kw},
+          $_tag{tag}, $_tag{pos}, $_tag{dir},
+          $_tag{tagAbund_n}) = my @_tag = split /\t/, $line;
+         $_tag{ord} = 1;
+         push(@{$Rv->{tags}}, \%_tag);
+      }
+   }
+
+   return $Rv;
+}
+
+# ----------------------------- findSacoTag ------------------------------
+
+=pod
+
+=head2 Finding Tags
+
+=cut
+
+sub findSacoTag {
+   my $Self    = shift;
+   my $Cluster = shift;
+   my $Tag     = shift;
+
+   my $Rv;
+
+   my $sequence_edrid = $Self->getArg('sequence_edrid');
+
+   my $cut_bp         = length($Self->getArg('enzymeCutSite'));
+   my $tag_bp         = length($Tag->{tag});
+
+   my $bind_start     = $Tag->{pos};
+   my $bind_end       = $Tag->{pos} + $cut_bp - 1;
+
+   my $tag_start      = $Tag->{dir} eq 'r' ? $Tag->{pos} - $tag_bp : $Tag->{pos} + $cut_bp;
+   my $tag_end        = $Tag->{dir} eq 'r' ? $Tag->{pos} - 1       : $Tag->{pos} + $cut_bp + $tag_bp - 1;
+
+   my $isRev_b        = $Tag->{dir} eq 'r' ? 1 : 0;
+
+   my $source_id      = join('-',
+                             $Cluster->{chr},
+                             $sequence_edrid,
+                             $tag_start,
+                             $tag_end,
+                             $Tag->{dir},
+                             $Self->getArg('enzymeName')
+                            );
+
+   my $_sql = <<SQL;
+
+   SELECT  stf.na_sequence_id
+   ,       stf.na_feature_id
+   ,       nalB.start_min
+   ,       nalB.end_min
+   FROM    dots.naLocation      nalT
+   ,       dots.naLocation      nalB
+   ,       dots.sageTagFeature  stf
+   ,       dots.virtualSequence vs
+   WHERE   nalT.start_min                  = $tag_start
+   AND     nalT.end_min                    = $tag_end
+   AND     nalT.is_reversed                = $isRev_b
+   AND     nalT.na_feature_id              = nalB.na_feature_id
+   AND     nalB.start_min                  = $bind_start
+   AND     nalB.end_min                    = $bind_end
+   AND     nalB.na_feature_id              = stf.na_feature_id
+   AND     stf.source_id                   = '$source_id'
+   AND     stf.na_sequence_id              = vs.na_sequence_id
+   AND     vs.external_database_release_id = $sequence_edrid
+
+SQL
+
+   my $_tags = $Self->sqlAsHashRefs( Sql => $_sql );
+   my $tags_n = @$_tags;
+   if (1 != $tags_n) {
+      die "Found $tags_n matching tags instead of 1: $_sql";
+   }
+
+   $Rv = $_tags->[0];
+
+   return $Rv;
+}
+
+
+# ========================================================================
+# -------------------- Other Support or Mode Methods ---------------------
+# ========================================================================
+
 
 # ----------------------------------------------------------------------
 # Given a projectId, use ProjectLink to find and process
@@ -651,6 +975,7 @@ sub createSageObjects {
       end_min        => $bind_end,
       end_max        => $bind_end,
       is_reversed    => $Args->{isReversed},
+      loc_order      => 0,
       #na_feature_id  => $Args->{sequenceSourceId},
     });
    $bnd_nalg->setParent( $sageTagFeature );
@@ -662,6 +987,7 @@ sub createSageObjects {
       end_max        => $tag_end,
       is_reversed    => $Args->{isReversed},
       $Args->{gtag} ? ( literal_sequence => $Args->{gtag} ) : (),
+      loc_order      => 1,
       #na_feature_id  => $Args->{sequenceSourceId},
     });
    $tag_nalg->setParent( $sageTagFeature );
@@ -673,6 +999,7 @@ sub createSageObjects {
       end_min        => $trailer_end,
       end_max        => $trailer_end,
       is_reversed    => $Args->{isReversed},
+      loc_order      => 2,
       #na_feature_id  => $Args->{sequenceSourceId},
     })
    : undef ;
