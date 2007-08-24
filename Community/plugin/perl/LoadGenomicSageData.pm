@@ -506,7 +506,8 @@ sub loadSacoClusters {
 
       else {
          my $feature_gus = GUS::Model::DoTS::Miscellaneous->new
-         ({ });
+         ({ external_database_release_id => $Self->getArg('features_edrid'),
+          });
 
          # location of cluster, ready for min/max updates
          my $beg = 1e10;
