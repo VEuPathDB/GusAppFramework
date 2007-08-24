@@ -92,7 +92,7 @@ sub new {
    $Self->initialize
    ({ requiredDbVersion    => '3.5',
       cvsRevision          => '$Revision$',
-      cvsTag               => '$ Name: $',
+      cvsTag               => '$Name: $',
       name                 => ref($Self),
 
       revisionNotes        => '',
@@ -131,6 +131,9 @@ sub new {
                   }),
        integerArg({ descr => 'sres.externalDatabaseRelease_id for genome sequences',
                     name  => 'sequence_edrid',  reqd  => 0,  constraintFunc=> undef, isList=> 0,
+                  }),
+       integerArg({ descr => 'sres.externalDatabaseRelease_id for features and other tables',
+                    name  => 'features_edrid',  reqd  => 0,  constraintFunc=> undef, isList=> 0,
                   }),
        integerArg({ name  => 'taxon_id',
                     descr => 'taxon_id',
@@ -941,6 +944,8 @@ sub createSageObjects {
 
    my $externalNaSequence = $Args->{sequenceObject};
 
+   my $features_edrid      = $Self->getArg('features_edrid');
+
    # Make source_id unique, even if the same NaSequence.SourceId occurs
    # in two different ExternalDatabaseReleases
    my $sourceId = join('-',
@@ -963,12 +968,14 @@ sub createSageObjects {
 
    # make the database entries.
    my $sageTagFeature = GUS::Model::DoTS::SAGETagFeature->new
-   ({ name               => $name,
-      source_id          => $sourceId,
-      is_predicted       => 1,
-      restriction_enzyme => $Args->{enzymeName},
+   ({ name                         => $name,
+      source_id                    => $sourceId,
+      external_database_release_id => $features_edrid,
+      is_predicted                 => 1,
+      restriction_enzyme           => $Args->{enzymeName},
     });
-   $sageTagFeature->setParent($Args->{sequenceObject});
+   #$sageTagFeature->setParent($Args->{sequenceObject});
+   $sageTagFeature->setNaSequenceId($externalNaSequence->getId());
 
    my $bnd_nalg = GUS::Model::DoTS::NALocation->new
    ({ start_min      => $bind_start,
@@ -977,7 +984,6 @@ sub createSageObjects {
       end_max        => $bind_end,
       is_reversed    => $Args->{isReversed},
       loc_order      => 0,
-      #na_feature_id  => $Args->{sequenceSourceId},
     });
    $bnd_nalg->setParent( $sageTagFeature );
 
@@ -989,7 +995,6 @@ sub createSageObjects {
       is_reversed    => $Args->{isReversed},
       $Args->{gtag} ? ( literal_sequence => $Args->{gtag} ) : (),
       loc_order      => 1,
-      #na_feature_id  => $Args->{sequenceSourceId},
     });
    $tag_nalg->setParent( $sageTagFeature );
 
@@ -1001,12 +1006,15 @@ sub createSageObjects {
       end_max        => $trailer_end,
       is_reversed    => $Args->{isReversed},
       loc_order      => 2,
-      #na_feature_id  => $Args->{sequenceSourceId},
     })
    : undef ;
    $trl_nalg && $trl_nalg->setParent( $sageTagFeature );
 
    $sageTagFeature->submit();
+
+   if ($sageTagFeature->getNaSequenceId() == 0) {
+      $Self->log('ERROR', 'null feature na_sequence_id');
+   }
 
    $Self->{tagsN} += 1;
 
@@ -1067,9 +1075,10 @@ sub updateRad {
    }
 
    my $sageTagMapping = GUS::Model::RAD::SAGETagMapping->new
-   ({ composite_element_id => $sageTag->getCompositeElementId(),
-      array_design_id      => $sageTag->getArrayDesignId(),
-      source_id            => $sageTagFeature->getSourceId()
+   ({ composite_element_id         => $sageTag->getCompositeElementId(),
+      array_design_id              => $sageTag->getArrayDesignId(),
+      source_id                    => $sageTagFeature->getSourceId(),
+      external_database_release_id => $Self->getArg('features_edrid'),
     });
 
    $sageTagMapping->submit();
