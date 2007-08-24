@@ -353,9 +353,9 @@ sub writeResultFile {
   close DATAFILE;
 
   #print STDERR "There are [$count] lines of differentially expressed genes in the result file\n";
-  unless($count) {
-    GUS::Community::RadAnalysis::DataFileEmptyError->new("The datafile [$fileName] has no rows")->throw();
-  }
+  #unless($count) {
+  #  GUS::Community::RadAnalysis::DataFileEmptyError->new("The datafile [$fileName] has no rows")->throw();
+  #}
   return $fileName;
 }
 
