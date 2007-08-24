@@ -91,12 +91,13 @@ sub new {
 
    $Self->initialize
    ({ requiredDbVersion    => '3.5',
-      cvsRevision          => "$ Revision: js-test-g $ ",
-      cvsTag               => "$ Name: $ ",
+      cvsRevision          => '$Revision$',
+      cvsTag               => '$ Name: $',
       name                 => ref($Self),
 
       revisionNotes        => '',
       revisionNotes        => 'code cleanup and support for SACO tags',
+      revisionNotes        => 'saco cluster loading',
 
       documentation        => 
       { $Self->extractDocumentationFromMyPod(),
