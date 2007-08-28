@@ -71,7 +71,12 @@ sub getArgumentsDeclaration {
 		 constraintFunc=> undef,
 		 reqd  => 0,
 		 isList => 0
-		})
+		}),
+     booleanArg({ name  => 'orderInput',
+		  descr => 'If true, RAD.AnalysisInput.order_num will be populated',
+		  constraintFunc => undef,
+		  reqd           => 0,
+		  isList         => 0 })
     ];
   return $argumentDeclaration;
 }
@@ -110,6 +115,10 @@ Do not use special symbols (like NA or similar) for empty fields: either leave t
 
 The names of each field and instructions for their values are as follows:
 
+B<I<analysis_name>>
+
+A name which will identify this analysis.
+
 B<I<table>> [Mandatory]
 
 The table (or view) whose entries the analysis results refer to. The format should be I<space.name>, e.g. RAD.SpotFamily. Both I<space> and I<name> must be spelled B<exactly> (case sensitive) as spelled in Core.DatabaseInfo.name and Core.TableInfo.name.
@@ -144,7 +153,7 @@ The value to be assigned to the I<N>th quality control parameter, whose id is sp
 
 B<I<logical_group_idN>>
 
-The logical_group_id (in RAD.LogicalGroup) of the I<N>th input group to this analysis. Start with I<N>=1, for the first input group, and continue up to the number of input groups. B<At least one> logical group id should be provided.
+The logical_group_id (in RAD.LogicalGroup) of the I<N>th input group to this analysis. Start with I<N>=0  (e.g. in PaGE) or 1, for the first input group, and continue till you have exhausted all input groups. B<At least one> logical group id should be provided. If --orderInput is true, I<N> will be used to populate RAD.AnalysisInput.order_num for that logical group.
 
 =head2 F<data_file>
 
@@ -287,6 +296,7 @@ sub readCfgFile {
   unless ($fh->open("<$file")) {
     $self->error("Could not open file $file.");
   }
+  my $analysisNameGiven = 0;
   my $tableGiven = 0;
   my $operatorIdGiven = 0;
   my $protocolIdGiven = 0;
@@ -298,7 +308,16 @@ sub readCfgFile {
     $name =~ s/^\s+|\s+$//g;
     $value =~ s/^\s+|\s+$//g;
     if ($name ne '' && $value ne '') {
-      if ($name eq 'table') {
+      if ($name eq 'analysis_name') {
+	if (!$analysisNameGiven) {
+	  $cfgInfo->{'analysis_name'} = $value;
+	  $analysisNameGiven = 1;
+	}
+	else {
+	  $self->userError('Only one analysis_name should be provided in the cfg_file.');
+	}
+      }
+      elsif ($name eq 'table') {
 	if (!$tableGiven) {
 	  my ($space, $tablename) = split(/\./, $value);
 	  my $db = GUS::Model::Core::DatabaseInfo->new({'name' =>$space});
@@ -402,8 +421,8 @@ sub readCfgFile {
       }
       elsif ($name =~ /^logical_group_id(\d+)$/) {
 	my $index = $1;
-	if ($index<1) {
-	  $self->userError('In the cfg_file, each logical_group_idN must have N>0.');
+	if ($index<0) {
+	  $self->userError('In the cfg_file, each logical_group_idN must have N>=0.');
 	}
 	my $group = GUS::Model::RAD::LogicalGroup->new({'logical_group_id' => $value});
 	if (!$group->retrieveFromDB()) {
@@ -599,7 +618,9 @@ sub insertAnalysis {
   if (defined $cfgInfo->{'operator_id'}) {
     $analysis->set('operator_id', $cfgInfo->{'operator_id'});
   }
-
+  if (defined $cfgInfo->{'analysis_name'}) {
+    $analysis->set('name', $cfgInfo->{'analysis_name'});
+  }
   my $sth =$dbh->prepare("select t.table_id from Core.TableInfo t, Core.DatabaseInfo d where t.name='Assay' and d.name='RAD' and t.database_id=d.database_id");
   $sth->execute();
   my ($assayTableId) = $sth->fetchrow_array();
@@ -612,7 +633,7 @@ sub insertAnalysis {
   $sth->execute();
   my ($quantificationTableId) = $sth->fetchrow_array();
 
-  for (my $i=1; $i<@{$cfgInfo->{'logical_group_id'}}; $i++) {
+  for (my $i=0; $i<@{$cfgInfo->{'logical_group_id'}}; $i++) {
     if (defined $cfgInfo->{'logical_group_id'}->[$i]) {
       my $sth1 = $dbh->prepare("select distinct row_id from RAD.LogicalGroupLink where table_id=$assayTableId and logical_group_id= $cfgInfo->{'logical_group_id'}->[$i]");
       $sth1->execute();
@@ -641,6 +662,9 @@ sub insertAnalysis {
       }
 
       my $analysisInput = GUS::Model::RAD::AnalysisInput->new({logical_group_id => $cfgInfo->{'logical_group_id'}->[$i]});
+      if ($self->getArg('orderInput')) {
+	$analysisInput->set('order_num', $i);
+      }
       $analysisInput->setParent($analysis);
       $numAnalysisInput++;
     }
