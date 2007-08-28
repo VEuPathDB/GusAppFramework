@@ -98,6 +98,7 @@ sub new {
       revisionNotes        => '',
       revisionNotes        => 'code cleanup and support for SACO tags',
       revisionNotes        => 'saco cluster loading',
+      revisionNotes        => 'oops, forgot to set na_sequence_id in cluster features',
 
       documentation        => 
       { $Self->extractDocumentationFromMyPod(),
@@ -566,6 +567,7 @@ sub loadSacoClusters {
                              );
          $feature_gus->setName($name);
          $feature_gus->setSourceId($source_id);
+         $feature_gus->getNaSequenceId($na_seq_id);
 
          # create and attach cluster location.
          my $location_gus = GUS::Model::DoTS::NALocation->new
