@@ -486,6 +486,9 @@ C<RAD::AnalysisResultImp>.
 sub loadSacoClusters {
    my $Self = shift;
 
+   $Self->{tagsN}     = 0;
+   $Self->{clustersN} = 0;
+
    my $cluster_f  = $Self->getArg('saco_cluster_file') || die "The --saco_cluster_file must be specified.";
    my $cluster_fh = CBIL::Util::Files::SmartOpenForRead($cluster_f);
 
@@ -567,7 +570,7 @@ sub loadSacoClusters {
                              );
          $feature_gus->setName($name);
          $feature_gus->setSourceId($source_id);
-         $feature_gus->getNaSequenceId($na_seq_id);
+         $feature_gus->setNaSequenceId($na_seq_id);
 
          # create and attach cluster location.
          my $location_gus = GUS::Model::DoTS::NALocation->new
@@ -587,6 +590,9 @@ sub loadSacoClusters {
             $_->setParentNaFeatureId($feature_gus->getId());
             $_->submit();
          }
+
+         $Self->{clustersN}++;
+         $Self->{tagsN}    += $_cluster->{tags_n};
 
          # add to log for RAD loading.
          $Self->logData('CLUSTER',
