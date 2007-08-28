@@ -43,7 +43,7 @@
 <h1><a name="synopsis">SYNOPSIS</a></h1>
 <p>ga GUS::Supported::Plugin::InsertRadAnalysis --help</p>
 <p>ga GUS::Supported::Plugin::InsertRadAnalysis --helpHTML</p>
-<p>ga GUS::Supported::Plugin::InsertRadAnalysis --subclass_view tablename --cfg_file file --data_file file [--restart integer] [--analysis_id integer] [--testnum integer] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
+<p>ga GUS::Supported::Plugin::InsertRadAnalysis --subclass_view tablename --cfg_file file --data_file file [--restart integer] [--analysis_id integer] [--testnum integer] [--orderInput ] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
 <p>
 </p>
 <hr />
@@ -170,6 +170,9 @@
 <dt><strong><a name="item_%2d%2dtestnum_integer">--testnum <em>integer</em></a></strong><br />
 </dt>
 <p>The number of data lines to read when testing this plugin. Not to be used in commit mode.</p>
+<dt><strong><a name="item_%2d%2dorderinput">--orderInput <em></em></a></strong><br />
+</dt>
+<p>If true, RAD.AnalysisInput.order_num will be populated</p>
 <dt><strong><a name="item_%2d%2dcommit">--commit <em></em></a></strong><br />
 </dt>
 <p>Actualy commit changes to the database</p>
@@ -267,6 +270,8 @@ The names should be spelled exactly as described below. The order of the rows is
 <p>Each (non-empty) line should contain <strong>exactly one</strong> tab.</p>
 <p>Do not use special symbols (like NA or similar) for empty fields: either leave the field empty or delete the entire line.</p>
 <p>The names of each field and instructions for their values are as follows:</p>
+<p><strong><em>analysis_name</em></strong></p>
+<p>A name which will identify this analysis.</p>
 <p><strong><em>table</em></strong> [Mandatory]</p>
 <p>The table (or view) whose entries the analysis results refer to. The format should be <em>space.name</em>, e.g. RAD.SpotFamily. Both <em>space</em> and <em>name</em> must be spelled <strong>exactly</strong> (case sensitive) as spelled in Core.DatabaseInfo.name and Core.TableInfo.name.</p>
 <p><strong><em>operator_id</em></strong></p>
@@ -284,7 +289,7 @@ The names should be spelled exactly as described below. The order of the rows is
 <p><strong><em>protocol_qc_param_valueN</em></strong></p>
 <p>The value to be assigned to the <em>N</em>th quality control parameter, whose id is specified by <em>protocol_qc_param_idN</em>.</p>
 <p><strong><em>logical_group_idN</em></strong></p>
-<p>The logical_group_id (in RAD.LogicalGroup) of the <em>N</em>th input group to this analysis. Start with <em>N</em>=1, for the first input group, and continue up to the number of input groups. <strong>At least one</strong> logical group id should be provided.</p>
+<p>The logical_group_id (in RAD.LogicalGroup) of the <em>N</em>th input group to this analysis. Start with <em>N</em>=0  (e.g. in PaGE) or 1, for the first input group, and continue till you have exhausted all input groups. <strong>At least one</strong> logical group id should be provided. If --orderInput is true, <em>N</em> will be used to populate RAD.AnalysisInput.order_num for that logical group.</p>
 <p>
 </p>
 <h2><a name="data_file"><em>data_file</em></a></h2>
