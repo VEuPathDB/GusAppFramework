@@ -23,6 +23,7 @@ sub new {
          _translator_function_args => {},
          _logical_groups => [],
          _contact => undef,
+         _order_input => undef,
         }, $class;
 }
 
@@ -55,6 +56,11 @@ sub isValid {
 
   return 1;
 }
+
+#--------------------------------------------------------------------------------
+
+sub getOrderInput {$_[0]->{_order_input}}
+sub setOrderInput {$_[0]->{_order_input} = $_[1]}
 
 #--------------------------------------------------------------------------------
 
