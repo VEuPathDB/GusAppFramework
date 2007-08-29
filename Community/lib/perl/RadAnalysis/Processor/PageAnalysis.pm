@@ -236,6 +236,7 @@ sub process {
   # make the Process Result
   my $result = GUS::Community::RadAnalysis::ProcessResult->new();
 
+  $result->setOrderInput(1) if($self->getDesign() eq 'R');
   $result->setContact($contact) if($contact);
 
   $result->setArrayTable($arrayTable);
