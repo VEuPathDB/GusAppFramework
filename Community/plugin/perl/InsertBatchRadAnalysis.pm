@@ -152,11 +152,13 @@ sub run {
         my $dataFile = $result->writeAnalysisDataFile();
         my $configFile = $result->writeAnalysisConfigFile();
         my $resultView = $result->getResultView(); 
+        my $orderInput = $result->getOrderInput();
 
         # set the Args for the Superclass
         $self->setArg('subclass_view', $resultView);
         $self->setArg('cfg_file', $configFile);
         $self->setArg('data_file', $dataFile);
+        $self->setArg('orderInput', $orderInput);
 
         $self->setArg('restart', undef);
         $self->setArg('analysis_id', undef);
