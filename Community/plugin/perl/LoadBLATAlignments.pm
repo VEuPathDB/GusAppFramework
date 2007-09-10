@@ -597,7 +597,7 @@ sub keepBestAlignments {
      foreach (@oneGrp) {
        my ($bid, $score, $pct_id) = @$_;
 
-       my $is_best = ($grpSize == 1 || $score >= 0.99 * $best_score);
+       my $is_best = ($grpSize == 1 || $score >= $percentTop * $best_score);
        if ($is_best) {
 	 $tot_bs++;
 	 $dbh->do("update DoTS.BlatAlignment set is_best_alignment = 1 "
