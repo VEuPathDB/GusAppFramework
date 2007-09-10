@@ -16,7 +16,7 @@ sub getFeatureSequence {
   my $self = shift;
   print STDERR $self->getClassName()."->getFeatureSequence\n" if $debug;
   if (!exists $self->{'sequence'}) {
-    my $seqob = $self->getParent('DoTS::NASequence',1,['sequence']);
+    my $seqob = $self->getParent('DoTS::NASequenceImp',1,['sequence']);
     #    print STDERR "Parent sequence length: ".length($seqob->getSequence())."\n";
     #    print STDERR $seqob->toXML();
     return undef unless $seqob;
