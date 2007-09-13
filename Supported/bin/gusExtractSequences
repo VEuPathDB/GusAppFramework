@@ -91,6 +91,7 @@ sub printSequence{
   }
 
 	my $defline = "\>".join(' ',@row)."\n";
+	$defline =~ s/\s+/ /g;
 	print OUT $defline . CBIL::Bio::SequenceUtils::breakSequence($sequence,60);
 }
 
