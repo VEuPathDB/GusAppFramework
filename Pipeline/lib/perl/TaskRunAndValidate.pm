@@ -125,7 +125,7 @@ sub runGenomeAlign {
 
 
 sub runGenomeAlignWithGfClient {
-    my ($pipelineDir, $numnodes, $queryName, $subjectName, $time, $queue) = @_;
+    my ($pipelineDir, $numnodes, $queryName, $subjectName, $time, $queue, $ppn) = @_;
 
     my $name = "$queryName-$subjectName";
     print "\nRunning alignment of $queryName against $name\n";
@@ -138,9 +138,10 @@ sub runGenomeAlignWithGfClient {
 
     my $valid = 0;
     # TODO: validate previous results                                                                                               
+    $queue = "" unless $queue;
 
     if (!$valid) {
-        &run($propFile, $logFile, $numnodes, $time, $queue);
+        &run($propFile, $logFile, $numnodes, $time, $queue,$ppn);
         # TODO: validate results                                                                                                    
     }
 
