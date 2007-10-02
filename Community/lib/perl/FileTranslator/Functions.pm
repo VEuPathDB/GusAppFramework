@@ -117,10 +117,12 @@ sub nameToCompositeElementId {
   my $sql = "select s.name, s.composite_element_id 
              from  Rad.ShortOligoFamily s, Rad.ArrayDesign a
              where s.array_design_id = a.array_design_id
-              and a.name = ?";
+              and (a.name = ? OR a.source_id = ?)";
+
+  my $arrayDesignName = $hash->{arrayDesignName};
 
   my $sh = $hash->{dbh}->prepare($sql);
-  $sh->execute($hash->{arrayDesignName});
+  $sh->execute($arrayDesignName, $arrayDesignName);
 
   while(my ($name, $id) = $sh->fetchrow_array()) {
     $mapping{$name} = $id;
