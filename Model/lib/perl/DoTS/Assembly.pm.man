@@ -132,7 +132,7 @@ sub createFeaturesAndAASequence {
   my $aaf = GUS::Model::DoTS::TranslatedAAFeature->
 	new({'subclass_view' => 'TranslatedAAFeature',
 		                              'is_simple' => 1,
-			                      'review_status_id' => 1,
+			                      #'review_status_id' => 1,
 				              'is_predicted' => 1
                                      });
   $aaf->setParent($rnaf);
@@ -153,18 +153,20 @@ sub createNewRNAToSelf {
 
   $naf->setParent($self); 
   ##now the RNAInstance
-  my $rs = GUS::Model::DoTS::RNAInstance->new({'review_status_id' => 1,
+  my $rs = GUS::Model::DoTS::RNAInstance->new({#'review_status_id' => 1,
                          'is_reference' => 0,
-                         'rna_instance_category_id' => 0 });
+                         #'rna_instance_category_id' => 0 
+                         });
 
   $naf->addChild($rs);
   ##last the RNA
-  my $rna = GUS::Model::DoTS::RNA->new({'review_status_id' => 1,
+  my $rna = GUS::Model::DoTS::RNA->new({#'review_status_id' => 1,
                            'name' => ($self->get('number_of_contained_sequences') == 1 ? 'Singleton EST' : 'DOTS assembly')});
   $rna->addChild($rs);
 
   ##need to also create a protein entry so can do GOFunction predictions..
-  my $prot = GUS::Model::DoTS::Protein->new({ 'review_status_id' => 1 });
+  #my $prot = GUS::Model::DoTS::Protein->new({ 'review_status_id' => 1 });
+  my $prot = GUS::Model::DoTS::Protein->new();
   $rna->addChild($prot);
 
   return $rna;
@@ -721,8 +723,21 @@ sub setContainsMrna{
   my $self = shift;
   my $current = $self->getContainsMrna();
   my $new = 0;
+  my $mrnaSeqTypeId = 7;
+  my $rnaSeqTypeId = 2;
+  my $mrnaSOId;
+
+  my $mrnaSeqType = GUS::Model::DoTS::SequenceType->new({'name' => 'mRNA'});
+  if($mrnaSeqType->retrieveFromDB()){$mrnaSeqTypeId = $mrnaSeqType->getSequenceTypeId();}
+
+  my $rnaSeqType = GUS::Model::DoTS::SequenceType->new({'name' => 'RNA'});
+  if($rnaSeqType->retrieveFromDB()){$rnaSeqTypeId = $rnaSeqType->getSequenceTypeId();} 
+
+  my $mrnaSO = GUS::Model::SRes::SequenceOntology->new({'term_name' => 'mRNA'});
+  if($mrnaSO->retrieveFromDB()){$mrnaSOId = $mrnaSO->getId();}
+
   foreach my $c ($self->getChildren('DoTS::AssemblySequence')) {
-    if ($c->getParent('DoTS::ExternalNASequence',1)->get('sequence_type_id') == 7 || $c->getParent('DoTS::ExternalNASequence',1)->get('sequence_type_id') == 2) { 
+    if ($c->getParent('DoTS::ExternalNASequence',1)->get('sequence_type_id') == $mrnaSeqTypeId || $c->getParent('DoTS::ExternalNASequence',1)->get('sequence_type_id') == $rnaSeqTypeId || $c->getParent('DoTS::ExternalNASequence',1)->get('sequence_ontology_id') == $mrnaSOId) { 
       $new = 1;
       last;
     }
@@ -1149,7 +1164,7 @@ sub submit {
   if (!$self->isMarkedDeleted() && $self->getDescription() ne 'DELETED' && $self->getSetDefaultsOnSubmit() && $self->getChildren('DoTS::AssemblySequence',1) ) { ##only do these things if have AssemblySequence kids
     print STDERR "Setting defaults for Assembly: ".$self->getId()."\n" if $debug;
     $self->set('number_of_contained_sequences',scalar($self->getChildren('DoTS::AssemblySequence'))) unless $self->getNumberOfContainedSequences() == scalar($self->getChildren('DoTS::AssemblySequence'));
-    $self->set('sequence_type_id',5) unless $self->getSequenceTypeId() == 5;
+    #$self->set('sequence_type_id',5) unless $self->getSequenceTypeId() == 5;
     $self->setContainsMrna();
     print STDERR "  Orienting assembly by contained sequences...\n" if $debug;
     $self->orientAssemblyByAssemblySequences();
