@@ -1096,6 +1096,10 @@ sub checkTestNum {
 sub getIdFromCache {
   my ($self, $cacheName, $name, $type, $field, $idColumn) = @_;
 
+  if($name eq "Cryptosporidium sp") {
+    $name = "Cryptosporidium sp.";
+  }
+
   if ($self->{$cacheName} == undef) {
     $self->{$cacheName}= {};
   }
