@@ -95,10 +95,12 @@ sub makeStandardLogicalGroups {
 
   my @logicalGroups;
 
+  my $prepend =  substr($studyName, 0, 35) . " ..." if($prependStudyName);
+
   foreach my $lgName (keys %$quantLgHash) {
     my $linkNames = $quantLgHash->{$lgName};
 
-    $lgName = "$studyName: $lgName" if($prependStudyName); 
+    $lgName = "$prepend $lgName" if($prependStudyName); 
 
     my $logicalGroup = $self->makeLogicalGroup($lgName, '', 'quantification', $linkNames, $studyName, $dbh, $isPaired);
 
@@ -108,7 +110,7 @@ sub makeStandardLogicalGroups {
   foreach my $lgName (keys %$analysisLgHash) {
     my $ids = $analysisLgHash->{$lgName};
 
-    $lgName = "$studyName: $lgName" if($prependStudyName); 
+    $lgName = "$prepend: $lgName" if($prependStudyName); 
 
     my $logicalGroup = $self->makeLogicalGroup($lgName, '', 'analysis', $ids, $studyName, $dbh, $isPaired);
 
@@ -317,6 +319,8 @@ Sql
   }
 
   my $sql = $allSql{$key};
+
+  #print STDERR $sql;
 
   my $sh = $dbh->prepare($sql);
 
