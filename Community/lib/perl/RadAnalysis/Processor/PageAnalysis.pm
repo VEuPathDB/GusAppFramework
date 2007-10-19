@@ -131,6 +131,7 @@ sub new {
                         'levelConfidence',
                         'minPrescence',
                         'statistic',
+                        'analysisName',
                        ];
 
   my $self = $class->SUPER::new($args, $requiredParams);
@@ -164,6 +165,7 @@ sub getArrayDesignName {$_[0]->{arrayDesignName}}
 sub getStudyName {$_[0]->{studyName}}
 sub getLogDir {$_[0]->{logDir}}
 sub getTranslator {$_[0]->{translator}}
+sub getAnalysisName {$_[0]->{analysisName}}
 
 sub getNumberOfChannels {$_[0]->{numberOfChannels}}
 sub getIsDataLogged {$_[0]->{isDataLogged}}
@@ -239,6 +241,7 @@ sub process {
   $result->setOrderInput(1) if($self->getDesign() eq 'R');
   $result->setContact($contact) if($contact);
 
+  $result->setAnalysisName($self->getAnalysisName());
   $result->setArrayTable($arrayTable);
   $result->setResultFile($resultFile);
   $result->setResultView($RESULT_VIEW);
