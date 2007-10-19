@@ -24,6 +24,7 @@ sub new {
          _logical_groups => [],
          _contact => undef,
          _order_input => undef,
+         _analysis_name => undef,
         }, $class;
 }
 
@@ -36,7 +37,6 @@ sub isValid {
   my $resultView = $self->getResultView();
   my $protocol = $self->getProtocol();
   my $logicalGroups = $self->getLogicalGroups();
-
 
   unless($resultView) {
     GUS::Community::RadAnalysis::InputError->new("ResultView was not defined")->throw();;
@@ -56,6 +56,12 @@ sub isValid {
 
   return 1;
 }
+
+
+#--------------------------------------------------------------------------------
+
+sub getAnalysisName {$_[0]->{_analysis_name}}
+sub setAnalysisName {$_[0]->{_analysis_name} = $_[1]}
 
 #--------------------------------------------------------------------------------
 
@@ -221,7 +227,6 @@ sub addToQcParamValuesHashRef {
 
 #--------------------------------------------------------------------------------
 
-# TODO:  QC Protocol params
 sub writeAnalysisConfigFile {
   my ($self) = @_;
 
@@ -235,6 +240,11 @@ sub writeAnalysisConfigFile {
   my $protocol = $self->getProtocol();
   my $paramValues = $self->getParamValues();
   my $qcParamValues = $self->getQcParamValues();
+
+  my $analysisNameString;
+  if(my $analysisName = $self->getAnalysisName()) {
+    $analysisNameString = "analysis_name\t$analysisName";
+  }
 
   my $operatorString;
   if(my $contact = $self->getContact()) {
@@ -296,6 +306,7 @@ $protocolQcParamString
 analysis_date\t$analysisDate
 $logicalGroupString
 $operatorString
+$analysisNameString
 Config
 
   print OUT $simpleConfig;
