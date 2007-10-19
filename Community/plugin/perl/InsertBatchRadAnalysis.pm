@@ -13,8 +13,6 @@ use  GUS::ObjRelP::DbiDatabase;
 
 use Error qw (:try);
 
-use Data::Dumper;
-
 my $purposeBrief = <<BRIEF;
 The purpose of this plugin is to run some process and capture the Result
 as a RAD::Analysis
