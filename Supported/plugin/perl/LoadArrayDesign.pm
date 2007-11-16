@@ -1270,7 +1270,7 @@ if(defined $cfg_rv->{'mapping'}->{'ElementImp.subclass_view'}){
  }#end of while loop
 
 
-   $dbh->disconnect();
+#   $dbh->disconnect();
    $RV="Total datalines read (after header): $n.";
    $M->logData('Result', $RV);
    if($M->getArgs->{'commit'}){print STDERR "Result: $RV\n";}
@@ -1420,5 +1420,10 @@ sub doSelect {
     return $result;
 }
 
+sub undoTables {
+  my $M   = shift;
+
+  return ('RAD.Control', 'RAD.ElementAnnotation', 'RAD.CompositeElementAnnotation', 'RAD.ElementImp', 'RAD.CompositeElementImp', 'RAD.ArrayDesignAnnotation', 'RAD.ArrayDesign');
+}
 1;
 
