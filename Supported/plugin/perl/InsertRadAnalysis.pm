@@ -432,7 +432,7 @@ sub readCfgFile {
 	$logicalGroupIdGiven++;
       }
       else {
-	$self->userError('The only valid names in the cfg_file are: table, operator_id, protocol_id, analysis_date, protocol_param_idN, protocol_param_valueN, protocol_qc_param_idN, protocol_qc_param_valueN, logical_group_idN.');
+	$self->userError('The only valid names in the cfg_file are: analysis_name, table, operator_id, protocol_id, analysis_date, protocol_param_idN, protocol_param_valueN, protocol_qc_param_idN, protocol_qc_param_valueN, logical_group_idN.');
       }
     }
   }
