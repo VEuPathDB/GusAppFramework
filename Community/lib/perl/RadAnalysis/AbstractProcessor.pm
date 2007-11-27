@@ -295,13 +295,20 @@ where q.acquisition_id = a.acquisition_id
  and s.name = ?
  and (q.uri = ? OR q.name = ?)
 Sql
-                analysis => <<Sql,
-select distinct aa.analysis_id
-from Rad.STUDYASSAY sa, Study.Study s,
-     Rad.ASSAYANALYSIS aa LEFT JOIN Rad.ANALYSISPARAM ap on ap.analysis_id = aa.analysis_id
-where aa.assay_id = sa.assay_id
+                analysis_name => <<Sql,
+select distinct a.analysis_id
+from Rad.ASSAYANALYSIS aa, Rad.ANALYSIS a,
+     study.study s, rad.studyassay sa   
+where s.study_id = sa.study_id
+ and sa.assay_id = aa.assay_id
+ and aa.analysis_id = a.analysis_id
  and s.name = ?
- and (aa.analysis_id = ? OR aa.analysis_id = ?)
+ and (a.name = ? OR a.name = ?)
+Sql
+                analysis_id => <<Sql,
+select analysis_id
+from rad.analysis
+where (analysis_id = ? OR analysis_id = ?)
 Sql
                 analysis_param_value => <<Sql,
 select distinct aa.analysis_id
@@ -313,15 +320,12 @@ where aa.assay_id = sa.assay_id
 Sql
                 );
 
-  my $key = $type;
-  if($key eq 'analysis' && $names->[0] =~ /\D/) {
-    $key = $key . "_param_value";
+
+  if($type eq 'analysis') {
+    $type = $names->[0] =~ /\D/ ? $type . '_name' : $type . '_id';
   }
 
-  my $sql = $allSql{$key};
-
-  #print STDERR $sql;
-
+  my $sql = $allSql{$type};
   my $sh = $dbh->prepare($sql);
 
   my @links;
@@ -447,6 +451,33 @@ sub setProtocolParams {
 
   return $protocol;
 }
+
+#--------------------------------------------------------------------------------
+
+sub getContactFromDefaultUser {
+  my ($self, $database) = @_;
+
+  my $userId = $database->getDefaultUserId;
+
+  my $userInfo = GUS::Model::Core::UserInfo->new({user_id => $userId});
+
+  unless($userInfo->retrieveFromDB()) {
+    GUS::Community::RadAnalysis::SqlError->new("User Id [$userId] is not valid")->throw();
+  }
+
+  my $contact;
+  if(my $contactId = $userInfo->getContactId()) {
+    $contact = GUS::Model::SRes::Contact->new({contact_id => $contactId});
+
+    unless($contact->retrieveFromDB()) {
+      GUS::Community::RadAnalysis::SqlError->new("Contact Id [$contactId] is not valid")->throw();
+    }
+  }
+
+  return $contact;
+}
+
+
 
 
 1;
