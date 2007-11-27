@@ -5,6 +5,7 @@ use strict;
 
 use GUS::Community::RadAnalysis::RadAnalysisError;
 use GUS::Community::RadAnalysis::ProcessResult;
+use GUS::Community::RadAnalysis::Utils qw(getOntologyEntriesHashFromParentValue);
 
 use GUS::Model::RAD::Protocol;
 use GUS::Model::RAD::ProtocolQCParam;
@@ -136,8 +137,8 @@ sub new {
 
   my $self = $class->SUPER::new($args, $requiredParams);
 
-  $args->{quantificationInputs} = [] unless($args->{quantificationInputs});
-  $args->{analysisInputs} = [] unless($args->{analysisInputs});
+  $self->{quantificationInputs} = [] unless($args->{quantificationInputs});
+  $self->{analysisInputs} = [] unless($args->{analysisInputs});
 
 
   unless(defined($args->{isDataLogged})) {
@@ -204,9 +205,7 @@ sub process {
     GUS::Community::RadAnalysis::ProcessorError->new("Package ".  __PACKAGE__ . " Requires Default DbiDatabase")->throw();
   }
 
-  my $userId = $database->getDefaultUserId;
-  my $contact = $self->getContactFromUserId($userId);
-
+  my $contact = $self->getContactFromDefaultUser($database);
   my $dbh = $database->getQueryHandle();
 
   my $quantLgHash = $self->standardLogicalGroupInputs($self->getQuantificationInputs);
@@ -547,45 +546,12 @@ sub setupProtocol {
     $protocol->setProtocolTypeId($oe->getId());
   }
 
-  my $oeHash = $self->getOntologyEntries();
+  my $oeHash = &getOntologyEntriesHashFromParentValue('DataType');
 
   $self->setupProtocolParams($protocol, $oeHash);
   $self->setupProtocolQCParams($protocol, $oeHash);
 
   return $protocol;
-}
-
-
-#--------------------------------------------------------------------------------
-
-sub getOntologyEntries {
-  my ($self) = @_;
-
-  my %ontologyEntries;
-
-  my @dataTypes = ('positive_integer',
-                   'float',
-                   'nonnegative_float',
-                   'list_of_nonnegative_floats',
-                   'string_datatype',
-                   'list_of_positive_integers',
-                   'boolean',
-                   'list_of_floats',
-                  );
-
-  foreach(@dataTypes) {
-    my $oe = GUS::Model::Study::OntologyEntry->new({value => $_,
-                                                    category => 'DataType',
-                                                   });
-
-    unless($oe->retrieveFromDB) {
-      die "Cannot retrieve RAD::OntologyEntry [$_]";
-    }
- 
-    $ontologyEntries{$_} = $oe;
-  }
-
-  return \%ontologyEntries;
 }
 
 #--------------------------------------------------------------------------------
@@ -669,30 +635,5 @@ sub setupProtocolParams {
 
   return \@protocolParams;
 }
-
-#--------------------------------------------------------------------------------
-# Should Refactor this to the superclass??
-sub getContactFromUserId {
-  my ($self, $userId) = @_;
-
-  my $userInfo = GUS::Model::Core::UserInfo->new({user_id => $userId});
-
-  unless($userInfo->retrieveFromDB()) {
-    GUS::Community::RadAnalysis::SqlError->new("User Id [$userId] is not valid")->throw();
-  }
-
-  my $contact;
-  if(my $contactId = $userInfo->getContactId()) {
-    $contact = GUS::Model::SRes::Contact->new({contact_id => $contactId});
-
-    unless($contact->retrieveFromDB()) {
-      GUS::Community::RadAnalysis::SqlError->new("Contact Id [$contactId] is not valid")->throw();
-    }
-  }
-
-  return $contact;
-}
-
-#--------------------------------------------------------------------------------
 
 1;
