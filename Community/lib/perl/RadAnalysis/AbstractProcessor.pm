@@ -321,11 +321,12 @@ Sql
                 );
 
 
-  if($type eq 'analysis') {
-    $type = $names->[0] =~ /\D/ ? $type . '_name' : $type . '_id';
+  my $key = $type;
+  if($key eq 'analysis') {
+    $key = $names->[0] =~ /\D/ ? $key . '_name' : $key . '_id';
   }
 
-  my $sql = $allSql{$type};
+  my $sql = $allSql{$key};
   my $sh = $dbh->prepare($sql);
 
   my @links;
