@@ -73,45 +73,21 @@ sub new {
 
   my $args = ref($argsHash) eq 'HASH' ? $argsHash : {};
 
-  unless($args->{arrayDesignName} || $args->{arrayDesign}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [arrayDesign] is missing in the config file")->throw();
-  }
+  my $requiredParams = ['arrayDesignName',
+                        'dataFile',
+                        'studyName',
+                        'resultView',
+                        'protocolName',
+                        'paramValues',
+                        'analysisName',
+                       ];
 
-  unless($args->{dataFile}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [dataFile] is missing in the config file")->throw();
-  }
-
-  unless($args->{studyName}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [studyName] is missing in the config file")->throw();
-  }
-
-  unless($args->{resultView}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [resultView] is missing in the config file")->throw();
-  }
-
-  unless($args->{protocolName}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [protocolName] is missing in the config file")->throw();
-  }
-
-  unless($args->{paramValues}) {
-    GUS::Community::RadAnalysis::InputError->new("Parameter [paramValues] is missing in the config file")->throw();
-  }
-
-  bless $args, $class;
+  return $class->SUPER::new($args, $requiredParams);
 }
 
 #--------------------------------------------------------------------------------
 
-sub getArrayDesignName {
-  my $self = shift;
-
-  if(my $ad = $self->{arrayDesign}) {
-    return $ad;
-  }
-  else {
-    return $self->{arrayDesignName};
-  }
-}
+sub getArrayDesignName {$_[0]->{arrayDesignName}}
 sub getDataFile {$_[0]->{dataFile}}
 sub getStudyName {$_[0]->{studyName}}
 sub getFileTranslatorName {$_[0]->{fileTranslatorName}}
@@ -119,6 +95,7 @@ sub getResultView {$_[0]->{resultView}}
 sub getQuantificationInputs {$_[0]->{quantificationInputs}}
 sub getProtocolName {$_[0]->{protocolName}}
 sub getParamValues {$_[0]->{paramValues}}
+sub getAnalysisName {$_[0]->{analysisName}}
 
 #--------------------------------------------------------------------------------
 
@@ -157,6 +134,9 @@ sub process {
   $result->addToParamValuesHashRef($paramValues);
 
   $result->addLogicalGroups(@$logicalGroups);
+
+  my $analysisName = $self->getAnalysisName();
+  $result->setAnalysisName($analysisName);
 
   return [$result];
 }
