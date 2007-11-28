@@ -23,6 +23,7 @@ sub mapAll {
     my $studyName = $assay->getStudyName();
     my $arrayDesign = $assay->getArraySourceId();
     my $acquisitions = $assay->getAcquisitions();
+    my $assayName = $assay->getName();
 
     foreach my $acquisition (@$acquisitions) {
       my $quantifications = $acquisition->getQuantifications();
@@ -39,6 +40,7 @@ sub mapAll {
 
           my $parameterValues = $process->getParameterValues();
 
+          $rv{$uri}->{assay_name} = $assayName;
           $rv{$uri}->{study_name} = $studyName;
           $rv{$uri}->{array_design} = $arrayDesign;
 
