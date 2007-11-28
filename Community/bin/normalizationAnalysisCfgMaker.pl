@@ -30,7 +30,11 @@ my $RESULT_TABLE = 'RAD::DataTransformationResult';
             );
 
 &usage() if($help);
-&usage() unless(-e $mageTabFile && -e $fileTranslator && -d $directory);
+&usage() unless(-e $mageTabFile && -d $directory);
+
+if($fileTranslator) {
+  die "File Translator $fileTranslator doesn't exist" unless(-e $fileTranslator);
+}
 
 my $config = {'service' => {
                             'reader' => {
