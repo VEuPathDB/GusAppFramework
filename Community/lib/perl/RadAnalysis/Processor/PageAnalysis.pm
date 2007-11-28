@@ -296,8 +296,12 @@ sub setupParamValues {
     $values->{filtering_criterion} = $filter;
   }
 
-  if($design) {
-    $values->{design} = $design;
+  if($design eq 'R') {
+    $values->{design} = 'reference';
+  }
+
+  if($design eq 'D') {
+    $values->{design} = 'direct comparison';
   }
 
   if($referenceCondition) {
