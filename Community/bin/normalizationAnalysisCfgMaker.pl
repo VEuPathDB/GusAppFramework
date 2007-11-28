@@ -6,26 +6,31 @@ use RAD::MR_T::MageImport::ServiceFactory;
 
 use Error qw(:try);
 
-use Data::Dumper;
-
 use XML::Simple;
 use Getopt::Long;
 
-my ($help, $mageTabFile, $logicalGroupQuantUriMap, $directory, $fileTranslator);
+=pod
+
+=head1 Purpose
+
+Create a config file for GUS::Community::Plugin::InsertBatchRadAnalysis from a MageTab file.  
+
+This is used for 2 channel processed data where there is a 1:1 relationship between the assay and the processed result.  (ie. NO Averaging of Dye Swaps)
+
+=cut
+
+my ($help, $mageTabFile, $directory, $fileTranslator);
 
 my $RESULT_TABLE = 'RAD::DataTransformationResult';
 
 &GetOptions('help|h' => \$help,
             'mageTab=s' => \$mageTabFile,
-            'lg_quant_map=s' => \$logicalGroupQuantUriMap,
             'directory_prefix=s' => \$directory,
             'file_translator=s' => \$fileTranslator,
             );
 
 &usage() if($help);
-&usage() unless(-e $mageTabFile && -e $logicalGroupQuantUriMap && -e $fileTranslator);
-
-$directory = "." unless($directory);
+&usage() unless(-e $mageTabFile && -e $fileTranslator && -d $directory);
 
 my $config = {'service' => {
                             'reader' => {
@@ -74,27 +79,19 @@ try {
 
   my $quantHash = $translator->mapAll($docRoot);
 
-  my $lgUriHash = &readLogicalGroupMap($logicalGroupQuantUriMap);
-
-  &printXml($quantHash, $lgUriHash);
+  &printXml($quantHash);
 
 } catch Error with {
   my $e = shift;
-  print $e->stacktrace();
-  $e->throw();
+
+  print STDERR $e->stacktrace();
+  exit;
 };
 
 #--------------------------------------------------------------------------------
 
 sub printXml {
-  my ($quantHash, $lgUriHash) = @_;
-
-  my $uriCount = scalar keys %$quantHash;
-  my $lgUriCount = scalar keys %$lgUriHash;
-
-  unless($uriCount == $lgUriCount) {
-    die "Norm File Count from MageTab [$uriCount] does NOT equal user provided mapping file count [$lgUriCount]\n";
-  }
+  my ($quantHash) = @_;
 
   my $xml = "<plugin>\n";
 
@@ -104,12 +101,19 @@ sub printXml {
     my $protocolName = $quantHash->{$uri}->{protocol_name};
     my $parameterValues = $quantHash->{$uri}->{parameter_values};
     my $quantificationNames = $quantHash->{$uri}->{quantification_names};
+    my $assayName = $quantHash->{$uri}->{assay_name};
 
-    my $name = $lgUriHash->{$uri};
-    my $lgName = $name ." quantifications";
+    my $dataFile = $directory . "/" . $uri;
+    unless(-e $dataFile) {
+      die "DataFile $dataFile does not exist";
+    }
+
+    my $lgName = $assayName ." quantifications";
+    my $analysisName = "Pre-processing of $assayName";
 
     $xml .=  "  <process class=\"GUS::Community::RadAnalysis::Processor::GenericAnalysis\">
-    <property name=\"dataFile\" value=\"$directory/$uri\"/>
+    <property name=\"analysisName\" value=\"$analysisName\"/>
+    <property name=\"dataFile\" value=\"$dataFile\"/>
     <property name=\"fileTranslatorName\" value=\"$fileTranslator\"/>
 
     <property name=\"arrayDesignName\" value=\"$arrayDesign\"/>
@@ -126,9 +130,7 @@ sub printXml {
 
       $xml .= "      <value>$parameterName|$value</value>\n";
     }
-
-    $xml .= "      <value>Analysis Name|$name</value>
-    </property>
+    $xml .= "    </property>
 ";
 
     $xml .= "    <property name=\"quantificationInputs\">\n";
@@ -147,33 +149,13 @@ sub printXml {
   print STDOUT $xml;
 }
 
-
-#--------------------------------------------------------------------------------
-
-sub readLogicalGroupMap {
-  my ($fn) = @_;
-
-  my %rv;
-
-  open(FILE, $fn) or die "Cannot open file $fn for reading: $!";
-
-  while(<FILE>) {
-    chomp;
-
-    my ($quantUri, $lgName) = split(/\t/, $_);
-    $rv{$quantUri} = $lgName;
-  }
-  close FILE;
-  return \%rv;
-}
-
 #--------------------------------------------------------------------------------
 
 sub usage {
   my ($e) = @_;
 
   print STDERR "ERROR:  $e\n" if($e);
-  print STDERR "usage:  perl normalizationAnalysisCfgMaker.pl --mageTab <FILE> --lg_quant_map <FILE>\n";
+  print STDERR "usage:  perl normalizationAnalysisCfgMaker.pl --mageTab <FILE> --directory_prefix <DIR> --file_translator <FILE>\n";
   exit;
 }
 
