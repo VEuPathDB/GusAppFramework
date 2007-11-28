@@ -45,7 +45,7 @@ my $config = {'service' => {
                                             'baseClass' => 'RAD::MR_T::MageImport::Service::Processor'
                                            },
                             'translator' => {
-                                             'class' => 'ApiCommonData::Load::MageToRadAnalysisTranslator',
+                                             'class' => 'GUS::Community::RadAnalysis::MageToRadAnalysisTranslator',
                                              'property' => {}
                                             },
                             'validator' => {
