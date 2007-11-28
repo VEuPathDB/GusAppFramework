@@ -1,4 +1,4 @@
-package ApiCommonData::Load::MageToRadAnalysisTranslator;
+package GUS::Community::RadAnalysis::MageToRadAnalysisTranslator;
 
 use base qw(RAD::MR_T::MageImport::Service::AbstractTranslator);
 
