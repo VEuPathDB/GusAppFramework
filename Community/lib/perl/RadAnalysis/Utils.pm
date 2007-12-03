@@ -13,7 +13,7 @@ use GUS::Model::Study::OntologyEntry;
 #--------------------------------------------------------------------------------
 # Requires default DBI database (If you're running from a plugin... you have it already)
 sub getOntologyEntriesHashFromParentValue {
-  my ($self, $value) = @_;
+  my ($value) = @_;
 
   return unless($value);
 
@@ -30,7 +30,7 @@ sub getOntologyEntriesHashFromParentValue {
   foreach my $oe (@kids) {
     my $value = $oe->getValue();
 
-    $ontologyEntries{$_} = $oe;
+    $ontologyEntries{$value} = $oe;
   }
 
   return \%ontologyEntries;
