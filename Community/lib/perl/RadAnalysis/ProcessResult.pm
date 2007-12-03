@@ -14,7 +14,7 @@ sub new {
   my ($class) = @_;
 
   bless {_array_table => undef,
-         _result_file => [],
+         _result_file => undef,
          _xml_translator => undef,
          _result_view => undef,
          _protocol => undef,
@@ -371,14 +371,14 @@ sub toString {
 
   my $string;
 
-
+  $string .= "AnalysisName:  " . $self->getAnalysisName() ."\n";
   $string .= "ArrayTable:  " . $self->getArrayTable() ."\n";
-  $string .= "ArrayDesignName:  " .$self->getArrayDesignName() ."\n";
   $string .= "ResultFile:  " .$self->getResultFile() ."\n";
   $string .= "ResultView:  " . $self->getResultView() ."\n";
   $string .= "XmlTranslator:  " . $self->getXmlTranslator() ."\n";
 
   $string .= "ParamValues\n    ". Dumper($self->getParamValues());
+  $string .= "QCParamValues\n    ". Dumper($self->getQcParamValues());
 
   $string .= "LogicalGroups\n    ";
 
@@ -391,6 +391,7 @@ sub toString {
   }
 
   $string .= "Protocol\n". $self->getProtocol()->toString();
+  $string .= "Contact\n". $self->getContact()->toString();
 
   return $string;
 }
