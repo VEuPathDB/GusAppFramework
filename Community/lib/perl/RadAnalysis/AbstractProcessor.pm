@@ -8,6 +8,10 @@ use GUS::Community::RadAnalysis::RadAnalysisError;
 
 use GUS::Model::RAD::LogicalGroup;
 use GUS::Model::RAD::LogicalGroupLink;
+use GUS::Model::RAD::Protocol;
+
+use GUS::Model::SRes::Contact;
+use GUS::Model::Core::UserInfo;
 
 use Data::Dumper;
 
