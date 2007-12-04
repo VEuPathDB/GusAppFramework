@@ -6,14 +6,9 @@ use strict;
 use GUS::Community::RadAnalysis::RadAnalysisError;
 use GUS::Community::RadAnalysis::ProcessResult;
 
-use GUS::Model::RAD::LogicalGroup;
-use GUS::Model::RAD::LogicalGroupLink;
-
 use  GUS::ObjRelP::DbiDatabase;
 
 use File::Basename;
-
-use Data::Dumper;
 
 #--------------------------------------------------------------------------------
 
@@ -32,7 +27,6 @@ sub new {
                         'studyName',
                         'logDir',
                         'analysisName',
-                        'design',
                         'numberOfChannels',
                         'conditionC0',
                         'conditionC1',
@@ -49,7 +43,21 @@ sub new {
     GUS::Community::RadAnalysis::InputError->new("Parameter [isDataPaired] is missing from the config file")->throw();
   }
 
-  print STDERR "WARNING:  baseX was not provided... assuming unlogged data\n" unless($self->{baseX});
+  if($args->{numberOfChannels} == 2 && $args->{design} ne 'R' && $args->{design} ne 'D') {
+    GUS::Community::RadAnalysis::InputError->new("Parameter [design] must be one of (D,R) for 2 channel data")->throw();
+  }
+
+  if($args->{numberOfChannels} == 1 && $args->{design}) {
+    GUS::Community::RadAnalysis::InputError->new("Parameter [design] should not be given for one channel data")->throw();
+  }
+
+  if($args->{isDataLogged} && !$args->{baseX}) {
+    GUS::Community::RadAnalysis::InputError->new("Parameter [baseX] must be specified when [isLoggedData] is true.")->throw();
+  }
+
+  if(!defined($args->{isDataLogged}) && $args->{baseX}) {
+    GUS::Community::RadAnalysis::InputError->new("Parameter [isDataLogged] must be 1 when [baseX] is specified.")->throw();
+  }
 
   $self->{quantificationInputs} = [] unless($args->{quantificationInputs});
   $self->{analysisInputs} = [] unless($args->{analysisInputs});
@@ -67,6 +75,7 @@ sub getAnalysisName {$_[0]->{analysisName}}
 sub getDesign {$_[0]->{design}}
 sub getNumberOfChannels {$_[0]->{numberOfChannels}}
 sub getIsDataPaired {$_[0]->{isDataPaired}}
+sub getIsDataLogged {$_[0]->{isDataLogged}}
 sub getDummyResultFile {$_[0]->{dummyResultFile}}
 sub getBaseX {$_[0]->{baseX}}
 
@@ -148,26 +157,38 @@ sub findCalculationType {
 
   my $design = $self->getDesign();
   my $numberOfChannels = $self->getNumberOfChannels();
-
-  my $baseX = $self->getBaseX();
+  my $isDataPaired = $self->getIsDataPaired();
+  my $isDataLogged = $self->getIsDataLogged();
 
   my $dir = $self->getLogDir();
 
   my $foldChanger;
 
-  if($numberOfChannels == 2 && $design eq 'D' && $baseX) {
+  if($numberOfChannels == 2 && $design eq 'D' && $isDataLogged) {
     $foldChanger = TwoChannelDirectComparison->new($dir);
   }
-  elsif($numberOfChannels == 2 && $design eq 'R' && $baseX) {
+  elsif($numberOfChannels == 2 && $design eq 'R' && $isDataLogged) {
     $foldChanger = TwoChannelReferenceDesign->new($dir);
   }
-
-  ## NEED TO ADD THE OTHERS...
-
+  elsif($numberOfChannels == 2 && $design eq 'R' && !$isDataLogged) {
+    $foldChanger = TwoChannelUnpairedRatios->new($dir);
+  }
+  elsif($numberOfChannels == 1 && !$isDataPaired && $isDataLogged) {
+    $foldChanger = OneChannelLogNormalized->new($dir);
+  }
+  elsif($numberOfChannels == 1 && $isDataPaired && !$isDataLogged) {
+    $foldChanger = OneChannelPaired->new($dir);
+  }
+  elsif($numberOfChannels == 1 && !$isDataPaired && !$isDataLogged) {
+    $foldChanger = OneChannelUnpaired->new($dir);
+  }
   else {
     GUS::Community::RadAnalysis::InputError->
-        new("Number of Channels [$numberOfChannels] and design [$design] and base [$baseX] Not supported")->throw();
+        new("Number of Channels [$numberOfChannels]; design [$design]; isDataLogged [$isDataLogged]; isDataPaired [$isDataPaired] Not supported")->throw();
   }
+
+  print STDERR "Using " . ref($foldChanger) . "\n";
+
   return $foldChanger;
 }
 
