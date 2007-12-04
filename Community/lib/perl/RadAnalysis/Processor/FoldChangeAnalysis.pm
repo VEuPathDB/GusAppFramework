@@ -28,6 +28,7 @@ sub new {
                         'logDir',
                         'analysisName',
                         'numberOfChannels',
+# TODO change to numerator vs denominator
                         'conditionC0',
                         'conditionC1',
                         'dummyResultFile',
@@ -170,10 +171,10 @@ sub findCalculationType {
   elsif($numberOfChannels == 2 && $design eq 'R' && $isDataLogged) {
     $foldChanger = TwoChannelReferenceDesign->new($dir);
   }
-  elsif($numberOfChannels == 2 && $design eq 'R' && !$isDataLogged) {
+  elsif($numberOfChannels == 2 && $design eq 'R' && !$isDataLogged && !$isDataPaired) {
     $foldChanger = TwoChannelUnpairedRatios->new($dir);
   }
-  elsif($numberOfChannels == 1 && !$isDataPaired && $isDataLogged) {
+  elsif($numberOfChannels == 1 && $isDataLogged) {
     $foldChanger = OneChannelLogNormalized->new($dir);
   }
   elsif($numberOfChannels == 1 && $isDataPaired && !$isDataLogged) {
@@ -359,14 +360,15 @@ sub writeDataFile {
     }
 
     # Don't print if the averages are all NA's
-    my $naCount;
+    my $naCount = 0;
     map {$naCount++ if($_ eq $MISSING_VALUE)} @averages;
-    next if($naCount == scalar(@averages));
+    next if($naCount>0);
 
     my $value;
     if($lgCount == 1) {
       $value = $averages[0];
     }
+    # TODO check numerator vs denominator
     elsif($lgCount == 2 && $baseX) {
       $value = $averages[1] - $averages[0];
     }
@@ -374,7 +376,7 @@ sub writeDataFile {
       $value = $averages[1] / $averages[0];
     }
     else {
-      die "Wrong Number of LocialGroups [$lgCount]";
+      die "Wrong Number of LogicalGroups [$lgCount]";
     }
 
     print $fh "$element\t\t\t$value\n";
