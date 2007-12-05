@@ -13,6 +13,7 @@ use File::Basename;
 
 #--------------------------------------------------------------------------------
 
+# Nothing will be insertet
 my $RESULT_VIEW = 'RAD::DataTransformationResult';
 
 #--------------------------------------------------------------------------------
@@ -132,7 +133,7 @@ sub process {
 
   my $protocol = $foldChanger->getProtocol();
 
-  $foldChanger->writeDataFile($dataMatrix, $logicalGroups, $self->getBaseX(), $self->getIsDataPaired());
+  $foldChanger->writeDataFile($dataMatrix, $logicalGroups, $self->getBaseX());
 
   my $paramValues = $self->setupParamValues();
 
@@ -168,14 +169,20 @@ sub findCalculationType {
   if($numberOfChannels == 2 && $design eq 'D' && $isDataLogged) {
     $foldChanger = GUS::Community::RadAnalysis::TwoChannelDirectComparison->new($dir);
   }
-  elsif($numberOfChannels == 2 && $design eq 'R' && $isDataLogged) {
-    $foldChanger = GUS::Community::RadAnalysis::TwoChannelReferenceDesign->new($dir);
+  elsif($numberOfChannels == 2 && $design eq 'R' && $isDataLogged && $isDataPaired) {
+    $foldChanger = GUS::Community::RadAnalysis::TwoChannelReferenceDesignPaired->new($dir);
+  }
+  elsif($numberOfChannels == 2 && $design eq 'R' && $isDataLogged && !$isDataPaired) {
+    $foldChanger = GUS::Community::RadAnalysis::TwoChannelReferenceDesignUnpaired->new($dir);
   }
   elsif($numberOfChannels == 2 && $design eq 'R' && !$isDataLogged && !$isDataPaired) {
     $foldChanger = GUS::Community::RadAnalysis::TwoChannelUnpairedRatios->new($dir);
   }
-  elsif($numberOfChannels == 1 && $isDataLogged) {
-    $foldChanger = GUS::Community::RadAnalysis::OneChannelLogNormalized->new($dir);
+  elsif($numberOfChannels == 1 && $isDataLogged && $isDataPaired) {
+    $foldChanger = GUS::Community::RadAnalysis::OneChannelLogNormalizedPaired->new($dir);
+  }
+  elsif($numberOfChannels == 1 && $isDataLogged && !$isDataPaired) {
+    $foldChanger = GUS::Community::RadAnalysis::OneChannelLogNormalizedUnpaired->new($dir);
   }
   elsif($numberOfChannels == 1 && $isDataPaired && !$isDataLogged) {
     $foldChanger = GUS::Community::RadAnalysis::OneChannelPaired->new($dir);
