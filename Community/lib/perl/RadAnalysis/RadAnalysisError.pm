@@ -32,10 +32,6 @@ package GUS::Community::RadAnalysis::ProcessorError;
 use base qw(GUS::Community::RadAnalysis::RadAnalysisError);
 1;
 
-package GUS::Community::RadAnalysis::SqlError;
-use base qw(GUS::Community::RadAnalysis::ProcessorError);
-1;
-
 package GUS::Community::RadAnalysis::DataFileEmptyError;
 use base qw(GUS::Community::RadAnalysis::ProcessorError);
 1;
@@ -43,5 +39,17 @@ use base qw(GUS::Community::RadAnalysis::ProcessorError);
 #--------------------------------------------------------------------------------
 
 package GUS::Community::RadAnalysis::InputError;
+use base qw(GUS::Community::RadAnalysis::RadAnalysisError);
+1;
+
+package GUS::Community::RadAnalysis::FileAccessError;
+use base qw(GUS::Community::RadAnalysis::RadAnalysisError);
+1;
+
+package GUS::Community::RadAnalysis::DirectoryAccessError;
+use base qw(GUS::Community::RadAnalysis::RadAnalysisError);
+1;
+
+package GUS::Community::RadAnalysis::SqlError;
 use base qw(GUS::Community::RadAnalysis::RadAnalysisError);
 1;
