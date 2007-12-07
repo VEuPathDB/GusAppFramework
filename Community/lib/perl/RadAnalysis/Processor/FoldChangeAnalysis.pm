@@ -133,7 +133,7 @@ sub process {
 
   my $protocol = $foldChanger->getProtocol();
 
-  $foldChanger->writeDataFile($dataMatrix, $logicalGroups, $self->getBaseX());
+  $foldChanger->writeDataFile($dataMatrix, $logicalGroups);
 
   my $paramValues = $self->setupParamValues();
 
@@ -163,32 +163,33 @@ sub findCalculationType {
   my $isDataLogged = $self->getIsDataLogged();
 
   my $dir = $self->getLogDir();
+  my $baseX = $self->getBaseX();
 
   my $foldChanger;
 
   if($numberOfChannels == 2 && $design eq 'D' && $isDataLogged) {
-    $foldChanger = GUS::Community::RadAnalysis::TwoChannelDirectComparison->new($dir);
+    $foldChanger = GUS::Community::RadAnalysis::TwoChannelDirectComparison->new($dir, $baseX, $isDataPaired);
   }
   elsif($numberOfChannels == 2 && $design eq 'R' && $isDataLogged && $isDataPaired) {
-    $foldChanger = GUS::Community::RadAnalysis::TwoChannelReferenceDesignPaired->new($dir);
+    $foldChanger = GUS::Community::RadAnalysis::TwoChannelReferenceDesignPaired->new($dir, $baseX, $isDataPaired);
   }
   elsif($numberOfChannels == 2 && $design eq 'R' && $isDataLogged && !$isDataPaired) {
-    $foldChanger = GUS::Community::RadAnalysis::TwoChannelReferenceDesignUnpaired->new($dir);
+    $foldChanger = GUS::Community::RadAnalysis::TwoChannelReferenceDesignUnpaired->new($dir, $baseX, $isDataPaired);
   }
   elsif($numberOfChannels == 2 && $design eq 'R' && !$isDataLogged && !$isDataPaired) {
-    $foldChanger = GUS::Community::RadAnalysis::TwoChannelUnpairedRatios->new($dir);
+    $foldChanger = GUS::Community::RadAnalysis::TwoChannelUnpairedRatios->new($dir, $baseX, $isDataPaired);
   }
   elsif($numberOfChannels == 1 && $isDataLogged && $isDataPaired) {
-    $foldChanger = GUS::Community::RadAnalysis::OneChannelLogNormalizedPaired->new($dir);
+    $foldChanger = GUS::Community::RadAnalysis::OneChannelLogNormalizedPaired->new($dir, $baseX, $isDataPaired);
   }
   elsif($numberOfChannels == 1 && $isDataLogged && !$isDataPaired) {
-    $foldChanger = GUS::Community::RadAnalysis::OneChannelLogNormalizedUnpaired->new($dir);
+    $foldChanger = GUS::Community::RadAnalysis::OneChannelLogNormalizedUnpaired->new($dir, $baseX, $isDataPaired);
   }
   elsif($numberOfChannels == 1 && $isDataPaired && !$isDataLogged) {
-    $foldChanger = GUS::Community::RadAnalysis::OneChannelPaired->new($dir);
+    $foldChanger = GUS::Community::RadAnalysis::OneChannelPaired->new($dir, $baseX, $isDataPaired);
   }
   elsif($numberOfChannels == 1 && !$isDataPaired && !$isDataLogged) {
-    $foldChanger = GUS::Community::RadAnalysis::OneChannelUnpaired->new($dir);
+    $foldChanger = GUS::Community::RadAnalysis::OneChannelUnpaired->new($dir, $baseX, $isDataPaired);
   }
   else {
     GUS::Community::RadAnalysis::InputError->
