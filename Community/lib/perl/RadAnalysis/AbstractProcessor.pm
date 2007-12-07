@@ -296,7 +296,7 @@ from Rad.QUANTIFICATION q, Rad.ACQUISITION a,
 where q.acquisition_id = a.acquisition_id
  and a.assay_id = sa.assay_id
  and sa.study_id = s.study_id
- and s.name = ?
+ and s.name = $studyName
  and (q.uri = ? OR q.name = ?)
 Sql
                 analysis_name => <<Sql,
@@ -306,7 +306,7 @@ from Rad.ASSAYANALYSIS aa, Rad.ANALYSIS a,
 where s.study_id = sa.study_id
  and sa.assay_id = aa.assay_id
  and aa.analysis_id = a.analysis_id
- and s.name = ?
+ and s.name = $studyName
  and (a.name = ? OR a.name = ?)
 Sql
                 analysis_id => <<Sql,
@@ -319,7 +319,7 @@ select distinct aa.analysis_id
 from Rad.STUDYASSAY sa, Study.Study s,
      Rad.ASSAYANALYSIS aa LEFT JOIN Rad.ANALYSISPARAM ap on ap.analysis_id = aa.analysis_id
 where aa.assay_id = sa.assay_id
- and s.name = ?
+ and s.name = $studyName
  and (ap.value = ? OR ap.value = ?)
 Sql
                 );
@@ -339,7 +339,7 @@ Sql
   foreach my $name (@$names) {
     $orderNum++ if($isPaired);
 
-    $sh->execute($studyName, $name, $name);
+    $sh->execute($name, $name);
 
     my ($id) = $sh->fetchrow_array();
     $sh->finish();
