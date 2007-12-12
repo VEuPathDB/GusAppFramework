@@ -253,8 +253,9 @@ sub calculateRatio {
   elsif($lgCount == 2 && $baseX) {
     $value = $averages->[1] - $averages->[0];
   }
+  # Return null if either average is negative
   elsif($lgCount == 2 && !$baseX) {
-    $value = $averages->[1] / $averages->[0];
+    $value = $averages->[1] / $averages->[0] unless($averages->[0] < 0 || $averages->[1] < 0);
   }
   else {
     GUS::Community::RadAnalysis::RadAnalysisError->new("Wrong Number of LogicalGroups [$lgCount]")->throw();
@@ -296,7 +297,7 @@ sub writeDataFile {
 
     my $ratio = $self->calculateRatio($lgCount, $baseX, $averages);
 
-    print $fh "$element\t$ratio\n";
+    print $fh "$element\t$ratio\n" if($ratio);
   }
   close $fh;
 }
