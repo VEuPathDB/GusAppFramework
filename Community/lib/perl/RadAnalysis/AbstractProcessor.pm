@@ -250,6 +250,11 @@ select composite_element_id, signal
 from Rad.AffymetrixMas5
 where quantification_id = ?
 Sql
+                  'AffymetrixMAS4' => <<Sql,
+select composite_element_id, average_difference
+from  Rad.AffymetrixMas4 
+where quantification_id = ?
+Sql
                );
 
   my $sql = $allSql{$table};
