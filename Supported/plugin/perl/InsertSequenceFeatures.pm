@@ -859,6 +859,8 @@ sub makeSkeletalGusFeature {
 
   my $feature = eval "{require $gusObjName; $gusObjName->new()}";
 
+  die $@ if ($@);
+
   $feature->setNaSequenceId($naSequenceId);
   $feature->setExternalDatabaseReleaseId($dbRlsId);
 
