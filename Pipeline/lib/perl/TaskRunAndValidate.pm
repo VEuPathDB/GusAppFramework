@@ -451,4 +451,5 @@ sub countSeqs {
     }
     close(F);
     return $c;
+
 }
