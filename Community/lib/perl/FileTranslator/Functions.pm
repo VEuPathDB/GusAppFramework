@@ -134,6 +134,42 @@ sub nameToCompositeElementId {
 
 #--------------------------------------------------------------------------------
 
+sub featureLocationToElementId {
+  my ($self, $hash) = @_;
+
+  my %mapping;
+
+  unless($hash->{dbh}) {
+    die "Function [featureLocationElementId] must give a database handle";
+  }
+
+  unless($hash->{arrayDesignName}) {
+    die "Function [nameTOCompositeElementId] must give an arrayDesignName";
+  }
+
+  my $sql = "select s.array_row, s.array_column, s.grid_row, s.grid_column, s.sub_row, s.sub_column, s.element_id
+             from Rad.SPOT s, Rad.ARRAYDESIGN a
+             where a.array_design_id = s.array_design_id 
+              and (a.name = ? OR a.source_id = ?)";
+
+  my $arrayDesignName = $hash->{arrayDesignName};
+
+  my $sh = $hash->{dbh}->prepare($sql);
+  $sh->execute($arrayDesignName, $arrayDesignName);
+
+  while(my ($ar, $ac, $gr, $gc, $sr, $sc, $id) = $sh->fetchrow_array()) {
+    my $featureLocation = "$ar.$ac.$gr.$gc.$sr.$sc";
+
+    $mapping{$featureLocation} = $id;
+  }
+  $sh->finish();
+
+  return \%mapping;
+}
+
+
+#--------------------------------------------------------------------------------
+
 sub coordGenePix2RAD{
   my ($self, $hash) = @_;
 
