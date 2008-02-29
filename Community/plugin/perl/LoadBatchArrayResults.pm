@@ -64,6 +64,13 @@ sub getArgumentsDeclaration {
 		 reqd  => 1,
 		 isList => 0
 		}),
+     integerArg({name  => 'posOption',
+		 descr => 'option choice of positionList of ShortOligoFamily table, default is 1.',
+		 constraintFunc=> undef,
+		 reqd  => 0,
+		 isList => 0,
+		 default => 1,
+		}),
      integerArg({name  => 'testNumLine',
 		 descr => 'The number of lines in the data file for the first retrieved assay to be tested for loading.',
 		 constraintFunc => undef,
@@ -732,11 +739,13 @@ sub runArrayResultLoader {
     $testnumberString = "--testnumber $num";
   }
 
+  my $posOption =  $self->getArg('posOption') ? "--posOption " . $self->getArg('posOption') : undef;
+
   if (!$globalRef->{'is2channel'}) {
-     system("ga GUS::Community::Plugin::LoadSimpleArrayResults --data_file $dataFile --array_design_id $arrayDesignId --quantification_id $Rqid --array_subclass_view $arraySubclassView --result_subclass_view $resultSubclassView --project '$projectName' --group '$groupName' --log_path $logPath $testnumberString $commitString");
+    system("ga GUS::Community::Plugin::LoadSimpleArrayResults --data_file $dataFile --array_design_id $arrayDesignId --quantification_id $Rqid --array_subclass_view $arraySubclassView --result_subclass_view $resultSubclassView --project '$projectName' --group '$groupName' --log_path $logPath $testnumberString $commitString $posOption");
    }
   else {
-    system("ga GUS::Community::Plugin::LoadSimpleArrayResults --data_file $dataFile --array_design_id $arrayDesignId --quantification_id $Rqid --rel_quantification_id $Gqid --array_subclass_view $arraySubclassView --result_subclass_view $resultSubclassView --project '$projectName' --group '$groupName' --log_path $logPath $testnumberString $commitString");
+    system("ga GUS::Community::Plugin::LoadSimpleArrayResults --data_file $dataFile --array_design_id $arrayDesignId --quantification_id $Rqid --rel_quantification_id $Gqid --array_subclass_view $arraySubclassView --result_subclass_view $resultSubclassView --project '$projectName' --group '$groupName' --log_path $logPath $testnumberString $commitString $posOption");
   }
 }
 
