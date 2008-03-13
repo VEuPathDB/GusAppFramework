@@ -53,7 +53,7 @@ sub getArgumentsDeclaration {
 	      format => 'See the NOTES for the format of this file'
 	     }),
      stringArg({name  => 'software',
-		 descr => "The quantification protocol for the quantifications that should be loaded. Should be one of 'mas4', 'mas5', 'genepix', 'arrayvision', 'rmaexpress', 'moid'.",
+		 descr => "The quantification protocol for the quantifications that should be loaded. Should be one of 'mas4', 'mas5', 'genepix', 'arrayvision', 'rmaexpress', 'moid', 'agilent'.",
 		 constraintFunc => \&isValidSoftware,
 		 reqd  => 1,
 		 isList => 0
@@ -101,7 +101,7 @@ sub getDocumentation {
   my $purposeBrief = 'Loads into the appropriate view of RAD::(Composite)ElementResultImp quantification data from a collection of files all having the same format.';
 
   my $purpose = <<PURPOSE;
-This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) a property file, (iii) an xml configuration file, and (iv) a quantification protocol or software (one of: I<MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, and MOID>). The plugin then uploads into the appropriate view of RAD::(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. I<If any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded>.
+This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) a property file, (iii) an xml configuration file, and (iv) a quantification protocol or software (one of: I<MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, MOID, and Agilent Feature Extraction Software>). The plugin then uploads into the appropriate view of RAD::(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. I<If any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded>.
 PURPOSE
 
   my $tablesAffected = [['RAD::ElementResultImp', 'Enters the quantification results here, if the protocol is GenePix or ArrayVision'], ['RAD::CompositeElementResultImp', 'Enters the quantification results here, if the protocol is MAS4.0, MAS5.0, RMAExpress, or MOID'], ['RAD::RelatedQuantification', 'Inserts entries in this table for the quantifications at stake, if missing']];
@@ -321,7 +321,7 @@ sub run {
 sub isValidSoftware {
 #--------------------
   my ($self, $software) = @_;
-  my @validSoftwares = qw(mas4 mas5 genepix arrayvision rmaexpress moid);
+  my @validSoftwares = qw(mas4 mas5 genepix arrayvision rmaexpress moid agilent);
   my @matching = grep {$software eq $_} @validSoftwares;
 
   if (scalar(@matching)==0) {
@@ -389,7 +389,8 @@ sub initializeGlobalRef {
    'rmaexpress'=>$propertySet->getProp("rmaexpress"),
    'cel4'=>$propertySet->getProp("cel4"),
    'cel5'=>$propertySet->getProp("cel5"),
-   'moid' =>$propertySet->getProp("moid")
+   'moid' =>$propertySet->getProp("moid").
+   'agilent' =>$propertySet->getProp("agilent")
   };
   
   $globalRef->{'protocolId'} = $globalRef->{'softwareName2Id'}->{$self->getArg('software')};
@@ -402,6 +403,7 @@ sub initializeGlobalRef {
      'arrayvision'=>'Spot',
      'rmaexpress'=>'ShortOligoFamily',
      'moid' => 'ShortOligoFamily',
+     'agilent' => 'Spot'
     };
   
   $globalRef->{'resultSubclassView'} =
@@ -412,6 +414,7 @@ sub initializeGlobalRef {
      'arrayvision'=>'ArrayVisionElementResult',
      'rmaexpress'=>'RMAExpress',
      'moid' => 'MOIDResult',
+     'agilent' => 'AgilentElementResult'
     };
 }
 
