@@ -43,12 +43,12 @@
 <h1><a name="synopsis">SYNOPSIS</a></h1>
 <p>ga GUS::Community::Plugin::LoadBatchArrayResults --help</p>
 <p>ga GUS::Community::Plugin::LoadBatchArrayResults --helpHTML</p>
-<p>ga GUS::Community::Plugin::LoadBatchArrayResults [--studyId integer] [--assayIdFile file] --cfgFile file --xmlFile file --software string --logPath string [--testNumLine integer] [--testNumAssay integer] [--skip string-list] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
+<p>ga GUS::Community::Plugin::LoadBatchArrayResults [--studyId integer] [--assayIdFile file] --cfgFile file --xmlFile file --software string --logPath string [--posOption integer] [--testNumLine integer] [--testNumAssay integer] [--skip string-list] [--commit ] [--debug ] [--sqlVerbose ] [--verbose ] [--veryVerbose ] [--user string] [--group string] [--project string] [--comment string] [--algoinvo integer] [--gusconfigfile file]</p>
 <p>
 </p>
 <hr />
 <h1><a name="description">DESCRIPTION</a></h1>
-<p>This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) a property file, (iii) an xml configuration file, and (iv) a quantification protocol or software (one of: <em>MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, and MOID</em>). The plugin then uploads into the appropriate view of RAD::(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. <em>If any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded</em>.</p>
+<p>This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) a property file, (iii) an xml configuration file, and (iv) a quantification protocol or software (one of: <em>MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, MOID, and Agilent Feature Extraction Software</em>). The plugin then uploads into the appropriate view of RAD::(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. <em>If any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded</em>.</p>
 <p>
 </p>
 <hr />
@@ -160,10 +160,18 @@
 <dt></dt>
 <dt><strong><a name="item_string">--software <em>string</em> (Required)</a></strong><br />
 </dt>
-<p>The quantification protocol for the quantifications that should be loaded. Should be one of 'mas4', 'mas5', 'genepix', 'arrayvision', 'rmaexpress', 'moid'.</p>
+<p>The quantification protocol for the quantifications that should be loaded. Should be one of 'mas4', 'mas5', 'genepix', 'arrayvision', 'rmaexpress', 'moid', 'agilent'.</p>
 <dt><strong>--logPath <em>string</em> (Required)</strong><br />
 </dt>
 <p>The absolute path of the directory where the log files and the data files will be created. The user should have write permission to that directory. This is also where the parsed data files go.</p>
+<dt><strong><a name="item_%2d%2dposoption_integer">--posOption <em>integer</em></a></strong><br />
+</dt>
+<p>option choice of positionList of ShortOligoFamily table, default is 1.</p>
+<dl>
+<dt><strong><a name="item_default%3a_1">default: 1</a></strong><br />
+</dt>
+</dl>
+<dt></dt>
 <dt><strong><a name="item_%2d%2dtestnumline_integer">--testNumLine <em>integer</em></a></strong><br />
 </dt>
 <p>The number of lines in the data file for the first retrieved assay to be tested for loading.</p>
@@ -229,7 +237,7 @@
 </dt>
 <p>Use this algorithm invocation id in the event that a new algorithm invocation id cannot be generated automatically</p>
 <dl>
-<dt><strong><a name="item_default%3a_1">default: 1</a></strong><br />
+<dt><strong>default: 1</strong><br />
 </dt>
 </dl>
 <dt></dt>
@@ -278,6 +286,7 @@ This file should be as follows:</p>
 <p>moid=&lt;RAD::Protocol::protocol_id for the MOID quantification protocol in your instance&gt;</p>
 <p>genepix=&lt;RAD::Protocol::protocol_id for the GenePix quantification protocol in your instance&gt;</p>
 <p>arrayvision=&lt;RAD::Protocol::protocol_id for the ArrayVision quantification protocol in your instance&gt;</p>
+<p>agilent=&lt;RAD::Protocol::protocol_id for the Agilent Feature Extraction quantification protocol in your instance&gt;</p>
 <p>filePath=&lt;The path to the directory on your server where the data files are stored (possibly organized in subdirectories)&gt;, e.g. at CBIL the filePath should be set to ``/files/cbil/data/cbil/RAD/''. For each quantification, this plugin concatenates this filePath with the uri specified in RAD.Quantification.uri, to retrieve the corresponding quantification file.</p>
 <p>
 </p>
