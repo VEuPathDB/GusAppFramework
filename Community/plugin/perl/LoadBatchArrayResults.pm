@@ -376,6 +376,7 @@ sub initializeGlobalRef {
      ["cel4", "", ""],
      ["cel5", "", ""],
      ["moid", "", ""],
+     ["agilent", "", ""],
      ["filePath", "", ""]
     ); 
   my $propertySet = CBIL::Util::PropertySet->new($self->getArg('cfgFile'), \@properties);
