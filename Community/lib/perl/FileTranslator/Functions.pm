@@ -252,6 +252,36 @@ sub coordArrayVision2RAD{
   return $mapping;
 }
 
+sub lineNum2RAD{
+  my ($self, $hash) = @_;
+
+  my $n_ar = $hash->{num_array_rows};
+  my $n_ac = $hash->{num_array_columns};
+  my $n_gr = $hash->{num_grid_rows};
+  my $n_gc = $hash->{num_grid_columns};
+  my $n_sr = $hash->{num_sub_rows};
+  my $n_sc = $hash->{num_sub_columns};
+
+  my $mapping;
+ 
+  my $lineNum = 0;
+  for (my $ar=1; $ar<=$n_ar; $ar++) {
+    for (my $ac=1; $ac<=$n_ac; $ac++) {
+      for (my $gr=1; $gr<=$n_gr; $gr++) {
+        for (my $gc=1; $gc<=$n_gc; $gc++) {
+          for (my $sr=1; $sr<=$n_sr; $sr++) {
+            for (my $sc=1; $sc<=$n_sc; $sc++) {
+              $lineNum++;
+              $mapping->{"$lineNum"} = "$ar\t$ac\t$gr\t$gc\t$sr\t$sc";
+            }
+          }
+        }
+      }
+    }
+  }
+  return $mapping;
+}
+
 1;
 __END__
 
@@ -279,3 +309,10 @@ __END__
   Creates a hash for the mapping of ArrayVision Spot Labels column (with dashes and colons) to RAD coordinates (array_row, array_column, grid_row, grid_column, sub_row, sub_column), using information on the array layout.
  Returns:
   A reference to a hash whose keys are the strings in the Spot Labels column of an ArrayVision output file and whose values are tab-delimited 6-ples of RAD coordinates.
+
+=head3 sub lineNum2RAD($num_array_rows, $num_array_columns, $num_grid_rows, $num_grid_columns, $num_sub_rows, $num_sub_columns);
+
+ Purpose:
+  Creates a hash for the mapping of line numbers (such as the Agilent FeatureNum) to RAD coordinates (array_row, array_column, grid_row, grid_column, sub_row, sub_column), using information on the array layout.
+ Returns:
+  A reference to a hash whose keys are the line numbers of a data file (e.g. the strings in the Agilent FeatureNum column) and whose values are tab-delimited 6-ples of RAD coordinates.
