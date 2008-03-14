@@ -392,7 +392,7 @@ sub initializeGlobalRef {
    'rmaexpress'=>$propertySet->getProp("rmaexpress"),
    'cel4'=>$propertySet->getProp("cel4"),
    'cel5'=>$propertySet->getProp("cel5"),
-   'moid' =>$propertySet->getProp("moid").
+   'moid' =>$propertySet->getProp("moid"),
    'agilent' =>$propertySet->getProp("agilent")
   };
   
