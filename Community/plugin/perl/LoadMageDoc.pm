@@ -160,6 +160,8 @@ sub run {
 
   my $coreInserts = $self->getTotalInserts();
 
+  $self->setPointerCacheSize(40000);
+
   my $dbh = $self->getDbHandle();
   $dbh->{AutoCommit}=0;
 
