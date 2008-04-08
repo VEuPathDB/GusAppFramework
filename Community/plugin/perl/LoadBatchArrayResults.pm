@@ -14,6 +14,7 @@ use GUS::PluginMgr::Plugin;
 use GUS::Community::FileTranslator;
 use GUS::Community::Utils::InformationQueries;
 use GUS::Model::RAD::RelatedQuantification;
+use GUS::Model::RAD::RelatedAcquisition;
 
 # ----------------------------------------------------------------------
 # Arguments
@@ -104,7 +105,7 @@ sub getDocumentation {
 This plugin takes as input: (i) a study_id or a file with a list of assay_ids, (ii) a property file, (iii) an xml configuration file, and (iv) a quantification protocol or software (one of: I<MAS4.0, MAS5.0, GenePix, ArrayVision, RMAExpress, MOID, and Agilent Feature Extraction Software>). The plugin then uploads into the appropriate view of RAD::(Composite)ElementResult the data contained in the uri files corresponding to all those quantifications from these assays, which have the specified quantification protocol. I<If any such file has a format that does not correspond to that specified by the configuration file (e.g. different header names, etc.), it will not be uploaded>.
 PURPOSE
 
-  my $tablesAffected = [['RAD::ElementResultImp', 'Enters the quantification results here, if the protocol is GenePix or ArrayVision'], ['RAD::CompositeElementResultImp', 'Enters the quantification results here, if the protocol is MAS4.0, MAS5.0, RMAExpress, or MOID'], ['RAD::RelatedQuantification', 'Inserts entries in this table for the quantifications at stake, if missing']];
+  my $tablesAffected = [['RAD::ElementResultImp', 'Enters the quantification results here, if the protocol is GenePix, ArrayVision, or Agilent Feature Extraction Software'], ['RAD::CompositeElementResultImp', 'Enters the quantification results here, if the protocol is MAS4.0, MAS5.0, RMAExpress, or MOID'], ['RAD::RelatedQuantification', 'Inserts entries in this table for the quantifications at stake, if missing'], ['RAD::RelatedAcquisition', 'Inserts entries in this table for the acquisitions at stake, if missing']];
 
   my $tablesDependedOn = [['Study::Study', 'The study, if studyId is passed in'], ['RAD::StudyAssay', 'The table linking the assays to the study, if studyId is passed in'], ['RAD::Assay', 'The assays passed in'], ['SRes::ExternalDatabaseRelease', 'The external database relase for the assays passed in'], ['RAD::ArrayDesign', 'The array design(s) used in the assays passed in' ], ['Study::OntologyEntry', 'The technology and substrate information for the arrays involved; also the channels for the acquisitions relative to the assays passed in'], ['RAD::Acquisition', 'The acquisitions for the assays passed in'], ['RAD::Quantification', 'The quantifications for the assays passed in'], ['RAD::RelatedAcquisition', 'The associations between the acquisitions for the assays passed in'], ['RAD::RelatedQuantification', 'The associations between the quantifications for the assays passed in'], ['RAD::Protocol', 'The quantification protocol of interest']];
 
@@ -472,6 +473,7 @@ sub getAssayIds {
 #    in $globalRef->{$assayId}->{'quantifications'}
 #    alternating red and green quantifications when 2-channel
 # -- calls to check related quantifications and to insert if needed
+# -- checks related acquisitions and inserts if needed
 #######################################################################
 #-----------------------
 sub retrieveQuantifications{
@@ -519,8 +521,8 @@ sub retrieveQuantifications{
     }
   }
   else {
-    # if the quantification is from GenePix or ArrayVision, note that the data
-    # can be one-channel or 2-channel data
+    # if the quantification is from GenePix, ArrayVision, or Agilent note that 
+    # the data can be one-channel or 2-channel data
 
     my @quantInfoArray;
 
@@ -538,6 +540,17 @@ sub retrieveQuantifications{
 
     my $quantRef = $self->checkRelatedQuantifications($dbh, \@quantInfoArray);
     push @{$globalRef->{$assayId}->{'quantifications'}}, @{$quantRef};
+  }
+
+  if ($globalRef->{'is2channel'}==1 && scalar(@acqs)==2) {
+    for (my $i=0; $i<@acqs ; $i++) {
+      my $acqInfo =  $infoQ->getAcquisitionInfo($acqs[$i]);
+      my $relAid = $acqInfo->{'assoc_acquisition_id}'};
+      if (!defined $relAid) {
+	$relAid = $i==0 ? $acqs[1] : $acqs[0];
+	$self->relateAcquisitions($acqs[$i], $relAid);
+      }
+    }
   }
 }
 
@@ -718,6 +731,24 @@ sub relateQuantifications{
   if (!$relQuant->retrieveFromDB()) {
     $relQuant->submit();
     $self->logData("RESULT","$qid1 and $qid2 are related. Inserted 1 entry in RAD::RelatedQuantification.");
+  }
+}
+
+##################################################################################
+# RelateAcquisitions($dbh, $aid1, $aid2)
+# Function:
+# -- relate $aid11 and $aid12 (insert one entry in RAD::RelatedAcquisition)
+##################################################################################
+#-------------------------
+sub relateAcquisitions{
+#-------------------------
+  my ($self, $aid1, $aid2) = @_;
+
+  my $relAcq = GUS::Model::RAD::RelatedAcquisition->new({ 'acquisition_id' => $aid1, 'associated_acquisition_id' => $aid2});
+
+  if (!$relAcq->retrieveFromDB()) {
+    $relAcq->submit();
+    $self->logData("RESULT","$aid1 and $aid2 are related. Inserted 1 entry in RAD::RelatedAcquisition.");
   }
 }
 
