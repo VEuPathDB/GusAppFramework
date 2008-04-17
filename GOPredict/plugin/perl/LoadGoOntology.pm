@@ -450,7 +450,9 @@ sub __getExtDbRelId{
 
     if (!($self->getArg('create_release'))) { 
 	#db's passed in from cla
-        $extDbRelId = $self->getArg($branch) . "_ext_db_rel";
+
+        my $relArg = $branch . "_ext_db_rel";
+        $extDbRelId = $self->getArg($relArg);
 	if (!($extDbRelId)){
 	    $self->userError("no external database release passed in for $branch branch.\n Either pass in --" . $branch . "_ext_db_rel or create a new one by setting --create_release to true");
 	}
