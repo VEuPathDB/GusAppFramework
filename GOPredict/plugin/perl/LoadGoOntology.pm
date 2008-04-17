@@ -130,13 +130,11 @@ sub new {
 
 	 ];
 
-    $self->initialize({requiredDbVersion => {},
+    $self->initialize({requiredDbVersion => 3.5,
 		       cvsRevision => '$Revision$', # cvs fills this in!
-	 		   cvsTag => '$Name: rel_3_5_branch $', # cvs fills this in!
  	 	       name => ref($self),
-		       revisionNotes => 'refactored and optomized version; same functionality',
-		      argsDeclaration => $argsDeclaration,
-       	      documentation => $documentation
+		       argsDeclaration => $argsDeclaration,
+		       documentation => $documentation
 		   });
 	  
     
