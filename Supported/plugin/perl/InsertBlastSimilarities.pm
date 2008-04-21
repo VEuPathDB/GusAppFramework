@@ -638,8 +638,9 @@ sub insertSubjects {
 		   $s->{max_query_end}, $s->{number_of_matches}, 
 		   $s->{total_match_length}, $s->{number_identical},
 		   $s->{number_positive}, $s->{is_reversed}, 
-		   $s->{reading_frame},
-		   $s->{non_overlap_match_length});
+		   $s->{reading_frame});
+
+    push(@simVals, $s->{non_overlap_match_length}) if $self->getArg('hasNonOverlapMatchLength');
 
     $simStmt->execute(@simVals) || die $simStmt->errstr;
     $self->log("Inserting Similarity: ", @simVals) if $verbose;
@@ -695,7 +696,7 @@ sub getInsertSubjStmt {
 "?,               ?,               ?,             ?, " .
 #total_match_length, number_identical, number_positive, is_reversed, reading_fr
 "?,                  ?,                ?,               ?,           ?, " .
-($self->getArg('nonOverlapMatchLength')? ' ?,' : '') .
+($self->getArg('hasNonOverlapMatchLength')? ' ?,' : '') .
 $self->getDb()->getDateFunction() . " , 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
 
   return $dbh->prepare($sql);
