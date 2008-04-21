@@ -255,6 +255,11 @@ select composite_element_id, average_difference
 from  Rad.AffymetrixMas4 
 where quantification_id = ?
 Sql
+                  'GenePixElementResult' => <<Sql,
+select element_id, foreground_median
+from Rad.GENEPIXELEMENTRESULT
+where quantification_id = ? and flag != -100
+Sql
                );
 
   my $sql = $allSql{$table};
