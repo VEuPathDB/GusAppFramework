@@ -168,6 +168,13 @@ at, eg, DoTS::ExternalNaSequence)',
                 default=> 0,
                 constraintFunc => undef,
               }),
+   booleanArg({ name   => 'hasNonOverlapMatchLength',
+                descr  => 'If true, the input and Similarity table have a new column non_overlap_match_length',
+                reqd   => 0,
+                isList => 0,
+                default=> 0,
+                constraintFunc => undef,
+              }),
    integerArg({name  => 'testnumber',
                descr => 'Number of query sequences to process for testing',
                reqd  => 0,
@@ -457,6 +464,7 @@ sub parseSubject {
   $subj{is_reversed} = $vals[12];
   $subj{reading_frame} = $vals[13];
   $subj{reading_frame} =~ s/\D//g;   # get rid of (+-)
+  $subj{non_overlap_match_length} = $vals[14] if $self->getArg('nonOverlapMatchLength');
 
   my $hspsLimit = $self->getArg('hspsLimit');
   my $pvalueF = $self->getArg('hspPvalue');
@@ -630,7 +638,8 @@ sub insertSubjects {
 		   $s->{max_query_end}, $s->{number_of_matches}, 
 		   $s->{total_match_length}, $s->{number_identical},
 		   $s->{number_positive}, $s->{is_reversed}, 
-		   $s->{reading_frame});
+		   $s->{reading_frame},
+		   $s->{non_overlap_match_length});
 
     $simStmt->execute(@simVals) || die $simStmt->errstr;
     $self->log("Inserting Similarity: ", @simVals) if $verbose;
@@ -685,7 +694,8 @@ sub getInsertSubjStmt {
 #min_subject_end, min_query_start, min_query_end, number_of_matches
 "?,               ?,               ?,             ?, " .
 #total_match_length, number_identical, number_positive, is_reversed, reading_fr
-"?,                  ?,                ?,               ?,           ?, ".
+"?,                  ?,                ?,               ?,           ?, " .
+($self->getArg('nonOverlapMatchLength')? ' ?,' : '') .
 $self->getDb()->getDateFunction() . " , 1, 1, 1, 1, 1, 0, $rowUserId, $rowGroupId, $rowProjectId, $algInvId)";
 
   return $dbh->prepare($sql);
