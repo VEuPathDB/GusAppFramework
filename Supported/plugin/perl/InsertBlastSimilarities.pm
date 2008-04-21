@@ -464,7 +464,7 @@ sub parseSubject {
   $subj{is_reversed} = $vals[12];
   $subj{reading_frame} = $vals[13];
   $subj{reading_frame} =~ s/\D//g;   # get rid of (+-)
-  $subj{non_overlap_match_length} = $vals[14] if $self->getArg('nonOverlapMatchLength');
+  $subj{non_overlap_match_length} = $vals[14] if $self->getArg('hasNonOverlapMatchLength');
 
   my $hspsLimit = $self->getArg('hspsLimit');
   my $pvalueF = $self->getArg('hspPvalue');
