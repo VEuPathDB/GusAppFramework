@@ -90,6 +90,13 @@ gene2go',
             isList => 0
             }),
 
+ integerArg({name => 'taxId',
+            descr => 'ncbi tax id, used if mapping is restricted to a single taxon',
+            constraintFunc => undef,
+            reqd => 0,
+            isList => 0
+            }),
+
  fileArg({name => 'gene2go',
 	  descr => 'pathname for the gene2accession file',
 	  constraintFunc => undef,
@@ -147,6 +154,7 @@ sub makeGoHash{
     my %goHash;
     my %evidHash;
     my $file = $self->getArg('gene2go');
+    my $taxId = $self->getArg('taxId') if  $self->getArg('taxId');
 
     open (GO, $file) || die "Can't open $file.  Reason: $!\n";
 
@@ -156,6 +164,8 @@ sub makeGoHash{
 	   next;
         }
 	my @goArray = split(/\t/, $_);
+
+	next() if ($taxId && $goArray[0] != $taxId);
 	my $gene_id = $goArray[1];
 	my $go_id = $goArray[2];
 	my $evidence = $goArray[3];
