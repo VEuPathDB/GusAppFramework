@@ -338,6 +338,8 @@ sub processOneFile{
     while (<F>) {
 	if (/^\>/) {                ##have a defline....need to process!
 
+	  s/\s+$//;  # trim trailing white space (including DOS newlines!)
+
 	    ##following must be in loop to allow garbage collection...
 	    $self->undefPointerCache();
 
