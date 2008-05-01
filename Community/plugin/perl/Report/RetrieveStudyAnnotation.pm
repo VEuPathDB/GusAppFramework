@@ -126,6 +126,7 @@ sub new {
 sub run {
   my ($self) = @_;
   $self->logArgs();
+
   my $dbh = $self->getQueryHandle();
 
   $self->logData("Retrieving Studies");
