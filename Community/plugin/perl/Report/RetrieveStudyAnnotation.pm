@@ -114,7 +114,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 5974$',
+		     cvsRevision => '$Revision: 5975 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -128,6 +128,7 @@ sub run {
   $self->logArgs();
 
   my $dbh = $self->getQueryHandle();
+
 
   $self->logData("Retrieving Studies");
   my $studies = $self->retrieveStudiesAllTaxons($dbh);
