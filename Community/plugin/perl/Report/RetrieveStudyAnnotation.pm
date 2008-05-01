@@ -24,6 +24,7 @@ sub getArgumentsDeclaration {
 		 isList => 0,
 		 default => 0,
 	       }),
+
      booleanArg({name => 'published',
 		 descr => 'If given, only studies with non-null bibliographic reference will be considered.',
 		 constraintFunc => undef,
@@ -113,7 +114,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 5973$',
+		     cvsRevision => '$Revision: 5974$',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
