@@ -126,7 +126,7 @@ sub run{
   $self->{'commit'} = $self->getArg('commit');
   $self->{'algInvocationIds'} = $self->getArg('algInvocationId');
   $self->{'dbh'} = $self->getQueryHandle();
-  print STDERR "Commit: $self->{'commit'}; 
+  print STDERR "Commit: $self->{'commit'}\n"; 
   $self->{'dbh'}->{AutoCommit}=0;
 
   $self->undoFeatures();
