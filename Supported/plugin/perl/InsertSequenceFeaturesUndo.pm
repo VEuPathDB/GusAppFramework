@@ -224,7 +224,7 @@ sub undoSequences{
 sub _deleteFromTable{
    my ($self, $tableName) = @_;
 
-  &deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'},$self->{'commit'});
+  &deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'},$self->getArg('commit'));
 }
 
 sub deleteFromTable{
