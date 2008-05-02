@@ -136,15 +136,7 @@ sub run{
 
   $self->_deleteFromTable('Core.AlgorithmInvocation');
 
-  if ($self->getArg('commit')) {
-    print STDERR "Committing\n";
-    $self->{'dbh'}->commit()
-      || die "Commit failed: " . $self->{'dbh'}->errstr() . "\n";
-  } else {
-    print STDERR "Rolling back\n";
-    $self->{'dbh'}->rollback()
-      || die "Rollback failed: " . $self->{'dbh'}->errstr() . "\n";
-  }
+ 
 }
 
 sub undoFeatures{
@@ -169,13 +161,18 @@ sub setParentToNull{
   my ($self) = @_;
 
   my $algoInvocIds = join(', ', @{$self->{'algInvocationIds'}});
-
+if ($self->getArg('commit')) {
   my $sql =
 "UPDATE DoTS.NAFeature
 SET parent_id = NULL
 WHERE row_alg_invocation_id IN ($algoInvocIds)";
 
    $self->{'dbh'}->prepareAndExecute($sql);
+    print STDERR "Committing updates to DoTS.NAFeature \n";
+    $self->{'dbh'}->commit()
+      || die "Committing updates to DoTS.NAFeature failed: " . $self->{'dbh'}->errstr() . "\n";
+  }
+
 
 }
 
@@ -226,21 +223,37 @@ sub undoSequences{
 sub _deleteFromTable{
    my ($self, $tableName) = @_;
 
-  &deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'});
+  &deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'},$self->getArg('commit'));
 }
 
 sub deleteFromTable{
-  my ($tableName, $algInvocationIds, $dbh) = @_;
+  my ($tableName, $algInvocationIds, $dbh, $commit) = @_;
 
   my $algoInvocIds = join(', ', @{$algInvocationIds});
 
-  my $sql = 
-"DELETE FROM $tableName
-WHERE row_alg_invocation_id IN ($algoInvocIds)";
+  if ($commit) {
+    my $sql = 
+    "DELETE FROM $tableName
+     WHERE row_alg_invocation_id IN ($algoInvocIds)";
 
-  my $rows = $dbh->do($sql) || die "Failed running sql:\n$sql\n";
-  $rows = 0 if $rows eq "0E0";
-  print STDERR "Deleted $rows rows from $tableName\n";
+     my $rows = $dbh->do($sql) || die "Failed running sql:\n$sql\n";
+     $rows = 0 if $rows eq "0E0";
+     print STDERR "Deleted $rows rows from $tableName\n";
+     print STDERR "Committing deletions from $tableName\n";
+     $dbh->commit()
+      || die "Committing deletions from $tableName failed: " . $dbh ->errstr() . "\n";
+  }else{
+      my $sql =
+      "SELECT COUNT(*) FROM $tableName
+       WHERE row_alg_invocation_id IN ($algoInvocIds)";
+      my $stmt = $dbh->prepareAndExecute($sql);
+      if(my ($rows) = $stmt->fetchrow_array()){
+         print STDERR "Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n";
+       }
+     
+  }
+    
+
 }
 
 
