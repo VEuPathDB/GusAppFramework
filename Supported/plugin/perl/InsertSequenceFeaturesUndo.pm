@@ -124,6 +124,7 @@ sub new {
 sub run{
   my ($self) = @_;
   $self->{'algInvocationIds'} = $self->getArg('algInvocationId');
+  $self->{'commit'} = $self->getArg('commit');
   $self->{'dbh'} = $self->getQueryHandle();
 
   $self->{'dbh'}->{AutoCommit}=0;
@@ -228,7 +229,6 @@ sub _deleteFromTable{
 
 sub deleteFromTable{
   my ($tableName, $algInvocationIds, $dbh, $commit) = @_;
-  print STDERR "Commit: $commit\n";
   my $algoInvocIds = join(', ', @{$algInvocationIds});
 
   if ($commit) {
