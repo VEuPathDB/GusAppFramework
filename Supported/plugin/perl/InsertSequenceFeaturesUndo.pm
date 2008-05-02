@@ -230,8 +230,8 @@ sub _deleteFromTable{
 sub deleteFromTable{
   my ($tableName, $algInvocationIds, $dbh, $commit) = @_;
   my $algoInvocIds = join(', ', @{$algInvocationIds});
-
-  if ($commit) {
+  print STDERR "Commit: $commit\n";
+  if ($commit == 1) {
     my $sql = 
     "DELETE FROM $tableName
      WHERE row_alg_invocation_id IN ($algoInvocIds)";
