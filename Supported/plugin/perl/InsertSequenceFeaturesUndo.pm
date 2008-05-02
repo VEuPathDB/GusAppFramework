@@ -182,7 +182,7 @@ sub undoSpecialCaseQualifiers{
   my @handlers = $mapperSet->getAllHandlers();
   foreach my $handler (@handlers){
     no strict 'refs';
-    $handler->undoAll($self->{'algInvocationIds'}, $self->{'dbh'});
+    $handler->undoAll($self->{'algInvocationIds'}, $self->{'dbh'}, $self->{'commit'});
     if ($self->{'commit'} == 1) {
       print STDERR "Committing undoing special case qualifier $handler->getHandlerName() from $handler->getGusTable()\n";
       $self->{'dbh'}->commit()
@@ -219,7 +219,7 @@ sub undoSequences{
   $self->_deleteFromTable('DoTS.NASequenceRef');
   $self->_deleteFromTable('DoTS.NASequenceKeyword');
   $self->_deleteFromTable('DoTS.Keyword');
-  $self->_deleteFromTable('Do}S.NAComment');
+  $self->_deleteFromTable('DoTS.NAComment');
   $self->_deleteFromTable('DoTS.NASequence');
   $self->_deleteFromTable('SRes.ExternalDatabaseRelease');
   $self->_deleteFromTable('SRes.ExternalDatabase');
