@@ -126,7 +126,6 @@ sub run{
   $self->{'commit'} = $self->getArg('commit');
   $self->{'algInvocationIds'} = $self->getArg('algInvocationId');
   $self->{'dbh'} = $self->getQueryHandle();
-  print STDERR "Commit: $self->{'commit'}\n"; 
   $self->{'dbh'}->{AutoCommit}=0;
 
   $self->undoFeatures();
@@ -184,6 +183,11 @@ sub undoSpecialCaseQualifiers{
   foreach my $handler (@handlers){
     no strict 'refs';
     $handler->undoAll($self->{'algInvocationIds'}, $self->{'dbh'});
+    if ($commit == 1) {
+      print STDERR "Committing undoing special case qualifier $handler->getHandlerName() from $handler->getGusTable()\n";
+      $dbh->commit()
+      || die "Committing undoing special case qualifier $handler->{'name'} failed: " . $dbh ->errstr() . "\n";
+    }
   }
 }
 
@@ -199,7 +203,7 @@ sub undoFeatureSkeleton {
       my $method = "${gusSkeletonMakerClassName}::undoTables";
       my @tableNames = &$method();
       foreach my $tableName (@tableNames) {
-	deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'});
+	deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'}, $self->{'commit'});
       }
     };
     my $err = $@;
@@ -215,7 +219,7 @@ sub undoSequences{
   $self->_deleteFromTable('DoTS.NASequenceRef');
   $self->_deleteFromTable('DoTS.NASequenceKeyword');
   $self->_deleteFromTable('DoTS.Keyword');
-  $self->_deleteFromTable('DoTS.NAComment');
+  $self->_deleteFromTable('Do}S.NAComment');
   $self->_deleteFromTable('DoTS.NASequence');
   $self->_deleteFromTable('SRes.ExternalDatabaseRelease');
   $self->_deleteFromTable('SRes.ExternalDatabase');
@@ -223,14 +227,12 @@ sub undoSequences{
 
 sub _deleteFromTable{
    my ($self, $tableName) = @_;
-   print STDERR "Commit: $self->{'commit'}\n";
-  &deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'},$self->getArg('commit'));
+  &deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'},$self->{'commit'});
 }
 
 sub deleteFromTable{
   my ($tableName, $algInvocationIds, $dbh, $commit) = @_;
   my $algoInvocIds = join(', ', @{$algInvocationIds});
-  print STDERR "Commit: $commit\n";
   if ($commit == 1) {
     my $sql = 
     "DELETE FROM $tableName
