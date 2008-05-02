@@ -123,10 +123,10 @@ sub new {
 
 sub run{
   my ($self) = @_;
-  $self->{'algInvocationIds'} = $self->getArg('algInvocationId');
   $self->{'commit'} = $self->getArg('commit');
+  $self->{'algInvocationIds'} = $self->getArg('algInvocationId');
   $self->{'dbh'} = $self->getQueryHandle();
-  print STDERR "Commit: $self->{'commit'}\n";
+  print STDERR "Commit: $self->{'commit'}; 
   $self->{'dbh'}->{AutoCommit}=0;
 
   $self->undoFeatures();
