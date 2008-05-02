@@ -223,12 +223,12 @@ sub undoSequences{
 sub _deleteFromTable{
    my ($self, $tableName) = @_;
 
-  &deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'},$self->getArg('commit'));
+  &deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'},$self->{'commit'});
 }
 
 sub deleteFromTable{
   my ($tableName, $algInvocationIds, $dbh, $commit) = @_;
-
+  print STDERR "Commit: $commit\n";
   my $algoInvocIds = join(', ', @{$algInvocationIds});
 
   if ($commit) {
