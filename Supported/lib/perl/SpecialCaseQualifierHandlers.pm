@@ -37,16 +37,17 @@ sub setPlugin{
 }
 
 sub initUndo{
-  my ($self, $algoInvocIds, $dbh) = @_;
+  my ($self, $algoInvocIds, $dbh, $commit) = @_;
 
   $self->{'algInvocationIds'} = $algoInvocIds;
   $self->{'dbh'} = $dbh;
+  $self->{'commit'} = $commit;
 }
 
 sub undoAll{
-  my ($self, $algoInvocIds, $dbh) = @_;
+  my ($self, $algoInvocIds, $dbh, $commit) = @_;
 
-  $self->initUndo($algoInvocIds, $dbh);
+  $self->initUndo($algoInvocIds, $dbh, $commit);
 
   $self->_undoGene();
   $self->_undoDbXRef();
@@ -292,7 +293,7 @@ sub ignoreFeature {
 sub _deleteFromTable{
    my ($self, $tableName) = @_;
 
-  &GUS::Supported::Plugin::InsertSequenceFeaturesUndo::deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'});
+  &GUS::Supported::Plugin::InsertSequenceFeaturesUndo::deleteFromTable($tableName, $self->{'algInvocationIds'}, $self->{'dbh'},$self->{'commit'});
 }
 
 1;
