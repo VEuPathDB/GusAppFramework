@@ -183,11 +183,7 @@ sub undoSpecialCaseQualifiers{
   foreach my $handler (@handlers){
     no strict 'refs';
     $handler->undoAll($self->{'algInvocationIds'}, $self->{'dbh'}, $self->{'commit'});
-    if ($self->{'commit'} == 1) {
-      print STDERR "Committing undoing special case qualifier $handler->getHandlerName() from $handler->getGusTable()\n";
-      $self->{'dbh'}->commit()
-      || die "Committing undoing special case qualifier $handler->{'name'} failed: " . $self->{'dbh'} ->errstr() . "\n";
-    }
+   
   }
 }
 
