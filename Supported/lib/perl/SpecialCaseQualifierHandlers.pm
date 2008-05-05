@@ -46,7 +46,6 @@ sub initUndo{
 
 sub undoAll{
   my ($self, $algoInvocIds, $dbh, $commit) = @_;
-
   $self->initUndo($algoInvocIds, $dbh, $commit);
 
   $self->_undoGene();
