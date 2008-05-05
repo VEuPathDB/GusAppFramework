@@ -229,33 +229,32 @@ sub _deleteFromTable{
 sub deleteFromTable{
   my ($tableName, $algInvocationIds, $dbh, $commit) = @_;
   my $algoInvocIds = join(', ', @{$algInvocationIds});
-  if ($commit == 1) {
-    my $sql = 
-    "DELETE FROM $tableName
-     WHERE row_alg_invocation_id IN ($algoInvocIds)";
-
-     my $rows = $dbh->do($sql) || die "Failed running sql:\n$sql\n";
-     $rows = 0 if $rows eq "0E0";
-     print STDERR "Deleted $rows rows from $tableName\n";
-     if ($rows > 0){
-       print STDERR "Committing deletions from $tableName\n";
-       $dbh->commit()
-       || die "Committing deletions from $tableName failed: " . $dbh ->errstr() . "\n";
-     }
-  }else{
-      my $sql =
+  my $sql =
       "SELECT COUNT(*) FROM $tableName
        WHERE row_alg_invocation_id IN ($algoInvocIds)";
-      my $stmt = $dbh->prepareAndExecute($sql);
-      if(my ($rows) = $stmt->fetchrow_array()){
+  my $stmt = $dbh->prepareAndExecute($sql);
+  if(my ($rows) = $stmt->fetchrow_array()){
+    if ($commit == 1) {
+       my $sql = 
+       "DELETE FROM $tableName
+       WHERE row_alg_invocation_id IN ($algoInvocIds)";
+       
+       if($rows > 0){
+         $dbh->do($sql) || die "Failed running sql:\n$sql\n";
+   
+         print STDERR "Deleted $rows rows from $tableName\n";              
+         
+         $dbh->commit()
+         || die "Committing deletions from $tableName failed: " . $dbh ->errstr() . "\n";
+          print STDERR "Committed deletions from $tableName\n";
+       }else{
+         print STDERR "Deleted 0 rows from $tableName\n";
+       }
+      }else{
          print STDERR "Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n";
        }
-     
   }
-    
-
 }
-
 
 1;
 
