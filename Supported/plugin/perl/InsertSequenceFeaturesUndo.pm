@@ -237,9 +237,11 @@ sub deleteFromTable{
      my $rows = $dbh->do($sql) || die "Failed running sql:\n$sql\n";
      $rows = 0 if $rows eq "0E0";
      print STDERR "Deleted $rows rows from $tableName\n";
-     print STDERR "Committing deletions from $tableName\n";
-     $dbh->commit()
-      || die "Committing deletions from $tableName failed: " . $dbh ->errstr() . "\n";
+     if ($rows > 0){
+       print STDERR "Committing deletions from $tableName\n";
+       $dbh->commit()
+       || die "Committing deletions from $tableName failed: " . $dbh ->errstr() . "\n";
+     }
   }else{
       my $sql =
       "SELECT COUNT(*) FROM $tableName
