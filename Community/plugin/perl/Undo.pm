@@ -129,6 +129,7 @@ sub run{
    $self->{'algInvocationIds'} = $self->getArg('algInvocationId');
    $self->{'dbh'} = $self->getQueryHandle();
    $self->{'dbh'}->{AutoCommit}=0;
+   $self->{'commit'} = $self->getArg('commit');
 
    my $plugin = eval "require $pluginName; $pluginName->new()";
 
@@ -143,31 +144,40 @@ sub run{
 
    $self->deleteFromTable('Core.AlgorithmInvocation');
 
-   if ($self->getArg('commit')) {
-      $self->log("Committing");
-      $self->{'dbh'}->commit()
-      || die "Commit failed: " . $self->{'dbh'}->errstr() . "\n";
-   } else {
-      $self->log("Rolling back");
-      $self->{'dbh'}->rollback()
-      || die "Rollback failed: " . $self->{'dbh'}->errstr() . "\n";
-   }
+
+
 }
 
 sub deleteFromTable{
    my ($self, $tableName) = @_;
 
    my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
-
-   my $sql = 
-   "DELETE FROM $tableName
-WHERE row_alg_invocation_id IN ($algoInvocIds)";
+   my $sql =
+      "SELECT COUNT(*) FROM $tableName
+       WHERE row_alg_invocation_id IN ($algoInvocIds)";
+   my $stmt = $self->{dbh}->prepareAndExecute($sql);
+   if(my ($rows) = $stmt->fetchrow_array()){
+    if ($self->{commit} == 1) {
+       my $sql = 
+       "DELETE FROM $tableName
+       WHERE row_alg_invocation_id IN ($algoInvocIds)";
+       warn "\n$sql\n" if $self->getArg('verbose');       
+       if($rows > 0){
+         $self->{dbh}->do($sql) || die "Failed running sql:\n$sql\n";
    
-   warn "\n$sql\n" if $self->getArg('verbose');
-   
-   my $rows = $self->{dbh}->do($sql) || die "Failed running sql:\n$sql\n";
-   $rows = 0 if $rows eq "0E0";
-   $self->log("Deleted $rows rows from $tableName");
+         $self->log("Deleted $rows rows from $tableName");              
+         
+         $self->{dbh}->commit()
+         || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
+         $self->log("Committed deletions from $tableName");
+       }else{
+         $self->log("Deleted 0 rows from $tableName");
+       }
+      }else{
+         $self->log("Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n");
+       }
+  }
+  
 }
 
 
