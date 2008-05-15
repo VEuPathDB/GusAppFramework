@@ -12,6 +12,8 @@ use CBIL::Util::Utils;
 sub new {
     my ($class, $pipelineDir, $propertySet, $propertiesFile, $cluster, $testNextPlugin, $justDocumenting, $skipCleanup) = @_;
 
+    umask(2);
+
     my $self = {};
     bless $self, $class;
     $self->{pipelineDir} = $pipelineDir;
