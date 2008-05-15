@@ -56,7 +56,7 @@ if(-e $outFile){
 	print STDERR "Ignoring ".scalar(keys%done)." entries already dumped\n" if $verbose;
 }
 
-open(OUT,">>$outFile");
+open(OUT,">>$outFile") || die "Can't open $outFile to append output\n Check write permission\n";
 
 print STDERR "SQL: $idSQL\n" if $verbose;
 my $count = 0;
