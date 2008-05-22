@@ -176,7 +176,11 @@ sub run {
    my $tally = 1;
    foreach my $fastaFile (@fastaFiles) {
       print STDERR "process " . $tally++ . " / $tot_files files: $fastaFile...\n";
-      open FA, $fastaFile;
+
+      $fastaFile =~ /.gz$/
+      ? open FA, "gunzip -c $fastaFile|"
+      : open FA, $fastaFile;
+
       while ($line = <FA>) {
          chomp($line);
          # Skip blank lines
@@ -349,13 +353,13 @@ sub createStoredProcedure {
 
    my $sp =<<SP;
 CREATE OR REPLACE PROCEDURE append_dots_naseq (seqid NUMBER, seq VARCHAR2) IS
-	clob_loc CLOB;
-   BEGIN
-	SELECT sequence INTO clob_loc
-	FROM DoTS.NASequenceImp where na_sequence_id = seqid
-	FOR UPDATE;
-	DBMS_LOB.WRITEAPPEND(clob_loc, length(seq), seq);
-   END append_dots_naseq;
+    clob_loc CLOB;
+  BEGIN
+    SELECT sequence INTO clob_loc
+    FROM DoTS.NASequenceImp where na_sequence_id = seqid
+    FOR UPDATE;
+    DBMS_LOB.WRITEAPPEND(clob_loc, length(seq), seq);
+  END append_dots_naseq;
 SP
    $dbh->do($sp);
 }
