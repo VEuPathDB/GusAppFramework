@@ -1600,6 +1600,33 @@ sub sqlGetStatementHandle {
 
 =pod
 
+=head4 sqlAsNoResult
+
+Executes the statement, but does not expect a return value.
+
+=cut
+
+sub sqlAsNoResult {
+   my $Self = shift;
+   my $Args = ref $_[0] ? shift : {@_};
+
+   my $Rv;
+
+   eval {
+      if ($Self->sqlGetStatementHandle($Args)) {
+         $Rv = 1;
+      }
+      else {
+         $Rv = 0;
+      }
+   };
+   $@ && $Self->sqlDie($Args->{Sql});
+
+   return $Rv;
+}
+
+=pod
+
 =head4 sqlAsArray
 
 Fetches rows as arrays.  If there is no C<Code> supplied, then the
