@@ -117,7 +117,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6046 $',
+		     cvsRevision => '$Revision: 6047 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -146,7 +146,7 @@ sub run {
   my $taxonId = $self->getTaxonId($dbh, $self->getArg('taxon'));
   my $extDbRls = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
   
-  $resultDescrip .= $self->insertGene($taxonId, $extDbRls, $geneCategoryIds, \%soMapping, $self->getArg('$geneInfoFile'));
+  $resultDescrip .= $self->insertGene($taxonId, $extDbRls, $geneCategoryIds, \%soMapping, $self->getArg('geneInfoFile'));
 
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
@@ -226,7 +226,6 @@ sub insertGene {
   my $countGeneSynonyms = 0;
   my $lineNum = 0;
   my $startLine = defined $self->getArg('restart') ? $self->getArg('restart') : 1;
-
   my $endLine;
   if (defined $self->getArg('testnum')) {
     $endLine = $startLine-1+$self->getArg('testnum');
@@ -253,7 +252,7 @@ sub insertGene {
     if ($arr[$i] eq 'type_of_gene') {
       $headerPos{'geneCategory'} = $i-1;
     }  
-    if ($arr[$i] eq 'Full_name_from_nomenclature_authority '){
+    if ($arr[$i] eq 'Full_name_from_nomenclature_authority'){
       $headerPos{'name'} = $i-1;
     }  
   }
@@ -270,21 +269,33 @@ sub insertGene {
       $self->log("Inserting data from the $lineNum-th line.");
     }
     chomp($line);
-    my $gene= GUS::Model::DoTS::Gene->new({name => $arr[$headerPos{'name'}], symbol => $arr[$headerPos{'symbol'}], gene_category_id => $geneCategoryIds->{$arr[$headerPos{'geneCategory'}]}, description => $arr[$headerPos{'description'}], external_database_release_id => $extDbRls, source_id => $arr[$headerPos{'sourceId'}], taxon_id => $taxonId});
-    if ($soMapping->{$arr[$headerPos{'geneCategory'}]} ne 'NA') {
+    my @arr = split(/\t/, $line);
+    my $gene= GUS::Model::DoTS::Gene->new({gene_symbol => $arr[$headerPos{'symbol'}], external_database_release_id => $extDbRls, source_id => $arr[$headerPos{'sourceId'}], taxon_id => $taxonId});
+    if (defined $soMapping->{$arr[$headerPos{'geneCategory'}]} && $soMapping->{$arr[$headerPos{'geneCategory'}]} ne 'NA') {
       $gene->set('sequence_ontology_id', $soMapping->{$arr[$headerPos{'geneCategory'}]});
     }
+    if ($arr[$headerPos{'name'}] ne '-'){
+	$gene->set('name', $arr[$headerPos{'name'}]);
+      }
+    if ($arr[$headerPos{'description'}] ne '-'){
+	$gene->set('description', $arr[$headerPos{'description'}]);
+      }
+    if ($arr[$headerPos{'geneCategory'}] ne '-'){
+	$gene->set('gene_category_id', $geneCategoryIds->{$arr[$headerPos{'geneCategory'}]},);
+      }
     my @synonyms = split(/\|/, $arr[ $headerPos{'synonyms'}]);
     for (my $i=0; $i<@synonyms; $i++) {
-      my $geneSynonym= GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
-      $geneSynonym->setParent($gene);
-      $countGeneSynonyms++;
-      $self->logDeb(Dumper($geneSynonym) . "\n");
+      if ($synonyms[$i] ne '-'){
+	my $geneSynonym= GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
+	$geneSynonym->setParent($gene);
+	$countGeneSynonyms++;
+	$self->logDebug($geneSynonym->toString() . "\n");
+      }
     }
     
     $gene->submit();
     $countGenes++;
-    $self->logDebug(Dumper($gene) . "\n");
+    $self->logDebug($gene->toString() . "\n");
   }
   $fh->close();
   $resultDescrip .= "Inserted $countGenes entries in DoTS.Gene and $countGeneSynonyms entries in DoTS.GeneSynonym.";
@@ -298,7 +309,7 @@ sub insertGene {
 sub undoTables {
   my ($self) = @_;
 
-  return ('DoTS.GeneSynonum', 'DoTS.Gene');
+  return ('DoTS.GeneSynonym', 'DoTS.Gene');
 }
 
 1;
