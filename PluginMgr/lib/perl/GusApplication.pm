@@ -1152,9 +1152,15 @@ sub openInvocation {
             # process each value for param in (posible) list.  Note that we
             # store value in string_value as well as its native type.
             for (my $v_i = 0; $v_i < @values; $v_i++) {
+
+              my $stringValue = $values[$v_i];
+              if(length $stringValue >= 4000) {
+                $stringValue = substr $stringValue, 0, 3000;
+              }
+
                my $ap_h = { algorithm_param_key_id  => $apk_go->getId,
-                            string_value            => $values[$v_i],
-                            $typed_value_key        => $values[$v_i],
+                            string_value            => $stringValue,
+                            $typed_value_key        => $strinValue,
                             order_num               => $v_i,
                             algorithm_invocation_id => $plugin->getAlgInvocation->getId,
                             is_default              => 0,
