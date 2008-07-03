@@ -1,5 +1,5 @@
 #############################################################################
-##                    InsertHomoloGene.pm
+##                    InsertHomoloGeneDeprecated.pm
 ##
 ## Plug_in to insert the homologene file from HomoloGene into
 ## DoTS.OrthologExperiment, DoTS.OrthologGroup, DoTS.AASequenceDbRef, and
@@ -9,7 +9,7 @@
 ## created August 18, 2005  by Jennifer Dommer
 #############################################################################
 
-package GUS::Supported::Plugin::InsertHomoloGene;
+package GUS::Supported::Plugin::InsertHomoloGeneDeprecated;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 
