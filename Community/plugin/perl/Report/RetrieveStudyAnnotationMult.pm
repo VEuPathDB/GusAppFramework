@@ -414,9 +414,11 @@ sub writeResults {
     if (defined $studies->[$i]->{'studyFactorTypes'} && $studies->[$i]->{'studyFactorTypes'} !~ /^\s*$/) {
       $fh->print(",$studies->[$i]->{'studyFactorTypes'}");
     }
-    if (defined $studies->[$i]->{'taxons'} && $studies->[$i]->{'taxons'} !~ /^\s*$/) {
+    if (defined $studies->[$i]->{'taxons'}) {
       my $taxons = join(",", @{$studies->[$i]->{'taxons'}});
-      $fh->print(",$taxons");
+      if ($taxons !~ /^\s*$/) {
+	$fh->print(",$taxons");
+      }
     }
     if (defined $studies->[$i]->{'bioMaterialCharacteristics'} && $studies->[$i]->{'biomaterialCharacteristics'} !~ /^\s*$/) {
       $fh->print(",$studies->[$i]->{'bioMaterialCharacteristics'}");
