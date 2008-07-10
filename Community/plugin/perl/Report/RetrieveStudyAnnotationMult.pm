@@ -408,9 +408,23 @@ sub writeResults {
   $fh->print("GroupIds\tGroupNames\tStudyId\tStudyName\tAnnotation\n");
 
   $self->logDebug(scalar(@{$studies}));
+
   for (my $i=0; $i<@{$studies}; $i++) {
-    my $taxons = $studies->[$i]->{'taxons'} ? join(",", @{$studies->[$i]->{'taxons'}}) : "";
-    $fh->print("$studies->[$i]->{'groupIds'}\t$studies->[$i]->{'groupNames'}\t$studies->[$i]->{'studyId'}\t$studies->[$i]->{'studyName'}\t$studies->[$i]->{'studyDesignTypes'},$studies->[$i]->{'studyFactorTypes'},$taxons,$studies->[$i]->{'bioMaterialCharacteristics'},$studies->[$i]->{'treatmentTypes'}\n");
+    $fh->print("$studies->[$i]->{'groupIds'}\t$studies->[$i]->{'groupNames'}\t$studies->[$i]->{'studyId'}\t$studies->[$i]->{'studyName'}\t$studies->[$i]->{'studyDesignTypes'}");
+    if (defined $studies->[$i]->{'studyFactorTypes'} && $studies->[$i]->{'studyFactorTypes'} !~ /^\s*$/) {
+      $fh->print(",$studies->[$i]->{'studyFactorTypes'}");
+    }
+    if (defined $studies->[$i]->{'taxons'} && $studies->[$i]->{'taxons'} !~ /^\s*$/) {
+      my $taxons = join(",", @{$studies->[$i]->{'taxons'}});
+      $fh->print(",$taxons");
+    }
+    if (defined $studies->[$i]->{'bioMaterialCharacteristics'} && $studies->[$i]->{'biomaterialCharacteristics'} !~ /^\s*$/) {
+      $fh->print(",$studies->[$i]->{'bioMaterialCharacteristics'}");
+    }
+    if (defined $studies->[$i]->{'treatmentTypes'} && $studies->[$i]->{'treatmentTypes'} !~ /^\s*$/){
+      $fh->print(",$studies->[$i]->{'treatmentTypes'}");
+    }
+    $fh->print("\n");
   } 
   $fh->close();
 }
