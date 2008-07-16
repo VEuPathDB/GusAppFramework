@@ -128,9 +128,9 @@ sub run {
 
   my $dbh = $self->getQueryHandle();
 
-  my $transcriptExonsHash = $self->_makeTranscriptExonsHash();
+  my $transcriptExonsHash = $self->_makeTranscriptExonsHash($extDbRlsId);
 
-  my $transcriptTypeHash = $self->_makeTranscriptTypeHash();
+  my $transcriptTypeHash = $self->_makeTranscriptTypeHash($extDbRlsId);
 
   my $sql = <<EOSQL;
   SELECT na_feature_id
@@ -341,7 +341,7 @@ EOSQL
 
 
 sub _makeTranscriptTypeHash {
-  my ($self) = @_;
+  my ($self, $extDbRlsId) = @_;
 
   my $sql = "
 SELECT s.term_name, t.na_feature_id
@@ -350,6 +350,7 @@ FROM dots.Transcript t,
      sres.SequenceOntology s
 WHERE s.sequence_ontology_id = g.sequence_ontology_id
 AND g.na_feature_id = t.parent_id
+AND t.external_database_release_id = $extDbRlsId
 ";
 
   my $sth = $self->prepareAndExecute($sql);
@@ -362,7 +363,7 @@ AND g.na_feature_id = t.parent_id
 }
 
 sub _makeTranscriptExonsHash {
-  my ($self) = @_;
+  my ($self, $extDbRlsId) = @_;
 
   my $sql = "
 SELECT t.source_id, e.na_feature_id
@@ -371,6 +372,7 @@ FROM dots.Transcript t,
      dots.ExonFeature e
 WHERE t.na_feature_id = rfe.rna_feature_id
 AND e.na_feature_id = rfe.exon_feature_id
+AND t.external_database_release_id = $extDbRlsId
 ORDER BY t.source_id
 ";
 
