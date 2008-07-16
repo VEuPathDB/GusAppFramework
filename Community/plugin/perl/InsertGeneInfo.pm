@@ -296,6 +296,7 @@ sub insertGene {
     $gene->submit();
     $countGenes++;
     $self->logDebug($gene->toString() . "\n");
+    $self->undefPointerCache();
   }
   $fh->close();
   $resultDescrip .= "Inserted $countGenes entries in DoTS.Gene and $countGeneSynonyms entries in DoTS.GeneSynonym.";
