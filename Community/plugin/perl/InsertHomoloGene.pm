@@ -117,7 +117,6 @@ sub new {
 
 sub run {
   my ($self) = @_;
-  my $resultDescrip;
 
   if (defined($self->getArg('testnum')) && $self->getArg('commit')) {
     $self->userError("The --testnum argument can only be provided if COMMIT is OFF.");
@@ -125,7 +124,7 @@ sub run {
   my $dbh = $self->getQueryHandle();
   my $taxa = $self->getTaxa($dbh);
 
-  $resultDescrip .= $self->insertHomoloGene($taxa);
+  my $resultDescrip = $self->insertHomoloGene($taxa);
 
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
