@@ -31,7 +31,7 @@ sub getArgumentsDeclaration {
 	      format => ''
 	     }),
      integerArg({name  => 'arrayDesignId',
-		 descr => 'The RAD array_design_id of the Affymetrix array to load.',
+		 descr => 'The RAD array_design_id of the Affymetrix array to link.',
 		 constraintFunc=> undef,
 		 reqd  => 1,
 		 isList => 0
@@ -165,7 +165,6 @@ sub insertCompositeElementGene {
   if (defined $self->getArg('testnum')) {
     $endLine = $startLine-1+$self->getArg('testnum');
   }
-  my $arrayDesignId =  $self->getArg('arrayDesignId');
   my %positions;
   my $line = <$fh>;
   chomp($line);
