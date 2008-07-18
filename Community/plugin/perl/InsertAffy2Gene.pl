@@ -209,10 +209,10 @@ sub insertCompositeElementGene {
     else {
       my $gene = GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $entrez});
       if ($gene->retrieveFromDB()) {
-	my $compositeElementGene = GUS::Model::RAD::CompositeElementGene->new({});
-	$compositeElementGene->setParent($gene);
 	my  $compositeElement = GUS::Model::RAD::ShortOligoFamily->new({name => $id, array_design_id => $arrayDesignId});
 	if ($compositeElement->retrieveFromDB()) {
+	  my $compositeElementGene = GUS::Model::RAD::CompositeElementGene->new({});
+	  $compositeElementGene->setParent($gene);
 	  $compositeElementGene->setParent($compositeElement);
 	  $compositeElementGene->submit();
 	  $insertCount++;
