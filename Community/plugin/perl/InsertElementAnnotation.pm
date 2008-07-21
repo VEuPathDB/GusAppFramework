@@ -95,7 +95,7 @@ sub new {
     my $argumentDeclaration    = &getArgumentsDeclaration();
     
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: 6072 $',
+		       cvsRevision => '$Revision: 6079 $',
 		       name => ref($self),
 		       revisionNotes => '',
 		       argsDeclaration => $argumentDeclaration,
@@ -180,6 +180,7 @@ sub insertElementAnnotation {
 		$insertCount++;
 	    }
 	}
+	$self->undefPointerCache();
     }
     $resultDescrip .= "Entered $insertCount rows in RAD.ElementAnnotation";
     return ($resultDescrip);
