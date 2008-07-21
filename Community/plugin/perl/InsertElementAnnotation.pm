@@ -95,7 +95,7 @@ sub new {
     my $argumentDeclaration    = &getArgumentsDeclaration();
     
     $self->initialize({requiredDbVersion => 3.5,
-		       cvsRevision => '$Revision: $',
+		       cvsRevision => '$Revision: 6072 $',
 		       name => ref($self),
 		       revisionNotes => '',
 		       argsDeclaration => $argumentDeclaration,
@@ -135,7 +135,7 @@ sub insertElementAnnotation {
     my $dbh = $self->getQueryHandle();
     my $sth = $dbh->prepare("select count(*) from RAD.ElementImp where element_id=?") || die $dbh->errstr;
     
-    my $fh = IO::File->new("<file") || die "Cannot open file $file";
+    my $fh = IO::File->new("<$file") || die "Cannot open file $file";
     my $startLine = defined $self->getArg('restart') ? $self->getArg('restart') : 1;
     my $endLine;
     if (defined $self->getArg('testnum')) {
