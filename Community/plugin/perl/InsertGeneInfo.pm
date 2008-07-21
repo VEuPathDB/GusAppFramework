@@ -285,7 +285,7 @@ sub insertGene {
       }
     my @synonyms = split(/\|/, $arr[ $headerPos{'synonyms'}]);
     for (my $i=0; $i<@synonyms; $i++) {
-      if ($synonyms[$i] ne '-'){
+      if ($synonyms[$i] ne '-' && $synonyms[$i] ne 'null'){
 	my $geneSynonym= GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
 	$geneSynonym->setParent($gene);
 	$countGeneSynonyms++;
