@@ -104,7 +104,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6082 $',
+		     cvsRevision => '$Revision: 6083 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -119,14 +119,14 @@ sub new {
 
 sub run {
   my ($self) = @_;
-
+  
   if (defined($self->getArg('testnum')) && $self->getArg('commit')) {
     $self->userError("The --testnum argument can only be provided if COMMIT is OFF.");
   }
-#  $self->checkArrayDesignId();
-
+  $self->checkArrayDesignId();
+  
   my $resultDescrip = $self->insertCompositeElementGene();
-
+  
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
 }
@@ -138,7 +138,7 @@ sub run {
 sub checkArrayDesignId {
   my ($self) = @_;
   my $arrayDesignId = $self->getArg('arrayDesignId');
-  my $arrayDesign = GUS::Model::RAD::ArrayDesign->new(array_design_id => $arrayDesignId);
+  my $arrayDesign = GUS::Model::RAD::ArrayDesign->new({array_design_id => $arrayDesignId});
   if (!retrieveFromDB($arrayDesign)) {
     $self->userError("The --arrayDesignId provided is not valid.");
   }    
