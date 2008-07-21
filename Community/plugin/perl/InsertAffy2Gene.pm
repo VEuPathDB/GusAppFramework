@@ -104,7 +104,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6083 $',
+		     cvsRevision => '$Revision: 6085 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -139,7 +139,7 @@ sub checkArrayDesignId {
   my ($self) = @_;
   my $arrayDesignId = $self->getArg('arrayDesignId');
   my $arrayDesign = GUS::Model::RAD::ArrayDesign->new({array_design_id => $arrayDesignId});
-  if (!retrieveFromDB($arrayDesign)) {
+  if (!$self->retrieveFromDB($arrayDesign)) {
     $self->userError("The --arrayDesignId provided is not valid.");
   }    
   else {
