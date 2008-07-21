@@ -159,7 +159,7 @@ sub insertCompositeElementGene {
   my $arrayDesignId = $self->getArg('arrayDesignId');
   my $extDbRls = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
 
-  my $fh = IO::File->new("<file") || die "Cannot open file $file";
+  my $fh = IO::File->new("<$file") || die "Cannot open file $file";
   my $startLine = defined $self->getArg('restart') ? $self->getArg('restart') : 1;
   my $endLine;
   if (defined $self->getArg('testnum')) {
