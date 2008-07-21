@@ -104,7 +104,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6080 $',
+		     cvsRevision => '$Revision: 6082 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -123,7 +123,7 @@ sub run {
   if (defined($self->getArg('testnum')) && $self->getArg('commit')) {
     $self->userError("The --testnum argument can only be provided if COMMIT is OFF.");
   }
-  $self->checkArrayDesignId();
+#  $self->checkArrayDesignId();
 
   my $resultDescrip = $self->insertCompositeElementGene();
 
@@ -182,49 +182,50 @@ sub insertCompositeElementGene {
     }   
   }
   while (my $line=<$fh>) {
-    $lineNum++;
-    if ($lineNum<$startLine) {
-      next;
-    }
-    if (defined $endLine && $lineNum>$endLine) {
-      last;
-    }
-    if ($lineNum % 200 == 0) {
-      $self->log("Working on line $lineNum-th.");
-    }
-    chomp($line);
-    if ($line =~ /^\s+$/) {
-      next;
-    }
-    my @arr = split(/\"\s*,\s*\"/, $line);
-    for (my $i=0; $i<@arr; $i++) {
-      $arr[$i] =~ s/^\s+|\s+$//g;
-      $arr[$i] =~ s/\"//g;
-    }
-    my $id = $arr[$positions{'id'}];
-    my $entrez = $arr[$positions{'entrez'}];
-    if ($entrez !~ /^\d+$/) {
-      next;
-    }
-    else {
-      my $gene = GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $entrez});
-      if ($gene->retrieveFromDB()) {
-	my  $compositeElement = GUS::Model::RAD::ShortOligoFamily->new({name => $id, array_design_id => $arrayDesignId});
-	if ($compositeElement->retrieveFromDB()) {
-	  my $compositeElementGene = GUS::Model::RAD::CompositeElementGene->new({});
-	  $compositeElementGene->setParent($gene);
-	  $compositeElementGene->setParent($compositeElement);
-	  $compositeElementGene->submit();
-	  $insertCount++;
-	}
+      $lineNum++;
+      if ($lineNum<$startLine) {
+	  next;
+      }
+      if (defined $endLine && $lineNum>$endLine) {
+	  last;
+      }
+      if ($lineNum % 200 == 0) {
+	  $self->log("Working on line $lineNum-th.");
+      }
+      chomp($line);
+      if ($line =~ /^\s+$/) {
+	  next;
+      }
+      my @arr = split(/\"\s*,\s*\"/, $line);
+      for (my $i=0; $i<@arr; $i++) {
+	  $arr[$i] =~ s/^\s+|\s+$//g;
+	  $arr[$i] =~ s/\"//g;
+      }
+      my $id = $arr[$positions{'id'}];
+      my $entrez = $arr[$positions{'entrez'}];
+      if ($entrez !~ /^\d+$/) {
+	  next;
       }
       else {
-	next;
+	  my $gene = GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $entrez});
+	  if ($gene->retrieveFromDB()) {
+	      my  $compositeElement = GUS::Model::RAD::ShortOligoFamily->new({name => $id, array_design_id => $arrayDesignId});
+	      if ($compositeElement->retrieveFromDB()) {
+		  my $compositeElementGene = GUS::Model::RAD::CompositeElementGene->new({});
+		  $compositeElementGene->setParent($gene);
+		  $compositeElementGene->setParent($compositeElement);
+		  $compositeElementGene->submit();
+		  $insertCount++;
+	      }
+	  }
+	  else {
+	      next;
+	  }
       }
-    }
-    $resultDescrip .= "Entered $insertCount rows in RAD.CompositeElementGene";
-    return ($resultDescrip);
-  }
+      $self->undefPointerCache();
+ }
+  $resultDescrip .= "Entered $insertCount rows in RAD.CompositeElementGene";
+  return ($resultDescrip);
 }
 
 # ----------------------------------------------------------------------
