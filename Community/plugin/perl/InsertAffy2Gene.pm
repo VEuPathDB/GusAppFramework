@@ -37,10 +37,10 @@ sub getArgumentsDeclaration {
 		 isList => 0
 		}),
      stringArg({ name  => 'extDbRlsSpec',
-		  descr => "The ExternalDBRelease specifier for the Taxon.gene_info file to which Entrez Gene Ids should refer. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
-		  constraintFunc => undef,
-		  reqd           => 1,
-		  isList         => 0 }),
+		 descr => "The ExternalDBRelease specifier for the Taxon.gene_info file to which Entrez Gene Ids should refer. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+		 constraintFunc => undef,
+		 reqd           => 1,
+		 isList         => 0 }),
      integerArg({name  => 'restart',
 		 descr => 'Line number in Taxon.gene_info file from which loading should be resumed (line 1 is the first line after the header, empty lines are counted).',
 		 constraintFunc=> undef,
@@ -64,17 +64,17 @@ sub getArgumentsDeclaration {
 
 sub getDocumentation {
   my $purposeBrief = 'Loads Entrez Gene annotation for an Affymetrix array into RAD.CompositeElementGene';
-
+  
   my $purpose = "This plugin reads an Affymetrix annotation file for a specified array and populates RAD.CompositeElementGene for that array.";
-
+  
   my $tablesAffected = [['RAD::CompositeElementGene', 'Enters a row for each annotated composite_element in the specified array.']];
-
+  
   my $tablesDependedOn = [['RAD::ArrayDesign', 'The array of interest'], ['RAD::ShortOligoFamily', 'The composite elements for the specified array'], ['DoTS::Gene', 'The Entrez Genes to which the specified array maps'], ['SRes::ExternalDatabaseRelease', 'The release of the Taxon Entrez Gene external database identifying the Entrez Genes']];
-
+  
   my $howToRestart = "Loading can be resumed using the I<--restart n> argument where n is the line number in the annotation file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted). Alternatively, one can use the plugin GUS::Community::Plugin::Undo to delete all entries inserted by a specific call to this plugin. Then this plugin can be re-run from fresh.";
-
+  
   my $failureCases = "";
-
+  
   my $notes = <<NOTES;
 
 =head1 AUTHOR
@@ -85,9 +85,9 @@ Written by Elisabetta Manduchi.
 
 Copyright Elisabetta Manduchi, Trustees of University of Pennsylvania 2008. 
 NOTES
-
+  
   my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief, tablesAffected=>$tablesAffected, tablesDependedOn=>$tablesDependedOn, howToRestart=>$howToRestart, failureCases=>$failureCases, notes=>$notes};
-
+  
   return $documentation;
 }
 
@@ -99,10 +99,10 @@ sub new {
   my ($class) = @_;
   my $self = {};
   bless($self,$class);
-
+  
   my $documentation = &getDocumentation();
   my $argumentDeclaration    = &getArgumentsDeclaration();
-
+  
   $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision: 6086 $',
 		     name => ref($self),
@@ -158,7 +158,7 @@ sub insertCompositeElementGene {
   my $insertCount = 0;
   my $arrayDesignId = $self->getArg('arrayDesignId');
   my $extDbRls = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
-
+  
   my $fh = IO::File->new("<$file") || die "Cannot open file $file";
   my $startLine = defined $self->getArg('restart') ? $self->getArg('restart') : 1;
   my $endLine;
@@ -182,48 +182,48 @@ sub insertCompositeElementGene {
     }   
   }
   while (my $line=<$fh>) {
-      $lineNum++;
-      if ($lineNum<$startLine) {
-	  next;
-      }
-      if (defined $endLine && $lineNum>$endLine) {
-	  last;
-      }
-      if ($lineNum % 200 == 0) {
-	  $self->log("Working on line $lineNum-th.");
-      }
-      chomp($line);
-      if ($line =~ /^\s+$/) {
-	  next;
-      }
-      my @arr = split(/\"\s*,\s*\"/, $line);
-      for (my $i=0; $i<@arr; $i++) {
-	  $arr[$i] =~ s/^\s+|\s+$//g;
-	  $arr[$i] =~ s/\"//g;
-      }
-      my $id = $arr[$positions{'id'}];
-      my $entrez = $arr[$positions{'entrez'}];
-      if ($entrez !~ /^\d+$/) {
-	  next;
+    $lineNum++;
+    if ($lineNum<$startLine) {
+      next;
+    }
+    if (defined $endLine && $lineNum>$endLine) {
+      last;
+    }
+    if ($lineNum % 200 == 0) {
+      $self->log("Working on line $lineNum-th.");
+    }
+    chomp($line);
+    if ($line =~ /^\s+$/) {
+      next;
+    }
+    my @arr = split(/\"\s*,\s*\"/, $line);
+    for (my $i=0; $i<@arr; $i++) {
+      $arr[$i] =~ s/^\s+|\s+$//g;
+      $arr[$i] =~ s/\"//g;
+    }
+    my $id = $arr[$positions{'id'}];
+    my $entrez = $arr[$positions{'entrez'}];
+    if ($entrez !~ /^\d+$/) {
+      next;
+    }
+    else {
+      my $gene = GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $entrez});
+      if ($gene->retrieveFromDB()) {
+	my  $compositeElement = GUS::Model::RAD::ShortOligoFamily->new({name => $id, array_design_id => $arrayDesignId});
+	if ($compositeElement->retrieveFromDB()) {
+	  my $compositeElementGene = GUS::Model::RAD::CompositeElementGene->new({});
+	  $compositeElementGene->setParent($gene);
+	  $compositeElementGene->setParent($compositeElement);
+	  $compositeElementGene->submit();
+	  $insertCount++;
+	}
       }
       else {
-	  my $gene = GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $entrez});
-	  if ($gene->retrieveFromDB()) {
-	      my  $compositeElement = GUS::Model::RAD::ShortOligoFamily->new({name => $id, array_design_id => $arrayDesignId});
-	      if ($compositeElement->retrieveFromDB()) {
-		  my $compositeElementGene = GUS::Model::RAD::CompositeElementGene->new({});
-		  $compositeElementGene->setParent($gene);
-		  $compositeElementGene->setParent($compositeElement);
-		  $compositeElementGene->submit();
-		  $insertCount++;
-	      }
-	  }
-	  else {
-	      next;
-	  }
+	next;
       }
-      $self->undefPointerCache();
- }
+    }
+    $self->undefPointerCache();
+  }
   $resultDescrip .= "Entered $insertCount rows in RAD.CompositeElementGene";
   return ($resultDescrip);
 }
