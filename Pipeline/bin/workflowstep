@@ -5,17 +5,47 @@ use GUS::Pipeline::Workflow;
 
 my $stepName = $ARGV[0];
 my $metaConfigFile = $ARGV[1];
-my $workflowXmlFile = $ARGV[2];
+my $state = $ARGV[2];
 
-my $workflow = GUS::Pipeline::Workflow->new($metaConfigFile, $workflowXmlFile);
+if (scalar($ARGV) != 3) {
+    usage();
+}
+
+my $workflow = GUS::Pipeline::Workflow->new($metaConfigFile);
 
 my $step = workflow->getStep($stepName);
 
-my $pid = ???;
+if ($state eq 'RUNSTEP') {
+    my $pid = $$;
 
-my $status = $step->runInWrapper($pid);
+    my $status = $step->runInWrapper($pid);
 
-exit($status);
+    exit($status);
+}
+
+else {
+    usage() unless grep(/$state/, 'ready', 'failed', 'do_not_run');
+    $step->forceState($state);
+}
+
+sub usage {
+    print "
+usage: workflowstep stepname metaconfigfile state
+
+allowed states are:
+  ready 
+  failed
+  do_not_run
+
+allowed transitions are:
+  do_not_run --> ready
+  failed     --> ready
+  running    --> failed
+  ready      --> do_not_run
+  on_deck    --> do_not_run
+";
+    exit(1);
+}
 
 
 
