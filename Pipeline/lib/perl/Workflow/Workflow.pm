@@ -1,5 +1,12 @@
 package GUS::Pipeline::Workflow;
 
+use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
+use XML::Simple;
+use DBI;
+use Data::Dumper;
+use CBIL::Util::MultiPropertySet;
+
 # to do
 # - xml validation
 # - include/exclude
@@ -9,18 +16,19 @@ package GUS::Pipeline::Workflow;
 # - reset option (clears running flag)
 # - always re-read config file
 # - dynamically change allowed num running steps
+# - handle changes to graph after running
+# - cascading defaults for config file
 
 my $RUNNING = 'running';
 my $DONE = 'done';
 
 sub new {
-  my ($class, $metaConfigFileName, $workflowXmlFileName) = @_;
+  my ($class, $metaConfigFileName, $showParse) = @_;
 
   my $self = { 
       metaConfigFileName => $metaConfigFileName,
-      workflowXmlFileName => $workflowXmlFileName,
+      showParse => $showParse
   };
-
 
   bless($self,$class);
 
@@ -31,27 +39,31 @@ sub new {
 
 sub run {
 
-    $self->setRunningFlag(); # fail if already running
+    $self->setRunningState(); # fail if already running
 
     $rootStep = $self->getStepGraph();  # parses workflow XML, validates graph
 
-    $rootStep->initializeDb(); # make sure graph is in db (in future, check if xml has changed)
+    $self->validateStepsConfig();
+
+    $rootStep->initializeStepTable();
+
+    $rootStep->initializeDependsTable();
 
     while (1) {
 	my $runningStepsCount = $rootStep->processChangesSinceLastPoll();
 	if ($runningStepsCount == -1) {
-	    $self->setDoneFlag();
+	    $self->setDoneState();
 	    exit(0);
 	}
     
-	if ($runningStepsCount < $self->getMetaConfig()->{numAllowedRunningSteps}) {
+	if ($runningStepsCount < $self->getMetaConfig('numAllowedRunningSteps')) {
 	    $rootStep->runAvailableStep();
 	}
 	sleep(2);
     }
 }
 
-sub setRunningFlag {
+sub setRunningState {
     my ($self) = @_;
 
     my $workflow_id = $self->getId();
@@ -61,9 +73,7 @@ sub setRunningFlag {
     
     $sql = "
 UPDATE apidb.Workflow
-SET (
-  state = $RUNNING
-)
+SET state = $RUNNING
 WHERE workflow_id = $workflow_id
 ";
 
@@ -72,49 +82,86 @@ WHERE workflow_id = $workflow_id
 
 # traverse a workflow XML, making Step objects as we go
 # also parse the step config file, giving each step its individual config
+# NEED TO DEAL WITH START AND END STEPS
 sub getStepGraph {
     my ($self) = @_;
 
     if (!$self->{graph}) {
 
-	my $metaConfig = $self->getMetaConfig();
+	my $stepsConfig = $self->getStepsConfig();
 
-	# following code is per step 
-	my $stepConfig = getStepConfig($stepName);
-	require $stepClass;
-	exec "${stepClass}->new($self, $stepName)";
+	my $workflowXmlFile = $self->getMetaConfig('workflowXmlFile');
+	open(FILE, $workflowXmlFile) || die "can't open workflow XML file '$workflowXmlFile'\n";
+	my $simple = XML::Simple->new();
+
+	# use forcearray so elements with one child are still arrays
+	my $data = $simple->XMLin($sanityFile, forcearray => 1);
+
+	if ($self->{showParse}) {
+	    print Dumper($data);
+	    print "\n\n\n";
+	}
+	my $stepsByName;
+	foreach my $stepxml (@{$data->{workflow}->{step}}) {
+	    die "non-unique step name: '$stepxml->{name}'" 
+		if ($stepsByName->{$stepxml->{name}});
+	    my $step = eval "{require $stepxml->{class};$stepxml->{class}->new($this, $stepxml->{name})}";
+	    $self->error($@) if $@;
+	    $stepsByName->{$stepxml->{name}} = $step;  
+	    $step->{dependsNames} = $stepxml->{depends};
+	    $step->setDbh($self->getDbh());
+	}
+	foreach my $step (values(%{$stepsByName})) {
+	    foreach my $dependName (@{$step->{dependsNames}}) {
+		my $stepName = $step->getName();
+		my $parent = $stepsByName->{$dependName};
+		die "step '$stepName' depends on '$dependName' which is not found" unless $parent;
+		$parent->addChild($step);
+	    }
+	}
     }
     return $self->{graph};
-    
 }
 
-sub setDoneFlag {
+sub setDoneState {
     my ($self) = @_;
 
     my $workflow_id = $self->getId();
     
     my $sql = "
 UPDATE apidb.Workflow
-SET (
-  state = $RUNNING
-)
+SET state = $RUNNING
 WHERE workflow_id = $workflow_id
 ";
 
     $self->runSql($sql);
 }
 
-# parse step config file
-sub getStep {
-    my ($self, $stepName) = @_;
-    my $step = $self->{stepsByName}->{$stepName};
-    $step->setDbh($self->getDbh());
-}
-
 # always re-read this file so pilot can change it while workflow is running
 sub getStepConfig {
-    my ($self, $stepName) = @_;
+    my ($self, $step, $prop) = @_;
+    if (!$self->{stepsConfig}->{$step->getName()}) {
+	my $stepsConfigDecl;
+	$stepsConfigDecl->{$step->getName()} = $step->getConfigurationDeclaration();
+	
+	$self->{stepsConfig}->{$step->getName()}= 
+	    CBIL::Util::MultiPropertySet->new($self->getMetaConfig('stepsConfigFile'),
+					      $stepsConfigDecl, $step->getName());
 
+    }
+    return $self->getStepsConfig()->{$step->getName()}->getProp($prop);
+}
+
+sub validateStepsConfig {
+    my ($self) = @_;
+    
+    my $stepsConfigDecl;
+    foreach my $step (values(%{$self->{stepsByName}})) {
+	$stepsConfigDecl->{$step->getName()} = $step->getConfigurationDeclaration();
+    }
+    
+    CBIL::Util::MultiPropertySet->new($self->getMetaConfig('stepsConfigFile'),
+				      $stepsConfigDecl);
 }
 
 sub getMetaConfigFileName {
@@ -124,23 +171,28 @@ sub getMetaConfigFileName {
 
 # parse meta config file
 sub getMetaConfig {
-    my ($self) = @_;
-    # properties:
-    #  name
-    #  version
-    #  dbLogin
-    #  dbPassword
-    #  dbConnectString
-    #  numAllowedRunningSteps 
-    #  homeDir
-    #  resourcesXmlFile
-    #  stepsConfigFile
-    
-    if (!$self->{metaConfig}) {
-	# use CBIL PropertySet object for this.
-    }
-    return $self->{metaConfig};
+    my ($self, $key) = @_;
 
+    my @properties = 
+	(
+	 # [name, default, description]
+	 ['name', "", ""],
+	 ['version', "", ""],
+	 ['dbLogin', "", ""],
+	 ['dbPassword', "", ""],
+	 ['dbConnectString', "", ""],
+	 ['numAllowedRunningSteps', "", ""],
+	 ['homeDir', "", ""],
+	 ['resourcesXmlFile', "", ""],
+	 ['stepsConfigFile', "", ""],
+	 ['workflowXmlFile', "", ""],
+	);
+
+    if (!$self->{metaConfig}) {
+	$self->{metaConfig} = CBIL::Util::PropertySet->new($self->{metaConfigFileName},
+	    \@properties);
+    }
+    return $self->{metaConfig}->getProp($key);
 }
 
 sub getId {
@@ -154,18 +206,13 @@ select workflow_id from apidb.workflow
 where name = '$name'
 and version = '$version'
 ";
-
-	my $stmt = $self->getDbh()->prepare($sql);
-	$stmt->execute();
-	my ($workflow_id) = $stmt->fetchrow_array();
+	my ($workflow_id) = $self->runSqlQuery_single_array($sql);
 	if (!$workflow_id) {
 	    $sql = "select next from sequence ???";
-	    my $stmt = $self->getDbh()->prepare($sql);
-	    $stmt->execute();
-	    my ($workflow_id) = $stmt->fetchrow_array();
+	    my ($workflow_id) = $self->runSqlQuery_single_array($sql);
 	    $sql = "
-insert into apidb.workflow
-???
+INSERT INTO workflow (workflow_id, name, version)
+VALUES ($workflow_id, '$name', '$version')
 ";
 	    $self->runSql($sql);
 	}
