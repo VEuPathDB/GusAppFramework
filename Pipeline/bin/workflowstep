@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+
+use DBI;
+use GUS::Pipeline::Workflow;
+
+my $stepName = $ARGV[0];
+my $metaConfigFile = $ARGV[1];
+my $workflowXmlFile = $ARGV[2];
+
+my $workflow = GUS::Pipeline::Workflow->new($metaConfigFile, $workflowXmlFile);
+
+my $step = workflow->getStep($stepName);
+
+my $pid = ???;
+
+my $status = $step->runInWrapper($pid);
+
+exit($status);
+
+
+
+
