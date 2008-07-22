@@ -1,8 +1,7 @@
 #!/usr/bin/perl
 
 my $metaConfigFile = $ARGV[0];
-my $workflowXmlFile = $ARGV[1];
 
-my $workflow = GUS::Pipeline::Workflow->new($metaConfigFile, $workflowXmlFile);
+my $workflow = GUS::Pipeline::Workflow->new($metaConfigFile);
  
 $workflow->run();
