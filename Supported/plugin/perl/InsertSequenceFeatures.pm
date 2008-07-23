@@ -356,19 +356,20 @@ sub run {
 
     my $bioperlSeqIO = $self->getSeqIO($inputFile);
     while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
+	if(!($bioperlSeq->molecule =~ /rna/i)){
+	    # use id instead of object because object is zapped by undefPointerCache
+	    my $naSequenceId = $self->processSequence($bioperlSeq, $seqExtDbRlsId);
+	    
+	    $seqCount++;
 
-      # use id instead of object because object is zapped by undefPointerCache
-      my $naSequenceId = $self->processSequence($bioperlSeq, $seqExtDbRlsId);
+	    $self->{mapperSet}->preprocessBioperlSeq($bioperlSeq, $self);
 
-      $seqCount++;
+	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh);
 
-      $self->{mapperSet}->preprocessBioperlSeq($bioperlSeq, $self);
+	    $self->undefPointerCache();
 
-      $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh);
-
-      $self->undefPointerCache();
-
-      last if $self->checkTestNum();
+	    last if $self->checkTestNum();
+	}
     }
 
     $self->log("Processed $inputFile: $format \n\t Seqs $action: $seqCount \n\t Features Inserted: $self->{fileFeatureCount} \n\t Feature Trees Inserted: $self->{fileFeatureTreeCount}");
