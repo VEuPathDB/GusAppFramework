@@ -1,7 +1,43 @@
 #!/usr/bin/perl
 
-my $metaConfigFile = $ARGV[0];
+my $metaConfigFile = shift @ARGV
+my @report = @ARGV;
+
+usage unless $metaConfigFile;
 
 my $workflow = GUS::Pipeline::Workflow->new($metaConfigFile);
- 
-$workflow->run();
+
+if (scalar(@report)) {
+    if ($report[0] eq 'state') {
+	$workflow->reportState();
+    } else {
+	$workflow->reportSteps(\@report);
+    }
+} else {
+    $workflow->run();
+}
+
+sub usage {
+    print "
+usage:  workflow metaconfigfile [report_options]
+
+if report_options is set, don't run.  just print a report.
+
+report_options can be 'state' which reports a brief summary of workflow state
+
+or, it can be a list of desired step states to report, eg 'RUNNING FAILED',
+
+Examples:
+
+ run a workflow:
+   % workflow myMetaFile
+
+ quick report of workflow state
+   % workflow myMetaFile state
+
+ show all failed and running steps
+   % workflow myMetaFile FAILED RUNNING
+
+";
+    exit(1);
+}

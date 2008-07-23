@@ -32,22 +32,59 @@ sub new {
 
   bless($self,$class);
 
-  $self->initDb();  # write a row in the db for this workflow (unless already there)
-
   return $self;
 }
 
-sub run {
+# very light reporting of state of workflow
+sub reportState {
+    my ($self) = @_;
 
-    $self->setRunningState(); # fail if already running
+    $self->getDbState();
+
+    print 
+"Workflow '$self->{name}' version '$self->{version}
+workflow_id = $self->{id}
+state       = $self->{state}
+process_id  = $self->{process_id}
+start_time  = $self->{start_time}
+end_time    = $self->{end_time}
+'\n\n";
+}
+
+sub reportSteps {
+    my ($self, $desiredStates) = @_;
 
     $rootStep = $self->getStepGraph();  # parses workflow XML, validates graph
 
-    $self->validateStepsConfig();
+    $self->initDb($rootStep);  # write workflow to db, if not already there
+    
+    $self->reportState();
 
-    $rootStep->initializeStepTable();
+    my @sortedStepNames = sort(keys(@{$self->{stepsByName}}));
+    foreach my $desiredState (@$desiredState) {
+	print "=============== $desiredState steps ================\n\n";
+	foreach my $stepName (@sorteStepNames) {
+	    my $step = $self->{stepsByName}->{$stepName};
+	    if ($step->getState() eq $desiredState) {
+		$step->toString();
+		print "\n";
+	    }
+	}
+    }
 
-    $rootStep->initializeDependsTable();
+    $rootStep->toString();
+}
+
+sub run {
+    my ($self) = @_;
+
+    $rootStep = $self->getStepGraph();  # parses workflow XML, validates graph
+
+    $self->initDb($rootStep);  # write workflow to db, if not already there
+
+    $self->setRunningState(); # fail if already running
+
+    $self->validateStepsConfig();  # validate the config of all steps.
 
     while (1) {
 	my $runningStepsCount = $rootStep->processChangesSinceLastPoll();
@@ -73,7 +110,7 @@ sub setRunningState {
     
     $sql = "
 UPDATE apidb.Workflow
-SET state = $RUNNING
+SET state = $RUNNING, process_id = $$
 WHERE workflow_id = $workflow_id
 ";
 
@@ -130,17 +167,22 @@ sub setDoneState {
     
     my $sql = "
 UPDATE apidb.Workflow
-SET state = $RUNNING
+SET state = $DONE
 WHERE workflow_id = $workflow_id
 ";
 
     $self->runSql($sql);
 }
 
-# always re-read this file so pilot can change it while workflow is running
+# get an individual config property for a step
+# if we haven't already read the step's config, do so, validating as well
 sub getStepConfig {
     my ($self, $step, $prop) = @_;
-    if (!$self->{stepsConfig}->{$step->getName()}) {
+
+    $self->{stepsConfig} = {} unless $self->{stepsConfig};
+
+    # acquire step config if we don't already have it
+    if (!$self->{stepsConfig}->{$step->getName()) {
 	my $stepsConfigDecl;
 	$stepsConfigDecl->{$step->getName()} = $step->getConfigurationDeclaration();
 	
@@ -149,17 +191,21 @@ sub getStepConfig {
 					      $stepsConfigDecl, $step->getName());
 
     }
-    return $self->getStepsConfig()->{$step->getName()}->getProp($prop);
+
+    return $self->{stepsConfig}->{$step->getName()}->getProp($prop);
 }
 
+# read all steps config and validate
 sub validateStepsConfig {
     my ($self) = @_;
     
+    # get hash of all step config declarations
     my $stepsConfigDecl;
     foreach my $step (values(%{$self->{stepsByName}})) {
 	$stepsConfigDecl->{$step->getName()} = $step->getConfigurationDeclaration();
     }
     
+    # this object will do the validation
     CBIL::Util::MultiPropertySet->new($self->getMetaConfig('stepsConfigFile'),
 				      $stepsConfigDecl);
 }
@@ -195,29 +241,52 @@ sub getMetaConfig {
     return $self->{metaConfig}->getProp($key);
 }
 
+# write the workflow and steps to the db
+# for now, assume the workflow steps don't change for the life of a workflow
+sub initDb {
+    my ($self, $rootStep) = @_;
+    
+    return if $self->getId();
+
+    # write workflow row
+    my $name = $self->getMetaConfig('name');
+    my $version = $self->getMetaConfig('version');
+    $sql = "select apidb.Workflow_sq.nextval from dual";
+    $self->{workflow_id} = $self->runSqlQuery_single_array($sql);
+    $sql = "
+INSERT INTO workflow (workflow_id, name, version)
+VALUES ($self->{workflow_id}, '$name', '$version')
+";
+    $self->runSql($sql);
+
+    # write all steps
+    $rootStep->initializeStepTable();
+
+    $rootStep->initializeDependsTable();
+}
+
 sub getId {
     my ($self) = @_;
+    $self->getDbState();
+    return $self->{workflow_id};
+}
 
-    my $name = $self->getMetaConfig()->{name};
-    my $name = $self->getMetaConfig()->{version};
+sub getDbState {
+    my ($self) = @_;
     if (!$self->{workflow_id}) {
+	my $name = $self->getMetaConfig('name');
+	my $version = $self->getMetaConfig('version');
 	my $sql = "
-select workflow_id from apidb.workflow
+select workflow_id, state, process_id, start_time, end_time
+from apidb.workflow
 where name = '$name'
 and version = '$version'
 ";
-	my ($workflow_id) = $self->runSqlQuery_single_array($sql);
-	if (!$workflow_id) {
-	    $sql = "select next from sequence ???";
-	    my ($workflow_id) = $self->runSqlQuery_single_array($sql);
-	    $sql = "
-INSERT INTO workflow (workflow_id, name, version)
-VALUES ($workflow_id, '$name', '$version')
-";
-	    $self->runSql($sql);
-	}
+	($self->{workflow_id}, $self->{state}, $self->{process_id}
+	 $self->{start_time}, $self->{end_time}) 
+	    = $self->runSqlQuery_single_array($sql);	
     }
-    return $self->{workflow_id};
+    die "workflow '$name' version '$version' not in database" unless $self->{workflow_id};
 }
 
 sub getDbh {

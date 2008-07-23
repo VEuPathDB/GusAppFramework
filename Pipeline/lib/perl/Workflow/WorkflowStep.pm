@@ -1,10 +1,10 @@
 package GUS::Pipeline::WorkflowStep;
 
-my $READY = 'ready';      # my parents are not done yet  -- default state
-my $ON_DECK = 'on_deck';  # my parents are done, but there is no slot for me
-my $DO_NOT_RUN = 'do_not_run';  # pilot doesn't want this step to start
-my $FAILED = 'failed';
-my $DONE = 'done';
+my $READY = 'READY';      # my parents are not done yet  -- default state
+my $ON_DECK = 'ON_DECK';  # my parents are done, but there is no slot for me
+my $DO_NOT_RUN = 'DO_NOT_RUN';  # pilot doesn't want this step to start
+my $FAILED = 'FAILED';
+my $DONE = 'DONE';
 
 # controller
 #  READY   --> ON_DECK
@@ -34,7 +34,6 @@ sub new {
       workflow => $workflow,
       name => $stepName,
       children => []
-	  
   };
 
   bless($self,$class);
@@ -72,19 +71,20 @@ sub getName {
 
 sub getId () {
     my ($self) = @_;
+    
+    $self->getDbState() if (!$self->{id});
+    return $self->{id};
+}
 
-    my $name = $self->getName();
-    my $workflow_id = $self->{workflow}->getId();
-    my $sql = "
-select workflow_step_id from workflowstep 
-where name = $name 
-and workflow_id = $workflow_id
-";
-    my ($id) =  runSqlQuery_single_array($sql);
-    return $id;
+sub getState () {
+    my ($self) = @_;
+    
+    $self->getDbState() if (!$self->{state});
+    return $self->{state};
 }
 
 # write this step to the db, if not already there.
+# called during workflow initialization
 sub initializeStepTable {
     my ($self, $stmt) = @_;
 
@@ -136,11 +136,10 @@ sub handleChangesSinceLastPoll {
 	return -1;
     }
 
-    my ($state, $handled, $processId) = $self->getDbState();
+    $self->getDbState();
 
-    # only the controller can transition into these states, so no need to handle change
-    if ($state eq $RUNNING) { 
-	system("ps -p $processId");
+    if ($self->{state} eq $RUNNING) { 
+	system("ps -p $self->{process_id}");
 	my $status = $? >> 8;
 	if ($status) {
 	    $self->forceFail();
@@ -148,115 +147,50 @@ sub handleChangesSinceLastPoll {
 	}
 	return 1; 
     }
-    if ($state eq $ON_DECK) { return 0; }
+    if ($self->{state} eq $ON_DECK) { return 0; }
 
-    # the wrapper or GUI can change the state to FAILED, DO_NOT_RUN, READY or DONE.
-    # here if we have already seen this state
-    if ($handled) {
-	if ($state eq $FAILED || $state eq $DO_NOT_RUN) {
+    # the wrapper or pilot UI can change the state to FAILED, DO_NOT_RUN, READY or DONE.
+    # here if unchanged since last time
+    if ($self->{handled}) {
+	if ($self->{state} eq $FAILED || $self->{state} eq $DO_NOT_RUN) {
 	    return 0;
 	} 
 	# kids can only be active if this step is done
-	elsif ($state eq $DONE) { 
+	elsif ($self->{state} eq $DONE) { 
 	    my $count = 0;
 	    foreach my $childStep (@{$self->getChildren()}) {
 		$count += $childStep->handleChangesSinceLastPoll();
 	    }
 	    return $count;
-	} elsif ($state eq $READY) {
+	} elsif ($self->{state} eq $READY) {
 	    $self->maybeGoToOnDeck();
 	}
     }
 
-    else {  # this step has not been handled yet
-    if ($state eq $DONE) {
-	$self->handleDone();
-	return 0;
-    } elsif ($state eq $FAILED) {
-	$self->handleFailed();
+    else {  # this step has been changed by wrapper or pilot UI. log change.
+	$self->log("step '$self->{stepName}' $self->{state}");
+	$self->setHandledFlag();
 	return 0;
     }
-    } elsif ($state eq $DO_NOT_RUN) {
-	$self->handleDoNotRun();
-	return 0;
-    }
-    } elsif ($state eq $READY) {
-	$self->handleReady();
-	return 0;
-    }
-}
-
-# if this step is ready, and all parents are done, transition to ON_DECK
-sub maybeGoToOnDeck {
-    my ($self) = @_;
-
-    foreach my $parent (@{$self->getParents()}) {
-	my ($state, $handled) = $parent->getDbState();
-	return unless $state eq $DONE;
-    }
-    my $sql = "
-UPDATE apidb.WorkflowStep
-SET 
-  state = '$ON_DECK',
-  state_handled = 1
-WHERE workflow_step_id = $id
-AND state = '$READY'
-";
-    $self->runSql($sql);   
 }
 
 sub handleRunning {
     my ($self) = @_;
-    my $sql = "select start_time, process_id from apidb.WorkflowStep where workflow_step_id = $id";
-    my ($time, $processId) = runSqlQuery_single_array($sql);
-    $self->log("step '$self->{stepName}' started, with process id '$processId'");
+    $self->log("step '$self->{stepName}' started, with process id '$self->{processId}'");
     $self->setHandledFlag($RUNNING);
 }
 
-sub handleDone {
-    my ($self) = @_;
-    my $sql = "select end_time from apidb.WorkflowStep where workflow_step_id = $id";
-    my ($time) = runSqlQuery_single_array();
-    $self->log("step '$self->{stepName}' done");
-    $self->setHandledFlag($DONE);
-}
-
-sub handleReady {
-    my ($self) = @_;
-    my $sql = "select end_time from apidb.WorkflowStep where workflow_step_id = $id";
-    my ($time) = runSqlQuery_single_array();
-    $self->log("step '$self->{stepName}' ready");
-    $self->setHandledFlag($READY);
-}
-
-sub handleFailed {
-    my ($self) = @_;
-    my $sql = "select end_time from apidb.WorkflowStep where workflow_step_id = $id";
-    my ($time) = runSqlQuery_single_array();
-    $self->log("step '$self->{stepName}' failed");
-    $self->setHandledFlag($FAILED);
-}
-
-sub handleDoNotRun {
-    my ($self) = @_;
-    my $sql = "select end_time from apidb.WorkflowStep where workflow_step_id = $id";
-    my ($time) = runSqlQuery_single_array();
-    $self->log("step '$self->{stepName}' do not run");
-    $self->setHandledFlag($DO_NOT_RUN);
-}
-
 sub setHandledFlag {
-    my ($self, $state) = @_;
+    my ($self) = @_;
 
     # check that state is still as expected, to avoid theoretical race condition
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET state_handled = 1;
-WHERE workflow_step_id = $id
-AND state = '$state'
+WHERE workflow_step_id = $self->{id}
+AND state = '$self->{state}'
 ";
     $self->runSql($sql);
-
 }
 
 sub forceFail {
@@ -321,17 +255,35 @@ AND (state = '$READY' OR state = '$ON_DECK')
     
 }
 
+# if this step is ready, and all parents are done, transition to ON_DECK
+sub maybeGoToOnDeck {
+    my ($self) = @_;
+
+    foreach my $parent (@{$self->getParents()}) {
+	my ($state, $handled) = $parent->getDbState();
+	return unless $state eq $DONE;
+    }
+    my $sql = "
+UPDATE apidb.WorkflowStep
+SET 
+  state = '$ON_DECK',
+  state_handled = 1
+WHERE workflow_step_id = $id
+AND state = '$READY'
+";
+    $self->runSql($sql);   
+}
+
 # try to run a single ON_DECK step
 sub runAvailableStep {
     my ($self) = @_;
 
-    my ($state, $handled) = $self->getDbState();
     my $foundOne;
-    if ($state eq $ON_DECK) {
+    if ($self->{state} eq $ON_DECK) {
 	$self->forkAndRun();
 	$foundOne = 1;
     } 
-    elsif ($state eq $DONE) {
+    elsif ($self->{state} eq $DONE) {
 	foreach my $childStep (@{$self->getChildren()}) {
 	    $foundOne = $childStep->runAvailableStep();
 	    last if $foundOne;
@@ -343,8 +295,15 @@ sub runAvailableStep {
 sub getDbState {
     my ($self) = @_;
 
-    my $sql = "select state, state_handled, process_id from workflowstep where id = $id";
-    return runSqlQuery_single_array();
+    my $sql = "
+SELECT workflow_step_id, host_machine, wrapper_process_id, state,
+       state_handled, process_id, start_time, end_time
+FROM workflowstep
+WHERE id = $id";
+    ($self->{workflow_step_id}, $self->{host_machine}, $self->{wrapper_process_id}, 
+     $self->{state}, $self->{state_handled}, $self->{process_id},
+     $self->{start_time}, $self->{end_time})= runSqlQuery_single_array();
+    return ($state, $handled, $pid);
 }
 
 sub forkAndRun {
@@ -360,25 +319,25 @@ sub forkAndRun {
 sub runInWrapper {
     my ($self, $pid) = @_;
 
-    my $id = $self->getId();
-    
+    my $workflow_id = $self->{workflow}->getId();
     my $process_id = $$;
 
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET 
-  state = $RUNNING,
-  state_handled = 0,
+  state = '$RUNNING',
+  state_handled = 1,
   process_id = $process_id,
   start_time = $start_time
 )
-WHERE workflow_step_id = $id
+WHERE name = $self->{name} 
+AND workflow_id = $workflow_id
+AND state = '$ON_DECK'
 ";
 
     $self->runSql($sql);
 
     exec {
-	$self->validateConfig();
 	$self->run();
     }
 
@@ -394,7 +353,9 @@ SET (
   end_time = $end_time
   state_handled = 0
 )
-WHERE workflow_step_id = $id
+WHERE name = $self->{name} 
+AND workflow_id = $workflow_id
+AND state = '$RUNNING'
 ";
     $self->runSql($sql);
 }
@@ -410,4 +371,27 @@ sub runSql {
 sub runSqlQuery_single_array {
     my ($self,$sql) = @_;
     return $self->{workflow}->runSqlQuery_single_array($sql);
+}
+
+sub toString {
+    my ($self) = @_;
+
+    $self->getDbState();
+
+    my @parentsNames;
+    foreach my $parent (@{self->getParents()}) {
+	push(@parentsNames, $parent->getName());
+    }
+
+    my $depends = join(", ", @parentsNames);
+    print "
+name:       - $self->{name}
+id:         = $self->{id}
+state:      = $self->{state}
+handled:    = $self->{state_handled}
+process_id: = $self->{process_id}
+start_time  = $self->{start_time}
+end_time    = $self->{end_time}
+depends     = $depends
+";
 }
