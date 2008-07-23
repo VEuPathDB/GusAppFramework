@@ -24,7 +24,7 @@ if ($state eq 'RUNSTEP') {
 }
 
 else {
-    usage() unless grep(/$state/, 'ready', 'failed', 'do_not_run');
+    usage() unless grep(/$state/, 'READY', 'FAILED', 'DO_NOT_RUN');
     $step->forceState($state);
 }
 
@@ -33,16 +33,16 @@ sub usage {
 usage: workflowstep stepname metaconfigfile state
 
 allowed states are:
-  ready 
-  failed
-  do_not_run
+  READY 
+  FAILED
+  DO_NOT_RUN
 
 allowed transitions are:
-  do_not_run --> ready
-  failed     --> ready
-  running    --> failed
-  ready      --> do_not_run
-  on_deck    --> do_not_run
+  DO_NOT_RUN --> READY
+  FAILED     --> READY
+  RUNNING    --> FAILED
+  READY      --> DO_NOT_RUN
+  ON_DECK    --> DO_NOT_RUN
 ";
     exit(1);
 }
