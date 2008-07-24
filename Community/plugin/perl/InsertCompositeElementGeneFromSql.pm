@@ -21,13 +21,18 @@ sub getArgumentsDeclaration {
   my $argumentDeclaration  =
     [
      fileArg({name => 'sqlFile',
-	      descr => 'The full path of the file containing sql returning (composite_element_id, gene_id) pairs. One sql statement per line',
+	      descr => 'The full path of a tab-delimited file whose 1st column contains sqls returning (composite_element_id, gene_id) pairs. One sql statement per line with variable DoTS.Gene.external_database_release_id',
 	      constraintFunc=> undef,
 	      reqd  => 1,
 	      isList => 0,
 	      mustExist => 1,
 	      format => ''
 	     }),
+     stringArg({ name  => 'extDbRlsSpec',
+		 descr => "The ExternalDBRelease specifier for the Taxon.gene_info file to which Entrez Gene Ids should refer. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+		 constraintFunc => undef,
+		 reqd           => 1,
+		 isList         => 0 }),
      integerArg({name  => 'testnum',
 		 descr => 'The number of entries to load. Not to be used in commit mode.',
 		 constraintFunc=> undef,
@@ -45,7 +50,7 @@ sub getArgumentsDeclaration {
 
 sub getDocumentation {
   my $purposeBrief = 'Loads Entrez Gene annotation for an array into RAD.CompositeElementGene using sql queries.';
-
+  
   my $purpose = "This plugin runs a set of sql queries returning (composite_element_id, gene_id) pairs and populates RAD.CompositeElementGene.";
 
   my $tablesAffected = [['RAD::CompositeElementGene', 'Enters a row for each pair returned by an sql query.']];
@@ -123,14 +128,16 @@ sub insertCompositeElementGene {
   my $file = $self->getArg('sqlFile');
   my $fh = IO::File->new("<$file") || die "Cannot open file $file\n.";
   my $dbh = $self->getQueryHandle();
+  my $extDbRls = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
 
-  while (my $sql=<$fh>) {
+  while (my $line=<$fh>) {
     my $lineNum2 = 0;
-    $self->log("$sql");
-    chomp($sql);
-    
+    chomp($line);
+    my ($sql, @rest) = split(/\t/, $line);
+ 
+    $self->log("$sql\n");
     my $sth = $dbh->prepare("$sql") || die $dbh->errstr;
-    $sth->execute() || die $dbh->errstr;
+    $sth->execute($extDbRls) || die $dbh->errstr;
     while (my ($ceId, $geneId)=$sth->fetchrow_array()) {
       $lineNum1++;
       $lineNum2++;
