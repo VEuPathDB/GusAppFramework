@@ -1,9 +1,11 @@
 #!/usr/bin/perl
 
+use lib "$ENV{GUS_HOME}/lib/perl";
+
 my $metaConfigFile = shift @ARGV
 my @report = @ARGV;
 
-usage unless $metaConfigFile;
+&usage unless $metaConfigFile;
 
 my $workflow = GUS::Pipeline::Workflow->new($metaConfigFile);
 
