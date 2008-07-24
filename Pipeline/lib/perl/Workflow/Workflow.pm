@@ -235,3 +235,45 @@ and version = '$version'
     }
 }
 
+sub log {
+    my ($self, $msg) = @_;
+    
+    open(LOG, ">>$self->{pipelineDir}/logs/pipeline.log");
+    print LOG $msg;
+    close (LOG);
+}
+
+sub _createPipelineDir {
+    my ($self) = @_;
+
+    $self->runCmd("mkdir -p $self->{pipelineDir}/logs") unless -e "$self->{pipelineDir}/logs";
+    $self->runCmd("mkdir -p $self->{pipelineDir}/signals") unless -e "$self->{pipelineDir}/signals";
+    $self->runCmd("mkdir -p $self->{pipelineDir}/skip") unless -e "$self->{pipelineDir}/skip";
+    $self->runCmd("mkdir -p $self->{pipelineDir}/plugins") unless -e "$self->{pipelineDir}/plugins";
+    $self->runCmd("mkdir -p $self->{pipelineDir}/externalFiles") unless -e "$self->{pipelineDir}/externalFiles";
+}
+
+sub _dieIfAlreadyRunning {
+    my ($self) = @_;
+
+    if (-e "$self->{pipelineDir}/signals/running") {
+	print STDERR 
+"
+ERROR:  Looks like '$self->{program} $self->{propertiesFile}' is already running (found signal running).
+        If it isn't really running, rm $self->{pipelineDir}/signals/running
+
+";
+	exit(1);
+    }
+}
+
+sub documentStep {
+  my ($self, $signal, $documentInfo, $doitProperty) = @_;
+
+  return if (!$self->{justDocumenting}
+	     || ($doitProperty
+		 && $self->{propertySet}->getProp($doitProperty) eq "no"));
+
+  my $documenter = GUS::Pipeline::StepDocumenter->new($signal, $documentInfo);
+  $documenter->printXml();
+}

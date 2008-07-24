@@ -3,7 +3,6 @@ package GUS::Pipeline::Workflow::Base;
 use strict;
 use lib "$ENV{GUS_HOME}/lib/perl";
 use DBI;
-use Data::Dumper;
 use CBIL::Util::MultiPropertySet;
 
 # methods shared by the perl controller and perl step wrapper.
@@ -19,7 +18,6 @@ sub new {
 
   return $self;
 }
-
 
 sub getDbh {
     my ($self) = @_;
@@ -65,4 +63,29 @@ sub getStepConfig {
     }
 
     return $self->{stepsConfig}->{$step->getName()}->getProp($prop);
+}
+
+sub getMetaConfig {
+    my ($self, $key) = @_;
+
+    my @properties = 
+	(
+	 # [name, default, description]
+	 ['name', "", ""],
+	 ['version', "", ""],
+	 ['dbLogin', "", ""],
+	 ['dbPassword', "", ""],
+	 ['dbConnectString', "", ""],
+	 ['numAllowedRunningSteps', "", ""],
+	 ['homeDir', "", ""],
+	 ['resourcesXmlFile', "", ""],
+	 ['stepsConfigFile', "", ""],
+	 ['workflowXmlFile', "", ""],
+	);
+
+    if (!$self->{metaConfig}) {
+	$self->{metaConfig} = CBIL::Util::PropertySet->new($self->{metaConfigFileName},
+							   \@properties);
+    }
+    return $self->{metaConfig}->getProp($key);
 }
