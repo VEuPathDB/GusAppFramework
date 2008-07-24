@@ -1,10 +1,13 @@
-package GUS::Pipeline::WorkflowStepController;
+package GUS::Pipeline::WorkflowStep;
+
+use strict;
 
 my $READY = 'READY';      # my parents are not done yet  -- default state
 my $ON_DECK = 'ON_DECK';  # my parents are done, but there is no slot for me
 my $DO_NOT_RUN = 'DO_NOT_RUN';  # pilot doesn't want this step to start
 my $FAILED = 'FAILED';
 my $DONE = 'DONE';
+my $RUNNING = 'RUNNING';
 
 # controller
 #  READY   --> ON_DECK
@@ -78,7 +81,7 @@ sub getId () {
 
 sub getState () {
     my ($self) = @_;
-    
+
     $self->getDbState() if (!$self->{state});
     return $self->{state};
 }
@@ -91,7 +94,7 @@ sub initializeStepTable {
     return if $self->{inStepTable};
     my $name = $self->getName();
     my $workflow_id = $self->{workflow}->getId();
-    $sql = "
+    my $sql = "
 INSERT INTO workflowstep (workflow_step_id, workflow_id, name, state, state_handled)
 VALUES ((select next from sequence ???), $workflow_id, ?, '$READY', 1)
 ";
@@ -110,14 +113,14 @@ VALUES ((select next from sequence ???), $workflow_id, ?, '$READY', 1)
 sub initializeDependsTable {
     my ($self,$stmt) = @_;
     return if $self->{inDependsTable};
-    $sql = "
+    my $sql = "
 INSERT INTO workflowstepdepends (parent_id, child_id)
 VALUES ((select next from sequence ???), ?, ?)
 ";
     if (!$stmt) {
 	$stmt = $self->getDbh()->prepare($sql);
     }
-    
+
     $self->{inDependsTable} = 1;
     foreach my $childStep (@{$self->getChildren()}) {
 	$stmt->execute($self->getId(), $childStep->getId());
@@ -206,7 +209,7 @@ UPDATE apidb.WorkflowStep
 SET 
   state = '$FAILED',
   state_handled = 1
-WHERE workflow_step_id = $id
+WHERE workflow_step_id = $self->{id}
 AND state = '$RUNNING'
 ";
     $self->runSql($sql);   
@@ -227,7 +230,7 @@ UPDATE apidb.WorkflowStep
 SET 
   state = '$READY',
   state_handled = 1
-WHERE workflow_step_id = $id
+WHERE workflow_step_id = $self->{id}
 AND (state = '$RUNNING' OR state = '$FAILED')
 ";
     $self->runSql($sql);   
@@ -247,7 +250,7 @@ UPDATE apidb.WorkflowStep
 SET 
   state = '$DO_NOT_RUN',
   state_handled = 1
-WHERE workflow_step_id = $id
+WHERE workflow_step_id = $self->{id}
 AND (state = '$READY' OR state = '$ON_DECK')
 ";
     $self->runSql($sql);   
@@ -268,7 +271,7 @@ UPDATE apidb.WorkflowStep
 SET 
   state = '$ON_DECK',
   state_handled = 1
-WHERE workflow_step_id = $id
+WHERE workflow_step_id = $self->{id}
 AND state = '$READY'
 ";
     $self->runSql($sql);   
@@ -299,17 +302,17 @@ sub getDbState {
 SELECT workflow_step_id, host_machine, wrapper_process_id, state,
        state_handled, process_id, start_time, end_time
 FROM workflowstep
-WHERE id = $id";
+WHERE name = $self->{name}
+AND workflow_id = $self->{workflow_id}";
     ($self->{workflow_step_id}, $self->{host_machine}, $self->{wrapper_process_id}, 
      $self->{state}, $self->{state_handled}, $self->{process_id},
      $self->{start_time}, $self->{end_time})= runSqlQuery_single_array();
-    return ($state, $handled, $pid);
 }
 
 sub forkAndRun {
     my ($self) = @_;
 
-    my $metaConfigFile = $self->{$workflow}->getMetaConfigFileName();
+    my $metaConfigFile = $self->{workflow}->getMetaConfigFileName();
     system("workflowstep $self->{stepName} $metaConfigFile RUNSTEP &");
     $self->log("running step '$self->{stepName}'");
 }
