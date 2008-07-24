@@ -1,32 +1,27 @@
 #!/usr/bin/perl
 
-use DBI;
+use strict;
 use GUS::Pipeline::Workflow;
+
+# these should be imported from someplace, not duplicated here
+my $READY = 'READY';      # my parents are not done yet  -- default state
+my $ON_DECK = 'ON_DECK';  # my parents are done, but there is no slot for me
+my $DO_NOT_RUN = 'DO_NOT_RUN';  # pilot doesn't want this step to start
+my $FAILED = 'FAILED';
+my $DONE = 'DONE';
 
 my $stepName = $ARGV[0];
 my $metaConfigFile = $ARGV[1];
 my $state = $ARGV[2];
 
-if (scalar($ARGV) != 3) {
-    usage();
-}
+usage unless scalar($ARGV) == 3;
 
 my $workflow = GUS::Pipeline::Workflow->new($metaConfigFile);
 
 my $step = workflow->getStep($stepName);
 
-if ($state eq 'RUNSTEP') {
-    my $pid = $$;
-
-    my $status = $step->runInWrapper($pid);
-
-    exit($status);
-}
-
-else {
-    usage() unless grep(/$state/, 'READY', 'FAILED', 'DO_NOT_RUN');
-    $step->forceState($state);
-}
+usage() unless grep(/$state/, $READY, $FAILED, $DO_NOT_RUN);
+$step->forceState($state);
 
 sub usage {
     print "
