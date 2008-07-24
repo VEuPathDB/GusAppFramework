@@ -1,7 +1,9 @@
 #!/usr/bin/perl
 
+use lib "$ENV{GUS_HOME}/lib/perl";
+
 use strict;
-use GUS::Pipeline::Workflow;
+use GUS::Pipeline::Workflow::Workflow;
 
 # these should be imported from someplace, not duplicated here
 my $READY = 'READY';      # my parents are not done yet  -- default state
@@ -14,9 +16,9 @@ my $stepName = $ARGV[0];
 my $metaConfigFile = $ARGV[1];
 my $state = $ARGV[2];
 
-usage unless scalar($ARGV) == 3;
+&usage unless scalar($ARGV) == 3;
 
-my $workflow = GUS::Pipeline::Workflow->new($metaConfigFile);
+my $workflow = GUS::Pipeline::Workflow::Workflow->new($metaConfigFile);
 
 my $step = workflow->getStep($stepName);
 
