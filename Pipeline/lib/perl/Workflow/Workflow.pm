@@ -72,6 +72,8 @@ sub run {
 
     $self->validateStepsConfig();  # validate the config of all steps.
 
+    $self->initHomeDir();
+
     while (1) {
 	my $runningStepsCount = $rootStep->processChangesSinceLastPoll();
 	if ($runningStepsCount == -1) {
@@ -92,6 +94,7 @@ sub setRunningState {
     my $workflow_id = $self->getId();
     my $sql = "select state from apidb.workflow where workflow_id = $workflow_id";
     my ($state) = runSqlQuery_single_array($sql);
+
     $self->error("already running") if ($state eq $RUNNING);
     
     $sql = "
@@ -237,34 +240,21 @@ and version = '$version'
 
 sub log {
     my ($self, $msg) = @_;
-    
-    open(LOG, ">>$self->{pipelineDir}/logs/pipeline.log");
+
+    my $homeDir = $self->getMetaConfig('homeDir');
+ 
+    open(LOG, ">>$homeDir/logs/workflow.log");
     print LOG $msg;
     close (LOG);
 }
 
-sub _createPipelineDir {
+sub initHomeDir {
     my ($self) = @_;
 
-    $self->runCmd("mkdir -p $self->{pipelineDir}/logs") unless -e "$self->{pipelineDir}/logs";
-    $self->runCmd("mkdir -p $self->{pipelineDir}/signals") unless -e "$self->{pipelineDir}/signals";
-    $self->runCmd("mkdir -p $self->{pipelineDir}/skip") unless -e "$self->{pipelineDir}/skip";
-    $self->runCmd("mkdir -p $self->{pipelineDir}/plugins") unless -e "$self->{pipelineDir}/plugins";
-    $self->runCmd("mkdir -p $self->{pipelineDir}/externalFiles") unless -e "$self->{pipelineDir}/externalFiles";
-}
+    my $homeDir = $self->getMetaConfig('homeDir');
 
-sub _dieIfAlreadyRunning {
-    my ($self) = @_;
-
-    if (-e "$self->{pipelineDir}/signals/running") {
-	print STDERR 
-"
-ERROR:  Looks like '$self->{program} $self->{propertiesFile}' is already running (found signal running).
-        If it isn't really running, rm $self->{pipelineDir}/signals/running
-
-";
-	exit(1);
-    }
+    $self->runCmd("mkdir -p $homeDir/steps") unless -e "$homeDir/steps";
+    $self->runCmd("mkdir -p $homeDir/externalFiles") unless -e "$homeDir/externalFiles";
 }
 
 sub documentStep {
