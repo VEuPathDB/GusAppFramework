@@ -2,7 +2,7 @@
 
 use lib "$ENV{GUS_HOME}/lib/perl";
 
-my $metaConfigFile = shift @ARGV
+my $metaConfigFile = shift @ARGV;
 my @report = @ARGV;
 
 &usage unless $metaConfigFile;
