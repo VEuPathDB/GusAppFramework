@@ -1,7 +1,6 @@
 package GUS::Pipeline::Workflow::Base;
 
 use strict;
-use lib "$ENV{GUS_HOME}/lib/perl";
 use DBI;
 use CBIL::Util::MultiPropertySet;
 
