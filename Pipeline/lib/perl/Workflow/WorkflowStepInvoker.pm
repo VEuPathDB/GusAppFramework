@@ -6,6 +6,7 @@ my $ON_DECK = 'ON_DECK';  # my parents are done, but there is no slot for me
 my $DO_NOT_RUN = 'DO_NOT_RUN';  # pilot doesn't want this step to start
 my $FAILED = 'FAILED';
 my $DONE = 'DONE';
+my $RUNNING = 'RUNNING';
 
 @ISA = qw(GUS::Pipeline::Workflow::Base);
 use strict;
@@ -41,6 +42,8 @@ AND state = '$ON_DECK'
 
     $self->runSql($sql);
 
+    chdir $self->getStepDir();
+
     exec {
 	$self->run();
     }
@@ -58,20 +61,31 @@ SET (
   state_handled = 0
 )
 WHERE name = $self->{name} 
-AND workflow_id = $workflow_id
+AND workflow_id = $workflowId
 AND state = '$RUNNING'
 ";
     $self->runSql($sql);
 }
 
 
-sub _runPlugin {
-    my ($self, $signal, $plugin, $args, $msg, $doitProperty) = @_;
+sub getStepDir {
+  my ($self) = @_;
 
-    return if $self->startStep($msg, $signal, $doitProperty);
-    
-    my $err = "$self->{pipelineDir}/logs/$signal.err";
-    my $out = "$self->{pipelineDir}/logs/$signal.out";
+  if (!$self->{stepDir}) {
+    my $homeDir = $self->getMetaConfig('homeDir');
+    my $stepDir = "$homeDir/steps/$self->{name}";
+    $self->runCmd("mkdir -p $stepDir") unless -e $stepDir;
+    $self->{stepDir} = $stepDir;
+  }
+  return $self->{stepDir};
+}
+
+sub runPlugin {
+    my ($self, $plugin, $args, $msg, $doitProperty) = @_;
+
+    my $stepDir = $self->getStepDir();
+    my $err = "$stepDir/step.err";
+    my $out = "$stepDir/step.out";
 
     my $comment = $args;
     $comment =~ s/"/\\"/g;
@@ -82,16 +96,6 @@ sub _runPlugin {
 
     my $cmd = "ga $plugin $args --comment \"$comment\"  >> $out 2>> $err";
 
-    $self->runCmd("mkdir -p $self->{pipelineDir}/plugins/$signal");
-    chdir "$self->{pipelineDir}/plugins/$signal";
-
     $self->runCmd($cmd);
-    if ($self->{testNextPlugin} eq "true"){
-	print STDERR "Tested next plugin.  Check $self->{pipelineDir}/logs/$signal" . ".err and $signal" . ".out for results\n\n";
-	$self->_cleanup(1);
-    }
-    else{
-	$self->endStep($signal);
-    }
 }
 
