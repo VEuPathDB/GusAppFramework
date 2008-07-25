@@ -129,7 +129,7 @@ sub insertElementGene {
   my $extDbRls = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
 
   my $dbh = $self->getQueryHandle();
-  my $sth = $dbh->prepare("select ea.element_id, ea.value from RAD.ElementAnnotation ea, RAD.Spot s where s.array_design_id=$arrayDesignId and s.element_id=ea.element_id and ea.name='Entrez Gene Id'") || die $dbh->errstr;
+  my $sth = $dbh->prepare("select ea.element_id, ea.value from RAD.ElementAnnotation ea, RAD.ElementImp s where s.array_design_id=$arrayDesignId and s.element_id=ea.element_id and ea.name='Entrez Gene Id'") || die $dbh->errstr;
 
   $sth->execute() || $dbh->errstr;
   while (my ($elementId, $entrez) = $sth->fetchrow_array()) {
