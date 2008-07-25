@@ -177,6 +177,7 @@ sub insertHomoloGene {
     }
     if ($lineNum % 200 == 0) {
       $self->log("Working on line $lineNum-th.");
+      $self->undefPointerCache();
     }
     chomp($line);
     if ($line =~ /^\s+$/) {
