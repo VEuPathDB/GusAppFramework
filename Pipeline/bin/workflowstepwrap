@@ -7,7 +7,9 @@ my $workflowId = $ARGV[3];
 
 usage() unless scalar($ARGV) == 4;
 
-my $step = eval "{require $stepClass;$stepClass->new($stepName, $metaConfigFile, $workflowId)}";
+my $s = "{require $stepClass;$stepClass->new($metaConfigFile)}";
+my $step = eval $s;
+$self->error($@) if $@;
 
 my $status = $step->runInWrapper($workflowId, $stepName);
 

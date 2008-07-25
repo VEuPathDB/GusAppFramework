@@ -3,6 +3,7 @@ package GUS::Pipeline::Workflow::Base;
 use strict;
 use DBI;
 use CBIL::Util::MultiPropertySet;
+use CBIL::Util::PropertySet;
 
 # methods shared by the perl controller and perl step wrapper.
 # any other language implementation would presumably need equivalent code
@@ -21,17 +22,17 @@ sub new {
 sub getDbh {
     my ($self) = @_;
     if (!$self->{dbh}) {
-	my $metaConfig = $self->getMetaConfig();
-	my $self->{dbh} = DBI->connect($metaConfig->{dbConnectString},
-				       $metaConfig->{dbLogin},
-				       $metaConfig->{dbPassword}) or die DBI::errstr;
+	$self->{dbh} = DBI->connect($self->getMetaConfig('dbConnectString'),
+				    $self->getMetaConfig('dbLogin'),
+				    $self->getMetaConfig('dbPassword'))
+	  or die DBI::errstr;
     }
     return $self->{dbh};
 }
 
 sub runSql {
     my ($self,$sql) = @_;
-    my $dbh = $self->{workflow}->getDbh();
+    my $dbh = $self->getDbh();
     my $stmt = $dbh->prepare("$sql") or die DBI::errstr;
     $stmt->execute() or die DBI::errstr;
 }
@@ -53,7 +54,7 @@ sub getStepConfig {
     # acquire step config if we don't already have it
     if (!$self->{stepsConfig}->{$step->getName()}) {
 	my $stepsConfigDecl;
-	$stepsConfigDecl->{$step->getName()} = $step->getConfigurationDeclaration();
+	$stepsConfigDecl->{$step->getName()} = $step->getConfigDeclaration();
 
 	$self->{stepsConfig}->{$step->getName()}= 
 	    CBIL::Util::MultiPropertySet->new($self->getMetaConfig('stepsConfigFile'),
@@ -62,6 +63,11 @@ sub getStepConfig {
     }
 
     return $self->{stepsConfig}->{$step->getName()}->getProp($prop);
+}
+
+sub getMetaConfigFileName {
+    my ($self) = @_;
+    return $self->{metaConfigFileName};
 }
 
 sub getMetaConfig {
@@ -75,7 +81,6 @@ sub getMetaConfig {
 	 ['dbLogin', "", ""],
 	 ['dbPassword', "", ""],
 	 ['dbConnectString', "", ""],
-	 ['numAllowedRunningSteps', "", ""],
 	 ['homeDir', "", ""],
 	 ['resourcesXmlFile', "", ""],
 	 ['stepsConfigFile', "", ""],
@@ -88,3 +93,28 @@ sub getMetaConfig {
     }
     return $self->{metaConfig}->getProp($key);
 }
+
+sub runCmd {
+    my ($self, $cmd) = @_;
+
+    my $output = `$cmd`;
+    my $status = $? >> 8;
+    $self->error("Failed with status $status running: \n$cmd") if ($status);
+    return $output;
+}
+
+sub runCmdInBackground {
+    my ($self, $cmd) = @_;
+
+    system("$cmd &");
+    my $status = $? >> 8;
+    $self->error("Failed running '$cmd' with stderr:\n $!") if ($status);
+}
+
+sub error {
+    my ($self, $msg) = @_;
+
+    die "$msg\n\n";
+}
+
+1;

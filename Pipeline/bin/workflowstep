@@ -27,19 +27,22 @@ $step->forceState($state);
 
 sub usage {
     print "
-usage: workflowstep stepname metaconfigfile state
 
-allowed states are:
-  READY 
-  FAILED
-  DO_NOT_RUN
+Change the state of a workflow step.
 
-allowed transitions are:
-  DO_NOT_RUN --> READY
-  FAILED     --> READY
-  RUNNING    --> FAILED
-  READY      --> DO_NOT_RUN
-  ON_DECK    --> DO_NOT_RUN
+Usage: workflowstep stepname metaconfigfile state
+
+Allowed states are:
+  $READY
+  $FAILED
+  $DO_NOT_RUN
+
+Allowed transitions are:
+  $DO_NOT_RUN --> $READY
+  $FAILED     --> $READY
+  $RUNNING    --> $FAILED
+  $READY      --> $DO_NOT_RUN
+  $ON_DECK    --> $DO_NOT_RUN
 ";
     exit(1);
 }

@@ -1,13 +1,21 @@
 #!/usr/bin/perl
 
+use strict;
 use lib "$ENV{GUS_HOME}/lib/perl";
+use GUS::Pipeline::Workflow::Workflow;
 
 my $metaConfigFile = shift @ARGV;
-my @report = @ARGV;
+my $numStepsAllowed;
+my @report;
+if ($ARGV[0] =~ /\d+/) {
+  $numStepsAllowed = $ARGV[0];
+} else {
+  @report = @ARGV;
+}
 
-&usage unless $metaConfigFile;
+&usage unless $metaConfigFile && ($numStepsAllowed || scalar(@report));
 
-my $workflow = GUS::Pipeline::Workflow->new($metaConfigFile);
+my $workflow = GUS::Pipeline::Workflow::Workflow->new($metaConfigFile);
 
 if (scalar(@report)) {
     if ($report[0] eq 'state') {
@@ -16,23 +24,29 @@ if (scalar(@report)) {
 	$workflow->reportSteps(\@report);
     }
 } else {
-    $workflow->run();
+    $workflow->run($numStepsAllowed);
 }
 
 sub usage {
     print "
-usage:  workflow metaconfigfile [report_options]
 
-if report_options is set, don't run.  just print a report.
+Run a workflow, or, print a report about a workflow.
 
-report_options can be 'state' which reports a brief summary of workflow state
 
-or, it can be a list of desired step states to report, eg 'RUNNING FAILED',
+Usage:  workflow metaconfigfile <allowed_running_steps | report_options>
+
+Where:
+  allowed_running_steps:  number of steps that can run simultaneously
+  report_options:         either 'state' which reports a brief summary of workflow state
+                          or, a list of desired step states to report, eg 'RUNNING FAILED'
+
+Supply either allowed_running_steps or report_options (not both).  If report_options
+is set, don't run, just print a report.
 
 Examples:
 
  run a workflow:
-   % workflow myMetaFile
+   % workflow myMetaFile 3
 
  quick report of workflow state
    % workflow myMetaFile state
