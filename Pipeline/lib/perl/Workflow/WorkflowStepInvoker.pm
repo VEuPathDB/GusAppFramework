@@ -1,4 +1,4 @@
-package GUS::Pipeline::WorkflowStep;
+package GUS::Pipeline::Workflow::WorkflowStepInvoker;
 
 # these should be imported from someplace, not duplicated here
 my $READY = 'READY';      # my parents are not done yet  -- default state
@@ -10,7 +10,7 @@ my $RUNNING = 'RUNNING';
 
 @ISA = qw(GUS::Pipeline::Workflow::Base);
 use strict;
-use lib "$ENV{GUS_HOME}/lib/perl";
+use GUS::Pipeline::Workflow::Base;
 
 #
 # Super class of workflow steps written in perl, and called by the wrapper
