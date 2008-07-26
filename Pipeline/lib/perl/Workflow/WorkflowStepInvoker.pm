@@ -16,28 +16,22 @@ use GUS::Pipeline::Workflow::Base;
 # Super class of workflow steps written in perl, and called by the wrapper
 #
 
-# get a single configuration property value
-sub getConfig {
-    my ($self, $propName) = @_;
-    return $self->getStepConfig($propName);
-}
-
 sub runInWrapper {
     my ($self, $workflowId, $stepName) = @_;
+
+    $self->{name} = $stepName;
 
     my $process_id = $$;
 
     my $sql = "
 UPDATE apidb.WorkflowStep
-SET 
+SET
   state = '$RUNNING',
   state_handled = 1,
   process_id = $process_id,
   start_time = SYSDATE
-)
-WHERE name = $stepName
+WHERE name = '$stepName'
 AND workflow_id = $workflowId
-AND state = '$ON_DECK'
 ";
 
     $self->runSql($sql);
@@ -54,19 +48,31 @@ AND state = '$ON_DECK'
     }
     $sql = "
 UPDATE apidb.WorkflowStep
-SET (
+SET
   state = $state
   process_id = NULL
   end_time = SYSDATE
   state_handled = 0
-)
-WHERE name = $self->{name} 
+WHERE name = '$stepName'
 AND workflow_id = $workflowId
 AND state = '$RUNNING'
 ";
     $self->runSql($sql);
 }
 
+
+sub getConfig {
+    my ($self, $prop) = @_;
+
+    if (!$self->{stepConfig}) {
+	$self->{stepsConfig} =
+	    CBIL::Util::MultiPropertySet->new($self->getMetaConfig('stepsConfigFile'),
+					      $self->getConfigDeclaration(),
+					      $self->{name});
+    }
+
+    return $self->{stepConfig}->getProp($self->{name}, $prop);
+}
 
 sub getStepDir {
   my ($self) = @_;
