@@ -44,27 +44,6 @@ sub runSqlQuery_single_array {
     return $stmt->fetchrow_array();
 }
 
-# get an individual config property for a step
-# if we haven't already read the step's config, do so, validating as well
-sub getStepConfig {
-    my ($self, $step, $prop) = @_;
-
-    $self->{stepsConfig} = {} unless $self->{stepsConfig};
-
-    # acquire step config if we don't already have it
-    if (!$self->{stepsConfig}->{$step->getName()}) {
-	my $stepsConfigDecl;
-	$stepsConfigDecl->{$step->getName()} = $step->getConfigDeclaration();
-
-	$self->{stepsConfig}->{$step->getName()}= 
-	    CBIL::Util::MultiPropertySet->new($self->getMetaConfig('stepsConfigFile'),
-					      $stepsConfigDecl, $step->getName());
-
-    }
-
-    return $self->{stepsConfig}->{$step->getName()}->getProp($prop);
-}
-
 sub getMetaConfigFileName {
     my ($self) = @_;
     return $self->{metaConfigFileName};

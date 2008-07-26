@@ -34,23 +34,18 @@ my $END = 'END';
 
 
 sub new {
-  my ($class, $stepName) = @_;
+  my ($class, $stepName, $workflow, $invokerClass) = @_;
 
-  my $self = { 
-      name => $stepName,
-      children => [],
-      parents => []
-  };
+  my $self = {
+	      workflow=> $workflow,
+	      name => $stepName,
+	      invokerClass => $invokerClass,
+	      children => [],
+	      parents => []
+	     };
 
   bless($self,$class);
   return $self;
-}
-
-############## called by controller ###################################
-
-sub setWorkflow {
-    my ($self, $workflow) = @_;
-    $self->{workflow} = $workflow;
 }
 
 sub addChild {
@@ -74,20 +69,14 @@ sub getParents {
     return $self->{parents};
 }
 
-# get a single configuration property value
-sub getConfig {
-    my ($self, $propName) = @_;
-    return $self->{workflow}->getStepConfig($self, $propName);
-}
-
 sub getName {
     my ($self) = @_;
     return $self->{name};
 }
 
-sub setName {
-    my ($self, $name) = @_;
-    $self->{name} = $name;
+sub getInvokerClass {
+    my ($self) = @_;
+    return $self->{invokerClass};
 }
 
 sub getId () {
@@ -209,7 +198,7 @@ sub handleChangesSinceLastPoll {
 
 sub handleRunning {
     my ($self) = @_;
-    $self->log("step '$self->{stepName}' started, with process id '$self->{processId}'");
+    $self->log("step '$self->{name}' started, with process id '$self->{processId}'");
     $self->setHandledFlag($RUNNING);
 }
 
@@ -244,7 +233,7 @@ AND state = '$RUNNING'
 ";
     $self->runSql($sql);   
     my $reason = $byPilot? "by pilot" : "(can't find wrapper process)";
-    $self->log("step '$self->{stepName}' forced to '$FAILED' from '$state' $reason");
+    $self->log("step '$self->{name}' forced to '$FAILED' from '$state' $reason");
 }
 
 sub forceReady {
@@ -263,7 +252,7 @@ WHERE workflow_step_id = $self->{workflow_step_id}
 AND (state = '$RUNNING' OR state = '$FAILED')
 ";
     $self->runSql($sql);
-    $self->log("step '$self->{stepName}' forced to '$READY' from '$state' by pilot");
+    $self->log("step '$self->{name}' forced to '$READY' from '$state' by pilot");
 }
 
 sub forceDoNotRun {
@@ -282,7 +271,7 @@ WHERE workflow_step_id = $self->{workflow_step_id}
 AND (state = '$READY' OR state = '$ON_DECK')
 ";
     $self->runSql($sql);
-    $self->log("step '$self->{stepName}' forced to '$DO_NOT_RUN' from '$state' by pilot");
+    $self->log("step '$self->{name}' forced to '$DO_NOT_RUN' from '$state' by pilot");
 }
 
 # if this step is ready, and all parents are done, transition to ON_DECK
@@ -290,9 +279,10 @@ sub maybeGoToOnDeck {
     my ($self) = @_;
 
     foreach my $parent (@{$self->getParents()}) {
-	my ($state, $handled) = $parent->getDbState();
-	return unless $state eq $DONE;
+      print STDERR "parent: $parent->{name}\n";
+	return unless $parent->getDbState() eq $DONE;
     }
+    $self->log("step '$self->{name}' $ON_DECK");
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET 
@@ -315,7 +305,7 @@ sub runOnDeckStep {
     } 
     elsif ($self->{state} eq $DONE) {
 	foreach my $childStep (@{$self->getChildren()}) {
-	    $foundOne = $childStep->runAvailableStep();
+	    $foundOne = $childStep->runOnDeckStep();
 	    last if $foundOne;
 	}
     }
@@ -335,14 +325,17 @@ AND workflow_id = $workflow_id";
     ($self->{workflow_step_id}, $self->{host_machine}, $self->{process_id},
      $self->{state}, $self->{state_handled},
      $self->{start_time}, $self->{end_time})= $self->runSqlQuery_single_array($sql);
+    return $self->{state};
 }
 
 sub forkAndRun {
     my ($self) = @_;
 
     my $metaConfigFile = $self->{workflow}->getMetaConfigFileName();
-    system("workflowstepwrap $self->{stepName} $metaConfigFile RUNSTEP &");
-    $self->log("running step '$self->{stepName}'");
+    my $workflowId = $self->{workflow}->getId();
+    $self->log("running step '$self->{name}'");
+    print STDERR "workflowstepwrap $self->{name} '$self->{invokerClass}' $metaConfigFile $workflowId\n";
+    system("workflowstepwrap $self->{name} '$self->{invokerClass}' $metaConfigFile $workflowId &");
 }
 
 
@@ -374,7 +367,7 @@ sub toString {
     }
 
     my $depends = join(", ", @parentsNames);
-    print "
+    return "
 name:       $self->{name}
 id:         $self->{workflow_step_id}
 state:      $self->{state}
