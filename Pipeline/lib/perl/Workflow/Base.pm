@@ -8,10 +8,10 @@ use CBIL::Util::PropertySet;
 # methods shared by the perl controller and perl step wrapper.
 # any other language implementation would presumably need equivalent code
 sub new {
-  my ($class, $metaConfigFileName) = @_;
+  my ($class, $homeDir) = @_;
 
-  my $self = { 
-      metaConfigFileName => $metaConfigFileName,
+  my $self = {
+      homeDir => $homeDir,
   };
 
   bless($self,$class);
@@ -22,9 +22,9 @@ sub new {
 sub getDbh {
     my ($self) = @_;
     if (!$self->{dbh}) {
-	$self->{dbh} = DBI->connect($self->getMetaConfig('dbConnectString'),
-				    $self->getMetaConfig('dbLogin'),
-				    $self->getMetaConfig('dbPassword'))
+	$self->{dbh} = DBI->connect($self->getWorkflowConfig('dbConnectString'),
+				    $self->getWorkflowConfig('dbLogin'),
+				    $self->getWorkflowConfig('dbPassword'))
 	  or die DBI::errstr;
     }
     return $self->{dbh};
@@ -44,12 +44,12 @@ sub runSqlQuery_single_array {
     return $stmt->fetchrow_array();
 }
 
-sub getMetaConfigFileName {
+sub getHomeDir {
     my ($self) = @_;
-    return $self->{metaConfigFileName};
+    return $self->{homeDir};
 }
 
-sub getMetaConfig {
+sub getWorkflowConfig {
     my ($self, $key) = @_;
 
     my @properties = 
@@ -60,17 +60,14 @@ sub getMetaConfig {
 	 ['dbLogin', "", ""],
 	 ['dbPassword', "", ""],
 	 ['dbConnectString', "", ""],
-	 ['homeDir', "", ""],
-	 ['resourcesXmlFile', "", ""],
-	 ['stepsConfigFile', "", ""],
-	 ['workflowXmlFile', "", ""],
 	);
 
-    if (!$self->{metaConfig}) {
-	$self->{metaConfig} = CBIL::Util::PropertySet->new($self->{metaConfigFileName},
-							   \@properties);
+    if (!$self->{workflowConfig}) {
+      my $workflowConfigFile = "$self->{homeDir}/config/workflow.prop";
+      $self->{workflowConfig} =
+	CBIL::Util::PropertySet->new($workflowConfigFile, \@properties);
     }
-    return $self->{metaConfig}->getProp($key);
+    return $self->{workflowConfig}->getProp($key);
 }
 
 sub runCmd {

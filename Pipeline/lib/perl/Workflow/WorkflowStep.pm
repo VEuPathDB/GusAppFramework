@@ -2,9 +2,9 @@ package GUS::Pipeline::Workflow::WorkflowStep;
 
 use strict;
 
+# allowed states
 my $READY = 'READY';      # my parents are not done yet  -- default state
 my $ON_DECK = 'ON_DECK';  # my parents are done, but there is no slot for me
-my $DO_NOT_RUN = 'DO_NOT_RUN';  # pilot doesn't want this step to start
 my $FAILED = 'FAILED';
 my $DONE = 'DONE';
 my $RUNNING = 'RUNNING';
@@ -24,14 +24,13 @@ my $END = 'END';
 #  (state_handled --> false)
 
 # Pilot UI (GUI or command line)
-#  READY      --> DO_NOT_RUN
-#  ON_DECK    --> DO_NOT_RUN
 #  RUNNING    --> FAILED  (or, just kill the process and let the controller change the state)
-#  DO_NOT_RUN --> READY
 #  FAILED     --> READY  (ie, the pilot has fixed the problem)
 #  (state_handled --> false)
 #  [note: going from done to ready is the provence of undo]
 
+# Pilot UI (GUI or command line)
+#  OFFLINE --> 1/0  (change not allowed if step is running)
 
 sub new {
   my ($class, $stepName, $workflow, $invokerClass) = @_;
@@ -116,8 +115,8 @@ sub initializeStepTable {
       return if $count;
 
       my $sql = "
-INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled)
-VALUES (apidb.workflowstep_sq.nextval, $workflow_id, ?, ?, 1)
+INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, off_line)
+VALUES (apidb.workflowstep_sq.nextval, $workflow_id, ?, ?, 1, 0)
 ";
       $stmt = $self->{workflow}->getDbh()->prepare($sql);
       $state = $DONE;
@@ -158,48 +157,59 @@ sub handleChangesSinceLastPoll {
 	return -1;
     }
 
+    my $prevState = $self->{state};
+    my $prevOffline = $self->{offline};
+
     $self->getDbState();
 
-    if ($self->{state} eq $RUNNING) { 
-	system("ps -p $self->{process_id}");
-	my $status = $? >> 8;
-	if ($status) {
-	    $self->forceFail();
-	    return 0;
-	}
-	return 1;
-    }
-    if ($self->{state} eq $ON_DECK) { return 0; }
-
-    # the wrapper or pilot UI can change the state to FAILED, DO_NOT_RUN, READY or DONE.
+    # the wrapper or pilot UI can change the state to
+    # RUNNING, FAILED, OFFLINE, READY or DONE.
     # here if unchanged since last time
     if ($self->{state_handled}) {
-	if ($self->{state} eq $FAILED || $self->{state} eq $DO_NOT_RUN) {
-	    return 0;
-	}
-	# kids can only be active if this step is done
-	elsif ($self->{state} eq $DONE) {
-	    my $count = 0;
-	    foreach my $childStep (@{$self->getChildren()}) {
-		$count += $childStep->handleChangesSinceLastPoll();
-	    }
-	    return $count;
-	} elsif ($self->{state} eq $READY) {
-	    $self->maybeGoToOnDeck();
-	}
-    }
 
-    else {  # this step has been changed by wrapper or pilot UI. log change.
-	$self->log("step '$self->{name}' $self->{state}");
+      return 0 if $self->{off_line};
+
+      if ($self->{state} eq $RUNNING) {
+	system("ps -p $self->{process_id} > /dev/null");
+	my $status = $? >> 8;
+	if ($status) {
+	  $self->handleMissingProcess();
+	  return 0;
+	}
+	return 1;
+      }
+
+      # kids can only be active if this step is done
+      elsif ($self->{state} eq $DONE) {
+	my $count = 0;
+	foreach my $childStep (@{$self->getChildren()}) {
+	  $count += $childStep->handleChangesSinceLastPoll();
+	}
+	return $count;
+      }
+
+      elsif ($self->{state} eq $READY) {
+	$self->maybeGoToOnDeck();
+      }
+
+      # FAILED, ON_DECK
+      else {
+	return 0;
+      }
+
+    } else { # this step has been changed by wrapper or pilot UI. log change.
+      my $stateMsg = "";
+      my $offlineMsg = "";
+      if ($self->{state} ne $prevState) {
+	$stateMsg = "  $self->{state}";
+      }
+      if ($self->{offline} ne $prevOffline) {
+	$offlineMsg = $self->{offline}? "  OFFLINE" : "  ONLINE";
+      }
+	$self->log("Step '$self->{name}'$stateMsg$offlineMsg");
 	$self->setHandledFlag();
 	return 0;
     }
-}
-
-sub handleRunning {
-    my ($self) = @_;
-    $self->log("step '$self->{name}' started, with process id '$self->{processId}'");
-    $self->setHandledFlag($RUNNING);
 }
 
 sub setHandledFlag {
@@ -211,67 +221,80 @@ UPDATE apidb.WorkflowStep
 SET state_handled = 1
 WHERE workflow_step_id = $self->{workflow_step_id}
 AND state = '$self->{state}'
+AND off_line = $self->{off_line}
 ";
     $self->runSql($sql);
 }
 
-sub forceFail {
-    my ($self, $byPilot) = @_;
-
-    my ($state) = $self->getDbState();
-
-    die "Can't change to '$FAILED' from '$state'" 
-	if ($byPilot && $state ne $RUNNING);
+sub handleMissingProcess {
+    my ($self) = @_;
 
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET 
   state = '$FAILED',
-  state_handled = 1
+  state_handled = 1,
+  process_id = NULL
 WHERE workflow_step_id = $self->{workflow_step_id}
 AND state = '$RUNNING'
 ";
-    $self->runSql($sql);   
-    my $reason = $byPilot? "by pilot" : "(can't find wrapper process)";
-    $self->log("step '$self->{name}' forced to '$FAILED' from '$state' $reason");
+    $self->runSql($sql);
+    $self->log("Step '$self->{name}' $FAILED (can't find wrapper process $self->{process_id})");
 }
 
-sub forceReady {
+# called by pilot UI
+sub pilotKill {
     my ($self) = @_;
 
     my ($state) = $self->getDbState();
-    die "Can't change to '$READY' from '$state'" 
-	unless ($state eq $DO_NOT_RUN || $state eq $FAILED);
+
+    die "Can't change to '$FAILED' from '$state'\n"
+	if ($state ne $RUNNING);
+
+    $self->{workflow}->runCmd("kill -9 $self->{process_id}");
+    $self->pilotLog("Step '$self->{name}' killed");
+}
+
+# called by pilot UI
+sub pilotSetReady {
+    my ($self) = @_;
+
+    my ($state) = $self->getDbState();
+
+    die "Can't change to '$READY' from '$state'\n"
+	unless ($state eq $FAILED);
 
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET 
   state = '$READY',
-  state_handled = 1
+  state_handled = 0
 WHERE workflow_step_id = $self->{workflow_step_id}
-AND (state = '$RUNNING' OR state = '$FAILED')
+AND state = '$FAILED'
 ";
     $self->runSql($sql);
-    $self->log("step '$self->{name}' forced to '$READY' from '$state' by pilot");
+    $self->pilotLog("Step '$self->{name}' set to $READY");
 }
 
-sub forceDoNotRun {
-    my ($self) = @_;
+# called by pilot UI
+sub pilotSetOffline {
+    my ($self, $offline) = @_;
 
     my ($state) = $self->getDbState();
-    die "Can't change to '$DO_NOT_RUN' from '$state'" 
-	unless ($state eq $READY || $state eq $ON_DECK);
+    die "Can't change OFFLINE when '$RUNNING'\n"
+	if ($state eq $RUNNING);
+    my $offline_bool = $offline eq 'offline'? 1 : 0;
 
     my $sql = "
 UPDATE apidb.WorkflowStep
-SET 
-  state = '$DO_NOT_RUN',
-  state_handled = 1
+SET
+  off_line = $offline_bool,
+  state_handled = 0
 WHERE workflow_step_id = $self->{workflow_step_id}
-AND (state = '$READY' OR state = '$ON_DECK')
+AND (state != '$RUNNING')
 ";
     $self->runSql($sql);
-    $self->log("step '$self->{name}' forced to '$DO_NOT_RUN' from '$state' by pilot");
+    $self->pilotLog("Step '$self->{name}' $offline");
 }
 
 # if this step is ready, and all parents are done, transition to ON_DECK
@@ -279,10 +302,9 @@ sub maybeGoToOnDeck {
     my ($self) = @_;
 
     foreach my $parent (@{$self->getParents()}) {
-      print STDERR "parent: $parent->{name}\n";
 	return unless $parent->getDbState() eq $DONE;
     }
-    $self->log("step '$self->{name}' $ON_DECK");
+    $self->log("Step '$self->{name}' $ON_DECK");
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET 
@@ -299,11 +321,11 @@ sub runOnDeckStep {
     my ($self) = @_;
 
     my $foundOne;
-    if ($self->{state} eq $ON_DECK) {
+    if ($self->{state} eq $ON_DECK && !$self->{off_line}) {
 	$self->forkAndRun();
 	$foundOne = 1;
     } 
-    elsif ($self->{state} eq $DONE) {
+    elsif ($self->{state} eq $DONE && !$self->{off_line}) {
 	foreach my $childStep (@{$self->getChildren()}) {
 	    $foundOne = $childStep->runOnDeckStep();
 	    last if $foundOne;
@@ -318,12 +340,12 @@ sub getDbState {
     my $workflow_id = $self->{workflow}->getId();
     my $sql = "
 SELECT workflow_step_id, host_machine, process_id, state,
-       state_handled, start_time, end_time
+       state_handled, off_line, start_time, end_time
 FROM apidb.workflowstep
 WHERE name = '$self->{name}'
 AND workflow_id = $workflow_id";
     ($self->{workflow_step_id}, $self->{host_machine}, $self->{process_id},
-     $self->{state}, $self->{state_handled},
+     $self->{state}, $self->{state_handled}, $self->{off_line},
      $self->{start_time}, $self->{end_time})= $self->runSqlQuery_single_array($sql);
     return $self->{state};
 }
@@ -331,11 +353,10 @@ AND workflow_id = $workflow_id";
 sub forkAndRun {
     my ($self) = @_;
 
-    my $metaConfigFile = $self->{workflow}->getMetaConfigFileName();
+    my $homeDir = $self->{workflow}->getHomeDir();
     my $workflowId = $self->{workflow}->getId();
-    $self->log("running step '$self->{name}'");
-    print STDERR "workflowstepwrap $self->{name} '$self->{invokerClass}' $metaConfigFile $workflowId\n";
-    system("workflowstepwrap $self->{name} '$self->{invokerClass}' $metaConfigFile $workflowId &");
+    $self->log("Invoking step '$self->{name}'");
+    system("workflowstepwrap $homeDir $workflowId $self->{name} '$self->{invokerClass}' &");
 }
 
 
@@ -344,6 +365,17 @@ sub forkAndRun {
 sub log {
     my ($self,$msg) = @_;
     $self->{workflow}->log($msg);
+}
+
+sub pilotLog {
+  my ($self,$msg) = @_;
+
+  my $homeDir = $self->{workflow}->getHomeDir();
+
+  open(LOG, ">>$homeDir/logs/pilot.log")
+    || die "can't open log file '$homeDir/logs/pilot.log'";
+  print LOG localtime() . " $msg\n";
+  close (LOG);
 }
 
 sub runSql {
@@ -371,6 +403,7 @@ sub toString {
 name:       $self->{name}
 id:         $self->{workflow_step_id}
 state:      $self->{state}
+off_line:   $self->{off_line}
 handled:    $self->{state_handled}
 process_id: $self->{process_id}
 start_time: $self->{start_time}
