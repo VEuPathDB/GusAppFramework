@@ -9,8 +9,9 @@ sub run {
 
   my $name = $self->getConfig('name');
   my $wait = $self->getConfig('wait');
+  my $mood = $self->getGlobalConfig('mood');
 
-  $self->runCmd("echo $name");
+  $self->runCmd("echo $name $mood > teststep.out");
   sleep($wait);
 }
 

@@ -33,9 +33,10 @@ sub usage {
 Run a workflow, or, print a report about a workflow.
 
 
-Usage:  workflow metaconfigfile <allowed_running_steps | report_options>
+Usage:  workflow workflow_dir <allowed_running_steps | report_options>
 
 Where:
+  workflow_dir:           the workflow's home directory.  see below
   allowed_running_steps:  number of steps that can run simultaneously
   report_options:         either 'state' which reports a brief summary of workflow state
                           or, a list of desired step states to report, eg 'RUNNING FAILED'
@@ -43,16 +44,33 @@ Where:
 Supply either allowed_running_steps or report_options (not both).  If report_options
 is set, don't run, just print a report.
 
+Home dir must contain the following:
+  config/
+    workflow.prop
+    workflow.xml
+    steps.prop
+    stepsGlobal.prop
+    resources.prop
+
 Examples:
 
  run a workflow:
-   % workflow myMetaFile 3
+   % workflow workflow_dir 3
 
  quick report of workflow state
-   % workflow myMetaFile state
+   % workflow workflow_dir -q
 
- show all failed and running steps
-   % workflow myMetaFile FAILED RUNNING
+ print steps report.  optionally limit to steps in particular states
+   % workflow workflow_dir -s
+   % workflow workflow_dir -s FAILED RUNNING
+
+ print steps report, using the optional do_not_run flag to only include steps
+ that have the flag in the indicated state.
+   % workflow workflow_dir -s0 ON_DECK
+   % workflow workflow_dir -s1 READY ON_DECK
+
+ reset a workflow that died while running
+   % workflow workflow_dir -r
 
 ";
     exit(1);

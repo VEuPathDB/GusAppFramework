@@ -3,46 +3,63 @@
 use lib "$ENV{GUS_HOME}/lib/perl";
 
 use strict;
-use GUS::Pipeline::Workflow::Workflow;
+use GUS::Pipeline::Workflow::WorkflowHandle;
+use GUS::Pipeline::Workflow::WorkflowStep;
 
 # these should be imported from someplace, not duplicated here
 my $READY = 'READY';      # my parents are not done yet  -- default state
 my $ON_DECK = 'ON_DECK';  # my parents are done, but there is no slot for me
-my $DO_NOT_RUN = 'DO_NOT_RUN';  # pilot doesn't want this step to start
 my $FAILED = 'FAILED';
 my $DONE = 'DONE';
+my $RUNNING = 'RUNNING';
 
-my $stepName = $ARGV[0];
-my $metaConfigFile = $ARGV[1];
-my $state = $ARGV[2];
+&usage unless (scalar(@ARGV) >= 3);
 
-&usage unless scalar($ARGV) == 3;
+my $homeDir = $ARGV[0];
+my $stepName = $ARGV[1];
+my $offline;
+my $state;
+if ($ARGV[2] eq 'offline' || $ARGV[2] eq 'online') {
+  $offline = $ARGV[2];
+  $state = $ARGV[3];
+} else {
+  $state = $ARGV[2]
+}
+&usage unless ($offline || ($state eq 'kill' || $state eq 'ready'));
 
-my $workflow = GUS::Pipeline::Workflow::Workflow->new($metaConfigFile);
+my $workflow = GUS::Pipeline::Workflow::WorkflowHandle->new($homeDir);
 
-my $step = workflow->getStep($stepName);
+my $step = GUS::Pipeline::Workflow::WorkflowStep->new($stepName, $workflow);
 
-usage() unless grep(/$state/, $READY, $FAILED, $DO_NOT_RUN);
-$step->forceState($state);
+if ($state eq 'ready') {
+  $step->pilotSetReady();
+} elsif ($state eq 'kill') {
+  $step->pilotKill();
+}
+
+if ($offline) {
+  $step->pilotSetOffline($offline);
+}
 
 sub usage {
     print "
 
-Change the state of a workflow step.
+Change the state and/or offline status of a workflow step.
 
-Usage: workflowstep stepname metaconfigfile state
+Usage: workflowstep workflow_dir stepname [offline|online] [ready|kill]
 
-Allowed states are:
-  $READY
-  $FAILED
-  $DO_NOT_RUN
+Allowed state changes are:
+  $FAILED  --> ready
+  $RUNNING --> kill
 
-Allowed transitions are:
-  $DO_NOT_RUN --> $READY
-  $FAILED     --> $READY
-  $RUNNING    --> $FAILED
-  $READY      --> $DO_NOT_RUN
-  $ON_DECK    --> $DO_NOT_RUN
+Offline status may not be changed when the step is $RUNNING
+
+Examples
+  % workflowstep my_step workflow_dir kill
+
+  % workflowstep my_step workflow_dir online
+
+  % workflowstep my_step workflow_dir offline ready
 ";
     exit(1);
 }

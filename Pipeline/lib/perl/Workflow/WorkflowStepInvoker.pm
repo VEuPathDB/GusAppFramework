@@ -3,7 +3,6 @@ package GUS::Pipeline::Workflow::WorkflowStepInvoker;
 # these should be imported from someplace, not duplicated here
 my $READY = 'READY';      # my parents are not done yet  -- default state
 my $ON_DECK = 'ON_DECK';  # my parents are done, but there is no slot for me
-my $DO_NOT_RUN = 'DO_NOT_RUN';  # pilot doesn't want this step to start
 my $FAILED = 'FAILED';
 my $DONE = 'DONE';
 my $RUNNING = 'RUNNING';
@@ -27,7 +26,7 @@ sub runInWrapper {
 UPDATE apidb.WorkflowStep
 SET
   state = '$RUNNING',
-  state_handled = 1,
+  state_handled = 0,
   process_id = $process_id,
   start_time = SYSDATE
 WHERE name = '$stepName'
@@ -49,9 +48,9 @@ AND workflow_id = $workflowId
     $sql = "
 UPDATE apidb.WorkflowStep
 SET
-  state = $state
-  process_id = NULL
-  end_time = SYSDATE
+  state = '$state',
+  process_id = NULL,
+  end_time = SYSDATE,
   state_handled = 0
 WHERE name = '$stepName'
 AND workflow_id = $workflowId
@@ -62,23 +61,36 @@ AND state = '$RUNNING'
 
 
 sub getConfig {
-    my ($self, $prop) = @_;
+  my ($self, $prop) = @_;
 
-    if (!$self->{stepConfig}) {
-	$self->{stepsConfig} =
-	    CBIL::Util::MultiPropertySet->new($self->getMetaConfig('stepsConfigFile'),
-					      $self->getConfigDeclaration(),
-					      $self->{name});
+  if (!$self->{stepsConfig}) {
+    $self->{multiConfigDecl}->{$self->{name}} = $self->getConfigDeclaration();
+    my $homeDir = $self->getHomeDir();
+    $self->{stepsConfig} =
+      CBIL::Util::MultiPropertySet->new("$homeDir/config/steps.prop",
+					$self->{multiConfigDecl},
+					$self->{name});
+  }
+
+  return $self->{stepsConfig}->getProp($self->{name}, $prop);
+}
+
+sub getGlobalConfig {
+    my ($self, $key) = @_;
+
+    if (!$self->{globalStepsConfig}) {
+      my $homeDir = $self->getHomeDir();
+      $self->{globalStepsConfig} =
+	CBIL::Util::PropertySet->new("$homeDir/config/stepsGlobal.prop",[], 1);
     }
-
-    return $self->{stepConfig}->getProp($self->{name}, $prop);
+    return $self->{globalStepsConfig}->getProp($key);
 }
 
 sub getStepDir {
   my ($self) = @_;
 
   if (!$self->{stepDir}) {
-    my $homeDir = $self->getMetaConfig('homeDir');
+    my $homeDir = $self->getHomeDir();
     my $stepDir = "$homeDir/steps/$self->{name}";
     $self->runCmd("mkdir -p $stepDir") unless -e $stepDir;
     $self->{stepDir} = $stepDir;
