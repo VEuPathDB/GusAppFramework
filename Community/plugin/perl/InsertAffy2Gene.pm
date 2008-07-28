@@ -104,7 +104,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
   
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6089 $',
+		     cvsRevision => '$Revision: 6091 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -166,7 +166,14 @@ sub insertCompositeElementGene {
     $endLine = $startLine-1+$self->getArg('testnum');
   }
   my %positions;
-  my $line = <$fh>;
+  while ($line=<$fh>) {
+    if ($line =~ /^#/) {
+      next;
+    }
+    else {
+      last;
+    }
+  }
   chomp($line);
   my @arr = split(/\"\s*,\s*\"/, $line);
   for (my $i=0; $i<@arr; $i++) {
