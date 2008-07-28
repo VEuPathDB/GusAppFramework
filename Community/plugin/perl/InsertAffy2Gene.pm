@@ -104,7 +104,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
   
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6091 $',
+		     cvsRevision => '$Revision: 6121 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -166,6 +166,7 @@ sub insertCompositeElementGene {
     $endLine = $startLine-1+$self->getArg('testnum');
   }
   my %positions;
+  my $line;
   while ($line=<$fh>) {
     if ($line =~ /^#/) {
       next;
@@ -188,7 +189,7 @@ sub insertCompositeElementGene {
       $self->logDebug("Entrez Gene column: $i");
     }   
   }
-  while (my $line=<$fh>) {
+  while ($line=<$fh>) {
     $lineNum++;
     if ($lineNum<$startLine) {
       next;
