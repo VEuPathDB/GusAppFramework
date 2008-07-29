@@ -64,6 +64,7 @@ sub run {
 
   # start polling
   while (1) {
+    $self->{snapshotNumber}++;
     my $runningStepsCount = $self->{startStep}->handleChangesSinceLastPoll();
     if ($runningStepsCount == -1) {
       $self->setDoneState();
@@ -311,5 +312,16 @@ sub documentStep {
   my $documenter = GUS::Pipeline::StepDocumenter->new($signal, $documentInfo);
   $documenter->printXml();
 }
+
+sub runCmd {
+    my ($self, $cmd) = @_;
+
+    my $output = `$cmd`;
+    my $status = $? >> 8;
+    $self->error("Failed with status $status running: \n$cmd") if ($status);
+    return $output;
+}
+
+
 
 1;

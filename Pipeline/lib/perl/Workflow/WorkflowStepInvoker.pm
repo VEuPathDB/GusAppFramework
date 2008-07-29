@@ -101,10 +101,6 @@ sub getStepDir {
 sub runPlugin {
     my ($self, $plugin, $args, $msg, $doitProperty) = @_;
 
-    my $stepDir = $self->getStepDir();
-    my $err = "$stepDir/step.err";
-    my $out = "$stepDir/step.out";
-
     my $comment = $args;
     $comment =~ s/"/\\"/g;
 
@@ -112,8 +108,20 @@ sub runPlugin {
       $args .= " --gusconfigfile $self->{gusConfigFile}";
     }
 
-    my $cmd = "ga $plugin $args --comment \"$comment\"  >> $out 2>> $err";
+    my $cmd = "echo ga $plugin $args --comment \"$comment\"";
 
     $self->runCmd($cmd);
+}
+
+sub runCmd {
+    my ($self, $cmd) = @_;
+
+    my $stepDir = $self->getStepDir();
+    my $err = "$stepDir/step.err";
+
+    my $output = `$cmd 2>> $err`;
+    my $status = $? >> 8;
+    $self->error("Failed with status $status running: \n$cmd") if ($status);
+    return $output;
 }
 

@@ -151,14 +151,15 @@ VALUES (apidb.workflowstepdependency_sq.nextval, ?, ?)
 sub handleChangesSinceLastPoll {
     my ($self) = @_;
 
+    return 0 if $self->{handledSnapshot} == $self->{workflow}->{snapshotNumber};
+
+    $self->{handledSnapshot} = $self->{workflow}->{snapshotNumber};
+
     # if this step has no kids, then it is the end-step
-    # workflow is done!
-    if (scalar(@{$self->getChildren()}) == 0) {
+    # if all parents done, workflow is done!
+    if (scalar(@{$self->getChildren()}) == 0 && $self->{state} eq $ON_DECK) {
 	return -1;
     }
-
-    my $prevState = $self->{state};
-    my $prevOffline = $self->{offline};
 
     $self->getDbState();
 
@@ -200,15 +201,16 @@ sub handleChangesSinceLastPoll {
     } else { # this step has been changed by wrapper or pilot UI. log change.
       my $stateMsg = "";
       my $offlineMsg = "";
-      if ($self->{state} ne $prevState) {
+      if ($self->{state} ne $self->{prevState}) {
 	$stateMsg = "  $self->{state}";
       }
-      if ($self->{offline} ne $prevOffline) {
+      if ($self->{offline} ne $self->{prevOffline}) {
 	$offlineMsg = $self->{offline}? "  OFFLINE" : "  ONLINE";
       }
-	$self->log("Step '$self->{name}'$stateMsg$offlineMsg");
-	$self->setHandledFlag();
-	return 0;
+
+      $self->log("Step '$self->{name}'$stateMsg$offlineMsg");
+      $self->setHandledFlag();
+      return 0;
     }
 }
 
@@ -224,6 +226,7 @@ AND state = '$self->{state}'
 AND off_line = $self->{off_line}
 ";
     $self->runSql($sql);
+    $self->{state_handled} = 1;  # till next snapshot
 }
 
 sub handleMissingProcess {
@@ -336,18 +339,36 @@ sub runOnDeckStep {
 
 sub getDbState {
     my ($self) = @_;
+    if ($self->{lastSnapshot} != $self->{workflow}->{snapshotNumber}) {
+      $self->{lastSnapshot} = $self->{workflow}->{snapshotNumber};
 
-    my $workflow_id = $self->{workflow}->getId();
-    my $sql = "
+      $self->{prevState} = $self->{state};
+      $self->{prevOffline} = $self->{offline};
+
+      my $workflow_id = $self->{workflow}->getId();
+      my $sql = "
 SELECT workflow_step_id, host_machine, process_id, state,
        state_handled, off_line, start_time, end_time
 FROM apidb.workflowstep
 WHERE name = '$self->{name}'
 AND workflow_id = $workflow_id";
-    ($self->{workflow_step_id}, $self->{host_machine}, $self->{process_id},
-     $self->{state}, $self->{state_handled}, $self->{off_line},
-     $self->{start_time}, $self->{end_time})= $self->runSqlQuery_single_array($sql);
+      ($self->{workflow_step_id}, $self->{host_machine}, $self->{process_id},
+       $self->{state}, $self->{state_handled}, $self->{off_line},
+       $self->{start_time}, $self->{end_time})= $self->runSqlQuery_single_array($sql);
+    }
     return $self->{state};
+}
+
+sub getStepDir {
+  my ($self) = @_;
+
+  if (!$self->{stepDir}) {
+    my $homeDir = $self->{workflow}->getHomeDir();
+    my $stepDir = "$homeDir/steps/$self->{name}";
+    $self->{workflow}->runCmd("mkdir -p $stepDir") unless -e $stepDir;
+    $self->{stepDir} = $stepDir;
+  }
+  return $self->{stepDir};
 }
 
 sub forkAndRun {
@@ -355,8 +376,11 @@ sub forkAndRun {
 
     my $homeDir = $self->{workflow}->getHomeDir();
     my $workflowId = $self->{workflow}->getId();
+    my $stepDir = $self->getStepDir();
+    my $err = "$stepDir/step.err";
+
     $self->log("Invoking step '$self->{name}'");
-    system("workflowstepwrap $homeDir $workflowId $self->{name} '$self->{invokerClass}' &");
+    system("workflowstepwrap $homeDir $workflowId $self->{name} '$self->{invokerClass}' 2>> $err &");
 }
 
 
