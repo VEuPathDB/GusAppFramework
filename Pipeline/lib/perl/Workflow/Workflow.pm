@@ -17,6 +17,7 @@ use Data::Dumper;
 # - handle changes to graph after running
 # - cascading defaults for config file
 # - check for graph cycles
+# - cluster
 
 my $RUNNING = 'RUNNING';
 my $DONE = 'DONE';

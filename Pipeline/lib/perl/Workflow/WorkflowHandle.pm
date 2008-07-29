@@ -57,4 +57,13 @@ sub getId {
   return $self->{workflow_id};
 }
 
+sub runCmd {
+    my ($self, $cmd) = @_;
+
+    my $output = `$cmd`;
+    my $status = $? >> 8;
+    $self->error("Failed with status $status running: \n$cmd") if ($status);
+    return $output;
+}
+
 1;
