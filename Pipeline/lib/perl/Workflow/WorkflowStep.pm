@@ -204,8 +204,8 @@ sub handleChangesSinceLastPoll {
       if ($self->{state} ne $self->{prevState}) {
 	$stateMsg = "  $self->{state}";
       }
-      if ($self->{offline} ne $self->{prevOffline}) {
-	$offlineMsg = $self->{offline}? "  OFFLINE" : "  ONLINE";
+      if ($self->{off_line} ne $self->{prevOffline}) {
+	$offlineMsg = $self->{off_line}? "  OFFLINE" : "  ONLINE";
       }
 
       $self->log("Step '$self->{name}'$stateMsg$offlineMsg");
@@ -249,7 +249,8 @@ AND state = '$RUNNING'
 sub pilotKill {
     my ($self) = @_;
 
-    my ($state) = $self->getDbState();
+     $self->{lastSnapshot} = -1;
+   my ($state) = $self->getDbState();
 
     die "Can't change to '$FAILED' from '$state'\n"
 	if ($state ne $RUNNING);
@@ -262,6 +263,7 @@ sub pilotKill {
 sub pilotSetReady {
     my ($self) = @_;
 
+    $self->{lastSnapshot} = -1;
     my ($state) = $self->getDbState();
 
     die "Can't change to '$READY' from '$state'\n"
@@ -283,6 +285,7 @@ AND state = '$FAILED'
 sub pilotSetOffline {
     my ($self, $offline) = @_;
 
+    $self->{lastSnapshot} = -1;
     my ($state) = $self->getDbState();
     die "Can't change OFFLINE when '$RUNNING'\n"
 	if ($state eq $RUNNING);
@@ -343,7 +346,7 @@ sub getDbState {
       $self->{lastSnapshot} = $self->{workflow}->{snapshotNumber};
 
       $self->{prevState} = $self->{state};
-      $self->{prevOffline} = $self->{offline};
+      $self->{prevOffline} = $self->{off_line};
 
       my $workflow_id = $self->{workflow}->getId();
       my $sql = "

@@ -29,6 +29,8 @@ my $END = 'END';
 ##   - step reporter
 ##
 
+$| = 1;
+
 sub reportSteps {
   my ($self, $desiredStates) = @_;
   $self->{noLog} = 1;
@@ -298,7 +300,7 @@ sub log {
 
   open(LOG, ">>$homeDir/logs/controller.log")
     || die "can't open log file '$homeDir/logs/controller.log'";
-  print LOG localtime() . " $msg\n";
+  print LOG localtime() . " $msg\n\n";
   close (LOG);
 }
 

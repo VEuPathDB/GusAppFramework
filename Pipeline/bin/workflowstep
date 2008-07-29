@@ -55,11 +55,11 @@ Allowed state changes are:
 Offline status may not be changed when the step is $RUNNING
 
 Examples
-  % workflowstep my_step workflow_dir kill
+  % workflowstep workflow_dir my_step kill
 
-  % workflowstep my_step workflow_dir online
+  % workflowstep workflow_dir my_step online
 
-  % workflowstep my_step workflow_dir offline ready
+  % workflowstep workflow_dir my_step offline ready
 ";
     exit(1);
 }
