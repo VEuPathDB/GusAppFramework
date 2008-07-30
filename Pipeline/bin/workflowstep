@@ -4,7 +4,7 @@ use lib "$ENV{GUS_HOME}/lib/perl";
 
 use strict;
 use GUS::Pipeline::Workflow::WorkflowHandle;
-use GUS::Pipeline::Workflow::WorkflowStep;
+use GUS::Pipeline::Workflow::WorkflowStepHandle;
 
 # these should be imported from someplace, not duplicated here
 my $READY = 'READY';      # my parents are not done yet  -- default state
@@ -55,11 +55,11 @@ Allowed state changes are:
 Offline status may not be changed when the step is $RUNNING
 
 Examples
-  % workflowstep workflow_dir my_step kill
+  % workflowstep workflow_dir stepname kill
 
-  % workflowstep workflow_dir my_step online
+  % workflowstep workflow_dir stepname online
 
-  % workflowstep workflow_dir my_step offline ready
+  % workflowstep workflow_dir stepname offline ready
 ";
     exit(1);
 }
