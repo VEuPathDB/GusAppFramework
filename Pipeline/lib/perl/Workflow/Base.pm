@@ -70,14 +70,6 @@ sub getWorkflowConfig {
     return $self->{workflowConfig}->getProp($key);
 }
 
-sub runCmdInBackground {
-    my ($self, $cmd) = @_;
-
-    system("$cmd &");
-    my $status = $? >> 8;
-    $self->error("Failed running '$cmd' with stderr:\n $!") if ($status);
-}
-
 sub error {
     my ($self, $msg) = @_;
 

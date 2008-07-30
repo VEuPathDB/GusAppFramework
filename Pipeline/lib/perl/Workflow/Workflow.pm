@@ -26,12 +26,18 @@ my $END = 'END';
 
 ##
 ## Workflow object that runs in two contexts:
-##   - controller
 ##   - step reporter
+##   - controller
 ##
 
+
+## controller theoretical issues
+##  - race conditions
+##  - resolution of logging
 $| = 1;
 
+# step reporter: called by command line UI to report state of steps. does not 
+# run the controller
 sub reportSteps {
   my ($self, $desiredStates) = @_;
   $self->{noLog} = 1;
@@ -54,29 +60,24 @@ sub reportSteps {
   }
 }
 
+# run the controller
 sub run {
   my ($self, $numSteps) = @_;
 
-  $self->initSteps();
+  $self->initSteps();           # parse graph xml, config, and init db
 
-  $self->getDbState();		# read state from db
+  $self->getDbSnapshot();	# read state of Workflow and WorkflowSteps
 
   $self->initHomeDir();		# initialize workflow home directory
 
-  $self->setRunningState($numSteps); # set db state. fail if already running
+  $self->setRunningState();     # set db state. fail if already running
 
   # start polling
   while (1) {
-    $self->{snapshotNumber}++;
-    my $runningStepsCount = $self->{startStep}->handleChangesSinceLastPoll();
-    if ($runningStepsCount == -1) {
-      $self->setDoneState();
-      exit(0);
-    }
-
-    if ($runningStepsCount < $self->{allowed_running_steps}) {
-      $self->{startStep}->runOnDeckStep();
-    }
+    $self->getDbSnapshot();
+    $self->handleStepChanges();  
+    $self->findOndeckSteps();
+    $self->fillOpenSlots();
     sleep(2);
   }
 }
@@ -84,16 +85,15 @@ sub run {
 sub initSteps {
   my ($self) = @_;
 
-  $self->getStepGraph(); # parses workflow XML, validates graph
+  $self->getStepGraph();        # parses workflow XML, validates graph
 
-  $self->initDb(); # write workflow to db, if not already there
+  $self->initDb();              # write workflow to db, if not already there
 
   $self->getStepsConfig();      # validate config of all steps.
 }
 
 # traverse a workflow XML, making Step objects as we go
 # also parse the step config file, giving each step its individual config
-# NEED TO DEAL WITH START AND END STEPS
 sub getStepGraph {
   my ($self) = @_;
 
@@ -150,7 +150,7 @@ sub getStepGraph {
 }
 
 # write the workflow and steps to the db
-# for now, assume the workflow steps don't change for the life of a workflow
+# for now, assume the workflow steps don't change over the life of a workflow
 sub initDb {
   my ($self) = @_;
 
@@ -177,21 +177,33 @@ VALUES ($self->{workflow_id}, '$self->{name}', '$self->{version}')
 ";
   $self->runSql($sql);
 
-  # write all steps
-  $self->{startStep}->initializeStepTable();
+  # write all steps to WorkflowStep table
+  my $stmt = GUS::Pipeline::Workflow::WorkflowStep::getPreparedInsertStmt();
+  foreach my $step (keys%{$self->{stepsByName}}) {
+      $step->initializeStepTable($stmt);
+  }
 
-  $self->{startStep}->initializeDependsTable();
+  # write all steps to WorkflowStepDepends table
+  my $stmt = GUS::Pipeline::Workflow::WorkflowStep::getPreparedDependsStmt();
+  foreach my $step (keys%{$self->{stepsByName}}) {
+      $step->initializeDependsTable($stmt);
+  }
 }
 
 sub getStep {
   my ($self, $stepName) = @_;
 
-  $self->initSteps();
   my $step = $self->{stepsByName}->{$stepName};
   $self->error("Can't find step with name '$stepName'") unless $step;
 }
 
-sub getDbState {
+sub getDbSnapshot {
+  my ($self) = @_;
+  $self->getWorkflowDbSnapshot();
+  $self->getWorkflowStepDbSnapshot();
+}
+
+sub getWorkflowDbSnapshot {
   my ($self) = @_;
   if (!$self->{workflow_id}) {
     $self->{name} = $self->getWorkflowConfig('name');
@@ -208,6 +220,51 @@ and version = '$self->{version}'
     $self->error("workflow '$self->{name}' version '$self->{version}' not in database")
       unless $self->{workflow_id};
   }
+}
+
+# read all WorkflowStep rows into memory (and remember the prev snapshot)
+sub getWorkflowStepsDbSnapshot {
+    my ($self) = @_;
+
+    my $sql = GUS::Pipeline::Workflow::WorkflowStep::getBulkSnapshotSql($self->{workflow_id});
+
+    my $stmt = $self->getDbh()->prepare($sql);
+    $stmt->execute();
+    while (my $rowHashRef = $stmt->fetchrow_hashref()) {
+	$self->{stepsSnapshot}->{$rowHashRef->{name}} = $rowHashRef;
+    }
+}
+
+# iterate through steps, checking on changes since last snapshot
+# while we're passing through, set running count
+sub handleStepChanges {
+    my ($self) = @_;
+
+    my $self->{runningCount} = 0;
+    foreach my $step (values(%{$self->{stepsByName}})) {
+	my $stepName = $step->getName();
+	my $stepSnapshot = $self->{stepsSnapshot}->{$stepName};
+	my $prevStepSnapshot = $self->{prevStepsSnapshot}->{$stepName};
+	$self->{runningCount} +=
+	    $step->handleChangesFromLastSnapshot($stepSnapshot);
+    }
+}
+ 
+sub findOndeckSteps {
+    my ($self) = @_;
+
+    foreach my $step (values(%{$self->{stepsByName}})) {
+	$step->maybeGoToOnDeck();
+    }
+}
+
+sub fillOpenSlots {
+    my ($self) = @_;
+
+    foreach my $step (values(%{$self->{stepsByName}})) {
+	last if $self->{runningCount} >= $self->{allowed_running_steps};
+	$self->{runningCount} += $step->runOnDeckStep();
+    }
 }
 
 # read and validate all steps config
@@ -324,7 +381,5 @@ sub runCmd {
     $self->error("Failed with status $status running: \n$cmd") if ($status);
     return $output;
 }
-
-
 
 1;
