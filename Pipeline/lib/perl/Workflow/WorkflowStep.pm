@@ -46,12 +46,6 @@ sub new {
   return $self;
 }
 
-sub addChild {
-    my ($self, $childStep) = @_;
-    push(@{$self->{children}}, $childStep);
-    $childStep->addParent($self);
-}
-
 sub addParent {
     my ($self, $parentStep) = @_;
     push(@{$self->{parents}}, $parentStep);
@@ -75,44 +69,32 @@ sub getInvokerClass {
 sub getId () {
     my ($self) = @_;
 
-    $self->getDbState() if (!$self->{workflow_step_id});
+    $self->getDbStateFromSnapshot();
     return $self->{workflow_step_id};
 }
 
 sub getState () {
     my ($self) = @_;
 
-    $self->getDbState() if (!$self->{state});
-    return $self->{state};
-}
-
-# static method
-sub getBulkSnapshotSql {
-    my ($workflow_id) = @_;
-      return "
-SELECT workflow_step_id, name, host_machine, process_id, state,
-       state_handled, off_line, start_time, end_time
-FROM apidb.workflowstep
-WHERE workflow_id = $workflow_id";
+    $self->getDbStateFromSnapshot();
+    return $self->{fakeStepType} eq $START? $DONE : $self->{state};
 }
 
 # static method
 sub getPreparedInsertStmt {
-    my ($workflow_id) = @_;
+    my ($dbh, $workflow_id) = @_;
 
     my $sql = "
 INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, off_line)
 VALUES (apidb.workflowstep_sq.nextval, $workflow_id, ?, ?, 1, 0)
 ";
-    return $self->getDbh()->prepare($sql);
+    return $dbh->prepare($sql);
 }
 
 # write this step to the db, if not already there.
 # called during workflow initialization
 sub initializeStepTable {
     my ($self, $stmt) = @_;
-
-    return if $self->{inStepTable};
 
     my $name = $self->getName();
     my $state = $self->{fakeStepType} eq $START? $DONE : $READY;
@@ -121,13 +103,13 @@ sub initializeStepTable {
 
 # static method
 sub getPreparedDependsStmt {
-    my ($workflow_id) = @_;
+    my ($dbh) = @_;
 
     my $sql= "
 INSERT INTO apidb.workflowstepdependency (workflow_step_dependency_id, parent_id, child_id)
 VALUES (apidb.workflowstepdependency_sq.nextval, ?, ?)
 ";
-    return $self->getDbh()->prepare($sql);
+    return $dbh->prepare($sql);
 }
 
 sub initializeDependsTable {
@@ -140,15 +122,18 @@ sub initializeDependsTable {
 sub setFakeStepType {
   my ($self, $type) = @_;
   $self->{fakeStepType} = $type;
+  if ($type eq $END) { $self->{state} = $READY; }
 }
 
 sub handleChangesSinceLastSnapshot {
-    my ($self, $newSnapshot) = @_;
+    my ($self) = @_;
 
-    my $prevState = $self->{state};
-    my $prevOffline = $self->{off_line};
+    my $prevState =
+      $self->{workflow}->{prevStepsSnapshot}->{$self->{name}}->{STATE};
+    my $prevOffline =
+      $self->{workflow}->{prevStepsSnapshot}->{$self->{name}}->{OFF_LINE};
 
-    $self->getDbStateFromSnapshot($newSnapshot);
+    $self->getDbStateFromSnapshot();
 
     if ($self->{state_handled}) {
 
@@ -169,10 +154,33 @@ sub handleChangesSinceLastSnapshot {
 	$offlineMsg = $self->{off_line}? "  OFFLINE" : "  ONLINE";
       }
 
-      $self->log("Step '$self->{name}'$stateMsg$offlineMsg");
-      $self->setHandledFlag();
+      $self->log("Step '$self->{name}'$stateMsg$offlineMsg");      $self->setHandledFlag();
     }
     return $self->{state} eq $RUNNING;
+}
+
+# static method
+sub getBulkSnapshotSql {
+    my ($workflow_id) = @_;
+      return "
+SELECT workflow_step_id, name, host_machine, process_id, state,
+       state_handled, off_line, start_time, end_time
+FROM apidb.workflowstep
+WHERE workflow_id = $workflow_id";
+}
+
+sub getDbStateFromSnapshot {
+    my ($self) = @_;
+
+    return if ($self->{fakeStepType});
+    return if ($self->{snapshotNum} == $self->{workflow}->{snapshotNum});
+
+    $self->{snapshotNum} = $self->{workflow}->{snapshotNum};
+
+    my $snapshot = $self->{workflow}->{stepsSnapshot}->{$self->{name}};
+    foreach my $key (keys %$snapshot) {
+	$self->{lc($key)} = $snapshot->{$key};
+    }
 }
 
 sub setHandledFlag {
@@ -210,10 +218,14 @@ AND state = '$RUNNING'
 sub maybeGoToOnDeck {
     my ($self) = @_;
 
+    return unless $self->{state} eq $READY && !$self->{off_line};
+
     foreach my $parent (@{$self->getParents()}) {
-	return unless $parent->getDbState() eq $DONE;
+	return unless $parent->getState() eq $DONE;
     }
+
     $self->log("Step '$self->{name}' $ON_DECK");
+
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET 
@@ -234,14 +246,6 @@ sub runOnDeckStep {
 	return 1;
     } 
     return 0;
-}
-
-sub getDbStateFromSnapshot {
-    my ($self, $snapshot) = @_;
-
-    foreach my $key (%$snapshot) {
-	$self->{$key} = $snapshot->{$key};
-    }
 }
 
 sub getStepDir {
@@ -283,8 +287,6 @@ sub runSql {
 
 sub toString {
     my ($self) = @_;
-
-    $self->getDbState();
 
     my @parentsNames;
     foreach my $parent (@{$self->getParents()}) {

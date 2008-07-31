@@ -18,8 +18,12 @@ use Data::Dumper;
 # - cascading defaults for config file
 # - check for graph cycles
 # - cluster
+# - make running order repeatable (sort by order in xml file)
+# - improve log formatting
+# - possibly support taking DONE steps offline.  this will require recursion.
 
 my $RUNNING = 'RUNNING';
+my $ON_DECK = 'ON_DECK';
 my $DONE = 'DONE';
 my $START = 'START';
 my $END = 'END';
@@ -31,9 +35,27 @@ my $END = 'END';
 ##
 
 
-## controller theoretical issues
-##  - race conditions
-##  - resolution of logging
+## Controller theoretical issues
+
+## Race conditions
+# the controller gets a snapshot of the db each cycle. one class of possible
+# race conditions is if there are external changes since the snapshot was
+# taken. the controller only updates the state in the database if the state
+# in the db is the same as in memory, ie, the same as in the snapshot.  this
+# preserves any external change to be seen by the next cycle.
+#
+# this leaves the problem of (a) more than one external change happening
+# within a cycle.  but, there are no transitory states that matter. The only
+# consequence is that the intermediate state won't be logged.  the only
+# one of these which could realistically happen in the timeframe of a cycle
+# is the transition from RUNNING to DONE, if a step executes quickly.  In this
+# case, the log will show only DONE, without ever showing RUNNING, which is ok.
+#
+# and also the problem of (b) that the controller could not write the step's
+# state because the state had changed since the snapshot.  the controller
+# only writes the ON_DECK and FAILED states.  the next cycle will handle
+# these correctly.
+
 $| = 1;
 
 # step reporter: called by command line UI to report state of steps. does not 
@@ -43,6 +65,8 @@ sub reportSteps {
   $self->{noLog} = 1;
 
   $self->initSteps();
+
+  $self->getDbSnapshot();	     # read state of Workflow and WorkflowSteps
 
   $self->reportState();
 
@@ -64,18 +88,18 @@ sub reportSteps {
 sub run {
   my ($self, $numSteps) = @_;
 
-  $self->initSteps();           # parse graph xml, config, and init db
+  $self->initSteps();                # parse graph xml, config, and init db
 
-  $self->getDbSnapshot();	# read state of Workflow and WorkflowSteps
+  $self->getDbSnapshot();	     # read state of Workflow and WorkflowSteps
 
-  $self->initHomeDir();		# initialize workflow home directory
+  $self->initHomeDir();		     # initialize workflow home directory
 
-  $self->setRunningState();     # set db state. fail if already running
+  $self->setRunningState($numSteps); # set db state. fail if already running
 
   # start polling
   while (1) {
     $self->getDbSnapshot();
-    $self->handleStepChanges();  
+    last if $self->handleStepChanges();  # return true if all steps done
     $self->findOndeckSteps();
     $self->fillOpenSlots();
     sleep(2);
@@ -97,7 +121,7 @@ sub initSteps {
 sub getStepGraph {
   my ($self) = @_;
 
-  if (!$self->{startStep}) {
+  if (!$self->{stepsByName}) {
     my $workflowXmlFile = "$self->{homeDir}/config/workflow.xml";
 
     $self->log("Parsing and validating $workflowXmlFile");
@@ -130,23 +154,10 @@ sub getStepGraph {
 	my $stepName = $step->getName();
 	my $parent = $self->{stepsByName}->{$dependName->{name}};
 	$self->error("step '$stepName' depends on '$dependName->{name}' which is not found") unless $parent;
-	$parent->addChild($step);
+	$step->addParent($parent);
       }
     }
-
-    # add fake start and end steps at top and bottom of graph
-    my $startStep = GUS::Pipeline::Workflow::WorkflowStep->new($START, $self);
-    $startStep->setFakeStepType($START);
-    my $endStep = GUS::Pipeline::Workflow::WorkflowStep->new($END, $self);
-    $endStep->setFakeStepType($END);
-    foreach my $step (values(%{$self->{stepsByName}})) {
-      $startStep->addChild($step) if scalar(@{$step->getParents()}) == 0;
-      $step->addChild($endStep) if scalar(@{$step->getChildren()}) == 0;
-    }
-    $self->{startStep} = $startStep;
   }
-
-  return $self->{startStep};
 }
 
 # write the workflow and steps to the db
@@ -157,15 +168,17 @@ sub initDb {
   $self->{name} = $self->getWorkflowConfig('name');
   $self->{version} = $self->getWorkflowConfig('version');
 
+  # don't bother if already in db
   my $sql = "
 select workflow_id
 from apidb.workflow
 where name = '$self->{name}'
 and version = '$self->{version}'
 ";
-  ($self->{workflow_id}) = $self->runSqlQuery_single_array($sql);
-  return if ($self->{workflow_id});
+  my ($workflow_id) = $self->runSqlQuery_single_array($sql);
+  return if ($workflow_id);
 
+  # otherwise, do it...
   $self->log("Initializing workflow '$self->{name} $self->{version}' in database");
 
   # write workflow row
@@ -178,14 +191,20 @@ VALUES ($self->{workflow_id}, '$self->{name}', '$self->{version}')
   $self->runSql($sql);
 
   # write all steps to WorkflowStep table
-  my $stmt = GUS::Pipeline::Workflow::WorkflowStep::getPreparedInsertStmt();
-  foreach my $step (keys%{$self->{stepsByName}}) {
+  my $stmt = 
+    GUS::Pipeline::Workflow::WorkflowStep::getPreparedInsertStmt($self->getDbh(), $self->{workflow_id});
+  foreach my $step (values %{$self->{stepsByName}}) {
       $step->initializeStepTable($stmt);
   }
 
+  # update steps in memory, to get their new IDs
+  $self->getWorkflowStepsDbSnapshot();
+
+
   # write all steps to WorkflowStepDepends table
-  my $stmt = GUS::Pipeline::Workflow::WorkflowStep::getPreparedDependsStmt();
-  foreach my $step (keys%{$self->{stepsByName}}) {
+  my $stmt = 
+    GUS::Pipeline::Workflow::WorkflowStep::getPreparedDependsStmt($self->getDbh());
+  foreach my $step (values%{$self->{stepsByName}}) {
       $step->initializeDependsTable($stmt);
   }
 }
@@ -199,12 +218,14 @@ sub getStep {
 
 sub getDbSnapshot {
   my ($self) = @_;
+
   $self->getWorkflowDbSnapshot();
-  $self->getWorkflowStepDbSnapshot();
+  $self->getWorkflowStepsDbSnapshot();
 }
 
 sub getWorkflowDbSnapshot {
   my ($self) = @_;
+
   if (!$self->{workflow_id}) {
     $self->{name} = $self->getWorkflowConfig('name');
     $self->{version} = $self->getWorkflowConfig('version');
@@ -217,6 +238,7 @@ and version = '$self->{version}'
     ($self->{workflow_id}, $self->{state}, $self->{process_id},
      $self->{start_time}, $self->{end_time}, $self->{allowed_running_steps})
       = $self->runSqlQuery_single_array($sql);
+
     $self->error("workflow '$self->{name}' version '$self->{version}' not in database")
       unless $self->{workflow_id};
   }
@@ -226,12 +248,16 @@ and version = '$self->{version}'
 sub getWorkflowStepsDbSnapshot {
     my ($self) = @_;
 
+    $self->{snapshotNum}++;
+    $self->{prevStepsSnapshot} = $self->{stepsSnapshot};
+    $self->{stepsSnapshot} = {};
+
     my $sql = GUS::Pipeline::Workflow::WorkflowStep::getBulkSnapshotSql($self->{workflow_id});
 
     my $stmt = $self->getDbh()->prepare($sql);
     $stmt->execute();
     while (my $rowHashRef = $stmt->fetchrow_hashref()) {
-	$self->{stepsSnapshot}->{$rowHashRef->{name}} = $rowHashRef;
+	$self->{stepsSnapshot}->{$rowHashRef->{NAME}} = $rowHashRef;
     }
 }
 
@@ -240,16 +266,16 @@ sub getWorkflowStepsDbSnapshot {
 sub handleStepChanges {
     my ($self) = @_;
 
-    my $self->{runningCount} = 0;
+    $self->{runningCount} = 0;
+    my $notDone = 0;
     foreach my $step (values(%{$self->{stepsByName}})) {
-	my $stepName = $step->getName();
-	my $stepSnapshot = $self->{stepsSnapshot}->{$stepName};
-	my $prevStepSnapshot = $self->{prevStepsSnapshot}->{$stepName};
-	$self->{runningCount} +=
-	    $step->handleChangesFromLastSnapshot($stepSnapshot);
+	$self->{runningCount} += $step->handleChangesSinceLastSnapshot();
+	$notDone |= ($step->getState() ne $DONE);
     }
+    if (!$notDone) { $self->log("Workflow DONE"); }
+    return !$notDone;
 }
- 
+
 sub findOndeckSteps {
     my ($self) = @_;
 
@@ -257,6 +283,17 @@ sub findOndeckSteps {
 	$step->maybeGoToOnDeck();
     }
 }
+
+sub workflowDone {
+  my ($self) = @_;
+
+  foreach my $step (values(%{$self->{stepsByName}})) {
+    return 0 if !($step->{offline} || $step->getState() eq $DONE);
+  }
+  $self->log("Workflow DONE");
+  return 1;
+}
+
 
 sub fillOpenSlots {
     my ($self) = @_;
@@ -314,9 +351,14 @@ sub initHomeDir {
 sub setRunningState {
   my ($self, $numSteps) = @_;
 
-  $self->error("already running") if ($self->{state} eq $RUNNING);
-
-  $self->log("Setting workflow state to $RUNNING and allowed-number-of-running-steps to $numSteps");
+  if ($self->{state} eq $RUNNING) {
+    system("ps -p $self->{process_id} > /dev/null");
+    my $status = $? >> 8;
+    if (!$status) {
+      $self->error("workflow already running (process $self->{process_id})");
+    }
+  }
+  $self->log("Setting workflow state to $RUNNING and allowed-number-of-running-steps to $numSteps (process id = $$)");
 
   $self->{allowed_running_steps} = $numSteps;
 
