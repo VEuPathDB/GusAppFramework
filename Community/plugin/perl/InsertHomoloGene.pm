@@ -188,7 +188,7 @@ sub insertHomoloGene {
       next;
     }
     else {
-      my $family = GUS::Model::DoTS::Family->new(external_database_release_id => $extDbRls, source_id => $hid);
+      my $family = GUS::Model::DoTS::Family->new({external_database_release_id => $extDbRls, source_id => $hid});
       my $gene = GUS::Model::DoTS::Gene->new({external_database_release_id => $taxa->{$taxId}, source_id => $geneId});
       if ($gene->retrieveFromDB()) {
 	if (!$family->retrieveFromDB()) {
