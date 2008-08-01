@@ -201,9 +201,10 @@ sub insertHomoloGene {
 	$family->submit();
       }
     }
-    $resultDescrip .= "Entered $familyCount rows in DoTS.Family and $familyGeneCount rows in DoTS.FamilyGene";
-    return ($resultDescrip);
+
   }
+  $resultDescrip .= "Entered $familyCount rows in DoTS.Family and $familyGeneCount rows in DoTS.FamilyGene";
+  return ($resultDescrip);
 }
 
 # ----------------------------------------------------------------------
