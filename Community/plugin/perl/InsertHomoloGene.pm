@@ -102,7 +102,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6055$',
+		     cvsRevision => '$Revision: 6114$',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -138,7 +138,7 @@ sub getTaxa {
   my ($self, $dbh) = @_;
   my @taxaSpecs = @{$self->getArg('taxaGeneInfoExtDbRlsSpecs')};
   my $taxa;
-  my $sth = $dbh->prepare('select distinct t.nci_tax_id from Sres.Taxon t, SRes.Gene g where t.taxon_id=g.taxon_id and g.external_database_release_id=?') || die $dbh->errstr;
+  my $sth = $dbh->prepare('select distinct t.nci_tax_id from Sres.Taxon t, Dots.Gene g where t.taxon_id=g.taxon_id and g.external_database_release_id=?') || die $dbh->errstr;
 
   for (my $i=0; $i<@taxaSpecs; $i++) {
     my $extDbRls = $self->getExtDbRlsId($taxaSpecs[$i]);
