@@ -160,7 +160,7 @@ sub insertHomoloGene {
   my $familyCount = 0;
   my $familyGeneCount = 0;
 
-  my $fh = IO::File->new("<file") || die "Cannot open file $file";
+  my $fh = IO::File->new("<$file") || die "Cannot open file $file";
   my $startLine = defined $self->getArg('restart') ? $self->getArg('restart') : 1;
   my $endLine;
   if (defined $self->getArg('testnum')) {
