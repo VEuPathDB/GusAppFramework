@@ -420,7 +420,7 @@ sub writeResults {
 	$fh->print(",$taxons");
       }
     }
-    if (defined $studies->[$i]->{'bioMaterialCharacteristics'} && $studies->[$i]->{'biomaterialCharacteristics'} !~ /^\s*$/) {
+    if (defined $studies->[$i]->{'bioMaterialCharacteristics'} && $studies->[$i]->{'bioMaterialCharacteristics'} !~ /^\s*$/) {
       $fh->print(",$studies->[$i]->{'bioMaterialCharacteristics'}");
     }
     if (defined $studies->[$i]->{'treatmentTypes'} && $studies->[$i]->{'treatmentTypes'} !~ /^\s*$/){
