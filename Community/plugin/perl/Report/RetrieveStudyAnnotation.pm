@@ -63,7 +63,7 @@ sub getArgumentsDeclaration {
 		isList => 1
 	       }),
      stringArg({name => 'taxonList',
-		descr => 'Comma-separated list of taxon preferred common names. If given, only studies involving the specified taxons will be considered.',
+		descr => 'Comma-separated list of taxon scientific names. If given, only studies involving the specified taxons will be considered.',
 		constraintFunc => undef,
 		reqd => 0,
 		isList => 1
@@ -91,7 +91,7 @@ sub getDocumentation {
   my $purpose = "For each study in the specified collection this plugin retrievs both 'intent' and 'context' information. Intent information consists of its study_design_type (category and value) list and its study_factor_type (category and value) list. Context information consist of: taxon list, biomaterial characteristic (category and value) list, and treatment_type list.";
 
   my $tablesAffected = [];
-  my $tablesDependedOn = [['Study::Study', 'The studies to consider'], ['Core::ProjectInfo', 'The projects whose studies should be considered or discarded, if specified'], ['Core::GroupInfo', 'The groups whose studies should be considered or discarded, if specified'], ['Study::OntologyEntry', 'Retrieved categories and values'], ['Study::StudyDesign', 'The study designs for the studies under consideration'], ['Study::StudyDesignType', 'The study design types for the studies under consideration'], ['Study::Factor', 'The study factors for the studies under consideration'], ['SRes::TaxonName', 'The preferred common names of the taxons for the studies under consideration'], ['SRes::Taxon', 'The taxons for the studies under consideration'], ['Study::BioMaterialImp', 'The biomaterials utilized in the studies under consideration'], ['RAD::StudyBioMaterial', 'Retrieves all biomaterials for each study under consideration'], ['Study::BioMaterialCharacteristic', 'The biomaterial characteristics for the biomaterials involved in the studies under consideration'], ['RAD::Treatment', 'The treatments employed in the studies under consideration']];
+  my $tablesDependedOn = [['Study::Study', 'The studies to consider'], ['Core::ProjectInfo', 'The projects whose studies should be considered or discarded, if specified'], ['Core::GroupInfo', 'The groups whose studies should be considered or discarded, if specified'], ['Study::OntologyEntry', 'Retrieved categories and values'], ['Study::StudyDesign', 'The study designs for the studies under consideration'], ['Study::StudyDesignType', 'The study design types for the studies under consideration'], ['Study::Factor', 'The study factors for the studies under consideration'], ['SRes::TaxonName', 'The scientific names of the taxons for the studies under consideration'], ['SRes::Taxon', 'The taxons for the studies under consideration'], ['Study::BioMaterialImp', 'The biomaterials utilized in the studies under consideration'], ['RAD::StudyBioMaterial', 'Retrieves all biomaterials for each study under consideration'], ['Study::BioMaterialCharacteristic', 'The biomaterial characteristics for the biomaterials involved in the studies under consideration'], ['RAD::Treatment', 'The treatments employed in the studies under consideration']];
   my $howToRestart = "No restart option.";
   my $failureCases = "";
   my $notes = "";
@@ -269,7 +269,7 @@ sub retrieveStudiesAllTaxons {
 
 sub retrieveTaxons {
   my ($self, $dbh, $studies) = @_;
-  my $sth = $dbh->prepare("select distinct t.name, b.taxon_id from Study.BioSource b, RAD.StudyBioMaterial sb, SRes.TaxonName t where sb.study_id=? and sb.bio_material_id=b.bio_material_id and b.taxon_id is not null and b.taxon_id=t.taxon_id and t.name_class='preferred common name' order by t.name");
+  my $sth = $dbh->prepare("select distinct t.name, b.taxon_id from Study.BioSource b, RAD.StudyBioMaterial sb, SRes.TaxonName t where sb.study_id=? and sb.bio_material_id=b.bio_material_id and b.taxon_id is not null and b.taxon_id=t.taxon_id and t.name_class='scientific name' order by t.name");
   for (my $i=0; $i<@{$studies}; $i++) {
     $sth->execute($studies->[$i]->{'studyId'});
     while (my ($taxonName, $taxonId)=$sth->fetchrow_array()) {
@@ -310,13 +310,13 @@ sub reduceByTaxons {
 
 sub retrieveStudyDesignTypes {
   my ($self, $dbh, $studies) = @_;
-  my $sth = $dbh->prepare("select distinct oe.category, oe.value from Study.OntologyEntry oe, Study.StudyDesign sd, Study.StudyDesignType sdt where sd.study_id=? and sd.study_design_id=sdt.study_design_id and sdt.ontology_entry_id=oe.ontology_entry_id order by oe.category, oe.value");
+  my $sth = $dbh->prepare("select distinct oe.value from Study.OntologyEntry oe, Study.StudyDesign sd, Study.StudyDesignType sdt where sd.study_id=? and sd.study_design_id=sdt.study_design_id and sdt.ontology_entry_id=oe.ontology_entry_id order by oe.value");
  
   for (my $i=0; $i<@{$studies}; $i++) {
     $sth->execute($studies->[$i]->{'studyId'});
     my @studyDesignTypes;
-    while (my ($category, $value)=$sth->fetchrow_array()) {
-      push(@studyDesignTypes, "$category.$value");
+    while (my ($value)=$sth->fetchrow_array()) {
+      push(@studyDesignTypes, "$value");
     }
     $sth->finish();
     $studies->[$i]->{'studyDesignTypes'} = join(",", @studyDesignTypes);
@@ -325,13 +325,13 @@ sub retrieveStudyDesignTypes {
 
 sub retrieveStudyFactorTypes {
   my ($self, $dbh, $studies) = @_;
-  my $sth = $dbh->prepare("select distinct oe.category, oe.value from Study.OntologyEntry oe, Study.StudyDesign sd, Study.StudyFactor sf where sd.study_id=? and sd.study_design_id=sf.study_design_id and sf.study_factor_type_id=oe.ontology_entry_id order by oe.category, oe.value");
+  my $sth = $dbh->prepare("select distinct oe.value from Study.OntologyEntry oe, Study.StudyDesign sd, Study.StudyFactor sf where sd.study_id=? and sd.study_design_id=sf.study_design_id and sf.study_factor_type_id=oe.ontology_entry_id order by oe.value");
  
   for (my $i=0; $i<@{$studies}; $i++) {
     $sth->execute($studies->[$i]->{'studyId'});
     my @studyFactorTypes;
-    while (my ($category, $value)=$sth->fetchrow_array()) {
-      push(@studyFactorTypes, "$category.$value");
+    while (my ($value)=$sth->fetchrow_array()) {
+      push(@studyFactorTypes, "$value");
     }
     $sth->finish();
     $studies->[$i]->{'studyFactorTypes'} = join(",", @studyFactorTypes);
@@ -340,13 +340,60 @@ sub retrieveStudyFactorTypes {
 
 sub retrieveBioMaterialCharacteristics {
   my ($self, $dbh, $studies) = @_;
-  my $sth = $dbh->prepare("select distinct oe.category, oe.value from Study.OntologyEntry oe, Study.BioMaterialCharacteristic bmc, RAD.StudyBioMaterial sb where sb.study_id=? and sb.bio_material_id=bmc.bio_material_id and bmc.ontology_entry_id=oe.ontology_entry_id order by oe.category, oe.value");
+  my $sth = $dbh->prepare("select distinct bmc.bio_material_id, oe.category, oe.value, oe.name, bmc.value from Study.OntologyEntry oe, Study.BioMaterialCharacteristic bmc, RAD.StudyBioMaterial sb where sb.study_id=? and sb.bio_material_id=bmc.bio_material_id and bmc.ontology_entry_id=oe.ontology_entry_id order by oe.category, oe.value");
 
   for (my $i=0; $i<@{$studies}; $i++) {
     $sth->execute($studies->[$i]->{'studyId'});
     my @bioMatChar;
-    while (my ($category, $value)=$sth->fetchrow_array()) {
-      push(@bioMatChar, "$category.$value");
+    my %isCounted;
+    my $ages;
+    while (my ($id, $category, $value, $name, $bmcValue)=$sth->fetchrow_array()) {
+      if ($category ne 'Age') {
+	if ($bmcValue eq 'null' || $bmcValue eq '' || !defined $bmcValue) { 
+	  if (!$isCounted{$value}) {
+	    $isCounted{$value} = 1;
+	    push(@bioMatChar, "$value");
+	  }
+	}
+	else {
+	  if (!$isCounted{"$bmcValue $value"}) {
+	    $isCounted{"$bmcValue $value"} = 1;
+	    push(@bioMatChar, "$bmcValue $value");
+	  }
+	}
+      }
+      else {
+	if ($name eq 'TimeUnit') {
+	  push(@{$ages->{$id}->{'number'}}, $bmcValue);
+	  push(@{$ages->{$id}->{'timeUnit'}}, $value);
+	}
+	if ($name eq 'InitialTimePoint') {
+	  $ages->{$id}->{'initialTimePoint'} = $value;
+	}
+      }
+    }
+    foreach my $id (keys %{$ages}) {
+      my $string = '';
+      my @numbers = @{$ages->{$id}->{'number'}};
+      my @timeUnits = @{$ages->{$id}->{'timeUnit'}};
+      if (scalar(@numbers)==2) {
+	  if ($timeUnits[0] eq $timeUnits[1] && $numbers[0]<$numbers[1]) {
+	    $string .= "$numbers[0] $timeUnits[0] to $numbers[1] $timeUnits[0]";
+	  }
+	  if ($timeUnits[0] eq $timeUnits[1] && $numbers[1]<$numbers[0]) {
+	    $string .= "$numbers[1] $timeUnits[0] to $numbers[0] $timeUnits[0]";
+	  }
+      }
+      if (scalar(@numbers)==1) {
+	$string .= "$numbers[0] $timeUnits[0]";
+      }
+      if (defined $ages->{$id}->{'initialTimePoint'}) {
+	$string .= " since $ages->{$id}->{'initialTimePoint'}";
+      }
+      if (!$isCounted{$string}) {
+	$isCounted{$string} = 1;
+	push(@bioMatChar, "$string");
+      }
     }
     $sth->finish();
     $studies->[$i]->{'bioMaterialCharacteristics'} = join(",", @bioMatChar);
@@ -355,13 +402,13 @@ sub retrieveBioMaterialCharacteristics {
 
 sub retrieveTreatmentTypes {
   my ($self, $dbh, $studies) = @_;
-  my $sth = $dbh->prepare("select distinct oe.category, oe.value from Study.OntologyEntry oe, RAD.Treatment t, RAD.StudyBioMaterial sb where sb.study_id=? and sb.bio_material_id=t.bio_material_id and t.treatment_type_id=oe.ontology_entry_id order by oe.category, oe.value");
+  my $sth = $dbh->prepare("select distinct oe.value from Study.OntologyEntry oe, RAD.Treatment t, RAD.StudyBioMaterial sb where sb.study_id=? and sb.bio_material_id=t.bio_material_id and t.treatment_type_id=oe.ontology_entry_id order by oe.value");
 
   for (my $i=0; $i<@{$studies}; $i++) {
     $sth->execute($studies->[$i]->{'studyId'});
     my @treatmentTypes;
-      while (my ($category, $value)=$sth->fetchrow_array()) {
-      push(@treatmentTypes, "$category.$value");
+      while (my ($value)=$sth->fetchrow_array()) {
+      push(@treatmentTypes, "$value");
     }
     $sth->finish();
     $studies->[$i]->{'treatmentTypes'} = join(",", @treatmentTypes);
