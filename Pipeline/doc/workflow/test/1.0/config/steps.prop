@@ -1,0 +1,13 @@
+# /firstStep/
+name=ralph
+wait=60
+
+# /secondStep/
+name=benny
+wait=13
+
+# /thirdStep/
+name=stan
+wait=7
+
+
