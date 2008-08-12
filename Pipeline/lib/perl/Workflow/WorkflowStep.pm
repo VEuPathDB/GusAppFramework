@@ -17,7 +17,7 @@ my $END = 'END';
 #  RUNNING --> FAILED (if wrapper itself dies, ie, controller can't find PID)
 #  (state_handled --> true)
 
-# wrapper
+# invoker
 #  ON_DECK --> RUNNING
 #  RUNNING --> DONE | FAILED
 #  (state_handled --> false)
@@ -119,6 +119,7 @@ sub initializeDependsTable {
     }
 }
 
+# for fake start and end steps that are forced into the graph
 sub setFakeStepType {
   my ($self, $type) = @_;
   $self->{fakeStepType} = $type;
