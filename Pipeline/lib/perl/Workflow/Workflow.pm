@@ -12,12 +12,11 @@ use Data::Dumper;
 # - include/exclude
 # - integrate resource pipeline
 # - nested workflows
-# - reset option (clears running flag)
 # - dynamically change allowed num running steps
 # - handle changes to graph after running
 # - cascading defaults for config file
 # - check for graph cycles
-# - cluster
+# - compute cluster
 # - make running order repeatable (sort by order in xml file)
 # - improve log formatting
 # - possibly support taking DONE steps offline.  this will require recursion.
@@ -25,6 +24,8 @@ use Data::Dumper;
 my $RUNNING = 'RUNNING';
 my $ON_DECK = 'ON_DECK';
 my $DONE = 'DONE';
+my $READY = 'READY';
+my $FAILED = 'FAILED';
 my $START = 'START';
 my $END = 'END';
 
@@ -58,7 +59,7 @@ my $END = 'END';
 
 $| = 1;
 
-# step reporter: called by command line UI to report state of steps. does not 
+# Step Reporter: called by command line UI to report state of steps. does not
 # run the controller
 sub reportSteps {
   my ($self, $desiredStates) = @_;
@@ -71,6 +72,9 @@ sub reportSteps {
   $self->reportState();
 
   my @sortedStepNames = sort(keys(%{$self->{stepsByName}}));
+  if (scalar(@$desiredStates) == 0) {
+    $desiredStates = [$READY, $ON_DECK, $RUNNING, $DONE, $FAILED];
+  }
   foreach my $desiredState (@$desiredStates) {
     print "=============== $desiredState steps ================\n";
     foreach my $stepName (@sortedStepNames) {
@@ -88,11 +92,11 @@ sub reportSteps {
 sub run {
   my ($self, $numSteps) = @_;
 
-  $self->initSteps();                # parse graph xml, config, and init db
+  $self->initHomeDir();		     # initialize workflow home directory
+
+  $self->initSteps();                # parse graph xml and config, and init db
 
   $self->getDbSnapshot();	     # read state of Workflow and WorkflowSteps
-
-  $self->initHomeDir();		     # initialize workflow home directory
 
   $self->setRunningState($numSteps); # set db state. fail if already running
 
@@ -117,17 +121,14 @@ sub initSteps {
 }
 
 # traverse a workflow XML, making Step objects as we go
-# also parse the step config file, giving each step its individual config
 sub getStepGraph {
   my ($self) = @_;
 
   if (!$self->{stepsByName}) {
-    my $workflowXmlFile = "$self->{homeDir}/config/workflow.xml";
+    my $fileName = $self->getWorkflowConfig('workflowFile');
+    my $workflowXmlFile = "$ENV{GUS_HOME}/lib/xml/workflow/$fileName";
 
     $self->log("Parsing and validating $workflowXmlFile");
-
-    #	open(FILE, $workflowXmlFile) || $self->error("can't open workflow XML file '$workflowXmlFile'");
-    #	close(FILE);
 
     # parse the XML.
     # use forcearray so elements with one child are still arrays
@@ -181,7 +182,7 @@ and version = '$self->{version}'
   # otherwise, do it...
   $self->log("Initializing workflow '$self->{name} $self->{version}' in database");
 
-  # write workflow row
+  # write row to Workflow table
   my $sql = "select apidb.Workflow_sq.nextval from dual";
   $self->{workflow_id} = $self->runSqlQuery_single_array($sql);
   $sql = "
@@ -199,14 +200,6 @@ VALUES ($self->{workflow_id}, '$self->{name}', '$self->{version}')
 
   # update steps in memory, to get their new IDs
   $self->getWorkflowStepsDbSnapshot();
-
-
-  # write all steps to WorkflowStepDepends table
-  my $stmt = 
-    GUS::Pipeline::Workflow::WorkflowStep::getPreparedDependsStmt($self->getDbh());
-  foreach my $step (values%{$self->{stepsByName}}) {
-      $step->initializeDependsTable($stmt);
-  }
 }
 
 sub getStep {
@@ -248,12 +241,14 @@ and version = '$self->{version}'
 sub getWorkflowStepsDbSnapshot {
     my ($self) = @_;
 
-    $self->{snapshotNum}++;
+    $self->{snapshotNum}++;   # identifier of this snapshot
     $self->{prevStepsSnapshot} = $self->{stepsSnapshot};
     $self->{stepsSnapshot} = {};
 
     my $sql = GUS::Pipeline::Workflow::WorkflowStep::getBulkSnapshotSql($self->{workflow_id});
 
+    # run query to get all rows from WorkflowStep for this workflow
+    # stuff each row into the snapshot, keyed on step name
     my $stmt = $self->getDbh()->prepare($sql);
     $stmt->execute();
     while (my $rowHashRef = $stmt->fetchrow_hashref()) {
@@ -262,7 +257,7 @@ sub getWorkflowStepsDbSnapshot {
 }
 
 # iterate through steps, checking on changes since last snapshot
-# while we're passing through, set running count
+# while we're passing through, count how many steps are running
 sub handleStepChanges {
     my ($self) = @_;
 
@@ -272,7 +267,7 @@ sub handleStepChanges {
 	$self->{runningCount} += $step->handleChangesSinceLastSnapshot();
 	$notDone |= ($step->getState() ne $DONE);
     }
-    if (!$notDone) { $self->log("Workflow DONE"); }
+    if (!$notDone) { $self->setDoneState(); }
     return !$notDone;
 }
 
@@ -283,17 +278,6 @@ sub findOndeckSteps {
 	$step->maybeGoToOnDeck();
     }
 }
-
-sub workflowDone {
-  my ($self) = @_;
-
-  foreach my $step (values(%{$self->{stepsByName}})) {
-    return 0 if !($step->{offline} || $step->getState() eq $DONE);
-  }
-  $self->log("Workflow DONE");
-  return 1;
-}
-
 
 sub fillOpenSlots {
     my ($self) = @_;
@@ -329,7 +313,7 @@ sub getStepsConfig {
 	$stepInvokers->{$invokerClass}->getConfigDeclaration();
     }
 
-    # this object will do the validation
+    # this object does the validation
     $self->{stepsConfig} =
       CBIL::Util::MultiPropertySet->new($stepsConfigFile, $stepsConfigDecl);
   }
@@ -341,11 +325,11 @@ sub initHomeDir {
 
   my $homeDir = $self->getHomeDir();
 
-  $self->log("Initializing workflow home directory '$homeDir'")
-    unless -e "$homeDir/steps";;
-  $self->runCmd("mkdir -p $homeDir/steps") unless -e "$homeDir/logs";
+  return if -e "$homeDir/steps";
+  $self->runCmd("mkdir -p $homeDir/logs") unless -e "$homeDir/logs";
   $self->runCmd("mkdir -p $homeDir/steps") unless -e "$homeDir/steps";
   $self->runCmd("mkdir -p $homeDir/externalFiles") unless -e "$homeDir/externalFiles";
+  $self->log("Initializing workflow home directory '$homeDir'");
 }
 
 sub setRunningState {
@@ -378,7 +362,7 @@ sub setDoneState {
 
   my $sql = "
 UPDATE apidb.Workflow
-SET state = '$DONE'
+SET state = '$DONE', process_id = NULL
 WHERE workflow_id = $workflow_id
 ";
 
@@ -404,6 +388,7 @@ sub log {
   close (LOG);
 }
 
+# not working yet
 sub documentStep {
   my ($self, $signal, $documentInfo, $doitProperty) = @_;
 

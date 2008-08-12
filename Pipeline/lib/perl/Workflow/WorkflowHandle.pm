@@ -24,8 +24,6 @@ Workflow '$self->{name} $self->{version}'
 workflow_id:           $self->{workflow_id}
 state:                 $self->{state}
 process_id:            $self->{process_id}
-start_time:            $self->{start_time}
-end_time:              $self->{end_time}
 allowed_running_steps: $self->{allowed_running_steps}
 \n\n";
 }
@@ -55,6 +53,26 @@ sub getId {
 
   $self->getDbState();
   return $self->{workflow_id};
+}
+
+# brute force reset of workflow.  for developers only
+sub reset {
+  my ($self) = @_;
+
+  my $homeDir = $self->getHomeDir();
+  foreach my $dir ("logs", "steps", "externalFiles") {
+    my $cmd = "rm -rf $homeDir/$dir";
+    $self->runCmd($cmd) if -e "$homeDir/$dir";
+    print "$cmd\n";
+  }
+
+  $self->getDbState();
+  my $sql = "delete from apidb.workflowstep where workflow_id = $self->{workflow_id}";
+  $self->runSql($sql);
+  print "$sql\n";
+  $sql = "delete from apidb.workflow where workflow_id = $self->{workflow_id}";
+  $self->runSql($sql);
+  print "$sql\n";
 }
 
 sub runCmd {
