@@ -1,0 +1,19 @@
+this doc describes how cascading defaults work.
+
+
+probably makes sense for each subflow to have its own config file.  it's parent config can
+specify defaults for it.
+
+more precise paths override less precise paths
+
+# / ApiCommonData::Load::Steps::RunBlast /    -- the defaults for this kind of step, globally
+
+
+# / splign.ApiCommonData::Load::Steps::RunBlast /  -- the defaults for this kind of step in
+                                                      the splign workflow, wherever it appears
+
+# / standardGenome.splign.ApiCommonData::Load::Steps::RunBlast /  -- the defaults for this kind of step in this path context
+
+
+# / splign.runBlast /  -- the defaults for this particular step in the splign subflow
+

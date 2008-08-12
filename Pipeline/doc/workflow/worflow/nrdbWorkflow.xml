@@ -1,6 +1,7 @@
 <workflow name="nrdb">
   <params>
     <param name="nrdbVersion"/>
+    <param name="nrdbFile"/>
   </param>
 
   <constants>
@@ -18,8 +19,8 @@
     </step>
 
     <step name="shortenNrdbDefline" class="ApiCommonData::Load::Steps::ShortenDefline">
-      <configValue name="fromFile">nr</configValue>
-      <configValue name="toDir">seqfiles</configValue>
+      <configValue name="fromFile">seqfiles/nr</configValue>
+      <configValue name="toFile">$$$nrdbOutputFile</configValue>
     </step>
   </steps>
 

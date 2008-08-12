@@ -1,4 +1,4 @@
-<workflow name="genome">
+<workflow name="standardGenomeAnalysis">
   <params>
     <param name="genomeName"/>
     <param name="genomeExtDb"/>
@@ -7,6 +7,7 @@
     <param name="soVersion"/>
     <param name="nrdbVersion"/>
     <param name="taxonomyVersion"/>
+    <param name="computeClusterQueue"/>
   </param>
 
   <constants>
@@ -18,11 +19,14 @@
     <constant name="soExtDbRlsSpec">SequenceOntology:${soVersion}</constant>
     <constant name="tigrExtDbRlsSpec">tigr:${tigrVersion}</constant>
     <constant name="taxonomyExtDbRlsSpec">tigr:${tigrVersion}</constant>
+    <constant name="nrdbFile">seqfiles/nr.fsa</constant>
+    <constant name="proteinsFile">seqfiles/${genomeName}AnnotatedProteins.fsa</constant>
   </constants>
 
   <steps>
     <step name="NRDB" subflow="resource" global="true">
       <configValue name="nrdbVersion">$$$nrdbVersion</configValue>
+      <configValue name="nrdbFile">$$$nrdbFile</configValue>
     </step>
 
     <step name="taxonomy" subflow="resource" global="true"/>
@@ -41,7 +45,8 @@
       <configValue name="extDbRlsSpec">$$$tigrExtDbRlsSpec</configValue>
     </step>
 
-    <step name="spline" subflow="spline">
+    <step name="splign" subflow="splign">
+      <include match="$$$genomeName" list="@@@Pf,@@@Pb,@@@Py,@@@Pv"/>
       <configValue name="genomeName">$$$genomeName</configValue>
       <configValue name="queryExtDbRlsSpec">$$$tigrExtDbRlsSpec</configValue>
       <depends step="genome"/>
@@ -64,6 +69,14 @@
       <depends step="calcTranslatedProteins"/>
     </step>
 
+    <step name="psipred" subflow="psipred">
+      <configValue name="genomeName">$$$genomeName</configValue>
+      <configValue name="nrdbFile">$$$nrdbFile</configValue>
+      <configValue name="proteinsFile">$$$proteinsFile</configValue>
+      <configValue name="queue">$$$computeClusterQueue</configValue>
+      <depends step="extractProteins"/>
+      <depends step="nrdb"/>
+    </step>
 
 
   </steps>
