@@ -4,28 +4,44 @@ use strict;
 use lib "$ENV{GUS_HOME}/lib/perl";
 use GUS::Pipeline::Workflow::Workflow;
 
-my $metaConfigFile = shift @ARGV;
+# process command line args 
+my $homeDir = shift @ARGV;
+&usage unless $homeDir;
 my $numStepsAllowed;
 my @report;
+
 if ($ARGV[0] =~ /\d+/) {
+  usage() unless scalar(@ARGV) == 1;
   $numStepsAllowed = $ARGV[0];
-} else {
+  my $workflow = GUS::Pipeline::Workflow::Workflow->new($homeDir);
+  $workflow->run($numStepsAllowed);
+}
+
+elsif ($ARGV[0] =~ /\-q/) {
+  usage() unless scalar(@ARGV) == 1;
+  my $workflow = GUS::Pipeline::Workflow::WorkflowHandle->new($homeDir);
+  $workflow->reportState();  # quick report
+  exit(0);
+}
+
+elsif ($ARGV[0] =~ /\-d/) {
+  shift @ARGV;
   @report = @ARGV;
+  my $workflow = GUS::Pipeline::Workflow::Workflow->new($homeDir);
+  $workflow->reportSteps(\@report);
 }
 
-&usage unless $metaConfigFile && ($numStepsAllowed || scalar(@report));
-
-my $workflow = GUS::Pipeline::Workflow::Workflow->new($metaConfigFile);
-
-if (scalar(@report)) {
-    if ($report[0] eq 'state') {
-	$workflow->reportState();
-    } else {
-	$workflow->reportSteps(\@report);
-    }
-} else {
-    $workflow->run($numStepsAllowed);
+elsif ($ARGV[0] =~ /\-reset/) {
+  shift @ARGV;
+  @report = @ARGV;
+  my $workflow = GUS::Pipeline::Workflow::Workflow->new($homeDir);
+  $workflow->reset();
 }
+
+else {
+  usage();
+}
+
 
 sub usage {
     print "
@@ -33,24 +49,29 @@ sub usage {
 Run a workflow, or, print a report about a workflow.
 
 
-Usage:  workflow workflow_dir <allowed_running_steps | report_options>
+Usage:  workflow workflow_dir <allowed_running_steps | -q | -d<0|1> <states> >
 
 Where:
   workflow_dir:           the workflow's home directory.  see below
-  allowed_running_steps:  number of steps that can run simultaneously
-  report_options:         either 'state' which reports a brief summary of workflow state
-                          or, a list of desired step states to report, eg 'RUNNING FAILED'
 
-Supply either allowed_running_steps or report_options (not both).  If report_options
-is set, don't run, just print a report.
+  allowed_running_steps:  number of steps that can run simultaneously. (this
+                          option starts the controller.)
+
+  -q:                     print quick report of workflow state (doesn't run
+                          controller).
+
+  -d<0|1> <states>:       print detailed report of workflow state. optional 0
+                          or 1 constrains report to online (0) or offline (1)
+                          steps. optional states is a space delimited list of
+                          state constraints, to print only steps in those
+                          states.
 
 Home dir must contain the following:
   config/
-    workflow.prop
-    workflow.xml
-    steps.prop
-    stepsGlobal.prop
-    resources.prop
+    workflow.prop      (meta config)
+    steps.prop         (steps config)
+    stepsGlobal.prop   (global steps config)
+    resources.xml      [future]
 
 Examples:
 
@@ -60,17 +81,16 @@ Examples:
  quick report of workflow state
    % workflow workflow_dir -q
 
- print steps report.  optionally limit to steps in particular states
-   % workflow workflow_dir -s
-   % workflow workflow_dir -s FAILED RUNNING
+ print detailed steps report.
+   % workflow workflow_dir -d
 
- print steps report, using the optional do_not_run flag to only include steps
- that have the flag in the indicated state.
-   % workflow workflow_dir -s0 ON_DECK
-   % workflow workflow_dir -s1 READY ON_DECK
+ limit steps report to steps in particular states
+   % workflow workflow_dir -d FAILED RUNNING
 
- reset a workflow that died while running
-   % workflow workflow_dir -r
+ print steps report, using the optional offline flag to only include steps
+ that have the flag in the indicated state.  [not implemented yet]
+   % workflow workflow_dir -d0 ON_DECK
+   % workflow workflow_dir -d1 READY ON_DECK
 
 ";
     exit(1);

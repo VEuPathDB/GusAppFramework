@@ -60,6 +60,7 @@ sub getWorkflowConfig {
 	 ['dbLogin', "", ""],
 	 ['dbPassword', "", ""],
 	 ['dbConnectString', "", ""],
+	 ['workflowFile', "", ""],
 	);
 
     if (!$self->{workflowConfig}) {
