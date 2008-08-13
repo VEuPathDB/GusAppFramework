@@ -2,7 +2,7 @@
 
 use strict;
 use lib "$ENV{GUS_HOME}/lib/perl";
-use GUS::Pipeline::Workflow::Workflow;
+use GUS::Workflow::Workflow;
 
 # process command line args 
 my $homeDir = shift @ARGV;
@@ -13,13 +13,13 @@ my @report;
 if ($ARGV[0] =~ /\d+/) {
   usage() unless scalar(@ARGV) == 1;
   $numStepsAllowed = $ARGV[0];
-  my $workflow = GUS::Pipeline::Workflow::Workflow->new($homeDir);
+  my $workflow = GUS::Workflow::Workflow->new($homeDir);
   $workflow->run($numStepsAllowed);
 }
 
 elsif ($ARGV[0] =~ /\-q/) {
   usage() unless scalar(@ARGV) == 1;
-  my $workflow = GUS::Pipeline::Workflow::WorkflowHandle->new($homeDir);
+  my $workflow = GUS::Workflow::WorkflowHandle->new($homeDir);
   $workflow->reportState();  # quick report
   exit(0);
 }
@@ -27,14 +27,14 @@ elsif ($ARGV[0] =~ /\-q/) {
 elsif ($ARGV[0] =~ /\-d/) {
   shift @ARGV;
   @report = @ARGV;
-  my $workflow = GUS::Pipeline::Workflow::Workflow->new($homeDir);
+  my $workflow = GUS::Workflow::Workflow->new($homeDir);
   $workflow->reportSteps(\@report);
 }
 
 elsif ($ARGV[0] =~ /\-reset/) {
   shift @ARGV;
   @report = @ARGV;
-  my $workflow = GUS::Pipeline::Workflow::Workflow->new($homeDir);
+  my $workflow = GUS::Workflow::Workflow->new($homeDir);
   $workflow->reset();
 }
 
