@@ -1,10 +1,10 @@
-package GUS::Pipeline::Workflow::Workflow;
+package GUS::Workflow::Workflow;
 
-@ISA = qw(GUS::Pipeline::Workflow::WorkflowHandle);
+@ISA = qw(GUS::Workflow::WorkflowHandle);
 use strict;
-use GUS::Pipeline::Workflow::Base;
-use GUS::Pipeline::Workflow::WorkflowHandle;
-use GUS::Pipeline::Workflow::WorkflowStep;
+use GUS::Workflow::Base;
+use GUS::Workflow::WorkflowHandle;
+use GUS::Workflow::WorkflowStep;
 use XML::Simple;
 use Data::Dumper;
 
@@ -135,7 +135,7 @@ sub getStepGraph {
       $self->error("non-unique step name: '$stepxml->{name}'")
 	if ($self->{stepsByName}->{$stepxml->{name}});
 
-      my $step = GUS::Pipeline::Workflow::WorkflowStep->
+      my $step = GUS::Workflow::WorkflowStep->
 	new($stepxml->{name}, $self, $stepxml->{class});
 
       push(@{$self->{steps}}, $step);  # in future, this should be ordered
@@ -189,7 +189,7 @@ VALUES ($self->{workflow_id}, '$self->{name}', '$self->{version}')
 
   # write all steps to WorkflowStep table
   my $stmt = 
-    GUS::Pipeline::Workflow::WorkflowStep::getPreparedInsertStmt($self->getDbh(), $self->{workflow_id});
+    GUS::Workflow::WorkflowStep::getPreparedInsertStmt($self->getDbh(), $self->{workflow_id});
   foreach my $step (@{$self->{steps}}) {
       $step->initializeStepTable($stmt);
   }
@@ -241,7 +241,7 @@ sub getWorkflowStepsDbSnapshot {
     $self->{prevStepsSnapshot} = $self->{stepsSnapshot};
     $self->{stepsSnapshot} = {};
 
-    my $sql = GUS::Pipeline::Workflow::WorkflowStep::getBulkSnapshotSql($self->{workflow_id});
+    my $sql = GUS::Workflow::WorkflowStep::getBulkSnapshotSql($self->{workflow_id});
 
     # run query to get all rows from WorkflowStep for this workflow
     # stuff each row into the snapshot, keyed on step name
@@ -392,7 +392,7 @@ sub documentStep {
 	     || ($doitProperty
 		 && $self->{propertySet}->getProp($doitProperty) eq "no"));
 
-  my $documenter = GUS::Pipeline::StepDocumenter->new($signal, $documentInfo);
+  my $documenter = GUS::StepDocumenter->new($signal, $documentInfo);
   $documenter->printXml();
 }
 

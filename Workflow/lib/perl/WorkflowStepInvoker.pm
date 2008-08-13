@@ -1,8 +1,8 @@
-package GUS::Pipeline::Workflow::WorkflowStepInvoker;
+package GUS::Workflow::WorkflowStepInvoker;
 
-@ISA = qw(GUS::Pipeline::Workflow::Base);
+@ISA = qw(GUS::Workflow::Base);
 use strict;
-use GUS::Pipeline::Workflow::Base;
+use GUS::Workflow::Base;
 
 #
 # Super class of workflow steps written in perl, and called by the wrapper

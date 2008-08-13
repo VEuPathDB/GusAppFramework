@@ -1,4 +1,4 @@
-package GUS::Pipeline::Workflow::Base;
+package GUS::Workflow::Base;
 
 use Exporter;
 @ISA = qw(Exporter);
