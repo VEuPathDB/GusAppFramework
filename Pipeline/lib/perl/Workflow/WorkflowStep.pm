@@ -1,23 +1,17 @@
 package GUS::Pipeline::Workflow::WorkflowStep;
 
 use strict;
+use GUS::Pipeline::Workflow::Base;
 
-# allowed states
-my $READY = 'READY';      # my parents are not done yet  -- default state
-my $ON_DECK = 'ON_DECK';  # my parents are done, but there is no slot for me
-my $FAILED = 'FAILED';
-my $DONE = 'DONE';
-my $RUNNING = 'RUNNING';
-
-my $START = 'START';
-my $END = 'END';
-
+# following "state diagram" shows allowed state transitions by
+# different parts of the system
+#
 # controller
 #  READY   --> ON_DECK
 #  RUNNING --> FAILED (if wrapper itself dies, ie, controller can't find PID)
 #  (state_handled --> true)
 
-# invoker
+# step invoker
 #  ON_DECK --> RUNNING
 #  RUNNING --> DONE | FAILED
 #  (state_handled --> false)
@@ -307,3 +301,5 @@ end_time:   $self->{end_time}
 depends:    $depends
 ";
 }
+
+1;

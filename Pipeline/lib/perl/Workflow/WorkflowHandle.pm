@@ -5,10 +5,10 @@ use strict;
 use GUS::Pipeline::Workflow::Base;
 
 ##
-## lite workflow object (handle on workflow row in db) used in three contexts:
+## lite workflow object (a handle on workflow row in db) used in three contexts:
 ##  - quick reporting of workflow state
 ##  - reseting the workflow
-##  - workflowstep command changing state of a step
+##  - workflowstep UI command changing state of a step
 ##
 ## (it avoids the overhead and stringency of parsing and validating
 ## all workflow steps)

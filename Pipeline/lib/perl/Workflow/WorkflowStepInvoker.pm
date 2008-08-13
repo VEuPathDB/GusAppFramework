@@ -1,12 +1,5 @@
 package GUS::Pipeline::Workflow::WorkflowStepInvoker;
 
-# these should be imported from someplace, not duplicated here
-my $READY = 'READY';      # my parents are not done yet  -- default state
-my $ON_DECK = 'ON_DECK';  # my parents are done, but there is no slot for me
-my $FAILED = 'FAILED';
-my $DONE = 'DONE';
-my $RUNNING = 'RUNNING';
-
 @ISA = qw(GUS::Pipeline::Workflow::Base);
 use strict;
 use GUS::Pipeline::Workflow::Base;

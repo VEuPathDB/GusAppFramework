@@ -2,6 +2,7 @@ package GUS::Pipeline::Workflow::Workflow;
 
 @ISA = qw(GUS::Pipeline::Workflow::WorkflowHandle);
 use strict;
+use GUS::Pipeline::Workflow::Base;
 use GUS::Pipeline::Workflow::WorkflowHandle;
 use GUS::Pipeline::Workflow::WorkflowStep;
 use XML::Simple;
@@ -21,13 +22,6 @@ use Data::Dumper;
 # - improve log formatting
 # - possibly support taking DONE steps offline.  this will require recursion.
 
-my $RUNNING = 'RUNNING';
-my $ON_DECK = 'ON_DECK';
-my $DONE = 'DONE';
-my $READY = 'READY';
-my $FAILED = 'FAILED';
-my $START = 'START';
-my $END = 'END';
 
 ##
 ## Workflow object that runs in two contexts:
@@ -144,13 +138,15 @@ sub getStepGraph {
       my $step = GUS::Pipeline::Workflow::WorkflowStep->
 	new($stepxml->{name}, $self, $stepxml->{class});
 
+      push(@{$self->{steps}}, $step);  # in future, this should be ordered
+                                       # by depth-first position
       $self->{stepsByName}->{$stepxml->{name}} = $step;
       $step->{dependsNames} = $stepxml->{depends};
     }
 
     # in second pass, make the parent/child links from the remembered
     # dependenceies
-    foreach my $step (values(%{$self->{stepsByName}})) {
+    foreach my $step (@{$self->{steps}}) {
       foreach my $dependName (@{$step->{dependsNames}}) {
 	my $stepName = $step->getName();
 	my $parent = $self->{stepsByName}->{$dependName->{name}};
@@ -194,7 +190,7 @@ VALUES ($self->{workflow_id}, '$self->{name}', '$self->{version}')
   # write all steps to WorkflowStep table
   my $stmt = 
     GUS::Pipeline::Workflow::WorkflowStep::getPreparedInsertStmt($self->getDbh(), $self->{workflow_id});
-  foreach my $step (values %{$self->{stepsByName}}) {
+  foreach my $step (@{$self->{steps}}) {
       $step->initializeStepTable($stmt);
   }
 
@@ -263,7 +259,7 @@ sub handleStepChanges {
 
     $self->{runningCount} = 0;
     my $notDone = 0;
-    foreach my $step (values(%{$self->{stepsByName}})) {
+    foreach my $step (@{$self->{steps}}) {
 	$self->{runningCount} += $step->handleChangesSinceLastSnapshot();
 	$notDone |= ($step->getState() ne $DONE);
     }
@@ -274,7 +270,7 @@ sub handleStepChanges {
 sub findOndeckSteps {
     my ($self) = @_;
 
-    foreach my $step (values(%{$self->{stepsByName}})) {
+    foreach my $step (@{$self->{steps}}) {
 	$step->maybeGoToOnDeck();
     }
 }
@@ -282,7 +278,7 @@ sub findOndeckSteps {
 sub fillOpenSlots {
     my ($self) = @_;
 
-    foreach my $step (values(%{$self->{stepsByName}})) {
+    foreach my $step (@{$self->{steps}}) {
 	last if $self->{runningCount} >= $self->{allowed_running_steps};
 	$self->{runningCount} += $step->runOnDeckStep();
     }
@@ -302,7 +298,7 @@ sub getStepsConfig {
     # invoker's config declaration.  compare that against the step config file
     my $stepsConfigDecl;
     my $stepInvokers;
-    foreach my $step (values(%{$self->{stepsByName}})) {
+    foreach my $step (@{$self->{steps}}) {
       my $invokerClass = $step->getInvokerClass();
       if (!$stepInvokers->{$invokerClass}) {
 	$stepInvokers->{$invokerClass}
