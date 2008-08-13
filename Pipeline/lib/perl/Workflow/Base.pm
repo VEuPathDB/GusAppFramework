@@ -1,9 +1,26 @@
 package GUS::Pipeline::Workflow::Base;
 
+use Exporter;
+@ISA = qw(Exporter);
+our @EXPORT = qw($READY $ON_DECK $FAILED $DONE $RUNNING $START $END);
+
 use strict;
 use DBI;
 use CBIL::Util::MultiPropertySet;
 use CBIL::Util::PropertySet;
+
+BEGIN {
+# allowed states
+  our $READY = 'READY';      # my parents are not done yet  -- default state
+  our $ON_DECK = 'ON_DECK';  # my parents are done, but there is no slot for me
+  our $FAILED = 'FAILED';
+  our $DONE = 'DONE';
+  our $RUNNING = 'RUNNING';
+  our $WAITING_FOR_PILOT = 'WAITING_FOR_PILOT';  # not used yet.
+
+  our $START = 'START';
+  our $END = 'END';
+}
 
 # methods shared by the perl controller and perl step wrapper.
 # any other language implementation would presumably need equivalent code

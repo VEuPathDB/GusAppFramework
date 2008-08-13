@@ -30,7 +30,7 @@ sub pilotKill {
 
     my ($state) = $self->getDbState();
 
-    die "Can't change to '$FAILED' from '$state'\n"
+    die "Can't change from '$state' to $FAILED\n"
 	if ($state ne $RUNNING);
 
     $self->{workflow}->runCmd("kill -9 $self->{process_id}");
@@ -43,7 +43,7 @@ sub pilotSetReady {
 
     my ($state) = $self->getDbState();
 
-    die "Can't change to '$READY' from '$state'\n"
+    die "Can't change from '$state' to '$READY'\n"
 	unless ($state eq $FAILED);
 
     my $sql = "
@@ -64,7 +64,7 @@ sub pilotSetOffline {
 
     $self->{lastSnapshot} = -1;
     my ($state) = $self->getDbState();
-    die "Can't change OFFLINE when '$RUNNING'\n"
+    die "Can't change to OFFLINE when '$RUNNING'\n"
 	if ($state eq $RUNNING);
     my $offline_bool = $offline eq 'offline'? 1 : 0;
 
