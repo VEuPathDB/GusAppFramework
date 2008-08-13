@@ -1,7 +1,7 @@
-package GUS::Pipeline::Workflow::WorkflowStep;
+package GUS::Workflow::WorkflowStep;
 
 use strict;
-use GUS::Pipeline::Workflow::Base;
+use GUS::Workflow::Base;
 
 # following "state diagram" shows allowed state transitions by
 # different parts of the system

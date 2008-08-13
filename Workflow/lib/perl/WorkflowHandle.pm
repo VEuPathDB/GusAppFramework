@@ -1,8 +1,8 @@
-package GUS::Pipeline::Workflow::WorkflowHandle;
+package GUS::Workflow::WorkflowHandle;
 
-@ISA = qw(GUS::Pipeline::Workflow::Base);
+@ISA = qw(GUS::Workflow::Base);
 use strict;
-use GUS::Pipeline::Workflow::Base;
+use GUS::Workflow::Base;
 
 ##
 ## lite workflow object (a handle on workflow row in db) used in three contexts:

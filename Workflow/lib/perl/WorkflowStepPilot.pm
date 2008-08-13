@@ -1,4 +1,4 @@
-package GUS::Pipeline::Workflow::WorkflowStepPilot;
+package GUS::Workflow::WorkflowStepPilot;
 
 use strict;
 
