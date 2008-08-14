@@ -230,6 +230,7 @@ EOSQL
     }
 
     if (!$self->getArg("overwrite") && $aaSeq->get('sequence')) {
+	$self->undefPointerCache();
       warn "Skipping transcript, already has a sequence.\n";
       next;
     }
@@ -237,6 +238,7 @@ EOSQL
     my $ntSeq = $transcript->getParent("DoTS::NASequence", 1);
 
     unless ($ntSeq) {
+	$self->undefPointerCache();
       die "Transcript had no associated NASequence: " . $transcript->getSourceId() . "\n";
     }
 
