@@ -79,6 +79,12 @@ my $argsDeclaration =
 	     reqd => 0,
 	     isList => 0
             }),
+ stringArg({name => 'taxonName',
+            descr => "SRes.TaxonName.name",
+            constraintFunc => undef,
+            reqd => 0,
+            isList => 0
+            }),
  fileArg({name => 'gene2go',
 	  descr => 'pathname for the gene2go file',
 	  constraintFunc => undef,
@@ -136,7 +142,7 @@ sub makeGoHash{
     my %goHash;
     my %evidHash;
     my $file = $self->getArg('gene2go');
-    my $taxId = $self->getArg('taxId') if  $self->getArg('taxId');
+    my $taxId = $self->getTaxonId();
 
     open (GO, $file) || die "Can't open $file.  Reason: $!\n";
 
@@ -162,6 +168,37 @@ sub makeGoHash{
     return (\%goHash);
 
 }
+
+sub getTaxonId {
+  my ($self) = @_;
+
+  if(my $taxId = $self->getArg('taxId')) {
+    return $taxId;
+  }
+
+  if(my $taxonName = $self->getArg('taxonName')) {
+    my $sql = "select distinct taxon_id from sres.taxonname where name = ?";
+
+    my $dbh = $self->getQueryHandle();
+    my $sh = $dbh->prepare($sql);
+    $sh->execute($taxonName);
+
+    my ($taxId, $count);
+    while(($taxId) = $sh->fetchrow_array()) {
+      $count++;
+    }
+    $sh->finish();
+
+    if($count != 1) {
+      $self->userError("Could not find a distinct taxon_id for taxon name $taxonName");
+    }
+
+    return $taxId;
+  }
+
+  $self->userError("Either taxId OR taxonName must be specified");
+}
+
 
 # --------------------------------------------------------------------
 # checkExistEvidCodes
