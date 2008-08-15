@@ -121,9 +121,9 @@ sub run{
 
     my $goHash = $self->makeGoHash();
 
-    if($self->checkExistGOTerms($goHash)){
+#    if($self->checkExistGOTerms($goHash)){
 	$msg = $self->loadData($goHash);
-    }
+#    }
 
     return $msg;
 }
@@ -240,7 +240,7 @@ sub checkExistGOTerms{
 	my $st = $dbh->prepareAndExecute($sql);
 	my $count = $st->fetchrow_array();
 
-	die "Not all of the GO Terms are in the database.  Please load GO Terms and then rerun this plugin.\n" unless ($count > 0);
+	$self->log("Skipping GO ID $go_id ... not in DB") unless ($count > 0);
     }
 
     return 1;
@@ -300,6 +300,10 @@ sub loadData{
 	    $$newGOAssoc->submit();
 	    $self->undefPointerCache();
 	    $entriesCount ++;
+
+            if($entriesCount % 1000 == 0) {
+              $self->log("Processed $entriesCount entries.  Skipped $skippedCount");
+            }
 	}#eo inner foreach
 	   
     }#eo outer foreach
@@ -327,6 +331,11 @@ sub makeGOAssocEntry{
     my $dbh = $self->getDb()->getDbHandle();
     my $st = $dbh->prepareAndExecute($sql);
     my $goTermId = $st->fetchrow_array();
+
+    unless($goTermId) {
+      $self->log("Skipping GO ID $goId ... not in DB");
+      return 0 ;
+    }
 
     my $gene = GUS::Model::DoTS::Gene->new({
 	'source_id' => $entrezGeneId,
@@ -421,8 +430,12 @@ sub makeAssocInstEvidCode{
     $evidCode->retrieveFromDB();
     my $evidCodeId = $evidCode->getId();
 
+    unless($evidCodeId) {
+      $evidCode->submit();
+    }
+
     my $newAssocEvidCode = GUS::Model::DoTS::GOAssocInstEvidCode->new({
-	'go_evidence_code_id'=> $evidCodeId,
+	'go_evidence_code_id'=> $evidCode->getId(),
 	'review_status_id' => 0
 	});
 
