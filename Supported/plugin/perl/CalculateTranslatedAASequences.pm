@@ -201,6 +201,7 @@ EOSQL
 
       $transAAFeat->setAaSequenceId($aaSeq->getId());
       $transAAFeat->setNaFeatureId($transcript->getId());
+      $transAAFeat->setExternalDatabaseReleaseId($transcript->getExternalDatabaseReleaseId());
 
       $transAAFeat->submit();
 
