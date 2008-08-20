@@ -589,9 +589,13 @@ sub retrieveNASequence {
   $seqIdColumn or die "if you provide --naSequenceSubclass you must also provide --seqIdColumn";
 
   my $class = "GUS::Model::DoTS::$naSequenceSubclass";
+  my $accession = $bioperlSeq->accession_number();
+  if($accession eq 'unknown'){
+      $accession = $bioperlSeq->id();
+  }
   my $naSequence = $class->
     new({ external_database_release_id => $dbRlsId,
-	  $seqIdColumn => $bioperlSeq->accession_number});
+	  $seqIdColumn => $accession);
 
   $naSequence->retrieveFromDB() or die "--naSequenceSubclass is set on the command line so input file is not providing the sequence.  Failed attempting to retrieve naSequenceSubclass '$naSequenceSubclass' with seqIdColumn '$seqIdColumn' and extDbRlsId: '$dbRlsId'\n";
 
