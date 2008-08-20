@@ -595,7 +595,7 @@ sub retrieveNASequence {
   }
   my $naSequence = $class->
     new({ external_database_release_id => $dbRlsId,
-	  $seqIdColumn => $accession);
+	  $seqIdColumn => $accession});
 
   $naSequence->retrieveFromDB() or die "--naSequenceSubclass is set on the command line so input file is not providing the sequence.  Failed attempting to retrieve naSequenceSubclass '$naSequenceSubclass' with seqIdColumn '$seqIdColumn' and extDbRlsId: '$dbRlsId'\n";
 
