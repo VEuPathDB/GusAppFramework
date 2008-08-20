@@ -199,10 +199,14 @@ EOSQL
 
       $aaSeq->submit();
 
+      $transAAFeat->setSourceId($transcript->getSourceId());
       $transAAFeat->setAaSequenceId($aaSeq->getId());
       $transAAFeat->setNaFeatureId($transcript->getId());
       $transAAFeat->setExternalDatabaseReleaseId($transcript->getExternalDatabaseReleaseId());
-
+      my $translationStart = $self->_getTranslationStart($transcript->getExternalDatabaseReleaseId(),$transcript->getSourceId());
+      my $translationStop = $self->_getTranslationStop($transcript->getExternalDatabaseReleaseId(),$transcript->getSourceId());
+      $transAAFeat->setTranslationStart($translationStart);
+      $transAAFeat->setTranslationStop($translationStop);
       $transAAFeat->submit();
 
       push @translatedAAFeatures, $transAAFeat;
@@ -411,5 +415,74 @@ sub exonIds2ExonObjects{
   return @exonObjs;
 }
 
+sub _getTranslationStart{
+  my ($self, $extDbRlsId, $transcriptSourceId) = @_;
+  my $sql = "
+select ef.coding_start,nl.is_reversed,nl.start_min,nl.end_max from dots.exonfeature ef, dots.nalocation nl, dots.transcript t, dots.rnafeatureexon rfe where
+ef.na_feature_id = nl.na_feature_id
+and ef.order_number = 1
+and ef.external_database_release_id = $extDbRlsId
+and t.source_id = '$transcriptSourceId'
+and t.na_feature_id = rfe.rna_feature_id
+and ef.na_feature_id = rfe.exon_feature_id";
+  my $sth = $self->prepareAndExecute($sql);
+
+  my $translationStart;
+
+  while (my ($codingStart,$isReversed,$exonStart,$exonStop) = $sth->fetchrow()) {
+  
+      if($isReversed){
+
+	  $translationStart = $exonStop - $codingStart + 1;
+
+      }else{
+
+	  $translationStart = $codingStart - $exonStart + 1;
+      }
+  }
+  return $translationStart;
+}
+
+sub _getTranslationStop{
+  my ($self, $extDbRlsId, $transcriptSourceId) = @_;
+
+  my $translationStop;
+
+  my $sql = "
+select max(ef.order_number) from dots.exonfeature ef , dots.transcript t, dots.rnafeatureexon rfe where
+ef.external_database_release_id = $extDbRlsId
+and t.source_id = '$transcriptSourceId'
+and t.na_feature_id = rfe.rna_feature_id
+and ef.na_feature_id = rfe.exon_feature_id
+and ef.coding_end is not null
+and ef.coding_start is not null
+";
+  my $sth = $self->prepareAndExecute($sql);
+
+  my ($finalCodingExon) = $sth->fetchrow();
+
+  $sql = "
+select ef.coding_end,nl.is_reversed,nl.start_min,nl.end_max,snas.length from dots.exonfeature ef, dots.nalocation nl, dots.transcript t, dots.rnafeatureexon rfe, dots.splicednasequence snas where
+ef.na_feature_id = nl.na_feature_id
+and ef.order_number = $finalCodingExon
+and ef.external_database_release_id = $extDbRlsId
+and t.source_id = '$transcriptSourceId'
+and t.na_feature_id = rfe.rna_feature_id
+and ef.na_feature_id = rfe.exon_feature_id
+and t.na_sequence_id = snas.na_sequence_id";
+
+    $sth = $self->prepareAndExecute($sql);
+  while (my ($codingStop,$isReversed,$exonStart,$exonStop,$transcriptLength) = $sth->fetchrow()) {
+      if($isReversed){
+
+	  $translationStop = $transcriptLength - ($codingStop - $exonStart);
+
+      }else{
+
+	  $translationStop = $transcriptLength - ($exonStop - $codingStop);
+      }
+  }
+  return $translationStop;
+}
 
 1;
