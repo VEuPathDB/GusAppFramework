@@ -34,7 +34,7 @@ elsif ($ARGV[0] =~ /\-d/) {
 elsif ($ARGV[0] =~ /\-reset/) {
   shift @ARGV;
   @report = @ARGV;
-  my $workflow = GUS::Workflow::Workflow->new($homeDir);
+  my $workflow = GUS::Workflow::WorkflowHandle->new($homeDir);
   $workflow->reset();
 }
 
