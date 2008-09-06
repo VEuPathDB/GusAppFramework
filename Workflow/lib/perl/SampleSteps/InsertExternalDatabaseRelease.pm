@@ -1,8 +1,8 @@
-package GUS::Pipeline::Workflow::SampleSteps::InsertExternalDatabaseRelease;
+package GUS::Workflow::SampleSteps::InsertExternalDatabaseRelease;
 
-@ISA = (GUS::Pipeline::Workflow::WorkflowStepInvoker);
+@ISA = (GUS::Workflow::WorkflowStepInvoker);
 use strict;
-use GUS::Pipeline::Workflow::WorkflowStepInvoker;
+use GUS::Workflow::WorkflowStepInvoker;
 
 sub run {
   my ($self) = @_;
