@@ -41,7 +41,7 @@ sub maxConfAndFoldChange {
 
     if($baseX) {
       $mean0 = $baseX ** $mean0;
-      $mean1 = $baseX ** $mean0 if(defined($mean1));
+      $mean1 = $baseX ** $mean1 if(defined($mean1));
     }
 
     my $foldChange;
