@@ -28,6 +28,9 @@ sub qPercentToConfidence {
 #--------------------------------------------------------------------------------
 
 sub maxConfAndFoldChange {
+  my ($self, $hash) = @_;
+
+  my $baseX = $hash->{baseX};
 
   my $maxConfAndFc; $maxConfAndFc = sub {
     my $valuesString = shift;
@@ -36,9 +39,13 @@ sub maxConfAndFoldChange {
 
     my $max = $conf0 >= $conf1 ? $conf0 : $conf1;
 
+    if($baseX) {
+      $mean0 = $baseX ** $mean0;
+      $mean1 = $baseX ** $mean0 if(defined($mean1));
+    }
+
     my $foldChange;
-    if($max == 0) { }
-    elsif(!$mean1) {
+    if(!$mean1) {
       $foldChange = $mean0 < 1 ? -(1/$mean0) : $mean0;
     }
     else {
