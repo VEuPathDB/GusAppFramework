@@ -1,0 +1,31 @@
+#!/usr/bin/perl
+
+use strict;
+use lib "$ENV{GUS_HOME}/lib/perl";
+
+my $homeDir = $ARGV[0];
+my $workflowId = $ARGV[1];
+my $stepName = $ARGV[2];
+my $invokerClass = $ARGV[3];
+
+usage() unless scalar(@ARGV) == 4;
+
+my $stepInvoker =  eval "{require $invokerClass; $invokerClass->new('$homeDir')}";
+die($@) if $@;
+
+my $status = $stepInvoker->runInWrapper($workflowId, $stepName);
+
+exit($status);
+
+sub usage {
+    print "
+Caution!! this program is only called by the workflow controller
+
+usage: workflowstepwrap workflow_dir workflow_id stepname stepclass
+";
+    exit(1);
+}
+
+
+
+
