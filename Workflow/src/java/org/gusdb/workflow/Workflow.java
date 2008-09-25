@@ -1,5 +1,16 @@
 package org.gusdb.workflow;
 
+import java.io.PrintWriter;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /*
    to do
    - xml validation
@@ -32,7 +43,7 @@ package org.gusdb.workflow;
    this leaves the problem of (a) more than one external change happening
    within a cycle.  but, there are no transitory states that matter. The only
    consequence is that the intermediate state won't be logged.  the only
-   one of these which could realistically happen in the timeframe of a cycle
+   one of these which could realistically happen in the time frame of a cycle
    is the transition from RUNNING to DONE, if a step executes quickly.  In this
    case, the log will show only DONE, without ever showing RUNNING, which is ok.
   
@@ -42,20 +53,22 @@ package org.gusdb.workflow;
    these correctly.
 */
 
-public class Workflow extends WorkflowBase {
-    private Array<WorkflowStep> steps;
+public class Workflow extends WorkflowHandle {
+    private List<WorkflowStep> steps;
     private Map<String, WorkflowStep> stepsByName;
-    private String name;
-    private String version;
-    private String workflow_id;
-    private String homeDir;
-    private final static String nl = System.getProperty("line.separator");
+    private boolean noLog;
+    private int runningCount;
+    private Date start_time;
+    private Date end_time;
+    private int snapshotNum;
+    private List<Map<String,Object>>stepsSnapshot;
+    private List<Map<String,Object>>prevStepsSnapshot;   
 
     /* Step Reporter: called by command line UI to report state of steps.
        does not run the controller
     */
-    public void reportSteps(String[] desiredStates) {
-	noLog(true);
+    public void reportSteps(String[] desiredStates) throws SQLException {
+	noLog = true;
 
 	initSteps();
 
@@ -63,28 +76,32 @@ public class Workflow extends WorkflowBase {
 
 	reportState();
 
-	Array<String> sortedStepNames = stepsByNames.getKeys().sort(); 
+	String sortedStepNames[] = (String[])stepsByName.keySet().toArray(); 
+	Arrays.sort(sortedStepNames);
 
 	if (desiredStates.length == 0) {
-	    desiredStates = [READY, ON_DECK, RUNNING, DONE, FAILED];
+	    String[] ds = {READY, ON_DECK, RUNNING, DONE, FAILED};
+	    desiredStates = ds;      
 	}
-	for (String desiredState : desiredStates) {
+	for (String desiredState : desiredStates) { 
 	    System.out.println("=============== " 
-			       + desiredState steps
-			       + "================");
+			       + desiredState + " steps "
+			       + "================"); 
 	    for (String stepName : sortedStepNames) {
-		WorkflowStep step = stepsByName.get(stepName};
+		WorkflowStep step = stepsByName.get(stepName);
 		if (step.getState().equals(desiredState)) {
 		    System.out.println(step.toString());
+		    /* FIX
 		    System.out.println(stepsConfig.toString(stepName));
+		    */
 		    System.out.println("-----------------------------------------");
 		}
-	    }
+	    }    
 	}
     }
 
     // run the controller
-    public void run(int numSteps) {
+    public void run(int numSteps) throws InterruptedException, SQLException {
 
 	initHomeDir();		   // initialize workflow home directory
 
@@ -97,14 +114,14 @@ public class Workflow extends WorkflowBase {
 	// start polling
 	while (true) {
 	    getDbSnapshot();
-	    if (handleStepChanges()) last;  // return true if all steps done
+	    if (handleStepChanges()) break;  // return true if all steps done
 	    findOndeckSteps();
 	    fillOpenSlots();
 	    wait(2000);
 	}
     }
 
-    private void initSteps() {
+    private void initSteps() throws SQLException {
 
 	getStepGraph();        // parses workflow XML, validates graph
 
@@ -115,8 +132,8 @@ public class Workflow extends WorkflowBase {
 
     // traverse a workflow XML, making Step objects as we go
     private void getStepGraph () {
-	if (!stepsByName) {
-	    String fileName = getWorkflowConfig('workflowFile');
+	if (stepsByName == null) {
+	    String fileName = getWorkflowConfig("workflowFile");
 	    String workflowXmlFile = System.getenv("GUS_HOME") 
 		+ "/lib/xml/workflow/" + fileName;
 
@@ -145,11 +162,11 @@ public class Workflow extends WorkflowBase {
 	    */
 
 	    // in second pass, make the parent/child links from the remembered
-	    // dependenceies
+	    // dependencies
 	    for (WorkflowStep step : steps) {
 		for (String dependName : step.getDependsNames()) {
 		    String stepName = step.getName();
-		    WorkflowStep parent = stepsByName.get(dependName};
+		    WorkflowStep parent = stepsByName.get(dependName);
 		    if (parent == null) 
 			error("step '" + stepName + "' depends on '"
 			      + dependName + "' which is not found");
@@ -161,7 +178,7 @@ public class Workflow extends WorkflowBase {
 
     // write the workflow and steps to the db
     // for now, assume the workflow steps don't change over the life of a workflow
-    private void initDb {
+    private void initDb() throws SQLException {
 
 	name = getWorkflowConfig("name");
 	version = getWorkflowConfig("version");
@@ -172,7 +189,7 @@ public class Workflow extends WorkflowBase {
 	    + "where name = " + "'" + name + "'"  + nl
 	    + "and version = '" + version + "'";
 
-	String workflow_id_tmp = runSqlQuery_single_array(sql);
+	Integer workflow_id_tmp = runSqlQuerySingleRow(sql).getInt(1);
 
 	if (workflow_id_tmp != null) return;
 
@@ -181,29 +198,29 @@ public class Workflow extends WorkflowBase {
 	    + "'" + name + " " + version + "' in database");
 
 	// write row to Workflow table
-	sql = "select apidb.Workflow_sq.nextval from dual";
-	workflow_id = runSqlQuery_single_array(sql);
+        sql = "select apidb.Workflow_sq.nextval from dual";
+        Integer workflow_id = runSqlQuerySingleRow(sql).getInt(1);
 
 	sql = "INSERT INTO apidb.workflow (workflow_id, name, version)" + nl
 	    + "VALUES (" + workflow_id + ", '" + name + "', '" + version + ")";
 	runSql(sql);
 
 	// write all steps to WorkflowStep table
-	stmt = WorkflowStep.getPreparedInsertStmt(getDbh(), workflow_id);
+	PreparedStatement stmt = WorkflowStep.getPreparedInsertStmt(dbConnection, workflow_id);
 	for (WorkflowStep step : steps) {
-	    step->initializeStepTable(stmt);
+	    step.initializeStepTable(stmt);
 	}
 
 	// update steps in memory, to get their new IDs
 	getWorkflowStepsDbSnapshot();
     }
 
-    private void getDbSnapshot() {
+    private void getDbSnapshot() throws SQLException {
 	getWorkflowDbSnapshot();
 	getWorkflowStepsDbSnapshot();
     }
 
-    private void getWorkflowDbSnapshot() {
+    private void getWorkflowDbSnapshot() throws SQLException {
 	if (workflow_id == null) {
 	    name = getWorkflowConfig("name");
 	    version = getWorkflowConfig("version");
@@ -212,41 +229,37 @@ public class Workflow extends WorkflowBase {
 		+ "where name = '" + name + "'"
 		+ "and version = '" + version + "'";
 
-	ResultSet rs = runSqlQuery_single_array(sql);
+	ResultSet rs = runSqlQuerySingleRow(sql);
 	workflow_id = rs.getInt(1);
 	state = rs.getString(2);
-	process_id = rs.getInt(3);
+	process_id = rs.getString(3);
 	start_time = rs.getDate(4);
 	end_time = rs.getDate(5);
 	allowed_running_steps = rs.getInt(6);
 
 	if (workflow_id == null) 
-	    error("workflow '" + name + "' version '" + version + "' not in database")
+	    error("workflow '" + name + "' version '" + version + "' not in database");
   }
 }
 
     // read all WorkflowStep rows into memory (and remember the prev snapshot)
-    private void getWorkflowStepsDbSnapshot() {
-	snapshotNum++;   // identifier of this snapshot
-	prevStepsSnapshot = stepsSnapshot;
-	stepsSnapshot = new HashMap();
-
+    private void getWorkflowStepsDbSnapshot() throws SQLException {
 	String sql = WorkflowStep.getBulkSnapshotSql(workflow_id);
 
 	// run query to get all rows from WorkflowStep for this workflow
 	// stuff each row into the snapshot, keyed on step name
-	Statement stmt = getDbh().prepare(sql);
-	stmt.execute();
-	/*
-	  while (my $rowHashRef = $stmt->fetchrow_hashref()) {
-	  $self->{stepsSnapshot}->{$rowHashRef->{NAME}} = $rowHashRef;
-	  }
-	*/
+	Statement stmt = dbConnection.createStatement();
+	ResultSet rs = stmt.executeQuery(sql);
+	while (rs.next()) {
+	    String stepName = rs.getString("NAME");
+	    WorkflowStep step = stepsByName.get(stepName);
+	    step.setFromDbSnapshot(rs);
+	}
     }
 
     // iterate through steps, checking on changes since last snapshot
     // while we're passing through, count how many steps are running
-    private void handleStepChanges() {
+    private boolean handleStepChanges() throws SQLException {
 
 	runningCount = 0;
 	boolean notDone = false;
@@ -258,7 +271,7 @@ public class Workflow extends WorkflowBase {
 	return !notDone;
     }
 
-    private void findOndeckSteps {
+    private void findOndeckSteps() throws SQLException {
 	for (WorkflowStep step : steps) {
 	    step.maybeGoToOnDeck();
 	}
@@ -266,13 +279,13 @@ public class Workflow extends WorkflowBase {
 
     private void fillOpenSlots() {
 	for (WorkflowStep step : steps) {
-	    if (runningCount >= allowed_running_steps) last;
+	    if (runningCount >= allowed_running_steps) break;
 	    runningCount += step.runOnDeckStep();
 	}
     }
 
     // read and validate all steps config
-    private void getStepsConfig {
+    private void getStepsConfig() {
 	if (stepsConfig == null) {
 
 	    String stepsConfigFile = homeDir + "/config/steps.prop";
@@ -309,8 +322,8 @@ public class Workflow extends WorkflowBase {
 	return stepsConfig;
     }
 
-    private void initHomeDir {
-	String homeDir = getHomeDir();
+    private void initHomeDir() {
+	String homeDir1 = getHomeDir();
 	/* FIX
 	if () return if -e "$homeDir/steps";
   $self->runCmd("mkdir -p $homeDir/logs") unless -e "$homeDir/logs";
@@ -320,14 +333,16 @@ public class Workflow extends WorkflowBase {
 	*/
     }
 
-    private void setRunningState(int numSteps) {
+    private void setRunningState(int numSteps) throws SQLException {
 
 	if (state.equals(RUNNING)) {
+	    /* FIX
 	    system("ps -p $self->{process_id} > /dev/null");
 	    my $status = $? >> 8;
 	    if (!$status) {
 		$self->error("workflow already running (process $self->{process_id})");
 	    }
+	    */
 	}
 	int processId = 0; // FIX
 	log("Setting workflow state to " + RUNNING + "and allowed-number-of-running-steps to " + numSteps + " (process id = " + processId + ")");
@@ -340,7 +355,7 @@ public class Workflow extends WorkflowBase {
 	runSql(sql);
     }
 
-    private void setDoneState {
+    private void setDoneState() throws SQLException {
 
 	String sql = "UPDATE apidb.Workflow" + nl
 	    + "SET state = '" + DONE + "', process_id = NULL" + nl
@@ -350,25 +365,17 @@ public class Workflow extends WorkflowBase {
 	log("Workflow " + DONE);
     }
 
-
-    private sub getId {
-	return workflow_id;
-    }
-
-    private void log(String msg) {
+    void log(String msg) {
 	if (noLog) return;
 
-	Strig homeDir = getHomeDir();
-	/* FIX
-	   open(LOG, ">>$homeDir/logs/controller.log")
-	   || die "can't open log file '$homeDir/logs/controller.log'";
-	   print LOG localtime() . " $msg\n\n";
-	   close (LOG);
-	*/
+	String logFileName = getHomeDir() + "/logs/controller.log";
+	PrintWriter writer = new PrintWriter(new FileWriter(logFileName));
+	writer.println(msg);
+	writer.close();
     }
 
     // not working yet
-    private void documentStep {
+    private void documentStep() {
 	/*
 	  my ($self, $signal, $documentInfo, $doitProperty) = @_;
 
@@ -381,12 +388,4 @@ public class Workflow extends WorkflowBase {
 	*/
     }
 
-    private void runCmd(String cmd) {
-	/* FIX
-    my $output = `$cmd`;
-    my $status = $? >> 8;
-    $self->error("Failed with status $status running: \n$cmd") if ($status);
-    return $output;
-	*/
-    }
 }
