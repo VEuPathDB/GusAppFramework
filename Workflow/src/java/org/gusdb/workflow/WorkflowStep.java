@@ -1,5 +1,7 @@
 package org.gusdb.workflow;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -56,6 +58,7 @@ public class WorkflowStep extends Base {
     private String stepDir;   
     private String prevState;
     private boolean prevOffline;
+    List<String> dependsNames = new ArrayList<String>();
     
     // static
     private static final String nl = System.getProperty("line.separator");
@@ -84,6 +87,10 @@ public class WorkflowStep extends Base {
 
     String getState () {
 	return fakeStepType.equals(WorkflowBase.START)? WorkflowBase.DONE : state;
+    }
+    
+    List<String> getDependsNames() {
+        return dependsNames;
     }
 
     static PreparedStatement getPreparedInsertStmt(Connection dbConnection, int workflowId) throws SQLException {
@@ -122,16 +129,12 @@ public class WorkflowStep extends Base {
 	if (type.equals(WorkflowBase.END)) state = WorkflowBase.READY; 
     }
 
-    int handleChangesSinceLastSnapshot() throws SQLException {
+    int handleChangesSinceLastSnapshot() throws SQLException, IOException {
 	if (state_handled) {
-	    if (state.equals(WorkflowBase.RUNNING)) {
-		/* FIX 
-		system("ps -p $self->{process_id} > /dev/null");
-		my $status = $? >> 8;
-		if ($status) {
-		    $self->handleMissingProcess();
-		}
-		*/
+	    if (state.equals(WorkflowBase.RUNNING)) {	        
+	        String cmd = "ps -p " + process_id +  " > /dev/null";
+	        Process process = Runtime.getRuntime().exec(cmd);
+	        if (process.exitValue() != 0) handleMissingProcess();
 	    }
 	} else { // this step has been changed by wrapper or pilot UI. log change.
 	    String stateMsg = "";
@@ -180,7 +183,7 @@ public class WorkflowStep extends Base {
 	state_handled = true;  // till next snapshot
     }
 
-    private void handleMissingProcess() throws SQLException {
+    private void handleMissingProcess() throws SQLException, IOException {
 	String sql = "UPDATE apidb.WorkflowStep" + nl
 	    + "SET" + nl
 	    + "state = '" + WorkflowBase.FAILED + "', state_handled = 1, process_id = null" + nl
@@ -191,7 +194,7 @@ public class WorkflowStep extends Base {
     }
 
     // if this step is ready, and all parents are done, transition to ON_DECK
-    void maybeGoToOnDeck() throws SQLException {
+    void maybeGoToOnDeck() throws SQLException, IOException {
  
 	if (!state.equals(WorkflowBase.READY) || off_line) return;
 
@@ -209,9 +212,13 @@ public class WorkflowStep extends Base {
     }
 
     // try to run a single ON_DECK step
-    int runOnDeckStep() {
+    int runOnDeckStep() throws IOException, SQLException {
 	if (state.equals(WorkflowBase.ON_DECK) && !off_line) {
-	    forkAndRun();
+	    log("Invoking step '" + name + "'");
+	    String cmd = "workflowstepwrap " + workflow.getHomeDir() + " "
+	    + workflow.getId() + " " + name + " " + invokerClassName
+	    + "2>> " + getStepDir() + "/step.err &";
+	    Runtime.getRuntime().exec(cmd);
 	    return 1;
 	} 
 	return 0;
@@ -220,26 +227,15 @@ public class WorkflowStep extends Base {
     private String getStepDir() {
 	if (stepDir == null) {
 	    stepDir = workflow.getHomeDir() + "/steps/" + name;
-	    /* FIX
-	    workflow.runCmd("mkdir -p " + stepDir) unless -e $stepDir;
-	    */
+            File dir = new File(stepDir);
+            if (!dir.exists()) dir.mkdir();
 	}
 	return stepDir;
     }
 
-    private void forkAndRun() {
-	log("Invoking step '" + name + "'");
-	/* FIX
-	system("workflowstepwrap " + workflow.getHomeDir() + " "
-	       + workflow.getHomeDir() + " " + name + " " + invokerClassName
-	       + "2>> " + getStepDir() + "/step.err &");
-	 */
-    }
-
-
 //////////////////////////  utilities /////////////////////////////////////////
 
-    private void log(String msg) {
+    private void log(String msg) throws IOException {
 	workflow.log(msg);
     }
 
