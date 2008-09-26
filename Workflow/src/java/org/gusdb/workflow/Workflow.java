@@ -1,5 +1,8 @@
 package org.gusdb.workflow;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -57,17 +60,16 @@ public class Workflow extends WorkflowHandle {
     private List<WorkflowStep> steps;
     private Map<String, WorkflowStep> stepsByName;
     private boolean noLog;
-    private int runningCount;
-    private Date start_time;
-    private Date end_time;
-    private int snapshotNum;
-    private List<Map<String,Object>>stepsSnapshot;
-    private List<Map<String,Object>>prevStepsSnapshot;   
+    private int runningCount; 
+
+    public Workflow(String homeDir) {
+        super(homeDir);
+    }
 
     /* Step Reporter: called by command line UI to report state of steps.
        does not run the controller
     */
-    public void reportSteps(String[] desiredStates) throws SQLException {
+    public void reportSteps(String[] desiredStates) throws SQLException, IOException {
 	noLog = true;
 
 	initSteps();
@@ -101,7 +103,7 @@ public class Workflow extends WorkflowHandle {
     }
 
     // run the controller
-    public void run(int numSteps) throws InterruptedException, SQLException {
+    public void run(int numSteps) throws InterruptedException, SQLException, IOException {
 
 	initHomeDir();		   // initialize workflow home directory
 
@@ -121,7 +123,7 @@ public class Workflow extends WorkflowHandle {
 	}
     }
 
-    private void initSteps() throws SQLException {
+    private void initSteps() throws SQLException, IOException {
 
 	getStepGraph();        // parses workflow XML, validates graph
 
@@ -131,7 +133,7 @@ public class Workflow extends WorkflowHandle {
     }
 
     // traverse a workflow XML, making Step objects as we go
-    private void getStepGraph () {
+    private void getStepGraph () throws IOException {
 	if (stepsByName == null) {
 	    String fileName = getWorkflowConfig("workflowFile");
 	    String workflowXmlFile = System.getenv("GUS_HOME") 
@@ -178,7 +180,7 @@ public class Workflow extends WorkflowHandle {
 
     // write the workflow and steps to the db
     // for now, assume the workflow steps don't change over the life of a workflow
-    private void initDb() throws SQLException {
+    private void initDb() throws SQLException, IOException {
 
 	name = getWorkflowConfig("name");
 	version = getWorkflowConfig("version");
@@ -216,31 +218,9 @@ public class Workflow extends WorkflowHandle {
     }
 
     private void getDbSnapshot() throws SQLException {
-	getWorkflowDbSnapshot();
+	getDbState();
 	getWorkflowStepsDbSnapshot();
     }
-
-    private void getWorkflowDbSnapshot() throws SQLException {
-	if (workflow_id == null) {
-	    name = getWorkflowConfig("name");
-	    version = getWorkflowConfig("version");
-	    String sql = "select workflow_id, state, process_id, start_time, end_time, allowed_running_steps" + nl
-		+ "from apidb.workflow" + nl
-		+ "where name = '" + name + "'"
-		+ "and version = '" + version + "'";
-
-	ResultSet rs = runSqlQuerySingleRow(sql);
-	workflow_id = rs.getInt(1);
-	state = rs.getString(2);
-	process_id = rs.getString(3);
-	start_time = rs.getDate(4);
-	end_time = rs.getDate(5);
-	allowed_running_steps = rs.getInt(6);
-
-	if (workflow_id == null) 
-	    error("workflow '" + name + "' version '" + version + "' not in database");
-  }
-}
 
     // read all WorkflowStep rows into memory (and remember the prev snapshot)
     private void getWorkflowStepsDbSnapshot() throws SQLException {
@@ -259,7 +239,7 @@ public class Workflow extends WorkflowHandle {
 
     // iterate through steps, checking on changes since last snapshot
     // while we're passing through, count how many steps are running
-    private boolean handleStepChanges() throws SQLException {
+    private boolean handleStepChanges() throws SQLException, IOException {
 
 	runningCount = 0;
 	boolean notDone = false;
@@ -277,7 +257,7 @@ public class Workflow extends WorkflowHandle {
 	}
     }
 
-    private void fillOpenSlots() {
+    private void fillOpenSlots() throws IOException, SQLException {
 	for (WorkflowStep step : steps) {
 	    if (runningCount >= allowed_running_steps) break;
 	    runningCount += step.runOnDeckStep();
@@ -322,30 +302,28 @@ public class Workflow extends WorkflowHandle {
 	return stepsConfig;
     }
 
-    private void initHomeDir() {
-	String homeDir1 = getHomeDir();
-	/* FIX
-	if () return if -e "$homeDir/steps";
-  $self->runCmd("mkdir -p $homeDir/logs") unless -e "$homeDir/logs";
-  $self->runCmd("mkdir -p $homeDir/steps") unless -e "$homeDir/steps";
-  $self->runCmd("mkdir -p $homeDir/externalFiles") unless -e "$homeDir/externalFiles";
-  $self->log("Initializing workflow home directory '$homeDir'");
-	*/
+    private void initHomeDir() throws IOException {
+	File stepsDir = new File(getHomeDir() + "/steps");
+	if (!stepsDir.exists()) stepsDir.mkdir();
+        File logsDir = new File(getHomeDir() + "/logs");
+        if (!logsDir.exists()) logsDir.mkdir();
+        log("Initializing workflow home directory '" + getHomeDir() + "'");
     }
 
-    private void setRunningState(int numSteps) throws SQLException {
+    private void setRunningState(int numSteps) throws SQLException, IOException {
 
 	if (state.equals(RUNNING)) {
-	    /* FIX
-	    system("ps -p $self->{process_id} > /dev/null");
-	    my $status = $? >> 8;
-	    if (!$status) {
-		$self->error("workflow already running (process $self->{process_id})");
-	    }
-	    */
+	    String cmd = "ps -p " + process_id + "> /dev/null";
+	    Process process = Runtime.getRuntime().exec(cmd);
+	    if (process.exitValue() != 0)
+		error("workflow already running (process $self->{process_id})");
 	}
-	int processId = 0; // FIX
-	log("Setting workflow state to " + RUNNING + "and allowed-number-of-running-steps to " + numSteps + " (process id = " + processId + ")");
+
+	String processId = getProcessId(); // FIX
+
+	log("Setting workflow state to " + RUNNING
+	        + "and allowed-number-of-running-steps to " 
+	        + numSteps + " (process id = " + processId + ")");
 
 	allowed_running_steps = numSteps;
 
@@ -355,7 +333,7 @@ public class Workflow extends WorkflowHandle {
 	runSql(sql);
     }
 
-    private void setDoneState() throws SQLException {
+    private void setDoneState() throws SQLException, IOException {
 
 	String sql = "UPDATE apidb.Workflow" + nl
 	    + "SET state = '" + DONE + "', process_id = NULL" + nl
@@ -365,13 +343,24 @@ public class Workflow extends WorkflowHandle {
 	log("Workflow " + DONE);
     }
 
-    void log(String msg) {
+    void log(String msg) throws IOException {
 	if (noLog) return;
 
 	String logFileName = getHomeDir() + "/logs/controller.log";
 	PrintWriter writer = new PrintWriter(new FileWriter(logFileName));
 	writer.println(msg);
 	writer.close();
+    }
+    
+    /*
+     * from http://blog.igorminar.com/2007/03/one-more-way-how-to-get-current-pid-in.html
+     */
+    private String getProcessId() throws IOException {
+        byte[] bo = new byte[100];
+        String[] cmd = {"bash", "-c", "echo $PPID"};
+        Process p = Runtime.getRuntime().exec(cmd);
+        p.getInputStream().read(bo);
+        return new String(bo);
     }
 
     // not working yet
