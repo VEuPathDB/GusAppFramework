@@ -4,13 +4,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -69,7 +67,7 @@ public class Workflow extends WorkflowHandle {
     /* Step Reporter: called by command line UI to report state of steps.
        does not run the controller
     */
-    public void reportSteps(String[] desiredStates) throws SQLException, IOException {
+    public void reportSteps(String[] desiredStates) throws Exception {
 	noLog = true;
 
 	initSteps();
@@ -103,7 +101,7 @@ public class Workflow extends WorkflowHandle {
     }
 
     // run the controller
-    public void run(int numSteps) throws InterruptedException, SQLException, IOException {
+    public void run(int numSteps) throws Exception {
 
 	initHomeDir();		   // initialize workflow home directory
 
@@ -123,7 +121,7 @@ public class Workflow extends WorkflowHandle {
 	}
     }
 
-    private void initSteps() throws SQLException, IOException {
+    private void initSteps() throws Exception {
 
 	getStepGraph();        // parses workflow XML, validates graph
 
@@ -133,35 +131,20 @@ public class Workflow extends WorkflowHandle {
     }
 
     // traverse a workflow XML, making Step objects as we go
-    private void getStepGraph () throws IOException {
+    private void getStepGraph () throws Exception {
 	if (stepsByName == null) {
-	    String fileName = getWorkflowConfig("workflowFile");
-	    String workflowXmlFile = System.getenv("GUS_HOME") 
-		+ "/lib/xml/workflow/" + fileName;
+	    String xmlFileName = getWorkflowConfig("workflowFile");
 
-	    log("Parsing and validating" + workflowXmlFile);
+	    log("Parsing and validating" + xmlFileName);
 
-	    /*
-	    // parse the XML.
-	    // use forcearray so elements with one child are still arrays
-	    my $simple = XML::Simple->new();
-	    my $data = $simple->XMLin($workflowXmlFile, forcearray => 1,
-				      KeyAttr => {sqlValue=>'+name'});
-
-	   // make each step object, remembering dependencies as a string
-	   foreach my $stepxml (@{$data->{step}}) {
-	   $self->error("non-unique step name: '$stepxml->{name}'")
-	   if ($self->{stepsByName}->{$stepxml->{name}});
-	   
-	   my $step = GUS::Workflow::WorkflowStep->
-	   new($stepxml->{name}, $self, $stepxml->{class});
-
-	   push(@{$self->{steps}}, $step);  // in future, this should be ordered
-                                       // by depth-first position
-				       $self->{stepsByName}->{$stepxml->{name}} = $step;
-				       $step->{dependsNames} = $stepxml->{depends};
-				       }
-	    */
+	    WorkflowXmlParser parser = new WorkflowXmlParser(System.getenv("GUS_HOME"));
+	    steps = parser.parseWorkflow(xmlFileName);
+	    for (WorkflowStep step : steps) {
+	            String stepName = step.getName();
+	        if (stepsByName.containsKey(stepName))
+	            error("non-unique step name: '" + stepName + "'");
+	        stepsByName.put(stepName, step);
+	    }
 
 	    // in second pass, make the parent/child links from the remembered
 	    // dependencies
@@ -251,7 +234,7 @@ public class Workflow extends WorkflowHandle {
 	return !notDone;
     }
 
-    private void findOndeckSteps() throws SQLException {
+    private void findOndeckSteps() throws SQLException, IOException {
 	for (WorkflowStep step : steps) {
 	    step.maybeGoToOnDeck();
 	}
@@ -266,6 +249,7 @@ public class Workflow extends WorkflowHandle {
 
     // read and validate all steps config
     private void getStepsConfig() {
+        /*
 	if (stepsConfig == null) {
 
 	    String stepsConfigFile = homeDir + "/config/steps.prop";
@@ -287,7 +271,7 @@ public class Workflow extends WorkflowHandle {
 		    $stepInvokers->{$invokerClass}
 		    = eval "{require $invokerClass; $invokerClass->new()}";
 		    $self->error($@) if $@;
-		    */
+		    
 		}
 		stepConfigDecl.put(step.getName(), 
 				   invokerClassConfigDecl.get(invokerClassName));
@@ -297,9 +281,10 @@ public class Workflow extends WorkflowHandle {
 	    /* FIX
 	       $self->{stepsConfig} =
 	       CBIL::Util::MultiPropertySet->new($stepsConfigFile, $stepsConfigDecl);
-	    */
+	    
 	}
 	return stepsConfig;
+	*/
     }
 
     private void initHomeDir() throws IOException {
@@ -319,7 +304,7 @@ public class Workflow extends WorkflowHandle {
 		error("workflow already running (process $self->{process_id})");
 	}
 
-	String processId = getProcessId(); // FIX
+	String processId = getProcessId(); 
 
 	log("Setting workflow state to " + RUNNING
 	        + "and allowed-number-of-running-steps to " 
