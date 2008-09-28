@@ -1,10 +1,14 @@
 package org.gusdb.workflow;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
 public class WorkflowBase {
     public static final String READY = "READY"; // my parents are not done yet  -- default state
@@ -21,6 +25,7 @@ public class WorkflowBase {
 
     Connection dbConnection;
     String homeDir;
+    private Properties workflowProps;
 
     // methods shared by the perl controller and perl step wrapper.
     // any other language implementation would presumably need equivalent code
@@ -28,7 +33,7 @@ public class WorkflowBase {
 	this.homeDir = homeDir;
     }
 
-    Connection getDbConnection() throws SQLException {
+    Connection getDbConnection() throws SQLException, FileNotFoundException, IOException {
 	if (dbConnection == null) {
 	    DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver());
 	    dbConnection = DriverManager.getConnection(getWorkflowConfig("dbConnectString"),
@@ -54,8 +59,14 @@ public class WorkflowBase {
 	return homeDir;
     }
 
-    String getWorkflowConfig(String key) {
-	/* FIX
+    String getWorkflowConfig(String key) throws FileNotFoundException, IOException {
+        if (workflowProps == null) {
+            workflowProps = new Properties();
+            workflowProps.load(new FileInputStream(getHomeDir() + "/workflow.prop"));
+        }
+        return workflowProps.getProperty(key);
+
+        /* FIX
     my @properties = 
 	(
 	 // [name, default, description]
@@ -66,19 +77,10 @@ public class WorkflowBase {
 	 ['dbConnectString', "", ""],
 	 ['workflowFile', "", ""],
 	);
-
-    if (!$self->{workflowConfig}) {
-      my $workflowConfigFile = "$self->{homeDir}/config/workflow.prop";
-      $self->{workflowConfig} =
-	CBIL::Util::PropertySet->new($workflowConfigFile, \@properties);
-    }
-    return $self->{workflowConfig}->getProp($key);
 	*/
-	return "";
     }
 
     void error(String msg) {
-	System.err.println(msg);
-	System.exit(1);
+        Utilities.error(msg);
     }
 }
