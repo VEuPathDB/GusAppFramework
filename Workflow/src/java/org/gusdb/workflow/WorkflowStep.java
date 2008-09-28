@@ -58,16 +58,23 @@ public class WorkflowStep extends Base {
     private String stepDir;   
     private String prevState;
     private boolean prevOffline;
-    List<String> dependsNames = new ArrayList<String>();
+    List<Name> dependsNames = new ArrayList<Name>();
     
     // static
     private static final String nl = System.getProperty("line.separator");
 
-    public WorkflowStep(String stepName, Workflow workflow, String invokerClassName) {
-	this.name = stepName;
-	this.workflow = workflow;
-	this.invokerClassName = invokerClassName;
+    
+    public void setName(String name) {
+        this.name = name;
     }
+    
+    public void setClass(String invokerClassName) {
+        this.invokerClassName = invokerClassName;
+    }
+    
+    public void setWorkflow(Workflow w) {
+        this.workflow = w;
+    }   
 
     void addParent(WorkflowStep parent) {
 	parents.add(parent);
@@ -89,10 +96,14 @@ public class WorkflowStep extends Base {
 	return fakeStepType.equals(WorkflowBase.START)? WorkflowBase.DONE : state;
     }
     
-    List<String> getDependsNames() {
+    List<Name> getDependsNames() {
         return dependsNames;
     }
 
+    public void addDependsName(Name dependsName) {
+        dependsNames.add(dependsName);
+    }
+    
     static PreparedStatement getPreparedInsertStmt(Connection dbConnection, int workflowId) throws SQLException {
 	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, off_line)"
 	    + "VALUES (apidb.workflowstep_sq.nextval, " + workflowId + ", ?, ?, 1, 0)";
@@ -248,6 +259,7 @@ public class WorkflowStep extends Base {
 	String s =  ""
 	    + "name:       " + name + nl
 	    + "id:         " + workflow_step_id + nl
+	    + "class:      " + invokerClassName + nl
 	    + "state:      " + state + nl
 	    + "off_line:   " + off_line + nl
 	    + "handled:    " + state_handled + nl

@@ -1,6 +1,7 @@
 package org.gusdb.workflow;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -8,9 +9,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionGroup;
+import org.apache.commons.cli.Options;
 
 /*
    to do
@@ -122,43 +128,19 @@ public class Workflow extends WorkflowHandle {
     }
 
     private void initSteps() throws Exception {
-
-	getStepGraph();        // parses workflow XML, validates graph
-
+        String xmlFileName = getWorkflowConfig("workflowFile");
+        
+        // parse workflow xml
+        log("Parsing and validating" + xmlFileName);
+        String gusHome = System.getProperty("GUS_HOME");
+        WorkflowXmlParser parser = new WorkflowXmlParser(gusHome);
+        Map<String, WorkflowStep> stepsByName = parser.parseWorkflow(xmlFileName);
+        
+        steps = new ArrayList<WorkflowStep>(stepsByName.values());
+        
 	initDb();              // write workflow to db, if not already there
 
 	getStepsConfig();      // validate config of all steps.
-    }
-
-    // traverse a workflow XML, making Step objects as we go
-    private void getStepGraph () throws Exception {
-	if (stepsByName == null) {
-	    String xmlFileName = getWorkflowConfig("workflowFile");
-
-	    log("Parsing and validating" + xmlFileName);
-
-	    WorkflowXmlParser parser = new WorkflowXmlParser(System.getenv("GUS_HOME"));
-	    steps = parser.parseWorkflow(xmlFileName);
-	    for (WorkflowStep step : steps) {
-	            String stepName = step.getName();
-	        if (stepsByName.containsKey(stepName))
-	            error("non-unique step name: '" + stepName + "'");
-	        stepsByName.put(stepName, step);
-	    }
-
-	    // in second pass, make the parent/child links from the remembered
-	    // dependencies
-	    for (WorkflowStep step : steps) {
-		for (String dependName : step.getDependsNames()) {
-		    String stepName = step.getName();
-		    WorkflowStep parent = stepsByName.get(dependName);
-		    if (parent == null) 
-			error("step '" + stepName + "' depends on '"
-			      + dependName + "' which is not found");
-		    step.addParent(parent);
-		}
-	    }
-	}
     }
 
     // write the workflow and steps to the db
@@ -200,7 +182,7 @@ public class Workflow extends WorkflowHandle {
 	getWorkflowStepsDbSnapshot();
     }
 
-    private void getDbSnapshot() throws SQLException {
+    private void getDbSnapshot() throws SQLException, FileNotFoundException, IOException {
 	getDbState();
 	getWorkflowStepsDbSnapshot();
     }
@@ -349,8 +331,9 @@ public class Workflow extends WorkflowHandle {
     }
 
     // not working yet
+    /*
     private void documentStep() {
-	/*
+
 	  my ($self, $signal, $documentInfo, $doitProperty) = @_;
 
 	  return if (!$self->{justDocumenting}
@@ -359,7 +342,88 @@ public class Workflow extends WorkflowHandle {
 	  
 	  my $documenter = GUS::StepDocumenter->new($signal, $documentInfo);
 	  $documenter->printXml();
-	*/
     }
+    */
+    
+    public static void main(String[] args) throws Exception  {
+        String cmdName = System.getProperty("cmdName");
+
+        // parse command line
+        Options options = declareOptions();
+        String cmdlineSyntax = cmdName + " -h workflow_home_dir <-n allowed_running_steps | -q | -d <states> >";
+        String cmdDescrip = "Run a workflow, or, print a report about a workflow.";
+        CommandLine cmdLine =
+            Utilities.parseOptions(cmdlineSyntax, cmdDescrip, getUsageNotes(), options, args);
+                
+        // get required homedir from cmd line
+        String homeDirName = cmdLine.getOptionValue("h");
+        Workflow workflow = new Workflow(homeDirName);
+        
+                
+        // branch based on provided options
+        if (cmdLine.hasOption("n")) {
+            String numSteps = cmdLine.getOptionValue("n"); 
+            workflow.run(Integer.parseInt(numSteps));
+        } else if (cmdLine.hasOption("q")) {
+            
+        } else if (cmdLine.hasOption("d")) {
+            
+        } else {
+            Utilities.usage(cmdlineSyntax, cmdDescrip, getUsageNotes(), options);
+        }
+        System.exit(0);
+    }
+    
+    private static String getUsageNotes() {
+        return
+ 
+      "Home dir must contain the following:" + nl
+    + "   config/" + nl
+    + "     workflow.prop      (meta config)" + nl
+    + "     steps.prop         (steps config)" + nl
+    + "     stepsGlobal.prop   (global steps config)" + nl
+    + "     resources.xml      [future]" + nl
+    + nl                              
+    + "Examples:" + nl
+    + nl     
+    + "  run a workflow:" + nl
+    + "    % workflow workflow_dir 3" + nl
+    + nl     
+    + "  quick report of workflow state" + nl
+    + "    % workflow workflow_dir -q" + nl
+    + nl     
+    + "  print detailed steps report." + nl
+    + "    % workflow workflow_dir -d" + nl
+    + nl     
+    + "  limit steps report to steps in particular states" + nl
+    + "    % workflow workflow_dir -d FAILED RUNNING" + nl
+    + nl     
+    + "  print steps report, using the optional offline flag to only include steps" + nl
+    + "  that have the flag in the indicated state.  [not implemented yet]" + nl
+    + "    % workflow workflow_dir -d0 ON_DECK" + nl
+    + "    % workflow workflow_dir -d1 READY ON_DECK" + nl;
+    }
+
+    private static Options declareOptions() {
+        Options options = new Options();
+
+        Utilities.addOption(options, "h", "Workflow homedir (see below)");
+        
+        OptionGroup optionalOptions = new OptionGroup();
+        Option numSteps = new Option("n", true,
+             "Number of steps allowed to run simultaneously");
+        optionalOptions.addOption(numSteps);
+        
+        Option detailedRep = new Option("d", true, "Print detailed report");
+        optionalOptions.addOption(detailedRep);
+        
+        Option quickRep = new Option("q", "Print quick report");
+        optionalOptions.addOption(quickRep);
+        options.addOptionGroup(optionalOptions);
+
+        return options;
+    }
+
+    
 
 }
