@@ -2,6 +2,7 @@ package org.gusdb.workflow;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 
 import javax.xml.transform.Result;
@@ -126,11 +128,14 @@ public class WorkflowXmlParser extends XmlParser {
 
         // process args
         Options options = declareOptions();
-        String cmdlineSyntax = cmdName + " -f xmlFile";
+        String cmdlineSyntax = cmdName + " -h workflowDir";
         String cmdDescrip = "Parse and print out a workflow xml file.";
         CommandLine cmdLine =
             Utilities.parseOptions(cmdlineSyntax, cmdDescrip, "", options, args);
-        String xmlFileName = cmdLine.getOptionValue("f");
+        String homeDir = cmdLine.getOptionValue("h");
+        Properties workflowProps = new Properties();
+        workflowProps.load(new FileInputStream(homeDir + "/workflow.prop"));
+        String xmlFileName = workflowProps.getProperty("workflowXmlFile");
 
         // create a parser, and parse the model file
         WorkflowXmlParser parser = new WorkflowXmlParser(gusHome);
@@ -144,7 +149,7 @@ public class WorkflowXmlParser extends XmlParser {
     private static Options declareOptions() {
         Options options = new Options();
 
-        Utilities.addOption(options, "f", "");
+        Utilities.addOption(options, "h", "");
 
         return options;
     }
