@@ -128,7 +128,7 @@ public class Workflow extends WorkflowHandle {
     }
 
     private void initSteps() throws Exception {
-        String xmlFileName = getWorkflowConfig("workflowFile");
+        String xmlFileName = getWorkflowConfig("workflowXmlFile");
         
         // parse workflow xml
         log("Parsing and validating" + xmlFileName);
@@ -182,7 +182,7 @@ public class Workflow extends WorkflowHandle {
 	getWorkflowStepsDbSnapshot();
     }
 
-    private void getDbSnapshot() throws SQLException, FileNotFoundException, IOException {
+    private void getDbSnapshot() throws SQLException, IOException {
 	getDbState();
 	getWorkflowStepsDbSnapshot();
     }
