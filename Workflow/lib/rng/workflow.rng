@@ -6,7 +6,7 @@
       <oneOrMore>
         <element name="step">
           <attribute name="name" />
-          <attribute name="class"/>
+          <attribute name="stepClass"/>
           <zeroOrMore>
             <element name="depends">
               <attribute name="name" />

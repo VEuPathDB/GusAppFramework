@@ -23,7 +23,7 @@ public class WorkflowBase {
 
     final static String nl = System.getProperty("line.separator");
 
-    Connection dbConnection;
+    private Connection dbConnection;
     String homeDir;
     private Properties workflowProps;
 
@@ -43,13 +43,13 @@ public class WorkflowBase {
 	return dbConnection;
     }
 
-    void runSql(String sql) throws SQLException {
-	Statement stmt = dbConnection.createStatement();
+    void runSql(String sql) throws SQLException, FileNotFoundException, IOException {
+	Statement stmt = getDbConnection().createStatement();
 	stmt.executeUpdate(sql);
     }
 
-    ResultSet runSqlQuerySingleRow(String sql) throws SQLException {
-        Statement stmt = dbConnection.createStatement();
+    ResultSet runSqlQuerySingleRow(String sql) throws SQLException, FileNotFoundException, IOException {
+        Statement stmt = getDbConnection().createStatement();
         ResultSet rs = stmt.executeQuery(sql);
         rs.next();
         return rs;
@@ -75,7 +75,7 @@ public class WorkflowBase {
 	 ['dbLogin', "", ""],
 	 ['dbPassword', "", ""],
 	 ['dbConnectString', "", ""],
-	 ['workflowFile', "", ""],
+	 ['workflowXmlFile', "", ""],
 	);
 	*/
     }

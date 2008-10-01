@@ -85,7 +85,7 @@ public class Workflow extends WorkflowHandle {
 	String sortedStepNames[] = (String[])stepsByName.keySet().toArray(); 
 	Arrays.sort(sortedStepNames);
 
-	if (desiredStates.length == 0) {
+	if (desiredStates.length == 0 || desiredStates[0].equals("ALL")) {
 	    String[] ds = {READY, ON_DECK, RUNNING, DONE, FAILED};
 	    desiredStates = ds;      
 	}
@@ -134,7 +134,7 @@ public class Workflow extends WorkflowHandle {
         log("Parsing and validating" + xmlFileName);
         String gusHome = System.getProperty("GUS_HOME");
         WorkflowXmlParser parser = new WorkflowXmlParser(gusHome);
-        Map<String, WorkflowStep> stepsByName = parser.parseWorkflow(xmlFileName);
+        stepsByName = parser.parseWorkflow(xmlFileName);
         
         steps = new ArrayList<WorkflowStep>(stepsByName.values());
         
@@ -151,10 +151,10 @@ public class Workflow extends WorkflowHandle {
 	version = getWorkflowConfig("version");
 
 	// don't bother if already in db
-	String sql = "select workflow_id" + nl
-	    + "from apidb.workflow" + nl
-	    + "where name = " + "'" + name + "'"  + nl
-	    + "and version = '" + version + "'";
+	String sql = "select workflow_id"  
+	    + " from apidb.workflow"  
+	    + " where name = " + "'" + name + "'"   
+	    + " and version = '" + version + "'";
 
 	Integer workflow_id_tmp = runSqlQuerySingleRow(sql).getInt(1);
 
@@ -168,12 +168,12 @@ public class Workflow extends WorkflowHandle {
         sql = "select apidb.Workflow_sq.nextval from dual";
         Integer workflow_id = runSqlQuerySingleRow(sql).getInt(1);
 
-	sql = "INSERT INTO apidb.workflow (workflow_id, name, version)" + nl
-	    + "VALUES (" + workflow_id + ", '" + name + "', '" + version + ")";
+	sql = "INSERT INTO apidb.workflow (workflow_id, name, version)"  
+	    + " VALUES (" + workflow_id + ", '" + name + "', '" + version + ")";
 	runSql(sql);
 
 	// write all steps to WorkflowStep table
-	PreparedStatement stmt = WorkflowStep.getPreparedInsertStmt(dbConnection, workflow_id);
+	PreparedStatement stmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
 	for (WorkflowStep step : steps) {
 	    step.initializeStepTable(stmt);
 	}
@@ -188,12 +188,12 @@ public class Workflow extends WorkflowHandle {
     }
 
     // read all WorkflowStep rows into memory (and remember the prev snapshot)
-    private void getWorkflowStepsDbSnapshot() throws SQLException {
+    private void getWorkflowStepsDbSnapshot() throws SQLException, FileNotFoundException, IOException {
 	String sql = WorkflowStep.getBulkSnapshotSql(workflow_id);
 
 	// run query to get all rows from WorkflowStep for this workflow
 	// stuff each row into the snapshot, keyed on step name
-	Statement stmt = dbConnection.createStatement();
+	Statement stmt = getDbConnection().createStatement();
 	ResultSet rs = stmt.executeQuery(sql);
 	while (rs.next()) {
 	    String stepName = rs.getString("NAME");
@@ -302,9 +302,9 @@ public class Workflow extends WorkflowHandle {
 
     private void setDoneState() throws SQLException, IOException {
 
-	String sql = "UPDATE apidb.Workflow" + nl
-	    + "SET state = '" + DONE + "', process_id = NULL" + nl
-	    + "WHERE workflow_id = " + getId();
+	String sql = "UPDATE apidb.Workflow"  
+	    + " SET state = '" + DONE + "', process_id = NULL"  
+	    + " WHERE workflow_id = " + getId();
 
 	runSql(sql);
 	log("Workflow " + DONE);
@@ -367,7 +367,9 @@ public class Workflow extends WorkflowHandle {
         } else if (cmdLine.hasOption("q")) {
             
         } else if (cmdLine.hasOption("d")) {
-            
+            String desiredStatesStr = cmdLine.getOptionValue("d"); 
+            String[] desiredStates = desiredStatesStr.split(",");
+            workflow.reportSteps(desiredStates);            
         } else {
             Utilities.usage(cmdlineSyntax, cmdDescrip, getUsageNotes(), options);
         }

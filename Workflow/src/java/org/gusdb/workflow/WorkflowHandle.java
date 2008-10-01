@@ -39,11 +39,11 @@ public class WorkflowHandle extends WorkflowBase {
     void reportState() throws SQLException, FileNotFoundException, IOException {
 	getDbState();
 
-	System.out.println("Workflow '" + name + " " + version  + "'"
-			   + "workflow_id:           " + workflow_id
-			   + "state:                 " + state
-			   + "process_id:            " + process_id
-			   + "allowed_running_steps: " + allowed_running_steps);
+	System.out.println("Workflow '" + name + " " + version  + "'" + nl
+			   + "workflow_id:           " + workflow_id + nl
+			   + "state:                 " + state + nl
+			   + "process_id:            " + process_id + nl
+			   + "allowed_running_steps: " + allowed_running_steps + nl);
     }
 
 
@@ -52,10 +52,10 @@ public class WorkflowHandle extends WorkflowBase {
 	if (workflow_id == null) {
 	    name = getWorkflowConfig("name");
 	    version = getWorkflowConfig("version");
-	    String sql = "select workflow_id, state, process_id, start_time, end_time, allowed_running_steps" + nl
-		+ "from apidb.workflow" + nl
-		+ "where name = '" + name + "'" + nl
-		+ "and version = '" + version + "'" + nl;
+	    String sql = "select workflow_id, state, process_id, start_time, end_time, allowed_running_steps"  
+		+ " from apidb.workflow"  
+		+ " where name = '" + name + "'"  
+		+ " and version = '" + version + "'" ;
 
 	    ResultSet rs = runSqlQuerySingleRow(sql);
 	    
