@@ -1,15 +1,15 @@
 <workflow>
 
   <step name="firstStep"
-        class="GUS::Pipeline::Workflow::TestStep">
+        stepClass="GUS::Pipeline::Workflow::TestStep">
   </step>
 
   <step name="secondStep"
-        class="GUS::Pipeline::Workflow::TestStep">
+        stepClass="GUS::Pipeline::Workflow::TestStep">
   </step>
 
   <step name="thirdStep"
-        class="GUS::Pipeline::Workflow::TestStep">
+        stepClass="GUS::Pipeline::Workflow::TestStep">
     <depends name="firstStep"/>
     <depends name="secondStep"/>
   </step>

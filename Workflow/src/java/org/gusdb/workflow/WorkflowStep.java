@@ -1,6 +1,7 @@
 package org.gusdb.workflow;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Date;
@@ -29,14 +30,14 @@ import java.util.List;
    RUNNING    --> FAILED  (or, just kill the process and let the controller change the state)
    FAILED     --> READY  (ie, the pilot has fixed the problem)
    (state_handled --> false)
-   [note: going from done to ready is the provence of undo]
+   [note: going from done to ready is the province of undo]
 
   Pilot UI (GUI or command line)
    OFFLINE --> 1/0  (change not allowed if step is running)
 
 */
 
-public class WorkflowStep extends Base {
+public class WorkflowStep  {
 
     // from construction and configuration
     private String name;
@@ -68,7 +69,7 @@ public class WorkflowStep extends Base {
         this.name = name;
     }
     
-    public void setClass(String invokerClassName) {
+    public void setStepClass(String invokerClassName) {
         this.invokerClassName = invokerClassName;
     }
     
@@ -106,7 +107,7 @@ public class WorkflowStep extends Base {
     
     static PreparedStatement getPreparedInsertStmt(Connection dbConnection, int workflowId) throws SQLException {
 	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, off_line)"
-	    + "VALUES (apidb.workflowstep_sq.nextval, " + workflowId + ", ?, ?, 1, 0)";
+	    + " VALUES (apidb.workflowstep_sq.nextval, " + workflowId + ", ?, ?, 1, 0)";
 	return dbConnection.prepareStatement(sql);
     }
 
@@ -121,8 +122,8 @@ public class WorkflowStep extends Base {
     }
 
     static PreparedStatement getPreparedDependsStmt(Connection dbConnection) throws SQLException {
-	String sql= "INSERT INTO apidb.workflowstepdependency (workflow_step_dependency_id, parent_id, child_id)" + nl
-	+ "VALUES (apidb.workflowstepdependency_sq.nextval, ?, ?)";
+	String sql= "INSERT INTO apidb.workflowstepdependency (workflow_step_dependency_id, parent_id, child_id)"
+	+ " VALUES (apidb.workflowstepdependency_sq.nextval, ?, ?)";
 	return dbConnection.prepareStatement(sql);
     }
 
@@ -163,9 +164,9 @@ public class WorkflowStep extends Base {
 
     // static method
     static String getBulkSnapshotSql(int workflow_id) {
-	return "SELECT name, workflow_step_id, state, state_handled, off_line, process_id, start_time, end_time, host_machine" + nl
-	    + "FROM apidb.workflowstep"
-	    + "WHERE workflow_id = " + workflow_id;
+	return "SELECT name, workflow_step_id, state, state_handled, off_line, process_id, start_time, end_time, host_machine" 
+	    + " FROM apidb.workflowstep"
+	    + " WHERE workflow_id = " + workflow_id;
     }
 
     void setFromDbSnapshot(ResultSet rs) throws SQLException {
@@ -183,23 +184,23 @@ public class WorkflowStep extends Base {
 	end_time = rs.getDate("END_TIME");
     }
 
-    private void setHandledFlag() throws SQLException {
+    private void setHandledFlag() throws SQLException, FileNotFoundException, IOException {
 	// check that state is still as expected, to avoid theoretical race condition
-	String sql = "UPDATE apidb.WorkflowStep" + nl
-	    + "SET state_handled = 1"
-	    + "WHERE workflow_step_id = " + workflow_step_id
-	    + "AND state = '" + state + "'"
-	    + "AND off_line = " + off_line;
+	String sql = "UPDATE apidb.WorkflowStep"  
+	    + " SET state_handled = 1"
+	    + " WHERE workflow_step_id = " + workflow_step_id
+	    + " AND state = '" + state + "'"
+	    + " AND off_line = " + off_line;
 	runSql(sql);
 	state_handled = true;  // till next snapshot
     }
 
     private void handleMissingProcess() throws SQLException, IOException {
-	String sql = "UPDATE apidb.WorkflowStep" + nl
-	    + "SET" + nl
-	    + "state = '" + WorkflowBase.FAILED + "', state_handled = 1, process_id = null" + nl
-	    + "WHERE workflow_step_id = " + workflow_step_id
-	    + "AND state = '" + WorkflowBase.RUNNING + "'";
+	String sql = "UPDATE apidb.WorkflowStep"  
+	    + " SET"  
+	    + " state = '" + WorkflowBase.FAILED + "', state_handled = 1, process_id = null" 
+	    + " WHERE workflow_step_id = " + workflow_step_id
+	    + " AND state = '" + WorkflowBase.RUNNING + "'";
 	runSql(sql);
 	log("Step '" + name + "' FAILED (can't find wrapper process " + process_id + ")");
     }
@@ -215,10 +216,10 @@ public class WorkflowStep extends Base {
 
 	log("Step '" + name + "' " + WorkflowBase.ON_DECK);
 
-	String sql = "UPDATE apidb.WorkflowStep" + nl
-	    + "SET state = '" + WorkflowBase.ON_DECK + "', state_handled = 1" + nl
-	    + "WHERE workflow_step_id = " + workflow_step_id + nl
-	    + "AND state = '" + WorkflowBase.READY;
+	String sql = "UPDATE apidb.WorkflowStep"  
+	    + " SET state = '" + WorkflowBase.ON_DECK + "', state_handled = 1" 
+	    + " WHERE workflow_step_id = " + workflow_step_id  
+	    + " AND state = '" + WorkflowBase.READY;
 	runSql(sql);
     }
 
@@ -250,16 +251,16 @@ public class WorkflowStep extends Base {
 	workflow.log(msg);
     }
 
-    private void runSql(String sql) throws SQLException {
+    private void runSql(String sql) throws SQLException, FileNotFoundException, IOException {
 	workflow.runSql(sql);
     }
 
     public String toString() {
 
-	String s =  ""
+	String s =  nl 
 	    + "name:       " + name + nl
 	    + "id:         " + workflow_step_id + nl
-	    + "class:      " + invokerClassName + nl
+	    + "stepClass:  " + invokerClassName + nl
 	    + "state:      " + state + nl
 	    + "off_line:   " + off_line + nl
 	    + "handled:    " + state_handled + nl
@@ -274,6 +275,7 @@ public class WorkflowStep extends Base {
 	    buf.append(delim + parent.getName());
 	    delim = ", ";
 	}
+	buf.append(nl + nl);
 	return buf.toString();
     }
 
