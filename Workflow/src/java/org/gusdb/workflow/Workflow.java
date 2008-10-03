@@ -82,7 +82,8 @@ public class Workflow extends WorkflowHandle {
 
 	reportState();
 
-	String sortedStepNames[] = (String[])stepsByName.keySet().toArray(); 
+	String sortedStepNames[] = new String[stepsByName.size()];
+	stepsByName.keySet().toArray(sortedStepNames); 
 	Arrays.sort(sortedStepNames);
 
 	if (desiredStates.length == 0 || desiredStates[0].equals("ALL")) {
