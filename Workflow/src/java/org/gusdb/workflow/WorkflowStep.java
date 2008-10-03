@@ -44,7 +44,6 @@ public class WorkflowStep  {
     private Workflow workflow;
     private String invokerClassName;
     private List<WorkflowStep> parents = new ArrayList<WorkflowStep>();
-    private String fakeStepType;
     
     // state from db
     private int workflow_step_id;
@@ -94,7 +93,7 @@ public class WorkflowStep  {
     }
 
     String getState () {
-	return fakeStepType.equals(WorkflowBase.START)? WorkflowBase.DONE : state;
+	return state;
     }
     
     List<Name> getDependsNames() {
@@ -114,10 +113,8 @@ public class WorkflowStep  {
     // write this step to the db, if not already there.
     // called during workflow initialization
     void initializeStepTable(PreparedStatement stmt) throws SQLException {
-	String state = fakeStepType.equals(WorkflowBase.START)? 
-	        WorkflowBase.DONE : WorkflowBase.READY;
 	stmt.setString(1, name);
-	stmt.setString(2, state);
+	stmt.setString(2, WorkflowBase.READY);
 	stmt.execute();
     }
 
@@ -133,12 +130,6 @@ public class WorkflowStep  {
 	    stmt.setInt(2, getId());
 	    stmt.execute();
 	}
-    }
-
-    // for fake start and end steps that are forced into the graph
-    void setFakeStepType(String type) {
-	fakeStepType = type;
-	if (type.equals(WorkflowBase.END)) state = WorkflowBase.READY; 
     }
 
     int handleChangesSinceLastSnapshot() throws SQLException, IOException {
@@ -170,8 +161,6 @@ public class WorkflowStep  {
     }
 
     void setFromDbSnapshot(ResultSet rs) throws SQLException {
-	if (fakeStepType != null) return;
-	
 	prevState = state;
 	prevOffline = off_line;
 
