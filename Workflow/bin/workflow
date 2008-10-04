@@ -1,97 +1,13 @@
 #!/usr/bin/perl
 
-use strict;
 use lib "$ENV{GUS_HOME}/lib/perl";
-use GUS::Workflow::Workflow;
+use WDK::Model::CommandHelper;
 
-# process command line args 
-my $homeDir = shift @ARGV;
-&usage unless $homeDir;
-my $numStepsAllowed;
-my @report;
+my $GUS_HOME = $ENV{GUS_HOME};
+my $CLASSPATH = &WDK::Model::CommandHelper::getJavaClasspath($GUS_HOME);
+my $sysProps = &WDK::Model::CommandHelper::getSystemProps($GUS_HOME, 'workflow');
+my $args = &WDK::Model::CommandHelper::getJavaArgs(@ARGV);
 
-if ($ARGV[0] =~ /\d+/) {
-  usage() unless scalar(@ARGV) == 1;
-  $numStepsAllowed = $ARGV[0];
-  my $workflow = GUS::Workflow::Workflow->new($homeDir);
-  $workflow->run($numStepsAllowed);
-}
+my $cmd = "java $sysProps -classpath $CLASSPATH org.gusdb.workflow.Workflow $args";
 
-elsif ($ARGV[0] =~ /\-q/) {
-  usage() unless scalar(@ARGV) == 1;
-  my $workflow = GUS::Workflow::WorkflowHandle->new($homeDir);
-  $workflow->reportState();  # quick report
-  exit(0);
-}
-
-elsif ($ARGV[0] =~ /\-d/) {
-  shift @ARGV;
-  @report = @ARGV;
-  my $workflow = GUS::Workflow::Workflow->new($homeDir);
-  $workflow->reportSteps(\@report);
-}
-
-elsif ($ARGV[0] =~ /\-reset/) {
-  shift @ARGV;
-  @report = @ARGV;
-  my $workflow = GUS::Workflow::Workflow->new($homeDir);
-  $workflow->reset();
-}
-
-else {
-  usage();
-}
-
-
-sub usage {
-    print "
-
-Run a workflow, or, print a report about a workflow.
-
-
-Usage:  workflow workflow_dir <allowed_running_steps | -q | -d<0|1> <states> >
-
-Where:
-  workflow_dir:           the workflow's home directory.  see below
-
-  allowed_running_steps:  number of steps that can run simultaneously. (this
-                          option starts the controller.)
-
-  -q:                     print quick report of workflow state (doesn't run
-                          controller).
-
-  -d<0|1> <states>:       print detailed report of workflow state. optional 0
-                          or 1 constrains report to online (0) or offline (1)
-                          steps. optional states is a space delimited list of
-                          state constraints, to print only steps in those
-                          states.
-
-Home dir must contain the following:
-  config/
-    workflow.prop      (meta config)
-    steps.prop         (steps config)
-    stepsGlobal.prop   (global steps config)
-    resources.xml      [future]
-
-Examples:
-
- run a workflow:
-   % workflow workflow_dir 3
-
- quick report of workflow state
-   % workflow workflow_dir -q
-
- print detailed steps report.
-   % workflow workflow_dir -d
-
- limit steps report to steps in particular states
-   % workflow workflow_dir -d FAILED RUNNING
-
- print steps report, using the optional offline flag to only include steps
- that have the flag in the indicated state.  [not implemented yet]
-   % workflow workflow_dir -d0 ON_DECK
-   % workflow workflow_dir -d1 READY ON_DECK
-
-";
-    exit(1);
-}
+system($cmd);
