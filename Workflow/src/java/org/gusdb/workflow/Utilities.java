@@ -46,7 +46,8 @@ public class Utilities {
 
         // PrintWriter stderr = new PrintWriter(System.err);
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp(75, cmdlineSyntax, header, options, usageNotes);
+        formatter.printHelp(75, cmdlineSyntax, header, options, nl);
+	System.out.println(usageNotes);
         System.exit(1);
     }
     

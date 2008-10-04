@@ -62,7 +62,7 @@ public class WorkflowBase {
     String getWorkflowConfig(String key) throws FileNotFoundException, IOException {
         if (workflowProps == null) {
             workflowProps = new Properties();
-            workflowProps.load(new FileInputStream(getHomeDir() + "/workflow.prop"));
+            workflowProps.load(new FileInputStream(getHomeDir() + "/config/workflow.prop"));
         }
         return workflowProps.getProperty(key);
 
