@@ -39,7 +39,7 @@ sub new {
 sub getDbh {
     my ($self) = @_;
     if (!$self->{dbh}) {
-	$self->{dbh} = DBI->connect($self->getWorkflowConfig('dbConnectString'),
+	$self->{dbh} = DBI->connect($self->getWorkflowConfig('dbiConnectString'),
 				    $self->getWorkflowConfig('dbLogin'),
 				    $self->getWorkflowConfig('dbPassword'))
 	  or die DBI::errstr;
@@ -76,8 +76,9 @@ sub getWorkflowConfig {
 	 ['version', "", ""],
 	 ['dbLogin', "", ""],
 	 ['dbPassword', "", ""],
-	 ['dbConnectString', "", ""],
-	 ['workflowFile', "", ""],
+	 ['dbiConnectString', "", ""],
+	 ['jdbcConnectString', "", ""],
+	 ['workflowXmlFile', "", ""],
 	);
 
     if (!$self->{workflowConfig}) {

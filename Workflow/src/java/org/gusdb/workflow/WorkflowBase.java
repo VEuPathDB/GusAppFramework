@@ -36,7 +36,7 @@ public class WorkflowBase {
     Connection getDbConnection() throws SQLException, FileNotFoundException, IOException {
 	if (dbConnection == null) {
 	    DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver());
-	    dbConnection = DriverManager.getConnection(getWorkflowConfig("dbConnectString"),
+	    dbConnection = DriverManager.getConnection(getWorkflowConfig("jdbcConnectString"),
 	            getWorkflowConfig("dbLogin"),
 	            getWorkflowConfig("dbPassword"));
 	}

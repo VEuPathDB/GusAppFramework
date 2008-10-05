@@ -132,11 +132,12 @@ public class WorkflowStep  {
 	}
     }
 
-    int handleChangesSinceLastSnapshot() throws SQLException, IOException {
+    int handleChangesSinceLastSnapshot() throws SQLException, IOException, InterruptedException  {
 	if (state_handled) {
 	    if (state.equals(WorkflowBase.RUNNING)) {	        
-	        String cmd = "ps -p " + process_id +  " > /dev/null";
+	        String cmd = "ps -p " + process_id;
 	        Process process = Runtime.getRuntime().exec(cmd);
+		process.waitFor();
 	        if (process.exitValue() != 0) handleMissingProcess();
 	    }
 	} else { // this step has been changed by wrapper or pilot UI. log change.
@@ -175,25 +176,38 @@ public class WorkflowStep  {
 
     private void setHandledFlag() throws SQLException, FileNotFoundException, IOException {
 	// check that state is still as expected, to avoid theoretical race condition
+
+	int offlineInt = off_line? 1 : 0;
 	String sql = "UPDATE apidb.WorkflowStep"  
 	    + " SET state_handled = 1"
 	    + " WHERE workflow_step_id = " + workflow_step_id
 	    + " AND state = '" + state + "'"
-	    + " AND off_line = " + off_line;
+	    + " AND off_line = " + offlineInt;
 	runSql(sql);
 	state_handled = true;  // till next snapshot
     }
 
     private void handleMissingProcess() throws SQLException, IOException {
-	String sql = "UPDATE apidb.WorkflowStep"  
-	    + " SET"  
-	    + " state = '" + WorkflowBase.FAILED + "', state_handled = 1, process_id = null" 
-	    + " WHERE workflow_step_id = " + workflow_step_id
-	    + " AND state = '" + WorkflowBase.RUNNING + "'";
-	runSql(sql);
-	log("Step '" + name + "' FAILED (can't find wrapper process " + process_id + ")");
-    }
+	String sql = "SELECT state" 
+	    + " FROM apidb.workflowstep"
+	    + " WHERE workflow_step_id = " + workflow_step_id;
+	
+        ResultSet rs = workflow.getDbConnection().createStatement().executeQuery(sql);
 
+	rs.next();
+	String stateNow = rs.getString(1);
+	if (stateNow.equals(WorkflowBase.RUNNING)) {
+
+	    sql = "UPDATE apidb.WorkflowStep"  
+		+ " SET"  
+		+ " state = '" + WorkflowBase.FAILED + "', state_handled = 1, process_id = null" 
+		+ " WHERE workflow_step_id = " + workflow_step_id
+		+ " AND state = '" + WorkflowBase.RUNNING + "'";
+	    //  runSql(sql);
+	    log("Step '" + name + "' FAILED (can't find wrapper process " + process_id + ")");
+	}
+    }
+	
     // if this step is ready, and all parents are done, transition to ON_DECK
     void maybeGoToOnDeck() throws SQLException, IOException {
  
@@ -208,17 +222,17 @@ public class WorkflowStep  {
 	String sql = "UPDATE apidb.WorkflowStep"  
 	    + " SET state = '" + WorkflowBase.ON_DECK + "', state_handled = 1" 
 	    + " WHERE workflow_step_id = " + workflow_step_id  
-	    + " AND state = '" + WorkflowBase.READY;
+	    + " AND state = '" + WorkflowBase.READY + "'";
 	runSql(sql);
     }
 
     // try to run a single ON_DECK step
     int runOnDeckStep() throws IOException, SQLException {
 	if (state.equals(WorkflowBase.ON_DECK) && !off_line) {
-	    log("Invoking step '" + name + "'");
 	    String cmd = "workflowstepwrap " + workflow.getHomeDir() + " "
-	    + workflow.getId() + " " + name + " " + invokerClassName
-	    + "2>> " + getStepDir() + "/step.err &";
+		+ workflow.getId() + " " + name + " " + invokerClassName;
+	    //	    + " 2>> " + getStepDir() + "/step.err";
+	    log("Invoking step '" + name + "'");
 	    Runtime.getRuntime().exec(cmd);
 	    return 1;
 	} 
