@@ -41,7 +41,7 @@ public class WorkflowXmlParser extends XmlParser {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, WorkflowStep> parseWorkflow(String xmlFileName) throws SAXException, IOException, Exception {
+    public Map<String, WorkflowStep> parseWorkflow(String xmlFileName, Workflow workflow) throws SAXException, IOException, Exception {
              
         // construct urls to model file, prop file, and config file
         URL modelURL = makeURL(gusHome, "lib/xml/workflow/" + xmlFileName);
@@ -61,6 +61,7 @@ public class WorkflowXmlParser extends XmlParser {
         
         Map<String, WorkflowStep> stepsByName = new HashMap();
         for (WorkflowStep step : steps) {
+	    step.setWorkflow(workflow);
             String stepName = step.getName();
             if (stepsByName.containsKey(stepName))
                 Utilities.error("non-unique step name: '" + stepName + "'");
@@ -139,7 +140,7 @@ public class WorkflowXmlParser extends XmlParser {
 
         // create a parser, and parse the model file
         WorkflowXmlParser parser = new WorkflowXmlParser(gusHome);
-        Map<String,WorkflowStep> steps = parser.parseWorkflow(xmlFileName);
+        Map<String,WorkflowStep> steps = parser.parseWorkflow(xmlFileName, null);
 
         // print out the model content
         System.out.println(steps.toString());

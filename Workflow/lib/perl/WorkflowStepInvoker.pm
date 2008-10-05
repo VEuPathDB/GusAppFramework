@@ -85,7 +85,10 @@ sub getStepDir {
   if (!$self->{stepDir}) {
     my $homeDir = $self->getHomeDir();
     my $stepDir = "$homeDir/steps/$self->{name}";
-    $self->runCmd("mkdir -p $stepDir") unless -e $stepDir;
+    my $cmd = "mkdir -p $stepDir";
+    `$cmd` unless -e $stepDir;
+    my $status = $? >> 8;
+    $self->error("Failed with status $status running: \n$cmd") if ($status);
     $self->{stepDir} = $stepDir;
   }
   return $self->{stepDir};

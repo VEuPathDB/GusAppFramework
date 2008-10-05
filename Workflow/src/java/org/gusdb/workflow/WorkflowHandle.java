@@ -57,7 +57,9 @@ public class WorkflowHandle extends WorkflowBase {
 		+ " where name = '" + name + "'"  
 		+ " and version = '" + version + "'" ;
 
-	    ResultSet rs = runSqlQuerySingleRow(sql);
+	    ResultSet rs = getDbConnection().createStatement().executeQuery(sql);
+	    if (!rs.next()) 
+		error("workflow '" + name + "' version '" + version + "' not in database");
 	    
 	    workflow_id = rs.getInt(1);
 	    state = rs.getString(2);
@@ -65,9 +67,6 @@ public class WorkflowHandle extends WorkflowBase {
 	    start_time = rs.getDate(4);
 	    end_time = rs.getDate(5);
 	    allowed_running_steps = rs.getInt(6);
-
-	    if (workflow_id == null) 
-	        error("workflow '" + name + "' version '" + version + "' not in database");
 	}
     }
 
@@ -81,8 +80,8 @@ public class WorkflowHandle extends WorkflowBase {
 	String[] dirNames = {"logs", "steps", "externalFiles"};
 	for (String dirName : dirNames) {
 	    File dir = new File(getHomeDir() + "/" + dirName);
-	    if (dir.exists()) dir.delete();
-	    System.out.println("rm -rf " + getHomeDir() + "/" + dirName);
+	    Utilities.deleteDir(dir);
+	    System.out.println("rm -rf " + dir);
 	}
 
 	getDbState();
@@ -94,8 +93,9 @@ public class WorkflowHandle extends WorkflowBase {
 	System.out.println(sql);
     }
 
-    void runCmd(String cmd) throws IOException {
+    void runCmd(String cmd) throws IOException, InterruptedException {
       Process process = Runtime.getRuntime().exec(cmd);
+      process.waitFor();
       if (process.exitValue() != 0) 
           error("Failed with status $status running: " + nl + cmd);
     }

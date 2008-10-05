@@ -7,6 +7,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import java.io.File;
 
 public class Utilities {
     
@@ -56,5 +57,13 @@ public class Utilities {
         System.exit(1);
     }
     
-   
+    static public void deleteDir(File dir) {
+	if( dir.exists() ) {
+	    for (File f : dir.listFiles()) {
+		if (f.isDirectory()) deleteDir(f);
+		else f.delete();
+	    }
+	    dir.delete();
+	}
+    }	
 }

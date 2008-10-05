@@ -124,7 +124,7 @@ public class Workflow extends WorkflowHandle {
 	    if (handleStepChanges()) break;  // return true if all steps done
 	    findOndeckSteps();
 	    fillOpenSlots();
-	    wait(2000);
+	    Thread.currentThread().sleep(2000);
 	}
     }
 
@@ -135,7 +135,7 @@ public class Workflow extends WorkflowHandle {
         log("Parsing and validating" + xmlFileName);
         String gusHome = System.getProperty("GUS_HOME");
         WorkflowXmlParser parser = new WorkflowXmlParser(gusHome);
-        stepsByName = parser.parseWorkflow(xmlFileName);
+        stepsByName = parser.parseWorkflow(xmlFileName, this);
         
         steps = new ArrayList<WorkflowStep>(stepsByName.values());
         
@@ -157,9 +157,9 @@ public class Workflow extends WorkflowHandle {
 	    + " where name = " + "'" + name + "'"   
 	    + " and version = '" + version + "'";
 
-	Integer workflow_id_tmp = runSqlQuerySingleRow(sql).getInt(1);
+        ResultSet rs = getDbConnection().createStatement().executeQuery(sql);
 
-	if (workflow_id_tmp != null) return;
+	if (rs.next()) return;
 
 	// otherwise, do it...
 	log("Initializing workflow "
@@ -167,10 +167,10 @@ public class Workflow extends WorkflowHandle {
 
 	// write row to Workflow table
         sql = "select apidb.Workflow_sq.nextval from dual";
-        Integer workflow_id = runSqlQuerySingleRow(sql).getInt(1);
+        workflow_id = runSqlQuerySingleRow(sql).getInt(1);
 
 	sql = "INSERT INTO apidb.workflow (workflow_id, name, version)"  
-	    + " VALUES (" + workflow_id + ", '" + name + "', '" + version + ")";
+	    + " VALUES (" + workflow_id + ", '" + name + "', '" + version + "')";
 	runSql(sql);
 
 	// write all steps to WorkflowStep table
@@ -205,7 +205,7 @@ public class Workflow extends WorkflowHandle {
 
     // iterate through steps, checking on changes since last snapshot
     // while we're passing through, count how many steps are running
-    private boolean handleStepChanges() throws SQLException, IOException {
+    private boolean handleStepChanges() throws SQLException, IOException, InterruptedException {
 
 	runningCount = 0;
 	boolean notDone = false;
@@ -278,19 +278,20 @@ public class Workflow extends WorkflowHandle {
         log("Initializing workflow home directory '" + getHomeDir() + "'");
     }
 
-    private void setRunningState(int numSteps) throws SQLException, IOException {
+    private void setRunningState(int numSteps) throws SQLException, IOException, java.lang.InterruptedException {
 
-	if (state.equals(RUNNING)) {
+	if (state != null && state.equals(RUNNING)) {
 	    String cmd = "ps -p " + process_id + "> /dev/null";
 	    Process process = Runtime.getRuntime().exec(cmd);
-	    if (process.exitValue() != 0)
-		error("workflow already running (process $self->{process_id})");
+	    process.waitFor();
+	    if (process.exitValue() == 0)
+		error("workflow already running (" + process_id + ")");
 	}
 
 	String processId = getProcessId(); 
 
 	log("Setting workflow state to " + RUNNING
-	        + "and allowed-number-of-running-steps to " 
+	        + " and allowed-number-of-running-steps to " 
 	        + numSteps + " (process id = " + processId + ")");
 
 	allowed_running_steps = numSteps;
@@ -315,7 +316,7 @@ public class Workflow extends WorkflowHandle {
 	if (noLog) return;
 
 	String logFileName = getHomeDir() + "/logs/controller.log";
-	PrintWriter writer = new PrintWriter(new FileWriter(logFileName));
+	PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true));
 	writer.println(msg);
 	writer.close();
     }
@@ -328,7 +329,7 @@ public class Workflow extends WorkflowHandle {
         String[] cmd = {"bash", "-c", "echo $PPID"};
         Process p = Runtime.getRuntime().exec(cmd);
         p.getInputStream().read(bo);
-        return new String(bo);
+        return new String(bo).trim();
     }
 
     // not working yet
@@ -371,6 +372,8 @@ public class Workflow extends WorkflowHandle {
             String desiredStatesStr = cmdLine.getOptionValue("d"); 
             String[] desiredStates = desiredStatesStr.split(",");
             workflow.reportSteps(desiredStates);            
+        } else if (cmdLine.hasOption("reset")) {
+            workflow.reset();
         } else {
             Utilities.usage(cmdlineSyntax, cmdDescrip, getUsageNotes(), options);
         }
@@ -422,6 +425,10 @@ public class Workflow extends WorkflowHandle {
         
         Option quickRep = new Option("q", "Print quick report");
         optionalOptions.addOption(quickRep);
+        options.addOptionGroup(optionalOptions);
+
+        Option reset = new Option("reset", "Reset workflow. DANGER! Will destroy your workflow.  Use only if you know exactly what you are doing.");
+        optionalOptions.addOption(reset);
         options.addOptionGroup(optionalOptions);
 
         return options;
