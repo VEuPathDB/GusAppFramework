@@ -203,8 +203,8 @@ public class WorkflowStep  {
 		+ " state = '" + WorkflowBase.FAILED + "', state_handled = 1, process_id = null" 
 		+ " WHERE workflow_step_id = " + workflow_step_id
 		+ " AND state = '" + WorkflowBase.RUNNING + "'";
-	    //  runSql(sql);
-	    log("Step '" + name + "' FAILED (can't find wrapper process " + process_id + ")");
+	    runSql(sql);
+	    log("Step '" + name + "' FAILED (no wrapper process " + process_id + ")");
 	}
     }
 	
@@ -230,7 +230,8 @@ public class WorkflowStep  {
     int runOnDeckStep() throws IOException, SQLException {
 	if (state.equals(WorkflowBase.ON_DECK) && !off_line) {
 	    String cmd = "workflowstepwrap " + workflow.getHomeDir() + " "
-		+ workflow.getId() + " " + name + " " + invokerClassName;
+		+ workflow.getId() + " " + name + " " + invokerClassName
+		+ " " + getStepDir() + "/step.err";
 	    //	    + " 2>> " + getStepDir() + "/step.err";
 	    log("Invoking step '" + name + "'");
 	    Runtime.getRuntime().exec(cmd);

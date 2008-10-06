@@ -7,8 +7,12 @@ my $homeDir = $ARGV[0];
 my $workflowId = $ARGV[1];
 my $stepName = $ARGV[2];
 my $invokerClass = $ARGV[3];
+my $errFile =  $ARGV[4];
 
-usage() unless scalar(@ARGV) == 4;
+open (STDERR, ">>$errFile");
+
+usage() unless scalar(@ARGV) == 5;
+print STDERR "this is a test\n";
 
 my $stepInvoker =  eval "{require $invokerClass; $invokerClass->new('$homeDir')}";
 die($@) if $@;
@@ -21,7 +25,7 @@ sub usage {
     print "
 Caution!! this program is only called by the workflow controller
 
-usage: workflowstepwrap workflow_dir workflow_id stepname stepclass
+usage: workflowstepwrap workflow_dir workflow_id stepname stepclass errfile
 ";
     exit(1);
 }
