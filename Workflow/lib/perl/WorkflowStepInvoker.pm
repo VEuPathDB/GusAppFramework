@@ -8,6 +8,23 @@ use GUS::Workflow::Base;
 # Super class of workflow steps written in perl, and called by the wrapper
 #
 
+sub setParamValues {
+  my ($self, $paramValueStrings) = @_;
+
+  $self->paramValues = {};
+  foreach my $paramValueString (@$paramValueStrings) {
+    # try to find the key and value, separated by the first occurence
+    # of \s*=\s*
+    $paramValueString =~ /(.+)(\s*=\s*){1}?(.*)/;
+    $self->{paramValues}->{$1} = $3;
+  }
+}
+
+sub getParamValue {
+  my ($self, $name) = @_;
+  return $self->{paramValues}->{$name};
+}
+
 sub runInWrapper {
     my ($self, $workflowId, $stepName) = @_;
 
@@ -56,16 +73,30 @@ AND state = '$RUNNING'
 sub getConfig {
   my ($self, $prop) = @_;
 
-  if (!$self->{stepsConfig}) {
-    $self->{multiConfigDecl}->{$self->{name}} = $self->getConfigDeclaration();
-    my $homeDir = $self->getHomeDir();
-    $self->{stepsConfig} =
-      CBIL::Util::MultiPropertySet->new("$homeDir/config/steps.prop",
-					$self->{multiConfigDecl},
-					$self->{name});
+  my $homeDir = $self->getHomeDir();
+  my $propFile = "$homeDir/config/steps.prop";
+  my $className = ref($self);
+  $className =~ s/\:\:/\//g;
+
+  if (!$self->{stepConfig}) {
+    my $rawDeclaration = $self->getConfigDeclaration();
+    my $fullDeclaration = [];
+    foreach my $rd (@$rawDeclaration) {
+      my $fd = ["$self->{name}.$rd->[0]", $rd->[1], '', "$className.$rd->[0]"];
+      push(@$fullDeclaration,$fd);
+    }
+    $self->{stepConfig} = 
+      CBIL::Util::PropertySet->new($propFile, $fullDeclaration, 1);
   }
 
-  return $self->{stepsConfig}->getProp($self->{name}, $prop);
+  # first try explicit step property
+  if (defined($self->{stepConfig}->getPropRelaxed("$self->{name}.$prop"))) {
+    return $self->{stepConfig}->getPropRelaxed("$self->{name}.$prop");
+  } elsif (defined($self->{stepConfig}->getPropRelaxed("$className.$prop"))) {
+    return $self->{stepConfig}->getPropRelaxed("$className.$prop");
+  } else {
+    die "Can't find property '$prop' for step '$self->{name}' or for class '$className' in file $propFile\n";
+  }
 }
 
 sub getGlobalConfig {
