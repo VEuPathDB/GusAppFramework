@@ -6,9 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -36,13 +34,17 @@ public class WorkflowXmlParser extends XmlParser {
 
     private static final Logger logger = Logger.getLogger(WorkflowXmlParser.class);
 
-    public WorkflowXmlParser(String gusHome) throws SAXException, IOException {
-        super(gusHome, "lib/rng/workflow.rng");
+    public WorkflowXmlParser() throws SAXException, IOException {
+
+        super("lib/rng/workflow.rng");
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, WorkflowStep> parseWorkflow(String xmlFileName, Workflow workflow) throws SAXException, IOException, Exception {
+    public Workflow parseWorkflow(String homeDir) throws SAXException, IOException, Exception {
              
+        Properties workflowProps = new Properties();
+        workflowProps.load(new FileInputStream(homeDir + "/workflow.prop"));
+        String xmlFileName = workflowProps.getProperty("workflowXmlFile");
+
         // construct urls to model file, prop file, and config file
         URL modelURL = makeURL(gusHome, "lib/xml/workflow/" + xmlFileName);
 
@@ -57,31 +59,7 @@ public class WorkflowXmlParser extends XmlParser {
 
         InputStream xmlStream = substituteProps(doc, properties);
 
-        List<WorkflowStep> steps = (List<WorkflowStep>)digester.parse(xmlStream);
-        
-        Map<String, WorkflowStep> stepsByName = new HashMap();
-        for (WorkflowStep step : steps) {
-	    step.setWorkflow(workflow);
-            String stepName = step.getName();
-            if (stepsByName.containsKey(stepName))
-                Utilities.error("non-unique step name: '" + stepName + "'");
-            stepsByName.put(stepName, step);
-        }
-
-        // in second pass, make the parent/child links from the remembered
-        // dependencies
-        for (WorkflowStep step : steps) {
-            for (Name dependName : step.getDependsNames()) {
-                String stepName = step.getName();
-                WorkflowStep parent = stepsByName.get(dependName.getName());
-                if (parent == null) 
-                    Utilities.error("step '" + stepName + "' depends on '"
-                          + dependName + "' which is not found");
-                step.addParent(parent);
-            }
-        }
-        
-        return stepsByName;
+        return (Workflow)digester.parse(xmlStream);
     }
 
     protected Digester configureDigester() {
@@ -89,15 +67,23 @@ public class WorkflowXmlParser extends XmlParser {
         digester.setValidating(false);
 
         // Root -- WDK Model
-        digester.addObjectCreate("workflow", ArrayList.class);
+        digester.addObjectCreate("workflow", Workflow.class);
+
+        configureNode(digester, "workflow/constant", NamedValue.class,
+        "addConstant");
+        digester.addCallMethod("workflow/constant", "setValue", 0);
 
         configureNode(digester, "workflow/step", WorkflowStep.class,
-                "add");
+                "addStep");
 
         configureNode(digester, "workflow/step/depends", Name.class,
                 "addDependsName");
         
-        return digester;
+        configureNode(digester, "workflow/step/paramValue", NamedValue.class,
+        "addParamValue");
+        digester.addCallMethod("workflow/step/paramValue", "setValue", 0);
+
+       return digester;
     }
 
     private InputStream substituteProps(Document masterDoc,
@@ -125,8 +111,7 @@ public class WorkflowXmlParser extends XmlParser {
     
     public static void main(String[] args) throws Exception  {
         String cmdName = System.getProperty("cmdName");
-        String gusHome = System.getProperty("GUS_HOME");
-
+ 
         // process args
         Options options = declareOptions();
         String cmdlineSyntax = cmdName + " -h workflowDir";
@@ -134,16 +119,13 @@ public class WorkflowXmlParser extends XmlParser {
         CommandLine cmdLine =
             Utilities.parseOptions(cmdlineSyntax, cmdDescrip, "", options, args);
         String homeDir = cmdLine.getOptionValue("h");
-        Properties workflowProps = new Properties();
-        workflowProps.load(new FileInputStream(homeDir + "/workflow.prop"));
-        String xmlFileName = workflowProps.getProperty("workflowXmlFile");
-
+        
         // create a parser, and parse the model file
-        WorkflowXmlParser parser = new WorkflowXmlParser(gusHome);
-        Map<String,WorkflowStep> steps = parser.parseWorkflow(xmlFileName, null);
+        WorkflowXmlParser parser = new WorkflowXmlParser();
+        Workflow workflow = parser.parseWorkflow(homeDir);
 
         // print out the model content
-        System.out.println(steps.toString());
+        System.out.println(workflow.toString());
         System.exit(0);
     }
 

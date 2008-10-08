@@ -62,8 +62,8 @@ import org.apache.commons.cli.Options;
 */
 
 public class Workflow extends WorkflowHandle {
-    private List<WorkflowStep> steps;
-    private Map<String, WorkflowStep> stepsByName;
+    private List<WorkflowStep> steps = new ArrayList<WorkflowStep>();
+    private Map<String, WorkflowStep> stepsByName = new HashMap<String, WorkflowStep>();
     private boolean noLog;
     private int runningCount; 
     private Map<String,String> constants = new HashMap<String,String>();
@@ -73,6 +73,16 @@ public class Workflow extends WorkflowHandle {
 
     public void addConstant(NamedValue constant) {
 	constants.put(constant.getName(),constant.getValue());
+    }
+    
+    public void addStep(WorkflowStep step) {
+        step.setWorkflow(this);
+        String stepName = step.getName();
+        if (stepsByName.containsKey(stepName))
+            Utilities.error("non-unique step name: '" + stepName + "'");
+        stepsByName.put(stepName, step);
+        steps.add(step);
+        step.substituteConstantValues(constants);
     }
 
     /* Step Reporter: called by command line UI to report state of steps.
@@ -129,26 +139,29 @@ public class Workflow extends WorkflowHandle {
 	    if (handleStepChanges()) break;  // return true if all steps done
 	    findOndeckSteps();
 	    fillOpenSlots();
-	    Thread.currentThread().sleep(2000);
+	    Thread.sleep(2000);
 	}
     }
 
     private void initSteps() throws Exception {
-        String xmlFileName = getWorkflowConfig("workflowXmlFile");
-        
-        // parse workflow xml
-        log("Parsing and validating" + xmlFileName);
-        String gusHome = System.getProperty("GUS_HOME");
-        WorkflowXmlParser parser = new WorkflowXmlParser(gusHome);
-        stepsByName = parser.parseWorkflow(xmlFileName, this);
-        
-        steps = new ArrayList<WorkflowStep>(stepsByName.values());
-        
-	initDb();              // write workflow to db, if not already there
+
+        // make the parent/child links from the remembered dependencies
+        for (WorkflowStep step : steps) {
+            for (Name dependName : step.getDependsNames()) {
+                String stepName = step.getName();
+                WorkflowStep parent = stepsByName.get(dependName.getName());
+                if (parent == null) 
+                    Utilities.error("step '" + stepName + "' depends on '"
+                          + dependName + "' which is not found");
+                step.addParent(parent);
+            }
+        }
+
+ 	initDb();              // write workflow to db, if not already there
 
 	getStepsConfig();      // validate config of all steps.
     }
-
+    
     // write the workflow and steps to the db
     // for now, assume the workflow steps don't change over the life of a workflow
     private void initDb() throws SQLException, IOException {
@@ -352,6 +365,11 @@ public class Workflow extends WorkflowHandle {
     }
     */
     
+    public String toString() {
+        return "Constants" + nl + constants.toString() + nl + nl
+        + "Steps" + nl + steps.toString();
+    }
+        
     public static void main(String[] args) throws Exception  {
         String cmdName = System.getProperty("cmdName");
 
@@ -364,20 +382,24 @@ public class Workflow extends WorkflowHandle {
                 
         // get required homedir from cmd line
         String homeDirName = cmdLine.getOptionValue("h");
-        Workflow workflow = new Workflow(homeDirName);
-        
-                
+    
         // branch based on provided options
         if (cmdLine.hasOption("n")) {
+            WorkflowXmlParser parser = new WorkflowXmlParser();
+            Workflow workflow = parser.parseWorkflow(homeDirName);
             String numSteps = cmdLine.getOptionValue("n"); 
             workflow.run(Integer.parseInt(numSteps));
         } else if (cmdLine.hasOption("q")) {
             
         } else if (cmdLine.hasOption("d")) {
+            WorkflowXmlParser parser = new WorkflowXmlParser();
+            Workflow workflow = parser.parseWorkflow(homeDirName);
             String desiredStatesStr = cmdLine.getOptionValue("d"); 
             String[] desiredStates = desiredStatesStr.split(",");
             workflow.reportSteps(desiredStates);            
         } else if (cmdLine.hasOption("reset")) {
+            Workflow workflow = new Workflow();
+            workflow.setHomeDir(homeDirName);
             workflow.reset();
         } else {
             Utilities.usage(cmdlineSyntax, cmdDescrip, getUsageNotes(), options);
