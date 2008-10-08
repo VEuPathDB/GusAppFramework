@@ -2,4 +2,6 @@ name=test
 version=1.0
 dbLogin=sfischer
 dbPassword=heathersofia
-dbConnectString=dbi:Oracle:ortho3p
+dbiConnectString=dbi:Oracle:ortho3p
+jdbcConnectString=jdbc:oracle:oci:@ortho3p
+workflowXmlFile=testWorkflow.xml
