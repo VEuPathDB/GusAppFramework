@@ -1,15 +1,20 @@
 <workflow>
 
+  <constant name="blue">very blue</constant>
+
   <step name="firstStep"
         stepClass="GUS::Workflow::TestStep">
+      <paramValue name="msg">$$blue$$</paramValue>
   </step>
 
   <step name="secondStep"
         stepClass="GUS::Workflow::TestStep">
+      <paramValue name="msg">green</paramValue>
   </step>
 
   <step name="thirdStep"
         stepClass="GUS::Workflow::TestStep">
+      <paramValue name="msg">orange</paramValue>
     <depends name="firstStep"/>
     <depends name="secondStep"/>
   </step>

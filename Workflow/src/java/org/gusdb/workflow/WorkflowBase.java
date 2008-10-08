@@ -29,7 +29,10 @@ public class WorkflowBase {
 
     // methods shared by the perl controller and perl step wrapper.
     // any other language implementation would presumably need equivalent code
-    public WorkflowBase(String homeDir) {
+    public WorkflowBase() {
+    }
+
+    public void setHomeDir(String homeDir) {
 	this.homeDir = homeDir;
     }
 

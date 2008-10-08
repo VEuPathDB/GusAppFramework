@@ -10,6 +10,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /*
 
@@ -58,7 +60,9 @@ public class WorkflowStep  {
     private String stepDir;   
     private String prevState;
     private boolean prevOffline;
-    List<Name> dependsNames = new ArrayList<Name>();
+    private List<Name> dependsNames = new ArrayList<Name>();
+    private Map<String,String> paramValues = new HashMap<String,String>();
+
     
     // static
     private static final String nl = System.getProperty("line.separator");
@@ -82,6 +86,10 @@ public class WorkflowStep  {
 
     private List<WorkflowStep> getParents() {
 	return parents;
+    }
+
+    public void addParamValue(NamedValue paramValue) {
+	paramValues.put(paramValue.getName(),paramValue.getValue());
     }
 
     String getName() {
@@ -229,9 +237,16 @@ public class WorkflowStep  {
     // try to run a single ON_DECK step
     int runOnDeckStep() throws IOException, SQLException {
 	if (state.equals(WorkflowBase.ON_DECK) && !off_line) {
+	    StringBuffer paramValuesBuf = new StringBuffer();
+	    for (String name : paramValues.keySet()) {
+		String valueStr = paramValues.get(name);
+		valueStr = valueStr.replaceAll("\"", "\\\\\""); 
+		paramValuesBuf.append(" " + name + " \"" + valueStr + "\""); 
+	    }
 	    String cmd = "workflowstepwrap " + workflow.getHomeDir() + " "
 		+ workflow.getId() + " " + name + " " + invokerClassName
-		+ " " + getStepDir() + "/step.err";
+		+ " " + getStepDir() + "/step.err"
+		+ paramValuesBuf;
 	    //	    + " 2>> " + getStepDir() + "/step.err";
 	    log("Invoking step '" + name + "'");
 	    Runtime.getRuntime().exec(cmd);

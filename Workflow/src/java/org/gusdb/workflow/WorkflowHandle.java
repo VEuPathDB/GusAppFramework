@@ -21,8 +21,7 @@ import java.sql.SQLException;
 public class WorkflowHandle extends WorkflowBase {
     
  
-    public WorkflowHandle(String homeDir) {
-        super(homeDir);
+    public WorkflowHandle() {
     }
 
     protected String name;
@@ -33,7 +32,6 @@ public class WorkflowHandle extends WorkflowBase {
     protected Integer allowed_running_steps;
     protected Date start_time;
     protected Date end_time;
-
 
     // very light reporting of state of workflow
     void reportState() throws SQLException, FileNotFoundException, IOException {

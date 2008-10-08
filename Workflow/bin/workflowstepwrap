@@ -3,19 +3,22 @@
 use strict;
 use lib "$ENV{GUS_HOME}/lib/perl";
 
-my $homeDir = $ARGV[0];
-my $workflowId = $ARGV[1];
-my $stepName = $ARGV[2];
-my $invokerClass = $ARGV[3];
-my $errFile =  $ARGV[4];
+usage() unless scalar(@ARGV) >= 5;
+
+my $homeDir = shift(@ARGV);
+my $workflowId = shift(@ARGV);
+my $stepName = shift(@ARGV);
+my $invokerClass = shift(@ARGV);
+my $errFile =  shift(@ARGV);
+my $paramStrings = \@ARGV;
 
 open (STDERR, ">>$errFile");
-
-usage() unless scalar(@ARGV) == 5;
 
 
 my $stepInvoker =  eval "{require $invokerClass; $invokerClass->new('$homeDir')}";
 die($@) if $@;
+
+$stepInvoker->setParamValues($paramStrings);
 
 my $status = $stepInvoker->runInWrapper($workflowId, $stepName);
 
@@ -25,7 +28,7 @@ sub usage {
     print "
 Caution!! this program is only called by the workflow controller
 
-usage: workflowstepwrap workflow_dir workflow_id stepname stepclass errfile
+usage: workflowstepwrap workflow_dir workflow_id stepname stepclass errfile param1name=param1value ...
 ";
     exit(1);
 }
