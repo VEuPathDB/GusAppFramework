@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.regex.Matcher;
 
 /*
 
@@ -254,6 +255,20 @@ public class WorkflowStep  {
 	} 
 	return 0;
     }
+    
+    void substituteConstantValues(Map<String,String>constants){
+        for (String paramName : paramValues.keySet()) {
+            String paramValue = paramValues.get(paramName);
+            if (paramValue.indexOf("$$") == -1) continue;
+            for (String constantName : constants.keySet()) {
+                String constantValue = constants.get(constantName);
+                paramValue =
+                    paramValue.replaceAll("\\$\\$" + constantName + "\\$\\$",
+                            Matcher.quoteReplacement(constantValue));
+                paramValues.put(paramName, paramValue);    
+            }
+        }
+    }
 
     private String getStepDir() {
 	if (stepDir == null) {
@@ -294,6 +309,7 @@ public class WorkflowStep  {
 	    buf.append(delim + parent.getName());
 	    delim = ", ";
 	}
+	buf.append(nl + "params: " + paramValues);
 	buf.append(nl + nl);
 	return buf.toString();
     }

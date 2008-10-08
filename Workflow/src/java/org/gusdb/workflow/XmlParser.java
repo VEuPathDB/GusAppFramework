@@ -36,9 +36,9 @@ public abstract class XmlParser {
     protected ValidationDriver validator;
     protected Digester digester;
     
-    public XmlParser( String gusHome, String schemaPath ) throws SAXException,
+    public XmlParser(String schemaPath ) throws SAXException,
             IOException {
-        this.gusHome = gusHome;
+        this.gusHome = System.getProperty("GUS_HOME");
         
         // get model schema file and xml schema file
         URL schemaURL = makeURL( gusHome, schemaPath );
