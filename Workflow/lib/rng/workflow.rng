@@ -3,10 +3,22 @@
          datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
   <start>
     <element name="workflow">
+      <zeroOrMore>
+        <element name="constant">
+          <attribute name="name" />
+          <text/>
+        </element>
+      </zeroOrMore>    
       <oneOrMore>
         <element name="step">
           <attribute name="name" />
           <attribute name="stepClass"/>
+          <zeroOrMore>
+            <element name="paramValue">
+              <attribute name="name" />
+              <text/>
+            </element>
+          </zeroOrMore>       
           <zeroOrMore>
             <element name="depends">
               <attribute name="name" />

@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionGroup;
@@ -65,9 +66,13 @@ public class Workflow extends WorkflowHandle {
     private Map<String, WorkflowStep> stepsByName;
     private boolean noLog;
     private int runningCount; 
+    private Map<String,String> constants = new HashMap<String,String>();
 
-    public Workflow(String homeDir) {
-        super(homeDir);
+    public Workflow() {
+    }
+
+    public void addConstant(NamedValue constant) {
+	constants.put(constant.getName(),constant.getValue());
     }
 
     /* Step Reporter: called by command line UI to report state of steps.
