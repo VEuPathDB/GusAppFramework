@@ -39,7 +39,7 @@ public class WorkflowXmlParser extends XmlParser {
         super("lib/rng/workflow.rng");
     }
 
-    public Workflow parseWorkflow(String homeDir) throws SAXException, IOException, Exception {
+    public WorkflowGraph parseWorkflow(String homeDir) throws SAXException, IOException, Exception {
              
         Properties workflowProps = new Properties();
         workflowProps.load(new FileInputStream(homeDir + "config/workflow.prop"));
@@ -58,9 +58,11 @@ public class WorkflowXmlParser extends XmlParser {
         //Map<String, String> properties = getPropMap(modelPropURL);
 
         InputStream xmlStream = substituteProps(doc, properties);
-	Workflow workflow = (Workflow)digester.parse(xmlStream);
-	workflow.setHomeDir(homeDir);
-        return workflow;
+	WorkflowGraph workflowGraph = (WorkflowGraph)digester.parse(xmlStream);
+	//workflow.setHomeDir(homeDir);
+	workflowGraph.makeParentChildLinks();
+	// also, resolve embedded subgraphs
+        return workflowGraph;
     }
 
     protected Digester configureDigester() {

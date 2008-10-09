@@ -45,7 +45,7 @@ public class WorkflowStep  {
 
     // from construction and configuration
     private String name;
-    private Workflow workflow;
+    private WorkflowGraph workflowGraph;
     private String invokerClassName;
     private List<WorkflowStep> parents = new ArrayList<WorkflowStep>();
     
@@ -142,7 +142,7 @@ public class WorkflowStep  {
 	}
     }
 
-    int handleChangesSinceLastSnapshot() throws SQLException, IOException, InterruptedException  {
+    int handleChangesSinceLastSnapshot(Workflow workflow) throws SQLException, IOException, InterruptedException  {
 	if (state_handled) {
 	    if (state.equals(WorkflowBase.RUNNING)) {	        
 	        String cmd = "ps -p " + process_id;
@@ -237,7 +237,7 @@ public class WorkflowStep  {
     }
 
     // try to run a single ON_DECK step
-    int runOnDeckStep() throws IOException, SQLException {
+    int runOnDeckStep(Workflow workflow) throws IOException, SQLException {
 	if (state.equals(WorkflowBase.ON_DECK) && !off_line) {
 	    String[] cmd = {"workflowstepwrap", workflow.getHomeDir(),
 			    workflow.getId().toString(),
@@ -275,7 +275,7 @@ public class WorkflowStep  {
 
     private String getStepDir() {
 	if (stepDir == null) {
-	    stepDir = workflow.getHomeDir() + "/steps/" + name;
+	    stepDir = workflowGraph.getHomeDir() + "/steps/" + name;
             File dir = new File(stepDir);
             if (!dir.exists()) dir.mkdir();
 	}
@@ -288,7 +288,7 @@ public class WorkflowStep  {
 	workflow.log(msg);
     }
 
-    private void runSql(String sql) throws SQLException, FileNotFoundException, IOException {
+    private void runSql2(String sql) throws SQLException, FileNotFoundException, IOException {
 	workflow.runSql(sql);
     }
 
