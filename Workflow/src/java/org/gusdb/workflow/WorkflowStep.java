@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collections;
 import java.util.regex.Matcher;
 
 /*
@@ -238,19 +239,21 @@ public class WorkflowStep  {
     // try to run a single ON_DECK step
     int runOnDeckStep() throws IOException, SQLException {
 	if (state.equals(WorkflowBase.ON_DECK) && !off_line) {
-	    StringBuffer paramValuesBuf = new StringBuffer();
+	    String[] cmd = {"workflowstepwrap", workflow.getHomeDir(),
+			    workflow.getId().toString(),
+			    name, invokerClassName,
+			    getStepDir() + "/step.err"}; 
+
+	    List<String> cmd2 = new ArrayList<String>();
+	    Collections.addAll(cmd2, cmd);
 	    for (String name : paramValues.keySet()) {
 		String valueStr = paramValues.get(name);
 		valueStr = valueStr.replaceAll("\"", "\\\\\""); 
-		paramValuesBuf.append(" " + name + " \"" + valueStr + "\""); 
+		cmd2.add("-" + name);
+		cmd2.add(valueStr);
 	    }
-	    String cmd = "workflowstepwrap " + workflow.getHomeDir() + " "
-		+ workflow.getId() + " " + name + " " + invokerClassName
-		+ " " + getStepDir() + "/step.err"
-		+ paramValuesBuf;
-	    //	    + " 2>> " + getStepDir() + "/step.err";
-	    log("Invoking step '" + name + "'");
-	    Runtime.getRuntime().exec(cmd);
+	    log("Invoking step '" + name + "'" );
+	    Runtime.getRuntime().exec(cmd2.toArray(new String[] {}));
 	    return 1;
 	} 
 	return 0;

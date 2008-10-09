@@ -10,8 +10,9 @@ sub run {
   my $name = $self->getConfig('name');
   my $wait = $self->getConfig('wait');
   my $mood = $self->getGlobalConfig('mood');
+  my $msg = $self->getParamValue('msg');
 
-  $self->runCmd("echo $name $mood > teststep.out");
+  $self->runCmd("echo $name $mood $msg > teststep.out");
   sleep($wait);
 }
 
@@ -28,6 +29,15 @@ sub getConfigDeclaration {
      # [name, default, description]
      ['name', "", ""],
      ['wait', "", ""],
+    ];
+  return $properties;
+}
+
+sub getParamDeclaration {
+  my $properties =
+    [
+     # [name, default, description]
+     ['msg', "", ""],
     ];
   return $properties;
 }

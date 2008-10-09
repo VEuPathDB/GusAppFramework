@@ -9,14 +9,12 @@ use GUS::Workflow::Base;
 #
 
 sub setParamValues {
-  my ($self, $paramValueStrings) = @_;
+  my ($self, $paramValuesArray) = @_;
 
-  $self->paramValues = {};
-  foreach my $paramValueString (@$paramValueStrings) {
-    # try to find the key and value, separated by the first occurence
-    # of \s*=\s*
-    $paramValueString =~ /(.+)(\s*=\s*){1}?(.*)/;
-    $self->{paramValues}->{$1} = $3;
+  $self->{paramValues} = {};
+  for (my $i=0; $i<scalar(@$paramValuesArray); $i+=2) {
+    my $noHyphen = substr($paramValuesArray->[$i],1);
+    $self->{paramValues}->{$noHyphen} = $paramValuesArray->[$i+1];
   }
 }
 

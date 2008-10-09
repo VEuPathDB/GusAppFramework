@@ -42,7 +42,7 @@ public class WorkflowXmlParser extends XmlParser {
     public Workflow parseWorkflow(String homeDir) throws SAXException, IOException, Exception {
              
         Properties workflowProps = new Properties();
-        workflowProps.load(new FileInputStream(homeDir + "/workflow.prop"));
+        workflowProps.load(new FileInputStream(homeDir + "config/workflow.prop"));
         String xmlFileName = workflowProps.getProperty("workflowXmlFile");
 
         // construct urls to model file, prop file, and config file
@@ -58,8 +58,9 @@ public class WorkflowXmlParser extends XmlParser {
         //Map<String, String> properties = getPropMap(modelPropURL);
 
         InputStream xmlStream = substituteProps(doc, properties);
-
-        return (Workflow)digester.parse(xmlStream);
+	Workflow workflow = (Workflow)digester.parse(xmlStream);
+	workflow.setHomeDir(homeDir);
+        return workflow;
     }
 
     protected Digester configureDigester() {
