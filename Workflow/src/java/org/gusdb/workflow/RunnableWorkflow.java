@@ -61,69 +61,15 @@ import org.apache.commons.cli.Options;
    these correctly.
 */
 
-public class Workflow extends WorkflowHandle {
-    private List<WorkflowStep> steps = new ArrayList<WorkflowStep>();
-    private Map<String, WorkflowStep> stepsByName = new HashMap<String, WorkflowStep>();
+public class Workflow extends WorkflowBase {
     private boolean noLog;
     private int runningCount; 
-    private Map<String,String> constants = new HashMap<String,String>();
 
-    public Workflow() {
-    }
+    public Workflow() {}
 
-    public void addConstant(NamedValue constant) {
-	constants.put(constant.getName(),constant.getValue());
-    }
-    
-    public void addStep(WorkflowStep step) {
-        step.setWorkflow(this);
-        String stepName = step.getName();
-        if (stepsByName.containsKey(stepName))
-            Utilities.error("non-unique step name: '" + stepName + "'");
-        stepsByName.put(stepName, step);
-        steps.add(step);
-        step.substituteConstantValues(constants);
-    }
-
-    /* Step Reporter: called by command line UI to report state of steps.
-       does not run the controller
-    */
-    public void reportSteps(String[] desiredStates) throws Exception {
-	noLog = true;
-
-	initSteps();
-
-	getDbSnapshot();      // read state of Workflow and WorkflowSteps
-
-	reportState();
-
-	String sortedStepNames[] = new String[stepsByName.size()];
-	stepsByName.keySet().toArray(sortedStepNames); 
-	Arrays.sort(sortedStepNames);
-
-	if (desiredStates.length == 0 || desiredStates[0].equals("ALL")) {
-	    String[] ds = {READY, ON_DECK, RUNNING, DONE, FAILED};
-	    desiredStates = ds;      
-	}
-	for (String desiredState : desiredStates) { 
-	    System.out.println("=============== " 
-			       + desiredState + " steps "
-			       + "================"); 
-	    for (String stepName : sortedStepNames) {
-		WorkflowStep step = stepsByName.get(stepName);
-		if (step.getState().equals(desiredState)) {
-		    System.out.println(step.toString());
-		    /* FIX
-		    System.out.println(stepsConfig.toString(stepName));
-		    */
-		    System.out.println("-----------------------------------------");
-		}
-	    }    
-	}
-    }
 
     // run the controller
-    public void run(int numSteps) throws Exception {
+    private void run(int numSteps) throws Exception {
 
 	initHomeDir();		   // initialize workflow home directory
 
@@ -143,83 +89,6 @@ public class Workflow extends WorkflowHandle {
 	}
     }
 
-    private void initSteps() throws Exception {
-
-        // make the parent/child links from the remembered dependencies
-        for (WorkflowStep step : steps) {
-            for (Name dependName : step.getDependsNames()) {
-                String stepName = step.getName();
-                WorkflowStep parent = stepsByName.get(dependName.getName());
-                if (parent == null) 
-                    Utilities.error("step '" + stepName + "' depends on '"
-                          + dependName + "' which is not found");
-                step.addParent(parent);
-            }
-        }
-
- 	initDb();              // write workflow to db, if not already there
-
-	getStepsConfig();      // validate config of all steps.
-    }
-    
-    // write the workflow and steps to the db
-    // for now, assume the workflow steps don't change over the life of a workflow
-    private void initDb() throws SQLException, IOException {
-
-	name = getWorkflowConfig("name");
-	version = getWorkflowConfig("version");
-
-	// don't bother if already in db
-	String sql = "select workflow_id"  
-	    + " from apidb.workflow"  
-	    + " where name = " + "'" + name + "'"   
-	    + " and version = '" + version + "'";
-
-        ResultSet rs = getDbConnection().createStatement().executeQuery(sql);
-
-	if (rs.next()) return;
-
-	// otherwise, do it...
-	log("Initializing workflow "
-	    + "'" + name + " " + version + "' in database");
-
-	// write row to Workflow table
-        sql = "select apidb.Workflow_sq.nextval from dual";
-        workflow_id = runSqlQuerySingleRow(sql).getInt(1);
-
-	sql = "INSERT INTO apidb.workflow (workflow_id, name, version)"  
-	    + " VALUES (" + workflow_id + ", '" + name + "', '" + version + "')";
-	runSql(sql);
-
-	// write all steps to WorkflowStep table
-	PreparedStatement stmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
-	for (WorkflowStep step : steps) {
-	    step.initializeStepTable(stmt);
-	}
-
-	// update steps in memory, to get their new IDs
-	getWorkflowStepsDbSnapshot();
-    }
-
-    private void getDbSnapshot() throws SQLException, IOException {
-	getDbState();
-	getWorkflowStepsDbSnapshot();
-    }
-
-    // read all WorkflowStep rows into memory (and remember the prev snapshot)
-    private void getWorkflowStepsDbSnapshot() throws SQLException, FileNotFoundException, IOException {
-	String sql = WorkflowStep.getBulkSnapshotSql(workflow_id);
-
-	// run query to get all rows from WorkflowStep for this workflow
-	// stuff each row into the snapshot, keyed on step name
-	Statement stmt = getDbConnection().createStatement();
-	ResultSet rs = stmt.executeQuery(sql);
-	while (rs.next()) {
-	    String stepName = rs.getString("NAME");
-	    WorkflowStep step = stepsByName.get(stepName);
-	    step.setFromDbSnapshot(rs);
-	}
-    }
 
     // iterate through steps, checking on changes since last snapshot
     // while we're passing through, count how many steps are running
@@ -286,14 +155,6 @@ public class Workflow extends WorkflowHandle {
 	}
 	return stepsConfig;
 	*/
-    }
-
-    private void initHomeDir() throws IOException {
-	File stepsDir = new File(getHomeDir() + "/steps");
-	if (!stepsDir.exists()) stepsDir.mkdir();
-        File logsDir = new File(getHomeDir() + "/logs");
-        if (!logsDir.exists()) logsDir.mkdir();
-        log("Initializing workflow home directory '" + getHomeDir() + "'");
     }
 
     private void setRunningState(int numSteps) throws SQLException, IOException, java.lang.InterruptedException {
@@ -364,11 +225,11 @@ public class Workflow extends WorkflowHandle {
 	  $documenter->printXml();
     }
     */
-    
-    public String toString() {
-        return "Constants" + nl + constants.toString() + nl + nl
-        + "Steps" + nl + steps.toString();
-    }
+
+
+    ////////////////////////////////////////////////////////////////////////
+    //           Static methods
+    ////////////////////////////////////////////////////////////////////////
         
     public static void main(String[] args) throws Exception  {
         String cmdName = System.getProperty("cmdName");
@@ -386,9 +247,10 @@ public class Workflow extends WorkflowHandle {
         // branch based on provided options
         if (cmdLine.hasOption("n")) {
             WorkflowXmlParser parser = new WorkflowXmlParser();
-            Workflow workflow = parser.parseWorkflow(homeDirName);
+            WorkflowGraph workflowGraph = parser.parseWorkflow(homeDirName);
             String numSteps = cmdLine.getOptionValue("n"); 
-            workflow.run(Integer.parseInt(numSteps));
+            RunnableWorkflow runnableWorkflow = new RunnableWorkflow(workflowGraph);
+            runnableWorkflow.run(Integer.parseInt(numSteps));
         } else if (cmdLine.hasOption("q")) {
             
         } else if (cmdLine.hasOption("d")) {
@@ -460,7 +322,4 @@ public class Workflow extends WorkflowHandle {
 
         return options;
     }
-
-    
-
 }
