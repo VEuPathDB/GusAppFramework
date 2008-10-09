@@ -1,11 +1,11 @@
 GUS/Workflow/TestStep.name=morton
 
 # firstStep
-firstStep.wait=20
+firstStep.wait=3
 
 # /secondStep/
 secondStep.name=benny
-secondStep.wait=16
+secondStep.wait=5
 
 # /thirdStep/
 thirdStep.name=stan
