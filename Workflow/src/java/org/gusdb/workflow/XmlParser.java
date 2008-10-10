@@ -32,18 +32,21 @@ import com.thaiopensource.xml.sax.ErrorHandlerImpl;
 public abstract class XmlParser {
     
     protected String gusHome;
+    protected String schemaPath;
     
     protected ValidationDriver validator;
     protected Digester digester;
     
-    public XmlParser(String schemaPath ) throws SAXException,
-            IOException {
+    public XmlParser(String schemaPath) {
         this.gusHome = System.getProperty("GUS_HOME");
-        
+        this.schemaPath = schemaPath;
+    }
+     
+    void configure() throws SAXException, IOException {
         // get model schema file and xml schema file
         URL schemaURL = makeURL( gusHome, schemaPath );
         
-        // config validator and digester
+       // config validator and digester
         validator = configureValidator( schemaURL );
         digester = configureDigester();
     }

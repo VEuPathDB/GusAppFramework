@@ -8,6 +8,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import java.io.File;
+import java.io.IOException;
 
 public class Utilities {
     
@@ -50,6 +51,13 @@ public class Utilities {
         formatter.printHelp(75, cmdlineSyntax, header, options, nl);
 	System.out.println(usageNotes);
         System.exit(1);
+    }
+    
+    static void runCmd(String cmd) throws IOException, InterruptedException {
+      Process process = Runtime.getRuntime().exec(cmd);
+      process.waitFor();
+      if (process.exitValue() != 0) 
+          error("Failed with status $status running: " + nl + cmd);
     }
     
     static void error(String msg) {
