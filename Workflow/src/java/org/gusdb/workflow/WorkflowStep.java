@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Collections;
 import java.util.regex.Matcher;
 
 /*
@@ -44,26 +43,26 @@ import java.util.regex.Matcher;
 public class WorkflowStep  {
 
     // from construction and configuration
-    private String name;
-    private WorkflowGraph workflowGraph;
-    private String invokerClassName;
-    private List<WorkflowStep> parents = new ArrayList<WorkflowStep>();
+    protected String name;
+    protected WorkflowGraph<? extends WorkflowStep> workflowGraph;
+    protected String invokerClassName;
+    protected List<WorkflowStep> parents = new ArrayList<WorkflowStep>();
     
     // state from db
-    private int workflow_step_id;
-    private String state;
-    private boolean state_handled;
-    private boolean off_line;
-    private String process_id;
-    private Date start_time;
-    private Date end_time;
+    protected int workflow_step_id;
+    protected String state;
+    protected boolean state_handled;
+    protected boolean off_line;
+    protected String process_id;
+    protected Date start_time;
+    protected Date end_time;
     
     // other
     private String stepDir;   
-    private String prevState;
-    private boolean prevOffline;
     private List<Name> dependsNames = new ArrayList<Name>();
-    private Map<String,String> paramValues = new HashMap<String,String>();
+    protected Map<String,String> paramValues = new HashMap<String,String>();
+    protected String prevState;
+    protected boolean prevOffline;
 
     
     // static
@@ -78,15 +77,15 @@ public class WorkflowStep  {
         this.invokerClassName = invokerClassName;
     }
     
-    public void setWorkflow(Workflow w) {
-        this.workflow = w;
+    public void setWorkflowGraph(WorkflowGraph<? extends WorkflowStep> workflowGraph) {
+        this.workflowGraph = workflowGraph;
     }   
 
     void addParent(WorkflowStep parent) {
 	parents.add(parent);
     }
 
-    private List<WorkflowStep> getParents() {
+    protected List<WorkflowStep> getParents() {
 	return parents;
     }
 
@@ -124,7 +123,7 @@ public class WorkflowStep  {
     // called during workflow initialization
     void initializeStepTable(PreparedStatement stmt) throws SQLException {
 	stmt.setString(1, name);
-	stmt.setString(2, WorkflowBase.READY);
+	stmt.setString(2, Workflow.READY);
 	stmt.execute();
     }
 
@@ -140,28 +139,6 @@ public class WorkflowStep  {
 	    stmt.setInt(2, getId());
 	    stmt.execute();
 	}
-    }
-
-    int handleChangesSinceLastSnapshot(Workflow workflow) throws SQLException, IOException, InterruptedException  {
-	if (state_handled) {
-	    if (state.equals(WorkflowBase.RUNNING)) {	        
-	        String cmd = "ps -p " + process_id;
-	        Process process = Runtime.getRuntime().exec(cmd);
-		process.waitFor();
-	        if (process.exitValue() != 0) handleMissingProcess();
-	    }
-	} else { // this step has been changed by wrapper or pilot UI. log change.
-	    String stateMsg = "";
-	    String offlineMsg = "";
-	    if (!state.equals(prevState)) stateMsg = "  " + state;
-	    if(off_line != prevOffline) {
-		offlineMsg = off_line? "  OFFLINE" : "  ONLINE";
-	    }
-
-	    log("Step '" + name + "'" + stateMsg + offlineMsg);
-	    setHandledFlag();
-	}
-	return state.equals(WorkflowBase.RUNNING)? 1 : 0;
     }
 
     // static method
@@ -183,81 +160,6 @@ public class WorkflowStep  {
 	start_time = rs.getDate("START_TIME");
 	end_time = rs.getDate("END_TIME");
     }
-
-    private void setHandledFlag() throws SQLException, FileNotFoundException, IOException {
-	// check that state is still as expected, to avoid theoretical race condition
-
-	int offlineInt = off_line? 1 : 0;
-	String sql = "UPDATE apidb.WorkflowStep"  
-	    + " SET state_handled = 1"
-	    + " WHERE workflow_step_id = " + workflow_step_id
-	    + " AND state = '" + state + "'"
-	    + " AND off_line = " + offlineInt;
-	runSql(sql);
-	state_handled = true;  // till next snapshot
-    }
-
-    private void handleMissingProcess() throws SQLException, IOException {
-	String sql = "SELECT state" 
-	    + " FROM apidb.workflowstep"
-	    + " WHERE workflow_step_id = " + workflow_step_id;
-	
-        ResultSet rs = workflow.getDbConnection().createStatement().executeQuery(sql);
-
-	rs.next();
-	String stateNow = rs.getString(1);
-	if (stateNow.equals(WorkflowBase.RUNNING)) {
-
-	    sql = "UPDATE apidb.WorkflowStep"  
-		+ " SET"  
-		+ " state = '" + WorkflowBase.FAILED + "', state_handled = 1, process_id = null" 
-		+ " WHERE workflow_step_id = " + workflow_step_id
-		+ " AND state = '" + WorkflowBase.RUNNING + "'";
-	    runSql(sql);
-	    log("Step '" + name + "' FAILED (no wrapper process " + process_id + ")");
-	}
-    }
-	
-    // if this step is ready, and all parents are done, transition to ON_DECK
-    void maybeGoToOnDeck() throws SQLException, IOException {
- 
-	if (!state.equals(WorkflowBase.READY) || off_line) return;
-
-	for (WorkflowStep parent : getParents()) {
-	    if (!parent.getState().equals(WorkflowBase.DONE)) return;
-	}
-
-	log("Step '" + name + "' " + WorkflowBase.ON_DECK);
-
-	String sql = "UPDATE apidb.WorkflowStep"  
-	    + " SET state = '" + WorkflowBase.ON_DECK + "', state_handled = 1" 
-	    + " WHERE workflow_step_id = " + workflow_step_id  
-	    + " AND state = '" + WorkflowBase.READY + "'";
-	runSql(sql);
-    }
-
-    // try to run a single ON_DECK step
-    int runOnDeckStep(Workflow workflow) throws IOException, SQLException {
-	if (state.equals(WorkflowBase.ON_DECK) && !off_line) {
-	    String[] cmd = {"workflowstepwrap", workflow.getHomeDir(),
-			    workflow.getId().toString(),
-			    name, invokerClassName,
-			    getStepDir() + "/step.err"}; 
-
-	    List<String> cmd2 = new ArrayList<String>();
-	    Collections.addAll(cmd2, cmd);
-	    for (String name : paramValues.keySet()) {
-		String valueStr = paramValues.get(name);
-		valueStr = valueStr.replaceAll("\"", "\\\\\""); 
-		cmd2.add("-" + name);
-		cmd2.add(valueStr);
-	    }
-	    log("Invoking step '" + name + "'" );
-	    Runtime.getRuntime().exec(cmd2.toArray(new String[] {}));
-	    return 1;
-	} 
-	return 0;
-    }
     
     void substituteConstantValues(Map<String,String>constants){
         for (String paramName : paramValues.keySet()) {
@@ -273,9 +175,9 @@ public class WorkflowStep  {
         }
     }
 
-    private String getStepDir() {
+    protected String getStepDir() {
 	if (stepDir == null) {
-	    stepDir = workflowGraph.getHomeDir() + "/steps/" + name;
+	    stepDir = workflowGraph.getWorkflow().getHomeDir() + "/steps/" + name;
             File dir = new File(stepDir);
             if (!dir.exists()) dir.mkdir();
 	}
@@ -284,12 +186,8 @@ public class WorkflowStep  {
 
 //////////////////////////  utilities /////////////////////////////////////////
 
-    private void log(String msg) throws IOException {
-	workflow.log(msg);
-    }
-
-    private void runSql2(String sql) throws SQLException, FileNotFoundException, IOException {
-	workflow.runSql(sql);
+    protected void runSql(String sql) throws SQLException, FileNotFoundException, IOException {
+	workflowGraph.getWorkflow().runSql(sql);
     }
 
     public String toString() {

@@ -30,19 +30,21 @@ import org.xml.sax.SAXException;
 import org.gusdb.workflow.WorkflowStep;
 import org.gusdb.workflow.Name;
 
-public class WorkflowXmlParser extends XmlParser {
+public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
 
     private static final Logger logger = Logger.getLogger(WorkflowXmlParser.class);
+    private Class<T> stepClass;
 
-    public WorkflowXmlParser() throws SAXException, IOException {
-
+    public WorkflowXmlParser() {
         super("lib/rng/workflow.rng");
     }
 
-    public WorkflowGraph parseWorkflow(String homeDir) throws SAXException, IOException, Exception {
-             
+    @SuppressWarnings("unchecked")
+    public WorkflowGraph<T> parseWorkflow(Workflow workflow, Class<T> stepClass) throws SAXException, IOException, Exception {
+        this.stepClass = stepClass;
+        configure();
         Properties workflowProps = new Properties();
-        workflowProps.load(new FileInputStream(homeDir + "config/workflow.prop"));
+        workflowProps.load(new FileInputStream(workflow.getHomeDir() + "config/workflow.prop"));
         String xmlFileName = workflowProps.getProperty("workflowXmlFile");
 
         // construct urls to model file, prop file, and config file
@@ -58,8 +60,8 @@ public class WorkflowXmlParser extends XmlParser {
         //Map<String, String> properties = getPropMap(modelPropURL);
 
         InputStream xmlStream = substituteProps(doc, properties);
-	WorkflowGraph workflowGraph = (WorkflowGraph)digester.parse(xmlStream);
-	//workflow.setHomeDir(homeDir);
+	WorkflowGraph<T> workflowGraph = (WorkflowGraph<T>)digester.parse(xmlStream);
+	workflowGraph.setWorkflow(workflow);
 	workflowGraph.makeParentChildLinks();
 	// also, resolve embedded subgraphs
         return workflowGraph;
@@ -68,23 +70,24 @@ public class WorkflowXmlParser extends XmlParser {
     protected Digester configureDigester() {
         Digester digester = new Digester();
         digester.setValidating(false);
-
+        WorkflowGraph<T> wg = new WorkflowGraph<T>();
+        
         // Root -- WDK Model
-        digester.addObjectCreate("workflow", Workflow.class);
+        digester.addObjectCreate("workflowGraph", wg.getClass());
 
-        configureNode(digester, "workflow/constant", NamedValue.class,
+        configureNode(digester, "workflowGraph/constant", NamedValue.class,
         "addConstant");
-        digester.addCallMethod("workflow/constant", "setValue", 0);
+        digester.addCallMethod("workflowGraph/constant", "setValue", 0);
 
-        configureNode(digester, "workflow/step", WorkflowStep.class,
+        configureNode(digester, "workflowGraph/step", stepClass,
                 "addStep");
 
-        configureNode(digester, "workflow/step/depends", Name.class,
+        configureNode(digester, "workflowGraph/step/depends", Name.class,
                 "addDependsName");
         
-        configureNode(digester, "workflow/step/paramValue", NamedValue.class,
+        configureNode(digester, "workflowGraph/step/paramValue", NamedValue.class,
         "addParamValue");
-        digester.addCallMethod("workflow/step/paramValue", "setValue", 0);
+        digester.addCallMethod("workflowGraph/step/paramValue", "setValue", 0);
 
        return digester;
     }
@@ -124,11 +127,13 @@ public class WorkflowXmlParser extends XmlParser {
         String homeDir = cmdLine.getOptionValue("h");
         
         // create a parser, and parse the model file
-        WorkflowXmlParser parser = new WorkflowXmlParser();
-        Workflow workflow = parser.parseWorkflow(homeDir);
+        Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDir);
+        WorkflowXmlParser<WorkflowStep> parser = new WorkflowXmlParser<WorkflowStep>();
+        WorkflowGraph<WorkflowStep> workflowGraph = parser.parseWorkflow(workflow,WorkflowStep.class);
+        workflow.setWorkflowGraph(workflowGraph);
 
         // print out the model content
-        System.out.println(workflow.toString());
+        System.out.println(workflowGraph.toString());
         System.exit(0);
     }
 

@@ -1,15 +1,19 @@
 package org.gusdb.workflow;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class WorkflowGraph {
+public class WorkflowGraph<T extends WorkflowStep> {
     private List<String> params = new ArrayList<String>();
-    private List<WorkflowStep> steps = new ArrayList<WorkflowStep>();
-    private Map<String, WorkflowStep> stepsByName = new HashMap<String, WorkflowStep>();
+    private List<T> steps = new ArrayList<T>();
+    private Map<String, T> stepsByName = new HashMap<String, T>();
     private Map<String,String> constants = new HashMap<String,String>();
+    String[] sortedStepNames; 
+    Workflow<T> workflow;
+    final static String nl = System.getProperty("line.separator");
 
     public WorkflowGraph() {}
 
@@ -21,7 +25,7 @@ public class WorkflowGraph {
 	params.add(paramName);
     }
     
-    public void addStep(WorkflowStep step) {
+    public void addStep(T step) {
         step.setWorkflowGraph(this);
         String stepName = step.getName();
         if (stepsByName.containsKey(stepName))
@@ -31,11 +35,32 @@ public class WorkflowGraph {
         step.substituteConstantValues(constants);
     }
 
-    String getHomeDir() {
-        return homeDir;
+    void setWorkflow(Workflow<T> workflow) {
+        this.workflow = workflow;
     }
     
-    private void makeParentChildLinks() {
+    Workflow<T> getWorkflow() {
+        return workflow;
+    }
+
+    String[] getSortedStepNames() {
+        if (sortedStepNames == null) {
+            sortedStepNames = new String[stepsByName.size()];
+            stepsByName.keySet().toArray(sortedStepNames); 
+            Arrays.sort(sortedStepNames);
+        }
+        return sortedStepNames;
+    }
+    
+    Map<String, T> getStepsByName() {
+        return stepsByName;
+    }
+    
+    List<T> getSteps() {
+        return steps;
+    }
+
+    void makeParentChildLinks() {
 	// make the parent/child links from the remembered dependencies
 	for (WorkflowStep step : steps) {
             for (Name dependName : step.getDependsNames()) {

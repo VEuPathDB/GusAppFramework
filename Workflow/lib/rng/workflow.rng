@@ -2,7 +2,7 @@
 <grammar xmlns="http://relaxng.org/ns/structure/1.0"
          datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
   <start>
-    <element name="workflow">
+    <element name="workflowGraph">
       <zeroOrMore>
         <element name="constant">
           <attribute name="name" />

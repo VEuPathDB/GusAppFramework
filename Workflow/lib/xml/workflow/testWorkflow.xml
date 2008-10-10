@@ -1,4 +1,4 @@
-<workflow>
+<workflowGraph>
 
   <constant name="blue">very blue</constant>
 
@@ -19,4 +19,4 @@
     <depends name="secondStep"/>
   </step>
 
-</workflow>
+</workflowGraph>

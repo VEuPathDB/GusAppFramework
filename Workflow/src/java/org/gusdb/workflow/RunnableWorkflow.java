@@ -1,23 +1,7 @@
 package org.gusdb.workflow;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionGroup;
-import org.apache.commons.cli.Options;
 
 /*
    to do
@@ -61,23 +45,31 @@ import org.apache.commons.cli.Options;
    these correctly.
 */
 
-public class Workflow extends WorkflowBase {
-    private boolean noLog;
-    private int runningCount; 
+public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
+    private int runningCount;
+    private WorkflowGraph<RunnableWorkflowStep> workflowGraph;
+    final static String nl = System.getProperty("line.separator");
 
-    public Workflow() {}
+    public RunnableWorkflow(String homeDir) {
+        super(homeDir);
+    }
 
-
+    void setWorkflowGraph(WorkflowGraph<RunnableWorkflowStep> workflowGraph) {
+        this.workflowGraph = workflowGraph;
+        setWorkflowGraph(workflowGraph);
+    }
+    
     // run the controller
-    private void run(int numSteps) throws Exception {
+    void run(int numSteps) throws Exception {
+        initHomeDir();         // initialize workflow home directory, if needed
 
-	initHomeDir();		   // initialize workflow home directory
+        initDb();              // write workflow to db, if not already there
 
-	initSteps();               // parse graph xml and config, and init db
+        getStepsConfig();      // validate config of all steps.
 
-	getDbSnapshot();	   //read state of Workflow and WorkflowSteps
+        getDbSnapshot();       // read state of Workflow and WorkflowSteps
 
-	setRunningState(numSteps); // set db state. fail if already running
+	setRunningState(numSteps);      // set db state. fail if already running
 
 	// start polling
 	while (true) {
@@ -96,8 +88,8 @@ public class Workflow extends WorkflowBase {
 
 	runningCount = 0;
 	boolean notDone = false;
-	for (WorkflowStep step : steps) {
-	    runningCount += step.handleChangesSinceLastSnapshot();
+	for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
+	    runningCount += step.handleChangesSinceLastSnapshot(this);
 	    notDone |= !step.getState().equals(DONE);
 	}
 	if (!notDone) setDoneState();
@@ -105,56 +97,16 @@ public class Workflow extends WorkflowBase {
     }
 
     private void findOndeckSteps() throws SQLException, IOException {
-	for (WorkflowStep step : steps) {
+	for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
 	    step.maybeGoToOnDeck();
 	}
     }
 
     private void fillOpenSlots() throws IOException, SQLException {
-	for (WorkflowStep step : steps) {
+	for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
 	    if (runningCount >= allowed_running_steps) break;
-	    runningCount += step.runOnDeckStep();
+	    runningCount += step.runOnDeckStep(this);
 	}
-    }
-
-    // read and validate all steps config
-    private void getStepsConfig() {
-        /*
-	if (stepsConfig == null) {
-
-	    String stepsConfigFile = homeDir + "/config/steps.prop";
-
-	    log("Validating Step classes and step config file '" 
-		+ stepsConfigFile + "'");
-
-	    // for each step in the graph, instantiate its invoker, and get the
-	    // invoker's config declaration.  compare that against the step config file
-	    Map<String, ConfigDecl> stepConfigDecl
-		= new HashMap<String, ConfigDecl>();
-	    Map<String, ConfigDecl> invokerClassConfigDecl
-		= new HashMap<String, ConfigDecl>();
-
-	    for (WorkflowStep step : steps) {
-		String invokerClassName = step->getInvokerClass();
-		if (!invokerClassConfigDecl.contains(invokerClass)) {
-		    /* FIX
-		    $stepInvokers->{$invokerClass}
-		    = eval "{require $invokerClass; $invokerClass->new()}";
-		    $self->error($@) if $@;
-		    
-		}
-		stepConfigDecl.put(step.getName(), 
-				   invokerClassConfigDecl.get(invokerClassName));
-	    }
-
-	    // this object does the validation
-	    /* FIX
-	       $self->{stepsConfig} =
-	       CBIL::Util::MultiPropertySet->new($stepsConfigFile, $stepsConfigDecl);
-	    
-	}
-	return stepsConfig;
-	*/
     }
 
     private void setRunningState(int numSteps) throws SQLException, IOException, java.lang.InterruptedException {
@@ -164,7 +116,7 @@ public class Workflow extends WorkflowBase {
 	    Process process = Runtime.getRuntime().exec(cmd);
 	    process.waitFor();
 	    if (process.exitValue() == 0)
-		error("workflow already running (" + process_id + ")");
+	        error("workflow already running (" + process_id + ")");
 	}
 
 	String processId = getProcessId(); 
@@ -191,15 +143,6 @@ public class Workflow extends WorkflowBase {
 	log("Workflow " + DONE);
     }
 
-    void log(String msg) throws IOException {
-	if (noLog) return;
-
-	String logFileName = getHomeDir() + "/logs/controller.log";
-	PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true));
-	writer.println(msg);
-	writer.close();
-    }
-    
     /*
      * from http://blog.igorminar.com/2007/03/one-more-way-how-to-get-current-pid-in.html
      */
@@ -225,101 +168,4 @@ public class Workflow extends WorkflowBase {
 	  $documenter->printXml();
     }
     */
-
-
-    ////////////////////////////////////////////////////////////////////////
-    //           Static methods
-    ////////////////////////////////////////////////////////////////////////
-        
-    public static void main(String[] args) throws Exception  {
-        String cmdName = System.getProperty("cmdName");
-
-        // parse command line
-        Options options = declareOptions();
-        String cmdlineSyntax = cmdName + " -h workflow_home_dir <-n allowed_running_steps | -q | -d <states> >";
-        String cmdDescrip = "Run a workflow, or, print a report about a workflow.";
-        CommandLine cmdLine =
-            Utilities.parseOptions(cmdlineSyntax, cmdDescrip, getUsageNotes(), options, args);
-                
-        // get required homedir from cmd line
-        String homeDirName = cmdLine.getOptionValue("h");
-    
-        // branch based on provided options
-        if (cmdLine.hasOption("n")) {
-            WorkflowXmlParser parser = new WorkflowXmlParser();
-            WorkflowGraph workflowGraph = parser.parseWorkflow(homeDirName);
-            String numSteps = cmdLine.getOptionValue("n"); 
-            RunnableWorkflow runnableWorkflow = new RunnableWorkflow(workflowGraph);
-            runnableWorkflow.run(Integer.parseInt(numSteps));
-        } else if (cmdLine.hasOption("q")) {
-            
-        } else if (cmdLine.hasOption("d")) {
-            WorkflowXmlParser parser = new WorkflowXmlParser();
-            Workflow workflow = parser.parseWorkflow(homeDirName);
-            String desiredStatesStr = cmdLine.getOptionValue("d"); 
-            String[] desiredStates = desiredStatesStr.split(",");
-            workflow.reportSteps(desiredStates);            
-        } else if (cmdLine.hasOption("reset")) {
-            Workflow workflow = new Workflow();
-            workflow.setHomeDir(homeDirName);
-            workflow.reset();
-        } else {
-            Utilities.usage(cmdlineSyntax, cmdDescrip, getUsageNotes(), options);
-        }
-        System.exit(0);
-    }
-    
-    private static String getUsageNotes() {
-        return
- 
-      "Home dir must contain the following:" + nl
-    + "   config/" + nl
-    + "     workflow.prop      (meta config)" + nl
-    + "     steps.prop         (steps config)" + nl
-    + "     stepsGlobal.prop   (global steps config)" + nl
-    + "     resources.xml      [future]" + nl
-    + nl                              
-    + "Examples:" + nl
-    + nl     
-    + "  run a workflow:" + nl
-    + "    % workflow workflow_dir 3" + nl
-    + nl     
-    + "  quick report of workflow state" + nl
-    + "    % workflow workflow_dir -q" + nl
-    + nl     
-    + "  print detailed steps report." + nl
-    + "    % workflow workflow_dir -d" + nl
-    + nl     
-    + "  limit steps report to steps in particular states" + nl
-    + "    % workflow workflow_dir -d FAILED RUNNING" + nl
-    + nl     
-    + "  print steps report, using the optional offline flag to only include steps" + nl
-    + "  that have the flag in the indicated state.  [not implemented yet]" + nl
-    + "    % workflow workflow_dir -d0 ON_DECK" + nl
-    + "    % workflow workflow_dir -d1 READY ON_DECK" + nl;
-    }
-
-    private static Options declareOptions() {
-        Options options = new Options();
-
-        Utilities.addOption(options, "h", "Workflow homedir (see below)");
-        
-        OptionGroup optionalOptions = new OptionGroup();
-        Option numSteps = new Option("n", true,
-             "Number of steps allowed to run simultaneously");
-        optionalOptions.addOption(numSteps);
-        
-        Option detailedRep = new Option("d", true, "Print detailed report");
-        optionalOptions.addOption(detailedRep);
-        
-        Option quickRep = new Option("q", "Print quick report");
-        optionalOptions.addOption(quickRep);
-        options.addOptionGroup(optionalOptions);
-
-        Option reset = new Option("reset", "Reset workflow. DANGER! Will destroy your workflow.  Use only if you know exactly what you are doing.");
-        optionalOptions.addOption(reset);
-        options.addOptionGroup(optionalOptions);
-
-        return options;
-    }
 }
