@@ -109,5 +109,9 @@ public class RunnableWorkflowStep extends WorkflowStep {
         workflowGraph.getWorkflow().log(msg);
     }
 
+    RunnableWorkflowStep newStep() {
+        return new RunnableWorkflowStep();
+    }
+
 
 }

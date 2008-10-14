@@ -40,13 +40,11 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
     }
 
     @SuppressWarnings("unchecked")
-    public WorkflowGraph<T> parseWorkflow(Workflow workflow, Class<T> stepClass) throws SAXException, IOException, Exception {
+    public WorkflowGraph<T> parseWorkflow(Workflow workflow, Class<T> stepClass, String xmlFileName) throws SAXException, IOException, Exception {
         this.stepClass = stepClass;
-        configure();
-        Properties workflowProps = new Properties();
-        workflowProps.load(new FileInputStream(workflow.getHomeDir() + "config/workflow.prop"));
-        String xmlFileName = workflowProps.getProperty("workflowXmlFile");
 
+        configure();
+        
         // construct urls to model file, prop file, and config file
         URL modelURL = makeURL(gusHome, "lib/xml/workflow/" + xmlFileName);
 
@@ -63,7 +61,6 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
 	WorkflowGraph<T> workflowGraph = (WorkflowGraph<T>)digester.parse(xmlStream);
 	workflowGraph.setWorkflow(workflow);
 	workflowGraph.makeParentChildLinks();
-	// also, resolve embedded subgraphs
         return workflowGraph;
     }
 
@@ -124,16 +121,17 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
         String cmdDescrip = "Parse and print out a workflow xml file.";
         CommandLine cmdLine =
             Utilities.parseOptions(cmdlineSyntax, cmdDescrip, "", options, args);
-        String homeDir = cmdLine.getOptionValue("h");
+        String homeDirName = cmdLine.getOptionValue("h");
         
         // create a parser, and parse the model file
-        Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDir);
-        WorkflowXmlParser<WorkflowStep> parser = new WorkflowXmlParser<WorkflowStep>();
-        WorkflowGraph<WorkflowStep> workflowGraph = parser.parseWorkflow(workflow,WorkflowStep.class);
-        workflow.setWorkflowGraph(workflowGraph);
+        Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDirName);
+        Class<WorkflowStep> stepClass = WorkflowStep.class;
+        WorkflowGraph<WorkflowStep> rootGraph = 
+            WorkflowGraph.constructFullGraph(stepClass, workflow);
+        workflow.setWorkflowGraph(rootGraph);      
 
         // print out the model content
-        System.out.println(workflowGraph.toString());
+        System.out.println(rootGraph.toString());
         System.exit(0);
     }
 

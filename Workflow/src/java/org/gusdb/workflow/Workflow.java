@@ -13,6 +13,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
@@ -216,6 +219,10 @@ public class Workflow <T extends WorkflowStep>{
         writer.println(msg);
         writer.close();
     }
+    
+    WorkflowStep newStep() {
+        return new WorkflowStep();
+    }
 
     void runCmd(String cmd) throws IOException, InterruptedException {
         Utilities.runCmd(cmd);
@@ -268,7 +275,11 @@ public class Workflow <T extends WorkflowStep>{
         Utilities.error(msg);
     }
     
-    
+    String getStepsXmlFileName() throws FileNotFoundException, IOException {
+        Properties workflowProps = new Properties();        
+        workflowProps.load(new FileInputStream(getHomeDir() + "config/workflow.prop"));
+        return workflowProps.getProperty("workflowXmlFile");
+    }
     
     //////////////////////////////////////////////////////////////////
     //   Actions
@@ -363,13 +374,10 @@ public class Workflow <T extends WorkflowStep>{
          if (cmdLine.hasOption("n")) {
              RunnableWorkflow runnableWorkflow = new RunnableWorkflow(homeDirName);
              Class<RunnableWorkflowStep> stepClass = RunnableWorkflowStep.class;
-             WorkflowXmlParser<RunnableWorkflowStep> parser =
-                 new WorkflowXmlParser<RunnableWorkflowStep>();
-             WorkflowGraph<RunnableWorkflowStep> workflowGraph = 
-                 parser.parseWorkflow(runnableWorkflow, stepClass);  
+             WorkflowGraph<RunnableWorkflowStep> rootGraph = 
+                 WorkflowGraph.constructFullGraph(stepClass, runnableWorkflow);
+             runnableWorkflow.setWorkflowGraph(rootGraph);
              String numSteps = cmdLine.getOptionValue("n");
-
-             runnableWorkflow.setWorkflowGraph(workflowGraph);
              runnableWorkflow.run(Integer.parseInt(numSteps));
          } 
          
@@ -380,11 +388,9 @@ public class Workflow <T extends WorkflowStep>{
          else if (cmdLine.hasOption("d")) {
              Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDirName);
              Class<WorkflowStep> stepClass = WorkflowStep.class;
-             WorkflowXmlParser<WorkflowStep> parser =
-                 new WorkflowXmlParser<WorkflowStep>();
-             WorkflowGraph<WorkflowStep> workflowGraph = 
-                 parser.parseWorkflow(workflow,stepClass);
-             workflow.setWorkflowGraph(workflowGraph);      
+             WorkflowGraph<WorkflowStep> rootGraph = 
+                 WorkflowGraph.constructFullGraph(stepClass, workflow);
+             workflow.setWorkflowGraph(rootGraph);      
              String desiredStatesStr = cmdLine.getOptionValue("d"); 
              String[] desiredStates = desiredStatesStr.split(",");
              workflow.reportSteps(desiredStates);            

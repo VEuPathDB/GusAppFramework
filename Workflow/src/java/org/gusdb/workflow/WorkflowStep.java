@@ -47,6 +47,8 @@ public class WorkflowStep  {
     protected WorkflowGraph<? extends WorkflowStep> workflowGraph;
     protected String invokerClassName;
     protected List<WorkflowStep> parents = new ArrayList<WorkflowStep>();
+    protected List<WorkflowStep> children = new ArrayList<WorkflowStep>();
+    protected String subgraphXmlFileName;
     
     // state from db
     protected int workflow_step_id;
@@ -84,9 +86,37 @@ public class WorkflowStep  {
     void addParent(WorkflowStep parent) {
 	parents.add(parent);
     }
+    
+    void removeParent(WorkflowStep parent) {
+        parents.remove(parent);
+    }
 
     protected List<WorkflowStep> getParents() {
 	return parents;
+    }
+
+    void addChild(WorkflowStep child) {
+        parents.add(child);
+    }
+    
+    void removeChild(WorkflowStep child) {
+        children.remove(child);
+    }
+
+    protected List<WorkflowStep> getChildren() {
+        return children;
+    }
+    
+    // insert a child between this step and its previous children
+    protected void insertChild(WorkflowStep child) {
+        for (WorkflowStep prevChild : children) {
+            prevChild.removeParent(this);
+            removeChild(prevChild);
+            child.addChild(prevChild);
+            prevChild.addParent(child);
+        }
+        child.addParent(this);
+        addChild(child);
     }
 
     public void addParamValue(NamedValue paramValue) {
@@ -111,6 +141,14 @@ public class WorkflowStep  {
 
     public void addDependsName(Name dependsName) {
         dependsNames.add(dependsName);
+    }
+    
+    public void setSubgraphXmlFileName(String subgraphXmlFileName) {
+        this.subgraphXmlFileName = subgraphXmlFileName;
+    }
+    
+    String getSubgraphXmlFileName() {
+        return subgraphXmlFileName;
     }
     
     static PreparedStatement getPreparedInsertStmt(Connection dbConnection, int workflowId) throws SQLException {
