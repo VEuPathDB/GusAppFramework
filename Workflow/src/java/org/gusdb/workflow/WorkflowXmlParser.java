@@ -2,13 +2,11 @@ package org.gusdb.workflow;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.regex.Matcher;
 
 import javax.xml.transform.Result;
@@ -60,6 +58,7 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
         InputStream xmlStream = substituteProps(doc, properties);
 	WorkflowGraph<T> workflowGraph = (WorkflowGraph<T>)digester.parse(xmlStream);
 	workflowGraph.setWorkflow(workflow);
+	workflowGraph.setXmlFileName(xmlFileName);
 	workflowGraph.makeParentChildLinks();
         return workflowGraph;
     }
@@ -85,6 +84,16 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
         configureNode(digester, "workflowGraph/step/paramValue", NamedValue.class,
         "addParamValue");
         digester.addCallMethod("workflowGraph/step/paramValue", "setValue", 0);
+        
+        configureNode(digester, "workflowGraph/subgraph", stepClass,
+        "addStep");
+
+        configureNode(digester, "workflowGraph/subgraph/depends", Name.class,
+        "addDependsName");
+
+        configureNode(digester, "workflowGraph/subgraph/paramValue", NamedValue.class,
+        "addParamValue");
+        digester.addCallMethod("workflowGraph/subgraph/paramValue", "setValue", 0);
 
        return digester;
     }

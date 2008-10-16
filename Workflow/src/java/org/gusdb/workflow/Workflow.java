@@ -13,9 +13,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
@@ -231,6 +228,8 @@ public class Workflow <T extends WorkflowStep>{
     Connection getDbConnection() throws SQLException, FileNotFoundException, IOException {
         if (dbConnection == null) {
             DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver());
+            String j = getWorkflowConfig("jdbcConnectString");
+            System.err.println(j);
             dbConnection = DriverManager.getConnection(getWorkflowConfig("jdbcConnectString"),
                     getWorkflowConfig("dbLogin"),
                     getWorkflowConfig("dbPassword"));
@@ -318,8 +317,7 @@ public class Workflow <T extends WorkflowStep>{
             System.out.println("=============== " 
                                + desiredState + " steps "
                                + "================"); 
-            for (String stepName : workflowGraph.getSortedStepNames()) {
-                WorkflowStep step = workflowGraph.getStepsByName().get(stepName);
+            for (T step : workflowGraph.getSortedSteps()) {
                 if (step.getState().equals(desiredState)) {
                     System.out.println(step.toString());
                     /* FIX

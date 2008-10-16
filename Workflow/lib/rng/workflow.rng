@@ -10,21 +10,38 @@
         </element>
       </zeroOrMore>    
       <oneOrMore>
-        <element name="step">
-          <attribute name="name" />
-          <attribute name="stepClass"/>
-          <zeroOrMore>
-            <element name="paramValue">
-              <attribute name="name" />
-              <text/>
-            </element>
-          </zeroOrMore>       
-          <zeroOrMore>
-            <element name="depends">
-              <attribute name="name" />
-            </element>
-          </zeroOrMore>       
-        </element>
+        <choice>
+          <element name="step">
+            <attribute name="name" />
+            <attribute name="stepClass"/>
+            <zeroOrMore>
+              <element name="paramValue">
+                <attribute name="name" />
+                <text/>
+              </element>
+            </zeroOrMore>       
+            <zeroOrMore>
+              <element name="depends">
+                <attribute name="name" />
+              </element>
+            </zeroOrMore>       
+          </element>
+          <element name="subgraph">
+            <attribute name="name" />
+            <attribute name="xmlFile"/>
+            <zeroOrMore>
+              <element name="paramValue">
+                <attribute name="name" />
+                <text/>
+              </element>
+            </zeroOrMore>       
+            <zeroOrMore>
+              <element name="depends">
+                <attribute name="name" />
+              </element>
+            </zeroOrMore>       
+          </element>
+        </choice>
       </oneOrMore>    
     </element>
   </start>
