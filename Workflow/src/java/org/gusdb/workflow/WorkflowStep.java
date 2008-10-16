@@ -43,7 +43,8 @@ import java.util.regex.Matcher;
 public class WorkflowStep  {
 
     // from construction and configuration
-    protected String name;
+    private String baseName;
+    private String path = "";
     protected WorkflowGraph<? extends WorkflowStep> workflowGraph;
     protected String invokerClassName;
     protected List<WorkflowStep> parents = new ArrayList<WorkflowStep>();
@@ -66,13 +67,12 @@ public class WorkflowStep  {
     protected String prevState;
     protected boolean prevOffline;
 
-    
     // static
     private static final String nl = System.getProperty("line.separator");
 
     
     public void setName(String name) {
-        this.name = name;
+        this.baseName = name;
     }
     
     public void setStepClass(String invokerClassName) {
@@ -96,7 +96,7 @@ public class WorkflowStep  {
     }
 
     void addChild(WorkflowStep child) {
-        parents.add(child);
+        children.add(child);
     }
     
     void removeChild(WorkflowStep child) {
@@ -107,24 +107,53 @@ public class WorkflowStep  {
         return children;
     }
     
-    // insert a child between this step and its previous children
-    protected void insertChild(WorkflowStep child) {
-        for (WorkflowStep prevChild : children) {
-            prevChild.removeParent(this);
-            removeChild(prevChild);
-            child.addChild(prevChild);
-            prevChild.addParent(child);
+    void addToList(List<WorkflowStep> list) {
+        if (list.contains(this)) return;
+        list.add(this);
+        for (WorkflowStep child : getChildren()) {
+            child.addToList(list);
         }
-        child.addParent(this);
-        addChild(child);
+    }
+        
+    // insert a child between this step and its previous children
+    protected WorkflowStep insertSubgraphReturnChild() {
+        WorkflowStep newStep = newStep();
+        insertSubgraphReturnChild_sub(newStep);
+        return newStep;
+    }
+    
+    private void insertSubgraphReturnChild_sub(WorkflowStep newStep) {
+        newStep.setName(getFullName() + ".return");
+        List<WorkflowStep> oldChildren =
+            new ArrayList<WorkflowStep>(children);
+        for (WorkflowStep oldChild : oldChildren) {
+            oldChild.removeParent(this);
+            removeChild(oldChild);
+            newStep.addChild(oldChild);
+            oldChild.addParent(newStep);
+        }
+        newStep.addParent(this);
+        addChild(newStep);
     }
 
     public void addParamValue(NamedValue paramValue) {
 	paramValues.put(paramValue.getName(),paramValue.getValue());
     }
 
-    String getName() {
-	return name;
+    String getBaseName() {
+	return baseName;
+    }
+    
+    String getFullName() {
+        return getPath() + getBaseName();
+    }
+    
+    void setPath(String path) {
+        this.path = path;
+    }
+    
+    String getPath() {
+        return path;
     }
 
     private int getId () {
@@ -143,7 +172,7 @@ public class WorkflowStep  {
         dependsNames.add(dependsName);
     }
     
-    public void setSubgraphXmlFileName(String subgraphXmlFileName) {
+    public void setXmlFile(String subgraphXmlFileName) {
         this.subgraphXmlFileName = subgraphXmlFileName;
     }
     
@@ -160,7 +189,7 @@ public class WorkflowStep  {
     // write this step to the db, if not already there.
     // called during workflow initialization
     void initializeStepTable(PreparedStatement stmt) throws SQLException {
-	stmt.setString(1, name);
+	stmt.setString(1, getFullName());
 	stmt.setString(2, Workflow.READY);
 	stmt.execute();
     }
@@ -215,7 +244,7 @@ public class WorkflowStep  {
 
     protected String getStepDir() {
 	if (stepDir == null) {
-	    stepDir = workflowGraph.getWorkflow().getHomeDir() + "/steps/" + name;
+	    stepDir = workflowGraph.getWorkflow().getHomeDir() + "/steps/" + getFullName();
             File dir = new File(stepDir);
             if (!dir.exists()) dir.mkdir();
 	}
@@ -223,6 +252,10 @@ public class WorkflowStep  {
     }
 
 //////////////////////////  utilities /////////////////////////////////////////
+    
+    WorkflowStep newStep() {
+        return new WorkflowStep();
+    }
 
     protected void runSql(String sql) throws SQLException, FileNotFoundException, IOException {
 	workflowGraph.getWorkflow().runSql(sql);
@@ -231,9 +264,10 @@ public class WorkflowStep  {
     public String toString() {
 
 	String s =  nl 
-	    + "name:       " + name + nl
+	    + "name:       " + getFullName() + nl
 	    + "id:         " + workflow_step_id + nl
 	    + "stepClass:  " + invokerClassName + nl
+	    + "subgraphXml " + subgraphXmlFileName + nl
 	    + "state:      " + state + nl
 	    + "off_line:   " + off_line + nl
 	    + "handled:    " + state_handled + nl
@@ -245,7 +279,7 @@ public class WorkflowStep  {
 	String delim = "";
 	StringBuffer buf = new StringBuffer(s);
 	for (WorkflowStep parent : getParents()) {
-	    buf.append(delim + parent.getName());
+	    buf.append(delim + parent.getFullName());
 	    delim = ", ";
 	}
 	buf.append(nl + "params: " + paramValues);

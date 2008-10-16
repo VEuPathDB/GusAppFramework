@@ -2,10 +2,9 @@
 
   <constant name="blue">very blue</constant>
 
-  <step name="firstStep"
-        stepClass="GUS::Workflow::TestStep">
+  <subgraph name="firstStep" xmlFile="testSubgraph.xml">
       <paramValue name="msg">$$blue$$</paramValue>
-  </step>
+  </subgraph>
 
   <step name="secondStep"
         stepClass="GUS::Workflow::TestStep">

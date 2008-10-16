@@ -26,7 +26,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
                 offlineMsg = off_line? "  OFFLINE" : "  ONLINE";
             }
 
-            log("Step '" + name + "'" + stateMsg + offlineMsg);
+            log("Step '" + getFullName() + "'" + stateMsg + offlineMsg);
             setHandledFlag();
         }
         return state.equals(Workflow.RUNNING)? 1 : 0;
@@ -61,7 +61,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
                 + " WHERE workflow_step_id = " + workflow_step_id
                 + " AND state = '" + Workflow.RUNNING + "'";
             runSql(sql);
-            log("Step '" + name + "' FAILED (no wrapper process " + process_id + ")");
+            log("Step '" + getFullName() + "' FAILED (no wrapper process " + process_id + ")");
         }
     }
         
@@ -74,7 +74,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
             if (!parent.getState().equals(Workflow.DONE)) return;
         }
 
-        log("Step '" + name + "' " + Workflow.ON_DECK);
+        log("Step '" + getFullName() + "' " + Workflow.ON_DECK);
 
         String sql = "UPDATE apidb.WorkflowStep"  
             + " SET state = '" + Workflow.ON_DECK + "', state_handled = 1" 
@@ -84,11 +84,11 @@ public class RunnableWorkflowStep extends WorkflowStep {
     }
 
     // try to run a single ON_DECK step
-    int runOnDeckStep(Workflow workflow) throws IOException, SQLException {
+    int runOnDeckStep(Workflow<RunnableWorkflowStep> workflow) throws IOException, SQLException {
         if (state.equals(Workflow.ON_DECK) && !off_line) {
             String[] cmd = {"workflowstepwrap", workflow.getHomeDir(),
                             workflow.getId().toString(),
-                            name, invokerClassName,
+                            getFullName(), invokerClassName,
                             getStepDir() + "/step.err"}; 
 
             List<String> cmd2 = new ArrayList<String>();
@@ -99,7 +99,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
                 cmd2.add("-" + name);
                 cmd2.add(valueStr);
             }
-            log("Invoking step '" + name + "'" );
+            log("Invoking step '" + getFullName() + "'" );
             Runtime.getRuntime().exec(cmd2.toArray(new String[] {}));
             return 1;
         } 
@@ -109,7 +109,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
         workflowGraph.getWorkflow().log(msg);
     }
 
-    RunnableWorkflowStep newStep() {
+    WorkflowStep newStep() {
         return new RunnableWorkflowStep();
     }
 
