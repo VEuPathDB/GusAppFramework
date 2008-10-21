@@ -228,7 +228,6 @@ public class Workflow <T extends WorkflowStep>{
     Connection getDbConnection() throws SQLException, FileNotFoundException, IOException {
         if (dbConnection == null) {
             DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver());
-            String j = getWorkflowConfig("jdbcConnectString");
             dbConnection = DriverManager.getConnection(getWorkflowConfig("jdbcConnectString"),
                     getWorkflowConfig("dbLogin"),
                     getWorkflowConfig("dbPassword"));
@@ -357,25 +356,24 @@ public class Workflow <T extends WorkflowStep>{
 
          // parse command line
          Options options = declareOptions();
-         String cmdlineSyntax = cmdName + " -h workflow_home_dir <-n allowed_running_steps | -q | -d <states> >";
-         String cmdDescrip = "Run a workflow, or, print a report about a workflow.";
+         String cmdlineSyntax = cmdName + " -h workflow_home_dir <-r num_steps | -t num_steps | -q | -d <states> >";
+         String cmdDescrip = "Run or test a workflow, or, print a report about a workflow.";
          CommandLine cmdLine =
              Utilities.parseOptions(cmdlineSyntax, cmdDescrip, getUsageNotes(), options, args);
                  
          String homeDirName = cmdLine.getOptionValue("h");
-     
-         if (cmdLine.hasOption("n") || cmdLine.hasOption("d")) {
-         }
-         
+
          // branch based on provided options
-         if (cmdLine.hasOption("n")) {
+         if (cmdLine.hasOption("r") || cmdLine.hasOption("t")) {
              RunnableWorkflow runnableWorkflow = new RunnableWorkflow(homeDirName);
              Class<RunnableWorkflowStep> stepClass = RunnableWorkflowStep.class;
              WorkflowGraph<RunnableWorkflowStep> rootGraph = 
                  WorkflowGraph.constructFullGraph(stepClass, runnableWorkflow);
              runnableWorkflow.setWorkflowGraph(rootGraph);
-             String numSteps = cmdLine.getOptionValue("n");
-             runnableWorkflow.run(Integer.parseInt(numSteps));
+             String numSteps = cmdLine.getOptionValue("r");
+             boolean testOnly = cmdLine.hasOption("t");
+             if (testOnly) numSteps = cmdLine.getOptionValue("t");
+             runnableWorkflow.run(Integer.parseInt(numSteps), testOnly);                
          } 
          
          else if (cmdLine.hasOption("q")) {
@@ -417,7 +415,10 @@ public class Workflow <T extends WorkflowStep>{
      + "Examples:" + nl
      + nl     
      + "  run a workflow:" + nl
-     + "    % workflow workflow_dir 3" + nl
+     + "    % workflow workflow_dir -r 3" + nl
+     + nl     
+     + "  test a workflow:" + nl
+     + "    % workflow workflow_dir -t 3" + nl
      + nl     
      + "  quick report of workflow state" + nl
      + "    % workflow workflow_dir -q" + nl
@@ -440,10 +441,14 @@ public class Workflow <T extends WorkflowStep>{
          Utilities.addOption(options, "h", "Workflow homedir (see below)");
          
          OptionGroup optionalOptions = new OptionGroup();
-         Option numSteps = new Option("n", true,
-              "Number of steps allowed to run simultaneously");
-         optionalOptions.addOption(numSteps);
+         Option run = new Option("r", true,
+              "Run a strategy, and specify the number of steps allowed to run simultaneously");
+         optionalOptions.addOption(run);
          
+         Option test = new Option("t", true,
+         "Test a strategy, and specify the number of steps allowed to run simultaneously");
+         optionalOptions.addOption(test);
+    
          Option detailedRep = new Option("d", true, "Print detailed report");
          optionalOptions.addOption(detailedRep);
          

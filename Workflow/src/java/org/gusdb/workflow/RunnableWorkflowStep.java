@@ -85,12 +85,13 @@ public class RunnableWorkflowStep extends WorkflowStep {
     }
 
     // try to run a single ON_DECK step
-    int runOnDeckStep(Workflow<RunnableWorkflowStep> workflow) throws IOException, SQLException {
+    int runOnDeckStep(Workflow<RunnableWorkflowStep> workflow, boolean testOnly) throws IOException, SQLException {
         if (state.equals(Workflow.ON_DECK) && !off_line) {
             String[] cmd = {"workflowstepwrap", workflow.getHomeDir(),
                             workflow.getId().toString(),
                             getFullName(), invokerClassName,
-                            getStepDir() + "/step.err"}; 
+                            getStepDir() + "/step.err",
+                            testOnly? "test" : "run"}; 
 
             List<String> cmd2 = new ArrayList<String>();
             Collections.addAll(cmd2, cmd);

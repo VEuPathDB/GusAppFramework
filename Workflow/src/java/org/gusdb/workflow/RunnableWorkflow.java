@@ -60,7 +60,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     }
     
     // run the controller
-    void run(int numSteps) throws Exception {
+    void run(int numSteps, boolean testOnly) throws Exception {
         initHomeDir();         // initialize workflow home directory, if needed
 
         initDb();              // write workflow to db, if not already there
@@ -76,7 +76,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	    getDbSnapshot();
 	    if (handleStepChanges()) break;  // return true if all steps done
 	    findOndeckSteps();
-	    fillOpenSlots();
+	    fillOpenSlots(testOnly);
 	    Thread.sleep(2000);
 	}
     }
@@ -102,10 +102,10 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	}
     }
 
-    private void fillOpenSlots() throws IOException, SQLException {
+    private void fillOpenSlots(boolean testOnly) throws IOException, SQLException {
 	for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
 	    if (runningCount >= allowed_running_steps) break;
-	    runningCount += step.runOnDeckStep(this);
+	    runningCount += step.runOnDeckStep(this, testOnly);
 	}
     }
 
