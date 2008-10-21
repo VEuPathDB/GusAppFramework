@@ -3,7 +3,7 @@
   <constant name="blue">very blue</constant>
 
   <subgraph name="firstStep" xmlFile="testSubgraph.xml">
-      <paramValue name="msg">$$blue$$</paramValue>
+      <paramValue name="prefix">$$blue$$</paramValue>
   </subgraph>
 
   <step name="secondStep"

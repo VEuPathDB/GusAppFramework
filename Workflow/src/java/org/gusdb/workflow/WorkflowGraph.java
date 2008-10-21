@@ -32,7 +32,7 @@ import org.xml.sax.SAXException;
  */
 
 public class WorkflowGraph<T extends WorkflowStep> {
-    private List<String> params = new ArrayList<String>();
+    private List<String> paramDeclarations = new ArrayList<String>();
     private Map<String,String> constants = new HashMap<String,String>();
     Workflow<T> workflow;
     String xmlFileName;
@@ -53,8 +53,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	constants.put(constant.getName(),constant.getValue());
     }
     
-    public void addParam(String paramName) {
-	params.add(paramName);
+    public void addParamDeclaration(String paramName) {
+	paramDeclarations.add(paramName);
     }
     
     public void addStep(T step) {
@@ -63,7 +63,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
         if (stepsByName.containsKey(stepName))
             Utilities.error("non-unique step name: '" + stepName + "'");
         stepsByName.put(stepName, step);
-        step.substituteConstantValues(constants);
     }
 
     void setWorkflow(Workflow<T> workflow) {
@@ -141,6 +140,12 @@ public class WorkflowGraph<T extends WorkflowStep> {
         + "Steps" + nl + getSortedSteps().toString();
     }
     
+    private void instantiateValues(Map<String,String> paramValues) {
+        for (T step : getSteps()) {
+            step.substituteValues(constants);
+            step.substituteValues(paramValues);
+        }
+    }
     /////////////////////////////////////////////////////////////////////////
     //   subgraph expansion
     /////////////////////////////////////////////////////////////////////////
@@ -155,6 +160,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
             // set the path of its unexpanded steps
             String newPath = path + stepWithSubgraph.getBaseName() + ".";
             subgraph.setPath(newPath);
+            
+            // 
+            subgraph.instantiateValues(stepWithSubgraph.getParamValues());
 
             // expand it (recursively) 
             // (this includes setting the paths of the expanded steps
@@ -163,6 +171,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
             // insert it
             WorkflowStep subgraphReturnStep = stepWithSubgraph.getChildren().get(0);
             stepWithSubgraph.removeChild(subgraphReturnStep);
+            subgraphReturnStep.removeParent(stepWithSubgraph);
             subgraph.attachToParentStep(stepWithSubgraph);
             subgraph.attachToChildStep(subgraphReturnStep);
             
@@ -186,8 +195,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
     
     private void attachToChildStep(WorkflowStep childStep) {
         for (T leafStep : leafSteps) {
-            childStep.addChild(leafStep);
-            leafStep.addParent(childStep);
+            childStep.addParent(leafStep);
+            leafStep.addChild(childStep);
         }
     }
     
@@ -203,8 +212,11 @@ public class WorkflowGraph<T extends WorkflowStep> {
         WorkflowGraph.makeGraphTemplates(templates, stepClass, workflow,
                 workflow.getStepsXmlFileName(), new ArrayList<String>());
         
-        // expand subgraphs
+        // get root graph and intantiate its values
         WorkflowGraph<S> rootGraph = templates.get(workflow.getStepsXmlFileName());
+        rootGraph.instantiateValues(new HashMap<String,String>());
+        
+        // expand subgraphs
         rootGraph.expandSubgraphs(templates, "");
         
         return rootGraph;

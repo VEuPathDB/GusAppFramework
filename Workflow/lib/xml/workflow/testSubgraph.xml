@@ -1,8 +1,10 @@
 <workflowGraph>
 
+  <param name="prefix"/>
+
   <step name="fourthStep"
         stepClass="GUS::Workflow::TestStep">
-      <paramValue name="msg">purple</paramValue>
+      <paramValue name="msg">$$prefix$$/purple</paramValue>
   </step>
 
   <step name="fifthStep"
