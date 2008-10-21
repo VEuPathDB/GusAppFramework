@@ -229,7 +229,6 @@ public class Workflow <T extends WorkflowStep>{
         if (dbConnection == null) {
             DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver());
             String j = getWorkflowConfig("jdbcConnectString");
-            System.err.println(j);
             dbConnection = DriverManager.getConnection(getWorkflowConfig("jdbcConnectString"),
                     getWorkflowConfig("dbLogin"),
                     getWorkflowConfig("dbPassword"));

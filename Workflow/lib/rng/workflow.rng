@@ -4,6 +4,11 @@
   <start>
     <element name="workflowGraph">
       <zeroOrMore>
+        <element name="param">
+          <attribute name="name" />
+          <text/>
+        </element>
+      <zeroOrMore>
         <element name="constant">
           <attribute name="name" />
           <text/>

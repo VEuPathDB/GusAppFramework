@@ -31,6 +31,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
         }
         return state.equals(Workflow.RUNNING)? 1 : 0;
     }
+
     private void setHandledFlag() throws SQLException, FileNotFoundException, IOException {
         // check that state is still as expected, to avoid theoretical race condition
 

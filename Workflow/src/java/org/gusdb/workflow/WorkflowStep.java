@@ -107,6 +107,10 @@ public class WorkflowStep  {
         return children;
     }
     
+    Map<String,String> getParamValues() {
+        return paramValues;
+    }
+    
     void addToList(List<WorkflowStep> list) {
         if (list.contains(this)) return;
         list.add(this);
@@ -122,18 +126,17 @@ public class WorkflowStep  {
         return newStep;
     }
     
-    private void insertSubgraphReturnChild_sub(WorkflowStep newStep) {
-        newStep.setName(getFullName() + ".return");
-        List<WorkflowStep> oldChildren =
-            new ArrayList<WorkflowStep>(children);
+    private void insertSubgraphReturnChild_sub(WorkflowStep returnStep) {
+        returnStep.setName(getFullName() + ".return");
+        List<WorkflowStep> oldChildren = new ArrayList<WorkflowStep>(children);
         for (WorkflowStep oldChild : oldChildren) {
             oldChild.removeParent(this);
             removeChild(oldChild);
-            newStep.addChild(oldChild);
-            oldChild.addParent(newStep);
+            returnStep.addChild(oldChild);
+            oldChild.addParent(returnStep);
         }
-        newStep.addParent(this);
-        addChild(newStep);
+        returnStep.addParent(this);
+        addChild(returnStep);
     }
 
     public void addParamValue(NamedValue paramValue) {
@@ -228,7 +231,8 @@ public class WorkflowStep  {
 	end_time = rs.getDate("END_TIME");
     }
     
-    void substituteConstantValues(Map<String,String>constants){
+    // interpolate constants into param values
+    void substituteValues(Map<String,String>constants){
         for (String paramName : paramValues.keySet()) {
             String paramValue = paramValues.get(paramName);
             if (paramValue.indexOf("$$") == -1) continue;
