@@ -52,8 +52,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	constants.put(constant.getName(),constant.getValue());
     }
     
-    public void addParamDeclaration(String paramName) {
-	paramDeclarations.add(paramName);
+    public void addParamDeclaration(Name paramName) {
+	paramDeclarations.add(paramName.getName());
     }
     
     public void addStep(T step) {

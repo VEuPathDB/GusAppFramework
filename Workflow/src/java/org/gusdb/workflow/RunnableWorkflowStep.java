@@ -84,29 +84,48 @@ public class RunnableWorkflowStep extends WorkflowStep {
         runSql(sql);
     }
 
+    // if this step doesn't have an invoker (ie, it is a call to or return
+    // from a subgraph), just go to done
+    void goToDone() throws SQLException, IOException {
+ 
+        String sql = "UPDATE apidb.WorkflowStep"  
+            + " SET state = '" + Workflow.DONE + "', state_handled = 1" 
+            + " WHERE workflow_step_id = " + workflow_step_id;  
+        runSql(sql);
+    }
+
     // try to run a single ON_DECK step
     int runOnDeckStep(Workflow<RunnableWorkflowStep> workflow, boolean testOnly) throws IOException, SQLException {
         if (state.equals(Workflow.ON_DECK) && !off_line) {
-            String[] cmd = {"workflowstepwrap", workflow.getHomeDir(),
-                            workflow.getId().toString(),
-                            getFullName(), invokerClassName,
-                            getStepDir() + "/step.err",
-                            testOnly? "test" : "run"}; 
+	    if (invokerClassName == null) {
+		if (subgraphXmlFileName != null)
+		    log("Step '" + getFullName() + "' " + Workflow.DONE
+			+ " -- called '" + subgraphXmlFileName + "'");
+		else log("Step '" + getFullName() + "' " + Workflow.DONE);
+		goToDone();		
+	    } else {
+		String[] cmd = {"workflowstepwrap", workflow.getHomeDir(),
+				workflow.getId().toString(),
+				getFullName(), invokerClassName,
+				getStepDir() + "/step.err",
+				testOnly? "test" : "run"}; 
 
-            List<String> cmd2 = new ArrayList<String>();
-            Collections.addAll(cmd2, cmd);
-            for (String name : paramValues.keySet()) {
-                String valueStr = paramValues.get(name);
-                valueStr = valueStr.replaceAll("\"", "\\\\\""); 
-                cmd2.add("-" + name);
-                cmd2.add(valueStr);
-            }
-            log("Invoking step '" + getFullName() + "'" );
-            Runtime.getRuntime().exec(cmd2.toArray(new String[] {}));
+		List<String> cmd2 = new ArrayList<String>();
+		Collections.addAll(cmd2, cmd);
+		for (String name : paramValues.keySet()) {
+		    String valueStr = paramValues.get(name);
+		    valueStr = valueStr.replaceAll("\"", "\\\\\""); 
+		    cmd2.add("-" + name);
+		    cmd2.add(valueStr);
+		}
+		log("Invoking step '" + getFullName() + "'" );
+		Runtime.getRuntime().exec(cmd2.toArray(new String[] {}));
+	    }
             return 1;
         } 
         return 0;
     }
+
     private void log(String msg) throws IOException {
         workflowGraph.getWorkflow().log(msg);
     }

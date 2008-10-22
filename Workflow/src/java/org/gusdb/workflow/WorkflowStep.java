@@ -122,6 +122,7 @@ public class WorkflowStep  {
     // insert a child between this step and its previous children
     protected WorkflowStep insertSubgraphReturnChild() {
         WorkflowStep newStep = newStep();
+	newStep.setWorkflowGraph(workflowGraph);
         insertSubgraphReturnChild_sub(newStep);
         return newStep;
     }
