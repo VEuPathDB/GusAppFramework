@@ -10,6 +10,7 @@ my $workflowId = shift(@ARGV);
 my $stepName = shift(@ARGV);
 my $invokerClass = shift(@ARGV);
 my $errFile =  shift(@ARGV);
+my $mode = shift(@ARGV);
 my $paramStrings = \@ARGV;
 
 open (STDERR, ">>$errFile");
@@ -20,7 +21,7 @@ die($@) if $@;
 
 $stepInvoker->setParamValues($paramStrings);
 
-my $status = $stepInvoker->runInWrapper($workflowId, $stepName);
+my $status = $stepInvoker->runInWrapper($workflowId, $stepName, $mode);
 
 exit($status);
 
@@ -28,7 +29,7 @@ sub usage {
     print "
 Caution!! this program is only called by the workflow controller
 
-usage: workflowstepwrap workflow_dir workflow_id stepname stepclass errfile param1name=param1value ...
+usage: workflowstepwrap workflow_dir workflow_id stepname stepclass errfile [run|test] param1name=param1value ...
 ";
     exit(1);
 }

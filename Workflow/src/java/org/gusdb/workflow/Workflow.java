@@ -213,7 +213,7 @@ public class Workflow <T extends WorkflowStep>{
     void log(String msg) throws IOException {
         String logFileName = getHomeDir() + "/logs/controller.log";
         PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true));
-        writer.println(msg);
+        writer.println(msg + nl);
         writer.close();
     }
     

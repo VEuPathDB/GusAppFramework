@@ -47,18 +47,13 @@ import java.sql.SQLException;
 
 public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     private int runningCount;
-    private WorkflowGraph<RunnableWorkflowStep> workflowGraph;
+
     final static String nl = System.getProperty("line.separator");
 
     public RunnableWorkflow(String homeDir) {
         super(homeDir);
     }
 
-    void setWorkflowGraph(WorkflowGraph<RunnableWorkflowStep> workflowGraph) {
-        this.workflowGraph = workflowGraph;
-        setWorkflowGraph(workflowGraph);
-    }
-    
     // run the controller
     void run(int numSteps, boolean testOnly) throws Exception {
         initHomeDir();         // initialize workflow home directory, if needed

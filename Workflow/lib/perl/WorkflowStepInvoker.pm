@@ -24,7 +24,7 @@ sub getParamValue {
 }
 
 sub runInWrapper {
-    my ($self, $workflowId, $stepName) = @_;
+    my ($self, $workflowId, $stepName, $mode) = @_;
 
     $self->{name} = $stepName;
 
@@ -46,7 +46,8 @@ AND workflow_id = $workflowId
     chdir $self->getStepDir();
 
     exec {
-	$self->run();
+        my $testOnly = $mode eq 'test';
+	$self->run($testOnly);
     }
 
     my $state = $DONE;

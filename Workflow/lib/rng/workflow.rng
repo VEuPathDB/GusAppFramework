@@ -8,6 +8,7 @@
           <attribute name="name" />
           <text/>
         </element>
+      </zeroOrMore>
       <zeroOrMore>
         <element name="constant">
           <attribute name="name" />
