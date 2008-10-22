@@ -5,15 +5,18 @@ use strict;
 use GUS::Workflow::WorkflowStepInvoker;
 
 sub run {
-  my ($self) = @_;
+  my ($self, $test) = @_;
 
   my $name = $self->getConfig('name');
   my $wait = $self->getConfig('wait');
   my $mood = $self->getGlobalConfig('mood');
   my $msg = $self->getParamValue('msg');
 
-  $self->runCmd("echo $name $mood $msg > teststep.out");
-  sleep($wait);
+  $self->runCmd($test, "echo $name $mood $msg > teststep.out");
+
+  if (!$test) {
+    sleep($wait);
+  }
 }
 
 sub restart {

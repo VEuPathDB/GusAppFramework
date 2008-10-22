@@ -64,12 +64,12 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
         getDbSnapshot();       // read state of Workflow and WorkflowSteps
 
-	setRunningState(numSteps);      // set db state. fail if already running
+	setRunningState(numSteps,testOnly); // set db state. fail if already running
 
 	// start polling
 	while (true) {
 	    getDbSnapshot();
-	    if (handleStepChanges()) break;  // return true if all steps done
+	    if (handleStepChanges(testOnly)) break;  // return true if all steps done
 	    findOndeckSteps();
 	    fillOpenSlots(testOnly);
 	    Thread.sleep(2000);
@@ -79,7 +79,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
     // iterate through steps, checking on changes since last snapshot
     // while we're passing through, count how many steps are running
-    private boolean handleStepChanges() throws SQLException, IOException, InterruptedException {
+    private boolean handleStepChanges(boolean testOnly) throws SQLException, IOException, InterruptedException {
 
 	runningCount = 0;
 	boolean notDone = false;
@@ -87,7 +87,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	    runningCount += step.handleChangesSinceLastSnapshot(this);
 	    notDone |= !step.getState().equals(DONE);
 	}
-	if (!notDone) setDoneState();
+	if (!notDone) setDoneState(testOnly);
 	return !notDone;
     }
 
@@ -104,7 +104,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	}
     }
 
-    private void setRunningState(int numSteps) throws SQLException, IOException, java.lang.InterruptedException {
+    private void setRunningState(int numSteps, boolean testOnly) throws SQLException, IOException, java.lang.InterruptedException {
 
 	if (state != null && state.equals(RUNNING)) {
 	    String cmd = "ps -p " + process_id + "> /dev/null";
@@ -115,6 +115,8 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	}
 
 	String processId = getProcessId(); 
+
+	if (testOnly) log("TESTING workflow....");
 
 	log("Setting workflow state to " + RUNNING
 	        + " and allowed-number-of-running-steps to " 
@@ -128,14 +130,14 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	runSql(sql);
     }
 
-    private void setDoneState() throws SQLException, IOException {
+    private void setDoneState(boolean testOnly) throws SQLException, IOException {
 
 	String sql = "UPDATE apidb.Workflow"  
 	    + " SET state = '" + DONE + "', process_id = NULL"  
 	    + " WHERE workflow_id = " + getId();
 
 	runSql(sql);
-	log("Workflow " + DONE);
+	log("Workflow " + (testOnly? "TEST " : "") + DONE);
     }
 
     /*
