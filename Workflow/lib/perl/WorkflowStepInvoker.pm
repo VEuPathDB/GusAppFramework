@@ -20,6 +20,7 @@ sub setParamValues {
 
 sub getParamValue {
   my ($self, $name) = @_;
+  $self->log("accessing parameter '$name=$self->{paramValues}->{$name}'");
   return $self->{paramValues}->{$name};
 }
 
@@ -47,7 +48,9 @@ AND workflow_id = $workflowId
 
     exec {
         my $testOnly = $mode eq 'test';
+	$self->log("only testing...") if $testOnly;
 	$self->run($testOnly);
+	sleep(int(rand(5))+1) if $testOnly;
     }
 
     my $state = $DONE;
@@ -89,13 +92,15 @@ sub getConfig {
   }
 
   # first try explicit step property
+  my $value;
   if (defined($self->{stepConfig}->getPropRelaxed("$self->{name}.$prop"))) {
-    return $self->{stepConfig}->getPropRelaxed("$self->{name}.$prop");
+    $value = $self->{stepConfig}->getPropRelaxed("$self->{name}.$prop");
   } elsif (defined($self->{stepConfig}->getPropRelaxed("$className.$prop"))) {
-    return $self->{stepConfig}->getPropRelaxed("$className.$prop");
+    $value = $self->{stepConfig}->getPropRelaxed("$className.$prop");
   } else {
     die "Can't find property '$prop' for step '$self->{name}' or for class '$className' in file $propFile\n";
   }
+  $self->log("accessing step property '$prop=$value'");
 }
 
 sub getGlobalConfig {
@@ -125,7 +130,7 @@ sub getStepDir {
 }
 
 sub runPlugin {
-    my ($self, $plugin, $args, $msg, $doitProperty) = @_;
+    my ($self, $test, $plugin, $args, $msg, $doitProperty) = @_;
 
     my $comment = $args;
     $comment =~ s/"/\\"/g;
@@ -136,18 +141,33 @@ sub runPlugin {
 
     my $cmd = "echo ga $plugin $args --comment \"$comment\"";
 
-    $self->runCmd($cmd);
+    $self->runCmd($test, $cmd);
 }
 
 sub runCmd {
-    my ($self, $cmd) = @_;
+    my ($self, $test, $cmd) = @_;
 
     my $stepDir = $self->getStepDir();
     my $err = "$stepDir/step.err";
+    $self->log("running:  $cmd\n\n");
 
-    my $output = `$cmd 2>> $err`;
-    my $status = $? >> 8;
-    $self->error("Failed with status $status running: \n$cmd") if ($status);
+    my $output;
+
+    if ($test) {
+      $output = `echo just testing 2>> $err`;
+    } else {
+      $output = `$cmd 2>> $err`;
+      my $status = $? >> 8;
+      $self->error("Failed with status $status running: \n$cmd") if ($status);
+    }
     return $output;
 }
 
+sub log {
+  my ($self, $msg) = @_;
+
+    my $stepDir = $self->getStepDir();
+  open(F, ">>$stepDir/step.log");
+  print F "$msg\n\n";
+  close(F);
+}
