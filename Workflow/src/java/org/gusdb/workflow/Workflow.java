@@ -48,6 +48,9 @@ public class Workflow <T extends WorkflowStep>{
     protected Date start_time;
     protected Date end_time;
 
+    String[] homeDirSubDirs = {"logs", "steps", "data"};
+
+
     public Workflow(String homeDir) {
 	this.homeDir = homeDir + "/";   
     }
@@ -69,10 +72,10 @@ public class Workflow <T extends WorkflowStep>{
     //////////////////////////////////////////////////////////////////////////
     
     void initHomeDir() throws IOException {
-        File stepsDir = new File(getHomeDir() + "/steps");
-        if (!stepsDir.exists()) stepsDir.mkdir();
-        File logsDir = new File(getHomeDir() + "/logs");
-        if (!logsDir.exists()) logsDir.mkdir();
+	for (String dirName : homeDirSubDirs) {
+	    File dir = new File(getHomeDir() + "/" + dirName);
+	    if (!dir.exists()) dir.mkdir();
+	}
         log("Initializing workflow home directory '" + getHomeDir() + "'");
     }
     
@@ -330,8 +333,7 @@ public class Workflow <T extends WorkflowStep>{
     
     // brute force reset of workflow.  for developers only
      void reset() throws SQLException, FileNotFoundException, IOException {
-         String[] dirNames = {"logs", "steps", "externalFiles"};
-         for (String dirName : dirNames) {
+         for (String dirName : homeDirSubDirs) {
              File dir = new File(getHomeDir() + "/" + dirName);
              Utilities.deleteDir(dir);
              System.out.println("rm -rf " + dir);
