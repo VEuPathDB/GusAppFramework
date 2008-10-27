@@ -1,5 +1,6 @@
 package org.gusdb.workflow;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -7,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.xml.sax.SAXException;
 
@@ -213,13 +215,22 @@ public class WorkflowGraph<T extends WorkflowStep> {
         
         // get root graph and intantiate its values
         WorkflowGraph<S> rootGraph = templates.get(workflow.getStepsXmlFileName());
-        rootGraph.instantiateValues(new HashMap<String,String>());
+        rootGraph.instantiateValues(getRootGraphParamValues(workflow));
         
         // expand subgraphs
         rootGraph.expandSubgraphs(templates, "");
-        
         return rootGraph;
     }   
+    
+    static <S extends WorkflowStep > Map<String,String>getRootGraphParamValues(Workflow<S> workflow) throws FileNotFoundException, IOException {
+        Properties paramValues = new Properties();
+        paramValues.load(new FileInputStream(workflow.getHomeDir() + "/config/rootParams.prop"));
+        Map<String,String>map = new HashMap<String,String>();
+        for (String k : paramValues.stringPropertyNames()) {
+            map.put(k,paramValues.getProperty(k));
+        }
+        return map;
+    }
     
     // recursively parse graph xml files, and put all resulting graphs
     // into a map keyed on the name of the xml file
