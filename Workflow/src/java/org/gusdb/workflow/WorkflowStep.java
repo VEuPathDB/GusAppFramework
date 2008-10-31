@@ -50,6 +50,9 @@ public class WorkflowStep  {
     protected List<WorkflowStep> parents = new ArrayList<WorkflowStep>();
     protected List<WorkflowStep> children = new ArrayList<WorkflowStep>();
     protected String subgraphXmlFileName;
+    protected boolean isGlobal = false;
+    List<? extends WorkflowStep> sharedGlobalSteps;
+    String signature;
     
     // state from db
     protected int workflow_step_id;
@@ -77,6 +80,16 @@ public class WorkflowStep  {
     
     public void setStepClass(String invokerClassName) {
         this.invokerClassName = invokerClassName;
+    }
+    
+    public void setIsGlobal(boolean isGlobal) {
+        this.isGlobal  = isGlobal;
+    }
+    
+    protected boolean getIsGlobal() { return isGlobal; }
+    
+    void setSharedGlobalSteps(List<? extends WorkflowStep> sharedGlobalSteps) {
+        this.sharedGlobalSteps = sharedGlobalSteps;
     }
     
     public void setWorkflowGraph(WorkflowGraph<? extends WorkflowStep> workflowGraph) {
@@ -182,6 +195,12 @@ public class WorkflowStep  {
     
     String getSubgraphXmlFileName() {
         return subgraphXmlFileName;
+    }
+    
+    String getSignature() {
+        if (signature == null) 
+            signature = invokerClassName + paramValues.toString();
+        return signature;
     }
     
     static PreparedStatement getPreparedInsertStmt(Connection dbConnection, int workflowId) throws SQLException {

@@ -45,6 +45,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     private Map<String, T> stepsByName = new HashMap<String, T>();
     private List<T> leafSteps = new ArrayList<T>();    
     List<T> sortedSteps; 
+    private Map<String, List<T>> globalSteps = new HashMap<String, List<T>>();
     
     final static String nl = System.getProperty("line.separator");
 
@@ -201,6 +202,21 @@ public class WorkflowGraph<T extends WorkflowStep> {
         }
     }
     
+    private void initializeGlobalSteps() {
+        for (T step : getSteps()) {
+            if (step.getIsGlobal()) {
+                String stepSignature = step.getSignature();
+                if (!globalSteps.containsKey(stepSignature)) {
+                    globalSteps.put(stepSignature, new ArrayList<T>());
+                }
+                List<T> sharedGlobalSteps = globalSteps.get(stepSignature);
+                sharedGlobalSteps.add(step);
+                step.setSharedGlobalSteps(sharedGlobalSteps);
+            }
+        }
+        
+    }
+    
     ////////////////////////////////////////////////////////////////////////
     //     Static methods
     ////////////////////////////////////////////////////////////////////////
@@ -219,6 +235,10 @@ public class WorkflowGraph<T extends WorkflowStep> {
         
         // expand subgraphs
         rootGraph.expandSubgraphs(templates, "");
+        
+        // initialize global steps
+        // rootGraph.initializeGlobalSteps();
+        
         return rootGraph;
     }   
     
