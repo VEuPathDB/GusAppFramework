@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -242,11 +243,14 @@ public class WorkflowGraph<T extends WorkflowStep> {
         return rootGraph;
     }   
     
+    @SuppressWarnings("unchecked")
     static <S extends WorkflowStep > Map<String,String>getRootGraphParamValues(Workflow<S> workflow) throws FileNotFoundException, IOException {
         Properties paramValues = new Properties();
         paramValues.load(new FileInputStream(workflow.getHomeDir() + "/config/rootParams.prop"));
         Map<String,String>map = new HashMap<String,String>();
-        for (String k : paramValues.stringPropertyNames()) {
+        Enumeration<String> e = (Enumeration<String>) paramValues.propertyNames();
+        while(e.hasMoreElements()) {
+            String k = e.nextElement();
             map.put(k,paramValues.getProperty(k));
         }
         return map;
