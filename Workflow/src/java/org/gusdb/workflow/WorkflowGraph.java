@@ -38,6 +38,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     private Map<String,String> constants = new HashMap<String,String>();
     Workflow<T> workflow;
     String xmlFileName;
+    String name;
     
     Map<T, String> stepsWithSubgraph = new HashMap<T, String>(); 
     private List<T> rootSteps = new ArrayList<T>();
@@ -60,11 +61,15 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	paramDeclarations.add(paramName.getName());
     }
     
+    public void setName(String name) {
+	this.name = name;
+    }
+
     public void addStep(T step) {
         step.setWorkflowGraph(this);
         String stepName = step.getBaseName();
         if (stepsByName.containsKey(stepName))
-            Utilities.error("non-unique step name: '" + stepName + "'");
+            Utilities.error("in graph " + name + ", non-unique step name: '" + stepName + "'");
         stepsByName.put(stepName, step);
     }
 
@@ -107,7 +112,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
                 String stepName = step.getBaseName();
                 T parent = stepsByName.get(dependName.getName());
                 if (parent == null) 
-                    Utilities.error("step '" + stepName + "' depends on '"
+                    Utilities.error("in file " + xmlFileName + ", step '"
+				    + stepName + "' depends on step '"
                           + dependName.getName() + "' which is not found");
                 step.addParent(parent);
                 parent.addChild(step);
