@@ -105,6 +105,39 @@ sub foldChange {
   return $fc;
 }
 
+#--------------------------------------------------------------------------------
+
+sub nameToElementId {
+  my ($self, $hash) = @_;
+
+  my %mapping;
+
+  unless($hash->{dbh}) {
+    die "Function [nameToCompositeElementId] must give a database handle";
+  }
+
+  unless($hash->{arrayDesignName}) {
+    die "Function [nameTOCompositeElementId] must give an arrayDesignName";
+  }
+
+  my $sql = "select s.name, s.element_id 
+             from  Rad.Spot s, Rad.ArrayDesign a
+             where s.array_design_id = a.array_design_id
+              and (a.name = ? OR a.source_id = ?)";
+
+  my $arrayDesignName = $hash->{arrayDesignName};
+
+  my $sh = $hash->{dbh}->prepare($sql);
+  $sh->execute($arrayDesignName, $arrayDesignName);
+
+  while(my ($name, $id) = $sh->fetchrow_array()) {
+    $mapping{$name} = $id;
+  }
+  $sh->finish();
+
+  return \%mapping;
+}
+
 
 #--------------------------------------------------------------------------------
 
