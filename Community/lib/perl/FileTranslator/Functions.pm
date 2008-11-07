@@ -90,7 +90,7 @@ sub foldChange {
     die "Only One channel data currently can calculate fold change";
   }
 
-  my $fc; $fc = sub {
+    my $fc; $fc = sub {
     my $valuesString = shift;
 
     my ($mean0, $mean1) = split(/\t/, $valuesString);
@@ -237,6 +237,19 @@ sub coordGenePix2RAD{
     }
   }
   return $mapping;
+}
+
+#--------------------------------------------------------------------------------
+
+# requires row\tcol\t to be passed in
+sub coordAgilent2RAD {
+  my $coord; $coord = sub {
+    my $valuesString = shift;
+
+
+    return "1\t1\t1\t1\t$valuesString";
+  };
+  return $coord;  
 }
 
 sub coordArrayVision2RAD{
