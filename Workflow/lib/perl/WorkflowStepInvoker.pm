@@ -24,6 +24,18 @@ sub getParamValue {
   return $self->{paramValues}->{$name};
 }
 
+sub getExtDbInfo {
+    my ($self, $extDbRlsSpec) = @_;
+
+    if ($extDbRlsSpec =~ /(.+)\|(.+)/) {
+      $extDbName = $1;
+      $extDbRlsVer = $2;
+      return ($extDbName, $extDbRlsVer);
+    } else {
+      die "Database specifier '$extDbRlsSpec' is not in 'name|version' format";
+    }
+}
+
 sub runInWrapper {
     my ($self, $workflowId, $stepName, $mode) = @_;
 
@@ -130,7 +142,17 @@ sub getStepDir {
 }
 
 sub runPlugin {
-    my ($self, $test, $plugin, $args, $msg, $doitProperty) = @_;
+    my ($self, $test, $plugin, $args) = @_;
+
+    my $className = REF($self);
+
+    if ($test != 1 || $test != 0) {
+	$self->error("illegal 'test' arg passed to runPlugin() in step class '$className'");
+    }
+
+    if ($plugin !~ /\w+\:\:\w+/) {
+	$self->error("illegal 'plugin' arg passed to runPlugin() in step class '$className'");
+    }
 
     my $comment = $args;
     $comment =~ s/"/\\"/g;
