@@ -24,18 +24,6 @@ sub getParamValue {
   return $self->{paramValues}->{$name};
 }
 
-sub getExtDbInfo {
-    my ($self, $extDbRlsSpec) = @_;
-
-    if ($extDbRlsSpec =~ /(.+)\|(.+)/) {
-      $extDbName = $1;
-      $extDbRlsVer = $2;
-      return ($extDbName, $extDbRlsVer);
-    } else {
-      die "Database specifier '$extDbRlsSpec' is not in 'name|version' format";
-    }
-}
-
 sub runInWrapper {
     my ($self, $workflowId, $stepName, $mode) = @_;
 
