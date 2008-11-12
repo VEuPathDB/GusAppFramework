@@ -434,11 +434,6 @@ sub runPage {
   my $statistic = '--' . $self->getStatistic();
   my $useLoggedData = $USE_LOGGED_DATA ? '--use_logged_data' : '--use_unlogged_data';
 
-  my $whichR = `which PaGE_5.1.6_modifiedConfOutput.pl`;
-  if ($whichR =~ /Not Found/) {
-    GUS::Community::RadAnalysis::ProcessorError->new("PaGE_5.1.6_modifiedConfOutput.pl is needed to run this plug-in. Set your PATH varible to include this script")->throw();
-  }
-
   my $pageCommand = "$PAGE --infile $pageIn --outfile $pageOut --output_gene_confidence_list --output_text --num_channels $channels $isLoggedArg $isPairedArg --level_confidence $levelConfidence $useLoggedData $statistic --min_presence $minPrescence --missing_value $MISSING_VALUE $design";
 
   my $systemResult = system($pageCommand);
