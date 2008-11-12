@@ -15,9 +15,11 @@ foreach my $xmlfile (@ARGV) {
 
 sub parsefile {
   my ($xmlfile) = @_;
-    my $simple = XML::Simple->new();
-    my $graph = $simple->XMLin($workflowXmlFile, forcearray => 1,
-			      KeyAttr => {sqlValue=>'+name'});
+
+  print STDERR "parsing $xmlfile\n";
+  my $simple = XML::Simple->new();
+  my $graph = $simple->XMLin($xmlfile, forcearray => 1,
+			     KeyAttr => {sqlValue=>'+name'});
 
   return $graph;
 }
@@ -25,7 +27,7 @@ sub parsefile {
 sub printStepClass {
   my ($className, $paramValues) = @_;
 
-  my ($a,$l,$w,$p) = split(/\:\:/,@$className);
+  my ($a,$l,$w,$p) = split(/\:\:/,$className);
 
   my $paramVals;
   my $paramDecl;
@@ -35,19 +37,19 @@ sub printStepClass {
     $paramDecl .= "          '$param',\n";
   }
 
-my $template = "
-package GUS::ApiCommonData::Load::WorkflowSteps::$p;
+my $template =
+"package GUS::ApiCommonData::Load::WorkflowSteps::$p;
 
 \@ISA = (ApiCommonData::Load::WorkflowSteps::WorkflowStep);
 use strict;
 use ApiCommonData::Load::WorkflowSteps::WorkflowStep;
 
+TEMPLATE
 sub run {
-  my (\$self, \$test) = @_;
+  my (\$self, \$test) = \@_;
 
   # get parameters
-$params
-
+$paramVals
   # get global properties
   my \$ = \$self->getGlobalConfig('');
 
@@ -63,14 +65,15 @@ $params
 }
 
 sub getParamsDeclaration {
-$paramDecl
+  return (
+$paramDecl         );
 }
 
 sub getConfigDeclaration {
-    return (
-     # [name, default, description]
-     ['', '', ''],
-    );
+  return (
+         # [name, default, description]
+         # ['', '', ''],
+         );
 }
 
 sub restart {
@@ -83,8 +86,11 @@ sub undo {
 sub getDocumentation {
 }
 ";
-open(F, "$p");
-print F $template;
-close(F)
 
+  my $file = "$p.pm";
+  if (! -e $file) {
+    open(F, ">$file");
+    print F $template;
+    close(F)
+  }
 }
