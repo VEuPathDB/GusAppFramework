@@ -157,11 +157,6 @@ sub new {
     GUS::Community::RadAnalysis::InputError->new("Parameter [design] must be given (R|D) when specifying 2 channel data.")->throw();
   }
 
-  if(my $path = $self->getPathToExecutable()) {
-    $PAGE = $path;
-    $PAGE_VERSION = basename($path);
-  }
-
   return $self;
 }
 
@@ -197,6 +192,11 @@ sub setFilteringCriterion {$_[0]->{filteringCriterion} = $_[1]}
 
 sub process {
   my ($self) = @_;
+
+  if(my $path = $self->getPathToExecutable()) {
+    $PAGE = $path;
+    $PAGE_VERSION = basename($path);
+  }
 
   my $logDir = $self->getLogDir();
 
