@@ -38,7 +38,7 @@ sub printStepClass {
   }
 
 my $template =
-"package GUS::ApiCommonData::Load::WorkflowSteps::$p;
+"package ApiCommonData::Load::WorkflowSteps::$p;
 
 \@ISA = (ApiCommonData::Load::WorkflowSteps::WorkflowStep);
 use strict;
