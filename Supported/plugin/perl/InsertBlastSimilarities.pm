@@ -442,7 +442,7 @@ sub parseSubject {
 
   my @vals = split(/:/, $sumLine);
   die "invalid Sum line: '$sumLine'\n" unless $vals[0] =~ /Sum/;
-  die "invalid Sum line (wrong number of columns):  '$sumLine'\n" unless scalar @vals == 14;
+  die "invalid Sum line (wrong number of columns):  '$sumLine'\n" unless (scalar @vals == 14 || scalar @vals == 17);
 
   my %subj;
   $subj{query_id} = $queryPK;
