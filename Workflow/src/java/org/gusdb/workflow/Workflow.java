@@ -417,24 +417,24 @@ public class Workflow <T extends WorkflowStep>{
      + "Examples:" + nl
      + nl     
      + "  run a workflow:" + nl
-     + "    % workflow workflow_dir -r 3" + nl
+     + "    % workflow -h workflow_dir -r 3" + nl
      + nl     
      + "  test a workflow:" + nl
-     + "    % workflow workflow_dir -t 3" + nl
+     + "    % workflow -h workflow_dir -t 3" + nl
      + nl     
      + "  quick report of workflow state" + nl
-     + "    % workflow workflow_dir -q" + nl
+     + "    % workflow -h workflow_dir -q" + nl
      + nl     
      + "  print detailed steps report." + nl
-     + "    % workflow workflow_dir -d" + nl
+     + "    % workflow -h workflow_dir -d" + nl
      + nl     
      + "  limit steps report to steps in particular states" + nl
-     + "    % workflow workflow_dir -d FAILED RUNNING" + nl
+     + "    % workflow -h workflow_dir -d FAILED RUNNING" + nl
      + nl     
      + "  print steps report, using the optional offline flag to only include steps" + nl
      + "  that have the flag in the indicated state.  [not implemented yet]" + nl
-     + "    % workflow workflow_dir -d0 ON_DECK" + nl
-     + "    % workflow workflow_dir -d1 READY ON_DECK" + nl;
+     + "    % workflow -h workflow_dir -d0 ON_DECK" + nl
+     + "    % workflow -h workflow_dir -d1 READY ON_DECK" + nl;
      }
 
      private static Options declareOptions() {
