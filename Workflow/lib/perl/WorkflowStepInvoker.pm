@@ -129,6 +129,32 @@ sub getStepDir {
   return $self->{stepDir};
 }
 
+sub getCluster {
+    my ($self) = @_;
+
+    if (!$self->{cluster}) {
+	my $clusterServer = $self->getGlobalConfig('clusterServer');
+	my $clusterUser = $self->getGlobalConfig('clusterServer');
+	if ($clusterServer ne "none") {
+	    $cluster = GUS::Pipeline::SshCluster->new($clusterServer,
+						      $clusterUser);
+	} else {
+	    $cluster = GUS::Pipeline::NfsCluster->new();
+	}
+    }
+    return $self->{cluster};
+}
+
+sub copyToCluster {
+    my ($fromDir, $fromFile, $toDir) = @_;
+    $self->getCluster()->copyTo($fromDir, $fromFile, $toDir);
+}
+
+sub copyFromCluster {
+    my ($fromDir, $fromFile, $toDir) = @_;
+    $self->getCluster()->copyFrom($fromDir, $fromFile, $toDir);
+}
+
 sub runPlugin {
     my ($self, $test, $plugin, $args) = @_;
 
