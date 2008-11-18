@@ -61,7 +61,7 @@ sub runSqlQuery_single_array {
     return $stmt->fetchrow_array();
 }
 
-sub getHomeDir {
+sub getWorkflowHomeDir {
     my ($self) = @_;
     return $self->{homeDir};
 }

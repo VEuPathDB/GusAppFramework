@@ -319,7 +319,7 @@ sub getStepsConfig {
 sub initHomeDir {
   my ($self) = @_;
 
-  my $homeDir = $self->getHomeDir();
+  my $homeDir = $self->getWorkflowHomeDir();
 
   return if -e "$homeDir/steps";
   $self->runCmd("mkdir -p $homeDir/logs") unless -e "$homeDir/logs";
@@ -376,7 +376,7 @@ sub log {
   my ($self, $msg) = @_;
   return if $self->{noLog};
 
-  my $homeDir = $self->getHomeDir();
+  my $homeDir = $self->getWorkflowHomeDir();
 
   open(LOG, ">>$homeDir/logs/controller.log")
     || die "can't open log file '$homeDir/logs/controller.log'";

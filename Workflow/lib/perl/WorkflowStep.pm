@@ -247,7 +247,7 @@ sub getStepDir {
   my ($self) = @_;
 
   if (!$self->{stepDir}) {
-    my $homeDir = $self->{workflow}->getHomeDir();
+    my $homeDir = $self->{workflow}->getWorkflowHomeDir();
     my $stepDir = "$homeDir/steps/$self->{name}";
     $self->{workflow}->runCmd("mkdir -p $stepDir") unless -e $stepDir;
     $self->{stepDir} = $stepDir;
@@ -258,7 +258,7 @@ sub getStepDir {
 sub forkAndRun {
     my ($self) = @_;
 
-    my $homeDir = $self->{workflow}->getHomeDir();
+    my $homeDir = $self->{workflow}->getWorkflowHomeDir();
     my $workflowId = $self->{workflow}->getId();
     my $stepDir = $self->getStepDir();
     my $err = "$stepDir/step.err";

@@ -103,7 +103,7 @@ AND workflow_id = $workflow_id";
 sub pilotLog {
   my ($self,$msg) = @_;
 
-  my $homeDir = $self->{workflow}->getHomeDir();
+  my $homeDir = $self->{workflow}->getWorkflowHomeDir();
 
   open(LOG, ">>$homeDir/logs/pilot.log")
     || die "can't open log file '$homeDir/logs/pilot.log'";

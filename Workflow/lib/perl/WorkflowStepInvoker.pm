@@ -75,7 +75,7 @@ AND state = '$RUNNING'
 sub getConfig {
   my ($self, $prop) = @_;
 
-  my $homeDir = $self->getHomeDir();
+  my $homeDir = $self->getWorkflowHomeDir();
   my $propFile = "$homeDir/config/steps.prop";
   my $className = ref($self);
   $className =~ s/\:\:/\//g;
@@ -107,7 +107,7 @@ sub getGlobalConfig {
     my ($self, $key) = @_;
 
     if (!$self->{globalStepsConfig}) {
-      my $homeDir = $self->getHomeDir();
+      my $homeDir = $self->getWorkflowHomeDir();
       $self->{globalStepsConfig} =
 	CBIL::Util::PropertySet->new("$homeDir/config/stepsGlobal.prop",[], 1);
     }
@@ -118,7 +118,7 @@ sub getStepDir {
   my ($self) = @_;
 
   if (!$self->{stepDir}) {
-    my $homeDir = $self->getHomeDir();
+    my $homeDir = $self->getWorkflowHomeDir();
     my $stepDir = "$homeDir/steps/$self->{name}";
     my $cmd = "mkdir -p $stepDir";
     `$cmd` unless -e $stepDir;
@@ -136,22 +136,22 @@ sub getCluster {
 	my $clusterServer = $self->getGlobalConfig('clusterServer');
 	my $clusterUser = $self->getGlobalConfig('clusterServer');
 	if ($clusterServer ne "none") {
-	    $cluster = GUS::Pipeline::SshCluster->new($clusterServer,
-						      $clusterUser);
+	    $self->{cluster} = GUS::Pipeline::SshCluster->new($clusterServer,
+							      $clusterUser);
 	} else {
-	    $cluster = GUS::Pipeline::NfsCluster->new();
+	    $self->{cluster} = GUS::Pipeline::NfsCluster->new();
 	}
     }
     return $self->{cluster};
 }
 
 sub copyToCluster {
-    my ($fromDir, $fromFile, $toDir) = @_;
+    my ($self, $fromDir, $fromFile, $toDir) = @_;
     $self->getCluster()->copyTo($fromDir, $fromFile, $toDir);
 }
 
 sub copyFromCluster {
-    my ($fromDir, $fromFile, $toDir) = @_;
+    my ($self, $fromDir, $fromFile, $toDir) = @_;
     $self->getCluster()->copyFrom($fromDir, $fromFile, $toDir);
 }
 
