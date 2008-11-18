@@ -3,6 +3,8 @@
 use strict;
 use lib "$ENV{GUS_HOME}/lib/perl";
 
+use GUS::Workflow::WorkflowStepInvoker;
+
 usage() unless scalar(@ARGV) >= 5;
 
 my $homeDir = shift(@ARGV);
@@ -16,8 +18,11 @@ my $paramStrings = \@ARGV;
 open (STDERR, ">>$errFile");
 
 
-my $stepInvoker =  eval "{require $invokerClass; $invokerClass->new('$homeDir')}";
-die($@) if $@;
+my $invoker = GUS::Workflow::WorkflowStepInvoker->new($homeDir);
+
+$invoker->setRunningState($workflowId, $stepName);
+
+my $stepInvoker =  $invoker->getStepInvoker($invokerClass, $homeDir);
 
 $stepInvoker->setParamValues($paramStrings);
 

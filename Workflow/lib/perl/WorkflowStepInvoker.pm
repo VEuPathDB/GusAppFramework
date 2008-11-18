@@ -24,10 +24,8 @@ sub getParamValue {
   return $self->{paramValues}->{$name};
 }
 
-sub runInWrapper {
-    my ($self, $workflowId, $stepName, $mode) = @_;
-
-    $self->{name} = $stepName;
+sub setRunningState {
+    my ($self, $workflowId, $stepName) = @_;
 
     my $process_id = $$;
 
@@ -43,6 +41,19 @@ AND workflow_id = $workflowId
 ";
 
     $self->runSql($sql);
+}
+
+sub getStepInvoker {
+  my ($self, $invokerClass, $homeDir) = @_;
+  my $stepInvoker =  eval "{require $invokerClass; $invokerClass->new('$homeDir')}";
+  $self->error($@) if $@;
+  return $stepInvoker;
+}
+
+sub runInWrapper {
+    my ($self, $workflowId, $stepName, $mode) = @_;
+
+    $self->{name} = $stepName;
 
     chdir $self->getStepDir();
 
@@ -57,7 +68,7 @@ AND workflow_id = $workflowId
     if ($@) {
 	$state = $FAILED;
     }
-    $sql = "
+    my $sql = "
 UPDATE apidb.WorkflowStep
 SET
   state = '$state',
