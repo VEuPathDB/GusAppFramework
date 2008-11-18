@@ -1,4 +1,4 @@
-<workflowGraph>
+<workflowGraph name="sub">
 
   <param name="prefix"/>
 

@@ -1,4 +1,4 @@
-<workflowGraph>
+<workflowGraph name="root">
 
   <param name="shape"/>
 
