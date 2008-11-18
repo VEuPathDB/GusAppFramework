@@ -15,15 +15,19 @@ import org.xml.sax.SAXException;
 
 /*
  * Overall subgraph strategy
- *  (1) parse root graph
- *     - parsing a graph sets parent child links, and inserts sugraph return nodes
+ *  (1) parse a graph (starting w/ root graph)
+       - read xml, and digest it
+ *     - set parent child links
+       - insert sugraph return nodes
  *  
  *  (2) expand subgraphs
  *     - starting with root graph, bottom up recursion through graph/subgraph
  *       hierarchy.  
- *     - for each graph, iterate through steps that call subgraphs.  the edge
- *       between it and its subgraph-return child is replaced with (copies of)
- *       the steps from the referenced template.
+ *     - for each graph
+           - parse as in (1)
+           - expand its subgraphs
+           - insert it into parent graph
+              - attach its root and leaf steps to parent graph
  *   
  *  (3) in a final pass, set the path of each of the steps (top down recursion)
  * 
@@ -122,8 +126,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
                 stepsWithSubgraph.put(step, sgxfn);
             }
         }
-	
-	// second pass: insert subgraph return children, and collect root steps
+    }
+
+    void insertSubgraphReturnChildren() {
 	Map<String, T> currentStepsByName = new HashMap<String, T>(stepsByName);
         for (T step : currentStepsByName.values()) {
             if (step.getSubgraphXmlFileName() != null) {
@@ -169,15 +174,15 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    WorkflowGraph<T> subgraph =
 		parser.parseWorkflow(workflow, stepClass, subgraphXmlFileName); 
 
+            // instantiate param values from calling step
+            subgraph.instantiateValues(stepWithSubgraph.getParamValues());
+
             // set the path of its unexpanded steps
             String newPath = path + stepWithSubgraph.getBaseName() + ".";
             subgraph.setPath(newPath);
             
-            // 
-            subgraph.instantiateValues(stepWithSubgraph.getParamValues());
-
             // expand it (recursively) 
-            // (this includes setting the paths of the expanded steps
+            // (this includes setting the paths of the expanded steps)
 	    List<String> callingXmlFileNamesNew = new ArrayList<String>(callingXmlFileNames);
 	    callingXmlFileNamesNew.add(subgraphXmlFileName);
             subgraph.expandSubgraphs(newPath, callingXmlFileNamesNew, stepClass); 
