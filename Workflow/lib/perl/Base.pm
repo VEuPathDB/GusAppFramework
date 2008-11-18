@@ -8,6 +8,7 @@ use strict;
 use DBI;
 use CBIL::Util::MultiPropertySet;
 use CBIL::Util::PropertySet;
+use Carp;
 
 BEGIN {
 # allowed states
@@ -42,7 +43,7 @@ sub getDbh {
 	$self->{dbh} = DBI->connect($self->getWorkflowConfig('dbiConnectString'),
 				    $self->getWorkflowConfig('dbLogin'),
 				    $self->getWorkflowConfig('dbPassword'))
-	  or die DBI::errstr;
+	  or $self->error(DBI::errstr);
     }
     return $self->{dbh};
 }
@@ -50,8 +51,8 @@ sub getDbh {
 sub runSql {
     my ($self,$sql) = @_;
     my $dbh = $self->getDbh();
-    my $stmt = $dbh->prepare("$sql") or die DBI::errstr;
-    $stmt->execute() or die DBI::errstr;
+    my $stmt = $dbh->prepare("$sql") or $self->error(DBI::errstr);
+    $stmt->execute() or $self->error(DBI::errstr);
 }
 
 sub runSqlQuery_single_array {
@@ -92,7 +93,7 @@ sub getWorkflowConfig {
 sub error {
     my ($self, $msg) = @_;
 
-    die "$msg\n\n";
+    confess "$msg\n\n";
 }
 
 1;

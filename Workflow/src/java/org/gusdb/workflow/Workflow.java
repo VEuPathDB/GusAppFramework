@@ -150,7 +150,6 @@ public class Workflow <T extends WorkflowStep>{
 
         // write all steps to WorkflowStep table
         PreparedStatement stmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
-	System.out.println(workflowGraph.stepsByName.toString());
         for (WorkflowStep step : workflowGraph.getSteps()) {
 	    log("  " + step.getFullName());
             step.initializeStepTable(stmt);
