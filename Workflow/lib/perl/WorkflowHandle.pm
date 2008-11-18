@@ -59,7 +59,7 @@ sub getId {
 sub reset {
   my ($self) = @_;
 
-  my $homeDir = $self->getHomeDir();
+  my $homeDir = $self->getWorkflowHomeDir();
   foreach my $dir ("logs", "steps", "externalFiles") {
     my $cmd = "rm -rf $homeDir/$dir";
     $self->runCmd($cmd) if -e "$homeDir/$dir";
