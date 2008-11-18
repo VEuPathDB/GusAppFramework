@@ -15,11 +15,8 @@ import org.xml.sax.SAXException;
 
 /*
  * Overall subgraph strategy
- *  (1) make graph templates
- *     - parse root xml file, and all xml files it refers to.  put resulting
- *       graphs into templates map, keyed on name of xml files
- *     - in this pass, any step that calls a subgraph has an "subgraph return"
- *       child inserted between it and its natural children
+ *  (1) parse root graph
+ *     - parsing a graph sets parent child links, and inserts sugraph return nodes
  *  
  *  (2) expand subgraphs
  *     - starting with root graph, bottom up recursion through graph/subgraph
@@ -44,7 +41,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     private List<T> rootSteps = new ArrayList<T>();
     
     // following state must be updated after expansion
-    private Map<String, T> stepsByName = new HashMap<String, T>();
+    Map<String, T> stepsByName = new HashMap<String, T>();
     private List<T> leafSteps = new ArrayList<T>();    
     List<T> sortedSteps; 
     private Map<String, List<T>> globalSteps = new HashMap<String, List<T>>();
@@ -158,14 +155,20 @@ public class WorkflowGraph<T extends WorkflowStep> {
     /////////////////////////////////////////////////////////////////////////
     //   subgraph expansion
     /////////////////////////////////////////////////////////////////////////
-    private void expandSubgraphs(HashMap<String, WorkflowGraph<T>> templates, String path) {
+    private void expandSubgraphs(String path, List<String> callingXmlFileNames, Class<T> stepClass) throws SAXException, Exception {
         for (T stepWithSubgraph : stepsWithSubgraph.keySet()) {
         
             // get a graph to insert
             String subgraphXmlFileName = stepsWithSubgraph.get(stepWithSubgraph);
-            WorkflowGraph<T> template = templates.get(subgraphXmlFileName);
-            WorkflowGraph<T> subgraph = template; //.clone();
-            
+	    if (callingXmlFileNames.contains(subgraphXmlFileName)) {
+		throw new Exception("Circular reference to graphXmlFile '"
+				    + subgraphXmlFileName + "'"
+				    + " step path: '" + path + "'");
+	    }      
+	    WorkflowXmlParser<T> parser = new WorkflowXmlParser<T>();
+	    WorkflowGraph<T> subgraph =
+		parser.parseWorkflow(workflow, stepClass, subgraphXmlFileName); 
+
             // set the path of its unexpanded steps
             String newPath = path + stepWithSubgraph.getBaseName() + ".";
             subgraph.setPath(newPath);
@@ -175,7 +178,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
 
             // expand it (recursively) 
             // (this includes setting the paths of the expanded steps
-            subgraph.expandSubgraphs(templates, newPath); 
+	    List<String> callingXmlFileNamesNew = new ArrayList<String>(callingXmlFileNames);
+	    callingXmlFileNamesNew.add(subgraphXmlFileName);
+            subgraph.expandSubgraphs(newPath, callingXmlFileNamesNew, stepClass); 
             
             // insert it
             WorkflowStep subgraphReturnStep = stepWithSubgraph.getChildren().get(0);
@@ -231,17 +236,16 @@ public class WorkflowGraph<T extends WorkflowStep> {
     static <S extends WorkflowStep > WorkflowGraph<S> constructFullGraph(Class<S> stepClass,
             Workflow<S> workflow) throws FileNotFoundException, SAXException, IOException, Exception {
         
-        // make templates
-        HashMap<String, WorkflowGraph<S>> templates = new HashMap<String, WorkflowGraph<S>>();
-        WorkflowGraph.makeGraphTemplates(templates, stepClass, workflow,
-                workflow.getStepsXmlFileName(), new ArrayList<String>());
-        
-        // get root graph and intantiate its values
-        WorkflowGraph<S> rootGraph = templates.get(workflow.getStepsXmlFileName());
+	WorkflowXmlParser<S> parser = new WorkflowXmlParser<S>();
+	WorkflowGraph<S> rootGraph =
+		parser.parseWorkflow(workflow, stepClass, workflow.getStepsXmlFileName()); 
+
         rootGraph.instantiateValues(getRootGraphParamValues(workflow));
         
         // expand subgraphs
-        rootGraph.expandSubgraphs(templates, "");
+	List<String> callingXmlFileNames = new ArrayList<String>();
+	callingXmlFileNames.add(workflow.getStepsXmlFileName());
+        rootGraph.expandSubgraphs("", callingXmlFileNames, stepClass);
         
         // initialize global steps
         // rootGraph.initializeGlobalSteps();
@@ -262,38 +266,4 @@ public class WorkflowGraph<T extends WorkflowStep> {
         return map;
     }
     
-    // recursively parse graph xml files, and put all resulting graphs
-    // into a map keyed on the name of the xml file
-    // these will be used as templates to inject graphs into the main graph
-    private static <S extends WorkflowStep > void makeGraphTemplates(
-            Map<String, WorkflowGraph<S>> templates,
-            Class<S> stepClass,
-            Workflow<S> workflow, String xmlFileName,
-            List<String> callingXmlFileNames) throws SAXException, IOException, Exception {
-         
-        WorkflowGraph<S> workflowGraph;         
-         if (templates.containsKey(xmlFileName)) {
-             workflowGraph = templates.get(xmlFileName);
-         } else {
-             WorkflowXmlParser<S> parser = new WorkflowXmlParser<S>();
-             workflowGraph = parser.parseWorkflow(workflow, stepClass, xmlFileName);
-             templates.put(xmlFileName, workflowGraph);
-         }
-         
-         callingXmlFileNames = new ArrayList<String>(callingXmlFileNames);
-         callingXmlFileNames.add(xmlFileName);
-         
-         // always have to go down path of child graphs, even if we have already
-         // seen this xml file, because it may be in a different context
-         // and we need to flush circular references in all contexts
-         for (String subgraphXmlFileName : workflowGraph.getSubgraphXmlFileNames()) {
-             if (callingXmlFileNames.contains(subgraphXmlFileName)) {
-                     throw new Exception("Circular reference to graphXmlFile '"
-                             + subgraphXmlFileName + "'");
-             }      
-             
-             makeGraphTemplates(templates, stepClass, workflow, subgraphXmlFileName,
-                     callingXmlFileNames);
-         }
-     }
 }
