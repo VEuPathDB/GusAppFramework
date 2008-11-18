@@ -60,6 +60,7 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
 	workflowGraph.setWorkflow(workflow);
 	workflowGraph.setXmlFileName(xmlFileName);
 	workflowGraph.makeParentChildLinks();
+	workflowGraph.insertSubgraphReturnChildren();
         return workflowGraph;
     }
 
