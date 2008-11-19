@@ -151,18 +151,4 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         return new String(bo).trim();
     }
 
-    // not working yet
-    /*
-    private void documentStep() {
-
-	  my ($self, $signal, $documentInfo, $doitProperty) = @_;
-
-	  return if (!$self->{justDocumenting}
-	  || ($doitProperty
-	  && $self->{propertySet}->getProp($doitProperty) eq "no"));
-	  
-	  my $documenter = GUS::StepDocumenter->new($signal, $documentInfo);
-	  $documenter->printXml();
-    }
-    */
 }

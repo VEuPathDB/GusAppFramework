@@ -151,7 +151,13 @@ public class WorkflowGraph<T extends WorkflowStep> {
         + "Steps" + nl + getSortedSteps().toString();
     }
     
-    private void instantiateValues(Map<String,String> paramValues) {
+    private void instantiateValues(String stepName,
+				   Map<String,String> paramValues) {
+	for (String decl : paramDeclarations) {
+	    if (!paramValues.containsKey(decl)) {
+		Utilities.error("Step '" + stepName + "' does not provide a value for the '" + decl + "' parameter");
+	    }
+	}
         for (T step : getSteps()) {
             step.substituteValues(constants);
             step.substituteValues(paramValues);
@@ -174,13 +180,14 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    WorkflowGraph<T> subgraph =
 		parser.parseWorkflow(workflow, stepClass, subgraphXmlFileName); 
 
-            // instantiate param values from calling step
-            subgraph.instantiateValues(stepWithSubgraph.getParamValues());
-
             // set the path of its unexpanded steps
             String newPath = path + stepWithSubgraph.getBaseName() + ".";
             subgraph.setPath(newPath);
             
+            // instantiate param values from calling step
+            subgraph.instantiateValues(stepWithSubgraph.getFullName(),
+				       stepWithSubgraph.getParamValues());
+
             // expand it (recursively) 
             // (this includes setting the paths of the expanded steps)
 	    List<String> callingXmlFileNamesNew = new ArrayList<String>(callingXmlFileNames);
@@ -245,7 +252,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	WorkflowGraph<S> rootGraph =
 		parser.parseWorkflow(workflow, stepClass, workflow.getStepsXmlFileName()); 
 
-        rootGraph.instantiateValues(getRootGraphParamValues(workflow));
+        rootGraph.instantiateValues("root",
+				    getRootGraphParamValues(workflow));
         
         // expand subgraphs
 	List<String> callingXmlFileNames = new ArrayList<String>();
