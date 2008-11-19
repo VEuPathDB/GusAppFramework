@@ -127,7 +127,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	String sql = "UPDATE apidb.Workflow" + nl
 	    + "SET state = '" + RUNNING + "', process_id = " + processId + ", allowed_running_steps = " + numSteps + nl
 	    + "WHERE workflow_id = " + workflow_id;
-	runSql(sql);
+	executeSqlUpdate(sql);
     }
 
     private void setDoneState(boolean testOnly) throws SQLException, IOException {
@@ -136,7 +136,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	    + " SET state = '" + DONE + "', process_id = NULL"  
 	    + " WHERE workflow_id = " + getId();
 
-	runSql(sql);
+	executeSqlUpdate(sql);
 	log("Workflow " + (testOnly? "TEST " : "") + DONE);
     }
 

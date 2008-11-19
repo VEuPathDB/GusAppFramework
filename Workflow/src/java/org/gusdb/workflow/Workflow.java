@@ -132,9 +132,16 @@ public class Workflow <T extends WorkflowStep>{
             + " where name = " + "'" + name + "'"   
             + " and version = '" + version + "'";
 
-        ResultSet rs = getDbConnection().createStatement().executeQuery(sql);
-
-        if (rs.next()) return;
+        Statement stmt = null;
+        ResultSet rs = null;
+        try {
+            stmt = getDbConnection().createStatement();
+            rs = stmt.executeQuery(sql);
+            if (rs.next()) return;
+        } finally {
+            if (rs != null) rs.close();
+            if (stmt != null) stmt.close(); 
+        }
 
         // otherwise, do it...
         log("Initializing workflow "
@@ -142,17 +149,29 @@ public class Workflow <T extends WorkflowStep>{
 
         // write row to Workflow table
         sql = "select apidb.Workflow_sq.nextval from dual";
-        workflow_id = runSqlQuerySingleRow(sql).getInt(1);
+        try {
+            stmt = getDbConnection().createStatement();
+            rs = stmt.executeQuery(sql);
+            rs.next();
+            workflow_id = rs.getInt(1);
+        } finally {
+            if (rs != null) rs.close();
+            if (stmt != null) stmt.close();
+        }
 
         sql = "INSERT INTO apidb.workflow (workflow_id, name, version)"  
             + " VALUES (" + workflow_id + ", '" + name + "', '" + version + "')";
-        runSql(sql);
+        executeSqlUpdate(sql);
 
         // write all steps to WorkflowStep table
-        PreparedStatement stmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
-        for (WorkflowStep step : workflowGraph.getSteps()) {
-	    log("  " + step.getFullName());
-            step.initializeStepTable(stmt);
+        PreparedStatement pstmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
+        try {
+            for (WorkflowStep step : workflowGraph.getSteps()) {
+                log("  " + step.getFullName());
+                step.initializeStepTable(pstmt);
+            }
+        } finally {
+            pstmt.close();
         }
 
         // update steps in memory, to get their new IDs
@@ -182,16 +201,24 @@ public class Workflow <T extends WorkflowStep>{
                 + " where name = '" + name + "'"  
                 + " and version = '" + version + "'" ;
 
-            ResultSet rs = getDbConnection().createStatement().executeQuery(sql);
-            if (!rs.next()) 
-                error("workflow '" + name + "' version '" + version + "' not in database");
+            Statement stmt = null;
+            ResultSet rs = null;
+            try {
+                stmt = getDbConnection().createStatement();
+                rs = stmt.executeQuery(sql);
+                if (!rs.next()) 
+                    error("workflow '" + name + "' version '" + version + "' not in database");
+                workflow_id = rs.getInt(1);
+                state = rs.getString(2);
+                process_id = rs.getString(3);
+                start_time = rs.getDate(4);
+                end_time = rs.getDate(5);
+                allowed_running_steps = rs.getInt(6);
+            } finally {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close(); 
+            }
             
-            workflow_id = rs.getInt(1);
-            state = rs.getString(2);
-            process_id = rs.getString(3);
-            start_time = rs.getDate(4);
-            end_time = rs.getDate(5);
-            allowed_running_steps = rs.getInt(6);
         }
     }
 
@@ -201,12 +228,19 @@ public class Workflow <T extends WorkflowStep>{
 
         // run query to get all rows from WorkflowStep for this workflow
         // stuff each row into the snapshot, keyed on step name
-        Statement stmt = getDbConnection().createStatement();
-        ResultSet rs = stmt.executeQuery(sql);
-        while (rs.next()) {
-            String stepName = rs.getString("NAME");
-            WorkflowStep step = workflowGraph.getStepsByName().get(stepName);
-            step.setFromDbSnapshot(rs);
+        Statement stmt = null;
+        ResultSet rs = null;
+        try {
+            stmt = getDbConnection().createStatement();
+            rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                String stepName = rs.getString("NAME");
+                WorkflowStep step = workflowGraph.getStepsByName().get(stepName);
+                step.setFromDbSnapshot(rs);
+            }
+        } finally {
+            if (rs != null) rs.close();
+            if (stmt != null) stmt.close();             
         }
     }
         
@@ -239,16 +273,13 @@ public class Workflow <T extends WorkflowStep>{
         return dbConnection;
     }
 
-    void runSql(String sql) throws SQLException, FileNotFoundException, IOException {
+    void executeSqlUpdate(String sql) throws SQLException, FileNotFoundException, IOException {
         Statement stmt = getDbConnection().createStatement();
-        stmt.executeUpdate(sql);
-    }
-
-    ResultSet runSqlQuerySingleRow(String sql) throws SQLException, FileNotFoundException, IOException {
-        Statement stmt = getDbConnection().createStatement();
-        ResultSet rs = stmt.executeQuery(sql);
-        rs.next();
-        return rs;
+        try {
+            stmt.executeUpdate(sql);
+        } finally {
+            stmt.close();
+        }
     }
 
     String getWorkflowConfig(String key) throws FileNotFoundException, IOException {
@@ -342,10 +373,10 @@ public class Workflow <T extends WorkflowStep>{
 
          getDbState();
          String sql = "delete from apidb.workflowstep where workflow_id = " + workflow_id;
-         runSql(sql);
+         executeSqlUpdate(sql);
          System.out.println(sql);
          sql = "delete from apidb.workflow where workflow_id = " + workflow_id;
-         runSql(sql);
+         executeSqlUpdate(sql);
          System.out.println(sql);
      }
 

@@ -281,8 +281,8 @@ public class WorkflowStep  {
         return new WorkflowStep();
     }
 
-    protected void runSql(String sql) throws SQLException, FileNotFoundException, IOException {
-	workflowGraph.getWorkflow().runSql(sql);
+    protected void executeSqlUpdate(String sql) throws SQLException, FileNotFoundException, IOException {
+	workflowGraph.getWorkflow().executeSqlUpdate(sql);
     }
 
     public String toString() {

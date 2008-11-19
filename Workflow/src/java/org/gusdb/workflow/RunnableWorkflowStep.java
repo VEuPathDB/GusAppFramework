@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +42,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
             + " WHERE workflow_step_id = " + workflow_step_id
             + " AND state = '" + state + "'"
             + " AND off_line = " + offlineInt;
-        runSql(sql);
+        executeSqlUpdate(sql);
         state_handled = true;  // till next snapshot
     }
 
@@ -50,19 +51,25 @@ public class RunnableWorkflowStep extends WorkflowStep {
             + " FROM apidb.workflowstep"
             + " WHERE workflow_step_id = " + workflow_step_id;
         
-        ResultSet rs = workflowGraph.getWorkflow().getDbConnection().createStatement().executeQuery(sql);
-
-        rs.next();
-        String stateNow = rs.getString(1);
-        if (stateNow.equals(Workflow.RUNNING)) {
-
-            sql = "UPDATE apidb.WorkflowStep"  
-                + " SET"  
-                + " state = '" + Workflow.FAILED + "', state_handled = 1, process_id = null" 
-                + " WHERE workflow_step_id = " + workflow_step_id
-                + " AND state = '" + Workflow.RUNNING + "'";
-            runSql(sql);
-            log("Step '" + getFullName() + "' FAILED (no wrapper process " + process_id + ")");
+        Statement stmt = null;
+        ResultSet rs = null;
+        try {
+            stmt = workflowGraph.getWorkflow().getDbConnection().createStatement();
+            rs = stmt.executeQuery(sql);
+            rs.next();
+            String stateNow = rs.getString(1);
+            if (stateNow.equals(Workflow.RUNNING)) {
+                sql = "UPDATE apidb.WorkflowStep"  
+                    + " SET"  
+                    + " state = '" + Workflow.FAILED + "', state_handled = 1, process_id = null" 
+                    + " WHERE workflow_step_id = " + workflow_step_id
+                    + " AND state = '" + Workflow.RUNNING + "'";
+                executeSqlUpdate(sql);
+                log("Step '" + getFullName() + "' FAILED (no wrapper process " + process_id + ")");
+            }
+        } finally {
+            if (rs != null) rs.close();
+            if (stmt != null) stmt.close();
         }
     }
         
@@ -81,7 +88,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
             + " SET state = '" + Workflow.ON_DECK + "', state_handled = 1" 
             + " WHERE workflow_step_id = " + workflow_step_id  
             + " AND state = '" + Workflow.READY + "'";
-        runSql(sql);
+        executeSqlUpdate(sql);
     }
 
     // if this step doesn't have an invoker (ie, it is a call to or return
@@ -91,7 +98,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
         String sql = "UPDATE apidb.WorkflowStep"  
             + " SET state = '" + Workflow.DONE + "', state_handled = 1" 
             + " WHERE workflow_step_id = " + workflow_step_id;  
-        runSql(sql);
+        executeSqlUpdate(sql);
     }
 
     // try to run a single ON_DECK step
