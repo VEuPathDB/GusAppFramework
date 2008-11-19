@@ -151,11 +151,15 @@ public class WorkflowGraph<T extends WorkflowStep> {
         + "Steps" + nl + getSortedSteps().toString();
     }
     
-    private void instantiateValues(String stepName,
+    private void instantiateValues(String stepBaseName,
+				   String xmlFileName,
 				   Map<String,String> paramValues) {
 	for (String decl : paramDeclarations) {
 	    if (!paramValues.containsKey(decl)) {
-		Utilities.error("Step '" + stepName + "' does not provide a value for the '" + decl + "' parameter");
+		Utilities.error("Step '" + stepBaseName + "' in file '"
+				+ xmlFileName 
+				+ "' does not provide a value for the '"
+				+ decl + "' parameter");
 	    }
 	}
         for (T step : getSteps()) {
@@ -185,7 +189,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
             subgraph.setPath(newPath);
             
             // instantiate param values from calling step
-            subgraph.instantiateValues(stepWithSubgraph.getFullName(),
+            subgraph.instantiateValues(stepWithSubgraph.getBaseName(),
+				       xmlFileName,
 				       stepWithSubgraph.getParamValues());
 
             // expand it (recursively) 
@@ -253,6 +258,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
 		parser.parseWorkflow(workflow, stepClass, workflow.getStepsXmlFileName()); 
 
         rootGraph.instantiateValues("root",
+				    "rootParams.prop",
 				    getRootGraphParamValues(workflow));
         
         // expand subgraphs
