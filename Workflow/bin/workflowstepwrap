@@ -26,7 +26,7 @@ my $stepInvoker =  $invoker->getStepInvoker($invokerClass, $homeDir);
 
 $stepInvoker->setParamValues($paramStrings);
 
-my $status = $stepInvoker->runInWrapper($workflowId, $stepName, $mode);
+my $status = $stepInvoker->runInWrapper($workflowId, $stepName, $mode, $invokerClass);
 
 exit($status);
 

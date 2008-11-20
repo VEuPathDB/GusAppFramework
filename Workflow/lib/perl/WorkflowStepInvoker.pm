@@ -51,12 +51,13 @@ sub getStepInvoker {
 }
 
 sub runInWrapper {
-    my ($self, $workflowId, $stepName, $mode) = @_;
+    my ($self, $workflowId, $stepName, $mode, $invokerClass) = @_;
 
     $self->{name} = $stepName;
 
     chdir $self->getStepDir();
 
+    $self->log("Running Step Class $invokerClass");
     exec {
         my $testOnly = $mode eq 'test';
 	$self->log("only testing...") if $testOnly;
