@@ -57,9 +57,10 @@ $paramVals
   my \$ = \$self->getConfig('');
 
   if (\$test) {
-  } else {
+
   }
 
+  \$self->runCmd(\$test, \$cmd);
   \$self->runPlugin(\$test, '', \$args);
 
 }
