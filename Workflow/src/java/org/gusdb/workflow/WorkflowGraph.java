@@ -105,7 +105,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
         return stepsByName.values();
     }
     
-    @SuppressWarnings("unchecked")
     void makeParentChildLinks() {
 	// make the parent/child links from the remembered dependencies
 	for (T step : getSteps()) {
@@ -128,6 +127,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     void insertSubgraphReturnChildren() {
 	Map<String, T> currentStepsByName = new HashMap<String, T>(stepsByName);
         for (T step : currentStepsByName.values()) {
@@ -141,25 +141,24 @@ public class WorkflowGraph<T extends WorkflowStep> {
         }
         
     }
-        
-    private Collection<String> getSubgraphXmlFileNames() {
-        return stepsWithSubgraph.values();
-    }
-     
+            
     public String toString() {
         return "Constants" + nl + constants.toString() + nl + nl
         + "Steps" + nl + getSortedSteps().toString();
     }
     
-    private void instantiateValues(String stepBaseName,
-				   String xmlFileName,
-				   Map<String,String> paramValues) {
+
+    private void instantiateValues(String stepBaseName, String xmlFileName,
+            Map<String,String> paramValues,
+            Map<String,Map<String,List<String>>> paramErrorsMap) {
 	for (String decl : paramDeclarations) {
 	    if (!paramValues.containsKey(decl)) {
-		Utilities.error("Step '" + stepBaseName + "' in file '"
-				+ xmlFileName 
-				+ "' does not provide a value for the '"
-				+ decl + "' parameter");
+	        if (!paramErrorsMap.containsKey(xmlFileName))
+	            paramErrorsMap.put(xmlFileName, new HashMap<String,List<String>>());
+	        Map<String,List<String>> fileErrorsMap = paramErrorsMap.get(xmlFileName);
+	        if (!fileErrorsMap.containsKey(stepBaseName)) 
+	            fileErrorsMap.put(stepBaseName, new ArrayList<String>());
+	        fileErrorsMap.get(stepBaseName).add(decl);
 	    }
 	}
         for (T step : getSteps()) {
@@ -170,7 +169,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
     /////////////////////////////////////////////////////////////////////////
     //   subgraph expansion
     /////////////////////////////////////////////////////////////////////////
-    private void expandSubgraphs(String path, List<String> callingXmlFileNames, Class<T> stepClass) throws SAXException, Exception {
+    private void expandSubgraphs(String path, List<String> callingXmlFileNames,
+            Class<T> stepClass, Map<String,Map<String,List<String>>> paramErrorsMap) throws SAXException, Exception {
         for (T stepWithSubgraph : stepsWithSubgraph.keySet()) {
         
             // get a graph to insert
@@ -190,14 +190,15 @@ public class WorkflowGraph<T extends WorkflowStep> {
             
             // instantiate param values from calling step
             subgraph.instantiateValues(stepWithSubgraph.getBaseName(),
-				       xmlFileName,
-				       stepWithSubgraph.getParamValues());
+                    xmlFileName,
+                    stepWithSubgraph.getParamValues(), paramErrorsMap);
+
 
             // expand it (recursively) 
             // (this includes setting the paths of the expanded steps)
 	    List<String> callingXmlFileNamesNew = new ArrayList<String>(callingXmlFileNames);
 	    callingXmlFileNamesNew.add(subgraphXmlFileName);
-            subgraph.expandSubgraphs(newPath, callingXmlFileNamesNew, stepClass); 
+            subgraph.expandSubgraphs(newPath, callingXmlFileNamesNew, stepClass, paramErrorsMap); 
             
             // insert it
             WorkflowStep subgraphReturnStep = stepWithSubgraph.getChildren().get(0);
@@ -257,14 +258,23 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	WorkflowGraph<S> rootGraph =
 		parser.parseWorkflow(workflow, stepClass, workflow.getStepsXmlFileName()); 
 
+	Map<String,Map<String,List<String>>> paramErrorsMap =
+	    new HashMap<String,Map<String,List<String>>>();
         rootGraph.instantiateValues("root",
-				    "rootParams.prop",
-				    getRootGraphParamValues(workflow));
+                                    "rootParams.prop",
+				    getRootGraphParamValues(workflow),
+				    paramErrorsMap);
         
         // expand subgraphs
 	List<String> callingXmlFileNames = new ArrayList<String>();
 	callingXmlFileNames.add(workflow.getStepsXmlFileName());
-        rootGraph.expandSubgraphs("", callingXmlFileNames, stepClass);
+        rootGraph.expandSubgraphs("", callingXmlFileNames, stepClass, paramErrorsMap);
+        
+        // report param errors, if any
+        if (paramErrorsMap.size() != 0) {
+            Utilities.error("Graph \"compilation\" failed.  Errors in parameter values:" + nl
+                    + paramErrorsMap.toString());
+        }
         
         // initialize global steps
         // rootGraph.initializeGlobalSteps();
