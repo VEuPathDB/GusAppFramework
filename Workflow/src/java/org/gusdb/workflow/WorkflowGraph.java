@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -36,7 +37,7 @@ import org.xml.sax.SAXException;
 
 public class WorkflowGraph<T extends WorkflowStep> {
     private List<String> paramDeclarations = new ArrayList<String>();
-    private Map<String,String> constants = new HashMap<String,String>();
+    private Map<String,String> constants = new LinkedHashMap<String,String>();
     Workflow<T> workflow;
     String xmlFileName;
     String name;
@@ -162,10 +163,35 @@ public class WorkflowGraph<T extends WorkflowStep> {
 		    fileErrorsMap.get(stepBaseName).add(decl);
 	    }
 	}
-        for (T step : getSteps()) {
-            step.substituteValues(constants);
-            step.substituteValues(paramValues);
+
+	// substitute param values into constants
+        for (String constantName : constants.keySet()) {
+            String constantValue = constants.get(constantName);
+	    String newConstantValue = 
+		Utilities.substituteVariablesIntoString(constantValue, paramValues);
+	    constants.put(constantName, newConstantValue);    
         }
+
+	// substitute constants into constants
+	Map fullyResolvedConstants = new HashMap<String,String>();
+        for (String constantName : constants.keySet()) {
+            String constantValue = constants.get(constantName);
+	    String newConstantValue = 
+		Utilities.substituteVariablesIntoString(constantValue,
+							fullyResolvedConstants);
+	    constants.put(constantName, newConstantValue);    
+	    fullyResolvedConstants.put(constantName, newConstantValue);    
+        }
+
+
+
+	// substitute both into step params
+        for (T step : getSteps()) {
+            step.substituteValues(constants, false);
+            step.substituteValues(paramValues, true);
+        }
+
+	
     }
     /////////////////////////////////////////////////////////////////////////
     //   subgraph expansion
