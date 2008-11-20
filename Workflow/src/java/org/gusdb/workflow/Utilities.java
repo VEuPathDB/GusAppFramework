@@ -11,6 +11,8 @@ import java.io.File;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
+import java.util.regex.Matcher;
 
 public class Utilities {
     
@@ -94,5 +96,16 @@ public class Utilities {
         }
         return buffer.toString();
     }
-    
+
+    public static String substituteVariablesIntoString(String string, Map<String,String>variables) {
+	if (string.indexOf("$$") == -1) return string;
+	String newString = string;
+	for (String variableName : variables.keySet()) {
+	    String variableValue = variables.get(variableName);
+	    newString =
+		newString.replaceAll("\\$\\$" + variableName + "\\$\\$",
+				    Matcher.quoteReplacement(variableValue));
+	}
+	return newString;
+    }
 }

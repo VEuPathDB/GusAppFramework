@@ -252,17 +252,19 @@ public class WorkflowStep  {
     }
     
     // interpolate constants into param values
-    void substituteValues(Map<String,String>constants){
+    void substituteValues(Map<String,String>variables, boolean check){
         for (String paramName : paramValues.keySet()) {
             String paramValue = paramValues.get(paramName);
-            if (paramValue.indexOf("$$") == -1) continue;
-            for (String constantName : constants.keySet()) {
-                String constantValue = constants.get(constantName);
-                paramValue =
-                    paramValue.replaceAll("\\$\\$" + constantName + "\\$\\$",
-                            Matcher.quoteReplacement(constantValue));
-                paramValues.put(paramName, paramValue);    
-            }
+	    String newParamValue = 
+		Utilities.substituteVariablesIntoString(paramValue, variables);
+	    paramValues.put(paramName, newParamValue); 
+	    if (check) {
+		if (newParamValue.indexOf("$$") != -1) 
+		    Utilities.error("Parameter '" + paramName + "' in step '" 
+				    + getFullName() 
+				    + "' includes an unresolvable variable reference: '"
+				    + newParamValue + "'");
+	    }
         }
     }
 
