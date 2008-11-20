@@ -158,7 +158,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	        Map<String,List<String>> fileErrorsMap = paramErrorsMap.get(xmlFileName);
 	        if (!fileErrorsMap.containsKey(stepBaseName)) 
 	            fileErrorsMap.put(stepBaseName, new ArrayList<String>());
-	        fileErrorsMap.get(stepBaseName).add(decl);
+	        if (!fileErrorsMap.get(stepBaseName).contains(decl))
+		    fileErrorsMap.get(stepBaseName).add(decl);
 	    }
 	}
         for (T step : getSteps()) {
@@ -272,8 +273,17 @@ public class WorkflowGraph<T extends WorkflowStep> {
         
         // report param errors, if any
         if (paramErrorsMap.size() != 0) {
-            Utilities.error("Graph \"compilation\" failed.  Errors in parameter values:" + nl
-                    + paramErrorsMap.toString());
+	    StringBuffer buf = new StringBuffer();
+	    for (String file : paramErrorsMap.keySet()) {
+		buf.append(nl + "  File " + file + ":" + nl);
+		for (String step : paramErrorsMap.get(file).keySet()) {
+		    buf.append("      step: " + step + nl);
+		    for (String param : paramErrorsMap.get(file).get(step)) 
+			buf.append("          > " + param + nl);
+		}
+	    }
+			
+            Utilities.error("Graph \"compilation\" failed.  The following subgraph parameter values are missing:" + nl + buf);
         }
         
         // initialize global steps
