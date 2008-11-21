@@ -48,6 +48,22 @@ and version = '$self->{version}'
   }
 }
 
+sub getStepNamesFromPattern {
+    my ($self, $stepNamePattern) = @_;
+
+    my $names;
+    my $sql = 
+"SELECT name 
+FROM workflowstep
+WHERE name like '$stepNamePattern'";
+    my $stmt = $self->getDbh()->prepare($sql);
+    $stmt->execute();
+    while (my $row = $stmt->fetchrow_arrayref()) {
+	push(@$names, $row->[0]);
+    }
+    return $names;
+}
+
 sub getId {
   my ($self) = @_;
 

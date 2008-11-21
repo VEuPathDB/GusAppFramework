@@ -16,37 +16,58 @@ my $RUNNING = 'RUNNING';
 &usage unless (scalar(@ARGV) >= 3);
 
 my $homeDir = $ARGV[0];
-my $stepName = $ARGV[1];
+my $stepNamePattern = $ARGV[1];
 my $offline;
 my $state;
-if ($ARGV[2] eq 'offline' || $ARGV[2] eq 'online') {
+my $list;
+if ($ARGV[2] eq '-l') {
+    $list = 1;
+} elsif ($ARGV[2] eq 'offline' || $ARGV[2] eq 'online') {
   $offline = $ARGV[2];
   $state = $ARGV[3];
 } else {
   $state = $ARGV[2]
 }
-&usage unless ($offline || ($state eq 'kill' || $state eq 'ready'));
+&usage unless ($list || $offline || ($state eq 'kill' || $state eq 'ready'));
 
 my $workflow = GUS::Workflow::WorkflowHandle->new($homeDir);
 
-my $step = GUS::Workflow::WorkflowStepPilot->new($stepName, $workflow);
+my $stepNames = $workflow->getStepNamesFromPattern($stepNamePattern);
 
-if ($state eq 'ready') {
-  $step->pilotSetReady();
-} elsif ($state eq 'kill') {
-  $step->pilotKill();
-}
+foreach my $stepName (@$stepNames) {
 
-if ($offline) {
-  $step->pilotSetOffline($offline);
+    if ($list) {
+	print "$stepName\n";
+	next;
+    }
+
+    my $step = GUS::Workflow::WorkflowStepPilot->new($stepName, $workflow);
+
+    if ($state eq 'ready') {
+	$step->pilotSetReady();
+    } elsif ($state eq 'kill') {
+	$step->pilotKill();
+    }
+
+    if ($offline) {
+	$step->pilotSetOffline($offline);
+    }
 }
 
 sub usage {
     print "
 
-Change the state and/or offline status of a workflow step.
+Change the state and/or offline status of the workflow steps whose name match the provided pattern.
 
-Usage: workflowstep workflow_dir stepname [offline|online] [ready|kill]
+Usage: workflowstep -h workflow_home_dir stepname_pattern [-l | [offline|online] [ready|kill]]
+
+Where:
+  -h                   - workflow home dir
+  stepname_pattern     - wildcard pattern using '%' as a wildcard (Oracle
+                         syntax) to specify  one or more steps to change.
+                         EG, %.runBlast
+  -l                   - list mode: don't change any steps, just list the
+                         names that match the pattern
 
 Allowed state changes are:
   $FAILED  --> ready
@@ -55,11 +76,13 @@ Allowed state changes are:
 Offline status may not be changed when the step is $RUNNING
 
 Examples
-  % workflowstep workflow_dir stepname kill
+  % workflowstep workflow_dir stepname_pattern -l
 
-  % workflowstep workflow_dir stepname online
+  % workflowstep workflow_dir stepname_pattern kill
 
-  % workflowstep workflow_dir stepname offline ready
+  % workflowstep workflow_dir stepname_pattern online
+
+  % workflowstep workflow_dir stepname_pattern offline ready
 ";
     exit(1);
 }
