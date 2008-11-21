@@ -170,9 +170,9 @@ sub copyFromCluster {
 sub runPlugin {
     my ($self, $test, $plugin, $args) = @_;
 
-    my $className = REF($self);
+    my $className = ref($self);
 
-    if ($test != 1 || $test != 0) {
+    if ($test != 1 && $test != 0) {
 	$self->error("illegal 'test' arg passed to runPlugin() in step class '$className'");
     }
 
@@ -187,7 +187,7 @@ sub runPlugin {
       $args .= " --gusconfigfile $self->{gusConfigFile}";
     }
 
-    my $cmd = "echo ga $plugin $args --comment \"$comment\"";
+    my $cmd = "ga $plugin $args --comment \"$comment\"";
 
     $self->runCmd($test, $cmd);
 }
@@ -216,6 +216,6 @@ sub log {
 
     my $stepDir = $self->getStepDir();
   open(F, ">>$stepDir/step.log");
-  print F "$msg\n\n";
+  print F localtime() . "\t$msg\n\n";
   close(F);
 }
