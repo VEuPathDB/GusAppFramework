@@ -93,6 +93,7 @@ sub getWorkflowConfig {
 sub error {
     my ($self, $msg) = @_;
 
+    print STDERR "\n================== " . localtime() . " ====================\n";
     confess "$msg\n\n";
 }
 
