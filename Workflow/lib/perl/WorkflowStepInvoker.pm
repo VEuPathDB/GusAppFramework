@@ -93,9 +93,9 @@ sub getConfig {
   $className =~ s/\:\:/\//g;
 
   if (!$self->{stepConfig}) {
-    my $rawDeclaration = $self->getConfigDeclaration();
+    my @rawDeclaration = $self->getConfigDeclaration();
     my $fullDeclaration = [];
-    foreach my $rd (@$rawDeclaration) {
+    foreach my $rd (@rawDeclaration) {
       my $fd = ["$self->{name}.$rd->[0]", $rd->[1], '', "$className.$rd->[0]"];
       push(@$fullDeclaration,$fd);
     }
