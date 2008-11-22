@@ -13,7 +13,7 @@ my $FAILED = 'FAILED';
 my $DONE = 'DONE';
 my $RUNNING = 'RUNNING';
 
-&usage unless (scalar(@ARGV) >= 3);
+&usage unless (scalar(@ARGV) >= 4 && shift(@ARGV) eq '-h');
 
 my $homeDir = $ARGV[0];
 my $stepNamePattern = $ARGV[1];
@@ -34,6 +34,8 @@ my $workflow = GUS::Workflow::WorkflowHandle->new($homeDir);
 
 my $stepNames = $workflow->getStepNamesFromPattern($stepNamePattern);
 
+my @errors;
+
 foreach my $stepName (@$stepNames) {
 
     if ($list) {
@@ -44,14 +46,21 @@ foreach my $stepName (@$stepNames) {
     my $step = GUS::Workflow::WorkflowStepPilot->new($stepName, $workflow);
 
     if ($state eq 'ready') {
-	$step->pilotSetReady();
+	my $errmsg = $step->pilotSetReady();
+	push(@errors,$errmsg) if $errmsg;
     } elsif ($state eq 'kill') {
-	$step->pilotKill();
+	my $errmsg = $step->pilotKill();
+	push(@errors,$errmsg) if $errmsg;
     }
 
     if ($offline) {
-	$step->pilotSetOffline($offline);
+        my $errmsg = $step->pilotSetOffline($offline);
+	push(@errors,$errmsg) if $errmsg;
     }
+}
+
+if (scalar(@errors)) {
+  print STDOUT "\n" . join("\n", @errors) . "\n";
 }
 
 sub usage {
@@ -76,13 +85,13 @@ Allowed state changes are:
 Offline status may not be changed when the step is $RUNNING
 
 Examples
-  % workflowstep workflow_dir stepname_pattern -l
+  % workflowstep -h workflow_dir stepname_pattern -l
 
-  % workflowstep workflow_dir stepname_pattern kill
+  % workflowstep -h workflow_dir stepname_pattern kill
 
-  % workflowstep workflow_dir stepname_pattern online
+  % workflowstep -h workflow_dir stepname_pattern online
 
-  % workflowstep workflow_dir stepname_pattern offline ready
+  % workflowstep -h workflow_dir stepname_pattern offline ready
 ";
     exit(1);
 }

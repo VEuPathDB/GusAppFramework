@@ -51,15 +51,18 @@ and version = '$self->{version}'
 sub getStepNamesFromPattern {
     my ($self, $stepNamePattern) = @_;
 
+    $self->getId();
     my $names;
     my $sql = 
-"SELECT name 
-FROM workflowstep
-WHERE name like '$stepNamePattern'";
+"SELECT name
+FROM apidb.WorkflowStep
+WHERE name like '$stepNamePattern'
+AND workflow_id = $self->{workflow_id}";
+
     my $stmt = $self->getDbh()->prepare($sql);
     $stmt->execute();
-    while (my $row = $stmt->fetchrow_arrayref()) {
-	push(@$names, $row->[0]);
+    while (my ($name) = $stmt->fetchrow_array()) {
+	push(@$names, $name);
     }
     return $names;
 }

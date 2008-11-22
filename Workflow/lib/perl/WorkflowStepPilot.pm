@@ -30,11 +30,13 @@ sub pilotKill {
 
     my ($state) = $self->getDbState();
 
-    die "Can't change from '$state' to $FAILED\n"
-	if ($state ne $RUNNING);
+    if ($state ne $RUNNING) {
+      return "Warning: Can't change $self->{name} from '$state' to '$FAILED'";
+    }
 
     $self->{workflow}->runCmd("kill -9 $self->{process_id}");
     $self->pilotLog("Step '$self->{name}' killed");
+    return 0;
 }
 
 # called by pilot UI
@@ -43,8 +45,9 @@ sub pilotSetReady {
 
     my ($state) = $self->getDbState();
 
-    die "Can't change from '$state' to '$READY'\n"
-	unless ($state eq $FAILED);
+    if ($state ne $FAILED) {
+      return "Warning: Can't change $self->{name} from '$state' to '$READY'";
+    }
 
     my $sql = "
 UPDATE apidb.WorkflowStep
@@ -56,6 +59,8 @@ AND state = '$FAILED'
 ";
     $self->runSql($sql);
     $self->pilotLog("Step '$self->{name}' set to $READY");
+
+    return 0;
 }
 
 # called by pilot UI
@@ -64,8 +69,9 @@ sub pilotSetOffline {
 
     $self->{lastSnapshot} = -1;
     my ($state) = $self->getDbState();
-    die "Can't change to OFFLINE when '$RUNNING'\n"
-	if ($state eq $RUNNING);
+    if ($state eq $RUNNING) {
+      return "Warning: Can't change $self->{name} to OFFLINE when '$RUNNING'";
+    }
     my $offline_bool = $offline eq 'offline'? 1 : 0;
 
     my $sql = "
@@ -78,6 +84,7 @@ AND (state != '$RUNNING')
 ";
     $self->runSql($sql);
     $self->pilotLog("Step '$self->{name}' $offline");
+    return 0;
 }
 
 sub getDbState {
@@ -109,6 +116,7 @@ sub pilotLog {
     || die "can't open log file '$homeDir/logs/pilot.log'";
   print LOG localtime() . " $msg\n";
   close (LOG);
+  print STDOUT "$msg\n";
 }
 
 sub runSql {
