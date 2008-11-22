@@ -16,7 +16,7 @@ my $mode = shift(@ARGV);
 my $paramStrings = \@ARGV;
 
 open (STDERR, ">>$errFile");
-
+print STDERR "\n\n================== " . localtime() . " ====================\n";
 
 my $invoker = GUS::Workflow::WorkflowStepInvoker->new($homeDir);
 
