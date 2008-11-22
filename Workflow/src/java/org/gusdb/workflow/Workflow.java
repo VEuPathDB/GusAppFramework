@@ -14,6 +14,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
+import java.text.SimpleDateFormat;
+import java.text.FieldPosition;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
@@ -251,7 +253,11 @@ public class Workflow <T extends WorkflowStep>{
     void log(String msg) throws IOException {
         String logFileName = getHomeDir() + "/logs/controller.log";
         PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true));
-        writer.println(msg + nl);
+	SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss");
+	StringBuffer buf = sdf.format(new java.util.Date(), new StringBuffer(),
+				      new FieldPosition(0));
+
+        writer.println(buf + "  " + msg + nl);
         writer.close();
     }
     
