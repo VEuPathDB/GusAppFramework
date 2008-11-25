@@ -110,7 +110,7 @@ sub getConfig {
   } elsif (defined($self->{stepConfig}->getPropRelaxed("$className.$prop"))) {
     $value = $self->{stepConfig}->getPropRelaxed("$className.$prop");
   } else {
-    die "Can't find property '$prop' for step '$self->{name}' or for class '$className' in file $propFile\n";
+    $self->error("Can't find property '$prop' for step '$self->{name}' or for class '$className' in file $propFile\n");
   }
   $self->log("accessing step property '$prop=$value'");
 }

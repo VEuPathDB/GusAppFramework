@@ -67,6 +67,23 @@ AND workflow_id = $self->{workflow_id}";
     return $names;
 }
 
+sub getStepNamesFromFile {
+  my ($self, $file) = @_;
+
+  my $homeDir = $self->getWorkflowHomeDir();
+
+  my $files = [];
+  if (-e $file) {
+    open(F, $file);
+    while(<F>) {
+      next if /^\#/;
+      chomp;
+      push(@$files, $_);
+    }
+  }
+  return $files;
+}
+
 sub getId {
   my ($self) = @_;
 
