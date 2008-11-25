@@ -87,6 +87,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
      this.xmlFileName = xmlFileName;
     }
     
+    // recurse through steps starting at roots.
     @SuppressWarnings("unchecked")
     List<T> getSortedSteps() {
         if (sortedSteps == null) {
@@ -128,17 +129,22 @@ public class WorkflowGraph<T extends WorkflowStep> {
         }
     }
 
+    // for each step that calls a subgraph, add a fake step after it
+    // called a "subgraph return child."  move all children dependencies to
+    // the src.  this makes it easy to inject the subgraph between the step
+    // and its src.
     @SuppressWarnings("unchecked")
     void insertSubgraphReturnChildren() {
 	Map<String, T> currentStepsByName = new HashMap<String, T>(stepsByName);
         for (T step : currentStepsByName.values()) {
+	    T returnStep = step;
             if (step.getSubgraphXmlFileName() != null) {
-                T returnStep = (T)step.insertSubgraphReturnChild();
+                returnStep = (T)step.insertSubgraphReturnChild();
                 stepsByName.put(returnStep.getBaseName(), returnStep);
             }
             
             if (step.getParents().size() == 0) rootSteps.add(step);
-            if (step.getChildren().size() == 0) leafSteps.add(step);
+            if (returnStep.getChildren().size() == 0) leafSteps.add(returnStep);
         }
         
     }
@@ -231,8 +237,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
             WorkflowStep subgraphReturnStep = stepWithSubgraph.getChildren().get(0);
             stepWithSubgraph.removeChild(subgraphReturnStep);
             subgraphReturnStep.removeParent(stepWithSubgraph);
-            subgraph.attachToParentStep(stepWithSubgraph);
-            subgraph.attachToChildStep(subgraphReturnStep);
+            subgraph.attachToCallingStep(stepWithSubgraph);
+            subgraph.attachToReturnStep(subgraphReturnStep);
             
             // add its steps to stepsByName
             for (T subgraphStep : subgraph.getSteps()) {
@@ -245,14 +251,18 @@ public class WorkflowGraph<T extends WorkflowStep> {
         for (T step : getSteps()) step.setPath(path);
     }
     
-    private void attachToParentStep(WorkflowStep parentStep) {
+    // attach the roots of this graph to a step in a parent graph that is
+    // calling it
+    private void attachToCallingStep(WorkflowStep parentStep) {
         for (T rootStep : rootSteps) {
             parentStep.addChild(rootStep);
             rootStep.addParent(parentStep);
         }
     }
     
-    private void attachToChildStep(WorkflowStep childStep) {
+    // attach the leafs of this graph to a step in a parent graph that is
+    // the return from this graph
+    private void attachToReturnStep(WorkflowStep childStep) {
         for (T leafStep : leafSteps) {
             childStep.addParent(leafStep);
             leafStep.addChild(childStep);

@@ -13,26 +13,33 @@ my $FAILED = 'FAILED';
 my $DONE = 'DONE';
 my $RUNNING = 'RUNNING';
 
-&usage unless (scalar(@ARGV) >= 4 && shift(@ARGV) eq '-h');
+&usage unless (scalar(@ARGV) >= 5 && shift(@ARGV) eq '-h');
 
 my $homeDir = $ARGV[0];
-my $stepNamePattern = $ARGV[1];
+my $inputType = $ARGV[1];
+my $stepNamePattern = $ARGV[2];
+my $stepNameFile = $ARGV[2];
 my $offline;
 my $state;
 my $list;
-if ($ARGV[2] eq '-l') {
+if ($ARGV[3] eq '-l') {
     $list = 1;
-} elsif ($ARGV[2] eq 'offline' || $ARGV[2] eq 'online') {
-  $offline = $ARGV[2];
+} elsif ($ARGV[3] eq 'offline' || $ARGV[3] eq 'online') {
+  $offline = $ARGV[3];
   $state = $ARGV[3];
 } else {
-  $state = $ARGV[2]
+  $state = $ARGV[3]
 }
-&usage unless ($list || $offline || ($state eq 'kill' || $state eq 'ready'));
+&usage unless (($inputType eq '-p' || $inputType eq '-f') && ($list || $offline || ($state eq 'kill' || $state eq 'ready')));
 
 my $workflow = GUS::Workflow::WorkflowHandle->new($homeDir);
 
-my $stepNames = $workflow->getStepNamesFromPattern($stepNamePattern);
+my $stepNames;
+if ($inputType eq '-p') {
+  $stepNames = $workflow->getStepNamesFromPattern($stepNamePattern);
+} else {
+  $stepNames = $workflow->getStepNamesFromFile($stepNameFile);
+}
 
 my @errors;
 
@@ -68,13 +75,14 @@ sub usage {
 
 Change the state and/or offline status of the workflow steps whose name match the provided pattern.
 
-Usage: workflowstep -h workflow_home_dir stepname_pattern [-l | [offline|online] [ready|kill]]
+Usage: workflowstep -h workflow_home_dir [ -p stepname_pattern | -f file_of_steps ] [-l | [offline|online] [ready|kill]]
 
 Where:
   -h                   - workflow home dir
-  stepname_pattern     - wildcard pattern using '%' as a wildcard (Oracle
+  -p stepname_pattern  - wildcard pattern using '%' as a wildcard (Oracle
                          syntax) to specify  one or more steps to change.
                          EG, %.runBlast
+  -f file_of_steps     - a file containing a list of step names.
   -l                   - list mode: don't change any steps, just list the
                          names that match the pattern
 

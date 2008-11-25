@@ -67,6 +67,8 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
         getDbSnapshot();       // read state of Workflow and WorkflowSteps
 
+	readOfflineFromFile(); // read start-up offline requests
+
 	setRunningState(numSteps,testOnly); // set db state. fail if already running
 
 	// start polling
@@ -105,6 +107,14 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	    if (runningCount >= allowed_running_steps) break;
 	    runningCount += step.runOnDeckStep(this, testOnly);
 	}
+    }
+
+    private void readOfflineFromFile() throws IOException, java.lang.InterruptedException {
+	String[] cmd = {"workflowstep", "-h", getHomeDir(),
+			"-f", getHomeDir() + "/config/initOfflineSteps",
+			"offline"}; 
+	Process process = Runtime.getRuntime().exec(cmd);
+	process.waitFor();
     }
 
     private void setRunningState(int numSteps, boolean testOnly) throws SQLException, IOException, java.lang.InterruptedException {
