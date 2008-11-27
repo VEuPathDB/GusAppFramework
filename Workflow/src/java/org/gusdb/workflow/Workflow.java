@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
+import java.util.Arrays;
 import java.text.SimpleDateFormat;
 import java.text.FieldPosition;
 
@@ -28,6 +29,7 @@ public class Workflow <T extends WorkflowStep>{
     public static final String FAILED = "FAILED";
     public static final String DONE = "DONE";
     public static final String RUNNING = "RUNNING";
+    public static final String ALL = "ALL";
     public static final String WAITING_FOR_PILOT = "WAITING_FOR_PILOT";  // not used yet.
     
     public static final String START = "START";
@@ -238,6 +240,8 @@ public class Workflow <T extends WorkflowStep>{
             while (rs.next()) {
                 String stepName = rs.getString("NAME");
                 WorkflowStep step = workflowGraph.getStepsByName().get(stepName);
+		if (step == null) error("Engine can't find step with name '" 
+					+ stepName + "'");
                 step.setFromDbSnapshot(rs);
             }
         } finally {
@@ -402,7 +406,8 @@ public class Workflow <T extends WorkflowStep>{
              Utilities.parseOptions(cmdlineSyntax, cmdDescrip, getUsageNotes(), options, args);
                  
          String homeDirName = cmdLine.getOptionValue("h");
-
+	 
+	 boolean oops = false;
          // branch based on provided options
          if (cmdLine.hasOption("r") || cmdLine.hasOption("t")) {
              RunnableWorkflow runnableWorkflow = new RunnableWorkflow(homeDirName);
@@ -428,7 +433,14 @@ public class Workflow <T extends WorkflowStep>{
              workflow.setWorkflowGraph(rootGraph);      
              String desiredStatesStr = cmdLine.getOptionValue("d"); 
              String[] desiredStates = desiredStatesStr.split(",");
-             workflow.reportSteps(desiredStates);            
+	     String[] allowedStates = {READY, ON_DECK, RUNNING, DONE, FAILED, ALL};
+	     Arrays.sort(allowedStates);
+	     for (String state : desiredStates) {
+		 if (Arrays.binarySearch(allowedStates, state) < 0)
+		     oops = true;
+	     }
+
+             if (!oops) workflow.reportSteps(desiredStates);            
          } 
          
          else if (cmdLine.hasOption("reset")) {
@@ -437,9 +449,15 @@ public class Workflow <T extends WorkflowStep>{
          } 
          
          else {
-             Utilities.usage(cmdlineSyntax, cmdDescrip, getUsageNotes(), options);
+	     oops = true;
          }
-         System.exit(0);
+	 if (oops) {
+             Utilities.usage(cmdlineSyntax, cmdDescrip, getUsageNotes(), options);
+	     System.exit(1);
+	     
+	 } else {
+	     System.exit(0);
+	 }
      }
      
      private static String getUsageNotes() {
@@ -451,7 +469,9 @@ public class Workflow <T extends WorkflowStep>{
      + "     steps.prop         (steps config)" + nl
      + "     stepsGlobal.prop   (global steps config)" + nl
      + "     resources.xml      [future]" + nl
-     + nl                              
+     + nl + nl   
+     + "Allowed states:  READY, ON_DECK, RUNNING, DONE, FAILED, ALL"
+     + nl + nl                        
      + "Examples:" + nl
      + nl     
      + "  run a workflow:" + nl

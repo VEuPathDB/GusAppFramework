@@ -8,6 +8,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Formatter;
 
 public class RunnableWorkflowStep extends WorkflowStep {
     
@@ -22,12 +23,11 @@ public class RunnableWorkflowStep extends WorkflowStep {
         } else { // this step has been changed by wrapper or pilot UI. log change.
             String stateMsg = "";
             String offlineMsg = "";
-            if (!state.equals(prevState)) stateMsg = "  " + state;
+            if (!state.equals(prevState)) steplog(state, "");
             if(off_line != prevOffline) {
                 offlineMsg = off_line? "  OFFLINE" : "  ONLINE";
+		steplog("", offlineMsg);
             }
-
-            log("Step '" + getFullName() + "'" + stateMsg + offlineMsg);
             setHandledFlag();
         }
         return state.equals(Workflow.RUNNING)? 1 : 0;
@@ -65,7 +65,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
                     + " WHERE workflow_step_id = " + workflow_step_id
                     + " AND state = '" + Workflow.RUNNING + "'";
                 executeSqlUpdate(sql);
-                log("Step '" + getFullName() + "' FAILED (no wrapper process " + process_id + ")");
+                steplog(Workflow.FAILED, "***");
             }
         } finally {
             if (rs != null) rs.close();
@@ -82,7 +82,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
             if (!parent.getState().equals(Workflow.DONE)) return;
         }
 
-        log("Step '" + getFullName() + "' " + Workflow.ON_DECK);
+        steplog(Workflow.ON_DECK, "");
 
         String sql = "UPDATE apidb.WorkflowStep"  
             + " SET state = '" + Workflow.ON_DECK + "', state_handled = 1" 
@@ -105,10 +105,8 @@ public class RunnableWorkflowStep extends WorkflowStep {
     int runOnDeckStep(Workflow<RunnableWorkflowStep> workflow, boolean testOnly) throws IOException, SQLException {
         if (state.equals(Workflow.ON_DECK) && !off_line) {
 	    if (invokerClassName == null) {
-		if (subgraphXmlFileName != null)
-		    log("Step '" + getFullName() + "' " + Workflow.DONE
-			+ " -- called '" + subgraphXmlFileName + "'");
-		else log("Step '" + getFullName() + "' " + Workflow.DONE);
+		if (subgraphXmlFileName != null) steplog(Workflow.DONE, "call");
+		else steplog(Workflow.DONE, "");
 		goToDone();		
 	    } else {
 		String[] cmd = {"workflowstepwrap", workflow.getHomeDir(),
@@ -125,7 +123,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
 		    cmd2.add("-" + name);
 		    cmd2.add(valueStr);
 		}
-		log("Invoking step '" + getFullName() + "'" );
+		steplog("Invoked", "");
 		Runtime.getRuntime().exec(cmd2.toArray(new String[] {}));
 	    }
             return 1;
@@ -133,8 +131,13 @@ public class RunnableWorkflowStep extends WorkflowStep {
         return 0;
     }
 
-    private void log(String msg) throws IOException {
-        workflowGraph.getWorkflow().log(msg);
+    private void steplog(String col1, String col2) throws IOException {
+	StringBuilder sb = new StringBuilder();
+	Formatter formatter = new Formatter(sb);
+
+	formatter.format("%1$-7s %2$-7s %3$s", col1, col2, getFullName());
+	
+        workflowGraph.getWorkflow().log(sb.toString());
     }
 
     WorkflowStep newStep() {

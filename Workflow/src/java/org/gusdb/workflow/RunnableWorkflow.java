@@ -5,20 +5,13 @@ import java.sql.SQLException;
 
 /*
    to do
-   - xml validation
    - integrate resource pipeline
-   - nested workflows
    - dynamically change allowed num running steps
    - handle changes to graph after running
-   - cascading defaults for config file
-   - check for graph cycles
    - compute cluster
-   - make running order repeatable (sort by order in xml file)
    - improve log formatting (include time stamp)
    - possibly support taking DONE steps offline.  this will require recursion.
    - workflowstep must work even when engine is not running
-   - change param values in xml after workflow has beun running
-   - workflowstep change multiple steps in one command
    - includeIf
 
   
