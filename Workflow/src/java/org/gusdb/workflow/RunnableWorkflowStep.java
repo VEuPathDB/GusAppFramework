@@ -25,7 +25,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
             String offlineMsg = "";
             if (!state.equals(prevState)) steplog(state, "");
             if(off_line != prevOffline) {
-                offlineMsg = off_line? "  OFFLINE" : "  ONLINE";
+                offlineMsg = off_line? "OFFLINE" : "ONLINE";
 		steplog("", offlineMsg);
             }
             setHandledFlag();
@@ -105,7 +105,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
     int runOnDeckStep(Workflow<RunnableWorkflowStep> workflow, boolean testOnly) throws IOException, SQLException {
         if (state.equals(Workflow.ON_DECK) && !off_line) {
 	    if (invokerClassName == null) {
-		if (subgraphXmlFileName != null) steplog(Workflow.DONE, "call");
+		if (subgraphXmlFileName != null) steplog(Workflow.DONE, "(call)");
 		else steplog(Workflow.DONE, "");
 		goToDone();		
 	    } else {
@@ -135,7 +135,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
 	StringBuilder sb = new StringBuilder();
 	Formatter formatter = new Formatter(sb);
 
-	formatter.format("%1$-7s %2$-7s %3$s", col1, col2, getFullName());
+	formatter.format("%1$-8s %2$-8s %3$s", col1, col2, getFullName());
 	
         workflowGraph.getWorkflow().log(sb.toString());
     }
