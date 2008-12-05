@@ -5,14 +5,17 @@ import java.sql.SQLException;
 
 /*
    to do
-   - integrate resource pipeline
-   - dynamically change allowed num running steps
-   - handle changes to graph after running
    - compute cluster
-   - improve log formatting (include time stamp)
+   - handle changes to graph after running
+   - load balancing for different kinds of steps
+   - integrate resource pipeline
+
    - possibly support taking DONE steps offline.  this will require recursion.
    - workflowstep must work even when engine is not running
    - includeIf
+   - generate step documentation
+   - whole system documentation
+   - get manual confirm on -reset
 
   
    Workflow object that runs in two contexts:
