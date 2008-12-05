@@ -167,7 +167,7 @@ sub copyFromCluster {
     $self->getCluster()->copyFrom($fromDir, $fromFile, $toDir);
 }
 
-sub runAndMonitorTaskOnCluster {
+sub runAndMonitorClusterTask {
     my ($self, $test, $user, $server, $logFile, $propFile, $numNodes, $time, $queue, $ppn) = @_;
     my $cmd = "workflowclustertask $propFile $logFile $numNodes $time $queue $ppn";
 #    my $cmd = 'perl -e "$|=1;print q($$);sleep(20);open(F,q(>/home/sfischer/testlog2)); print F q(Done)"';
