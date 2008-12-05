@@ -167,6 +167,25 @@ sub copyFromCluster {
     $self->getCluster()->copyFrom($fromDir, $fromFile, $toDir);
 }
 
+sub runAndMonitorTaskOnCluster {
+    my ($self, $test, $user, $server, $logFile, $propFile, $numNodes, $time, $queue, $ppn) = @_;
+#    my $cmd = "workflowclustertask $propFile $logFile $numNodes $time $queue $ppn";
+    my $cmd = 'perl -e \'print "$$\n";sleep(20);\'';
+    my $processId = $self->runCmd($test, "ssh -2 $user\@$server '$cmd'");
+
+    if ($test) return 1;
+
+    while (1) {
+	sleep(3);
+	my $psOutput = $self->runCmd($test, "ssh -2 $user\@$server 'ps -p $processId'");
+	last if ($psOuput !~ /$processId/);
+    }
+
+    my $done = $self->runCmd($test, "ssh -2 $user\@$server 'tail -1 $logFile'");
+    
+    return $done && $done =~ /Done/;
+}
+
 sub runPlugin {
     my ($self, $test, $plugin, $args) = @_;
 
