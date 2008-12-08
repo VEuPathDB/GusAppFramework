@@ -143,6 +143,12 @@ sub getStepDir {
   return $self->{stepDir};
 }
 
+sub getName {
+  my ($self) = @_;
+
+  return $self->{name};
+}
+
 sub getCluster {
     my ($self) = @_;
 
