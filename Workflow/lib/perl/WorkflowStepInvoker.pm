@@ -3,6 +3,8 @@ package GUS::Workflow::WorkflowStepInvoker;
 @ISA = qw(GUS::Workflow::Base);
 use strict;
 use GUS::Workflow::Base;
+use GUS::Workflow::SshCluster;
+use GUS::Workflow::NfsCluster;
 
 #
 # Super class of workflow steps written in perl, and called by the wrapper
@@ -145,16 +147,23 @@ sub getCluster {
     my ($self) = @_;
 
     if (!$self->{cluster}) {
-	my $clusterServer = $self->getGlobalConfig('clusterServer');
-	my $clusterUser = $self->getGlobalConfig('clusterServer');
+	my $clusterServer = $self->getWorkflowConfig('clusterServer');
+	my $clusterUser = $ENV{USER};
 	if ($clusterServer ne "none") {
-	    $self->{cluster} = GUS::Pipeline::SshCluster->new($clusterServer,
-							      $clusterUser);
+	    $self->{cluster} = GUS::Workflow::SshCluster->new($clusterServer,
+							      $clusterUser,
+							      $self);
 	} else {
-	    $self->{cluster} = GUS::Pipeline::NfsCluster->new();
+	    $self->{cluster} = GUS::Workflow::NfsCluster->new($self);
 	}
     }
     return $self->{cluster};
+}
+
+sub runCmdOnCluster {
+  my ($self, $test, $cmd) = @_;
+
+  $self->getCluster()->runCmdOnCluster($test, $cmd);
 }
 
 sub copyToCluster {
