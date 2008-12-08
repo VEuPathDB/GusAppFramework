@@ -7,16 +7,18 @@ use GUS::Workflow::WorkflowStepInvoker;
 
 usage() unless scalar(@ARGV) >= 5;
 
-my $homeDir = shift(@ARGV);
-my $workflowId = shift(@ARGV);
-my $stepName = shift(@ARGV);
-my $invokerClass = shift(@ARGV);
-my $errFile =  shift(@ARGV);
-my $mode = shift(@ARGV);
-my $paramStrings = \@ARGV;
+my $i = 0;
+my $homeDir = $ARGV[$i++];
+my $workflowId = $ARGV[$i++];
+my $stepName = $ARGV[$i++];
+my $invokerClass = $ARGV[$i++];
+my $errFile =  $ARGV[$i++];
+my $mode = $ARGV[$i++];
+my @paramStrings = @ARGV[$i..$#ARGV];
 
 open (STDERR, ">>$errFile");
 print STDERR "\n\n================== " . localtime() . " ====================\n";
+print STDERR "running wrapper command: $0 " . join(" ", @ARGV) . "\n";
 
 my $invoker = GUS::Workflow::WorkflowStepInvoker->new($homeDir);
 
@@ -24,7 +26,7 @@ $invoker->setRunningState($workflowId, $stepName);
 
 my $stepInvoker =  $invoker->getStepInvoker($invokerClass, $homeDir);
 
-$stepInvoker->setParamValues($paramStrings);
+$stepInvoker->setParamValues(\@paramStrings);
 
 my $status = $stepInvoker->runInWrapper($workflowId, $stepName, $mode, $invokerClass);
 

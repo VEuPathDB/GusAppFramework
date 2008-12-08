@@ -80,6 +80,7 @@ sub getWorkflowConfig {
 	 ['dbiConnectString', "", ""],
 	 ['jdbcConnectString', "", ""],
 	 ['workflowXmlFile', "", ""],
+	 ['clusterServer', "", ""],
 	);
 
     if (!$self->{workflowConfig}) {
