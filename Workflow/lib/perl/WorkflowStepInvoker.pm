@@ -232,7 +232,8 @@ sub runCmd {
 
     my $stepDir = $self->getStepDir();
     my $err = "$stepDir/step.err";
-    $self->log("running:  $cmd\n\n");
+    my $testmode = $test? " (in test mode , so only pretending) " : "";
+    $self->log("running$testmode:  $cmd\n\n");
 
     my $output;
 
