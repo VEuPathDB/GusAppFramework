@@ -110,21 +110,32 @@ public class RunnableWorkflowStep extends WorkflowStep {
 		goToDone();		
 	    } else {
 		String[] cmd = {"workflowstepwrap", workflow.getHomeDir(),
-				workflow.getId().toString(),
-				getFullName(), invokerClassName,
-				getStepDir() + "/step.err",
-				testOnly? "test" : "run"}; 
-
+				    workflow.getId().toString(),
+				    getFullName(), invokerClassName,
+				    getStepDir() + "/step.err",
+				    testOnly? "test" : "run"}; 
 		List<String> cmd2 = new ArrayList<String>();
 		Collections.addAll(cmd2, cmd);
 		for (String name : paramValues.keySet()) {
 		    String valueStr = paramValues.get(name);
 		    valueStr = valueStr.replaceAll("\"", "\\\\\""); 
 		    cmd2.add("-" + name);
-		    cmd2.add(valueStr);
+		    cmd2.add("\"" + valueStr + "\"");
 		}
+
+		// join wrapper command into a single string
+		StringBuilder sb  = new StringBuilder();
+		String delim = "";
+		for (String s : cmd2) { 
+		    sb.append(delim + s);
+		    delim = " ";
+		}
+
+		// call sh directly to force wrapper into background
+		// so it survives a kill of the controller
+		String[] cmd3 = {"sh", "-c", sb.toString() + " &"};
 		steplog("Invoked", "");
-		Runtime.getRuntime().exec(cmd2.toArray(new String[] {}));
+		Runtime.getRuntime().exec(cmd3);
 	    }
             return 1;
         } 
