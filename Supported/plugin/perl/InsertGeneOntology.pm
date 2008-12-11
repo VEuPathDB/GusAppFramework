@@ -1,4 +1,4 @@
-package ApiCommonData::Load::Plugin::InsertGOTermsFromObo;
+package GUS::Supported::Plugin::InsertGeneOntology;
 
 @ISA = qw(GUS::PluginMgr::Plugin);
 
