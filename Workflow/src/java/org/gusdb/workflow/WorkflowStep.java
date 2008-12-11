@@ -3,6 +3,7 @@ package org.gusdb.workflow;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -52,7 +53,8 @@ public class WorkflowStep  {
     protected String subgraphXmlFileName;
     protected boolean isGlobal = false;
     List<? extends WorkflowStep> sharedGlobalSteps;
-    String signature;
+    String paramsSignature;
+    int depthFirstOrder;
     
     // state from db
     protected int workflow_step_id;
@@ -197,15 +199,24 @@ public class WorkflowStep  {
         return subgraphXmlFileName;
     }
     
-    String getSignature() {
-        if (signature == null) 
-            signature = invokerClassName + paramValues.toString();
-        return signature;
+    String getParamsSignature() throws NoSuchAlgorithmException, Exception {
+        if (paramsSignature == null) 
+            paramsSignature = Utilities.encrypt(paramValues.toString());
+        return paramsSignature;
+    }
+
+    int getDepthFirstOrder() {
+	return depthFirstOrder;
+    }
+
+    void setDepthFirstOrder(int o) {
+	depthFirstOrder = o;
     }
     
     static PreparedStatement getPreparedInsertStmt(Connection dbConnection, int workflowId) throws SQLException {
-	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, off_line)"
-	    + " VALUES (apidb.workflowstep_sq.nextval, " + workflowId + ", ?, ?, 1, 0)";
+	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, off_line, depth_first_order, step_class_name, param_values_digest)"
+	    + " VALUES (apidb.workflowstep_sq.nextval, " + workflowId
+	    + ", ?, ?, 1, 0, ?, ?, ?)";
 	return dbConnection.prepareStatement(sql);
     }
 
@@ -214,6 +225,9 @@ public class WorkflowStep  {
     void initializeStepTable(PreparedStatement stmt) throws SQLException {
 	stmt.setString(1, getFullName());
 	stmt.setString(2, Workflow.READY);
+	stmt.setInt(3, depthFirstOrder);
+	stmt.setString(4, invokerClassName);
+	stmt.setString(5, paramsSignature);
 	stmt.execute();
     }
 

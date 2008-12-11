@@ -3,6 +3,7 @@ package org.gusdb.workflow;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -95,6 +96,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
             for (T rootStep : rootSteps) {
                 rootStep.addToList((List<WorkflowStep>)sortedSteps);
             }
+	    int depthFirstOrder = 0;
+	    for (T step : sortedSteps) step.setDepthFirstOrder(depthFirstOrder++); 
         }
         return sortedSteps;
     }
@@ -269,10 +272,10 @@ public class WorkflowGraph<T extends WorkflowStep> {
         }
     }
     
-    private void initializeGlobalSteps() {
+    private void initializeGlobalSteps() throws NoSuchAlgorithmException, Exception {
         for (T step : getSteps()) {
             if (step.getIsGlobal()) {
-                String stepSignature = step.getSignature();
+                String stepSignature = step.getParamsSignature();
                 if (!globalSteps.containsKey(stepSignature)) {
                     globalSteps.put(stepSignature, new ArrayList<T>());
                 }

@@ -9,6 +9,7 @@ import java.sql.SQLException;
    - handle changes to graph after running
    - load balancing for different kinds of steps
    - integrate resource pipeline
+   - undo
 
    - possibly support taking DONE steps offline.  this will require recursion.
    - workflowstep must work even when engine is not running
