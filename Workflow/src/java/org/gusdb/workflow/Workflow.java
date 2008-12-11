@@ -17,6 +17,7 @@ import java.util.Properties;
 import java.util.Arrays;
 import java.text.SimpleDateFormat;
 import java.text.FieldPosition;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
@@ -125,7 +126,7 @@ public class Workflow <T extends WorkflowStep>{
     
     // write the workflow and steps to the db
     // for now, assume the workflow steps don't change over the life of a workflow
-    void initDb() throws SQLException, IOException {
+    void initDb() throws SQLException, IOException, Exception, NoSuchAlgorithmException {
 
         name = getWorkflowConfig("name");
         version = getWorkflowConfig("version");
@@ -170,7 +171,7 @@ public class Workflow <T extends WorkflowStep>{
         // write all steps to WorkflowStep table
         PreparedStatement pstmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
         try {
-            for (WorkflowStep step : workflowGraph.getSteps()) {
+            for (WorkflowStep step : workflowGraph.getSortedSteps()) {
                 log("  " + step.getFullName());
                 step.initializeStepTable(pstmt);
             }
