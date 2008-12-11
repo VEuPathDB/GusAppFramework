@@ -214,7 +214,7 @@ public class WorkflowStep  {
     }
     
     static PreparedStatement getPreparedInsertStmt(Connection dbConnection, int workflowId) throws SQLException {
-	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, off_line, depth_first_order, step_class_name, param_values_digest)"
+	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, off_line, depth_first_order, step_class, param_values_digest)"
 	    + " VALUES (apidb.workflowstep_sq.nextval, " + workflowId
 	    + ", ?, ?, 1, 0, ?, ?, ?)";
 	return dbConnection.prepareStatement(sql);
@@ -222,12 +222,12 @@ public class WorkflowStep  {
 
     // write this step to the db, if not already there.
     // called during workflow initialization
-    void initializeStepTable(PreparedStatement stmt) throws SQLException {
+    void initializeStepTable(PreparedStatement stmt) throws SQLException, NoSuchAlgorithmException, Exception{
 	stmt.setString(1, getFullName());
 	stmt.setString(2, Workflow.READY);
 	stmt.setInt(3, depthFirstOrder);
 	stmt.setString(4, invokerClassName);
-	stmt.setString(5, paramsSignature);
+	stmt.setString(5, getParamsSignature());
 	stmt.execute();
     }
 
