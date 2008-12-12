@@ -179,7 +179,7 @@ EOSQL
       die "No SO term for transcript; how can I tell if this is protein-coding or not?\n";
     }
 
-    if ($transcriptSOTerm ne 'protein_coding') {
+    if ($transcriptSOTerm ne 'protein_coding' && $transcriptSOTerm ne 'pseudogene') {
       warn "Skipping transcript " . $transcript->getSourceId() . ", not a protein-coding transcript\n";
       next;
     }
