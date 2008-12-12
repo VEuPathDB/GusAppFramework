@@ -11,7 +11,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Properties;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 import org.xml.sax.SAXException;
 
@@ -92,11 +97,12 @@ public class WorkflowGraph<T extends WorkflowStep> {
     @SuppressWarnings("unchecked")
     List<T> getSortedSteps() {
         if (sortedSteps == null) {
+	    int depthFirstOrder = 0;
             sortedSteps = new ArrayList<T>();
             for (T rootStep : rootSteps) {
                 rootStep.addToList((List<WorkflowStep>)sortedSteps);
             }
-	    int depthFirstOrder = 0;
+	    // second pass to give everybody their order number;
 	    for (T step : sortedSteps) step.setDepthFirstOrder(depthFirstOrder++); 
         }
         return sortedSteps;
@@ -275,16 +281,99 @@ public class WorkflowGraph<T extends WorkflowStep> {
     private void initializeGlobalSteps() throws NoSuchAlgorithmException, Exception {
         for (T step : getSteps()) {
             if (step.getIsGlobal()) {
-                String stepSignature = step.getParamsSignature();
-                if (!globalSteps.containsKey(stepSignature)) {
-                    globalSteps.put(stepSignature, new ArrayList<T>());
+                String stepDigest = step.getParamsDigest();
+                if (!globalSteps.containsKey(stepDigest)) {
+                    globalSteps.put(stepDigest, new ArrayList<T>());
                 }
-                List<T> sharedGlobalSteps = globalSteps.get(stepSignature);
+                List<T> sharedGlobalSteps = globalSteps.get(stepDigest);
                 sharedGlobalSteps.add(step);
                 step.setSharedGlobalSteps(sharedGlobalSteps);
             }
         }
         
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    //    Manage DB 
+    ////////////////////////////////////////////////////////////////////////
+
+    // check if the in-memory graph matches that in the db exactly
+    boolean inDbExactly() throws SQLException, FileNotFoundException, NoSuchAlgorithmException, IOException, Exception {
+	String sql = "select name, params_digest, depth_first_order, step_class, state"
+	    + " from apidb.workflowstep"  
+	    + " where workflow_id = " + workflow.getId()
+	    + " order by depth_first_order";
+
+	Statement stmt = null;
+	ResultSet rs = null;
+	try {
+	    stmt = workflow.getDbConnection().createStatement();
+	    rs = stmt.executeQuery(sql);
+	    for (T step : getSortedSteps()) {
+		System.err.println("checkin step " + step.getFullName());
+		if (!rs.next()) return false;
+		String dbName = rs.getString(1);
+		String dbDigest = rs.getString(2);
+		int dbDepthFirstOrder = rs.getInt(3);
+		String dbClassName = rs.getString(4);
+		String dbState = rs.getString(5);
+
+		boolean stepClassMatch = 
+		    (dbClassName == null && step.getStepClassName() == null)
+		    || ((dbClassName != null && step.getStepClassName() != null)
+			&& step.getStepClassName().equals(dbClassName));
+
+		boolean mismatch = !step.getFullName().equals(dbName)
+		    || !step.getParamsDigest().equals(dbDigest)
+		    || !stepClassMatch
+		  || step.getDepthFirstOrder() != dbDepthFirstOrder;
+
+		if (mismatch) {
+		    if (!dbState.equals(Workflow.READY) 
+			&& !dbState.equals(Workflow.ON_DECK)) {
+			Utilities.error("Step '" + dbName +"' has changed in the XML file illegally:  it is in the state '" + dbState + "'");
+		    }
+		    return false;
+		}
+	    }
+	    if (rs.next()) return false;
+	} finally {
+	    if (rs != null) rs.close();
+	    if (stmt != null) stmt.close(); 
+	}  
+	return true;
+    }
+
+    // remove from the db all READY or ON_DECK steps
+    void removeReadyStepsFromDb() throws SQLException, FileNotFoundException, IOException {
+	String sql = "delete from apidb.workflowstep where workflow_id = "
+	    + workflow.getId() + 
+	    " and (state = 'READY' or state = 'ON_DECK')";
+	workflow.executeSqlUpdate(sql);
+    }
+
+    Set<String> getStepNamesInDb() throws SQLException, FileNotFoundException, IOException {
+	Set<String> stepsInDb = new HashSet<String>();
+
+	String sql = "select name"
+	    + " from apidb.workflowstep"  
+	    + " where workflow_id = " + workflow.getId()
+	    + " order by depth_first_order";
+
+	Statement stmt = null;
+	ResultSet rs = null;
+	try {
+	    stmt = workflow.getDbConnection().createStatement();
+	    rs = stmt.executeQuery(sql);
+	    while (rs.next()) {
+		String dbName = rs.getString(1);
+		stepsInDb.add(dbName);
+	    }
+	} finally {
+	    if (rs != null) rs.close();
+	    if (stmt != null) stmt.close(); 
+	}  
+	return stepsInDb;
     }
     
     ////////////////////////////////////////////////////////////////////////

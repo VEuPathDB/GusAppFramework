@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 
@@ -53,7 +54,7 @@ public class WorkflowStep  {
     protected String subgraphXmlFileName;
     protected boolean isGlobal = false;
     List<? extends WorkflowStep> sharedGlobalSteps;
-    String paramsSignature;
+    String paramsDigest;
     int depthFirstOrder;
     
     // state from db
@@ -89,6 +90,10 @@ public class WorkflowStep  {
     }
     
     protected boolean getIsGlobal() { return isGlobal; }
+
+    String getStepClassName() {
+	return invokerClassName;
+    }
     
     void setSharedGlobalSteps(List<? extends WorkflowStep> sharedGlobalSteps) {
         this.sharedGlobalSteps = sharedGlobalSteps;
@@ -199,10 +204,10 @@ public class WorkflowStep  {
         return subgraphXmlFileName;
     }
     
-    String getParamsSignature() throws NoSuchAlgorithmException, Exception {
-        if (paramsSignature == null) 
-            paramsSignature = Utilities.encrypt(paramValues.toString());
-        return paramsSignature;
+    String getParamsDigest() throws NoSuchAlgorithmException, Exception {
+        if (paramsDigest == null) 
+            paramsDigest = Utilities.encrypt(paramValues.toString());
+        return paramsDigest;
     }
 
     int getDepthFirstOrder() {
@@ -214,21 +219,35 @@ public class WorkflowStep  {
     }
     
     static PreparedStatement getPreparedInsertStmt(Connection dbConnection, int workflowId) throws SQLException {
-	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, off_line, depth_first_order, step_class, param_values_digest)"
+	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, off_line, depth_first_order, step_class, params_digest)"
 	    + " VALUES (apidb.workflowstep_sq.nextval, " + workflowId
 	    + ", ?, ?, 1, 0, ?, ?, ?)";
 	return dbConnection.prepareStatement(sql);
     }
 
+    static PreparedStatement getPreparedUpdateStmt(Connection dbConnection, int workflowId) throws SQLException {
+	String sql = "UPDATE apidb.workflowstep"
+	    + " SET depth_first_order = ?"
+	    + " WHERE name = ?"
+	    + " AND workflow_id = " + workflowId;
+	return dbConnection.prepareStatement(sql);
+    }
+
     // write this step to the db, if not already there.
     // called during workflow initialization
-    void initializeStepTable(PreparedStatement stmt) throws SQLException, NoSuchAlgorithmException, Exception{
-	stmt.setString(1, getFullName());
-	stmt.setString(2, Workflow.READY);
-	stmt.setInt(3, depthFirstOrder);
-	stmt.setString(4, invokerClassName);
-	stmt.setString(5, getParamsSignature());
-	stmt.execute();
+    void initializeStepTable(Set<String> stepNamesInDb, PreparedStatement insertStmt, PreparedStatement updateStmt) throws SQLException, NoSuchAlgorithmException, Exception {
+	if (stepNamesInDb.contains(getFullName())) {
+	    updateStmt.setInt(1, getDepthFirstOrder());
+	    updateStmt.setString(2, getFullName());
+	    updateStmt.execute();
+	} else {
+	    insertStmt.setString(1, getFullName());
+	    insertStmt.setString(2, Workflow.READY);
+	    insertStmt.setInt(3, depthFirstOrder);
+	    insertStmt.setString(4, invokerClassName);
+	    insertStmt.setString(5, getParamsDigest());
+	    insertStmt.execute();
+	} 
     }
 
     static PreparedStatement getPreparedDependsStmt(Connection dbConnection) throws SQLException {

@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Set;
 import java.util.Properties;
 import java.util.Arrays;
 import java.text.SimpleDateFormat;
@@ -128,6 +129,12 @@ public class Workflow <T extends WorkflowStep>{
     // for now, assume the workflow steps don't change over the life of a workflow
     void initDb() throws SQLException, IOException, Exception, NoSuchAlgorithmException {
 
+	boolean stepTableEmpty = initWorkflowTable();
+	initWorkflowStepTable(stepTableEmpty);
+    }
+
+    boolean  initWorkflowTable() throws SQLException, IOException, Exception, NoSuchAlgorithmException {
+
         name = getWorkflowConfig("name");
         version = getWorkflowConfig("version");
 
@@ -142,7 +149,7 @@ public class Workflow <T extends WorkflowStep>{
         try {
             stmt = getDbConnection().createStatement();
             rs = stmt.executeQuery(sql);
-            if (rs.next()) return;
+            if (rs.next()) return false;
         } finally {
             if (rs != null) rs.close();
             if (stmt != null) stmt.close(); 
@@ -167,16 +174,42 @@ public class Workflow <T extends WorkflowStep>{
         sql = "INSERT INTO apidb.workflow (workflow_id, name, version)"  
             + " VALUES (" + workflow_id + ", '" + name + "', '" + version + "')";
         executeSqlUpdate(sql);
+	return true;
+    }
+
+    void  initWorkflowStepTable(boolean stepTableEmpty) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
+
+	if (!stepTableEmpty) {
+	    // see if our current graph is already in db (exactly)
+	    // if so, return
+	    // throw an error if any DONE or FAILED steps are changed
+	    if (workflowGraph.inDbExactly()) {
+		log("Graph in XML matches graph in database.  No need to update database.");
+		return;
+	    }
+
+	    log("Workflow graph in XML has changed.  Updating DB with new graph.");
+
+	    // if graph has changed, remove all READY/ON_DECK steps from db
+	    workflowGraph.removeReadyStepsFromDb();
+	    
+	}
+
+
+	Set<String> stepNamesInDb = workflowGraph.getStepNamesInDb();
 
         // write all steps to WorkflowStep table
-        PreparedStatement pstmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
+	// for steps that are already there, update the depthFirstOrder
+        PreparedStatement insertStepPstmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
+	PreparedStatement updateStepPstmt = WorkflowStep.getPreparedUpdateStmt(getDbConnection(), workflow_id);
         try {
             for (WorkflowStep step : workflowGraph.getSortedSteps()) {
                 log("  " + step.getFullName());
-                step.initializeStepTable(pstmt);
+                step.initializeStepTable(stepNamesInDb, insertStepPstmt, updateStepPstmt);
             }
         } finally {
-            pstmt.close();
+            updateStepPstmt.close();
+            insertStepPstmt.close();
         }
 
         // update steps in memory, to get their new IDs
@@ -241,8 +274,11 @@ public class Workflow <T extends WorkflowStep>{
             while (rs.next()) {
                 String stepName = rs.getString("NAME");
                 WorkflowStep step = workflowGraph.getStepsByName().get(stepName);
-		if (step == null) error("Engine can't find step with name '" 
-					+ stepName + "'");
+		if (step == null) {
+		    (new Throwable()).printStackTrace();
+		     error("Engine can't find step with name '" 
+			   + stepName + "'");
+		}
                 step.setFromDbSnapshot(rs);
             }
         } finally {
