@@ -13,7 +13,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Enumeration;
 import java.util.Set;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Arrays;
 import java.text.SimpleDateFormat;
@@ -53,12 +55,15 @@ public class Workflow <T extends WorkflowStep>{
     protected Integer allowed_running_steps;
     protected Date start_time;
     protected Date end_time;
+    
+    Map<String,Integer> filledSlots;
+    Properties loadBalancingConfig;
 
     String[] homeDirSubDirs = {"logs", "steps", "data"};
 
 
-    public Workflow(String homeDir) {
-	this.homeDir = homeDir + "/";   
+    public Workflow(String homeDir) throws FileNotFoundException, IOException {
+	this.homeDir = homeDir + "/";
     }
     
     /////////////////////////////////////////////////////////////////////////
@@ -268,6 +273,8 @@ public class Workflow <T extends WorkflowStep>{
         // stuff each row into the snapshot, keyed on step name
         Statement stmt = null;
         ResultSet rs = null;
+        for (String category : filledSlots.keySet())
+            filledSlots.put(category, 0);
         try {
             stmt = getDbConnection().createStatement();
             rs = stmt.executeQuery(sql);
@@ -280,6 +287,13 @@ public class Workflow <T extends WorkflowStep>{
 			   + stepName + "'");
 		}
                 step.setFromDbSnapshot(rs);
+                if (step.getState().equals(RUNNING)) {
+                    for (String loadType : step.getLoadTypes()) {
+                        Integer f = filledSlots.get(loadType);
+                        f = f == null? 0 : f;
+                        filledSlots.put(loadType, f + 1);
+                    }
+                }
             }
         } finally {
             if (rs != null) rs.close();
@@ -348,6 +362,14 @@ public class Workflow <T extends WorkflowStep>{
          ['workflowXmlFile', "", ""],
         );
         */
+    }
+ 
+    Integer getLoadBalancingConfig(String key) throws FileNotFoundException, IOException {
+        if (loadBalancingConfig == null) {
+            loadBalancingConfig = new Properties();
+            loadBalancingConfig.load(new FileInputStream(getHomeDir() + "/config/loadBalance.prop"));
+        }
+        return new Integer(loadBalancingConfig.getProperty(key));
     }
 
     void error(String msg) {

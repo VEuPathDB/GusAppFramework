@@ -24,6 +24,9 @@
             <optional>
               <attribute name="includeIf"/>
             </optional>
+            <optional>
+              <attribute name="loadType"/>
+            </optional>
             <zeroOrMore>
               <element name="paramValue">
                 <attribute name="name" />

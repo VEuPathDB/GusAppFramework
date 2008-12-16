@@ -1,5 +1,6 @@
 package org.gusdb.workflow;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -48,7 +49,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
     final static String nl = System.getProperty("line.separator");
 
-    public RunnableWorkflow(String homeDir) {
+    public RunnableWorkflow(String homeDir) throws FileNotFoundException, IOException {
         super(homeDir);
     }
 
@@ -99,8 +100,22 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
     private void fillOpenSlots(boolean testOnly) throws IOException, SQLException {
 	for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
-	    if (runningCount >= allowed_running_steps) break;
-	    runningCount += step.runOnDeckStep(this, testOnly);
+	    String[] loadTypes = step.getLoadTypes();
+	    boolean okToRun = true;
+	    for (String loadType : loadTypes) {
+	        if (filledSlots.get(loadType) >= getLoadBalancingConfig(loadType)) {
+	            okToRun = false;
+	            break;
+	        }
+	    }
+	    if (okToRun) {
+	        for (String loadType : loadTypes) {
+	            Integer f = filledSlots.get(loadType);
+	            f = f == null? 0 : f;
+	            filledSlots.put(loadType, f+1);
+	        }
+	        step.runOnDeckStep(this, testOnly);	  
+	    }
 	}
     }
 
