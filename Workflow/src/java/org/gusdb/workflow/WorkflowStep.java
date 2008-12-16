@@ -56,6 +56,7 @@ public class WorkflowStep  {
     List<? extends WorkflowStep> sharedGlobalSteps;
     String paramsDigest;
     int depthFirstOrder;
+    String[] loadTypes = {"default"};
     
     // state from db
     protected int workflow_step_id;
@@ -85,6 +86,14 @@ public class WorkflowStep  {
         this.invokerClassName = invokerClassName;
     }
     
+    public void setLoadTypes(String loadTypes) {
+        this.loadTypes = loadTypes.split(",");
+    }
+    
+    public String[] getLoadTypes() {
+        return loadTypes;
+    }
+    
     public void setIsGlobal(boolean isGlobal) {
         this.isGlobal  = isGlobal;
     }
@@ -102,6 +111,12 @@ public class WorkflowStep  {
     public void setWorkflowGraph(WorkflowGraph<? extends WorkflowStep> workflowGraph) {
         this.workflowGraph = workflowGraph;
     }   
+    
+    void checkLoadTypes() throws FileNotFoundException, IOException {
+        for (String loadType : loadTypes) {
+            workflowGraph.getWorkflow().getLoadBalancingConfig(loadType);
+        }
+    }
 
     void addParent(WorkflowStep parent) {
 	parents.add(parent);

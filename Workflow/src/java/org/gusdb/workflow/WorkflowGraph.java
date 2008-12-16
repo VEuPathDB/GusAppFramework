@@ -73,12 +73,13 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	this.name = name;
     }
 
-    public void addStep(T step) {
+    public void addStep(T step) throws FileNotFoundException, IOException {
         step.setWorkflowGraph(this);
         String stepName = step.getBaseName();
         if (stepsByName.containsKey(stepName))
             Utilities.error("in graph " + name + ", non-unique step name: '" + stepName + "'");
         stepsByName.put(stepName, step);
+        step.checkLoadTypes();
     }
 
     void setWorkflow(Workflow<T> workflow) {
