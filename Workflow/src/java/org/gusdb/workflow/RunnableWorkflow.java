@@ -54,7 +54,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     }
 
     // run the controller
-    void run(int numSteps, boolean testOnly) throws Exception {
+    void run(boolean testOnly) throws Exception {
         initHomeDir();         // initialize workflow home directory, if needed
 
         initDb();              // write workflow to db, if not already there
@@ -65,7 +65,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
 	readOfflineFromFile(); // read start-up offline requests
 
-	setRunningState(numSteps,testOnly); // set db state. fail if already running
+	setRunningState(testOnly); // set db state. fail if already running
 
 	// start polling
 	while (true) {
@@ -99,22 +99,22 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     }
 
     private void fillOpenSlots(boolean testOnly) throws IOException, SQLException {
-	for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
+	for (RunnableWorkflowStep step : workflowGraph.getSortedSteps()) {
 	    String[] loadTypes = step.getLoadTypes();
 	    boolean okToRun = true;
 	    for (String loadType : loadTypes) {
-	        if (filledSlots.get(loadType) >= getLoadBalancingConfig(loadType)) {
+	        if (filledSlots.get(loadType) != null && filledSlots.get(loadType) >= getLoadBalancingConfig(loadType)) {
 	            okToRun = false;
 	            break;
 	        }
 	    }
 	    if (okToRun) {
+	        int slotsUsed = step.runOnDeckStep(this, testOnly);	  
 	        for (String loadType : loadTypes) {
 	            Integer f = filledSlots.get(loadType);
 	            f = f == null? 0 : f;
-	            filledSlots.put(loadType, f+1);
+	            filledSlots.put(loadType, f + slotsUsed);
 	        }
-	        step.runOnDeckStep(this, testOnly);	  
 	    }
 	}
     }
@@ -127,7 +127,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	process.waitFor();
     }
 
-    private void setRunningState(int numSteps, boolean testOnly) throws SQLException, IOException, java.lang.InterruptedException {
+    private void setRunningState(boolean testOnly) throws SQLException, IOException, java.lang.InterruptedException {
 
 	if (state != null && state.equals(RUNNING)) {
 	    String cmd = "ps -p " + process_id + "> /dev/null";
@@ -142,13 +142,10 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	if (testOnly) log("TESTING workflow....");
 
 	log("Setting workflow state to " + RUNNING
-	        + " and allowed-number-of-running-steps to " 
-	        + numSteps + " (process id = " + processId + ")");
-
-	allowed_running_steps = numSteps;
+	    + " (process id = " + processId + ")");
 
 	String sql = "UPDATE apidb.Workflow" + nl
-	    + "SET state = '" + RUNNING + "', process_id = " + processId + ", allowed_running_steps = " + numSteps + nl
+	    + "SET state = '" + RUNNING + "', process_id = " + processId + nl
 	    + "WHERE workflow_id = " + workflow_id;
 	executeSqlUpdate(sql);
     }
