@@ -79,7 +79,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
         if (stepsByName.containsKey(stepName))
             Utilities.error("in graph " + name + ", non-unique step name: '" + stepName + "'");
         stepsByName.put(stepName, step);
-        step.checkLoadTypes();
     }
 
     void setWorkflow(Workflow<T> workflow) {
@@ -117,9 +116,12 @@ public class WorkflowGraph<T extends WorkflowStep> {
         return stepsByName.values();
     }
     
-    void makeParentChildLinks() {
-	// make the parent/child links from the remembered dependencies
+    // clean up after building from xml
+    void postprocessSteps() throws FileNotFoundException, IOException {
+
 	for (T step : getSteps()) {
+
+	    // make the parent/child links from the remembered dependencies
             for (Name dependName : step.getDependsNames()) {
                 String stepName = step.getBaseName();
                 T parent = stepsByName.get(dependName.getName());
@@ -131,11 +133,14 @@ public class WorkflowGraph<T extends WorkflowStep> {
                 parent.addChild(step);
             }
             
-            // while we are here, keep track of all subgraph xml files
+            // keep track of all subgraph xml files
             String sgxfn = step.getSubgraphXmlFileName();
             if (sgxfn != null) {
                 stepsWithSubgraph.put(step, sgxfn);
             }
+
+	    // validate loadType
+	    step.checkLoadTypes();
         }
     }
 
@@ -311,7 +316,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    stmt = workflow.getDbConnection().createStatement();
 	    rs = stmt.executeQuery(sql);
 	    for (T step : getSortedSteps()) {
-		System.err.println("checkin step " + step.getFullName());
 		if (!rs.next()) return false;
 		String dbName = rs.getString(1);
 		String dbDigest = rs.getString(2);

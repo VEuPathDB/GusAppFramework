@@ -16,6 +16,7 @@ import java.sql.Statement;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Properties;
 import java.util.Arrays;
 import java.text.SimpleDateFormat;
@@ -52,11 +53,10 @@ public class Workflow <T extends WorkflowStep>{
     protected Integer workflow_id;
     protected String state;
     protected String process_id;
-    protected Integer allowed_running_steps;
     protected Date start_time;
     protected Date end_time;
     
-    Map<String,Integer> filledSlots;
+    Map<String,Integer> filledSlots = new HashMap<String,Integer>();
     Properties loadBalancingConfig;
 
     String[] homeDirSubDirs = {"logs", "steps", "data"};
@@ -239,7 +239,7 @@ public class Workflow <T extends WorkflowStep>{
         if (workflow_id == null) {
             name = getWorkflowConfig("name");
             version = getWorkflowConfig("version");
-            String sql = "select workflow_id, state, process_id, start_time, end_time, allowed_running_steps"  
+            String sql = "select workflow_id, state, process_id, start_time, end_time"  
                 + " from apidb.workflow"  
                 + " where name = '" + name + "'"  
                 + " and version = '" + version + "'" ;
@@ -256,7 +256,6 @@ public class Workflow <T extends WorkflowStep>{
                 process_id = rs.getString(3);
                 start_time = rs.getDate(4);
                 end_time = rs.getDate(5);
-                allowed_running_steps = rs.getInt(6);
             } finally {
                 if (rs != null) rs.close();
                 if (stmt != null) stmt.close(); 
@@ -393,8 +392,7 @@ public class Workflow <T extends WorkflowStep>{
         System.out.println("Workflow '" + name + " " + version  + "'" + nl
                            + "workflow_id:           " + workflow_id + nl
                            + "state:                 " + state + nl
-                           + "process_id:            " + process_id + nl
-                           + "allowed_running_steps: " + allowed_running_steps + nl);
+                           + "process_id:            " + process_id + nl);
     }
 
     /* Step Reporter: called by command line UI to report state of steps.
@@ -476,8 +474,7 @@ public class Workflow <T extends WorkflowStep>{
              runnableWorkflow.setWorkflowGraph(rootGraph);
              String numSteps = cmdLine.getOptionValue("r");
              boolean testOnly = cmdLine.hasOption("t");
-             if (testOnly) numSteps = cmdLine.getOptionValue("t");
-             runnableWorkflow.run(Integer.parseInt(numSteps), testOnly);                
+             runnableWorkflow.run(testOnly);                
          } 
          
          else if (cmdLine.hasOption("q")) {
@@ -534,10 +531,10 @@ public class Workflow <T extends WorkflowStep>{
      + "Examples:" + nl
      + nl     
      + "  run a workflow:" + nl
-     + "    % workflow -h workflow_dir -r 3" + nl
+     + "    % workflow -h workflow_dir -r" + nl
      + nl     
      + "  test a workflow:" + nl
-     + "    % workflow -h workflow_dir -t 3" + nl
+     + "    % workflow -h workflow_dir -t" + nl
      + nl     
      + "  quick report of workflow state" + nl
      + "    % workflow -h workflow_dir -q" + nl
@@ -560,12 +557,10 @@ public class Workflow <T extends WorkflowStep>{
          Utilities.addOption(options, "h", "Workflow homedir (see below)");
          
          OptionGroup optionalOptions = new OptionGroup();
-         Option run = new Option("r", true,
-              "Run a strategy, and specify the number of steps allowed to run simultaneously");
+         Option run = new Option("r", "Run a workflow");
          optionalOptions.addOption(run);
          
-         Option test = new Option("t", true,
-         "Test a strategy, and specify the number of steps allowed to run simultaneously");
+         Option test = new Option("t", "Test a workflow");
          optionalOptions.addOption(test);
     
          Option detailedRep = new Option("d", true, "Print detailed report");
