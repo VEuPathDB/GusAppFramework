@@ -368,6 +368,8 @@ public class Workflow <T extends WorkflowStep>{
             loadBalancingConfig = new Properties();
             loadBalancingConfig.load(new FileInputStream(getHomeDir() + "/config/loadBalance.prop"));
         }
+	String value = loadBalancingConfig.getProperty(key);
+	if (value == null) return null;
         return new Integer(loadBalancingConfig.getProperty(key));
     }
 

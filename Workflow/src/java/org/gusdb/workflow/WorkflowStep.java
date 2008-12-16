@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 
@@ -56,7 +57,7 @@ public class WorkflowStep  {
     List<? extends WorkflowStep> sharedGlobalSteps;
     String paramsDigest;
     int depthFirstOrder;
-    String[] loadTypes = {"default"};
+    String[] loadTypes = {"total"};
     
     // state from db
     protected int workflow_step_id;
@@ -86,8 +87,11 @@ public class WorkflowStep  {
         this.invokerClassName = invokerClassName;
     }
     
-    public void setLoadTypes(String loadTypes) {
-        this.loadTypes = loadTypes.split(",");
+    public void setStepLoadTypes(String loadTypes) {
+	String[] tmp = loadTypes.split(",\\s*");
+	this.loadTypes = new String[tmp.length+1];
+	this.loadTypes[0] = "total";
+	for (int i=0; i<tmp.length; i++) this.loadTypes[i+1] = tmp[i];
     }
     
     public String[] getLoadTypes() {
@@ -114,7 +118,8 @@ public class WorkflowStep  {
     
     void checkLoadTypes() throws FileNotFoundException, IOException {
         for (String loadType : loadTypes) {
-            workflowGraph.getWorkflow().getLoadBalancingConfig(loadType);
+            Integer val = workflowGraph.getWorkflow().getLoadBalancingConfig(loadType);
+	    if (val == null) Utilities.error("Step " + getFullName() + " has unknown stepLoadType: " + loadType);
         }
     }
 
