@@ -115,6 +115,7 @@ sub getConfig {
     $self->error("Can't find property '$prop' for step '$self->{name}' or for class '$className' in file $propFile\n");
   }
   $self->log("accessing step property '$prop=$value'");
+  return $value;
 }
 
 sub getGlobalConfig {
