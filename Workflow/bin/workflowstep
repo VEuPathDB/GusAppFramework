@@ -93,13 +93,13 @@ Allowed state changes are:
 Offline status may not be changed when the step is $RUNNING
 
 Examples
-  % workflowstep -h workflow_dir stepname_pattern -l
+  % workflowstep -h workflow_dir -p stepname_pattern -l
 
-  % workflowstep -h workflow_dir stepname_pattern kill
+  % workflowstep -h workflow_dir -p stepname_pattern kill
 
-  % workflowstep -h workflow_dir stepname_pattern online
+  % workflowstep -h workflow_dir -f file_of_steps online
 
-  % workflowstep -h workflow_dir stepname_pattern offline ready
+  % workflowstep -h workflow_dir -p stepname_pattern offline ready
 ";
     exit(1);
 }
