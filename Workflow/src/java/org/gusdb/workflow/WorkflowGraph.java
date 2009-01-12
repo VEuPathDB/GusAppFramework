@@ -80,7 +80,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
             Utilities.error("in graph " + name + ", non-unique step name: '" + stepName + "'");
         stepsByName.put(stepName, step);
     }
-
+    
     void setWorkflow(Workflow<T> workflow) {
         this.workflow = workflow;
     }
@@ -118,8 +118,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
     
     // clean up after building from xml
     void postprocessSteps() throws FileNotFoundException, IOException {
-
-	for (T step : getSteps()) {
+        
+        for (T step : getSteps()) {
 
 	    // make the parent/child links from the remembered dependencies
             for (Name dependName : step.getDependsNames()) {
@@ -142,6 +142,23 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    // validate loadType
 	    step.checkLoadTypes();
         }
+        
+        // now delete steps with includeIf = false
+        for (T step : getSteps()) {
+            if (step.includeIf) continue;
+            for (WorkflowStep parent : step.getParents()) {
+                parent.removeChild(step);
+            }
+            
+            for (WorkflowStep child : step.getChildren()) {
+                child.removeParent(step);
+                for (WorkflowStep parent : step.getParents()) {
+                    parent.addChild(child);
+                    child.addParent(parent);
+                }                
+            }
+            stepsByName.remove(step);
+        }
     }
 
     // for each step that calls a subgraph, add a fake step after it
@@ -153,7 +170,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	Map<String, T> currentStepsByName = new HashMap<String, T>(stepsByName);
         for (T step : currentStepsByName.values()) {
 	    T returnStep = step;
-            if (step.getSubgraphXmlFileName() != null) {
+            if (step.getIsSubgraphCall()) {
                 returnStep = (T)step.insertSubgraphReturnChild();
                 stepsByName.put(returnStep.getBaseName(), returnStep);
             }
