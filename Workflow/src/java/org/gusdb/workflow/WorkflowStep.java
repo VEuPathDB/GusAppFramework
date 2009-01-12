@@ -53,11 +53,15 @@ public class WorkflowStep  {
     protected List<WorkflowStep> parents = new ArrayList<WorkflowStep>();
     protected List<WorkflowStep> children = new ArrayList<WorkflowStep>();
     protected String subgraphXmlFileName;
+    protected boolean isSubgraphCall;
+    protected boolean isSubgraphReturn;
     protected boolean isGlobal = false;
     List<? extends WorkflowStep> sharedGlobalSteps;
     String paramsDigest;
     int depthFirstOrder;
     String[] loadTypes = {"total"};
+    String includeIf_string;
+    boolean includeIf = true;
     
     // state from db
     protected int workflow_step_id;
@@ -103,7 +107,11 @@ public class WorkflowStep  {
     }
     
     protected boolean getIsGlobal() { return isGlobal; }
-
+    
+    boolean getIsSubgraphCall() { return isSubgraphCall; }
+    
+    boolean getIsSubgraphReturn() { return isSubgraphReturn; }
+    
     String getStepClassName() {
 	return invokerClassName;
     }
@@ -122,9 +130,17 @@ public class WorkflowStep  {
 	    if (val == null) Utilities.error("Step " + getFullName() + " has unknown stepLoadType: " + loadType);
         }
     }
+    
+    void setIncludeIf(String includeIf_str) {
+        includeIf_string = includeIf_str;
+    }
+    
+    boolean getIncludeIf() {
+        return includeIf;
+    }
 
     void addParent(WorkflowStep parent) {
-	parents.add(parent);
+	if (!parents.contains(parent)) parents.add(parent);
     }
     
     void removeParent(WorkflowStep parent) {
@@ -136,7 +152,7 @@ public class WorkflowStep  {
     }
 
     void addChild(WorkflowStep child) {
-        children.add(child);
+        if (!children.contains(child)) children.add(child);
     }
     
     void removeChild(WorkflowStep child) {
@@ -162,6 +178,9 @@ public class WorkflowStep  {
     // insert a child between this step and its previous children
     protected WorkflowStep insertSubgraphReturnChild() {
         WorkflowStep newStep = newStep();
+        newStep.setXmlFile(subgraphXmlFileName); // remember this in case of undo
+        newStep.isSubgraphCall = false;
+        newStep.isSubgraphReturn = true;
 	newStep.setWorkflowGraph(workflowGraph);
         insertSubgraphReturnChild_sub(newStep);
         return newStep;
@@ -218,6 +237,7 @@ public class WorkflowStep  {
     
     public void setXmlFile(String subgraphXmlFileName) {
         this.subgraphXmlFileName = subgraphXmlFileName;
+        isSubgraphCall = true;
     }
     
     String getSubgraphXmlFileName() {
@@ -318,6 +338,18 @@ public class WorkflowStep  {
 				    + "' includes an unresolvable variable reference: '"
 				    + newParamValue + "'");
 	    }
+        }
+        if (includeIf_string != null) {
+            String newIncludeIf = Utilities.substituteVariablesIntoString(includeIf_string, variables);
+            if (newIncludeIf.indexOf("$$") != -1) 
+                Utilities.error("'includeIf in step '"  + getFullName() 
+                        + "' includes an unresolvable variable reference: '"
+                        + newIncludeIf + "'");
+            if (!newIncludeIf.equals("true") && !newIncludeIf.equals("false"))
+                Utilities.error("'includeIf in step '"  + getFullName() 
+                        + "' is neither 'true' nor 'false': '"
+                        + newIncludeIf + "'");
+            includeIf = Boolean.valueOf(newIncludeIf).booleanValue();
         }
     }
 
