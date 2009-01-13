@@ -87,7 +87,7 @@ public class Workflow <T extends WorkflowStep>{
 	    File dir = new File(getHomeDir() + "/" + dirName);
 	    if (!dir.exists()) dir.mkdir();
 	}
-        log("Initializing workflow home directory '" + getHomeDir() + "'");
+        log("Checking if workflow home directory needs initializing'" + getHomeDir() + "'");
     }
     
     // read and validate all steps config

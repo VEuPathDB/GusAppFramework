@@ -3,6 +3,8 @@ package GUS::Workflow::WorkflowHandle;
 @ISA = qw(GUS::Workflow::Base);
 use strict;
 use GUS::Workflow::Base;
+use XML::Simple;
+use Data::Dumper;
 
 ##
 ## lite workflow object (a handle on workflow row in db) used in three contexts:
@@ -24,10 +26,45 @@ Workflow '$self->{name} $self->{version}'
 workflow_id:           $self->{workflow_id}
 state:                 $self->{state}
 process_id:            $self->{process_id}
-allowed_running_steps: $self->{allowed_running_steps}
+xml_file_digest:       $self->{xml_file_digest}
 \n\n";
 }
 
+sub getDbXmlFileDigest {
+  my ($self) = @_;
+
+  $self->getDbState();
+  return $self->{xml_file_digest};
+}
+
+sub getXmlFileDigest {
+  my ($self) = @_;
+
+  my $rootXmlFile = $self->getWorkflowConfig('workflowXmlFile');
+  $rootXmlFile = "$ENV{GUS_HOME}/lib/xml/workflow/$rootXmlFile";
+  my $xmlFiles = [$rootXmlFile];
+  $self->findSubgraphXmlFiles($rootXmlFile, $xmlFiles);
+  my @sortedFiles = sort @$xmlFiles;
+  my $md5 = $self->runCmd("cat " . join(" ", @sortedFiles) . " | md5sum" );
+  chomp $md5;
+  $md5 =~ s/^(\S+).+/$1/;
+
+  return $md5;
+}
+
+sub findSubgraphXmlFiles {
+  my ($self, $parentXmlFile, $xmlFiles) = @_;
+  my $simple = XML::Simple->new();
+  my $data = $simple->XMLin($parentXmlFile, forcearray => 1);
+#  print Dumper($data);
+
+  # make each step object, remembering dependencies as a string
+  foreach my $subgraph (values %{$data->{subgraph}}) {
+    my $xmlFile = "$ENV{GUS_HOME}/lib/xml/workflow/$subgraph->{xmlFile}";
+    push(@$xmlFiles, $xmlFile);
+    $self->findSubgraphXmlFiles($xmlFile, $xmlFiles);
+  }
+}
 
 sub getDbState {
   my ($self) = @_;
@@ -35,13 +72,13 @@ sub getDbState {
     $self->{name} = $self->getWorkflowConfig('name');
     $self->{version} = $self->getWorkflowConfig('version');
     my $sql = "
-select workflow_id, state, process_id, start_time, end_time, allowed_running_steps
+select workflow_id, state, process_id, start_time, end_time, xml_file_digest
 from apidb.workflow
 where name = '$self->{name}'
 and version = '$self->{version}'
 ";
     ($self->{workflow_id}, $self->{state}, $self->{process_id},
-     $self->{start_time}, $self->{end_time}, $self->{allowed_running_steps})
+     $self->{start_time}, $self->{end_time}, $self->{xml_file_digest})
       = $self->runSqlQuery_single_array($sql);
     $self->error("workflow '$self->{name}' version '$self->{version}' not in database")
       unless $self->{workflow_id};
