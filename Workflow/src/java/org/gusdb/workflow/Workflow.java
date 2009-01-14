@@ -1,10 +1,12 @@
 package org.gusdb.workflow;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.Date;
@@ -132,17 +134,17 @@ public class Workflow <T extends WorkflowStep>{
     
     // write the workflow and steps to the db
     // for now, assume the workflow steps don't change over the life of a workflow
-    void initDb() throws SQLException, IOException, Exception, NoSuchAlgorithmException {
+    void initDb(boolean updateXmlFileDigest) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
 
-	boolean stepTableEmpty = initWorkflowTable();
+	boolean stepTableEmpty = initWorkflowTable(updateXmlFileDigest);
 	initWorkflowStepTable(stepTableEmpty);
     }
 
-    boolean  initWorkflowTable() throws SQLException, IOException, Exception, NoSuchAlgorithmException {
-
+    boolean workflowTableInitialized() throws FileNotFoundException, IOException, SQLException {
+        
         name = getWorkflowConfig("name");
         version = getWorkflowConfig("version");
-
+       
         // don't bother if already in db
         String sql = "select workflow_id"  
             + " from apidb.workflow"  
@@ -154,32 +156,49 @@ public class Workflow <T extends WorkflowStep>{
         try {
             stmt = getDbConnection().createStatement();
             rs = stmt.executeQuery(sql);
-            if (rs.next()) return false;
+            if (rs.next()) return true;
         } finally {
             if (rs != null) rs.close();
             if (stmt != null) stmt.close(); 
         }
+        return false;
+    }
+    
+    boolean initWorkflowTable(boolean updateXmlFileDigest) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
 
-        // otherwise, do it...
-        log("Initializing workflow "
-            + "'" + name + " " + version + "' in database");
+        boolean uninitialized = !workflowTableInitialized();
+        if (uninitialized) {
+        
+            name = getWorkflowConfig("name");
+            version = getWorkflowConfig("version");
 
-        // write row to Workflow table
-        sql = "select apidb.Workflow_sq.nextval from dual";
-        try {
-            stmt = getDbConnection().createStatement();
-            rs = stmt.executeQuery(sql);
-            rs.next();
-            workflow_id = rs.getInt(1);
-        } finally {
-            if (rs != null) rs.close();
-            if (stmt != null) stmt.close();
+            log("Initializing workflow "
+                    + "'" + name + " " + version + "' in database");
+
+            // write row to Workflow table
+            String sql = "select apidb.Workflow_sq.nextval from dual";
+            Statement stmt = null;
+            ResultSet rs = null;
+            try {
+                stmt = getDbConnection().createStatement();
+                rs = stmt.executeQuery(sql);
+                rs.next();
+                workflow_id = rs.getInt(1);
+            } finally {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+            }
+
+            sql = "INSERT INTO apidb.workflow (workflow_id, name, version)"  
+                + " VALUES (" + workflow_id + ", '" + name + "', '" + version + "')";
+            executeSqlUpdate(sql);
         }
-
-        sql = "INSERT INTO apidb.workflow (workflow_id, name, version)"  
-            + " VALUES (" + workflow_id + ", '" + name + "', '" + version + "')";
-        executeSqlUpdate(sql);
-	return true;
+        if (updateXmlFileDigest) {
+            String sql = "INSERT INTO apidb.workflow (xml_file_digest)"  
+                + " VALUES (" + getXmlFileDigest() + "')";
+            executeSqlUpdate(sql);
+        }
+	return uninitialized;
     }
 
     void  initWorkflowStepTable(boolean stepTableEmpty) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
@@ -219,6 +238,18 @@ public class Workflow <T extends WorkflowStep>{
 
         // update steps in memory, to get their new IDs
         getStepsDbState();
+    }
+    
+    String getXmlFileDigest() throws InterruptedException, IOException {
+        String cmd = "workflowxmlsum -h " + getHomeDir();
+        Process process = Runtime.getRuntime().exec(cmd);
+        process.waitFor();
+        if (process.exitValue() != 0) error("failed running cmd '" + cmd + '"');
+        BufferedReader reader =  
+            new BufferedReader(new InputStreamReader(process.getInputStream()));  
+        String digest = reader.readLine().trim();
+        reader.close();
+        return digest;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -401,9 +432,8 @@ public class Workflow <T extends WorkflowStep>{
        does not run the controller
     */
     void reportSteps(String[] desiredStates) throws Exception {
-        initHomeDir();         // initialize workflow home directory, if needed
-
-        initDb();              // write workflow to db, if not already there
+        if (!workflowTableInitialized()) 
+            Utilities.error("Workflow not initialized.  Please run controller first.");
 
         getStepsConfig();      // validate config of all steps.
 
@@ -459,7 +489,7 @@ public class Workflow <T extends WorkflowStep>{
 
          // parse command line
          Options options = declareOptions();
-         String cmdlineSyntax = cmdName + " -h workflow_home_dir <-r num_steps | -t num_steps | -q | -d <states> >";
+         String cmdlineSyntax = cmdName + " -h workflow_home_dir <-r | -t | -q | -d <states> >";
          String cmdDescrip = "Run or test a workflow, or, print a report about a workflow.";
          CommandLine cmdLine =
              Utilities.parseOptions(cmdlineSyntax, cmdDescrip, getUsageNotes(), options, args);
