@@ -194,6 +194,7 @@ public class Workflow <T extends WorkflowStep>{
             executeSqlUpdate(sql);
         }
         if (updateXmlFileDigest) {
+	    if (!uninitialized) getDbState(); // get workflow_id
             String sql = "UPDATE apidb.workflow" +
 		" SET xml_file_digest = '" + getXmlFileDigest() + "'" +
 		" WHERE workflow_id = " + workflow_id;

@@ -34,7 +34,7 @@ sub checkXmlFileDigest {
   my ($self) = @_;
   
   $self->error("One or more Workflow XML files have changed since controller startup.  Please start or restart controller.") unless
-      $self->getDbXmlFileDigest() ne $self->getXmlFileDigest();
+      $self->getDbXmlFileDigest() eq $self->getXmlFileDigest();
 }
 
 sub getDbXmlFileDigest {
@@ -53,7 +53,6 @@ sub getXmlFileDigest {
   $self->findSubgraphXmlFiles($rootXmlFile, $xmlFiles);
   my @sortedFiles = sort @$xmlFiles;
   my $cmd = "cat " . join(" ", @sortedFiles) . " | md5sum";
-  print STDERR $cmd;
   my $md5 = $self->runCmd($cmd);
   chomp $md5;
   $md5 =~ s/^(\S+).+/$1/;
