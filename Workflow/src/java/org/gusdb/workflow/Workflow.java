@@ -194,8 +194,9 @@ public class Workflow <T extends WorkflowStep>{
             executeSqlUpdate(sql);
         }
         if (updateXmlFileDigest) {
-            String sql = "INSERT INTO apidb.workflow (xml_file_digest)"  
-                + " VALUES (" + getXmlFileDigest() + "')";
+            String sql = "UPDATE apidb.workflow" +
+		" SET xml_file_digest = '" + getXmlFileDigest() + "'" +
+		" WHERE workflow_id = " + workflow_id;
             executeSqlUpdate(sql);
         }
 	return uninitialized;
