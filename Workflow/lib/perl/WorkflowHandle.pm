@@ -52,7 +52,9 @@ sub getXmlFileDigest {
   my $xmlFiles = [$rootXmlFile];
   $self->findSubgraphXmlFiles($rootXmlFile, $xmlFiles);
   my @sortedFiles = sort @$xmlFiles;
-  my $md5 = $self->runCmd("cat " . join(" ", @sortedFiles) . " | md5sum" );
+  my $cmd = "cat " . join(" ", @sortedFiles) . " | md5sum";
+  print STDERR $cmd;
+  my $md5 = $self->runCmd($cmd);
   chomp $md5;
   $md5 =~ s/^(\S+).+/$1/;
 
