@@ -19,6 +19,7 @@ sub new {
 	      workflow=> $workflow,
 	      name => $stepName,
 	     };
+  $workflow->checkXmlFileDigest();
 
   bless($self,$class);
   return $self;

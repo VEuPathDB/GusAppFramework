@@ -30,6 +30,13 @@ xml_file_digest:       $self->{xml_file_digest}
 \n\n";
 }
 
+sub checkXmlFileDigest {
+  my ($self) = @_;
+  
+  $self->error("One or more Workflow XML files have changed since controller startup.  Please start or restart controller.") unless
+      $self->getDbXmlFileDigest() ne $self->getXmlFileDigest();
+}
+
 sub getDbXmlFileDigest {
   my ($self) = @_;
 

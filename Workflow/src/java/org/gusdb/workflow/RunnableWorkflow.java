@@ -57,7 +57,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     void run(boolean testOnly) throws Exception {
         initHomeDir();         // initialize workflow home directory, if needed
 
-        initDb();              // write workflow to db, if not already there
+        initDb(true);          // write workflow to db, if not already there
 
         getStepsConfig();      // validate config of all steps.
 
