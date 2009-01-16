@@ -151,7 +151,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	Map<String, T> stepsTmp = new HashMap<String, T>(stepsByName);
         for (T step : stepsTmp.values()) {
             if (step.getExcludeFromGraph()) {
-		workflow.log("Excluding: " + step.getFullName());
+		System.err.println("Excluding " + step.getFullName());
 		for (WorkflowStep parent : step.getParents()) {
 		    parent.removeChild(step);
 		}
