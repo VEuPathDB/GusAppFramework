@@ -22,7 +22,10 @@
             <attribute name="name" />
             <attribute name="stepClass"/>
             <optional>
-              <attribute name="includeIf"/>
+              <choice>
+                <attribute name="includeIf"/>
+                <attribute name="excludeIf"/>
+              </choice>
             </optional>
             <optional>
               <attribute name="stepLoadTypes"/>

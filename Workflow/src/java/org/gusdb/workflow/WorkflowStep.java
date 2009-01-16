@@ -61,7 +61,8 @@ public class WorkflowStep  {
     int depthFirstOrder;
     String[] loadTypes = {"total"};
     String includeIf_string;
-    boolean includeIf = true;
+    String excludeIf_string;
+    boolean excludeFromGraph = false;
     
     // state from db
     protected int workflow_step_id;
@@ -131,12 +132,16 @@ public class WorkflowStep  {
         }
     }
     
-    void setIncludeIf(String includeIf_str) {
+    public void setIncludeIf(String includeIf_str) {
         includeIf_string = includeIf_str;
     }
     
-    boolean getIncludeIf() {
-        return includeIf;
+    public void setExcludeIf(String excludeIf_str) {
+        excludeIf_string = excludeIf_str;
+    }
+    
+    boolean getExcludeFromGraph() {
+        return excludeFromGraph;
     }
 
     void addParent(WorkflowStep parent) {
@@ -339,18 +344,42 @@ public class WorkflowStep  {
 				    + newParamValue + "'");
 	    }
         }
-        if (includeIf_string != null) {
-            String newIncludeIf = Utilities.substituteVariablesIntoString(includeIf_string, variables);
-            if (newIncludeIf.indexOf("$$") != -1) 
-                Utilities.error("'includeIf in step '"  + getFullName() 
-                        + "' includes an unresolvable variable reference: '"
-                        + newIncludeIf + "'");
-            if (!newIncludeIf.equals("true") && !newIncludeIf.equals("false"))
-                Utilities.error("'includeIf in step '"  + getFullName() 
-                        + "' is neither 'true' nor 'false': '"
-                        + newIncludeIf + "'");
-            includeIf = Boolean.valueOf(newIncludeIf).booleanValue();
-        }
+        if (includeIf_string != null) 
+	    includeIf_string = processIfString("includeIf", 
+					       includeIf_string,
+					       variables,
+					       check);
+	
+        if (excludeIf_string != null) 
+	    excludeIf_string = processIfString("excludeIf", 
+					       excludeIf_string,
+					       variables,
+					       check);
+	
+    }
+
+    private String processIfString(String type, String ifString, Map<String,String>variables, boolean check) {
+	String newIf = Utilities.substituteVariablesIntoString(ifString, variables);
+	    
+	if (check) {
+	    if (newIf.indexOf("$$") != -1) 
+		Utilities.error(type + " in step '"  + getFullName() 
+				+ "' includes an unresolvable variable reference: '"
+				+ newIf + "'");
+	    if (!newIf.equals("true") && !newIf.equals("false"))
+		Utilities.error(type + " in step '"  + getFullName() 
+				+ "' is neither 'true' nor 'false': '"
+				+ newIf + "'");
+	}
+	return newIf;
+    }
+
+    void setIfs() {
+	// the rng schema enforces that we have one or the other, not both
+        if (includeIf_string != null) 
+	    excludeFromGraph = !Boolean.valueOf(includeIf_string).booleanValue();
+        if (excludeIf_string != null) 
+	    excludeFromGraph = Boolean.valueOf(excludeIf_string).booleanValue();
     }
 
     protected String getStepDir() {
