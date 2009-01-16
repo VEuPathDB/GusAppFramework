@@ -77,7 +77,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
         step.setWorkflowGraph(this);
         String stepName = step.getBaseName();
         if (stepsByName.containsKey(stepName))
-            Utilities.error("in graph " + name + ", non-unique step name: '" + stepName + "'");
+            Utilities.error("In graph " + name + ", non-unique step name: '" + stepName + "'");
         stepsByName.put(stepName, step);
     }
     
@@ -126,7 +126,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
                 String stepName = step.getBaseName();
                 T parent = stepsByName.get(dependName.getName());
                 if (parent == null) 
-                    Utilities.error("in file " + xmlFileName + ", step '"
+                    Utilities.error("In file " + xmlFileName + ", step '"
 				    + stepName + "' depends on step '"
                           + dependName.getName() + "' which is not found");
                 step.addParent(parent);
@@ -143,22 +143,29 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    step.checkLoadTypes();
         }
         
-        // now delete steps with includeIf = false
-        for (T step : getSteps()) {
-            if (step.includeIf) continue;
-            for (WorkflowStep parent : step.getParents()) {
-                parent.removeChild(step);
-            }
+    }
+
+    // delete steps with includeIf = false
+    private void deleteExcludedSteps() throws java.io.IOException {
+	
+	Map<String, T> stepsTmp = new HashMap<String, T>(stepsByName);
+        for (T step : stepsTmp.values()) {
+            if (step.getExcludeFromGraph()) {
+		workflow.log("Excluding: " + step.getFullName());
+		for (WorkflowStep parent : step.getParents()) {
+		    parent.removeChild(step);
+		}
             
-            for (WorkflowStep child : step.getChildren()) {
-                child.removeParent(step);
-                for (WorkflowStep parent : step.getParents()) {
-                    parent.addChild(child);
-                    child.addParent(parent);
-                }                
-            }
-            stepsByName.remove(step);
-        }
+		for (WorkflowStep child : step.getChildren()) {
+		    child.removeParent(step);
+		    for (WorkflowStep parent : step.getParents()) {
+			parent.addChild(child);
+			child.addParent(parent);
+		    }                
+		}
+		stepsByName.remove(step.getFullName());
+	    }
+	}
     }
 
     // for each step that calls a subgraph, add a fake step after it
@@ -223,10 +230,11 @@ public class WorkflowGraph<T extends WorkflowStep> {
 
 
 
-	// substitute both into step params
+	// substitute both into step params, includeIf and excludeIf
         for (T step : getSteps()) {
             step.substituteValues(constants, false);
             step.substituteValues(paramValues, true);
+	    step.setIfs();
         }
 
 	
@@ -436,6 +444,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
             Utilities.error("Graph \"compilation\" failed.  The following subgraph parameter values are missing:" + nl + buf);
         }
         
+	// delete excluded steps
+	rootGraph.deleteExcludedSteps();
+
         // initialize global steps
         // rootGraph.initializeGlobalSteps();
         

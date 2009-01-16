@@ -23,6 +23,9 @@ public class RunnableWorkflowStep extends WorkflowStep {
         } else { // this step has been changed by wrapper or pilot UI. log change.
             String stateMsg = "";
             String offlineMsg = "";
+	    if (state == null || prevState == null) {
+		System.err.println("rws " + state + " " + prevState + " name: " + getFullName());
+	    }
             if (!state.equals(prevState)) steplog(state, "");
             if(off_line != prevOffline) {
                 offlineMsg = off_line? "OFFLINE" : "ONLINE";
