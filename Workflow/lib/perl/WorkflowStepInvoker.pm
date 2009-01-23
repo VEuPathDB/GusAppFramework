@@ -215,7 +215,7 @@ sub runPlugin {
     if ($plugin !~ /\w+\:\:\w+/) {
 	$self->error("illegal 'plugin' arg passed to runPlugin() in step class '$className'");
     }
-
+    
     my $comment = $args;
     $comment =~ s/"/\\"/g;
 
@@ -223,7 +223,9 @@ sub runPlugin {
       $args .= " --gusconfigfile $self->{gusConfigFile}";
     }
 
-    my $cmd = "ga $plugin $args --comment \"$comment\"";
+    my $commit = $args." --commit";
+
+    my $cmd = "ga $plugin $commit --comment \"$comment\"";
 
     $self->runCmd($test, $cmd);
 }
