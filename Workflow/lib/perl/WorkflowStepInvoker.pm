@@ -184,23 +184,32 @@ sub copyFromCluster {
 }
 
 sub runAndMonitorClusterTask {
-    my ($self, $test, $user, $server, $logFile, $propFile, $numNodes, $time, $queue, $ppn) = @_;
-    my $cmd = "workflowclustertask $propFile $logFile $numNodes $time $queue $ppn";
-#    my $cmd = 'perl -e "$|=1;print q($$);sleep(20);open(F,q(>/home/sfischer/testlog2)); print F q(Done)"';
-    my $processId = $self->runCmd($test, "ssh -2 $user\@$server '$cmd'");
+    my ($self, $test, $user, $server, $processIdFile, $logFile, $propFile, $numNodes, $time, $queue, $ppn) = @_;
+
+    # see if it was already started (and the local process was restarted)
+    if (!$self->clusterTaskRunning($processIdFile)) {
+	my $cmd = "workflowclustertask $propFile $processIdFile $logFile $numNodes $time $queue $ppn";
+	$self->runCmd($test, "ssh -2 $user\@$server '$cmd' &");
+    }
 
     return 1 if ($test);
 
     while (1) {
-	sleep(3);
-	system("ssh -2 $user\@$server 'ps -p $processId > /dev/null'");
-	my $status = $? >> 8;
-	last if ($status);
+	sleep(5);
+	last if !$self->clusterTaskRunning($processIdFile);
     }
 #    $logFile = "/home/sfischer/testlog2";
     my $done = $self->runCmd($test, "ssh -2 $user\@$server 'tail -1 $logFile'");
 
     return $done && $done =~ /Done/;
+}
+
+sub clusterTaskRunning {
+    my ($self, $processIdFile) = @_;
+    my $processId = `ssh -2 $user\@server 'cat $processIdFile'`;
+    system("ssh -2 $user\@$server 'ps -p $processId > /dev/null'");
+    my $status = $? >> 8;
+    return $status;
 }
 
 sub runPlugin {
