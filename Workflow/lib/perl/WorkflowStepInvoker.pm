@@ -187,7 +187,7 @@ sub runAndMonitorClusterTask {
     my ($self, $test, $user, $server, $processIdFile, $logFile, $propFile, $numNodes, $time, $queue, $ppn) = @_;
 
     # see if it was already started (and the local process was restarted)
-    if (!$self->clusterTaskRunning($processIdFile)) {
+    if (!$self->clusterTaskRunning($processIdFile, $user, $server)) {
 	my $cmd = "workflowclustertask $propFile $processIdFile $logFile $numNodes $time $queue $ppn";
 	$self->runCmd($test, "ssh -2 $user\@$server '$cmd' &");
     }
@@ -205,8 +205,8 @@ sub runAndMonitorClusterTask {
 }
 
 sub clusterTaskRunning {
-    my ($self, $processIdFile) = @_;
-    my $processId = `ssh -2 $user\@server 'cat $processIdFile'`;
+    my ($self, $processIdFile, $user, $server) = @_;
+    my $processId = `ssh -2 $user\@$server 'cat $processIdFile'`;
     system("ssh -2 $user\@$server 'ps -p $processId > /dev/null'");
     my $status = $? >> 8;
     return $status;
