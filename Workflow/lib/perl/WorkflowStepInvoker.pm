@@ -205,11 +205,17 @@ sub runAndMonitorClusterTask {
 
 sub clusterTaskRunning {
     my ($self, $processIdFile, $user, $server) = @_;
+
     my $processId = `ssh -2 $user\@$server 'if [ -a $processIdFile ];then cat $processIdFile; fi'`;
     chomp $processId;
-    system("ssh -2 $user\@$server 'ps -p $processId > /dev/null'");
-    my $status = $? >> 8;
-    return !$status;
+
+    my $status = 0;
+    if ($processId) {
+      system("ssh -2 $user\@$server 'ps -p $processId > /dev/null'");
+      $status = $? >> 8;
+      $status = !$status;
+    }
+    return $status;
 }
 
 sub runPlugin {
