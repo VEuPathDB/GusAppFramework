@@ -363,12 +363,12 @@ public class WorkflowGraph<T extends WorkflowStep> {
 			&& !dbState.equals(Workflow.ON_DECK)) {
 			Utilities.error("Step '" + dbName +"' has changed in the XML file illegally. Changes not allowed while in the state '" + dbState + "'" + nl
 					+ "old name:              " + dbName + nl
-					+ "old digest:            " + dbDigest + nl
+					+ "old params digest:     " + dbDigest + nl
                                         + "old depth first order: " + dbDepthFirstOrder + nl
 					+ "old class name:        " + dbClassName + nl
 					+ nl
                                         + "new name:              " + step.getFullName() + nl
-                                        + "new digest:            " + step.getParamsDigest() + nl
+                                        + "new params digest:     " + step.getParamsDigest() + nl
 					+ "new depth first order: " + step.getDepthFirstOrder() + nl
 					+ "new class name:        " + step.getStepClassName());
 		    }
