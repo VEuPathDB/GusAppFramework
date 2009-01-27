@@ -360,7 +360,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
 
 		if (mismatch) {
 		    if (!dbState.equals(Workflow.READY) 
-			&& !dbState.equals(Workflow.ON_DECK)) {
+			&& !dbState.equals(Workflow.ON_DECK)
+			&& !dbState.equals(Workflow.FAILED)
+			) {
 			Utilities.error("Step '" + dbName +"' has changed in the XML file illegally. Changes not allowed while in the state '" + dbState + "'" + nl
 					+ "old name:              " + dbName + nl
 					+ "old params digest:     " + dbDigest + nl
