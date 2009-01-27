@@ -198,9 +198,8 @@ sub runAndMonitorClusterTask {
 	sleep(5);
 	last if !$self->clusterTaskRunning($processIdFile);
     }
-#    $logFile = "/home/sfischer/testlog2";
-    my $done = $self->runCmd($test, "ssh -2 $user\@$server 'tail -1 $logFile'");
 
+    my $done = $self->runCmd($test, "ssh -2 $user\@$server 'if [ -a $logFile ]; then tail -1 $logFile; fi'");
     return $done && $done =~ /Done/;
 }
 
