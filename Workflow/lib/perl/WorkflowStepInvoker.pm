@@ -188,7 +188,7 @@ sub runAndMonitorClusterTask {
 
     # if not already started, start it up (otherwise the local process was restarted)
     if (!$self->clusterTaskRunning($processIdFile, $user, $server)) {
-	my $cmd = "workflowclustertask $propFile $processIdFile $logFile $numNodes $time $queue $ppn";
+	my $cmd = "workflowclustertask $propFile $logFile $processIdFile $numNodes $time $queue $ppn";
 	$self->runCmd($test, "ssh -2 $user\@$server '$cmd' &");
     }
 
@@ -196,7 +196,7 @@ sub runAndMonitorClusterTask {
 
     while (1) {
 	sleep(5);
-	last if !$self->clusterTaskRunning($processIdFile);
+	last if !$self->clusterTaskRunning($processIdFile,$user, $server);
     }
 
     my $done = $self->runCmd($test, "ssh -2 $user\@$server 'if [ -a $logFile ]; then tail -1 $logFile; fi'");
