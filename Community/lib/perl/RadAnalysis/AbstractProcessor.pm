@@ -264,6 +264,11 @@ Sql
 
   my $sql = $allSql{$table};
 
+  unless ($sql) {
+    GUS::Community::RadAnalysis::ProcessorError->new("No SQL defined for [$table].")->throw();
+  }
+
+
   my $sh = $dbh->prepare($sql);
 
   return $sh;
