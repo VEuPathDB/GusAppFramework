@@ -18,10 +18,10 @@ public class Utilities {
     
     final static String nl = System.getProperty("line.separator");
 
-    static void addOption(Options options, String argName, String desc) {
+    static void addOption(Options options, String argName, String desc, boolean isRequired) {
 
         Option option = new Option(argName, true, desc);
-        option.setRequired(true);
+        option.setRequired(isRequired);
         option.setArgName(argName);
 
         options.addOption(option);

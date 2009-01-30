@@ -592,7 +592,7 @@ public class Workflow <T extends WorkflowStep>{
      private static Options declareOptions() {
          Options options = new Options();
 
-         Utilities.addOption(options, "h", "Workflow homedir (see below)");
+         Utilities.addOption(options, "h", "Workflow homedir (see below)", true);
          
          OptionGroup actions = new OptionGroup();
          Option run = new Option("r", "Run a workflow");
@@ -612,7 +612,7 @@ public class Workflow <T extends WorkflowStep>{
          
          options.addOptionGroup(actions);
          
-         Utilities.addOption(options, "u", "Undo the specified step");         
+         Utilities.addOption(options, "u", "Undo the specified step", false);         
 
          return options;
      }
