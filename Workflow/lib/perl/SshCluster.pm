@@ -66,7 +66,7 @@ sub runCmdOnCluster {
   my $user = "$self->{user}\@" if $self->{user};
   my $ssh_target = "$user$self->{server}";
 
-  $self->{mgr}->runCmd($test, "ssh -2 $ssh_target '$cmd'");
+  $self->{mgr}->runCmd($test, "ssh -2 $ssh_target '/bin/bash -login -c \"$cmd\"'");
 }
 
 1;
