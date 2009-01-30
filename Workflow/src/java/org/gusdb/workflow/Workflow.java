@@ -15,7 +15,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Enumeration;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
@@ -491,8 +490,8 @@ public class Workflow <T extends WorkflowStep>{
 
          // parse command line
          Options options = declareOptions();
-         String cmdlineSyntax = cmdName + " -h workflow_home_dir <-r | -t | -q | -d <states> >";
-         String cmdDescrip = "Run or test a workflow, or, print a report about a workflow.";
+         String cmdlineSyntax = cmdName + " -h workflow_home_dir <-r | -t | -q | -d <states>> <-u step_name>";
+         String cmdDescrip = "Run or test a workflow (regular or undo), or, print a report about a workflow.";
          CommandLine cmdLine =
              Utilities.parseOptions(cmdlineSyntax, cmdDescrip, getUsageNotes(), options, args);
                  
@@ -506,7 +505,6 @@ public class Workflow <T extends WorkflowStep>{
              WorkflowGraph<RunnableWorkflowStep> rootGraph = 
                  WorkflowGraph.constructFullGraph(stepClass, runnableWorkflow);
              runnableWorkflow.setWorkflowGraph(rootGraph);
-             String numSteps = cmdLine.getOptionValue("r");
              boolean testOnly = cmdLine.hasOption("t");
              runnableWorkflow.run(testOnly);                
          } 
@@ -570,6 +568,12 @@ public class Workflow <T extends WorkflowStep>{
      + "  test a workflow:" + nl
      + "    % workflow -h workflow_dir -t" + nl
      + nl     
+     + "  undo a step:" + nl
+     + "    % workflow -h workflow_dir -r -u my_step_name" + nl
+     + nl     
+     + "  undo a step in a test workflow:" + nl
+     + "    % workflow -h workflow_dir -t -u my_step_name" + nl
+     + nl     
      + "  quick report of workflow state" + nl
      + "    % workflow -h workflow_dir -q" + nl
      + nl     
@@ -590,23 +594,25 @@ public class Workflow <T extends WorkflowStep>{
 
          Utilities.addOption(options, "h", "Workflow homedir (see below)");
          
-         OptionGroup optionalOptions = new OptionGroup();
+         OptionGroup actions = new OptionGroup();
          Option run = new Option("r", "Run a workflow");
-         optionalOptions.addOption(run);
+         actions.addOption(run);
          
          Option test = new Option("t", "Test a workflow");
-         optionalOptions.addOption(test);
+         actions.addOption(test);
     
          Option detailedRep = new Option("d", true, "Print detailed report");
-         optionalOptions.addOption(detailedRep);
+         actions.addOption(detailedRep);
          
          Option quickRep = new Option("q", "Print quick report");
-         optionalOptions.addOption(quickRep);
-         options.addOptionGroup(optionalOptions);
+         actions.addOption(quickRep);
 
          Option reset = new Option("reset", "Reset workflow. DANGER! Will destroy your workflow.  Use only if you know exactly what you are doing.");
-         optionalOptions.addOption(reset);
-         options.addOptionGroup(optionalOptions);
+         actions.addOption(reset);
+         
+         options.addOptionGroup(actions);
+         
+         Utilities.addOption(options, "u", "Undo the specified step");         
 
          return options;
      }

@@ -194,6 +194,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     }
     
 
+    @SuppressWarnings("unchecked")
     private void instantiateValues(String stepBaseName, String xmlFileName,
             Map<String,String> paramValues,
             Map<String,Map<String,List<String>>> paramErrorsMap) {
