@@ -129,19 +129,20 @@ sub queryForArrayTable {
   my ($self, $dbh, $arrayDesignName) = @_;
 
   my $sql = <<Sql;
-select oe.value
-from study.ontologyentry oe, Rad.ARRAYDESIGN a
-where a.technology_type_id = oe.ontology_entry_id
+select tt.value as technology, st.value as substrate
+from study.ontologyentry tt, Study.ontologyEntry st, Rad.ARRAYDESIGN a
+where a.technology_type_id = tt.ontology_entry_id
+and a.substrate_type_id = st.ontology_entry_id
 and (a.name = ? or a.source_id = ?)
 Sql
 
   my $sh = $dbh->prepare($sql);
   $sh->execute($arrayDesignName, $arrayDesignName);  
 
-  my ($type) = $sh->fetchrow_array();
+  my ($type, $substrate) = $sh->fetchrow_array();
   $sh->finish();
 
-  if($type eq 'in_situ_oligo_features') {
+  if($type eq 'in_situ_oligo_features' && $substrate eq 'glass') {
     return 'RAD.ShortOligoFamily';
   }
 
