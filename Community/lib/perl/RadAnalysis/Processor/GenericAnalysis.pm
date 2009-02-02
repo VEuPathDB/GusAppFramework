@@ -78,7 +78,6 @@ sub new {
                         'studyName',
                         'resultView',
                         'protocolName',
-                        'paramValues',
                         'analysisName',
                        ];
 
@@ -87,15 +86,16 @@ sub new {
 
 #--------------------------------------------------------------------------------
 
-sub getArrayDesignName {$_[0]->{arrayDesignName}}
-sub getDataFile {$_[0]->{dataFile}}
-sub getStudyName {$_[0]->{studyName}}
-sub getFileTranslatorName {$_[0]->{fileTranslatorName}}
-sub getResultView {$_[0]->{resultView}}
-sub getQuantificationInputs {$_[0]->{quantificationInputs}}
-sub getProtocolName {$_[0]->{protocolName}}
-sub getParamValues {$_[0]->{paramValues}}
-sub getAnalysisName {$_[0]->{analysisName}}
+sub getArrayDesignName                {$_[0]->{arrayDesignName}}
+sub getDataFile                       {$_[0]->{dataFile}}
+sub getStudyName                      {$_[0]->{studyName}}
+sub getFileTranslatorName             {$_[0]->{fileTranslatorName}}
+sub getResultView                     {$_[0]->{resultView}}
+sub getQuantificationInputs           {$_[0]->{quantificationInputs}}
+sub getProtocolName                   {$_[0]->{protocolName}}
+sub getParamValues                    {$_[0]->{paramValues}}
+sub getAnalysisName                   {$_[0]->{analysisName}}
+sub getInsertNewProtocol              {$_[0]->{insertNewProtocol}}
 
 #--------------------------------------------------------------------------------
 
@@ -130,7 +130,8 @@ sub process {
 
   $result->addToTranslatorFunctionArgs({dbh => $dbh, arrayDesignName => $arrayDesignName});
 
-  my $paramValues = $self->standardParameterValues($self->getParamValues());
+  my $paramArgs = $self->getParamValues();
+  my $paramValues = $paramArgs ? $self->standardParameterValues($paramArgs) : {};
   $result->addToParamValuesHashRef($paramValues);
 
   $result->addLogicalGroups(@$logicalGroups);
@@ -171,6 +172,8 @@ sub setupProtocol {
   my $protocol = GUS::Model::RAD::Protocol->new({name => $protocolName});
 
   unless($protocol->retrieveFromDB) {
+    return $protocol if($self->getInsertNewProtocol());
+
     GUS::Community::RadAnalysis::ProcessorError->new("Could not Retrieve RAD::Protocol [$protocolName]")->throw();
   }
 
