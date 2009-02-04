@@ -61,6 +61,7 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
 	workflowGraph.setXmlFileName(xmlFileName);
 	workflowGraph.postprocessSteps();
 	workflowGraph.insertSubgraphReturnChildren();
+	workflowGraph.setRootsAndLeafs();
         return workflowGraph;
     }
 
@@ -151,7 +152,7 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
     private static Options declareOptions() {
         Options options = new Options();
 
-        Utilities.addOption(options, "h", "");
+        Utilities.addOption(options, "h", "", true);
 
         return options;
     }

@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Properties;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -180,14 +182,18 @@ public class WorkflowGraph<T extends WorkflowStep> {
             if (step.getIsSubgraphCall()) {
                 returnStep = (T)step.insertSubgraphReturnChild();
                 stepsByName.put(returnStep.getBaseName(), returnStep);
-            }
-            
-            if (step.getParents().size() == 0) rootSteps.add(step);
-            if (returnStep.getChildren().size() == 0) leafSteps.add(returnStep);
+            }   
         }
         
     }
             
+    void setRootsAndLeafs() {
+        for (T step : getSteps()) {
+            if (step.getParents().size() == 0) rootSteps.add(step);
+            if (step.getChildren().size() == 0) leafSteps.add(step);
+        }       
+    }
+    
     public String toString() {
         return "Constants" + nl + constants.toString() + nl + nl
         + "Steps" + nl + getSortedSteps().toString();
@@ -228,8 +234,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    constants.put(constantName, newConstantValue);    
 	    fullyResolvedConstants.put(constantName, newConstantValue);    
         }
-
-
 
 	// substitute both into step params, includeIf and excludeIf
         for (T step : getSteps()) {
@@ -323,6 +327,35 @@ public class WorkflowGraph<T extends WorkflowStep> {
             }
         }
         
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    //    Invert 
+    ////////////////////////////////////////////////////////////////////////
+    @SuppressWarnings("unchecked")
+    void convertToUndo() throws FileNotFoundException, SQLException, IOException {
+        
+        // invert each step
+        for (T step : getSteps()) step.invert();
+        
+        // trim away steps that are not involved in undo
+        WorkflowStep undoRootStep = stepsByName.get(workflow.getUndoStepName());
+        Set<WorkflowStep> allUndoKids = undoRootStep.getAllChildren();
+        stepsByName = new HashMap<String,T>();
+        for (WorkflowStep step : allUndoKids) {
+            stepsByName.put(step.getFullName(), (T)step);
+        }
+        
+        // make sure all undoable steps in db have state set
+        PreparedStatement undoStepPstmt = WorkflowStep.getPreparedUndoUpdateStmt(workflow.getDbConnection(), workflow.getId()); 
+        try {
+            for (WorkflowStep step : getSteps()) {
+                undoStepPstmt.setString(1, step.getFullName());
+                undoStepPstmt.execute();
+            }
+        } finally {
+            undoStepPstmt.close();;
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////

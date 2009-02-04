@@ -10,12 +10,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.regex.Matcher;
 
 /*
 
@@ -68,6 +67,8 @@ public class WorkflowStep  {
     protected int workflow_step_id;
     protected String state;
     protected boolean state_handled;
+    protected String undo_state;
+    protected boolean undo_state_handled;
     protected boolean off_line;
     protected String process_id;
     protected Date start_time;
@@ -168,6 +169,14 @@ public class WorkflowStep  {
         return children;
     }
     
+    Set<WorkflowStep> getAllChildren() {
+        Set<WorkflowStep> kids = new HashSet<WorkflowStep>(children);
+        for (WorkflowStep kid : children) {
+            kids.addAll(kid.getAllChildren());
+        }
+        return kids;
+    }
+    
     Map<String,String> getParamValues() {
         return paramValues;
     }
@@ -224,7 +233,7 @@ public class WorkflowStep  {
         return path;
     }
 
-    private int getId () {
+    int getId () {
 	return workflow_step_id;
     }
 
@@ -232,6 +241,21 @@ public class WorkflowStep  {
 	return state;
     }
     
+    String getUndoState () {
+        return undo_state;
+    }
+    
+    String getOperativeState() {
+        return getUndoing()? undo_state : state;
+    }
+    
+    boolean getOperativeStateHandled() {
+        return getUndoing()? undo_state_handled : state_handled;
+    }
+    
+    boolean getUndoing() {
+        return workflowGraph.getWorkflow().getUndoStepId() != null;
+    }
     List<Name> getDependsNames() {
         return dependsNames;
     }
@@ -264,18 +288,27 @@ public class WorkflowStep  {
     }
     
     static PreparedStatement getPreparedInsertStmt(Connection dbConnection, int workflowId) throws SQLException {
-	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, off_line, depth_first_order, step_class, params_digest)"
+	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, undo_state, undo_state_handled, off_line, depth_first_order, step_class, params_digest)"
 	    + " VALUES (apidb.workflowstep_sq.nextval, " + workflowId
-	    + ", ?, ?, 1, 0, ?, ?, ?)";
+	    + ", ?, ?, 1, ?, 1, 0, ?, ?, ?)";
 	return dbConnection.prepareStatement(sql);
     }
 
     static PreparedStatement getPreparedUpdateStmt(Connection dbConnection, int workflowId) throws SQLException {
-	String sql = "UPDATE apidb.workflowstep"
-	    + " SET depth_first_order = ?"
-	    + " WHERE name = ?"
-	    + " AND workflow_id = " + workflowId;
-	return dbConnection.prepareStatement(sql);
+        String sql = "UPDATE apidb.workflowstep"
+            + " SET depth_first_order = ?"
+            + " WHERE name = ?"
+            + " AND workflow_id = " + workflowId;
+        return dbConnection.prepareStatement(sql);
+    }
+
+    static PreparedStatement getPreparedUndoUpdateStmt(Connection dbConnection, int workflowId) throws SQLException {
+        String sql = "UPDATE apidb.workflowstep"
+            + " SET undo_state = '" + Workflow.READY + "'"
+            + " WHERE name = ?"
+            + " AND undo_state is NULL"
+            + " AND workflow_id = " + workflowId;
+        return dbConnection.prepareStatement(sql);
     }
 
     // write this step to the db, if not already there.
@@ -311,18 +344,20 @@ public class WorkflowStep  {
 
     // static method
     static String getBulkSnapshotSql(int workflow_id) {
-	return "SELECT name, workflow_step_id, state, state_handled, off_line, process_id, start_time, end_time, host_machine" 
+	return "SELECT name, workflow_step_id, state, state_handled, undo_state, undo_state_handled, off_line, process_id, start_time, end_time, host_machine" 
 	    + " FROM apidb.workflowstep"
 	    + " WHERE workflow_id = " + workflow_id;
     }
 
     void setFromDbSnapshot(ResultSet rs) throws SQLException {
-	prevState = state;
+	prevState = getOperativeState();
 	prevOffline = off_line;
 
 	workflow_step_id = rs.getInt("WORKFLOW_STEP_ID");
 	state = rs.getString("STATE");
 	state_handled = rs.getBoolean("STATE_HANDLED");
+        undo_state = rs.getString("UNDO_STATE");
+        undo_state_handled = rs.getBoolean("UNDO_STATE_HANDLED");
 	off_line = rs.getBoolean("OFF_LINE");
 	process_id = rs.getString("PROCESS_ID");
 	start_time = rs.getDate("START_TIME");
@@ -390,6 +425,15 @@ public class WorkflowStep  {
 	}
 	return stepDir;
     }
+    
+    void invert() {
+        List<WorkflowStep> temp = parents;
+        parents = children;
+        children = temp;
+        boolean temp2 = isSubgraphCall;
+        isSubgraphCall = isSubgraphReturn;
+        isSubgraphReturn = temp2;
+    }
 
 //////////////////////////  utilities /////////////////////////////////////////
     
@@ -409,6 +453,7 @@ public class WorkflowStep  {
 	    + "stepClass:  " + invokerClassName + nl
 	    + "subgraphXml " + subgraphXmlFileName + nl
 	    + "state:      " + state + nl
+            + "undo_state: " + undo_state + nl
 	    + "off_line:   " + off_line + nl
 	    + "handled:    " + state_handled + nl
 	    + "process_id: " + process_id + nl
