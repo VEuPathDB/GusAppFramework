@@ -297,7 +297,7 @@ public class Workflow <T extends WorkflowStep>{
                     error("workflow '" + name + "' version '" + version + "' not in database");
                 workflow_id = rs.getInt(1);
                 state = rs.getString(2);
-                undo_step_id = rs.getInt(3);
+                undo_step_id = (rs.getObject(3) == null)? null : rs.getInt(3);
                 process_id = rs.getString(4);
                 start_time = rs.getDate(5);
                 end_time = rs.getDate(6);

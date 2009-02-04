@@ -290,7 +290,7 @@ public class WorkflowStep  {
     static PreparedStatement getPreparedInsertStmt(Connection dbConnection, int workflowId) throws SQLException {
 	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, undo_state, undo_state_handled, off_line, depth_first_order, step_class, params_digest)"
 	    + " VALUES (apidb.workflowstep_sq.nextval, " + workflowId
-	    + ", ?, ?, 1, ?, 1, 0, ?, ?, ?)";
+	    + ", ?, ?, 1, null, 1, 0, ?, ?, ?)";
 	return dbConnection.prepareStatement(sql);
     }
 
