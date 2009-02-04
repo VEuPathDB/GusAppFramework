@@ -124,8 +124,12 @@ sub printXml {
     <property name=\"studyName\" value=\"$studyName\"/>
     <property name=\"resultView\" value=\"$RESULT_TABLE\"/>
     <property name=\"protocolName\" value=\"$protocolName\"/>     
+";
 
-    <property name=\"paramValues\">
+
+    if(scalar @$parameterValues > 0) {
+
+  $xml .= "    <property name=\"paramValues\">
 ";
 
     foreach my $parameterValue (@$parameterValues) {
@@ -136,6 +140,7 @@ sub printXml {
     }
     $xml .= "    </property>
 ";
+}
 
     $xml .= "    <property name=\"quantificationInputs\">\n";
 
@@ -159,7 +164,7 @@ sub usage {
   my ($e) = @_;
 
   print STDERR "ERROR:  $e\n" if($e);
-  print STDERR "usage:  perl normalizationAnalysisCfgMaker.pl --mageTab <FILE> --directory_prefix <DIR> --file_translator <FILE>\n";
+  print STDERR "usage:  perl normalizationAnalysisCfgMaker.pl --mageTab <FILE> --directory_prefix <DIR> [--file_translator <FILE>]\n";
   exit;
 }
 
