@@ -13,44 +13,49 @@ import java.util.Formatter;
 public class RunnableWorkflowStep extends WorkflowStep {
     
     int handleChangesSinceLastSnapshot(Workflow<RunnableWorkflowStep> workflow) throws SQLException, IOException, InterruptedException  {
-        if (state_handled) {
-            if (state.equals(Workflow.RUNNING)) {               
+        if (getOperativeStateHandled()) {
+            if (getOperativeState().equals(Workflow.RUNNING)) {               
                 String cmd = "ps -p " + process_id;
                 Process process = Runtime.getRuntime().exec(cmd);
                 process.waitFor();
                 if (process.exitValue() != 0) handleMissingProcess();
             }
         } else { // this step has been changed by wrapper or pilot UI. log change.
-            String stateMsg = "";
             String offlineMsg = "";
-	    if (state == null || prevState == null) {
-		System.err.println("rws " + state + " " + prevState + " name: " + getFullName());
-	    }
-            if (!state.equals(prevState)) steplog(state, "");
+            if (!getOperativeState().equals(prevState)) steplog(getOperativeState(), "");
             if(off_line != prevOffline) {
                 offlineMsg = off_line? "OFFLINE" : "ONLINE";
 		steplog("", offlineMsg);
             }
             setHandledFlag();
         }
-        return state.equals(Workflow.RUNNING)? 1 : 0;
+        return getOperativeState().equals(Workflow.RUNNING)? 1 : 0;
     }
 
     private void setHandledFlag() throws SQLException, FileNotFoundException, IOException {
         // check that state is still as expected, to avoid theoretical race condition
 
         int offlineInt = off_line? 1 : 0;
-        String sql = "UPDATE apidb.WorkflowStep"  
+        String sql;
+        if (!getUndoing()) {
+            sql = "UPDATE apidb.WorkflowStep"  
             + " SET state_handled = 1"
             + " WHERE workflow_step_id = " + workflow_step_id
             + " AND state = '" + state + "'"
-            + " AND off_line = " + offlineInt;
+            + " AND off_line = " + offlineInt;      
+            state_handled = true;  // till next snapshot
+        } else {
+            sql = "UPDATE apidb.WorkflowStep"  
+                + " SET undo_state_handled = 1"
+                + " WHERE workflow_step_id = " + workflow_step_id;
+            undo_state_handled = true;  // till next snapshot
+        }
         executeSqlUpdate(sql);
-        state_handled = true;  // till next snapshot
     }
 
     private void handleMissingProcess() throws SQLException, IOException {
-        String sql = "SELECT state" 
+        String sql = "SELECT " 
+            + (getUndoing()? "undo_state" : "state") 
             + " FROM apidb.workflowstep"
             + " WHERE workflow_step_id = " + workflow_step_id;
         
@@ -63,10 +68,15 @@ public class RunnableWorkflowStep extends WorkflowStep {
             String stateNow = rs.getString(1);
             if (stateNow.equals(Workflow.RUNNING)) {
                 sql = "UPDATE apidb.WorkflowStep"  
-                    + " SET"  
-                    + " state = '" + Workflow.FAILED + "', state_handled = 1, process_id = null" 
+                    + " SET "  
+                    + (getUndoing()? "undo_state" : "state") + " = '" + Workflow.FAILED
+                    + "', "
+                    + (getUndoing()? "undo_state_handled" : "state_handled") + "= 1"
+                    + ","
+                    + "process_id = null" 
                     + " WHERE workflow_step_id = " + workflow_step_id
-                    + " AND state = '" + Workflow.RUNNING + "'";
+                    + " AND "
+                    + (getUndoing()? "undo_state" : "state") + "= '" + Workflow.RUNNING + "'";
                 executeSqlUpdate(sql);
                 steplog(Workflow.FAILED, "***");
             }
@@ -79,27 +89,36 @@ public class RunnableWorkflowStep extends WorkflowStep {
     // if this step is ready, and all parents are done, transition to ON_DECK
     void maybeGoToOnDeck() throws SQLException, IOException {
  
-        if (!state.equals(Workflow.READY) || off_line) return;
+        if (!getOperativeState().equals(Workflow.READY) || off_line) return;
 
         for (WorkflowStep parent : getParents()) {
-            if (!parent.getState().equals(Workflow.DONE)) return;
+            if (!parent.getOperativeState().equals(Workflow.DONE)) return;
         }
 
         steplog(Workflow.ON_DECK, "");
 
+        String set = getUndoing()?
+                " SET undo_state = '" + Workflow.ON_DECK + "', undo_state_handled = 1" :
+                    " SET state = '" + Workflow.ON_DECK + "', state_handled = 1" ;
+        
+        String and = getUndoing()? "undo_state" : "state";
+       
         String sql = "UPDATE apidb.WorkflowStep"  
-            + " SET state = '" + Workflow.ON_DECK + "', state_handled = 1" 
+            + set
             + " WHERE workflow_step_id = " + workflow_step_id  
-            + " AND state = '" + Workflow.READY + "'";
+            + " AND " + and + " = '" + Workflow.READY + "'";
         executeSqlUpdate(sql);
     }
 
     // if this step doesn't have an invoker (ie, it is a call to or return
     // from a subgraph), just go to done
     void goToDone() throws SQLException, IOException {
- 
+        String set = getUndoing()?
+                 " SET undo_state = '" + Workflow.DONE + "', undo_state_handled = 1" :
+                     " SET state = '" + Workflow.DONE + "', state_handled = 1" ;
+        
         String sql = "UPDATE apidb.WorkflowStep"  
-            + " SET state = '" + Workflow.DONE + "', state_handled = 1" 
+            + set
             + " WHERE workflow_step_id = " + workflow_step_id;  
         executeSqlUpdate(sql);
     }

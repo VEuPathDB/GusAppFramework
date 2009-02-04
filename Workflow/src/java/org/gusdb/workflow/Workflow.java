@@ -53,12 +53,14 @@ public class Workflow <T extends WorkflowStep>{
     protected String version;
     protected Integer workflow_id;
     protected String state;
+    protected Integer undo_step_id;
     protected String process_id;
     protected Date start_time;
     protected Date end_time;
     
     Map<String,Integer> filledSlots = new HashMap<String,Integer>();
     Properties loadBalancingConfig;
+    String undoStepName;
 
     String[] homeDirSubDirs = {"logs", "steps", "data"};
 
@@ -77,7 +79,14 @@ public class Workflow <T extends WorkflowStep>{
     String getHomeDir() {
         return homeDir;
     }
+    
+    Integer getUndoStepId() {
+        return undo_step_id;
+    }
 
+    String getUndoStepName() {
+        return undoStepName;
+    }
     
     //////////////////////////////////////////////////////////////////////////
     //      Persistent Initialization
@@ -213,13 +222,16 @@ public class Workflow <T extends WorkflowStep>{
 		return;
 	    }
 
+	    if (undoStepName != null) error("Workflow graph in XML has changed.  Undo not allowed.");
+	    
 	    log("Workflow graph in XML has changed.  Updating DB with new graph.");
 
 	    // if graph has changed, remove all READY/ON_DECK steps from db
 	    workflowGraph.removeReadyStepsFromDb();
 	    
+	} else {
+	    if (undoStepName != null) error("Workflow has never run.  Undo not allowed.");
 	}
-
 
 	Set<String> stepNamesInDb = workflowGraph.getStepNamesInDb();
 
@@ -271,7 +283,7 @@ public class Workflow <T extends WorkflowStep>{
         if (workflow_id == null) {
             name = getWorkflowConfig("name");
             version = getWorkflowConfig("version");
-            String sql = "select workflow_id, state, process_id, start_time, end_time"  
+            String sql = "select workflow_id, state, undo_step_id, process_id, start_time, end_time"  
                 + " from apidb.workflow"  
                 + " where name = '" + name + "'"  
                 + " and version = '" + version + "'" ;
@@ -285,14 +297,14 @@ public class Workflow <T extends WorkflowStep>{
                     error("workflow '" + name + "' version '" + version + "' not in database");
                 workflow_id = rs.getInt(1);
                 state = rs.getString(2);
-                process_id = rs.getString(3);
-                start_time = rs.getDate(4);
-                end_time = rs.getDate(5);
+                undo_step_id = rs.getInt(3);
+                process_id = rs.getString(4);
+                start_time = rs.getDate(5);
+                end_time = rs.getDate(6);
             } finally {
                 if (rs != null) rs.close();
                 if (stmt != null) stmt.close(); 
             }
-            
         }
     }
 
@@ -318,7 +330,7 @@ public class Workflow <T extends WorkflowStep>{
 			   + stepName + "'");
 		}
                 step.setFromDbSnapshot(rs);
-                if (step.getState().equals(RUNNING)) {
+                if (step.getOperativeState().equals(RUNNING)) {
                     for (String loadType : step.getLoadTypes()) {
                         Integer f = filledSlots.get(loadType);
                         f = f == null? 0 : f;
@@ -426,6 +438,7 @@ public class Workflow <T extends WorkflowStep>{
         System.out.println("Workflow '" + name + " " + version  + "'" + nl
                            + "workflow_id:           " + workflow_id + nl
                            + "state:                 " + state + nl
+                           + "undo_step:             " + undoStepName + nl
                            + "process_id:            " + process_id + nl);
     }
 
@@ -446,12 +459,16 @@ public class Workflow <T extends WorkflowStep>{
             String[] ds = {READY, ON_DECK, RUNNING, DONE, FAILED};
             desiredStates = ds;      
         }
+        
+        String undoStr = undo_step_id != null? " (Undo Mode) " : "";
+                
         for (String desiredState : desiredStates) { 
-            System.out.println("=============== " 
-                               + desiredState + " steps "
-                               + "================"); 
+            System.out.println("=============== "
+                    + undoStr
+                    + desiredState + " steps "
+                    + "================"); 
             for (T step : workflowGraph.getSortedSteps()) {
-                if (step.getState().equals(desiredState)) {
+                if (step.getOperativeState().equals(desiredState)) {
                     System.out.println(step.toString());
                     /* FIX
                     System.out.println(stepsConfig.toString(stepName));
@@ -506,6 +523,8 @@ public class Workflow <T extends WorkflowStep>{
                  WorkflowGraph.constructFullGraph(stepClass, runnableWorkflow);
              runnableWorkflow.setWorkflowGraph(rootGraph);
              boolean testOnly = cmdLine.hasOption("t");
+             runnableWorkflow.undoStepName = 
+                 cmdLine.hasOption("u")? cmdLine.getOptionValue("u"): null;
              runnableWorkflow.run(testOnly);                
          } 
          
@@ -527,7 +546,6 @@ public class Workflow <T extends WorkflowStep>{
 		 if (Arrays.binarySearch(allowedStates, state) < 0)
 		     oops = true;
 	     }
-
              if (!oops) workflow.reportSteps(desiredStates);            
          } 
          
@@ -550,43 +568,47 @@ public class Workflow <T extends WorkflowStep>{
      
      private static String getUsageNotes() {
          return
-  
-       "Home dir must contain the following:" + nl
-     + "   config/" + nl
-     + "     workflow.prop      (meta config)" + nl
-     + "     steps.prop         (steps config)" + nl
-     + "     stepsGlobal.prop   (global steps config)" + nl
-     + "     resources.xml      [future]" + nl
-     + nl + nl   
-     + "Allowed states:  READY, ON_DECK, RUNNING, DONE, FAILED, ALL"
-     + nl + nl                        
-     + "Examples:" + nl
-     + nl     
-     + "  run a workflow:" + nl
-     + "    % workflow -h workflow_dir -r" + nl
-     + nl     
-     + "  test a workflow:" + nl
-     + "    % workflow -h workflow_dir -t" + nl
-     + nl     
-     + "  undo a step:" + nl
-     + "    % workflow -h workflow_dir -r -u my_step_name" + nl
-     + nl     
-     + "  undo a step in a test workflow:" + nl
-     + "    % workflow -h workflow_dir -t -u my_step_name" + nl
-     + nl     
-     + "  quick report of workflow state" + nl
-     + "    % workflow -h workflow_dir -q" + nl
-     + nl     
-     + "  print detailed steps report." + nl
-     + "    % workflow -h workflow_dir -d" + nl
-     + nl     
-     + "  limit steps report to steps in particular states" + nl
-     + "    % workflow -h workflow_dir -d FAILED RUNNING" + nl
-     + nl     
-     + "  print steps report, using the optional offline flag to only include steps" + nl
-     + "  that have the flag in the indicated state.  [not implemented yet]" + nl
-     + "    % workflow -h workflow_dir -d0 ON_DECK" + nl
-     + "    % workflow -h workflow_dir -d1 READY ON_DECK" + nl;
+
+         nl 
+         + "Home dir must contain the following:" + nl
+         + "   config/" + nl
+         + "     initOfflineSteps   (steps to take offline at startup)"
+         + "     loadBalance.prop   (configure load balancing)"
+         + "     resources.xml      [future]" + nl
+         + "     rootParams.prop    (root parameter values)" + nl
+         + "     stepsGlobal.prop   (global steps config)" + nl
+         + "     steps.prop         (steps config)" + nl
+         + "     workflow.prop      (meta config)" + nl
+         + nl + nl   
+         + "Allowed states:  READY, ON_DECK, RUNNING, DONE, FAILED, ALL"
+         + nl + nl                        
+         + "Examples:" + nl
+         + nl     
+         + "  run a workflow:" + nl
+         + "    % workflow -h workflow_dir -r" + nl
+         + nl     
+         + "  test a workflow:" + nl
+         + "    % workflow -h workflow_dir -t" + nl
+         + nl     
+         + "  undo a step:" + nl
+         + "    % workflow -h workflow_dir -r -u step_name" + nl
+         + nl     
+         + "  undo a step in a test workflow:" + nl
+         + "    % workflow -h workflow_dir -t -u step_name" + nl
+         + nl     
+         + "  quick report of workflow state" + nl
+         + "    % workflow -h workflow_dir -q" + nl
+         + nl     
+         + "  print detailed steps report." + nl
+         + "    % workflow -h workflow_dir -d" + nl
+         + nl     
+         + "  limit steps report to steps in particular states" + nl
+         + "    % workflow -h workflow_dir -d FAILED RUNNING" + nl
+         + nl     
+         + "  print steps report, using the optional offline flag to only include steps" + nl
+         + "  that have the flag in the indicated state.  [not implemented yet]" + nl
+         + "    % workflow -h workflow_dir -d0 ON_DECK" + nl
+         + "    % workflow -h workflow_dir -d1 READY ON_DECK" + nl;
      }
 
      private static Options declareOptions() {

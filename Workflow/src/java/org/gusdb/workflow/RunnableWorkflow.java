@@ -3,6 +3,8 @@ package org.gusdb.workflow;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /*
    to do
@@ -64,8 +66,10 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         getDbSnapshot();       // read state of Workflow and WorkflowSteps
 
 	readOfflineFromFile(); // read start-up offline requests
-
+	
 	setRunningState(testOnly); // set db state. fail if already running
+
+        initializeUndo(testOnly);      // unless undoStepName is null
 
 	// start polling
 	while (true) {
@@ -77,6 +81,55 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	}
     }
 
+    private void initializeUndo(boolean testOnly) throws SQLException, IOException, InterruptedException {
+        
+        if (undo_step_id == null && undoStepName == null) return; 
+         
+        if (undoStepName == null) error("An undo is in progress.  Cannot run the workflow in regular mode.");
+
+        // if not already running undo
+        if (undo_step_id == null) {
+            // confirm that no steps are running   
+            handleStepChanges(testOnly);
+            List<RunnableWorkflowStep> runningSteps = new ArrayList<RunnableWorkflowStep>();
+            for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
+                if (step.getState() != null && step.getState().equals(RUNNING))
+                    runningSteps.add(step);
+            }
+            if (runningSteps.size() != 0) {
+                String errStr = null;
+                for (RunnableWorkflowStep step: runningSteps) {
+                    errStr += step.getFullName() + nl;
+                }
+                if (errStr != null)
+                    error("The following steps are running.  Can't start an undo while steps are running.  Wait for all steps to complete (or kill them), and try to run undo again" + nl +errStr);
+            }
+            
+            // set undo_step_id in workflow table         
+            for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
+                if (step.getFullName().equals(undoStepName)) undo_step_id = step.getId();
+            }
+            if (undo_step_id == null) error("Step name '" + undoStepName + "' is not found");
+            
+            String sql = "UPDATE apidb.Workflow" + nl
+            + "SET undo_step_id = '" + undo_step_id + "'" + nl
+            + "WHERE workflow_id = " + workflow_id;
+            executeSqlUpdate(sql);
+        } 
+        
+        // if already running undo
+        else {
+            // confirm that step name does not conflict with current undo step
+            for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
+                if (undo_step_id == step.getId() && !step.getFullName().equals(undoStepName))
+                    error("Step '" + undoStepName + "' does not match '" + step.getFullName()
+                            + "' which is currently the step being undone");
+            }
+        }
+            
+        // invert and trim graph
+        workflowGraph.convertToUndo();
+    }
 
     // iterate through steps, checking on changes since last snapshot
     // while we're passing through, count how many steps are running
@@ -86,7 +139,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	boolean notDone = false;
 	for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
 	    runningCount += step.handleChangesSinceLastSnapshot(this);
-	    notDone |= !step.getState().equals(DONE);
+	    notDone |= !step.getOperativeState().equals(DONE);
 	}
 	if (!notDone) setDoneState(testOnly);
 	return !notDone;
@@ -152,12 +205,23 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
     private void setDoneState(boolean testOnly) throws SQLException, IOException {
 
-	String sql = "UPDATE apidb.Workflow"  
-	    + " SET state = '" + DONE + "', process_id = NULL"  
-	    + " WHERE workflow_id = " + getId();
+        String doneFlag = "state = '" + DONE + "'";
+        if (undo_step_id != null) doneFlag = "undo_step_id = NULL";
 
+        String sql = "UPDATE apidb.Workflow"  
+            + "SET " + doneFlag + ", process_id = NULL"  
+            + " WHERE workflow_id = " + getId();
+        
 	executeSqlUpdate(sql);
-	log("Workflow " + (testOnly? "TEST " : "") + DONE);
+	
+	sql = "UPDATE apidb.WorkflowStep "
+	    + "SET undo_state = NULL, undo_state_handled = 1 " 
+	    + "WHERE workflow_id = " + workflow_id;
+	executeSqlUpdate(sql); 
+	
+	String what = "Workflow";
+	if (undo_step_id != null) what = "Undo of " + undoStepName;
+	log(what + " " + (testOnly? "TEST " : "") + DONE);
     }
 
     /*
