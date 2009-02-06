@@ -737,5 +737,11 @@ sub getNextId {
   }
 }
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('DoTS.SimilaritySpan','DoTS.Similarity');
+}
+
 1;
 
