@@ -1105,6 +1105,18 @@ sub openInvocation {
    $alg_inv_gus->submit();
    $alg_inv_gus->setDefaultAlgoInvoId($alg_inv_gus->getId);
 
+   # if run by a workflow, associate the alg_inv_id with the workflow step
+   if ($cla->{commit} && $cla->{workflowstepid}) {
+     my $alg_inv_id = $alg_inv_gus->getId();
+     my $sql = 
+"INSERT INTO ApiDB.WorkflowStepAlgInvocation
+(workflow_step_alg_inv_id, workflowstep_id, algorithm_invocation_id)
+VALUES (apidb.WorkflowStepAlgInvocation_sq.nextval, $cla->{workflowstepid}, $alg_inv_id)";
+     $plugin->getQueryHandle()->prepareAndExecute($sql);
+   }
+
+
+
    # set parameter values in the DB.
    # ......................................................................
 
@@ -1348,6 +1360,13 @@ sub getStandardArgsDeclaration {
                 format => 'GUS config file format',
                }),
 
+    integerArg({name  => 'workflowstepid',
+                descr => 'Workflow step to associate this plugin run\'s algorithm invocation id with',
+                reqd  => 0,
+                default=> 0,
+                constraintFunc=>undef,
+                isList=>0,
+               }),
    ];
 }
 
