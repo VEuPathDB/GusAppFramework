@@ -1414,6 +1414,12 @@ sub getGlobalEasyCspOptions {
        o => 'algoinvo',
      },
 
+     { h => 'workflow step id',
+       d => 0
+       t => 'integer',
+       o => 'workflowstepid',
+     },
+
      { h => 'set Core.AlgorithmInvocation.comment with this comment',
        t => 'string',
        o => 'comment',
