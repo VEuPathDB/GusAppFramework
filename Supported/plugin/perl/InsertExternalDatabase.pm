@@ -12,6 +12,7 @@ package GUS::Supported::Plugin::InsertExternalDatabase;
 
 use strict 'vars';
 
+
 use GUS::PluginMgr::Plugin;
 use lib "$ENV{GUS_HOME}/lib/perl";
 use FileHandle;
