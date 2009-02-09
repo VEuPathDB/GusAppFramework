@@ -1415,7 +1415,7 @@ sub getGlobalEasyCspOptions {
      },
 
      { h => 'workflow step id',
-       d => 0
+       d => 0,
        t => 'integer',
        o => 'workflowstepid',
      },
