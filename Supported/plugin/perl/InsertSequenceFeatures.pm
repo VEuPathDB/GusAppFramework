@@ -7,6 +7,7 @@ package GUS::Supported::Plugin::InsertSequenceFeatures;
 
 @ISA = qw(GUS::PluginMgr::Plugin);
 
+
 use strict;
 use Data::Dumper;
 use FileHandle;
