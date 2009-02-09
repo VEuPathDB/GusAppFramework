@@ -10,6 +10,7 @@
 package GUS::Supported::Plugin::InsertExternalDatabaseRls;
 @ISA = qw( GUS::PluginMgr::Plugin);
 
+
 use strict 'vars';
 
 use GUS::PluginMgr::Plugin;
