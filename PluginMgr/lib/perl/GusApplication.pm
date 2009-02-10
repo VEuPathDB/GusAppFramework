@@ -1111,7 +1111,7 @@ sub openInvocation {
      my $alg_inv_id = $alg_inv_gus->getId();
      my $sql = 
 "INSERT INTO ApiDB.WorkflowStepAlgInvocation
-(workflow_step_alg_inv_id, workflowstep_id, algorithm_invocation_id)
+(workflow_step_alg_inv_id, workflow_step_id, algorithm_invocation_id)
 VALUES (apidb.WorkflowStepAlgInvocation_sq.nextval, $cla->{workflowstepid}, $alg_inv_id)";
      $plugin->getDb()->getQueryHandle(1)->prepareAndExecute($sql);
 
