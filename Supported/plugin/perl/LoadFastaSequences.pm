@@ -681,4 +681,17 @@ sub fetchTaxonIdFromName {
 }
 
 
+
+sub undoTables {
+  my ($self) = @_;
+
+  my $table = $self->getArg('tableName');
+
+  $table =~ s/\:\:/\./;
+
+  return ($table);
+}
+
+
+
 1;
