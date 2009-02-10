@@ -1113,7 +1113,8 @@ sub openInvocation {
 "INSERT INTO ApiDB.WorkflowStepAlgInvocation
 (workflow_step_alg_inv_id, workflowstep_id, algorithm_invocation_id)
 VALUES (apidb.WorkflowStepAlgInvocation_sq.nextval, $cla->{workflowstepid}, $alg_inv_id)";
-     $plugin->getQueryHandle()->prepareAndExecute($sql);
+     $plugin->getDb()->getQueryHandle(1)->prepareAndExecute($sql);
+
    }
 
 
