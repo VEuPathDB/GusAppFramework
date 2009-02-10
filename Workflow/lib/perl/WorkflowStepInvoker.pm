@@ -27,15 +27,17 @@ sub getParamValue {
 }
 
 sub setRunningState {
-    my ($self, $workflowId, $stepName) = @_;
+    my ($self, $workflowId, $stepName, $undo) = @_;
 
     my $process_id = $$;
+
+    my $undoStr = $undo? "undo_" : "";
 
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET
-  state = '$RUNNING',
-  state_handled = 0,
+  ${undoStr}state = '$RUNNING',
+  ${undoStr}state_handled = 0,
   process_id = $process_id,
   start_time = SYSDATE
 WHERE name = '$stepName'
@@ -53,17 +55,19 @@ sub getStepInvoker {
 }
 
 sub runInWrapper {
-    my ($self, $workflowId, $stepName, $mode, $invokerClass) = @_;
+    my ($self, $workflowId, $stepName, $mode, $undo, $invokerClass) = @_;
 
     $self->{name} = $stepName;
 
     chdir $self->getStepDir();
 
-    $self->log("Running Step Class $invokerClass");
+    my $undoStr = $undo? " (Undoing)" : "";
+
+    $self->log("Running$undoStr Step Class $invokerClass");
     exec {
         my $testOnly = $mode eq 'test';
 	$self->log("only testing...") if $testOnly;
-	$self->run($testOnly);
+	$self->run($testOnly, $undo);
 	sleep(int(rand(5))+1) if $testOnly;
     }
 
@@ -71,16 +75,18 @@ sub runInWrapper {
     if ($@) {
 	$state = $FAILED;
     }
+
+    $undoStr = $undo? "undo_" : "";
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET
-  state = '$state',
+  ${undoStr}state = '$state',
   process_id = NULL,
   end_time = SYSDATE,
-  state_handled = 0
+  ${undoStr}state_handled = 0
 WHERE name = '$stepName'
 AND workflow_id = $workflowId
-AND state = '$RUNNING'
+AND ${undoStr}state = '$RUNNING'
 ";
     $self->runSql($sql);
 }

@@ -135,7 +135,8 @@ public class RunnableWorkflowStep extends WorkflowStep {
 				    workflow.getId().toString(),
 				    getFullName(), invokerClassName,
 				    getStepDir() + "/step.err",
-				    testOnly? "test" : "run"}; 
+				    testOnly? "test" : "run",
+		                    getUndoing()? "1" : "0"}; 
 		List<String> cmd2 = new ArrayList<String>();
 		Collections.addAll(cmd2, cmd);
 		for (String name : paramValues.keySet()) {

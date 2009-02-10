@@ -183,7 +183,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     private void setRunningState(boolean testOnly) throws SQLException, IOException, java.lang.InterruptedException {
 
 	if (state != null && state.equals(RUNNING)) {
-	    String cmd = "ps -p " + process_id + "> /dev/null";
+	    String[] cmd = {"ps", "-p", process_id};
 	    Process process = Runtime.getRuntime().exec(cmd);
 	    process.waitFor();
 	    if (process.exitValue() == 0)
@@ -195,6 +195,8 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	if (testOnly) log("TESTING workflow....");
 
 	log("Setting workflow state to " + RUNNING
+	    + " (process id = " + processId + ")");
+	System.err.println("Setting workflow state to " + RUNNING
 	    + " (process id = " + processId + ")");
 
 	String sql = "UPDATE apidb.Workflow" + nl
