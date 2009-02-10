@@ -40,9 +40,9 @@ sub new {
 sub getDbh {
     my ($self) = @_;
     if (!$self->{dbh}) {
-	$self->{dbh} = DBI->connect($self->getWorkflowConfig('dbiConnectString'),
-				    $self->getWorkflowConfig('dbLogin'),
-				    $self->getWorkflowConfig('dbPassword'))
+	$self->{dbh} = DBI->connect($self->getGusConfig('dbiDsn'),
+				    $self->getGusConfig('databaseLogin'),
+				    $self->getGusConfig('databasePassword'))
 	  or $self->error(DBI::errstr);
     }
     return $self->{dbh};
@@ -67,6 +67,25 @@ sub getWorkflowHomeDir {
     return $self->{homeDir};
 }
 
+sub getGusConfig {
+    my ($self, $key) = @_;
+
+    my @properties = 
+	(
+	 # [name, default, description]
+	 ['databaseLogin', "", ""],
+	 ['databasePassword', "", ""],
+	 ['dbiDsn', "", ""],
+	);
+
+    if (!$self->{workflowConfig}) {
+      my $workflowConfigFile = "$self->{homeDir}/config/gus.config";
+      $self->{workflowConfig} =
+	CBIL::Util::PropertySet->new($workflowConfigFile, \@properties);
+    }
+    return $self->{workflowConfig}->getProp($key);
+}
+
 sub getWorkflowConfig {
     my ($self, $key) = @_;
 
@@ -75,10 +94,6 @@ sub getWorkflowConfig {
 	 # [name, default, description]
 	 ['name', "", ""],
 	 ['version', "", ""],
-	 ['dbLogin', "", ""],
-	 ['dbPassword', "", ""],
-	 ['dbiConnectString', "", ""],
-	 ['jdbcConnectString', "", ""],
 	 ['workflowXmlFile', "", ""],
 	 ['clusterServer', "", ""],
 	);

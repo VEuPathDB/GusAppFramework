@@ -46,6 +46,7 @@ public class Workflow <T extends WorkflowStep>{
     private Connection dbConnection;
     private String homeDir;
     private Properties workflowProps;
+    private Properties gusProps;
     protected WorkflowGraph<T> workflowGraph;
     
     // persistent state
@@ -370,9 +371,9 @@ public class Workflow <T extends WorkflowStep>{
     Connection getDbConnection() throws SQLException, FileNotFoundException, IOException {
         if (dbConnection == null) {
             DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver());
-            dbConnection = DriverManager.getConnection(getWorkflowConfig("jdbcConnectString"),
-                    getWorkflowConfig("dbLogin"),
-                    getWorkflowConfig("dbPassword"));
+            dbConnection = DriverManager.getConnection(getGusConfig("jdbcDsn"),
+                    getGusConfig("databaseLogin"),
+                    getGusConfig("databasePassword"));
         }
         return dbConnection;
     }
@@ -392,19 +393,15 @@ public class Workflow <T extends WorkflowStep>{
             workflowProps.load(new FileInputStream(getHomeDir() + "/config/workflow.prop"));
         }
         return workflowProps.getProperty(key);
-
-        /* FIX
-    my @properties = 
-        (
-         // [name, default, description]
-         ['name', "", ""],
-         ['version', "", ""],
-         ['dbLogin', "", ""],
-         ['dbPassword', "", ""],
-         ['dbConnectString', "", ""],
-         ['workflowXmlFile', "", ""],
-        );
-        */
+    }
+ 
+    String getGusConfig(String key) throws FileNotFoundException, IOException {
+        if (gusProps == null) {
+	    String gusHome = System.getProperty("GUS_HOME");
+            gusProps = new Properties();
+            gusProps.load(new FileInputStream(gusHome + "/config/gus.config"));
+        }
+        return gusProps.getProperty(key);
     }
  
     Integer getLoadBalancingConfig(String key) throws FileNotFoundException, IOException {
