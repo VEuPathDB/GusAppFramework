@@ -4,6 +4,7 @@ use strict;
 use GUS::Model::DoTS::NASequence_Row;
 use GUS::Model::DoTS::VirtualSequence;
 use CBIL::Bio::SequenceUtils;
+use Bio::Tools::SeqStats;
 #use GUS30::GUS_utils::Sequence;
 
 use vars qw (@ISA);
@@ -28,6 +29,7 @@ sub setSequence{
 	$sequence =~ tr/a-z/A-Z/;
   if($self->get('sequence') ne $sequence){
     $self->set('length',length($sequence)) unless $self->getLength() == length($sequence);
+    $self->monomerCount($sequence);
     $self->set('sequence',$sequence); 
   }
 }
@@ -55,6 +57,47 @@ sub toCAML {
   if(exists $self->{quality}){ $caml .= "    <QUALITY>$self->{quality}</QUALITY>\n";}
   $caml .= "  </SEQUENCE>\n";
   return $caml;
+}
+
+
+sub monomerCount{
+  my ($self, $naSeq)=@_;
+  my $monomersHash;
+  my $countA = 0;
+  my $countT = 0;
+  my $countC = 0;
+  my $countG = 0;
+  my $countOther = 0;
+
+  my $seqobj = Bio::PrimarySeq->new(-seq=>$naSeq,
+				    -alphabet=>'dna');
+  my $seqStats  =  Bio::Tools::SeqStats->new(-seq=>$seqobj);
+
+  $monomersHash = $seqStats->count_monomers();
+  foreach my $base (keys %$monomersHash) {
+    if ($base eq 'A'){
+      $countA = $$monomersHash{$base};
+    }
+    elsif ($base eq 'T'){
+      $countT = $$monomersHash{$base};
+    }
+    elsif ($base eq 'C'){
+      $countC = $$monomersHash{$base};
+    }
+    elsif ($base eq 'G'){
+      $countG = $$monomersHash{$base};
+    }
+    else{
+      $countOther = $$monomersHash{$base};
+    }
+  }
+
+  $self->set('a_count', $countA) unless $self->getACount() == $countA;
+  $self->set('t_count', $countT) unless $self->getTCount() == $countT;
+  $self->set('c_count', $countC) unless $self->getCCount() == $countC;
+  $self->set('g_count', $countG) unless $self->getGCount() == $countG;
+  $self->set('other_count', $countOther) unless $self->getOtherCount() == $countOther;
+
 }
 
 1;
