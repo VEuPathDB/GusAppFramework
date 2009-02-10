@@ -489,8 +489,8 @@ and t.na_sequence_id = snas.na_sequence_id";
 sub undoTables {
   my ($self) = @_;
 
-  return ('DoTS.TranslatedAAFeature',
-	  'DoTS.TranslatedAASequence',
+  return ('DoTS.TranslatedAASequence',
+	  'DoTS.TranslatedAAFeature',
 	 );
 }
 
@@ -498,8 +498,8 @@ sub undoTables {
 sub undoUpdatedTables {
   my ($self) = @_;
 
-  return ('DoTS.TranslatedAAFeature',
-	  'DoTS.TranslatedAASequence',
+  return ('DoTS.TranslatedAASequence',
+	  'DoTS.TranslatedAAFeature',
 	 );
 }
 
