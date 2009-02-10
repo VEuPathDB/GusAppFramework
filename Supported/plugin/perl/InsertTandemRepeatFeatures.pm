@@ -257,4 +257,12 @@ sub getNaLoc {
   return $naLoc;
 }
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('DoTS.NALocation',
+	  'DoTS.NAFeature',
+	 );
+}
+
 1;
