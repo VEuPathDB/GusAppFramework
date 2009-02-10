@@ -490,7 +490,7 @@ sub undoTables {
   my ($self) = @_;
 
   return ('DoTS.TranslatedAASequence',
-	  'DoTS.TranslatedAAFeature',
+	  'DoTS.TranslatedAAFeature'
 	 );
 }
 
@@ -499,7 +499,7 @@ sub undoUpdatedTables {
   my ($self) = @_;
 
   return ('DoTS.TranslatedAASequence',
-	  'DoTS.TranslatedAAFeature',
+	  'DoTS.TranslatedAAFeature'
 	 );
 }
 
