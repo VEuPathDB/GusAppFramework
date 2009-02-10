@@ -485,4 +485,23 @@ and t.na_sequence_id = snas.na_sequence_id";
   return $translationStop;
 }
 
+
+sub undoTables {
+  my ($self) = @_;
+
+  return ('DoTS.TranslatedAAFeature',
+	  'DoTS.TranslatedAASequence',
+	 );
+}
+
+
+sub undoUpdatedTables {
+  my ($self) = @_;
+
+  return ('DoTS.TranslatedAAFeature',
+	  'DoTS.TranslatedAASequence',
+	 );
+}
+
+
 1;
