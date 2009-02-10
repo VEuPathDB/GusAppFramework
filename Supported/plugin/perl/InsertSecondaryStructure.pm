@@ -321,4 +321,13 @@ $sql .= " and inv.result = '$algInvResult'" if ($algInvResult);
   return($algInvIds[0]);
 }
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('DoTS.SecondaryStructureCall',
+	  'DoTS.SecondaryStructureCall',
+	 );
+}
+
+
 1;
