@@ -244,5 +244,14 @@ sub _getAlgorithmInvocation {
   return($algInv);
 }
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('Core.Algorithm',
+	  'Core.AlgorithmImplementation',
+          'Core.AlgorithmInvocation'
+	 );
+}
+
 1;
 
