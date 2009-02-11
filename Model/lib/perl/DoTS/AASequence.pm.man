@@ -11,14 +11,16 @@ use vars qw (@ISA);
 my $debug = 0;
 
 sub setSequence{
-	my($self,$sequence) = @_;
-	print STDERR "setting sequence for ",$self->getClassName()," ",$self->getId(),"\nNew: $sequence\n\nOld: ",$self->get('sequence'),"\n\n" if $debug;
-	$sequence =~ s/\s//g; ##removes any returns
-	$self->set('length',length($sequence)) if $self->getLength != length($sequence);
-	$sequence =~ tr/a-z/A-Z/;
+  my($self,$sequence,$doMW) = @_;
+  print STDERR "setting sequence for ",$self->getClassName()," ",$self->getId(),"\nNew: $sequence\n\nOld: ",$self->get('sequence'),"\n\n" if $debug;
+  $sequence =~ s/\s//g; ##removes any returns
+  $self->set('length',length($sequence)) if $self->getLength != length($sequence);
+  $sequence =~ tr/a-z/A-Z/;
   if($self->get('sequence') ne $sequence){
     $self->set('sequence',$sequence);
-    $self->molecularWeight($sequence);
+    unless($doMW){
+      $self->molecularWeight($sequence);
+    }
   }
 }
 
