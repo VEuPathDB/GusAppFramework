@@ -3,7 +3,7 @@ package GUS::Model::DoTS::AASequence; # table name
 use strict;
 use GUS::Model::DoTS::AASequence_Row;
 use CBIL::Bio::SequenceUtils;
-
+use Bio::Tools::SeqStats;
 
 use vars qw (@ISA);
 @ISA = qw (GUS::Model::DoTS::AASequence_Row);
@@ -17,7 +17,8 @@ sub setSequence{
 	$self->set('length',length($sequence)) if $self->getLength != length($sequence);
 	$sequence =~ tr/a-z/A-Z/;
   if($self->get('sequence') ne $sequence){
-    $self->set('sequence',$sequence); 
+    $self->set('sequence',$sequence);
+    $self->molecularWeight($sequence);
   }
 }
 
@@ -34,6 +35,23 @@ sub toFasta {
 		$defline .= $self->get('description') if $self->get('description');
 	}else{ $defline = ">".$self->getId(); }
 	return "$defline\n" . CBIL::Bio::SequenceUtils::breakSequence($self->getSequence());
+}
+
+sub molecularWeight {
+  my ($self,$seq) = @_;
+
+  $seq =~ s/J/L/g;
+
+  my $seq = Bio::PrimarySeq->new(-seq => $seq,
+				      -alphabet => "protein",
+				     );
+
+  my ($minWt, $maxWt) =
+    @{Bio::Tools::SeqStats->get_mol_wt($seq)};
+
+  my $aveWt = sprintf("%d", ($minWt + $maxWt) / 2);
+
+  $self->setMolecularWeight($aveWt);
 }
 
 1;
