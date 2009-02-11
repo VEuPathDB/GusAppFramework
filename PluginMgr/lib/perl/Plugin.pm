@@ -457,7 +457,7 @@ B<Return type:> C<GUS::ObjRelP::DbiDbHandle>
 sub getQueryHandle {
   my ($self, $autocommit) = @_;
 
-  if (!$self->getDb()) return undef;
+  if (!$self->getDb()) {return undef};
 
   return $self->getDb()->getQueryHandle($autocommit);
 }
