@@ -23,13 +23,15 @@ sub getSequence {
 }
 
 sub setSequence{
-	my($self,$sequence) = @_;
+	my($self,$sequence,$doMonomer) = @_;
 	print STDERR "setting sequence for ",$self->getClassName()," ",$self->getId(),"\nNew: $sequence\n\nOld: ",$self->get('sequence'),"\n\n" if $debug;
 	$sequence =~ s/\s//g; ##removes any returns
 	$sequence =~ tr/a-z/A-Z/;
   if($self->get('sequence') ne $sequence){
     $self->set('length',length($sequence)) unless $self->getLength() == length($sequence);
-    $self->monomerCount($sequence);
+    unless($doMonomer) {
+      $self->monomerCount($sequence);
+    }
     $self->set('sequence',$sequence); 
   }
 }
