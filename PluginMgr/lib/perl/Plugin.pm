@@ -449,12 +449,19 @@ sub getDbHandle    { $_[0]->getDb ? $_[0]->getDb->getDbHandle : undef }
 
 =item C<getQueryHandle()>
 
-Get a DbiDbHandle that is distinct from that used by the objects, for querying purposes.  This handle ignores the --commit flag (auto commit is on by default).
+Get a DbiDbHandle that is distinct from that used by the objects, for querying purposes.  This handle ignores the --commit flag.  Auto commit is off by default (ie, if no autocommit arg value is provided).  Commit is issued upon normal completion of the run() method.
 
 B<Return type:> C<GUS::ObjRelP::DbiDbHandle>
 
 =cut
-sub getQueryHandle    { $_[0]->getDb ? $_[0]->getDb->getQueryHandle : undef }
+sub getQueryHandle {
+  my ($self, $autocommit) = @_;
+
+  if (!$self->getDb()) return undef;
+
+  return $self->getDb()->getQueryHandle($autocommit);
+}
+
 
 =item C<getCheckSum()>
 

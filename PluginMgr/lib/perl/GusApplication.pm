@@ -589,6 +589,7 @@ sub doMajorMode_RunOrReport {
       $Run && $pu->logRowsInserted();
       $Run && $pu->logAlgInvocationId();
       $Run && $pu->logCommit();
+      $pu->getQueryHandle()->commit();  # oracle does this automatically; do it explicity for other DBMSs
 
    };}
 
@@ -1113,8 +1114,7 @@ sub openInvocation {
 "INSERT INTO ApiDB.WorkflowStepAlgInvocation
 (workflow_step_alg_inv_id, workflow_step_id, algorithm_invocation_id)
 VALUES (apidb.WorkflowStepAlgInvocation_sq.nextval, $cla->{workflowstepid}, $alg_inv_id)";
-     $plugin->getDb()->getQueryHandle(1)->prepareAndExecute($sql);
-
+     $plugin->getQueryHandle(1)->prepareAndExecute($sql);
    }
 
 
