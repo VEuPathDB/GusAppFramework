@@ -357,6 +357,7 @@ sub run {
   $RV = $M->loadData($fh);
   $fh->close();
 
+  $M->getQueryHandle()->commit(); # ga no longer doing this by default
   return $RV;
 }
 

@@ -358,6 +358,7 @@ sub run {
       $summary .= $self->keepBestAlignments;
    }
 
+   $self->getQueryHandle()->commit(); # ga no longer doing this by default
    return $summary;
 }
 

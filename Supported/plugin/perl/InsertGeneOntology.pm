@@ -415,6 +415,8 @@ EOSQL
   }
   
   $dbh->do("DROP TABLE go_tc");
+  $dbh->commit(); # ga no longer doing this by default
+
 }
 
 sub _deleteTermsAndRelationships {

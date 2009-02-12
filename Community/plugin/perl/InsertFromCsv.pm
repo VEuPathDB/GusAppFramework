@@ -188,6 +188,9 @@ sub run {
        $Self->getDb()->manageTransaction(0,'commit');
     }
 
+    # NOTE: this plugin should probably use $Self->getDbHandle() so as to 
+    # obey the --commit arg
+    $Self->getQueryHandle()->commit(); # ga no longer doing this by default
     return "Inserted $rows_n rows from $files_n files.";
 }
 
