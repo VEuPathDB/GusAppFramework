@@ -233,6 +233,7 @@ sub run {
   my $results = "Processing completed:";
   $results = $results . $tempresults . $entryresults . $nrdbdelete . $aadelete; #not all of these will be initialized 
   $self->log("$results\n");
+  $self->getQueryHandle()->commit(); # ga no longer doing this by default
 
   return $results;
 }

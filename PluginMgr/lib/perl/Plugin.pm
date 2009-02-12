@@ -449,7 +449,7 @@ sub getDbHandle    { $_[0]->getDb ? $_[0]->getDb->getDbHandle : undef }
 
 =item C<getQueryHandle()>
 
-Get a DbiDbHandle that is distinct from that used by the objects, for querying purposes.  This handle ignores the --commit flag.  Auto commit is off by default (ie, if no autocommit arg value is provided).  Commit is issued upon normal completion of the run() method.
+Get a DbiDbHandle that is distinct from that used by the objects, for querying purposes.  This handle ignores the --commit flag.  Auto commit is off by default (ie, if no autocommit arg value is provided).  Any open transactions are rolled back upon plugin completion.  Warning: do not use this handle for writing permanant data, because it ignores the --commit flag.
 
 B<Return type:> C<GUS::ObjRelP::DbiDbHandle>
 

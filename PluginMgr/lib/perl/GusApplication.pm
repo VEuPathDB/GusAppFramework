@@ -556,14 +556,13 @@ sub doMajorMode_RunOrReport {
    # the application context
    $Run && $self->openInvocation($pu);
    
-   # this acts like a java final block.  clean up and show a stack trace.
+   # this acts like a java finally block.  clean up and show a stack trace.
    { local
 
    $SIG{__DIE__} = sub {
      my ($err) = @_;
 
      require Carp;
-     
      die "\nERROR:\n$err\nSTACK TRACE:\n" . Carp::longmess() . "\n";
    };
 
@@ -589,19 +588,19 @@ sub doMajorMode_RunOrReport {
       $Run && $pu->logRowsInserted();
       $Run && $pu->logAlgInvocationId();
       $Run && $pu->logCommit();
-      $pu->getQueryHandle()->commit();  # oracle does this automatically; do it explicity for other DBMSs
-
-   };}
+   };
+   }
 
    my $err = $@;
-
-   die "Plugin run() must return a string describing the result of the run"
-     unless $err || $pu->getResultDescr();
-
    $Run && $self->closeInvocation($pu, $err);
 
-   die $err if $err;
-}
+   if ($err) {
+     die $err;
+   } else {
+     die "Plugin run() must return a string describing the result of the run"
+       if (!$self->getArgs->{commit} && !$pu->getResultDescr());
+   }
+ }
 
 sub logTime {
   my ($self, $startTime, $pu) = @_;
@@ -1210,18 +1209,21 @@ If you are developing the plugin, you may need to check it in to the repostory a
 sub closeInvocation {
    my $self   = shift;
    my $plugin = shift;
-
-   my $failmsg;
+   my $failmsg = shift;
 
    $plugin->setResultDescr($failmsg) if $failmsg; # until we add an errmsg attribute
 
+   # do this first in case the submit below fails
+   if ($plugin->getQueryHandle()) {
+     $plugin->getQueryHandle()->rollback(); # rollback uncommitted changes
+     $pu->getQueryHandle()->logout();
+   }
    $plugin->getAlgInvocation->setGlobalNoVersion(1);
    $plugin->getAlgInvocation->setResult($plugin->getResultDescr);
    $plugin->getAlgInvocation->setEndTime($plugin->getAlgInvocation->getDatabase()->getDateFunction());
    $plugin->getAlgInvocation->submit(1);
 
-   ##logout
-   $self->disconnect_from_database($plugin);
+   $plugin->getDb()->logout();
 
    return undef;
 }
@@ -1255,7 +1257,6 @@ sub disconnect_from_database {
    my $self   = shift;
    my $plugin = shift;
 
-   $plugin->getDb()->logout();
 }
 
 
