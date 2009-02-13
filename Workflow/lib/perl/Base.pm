@@ -30,6 +30,7 @@ sub new {
 
   my $self = {
       homeDir => $homeDir,
+      gusHome => $ENV{GUS_HOME},
   };
 
   bless($self,$class);
@@ -73,17 +74,17 @@ sub getGusConfig {
     my @properties = 
 	(
 	 # [name, default, description]
+	 ['dbiDsn', "", ""],
 	 ['databaseLogin', "", ""],
 	 ['databasePassword', "", ""],
-	 ['dbiDsn', "", ""],
 	);
 
-    if (!$self->{workflowConfig}) {
-      my $workflowConfigFile = "$self->{homeDir}/config/gus.config";
-      $self->{workflowConfig} =
-	CBIL::Util::PropertySet->new($workflowConfigFile, \@properties);
+    if (!$self->{gusConfig}) {
+      my $gusConfigFile = "$self->{gusHome}/config/gus.config";
+      $self->{gusConfig} =
+	CBIL::Util::PropertySet->new($gusConfigFile, \@properties, 1);
     }
-    return $self->{workflowConfig}->getProp($key);
+    return $self->{gusConfig}->getProp($key);
 }
 
 sub getWorkflowConfig {
@@ -102,6 +103,7 @@ sub getWorkflowConfig {
       my $workflowConfigFile = "$self->{homeDir}/config/workflow.prop";
       $self->{workflowConfig} =
 	CBIL::Util::PropertySet->new($workflowConfigFile, \@properties);
+
     }
     return $self->{workflowConfig}->getProp($key);
 }
