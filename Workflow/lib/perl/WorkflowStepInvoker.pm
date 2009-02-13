@@ -232,7 +232,7 @@ sub clusterTaskRunning {
 }
 
 sub runPlugin {
-    my ($self, $test, $plugin, $args) = @_;
+    my ($self, $test, $undo, $plugin, $args) = @_;
 
     my $className = ref($self);
 
