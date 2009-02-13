@@ -80,13 +80,12 @@ sub getDbState {
     $self->{name} = $self->getWorkflowConfig('name');
     $self->{version} = $self->getWorkflowConfig('version');
     my $sql = "
-select workflow_id, state, process_id, start_time, end_time, xml_file_digest
+select workflow_id, state, process_id, xml_file_digest
 from apidb.workflow
 where name = '$self->{name}'
 and version = '$self->{version}'
 ";
-    ($self->{workflow_id}, $self->{state}, $self->{process_id},
-     $self->{start_time}, $self->{end_time}, $self->{xml_file_digest})
+    ($self->{workflow_id}, $self->{state}, $self->{process_id},$self->{xml_file_digest})
       = $self->runSqlQuery_single_array($sql);
     $self->error("workflow '$self->{name}' version '$self->{version}' not in database")
       unless $self->{workflow_id};
