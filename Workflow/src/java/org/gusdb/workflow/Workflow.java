@@ -56,8 +56,6 @@ public class Workflow <T extends WorkflowStep>{
     protected String state;
     protected Integer undo_step_id;
     protected String process_id;
-    protected Date start_time;
-    protected Date end_time;
     
     Map<String,Integer> filledSlots = new HashMap<String,Integer>();
     Properties loadBalancingConfig;
@@ -284,7 +282,7 @@ public class Workflow <T extends WorkflowStep>{
         if (workflow_id == null) {
             name = getWorkflowConfig("name");
             version = getWorkflowConfig("version");
-            String sql = "select workflow_id, state, undo_step_id, process_id, start_time, end_time"  
+            String sql = "select workflow_id, state, undo_step_id, process_id"  
                 + " from apidb.workflow"  
                 + " where name = '" + name + "'"  
                 + " and version = '" + version + "'" ;
@@ -300,8 +298,6 @@ public class Workflow <T extends WorkflowStep>{
                 state = rs.getString(2);
                 undo_step_id = (rs.getObject(3) == null)? null : rs.getInt(3);
                 process_id = rs.getString(4);
-                start_time = rs.getDate(5);
-                end_time = rs.getDate(6);
             } finally {
                 if (rs != null) rs.close();
                 if (stmt != null) stmt.close(); 
