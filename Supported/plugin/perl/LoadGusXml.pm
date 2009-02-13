@@ -24,7 +24,14 @@ booleanArg({ name           => 'refresh',
 	    reqd           => 1,
 	    isList         => 0,
 	    format         => 'Simple GUS XML Format.  See the notes.',
-	    mustExist      => 1 })
+	    mustExist      => 1 }),
+
+   stringArg({name => 'tableName',
+	      descr => 'name of the table for inserts, used for undo, schema.table format, e.g. dots.nasequence',
+	      reqd => 0,
+	      constraintFunc => undef,
+	      isList => 0,
+	     })
 
   ];
 
@@ -55,7 +62,7 @@ my $tablesDependedOn = <<EOF;
 EOF
 
 my $howToRestart = <<EOF;
-There are no restart facilities for this plugin
+There are no restart facilities for this plugin, can undo, must provide tableName for undo
 EOF
 
 my $failureCases = <<EOF;
@@ -175,6 +182,15 @@ sub countChangedObjs {
     $self->countChangedObjs($c);
   }
 }
+
+sub undoTables {
+  my ($self) = @_;
+
+  my $table = $self->getArg->('tableName');
+
+  return ($table);
+}
+
 
 1;
 
