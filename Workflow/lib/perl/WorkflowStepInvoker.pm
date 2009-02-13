@@ -55,9 +55,10 @@ sub getStepInvoker {
 }
 
 sub runInWrapper {
-    my ($self, $workflowId, $stepName, $mode, $undo, $invokerClass) = @_;
+    my ($self, $workflowId, $stepName, $stepId, $mode, $undo, $invokerClass) = @_;
 
     $self->{name} = $stepName;
+    $self->{id} = $stepId;
 
     chdir $self->getStepDir();
 
@@ -89,6 +90,11 @@ AND workflow_id = $workflowId
 AND ${undoStr}state = '$RUNNING'
 ";
     $self->runSql($sql);
+}
+
+sub getId {
+  my ($self) = @_;
+  return $self->{id};
 }
 
 

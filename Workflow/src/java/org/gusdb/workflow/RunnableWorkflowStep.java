@@ -133,7 +133,8 @@ public class RunnableWorkflowStep extends WorkflowStep {
 	    } else {
 		String[] cmd = {"workflowstepwrap", workflow.getHomeDir(),
 				    workflow.getId().toString(),
-				    getFullName(), invokerClassName,
+				    getFullName(), getId(),
+				    invokerClassName,
 				    getStepDir() + "/step.err",
 				    testOnly? "test" : "run",
 		                    getUndoing()? "1" : "0"}; 
