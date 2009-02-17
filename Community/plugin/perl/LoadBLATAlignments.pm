@@ -358,7 +358,6 @@ sub run {
       $summary .= $self->keepBestAlignments;
    }
 
-   $self->getQueryHandle()->commit(); # ga no longer doing this by default
    return $summary;
 }
 
@@ -474,10 +473,10 @@ sub loadAlignments {
          $self->progressMessage($reportInterval, $nTotalAligns, 'BLAT alignments processed.');
          $self->progressMessage($reportInterval, $nTotalAlignsLoaded, 'BLAT alignments loaded.') if ($nl > 0);
 
-         $dbh->commit() if (($nTotalAlignsLoaded % $commitInterval) == 0);
+         $dbh->commit() if (($nTotalAlignsLoaded % $commitInterval) == 0 && $self-getArg('commit'));
       }
 
-      $dbh->commit();
+      $dbh->commit() if $self-getArg('commit');
 
       print "LoadBLATAlignments: loaded $nAlignsLoaded/$nAligns BLAT alignments from $blatFile.\n";
 
@@ -604,12 +603,12 @@ sub keepBestAlignments {
 	 $dbh->do("update DoTS.BlatAlignment set is_best_alignment = 1 "
 		  . "where blat_alignment_id = $bid" );
 	 if (($tot_bs % $commitInterval) == 0) {
-	   $dbh->commit();
+	   $dbh->commit() if $self->getArg('commit');
 	   print "# $tot_bs alignments marked is_best_alignment = 1\n";
 	 }
        }
      }
-     $dbh->commit();
+     $dbh->commit() if $self->getArg('commit');
    }
 
    @$blatIds = ();
@@ -629,7 +628,7 @@ sub keepBestAlignments {
       . "and target_external_db_release_id = $targetExtDbRelId "
       . "and (is_best_alignment is null or is_best_alignment = 0)";
       $dbh->do($sql) or die "could not run $sql:!\n";
-      $dbh->commit();
+      $dbh->commit() if $self->getArg('commit');
       $summary .= "(non-best alignments deleted from db)\n";
    }
 
@@ -950,6 +949,22 @@ sub getGenomeVersion {
    my $v = $vers[0];
 
    $v;
+}
+
+sub undoTables {
+  my ($self) = @_;
+
+  return ('DoTS.AALocation',
+	  'DoTS.AAFeature',
+	 );
+}
+
+sub undoUpdatedTables {
+  my ($self) = @_;
+
+  return ('DoTS.AALocation',
+	  'DoTS.AAFeature',
+	 );
 }
 
 1;
