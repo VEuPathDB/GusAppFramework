@@ -1,4 +1,4 @@
-#!@perl@
+#!/usr/bin/perl
 
 ## dumps sequences from sequence table 
 ##note the sequence must be returned as thelast item
@@ -70,6 +70,10 @@ while(my (@row) = $idStmt->fetchrow_array()){
   next if exists $done{$row[0]};  ##don't put into hash if already have...
   &printSequence(@row)
 }
+
+my $countSeqInOutFile=`grep -c '>' $outFile`;
+
+die "Inconsistant number of sequences between query results and outputs in $outFile. Please check log file.\n" unless ($countSeqInOutFile==$count);
 
 sub printSequence{
 	my @row = @_;
