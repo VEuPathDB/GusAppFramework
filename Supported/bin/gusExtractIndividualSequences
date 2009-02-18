@@ -67,8 +67,11 @@ print "outFile: $outFile\n";
   &printSequence(@row)
 }
 
-	print STDERR "Ignored ".scalar(keys%done)." entries dumped in previous run\n" if $verbose;
+  print STDERR "Ignored ".scalar(keys%done)." entries dumped in previous run\n" if $verbose;
 
+my $countSeqInOutFile=`ls $outDir|wc -l`;
+
+die "Inconsistant number of sequences between query results and outputs in $outDir. Please check log file.\n" unless ($countSeqInOutFile==$count);
 
 sub printSequence{
 open(OUT,">$outFile");
