@@ -6,6 +6,7 @@ use strict;
 
 use GUS::PluginMgr::Plugin;
 
+
 my $purpose = <<PURPOSE;
 The Undo plugin is very simple:
 
