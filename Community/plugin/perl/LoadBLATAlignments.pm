@@ -953,17 +953,10 @@ sub getGenomeVersion {
 sub undoTables {
   my ($self) = @_;
 
-  return ('DoTS.AALocation',
-	  'DoTS.AAFeature',
+  return ('DoTS.BlatAlignment'
 	 );
 }
 
-sub undoUpdatedTables {
-  my ($self) = @_;
 
-  return ('DoTS.AALocation',
-	  'DoTS.AAFeature',
-	 );
-}
 
 1;
