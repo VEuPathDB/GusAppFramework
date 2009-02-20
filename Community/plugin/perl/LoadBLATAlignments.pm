@@ -817,8 +817,7 @@ sub loadAlignment {
       $target_id = $targetIdHash->{$srcId};
 
       if (!($target_id =~ /\d+/)) {
-         print STDERR "LoadBLATALignments: ERROR - unable to resolve target source_id '$srcId'\n";
-         return 0;
+         die "LoadBLATALignments: ERROR - unable to resolve target source_id '$srcId'\n";
       }
    }
 
