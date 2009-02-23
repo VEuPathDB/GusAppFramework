@@ -20,17 +20,19 @@ my $inputType = $ARGV[1];
 my $stepNamePattern = $ARGV[2];
 my $stepNameFile = $ARGV[2];
 my $offline;
+my $stopafter;
 my $state;
 my $list;
 if ($ARGV[3] eq '-l') {
     $list = 1;
 } elsif ($ARGV[3] eq 'offline' || $ARGV[3] eq 'online') {
   $offline = $ARGV[3];
-  $state = $ARGV[3];
+} elsif ($ARGV[3] eq 'stopafter' || $ARGV[3] eq 'resume') {
+  $stopafter = $ARGV[3];
 } else {
   $state = $ARGV[3]
 }
-&usage unless (($inputType eq '-p' || $inputType eq '-f') && ($list || $offline || ($state eq 'kill' || $state eq 'ready')));
+&usage unless (($inputType eq '-p' || $inputType eq '-f') && ($list || $offline || $stopafter || ($state eq 'kill' || $state eq 'ready')));
 
 my $workflow = GUS::Workflow::WorkflowHandle->new($homeDir);
 
@@ -64,6 +66,10 @@ foreach my $stepName (@$stepNames) {
         my $errmsg = $step->pilotSetOffline($offline);
 	push(@errors,$errmsg) if $errmsg;
     }
+    if ($stopafter) {
+        my $errmsg = $step->pilotSetStopAfter($stopafter);
+	push(@errors,$errmsg) if $errmsg;
+    }
 }
 
 if (scalar(@errors)) {
@@ -75,7 +81,7 @@ sub usage {
 
 Change the state and/or offline status of the workflow steps whose name match the provided pattern.
 
-Usage: workflowstep -h workflow_home_dir [ -p stepname_pattern | -f file_of_steps ] [-l | [offline|online] [ready|kill]]
+Usage: workflowstep -h workflow_home_dir [ -p stepname_pattern | -f file_of_steps ] [-l | [offline|online|stopafter|resume] [ready|kill]]
 
 Where:
   -h                   - workflow home dir
@@ -91,6 +97,7 @@ Allowed state changes are:
   $RUNNING --> kill
 
 Offline status may not be changed when the step is $RUNNING
+Stop after status may not be changed when the stop is $DONE
 
 Examples
   % workflowstep -h workflow_dir -p stepname_pattern -l
