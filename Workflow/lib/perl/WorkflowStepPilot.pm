@@ -88,6 +88,30 @@ AND (state != '$RUNNING')
     return 0;
 }
 
+# called by pilot UI
+sub pilotSetStopAfter {
+    my ($self, $stopafter) = @_;
+
+    $self->{lastSnapshot} = -1;
+    my ($state) = $self->getDbState();
+    if ($state eq $DONE) {
+      return "Warning: Can't change $self->{name} to STOP_AFTER when '$DONE'";
+    }
+    my $stopafter_bool = $stopafter eq 'stopafter'? 1 : 0;
+
+    my $sql = "
+UPDATE apidb.WorkflowStep
+SET
+  stop_after = $stopafter_bool,
+  state_handled = 0
+WHERE workflow_step_id = $self->{workflow_step_id}
+AND (state != '$DONE')
+";
+    $self->runSql($sql);
+    $self->pilotLog("Step '$self->{name}' $stopafter");
+    return 0;
+}
+
 sub getDbState {
     my ($self) = @_;
 
@@ -95,12 +119,12 @@ sub getDbState {
       my $workflow_id = $self->{workflow}->getId();
       my $sql = "
 SELECT workflow_step_id, host_machine, process_id, state,
-       state_handled, off_line, start_time, end_time
+       state_handled, off_line, stop_after, start_time, end_time
 FROM apidb.workflowstep
 WHERE name = '$self->{name}'
 AND workflow_id = $workflow_id";
       ($self->{workflow_step_id}, $self->{host_machine}, $self->{process_id},
-       $self->{state}, $self->{state_handled}, $self->{off_line},
+       $self->{state}, $self->{state_handled}, $self->{off_line}, $self->{stop_after},
        $self->{start_time}, $self->{end_time})= $self->runSqlQuery_single_array($sql);
     }
     return $self->{state};
@@ -146,6 +170,7 @@ name:       $self->{name}
 id:         $self->{workflow_step_id}
 state:      $self->{state}
 off_line:   $self->{off_line}
+stop_after: $self->{stop_after}
 handled:    $self->{state_handled}
 process_id: $self->{process_id}
 start_time: $self->{start_time}
