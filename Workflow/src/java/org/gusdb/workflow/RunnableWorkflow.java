@@ -57,19 +57,21 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
     // run the controller
     void run(boolean testOnly) throws Exception {
-        initHomeDir();         // initialize workflow home directory, if needed
+        initHomeDir();             // initialize workflow home directory, if needed
 
-        initDb(true);          // write workflow to db, if not already there
+        initDb(true);              // write workflow to db, if not already there
 
-        getStepsConfig();      // validate config of all steps.
+        getStepsConfig();          // validate config of all steps.
 
-        getDbSnapshot();       // read state of Workflow and WorkflowSteps
+        getDbSnapshot();           // read state of Workflow and WorkflowSteps
 
-	readOfflineFromFile(); // read start-up offline requests
+	readOfflineFromFile();     // read start-up offline requests
 	
+        readStopAfterFromFile();   // read start-up offline requests
+        
 	setRunningState(testOnly); // set db state. fail if already running
 
-        initializeUndo(testOnly);      // unless undoStepName is null
+        initializeUndo(testOnly);  // unless undoStepName is null
 
 	// start polling
 	while (true) {
@@ -178,6 +180,14 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 			"offline"}; 
 	Process process = Runtime.getRuntime().exec(cmd);
 	process.waitFor();
+    }
+
+    private void readStopAfterFromFile() throws IOException, java.lang.InterruptedException {
+        String[] cmd = {"workflowstep", "-h", getHomeDir(),
+                        "-f", getHomeDir() + "/config/initStopAfterSteps",
+                        "stopafter"}; 
+        Process process = Runtime.getRuntime().exec(cmd);
+        process.waitFor();
     }
 
     private void setRunningState(boolean testOnly) throws SQLException, IOException, java.lang.InterruptedException {

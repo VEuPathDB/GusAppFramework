@@ -21,12 +21,9 @@ public class RunnableWorkflowStep extends WorkflowStep {
                 if (process.exitValue() != 0) handleMissingProcess();
             }
         } else { // this step has been changed by wrapper or pilot UI. log change.
-            String offlineMsg = "";
             if (!getOperativeState().equals(prevState)) steplog(getOperativeState(), "");
-            if(off_line != prevOffline) {
-                offlineMsg = off_line? "OFFLINE" : "ONLINE";
-		steplog("", offlineMsg);
-            }
+            if (off_line != prevOffline) steplog("", (off_line? "OFFLINE" : "ONLINE"));
+            if (stop_after != prevStopAfter) steplog("", (stop_after? "STOP_AFTER" : "RESUME"));
             setHandledFlag();
         }
         return getOperativeState().equals(Workflow.RUNNING)? 1 : 0;
@@ -36,13 +33,15 @@ public class RunnableWorkflowStep extends WorkflowStep {
         // check that state is still as expected, to avoid theoretical race condition
 
         int offlineInt = off_line? 1 : 0;
+        int stopafterInt = stop_after? 1 : 0;
         String sql;
         if (!getUndoing()) {
             sql = "UPDATE apidb.WorkflowStep"  
             + " SET state_handled = 1"
             + " WHERE workflow_step_id = " + workflow_step_id
             + " AND state = '" + state + "'"
-            + " AND off_line = " + offlineInt;      
+            + " AND off_line = " + offlineInt 
+            + " AND stop_after = " + stopafterInt;      
             state_handled = true;  // till next snapshot
         } else {
             sql = "UPDATE apidb.WorkflowStep"  
@@ -92,7 +91,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
         if (!getOperativeState().equals(Workflow.READY) || off_line) return;
 
         for (WorkflowStep parent : getParents()) {
-            if (!parent.getOperativeState().equals(Workflow.DONE)) return;
+            if (!parent.getOperativeState().equals(Workflow.DONE) || parent.getStopAfter()) return;
         }
 
         steplog(Workflow.ON_DECK, "");
