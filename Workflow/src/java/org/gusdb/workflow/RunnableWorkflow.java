@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.File;
 
 /*
    to do
@@ -65,9 +66,9 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
         getDbSnapshot();           // read state of Workflow and WorkflowSteps
 
-	readOfflineFromFile();     // read start-up offline requests
+	readOfflineFile();         // read start-up offline requests
 	
-        readStopAfterFromFile();   // read start-up offline requests
+        readStopAfterFile();       // read start-up offline requests
         
 	setRunningState(testOnly); // set db state. fail if already running
 
@@ -174,21 +175,24 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	}
     }
 
-    private void readOfflineFromFile() throws IOException, java.lang.InterruptedException {
-	String[] cmd = {"workflowstep", "-h", getHomeDir(),
-			"-f", getHomeDir() + "/config/initOfflineSteps",
-			"offline"}; 
-	Process process = Runtime.getRuntime().exec(cmd);
-	process.waitFor();
+    private void readOfflineFile() throws IOException, java.lang.InterruptedException {
+        readStepStateFile("initOfflineSteps", "offline");
     }
 
-    private void readStopAfterFromFile() throws IOException, java.lang.InterruptedException {
+    private void readStopAfterFile() throws IOException, java.lang.InterruptedException {
+        readStepStateFile("initStopAfterteps", "stopafter");
+    }
+
+    private void readStepStateFile(String file, String state) throws IOException, java.lang.InterruptedException {
+        String filename = getHomeDir() + "/config/" + file;
+        File f = new File(filename);
+        if (!f.exists()) error("config file " + filename + " does not exist");
         String[] cmd = {"workflowstep", "-h", getHomeDir(),
-                        "-f", getHomeDir() + "/config/initStopAfterSteps",
-                        "stopafter"}; 
+                        "-f", filename, state};
         Process process = Runtime.getRuntime().exec(cmd);
         process.waitFor();
     }
+
 
     private void setRunningState(boolean testOnly) throws SQLException, IOException, java.lang.InterruptedException {
 

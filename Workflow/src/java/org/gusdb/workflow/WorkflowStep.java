@@ -141,9 +141,13 @@ public class WorkflowStep  {
         includeIf_string = includeIf_str;
     }
     
+    String getIncludeIfString() { return includeIf_string; }
+    
     public void setExcludeIf(String excludeIf_str) {
         excludeIf_string = excludeIf_str;
     }
+    
+    String getExcludeIfString() { return excludeIf_string; }
     
     boolean getExcludeFromGraph() {
         return excludeFromGraph;
@@ -200,6 +204,8 @@ public class WorkflowStep  {
         newStep.isSubgraphCall = false;
         newStep.isSubgraphReturn = true;
 	newStep.setWorkflowGraph(workflowGraph);
+	newStep.setIncludeIf(includeIf_string);
+        newStep.setExcludeIf(excludeIf_string);
         insertSubgraphReturnChild_sub(newStep);
         return newStep;
     }
@@ -416,11 +422,9 @@ public class WorkflowStep  {
     }
 
     void setIfs() {
-	// the rng schema enforces that we have one or the other, not both
-        if (includeIf_string != null) 
-	    excludeFromGraph = !Boolean.valueOf(includeIf_string).booleanValue();
-        if (excludeIf_string != null) 
-	    excludeFromGraph = Boolean.valueOf(excludeIf_string).booleanValue();
+	excludeFromGraph = false;
+	if (includeIf_string.equals("false") || excludeIf_string.equals("true"))
+	    excludeFromGraph = true;
     }
 
     protected String getStepDir() {
