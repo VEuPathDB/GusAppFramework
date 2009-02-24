@@ -265,6 +265,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
             // set the path of its unexpanded steps
             String newPath = path + stepWithSubgraph.getBaseName() + ".";
             subgraph.setPath(newPath);
+
+            // set include/exclude based on calling step, if set there
+            subgraph.setIncludeExcludeFromCaller(stepWithSubgraph);
             
             // instantiate param values from calling step
             subgraph.instantiateValues(stepWithSubgraph.getBaseName(),
@@ -294,6 +297,17 @@ public class WorkflowGraph<T extends WorkflowStep> {
     
     private void setPath(String path) {
         for (T step : getSteps()) step.setPath(path);
+    }
+    
+    private void setIncludeExcludeFromCaller(T caller) {
+        String includeIf_str = caller.getIncludeIfString();
+        String excludeIf_str = caller.getExcludeIfString();
+        if (includeIf_str != null && includeIf_str.equals("false")) { 
+            for (T step: getSteps()) step.setIncludeIf(includeIf_str);
+        }
+        if (excludeIf_str != null && excludeIf_str.equals("true")) { 
+            for (T step: getSteps()) step.setExcludeIf(excludeIf_str);
+        }
     }
     
     // attach the roots of this graph to a step in a parent graph that is
