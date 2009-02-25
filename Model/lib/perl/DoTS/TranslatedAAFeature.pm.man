@@ -58,6 +58,9 @@ sub getFeatureNASequence {
       }
       if(!$start || !$stop){
         ($start,$stop) = $rna->getTranslationStartStop();
+        ## set these attributes.
+        $self->setTranslationStart($start);
+        $self->setTranslationStop($stop);
       }
 
       print STDERR "TranslatedAAFeature->getFeatureNASequence: \$rna->getFeatureSequence()=", $rna->getFeatureSequence(), "\n" if $debug;
