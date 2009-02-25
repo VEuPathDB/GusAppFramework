@@ -16,6 +16,7 @@ sub setSequence{
   $sequence =~ s/\s//g; ##removes any returns
   $self->set('length',length($sequence)) if $self->getLength != length($sequence);
   $sequence =~ tr/a-z/A-Z/;
+  $sequence =~ s/\*+$//;
   if($self->get('sequence') ne $sequence){
     $self->set('sequence',$sequence);
     unless($doMW){
