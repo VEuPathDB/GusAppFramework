@@ -53,13 +53,16 @@ sub getFeatureNASequence {
       my $start = $self->getTranslationStart();
       my $stop = $self->getTranslationStop();
       my $rna = $self->getParent('DoTS::RNAFeature',1);
+      if(!$rna){
+        $rna =  $self->getParent('DoTS::Transcript',1);
+      }
       if(!$start || !$stop){
         ($start,$stop) = $rna->getTranslationStartStop();
       }
 
       print STDERR "TranslatedAAFeature->getFeatureNASequence: \$rna->getFeatureSequence()=", $rna->getFeatureSequence(), "\n" if $debug;
 
-      $self->{'featureNASequence'} = $self->getIsReversed() ?  CBIL::Bio::SequenceUtils::->reverseComplementSequence(substr($rna->getFeatureSequence(),$start-1,$stop-$start + 1)) : substr($rna->getFeatureSequence(),$start-1,$stop-$start + 1);
+      $self->{'featureNASequence'} =  substr($rna->getFeatureSequence(),$start-1,$stop-$start + 1);
     }
   }
   return $self->{featureNASequence};
