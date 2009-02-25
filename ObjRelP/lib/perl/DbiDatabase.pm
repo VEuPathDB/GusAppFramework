@@ -453,6 +453,9 @@ sub manageTransaction {
       $self->_setOracleRollbackSegment($self->getDbHandle());
       return 0;                 ##will cause the return value of submit to be 0
     }
+  } elsif ($task =~ /rollback/i){
+    $self->getDbHandle()->rollback();
+    $self->_setOracleRollbackSegment($self->getDbHandle());
   } else {
     &confess("ERROR: ".$self->getClassName()."->manageTransaction() - invalid task '$task'...options (begin|commit)\n"); 
   }
