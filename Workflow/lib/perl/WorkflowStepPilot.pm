@@ -71,7 +71,7 @@ sub pilotSetOffline {
     $self->{lastSnapshot} = -1;
     my ($state) = $self->getDbState();
     if ($state eq $RUNNING) {
-      return "Warning: Can't change $self->{name} to OFFLINE when '$RUNNING'";
+      return "Warning: Can't change $self->{name} to OFFLINE or ONLINE when '$RUNNING'";
     }
     my $offline_bool = $offline eq 'offline'? 1 : 0;
 
@@ -94,10 +94,17 @@ sub pilotSetStopAfter {
 
     $self->{lastSnapshot} = -1;
     my ($state) = $self->getDbState();
-    if ($state eq $DONE) {
-      return "Warning: Can't change $self->{name} to STOP_AFTER when '$DONE'";
+    my $stopafter_bool;
+    my $and_clause = "";
+    if ($stopafter eq 'stopafter') {
+      $stopafter_bool = 1;
+      if ($state eq $DONE) {
+	return "Warning: Can't change $self->{name} to STOP_AFTER when '$DONE'";
+      }
+      $and_clause =  "AND (state != '$DONE')";
+    } else {
+      $stopafter_bool = 0;
     }
-    my $stopafter_bool = $stopafter eq 'stopafter'? 1 : 0;
 
     my $sql = "
 UPDATE apidb.WorkflowStep
@@ -105,7 +112,7 @@ SET
   stop_after = $stopafter_bool,
   state_handled = 0
 WHERE workflow_step_id = $self->{workflow_step_id}
-AND (state != '$DONE')
+$and_clause
 ";
     $self->runSql($sql);
     $self->pilotLog("Step '$self->{name}' $stopafter");
