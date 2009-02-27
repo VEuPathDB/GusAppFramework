@@ -180,13 +180,13 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     }
 
     private void readStopAfterFile() throws IOException, java.lang.InterruptedException {
-        readStepStateFile("initStopAfterteps", "stopafter");
+        readStepStateFile("initStopAfterSteps", "stopafter");
     }
 
     private void readStepStateFile(String file, String state) throws IOException, java.lang.InterruptedException {
         String filename = getHomeDir() + "/config/" + file;
         File f = new File(filename);
-        if (!f.exists()) error("config file " + filename + " does not exist");
+        if (!f.exists()) error("Required config file " + filename + " does not exist");
         String[] cmd = {"workflowstep", "-h", getHomeDir(),
                         "-f", filename, state};
         Process process = Runtime.getRuntime().exec(cmd);

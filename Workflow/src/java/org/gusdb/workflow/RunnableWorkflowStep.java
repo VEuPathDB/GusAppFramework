@@ -169,7 +169,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
 	StringBuilder sb = new StringBuilder();
 	Formatter formatter = new Formatter(sb);
 
-	formatter.format("%1$-8s %2$-8s %3$s", col1, col2, getFullName());
+	formatter.format("%1$-8s %2$-10s %3$s", col1, col2, getFullName());
 	
         workflowGraph.getWorkflow().log(sb.toString());
     }
