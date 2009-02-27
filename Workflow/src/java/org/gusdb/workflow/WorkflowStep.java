@@ -423,7 +423,8 @@ public class WorkflowStep  {
 
     void setIfs() {
 	excludeFromGraph = false;
-	if (includeIf_string.equals("false") || excludeIf_string.equals("true"))
+	if ((includeIf_string != null && includeIf_string.equals("false"))
+	    || (excludeIf_string != null && excludeIf_string.equals("true")))
 	    excludeFromGraph = true;
     }
 
