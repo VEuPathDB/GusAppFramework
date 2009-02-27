@@ -46,7 +46,10 @@
             <attribute name="name" />
             <attribute name="xmlFile"/>
             <optional>
-              <attribute name="includeIf"/>
+              <choice>
+                <attribute name="includeIf"/>
+                <attribute name="excludeIf"/>
+              </choice>
             </optional>
             <zeroOrMore>
               <element name="paramValue">
