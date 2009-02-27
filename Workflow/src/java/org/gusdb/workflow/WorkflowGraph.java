@@ -306,6 +306,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
             for (T step: getSteps()) step.setIncludeIf(includeIf_str);
         }
         if (excludeIf_str != null && excludeIf_str.equals("true")) { 
+	    System.err.println("** Excluding subgraph " + caller.getFullName());
             for (T step: getSteps()) step.setExcludeIf(excludeIf_str);
         }
     }
