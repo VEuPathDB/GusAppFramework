@@ -224,10 +224,9 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         String doneFlag = "state = '" + DONE + "'";
         if (undo_step_id != null) doneFlag = "undo_step_id = NULL";
 
-        String sql = "UPDATE apidb.Workflow"  
+        String sql = "UPDATE apidb.Workflow "  
             + "SET " + doneFlag + ", process_id = NULL"  
             + " WHERE workflow_id = " + getId();
-        
 	executeSqlUpdate(sql);
 	
 	sql = "UPDATE apidb.WorkflowStep "
