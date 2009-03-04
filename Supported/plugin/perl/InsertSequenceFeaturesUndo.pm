@@ -9,6 +9,7 @@ package GUS::Supported::Plugin::InsertSequenceFeaturesUndo;
 
 use strict;
 
+
 use Bio::SeqIO;
 use Bio::Tools::SeqStats;
 use Bio::Tools::GFF;
