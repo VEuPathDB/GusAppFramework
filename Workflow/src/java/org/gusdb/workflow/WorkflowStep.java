@@ -61,6 +61,8 @@ public class WorkflowStep  {
     String[] loadTypes = {"total"};
     String includeIf_string;
     String excludeIf_string;
+    String callerIncludeIf_string;
+    String callerExcludeIf_string;
     boolean excludeFromGraph = false;
     
     // state from db
@@ -149,6 +151,18 @@ public class WorkflowStep  {
     
     String getExcludeIfString() { return excludeIf_string; }
     
+    public void setCallerIncludeIf(String includeIf_str) {
+        callerIncludeIf_string = includeIf_str;
+    }
+    
+    String getCallerIncludeIfString() { return includeIf_string; }
+    
+    public void setCallerExcludeIf(String excludeIf_str) {
+        callerExcludeIf_string = excludeIf_str;
+    }
+    
+    String getCallerExcludeIfString() { return excludeIf_string; }
+    
     boolean getExcludeFromGraph() {
         return excludeFromGraph;
     }
@@ -204,8 +218,8 @@ public class WorkflowStep  {
         newStep.isSubgraphCall = false;
         newStep.isSubgraphReturn = true;
 	newStep.setWorkflowGraph(workflowGraph);
-	newStep.setIncludeIf(includeIf_string);
-        newStep.setExcludeIf(excludeIf_string);
+	newStep.setCallerIncludeIf(includeIf_string);
+        newStep.setCallerExcludeIf(excludeIf_string);
         insertSubgraphReturnChild_sub(newStep);
         return newStep;
     }
@@ -423,9 +437,18 @@ public class WorkflowStep  {
 
     void setIfs() {
 	excludeFromGraph = false;
-	if ((includeIf_string != null && includeIf_string.equals("false"))
-	    || (excludeIf_string != null && excludeIf_string.equals("true")))
+	if ((callerIncludeIf_string != null 
+	     && callerIncludeIf_string.equals("false"))
+	    || (callerExcludeIf_string != null 
+		&& callerExcludeIf_string.equals("true"))) {
 	    excludeFromGraph = true;
+	}
+	if ((includeIf_string != null && includeIf_string.equals("false"))
+	    || (excludeIf_string != null && excludeIf_string.equals("true"))) {
+	    excludeFromGraph = true;
+	    String gr = isSubgraphCall? "SUBGRAPH " : "";
+	    System.err.println("Excluding " + gr + getFullName());
+	}
     }
 
     protected String getStepDir() {

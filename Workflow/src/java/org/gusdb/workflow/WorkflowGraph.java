@@ -153,7 +153,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	Map<String, T> stepsTmp = new HashMap<String, T>(stepsByName);
         for (T step : stepsTmp.values()) {
             if (step.getExcludeFromGraph()) {
-		System.err.println("Excluding " + step.getFullName());
 		for (WorkflowStep parent : step.getParents()) {
 		    parent.removeChild(step);
 		}
@@ -303,11 +302,10 @@ public class WorkflowGraph<T extends WorkflowStep> {
         String includeIf_str = caller.getIncludeIfString();
         String excludeIf_str = caller.getExcludeIfString();
         if (includeIf_str != null && includeIf_str.equals("false")) { 
-            for (T step: getSteps()) step.setIncludeIf(includeIf_str);
+            for (T step: getSteps()) step.setCallerIncludeIf(includeIf_str);
         }
         if (excludeIf_str != null && excludeIf_str.equals("true")) { 
-	    System.err.println("** Excluding subgraph " + caller.getFullName());
-            for (T step: getSteps()) step.setExcludeIf(excludeIf_str);
+            for (T step: getSteps()) step.setCallerExcludeIf(excludeIf_str);
         }
     }
     
