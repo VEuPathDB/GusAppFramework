@@ -1,4 +1,3 @@
-
 package GUS::Community::Plugin::UpdateNASequences;
 
 # -----------------------------------------------------------------------
