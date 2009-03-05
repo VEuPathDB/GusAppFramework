@@ -347,7 +347,7 @@ sub logout {
     $self->{'metaDbh'}->disconnect();
   }
   if ($self->{'queryDbh'}) {
-    $self->{'queryDbh'}->rollback();
+    #$self->{'queryDbh'}->rollback();
     $self->{'queryDbh'}->disconnect();
   }
 }
