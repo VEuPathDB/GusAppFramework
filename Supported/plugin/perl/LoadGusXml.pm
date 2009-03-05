@@ -185,12 +185,10 @@ sub countChangedObjs {
 
 sub undoTables {
   my ($self) = @_;
-
-  my $table = $self->getArg->('tableName');
-
+  return if (!$self->getArg('tableName'));
+  my $table = $self->getArg('tableName');
   return ($table);
 }
-
 
 1;
 
