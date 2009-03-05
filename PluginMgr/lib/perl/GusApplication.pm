@@ -556,13 +556,14 @@ sub doMajorMode_RunOrReport {
    # the application context
    $Run && $self->openInvocation($pu);
    
-   # this acts like a java finally block.  clean up and show a stack trace.
+   # this acts like a java final block.  clean up and show a stack trace.
    { local
 
    $SIG{__DIE__} = sub {
      my ($err) = @_;
 
      require Carp;
+     
      die "\nERROR:\n$err\nSTACK TRACE:\n" . Carp::longmess() . "\n";
    };
 
@@ -588,19 +589,18 @@ sub doMajorMode_RunOrReport {
       $Run && $pu->logRowsInserted();
       $Run && $pu->logAlgInvocationId();
       $Run && $pu->logCommit();
-   };
-   }
+
+   };}
 
    my $err = $@;
+
+   die "Plugin run() must return a string describing the result of the run"
+     unless $err || $pu->getResultDescr();
+
    $Run && $self->closeInvocation($pu, $err);
 
-   if ($err) {
-     die $err;
-   } else {
-     die "Plugin run() must return a string describing the result of the run"
-       if (!$self->getArgs->{commit} && !$pu->getResultDescr());
-   }
- }
+   die $err if $err;
+}
 
 sub logTime {
   my ($self, $startTime, $pu) = @_;
@@ -1111,11 +1111,9 @@ sub openInvocation {
      my $alg_inv_id = $alg_inv_gus->getId();
      my $sql = 
 "INSERT INTO ApiDB.WorkflowStepAlgInvocation
-(workflow_step_alg_inv_id, workflow_step_id, algorithm_invocation_id)
+(workflow_step_alg_inv_id, workflowstep_id, algorithm_invocation_id)
 VALUES (apidb.WorkflowStepAlgInvocation_sq.nextval, $cla->{workflowstepid}, $alg_inv_id)";
-     my $handle = $plugin->getDb()->makeNewHandle(1);
-     $handle->prepareAndExecute($sql);
-     $handle->disconnect();
+     $plugin->getQueryHandle()->prepareAndExecute($sql);
    }
 
 
@@ -1209,21 +1207,18 @@ If you are developing the plugin, you may need to check it in to the repostory a
 sub closeInvocation {
    my $self   = shift;
    my $plugin = shift;
-   my $failmsg = shift;
+
+   my $failmsg;
 
    $plugin->setResultDescr($failmsg) if $failmsg; # until we add an errmsg attribute
 
-   # do this first in case the submit below fails
-   if ($plugin->getQueryHandle()) {
-     $plugin->getQueryHandle()->rollback(); # rollback uncommitted changes
-     $pu->getQueryHandle()->logout();
-   }
    $plugin->getAlgInvocation->setGlobalNoVersion(1);
    $plugin->getAlgInvocation->setResult($plugin->getResultDescr);
    $plugin->getAlgInvocation->setEndTime($plugin->getAlgInvocation->getDatabase()->getDateFunction());
    $plugin->getAlgInvocation->submit(1);
 
-   $plugin->getDb()->logout();
+   ##logout
+   $self->disconnect_from_database($plugin);
 
    return undef;
 }
@@ -1257,6 +1252,7 @@ sub disconnect_from_database {
    my $self   = shift;
    my $plugin = shift;
 
+   $plugin->getDb()->logout();
 }
 
 
@@ -1416,12 +1412,6 @@ sub getGlobalEasyCspOptions {
        t => 'integer',
        d => 1,
        o => 'algoinvo',
-     },
-
-     { h => 'workflow step id',
-       d => 0,
-       t => 'integer',
-       o => 'workflowstepid',
      },
 
      { h => 'set Core.AlgorithmInvocation.comment with this comment',
