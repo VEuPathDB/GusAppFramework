@@ -1111,9 +1111,10 @@ sub openInvocation {
      my $alg_inv_id = $alg_inv_gus->getId();
      my $sql = 
 "INSERT INTO ApiDB.WorkflowStepAlgInvocation
-(workflow_step_alg_inv_id, workflowstep_id, algorithm_invocation_id)
+(workflow_step_alg_inv_id, workflow_step_id, algorithm_invocation_id)
 VALUES (apidb.WorkflowStepAlgInvocation_sq.nextval, $cla->{workflowstepid}, $alg_inv_id)";
-     $plugin->getQueryHandle()->prepareAndExecute($sql);
+     $plugin->getDb()->getQueryHandle(1)->prepareAndExecute($sql);
+
    }
 
 
@@ -1412,6 +1413,12 @@ sub getGlobalEasyCspOptions {
        t => 'integer',
        d => 1,
        o => 'algoinvo',
+     },
+
+     { h => 'workflow step id',
+       d => 0,
+       t => 'integer',
+       o => 'workflowstepid',
      },
 
      { h => 'set Core.AlgorithmInvocation.comment with this comment',
