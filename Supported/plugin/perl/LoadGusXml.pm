@@ -3,6 +3,7 @@
 ## $Id$
 ##
 
+
 package GUS::Supported::Plugin::LoadGusXml;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
