@@ -298,6 +298,24 @@ my $argsDeclaration  =
 	    mustExist => 0,
 	    format=>'XML'
            }),
+   integerArg({name => 'allowedValidationErrors',
+	       descr => 'number of feature trees with validation errors that the plugin will tolerate',
+	       constraintFunc=> undef,
+	       reqd  => 0,
+	       isList => 0,
+               default => 0
+	      }),
+
+   fileArg({name => 'validationLog',
+	    descr => 'print feature tree validation errors to this file',
+	    constraintFunc=> undef,
+            reqd  => 0,
+            isList => 0,
+            default => 0,
+	    mustExist => 0,
+	    format=>'Text'
+
+           }),
 
   ];
 
@@ -322,6 +340,8 @@ sub run {
   $self->{mapperSet} =
     GUS::Supported::BioperlFeatMapperSet->new($self->getArg('mapFile'), $self);
 
+  $self->{validationErrors};
+
   my $dbRlsId = $self->getExtDbRlsId($self->getArg('extDbName'),
 				     $self->getArg('extDbRlsVer'))
       or die "Couldn't retrieve external database!\n";
@@ -340,6 +360,8 @@ sub run {
   my $format = $self->getArg('fileFormat');
   $self->{totalFeatureCount} = 0;
   $self->{totalFeatureTreeCount} = 0;
+  $self->{brokenFeatureTreeCount} = 0;
+
   my $totalSeqCount = 0;
   my $fileCount = 0;
   my $action = $self->getArg('seqIdColumn')? 'Processed' : 'Inserted';
@@ -347,6 +369,9 @@ sub run {
   my @inputFiles = $self->getInputFiles();
 
   my $btFh = $self->openBioperlTreeFile();
+  
+  my $self->{vlFh} = $self->openValidationLogFile();
+
 
   foreach my $inputFile (@inputFiles) {
     $self->{fileFeatureCount} = 0;
@@ -354,7 +379,7 @@ sub run {
     my $seqCount=0;
 
     $self->log("Processing file '$inputFile'...");
-
+    
     my $bioperlSeqIO = $self->getSeqIO($inputFile);
     while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
 	if(!($bioperlSeq->alphabet =~ /rna/i)){
@@ -394,6 +419,20 @@ sub openBioperlTreeFile {
       || die "can't open bioperlTreeFile '$bioperlTreeFile'";
   }
   return $btFh;
+}
+
+
+sub openValidationLogFile {
+  my ($self) = @_;
+
+  my $validationLogFile = $self->getArg('validationLog');
+  my $vlFh;
+  if ($validationLogFile) {
+    $vlFh = FileHandle->new();
+    $vlFh->open(">$validationLogFile")
+      || die "can't open validationLogFile '$validationLogFile'";
+  }
+  return $vlFh;
 }
 
 sub getInputFiles {
@@ -761,9 +800,9 @@ sub addKeywords {
 
 sub processFeatureTrees {
   my ($self, $bioperlSeq, $naSequenceId, $dbRlsId, $btFh) = @_;
-
+  
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
-
+    undef $self->{validationErrors};
     $self->defaultPrintFeatureTree($btFh, $bioperlFeatureTree, "");
 
     # traverse bioperl tree to make gus skeleton (linked to bioperl objects)
@@ -777,14 +816,27 @@ sub processFeatureTrees {
     my $ignoreFeature = $self->applyQualifiers($bioperlFeatureTree);
 
     next if $ignoreFeature;
+    
+    if($self->validateFeatureTree($bioperlFeatureTree) == 1){
+       $NAFeature->submit();
+       $self->{fileFeatureTreeCount}++;
+       $self->{totalFeatureTreeCount}++;
+   }else{
+       $self->{brokenFeatureTreeCount}++;
+   }
+       
+    
 
-    $NAFeature->submit();
-    $self->{fileFeatureTreeCount}++;
-    $self->{totalFeatureTreeCount}++;
     $self->log("Inserted $self->{fileFeatureTreeCount} feature trees") 
       if $self->{fileFeatureTreeCount} % 100 == 0;
     $self->undefPointerCache();
+    if($self->checkBrokenTreeNum()){
+	$self->log("$self->{brokenFeatureTreeCount} feature trees could not be validated. Pleased check validation log for errors.\n");
+	last;
+    }
+
     last if $self->checkTestNum();
+
   }
 }
 
@@ -1101,6 +1153,13 @@ sub checkTestNum {
     && $self->getArg('testNumber') == $self->{totalFeatureTreeCount};
 }
 
+sub checkBrokenTreeNum {
+  my ($self) = @_;
+
+  return $self->getArg('allowedValidationErrors')
+    && $self->getArg('allowedValidationErrors') == $self->{brokenFeatureTreeCount};
+}
+
 sub getIdFromCache {
   my ($self, $cacheName, $name, $type, $field, $idColumn) = @_;
 
@@ -1185,6 +1244,37 @@ sub getExternalDbRlsIdByTag {
   return $self->{handlerExternalDbRlsIds}->{$tag};
 }
 
+
+sub validateFeatureTree {
+  my ($self, $bioperlFeature) = @_;
+  my $primaryTag = $bioperlFeature->primary_tag();
+
+  my $featureMapper = $self->{mapperSet}->getMapperByFeatureName($primaryTag);
+  my $feature = $bioperlFeature->{gusFeature};
+  my @sortedTags = $featureMapper->sortValidationTags($bioperlFeature->get_all_tags());
+
+  foreach my $tag (@sortedTags) {
+    my $gusFeature = $bioperlFeature->{gusFeature};
+    my $handlerName = $featureMapper->getHandlerName($tag);
+    my $method = $featureMapper->getHandlerMethod($tag);
+    my $handler= $self->{mapperSet}->getHandler($handlerName);
+    my $validationError = $handler->$method($tag, $bioperlFeature, $feature);
+    push(@{$self->validationErrors},$validationError);
+  }
+
+
+  if($self->{validationErrors}){
+      foreach my $msg (@{$self->{validationErrors}}){
+	  if($self->{vlFh}){
+	      $self->{vlFh}->print("$msg\n");
+	  }else{
+	      $self->log("$msg\n");
+	  }
+      }
+     return 0; 
+  }
+  return 1;
+}
 
 ############################################################################
 # Aggregator private class
