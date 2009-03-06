@@ -1216,7 +1216,6 @@ sub closeInvocation {
    # do this first in case the submit below fails
    if ($plugin->getQueryHandle()) {
      $plugin->getQueryHandle()->rollback(); # rollback uncommitted changes
-     $plugin->getQueryHandle()->disconnect();
    }
    $plugin->getAlgInvocation->setGlobalNoVersion(1);
    $plugin->getAlgInvocation->setResult($plugin->getResultDescr);
