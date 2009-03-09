@@ -322,12 +322,16 @@ public class Workflow <T extends WorkflowStep>{
                 String stepName = rs.getString("NAME");
                 WorkflowStep step = workflowGraph.getStepsByName().get(stepName);
 		if (step == null) {
-		    (new Throwable()).printStackTrace();
-		     error("Engine can't find step with name '" 
-			   + stepName + "'");
+		    if (undoStepName == null) {
+			(new Throwable()).printStackTrace();
+			error("Engine can't find step with name '" + stepName + "'");
+		    } else {
+			continue;
+		    }
 		}
                 step.setFromDbSnapshot(rs);
-                if (step.getOperativeState().equals(RUNNING)) {
+                if (step.getOperativeState() != null 
+		    && step.getOperativeState().equals(RUNNING)) {
                     for (String loadType : step.getLoadTypes()) {
                         Integer f = filledSlots.get(loadType);
                         f = f == null? 0 : f;
@@ -482,7 +486,9 @@ public class Workflow <T extends WorkflowStep>{
          }
 
          getDbState();
-         String sql = "delete from apidb.workflowstep where workflow_id = " + workflow_id;
+         String sql = "update apidb.workflow set undo_step_id = null where workflow_id = " + workflow_id;
+         executeSqlUpdate(sql);
+         sql = "delete from apidb.workflowstep where workflow_id = " + workflow_id;
          executeSqlUpdate(sql);
          System.out.println(sql);
          sql = "delete from apidb.workflow where workflow_id = " + workflow_id;
