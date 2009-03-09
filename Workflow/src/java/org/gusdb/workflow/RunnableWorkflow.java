@@ -132,6 +132,10 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
             
         // invert and trim graph
         workflowGraph.convertToUndo();
+	log("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
+	log("Steps in the Undo Graph:");
+	log(workflowGraph.getStepsAsString());
+	log("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
     }
 
     // iterate through steps, checking on changes since last snapshot

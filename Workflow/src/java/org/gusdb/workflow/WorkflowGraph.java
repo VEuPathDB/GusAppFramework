@@ -117,6 +117,14 @@ public class WorkflowGraph<T extends WorkflowStep> {
     Collection<T> getSteps() {
         return stepsByName.values();
     }
+
+    String getStepsAsString() {
+    	StringBuffer buf = new StringBuffer();
+	for (T step : getSteps()) {
+	    buf.append(step.getFullName() + nl);
+	}
+	return buf.toString();
+    }
     
     // clean up after building from xml
     void postprocessSteps() throws FileNotFoundException, IOException {
@@ -238,7 +246,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
         for (T step : getSteps()) {
             step.substituteValues(constants, false);
             step.substituteValues(paramValues, true);
-	    step.setIfs();
         }
 
 	
@@ -265,9 +272,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
             String newPath = path + stepWithSubgraph.getBaseName() + ".";
             subgraph.setPath(newPath);
 
-            // set include/exclude based on calling step, if set there
-            subgraph.setIncludeExcludeFromCaller(stepWithSubgraph);
-            
+	    // set the calling step of its unexpanded steps
+	    subgraph.setCallingStep(stepWithSubgraph);
+
             // instantiate param values from calling step
             subgraph.instantiateValues(stepWithSubgraph.getBaseName(),
                     xmlFileName,
@@ -298,23 +305,16 @@ public class WorkflowGraph<T extends WorkflowStep> {
         for (T step : getSteps()) step.setPath(path);
     }
     
-    private void setIncludeExcludeFromCaller(T caller) {
-        String includeIf_str = caller.getIncludeIfString();
-        String excludeIf_str = caller.getExcludeIfString();
-        if (includeIf_str != null && includeIf_str.equals("false")) { 
-            for (T step: getSteps()) step.setCallerIncludeIf(includeIf_str);
-        }
-        if (excludeIf_str != null && excludeIf_str.equals("true")) { 
-            for (T step: getSteps()) step.setCallerExcludeIf(excludeIf_str);
-        }
+    private void setCallingStep(T callingStep) {
+        for (T step : getSteps()) step.setCallingStep(callingStep);
     }
     
     // attach the roots of this graph to a step in a parent graph that is
     // calling it
-    private void attachToCallingStep(WorkflowStep parentStep) {
+    private void attachToCallingStep(WorkflowStep callingStep) {
         for (T rootStep : rootSteps) {
-            parentStep.addChild(rootStep);
-            rootStep.addParent(parentStep);
+            callingStep.addChild(rootStep);
+            rootStep.addParent(callingStep);
         }
     }
     
@@ -348,16 +348,17 @@ public class WorkflowGraph<T extends WorkflowStep> {
     @SuppressWarnings("unchecked")
     void convertToUndo() throws FileNotFoundException, SQLException, IOException {
         
-        // invert each step
-        for (T step : getSteps()) step.invert();
-        
         // trim away steps that are not involved in undo
         WorkflowStep undoRootStep = stepsByName.get(workflow.getUndoStepName());
-        Set<WorkflowStep> allUndoKids = undoRootStep.getAllChildren();
+        Set<WorkflowStep> allUndoSteps = undoRootStep.getDescendents();
+	allUndoSteps.add(undoRootStep);
         stepsByName = new HashMap<String,T>();
-        for (WorkflowStep step : allUndoKids) {
+        for (WorkflowStep step : allUndoSteps) {
             stepsByName.put(step.getFullName(), (T)step);
         }
+        
+        // invert each step (in trimmed graph)
+        for (T step : getSteps()) step.invert();
         
         // make sure all undoable steps in db have state set
         PreparedStatement undoStepPstmt = WorkflowStep.getPreparedUndoUpdateStmt(workflow.getDbConnection(), workflow.getId()); 

@@ -56,14 +56,13 @@ public class WorkflowStep  {
     protected boolean isSubgraphReturn;
     protected boolean isGlobal = false;
     List<? extends WorkflowStep> sharedGlobalSteps;
+    protected WorkflowStep callingStep;  // step that called our subgraph, if any
     String paramsDigest;
     int depthFirstOrder;
     String[] loadTypes = {"total"};
     String includeIf_string;
     String excludeIf_string;
-    String callerIncludeIf_string;
-    String callerExcludeIf_string;
-    boolean excludeFromGraph = false;
+    Boolean excludeFromGraph = null;
     
     // state from db
     protected int workflow_step_id;
@@ -115,6 +114,10 @@ public class WorkflowStep  {
     protected boolean getIsGlobal() { return isGlobal; }
     
     boolean getIsSubgraphCall() { return isSubgraphCall; }
+
+    void setCallingStep(WorkflowStep callingStep) {
+	this.callingStep = callingStep;
+    }
     
     boolean getIsSubgraphReturn() { return isSubgraphReturn; }
     
@@ -151,19 +154,19 @@ public class WorkflowStep  {
     
     String getExcludeIfString() { return excludeIf_string; }
     
-    public void setCallerIncludeIf(String includeIf_str) {
-        callerIncludeIf_string = includeIf_str;
-    }
-    
-    String getCallerIncludeIfString() { return includeIf_string; }
-    
-    public void setCallerExcludeIf(String excludeIf_str) {
-        callerExcludeIf_string = excludeIf_str;
-    }
-    
-    String getCallerExcludeIfString() { return excludeIf_string; }
-    
     boolean getExcludeFromGraph() {
+	if (excludeFromGraph == null) {
+	    boolean efg = false;
+	    if (callingStep != null && callingStep.getExcludeFromGraph()) {
+		efg = true;
+	    } else if ((includeIf_string != null && includeIf_string.equals("false"))
+		|| (excludeIf_string != null && excludeIf_string.equals("true"))) {
+		efg = true;
+		String gr = isSubgraphCall? "SUBGRAPH " : "";
+		if (!isSubgraphReturn) System.err.println("Excluding " + gr + getFullName());
+	    }
+	    excludeFromGraph = new Boolean(efg);
+	}
         return excludeFromGraph;
     }
 
@@ -191,12 +194,13 @@ public class WorkflowStep  {
         return children;
     }
     
-    Set<WorkflowStep> getAllChildren() {
-        Set<WorkflowStep> kids = new HashSet<WorkflowStep>(children);
+    // all kids, recursively
+    Set<WorkflowStep> getDescendents() {
+        Set<WorkflowStep> descendents = new HashSet<WorkflowStep>(children);
         for (WorkflowStep kid : children) {
-            kids.addAll(kid.getAllChildren());
+            descendents.addAll(kid.getDescendents());
         }
-        return kids;
+        return descendents;
     }
     
     Map<String,String> getParamValues() {
@@ -218,23 +222,20 @@ public class WorkflowStep  {
         newStep.isSubgraphCall = false;
         newStep.isSubgraphReturn = true;
 	newStep.setWorkflowGraph(workflowGraph);
-	newStep.setCallerIncludeIf(includeIf_string);
-        newStep.setCallerExcludeIf(excludeIf_string);
-        insertSubgraphReturnChild_sub(newStep);
-        return newStep;
-    }
-    
-    private void insertSubgraphReturnChild_sub(WorkflowStep returnStep) {
-        returnStep.setName(getFullName() + ".return");
+	newStep.setIncludeIf(includeIf_string);
+	newStep.setExcludeIf(excludeIf_string);
+
+        newStep.setName(getFullName() + ".return");
         List<WorkflowStep> oldChildren = new ArrayList<WorkflowStep>(children);
         for (WorkflowStep oldChild : oldChildren) {
             oldChild.removeParent(this);
             removeChild(oldChild);
-            returnStep.addChild(oldChild);
-            oldChild.addParent(returnStep);
+            newStep.addChild(oldChild);
+            oldChild.addParent(newStep);
         }
-        returnStep.addParent(this);
-        addChild(returnStep);
+        newStep.addParent(this);
+        addChild(newStep);
+        return newStep;
     }
 
     public void addParamValue(NamedValue paramValue) {
@@ -433,22 +434,6 @@ public class WorkflowStep  {
 				+ newIf + "'");
 	}
 	return newIf;
-    }
-
-    void setIfs() {
-	excludeFromGraph = false;
-	if ((callerIncludeIf_string != null 
-	     && callerIncludeIf_string.equals("false"))
-	    || (callerExcludeIf_string != null 
-		&& callerExcludeIf_string.equals("true"))) {
-	    excludeFromGraph = true;
-	}
-	if ((includeIf_string != null && includeIf_string.equals("false"))
-	    || (excludeIf_string != null && excludeIf_string.equals("true"))) {
-	    excludeFromGraph = true;
-	    String gr = isSubgraphCall? "SUBGRAPH " : "";
-	    System.err.println("Excluding " + gr + getFullName());
-	}
     }
 
     protected String getStepDir() {
