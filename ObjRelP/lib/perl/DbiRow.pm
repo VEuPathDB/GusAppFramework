@@ -122,24 +122,30 @@ sub get {
 # getSubstrFromClob
 # method to retrieve a substring from a Clob datatype...
 # note that substring is 1 indexed....first charcter thus has start of 1
+# NOTE: may already have the value in which case just do straight substring
+#   -this is particularly important if the object has not been submitted to db yet
 #-----------------------------------------------------------
 sub getSubstrFromClob {
   my($self,$att,$start,$length) = @_;
   my $string = "";
-  my $stmt = $self->getTable()->getCachedStatement('clobSubstr',$att);
-  if (!$stmt) {
-    my $pkatts = $self->getTable()->getPrimaryKeyAttributes();
-    my $query = "select DBMS_LOB.SUBSTR($att,?,?) from ".$self->getTable()->getOracleTableName()." where $pkatts->[0] = ?"; ##".$self->getId();
-    #    print STDERR "getSubstrFromClob: $query\n";
-    $stmt = $self->getDbHandle()->prepare($query);
-    $self->getTable()->cacheStatement('clobSubstr',$att,$stmt);
-  }
-  ##need loop if $length > 4000 as can only get 4000 at a time....
-  for (my $s = $start; $s < $start + $length;$s += 4000) {
-    $stmt->execute($s + 4000 <= $start + $length ? 4000 : $length + $start - $s,$s,$self->getId());
-    while (my($str) = $stmt->fetchrow_array()) {
-      #      print STDERR "$str\n";
-      $string .= $str;
+  if(!$self->{'didNotRetrieve'}->{$att} && $self->get($att)){
+    $string = substr($self->get($att),$start - 1,$length);
+  }else{
+    my $stmt = $self->getTable()->getCachedStatement('clobSubstr',$att);
+    if (!$stmt) {
+      my $pkatts = $self->getTable()->getPrimaryKeyAttributes();
+      my $query = "select DBMS_LOB.SUBSTR($att,?,?) from ".$self->getTable()->getOracleTableName()." where $pkatts->[0] = ?"; ##".$self->getId();
+      #    print STDERR "getSubstrFromClob: $query\n";
+      $stmt = $self->getDbHandle()->prepare($query);
+      $self->getTable()->cacheStatement('clobSubstr',$att,$stmt);
+    }
+    ##need loop if $length > 4000 as can only get 4000 at a time....
+    for (my $s = $start; $s < $start + $length;$s += 4000) {
+      $stmt->execute($s + 4000 <= $start + $length ? 4000 : $length + $start - $s,$s,$self->getId());
+      while (my($str) = $stmt->fetchrow_array()) {
+        #      print STDERR "$str\n";
+        $string .= $str;
+      }
     }
   }
   return $string;
