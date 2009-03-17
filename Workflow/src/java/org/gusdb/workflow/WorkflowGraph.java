@@ -195,10 +195,13 @@ public class WorkflowGraph<T extends WorkflowStep> {
     }
             
     void setRootsAndLeafs() {
+	rootSteps = new ArrayList<T>();
+	leafSteps = new ArrayList<T>();
         for (T step : getSteps()) {
             if (step.getParents().size() == 0) rootSteps.add(step);
             if (step.getChildren().size() == 0) leafSteps.add(step);
-        }       
+        }    
+	sortedSteps = null;
     }
     
     public String toString() {
@@ -348,17 +351,29 @@ public class WorkflowGraph<T extends WorkflowStep> {
     @SuppressWarnings("unchecked")
     void convertToUndo() throws FileNotFoundException, SQLException, IOException {
         
-        // trim away steps that are not involved in undo
+        // find all descendents of the undo root
         WorkflowStep undoRootStep = stepsByName.get(workflow.getUndoStepName());
-        Set<WorkflowStep> allUndoSteps = undoRootStep.getDescendents();
-	allUndoSteps.add(undoRootStep);
+        Set<WorkflowStep> undoDescendents = undoRootStep.getDescendents();
+	undoDescendents.add(undoRootStep);
+
+	// reset stepsByName to hold only descendents of undo root that are DONE
         stepsByName = new HashMap<String,T>();
-        for (WorkflowStep step : allUndoSteps) {
-            stepsByName.put(step.getFullName(), (T)step);
+        for (WorkflowStep step : undoDescendents) {
+            if (step.getState().equals(Workflow.DONE))
+		stepsByName.put(step.getFullName(), (T)step);
         }
-        
+
         // invert each step (in trimmed graph)
-        for (T step : getSteps()) step.invert();
+        for (T step : getSteps()) step.invert(stepsByName.keySet());
+ 
+	// remove undoRootStep's children (it is the new leaf)
+	undoRootStep.removeAllChildren();
+        
+	// reset root and leaf sets
+	setRootsAndLeafs();
+
+	System.err.println("sorted " + getSortedSteps());
+	System.err.println(" un " + getSteps());
         
         // make sure all undoable steps in db have state set
         PreparedStatement undoStepPstmt = WorkflowStep.getPreparedUndoUpdateStmt(workflow.getDbConnection(), workflow.getId()); 

@@ -82,7 +82,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
         } finally {
             if (rs != null) rs.close();
             if (stmt != null) stmt.close();
-        }
+     }
     }
         
     // if this step is ready, and all parents are done, transition to ON_DECK
@@ -124,7 +124,8 @@ public class RunnableWorkflowStep extends WorkflowStep {
 
     // try to run a single ON_DECK step
     int runOnDeckStep(Workflow<RunnableWorkflowStep> workflow, boolean testOnly) throws IOException, SQLException {
-        if (state.equals(Workflow.ON_DECK) && !off_line) {
+	if (getOperativeState() == null) System.err.println("rws " + getFullName());
+        if (getOperativeState().equals(Workflow.ON_DECK) && !off_line) {
 	    if (invokerClassName == null) {
 		if (subgraphXmlFileName != null) steplog(Workflow.DONE, "(call)");
 		else steplog(Workflow.DONE, "");
@@ -168,8 +169,8 @@ public class RunnableWorkflowStep extends WorkflowStep {
     private void steplog(String col1, String col2) throws IOException {
 	StringBuilder sb = new StringBuilder();
 	Formatter formatter = new Formatter(sb);
-
-	formatter.format("%1$-8s %2$-10s %3$s", col1, col2, getFullName());
+	String u = getUndoing()? "U " : "";
+	formatter.format(u + "%1$-8s %2$-10s %3$s", col1, col2, getFullName());
 	
         workflowGraph.getWorkflow().log(sb.toString());
     }
