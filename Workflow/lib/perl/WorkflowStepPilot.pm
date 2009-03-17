@@ -53,10 +53,10 @@ sub pilotSetReady {
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET 
-  state = '$READY',
-  state_handled = 0
+  $self->{undo}state = '$READY',
+  $self->{undo}state_handled = 0
 WHERE workflow_step_id = $self->{workflow_step_id}
-AND state = '$FAILED'
+AND $self->{undo}state = '$FAILED'
 ";
     $self->runSql($sql);
     $self->pilotLog("Step '$self->{name}' set to $READY");
@@ -78,10 +78,10 @@ sub pilotSetOffline {
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET
-  off_line = $offline_bool,
-  state_handled = 0
+  $self->{undo}off_line = $offline_bool,
+  $self->{undo}state_handled = 0
 WHERE workflow_step_id = $self->{workflow_step_id}
-AND (state != '$RUNNING')
+AND ($self->{undo}state != '$RUNNING')
 ";
     $self->runSql($sql);
     $self->pilotLog("Step '$self->{name}' $offline");
@@ -101,7 +101,7 @@ sub pilotSetStopAfter {
       if ($state eq $DONE) {
 	return "Warning: Can't change $self->{name} to STOP_AFTER when '$DONE'";
       }
-      $and_clause =  "AND (state != '$DONE')";
+      $and_clause =  "AND ($self->{undo}state != '$DONE')";
     } else {
       $stopafter_bool = 0;
     }
@@ -109,8 +109,8 @@ sub pilotSetStopAfter {
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET
-  stop_after = $stopafter_bool,
-  state_handled = 0
+  $self->{undo}stop_after = $stopafter_bool,
+  $self->{undo}state_handled = 0
 WHERE workflow_step_id = $self->{workflow_step_id}
 $and_clause
 ";
@@ -125,16 +125,21 @@ sub getDbState {
     if (!$self->{state}) {
       my $workflow_id = $self->{workflow}->getId();
       my $sql = "
-SELECT workflow_step_id, host_machine, process_id, state,
-       state_handled, off_line, stop_after, start_time, end_time
-FROM apidb.workflowstep
+SELECT s.workflow_step_id, s.host_machine, s.process_id,
+       s.state, s.state_handled, s.off_line, s.stop_after,
+       s.undo_state, s.undo_state_handled, s.undo_off_line, s.undo_stop_after,
+       s.start_time, s.end_time,
+       w.undo_step_id
+FROM apidb.workflowstep s, apidb.workflow w
 WHERE name = '$self->{name}'
 AND workflow_id = $workflow_id";
       ($self->{workflow_step_id}, $self->{host_machine}, $self->{process_id},
        $self->{state}, $self->{state_handled}, $self->{off_line}, $self->{stop_after},
-       $self->{start_time}, $self->{end_time})= $self->runSqlQuery_single_array($sql);
+       $self->{undo_state}, $self->{undo_state_handled}, $self->{undo_off_line}, $self->{undo_stop_after},
+       $self->{start_time}, $self->{end_time}, $self->{undo_step_id})= $self->runSqlQuery_single_array($sql);
     }
-    return $self->{state};
+    $self->{undo} = $self->{undo_step_id}? "undo_" : "";
+    return $self->{undo}? $self->{undo_state} : $self->{state};
 }
 
 #########################  utilities ##########################################
