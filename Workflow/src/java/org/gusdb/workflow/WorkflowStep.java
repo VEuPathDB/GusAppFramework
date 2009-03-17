@@ -190,6 +190,10 @@ public class WorkflowStep  {
         children.remove(child);
     }
 
+    void removeAllChildren() {
+        children =  new ArrayList<WorkflowStep>();
+    }
+
     protected List<WorkflowStep> getChildren() {
         return children;
     }
@@ -445,13 +449,24 @@ public class WorkflowStep  {
 	return stepDir;
     }
     
-    void invert() {
-        List<WorkflowStep> temp = parents;
-        parents = children;
+    void invert(Set<String> allowedSteps) {
+        List<WorkflowStep> temp = new ArrayList<WorkflowStep>(parents);
+	for (WorkflowStep parent : parents) {
+	    if (!allowedSteps.contains(parent.getFullName())) {
+		temp.remove(parent);
+	    }
+	}
+        List<WorkflowStep> temp2 = new ArrayList<WorkflowStep>(children);
+	for (WorkflowStep child : children) {
+	    if (!allowedSteps.contains(child.getFullName())) {
+		temp2.remove(child);
+	    }
+	}
+        parents = temp2;
         children = temp;
-        boolean temp2 = isSubgraphCall;
+        boolean temp3 = isSubgraphCall;
         isSubgraphCall = isSubgraphReturn;
-        isSubgraphReturn = temp2;
+        isSubgraphReturn = temp3;
     }
 
 //////////////////////////  utilities /////////////////////////////////////////
