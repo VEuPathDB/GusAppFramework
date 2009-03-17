@@ -369,13 +369,18 @@ sub run {
   my @inputFiles = $self->getInputFiles();
 
   my $btFh = $self->openBioperlTreeFile();
-  
-  my $self->{vlFh} = $self->openValidationLogFile();
 
+  $self->{vlFh} = $self->openValidationLogFile();  
+
+
+
+
+  
 
   foreach my $inputFile (@inputFiles) {
     $self->{fileFeatureCount} = 0;
     $self->{fileFeatureTreeCount} = 0;
+    $self->{fileBrokenFeatureTreeCount} = 0;
     my $seqCount=0;
 
     $self->log("Processing file '$inputFile'...");
@@ -398,14 +403,14 @@ sub run {
 	}
     }
 
-    $self->log("Processed $inputFile: $format \n\t Seqs $action: $seqCount \n\t Features Inserted: $self->{fileFeatureCount} \n\t Feature Trees Inserted: $self->{fileFeatureTreeCount}");
+    $self->log("Processed $inputFile: $format \n\t Seqs $action: $seqCount \n\t Features Inserted: $self->{fileFeatureCount} \n\t Feature Trees Inserted: $self->{fileFeatureTreeCount}\n\tFeature Trees Not Inserted (due to validation failures) : $self->{fileBrokenFeatureTreeCount}");
     $totalSeqCount += $seqCount;
     $fileCount++;
     last if $self->checkTestNum();
   }
 
   my $fileOrDir = $self->getArg('inputFileOrDir');
-  $self->setResultDescr("Processed $fileCount files from $fileOrDir: $format \n\t Total Seqs $action: $totalSeqCount \n\t Total Features Inserted: $self->{totalFeatureCount} \n\t Total Feature Trees Inserted: $self->{totalFeatureTreeCount}");
+  $self->setResultDescr("Processed $fileCount files from $fileOrDir: $format \n\t Total Seqs $action: $totalSeqCount \n\t Total Features Inserted: $self->{totalFeatureCount} \n\t Total Feature Trees Inserted: $self->{totalFeatureTreeCount}\n\t Total Feature Trees Not Inserted (due to validation failures) : $self->{brokenFeatureTreeCount}");
 }
 
 sub openBioperlTreeFile {
@@ -822,6 +827,7 @@ sub processFeatureTrees {
        $self->{fileFeatureTreeCount}++;
        $self->{totalFeatureTreeCount}++;
    }else{
+       $self->{fileBrokenFeatureTreeCount}++;
        $self->{brokenFeatureTreeCount}++;
    }
        
@@ -1080,6 +1086,7 @@ sub handleFeatureTag {
     my $handler= $self->{mapperSet}->getHandler($handlerName);
     my $children = $handler->$method($tag, $bioperlFeature, $feature);
 
+  
     return 1 if (!defined($children));  # ignore entire feature
 
     foreach my $child (@{$children}) {
@@ -1249,17 +1256,25 @@ sub validateFeatureTree {
   my ($self, $bioperlFeature) = @_;
   my $primaryTag = $bioperlFeature->primary_tag();
 
+
+
   my $featureMapper = $self->{mapperSet}->getMapperByFeatureName($primaryTag);
   my $feature = $bioperlFeature->{gusFeature};
-  my @sortedTags = $featureMapper->sortValidationTags($bioperlFeature->get_all_tags());
+  my $tags = $featureMapper->{validatorNamesList};
 
-  foreach my $tag (@sortedTags) {
-    my $gusFeature = $bioperlFeature->{gusFeature};
-    my $handlerName = $featureMapper->getHandlerName($tag);
-    my $method = $featureMapper->getHandlerMethod($tag);
+  foreach my $tag (@{$tags}) {
+
+    my $handlerName = $featureMapper->getValidatorHandlerName($tag);
+    my $method = $featureMapper->getValidatorHandlerMethod($tag);
+
     my $handler= $self->{mapperSet}->getHandler($handlerName);
-    my $validationError = $handler->$method($tag, $bioperlFeature, $feature);
-    push(@{$self->validationErrors},$validationError);
+    my $children = $handler->$method($tag, $bioperlFeature, $feature);
+    return 1 if (!defined($children));  # ignore entire feature
+
+    foreach my $child (@{$children}) {
+      $feature->addChild($child);
+    }
+
   }
 
 
