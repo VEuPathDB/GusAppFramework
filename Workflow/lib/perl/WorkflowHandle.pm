@@ -80,7 +80,7 @@ sub getDbState {
     $self->{name} = $self->getWorkflowConfig('name');
     $self->{version} = $self->getWorkflowConfig('version');
     my $sql = "
-select workflow_id, state, process_id, xml_file_digest, undo_step_id,
+select workflow_id, state, process_id, xml_file_digest, undo_step_id
 from apidb.workflow
 where name = '$self->{name}'
 and version = '$self->{version}'

@@ -113,7 +113,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
     // from a subgraph), just go to done
     void goToDone() throws SQLException, IOException {
         String set = getUndoing()?
-                 " SET undo_state = '" + Workflow.DONE + "', undo_state_handled = 1" :
+                 " SET undo_state = '" + Workflow.DONE + "', undo_state_handled = 1, state = '" + Workflow.READY + "', state_handled = 1"  :
                      " SET state = '" + Workflow.DONE + "', state_handled = 1" ;
         
         String sql = "UPDATE apidb.WorkflowStep"  
