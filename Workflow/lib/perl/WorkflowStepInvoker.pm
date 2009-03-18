@@ -77,13 +77,17 @@ sub runInWrapper {
 	$state = $FAILED;
     }
 
+
     $undoStr = $undo? "undo_" : "";
+
+    my $undoStr2 = ($undo && $state eq $DONE)? "\nstate = '$READY'," : "";
+
     my $sql = "
 UPDATE apidb.WorkflowStep
 SET
   ${undoStr}state = '$state',
   process_id = NULL,
-  end_time = SYSDATE,
+  end_time = SYSDATE, $undoStr2
   ${undoStr}state_handled = 0
 WHERE name = '$stepName'
 AND workflow_id = $workflowId

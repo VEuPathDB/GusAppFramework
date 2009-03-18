@@ -372,9 +372,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	// reset root and leaf sets
 	setRootsAndLeafs();
 
-	System.err.println("sorted " + getSortedSteps());
-	System.err.println(" un " + getSteps());
-        
         // make sure all undoable steps in db have state set
         PreparedStatement undoStepPstmt = WorkflowStep.getPreparedUndoUpdateStmt(workflow.getDbConnection(), workflow.getId()); 
         try {

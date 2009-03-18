@@ -131,8 +131,9 @@ SELECT s.workflow_step_id, s.host_machine, s.process_id,
        s.start_time, s.end_time,
        w.undo_step_id
 FROM apidb.workflowstep s, apidb.workflow w
-WHERE name = '$self->{name}'
-AND workflow_id = $workflow_id";
+WHERE s.name = '$self->{name}'
+AND w.workflow_id = $workflow_id
+AND s.workflow_id = w.workflow_id";
       ($self->{workflow_step_id}, $self->{host_machine}, $self->{process_id},
        $self->{state}, $self->{state_handled}, $self->{off_line}, $self->{stop_after},
        $self->{undo_state}, $self->{undo_state_handled}, $self->{undo_off_line}, $self->{undo_stop_after},

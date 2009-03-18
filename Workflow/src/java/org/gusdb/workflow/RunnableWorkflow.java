@@ -200,7 +200,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
     private void setRunningState(boolean testOnly) throws SQLException, IOException, java.lang.InterruptedException {
 
-	if (state != null && state.equals(RUNNING)) {
+	if (state != null && process_id != null && state.equals(RUNNING)) {
 	    String[] cmd = {"ps", "-p", process_id};
 	    Process process = Runtime.getRuntime().exec(cmd);
 	    process.waitFor();
