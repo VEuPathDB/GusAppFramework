@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -15,6 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Formatter;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
@@ -439,6 +441,46 @@ public class Workflow <T extends WorkflowStep>{
                            + "process_id:            " + process_id + nl);
     }
 
+    // very light reporting of state of workflow
+    void quickReportSteps(String[] desiredStates) throws SQLException, FileNotFoundException, IOException {
+        getDbState();
+
+        StringBuffer buf = new StringBuffer();
+        for (String ds : desiredStates) buf.append(ds + ",");
+        String state_str = undoStepName == null? "state" : "undo_state";
+        String sql = "select name, workflow_step_id, process_id, start_time, end_time, " + state_str  
+            + " from apidb.workflow"  
+            + " where workflow_id = '" + workflow_id + "'"  
+            + " and " + state_str + " in(" + buf.substring(0,buf.length()-1) + ")" ;
+
+        Statement stmt = null;
+        ResultSet rs = null;
+        try {
+            stmt = getDbConnection().createStatement();
+            rs = stmt.executeQuery(sql);
+            StringBuilder sb = new StringBuilder();
+            Formatter formatter = new Formatter(sb);
+            formatter.format("%1$-8s %2$-60s %12$s %12$s", "STATUS", "NAME", "STEP ID", "PROCESS");               
+            System.out.println(sb.toString());
+
+            workflowGraph.getWorkflow().log(sb.toString());
+            while (rs.next()) {
+                String nm = rs.getString(1);
+                Integer ws_id = rs.getInt(2);
+                Integer proc_id = rs.getInt(3);
+                String stat = rs.getString(4);
+                
+                sb = new StringBuilder();
+                formatter = new Formatter(sb);
+                formatter.format("%1$-8s %2$-60s %12$s %12$s", stat, nm, ws_id, proc_id);               
+                System.out.println(sb.toString());
+             }
+        } finally {
+            if (rs != null) rs.close();
+            if (stmt != null) stmt.close(); 
+        }
+    }
+
     /* Step Reporter: called by command line UI to report state of steps.
        does not run the controller
     */
@@ -506,7 +548,7 @@ public class Workflow <T extends WorkflowStep>{
 
          // parse command line
          Options options = declareOptions();
-         String cmdlineSyntax = cmdName + " -h workflow_home_dir <-r | -t | -q | -d <states>> <-u step_name>";
+         String cmdlineSyntax = cmdName + " -h workflow_home_dir <-r | -t | -q | -s <states>| -d <states>> <-u step_name>";
          String cmdDescrip = "Run or test a workflow (regular or undo), or, print a report about a workflow.";
          CommandLine cmdLine =
              Utilities.parseOptions(cmdlineSyntax, cmdDescrip, getUsageNotes(), options, args);
@@ -539,13 +581,26 @@ public class Workflow <T extends WorkflowStep>{
              workflow.setWorkflowGraph(rootGraph);      
              String desiredStatesStr = cmdLine.getOptionValue("d"); 
              String[] desiredStates = desiredStatesStr.split(",");
+             String[] allowedStates = {READY, ON_DECK, RUNNING, DONE, FAILED, ALL};
+             Arrays.sort(allowedStates);
+             for (String state : desiredStates) {
+                 if (Arrays.binarySearch(allowedStates, state) < 0)
+                     oops = true;
+             }
+             if (!oops) workflow.reportSteps(desiredStates);            
+         } 
+         
+         else if (cmdLine.hasOption("s")) {
+             Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDirName);    
+             String desiredStatesStr = cmdLine.getOptionValue("s"); 
+             String[] desiredStates = desiredStatesStr.split(",");
 	     String[] allowedStates = {READY, ON_DECK, RUNNING, DONE, FAILED, ALL};
 	     Arrays.sort(allowedStates);
 	     for (String state : desiredStates) {
 		 if (Arrays.binarySearch(allowedStates, state) < 0)
 		     oops = true;
 	     }
-             if (!oops) workflow.reportSteps(desiredStates);            
+             if (!oops) workflow.quickReportSteps(desiredStates);            
          } 
          
          else if (cmdLine.hasOption("reset")) {
@@ -598,6 +653,9 @@ public class Workflow <T extends WorkflowStep>{
          + "  quick report of workflow state" + nl
          + "    % workflow -h workflow_dir -q" + nl
          + nl     
+         + "  print steps report." + nl
+         + "    % workflow -h workflow_dir -s FAILED ON_DECK" + nl
+         + nl     
          + "  print detailed steps report." + nl
          + "    % workflow -h workflow_dir -d" + nl
          + nl     
@@ -622,11 +680,14 @@ public class Workflow <T extends WorkflowStep>{
          Option test = new Option("t", "Test a workflow");
          actions.addOption(test);
     
-         Option detailedRep = new Option("d", true, "Print detailed report");
+         Option detailedRep = new Option("d", true, "Print detailed steps report");
          actions.addOption(detailedRep);
          
-         Option quickRep = new Option("q", "Print quick report");
+         Option quickRep = new Option("s", "Print quick steps report");
          actions.addOption(quickRep);
+
+         Option quickWorkflowRep = new Option("q", "Print quick workflow report");
+         actions.addOption(quickWorkflowRep);
 
          Option reset = new Option("reset", "Reset workflow. DANGER! Will destroy your workflow.  Use only if you know exactly what you are doing.");
          actions.addOption(reset);
