@@ -441,17 +441,18 @@ public class Workflow <T extends WorkflowStep>{
                            + "process_id:            " + process_id + nl);
     }
 
-    // very light reporting of state of workflow
+    // light reporting of state of workflow
     void quickReportSteps(String[] desiredStates) throws SQLException, FileNotFoundException, IOException {
         getDbState();
 
         StringBuffer buf = new StringBuffer();
-        for (String ds : desiredStates) buf.append(ds + ",");
+        for (String ds : desiredStates) buf.append("'" + ds + "',");
         String state_str = undoStepName == null? "state" : "undo_state";
-        String sql = "select name, workflow_step_id, process_id, start_time, end_time, " + state_str  
-            + " from apidb.workflow"  
+        String sql = "select name, workflow_step_id," + state_str  
+            + " from apidb.workflowstep"  
             + " where workflow_id = '" + workflow_id + "'"  
-            + " and " + state_str + " in(" + buf.substring(0,buf.length()-1) + ")" ;
+            + " and " + state_str + " in(" + buf.substring(0,buf.length()-1) + ")"
+	    + " order by depth_first_order";
 
         Statement stmt = null;
         ResultSet rs = null;
@@ -460,19 +461,17 @@ public class Workflow <T extends WorkflowStep>{
             rs = stmt.executeQuery(sql);
             StringBuilder sb = new StringBuilder();
             Formatter formatter = new Formatter(sb);
-            formatter.format("%1$-8s %2$-60s %12$s %12$s", "STATUS", "NAME", "STEP ID", "PROCESS");               
+            formatter.format("%1$-8s %2$-12s  %3$s ", "STATUS", "STEP ID", "NAME");               
             System.out.println(sb.toString());
 
-            workflowGraph.getWorkflow().log(sb.toString());
             while (rs.next()) {
                 String nm = rs.getString(1);
                 Integer ws_id = rs.getInt(2);
-                Integer proc_id = rs.getInt(3);
-                String stat = rs.getString(4);
+                String stat = rs.getString(3);
                 
                 sb = new StringBuilder();
                 formatter = new Formatter(sb);
-                formatter.format("%1$-8s %2$-60s %12$s %12$s", stat, nm, ws_id, proc_id);               
+                formatter.format("%1$-8s %2$-12s  %3$s", stat, ws_id, nm);               
                 System.out.println(sb.toString());
              }
         } finally {
@@ -683,7 +682,7 @@ public class Workflow <T extends WorkflowStep>{
          Option detailedRep = new Option("d", true, "Print detailed steps report");
          actions.addOption(detailedRep);
          
-         Option quickRep = new Option("s", "Print quick steps report");
+         Option quickRep = new Option("s", true, "Print quick steps report");
          actions.addOption(quickRep);
 
          Option quickWorkflowRep = new Option("q", "Print quick workflow report");
