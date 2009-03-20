@@ -5,6 +5,7 @@ use strict;
 use GUS::PluginMgr::Plugin;
 use File::Basename;
 
+
   my $purposeBrief = 'Insert or update sequences from a FASTA file or as set of FASTA files.';
 
   my $purpose = <<PLUGIN_PURPOSE;
