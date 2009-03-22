@@ -10,7 +10,7 @@ use GUS::PluginMgr::Plugin;
 
 use RAD::MR_T::MageImport::ServiceFactory;
 use RAD::MR_T::MageImport::Service::Translator::VoToGusTranslator;
-
+ 
 my $notes = <<PLUGIN_NOTES;
 =pod
 
