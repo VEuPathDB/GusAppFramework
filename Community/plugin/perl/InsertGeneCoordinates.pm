@@ -107,7 +107,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6915 $',
+		     cvsRevision => '$Revision: 6916 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -197,6 +197,9 @@ sub insertCoordinates {
       $self->userError("Inconsistent exon counts at line $lineNum");
     }
     
+    if ($chr eq 'chrM' || $chr =~ /random/) {
+      next;
+    }
     my $gene= GUS::Model::DoTS::Gene->new({gene_symbol => $geneSymbol, external_database_release_id => $extDbRlsEntrez});
     if (!$gene->retrieveFromDB()) {
       next;
@@ -323,7 +326,7 @@ sub parseHeader{
 sub undoTables {
   my ($self) = @_;
 
-  return ('DoTS.NALocation', 'DoTS.ExonFeature', 'DoTS.GeneFeature', 'DoTS.GeneInstance');
+  return ('DoTS.NALocation', 'DoTS.ExonFeature', 'DoTS.GeneInstance', 'DoTS.GeneFeature');
 }
 
 1;
