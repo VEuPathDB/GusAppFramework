@@ -107,7 +107,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: $',
+		     cvsRevision => '$Revision: 6915 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -129,7 +129,7 @@ sub run {
   }
   my $extDbRlsGenome = $self->getExtDbRlsId($self->getArg('extDbRlsSpecGenome'));
   my $extDbRlsEntrez = $self->getExtDbRlsId($self->getArg('extDbRlsSpecEntrez'));
-
+  $self->logDebug("Ext Db Rls Ids: $extDbRlsGenome, $extDbRlsEntrez");
   $resultDescrip .= $self->insertCoordinates($extDbRlsGenome, $extDbRlsEntrez, $self->getArg('geneCoordFile'));
   
   $self->setResultDescr($resultDescrip);
@@ -161,9 +161,9 @@ sub insertCoordinates {
   }
   my $geneInstanceCategory= GUS::Model::DoTS::GeneInstanceCategory->new({name => 'Entrez Genes'});
   if (!$geneInstanceCategory->retrieveFromDB()) {
-    userError->("Missing required 'Entrez Genes' Gene Instance Category");
+    $self->userError("Missing required 'Entrez Genes' Gene Instance Category");
   }
-
+  $self->logDebug($geneInstanceCategory->toString() . "\n");
   while ($line=<$fh>) {
     $lineNum++;
     if ($lineNum<$startLine) {
@@ -201,13 +201,19 @@ sub insertCoordinates {
     if (!$gene->retrieveFromDB()) {
       next;
     }
-    my $virtualSequence= GUS::Model::DoTS::VirtualSequence->new({external_database_release_id => $extDbRlsGenome, chromosome => $chr});
-  if (!$virtualSequence->retrieveFromDB()) {
-    userError->("Missing required DoTS.VirtualSequence for $chr");
-  } 
-    my $geneFeature= GUS::Model::DoTS::GeneFeature->new({name => $geneSymbol . '-' . $ucId, number_of_exons => $exonCount, na_sequence_id => $virtualSequence});
+    $self->logDebug($gene->toString() . "\n");
+    my $virtualSequence= GUS::Model::DoTS::VirtualSequence->new({external_database_release_id => $extDbRlsGenome, source_id => $chr});
 
-    my $geneInstance= GUS::Model::DoTS::GeneInstance->new();    
+    my @doNotRetrieve = ('sequence');
+    if (!$virtualSequence->retrieveFromDB(\@doNotRetrieve)) {
+      $self->userError("Missing required DoTS.VirtualSequence for $chr");
+    } 
+    $self->logDebug($virtualSequence->toString() . "\n");
+
+    my $geneFeature= GUS::Model::DoTS::GeneFeature->new({name => $geneSymbol . '-' . $ucId, number_of_exons => $exonCount});
+    $geneFeature->setParent($virtualSequence);
+
+    my $geneInstance= GUS::Model::DoTS::GeneInstance->new({is_reference => 0});    
     $geneInstance->setParent($geneInstanceCategory);   
     $geneInstance->setParent($gene);
     $geneInstance->setParent($geneFeature);
@@ -221,7 +227,7 @@ sub insertCoordinates {
     for (my $i=0; $i<$exonCount; $i++) {
       my $exonNum = $i+1;
       my ($start, $end);
-      if ($exonStarts[$i]<=$cdsEnd) {
+      if ($cdsEnd>$cdsStart && $exonStarts[$i]<=$cdsEnd) {
 	if ($exonStarts[$i]>=$cdsStart) {
 	  $start = $exonStarts[$i];
 	}
@@ -229,7 +235,7 @@ sub insertCoordinates {
 	  $start = $cdsStart;
 	}
       }
-      if ($exonEnds[$i]>=$cdsStart) {
+      if ($cdsEnd>$cdsStart && $exonEnds[$i]>=$cdsStart) {
 	if ($exonEnds[$i]<=$cdsEnd) {
 	  $end = $exonEnds[$i];
 	}
@@ -238,7 +244,7 @@ sub insertCoordinates {
 	}
       }
 
-      my $exonFeature= GUS::Model::DoTS::exonFeature->new({name => 'exon '. $exonNum, coding_start => $start, coding_end => $end});
+      my $exonFeature= GUS::Model::DoTS::ExonFeature->new({name => 'exon '. $exonNum, coding_start => $start, coding_end => $end});
       $exonFeature->setParent($geneFeature); 
       my $exonNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $exonStarts[$i], start_max => $exonStarts[$i], end_min => $exonEnds[$i], end_max => $exonEnds[$i], is_reversed => $isReversed});
       $exonNaLocation->setParent($exonFeature);    
@@ -298,15 +304,15 @@ sub parseHeader{
       $pos->{'geneSymbol'} = $i;
     }
   }
+  $self->logDebug(Dumper($pos) . "\n");
   if (!defined $pos->{'ucId'} || 
       !defined $pos->{'chr'} || !defined $pos->{'strand'} ||
       !defined $pos->{'txStart'} || !defined $pos->{'txEnd'} ||
       !defined $pos->{'cdsStart'} || !defined $pos->{'cdsEnd'} ||
-      !defined $pos->{'exonStarts'} || !defined $pos->{'exonEnd'} ||
+      !defined $pos->{'exonStarts'} || !defined $pos->{'exonEnds'} ||
       !defined $pos->{'exonCount'} || !defined $pos->{'geneSymbol'}) {
     $self->userError("Missing fields in gene coordinates file");
   }
-  $self->logDebug(Dumper($pos) . "\n");
   return($pos);
 }
 
