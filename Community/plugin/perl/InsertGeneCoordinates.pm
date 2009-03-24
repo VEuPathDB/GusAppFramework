@@ -107,7 +107,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6918 $',
+		     cvsRevision => '$Revision: 6919 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -152,9 +152,6 @@ sub insertCoordinates {
   my $pos = $self->parseHeader($line);
 
   my $startLine = defined $self->getArg('restart') ? $self->getArg('restart') : 1;
-  for (my $i=1; $i<$startLine; $i++) {
-    $line = <$fh>;
-  }
   my $endLine;
   if (defined $self->getArg('testnum')) {
     $endLine = $startLine-1+$self->getArg('testnum');
