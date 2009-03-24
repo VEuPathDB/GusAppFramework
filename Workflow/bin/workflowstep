@@ -47,6 +47,10 @@ $workflow->error("Workflow is running an Undo.  -u required")
 $workflow->error("Workflow is not running an Undo.  -u is not allowed")
     if !$workflow->{undo_step_id} && $undo;
 
+$workflow->checkXmlFileDigest();
+
+
+
 my $stepNames;
 if ($inputType eq '-p') {
   $stepNames = $workflow->getStepNamesFromPattern($stepNamePattern);
