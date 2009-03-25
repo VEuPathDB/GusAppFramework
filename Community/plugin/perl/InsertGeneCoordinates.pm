@@ -107,7 +107,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6921 $',
+		     cvsRevision => '$Revision: 6931 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -194,7 +194,7 @@ sub insertCoordinates {
       $self->userError("Inconsistent exon counts at line $lineNum");
     }
     
-    if ($chr eq 'chrM' || $chr eq 'chrU' || $chr =~ /_/) {
+    if ($chr eq 'chrM' || $chr =~ /chrU/ || $chr =~ /_/) {
       next;
     }
     my $gene= GUS::Model::DoTS::Gene->new({gene_symbol => $geneSymbol, external_database_release_id => $extDbRlsEntrez});
