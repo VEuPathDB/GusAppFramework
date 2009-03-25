@@ -476,7 +476,7 @@ sub loadAlignments {
          $dbh->commit() if (($nTotalAlignsLoaded % $commitInterval) == 0 && $self-getArg('commit'));
       }
 
-      $dbh->commit() if $self-getArg('commit');
+      $dbh->commit() if $self->getArg('commit');
 
       print "LoadBLATAlignments: loaded $nAlignsLoaded/$nAligns BLAT alignments from $blatFile.\n";
 
