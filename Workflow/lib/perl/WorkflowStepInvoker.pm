@@ -257,7 +257,7 @@ sub runPlugin {
 
     my $commit = $args." --commit";
 
-    my $cmd = "ga $plugin --workflow_step_id $self->{id} $commit --comment \"$comment\"";
+    my $cmd = "ga $plugin --workflowstepid $self->{id} $commit --comment \"$comment\"";
 
     $self->runCmd($test, $cmd);
 }
