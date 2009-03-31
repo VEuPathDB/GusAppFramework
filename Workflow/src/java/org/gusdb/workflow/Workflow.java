@@ -263,10 +263,10 @@ public class Workflow <T extends WorkflowStep>{
         Process process = Runtime.getRuntime().exec(cmd);
         process.waitFor();
         if (process.exitValue() != 0) error("failed running cmd '" + cmd + '"');
-	process.destroy();
         BufferedReader reader =  
             new BufferedReader(new InputStreamReader(process.getInputStream()));  
         String digest = reader.readLine().trim();
+	process.destroy();
         reader.close();
         return digest;
     }
