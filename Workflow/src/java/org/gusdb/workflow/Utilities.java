@@ -62,6 +62,7 @@ public class Utilities {
       process.waitFor();
       if (process.exitValue() != 0) 
           error("Failed with status $status running: " + nl + cmd);
+      process.destroy();
     }
     
     static void error(String msg) {

@@ -19,6 +19,8 @@ import java.sql.Statement;
 import java.util.Formatter;
 import java.util.Set;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Arrays;
@@ -62,6 +64,8 @@ public class Workflow <T extends WorkflowStep>{
     Map<String,Integer> filledSlots = new HashMap<String,Integer>();
     Properties loadBalancingConfig;
     String undoStepName;
+    private List<Process> bgdProcesses = new ArrayList<Process>();
+
 
     String[] homeDirSubDirs = {"logs", "steps", "data"};
 
@@ -259,6 +263,7 @@ public class Workflow <T extends WorkflowStep>{
         Process process = Runtime.getRuntime().exec(cmd);
         process.waitFor();
         if (process.exitValue() != 0) error("failed running cmd '" + cmd + '"');
+	process.destroy();
         BufferedReader reader =  
             new BufferedReader(new InputStreamReader(process.getInputStream()));  
         String digest = reader.readLine().trim();
@@ -387,6 +392,26 @@ public class Workflow <T extends WorkflowStep>{
         } finally {
             stmt.close();
         }
+    }
+
+    void addBgdProcess(Process p) {
+	bgdProcesses.add(p);
+    }
+    
+    void cleanProcesses() {
+	List<Process> clone = new ArrayList<Process>(bgdProcesses);
+	for (Process p : clone) {
+	    boolean stillRunning = false;
+	    try {
+		p.exitValue();
+	    } catch (IllegalThreadStateException e){
+		stillRunning = true;
+	    }
+	    if (!stillRunning) {
+		p.destroy();
+		bgdProcesses.remove(p);
+	    }
+	}
     }
 
     String getWorkflowConfig(String key) throws FileNotFoundException, IOException {
