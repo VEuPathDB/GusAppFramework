@@ -19,6 +19,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
                 Process process = Runtime.getRuntime().exec(cmd);
                 process.waitFor();
                 if (process.exitValue() != 0) handleMissingProcess();
+		process.destroy();
             }
         } else { // this step has been changed by wrapper or pilot UI. log change.
             if (!getOperativeState().equals(prevState)) steplog(getOperativeState(), "");
@@ -159,7 +160,8 @@ public class RunnableWorkflowStep extends WorkflowStep {
 		// so it survives a kill of the controller
 		String[] cmd3 = {"sh", "-c", sb.toString() + " &"};
 		steplog("Invoked", "");
-		Runtime.getRuntime().exec(cmd3);
+		Process p = Runtime.getRuntime().exec(cmd3);
+		workflow.addBgdProcess(p);
 	    }
             return 1;
         } 

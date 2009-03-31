@@ -9,13 +9,8 @@ import java.io.File;
 
 /*
    to do
-   - handle changes to graph after running
-   - load balancing for different kinds of steps
    - integrate resource pipeline
-   - undo
-
    - possibly support taking DONE steps offline.  this will require recursion.
-   - includeIf
    - generate step documentation
    - whole system documentation
    - get manual confirm on -reset
@@ -49,7 +44,6 @@ import java.io.File;
 
 public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     private int runningCount;
-
     final static String nl = System.getProperty("line.separator");
 
     public RunnableWorkflow(String homeDir) throws FileNotFoundException, IOException {
@@ -81,6 +75,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	    findOndeckSteps();
 	    fillOpenSlots(testOnly);
 	    Thread.sleep(2000);
+	    cleanProcesses();
 	}
     }
 
@@ -195,6 +190,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
                         "-f", filename, state};
         Process process = Runtime.getRuntime().exec(cmd);
         process.waitFor();
+	process.destroy();
     }
 
 
@@ -206,6 +202,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	    process.waitFor();
 	    if (process.exitValue() == 0)
 	        error("workflow already running (" + process_id + ")");
+	    process.destroy();
 	}
 
 	String processId = getProcessId(); 
@@ -246,11 +243,13 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     /*
      * from http://blog.igorminar.com/2007/03/one-more-way-how-to-get-current-pid-in.html
      */
-    private String getProcessId() throws IOException {
+    private String getProcessId() throws IOException, InterruptedException {
         byte[] bo = new byte[100];
         String[] cmd = {"bash", "-c", "echo $PPID"};
         Process p = Runtime.getRuntime().exec(cmd);
-        p.getInputStream().read(bo);
+	p.waitFor();
+        p.getInputStream().read(bo);	
+	p.destroy();
         return new String(bo).trim();
     }
 
