@@ -473,7 +473,7 @@ sub loadAlignments {
          $self->progressMessage($reportInterval, $nTotalAligns, 'BLAT alignments processed.');
          $self->progressMessage($reportInterval, $nTotalAlignsLoaded, 'BLAT alignments loaded.') if ($nl > 0);
 
-         $dbh->commit() if (($nTotalAlignsLoaded % $commitInterval) == 0 && $self-getArg('commit'));
+         $dbh->commit() if (($nTotalAlignsLoaded % $commitInterval) == 0 && $self->getArg('commit'));
       }
 
       $dbh->commit() if $self->getArg('commit');
