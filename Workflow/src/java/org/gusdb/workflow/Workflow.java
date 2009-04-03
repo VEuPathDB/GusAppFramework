@@ -60,6 +60,7 @@ public class Workflow <T extends WorkflowStep>{
     protected String state;
     protected Integer undo_step_id;
     protected String process_id;
+    protected Boolean test_mode;
     
     Map<String,Integer> filledSlots = new HashMap<String,Integer>();
     Properties loadBalancingConfig;
@@ -147,9 +148,9 @@ public class Workflow <T extends WorkflowStep>{
     
     // write the workflow and steps to the db
     // for now, assume the workflow steps don't change over the life of a workflow
-    void initDb(boolean updateXmlFileDigest) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
+    void initDb(boolean updateXmlFileDigest, boolean testmode) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
 
-	boolean stepTableEmpty = initWorkflowTable(updateXmlFileDigest);
+	boolean stepTableEmpty = initWorkflowTable(updateXmlFileDigest, testmode);
 	initWorkflowStepTable(stepTableEmpty);
     }
 
@@ -177,7 +178,7 @@ public class Workflow <T extends WorkflowStep>{
         return false;
     }
     
-    boolean initWorkflowTable(boolean updateXmlFileDigest) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
+    boolean initWorkflowTable(boolean updateXmlFileDigest, boolean testmode) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
 
         boolean uninitialized = !workflowTableInitialized();
         if (uninitialized) {
@@ -201,11 +202,12 @@ public class Workflow <T extends WorkflowStep>{
                 if (rs != null) rs.close();
                 if (stmt != null) stmt.close();
             }
-
-            sql = "INSERT INTO apidb.workflow (workflow_id, name, version)"  
-                + " VALUES (" + workflow_id + ", '" + name + "', '" + version + "')";
+            int testint = testmode? 1 : 0;
+            sql = "INSERT INTO apidb.workflow (workflow_id, name, version, test_mode)"  
+                + " VALUES (" + workflow_id + ", '" + name + "', '" + version + "', " + testint + ")";
             executeSqlUpdate(sql);
         }
+        
         if (updateXmlFileDigest) {
 	    if (!uninitialized) getDbState(); // get workflow_id
             String sql = "UPDATE apidb.workflow" +
@@ -289,7 +291,7 @@ public class Workflow <T extends WorkflowStep>{
         if (workflow_id == null) {
             name = getWorkflowConfig("name");
             version = getWorkflowConfig("version");
-            String sql = "select workflow_id, state, undo_step_id, process_id"  
+            String sql = "select workflow_id, state, undo_step_id, process_id, test_mode"  
                 + " from apidb.workflow"  
                 + " where name = '" + name + "'"  
                 + " and version = '" + version + "'" ;
@@ -305,6 +307,7 @@ public class Workflow <T extends WorkflowStep>{
                 state = rs.getString(2);
                 undo_step_id = (rs.getObject(3) == null)? null : rs.getInt(3);
                 process_id = rs.getString(4);
+                test_mode = rs.getBoolean(5);
             } finally {
                 if (rs != null) rs.close();
                 if (stmt != null) stmt.close(); 
@@ -545,13 +548,15 @@ public class Workflow <T extends WorkflowStep>{
     
     // brute force reset of workflow.  for developers only
      void reset() throws SQLException, FileNotFoundException, IOException {
+         getDbState();
+         if (!test_mode) error("Cannot reset a workflow unless it was run in test mode (-t)");
+         
          for (String dirName : homeDirSubDirs) {
              File dir = new File(getHomeDir() + "/" + dirName);
              Utilities.deleteDir(dir);
              System.out.println("rm -rf " + dir);
          }
 
-         getDbState();
          String sql = "update apidb.workflow set undo_step_id = null where workflow_id = " + workflow_id;
          executeSqlUpdate(sql);
          sql = "delete from apidb.workflowstep where workflow_id = " + workflow_id;
@@ -596,7 +601,7 @@ public class Workflow <T extends WorkflowStep>{
          else if (cmdLine.hasOption("q")) {
 
          } 
-         
+
          else if (cmdLine.hasOption("d")) {
              Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDirName);
              Class<WorkflowStep> stepClass = WorkflowStep.class;
