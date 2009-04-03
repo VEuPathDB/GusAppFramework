@@ -38,7 +38,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
         String sql;
         if (!getUndoing()) {
             sql = "UPDATE apidb.WorkflowStep"  
-            + " SET state_handled = 1, last_handled_time TO_CHAR(SYSDATE, 'MM-DD-YYYY HH24:MI:SS')"
+            + " SET state_handled = 1, last_handled_time = SYSDATE"
             + " WHERE workflow_step_id = " + workflow_step_id
             + " AND state = '" + state + "'"
             + " AND off_line = " + offlineInt 
@@ -46,7 +46,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
             state_handled = true;  // till next snapshot
         } else {
             sql = "UPDATE apidb.WorkflowStep"  
-                + " SET undo_state_handled = 1, undo_last_handled_time TO_CHAR(SYSDATE, 'MM-DD-YYYY HH24:MI:SS')"
+                + " SET undo_state_handled = 1, undo_last_handled_time = SYSDATE"
                 + " WHERE workflow_step_id = " + workflow_step_id;
             undo_state_handled = true;  // till next snapshot
         }

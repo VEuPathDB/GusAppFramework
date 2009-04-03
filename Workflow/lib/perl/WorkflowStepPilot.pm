@@ -65,9 +65,9 @@ AND $self->{undo}state = '$FAILED'
 # called by pilot UI
 sub pilotSetOffline {
     my ($self, $offline) = @_;
-
-    (!$offline && grep(/$self->{name}/, $self->{workflow}->getInitOfflineSteps())
-     && die "Must first remove '$self->{name}' from the config/initOfflineSteps file\n";
+    ($offline eq 'online'
+     && grep(/$self->{name}/, @{$self->{workflow}->getInitOfflineSteps()}))
+      && die "Must first remove or comment out '$self->{name}' from the config/initOfflineSteps file\n";
 
     $self->{lastSnapshot} = -1;
     my ($state) = $self->getDbState();
@@ -94,8 +94,9 @@ AND $self->{undo}state != '$DONE'
 sub pilotSetStopAfter {
     my ($self, $stopafter) = @_;
 
-    (!$stopafter && grep(/$self->{name}/, $self->{workflow}->getInitStopAfterSteps())
-     && die "Must first remove '$self->{name}' from the config/initStopAfterSteps file\n";
+    ($stopafter eq 'resume'
+     && grep(/$self->{name}/, @{$self->{workflow}->getInitStopAfterSteps()}))
+      && die "Must first remove or comment out '$self->{name}' from the config/initStopAfterSteps file\n";
 
     $self->{lastSnapshot} = -1;
     my ($state) = $self->getDbState();

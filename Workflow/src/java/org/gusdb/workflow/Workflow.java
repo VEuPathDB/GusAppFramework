@@ -185,6 +185,7 @@ public class Workflow <T extends WorkflowStep>{
         
             name = getWorkflowConfig("name");
             version = getWorkflowConfig("version");
+	    test_mode = new Boolean(testmode);
 
             log("Initializing workflow "
                     + "'" + name + " " + version + "' in database");
@@ -202,7 +203,7 @@ public class Workflow <T extends WorkflowStep>{
                 if (rs != null) rs.close();
                 if (stmt != null) stmt.close();
             }
-            int testint = testmode? 1 : 0;
+            int testint = test_mode? 1 : 0;
             sql = "INSERT INTO apidb.workflow (workflow_id, name, version, test_mode)"  
                 + " VALUES (" + workflow_id + ", '" + name + "', '" + version + "', " + testint + ")";
             executeSqlUpdate(sql);

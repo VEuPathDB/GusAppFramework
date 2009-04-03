@@ -117,13 +117,11 @@ sub getStepNamesFromFile {
   my $homeDir = $self->getWorkflowHomeDir();
 
   my $files = [];
-  if (-e $file) {
-    open(F, $file);
-    while(<F>) {
-      next if /^\#/;
-      chomp;
-      push(@$files, $_);
-    }
+  open(F, $file) || die "Cannot open steps file '$file'";
+  while(<F>) {
+    next if /^\#/;
+    chomp;
+    push(@$files, $_);
   }
   return $files;
 }
@@ -167,23 +165,12 @@ sub runCmd {
 
 sub getInitOfflineSteps {
     my ($self) = @_;
-    return $self->getStepsFromFile('initOfflineSteps');
+    return $self->getStepNamesFromFile($self->getWorkflowHomeDir() . 'config/initOfflineSteps');
 }
 
 sub getInitStopAfterSteps {
     my ($self) = @_;
-    return $self->getStepsFromFile('initStopAfterSteps');
-}
-
-sub getStepsFromFile {
-    my ($self, $filename) = @_;
-    open(F, $self->getWorkflowHomeDir(). "/config/$filename") || die "Can't read config/$filename from home dir\n";
-    my @s;
-    while(<F>) {
-	chomp;
-	push(@s,$_);
-    }
-    return \@s
+    return $self->getStepNamesFromFile($self->getWorkflowHomeDir() . 'config/initStopAfterSteps');
 }
 
 1;
