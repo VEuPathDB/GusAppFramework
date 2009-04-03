@@ -164,4 +164,26 @@ sub runCmd {
     return $output;
 }
 
+
+sub getInitOfflineSteps {
+    my ($self) = @_;
+    return $self->getStepsFromFile('initOfflineSteps');
+}
+
+sub getInitStopAfterSteps {
+    my ($self) = @_;
+    return $self->getStepsFromFile('initStopAfterSteps');
+}
+
+sub getStepsFromFile {
+    my ($self, $filename) = @_;
+    open(F, $self->getWorkflowHomeDir(). "/config/$filename") || die "Can't read config/$filename from home dir\n";
+    my @s;
+    while(<F>) {
+	chomp;
+	push(@s,$_);
+    }
+    return \@s
+}
+
 1;

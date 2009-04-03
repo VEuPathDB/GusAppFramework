@@ -66,10 +66,13 @@ AND $self->{undo}state = '$FAILED'
 sub pilotSetOffline {
     my ($self, $offline) = @_;
 
+    (!$offline && grep(/$self->{name}/, $self->{workflow}->getInitOfflineSteps())
+     && die "Must first remove '$self->{name}' from the config/initOfflineSteps file\n";
+
     $self->{lastSnapshot} = -1;
     my ($state) = $self->getDbState();
-    if ($state eq $RUNNING) {
-      return "Warning: Can't change $self->{name} to OFFLINE or ONLINE when '$RUNNING'";
+    if ($state eq $RUNNING || $state eq $DONE) {
+      return "Warning: Can't change $self->{name} to OFFLINE or ONLINE when '$RUNNING' or 'DONE'";
     }
     my $offline_bool = $offline eq 'offline'? 1 : 0;
 
@@ -79,7 +82,8 @@ SET
   $self->{undo}off_line = $offline_bool,
   $self->{undo}state_handled = 0
 WHERE workflow_step_id = $self->{workflow_step_id}
-AND ($self->{undo}state != '$RUNNING')
+AND $self->{undo}state != '$RUNNING'
+AND $self->{undo}state != '$DONE'
 ";
     $self->runSql($sql);
     $self->pilotLog("Step '$self->{name}' $offline");
@@ -89,6 +93,9 @@ AND ($self->{undo}state != '$RUNNING')
 # called by pilot UI
 sub pilotSetStopAfter {
     my ($self, $stopafter) = @_;
+
+    (!$stopafter && grep(/$self->{name}/, $self->{workflow}->getInitStopAfterSteps())
+     && die "Must first remove '$self->{name}' from the config/initStopAfterSteps file\n";
 
     $self->{lastSnapshot} = -1;
     my ($state) = $self->getDbState();
