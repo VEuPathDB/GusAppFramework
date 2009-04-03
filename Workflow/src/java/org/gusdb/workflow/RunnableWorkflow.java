@@ -54,7 +54,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     void run(boolean testOnly) throws Exception {
         initHomeDir();             // initialize workflow home directory, if needed
 
-        initDb(true);              // write workflow to db, if not already there
+        initDb(true, testOnly);    // write workflow to db, if not already there
 
         getStepsConfig();          // validate config of all steps.
 
@@ -196,6 +196,9 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
     private void setRunningState(boolean testOnly) throws SQLException, IOException, java.lang.InterruptedException {
 
+        if (!test_mode && testOnly) error("Cannot run with '-t'.  Already running with '-r'");
+        if (test_mode && !testOnly) error("Cannot run with '-r'.  Already running with '-t'");
+        
 	if (state != null && process_id != null && state.equals(RUNNING)) {
 	    String[] cmd = {"ps", "-p", process_id};
 	    Process process = Runtime.getRuntime().exec(cmd);
