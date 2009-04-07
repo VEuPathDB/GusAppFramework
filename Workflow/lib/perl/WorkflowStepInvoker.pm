@@ -247,7 +247,7 @@ sub runPlugin {
     if ($plugin !~ /\w+\:\:\w+/) {
 	$self->error("illegal 'plugin' arg passed to runPlugin() in step class '$className'");
     }
-    
+
     my $comment = $args;
     $comment =~ s/"/\\"/g;
 
@@ -257,9 +257,40 @@ sub runPlugin {
 
     my $commit = $args." --commit";
 
-    my $cmd = "ga $plugin --workflowstepid $self->{id} $commit --comment \"$comment\"";
+    my $cmd;
+    if ($undo) {
+      my $undoPlugin = $self->getUndoPlugin($plugin);
+      my $algInvIds = $self->getAlgInvIds();
+      $cmd = "ga $undoPlugin --algInvocationIds '$algInvIds'";
 
+    } else {
+      $cmd = "ga $plugin --workflowstepid $self->{id} $commit --comment \"$comment\"";
+    }
     $self->runCmd($test, $cmd);
+}
+
+# individual steps can override this method if needed
+# must return name of undo plugin and all args besides algInvocationId
+sub getUndoPlugin{
+  my ($self, $pluginClassName) = @_;
+
+  return "GUS::Community::Plugin::Undo --plugin $pluginClassName";
+}
+
+sub getAlgInvIds {
+  my ($self) = @_;
+  my $sql = "
+  select algorithm_invocation_id
+  from apidb.WorkflowStepAlgInvocation
+  where workflow_step_id = $self->{id}
+";
+
+  my $stmt = $self->runSql($sql);
+  my @algInvIds;
+  while (my @row = $stmt->fetchrow_array()) {
+    push(@algInvIds, $row[0]);
+  }
+  return join(",", @algInvIds);
 }
 
 sub runCmd {
