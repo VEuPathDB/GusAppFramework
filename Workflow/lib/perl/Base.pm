@@ -54,6 +54,7 @@ sub runSql {
     my $dbh = $self->getDbh();
     my $stmt = $dbh->prepare("$sql") or $self->error(DBI::errstr);
     $stmt->execute() or $self->error(DBI::errstr);
+    return $stmt;
 }
 
 sub runSqlQuery_single_array {
