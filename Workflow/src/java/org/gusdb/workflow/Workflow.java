@@ -476,7 +476,7 @@ public class Workflow <T extends WorkflowStep>{
 
         StringBuffer buf = new StringBuffer();
         for (String ds : desiredStates) buf.append("'" + ds + "',");
-        String state_str = undoStepName == null? "state" : "undo_state";
+        String state_str = undo_step_id == null? "state" : "undo_state";
         String sql = "select name, workflow_step_id," + state_str  
             + " from apidb.workflowstep"  
             + " where workflow_id = '" + workflow_id + "'"  
