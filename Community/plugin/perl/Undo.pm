@@ -146,7 +146,7 @@ sub run{
 
    my @tables = $plugin->undoTables();
    foreach my $table (@tables) {
-      $self->deleteFromTable($table);
+      $self->deleteFromTable($table,'row_alg_invocation_id');
    }
 
    if ($workflowContext) {
