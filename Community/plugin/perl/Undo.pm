@@ -105,6 +105,13 @@ my $argsDeclaration  =
             reqd  => 1,
             isList => 1,
            }),
+
+ booleanArg({name  => 'workflowContext',
+	     descr => 'The plugin was run by a workflow, so rows in WorkflowStepAlgInvocation must be deleted.',
+	     reqd  => 0,
+	     default=> 0,
+	    }),
+
 ];
 
 
@@ -127,6 +134,7 @@ sub run{
    my ($self) = @_;
 
    my $pluginName = $self->getArg('plugin');
+   my $workflowContext = $self->getArg('workflowContext');
    $self->{'algInvocationIds'} = $self->getArg('algInvocationId');
    $self->{'dbh'} = $self->getQueryHandle();
    $self->{'dbh'}->{AutoCommit}=0;
@@ -141,27 +149,29 @@ sub run{
       $self->deleteFromTable($table);
    }
 
-   $self->deleteFromTable('Core.AlgorithmParam');
+   if ($workflowContext) {
+     $self->deleteFromTable('ApiDB.WorkflowStepAlgInvocation', 'algorithm_invocation_id');
+   }
 
-   $self->deleteFromTable('Core.AlgorithmInvocation');
+   $self->deleteFromTable('Core.AlgorithmParam', 'row_alg_invocation_id');
 
-
+   $self->deleteFromTable('Core.AlgorithmInvocation', 'row_alg_invocation_id');
 
 }
 
 sub deleteFromTable{
-   my ($self, $tableName) = @_;
+   my ($self, $tableName, $algInvIdColumnName) = @_;
 
    my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
    my $sql =
       "SELECT COUNT(*) FROM $tableName
-       WHERE row_alg_invocation_id IN ($algoInvocIds)";
+       WHERE $algInvIdColumnName IN ($algoInvocIds)";
    my $stmt = $self->{dbh}->prepareAndExecute($sql);
    if(my ($rows) = $stmt->fetchrow_array()){
     if ($self->{commit} == 1) {
        my $sql = 
        "DELETE FROM $tableName
-       WHERE row_alg_invocation_id IN ($algoInvocIds)";
+       WHERE $algInvIdColumnName IN ($algoInvocIds)";
        warn "\n$sql\n" if $self->getArg('verbose');       
        if($rows > 0){
          $self->{dbh}->do($sql) || die "Failed running sql:\n$sql\n";
