@@ -324,7 +324,7 @@ $sql .= " and inv.result = '$algInvResult'" if ($algInvResult);
 sub undoTables {
   my ($self) = @_;
 
-  return ('DoTS.SecondaryStructureCall',
+  return ('DoTS.SecondaryStructure',
 	  'DoTS.SecondaryStructureCall',
 	 );
 }
