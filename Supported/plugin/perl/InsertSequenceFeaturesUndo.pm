@@ -103,7 +103,13 @@ my $argsDeclaration  =
 	      constraintFunc=> undef,
 	      reqd  => 1,
 	      isList => 1,
-	     })
+	     }),
+
+   booleanArg({name  => 'workflowContext',
+	     descr => 'The plugin was run by a workflow, so rows in WorkflowStepAlgInvocation must be deleted.',
+	     reqd  => 0,
+	     default=> 0,
+	    })
   ];
 
 
@@ -132,6 +138,12 @@ sub run{
   $self->undoFeatures();
 
   $self->undoSequences();
+
+  if ($self->getArg('workflowContext')) {
+
+     deleteFromTable('ApiDB.WorkflowStepAlgInvocation', $self->{'algInvocationIds'}, $self->{'dbh'}, $self->{'commit'},'algorithm_invocation_id');       
+
+  }
 
   $self->_deleteFromTable('Core.AlgorithmParam');
 
@@ -228,17 +240,18 @@ sub _deleteFromTable{
 }
 
 sub deleteFromTable{
-  my ($tableName, $algInvocationIds, $dbh, $commit) = @_;
+  my ($tableName, $algInvocationIds, $dbh, $commit, $algInvIdColumnName) = @_;
   my $algoInvocIds = join(', ', @{$algInvocationIds});
+  $algInvIdColumnName = "row_alg_invocation_id" unless $algInvIdColumnName;
   my $sql =
       "SELECT COUNT(*) FROM $tableName
-       WHERE row_alg_invocation_id IN ($algoInvocIds)";
+       WHERE $algInvIdColumnName IN ($algoInvocIds)";
   my $stmt = $dbh->prepareAndExecute($sql);
   if(my ($rows) = $stmt->fetchrow_array()){
     if ($commit == 1) {
        my $sql = 
        "DELETE FROM $tableName
-       WHERE row_alg_invocation_id IN ($algoInvocIds)";
+       WHERE $algInvIdColumnName IN ($algoInvocIds)";
        
        if($rows > 0){
          $dbh->do($sql) || die "Failed running sql:\n$sql\n";
