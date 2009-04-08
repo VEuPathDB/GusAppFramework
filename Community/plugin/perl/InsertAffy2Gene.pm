@@ -216,6 +216,7 @@ sub insertCompositeElementGene {
       if ($entrez[$j] !~ /^\d+$/) {
 	next;
       }
+
       else {
 	my $gene = GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $entrez[$j]});
 	if ($gene->retrieveFromDB()) {
