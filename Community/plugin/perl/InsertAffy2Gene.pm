@@ -210,24 +210,27 @@ sub insertCompositeElementGene {
       $arr[$i] =~ s/\"//g;
     }
     my $id = $arr[$positions{'id'}];
-    my $entrez = $arr[$positions{'entrez'}];
-    if ($entrez !~ /^\d+$/) {
-      next;
-    }
-    else {
-      my $gene = GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $entrez});
-      if ($gene->retrieveFromDB()) {
-	my  $compositeElement = GUS::Model::RAD::ShortOligoFamily->new({name => $id, array_design_id => $arrayDesignId});
-	if ($compositeElement->retrieveFromDB()) {
-	  my $compositeElementGene = GUS::Model::RAD::CompositeElementGene->new({});
-	  $compositeElementGene->setParent($gene);
-	  $compositeElementGene->setParent($compositeElement);
-	  $compositeElementGene->submit();
-	  $insertCount++;
-	}
+    my @entrez = split(/\/\/\//,$arr[$positions{'entrez'}]);
+    for (my $j=0; $j<@entrez; $j++) {
+      $entrez[$j] =~ s/^\s+|\s+$//g;
+      if ($entrez[$j] !~ /^\d+$/) {
+	next;
       }
       else {
-	next;
+	my $gene = GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $entrez[$j]});
+	if ($gene->retrieveFromDB()) {
+	  my  $compositeElement = GUS::Model::RAD::ShortOligoFamily->new({name => $id, array_design_id => $arrayDesignId});
+	  if ($compositeElement->retrieveFromDB()) {
+	    my $compositeElementGene = GUS::Model::RAD::CompositeElementGene->new({});
+	    $compositeElementGene->setParent($gene);
+	    $compositeElementGene->setParent($compositeElement);
+	    $compositeElementGene->submit();
+	    $insertCount++;
+	  }
+	}
+	else {
+	  next;
+	}
       }
     }
     $self->undefPointerCache();
