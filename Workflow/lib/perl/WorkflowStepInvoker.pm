@@ -261,7 +261,7 @@ sub runPlugin {
     if ($undo) {
       my $undoPlugin = $self->getUndoPlugin($plugin);
       my $algInvIds = $self->getAlgInvIds();
-      $cmd = "ga $undoPlugin --algInvocationIds '$algInvIds'";
+      $cmd = "ga $undoPlugin --algInvocationId '$algInvIds' --workflowContext --commit";
 
     } else {
       $cmd = "ga $plugin --workflowstepid $self->{id} $commit --comment \"$comment\"";
