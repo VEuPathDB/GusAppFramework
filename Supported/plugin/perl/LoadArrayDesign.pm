@@ -1426,4 +1426,3 @@ sub undoTables {
   return ('RAD.Control', 'RAD.ElementAnnotation', 'RAD.CompositeElementAnnotation', 'RAD.ElementImp', 'RAD.CompositeElementImp', 'RAD.ArrayDesignAnnotation', 'RAD.ArrayDesign');
 }
 1;
-
