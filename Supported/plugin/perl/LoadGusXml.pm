@@ -178,7 +178,7 @@ sub countChangedObjs {
     $countObjs++;
     $countUpdates++;
     if (!$self->getArg('refresh') && !$c->hasChangedAttributes()) {
-      $self->logDebug('DEBUG','There are no changed attributes') if $self->getArg->('debug');
+      $self->logDebug('DEBUG','There are no changed attributes') if $self->getArg('debug');
       $countUpdates--;
     }
     $self->countChangedObjs($c);
