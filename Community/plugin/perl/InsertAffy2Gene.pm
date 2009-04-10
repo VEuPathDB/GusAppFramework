@@ -104,7 +104,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
   
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6121 $',
+		     cvsRevision => '$Revision:  $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -113,6 +113,7 @@ sub new {
   return $self;
 }
 
+#
 # ----------------------------------------------------------------------
 # run method to do the work
 # ----------------------------------------------------------------------
@@ -216,7 +217,6 @@ sub insertCompositeElementGene {
       if ($entrez[$j] !~ /^\d+$/) {
 	next;
       }
-
       else {
 	my $gene = GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $entrez[$j]});
 	if ($gene->retrieveFromDB()) {
