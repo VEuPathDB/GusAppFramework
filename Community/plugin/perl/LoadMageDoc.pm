@@ -353,7 +353,6 @@ sub setLogger {$_[0]->{_logger} = $_[1]}
 sub getLogger {$_[0]->{_logger}}
 
 
-
 sub undoTables {
   return ('RAD.BioMaterialMeasurement',
           'RAD.Treatment',
