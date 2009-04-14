@@ -249,6 +249,7 @@ sub undoTables {
 
   return ('Core.Algorithm',
 	  'Core.AlgorithmImplementation',
+	  'Core.ALGORITHMPARAM',
           'Core.AlgorithmInvocation'
 	 );
 }
