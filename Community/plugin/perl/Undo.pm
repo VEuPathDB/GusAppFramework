@@ -116,7 +116,7 @@ my $argsDeclaration  =
             descr => 'A comma delimited list of table names to undo, schema.table format, e.g. dots.nasequence.',
             constraintFunc=> undef,
             reqd  => 0,
-            isList => 1,
+            isList => 0,
            }),
 
 ];
@@ -154,7 +154,7 @@ sub run{
 
    if ($self->getArg('undoTables'))
    {
-       @tables = map{"'$_'"} split (/,/,$self->getArg('undoTables'));
+       @tables = split (/,/,$self->getArg('undoTables'));
 
    }else{
        @tables = $plugin->undoTables();
@@ -162,6 +162,7 @@ sub run{
 
 
    foreach my $table (@tables) {
+
       $self->deleteFromTable($table,'row_alg_invocation_id');
    }
 
