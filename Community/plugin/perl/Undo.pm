@@ -112,6 +112,13 @@ my $argsDeclaration  =
 	     default=> 0,
 	    }),
 
+ stringArg({name => 'undoTables',
+            descr => 'A comma delimited list of table names to undo, schema.table format, e.g. dots.nasequence.',
+            constraintFunc=> undef,
+            reqd  => 0,
+            isList => 1,
+           }),
+
 ];
 
 
@@ -143,8 +150,17 @@ sub run{
    my $plugin = eval "require $pluginName; $pluginName->new()";
 
    $self->error("Failed trying to create new plugin '$pluginName' with error '$@'") unless $plugin;
+   my @tables;
 
-   my @tables = $plugin->undoTables();
+   if ($self->getArg('undoTables'))
+   {
+       @tables = map{"'$_'"} split (/,/,$self->getArg('undoTables'));
+
+   }else{
+       @tables = $plugin->undoTables();
+   }
+
+
    foreach my $table (@tables) {
       $self->deleteFromTable($table,'row_alg_invocation_id');
    }
