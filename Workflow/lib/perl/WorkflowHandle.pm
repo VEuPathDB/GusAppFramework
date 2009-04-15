@@ -165,12 +165,12 @@ sub runCmd {
 
 sub getInitOfflineSteps {
     my ($self) = @_;
-    return $self->getStepNamesFromFile($self->getWorkflowHomeDir() . 'config/initOfflineSteps');
+    return $self->getStepNamesFromFile($self->getWorkflowHomeDir() . '/config/initOfflineSteps');
 }
 
 sub getInitStopAfterSteps {
     my ($self) = @_;
-    return $self->getStepNamesFromFile($self->getWorkflowHomeDir() . 'config/initStopAfterSteps');
+    return $self->getStepNamesFromFile($self->getWorkflowHomeDir() . '/config/initStopAfterSteps');
 }
 
 1;
