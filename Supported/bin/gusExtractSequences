@@ -60,6 +60,7 @@ open(OUT,">>$outFile") || die "Can't open $outFile to append output\n Check writ
 
 print STDERR "SQL: $idSQL\n" if $verbose;
 my $count = 0;
+my $skip = 0;
 my $idStmt = $dbh->prepare($idSQL);
 $idStmt->execute();
 my @ids;
@@ -73,7 +74,7 @@ while(my (@row) = $idStmt->fetchrow_array()){
 
 my $countSeqInOutFile=`grep -c '>' $outFile`;
 
-die "Inconsistant number of sequences between query results and outputs in $outFile. Please check log file.\n" unless ($countSeqInOutFile==$count);
+die "Inconsistant number of sequences between query results and outputs in $outFile. Please check log file.\n" unless (($countSeqInOutFile + $skip)==$count);
 
 sub printSequence{
 	my @row = @_;
@@ -81,6 +82,7 @@ sub printSequence{
   my $sequence = pop(@row);
   if(length($sequence) < $minLength){
     print STDERR "Skipping: $row[0] too short: ",length($sequence),"\n";
+    $skip++;
     return;
   }
 
@@ -90,6 +92,7 @@ sub printSequence{
 	  my $aaStopCodonPercent = (($aaLength - $aaCount)/($aaLength)) * 100;
 	  if ($aaStopCodonPercent > $mscPercent) {
   		print STDERR "Skipping: $row[0] has $aaStopCodonPercent\% stop codons\n";
+		$skip++;
 		return;
 	  }
   }
