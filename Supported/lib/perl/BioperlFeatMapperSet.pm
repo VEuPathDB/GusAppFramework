@@ -105,8 +105,10 @@ sub _parseMapFile {
 
   foreach my $feature (@{$mapperSet}) {
     my $name = $feature->{name};
+
     $self->{mappersByName}->{$name} = 
       GUS::Supported::BioperlFeatMapper->new($name, $feature, $mapXml);
+
   }
 
   foreach my $handler (@{$self->{qualifierHandlersList}}) {
