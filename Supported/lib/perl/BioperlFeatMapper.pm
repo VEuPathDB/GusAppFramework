@@ -13,6 +13,11 @@ sub new{
     $self->{qualifiers}->{$qualifier->{name}} = $qualifier;
     push(@{$self->{qualifierNamesList}}, $qualifier->{name});
   }
+
+  foreach my $validator (@{$self->{validator}}) {
+    $self->{validators}->{$validator->{name}} = $validator;
+    push(@{$self->{validatorNamesList}}, $validator->{name});
+  }
   bless($self, $class);
   return $self;
 }
@@ -31,6 +36,18 @@ sub sortTags {
     $tags{$t} = 1;
   }
   foreach my $q (@{$self->{qualifierNamesList}}) {
+    push(@sortedTags, $q) if $tags{$q};
+  }
+  return @sortedTags;
+}
+
+
+sub sortValidationTags {
+  my ($self, @tags) = @_;
+  my %tags;
+  my @sortedTags;
+
+  foreach my $q (@{$self->{validatorNamesList}}) {
     push(@sortedTags, $q) if $tags{$q};
   }
   return @sortedTags;
@@ -84,6 +101,18 @@ sub getHandlerMethod {
   my ($self, $tag) = @_;
 
   return $self->{qualifiers}->{$tag}->{'method'}
+}
+
+sub getValidatorHandlerName {
+  my ($self, $tag) = @_;
+
+  return $self->{validators}->{$tag}->{'handler'}
+}
+
+sub getValidatorHandlerMethod {
+  my ($self, $tag) = @_;
+
+  return $self->{validators}->{$tag}->{'method'}
 }
 
 sub ignoreFeature {
