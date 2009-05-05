@@ -188,7 +188,7 @@ sub note {
 
   my @notes;
   foreach my $tagValue ($bioperlFeature->get_tag_values($tag)) {
-      if($tagValue ne '' && $tagValue ne 'null'){
+      if($tagValue ne '' && $tagValue ne 'null' && $tagValue ne 'NULL'){
 	  my $arg = {comment_string => substr($tagValue, 0, 4000)};
 	  push(@notes, GUS::Model::DoTS::NAFeatureComment->new($arg));
       }
