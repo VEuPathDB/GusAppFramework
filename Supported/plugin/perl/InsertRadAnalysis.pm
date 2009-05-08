@@ -582,7 +582,8 @@ sub readDataFile {
       my $sth = $dbh->prepare("select $pk from $table where $pk=$rowId");
       $sth->execute();
       if (!$sth->fetchrow_array()) {
-	$self->userError("The row_id on line $lineNum is not a valid $pk for $table.");
+	$self->log("WARNING:  The row_id on line $lineNum is not a valid $pk for $table.");
+	#$self->userError("The row_id on line $lineNum is not a valid $pk for $table.");
       }
     }
     $data->[$lineNum]->{'discard'} = 0;
