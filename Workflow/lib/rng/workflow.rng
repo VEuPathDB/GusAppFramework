@@ -7,6 +7,9 @@
       <zeroOrMore>
         <element name="param">
           <attribute name="name" />
+          <optional>
+            <attribute name="doNotValidate"/>
+          </optional>
           <text/>
         </element>
       </zeroOrMore>
@@ -29,6 +32,9 @@
             </optional>
             <optional>
               <attribute name="stepLoadTypes"/>
+            </optional>
+            <optional>
+              <attribute name="undoRoot"/>
             </optional>
             <zeroOrMore>
               <element name="paramValue">
