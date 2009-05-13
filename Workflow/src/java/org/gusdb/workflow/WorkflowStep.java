@@ -63,6 +63,7 @@ public class WorkflowStep  {
     String includeIf_string;
     String excludeIf_string;
     Boolean excludeFromGraph = null;
+    String undoRoot;
     
     // state from db
     protected int workflow_step_id;
@@ -105,6 +106,14 @@ public class WorkflowStep  {
     
     public String[] getLoadTypes() {
         return loadTypes;
+    }
+    
+    public void setUndoRoot(String undoRoot) {
+        this.undoRoot = undoRoot;
+    }
+    
+    public String getUndoRoot() {
+        return undoRoot;
     }
     
     public void setIsGlobal(boolean isGlobal) {
