@@ -87,6 +87,18 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
         // if not already running undo
         if (undo_step_id == null) {
+            // find the step based on its name       
+            for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
+                if (step.getFullName().equals(undoStepName)) {
+                    undo_step_id = step.getId();
+                    if (step.getUndoRoot() != null) 
+                        error("This step may not be the root of an undo. Instead use " + step.getUndoRoot());
+                    break;
+                }
+            }
+            if (undo_step_id == null) error("Step name '" + undoStepName + "' is not found");
+            
+            
             // confirm that no steps are running   
             handleStepChanges(testOnly);
             List<RunnableWorkflowStep> runningSteps = new ArrayList<RunnableWorkflowStep>();
@@ -104,11 +116,6 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
             }
             
             // set undo_step_id in workflow table         
-            for (RunnableWorkflowStep step : workflowGraph.getSteps()) {
-                if (step.getFullName().equals(undoStepName)) undo_step_id = step.getId();
-            }
-            if (undo_step_id == null) error("Step name '" + undoStepName + "' is not found");
-            
             String sql = "UPDATE apidb.Workflow" + nl
             + "SET undo_step_id = '" + undo_step_id + "'" + nl
             + "WHERE workflow_id = " + workflow_id;
