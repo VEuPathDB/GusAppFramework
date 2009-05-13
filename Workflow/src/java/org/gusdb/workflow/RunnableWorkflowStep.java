@@ -12,6 +12,8 @@ import java.util.Formatter;
 
 public class RunnableWorkflowStep extends WorkflowStep {
     
+    boolean isInvoked;
+
     int handleChangesSinceLastSnapshot(Workflow<RunnableWorkflowStep> workflow) throws SQLException, IOException, InterruptedException  {
         if (getOperativeStateHandled()) {
             if (getOperativeState().equals(Workflow.RUNNING)) {               
@@ -22,7 +24,10 @@ public class RunnableWorkflowStep extends WorkflowStep {
 		process.destroy();
             }
         } else { // this step has been changed by wrapper or pilot UI. log change.
-            if (!getOperativeState().equals(prevState)) steplog(getOperativeState(), "");
+            if (!getOperativeState().equals(prevState)) {
+		steplog(getOperativeState(), "");
+		isInvoked = false;
+	    }
             if (off_line != prevOffline) steplog("", (off_line? "OFFLINE" : "ONLINE"));
             if (stop_after != prevStopAfter) steplog("", (stop_after? "STOP_AFTER" : "RESUME"));
             setHandledFlag();
@@ -159,9 +164,14 @@ public class RunnableWorkflowStep extends WorkflowStep {
 		// call sh directly to force wrapper into background
 		// so it survives a kill of the controller
 		String[] cmd3 = {"sh", "-c", sb.toString() + " &"};
-		steplog("Invoked", "");
-		Process p = Runtime.getRuntime().exec(cmd3);
-		workflow.addBgdProcess(p);
+		if (isInvoked) {
+		    steplog("Invoked but not running", "");
+		} else {
+		    steplog("Invoked", "");
+		    Process p = Runtime.getRuntime().exec(cmd3);
+		    workflow.addBgdProcess(p);
+		    isInvoked = true;
+		}
 	    }
             return 1;
         } 
