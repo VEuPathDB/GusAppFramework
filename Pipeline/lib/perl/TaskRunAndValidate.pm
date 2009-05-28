@@ -42,7 +42,7 @@ use strict;
 use Carp;
 
 sub runRepeatMask {
-    my ($pipelineDir, $numnodes, $name, $time,$queue) = @_;
+    my ($pipelineDir, $numnodes, $name, $time,$queue, $ppn) = @_;
     
     print "\nRunning repeatmask on $name\n";
 
@@ -62,7 +62,7 @@ sub runRepeatMask {
 	}
     }
     if (!$valid) {
-	&run($propFile, "$pipelineDir/logs/$name.mask.log", $numnodes, $time, $queue);
+	&run($propFile, "$pipelineDir/logs/$name.mask.log", $numnodes, $time, $queue, $ppn);
 	$valid = &validateRM($inputFile, $resultFile, $errFile);
 	if  (!$valid) {
 	    print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
@@ -149,12 +149,12 @@ sub runGenomeAlignWithGfClient {
 }
 
 sub runIprScan {
-  my ($pipelineDir, $proteinFile, $numnodes, $time, $queue) = @_;
+  my ($pipelineDir, $proteinFile, $numnodes, $time, $queue, $ppn) = @_;
 
   my $propFile = "$pipelineDir/iprscan/$proteinFile/input/controller.prop";
   my $logFile = "$pipelineDir/logs/${proteinFile}_Iprscan.log";
 
-  &run($propFile, $logFile, $numnodes, $time, $queue);
+  &run($propFile, $logFile, $numnodes, $time, $queue, $ppn);
 
   return 1;
 }
@@ -214,7 +214,7 @@ sub runMicerAlign {
 }
 
 sub runPsipred {
-  my ($pipelineDir, $queryFile, $subjectFile, $numNodes, $time, $queue) = @_;
+  my ($pipelineDir, $queryFile, $subjectFile, $numNodes, $time, $queue, $ppn) = @_;
 
   die "Build dir $pipelineDir doesn't exist" unless -d $pipelineDir;
   my $name = "$queryFile-$subjectFile";
@@ -231,7 +231,7 @@ sub runPsipred {
 
   print "\nRunning psipred on $name\n";
 
-  &run($propFile, $logFile, $numNodes, $time, $queue);
+  &run($propFile, $logFile, $numNodes, $time, $queue, $ppn);
 
   my $valid = &validatePsipred($inputFile, $resultDir);
   if  (!$valid) {
@@ -343,7 +343,7 @@ sub runPfam {
 }
 
 sub runTRNAscan {
-    my ($pipelineDir, $subjectFile, $numNodes, $time, $queue) = @_;
+    my ($pipelineDir, $subjectFile, $numNodes, $time, $queue, $ppn) = @_;
 
     $subjectFile =~ s/\.\w+\b//;
 
@@ -357,7 +357,7 @@ sub runTRNAscan {
     my $valid = 0;
     # TODO: validate previous results
     if (!$valid) {
-        &run($propFile, $logFile,$numNodes,$time,$queue);
+        &run($propFile, $logFile,$numNodes,$time,$queue, $ppn);
         # TODO: validate results
     }
     return $valid;
