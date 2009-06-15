@@ -25,6 +25,7 @@
 package GUS::Supported::Plugin::LoadArrayDesign;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
+
 use strict;
 use IO::File;
 use CBIL::Util::Disp;
