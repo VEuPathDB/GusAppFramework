@@ -287,7 +287,7 @@ sub run {
   }
 
   if ($self->getArg('organism')) {
-    $self->fetchTaxonIdFromName();
+    $self->fetchTaxonIdFromName($self->getArg('organism'));
   }
   
   if ($self->getArg('sourceIdsFile')) {
