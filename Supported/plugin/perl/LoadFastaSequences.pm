@@ -93,12 +93,16 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
- integerArg({   name           => 'ncbiTaxId',
-	       descr          => 'The taxon id from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName flag.',
+ stringArg({   name           => 'organism',
+	       descr          => 'The organism scientific name from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName  or ncbiTaxId flag.',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
-
+ integerArg({   name           => 'ncbiTaxId',
+	       descr          => 'The organism taxon id from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName or organism flag.',
+	       reqd           => 0,
+	       constraintFunc => undef,
+	       isList         => 0 }),
  fileArg({   name           => 'sequenceFile',
 	       descr          => 'The name of the FASTA file containing the input sequences',
 	       reqd           => 0,
@@ -142,7 +146,7 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       isList         => 0 }),
 
  stringArg({   name           => 'regexTaxonName',
-	       descr          => 'The regular expression to pick the taxon name from the defline. Do not use this flag if using the ncbiTaxId flag.',
+	       descr          => 'The regular expression to pick the taxon name from the defline. Do not use this flag if using the organism flag.',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
@@ -282,6 +286,10 @@ sub run {
     $self->fetchTaxonId();
   }
 
+  if ($self->getArg('organism')) {
+    $self->fetchTaxonIdFromName();
+  }
+  
   if ($self->getArg('sourceIdsFile')) {
     $self->getGoodSourceIds();
   }
@@ -655,6 +663,7 @@ sub fetchSequenceOntologyId {
     || $self->userError("Can't find SO term '$name' in database");
 }
 
+
 sub fetchTaxonId {
   my ($self) = @_;
 
@@ -667,6 +676,9 @@ sub fetchTaxonId {
 
   $self->{taxonId} = $taxon->getTaxonId();
 }
+
+
+
 
 
 sub fetchTaxonIdFromName {
