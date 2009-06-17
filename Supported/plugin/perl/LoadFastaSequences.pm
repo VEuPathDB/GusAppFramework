@@ -68,6 +68,13 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
+stringArg({   name           => 'ncbiTaxonName',
+	       descr          => 'organism name found in taxonname table, preferably name_class is scientific name, do not use if using ncbiTaxId or regexTaxonName args',
+	       reqd           => 0,
+	       constraintFunc => undef,
+	       isList         => 0 }),
+
+
  integerArg({   name           => 'logFrequency',
 	       descr          => 'The frequency of logging progress, ie, after how many sequences are processed',
 	       reqd           => 0,
@@ -93,16 +100,12 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
- stringArg({   name           => 'organism',
-	       descr          => 'The organism scientific name from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName  or ncbiTaxId flag.',
-	       reqd           => 0,
-	       constraintFunc => undef,
-	       isList         => 0 }),
  integerArg({   name           => 'ncbiTaxId',
-	       descr          => 'The organism taxon id from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName or organism flag.',
+	       descr          => 'The taxon id from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName or ncbiTaxonName args.',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
+
  fileArg({   name           => 'sequenceFile',
 	       descr          => 'The name of the FASTA file containing the input sequences',
 	       reqd           => 0,
@@ -146,7 +149,7 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       isList         => 0 }),
 
  stringArg({   name           => 'regexTaxonName',
-	       descr          => 'The regular expression to pick the taxon name from the defline. Do not use this flag if using the organism flag.',
+	       descr          => 'The regular expression to pick the taxon name from the defline. Do not use this flag if using the ncbiTaxId or ncbiTaxonName args.',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
@@ -246,7 +249,8 @@ $| = 1;
 sub run {
   my $self  = shift;
 
-  die "Do not use both 'ncbiTaxId' and 'regexTaxonName'. Use one or the other, use the --help flag for more information." if ($self->getArg('ncbiTaxId') && $self->getArg('regexTaxonName'));
+  die "Only use one of 'ncbiTaxId', 'regexTaxonName', or 'ncbiTaxonName. Use the --help flag for more information."
+        if (($self->getArg('ncbiTaxId') && $self->getArg('regexTaxonName')) || ($self->getArg('ncbiTaxId') && $self->getArg('ncbiTaxonName')) || ($self->getArg('ncbiTaxonName') && $self->getArg('regexTaxonName')));
 
   $self->{totalCount} = 0;
   $self->{skippedCount} = 0;
@@ -286,13 +290,10 @@ sub run {
     $self->fetchTaxonId();
   }
 
-  if ($self->getArg('organism')) {
-    $self->fetchTaxonIdFromName($self->getArg('organism'));
-  }
-  
   if ($self->getArg('sourceIdsFile')) {
     $self->getGoodSourceIds();
   }
+
 
   my $oracleName = $self->className2oracleName($self->getArg('tableName'));
   $checkStmt = $self->getAlgInvocation()->getQueryHandle()->prepare("select $prim_key from $oracleName where source_id = ? and external_database_release_id = $self->{external_database_release_id}");
@@ -343,6 +344,12 @@ sub processOneFile{
     my $seq_version = 1;
     my $start = 1;
     my $taxonName;
+
+    if ($self->getArg('ncbiTaxonName')) {
+      $taxonName = $self->getArg('ncbiTaxonName');
+      $self->fetchTaxonIdFromName($taxonName);
+    }
+
 
     while (<F>) {
 	if (/^\>/) {                ##have a defline....need to process!
@@ -663,7 +670,6 @@ sub fetchSequenceOntologyId {
     || $self->userError("Can't find SO term '$name' in database");
 }
 
-
 sub fetchTaxonId {
   my ($self) = @_;
 
@@ -676,9 +682,6 @@ sub fetchTaxonId {
 
   $self->{taxonId} = $taxon->getTaxonId();
 }
-
-
-
 
 
 sub fetchTaxonIdFromName {
