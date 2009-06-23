@@ -209,11 +209,8 @@ sub insertCoordinates {
       $self->userError("Missing required DoTS.VirtualSequence for $chr");
     } 
     $self->logDebug($virtualSequence->toString() . "\n");
-    my $geneFeatureName =  $geneSymbol . '-' . $ucId;
-    if (length $geneFeatureName>30) {
-      $geneFeatureName = $ucId;
-    }
-    my $geneFeature= GUS::Model::DoTS::GeneFeature->new({name => $geneFeatureName, number_of_exons => $exonCount});
+
+    my $geneFeature= GUS::Model::DoTS::GeneFeature->new({name => $ucId, number_of_exons => $exonCount});
     $geneFeature->setParent($virtualSequence);
 
     my $geneInstance= GUS::Model::DoTS::GeneInstance->new({is_reference => 0});    
