@@ -1,10 +1,17 @@
 package org.gusdb.workflow;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.security.NoSuchAlgorithmException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.io.File;
 
 /*
@@ -44,6 +51,8 @@ import java.io.File;
 
 public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     private int runningCount;
+    private List<Process> bgdProcesses = new ArrayList<Process>();  // list of processes to clean
+
     final static String nl = System.getProperty("line.separator");
 
     public RunnableWorkflow(String homeDir) throws FileNotFoundException, IOException {
@@ -55,8 +64,6 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         initHomeDir();             // initialize workflow home directory, if needed
 
         initDb(true, testOnly);    // write workflow to db, if not already there
-
-        getStepsConfig();          // validate config of all steps.
 
         getDbSnapshot();           // read state of Workflow and WorkflowSteps
 
@@ -78,7 +85,112 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	    cleanProcesses();
 	}
     }
+    
+    // write the workflow and steps to the db
+    protected void initDb(boolean updateXmlFileDigest, boolean testmode) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
 
+        boolean stepTableEmpty = initWorkflowTable(updateXmlFileDigest, testmode);
+        initWorkflowStepTable(stepTableEmpty);
+    }
+
+    private boolean initWorkflowTable(boolean updateXmlFileDigest, boolean testmode) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
+
+        boolean uninitialized = !workflowTableInitialized();
+        if (uninitialized) {
+        
+            name = getWorkflowConfig("name");
+            version = getWorkflowConfig("version");
+            test_mode = new Boolean(testmode);
+
+            log("Initializing workflow "
+                    + "'" + name + " " + version + "' in database");
+
+            // write row to Workflow table
+            String sql = "select apidb.Workflow_sq.nextval from dual";
+            Statement stmt = null;
+            ResultSet rs = null;
+            try {
+                stmt = getDbConnection().createStatement();
+                rs = stmt.executeQuery(sql);
+                rs.next();
+                workflow_id = rs.getInt(1);
+            } finally {
+                if (rs != null) rs.close();
+                if (stmt != null) stmt.close();
+            }
+            int testint = test_mode? 1 : 0;
+            sql = "INSERT INTO apidb.workflow (workflow_id, name, version, test_mode)"  
+                + " VALUES (" + workflow_id + ", '" + name + "', '" + version + "', " + testint + ")";
+            executeSqlUpdate(sql);
+        }
+        
+        if (updateXmlFileDigest) {
+            if (!uninitialized) getDbState(); // get workflow_id
+            String sql = "UPDATE apidb.workflow" +
+                " SET xml_file_digest = '" + getXmlFileDigest() + "'" +
+                " WHERE workflow_id = " + workflow_id;
+            executeSqlUpdate(sql);
+        }
+        return uninitialized;
+    }
+    
+    private void  initWorkflowStepTable(boolean stepTableEmpty) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
+
+        if (!stepTableEmpty) {
+            // see if our current graph is already in db (exactly)
+            // if so, return
+            // throw an error if any DONE or FAILED steps are changed
+            if (workflowGraph.inDbExactly()) {
+                log("Graph in XML matches graph in database.  No need to update database.");
+                return;
+            }
+
+            if (undoStepName != null) error("Workflow graph in XML has changed.  Undo not allowed.");
+            
+            log("Workflow graph in XML has changed.  Updating DB with new graph.");
+
+            // if graph has changed, remove all READY/ON_DECK steps from db
+            workflowGraph.removeReadyStepsFromDb();
+            
+        } else {
+            if (undoStepName != null) error("Workflow has never run.  Undo not allowed.");
+        }
+
+        Set<String> stepNamesInDb = workflowGraph.getStepNamesInDb();
+
+        // write all steps to WorkflowStep table
+        // for steps that are already there, update the depthFirstOrder
+        PreparedStatement insertStepPstmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
+        PreparedStatement updateStepPstmt = WorkflowStep.getPreparedUpdateStmt(getDbConnection(), workflow_id);
+        try {
+            for (WorkflowStep step : workflowGraph.getSortedSteps()) {
+                log("  " + step.getFullName());
+                step.initializeStepTable(stepNamesInDb, insertStepPstmt, updateStepPstmt);
+            }
+        } finally {
+            updateStepPstmt.close();
+            insertStepPstmt.close();
+        }
+
+        // update steps in memory, to get their new IDs
+        getStepsDbState();
+    }
+    
+    String getXmlFileDigest() throws InterruptedException, IOException {
+        String cmd = "workflowxmlsum -h " + getHomeDir();
+        Process process = Runtime.getRuntime().exec(cmd);
+        process.waitFor();
+        if (process.exitValue() != 0) error("failed running cmd '" + cmd + '"');
+        BufferedReader reader =  
+            new BufferedReader(new InputStreamReader(process.getInputStream()));  
+        String digest = reader.readLine().trim();
+        process.destroy();
+        reader.close();
+        return digest;
+    }
+
+
+    
     private void initializeUndo(boolean testOnly) throws SQLException, IOException, InterruptedException {
         
         if (undo_step_id == null && undoStepName == null) return; 
@@ -165,7 +277,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	    String[] loadTypes = step.getLoadTypes();
 	    boolean okToRun = true;
 	    for (String loadType : loadTypes) {
-	        if (filledSlots.get(loadType) != null && filledSlots.get(loadType) >= getLoadBalancingConfig(loadType)) {
+	        if (runningLoadTypes.get(loadType) != null && runningLoadTypes.get(loadType) >= getLoadBalancingConfig(loadType)) {
 	            okToRun = false;
 	            break;
 	        }
@@ -173,9 +285,9 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	    if (okToRun) {
 	        int slotsUsed = step.runOnDeckStep(this, testOnly);	  
 	        for (String loadType : loadTypes) {
-	            Integer f = filledSlots.get(loadType);
+	            Integer f = runningLoadTypes.get(loadType);
 	            f = f == null? 0 : f;
-	            filledSlots.put(loadType, f + slotsUsed);
+	            runningLoadTypes.put(loadType, f + slotsUsed);
 	        }
 	    }
 	}
@@ -262,5 +374,27 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	p.destroy();
         return new String(bo).trim();
     }
+    
+    void cleanProcesses() {
+        List<Process> clone = new ArrayList<Process>(bgdProcesses);
+        for (Process p : clone) {
+            boolean stillRunning = false;
+            try {
+                p.exitValue();
+            } catch (IllegalThreadStateException e){
+                stillRunning = true;
+            }
+            if (!stillRunning) {
+                p.destroy();
+                bgdProcesses.remove(p);
+            }
+        }
+    }
+
+    void addBgdProcess(Process p) {
+        bgdProcesses.add(p);
+    }
+    
+    
 
 }

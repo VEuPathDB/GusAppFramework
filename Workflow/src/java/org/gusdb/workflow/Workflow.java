@@ -1,58 +1,56 @@
 package org.gusdb.workflow;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Formatter;
-import java.util.Set;
 import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Arrays;
 import java.text.SimpleDateFormat;
 import java.text.FieldPosition;
-import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 
-public class Workflow <T extends WorkflowStep>{
+/**
+ *
+ * @param <T> The type of step contained by this workflow, ie, runnable or not.
+ * 
+ * This is the Workflow base class.  It knows about the workflow home dir, configuration,
+ * graph, steps and all the state in the database.  Its only actions are reporting.  
+ * It cannot run (subclass does that).
+ */
+public class Workflow <T extends WorkflowStep> {
+    
+    // static
     public static final String READY = "READY"; // my parents are not done yet  -- default state
     public static final String ON_DECK = "ON_DECK";  //my parents are done, but there is no slot for me
     public static final String FAILED = "FAILED";
     public static final String DONE = "DONE";
     public static final String RUNNING = "RUNNING";
     public static final String ALL = "ALL";
-    public static final String WAITING_FOR_PILOT = "WAITING_FOR_PILOT";  // not used yet.
-    
-    public static final String START = "START";
-    public static final String  END = "END";
-
     final static String nl = System.getProperty("line.separator");
 
+    // configuration
     private Connection dbConnection;
     private String homeDir;
-    private Properties workflowProps;
-    private Properties gusProps;
-    protected WorkflowGraph<T> workflowGraph;
-    
+    private Properties workflowProps;   // from workflow config file
+    private Properties gusProps;        // from gus.config (db stuff)
+    private Properties loadBalancingConfig;    
+    private String[] homeDirSubDirs = {"logs", "steps", "data"};    
+
     // persistent state
     protected String name;
     protected String version;
@@ -62,15 +60,14 @@ public class Workflow <T extends WorkflowStep>{
     protected String process_id;
     protected Boolean test_mode;
     
-    Map<String,Integer> filledSlots = new HashMap<String,Integer>();
-    Properties loadBalancingConfig;
-    String undoStepName;
-    private List<Process> bgdProcesses = new ArrayList<Process>();
+    // derived from persistent state
+    protected Map<String,Integer> runningLoadTypes = new HashMap<String,Integer>();  // running steps
+    
+    // input
+    protected WorkflowGraph<T> workflowGraph;  // the graph
+    protected String undoStepName;  // iff we are running undo
 
-
-    String[] homeDirSubDirs = {"logs", "steps", "data"};
-
-
+    
     public Workflow(String homeDir) throws FileNotFoundException, IOException {
 	this.homeDir = homeDir + "/";
     }
@@ -95,10 +92,10 @@ public class Workflow <T extends WorkflowStep>{
     }
     
     //////////////////////////////////////////////////////////////////////////
-    //      Persistent Initialization
+    //   Initialization
     //////////////////////////////////////////////////////////////////////////
     
-    void initHomeDir() throws IOException {
+    protected void initHomeDir() throws IOException {
 	for (String dirName : homeDirSubDirs) {
 	    File dir = new File(getHomeDir() + "/" + dirName);
 	    if (!dir.exists()) dir.mkdir();
@@ -106,174 +103,6 @@ public class Workflow <T extends WorkflowStep>{
         log("Checking if workflow home directory needs initializing'" + getHomeDir() + "'");
     }
     
-    // read and validate all steps config
-   void getStepsConfig() {
-        /*
-        if (stepsConfig == null) {
-
-            String stepsConfigFile = homeDir + "/config/steps.prop";
-
-            log("Validating Step classes and step config file '" 
-                + stepsConfigFile + "'");
-
-            // for each step in the graph, instantiate its invoker, and get the
-            // invoker's config declaration.  compare that against the step config file
-            Map<String, ConfigDecl> stepConfigDecl
-                = new HashMap<String, ConfigDecl>();
-            Map<String, ConfigDecl> invokerClassConfigDecl
-                = new HashMap<String, ConfigDecl>();
-
-            for (WorkflowStep step : steps) {
-                String invokerClassName = step->getInvokerClass();
-                if (!invokerClassConfigDecl.contains(invokerClass)) {
-                    /* FIX
-                    $stepInvokers->{$invokerClass}
-                    = eval "{require $invokerClass; $invokerClass->new()}";
-                    $self->error($@) if $@;
-                    
-                }
-                stepConfigDecl.put(step.getName(), 
-                                   invokerClassConfigDecl.get(invokerClassName));
-            }
-
-            // this object does the validation
-            /* FIX
-               $self->{stepsConfig} =
-               CBIL::Util::MultiPropertySet->new($stepsConfigFile, $stepsConfigDecl);
-            
-        }
-        return stepsConfig;
-        */
-    }
-    
-    // write the workflow and steps to the db
-    // for now, assume the workflow steps don't change over the life of a workflow
-    void initDb(boolean updateXmlFileDigest, boolean testmode) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
-
-	boolean stepTableEmpty = initWorkflowTable(updateXmlFileDigest, testmode);
-	initWorkflowStepTable(stepTableEmpty);
-    }
-
-    boolean workflowTableInitialized() throws FileNotFoundException, IOException, SQLException {
-        
-        name = getWorkflowConfig("name");
-        version = getWorkflowConfig("version");
-       
-        // don't bother if already in db
-        String sql = "select workflow_id"  
-            + " from apidb.workflow"  
-            + " where name = " + "'" + name + "'"   
-            + " and version = '" + version + "'";
-
-        Statement stmt = null;
-        ResultSet rs = null;
-        try {
-            stmt = getDbConnection().createStatement();
-            rs = stmt.executeQuery(sql);
-            if (rs.next()) return true;
-        } finally {
-            if (rs != null) rs.close();
-            if (stmt != null) stmt.close(); 
-        }
-        return false;
-    }
-    
-    boolean initWorkflowTable(boolean updateXmlFileDigest, boolean testmode) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
-
-        boolean uninitialized = !workflowTableInitialized();
-        if (uninitialized) {
-        
-            name = getWorkflowConfig("name");
-            version = getWorkflowConfig("version");
-	    test_mode = new Boolean(testmode);
-
-            log("Initializing workflow "
-                    + "'" + name + " " + version + "' in database");
-
-            // write row to Workflow table
-            String sql = "select apidb.Workflow_sq.nextval from dual";
-            Statement stmt = null;
-            ResultSet rs = null;
-            try {
-                stmt = getDbConnection().createStatement();
-                rs = stmt.executeQuery(sql);
-                rs.next();
-                workflow_id = rs.getInt(1);
-            } finally {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-            }
-            int testint = test_mode? 1 : 0;
-            sql = "INSERT INTO apidb.workflow (workflow_id, name, version, test_mode)"  
-                + " VALUES (" + workflow_id + ", '" + name + "', '" + version + "', " + testint + ")";
-            executeSqlUpdate(sql);
-        }
-        
-        if (updateXmlFileDigest) {
-	    if (!uninitialized) getDbState(); // get workflow_id
-            String sql = "UPDATE apidb.workflow" +
-		" SET xml_file_digest = '" + getXmlFileDigest() + "'" +
-		" WHERE workflow_id = " + workflow_id;
-            executeSqlUpdate(sql);
-        }
-	return uninitialized;
-    }
-
-    void  initWorkflowStepTable(boolean stepTableEmpty) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
-
-	if (!stepTableEmpty) {
-	    // see if our current graph is already in db (exactly)
-	    // if so, return
-	    // throw an error if any DONE or FAILED steps are changed
-	    if (workflowGraph.inDbExactly()) {
-		log("Graph in XML matches graph in database.  No need to update database.");
-		return;
-	    }
-
-	    if (undoStepName != null) error("Workflow graph in XML has changed.  Undo not allowed.");
-	    
-	    log("Workflow graph in XML has changed.  Updating DB with new graph.");
-
-	    // if graph has changed, remove all READY/ON_DECK steps from db
-	    workflowGraph.removeReadyStepsFromDb();
-	    
-	} else {
-	    if (undoStepName != null) error("Workflow has never run.  Undo not allowed.");
-	}
-
-	Set<String> stepNamesInDb = workflowGraph.getStepNamesInDb();
-
-        // write all steps to WorkflowStep table
-	// for steps that are already there, update the depthFirstOrder
-        PreparedStatement insertStepPstmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
-	PreparedStatement updateStepPstmt = WorkflowStep.getPreparedUpdateStmt(getDbConnection(), workflow_id);
-        try {
-            for (WorkflowStep step : workflowGraph.getSortedSteps()) {
-                log("  " + step.getFullName());
-                step.initializeStepTable(stepNamesInDb, insertStepPstmt, updateStepPstmt);
-            }
-        } finally {
-            updateStepPstmt.close();
-            insertStepPstmt.close();
-        }
-
-        // update steps in memory, to get their new IDs
-        getStepsDbState();
-    }
-    
-    String getXmlFileDigest() throws InterruptedException, IOException {
-        String cmd = "workflowxmlsum -h " + getHomeDir();
-        Process process = Runtime.getRuntime().exec(cmd);
-        process.waitFor();
-        if (process.exitValue() != 0) error("failed running cmd '" + cmd + '"');
-        BufferedReader reader =  
-            new BufferedReader(new InputStreamReader(process.getInputStream()));  
-        String digest = reader.readLine().trim();
-	process.destroy();
-        reader.close();
-        return digest;
-    }
-
     ///////////////////////////////////////////////////////////////////////////
     //    Read from DB
     ///////////////////////////////////////////////////////////////////////////
@@ -283,12 +112,12 @@ public class Workflow <T extends WorkflowStep>{
         return workflow_id;
     }
     
-    void getDbSnapshot() throws SQLException, IOException {
+    protected void getDbSnapshot() throws SQLException, IOException {
         getDbState();
         getStepsDbState();
     }
 
-    void getDbState() throws SQLException, FileNotFoundException, IOException {
+    protected void getDbState() throws SQLException, FileNotFoundException, IOException {
         if (workflow_id == null) {
             name = getWorkflowConfig("name");
             version = getWorkflowConfig("version");
@@ -317,15 +146,15 @@ public class Workflow <T extends WorkflowStep>{
     }
 
     // read all WorkflowStep rows into memory (and remember the prev snapshot)
-    void getStepsDbState() throws SQLException, FileNotFoundException, IOException {
+    protected void getStepsDbState() throws SQLException, FileNotFoundException, IOException {
         String sql = WorkflowStep.getBulkSnapshotSql(workflow_id);
 
         // run query to get all rows from WorkflowStep for this workflow
         // stuff each row into the snapshot, keyed on step name
         Statement stmt = null;
         ResultSet rs = null;
-        for (String category : filledSlots.keySet())
-            filledSlots.put(category, 0);
+        for (String category : runningLoadTypes.keySet())
+            runningLoadTypes.put(category, 0);
         try {
             stmt = getDbConnection().createStatement();
             rs = stmt.executeQuery(sql);
@@ -344,9 +173,9 @@ public class Workflow <T extends WorkflowStep>{
                 if (step.getOperativeState() != null 
 		    && step.getOperativeState().equals(RUNNING)) {
                     for (String loadType : step.getLoadTypes()) {
-                        Integer f = filledSlots.get(loadType);
+                        Integer f = runningLoadTypes.get(loadType);
                         f = f == null? 0 : f;
-                        filledSlots.put(loadType, f + 1);
+                        runningLoadTypes.put(loadType, f + 1);
                     }
                 }
             }
@@ -356,6 +185,31 @@ public class Workflow <T extends WorkflowStep>{
         }
     }
         
+    protected boolean workflowTableInitialized() throws FileNotFoundException, IOException, SQLException {
+        
+        name = getWorkflowConfig("name");
+        version = getWorkflowConfig("version");
+       
+        // don't bother if already in db
+        String sql = "select workflow_id"  
+            + " from apidb.workflow"  
+            + " where name = " + "'" + name + "'"   
+            + " and version = '" + version + "'";
+
+        Statement stmt = null;
+        ResultSet rs = null;
+        try {
+            stmt = getDbConnection().createStatement();
+            rs = stmt.executeQuery(sql);
+            if (rs.next()) return true;
+        } finally {
+            if (rs != null) rs.close();
+            if (stmt != null) stmt.close(); 
+        }
+        return false;
+    }
+    
+
     ////////////////////////////////////////////////////////////////////////
     //             Utilities
     ////////////////////////////////////////////////////////////////////////
@@ -369,14 +223,6 @@ public class Workflow <T extends WorkflowStep>{
 
         writer.println(buf + "  " + msg + nl);
         writer.close();
-    }
-    
-    WorkflowStep newStep() {
-        return new WorkflowStep();
-    }
-
-    void runCmd(String cmd) throws IOException, InterruptedException {
-        Utilities.runCmd(cmd);
     }
     
     Connection getDbConnection() throws SQLException, FileNotFoundException, IOException {
@@ -396,26 +242,6 @@ public class Workflow <T extends WorkflowStep>{
         } finally {
             stmt.close();
         }
-    }
-
-    void addBgdProcess(Process p) {
-	bgdProcesses.add(p);
-    }
-    
-    void cleanProcesses() {
-	List<Process> clone = new ArrayList<Process>(bgdProcesses);
-	for (Process p : clone) {
-	    boolean stillRunning = false;
-	    try {
-		p.exitValue();
-	    } catch (IllegalThreadStateException e){
-		stillRunning = true;
-	    }
-	    if (!stillRunning) {
-		p.destroy();
-		bgdProcesses.remove(p);
-	    }
-	}
     }
 
     String getWorkflowConfig(String key) throws FileNotFoundException, IOException {
@@ -449,7 +275,7 @@ public class Workflow <T extends WorkflowStep>{
         Utilities.error(msg);
     }
     
-    String getStepsXmlFileName() throws FileNotFoundException, IOException {
+    String getWorkflowXmlFileName() throws FileNotFoundException, IOException {
         Properties workflowProps = new Properties();        
         workflowProps.load(new FileInputStream(getHomeDir() + "config/workflow.prop"));
         return workflowProps.getProperty("workflowXmlFile");
@@ -459,8 +285,8 @@ public class Workflow <T extends WorkflowStep>{
     //   Actions
     //////////////////////////////////////////////////////////////////
     
-    // very light reporting of state of workflow
-    void reportState() throws SQLException, FileNotFoundException, IOException {
+    // very light reporting of state of workflow (no steps)
+    void quickReportWorkflow() throws SQLException, FileNotFoundException, IOException {
         getDbState();
 
         System.out.println("Workflow '" + name + " " + version  + "'" + nl
@@ -470,7 +296,7 @@ public class Workflow <T extends WorkflowStep>{
                            + "process_id:            " + process_id + nl);
     }
 
-    // light reporting of state of workflow
+    // light reporting of state of workflow with steps
     void quickReportSteps(String[] desiredStates) throws SQLException, FileNotFoundException, IOException {
         getDbState();
 
@@ -509,18 +335,14 @@ public class Workflow <T extends WorkflowStep>{
         }
     }
 
-    /* Step Reporter: called by command line UI to report state of steps.
-       does not run the controller
-    */
+    // detailed reporting of steps
     void reportSteps(String[] desiredStates) throws Exception {
         if (!workflowTableInitialized()) 
             Utilities.error("Workflow not initialized.  Please run controller first.");
 
-        getStepsConfig();      // validate config of all steps.
-
         getDbSnapshot();       // read state of Workflow and WorkflowSteps
 
-        reportState();
+        quickReportWorkflow();
 
         if (desiredStates.length == 0 || desiredStates[0].equals("ALL")) {
             String[] ds = {READY, ON_DECK, RUNNING, DONE, FAILED};
@@ -546,8 +368,8 @@ public class Workflow <T extends WorkflowStep>{
         }
     }
     
-    
-    // brute force reset of workflow.  for developers only
+    // brute force reset of workflow.  for test workflows only.
+    // cleans out Workflow and WorkflowStep tables and the home dir, except config/
      void reset() throws SQLException, FileNotFoundException, IOException {
          getDbState();
          if (!test_mode) error("Cannot reset a workflow unless it was run in test mode (-t)");
@@ -586,7 +408,10 @@ public class Workflow <T extends WorkflowStep>{
          String homeDirName = cmdLine.getOptionValue("h");
 	 
 	 boolean oops = false;
+	 
          // branch based on provided options
+	 
+	 // runnable workflow, either test or run mode
          if (cmdLine.hasOption("r") || cmdLine.hasOption("t")) {
              RunnableWorkflow runnableWorkflow = new RunnableWorkflow(homeDirName);
              Class<RunnableWorkflowStep> stepClass = RunnableWorkflowStep.class;
@@ -599,38 +424,30 @@ public class Workflow <T extends WorkflowStep>{
              runnableWorkflow.run(testOnly);                
          } 
          
+         // quick workflow report
          else if (cmdLine.hasOption("q")) {
-
+             Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDirName);
+             workflow.quickReportWorkflow();
          } 
 
+         // quick step report
+         else if (cmdLine.hasOption("s")) {
+             Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDirName); 
+             String[] desiredStates = getDesiredStates(cmdLine, "s");
+             oops = desiredStates.length < 1;
+             if (!oops) workflow.quickReportSteps(desiredStates);            
+         } 
+         
+         // detailed step report
          else if (cmdLine.hasOption("d")) {
              Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDirName);
              Class<WorkflowStep> stepClass = WorkflowStep.class;
              WorkflowGraph<WorkflowStep> rootGraph = 
                  WorkflowGraph.constructFullGraph(stepClass, workflow);
              workflow.setWorkflowGraph(rootGraph);      
-             String desiredStatesStr = cmdLine.getOptionValue("d"); 
-             String[] desiredStates = desiredStatesStr.split(",");
-             String[] allowedStates = {READY, ON_DECK, RUNNING, DONE, FAILED, ALL};
-             Arrays.sort(allowedStates);
-             for (String state : desiredStates) {
-                 if (Arrays.binarySearch(allowedStates, state) < 0)
-                     oops = true;
-             }
+             String[] desiredStates = getDesiredStates(cmdLine, "d");
+             oops = desiredStates.length < 1;
              if (!oops) workflow.reportSteps(desiredStates);            
-         } 
-         
-         else if (cmdLine.hasOption("s")) {
-             Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDirName);    
-             String desiredStatesStr = cmdLine.getOptionValue("s"); 
-             String[] desiredStates = desiredStatesStr.split(",");
-	     String[] allowedStates = {READY, ON_DECK, RUNNING, DONE, FAILED, ALL};
-	     Arrays.sort(allowedStates);
-	     for (String state : desiredStates) {
-		 if (Arrays.binarySearch(allowedStates, state) < 0)
-		     oops = true;
-	     }
-             if (!oops) workflow.quickReportSteps(desiredStates);            
          } 
          
          else if (cmdLine.hasOption("reset")) {
@@ -648,6 +465,20 @@ public class Workflow <T extends WorkflowStep>{
 	 } else {
 	     System.exit(0);
 	 }
+     }
+     
+     private static String[] getDesiredStates(CommandLine cmdLine, String optionName) {
+         boolean oops = false;
+         String desiredStatesStr = cmdLine.getOptionValue(optionName); 
+         String[] desiredStates = desiredStatesStr.split(",");
+         String[] allowedStates = {READY, ON_DECK, RUNNING, DONE, FAILED, ALL};
+         Arrays.sort(allowedStates);
+         for (String state : desiredStates) {
+             if (Arrays.binarySearch(allowedStates, state) < 0)
+                 oops = true;
+         }
+         String[] none = {};
+         return oops? none : desiredStates;
      }
      
      private static String getUsageNotes() {
@@ -680,7 +511,7 @@ public class Workflow <T extends WorkflowStep>{
          + "  undo a step in a test workflow:" + nl
          + "    % workflow -h workflow_dir -t -u step_name" + nl
          + nl     
-         + "  quick report of workflow state" + nl
+         + "  quick report of workflow state (no steps)" + nl
          + "    % workflow -h workflow_dir -q" + nl
          + nl     
          + "  print steps report." + nl
@@ -716,7 +547,7 @@ public class Workflow <T extends WorkflowStep>{
          Option quickRep = new Option("s", true, "Print quick steps report");
          actions.addOption(quickRep);
 
-         Option quickWorkflowRep = new Option("q", "Print quick workflow report");
+         Option quickWorkflowRep = new Option("q", "Print quick workflow report (no steps)");
          actions.addOption(quickWorkflowRep);
 
          Option reset = new Option("reset", "Reset workflow. DANGER! Will destroy your workflow.  Use only if you know exactly what you are doing.");

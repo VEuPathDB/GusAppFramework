@@ -486,7 +486,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
         
 	WorkflowXmlParser<S> parser = new WorkflowXmlParser<S>();
 	WorkflowGraph<S> rootGraph =
-		parser.parseWorkflow(workflow, stepClass, workflow.getStepsXmlFileName()); 
+		parser.parseWorkflow(workflow, stepClass, workflow.getWorkflowXmlFileName()); 
 
 	Map<String,Map<String,List<String>>> paramErrorsMap =
 	    new HashMap<String,Map<String,List<String>>>();
@@ -497,7 +497,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
         
         // expand subgraphs
 	List<String> callingXmlFileNames = new ArrayList<String>();
-	callingXmlFileNames.add(workflow.getStepsXmlFileName());
+	callingXmlFileNames.add(workflow.getWorkflowXmlFileName());
         rootGraph.expandSubgraphs("", callingXmlFileNames, stepClass, paramErrorsMap);
         
         // report param errors, if any
