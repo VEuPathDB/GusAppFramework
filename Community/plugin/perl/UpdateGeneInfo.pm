@@ -122,7 +122,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7282 $',
+		     cvsRevision => '$Revision: 7283 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -300,6 +300,7 @@ sub processGene {
 	my $geneSynonym= GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
 	$geneSynonym->setParent($gene);
 	my $isOldSynonym = $geneSynonym->retrieveFromDB();
+	$geneSynonym->setVersionable(0);
 	if (!$isOldSynonym) {
 	  $countInsertedGeneSynonyms++;
 	}
