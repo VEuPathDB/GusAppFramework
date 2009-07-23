@@ -122,7 +122,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7280$',
+		     cvsRevision => '$Revision: 7282 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -340,16 +340,6 @@ sub processGene {
 
   $resultDescrip .= "Updated $countUpdatedGenes entries in DoTS.Gene. Inserted $countInsertedGenes entries in DoTS.Gene and $countInsertedGeneSynonyms entries in DoTS.GeneSynonym. Deprecated $countDeprecatedGenes entries in DoTS.Gene and $countDeprecatedGeneSynonyms entries in DoTS.GeneSynonym.";
   return ($resultDescrip);
-}
-
-# ----------------------------------------------------------------------
-# Undo
-# ----------------------------------------------------------------------
-
-sub undoTables {
-  my ($self) = @_;
-
-  return ('DoTS.GeneSynonym', 'DoTS.Gene');
 }
 
 1;
