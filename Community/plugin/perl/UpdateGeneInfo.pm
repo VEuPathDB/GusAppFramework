@@ -122,7 +122,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7283 $',
+		     cvsRevision => '$Revision: 7284 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -139,6 +139,7 @@ sub run {
   my ($self) = @_;
   my $resultDescrip;
 
+  $self->setGlobalNoVersion(1);
   if (defined($self->getArg('testnum')) && $self->getArg('commit')) {
     $self->userError("The --testnum argument can only be provided if COMMIT is OFF.");
   }
@@ -300,7 +301,6 @@ sub processGene {
 	my $geneSynonym= GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
 	$geneSynonym->setParent($gene);
 	my $isOldSynonym = $geneSynonym->retrieveFromDB();
-	$geneSynonym->setVersionable(0);
 	if (!$isOldSynonym) {
 	  $countInsertedGeneSynonyms++;
 	}
