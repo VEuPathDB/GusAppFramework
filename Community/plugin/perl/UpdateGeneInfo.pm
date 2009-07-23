@@ -15,7 +15,7 @@ use GUS::Model::DoTS::Gene;
 use GUS::Model::DoTS::GeneSynonym;
 use GUS::Model::DoTS::GeneCategory;
 
-# ----------------------------------------------------------------------
+# -----------------------------_---------------------------------------
 # Arguments
 # ---------------------------------------------------------------------
 
@@ -81,9 +81,9 @@ sub getArgumentsDeclaration {
 
 
 sub getDocumentation {
-  my $purposeBrief = 'Updates data in DoTS Gene and DoTS.GeneSynonym according to a new relesae of an NCBI taxon gene_info file.';
+  my $purposeBrief = 'Updates data in DoTS Gene, DoTS.GeneSynonym, and DoTS.GeneCategory according to a new release of an NCBI taxon gene_info file.';
 
-  my $purpose = "This plugin reads a Taxon.gene_info file from NCBI Entrez Gene and updates DoTS Gene and DoTS.GeneSynonym. More precisely, existing entries are  updated or deprecated and new entries are added.";
+  my $purpose = "This plugin reads a Taxon.gene_info file from NCBI Entrez Gene and updates DoTS Gene, DoTS.GeneSynonym, and DoTS.GeneCategory. More precisely, existing entries are updated or deprecated and new entries are added.";
 
   my $tablesAffected = [['DoTS::Gene', 'Updates or enters a row for each gene in the file'], ['DoTS::GeneSynomym', 'Updates or enters rows linking each entered Gene to its Synonyms'], ['DoTS::GeneCategory', 'Enters values from type_of_gene, if not already present in this table']];
 
@@ -150,7 +150,7 @@ sub run {
 
   my $taxonId = $self->getTaxonId($dbh, $self->getArg('taxon'));
   my $extDbRls = $self->getExtDbRlsId($self->getArg('oldExtDbRlsSpec'));
-  my $newExtDbRlsVer = $self->getExtDbRlsId($self->getArg('newExtDbRlsVer'));
+  my $newExtDbRlsVer = $self->getArg('newExtDbRlsVer');
 
   $resultDescrip .= $self->processGene($dbh, $taxonId, $extDbRls, $geneCategoryIds, \%soMapping, $self->getArg('geneInfoFile'));
 
@@ -253,26 +253,13 @@ sub processGene {
   chomp($line);
   my @arr = split(/\s+/, $line);
   my %headerPos;
-  for (my $i=0; $i<@arr; $i++) {
-    if ($arr[$i] eq 'GeneID') {
-      $headerPos{'sourceId'} = $i-1;
-    }
-    if ($arr[$i] eq 'Symbol') {
-      $headerPos{'symbol'} = $i-1;
-    }
-    if ($arr[$i] eq 'Synonyms') {
-      $headerPos{'synonyms'} = $i-1;
-    }
-    if ($arr[$i] eq 'description') {
-      $headerPos{'description'} = $i-1;
-    }
-    if ($arr[$i] eq 'type_of_gene') {
-      $headerPos{'geneCategory'} = $i-1;
-    }  
-    if ($arr[$i] eq 'Full_name_from_nomenclature_authority'){
-      $headerPos{'name'} = $i-1;
-    }  
-  }
+  $headerPos{'sourceId'} = 1;
+  $headerPos{'symbol'} = 2;
+  $headerPos{'synonyms'} = 4;
+  $headerPos{'description'} = 8;
+  $headerPos{'geneCategory'} = 9;
+  $headerPos{'name'} = 11;
+
   $self->logDebug(Dumper(%headerPos) . "\n");
   while ($line=<$fh>) {
     $lineNum++;
