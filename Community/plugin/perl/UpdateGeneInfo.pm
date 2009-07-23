@@ -122,7 +122,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7284 $',
+		     cvsRevision => '$Revision: 7285 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -139,7 +139,6 @@ sub run {
   my ($self) = @_;
   my $resultDescrip;
 
-  $self->setGlobalNoVersion(1);
   if (defined($self->getArg('testnum')) && $self->getArg('commit')) {
     $self->userError("The --testnum argument can only be provided if COMMIT is OFF.");
   }
