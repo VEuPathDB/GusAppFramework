@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7286 $',
+		     cvsRevision => '$Revision: 7287 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -287,7 +287,9 @@ sub processGene {
       }
     }
     $gene->set('gene_symbol', $arr[$headerPos{'symbol'}]);
-    $gene->set('sequence_ontology_id', $soMapping->{$arr[$headerPos{'geneCategory'}]});
+    if ($soMapping->{$arr[$headerPos{'geneCategory'}]} ne 'NA') {
+      $gene->set('sequence_ontology_id', $soMapping->{$arr[$headerPos{'geneCategory'}]});
+    }
     if ($arr[$headerPos{'name'}] ne '-'){
       $gene->set('name', $arr[$headerPos{'name'}]);
     }
@@ -324,7 +326,9 @@ sub processGene {
       my $gene= GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $sourceId, taxon_id => $taxonId}); 
       $gene->retrieveFromDB();
       my $descr = $gene->get('description');
-      $gene->set('description', $descr . " (DEPRECATED)");
+      (if $descr !~ /DEPRECATED/) {
+	$gene->set('description', $descr . " (DEPRECATED)");
+      }
       $gene->submit();
       $countDeprecatedGenes++;
       $self->undefPointerCache();
