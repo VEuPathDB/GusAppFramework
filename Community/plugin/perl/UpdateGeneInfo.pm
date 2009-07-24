@@ -59,12 +59,6 @@ sub getArgumentsDeclaration {
 	      mustExist => 1,
 	      format => ''
 	     }),
-     integerArg({name  => 'restart',
-		 descr => 'Line number in Taxon.gene_info file from which loading should be resumed (line 1 is the first line after the header, empty lines are counted).',
-		 constraintFunc=> undef,
-		 reqd  => 0,
-		 isList => 0
-		}),
      integerArg({name  => 'testnum',
 		 descr => 'The number of data lines to read when testing this plugin. Not to be used in commit mode.',
 		 constraintFunc=> undef,
@@ -89,7 +83,7 @@ sub getDocumentation {
 
   my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The release of the Taxon Entrez Gene external database for the previous version of the taxon gene_info file'], ['SRes::SequenceOntology', 'The terms corresponding to types of gene'], ['SRes::TaxonName', 'The taxon for the gene_info being updated']];
 
-  my $howToRestart = "Loading can be resumed using the I<--restart n> argument where n is the line number in the Taxon.gene_info file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted). Alternatively, one can use the plugin GUS::Community::Plugin::Undo to delete all entries inserted by a specific call to this plugin. Then this plugin can be re-run from fresh.";
+  my $howToRestart = "";
 
   my $failureCases = "";
 
@@ -122,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7285 $',
+		     cvsRevision => '$Revision: 7286 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -156,10 +150,10 @@ sub run {
 
   my $sth = $dbh->prepare("Update Sres.ExternalDatabaseRelease set version='$newExtDbRlsVer' where external_database_release_id=$extDbRls");
   $sth->execute();
-  if ($self->getCommitState()) {
+  if ($self->getArg('commit')) {
     $dbh->commit();
   }
-  $resultDescrip .= "Updated the version of the external database release for this taxon gene_info file.";
+  $resultDescrip .= "Updated the version of the external database release.";
 
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
@@ -228,7 +222,7 @@ sub insertGeneCategory {
     }
     $geneCategoryIds->{$term} = $geneCategory->getId();
   }
-  $resultDescrip .= "Entered $count rows in DoTS.GeneCategory";
+  $resultDescrip .= "Entered $count rows in DoTS.GeneCategory. ";
   return ($resultDescrip, $geneCategoryIds);
 }
 
@@ -241,10 +235,9 @@ sub processGene {
   my $countDeprecatedGenes = 0;
   my $countDeprecatedGeneSynonyms = 0;
   my $lineNum = 0;
-  my $startLine = defined $self->getArg('restart') ? $self->getArg('restart') : 1;
   my $endLine;
   if (defined $self->getArg('testnum')) {
-    $endLine = $startLine-1+$self->getArg('testnum');
+    $endLine = $self->getArg('testnum');
   }
   my %isProcessedGene;
 
@@ -263,9 +256,6 @@ sub processGene {
   $self->logDebug(Dumper(%headerPos) . "\n");
   while ($line=<$fh>) {
     $lineNum++;
-    if ($lineNum<$startLine) {
-      next;
-    }
     if (defined $endLine && $lineNum>$endLine) {
       last;
     }
@@ -281,6 +271,21 @@ sub processGene {
     if ($isOldGene) {
       @oldSynonyms = $gene->getChildren("DoTS::GeneSynonym", 1);
     }
+    my %isProcessedSynonym;
+    my @synonyms = split(/\|/, $arr[ $headerPos{'synonyms'}]);
+    for (my $i=0; $i<@synonyms; $i++) {
+      $isProcessedSynonym{$synonyms[$i]} = 1;
+      if ($synonyms[$i] ne '-' && $synonyms[$i] ne 'null'){
+	my $geneSynonym= GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
+	$geneSynonym->setParent($gene);
+#	$geneSynonym->setGlobalNoVersion(1);
+	my $isOldSynonym = $geneSynonym->retrieveFromDB();
+	if (!$isOldSynonym) {
+	  $countInsertedGeneSynonyms++;
+	}
+	$self->logDebug($geneSynonym->toString() . "\n");
+      }
+    }
     $gene->set('gene_symbol', $arr[$headerPos{'symbol'}]);
     $gene->set('sequence_ontology_id', $soMapping->{$arr[$headerPos{'geneCategory'}]});
     if ($arr[$headerPos{'name'}] ne '-'){
@@ -292,24 +297,12 @@ sub processGene {
     if ($arr[$headerPos{'geneCategory'}] ne '-'){
       $gene->set('gene_category_id', $geneCategoryIds->{$arr[$headerPos{'geneCategory'}]},);
     }
-    my %isProcessedSynonym;
-    my @synonyms = split(/\|/, $arr[ $headerPos{'synonyms'}]);
-    for (my $i=0; $i<@synonyms; $i++) {
-      $isProcessedSynonym{$synonyms[$i]} = 1;
-      if ($synonyms[$i] ne '-' && $synonyms[$i] ne 'null'){
-	my $geneSynonym= GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
-	$geneSynonym->setParent($gene);
-	my $isOldSynonym = $geneSynonym->retrieveFromDB();
-	if (!$isOldSynonym) {
-	  $countInsertedGeneSynonyms++;
-	}
-	$self->logDebug($geneSynonym->toString() . "\n");
-      }
-    }
+    
     for (my $i=0; $i<@oldSynonyms; $i++) {
       my $synonym = $oldSynonyms[$i]->get('synonym_name');
       if (!$isProcessedSynonym{$synonym}) {
 	$oldSynonyms[$i]->set('is_obsolete', 1);
+	$self->logDebug($oldSynonyms[$i]->toString() . "\n");
 	$countDeprecatedGeneSynonyms++;
       }
     }
@@ -324,13 +317,13 @@ sub processGene {
     $self->undefPointerCache();
   }
   $fh->close();
-  my $sth = dbh->prepare("select source_id from DoTS.Gene where external_database_release_id=$extDbRls");
+  my $sth = $dbh->prepare("select distinct source_id from DoTS.Gene where external_database_release_id=$extDbRls");
   $sth->execute();
   while (my ($sourceId)=$sth->fetchrow_array()) {
-    if (!$isProcessedGene{$sourceId}) {
-      my $gene= GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $arr[$headerPos{'sourceId'}], taxon_id => $taxonId}); 
+    if (!$isProcessedGene{$sourceId} && !$self->getArg('testnum')) {
+      my $gene= GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $sourceId, taxon_id => $taxonId}); 
       $gene->retrieveFromDB();
-      my $descr = $gene=>get('description');
+      my $descr = $gene->get('description');
       $gene->set('description', $descr . " (DEPRECATED)");
       $gene->submit();
       $countDeprecatedGenes++;
@@ -338,7 +331,7 @@ sub processGene {
     }
   }
 
-  $resultDescrip .= "Updated $countUpdatedGenes entries in DoTS.Gene. Inserted $countInsertedGenes entries in DoTS.Gene and $countInsertedGeneSynonyms entries in DoTS.GeneSynonym. Deprecated $countDeprecatedGenes entries in DoTS.Gene and $countDeprecatedGeneSynonyms entries in DoTS.GeneSynonym.";
+  $resultDescrip .= "Updated $countUpdatedGenes entries in Gene. Inserted $countInsertedGenes entries in Gene and $countInsertedGeneSynonyms entries in GeneSynonym. Deprecated $countDeprecatedGenes entries in Gene and $countDeprecatedGeneSynonyms entries in GeneSynonym. ";
   return ($resultDescrip);
 }
 
