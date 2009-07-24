@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7287 $',
+		     cvsRevision => '$Revision: 7288 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -326,7 +326,7 @@ sub processGene {
       my $gene= GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $sourceId, taxon_id => $taxonId}); 
       $gene->retrieveFromDB();
       my $descr = $gene->get('description');
-      (if $descr !~ /DEPRECATED/) {
+      if ($descr !~ /DEPRECATED/) {
 	$gene->set('description', $descr . " (DEPRECATED)");
       }
       $gene->submit();
