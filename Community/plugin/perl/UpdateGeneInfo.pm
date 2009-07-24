@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7288 $',
+		     cvsRevision => '$Revision: 7289 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -278,7 +278,7 @@ sub processGene {
       if ($synonyms[$i] ne '-' && $synonyms[$i] ne 'null'){
 	my $geneSynonym= GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
 	$geneSynonym->setParent($gene);
-#	$geneSynonym->setGlobalNoVersion(1);
+	$geneSynonym->setGlobalNoVersion(1);
 	my $isOldSynonym = $geneSynonym->retrieveFromDB();
 	if (!$isOldSynonym) {
 	  $countInsertedGeneSynonyms++;
