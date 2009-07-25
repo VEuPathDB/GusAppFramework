@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7289 $',
+		     cvsRevision => '$Revision: 7290 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -275,15 +275,20 @@ sub processGene {
     my @synonyms = split(/\|/, $arr[ $headerPos{'synonyms'}]);
     for (my $i=0; $i<@synonyms; $i++) {
       $isProcessedSynonym{$synonyms[$i]} = 1;
+      my $isOldSynonym = 0;
       if ($synonyms[$i] ne '-' && $synonyms[$i] ne 'null'){
-	my $geneSynonym= GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
-	$geneSynonym->setParent($gene);
-	$geneSynonym->setGlobalNoVersion(1);
-	my $isOldSynonym = $geneSynonym->retrieveFromDB();
+	for (my $j=0; $j<@oldSynonyms; $j++) {
+	  if ($synonyms[$i] eq $oldSynonyms[$j]) {
+	    $isOldSynonym = 1;
+	    last;
+	  }
+	}
 	if (!$isOldSynonym) {
 	  $countInsertedGeneSynonyms++;
+	  my $geneSynonym= GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
+	  $geneSynonym->setParent($gene);
+	  $self->logDebug($geneSynonym->toString() . "\n");
 	}
-	$self->logDebug($geneSynonym->toString() . "\n");
       }
     }
     $gene->set('gene_symbol', $arr[$headerPos{'symbol'}]);
