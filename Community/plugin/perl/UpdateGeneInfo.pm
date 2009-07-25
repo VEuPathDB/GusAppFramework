@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7290 $',
+		     cvsRevision => '$Revision: 7291 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -154,7 +154,7 @@ sub run {
     $dbh->commit();
   }
   $resultDescrip .= "Updated the version of the external database release.";
-
+#  $resultDescrip .= $self->cleanRedundancies($dbh, $extDbRls);
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
 }
@@ -166,7 +166,7 @@ sub run {
 sub getSoMapping {
   my ($self, $dbh, $soVersion, $file) = @_;
   my %soMapping;
-
+  
   my $sth = $dbh->prepare("select sequence_ontology_id from SRes.SequenceOntology where so_version='$soVersion' and term_name=?") || die $dbh->errstr;
   my $fh = IO::File->new("<$file") || $self->userError("Cannot open file $file.");
   while (my $line=<$fh>) {
@@ -175,27 +175,27 @@ sub getSoMapping {
       next;
     }
     else {
-     my ($type, $so) = split(/=/, $line);
-     if ($so eq 'NA') {
-       $soMapping{$type} = $so;
-     }
-     else {
-       $sth->execute($so)  || die $dbh->errstr;
-       my ($soId) = $sth->fetchrow_array();
-       $sth->finish();
-       $soMapping{$type} = $soId;
-     }
-   }
+      my ($type, $so) = split(/=/, $line);
+      if ($so eq 'NA') {
+	$soMapping{$type} = $so;
+      }
+      else {
+	$sth->execute($so)  || die $dbh->errstr;
+	my ($soId) = $sth->fetchrow_array();
+	$sth->finish();
+	$soMapping{$type} = $soId;
+      }
+    }
   }
   $fh->close();
-
+  
   return(\%soMapping);
 }
-  
+
 sub getTaxonId {
   my ($self, $dbh, $taxonName) = @_;
   my $taxonId;
- 
+  
   $taxonName =~ tr/A-Z/a-z/;
   my $sth =$dbh->prepare("select taxon_id from SRes.TaxonName where name_class='scientific name' and lower(name)='$taxonName'")  || die $dbh->errstr;
   $sth->execute() || die $dbh->errstr ;
@@ -213,7 +213,7 @@ sub insertGeneCategory {
   my $resultDescrip = '';
   my $geneCategoryIds;
   my $count = 0;
-
+  
   foreach my $term (keys %{$soMapping}) {
     my $geneCategory = GUS::Model::DoTS::GeneCategory->new({term => $term});
     if (!$geneCategory->retrieveFromDB()) {
@@ -240,7 +240,7 @@ sub processGene {
     $endLine = $self->getArg('testnum');
   }
   my %isProcessedGene;
-
+  
   my $fh = IO::File->new("<$file")  || $self->userError("Cannot open file $file.");
   my $line = <$fh>;
   chomp($line);
@@ -252,7 +252,7 @@ sub processGene {
   $headerPos{'description'} = 8;
   $headerPos{'geneCategory'} = 9;
   $headerPos{'name'} = 11;
-
+  
   $self->logDebug(Dumper(%headerPos) . "\n");
   while ($line=<$fh>) {
     $lineNum++;
@@ -287,61 +287,86 @@ sub processGene {
 	  $countInsertedGeneSynonyms++;
 	  my $geneSynonym= GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
 	  $geneSynonym->setParent($gene);
-	  $self->logDebug($geneSynonym->toString() . "\n");
+	  
 	}
       }
-    }
-    $gene->set('gene_symbol', $arr[$headerPos{'symbol'}]);
-    if ($soMapping->{$arr[$headerPos{'geneCategory'}]} ne 'NA') {
-      $gene->set('sequence_ontology_id', $soMapping->{$arr[$headerPos{'geneCategory'}]});
-    }
-    if ($arr[$headerPos{'name'}] ne '-'){
-      $gene->set('name', $arr[$headerPos{'name'}]);
-    }
-    if ($arr[$headerPos{'description'}] ne '-'){
-      $gene->set('description', $arr[$headerPos{'description'}]);
-    }
-    if ($arr[$headerPos{'geneCategory'}] ne '-'){
-      $gene->set('gene_category_id', $geneCategoryIds->{$arr[$headerPos{'geneCategory'}]},);
-    }
-    
-    for (my $i=0; $i<@oldSynonyms; $i++) {
-      my $synonym = $oldSynonyms[$i]->get('synonym_name');
-      if (!$isProcessedSynonym{$synonym}) {
-	$oldSynonyms[$i]->set('is_obsolete', 1);
-	$self->logDebug($oldSynonyms[$i]->toString() . "\n");
-	$countDeprecatedGeneSynonyms++;
+      $gene->set('gene_symbol', $arr[$headerPos{'symbol'}]);
+      if ($soMapping->{$arr[$headerPos{'geneCategory'}]} ne 'NA') {
+	$gene->set('sequence_ontology_id', $soMapping->{$arr[$headerPos{'geneCategory'}]});
       }
-    }
-    $gene->submit();
-    if ($isOldGene) {
-      $countUpdatedGenes++;
-    }
-    else {
-      $countInsertedGenes++;
-    }
-    $self->logDebug($gene->toString() . "\n");
-    $self->undefPointerCache();
-  }
-  $fh->close();
-  my $sth = $dbh->prepare("select distinct source_id from DoTS.Gene where external_database_release_id=$extDbRls");
-  $sth->execute();
-  while (my ($sourceId)=$sth->fetchrow_array()) {
-    if (!$isProcessedGene{$sourceId} && !$self->getArg('testnum')) {
-      my $gene= GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $sourceId, taxon_id => $taxonId}); 
-      $gene->retrieveFromDB();
-      my $descr = $gene->get('description');
-      if ($descr !~ /DEPRECATED/) {
-	$gene->set('description', $descr . " (DEPRECATED)");
+      if ($arr[$headerPos{'name'}] ne '-'){
+	$gene->set('name', $arr[$headerPos{'name'}]);
+      }
+      if ($arr[$headerPos{'description'}] ne '-'){
+	$gene->set('description', $arr[$headerPos{'description'}]);
+      }
+      if ($arr[$headerPos{'geneCategory'}] ne '-'){
+	$gene->set('gene_category_id', $geneCategoryIds->{$arr[$headerPos{'geneCategory'}]},);
+      }
+      
+      for (my $i=0; $i<@oldSynonyms; $i++) {
+	my $synonym = $oldSynonyms[$i]->get('synonym_name');
+	if (!$isProcessedSynonym{$synonym}) {
+	  $oldSynonyms[$i]->set('is_obsolete', 1);
+	  $self->logDebug($oldSynonyms[$i]->toString() . "\n");
+	  $countDeprecatedGeneSynonyms++;
+	}
       }
       $gene->submit();
-      $countDeprecatedGenes++;
+      if ($isOldGene) {
+	$countUpdatedGenes++;
+      }
+      else {
+	$countInsertedGenes++;
+      }
+      $self->logDebug($gene->toString() . "\n");
       $self->undefPointerCache();
     }
+    $fh->close();
+    my $sth = $dbh->prepare("select distinct source_id from DoTS.Gene where external_database_release_id=$extDbRls");
+    $sth->execute();
+    while (my ($sourceId)=$sth->fetchrow_array()) {
+      if (!$isProcessedGene{$sourceId} && !$self->getArg('testnum')) {
+	my $gene= GUS::Model::DoTS::Gene->new({external_database_release_id => $extDbRls, source_id => $sourceId, taxon_id => $taxonId}); 
+	$gene->retrieveFromDB();
+	my $descr = $gene->get('description');
+	if ($descr !~ /DEPRECATED/) {
+	  $gene->set('description', $descr . " (DEPRECATED)");
+	}
+	$gene->submit();
+	$countDeprecatedGenes++;
+	$self->undefPointerCache();
+      }
+    }
   }
-
   $resultDescrip .= "Updated $countUpdatedGenes entries in Gene. Inserted $countInsertedGenes entries in Gene and $countInsertedGeneSynonyms entries in GeneSynonym. Deprecated $countDeprecatedGenes entries in Gene and $countDeprecatedGeneSynonyms entries in GeneSynonym. ";
   return ($resultDescrip);
 }
+
+#    sub cleanRedundancies {
+#  my ($self, $dbh, $extDbRls) = @_;
+#  my $countDeleted = 0;
+#  my $sth1 = $dbh->prepare("select synonym_name, gene_id, row_alg_invocation_id from DoTS.GeneSynonym where gene_id in (select gene_id from DoTS.gene where external_database_release_id=$extDbRls)");
+#  $sth1->execute();
+#  my ($syns, $ids, @algs);
+#  while (my ($syn, $id, $alg)=$sth1->fetchrow_array()) {
+#    $syns->{$alg} = $syn;
+#    $ids->{$alg} = $id;
+#    push(@algs, $alg);
+#  }
+#  if (@algs>1) {
+#    $countDeleted++;
+#    my @sortedAlgs = sort {$a<=>$b} @algs;
+#    for (my $i=1; $i<@sortedAlgs; $i++) {
+#      my $sth2 = $dbh->prepare("delete DoTS.GeneSynonym where synonym_name='$syns->{$sortedAlgs[$i]}' and gene_id=$ids->{$sortedAlgs[$i]} and row_alg_invocation_id=$sortedAlgs[$i]");
+#      $sth2->execute();
+#      if ($self->getArg('commit')) {
+#	$dbh->commit();
+#      }
+#      $sth2->finish();
+#    }
+#  }
+#  return(" Deleted $countDeleted redundant gene synonyms.");
+#}
 
 1;
