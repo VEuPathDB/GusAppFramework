@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration(); 
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7293 $',
+		     cvsRevision => '$Revision: 7294 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -251,7 +251,6 @@ sub processGene {
   $headerPos{'geneCategory'} = 9;
   $headerPos{'name'} = 11;
   
-  $self->logDebug(Dumper(%headerPos) . "\n");
   while (my $line=<$fh>) {
     $lineNum++;
     if (defined $endLine && $lineNum>$endLine) {
@@ -268,8 +267,6 @@ sub processGene {
     my @oldSynonyms;
     if ($isOldGene) {
       @oldSynonyms = $gene->getChildren("DoTS::GeneSynonym", 1);
-      for (my $i=0; $i<@oldSynonyms; $i++) {
-      }
     }
     
     my %isProcessedSynonym;
@@ -309,7 +306,7 @@ sub processGene {
       my $synonym = $oldSynonyms[$i]->get('synonym_name');
       if (!$isProcessedSynonym{$synonym}) {
 	$oldSynonyms[$i]->set('is_obsolete', 1);
-	#	  $self->logDebug($oldSynonyms[$i]->toString() . "\n");
+	$self->logDebug($oldSynonyms[$i]->toString() . "\n");
 	$countDeprecatedGeneSynonyms++;
       }
     }
