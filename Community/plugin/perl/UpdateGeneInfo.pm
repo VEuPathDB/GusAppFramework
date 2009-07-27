@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration(); 
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7294 $',
+		     cvsRevision => '$Revision: 7295 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -310,6 +310,7 @@ sub processGene {
 	$countDeprecatedGeneSynonyms++;
       }
     }
+    $gene->setNoGlobalVersion(1);
     $gene->submit();
     if ($isOldGene) {
       $countUpdatedGenes++;
