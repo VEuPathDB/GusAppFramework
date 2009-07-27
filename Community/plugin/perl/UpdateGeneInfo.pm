@@ -113,7 +113,7 @@ sub new {
   bless($self,$class);
 
   my $documentation = &getDocumentation();
-  my $argumentDeclaration    = &getArgumentsDeclaration();
+  my $argumentDeclaration    = &getArgumentsDeclaration(); 
 
   $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision: 7293 $',
