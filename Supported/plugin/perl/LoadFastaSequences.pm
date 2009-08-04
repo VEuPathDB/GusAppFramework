@@ -69,7 +69,7 @@ stringArg({   name           => 'externalDatabaseVersion',
 	       isList         => 0 }),
 
 stringArg({   name           => 'ncbiTaxonName',
-	       descr          => 'organism name found in taxonname table, preferably name_class is scientific name, do not use if using ncbiTaxId or regexTaxonName args',
+	       descr          => 'organism name found in taxonname table, preferably name_class is scientific name, do not use if using ncbiTaxId or regexTaxonName or regexNcbiTaxId args',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
@@ -101,7 +101,7 @@ stringArg({   name           => 'ncbiTaxonName',
 	       isList         => 0 }),
 
  integerArg({   name           => 'ncbiTaxId',
-	       descr          => 'The taxon id from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName or ncbiTaxonName args.',
+	       descr          => 'The taxon id from NCBI for these sequences.  Not applicable for AASequences. Do not use this flag if using the regexTaxonName or ncbiTaxonName or regexNcbiTaxId args.',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
@@ -149,7 +149,13 @@ stringArg({   name           => 'ncbiTaxonName',
 	       isList         => 0 }),
 
  stringArg({   name           => 'regexTaxonName',
-	       descr          => 'The regular expression to pick the taxon name from the defline. Do not use this flag if using the ncbiTaxId or ncbiTaxonName args.',
+	       descr          => 'The regular expression to pick the taxon name from the defline. Do not use this flag if using the ncbiTaxId or ncbiTaxonName or ncbiTaxId or regexNcbiTaxId args.',
+	       reqd           => 0,
+	       constraintFunc => undef,
+	       isList         => 0 }),
+
+ stringArg({   name           => 'regexNcbiTaxId',
+	       descr          => 'The regular expression to pick the Ncbi taxon id from the defline. Do not use this flag if using the ncbiTaxId or ncbiTaxonName or regexTaxonName args.',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
@@ -249,8 +255,8 @@ $| = 1;
 sub run {
   my $self  = shift;
 
-  die "Only use one of 'ncbiTaxId', 'regexTaxonName', or 'ncbiTaxonName. Use the --help flag for more information."
-        if (($self->getArg('ncbiTaxId') && $self->getArg('regexTaxonName')) || ($self->getArg('ncbiTaxId') && $self->getArg('ncbiTaxonName')) || ($self->getArg('ncbiTaxonName') && $self->getArg('regexTaxonName')));
+  die "Only use one of 'ncbiTaxId', 'regexTaxonName', 'ncbiTaxonName' or 'regexNcbiTaxId'. Use the --help flag for more information."
+        if (($self->getArg('ncbiTaxId') && $self->getArg('regexTaxonName')) || ($self->getArg('ncbiTaxId') && $self->getArg('ncbiTaxonName')) || ($self->getArg('ncbiTaxonName') && $self->getArg('regexTaxonName')) || ($self->getArg('regexNcbiTaxId') && $self->getArg('regexTaxonName')) || ($self->getArg('ncbiTaxId') && $self->getArg('regexNcbiTaxId')) ||($self->getArg('regexNcbiTaxId') && $self->getArg('ncbiTaxonName')));
 
   $self->{totalCount} = 0;
   $self->{skippedCount} = 0;
@@ -344,6 +350,7 @@ sub processOneFile{
     my $seq_version = 1;
     my $start = 1;
     my $taxonName;
+    my $NcbiTaxonId;
 
     if ($self->getArg('ncbiTaxonName')) {
       $taxonName = $self->getArg('ncbiTaxonName');
@@ -404,6 +411,12 @@ sub processOneFile{
 	    if ($regex_taxon_name && /$regex_taxon_name/) {
 	      $taxonName = $1;
 	      $self->fetchTaxonIdFromName($taxonName);
+	    }
+
+	    my $regex_ncbi_taxId = $self ->getArg('regexNcbiTaxId') if $self ->getArg('regexNcbiTaxId');
+            if ($regex_ncbi_taxId && /$regex_ncbi_taxId/) {
+	      $NcbiTaxonId = $1;
+	      $self->fetchTaxonId($NcbiTaxonId);
 	    }
 
 	    my $regexChromosome = $self->getArg('regexChromosome') if $self->getArg('regexChromosome');
