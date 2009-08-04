@@ -683,19 +683,24 @@ sub fetchSequenceOntologyId {
     || $self->userError("Can't find SO term '$name' in database");
 }
 
+
 sub fetchTaxonId {
-  my ($self) = @_;
+  my ($self, $ncbiTaxId) = @_;
 
   eval ("require GUS::Model::SRes::Taxon");
 
-  my $ncbiTaxId = $self->getArg('ncbiTaxId');
+  $ncbiTaxId = $self->getArg('ncbiTaxId') if $self->getArg('ncbiTaxId');
+
   my $taxon = GUS::Model::SRes::Taxon->new({ncbi_tax_id=>$ncbiTaxId});
 
-  $taxon->retrieveFromDB || die "The NCBI tax ID '$ncbiTaxId' provided on the command line is not found in the database\n";
+  if ($taxon->retrieveFromDB){
 
-  $self->{taxonId} = $taxon->getTaxonId();
+      $self->{taxonId} = $taxon->getTaxonId();
+  }else{
+
+      $self->fetchTaxonIdFromName('unknown');
+  }
 }
-
 
 sub fetchTaxonIdFromName {
   my ($self, $taxonName) = @_;
