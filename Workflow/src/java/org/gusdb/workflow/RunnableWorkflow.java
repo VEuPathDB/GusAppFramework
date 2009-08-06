@@ -51,7 +51,6 @@ import java.io.File;
 
 public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     private int runningCount;
-    private List<Process> bgdProcesses = new ArrayList<Process>();  // list of processes to clean
 
     final static String nl = System.getProperty("line.separator");
 
@@ -375,26 +374,4 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         return new String(bo).trim();
     }
     
-    void cleanProcesses() {
-        List<Process> clone = new ArrayList<Process>(bgdProcesses);
-        for (Process p : clone) {
-            boolean stillRunning = false;
-            try {
-                p.exitValue();
-            } catch (IllegalThreadStateException e){
-                stillRunning = true;
-            }
-            if (!stillRunning) {
-                p.destroy();
-                bgdProcesses.remove(p);
-            }
-        }
-    }
-
-    void addBgdProcess(Process p) {
-        bgdProcesses.add(p);
-    }
-    
-    
-
 }

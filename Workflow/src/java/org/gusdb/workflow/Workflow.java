@@ -11,7 +11,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Formatter;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
@@ -67,7 +69,8 @@ public class Workflow <T extends WorkflowStep> {
     protected WorkflowGraph<T> workflowGraph;  // the graph
     protected String undoStepName;  // iff we are running undo
 
-    
+    private List<Process> bgdProcesses = new ArrayList<Process>();  // list of processes to clean
+   
     public Workflow(String homeDir) throws FileNotFoundException, IOException {
 	this.homeDir = homeDir + "/";
     }
@@ -281,6 +284,26 @@ public class Workflow <T extends WorkflowStep> {
         return workflowProps.getProperty("workflowXmlFile");
     }
     
+    void addBgdProcess(Process p) {
+        bgdProcesses.add(p);
+    }
+    
+    void cleanProcesses() {
+        List<Process> clone = new ArrayList<Process>(bgdProcesses);
+        for (Process p : clone) {
+            boolean stillRunning = false;
+            try {
+                p.exitValue();
+            } catch (IllegalThreadStateException e){
+                stillRunning = true;
+            }
+            if (!stillRunning) {
+                p.destroy();
+                bgdProcesses.remove(p);
+            }
+        }
+    }
+
     //////////////////////////////////////////////////////////////////
     //   Actions
     //////////////////////////////////////////////////////////////////
