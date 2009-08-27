@@ -140,7 +140,7 @@ SQL
    }
 
    elsif ( scalar @$imps > 1 ) {
-     $self->tooManyImpsError($imps);
+     $self->tooManyImpsError($imps,$plugin);
    }
 
    elsif ($plugin->getArgs->{commit} &&
