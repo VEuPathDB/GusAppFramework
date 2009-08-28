@@ -12,15 +12,16 @@ use GUS::ObjRelP::DbiDatabase;
 use CBIL::Bio::SequenceUtils;
 use GUS::Supported::GusConfig;
 
-my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength,$mscPercent);
+my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength,$mscPercent, $noSeq);
 &GetOptions("verbose!"=> \$verbose,
             "outputFile=s" => \$outFile,"idSQL=s" => \$idSQL, 
             "minLength=i" => \$minLength,"debug!" => \$debug,
             "maxStopCodonPercent=i" => \$mscPercent,
-            "gusConfigFile=s" => \$gusConfigFile);
+            "gusConfigFile=s" => \$gusConfigFile,
+            "noSequence!" => \$noSeq);
 
 if(!$idSQL || !$outFile){
-	die "usage: gusExtractSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --maxStopCodonPercent <maxium multiple-stop-codons per 100 AA sequences [100]> --gusConfigFile [\$GUS_HOME/config/gus.config]\n";
+	die "usage: gusExtractSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --maxStopCodonPercent <maxium multiple-stop-codons per 100 AA sequences [100]> --gusConfigFile [\$GUS_HOME/config/gus.config] --noSequence\n";
 }
 
 ##set the defaults
@@ -79,8 +80,8 @@ die "Inconsistant number of sequences between query results and outputs in $outF
 sub printSequence{
 	my @row = @_;
 #	print STDERR "$gene_id,$na_id,$description,$number,$taxon,$assembly_id,$length,$seq_ver\n";
-  my $sequence = pop(@row);
-  if(length($sequence) < $minLength){
+  my $sequence = pop(@row) unless $noSeq;
+  if(!$noSeq && length($sequence) < $minLength){
     print STDERR "Skipping: $row[0] too short: ",length($sequence),"\n";
     $skip++;
     return;
@@ -100,7 +101,8 @@ sub printSequence{
 	my $defline = "\>".join(' ',@row);
 	$defline =~ s/\s+/ /g;
 	$defline .= "\n";
-	print OUT $defline . CBIL::Bio::SequenceUtils::breakSequence($sequence,60);
+	$noSeq ? print OUT $defline : print OUT $defline . CBIL::Bio::SequenceUtils::breakSequence($sequence,60);
+	
 }
 
 
