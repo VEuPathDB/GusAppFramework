@@ -392,7 +392,7 @@ sub run {
 	    my $naSequenceId = $self->processSequence($bioperlSeq, $seqExtDbRlsId);
 	    
 	    $seqCount++;
-
+	  #  print STDERR Dumper $bioperlSeq;
 	    $self->{mapperSet}->preprocessBioperlSeq($bioperlSeq, $self);
 
 	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh);
@@ -403,7 +403,8 @@ sub run {
 	}
     }
 
-    $self->log("Processed $inputFile: $format \n\t Seqs $action: $seqCount \n\t Features Inserted: $self->{fileFeatureCount} \n\t Feature Trees Inserted: $self->{fileFeatureTreeCount}\n\tFeature Trees Not Inserted (due to validation failures) : $self->{fileBrokenFeatureTreeCount}");
+    $self->log("Processed $inputFile: $format
+ \n\t Seqs $action: $seqCount \n\t Features Inserted: $self->{fileFeatureCount} \n\t Feature Trees Inserted: $self->{fileFeatureTreeCount}\n\tFeature Trees Not Inserted (due to validation failures) : $self->{fileBrokenFeatureTreeCount}");
     $totalSeqCount += $seqCount;
     $fileCount++;
     last if $self->checkTestNum();
@@ -441,6 +442,7 @@ sub openValidationLogFile {
 }
 
 sub getInputFiles {
+
   my ($self) = @_;
 
   my $fileOrDir = $self->getArg('inputFileOrDir');
@@ -534,6 +536,8 @@ sub convertGFFStreamToSeqIO {
 	my $id = 0;
 	($id) = $feature->each_tag_value("ID")
 	  if $feature->has_tag("ID");
+
+	print STDERR "ID: $id\n";
 	if ($feature->has_tag("Parent")) {
 	  for my $parent ($feature->each_tag_value("Parent")) {
 	    push @{$children{$parent}}, [$id, $feature];
@@ -549,22 +553,37 @@ sub convertGFFStreamToSeqIO {
 	# build a stack of children to be associated with their
 	# parent feature:
 	# [$child_id, $child_feature, $parent_feature]
-	my @children =
-	  map {
-	    push @$_, $feature;
-	  } @{delete($children{$id}) || []};
+	my @children;
+	if($children{$id}){
+	
+	  foreach my $col (@{$children{$id}}){
+
+	    push @children ,[@$col,$feature];
+
+	      
+	  }
+	}
+	delete($children{$id});
 
 	# now iterate over the stack until empty:
-	while (my $child = shift @children) {
+        foreach my $child (@children) {
+#	while (my $child = shift @children) {
+	    print STDERR Dumper $child;
 	  my ($child_id, $child, $parent) = @$child;
 	  # make the association:
-	  $parent->add_SubFeature($child);
+	  $parent->add_SeqFeature($child);
 
 	  # add to the stack any nested children of this child
-	  push @children,
-	    map {
-	      push @$_, $child;
-	    } @{delete($children{$child_id}) || []};
+	  if($children{$child_id}){
+	
+
+	    foreach my $col (@{$children{$child_id}}){
+
+	      push @children ,[@$col,$child];
+	      
+	    }
+	  }
+	  delete($children{$child_id});
 	}
       }
 
