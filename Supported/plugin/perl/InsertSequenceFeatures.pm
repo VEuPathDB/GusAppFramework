@@ -537,7 +537,6 @@ sub convertGFFStreamToSeqIO {
 	($id) = $feature->each_tag_value("ID")
 	  if $feature->has_tag("ID");
 
-	print STDERR "ID: $id\n";
 	if ($feature->has_tag("Parent")) {
 	  for my $parent ($feature->each_tag_value("Parent")) {
 	    push @{$children{$parent}}, [$id, $feature];
@@ -567,8 +566,7 @@ sub convertGFFStreamToSeqIO {
 
 	# now iterate over the stack until empty:
         foreach my $child (@children) {
-#	while (my $child = shift @children) {
-	    print STDERR Dumper $child;
+
 	  my ($child_id, $child, $parent) = @$child;
 	  # make the association:
 	  $parent->add_SeqFeature($child);
