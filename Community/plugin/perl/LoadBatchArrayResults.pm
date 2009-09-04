@@ -609,14 +609,14 @@ sub checkRelatedQuantifications{
 	my $acq = $infoQ->getAcquisitionInfo($relQ->{'acquisition_id'});
 	$relChannel = $acq->{'channel'};
       }
-    
+      
       if ($channel eq "Cy5") {
 	push (@redChannels, $qid);
 	if (defined($relChannel) && $relChannel ne 'Cy3') {
 	  $self->error("DATABASE: quantifications (Cy5) $qid and $relQid are related but the latter is not for channel Cy3.");
 	}
 	push (@relatedRedChannels, $relQid);
-      } 
+      }
       elsif ($channel eq "Cy3") {
 	push (@greenChannels, $qid);
 	if (defined($relChannel) && $relChannel ne 'Cy5') {
@@ -638,6 +638,20 @@ sub checkRelatedQuantifications{
 	}
 	push (@relatedRedChannels, $relQid);
       }
+      elsif ($channel eq "alexa_555") {
+	push (@greenChannels, $qid);
+	if (defined($relChannel) && $relChannel ne 'alexa_647') {
+	  $self->error("DATABASE: quantifications (alexa_555) $qid and $relQid are related but the latter is not for channel alexa_647.");
+	}
+	push (@relatedGreenChannels, $relQid);
+      }
+      elsif ($channel eq "alexa_647") {
+	push (@redChannels, $qid);
+	if (defined($relChannel) && $relChannel ne 'alexa_555') {
+	  $self->error("DATABASE: quantifications (alexa_647) $qid and $relQid are related but the latter is not for channel alexa_555.");
+	}
+	push (@relatedRedChannels, $relQid);
+      }
     }
   }
 
@@ -647,7 +661,7 @@ sub checkRelatedQuantifications{
 
   # if it is 2-channel data, need to check related quantification relationships
   if ($#redChannels != $#greenChannels) {
-    $self->error("For acquisition $acqId, the number of Cy5 quantifications, with the specified protocol, differs from that of Cy3 quantifications.");
+    $self->error("For acquisition $acqId, the number of red quantifications, with the specified protocol, differs from that of green quantifications.");
   }
   
   foreach my $i (0..$#redChannels) {
