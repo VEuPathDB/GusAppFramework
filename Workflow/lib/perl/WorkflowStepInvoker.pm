@@ -3,8 +3,8 @@ package GUS::Workflow::WorkflowStepInvoker;
 @ISA = qw(GUS::Workflow::Base);
 use strict;
 use GUS::Workflow::Base;
-use GUS::Workflow::SshCluster;
-use GUS::Workflow::NfsCluster;
+use CBIL::Util::SshCluster;
+use CBIL::Util::NfsCluster;
 
 #
 # Super class of workflow steps written in perl, and called by the wrapper
@@ -173,11 +173,11 @@ sub getCluster {
 	my $clusterServer = $self->getWorkflowConfig('clusterServer');
 	my $clusterUser = $ENV{USER};
 	if ($clusterServer ne "none") {
-	    $self->{cluster} = GUS::Workflow::SshCluster->new($clusterServer,
+	    $self->{cluster} = CBIL::Util::SshCluster->new($clusterServer,
 							      $clusterUser,
 							      $self);
 	} else {
-	    $self->{cluster} = GUS::Workflow::NfsCluster->new($self);
+	    $self->{cluster} = CBIL::Util::NfsCluster->new($self);
 	}
     }
     return $self->{cluster};
