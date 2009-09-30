@@ -336,7 +336,7 @@ sub _updateAncestors {
   my %ancestorIds;
   $ancestorIds{'molecular_function'} = $mf->getGoTermId();
   $ancestorIds{'cellular_component'} = $cc->getGoTermId();
-  $ancestorIds{'biological_process'} = $bp->getGotermId();
+  $ancestorIds{'biological_process'} = $bp->getGoTermId();
 
   foreach my $goId (keys %{$ancestors}) {
     my $goTerm = GUS::Model::SRes::GOTerm->new({
