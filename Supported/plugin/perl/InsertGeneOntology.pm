@@ -37,6 +37,11 @@ my $argsDeclaration =
 	       constraintFunc => undef,
 	       isList         => 0,
 	     }),
+   booleanArg({ name          => 'calcTransitiveClosure',
+		descr         => 'If this argument is given, a transitive closure table is created and populated',
+		reqd         => 0,
+		default      => 0
+	    })	
   ];
 
 my $purpose = <<PURPOSE;
@@ -118,21 +123,24 @@ sub run {
 
   $self->_deleteTermsAndRelationships($extDbRlsId);
 
-  $self->_parseTerms(\*OBO, $extDbRlsId);
+  my $ancestors;
+  $self->_parseTerms(\*OBO, $extDbRlsId, $ancestors);
 
   close(OBO);
-
-  $self->_calcTransitiveClosure($extDbRlsId);
+  $self->_updateAncestors($extDbRlsId, $ancestors);
+  if ($self->getArg('calcTransitiveClosure')) {
+    $self->_calcTransitiveClosure($extDbRlsId);
+  }
 }
 
 sub _parseTerms {
 
-  my ($self, $fh, $extDbRlsId) = @_;
+  my ($self, $fh, $extDbRlsId, $ancestors) = @_;
 
   my $block = "";
   while (<$fh>) {
     if (m/^\[ ([^\]]+) \]/x) {
-      $self->_processBlock($block, $extDbRlsId)
+      $self->_processBlock($block, $extDbRlsId, $ancestors)
 	if $block =~ m/\A\[Term\]/; # the very first block will be the
                                     # header, and so should not get
                                     # processed; also, some blocks may
@@ -143,7 +151,7 @@ sub _parseTerms {
     $block .= $_;
   }
 
-  $self->_processBlock($block, $extDbRlsId)
+  $self->_processBlock($block, $extDbRlsId, $ancestors)
     if $block =~ m/\A\[Term\]/; # the very first block will be the
                                 # header, and so should not get
                                 # processed; also, some blocks may be
@@ -152,18 +160,18 @@ sub _parseTerms {
 
 sub _processBlock {
 
-  my ($self, $block, $extDbRlsId) = @_;
+  my ($self, $block, $extDbRlsId, $ancestors) = @_;
 
   $self->{_count}++;
 
-  my ($id, $name, $def, $comment,
+  my ($id, $name, $namespace, $def, $comment,
       $synonyms, $relationships,
       $isObsolete) = $self->_parseBlock($block);
 
   my $goTerm = $self->_retrieveGOTerm($id, $name, $def, $comment,
 				      $synonyms, $isObsolete,
 				      $extDbRlsId);
-
+  $ancestors->{$id} = $namespace;
   for my $relationship (@$relationships) {
     $self->_processRelationship($goTerm, $relationship, $extDbRlsId);
   }
@@ -262,6 +270,7 @@ sub _parseBlock {
 
   my ($id) = $block =~ m/^id:\s+(GO:\d+)/m;
   my ($name) = $block =~ m/^name:\s+(.*)/m;
+  my ($namespace) = $block =~ m/^namespace:\s+(.*)/m;
   my ($comment) = $block =~ m/^comment:\s+(.*)/m;
   my ($def) = $block =~ m/^def:\s+(.*)/ms;
   ($def) = extract_quotelike($def);
@@ -303,7 +312,42 @@ sub _parseBlock {
 
   my ($isObsolete) = $block =~ m/^is_obsolete:\s+(\S+)/m;
 
-  return ($id, $name, $def, $comment, \@synonyms, \@relationships, $isObsolete)
+  return ($id, $name, $namespace, $def, $comment, \@synonyms, \@relationships, $isObsolete)
+}
+
+sub _updateAncestors {
+  my ($self, $extDbRlsId, $ancestors);
+  my $mf = GUS::Model::SRes::GOTerm->new({
+    name                        => 'molecular_function',
+    external_database_release_id => $extDbRlsId
+  });
+  my $cc = GUS::Model::SRes::GOTerm->new({
+    name                        => 'cellular_component',
+    external_database_release_id => $extDbRlsId
+  });
+  my $bp = GUS::Model::SRes::GOTerm->new({
+    name                        => 'biological_process',
+    external_database_release_id => $extDbRlsId
+  });
+  $mf->retrieveFromDB();
+  $cc->retrieveFromDB();
+  $bp->retrieveFromDB();
+
+  my %ancestorIds;
+  $ancestorIds{'molecular_function'} = $mf->getGoTermId();
+  $ancestorIds{'cellular_component'} = $cc->getGoTermId();
+  $ancestorIds{'biological_process'} = $bp->getGotermId();
+
+  foreach my $goId (keys %{$ancestors}) {
+    my $goTerm = GUS::Model::SRes::GOTerm->new({
+    source_id                        => $goId,
+    external_database_release_id => $extDbRlsId
+  });
+    $goTerm->retrieveFromDB();
+    $goTerm->setAncestorGoTermId($ancestorIds{$ancestors->{$goId}});
+    $goTerm->submit();
+    $self->undefPointerCache();
+  }
 }
 
 sub _calcTransitiveClosure {
