@@ -97,7 +97,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision       => '$Revision: 7383 $',
+		      cvsRevision       => '$Revision: 7384 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -125,10 +125,11 @@ sub run {
   $self->_deleteTermsAndRelationships($extDbRlsId);
 
   my $ancestors;
-  $self->_parseTerms(\*OBO, $extDbRlsId, $ancestors);
+  my $ancestorIds;
+  $self->_parseTerms(\*OBO, $extDbRlsId, $ancestors, $ancestorIds);
 
   close(OBO);
-  $self->_updateAncestors($extDbRlsId, $ancestors);
+  $self->_updateAncestors($extDbRlsId, $ancestors, $ancestorIds);
   if ($self->getArg('calcTransitiveClosure')) {
     $self->_calcTransitiveClosure($extDbRlsId);
   }
@@ -136,12 +137,12 @@ sub run {
 
 sub _parseTerms {
 
-  my ($self, $fh, $extDbRlsId, $ancestors) = @_;
+  my ($self, $fh, $extDbRlsId, $ancestors, $ancestorIds) = @_;
 
   my $block = "";
   while (<$fh>) {
     if (m/^\[ ([^\]]+) \]/x) {
-      $self->_processBlock($block, $extDbRlsId, $ancestors)
+      $self->_processBlock($block, $extDbRlsId, $ancestors, $ancestorIds)
 	if $block =~ m/\A\[Term\]/; # the very first block will be the
                                     # header, and so should not get
                                     # processed; also, some blocks may
@@ -152,7 +153,7 @@ sub _parseTerms {
     $block .= $_;
   }
 
-  $self->_processBlock($block, $extDbRlsId, $ancestors)
+  $self->_processBlock($block, $extDbRlsId, $ancestors, $ancestorIds)
     if $block =~ m/\A\[Term\]/; # the very first block will be the
                                 # header, and so should not get
                                 # processed; also, some blocks may be
@@ -161,7 +162,7 @@ sub _parseTerms {
 
 sub _processBlock {
 
-  my ($self, $block, $extDbRlsId, $ancestors) = @_;
+  my ($self, $block, $extDbRlsId, $ancestors, $ancestorIds) = @_;
 
   $self->{_count}++;
 
@@ -173,6 +174,17 @@ sub _processBlock {
 				      $synonyms, $isObsolete,
 				      $extDbRlsId);
   $ancestors->{$id} = $namespace;
+  if ($name eq 'molecular_function') {
+    $ancestorIds->{'molecular_function'} = $goTerm->getGoTermId();
+  }
+  elsif ($name eq 'cellular_component') {
+    $ancestorIds->{'cellular_component'} = $goTerm->getGoTermId();
+  }
+  elsif ($name eq 'biological_process') {
+    $ancestorIds->{'biological_process'} = $goTerm->getGoTermId();
+  }
+
+  STDERR->print(Dumper($ancestorIds) . "\n");
   for my $relationship (@$relationships) {
     $self->_processRelationship($goTerm, $relationship, $extDbRlsId);
   }
@@ -317,28 +329,7 @@ sub _parseBlock {
 }
 
 sub _updateAncestors {
-  my ($self, $extDbRlsId, $ancestors);
-  my $mf = GUS::Model::SRes::GOTerm->new({
-    name                        => 'molecular_function',
-    external_database_release_id => $extDbRlsId
-  });
-  my $cc = GUS::Model::SRes::GOTerm->new({
-    name                        => 'cellular_component',
-    external_database_release_id => $extDbRlsId
-  });
-  my $bp = GUS::Model::SRes::GOTerm->new({
-    name                        => 'biological_process',
-    external_database_release_id => $extDbRlsId
-  });
-  $mf->retrieveFromDB();
-  $cc->retrieveFromDB();
-  $bp->retrieveFromDB();
-
-  my %ancestorIds;
-  $ancestorIds{'molecular_function'} = $mf->getGoTermId();
-  $ancestorIds{'cellular_component'} = $cc->getGoTermId();
-  $ancestorIds{'biological_process'} = $bp->getGoTermId();
-  STDERR->print(Dumper(%ancestorIds)."\n");
+  my ($self, $extDbRlsId, $ancestors, $ancestorIds);
 
   foreach my $goId (keys %{$ancestors}) {
     my $goTerm = GUS::Model::SRes::GOTerm->new({
@@ -346,7 +337,7 @@ sub _updateAncestors {
     external_database_release_id => $extDbRlsId
   });
     $goTerm->retrieveFromDB();
-    $goTerm->setAncestorGoTermId($ancestorIds{$ancestors->{$goId}});
+    $goTerm->setAncestorGoTermId($ancestorIds->{$ancestors->{$goId}});
     STDERR->print(toString($goTerm) . "\n");
     $goTerm->submit();
     $self->undefPointerCache();
