@@ -12,7 +12,6 @@ use GUS::Model::SRes::GORelationshipType;
 use GUS::Model::SRes::GOSynonym;
 
 use Text::Balanced qw(extract_quotelike extract_delimited);
-use Data::Dumper;
 
 my $argsDeclaration =
   [
@@ -124,13 +123,10 @@ sub run {
 
   $self->_deleteTermsAndRelationships($extDbRlsId);
 
-  my $ancestors;
-  my $ancestorIds;
-  $self->_parseTerms(\*OBO, $extDbRlsId, $ancestors, $ancestorIds);
+  $self->_parseTerms(\*OBO, $extDbRlsId);
 
   close(OBO);
-  STDERR->print(Dumper($ancestorIds) . "\n");
-  $self->_updateAncestors($extDbRlsId, $ancestors, $ancestorIds);
+
   if ($self->getArg('calcTransitiveClosure')) {
     $self->_calcTransitiveClosure($extDbRlsId);
   }
@@ -138,12 +134,12 @@ sub run {
 
 sub _parseTerms {
 
-  my ($self, $fh, $extDbRlsId, $ancestors, $ancestorIds) = @_;
+  my ($self, $fh, $extDbRlsId) = @_;
 
   my $block = "";
   while (<$fh>) {
     if (m/^\[ ([^\]]+) \]/x) {
-      $self->_processBlock($block, $extDbRlsId, $ancestors, $ancestorIds)
+      $self->_processBlock($block, $extDbRlsId)
 	if $block =~ m/\A\[Term\]/; # the very first block will be the
                                     # header, and so should not get
                                     # processed; also, some blocks may
@@ -154,7 +150,7 @@ sub _parseTerms {
     $block .= $_;
   }
 
-  $self->_processBlock($block, $extDbRlsId, $ancestors, $ancestorIds)
+  $self->_processBlock($block, $extDbRlsId)
     if $block =~ m/\A\[Term\]/; # the very first block will be the
                                 # header, and so should not get
                                 # processed; also, some blocks may be
@@ -163,7 +159,7 @@ sub _parseTerms {
 
 sub _processBlock {
 
-  my ($self, $block, $extDbRlsId, $ancestors, $ancestorIds) = @_;
+  my ($self, $block, $extDbRlsId) = @_;
 
   $self->{_count}++;
 
@@ -171,19 +167,9 @@ sub _processBlock {
       $synonyms, $relationships,
       $isObsolete) = $self->_parseBlock($block);
 
-  my $goTerm = $self->_retrieveGOTerm($id, $name, $def, $comment,
+  my $goTerm = $self->_retrieveGOTerm($id, $name, $namespace, $def, $comment,
 				      $synonyms, $isObsolete,
 				      $extDbRlsId);
-  $ancestors->{$id} = $namespace;
-  if ($name eq 'molecular_function') {
-    $ancestorIds->{'molecular_function'} = $goTerm->getGoTermId();
-  }
-  elsif ($name eq 'cellular_component') {
-    $ancestorIds->{'cellular_component'} = $goTerm->getGoTermId();
-  }
-  elsif ($name eq 'biological_process') {
-    $ancestorIds->{'biological_process'} = $goTerm->getGoTermId();
-  }
 
   for my $relationship (@$relationships) {
     $self->_processRelationship($goTerm, $relationship, $extDbRlsId);
@@ -199,8 +185,7 @@ sub _processRelationship {
 
   my ($type, $parentId) = @$relationship;
 
-  my $parentTerm = $self->_retrieveGOTerm($parentId, undef, undef, undef,
-					  undef, undef, $extDbRlsId);
+  my $parentTerm = $self->_retrieveGOTerm($parentId, undef, undef, undef, undef,					  undef, undef, $extDbRlsId);
 
   my $goRelationshipType =
     $self->{_goRelationshipTypeCache}->{$type} ||= do {
@@ -224,8 +209,7 @@ sub _processRelationship {
 
 sub _retrieveGOTerm {
 
-  my ($self, $id, $name, $def, $comment,
-      $synonyms, $isObsolete, $extDbRlsId) = @_;
+  my ($self, $id, $name, $namespace, $def, $comment, $synonyms, $isObsolete, $extDbRlsId) = @_;
 
   my $goTerm = GUS::Model::SRes::GOTerm->new({
     go_id                        => $id,
@@ -247,6 +231,17 @@ sub _retrieveGOTerm {
   $goTerm->setDefinition($def) if length($def);
   $goTerm->setCommentString($comment) if length($comment);
   $goTerm->setIsObsolete(1) if ($isObsolete && $isObsolete eq "true");
+  if (length($namespace)) {
+    my $ancestor = GUS::Model::SRes::GOTerm->new({
+       name                        => $namespace,
+       external_database_release_id => $extDbRlsId,
+       minimum_level                => 1,
+       maximum_level                => 1,
+       number_of_levels             => 1,
+    });
+    $ancestor->retrieveFromDB();
+    $goTerm->setParent($ancestor);
+  }
 
   $self->_setGOTermSynonyms($goTerm, $synonyms, $extDbRlsId) if $synonyms;
 
@@ -326,22 +321,6 @@ sub _parseBlock {
   my ($isObsolete) = $block =~ m/^is_obsolete:\s+(\S+)/m;
 
   return ($id, $name, $namespace, $def, $comment, \@synonyms, \@relationships, $isObsolete)
-}
-
-sub _updateAncestors {
-  my ($self, $extDbRlsId, $ancestors, $ancestorIds);
-
-  foreach my $goId (keys %{$ancestors}) {
-    my $goTerm = GUS::Model::SRes::GOTerm->new({
-    source_id                        => $goId,
-    external_database_release_id => $extDbRlsId
-  });
-    $goTerm->retrieveFromDB();
-    $goTerm->setAncestorGoTermId($ancestorIds->{$ancestors->{$goId}});
-    STDERR->print(toString($goTerm) . "\n");
-    $goTerm->submit();
-    $self->undefPointerCache();
-  }
 }
 
 sub _calcTransitiveClosure {
