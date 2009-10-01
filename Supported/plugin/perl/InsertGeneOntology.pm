@@ -97,7 +97,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision       => '$Revision: 7380 $',
+		      cvsRevision       => '$Revision: 7383 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -338,7 +338,7 @@ sub _updateAncestors {
   $ancestorIds{'molecular_function'} = $mf->getGoTermId();
   $ancestorIds{'cellular_component'} = $cc->getGoTermId();
   $ancestorIds{'biological_process'} = $bp->getGoTermId();
-  $self->logDebug(Dumper(%ancestorIds));
+  STDERR->print(Dumper(%ancestorIds)."\n");
 
   foreach my $goId (keys %{$ancestors}) {
     my $goTerm = GUS::Model::SRes::GOTerm->new({
@@ -347,7 +347,7 @@ sub _updateAncestors {
   });
     $goTerm->retrieveFromDB();
     $goTerm->setAncestorGoTermId($ancestorIds{$ancestors->{$goId}});
-    $self->logDebug(toString($goTerm));
+    STDERR->print(toString($goTerm) . "\n");
     $goTerm->submit();
     $self->undefPointerCache();
   }
