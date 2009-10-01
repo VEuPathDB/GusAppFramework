@@ -12,6 +12,7 @@ use GUS::Model::SRes::GORelationshipType;
 use GUS::Model::SRes::GOSynonym;
 
 use Text::Balanced qw(extract_quotelike extract_delimited);
+use Data::Dumper;
 
 my $argsDeclaration =
   [
@@ -96,7 +97,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision       => '$Revision: 15044 $',
+		      cvsRevision       => '$Revision: 7380 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -337,6 +338,7 @@ sub _updateAncestors {
   $ancestorIds{'molecular_function'} = $mf->getGoTermId();
   $ancestorIds{'cellular_component'} = $cc->getGoTermId();
   $ancestorIds{'biological_process'} = $bp->getGoTermId();
+  $self->logDebug(Dumper(%ancestorIds));
 
   foreach my $goId (keys %{$ancestors}) {
     my $goTerm = GUS::Model::SRes::GOTerm->new({
@@ -345,6 +347,7 @@ sub _updateAncestors {
   });
     $goTerm->retrieveFromDB();
     $goTerm->setAncestorGoTermId($ancestorIds{$ancestors->{$goId}});
+    $self->logDebug(toString($goTerm));
     $goTerm->submit();
     $self->undefPointerCache();
   }
