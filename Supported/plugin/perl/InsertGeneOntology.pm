@@ -96,7 +96,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision       => '$Revision: 7386 $',
+		      cvsRevision       => '$Revision: 7388 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -122,10 +122,11 @@ sub run {
   my $extDbRlsId = $self->getExtDbRlsId($extDbRlsName, $extDbRlsVer);
 
   $self->_deleteTermsAndRelationships($extDbRlsId);
-
-  $self->_parseTerms(\*OBO, $extDbRlsId);
+  my $ancestors;
+  $self->_parseTerms(\*OBO, $extDbRlsId, $ancestors);
 
   close(OBO);
+  $self->_updateAncestors($extDbRlsId, $ancestors);
 
   if ($self->getArg('calcTransitiveClosure')) {
     $self->_calcTransitiveClosure($extDbRlsId);
@@ -134,12 +135,12 @@ sub run {
 
 sub _parseTerms {
 
-  my ($self, $fh, $extDbRlsId) = @_;
+  my ($self, $fh, $extDbRlsId, $ancestors) = @_;
 
   my $block = "";
   while (<$fh>) {
     if (m/^\[ ([^\]]+) \]/x) {
-      $self->_processBlock($block, $extDbRlsId)
+      $self->_processBlock($block, $extDbRlsId, $ancestors)
 	if $block =~ m/\A\[Term\]/; # the very first block will be the
                                     # header, and so should not get
                                     # processed; also, some blocks may
@@ -150,7 +151,7 @@ sub _parseTerms {
     $block .= $_;
   }
 
-  $self->_processBlock($block, $extDbRlsId)
+  $self->_processBlock($block, $extDbRlsId, $ancestors)
     if $block =~ m/\A\[Term\]/; # the very first block will be the
                                 # header, and so should not get
                                 # processed; also, some blocks may be
@@ -159,7 +160,7 @@ sub _parseTerms {
 
 sub _processBlock {
 
-  my ($self, $block, $extDbRlsId) = @_;
+  my ($self, $block, $extDbRlsId, $ancestors) = @_;
 
   $self->{_count}++;
 
@@ -167,9 +168,10 @@ sub _processBlock {
       $synonyms, $relationships,
       $isObsolete) = $self->_parseBlock($block);
 
-  my $goTerm = $self->_retrieveGOTerm($id, $name, $namespace, $def, $comment,
+  my $goTerm = $self->_retrieveGOTerm($id, $name, $def, $comment,
 				      $synonyms, $isObsolete,
 				      $extDbRlsId);
+  $ancestors->{$id} = $namespace;
 
   for my $relationship (@$relationships) {
     $self->_processRelationship($goTerm, $relationship, $extDbRlsId);
@@ -185,7 +187,7 @@ sub _processRelationship {
 
   my ($type, $parentId) = @$relationship;
 
-  my $parentTerm = $self->_retrieveGOTerm($parentId, undef, undef, undef, undef,					  undef, undef, $extDbRlsId);
+  my $parentTerm = $self->_retrieveGOTerm($parentId, undef, undef, undef,					  undef, undef, $extDbRlsId);
 
   my $goRelationshipType =
     $self->{_goRelationshipTypeCache}->{$type} ||= do {
@@ -209,7 +211,7 @@ sub _processRelationship {
 
 sub _retrieveGOTerm {
 
-  my ($self, $id, $name, $namespace, $def, $comment, $synonyms, $isObsolete, $extDbRlsId) = @_;
+  my ($self, $id, $name, $def, $comment, $synonyms, $isObsolete, $extDbRlsId) = @_;
 
   my $goTerm = GUS::Model::SRes::GOTerm->new({
     go_id                        => $id,
@@ -218,12 +220,12 @@ sub _retrieveGOTerm {
   });
 
   unless ($goTerm->retrieveFromDB()) {
-    $goTerm->setName("Not yet available");
-    $goTerm->setMinimumLevel(1);
-    $goTerm->setMaximumLevel(1);
-    $goTerm->setNumberOfLevels(1);
-  }
-  
+      $goTerm->setName("Not yet available");
+      $goTerm->setMinimumLevel(1);
+      $goTerm->setMaximumLevel(1);
+      $goTerm->setNumberOfLevels(1);
+    }
+
   # some of these may not actually yet be available, if we've been
   # called while building a relationship:
 
@@ -231,17 +233,6 @@ sub _retrieveGOTerm {
   $goTerm->setDefinition($def) if length($def);
   $goTerm->setCommentString($comment) if length($comment);
   $goTerm->setIsObsolete(1) if ($isObsolete && $isObsolete eq "true");
-  if (length($namespace)) {
-    my $ancestor = GUS::Model::SRes::GOTerm->new({
-       name                        => $namespace,
-       external_database_release_id => $extDbRlsId,
-       minimum_level                => 1,
-       maximum_level                => 1,
-       number_of_levels             => 1,
-    });
-    $ancestor->retrieveFromDB();
-    $goTerm->setParent($ancestor);
-  }
 
   $self->_setGOTermSynonyms($goTerm, $synonyms, $extDbRlsId) if $synonyms;
 
@@ -321,6 +312,55 @@ sub _parseBlock {
   my ($isObsolete) = $block =~ m/^is_obsolete:\s+(\S+)/m;
 
   return ($id, $name, $namespace, $def, $comment, \@synonyms, \@relationships, $isObsolete)
+}
+
+sub _updateAncestors {
+
+  my ($self, $extDbRlsId, $ancestors) = @_;
+  my %ancestorIds;
+
+  my $mf = GUS::Model::SRes::GOTerm->new({
+    name                        => 'molecular_function',
+    external_database_release_id => $extDbRlsId,
+  });
+  my $cc = GUS::Model::SRes::GOTerm->new({
+    name                        => 'cellular_component',
+    external_database_release_id => $extDbRlsId,
+  });
+  my $bp = GUS::Model::SRes::GOTerm->new({
+    name                        => 'biological_process',
+    external_database_release_id => $extDbRlsId,
+  });
+
+  if ($mf->retrieveFromDB()) {
+    $ancestorIds{'molecular_function'} = $mf->getGoTermId();
+  }
+  else {
+    STDERR->print("There is no molecular_function term.\n");
+  }
+  if ($cc->retrieveFromDB()) {
+    $ancestorIds{'cellular_component'} = $cc->getGoTermId();
+  }
+  else {
+    STDERR->print("There is no cellular_component term.\n");
+  }
+  if ($bp->retrieveFromDB()) {
+    $ancestorIds{'biological_process'} = $bp->getGoTermId();
+  }
+  else {
+    STDERR->print("There is no biological_process term.\n");
+  }
+
+  foreach my $goId (keys %{$ancestors}) {
+    my $goTerm = GUS::Model::SRes::GOTerm->new({
+       source_id                        => $goId,
+       external_database_release_id => $extDbRlsId
+    });
+    if ($goTerm->retrieveFromDB()) {
+      $goTerm->setAncestorGoTermId($ancestorIds{$ancestors->{$goId}});
+      $goTerm->submit();
+    }
+  }
 }
 
 sub _calcTransitiveClosure {
