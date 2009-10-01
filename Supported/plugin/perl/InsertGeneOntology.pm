@@ -97,7 +97,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision       => '$Revision: 7384 $',
+		      cvsRevision       => '$Revision: 7386 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -129,6 +129,7 @@ sub run {
   $self->_parseTerms(\*OBO, $extDbRlsId, $ancestors, $ancestorIds);
 
   close(OBO);
+  STDERR->print(Dumper($ancestorIds) . "\n");
   $self->_updateAncestors($extDbRlsId, $ancestors, $ancestorIds);
   if ($self->getArg('calcTransitiveClosure')) {
     $self->_calcTransitiveClosure($extDbRlsId);
@@ -184,7 +185,6 @@ sub _processBlock {
     $ancestorIds->{'biological_process'} = $goTerm->getGoTermId();
   }
 
-  STDERR->print(Dumper($ancestorIds) . "\n");
   for my $relationship (@$relationships) {
     $self->_processRelationship($goTerm, $relationship, $extDbRlsId);
   }
