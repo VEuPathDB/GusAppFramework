@@ -96,7 +96,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision       => '$Revision: 7389 $',
+		      cvsRevision       => '$Revision: 7390 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -361,6 +361,7 @@ sub _updateAncestors {
       $goTerm->setAncestorGoTermId($ancestorIds{$ancestors->{$goId}});
       $goTerm->submit();
     }
+     $self->undefPointerCache();
   }
 }
 
