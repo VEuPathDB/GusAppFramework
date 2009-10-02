@@ -96,7 +96,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision       => '$Revision: 7388 $',
+		      cvsRevision       => '$Revision: 7389 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -122,8 +122,7 @@ sub run {
   my $extDbRlsId = $self->getExtDbRlsId($extDbRlsName, $extDbRlsVer);
 
   $self->_deleteTermsAndRelationships($extDbRlsId);
-  my $ancestors;
-  $self->_parseTerms(\*OBO, $extDbRlsId, $ancestors);
+  my $ancestors = $self->_parseTerms(\*OBO, $extDbRlsId);
 
   close(OBO);
   $self->_updateAncestors($extDbRlsId, $ancestors);
@@ -135,12 +134,13 @@ sub run {
 
 sub _parseTerms {
 
-  my ($self, $fh, $extDbRlsId, $ancestors) = @_;
+  my ($self, $fh, $extDbRlsId) = @_;
+  my $ancestors;
 
   my $block = "";
   while (<$fh>) {
     if (m/^\[ ([^\]]+) \]/x) {
-      $self->_processBlock($block, $extDbRlsId, $ancestors)
+      $ancestors = $self->_processBlock($block, $extDbRlsId, $ancestors)
 	if $block =~ m/\A\[Term\]/; # the very first block will be the
                                     # header, and so should not get
                                     # processed; also, some blocks may
@@ -151,11 +151,12 @@ sub _parseTerms {
     $block .= $_;
   }
 
-  $self->_processBlock($block, $extDbRlsId, $ancestors)
+  $ancestors = $self->_processBlock($block, $extDbRlsId, $ancestors)
     if $block =~ m/\A\[Term\]/; # the very first block will be the
                                 # header, and so should not get
                                 # processed; also, some blocks may be
                                 # [Typedef] blocks
+  return($ancestors);
 }
 
 sub _processBlock {
@@ -178,7 +179,7 @@ sub _processBlock {
   }
 
   warn "Processed $self->{_count} terms\n" unless $self->{_count} % 500;
-
+  return($ancestors);
 }
 
 sub _processRelationship {
