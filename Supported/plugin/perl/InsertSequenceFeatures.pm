@@ -387,7 +387,15 @@ sub run {
     
     my $bioperlSeqIO = $self->getSeqIO($inputFile);
     while (my $bioperlSeq = $bioperlSeqIO->next_seq() ) {
-	if(!($bioperlSeq->alphabet =~ /rna/i)){
+
+	my $seqType = 'DNA';
+
+	if($bioperlSeq->molecule){
+	    $seqType = $bioperlSeq->molecule;
+	}elsif($bioperlSeq->alphabet){
+	    $seqType = $bioperlSeq->alphabet;
+	}
+	if(!($seqType =~ /rna/i)){
 	    # use id instead of object because object is zapped by undefPointerCache
 	    my $naSequenceId = $self->processSequence($bioperlSeq, $seqExtDbRlsId);
 	    
