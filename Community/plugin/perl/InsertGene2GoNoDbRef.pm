@@ -58,7 +58,6 @@ my $documentation = {purposeBrief => $purposeBrief,
 		     notes => $notes
 		    };
 
-
 my $argsDeclaration =
 [
  stringArg({name => 'goAssociationExtDbRlsSpec',
@@ -140,7 +139,7 @@ sub run{
 sub makeGoHash{
     my ($self) = @_;
     my %goHash;
-    my %evidHash;
+#    my %evidHash;
     my $file = $self->getArg('gene2go');
     my $taxId = $self->getTaxonId();
 
@@ -159,11 +158,11 @@ sub makeGoHash{
 	my $evidence = $goArray[3];
 
 	push(@{$goHash{$goId}->{$entrezGeneId}}, $evidence);
-	$evidHash{$evidence};
+#	$evidHash{$evidence};
     }
     close(GO);
 
-    $self->checkExistEvidCodes(\%evidHash);
+#    $self->checkExistEvidCodes(\%evidHash);
 
     return (\%goHash);
 
