@@ -15,6 +15,7 @@ use FileHandle;
 use Bio::SeqIO;
 use Bio::Tools::SeqStats;
 use Bio::Tools::GFF;
+use Bio::Seq::RichSeq;
 
 use GUS::PluginMgr::Plugin;
 use GUS::Supported::BioperlFeatMapperSet;
@@ -518,7 +519,8 @@ sub convertGFFStreamToSeqIO {
   }
 
   while (my ($seq_id, $features) = each %seqs) {
-    my $seq = Bio::Seq->new( -alphabet => 'dna',
+    my $seq = Bio::Seq::RichSeq->new( -alphabet => 'dna',
+                             -molecule => 'dna',
 			     -display_id => $seq_id,
 			     -accession_number => $seq_id,
 			   );
