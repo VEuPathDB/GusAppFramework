@@ -307,7 +307,7 @@ sub loadData{
 	   
     }#eo outer foreach
 
-    my $msg = "$entriesCount entries added to the database, $skippedCount skipped because they were not in DbRef, $presentCount skipped because they were already in the database for this release.\n";
+    my $msg = "$entriesCount entries added to the database, $skippedCount skipped because they were not in DoTS.Gene, $presentCount skipped because they were already in the database for this release.\n";
 
     return $msg;
 }
@@ -403,7 +403,7 @@ sub getLOEid{
 
 # --------------------------------------------------------------------
 # getTableId
-# gets the table id for DbRef from Core.TableInfo and returns it
+# gets the table id for Gene from Core.TableInfo and returns it
 # --------------------------------------------------------------------
 
 sub getTableId{
