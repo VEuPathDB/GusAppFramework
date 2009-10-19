@@ -78,7 +78,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision       => '$Revision: $',
+		      cvsRevision       => '$Revision: 7435 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -173,6 +173,7 @@ sub _retrieveTerm {
   my $term = GUS::Model::SRes::OntologyTerm->new({
     source_id                    => $id,
     external_database_release_id => $extDbRlsId,
+    ontology_term_type_id => 1
   });
 
   unless ($term->retrieveFromDB()) {
