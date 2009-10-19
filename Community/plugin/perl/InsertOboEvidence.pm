@@ -1,3 +1,5 @@
+# $Id: InsertGOEvidenceCode.pm  $
+
 package GUS::Community::Plugin::InsertOboEvidence;
 
 @ISA = qw(GUS::PluginMgr::Plugin);
@@ -76,7 +78,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision       => '$Revision: 7433$',
+		      cvsRevision       => '$Revision: $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
