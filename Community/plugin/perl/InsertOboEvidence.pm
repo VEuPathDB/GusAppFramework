@@ -78,7 +78,7 @@ sub new {
   my $self = bless({}, $class);
 
   $self->initialize({ requiredDbVersion => 3.5,
-		      cvsRevision       => '$Revision: 7435 $',
+		      cvsRevision       => '$Revision: 7437 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
 		      documentation     => $documentation
@@ -152,7 +152,7 @@ sub _processRelationship {
   my $objectTerm = $self->_retrieveTerm($objectId, undef, undef, $extDbRlsId);
 
   my $ontologyRelationshipType = GUS::Model::SRes::OntologyRelationshipType->new({ name => $type , is_native => 1});
-  unless ($type->retrieveFromDB()) {
+  unless ($ontologyRelationshipType->retrieveFromDB()) {
     $type->submit();
   }
 
