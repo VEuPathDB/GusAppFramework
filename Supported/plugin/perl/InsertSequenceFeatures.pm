@@ -567,6 +567,7 @@ sub convertGFFStreamToSeqIO {
 	
 	  foreach my $col (@{$children{$id}}){
 
+
 	    push @children ,[@$col,$feature];
 
 	      
@@ -579,6 +580,18 @@ sub convertGFFStreamToSeqIO {
 
 	  my ($child_id, $child, $parent) = @$child;
 	  # make the association:
+	  if($parent->location->start() > $child->location->start()){
+	      warn "Child feature $child_id does not lie within parent boundaries.\n";
+
+	      $parent->location->start($child->location->start());
+	  }
+
+	  if($parent->location->end() < $child->location->end()){
+	      warn "Child feature $child_id does not lie within parent boundaries.\n";
+
+	      $parent->location->end($child->location->end());
+	  }
+
 	  $parent->add_SeqFeature($child);
 
 	  # add to the stack any nested children of this child
