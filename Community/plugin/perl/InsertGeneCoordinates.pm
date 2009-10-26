@@ -34,6 +34,14 @@ sub getArgumentsDeclaration {
 	      mustExist => 1,
 	      format => ''
 	     }),
+     fileArg({name => 'entrezChrFile',
+	      descr => 'The full path of an NCBI file mapping Entrez Genes to chromosomes with the first 2 columns having values chromosome number and gene_symbol (no header).',
+	      constraintFunc=> undef,
+	      reqd  => 1,
+	      isList => 0,
+	      mustExist => 1,
+	      format => ''
+	     }),
      stringArg({ name  => 'extDbRlsSpecGenome',
 		  descr => "The ExternalDBRelease specifier for the genome release which the coordinates refer to. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
 		  constraintFunc => undef,
@@ -68,7 +76,7 @@ sub getArgumentsDeclaration {
 sub getDocumentation {
   my $purposeBrief = 'Loads gene coordinates from a UCSC file into DoTS.';
 
-  my $purpose = "This plugin reads a file obtained from UCSC by joining knownGene and knownXref, with the following header suffixes (order is not relevant): name, chrom, strand, txStart, txEnd, cdsStart, cdsEnd, exonCount, extonStarts, exonEnds, geneSymbol. The file is assumed to have 0-base for starts and 1-base for ends. The plugin enters all this info into the relevant DoTS tables.";
+  my $purpose = "This plugin reads a file obtained from UCSC by joining knownGene and knownXref, with the following header suffixes (order is not relevant): name, chrom, strand, txStart, txEnd, cdsStart, cdsEnd, exonCount, extonStarts, exonEnds, geneSymbol. The file is assumed to have 0-base for starts and 1-base for ends. The plugin enters all this info into the relevant DoTS tables. An Entrez Gene mapping file from genes to chromosomes is used to filter out UCSC entries mapping to more than one chromosome. When a gene maps both to chrX and to chrY, only the first of these two mappings is retained.";
 
   my $tablesAffected = [['DoTS::GeneFeature', 'Enters a row for each gene in the file'], ['DoTS::GeneInstance', 'Enters rows linking each new GeneFeature to its Gene and VirtualSequence'], ['DoTS::ExonFeature', 'Enters a row for each exon'], ['DoTS::NALocation', 'Enters a row for each gene and a row for each exon']];
 
@@ -107,7 +115,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 6931 $',
+		     cvsRevision => '$Revision: 7460 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -130,7 +138,8 @@ sub run {
   my $extDbRlsGenome = $self->getExtDbRlsId($self->getArg('extDbRlsSpecGenome'));
   my $extDbRlsEntrez = $self->getExtDbRlsId($self->getArg('extDbRlsSpecEntrez'));
   $self->logDebug("Ext Db Rls Ids: $extDbRlsGenome, $extDbRlsEntrez");
-  $resultDescrip .= $self->insertCoordinates($extDbRlsGenome, $extDbRlsEntrez, $self->getArg('geneCoordFile'));
+  my $chrs = $self->getGene2Chr($self->getArg('entrezChrFile'));
+  $resultDescrip .= $self->insertCoordinates($extDbRlsGenome, $extDbRlsEntrez, $self->getArg('geneCoordFile') , $chrs);
   
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
@@ -140,8 +149,31 @@ sub run {
 # methods
 # ----------------------------------------------------------------------
 
+sub getGene2Chr {
+  my ($self, $file) = @_;
+  my $chrs;
+  my $fh = IO::File->new("<$file") || $self->userError("Cannot open $file");
+  while (my $line=<$fh>) {
+    chomp($line);
+    my ($chr, $geneSymbol, @rest) = split(/\t/, $line);
+    if (!defined($chrs->{$geneSymbol})) {
+      $chrs->{$geneSymbol} = 'chr' . $chr;
+    }    
+    elsif ($chr eq 'X' && $chrs->{$geneSymbol} eq 'chrY') {
+      $chrs->{$geneSymbol} = 'chrX';
+    }
+    elsif ($chr eq 'Y' && $chrs->{$geneSymbol} eq 'chrX') {
+      $chrs->{$geneSymbol} = 'chrX';
+    }
+    else {
+      $self->userError("$geneSymbol has multiple mappings in --entezChrFile"); 
+    }
+  }
+  return($chrs);
+}
+
 sub insertCoordinates {
-  my ($self, $extDbRlsGenome, $extDbRlsEntrez, $file) = @_;
+  my ($self, $extDbRlsGenome, $extDbRlsEntrez, $file, $chrs) = @_;
   my $resultDescrip = '';
   my $countGeneFeatures = 0;
   my $countExonFeatures = 0;
@@ -169,7 +201,7 @@ sub insertCoordinates {
     if (defined $endLine && $lineNum>$endLine) {
       last;
     }
-    if ($lineNum % 500 == 0) {
+    if ($lineNum % 1000 == 0) {
       $self->log("Inserting data from the $lineNum-th line.");
     }
     chomp($line);
@@ -189,7 +221,9 @@ sub insertCoordinates {
     my @exonEnds = split(/,/,$arr[$pos->{'exonEnds'}]);
     my $exonCount = $arr[$pos->{'exonCount'}];
     my $geneSymbol = $arr[$pos->{'geneSymbol'}]; 
-
+    if ($chrs->{$geneSymbol} ne $chr) {
+      next;
+    }
     if (scalar(@exonStarts) != $exonCount || scalar(@exonEnds) != $exonCount) {
       $self->userError("Inconsistent exon counts at line $lineNum");
     }
