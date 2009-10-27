@@ -115,7 +115,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7460 $',
+		     cvsRevision => '$Revision: 7463 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -165,7 +165,7 @@ sub getGene2Chr {
     elsif ($chr eq 'Y' && $chrs->{$geneSymbol} eq 'chrX') {
       $chrs->{$geneSymbol} = 'chrX';
     }
-    else {
+    elsif ($chrs->{$geneSymbol} ne 'chr'.$chr) {
       $self->userError("$geneSymbol has multiple mappings in --entezChrFile"); 
     }
   }
