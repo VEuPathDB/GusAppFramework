@@ -115,7 +115,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7464 $',
+		     cvsRevision => '$Revision: 7465 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -151,7 +151,7 @@ sub run {
 
 sub getGene2Chr {
   my ($self, $file) = @_;
-  my ($chrs, $skip);
+  my ($chrs, $skip, $printed);
   my $fh = IO::File->new("<$file") || $self->userError("Cannot open $file");
   while (my $line=<$fh>) {
     chomp($line);
@@ -166,8 +166,11 @@ sub getGene2Chr {
       $chrs->{$geneSymbol} = 'chrX';
     }
     elsif ($chrs->{$geneSymbol} ne 'chr'.$chr) {
-      STDOUT->print("$geneSymbol has multiple mappings in --entezChrFile\n");
-      $skip->{$geneSymbol} = 1;
+      if (!$printed->{$geneSymbol}) {
+	$printed->{$geneSymbol} = 1;
+	STDOUT->print("$geneSymbol has multiple mappings in --entezChrFile\n");
+	$skip->{$geneSymbol} = 1;
+      }
     }
   }
   return($chrs, $skip);
