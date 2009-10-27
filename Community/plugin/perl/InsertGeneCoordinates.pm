@@ -115,7 +115,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7463 $',
+		     cvsRevision => '$Revision: 7464 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -138,8 +138,8 @@ sub run {
   my $extDbRlsGenome = $self->getExtDbRlsId($self->getArg('extDbRlsSpecGenome'));
   my $extDbRlsEntrez = $self->getExtDbRlsId($self->getArg('extDbRlsSpecEntrez'));
   $self->logDebug("Ext Db Rls Ids: $extDbRlsGenome, $extDbRlsEntrez");
-  my $chrs = $self->getGene2Chr($self->getArg('entrezChrFile'));
-  $resultDescrip .= $self->insertCoordinates($extDbRlsGenome, $extDbRlsEntrez, $self->getArg('geneCoordFile') , $chrs);
+  my ($chrs, $skip) = $self->getGene2Chr($self->getArg('entrezChrFile'));
+  $resultDescrip .= $self->insertCoordinates($extDbRlsGenome, $extDbRlsEntrez, $self->getArg('geneCoordFile') , $chrs, $skip);
   
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
@@ -151,7 +151,7 @@ sub run {
 
 sub getGene2Chr {
   my ($self, $file) = @_;
-  my $chrs;
+  my ($chrs, $skip);
   my $fh = IO::File->new("<$file") || $self->userError("Cannot open $file");
   while (my $line=<$fh>) {
     chomp($line);
@@ -166,14 +166,15 @@ sub getGene2Chr {
       $chrs->{$geneSymbol} = 'chrX';
     }
     elsif ($chrs->{$geneSymbol} ne 'chr'.$chr) {
-      $self->userError("$geneSymbol has multiple mappings in --entezChrFile"); 
+      STDOUT->print("$geneSymbol has multiple mappings in --entezChrFile\n");
+      $skip->{$geneSymbol} = 1;
     }
   }
-  return($chrs);
+  return($chrs, $skip);
 }
 
 sub insertCoordinates {
-  my ($self, $extDbRlsGenome, $extDbRlsEntrez, $file, $chrs) = @_;
+  my ($self, $extDbRlsGenome, $extDbRlsEntrez, $file, $chrs, $skip) = @_;
   my $resultDescrip = '';
   my $countGeneFeatures = 0;
   my $countExonFeatures = 0;
@@ -221,7 +222,7 @@ sub insertCoordinates {
     my @exonEnds = split(/,/,$arr[$pos->{'exonEnds'}]);
     my $exonCount = $arr[$pos->{'exonCount'}];
     my $geneSymbol = $arr[$pos->{'geneSymbol'}]; 
-    if ($chrs->{$geneSymbol} ne $chr) {
+    if ($chrs->{$geneSymbol} ne $chr || $skip->{$geneSymbol}) {
       next;
     }
     if (scalar(@exonStarts) != $exonCount || scalar(@exonEnds) != $exonCount) {
