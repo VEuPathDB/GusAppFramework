@@ -481,7 +481,14 @@ sub process {
     $aas->setMolecularWeight($mol_wgt) unless ((!$aas->isValidAttribute('molecular_weight')) || (!$mol_wgt || $aas->getMolecularWeight() eq $mol_wgt));  
     $aas->setNumberOfContainedSequences($contained_seqs) unless ((!$aas->isValidAttribute('number_of_contained_sequences')) || (!$contained_seqs || $aas->getNumberOfContainedSequences() eq $contained_seqs)); 
     $aas->setSequenceVersion($seq_version) unless (!$aas->isValidAttribute('sequence_version') || ($aas->getSequenceVersion() = $seq_version));
-    $aas->setSequence($sequence) if $sequence;
+    if ($sequence) {
+      my $count = ($sequence =~ tr/ACGT//);
+      my $length = length($sequence);
+      my $percent = $count / $length * 100;
+      $self->log ("$source_id is $percent percent ACGT and may not be a protein\n") if ($percent > 50 && $self->getArg('tableName') =~ /aasequence/i);
+      $self->log ("$source_id is $percent percent ACGT and may not be a nucleic acid\n") if ($percent < 50 && $self->getArg('tableName') !~ /aasequence/i);
+      $aas->setSequence($sequence);
+    }
   } else {
     return if $id;		##already have and am not updating..
     $aas = $self->createNewExternalSequence($source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence,$seq_version);
