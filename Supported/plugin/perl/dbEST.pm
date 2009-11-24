@@ -1280,6 +1280,19 @@ sub checkExtNASeq {
   }
 }
 
+
+sub undoTables {
+  my ($self) = @_;
+
+  return ('DoTS.EST',
+	  'DoTS.Clone',
+	  'DoTS.Library',
+	  'DoTS.Contact',
+	  'DoTS.NASequenceImp',
+	 );
+}
+
+
 1;
 
 __END__
