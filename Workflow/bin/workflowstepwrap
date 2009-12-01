@@ -38,7 +38,7 @@ sub usage {
     print "
 Caution!! this program is only called by the workflow controller
 
-usage: workflowstepwrap workflow_dir workflow_id stepname stepclass errfile [run|test] param1name=param1value ...
+usage: workflowstepwrap workflow_dir workflow_id stepname stepid stepclass errfile [run|test] undo param1name=param1value ...
 ";
     exit(1);
 }
