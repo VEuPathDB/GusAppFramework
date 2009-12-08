@@ -551,6 +551,18 @@ sub _return_message {
 
 # ----------------------------------------------------------------------
 
+
+sub undoTables {
+   qw(
+      DoTS.AASequenceEnzymeClass
+      SRes.EnzymeClassAttribute
+      SRes.EnzymeClass
+      SRes.ExternalDatabaseRelease
+      SRes.ExternalDatabase
+   );
+}
+
+
 1;
 
 __END__
