@@ -162,5 +162,9 @@ sub makeSequenceOntology {
    return $soTerm;
 }
 
-
+sub undoTables {
+   qw(
+   SRes.SequenceOntology
+   );
+}
 1;
