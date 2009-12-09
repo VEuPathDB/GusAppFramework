@@ -496,3 +496,16 @@ sub processLine {
   $self->undefPointerCache();
 
 }
+
+sub undoTables {
+  my ($self) = @_;
+
+  return ('RAD.SAGETagResult',
+	  'RAD.Quantification',
+	  'RAD.Acquisition',
+	  'RAD.StudyAssay',
+	  'RAD.Assay',
+	  'Study.Study',
+	  'SRes.Contact',
+	 );
+}
