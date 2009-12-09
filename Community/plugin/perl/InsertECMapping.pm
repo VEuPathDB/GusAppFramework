@@ -214,5 +214,10 @@ print "AA SEQ ID: $aaSequenceId\n";
   return $aaSequenceId;
 }
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('DoTS.AASequenceEnzymeClass');
+}
 
 1;
