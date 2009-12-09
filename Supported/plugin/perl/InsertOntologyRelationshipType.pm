@@ -122,5 +122,10 @@ sub makeOntologyRelType {
    return $term;
 }
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('SRes.OntologyRelationshipType');
+}
 
 1;
