@@ -436,6 +436,7 @@ sub processEntries {
   # get the most recent entry 
   foreach my $id (sort {$a <=> $b} keys %$e) {
     if ($e->{$id}->{e}->{replaced_by}){
+      $self->logAlert ("Id being replaced: $id\n");
       my $re =  $self->getMostRecentEntry($e->{$id}->{e}, $estDbh);
       #this entry is bogus, delete from insert hash
       delete $e->{$id};
