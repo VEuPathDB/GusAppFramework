@@ -520,5 +520,10 @@ sub getParentInfo {
 #-------------------------------------------------------------------------------
 
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('Study.OntologyEntry');
+}
 
 1;

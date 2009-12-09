@@ -127,5 +127,10 @@ sub makeOntologyTermType {
    return $term;
 }
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('SRes.OntologyTermType');
+}
 
 1;
