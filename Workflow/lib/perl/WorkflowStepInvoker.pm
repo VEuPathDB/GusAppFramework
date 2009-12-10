@@ -137,12 +137,19 @@ sub getConfig {
 sub getGlobalConfig {
     my ($self, $key) = @_;
 
+    $self->getGlobalConfigProperties();
+    return $self->{globalStepsConfig}->getProp($key);
+}
+
+sub getGlobalConfigProperties {
+    my ($self) = @_;
+
     if (!$self->{globalStepsConfig}) {
       my $homeDir = $self->getWorkflowHomeDir();
       $self->{globalStepsConfig} =
 	CBIL::Util::PropertySet->new("$homeDir/config/stepsGlobal.prop",[], 1);
     }
-    return $self->{globalStepsConfig}->getProp($key);
+    return $self->{globalStepsConfig};
 }
 
 sub getStepDir {
