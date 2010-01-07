@@ -89,8 +89,9 @@ sub new {
   my $documentation = &getDocumentation();
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
+
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: $',
+		     cvsRevision => '$Revision: 7794$',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -98,7 +99,6 @@ sub new {
 		    });
   return $self;
 }
-
 
 # ----------------------------------------------------------------------
 # run method to do the work
