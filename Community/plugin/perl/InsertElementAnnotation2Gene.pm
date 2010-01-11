@@ -120,6 +120,7 @@ sub checkArrayDesignId {
   }    
 }
 
+
 sub insertElementGene {
   my ($self) = @_;
   my $resultDescrip = '';
