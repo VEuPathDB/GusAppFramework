@@ -18,17 +18,6 @@
            </td>
          </tr>
          <tr>
-           <td class=Four>
-	     <font>
-                <b>UNDER CONSTRUCTION</b>
-                <p><p>
-                This site is currently a few years old.  It will be upgraded in the first half of 2010 to fully describe the latest <b>StrategiesWDK</b>. <p> In the meantime the information here will give you a good understanding of WDK basics.  Please feel free to mail us at <a href="mailto:wdkdev@pcbi.upenn.edu">wdkdev@pcbi.upenn.edu</a>.<p>
-                (The old name of the system was the GUS WDK.  Please bear with us as we make the transition to a new name.)
-
-             </font>
-           </td>
-         </tr>
-         <tr>
 
            <td class=two>
 	     <font>
@@ -45,13 +34,13 @@
 
 	      <p>
 
-               The Strategies WDK is designed to accelerate the creation of "data mining" websites. It can work on any relational database system and on any schema.
+               Use the Strategies WDK to create powerful "data mining" websites. It was developed for "omics" databases (genomics, proteomics, etc), but will work with any relational database system and on any schema.
               <p>
 
-              Use the WDK to:
+              Use the WDK to design:
               <UL>
-              <li>define a coarse grained data model (based on the tables already in your existing database) data model that specifies what questions the user can ask of the database and what kinds of answers they get
-              <li>define a view of that data model using JavaServer Pages
+              <li>a coarse grained <i>Data Model</i> (using your existing schema) that specifies <i>record types</i> and <i>searches</i> against them.   
+              <li>a <i>View</i> of that data model using JavaServer Pages
               </ul>
 	      </p>
  
@@ -59,7 +48,53 @@
 	     </td></tr></tbody></table>
 
 	     </td> 
-            </tr>   
+            </tr>  
+
+            <tr>
+             <td class=two>
+               <font>
+                 <b>Sites that use the WDK</b>
+               </font>
+             </td>
+
+           </tr>
+           <tr>
+              <td class=four>
+	       <table cellpadding="4" cellspacing="0" border="0" align="left" width="90%">
+               <p>Here are some production sites powered by the WDK:
+               <ul>
+                 <LI> <a href='http://plasmodb.org'>PlasmoDB</a> - A genomic database for the malaria-causing parasite <i>Plasmodium falciparum</i>.
+                 <LI><a href='http://genomics.betacell.org/gbco/'>BCBC Genomics</a> - The Beta Cell Biology Consortium Genomics database.
+              
+               </ul>
+    </p>
+
+
+	       <br>
+	       </td></tr></table>
+             </td>
+           </tr>
+
+           <tr>
+             <td class=two>
+               <font>
+                 <b>The WDK Template Site</b>
+
+               </font>
+             </td>
+           </tr>
+           <tr>
+              <td class=four>
+	       <table cellpadding="4" cellspacing="0" border="0" align="left" width="90%">
+	       <tr><td>
+               
+		 The <a href="http://strategieswdk.gusdb.org/templatesite">WDK Template Site</a> is a template for you to create your own site from.  It is a simple but fully featured site (<a href="http://strategieswdk.gusdb.org/templatesite">check it out</a>) that you can download and install (see the Access section below).  The site is <i>completely</i> specified by:
+                 <ul>
+                 <li><a href="https://www.cbil.upenn.edu/svn/gus/WDKTemplateSite/trunk/Model/">Its Model (XML)</a>
+                 <li><a href="https://www.cbil.upenn.edu/svn/gus/WDKTemplateSite/trunk/Site/">Its View (JSP and CSS)</a>
+	       </td></tr></table>
+             </td>
+           </tr>
             <tr> <td class=two> <font>
                 <b>Access</b>
               </font>
@@ -154,24 +189,6 @@
              </td>
            </tr>
 
-           <tr>
-             <td class=two>
-               <font>
-                 <b>Sample site built with the WDK</b>
-
-               </font>
-             </td>
-           </tr>
-           <tr>
-              <td class=four>
-	       <table cellpadding="4" cellspacing="0" border="0" align="left" width="90%">
-	       <tr><td>
-               
-		 We have used the WDK to build a <a href="http://www.gusdb.org/wdk/toy">Toy Site</a>.  The site is based on a <a href="http://www.gusdb.org/wdk/toyModel.xml">Toy Model</a> written in xml.  (The WDK uses an <a href="http://www.gusdb.org/wdk/wdkModel.rng">xml schema file</a> written in RELAX NG to validate the model xml).
-	       </td></tr></table>
-             </td>
-           </tr>
-
 
            <tr>
              <td class=two>
@@ -192,30 +209,6 @@
 		 <li> <a href='http://mango.ctegd.uga.edu/jkissingLab/'>Kissinger Lab</a> - Jessica Kissinger's lab at The University of Georgia.
 		 <li> <a href='http://roos.bio.upenn.edu/~rooslab/rooslab.html'>Roos Lab</a> - David Roos's lab at The University of Pennsylvania.
 		 </ul>
-	       </td></tr></table>
-             </td>
-           </tr>
-           <tr>
-             <td class=two>
-               <font>
-                 <b>Links</b>
-               </font>
-             </td>
-
-           </tr>
-           <tr>
-              <td class=four>
-	       <table cellpadding="4" cellspacing="0" border="0" align="left" width="90%">
-               <p>Here are some sites which use the WDK:
-               <ul>
-                 <LI> <a href='http://plasmodb.org'>PlasmoDB</a> - A genomic database for the malaria-causing parasite <i>Plasmodium falciparum</i>.
-                 <LI><a href='http://genomics.betacell.org/gbco/'>BCBC Genomics</a> - The Beta Cell Biology Consortium Genomics database.
-              
-               </ul>
-    </p>
-
-
-	       <br>
 	       </td></tr></table>
              </td>
            </tr>
