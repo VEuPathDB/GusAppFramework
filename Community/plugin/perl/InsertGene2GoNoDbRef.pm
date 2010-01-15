@@ -61,13 +61,13 @@ my $documentation = {purposeBrief => $purposeBrief,
 my $argsDeclaration =
 [
  stringArg({name => 'goAssociationExtDbRlsSpec',
-            descr => "The ExternalDBRelease specifier for the gene2go file. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+            descr => "The ExternalDBRelease specifier for the gene2go file. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
             constraintFunc => undef,
             reqd => 1,
             isList => 0
             }),
  stringArg({name => 'entrezGeneExtDbRlsSpec',
-            descr => "The ExternalDBRelease specifier for the Taxon.gene_info file to which GO mapping should be linkd. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.res.externaldatabase.",
+            descr => "The ExternalDBRelease specifier for the Taxon.gene_info file to which GO mapping should be linkd. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.res.externaldatabase.",
             constraintFunc => undef,
             reqd => 1,
             isList => 0
