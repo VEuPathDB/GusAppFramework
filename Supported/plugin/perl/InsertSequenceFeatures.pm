@@ -155,7 +155,7 @@ my $documentation = { purpose=>$purpose,
 my $argsDeclaration  =
   [
    fileArg({name => 'mapFile',
-	    descr => 'XML file with mapping of Sequence Features from BioPerl to GUS.  For an example, see $GUS_HOME/config/genbank2gus.xml',
+	    descr => 'XML file with mapping of Sequence Features from BioPerl to GUS.  For an example, see $GUS_HOME/lib/xml/genbank2gus.xml.  If a relative path, $GUS_HOME/lib/xml is prepended',
 	    constraintFunc=> undef,
 	    reqd  => 1,
 	    isList => 0,
@@ -338,8 +338,10 @@ sub new {
 sub run {
   my ($self) = @_;
 
+  my $mapFile = $self->getArg('mapFile');
+  $mapFile = "$GUS_HOME/lib/xml/$mapFile" unless $mapFile =~ /^\//;
   $self->{mapperSet} =
-    GUS::Supported::BioperlFeatMapperSet->new($self->getArg('mapFile'), $self);
+    GUS::Supported::BioperlFeatMapperSet->new($mapFile, $self);
 
   $self->{validationErrors};
 
