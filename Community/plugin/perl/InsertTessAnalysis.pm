@@ -24,6 +24,7 @@ use GUS::Model::TESS::AnalysisInput;
 use GUS::Model::TESS::AnalysisBiomaterial;
 use GUS::Model::Core::TableInfo;
 use GUS::Model::Core::DatabaseInfo;
+use GUS::Model::TESS::SequenceFeature;
 
 # ----------------------------------------------------------------------
 # Arguments
