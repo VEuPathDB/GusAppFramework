@@ -510,9 +510,8 @@ public class Workflow <T extends WorkflowStep> {
          nl 
          + "Home dir must contain the following:" + nl
          + "   config/" + nl
-         + "     initOfflineSteps   (steps to take offline at startup)"
-         + "     loadBalance.prop   (configure load balancing)"
-         + "     resources.xml      [future]" + nl
+         + "     initOfflineSteps   (steps to take offline at startup)" + nl
+         + "     loadBalance.prop   (configure load balancing)" + nl
          + "     rootParams.prop    (root parameter values)" + nl
          + "     stepsGlobal.prop   (global steps config)" + nl
          + "     steps.prop         (steps config)" + nl
