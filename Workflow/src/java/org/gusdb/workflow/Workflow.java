@@ -461,16 +461,18 @@ public class Workflow <T extends WorkflowStep> {
              if (!oops) workflow.quickReportSteps(desiredStates);            
          } 
          
-         // detailed step report
-         else if (cmdLine.hasOption("d")) {
+         // compile check or detailed step report
+         else if (cmdLine.hasOption("c") || cmdLine.hasOption("d")) {
              Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDirName);
              Class<WorkflowStep> stepClass = WorkflowStep.class;
              WorkflowGraph<WorkflowStep> rootGraph = 
                  WorkflowGraph.constructFullGraph(stepClass, workflow);
-             workflow.setWorkflowGraph(rootGraph);      
-             String[] desiredStates = getDesiredStates(cmdLine, "d");
-             oops = desiredStates.length < 1;
-             if (!oops) workflow.reportSteps(desiredStates);            
+             workflow.setWorkflowGraph(rootGraph);
+             if (cmdLine.hasOption("d")) {
+                 String[] desiredStates = getDesiredStates(cmdLine, "d");
+                 oops = desiredStates.length < 1;
+                 if (!oops) workflow.reportSteps(desiredStates);  
+             }
          } 
          
          else if (cmdLine.hasOption("reset")) {
@@ -533,6 +535,9 @@ public class Workflow <T extends WorkflowStep> {
          + "  undo a step in a test workflow:" + nl
          + "    % workflow -h workflow_dir -t -u step_name" + nl
          + nl     
+         + "  check the graph for compile errors" + nl
+         + "    % workflow -h workflow_dir -c" + nl
+         + nl     
          + "  quick report of workflow state (no steps)" + nl
          + "    % workflow -h workflow_dir -q" + nl
          + nl     
@@ -562,6 +567,9 @@ public class Workflow <T extends WorkflowStep> {
          
          Option test = new Option("t", "Test a workflow");
          actions.addOption(test);
+    
+         Option compile = new Option("c", "Compile check a workflow graph");
+         actions.addOption(compile);
     
          Option detailedRep = new Option("d", true, "Print detailed steps report");
          actions.addOption(detailedRep);
