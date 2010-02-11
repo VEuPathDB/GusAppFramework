@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Properties;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -46,17 +45,17 @@ import org.xml.sax.SAXException;
 public class WorkflowGraph<T extends WorkflowStep> {
     private List<String> paramDeclarations = new ArrayList<String>();
     private Map<String,String> constants = new LinkedHashMap<String,String>();
-    Workflow<T> workflow;
-    String xmlFileName;
-    String name;
+    private Workflow<T> workflow;
+    private String xmlFileName;
+    private String name;
     
-    private Map<T, String> stepsWithSubgraph = new HashMap<T, String>(); 
+    private List<T> stepsWithSubgraph = new ArrayList<T>(); 
     private List<T> rootSteps = new ArrayList<T>();
     
     // following state must be updated after expansion
-    Map<String, T> stepsByName = new HashMap<String, T>();
+    private Map<String, T> stepsByName = new HashMap<String, T>();
     private List<T> leafSteps = new ArrayList<T>();    
-    List<T> sortedSteps; 
+    private List<T> sortedSteps; 
     private Map<String, List<T>> globalSteps = new HashMap<String, List<T>>();
     
     final static String nl = System.getProperty("line.separator");
@@ -146,7 +145,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
             // keep track of all subgraph xml files
             String sgxfn = step.getSubgraphXmlFileName();
             if (sgxfn != null) {
-                stepsWithSubgraph.put(step, sgxfn);
+                stepsWithSubgraph.add(step);
             }
 
 	    // validate loadType
@@ -262,10 +261,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
     /////////////////////////////////////////////////////////////////////////
     private void expandSubgraphs(String path, List<String> callingXmlFileNames,
             Class<T> stepClass, Map<String,Map<String,List<String>>> paramErrorsMap) throws SAXException, Exception {
-        for (T stepWithSubgraph : stepsWithSubgraph.keySet()) {
+        for (T stepWithSubgraph : stepsWithSubgraph) {
         
             // get a graph to insert
-	    //            String subgraphXmlFileName = stepsWithSubgraph.get(stepWithSubgraph);
             String subgraphXmlFileName = stepWithSubgraph.getSubgraphXmlFileName();
 	    if (callingXmlFileNames.contains(subgraphXmlFileName)) {
 		throw new Exception("Circular reference to graphXmlFile '"
