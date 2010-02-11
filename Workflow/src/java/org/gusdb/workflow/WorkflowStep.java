@@ -404,7 +404,7 @@ public class WorkflowStep  {
 	end_time = rs.getDate("END_TIME");
     }
     
-    // interpolate constants into param values
+    // interpolate variables into subgraphXmlFileName, param values, includeIf and excludeIf
     void substituteValues(Map<String,String>variables, boolean check){
 
 	
