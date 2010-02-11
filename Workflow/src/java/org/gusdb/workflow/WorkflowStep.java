@@ -406,6 +406,11 @@ public class WorkflowStep  {
     
     // interpolate constants into param values
     void substituteValues(Map<String,String>variables, boolean check){
+
+	
+	if (subgraphXmlFileName != null) {
+	    subgraphXmlFileName = Utilities.substituteVariablesIntoString(subgraphXmlFileName, variables);
+	}
         for (String paramName : paramValues.keySet()) {
             String paramValue = paramValues.get(paramName);
 	    String newParamValue = 

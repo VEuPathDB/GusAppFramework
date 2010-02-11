@@ -50,7 +50,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     String xmlFileName;
     String name;
     
-    Map<T, String> stepsWithSubgraph = new HashMap<T, String>(); 
+    private Map<T, String> stepsWithSubgraph = new HashMap<T, String>(); 
     private List<T> rootSteps = new ArrayList<T>();
     
     // following state must be updated after expansion
@@ -214,6 +214,10 @@ public class WorkflowGraph<T extends WorkflowStep> {
     private void instantiateValues(String stepBaseName, String xmlFileName,
             Map<String,String> paramValues,
             Map<String,Map<String,List<String>>> paramErrorsMap) {
+
+	// confirm that caller has values for each of this graph's declared
+	// parameters.  gather all such errors into fileErrorsMap for reporting
+	// in total later
 	for (String decl : paramDeclarations) {
 	    if (!paramValues.containsKey(decl)) {
 	        if (!paramErrorsMap.containsKey(xmlFileName))
@@ -261,7 +265,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
         for (T stepWithSubgraph : stepsWithSubgraph.keySet()) {
         
             // get a graph to insert
-            String subgraphXmlFileName = stepsWithSubgraph.get(stepWithSubgraph);
+	    //            String subgraphXmlFileName = stepsWithSubgraph.get(stepWithSubgraph);
+            String subgraphXmlFileName = stepWithSubgraph.getSubgraphXmlFileName();
 	    if (callingXmlFileNames.contains(subgraphXmlFileName)) {
 		throw new Exception("Circular reference to graphXmlFile '"
 				    + subgraphXmlFileName + "'"
