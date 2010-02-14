@@ -38,7 +38,9 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
     }
 
     @SuppressWarnings("unchecked")
-    public WorkflowGraph<T> parseWorkflow(Workflow workflow, Class<T> stepClass, String xmlFileName) throws SAXException, IOException, Exception {
+    public WorkflowGraph<T> parseWorkflow(Workflow workflow, Class<T> stepClass,
+            String xmlFileName, Map<String, T> globalSteps, 
+            Map<String,String> globalConstants, boolean isGlobalGraph) throws SAXException, IOException, Exception {
         this.stepClass = stepClass;
 
         configure();
@@ -58,7 +60,9 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
         InputStream xmlStream = substituteProps(doc, properties);
 	WorkflowGraph<T> workflowGraph = (WorkflowGraph<T>)digester.parse(xmlStream);
 	workflowGraph.setWorkflow(workflow);
-	workflowGraph.setXmlFileName(xmlFileName);
+        workflowGraph.setXmlFileName(xmlFileName);
+        workflowGraph.setGlobalConstants(globalConstants);
+        workflowGraph.setGlobalSteps(globalSteps);
 	workflowGraph.postprocessSteps();
 	workflowGraph.insertSubgraphReturnChildren();
 	workflowGraph.setRootsAndLeafs();
@@ -80,12 +84,19 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
         "addConstant");
         digester.addCallMethod("workflowGraph/constant", "setValue", 0);
 
+        configureNode(digester, "workflowGraph/globalConstant", NamedValue.class,
+        "addGlobalConstant");
+        digester.addCallMethod("workflowGraph/globalConstant", "setValue", 0);
+
         configureNode(digester, "workflowGraph/step", stepClass,
                 "addStep");
 
         configureNode(digester, "workflowGraph/step/depends", Name.class,
-                "addDependsName");
-        
+        "addDependsName");
+
+        configureNode(digester, "workflowGraph/step/dependsGlobal", Name.class,
+        "addDependsGlobalName");
+
         configureNode(digester, "workflowGraph/step/paramValue", NamedValue.class,
         "addParamValue");
         digester.addCallMethod("workflowGraph/step/paramValue", "setValue", 0);
@@ -96,9 +107,19 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
         configureNode(digester, "workflowGraph/subgraph/depends", Name.class,
         "addDependsName");
 
+        configureNode(digester, "workflowGraph/subgraph/dependsGlobal", Name.class,
+        "addDependsGlobalName");
+
         configureNode(digester, "workflowGraph/subgraph/paramValue", NamedValue.class,
         "addParamValue");
         digester.addCallMethod("workflowGraph/subgraph/paramValue", "setValue", 0);
+
+        configureNode(digester, "workflowGraph/globalSubgraph", stepClass,
+        "addGlobalStep");
+
+        configureNode(digester, "workflowGraph/globalSubgraph/paramValue", NamedValue.class,
+        "addParamValue");
+        digester.addCallMethod("workflowGraph/globalSubgraph/paramValue", "setValue", 0);
 
        return digester;
     }

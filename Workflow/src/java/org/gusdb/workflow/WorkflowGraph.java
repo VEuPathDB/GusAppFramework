@@ -34,8 +34,11 @@ import org.xml.sax.SAXException;
  *     - for each graph
            - parse as in (1)
            - expand its subgraphs
+             - replace each calling step with a pair of steps: caller and return
+             - move caller's children to return; make return be caller's only child
            - insert it into parent graph
-              - attach its root and leaf steps to parent graph
+              - attach its root steps to parent caller
+              - attach its leaf steps to parent return
  *   
  *  (3) in a final pass, set the path of each of the steps (top down recursion)
  * 
@@ -45,18 +48,20 @@ import org.xml.sax.SAXException;
 public class WorkflowGraph<T extends WorkflowStep> {
     private List<String> paramDeclarations = new ArrayList<String>();
     private Map<String,String> constants = new LinkedHashMap<String,String>();
+    private Map<String,String> globalConstants;
+    private Map<String, T> globalSteps = new HashMap<String, T>();
     private Workflow<T> workflow;
     private String xmlFileName;
     private String name;
+    private boolean isGlobal = false;
     
-    private List<T> stepsWithSubgraph = new ArrayList<T>(); 
+    private List<T> subgraphCallerSteps = new ArrayList<T>(); 
     private List<T> rootSteps = new ArrayList<T>();
     
     // following state must be updated after expansion
     private Map<String, T> stepsByName = new HashMap<String, T>();
     private List<T> leafSteps = new ArrayList<T>();    
     private List<T> sortedSteps; 
-    private Map<String, List<T>> globalSteps = new HashMap<String, List<T>>();
     
     final static String nl = System.getProperty("line.separator");
 
@@ -66,12 +71,22 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	constants.put(constant.getName(),constant.getValue());
     }
     
+    public void addGlobalConstant(NamedValue constant) {
+        if (!isGlobal) 
+                Utilities.error("In graph " + name + " a <globalConstant> is declared, but this graph is not global");
+        globalConstants.put(constant.getName(),constant.getValue());
+    }
+    
     public void addParamDeclaration(Name paramName) {
 	paramDeclarations.add(paramName.getName());
     }
     
     public void setName(String name) {
 	this.name = name;
+    }
+    
+    public boolean getIsGlobal() {
+        return isGlobal;
     }
 
     public void addStep(T step) throws FileNotFoundException, IOException {
@@ -80,6 +95,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
         if (stepsByName.containsKey(stepName))
             Utilities.error("In graph " + name + ", non-unique step name: '" + stepName + "'");
         stepsByName.put(stepName, step);
+        
+        // if this graph is global, all its steps are global steps
+        if (isGlobal) globalSteps.put(stepName, step);
     }
     
     void setWorkflow(Workflow<T> workflow) {
@@ -92,6 +110,14 @@ public class WorkflowGraph<T extends WorkflowStep> {
 
     void setXmlFileName(String xmlFileName) {
      this.xmlFileName = xmlFileName;
+    }
+    
+    void setGlobalConstants(Map<String,String> globalConstants) {
+        this.globalConstants = globalConstants;
+    }
+    
+    void setGlobalSteps(Map<String, T> globalSteps) {
+        this.globalSteps = globalSteps;
     }
     
     // recurse through steps starting at roots.
@@ -132,20 +158,19 @@ public class WorkflowGraph<T extends WorkflowStep> {
 
 	    // make the parent/child links from the remembered dependencies
             for (Name dependName : step.getDependsNames()) {
-                String stepName = step.getBaseName();
                 T parent = stepsByName.get(dependName.getName());
-                if (parent == null) 
+                if (parent == null) {      
                     Utilities.error("In file " + xmlFileName + ", step '"
-				    + stepName + "' depends on step '"
+				    + step.getBaseName() + "' depends on step '"
                           + dependName.getName() + "' which is not found");
+                }
                 step.addParent(parent);
                 parent.addChild(step);
             }
             
-            // keep track of all subgraph xml files
-            String sgxfn = step.getSubgraphXmlFileName();
-            if (sgxfn != null) {
-                stepsWithSubgraph.add(step);
+            // remember steps that call a subgraph
+            if (step.getSubgraphXmlFileName() != null) {
+                subgraphCallerSteps.add(step);
             }
 
 	    // validate loadType
@@ -259,45 +284,58 @@ public class WorkflowGraph<T extends WorkflowStep> {
     /////////////////////////////////////////////////////////////////////////
     //   subgraph expansion
     /////////////////////////////////////////////////////////////////////////
-    private void expandSubgraphs(String path, List<String> callingXmlFileNames,
-            Class<T> stepClass, Map<String,Map<String,List<String>>> paramErrorsMap) throws SAXException, Exception {
-        for (T stepWithSubgraph : stepsWithSubgraph) {
+    private void expandSubgraphs(String path, List<String> xmlFileNamesStack,
+            Class<T> stepClass, Map<String, Map<String,List<String>>> paramErrorsMap,
+            Map<String, T> globalSteps, Map<String,String> globalConstants) throws SAXException, Exception {
+
+        // iterate through all subgraph callers
+        for (T subgraphCallerStep : subgraphCallerSteps) {
         
-            // get a graph to insert
-            String subgraphXmlFileName = stepWithSubgraph.getSubgraphXmlFileName();
-	    if (callingXmlFileNames.contains(subgraphXmlFileName)) {
+            // get the xml file of a graph to insert, and check for circularity
+            String subgraphXmlFileName = subgraphCallerStep.getSubgraphXmlFileName();
+	    if (xmlFileNamesStack.contains(subgraphXmlFileName)) {
 		throw new Exception("Circular reference to graphXmlFile '"
 				    + subgraphXmlFileName + "'"
 				    + " step path: '" + path + "'");
 	    }      
+	    
+	    // if is a global graph, check that it is a child of the root graph
+	    if (subgraphCallerStep.getIsGlobal() && !path.equals("")) {
+	        Utilities.error("Graph " + xmlFileName
+	                + "is not the root graph, but contains a global subgraph step '"
+	                + subgraphCallerStep.getBaseName() +"'.");
+	    }
+	    
+	    // parse it
 	    WorkflowXmlParser<T> parser = new WorkflowXmlParser<T>();
 	    WorkflowGraph<T> subgraph =
-		parser.parseWorkflow(workflow, stepClass, subgraphXmlFileName); 
+		parser.parseWorkflow(workflow, stepClass, subgraphXmlFileName,
+		        globalSteps, globalConstants, false); 
 
             // set the path of its unexpanded steps
-            String newPath = path + stepWithSubgraph.getBaseName() + ".";
+            String newPath = path + subgraphCallerStep.getBaseName() + ".";
             subgraph.setPath(newPath);
 
 	    // set the calling step of its unexpanded steps
-	    subgraph.setCallingStep(stepWithSubgraph);
+	    subgraph.setCallingStep(subgraphCallerStep);
 
             // instantiate param values from calling step
-            subgraph.instantiateValues(stepWithSubgraph.getBaseName(),
+            subgraph.instantiateValues(subgraphCallerStep.getBaseName(),
                     xmlFileName,
-                    stepWithSubgraph.getParamValues(), paramErrorsMap);
+                    subgraphCallerStep.getParamValues(), paramErrorsMap);
 
 
             // expand it (recursively) 
             // (this includes setting the paths of the expanded steps)
-	    List<String> callingXmlFileNamesNew = new ArrayList<String>(callingXmlFileNames);
-	    callingXmlFileNamesNew.add(subgraphXmlFileName);
-            subgraph.expandSubgraphs(newPath, callingXmlFileNamesNew, stepClass, paramErrorsMap); 
+	    List<String> newXmlFileNamesStack = new ArrayList<String>(xmlFileNamesStack);
+	    newXmlFileNamesStack.add(subgraphXmlFileName);
+            subgraph.expandSubgraphs(newPath, newXmlFileNamesStack, stepClass, paramErrorsMap, globalSteps, globalConstants); 
             
             // insert it
-            WorkflowStep subgraphReturnStep = stepWithSubgraph.getChildren().get(0);
-            stepWithSubgraph.removeChild(subgraphReturnStep);
-            subgraphReturnStep.removeParent(stepWithSubgraph);
-            subgraph.attachToCallingStep(stepWithSubgraph);
+            WorkflowStep subgraphReturnStep = subgraphCallerStep.getChildren().get(0);
+            subgraphCallerStep.removeChild(subgraphReturnStep);
+            subgraphReturnStep.removeParent(subgraphCallerStep);
+            subgraph.attachToCallingStep(subgraphCallerStep);
             subgraph.attachToReturnStep(subgraphReturnStep);
             
             // add its steps to stepsByName
@@ -332,7 +370,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
             leafStep.addChild(childStep);
         }
     }
-    
+/*    
     private void initializeGlobalSteps() throws NoSuchAlgorithmException, Exception {
         for (T step : getSteps()) {
             if (step.getIsGlobal()) {
@@ -347,6 +385,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
         }
         
     }
+    */
 
     ////////////////////////////////////////////////////////////////////////
     //    Invert 
@@ -487,21 +526,31 @@ public class WorkflowGraph<T extends WorkflowStep> {
     static <S extends WorkflowStep > WorkflowGraph<S> constructFullGraph(Class<S> stepClass,
             Workflow<S> workflow) throws FileNotFoundException, SAXException, IOException, Exception {
         
-	WorkflowXmlParser<S> parser = new WorkflowXmlParser<S>();
+        // create structures to hold global steps and constants
+        Map<String, S> globalSteps = new HashMap<String, S>();
+        Map<String,String> globalConstants = new LinkedHashMap<String,String>();
+        
+        // create root graph
+        WorkflowXmlParser<S> parser = new WorkflowXmlParser<S>();
 	WorkflowGraph<S> rootGraph =
-		parser.parseWorkflow(workflow, stepClass, workflow.getWorkflowXmlFileName()); 
+		parser.parseWorkflow(workflow, stepClass, workflow.getWorkflowXmlFileName(),
+		        globalSteps, globalConstants, false); 
 
+	// construct map that will accumulate error messages
 	Map<String,Map<String,List<String>>> paramErrorsMap =
 	    new HashMap<String,Map<String,List<String>>>();
+	
+	// instantiate param values from root params file
         rootGraph.instantiateValues("root",
                                     "rootParams.prop",
 				    getRootGraphParamValues(workflow),
 				    paramErrorsMap);
         
         // expand subgraphs
-	List<String> callingXmlFileNames = new ArrayList<String>();
-	callingXmlFileNames.add(workflow.getWorkflowXmlFileName());
-        rootGraph.expandSubgraphs("", callingXmlFileNames, stepClass, paramErrorsMap);
+	List<String> xmlFileNamesStack = new ArrayList<String>();
+	xmlFileNamesStack.add(workflow.getWorkflowXmlFileName());
+        rootGraph.expandSubgraphs("", xmlFileNamesStack, stepClass, paramErrorsMap,
+                globalSteps, globalConstants);
         
         // report param errors, if any
         if (paramErrorsMap.size() != 0) {
