@@ -80,6 +80,16 @@
               </element>
             </zeroOrMore>       
           </element>
+          <element name="globalSubgraph">
+            <attribute name="name" />
+            <attribute name="xmlFile"/>
+            <zeroOrMore>
+              <element name="paramValue">
+                <attribute name="name" />
+                <text/>
+              </element>
+            </zeroOrMore>       
+          </element>
         </choice>
       </oneOrMore>    
     </element>

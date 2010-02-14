@@ -54,8 +54,7 @@ public class WorkflowStep  {
     protected String subgraphXmlFileName;
     protected boolean isSubgraphCall;
     protected boolean isSubgraphReturn;
-    protected boolean isGlobal = false;
-    List<? extends WorkflowStep> sharedGlobalSteps;
+    protected boolean isGlobal = false;  // set if this step is call or return of a global subgraph.
     protected WorkflowStep callingStep;  // step that called our subgraph, if any
     String paramsDigest;
     int depthFirstOrder;
@@ -80,6 +79,7 @@ public class WorkflowStep  {
     // other
     private String stepDir;   
     private List<Name> dependsNames = new ArrayList<Name>();
+    private List<Name> dependsGlobalNames = new ArrayList<Name>();
     protected Map<String,String> paramValues = new HashMap<String,String>();
     protected String prevState;
     protected boolean prevOffline;
@@ -135,11 +135,7 @@ public class WorkflowStep  {
     String getStepClassName() {
 	return invokerClassName;
     }
-    
-    void setSharedGlobalSteps(List<? extends WorkflowStep> sharedGlobalSteps) {
-        this.sharedGlobalSteps = sharedGlobalSteps;
-    }
-    
+        
     public void setWorkflowGraph(WorkflowGraph<? extends WorkflowStep> workflowGraph) {
         this.workflowGraph = workflowGraph;
     }   
@@ -237,6 +233,7 @@ public class WorkflowStep  {
 	newStep.setWorkflowGraph(workflowGraph);
 	newStep.setIncludeIf(includeIf_string);
 	newStep.setExcludeIf(excludeIf_string);
+	newStep.setIsGlobal(isGlobal);
 
         newStep.setName(getFullName() + ".return");
         List<WorkflowStep> oldChildren = new ArrayList<WorkflowStep>(children);
@@ -294,12 +291,21 @@ public class WorkflowStep  {
     boolean getUndoing() {
         return workflowGraph.getWorkflow().getUndoStepId() != null;
     }
+
     List<Name> getDependsNames() {
         return dependsNames;
     }
 
     public void addDependsName(Name dependsName) {
         dependsNames.add(dependsName);
+    }
+    
+    List<Name> getDependsGlobalNames() {
+        return dependsGlobalNames;
+    }
+
+    public void addGlobalDependsName(Name dependsName) {
+        dependsGlobalNames.add(dependsName);
     }
     
     public void setXmlFile(String subgraphXmlFileName) {
