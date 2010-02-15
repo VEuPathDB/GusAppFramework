@@ -303,6 +303,10 @@ public class WorkflowStep  {
     List<Name> getDependsGlobalNames() {
         return dependsGlobalNames;
     }
+    
+    boolean getHasGlobalDepends() {
+        return dependsGlobalNames.size() != 0;
+    }
 
     public void addGlobalDependsName(Name dependsName) {
         dependsGlobalNames.add(dependsName);
