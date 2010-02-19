@@ -283,7 +283,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
 
 	// substitute both into step params, includeIf and excludeIf
         for (T step : getSteps()) {
-            if () step.substituteValues(constants, false);
+            step.substituteValues(globalConstants, false);
             step.substituteValues(constants, false);
             step.substituteValues(paramValues, true);
         }
