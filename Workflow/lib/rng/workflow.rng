@@ -25,6 +25,18 @@
           <text/>
         </element>
       </zeroOrMore>    
+      <zeroOrOne>    
+        <element name="globalSubgraph">
+          <attribute name="name" />
+          <attribute name="xmlFile"/>
+          <zeroOrMore>
+            <element name="paramValue">
+              <attribute name="name" />
+              <text/>
+            </element>
+          </zeroOrMore>       
+        </element>
+      </zeroOrOne>    
       <oneOrMore>
         <choice>
           <element name="step">
@@ -77,16 +89,6 @@
             <zeroOrMore>
               <element name="dependsGlobal">
                 <attribute name="name" />
-              </element>
-            </zeroOrMore>       
-          </element>
-          <element name="globalSubgraph">
-            <attribute name="name" />
-            <attribute name="xmlFile"/>
-            <zeroOrMore>
-              <element name="paramValue">
-                <attribute name="name" />
-                <text/>
               </element>
             </zeroOrMore>       
           </element>
