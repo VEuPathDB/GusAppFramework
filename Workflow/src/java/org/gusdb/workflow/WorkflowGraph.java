@@ -49,7 +49,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     private List<String> paramDeclarations = new ArrayList<String>();
     private Map<String,String> constants = new LinkedHashMap<String,String>();
     private Map<String,String> globalConstants;
-    private Map<String, T> globalStepsByName = new HashMap<String, T>();
+    private Map<String, T> globalStepsByName;
     private Workflow<T> workflow;
     private String xmlFileName;
     private String name;
@@ -89,6 +89,11 @@ public class WorkflowGraph<T extends WorkflowStep> {
         return isGlobal;
     }
 
+    void setIsGlobal(boolean isGlobal) {
+	System.err.println("workflowgraph.setIsGlobal(" + isGlobal + ")");
+	this.isGlobal = isGlobal;
+    }
+
     public void addStep(T step) throws FileNotFoundException, IOException {
         step.setWorkflowGraph(this);
         String stepName = step.getBaseName();
@@ -97,11 +102,22 @@ public class WorkflowGraph<T extends WorkflowStep> {
         stepsByName.put(stepName, step);
         
         // if this graph is global, all its steps are global steps
-        if (isGlobal) globalStepsByName.put(stepName, step);
+        if (isGlobal) {
+	    if (globalStepsByName.containsKey(stepName))
+		Utilities.error("In graph " + name + ", non-unique global step name: '" + stepName + "'");
+	    globalStepsByName.put(stepName, step);
+	    System.err.println("workflowgraph.addstep:  adding step to global graph: " + stepName);
+	}
     }
     
     void setWorkflow(Workflow<T> workflow) {
         this.workflow = workflow;
+    }
+
+    // a step that is a call to a globalSubgraph
+    public void addGlobalStep(T step) throws FileNotFoundException, IOException {
+	step.setIsGlobal(true);
+	addStep(step);
     }
     
     Workflow<T> getWorkflow() {
@@ -175,12 +191,19 @@ public class WorkflowGraph<T extends WorkflowStep> {
     
     void makeParentChildLinks(List<Name> dependsNames, T step, String globalStr) {
         for (Name dependName : dependsNames) {
-            T parent = stepsByName.get(dependName.getName());
+	    String dName = dependName.getName();
+            T parent = stepsByName.get(dName);
             if (parent == null) {      
                 Utilities.error("In file " + xmlFileName + ", step '"
-                                + step.getBaseName() + "' " + globalStr + " depends on step '"
-                      + dependName.getName() + "' which is not found");
+                                + step.getBaseName() + "' " + globalStr
+				+ " depends on step '"
+				+ dName + "' which is not found");
             }
+	    if (parent.getIsGlobal()) 
+		Utilities.error("Step " + step.getFullName() +
+				" depends=" + dName + 
+				" is not allowed because " + dName +
+				" is a global subgraph");
             step.addParent(parent);
             parent.addChild(step);
         }
@@ -311,15 +334,16 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    // if is a global graph, check that it is a child of the root graph
 	    if (subgraphCallerStep.getIsGlobal() && !path.equals("")) {
 	        Utilities.error("Graph " + xmlFileName
-	                + "is not the root graph, but contains a global subgraph step '"
-	                + subgraphCallerStep.getBaseName() +"'.");
+	                + " is not the root graph, but contains a <globalSubgraph> step '"
+	                + subgraphCallerStep.getBaseName() +"'.  They are only allowed in the root graph.");
 	    }
 	    
 	    // parse it
 	    WorkflowXmlParser<T> parser = new WorkflowXmlParser<T>();
 	    WorkflowGraph<T> subgraph =
 		parser.parseWorkflow(workflow, stepClass, subgraphXmlFileName,
-		        globalSteps, globalConstants, false); 
+				     globalSteps, globalConstants, 
+				     subgraphCallerStep.getIsGlobal()); 
 
             // set the path of its unexpanded steps
             String newPath = path + subgraphCallerStep.getBaseName() + ".";

@@ -54,7 +54,7 @@ public class WorkflowStep  {
     protected String subgraphXmlFileName;
     protected boolean isSubgraphCall;
     protected boolean isSubgraphReturn;
-    protected boolean isGlobal = false;  // set if this step is call or return of a global subgraph.
+    protected boolean isGlobal = false;  // set iff this step is call or return of a global subgraph.
     protected WorkflowStep callingStep;  // step that called our subgraph, if any
     String paramsDigest;
     int depthFirstOrder;

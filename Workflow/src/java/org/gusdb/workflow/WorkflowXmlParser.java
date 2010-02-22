@@ -61,6 +61,7 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
 	WorkflowGraph<T> workflowGraph = (WorkflowGraph<T>)digester.parse(xmlStream);
 	workflowGraph.setWorkflow(workflow);
         workflowGraph.setXmlFileName(xmlFileName);
+        workflowGraph.setIsGlobal(isGlobalGraph);
         workflowGraph.setGlobalConstants(globalConstants);
         workflowGraph.setGlobalSteps(globalSteps);
 	workflowGraph.postprocessSteps();
