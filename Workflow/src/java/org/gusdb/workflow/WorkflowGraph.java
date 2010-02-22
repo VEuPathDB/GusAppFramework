@@ -59,7 +59,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     private List<T> rootSteps = new ArrayList<T>();
     
     // following state must be updated after expansion
-    private Map<String, T> stepsByName = new HashMap<String, T>();
+    private Map<String, T> stepsByName = new LinkedHashMap<String, T>();
     private List<T> leafSteps = new ArrayList<T>();    
     private List<T> sortedSteps; 
     
@@ -94,20 +94,19 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	this.isGlobal = isGlobal;
     }
 
+    // called in the order found in the XML file.  therefore stepsByName
+    // retains that order.  this keeps global subgraph first, if there is one
     public void addStep(T step) throws FileNotFoundException, IOException {
         step.setWorkflowGraph(this);
         String stepName = step.getBaseName();
         if (stepsByName.containsKey(stepName))
             Utilities.error("In graph " + name + ", non-unique step name: '" + stepName + "'");
+        
         stepsByName.put(stepName, step);
         
         // if this graph is global, all its steps are global steps
-        if (isGlobal) {
-	    if (globalStepsByName.containsKey(stepName))
-		Utilities.error("In graph " + name + ", non-unique global step name: '" + stepName + "'");
+        if (isGlobal) 
 	    globalStepsByName.put(stepName, step);
-	    System.err.println("workflowgraph.addstep:  adding step to global graph: " + stepName);
-	}
     }
     
     void setWorkflow(Workflow<T> workflow) {
@@ -169,7 +168,10 @@ public class WorkflowGraph<T extends WorkflowStep> {
     
     // clean up after building from xml
     void postprocessSteps() throws FileNotFoundException, IOException {
-        
+
+        // getSteps retains the order in the XML file, so global subgraph
+        // will come first, if there is one.  this ensures that it is first
+        // in subgraphCallerSteps
         for (T step : getSteps()) {
 
 	    // make the parent/child links from the remembered dependencies
@@ -179,14 +181,11 @@ public class WorkflowGraph<T extends WorkflowStep> {
             makeParentChildLinks(step.getDependsGlobalNames(), step, "global");
                         
             // remember steps that call a subgraph
-            if (step.getSubgraphXmlFileName() != null) {
-                subgraphCallerSteps.add(step);
-            }
+            if (step.getSubgraphXmlFileName() != null) subgraphCallerSteps.add(step);      
 
 	    // validate loadType
 	    step.checkLoadTypes();
         }
-        
     }
     
     void makeParentChildLinks(List<Name> dependsNames, T step, String globalStr) {
@@ -304,7 +303,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    fullyResolvedConstants.put(constantName, newConstantValue);    
         }
 
-	// substitute both into step params, includeIf and excludeIf
+	// substitute both into step params, global constants, includeIf and excludeIf
         for (T step : getSteps()) {
             step.substituteValues(globalConstants, false);
             step.substituteValues(constants, false);
@@ -321,6 +320,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
             Map<String, T> globalSteps, Map<String,String> globalConstants) throws SAXException, Exception {
 
         // iterate through all subgraph callers
+        // (if there is a global subgraph caller, it will be first in the list.
+        //  this way we can gather global constants before any other graph is processed)
         for (T subgraphCallerStep : subgraphCallerSteps) {
         
             // get the xml file of a graph to insert, and check for circularity
