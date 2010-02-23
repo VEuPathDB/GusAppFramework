@@ -25,7 +25,7 @@
           <text/>
         </element>
       </zeroOrMore>    
-      <zeroOrOne>    
+      <optional>    
         <element name="globalSubgraph">
           <attribute name="name" />
           <attribute name="xmlFile"/>
@@ -36,7 +36,7 @@
             </element>
           </zeroOrMore>       
         </element>
-      </zeroOrOne>    
+      </optional>    
       <oneOrMore>
         <choice>
           <element name="step">
