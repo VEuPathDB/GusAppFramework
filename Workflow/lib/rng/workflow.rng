@@ -14,13 +14,13 @@
         </element>
       </zeroOrMore>
       <zeroOrMore>
-        <element name="constant">
+        <element name="globalConstant">
           <attribute name="name" />
           <text/>
         </element>
       </zeroOrMore>    
       <zeroOrMore>
-        <element name="globalConstant">
+        <element name="constant">
           <attribute name="name" />
           <text/>
         </element>
@@ -62,6 +62,11 @@
             </zeroOrMore>       
             <zeroOrMore>
               <element name="depends">
+                <attribute name="name" />
+              </element>
+            </zeroOrMore>       
+            <zeroOrMore>
+              <element name="dependsGlobal">
                 <attribute name="name" />
               </element>
             </zeroOrMore>       

@@ -308,7 +308,7 @@ public class WorkflowStep  {
         return dependsGlobalNames.size() != 0;
     }
 
-    public void addGlobalDependsName(Name dependsName) {
+    public void addDependsGlobalName(Name dependsName) {
         dependsGlobalNames.add(dependsName);
     }
     
