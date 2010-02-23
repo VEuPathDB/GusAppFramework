@@ -90,12 +90,11 @@ public class WorkflowGraph<T extends WorkflowStep> {
     }
 
     void setIsGlobal(boolean isGlobal) {
-	System.err.println("workflowgraph.setIsGlobal(" + isGlobal + ")");
 	this.isGlobal = isGlobal;
     }
 
-    // called in the order found in the XML file.  therefore stepsByName
-    // retains that order.  this keeps global subgraph first, if there is one
+    // called in the order found in the XML file.  stepsByName retains
+    // that order.  this keeps the global subgraph first, if there is one
     public void addStep(T step) throws FileNotFoundException, IOException {
         step.setWorkflowGraph(this);
         String stepName = step.getBaseName();
