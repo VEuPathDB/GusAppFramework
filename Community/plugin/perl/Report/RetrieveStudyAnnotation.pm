@@ -352,13 +352,13 @@ sub retrieveBioMaterialCharacteristics {
 	if ($bmcValue eq 'null' || $bmcValue eq '' || !defined $bmcValue) { 
 	  if (!$isCounted{$value}) {
 	    $isCounted{$value} = 1;
-	    push(@bioMatChar, "$value");
+	    push(@bioMatChar, "$category\|$value");
 	  }
 	}
 	else {
 	  if (!$isCounted{"$bmcValue $value"}) {
 	    $isCounted{"$bmcValue $value"} = 1;
-	    push(@bioMatChar, "$bmcValue $value");
+	    push(@bioMatChar, "$category\|$bmcValue $value");
 	  }
 	}
       }
@@ -378,14 +378,14 @@ sub retrieveBioMaterialCharacteristics {
       my @timeUnits = @{$ages->{$id}->{'timeUnit'}};
       if (scalar(@numbers)==2) {
 	  if ($timeUnits[0] eq $timeUnits[1] && $numbers[0]<$numbers[1]) {
-	    $string .= "$numbers[0] $timeUnits[0] to $numbers[1] $timeUnits[0]";
+	    $string .= "Age\|$numbers[0] $timeUnits[0] to $numbers[1] $timeUnits[0]";
 	  }
 	  if ($timeUnits[0] eq $timeUnits[1] && $numbers[1]<$numbers[0]) {
-	    $string .= "$numbers[1] $timeUnits[0] to $numbers[0] $timeUnits[0]";
+	    $string .= "Age\|$numbers[1] $timeUnits[0] to $numbers[0] $timeUnits[0]";
 	  }
       }
       if (scalar(@numbers)==1) {
-	$string .= "$numbers[0] $timeUnits[0]";
+	$string .= "Age\|$numbers[0] $timeUnits[0]";
       }
       if (defined $ages->{$id}->{'initialTimePoint'}) {
 	$string .= " since $ages->{$id}->{'initialTimePoint'}";
