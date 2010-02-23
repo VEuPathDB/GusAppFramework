@@ -49,6 +49,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     private List<String> paramDeclarations = new ArrayList<String>();
     private Map<String,String> constants = new LinkedHashMap<String,String>();
     private Map<String,String> globalConstants;
+    private Map<String,String> tmpGlobalConstants;
     private Map<String, T> globalStepsByName;
     private Workflow<T> workflow;
     private String xmlFileName;
@@ -72,9 +73,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     }
     
     public void addGlobalConstant(NamedValue constant) {
-        if (!isGlobal) 
-                Utilities.error("In graph " + name + " a <globalConstant> is declared, but this graph is not global");
-        globalConstants.put(constant.getName(),constant.getValue());
+        tmpGlobalConstants.put(constant.getName(),constant.getValue());
     }
     
     public void addParamDeclaration(Name paramName) {
@@ -167,6 +166,10 @@ public class WorkflowGraph<T extends WorkflowStep> {
     
     // clean up after building from xml
     void postprocessSteps() throws FileNotFoundException, IOException {
+
+        if (isGlobal) globalConstants.putAll(tmpGlobalConstants);
+        else if (tmpGlobalConstants.size() != 0) 
+            Utilities.error("In graph " + name + " a <globalConstant> is declared, but this graph is not global");
 
         // getSteps retains the order in the XML file, so global subgraph
         // will come first, if there is one.  this ensures that it is first
