@@ -49,7 +49,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     private List<String> paramDeclarations = new ArrayList<String>();
     private Map<String,String> constants = new LinkedHashMap<String,String>();
     private Map<String,String> globalConstants;
-    private Map<String,String> tmpGlobalConstants;
+    private Map<String,String> tmpGlobalConstants = new LinkedHashMap<String,String>();
     private Map<String, T> globalStepsByName;
     private Workflow<T> workflow;
     private String xmlFileName;
@@ -80,10 +80,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	paramDeclarations.add(paramName.getName());
     }
     
-    public void setName(String name) {
-	this.name = name;
-    }
-    
     public boolean getIsGlobal() {
         return isGlobal;
     }
@@ -98,13 +94,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
         step.setWorkflowGraph(this);
         String stepName = step.getBaseName();
         if (stepsByName.containsKey(stepName))
-            Utilities.error("In graph " + name + ", non-unique step name: '" + stepName + "'");
+            Utilities.error("In graph " + xmlFileName + ", non-unique step name: '" + stepName + "'");
         
         stepsByName.put(stepName, step);
-        
-        // if this graph is global, all its steps are global steps
-        if (isGlobal) 
-	    globalStepsByName.put(stepName, step);
     }
     
     void setWorkflow(Workflow<T> workflow) {
@@ -167,9 +159,14 @@ public class WorkflowGraph<T extends WorkflowStep> {
     // clean up after building from xml
     void postprocessSteps() throws FileNotFoundException, IOException {
 
+	// digester loads global constants into a tmp and we validate
+	// as a post-process because validation must happen after other
+	// properties are set, which digester does later
         if (isGlobal) globalConstants.putAll(tmpGlobalConstants);
         else if (tmpGlobalConstants.size() != 0) 
-            Utilities.error("In graph " + name + " a <globalConstant> is declared, but this graph is not global");
+            Utilities.error("In graph " + xmlFileName + " a <globalConstant> is declared, but this graph is not global");
+
+	if (isGlobal) globalStepsByName.putAll(stepsByName);
 
         // getSteps retains the order in the XML file, so global subgraph
         // will come first, if there is one.  this ensures that it is first
@@ -177,10 +174,10 @@ public class WorkflowGraph<T extends WorkflowStep> {
         for (T step : getSteps()) {
 
 	    // make the parent/child links from the remembered dependencies
-            makeParentChildLinks(step.getDependsNames(), step, "");
+            makeParentChildLinks(step.getDependsNames(), stepsByName, step, "");
 
             // make the parent/child links from the remembered global dependencies
-            makeParentChildLinks(step.getDependsGlobalNames(), step, "global");
+            makeParentChildLinks(step.getDependsGlobalNames(), globalStepsByName, step, "global ");
                         
             // remember steps that call a subgraph
             if (step.getSubgraphXmlFileName() != null) subgraphCallerSteps.add(step);      
@@ -190,21 +187,18 @@ public class WorkflowGraph<T extends WorkflowStep> {
         }
     }
     
-    void makeParentChildLinks(List<Name> dependsNames, T step, String globalStr) {
+    void makeParentChildLinks(List<Name> dependsNames, Map<String, T> steps,
+			      T step, String globalStr) {
         for (Name dependName : dependsNames) {
 	    String dName = dependName.getName();
-            T parent = stepsByName.get(dName);
+            T parent = steps.get(dName);
             if (parent == null) {      
+		System.err.println(steps.toString());
                 Utilities.error("In file " + xmlFileName + ", step '"
-                                + step.getBaseName() + "' " + globalStr
-				+ " depends on step '"
+                                + step.getBaseName() + "' depends on "
+				+ globalStr + "step '"
 				+ dName + "' which is not found");
             }
-	    if (parent.getIsGlobal()) 
-		Utilities.error("Step " + step.getFullName() +
-				" depends=" + dName + 
-				" is not allowed because " + dName +
-				" is a global subgraph");
             step.addParent(parent);
             parent.addChild(step);
         }
@@ -287,33 +281,41 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	}
 
 	// substitute param values into constants
-        for (String constantName : constants.keySet()) {
-            String constantValue = constants.get(constantName);
-	    String newConstantValue = 
-		Utilities.substituteVariablesIntoString(constantValue, paramValues);
-	    constants.put(constantName, newConstantValue);    
-        }
+	substituteIntoConstants(paramValues, constants, false);
+
+	// substitute param values and globalConstants into globalConstants
+	if (isGlobal) {
+	    substituteIntoConstants(paramValues, globalConstants, false);
+	    
+	    substituteIntoConstants(new HashMap<String,String>(), globalConstants, true);
+	}
+
+	// substitute globalConstants into constants
+	substituteIntoConstants(globalConstants, constants, false);
 
 	// substitute constants into constants
-	Map fullyResolvedConstants = new HashMap<String,String>();
-        for (String constantName : constants.keySet()) {
-            String constantValue = constants.get(constantName);
-	    String newConstantValue = 
-		Utilities.substituteVariablesIntoString(constantValue,
-							fullyResolvedConstants);
-	    constants.put(constantName, newConstantValue);    
-	    fullyResolvedConstants.put(constantName, newConstantValue);    
-        }
+	substituteIntoConstants(new HashMap<String,String>(), constants, true);
 
-	// substitute both into step params, global constants, includeIf and excludeIf
+	// substitute them all into step param values, xmlFileName,
+	// includeIf and excludeIf
         for (T step : getSteps()) {
             step.substituteValues(globalConstants, false);
             step.substituteValues(constants, false);
             step.substituteValues(paramValues, true);
         }
-
-	
     }
+
+    void substituteIntoConstants(Map<String,String> from, Map<String,String> to, boolean updateFrom) {
+        for (String constantName : to.keySet()) {
+            String constantValue = to.get(constantName);
+	    String newConstantValue = 
+		Utilities.substituteVariablesIntoString(constantValue,
+							from);
+	    to.put(constantName, newConstantValue); 
+	    if (updateFrom) from.put(constantName, newConstantValue);    
+        }
+    }
+
     /////////////////////////////////////////////////////////////////////////
     //   subgraph expansion
     /////////////////////////////////////////////////////////////////////////
