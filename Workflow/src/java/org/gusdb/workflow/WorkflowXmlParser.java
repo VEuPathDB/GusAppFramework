@@ -41,6 +41,14 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
     public WorkflowGraph<T> parseWorkflow(Workflow workflow, Class<T> stepClass,
             String xmlFileName, Map<String, T> globalSteps, 
             Map<String,String> globalConstants, boolean isGlobalGraph) throws SAXException, IOException, Exception {
+	return parseWorkflow(workflow, stepClass, xmlFileName, globalSteps, globalConstants, isGlobalGraph, true);
+    }
+
+    @SuppressWarnings("unchecked")
+    public WorkflowGraph<T> parseWorkflow(Workflow workflow, Class<T> stepClass,
+            String xmlFileName, Map<String, T> globalSteps, 
+            Map<String,String> globalConstants, boolean isGlobalGraph,
+	    boolean insertSubgraphReturns) throws SAXException, IOException, Exception {
         this.stepClass = stepClass;
 
         configure();
@@ -65,7 +73,9 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
         workflowGraph.setGlobalConstants(globalConstants);
         workflowGraph.setGlobalSteps(globalSteps);
 	workflowGraph.postprocessSteps();
-	workflowGraph.insertSubgraphReturnChildren();
+	if (insertSubgraphReturns) {
+	    workflowGraph.insertSubgraphReturnChildren();
+	}
 	workflowGraph.setRootsAndLeafs();
         return workflowGraph;
     }

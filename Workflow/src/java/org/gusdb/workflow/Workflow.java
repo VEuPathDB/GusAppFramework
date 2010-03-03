@@ -278,7 +278,7 @@ public class Workflow <T extends WorkflowStep> {
         Utilities.error(msg);
     }
     
-    String getWorkflowXmlFileName() throws FileNotFoundException, IOException {
+    public String getWorkflowXmlFileName() throws FileNotFoundException, IOException {
         Properties workflowProps = new Properties();        
         workflowProps.load(new FileInputStream(getHomeDir() + "config/workflow.prop"));
         return workflowProps.getProperty("workflowXmlFile");
