@@ -119,10 +119,10 @@ public class WorkflowStep  {
     public void setIsGlobal(boolean isGlobal) {
         this.isGlobal  = isGlobal;
     }
-    
+
     protected boolean getIsGlobal() { return isGlobal; }
     
-    boolean getIsSubgraphCall() { return isSubgraphCall; }
+    public boolean getIsSubgraphCall() { return isSubgraphCall; }
 
     void setCallingStep(WorkflowStep callingStep) {
 	this.callingStep = callingStep;
@@ -183,7 +183,7 @@ public class WorkflowStep  {
         parents.remove(parent);
     }
 
-    protected List<WorkflowStep> getParents() {
+    public List<WorkflowStep> getParents() {
 	return parents;
     }
 
@@ -252,7 +252,7 @@ public class WorkflowStep  {
 	paramValues.put(paramValue.getName(),paramValue.getValue());
     }
 
-    String getBaseName() {
+    public String getBaseName() {
 	return baseName;
     }
     
@@ -268,7 +268,7 @@ public class WorkflowStep  {
         return path;
     }
 
-    int getId () {
+    public int getId () {
 	return workflow_step_id;
     }
 
@@ -317,7 +317,7 @@ public class WorkflowStep  {
         isSubgraphCall = true;
     }
     
-    String getSubgraphXmlFileName() {
+    public String getSubgraphXmlFileName() {
         return subgraphXmlFileName;
     }
     

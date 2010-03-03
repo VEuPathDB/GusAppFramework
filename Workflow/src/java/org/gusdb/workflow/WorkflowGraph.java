@@ -116,6 +116,10 @@ public class WorkflowGraph<T extends WorkflowStep> {
     void setXmlFileName(String xmlFileName) {
      this.xmlFileName = xmlFileName;
     }
+
+    public String getXmlFileName() {
+	return xmlFileName;
+    }
     
     void setGlobalConstants(Map<String,String> globalConstants) {
         this.globalConstants = globalConstants;
@@ -127,7 +131,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     
     // recurse through steps starting at roots.
     @SuppressWarnings("unchecked")
-    List<T> getSortedSteps() {
+    public List<T> getSortedSteps() {
         if (sortedSteps == null) {
 	    int depthFirstOrder = 0;
             sortedSteps = new ArrayList<T>();
