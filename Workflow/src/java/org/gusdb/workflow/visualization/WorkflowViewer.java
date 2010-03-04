@@ -17,8 +17,10 @@ import edu.uci.ics.jung.visualization.renderers.Renderer.VertexLabel.Position;
 import java.io.IOException;
 
 import java.awt.BasicStroke;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Paint;
@@ -47,6 +49,7 @@ import org.apache.commons.collections15.Transformer;
 import org.gusdb.workflow.*;
 
 public class WorkflowViewer extends JFrame implements ActionListener {
+    private static final String TITLE = "Workflow Viewer";
     private Workflow workflow;
     private WorkflowGraph<WorkflowStep> currentGraph;
     private WorkflowXmlParser<WorkflowStep> parser;
@@ -59,23 +62,29 @@ public class WorkflowViewer extends JFrame implements ActionListener {
     private JPanel applicationPane;
     private JPanel graphPane;
 
+    public WorkflowViewer(String workflowXmlFileName) {
+	super(TITLE);
+	initApplicationPane();
+	createViewFromXmlFile(workflowXmlFileName);
+    }
+
     public WorkflowViewer() throws IOException {
-	super("Workflow Viewer");
+	super(TITLE);
+
+	initApplicationPane();
+
 	//Create a file chooser
 	final JFileChooser fc = new JFileChooser();
 	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	this.setVisible(true);
 	fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 	
-	//In response to a button click:
 	int returnVal = fc.showOpenDialog(this);
 	
 	if (returnVal == JFileChooser.APPROVE_OPTION) {
 	    parser = new WorkflowXmlParser<WorkflowStep>();
 	    history = new Stack<WorkflowGraph>();
 	    workflow = new Workflow<WorkflowStep>(fc.getSelectedFile().getCanonicalPath());
-
-	    initApplicationPane();
 	    createViewFromXmlFile(workflow.getWorkflowXmlFileName());
 	}
     }
@@ -119,7 +128,7 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	// sets the initial size of the layout space
 	// The VisualizationViewer is parameterized by the vertex and edge types
 	VisualizationViewer vv = new VisualizationViewer(layout);
-	vv.setPreferredSize(new Dimension(1024,768));
+	vv.setPreferredSize(graphPane.getSize());
 	
 	Transformer<WorkflowStep,Shape> shaper = new Transformer<WorkflowStep,Shape>() {
 	    public Shape transform(WorkflowStep vertex) {
@@ -134,6 +143,13 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	    }
 	};
 	vv.getRenderContext().setVertexLabelTransformer(labeler);
+	
+	Transformer<WorkflowStep,Font> fontStyler = new Transformer<WorkflowStep,Font>() {
+	    public Font transform(WorkflowStep vertex) {
+		return new Font("Lucida Sans Regular", Font.PLAIN, 15);
+	    }
+	};
+	vv.getRenderContext().setVertexFontTransformer(fontStyler);
 	
 	Transformer<WorkflowStep,Paint> painter = new Transformer<WorkflowStep,Paint>() {
 	    public Paint transform(WorkflowStep vertex) {
@@ -160,9 +176,9 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	gm.add(new PickingGraphMousePlugin());
 	
 	vv.setGraphMouse(gm);
-	
+
 	graphPane.removeAll();
-	graphPane.add(new GraphZoomScrollPane(vv));
+	graphPane.add(new GraphZoomScrollPane(vv),BorderLayout.CENTER);
 	this.validate();
 	this.pack();
     }
@@ -208,12 +224,14 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 
 	current = new JLabel();
 	c.fill = GridBagConstraints.HORIZONTAL;
+	c.anchor = GridBagConstraints.CENTER;
 	c.gridx = 1;
 	c.gridy = 0;
 	c.weightx = 0.6;
 	applicationPane.add(current, c);
 
-	graphPane = new JPanel();
+	graphPane = new JPanel(new BorderLayout());
+	graphPane.setMinimumSize(new Dimension(800,600));
 	c.fill = GridBagConstraints.BOTH;
 	c.anchor = GridBagConstraints.SOUTHEAST;
 	c.gridx = 0;
