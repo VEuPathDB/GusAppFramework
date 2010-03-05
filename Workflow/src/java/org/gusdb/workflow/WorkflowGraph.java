@@ -179,9 +179,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    // make the parent/child links from the remembered dependencies
             makeParentChildLinks(step.getDependsNames(), stepsByName, step, "");
 
-            // make the parent/child links from the remembered global dependencies
-            makeParentChildLinks(step.getDependsGlobalNames(), globalStepsByName, step, "global ");
-                        
             // remember steps that call a subgraph
             if (step.getSubgraphXmlFileName() != null) subgraphCallerSteps.add(step);      
 
