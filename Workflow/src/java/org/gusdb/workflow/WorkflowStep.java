@@ -45,24 +45,24 @@ import java.util.HashMap;
 public class WorkflowStep  {
 
     // from construction and configuration
-    private String baseName;
-    private String path = "";
+    protected String subgraphXmlFileName;
     protected WorkflowGraph<? extends WorkflowStep> workflowGraph;
     protected String invokerClassName;
-    protected List<WorkflowStep> parents = new ArrayList<WorkflowStep>();
-    protected List<WorkflowStep> children = new ArrayList<WorkflowStep>();
-    protected String subgraphXmlFileName;
-    protected boolean isSubgraphCall;
-    protected boolean isSubgraphReturn;
-    protected boolean isGlobal = false;  // set iff this step is call or return of a global subgraph.
-    protected WorkflowStep callingStep;  // step that called our subgraph, if any
-    String paramsDigest;
-    int depthFirstOrder;
-    String[] loadTypes = {"total"};
-    String includeIf_string;
-    String excludeIf_string;
-    Boolean excludeFromGraph = null;
-    String undoRoot;
+    private String baseName;
+    private String path = "";
+    private List<WorkflowStep> parents = new ArrayList<WorkflowStep>();
+    private List<WorkflowStep> children = new ArrayList<WorkflowStep>();
+    private boolean isSubgraphCall;
+    private boolean isSubgraphReturn;
+    private boolean isGlobal = false;  // set iff this step is call or return of a global subgraph.
+    private WorkflowStep callingStep;  // step that called our subgraph, if any
+    private String paramsDigest;
+    private int depthFirstOrder;
+    private String[] loadTypes = {"total"};
+    private String includeIf_string;
+    private String excludeIf_string;
+    private Boolean excludeFromGraph = null;
+    private String undoRoot;
     
     // state from db
     protected int workflow_step_id;
@@ -295,6 +295,10 @@ public class WorkflowStep  {
     List<Name> getDependsNames() {
         return dependsNames;
     }
+    
+    String getDependsString() {
+        return dependsNames.toString();
+    }
 
     public void addDependsName(Name dependsName) {
         dependsNames.add(dependsName);
@@ -304,7 +308,11 @@ public class WorkflowStep  {
         return dependsGlobalNames;
     }
     
-    boolean getHasGlobalDepends() {
+    String getDependsGlobalString() {
+        return dependsGlobalNames.toString();
+    }
+
+   boolean getHasGlobalDepends() {
         return dependsGlobalNames.size() != 0;
     }
 
@@ -365,13 +373,17 @@ public class WorkflowStep  {
 	if (stepNamesInDb.contains(getFullName())) {
 	    updateStmt.setInt(1, getDepthFirstOrder());
 	    updateStmt.setString(2, getFullName());
+            insertStmt.setString(3, getDependsString());
+            insertStmt.setString(4, getDependsGlobalString());
 	    updateStmt.execute();
 	} else {
 	    insertStmt.setString(1, getFullName());
 	    insertStmt.setString(2, Workflow.READY);
 	    insertStmt.setInt(3, depthFirstOrder);
 	    insertStmt.setString(4, invokerClassName);
-	    insertStmt.setString(5, getParamsDigest());
+            insertStmt.setString(5, getParamsDigest());
+            insertStmt.setString(6, getDependsString());
+            insertStmt.setString(7, getDependsGlobalString());
 	    insertStmt.execute();
 	} 
     }
