@@ -480,6 +480,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
                         + subgraphCallerStep.getBaseName() +"'.  They are only allowed in the root graph.");
             }
             
+	    String newPath = path + subgraphCallerStep.getBaseName() + ".";
+        
             WorkflowGraph<T> subgraph = createExpandedGraph (
                     stepClass,
                     workflow, 
@@ -489,7 +491,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
                     subgraphXmlFileName, 
                     xmlFileName,
                     subgraphCallerStep.getIsGlobal(), 
-                    path,
+                    newPath,
                     subgraphCallerStep.getBaseName(),
                     subgraphCallerStep.getParamValues(),
                     subgraphCallerStep,
@@ -557,7 +559,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
             String path,
             String baseName,
             Map<String,String> paramValuesMap,
-            S subgraphCallerStep,
+	    S subgraphCallerStep,
             List<String> xmlFileNamesStack) throws FileNotFoundException, SAXException, IOException, Exception {
         
         // create graph
@@ -566,10 +568,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
                 parser.parseWorkflow(workflow, stepClass, xmlFileName,
                         globalSteps, globalConstants, isGlobal); 
 
-        String newPath = path + baseName + ".";
-        
         // set the path of its unexpanded steps
-        graph.setPath(newPath);
+        graph.setPath(path);
 
         // set the calling step of its unexpanded steps
         graph.setCallingStep(subgraphCallerStep);
@@ -584,7 +584,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
         // expand subgraphs
         List<String> newXmlFileNamesStack = new ArrayList<String>(xmlFileNamesStack);
         newXmlFileNamesStack.add(xmlFileName);
-        graph.expandSubgraphs(newPath, newXmlFileNamesStack, stepClass, paramErrorsMap,
+        graph.expandSubgraphs(path, newXmlFileNamesStack, stepClass, paramErrorsMap,
                 globalSteps, globalConstants);
         
         return graph;
