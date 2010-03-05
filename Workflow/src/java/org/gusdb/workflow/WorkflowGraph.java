@@ -376,7 +376,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
             // after expanding kids, process dependsGlobal.  (In root graph, we
             // need to expand global graph before processing dependsGlobal in that graph)
             for (T step : getSteps())                 
-                makeParentChildLinks(step.getDependsGlobalNames(), step, "global");
+                makeParentChildLinks(step.getDependsGlobalNames(), globalStepsByName, step, "global");
          
             // insert it
             WorkflowStep subgraphReturnStep = subgraphCallerStep.getChildren().get(0);
@@ -435,7 +435,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
             // expansion so that in root graph, the global graph is expanded
             // before processing dependsGlobal in that graph)
             for (T step : getSteps())                 
-                makeParentChildLinks(step.getDependsGlobalNames(), step, "global");
+                makeParentChildLinks(step.getDependsGlobalNames(), globalStepsByName, step, "global");
          
             // insert it
             WorkflowStep subgraphReturnStep = subgraphCallerStep.getChildren().get(0);
