@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +81,7 @@ public class WorkflowStep  {
     private String stepDir;   
     private List<Name> dependsNames = new ArrayList<Name>();
     private List<Name> dependsGlobalNames = new ArrayList<Name>();
+    private String dependsString;
     protected Map<String,String> paramValues = new HashMap<String,String>();
     protected String prevState;
     protected boolean prevOffline;
@@ -296,8 +298,14 @@ public class WorkflowStep  {
         return dependsNames;
     }
     
-    String getDependsString() {
-        return dependsNames.toString();
+    String getDependsString() throws NoSuchAlgorithmException, Exception {
+        if (dependsString == null) {
+            List<String> d = new ArrayList<String>();
+            for (WorkflowStep parent : parents) d.add(parent.getBaseName());
+            Collections.sort(d);
+            dependsString = d.toString();
+        }
+        return dependsString;
     }
 
     public void addDependsName(Name dependsName) {
@@ -344,15 +352,15 @@ public class WorkflowStep  {
     }
     
     static PreparedStatement getPreparedInsertStmt(Connection dbConnection, int workflowId) throws SQLException {
-	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, undo_state, undo_state_handled, off_line, stop_after, depth_first_order, step_class, params_digest)"
+	String sql = "INSERT INTO apidb.workflowstep (workflow_step_id, workflow_id, name, state, state_handled, undo_state, undo_state_handled, off_line, stop_after, depends_string, step_class, params_digest, depth_firt_order)"
 	    + " VALUES (apidb.workflowstep_sq.nextval, " + workflowId
-	    + ", ?, ?, 1, null, 1, 0, 0, ?, ?, ?)";
+	    + ", ?, ?, 1, null, 1, 0, 0, ?, ?, ?, ?, ?)";
 	return dbConnection.prepareStatement(sql);
     }
 
     static PreparedStatement getPreparedUpdateStmt(Connection dbConnection, int workflowId) throws SQLException {
         String sql = "UPDATE apidb.workflowstep"
-            + " SET depth_first_order = ?"
+            + " SET depends_string = ?, depth_first_order = ?"
             + " WHERE name = ?"
             + " AND workflow_id = " + workflowId;
         return dbConnection.prepareStatement(sql);
@@ -371,19 +379,17 @@ public class WorkflowStep  {
     // called during workflow initialization
     void initializeStepTable(Set<String> stepNamesInDb, PreparedStatement insertStmt, PreparedStatement updateStmt) throws SQLException, NoSuchAlgorithmException, Exception {
 	if (stepNamesInDb.contains(getFullName())) {
-	    updateStmt.setInt(1, getDepthFirstOrder());
-	    updateStmt.setString(2, getFullName());
-            insertStmt.setString(3, getDependsString());
-            insertStmt.setString(4, getDependsGlobalString());
+            updateStmt.setString(1, getDependsString());
+            updateStmt.setInt(2, getDepthFirstOrder());
+	    updateStmt.setString(3, getFullName());
 	    updateStmt.execute();
 	} else {
 	    insertStmt.setString(1, getFullName());
 	    insertStmt.setString(2, Workflow.READY);
-	    insertStmt.setInt(3, depthFirstOrder);
+	    insertStmt.setString(3, getDependsString());
 	    insertStmt.setString(4, invokerClassName);
             insertStmt.setString(5, getParamsDigest());
-            insertStmt.setString(6, getDependsString());
-            insertStmt.setString(7, getDependsGlobalString());
+            insertStmt.setInt(6, getDepthFirstOrder());
 	    insertStmt.execute();
 	} 
     }
