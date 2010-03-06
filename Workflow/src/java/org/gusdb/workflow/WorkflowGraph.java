@@ -362,7 +362,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
 
     // check if the in-memory graph matches that in the db exactly
     boolean inDbExactly() throws SQLException, FileNotFoundException, NoSuchAlgorithmException, IOException, Exception {
-	String sql = "select name, params_digest, depth_first_order, step_class, state"
+	String sql = "select name, params_digest, depends_string, step_class, state"
 	    + " from apidb.workflowstep"  
 	    + " where workflow_id = " + workflow.getId()
 	    + " order by depth_first_order";
@@ -375,8 +375,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    for (T step : getSortedSteps()) {
 		if (!rs.next()) return false;
 		String dbName = rs.getString(1);
-		String dbDigest = rs.getString(2);
-		int dbDepthFirstOrder = rs.getInt(3);
+		String dbParamsDigest = rs.getString(2);
+		String dbDependsString = rs.getString(3);
 		String dbClassName = rs.getString(4);
 		String dbState = rs.getString(5);
 
@@ -386,9 +386,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
 			&& step.getStepClassName().equals(dbClassName));
 
 		boolean mismatch = !step.getFullName().equals(dbName)
-		    || !step.getParamsDigest().equals(dbDigest)
+		    || (!step.getIsSubgraphCall() && !step.getParamsDigest().equals(dbParamsDigest))
 		    || !stepClassMatch
-		  || step.getDepthFirstOrder() != dbDepthFirstOrder;
+		    || step.getDependsString() != dbDependsString;
 
 		if (mismatch) {
 		    if (!dbState.equals(Workflow.READY) 
@@ -397,13 +397,13 @@ public class WorkflowGraph<T extends WorkflowStep> {
 			) {
 			Utilities.error("Step '" + dbName +"' has changed in the XML file illegally. Changes not allowed while in the state '" + dbState + "'" + nl
 					+ "old name:              " + dbName + nl
-					+ "old params digest:     " + dbDigest + nl
-                                        + "old depth first order: " + dbDepthFirstOrder + nl
+					+ "old params digest:     " + dbParamsDigest + nl
+                                        + "old depends string:    " + dbDependsString + nl
 					+ "old class name:        " + dbClassName + nl
 					+ nl
                                         + "new name:              " + step.getFullName() + nl
                                         + "new params digest:     " + step.getParamsDigest() + nl
-					+ "new depth first order: " + step.getDepthFirstOrder() + nl
+					+ "new depends string:    " + step.getDependsString() + nl
 					+ "new class name:        " + step.getStepClassName());
 		    }
 		    return false;
