@@ -213,6 +213,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
             if (step.getExcludeFromGraph()) {
 		for (WorkflowStep parent : step.getParents()) {
 		    parent.removeChild(step);
+
 		}
             
 		for (WorkflowStep child : step.getChildren()) {
@@ -223,6 +224,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
 		    }                
 		}
 		stepsByName.remove(step.getFullName());
+		subgraphCallerSteps.remove(step);
 	    }
 	}
     }
@@ -579,7 +581,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
                                 paramErrorsMap);
         
         // delete excluded steps
-        graph.deleteExcludedSteps();
+	graph.deleteExcludedSteps();
         
         // expand subgraphs
         List<String> newXmlFileNamesStack = new ArrayList<String>(xmlFileNamesStack);
