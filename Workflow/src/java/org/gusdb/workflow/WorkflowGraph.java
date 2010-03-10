@@ -578,6 +578,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
                                 paramValuesMap,
                                 paramErrorsMap);
         
+        // delete excluded steps
+        graph.deleteExcludedSteps();
+        
         // expand subgraphs
         List<String> newXmlFileNamesStack = new ArrayList<String>(xmlFileNamesStack);
         newXmlFileNamesStack.add(xmlFileName);
@@ -628,9 +631,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
             }                        
             Utilities.error("Graph \"compilation\" failed.  The following subgraph parameter values are missing:" + nl + buf);
         }
-        
-        // delete excluded steps
-        graph.deleteExcludedSteps();
         
         return graph;
     }   
