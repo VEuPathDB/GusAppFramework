@@ -435,35 +435,49 @@ public class WorkflowStep  {
     // interpolate variables into subgraphXmlFileName, param values, includeIf and excludeIf
     void substituteValues(Map<String,String>variables, boolean check){
 
-	
-	if (subgraphXmlFileName != null) {
-	    subgraphXmlFileName = Utilities.substituteVariablesIntoString(subgraphXmlFileName, variables);
-	}
+        
+        if (subgraphXmlFileName != null) {
+            subgraphXmlFileName = Utilities.substituteVariablesIntoString(subgraphXmlFileName, variables);
+        }
         for (String paramName : paramValues.keySet()) {
             String paramValue = paramValues.get(paramName);
-	    String newParamValue = 
-		Utilities.substituteVariablesIntoString(paramValue, variables);
-	    paramValues.put(paramName, newParamValue); 
-	    if (check) {
-		if (newParamValue.indexOf("$$") != -1) 
-		    Utilities.error("Parameter '" + paramName + "' in step '" 
-				    + getFullName() 
-				    + "' includes an unresolvable variable reference: '"
-				    + newParamValue + "'");
-	    }
+            String newParamValue = 
+                Utilities.substituteVariablesIntoString(paramValue, variables);
+            paramValues.put(paramName, newParamValue); 
+            if (check) {
+                if (newParamValue.indexOf("$$") != -1) 
+                    Utilities.error("Parameter '" + paramName + "' in step '" 
+                                    + getFullName() 
+                                    + "' includes an unresolvable variable reference: '"
+                                    + newParamValue + "'");
+            }
         }
         if (includeIf_string != null) 
-	    includeIf_string = processIfString("includeIf", 
-					       includeIf_string,
-					       variables,
-					       check);
-	
+            includeIf_string = processIfString("includeIf", 
+                                               includeIf_string,
+                                               variables,
+                                               check);
+        
         if (excludeIf_string != null) 
-	    excludeIf_string = processIfString("excludeIf", 
-					       excludeIf_string,
-					       variables,
-					       check);
-	
+            excludeIf_string = processIfString("excludeIf", 
+                                               excludeIf_string,
+                                               variables,
+                                               check);
+        
+    }
+
+    void substituteMacros(Map<String,String> globalProps){
+        for (String paramName : paramValues.keySet()) {
+            String paramValue = paramValues.get(paramName);
+            String newParamValue = 
+                Utilities.substituteMacrosIntoString(paramValue, globalProps);
+            paramValues.put(paramName, newParamValue); 
+            if (newParamValue.indexOf("@@") != -1) 
+                    Utilities.error("Parameter '" + paramName + "' in step '" 
+                                    + getFullName() 
+                                    + "' includes an unresolvable macro reference: '"
+                                    + newParamValue + "'");
+            }         
     }
 
     private String processIfString(String type, String ifString, Map<String,String>variables, boolean check) {

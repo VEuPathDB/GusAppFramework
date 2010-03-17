@@ -261,49 +261,56 @@ public class WorkflowGraph<T extends WorkflowStep> {
         + "Steps" + nl + getSortedSteps().toString();
     }
     
-
-    @SuppressWarnings("unchecked")
     private void instantiateValues(String stepBaseName, String callerXmlFileName,
             Map<String, String> globalConstants, Map<String,String> paramValues,
             Map<String,Map<String,List<String>>> paramErrorsMap) {
 
-	// confirm that caller has values for each of this graph's declared
-	// parameters.  gather all such errors into fileErrorsMap for reporting
-	// in total later
-	for (String decl : paramDeclarations) {
-	    if (!paramValues.containsKey(decl)) {
-	        if (!paramErrorsMap.containsKey(callerXmlFileName))
-	            paramErrorsMap.put(callerXmlFileName, new HashMap<String,List<String>>());
-	        Map<String,List<String>> fileErrorsMap = paramErrorsMap.get(callerXmlFileName);
-	        if (!fileErrorsMap.containsKey(stepBaseName)) 
-	            fileErrorsMap.put(stepBaseName, new ArrayList<String>());
-	        if (!fileErrorsMap.get(stepBaseName).contains(decl))
-		    fileErrorsMap.get(stepBaseName).add(decl);
-	    }
-	}
+        // confirm that caller has values for each of this graph's declared
+        // parameters.  gather all such errors into fileErrorsMap for reporting
+        // in total later
+        for (String decl : paramDeclarations) {
+            if (!paramValues.containsKey(decl)) {
+                if (!paramErrorsMap.containsKey(callerXmlFileName))
+                    paramErrorsMap.put(callerXmlFileName, new HashMap<String,List<String>>());
+                Map<String,List<String>> fileErrorsMap = paramErrorsMap.get(callerXmlFileName);
+                if (!fileErrorsMap.containsKey(stepBaseName)) 
+                    fileErrorsMap.put(stepBaseName, new ArrayList<String>());
+                if (!fileErrorsMap.get(stepBaseName).contains(decl))
+                    fileErrorsMap.get(stepBaseName).add(decl);
+            }
+        }
 
-	// substitute param values into constants
-	substituteIntoConstants(paramValues, constants, false);
+        // substitute param values into constants
+        substituteIntoConstants(paramValues, constants, false);
 
-	// substitute param values and globalConstants into globalConstants
-	if (isGlobal) {
-	    substituteIntoConstants(paramValues, globalConstants, false);
-	    
-	    substituteIntoConstants(new HashMap<String,String>(), globalConstants, true);
-	}
+        // substitute param values and globalConstants into globalConstants
+        if (isGlobal) {
+            substituteIntoConstants(paramValues, globalConstants, false);
+            
+            substituteIntoConstants(new HashMap<String,String>(), globalConstants, true);
+        }
 
-	// substitute globalConstants into constants
-	substituteIntoConstants(globalConstants, constants, false);
+        // substitute globalConstants into constants
+        substituteIntoConstants(globalConstants, constants, false);
 
-	// substitute constants into constants
-	substituteIntoConstants(new HashMap<String,String>(), constants, true);
+        // substitute constants into constants
+        substituteIntoConstants(new HashMap<String,String>(), constants, true);
 
-	// substitute them all into step param values, xmlFileName,
-	// includeIf and excludeIf
+        // substitute them all into step param values, xmlFileName,
+        // includeIf and excludeIf
         for (T step : getSteps()) {
             step.substituteValues(globalConstants, false);
             step.substituteValues(constants, false);
             step.substituteValues(paramValues, true);
+        }
+    }
+
+    private void instantiateMacros(Map<String,String> macroValues) {
+
+        // substitute them all into step param values, xmlFileName,
+        // includeIf and excludeIf
+        for (T step : getSteps()) {
+            step.substituteMacros(macroValues);
         }
     }
 
@@ -457,7 +464,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     
     private void expandSubgraphs(String path, List<String> xmlFileNamesStack,
             Class<T> stepClass, Map<String, Map<String,List<String>>> paramErrorsMap,
-            Map<String, T> globalSteps, Map<String,String> globalConstants) throws SAXException, Exception {
+            Map<String, T> globalSteps, Map<String,String> globalConstants, Map<String,String> macroValuesMap) throws SAXException, Exception {
 
         // iterate through all subgraph callers
         // (if there is a global subgraph caller, it will be first in the list.
@@ -493,6 +500,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
                     newPath,
                     subgraphCallerStep.getBaseName(),
                     subgraphCallerStep.getParamValues(),
+                    macroValuesMap,
                     subgraphCallerStep,
                     xmlFileNamesStack);       
             
@@ -558,6 +566,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
             String path,
             String baseName,
             Map<String,String> paramValuesMap,
+            Map<String,String> macroValuesMap,
 	    S subgraphCallerStep,
             List<String> xmlFileNamesStack) throws FileNotFoundException, SAXException, IOException, Exception {
         
@@ -572,6 +581,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
 
         // set the calling step of its unexpanded steps
         graph.setCallingStep(subgraphCallerStep);
+        
+        graph.instantiateMacros(macroValuesMap);
 
         // instantiate param values from param values passed in
         graph.instantiateValues(baseName,
@@ -587,7 +598,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
         List<String> newXmlFileNamesStack = new ArrayList<String>(xmlFileNamesStack);
         newXmlFileNamesStack.add(xmlFileName);
         graph.expandSubgraphs(path, newXmlFileNamesStack, stepClass, paramErrorsMap,
-                globalSteps, globalConstants);
+                globalSteps, globalConstants, macroValuesMap);
         
         return graph;
     }
@@ -612,11 +623,12 @@ public class WorkflowGraph<T extends WorkflowStep> {
                 globalSteps, 
                 globalConstants, 
                 workflow.getWorkflowXmlFileName(), 
-                "globalParams.prop",
+                "rootParams.prop",
                 false, 
                 "",
                 "root",
                 getRootGraphParamValues(workflow),
+                getGlobalPropValues(workflow),
                 null,
                 xmlFileNamesStack);       
         
@@ -638,10 +650,18 @@ public class WorkflowGraph<T extends WorkflowStep> {
     }   
     
     
-    @SuppressWarnings("unchecked")
     static <S extends WorkflowStep > Map<String,String>getRootGraphParamValues(Workflow<S> workflow) throws FileNotFoundException, IOException {
+        return readPropFile(workflow, "rootParams.prop");
+    }
+    
+    static <S extends WorkflowStep > Map<String,String>getGlobalPropValues(Workflow<S> workflow) throws FileNotFoundException, IOException {
+        return readPropFile(workflow, "stepsGlobal.prop");
+    }
+    
+    @SuppressWarnings("unchecked")
+    static <S extends WorkflowStep > Map<String,String>readPropFile(Workflow<S> workflow, String propFile) throws FileNotFoundException, IOException {
         Properties paramValues = new Properties();
-        paramValues.load(new FileInputStream(workflow.getHomeDir() + "/config/rootParams.prop"));
+        paramValues.load(new FileInputStream(workflow.getHomeDir() + "/config/" + propFile));
         Map<String,String>map = new HashMap<String,String>();
         Enumeration<String> e = (Enumeration<String>) paramValues.propertyNames();
         while(e.hasMoreElements()) {
