@@ -1,11 +1,9 @@
 package org.gusdb.workflow.visualization;
 
 import edu.uci.ics.jung.algorithms.layout.Layout;
-import edu.uci.ics.jung.algorithms.layout.TreeLayout;
+import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.graph.Graph;
-import edu.uci.ics.jung.graph.DelegateForest;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
-import edu.uci.ics.jung.graph.Forest;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
 import edu.uci.ics.jung.visualization.control.CrossoverScalingControl;
@@ -46,14 +44,20 @@ import java.util.Stack;
 
 import org.apache.commons.collections15.Transformer;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionGroup;
+import org.apache.commons.cli.Options;
+
 import org.gusdb.workflow.*;
 
 public class WorkflowViewer extends JFrame implements ActionListener {
+    final static String nl = System.getProperty("line.separator");
     private static final String TITLE = "Workflow Viewer";
     private Workflow workflow;
     private WorkflowGraph<WorkflowStep> currentGraph;
     private WorkflowXmlParser<WorkflowStep> parser;
-    private Forest<WorkflowStep,Integer> workflowTree;
+    private Graph<WorkflowStep,Integer> workflowTree;
     private Stack<WorkflowGraph> history;
     private Map<String, WorkflowStep> globalSteps;
     private Map<String,String> globalConstants;
@@ -62,33 +66,15 @@ public class WorkflowViewer extends JFrame implements ActionListener {
     private JPanel applicationPane;
     private JPanel graphPane;
 
-    public WorkflowViewer(String workflowXmlFileName) {
+    public WorkflowViewer(String workflowDir) throws IOException {
 	super(TITLE);
 	initApplicationPane();
-	createViewFromXmlFile(workflowXmlFileName);
+	parser = new WorkflowXmlParser<WorkflowStep>();
+	history = new Stack<WorkflowGraph>();
+	workflow = new Workflow<WorkflowStep>(workflowDir);
+	createViewFromXmlFile(workflow.getWorkflowXmlFileName());
     }
 
-    public WorkflowViewer() throws IOException {
-	super(TITLE);
-
-	initApplicationPane();
-
-	//Create a file chooser
-	final JFileChooser fc = new JFileChooser();
-	this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	this.setVisible(true);
-	fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-	
-	int returnVal = fc.showOpenDialog(this);
-	
-	if (returnVal == JFileChooser.APPROVE_OPTION) {
-	    parser = new WorkflowXmlParser<WorkflowStep>();
-	    history = new Stack<WorkflowGraph>();
-	    workflow = new Workflow<WorkflowStep>(fc.getSelectedFile().getCanonicalPath());
-	    createViewFromXmlFile(workflow.getWorkflowXmlFileName());
-	}
-    }
-    
     public void actionPerformed(ActionEvent e) {
 	loadPreviousGraphView();
     }
@@ -124,12 +110,15 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	current.setText(currentGraph.getXmlFileName());
 
 	// The Layout is parameterized by the vertex and edge types
-	Layout layout = new TreeLayout(workflowTree, 375, 175);
+	FRLayout<WorkflowStep,Integer> layout = new FRLayout<WorkflowStep,Integer>(workflowTree, new Dimension(workflowTree.getVertexCount() * 150, workflowTree.getVertexCount() * 50));
+	layout.setAttractionMultiplier(0.5);
+	layout.setRepulsionMultiplier(0.75);
+	layout.setMaxIterations(400);
 	// sets the initial size of the layout space
 	// The VisualizationViewer is parameterized by the vertex and edge types
 	VisualizationViewer vv = new VisualizationViewer(layout);
-	vv.setPreferredSize(graphPane.getSize());
-	
+	vv.setPreferredSize(new Dimension(1024,768));
+
 	Transformer<WorkflowStep,Shape> shaper = new Transformer<WorkflowStep,Shape>() {
 	    public Shape transform(WorkflowStep vertex) {
 		return new Rectangle(300,100);
@@ -184,20 +173,20 @@ public class WorkflowViewer extends JFrame implements ActionListener {
     }
 
     private void buildDisplayTree() {
-	    // Graph where WorkflowStep is the type of the vertices and Integer is the type of the edges
-	    workflowTree = new DelegateForest<WorkflowStep,Integer>(new DirectedSparseGraph<WorkflowStep,Integer>());
+	// Graph where WorkflowStep is the type of the vertices and Integer is the type of the edges
+	workflowTree = new DirectedSparseGraph<WorkflowStep,Integer>();
 	    
-	    int edge = 0;
-	    // Iterate over steps in graph, adding to graph & adding edges based on parent pointers
-	    List<WorkflowStep> steps = currentGraph.getSortedSteps();
-	    for (WorkflowStep step : steps) {
-		workflowTree.addVertex(step);
+	int edge = 0;
+	// Iterate over steps in graph, adding to graph & adding edges based on parent pointers
+	List<WorkflowStep> steps = currentGraph.getSortedSteps();
+	for (WorkflowStep step : steps) {
+	    workflowTree.addVertex(step);
 
-		List<WorkflowStep> parents = step.getParents();
-		for (WorkflowStep parent : parents) {
-		    workflowTree.addEdge(new Integer(edge++),parent,step);
-		}
+	    List<WorkflowStep> parents = step.getParents();
+	    for (WorkflowStep parent : parents) {
+		workflowTree.addEdge(new Integer(edge++),parent,step);
 	    }
+	}
     }
     
     private void loadPreviousGraphView() {
@@ -241,16 +230,55 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	applicationPane.add(graphPane, c);
 
 	this.add(applicationPane);
+	this.setPreferredSize(new Dimension(800,600));
+	this.setVisible(true);
     }
 
     public static void main(String[] args) {
+	String cmdName = System.getProperty("cmdName");
+
+	// parse command line
+	Options options = declareOptions();
+	String cmdlineSyntax = cmdName + " -h workflow_home_dir";
+	String cmdDescrip = "View a workflow graph.";
+	CommandLine cmdLine =
+	    Utilities.parseOptions(cmdlineSyntax, cmdDescrip, getUsageNotes(), options, args);
+	 
+	String homeDirName = cmdLine.getOptionValue("h");
 	try {
-	    new WorkflowViewer();
+	    new WorkflowViewer(homeDirName);
 	}
 	catch (Exception ex) {
-	    // TODO: Don't do this.
-	    ex.printStackTrace();
+	    Utilities.usage(cmdlineSyntax, cmdDescrip, getUsageNotes(), options);
 	    System.exit(1);
 	}
+    }
+
+    private static Options declareOptions() {
+	Options options = new Options();
+
+	Utilities.addOption(options, "h", "Workflow homedir (see below)", true);      
+
+	return options;
+    }
+
+    private static String getUsageNotes() {
+	return
+
+	    nl 
+	    + "Home dir must contain the following:" + nl
+	    + "   config/" + nl
+	    + "     initOfflineSteps   (steps to take offline at startup)" + nl
+	    + "     loadBalance.prop   (configure load balancing)" + nl
+	    + "     rootParams.prop    (root parameter values)" + nl
+	    + "     stepsGlobal.prop   (global steps config)" + nl
+	    + "     steps.prop         (steps config)" + nl
+	    + "     workflow.prop      (meta config)" + nl
+	    + nl + nl   
+	    + nl + nl                        
+	    + "Examples:" + nl
+	    + nl     
+	    + "  view a workflow:" + nl
+	    + "    % workflowViewer -h workflow_dir" + nl;
     }
 } 
