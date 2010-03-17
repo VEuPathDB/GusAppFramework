@@ -18,7 +18,7 @@ public class Utilities {
     
     final static String nl = System.getProperty("line.separator");
 
-    static void addOption(Options options, String argName, String desc, boolean isRequired) {
+    public static void addOption(Options options, String argName, String desc, boolean isRequired) {
 
         Option option = new Option(argName, true, desc);
         option.setRequired(isRequired);
@@ -27,7 +27,7 @@ public class Utilities {
         options.addOption(option);
     }
 
-    static CommandLine parseOptions(String cmdlineSyntax, String cmdDescrip, String usageNotes, Options options,
+    public static CommandLine parseOptions(String cmdlineSyntax, String cmdDescrip, String usageNotes, Options options,
             String[] args) {
 
         CommandLineParser parser = new BasicParser();
@@ -46,7 +46,7 @@ public class Utilities {
         return cmdLine;
     }
     
-    static void usage(String cmdlineSyntax, String cmdDescrip, String usageNotes, Options options) {
+    public static void usage(String cmdlineSyntax, String cmdDescrip, String usageNotes, Options options) {
         
         String header = nl + cmdDescrip + nl + nl + "Options:";
 
