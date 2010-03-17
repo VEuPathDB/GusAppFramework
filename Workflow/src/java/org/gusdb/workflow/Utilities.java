@@ -99,14 +99,26 @@ public class Utilities {
     }
 
     public static String substituteVariablesIntoString(String string, Map<String,String>variables) {
-	if (string.indexOf("$$") == -1) return string;
-	String newString = string;
-	for (String variableName : variables.keySet()) {
-	    String variableValue = variables.get(variableName);
-	    newString =
-		newString.replaceAll("\\$\\$" + variableName + "\\$\\$",
-				    Matcher.quoteReplacement(variableValue));
-	}
-	return newString;
+        if (string.indexOf("$$") == -1) return string;
+        String newString = string;
+        for (String variableName : variables.keySet()) {
+            String variableValue = variables.get(variableName);
+            newString =
+                newString.replaceAll("\\$\\$" + variableName + "\\$\\$",
+                                    Matcher.quoteReplacement(variableValue));
+        }
+        return newString;
+    }
+    
+    public static String substituteMacrosIntoString(String string, Map<String,String>macros) {
+        if (string.indexOf("@@") == -1) return string;
+        String newString = string;
+        for (String variableName : macros.keySet()) {
+            String variableValue = macros.get(variableName);
+            newString =
+                newString.replaceAll("\\@\\@" + variableName + "\\@\\@",
+                                    Matcher.quoteReplacement(variableValue));
+        }
+        return newString;
     }
 }
