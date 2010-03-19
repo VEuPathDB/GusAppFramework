@@ -1,8 +1,7 @@
 package org.gusdb.workflow.visualization;
 
-import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
-import edu.uci.ics.jung.graph.Graph;
+import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
@@ -49,7 +48,15 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 
-import org.gusdb.workflow.*;
+import org.gusdb.workflow.Utilities;
+import org.gusdb.workflow.Workflow;
+import org.gusdb.workflow.WorkflowGraph;
+import org.gusdb.workflow.WorkflowStep;
+import org.gusdb.workflow.WorkflowXmlParser;
+
+import org.gusdb.workflow.visualization.layout.AssistedTreeLayout;
+import org.gusdb.workflow.visualization.mouse.PopupVertexEdgeMenuMousePlugin;
+import org.gusdb.workflow.visualization.mouse.WorkflowViewerMousePlugin;
 
 public class WorkflowViewer extends JFrame implements ActionListener {
     final static String nl = System.getProperty("line.separator");
@@ -57,7 +64,7 @@ public class WorkflowViewer extends JFrame implements ActionListener {
     private Workflow workflow;
     private WorkflowGraph<WorkflowStep> currentGraph;
     private WorkflowXmlParser<WorkflowStep> parser;
-    private Graph<WorkflowStep,Integer> workflowTree;
+    private DirectedGraph<WorkflowStep,Integer> currentView;
     private Stack<WorkflowGraph> history;
     private Map<String, WorkflowStep> globalSteps;
     private Map<String,String> globalConstants;
@@ -65,6 +72,7 @@ public class WorkflowViewer extends JFrame implements ActionListener {
     private JButton back;
     private JPanel applicationPane;
     private JPanel graphPane;
+    private JFrame menuFrame;
 
     public WorkflowViewer(String workflowDir) throws IOException {
 	super(TITLE);
@@ -79,7 +87,7 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	loadPreviousGraphView();
     }
     
-    protected void createViewFromXmlFile(String xmlFileName) {
+    public void createViewFromXmlFile(String xmlFileName) {
 	try {
 	    // create structures to hold global steps and constants
 	    // at some point, may want to only create them once & maintain as class fields
@@ -110,10 +118,13 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	current.setText(currentGraph.getXmlFileName());
 
 	// The Layout is parameterized by the vertex and edge types
-	FRLayout<WorkflowStep,Integer> layout = new FRLayout<WorkflowStep,Integer>(workflowTree, new Dimension(workflowTree.getVertexCount() * 150, workflowTree.getVertexCount() * 50));
-	layout.setAttractionMultiplier(0.5);
-	layout.setRepulsionMultiplier(0.75);
-	layout.setMaxIterations(400);
+	//FRLayout<WorkflowStep,Integer> layout = new FRLayout<WorkflowStep,Integer>(currentView, new Dimension(currentView.getVertexCount() * 150, currentView.getVertexCount() * 50));
+	//layout.setAttractionMultiplier(0.5);
+	//layout.setRepulsionMultiplier(0.75);
+	//layout.setMaxIterations(400);
+
+	AssistedTreeLayout<WorkflowStep,Integer> layout = new AssistedTreeLayout<WorkflowStep,Integer>(currentView, 350, 150);
+
 	// sets the initial size of the layout space
 	// The VisualizationViewer is parameterized by the vertex and edge types
 	VisualizationViewer vv = new VisualizationViewer(layout);
@@ -159,9 +170,14 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	
 	vv.getRenderer().getVertexLabelRenderer().setPosition(Position.CNTR);
 	
+	// Step details popup is disabled for now.
+	//PopupVertexEdgeMenuMousePlugin mousePlugin = new PopupVertexEdgeMenuMousePlugin();
+	//mousePlugin.setVertexPopup(new MyMouseMenus.WorkflowStepMenu(menuFrame));
+
 	PluggableGraphMouse gm = new PluggableGraphMouse();
 	gm.add(new ScalingGraphMousePlugin(new CrossoverScalingControl(), 0, 1.1f, 0.9f));
 	gm.add(new WorkflowViewerMousePlugin(this));
+	//gm.add(mousePlugin);
 	gm.add(new PickingGraphMousePlugin());
 	
 	vv.setGraphMouse(gm);
@@ -174,17 +190,17 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 
     private void buildDisplayTree() {
 	// Graph where WorkflowStep is the type of the vertices and Integer is the type of the edges
-	workflowTree = new DirectedSparseGraph<WorkflowStep,Integer>();
+	currentView = new DirectedSparseGraph<WorkflowStep,Integer>();
 	    
 	int edge = 0;
 	// Iterate over steps in graph, adding to graph & adding edges based on parent pointers
 	List<WorkflowStep> steps = currentGraph.getSortedSteps();
 	for (WorkflowStep step : steps) {
-	    workflowTree.addVertex(step);
+	    currentView.addVertex(step);
 
 	    List<WorkflowStep> parents = step.getParents();
 	    for (WorkflowStep parent : parents) {
-		workflowTree.addEdge(new Integer(edge++),parent,step);
+		currentView.addEdge(new Integer(edge++),parent,step);
 	    }
 	}
     }
@@ -228,6 +244,8 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	c.weighty = 1;
 	c.gridwidth = 2;
 	applicationPane.add(graphPane, c);
+
+	menuFrame = new JFrame();
 
 	this.add(applicationPane);
 	this.setPreferredSize(new Dimension(800,600));

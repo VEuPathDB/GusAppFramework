@@ -1,4 +1,4 @@
-package org.gusdb.workflow.visualization;
+package org.gusdb.workflow.visualization.mouse;
 
 import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.algorithms.layout.GraphElementAccessor;
@@ -15,6 +15,7 @@ import java.awt.event.MouseMotionListener;
 import javax.swing.JComponent;
 
 import org.gusdb.workflow.WorkflowStep;
+import org.gusdb.workflow.visualization.WorkflowViewer;
 
 public class WorkflowViewerMousePlugin extends AbstractGraphMousePlugin
     implements MouseListener, MouseMotionListener {

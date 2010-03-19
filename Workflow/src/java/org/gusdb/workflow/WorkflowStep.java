@@ -214,7 +214,7 @@ public class WorkflowStep  {
         return descendents;
     }
     
-    Map<String,String> getParamValues() {
+    public Map<String,String> getParamValues() {
         return paramValues;
     }
     
