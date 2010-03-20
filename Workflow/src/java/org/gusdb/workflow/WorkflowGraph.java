@@ -655,7 +655,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     }
     
     static <S extends WorkflowStep > Map<String,String>getGlobalPropValues(Workflow<S> workflow) throws FileNotFoundException, IOException {
-        return readPropFile(workflow, "stepsGlobal.prop");
+        return readPropFile(workflow, "stepsShared.prop");
     }
     
     @SuppressWarnings("unchecked")
