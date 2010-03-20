@@ -515,7 +515,7 @@ public class Workflow <T extends WorkflowStep> {
          + "     initOfflineSteps   (steps to take offline at startup)" + nl
          + "     loadBalance.prop   (configure load balancing)" + nl
          + "     rootParams.prop    (root parameter values)" + nl
-         + "     stepsGlobal.prop   (global steps config)" + nl
+         + "     stepsShared.prop   (steps shared config)" + nl
          + "     steps.prop         (steps config)" + nl
          + "     workflow.prop      (meta config)" + nl
          + nl + nl   
