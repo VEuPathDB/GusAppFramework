@@ -147,7 +147,7 @@ sub getGlobalConfigProperties {
     if (!$self->{globalStepsConfig}) {
       my $homeDir = $self->getWorkflowHomeDir();
       $self->{globalStepsConfig} =
-	CBIL::Util::PropertySet->new("$homeDir/config/stepsGlobal.prop",[], 1);
+	CBIL::Util::PropertySet->new("$homeDir/config/stepsShared.prop",[], 1);
     }
     return $self->{globalStepsConfig};
 }

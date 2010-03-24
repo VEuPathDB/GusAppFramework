@@ -102,7 +102,7 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	    Class<WorkflowStep> stepClass = WorkflowStep.class;
 	    currentGraph = parser.parseWorkflow(workflow, stepClass,
 						xmlFileName,
-						globalSteps, globalConstants, false, false);
+						globalSteps, globalConstants, false);
 	    updateGraphView();
 	}
 	catch (Exception ex) {

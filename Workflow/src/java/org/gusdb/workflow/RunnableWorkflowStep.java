@@ -130,7 +130,6 @@ public class RunnableWorkflowStep extends WorkflowStep {
 
     // try to run a single ON_DECK step
     int runOnDeckStep(Workflow<RunnableWorkflowStep> workflow, boolean testOnly) throws IOException, SQLException {
-	if (getOperativeState() == null) System.err.println("rws " + getFullName());
         if (getOperativeState().equals(Workflow.ON_DECK) && !off_line) {
 	    if (invokerClassName == null) {
 		if (subgraphXmlFileName != null) steplog(Workflow.DONE, "(call)");
@@ -169,6 +168,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
 		    //steplog(sb.toString(),"");
 		} else {
 		    steplog("Invoked", "");
+		    // System.err.println(sb.toString());
 		    Process p = Runtime.getRuntime().exec(cmd3);
 		    workflow.addBgdProcess(p);
 		    isInvoked = true;

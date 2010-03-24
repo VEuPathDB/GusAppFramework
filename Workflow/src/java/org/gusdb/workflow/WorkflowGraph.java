@@ -130,8 +130,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
     
     // recurse through steps starting at roots.
     @SuppressWarnings("unchecked")
-    public List<T> getSortedSteps() {
-        if (sortedSteps == null) {
+    public List<T> getSortedSteps() { 
+       if (sortedSteps == null) {
 	    int depthFirstOrder = 0;
             sortedSteps = new ArrayList<T>();
             for (T rootStep : rootSteps) {
@@ -193,7 +193,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    String dName = dependName.getName();
             T parent = steps.get(dName);
             if (parent == null) {      
-		System.err.println(steps.toString());
                 Utilities.error("In file " + xmlFileName + ", step '"
                                 + step.getBaseName() + "' depends on "
 				+ globalStr + "step '"
@@ -207,7 +206,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
 
     // delete steps with includeIf = false
     private void deleteExcludedSteps() throws java.io.IOException {
-	
 	Map<String, T> stepsTmp = new HashMap<String, T>(stepsByName);
         for (T step : stepsTmp.values()) {
             if (step.getExcludeFromGraph()) {
@@ -223,8 +221,10 @@ public class WorkflowGraph<T extends WorkflowStep> {
 			child.addParent(parent);
 		    }                
 		}
-		stepsByName.remove(step.getFullName());
+		stepsByName.remove(step.getBaseName());
 		subgraphCallerSteps.remove(step);
+		rootSteps.remove(step);
+		leafSteps.remove(step);
 	    }
 	}
     }
@@ -397,7 +397,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
 		boolean mismatch = !step.getFullName().equals(dbName)
 		    || (!step.getIsSubgraphCall() && !step.getParamsDigest().equals(dbParamsDigest))
 		    || !stepClassMatch
-		    || step.getDependsString() != dbDependsString;
+		    || !step.getDependsString().equals(dbDependsString);
 
 		if (mismatch) {
 		    if (!dbState.equals(Workflow.READY) 
@@ -470,6 +470,8 @@ public class WorkflowGraph<T extends WorkflowStep> {
         // (if there is a global subgraph caller, it will be first in the list.
         //  this way we can gather global constants before any other graph is processed)
         for (T subgraphCallerStep : subgraphCallerSteps) {
+
+	    if (subgraphCallerStep.getExcludeFromGraph()) continue;
         
             // get the xml file of a graph to insert, and check for circularity
             String subgraphXmlFileName = subgraphCallerStep.getSubgraphXmlFileName();
@@ -525,7 +527,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
     }
     
     private void setPath(String path) {
-        for (T step : getSteps()) step.setPath(path);
+        for (T step : getSteps()) {
+	    step.setPath(path);
+	}
     }
     
     private void setCallingStep(T callingStep) {
@@ -576,12 +580,17 @@ public class WorkflowGraph<T extends WorkflowStep> {
                 parser.parseWorkflow(workflow, stepClass, xmlFileName,
                         globalSteps, globalConstants, isGlobal); 
 
+	graph.postprocessSteps();
+	graph.insertSubgraphReturnChildren();
+
         // set the path of its unexpanded steps
         graph.setPath(path);
 
         // set the calling step of its unexpanded steps
         graph.setCallingStep(subgraphCallerStep);
         
+	// instantiate macros and param values before processing 
+	// steps
         graph.instantiateMacros(macroValuesMap);
 
         // instantiate param values from param values passed in
@@ -591,14 +600,16 @@ public class WorkflowGraph<T extends WorkflowStep> {
                                 paramValuesMap,
                                 paramErrorsMap);
         
-        // delete excluded steps
-	graph.deleteExcludedSteps();
-        
+	graph.setRootsAndLeafs();
+
         // expand subgraphs
         List<String> newXmlFileNamesStack = new ArrayList<String>(xmlFileNamesStack);
         newXmlFileNamesStack.add(xmlFileName);
         graph.expandSubgraphs(path, newXmlFileNamesStack, stepClass, paramErrorsMap,
                 globalSteps, globalConstants, macroValuesMap);
+        
+        // delete excluded steps
+	graph.deleteExcludedSteps();
         
         return graph;
     }
