@@ -41,20 +41,12 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
     public WorkflowGraph<T> parseWorkflow(Workflow workflow, Class<T> stepClass,
             String xmlFileName, Map<String, T> globalSteps, 
             Map<String,String> globalConstants, boolean isGlobalGraph) throws SAXException, IOException, Exception {
-	return parseWorkflow(workflow, stepClass, xmlFileName, globalSteps, globalConstants, isGlobalGraph, true);
-    }
-
-    @SuppressWarnings("unchecked")
-    public WorkflowGraph<T> parseWorkflow(Workflow workflow, Class<T> stepClass,
-            String xmlFileName, Map<String, T> globalSteps, 
-            Map<String,String> globalConstants, boolean isGlobalGraph,
-	    boolean insertSubgraphReturns) throws SAXException, IOException, Exception {
         this.stepClass = stepClass;
 
         configure();
         
         // construct urls to model file, prop file, and config file
-        URL modelURL = makeURL(gusHome, "lib/xml/workflow/" + xmlFileName);
+        URL modelURL = makeURL(gusHome + "/lib/xml/workflow/" + xmlFileName);
 
         if (!validate(modelURL))
             throw new Exception("validation failed.");
@@ -72,11 +64,6 @@ public class WorkflowXmlParser<T extends WorkflowStep> extends XmlParser {
         workflowGraph.setIsGlobal(isGlobalGraph);
         workflowGraph.setGlobalConstants(globalConstants);
         workflowGraph.setGlobalSteps(globalSteps);
-	workflowGraph.postprocessSteps();
-	if (insertSubgraphReturns) {
-	    workflowGraph.insertSubgraphReturnChildren();
-	}
-	workflowGraph.setRootsAndLeafs();
         return workflowGraph;
     }
 

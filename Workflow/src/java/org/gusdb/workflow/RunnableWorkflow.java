@@ -175,7 +175,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         getStepsDbState();
     }
     
-    String getXmlFileDigest() throws InterruptedException, IOException {
+    /*    String getXmlFileDigest() throws InterruptedException, IOException {
         String cmd = "workflowxmlsum -h " + getHomeDir();
         Process process = Runtime.getRuntime().exec(cmd);
         process.waitFor();
@@ -185,11 +185,17 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         String digest = reader.readLine().trim();
         process.destroy();
         reader.close();
+	digest = 1;
         return digest;
     }
 
+    */
+     String getXmlFileDigest() throws InterruptedException, IOException {
+	 return "hello";
+    }
 
-    
+
+   
     private void initializeUndo(boolean testOnly) throws SQLException, IOException, InterruptedException {
         
         if (undo_step_id == null && undoStepName == null) return; 

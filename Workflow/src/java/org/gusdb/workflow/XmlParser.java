@@ -42,9 +42,9 @@ public abstract class XmlParser {
         this.schemaPath = schemaPath;
     }
      
-    void configure() throws SAXException, IOException {
+    protected void configure() throws SAXException, IOException {
         // get model schema file and xml schema file
-        URL schemaURL = makeURL( gusHome, schemaPath );
+        URL schemaURL = makeURL(gusHome + "/" + schemaPath );
         
        // config validator and digester
         validator = configureValidator( schemaURL );
@@ -66,9 +66,9 @@ public abstract class XmlParser {
         return validator;
     }
     
-    protected URL makeURL( String parent, String relativePath )
+    protected URL makeURL(String fullPath)
             throws MalformedURLException {
-        String url = parent + "/" + relativePath;
+        String url = fullPath;
         String lower = url.toLowerCase();
         if ( lower.startsWith( "file:/" ) || lower.startsWith( "http://" )
                 || lower.startsWith( "https://" )
