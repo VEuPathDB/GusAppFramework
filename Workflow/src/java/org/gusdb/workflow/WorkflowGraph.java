@@ -128,6 +128,10 @@ public class WorkflowGraph<T extends WorkflowStep> {
         this.globalStepsByName = globalSteps;
     }
     
+    public List<T> getRootSteps() {
+	return rootSteps;
+    }
+
     // recurse through steps starting at roots.
     @SuppressWarnings("unchecked")
     public List<T> getSortedSteps() { 
@@ -614,7 +618,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
         return graph;
     }
     
-    static <S extends WorkflowStep > WorkflowGraph<S> constructFullGraph(Class<S> stepClass,
+    public static <S extends WorkflowStep > WorkflowGraph<S> constructFullGraph(Class<S> stepClass,
             Workflow<S> workflow) throws FileNotFoundException, SAXException, IOException, Exception {
         
         // create structures to hold global steps and constants

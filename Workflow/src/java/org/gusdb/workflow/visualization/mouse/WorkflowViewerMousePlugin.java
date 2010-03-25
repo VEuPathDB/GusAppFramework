@@ -51,7 +51,7 @@ public class WorkflowViewerMousePlugin extends AbstractGraphMousePlugin
 		vertex = pickSupport.getVertex(layout, e.getPoint().getX(), e.getPoint().getY());
 		if(vertex != null) {
 		    if (vertex.getIsSubgraphCall()) {
-			viewer.createViewFromXmlFile(vertex.getSubgraphXmlFileName());
+			viewer.displayGraph(WorkflowViewer.getSubgraphKey(vertex));
 		    }
 		    e.consume();
 		}

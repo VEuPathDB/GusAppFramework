@@ -43,7 +43,7 @@ import java.util.HashMap;
 
 */
 
-public class WorkflowStep  {
+public class WorkflowStep implements Comparable {
 
     // from construction and configuration
     protected String subgraphXmlFileName;
@@ -130,7 +130,7 @@ public class WorkflowStep  {
 	this.callingStep = callingStep;
     }
     
-    boolean getIsSubgraphReturn() { return isSubgraphReturn; }
+    public boolean getIsSubgraphReturn() { return isSubgraphReturn; }
     
     boolean getStopAfter() { return stop_after; }
     
@@ -161,7 +161,7 @@ public class WorkflowStep  {
     
     String getExcludeIfString() { return excludeIf_string; }
     
-    boolean getExcludeFromGraph() {
+    public boolean getExcludeFromGraph() {
 	if (excludeFromGraph == null) {
 	    boolean efg = false;
 	    if (callingStep != null && callingStep.getExcludeFromGraph()) {
@@ -201,7 +201,7 @@ public class WorkflowStep  {
         children =  new ArrayList<WorkflowStep>();
     }
 
-    protected List<WorkflowStep> getChildren() {
+    public List<WorkflowStep> getChildren() {
         return children;
     }
     
@@ -561,6 +561,11 @@ public class WorkflowStep  {
 	buf.append(nl + "params: " + paramValues);
 	buf.append(nl + nl);
 	return buf.toString();
+    }
+
+    public int compareTo(Object o) {
+	WorkflowStep s = (WorkflowStep) o;
+	return baseName.compareTo(s.getBaseName());
     }
 
 }
