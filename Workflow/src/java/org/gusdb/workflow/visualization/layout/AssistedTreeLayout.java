@@ -4,8 +4,10 @@ import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -91,7 +93,7 @@ public class AssistedTreeLayout<V,E> implements Layout<V,E> {
 	tree = new DelegateForest<V,E>();
 
 	// Add roots to the tree first
-	for (V vertex : graph.getVertices()) {
+	for (V vertex : sortVertices(graph.getVertices())) {
 	    if (graph.inDegree(vertex) == 0) {
 		tree.addVertex(vertex);
 	    }
@@ -100,9 +102,8 @@ public class AssistedTreeLayout<V,E> implements Layout<V,E> {
 	// Add the remaining vertices
 	// Need something better than n^2 here
 	while (graph.getVertexCount() > tree.getVertexCount()) {
-	    ArrayList<V> vertices = new ArrayList<V>(tree.getVertices());
-	    for (V vertex : vertices) {
-		for (E edge : graph.getOutEdges(vertex)) {
+	    for (V vertex : sortVertices(tree.getVertices())) {
+		for (E edge : sortEdges(graph.getOutEdges(vertex))) {
 		    V target = graph.getOpposite(vertex, edge);
 		    if (!tree.containsVertex(target)) {
 			tree.addEdge(edge, vertex, target);
@@ -114,7 +115,7 @@ public class AssistedTreeLayout<V,E> implements Layout<V,E> {
 
     protected void buildTree() {
         this.m_currentPoint = new Point(0, 20);
-        Collection<V> roots = TreeUtils.getRoots(tree);
+        Collection<V> roots = sortVertices(TreeUtils.getRoots(tree));
         if (roots.size() > 0 && tree != null) {
 	    calculateDimensionX(roots);
 	    for(V v : roots) {
@@ -130,8 +131,7 @@ public class AssistedTreeLayout<V,E> implements Layout<V,E> {
     }
 
     protected void buildTree(V v, int x) {
-	
-        if (!alreadyDone.contains(v)) {
+	if (!alreadyDone.contains(v)) {
             alreadyDone.add(v);
 	    
             //go one level further down
@@ -147,7 +147,7 @@ public class AssistedTreeLayout<V,E> implements Layout<V,E> {
             int sizeXofChild;
             int startXofChild;
 	    
-            for (V element : tree.getSuccessors(v)) {
+            for (V element : sortVertices(tree.getSuccessors(v))) {
                 sizeXofChild = this.basePositions.get(element);
                 startXofChild = lastX + sizeXofChild / 2;
                 buildTree(element, startXofChild);
@@ -163,7 +163,7 @@ public class AssistedTreeLayout<V,E> implements Layout<V,E> {
         int childrenNum = tree.getSuccessors(v).size();
 	
         if (childrenNum != 0) {
-            for (V element : tree.getSuccessors(v)) {
+            for (V element : sortVertices(tree.getSuccessors(v))) {
                 size += calculateDimensionX(element) + distX;
             }
         }
@@ -180,7 +180,7 @@ public class AssistedTreeLayout<V,E> implements Layout<V,E> {
 	    int childrenNum = tree.getSuccessors(v).size();
 	    
 	    if (childrenNum != 0) {
-		for (V element : tree.getSuccessors(v)) {
+		for (V element : sortVertices(tree.getSuccessors(v))) {
 		    size += calculateDimensionX(element) + distX;
 		}
 	    }
@@ -265,5 +265,19 @@ public class AssistedTreeLayout<V,E> implements Layout<V,E> {
     
     public Point2D transform(V v) {
 	return locations.get(v);
+    }
+
+    private Collection<V> sortVertices(Collection<V> vertices) {
+	return (Collection<V>) sortCollection(vertices);
+    }
+
+    private Collection<E> sortEdges(Collection<E> edges) {
+	return (Collection<E>) sortCollection(edges);
+    }
+
+    private Collection sortCollection(Collection items) {
+	List sortedItems = new ArrayList(items);
+	Collections.sort(sortedItems);
+	return sortedItems;
     }
 }
