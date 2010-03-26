@@ -1,9 +1,7 @@
 package org.gusdb.workflow;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -123,18 +121,20 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
             executeSqlUpdate(sql);
         }
         
-        if (updateXmlFileDigest) {
-            if (!uninitialized) getDbState(); // get workflow_id
-            String sql = "UPDATE apidb.workflow" +
-                " SET xml_file_digest = '" + getXmlFileDigest() + "'" +
-                " WHERE workflow_id = " + workflow_id;
-            executeSqlUpdate(sql);
-        }
         return uninitialized;
+    }
+    
+    private void setInitializingStepTableFlag(boolean initializing) throws FileNotFoundException, SQLException, IOException {
+        int i = initializing? 1 : 0;
+        String sql = "UPDATE apidb.workflow" +
+        " SET initializing_step_table = " + i +
+        " WHERE workflow_id = " + workflow_id;
+        executeSqlUpdate(sql);
     }
     
     private void  initWorkflowStepTable(boolean stepTableEmpty) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
 
+        setInitializingStepTableFlag(true);
         if (!stepTableEmpty) {
             // see if our current graph is already in db (exactly)
             // if so, return
@@ -173,28 +173,9 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
         // update steps in memory, to get their new IDs
         getStepsDbState();
+        setInitializingStepTableFlag(false);
     }
     
-    /*    String getXmlFileDigest() throws InterruptedException, IOException {
-        String cmd = "workflowxmlsum -h " + getHomeDir();
-        Process process = Runtime.getRuntime().exec(cmd);
-        process.waitFor();
-        if (process.exitValue() != 0) error("failed running cmd '" + cmd + '"');
-        BufferedReader reader =  
-            new BufferedReader(new InputStreamReader(process.getInputStream()));  
-        String digest = reader.readLine().trim();
-        process.destroy();
-        reader.close();
-	digest = 1;
-        return digest;
-    }
-
-    */
-     String getXmlFileDigest() throws InterruptedException, IOException {
-	 return "hello";
-    }
-
-
    
     private void initializeUndo(boolean testOnly) throws SQLException, IOException, InterruptedException {
         

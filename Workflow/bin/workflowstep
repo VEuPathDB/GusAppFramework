@@ -46,9 +46,8 @@ $workflow->error("Workflow is running an Undo.  -u required")
     if $workflow->{undo_step_id} && !$undo;
 $workflow->error("Workflow is not running an Undo.  -u is not allowed")
     if !$workflow->{undo_step_id} && $undo;
-
-$workflow->checkXmlFileDigest();
-
+$workflow->error("Workflow is currently initializing step table.  Try again when it is done.")
+    if $workflow->{initializing_step_table};
 
 
 my $stepNames;
@@ -96,7 +95,7 @@ sub usage {
 
 Change the state and/or offline status of the workflow steps whose name match the provided pattern.
 
-Usage: workflowstep -h workflow_home_dir [ -p stepname_pattern | -f file_of_steps ] [-l | [offline|online|stopafter|resume] [ready|kill]]
+Usage: workflowstep -h workflow_home_dir [ -p stepname_pattern | -f file_of_steps ] [-l | [[offline|online|stopafter|resume] [ready|kill]]
 
 Where:
   -h                   - workflow home dir
@@ -111,8 +110,12 @@ Allowed state changes are:
   $FAILED  --> ready
   $RUNNING --> kill
 
+An offline step may be changed to online, and vice versa.
+
+A stopafter step may be changed to resume, and vice versa.
+
 Offline status may not be changed when the step is $RUNNING
-Stop after status may not be changed when the stop is $DONE
+Stopafter status may not be changed when the step is $DONE
 
 Examples
   % workflowstep -h workflow_dir -p stepname_pattern -l
