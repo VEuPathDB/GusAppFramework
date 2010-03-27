@@ -186,6 +186,8 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         // if not already running undo
         if (undo_step_id == null) {
             
+	    log("Running UNDO of step " + step.getFullName());
+
             // confirm that no steps are running   
             handleStepChanges(testOnly);
             List<RunnableWorkflowStep> runningSteps = new ArrayList<RunnableWorkflowStep>();
