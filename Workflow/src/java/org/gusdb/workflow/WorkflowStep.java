@@ -134,7 +134,7 @@ public class WorkflowStep implements Comparable {
     public boolean getIsSubgraphReturn() { return isSubgraphReturn; }
     
     public WorkflowStep getSubgraphReturnStep() {
-	subgraphReturnStep;
+	return subgraphReturnStep;
     }
 
 
