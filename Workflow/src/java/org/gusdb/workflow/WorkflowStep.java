@@ -57,6 +57,7 @@ public class WorkflowStep implements Comparable {
     private boolean isSubgraphReturn;
     private boolean isGlobal = false;  // set iff this step is call or return of a global subgraph.
     private WorkflowStep callingStep;  // step that called our subgraph, if any
+    public WorkflowStep subgraphReturnStep;  // if this step is a caller, its associated return step.
     private String paramsDigest;
     private int depthFirstOrder;
     private String[] loadTypes = {"total"};
@@ -132,6 +133,11 @@ public class WorkflowStep implements Comparable {
     
     public boolean getIsSubgraphReturn() { return isSubgraphReturn; }
     
+    public WorkflowStep getSubgraphReturnStep() {
+	subgraphReturnStep;
+    }
+
+
     boolean getStopAfter() { return stop_after; }
     
     String getStepClassName() {
@@ -238,6 +244,7 @@ public class WorkflowStep implements Comparable {
 	newStep.setIsGlobal(isGlobal);
 
         newStep.setName(getFullName() + ".return");
+	subgraphReturnStep = newStep;
         List<WorkflowStep> oldChildren = new ArrayList<WorkflowStep>(children);
         for (WorkflowStep oldChild : oldChildren) {
             oldChild.removeParent(this);
@@ -550,6 +557,7 @@ public class WorkflowStep implements Comparable {
 	    + "process_id: " + process_id + nl
 	    + "start_time: " + start_time + nl
 	    + "end_time:   " + end_time + nl
+	    + "depth:      " + depthFirstOrder + nl
 	    + "depends on: ";
 
 	String delim = "";
