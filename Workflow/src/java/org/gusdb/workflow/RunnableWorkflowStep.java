@@ -165,7 +165,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
 		String[] cmd3 = {"sh", "-c", sb.toString() + " &"};
 		if (isInvoked) {
 		    steplog("Invoked but not running", "");
-		    //steplog(sb.toString(),"");
+		    steplog(sb.toString(),"");
 		} else {
 		    steplog("Invoked", "");
 		    // System.err.println(sb.toString());
