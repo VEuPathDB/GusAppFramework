@@ -199,6 +199,14 @@ sub runCmdOnCluster {
 sub copyToCluster {
     my ($self, $fromDir, $fromFile, $toDir) = @_;
     $self->getCluster()->copyTo($fromDir, $fromFile, $toDir);
+
+    # SshCluster object is not testing that file successfully copied
+    my $server = $self->getWorkflowConfig('clusterServer');
+    my $user = $ENV{USER};
+    my $cmd = qq{ssh -2 $user\@$server '/bin/bash -login -c "ls $toDir"'};
+    my $ls = $self->runCmd(0, $cmd);
+    my @ls2 = split(/\s/, $ls);
+    $self->error("$ls\nFailed copying '$fromDir/$fromFile' to '$toDir' oncluster") unless grep(/$fromFile/, @ls2);
 }
 
 sub copyFromCluster {
