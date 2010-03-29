@@ -183,11 +183,11 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
          
         if (undoStepName == null) error("An undo is in progress.  Cannot run the workflow in regular mode.");
 
+	log("Running UNDO of step " + undoStepName);
+
         // if not already running undo
         if (undo_step_id == null) {
             
-	    log("Running UNDO of step " + undoStepName);
-
             // confirm that no steps are running   
             handleStepChanges(testOnly);
             List<RunnableWorkflowStep> runningSteps = new ArrayList<RunnableWorkflowStep>();
