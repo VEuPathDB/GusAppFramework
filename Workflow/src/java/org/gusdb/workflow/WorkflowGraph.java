@@ -157,14 +157,14 @@ public class WorkflowGraph<T extends WorkflowStep> {
 
     String getStepsAsString() {
     	StringBuffer buf = new StringBuffer();
-	for (T step : getSteps()) {
-	    buf.append(step.getFullName() + nl);
+	for (T step : getSortedSteps()) {
+	    buf.append(step.toString() + nl);
 	}
 	return buf.toString();
     }
     
     // clean up after building from xml
-    void postprocessSteps() throws FileNotFoundException, IOException {
+    private void postprocessSteps() throws FileNotFoundException, IOException {
 
 	// digester loads global constants into a tmp and we validate
 	// as a post-process because validation must happen after other
@@ -181,7 +181,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
         for (T step : getSteps()) {
 
 	    // make the parent/child links from the remembered dependencies
-            makeParentChildLinks(step.getDependsNames(), stepsByName, step, "");
+            makeParentChildLinks(step.getDependsNames(), stepsByName, step, false);
 
             // remember steps that call a subgraph
             if (step.getSubgraphXmlFileName() != null) subgraphCallerSteps.add(step);      
@@ -191,8 +191,10 @@ public class WorkflowGraph<T extends WorkflowStep> {
         }
     }
     
-    void makeParentChildLinks(List<Name> dependsNames, Map<String, T> steps,
-			      T step, String globalStr) {
+    // global = true if we are making links to global parents
+    private void makeParentChildLinks(List<Name> dependsNames, Map<String, T> steps,
+			      T step, Boolean global) {
+	String globalStr = global? "global " : "";
         for (Name dependName : dependsNames) {
 	    String dName = dependName.getName();
             T parent = steps.get(dName);
@@ -202,8 +204,22 @@ public class WorkflowGraph<T extends WorkflowStep> {
 				+ globalStr + "step '"
 				+ dName + "' which is not found");
             }
-            step.addParent(parent);
-            parent.addChild(step);
+
+	    // global parent-child links are made after subgraph expansion,
+	    // not before as is done for standard parent-child links.
+	    // if processing global parents and the parent is a subgraph
+	    // call, compensate for the fact that expansion has already created
+	    // the subgraph return step.
+	    // force the children to be attached to the return.
+	    // if we don't, the global kids are attached to call, which is wrong
+	    if (global && parent.getIsSubgraphCall()) {
+		step.addParent(parent.getSubgraphReturnStep());
+		parent.getSubgraphReturnStep().addChild(step);
+	    }
+	    else {
+		step.addParent(parent);
+		parent.addChild(step);
+	    }
         }
         
     }
@@ -510,11 +526,15 @@ public class WorkflowGraph<T extends WorkflowStep> {
                     subgraphCallerStep,
                     xmlFileNamesStack);       
             
-            // after expanding kids, process dependsGlobal.  (We do this after
+            // after expanding kids, process dependsGlobal.  We do this after
             // expansion so that in root graph, the global graph is expanded
-            // before processing dependsGlobal in that graph)
+            // before processing dependsGlobal in that graph.  This is needed
+	    // because it is not until we expand the global graph that the steps
+	    // within it are instantiated.  the steps in non-root graphs would be
+	    // ok, but there are steps in root graph that have globalDepends, and
+	    // they can't make the association before the global graph is expanded
             for (T step : getSteps())                 
-                makeParentChildLinks(step.getDependsGlobalNames(), globalStepsByName, step, "global");
+                makeParentChildLinks(step.getDependsGlobalNames(), globalStepsByName, step, true);
          
             // insert it
             WorkflowStep subgraphReturnStep = subgraphCallerStep.getChildren().get(0);
