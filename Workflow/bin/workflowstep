@@ -95,16 +95,17 @@ sub usage {
 
 Change the state and/or offline status of the workflow steps whose name match the provided pattern.
 
-Usage: workflowstep -h workflow_home_dir [ -p stepname_pattern | -f file_of_steps ] [-l | [[offline|online|stopafter|resume] [ready|kill]]
+Usage: workflowstep -h workflow_home_dir [ -p stepname_pattern | -f file_of_steps ] [-l | [[offline|online|stopafter|resume] [ready|kill]] [-u]
 
 Where:
   -h                   - workflow home dir
-  -p stepname_pattern  - wildcard pattern using '%' as a wildcard (Oracle
-                         syntax) to specify  one or more steps to change.
+  -p stepname_pattern  - name or pattern (using '%' as a wildcard) that
+                         specifies  one or more steps to change.
                          EG, %.runBlast
   -f file_of_steps     - a file containing a list of step names.
   -l                   - list mode: don't change any steps, just list the
                          names that match the pattern
+  -u                   - if and only if workflow is running in undo mode
 
 Allowed state changes are:
   $FAILED  --> ready
@@ -119,6 +120,10 @@ Stopafter status may not be changed when the step is $DONE
 
 Examples
   % workflowstep -h workflow_dir -p stepname_pattern -l
+
+  % workflowstep -h workflow_dir -p stepname_pattern ready
+
+  % workflowstep -h workflow_dir -p stepname_pattern ready -u
 
   % workflowstep -h workflow_dir -p stepname_pattern kill
 
