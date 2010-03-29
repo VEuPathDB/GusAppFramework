@@ -134,14 +134,14 @@ sub getConfig {
   return $value;
 }
 
-sub getGlobalConfig {
+sub getSharedConfig {
     my ($self, $key) = @_;
 
-    $self->getGlobalConfigProperties();
+    $self->getSharedConfigProperties();
     return $self->{globalStepsConfig}->getProp($key);
 }
 
-sub getGlobalConfigProperties {
+sub getSharedConfigProperties {
     my ($self) = @_;
 
     if (!$self->{globalStepsConfig}) {

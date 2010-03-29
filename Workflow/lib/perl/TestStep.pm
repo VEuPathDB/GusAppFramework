@@ -9,7 +9,7 @@ sub run {
 
   my $name = $self->getConfig('name');
   my $wait = $self->getConfig('wait');
-  my $mood = $self->getGlobalConfig('mood');
+  my $mood = $self->getSharedConfig('mood');
   my $msg = $self->getParamValue('msg');
 
   $self->runCmd($test, "echo $name $mood $msg > teststep.out");
