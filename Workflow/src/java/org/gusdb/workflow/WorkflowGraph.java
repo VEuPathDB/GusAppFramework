@@ -401,7 +401,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	try {
 	    stmt = workflow.getDbConnection().createStatement();
 	    rs = stmt.executeQuery(sql);
+	    int count = 0;
 	    while(rs.next()) {
+	        count++;
 		String dbName = rs.getString(1);
 		String dbParamsDigest = rs.getString(2);
 		String dbDependsString = rs.getString(3);
@@ -424,7 +426,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
 		    || ((dbClassName != null && step.getStepClassName() != null)
 			&& step.getStepClassName().equals(dbClassName));
 
-		// don't require that the param digest of a subgraph call agrees
+		// don't require that the param digest of a subgraph call agrees.
 		// this way steps can be grafted into a graph, and new params can
 		// be passed to them.  as long as existing steps have matching
 		// param digests, all is ok
@@ -452,11 +454,11 @@ public class WorkflowGraph<T extends WorkflowStep> {
 		    return false;
 		}
 	    }
+            return (count == stepsByName.size());
 	} finally {
 	    if (rs != null) rs.close();
 	    if (stmt != null) stmt.close(); 
 	}  
-	return true;
     }
 
     // remove from the db all READY or ON_DECK steps
