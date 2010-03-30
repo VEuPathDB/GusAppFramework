@@ -401,21 +401,35 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	try {
 	    stmt = workflow.getDbConnection().createStatement();
 	    rs = stmt.executeQuery(sql);
-	    for (T step : getSortedSteps()) {
-		if (!rs.next()) return false;
+	    while(rs.next()) {
 		String dbName = rs.getString(1);
 		String dbParamsDigest = rs.getString(2);
 		String dbDependsString = rs.getString(3);
 		String dbClassName = rs.getString(4);
 		String dbState = rs.getString(5);
+		
+		T step = stepsByName.get(dbName);
+		
+		if (step == null) {
+		    if (!dbState.equals(Workflow.READY) && !dbState.equals(Workflow.ON_DECK)) {
+		        Utilities.error("Step '" + dbName +
+		                "' has been deleted from the XML file while in the state '"
+		                + dbState + '"');		        
+		    }
+		    return false;
+		}
 
 		boolean stepClassMatch = 
 		    (dbClassName == null && step.getStepClassName() == null)
 		    || ((dbClassName != null && step.getStepClassName() != null)
 			&& step.getStepClassName().equals(dbClassName));
 
-		boolean mismatch = !step.getFullName().equals(dbName)
-		    || (!step.getIsSubgraphCall() && !step.getParamsDigest().equals(dbParamsDigest))
+		// don't require that the param digest of a subgraph call agrees
+		// this way steps can be grafted into a graph, and new params can
+		// be passed to them.  as long as existing steps have matching
+		// param digests, all is ok
+		boolean mismatch =
+		    (!step.getIsSubgraphCall() && !step.getParamsDigest().equals(dbParamsDigest))
 		    || !stepClassMatch
 		    || !step.getDependsString().equals(dbDependsString);
 
@@ -438,7 +452,6 @@ public class WorkflowGraph<T extends WorkflowStep> {
 		    return false;
 		}
 	    }
-	    if (rs.next()) return false;
 	} finally {
 	    if (rs != null) rs.close();
 	    if (stmt != null) stmt.close(); 
