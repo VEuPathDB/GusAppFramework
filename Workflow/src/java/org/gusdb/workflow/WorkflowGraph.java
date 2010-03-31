@@ -158,7 +158,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     String getStepsAsString() {
     	StringBuffer buf = new StringBuffer();
 	for (T step : getSortedSteps()) {
-	    buf.append(step.toString() + nl);
+	    buf.append(step.getFullName() + nl);
 	}
 	return buf.toString();
     }
