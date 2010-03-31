@@ -33,19 +33,20 @@ sub getStepNamesFromPattern {
     my ($self, $stepNamePattern) = @_;
 
     $self->getId();
-    my $names;
+    my $result;
     my $sql = 
-"SELECT name
+"SELECT name, state, undo_state
 FROM apidb.WorkflowStep
 WHERE name like '$stepNamePattern'
-AND workflow_id = $self->{workflow_id}";
+AND workflow_id = $self->{workflow_id}
+order by depth_first_order";
 
     my $stmt = $self->getDbh()->prepare($sql);
     $stmt->execute();
-    while (my ($name) = $stmt->fetchrow_array()) {
-	push(@$names, $name);
+    while (my ($name, $status, $undo_status) = $stmt->fetchrow_array()) {
+	push(@$result, [$name, $status, $undo_status]);
     }
-    return $names;
+    return $result;
 }
 
 sub getStepNamesFromFile {
@@ -53,14 +54,14 @@ sub getStepNamesFromFile {
 
   my $homeDir = $self->getWorkflowHomeDir();
 
-  my $files = [];
+  my $names = [];
   open(F, $file) || die "Cannot open steps file '$file'";
   while(<F>) {
     next if /^\#/;
     chomp;
-    push(@$files, $_);
+    push(@$names, $_);
   }
-  return $files;
+  return $names;
 }
 
 sub getId {

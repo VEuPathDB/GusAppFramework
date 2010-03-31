@@ -50,20 +50,26 @@ $workflow->error("Workflow is currently initializing step table.  Try again when
     if $workflow->{initializing_step_table};
 
 
-my $stepNames;
+my $stepList;
 if ($inputType eq '-p') {
-  $stepNames = $workflow->getStepNamesFromPattern($stepNamePattern);
+  $stepList = $workflow->getStepNamesFromPattern($stepNamePattern);
 } else {
-  $stepNames = $workflow->getStepNamesFromFile($stepNameFile);
+  $stepList = $workflow->getStepNamesFromFile($stepNameFile);
 }
 
 my @errors;
 
-foreach my $stepName (@$stepNames) {
+foreach my $stepInfo (@$stepList) {
+  my ($stepName, $state,$undoState) = @$stepInfo;
 
     if ($list) {
-	print "$stepName\n";
-	next;
+      my $undo = "";
+      if ($undoState) {
+	$state = $undoState;
+	$undo = "U";
+      }
+      print sprintf('%-7s %1s %s', $state,$undo, $stepName) . "\n";
+      next;
     }
 
     my $step = GUS::Workflow::WorkflowStepPilot->new($stepName, $workflow);
