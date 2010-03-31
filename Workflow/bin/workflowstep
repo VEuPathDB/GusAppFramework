@@ -110,7 +110,7 @@ Where:
                          EG, %.runBlast
   -f file_of_steps     - a file containing a list of step names.
   -l                   - list mode: don't change any steps, just list the
-                         names that match the pattern
+                         names that match the pattern (and their state)
   -u                   - if and only if workflow is running in undo mode
 
 Allowed state changes are:
