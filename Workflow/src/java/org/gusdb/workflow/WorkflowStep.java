@@ -167,7 +167,7 @@ public class WorkflowStep implements Comparable {
     
     String getExcludeIfString() { return excludeIf_string; }
     
-    public boolean getExcludeFromGraph() {
+    public boolean getExcludeFromGraph() throws FileNotFoundException, IOException{
 	if (excludeFromGraph == null) {
 	    boolean efg = false;
 	    if (callingStep != null && callingStep.getExcludeFromGraph()) {
@@ -176,7 +176,8 @@ public class WorkflowStep implements Comparable {
 		|| (excludeIf_string != null && excludeIf_string.equals("true"))) {
 		efg = true;
 		String gr = isSubgraphCall? "SUBGRAPH " : "";
-		if (!isSubgraphReturn) System.err.println("Excluding " + gr + getFullName());
+		if (!isSubgraphReturn)
+		    workflowGraph.getWorkflow().log("Excluding " + gr + getFullName());
 	    }
 	    excludeFromGraph = new Boolean(efg);
 	}
