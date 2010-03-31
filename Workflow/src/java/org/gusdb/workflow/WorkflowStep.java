@@ -212,12 +212,12 @@ public class WorkflowStep implements Comparable {
     }
     
     // all kids, recursively
-    Set<WorkflowStep> getDescendents() {
-        Set<WorkflowStep> descendents = new HashSet<WorkflowStep>(children);
+    Set<WorkflowStep> getDescendants() {
+        Set<WorkflowStep> descendants = new HashSet<WorkflowStep>(children);
         for (WorkflowStep kid : children) {
-            descendents.addAll(kid.getDescendents());
+            descendants.addAll(kid.getDescendants());
         }
-        return descendents;
+        return descendants;
     }
     
     public Map<String,String> getParamValues() {

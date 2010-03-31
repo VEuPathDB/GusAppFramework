@@ -352,14 +352,14 @@ public class WorkflowGraph<T extends WorkflowStep> {
     @SuppressWarnings("unchecked")
     void convertToUndo() throws FileNotFoundException, SQLException, IOException {
         
-        // find all descendents of the undo root
+        // find all descendants of the undo root
         WorkflowStep undoRootStep = stepsByName.get(workflow.getUndoStepName());
-        Set<WorkflowStep> undoDescendents = undoRootStep.getDescendents();
-	undoDescendents.add(undoRootStep);
+        Set<WorkflowStep> undoDescendants = undoRootStep.getDescendants();
+	undoDescendants.add(undoRootStep);
 
-	// reset stepsByName to hold only descendents of undo root that are DONE
+	// reset stepsByName to hold only descendants of undo root that are DONE
         stepsByName = new HashMap<String,T>();
-        for (WorkflowStep step : undoDescendents) {
+        for (WorkflowStep step : undoDescendants) {
             if (step.getState().equals(Workflow.DONE))
 		stepsByName.put(step.getFullName(), (T)step);
         }
@@ -390,14 +390,23 @@ public class WorkflowGraph<T extends WorkflowStep> {
     ////////////////////////////////////////////////////////////////////////
 
     // check if the in-memory graph matches that in the db exactly
-    boolean inDbExactly() throws SQLException, FileNotFoundException, NoSuchAlgorithmException, IOException, Exception {
-	String sql = "select name, params_digest, depends_string, step_class, state"
+    boolean inDbExactly(boolean stepTableEmpty) throws SQLException, FileNotFoundException, NoSuchAlgorithmException, IOException, Exception {
+
+        if (stepTableEmpty) return false;
+        
+        String sql = "select name, params_digest, depends_string, step_class, state"
 	    + " from apidb.workflowstep"  
 	    + " where workflow_id = " + workflow.getId()
 	    + " order by depth_first_order";
 
 	Statement stmt = null;
 	ResultSet rs = null;
+	
+        StringBuffer diffs = new StringBuffer();
+        StringBuffer errors = new StringBuffer();
+	
+	List<String> notInDb = new ArrayList<String>(stepsByName.keySet());
+	
 	try {
 	    stmt = workflow.getDbConnection().createStatement();
 	    rs = stmt.executeQuery(sql);
@@ -413,54 +422,77 @@ public class WorkflowGraph<T extends WorkflowStep> {
 		T step = stepsByName.get(dbName);
 		
 		if (step == null) {
-		    if (!dbState.equals(Workflow.READY) && !dbState.equals(Workflow.ON_DECK)) {
-		        Utilities.error("Step '" + dbName +
-		                "' has been deleted from the XML file while in the state '"
-		                + dbState + '"');		        
-		    }
-		    return false;
-		}
-
-		boolean stepClassMatch = 
-		    (dbClassName == null && step.getStepClassName() == null)
-		    || ((dbClassName != null && step.getStepClassName() != null)
-			&& step.getStepClassName().equals(dbClassName));
-
-		// don't require that the param digest of a subgraph call agrees.
-		// this way steps can be grafted into a graph, and new params can
-		// be passed to them.  as long as existing steps have matching
-		// param digests, all is ok
-		boolean mismatch =
-		    (!step.getIsSubgraphCall() && !step.getParamsDigest().equals(dbParamsDigest))
-		    || !stepClassMatch
-		    || !step.getDependsString().equals(dbDependsString);
-
-		if (mismatch) {
-		    if (!dbState.equals(Workflow.READY) 
-			&& !dbState.equals(Workflow.ON_DECK)
-			&& !dbState.equals(Workflow.FAILED)
-			) {
-			Utilities.error("Step '" + dbName +"' has changed in the XML file illegally. Changes not allowed while in the state '" + dbState + "'" + nl
-					+ "old name:              " + dbName + nl
-					+ "old params digest:     " + dbParamsDigest + nl
-                                        + "old depends string:    " + dbDependsString + nl
-					+ "old class name:        " + dbClassName + nl
-					+ nl
-                                        + "new name:              " + step.getFullName() + nl
-                                        + "new params digest:     " + step.getParamsDigest() + nl
-					+ "new depends string:    " + step.getDependsString() + nl
-					+ "new class name:        " + step.getStepClassName());
-		    }
-		    return false;
+		    String diff = "Step '" + dbName +
+		                "' has been deleted (or excluded) from the XML file";
+		    diffs.append(diff);
+		    if (!(dbState.equals(Workflow.READY) || dbState.equals(Workflow.ON_DECK))) {
+		        errors.append(diff + " while in the state '" + dbState + '"' + nl + nl);
+		    } 
+		} else {
+		    notInDb.remove(dbName);
+		
+		    // update diffs and errors depending on mismatch found, if any
+		    checkStepMismatch(step, 
+		            dbName, dbParamsDigest, dbDependsString, dbClassName, dbState,
+		            diffs, errors);
 		}
 	    }
-            return (count == stepsByName.size());
+
+	    if (notInDb.size() != 0) {
+	        diffs.append("The following steps are in the XML graph, but not yet in the WorkflowStep table");
+	        for (String t : notInDb) diffs.append("   " + t + nl);
+	    }
+	    
+	    if (errors.length() != 0) {
+	        workflow.log(errors.toString());
+	        Utilities.error("The XML graph has changed illegally.  See log for details");
+	    } 
+            return diffs.length() == 0;
 	} finally {
 	    if (rs != null) rs.close();
 	    if (stmt != null) stmt.close(); 
 	}  
     }
 
+    void checkStepMismatch(T step, String dbName, String dbParamsDigest,
+            String dbDependsString, String dbClassName, String dbState,
+            StringBuffer diffs, StringBuffer errors) throws NoSuchAlgorithmException, Exception {
+        
+        boolean stepClassMatch = 
+            (dbClassName == null && step.getStepClassName() == null)
+            || ((dbClassName != null && step.getStepClassName() != null)
+                    && step.getStepClassName().equals(dbClassName));
+
+        // don't require that the param digest of a subgraph call agrees.
+        // this way steps can be grafted into a graph, and new params can
+        // be passed to them.  as long as existing steps have matching
+        // param digests, all is ok
+        boolean mismatch =
+            (!step.getIsSubgraphCall() && !step.getParamsDigest().equals(dbParamsDigest))
+            || !stepClassMatch
+            || !step.getDependsString().equals(dbDependsString);
+
+        if (mismatch) {
+            String s = "Step '" + dbName +
+            "' has changed in the XML file";
+            String diff = 
+                "old name:              " + dbName + nl
+                + "old params digest:     " + dbParamsDigest + nl
+                + "old depends string:    " + dbDependsString + nl
+                + "old class name:        " + dbClassName + nl
+                + nl
+                + "new name:              " + step.getFullName() + nl
+                + "new params digest:     " + step.getParamsDigest() + nl
+                + "new depends string:    " + step.getDependsString() + nl
+                + "new class name:        " + step.getStepClassName();
+            diffs.append(s + diff);
+            if (!dbState.equals(Workflow.READY) && !dbState.equals(Workflow.ON_DECK))
+                errors.append(s + " while in the state '" + dbState + "'" + nl + diff + nl + nl);
+        }
+    }
+
+	
+	
     // remove from the db all READY or ON_DECK steps
     void removeReadyStepsFromDb() throws SQLException, FileNotFoundException, IOException {
 	String sql = "delete from apidb.workflowstep where workflow_id = "

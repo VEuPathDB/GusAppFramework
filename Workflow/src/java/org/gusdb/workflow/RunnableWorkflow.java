@@ -135,48 +135,55 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     private void  initWorkflowStepTable(boolean stepTableEmpty) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
 
         setInitializingStepTableFlag(true);
-        if (!stepTableEmpty) {
-            // see if our current graph is already in db (exactly)
-            // if so, return
-            // throw an error if any DONE or FAILED steps are changed
-            if (workflowGraph.inDbExactly()) {
-                log("Graph in XML matches graph in database.  No need to update database.");
-                return;
+ 
+        // see if our current graph is already in db (exactly)
+        // if so, no need to update db. otherwise, log the differences.
+        // throw an error if any DONE or FAILED steps are changed
+        if (workflowGraph.inDbExactly(stepTableEmpty)) 
+            log("Graph in XML matches graph in database.  No need to update database.");
+
+        else {
+            if (stepTableEmpty) {
+                if (undoStepName != null) error("Workflow has never run.  Undo not allowed.");
+            } else {
+                // can't allow changes to graph if already in undo mode, because it
+                // is just too confusing.  they are allowed if the user is asking to
+                // start an undo mode run, but the flow has not yet been converted
+                // (ie, we are about to set undo_step_id in the db, but its not set yet)
+                if (undo_step_id != null) error("Workflow graph in XML has changed.  Not allowed while in UNDO mode.");
+
+                if (checkForRunningOrFailedSteps()) 
+                    error("Workflow graph in XML has changed while there are steps in state RUNNING or FAILED." + nl
+                            + "Please use workflowstep -l to find these states." + nl
+                            + "Please wait until all RUNNING states are complete." + nl
+                            + "For FAILED states, correct their problems and use workflowstep to set them to 'ready'.");
+
+                log("Workflow graph in XML has changed.  Updating DB with new graph.");
+
+                // if graph has changed, remove all READY/ON_DECK steps from db
+                workflowGraph.removeReadyStepsFromDb();   
+            }
+ 
+            // write all steps to WorkflowStep table
+            // for steps that are already there, update the depthFirstOrder
+            Set<String> stepNamesInDb = workflowGraph.getStepNamesInDb();
+            PreparedStatement insertStepPstmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
+            PreparedStatement updateStepPstmt = WorkflowStep.getPreparedUpdateStmt(getDbConnection(), workflow_id);
+            try {
+                for (WorkflowStep step : workflowGraph.getSortedSteps()) {
+                    step.initializeStepTable(stepNamesInDb, insertStepPstmt, updateStepPstmt);
+                }
+            } finally {
+                updateStepPstmt.close();
+                insertStepPstmt.close();
             }
 
-            if (undoStepName != null) error("Workflow graph in XML has changed.  Undo not allowed.");
-            
-            log("Workflow graph in XML has changed.  Updating DB with new graph.");
-
-            // if graph has changed, remove all READY/ON_DECK steps from db
-            workflowGraph.removeReadyStepsFromDb();
-            
-        } else {
-            if (undoStepName != null) error("Workflow has never run.  Undo not allowed.");
+            // update steps in memory, to get their new IDs
+            getStepsDbState();
         }
-
-        Set<String> stepNamesInDb = workflowGraph.getStepNamesInDb();
-
-        // write all steps to WorkflowStep table
-        // for steps that are already there, update the depthFirstOrder
-        PreparedStatement insertStepPstmt = WorkflowStep.getPreparedInsertStmt(getDbConnection(), workflow_id);
-        PreparedStatement updateStepPstmt = WorkflowStep.getPreparedUpdateStmt(getDbConnection(), workflow_id);
-        try {
-            for (WorkflowStep step : workflowGraph.getSortedSteps()) {
-                log("  " + step.getFullName());
-                step.initializeStepTable(stepNamesInDb, insertStepPstmt, updateStepPstmt);
-            }
-        } finally {
-            updateStepPstmt.close();
-            insertStepPstmt.close();
-        }
-
-        // update steps in memory, to get their new IDs
-        getStepsDbState();
-        setInitializingStepTableFlag(false);
+        setInitializingStepTableFlag(false);        
     }
     
-   
     private void initializeUndo(boolean testOnly) throws SQLException, IOException, InterruptedException {
         
         if (undo_step_id == null && undoStepName == null) return; 
@@ -361,6 +368,25 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         p.getInputStream().read(bo);	
 	p.destroy();
         return new String(bo).trim();
+    }
+    
+    private boolean checkForRunningOrFailedSteps() throws SQLException, IOException {
+        Statement stmt = null;
+        ResultSet rs = null;
+        String sql = "select count(*) from apidb.WorkflowStep where workflow_id = "
+            + workflow_id
+            + " and state in ('RUNNING', 'FAILED')";
+            
+        try {
+            stmt = getDbConnection().createStatement();
+            rs = stmt.executeQuery(sql);
+            rs.next();
+            Integer count = rs.getInt(1);
+            return count != 0;
+        } finally {
+            if (rs != null) rs.close();
+            if (stmt != null) stmt.close();
+        }
     }
     
 }
