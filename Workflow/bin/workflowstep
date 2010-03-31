@@ -62,19 +62,19 @@ if (scalar(@$stepList) == 0) { print STDERR "No steps found."; }
 my @errors;
 
 foreach my $stepInfo (@$stepList) {
-  my ($stepName, $state,$undoState) = @$stepInfo;
+  my ($dbStepName, $dbState,$dbUndoState) = @$stepInfo;
 
     if ($list) {
       my $undo = "";
-      if ($undoState) {
-	$state = $undoState;
+      if ($dbUndoState) {
+	$dbState = $dbUndoState;
 	$undo = "U";
       }
-      print sprintf('%-7s %1s %s', $state,$undo, $stepName) . "\n";
+      print sprintf('%-7s %1s %s', $dbState,$undo, $dbStepName) . "\n";
       next;
     }
 
-    my $step = GUS::Workflow::WorkflowStepPilot->new($stepName, $workflow);
+    my $step = GUS::Workflow::WorkflowStepPilot->new($dbStepName, $workflow);
 
     if ($state eq 'ready') {
 	my $errmsg = $step->pilotSetReady();
