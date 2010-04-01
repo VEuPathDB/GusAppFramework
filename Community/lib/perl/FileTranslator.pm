@@ -138,7 +138,7 @@ sub translate {
       }
       push @V, $val ;
     }
-    $writer->print( (join "\t" , @V) );
+    $writer->print( (join "\t" , @V) . "\n" );
 
     if ($idMaps) {
 
