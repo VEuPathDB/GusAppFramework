@@ -301,20 +301,20 @@ public class WorkflowGraph<T extends WorkflowStep> {
         }
 
         // substitute param values into constants
-        substituteIntoConstants(paramValues, constants, false);
+        substituteIntoConstants(paramValues, constants, false, false);
 
         // substitute param values and globalConstants into globalConstants
         if (isGlobal) {
-            substituteIntoConstants(paramValues, globalConstants, false);
+            substituteIntoConstants(paramValues, globalConstants, false, false);
             
-            substituteIntoConstants(new HashMap<String,String>(), globalConstants, true);
+            substituteIntoConstants(new HashMap<String,String>(), globalConstants, true, true);
         }
 
         // substitute globalConstants into constants
-        substituteIntoConstants(globalConstants, constants, false);
+        substituteIntoConstants(globalConstants, constants, false, false);
 
         // substitute constants into constants
-        substituteIntoConstants(new HashMap<String,String>(), constants, true);
+        substituteIntoConstants(new HashMap<String,String>(), constants, true, true);
 
         // substitute them all into step param values, xmlFileName,
         // includeIf and excludeIf
@@ -334,14 +334,23 @@ public class WorkflowGraph<T extends WorkflowStep> {
         }
     }
 
-    void substituteIntoConstants(Map<String,String> from, Map<String,String> to, boolean updateFrom) {
+    void substituteIntoConstants(Map<String,String> from, Map<String,String> to,
+            boolean updateFrom, boolean check) {
         for (String constantName : to.keySet()) {
             String constantValue = to.get(constantName);
 	    String newConstantValue = 
 		Utilities.substituteVariablesIntoString(constantValue,
 							from);
 	    to.put(constantName, newConstantValue); 
-	    if (updateFrom) from.put(constantName, newConstantValue);    
+	    if (updateFrom) from.put(constantName, newConstantValue);   
+            if (check) {
+                if (newConstantValue.indexOf("$$") != -1) 
+                    Utilities.error("Constant '" + constantName + "' in graph '" 
+                                    + xmlFileName 
+                                    + "' includes an unresolvable variable reference: '"
+                                    + newConstantValue + "'");
+            }
+
         }
     }
 

@@ -1,12 +1,16 @@
 package org.gusdb.workflow;
 
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.FieldPosition;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -54,12 +58,11 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
     public RunnableWorkflow(String homeDir) throws FileNotFoundException, IOException {
         super(homeDir);
+        initHomeDir(); // initialize workflow home directory, if needed
     }
 
     // run the controller
     void run(boolean testOnly) throws Exception {
-
-        initHomeDir();             // initialize workflow home directory, if needed
 
         initDb(true, testOnly);    // write workflow to db, if not already there
 
@@ -390,4 +393,14 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         }
     }
     
+    void log(String msg) throws IOException {
+        String logFileName = getHomeDir() + "/logs/controller.log";
+        PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true));
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss");
+        StringBuffer buf = sdf.format(new java.util.Date(), new StringBuffer(),
+                                      new FieldPosition(0));
+
+        writer.println(buf + "  " + msg + nl);
+        writer.close();
+    }
 }

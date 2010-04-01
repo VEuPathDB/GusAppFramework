@@ -103,7 +103,11 @@ public class Workflow <T extends WorkflowStep> {
 	    File dir = new File(getHomeDir() + "/" + dirName);
 	    if (!dir.exists()) dir.mkdir();
 	}
-        log("Checking if workflow home directory needs initializing'" + getHomeDir() + "'");
+        log("");
+        log("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
+        log("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
+        log("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
+        log("");
     }
     
     ///////////////////////////////////////////////////////////////////////////
@@ -218,14 +222,7 @@ public class Workflow <T extends WorkflowStep> {
     ////////////////////////////////////////////////////////////////////////
 
     void log(String msg) throws IOException {
-        String logFileName = getHomeDir() + "/logs/controller.log";
-        PrintWriter writer = new PrintWriter(new FileWriter(logFileName, true));
-	SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss");
-	StringBuffer buf = sdf.format(new java.util.Date(), new StringBuffer(),
-				      new FieldPosition(0));
-
-        writer.println(buf + "  " + msg + nl);
-        writer.close();
+        System.err.println(msg);
     }
     
     Connection getDbConnection() throws SQLException, FileNotFoundException, IOException {
@@ -438,11 +435,6 @@ public class Workflow <T extends WorkflowStep> {
          if (cmdLine.hasOption("r") || cmdLine.hasOption("t")) {
 	     System.err.println("initializing...");
              RunnableWorkflow runnableWorkflow = new RunnableWorkflow(homeDirName);
-	     runnableWorkflow.log("");
-	     runnableWorkflow.log("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
-	     runnableWorkflow.log("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
-	     runnableWorkflow.log("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
-	     runnableWorkflow.log("");
              Class<RunnableWorkflowStep> stepClass = RunnableWorkflowStep.class;
              WorkflowGraph<RunnableWorkflowStep> rootGraph = 
                  WorkflowGraph.constructFullGraph(stepClass, runnableWorkflow);
