@@ -221,6 +221,7 @@ public class Workflow <T extends WorkflowStep> {
     //             Utilities
     ////////////////////////////////////////////////////////////////////////
 
+    // RunnableWorkflow overrides this to log to a real log
     void log(String msg) throws IOException {
         System.err.println(msg);
     }
