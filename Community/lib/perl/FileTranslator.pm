@@ -127,19 +127,6 @@ sub translate {
       $slf->fhlog->print("LN=" . $slf->fhin()->linenum() . ":\t$line\n");
     }
 
-    # rest of MAPS
-    my @V ;
-
-    foreach my $mapkey ($config->mappings()->Keys) {
-      my $input = $config->mappings()->FETCH($mapkey)->{in}->[0];
-      my $val = "" ;
-      if (exists $config->header($input)->{idx}) {
-        $val = $A[$config->header($input)->{idx}];
-      }
-      push @V, $val ;
-    }
-    $writer->print( (join "\t" , @V) . "\n" );
-
     if ($idMaps) {
 
       for(my $i = 0; $i < scalar(@$idMaps); $i++) {
@@ -151,19 +138,27 @@ sub translate {
 
         # Allow the Funtion to give a coderef OR hashref 
         if(ref($function) eq 'CODE') {
-          $writer->print("\t" . $function->( join "\t", @$values ) );
+          $writer->print($function->( join "\t", @$values ) . "\t");
         }
         else {
-          $writer->print("\t" . $function->{ join "\t", @$values } );
+          $writer->print($function->{ join "\t", @$values } . "\t");
         }
-
       }
-    $writer->print( "\n" ); 
     }
     
+    # rest of MAPS
+    my @V ;
 
+    foreach my $mapkey ($config->mappings()->Keys) {
+      my $input = $config->mappings()->FETCH($mapkey)->{in}->[0];
+      my $val = "" ;
+      if (exists $config->header($input)->{idx}) {
+        $val = $A[$config->header($input)->{idx}];
+      }
+      push @V, $val ;
+    }
 
-
+    $writer->print( (join "\t" , @V) . "\n" );
   }
   # all parsing successful 
   $log->print("File translated to " . $slf->outputfile . " \n\n");
@@ -224,8 +219,6 @@ sub makeHeaderArrayRef {
 
   my @headers;
 
-  push(@headers, $config->mappings()->Keys);
-
   if ($idMaps) {
 
     foreach my $idMap (@$idMaps) {
@@ -234,7 +227,7 @@ sub makeHeaderArrayRef {
     }
   }
 
-
+  push(@headers, $config->mappings()->Keys);
 
   return \@headers;
 }
