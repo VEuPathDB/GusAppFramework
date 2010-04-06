@@ -62,23 +62,29 @@ public class WorkflowViewer extends JFrame implements ActionListener {
     final static String nl = System.getProperty("line.separator");
     private static final String TITLE = "Workflow Viewer";
     private Workflow workflow;
-    private DirectedGraph<WorkflowStep,Integer> currentView;
+    private GraphZoomScrollPane currentView;
     private Map<String, DirectedGraph<WorkflowStep, Integer>> viewGraphs;
-    private Map<String, VisualizationViewer> viewInstances;
+    private Map<String, GraphZoomScrollPane> viewInstances;
     private Stack<String> history;
     private JLabel current;
     private JButton back;
     private JPanel applicationPane;
     private JPanel graphPane;
     private JFrame menuFrame;
+    private Transformer<WorkflowStep,Shape> shaper;
+    private Transformer<WorkflowStep,String> labeler;
+    private Transformer<WorkflowStep,Font> fontStyler;
+    private Transformer<WorkflowStep,Paint> painter;
+    private Transformer<WorkflowStep,Stroke> outliner;
 
     public WorkflowViewer(String workflowDir) throws IOException {
 	super(TITLE);
-	initApplicationPane();
 	history = new Stack<String>();
 	viewGraphs = new HashMap<String, DirectedGraph<WorkflowStep,Integer>>();
-	viewInstances = new HashMap<String, VisualizationViewer>();
+	viewInstances = new HashMap<String, GraphZoomScrollPane>();
 	workflow = new Workflow<WorkflowStep>(workflowDir);
+	initApplicationPane();
+	initTransformers();
 	createViewFromWorkflow();
     }
 
@@ -120,6 +126,7 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	}
 
 	viewGraphs.put(key, graph);
+	createViewInstance(key, graph);
     }
 
     private int addEdgeToGraph(DirectedGraph<WorkflowStep, Integer> graph, int edgeId, WorkflowStep parent, WorkflowStep child) {
@@ -166,77 +173,42 @@ public class WorkflowViewer extends JFrame implements ActionListener {
     private void updateGraphView(String key) {
 	current.setText(key);
 
-	currentView = viewGraphs.get(key);
-
-	VisualizationViewer vv;
-	if (viewInstances.containsKey(key)) {
-	    vv = viewInstances.get(key);
-	}
-	else {
-	    AssistedTreeLayout<WorkflowStep,Integer> layout = new AssistedTreeLayout<WorkflowStep,Integer>(currentView, 175, 75);
-
-	    // sets the initial size of the layout space
-	    // The VisualizationViewer is parameterized by the vertex and edge types
-	    vv = new VisualizationViewer(layout);
-	    	    
-	    Transformer<WorkflowStep,Shape> shaper = new Transformer<WorkflowStep,Shape>() {
-		public Shape transform(WorkflowStep vertex) {
-		    return new Rectangle(150,50);
-		}
-	    };
-	    vv.getRenderContext().setVertexShapeTransformer(shaper);
-	    
-	    Transformer<WorkflowStep,String> labeler = new Transformer<WorkflowStep,String>() {
-		public String transform(WorkflowStep vertex) {
-		    return vertex.getBaseName();
-		}
-	    };
-	    vv.getRenderContext().setVertexLabelTransformer(labeler);
-	    
-	    Transformer<WorkflowStep,Font> fontStyler = new Transformer<WorkflowStep,Font>() {
-		public Font transform(WorkflowStep vertex) {
-		    return new Font("Lucida Sans Regular", Font.PLAIN, 10);
-		}
-	    };
-	    vv.getRenderContext().setVertexFontTransformer(fontStyler);
-	    
-	    Transformer<WorkflowStep,Paint> painter = new Transformer<WorkflowStep,Paint>() {
-		public Paint transform(WorkflowStep vertex) {
-		    return Color.WHITE;
-		}
-	    };
-	    vv.getRenderContext().setVertexFillPaintTransformer(painter);
-	    
-	    Transformer<WorkflowStep,Stroke> outliner = new Transformer<WorkflowStep,Stroke>() {
-		public Stroke transform(WorkflowStep vertex) {
-		    if (vertex.getIsSubgraphCall()) {
-			return new BasicStroke(3f);
-		    }
-		    return new BasicStroke(1f);
-		}
-	    };
-	    vv.getRenderContext().setVertexStrokeTransformer(outliner);
-	    
-	    vv.getRenderer().getVertexLabelRenderer().setPosition(Position.CNTR);
-	    
-	    // Step details popup is disabled for now.
-	    //PopupVertexEdgeMenuMousePlugin mousePlugin = new PopupVertexEdgeMenuMousePlugin();
-	    //mousePlugin.setVertexPopup(new MyMouseMenus.WorkflowStepMenu(menuFrame));
-	    
-	    PluggableGraphMouse gm = new PluggableGraphMouse();
-	    gm.add(new ScalingGraphMousePlugin(new CrossoverScalingControl(), 0, 1.1f, 0.9f));
-	    gm.add(new WorkflowViewerMousePlugin(this));
-	    //gm.add(mousePlugin);
-	    gm.add(new PickingGraphMousePlugin());
-	    
-	    vv.setGraphMouse(gm);
-	    
-	    viewInstances.put(key, vv);
-	}
+	currentView = viewInstances.get(key);
 
 	graphPane.removeAll();
-	graphPane.add(new GraphZoomScrollPane(vv),BorderLayout.CENTER);
+	graphPane.add(currentView, BorderLayout.CENTER);
 	this.validate();
+	this.repaint();
+    }
+
+    private void createViewInstance(String key, DirectedGraph<WorkflowStep,Integer> graph) {
+	AssistedTreeLayout<WorkflowStep,Integer> layout = new AssistedTreeLayout<WorkflowStep,Integer>(graph, 175, 75);
+
+	// sets the initial size of the layout space
+	// The VisualizationViewer is parameterized by the vertex and edge types
+	
+	VisualizationViewer vv = new VisualizationViewer(layout);
+	vv.getRenderContext().setVertexShapeTransformer(shaper);
+	vv.getRenderContext().setVertexLabelTransformer(labeler);
+	vv.getRenderContext().setVertexFontTransformer(fontStyler);
+	vv.getRenderContext().setVertexFillPaintTransformer(painter);
+	vv.getRenderContext().setVertexStrokeTransformer(outliner);
+	
+	vv.getRenderer().getVertexLabelRenderer().setPosition(Position.CNTR);
+	
+	// Step details popup is disabled for now.
+	//PopupVertexEdgeMenuMousePlugin mousePlugin = new PopupVertexEdgeMenuMousePlugin();
+	//mousePlugin.setVertexPopup(new MyMouseMenus.WorkflowStepMenu(menuFrame));
+	
+	PluggableGraphMouse gm = new PluggableGraphMouse();
+	gm.add(new ScalingGraphMousePlugin(new CrossoverScalingControl(), 0, 1.1f, 0.9f));
+	gm.add(new WorkflowViewerMousePlugin(this));
+	//gm.add(mousePlugin);
+	gm.add(new PickingGraphMousePlugin());
+	
+	vv.setGraphMouse(gm);
+	
+	viewInstances.put(key, new GraphZoomScrollPane(vv));
     }
     
     private void loadPreviousGraphView() {
@@ -246,6 +218,41 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 	else {
 	    JOptionPane.showMessageDialog(this, "You are already looking at the first workflow graph.");
 	}
+    }
+
+    private void initTransformers() {
+	shaper = new Transformer<WorkflowStep,Shape>() {
+	    public Shape transform(WorkflowStep vertex) {
+		return new Rectangle(150,50);
+	    }
+	};
+
+	labeler = new Transformer<WorkflowStep,String>() {
+	    public String transform(WorkflowStep vertex) {
+		return vertex.getBaseName();
+	    }
+	};
+	
+	fontStyler = new Transformer<WorkflowStep,Font>() {
+	    public Font transform(WorkflowStep vertex) {
+		return new Font("Lucida Sans Regular", Font.PLAIN, 10);
+	    }
+	};
+	
+	painter = new Transformer<WorkflowStep,Paint>() {
+	    public Paint transform(WorkflowStep vertex) {
+		return Color.WHITE;
+	    }
+	};
+	
+	outliner = new Transformer<WorkflowStep,Stroke>() {
+	    public Stroke transform(WorkflowStep vertex) {
+		if (vertex.getIsSubgraphCall()) {
+		    return new BasicStroke(3f);
+		}
+		return new BasicStroke(1f);
+	    }
+	};
     }
 
     private void initApplicationPane() {
