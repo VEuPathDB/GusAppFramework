@@ -42,6 +42,7 @@ public class WorkflowViewerMousePlugin extends AbstractGraphMousePlugin
     public void mouseClicked(MouseEvent e) {
 	WorkflowStep vertex = null;
 	if (e.getClickCount() > 1) {
+	    System.err.println("You double-clicked on something. I'm going to figure out what it was.");
 	    down = e.getPoint();
 	    VisualizationViewer<WorkflowStep,Integer> vv = (VisualizationViewer)e.getSource();
 	    GraphElementAccessor<WorkflowStep,Integer> pickSupport = vv.getPickSupport();
@@ -51,9 +52,16 @@ public class WorkflowViewerMousePlugin extends AbstractGraphMousePlugin
 		vertex = pickSupport.getVertex(layout, e.getPoint().getX(), e.getPoint().getY());
 		if(vertex != null) {
 		    if (vertex.getIsSubgraphCall()) {
+			System.err.println("It was a subgraph step, so I'm going to load that graph.");
 			viewer.displayGraph(WorkflowViewer.getSubgraphKey(vertex));
 		    }
+		    else {
+			System.err.println("It wasn't a subgraph step, so I can't do anything with it.");
+		    }
 		    e.consume();
+		}
+		else {
+		    System.err.println("It wasn't a step, so I don't know what to do.");
 		}
 	    }
 	}

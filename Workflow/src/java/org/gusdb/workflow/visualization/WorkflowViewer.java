@@ -172,6 +172,7 @@ public class WorkflowViewer extends JFrame implements ActionListener {
 
     private void updateGraphView(String key) {
 	current.setText(key);
+	System.err.println("Loading graph: " + key);
 
 	currentView = viewInstances.get(key);
 
