@@ -339,7 +339,7 @@ sub run {
   my ($self) = @_;
 
   my $mapFile = $self->getArg('mapFile');
-  $mapFile = "$GUS_HOME/lib/xml/$mapFile" unless $mapFile =~ /^\//;
+  $mapFile = "$ENV{GUS_HOME}/lib/xml/$mapFile" unless $mapFile =~ /^\//;
   $self->{mapperSet} =
     GUS::Supported::BioperlFeatMapperSet->new($mapFile, $self);
 
@@ -358,7 +358,7 @@ sub run {
 	  or die "Couldn't retrieve external database for sequences!\n";
   }
 
-  $self->initHandlerExternalDbs();
+  $self->initHandlerExternalDbs() if ($self->getArg('handlerExternalDbs'));
 
   my $format = $self->getArg('fileFormat');
   $self->{totalFeatureCount} = 0;
@@ -393,9 +393,9 @@ sub run {
 
 	my $seqType = 'DNA';
 
-	if($bioperlSeq->molecule){
+	if(defined $bioperlSeq->molecule){
 	    $seqType = $bioperlSeq->molecule;
-	}elsif($bioperlSeq->alphabet){
+	}elsif(defined bioperlSeq->alphabet){
 	    $seqType = $bioperlSeq->alphabet;
 	}
 	if(!($seqType =~ /rna/i)){
@@ -522,6 +522,7 @@ sub convertGFFStreamToSeqIO {
 
   while (my ($seq_id, $features) = each %seqs) {
     my $seq = Bio::Seq::RichSeq->new( -alphabet => 'dna',
+                             -molecule => 'dna',
                              -molecule => 'dna',
 			     -display_id => $seq_id,
 			     -accession_number => $seq_id,
