@@ -388,6 +388,18 @@ sub undoTables {
           'SRes.Contact',
           'SRes.ExternalDatabaseRelease',
           'SRes.ExternalDatabase',
+          'TESS.Protocol',
+          'TESS.ProtocolParam',
+          'TESS.Assay',
+          'TESS.AssayParam',
+          'TESS.Acquisition',
+          'TESS.AcquisitionParam',
+          'TESS.Quantification',
+          'TESS.QuantificationParam',
+          'TESS.StudyAssay',
+          'TESS.StudyDesignAssay',
+          'TESS.StudyFactorValue',
+          'TESS.AssayBioMaterial',
          );
 }
 1;
