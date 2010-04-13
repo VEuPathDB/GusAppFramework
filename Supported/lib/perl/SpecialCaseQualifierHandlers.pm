@@ -63,11 +63,15 @@ sub gene {
   my ($self, $tag, $bioperlFeature, $feature) = @_;
 
   my @genes;
-  foreach my $tagValue ($bioperlFeature->get_tag_values($tag)) {
-    my $geneID = $self->_getNAGeneId($tagValue);
-    my $gene = GUS::Model::DoTS::NAFeatureNAGene->new();
-    $gene->setNaGeneId($geneID);
-    push(@genes, $gene);
+  foreach my $tagValues ($bioperlFeature->get_tag_values($tag)) {
+      my @tagValues = split(/,/,$tagValues);
+
+      foreach my $tagValue (@tagValues){
+	  my $geneID = $self->_getNAGeneId($tagValue);
+	  my $gene = GUS::Model::DoTS::NAFeatureNAGene->new();
+	  $gene->setNaGeneId($geneID);
+	  push(@genes, $gene);
+      }
   }
   return \@genes;
 }
