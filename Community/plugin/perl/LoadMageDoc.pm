@@ -330,6 +330,16 @@ sub submit{
     }
   }
 
+#this will submit study, studydesign, studyfactor and assays if studyAssays are set
+  if(my @studyAssay = $study->getChildren("GUS::Model::TESS::StudyAssay")){
+
+    foreach my $studyAssay (@studyAssay){
+      my $assay = $studyAssay->getParent("GUS::Model::TESS::Assay");
+      $study->addToSubmitList($assay);
+    }
+  }
+
+
   if(my @studyBioMaterial = $study->getChildren("GUS::Model::RAD::StudyBioMaterial")){
     foreach my $studyBioMaterial (@studyBioMaterial){
       my $biomat = $studyBioMaterial->getParent("GUS::Model::Study::BioMaterialImp");
