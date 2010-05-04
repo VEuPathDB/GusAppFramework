@@ -210,38 +210,39 @@ sub featureLocationToElementId {
 #--------------------------------------------------------------------------------
 
 ## The below function will not map correctly when array layout is non-trivial
-#sub agilentLocationToElementId {
-#  my ($self, $hash) = @_;
+## Make sure all array_row	array_col	grid_row	grid_col are 1 before apply
+sub agilentLocationToElementId {
+  my ($self, $hash) = @_;
 
-#  my %mapping;
+  my %mapping;
 
-#  unless($hash->{dbh}) {
-#    die "Function [agilentLocationElementId] must give a database handle";
-#  }
+  unless($hash->{dbh}) {
+    die "Function [agilentLocationElementId] must give a database handle";
+  }
 
-#  unless($hash->{arrayDesignName}) {
-#    die "Function [agilentLocationElementId] must give an arrayDesignName";
-#  }
+  unless($hash->{arrayDesignName}) {
+    die "Function [agilentLocationElementId] must give an arrayDesignName";
+  }
 
-#  my $sql = "select s.sub_row, s.sub_column, s.element_id
-#             from Rad.SPOT s, Rad.ARRAYDESIGN a
-#             where a.array_design_id = s.array_design_id 
-#              and (a.name = ? OR a.source_id = ?)";
-#
-#  my $arrayDesignName = $hash->{arrayDesignName};
+  my $sql = "select s.sub_row, s.sub_column, s.element_id
+             from Rad.SPOT s, Rad.ARRAYDESIGN a
+             where a.array_design_id = s.array_design_id 
+              and (a.name = ? OR a.source_id = ?)";
 
-#  my $sh = $hash->{dbh}->prepare($sql);
-#  $sh->execute($arrayDesignName, $arrayDesignName);
+  my $arrayDesignName = $hash->{arrayDesignName};
 
-#  while(my ($row, $col, $id) = $sh->fetchrow_array()) {
-#    my $featureLocation = "$row\t$col";
+  my $sh = $hash->{dbh}->prepare($sql);
+  $sh->execute($arrayDesignName, $arrayDesignName);
 
-#    $mapping{$featureLocation} = $id;
-#  }
-#  $sh->finish();
+  while(my ($row, $col, $id) = $sh->fetchrow_array()) {
+    my $featureLocation = "$row\t$col";
 
-#  return \%mapping;
-#}
+    $mapping{$featureLocation} = $id;
+  }
+  $sh->finish();
+
+  return \%mapping;
+}
 
 
 #--------------------------------------------------------------------------------
