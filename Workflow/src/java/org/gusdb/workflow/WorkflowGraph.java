@@ -257,6 +257,13 @@ public class WorkflowGraph<T extends WorkflowStep> {
 		leafSteps.remove(step);
 	    }
 	}
+        // rediscover root steps: if we deleted one, then its kids become root
+        for (T step : getSteps()) {
+            if (step.getParents().size() == 0 && !rootSteps.contains(step)) {
+                rootSteps.add(step);
+                sortedSteps = null;  // force re-creation of this list
+            }
+        }    
     }
 
     // for each step that calls a subgraph, add a fake step after it
