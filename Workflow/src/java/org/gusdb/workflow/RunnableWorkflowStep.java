@@ -15,6 +15,8 @@ public class RunnableWorkflowStep extends WorkflowStep {
     boolean isInvoked;
 
     int handleChangesSinceLastSnapshot(Workflow<RunnableWorkflowStep> workflow) throws SQLException, IOException, InterruptedException  {
+        if (workflow_step_id == null) 
+            Utilities.error("Step " + getFullName() + " is not found in the database");
         if (getOperativeStateHandled()) {
             if (getOperativeState().equals(Workflow.RUNNING)) {               
                 String cmd = "ps -p " + process_id;

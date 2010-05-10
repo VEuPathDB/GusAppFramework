@@ -67,7 +67,7 @@ public class WorkflowStep implements Comparable {
     private String undoRoot;
     
     // state from db
-    protected int workflow_step_id;
+    protected Integer workflow_step_id = null;
     protected String state;
     protected boolean state_handled;
     protected String undo_state;
