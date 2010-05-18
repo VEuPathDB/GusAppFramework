@@ -109,4 +109,10 @@ sub run {
     return $msg;
 }
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('SRes.ExternalDatabase');
+}
+
 1;
