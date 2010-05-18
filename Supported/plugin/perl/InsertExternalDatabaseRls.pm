@@ -251,5 +251,10 @@ sub getExtDbId{
     }
 }
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('SRes.ExternalDatabaseRelease');
+}
 
 1;
