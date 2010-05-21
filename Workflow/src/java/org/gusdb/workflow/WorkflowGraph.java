@@ -166,7 +166,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
     // clean up after building from xml
     private void postprocessSteps() throws FileNotFoundException, IOException {
 
-	// digester loads global constants into a tmp and we validate
+	// digester loads global constants into a tmp structure.  we validate
 	// as a post-process because validation must happen after other
 	// properties are set, which digester does later
         if (isGlobal) globalConstants.putAll(tmpGlobalConstants);
@@ -609,7 +609,7 @@ public class WorkflowGraph<T extends WorkflowStep> {
             for (T step : getSteps())                 
                 makeParentChildLinks(step.getDependsGlobalNames(), globalStepsByName, step, true, null);
          
-            // insert it
+            // inject it into the caller graph
             WorkflowStep subgraphReturnStep = subgraphCallerStep.getChildren().get(0);
             subgraphCallerStep.removeChild(subgraphReturnStep);
             subgraphReturnStep.removeParent(subgraphCallerStep);
@@ -655,6 +655,11 @@ public class WorkflowGraph<T extends WorkflowStep> {
     //     Static methods
     ////////////////////////////////////////////////////////////////////////
     
+    /*
+     * top down.  for the graph XML passed in, create that graph then iterate
+     * through its calls
+     * 
+     */
     static <S extends WorkflowStep > WorkflowGraph<S> createExpandedGraph (
             Class<S> stepClass,
             Workflow<S> workflow, 
@@ -671,26 +676,38 @@ public class WorkflowGraph<T extends WorkflowStep> {
 	    S subgraphCallerStep,
             List<String> xmlFileNamesStack) throws FileNotFoundException, SAXException, IOException, Exception {
         
-        // create graph
+        /////////////////////////
+        // create graph from XML
+        ///////////////////////
+        
+        // parse XML into objects
         WorkflowXmlParser<S> parser = new WorkflowXmlParser<S>();
         WorkflowGraph<S> graph =
                 parser.parseWorkflow(workflow, stepClass, xmlFileName,
                         globalSteps, globalConstants, isGlobal); 
 
+        // clean up the unexpanded graph, after its creation by digester
 	graph.postprocessSteps();
+	
+	
+	/////////////////////////
+	// prepare for expansion
+	///////////////////////
+	
+	// for each step that calls a subgraph, give it a child step
+	// that is the subgraph return, and move its kids there.
 	graph.insertSubgraphReturnChildren();
 
-        // set the path of its unexpanded steps
+        // set the full path of its unexpanded steps
         graph.setPath(path);
 
-        // set the calling step of its unexpanded steps
+        // set the caller step of its unexpanded steps, since we now know it now
         graph.setCallingStep(subgraphCallerStep);
         
-	// instantiate macros and param values before processing 
-	// steps
+	// instantiate local macros before expanding subgraphs
         graph.instantiateMacros(macroValuesMap);
 
-        // instantiate param values from param values passed in
+        // instantiate global and local param values before expanding subgraphs
         graph.instantiateValues(baseName,
                                 callerXmlFileName,
                                 globalConstants,
@@ -699,7 +716,9 @@ public class WorkflowGraph<T extends WorkflowStep> {
         
 	graph.setRootsAndLeafs();
 
+	////////////////////
         // expand subgraphs
+	//////////////////
         List<String> newXmlFileNamesStack = new ArrayList<String>(xmlFileNamesStack);
         newXmlFileNamesStack.add(xmlFileName);
         graph.expandSubgraphs(path, newXmlFileNamesStack, stepClass, paramErrorsMap,
