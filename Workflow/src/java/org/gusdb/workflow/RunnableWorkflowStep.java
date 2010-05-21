@@ -185,7 +185,7 @@ public class RunnableWorkflowStep extends WorkflowStep {
 	StringBuilder sb = new StringBuilder();
 	Formatter formatter = new Formatter(sb);
 	String u = getUndoing()? "U " : "";
-	formatter.format(u + "%1$-8s %2$-10s %3$s", col1, col2, getFullName());
+	formatter.format(u + "%1$-8s %2$-10s %3$s", col1, col2, getFullName() + " " + hashCode());
 	
         workflowGraph.getWorkflow().log(sb.toString());
     }
