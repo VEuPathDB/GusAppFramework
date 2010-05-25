@@ -60,6 +60,7 @@ public class Workflow <T extends WorkflowStep> {
     protected String state;
     protected Integer undo_step_id;
     protected String process_id;
+    protected String host_machine;
     protected Boolean test_mode;
     
     // derived from persistent state
@@ -128,7 +129,7 @@ public class Workflow <T extends WorkflowStep> {
         if (workflow_id == null) {
             name = getWorkflowConfig("name");
             version = getWorkflowConfig("version");
-            String sql = "select workflow_id, state, undo_step_id, process_id, test_mode"  
+            String sql = "select workflow_id, state, undo_step_id, process_id, host_machine, test_mode"  
                 + " from apidb.workflow"  
                 + " where name = '" + name + "'"  
                 + " and version = '" + version + "'" ;
@@ -144,7 +145,8 @@ public class Workflow <T extends WorkflowStep> {
                 state = rs.getString(2);
                 undo_step_id = (rs.getObject(3) == null)? null : rs.getInt(3);
                 process_id = rs.getString(4);
-                test_mode = rs.getBoolean(5);
+                host_machine = rs.getString(5);
+                test_mode = rs.getBoolean(6);
             } finally {
                 if (rs != null) rs.close();
                 if (stmt != null) stmt.close(); 
@@ -229,9 +231,12 @@ public class Workflow <T extends WorkflowStep> {
     Connection getDbConnection() throws SQLException, FileNotFoundException, IOException {
         if (dbConnection == null) {
             DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver());
-            dbConnection = DriverManager.getConnection(getGusConfig("jdbcDsn"),
-                    getGusConfig("databaseLogin"),
+            String dsn = getGusConfig("jdbcDsn");
+            String login = getGusConfig("databaseLogin");
+            dbConnection = DriverManager.getConnection(dsn,
+                    login,
                     getGusConfig("databasePassword"));
+            log("Connecting to " + dsn + "(" + login + ")");
         }
         return dbConnection;
     }
@@ -314,7 +319,9 @@ public class Workflow <T extends WorkflowStep> {
                            + "workflow_id:           " + workflow_id + nl
                            + "state:                 " + state + nl
                            + "undo_step:             " + undoStepName + nl
-                           + "process_id:            " + process_id + nl);
+                           + "process_id:            " + process_id + nl
+                           + "host_machine:          " + host_machine + nl
+                           );
     }
 
     // light reporting of state of workflow with steps
@@ -412,6 +419,22 @@ public class Workflow <T extends WorkflowStep> {
      }
 
 
+     // brute force reset of workflow.  for test workflows only.
+     // cleans out Workflow and WorkflowStep tables and the home dir, except config/
+      void resetMachine() throws SQLException, FileNotFoundException, IOException {
+          getDbState();
+          
+          String hostname = java.net.InetAddress.getLocalHost().getHostName();
+
+          if (host_machine.equals(hostname)) {
+              error("The workflow last ran on your current machine.  You can only reset a different machine.");
+          }
+
+          String sql = "update apidb.workflow set host_name = null where workflow_id = " + workflow_id;
+          executeSqlUpdate(sql);
+          System.out.println(sql);
+      }
+
      ////////////////////////////////////////////////////////////////////////
      //           Static methods
      ////////////////////////////////////////////////////////////////////////
@@ -421,7 +444,7 @@ public class Workflow <T extends WorkflowStep> {
 
          // parse command line
          Options options = declareOptions();
-         String cmdlineSyntax = cmdName + " -h workflow_home_dir <-r | -t | -q | -s <states>| -d <states>> <-u step_name>";
+         String cmdlineSyntax = cmdName + " -h workflow_home_dir <-r | -t | -m | -q | -s <states>| -d <states>> <-u step_name>";
          String cmdDescrip = "Run or test a workflow (regular or undo), or, print a report about a workflow.";
          CommandLine cmdLine =
              Utilities.parseOptions(cmdlineSyntax, cmdDescrip, getUsageNotes(), options, args);
@@ -450,6 +473,12 @@ public class Workflow <T extends WorkflowStep> {
          else if (cmdLine.hasOption("q")) {
              Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDirName);
              workflow.quickReportWorkflow();
+         } 
+
+         // change machine
+         else if (cmdLine.hasOption("m")) {
+             Workflow<WorkflowStep> workflow = new Workflow<WorkflowStep>(homeDirName);
+             workflow.resetMachine();
          } 
 
          // quick step report
@@ -578,6 +607,9 @@ public class Workflow <T extends WorkflowStep> {
 
          Option quickWorkflowRep = new Option("q", "Print quick workflow report (no steps)");
          actions.addOption(quickWorkflowRep);
+
+         Option resetMachine = new Option("m", "Reset the workflow's host machine.  Only use this if there are no workflow processes running on any machine.");
+         actions.addOption(resetMachine);
 
          Option reset = new Option("reset", "Reset workflow. DANGER! Will destroy your workflow.  Use only if you know exactly what you are doing.");
          actions.addOption(reset);
