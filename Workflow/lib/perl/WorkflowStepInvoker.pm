@@ -5,6 +5,7 @@ use strict;
 use GUS::Workflow::Base;
 use CBIL::Util::SshCluster;
 use CBIL::Util::NfsCluster;
+use Sys::Hostname;
 
 #
 # Super class of workflow steps written in perl, and called by the wrapper
@@ -30,6 +31,7 @@ sub setRunningState {
     my ($self, $workflowId, $stepName, $undo) = @_;
 
     my $process_id = $$;
+    my $hostname = hostname();
 
     my $undoStr = $undo? "undo_" : "";
 
@@ -39,6 +41,7 @@ SET
   ${undoStr}state = '$RUNNING',
   ${undoStr}state_handled = 0,
   process_id = $process_id,
+  host_machine = '$hostname',
   start_time = SYSDATE
 WHERE name = '$stepName'
 AND workflow_id = $workflowId

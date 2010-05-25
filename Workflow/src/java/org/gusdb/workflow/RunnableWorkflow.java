@@ -95,7 +95,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
     }
 
     private boolean initWorkflowTable(boolean updateXmlFileDigest, boolean testmode) throws SQLException, IOException, Exception, NoSuchAlgorithmException {
-
+        
         boolean uninitialized = !workflowTableInitialized();
         if (uninitialized) {
         
@@ -105,7 +105,11 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
             log("Initializing workflow "
                     + "'" + name + " " + version + "' in database");
-
+            
+            if (!checkNewWorkflowHomeDir()) {
+                error("Either the data/ or steps/ directory is not empty.  This suggests you have mistakenly changed databases.");
+            }
+                
             // write row to Workflow table
             String sql = "select apidb.Workflow_sq.nextval from dual";
             Statement stmt = null;
@@ -317,7 +321,19 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         if (!test_mode && testOnly) error("Cannot run with '-t'.  Already running with '-r'");
         if (test_mode && !testOnly) error("Cannot run with '-r'.  Already running with '-t'");
         
-	if (state != null && process_id != null && state.equals(RUNNING)) {
+        String hostname = java.net.InetAddress.getLocalHost().getHostName();
+
+        if (host_machine != null && host_machine.equals(hostname)) {
+            error("You are now running on " + hostname + " but the workflow was last run on " 
+                    + host_machine + nl
+                    + "Please go to " + host_machine + 
+                    " and run the ps -u command to confirm that no workflow process are running there.  It is CRITICAL that there be none." + nl
+                    + "If the controller is running on " + host_machine
+                    + ", you must kill it to run here.  If workflowstepwrap processes are running, then you must either wait until they complete or kill them." + nl
+                    + "If there are no processes running on " + host_machine + " then it is safe to run here.  Use the workflow -m option to let the controller know you are changing machines.");
+        }
+        
+        if (state != null && process_id != null && state.equals(RUNNING)) {
 	    String[] cmd = {"ps", "-p", process_id};
 	    Process process = Runtime.getRuntime().exec(cmd);
 	    process.waitFor();
@@ -334,9 +350,10 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 	    + " (process id = " + processId + ")");
 	System.err.println("Setting workflow state to " + RUNNING
 	    + " (process id = " + processId + ")");
-
+	
 	String sql = "UPDATE apidb.Workflow" + nl
-	    + "SET state = '" + RUNNING + "', process_id = " + processId + nl
+	    + "SET state = '" + RUNNING + "', process_id = " + processId
+	    + " host_machine = '" + hostname + "'" +  nl
 	    + "WHERE workflow_id = " + workflow_id;
 	executeSqlUpdate(sql);
     }
@@ -391,6 +408,12 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
             if (rs != null) rs.close();
             if (stmt != null) stmt.close();
         }
+    }
+    
+    private boolean checkNewWorkflowHomeDir() {
+        File stepDir = new File(getHomeDir() + "/steps");
+        File dataDir = new File(getHomeDir() + "/data");
+        return stepDir.list().length == 0 && dataDir.list().length == 0;
     }
     
     void log(String msg) throws IOException {
