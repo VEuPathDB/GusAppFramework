@@ -205,6 +205,8 @@ public class Workflow <T extends WorkflowStep> {
             + " where name = " + "'" + name + "'"   
             + " and version = '" + version + "'";
 
+	log("Checking if database already intialized");
+
         Statement stmt = null;
         ResultSet rs = null;
         try {
@@ -230,13 +232,14 @@ public class Workflow <T extends WorkflowStep> {
     
     Connection getDbConnection() throws SQLException, FileNotFoundException, IOException {
         if (dbConnection == null) {
-            DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver());
             String dsn = getGusConfig("jdbcDsn");
             String login = getGusConfig("databaseLogin");
+            log("Connecting to " + dsn + " (" + login + ")");
+            DriverManager.registerDriver (new oracle.jdbc.driver.OracleDriver());
             dbConnection = DriverManager.getConnection(dsn,
                     login,
                     getGusConfig("databasePassword"));
-            log("Connecting to " + dsn + "(" + login + ")");
+            log("Connected");
         }
         return dbConnection;
     }
@@ -429,10 +432,12 @@ public class Workflow <T extends WorkflowStep> {
           if (host_machine.equals(hostname)) {
               error("The workflow last ran on your current machine.  You can only reset a different machine.");
           }
+	  log("Reseting host_machine in database");
 
-          String sql = "update apidb.workflow set host_name = null where workflow_id = " + workflow_id;
+          String sql = "update apidb.workflow set host_machine = null where workflow_id = " + workflow_id;
           executeSqlUpdate(sql);
-          System.out.println(sql);
+          log(sql);
+	  log("Please double check that NO workflow processes are running on " + host_machine + " before running on " + hostname + ".");
       }
 
      ////////////////////////////////////////////////////////////////////////
