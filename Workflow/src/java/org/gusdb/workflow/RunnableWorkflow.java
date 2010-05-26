@@ -107,7 +107,7 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
                     + "'" + name + " " + version + "' in database");
             
             if (!checkNewWorkflowHomeDir()) {
-                error("Either the data/ or steps/ directory is not empty.  This suggests you have mistakenly changed databases.");
+                error(nl + "Error: The data/ and steps/ directories are not empty, but your workflow does not exist in the database.  This suggests you have mistakenly changed databases.  Check your gus.config file." + nl);
             }
                 
             // write row to Workflow table
@@ -323,14 +323,14 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
         
         String hostname = java.net.InetAddress.getLocalHost().getHostName();
 
-        if (host_machine != null && host_machine.equals(hostname)) {
-            error("You are now running on " + hostname + " but the workflow was last run on " 
-                    + host_machine + nl
+        if (host_machine != null && !host_machine.equals(hostname)) {
+            error(nl + "Error: You are running on " + hostname + " but the workflow was last run on " 
+                    + host_machine + "." + nl + nl
                     + "Please go to " + host_machine + 
-                    " and run the ps -u command to confirm that no workflow process are running there.  It is CRITICAL that there be none." + nl
+                    " and run the ps -u command to confirm that no workflow process are running there.  It is CRITICAL that there be none." + nl + nl
                     + "If the controller is running on " + host_machine
-                    + ", you must kill it to run here.  If workflowstepwrap processes are running, then you must either wait until they complete or kill them." + nl
-                    + "If there are no processes running on " + host_machine + " then it is safe to run here.  Use the workflow -m option to let the controller know you are changing machines.");
+                    + ", you must kill it to run here.  If workflowstepwrap processes are running, then you must either wait until they complete or kill them." + nl + nl
+                    + "If there are NO PROCESSES RUNNING on " + host_machine + " then it is safe to run here.  Use the workflow -m option to let the controller know you are changing machines." + nl);
         }
         
         if (state != null && process_id != null && state.equals(RUNNING)) {
@@ -346,14 +346,14 @@ public class RunnableWorkflow extends Workflow<RunnableWorkflowStep>{
 
 	if (testOnly) log("TESTING workflow....");
 
-	log("Setting workflow state to " + RUNNING
-	    + " (process id = " + processId + ")");
-	System.err.println("Setting workflow state to " + RUNNING
-	    + " (process id = " + processId + ")");
+	String msg = "Setting workflow state to " + RUNNING
+	    + " (host machine = " + hostname + " process id = " + processId + ")";
+	log(msg);
+	System.err.println(msg);
 	
 	String sql = "UPDATE apidb.Workflow" + nl
 	    + "SET state = '" + RUNNING + "', process_id = " + processId
-	    + " host_machine = '" + hostname + "'" +  nl
+	    + ", host_machine = '" + hostname + "'" +  nl
 	    + "WHERE workflow_id = " + workflow_id;
 	executeSqlUpdate(sql);
     }
