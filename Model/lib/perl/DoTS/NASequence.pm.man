@@ -71,7 +71,9 @@ sub monomerCount{
   my $countG = 0;
   my $countOther = 0;
 
-  my $seqobj = Bio::PrimarySeq->new(-seq=>$naSeq,
+  my $seq=$naSeq;
+  $seq =~ s/-//g; ##removes any returns
+  my $seqobj = Bio::PrimarySeq->new(-seq=>$seq,
 				    -alphabet=>'dna');
   my $seqStats  =  Bio::Tools::SeqStats->new(-seq=>$seqobj);
 
