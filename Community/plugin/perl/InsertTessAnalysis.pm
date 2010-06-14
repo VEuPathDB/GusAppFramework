@@ -503,12 +503,12 @@ sub insertAnalysis {
   my $numAnalysisInput = 0;
   my $numAnalysisParam = 0;
   my $numAnalysisQcParam = 0;
-  my $numAnalysisBiomaterial = 0;
+  my $numAnalysisBioMaterial = 0;
   my $dbh = $self->getQueryHandle();
   my @assayIds;
   my %assayCounted;
 
-  my $analysis = GUS::Model::TESS::Analysis->new({protocol_id => $cfgInfo->{'protocol_id'});
+  my $analysis = GUS::Model::TESS::Analysis->new({protocol_id => $cfgInfo->{'protocol_id'}});
   if (defined $cfgInfo->{'description'}) {
     $analysis->set('description', $cfgInfo->{'description'});
   }
@@ -563,11 +563,11 @@ sub insertAnalysis {
       $numAnalysisInput++;
     }
   }
-  my $sth4 = $dbh->prepare("select distinct bio_material_id from TESS.AssayBioMaterial where assay_id=?";
+  my $sth4 = $dbh->prepare("select distinct bio_material_id from TESS.AssayBioMaterial where assay_id=?");
   for (my $i=0; $i<@assayIds; $i++) {
     $sth4->xecute($assayIds[$i]);
     while (my ($bioMaterialId) = $sth4->fetchrow_array()) {
-      my $analysisBiomaterial = GUS::Model::TESS::AnalysisBioMaterial->new({bio_material_id => $bioMaterialId});
+      my $analysisBioMaterial = GUS::Model::TESS::AnalysisBioMaterial->new({bio_material_id => $bioMaterialId});
       $analysisBioMaterial->setParent($analysis);
       $numAnalysisBioMaterial++;
   }
