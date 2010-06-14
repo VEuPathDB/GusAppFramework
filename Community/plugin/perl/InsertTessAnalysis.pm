@@ -587,7 +587,7 @@ sub insertAnalysis {
   }
 
   $analysis->submit();
-  $resultDescrip .= "Entered 1 row in TESS.Analysis, $numAnalysisInput rows in TESS.AnalysisInput, $numAnalysisBiomaterial rows in TESS.AssayAnalysis, $numAnalysisParam rows in TESS.AnalysisParam, $numAnalysisQcParam rows in TESSx.AnalysisQCParam.";
+  $resultDescrip .= "Entered 1 row in TESS.Analysis, $numAnalysisInput rows in TESS.AnalysisInput, $numAnalysisBioMaterial rows in TESS.AssayAnalysis, $numAnalysisParam rows in TESS.AnalysisParam, $numAnalysisQcParam rows in TESSx.AnalysisQCParam.";
   $analysisId = $analysis->getId();
   return ($resultDescrip, $analysisId);
 }
@@ -609,9 +609,9 @@ sub insertAnalysisResults {
       $numResults++;
       my $analysisResult = GUS::Model::TESS::SequenceFeature->new({analysis_id => $analysisId});
       foreach my $key (keys %{$data->[$i]}) {
-	if ($key ne "discard") {
-	  $analysisResult->set($key, $data->[$i]->{$key});
-	}
+				if ($key ne "discard") {
+	  			$analysisResult->set($key, $data->[$i]->{$key});
+				}
       }
       $analysisResult->submit();
     }
