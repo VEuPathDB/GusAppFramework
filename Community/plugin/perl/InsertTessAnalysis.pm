@@ -260,7 +260,7 @@ sub readCfgFile {
     $self->error("Could not open file $file.");
   }
   my $analysisNameGiven = 0;
-  my $descriptionIdGiven = 0;
+  my $descriptionGiven = 0;
   my $protocolIdGiven = 0;
   my $analysisDateGiven = 0;
   my $logicalGroupIdGiven = 0;
