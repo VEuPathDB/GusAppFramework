@@ -570,6 +570,7 @@ sub insertAnalysis {
       my $analysisBioMaterial = GUS::Model::TESS::AnalysisBioMaterial->new({bio_material_id => $bioMaterialId});
       $analysisBioMaterial->setParent($analysis);
       $numAnalysisBioMaterial++;
+    }
   }
   if (defined($cfgInfo->{'protocol_param_id'})) {
     for (my $i=1; $i<@{$cfgInfo->{'protocol_param_id'}}; $i++) {
