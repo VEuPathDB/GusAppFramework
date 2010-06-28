@@ -21,7 +21,7 @@ use GUS::Model::TESS::AnalysisQCParam;
 use GUS::Model::TESS::ProtocolQCParam;
 use GUS::Model::TESS::LogicalGroup;
 use GUS::Model::TESS::AnalysisInput;
-use GUS::Model::TESS::AnalysisBiomaterial;
+use GUS::Model::TESS::AssayAnalysis;
 use GUS::Model::Core::TableInfo;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::TESS::SequenceFeature;
@@ -49,14 +49,21 @@ sub getArgumentsDeclaration {
 	      mustExist => 1,
 	      format => 'See the NOTES for the format of this file'
 	     }),
-     integerArg({name  => 'restart',
-		 descr => 'Line number in data_file from which loading should be resumed (line 1 is the first line after the header, empty lines are counted). If this argument is given the analysis_id should also be given.',
+     integerArg({name  => 'skip',
+		 descr => 'The number of head lines to skip in the data file.',
 		 constraintFunc=> undef,
 		 reqd  => 0,
-		 isList => 0
+		 isList => 0,
+		 default=>0
 		}),
+     stringArg({ name  => 'extDbRlsSpec',
+		  descr => "The ExternalDBRelease specifier for the genome build to which reads refer. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+		  constraintFunc => undef,
+		  reqd           => 1,
+		  isList         => 0 
+	       }),
      integerArg({name  => 'analysis_id',
-		 descr => 'The analysis_id of the analysis whose results loading should be resumed with the --restart option. This argument should be provided if and only if the restart option is used.',
+		 descr => 'The analysis_id of the analysis whose results loading should be resumed. If this argument is provided then the --skip option should be used to specify where to restart.',
 		 constraintFunc=> undef,
 		 reqd  => 0,
 		 isList => 0
@@ -71,7 +78,8 @@ sub getArgumentsDeclaration {
 		  descr => 'If true, TESS.AnalysisInput.order_num will be populated',
 		  constraintFunc => undef,
 		  reqd           => 0,
-		  isList         => 0 })
+		  isList         => 0 
+		})
     ];
   return $argumentDeclaration;
 }
@@ -85,11 +93,11 @@ sub getDocumentation {
 
   my $purpose = "This plugin reads a configuration file and a data file (representing the results of some high-thoughput sequencing data analysis) and inserts inputs, parameter settings, and results into the appropriate tables in TESS.";
 
-  my $tablesAffected = [['TESS::Analysis', 'Enters a row representing this analysis here'], ['TESS::AnalysisBiomaterial', 'Enters rows here linking this analysis to all relevant biomaterials'], ['TESS::AnalysisParam', 'Enters the values of the protocol parameters for this analysis here'], ['TESS::AnalysisQCParam', 'Enters the values of the protocol quality control parameters for this analysis here'], ['TESS::AnalysisInput', 'Enters the input(s) of this analysis here'], ['TESS::SequenceFeature', 'Enters the results of this analysis here']];
+  my $tablesAffected = [['TESS::Analysis', 'Enters a row representing this analysis here'], ['TESS::AssayAnalysis', 'Enters rows here linking this analysis to all relevant assays'], ['TESS::AnalysisParam', 'Enters the values of the protocol parameters for this analysis here'], ['TESS::AnalysisQCParam', 'Enters the values of the protocol quality control parameters for this analysis here'], ['TESS::AnalysisInput', 'Enters the input(s) of this analysis here'], ['TESS::SequenceFeature', 'Enters the results of this analysis here']];
 
   my $tablesDependedOn = [['SRes::Contact', 'The researcher or organization who performed this analysis'], ['TESS::Protocol', 'The analysis protocol used'], ['TESS::ProtocolStep', 'The components of the analysis protocol used, if the latter is an ordered series of protocols'], ['Study::OntologyEntry', 'The protocol_type of the protocol used'], ['TESS::ProtocolParam', 'The parameters for the protocol used or for its components'], ['TESS::ProtocolQCParam', 'The quality control parameters for the protocol used or for its components'], ['TESS::LogicalGroup', 'The input group(s) to the analysis'], ['TESS::LogicalGroupLink', 'The members of the logical group(s) input into the analysis']]; 
 
-  my $howToRestart = "Loading can be resumed using the I<--restart n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted). If this argument is given then the I<analysis_id> argument should be given too. Alternatively, one can use the plugin GUS::Community::Plugin::Undo to delete all entries inserted by a specific call to this plugin. Then this plugin can be re-run from fresh.";
+  my $howToRestart = "Loading can be resumed using the I<--skip n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line, empty lines are counted). This argument should be given when the I<analysis_id> argument is given. Alternatively, one can use the plugin GUS::Community::Plugin::Undo to delete all entries inserted by a specific call to this plugin. Then this plugin can be re-run from fresh.";
 
   my $failureCases = "";
 
@@ -139,15 +147,37 @@ The value to be assigned to the I<N>th quality control parameter, whose id is sp
 B<I<logical_group_idN>>
 
 The logical_group_id (in TESS.LogicalGroup) of the I<N>th input group to this analysis. Start with 1, for the first input group, and continue till you have exhausted all input groups. B<At least one> logical group id should be provided. If --orderInput is true, I<N> will be used to populate TESS.AnalysisInput.order_num for that logical group.
+B<I<chr>> [Mandatory]
+The column in the data file containing the chromosome info, with values 'chr*'. 
+Start counting columns from 0.
+
+B<I<start_position>> [Mandatory]
+The column in the data file containing the start positions. Start counting columns from 0.
+
+B<I<end_position>> [Mandatory]
+The column in the data file containing the end positions. Start counting columns from 0.
+
+B<I<strand>>
+The (optional) column in the data file containing the strand. Start counting columns from 0.
+
+B<I<sequence_ontology_id>>
+The (optional) column in the data file containing the sequence_ontology_ids. Start counting columns from 0.
+
+B<I<score>>
+The (optional) column in the data file containing the score. Start counting columns from 0.
+
+B<I<p_value>>
+The (optional) column in the data file containing the p-value. Start counting columns from 0.
+
+B<I<fdr>>
+The (optional) column in the data file containing the FDR. Start counting columns from 0.
 
 =head2 F<data_file>
 
-The data file should be in tab-delimited text format with one header line and a line for each result to be entered in SequenceFeature.
-All lines should contain the same number of tab/fields. Empty lines will be ignored.
+The data file would tpically be a bed, or bedgraph file or other tab-delimited file with columns containing: chromosome (mandatory), start_position (mandatory), end_position (mandatory), strand, sequence_ontology_id, score, p_vaue, fdr.
+Empty lines will be ignored.
 
-The header should contain the fields: na_sequence_id (mandatory), start_position (mandatory), end_position (mandatory), is_reversed (optional), sequence_ontology_id (optional), score (optional), p_value (optional), fdr (optional)
-
-Missing values in a field can be left empty or set to na or NA or n/a or N/A. If all values for a row are missing, that row is not entered.
+Missing values in a field can be left empty or set to na or NA or n/a or N/A.
 
 =head1 AUTHOR
 
@@ -195,12 +225,9 @@ sub run {
   $self->logAlgInvocationId();
   $self->logCommit();
   $self->logArgs();
-  $self->checkArgs();
+  my $ids = $self->checkArgs();
 
   my $cfgInfo = $self->readCfgFile();
-  my ($data, $lineCount) = $self->readDataFile();
-  $self->logData("There are $lineCount lines in data_file after the header, counting empty lines.");
-
   my $analysisId;
   my $resultDescrip = "";
   if (defined $self->getArg('analysis_id')) {
@@ -211,7 +238,7 @@ sub run {
   }
   $self->setResultDescr($resultDescrip);
 
-  $resultDescrip .= " ". $self->insertAnalysisResults($analysisId, $data, $lineCount);
+  $resultDescrip .= " ". $self->insertAnalysisResults($analysisId, $cfgInfo, $ids);
 
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
@@ -223,20 +250,28 @@ sub run {
 
 sub checkArgs {
   my ($self) = @_;
-
+  my $extDbRls = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
+  my $ids;
   my $dbh = $self->getQueryHandle();
+
+  my $sth = $dbh->prepare("select na_sequence_id, chromosome from DoTS.VirtualSequence where external_database_release_id=$extDbRls");
+  $sth->execute();
+  while (my ($id, $chr)=$sth->fetchrow_array()) {
+    $chr =~ /^.*(chr.+)$/;
+    $ids->{$1} = $id;
+  }
+  if (!scalar(keys %{$ids})) {
+    $self->userError('There are no data in DoTS.VirtualSequence for the specified External Database Release');
+  }
 
   if (defined($self->getArg('testnum')) && $self->getArg('commit')) {
     $self->userError("The --testnum argument can only be provided if COMMIT is OFF.");
   }
-  if (!defined($self->getArg('restart')) && defined($self->getArg('analysis_id'))) {
-    $self->userError('The --restart argument must be provided only if the --analysis_id argument is provided.');
+  if (defined($self->getArg('analysis_id')) && defined(!$self->getArg('skip'))) {
+    $self->userError('The --analysis_id argument requires that the --skip argument is also provided.');
   }
-  if (!defined($self->getArg('analysis_id')) && defined($self->getArg('restart'))) {
-    $self->userError('The --analysis_id argument must be provided only if the --restart argument is provided.');
-  }
-  if (defined($self->getArg('restart')) && $self->getArg('restart')<1) {
-    $self->userError('The value of the --restart argument should be an integer greater than or equal to 1.');
+  if (defined($self->getArg('skip')) && $self->getArg('skip')<0) {
+    $self->userError('The value of the --skip argument should be an integer greater than or equal to 0.');
   }
   if (defined($self->getArg('testnum')) && $self->getArg('testnum')<1) {
     $self->userError('The value of the --testnum argument should be an integer greater than or equal to 1.');
@@ -247,6 +282,7 @@ sub checkArgs {
       $self->userError('Invalid analysis_id.');
     }
   }
+  return($ids);
 }
 
 sub readCfgFile {
@@ -264,6 +300,14 @@ sub readCfgFile {
   my $protocolIdGiven = 0;
   my $analysisDateGiven = 0;
   my $logicalGroupIdGiven = 0;
+  my $chrGiven = 0;
+  my $startGiven = 0;
+  my $endGiven = 0;
+  my $strandGiven = 0;
+  my $soGiven = 0;
+  my $scoreGiven = 0;
+  my $pGiven = 0;
+  my $fdrGiven = 0;
 
   while (my $line=<$fh>) {
     my ($name, $value) = split(/\t/, $line);
@@ -341,8 +385,81 @@ sub readCfgFile {
 	$cfgInfo->{'logical_group_id'}->[$index] = $value;
 	$logicalGroupIdGiven++;
       }
+      elsif ($name eq 'chr') {
+	if (!$chrGiven) {
+	  $cfgInfo->{'chr'} = $value;
+	  $chrGiven = 1;
+	}
+	else {
+	  $self->userError('chr should be provided only once in the cfg_file.');
+	}
+      } 
+      elsif ($name eq 'start_position') {
+	if (!$startGiven) {
+	  $cfgInfo->{'start_position'} = $value;
+	  $startGiven = 1;
+	}
+	else {
+	  $self->userError('start_position should be provided only once in the cfg_file.');
+	}
+      }
+       elsif ($name eq 'end_position') {
+	if (!$endGiven) {
+	  $cfgInfo->{'end_position'} = $value;
+	  $endGiven = 1;
+	}
+	else {
+	  $self->userError('end_position should be provided only once in the cfg_file.');
+	}
+      } 
+      elsif ($name eq 'strand') { 
+	if (!$strandGiven) {
+	  $cfgInfo->{'strand'} = $value;
+	  $strandGiven = 1;
+	}
+	else {
+	  $self->userError('strand should be provided only once in the cfg_file.');
+	}
+      }
+      elsif ($name eq 'sequence_ontology_id') { 
+	if (!$soGiven) {
+	  $cfgInfo->{'sequence_ongoloty_id'} = $value;
+	  $soGiven = 1;
+	}
+	else {
+	  $self->userError('sequence_ontology_id should be provided only once in the cfg_file.');
+	}
+      } 
+      elsif ($name eq 'score') { 
+	if (!$scoreGiven) {
+	  $cfgInfo->{'score'} = $value;
+	  $scoreGiven = 1;
+	}
+	else {
+	  $self->userError('score should be provided only once in the cfg_file.');
+	}
+      } 
+      elsif ($name eq 'p_value') { 
+	if (!$pGiven) {
+	  $cfgInfo->{'p_value'} = $value;
+	  $pGiven = 1;
+	}
+	else {
+	  $self->userError('p_value should be provided only once in the cfg_file.');
+	}
+      } 
+      
+      elsif ($name eq 'fdr') { 
+	if (!$fdrGiven) {
+	  $cfgInfo->{'fdr'} = $value;
+	  $fdrGiven = 1;
+	}
+	else {
+	  $self->userError('fdr should be provided only once in the cfg_file.');
+	}
+      }       
       else {
-	$self->userError('The only valid names in the cfg_file are: analysis_name, description, protocol_id, protocol_param_idN, protocol_param_valueN, protocol_qc_param_idN, protocol_qc_param_valueN, logical_group_idN.');
+	$self->userError('The only valid names in the cfg_file are: analysis_name, description, protocol_id, protocol_param_idN, protocol_param_valueN, protocol_qc_param_idN, protocol_qc_param_valueN, logical_group_idN, chr, start_position, end_position, strand, score, p_value, fdr.');
       }
     }
   }
@@ -411,99 +528,13 @@ sub readCfgFile {
   return $cfgInfo;
 }
 
-sub readDataFile {
-  my ($self) = @_;
-  my $data;
-  my $lineNum = 0;
-
-  my $fh = new IO::File;
-  my $file = $self->getArg('data_file');
-  unless ($fh->open("<$file")) {
-    $self->error("Could not open the file $self->getArg('data_file').");
-  }
-
-  my %header;
-  my %position;
-  my $line = "";
-  $self->log("Checking the data file header.");
-  while ($line =~ /^\s*$/) {
-    last unless $line = <$fh>;
-  }
-
-  my @arr = split(/\t/, $line);
-  my $numFields = scalar(@arr);
-  for (my $i=0; $i<@arr; $i++) {
-    $arr[$i] =~ s/^\s+|\s+$//g;
-    $arr[$i] =~ s/\"|\'//g;
-    if ($header{$arr[$i]}) {
-      $self->userError('No two columns can have the same name in the data file header.');
-    }
-    else {
-      $header{$arr[$i]} = 1;
-      $position{$arr[$i]} = $i;
-    }
-  }
-  my $v = GUS::Model::TESS::SequenceFeature->new();
-  my $attribute;
-  foreach my $key (keys %header) {
-    if ($v->isValidAttribute($key)) {
-      if ($key ne 'sequence_feature_id' && $key ne 'analysis_id') {
-	$attribute->{$key} = $position{$key};
-      }
-    }
-  }
-
-  $self->logData("Valid attributes in the header:");
-  my $numAttr = 0;
-  foreach my $key (keys %{$attribute}) {
-    $self->logData("$key");
-    $numAttr++;
-  }
-
-  while ($line=<$fh>) {
-    $lineNum++;
-    if ($lineNum % 500 == 0) {
-      $self->log("Reading line $lineNum in the data file, after the header.");
-    }
-    if ($line =~ /^\s*$/) {
-      next;
-    }
-    my @arr = split(/\t/, $line);
-    if (scalar(@arr) != $numFields) {
-      $self->userError("The number of fields on the $lineNum-th line after the header in data_file does not equal $numFields, the number of header fields.");
-    }
-    for (my $i=0; $i<@arr; $i++) {
-      $arr[$i] =~ s/^\s+|\s+$//g;
-      $arr[$i] =~ s/\"|\'//g;
-      if ($arr[$i] eq "na" || $arr[$i] eq "NA" || $arr[$i] eq "n/a" || $arr[$i] eq "N/A") {
-	$arr[$i] = "";
-      }
-    }
-    $data->[$lineNum]->{'discard'} = 0;
-    my $numMissing = 0;
-    foreach my $key (keys %{$attribute}) {
-      if ($arr[$attribute->{$key}] ne "") {
-	$data->[$lineNum]->{$key} = $arr[$attribute->{$key}];
-      } 
-      else {
-	$numMissing++;
-      }
-    }
-    if ($numMissing == $numAttr) {
-      $data->[$lineNum]->{'discard'} = 1;
-    }
-  }
-  $fh->close();
-  return ($data, $lineNum);
-}
-
 sub insertAnalysis {
   my ($self, $cfgInfo) = @_;
   my ($resultDescrip, $analysisId);
   my $numAnalysisInput = 0;
   my $numAnalysisParam = 0;
   my $numAnalysisQcParam = 0;
-  my $numAnalysisBioMaterial = 0;
+  my $numAssayAnalysis = 0;
   my $dbh = $self->getQueryHandle();
   my @assayIds;
   my %assayCounted;
@@ -563,15 +594,12 @@ sub insertAnalysis {
       $numAnalysisInput++;
     }
   }
-  my $sth4 = $dbh->prepare("select distinct bio_material_id from TESS.AssayBioMaterial where assay_id=?");
   for (my $i=0; $i<@assayIds; $i++) {
-    $sth4->xecute($assayIds[$i]);
-    while (my ($bioMaterialId) = $sth4->fetchrow_array()) {
-      my $analysisBioMaterial = GUS::Model::TESS::AnalysisBioMaterial->new({bio_material_id => $bioMaterialId});
-      $analysisBioMaterial->setParent($analysis);
-      $numAnalysisBioMaterial++;
-    }
+    my $assayAnalysis = GUS::Model::TESS::AssayAnalysis->new({assay_id => $assayIds[$i]});
+    $assayAnalysis->setParent($analysis);
+    $numAssayAnalysis++;
   }
+
   if (defined($cfgInfo->{'protocol_param_id'})) {
     for (my $i=1; $i<@{$cfgInfo->{'protocol_param_id'}}; $i++) {
       my $analysisParam = GUS::Model::TESS::AnalysisParam->new({protocol_param_id => $cfgInfo->{'protocol_param_id'}->[$i], value => $cfgInfo->{'protocol_param_value'}->[$i]});
@@ -588,34 +616,65 @@ sub insertAnalysis {
   }
 
   $analysis->submit();
-  $resultDescrip .= "Entered 1 row in TESS.Analysis, $numAnalysisInput rows in TESS.AnalysisInput, $numAnalysisBioMaterial rows in TESS.AssayAnalysis, $numAnalysisParam rows in TESS.AnalysisParam, $numAnalysisQcParam rows in TESSx.AnalysisQCParam.";
+  $resultDescrip .= "Entered 1 row in TESS.Analysis, $numAnalysisInput rows in TESS.AnalysisInput, $numAssayAnalysis rows in TESS.AssayAnalysis, $numAnalysisParam rows in TESS.AnalysisParam, $numAnalysisQcParam rows in TESSx.AnalysisQCParam.";
   $analysisId = $analysis->getId();
   return ($resultDescrip, $analysisId);
 }
 
 sub insertAnalysisResults {
-  my ($self, $analysisId, $data, $lineCount) = @_;
+  my ($self, $analysisId, $cfgInfo, $ids) = @_;
   my $resultDescrip;
   my $numResults = 0;
 
-  my $startLine = defined $self->getArg('restart') ? $self->getArg('restart') : 1;
-
-  my $endLine = defined $self->getArg('testnum') ? $startLine-1+$self->getArg('testnum') : $lineCount;
-
-  for (my $i=$startLine; $i<=$endLine; $i++) {
-    if ($i % 500 == 0) {
-      $self->log("Inserting data from the $i-th line.");
+  my $dataFile = $self->getArg('data_file');
+  my $fh = IO::File->new("<$dataFile");
+  
+  for (my $i=0; $i<$self->getArg('skip'); $i++) {
+    my $line = <$fh>;
+  }
+  my $lineNum = 0;
+  while (my $line=<$fh>) {
+    $lineNum++;
+    if (defined $self->getArg('testNum') && $lineNum>$self->getArg('testNum')) {
+      last;
     }
-    if (defined $data->[$i] && $data->[$i]->{'discard'} == 0) {
-      $numResults++;
-      my $analysisResult = GUS::Model::TESS::SequenceFeature->new({analysis_id => $analysisId});
-      foreach my $key (keys %{$data->[$i]}) {
-				if ($key ne "discard") {
-	  			$analysisResult->set($key, $data->[$i]->{$key});
-				}
+    if ($lineNum % 5000 == 0) {
+      $self->log("Working on the $lineNum-th data line.");
+    }
+    chomp($line);
+    if ($line =~ /^\s*$/) {
+      next;
+    }
+    my @arr = split(/\t/, $line);
+    my $analysisResult = GUS::Model::TESS::SequenceFeature->new({analysis_id => $analysisId}, na_sequence_id => $ids->{$arr[$cfgInfo->{'chr'}]}, start_position => $arr[$cfgInfo->{'start_position'}], end_position => $arr[$cfgInfo->{'end_position'}]);
+
+    if (defined $cfgInfo->{'strand'}) {
+      my $isReversed;
+      if ($arr[$cfgInfo->{'strand'}] eq '+') {
+	$isReversed = 0;
       }
-      $analysisResult->submit();
+      elsif ($arr[$cfgInfo->{'strand'}] eq '-') {
+	$isReversed = 1;
+      }
+      else {
+	$self->userError("incorrect strand info at data line $lineNum");
+      }
+      $analysisResult->set('is_reversed', $isReversed);
     }
+    if (defined $cfgInfo->{'score'}) {
+      $analysisResult->set('score', $arr[$cfgInfo->{'score'}]);
+    }
+    if (defined $cfgInfo->{'sequence_ontology_id'}) {
+      $analysisResult->set('sequence_ontology_id', $arr[$cfgInfo->{'sequence_ontology_id'}]);
+    }
+    if (defined $cfgInfo->{'p_value'}) {
+      $analysisResult->set('p_value', $arr[$cfgInfo->{'p_value'}]);
+    }
+    if (defined $cfgInfo->{'fdr'}) {
+      $analysisResult->set('fdr', $arr[$cfgInfo->{'fdr'}]);
+    }
+    $analysisResult->submit();
+    $numResults++;
     $self->undefPointerCache();
   }
 
@@ -626,7 +685,7 @@ sub insertAnalysisResults {
 sub undoTables {
   my ($self) = @_;
 
-  return ('TESS.SequenceFeature', 'TESS.AnalysisQCParam', 'TESS.AnalysisParam', 'TESS.AnalysisInput', 'TESS.AnalysisBioMaterial', 'TESS.Analysis');
+  return ('TESS.SequenceFeature', 'TESS.AnalysisQCParam', 'TESS.AnalysisParam', 'TESS.AnalysisInput', 'TESS.AssayAnalysis', 'TESS.Analysis');
 }
 
 1;
