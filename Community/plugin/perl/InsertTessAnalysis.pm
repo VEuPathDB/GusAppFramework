@@ -206,7 +206,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 8447 $',
+		     cvsRevision => '$Revision: 8448 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -647,7 +647,7 @@ sub insertAnalysisResults {
       next;
     }
     my @arr = split(/\t/, $line);
-    my $analysisResult = GUS::Model::TESS::SequenceFeature->new({analysis_id => $analysisId}, na_sequence_id => $ids->{$arr[$cfgInfo->{'chr'}]}, start_position => $arr[$cfgInfo->{'start_position'}], end_position => $arr[$cfgInfo->{'end_position'}]);
+    my $analysisResult = GUS::Model::TESS::SequenceFeature->new({analysis_id => $analysisId, na_sequence_id => $ids->{$arr[$cfgInfo->{'chr'}]}, start_position => $arr[$cfgInfo->{'start_position'}], end_position => $arr[$cfgInfo->{'end_position'}]});
 
     if (defined $cfgInfo->{'strand'}) {
       my $isReversed;
