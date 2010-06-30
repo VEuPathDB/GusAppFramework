@@ -206,7 +206,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 8448 $',
+		     cvsRevision => '$Revision: 8449 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -617,7 +617,7 @@ sub insertAnalysis {
   }
 
   $analysis->submit();
-  $resultDescrip .= "Entered 1 row in TESS.Analysis, $numAnalysisInput rows in TESS.AnalysisInput, $numAssayAnalysis rows in TESS.AssayAnalysis, $numAnalysisParam rows in TESS.AnalysisParam, $numAnalysisQcParam rows in TESSx.AnalysisQCParam.";
+  $resultDescrip .= "Entered 1 row in TESS.Analysis, $numAnalysisInput rows in TESS.AnalysisInput, $numAssayAnalysis rows in TESS.AssayAnalysis, $numAnalysisParam rows in TESS.AnalysisParam, $numAnalysisQcParam rows in TESS.AnalysisQCParam.";
   $analysisId = $analysis->getId();
   return ($resultDescrip, $analysisId);
 }
