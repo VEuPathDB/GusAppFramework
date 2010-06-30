@@ -206,7 +206,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 8446 $',
+		     cvsRevision => '$Revision: 8447 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -636,7 +636,7 @@ sub insertAnalysisResults {
   my $lineNum = 0;
   while (my $line=<$fh>) {
     $lineNum++;
-    if (defined $self->getArg('testNum') && $lineNum>$self->getArg('testNum')) {
+    if (defined $self->getArg('testnum') && $lineNum>$self->getArg('testnum')) {
       last;
     }
     if ($lineNum % 5000 == 0) {
