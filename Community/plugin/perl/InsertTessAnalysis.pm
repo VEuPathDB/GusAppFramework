@@ -219,7 +219,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 8453 $',
+		     cvsRevision => '$Revision: 8454 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -252,7 +252,7 @@ sub run {
   }
   $self->setResultDescr($resultDescrip);
 
-  if (getArg('useSqlLdr')) {
+  if ($self->getArg('useSqlLdr')) {
     $resultDescrip .= " ". $self->runSqlLdr($analysisId, $cfgInfo, $ids);
   }
   else {
