@@ -62,6 +62,19 @@ sub getArgumentsDeclaration {
 		  reqd           => 1,
 		  isList         => 0 
 	       }),
+     integerArg({ name  => 'useSqlLdr',
+		  descr => 'If true, sqlldr will be used to load TESS.SequenceFeature. This is the default mode and it is recommended for large data_files.',
+		  constraintFunc => undef,
+		  reqd           => 0,
+		  isList         => 0,
+		  default        => 1
+		}),
+     integerArg({ name  => 'zeroBasedHalfOpen',
+		  descr => 'If set to 1, that means the data_file coordinates are 0-based, half-open and the plugin will convert them to 1-based, closed.',
+		  constraintFunc => undef,
+		  reqd           => 1,
+		  isList         => 0 
+		}),
      integerArg({name  => 'analysis_id',
 		 descr => 'The analysis_id of the analysis whose results loading should be resumed. If this argument is provided then the --skip option should be used to specify where to restart.',
 		 constraintFunc=> undef,
@@ -75,7 +88,7 @@ sub getArgumentsDeclaration {
 		 isList => 0
 		}),
      booleanArg({ name  => 'orderInput',
-		  descr => 'If true, TESS.AnalysisInput.order_num will be populated',
+		  descr => 'If true, TESS.AnalysisInput.order_num will be populated.',
 		  constraintFunc => undef,
 		  reqd           => 0,
 		  isList         => 0 
@@ -206,7 +219,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 8449 $',
+		     cvsRevision => '$Revision: 8450 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -239,8 +252,12 @@ sub run {
   }
   $self->setResultDescr($resultDescrip);
 
-  $resultDescrip .= " ". $self->insertAnalysisResults($analysisId, $cfgInfo, $ids);
-
+  if (getArg('useSqlLdr')) {
+    $resultDescrip .= " ". $self->runSqlLdr($analysisId, $cfgInfo, $ids);
+  }
+  else {
+    $resultDescrip .= " ". $self->insertAnalysisResults($analysisId, $cfgInfo, $ids);
+  }
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
 }
@@ -622,6 +639,158 @@ sub insertAnalysis {
   return ($resultDescrip, $analysisId);
 }
 
+sub runSqlLdr {
+  my ($self, $analysisId, $cfgInfo, $ids) = @_;
+  my $resultDescrip;
+  my $numResults = 0;
+
+  my $dataFile = $self->getArg('data_file');
+  my $fh = IO::File->new("<$dataFile");
+  my $wfh = IO::File->new(">new_" . $dataFile);
+
+  for (my $i=0; $i<$self->getArg('skip'); $i++) {
+    my $line = <$fh>;
+  }
+  my $lineNum = 0;
+  while (my $line=<$fh>) {
+    $lineNum++;
+    if (defined $self->getArg('testnum') && $lineNum>$self->getArg('testnum')) {
+      last;
+    }
+    if ($lineNum % 5000 == 0) {
+      $self->log("Working on the $lineNum-th data line.");
+    }
+    chomp($line);
+    if ($line =~ /^\s*$/) {
+      next;
+    }
+    my @arr = split(/\t/, $line);
+    my $start = $self->getArg('zeroBasedHalfOpen') ? $arr[$cfgInfo->{'start_position'}]+1 : $arr[$cfgInfo->{'start_position'}];
+    $wfh->print("$analysisId\t$ids->{$arr[$cfgInfo->{'chr'}]}\t$start\t$arr[$cfgInfo->{'end_position'}]");
+
+    if (defined $cfgInfo->{'strand'}) {
+      my $isReversed;
+      if ($arr[$cfgInfo->{'strand'}] eq '+') {
+	$isReversed = 0;
+      }
+      elsif ($arr[$cfgInfo->{'strand'}] eq '-') {
+	$isReversed = 1;
+      }
+      else {
+	$self->userError("incorrect strand info at data line $lineNum");
+      }
+      $wfh->print("\t$isReversed");
+    }
+    if (defined $cfgInfo->{'score'}) {
+      $wfh->print("\t$arr[$cfgInfo->{'score'}]");
+    }
+    if (defined $cfgInfo->{'sequence_ontology_id'}) {
+      $wfh->print("\t$arr[$cfgInfo->{'sequence_ontology_id'}]");
+    }
+    if (defined $cfgInfo->{'p_value'}) {
+      $wfh->print("\t$arr[$cfgInfo->{'p_value'}]");
+    }
+    if (defined $cfgInfo->{'fdr'}) {
+      $wfh->print("\t$arr[$cfgInfo->{'fdr'}]");
+    }
+    $numResults++;
+  }
+  $wfh->close();
+
+  my $configFile = "$dataFile" . ".ctrl";
+  my $logFile = "$dataFile" . ".log";
+
+  $self->writeConfigFile($cfgInfo, $configFile,"new_" . $dataFile);
+
+  my $login       = $self->getConfig->getDatabaseLogin();
+  my $password    = $self->getConfig->getDatabasePassword();
+  my $dbiDsn      = $self->getConfig->getDbiDsn();
+
+  my ($dbi, $type, $db) = split(':', $dbiDsn);
+  system("sqlldr $login/$password\@$db control=$configFile log=$logFile") if($self->getArg('commit'));
+
+  unlink(">new_" . $dataFile);
+  if (!$self->getArg('testnum')) {
+    unlink($configFile);
+    unlink("new_" . $dataFile);
+  }
+  $resultDescrip = "Entered $numResults rows in TESS.SequenceFeature.";
+  return $resultDescrip;
+}
+
+sub getConfig {
+  my ($self) = @_;
+  
+  if (!$self->{config}) {
+    my $gusConfigFile = $self->getArg('gusconfigfile');
+    $self->{config} = GUS::Supported::GusConfig->new($gusConfigFile);
+  }
+  
+  $self->{config};
+}
+
+ sub writeConfigFile {
+  my ($self, $cfgInfo, $configFile, $dataFile) = @_;
+  my ($sec,$min,$hour,$mday,$mon,$year) = localtime();
+  my @abbr = qw(JAN FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC);
+  my $modDate = sprintf('%2d-%s-%02d', $mday, $abbr[$mon], ($year+1900) % 100);
+  my $database = $self->getDb();
+  my $projectId = $database->getDefaultProjectId();
+  my $userId = $database->getDefaultUserId();
+  my $groupId = $database->getDefaultGroupId();
+  my $algInvocationId = $database->getDefaultAlgoInvoId();
+  my $userRead = $database->getDefaultUserRead();
+  my $userWrite = $database->getDefaultUserWrite();
+  my $groupRead = $database->getDefaultGroupRead();
+  my $groupWrite = $database->getDefaultGroupWrite();
+  my $otherRead = $database->getDefaultOtherRead();
+  my $otherWrite = $database->getDefaultOtherWrite();
+
+  open(CONFIG, "> $configFile") or die "Cannot open file $configFile For writing:$!";
+  my $optional = '';
+  if (defined $cfgInfo->{'strand'}) {
+    $optional .= ', is_reversed';
+  }
+  if (defined $cfgInfo->{'score'}) {
+    $optional .= ', score';
+  }
+  if (defined $cfgInfo->{'sequence_ontology_id'}) {
+    $optional .= ', sequence_ontology_id';
+  }
+  if (defined $cfgInfo->{'p_value'}) {
+    $optional .= ', p_value';
+  }
+  if (defined $cfgInfo->{'fdr'}) {
+    $optional .= ', fdr';
+  }
+  
+  print CONFIG "LOAD DATA
+INFILE '$dataFile'
+APPEND
+INTO TABLE tess.sequencefeature
+FIELDS TERMINATED BY '\\t'
+TRAILING NULLCOLS
+(
+analysis_id,
+na_sequence_id,
+start_position,
+end_position$optional,
+modification_date constant \"$modDate\", 
+user_read constant $userRead, 
+user_write constant $userWrite, 
+group_read constant $groupRead, 
+group_write constant $groupWrite, 
+other_read constant $otherRead, 
+other_write constant $otherWrite, 
+row_user_id constant $userId, 
+row_group_id constant $groupId, 
+row_project_id constant $projectId, 
+row_alg_invocation_id constant $algInvocationId,
+sequence_feature_id  \"TESS.SequenceFeature_SQ.nextval\"
+)\n";
+  close CONFIG;
+}
+
 sub insertAnalysisResults {
   my ($self, $analysisId, $cfgInfo, $ids) = @_;
   my $resultDescrip;
@@ -647,7 +816,8 @@ sub insertAnalysisResults {
       next;
     }
     my @arr = split(/\t/, $line);
-    my $analysisResult = GUS::Model::TESS::SequenceFeature->new({analysis_id => $analysisId, na_sequence_id => $ids->{$arr[$cfgInfo->{'chr'}]}, start_position => $arr[$cfgInfo->{'start_position'}], end_position => $arr[$cfgInfo->{'end_position'}]});
+    my $start = $self->getArg('zeroBasedHalfOpen') ? $arr[$cfgInfo->{'start_position'}]+1 : $arr[$cfgInfo->{'start_position'}];
+    my $analysisResult = GUS::Model::TESS::SequenceFeature->new({analysis_id => $analysisId, na_sequence_id => $ids->{$arr[$cfgInfo->{'chr'}]}, start_position => $start, end_position => $arr[$cfgInfo->{'end_position'}]});
 
     if (defined $cfgInfo->{'strand'}) {
       my $isReversed;
