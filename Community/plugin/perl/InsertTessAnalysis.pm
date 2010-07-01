@@ -219,7 +219,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 8454 $',
+		     cvsRevision => '$Revision: 8455 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -646,7 +646,7 @@ sub runSqlLdr {
 
   my $dataFile = $self->getArg('data_file');
   my $fh = IO::File->new("<$dataFile");
-  my $wfh = IO::File->new(">new_" . $dataFile);
+  my $wfh = IO::File->new(">$dataFile" . ".new");
 
   for (my $i=0; $i<$self->getArg('skip'); $i++) {
     my $line = <$fh>;
@@ -693,6 +693,7 @@ sub runSqlLdr {
     if (defined $cfgInfo->{'fdr'}) {
       $wfh->print("\t$arr[$cfgInfo->{'fdr'}]");
     }
+    $wfh->print("\n");
     $numResults++;
   }
   $wfh->close();
@@ -700,7 +701,7 @@ sub runSqlLdr {
   my $configFile = "$dataFile" . ".ctrl";
   my $logFile = "$dataFile" . ".log";
 
-  $self->writeConfigFile($cfgInfo, $configFile,"new_" . $dataFile);
+  $self->writeConfigFile($cfgInfo, $configFile,$dataFile . ".new");
 
   my $login       = $self->getConfig->getDatabaseLogin();
   my $password    = $self->getConfig->getDatabasePassword();
@@ -709,10 +710,9 @@ sub runSqlLdr {
   my ($dbi, $type, $db) = split(':', $dbiDsn);
   system("sqlldr $login/$password\@$db control=$configFile log=$logFile") if($self->getArg('commit'));
 
-  unlink(">new_" . $dataFile);
   if (!$self->getArg('testnum')) {
     unlink($configFile);
-    unlink("new_" . $dataFile);
+    unlink($dataFile . ".new");
   }
   $resultDescrip = "Entered $numResults rows in TESS.SequenceFeature.";
   return $resultDescrip;
