@@ -225,7 +225,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 8458 $',
+		     cvsRevision => '$Revision: 8459 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -871,21 +871,23 @@ sub insertAnalysisResults {
       ($geneId) = $sth2->fetchrow_array();
       $sth2->finish();
     }
-    
-    my $analysisResult = GUS::Model::TESS::AnalysisResultGene->new({analysis_id => $analysisId, gene_id => $geneId});
-								   
-    if (defined $cfgInfo->{'score'}) {
-      $analysisResult->set('score', $arr[$cfgInfo->{'score'}]);
+  
+    if (defined $geneId) {
+      my $analysisResult = GUS::Model::TESS::AnalysisResultGene->new({analysis_id => $analysisId, gene_id => $geneId});
+      
+      if (defined $cfgInfo->{'score'}) {
+	$analysisResult->set('score', $arr[$cfgInfo->{'score'}]);
+      }
+      
+      if (defined $cfgInfo->{'p_value'}) {
+	$analysisResult->set('p_value', $arr[$cfgInfo->{'p_value'}]);
+      }
+      if (defined $cfgInfo->{'fdr'}) {
+	$analysisResult->set('fdr', $arr[$cfgInfo->{'fdr'}]);
+      }
+      $analysisResult->submit();
+      $numResults++;
     }
-
-    if (defined $cfgInfo->{'p_value'}) {
-      $analysisResult->set('p_value', $arr[$cfgInfo->{'p_value'}]);
-    }
-    if (defined $cfgInfo->{'fdr'}) {
-      $analysisResult->set('fdr', $arr[$cfgInfo->{'fdr'}]);
-    }
-    $analysisResult->submit();
-    $numResults++;
     $self->undefPointerCache();
   }
 
