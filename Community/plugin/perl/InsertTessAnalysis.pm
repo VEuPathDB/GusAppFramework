@@ -69,9 +69,9 @@ sub getArgumentsDeclaration {
 		  isList         => 0
 		}),
      integerArg({ name  => 'isZeroBasedHalfOpen',
-		  descr => 'For sequence feature loading. If set to 1, that means the data_file coordinates are 0-based, half-open and the plugin will convert them to 1-based, closed.',
+		  descr => 'For sequence feature loading only (mandatory). If set to 1, that means the data_file coordinates are 0-based, half-open and the plugin will convert them to 1-based, closed.',
 		  constraintFunc => undef,
-		  reqd           => 1,
+		  reqd           => 0,
 		  isList         => 0 
 		}),
      integerArg({name  => 'analysis_id',
@@ -225,7 +225,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 8457 $',
+		     cvsRevision => '$Revision: 8458 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -285,6 +285,9 @@ sub checkArgs {
     while (my ($id, $chr)=$sth->fetchrow_array()) {
       $chr =~ /^.*(chr.+)$/;
       $ids->{$1} = $id;
+      if (!defined $self->getArg('isZeroBasedHalfOpen')) {
+	$self->userError("Must provide a value for --isZeroBasedHalfOpen when loading SequenceFeature");
+      }
     }
     if (!scalar(keys %{$ids})) {
       $self->userError('There are no data in DoTS.VirtualSequence for the specified External Database Release');
