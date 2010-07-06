@@ -12,7 +12,6 @@ use CBIL::Util::Disp;
 use GUS::PluginMgr::Plugin;
 
 use GUS::Model::TESS::Analysis;
-use GUS::Model::SRes::Contact;
 use GUS::Model::TESS::Protocol;
 use GUS::Model::Study::OntologyEntry;
 use GUS::Model::TESS::AnalysisParam;
@@ -25,6 +24,7 @@ use GUS::Model::TESS::AssayAnalysis;
 use GUS::Model::Core::TableInfo;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::TESS::SequenceFeature;
+use GUS::Model::TESS::AnalysisResultGene;
 
 # ----------------------------------------------------------------------
 # Arguments
@@ -57,20 +57,19 @@ sub getArgumentsDeclaration {
 		 default=>0
 		}),
      stringArg({ name  => 'extDbRlsSpec',
-		  descr => "The ExternalDBRelease specifier for the genome build to which reads refer. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+		  descr => "If loading TESS.SequenceFeature, this should be the ExternalDBRelease specifier for the genome build to which reads refer. If loading TESS.AnalysisResultGene, this should be the ExternalDBRelease specifier for the species gene info database to which gene symbols or Entrez Gene ids refer. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
 		  constraintFunc => undef,
 		  reqd           => 1,
 		  isList         => 0 
 	       }),
-     integerArg({ name  => 'useSqlLdr',
-		  descr => 'If true, sqlldr will be used to load TESS.SequenceFeature. This is the default mode and it is recommended for large data_files.',
+     booleanArg({ name  => 'loadGeneResults',
+		  descr => 'If provided, TESS.AnalysisResultGene will be loaded instead of TESS.SequenceFeature.',
 		  constraintFunc => undef,
 		  reqd           => 0,
-		  isList         => 0,
-		  default        => 1
+		  isList         => 0
 		}),
-     integerArg({ name  => 'zeroBasedHalfOpen',
-		  descr => 'If set to 1, that means the data_file coordinates are 0-based, half-open and the plugin will convert them to 1-based, closed.',
+     integerArg({ name  => 'isZeroBasedHalfOpen',
+		  descr => 'For sequence feature loading. If set to 1, that means the data_file coordinates are 0-based, half-open and the plugin will convert them to 1-based, closed.',
 		  constraintFunc => undef,
 		  reqd           => 1,
 		  isList         => 0 
@@ -106,9 +105,9 @@ sub getDocumentation {
 
   my $purpose = "This plugin reads a configuration file and a data file (representing the results of some high-thoughput sequencing data analysis) and inserts inputs, parameter settings, and results into the appropriate tables in TESS.";
 
-  my $tablesAffected = [['TESS::Analysis', 'Enters a row representing this analysis here'], ['TESS::AssayAnalysis', 'Enters rows here linking this analysis to all relevant assays'], ['TESS::AnalysisParam', 'Enters the values of the protocol parameters for this analysis here'], ['TESS::AnalysisQCParam', 'Enters the values of the protocol quality control parameters for this analysis here'], ['TESS::AnalysisInput', 'Enters the input(s) of this analysis here'], ['TESS::SequenceFeature', 'Enters the results of this analysis here']];
+  my $tablesAffected = [['TESS::Analysis', 'Enters a row representing this analysis here'], ['TESS::AssayAnalysis', 'Enters rows here linking this analysis to all relevant assays'], ['TESS::AnalysisParam', 'Enters the values of the protocol parameters for this analysis here'], ['TESS::AnalysisQCParam', 'Enters the values of the protocol quality control parameters for this analysis here'], ['TESS::AnalysisInput', 'Enters the input(s) of this analysis here'], ['TESS::SequenceFeature', 'Enters the results of this analysis here, if loading sequence feature results'], ['TESS::AnalysisResultGene', 'Enters the results of this analysis here, if loading gene results']];
 
-  my $tablesDependedOn = [['SRes::Contact', 'The researcher or organization who performed this analysis'], ['TESS::Protocol', 'The analysis protocol used'], ['TESS::ProtocolStep', 'The components of the analysis protocol used, if the latter is an ordered series of protocols'], ['Study::OntologyEntry', 'The protocol_type of the protocol used'], ['TESS::ProtocolParam', 'The parameters for the protocol used or for its components'], ['TESS::ProtocolQCParam', 'The quality control parameters for the protocol used or for its components'], ['TESS::LogicalGroup', 'The input group(s) to the analysis'], ['TESS::LogicalGroupLink', 'The members of the logical group(s) input into the analysis']]; 
+  my $tablesDependedOn = [['TESS::Protocol', 'The analysis protocol used'], ['Study::OntologyEntry', 'The protocol_type of the protocol used'], ['TESS::ProtocolParam', 'The parameters for the protocol used or for its components'], ['TESS::ProtocolQCParam', 'The quality control parameters for the protocol used or for its components'], ['TESS::LogicalGroup', 'The input group(s) to the analysis'], ['TESS::LogicalGroupLink', 'The members of the logical group(s) input into the analysis'], ['DoTS::VirtualSequence', 'The chromosomes to which coordinates refer when loading sequence features'], ['DoTS::Gene', 'The genes to which results refer when loading gene results'], ['Sres::ExternalDatabaseRelease', 'The external database to which chromosomes or genes refer']]; 
 
   my $howToRestart = "Loading can be resumed using the I<--skip n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line, empty lines are counted). This argument should be given when the I<analysis_id> argument is given. Alternatively, one can use the plugin GUS::Community::Plugin::Undo to delete all entries inserted by a specific call to this plugin. Then this plugin can be re-run from fresh.";
 
@@ -160,21 +159,28 @@ The value to be assigned to the I<N>th quality control parameter, whose id is sp
 B<I<logical_group_idN>>
 
 The logical_group_id (in TESS.LogicalGroup) of the I<N>th input group to this analysis. Start with 1, for the first input group, and continue till you have exhausted all input groups. B<At least one> logical group id should be provided. If --orderInput is true, I<N> will be used to populate TESS.AnalysisInput.order_num for that logical group.
-B<I<chr>> [Mandatory]
-The column in the data file containing the chromosome info, with values 'chr*'. 
+
+B<I<chr>> [Mandatory if loading sequence features]
+If loading sequence features, the column in the data file containing the chromosome info, with values 'chr*'. 
 Start counting columns from 0.
 
-B<I<start_position>> [Mandatory]
-The column in the data file containing the start positions. Start counting columns from 0.
+B<I<start_position>> [Mandatory if loading sequence features]
+If loading sequence features, the column in the data file containing the start positions. Start counting columns from 0.
 
-B<I<end_position>> [Mandatory]
-The column in the data file containing the end positions. Start counting columns from 0.
+B<I<end_position>> [Mandatory if loading sequence features]
+If loading sequence features, the column in the data file containing the end positions. Start counting columns from 0.
+
+B<I<gene_symbol>>
+If loading gene results, the column in the data file containing the gene symbols, if loading gene results. Start counting columns from 0.
+ 
+B<I<entrez_gene_id>>
+If loading gene results, the column in the data file containing the Entrez Gene ids, if loading gene results. Start counting columns from 0.
 
 B<I<strand>>
-The (optional) column in the data file containing the strand. Start counting columns from 0.
+If loading sequence features, the (optional) column in the data file containing the strand. Start counting columns from 0.
 
 B<I<sequence_ontology_id>>
-The (optional) column in the data file containing the sequence_ontology_ids. Start counting columns from 0.
+If loading sequence features, the (optional) column in the data file containing the sequence_ontology_ids. Start counting columns from 0.
 
 B<I<score>>
 The (optional) column in the data file containing the score. Start counting columns from 0.
@@ -187,14 +193,14 @@ The (optional) column in the data file containing the FDR. Start counting column
 
 =head2 F<data_file>
 
-The data file would tpically be a bed, or bedgraph file or other tab-delimited file with columns containing: chromosome (mandatory), start_position (mandatory), end_position (mandatory), strand, sequence_ontology_id, score, p_vaue, fdr.
-Empty lines will be ignored.
+For sequence features, the data file would tpically be a bed, or bedgraph file or other tab-delimited file with columns containing: chromosome (mandatory), start_position (mandatory), end_position (mandatory), strand, sequence_ontology_id, score, p_value, fdr.
+For gene results, the data file should be a tab-delimited file with columns containing: gene_symbols or Entrez Gene ids (at least one of the two), score, p_value, fdr. 
 
 Missing values in a field can be left empty or set to na or NA or n/a or N/A.
 
 =head1 AUTHOR
 
-Written by Elisabetta Manduchi.
+Written by Elisabetta Manduchi
 
 =head1 COPYRIGHT
 
@@ -219,7 +225,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 8455 $',
+		     cvsRevision => '$Revision: 8457 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -239,7 +245,7 @@ sub run {
   $self->logAlgInvocationId();
   $self->logCommit();
   $self->logArgs();
-  my $ids = $self->checkArgs();
+  my ($ids, $extDbRls) = $self->checkArgs();
 
   my $cfgInfo = $self->readCfgFile();
   my $analysisId;
@@ -252,11 +258,11 @@ sub run {
   }
   $self->setResultDescr($resultDescrip);
 
-  if ($self->getArg('useSqlLdr')) {
+  if (!$self->getArg('loadGeneResults')) {
     $resultDescrip .= " ". $self->runSqlLdr($analysisId, $cfgInfo, $ids);
   }
   else {
-    $resultDescrip .= " ". $self->insertAnalysisResults($analysisId, $cfgInfo, $ids);
+    $resultDescrip .= " ". $self->insertAnalysisResults($analysisId, $cfgInfo, $extDbRls);
   }
   $self->setResultDescr($resultDescrip);
   $self->logData($resultDescrip);
@@ -272,14 +278,16 @@ sub checkArgs {
   my $ids;
   my $dbh = $self->getQueryHandle();
 
-  my $sth = $dbh->prepare("select na_sequence_id, chromosome from DoTS.VirtualSequence where external_database_release_id=$extDbRls");
-  $sth->execute();
-  while (my ($id, $chr)=$sth->fetchrow_array()) {
-    $chr =~ /^.*(chr.+)$/;
-    $ids->{$1} = $id;
-  }
-  if (!scalar(keys %{$ids})) {
-    $self->userError('There are no data in DoTS.VirtualSequence for the specified External Database Release');
+  if (!$self->getArg('loadGeneResults')) {
+    my $sth = $dbh->prepare("select na_sequence_id, chromosome from DoTS.VirtualSequence where external_database_release_id=$extDbRls");
+    $sth->execute();
+    while (my ($id, $chr)=$sth->fetchrow_array()) {
+      $chr =~ /^.*(chr.+)$/;
+      $ids->{$1} = $id;
+    }
+    if (!scalar(keys %{$ids})) {
+      $self->userError('There are no data in DoTS.VirtualSequence for the specified External Database Release');
+    }
   }
 
   if (defined($self->getArg('testnum')) && $self->getArg('commit')) {
@@ -300,7 +308,7 @@ sub checkArgs {
       $self->userError('Invalid analysis_id.');
     }
   }
-  return($ids);
+  return($ids, $extDbRls);
 }
 
 sub readCfgFile {
@@ -326,6 +334,8 @@ sub readCfgFile {
   my $scoreGiven = 0;
   my $pGiven = 0;
   my $fdrGiven = 0;
+  my $geneSymbolGiven = 0;
+  my $entrezGiven = 0;
 
   while (my $line=<$fh>) {
     my ($name, $value) = split(/\t/, $line);
@@ -475,9 +485,27 @@ sub readCfgFile {
 	else {
 	  $self->userError('fdr should be provided only once in the cfg_file.');
 	}
-      }       
+      } 
+       elsif ($name eq 'gene_symbol') { 
+	if (!$geneSymbolGiven) {
+	  $cfgInfo->{'geneSymbol'} = $value;
+	  $geneSymbolGiven = 1;
+	}
+	else {
+	  $self->userError('gene_symbol should be provided only once in the cfg_file.');
+	}
+      }  
+       elsif ($name eq 'entrez_gene_id') { 
+	if (!$entrezGiven) {
+	  $cfgInfo->{'entrez'} = $value;
+	  $entrezGiven = 1;
+	}
+	else {
+	  $self->userError('entrez_gene_id should be provided only once in the cfg_file.');
+	}
+      }      
       else {
-	$self->userError('The only valid names in the cfg_file are: analysis_name, description, protocol_id, protocol_param_idN, protocol_param_valueN, protocol_qc_param_idN, protocol_qc_param_valueN, logical_group_idN, chr, start_position, end_position, strand, score, p_value, fdr.');
+	$self->userError('The only valid names in the cfg_file are: analysis_name, description, protocol_id, protocol_param_idN, protocol_param_valueN, protocol_qc_param_idN, protocol_qc_param_valueN, logical_group_idN, chr, start_position, end_position, strand, score, p_value, fdr, gene_symbol, entrez.');
       }
     }
   }
@@ -665,7 +693,7 @@ sub runSqlLdr {
       next;
     }
     my @arr = split(/\t/, $line);
-    my $start = $self->getArg('zeroBasedHalfOpen') ? $arr[$cfgInfo->{'start_position'}]+1 : $arr[$cfgInfo->{'start_position'}];
+    my $start = $self->getArg('isZeroBasedHalfOpen') ? $arr[$cfgInfo->{'start_position'}]+1 : $arr[$cfgInfo->{'start_position'}];
     $wfh->print("$analysisId\t$ids->{$arr[$cfgInfo->{'chr'}]}\t$start\t$arr[$cfgInfo->{'end_position'}]");
 
     if (defined $cfgInfo->{'strand'}) {
@@ -792,9 +820,19 @@ sequence_feature_id  \"TESS.SequenceFeature_SQ.nextval\"
 }
 
 sub insertAnalysisResults {
-  my ($self, $analysisId, $cfgInfo, $ids) = @_;
+  my ($self, $analysisId, $cfgInfo, $extDbRls) = @_;
+
+  if (!defined $cfgInfo->{'geneSymbol'} && !defined $cfgInfo->{'entrez'}){
+    $self->userError("Must provide either a gene symbol column or an Entrez Gene id column in the data file");
+  }
+
   my $resultDescrip;
   my $numResults = 0;
+
+  my $dbh = $self->getQueryHandle();
+  my $sth1 = $dbh->prepare("select distinct gene_id from DoTS.Gene where external_database_release_id=$extDbRls and source_id=?");
+  my $sth2 = $dbh->prepare("select distinct gene_id from DoTS.Gene where external_database_release_id=$extDbRls and lower(gene_symbol)=?");
+
 
   my $dataFile = $self->getArg('data_file');
   my $fh = IO::File->new("<$dataFile");
@@ -808,36 +846,34 @@ sub insertAnalysisResults {
     if (defined $self->getArg('testnum') && $lineNum>$self->getArg('testnum')) {
       last;
     }
-    if ($lineNum % 5000 == 0) {
+    if ($lineNum % 1000 == 0) {
       $self->log("Working on the $lineNum-th data line.");
     }
     chomp($line);
     if ($line =~ /^\s*$/) {
       next;
     }
+    
+    my $geneId;
     my @arr = split(/\t/, $line);
-    my $start = $self->getArg('zeroBasedHalfOpen') ? $arr[$cfgInfo->{'start_position'}]+1 : $arr[$cfgInfo->{'start_position'}];
-    my $analysisResult = GUS::Model::TESS::SequenceFeature->new({analysis_id => $analysisId, na_sequence_id => $ids->{$arr[$cfgInfo->{'chr'}]}, start_position => $start, end_position => $arr[$cfgInfo->{'end_position'}]});
-
-    if (defined $cfgInfo->{'strand'}) {
-      my $isReversed;
-      if ($arr[$cfgInfo->{'strand'}] eq '+') {
-	$isReversed = 0;
-      }
-      elsif ($arr[$cfgInfo->{'strand'}] eq '-') {
-	$isReversed = 1;
-      }
-      else {
-	$self->userError("incorrect strand info at data line $lineNum");
-      }
-      $analysisResult->set('is_reversed', $isReversed);
+    if ($arr[$cfgInfo->{'entrez'}]) {
+      $sth1->execute($arr[$cfgInfo->{'entrez'}]);
+      ($geneId) = $sth1->fetchrow_array();
+      $sth1->finish();
     }
+    elsif ($arr[$cfgInfo->{'geneSymbol'}]) {
+      $arr[$cfgInfo->{'geneSymbol'}] =~ tr/A-Z/a-z/;
+      $sth2->execute($arr[$cfgInfo->{'geneSymbol'}]);
+      ($geneId) = $sth2->fetchrow_array();
+      $sth2->finish();
+    }
+    
+    my $analysisResult = GUS::Model::TESS::AnalysisResultGene->new({analysis_id => $analysisId, gene_id => $geneId});
+								   
     if (defined $cfgInfo->{'score'}) {
       $analysisResult->set('score', $arr[$cfgInfo->{'score'}]);
     }
-    if (defined $cfgInfo->{'sequence_ontology_id'}) {
-      $analysisResult->set('sequence_ontology_id', $arr[$cfgInfo->{'sequence_ontology_id'}]);
-    }
+
     if (defined $cfgInfo->{'p_value'}) {
       $analysisResult->set('p_value', $arr[$cfgInfo->{'p_value'}]);
     }
@@ -849,14 +885,14 @@ sub insertAnalysisResults {
     $self->undefPointerCache();
   }
 
-  $resultDescrip = "Entered $numResults rows in TESS.SequenceFeature.";
+  $resultDescrip = "Entered $numResults rows in TESS.AnalysisResultGene.";
   return $resultDescrip;
 }
 
 sub undoTables {
   my ($self) = @_;
 
-  return ('TESS.SequenceFeature', 'TESS.AnalysisQCParam', 'TESS.AnalysisParam', 'TESS.AnalysisInput', 'TESS.AssayAnalysis', 'TESS.Analysis');
+  return ('TESS.SequenceFeature', 'TESS.AnalysisResultGene', 'TESS.AnalysisQCParam', 'TESS.AnalysisParam', 'TESS.AnalysisInput', 'TESS.AssayAnalysis', 'TESS.Analysis');
 }
 
 1;
