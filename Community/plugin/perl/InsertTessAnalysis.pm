@@ -225,7 +225,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 8459 $',
+		     cvsRevision => '$Revision: 8460 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -857,15 +857,15 @@ sub insertAnalysisResults {
     if ($line =~ /^\s*$/) {
       next;
     }
-    
     my $geneId;
     my @arr = split(/\t/, $line);
-    if ($arr[$cfgInfo->{'entrez'}]) {
+    if (defined $cfgInfo->{'entrez'}) {
       $sth1->execute($arr[$cfgInfo->{'entrez'}]);
       ($geneId) = $sth1->fetchrow_array();
       $sth1->finish();
     }
-    elsif ($arr[$cfgInfo->{'geneSymbol'}]) {
+
+    elsif (defined $cfgInfo->{'geneSymbol'}) {
       $arr[$cfgInfo->{'geneSymbol'}] =~ tr/A-Z/a-z/;
       $sth2->execute($arr[$cfgInfo->{'geneSymbol'}]);
       ($geneId) = $sth2->fetchrow_array();
