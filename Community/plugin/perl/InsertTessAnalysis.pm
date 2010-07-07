@@ -225,7 +225,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 8460 $',
+		     cvsRevision => '$Revision: 8461 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -297,7 +297,7 @@ sub checkArgs {
   if (defined($self->getArg('testnum')) && $self->getArg('commit')) {
     $self->userError("The --testnum argument can only be provided if COMMIT is OFF.");
   }
-  if (defined($self->getArg('analysis_id')) && defined(!$self->getArg('skip'))) {
+  if (defined($self->getArg('analysis_id')) && !defined($self->getArg('skip'))) {
     $self->userError('The --analysis_id argument requires that the --skip argument is also provided.');
   }
   if (defined($self->getArg('skip')) && $self->getArg('skip')<0) {
