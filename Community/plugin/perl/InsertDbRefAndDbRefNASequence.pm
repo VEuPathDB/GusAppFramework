@@ -1,5 +1,6 @@
 package GUS::Community::Plugin::InsertDbRefAndDbRefNASequence;
 
+
 @ISA = qw(GUS::PluginMgr::Plugin);
  
 use strict;
