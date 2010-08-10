@@ -107,6 +107,11 @@ my $argsDeclaration =
              descr => 'option to map assembly a current assembly',
              reqd => 0,
              default => 0
+            }),
+ booleanArg({name => 'sourceIdGiven',
+             descr => 'option to indicate that that the DT info in the mapping file corresponds to source_id, not na_sequence_id',
+             reqd => 0,
+             default => 0
             })
 ];
 
@@ -184,6 +189,8 @@ sub getSourceIdsAndMap {
   my $pattern1 = $self->getArg('pattern1');
   my $pattern2 = $self->getArg('pattern2');
   my $nLinks = 0;
+  my $dbh = $self->getQueryHandle();
+  my $sth = $dbh->prepare("select na_sequence_id from dots.assembly where source_id = ?");
 
   foreach my $file (@{$files}) {
     open (F,$file) || die "Can't open $file for reading\n";
@@ -198,6 +205,11 @@ sub getSourceIdsAndMap {
 	my $MappedFrom = $1;
 	if (/$pattern2/) {
 	  my $MappedTo = $1;
+	  if ($self->getArg('sourceIdGiven')) {
+	    $sth->execute($MappedTo);
+	    $MappedTo = $sth->fetchrow_array();
+	    $sth->finish();
+	  }
 	  $sourceIdHash{$MappedFrom} = 1;
 	  push (@{$mapHash{$MappedFrom}},$MappedTo);
 	  ++$nLinks;
