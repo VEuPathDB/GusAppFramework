@@ -95,7 +95,7 @@ public class MetadataPopulator {
 			"(database_version_id, version, modification_date, user_read, user_write," + 
 			"group_read, group_write, other_read, other_write, row_user_id, " +
 			"row_group_id, row_project_id, row_alg_invocation_id) VALUES (" + 
-			getSequenceFunction("core.databaseversion_sq") + "," + version + ","
+			getSequenceFunction("core.databaseversion_sq", "nextval") + "," + version + ","
 			+ getDateFunction() + ",1,1,1,1,1,0,1,1,1,1);\n\n");
 	}
 
@@ -104,7 +104,7 @@ public class MetadataPopulator {
 			writer.write( "BEGIN;\n\n" );
 		}
 		
-		writer.write("INSERT INTO Core.UserInfo VALUES(" + getSequenceFunction("core.userinfo_sq") +
+		writer.write("INSERT INTO Core.UserInfo VALUES(" + getSequenceFunction("core.userinfo_sq", "nextval") +
 			", 'dba', 'dba', 'Database', 'Administrator', 'unknown', NULL, " + getDateFunction() +
 			",1,1,1,1,1,0,1,1,1,1);\n\n");
 			
@@ -112,17 +112,17 @@ public class MetadataPopulator {
 			"modification_date, user_read, user_write," + 
 			"group_read, group_write, other_read, other_write, row_user_id, " +
 			"row_group_id, row_project_id, row_alg_invocation_id) " + 
-			"VALUES(" + getSequenceFunction("core.projectinfo_sq") +
+			"VALUES(" + getSequenceFunction("core.projectinfo_sq", "nextval") +
 			", 'Database administration', NULL, NULL, " + getDateFunction() +
 			",1,1,1,1,1,0,1,1,1,1);\n\n");
 			
-		writer.write("INSERT INTO Core.GroupInfo VALUES(" + getSequenceFunction("core.groupinfo_sq") +
+		writer.write("INSERT INTO Core.GroupInfo VALUES(" + getSequenceFunction("core.groupinfo_sq", "nextval") +
 			", 'dba', NULL, " + getDateFunction() + ",1,1,1,1,1,0,1,1,1,1);\n\n");
 			
 
-		String algorithmId = "core.algorithm_sq.currval";
-		String algImplementationId = "core.algorithminvocation_sq.currval" ;
-		writer.write("INSERT INTO Core.Algorithm VALUES (" +getSequenceFunction("core.algorithm_sq")  +
+		String algorithmId = getSequenceFunction("core.algorithm_sq", "currval");
+		String algImplementationId = getSequenceFunction("core.algorithminvocation_sq", "currval");
+		writer.write("INSERT INTO Core.Algorithm VALUES (" +getSequenceFunction("core.algorithm_sq", "nextval")  +
 			", 'SQL*PLUS', NULL, " + getDateFunction() + ",1,1,1,1,1,0,1,1,1,1);\n\n");
 
 		writer.write("INSERT INTO Core.AlgorithmImplementation (Algorithm_Implementation_id, " +
@@ -130,7 +130,7 @@ public class MetadataPopulator {
 			"modification_date, user_read, user_write," + 
 			"group_read, group_write, other_read, other_write, row_user_id, " +
 			"row_group_id, row_project_id, row_alg_invocation_id) VALUES (" +
-			getSequenceFunction("core.algorithmimplementation_sq") +
+			getSequenceFunction("core.algorithmimplementation_sq", "nextval") +
 			", "+algorithmId+", 'unknown', NULL, NULL, NULL, NULL, NULL, " + getDateFunction() +
 			",1,1,1,1,1,0,1,1,1,1);\n\n");
 			
@@ -139,12 +139,12 @@ public class MetadataPopulator {
 			"comment_string, modification_date, user_read, user_write," + 
 			"group_read, group_write, other_read, other_write, row_user_id, " +
 			"row_group_id, row_project_id, row_alg_invocation_id) VALUES (" +
-			getSequenceFunction("core.algorithminvocation_sq") + ", "+algImplementationId+", " +
+			getSequenceFunction("core.algorithminvocation_sq", "nextval") + ", "+algImplementationId+", " +
 			getDateFunction() + ","  +getDateFunction() + ", NULL, NULL, 'Row(s) inserted', NULL, "
 			+ getDateFunction() + ",1,1,1,1,1,0,1,1,1,1);\n\n");
 
 		String apktHead = "Insert INTO Core.AlgorithmParamKeyType VALUES(" + 
-						getSequenceFunction("core.AlgorithmParamKeyType_SQ");
+						getSequenceFunction("core.AlgorithmParamKeyType_SQ", "nextval");
 		String apktTail = getDateFunction() + ",1,1,1,1,1,0,1,1,1,1);\n\n";
 
 		writer.write( apktHead + ",'string'," + apktTail);
@@ -321,12 +321,12 @@ public class MetadataPopulator {
 		}
 	}
 	
-	private String getSequenceFunction(String sequenceName) {
+	private String getSequenceFunction(String sequenceName, String function) {
 		if ( dbVendor.compareToIgnoreCase("Oracle") == 0 ) {
-			return sequenceName + ".nextval";
+			return sequenceName + "." + function;
 		}
 		else if ( dbVendor.compareToIgnoreCase("Postgres") == 0 ) {
-			return "nextval('" + sequenceName + "')";
+			return function + "('" + sequenceName + "')";
 		}
 		else { 
 			log.error("Unknown DB Vendor: '" + dbVendor + "', returning null as sequence function");
