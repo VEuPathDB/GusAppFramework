@@ -86,7 +86,6 @@
                                            GUS/Model-Installation, 
                                            GUS/ObjRelP-Installation, 
                                            GUS/Pipeline-Installation, 
-                                           GUS/Workflow-Installation, 
                                            GUS/PluginMgr-Installation, 
                                            GUS/ReportMaker-Installation">
     <ant target="defaultProjectInstall"/>
@@ -385,13 +384,6 @@
     <ant target="defaultComponentInstall">
       <property name="project" value="GUS"/>
       <property name="component" value="Pipeline"/>
-    </ant>
-  </target>  
-
-  <target name="GUS/Workflow-Installation" depends="ProjectTree">
-    <ant target="defaultComponentInstall">
-      <property name="project" value="GUS"/>
-      <property name="component" value="Workflow"/>
     </ant>
   </target>  
 
