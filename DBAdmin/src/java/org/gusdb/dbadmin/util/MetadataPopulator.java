@@ -104,7 +104,8 @@ public class MetadataPopulator {
 			writer.write( "BEGIN;\n\n" );
 		}
 		
-		writer.write("INSERT INTO Core.UserInfo VALUES(" + getSequenceFunction("core.userinfo_sq", "nextval") +
+		writer.write("INSERT INTO Core.UserInfo VALUES(" + 
+		    getSequenceFunction("core.userinfo_sq", "nextval") +
 			", 'dba', 'dba', 'Database', 'Administrator', 'unknown', NULL, " + getDateFunction() +
 			",1,1,1,1,1,0,1,1,1,1);\n\n");
 			
@@ -116,13 +117,12 @@ public class MetadataPopulator {
 			", 'Database administration', NULL, NULL, " + getDateFunction() +
 			",1,1,1,1,1,0,1,1,1,1);\n\n");
 			
-		writer.write("INSERT INTO Core.GroupInfo VALUES(" + getSequenceFunction("core.groupinfo_sq", "nextval") +
+		writer.write("INSERT INTO Core.GroupInfo VALUES(" + 
+		    getSequenceFunction("core.groupinfo_sq", "nextval") +
 			", 'dba', NULL, " + getDateFunction() + ",1,1,1,1,1,0,1,1,1,1);\n\n");
-			
 
-		String algorithmId = getSequenceFunction("core.algorithm_sq", "currval");
-		String algImplementationId = getSequenceFunction("core.algorithminvocation_sq", "currval");
-		writer.write("INSERT INTO Core.Algorithm VALUES (" +getSequenceFunction("core.algorithm_sq", "nextval")  +
+		writer.write("INSERT INTO Core.Algorithm VALUES (" +
+		    getSequenceFunction("core.algorithm_sq", "nextval")  +
 			", 'SQL*PLUS', NULL, " + getDateFunction() + ",1,1,1,1,1,0,1,1,1,1);\n\n");
 
 		writer.write("INSERT INTO Core.AlgorithmImplementation (Algorithm_Implementation_id, " +
@@ -130,8 +130,9 @@ public class MetadataPopulator {
 			"modification_date, user_read, user_write," + 
 			"group_read, group_write, other_read, other_write, row_user_id, " +
 			"row_group_id, row_project_id, row_alg_invocation_id) VALUES (" +
-			getSequenceFunction("core.algorithmimplementation_sq", "nextval") +
-			", "+algorithmId+", 'unknown', NULL, NULL, NULL, NULL, NULL, " + getDateFunction() +
+			getSequenceFunction("core.algorithmimplementation_sq", "nextval") + ", " + 
+			getSequenceFunction("core.algorithm_sq", "currval") +
+			", 'unknown', NULL, NULL, NULL, NULL, NULL, " + getDateFunction() +
 			",1,1,1,1,1,0,1,1,1,1);\n\n");
 			
 		writer.write("INSERT INTO Core.AlgorithmInvocation (algorithm_invocation_id, " +
@@ -139,7 +140,8 @@ public class MetadataPopulator {
 			"comment_string, modification_date, user_read, user_write," + 
 			"group_read, group_write, other_read, other_write, row_user_id, " +
 			"row_group_id, row_project_id, row_alg_invocation_id) VALUES (" +
-			getSequenceFunction("core.algorithminvocation_sq", "nextval") + ", "+algImplementationId+", " +
+			getSequenceFunction("core.algorithminvocation_sq", "nextval") + ", " +
+			getSequenceFunction("core.algorithminvocation_sq", "currval") + ", " +
 			getDateFunction() + ","  +getDateFunction() + ", NULL, NULL, 'Row(s) inserted', NULL, "
 			+ getDateFunction() + ",1,1,1,1,1,0,1,1,1,1);\n\n");
 
