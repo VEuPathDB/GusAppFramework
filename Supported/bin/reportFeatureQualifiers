@@ -125,11 +125,11 @@ sub usage {
 "
 Report the features and qualifiers used in a sequence features file
 
-Usage: reportFeatureQualifers format fileOrDir [-xmlOutput -noUnflatten]
+Usage: reportFeatureQualifers --format --file_or_dir [--xmlOutput --noUnflatten]
 
 where
   --format:       embl, genbank, tigr (or any format supported by bioperl's SeqIO)
-  --fileOrDir:    a seq/feature file, or a directory containing a set of them
+  --file_or_dir:    a seq/feature file, or a directory containing a set of them
   --xmlOutput:   if present, the output is a template in 'mapping file XML' 
                 format as expected by the InsertSequenceFeatures plugin.
   --unflatten  if present, use bioperl's unflattener (only applicable
