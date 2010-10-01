@@ -162,7 +162,7 @@ sub run {
 
   my $algInvocation = $self->_getAlgorithmInvocation($algImp);
 
-  $alg->submit();
+  $alg->submit() if $algInvocation;
 
   return("Inserted $algCount rows into Core::Algorithm,$algImpCount into Core::AlgorithmImplementation, and $algInvCount into Core::AlgorithmInvocation.");
 }
@@ -237,11 +237,15 @@ sub _getAlgorithmInvocation {
   $algInv->setParent($algImp);
 
   if($algInv->retrieveFromDB()) {
-    $self->userError("Identical Algorithm Invocation Exists Already!");
-  }
+    $self->log("Identical Algorithm Invocation Exists Already\n");
+    return 0;
+}else{
   $algInvCount++;
-
   return($algInv);
+}
+
+
+
 }
 
 sub undoTables {
