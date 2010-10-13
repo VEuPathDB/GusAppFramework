@@ -1,7 +1,7 @@
 package GUS::PluginMgr::PluginError;
 use base qw(Error);
 
-use overload ('""' => 'stringify');
+#use overload ('""' => 'stringify');
 
 sub new {
   my ($class, $m) = @_;
@@ -18,5 +18,10 @@ sub new {
 1;
 
 package GUS::PluginMgr::PluginUserError;
+use base qw(GUS::PluginMgr::PluginError);
+1;
+
+
+package GUS::PluginMgr::UnexpectedError;
 use base qw(GUS::PluginMgr::PluginError);
 1;
