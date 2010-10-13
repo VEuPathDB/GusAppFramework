@@ -35,6 +35,8 @@ use GUS::Model::Core::AlgorithmParamKey;
 use GUS::Model::Core::AlgorithmParam;
 use GUS::Model::GusRow;
 
+use GUS::PluginMgr::PluginError;
+
 use Data::Dumper qw(Dumper);
 
 use constant FLAG_DEBUG => 0;
@@ -557,14 +559,14 @@ sub doMajorMode_RunOrReport {
    $Run && $self->openInvocation($pu);
    
    # this acts like a java finally block.  clean up and show a stack trace.
-   { local
+#   { local
 
-   $SIG{__DIE__} = sub {
-     my ($err) = @_;
+#   $SIG{__DIE__} = sub {
+#     my ($err) = @_;
 
-     require Carp;
-     die "\nERROR:\n$err\nSTACK TRACE:\n" . Carp::longmess() . "\n";
-   };
+#     require Carp;
+#     die "\nERROR:\n$err\nSTACK TRACE:\n" . Carp::longmess() . "\n";
+#   };
 
    eval {
       my $resultDescrip;
@@ -589,13 +591,18 @@ sub doMajorMode_RunOrReport {
       $Run && $pu->logAlgInvocationId();
       $Run && $pu->logCommit();
    };
-   }
+#   }
 
    my $err = $@;
    $Run && $self->closeInvocation($pu, $err);
 
    if ($err) {
-     die $err;
+     my $error =  GUS::PluginMgr::UnexpectedError->new($err);
+
+     print STDERR "\n$err\nSTACK TRACE:\n";
+     print STDERR $error->stacktrace();
+     exit;
+
    } else {
      die "Plugin run() must return a string describing the result of the run"
        if (!$self->getArgs->{commit} && !$pu->getResultDescr());
