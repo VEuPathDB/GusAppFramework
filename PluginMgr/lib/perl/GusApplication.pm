@@ -35,6 +35,8 @@ use GUS::Model::Core::AlgorithmParamKey;
 use GUS::Model::Core::AlgorithmParam;
 use GUS::Model::GusRow;
 
+use Error qw(:try);
+
 use GUS::PluginMgr::PluginError;
 
 use Data::Dumper qw(Dumper);
@@ -568,7 +570,13 @@ sub doMajorMode_RunOrReport {
 #     die "\nERROR:\n$err\nSTACK TRACE:\n" . Carp::longmess() . "\n";
 #   };
 
-   eval {
+
+  local $Error::Depth = $Error::Depth + 1;
+  local $Error::Debug = 1;  # Enables storing of stacktrace
+
+   my $closingErrorMessage;
+
+   try {
       my $resultDescrip;
 
       my $startTime = time;
@@ -590,25 +598,26 @@ sub doMajorMode_RunOrReport {
       $Run && $pu->logRowsInserted();
       $Run && $pu->logAlgInvocationId();
       $Run && $pu->logCommit();
+   } otherwise {
+     my $error = shift;
+
+     print STDERR "\nERROR MESSAGE:  " . $error->text . "\n";
+     print STDERR "**** " . $error->file . " on line " . $error->line . "\n";
+     print STDERR "\nSTACK TRACE:\n" . $error->stacktrace() . "\n\n";
+
+     $closingErrorMessage = $error->text();
+     $error->throw();
+   } finally {
+     $Run && $self->closeInvocation($pu, $closingErrorMessage);
+
+     my $error = GUS::PluginMgr::PluginError->
+       new("Plugin run() must return a string describing the result of the run");
+
+     if (!$self->getArgs->{commit} && !$pu->getResultDescr()) {
+       print STDERR "\n" . $error->text . "\n";
+       $error->throw();
+     }
    };
-#   }
-
-   my $err = $@;
-   $Run && $self->closeInvocation($pu, $err);
-
-   if ($err) {
-     my $error =  GUS::PluginMgr::UnexpectedError->new($err);
-
-     print STDERR "\n$err\nSTACK TRACE:\n";
-     print STDERR $error->stacktrace();
-
-     # end the process with error status
-     exit(1);
-
-   } else {
-     die "Plugin run() must return a string describing the result of the run"
-       if (!$self->getArgs->{commit} && !$pu->getResultDescr());
-   }
  }
 
 sub logTime {
