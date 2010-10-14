@@ -601,7 +601,9 @@ sub doMajorMode_RunOrReport {
 
      print STDERR "\n$err\nSTACK TRACE:\n";
      print STDERR $error->stacktrace();
-     exit;
+
+     # end the process with error status
+     exit(1);
 
    } else {
      die "Plugin run() must return a string describing the result of the run"
