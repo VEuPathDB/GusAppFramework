@@ -92,7 +92,7 @@ sub getCommand {
 
     $cmd .= $self->{commandName} eq "" ? '' : "-DcmdName=".$self->{commandName}." ";
 
-    $cmd .= $self->{log4jConfig} eq "" ? "-Dlog4j.configuration=file".$self->{GUS_HOME}."/config/log4j.properties " :
+    $cmd .= $self->{log4jConfig} eq "" ? "-Dlog4j.configuration=file:".$self->{GUS_HOME}."/config/log4j.properties " :
 	"-Dlog4j.configuration=".$self->{log4jConfig}." ";
 
     $cmd .= $self->{propertyFile} eq "" ?  "-DPROPERTYFILE=".$self->{GUS_HOME}."/config/gus.config " : 
