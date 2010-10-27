@@ -384,6 +384,7 @@ sub undoTables {
           'RAD.AcquisitionParam',
           'RAD.Acquisition',
           'RAD.StudyAssay',
+          'TESS.StudyAssay',
           'RAD.AssayParam',
           'RAD.StudyDesignAssay',
           'RAD.StudyFactorValue',
