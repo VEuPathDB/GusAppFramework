@@ -406,16 +406,17 @@ sub undoTables {
           'SRes.ExternalDatabase',
           'TESS.Protocol',
           'TESS.ProtocolParam',
-          'TESS.Assay',
-          'TESS.AssayParam',
-          'TESS.Acquisition',
-          'TESS.AcquisitionParam',
-          'TESS.Quantification',
           'TESS.QuantificationParam',
+	  'TESS.RelatedQuantification',
+	  'TESS.Quantification',
+          'TESS.AssayParam',
+          'TESS.AcquisitionParam',
+          'TESS.Acquisition',
           'TESS.StudyAssay',
           'TESS.StudyDesignAssay',
           'TESS.StudyFactorValue',
           'TESS.AssayBioMaterial',
+          'TESS.Assay',
          );
 }
 1;
