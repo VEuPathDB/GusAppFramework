@@ -387,6 +387,7 @@ sub undoTables {
           'RAD.AssayParam',
           'RAD.StudyDesignAssay',
           'RAD.StudyFactorValue',
+          'TESS.StudyDesignAssay',
 	  'TESS.StudyFactorValue',
           'RAD.Assay',
           'Study.StudyFactor',
