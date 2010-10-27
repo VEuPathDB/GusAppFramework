@@ -371,6 +371,8 @@ sub undoTables {
           'RAD.StudyBioMaterial',
           'RAD.AssayBioMaterial',
           'RAD.AssayLabeledExtract',
+	  'TESS.AssayBioMaterial',
+	  'TESS.AssayInputBioMaterial',
           'Study.BioMaterialCharacteristic',
           'Study.LabeledExtract',
           'Study.BioSample',
