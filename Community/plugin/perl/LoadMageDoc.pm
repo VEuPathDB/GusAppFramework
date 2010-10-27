@@ -366,6 +366,7 @@ sub getLogger {$_[0]->{_logger}}
 
 sub undoTables {
   return ('RAD.BioMaterialMeasurement',
+          'RAD.TreatmentParam',
           'RAD.Treatment',
           'RAD.StudyBioMaterial',
           'RAD.AssayBioMaterial',
