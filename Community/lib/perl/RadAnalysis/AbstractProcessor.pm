@@ -145,8 +145,16 @@ Sql
   if($type eq 'in_situ_oligo_features' && $substrate eq 'glass') {
     return 'RAD.ShortOligoFamily';
   }
-
-  return 'RAD.Spot';
+  
+  elsif($type eq 'RT-PCR') {
+    return 'RAD.RTPCRElement';
+  }
+  elsif($type eq 'MPSS') {
+    return 'MPSSTag';
+  }
+  else {
+    return 'RAD.Spot';
+  }
 }
 
 #--------------------------------------------------------------------------------
@@ -161,8 +169,14 @@ sub queryForElements {
   if($arrayTable eq 'RAD.Spot') {
     $tableId = $coreTableHash->{spot};
   }
+  elsif($arrayTable eq 'RAD.RTPCRElement') {
+    $tableId = $coreTableHash->{rtpcrelement};
+  }
   elsif($arrayTable eq 'RAD.ShortOligoFamily') {
     $tableId = $coreTableHash->{shortoligofamily};
+  }
+  elsif($arrayTable eq 'RAD.MPSSTag') {
+    $tableId = $coreTableHash->{mpsstag};
   }
   else {
     GUS::Community::RadAnalysis::ProcessorError->new("Illegal ArrayTable [$arrayTable].")->throw();
@@ -176,7 +190,21 @@ where c.control_id is null
  and e.name not like 'AFFX%'
  and (a.name = ? or a.source_id = ?)
 Sql
+'RAD.MPSSTag' => <<Sql,
+select e.composite_element_id
+from  Rad.ARRAYDESIGN a, $arrayTable e left join Rad.Control c on c.row_id = e.composite_element_id and c.table_id = $tableId 
+where c.control_id is null 
+ and a.array_design_id = e.array_design_id 
+ and (a.name = ? or a.source_id = ?)
+Sql
                 'RAD.Spot' => <<Sql,
+select e.element_id
+from  Rad.ARRAYDESIGN a, $arrayTable e left join Rad.Control c on c.row_id = e.element_id and c.table_id = $tableId 
+where c.control_id is null 
+ and a.array_design_id = e.array_design_id
+ and (a.name = ? or a.source_id = ?)
+Sql
+                'RAD.RTCPRElement' => <<Sql,
 select e.element_id
 from  Rad.ARRAYDESIGN a, $arrayTable e left join Rad.Control c on c.row_id = e.element_id and c.table_id = $tableId 
 where c.control_id is null 
@@ -389,7 +417,7 @@ sub queryForTable {
   my $sql = "select lower(t.name), t.table_id from Core.TableInfo t, Core.DATABASEINFO d
              where t.database_id = d.database_id
               and d.name = 'RAD'
-              and t.name in ('Quantification', 'Analysis','Spot', 'ShortOligoFamily')";
+              and t.name in ('Quantification', 'Analysis','Spot', 'ShortOligoFamily', 'RTPCRElement', 'MPSSTag')";
 
   my $sh = $dbh->prepare($sql);
   $sh->execute();
