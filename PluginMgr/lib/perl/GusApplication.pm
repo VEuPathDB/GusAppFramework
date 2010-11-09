@@ -428,23 +428,9 @@ sub doMajorMode_Meta {
    ->new({ name        => 'GA-Plugin',
            description => 'GUS application framework for plugins'
          });
-   $alg_go->retrieveFromDB;
 
    my $name = $self->getName();
    my $cvsRevision = $self->getCVSRevision();
-
-   my $sql =
-   "SELECT *
-     FROM Core.AlgorithmImplementation
-     WHERE executable = '$name'
-     AND cvs_revision    = '$cvsRevision'";
-
-   my $imps = $self->sql_get_as_hash_refs($sql);
-
-   if (scalar(@$imps) !=0) {
-      print STDERR "Error: $name with CVS revision $cvsRevision is already registered.  You don't need to do a +meta.\n";
-      exit 0;
-   }
 
    my $imp_go = GUS::Model::Core::AlgorithmImplementation
    ->new({ cvs_revision   => $self->getCVSRevision,
@@ -463,7 +449,29 @@ sub doMajorMode_Meta {
    $inv_go->setParent($imp_go);
 
    $self->set_defaults($alg_go);
-   $alg_go->submit;
+
+
+   my $sql =
+   "SELECT *
+     FROM Core.AlgorithmImplementation
+     WHERE executable = '$name'
+     AND cvs_revision    = '$cvsRevision'";
+
+   # the following is done in a transaction to ensure consistency.
+   # this avoids a race condition when multiple ga's are running in parallel
+   # (eg, in a workflow)
+   $self->getDb()->manageTransaction(undef,'begin');
+
+   $alg_go->retrieveFromDB;
+
+   my $dbHandle = $self->getDbHandle();
+   my $stmt = $dbHandle->prepareAndExecute($sql);
+   if ($stmt->fetchrow_arrayref()) {
+      print STDERR "Warning: $name with CVS revision $cvsRevision is already registered.  You don't need to do a +meta.\n";
+      exit 0;
+   }
+
+   $alg_go->submit(undef,1);  # use existing transaction
 
    # update with invocation's newly set id and resubmit
    $alg_go->setRowAlgInvocationId($inv_go->getId);
@@ -471,11 +479,15 @@ sub doMajorMode_Meta {
    $inv_go->setRowAlgInvocationId($inv_go->getId);
 
    $alg_go->setGlobalNoVersion(1);
-   $alg_go->submit;
+   $alg_go->submit(undef,1);  # use existing transaction
    $self->logData('INFO', "ga registered with cvs revision '$cvsRevision'");
-   $self->logData('INFO', "...Just kidding: you didn't --commit")
-	unless ($self->getArgs->{commit});
-
+   if ($self->getArgs->{commit}) {
+     $self->getDb()->manageTransaction(undef,'commit');
+   } else {
+     $self->getDb()->manageTransaction(undef,'rollback');
+     $self->logData('INFO', "...Just kidding: you didn't --commit")
+       unless ($self->getArgs->{commit});
+   }
 }
 
 
@@ -936,9 +948,6 @@ sub create_or_update_implementation {
 
 
    my $imp_description = $pu->getRevisionNotes;
-
-   use Sys::Hostname;
-   my $host = hostname();
 
    # AlgorithmParamKeys
    my $apkt_cache = $self->load_AlgorithmParamKeyType_cache;
