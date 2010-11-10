@@ -193,6 +193,10 @@ sub convertGFFStreamToSeqIO {
 	  for my $parent ($feature->each_tag_value("Parent")) {
 	    push @{$children{$parent}}, [$id, $feature];
 	  }
+	}  elsif ($feature->has_tag("Derives_from")) {
+	  for my $parent ($feature->each_tag_value("Derives_from")) {
+	    push @{$children{$parent}}, [$id, $feature];
+	  }
 	} else {
 	  push @keep, $feature;
 	  $top{$id} = $feature if $id; # only features with IDs can
