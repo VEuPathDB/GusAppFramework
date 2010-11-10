@@ -166,6 +166,8 @@ sub undoFeatures{
 
 #   $self->setParentToNull();
 
+   $self->_deleteFromTable('DoTS.GeneInstance');
+   $self->_deleteFromTable('DoTS.Gene');
    $self->_deleteFromTable('DoTS.NAFeature');
 }
 
