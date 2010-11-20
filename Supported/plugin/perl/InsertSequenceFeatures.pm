@@ -395,7 +395,7 @@ sub run {
 
 	if(defined $bioperlSeq->molecule){
 	    $seqType = $bioperlSeq->molecule;
-	}elsif(defined bioperlSeq->alphabet){
+	}elsif(defined $bioperlSeq->alphabet){
 	    $seqType = $bioperlSeq->alphabet;
 	}
 	if(!($seqType =~ /rna/i)){
