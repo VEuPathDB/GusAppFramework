@@ -110,6 +110,13 @@
       <property name="project" value="GUS"/>
       <property name="component" value="DBAdmin"/>
     </ant>
+
+    <property environment="env"/>
+    <available file="${env.ORACLE_HOME}/jdbc/lib/ojdbc14.jar" type="file"  property="ojdbc14.present" />
+    <antcall target="copyLocal14Driver"/>
+    <available file="${env.ORACLE_HOME}/jdbc/lib/ojdbc5.jar" type="file"  property="ojdbc5.present" />
+    <antcall target="copyLocal5Driver"/>
+
   </target>  
 
   <target name="GUS/GOPredict-Installation" depends="ProjectTree">
@@ -407,6 +414,21 @@
       <property name="project" value="GUS"/>
       <property name="component" value="RAD"/>
     </ant>
+  </target>
+
+  <target name="copyLocal14Driver" if="ojdbc14.present">
+    <echo>Installing local ojdbc14.jar from ${env.ORACLE_HOME}/jdbc/lib/ojdbc14.jar</echo>
+    <copy  file="${env.ORACLE_HOME}/jdbc/lib/ojdbc14.jar"
+     toDir="${targetDir}/lib/java/db_driver"
+     overwrite="true"/>
+  </target>
+
+  <target name="copyLocal5Driver" if="ojdbc5.present">
+    <echo>Installing local ojdbc5.jar from ${env.ORACLE_HOME}/jdbc/lib/ojdbc5.ja
+r</echo>
+    <copy  file="${env.ORACLE_HOME}/jdbc/lib/ojdbc5.jar"
+     toDir="${targetDir}/lib/java/db_driver"
+     overwrite="true"/>
   </target>
 
 
