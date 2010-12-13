@@ -114,7 +114,7 @@ my $tablesAffected = [['GUS::Model::Study::Study', 'inserts a single row for ent
 my $tablesDependedOn = [['GUS::Model::RAD::ArrayDesign', 'Gets an existing ArrayDesign row'],['GUS::Model::RAD::SAGETag', 'Gets existing sage tag rows for each row in the input file']];
 
 my $howToRestart = <<PLUGIN_RESTART;
-Loading can be resumed using the I<--restart n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted).
+Loading can be resumed using the I<--restart n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header).
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -458,6 +458,8 @@ sub insertSageTagResults {
       next;
     }
 
+    $linenum++;
+
     if ($self->getArg('testnum') && $linenum >= $self->getArg('testnum')) {
       return \$num;
     }
@@ -471,7 +473,7 @@ sub insertSageTagResults {
 
     $self->processLine(\@line,$arrayDesign,$quantificationIds,\$num);
 
-    $linenum++;
+
 
     $self->log("$linenum lines from the frequency file have been processed\n") if $linenum % 1000 == 0;
   }
