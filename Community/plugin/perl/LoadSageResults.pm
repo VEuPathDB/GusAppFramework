@@ -69,6 +69,13 @@ sub getArgumentsDeclaration{
 	      format => 'tab delimited, first column contains tag sequences, first row contains the label tag followed by sample source names'
 	     }),
 
+    integerArg({name  => 'restart',
+	       descr => 'optional,data file line number to start loading data from(start counting after the header)',
+	       constraintFunc=> undef,
+	       reqd  => 0,
+	       isList => 0
+	      }),
+
      integerArg({name  => 'testnum',
 		 descr => 'The number of data lines to read when testing this plugin. Not to be used in commit mode.',
 		 constraintFunc=> undef,
@@ -107,7 +114,7 @@ my $tablesAffected = [['GUS::Model::Study::Study', 'inserts a single row for ent
 my $tablesDependedOn = [['GUS::Model::RAD::ArrayDesign', 'Gets an existing ArrayDesign row'],['GUS::Model::RAD::SAGETag', 'Gets existing sage tag rows for each row in the input file']];
 
 my $howToRestart = <<PLUGIN_RESTART;
-Explicit restart is not needed as frequency files are relatively short and rows in the db will not be clobbered.
+Loading can be resumed using the I<--restart n> argument where n is the line number in the data file of the first row to load upon restarting (line 1 is the first line after the header, empty lines are counted).
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
@@ -454,6 +461,11 @@ sub insertSageTagResults {
     if ($self->getArg('testnum') && $linenum >= $self->getArg('testnum')) {
       return \$num;
     }
+
+     if ($self->getArg('restart') && $linenum < $self->getArg('restart')) {
+         $self->log("$linenum lines from the frequency file have been processed before restart\n"); 
+	 next;
+     }
 
     my @line = split(/\t/, $_);
 
