@@ -698,6 +698,9 @@ sub runSqlLdr {
     }
     my @arr = split(/\t/, $line);
     my $start = $self->getArg('isZeroBasedHalfOpen') ? $arr[$cfgInfo->{'start_position'}]+1 : $arr[$cfgInfo->{'start_position'}];
+    if (!defined($ids->{$arr[$cfgInfo->{'chr'}]})){
+      next;
+    }
     $wfh->print("$analysisId\t$ids->{$arr[$cfgInfo->{'chr'}]}\t$start\t$arr[$cfgInfo->{'end_position'}]");
 
     if (defined $cfgInfo->{'strand'}) {
