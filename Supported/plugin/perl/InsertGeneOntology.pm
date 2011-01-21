@@ -121,11 +121,11 @@ sub run {
 
   my $extDbRlsId = $self->getExtDbRlsId($extDbRlsName, $extDbRlsVer);
 
-  $self->_deleteTermsAndRelationships($extDbRlsId);
+#  $self->_deleteTermsAndRelationships($extDbRlsId);
   my $ancestors = $self->_parseTerms(\*OBO, $extDbRlsId);
 
   close(OBO);
-  $self->_updateAncestors($extDbRlsId, $ancestors);
+#  $self->_updateAncestors($extDbRlsId, $ancestors);
 
   if ($self->getArg('calcTransitiveClosure')) {
     $self->_calcTransitiveClosure($extDbRlsId);
