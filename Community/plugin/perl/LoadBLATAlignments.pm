@@ -832,6 +832,10 @@ sub loadAlignment {
    my $origQueryId = $query_id;
    # HACK
    $query_id = $self->getQueryNaSeqId($dbh, $query_id, $queryTableName);
+   unless($query_id){
+      print STDERR "LoadBLATAlignments: Can not find query_id\n";
+      return 0; 
+   }
    $query_id =~ s/[^0-9]//g;
 
    # Check to see whether this alignment has already been loaded
@@ -928,10 +932,10 @@ sub getQueryNaSeqId {
    } elsif ($queryTableName eq 'assemblysequence') {
       $sql = "select na_sequence_id from $TPREF.assemblysequence where assembly_sequence_id = $qid";
    }
-    
+
    my $sth = $dbh->prepareAndExecute($sql);
    my($sid) =  $sth->fetchrow_array();
-   $sth->finish();
+   $sth->finish();       
    return $sid;
 }
 
