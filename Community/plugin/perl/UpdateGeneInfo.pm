@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration(); 
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 9063 $',
+		     cvsRevision => '$Revision: 9066 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -344,7 +344,7 @@ sub processGene {
     }
   }
 
-  $resultDescrip .= "Updated $countUpdatedGenes entries in Gene. Inserted $countInsertedGenes entries in Gene and $countInsertedGeneSynonyms entries in GeneSynonym. Deprecated $countDeprecatedGenes entries in Gene and $countDeprecatedGeneSynonyms entries in GeneSynonym. Reinstated $countReinstatedGeneSynonyms in GeneSynonym.";
+  $resultDescrip .= "Updated $countUpdatedGenes genes. Inserted $countInsertedGenes genes and $countInsertedGeneSynonyms synonyms. Deprecated $countDeprecatedGenes genes and $countDeprecatedGeneSynonyms synonyms. Reinstated $countReinstatedGeneSynonyms synonyms.";
   return ($resultDescrip);
 }
 
