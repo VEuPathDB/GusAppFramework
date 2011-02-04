@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration(); 
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7296 $',
+		     cvsRevision => '$Revision: 9063 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -234,6 +234,7 @@ sub processGene {
   my $countInsertedGeneSynonyms = 0;
   my $countDeprecatedGenes = 0;
   my $countDeprecatedGeneSynonyms = 0;
+  my $countReinstatedGeneSynonyms = 0;
   my $lineNum = 0;
   my $endLine;
   if (defined $self->getArg('testnum')) {
@@ -309,6 +310,11 @@ sub processGene {
 	$self->logDebug($oldSynonyms[$i]->toString() . "\n");
 	$countDeprecatedGeneSynonyms++;
       }
+      elsif($oldSynonyms[$i]->get('is_obsolete')==1) {
+	$oldSynonyms[$i]->set('is_obsolete', 0);
+	$countReinstatedGeneSynonyms++;
+      }
+      else {}
     }
     $gene->setGlobalNoVersion(1);
     $gene->submit();
@@ -338,7 +344,7 @@ sub processGene {
     }
   }
 
-  $resultDescrip .= "Updated $countUpdatedGenes entries in Gene. Inserted $countInsertedGenes entries in Gene and $countInsertedGeneSynonyms entries in GeneSynonym. Deprecated $countDeprecatedGenes entries in Gene and $countDeprecatedGeneSynonyms entries in GeneSynonym. ";
+  $resultDescrip .= "Updated $countUpdatedGenes entries in Gene. Inserted $countInsertedGenes entries in Gene and $countInsertedGeneSynonyms entries in GeneSynonym. Deprecated $countDeprecatedGenes entries in Gene and $countDeprecatedGeneSynonyms entries in GeneSynonym. Reinstated $countReinstatedGeneSynonyms in GeneSynonym.";
   return ($resultDescrip);
 }
 
