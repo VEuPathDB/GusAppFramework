@@ -292,12 +292,12 @@ sub processGene {
     if ($soMapping->{$arr[$headerPos{'geneCategory'}]} ne 'NA') {
       $gene->set('sequence_ontology_id', $soMapping->{$arr[$headerPos{'geneCategory'}]});
     }
-    if ($arr[$headerPos{'name'}] ne '-'){
+#    if ($arr[$headerPos{'name'}] ne '-'){
       $gene->set('name', $arr[$headerPos{'name'}]);
-    }
-    if ($arr[$headerPos{'description'}] ne '-'){
+#    }
+#    if ($arr[$headerPos{'description'}] ne '-'){
       $gene->set('description', $arr[$headerPos{'description'}]);
-    }
+#    }
     if ($arr[$headerPos{'geneCategory'}] ne '-'){
       $gene->set('gene_category_id', $geneCategoryIds->{$arr[$headerPos{'geneCategory'}]},);
     }
