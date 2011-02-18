@@ -35,7 +35,7 @@ sub getArgumentsDeclaration {
 	      format => ''
 	     }),
      fileArg({name => 'entrezChrFile',
-	      descr => 'The full path of an NCBI file mapping Entrez Genes to chromosomes with the first 2 columns having values chromosome number and gene_symbol (no header).',
+	      descr => 'The full path of a file with column in this order: Entrez Gene Id, Gene Symbol, chromosome (no header).',
 	      constraintFunc=> undef,
 	      reqd  => 1,
 	      isList => 0,
@@ -155,7 +155,10 @@ sub getGene2Chr {
   my $fh = IO::File->new("<$file") || $self->userError("Cannot open $file");
   while (my $line=<$fh>) {
     chomp($line);
-    my ($chr, $geneSymbol, @rest) = split(/\t/, $line);
+    my ($id, $geneSymbol, $chr) = split(/\t/, $line);
+    if ($chr eq '-') {
+      next;
+    }
     if (!defined($chrs->{$geneSymbol})) {
       $chrs->{$geneSymbol} = 'chr' . $chr;
     }    
@@ -225,7 +228,7 @@ sub insertCoordinates {
     my @exonEnds = split(/,/,$arr[$pos->{'exonEnds'}]);
     my $exonCount = $arr[$pos->{'exonCount'}];
     my $geneSymbol = $arr[$pos->{'geneSymbol'}]; 
-    if ($chrs->{$geneSymbol} ne $chr || $skip->{$geneSymbol}) {
+    if ((defined ($chrs->{$geneSymbol}) && $chrs->{$geneSymbol} ne $chr) || $skip->{$geneSymbol}) {
       next;
     }
     if (scalar(@exonStarts) != $exonCount || scalar(@exonEnds) != $exonCount) {
