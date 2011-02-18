@@ -115,7 +115,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.5,
-		     cvsRevision => '$Revision: 7465 $',
+		     cvsRevision => '$Revision: 9092 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -185,11 +185,11 @@ sub insertCoordinates {
   my $countGeneFeatures = 0;
   my $countExonFeatures = 0;
   my $lineNum = 0;
-
+  
   my $fh = IO::File->new("<$file") || $self->userError("Cannot open $file");
   my $line = <$fh>;
   my $pos = $self->parseHeader($line);
-
+  
   my $startLine = defined $self->getArg('restart') ? $self->getArg('restart') : 1;
   my $endLine;
   if (defined $self->getArg('testnum')) {
@@ -244,27 +244,27 @@ sub insertCoordinates {
     }
     $self->logDebug($gene->toString() . "\n");
     my $virtualSequence= GUS::Model::DoTS::VirtualSequence->new({external_database_release_id => $extDbRlsGenome, source_id => $chr});
-
+    
     my @doNotRetrieve = ('sequence');
     if (!$virtualSequence->retrieveFromDB(\@doNotRetrieve)) {
       $self->userError("Missing required DoTS.VirtualSequence for $chr");
     } 
     $self->logDebug($virtualSequence->toString() . "\n");
-
+    
     my $geneFeature= GUS::Model::DoTS::GeneFeature->new({name => $ucId, number_of_exons => $exonCount});
     $geneFeature->setParent($virtualSequence);
-
+    
     my $geneInstance= GUS::Model::DoTS::GeneInstance->new({is_reference => 0});    
     $geneInstance->setParent($geneInstanceCategory);   
     $geneInstance->setParent($gene);
     $geneInstance->setParent($geneFeature);
     my $naLocation = GUS::Model::DoTS::NALocation->new({start_min => $geneStart, start_max => $geneStart, end_min => $geneEnd, end_max => $geneEnd, is_reversed => $isReversed});
     $naLocation->setParent($geneFeature);
-
+    
     $self->logDebug($geneFeature->toString() . "\n");
     $self->logDebug($naLocation->toString() . "\n");
     $self->logDebug($geneInstance->toString() . "\n");
-
+    
     for (my $i=0; $i<$exonCount; $i++) {
       my $exonNum = $i+1;
       my ($start, $end);
