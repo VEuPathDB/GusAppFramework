@@ -77,6 +77,8 @@ my $countSeqInOutFile=`grep -c '>' $outFile`;
 
 die "Inconsistant number of sequences between query results and outputs in $outFile. Please check log file.\n" unless (($countSeqInOutFile + $skip)==$count);
 
+die "No sequences extracted. (Check your idSQL.)" unless $count;
+
 sub printSequence{
 	my @row = @_;
 #	print STDERR "$gene_id,$na_id,$description,$number,$taxon,$assembly_id,$length,$seq_ver\n";
