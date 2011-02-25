@@ -263,14 +263,14 @@ my $argsDeclaration  =
 
 
    stringArg({name => 'defaultOrganism',
-	      descr => 'The organism name to use if a sequence in the input file does not provide organism information and the --organism parameter is not provided.  Eg "Plasmodium falciparum"',
+	      descr => 'The organism name or NCBI Taxon ID to use if a sequence in the input file does not provide organism information and the --organism parameter is not provided.  Eg "Plasmodium falciparum" or 5833 ',
 	      constraintFunc=> undef,
 	      reqd  => 0,
 	      isList => 0
 	     }),
 
    stringArg({name => 'organism',
-	      descr => 'The organism name to use no matter what.  Eg "Plasmodium falciparum"',
+	      descr => 'The organism name or NCBI Taxon ID to use no matter what.  Eg "Plasmodium falciparum" or 5833',
 	      constraintFunc=> undef,
 	      reqd  => 0,
 	      isList => 0
@@ -1084,8 +1084,17 @@ sub getSeqTypeId {
 sub getTaxonId {
   my ($self, $bioperlSeq) = @_;
 
-  my $sciName = $self->getArg('organism');
-  if (!$sciName){
+  my $organism = $self->getArg('organism');
+
+  my $ncbiTaxonId;
+  my $sciName;
+  if ($organism =~ /^\d+$/) {
+    $ncbiTaxonId = $organism;
+  } else {
+    $sciName = $organism;
+  }
+
+  if (!$organism){
     my $species = $bioperlSeq->species();
 
     if ($species) {
@@ -1094,8 +1103,14 @@ sub getTaxonId {
       # to be:
       $sciName = $species->common_name();
     } else {
-      $sciName = $self->getArg('defaultOrganism');
-      if (!$sciName) {
+      my $defaultOrganism = $self->getArg('defaultOrganism');
+      if ($defaultOrganism =~ /^\d+$/) {
+	$ncbiTaxonId = $defaultOrganism;
+      } else {
+	$sciName = $defaultOrganism;
+      }
+
+      if (!$defaultOrganism) {
 	my $acc = $bioperlSeq->accession_number();
 	$self->userError("Sequence '$acc' does not have organism information, and, you have not supplied a --defaultOrganism argument on the command line");
       }
@@ -1104,13 +1119,21 @@ sub getTaxonId {
     }
   }
 
-  return $self->getIdFromCache('taxonNameCache',
-			       $sciName,
-			       'GUS::Model::SRes::TaxonName',
-			       "name",
-			       "taxon_id"
-			      );
-
+  if ($sciName) {
+    return $self->getIdFromCache('taxonNameCache',
+				 $sciName,
+				 'GUS::Model::SRes::TaxonName',
+				 "name",
+				 "taxon_id"
+				);
+  } else {
+    return $self->getIdFromCache('ncbiTaxonIdCache',
+				 $ncbiTaxonId,
+				 'GUS::Model::SRes::Taxon',
+				 "ncbi_tax_id",
+				 "taxon_id"
+				);
+  }
 }
 
 # handle feature tags.
