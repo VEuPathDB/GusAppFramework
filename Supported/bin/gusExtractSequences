@@ -12,16 +12,18 @@ use GUS::ObjRelP::DbiDatabase;
 use CBIL::Bio::SequenceUtils;
 use GUS::Supported::GusConfig;
 
-my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength,$mscPercent, $noSeq);
+my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength,$mscPercent, $noSeq,$posStrand,$negStrand);
 &GetOptions("verbose!"=> \$verbose,
             "outputFile=s" => \$outFile,"idSQL=s" => \$idSQL, 
             "minLength=i" => \$minLength,"debug!" => \$debug,
             "maxStopCodonPercent=i" => \$mscPercent,
             "gusConfigFile=s" => \$gusConfigFile,
-            "noSequence!" => \$noSeq);
+            "noSequence!" => \$noSeq,
+            "posStrand=s" => \$posStrand, 
+            "negStrand=s" => \$negStrand); 
 
 if(!$idSQL || !$outFile){
-	die "usage: gusExtractSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --maxStopCodonPercent <maxium multiple-stop-codons per 100 AA sequences [100]> --gusConfigFile [\$GUS_HOME/config/gus.config] --noSequence\n";
+	die "usage: gusExtractSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --maxStopCodonPercent <maxium multiple-stop-codons per 100 AA sequences [100]> --gusConfigFile [\$GUS_HOME/config/gus.config] --noSequence --posStrand <pos strand notation in idSQL defline,required for file of both strands> --negStrand <neg strand notation, substituted and required in file of both strands> \n";
 }
 
 ##set the defaults
@@ -73,6 +75,8 @@ while(my (@row) = $idStmt->fetchrow_array()){
   &printSequence(@row)
 }
 
+$count = 2 * $count if ($posStrand && $negStrand);
+
 my $countSeqInOutFile=`grep -c '>' $outFile`;
 
 die "Inconsistant number of sequences between query results and outputs in $outFile. Please check log file.\n" unless (($countSeqInOutFile + $skip)==$count);
@@ -104,7 +108,11 @@ sub printSequence{
 	$defline =~ s/\s+/ /g;
 	$defline .= "\n";
 	$noSeq ? print OUT $defline : print OUT $defline . CBIL::Bio::SequenceUtils::breakSequence($sequence,60);
-	
+        if ($posStrand && $negStrand) {
+	  $defline =~ s/$posStrand/$negStrand/;
+          my $negSeq = CBIL::Bio::SequenceUtils::reverseComplementSequence($sequence);
+	  print OUT $defline . CBIL::Bio::SequenceUtils::breakSequence($negSeq,60) unless $noSeq;
+	}
 }
 
 
