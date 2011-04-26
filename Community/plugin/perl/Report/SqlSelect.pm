@@ -22,7 +22,7 @@ sub new {
    my $self = bless {}, $Class;
 
    $self->initialize
-   ({ requiredDbVersion => '3.5',
+   ({ requiredDbVersion => '3.6',
       cvsRevision       => ' $Revision: 2892 $ ',
       name              => ref($self),
 

@@ -27,7 +27,7 @@ sub new {
    my $selfPod        = `$selfPodCommand`;
 
    $self->initialize
-   ({ requiredDbVersion => '3.5',
+   ({ requiredDbVersion => '3.6',
       cvsRevision       => ' $Revision: 2892 $ ',
       name              => ref($self),
 
