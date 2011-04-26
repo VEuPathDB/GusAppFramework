@@ -172,7 +172,7 @@ integerArg({name  => 'testnumber',
 
 # command line options  
 
-$self->initialize({requiredDbVersion => '3.5',
+$self->initialize({requiredDbVersion => '3.6',
 		     cvsRevision => '$Revision$',
 		     name => ref($self),
 		     revisionNotes => 'make consistent with GUS 3.5',
