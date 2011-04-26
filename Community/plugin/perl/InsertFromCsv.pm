@@ -50,7 +50,7 @@ sub new {
    my $Self = bless {}, $Class;
 
    $Self->initialize
-   ({ requiredDbVersion => '3.5',
+   ({ requiredDbVersion => '3.6',
       cvsRevision       => '$Revision: presvn-5 $',
       name              => ref($Self),
       releaseNotes      => 'added --inDelimRx',

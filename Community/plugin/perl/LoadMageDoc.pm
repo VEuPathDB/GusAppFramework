@@ -134,7 +134,7 @@ sub new {
   my $argumentDeclaration = &getArgumentsDeclaration();
 
 
-  $self->initialize({requiredDbVersion => 3.5,
+  $self->initialize({requiredDbVersion => 3.6,
 		     cvsRevision => '$Revision$', # cvs fills this in!
 		     cvsTag => '$Name: $', # cvs fills this in!
                      name => ref($self),
