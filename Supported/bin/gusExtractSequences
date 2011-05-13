@@ -109,7 +109,7 @@ sub printSequence{
 	$defline .= "\n";
 	$noSeq ? print OUT $defline : print OUT $defline . CBIL::Bio::SequenceUtils::breakSequence($sequence,60);
         if ($posStrand && $negStrand) {
-	  $defline =~ s/\${posStrand}/\${negStrand}/;
+	  $defline =~ s/$posStrand/$negStrand/;
           my $negSeq = CBIL::Bio::SequenceUtils::reverseComplementSequence($sequence);
 	  print OUT $defline . CBIL::Bio::SequenceUtils::breakSequence($negSeq,60) unless $noSeq;
 	}
