@@ -1674,7 +1674,7 @@ sub submit {
       if ($self->isUpdateable() && $self->checkWritePermission()) {
         if ($self->hasChangedAttributes()) {
           $self->set('modification_date',$self->getDatabase()->getDateFunction()); 
-          $self->set('row_alg_invocation_id',$self->getDatabase()->getDefaultAlgoInvoId()) if (defined $self->getDatabase()->getDefaultAlgoInvoId());
+          $self->set('row_alg_invocation_id',$self->getDatabase()->getDefaultAlgoInvoId()) if (defined $self->getDatabase()->getDefaultAlgoInvoId() && !$self->getDatabase()->getDoNotUpdateAlgoInvoId());
           $self->set('row_user_id',$self->getDatabase()->getDefaultUserId()) if (defined $self->getDatabase()->getDefaultUserId() && $self->getRowUserId() != $self->getDatabase()->getDefaultUserId());
           print STDERR "Am updateable and have changed atts\n".$self->toString() if $debug;
           $self->version();

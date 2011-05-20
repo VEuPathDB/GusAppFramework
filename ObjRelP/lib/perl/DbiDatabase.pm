@@ -384,6 +384,10 @@ sub getDefaultGroupId { my($self) = @_; return $self->{defaultGroupId}; }
 sub setDefaultAlgoInvoId { my($self,$op_id) = @_; $self->{defaultAlgoInvoId} = $op_id; }
 sub getDefaultAlgoInvoId { my($self) = @_; return $self->{defaultAlgoInvoId}; }
 
+##globalDoNotUpdateAlgoInvoId ... if true then don't update on insert
+sub setDoNotUpdateAlgoInvoId { my($self,$val) = @_; $self->{doNotUpdateAlgoInvoId} = $val; }
+sub getDoNotUpdateAlgoInvoId { my($self) = @_; return $self->{doNotUpdateAlgoInvoId}; }
+
 ##globalNoVerison methods.
 sub setGlobalNoVersion { my($self,$val) = @_; $self->{globalNoVersion} = $val; }
 sub getGlobalNoVersion { my($self) = @_; return $self->{globalNoVersion}; }
