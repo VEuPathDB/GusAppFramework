@@ -979,8 +979,8 @@ sub makeSkeletalGusFeature {
   } else {
     $feature->setName($bioperlFeature->primary_tag());
   }
-  $feature->addChild($self->makeLocation($bioperlFeature->location(),
-					 $bioperlFeature->strand()));
+
+    $feature->addChild($self->makeLocation($bioperlFeature));
   #  $feature->submit();
   return $feature;
 }
@@ -1011,7 +1011,10 @@ sub applyQualifiers {
 }
 
 sub makeLocation {
-  my ($self, $f_location, $strand) = @_;
+  my ($self, $feature) = @_;
+
+  my $strand = $feature->strand();
+  my $f_location= $feature->location();
 
   if ($strand == 0) {
     $strand = '';
@@ -1023,10 +1026,25 @@ sub makeLocation {
     $strand = 1;
   }
    
-  my $min_start = $f_location->min_start();
+
+my ($min_start,$max_end);
+
+  if ($feature->get_tag_values('Start_Min')) {
+    my @startLoc = $feature->get_tag_values('Start_Min');
+    $min_start = $startLoc[0]; 
+  } else{
+    $min_start = $f_location->min_start();
+  }
+
+  if ($feature->get_tag_values('End_Max')) {
+    my @endLoc = $feature->get_tag_values('End_Max');
+    $max_end = $endLoc[0];
+  } else{
+    $max_end = $f_location->max_end();
+  }
+
   my $max_start = $f_location->max_start();
   my $min_end = $f_location->min_end();
-  my $max_end = $f_location->max_end();
   my $start_pos_type = $f_location->start_pos_type();
   my $end_pos_type = $f_location->end_pos_type();
   my $location_type = $f_location->location_type();
