@@ -1029,14 +1029,14 @@ sub makeLocation {
 
 my ($min_start,$max_end);
 
-  if ($feature->get_tag_values('Start_Min')) {
+  if ($feature->has_tag('Start_Min')) {
     my @startLoc = $feature->get_tag_values('Start_Min');
     $min_start = $startLoc[0]; 
   } else{
     $min_start = $f_location->min_start();
   }
 
-  if ($feature->get_tag_values('End_Max')) {
+  if ($feature->has_tag('End_Max')) {
     my @endLoc = $feature->get_tag_values('End_Max');
     $max_end = $endLoc[0];
   } else{
