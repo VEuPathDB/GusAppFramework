@@ -255,8 +255,13 @@ public class MetadataPopulator {
 		    writer.write(" WITH ");
 		}
 	        writer.write((start + 1) + ";\n\n");
-        // grants may be lost after dropping sequence. add them back.
-        writer.write( "GRANT SELECT ON " + name + " TO GUS_W;\n" );
+
+        // Grants may be lost after dropping sequence. add them back.
+        // PostgresWriter doesn't use roles.
+		if ( dbVendor.compareToIgnoreCase("Oracle") == 0 ) {
+            writer.write( "GRANT SELECT ON " + name + " TO GUS_W;\n" );
+        }
+
 		writer.flush();
 	}
 	
