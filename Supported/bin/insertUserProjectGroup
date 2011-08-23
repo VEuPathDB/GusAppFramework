@@ -36,6 +36,8 @@ print STDERR "Establishing dbi login\n" if $verbose;
 
 my $gusconfig = GUS::Supported::GusConfig->new($gusConfigFile);
 
+my $dbVendor = $gusconfig->getDatabaseVendor;
+
 my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
                                         $gusconfig->getDatabaseLogin(),
                                         $gusconfig->getDatabasePassword(),
@@ -43,6 +45,8 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
                                         $gusconfig->getCoreSchemaName());
 
 my $dbh = $db->getQueryHandle(0);
+
+my $tsFunction = getTimestampFunction($dbVendor);
 
 my ($dbaRows) = &getDBARows($dbh);
 
@@ -100,7 +104,7 @@ sub insertUserInfo {
 
     my $nextvalSql = $db->getDbPlatform()->nextVal("core.UserInfo");
 
-    $sql = "insert into core.userinfo (group_read, user_read, last_name, other_write, password, modification_date, row_group_id, user_write, e_mail, other_read, group_write, row_user_id, login, row_alg_invocation_id, row_project_id, user_id, first_name ) VALUES (1, 1, '${lastName}', 0, '${login}', SYSDATE, $dbaRows->{'group'}, 1, 'unknown', 1, 1, $dbaRows->{'user'}, '${login}', 1, $dbaRows->{'project'}, $nextvalSql, '${firstName}')";
+    $sql = "insert into core.userinfo (group_read, user_read, last_name, other_write, password, modification_date, row_group_id, user_write, e_mail, other_read, group_write, row_user_id, login, row_alg_invocation_id, row_project_id, user_id, first_name ) VALUES (1, 1, '${lastName}', 0, '${login}', ${tsFunction}, $dbaRows->{'group'}, 1, 'unknown', 1, 1, $dbaRows->{'user'}, '${login}', 1, $dbaRows->{'project'}, $nextvalSql, '${firstName}')";
 
     print STDERR "sql: $sql\n" if $verbose;
 
@@ -140,7 +144,7 @@ sub insertProjectInfo {
 
     my $nextvalSql = $db->getDbPlatform()->nextVal("core.ProjectInfo");
 
-    $sql = "INSERT INTO Core.ProjectInfo (group_write, other_read, group_read, name, release, user_read, row_user_id, other_write, modification_date, row_alg_invocation_id, row_project_id, row_group_id, user_write, project_id) VALUES (1, 1, 1, '${projectName}', '${projectRelease}', 1, $dbaRows->{'user'}, 0, SYSDATE, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1, $nextvalSql)";
+    $sql = "INSERT INTO Core.ProjectInfo (group_write, other_read, group_read, name, release, user_read, row_user_id, other_write, modification_date, row_alg_invocation_id, row_project_id, row_group_id, user_write, project_id) VALUES (1, 1, 1, '${projectName}', '${projectRelease}', 1, $dbaRows->{'user'}, 0, ${tsFunction}, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1, $nextvalSql)";
 
     $dbh->do($sql) || die "Couln't execute the following sql:\n      $sql\n";
 
@@ -178,7 +182,7 @@ sub insertGroupInfo {
 
     my $nextvalSql = $db->getDbPlatform()->nextVal("core.GroupInfo");
 
-    $sql = "INSERT INTO Core.GroupInfo (  group_write, other_read, group_read, name, user_read, row_user_id, other_write, modification_date, group_id, row_alg_invocation_id, row_project_id, row_group_id, user_write ) VALUES (1, 1, 1,'${groupName}', 1, $dbaRows->{'user'}, 0, SYSDATE, $nextvalSql, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1)";
+    $sql = "INSERT INTO Core.GroupInfo (  group_write, other_read, group_read, name, user_read, row_user_id, other_write, modification_date, group_id, row_alg_invocation_id, row_project_id, row_group_id, user_write ) VALUES (1, 1, 1,'${groupName}', 1, $dbaRows->{'user'}, 0, ${tsFunction}, $nextvalSql, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1)";
 
     $dbh->do($sql) || die "Couln't execute the following sql:\n      $sql\n";
 
@@ -217,7 +221,7 @@ sub insertUserProject {
 
     my $nextvalSql = $db->getDbPlatform()->nextVal("core.UserProject");
 
-    $sql = "INSERT INTO Core.UserProject (group_write, other_read, group_read, user_id, user_read, row_user_id, other_write, modification_date, user_project_id, row_alg_invocation_id, row_project_id, row_group_id, user_write, project_id) VALUES (1, 1, 1,$userId , 1, $dbaRows->{'user'}, 0, SYSDATE, $nextvalSql, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1, $projectId )";
+    $sql = "INSERT INTO Core.UserProject (group_write, other_read, group_read, user_id, user_read, row_user_id, other_write, modification_date, user_project_id, row_alg_invocation_id, row_project_id, row_group_id, user_write, project_id) VALUES (1, 1, 1,$userId , 1, $dbaRows->{'user'}, 0, ${tsFunction}, $nextvalSql, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1, $projectId )";
 
     $dbh->do($sql) || die "Couln't execute the following sql:\n      $sql\n";
 
@@ -249,7 +253,7 @@ sub insertUserGroup {
 
     my $nextvalSql = $db->getDbPlatform()->nextVal("core.UserGroup");
 
-    $sql = "INSERT INTO Core.UserGroup (group_write, other_read, group_read, user_id, user_read, row_user_id, other_write, modification_date, user_group_id, row_alg_invocation_id, row_project_id, row_group_id, user_write, group_id) VALUES (1, 1, 1,$userId , 1, $dbaRows->{'user'}, 0, SYSDATE, $nextvalSql, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1, $groupId )";
+    $sql = "INSERT INTO Core.UserGroup (group_write, other_read, group_read, user_id, user_read, row_user_id, other_write, modification_date, user_group_id, row_alg_invocation_id, row_project_id, row_group_id, user_write, group_id) VALUES (1, 1, 1,$userId , 1, $dbaRows->{'user'}, 0, ${tsFunction}, $nextvalSql, 1, $dbaRows->{'project'}, $dbaRows->{'group'}, 1, $groupId )";
 
     $dbh->do($sql) || die "Couln't execute the following sql:\n      $sql\n";
 
@@ -261,5 +265,11 @@ sub insertUserGroup {
 
 }
 
+sub getTimestampFunction {
+  my ($dbVendor) = @_;
+  return 'SYSDATE' if (lc($dbVendor) eq 'oracle');
+  return 'CURRENT_TIMESTAMP' if (lc($dbVendor) eq 'postgres');
+  die "unable to determine timestamp function for $dbVendor\n";
+}
 
 $dbh->disconnect();
