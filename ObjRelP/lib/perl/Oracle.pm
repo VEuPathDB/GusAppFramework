@@ -39,6 +39,17 @@ sub dateFunction{
 }
 
 ############################################################
+# clobSubstringFunctionName
+#
+# Return the function name that is used by the database engine 
+# to return a substring of a CLOB.
+############################################################
+sub clobSubstringFunctionName{
+	my($self)=@_;
+	return "DBMS_LOB.SUBSTR";
+}
+
+############################################################
 # sequenceIdSql
 #
 # Query the system tables to get (schemaname, sequencename) 
