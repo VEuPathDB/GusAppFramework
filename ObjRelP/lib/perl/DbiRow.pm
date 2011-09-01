@@ -134,7 +134,11 @@ sub getSubstrFromClob {
     my $stmt = $self->getTable()->getCachedStatement('clobSubstr',$att);
     if (!$stmt) {
       my $pkatts = $self->getTable()->getPrimaryKeyAttributes();
-      my $query = "select DBMS_LOB.SUBSTR($att,?,?) from ".$self->getTable()->getOracleTableName()." where $pkatts->[0] = ?"; ##".$self->getId();
+      my $query = "select " . 
+                   $self->getDatabase()->getClobSubstringFunctionName() . 
+                  "($att,?,?) from " . 
+                  $self->getTable()->getOracleTableName() .
+                  " where $pkatts->[0] = ?"; ##".$self->getId();
       #    print STDERR "getSubstrFromClob: $query\n";
       $stmt = $self->getDbHandle()->prepare($query);
       $self->getTable()->cacheStatement('clobSubstr',$att,$stmt);

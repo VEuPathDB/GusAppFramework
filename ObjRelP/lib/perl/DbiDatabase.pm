@@ -210,6 +210,11 @@ sub getDateFunction {
 	return $self->getDbPlatform->dateFunction();
 }
 
+sub getClobSubstringFunctionName {
+  my($self) = @_;
+	return $self->getDbPlatform->clobSubstringFunctionName();
+}
+
 sub tableHasSequenceId {
   my($self,$className) = @_;
 
