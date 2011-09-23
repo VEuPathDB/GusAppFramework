@@ -178,8 +178,17 @@ sub run {
 
   $self->setExtDbRls($extDbRlsId);
 
+  # build classpath
+  opendir(D, "$ENV{GUS_HOME}/lib/java") || $self->error("Can't open $ENV{GUS_HOME}/lib/java to find .jar files");
+  my @jars;
+  foreach my $file (readdir D){
+    next if ($file !~ /\.jar$/);
+    push(@jars, "$ENV{GUS_HOME}/lib/java/$file");
+  }
+  my $classpath = join(':', @jars);
+
   # This will create a file appending ".out" to the inFile 
-  my $systemResult = system("java org.gusdb.gus.supported.OwlParser $file $parserType");
+  my $systemResult = system("java -classpath $classpath org.gusdb.gus.supported.OwlParser $file $parserType");
 
   unless($systemResult / 256 == 0) {
     $self->error("Could not Parse RDF file $file");
