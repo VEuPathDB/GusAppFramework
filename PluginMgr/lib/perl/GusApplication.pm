@@ -35,10 +35,6 @@ use GUS::Model::Core::AlgorithmParamKey;
 use GUS::Model::Core::AlgorithmParam;
 use GUS::Model::GusRow;
 
-use Error qw(:try);
-
-use GUS::PluginMgr::PluginError;
-
 use Data::Dumper qw(Dumper);
 
 use constant FLAG_DEBUG => 0;
@@ -573,22 +569,16 @@ sub doMajorMode_RunOrReport {
    $Run && $self->openInvocation($pu);
    
    # this acts like a java finally block.  clean up and show a stack trace.
-#   { local
+   { local
 
-#   $SIG{__DIE__} = sub {
-#     my ($err) = @_;
+   $SIG{__DIE__} = sub {
+     my ($err) = @_;
 
-#     require Carp;
-#     die "\nERROR:\n$err\nSTACK TRACE:\n" . Carp::longmess() . "\n";
-#   };
+     require Carp;
+     die "\nERROR:\n$err\nSTACK TRACE:\n" . Carp::longmess() . "\n";
+   };
 
-
-  local $Error::Depth = $Error::Depth + 1;
-  local $Error::Debug = 1;  # Enables storing of stacktrace
-
-   my $closingErrorMessage;
-
-   try {
+     eval {
       my $resultDescrip;
 
       my $startTime = time;
@@ -610,26 +600,18 @@ sub doMajorMode_RunOrReport {
       $Run && $pu->logRowsInserted();
       $Run && $pu->logAlgInvocationId();
       $Run && $pu->logCommit();
-   } otherwise {
-     my $error = shift;
+    };
+   }
 
-     print STDERR "\nERROR MESSAGE:  " . $error->text . "\n";
-     print STDERR "**** " . $error->file . " on line " . $error->line . "\n";
-     print STDERR "\nSTACK TRACE:\n" . $error->stacktrace() . "\n\n";
+   my $err = $@;
+   $Run && $self->closeInvocation($pu, $err);
 
-     $closingErrorMessage = $error->text();
-     $error->throw();
-   } finally {
-     $Run && $self->closeInvocation($pu, $closingErrorMessage);
-
-     my $error = GUS::PluginMgr::PluginError->
-       new("Plugin run() must return a string describing the result of the run");
-
-     if (!$self->getArgs->{commit} && !$pu->getResultDescr()) {
-       print STDERR "\n" . $error->text . "\n";
-       $error->throw();
-     }
-   };
+   if ($err) {
+     die $err;
+   } else {
+     die "Plugin run() must return a string describing the result of the run"
+       if (!$self->getArgs->{commit} && !$pu->getResultDescr());
+   }
  }
 
 sub logTime {
