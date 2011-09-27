@@ -702,7 +702,8 @@ sub addToChildList{
     chomp(my $selfName = ref($self)."\n");
     foreach my $i (@list) {
 	my $childFullName = $self->getFullClassName($i->[0]);
-	&confess("Invalid child name for Table $selfName: '$i->[0]'") unless $childFullName;
+	&confess("Invalid child name for Table $selfName: '$i->[0]'\n(Possible causes of this error are that Core.TableInfo has a row for '$i->[0]' but there is no such table; or, if there is no such row in Core.TableInfo, that the generated file for $selfName is out of date with respect to Core.TableInfo.") unless $childFullName;
+
 	@{$self->{'childList'}->{$childFullName}} = ($i->[1],$i->[2]);
     }
 		}
