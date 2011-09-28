@@ -41,4 +41,17 @@ sub checkValue {
   return 0;
 }
 
+# returns undef if no value (including for list values)
+sub getValue {
+  my ($self) = @_;
+
+  # compensate for bug someplace that makes absent boolean flags into
+  # an undefined value.  we always want either a 1 or 0;
+  if (!defined($self->{value})) {
+      $self->{value} = 0;
+  }
+  return $self->{value};
+}
+
+
 1;
