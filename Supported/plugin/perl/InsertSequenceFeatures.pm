@@ -25,6 +25,7 @@ use GUS::Supported::SequenceIterator;
 use GUS::Model::SRes::ExternalDatabase;
 use GUS::Model::SRes::ExternalDatabaseRelease;
 use GUS::Model::SRes::Reference;
+use GUS::Model::SRes::Taxon;
 
 #USED IN LOADING NASEQUENCE
 use GUS::Model::SRes::TaxonName;
