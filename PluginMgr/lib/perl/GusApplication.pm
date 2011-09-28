@@ -604,7 +604,7 @@ sub doMajorMode_RunOrReport {
    }
 
    my $err = $@;
-   $Run && $self->closeInvocation($pu, $err);
+   $Run && $self->closeInvocation($pu, "FAILED");
 
    if ($err) {
      die $err;
