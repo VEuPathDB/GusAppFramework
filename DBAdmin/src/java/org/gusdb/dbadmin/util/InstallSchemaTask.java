@@ -68,7 +68,8 @@ public class InstallSchemaTask extends Task {
             dbWriter = new PostgresWriter( );
         }
         else if ( dbVendor.compareToIgnoreCase( "Oracle" ) == 0 ) {
-            dbWriter = new OracleWriter( skipRoles );
+            dbWriter = new OracleWriter( );
+	    ((OracleWriter)dbWriter).setSkipRoles(skipRoles);
         }
         else {
             log.error( "Unknown DB Vendor: '" + dbVendor + "'" );

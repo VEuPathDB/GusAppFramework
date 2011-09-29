@@ -31,6 +31,7 @@ public class OracleWriter extends RelationalDatabaseWriter {
 
     private HashMap tablespacePermissions = new HashMap( );
     private HashMap tablePermissions      = new HashMap( );
+    private boolean skipRoles = false;
 
     /**
      * @param db Description of the Parameter
@@ -47,7 +48,7 @@ public class OracleWriter extends RelationalDatabaseWriter {
             oStream.write( "-- Generated for " + db.getName( ) + "\n" );
         }
         oStream.write( "\n\n" );
-        createRoles( );
+        if (!skipRoles) createRoles( );
         oStream.write( "\n-- Schemata\n\n" );
         for ( Schema schema : db.getAllSchemas( ) ) {
             oStream.write( "CREATE USER " + schema.getName( ) + " IDENTIFIED BY temppass PASSWORD EXPIRE ACCOUNT LOCK "
@@ -82,6 +83,10 @@ public class OracleWriter extends RelationalDatabaseWriter {
         }
         oStream.write( "\n\n--EOF\n" );
         written = new ArrayList<DatabaseObject>( );
+    }
+
+    public void setSkipRoles (boolean skipRoles) {
+	this.skipRoles = skipRoles;
     }
 
     private void createRoles( ) throws IOException {
