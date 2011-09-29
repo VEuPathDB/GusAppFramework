@@ -39,6 +39,7 @@ public class InstallSchemaTask extends Task {
 
     private String     gusHome;
     private String     schema;
+    private boolean    skipRoles = false;
     private String     dbVendor;
     private String     dbDsn;
     private String     dbUsername;
@@ -53,6 +54,10 @@ public class InstallSchemaTask extends Task {
         this.schema = schema;
     }
 
+    public void setSkipRoles( String skipRoles ) {
+        this.skipRoles = skipRoles != null && skipRoles.equals("true");
+    }
+
     public void execute( ) throws BuildException {
         initialize( );
 
@@ -63,7 +68,7 @@ public class InstallSchemaTask extends Task {
             dbWriter = new PostgresWriter( );
         }
         else if ( dbVendor.compareToIgnoreCase( "Oracle" ) == 0 ) {
-            dbWriter = new OracleWriter( );
+            dbWriter = new OracleWriter( skipRoles );
         }
         else {
             log.error( "Unknown DB Vendor: '" + dbVendor + "'" );
