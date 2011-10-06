@@ -319,7 +319,7 @@ my $argsDeclaration  =
 
            }),
 
-  booleanArg({   name           => 'isPredicted',
+  booleanArg({   name           => 'notOfficialAnnotation',
 	       descr          => 'If true, sets the is_predicted column in DoTS.GeneFeature to 1. Used to distinguish non-official genome annotations from official',
 	       reqd           => 0,
 	       constraintFunc => undef,
@@ -361,7 +361,7 @@ sub run {
 
   my $isPredicted;
 
-  $isPredicted = $self->getArg('isPredicted') if $self->getArg('isPredicted');
+  $isPredicted = $self->getArg('notOfficialAnnotation') if $self->getArg('notOfficialAnnotation');
   if ($self->getArg('seqExtDbName')) {
       $seqExtDbRlsId = $self->getExtDbRlsId($self->getArg('seqExtDbName'),
 					    $self->getArg('seqExtDbRlsVer'))
