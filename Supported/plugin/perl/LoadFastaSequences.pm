@@ -231,6 +231,15 @@ stringArg({   name           => 'ncbiTaxonName',
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
+   fileArg({name => 'chromosomeMapFile',
+	    descr => 'Tab-delimited file containing source_id,chromosome,chromosome_order_number mapping',
+	    constraintFunc=> undef,
+	    reqd  => 0,
+	    isList => 0,
+	    mustExist => 0,
+	    format=>'Text'
+	   }),
+
 ];
 
 
@@ -357,6 +366,10 @@ sub processOneFile{
       $self->fetchTaxonIdFromName($taxonName);
     }
 
+    if($self->getArg('chromosomeMapFile')){
+       $self->{chromMap} = $self->getChromosomeMapping();
+      
+   }
 
     while (<F>) {
 	if (/^\>/) {                ##have a defline....need to process!
@@ -458,7 +471,7 @@ sub processOneFile{
 ##SUBS
 
 sub process {
-  my($self, $source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$sequence,$seq_version) = @_;
+   my($self, $source_id,$secondary_id,$name,$description,$mol_wgt,$contained_seqs,$chromosome,$sequence,$seq_version) = @_;
 
   if ($self->{goodSourceIds} && !$self->{goodSourceIds}->{$source_id}) {
     $self->{skippedCount}++;
@@ -477,7 +490,22 @@ sub process {
     $aas->setSecondaryIdentifier($secondary_id) unless !$secondary_id || $aas->getSecondaryIdentifier() eq $secondary_id;
     $aas->setDescription($description) unless !$description || $aas->getDescription() eq $description;
     $aas->setName($name) unless !$name || $aas->getName() eq $name;
-    $aas->setChromosome($chromosome) unless !$chromosome || $aas->getChromosome() eq $chromosome;
+ 
+
+    my $chromosome_order_num;
+    if($chromosome && $chromosome =~ /^\d+$/){
+	$chromosome_order_num = $chromosome;
+    }
+
+    if($self->getArg('chromosomeMapFile')){
+	$chromosome = $self->{chromMap}->{$id}->{chrom};
+	$chromosome_order_num = $self->{chromMap}->{$id}->{chrom_order_num};
+
+    }
+
+    $aas->setChromosome($chromosome) unless !$chromosome || $aas->getChromosome() eq $chromosome; 
+    $aas->set('chromosome_order_num',$chromosome_order_num) unless !$chromosome_order_num;
+
     $aas->setMolecularWeight($mol_wgt) unless ((!$aas->isValidAttribute('molecular_weight')) || (!$mol_wgt || $aas->getMolecularWeight() eq $mol_wgt));  
     $aas->setNumberOfContainedSequences($contained_seqs) unless ((!$aas->isValidAttribute('number_of_contained_sequences')) || (!$contained_seqs || $aas->getNumberOfContainedSequences() eq $contained_seqs)); 
     $aas->setSequenceVersion($seq_version) unless (!$aas->isValidAttribute('sequence_version') || ($aas->getSequenceVersion() = $seq_version));
@@ -721,7 +749,25 @@ sub fetchTaxonIdFromName {
   $self->{taxonId} = $taxon->getTaxonId();
 }
 
+sub getChromosomeMapping {
+  my ($self) = @_;
 
+  my %chromMap;
+  my $chromMapFile = $self->getArg('chromosomeMapFile');
+  open(FH,"$chromMapFile") || die "can't open chromosome map File '$chromMapFile'";
+   
+  foreach my $line (<FH>) {
+      chomp($line);
+      if(!($line =~ /^\s+$/)){ 
+	  my($sourceId,$chrom,$chrom_order_num) = split(/\t/,$line);
+	  $chromMap{$sourceId}->{chrom} = $chrom;
+	  $chromMap{$sourceId}->{chrom_order_num} = $chrom_order_num;
+
+      }
+  }
+  close(FH);
+  return \%chromMap;
+}
 
 sub undoTables {
   my ($self) = @_;
