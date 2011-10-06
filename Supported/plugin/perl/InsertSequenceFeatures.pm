@@ -325,6 +325,21 @@ my $argsDeclaration  =
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
+ stringArg({   name           => 'regexChromosome',
+	       descr          => 'The regular expression to pick the chromosome from the source id',
+	       reqd           => 0,
+	       constraintFunc => undef,
+	       isList         => 0 }),
+
+   fileArg({name => 'chromosomeMapFile',
+	    descr => 'Tab-delimited file containing source_id,chromosome,chromosome_order_number mapping',
+	    constraintFunc=> undef,
+	    reqd  => 0,
+	    isList => 0,
+	    mustExist => 0,
+	    format=>'Text'
+	   }),
+
   ];
 
 
@@ -387,7 +402,10 @@ sub run {
 
 
 
-
+   if($self->getArg('chromosomeMapFile')){
+       $self->{chromMap} = $self->getChromosomeMapping();
+      
+  }
   
 
   foreach my $inputFile (@inputFiles) {
@@ -446,6 +464,26 @@ sub openBioperlTreeFile {
       || die "can't open bioperlTreeFile '$bioperlTreeFile'";
   }
   return $btFh;
+}
+
+sub getChromosomeMapping {
+  my ($self) = @_;
+
+  my %chromMap;
+  my $chromMapFile = $self->getArg('chromosomeMapFile');
+  open(FH,"$chromMapFile") || die "can't open chromosome map File '$chromMapFile'";
+   
+  foreach my $line (<FH>) {
+      chomp($line);
+      if(!($line =~ /^\s+$/)){ 
+	  my($sourceId,$chrom,$chrom_order_num) = split(/\t/,$line);
+	  $chromMap{$sourceId}->{chrom} = $chrom;
+	  $chromMap{$sourceId}->{chrom_order_num} = $chrom_order_num;
+
+      }
+  }
+  close(FH);
+  return \%chromMap;
 }
 
 
@@ -736,6 +774,26 @@ sub constructNASequence {
       new({ external_database_release_id => $dbRlsId,
 	    source_id => $bioperlId
 	 });
+
+  my ($chromosome,$chromosomeOrderNum);
+  my $regexChromosome = $self->getArg('regexChromosome') if $self->getArg('regexChromosome');
+  if ($regexChromosome && $bioperlId =~ /$regexChromosome/) {
+      $chromosome = $1;
+  }
+
+  
+  if($chromosome =~ /^\d+$/){
+      $chromosomeOrderNum = $chromosome;
+  }
+
+  if($self->getArg('chromosomeMapFile')){
+      $chromosome = $self->{chromMap}->{$bioperlId}->{chrom};
+      $chromosomeOrderNum = $self->{chromMap}->{$bioperlId}->{chrom_order_num};
+
+  }
+
+  $naSequence->set('chromosome',$chromosome) if $chromosome;
+  $naSequence->set('chromosome_order_num',$chromosomeOrderNum) if $chromosomeOrderNum;
 
   my $seqType = $self->getArg('seqType');
   if ($seqType) { 
