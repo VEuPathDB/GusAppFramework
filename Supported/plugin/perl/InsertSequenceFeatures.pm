@@ -319,6 +319,12 @@ my $argsDeclaration  =
 
            }),
 
+  booleanArg({   name           => 'isPredicted',
+	       descr          => 'If true, sets the is_predicted column in DoTS.GeneFeature to 1. Used to distinguish non-official genome annotations from official',
+	       reqd           => 0,
+	       constraintFunc => undef,
+	       isList         => 0 }),
+
   ];
 
 
@@ -353,6 +359,9 @@ sub run {
   
   my $seqExtDbRlsId = $dbRlsId;
 
+  my $isPredicted;
+
+  $isPredicted = $self->getArg('isPredicted') if $self->getArg('isPredicted');
   if ($self->getArg('seqExtDbName')) {
       $seqExtDbRlsId = $self->getExtDbRlsId($self->getArg('seqExtDbName'),
 					    $self->getArg('seqExtDbRlsVer'))
@@ -407,7 +416,7 @@ sub run {
 	  #  print STDERR Dumper $bioperlSeq;
 	    $self->{mapperSet}->preprocessBioperlSeq($bioperlSeq, $self);
 
-	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh);
+	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted);
 
 	    $self->undefPointerCache();
 
@@ -848,7 +857,7 @@ sub addKeywords {
 ###########################################################################
 
 sub processFeatureTrees {
-  my ($self, $bioperlSeq, $naSequenceId, $dbRlsId, $btFh) = @_;
+  my ($self, $bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted) = @_;
   
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
     undef $self->{validationErrors};
@@ -857,7 +866,7 @@ sub processFeatureTrees {
     # traverse bioperl tree to make gus skeleton (linked to bioperl objects)
     my $NAFeature =
       $self->makeGusFeatureSkeleton($bioperlFeatureTree, $bioperlSeq,
-				    $naSequenceId, $dbRlsId);
+				    $naSequenceId, $dbRlsId,$isPredicted);
 
     next unless $NAFeature;    # if we're supposed to ignore this type of feat
 
@@ -893,7 +902,7 @@ sub processFeatureTrees {
 # make the gus feature tree in skeletal form, ie, with only the parent-child
 # relations set, not attributes
 sub makeGusFeatureSkeleton {
-  my ($self, $bioperlFeature, $bioperlSeq,  $naSequenceId, $dbRlsId) = @_;
+  my ($self, $bioperlFeature, $bioperlSeq,  $naSequenceId, $dbRlsId, $isPredicted) = @_;
 
   my $tag = $bioperlFeature->primary_tag();
 
@@ -912,7 +921,7 @@ sub makeGusFeatureSkeleton {
   my $gusSkeleton;
 
   if ($tableName) {
-    $gusSkeleton = $self->defaultGusSkeletonMaker($bioperlFeature, $naSequenceId, $dbRlsId);
+    $gusSkeleton = $self->defaultGusSkeletonMaker($bioperlFeature, $naSequenceId, $dbRlsId,$isPredicted);
   }
   else {
     eval {
@@ -921,7 +930,7 @@ sub makeGusFeatureSkeleton {
       my $method = "${gusSkeletonMakerClassName}::$gusSkeletonMakerMethodName";
       my $taxonId = $self->getTaxonId($bioperlSeq);
       $gusSkeleton =
-	&$method($self, $bioperlFeature, $naSequenceId, $dbRlsId, $taxonId);
+	&$method($self, $bioperlFeature, $naSequenceId, $dbRlsId, $taxonId,$isPredicted);
     };
 
     my $err = $@;
@@ -932,7 +941,7 @@ sub makeGusFeatureSkeleton {
 }
 
 sub defaultGusSkeletonMaker {
-  my ($self, $bioperlFeature, $naSequenceId, $dbRlsId) = @_; 
+  my ($self, $bioperlFeature, $naSequenceId, $dbRlsId,$isPredicted) = @_; 
 
   my $tag = $bioperlFeature->primary_tag();
 
@@ -945,7 +954,7 @@ sub defaultGusSkeletonMaker {
   my $soTerm = $featureMapper->getSoTerm();
 
   my $feature = $self->makeSkeletalGusFeature($bioperlFeature, $naSequenceId,
-					      $dbRlsId, $gusObjName, $soTerm);
+					      $dbRlsId, $gusObjName, $soTerm,$isPredicted);
   $bioperlFeature->{gusFeature} = $feature;
 
   if ($feature) {
@@ -953,7 +962,7 @@ sub defaultGusSkeletonMaker {
     foreach my $bioperlChildFeature ($bioperlFeature->get_SeqFeatures()) {
       my $childFeature = $self->defaultGusSkeletonMaker($bioperlChildFeature,
 							$naSequenceId,
-							$dbRlsId);
+							$dbRlsId,$isPredicted);
 
       if ($childFeature) { $feature->addChild($childFeature); }
     }
@@ -963,7 +972,7 @@ sub defaultGusSkeletonMaker {
 
 # make a bare bones gus feature object, setting only its absolute minimum state
 sub makeSkeletalGusFeature {
-  my ($self, $bioperlFeature, $naSequenceId, $dbRlsId, $gusObjName, $soTerm) = @_;
+  my ($self, $bioperlFeature, $naSequenceId, $dbRlsId, $gusObjName, $soTerm,$isPredicted) = @_;
 
   my $feature = eval "{require $gusObjName; $gusObjName->new()}";
 
@@ -971,6 +980,7 @@ sub makeSkeletalGusFeature {
 
   $feature->setNaSequenceId($naSequenceId);
   $feature->setExternalDatabaseReleaseId($dbRlsId);
+  $feature->setIsPredicted(1) if $isPredicted;
 
   $bioperlFeature->{gusFeature} = $feature;
 
