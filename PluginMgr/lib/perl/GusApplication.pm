@@ -208,8 +208,18 @@ sub wrongChecksumError {
 
   The md5 checksum of ${pluginNm}'s executable file (cvs revision
   $cvsRevision) doesn't match the md5 checksum in the database for
-  that plugin and revision, i.e., the plugin has been changed but not
-  commited and updated.  Please:
+  that plugin and revision.
+
+  This means that the plugin in \$GUS_HOME is different than the version
+  in SVN. 
+
+  If you have put in temporary debugging statements, remove them by replacing
+  the file in GUS_HOME with the file from SVN:
+     - delete the file from PROJECT_HOME
+     - svn update
+     - bld
+
+  If you have made permanent changes to the plugin, please:
 
   - svn commit the plugin file
   - confirm that the revision declared in the file is equal
