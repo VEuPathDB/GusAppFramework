@@ -33,15 +33,14 @@ if ($javaOrPerl eq "perl"){
    $targetDir = "$ENV{PROJECT_HOME}/GUS/Model/lib/perl";}
 elsif ($javaOrPerl eq "java"){
   $targetDir = "$ENV{PROJECT_HOME}/GUS/Model/src/java/org/gusdb/model";}
-else {die  "please set attribute --javaOrPerl to be either \'java\' or \'perl\' depending on which object layer you are generating";}
+else {
+  usage();
+}
 
 my $superclassesLibDir = "$ENV{PROJECT_HOME}";
 my $specialCasesFile = "$ENV{PROJECT_HOME}/GUS/Model/data/modelSpecialCases.txt";
 
-if ($help) {
-  print "usage: generateGusPerlObjects --gusconfigfile <\$GUS_HOME/config/gus.config> --type (0=working, 1=_gen, 2=both(default)) --newOnly (does only tables that have no objects) --schemas 'comma, separated, [all]' --tables 'comma, separated, list, of, tables, [all]'\n";
-  exit 1;
-}
+usage() if $help;
 
 my @tables = split(/,\s*/, $tables) if $tables;
 my @schemas = split(/,\s*/, $schemas) if $schemas;
@@ -76,4 +75,23 @@ elsif ($javaOrPerl eq "java"){
    open(F, ">$ENV{PROJECT_HOME}/GUS/Model/src/java/org/gusdb/model/generated");
    print F "$date\n";
    close(F);
+}
+
+sub usage {
+
+  print "
+usage: generateGusPerlObjects --javaOrPerl [java|perl] <--gusconfigfile config_file> <--type [0|1|2]> <--newOnly> <--schemas list_of_schemas>  <--tables list_of_tables>
+
+Where:
+  gusconfigFile   - a gus config file. default is \$GUS_HOME/config/gus.config
+  type            - type of objects to make
+                      0=working
+                      1=gen
+                      2=both (default)
+  newOnly         - only do tables that have no objects already. default=false
+  schemas         - comma separated list.  default=all
+  tables          - comma separated list.  default=all
+
+";
+  exit 1;
 }
