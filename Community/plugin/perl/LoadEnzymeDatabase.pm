@@ -137,7 +137,7 @@ DoTS.AASequenceEnzymeClass row.
 
 Several of the options of this plugin are specifications of a row in
 SRes.ExternalDatabaseRelease.  While this could be done using the
-external_database_release_id, we've tried to be a little more symbolic
+external_database_release_id, we have tried to be a little more symbolic
 and use a comma-delimited list of the
 SRes.ExternalDatabase.name and
 SRes.ExternalDatabaseRelease.version, e.g., 'swissprot,5.4'.
@@ -351,7 +351,7 @@ sub _process {
 
    return if $GusCache->{$ec_key};
 
-   $self->log('INFO', '_process',  $self->_getProcessCount(), $EnzymeClass->getDescription() );
+#   $self->log('INFO', '_process',  $self->_getProcessCount(), $EnzymeClass->getDescription() );  # creates a huge log
 
    my $ez_class_h = { depth       => $ec->getDepth,
                       ec_number   => $ec->toString,
