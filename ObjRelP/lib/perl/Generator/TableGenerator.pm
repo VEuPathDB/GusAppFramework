@@ -44,6 +44,10 @@ sub _getParents {
     $self->{parents} =
       $self->_getRelations($self->{realTable}->getParentRelations());
   }
+#  print STDERR "Parents for $self->{tableName}\n";
+#  foreach my $p (@{$self->{parents}}){
+#    print STDERR "  ".join(", ",@$p)."\n";
+#  }
   return $self->{parents};
 }
 
@@ -74,9 +78,14 @@ sub _getRelations {
 
     if ($tn =~ /Imp$/) {
       foreach my $subclass ($self->{generator}->getSubclasses($tn)) {
-	push(@list, [$subclass,$fk,$pk])
-	  if $self->{generator}->isValidAttribute($subclass, $pk)
-	    && $self->{generator}->isValidAttribute($self->{fullName}, $fk);
+#        print STDERR "Adding relations for subclass $subclass .. ";
+        if ($self->{generator}->isValidAttribute($subclass, $pk)
+	    && $self->{generator}->isValidAttribute($self->{fullName}, $fk)){
+          push(@list, [$subclass,$fk,$pk]);
+#          print STDERR "columns present [$subclass,$fk,$pk]\n";
+        }else{
+#          print STDERR "COLUMNS ABSENT [$subclass,$fk,$pk] so not adding\n";
+        } 
       }
     }
 

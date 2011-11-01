@@ -353,32 +353,12 @@ sub getRealPerlTableName {
 
 sub getParentRelations {
   my ($self) = @_;
+  ##get this from DbiDatabase so that all table can be cached with one query.
   if (!$self->{'parents'}) {
-		my $table = $self->getDatabase()->getTable($self->getRealTableName())->getTableName();
-	  my $owner = $self->getSchemaNameUpper();
-		my $sql=$self->getDatabase->getDbPlatform->parentRelationsSql($owner,$table);
-#		print STDERR $sql, "\n";
-	  my $sth  = $self->getDbHandle()->prepareAndExecute($sql);
-	  while (my($cons_owner,$selftab,$selfcol,$pkowner,$pktable,$pkcol) = $sth->fetchrow_array()) {
-			$cons_owner=~tr/a-z/A-Z/;  ##upper case or else!
-	    next unless $cons_owner eq $owner;  ##hack....but query runs very slowly if constrain on this!!
-#                print STDERR "  returns: ($selftab,$selfcol,$pktable,$pkcol)\n";
-        #        push(@{$self->{'relations'}->{$selftab}->{$selfcol}},$pkcol);
-####NOTE...this willNOT work with tables in other schemas...need to somehow get the schema owner for  them!!!
-	    $pktable = $self->getFullClassName($pkowner."::".$pktable);
-	    next unless $pktable;
-	    $selfcol =~ tr/A-Z/a-z/;
-	    $pkcol =~ tr/A-Z/a-z/;
-	    push(@{$self->{'parents'}},[$pktable, $selfcol, $pkcol]);
-		} 
-      ##now do the four generic tables AlgorithmInvocation,UserInfo,GroupInfo,Project
-	  push(@{$self->{'parents'}},['GUS::Model::Core::AlgorithmInvocation','row_alg_invocation_id','algorithm_invocation_id']);
-	  push(@{$self->{'parents'}},['GUS::Model::Core::GroupInfo','row_group_id','group_id']);
-	  push(@{$self->{'parents'}},['GUS::Model::Core::UserInfo','row_user_id','user_id']);
-	  push(@{$self->{'parents'}},['GUS::Model::Core::ProjectInfo','row_project_id','project_id']);
-	}
-  #  print STDERR $self->getTableName,": Parents = (",join(', ', keys%{$self->{'parents'}}),")\n";
-	return $self->{'parents'};
+    my $table = $self->getRealTableName();
+    $self->{'parents'} = $self->getDatabase()->getTableParentRelations($table) if $table;
+  }
+  return $self->{'parents'};
 }
 
 sub setParentRelations {
