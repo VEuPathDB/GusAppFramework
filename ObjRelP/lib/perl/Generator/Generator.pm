@@ -67,32 +67,37 @@ sub new {
 
 sub generate {
     my ($self, $newOnly) = @_;
-    
+
     my $cnt = scalar(@{$self->{tables}});
     print "Generating objects for $cnt $self->{javaOrPerl} tables and views\n";
-    
+
+    my %schema;
+
     foreach my $table (sort @{$self->{tables}}) {
-	
+
 	# parse schema::tablename format
 	$table =~ /(GUS::Model::)?(\w+)::(\w+)/ || die "ERROR: table '$table' not in schema::tablename format\n";
-	
+
 	my ($schemaName, $tableName) = ($2, $3);
-	
+
 	if ($self->{javaOrPerl} eq "java" && !$self->{makeImpTables}){
 	    next if ( $tableName =~ /Imp$/ || $schemaName eq "TESS");
 	}
 	next if (($self->{schemas} && !$self->{schemas}->{$schemaName})
 		 || $tableName =~ /Ver$/);
-	
+
 	print "generating $self->{javaOrPerl} object for $schemaName" . "::" . $tableName . "\n";
-	
+
 	$self->{db}->checkTableExists($table) || die "ERROR: $table does not exist in db\n";
-	
-	`mkdir -p $self->{targetDir}/$schemaName` unless -d "$self->{targetDir}/$schemaName";
+
+        if(!$schema{$schemaName} && !-d "$self->{targetDir}/$schemaName"){
+          `mkdir -p $self->{targetDir}/$schemaName`;
+          $schema{$schemaName} = 1;
+        }
 	my $tableG; my $rowG; my $wrapperG;
-	
+
 	if ($self->{javaOrPerl} eq "java"){
-	    
+
 	    $rowG = GUS::ObjRelP::Generator::JavaRowGenerator->new($self, $schemaName, $tableName, $tableG);
 	    $wrapperG = GUS::ObjRelP::Generator::JavaWrapperGenerator->new($self, $schemaName, $tableName, $tableG);
 	    $tableG =  GUS::ObjRelP::Generator::JavaTableGenerator->new($self, $schemaName, $tableName);
@@ -103,12 +108,12 @@ sub generate {
 	    $wrapperG = GUS::ObjRelP::Generator::PerlWrapperGenerator->new($self, $schemaName, $tableName);
 	}
 	else {die "please set attribute --javaOrPerl to be either \'java\' or \'perl\' depending on which object layer you are generating";}
-	       
+
 	my $type = 2;
 	$tableG->generate($newOnly) if ($type == 1 || $type == 2);
 	$rowG->generate($newOnly) if ($type == 1 || $type == 2);
 	$wrapperG->generate($newOnly) if ($type == 0 || $type == 2);
-	
+
     }
 }
 
@@ -127,21 +132,21 @@ sub getSpecialCases {
 #creates associations between "imp" tables and views upon those tables
 sub getSubclasses {
     my($self, $superName) = @_;
-    
+
     $superName = $self->getFullTableClassName($superName);
-    
+
     if (! $self->{subclasses}) {
 	print "(Caching all subclasses)\n";
-	
+
 	my $dbh= $self->{'db'}->getDbHandle();
-	
+
 	my $coreName = $self->{db}->getCoreName();
 	my $sql =
 "select d.name, t2.name, t1.name\
  from $coreName.TableInfo t1,$coreName.TableInfo t2, $coreName.DatabaseInfo d\
  where t2.table_id = t1.view_on_table_id\
  and t1.database_id = d.database_id";
-	
+
 	my $sth = $dbh->prepareAndExecute($sql);
 	while (my($schema,$superclass,$subclass) = $sth->fetchrow_array()) {
 	    next if $subclass =~ /ver$/i;
@@ -161,9 +166,9 @@ sub getSubclasses {
 sub isValidAttribute {
   my($self, $tableName, $att) = @_;
 
-  $tableName = $self->getFullTableClassName($tableName);
 
   if (!exists $self->{'attList'}->{'$tableName'}) {
+    $tableName = $self->getFullTableClassName($tableName);
     my $list = $self->getTable($tableName, 1)->getAttributeList();
     foreach my $a (@{$list}) {
       $self->{'attList'}->{$tableName}->{$a} = 1;

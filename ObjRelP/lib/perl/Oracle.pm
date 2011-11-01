@@ -116,13 +116,12 @@ sub viewSql{
 # schema. The return values are all upper case.
 ############################################################
 sub parentRelationsSql{
-	my($self,$owner,$table)=@_;
-	$table=~tr/a-z/A-Z/;
-	return "select ac.owner,accs.table_name,accs.column_name,accr.owner,accr.table_name,accr.column_name
+	my($self,$owner) = @_;
+	return "select ac.owner,ac.table_name,accs.column_name,accr.owner,accr.table_name,accr.column_name
         from all_cons_columns accr, all_cons_columns accs, all_constraints ac 
-        where accs.owner = '$owner'
-        and ac.table_name = '$table'
-        and ac.owner = '$owner'
+        where ac.owner = '$owner'
+        and ac.owner = accs.owner
+        and accs.table_name = ac.table_name
         and ac.constraint_type = 'R'
         and accr.constraint_name = ac.r_constraint_name
         and ac.r_owner = accr.owner

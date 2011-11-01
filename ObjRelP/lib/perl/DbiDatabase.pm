@@ -205,6 +205,46 @@ sub getTable {
   return $self->{'tables'}->{$className};
 }
 
+sub getTableParentRelations {
+  my ($self,$tableName) = @_;
+  my $table = $self->getFullTableClassName($tableName);
+  my $owner = $self->getTable($tableName)->getSchemaNameUpper();
+
+  if (!$self->{'allParents'}->{$owner}) {
+    my $sql=$self->getDbPlatform->parentRelationsSql($owner);
+    #    print STDERR "Caching parent relations\n";
+#    print STDERR "parentRelationsSQL: \n$sql \n";
+    my $sth  = $self->getDbHandle()->prepareAndExecute($sql);
+    my %check;
+    while (my($cons_owner,$selftab,$selfcol,$pkowner,$pktable,$pkcol) = $sth->fetchrow_array()) {
+      $cons_owner=~tr/a-z/A-Z/;  ##upper case or else!
+      $pktable = $self->getFullTableClassName($pkowner."::".$pktable);
+      $selftab = $self->getFullTableClassName($cons_owner."::".$selftab);
+      next unless $pktable && $selftab;
+      $selfcol =~ tr/A-Z/a-z/;
+      $pkcol =~ tr/A-Z/a-z/;
+      push(@{$self->{'allParents'}->{$owner}->{$selftab}},[$pktable, $selfcol, $pkcol]);
+    } 
+    $self->cacheFourCoreParentRelations($owner);
+  }
+  #  print STDERR $self->getTableName,": Parents = (",join(', ', keys%{$self->{'parents'}}),")\n";
+  return $self->{'allParents'}->{$owner}->{$table};
+}
+
+sub cacheFourCoreParentRelations {
+  my($self,$owner) = @_;
+  foreach my $t (values(%{$self->{tables}})){
+
+    next unless $owner eq $t->getSchemaNameUpper();
+    my $table = $t->getFullClassName($t->getClassName());
+    ##now do the four generic tables AlgorithmInvocation,UserInfo,GroupInfo,Project
+    push(@{$self->{'allParents'}->{$owner}->{$table}},['GUS::Model::Core::AlgorithmInvocation','row_alg_invocation_id','algorithm_invocation_id']);
+    push(@{$self->{'allParents'}->{$owner}->{$table}},['GUS::Model::Core::GroupInfo','row_group_id','group_id']);
+    push(@{$self->{'allParents'}->{$owner}->{$table}},['GUS::Model::Core::UserInfo','row_user_id','user_id']);
+    push(@{$self->{'allParents'}->{$owner}->{$table}},['GUS::Model::Core::ProjectInfo','row_project_id','project_id']);
+  }
+}
+
 sub getDateFunction {
   my($self) = @_;
 	return $self->getDbPlatform->dateFunction();

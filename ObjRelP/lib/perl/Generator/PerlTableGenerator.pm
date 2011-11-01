@@ -148,6 +148,7 @@ sub _genAttributeInfo {
 
 sub _genChildRelationsData {
   my($self) = @_;
+#  return $self->_genRelativeList($self->_getChildren());
   my @rels;
   my $children = $self->{table}->getChildRelations();
   foreach my $r (@{$children}){
@@ -158,8 +159,9 @@ sub _genChildRelationsData {
 
 sub _genParentRelationsData {
   my($self) = @_;
+#  return $self->_genRelativeList($self->_getParents());
   my @rels;
-  my $parents = $self->{table}->getParentRelations();
+  my $parents = $self->{realTable}->getParentRelations();
   foreach my $r (@{$parents}){
     push(@rels,"\n      ['".join("','",@{$r})."']");
   }
