@@ -12,4 +12,6 @@ rel GUS::Model::Core::UserGroup GUS::Model::Core::GroupInfo group_id group_id
 rel GUS::Model::Core::UserProject GUS::Model::Core::ProjectInfo project_id project_id
 rel GUS::Model::DoTS::AAFeatureImp GUS::Model::DoTS::AASequenceImp aa_sequence_id aa_sequence_id 
 rel GUS::Model::DoTS::AAFeatureImp GUS::Model::DoTS::TranslatedAASequence aa_sequence_id aa_sequence_id
+rel GUS::Model::DoTS::TranslatedAAFeature GUS::Model::DoTS::AASequenceImp aa_sequence_id aa_sequence_id 
+rel GUS::Model::DoTS::TranslatedAAFeature GUS::Model::DoTS::TranslatedAASequence aa_sequence_id aa_sequence_id 
 rel GUS::Model::DoTS::BLATAlignment GUS::Model::DoTS::Assembly query_na_sequence_id na_sequence_id
