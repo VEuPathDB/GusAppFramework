@@ -357,6 +357,11 @@ sub getParentRelations {
   if (!$self->{'parents'}) {
     my $table = $self->getRealTableName();
     $self->{'parents'} = $self->getDatabase()->getTableParentRelations($table) if $table;
+    ##now add the generic ones here rather than in dbidatabase ... seems cleaner
+    push(@{$self->{'parents'}},['GUS::Model::Core::AlgorithmInvocation','row_alg_invocation_id','algorithm_invocation_id']) if $self->isValidAttribute('row_alg_invocation_id');
+    push(@{$self->{'parents'}},['GUS::Model::Core::GroupInfo','row_group_id','group_id']) if $self->isValidAttribute('row_group_id');
+    push(@{$self->{'parents'}},['GUS::Model::Core::UserInfo','row_user_id','user_id']) if $self->isValidAttribute('row_user_id');
+    push(@{$self->{'parents'}},['GUS::Model::Core::ProjectInfo','row_project_id','project_id']) if $self->isValidAttribute('row_project_id');
   }
   return $self->{'parents'};
 }

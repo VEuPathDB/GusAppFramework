@@ -225,24 +225,9 @@ sub getTableParentRelations {
       $pkcol =~ tr/A-Z/a-z/;
       push(@{$self->{'allParents'}->{$owner}->{$selftab}},[$pktable, $selfcol, $pkcol]);
     } 
-    $self->cacheFourCoreParentRelations($owner);
   }
   #  print STDERR $self->getTableName,": Parents = (",join(', ', keys%{$self->{'parents'}}),")\n";
   return $self->{'allParents'}->{$owner}->{$table};
-}
-
-sub cacheFourCoreParentRelations {
-  my($self,$owner) = @_;
-  foreach my $t (values(%{$self->{tables}})){
-
-    next unless $owner eq $t->getSchemaNameUpper();
-    my $table = $t->getFullClassName($t->getClassName());
-    ##now do the four generic tables AlgorithmInvocation,UserInfo,GroupInfo,Project
-    push(@{$self->{'allParents'}->{$owner}->{$table}},['GUS::Model::Core::AlgorithmInvocation','row_alg_invocation_id','algorithm_invocation_id']);
-    push(@{$self->{'allParents'}->{$owner}->{$table}},['GUS::Model::Core::GroupInfo','row_group_id','group_id']);
-    push(@{$self->{'allParents'}->{$owner}->{$table}},['GUS::Model::Core::UserInfo','row_user_id','user_id']);
-    push(@{$self->{'allParents'}->{$owner}->{$table}},['GUS::Model::Core::ProjectInfo','row_project_id','project_id']);
-  }
 }
 
 sub getDateFunction {
