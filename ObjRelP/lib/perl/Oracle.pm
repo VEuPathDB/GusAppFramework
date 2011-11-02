@@ -125,7 +125,8 @@ sub parentRelationsSql{
         and ac.constraint_type = 'R'
         and accr.constraint_name = ac.r_constraint_name
         and ac.r_owner = accr.owner
-        and accs.constraint_name = ac.constraint_name";
+        and accs.constraint_name = ac.constraint_name
+        order by ac.owner,ac.table_name,accs.column_name";
 }
 
 ############################################################
