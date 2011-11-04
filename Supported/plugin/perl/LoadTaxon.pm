@@ -110,12 +110,11 @@ sub run {
 
     my $count = 0;
 
+    $self->cacheTaxonIdMapping();
     
     $self->mergeTaxons();
 
     my $genCodes = $self->makeGeneticCode();
-    
-    my $namesDmp = $self->getNames(); 
     
     my $nodesHash = $self->makeNodesHash($genCodes);
     
@@ -129,9 +128,10 @@ sub run {
     else {
 	$self->getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 
     }
-    my ($TaxonNameIdHash,$TaxonIdHash) = $self->makeTaxonName($namesDmp);
+
+    my ($TaxonNameIdHash,$TaxonIdHash) = $self->makeTaxonName($self->getNames());
     $self->deleteTaxonName($TaxonNameIdHash,$TaxonIdHash);
-    
+
 }
 
 sub mergeTaxons {
@@ -160,6 +160,10 @@ sub updateTaxonRow {
   my $taxonRow  = GUS::Model::SRes::Taxon->new({'taxon_id'=>$oldTaxon});
   $taxonRow ->retrieveFromDB();
   if ($taxonRow->get('ncbi_tax_id') != $newTax) {
+    ##deal with idcache
+    $self->{taxonIdMapping}->{$newTax} = $oldTaxon;
+    delete $self->{taxonIdMapping}->{$taxonRow->getNcbiTaxId()};
+
     $taxonRow->set('ncbi_tax_id',$newTax);
   }
   my $submit = $taxonRow->submit();
@@ -192,6 +196,10 @@ sub updateTaxonAndChildRows {
   else {
     $self->log("Taxon_id = $oldId FAILED to merge with Taxon_id = $newId");
   }
+  ##deal with idcache
+  $self->{taxonIdMapping}->{$newTaxon->getNcbiTaxId()} = $newId;
+  delete $self->{taxonIdMapping}->{$oldTaxon->getNcbiTaxId()};
+
   $oldTaxon->markDeleted(); 
   my $delete = $oldTaxon->submit();
   if ($delete == 1) {
@@ -307,7 +315,7 @@ sub makeTaxonEntry {
     my $mit_code = $attArray->[4];
     
     my $newTaxon  = GUS::Model::SRes::Taxon->new({'ncbi_tax_id'=>$tax_id});
-    $newTaxon ->retrieveFromDB();
+    $newTaxon->retrieveFromDB() if $self->{taxonIdMapping}->{$tax_id};
     
     if ($newTaxon->get('rank') ne $rank) {
 	$newTaxon->set('rank',$rank);
@@ -325,6 +333,7 @@ sub makeTaxonEntry {
 
     
     my $submit = $newTaxon->submit();
+    $self->{taxonIdMapping}->{$newTaxon->getNcbiTaxId()} = $newTaxon->getId();
     $self->undefPointerCache();
     if ($submit ==1){
 	$self->log("Processed ncbi_tax_id : $tax_id\n");
@@ -353,14 +362,18 @@ sub getTaxonAtt {
     }
 }
 
+sub cacheTaxonIdMapping {
+  my $self = shift;
+  my $st = $self->prepareAndExecute("select taxon_id, ncbi_tax_id from sres.taxon");
+  while(my($taxon_id,$n_tax_id) = $st->fetchrow_array()){
+    $self->{taxonIdMapping}->{$n_tax_id} = $taxon_id;
+  }
+}
+
+
 sub getTaxon{
-    
-    my $self   = shift;
-    my ($tax_id) = @_;
-    my $st = $self->prepareAndExecute("select t.taxon_id from sres.taxon t where t.ncbi_tax_id = $tax_id");
-    my $taxon_id = $st->fetchrow_array();
-    $st->finish();
-    return $taxon_id;
+    my ($self,$tax_id) = @_;
+    return $self->{taxonIdMapping}->{$tax_id};
 }
 
 sub makeTaxonName {
@@ -371,19 +384,31 @@ sub makeTaxonName {
   my %TaxonNameIdHash;
   my %TaxonIdHash;
   my $num = 0;
+  my $nameCache = {};
+
+  ##want to cache the taxonNames in the db so don't have to call retreiveFromDB unless already in the db
+  my $st = $self->prepareAndExecute("select taxon_name_id, taxon_id, name, unique_name_variant, name_class from sres.taxonname");
+  while(my($taxonNameId,$taxonId,$name,$nameClass,$variant) = $st->fetchrow_array()){
+    $nameCache->{$taxonId}->{$name}->{$nameClass}->{$variant} = $taxonNameId;
+  }
+  
   foreach my $tax_id (keys %$namesDmp) {
     my $taxon_id = $self->getTaxon($tax_id);
     foreach my $name (keys %{$namesDmp->{$tax_id}}) {
       foreach my $name_class (keys %{$namesDmp->{$tax_id}->{$name}}) {
 	foreach my $unique_name_variant (keys %{$namesDmp->{$tax_id}->{$name}->{$name_class}}) {
 	  my %attHash = ('taxon_id'=>$taxon_id,'name'=>$name, 'unique_name_variant'=> $unique_name_variant, 'name_class'=>$name_class);
-	  my $newTaxonName = GUS::Model::SRes::TaxonName->new(\%attHash);
 
-	  if (!$newTaxonName->retrieveFromDB()) {
+          my $taxon_name_id;
+          if($nameCache->{$taxon_id}->{$name}->{$name_class}->{$unique_name_variant}){
+            $taxon_name_id = $nameCache->{$taxon_id}->{$name}->{$name_class}->{$unique_name_variant};
+          }else{
+            my $newTaxonName = GUS::Model::SRes::TaxonName->new(\%attHash);
 	    $num += $newTaxonName->submit();
+            $taxon_name_id = $newTaxonName->getTaxonNameId();
+            $nameCache->{$taxon_id}->{$name}->{$name_class}->{$unique_name_variant} = $taxon_name_id;
 	  }
 
-	  my $taxon_name_id = $newTaxonName->getTaxonNameId();
 	  $TaxonNameIdHash{$taxon_name_id}=1;
 	  $TaxonIdHash{$taxon_id}->{$name_class}=1;
 	  
