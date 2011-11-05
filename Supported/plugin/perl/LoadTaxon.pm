@@ -129,7 +129,7 @@ sub run {
 	$self->getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 
     }
     $self->getDb()->manageTransaction(0,'commit'); ##commit remaining uncommitted ones
-    $self->log("Processed".($self->getCla()->{commit} ? " and committed" : "").": $count\n");
+    $self->log("Finished inserting taxon entries: total processed = $count");
 
     my ($TaxonNameIdHash,$TaxonIdHash) = $self->makeTaxonName($self->getNames());
 
@@ -341,12 +341,9 @@ sub makeTaxonEntry {
     $self->{taxonIdMapping}->{$newTaxon->getNcbiTaxId()} = $newTaxon->getId();
     $$count++;
 
-    if ($submit ==1){
-	$self->log("Processed ncbi_tax_id : $tax_id");
-    }
     if ($$count % 100 == 0) {
       $self->getDb()->manageTransaction(0,'commit');
-      $self->log("Processed".($self->getCla()->{commit} ? " and committed" : "").": $$count\n");
+      $self->log("Processed ncbi_tax_id : $tax_id, total processed = $$count");
     }
 
     $self->undefPointerCache();
@@ -413,7 +410,7 @@ sub makeTaxonName {
           }else{
             my $newTaxonName = GUS::Model::SRes::TaxonName->new(\%attHash);
             $self->getDb()->manageTransaction(0,'begin') if $num % 100 == 0;
-	    $num += $newTaxonName->submit();
+	    $num += $newTaxonName->submit(0,1);
             $self->getDb()->manageTransaction(0,'commit') if $num % 100 == 0;
             $taxon_name_id = $newTaxonName->getTaxonNameId();
             $nameCache->{$taxon_id}->{$name}->{$name_class}->{$unique_name_variant} = $taxon_name_id;
@@ -448,7 +445,7 @@ sub deleteTaxonName {
       $newTaxonName->retrieveFromDB();
       $newTaxonName->markDeleted();
       $self->getDb()->manageTransaction(0,'begin') if $num % 100 == 0;
-      $num += $newTaxonName->submit();
+      $num += $newTaxonName->submit(0,1);
       $self->getDb()->manageTransaction(0,'commit') if $num % 100 == 0;
       $newTaxonName->undefPointerCache();
      }
