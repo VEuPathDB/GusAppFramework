@@ -129,12 +129,11 @@ sub run {
 	$self->getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 
     }
     $self->getDb()->manageTransaction(0,'commit'); ##commit remaining uncommitted ones
+    $self->log("Processed".($self->getCla()->{commit} ? " and committed" : "").": $count\n");
 
     my ($TaxonNameIdHash,$TaxonIdHash) = $self->makeTaxonName($self->getNames());
-    $self->getDb()->manageTransaction(0,'commit'); ##commit remaining uncommitted ones
 
     $self->deleteTaxonName($TaxonNameIdHash,$TaxonIdHash);
-    $self->getDb()->manageTransaction(0,'commit'); ##commit remaining uncommitted ones
 
 }
 
@@ -342,15 +341,15 @@ sub makeTaxonEntry {
     $self->{taxonIdMapping}->{$newTaxon->getNcbiTaxId()} = $newTaxon->getId();
     $$count++;
 
-    $self->getDb()->manageTransaction(0,'commit') if $$count % 100 == 0;
-
-    $self->undefPointerCache();
     if ($submit ==1){
 	$self->log("Processed ncbi_tax_id : $tax_id");
     }
-    if ($$count % 1000 == 0) {
-	$self->log("\nNumber processed: $$count\n");
+    if ($$count % 100 == 0) {
+      $self->getDb()->manageTransaction(0,'commit');
+      $self->log("Processed".($self->getCla()->{commit} ? " and committed" : "").": $$count\n");
     }
+
+    $self->undefPointerCache();
 }
 
 
