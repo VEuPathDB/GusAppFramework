@@ -128,9 +128,13 @@ sub run {
     else {
 	$self->getTaxonAtt($rootAttArray->[0],$nodesHash,\$count); 
     }
+    $self->getDb()->manageTransaction(0,'commit'); ##commit remaining uncommitted ones
 
     my ($TaxonNameIdHash,$TaxonIdHash) = $self->makeTaxonName($self->getNames());
+    $self->getDb()->manageTransaction(0,'commit'); ##commit remaining uncommitted ones
+
     $self->deleteTaxonName($TaxonNameIdHash,$TaxonIdHash);
+    $self->getDb()->manageTransaction(0,'commit'); ##commit remaining uncommitted ones
 
 }
 
@@ -331,16 +335,21 @@ sub makeTaxonEntry {
     }  
     
 
+    $self->getDb()->manageTransaction(0,'begin') if $$count % 100 == 0;
     
-    my $submit = $newTaxon->submit();
+    my $submit = $newTaxon->submit(0,1);
+
     $self->{taxonIdMapping}->{$newTaxon->getNcbiTaxId()} = $newTaxon->getId();
+    $$count++;
+
+    $self->getDb()->manageTransaction(0,'commit') if $$count % 100 == 0;
+
     $self->undefPointerCache();
     if ($submit ==1){
-	$self->log("Processed ncbi_tax_id : $tax_id\n");
+	$self->log("Processed ncbi_tax_id : $tax_id");
     }
-    $$count++;
     if ($$count % 1000 == 0) {
-	$self->log("Number processed: $$count\n");
+	$self->log("\nNumber processed: $$count\n");
     }
 }
 
@@ -404,7 +413,9 @@ sub makeTaxonName {
             $taxon_name_id = $nameCache->{$taxon_id}->{$name}->{$name_class}->{$unique_name_variant};
           }else{
             my $newTaxonName = GUS::Model::SRes::TaxonName->new(\%attHash);
+            $self->getDb()->manageTransaction(0,'begin') if $num % 100 == 0;
 	    $num += $newTaxonName->submit();
+            $self->getDb()->manageTransaction(0,'commit') if $num % 100 == 0;
             $taxon_name_id = $newTaxonName->getTaxonNameId();
             $nameCache->{$taxon_id}->{$name}->{$name_class}->{$unique_name_variant} = $taxon_name_id;
 	  }
@@ -418,6 +429,7 @@ sub makeTaxonName {
       }
     }
   }
+  $self->getDb()->manageTransaction(0,'commit');
   $self->log("$num taxon names inserted\n");
   return (\%TaxonNameIdHash,\%TaxonIdHash);
 }
@@ -436,10 +448,13 @@ sub deleteTaxonName {
       my $newTaxonName = GUS::Model::SRes::TaxonName->new({'taxon_name_id'=>$taxon_name_id});
       $newTaxonName->retrieveFromDB();
       $newTaxonName->markDeleted();
+      $self->getDb()->manageTransaction(0,'begin') if $num % 100 == 0;
       $num += $newTaxonName->submit();
+      $self->getDb()->manageTransaction(0,'commit') if $num % 100 == 0;
       $newTaxonName->undefPointerCache();
      }
   }
+  $self->getDb()->manageTransaction(0,'commit');
   $self->log("$num TaxonName entries deleted\n");
 }
 
