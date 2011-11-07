@@ -120,6 +120,7 @@ sub run {
     
     my $rootAttArray = $self->getRootAttArray($genCodes);
 
+    $self->log("Inserting and updating taxon entries");
     $self->makeTaxonEntry($rootAttArray, \$count);
     
     if ($self->getArg('restart') > 1) {
@@ -149,7 +150,7 @@ sub mergeTaxons {
     my $newTax = $merged[1];
     my $oldTaxon = $self->getTaxon($oldTax);
     if (! $oldTaxon) {
-      $self->log("Doing merge and NCBI tax id '$oldTax' not in database, skipping");
+#      $self->log("Doing merge and NCBI tax id '$oldTax' not in database, skipping");
       next;
     }
     my $newTaxon = $self->getTaxon($newTax);
@@ -343,7 +344,7 @@ sub makeTaxonEntry {
 
     if ($$count % 100 == 0) {
       $self->getDb()->manageTransaction(0,'commit');
-      $self->log("Processed ncbi_tax_id : $tax_id, total processed = $$count");
+      $self->log("  Processed $$count taxon rows") if $$count % 10000 == 0;
     }
 
     $self->undefPointerCache();
@@ -411,7 +412,10 @@ sub makeTaxonName {
             my $newTaxonName = GUS::Model::SRes::TaxonName->new(\%attHash);
             $self->getDb()->manageTransaction(0,'begin') if $num % 100 == 0;
 	    $num += $newTaxonName->submit(0,1);
-            $self->getDb()->manageTransaction(0,'commit') if $num % 100 == 0;
+            if($num % 100 == 0){
+              $self->getDb()->manageTransaction(0,'commit');
+              $self->log("  Processed $num taxonName rows") if $num % 10000 == 0;
+            }
             $taxon_name_id = $newTaxonName->getTaxonNameId();
             $nameCache->{$taxon_id}->{$name}->{$name_class}->{$unique_name_variant} = $taxon_name_id;
 	  }
