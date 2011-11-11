@@ -1,0 +1,50 @@
+#!@perl@
+
+use strict;
+use Getopt::Long;
+
+
+my ($query,$subject,$blatFile,$outFile);
+&GetOptions("query!"=> \$query,
+            "subject!"=> \$subject, 
+            "blatFile=s" => \$blatFile,
+	    "outFile=s" => \$outFile);
+
+if((!$blatFile || !$outFile || (!$query && !$subject)) || ($query && $subject)){
+	die "extracts either (not both) the query or subject identifiers from a BLAST similarity output file
+             usage: --outFile --blatFile --query|--subject\n";
+}
+
+my %ids;
+
+if ($blatFile =~ /gz$/) {
+  open(F, "gunzip -c $blatFile |") || die "Can't open $blatFile\n";
+}
+else {
+  open(F,"$blatFile") || die "Can't open $blatFile\n";
+}
+
+
+while(<F>) {
+  my @tmp = split("\t",$_);
+  if ($query){
+    if($tmp[9] =~ /^gi\|(\d+)/){
+      $ids{$1} = 1;
+    }else{
+      $ids{$tmp[9]} = 1;
+    }
+  }
+  if ($subject){
+    $ids{$tmp[13]} = 1;
+  }
+}
+
+close (F);
+
+open (OUT,">$outFile") || "Can't open $outFile for writing\n";
+
+foreach my $id (keys(%ids)) {
+  print OUT "$id\n";
+}
+
+close (OUT);
