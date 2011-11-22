@@ -332,8 +332,9 @@ sub run {
    my $dbh           = $self->getQueryHandle();
 
    die "LoadBLATAlignments: query_file not defined" unless $queryFile;
-   die "LoadBLATAlignments: unrecognized query_table_id"  unless ($self->getTableNameFromTableId($dbh, $queryTableId) =~ /^(?:Assembly|AssemblySequence|ExternalNASequence|VirtualSequence|SplicedNASequence)$/i);
+   die "LoadBLATAlignments: unrecognized query_table_id"  unless ($self->getTableNameFromTableId($dbh, $queryTableId) =~ /^(?:AASequence|ExternalAASequence|Assembly|AssemblySequence|ExternalNASequence|VirtualSequence|SplicedNASequence)$/i);
    die "LoadBLATAlignments: unrecognized target_table_id" unless ($self->getTableNameFromTableId($dbh, $targetTableId) =~ /^(?:Assembly|AssemblySequence|ExternalNASequence|VirtualSequence|SplicedNASequence)$/i);
+
  
    my $summary;
 
