@@ -37,7 +37,7 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 
 my $dbh = $db->getQueryHandle();
 
-$dbh->{LongReadLen} = 8192 * 1024;
+$dbh->{LongReadLen} = 20000 * 1024;
 
 print STDERR "SQL: $idSQL\n" if $verbose;
 my $count = 0;
