@@ -344,30 +344,21 @@ sub updateAllEST {
   $min = $self->getArg('restart_number') ? $self->getArg('restart_number') : $min ;
 
   my $max = $min + $self->getArg('span');
-  while ($max <= $abs_max) {
-    last if ($min == $max);
-    last if ($self->getArg('test_number') && $count > $self->getArg('test_number'));
 
-    my @ests;
+  $sth->execute($min,$abs_max);
 
-    $sth->execute($min,$max);
-
-    while (my $hsh_ref = $sth->fetchrow_hashref('NAME_lc')) {
-      push (@ests, {%$hsh_ref});
+  my $ctRows = 0;
+  my $e;
+  while (my $hsh_ref = $sth->fetchrow_hashref('NAME_lc')) {
+    last if ($self->getArg('test_number') && ++$ctRows > $self->getArg('test_number'));
+    $e->{$hsh_ref->{id_est}}->{e} = $hsh_ref;
+    if($ctRows % $self->getArg('span') == 0){
+      $count += $self->processEntries($e,$estDbh);
+      $self->logAlert("Processed $ctRows ESTs"); 
+      undef $e;
     }
-
-    my ($e);
-    foreach my $est (@ests) {
-      $e->{$est->{id_est}}->{e} = $est;
-    }
-
-    $self->logAlert("Processing id_est from $min to $max\n"); 
-    $count += $self->processEntries($e,$estDbh);
-    $self->undefPointerCache();
-    $min = $max;
-    $max += $self->getArg('span');
-    $max = $abs_max if $max > $abs_max;
   }
+  $count += $self->processEntries($e,$estDbh) if $e;
   return $count;
 }
 
@@ -433,6 +424,7 @@ sub processEntries {
   my ($self, $e , $estDbh) = @_;
   my $count = 0;
   return $count unless (keys %$e) ;
+  $self->getDb()->manageTransaction(0,'begin');
   # get the most recent entry 
   foreach my $id (sort {$a <=> $b} keys %$e) {
     if ($e->{$id}->{e}->{replaced_by}){
@@ -490,6 +482,8 @@ sub processEntries {
       $count += $self->insertEntry($e->{$id}->{e},$estDbh);
     }
   }
+  $self->getDb()->manageTransaction(0,'commit');
+  $self->undefPointerCache();
   return $count;
 }
 
@@ -620,15 +614,15 @@ sub insertEntry{
   if ($clone) { $seq->addToSubmitList($clone); }
   
   # submit the sequence and EST entry. Return the submit() result.
-  my $result = $seq->submit();
+  my $result = $seq->submit(0,1);
 
   my $naSeqId = $seq->getId();
 
   $self->logData("na_sequence_id\t$naSeqId")if $self->getArg('logNaSeqId');
 
-  if ($result) {
-    $self->{'log_fh'}->print($self->logAlert('INSERT/UPDATE', $e->{id_est}),"\n");
-  }
+#  if ($result) {
+#    $self->{'log_fh'}->print($self->logAlert('INSERT/UPDATE', $e->{id_est}),"\n");
+#  }
   return $result;
 }
 
@@ -871,7 +865,7 @@ sub updateClone {
     my $l = GUS::Model::DoTS::Library->new({'dbest_id' => $e->{id_lib}});
     $l->retrieveFromDB();
     $l->setIsImage(1);
-    $l->submit();
+    $l->submit(0,1);
    $self->{libs}->{$e->{id_lib}}->{is_image} = 1;
   }
 
@@ -1190,7 +1184,7 @@ sub newLibrary {
   }
 
   ## Submit the new library
-  $l->submit();
+  $l->submit(0,1);
   # return
   $self;
 }
@@ -1234,7 +1228,7 @@ sub newContact {
   # Set the external_database_release_id
   #$c->setExternalDatabaseReleaseId($DBEST_EXTDB_ID);
   # submit the new contact to the DB
-  $c->submit();
+  $c->submit(0,1);
   $self;
 }
 
