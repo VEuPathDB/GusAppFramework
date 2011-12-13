@@ -355,7 +355,7 @@ sub updateAllEST {
     $e->{$hsh_ref->{id_est}}->{e} = $hsh_ref;
     if($ctRows % $self->getArg('span') == 0){
       $count += $self->processEntries($e,$estDbh);
-      $self->logAlert("Processed $ctRows ESTs"); 
+      $self->logAlert("Processed $ctRows ESTs ... last id: $hsh_ref->{id_est}"); 
       undef $e;
     }
   }
