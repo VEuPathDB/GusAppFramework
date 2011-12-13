@@ -350,7 +350,8 @@ sub updateAllEST {
   my $ctRows = 0;
   my $e;
   while (my $hsh_ref = $sth->fetchrow_hashref('NAME_lc')) {
-    last if ($self->getArg('test_number') && ++$ctRows > $self->getArg('test_number'));
+    $ctRows++;
+    last if ($self->getArg('test_number') && $ctRows > $self->getArg('test_number'));
     $e->{$hsh_ref->{id_est}}->{e} = $hsh_ref;
     if($ctRows % $self->getArg('span') == 0){
       $count += $self->processEntries($e,$estDbh);
