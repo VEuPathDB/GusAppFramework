@@ -1162,7 +1162,7 @@ sub newLibrary {
     else {
       #Log the fact that we couldn't parse out a taxon
       $self->logAlert('ERR:NEW LIBRARY: TAXON', ' LIB_ID:',  $l->getId(), ' DBEST_ID:',
-		   $l->getDbestId(), ' ORGANISM:', $dbest_lib->{organism},"\n");
+		   $l->getDbestId(), ' ORGANISM:', $dbest_lib->{organism});
     }
   }
   
