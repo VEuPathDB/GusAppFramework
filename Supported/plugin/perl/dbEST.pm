@@ -335,7 +335,7 @@ sub updateAllEST {
   my ($abs_max) = $sth->fetchrow_array();
   $sth->finish();
 
-  my $sth = $estDbh->prepare("select est.* from dbest.est est, dbest.library library where est.id_est >= ? and est.id_est < ? and library.id_lib = est.id_lib and library.organism in ($nameStrings)");
+  my $sth = $estDbh->prepare("select est.* from dbest.est est, dbest.library library where est.id_est >= ? and est.id_est < ? and library.id_lib = est.id_lib and library.organism in ($nameStrings) order by est.id_est");
 
   # get the min and max ids
   $abs_max++;
