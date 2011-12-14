@@ -32,20 +32,25 @@ my $argsDeclaration =
 	  format => 'Text'
         }),
 
+ stringArg({name => 'soExtDbRlsName',
+	    descr => 'The extDbRlsName of Sequence Ontology',
+	    constraintFunc => undef,
+	    reqd => 0,
+	    isList => 0
+	   }),
  stringArg({name => 'soVersion',
 	    descr => 'version of Sequence Ontology',
 	    constraintFunc => undef,
-	    reqd => 1,
+	    reqd => 0,
 	    isList => 0
 	   }),
 
  stringArg({name => 'soCvsVersion',
 	    descr => 'cvs version of Sequence Ontology',
 	    constraintFunc => undef,
-	    reqd => 1,
+	    reqd => 0,
 	    isList => 0
 	   })
-
  ];
 
 
@@ -151,15 +156,49 @@ sub makeSequenceOntology {
    $obo->{'id'}=~ s/\n//g;
    $obo->{'name'}=~ s/\n//g;
 
+   my $soVer = $self->getArg('soVersion');
+   
+   unless ($soVer){
+
+          my $soExtDbRlsName = $self->getArg('soExtDbRlsName');
+	  $soExtDbRlsName or $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbRlsName or --soVersion on the command line");
+	  $soVer = $self->getExtDbRlsVerFromExtDbRlsName($soExtDbRlsName);
+   }
+
+
+
    my $soTerm = GUS::Model::SRes::SequenceOntology->
      new({'so_id' => $obo->{'id'},
 	  'ontology_name' => 'sequence',
-	  'so_version' => $self->getArg('soVersion'),
-	  'so_cvs_version' => $self->getArg('soCvsVersion'),
+	  'so_version' => $soVer,
+	  'so_cvs_version' => $soVer,
 	  'term_name' => $obo->{'name'},
 	  'definition' => $definition });
  
    return $soTerm;
+}
+
+sub getExtDbRlsVerFromExtDbRlsName {
+  my ($self, $extDbRlsName) = @_;
+
+  my $dbh = $self->getQueryHandle();
+
+  my $sql = "select version from sres.externaldatabaserelease edr, sres.externaldatabase ed
+             where ed.name = '$extDbRlsName'
+             and edr.external_database_id = ed.external_database_id";
+  my $stmt = $dbh->prepareAndExecute($sql);
+  my @verArray;
+
+  while ( my($version) = $stmt->fetchrow_array()) {
+      push @verArray, $version;
+  }
+
+  die "No ExtDbRlsVer found for '$extDbRlsName'" unless(scalar(@verArray) > 0);
+
+  die "trying to find unique ext db version for '$extDbRlsName', but more than one found" if(scalar(@verArray) > 1);
+
+  return @verArray[0];
+
 }
 
 sub undoTables {
