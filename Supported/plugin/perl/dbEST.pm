@@ -77,6 +77,11 @@ FAIL_CASES
 		 constraintFunc => undef,
 		 reqd => 0,
 		}),
+     booleanArg({name => 'do_not_update',
+		 descr => 'Will do inserts only, if est already loaded will throw error and fail', 
+		 constraintFunc => undef,
+		 reqd => 0,
+		}),
      stringArg({name => 'update_file',
 		descr => 'An update file containing the EST entries that changed,one id_est per line',
 		constraintFunc => undef,
@@ -477,7 +482,7 @@ sub processEntries {
     # proceedure of historical entries. Else just insert if not already 
     # present.
     #####################################################################
-    if ($e->{$id}->{old} && @{$e->{$id}->{old}} > 0) {
+    if (!$self->getArg('do_not_update') && $e->{$id}->{old} && @{$e->{$id}->{old}} > 0) {
       $count +=  $self->updateEntry($e->{$id},$estDbh);
     }else {
       $count += $self->insertEntry($e->{$id}->{e},$estDbh);
@@ -552,7 +557,7 @@ sub insertEntry{
     $est = GUS::Model::DoTS::EST->new({'dbest_id_est' => $e->{id_est}});
   }
   
-  if ($est->retrieveFromDB()){    
+  if (!$self->getArg('do_not_update') && $est->retrieveFromDB()){    
     # The entry exists in GUS. Must check to see if valid
     if ($self->getArg('fullupdate') || $needsUpdate) {
       # Treat this as a new entry
@@ -579,7 +584,8 @@ sub insertEntry{
 
   my $sequence_ontology_id = $self->{sequence_ontology_id};
 
-  my $seq = $est->getParent('GUS::Model::DoTS::ExternalNASequence',1);
+  my $seq;
+  $seq = $est->getParent('GUS::Model::DoTS::ExternalNASequence',1) unless $self->getArg('do_not_update');
 
   if ((defined $seq) && $e->{sequence} ne $seq->getSequence()){
     if (! $self->getArg('no_sequence_update')) {
@@ -605,7 +611,6 @@ sub insertEntry{
     #####################################################################
 
     $seq = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $e->{gb_uid}, 'sequence_version' => 1, 'external_database_release_id' => $self->{dbest_ext_db_rel_id}});
-    $seq->retrieveFromDB();
     $self->checkExtNASeq($e,$seq,$sequence_ontology_id);
     $est->setParent($seq);
   }
@@ -631,7 +636,7 @@ sub getSequenceOntologyId {
   my ($self) = @_;
 
   my $name = "EST";
-
+      
   my $soVer = $self->getArg('soVer');
 
   my $sequenceOntology = GUS::Model::SRes::SequenceOntology->new({"term_name" => $name, "so_version" => $soVer});
