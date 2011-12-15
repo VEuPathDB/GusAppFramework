@@ -248,7 +248,7 @@ sub run {
 
   my $dbh = $self->getQueryHandle();
 
-  my $sth2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l, sres.taxonname t where l.taxon_id = t.taxon_id and t.name in ($nameStrings) and l.library_id = e.library_id");
+  my $sth2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l, sres.taxonname t where l.taxon_id = t.taxon_id and t.name in ($nameStrings) and t.name_class = 'scientific name' and l.library_id = e.library_id");
 
   my ($finalNumGus) = $sth2->fetchrow_array();
 
