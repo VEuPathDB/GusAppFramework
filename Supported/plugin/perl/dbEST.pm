@@ -89,7 +89,7 @@ FAIL_CASES
 		isList => 0
 	       }),
      integerArg({name => 'restart_number',
-		 descr => 'line number if input is file, id_est if input is dbEST',
+		 descr => 'line number if input is file, last id_est in log file if input is dbEST',
 		 constraintFunc => undef,
 		 reqd => 0,
 		 isList => 0
@@ -334,23 +334,13 @@ sub updateAllEST {
 
   my $count = 0;
 
-  # get the absolute max id_est
-  my $sth = $estDbh->prepare("select max(id_est) from dbest.est");
-  $sth->execute();
-  my ($abs_max) = $sth->fetchrow_array();
-  $sth->finish();
+  my $sth = $estDbh->prepare("select est.* from dbest.est est, dbest.library library where est.id_est > ? and library.id_lib = est.id_lib and library.organism in ($nameStrings) order by est.id_est");
 
-  my $sth = $estDbh->prepare("select est.* from dbest.est est, dbest.library library where est.id_est >= ? and est.id_est < ? and library.id_lib = est.id_lib and library.organism in ($nameStrings) order by est.id_est");
-
-  # get the min and max ids
-  $abs_max++;
   my $min = 0;
   # Set the restart entry id if defined
   $min = $self->getArg('restart_number') ? $self->getArg('restart_number') : $min ;
 
-  my $max = $min + $self->getArg('span');
-
-  $sth->execute($min,$abs_max);
+  $sth->execute($min);
 
   my $ctRows = 0;
   my $e;
