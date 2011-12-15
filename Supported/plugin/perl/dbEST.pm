@@ -77,6 +77,11 @@ FAIL_CASES
 		 constraintFunc => undef,
 		 reqd => 0,
 		}),
+     booleanArg({name => 'do_not_update',
+		 descr => 'Will do inserts only, if est already loaded will throw error and fail', 
+		 constraintFunc => undef,
+		 reqd => 0,
+		}),
      stringArg({name => 'update_file',
 		descr => 'An update file containing the EST entries that changed,one id_est per line',
 		constraintFunc => undef,
@@ -84,7 +89,7 @@ FAIL_CASES
 		isList => 0
 	       }),
      integerArg({name => 'restart_number',
-		 descr => 'line number if input is file, id_est if input is dbEST',
+		 descr => 'line number if input is file, last id_est in log file if input is dbEST',
 		 constraintFunc => undef,
 		 reqd => 0,
 		 isList => 0
@@ -152,6 +157,12 @@ FAIL_CASES
 	       }),
      stringArg({name => 'soVer',
 		descr => 'version number used in sres.sequenceontology.so_version',
+		reqd => 0,
+		constraintFunc => undef,
+		isList => 0
+	       }),
+     stringArg({name => 'soExtDbRlsName',
+		descr => 'The extDbRlsName of the Sequence Ontology to use',
 		reqd => 0,
 		constraintFunc => undef,
 		isList => 0
@@ -243,7 +254,7 @@ sub run {
 
   my $dbh = $self->getQueryHandle();
 
-  my $sth2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l, sres.taxonname t where l.taxon_id = t.taxon_id and t.name in ($nameStrings) and l.library_id = e.library_id");
+  my $sth2 = $dbh->prepareAndExecute("select count(e.est_id) from dots.est e, dots.library l, sres.taxonname t where l.taxon_id = t.taxon_id and t.name in ($nameStrings) and t.name_class = 'scientific name' and l.library_id = e.library_id");
 
   my ($finalNumGus) = $sth2->fetchrow_array();
 
@@ -329,45 +340,27 @@ sub updateAllEST {
 
   my $count = 0;
 
-  # get the absolute max id_est
-  my $sth = $estDbh->prepare("select max(id_est) from dbest.est");
-  $sth->execute();
-  my ($abs_max) = $sth->fetchrow_array();
-  $sth->finish();
+  my $sth = $estDbh->prepare("select est.* from dbest.est est, dbest.library library where est.id_est > ? and library.id_lib = est.id_lib and library.organism in ($nameStrings) order by est.id_est");
 
-  my $sth = $estDbh->prepare("select est.* from dbest.est est, dbest.library library where est.id_est >= ? and est.id_est < ? and library.id_lib = est.id_lib and library.organism in ($nameStrings)");
-
-  # get the min and max ids
-  $abs_max++;
   my $min = 0;
   # Set the restart entry id if defined
   $min = $self->getArg('restart_number') ? $self->getArg('restart_number') : $min ;
 
-  my $max = $min + $self->getArg('span');
-  while ($max <= $abs_max) {
-    last if ($min == $max);
-    last if ($self->getArg('test_number') && $count > $self->getArg('test_number'));
+  $sth->execute($min);
 
-    my @ests;
-
-    $sth->execute($min,$max);
-
-    while (my $hsh_ref = $sth->fetchrow_hashref('NAME_lc')) {
-      push (@ests, {%$hsh_ref});
+  my $ctRows = 0;
+  my $e;
+  while (my $hsh_ref = $sth->fetchrow_hashref('NAME_lc')) {
+    $ctRows++;
+    last if ($self->getArg('test_number') && $ctRows > $self->getArg('test_number'));
+    $e->{$hsh_ref->{id_est}}->{e} = $hsh_ref;
+    if($ctRows % $self->getArg('span') == 0){
+      $count += $self->processEntries($e,$estDbh);
+      $self->logAlert("Processed $ctRows ESTs ... last id: $hsh_ref->{id_est}"); 
+      undef $e;
     }
-
-    my ($e);
-    foreach my $est (@ests) {
-      $e->{$est->{id_est}}->{e} = $est;
-    }
-
-    $self->logAlert("Processing id_est from $min to $max\n"); 
-    $count += $self->processEntries($e,$estDbh);
-    $self->undefPointerCache();
-    $min = $max;
-    $max += $self->getArg('span');
-    $max = $abs_max if $max > $abs_max;
   }
+  $count += $self->processEntries($e,$estDbh) if $e;
   return $count;
 }
 
@@ -433,6 +426,7 @@ sub processEntries {
   my ($self, $e , $estDbh) = @_;
   my $count = 0;
   return $count unless (keys %$e) ;
+  $self->getDb()->manageTransaction(0,'begin');
   # get the most recent entry 
   foreach my $id (sort {$a <=> $b} keys %$e) {
     if ($e->{$id}->{e}->{replaced_by}){
@@ -484,12 +478,14 @@ sub processEntries {
     # proceedure of historical entries. Else just insert if not already 
     # present.
     #####################################################################
-    if ($e->{$id}->{old} && @{$e->{$id}->{old}} > 0) {
+    if (!$self->getArg('do_not_update') && $e->{$id}->{old} && @{$e->{$id}->{old}} > 0) {
       $count +=  $self->updateEntry($e->{$id},$estDbh);
     }else {
       $count += $self->insertEntry($e->{$id}->{e},$estDbh);
     }
   }
+  $self->getDb()->manageTransaction(0,'commit');
+  $self->undefPointerCache();
   return $count;
 }
 
@@ -557,7 +553,7 @@ sub insertEntry{
     $est = GUS::Model::DoTS::EST->new({'dbest_id_est' => $e->{id_est}});
   }
   
-  if ($est->retrieveFromDB()){    
+  if (!$self->getArg('do_not_update') && $est->retrieveFromDB()){    
     # The entry exists in GUS. Must check to see if valid
     if ($self->getArg('fullupdate') || $needsUpdate) {
       # Treat this as a new entry
@@ -584,7 +580,8 @@ sub insertEntry{
 
   my $sequence_ontology_id = $self->{sequence_ontology_id};
 
-  my $seq = $est->getParent('GUS::Model::DoTS::ExternalNASequence',1);
+  my $seq;
+  $seq = $est->getParent('GUS::Model::DoTS::ExternalNASequence',1) unless $self->getArg('do_not_update');
 
   if ((defined $seq) && $e->{sequence} ne $seq->getSequence()){
     if (! $self->getArg('no_sequence_update')) {
@@ -610,7 +607,6 @@ sub insertEntry{
     #####################################################################
 
     $seq = GUS::Model::DoTS::ExternalNASequence->new({'source_id' => $e->{gb_uid}, 'sequence_version' => 1, 'external_database_release_id' => $self->{dbest_ext_db_rel_id}});
-    $seq->retrieveFromDB();
     $self->checkExtNASeq($e,$seq,$sequence_ontology_id);
     $est->setParent($seq);
   }
@@ -620,15 +616,15 @@ sub insertEntry{
   if ($clone) { $seq->addToSubmitList($clone); }
   
   # submit the sequence and EST entry. Return the submit() result.
-  my $result = $seq->submit();
+  my $result = $seq->submit(0,1);
 
   my $naSeqId = $seq->getId();
 
   $self->logData("na_sequence_id\t$naSeqId")if $self->getArg('logNaSeqId');
 
-  if ($result) {
-    $self->{'log_fh'}->print($self->logAlert('INSERT/UPDATE', $e->{id_est}),"\n");
-  }
+#  if ($result) {
+#    $self->{'log_fh'}->print($self->logAlert('INSERT/UPDATE', $e->{id_est}),"\n");
+#  }
   return $result;
 }
 
@@ -636,8 +632,15 @@ sub getSequenceOntologyId {
   my ($self) = @_;
 
   my $name = "EST";
-
+      
   my $soVer = $self->getArg('soVer');
+  
+  unless ($soVer){
+
+      my $soExtDbRlsName = $self->getArg('soExtDbRlsName');
+      $soExtDbRlsName or $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbRlsName or --soVer on the command line");
+      $soVer = $self->getExtDbRlsVerFromExtDbRlsName($soExtDbRlsName);
+  }
 
   my $sequenceOntology = GUS::Model::SRes::SequenceOntology->new({"term_name" => $name, "so_version" => $soVer});
 
@@ -646,6 +649,29 @@ sub getSequenceOntologyId {
   my $sequence_ontology_id = $sequenceOntology->getId();
 
   return $sequence_ontology_id;
+}
+
+sub getExtDbRlsVerFromExtDbRlsName {
+  my ($self, $extDbRlsName) = @_;
+
+  my $dbh = $self->getQueryHandle();
+
+  my $sql = "select version from sres.externaldatabaserelease edr, sres.externaldatabase ed
+             where ed.name = '$extDbRlsName'
+             and edr.external_database_id = ed.external_database_id";
+  my $stmt = $dbh->prepareAndExecute($sql);
+  my @verArray;
+
+  while ( my($version) = $stmt->fetchrow_array()) {
+      push @verArray, $version;
+  }
+
+  die "No ExtDbRlsVer found for '$extDbRlsName'" unless(scalar(@verArray) > 0);
+
+  die "trying to find unique ext db version for '$extDbRlsName', but more than one found" if(scalar(@verArray) > 1);
+
+  return @verArray[0];
+
 }
 
 sub getExternalDatabaseRelease{
@@ -871,7 +897,7 @@ sub updateClone {
     my $l = GUS::Model::DoTS::Library->new({'dbest_id' => $e->{id_lib}});
     $l->retrieveFromDB();
     $l->setIsImage(1);
-    $l->submit();
+    $l->submit(0,1);
    $self->{libs}->{$e->{id_lib}}->{is_image} = 1;
   }
 
@@ -1162,7 +1188,7 @@ sub newLibrary {
     else {
       #Log the fact that we couldn't parse out a taxon
       $self->logAlert('ERR:NEW LIBRARY: TAXON', ' LIB_ID:',  $l->getId(), ' DBEST_ID:',
-		   $l->getDbestId(), ' ORGANISM:', $dbest_lib->{organism},"\n");
+		   $l->getDbestId(), ' ORGANISM:', $dbest_lib->{organism});
     }
   }
   
@@ -1190,7 +1216,7 @@ sub newLibrary {
   }
 
   ## Submit the new library
-  $l->submit();
+  $l->submit(0,1);
   # return
   $self;
 }
@@ -1234,7 +1260,7 @@ sub newContact {
   # Set the external_database_release_id
   #$c->setExternalDatabaseReleaseId($DBEST_EXTDB_ID);
   # submit the new contact to the DB
-  $c->submit();
+  $c->submit(0,1);
   $self;
 }
 
