@@ -161,6 +161,12 @@ FAIL_CASES
 		constraintFunc => undef,
 		isList => 0
 	       }),
+     stringArg({name => 'soExtDbRlsName',
+		descr => 'The extDbRlsName of the Sequence Ontology to use',
+		reqd => 0,
+		constraintFunc => undef,
+		isList => 0
+	       }),
      stringArg({name => 'dbestConnect',
                 descr => 'connection string used for dbest Ex. dbi:oracle:musbld',
                 reqd => 1,
@@ -628,6 +634,13 @@ sub getSequenceOntologyId {
   my $name = "EST";
       
   my $soVer = $self->getArg('soVer');
+  
+  unless ($soVer){
+
+      my $soExtDbRlsName = $self->getArg('soExtDbRlsName');
+      $soExtDbRlsName or $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbRlsName or --soVer on the command line");
+      $soVer = $self->getExtDbRlsVerFromExtDbRlsName($soExtDbRlsName);
+  }
 
   my $sequenceOntology = GUS::Model::SRes::SequenceOntology->new({"term_name" => $name, "so_version" => $soVer});
 
@@ -636,6 +649,29 @@ sub getSequenceOntologyId {
   my $sequence_ontology_id = $sequenceOntology->getId();
 
   return $sequence_ontology_id;
+}
+
+sub getExtDbRlsVerFromExtDbRlsName {
+  my ($self, $extDbRlsName) = @_;
+
+  my $dbh = $self->getQueryHandle();
+
+  my $sql = "select version from sres.externaldatabaserelease edr, sres.externaldatabase ed
+             where ed.name = '$extDbRlsName'
+             and edr.external_database_id = ed.external_database_id";
+  my $stmt = $dbh->prepareAndExecute($sql);
+  my @verArray;
+
+  while ( my($version) = $stmt->fetchrow_array()) {
+      push @verArray, $version;
+  }
+
+  die "No ExtDbRlsVer found for '$extDbRlsName'" unless(scalar(@verArray) > 0);
+
+  die "trying to find unique ext db version for '$extDbRlsName', but more than one found" if(scalar(@verArray) > 1);
+
+  return @verArray[0];
+
 }
 
 sub getExternalDatabaseRelease{
