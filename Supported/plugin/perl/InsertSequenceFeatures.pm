@@ -219,6 +219,13 @@ my $argsDeclaration  =
 	      isList => 0,
 	     }),
 
+   stringArg({name => 'soExtDbRlsName',
+	      descr => 'The extDbRlsName of Sequence Ontology',
+	      constraintFunc=> undef,
+	      reqd  => 0,
+	      isList => 0,
+	     }),
+
    stringArg({name => 'fileFormat',
 	      descr => 'Format of external data being loaded.  See Bio::SeqIO::new() for allowed options.  gff2 and gff3 are additional options',
 	      constraintFunc=> undef,
@@ -1350,10 +1357,14 @@ sub getSOPrimaryKey {
   my ($self, $soTerm) = @_;
 
   if (!$self->{soPrimaryKeys}) {
+
     my $soCvsVersion = $self->getArg('soCvsVersion');
 
-    $soCvsVersion or $self->userError("You are using Sequence Ontology terms but have not provided a --soCvsVersion on the command line");
-
+    unless ($soCvsVersion){ 
+	my $soExtDbRlsName = $self->getArg('soExtDbRlsName');
+	$soExtDbRlsName or $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbRlsName or --soCvsVersion on the command line");
+	$soCvsVersion = $self->getExtDbRlsVerFromExtDbRlsName($soExtDbRlsName);
+    }
     my $dbh = $self->getQueryHandle();
     my $sql = "
 select term_name, sequence_ontology_id
@@ -1376,6 +1387,29 @@ where so_cvs_version = '$soCvsVersion'
   $self->error("Can't find primary key for SO term '$soTerm'")
     unless $self->{soPrimaryKeys}->{$soTerm};
   return $self->{soPrimaryKeys}->{$soTerm};
+}
+
+sub getExtDbRlsVerFromExtDbRlsName {
+  my ($self, $extDbRlsName) = @_;
+
+  my $dbh = $self->getQueryHandle();
+
+  my $sql = "select version from sres.externaldatabaserelease edr, sres.externaldatabase ed
+             where ed.name = '$extDbRlsName'
+             and edr.external_database_id = ed.external_database_id";
+  my $stmt = $dbh->prepareAndExecute($sql);
+  my @verArray;
+
+  while ( my($version) = $stmt->fetchrow_array()) {
+      push @verArray, $version;
+  }
+
+  die "No ExtDbRlsVer found for '$extDbRlsName'" unless(scalar(@verArray) > 0);
+
+  die "trying to find unique ext db version for '$extDbRlsName', but more than one found" if(scalar(@verArray) > 1);
+
+  return @verArray[0];
+
 }
 
 sub initHandlerExternalDbs {
