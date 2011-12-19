@@ -409,9 +409,8 @@ sub run {
 
 
 
-   if($self->getArg('chromosomeMapFile')){
+   if($self->getArg('seqSoTerm') eq 'chromosome'  && $self->getArg('chromosomeMapFile')){
        $self->{chromMap} = $self->getChromosomeMapping();
-      
   }
   
 
@@ -793,7 +792,7 @@ sub constructNASequence {
       $chromosomeOrderNum = $chromosome;
   }
 
-  if($self->getArg('chromosomeMapFile')){
+  if($self->getArg('seqSoTerm') eq 'chromosome' && $self->getArg('chromosomeMapFile')){
       $chromosome = $self->{chromMap}->{$bioperlId}->{chrom};
       $chromosomeOrderNum = $self->{chromMap}->{$bioperlId}->{chrom_order_num};
 
