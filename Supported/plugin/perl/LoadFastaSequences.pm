@@ -366,7 +366,7 @@ sub processOneFile{
       $self->fetchTaxonIdFromName($taxonName);
     }
 
-    if($self->getArg('chromosomeMapFile')){
+    if($self->getArg('SOTermName') eq 'chromosome' && $self->getArg('chromosomeMapFile')){
        $self->{chromMap} = $self->getChromosomeMapping();
       
    }
@@ -497,7 +497,7 @@ sub process {
 	$chromosome_order_num = $chromosome;
     }
 
-    if($self->getArg('chromosomeMapFile')){
+    if($self->getArg('SOTermName') eq 'chromosome' && $self->getArg('chromosomeMapFile')){
 	$chromosome = $self->{chromMap}->{$id}->{chrom};
 	$chromosome_order_num = $self->{chromMap}->{$id}->{chrom_order_num};
 
