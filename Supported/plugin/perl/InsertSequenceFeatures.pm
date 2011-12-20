@@ -409,7 +409,7 @@ sub run {
 
 
 
-   if($self->getArg('seqSoTerm') eq 'chromosome'  && $self->getArg('chromosomeMapFile')){
+   if($self->getArg('seqSoTerm') eq 'chromosome'){
        $self->{chromMap} = $self->getChromosomeMapping();
   }
   
@@ -476,6 +476,9 @@ sub getChromosomeMapping {
   my ($self) = @_;
 
   my %chromMap;
+
+  die "chromosome map file must be specified" unless $self->getArg('chromosomeMapFile');
+
   my $chromMapFile = $self->getArg('chromosomeMapFile');
   open(FH,"$chromMapFile") || die "can't open chromosome map File '$chromMapFile'";
    
