@@ -360,6 +360,7 @@ sub processOneFile{
     my $start = 1;
     my $taxonName;
     my $NcbiTaxonId;
+    my $chrom_order_num;
 
     if ($self->getArg('ncbiTaxonName')) {
       $taxonName = $self->getArg('ncbiTaxonName');
@@ -368,7 +369,7 @@ sub processOneFile{
 
     if($self->getArg('SOTermName') eq 'chromosome'){
        $self->{chromMap} = $self->getChromosomeMapping();
-      
+
    }
 
     while (<F>) {
@@ -390,7 +391,7 @@ sub processOneFile{
 	    if ($source_id) {
 	      $self->process($source_id,$secondary_id,$name,
 			       $description,$mol_wgt,$contained_seqs,
-			       $chromosome,$seq,$seq_version);
+			       $chromosome,$seq,$seq_version,$chrom_order_num);
       	    }
 
 	    $self->log($self->getProgress())
@@ -457,7 +458,7 @@ sub processOneFile{
 		$seq_version = $1;
 	    }
 
-	    ##reset the sequence..
+	  ##reset the sequence..
 	    $seq = "";
 	} else {
 	    $seq .= $_;
@@ -540,6 +541,14 @@ sub getProgress {
 sub createNewExternalSequence {
   my($self, $source_id,$secondary_id,$name,$description,$chromosome,$mol_wgt,$contained_seqs,$sequence,$seq_version,) = @_;
 
+  my $chromosome_order_num;
+
+  if($self->getArg('SOTermName') eq 'chromosome' && $self->getArg('chromosomeMapFile')){
+	$chromosome = $self->{chromMap}->{$source_id}->{chrom};
+	$chromosome_order_num = $self->{chromMap}->{$source_id}->{chrom_order_num};
+
+    }
+
   my $className = "GUS::Model::" . $self->getArg('tableName');
   $className =~ /GUS::Model::\w+::(\w+)/ || die "can't parse className";
   my $tbl = $1;
@@ -593,6 +602,10 @@ sub createNewExternalSequence {
   if ($chromosome && $aas->isValidAttribute('chromosome') ) {
     $aas->setChromosome($chromosome);
   }
+  if ($chromosome_order_num && $aas->isValidAttribute('chromosome_order_num') ) {
+    $aas->setChromosomeOrderNum($chromosome_order_num);
+  }
+  
   if ($mol_wgt && $aas->isValidAttribute('molecular_weight')) {
     $aas->setMolecularWeight($mol_wgt);
   }
