@@ -12,18 +12,19 @@ use GUS::ObjRelP::DbiDatabase;
 use CBIL::Bio::SequenceUtils;
 use GUS::Supported::GusConfig;
 
-my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength,$mscPercent, $noSeq,$posStrand,$negStrand);
+my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength,$mscPercent, $noSeq,$posStrand,$negStrand,$allowEmptyOutput);
 &GetOptions("verbose!"=> \$verbose,
             "outputFile=s" => \$outFile,"idSQL=s" => \$idSQL, 
             "minLength=i" => \$minLength,"debug!" => \$debug,
             "maxStopCodonPercent=i" => \$mscPercent,
             "gusConfigFile=s" => \$gusConfigFile,
             "noSequence!" => \$noSeq,
+            "allowEmptyOuput!" => \$allowEmptyOuput,
             "posStrand=s" => \$posStrand, 
             "negStrand=s" => \$negStrand); 
 
 if(!$idSQL || !$outFile){
-	die "usage: gusExtractSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --maxStopCodonPercent <maxium multiple-stop-codons per 100 AA sequences [100]> --gusConfigFile [\$GUS_HOME/config/gus.config] --noSequence --posStrand <pos strand notation in idSQL defline,required for file of both strands> --negStrand <neg strand notation, substituted and required in file of both strands> \n";
+	die "usage: gusExtractSequences --outputFile <outfile> --verbose --debug --idSQL 'sql stmt that returns (primary_identifier,arbritrary number of atts to be joined on defline by spaces,sequence)' --minLength <minimum length to output [1]> --maxStopCodonPercent <maxium multiple-stop-codons per 100 AA sequences [100]> --gusConfigFile [\$GUS_HOME/config/gus.config] --noSequence --allowEmptyOutput --posStrand <pos strand notation in idSQL defline,required for file of both strands> --negStrand <neg strand notation, substituted and required in file of both strands> \n";
 }
 
 ##set the defaults
@@ -81,7 +82,7 @@ my $countSeqInOutFile=`grep -c '>' $outFile`;
 
 die "Inconsistant number of sequences between query results and outputs in $outFile. Please check log file.\n" unless (($countSeqInOutFile + $skip)==$count);
 
-die "No sequences extracted. (Check your idSQL.)" unless $count;
+die "No sequences extracted. (Check your idSQL.)" unless ($count || $allowEmptyOutput);
 
 sub printSequence{
 	my @row = @_;
