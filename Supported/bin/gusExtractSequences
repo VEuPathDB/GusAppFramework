@@ -19,7 +19,7 @@ my ($gusConfigFile,$debug,$verbose,$outFile,$idSQL,$minLength,$mscPercent, $noSe
             "maxStopCodonPercent=i" => \$mscPercent,
             "gusConfigFile=s" => \$gusConfigFile,
             "noSequence!" => \$noSeq,
-            "allowEmptyOuput!" => \$allowEmptyOuput,
+            "allowEmptyOutput!" => \$allowEmptyOutput,
             "posStrand=s" => \$posStrand, 
             "negStrand=s" => \$negStrand); 
 
