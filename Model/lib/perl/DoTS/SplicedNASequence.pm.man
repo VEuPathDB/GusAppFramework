@@ -8,11 +8,19 @@ use vars qw (@ISA);
 @ISA = qw (GUS::Model::DoTS::SplicedNASequence_Row);
 
 sub getSequence {
-	my $self = shift;
-	if($self->get('sequence')) {
+  my $self = shift;
+  if($self->get('sequence')) {
     return $self->get('sequence');
   }
-  return $self->getChild('DoTS::RNAFeature',1)->getFeatureSequence();
+  my $feat = $self->getChild('DoTS::RNAFeature',1);
+  $feat = $self->getChild('DoTS::Transcript',1) unless $feat;
+  if($feat){
+    my $seq = $feat->getFeatureSequence();
+    $self->set('sequence',$seq);
+    return $seq;
+  }else{
+    print STDERR "ERROR: unable to retrieve sequence for SplicedNASequence\n";
+  }
 }
 
 1;
