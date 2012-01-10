@@ -372,6 +372,7 @@ sub getNameStrings {
   my ($self) = @_;
   my $nameStrings;
   foreach my $name (keys %{$self->{taxon}}) {
+      $name =~ s/'/''/g;   # escape single quotes for oracle
       $nameStrings .= " '$name',";
   }
   $nameStrings =~ s/\,$//;
