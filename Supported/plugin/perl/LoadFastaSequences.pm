@@ -8,6 +8,7 @@ use File::Basename;
 
   my $purposeBrief = 'Insert or update sequences from a FASTA file or as set of FASTA files.';
 
+
   my $purpose = <<PLUGIN_PURPOSE;
 Insert or update sequences from a FASTA file or as set of FASTA files.  A set of regular expressions provided on the command line extract from the definition lines of the input sequences various information to stuff into the database.
 PLUGIN_PURPOSE
