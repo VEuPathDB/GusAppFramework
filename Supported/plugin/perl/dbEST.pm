@@ -1317,6 +1317,7 @@ sub undoTables {
 	  'DoTS.Library',
 	  'SRES.Contact',
 	  'DoTS.NASequenceImp',
+	  'SRes.ExternalDatabaseRelease',
 	 );
 }
 
