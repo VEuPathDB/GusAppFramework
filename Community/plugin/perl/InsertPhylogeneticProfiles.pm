@@ -11,6 +11,9 @@ use GUS::PluginMgr::Plugin;
 use GUS::Model::DoTS::PhylogeneticProfileSet;
 use GUS::Model::DoTS::PhylogeneticProfile;
 use GUS::Model::DoTS::PhylogeneticProfileMember;
+use GUS::Model::DoTS::MutualInformationScore;
+use GUS::Model::Core::DatabaseInfo;
+use GUS::Model::Core::TableInfo;
 
 use ApiCommonData::Load::Util;
 
@@ -77,6 +80,13 @@ my $argsDeclaration =
                constraintFunc => undef,
              }),
 
+     floatArg({name  => 'threshold',
+		 descr => 'skip pairs with score below this threshold',  # talk about what SQL does
+		 reqd  => 0,
+		 constraintFunc=> undef,
+		 isList=> 0,
+		}),
+
    booleanArg ({name => 'tolerateMissingIds',
                 descr => 'Set this to tolerate (and log) source ids in the input that do not find an oligo or gene in the database.  
                           If not set, will fail on that condition',
@@ -99,7 +109,7 @@ my $argsDeclaration =
 	  isList         => 0, 
 	 }),
 
-   fileArg({name            => 'datafile',
+   fileArg({name            => 'profilesDataFile',
 	    descr           => '',
 	    reqd            => 1,
 	    mustExist       => 1,
@@ -113,7 +123,16 @@ and the remaining values after the tab are presence-or-absence calls for homolog
 ',
 	    constraintFunc  => undef,
 	    isList          => 0, }),
-                      ];
+
+     fileArg({name           => 'mutualInformationDataFile',
+              descr          => 'File containing SourceIds and mutual information scores',
+              reqd           => 0,
+              mustExist      => 0,
+              format         => 'One line for each record separated by | ',
+              constraintFunc => undef,
+              isList         => 0,
+	 }),
+];
 
 # ----------------------------------------------------------------------
 
@@ -142,13 +161,13 @@ sub run {
   my $phylogeneticProfileSet = GUS::Model::DoTS::PhylogeneticProfileSet->
     new({DESCRIPTION => $self->getArg('ProfileSetDescription'),
          PRED_ALG_INVOCATION_ID => $self->getAlgInvocation()->getId(),
-         });
+        });
 
   $phylogeneticProfileSet->submit();
 
-  my ($ppsLoaded, $ppLoaded, $ppmLoaded) = (1, 0, 0);
+  my ($ppsLoaded, $ppLoaded, $ppmLoaded, ) = (1, 0, 0, );
 
-  my $datafile = $self->getArg('datafile');
+  my $datafile = $self->getArg('profilesDataFile');
   my $fileName;
 
   if ($datafile =~ /(.*)\.gz$/){
@@ -162,56 +181,66 @@ sub run {
   open(FILE, "< $fileName") || die "Can't open datafile $fileName";
 
   my $taxonIdList = $self->_getTaxonIds();
-
+  my %profileIdHash = () ;
+  my $mutualInfoFile;
+  my $profileId;
+  if ($self->getArg('mutualInformationDataFile')){
+    $mutualInfoFile = $self->getArg('mutualInformationDataFile');
+  }
   my ($cCalls, $hCalls, $eCalls, $aa_sequence_id);
   while (<FILE>) {
-      chomp;
+    chomp;
 
-      my ($geneDoc, $valueString) = split(/\t/, $_);
-      my $sourceId = (split(/\|/, $geneDoc))[3];
+    my ($geneDoc, $valueString) = split(/\t/, $_);
+    my $sourceId = (split(/\|/, $geneDoc))[3];
+    print STDERR "sourceId:  $sourceId\n";
 
-      print STDERR "sourceId:  $sourceId\n";
+    if(my $naFeatureId = ApiCommonData::Load::Util::getGeneFeatureId($self, $sourceId)) {
+      my $profileSetId = $phylogeneticProfileSet->getId();
+      my $profile = GUS::Model::DoTS::PhylogeneticProfile->
+        new({phylogenetic_profile_set_id => $profileSetId,
+             na_feature_id => $naFeatureId,
+            })
+          ;
+      $profile->submit();
+      $ppLoaded++;
 
-      if(my $naFeatureId = ApiCommonData::Load::Util::getGeneFeatureId($self, $sourceId)) {
-        my $profile = GUS::Model::DoTS::PhylogeneticProfile->
-          new({phylogenetic_profile_set_id => $phylogeneticProfileSet->getId(),
-               na_feature_id => $naFeatureId,
-              });
+      my @values = split(/ /, $valueString);
 
-        $profile->submit();
-        $ppLoaded++;
+      if(scalar(@values) != scalar(@$taxonIdList)) {
+        die "There are ".scalar(@values)." values and ".scalar(@$taxonIdList)." TaxonNames";
+      }
+      $profileId = $profile->getId();
+      if (!$self->getArg('dontLoadScores')) {
 
-        my @values = split(/ /, $valueString);
-        if(scalar(@values) != scalar(@$taxonIdList)) {
-          die "There are ".scalar(@values)." values and ".scalar(@$taxonIdList)." TaxonNames";
+        for (my $i=0; $i <= $#values; $i++) {
+
+          my $profileMember = GUS::Model::DoTS::PhylogeneticProfileMember->
+            new({taxon_id => $taxonIdList->[$i],
+                 minus_log_e_value => $values[$i]*1000,
+                 PHYLOGENETIC_PROFILE_ID => $profileId
+                });
+
+          $profileMember->submit();
+          $ppmLoaded++;
         }
-
-	if (!$self->getArg('dontLoadScores')) {
-
-	  for (my $i=0; $i <= $#values; $i++) {
-
-	    my $profileMember = GUS::Model::DoTS::PhylogeneticProfileMember->
-	      new({taxon_id => $taxonIdList->[$i],
-		   minus_log_e_value => $values[$i]*1000,
-		   PHYLOGENETIC_PROFILE_ID => $profile->getId()
-		  });
-
-	    $profileMember->submit();
-	    $ppmLoaded++;
-	  }
-	}
-      } elsif ($self->getArgs()->{tolerateMissingIds}) {
-	$self->log("WARN:  No na_Feature_id found for '$sourceId'");
       }
-      else {
-        $self->userError("Can't find naFeatureId for source id '$sourceId'");
-      }
-
-      $self->undefPointerCache();
+      $profileIdHash{ $naFeatureId } = $profileId;
+    } elsif ($self->getArgs()->{tolerateMissingIds}) {
+      $self->log("WARN:  No na_Feature_id found for '$sourceId'");
     }
+    else {
+      $self->userError("Can't find naFeatureId for source id '$sourceId'");
+    }
+  }
 
   close(FILE);
   system("gzip $fileName");
+  print STDERR $mutualInfoFile;
+  if (-e $mutualInfoFile) {
+    my $profileIdHash = \%profileIdHash;
+    $self->loadMutualInformationFile($mutualInfoFile, $profileIdHash);
+  }
 
   return("Inserted $ppsLoaded PhylogenicProfileSet, $ppLoaded PhylogenicProfiles, and $ppmLoaded PhylogenicProfileMembers\n");
 }
@@ -272,6 +301,76 @@ sub _getTaxonIds {
   return(\@rv);
 }
 
+sub loadMutualInformationFile {
+  my ($self, $datafile, $profileIdHash) = @_;
+
+  my $fileName;
+
+  if ($datafile =~ /(.*)\.gz$/){
+    system("gunzip $datafile");
+    $fileName = $1;
+  }
+  else {
+    $fileName = $datafile;
+  }
+  $self->log("loading Mutual Information Scores");
+
+  open(FILE, "< $fileName") || die ("Can't open datafile $datafile");
+
+  my %profileIdHash = %$profileIdHash;
+  my $submitCount = 0;
+  my $skipCount = 0;
+  my $missingCount = 0;
+  my $threshold = $self->getArg('threshold');
+
+  while(<FILE>) {
+    chomp;
+
+    my ($primarySourceId, $secondarySourceId, $score) = (split(/\|/, $_));
+    if ($score < $threshold) {
+      $skipCount++;
+      next;
+    }
+
+    my $primaryNaFeatureId =
+      ApiCommonData::Load::Util::getGeneFeatureId($self, $primarySourceId);
+
+    my $secondaryNaFeatureId = 
+      ApiCommonData::Load::Util::getGeneFeatureId($self, $secondarySourceId);
+    my $primaryProfileId = $profileIdHash{$primaryNaFeatureId};
+
+    my $secondaryProfileId = $profileIdHash{$secondaryNaFeatureId};
+
+    if (!$primaryProfileId || !$secondaryProfileId) {
+      my $msg = "Can't find either na_feature_id or profile_id for one or both of '$primarySourceId' and '$secondarySourceId'";
+      if ($self->getArgs()->{tolerateMissingIds}) {
+	$missingCount++;
+ 	$self->log($msg);
+	next;
+      } else {
+ 	$self->userError($msg);
+      }
+    }
+
+    my $mi = GUS::Model::DoTS::MutualInformationScore->
+      new( {primary_profile_id => $primaryProfileId,
+	    secondary_profile_id => $secondaryProfileId,
+	    mutual_information_score => $score * 10000
+	   } );
+    
+    $mi->submit();
+    if ($submitCount++ % 1000 == 0) {
+      $self->log("submitted $submitCount.  skipped $skipCount (below threshold).  skipped $missingCount (profile not found)");
+      $self->undefPointerCache();
+    }
+  }
+
+  close(FILE);
+  system("gzip $fileName");
+
+  my $rv = "submitted $submitCount.  skipped $skipCount (below threshold).  skipped $missingCount (profile not found)";
+  return($rv);
+}
 # ----------------------------------------------------------------------
 
 sub undoTables {
@@ -279,7 +378,8 @@ sub undoTables {
 
   return ('DoTS.PhylogeneticProfileMember',
 	  'DoTS.PhylogeneticProfile',
-	  'DoTS.PhylogeneticProfileSet'
+	  'DoTS.PhylogeneticProfileSet',
+          'DoTS.MutualInformationScore'
 	 );
 }
 
