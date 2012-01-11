@@ -377,9 +377,9 @@ sub undoTables {
   my ($self) = @_;
 
   return ('DoTS.PhylogeneticProfileMember',
-	  'DoTS.PhylogeneticProfile',
+	  'DoTS.MutualInformationScore'
+          'DoTS.PhylogeneticProfile',
 	  'DoTS.PhylogeneticProfileSet',
-          'DoTS.MutualInformationScore'
 	 );
 }
 
