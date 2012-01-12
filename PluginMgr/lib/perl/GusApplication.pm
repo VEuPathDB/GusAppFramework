@@ -610,6 +610,7 @@ sub doMajorMode_RunOrReport {
       $Run && $pu->logRowsInserted();
       $Run && $pu->logAlgInvocationId();
       $Run && $pu->logCommit();
+      print STDERR "\n";   # add empty line after logging for clarity
     };
    }
 
