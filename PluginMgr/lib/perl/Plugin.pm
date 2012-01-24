@@ -2,7 +2,7 @@ package GUS::PluginMgr::Plugin;
  
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(stringArg booleanArg fileArg integerArg floatArg globArg tableNameArg enumArg);
+@EXPORT = qw(stringArg booleanArg fileArg directoryArg integerArg floatArg globArg tableNameArg enumArg);
 
 use strict 'vars';
 
@@ -16,6 +16,7 @@ use GUS::Supported::GusConfig;
 use GUS::PluginMgr::Args::StringArg;
 use GUS::PluginMgr::Args::BooleanArg;
 use GUS::PluginMgr::Args::FileArg;
+use GUS::PluginMgr::Args::DirectoryArg;
 use GUS::PluginMgr::Args::EnumArg;
 use GUS::PluginMgr::Args::GlobArg;
 use GUS::PluginMgr::Args::IntegerArg;
@@ -681,6 +682,30 @@ sub fileArg {
   return GUS::PluginMgr::Args::FileArg->new($paramsHashRef);
 }
 
+# ----------------------------------------------------------------------
+
+=item C<directoryArg($argDescriptorHashRef)>
+
+Construct a directory argument declaration.
+
+B<Parameters>
+
+- argDescriptorHashRef (hash ref).  This argument is a hash ref which must contain the standard keys described above and also
+
+over 4
+
+=item * mustExist (0 or 1)
+
+Whether the directory must exist
+
+B<Return type:> C<GUS::PluginMgr::Args::DirectoryArg>
+
+=cut
+
+sub directoryArg {
+  my ($paramsHashRef) = @_;
+  return GUS::PluginMgr::Args::DirectoryArg->new($paramsHashRef);
+}
 
 =item C<enumArg($argDescriptorHashRef)>
 
