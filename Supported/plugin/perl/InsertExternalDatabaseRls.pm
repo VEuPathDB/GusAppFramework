@@ -62,6 +62,13 @@ my $argsDeclaration =
 		    isList => 0,
 		}),
 
+	 stringArg({name => 'idIsAlias',
+		    descr => 'the primary indentifier of entries in this release can be used as an alias for the source ID that it is linked to',
+		    reqd => 0,
+		    constraintFunc => undef,
+		    isList => 0,
+		}),
+
 	 stringArg({name => 'secondaryIdType',
 		    descr => 'brief description of the format of the secondary identifier of entries in the release',
 		    reqd => 0,
@@ -215,6 +222,7 @@ sub makeNewReleaseId{
 	download_url => $self->getArg('downloadUrl'),
 	id_type => $self->getArg('idType'),
 	id_url => $self->getArg('idUrl'),
+	id_is_alias => $self->getArg('idIsAlias'),
 	secondary_id_type => $self->getArg('secondaryIdType'),
 	secondary_id_url => $self->getArg('secondaryIdUrl'),
 	description => $self->getArg('description'),
