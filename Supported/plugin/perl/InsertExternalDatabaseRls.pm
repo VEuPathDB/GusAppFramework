@@ -62,10 +62,11 @@ my $argsDeclaration =
 		    isList => 0,
 		}),
 
-	 stringArg({name => 'idIsAlias',
+	 booleanArg({name => 'idIsAlias',
 		    descr => 'the primary indentifier of entries in this release can be used as an alias for the source ID that it is linked to',
 		    reqd => 0,
 		    constraintFunc => undef,
+                    default=> 0,
 		    isList => 0,
 		}),
 
