@@ -132,6 +132,13 @@ and the remaining values after the tab are presence-or-absence calls for homolog
               constraintFunc => undef,
               isList         => 0,
 	 }),
+
+   stringArg({name => 'organismAbbrev',
+	      descr => 'if supplied, use a prefix to use for tuning manager tables',
+	      reqd => 0,
+	      constraintFunc => undef,
+	      isList => 0,
+	     }),
 ];
 
 # ----------------------------------------------------------------------
@@ -195,7 +202,7 @@ sub run {
     my $sourceId = (split(/\|/, $geneDoc))[3];
     print STDERR "sourceId:  $sourceId\n";
 
-    if(my $naFeatureId = ApiCommonData::Load::Util::getGeneFeatureId($self, $sourceId)) {
+    if(my $naFeatureId = ApiCommonData::Load::Util::getGeneFeatureId($self, $sourceId, 0, $self->getArg('organismAbbrev'))) {
       my $profileSetId = $phylogeneticProfileSet->getId();
       my $profile = GUS::Model::DoTS::PhylogeneticProfile->
         new({phylogenetic_profile_set_id => $profileSetId,
@@ -333,10 +340,10 @@ sub loadMutualInformationFile {
     }
 
     my $primaryNaFeatureId =
-      ApiCommonData::Load::Util::getGeneFeatureId($self, $primarySourceId);
+      ApiCommonData::Load::Util::getGeneFeatureId($self, $primarySourceId, 0, $self->getArg('organismAbbrev'));
 
     my $secondaryNaFeatureId = 
-      ApiCommonData::Load::Util::getGeneFeatureId($self, $secondarySourceId);
+      ApiCommonData::Load::Util::getGeneFeatureId($self, $secondarySourceId, 0, $self->getArg('organismAbbrev'));
     my $primaryProfileId = $profileIdHash{$primaryNaFeatureId};
 
     my $secondaryProfileId = $profileIdHash{$secondaryNaFeatureId};
@@ -377,7 +384,7 @@ sub undoTables {
   my ($self) = @_;
 
   return ('DoTS.PhylogeneticProfileMember',
-	  'DoTS.MutualInformationScore'
+	  'DoTS.MutualInformationScore',
           'DoTS.PhylogeneticProfile',
 	  'DoTS.PhylogeneticProfileSet',
 	 );
