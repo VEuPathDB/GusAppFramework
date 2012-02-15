@@ -747,7 +747,7 @@ sub fetchTaxonId {
       $self->{taxonId} = $taxon->getTaxonId();
   }else{
 
-      $self->fetchTaxonIdFromName('unknown');
+      die "$ncbiTaxId is not a valid ncbi_tax_id in sres.taxon";
   }
 }
 
