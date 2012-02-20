@@ -309,7 +309,7 @@ sub runMatrixOrSimilarity {
   }
   if (-e "${resultFile}.gz") {
     print "  previous (zipped) result found\n";
-    $valid = &validateBM($inputFile, "${resultFile}.gz");run
+    $valid = &validateBM($inputFile, "${resultFile}.gz");
     if (!$valid) {
       print "  trying again...\n";
       print "  unzipping ${resultFile}.gz\n";
