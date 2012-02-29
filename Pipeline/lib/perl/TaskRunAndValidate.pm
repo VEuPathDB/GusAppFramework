@@ -36,7 +36,7 @@ package GUS::Pipeline::TaskRunAndValidate;
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGenomeAlignWithGfClient runGeneTagAlign runMicerAlign runPfam runTRNAscan runPsipred runIprScan); 
+@EXPORT = qw(runRepeatMask runMatrix runSimilarity runGenomeAlign runGenomeAlignWithGfClient runGeneTagAlign runMicerAlign runPfam runTRNAscan runPsipred runIprScan runMsa); 
 
 use strict;
 use Carp;
@@ -147,6 +147,18 @@ sub runGenomeAlignWithGfClient {
 
     return $valid;
 }
+
+sub runMsa {
+    my ($pipelineDir,$numnodes, $time, $queue, $ppn) = @_;
+    my $propFile = "$pipelineDir/msa/input/controller.prop";
+    my $logFile = "$pipelineDir/logs/msa.log";
+
+    &run($propFile, $logFile, $numnodes, $time, $queue, $ppn);
+
+    return 1;
+}
+
+    
 
 sub runIprScan {
   my ($pipelineDir, $proteinFile, $numnodes, $time, $queue, $ppn) = @_;
@@ -264,7 +276,7 @@ sub runMatrix {
 
 
 sub runSimilarity {
-  my ($pipelineDir, $queryname, $subjectname, $numNodes,$time,$queue, $ppn) = @_;
+  my ($pipelineDir, $queryname, $subjectname, $numNodes,$time,$queue, $mem, $ppn ) = @_;
 
   my $name = "$queryname-$subjectname";
 
@@ -278,13 +290,13 @@ sub runSimilarity {
 
   my $logFile = "$pipelineDir/logs/$name.sim.log";
 
-  my $valid =   &runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time,$queue, $ppn);
+  my $valid =   &runMatrixOrSimilarity($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time,$queue, $mem, $ppn);
 
   return $valid;
 }
 
 sub runMatrixOrSimilarity {
-  my ($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time,$queue, $ppn) = @_;
+  my ($resultFile, $inputFile, $propFile, $logFile, $numNodes, $time,$queue, $mem, $ppn) = @_;
 
   my $valid = 0;
 
@@ -307,7 +319,7 @@ sub runMatrixOrSimilarity {
     }
   }
   if (!$valid) {
-    &runAndZip($propFile,$logFile, $resultFile, $numNodes, $time,$queue, $ppn);
+    &runAndZip($propFile,$logFile, $resultFile, $numNodes, $time,$queue, $mem, $ppn);
     my $valid = &validateBM($inputFile, "${resultFile}.gz");
     if  (!$valid) {
       print "  please correct failures (delete them from failures/ when done), and set restart=yes in $propFile\n";
@@ -410,11 +422,11 @@ sub validatePsipred {
 }
 
 sub runAndZip {
-  my ($propFile, $logFile, $resultFile, $numNodes, $time, $queue, $ppn) = @_;
+  my ($propFile, $logFile, $resultFile, $numNodes, $time, $queue, $mem, $ppn) = @_;
 
   my ($cmd, $status);
 
-  $cmd = "liniacsubmit $numNodes $time $propFile $queue ".($ppn ? "--ppn $ppn " : "").">& $logFile";
+  $cmd = "liniacsubmit $numNodes $time $propFile $queue $mem ".($ppn ? "--ppn $ppn " : "").">& $logFile";
 
   $status = system($cmd);
   &confess ("failed running '$cmd' with stderr:\n $!") if ($status >> 8);
