@@ -942,7 +942,7 @@ public class OracleReader extends SchemaReader {
             name = name.substring( 0, name.length( ) - 3 );
         }
 
-        if ( DatabaseUtilities.getTableFromCollection( superClasses, name, owner ) != null )
+        if ( DatabaseUtilities.getTableFromCollection( superClasses, owner, name ) != null )
 
         return true;
 
