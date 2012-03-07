@@ -351,14 +351,14 @@ public class XMLWriter extends SchemaWriter {
 		if ( documentation == null ) {
 			return;
 		}
-		indent();
+		// indent();
 		//		oStream.write( "<documentation>![CDATA[" + documentation + "]]</documentation>\n" );
 	}
 
 
 	private void indent() throws IOException {
 		for ( int i = 0; i < indent; i++ ) {
-			oStream.write( "\t" );
+			oStream.write( "   " );
 		}
 	}
 
