@@ -83,7 +83,10 @@ public class InstallSchemaTask extends Task {
         FileWriter rows;
 
         convertSubclasses( db );
-        DatabaseUtilities.setTablespace( db, this.tablespace );
+	if ( this.tablespace != null ) {
+	    log.info( " Overriding individual tablespace specifications with value \"" + this.tablespace + "\" from property file " );
+	    DatabaseUtilities.setTablespace( db, this.tablespace );
+	}
 
         try {
             ddl = new FileWriter( gusHome + "/config/SchemaInstall-objects.sql" );
