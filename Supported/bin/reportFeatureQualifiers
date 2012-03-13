@@ -12,7 +12,7 @@ use Getopt::Long;
 
 use Data::Dumper;
 
-my ($format,$fileOrDir, $xmlOutput, $unflatten, $gff2GroupTag, $verbose, $help);
+my ($format,$fileOrDir, $xmlOutput, $unflatten, $gff2GroupTag, $verbose, $help, $summary);
 
 &GetOptions('verbose' => \$verbose,
             'help|h' => \$help,
@@ -21,7 +21,7 @@ my ($format,$fileOrDir, $xmlOutput, $unflatten, $gff2GroupTag, $verbose, $help);
             'xmlOutput' => \$xmlOutput,
             'unflatten' => \$unflatten,
             'gff2GroupTag=s' => \$gff2GroupTag,
-
+	    'summary' => \$summary
            );
 
 &usage() if($help);
@@ -111,10 +111,12 @@ HEADER
   foreach my $feature (sort(keys %{$features})) {
     foreach my $parent (sort(keys %{$features->{$feature}})) {
       print "$feature:$parent ($featureCounts{$feature}->{$parent})\n";
-      foreach my $qualifier (sort(keys %{$features->{$feature}->{$parent}})) {
-	print "  $qualifier ($features->{$feature}->{$parent}->{$qualifier})\n";
+      if (!$summary) {
+        foreach my $qualifier (sort(keys %{$features->{$feature}->{$parent}})) {
+	  print "  $qualifier ($features->{$feature}->{$parent}->{$qualifier})\n";
+        }
+        print "\n";
       }
-      print "\n";
     }
   }
 }
@@ -136,6 +138,7 @@ where
                 to genbank and embl)
   --gff2Group  if present, specify gff2 group tag (only applicable
                 to gff2)
+  --summary  if present, only print features, no qualifers
 ";
 }
 
