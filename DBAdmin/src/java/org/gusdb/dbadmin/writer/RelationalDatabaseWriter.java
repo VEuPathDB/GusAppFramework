@@ -126,8 +126,7 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
                     + "' and Type: '" + column.getType( ) + "'" );
             oStream.write( "\t " + column.getName( ) + " " + getType( column.getType( ) ) );
 
-            if ( ( column.getType( ) == Column.ColumnType.STRING || column.getType( ) == Column.ColumnType.CHARACTER || column.getType( ) == Column.ColumnType.FLOAT )
-                 && column.getLength( ) != 0 ) {
+            if ( column.getType( ) == Column.ColumnType.STRING || column.getType( ) == Column.ColumnType.CHARACTER ) {
                 oStream.write( "(" + column.getLength( ) + ") " );
             }
 
