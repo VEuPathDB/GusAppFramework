@@ -47,3 +47,4 @@ DONE
 - build system is not detecting when .man files change.
 
 - build system needs to delete old model when generating all objects.
+
