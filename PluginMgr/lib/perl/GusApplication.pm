@@ -59,7 +59,7 @@ sub new {
 
    my $self = bless {}, $Class;
 
-   $self->initialize({requiredDbVersion => '3.6',
+   $self->initialize({requiredDbVersion => '4',
                       cvsRevision       => '$Revision$',
                       name              => ref($self),
                       easyCspOptions    => {},
