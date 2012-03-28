@@ -8,14 +8,14 @@
   <target name="CBIL-Installation">
     <ant antfile="../CBIL/build.xml" target="CBIL-Installation">
       <property name="project" value="CBIL"/>
- <!-- <property name="version" value="2.1.2"/> -->
+      <property name="version" value="2.1.2"/>
     </ant>
   </target>  
 
   <target name="GusSchema-Installation" >
     <ant antfile="../GusSchema/build.xml" target="GusSchema-Installation">
       <property name="project" value="GusSchema"/>
-      <property name="version" value="4.0"/>
+      <property name="version" value="3.5"/>
     </ant>
   </target>  
 
@@ -23,7 +23,7 @@
     <ant target="defaultProjectCheckout" inheritAll="false">
       <property name="svnurl" value="https://www.cbil.upenn.edu/svn/gus/GusSchema" />
       <property name="project" value="GusSchema"/>
-      <property name="version" value="4.0"/>
+      <property name="version" value="3-6-dev"/>
     </ant>
   </target>  
 
@@ -31,8 +31,7 @@
     <ant target="defaultProjectCheckout" inheritAll="false">
       <property name="svnurl" value="https://www.cbil.upenn.edu/svn/gus/CBIL" />
       <property name="project" value="CBIL"/>
-      <property name="useBranch" value="false"/>
- <!-- <property name="version" value="1.7"/> -->
+      <property name="version" value="1.7"/>
     </ant>
   </target>  
   
