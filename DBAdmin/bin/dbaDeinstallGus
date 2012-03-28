@@ -9,8 +9,8 @@ use GUS::Supported::GusConfig;
 use DBI;
 
 my @schemas = (
-    "DoTS", "Core", "Model", "Platform", "Prot", "SRes", "TESS", "Study", "RAD",
-	"DoTSVer", "CoreVer", "ModelVer", "PlatformVer", "ProtVer", "SResVer", "TESSVer", 
+    "DoTS", "Core", "Model", "Platform", "Prot", "Results", "SRes", "TESS", "Study", "RAD",
+	"DoTSVer", "CoreVer", "ModelVer", "PlatformVer", "ProtVer", "ResultsVer", "SResVer", "TESSVer", 
 	"StudyVer", "RADVER");
 
 my $configFile = "$ENV{GUS_HOME}/config/gus.config";
