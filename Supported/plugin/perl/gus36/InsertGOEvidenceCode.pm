@@ -6,7 +6,10 @@
 ## $Id$
 ##
 #######################################################################
- 
+
+# this plugin is incompatible with version 4.0 of GUS because it references tables
+# which have been dropped, such as sres.GoEvidenceCode
+
 package GUS::Supported::Plugin::InsertGOEvidenceCode;
 @ISA = qw( GUS::PluginMgr::Plugin);
 

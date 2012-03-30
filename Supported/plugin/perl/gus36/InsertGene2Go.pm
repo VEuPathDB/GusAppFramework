@@ -9,6 +9,9 @@
 ## created August 10, 2005  by Jennifer Dommer
 #############################################################################
 
+# this plugin is incompatible with version 4.0 of GUS because it references tables
+# which have been dropped, such as sres.GoTerm
+
 package GUS::Supported::Plugin::InsertGene2Go;
 @ISA = qw(GUS::PluginMgr::Plugin);
 

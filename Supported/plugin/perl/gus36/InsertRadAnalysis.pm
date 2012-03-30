@@ -3,6 +3,9 @@
 ## $Id$
 ##
 
+# this plugin is incompatible with version 4.0 of GUS because it references
+# tables in the RAD schema, which has been dropped
+
 package GUS::Supported::Plugin::InsertRadAnalysis;
 @ISA = qw( GUS::PluginMgr::Plugin );
 

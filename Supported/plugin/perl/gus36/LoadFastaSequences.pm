@@ -1,5 +1,8 @@
 package GUS::Supported::Plugin::LoadFastaSequences;
 
+# this plugin is incompatible with version 4.0 of GUS because it references tables
+# which have been dropped, such as sres.SequenceOntology
+
 @ISA = qw(GUS::PluginMgr::Plugin);
 use strict;
 use GUS::PluginMgr::Plugin;

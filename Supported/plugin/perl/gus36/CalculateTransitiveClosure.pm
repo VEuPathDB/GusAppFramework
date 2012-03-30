@@ -1,5 +1,8 @@
 package GUS::Supported::Plugin::CalculateTransitiveClosure;
 
+# this plugin is incompatible with version 4.0 of GUS because it references tables
+# which have been dropped, including GoTerm, GoRelationship, GoRelationshipType, and GoSynonym
+
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;

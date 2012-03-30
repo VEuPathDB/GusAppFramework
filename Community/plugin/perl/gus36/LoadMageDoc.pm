@@ -1,4 +1,8 @@
 package GUS::Community::Plugin::LoadMageDoc;
+
+# this plugin is incompatible with version 4.0 of GUS because it references tables
+# in the RAD and TESS schemas, which have been dropped
+
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;

@@ -5,6 +5,9 @@
 ##
 #######################################################################
 
+# this plugin is incompatible with version 4.0 of GUS because it references tables
+# which have been dropped, such as sres.GoTerm
+
 package GUS::Supported::Plugin::InsertGeneOntologyAssoc;
 @ISA = qw( GUS::PluginMgr::Plugin);
 

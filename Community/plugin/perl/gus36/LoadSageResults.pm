@@ -1,5 +1,9 @@
 # $Id$
 package GUS::Community::Plugin::LoadSageResults;
+
+# this plugin is incompatible with version 4.0 of GUS because it references tables
+# in the RAD schema, which has been dropped
+
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 

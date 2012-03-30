@@ -1,5 +1,8 @@
  package GUS::Supported::Plugin::dbEST;
 
+# this plugin is incompatible with version 4.0 of GUS because it references
+# sres.SequenceOntology and sres.Anatomy, which have been dropped
+
 @ISA = qw( GUS::PluginMgr::Plugin );
 use GUS::PluginMgr::Plugin;
 use CBIL::Util::PropertySet;
