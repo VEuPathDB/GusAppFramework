@@ -1,5 +1,7 @@
 package GUS::Supported::Plugin::CalculateTranslatedAASequences;
 
+# this plugin is incompatible with version 4.0 of GUS because it references sres.SequenceOntology, which has been dropped
+
 use strict;
 #use warnings;
 

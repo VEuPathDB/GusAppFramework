@@ -6,6 +6,9 @@
 ##
 #######################################################################
 
+# this plugin is incompatible with version 4.0 of GUS because it references
+# Study.OntologyEntry, which has been dropped
+
 package GUS::Supported::Plugin::InsertOntologyEntry;
 @ISA = qw(GUS::PluginMgr::Plugin);
 

@@ -1,5 +1,8 @@
 package GUS::Supported::Plugin::InsertSequenceFeatures;
 
+# this plugin is incompatible with version 4.0 of GUS because it references tables
+# which have been dropped, such as sres.Reference and sres.SequenceOntology
+
 # todo:
 #  - handle seqVersion more robustly
 #  - add logging info

@@ -6,6 +6,9 @@
 ##
 #######################################################################
 
+# this plugin is incompatible with version 4.0 of GUS because it references tables
+# which have been dropped, such as sres.SequenceOntology
+
 package GUS::Supported::Plugin::InsertSequenceOntologyNew;
 @ISA = qw(GUS::PluginMgr::Plugin);
  

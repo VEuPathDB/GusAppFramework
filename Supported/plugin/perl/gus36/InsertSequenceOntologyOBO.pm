@@ -7,6 +7,9 @@
 ## Drafted from the old LoadSequenceOntologyPlugin, Oct, 2005 E.R.
 #######################################################################
 
+# this plugin is incompatible with version 4.0 of GUS because it references tables
+# which have been dropped, such as sres.SequenceOntology
+
 package GUS::Supported::Plugin::InsertSequenceOntologyOBO;
 @ISA = qw(GUS::PluginMgr::Plugin);
  
