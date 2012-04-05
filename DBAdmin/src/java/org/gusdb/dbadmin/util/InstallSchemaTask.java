@@ -59,36 +59,36 @@ public class InstallSchemaTask extends Task {
     }
 
     public void execute( ) throws BuildException {
-        initialize( );
+	try {
+	    initialize( );
 
-        XMLReader xr = new XMLReader( schema );
-        SchemaWriter dbWriter = null;
+	    XMLReader xr = new XMLReader( schema );
+	    SchemaWriter dbWriter = null;
 
-        if ( dbVendor.compareToIgnoreCase( "Postgres" ) == 0 ) {
-            dbWriter = new PostgresWriter( );
-        }
-        else if ( dbVendor.compareToIgnoreCase( "Oracle" ) == 0 ) {
-            dbWriter = new OracleWriter( );
-	    ((OracleWriter)dbWriter).setSkipRoles(skipRoles);
-        }
-        else {
-            log.error( "Unknown DB Vendor: '" + dbVendor + "'" );
-            throw new BuildException( "Unknown DB Vendor: '" + dbVendor + "'" );
-        }
+	    if ( dbVendor.compareToIgnoreCase( "Postgres" ) == 0 ) {
+		dbWriter = new PostgresWriter( );
+	    }
+	    else if ( dbVendor.compareToIgnoreCase( "Oracle" ) == 0 ) {
+		dbWriter = new OracleWriter( );
+		((OracleWriter)dbWriter).setSkipRoles(skipRoles);
+	    }
+	    else {
+		log.error( "Unknown DB Vendor: '" + dbVendor + "'" );
+		throw new BuildException( "Unknown DB Vendor: '" + dbVendor + "'" );
+	    }
 
-        log.info( "Reading database from " + schema );
-        db = xr.read( );
+	    log.info( "Reading database from " + schema );
+	    db = xr.read( );
 
-        FileWriter ddl;
-        FileWriter rows;
+	    FileWriter ddl;
+	    FileWriter rows;
 
-        convertSubclasses( db );
-	if ( this.tablespace != null ) {
-	    log.info( " Overriding individual tablespace specifications with value \"" + this.tablespace + "\" from property file " );
-	    DatabaseUtilities.setTablespace( db, this.tablespace );
-	}
-
-        try {
+	    convertSubclasses( db );
+	    if ( this.tablespace != null ) {
+		log.info( " Overriding individual tablespace specifications with value \"" + this.tablespace + "\" from property file " );
+		DatabaseUtilities.setTablespace( db, this.tablespace );
+	    }
+	    log.info("in the try block");
             ddl = new FileWriter( gusHome + "/config/SchemaInstall-objects.sql" );
             rows = new FileWriter( gusHome + "/config/SchemaInstall-rows.sql" );
 
@@ -112,7 +112,8 @@ public class InstallSchemaTask extends Task {
             ddl.close( );
             rdbms.close( );
         }
-        catch ( IOException e ) {
+        catch ( Exception e ) {
+            e.printStackTrace();
             throw new BuildException( e );
         }
     }
