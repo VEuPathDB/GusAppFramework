@@ -22,7 +22,7 @@ use GUS::Model::DoTS::TranslatedAAFeature;
 use GUS::Model::DoTS::GeneFeature;
 #use GUS::Model::DoTS::NAFeatureNaGene;
 use GUS::Model::DoTS::NAGene;
-
+use GUS::Supported::Util;
 
 my $purposeBrief = <<PURPOSEBRIEF;
 Creates new entries in table DoTS.AASequenceEnzymeClass to represent new aa sequence/enzyme class associations.
@@ -202,8 +202,8 @@ print "SQL: $sql\n";
   my $queryHandle = $self->getQueryHandle();
 
   my $sth = $queryHandle->prepare($sql);
-  $sth->execute($locusTag);
-
+  my $naFeatureId =  GUS::Supported::Util::getGeneFeatureId($self, $locusTag) ;
+  $sth->execute($naFeatureId);
   my $aaSequenceId = $sth->fetchrow_array();
   $sth->finish();
 
