@@ -47,7 +47,6 @@ NOTES
    ['DoTS.SecondaryAccs', ''],
    ['DoTS.NALocation', ''],
    ['DoTS.NASequenceRef', ''],
-   ['DoTS.Keyword', ''],
    ['DoTS.NAComment', ''],
    ['DoTS.TranslatedAAFeature', ''],
    ['DoTS.TranslatedAASequence', ''],
@@ -229,7 +228,6 @@ sub undoSequences{
   $self->_deleteFromTable('DoTS.SecondaryAccs');
   $self->_deleteFromTable('DoTS.NASequenceRef');
   $self->_deleteFromTable('DoTS.NASequenceKeyword');
-  $self->_deleteFromTable('DoTS.Keyword');
   $self->_deleteFromTable('DoTS.NAComment');
   $self->_deleteFromTable('DoTS.NASequence');
   $self->_deleteFromTable('SRes.ExternalDatabaseRelease');
