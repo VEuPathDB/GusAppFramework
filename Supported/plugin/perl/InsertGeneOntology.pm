@@ -1,20 +1,21 @@
 package GUS::Supported::Plugin::InsertGeneOntology;
 
-# this plugin is incompatible with version 4.0 of GUS because it references tables
-# which have been dropped, such as sres.GoTerm
-
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use strict;
 
 use GUS::PluginMgr::Plugin;
 
-use GUS::Model::SRes::GOTerm;
-use GUS::Model::SRes::GORelationship;
-use GUS::Model::SRes::GORelationshipType;
-use GUS::Model::SRes::GOSynonym;
+use GUS::Model::SRes::OntologyTerm;
+use GUS::Model::SRes::OntologyTermType;
+use GUS::Model::SRes::OntologyRelationship;
+use GUS::Model::SRes::OntologyRelationshipType;
+use GUS::Model::SRes::OntologySynonym;
 
 use Text::Balanced qw(extract_quotelike extract_delimited);
+
+my $ontologyTermTypeId;
+my $parenthoodOntologyTermId;
 
 my $argsDeclaration =
   [
@@ -44,7 +45,7 @@ my $argsDeclaration =
 		descr         => 'If this argument is given, a transitive closure table is created and populated',
 		reqd         => 0,
 		default      => 0
-	    })	
+	    })
   ];
 
 my $purpose = <<PURPOSE;
@@ -62,7 +63,7 @@ this plugin is (marginally) incomplete.
 NOTES
 
 my $tablesAffected = <<TABLES_AFFECTED;
-SRes.GOTerme, SRes.GORelationship, SRes.GORelationshipType, SRes.GOSynonym
+SRes.OntologyTerm, SRes.OntologyTermType, SRes.OntologyRelationship, SRes.OntologyRelationshipType, SRes.OntologySynonym
 TABLES_AFFECTED
 
 my $tablesDependedOn = <<TABLES_DEPENDED_ON;
@@ -71,7 +72,7 @@ TABLES_DEPENDED_ON
 
 my $howToRestart = <<RESTART;
 Just reexecute the plugin; all existing terms, synonyms and
-relationships (defined by the specified External Database Release)
+relationships for the specified External Database Release
 will be removed.
 RESTART
 
@@ -98,7 +99,7 @@ sub new {
 
   my $self = bless({}, $class);
 
-  $self->initialize({ requiredDbVersion => 3.6,
+  $self->initialize({ requiredDbVersion => 4.0,
 		      cvsRevision       => '$Revision: 9030 $',
 		      name              => ref($self),
 		      argsDeclaration   => $argsDeclaration,
@@ -172,13 +173,13 @@ sub _processBlock {
       $synonyms, $relationships,
       $isObsolete) = $self->_parseBlock($block);
 
-  my $goTerm = $self->_retrieveGOTerm($id, $name, $def, $comment,
+  my $ontologyTerm = $self->_retrieveOntologyTerm($id, $name, $def, $comment,
 				      $synonyms, $isObsolete,
 				      $extDbRlsId);
   $ancestors->{$id} = $namespace;
 
   for my $relationship (@$relationships) {
-    $self->_processRelationship($goTerm, $relationship, $extDbRlsId);
+    $self->_processRelationship($ontologyTerm, $relationship, $extDbRlsId);
   }
 
   warn "Processed $self->{_count} terms\n" unless $self->{_count} % 500;
@@ -191,63 +192,103 @@ sub _processRelationship {
 
   my ($type, $parentId) = @$relationship;
 
-  my $parentTerm = $self->_retrieveGOTerm($parentId, undef, undef, undef,					  undef, undef, $extDbRlsId);
+  my $parentTerm = $self->_retrieveOntologyTerm($parentId, undef, undef, undef,					  undef, undef, $extDbRlsId);
 
-  my $goRelationshipType =
-    $self->{_goRelationshipTypeCache}->{$type} ||= do {
-      my $goType = GUS::Model::SRes::GORelationshipType->new({ name => $type });
+  my $ontologyRelationshipType =
+    $self->{_ontologyRelationshipTypeCache}->{$type} ||= do {
+      my $goType = GUS::Model::SRes::OntologyRelationshipType->new({ name => $type });
       unless ($goType->retrieveFromDB()) {
 	$goType->submit();
       }
       $goType;
     };
-  
 
-  my $goRelationship =
-    GUS::Model::SRes::GORelationship->new({
-      parent_term_id          => $parentTerm->getGoTermId(),
-      child_term_id           => $childTerm->getGoTermId(),
-      go_relationship_type_id => $goRelationshipType->getGoRelationshipTypeId(),
+  my $ontologyRelationship =
+    GUS::Model::SRes::OntologyRelationship->new({
+      subject_term_id               => $parentTerm->getOntologyTermId(),
+      predicate_term_id             => _getParenthoodOntologyTermId($extDbRlsId),
+      object_term_id                => $childTerm->getOntologyTermId(),
+      ontology_relationship_type_id => $ontologyRelationshipType->getOntologyRelationshipTypeId(),
     });
 
-  $goRelationship->submit();
+  $ontologyRelationship->submit();
 }
 
-sub _retrieveGOTerm {
+sub _getParenthoodOntologyTermId {
+  my ($extDbRlsId) = @_;
+
+  if (!$parenthoodOntologyTermId) {
+    my $ontologyTermType = GUS::Model::SRes::OntologyTermType->new({
+      name                         => "Gene Ontology term",
+    });
+
+    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
+      name                    => "is parent of",
+      ontology_term_type_id   => $ontologyTermType->getOntologyTermTypeId(),
+    });
+
+    unless ($ontologyTerm->retrieveFromDB()) {
+      $ontologyTerm->setOntologyTermTypeId(_getOntologyTermTypeId());
+      $ontologyTerm->submit();
+    }
+
+    $parenthoodOntologyTermId = $ontologyTerm->getOntologyTermId();
+  }
+
+  return($parenthoodOntologyTermId);
+}
+
+sub _retrieveOntologyTerm {
 
   my ($self, $id, $name, $def, $comment, $synonyms, $isObsolete, $extDbRlsId) = @_;
 
-  my $goTerm = GUS::Model::SRes::GOTerm->new({
-    go_id                        => $id,
+  my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
     source_id                    => $id,
+    ontology_term_type_id        => _getOntologyTermTypeId(),
     external_database_release_id => $extDbRlsId,
   });
 
-  unless ($goTerm->retrieveFromDB()) {
-      $goTerm->setName("Not yet available");
-      $goTerm->setMinimumLevel(1);
-      $goTerm->setMaximumLevel(1);
-      $goTerm->setNumberOfLevels(1);
+  unless ($ontologyTerm->retrieveFromDB()) {
+      $ontologyTerm->setName("Not yet available");
+      $ontologyTerm->setMinimumLevel(1);
+      $ontologyTerm->setMaximumLevel(1);
+      $ontologyTerm->setNumberOfLevels(1);
     }
 
   # some of these may not actually yet be available, if we've been
   # called while building a relationship:
 
-  $goTerm->setName($name) if length($name);
-  $goTerm->setDefinition($def) if length($def);
-  $goTerm->setCommentString($comment) if length($comment);
-  $goTerm->setIsObsolete(1) if ($isObsolete && $isObsolete eq "true");
+  $ontologyTerm->setName($name) if length($name);
+  $ontologyTerm->setDefinition($def) if length($def);
+  $ontologyTerm->setNotes($comment) if length($comment);
+  $ontologyTerm->setIsObsolete(1) if ($isObsolete && $isObsolete eq "true");
 
-  $self->_setGOTermSynonyms($goTerm, $synonyms, $extDbRlsId) if $synonyms;
+  $self->_setOntologyTermSynonyms($ontologyTerm, $synonyms, $extDbRlsId) if $synonyms;
 
-  $goTerm->submit();
+  $ontologyTerm->submit();
 
-  return $goTerm;
+  return $ontologyTerm;
 }
 
-sub _setGOTermSynonyms {
+sub _getOntologyTermTypeId {
 
-  my ($self, $goTerm, $synonyms, $extDbRlsId) = @_;
+  if (!$ontologyTermTypeId) {
+    my $ontologyTermType = GUS::Model::SRes::OntologyTermType->new({
+      name                         => "Gene Ontology term",
+    });
+
+    $ontologyTermType->submit()
+      unless ($ontologyTermType->retrieveFromDB());
+
+    $ontologyTermTypeId = $ontologyTermType->getOntologyTermTypeId();
+  }
+
+  return ($ontologyTermTypeId);
+}
+
+sub _setOntologyTermSynonyms {
+
+  my ($self, $ontologyTerm, $synonyms, $extDbRlsId) = @_;
 
   for my $synonym (@$synonyms) {
     my ($type, $text) = @$synonym;
@@ -257,12 +298,12 @@ sub _setGOTermSynonyms {
 	$sourceId = $text;
     }
 
-    my $goSynonym = GUS::Model::SRes::GOSynonym->new({
-      text                         => $text,
+    my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({
+      ontology_synonym             => $text,
       source_id                    => $sourceId,
       external_database_release_id => $extDbRlsId,
     });
-    $goTerm->addChild($goSynonym);
+    $ontologyTerm->addChild($ontologySynonym);
   }
 }
 
@@ -323,46 +364,46 @@ sub _updateAncestors {
   my ($self, $extDbRlsId, $ancestors) = @_;
   my %ancestorIds;
 
-  my $mf = GUS::Model::SRes::GOTerm->new({
+  my $mf = GUS::Model::SRes::OntologyTerm->new({
     name                        => 'molecular_function',
     external_database_release_id => $extDbRlsId,
   });
-  my $cc = GUS::Model::SRes::GOTerm->new({
+  my $cc = GUS::Model::SRes::OntologyTerm->new({
     name                        => 'cellular_component',
     external_database_release_id => $extDbRlsId,
   });
-  my $bp = GUS::Model::SRes::GOTerm->new({
+  my $bp = GUS::Model::SRes::OntologyTerm->new({
     name                        => 'biological_process',
     external_database_release_id => $extDbRlsId,
   });
 
   if ($mf->retrieveFromDB()) {
-    $ancestorIds{'molecular_function'} = $mf->getGoTermId();
+    $ancestorIds{'molecular_function'} = $mf->getOntologyTermId();
   }
   else {
     STDERR->print("There is no molecular_function term.\n");
   }
   if ($cc->retrieveFromDB()) {
-    $ancestorIds{'cellular_component'} = $cc->getGoTermId();
+    $ancestorIds{'cellular_component'} = $cc->getOntologyTermId();
   }
   else {
     STDERR->print("There is no cellular_component term.\n");
   }
   if ($bp->retrieveFromDB()) {
-    $ancestorIds{'biological_process'} = $bp->getGoTermId();
+    $ancestorIds{'biological_process'} = $bp->getOntologyTermId();
   }
   else {
     STDERR->print("There is no biological_process term.\n");
   }
 
   foreach my $goId (keys %{$ancestors}) {
-    my $goTerm = GUS::Model::SRes::GOTerm->new({
+    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
        source_id                        => $goId,
        external_database_release_id => $extDbRlsId
     });
-    if ($goTerm->retrieveFromDB()) {
-      $goTerm->setAncestorGoTermId($ancestorIds{$ancestors->{$goId}});
-      $goTerm->submit();
+    if ($ontologyTerm->retrieveFromDB()) {
+      $ontologyTerm->setAncestorTermId($ancestorIds{$ancestors->{$goId}});
+      $ontologyTerm->submit();
     }
      $self->undefPointerCache();
   }
@@ -374,9 +415,9 @@ sub _calcTransitiveClosure {
 
   my $dbh = $self->getQueryHandle();
 
-  $dbh->do("DROP TABLE go_tc");
+  $dbh->do("DROP TABLE ontology_tc");
   $dbh->do(<<EOSQL);
-    CREATE TABLE go_tc (
+    CREATE TABLE ontology_tc (
       child_id NUMBER(10,0) NOT NULL,
       parent_id NUMBER(10,0) NOT NULL,
       depth NUMBER(3,0) NOT NULL,
@@ -385,25 +426,25 @@ sub _calcTransitiveClosure {
 EOSQL
 
   $dbh->do(<<EOSQL);
-    INSERT INTO go_tc (child_id, parent_id, depth)
-    SELECT go_term_id,
-           go_term_id,
+    INSERT INTO ontology_tc (child_id, parent_id, depth)
+    SELECT ontology_term_id,
+           ontology_term_id,
            0
-    FROM   SRes.GOTerm
+    FROM   SRes.OntologyTerm
     WHERE  external_database_release_id = $extDbRlsId
 EOSQL
 
   $dbh->do(<<EOSQL);
 
-    INSERT INTO go_tc (child_id, parent_id, depth)
+    INSERT INTO ontology_tc (child_id, parent_id, depth)
     SELECT child_term_id,
            parent_term_id,
            1
-    FROM   SRes.GORelationship gr,
-           SRes.GOTerm gtc,
-           SRes.GOTerm gtp
-    WHERE  gtc.go_term_id = gr.child_term_id
-      AND  gtp.go_term_id = gr.parent_term_id
+    FROM   SRes.OntologyRelationship gr,
+           SRes.OntologyTerm gtc,
+           SRes.OntologyTerm gtp
+    WHERE  gtc.ontology_term_id = gr.child_term_id
+      AND  gtp.ontology_term_id = gr.parent_term_id
       AND  gtc.external_database_release_id = $extDbRlsId
       AND  gtp.external_database_release_id = $extDbRlsId
 EOSQL
@@ -412,30 +453,30 @@ EOSQL
     SELECT DISTINCT tc1.child_id,
                     tc2.parent_id,
                     tc1.depth + 1
-    FROM   go_tc tc1,
-           go_tc tc2
+    FROM   ontology_tc tc1,
+           ontology_tc tc2
     WHERE  tc1.parent_id = tc2.child_id
       AND  tc2.depth = 1
       AND  tc1.depth = ?
       AND  NOT EXISTS (
              SELECT 'x'
-             FROM go_tc tc3
+             FROM ontology_tc tc3
              WHERE tc3.child_id = tc1.child_id
                AND tc3.parent_id = tc2.parent_id
            )
 EOSQL
 
   my $insert = $dbh->prepare(<<EOSQL);
-    INSERT INTO go_tc (child_id, parent_id, depth)
+    INSERT INTO ontology_tc (child_id, parent_id, depth)
                VALUES (    ?,      ?,      ?)
 EOSQL
 
   my ($oldsize) =
-    $dbh->selectrow_array("SELECT COUNT(*) FROM go_tc");
+    $dbh->selectrow_array("SELECT COUNT(*) FROM ontology_tc");
 
-  my ($num) = $dbh->selectrow_array("SELECT COUNT(*) FROM SRes.GOTerm WHERE external_database_release_id = $extDbRlsId");
+  my ($num) = $dbh->selectrow_array("SELECT COUNT(*) FROM SRes.OntologyTerm WHERE external_database_release_id = $extDbRlsId");
   warn "GO Terms: $num\n";
-  ($num) = $dbh->selectrow_array("SELECT COUNT(*) FROM SRes.GORelationship");
+  ($num) = $dbh->selectrow_array("SELECT COUNT(*) FROM SRes.OntologyRelationship");
   warn "Relationships: $num\n";
   warn "starting size: $oldsize\n";
 
@@ -454,29 +495,29 @@ EOSQL
   }
 
   my $closureRelationshipType =
-      GUS::Model::SRes::GORelationshipType->new({ name => 'closure' });
+      GUS::Model::SRes::OntologyRelationshipType->new({ name => 'closure' });
 
   unless ($closureRelationshipType->retrieveFromDB()) {
     $closureRelationshipType->submit();
   }
 
-  my $closureRelationshipTypeId = $closureRelationshipType->getGoRelationshipTypeId();
+  my $closureRelationshipTypeId = $closureRelationshipType->getOntologyRelationshipTypeId();
 
-  my $sth = $dbh->prepare("SELECT child_id, parent_id, depth FROM go_tc");
+  my $sth = $dbh->prepare("SELECT child_id, parent_id, depth FROM ontology_tc");
   $sth->execute();
 
 
   while (my ($child_id, $parent_id, $depth) = $sth->fetchrow_array()) {
     $self->undefPointerCache();
-    my $goRelationship = GUS::Model::SRes::GORelationship->new({
+    my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->new({
       parent_term_id          => $parent_id,
       child_term_id           => $child_id,
-      go_relationship_type_id => $closureRelationshipTypeId,
+      ontology_relationship_type_id => $closureRelationshipTypeId,
     });
-    $goRelationship->submit();
+    $ontologyRelationship->submit();
   }
-  
-  $dbh->do("DROP TABLE go_tc");
+
+  $dbh->do("DROP TABLE ontology_tc");
   $dbh->commit(); # ga no longer doing this by default
 
 }
@@ -487,10 +528,10 @@ sub _deleteTermsAndRelationships {
 
   my $dbh = $self->getQueryHandle();
 
-  my $goTerms = $dbh->prepare(<<EOSQL);
+  my $ontologyTerms = $dbh->prepare(<<EOSQL);
 
-  SELECT go_term_id
-  FROM   SRes.GOTerm
+  SELECT ontology_term_id
+  FROM   SRes.OntologyTerm
   WHERE  external_database_release_id = ?
 
 EOSQL
@@ -498,7 +539,7 @@ EOSQL
   my $deleteRelationships = $dbh->prepare(<<EOSQL);
 
   DELETE
-  FROM   SRes.GORelationship
+  FROM   SRes.OntologyRelationship
   WHERE  parent_term_id = ?
      OR  child_term_id = ?
 
@@ -507,24 +548,24 @@ EOSQL
   my $deleteSynonyms = $dbh->prepare(<<EOSQL);
 
   DELETE
-  FROM   SRes.GOSynonym
-  WHERE  go_term_id = ?
+  FROM   SRes.OntologySynonym
+  WHERE  ontology_term_id = ?
 
 EOSQL
 
   my $deleteTerm = $dbh->prepare(<<EOSQL);
 
   DELETE
-  FROM   SRes.GOTerm
-  WHERE  go_term_id = ?
+  FROM   SRes.OntologyTerm
+  WHERE  ontology_term_id = ?
 
 EOSQL
-  
-  $goTerms->execute($extDbRlsId);
-  while (my ($goTermId) = $goTerms->fetchrow_array()) {
-    $deleteRelationships->execute($goTermId, $goTermId);
-    $deleteSynonyms->execute($goTermId);
-    $deleteTerm->execute($goTermId);
+
+  $ontologyTerms->execute($extDbRlsId);
+  while (my ($ontologyTermId) = $ontologyTerms->fetchrow_array()) {
+    $deleteRelationships->execute($ontologyTermId, $ontologyTermId);
+    $deleteSynonyms->execute($ontologyTermId);
+    $deleteTerm->execute($ontologyTermId);
   }
 }
 
@@ -550,9 +591,9 @@ sub _parseCvsRevision {
 sub undoTables {
   my ($self) = @_;
 
-  return ('SRes.GORelationship',
-	  'SRes.GORelationshipType',
-	  'SRes.GOSynonym',
-	  'SRes.GOTerm',
+  return ('SRes.OntologyRelationship',
+	  'SRes.OntologyRelationshipType',
+	  'SRes.OntologySynonym',
+	  'SRes.OntologyTerm',
 	 );
 }
