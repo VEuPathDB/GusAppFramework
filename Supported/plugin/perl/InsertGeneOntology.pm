@@ -57,9 +57,7 @@ Insert all terms from a Gene Ontology OBO file.
 PURPOSE_BRIEF
 
 my $notes = <<NOTES;
-MINIMUM_LEVEL, MAXIMUM_LEVEL, and NUMBER_OF_LEVELS fields are
-currently left at a default of 1; i.e. with respect to the schema,
-this plugin is (marginally) incomplete.
+This plugin does not populate the MINIMUM_LEVEL, MAXIMUM_LEVEL, or NUMBER_OF_LEVELS fields.
 NOTES
 
 my $tablesAffected = <<TABLES_AFFECTED;
@@ -250,9 +248,6 @@ sub _retrieveOntologyTerm {
 
   unless ($ontologyTerm->retrieveFromDB()) {
       $ontologyTerm->setName("Not yet available");
-      $ontologyTerm->setMinimumLevel(1);
-      $ontologyTerm->setMaximumLevel(1);
-      $ontologyTerm->setNumberOfLevels(1);
     }
 
   # some of these may not actually yet be available, if we've been
