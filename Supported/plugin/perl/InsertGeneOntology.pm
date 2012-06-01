@@ -15,7 +15,8 @@ use GUS::Model::SRes::OntologySynonym;
 use Text::Balanced qw(extract_quotelike extract_delimited);
 
 my $ontologyTermTypeId;
-my $parenthoodOntologyTermId;
+
+my %transitiveClosure; # the smallest set of relationships that is a superset of the OBO file's edge set
 
 my $argsDeclaration =
   [
@@ -192,6 +193,9 @@ sub _processRelationship {
 
   my $parentTerm = $self->_retrieveOntologyTerm($parentId, undef, undef, undef,					  undef, undef, $extDbRlsId);
 
+  # add this link to the data structure we'll use later to find the transitive closure
+  $transitiveClosure{$childTerm->getOntologyTermId()}{$parentTerm->getOntologyTermId()} = 1;
+
   my $ontologyRelationshipType =
     $self->{_ontologyRelationshipTypeCache}->{$type} ||= do {
       my $goType = GUS::Model::SRes::OntologyRelationshipType->new({ name => $type });
@@ -204,36 +208,11 @@ sub _processRelationship {
   my $ontologyRelationship =
     GUS::Model::SRes::OntologyRelationship->new({
       subject_term_id               => $parentTerm->getOntologyTermId(),
-      predicate_term_id             => _getParenthoodOntologyTermId($extDbRlsId),
       object_term_id                => $childTerm->getOntologyTermId(),
       ontology_relationship_type_id => $ontologyRelationshipType->getOntologyRelationshipTypeId(),
     });
 
   $ontologyRelationship->submit();
-}
-
-sub _getParenthoodOntologyTermId {
-  my ($extDbRlsId) = @_;
-
-  if (!$parenthoodOntologyTermId) {
-    my $ontologyTermType = GUS::Model::SRes::OntologyTermType->new({
-      name                         => "Gene Ontology term",
-    });
-
-    my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
-      name                    => "is parent of",
-      ontology_term_type_id   => $ontologyTermType->getOntologyTermTypeId(),
-    });
-
-    unless ($ontologyTerm->retrieveFromDB()) {
-      $ontologyTerm->setOntologyTermTypeId(_getOntologyTermTypeId());
-      $ontologyTerm->submit();
-    }
-
-    $parenthoodOntologyTermId = $ontologyTerm->getOntologyTermId();
-  }
-
-  return($parenthoodOntologyTermId);
 }
 
 sub _retrieveOntologyTerm {
@@ -407,114 +386,62 @@ sub _updateAncestors {
 sub _calcTransitiveClosure {
 
   my ($self, $extDbRlsId) = @_;
+  my %augmentation; # just the added relationships, unlike %transitiveCloure, which contains both explicitly-given relationships and those added here
+
+  my $somethingWasAdded;
+  warn "calculating transitive closure\n";
+
+  # find transitive closure
+  do {
+    $somethingWasAdded = undef;
+
+    foreach my $key1 (sort keys %transitiveClosure)  {
+      foreach my $key2 (sort keys %{$transitiveClosure{$key1}}) {
+	foreach my $key3 (sort keys %{$transitiveClosure{$key2}}) {
+	  if (!$transitiveClosure{$key1}{$key3}) {
+	    $transitiveClosure{$key1}{$key3} = 1;
+	    $augmentation{$key1}{$key3} = 1;
+	    $somethingWasAdded = 1;
+	  }
+	}
+      }
+    }
+  } until !$somethingWasAdded;
+
+  # get an OntologyRelationshipType for closure links
+  my $type = "closure";
+  my $ontologyRelationshipType =
+    $self->{_ontologyRelationshipTypeCache}->{$type} ||= do {
+      my $goType = GUS::Model::SRes::OntologyRelationshipType->new({ name => $type });
+      unless ($goType->retrieveFromDB()) {
+	$goType->submit();
+      }
+      $goType;
+    };
+
+  my $counter;
+  # put transitive-closure links into database
+  foreach my $key1 (sort keys %augmentation)
+    {
+      foreach my $key2 (sort keys %{$augmentation{$key1}})
+        {
+	  my $ontologyRelationship =
+             GUS::Model::SRes::OntologyRelationship->new({
+               subject_term_id               => $key1,
+               object_term_id                => $key2,
+               ontology_relationship_type_id => $ontologyRelationshipType->getOntologyRelationshipTypeId(),
+             });
+
+	  $ontologyRelationship->submit();
+	  $self->undefPointerCache()
+	    if ($counter++) % 500;
+        }
+    }
+
+  warn "added $counter new relationships\n";
 
   my $dbh = $self->getQueryHandle();
-
-  $dbh->do("DROP TABLE ontology_tc");
-  $dbh->do(<<EOSQL);
-    CREATE TABLE ontology_tc (
-      child_id NUMBER(10,0) NOT NULL,
-      parent_id NUMBER(10,0) NOT NULL,
-      depth NUMBER(3,0) NOT NULL,
-      PRIMARY KEY (child_id, parent_id)
-    )
-EOSQL
-
-  $dbh->do(<<EOSQL);
-    INSERT INTO ontology_tc (child_id, parent_id, depth)
-    SELECT ontology_term_id,
-           ontology_term_id,
-           0
-    FROM   SRes.OntologyTerm
-    WHERE  external_database_release_id = $extDbRlsId
-EOSQL
-
-  $dbh->do(<<EOSQL);
-
-    INSERT INTO ontology_tc (child_id, parent_id, depth)
-    SELECT child_term_id,
-           parent_term_id,
-           1
-    FROM   SRes.OntologyRelationship gr,
-           SRes.OntologyTerm gtc,
-           SRes.OntologyTerm gtp
-    WHERE  gtc.ontology_term_id = gr.child_term_id
-      AND  gtp.ontology_term_id = gr.parent_term_id
-      AND  gtc.external_database_release_id = $extDbRlsId
-      AND  gtp.external_database_release_id = $extDbRlsId
-EOSQL
-
-  my $select = $dbh->prepare(<<EOSQL);
-    SELECT DISTINCT tc1.child_id,
-                    tc2.parent_id,
-                    tc1.depth + 1
-    FROM   ontology_tc tc1,
-           ontology_tc tc2
-    WHERE  tc1.parent_id = tc2.child_id
-      AND  tc2.depth = 1
-      AND  tc1.depth = ?
-      AND  NOT EXISTS (
-             SELECT 'x'
-             FROM ontology_tc tc3
-             WHERE tc3.child_id = tc1.child_id
-               AND tc3.parent_id = tc2.parent_id
-           )
-EOSQL
-
-  my $insert = $dbh->prepare(<<EOSQL);
-    INSERT INTO ontology_tc (child_id, parent_id, depth)
-               VALUES (    ?,      ?,      ?)
-EOSQL
-
-  my ($oldsize) =
-    $dbh->selectrow_array("SELECT COUNT(*) FROM ontology_tc");
-
-  my ($num) = $dbh->selectrow_array("SELECT COUNT(*) FROM SRes.OntologyTerm WHERE external_database_release_id = $extDbRlsId");
-  warn "GO Terms: $num\n";
-  ($num) = $dbh->selectrow_array("SELECT COUNT(*) FROM SRes.OntologyRelationship");
-  warn "Relationships: $num\n";
-  warn "starting size: $oldsize\n";
-
-  my $newsize = 0;
-  my $len = 1;
-
-  while (!$newsize || $oldsize < $newsize) {
-    $oldsize = $newsize || $oldsize;
-    $newsize = $oldsize;
-    $select->execute($len++);
-    while(my @data = $select->fetchrow_array) {
-      $insert->execute(@data);
-      $newsize++;
-    }
-    warn "Transitive closure (length $len): added @{[$newsize - $oldsize]} edges\n";
-  }
-
-  my $closureRelationshipType =
-      GUS::Model::SRes::OntologyRelationshipType->new({ name => 'closure' });
-
-  unless ($closureRelationshipType->retrieveFromDB()) {
-    $closureRelationshipType->submit();
-  }
-
-  my $closureRelationshipTypeId = $closureRelationshipType->getOntologyRelationshipTypeId();
-
-  my $sth = $dbh->prepare("SELECT child_id, parent_id, depth FROM ontology_tc");
-  $sth->execute();
-
-
-  while (my ($child_id, $parent_id, $depth) = $sth->fetchrow_array()) {
-    $self->undefPointerCache();
-    my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->new({
-      parent_term_id          => $parent_id,
-      child_term_id           => $child_id,
-      ontology_relationship_type_id => $closureRelationshipTypeId,
-    });
-    $ontologyRelationship->submit();
-  }
-
-  $dbh->do("DROP TABLE ontology_tc");
   $dbh->commit(); # ga no longer doing this by default
-
 }
 
 sub _deleteTermsAndRelationships {
@@ -523,45 +450,31 @@ sub _deleteTermsAndRelationships {
 
   my $dbh = $self->getQueryHandle();
 
-  my $ontologyTerms = $dbh->prepare(<<EOSQL);
+  $dbh->do(<<SQL) or die "deleting old records from OntologySynonym";
+    delete from sres.OntologySynonym
+    where ontology_term_id in (select ontology_term_id
+                               from sres.OntologyTerm
+                               where external_database_release_id = $extDbRlsId)
+SQL
 
-  SELECT ontology_term_id
-  FROM   SRes.OntologyTerm
-  WHERE  external_database_release_id = ?
+  $dbh->do(<<SQL) or die "deleting old records from ";
+    delete from sres.OntologyRelationship
+    where subject_term_id in (select ontology_term_id
+                              from sres.OntologyTerm
+                              where external_database_release_id = $extDbRlsId)
+                  or predicate_term_id in (select ontology_term_id
+                              from sres.OntologyTerm
+                              where external_database_release_id = $extDbRlsId)
+                  or object_term_id in (select ontology_term_id
+                              from sres.OntologyTerm
+                              where external_database_release_id = $extDbRlsId)
+SQL
 
-EOSQL
+  $dbh->do(<<SQL) or die "deleting old records from ";
+    delete  from sres.OntologyTerm
+    where external_database_release_id = $extDbRlsId
+SQL
 
-  my $deleteRelationships = $dbh->prepare(<<EOSQL);
-
-  DELETE
-  FROM   SRes.OntologyRelationship
-  WHERE  parent_term_id = ?
-     OR  child_term_id = ?
-
-EOSQL
-
-  my $deleteSynonyms = $dbh->prepare(<<EOSQL);
-
-  DELETE
-  FROM   SRes.OntologySynonym
-  WHERE  ontology_term_id = ?
-
-EOSQL
-
-  my $deleteTerm = $dbh->prepare(<<EOSQL);
-
-  DELETE
-  FROM   SRes.OntologyTerm
-  WHERE  ontology_term_id = ?
-
-EOSQL
-
-  $ontologyTerms->execute($extDbRlsId);
-  while (my ($ontologyTermId) = $ontologyTerms->fetchrow_array()) {
-    $deleteRelationships->execute($ontologyTermId, $ontologyTermId);
-    $deleteSynonyms->execute($ontologyTermId);
-    $deleteTerm->execute($ontologyTermId);
-  }
 }
 
 sub _parseCvsRevision {
