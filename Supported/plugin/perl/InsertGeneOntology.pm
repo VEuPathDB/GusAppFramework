@@ -16,7 +16,7 @@ use Text::Balanced qw(extract_quotelike extract_delimited);
 
 my $ontologyTermTypeId;
 
-my %transitiveClosure; # the smallest set of relationships that is a superset of the OBO file's edge set
+my %transitiveClosure; # the smallest superset of the OBO file's relationship set that is a transitive
 
 my $argsDeclaration =
   [
@@ -207,8 +207,8 @@ sub _processRelationship {
 
   my $ontologyRelationship =
     GUS::Model::SRes::OntologyRelationship->new({
-      subject_term_id               => $parentTerm->getOntologyTermId(),
-      object_term_id                => $childTerm->getOntologyTermId(),
+      subject_term_id               => $childTerm->getOntologyTermId(),
+      object_term_id                => $parentTerm->getOntologyTermId(),
       ontology_relationship_type_id => $ontologyRelationshipType->getOntologyRelationshipTypeId(),
     });
 
@@ -393,14 +393,17 @@ sub _calcTransitiveClosure {
 
   # find transitive closure
   do {
+    warn "iterating through big loop\n";
     $somethingWasAdded = undef;
 
     foreach my $key1 (sort keys %transitiveClosure)  {
       foreach my $key2 (sort keys %{$transitiveClosure{$key1}}) {
 	foreach my $key3 (sort keys %{$transitiveClosure{$key2}}) {
+	  warn "considering \"$key1\"->\"$key2\"->\"$key3\"\n";
 	  if (!$transitiveClosure{$key1}{$key3}) {
 	    $transitiveClosure{$key1}{$key3} = 1;
 	    $augmentation{$key1}{$key3} = 1;
+	    warn "adding \"$key1\"->\"$key3\"\n";
 	    $somethingWasAdded = 1;
 	  }
 	}
