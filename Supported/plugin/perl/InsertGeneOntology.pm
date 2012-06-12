@@ -16,6 +16,7 @@ use Text::Balanced qw(extract_quotelike extract_delimited);
 
 my $ontologyTermTypeId;
 
+my %idSet;
 my %transitiveClosure; # the smallest superset of the OBO file's relationship set that is a transitive
 
 my $argsDeclaration =
@@ -171,6 +172,8 @@ sub _processBlock {
   my ($id, $name, $namespace, $def, $comment,
       $synonyms, $relationships,
       $isObsolete) = $self->_parseBlock($block);
+
+  $idSet{$id} = 1;
 
   my $ontologyTerm = $self->_retrieveOntologyTerm($id, $name, $def, $comment,
 				      $synonyms, $isObsolete,
@@ -410,6 +413,13 @@ sub _calcTransitiveClosure {
       }
     }
   } until !$somethingWasAdded;
+
+  # add links as needed to make relation reflexive, so each term is an ancestor of itself.
+  # this simplifies the use of OntologyRelationship in queries. (and maintains compatibility
+  # with GUS 3.6)
+  foreach my $id (keys %idSet) {
+    $augmentation{$id}{$id} = 1;
+  }
 
   # get an OntologyRelationshipType for closure links
   my $type = "closure";
