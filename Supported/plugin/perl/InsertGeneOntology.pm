@@ -172,12 +172,11 @@ sub _processBlock {
       $synonyms, $relationships,
       $isObsolete) = $self->_parseBlock($block);
 
-  $idSet{$id} = 1;
-
   my $ontologyTerm = $self->_retrieveOntologyTerm($id, $name, $def, $comment,
 				      $synonyms, $isObsolete,
 				      $extDbRlsId);
   $ancestors->{$id} = $namespace;
+  $idSet{$ontologyTerm->getOntologyTermId()} = 1;
 
   for my $relationship (@$relationships) {
     $self->_processRelationship($ontologyTerm, $relationship, $extDbRlsId);
@@ -412,11 +411,9 @@ sub _calcTransitiveClosure {
     foreach my $key1 (sort keys %transitiveClosure)  {
       foreach my $key2 (sort keys %{$transitiveClosure{$key1}}) {
 	foreach my $key3 (sort keys %{$transitiveClosure{$key2}}) {
-	  warn "considering \"$key1\"->\"$key2\"->\"$key3\"\n";
 	  if (!$transitiveClosure{$key1}{$key3}) {
 	    $transitiveClosure{$key1}{$key3} = 1;
 	    $augmentation{$key1}{$key3} = 1;
-	    warn "adding \"$key1\"->\"$key3\"\n";
 	    $somethingWasAdded = 1;
 	  }
 	}
@@ -427,8 +424,10 @@ sub _calcTransitiveClosure {
   # add links as needed to make relation reflexive, so each term is an ancestor of itself.
   # this simplifies the use of OntologyRelationship in queries. (and maintains compatibility
   # with GUS 3.6)
+  warn "adding self-links\n";
   foreach my $id (keys %idSet) {
-    $augmentation{$id}{$id} = 1;
+    $augmentation{$id}{$id} = 1
+      unless ($transitiveClosure{$id}{$id});
   }
 
   # get a predicate term for closure links
