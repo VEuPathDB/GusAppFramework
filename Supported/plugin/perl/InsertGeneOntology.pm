@@ -9,7 +9,6 @@ use GUS::PluginMgr::Plugin;
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::SRes::OntologyTermType;
 use GUS::Model::SRes::OntologyRelationship;
-use GUS::Model::SRes::OntologyRelationshipType;
 use GUS::Model::SRes::OntologySynonym;
 
 use Text::Balanced qw(extract_quotelike extract_delimited);
@@ -63,7 +62,7 @@ This plugin does not populate the MINIMUM_LEVEL, MAXIMUM_LEVEL, or NUMBER_OF_LEV
 NOTES
 
 my $tablesAffected = <<TABLES_AFFECTED;
-SRes.OntologyTerm, SRes.OntologyTermType, SRes.OntologyRelationship, SRes.OntologyRelationshipType, SRes.OntologySynonym
+SRes.OntologyTerm, SRes.OntologyTermType, SRes.OntologyRelationship, SRes.OntologySynonym
 TABLES_AFFECTED
 
 my $tablesDependedOn = <<TABLES_DEPENDED_ON;
@@ -199,23 +198,32 @@ sub _processRelationship {
   # add this link to the data structure we'll use later to find the transitive closure
   $transitiveClosure{$childTerm->getOntologyTermId()}{$parentTerm->getOntologyTermId()} = 1;
 
-  my $ontologyRelationshipType =
-    $self->{_ontologyRelationshipTypeCache}->{$type} ||= do {
-      my $goType = GUS::Model::SRes::OntologyRelationshipType->new({ name => $type });
-      unless ($goType->retrieveFromDB()) {
-	$goType->submit();
-      }
-      $goType;
-    };
+  my $predicate = $self->_retrieveRelationshipPredicate($type, $extDbRlsId);
 
   my $ontologyRelationship =
     GUS::Model::SRes::OntologyRelationship->new({
-      subject_term_id               => $childTerm->getOntologyTermId(),
-      object_term_id                => $parentTerm->getOntologyTermId(),
-      ontology_relationship_type_id => $ontologyRelationshipType->getOntologyRelationshipTypeId(),
+      subject_term_id   => $childTerm->getOntologyTermId(),
+      predicate_term_id => $predicate->getOntologyTermId(),
+      object_term_id    => $parentTerm->getOntologyTermId(),
     });
 
   $ontologyRelationship->submit();
+}
+
+sub _retrieveRelationshipPredicate {
+
+  my ($self, $type, $extDbRlsId) = @_;
+
+  my $predicateTerm = GUS::Model::SRes::OntologyTerm->new({
+    name                         => $type,
+    ontology_term_type_id        => $self->_getOntologyTermTypeId('relationship'),
+    external_database_release_id => $extDbRlsId,
+  });
+
+  $predicateTerm->submit()
+    unless ($predicateTerm->retrieveFromDB());
+
+  return $predicateTerm;
 }
 
 sub _retrieveOntologyTerm {
@@ -224,7 +232,7 @@ sub _retrieveOntologyTerm {
 
   my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({
     source_id                    => $id,
-    ontology_term_type_id        => _getOntologyTermTypeId(),
+    ontology_term_type_id        => $self->_getOntologyTermTypeId('class'),
     external_database_release_id => $extDbRlsId,
   });
 
@@ -249,9 +257,11 @@ sub _retrieveOntologyTerm {
 
 sub _getOntologyTermTypeId {
 
+  my ($self, $name) = @_;
+
   if (!$ontologyTermTypeId) {
     my $ontologyTermType = GUS::Model::SRes::OntologyTermType->new({
-      name                         => "Gene Ontology term",
+      name                         => $name,
     });
 
     $ontologyTermType->submit()
@@ -421,16 +431,8 @@ sub _calcTransitiveClosure {
     $augmentation{$id}{$id} = 1;
   }
 
-  # get an OntologyRelationshipType for closure links
-  my $type = "closure";
-  my $ontologyRelationshipType =
-    $self->{_ontologyRelationshipTypeCache}->{$type} ||= do {
-      my $goType = GUS::Model::SRes::OntologyRelationshipType->new({ name => $type });
-      unless ($goType->retrieveFromDB()) {
-	$goType->submit();
-      }
-      $goType;
-    };
+  # get a predicate term for closure links
+  my $predicate = $self->_retrieveRelationshipPredicate("closure", $extDbRlsId);
 
   my $counter;
   # put transitive-closure links into database
@@ -440,9 +442,9 @@ sub _calcTransitiveClosure {
         {
 	  my $ontologyRelationship =
              GUS::Model::SRes::OntologyRelationship->new({
-               subject_term_id               => $key1,
-               object_term_id                => $key2,
-               ontology_relationship_type_id => $ontologyRelationshipType->getOntologyRelationshipTypeId(),
+               subject_term_id   => $key1,
+               predicate_term_id => $predicate->getOntologyTermId(),
+               object_term_id    => $key2,
              });
 
 	  $ontologyRelationship->submit();
@@ -513,7 +515,6 @@ sub undoTables {
   my ($self) = @_;
 
   return ('SRes.OntologyRelationship',
-	  'SRes.OntologyRelationshipType',
 	  'SRes.OntologySynonym',
 	  'SRes.OntologyTerm',
 	 );
