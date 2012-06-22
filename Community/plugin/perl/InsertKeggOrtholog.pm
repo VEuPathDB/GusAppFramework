@@ -181,37 +181,34 @@ sub getKeggTaxonCodes {
 
 sub parseKeggOrthologs {
   my ($self, $keggOrthologFile, @taxonCodes) = @_;
-
+  
   my $fh = FileHandle->new;
   $fh->open("<" . $keggOrthologFile) || die "Unable to open ko file: " . $keggOrthologFile . "\n";
   
   my $ko2geneMap = undef;
   my $entryCount = 0;
   my $entry = undef;
-
+  
+  $self->log("Parsing $keggOrthologFile\n");
   while(<$fh>) {
     chomp;
     s/\s{2,}/\t/g; # substitute one or more white spaces with tabs
     my @row = split /\t/;
-
+    
     if ($row[0] =~ /ENTRY/) {
       $entry = $row[1]; 
       $entryCount++;
-
-      if ($entryCount % 1000 == 0) {
-	$self->log("Parsing $entryCount-th ortholog.");
-	$self->undefPointerCache();
-      }
     }
     
     foreach my $taxon (@taxonCodes) {
       $ko2geneMap->{$entry}->{$taxon} = parseGeneList($row[1]) if ($row[1] =~ /$taxon/);
     }
-
-   
- 
+    
   } # end iterate over file
 
+  $self->log("Done Parsing $keggOrthologFile\n");
+  $self->undefPointerCache();
+  
   $fh->close();
 
   return $ko2geneMap;
@@ -248,6 +245,9 @@ sub insertKeggOrtholog {
   foreach my $koid (keys %$ortholog2entrezGeneMap) {
 
     my $family = GUS::Model::DoTS::Family->new({external_database_release_id => $extDbRls, source_id => $koid});
+    if (!$family->retrieveFromDB()) {
+      $familyCount++;
+    }
 
     my $orthologs = $ortholog2entrezGeneMap->{$koid};
 
@@ -256,13 +256,14 @@ sub insertKeggOrtholog {
     foreach my $taxon (@taxa) {
       my @entrezGenes = @{$orthologs->{$taxon}};
 
- 
       foreach my $geneId (@entrezGenes) {
+	if ($familyGeneCount % 1000 == 0) {
+	  $self->log("Inserted $familyGeneCount-th KEGG ortholog.");
+	  $self->undefPointerCache();
+	}
+
 	my $gene = GUS::Model::DoTS::Gene->new({external_database_release_id => $taxonCodes->{$taxon}, source_id => $geneId});
 	if ($gene->retrieveFromDB()) {
-	  if (!$family->retrieveFromDB()) {
-	    $familyCount++;
-	  }
 	  my $familyGene = GUS::Model::DoTS::FamilyGene->new({});
 	  $familyGeneCount++;
 	  $familyGene->setParent($family);
@@ -272,7 +273,7 @@ sub insertKeggOrtholog {
       }
     }
   }
-  
+
   $resultDescrip .= "Entered $familyCount rows in DoTS.Family and $familyGeneCount rows in DoTS.FamilyGene";
   return ($resultDescrip);
 }
