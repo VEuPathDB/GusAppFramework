@@ -1,16 +1,16 @@
 #############################################################################
-##                    InsertGene2GoNoDbRef.pm
+##                    InsertGene2GoGene.pm
 ##
 ## Plug_in to insert the gene2go file from Entrez Gene into
 ## DoTS.GOAssociation, DoTS.GOAssociationInstance, and
 ## DoTS.GOAssocInstEvidCode tables
-## $Id: InsertGene2GoNoDbRef.pm  $
+## $Id: InsertGene2GoGene.pm  $
 ##
 ## created July 25, 2008  by Elisabetta Manduchi, modifying an older
 ## plugin by Jennifer Dommer
 #############################################################################
 
-package GUS::Community::Plugin::InsertGene2GoNoDbRef;
+package GUS::Community::Plugin::InsertGene2GoGene;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 
