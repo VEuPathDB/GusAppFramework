@@ -1197,8 +1197,10 @@ sub getTaxonId {
       # for exotic taxa, common name is more likely to match in NCBI
       # Taxonomy than whatever BioPerl guesses the genus/species names
       # to be:
-      $sciName = $species->common_name();
-    } else {
+      #$sciName = $species->common_name();
+      $ncbiTaxonId = $species->ncbi_taxid();
+    #} else {
+    } elsif (!$ncbiTaxonId) {
       my $defaultOrganism = $self->getArg('defaultOrganism');
       if ($defaultOrganism =~ /^\d+$/) {
 	$ncbiTaxonId = $defaultOrganism;
