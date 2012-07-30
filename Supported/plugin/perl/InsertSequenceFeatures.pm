@@ -1198,9 +1198,17 @@ sub getTaxonId {
       # Taxonomy than whatever BioPerl guesses the genus/species names
       # to be:
       #$sciName = $species->common_name();
-      $ncbiTaxonId = $species->ncbi_taxid();
-    #} else {
-    } elsif (!$ncbiTaxonId) {
+      my $tempSciName = $species->common_name();
+      $tempSciName =~ s/\'//g;
+my $sql = <<SQL;
+                select t.ncbi_tax_id from sres.taxon t, sres.taxonname tn 
+                where t.taxon_id=tn.taxon_id and tn.name like '$tempSciName' 
+SQL
+      my $dbh = $self->getQueryHandle();
+      my $stmt = $dbh->prepareAndExecute($sql);
+      ($ncbiTaxonId) = $stmt->fetchrow_array();
+    }
+    if (!$ncbiTaxonId && !$sciName) {
       my $defaultOrganism = $self->getArg('defaultOrganism');
       if ($defaultOrganism =~ /^\d+$/) {
 	$ncbiTaxonId = $defaultOrganism;
