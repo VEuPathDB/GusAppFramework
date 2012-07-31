@@ -1197,8 +1197,18 @@ sub getTaxonId {
       # for exotic taxa, common name is more likely to match in NCBI
       # Taxonomy than whatever BioPerl guesses the genus/species names
       # to be:
-      $sciName = $species->common_name();
-    } else {
+      #$sciName = $species->common_name();
+      my $tempSciName = $species->common_name();
+      $tempSciName =~ s/\'//g;
+my $sql = <<SQL;
+                select t.ncbi_tax_id from sres.taxon t, sres.taxonname tn 
+                where t.taxon_id=tn.taxon_id and tn.name like '$tempSciName' 
+SQL
+      my $dbh = $self->getQueryHandle();
+      my $stmt = $dbh->prepareAndExecute($sql);
+      ($ncbiTaxonId) = $stmt->fetchrow_array();
+    }
+    if (!$ncbiTaxonId && !$sciName) {
       my $defaultOrganism = $self->getArg('defaultOrganism');
       if ($defaultOrganism =~ /^\d+$/) {
 	$ncbiTaxonId = $defaultOrganism;
