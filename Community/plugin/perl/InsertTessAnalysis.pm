@@ -225,7 +225,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.6,
-		     cvsRevision => '$Revision: 8463 $',
+		     cvsRevision => '$Revision: 8979 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -749,7 +749,7 @@ sub runSqlLdr {
     unlink($configFile);
     unlink($dataFile . ".new");
   }
-  $resultDescrip = "Entered $numResults rows in TESS.SequenceFeature.";
+  $resultDescrip = "Check $logFile for the results of this run.";
   return $resultDescrip;
 }
 
