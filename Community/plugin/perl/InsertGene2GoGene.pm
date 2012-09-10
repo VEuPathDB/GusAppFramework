@@ -17,13 +17,13 @@ package GUS::Community::Plugin::InsertGene2GoGene;
 use strict;
 
 use GUS::PluginMgr::Plugin;
-use GUS::Model::SRes::GOTerm;
+use GUS::Model::SRes::OntologyTerm;
+use GUS::Model::SRes::OntologyTermType;
 use GUS::Model::DoTS::Gene;
 use GUS::Model::DoTS::GOAssociation;
 use GUS::Model::DoTS::GOAssociationInstance;
 use GUS::Model::DoTS::GOAssociationInstanceLOE;
 use GUS::Model::DoTS::GOAssocInstEvidCode;
-use GUS::Model::SRes::GOEvidenceCode;
 
 
 my $purposeBrief = <<PURPOSEBRIEF;
@@ -34,16 +34,16 @@ my $purpose = <<PLUGIN_PURPOSE;
 plug_in to load the data from the gene2go file downloaded from Entrez Gene into the DoTS.GOAssociation, DoTS.GOAssociationInstance, and DoTS.GOAssocInstEvidCode tables.
 PLUGIN_PURPOSE
 
-my $tablesAffected = [['GUS::Model::DoTS::GOAssociation', 'This will be used to map entries in DoTS::Gene to GO Terms in SRes::GOTerm'],['GUS::Model::DoTS::GOAssociationInstance', 'The new GOAssociation entries will be mapped to an loe and the current external database release ID'],['GUS::Model::DoTS::GOAssocInstEvidCode', 'Mappings from the SRes::GOEvidenceCode table to the new entries in the DoTS::GOAssociationInstance table will be done here'],['GUS::Model::SRes::GOEvidenceCode','if any of the evidence codes in gene2go are not in this table, they will be inserted']];
+my $tablesAffected = [['GUS::Model::DoTS::GOAssociation', 'This will be used to map entries in DoTS::Gene to GO Terms in SRes::OntologyTerm'],['GUS::Model::DoTS::GOAssociationInstance', 'The new GOAssociation entries will be mapped to an loe and the current external database release ID'],['GUS::Model::DoTS::GOAssocInstEvidCode', 'Mappings from GO evidence codes in the SRes::OntologyTerm table to the new entries in the DoTS::GOAssociationInstance table will be done here'],['GUS::Model::SRes::OntologyTerm','if any of the evidence codes in gene2go are not in this table, they will be inserted']];
 
-my $tablesDependedOn = [['GUS::Model::DoTS::Gene','We will link all entries for a given external database release id in Gene to a GO term using DoTS::GOAssociation'],['GUS::Model::SRes::ExternalDatabaseRelease', 'The new database release for the current gene2go file must have been loaded into SRes::ExternalDatabaseRelease prior to loading the file into the database.'],['GUS::Model::SRes::GOTerm','All of the GO terms in the gene2go file must exist in this table prior to inserting the file'],['GUS::Model::SRes::GOEvidenceCode','All evidence codes in gene2go must exist in this table or they will be inserted']];
+my $tablesDependedOn = [['GUS::Model::DoTS::Gene','We will link all entries for a given external database release id in Gene to a GO term using DoTS::GOAssociation'],['GUS::Model::SRes::ExternalDatabaseRelease', 'The new database release for the current gene2go file must have been loaded into SRes::ExternalDatabaseRelease prior to loading the file into the database.'],['GUS::Model::SRes::OntologyTerm','GO terms which do not exist in this table cannot be linked to genes, and will be ignored if found in the gene2go file. Also, evidence codes in gene2go which do not already exist in this table will be inserted']];
 
 my $howToRestart = <<PLUGIN_RESTART;
 There is no restart method for this plugin.  All entries are checked before they are loaded into the database to prevent duplicate entries.
 PLUGIN_RESTART
 
 my $failureCases = <<PLUGIN_FAILURE_CASES;
-If there are GO terms in the gene2go file that are not in SRes.GOTerm the plugin will fail and request that you load the GO terms into SRes.GOTerm.  This is a deliberate failure of the plugin and not bug.
+If there are GO terms in the gene2go file that are not in SRes.OntologyTerm the plugin will skip them with a warning.
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
@@ -66,8 +66,20 @@ my $argsDeclaration =
             reqd => 1,
             isList => 0
             }),
- stringArg({name => 'entrezGeneExtDbRlsSpec',
-            descr => "The ExternalDBRelease specifier for the Taxon.gene_info file to which GO mapping should be linkd. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.res.externaldatabase.",
+#  stringArg({name => 'entrezGeneExtDbRlsSpec',
+#             descr => "The ExternalDBRelease specifier for the Taxon.gene_info file to which GO mapping should be linked. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.res.externaldatabase.",
+#             constraintFunc => undef,
+#             reqd => 1,
+#             isList => 0
+#             }),
+ stringArg({name => 'goExtDbRlsSpec',
+            descr => "The ExternalDBRelease specifier for the Gene Ontology external database. Must match a name in SRes::ExternalDatabase. The named ExternalDatabase record must have a corresponding ExternalDatabaseRelease record.",
+            constraintFunc => undef,
+            reqd => 1,
+            isList => 0
+            }),
+ stringArg({name => 'goEvidCodeExtDbName',
+            descr => "The name of the external database for GO evidence codes. Must match a name in SRes::ExternalDatabase. The named ExternalDatabase record must have a corresponding ExternalDatabaseRelease record.",
             constraintFunc => undef,
             reqd => 1,
             isList => 0
@@ -100,7 +112,7 @@ sub new {
   my $self = {};
   bless($self,$class);
 
-  $self->initialize({requiredDbVersion => 3.6,
+  $self->initialize({requiredDbVersion => 4.0,
 		     cvsRevision => '$Revision$',
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
@@ -120,9 +132,7 @@ sub run{
 
     my $goHash = $self->makeGoHash();
 
-#    if($self->checkExistGOTerms($goHash)){
-	$msg = $self->loadData($goHash);
-#    }
+    $msg = $self->loadData($goHash);
 
     return $msg;
 }
@@ -162,8 +172,6 @@ sub makeGoHash{
     }
     close(GO);
 
-#    $self->checkExistEvidCodes(\%evidHash);
-
     return (\%goHash);
 
 }
@@ -200,52 +208,6 @@ sub getTaxonId {
 
 
 # --------------------------------------------------------------------
-# checkExistEvidCodes
-# checks to see if all evidence codes in gene2go are in the table
-# SRes.GOEvidenceCode
-# returns true if they are or dies with an error message if they aren't
-# --------------------------------------------------------------------
-
-sub checkExistEvidCodes{
-    my ($self, $evidHash) = @_;
-
-    foreach my $evidCode (keys %$evidHash){
-
-	my $sql = "select count(*) from SRes.GOEvidenceCode where name = '$evidCode'";
-	my $dbh = $self->getDb()->getDbHandle();
-	my $st = $dbh->prepareAndExecute($sql);
-	my $count = $st->fetchrow_array();
-
-	die "The evidence code $evidCode is not in the database.  Please load it and then rerun this plugin.\n" unless ($count > 0);
-    }
-
-    return 1;
-}
-
-# --------------------------------------------------------------------
-# checkExistGOTerms
-# checks to see if all GO IDs in gene2go are in the table
-# SRes.GOTerm
-# returns true if they are or dies with an error message if they aren't
-# --------------------------------------------------------------------
-
-sub checkExistGOTerms{
-    my ($self, $goHash) = @_;
-
-    foreach my $go_id (keys %$goHash){
-
-	my $sql = "select count(*) from SRes.GOTerm where go_id = '$go_id'";
-	my $dbh = $self->getDb()->getDbHandle();
-	my $st = $dbh->prepareAndExecute($sql);
-	my $count = $st->fetchrow_array();
-
-	$self->log("Skipping GO ID $go_id ... not in DB") unless ($count > 0);
-    }
-
-    return 1;
-}
-
-# --------------------------------------------------------------------
 # loadData
 # loads the data from the gene2go file into the appropriate tables in
 # the database
@@ -259,14 +221,15 @@ sub loadData{
     my $skippedCount = 0;
     my $presentCount = 0;
 
-    my $entrezExtDbRelId = $self->getExtDbRlsId($self->getArg('entrezGeneExtDbRlsSpec'));
-    my $goExtDbRelId = $self->getExtDbRlsId($self->getArg('goAssociationExtDbRlsSpec'));
-    
+    # my $entrezExtDbRelId = $self->getExtDbRlsId($self->getArg('entrezGeneExtDbRlsSpec'));
+    my $goAssocExtDbRelId = $self->getExtDbRlsId($self->getArg('goAssociationExtDbRlsSpec'));
+    my $goExtDbRelId = $self->getExtDbRlsId($self->getArg('goExtDbRlsSpec'));
+
     foreach my $goId (keys %$goHash){
 	$self->log("Loading entries for GO ID $goId into the database.");
 	foreach my $entrezGeneId (keys %{$goHash->{$goId}}){
-	
-	    my $newGOAssoc = $self->makeGOAssocEntry($goId, $entrezGeneId, $entrezExtDbRelId, $tableId);
+
+	    my $newGOAssoc = $self->makeGOAssocEntry($goId, $entrezGeneId, $goExtDbRelId, $tableId);
 	    unless($newGOAssoc){
 		$skippedCount ++;
 		$self->undefPointerCache();
@@ -280,21 +243,21 @@ sub loadData{
 		#next;
 	    }
 
-	    my $newGOAssocInst = $self->makeGOAssocInstEntry($loeId, $goExtDbRelId);
+	    my $newGOAssocInst = $self->makeGOAssocInstEntry($loeId, $goAssocExtDbRelId);
 	    my %seen = ();
 	    foreach my $evidCode (@{$goHash->{$goId}->{$entrezGeneId}}){
 		if($evidCode) {
 		    unless($seen{$evidCode}){
 			$seen{$evidCode} = 1;
-						
+
 			my $newAssocEvidCode = $self->makeAssocInstEvidCode($evidCode);
 			$$newGOAssocInst->addChild($$newAssocEvidCode);
-			
+
 #			$self->undefPointerCache();
 		    }
 		}
 	    }
-	    
+
 	    $$newGOAssoc->addChild($$newGOAssocInst);
 	    $$newGOAssoc->submit();
 	    $self->undefPointerCache();
@@ -304,7 +267,7 @@ sub loadData{
               $self->log("Processed $entriesCount entries.  Skipped $skippedCount");
             }
 	}#eo inner foreach
-	   
+
     }#eo outer foreach
 
     my $msg = "$entriesCount entries added to the database, $skippedCount skipped because they were not in DoTS.Gene, $presentCount skipped because they were already in the database for this release.\n";
@@ -316,7 +279,7 @@ sub loadData{
 # makeGOAssocEntry
 # fetches the primary key of the row in DoTS.Gene housing
 # the given gene for the specified database release of
-# Taxon.gene_info, and the GOTerm ID from SRes.GOTerm of the
+# Taxon.gene_info, and the primary key from SRes.OntologyTerm record of the
 # term associated with the gene id in the gene2go file.
 # It then creates a new GOAssociation entry and returns it.
 # It will return a 0 if an entry for the gene does not already exist in
@@ -324,11 +287,15 @@ sub loadData{
 # --------------------------------------------------------------------
 
 sub makeGOAssocEntry{
-    my ($self, $goId, $entrezGeneId, $entrezExtDbRelId, $tableId) = @_;
-
-    my $sql = "select max(go_term_id) from SRes.GOTerm where go_id = '$goId'";
+    my ($self, $goId, $entrezGeneId, $goExtDbRelId, $tableId) = @_;
+print "makeGOAssocEntry($self, $goId, $entrezGeneId, $goExtDbRelId, $tableId)\n";
     my $dbh = $self->getDb()->getDbHandle();
-    my $st = $dbh->prepareAndExecute($sql);
+    my $st = $dbh->prepareAndExecute(<<SQL);
+                select max(ontology_term_id)
+                from sres.OntologyTerm ot, sres.ExternalDatabaseRelease edr, sres.ExternalDatabase ed
+                where ot.source_id = '$goId'
+                  and ot.external_database_release_id = $goExtDbRelId
+SQL
     my $goTermId = $st->fetchrow_array();
 
     unless($goTermId) {
@@ -337,8 +304,8 @@ sub makeGOAssocEntry{
     }
 
     my $gene = GUS::Model::DoTS::Gene->new({
-	'source_id' => $entrezGeneId,
-	'external_database_release_id' => $entrezExtDbRelId
+	'gene_id' => $entrezGeneId,
+	# 'external_database_release_id' => $entrezExtDbRelId
 	});
     $gene->retrieveFromDB();
     my $geneId;
@@ -366,11 +333,11 @@ sub makeGOAssocEntry{
 # --------------------------------------------------------------------
 
 sub makeGOAssocInstEntry{
-    my ($self, $loeId, $goExtDbRelId) = @_;
+    my ($self, $loeId, $goAssocExtDbRelId) = @_;
 
     my $newGOAssocInst = GUS::Model::DoTS::GOAssociationInstance->new({
 		'go_assoc_inst_loe_id'=> $loeId,
-		'external_database_release_id' => $goExtDbRelId,
+		'external_database_release_id' => $goAssocExtDbRelId,
 		'is_primary' => 0,
 		'is_deprecated' => 0,
 		'review_status_id' => 0
@@ -418,14 +385,17 @@ sub getTableId{
 
 # --------------------------------------------------------------------
 # makeAssocInstEvidCode
-# gets the go_evidence_code_id from SRes.GOEvidenceCode and creates
-# and returns a new DoTS.GOAssocInstEvidCode object
+# gets the primary key for the SRes.OntologyTerm record for the given GO evidence code,
+# and creates and returns a new DoTS.GOAssocInstEvidCode object
 # --------------------------------------------------------------------
 
 sub makeAssocInstEvidCode{
     my ($self, $evidence) = @_;
 
-    my $evidCode = GUS::Model::SRes::GOEvidenceCode->new({'name'=> $evidence});
+    my $termType = GUS::Model::SRes::OntologyTermType->new({'name'=> 'class'});
+    $termType->retrieveFromDB();
+
+    my $evidCode = GUS::Model::SRes::OntologyTerm->new({'name'=> $evidence, 'ontology_term_type_id' => $termType->getId()});
     $evidCode->retrieveFromDB();
     my $evidCodeId = $evidCode->getId();
 
@@ -451,10 +421,9 @@ sub makeAssocInstEvidCode{
 
 sub undoTables {
     my ($self) = @_;
-    
-    return ('SRes.GOEvidenceCode', 'DoTS.GOAssocInstEvidCode', 'DoTS.GOAssociationInstanceLOE', 'DoTS.GOAssociationInstance', 'DoTS.GOAssociation');
-}
 
+    return ('SRes.OntologyTerm', 'DoTS.GOAssocInstEvidCode', 'DoTS.GOAssociationInstanceLOE', 'DoTS.GOAssociationInstance', 'DoTS.GOAssociation');
+}
 
 
 1;
