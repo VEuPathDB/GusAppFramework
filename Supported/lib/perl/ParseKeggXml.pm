@@ -86,24 +86,25 @@ sub parseKGML {
   foreach my $entry (@nodes) {
     my $type = $entry->getAttribute('type');
  
-    my $id = $entry->getAttribute('id');
+    my $id = $entry->getAttribute('name');
 
-    $pathway->{ENTRY}->{$id}->{TYPE} = $type;
-    $pathway->{ENTRY}->{$id}->{NAME} = $entry->getAttribute('name');
-    $pathway->{ENTRY}->{$id}->{REACTION} = $entry->getAttribute('reaction');
-    $pathway->{ENTRY}->{$id}->{LINK} = $entry->getAttribute('link');
+    $pathway->{NODES}->{$id}->{TYPE} = $type;
+    $pathway->{NODES}->{$id}->{ENTRY_ID} = $entry->getAttribute('id');
+    $pathway->{NODES}->{$id}->{REACTION} = $entry->getAttribute('reaction');
+    $pathway->{NODES}->{$id}->{LINK} = $entry->getAttribute('link');
 
     my @graphicsNode = $entry->getChildrenByTagName('graphics');
 
     foreach my $gn (@graphicsNode) {
      my $gnName = $gn->getAttribute('name');
-     $pathway->{ENTRY}->{$id}->{GRAPHICS}->{$gnName}->{FGCOLOR} = $gn->getAttribute('fgcolor');
-     $pathway->{ENTRY}->{$id}->{GRAPHICS}->{$gnName}->{BGCOLOR} = $gn->getAttribute('bgcolor');
-     $pathway->{ENTRY}->{$id}->{GRAPHICS}->{$gnName}->{TYPE} = $gn->getAttribute('type');
-     $pathway->{ENTRY}->{$id}->{GRAPHICS}->{$gnName}->{X} = $gn->getAttribute('x');
-     $pathway->{ENTRY}->{$id}->{GRAPHICS}->{$gnName}->{Y} = $gn->getAttribute('y');
-     $pathway->{ENTRY}->{$id}->{GRAPHICS}->{$gnName}->{WIDTH} = $gn->getAttribute('width');
-     $pathway->{ENTRY}->{$id}->{GRAPHICS}->{$gnName}->{HEIGHT} = $gn->getAttribute('height');
+     $pathway->{NODES}->{$id}->{GRAPHICS}->{NAME} = $gn->getAttribute('name');
+     $pathway->{NODES}->{$id}->{GRAPHICS}->{FGCOLOR} = $gn->getAttribute('fgcolor');
+     $pathway->{NODES}->{$id}->{GRAPHICS}->{BGCOLOR} = $gn->getAttribute('bgcolor');
+     $pathway->{NODES}->{$id}->{GRAPHICS}->{TYPE} = $gn->getAttribute('type');
+     $pathway->{NODES}->{$id}->{GRAPHICS}->{X} = $gn->getAttribute('x');
+     $pathway->{NODES}->{$id}->{GRAPHICS}->{Y} = $gn->getAttribute('y');
+     $pathway->{NODES}->{$id}->{GRAPHICS}->{WIDTH} = $gn->getAttribute('width');
+     $pathway->{NODES}->{$id}->{GRAPHICS}->{HEIGHT} = $gn->getAttribute('height');
     }
   }  # end entries
 
@@ -168,15 +169,15 @@ sub parseKGML {
       my @substrate = $reaction->getChildrenByTagName('substrate');
       foreach my $sbstr (@substrate) {
         my $substrId = $sbstr->getAttribute('id');
-        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{$substrId}->{ENTRY} =  $substrId; 
-        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{$substrId}->{NAME} =  $sbstr->getAttribute('name'); 
+        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{ENTRY} =  $substrId; 
+        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{NAME} =  $sbstr->getAttribute('name'); 
       } 
 
       my @product = $reaction->getChildrenByTagName('product');
       foreach my $prd (@product) {
         my $prdId = $prd->getAttribute('id');
-        $pathway->{REACTIONS}->{$reactionName}->{PRODUCT}->{$prdId}->{ENTRY} =  $prdId;
-        $pathway->{REACTIONS}->{$reactionName}->{PRODUCT}->{$prdId}->{NAME} =  $prd->getAttribute('name');
+        $pathway->{REACTIONS}->{$reactionName}->{PRODUCT}->{ENTRY} =  $prdId;
+        $pathway->{REACTIONS}->{$reactionName}->{PRODUCT}->{NAME} =  $prd->getAttribute('name');
       } 
   }
 
