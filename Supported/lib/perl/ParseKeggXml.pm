@@ -4,7 +4,7 @@
 # Package ParseKeggXml
 # =================================================
 
-package ApiCommonData::Load::ParseKeggXml;
+package GUS::Supported::ParseKeggXml;
 
 # =================================================
 # Documentation
@@ -45,11 +45,23 @@ use XML::LibXML;
 #          the kegg entries, relations and reactions
 # -------------------------------------------------
 
+sub new {
+  my ($class) = @_;
+  my $self = {};
+  bless($self, $class);
+  return $self;
+}
+
+
+
 sub parseKGML {
-  my $filename = shift;
+  my ($self, $filename) = @_;
 
   my $pathway = undef; # returned value
 
+  if (!$filename) {
+   die "Error: KGML file not found!";
+  }
 
   #initialize parser
   # ===================================
@@ -122,17 +134,18 @@ sub parseKGML {
     foreach my $e (@entries) {
       foreach my $a (@associatedEntries) {
 	if (!defined $subtype[0]) {
-	  $pathway->{RELATION}->{$rtype}->{$rid}->{ENTRY} = $e;
-	  $pathway->{RELATION}->{$rtype}->{$rid}->{ASSOCIATED_ENTRY} = $a;
-	  $pathway->{RELATION}->{$rtype}->{$rid}->{INTERACTION} = $rtype;
+	  $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ENTRY} = $e;
+	  $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ASSOCIATED_ENTRY} = $a;
+	  $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{INTERACTION_TYPE} = $rtype;
 	  $rid++;
 	}
 	else {
 	  foreach my $st (@subtype) {
-	    $pathway->{RELATION}->{$rtype}->{$rid}->{ENTRY} = $e;
-	    $pathway->{RELATION}->{$rtype}->{$rid}->{ASSOCIATED_ENTRY} = $a;
-	    $pathway->{RELATION}->{$rtype}->{$rid}->{INTERACTION} = $st->getAttribute('name');
-	    $pathway->{RELATION}->{$rtype}->{$rid}->{INTERACTION_ENTRY} = $st->getAttribute('value');
+	    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ENTRY} = $e;
+	    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ASSOCIATED_ENTRY} = $a;
+	    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{INTERACTION_TYPE} = $rtype;
+	    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{INTERACTION_ENTITY} = $st->getAttribute('name');
+	    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{INTERACTION_ENTITY_ENTRY} = $st->getAttribute('value');
 	    $rid++;
 	  }
 	}
@@ -149,21 +162,21 @@ sub parseKGML {
 
   foreach my $reaction (@reactions) {
     my $reactionName = $reaction->getAttribute('name');
-      $pathway->{REACTION}->{$reactionName}->{ID} = $reaction->getAttribute('id');
-      $pathway->{REACTION}->{$reactionName}->{TYPE} = $reaction->getAttribute('type');
+      $pathway->{REACTIONS}->{$reactionName}->{ID} = $reaction->getAttribute('id');
+      $pathway->{REACTIONS}->{$reactionName}->{TYPE} = $reaction->getAttribute('type');
 
       my @substrate = $reaction->getChildrenByTagName('substrate');
       foreach my $sbstr (@substrate) {
         my $substrId = $sbstr->getAttribute('id');
-        $pathway->{REACTION}->{$reactionName}->{SUBSTRATE}->{$substrId}->{ENTRY} =  $substrId; 
-        $pathway->{REACTION}->{$reactionName}->{SUBSTRATE}->{$substrId}->{NAME} =  $sbstr->getAttribute('name'); 
+        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{$substrId}->{ENTRY} =  $substrId; 
+        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{$substrId}->{NAME} =  $sbstr->getAttribute('name'); 
       } 
 
       my @product = $reaction->getChildrenByTagName('product');
       foreach my $prd (@product) {
         my $prdId = $prd->getAttribute('id');
-        $pathway->{REACTION}->{$reactionName}->{PRODUCT}->{$prdId}->{ENTRY} =  $prdId;
-        $pathway->{REACTION}->{$reactionName}->{PRODUCT}->{$prdId}->{NAME} =  $prd->getAttribute('name');
+        $pathway->{REACTIONS}->{$reactionName}->{PRODUCT}->{$prdId}->{ENTRY} =  $prdId;
+        $pathway->{REACTIONS}->{$reactionName}->{PRODUCT}->{$prdId}->{NAME} =  $prd->getAttribute('name');
       } 
   }
 
