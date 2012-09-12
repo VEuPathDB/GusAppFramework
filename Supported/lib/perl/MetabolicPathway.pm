@@ -4,7 +4,7 @@
 # Package MetabolicPathway 
 # =================================================
 
-package ApiCommonData::Load::MetabolicPathway;
+package GUS::Supported::MetabolicPathway;
 
 # =================================================
 # Documentation
@@ -50,6 +50,7 @@ sub new {
 sub setPathwayNodes {
   my ($self,$nodes) = @_;
   $self->{pathwayNodes} = $nodes;
+  #every node has a Type(Enzyme) and Name (ec:1.1.1.1)
 }
 
 sub getPathwayNodes {
@@ -61,6 +62,7 @@ sub getPathwayNodes {
 sub setPathwayName {
   my ($self,$name) = @_;
   $self->{pathwayName} = $name;
+  #string
 }
 
 sub getPathwayName {
