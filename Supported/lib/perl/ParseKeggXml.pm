@@ -47,7 +47,8 @@ use XML::LibXML;
 
 sub new {
   my ($class) = @_;
-  my $self = {};
+  my $parser = new XML::LibXML;
+  my $self = {parser => $parser};
   bless($self, $class);
   return $self;
 }
@@ -65,7 +66,7 @@ sub parseKGML {
 
   #initialize parser
   # ===================================
-  my $parser = new XML::LibXML;
+  my $parser = $self->parser;
   my $doc = $parser->parse_file($filename);
   my $rid = 0;
 
