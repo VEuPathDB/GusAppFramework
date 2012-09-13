@@ -421,8 +421,8 @@ sub addGffFeatures {
     my $end = $location->end();
     my $strand = $location->strand();
 
-    push @{$allFeatureLocations->{$seqId}->{$gene}->{strand}}, $start;
-    push @{$allFeatureLocations->{$seqId}->{$gene}->{strand}}, $end;
+    push @{$allFeatureLocations->{$seqId}->{$gene}->{$strand}}, $start;
+    push @{$allFeatureLocations->{$seqId}->{$gene}->{$strand}}, $end;
   }
 
   $gffIO->close();
