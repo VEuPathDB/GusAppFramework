@@ -66,7 +66,7 @@ sub parseKGML {
 
   #initialize parser
   # ===================================
-  my $parser = $self->parser;
+  my $parser = $self->{parser};
   my $doc = $parser->parse_file($filename);
   my $rid = 0;
 
