@@ -182,7 +182,7 @@ sub parseKGML {
       } 
   }
 
-  print  Dumper $pathway;
+  #print  Dumper $pathway;
   return $pathway;
 }  # end parseKeggXml
 
