@@ -33,11 +33,11 @@ use strict;
 sub new {
 
   my ($class,$pathwayName) = @_;
-
-  my $self = {pathwayName = $pathwayName};  
-
+  my $self = {};  
   bless($self,$class);
-
+  
+  $self->{pathwayName} = $pathwayName;
+  return $self;
 }
 
 
@@ -52,12 +52,12 @@ sub getPathwayNode {
   return $self->{NODES}->{$nodeName};
 }
 
-sub setPathwayGraphics {
+sub setNodeGraphics {
   my ($self,$nodeName, $graphics) = @_;
   $self->{GRAPHICS}->{$nodeName} = $graphics;
 }
 
-sub getPathwayGraphics {
+sub getNodeGraphics {
   my ($self, $nodeName) = @_;
   return $self->{GRAPHICS}->{$nodeName};
 }
