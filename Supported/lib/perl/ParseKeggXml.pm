@@ -32,7 +32,7 @@ use strict;
 use Data::Dumper;
 use FileHandle;
 use XML::LibXML;
-
+use File::Basename;
 # =================================================
 # Package Methods
 # =================================================
@@ -78,6 +78,7 @@ sub parseKGML {
   $pathway->{SOURCE_ID} = $nodes[0]->getAttribute('name');
   $pathway->{NAME} = $nodes[0]->getAttribute('title');
   $pathway->{URI} = $nodes[0]->getAttribute('link');
+  $pathway->{IMAGE_FILE} = basename($nodes[0]->getAttribute('image'));
   $pathway->{NCOMPLEXES} = 0;
   
 
