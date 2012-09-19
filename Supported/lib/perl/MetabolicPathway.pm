@@ -43,23 +43,23 @@ sub new {
 
 sub setPathwayNode {
   my ($self,$nodeName, $node) = @_;
-  $self->{NODES}->{$nodeName} = $node;
+  $self->{nodes}->{$nodeName} = $node;
   #every node has a Type(Enzyme) and Name (ec:1.1.1.1)
 }
 
 sub getPathwayNode {
   my ($self, $nodeName) = @_;
-  return $self->{NODES}->{$nodeName};
+  return $self->{nodes}->{$nodeName};
 }
 
 sub setNodeGraphics {
   my ($self,$nodeName, $graphics) = @_;
-  $self->{GRAPHICS}->{$nodeName} = $graphics;
+  $self->{graphics}->{$nodeName} = $graphics;
 }
 
 sub getNodeGraphics {
   my ($self, $nodeName) = @_;
-  return $self->{GRAPHICS}->{$nodeName};
+  return $self->{graphics}->{$nodeName};
 }
 
 
@@ -71,13 +71,13 @@ sub getPathwayName {
 
 sub setPathwayNodeAssociation {
   my ($self,$asscName,$association) = @_;
-  $self->{ASSOCIATIONS}->{$asscName} = $association;
+  $self->{associations}->{$asscName} = $association;
 }
 
 
 sub getPathwayNodeAssociation {
   my ($self,$asscName) = @_;
-  return $self->{ASSOCIATIONS}->{$asscName};
+  return $self->{associations}->{$asscName};
 }
 
 sub setPathwayInteractions {
