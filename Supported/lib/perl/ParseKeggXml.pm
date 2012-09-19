@@ -89,6 +89,8 @@ sub parseKGML {
     my $type = $entry->getAttribute('type');
  
     my $id = $entry->getAttribute('name');
+    $id =~ s/ec://g;
+    $id =~ s/cpd://g;
 
     $pathway->{NODES}->{$id}->{TYPE} = $type;
     $pathway->{NODES}->{$id}->{ENTRY_ID} = $entry->getAttribute('id');
@@ -171,15 +173,19 @@ sub parseKGML {
       my @substrate = $reaction->getChildrenByTagName('substrate');
       foreach my $sbstr (@substrate) {
         my $substrId = $sbstr->getAttribute('id');
-        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{ENTRY} =  $substrId; 
-        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{NAME} =  $sbstr->getAttribute('name'); 
+        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{ENTRY} =  $substrId;
+        my $name = $sbstr->getAttribute('name');
+        $name =~ s/ec:|cpd://g;
+        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{NAME} =  $name; 
       } 
 
       my @product = $reaction->getChildrenByTagName('product');
       foreach my $prd (@product) {
         my $prdId = $prd->getAttribute('id');
         $pathway->{REACTIONS}->{$reactionName}->{PRODUCT}->{ENTRY} =  $prdId;
-        $pathway->{REACTIONS}->{$reactionName}->{PRODUCT}->{NAME} =  $prd->getAttribute('name');
+        my $name = $prd->getAttribute('name');
+        $name =~ s/ec:|cpd://g;
+        $pathway->{REACTIONS}->{$reactionName}->{PRODUCT}->{NAME} = $name;
       } 
   }
 
