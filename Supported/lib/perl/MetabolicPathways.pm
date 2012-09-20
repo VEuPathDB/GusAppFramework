@@ -53,7 +53,6 @@ sub getNewPathwayObj {
 
 sub setPathwayObj {
   my($self, $pathwayObj) = @_;
-  my $name = $pathwayObj->getPathwayName; print "$name\n";
   $self->{$pathwayObj->getPathwayName} = $pathwayObj;
 }
 
