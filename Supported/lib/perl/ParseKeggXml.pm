@@ -58,7 +58,7 @@ sub new {
 sub parseKGML {
   my ($self, $filename) = @_;
 
-  my $pathway = undef; # returned value
+  my ($pathway, $nodeEntryMapping);
 
   if (!$filename) {
    die "Error: KGML file not found!";
@@ -89,8 +89,9 @@ sub parseKGML {
     my $type = $entry->getAttribute('type');
  
     my $id = $entry->getAttribute('name');
-    $id =~ s/ec://g;
-    $id =~ s/cpd://g;
+    $id =~ s/ec:|cpd://g; 
+
+    $nodeEntryMapping->{$entry->getAttribute('id')} = $id;
 
     $pathway->{NODES}->{$id}->{TYPE} = $type;
     $pathway->{NODES}->{$id}->{ENTRY_ID} = $entry->getAttribute('id');
@@ -169,6 +170,7 @@ sub parseKGML {
     my $reactionName = $reaction->getAttribute('name');
       $pathway->{REACTIONS}->{$reactionName}->{ID} = $reaction->getAttribute('id');
       $pathway->{REACTIONS}->{$reactionName}->{TYPE} = $reaction->getAttribute('type');
+      $pathway->{REACTIONS}->{$reactionName}->{ENZYME}->{NAME} = $nodeEntryMapping->{$reaction->getAttribute('id')};
 
       my @substrate = $reaction->getChildrenByTagName('substrate');
       foreach my $sbstr (@substrate) {
