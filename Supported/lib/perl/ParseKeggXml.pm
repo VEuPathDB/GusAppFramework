@@ -167,8 +167,13 @@ sub parseKGML {
  my @reactions = $doc->findnodes('/pathway/reaction');
 
   foreach my $reaction (@reactions) {
-    my $reactionName = $reaction->getAttribute('name');
-      $pathway->{REACTIONS}->{$reactionName}->{ID} = $reaction->getAttribute('id');
+
+      #a complex reaction key to uniquely identify an 'Interaction'. To be noted that a single reaction can have multiple interactions
+      #like substrateA <-> Enzyme1 <-> ProductA and SubstrateA <->EnzymeB <-> ProductA
+      #which is a single reaction in KEGG but two separate network interactions
+      my $reactionName = $reaction->getAttribute('id')."_".$reaction->getAttribute('name');
+
+      $pathway->{REACTIONS}->{$reactionName}->{NAME} = $reaction->getAttribute('name');
       $pathway->{REACTIONS}->{$reactionName}->{TYPE} = $reaction->getAttribute('type');
       $pathway->{REACTIONS}->{$reactionName}->{ENZYME}->{NAME} = $nodeEntryMapping->{$reaction->getAttribute('id')};
 
