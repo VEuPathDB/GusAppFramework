@@ -88,31 +88,33 @@ sub parseKGML {
   foreach my $entry (@nodes) {
     my $type = $entry->getAttribute('type');
  
-    my $id = $entry->getAttribute('name');
-    $id =~ s/ec:|cpd://g; 
+    $nodeEntryMapping->{$entry->getAttribute('id')} .= $entry->getAttribute('name');
 
-    $nodeEntryMapping->{$entry->getAttribute('id')} = $id;
+    my @nodeIds = split(/ /,$entry->getAttribute('name'));
 
-    $pathway->{NODES}->{$id}->{TYPE} = $type;
-    $pathway->{NODES}->{$id}->{ENTRY_ID} = $entry->getAttribute('id');
-    $pathway->{NODES}->{$id}->{REACTION} = $entry->getAttribute('reaction');
-    $pathway->{NODES}->{$id}->{LINK} = $entry->getAttribute('link');
+    foreach my $id (@nodeIds) {
+      $id =~ s/ec:|cpd://g; 
+      $pathway->{NODES}->{$id}->{TYPE} = $type;
+      $pathway->{NODES}->{$id}->{ENTRY_ID} = $entry->getAttribute('id');
+      $pathway->{NODES}->{$id}->{REACTION} = $entry->getAttribute('reaction');
+      $pathway->{NODES}->{$id}->{LINK} = $entry->getAttribute('link');
 
-    my @graphicsNode = $entry->getChildrenByTagName('graphics');
+      my @graphicsNode = $entry->getChildrenByTagName('graphics');
 
-    foreach my $gn (@graphicsNode) {
-     my $gnName = $gn->getAttribute('name');
-     $pathway->{NODES}->{$id}->{GRAPHICS}->{NAME} = $gn->getAttribute('name');
-     $pathway->{NODES}->{$id}->{GRAPHICS}->{FGCOLOR} = $gn->getAttribute('fgcolor');
-     $pathway->{NODES}->{$id}->{GRAPHICS}->{BGCOLOR} = $gn->getAttribute('bgcolor');
-     $pathway->{NODES}->{$id}->{GRAPHICS}->{TYPE} = $gn->getAttribute('type');
-     $pathway->{NODES}->{$id}->{GRAPHICS}->{X} = $gn->getAttribute('x');
-     $pathway->{NODES}->{$id}->{GRAPHICS}->{Y} = $gn->getAttribute('y');
-     $pathway->{NODES}->{$id}->{GRAPHICS}->{WIDTH} = $gn->getAttribute('width');
-     $pathway->{NODES}->{$id}->{GRAPHICS}->{HEIGHT} = $gn->getAttribute('height');
-    }
-  }  # end entries
-
+      foreach my $gn (@graphicsNode) {
+       my $gnName = $gn->getAttribute('name');
+       $pathway->{NODES}->{$id}->{GRAPHICS}->{NAME} = $gn->getAttribute('name');
+       $pathway->{NODES}->{$id}->{GRAPHICS}->{FGCOLOR} = $gn->getAttribute('fgcolor');
+       $pathway->{NODES}->{$id}->{GRAPHICS}->{BGCOLOR} = $gn->getAttribute('bgcolor');
+       $pathway->{NODES}->{$id}->{GRAPHICS}->{TYPE} = $gn->getAttribute('type');
+       $pathway->{NODES}->{$id}->{GRAPHICS}->{X} = $gn->getAttribute('x');
+       $pathway->{NODES}->{$id}->{GRAPHICS}->{Y} = $gn->getAttribute('y');
+       $pathway->{NODES}->{$id}->{GRAPHICS}->{WIDTH} = $gn->getAttribute('width');
+       $pathway->{NODES}->{$id}->{GRAPHICS}->{HEIGHT} = $gn->getAttribute('height');
+       $pathway->{NODES}->{$id}->{GRAPHICS}->{LINECOORDS} = $gn->getAttribute('coords');
+      }
+    }  # end entries
+  }
  
   # read in the relations
   # ===================================
@@ -173,30 +175,34 @@ sub parseKGML {
       #which is a single reaction in KEGG but two separate network interactions
       my $reactionName = $reaction->getAttribute('id')."_".$reaction->getAttribute('name');
 
-      $pathway->{REACTIONS}->{$reactionName}->{NAME} = $reaction->getAttribute('name');
-      $pathway->{REACTIONS}->{$reactionName}->{TYPE} = $reaction->getAttribute('type');
-      $pathway->{REACTIONS}->{$reactionName}->{ENZYME}->{NAME} = $nodeEntryMapping->{$reaction->getAttribute('id')};
+      my @enzymes = split(/ /,$nodeEntryMapping->{$reaction->getAttribute('id')});
+
+      my (@substrates, @products);
 
       my @substrate = $reaction->getChildrenByTagName('substrate');
       foreach my $sbstr (@substrate) {
         my $substrId = $sbstr->getAttribute('id');
-        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{ENTRY} =  $substrId;
         my $name = $sbstr->getAttribute('name');
         $name =~ s/ec:|cpd://g;
-        $pathway->{REACTIONS}->{$reactionName}->{SUBSTRATE}->{NAME} =  $name; 
+        push (@substrates,({ENTRY => $substrId, NAME => $name}));
       } 
 
       my @product = $reaction->getChildrenByTagName('product');
       foreach my $prd (@product) {
         my $prdId = $prd->getAttribute('id');
-        $pathway->{REACTIONS}->{$reactionName}->{PRODUCT}->{ENTRY} =  $prdId;
         my $name = $prd->getAttribute('name');
         $name =~ s/ec:|cpd://g;
-        $pathway->{REACTIONS}->{$reactionName}->{PRODUCT}->{NAME} = $name;
-      } 
+        push (@products, ({ENTRY => $prdId, NAME => $name}));
+      }
+
+      $pathway->{REACTIONS}->{$reactionName} = {PRODUCTS => [@products],
+                                                SUBSTRATES => [@substrates],
+                                                ENZYMES => [@enzymes],
+                                                NAME => $reaction->getAttribute('name'),
+                                                TYPE => $reaction->getAttribute('type')};
   }
 
-  #print  Dumper $pathway;
+  print  Dumper $pathway;
   return $pathway;
 }  # end parseKeggXml
 
