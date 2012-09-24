@@ -115,7 +115,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.6,
-		     cvsRevision => '$Revision: 9092 $',
+		     cvsRevision => '$Revision: 9093 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
