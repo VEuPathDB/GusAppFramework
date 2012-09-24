@@ -227,7 +227,7 @@ my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief,tablesAffect
 	     })
     ];
 
-  $self->initialize({requiredDbVersion => 3.6,
+  $self->initialize({requiredDbVersion => 3.5,
 		     cvsRevision => '$Revision$',
 		     name => ref($self),
 		     revisionNotes => '',
