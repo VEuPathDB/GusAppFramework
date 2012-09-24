@@ -88,12 +88,14 @@ sub parseKGML {
   foreach my $entry (@nodes) {
     my $type = $entry->getAttribute('type');
  
-    $nodeEntryMapping->{$entry->getAttribute('id')} .= $entry->getAttribute('name');
 
-    my @nodeIds = split(/ /,$entry->getAttribute('name'));
+    my $enzymeNames = $entry->getAttribute('name');
+    $enzymeNames =~ s/ec:|cpd:|dr://g;
+    $nodeEntryMapping->{$entry->getAttribute('id')} = $enzymeNames;
+
+    my @nodeIds = split(/ /,$enzymeNames);
 
     foreach my $id (@nodeIds) {
-      $id =~ s/ec:|cpd://g; 
       $pathway->{NODES}->{$id}->{TYPE} = $type;
       $pathway->{NODES}->{$id}->{ENTRY_ID} = $entry->getAttribute('id');
       $pathway->{NODES}->{$id}->{REACTION} = $entry->getAttribute('reaction');
@@ -183,7 +185,7 @@ sub parseKGML {
       foreach my $sbstr (@substrate) {
         my $substrId = $sbstr->getAttribute('id');
         my $name = $sbstr->getAttribute('name');
-        $name =~ s/ec:|cpd://g;
+        $name =~ s/ec:|cpd:|dr://g;
         push (@substrates,({ENTRY => $substrId, NAME => $name}));
       } 
 
@@ -191,7 +193,7 @@ sub parseKGML {
       foreach my $prd (@product) {
         my $prdId = $prd->getAttribute('id');
         my $name = $prd->getAttribute('name');
-        $name =~ s/ec:|cpd://g;
+        $name =~ s/ec:|cpd:|dr://g;
         push (@products, ({ENTRY => $prdId, NAME => $name}));
       }
 
@@ -202,7 +204,7 @@ sub parseKGML {
                                                 TYPE => $reaction->getAttribute('type')};
   }
 
-  print  Dumper $pathway;
+  #print  Dumper $pathway;
   return $pathway;
 }  # end parseKeggXml
 
