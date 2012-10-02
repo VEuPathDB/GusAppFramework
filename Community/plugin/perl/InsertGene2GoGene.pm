@@ -320,7 +320,6 @@ SQL
 		'is_not' => 0,
 		'is_deprecated' => 0,
 		'defining' => 0,
-		'review_status_id' => 0
 		});
 
     return (\$newGOAssoc);
@@ -340,7 +339,6 @@ sub makeGOAssocInstEntry{
 		'external_database_release_id' => $goAssocExtDbRelId,
 		'is_primary' => 0,
 		'is_deprecated' => 0,
-		'review_status_id' => 0
 		});
 
     return (\$newGOAssocInst);
@@ -405,7 +403,6 @@ sub makeAssocInstEvidCode{
 
     my $newAssocEvidCode = GUS::Model::DoTS::GOAssocInstEvidCode->new({
 	'go_evidence_code_id'=> $evidCode->getId(),
-	'review_status_id' => 0
 	});
 
     return (\$newAssocEvidCode);
