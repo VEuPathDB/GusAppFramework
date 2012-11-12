@@ -66,7 +66,7 @@ sub getDbHandle {
   my ($self) = @_;
   if ( ! exists $self->{'dbh'} ) { 
     $self->{'dbh'} = $self->makeNewHandle(0);
-    $self->{'dbh'}->{'LongReadLen'} = 40000000;
+    $self->{'dbh'}->{'LongReadLen'} = 300000000
   }
   return $self->{'dbh'};
 }
@@ -85,7 +85,7 @@ sub getQueryHandle {
   my ($self,$autocommit) = @_;
   if (!$self->{'queryDbh'}) { 
     $self->{'queryDbh'} = $self->makeNewHandle($autocommit); 
-    $self->{'queryDbh'}->{LongReadLen} = 40000000;
+    $self->{'queryDbh'}->{LongReadLen} = 300000000;
   }
   return $self->{'queryDbh'};
 }
