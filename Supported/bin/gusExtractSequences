@@ -45,7 +45,7 @@ my $db = GUS::ObjRelP::DbiDatabase->new($gusconfig->getDbiDsn(),
 
 my $dbh = $db->getQueryHandle();
 
-$dbh->{LongReadLen} = 100000 * 1024;
+$dbh->{LongReadLen} = 512 * 512 * 1024;
 
 ##want to be able to restart it....
 my %done;
