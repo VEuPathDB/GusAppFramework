@@ -16,7 +16,7 @@ use GUS::PluginMgr::Plugin;
 use lib "$ENV{GUS_HOME}/lib/perl";
 use FileHandle;
 use Carp;
-use GUS::Model::SRes::ExternalDatabase;
+use GUS::Model::DoTS::Gene;
 
 my $argsDeclaration =
   [
@@ -98,7 +98,7 @@ sub run {
     my $insertCount;
     my %countByStatus;
 
-    while (<STDIN>) {
+    while (<HUGO>) {
       # HGNC ID	Approved Symbol	Status	Accession Numbers	Entrez Gene ID	Ensembl Gene ID	RefSeq IDs	Primary IDs	Entrez Gene ID (mapped data supplied by NCBI)	Ensembl ID (mapped data supplied by Ensembl)	UCSC ID (mapped data supplied by UCSC)
       if (/^(.*)\t(.*)\t(.*)\t.*\t(.*)\t(.*)\t.*\t.*\t(.*)\t(.*)\t(.*)$/) {
 	my $id = $1;
