@@ -117,7 +117,11 @@ sub run {
             external_database_release_id => $extDbRlsId,
 	   });
 	$gene->submit();
-	$insertCount++
+	$insertCount++;
+	unless ($insertCount % 1000) {
+	  $self->undefPointerCache();
+	  print STDERR "inserted $insertCount HUGO genes\n";
+	}
       }
     }
 
