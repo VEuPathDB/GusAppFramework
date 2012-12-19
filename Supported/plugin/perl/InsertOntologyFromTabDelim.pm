@@ -104,7 +104,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: $',
+		     cvsRevision => '$Revision: 11326 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -151,14 +151,14 @@ sub insertTerms {
     my ($id, $name, $def, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
     $isObsolete = $isObsolete eq 'false' ? 0 : 1;
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $name, definition => $def, external_database_release_id => $extDbRls, source_id => $id, uri => $uri, is_obsolete => $isObsolete });   
-    if (!$ontologyTerm->retrievFromDB()) {
+    if (!$ontologyTerm->retrieveFromDB()) {
       $countTerms++;
     }
     my @synArr = split(/,/, $synonyms);
     for (my $i=0; $i<@synArr; $i++) {
       my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $synArr[$i], external_database_release_id => $extDbRls});  
       $ontologySynonym->setParent($ontologyTerm);
-      if (!$ontologySynonym->retrievFromDB()) {
+      if (!$ontologySynonym->retrieveFromDB()) {
 	$countSyns++;
       }    
     }
@@ -187,11 +187,11 @@ sub insertRelationships {
     
     if($subject->retrieveFromDB() && $predicate->retrieveFromDB() && $object->retrieveFromDB()) {
       my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->new();   
-      $ontologyRelationship->setSubjectTermId = $subject->getId();
-      $ontologyRelationship->setPredicateTermId = $predicate->getId(); 
-      $ontologyRelationship->setObjectTermId = $object->getId();
+      $ontologyRelationship->setSubjectTermId($subject->getId());
+      $ontologyRelationship->setPredicateTermId($predicate->getId()); 
+      $ontologyRelationship->setObjectTermId($object->getId());
       
-      if (!$ontologyRelationship->retrievFromDB()) {
+      if (!$ontologyRelationship->retrieveFromDB()) {
 	$countRels++;
       }
       $ontologyRelationship->submit();
