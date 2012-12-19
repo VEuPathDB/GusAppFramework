@@ -104,7 +104,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11326 $',
+		     cvsRevision => '$Revision: 11327 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -202,7 +202,7 @@ sub insertRelationships {
     }
   }
   $fh->close();
-  my $resultDescr = "Inserted $countRels rows in SRes.OntologyRelationship";
+  my $resultDescr = ". Inserted $countRels rows in SRes.OntologyRelationship";
   return ($resultDescr);
 }
 
