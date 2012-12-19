@@ -104,7 +104,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: $',
+		     cvsRevision => '$Revision: 11324$',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -156,8 +156,8 @@ sub insertTerms {
     }
     my @synArr = split(/,/, $synonyms);
     for (my $i=0; $i<@synArr; $i++) {
-      my $ontologySyn = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $synArr[$i], external_database_release_id => $extDbRls});  
-      $ontologySyn->setParent($ontologyTerm);
+      my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $synArr[$i], external_database_release_id => $extDbRls});  
+      $ontologySynonym->setParent($ontologyTerm);
       if (!$ontologySynonym->retrievFromDB()) {
 	$countSyns++;
       }    
@@ -168,7 +168,7 @@ sub insertTerms {
   $fh->close();
 
   my $resultDescr = "Inserted $countTerms rows in SRes.OntologyTerm and $countSyns row in SRes.OntologySynonym";
-  return ($resultDesc);
+  return ($resultDescr);
 }
 
 sub insertRelationships {
@@ -203,7 +203,7 @@ sub insertRelationships {
   }
   $fh->close();
   my $resultDescr = "Inserted $countRels rows in SRes.OntologyRelationship";
-  return ($resultDesc);
+  return ($resultDescr);
 }
 
 sub undoTables {
