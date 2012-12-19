@@ -131,7 +131,7 @@ sub run {
   my $resultDescr = $self->insertTerms($termFile, $extDbRls);
   $resultDescr .= $self->insertRelationships($relFile, $extDbRls);
 
-  $self->setResultDescr($resultDescrip);
+  $self->setResultDescr($resultDescr);
   $self->logData($resultDescr);
 }
 
