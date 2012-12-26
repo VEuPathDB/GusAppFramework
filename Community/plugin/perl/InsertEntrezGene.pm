@@ -9,14 +9,21 @@
 package GUS::Community::Plugin::InsertEntrezGene;
 @ISA = qw( GUS::PluginMgr::Plugin);
 
-use strict 'vars';
-
+use strict;
 
 use GUS::PluginMgr::Plugin;
 use lib "$ENV{GUS_HOME}/lib/perl";
 use FileHandle;
 use Carp;
+
+use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::Gene;
+use GUS::Model::DoTS::GeneFeature;
+use GUS::Model::DoTS::GeneInstance;
+use GUS::Model::DoTS::Transcript;
+use GUS::Model::DoTS::ExonFeature;
+use GUS::Model::DoTS::RNAFeatureExon;
+use GUS::Model::DoTS::NALocation;
 
 my $argsDeclaration =
   [
@@ -83,6 +90,14 @@ my $documentation = { purpose=>$purpose,
                       notes=>$notes
                     };
 
+my %processedFeatureCount; # top-level features processed, by feature type
+my %ignoredFeatureCount;  # top-level features not processed, by feature type
+my $totalFeatureCount;   # total number of top-level features processed
+my $extDbRlsId;         # Entrez Gene external database release ID
+my $hugoQuery;         # prepared query for HUGO genes
+my $hugoDbName;       # saved value of HUGO database-name parameter
+my $hugoNotFound;    # count of HUGO IDs found in data file but not in database
+
 sub new {
     my ($class) = @_;
     my $self = {};
@@ -107,37 +122,214 @@ sub run {
     my ($self) = @_;
     my $msg;
 
-    my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
+    open(GFF3, $self->getArg('inputFile'));
 
-    open(GENE, $self->getArg('inputFile'));
+    my @featuresWorth; # one top-level-feature-sized bite of a GFF3 file
 
-    my $lastGene;
-    my @genesWorth;
-    while (<GENE>) {
+    while (<GFF3>) {
       chomp;
-
       next if substr($_, 0, 1) eq "#"; # skip comment lines
 
-      my ($sequence, $source, $type, $etc) = split /\t/;
-      if ($type eq "gene" || $type eq "tRNA" || $type eq "J_gene_segment"
-          || $type eq "C_gene_segment" || $type eq "D_gene_segment"
-	  || $type eq "V_gene_segment") {
-	processGene(\@genesWorth)
-	  if @genesWorth;
-	undef @genesWorth;
+      if ($_ !~ /Parent=/) { # top-level feature
+	$self->processTopLevelFeature(\@featuresWorth)
+	  if @featuresWorth;
+	undef @featuresWorth;
       }
-      push(@genesWorth, $_);
+
+      push(@featuresWorth, $_);
     }
 
+    $msg = "among top-level features, processed " .
+	   join(", ", (map {$processedFeatureCount{$_} . " " . $_; } keys(%processedFeatureCount))) .
+            "; ignored " .
+	   join(", ", (map {$ignoredFeatureCount{$_} . " " . $_; } keys(%ignoredFeatureCount)));
+
+print "\$msg = \"$msg\"\n";
     return $msg;
 }
 
-sub processGene {
-  my ($inputArrayRef) = @_;
+sub processTopLevelFeature {
+  my ($self, $inputArrayRef) = @_;
 
-  foreach my $line (@$inputArrayRef) {
-    print "got a line like this: \"$line\"\n";
+  # first feature
+  my ($sequenceSourceId, $source, $type, $start, $end, $score, $strand, $phase, $attributes)
+    = split(/\t/, shift(@{$inputArrayRef}));
+
+  # not handling all top-level feature types
+  if ($type ne 'gene' && $type ne 'tRNA'
+      && $type ne 'V_gene_segment' && $type ne 'J_gene_segment'
+      && $type ne 'C_gene_segment' && $type ne 'D_gene_segment') {
+    $ignoredFeatureCount{$type}++;
+    return;
   }
+  $processedFeatureCount{$type}++;
+
+  $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'))
+    unless $extDbRlsId;
+
+  # sequence
+  my $sequence = $self->getSequence($sequenceSourceId, $extDbRlsId);
+
+  # gene
+  my $geneId = $self->getGeneId($attributes, $extDbRlsId);
+
+  # geneFeature
+  my $geneFeatureId = $self->getGeneFeatureId($attributes, $sequence->getNaSequenceId(), $extDbRlsId);
+
+  # geneInstance
+  $self->createGeneInstance($geneId, $geneFeatureId);
+
+  # dependent features
+  foreach my $line (@$inputArrayRef) {
+    my ($sequence, $source, $type, $start, $end, $score, $strand, $phase, $attributes)
+      = split(/\t/, $line);
+  }
+
+  unless ($totalFeatureCount++ % 500) {
+    print STDERR "processed $totalFeatureCount top-level features\n";
+    $self->undefPointerCache();
+  }
+}
+
+sub getGeneFeatureId {
+
+  my ($self, $attributes, $naSequenceId, $extDbRlsId) = @_;
+
+  my ($sourceId, $name, $product, $isPseudo);
+
+  if ($attributes =~ /GeneID:([0-9]*)[,;\s]/) {
+    $sourceId = $1;
+  } else {
+    die "can't find Gene ID in attributes \"$attributes\"";
+  }
+
+  if ($attributes =~ /Name=([^,;\s]*)[,;\s]/) {
+    $name = $1;
+  } elsif ($attributes =~ /ID=([^,;\s]*)[,;\s]/) {
+    $name = $1;
+  } else {
+    die "can't find name in attributes \"$attributes\"";
+  }
+
+  $isPseudo = 1
+    if $attributes =~ /pseudo=true/;
+
+  if ($attributes =~ /product=([[^,;\s]*)/) {
+    $product = $1;
+  }
+
+  my $geneFeature = GUS::Model::DoTS::GeneFeature->new( {
+                         'source_id' => $sourceId,
+                         'name' => $name,
+                         'product' => $product,
+                         'is_pseudo' => $isPseudo,
+                         'external_database_release_id' => $extDbRlsId,
+					 } );
+  $geneFeature->submit();
+
+  return $geneFeature->getNaFeatureId();
+}
+
+sub createGeneInstance {
+
+  my ($self, $geneId, $geneFeatureId) = @_;
+
+  my $geneInstance = GUS::Model::DoTS::GeneInstance->new( {
+                         'gene_id' => $geneId,
+                         'na_feature_id' => $geneFeatureId,
+                         'is_reference' => 0,
+					 } );
+  $geneInstance->submit();
+}
+
+sub getSequence {
+
+  my ($self, $sequenceSourceId, $extDbRlsId) = @_;
+
+  my $sequence = GUS::Model::DoTS::ExternalNASequence->new( {
+          'source_id' => $sequenceSourceId,
+    } );
+
+  unless ( $sequence->retrieveFromDB() ) {
+    $sequence->setSequenceVersion(1);
+    $sequence->setExternalDatabaseReleaseId($extDbRlsId);
+    $sequence->submit();
+    $self->undefPointerCache();
+  }
+
+  return $sequence;
+}
+
+sub getGeneId {
+
+  my ($self, $attributes, $extDbRlsId) = @_;
+
+  my ($hgncId, $gene);
+
+  if ($attributes =~ /HGNC:([0-9]*)/) {
+    $hgncId = $1;
+    $hugoDbName = $self->getArg('hugoExtDbRlsName')
+      unless $hugoDbName;
+    if ($hugoDbName && !$hugoQuery) {
+      $hugoQuery = $self->getQueryHandle()->prepare(<<SQL) or die DBI::errstr;
+            select g.gene_id
+            from dots.Gene g, sres.ExternalDatabaseRelease edr, sres.ExternalDatabase ed
+            where g.source_id = ?
+              and g.external_database_release_id = edr.external_database_release_id
+              and edr.external_database_id = ed.external_database_id
+              and ed.name = '$hugoDbName'
+SQL
+    }
+
+    $hugoQuery->execute($hgncId) or die DBI::errstr;
+    my ($geneId) = $hugoQuery->fetchrow_array();
+
+    if ($geneId) {
+      $gene = GUS::Model::DoTS::Gene->new( {
+					    'gene_id' => $geneId,
+					    'source_id' => $hgncId,
+					   } );
+    } else {
+      $hugoNotFound++;
+    }
+  }
+
+  if (!$gene) {
+    my $geneId;
+    if ($attributes =~ /GeneID:([0-9]*)[,;\s]/) {
+      $geneId = $1;
+    } else {
+      die "can't find Gene ID in attributes \"$attributes\"";
+    }
+
+    $gene = GUS::Model::DoTS::Gene->new( {
+                         'source_id' => $geneId,
+                         'description' => $attributes,
+                         'external_database_release_id' => $extDbRlsId,
+					 } );
+    $gene->submit();
+  }
+
+  return $gene->getGeneId();
+}
+
+sub undoTables {
+  my ($self) = @_;
+
+  return ('DoTS.ExternalNaSequence',
+          'DoTS.Gene',
+          'DoTS.GeneFeature',
+          'DoTS.GeneInstance',
+	  'DoTS.ExternalNASequence',
+	  'DoTS.Gene',
+	  'DoTS.GeneFeature',
+	  'DoTS.GeneInstance',
+	  'DoTS.Transcript',
+	  'DoTS.ExonFeature',
+	  'DoTS.RNAFeatureExon',
+	  'DoTS.NALocation',
+         );
+
 }
 
 1;
