@@ -97,6 +97,9 @@ my $extDbRlsId;         # Entrez Gene external database release ID
 my $hugoQuery;         # prepared query for HUGO genes
 my $hugoDbName;       # saved value of HUGO database-name parameter
 my $hugoNotFound;    # count of HUGO IDs found in data file but not in database
+my $codingRegionStmt; # prepared statement to set ExonFeature start and end
+
+my %subfeatureCount; # for debugging: what non-top-level features do we encounter?
 
 sub new {
     my ($class) = @_;
@@ -139,12 +142,19 @@ sub run {
       push(@featuresWorth, $_);
     }
 
+    $self->undefPointerCache();
+    $self->setFinalExon();
+
     $msg = "among top-level features, processed " .
 	   join(", ", (map {$processedFeatureCount{$_} . " " . $_; } keys(%processedFeatureCount))) .
             "; ignored " .
 	   join(", ", (map {$ignoredFeatureCount{$_} . " " . $_; } keys(%ignoredFeatureCount)));
 
 print "\$msg = \"$msg\"\n";
+
+print "subfeatures: " .
+	   join(", ", (map {$subfeatureCount{$_} . " " . $_; } sort(keys(%subfeatureCount)))) .
+            "\n";
     return $msg;
 }
 
@@ -168,13 +178,14 @@ sub processTopLevelFeature {
     unless $extDbRlsId;
 
   # sequence
-  my $sequence = $self->getSequence($sequenceSourceId, $extDbRlsId);
+  my $sequenceId = $self->getSequenceId($sequenceSourceId, $extDbRlsId);
 
   # gene
   my $geneId = $self->getGeneId($attributes, $extDbRlsId);
 
   # geneFeature
-  my $geneFeatureId = $self->getGeneFeatureId($attributes, $sequence->getNaSequenceId(), $extDbRlsId);
+  my $geneFeatureId = $self->getGeneFeatureId($attributes, $sequenceId, $extDbRlsId);
+  $self->setFeatureLocation($geneFeatureId, $start, $end, $strand);
 
   # geneInstance
   $self->createGeneInstance($geneId, $geneFeatureId);
@@ -183,9 +194,61 @@ sub processTopLevelFeature {
   foreach my $line (@$inputArrayRef) {
     my ($sequence, $source, $type, $start, $end, $score, $strand, $phase, $attributes)
       = split(/\t/, $line);
+    $subfeatureCount{$type}++;
+
+    # make a hash of the attributes
+    my %attr;
+    map { my ($name, $value) = split("=", $_); $attr{$name} = $value;} split(";", $attributes);
+
+    my ($lastTranscriptId, $exonOrderNumber);
+    if ($type eq "transcript" || $type eq "mRNA" || $type eq "ncRNA") {
+      my $name = $attr{Name};
+      $name = $attr{ID} unless $name;
+      my $transcript = GUS::Model::DoTS::Transcript->new( {
+                         "na_sequence_id" => $sequenceId,
+                         "name" => $name,
+                         "source_id" => $attr{ID},
+                         "product" => $attr{product},
+                         "parent_id" => $geneFeatureId,
+                         "external_database_release_id" => $extDbRlsId,
+					 } );
+      $transcript->submit();
+      $lastTranscriptId = $transcript->getNaFeatureId();
+      $self->setFeatureLocation($lastTranscriptId, $start, $end, $strand);
+    } elsif ($type eq "exon") {
+      # create ExonFeature record
+      my $name = $attr{Name};
+      $name = $attr{ID} unless $name;
+      my $exonFeature = GUS::Model::DoTS::ExonFeature->new( {
+                         "na_sequence_id" => $sequenceId,
+                         "name" => $name,
+                         "source_id" => $attr{ID},
+                         "parent_id" => $geneFeatureId,
+                         "external_database_release_id" => $extDbRlsId,
+					 } );
+      $exonFeature->submit();
+      $self->setFeatureLocation($exonFeature->getNaFeatureId(), $start, $end, $strand);
+
+      # create RnaFeatureExon record, if parent is a transcript
+      if ($lastTranscriptId) {
+	my $rnaFeatureExon = GUS::Model::DoTS::RNAFeatureExon->new( {
+                             "rna_feature_id" => $lastTranscriptId,
+                             "exon_feature_id" => $exonFeature->getNaFeatureId(),
+                             "order_number" => ++$exonOrderNumber,
+                             "is_initial_exon" => ($exonOrderNumber == 1) ? 1 : 0,
+                             "is_final_exon" => 0, # fix later for final exons
+                                                                     } );
+	$rnaFeatureExon->submit();
+      }
+    } elsif ($type eq "CDS") {
+      $self->setCodingRegion($lastTranscriptId, $start, $end);
+    } else {
+      print "not handling feature type \"$type\"\n";
+      next;
+    }
   }
 
-  unless ($totalFeatureCount++ % 500) {
+  unless (++$totalFeatureCount % 250) {
     print STDERR "processed $totalFeatureCount top-level features\n";
     $self->undefPointerCache();
   }
@@ -242,7 +305,7 @@ sub createGeneInstance {
   $geneInstance->submit();
 }
 
-sub getSequence {
+sub getSequenceId {
 
   my ($self, $sequenceSourceId, $extDbRlsId) = @_;
 
@@ -257,7 +320,7 @@ sub getSequence {
     $self->undefPointerCache();
   }
 
-  return $sequence;
+  return $sequence->getNaSequenceId();
 }
 
 sub getGeneId {
@@ -311,6 +374,56 @@ SQL
   }
 
   return $gene->getGeneId();
+}
+
+sub setFeatureLocation {
+
+  my ($self, $featureId, $start, $end, $strand) = @_;
+
+  my $isReversed;
+
+  $isReversed = 1 if $strand eq "-";
+  $isReversed = 0 if $strand eq "+";
+
+  my $location = GUS::Model::DoTS::NALocation->new( {
+                         'na_feature_id' => $featureId,
+                         'start_min' => $start,
+                         'end_max' => $end,
+                         'is_reversed' => $isReversed,
+						      } );
+  $location->submit();
+}
+
+sub setCodingRegion {
+  my ($self, $transcriptId, $start, $end) = @_;
+
+  if (!$codingRegionStmt) {
+    $codingRegionStmt = $self->getQueryHandle()->prepare(<<SQL) or die DBI::errstr;
+            update dots.ExonFeature
+            set coding_start = ?, coding_end = ?
+            where na_feature_id in (select na_feature_id
+                                    from dots.NaLocation
+                                    where start_min <= ?
+                                      and end_max >= ?)
+              and na_feature_id in (select na_feature_id
+                                    from dots.RnaFeatureExon
+                                    where rna_feature_id = ?)
+SQL
+  }
+
+  $codingRegionStmt->execute($start, $end, $start, $end, $transcriptId);
+}
+
+sub setFinalExon {
+  my ($self) = @_;
+
+  $self->getQueryHandle()->prepareAndExecute(<<SQL) or die DBI::errstr;
+            update dots.RnaFeatureExon
+            set is_final_exon = 1
+            where order_number = (select max(order_number)
+                                  from dots.RnaFeatureExon
+                                  where rna_feature_exon_id = RnaFeatureExon.rna_feature_exon_id)
+SQL
 }
 
 sub undoTables {
