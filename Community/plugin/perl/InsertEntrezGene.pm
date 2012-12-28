@@ -201,7 +201,7 @@ sub processTopLevelFeature {
     map { my ($name, $value) = split("=", $_); $attr{$name} = $value;} split(";", $attributes);
 
     my ($lastTranscriptId, $exonOrderNumber);
-    if ($type eq "transcript" || $type eq "mRNA" || $type eq "ncRNA") {
+    if ($type eq "transcript" || $type eq "mRNA" || $type eq "ncRNA" || $type eq "rRNA") {
       my $name = $attr{Name};
       $name = $attr{ID} unless $name;
       my $transcript = GUS::Model::DoTS::Transcript->new( {
@@ -398,16 +398,18 @@ sub setCodingRegion {
   my ($self, $transcriptId, $start, $end) = @_;
 
   if (!$codingRegionStmt) {
+    my $algInvId   = $self->getAlgInvocation()->getId();
     $codingRegionStmt = $self->getQueryHandle()->prepare(<<SQL) or die DBI::errstr;
             update dots.ExonFeature
             set coding_start = ?, coding_end = ?
-            where na_feature_id in (select na_feature_id
+            where row_alg_invocation_id = $algInvId       -- current run
+              and na_feature_id in (select na_feature_id  -- child of the current transctip
+                                    from dots.RnaFeatureExon
+                                    where rna_feature_id = ?)
+              and na_feature_id in (select na_feature_id  -- overlapping exon
                                     from dots.NaLocation
                                     where start_min <= ?
                                       and end_max >= ?)
-              and na_feature_id in (select na_feature_id
-                                    from dots.RnaFeatureExon
-                                    where rna_feature_id = ?)
 SQL
   }
 
