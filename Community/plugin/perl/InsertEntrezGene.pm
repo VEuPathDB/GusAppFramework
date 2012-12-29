@@ -125,6 +125,8 @@ sub run {
     my ($self) = @_;
     my $msg;
 
+    $self->getAlgInvocation()->setMaximumNumberOfObjects(100000);
+
     open(GFF3, $self->getArg('inputFile'));
 
     my @featuresWorth; # one top-level-feature-sized bite of a GFF3 file
