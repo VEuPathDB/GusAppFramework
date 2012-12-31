@@ -193,6 +193,7 @@ sub processTopLevelFeature {
   $self->createGeneInstance($geneId, $geneFeatureId);
 
   # dependent features
+  my ($lastTranscriptId, $exonOrderNumber);
   foreach my $line (@$inputArrayRef) {
     my ($sequence, $source, $type, $start, $end, $score, $strand, $phase, $attributes)
       = split(/\t/, $line);
@@ -202,7 +203,6 @@ sub processTopLevelFeature {
     my %attr;
     map { my ($name, $value) = split("=", $_); $attr{$name} = $value;} split(";", $attributes);
 
-    my ($lastTranscriptId, $exonOrderNumber);
     if ($type eq "transcript" || $type eq "mRNA" || $type eq "ncRNA" || $type eq "rRNA") {
       my $name = $attr{Name};
       $name = $attr{ID} unless $name;
@@ -260,34 +260,23 @@ sub getGeneFeatureId {
 
   my ($self, $attributes, $naSequenceId, $extDbRlsId) = @_;
 
-  my ($sourceId, $name, $product, $isPseudo);
+  my ($name, $product);
 
-  if ($attributes =~ /GeneID:([0-9]*)[,;\s]/) {
-    $sourceId = $1;
-  } else {
-    die "can't find Gene ID in attributes \"$attributes\"";
-  }
+  # make a hash of the attributes
+  my %attr;
+  map { my ($name, $value) = split("=", $_); $attr{$name} = $value;} split(";", $attributes);
 
-  if ($attributes =~ /Name=([^,;\s]*)[,;\s]/) {
-    $name = $1;
-  } elsif ($attributes =~ /ID=([^,;\s]*)[,;\s]/) {
-    $name = $1;
-  } else {
-    die "can't find name in attributes \"$attributes\"";
-  }
-
-  $isPseudo = 1
-    if $attributes =~ /pseudo=true/;
-
-  if ($attributes =~ /product=([[^,;\s]*)/) {
-    $product = $1;
-  }
+  # . . . and a hash of the database cross-references
+  my %dbxref;
+  map { my ($name, $value) = split(":", $_); $dbxref{$name} = $value;} split(",", $attr{Dbxref})
+    if $attr{Dbxref};
 
   my $geneFeature = GUS::Model::DoTS::GeneFeature->new( {
-                         'source_id' => $sourceId,
-                         'name' => $name,
-                         'product' => $product,
-                         'is_pseudo' => $isPseudo,
+                         'na_sequence_id' => $naSequenceId,
+                         'source_id' => $dbxref{GeneID},
+                         'name' => $attr{Name} ? $attr{Name} : $attr{ID},
+                         'product' => $attr{product},
+                         'is_pseudo' => ($attr{pseudo} eq "true") ? 1 : '',
                          'external_database_release_id' => $extDbRlsId,
 					 } );
   $geneFeature->submit();
@@ -416,6 +405,7 @@ SQL
   }
 
   $codingRegionStmt->execute($start, $end, $start, $end, $transcriptId);
+  $codingRegionStmt->finish();
 }
 
 sub setFinalExon {
