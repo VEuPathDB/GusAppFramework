@@ -193,7 +193,7 @@ sub processTopLevelFeature {
   $self->createGeneInstance($geneId, $geneFeatureId);
 
   # dependent features
-  my ($lastTranscriptId, $exonOrderNumber);
+  my (%transcriptFeatureId, $exonOrderNumber);
   foreach my $line (@$inputArrayRef) {
     my ($sequence, $source, $type, $start, $end, $score, $strand, $phase, $attributes)
       = split(/\t/, $line);
@@ -215,8 +215,8 @@ sub processTopLevelFeature {
                          "external_database_release_id" => $extDbRlsId,
 					 } );
       $transcript->submit();
-      $lastTranscriptId = $transcript->getNaFeatureId();
-      $self->setFeatureLocation($lastTranscriptId, $start, $end, $strand);
+      $transcriptFeatureId{$attr{ID}} = $transcript->getNaFeatureId();
+      $self->setFeatureLocation($transcript->getNaFeatureId(), $start, $end, $strand);
     } elsif ($type eq "exon") {
       # create ExonFeature record
       my $name = $attr{Name};
@@ -232,9 +232,9 @@ sub processTopLevelFeature {
       $self->setFeatureLocation($exonFeature->getNaFeatureId(), $start, $end, $strand);
 
       # create RnaFeatureExon record, if parent is a transcript
-      if ($lastTranscriptId) {
+      if ($transcriptFeatureId{$attr{Parent}}) {
 	my $rnaFeatureExon = GUS::Model::DoTS::RNAFeatureExon->new( {
-                             "rna_feature_id" => $lastTranscriptId,
+                             "rna_feature_id" => $transcriptFeatureId{$attr{Parent}},
                              "exon_feature_id" => $exonFeature->getNaFeatureId(),
                              "order_number" => ++$exonOrderNumber,
                              "is_initial_exon" => ($exonOrderNumber == 1) ? 1 : 0,
@@ -243,7 +243,7 @@ sub processTopLevelFeature {
 	$rnaFeatureExon->submit();
       }
     } elsif ($type eq "CDS") {
-      $self->setCodingRegion($lastTranscriptId, $start, $end);
+      $self->setCodingRegion($transcriptFeatureId{$attr{Parent}}, $start, $end);
     } else {
       print "not handling feature type \"$type\"\n";
       next;
@@ -394,13 +394,12 @@ sub setCodingRegion {
             update dots.ExonFeature
             set coding_start = ?, coding_end = ?
             where row_alg_invocation_id = $algInvId       -- current run
-              and na_feature_id in (select na_feature_id  -- child of the current transctip
-                                    from dots.RnaFeatureExon
-                                    where rna_feature_id = ?)
-              and na_feature_id in (select na_feature_id  -- overlapping exon
-                                    from dots.NaLocation
-                                    where start_min <= ?
-                                      and end_max >= ?)
+              and na_feature_id = (select rnaf.exon_feature_id
+                                    from dots.RnaFeatureExon rnaf, dots.NaLocation nl
+                                     where rnaf.exon_feature_id = nl.na_feature_id
+                                       and rnaf.rna_feature_id = ?
+                                       and nl.start_min <= ?
+                                       and nl.end_max >= ?)
 SQL
   }
 
