@@ -394,11 +394,8 @@ sub setFeatureLocation {
 sub setCodingRegion {
   my ($self, $transcriptId, $start, $end) = @_;
 
-  print "setting coding start, end to ($start, $end) for exon of RNA feature $transcriptId. . .   ";
-
   if (!$codingRegionStmt) {
     my $algInvId   = $self->getAlgInvocation()->getId();
-    print "\$algInvId = \"algInvId\"\n";
     $codingRegionStmt = $self->getQueryHandle()->prepare(<<SQL) or die DBI::errstr;
             update dots.ExonFeature
             set coding_start = ?, coding_end = ?
@@ -413,7 +410,6 @@ SQL
   }
 
   my $returnValue = $codingRegionStmt->execute($start, $end, $transcriptId, $start, $end);
-  print ". . . returned \"$returnValue\"\n";
   $codingRegionStmt->finish();
 }
 
