@@ -154,11 +154,14 @@ sub run {
             "; ignored " .
 	   join(", ", (map {$ignoredFeatureCount{$_} . " " . $_; } keys(%ignoredFeatureCount)));
 
-print "\$msg = \"$msg\"\n";
+# print "\$msg = \"$msg\"\n";
 
-print "subfeatures: " .
-	   join(", ", (map {$subfeatureCount{$_} . " " . $_; } sort(keys(%subfeatureCount)))) .
-            "\n";
+# print "subfeatures: " .
+# 	   join(", ", (map {$subfeatureCount{$_} . " " . $_; } sort(keys(%subfeatureCount)))) .
+#             "\n";
+
+    $self->getQueryHandle()->commit() or die DBI::errstr;
+
     return $msg;
 }
 
@@ -395,6 +398,7 @@ sub setCodingRegion {
 
   if (!$codingRegionStmt) {
     my $algInvId   = $self->getAlgInvocation()->getId();
+    print "\$algInvId = \"algInvId\"\n";
     $codingRegionStmt = $self->getQueryHandle()->prepare(<<SQL) or die DBI::errstr;
             update dots.ExonFeature
             set coding_start = ?, coding_end = ?
