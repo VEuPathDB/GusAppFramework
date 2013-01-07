@@ -339,6 +339,7 @@ SQL
 
     $hugoQuery->execute($hgncId) or die DBI::errstr;
     my ($geneId) = $hugoQuery->fetchrow_array();
+    $hugoQuery->finish();
 
     if ($geneId) {
       $gene = GUS::Model::DoTS::Gene->new( {
@@ -390,7 +391,7 @@ sub setFeatureLocation {
 sub setCodingRegion {
   my ($self, $transcriptId, $start, $end) = @_;
 
-  print "setting coding start, end to ($start, $end) for exon of RNA feature $transcriptId\n";
+  print "setting coding start, end to ($start, $end) for exon of RNA feature $transcriptId. . .   ";
 
   if (!$codingRegionStmt) {
     my $algInvId   = $self->getAlgInvocation()->getId();
@@ -407,7 +408,8 @@ sub setCodingRegion {
 SQL
   }
 
-  $codingRegionStmt->execute($start, $end, $transcriptId, $start, $end);
+  my $returnValue = $codingRegionStmt->execute($start, $end, $transcriptId, $start, $end);
+  print ". . . returned \"$returnValue\"\n";
   $codingRegionStmt->finish();
 }
 
