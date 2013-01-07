@@ -143,6 +143,8 @@ sub run {
 
       push(@featuresWorth, $_);
     }
+    $self->processTopLevelFeature(\@featuresWorth)
+	  if @featuresWorth;
 
     $self->undefPointerCache();
     $self->setFinalExon();
