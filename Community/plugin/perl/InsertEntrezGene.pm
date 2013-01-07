@@ -407,7 +407,7 @@ sub setCodingRegion {
 SQL
   }
 
-  $codingRegionStmt->execute($start, $end, $start, $end, $transcriptId);
+  $codingRegionStmt->execute($start, $end, $transcriptId, $start, $end);
   $codingRegionStmt->finish();
 }
 
