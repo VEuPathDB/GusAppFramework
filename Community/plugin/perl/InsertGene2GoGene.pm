@@ -60,30 +60,30 @@ my $documentation = {purposeBrief => $purposeBrief,
 
 my $argsDeclaration =
 [
- stringArg({name => 'goAssociationExtDbRlsSpec',
+ stringArg({name => 'gene2GoExtDbRlsSpec',
             descr => "The ExternalDBRelease specifier for the gene2go file. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
             constraintFunc => undef,
             reqd => 1,
             isList => 0
             }),
-#  stringArg({name => 'entrezGeneExtDbRlsSpec',
-#             descr => "The ExternalDBRelease specifier for the Taxon.gene_info file to which GO mapping should be linked. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.res.externaldatabase.",
+ stringArg({name => 'entrezGeneExtDbName',
+            descr => "The external database name under which Entrez Gene has been loaded. Must match a name in SRes::ExternalDatabase. The named ExternalDatabase record must have a corresponding ExternalDatabaseRelease record.",
+            constraintFunc => undef,
+            reqd => 1,
+            isList => 0
+            }),
+ stringArg({name => 'goExtDbName',
+            descr => "The external database name for the Gene Ontology. Must match a name in SRes::ExternalDatabase. The named ExternalDatabase record must have a corresponding ExternalDatabaseRelease record.",
+            constraintFunc => undef,
+            reqd => 1,
+            isList => 0
+            }),
+#  stringArg({name => 'goEvidCodeExtDbName',
+#             descr => "The name of the external database for GO evidence codes. Must match a name in SRes::ExternalDatabase. The named ExternalDatabase record must have a corresponding ExternalDatabaseRelease record.",
 #             constraintFunc => undef,
 #             reqd => 1,
 #             isList => 0
 #             }),
- stringArg({name => 'goExtDbRlsSpec',
-            descr => "The ExternalDBRelease specifier for the Gene Ontology external database. Must match a name in SRes::ExternalDatabase. The named ExternalDatabase record must have a corresponding ExternalDatabaseRelease record.",
-            constraintFunc => undef,
-            reqd => 1,
-            isList => 0
-            }),
- stringArg({name => 'goEvidCodeExtDbName',
-            descr => "The name of the external database for GO evidence codes. Must match a name in SRes::ExternalDatabase. The named ExternalDatabase record must have a corresponding ExternalDatabaseRelease record.",
-            constraintFunc => undef,
-            reqd => 1,
-            isList => 0
-            }),
  integerArg({name => 'taxId',
 	     descr => 'NCBI tax id, used if mapping is restricted to a single taxon',
 	     constraintFunc => undef,
@@ -106,6 +106,8 @@ my $argsDeclaration =
         })
  ];
 
+my $goQuery;
+my $entrezQuery;
 
 sub new {
   my ($class) = @_;
@@ -184,17 +186,17 @@ sub getTaxonId {
   }
 
   if(my $taxonName = $self->getArg('taxonName')) {
-    my $sql = "select distinct taxon_id from sres.taxonname where name = ?";
 
-    my $dbh = $self->getQueryHandle();
-    my $sh = $dbh->prepare($sql);
-    $sh->execute($taxonName);
+    my $sh = $self->getQueryHandle()->prepare(<<SQL) or die DBI::errstr;
+               select distinct taxon_id from sres.taxonname where name = ?
+SQL
+    $sh->execute($taxonName) or die DBI::errstr;
 
     my ($taxId, $count);
     while(($taxId) = $sh->fetchrow_array()) {
       $count++;
     }
-    $sh->finish();
+    $sh->finish() or die DBI::errstr;
 
     if($count != 1) {
       $self->userError("Could not find a distinct taxon_id for taxon name $taxonName");
@@ -221,27 +223,19 @@ sub loadData{
     my $skippedCount = 0;
     my $presentCount = 0;
 
-    # my $entrezExtDbRelId = $self->getExtDbRlsId($self->getArg('entrezGeneExtDbRlsSpec'));
-    my $goAssocExtDbRelId = $self->getExtDbRlsId($self->getArg('goAssociationExtDbRlsSpec'));
-    my $goExtDbRelId = $self->getExtDbRlsId($self->getArg('goExtDbRlsSpec'));
+    my $entrezExtDbName = $self->getArg('entrezGeneExtDbName');
+    my $goAssocExtDbRelId = $self->getExtDbRlsId($self->getArg('gene2GoExtDbRlsSpec'));
 
     foreach my $goId (keys %$goHash){
 	$self->log("Loading entries for GO ID $goId into the database.");
 	foreach my $entrezGeneId (keys %{$goHash->{$goId}}){
 
-	    my $newGOAssoc = $self->makeGOAssocEntry($goId, $entrezGeneId, $goExtDbRelId, $tableId);
+	    my $newGOAssoc = $self->makeGOAssocEntry($goId, $entrezGeneId, $tableId);
 	    unless($newGOAssoc){
 		$skippedCount ++;
 		$self->undefPointerCache();
 		next;
 	    }#eo unless
-
-	    if($$newGOAssoc->retrieveFromDB()){
-#		$self->log("Gene $gene_id GO term $go_id pair already in database for this release");
-	#	$presentCount ++;
-		#$self->undefPointerCache();
-		#next;
-	    }
 
 	    my $newGOAssocInst = $self->makeGOAssocInstEntry($loeId, $goAssocExtDbRelId);
 	    my %seen = ();
@@ -287,30 +281,52 @@ sub loadData{
 # --------------------------------------------------------------------
 
 sub makeGOAssocEntry{
-    my ($self, $goId, $entrezGeneId, $goExtDbRelId, $tableId) = @_;
-print "makeGOAssocEntry($self, $goId, $entrezGeneId, $goExtDbRelId, $tableId)\n";
-    my $dbh = $self->getDb()->getDbHandle();
-    my $st = $dbh->prepareAndExecute(<<SQL);
-                select max(ontology_term_id)
+    my ($self, $goId, $entrezGeneId, $tableId) = @_;
+print "makeGOAssocEntry($self, $goId, $entrezGeneId, $tableId)\n";
+    unless ($goQuery) {
+      my $goExtDbName = $self->getArg('goExtDbName');
+      $goQuery = $self->getDb()->getDbHandle()->prepare(<<SQL) or die DBI::errstr;
+                select ontology_term_id
                 from sres.OntologyTerm ot, sres.ExternalDatabaseRelease edr, sres.ExternalDatabase ed
-                where ot.source_id = '$goId'
-                  and ot.external_database_release_id = $goExtDbRelId
+                where ot.source_id = ?
+                  and ot.external_database_release_id = edr.external_database_release_id
+                  and edr.external_database_id = ed.external_database_id
+                  and ed.name = '$goExtDbName'
 SQL
-    my $goTermId = $st->fetchrow_array();
+    }
+
+    $goQuery->execute($goId) or die DBI::errstr;
+    my ($goTermId) = $goQuery->fetchrow_array();
+    $goQuery->finish() or die DBI::errstr;
 
     unless($goTermId) {
       $self->log("Skipping GO ID $goId ... not in DB");
       return 0 ;
     }
 
-    my $gene = GUS::Model::DoTS::Gene->new({
-	'gene_id' => $entrezGeneId,
-	# 'external_database_release_id' => $entrezExtDbRelId
-	});
-    $gene->retrieveFromDB();
-    my $geneId;
-    unless($geneId = $gene->getId()){
-	return 0;
+    unless ($entrezQuery) {
+      my $entrezExtDbName = $self->getArg('entrezGeneExtDbName');
+      $entrezQuery = $self->getDb()->getDbHandle()->prepare(<<SQL) or die DBI::errstr;
+                    select g.gene_id
+                    from dots.GeneFeature gf, dots.GeneInstance gi, dots.Gene g
+                    where gi.gene_id = g.gene_id
+                      and gi.na_feature_id = gf.na_feature_id
+                      and gf.source_id = ?
+                      and gf.external_database_release_id
+                            in (select edr.external_database_release_id
+                                from sres.ExternalDatabase ed, sres.ExternalDatabaseRelease edr
+                                where ed.name = '$entrezExtDbName'
+                                  and ed.external_database_id = edr.external_database_id)
+SQL
+    }
+
+    $entrezQuery->execute($entrezGeneId) or die DBI::errstr;
+    my ($geneId) = $entrezQuery->fetchrow_array();
+    $entrezQuery->finish() or die DBI::errstr;
+
+    unless($geneId) {
+      $self->log("Skipping Gene ID \"$geneId\" ... not in DB");
+      return 0 ;
     }
 
     my $newGOAssoc = GUS::Model::DoTS::GOAssociation->new({
