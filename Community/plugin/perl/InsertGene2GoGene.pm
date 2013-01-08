@@ -325,7 +325,7 @@ SQL
     $entrezQuery->finish() or die DBI::errstr;
 
     unless($geneId) {
-      $self->log("Skipping Gene ID \"$geneId\" ... not in DB");
+      $self->log("Skipping Gene ID \"$entrezGeneId\" ... not in DB");
       return 0 ;
     }
 
