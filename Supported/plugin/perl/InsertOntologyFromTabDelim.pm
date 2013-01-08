@@ -198,7 +198,7 @@ sub insertRelationships {
       $self->undefPointerCache();
     }
     else {
-      $self->userError("One of $subject, $predicate, $object is not among the terms entered");
+      $self->userError("One of $subjectId, $predicateId, $objectId is not among the terms entered");
     }
   }
   $fh->close();
