@@ -282,7 +282,6 @@ sub loadData{
 
 sub makeGOAssocEntry{
     my ($self, $goId, $entrezGeneId, $tableId) = @_;
-print "makeGOAssocEntry($self, $goId, $entrezGeneId, $tableId)\n";
     unless ($goQuery) {
       my $goExtDbName = $self->getArg('goExtDbName');
       $goQuery = $self->getDb()->getDbHandle()->prepare(<<SQL) or die DBI::errstr;
