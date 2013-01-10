@@ -92,7 +92,7 @@ sub new {
 
 
     $self->initialize({requiredDbVersion => 3.6,
-		       cvsRevision => '$Revision: 11363 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 11364 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -164,10 +164,7 @@ sub getMapping {
 	  if(!$newAASeqEnzClass->retrieveFromDB()){
 	    $self->log("submitted enzyme $enzymeClass, seq $aaSeqId\n");
 	    $newAASeqEnzClass->submit();
-	    unless (++$newRecordCount % 500) {
-	      $self->log("processed $newRecordCount records\n");
-	      $self->undefPointerCache();
-	    }
+	    $self->undefPointerCache();
 	  }
 	}
       }
