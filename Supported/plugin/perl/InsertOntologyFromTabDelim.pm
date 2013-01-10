@@ -156,6 +156,7 @@ sub insertTerms {
     }
     my @synArr = split(/,/, $synonyms);
     for (my $i=0; $i<@synArr; $i++) {
+      $synArr[$i] =~ s/^\s+|\s+$//g;
       my $ontologySynonym = GUS::Model::SRes::OntologySynonym->new({ontology_synonym => $synArr[$i], external_database_release_id => $extDbRls});  
       $ontologySynonym->setParent($ontologyTerm);
       if (!$ontologySynonym->retrieveFromDB()) {
