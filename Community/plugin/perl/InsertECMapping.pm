@@ -125,6 +125,7 @@ sub getMapping {
   open (ECMAP, "$mappingFile") ||
                     die ("Can't open the file $mappingFile.  Reason: $!\n");
 
+  my $newRecordCount;
     while (<ECMAP>) {
 	chomp;
 
@@ -163,6 +164,10 @@ sub getMapping {
 	  if(!$newAASeqEnzClass->retrieveFromDB()){
 	    $self->log("submitted enzyme $enzymeClass, seq $aaSeqId\n");
 	    $newAASeqEnzClass->submit();
+	    unless (++$newRecordCount % 1000) {
+	      $self->log("processed $newRecordCount records\n");
+	      $self->undefPointerCache();
+	    }
 	  }
 	}
       }
