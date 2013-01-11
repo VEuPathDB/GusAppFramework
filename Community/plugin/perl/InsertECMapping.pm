@@ -84,6 +84,7 @@ my $argsDeclaration =
 
   ];
 
+my $sth; # prepared SQL statement handle
 
 sub new {
     my ($class) = @_;
@@ -92,7 +93,7 @@ sub new {
 
 
     $self->initialize({requiredDbVersion => 3.6,
-		       cvsRevision => '$Revision: 11365 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 11366 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -198,14 +199,17 @@ return $enzymeClass;
 sub getAASeqId {
   my ($self, $locusTag, $aaIdHash) = @_;
 
-  my $sql = $self->getArg('aaSeqLocusTagMappingSql');
-print "SQL: $sql\n";
 
-  my $queryHandle = $self->getQueryHandle();
+  unless ($sth) {
+    my $sql = $self->getArg('aaSeqLocusTagMappingSql');
+    print "SQL: $sql\n";
+    my $queryHandle = $self->getQueryHandle();
+    $sth = $queryHandle->prepare($sql);
+  }
 
-  my $sth = $queryHandle->prepare($sql);
-  my $naFeatureId =  GUS::Supported::Util::getGeneFeatureId($self, $locusTag) ;
-  $sth->execute($naFeatureId);
+  # my $naFeatureId =  GUS::Supported::Util::getGeneFeatureId($self, $locusTag) ;
+  # $sth->execute($naFeatureId);
+  $sth->execute($locusTag);
   my $aaSequenceId = $sth->fetchrow_array();
   $sth->finish();
 
