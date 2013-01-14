@@ -22,7 +22,7 @@ use GUS::Model::DoTS::TranslatedAAFeature;
 use GUS::Model::DoTS::GeneFeature;
 #use GUS::Model::DoTS::NAFeatureNaGene;
 use GUS::Model::DoTS::NAGene;
-use GUS::Supported::Util;
+# use GUS::Supported::Util;
 
 my $purposeBrief = <<PURPOSEBRIEF;
 Creates new entries in table DoTS.AASequenceEnzymeClass to represent new aa sequence/enzyme class associations.
@@ -76,7 +76,7 @@ my $argsDeclaration =
 	      isList => 0,
 	     }), 
    stringArg({name => 'aaSeqLocusTagMappingSql',
-	      descr => 'sql which returns the aa_sequence_id for a given locus tag.  use LOCUS_TAG as a macro for where the locus tag should be interpolated into the sql string',
+	      descr => 'sql which returns the aa_sequence_id for a given locus tag. Use a question mark as a macro for where the locus tag should be interpolated into the sql string',
 	      reqd => 1,
 	      constraintFunc => undef,
 	      isList => 0,
@@ -93,7 +93,7 @@ sub new {
 
 
     $self->initialize({requiredDbVersion => 3.6,
-		       cvsRevision => '$Revision: 11366 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 11376 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
