@@ -130,7 +130,7 @@ sub run {
         # subsequent trip: input record contains data to insert
 
 	unshift(@inputRecord, $inputFile);
-	my @inputRecord =  map({my $s = $_; $s =~ s/^NA$//g; $s} @inputRecord); # change "NA" to null string
+	my @inputRecord =  map({my $s = $_; $s =~ s/^NA$/null/g; $s} @inputRecord); # change "NA" to null string
 	$insertStmt->execute(@inputRecord) or die DBI::errstr;
 	$insertStmt->finish();
 
