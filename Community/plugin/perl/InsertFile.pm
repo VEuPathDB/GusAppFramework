@@ -143,9 +143,7 @@ sub run {
     }
 
     if ($self->getArg('commit')) {
-      print "commit YES!\n";
-    } else {
-      print "commit NO!\n";
+      $self->getQueryHandle()->commit();
     }
 
     $self->undefPointerCache();
