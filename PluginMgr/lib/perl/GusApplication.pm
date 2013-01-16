@@ -210,7 +210,7 @@ sub wrongChecksumError {
   $cvsRevision) doesn't match the md5 checksum in the database for
   that plugin and revision.
 
-  This means that the plugin in \$GUS_HOME is different than the version
+  This means that the plugin in \$GUS_HOME is different from the version
   in SVN. 
 
   If you have put in temporary debugging statements, remove them by replacing
