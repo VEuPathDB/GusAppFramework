@@ -142,7 +142,7 @@ sub run {
       }
     }
 
-    # $self->getQueryHandle()->commit();
+    $self->undefPointerCache();
 
     my $msg = "$insertCount records inserted";
     return $msg;
