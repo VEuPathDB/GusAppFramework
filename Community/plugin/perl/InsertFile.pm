@@ -142,6 +142,12 @@ sub run {
       }
     }
 
+    if ($self->getArg('commit')) {
+      print "commit YES!\n";
+    } else {
+      print "commit NO!\n";
+    }
+
     $self->undefPointerCache();
 
     my $msg = "$insertCount records inserted";
