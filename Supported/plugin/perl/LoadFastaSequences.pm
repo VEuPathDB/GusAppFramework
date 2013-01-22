@@ -789,7 +789,8 @@ sub getChromosomeMapping {
 sub undoTables {
   my ($self) = @_;
 
-  return (  #'DoTS.AASequenceImp',
+  
+  return ( #'DoTS.AASequenceImp',
 	  'DoTS.NASequenceImp',
 	 );
 }
