@@ -108,7 +108,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11447 $',
+		     cvsRevision => '$Revision: 11458 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -390,7 +390,7 @@ sub getContacts {
     my $contact = GUS::Model::SRes::Contact->new({name => $name});
     my $affiliation = $contactNode->findvalue('./affiliation');
     if ($name ne $affiliation) {
-      my $affiliation = GUS::Model::SRes::Contact->new({name => $affiliation});
+      my $affiliation = GUS::Model::SRes::Contact->new({name => $affiliation, last => $affiliation});
       $affiliation->retrieveFromDB();
       $contact->setParent($affiliation);
     }
