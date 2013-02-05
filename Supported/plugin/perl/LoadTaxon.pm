@@ -459,11 +459,9 @@ sub deleteTaxonName {
 }
 
 sub undoTables {
-   qw(
-   SRes.TaxonName
-   SRes.Taxon
-   SRes.GeneticCode
-   );
+  my ($self) = @_;
+
+   return('SRes.TaxonName', 'SRes.Taxon', 'SRes.GeneticCode');
 }
 
 
