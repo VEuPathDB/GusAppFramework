@@ -17,6 +17,7 @@ use GUS::Model::Study::Study;
 use GUS::Model::SRes::Contact;
 use GUS::Model::Study::StudyContact;
 use GUS::Model::SRes::BibliographicReference;
+use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::Study::StudyBibRef;
 use GUS::Model::Study::StudyDesign;
 use GUS::Model::Study::Funding;
@@ -107,7 +108,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: $',
+		     cvsRevision => '$Revision: 11447 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -133,19 +134,19 @@ sub run {
   my @gusFields = ('modification_date', 'user_read', 'user_write', 'group_read', 'group_write', 'other_read', 'other_write', 'row_user_id', 'row_group_id', 'row_project_id', 'row_alg_invocation_id');
   my $resultDescrip = "";
 
-  my $study = $self->getStudy($doc, \@gusFields);
+  my $study = $self->getStudy($doc);
 
-  $self->setStudyDesigns($doc, $study, \@gusFields);
+  $self->setStudyDesigns($doc, $study);
 
-  my $studyFactors = $self->getStudyFactors($doc, $study, \@gusFields);
+  my $studyFactors = $self->getStudyFactors($doc, $study);
 
-  my $contacts = $self->getContacts($doc, $study, \@gusFields);
+  my $contacts = $self->getContacts($doc, $study);
 
   my @protocolSeriesNames;
-  my $protocolIds = $self->submitProtocols($doc, \@protocolSeriesNames, \@gusFields);
+  my $protocolIds = $self->submitProtocols($doc, \@protocolSeriesNames);
 
   for (my $i=0; $i<@protocolSeriesNames; $i++) {
-    my $protocolSeriesIds = $self->submitProtocolSeries($protocolSeriesNames[$i], $protocolIds, \@gusFields);
+    my $protocolSeriesIds = $self->submitProtocolSeries($protocolSeriesNames[$i], $protocolIds);
 
   }
   
@@ -162,12 +163,12 @@ sub run {
 # ----------------------------------------------------------------------
 
 sub getStudy {
-  my ($self, $doc, $gusFields) = @_;
+  my ($self, $doc) = @_;
 
   my ($studyNode) = $doc->findnodes('/idf/study');
   my $name = $studyNode->findvalue('./name');
   my $study= GUS::Model::Study::Study->new({name => $name});
-  if ($study->retrieveFromDB($gusFields)) {
+  if ($study->retrieveFromDB()) {
     $self->userError("A study named '$name' already exists in the database.");
   }
   
@@ -209,17 +210,17 @@ sub getStudy {
   if (defined($pubmedIdsString) && $pubmedIdsString !~ /^\s*$/) {
     my @pubmedIds = split(/;/, $pubmedIdsString);
     for (my $i=0; $i<@pubmedIds; $i++) {
-      my $bibRef = $self->getBibef($pubmedIds[$i], $gusFields);
-      my $bibRefString = $bibRef->toString();
-      $self->log($bibRefString);
+      my $bibRef = $self->getBibRef($pubmedIds[$i]);
+#      my $bibRefString = $bibRef->toString();
+#      $self->log($bibRefString);
       my $studyBibRef = GUS::Model::Study::StudyBibRef->new();
       $studyBibRef->setParent($study);
       $studyBibRef->setParent($bibRef);
     }
   }
 
-  my $studyString = $study->toString();
-  $self->log($studyString);
+#  my $studyString = $study->toString();
+#  $self->log($studyString);
   return($study);
 }
 
@@ -247,16 +248,15 @@ sub getPubmedXml {
   my $efetch = "$utils/efetch.fcgi?rettype=$report&retmode=text&retmax=1&db=$db&query_key=$QueryKey&WebEnv=$WebEnv";
 	
   my $pubmedXml = get($efetch);
-
   return($pubmedXml);
 }
 
 
 sub getBibRef {
-  my ($self, $pubmedId, $gusFields) = @_;
+  my ($self, $pubmedId) = @_;
 
   my $parser = XML::LibXML->new();
-  my $pubmedXml = getPubmedXml($pubmedId);
+  my $pubmedXml = $self->getPubmedXml($pubmedId);
   my $pubmedDoc = $parser->load_xml(string => $pubmedXml);
 
   my $title = $pubmedDoc->findvalue('/PubmedArticleSet/PubmedArticle/MedlineCitation/Article/ArticleTitle');
@@ -292,26 +292,25 @@ sub getBibRef {
   }
   my $bibRef = GUS::Model::SRes::BibliographicReference->new({external_database_release_id => $extDbRlsId, source_id => $pubmedId});
 
-  unless($bibRef->retrieveFromDB($gusFields)) {
-    $bibRef->setTitle($title);
-    $bibRef->setAbstract($abstract);
-    $bibRef->setAuthors($authorString);
-    $bibRef->setPublication($journal);
-    $bibRef->setYear($year);
-    $bibRef->setVolume($volume);
-    $bibRef->setIssue($issue);
-    $bibRef->setPages($pages);
-  }
+  $bibRef->retrieveFromDB();
+  $bibRef->setTitle($title);
+  $bibRef->setAbstract($abstract);
+  $bibRef->setAuthors($authorString);
+  $bibRef->setPublication($journal);
+  $bibRef->setYear($year);
+  $bibRef->setVolume($volume);
+  $bibRef->setIssue($issue);
+  $bibRef->setPages($pages);
 
   return($bibRef);
 }
 
 sub getOntologyTerm {
-  my ($self, $term, $extDbRlsId, $gusFields) = @_;
+  my ($self, $term, $extDbRlsId) = @_;
   
   my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $term, external_database_release_id => $extDbRlsId});
-  
-  if (!$ontologyTerm->retrieveFromDB($gusFields)) {
+
+  if (!$ontologyTerm->retrieveFromDB()) {
     $self->userError('Missing entry for term=$term and ext_db_rls_id=$extDbRlsId in SRes.OntologyTerm');
   }
   elsif ($ontologyTerm->getIsObsolete()==1) {
@@ -321,17 +320,18 @@ sub getOntologyTerm {
 }
 
 sub setStudyDesigns {
-  my ($self, $doc, $study, $gusFields) = @_;
+  my ($self, $doc, $study) = @_;
   
   foreach my $studyDesignNode ($doc->findnodes('/idf/study_design')) {
     
     my $type = $studyDesignNode->findvalue('./type');
     my $extDbRls = $studyDesignNode->findvalue('./type_ext_db_rls');
-    my $extDbRlsId = $self->getExtDbRlsId($extDbRls);;
+    my $extDbRlsId = $self->getExtDbRlsId($extDbRls);
+
     if (!$extDbRlsId || !defined($extDbRlsId)) {
       $self->userError("Must provide a valid external database release for Study Design Type $type");
     }
-    my $studyDesignType = getOntologyTerm($type, $extDbRlsId, $gusFields);
+    my $studyDesignType = $self->getOntologyTerm($type, $extDbRlsId);
     
     my $studyDesign = GUS::Model::Study::StudyDesign->new();
     $studyDesign->setParent($study);
@@ -341,7 +341,7 @@ sub setStudyDesigns {
 }
 
 sub getStudyFactors {
-  my ($self, $doc, $study, $gusFields) = @_;
+  my ($self, $doc, $study) = @_;
   my $studyFactors;
   
   foreach my $studyFactorNode ($doc->findnodes('/idf/study_factor')) {
@@ -352,7 +352,7 @@ sub getStudyFactors {
       $self->userError("Must provide a valid external database release for Study Factor Type $type");
     }
 
-    my $studyFactorType = getOntologyTerm($type, $extDbRlsId, $gusFields);
+    my $studyFactorType = $self->getOntologyTerm($type, $extDbRlsId);
     
     my $name = $studyFactorNode->findvalue('./name');
     my $description = $studyFactorNode->findvalue('./description');
@@ -381,7 +381,7 @@ sub setExtDbRlsSourceId {
 }
 
 sub getContacts {
-  my ($self, $doc, $study, $gusFields) = @_;
+  my ($self, $doc, $study) = @_;
   my $contacts;
   
   foreach my $contactNode ($doc->findnodes('/idf/contact')) {
@@ -391,19 +391,19 @@ sub getContacts {
     my $affiliation = $contactNode->findvalue('./affiliation');
     if ($name ne $affiliation) {
       my $affiliation = GUS::Model::SRes::Contact->new({name => $affiliation});
-      $affiliation->retrieveFromDB($gusFields);
+      $affiliation->retrieveFromDB();
       $contact->setParent($affiliation);
     }
-    $contact->retrieveFromDB($gusFields);
+    $contact->retrieveFromDB();
     
     my $firstName = $contactNode->findvalue('./first_name');
     if (defined($firstName) && $firstName !~ /^\s*$/) {
-      $contact->setFirstName($firstName);
+      $contact->setFirst($firstName);
     }
     
     my $lastName = $contactNode->findvalue('./last_name');
     if (defined($lastName) && $lastName !~ /^\s*$/) {
-      $contact->setLastName($lastName);
+      $contact->setLast($lastName);
     }
         
     my $address1 = $contactNode->findvalue('./address1');
@@ -451,8 +451,8 @@ sub getContacts {
       $contact->setFax($fax);
     }
 
-    my $contactString = $contact->toString();
-    $self->log($contactString);
+#    my $contactString = $contact->toString();
+#    $self->log($contactString);
     $contact->submit();
 
     my @roles = split(/;/, $contactNode->findvalue('./roles'));
@@ -462,7 +462,7 @@ sub getContacts {
       if (!$extDbRlsId || !defined($extDbRlsId)) {
 	$self->userError("Must provide a valid external database release for Contact Role $roles[$i]");
       }    
-      my $contactRole = getOntologyTerm($roles[$i], $extDbRlsId, $gusFields);
+      my $contactRole = $self->getOntologyTerm($roles[$i], $extDbRlsId);
     
       my $studyContact = GUS::Model::Study::StudyContact->new();
       $studyContact->setParent($study);
@@ -476,7 +476,7 @@ sub getContacts {
 }
 
 sub submitProtocols {
-  my ($self, $doc, $gusFields) = @_;
+  my ($self, $doc) = @_;
   my ($protocolIds, $protocolSeriesNames);
   
   foreach my $protocolNode ($doc->findnodes('/idf/protocol')) {
@@ -487,7 +487,7 @@ sub submitProtocols {
     }   
     my $name = $protocolNode->findvalue('./name');
     my $protocol = GUS::Model::Study::Protocol->new({name => $name});
-    $protocol->retrieveFromDB($gusFields);
+    $protocol->retrieveFromDB();
     
     my $description = $protocolNode->findvalue('./description');
     if (defined($description) && $description !~ /^\s*$/) {
@@ -502,7 +502,7 @@ sub submitProtocols {
       if (!$typeExtDbRlsId || !defined($typeExtDbRlsId)) {
 	$self->userError("Must provide a valid external database release for Protocol Type $type");
       }
-      my $protocolType = getOntologyTerm($type, $typeExtDbRlsId, $gusFields);
+      my $protocolType = $self->getOntologyTerm($type, $typeExtDbRlsId);
       $protocol->setParent($protocolType);
     }
     
@@ -513,7 +513,7 @@ sub submitProtocols {
     
     my $pubmedId = $protocolNode->findvalue('./pubmed_id');
     if (defined($pubmedId) && $pubmedId  !~ /^\s*$/) {  
-      my $bibRef = $self->getBibRef($pubmedId, $gusFields);
+      my $bibRef = $self->getBibRef($pubmedId);
       $protocol->setParent($bibRef);
     }
     
@@ -531,7 +531,7 @@ sub submitProtocols {
     my $contactName = $protocolNode->findvalue('./contact');
     if (defined($contactName) && $contactName !~ /^\s*$/) {
       my $contact = GUS::Model::SRes::Contact->new({name => $contactName});
-      if (!$contact->retrieveFromDb($gusFields)) {
+      if (!$contact->retrieveFromDb()) {
 	$self->userError("Contact $contactName for protocol $name is missing in the database");
       }
       $protocol->setParent($contact);
@@ -541,50 +541,52 @@ sub submitProtocols {
     if (defined($protocolParamsNode) && $protocolParamsNode !~ /^\s*$/) {
       foreach my $protocolParamNode ($protocolParamsNode->findnodes('./param')) {
 	my $name = $protocolParamNode->findvalue('./name');
-	my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name});
-	$protocolParam->setParent($protocol);
-	$protocol->retrieveFromDB($gusFields);
-	
-	my $defaultValue = $protocolParamNode->findvalue('./default_value');
-	if (defined($defaultValue) && $defaultValue  !~ /^\s*$/) {
-	  $protocolParam->setDefaultValue($defaultValue);
-	}
-	
- 	my $isUserSpecified = $protocolParamNode->findvalue('./is_user_specified');
-	if (defined($isUserSpecified) && $isUserSpecified  !~ /^\s*$/) {
-	  $protocolParam->setIsUserSpecified($isUserSpecified);
-	}
-	
-	my $dataTypeTerm = $protocolParamNode->findvalue('./data_type'); 
-	if (defined($dataTypeTerm) && $dataTypeTerm !~ /^\s*$/) { 
-	  my $dataTypeExtDbRls = $protocolParamNode->findvalue('./data_type_ext_db_rls'); 
-	  my $dataTypeExtDbRlsId = $self->getExtDbRlsId($dataTypeExtDbRls);
+	if (defined($name) && $name !~ /^\s*$/) {
+	  my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name});
+	  $protocolParam->setParent($protocol);
+	  $protocol->retrieveFromDB();
 	  
-	  if (!$dataTypeExtDbRlsId || !defined($dataTypeExtDbRlsId)) {
-	    $self->userError("Must provide a valid external database release for Data Type $dataTypeTerm");
+	  my $defaultValue = $protocolParamNode->findvalue('./default_value');
+	  if (defined($defaultValue) && $defaultValue  !~ /^\s*$/) {
+	    $protocolParam->setDefaultValue($defaultValue);
 	  }
-	  my $dataType = getOntologyTerm($dataTypeTerm, $dataTypeExtDbRlsId, $gusFields);
-	  my $dataTypeId = $dataType->getId();
-	  $protocolParam->setDataTypeId($dataTypeId);
-	} 
-	
-	my $unitTypeTerm = $protocolParamNode->findvalue('./unit_type'); 
-	if (defined($unitTypeTerm) && $unitTypeTerm !~ /^\s*$/) { 
-	  my $unitTypeExtDbRls = $protocolParamNode->findvalue('./unit_type_ext_db_rls'); 
-	  my $unitTypeExtDbRlsId = $self->getExtDbRlsId($unitTypeExtDbRls);
 	  
-	  if (!$unitTypeExtDbRlsId || !defined($unitTypeExtDbRlsId)) {
-	    $self->userError("Must provide a valid external database release for Unit Type $unitTypeTerm");
+	  my $isUserSpecified = $protocolParamNode->findvalue('./is_user_specified');
+	  if (defined($isUserSpecified) && $isUserSpecified  !~ /^\s*$/) {
+	    $protocolParam->setIsUserSpecified($isUserSpecified);
 	  }
-	  my $unitType = getOntologyTerm($unitTypeTerm, $unitTypeExtDbRlsId, $gusFields);
-	  my $unitTypeId = $unitType->getId();
-	  $protocolParam->setUnitTypeId($unitTypeId);
-	} 
+	  
+	  my $dataTypeTerm = $protocolParamNode->findvalue('./data_type'); 
+	  if (defined($dataTypeTerm) && $dataTypeTerm !~ /^\s*$/) { 
+	    my $dataTypeExtDbRls = $protocolParamNode->findvalue('./data_type_ext_db_rls'); 
+	    my $dataTypeExtDbRlsId = $self->getExtDbRlsId($dataTypeExtDbRls);
+	    
+	    if (!$dataTypeExtDbRlsId || !defined($dataTypeExtDbRlsId)) {
+	      $self->userError("Must provide a valid external database release for Data Type $dataTypeTerm");
+	    }
+	    my $dataType = $self->getOntologyTerm($dataTypeTerm, $dataTypeExtDbRlsId);
+	    my $dataTypeId = $dataType->getId();
+	    $protocolParam->setDataTypeId($dataTypeId);
+	  } 
+	  
+	  my $unitTypeTerm = $protocolParamNode->findvalue('./unit_type'); 
+	  if (defined($unitTypeTerm) && $unitTypeTerm !~ /^\s*$/) { 
+	    my $unitTypeExtDbRls = $protocolParamNode->findvalue('./unit_type_ext_db_rls'); 
+	    my $unitTypeExtDbRlsId = $self->getExtDbRlsId($unitTypeExtDbRls);
+	    
+	    if (!$unitTypeExtDbRlsId || !defined($unitTypeExtDbRlsId)) {
+	      $self->userError("Must provide a valid external database release for Unit Type $unitTypeTerm");
+	    }
+	    my $unitType = $self->getOntologyTerm($unitTypeTerm, $unitTypeExtDbRlsId);
+	    my $unitTypeId = $unitType->getId();
+	    $protocolParam->setUnitTypeId($unitTypeId);
+	  } 
+	}
       }
     }
 
-    my $protocolString = $protocol->toString();
-    $self->log($protocolString);
+#    my $protocolString = $protocol->toString();
+#    $self->log($protocolString);
     $protocol->submit();
     my $protocolId = $protocol->getId();
     $protocolIds->{$name} = $protocolId;
@@ -593,7 +595,7 @@ sub submitProtocols {
 }
 
 sub submitProtocolSeries {
-  my ($self, $protocolSeriesName, $protocolIds, $gusFields) = @_;
+  my ($self, $protocolSeriesName, $protocolIds) = @_;
   my $protocolSeriesIds;
   
   my $protocolSeries = GUS::Model::Study::Protocol->new({name => $protocolSeriesName});
