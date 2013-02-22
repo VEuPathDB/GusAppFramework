@@ -108,7 +108,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11458 $',
+		     cvsRevision => '$Revision: 11459 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -151,6 +151,13 @@ sub run {
   }
   
   $study->submit();
+  my $studyId = $study->getId();
+  my $studyFactorIds;
+  foreach my $key (keys %{$studyFactors}) {
+    $studyFactorIds->{$key} = $studyFactors->{$key}->getId();
+  }
+
+  my $protAppNodeIds = $self->submitProtocolAppNodes($doc, $studyId, $studyFactorIds);
 
   $self->logData("");
 
@@ -165,7 +172,7 @@ sub run {
 sub getStudy {
   my ($self, $doc) = @_;
 
-  my ($studyNode) = $doc->findnodes('/idf/study');
+  my ($studyNode) = $doc->findnodes('/mage-tab/idf/study');
   my $name = $studyNode->findvalue('./name');
   my $study= GUS::Model::Study::Study->new({name => $name});
   if ($study->retrieveFromDB()) {
@@ -322,7 +329,7 @@ sub getOntologyTerm {
 sub setStudyDesigns {
   my ($self, $doc, $study) = @_;
   
-  foreach my $studyDesignNode ($doc->findnodes('/idf/study_design')) {
+  foreach my $studyDesignNode ($doc->findnodes('/mage-tab/idf/study_design')) {
     
     my $type = $studyDesignNode->findvalue('./type');
     my $extDbRls = $studyDesignNode->findvalue('./type_ext_db_rls');
@@ -344,7 +351,7 @@ sub getStudyFactors {
   my ($self, $doc, $study) = @_;
   my $studyFactors;
   
-  foreach my $studyFactorNode ($doc->findnodes('/idf/study_factor')) {
+  foreach my $studyFactorNode ($doc->findnodes('/mage-tab/idf/study_factor')) {
     my $type = $studyFactorNode->findvalue('./type');
     my $extDbRls = $studyFactorNode->findvalue('./type_ext_db_rls');
     my $extDbRlsId = $self->getExtDbRlsId($extDbRls);;
@@ -384,13 +391,13 @@ sub getContacts {
   my ($self, $doc, $study) = @_;
   my $contacts;
   
-  foreach my $contactNode ($doc->findnodes('/idf/contact')) {
+  foreach my $contactNode ($doc->findnodes('/mage-tab/idf/contact')) {
     
     my $name = $contactNode->findvalue('./name');
     my $contact = GUS::Model::SRes::Contact->new({name => $name});
     my $affiliation = $contactNode->findvalue('./affiliation');
     if ($name ne $affiliation) {
-      my $affiliation = GUS::Model::SRes::Contact->new({name => $affiliation, last => $affiliation});
+      my $affiliation = GUS::Model::SRes::Contact->new({name => $affiliation);
       $affiliation->retrieveFromDB();
       $contact->setParent($affiliation);
     }
@@ -479,7 +486,7 @@ sub submitProtocols {
   my ($self, $doc) = @_;
   my ($protocolIds, $protocolSeriesNames);
   
-  foreach my $protocolNode ($doc->findnodes('/idf/protocol')) {
+  foreach my $protocolNode ($doc->findnodes('/mage-tab/idf/protocol')) {
     my $childProtocols = $protocolNode->findvalue('./child_protocols');
     if (defined($childProtocols) && $childProtocols !~ /^\s*$/) {
       push(@{$protocolSeriesNames}, $childProtocols);
@@ -604,13 +611,97 @@ sub submitProtocolSeries {
   $protocolSeriesIds->{$protocolSeriesName} = $protocolSeriesId;
   my @children = split(/;/, $protocolSeriesName);
   for (my $i=0; $i<@children; $i++) {
-    my $protocolSeriesLink = GUS::Model::Study::ProtocolSeriesLink->new();
+    my $orderNum = $i+1;
+    my $protocolSeriesLink = GUS::Model::Study::ProtocolSeriesLink->new({order_num => $orderNum});
     $protocolSeriesLink->setProtocolSeriesId($protocolSeriesId);
     $protocolSeriesLink->setProtocolId($protocolIds->{$children[$i]});
     $protocolSeriesLink->submit();
   }
 
   return($protocolSeriesIds);
+}
+
+sub submitProtocolAppNodes {
+  my ($self, $doc, $studyId, $studyFactors) = @_;
+  my $protocolAppNodes;
+
+  foreach my $protocolAppNodeNode ($doc->findnodes('/mage-tab/sdrf/protocol_app_node')) {
+    my $id = $protocolAppNodeNode->getAttribute('id');
+ 
+    my $name = $protocolAppNodeNode->findvalue('./name');
+    my $protocolAppNode = GUS::Model::Study::ProtocolAppNode->new({name => $name});
+    my $typeNode = $protocolAppNodeNode->findvalue('./type');
+    if (defined($typeNode) && $typeNode !~ /^\s*$/) {
+      my $extDbRlsId =  $self->getExtDbRlsId('OBI|http://purl.obolibrary.org/obo/obi/2012-07-01/obi.owl');
+      if (!$extDbRlsId || !defined($extDbRlsId)) {
+	$self->userError("Database is missing an entry for the GusDatabase, with unknown version");
+      }
+      my $type = $self->getOntologyTerm($typeNode, $extDbRlsId);
+      my $typeId = $type->getId();
+      $protocolAppNode->setTypeId($typeId);
+    }
+
+#    my $subTypeNode = $protocolAppNodeNode->findvalue('./subtype');
+#    if (defined($subTypeNode) && $subTypeNode !~ /^\s*$/) {
+#      my $extDbRlsId =  $self->getExtDbRlsId('GusDatabase|unknown');
+#      if (!$extDbRlsId || !defined($extDbRlsId)) {
+#	$self->userError("Database is missing an entry for the GusDatabase, with unknown version");
+#      }
+#      my $subtype = $self->getOntologyTerm($subTypeNode, $extDbRlsId);
+#      my $subTypeId = $subtype->getId();
+#      $protocolAppNode->setSubtypeId($subtypeId);
+#    }
+
+    my $description = $protocolAppNodeNode->findvalue('./description');
+    if (defined($description) && $description !~ /^\s*$/) {
+      $protocolAppNode->setDescription($description);
+    }
+    
+    my $ext_db_rls = $protocolAppNodeNode->findvalue('./ext_db_rls');
+    my $source_id = $protocolAppNodeNode->findvalue('./source_id');
+    if (defined($extDbRls) && $extDbRls !~ /^\s*$/ && defined($sourceId) && $sourceId !~ /^\s*$/) {
+      $self->setExtDbRlsSourceId($extDbRls, $sourceId, $protocolAppNode);     
+    }
+
+ 
+    my $uri = $protocolAppNodeNode->findvalue('./uri');
+    if (defined($uri) && $uri !~ /^\s*$/) {
+      $protocolAppNode->setUri($uri);
+    }
+      
+    my $taxon = $protocolAppNodeNode->findvalue('./taxon');
+    my $taxonName = GUS::Model::SRes::TaxonName->new({name => $taxon});
+    if ($taxonName->retrieveFromDB()) {
+      my $taxonId = $taxonName->getTaxonId();
+      $protocolAppNode->setTaxonId($taxonId);
+    }
+    else {
+      $self->userError("The database does not contain an entry for Taxon $taxon");
+    }
+    my $studyLink = GUS::Model::Study::StudyLink->new({study_id => $studyId});
+    $studyLink->setParent($protocolAppNode);
+
+    my @factorValues = split(/;/, $protocolAppNodeNode->findvalue('./factor_values'));
+    for (my $i=0; $i<@factorValues; $i++) {
+      my ($fvName, $fvValue, $fvTable, $fvRowId) = split(/\|/, $factorValues[$i]);
+      my $studyFactorValue = GUS::Model::Study::StudyFactorValue->new({study_factor_id => $studyFactorIds->{$fvName}});
+      $studyFactorValue->setParent($protocolAppNode);
+      if (defined($fvValue) && $fvValue !~ /^\s*$/) {    
+	$studyFactorValue->setValue($fvValue);
+      }
+      if (defined($fvTable) && $fvTable !~ /^\s*$/ && (defined($fvRowId) && $fvRowId !~ /^\s*$/) ) { 
+	my $tableId = $self->getTableId($fvTable);
+	$studyFactorValue->setTableId($tableId);
+	$studyFactorValue->setRowId($fvRowId);
+      }
+      
+    }
+
+    $protocolAppNode->submit();
+    $protocolAppNodeIds->{$id} = $protocolAppNode->getId();
+  }
+
+  return ($protocolAppNodeIds);
 }
 
 sub undoTables {
