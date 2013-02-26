@@ -9,7 +9,6 @@ package GUS::Community::Plugin::InsertEnsemblGenes;
 
 use strict;
 use GUS::PluginMgr::Plugin;
-
 use GUS::Model::DoTS::Gene;
 use GUS::Model::DoTS::GeneInstance;
 use GUS::Model::DoTS::ExternalNASequence;
@@ -24,7 +23,7 @@ use GUS::Model::DoTS::NALocation;
 # ---------------------------------------------------------------------
 
 sub getArgumentsDeclaration {
-  my $argumentDeclaration  =
+  my $argumentDeclAration =
     [
      fileArg({name => 'geneFile',
 	      descr => 'The full path to a tab-delimited file as generated from Ensembl Biomart with the following fields in the header: Ensembl Gene ID, Ensembl Transcript ID, Chromosome Name, Gene Start (bp), Gene End (bp), Strand, Transcript Start (bp), Transcript End (bp), HGNC symbol, Strand (order is irrelevant and extra header fields will be ignored).',
@@ -111,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11515 $',
+		     cvsRevision => '$Revision: 11516 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -247,7 +246,7 @@ sub insertGenes {
     for (my $i=0; $i<@{$exons->{$rnaId}}; $i++) {
       ($exonId, $orderNum) = split(/\|/, $exons->{$rnaId}->[$i]);
     }
-    my $rnaFeatureExon = GUS::Model::DoTS::RNAFeatureExon->new({exon_feature_id => $exonId, order_num => $orderNum});
+    my $rnaFeatureExon = GUS::Model::DoTS::RNAFeatureExon->new({exon_feature_id => $exonId, order_number => $orderNum});
     $rnaFeatureExon->setParent($rnaFeature);
     $gene->submit();
     $self->undefPointerCache();
