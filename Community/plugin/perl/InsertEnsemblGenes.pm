@@ -23,7 +23,7 @@ use GUS::Model::DoTS::NALocation;
 # ---------------------------------------------------------------------
 
 sub getArgumentsDeclaration {
-  my $argumentDeclAration =
+  my $argumentDeclaration =
     [
      fileArg({name => 'geneFile',
 	      descr => 'The full path to a tab-delimited file as generated from Ensembl Biomart with the following fields in the header: Ensembl Gene ID, Ensembl Transcript ID, Chromosome Name, Gene Start (bp), Gene End (bp), Strand, Transcript Start (bp), Transcript End (bp), HGNC symbol, Strand (order is irrelevant and extra header fields will be ignored).',
