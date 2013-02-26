@@ -26,7 +26,7 @@ sub getArgumentsDeclaration {
   my $argumentDeclaration =
     [
      fileArg({name => 'geneFile',
-	      descr => 'The full path to a tab-delimited file as generated from Ensembl Biomart with the following fields in the header: Ensembl Gene ID, Ensembl Transcript ID, Chromosome Name, Gene Start (bp), Gene End (bp), Strand, Transcript Start (bp), Transcript End (bp), HGNC symbol, Strand (order is irrelevant and extra header fields will be ignored).',
+	      descr => 'The full path to a tab-delimited file as generated from Ensembl Biomart with the following fields in the header: Ensembl Gene ID, Ensembl Transcript ID, Chromosome Name, Gene Start (bp), Gene End (bp), Strand, Transcript Start (bp), Transcript End (bp), <some symbol header, e.g. HGNC symbol>, Strand (order is irrelevant and extra header fields will be ignored).',
 	      constraintFunc=> undef,
 	      reqd  => 1,
 	      isList => 0,
@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11516 $',
+		     cvsRevision => '$Revision: 11520 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
