@@ -26,8 +26,7 @@ The Undo plugin is very simple:
 
   - Undo also deletes from AlgorithmParam and AlgorithmInvocation.
 
-  - all deletes are performed as part of one transaction.  The deletes
-    are only committed if Undo is run with --commit
+  - For each table, if Undo is run with --commit, deletes are committed every 10,000 so not to flood the logs.
 
   - Undo does *not* write to the version tables.
 
