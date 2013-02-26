@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11520 $',
+		     cvsRevision => '$Revision: 11525 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -175,6 +175,9 @@ sub insertExons {
     my @arr = split(/\t/, $line);
     my $rnaId = $arr[$pos{'Ensembl Transcript ID'}];
     my $chrId = $chrIds->{$arr[$pos{'Chromosome Name'}]};
+    if (!defined($chrIds->{$arr[$pos{'Chromosome Name'}]}) {
+      next;
+    }
     my $exonStart = $arr[$pos{'Exon Chr Start (bp)'}];
     my $exonEnd = $arr[$pos{'Exon Chr End (bp)'}];
     my $cdsStart = $arr[$pos{'CDS Start'}];
@@ -217,6 +220,9 @@ sub insertGenes {
     my @arr = split(/\t/, $line);
     my $geneId = $arr[$pos{'Ensembl Gene ID'}]; 
     my $rnaId = $arr[$pos{'Ensembl Transcript ID'}]; 
+    if (!defined($chrIds->{$arr[$pos{'Chromosome Name'}]}) {
+      next;
+    }
     my $chrId = $chrIds->{$arr[$pos{'Chromosome Name'}]};
     my $geneStart = $arr[$pos{'Gene Start (bp)'}]; 
     my $geneEnd = $arr[$pos{'Gene End (bp)'}]; 
