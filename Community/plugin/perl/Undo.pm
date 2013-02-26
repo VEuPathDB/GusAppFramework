@@ -181,32 +181,38 @@ sub deleteFromTable{
    my ($self, $tableName, $algInvIdColumnName) = @_;
 
    my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
-   my $sql =
-      "SELECT COUNT(*) FROM $tableName
+   my $rows = 1;
+   while ($rows) {
+     my $sql =
+       "SELECT COUNT(*) FROM $tableName
        WHERE $algInvIdColumnName IN ($algoInvocIds)";
-   my $stmt = $self->{dbh}->prepareAndExecute($sql);
-   if(my ($rows) = $stmt->fetchrow_array()){
-    if ($self->{commit} == 1) {
-       my $sql = 
-       "DELETE FROM $tableName
-       WHERE $algInvIdColumnName IN ($algoInvocIds)";
-       warn "\n$sql\n" if $self->getArg('verbose');       
-       if($rows > 0){
-         $self->{dbh}->do($sql) || die "Failed running sql:\n$sql\n";
-   
-         $self->log("Deleted $rows rows from $tableName");              
+     my $stmt = $self->{dbh}->prepareAndExecute($sql);
+     
+     
+     if(($rows) = $stmt->fetchrow_array()){
+       if ($self->{commit} == 1) {
+	 my $sql = 
+	   "DELETE FROM $tableName
+            WHERE $algInvIdColumnName IN ($algoInvocIds) and rownum<=10000";
+	 warn "\n$sql\n" if $self->getArg('verbose');       
+	 if($rows > 0){
+	   $self->{dbh}->do($sql) || die "Failed running sql:\n$sql\n";
+	   my $numDeleted = $rows>10000 ? 10000 : $rows;
+	   $self->log("Deleted $rows rows from $tableName");              
          
-         $self->{dbh}->commit()
-         || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
-         $self->log("Committed deletions from $tableName");
-       }else{
-         $self->log("Deleted 0 rows from $tableName");
+	   $self->{dbh}->commit()
+	     || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
+	   $self->log("Committed deletions from $tableName");
+	 }
+	 else{
+	   $self->log("Deleted 0 rows from $tableName");
+	 }
        }
-      }else{
+       else{
          $self->log("Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n");
        }
-  }
-  
+     }
+   }
 }
 
 
