@@ -112,7 +112,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11512 $',
+		     cvsRevision => '$Revision: 11513 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -161,7 +161,7 @@ sub insertExons {
   my ($self, $chrIds) = @_;
   my $exons;
   my $file = $self->getArg('exonFile');
-  my $fh = IO::File->new("<$file");
+  open(my $fh ,'<', $file);
   my $count = 0;
   my %done;
 
@@ -195,7 +195,7 @@ sub insertExons {
     push(@{$exons->{$rnaId}}, "$exonId|$orderNum");
     $self->undefPointerCache();
   }
-  $fh->close();
+  close($fh);
   $self->logData("Inserted $count exons");
   return($exons);
 }
@@ -203,7 +203,7 @@ sub insertExons {
 sub insertGenes {
   my ($self, $extDbRlsGenes, $chrIds, $exons) = @_;
   my $file = $self->getArg('geneFile');
-  my $fh = IO::File->new("<$file");
+  open(my $fh ,'<', $file);
   my %pos;
   my $symbolHeader = $self->getArg('symbolHeader');
 
@@ -253,7 +253,8 @@ sub insertGenes {
     $gene->submit();
     $self->undefPointerCache();
   } 
-  
+  close($fh);
+ 
 }
 
 # ----------------------------------------------------------------------
