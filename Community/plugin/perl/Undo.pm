@@ -188,8 +188,8 @@ sub deleteFromTable{
        WHERE $algInvIdColumnName IN ($algoInvocIds)";
      my $stmt = $self->{dbh}->prepareAndExecute($sql);
      
-     
-     if(($rows) = $stmt->fetchrow_array()){
+     ($rows) = $stmt->fetchrow_array();    
+     if($rows){
        if ($self->{commit} == 1) {
 	 my $sql = 
 	   "DELETE FROM $tableName
