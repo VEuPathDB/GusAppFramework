@@ -8,7 +8,6 @@ package GUS::Community::Plugin::InsertEnsemblGenes;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 use strict;
-use IO::File;
 use GUS::PluginMgr::Plugin;
 
 use GUS::Model::DoTS::Gene;
@@ -112,7 +111,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11513 $',
+		     cvsRevision => '$Revision: 11515 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
