@@ -181,24 +181,24 @@ sub deleteFromTable{
   my ($self, $tableName, $algInvIdColumnName) = @_;
   
   my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
-  my $sql =
+  my $sql1 =
     "SELECT COUNT(*) FROM $tableName
        WHERE $algInvIdColumnName IN ($algoInvocIds)";
-  my $stmt = $self->{dbh}->prepareAndExecute($sql);
+  my $stmt = $self->{dbh}->prepareAndExecute($sql1);
   my  ($rows) = $stmt->fetchrow_array();   
   if ($self->{commit} == 1) {
     while ($rows) {
-      my $sql = 
+      my $sql2 = 
 	"DELETE FROM $tableName
          WHERE $algInvIdColumnName IN ($algoInvocIds) and rownum<=10000";
-      warn "\n$sql\n" if $self->getArg('verbose');       
-      $self->{dbh}->do($sql) || die "Failed running sql:\n$sql\n";
+      warn "\n$sql2\n" if $self->getArg('verbose');       
+      $self->{dbh}->do($sql2) || die "Failed running sql:\n$sql2\n";
       my $numDeleted = $rows>10000 ? 10000 : $rows;
       $self->log("Deleted $numDeleted rows from $tableName");              
       
       $self->{dbh}->commit() || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
       $self->log("Committed $numDeleted deletions from $tableName");
-      $stmt = $self->{dbh}->prepareAndExecute($sql);
+      $stmt = $self->{dbh}->prepareAndExecute($sql1);
       ($rows) = $stmt->fetchrow_array();        
     }
   }
