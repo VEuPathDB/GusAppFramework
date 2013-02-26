@@ -178,42 +178,34 @@ sub run{
 }
 
 sub deleteFromTable{
-   my ($self, $tableName, $algInvIdColumnName) = @_;
-
-   my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
-   my $rows = 1;
-   while ($rows) {
-     my $sql =
-       "SELECT COUNT(*) FROM $tableName
+  my ($self, $tableName, $algInvIdColumnName) = @_;
+  
+  my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
+  my $sql =
+    "SELECT COUNT(*) FROM $tableName
        WHERE $algInvIdColumnName IN ($algoInvocIds)";
-     my $stmt = $self->{dbh}->prepareAndExecute($sql);
-     
-     ($rows) = $stmt->fetchrow_array();    
-     if($rows){
-       if ($self->{commit} == 1) {
-	 my $sql = 
-	   "DELETE FROM $tableName
-            WHERE $algInvIdColumnName IN ($algoInvocIds) and rownum<=10000";
-	 warn "\n$sql\n" if $self->getArg('verbose');       
-	 if($rows > 0){
-	   $self->{dbh}->do($sql) || die "Failed running sql:\n$sql\n";
-	   my $numDeleted = $rows>10000 ? 10000 : $rows;
-	   $self->log("Deleted $rows rows from $tableName");              
-         
-	   $self->{dbh}->commit()
-	     || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
-	   $self->log("Committed deletions from $tableName");
-	 }
-	 else{
-	   $self->log("Deleted 0 rows from $tableName");
-	 }
-       }
-       else{
-         $self->log("Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n");
-       }
-     }
-   }
+  my $stmt = $self->{dbh}->prepareAndExecute($sql);
+  my  ($rows) = $stmt->fetchrow_array();   
+  if ($self->{commit} == 1) {
+    while ($rows) {
+      my $sql = 
+	"DELETE FROM $tableName
+         WHERE $algInvIdColumnName IN ($algoInvocIds) and rownum<=10000";
+      warn "\n$sql\n" if $self->getArg('verbose');       
+      $self->{dbh}->do($sql) || die "Failed running sql:\n$sql\n";
+      my $numDeleted = $rows>10000 ? 10000 : $rows;
+      $self->log("Deleted $numDeleted rows from $tableName");              
+      
+      $self->{dbh}->commit() || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
+      $self->log("Committed $numDeleted deletions from $tableName");
+      $stmt = $self->{dbh}->prepareAndExecute($sql);
+      ($rows) = $stmt->fetchrow_array();        
+    }
+  }
+      
+  else {
+    $self->log("Plugin will attempt to delete $rows rows from $tableName when run in commit mode\n");
+  }
 }
-
 
 1;
