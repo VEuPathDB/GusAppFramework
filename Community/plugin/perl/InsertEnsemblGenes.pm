@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11528 $',
+		     cvsRevision => '$Revision: 11530 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -170,30 +170,31 @@ sub insertExons {
   for (my $i=0; $i<@arr; $i++) {
     $pos{$arr[$i]} = $i;
   }
+  my %exonIds;
   while (my $line=<$fh>) {
     chomp($line);
     my @arr = split(/\t/, $line);
     my $rnaId = $arr[$pos{'Ensembl Transcript ID'}];
-    my $chrId = $chrIds->{$arr[$pos{'Chromosome Name'}]};
     if (!defined($chrIds->{$arr[$pos{'Chromosome Name'}]})) {
       next;
     }
+    my $chrId = $chrIds->{$arr[$pos{'Chromosome Name'}]};
     my $exonStart = $arr[$pos{'Exon Chr Start (bp)'}];
     my $exonEnd = $arr[$pos{'Exon Chr End (bp)'}];
     my $cdsStart = $arr[$pos{'CDS Start'}];
     my $cdsEnd = $arr[$pos{'CDS End'}];
     my $orderNum = $arr[$pos{'Exon Rank in Transcript'}];
-    if ($done{"$chrId|$exonStart|$exonEnd|$cdsStart|$cdsEnd"}) {
-      next;
+    
+    if (!defined($exonIds{"$chrId|$exonStart|$exonEnd|$cdsStart|$cdsEnd"})) {
+      my $exonFeature= GUS::Model::DoTS::ExonFeature->new({na_sequence_id => $chrId, name => 'Ensembl exon', coding_start => $cdsStart, coding_end => $cdsEnd});
+      my $exonNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $exonStart, start_max => $exonStart, end_min => $exonEnd, end_max => $exonEnd});
+      $exonNaLocation->setParent($exonFeature); 
+    
+      $exonFeature->submit();
+      $exonIds{"$chrId|$exonStart|$exonEnd|$cdsStart|$cdsEnd"} = $exonFeature->getId();
+      $count++;
     }
-    $done{"$chrId|$exonStart|$exonEnd|$cdsStart|$cdsEnd"} = 1;
-    my $exonFeature= GUS::Model::DoTS::ExonFeature->new({na_sequence_id => $chrId, name => 'Ensembl exon', coding_start => $cdsStart, coding_end => $cdsEnd});
-    my $exonNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $exonStart, start_max => $exonStart, end_min => $exonEnd, end_max => $exonEnd});
-    $exonNaLocation->setParent($exonFeature);    
-    $exonFeature->submit();
-    my $exonId = $exonFeature->getId();
-    $count++;
-    push(@{$exons->{$rnaId}}, "$exonId|$orderNum");
+    push(@{$exons->{$rnaId}}, $exonIds{"$chrId|$exonStart|$exonEnd|$cdsStart|$cdsEnd"} . "|" .$orderNum);
     $self->undefPointerCache();
   }
   close($fh);
