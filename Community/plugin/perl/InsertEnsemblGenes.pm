@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11530 $',
+		     cvsRevision => '$Revision: 11547 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -186,6 +186,7 @@ sub insertExons {
     my $orderNum = $arr[$pos{'Exon Rank in Transcript'}];
     
     if (!defined($exonIds{"$chrId|$exonStart|$exonEnd|$cdsStart|$cdsEnd"})) {
+      print('here');exit;
       my $exonFeature= GUS::Model::DoTS::ExonFeature->new({na_sequence_id => $chrId, name => 'Ensembl exon', coding_start => $cdsStart, coding_end => $cdsEnd});
       my $exonNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $exonStart, start_max => $exonStart, end_min => $exonEnd, end_max => $exonEnd});
       $exonNaLocation->setParent($exonFeature); 
@@ -243,6 +244,7 @@ sub insertGenes {
     $geneInstance->setParent($geneFeature);
     my $geneNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $geneStart, start_max => $geneStart, end_min => $geneEnd, end_max => $geneEnd, is_reversed => $isReversed}); 
     $geneNaLocation->setParent($geneFeature);
+    $self->addToSubmitList($geneFeature);
     my $rnaFeature = GUS::Model::DoTS::RNAFeature->new({name => $rnaId, na_sequence_id => $chrId, external_database_release_id => $extDbRlsGenes, source_id => $rnaId});
     $rnaFeature->setParent($geneFeature);
     my $rnaNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $rnaStart, start_max => $rnaStart, end_min => $rnaEnd, end_max => $rnaEnd, is_reversed => $isReversed}); 
