@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11553 $',
+		     cvsRevision => '$Revision: 11555 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -132,9 +132,12 @@ sub run {
 
   my $chrIds = $self->getChromosomeIds($extDbRlsGenome);
   $self->logData('Inserting the exons');
-  my $exons = $self->insertExons($chrIds);
+  my ($exons, $exonFeatureCount) = $self->insertExons($chrIds);
   $self->logData('Inserting the genes');
-  $self->insertGenes($extDbRlsGenes, $chrIds, $exons);
+  my ($geneFeatureCount, $rnaFeatureCount) = $self->insertGenes($extDbRlsGenes, $chrIds, $exons);
+
+  $self->setResultDescr("Inserted $geneFeatureCount gene features, $rnaFeatureCount rna features, and $exonFeatureCount, exon features");
+  $self->logData($resultDescrip);
 }
 
 # ----------------------------------------------------------------------
@@ -198,13 +201,14 @@ sub insertExons {
     $self->undefPointerCache();
   }
   close($fh);
-  $self->logData("Inserted $count exons");
-  return($exons);
+  return($exons, $count);
 }
 
 sub insertGenes {
   my ($self, $extDbRlsGenes, $chrIds, $exons) = @_;
   my $file = $self->getArg('geneFile');
+  my ($geneFeatureCount, $rnaFeatureCount) = (0,0,0);
+
   open(my $fh ,'<', $file);
   my %pos;
   my $symbolHeader = $self->getArg('symbolHeader');
@@ -257,10 +261,13 @@ sub insertGenes {
     my $rnaFeatureExon = GUS::Model::DoTS::RNAFeatureExon->new({exon_feature_id => $exonId, order_number => $orderNum});
     $rnaFeatureExon->setParent($rnaFeature);
     $gene->submit();
+    $geneFeatureCount++;
+    $rnaFeatureCount++;
     $self->undefPointerCache();
   } 
   close($fh);
  
+  return($geneFeatureCount, $rnaFeatureCount);
 }
 
 # ----------------------------------------------------------------------
