@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11555 $',
+		     cvsRevision => '$Revision: 11598 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -259,9 +259,10 @@ sub insertGenes {
 
     for (my $i=0; $i<@{$exons->{$rnaId}}; $i++) {
       ($exonId, $orderNum) = split(/\|/, $exons->{$rnaId}->[$i]);
+      
+      my $rnaFeatureExon = GUS::Model::DoTS::RNAFeatureExon->new({exon_feature_id => $exonId, order_number => $orderNum});
+      $rnaFeatureExon->setParent($rnaFeature);
     }
-    my $rnaFeatureExon = GUS::Model::DoTS::RNAFeatureExon->new({exon_feature_id => $exonId, order_number => $orderNum});
-    $rnaFeatureExon->setParent($rnaFeature);
     $gene->submit();
     $geneFeatureCount++;
     $rnaFeatureCount++;
