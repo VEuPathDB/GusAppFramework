@@ -26,7 +26,7 @@ sub getArgumentsDeclaration {
   my $argumentDeclaration =
     [
      fileArg({name => 'geneFile',
-	      descr => 'The full path to a tab-delimited file as generated from Ensembl Biomart with the following fields in the header: Ensembl Gene ID, Ensembl Transcript ID, Chromosome Name, Gene Start (bp), Gene End (bp), Strand, Transcript Start (bp), Transcript End (bp), <some symbol header, e.g. HGNC symbol>, Strand (order is irrelevant and extra header fields will be ignored).',
+	      descr => 'The full path to a tab-delimited file as generated from Ensembl Biomart with the following fields in the header: Ensembl Gene ID, Ensembl Transcript ID, Chromosome Name, Gene Start (bp), Gene End (bp), Strand, Transcript Start (bp), Transcript End (bp), <some symbol header, e.g. HGNC symbol> (order is irrelevant and extra header fields will be ignored).',
 	      constraintFunc=> undef,
 	      reqd  => 1,
 	      isList => 0,
@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11598 $',
+		     cvsRevision => '$Revision: 11566 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -132,7 +132,7 @@ sub run {
 
   my $chrIds = $self->getChromosomeIds($extDbRlsGenome);
   $self->logData('Inserting the exons');
-  my ($exons, $exonFeatureCount) = $self->insertExons($chrIds);
+  my ($exons, $exonFeatureCount) = $self->insertExons($extDbRlsGenes, $chrIds);
   $self->logData('Inserting the genes');
   my ($geneFeatureCount, $rnaFeatureCount) = $self->insertGenes($extDbRlsGenes, $chrIds, $exons);
 
@@ -159,7 +159,7 @@ sub getChromosomeIds {
 }
 
 sub insertExons {
-  my ($self, $chrIds) = @_;
+  my ($self, $extDbRlsGenes, $chrIds) = @_;
   my $exons;
   my $file = $self->getArg('exonFile');
   open(my $fh ,'<', $file);
@@ -189,7 +189,7 @@ sub insertExons {
     my $orderNum = $arr[$pos{'Exon Rank in Transcript'}];
     
     if (!defined($exonIds{"$chrId|$exonStart|$exonEnd|$cdsStart|$cdsEnd"})) {
-      my $exonFeature= GUS::Model::DoTS::ExonFeature->new({na_sequence_id => $chrId, name => 'Ensembl exon', coding_start => $cdsStart, coding_end => $cdsEnd});
+      my $exonFeature= GUS::Model::DoTS::ExonFeature->new({na_sequence_id => $chrId, name => 'Ensembl exon', coding_start => $cdsStart, coding_end => $cdsEnd}, external_database_release_id => $extDbRlsGenes);
       my $exonNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $exonStart, start_max => $exonStart, end_min => $exonEnd, end_max => $exonEnd});
       $exonNaLocation->setParent($exonFeature); 
     
