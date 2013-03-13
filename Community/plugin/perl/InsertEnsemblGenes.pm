@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11566 $',
+		     cvsRevision => '$Revision: 11597 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -247,7 +247,7 @@ sub insertGenes {
     $geneInstance->setParent($geneFeature);
     my $geneNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $geneStart, start_max => $geneStart, end_min => $geneEnd, end_max => $geneEnd, is_reversed => $isReversed}); 
     $geneNaLocation->setParent($geneFeature);
-    $geneFeature->addToSubmitList($geneNaLocation);
+    #$geneFeature->addToSubmitList($geneNaLocation);
     my $rnaFeature = GUS::Model::DoTS::RNAFeature->new({name => $rnaId, na_sequence_id => $chrId, external_database_release_id => $extDbRlsGenes, source_id => $rnaId});
     $rnaFeature->setParent($geneFeature);
     $geneFeature->addToSubmitList($rnaFeature);
