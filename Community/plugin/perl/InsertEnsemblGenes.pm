@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11597 $',
+		     cvsRevision => '$Revision: 11600 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -124,7 +124,6 @@ sub new {
 # ----------------------------------------------------------------------
 sub run {
   my ($self) = @_;
-  my $resultDescrip;
 
   my $extDbRlsGenome = $self->getExtDbRlsId($self->getArg('extDbRlsSpecGenome'));
   my $extDbRlsGenes = $self->getExtDbRlsId($self->getArg('extDbRlsSpecGenes'));
@@ -132,12 +131,14 @@ sub run {
 
   my $chrIds = $self->getChromosomeIds($extDbRlsGenome);
   $self->logData('Inserting the exons');
+  
   my ($exons, $exonFeatureCount) = $self->insertExons($extDbRlsGenes, $chrIds);
+
   $self->logData('Inserting the genes');
   my ($geneFeatureCount, $rnaFeatureCount) = $self->insertGenes($extDbRlsGenes, $chrIds, $exons);
 
-  $self->setResultDescr("Inserted $geneFeatureCount gene features, $rnaFeatureCount rna features, and $exonFeatureCount, exon features");
-  $self->logData($resultDescrip);
+  my $resultDescrip = "Inserted $geneFeatureCount gene features, $rnaFeatureCount rna features, $exonFeatureCount exon feature with their corresponding locations. Entries in DoTS.Gene, DoTS.GeneInstance, and DoTS.RnaFeatureExon were inserted as needed.";
+  return $resultDescrip;
 }
 
 # ----------------------------------------------------------------------
@@ -153,7 +154,6 @@ sub getChromosomeIds {
   while (my ($naSeqId, $sourceId) = $sth->fetchrow_array()) {
     $chrIds->{$sourceId} = $naSeqId;
   }
-  $dbh->disconnect();
   
   return($chrIds);
 }
@@ -189,7 +189,7 @@ sub insertExons {
     my $orderNum = $arr[$pos{'Exon Rank in Transcript'}];
     
     if (!defined($exonIds{"$chrId|$exonStart|$exonEnd|$cdsStart|$cdsEnd"})) {
-      my $exonFeature= GUS::Model::DoTS::ExonFeature->new({na_sequence_id => $chrId, name => 'Ensembl exon', coding_start => $cdsStart, coding_end => $cdsEnd}, external_database_release_id => $extDbRlsGenes);
+      my $exonFeature= GUS::Model::DoTS::ExonFeature->new({na_sequence_id => $chrId, name => 'Ensembl exon', coding_start => $cdsStart, coding_end => $cdsEnd, external_database_release_id => $extDbRlsGenes});
       my $exonNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $exonStart, start_max => $exonStart, end_min => $exonEnd, end_max => $exonEnd});
       $exonNaLocation->setParent($exonFeature); 
     
@@ -247,7 +247,7 @@ sub insertGenes {
     $geneInstance->setParent($geneFeature);
     my $geneNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $geneStart, start_max => $geneStart, end_min => $geneEnd, end_max => $geneEnd, is_reversed => $isReversed}); 
     $geneNaLocation->setParent($geneFeature);
-    #$geneFeature->addToSubmitList($geneNaLocation);
+    $geneFeature->addToSubmitList($geneNaLocation);
     my $rnaFeature = GUS::Model::DoTS::RNAFeature->new({name => $rnaId, na_sequence_id => $chrId, external_database_release_id => $extDbRlsGenes, source_id => $rnaId});
     $rnaFeature->setParent($geneFeature);
     $geneFeature->addToSubmitList($rnaFeature);
@@ -279,7 +279,6 @@ sub insertGenes {
 
 sub undoTables {
   my ($self) = @_;
-
   return ('DoTS.NALocation', 'DoTS.RNAFeatureExon', 'DoTS.ExonFeature', 'DoTS.RNAFeature', 'DoTS.GeneInstance', 'DoTS.GeneFeature', 'DoTS.Gene');
 }
 
