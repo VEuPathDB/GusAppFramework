@@ -71,7 +71,7 @@ sub getDocumentation {
 
   my $tablesAffected = [['Study::Study', 'Loads a row representing this study'], ['Study::StudyDesign', 'Loads all applicable study designs for this study'], ['Study::StudyFactors', 'Loads all applicable study factors for this study'], ['SRes::Contact', 'Enters all missing contacts'], ['Study::StudyContact', 'Loads links between this study and all relevant contacts'], ['SRes::BibliographicReference', 'Enters all missing bibliographic references'], ['Study::StudyBibRef', 'Loads links between this study and all relevant bibliographic references'], ['Study::Funding', 'Loads all missing fundings'], ['Study::StudyFunding', 'Loads links between this study and all relevant fundings'], ['Study::Protocol', 'Enters all missing protocols'], ['Study::ProtocolParam', 'Enters all missing protocol parameters'], ['Study::ProtocolSeriesLinks', 'Enters all missing protocol series links'], ['Study::ProtocolApp', 'Enters all missing protocol applications'], ['Study::ProtocolAppParam', 'Enters all missing protocol application parameters'], ['Study::ProtocolAppContact', 'Loads links between all relevant protocols and contacts'], ['Study::ProtocolAppNode', 'Enters all missing protocol application nodes'], ['Study::Characteristic', 'Enters all missing protocol app. node characteristics'], ['Study::StudyFactorValues', 'Loads links between study factors and protocol application nodes'], ['Study::StudyLink', 'Loads links between this study and all relevant protocol application nodes'], ['Study::Input', 'Loads links between protocol applications and their inputs'], ['Study::Output', 'Loads links between protocol applications and their outputs']];
 
-  my $tablesDependedOn = [['SRes::OntologyTerm', 'All ontology terms pointed to by this study'], ['SRes::Taxon', 'All taxa pointed to by this study'], ['SRes::ExternalDatabaseRelease', 'All external database releases referred to by this study']]; 
+  my $tablesDependedOn = [['SRes::OntologyTerm', 'All ontology terms pointed to by this study'], ['SRes::Taxon', 'All taxa pointed to by this study'], ['SRes::ExternalDatabaseRelease', 'All external database releases referred to by this study'], ['Core::DatabaseInfo', 'All database schemas referred to'], ['Core::TableInfo', 'All tables referred to']]; 
 
   my $howToRestart = '';
 
@@ -131,9 +131,6 @@ sub run {
   my $parser = XML::LibXML->new();
   my $doc = $parser->parse_file($self->getArg('xmlFile'));
 
-  my @gusFields = ('modification_date', 'user_read', 'user_write', 'group_read', 'group_write', 'other_read', 'other_write', 'row_user_id', 'row_group_id', 'row_project_id', 'row_alg_invocation_id');
-  my $resultDescrip = "";
-
   my $study = $self->getStudy($doc);
 
   $self->setStudyDesigns($doc, $study);
@@ -143,11 +140,11 @@ sub run {
   my $contacts = $self->getContacts($doc, $study);
 
   my @protocolSeriesNames;
-  my $protocolIds = $self->submitProtocols($doc, \@protocolSeriesNames);
+  my $protocolSeriesChildren;
+  my $protocolIds = $self->submitProtocols($doc, \@protocolSeriesNames, $protocolSeriesChildren);
 
   for (my $i=0; $i<@protocolSeriesNames; $i++) {
-    my $protocolSeriesIds = $self->submitProtocolSeries($protocolSeriesNames[$i], $protocolIds);
-
+    $self->submitProtocolSeries($protocolSeriesNames[$i], $protocolIds, $protocolSeriesChildren);
   }
   
   $study->submit();
@@ -158,11 +155,7 @@ sub run {
   }
 
   my $protAppNodeIds = $self->submitProtocolAppNodes($doc, $studyId, $studyFactorIds);
-
-  $self->logData("");
-
-  $self->setResultDescr($resultDescrip);
-  $self->logData($resultDescrip);
+  $self->submitProtocolApps($doc, $protocolIds, $protAppNodeIds, $contacts, $protocolSeriesChildren);
 }
 
 # ----------------------------------------------------------------------
@@ -212,26 +205,21 @@ sub getStudy {
     $study->setConclusions($conclusions);
   }
 
-
   my $pubmedIdsString = $studyNode->findvalue('./pubmed_ids');
   if (defined($pubmedIdsString) && $pubmedIdsString !~ /^\s*$/) {
     my @pubmedIds = split(/;/, $pubmedIdsString);
     for (my $i=0; $i<@pubmedIds; $i++) {
       my $bibRef = $self->getBibRef($pubmedIds[$i]);
-#      my $bibRefString = $bibRef->toString();
-#      $self->log($bibRefString);
       my $studyBibRef = GUS::Model::Study::StudyBibRef->new();
       $studyBibRef->setParent($study);
       $studyBibRef->setParent($bibRef);
     }
   }
 
-#  my $studyString = $study->toString();
-#  $self->log($studyString);
   return($study);
 }
 
-# AUTHOR: Oleg Khovayko
+# AUTHOR of getPubmedXml: Oleg Khovayko
 # This Util is Based on the eutils example from NCBI
 
 sub getPubmedXml {
@@ -381,7 +369,7 @@ sub setExtDbRlsSourceId {
 
   my $extDbRlsId =  $self->getExtDbRlsId($extDbRls);
   if (!$extDbRlsId || !defined($extDbRlsId)) {
-    $self->userError("$extDbRlsId is not in SRes.ExteralDatabaseRelease");
+    $self->userError("$extDbRlsId is not in SRes.ExternalDatabaseRelease");
   }
   $object->setExternalDatabaseReleaseId($extDbRlsId); 
   $object->setSourceId($sourceId);   
@@ -391,13 +379,12 @@ sub getContacts {
   my ($self, $doc, $study) = @_;
   my $contacts;
   
-  foreach my $contactNode ($doc->findnodes('/mage-tab/idf/contact')) {
-    
+  foreach my $contactNode ($doc->findnodes('/mage-tab/idf/contact')) {  
     my $name = $contactNode->findvalue('./name');
     my $contact = GUS::Model::SRes::Contact->new({name => $name});
-    my $affiliation = $contactNode->findvalue('./affiliation');
-    if ($name ne $affiliation) {
-      my $affiliation = GUS::Model::SRes::Contact->new({name => $affiliation);
+    my $affiliationNode = $contactNode->findvalue('./affiliation');
+    if ($name ne $affiliationNode) {
+      my $affiliation = GUS::Model::SRes::Contact->new({name => $affiliationNode});
       $affiliation->retrieveFromDB();
       $contact->setParent($affiliation);
     }
@@ -458,8 +445,6 @@ sub getContacts {
       $contact->setFax($fax);
     }
 
-#    my $contactString = $contact->toString();
-#    $self->log($contactString);
     $contact->submit();
 
     my @roles = split(/;/, $contactNode->findvalue('./roles'));
@@ -484,7 +469,7 @@ sub getContacts {
 
 sub submitProtocols {
   my ($self, $doc) = @_;
-  my ($protocolIds, $protocolSeriesNames);
+  my ($protocolIds, $protocolSeriesNames, $protocolSeriesChildren);
   
   foreach my $protocolNode ($doc->findnodes('/mage-tab/idf/protocol')) {
     my $childProtocols = $protocolNode->findvalue('./child_protocols');
@@ -551,7 +536,7 @@ sub submitProtocols {
 	if (defined($name) && $name !~ /^\s*$/) {
 	  my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name});
 	  $protocolParam->setParent($protocol);
-	  $protocol->retrieveFromDB();
+	  $protocolParam->retrieveFromDB();
 	  
 	  my $defaultValue = $protocolParamNode->findvalue('./default_value');
 	  if (defined($defaultValue) && $defaultValue  !~ /^\s*$/) {
@@ -592,23 +577,22 @@ sub submitProtocols {
       }
     }
 
-#    my $protocolString = $protocol->toString();
-#    $self->log($protocolString);
     $protocol->submit();
     my $protocolId = $protocol->getId();
     $protocolIds->{$name} = $protocolId;
+    push(@{$protocolSeriesChildren->{$protocolId}}, $protocolId);
   }
+
   return($protocolIds);
 }
 
 sub submitProtocolSeries {
-  my ($self, $protocolSeriesName, $protocolIds) = @_;
-  my $protocolSeriesIds;
+  my ($self, $protocolSeriesName, $protocolIds, $protocolSeriesChildren) = @_;
   
   my $protocolSeries = GUS::Model::Study::Protocol->new({name => $protocolSeriesName});
   $protocolSeries->submit();
   my $protocolSeriesId = $protocolSeries->getId();
-  $protocolSeriesIds->{$protocolSeriesName} = $protocolSeriesId;
+  $protocolIds->{$protocolSeriesName} = $protocolSeriesId;
   my @children = split(/;/, $protocolSeriesName);
   for (my $i=0; $i<@children; $i++) {
     my $orderNum = $i+1;
@@ -616,15 +600,16 @@ sub submitProtocolSeries {
     $protocolSeriesLink->setProtocolSeriesId($protocolSeriesId);
     $protocolSeriesLink->setProtocolId($protocolIds->{$children[$i]});
     $protocolSeriesLink->submit();
+    push(@{$protocolSeriesChildren->{$protocolSeriesId}}, $protocolIds->{$children[$i]});
   }
-
-  return($protocolSeriesIds);
 }
 
-sub submitProtocolAppNodes {
-  my ($self, $doc, $studyId, $studyFactors) = @_;
-  my $protocolAppNodes;
 
+sub submitProtocolAppNodes {
+  my ($self, $doc, $studyId, $studyFactorIds) = @_;
+  my $protocolAppNodeIds;
+
+  $self->logData("Submitting the Protocol Application Nodes");
   foreach my $protocolAppNodeNode ($doc->findnodes('/mage-tab/sdrf/protocol_app_node')) {
     my $id = $protocolAppNodeNode->getAttribute('id');
  
@@ -634,35 +619,23 @@ sub submitProtocolAppNodes {
     if (defined($typeNode) && $typeNode !~ /^\s*$/) {
       my $extDbRlsId =  $self->getExtDbRlsId('OBI|http://purl.obolibrary.org/obo/obi/2012-07-01/obi.owl');
       if (!$extDbRlsId || !defined($extDbRlsId)) {
-	$self->userError("Database is missing an entry for the GusDatabase, with unknown version");
+	$self->userError("Database is missing an entry for http://purl.obolibrary.org/obo/obi/2012-07-01/obi.owl");
       }
       my $type = $self->getOntologyTerm($typeNode, $extDbRlsId);
       my $typeId = $type->getId();
       $protocolAppNode->setTypeId($typeId);
     }
 
-#    my $subTypeNode = $protocolAppNodeNode->findvalue('./subtype');
-#    if (defined($subTypeNode) && $subTypeNode !~ /^\s*$/) {
-#      my $extDbRlsId =  $self->getExtDbRlsId('GusDatabase|unknown');
-#      if (!$extDbRlsId || !defined($extDbRlsId)) {
-#	$self->userError("Database is missing an entry for the GusDatabase, with unknown version");
-#      }
-#      my $subtype = $self->getOntologyTerm($subTypeNode, $extDbRlsId);
-#      my $subTypeId = $subtype->getId();
-#      $protocolAppNode->setSubtypeId($subtypeId);
-#    }
-
     my $description = $protocolAppNodeNode->findvalue('./description');
     if (defined($description) && $description !~ /^\s*$/) {
       $protocolAppNode->setDescription($description);
     }
     
-    my $ext_db_rls = $protocolAppNodeNode->findvalue('./ext_db_rls');
-    my $source_id = $protocolAppNodeNode->findvalue('./source_id');
+    my $extDbRls = $protocolAppNodeNode->findvalue('./ext_db_rls');
+    my $sourceId = $protocolAppNodeNode->findvalue('./source_id');
     if (defined($extDbRls) && $extDbRls !~ /^\s*$/ && defined($sourceId) && $sourceId !~ /^\s*$/) {
       $self->setExtDbRlsSourceId($extDbRls, $sourceId, $protocolAppNode);     
     }
-
  
     my $uri = $protocolAppNodeNode->findvalue('./uri');
     if (defined($uri) && $uri !~ /^\s*$/) {
@@ -689,25 +662,135 @@ sub submitProtocolAppNodes {
       if (defined($fvValue) && $fvValue !~ /^\s*$/) {    
 	$studyFactorValue->setValue($fvValue);
       }
-      if (defined($fvTable) && $fvTable !~ /^\s*$/ && (defined($fvRowId) && $fvRowId !~ /^\s*$/) ) { 
+      if (defined($fvTable) && $fvTable !~ /^\s*$/ && defined($fvRowId) && $fvRowId !~ /^\s*$/ ) { 
 	my $tableId = $self->getTableId($fvTable);
 	$studyFactorValue->setTableId($tableId);
 	$studyFactorValue->setRowId($fvRowId);
-      }
-      
+      }      
     }
+    my $characteristics = $protocolAppNodeNode->findvalue('./node_characteristics');
+    if (defined($characteristics) && $characteristics !~ /^\s*$/) {
+      foreach my $charNode ($characteristics->findnodes('./characteristic')) {
+	my $characteristic = GUS::Model::Study::Characteristic->new();
+	$characteristic->setParent($protocolAppNode);
+	my $table = $charNode->findvalue('./table');
+	if (defined($table) && $table !~ /^\s*$/) {
+	  my $tableId = $self->getTableId($table);
+	  $characteristic->setTableId($tableId);
+	}
 
+	my $ontologyTermNode = $characteristic->findvalue('./ontology_term');
+	if (defined($ontologyTermNode) && $ontologyTermNode !~ /^\s*$/) {    
+	  my $extDbRls = $characteristic->findvalue('./external_database_release');
+	  my $extDbRlsId = $self->getExtDbRlsId($extDbRls);
+      
+	  if (!$extDbRlsId || !defined($extDbRlsId)) {
+	    $self->userError("Must provide a valid external database release for Characteristic $ontologyTermNode");
+	  }
+	  my $ontologyTerm = $self->getOntologyTerm($ontologyTermNode, $extDbRlsId);
+	  $characteristic->setParent($ontologyTerm);
+	}
+      }
+    }
     $protocolAppNode->submit();
     $protocolAppNodeIds->{$id} = $protocolAppNode->getId();
   }
-
   return ($protocolAppNodeIds);
 }
 
-sub undoTables {
+sub submitProtocolApps {
+  my ($self, $doc, $protocolIds, $protAppNodeIds, $contacts, $protocolSeriesChildren) = @_;
+ 
+  $self->logData("Submitting the Protocol Applications");
+  foreach my $protocolAppNode ($doc->findnodes('/mage-tab/sdrf/protocol_app')) {
+    my $protocol = $protocolAppNode->findvalue('./protocol');
+    my $protocolApp = GUS::Model::Study::ProtocolApp->new({protocol_id => $protocolIds->{$protocol}});
+    my $protocolAppDate = $protocolAppNode->findvalue('./protocol_app_date');
+    if (defined($protocolAppDate) && $protocolAppDate !~ /^\s*$/) {
+      $protocolApp->setProtocolAppDate($protocolAppDate);
+    }
+    if ($protocolAppNode->findvalue('./contacts') && defined($protocolAppNode->findvalue('./contacts'))) {
+      my @contactInfo = split(/;/, $protocolAppNode->findvalue('./contacts'));
+      for (my $i=0; $i<@contactInfo; $i++) {
+	my ($contactName, $role, $extDbRls) = split(/\:\:/, $contactInfo[$i]);
+	my $extDbRlsId = $self->getExtDbRlsId($extDbRls);
+	if (!$extDbRlsId || !defined($extDbRlsId)) {
+	  $self->userError("Must provide a valid external database release for Performer $contactName Role's $role");
+	}    
+	my $contactRole = $self->getOntologyTerm($role, $extDbRlsId);
+	
+	my $protocolAppContact = GUS::Model::Study::ProtocolAppContact->new({contact_id => $contacts->{$contactName}, order_num => $i+1});
+	$protocolAppContact->setParent($protocolApp);
+	$protocolAppContact->setParent($contactRole);
+      }
+    }
+
+    if ($protocolAppNode->findvalue('./protocol_app_params') && defined($protocolAppNode->findvalue('./protocol_app_params'))) {
+      my @paramsByChildren = split(/!/, $protocolAppNode->findvalue('./protocol_app_params'));
+      for (my $i=0; $i<@paramsByChildren; $i++) {
+	my @paramsInfo = split(/;/, $paramsByChildren[$i]);	
+	for (my $j=0; $j<@paramsInfo; $j++) {
+	  my ($name, $value, $table, $rowId) = split(/\|/, $paramsInfo[$j]);
+	  my $protocolAppParam = GUS::Model::Study::ProtocolAppParam->new();
+	  $protocolAppParam->setParent($protocolApp);
+	  my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name, protocol_id => $protocolSeriesChildren->{$protocol}->[$i]});
+	  $protocolParam->retrieveFromDB();
+	  $protocolAppParam->setParent($protocolParam);
+	  if ($value && defined($value)) {
+	    $protocolAppParam->setValue($value);
+	  }
+	  if (defined($table) && $table !~ /^\s*$/ && defined($rowId) && $rowId !~ /^\s*$/ ) { 
+	    my $tableId = $self->getTableId($table);
+	    $protocolAppParam->setTableId($tableId);
+	    $protocolAppParam->setRowId($rowId);
+	  }
+	}
+      } 
+    }
+    if ($protocolAppNode->findvalue('./inputs') && defined($protocolAppNode->findvalue('./inputs'))) {
+      my @inputNodes = split(/;/, $protocolAppNode->findvalue('./inputs'));    
+      for (my $i=0; $i<@inputNodes; $i++) {
+	my $input = GUS::Model::Study::Input->new();
+	$input->setParent($protocolApp);
+	$input->setProtocolAppNodeId($protAppNodeIds->{$inputNodes[$i]});
+      }
+    }
+    if ($protocolAppNode->findvalue('./outputs') && defined($protocolAppNode->findvalue('./outputs'))) {
+      my @outputNodes = split(/;/, $protocolAppNode->findvalue('./outputs'));    
+      for (my $i=0; $i<@outputNodes; $i++) {
+	my $output = GUS::Model::Study::Output->new();
+	$output->setParent($protocolApp);
+	$output->setProtocolAppNodeId($protAppNodeIds->{$outputNodes[$i]});
+      }
+    }
+    $protocolApp->submit();
+    $self->undefPointerCache();
+  }
+}
+
+sub getTableId {
+  my ($self, $dbTable) = @_;
+  my ($db, $table) = split(/\:\:/, $dbTable);
+
+  my $dbInfo = GUS::Model::Core::DatabaseInfo->new({name => $db});
+  if (!$dbInfo->retrieveFromDB()) {
+    $self->userError("There is no database schema named $db");
+  }
+  my $dbId = $dbInfo->getId();
+
+  my $tableInfo = GUS::Model::Core::TableInfo->new({database_id => $dbId, name => $table});
+  if (!$tableInfo->retrieveFromDb()) {
+    $self->userError("There is no table named $table in database schema $db")
+  }
+  my$tableId = $tableInfo->getId();
+  
+  return($tableId);
+}
+
+sub undoTable {
   my ($self) = @_;
 
-  return ('Study.StudyContact', 'Study.ProtocolAppContact', 'SRes.Contact', 'Study.StudyBibRef', 'SRes.BibliographicReference', 'Study.StudyFunding', 'Study.Funding', 'Study.StudyDesign', 'Study.StudyFactorValue', 'Study.StudyFactor', 'Study.StudyLink', 'Study.Characteristic', 'Study.Input', 'Study.Output', 'Study.ProtocolAppNode', 'Study.ProtocolAppParam', 'Study.ProtocolApp', 'Study.ProtocolParam', 'Study.ProtocolSeriesLink', 'Study.Protocol', 'Study.Study');
+  return ('Study.StudyContact', 'Study.ProtocolAppContact', 'SRes.Contact', 'Study.StudyBibRef', 'SRes.BibliographicReference', 'Study.StudyDesign', 'Study.StudyFactorValue', 'Study.StudyFactor', 'Study.StudyLink', 'Study.Characteristic', 'Study.Input', 'Study.Output', 'Study.ProtocolAppNode', 'Study.ProtocolAppParam', 'Study.ProtocolApp', 'Study.ProtocolParam', 'Study.ProtocolSeriesLink', 'Study.Protocol', 'Study.Study');
 }
 
 1;
