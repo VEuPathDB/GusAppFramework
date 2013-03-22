@@ -18,6 +18,7 @@ use GUS::Model::SRes::Contact;
 use GUS::Model::Study::StudyContact;
 use GUS::Model::SRes::BibliographicReference;
 use GUS::Model::SRes::OntologyTerm;
+use GUS::Model::SRes::TaxonName;
 use GUS::Model::Study::StudyBibRef;
 use GUS::Model::Study::StudyDesign;
 use GUS::Model::Study::Funding;
@@ -306,10 +307,10 @@ sub getOntologyTerm {
   my $ontologyTerm = GUS::Model::SRes::OntologyTerm->new({name => $term, external_database_release_id => $extDbRlsId});
 
   if (!$ontologyTerm->retrieveFromDB()) {
-    $self->userError('Missing entry for term=$term and ext_db_rls_id=$extDbRlsId in SRes.OntologyTerm');
+    $self->userError("Missing entry for term=$term and ext_db_rls_id=$extDbRlsId in SRes.OntologyTerm");
   }
   elsif ($ontologyTerm->getIsObsolete()==1) {
-    $self->userError('Term $term is obsolete in ext_db_rls_id=$extDbRlsId');
+    $self->userError("Term $term is obsolete in ext_db_rls_id=$extDbRlsId");
   }
   return($ontologyTerm);
 }
@@ -643,13 +644,15 @@ sub submitProtocolAppNodes {
     }
       
     my $taxon = $protocolAppNodeNode->findvalue('./taxon');
-    my $taxonName = GUS::Model::SRes::TaxonName->new({name => $taxon});
-    if ($taxonName->retrieveFromDB()) {
-      my $taxonId = $taxonName->getTaxonId();
-      $protocolAppNode->setTaxonId($taxonId);
-    }
-    else {
-      $self->userError("The database does not contain an entry for Taxon $taxon");
+    if (defined($taxon) && $taxon !~ /^\s*$/) {   
+      my $taxonName = GUS::Model::SRes::TaxonName->new({name => $taxon});
+      if ($taxonName->retrieveFromDB()) {
+	my $taxonId = $taxonName->getTaxonId();
+	$protocolAppNode->setTaxonId($taxonId);
+      }
+      else {
+	$self->userError("The database does not contain an entry for Taxon $taxon");
+      }
     }
     my $studyLink = GUS::Model::Study::StudyLink->new({study_id => $studyId});
     $studyLink->setParent($protocolAppNode);
@@ -668,7 +671,7 @@ sub submitProtocolAppNodes {
 	$studyFactorValue->setRowId($fvRowId);
       }      
     }
-    my $characteristics = $protocolAppNodeNode->findvalue('./node_characteristics');
+    my ($characteristics) = $protocolAppNodeNode->findnodes('./node_characteristics');
     if (defined($characteristics) && $characteristics !~ /^\s*$/) {
       foreach my $charNode ($characteristics->findnodes('./characteristic')) {
 	my $characteristic = GUS::Model::Study::Characteristic->new();
@@ -678,12 +681,12 @@ sub submitProtocolAppNodes {
 	  my $tableId = $self->getTableId($table);
 	  $characteristic->setTableId($tableId);
 	}
-
-	my $ontologyTermNode = $characteristic->findvalue('./ontology_term');
+	
+	my $ontologyTermNode = $charNode->findvalue('./ontology_term');
 	if (defined($ontologyTermNode) && $ontologyTermNode !~ /^\s*$/) {    
-	  my $extDbRls = $characteristic->findvalue('./external_database_release');
+	  my $extDbRls = $charNode->findvalue('./external_database_release');
 	  my $extDbRlsId = $self->getExtDbRlsId($extDbRls);
-      
+	  
 	  if (!$extDbRlsId || !defined($extDbRlsId)) {
 	    $self->userError("Must provide a valid external database release for Characteristic $ontologyTermNode");
 	  }
