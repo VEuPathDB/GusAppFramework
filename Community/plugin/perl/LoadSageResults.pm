@@ -492,13 +492,13 @@ sub processLine {
 
   my $arrayDesignId = $arrayDesign->get('array_design_id');
 
-  for (my $i=1;$i < @$line;$i++) {
-
-    my $sageTag = GUS::Model::RAD::SAGETag->new({'tag'=>$line->[0], 'array_design_id'=>$arrayDesignId});
+   my $sageTag = GUS::Model::RAD::SAGETag->new({'tag'=>$line->[0], 'array_design_id'=>$arrayDesignId});
 
     if (! $sageTag->retrieveFromDB()) {
       $self->userError("SAGE tag $line->[0] with array_design_id = $arrayDesignId not in db\n");
     } 
+
+  for (my $i=1;$i < @$line;$i++) {
 
     my $sageTagResult = GUS::Model::RAD::SAGETagResult->new({'subclass_view'=>"SAGETagResult", 'quantification_id'=>$quantificationIds->[$i],'tag_count'=>$line->[$i]});
 
