@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11719 $',
+		     cvsRevision => '$Revision: 11722 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -143,7 +143,7 @@ sub run {
 
   my @protocolSeriesNames;
   my $protocolSeriesChildren;
-  my $protocolIds = $self->submitProtocols($doc, \@protocolSeriesNames, $protocolSeriesChildren);
+  my $protocolIds = $self->submitProtocols($doc, $contacts, \@protocolSeriesNames, $protocolSeriesChildren);
 
   for (my $i=0; $i<@protocolSeriesNames; $i++) {
     $self->submitProtocolSeries($protocolSeriesNames[$i], $protocolIds, $protocolSeriesChildren);
@@ -470,7 +470,7 @@ sub getContacts {
 }
 
 sub submitProtocols {
-  my ($self, $doc, $protocolSeriesNames, $protocolSeriesChildren) = @_;
+  my ($self, $doc, $contacts, $protocolSeriesNames, $protocolSeriesChildren) = @_;
   my $protocolIds;
   
   foreach my $protocolNode ($doc->findnodes('/mage-tab/idf/protocol')) {
@@ -524,11 +524,11 @@ sub submitProtocols {
     
     my $contactName = $protocolNode->findvalue('./contact');
     if (defined($contactName) && $contactName !~ /^\s*$/) {
-      my $contact = GUS::Model::SRes::Contact->new({name => $contactName});
-      if (!$contact->retrieveFromDb()) {
-	$self->userError("Contact $contactName for protocol $name is missing in the database");
-      }
-      $protocol->setParent($contact);
+#      my $contact = GUS::Model::SRes::Contact->new({name => $contactName});
+#      if (!$contact->retrieveFromDb()) {
+#	$self->userError("Contact $contactName for protocol $name is missing in the database");
+#      }
+      $protocol->setParent($contacts->{$contactName});
     }
     
     my ($protocolParamsNode) = $protocolNode->findnodes('./protocol_parameters');
