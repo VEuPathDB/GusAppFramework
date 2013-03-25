@@ -7,6 +7,7 @@
 package GUS::Community::Plugin::LoadStudyXml;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
+use Data::Dumper;
 use strict;
 use CBIL::Util::Disp;
 use GUS::PluginMgr::Plugin;
@@ -109,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11459 $',
+		     cvsRevision => '$Revision: 11719 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -469,8 +470,8 @@ sub getContacts {
 }
 
 sub submitProtocols {
-  my ($self, $doc) = @_;
-  my ($protocolIds, $protocolSeriesNames, $protocolSeriesChildren);
+  my ($self, $doc, $protocolSeriesNames, $protocolSeriesChildren) = @_;
+  my $protocolIds;
   
   foreach my $protocolNode ($doc->findnodes('/mage-tab/idf/protocol')) {
     my $childProtocols = $protocolNode->findvalue('./child_protocols');
@@ -790,10 +791,10 @@ sub getTableId {
   return($tableId);
 }
 
-sub undoTable {
+sub undoTables {
   my ($self) = @_;
-
-  return ('Study.StudyContact', 'Study.ProtocolAppContact', 'SRes.Contact', 'Study.StudyBibRef', 'SRes.BibliographicReference', 'Study.StudyDesign', 'Study.StudyFactorValue', 'Study.StudyFactor', 'Study.StudyLink', 'Study.Characteristic', 'Study.Input', 'Study.Output', 'Study.ProtocolAppNode', 'Study.ProtocolAppParam', 'Study.ProtocolApp', 'Study.ProtocolParam', 'Study.ProtocolSeriesLink', 'Study.Protocol', 'Study.Study');
+# add SRes.Contact
+  return ('Study.StudyContact', 'Study.ProtocolAppContact', 'Study.StudyBibRef', 'SRes.BibliographicReference', 'Study.StudyDesign', 'Study.StudyFactorValue', 'Study.StudyFactor', 'Study.StudyLink', 'Study.Characteristic', 'Study.Input', 'Study.Output', 'Study.ProtocolAppNode', 'Study.ProtocolAppParam', 'Study.ProtocolApp', 'Study.ProtocolParam', 'Study.ProtocolSeriesLink', 'Study.Protocol', 'Study.Study');
 }
 
 1;
