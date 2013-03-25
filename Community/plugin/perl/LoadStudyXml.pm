@@ -111,7 +111,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11727 $',
+		     cvsRevision => '$Revision: 11728 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -484,6 +484,9 @@ sub submitProtocols {
     my $protocol = GUS::Model::Study::Protocol->new({name => $name});
     if ($protocol->retrieveFromDB()) {
       logData("A protocol named $name already exists in the database. This will not be altered.");
+      my $protocolId = $protocol->getId();
+      $protocolIds->{$name} = $protocolId;
+      next;
     }
     
     my $description = $protocolNode->findvalue('./description');
