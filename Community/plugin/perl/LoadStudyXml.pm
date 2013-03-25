@@ -106,6 +106,7 @@ sub new {
   my $self = {};
   bless($self,$class);
 
+
   my $documentation = &getDocumentation();
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
