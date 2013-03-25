@@ -111,7 +111,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11726 $',
+		     cvsRevision => '$Revision: 11727 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -482,7 +482,9 @@ sub submitProtocols {
     }   
     my $name = $protocolNode->findvalue('./name');
     my $protocol = GUS::Model::Study::Protocol->new({name => $name});
-    $protocol->retrieveFromDB();
+    if ($protocol->retrieveFromDB()) {
+      logData("A protocol named $name already exists in the database. This will not be altered.");
+    }
     
     my $description = $protocolNode->findvalue('./description');
     if (defined($description) && $description !~ /^\s*$/) {
@@ -535,7 +537,6 @@ sub submitProtocols {
 	if (defined($name) && $name !~ /^\s*$/) {
 	  my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name});
 	  $protocolParam->setParent($protocol);
-#	  $protocolParam->retrieveFromDB();
 	  
 	  my $defaultValue = $protocolParamNode->findvalue('./default_value');
 	  if (defined($defaultValue) && $defaultValue  !~ /^\s*$/) {
