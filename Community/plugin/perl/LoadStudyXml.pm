@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11722 $',
+		     cvsRevision => '$Revision: 11725 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -157,7 +157,7 @@ sub run {
   }
 
   my $protAppNodeIds = $self->submitProtocolAppNodes($doc, $studyId, $studyFactorIds);
-  $self->submitProtocolApps($doc, $protocolIds, $protAppNodeIds, $contacts, $protocolSeriesChildren);
+  $self->submitProtocolApps($doc, $contacts, $protocolIds, $protAppNodeIds, $contacts, $protocolSeriesChildren);
 }
 
 # ----------------------------------------------------------------------
@@ -524,10 +524,6 @@ sub submitProtocols {
     
     my $contactName = $protocolNode->findvalue('./contact');
     if (defined($contactName) && $contactName !~ /^\s*$/) {
-#      my $contact = GUS::Model::SRes::Contact->new({name => $contactName});
-#      if (!$contact->retrieveFromDb()) {
-#	$self->userError("Contact $contactName for protocol $name is missing in the database");
-#      }
       $protocol->setParent($contacts->{$contactName});
     }
     
@@ -605,7 +601,6 @@ sub submitProtocolSeries {
     push(@{$protocolSeriesChildren->{$protocolSeriesId}}, $protocolIds->{$children[$i]});
   }
 }
-
 
 sub submitProtocolAppNodes {
   my ($self, $doc, $studyId, $studyFactorIds) = @_;
@@ -703,7 +698,7 @@ sub submitProtocolAppNodes {
 }
 
 sub submitProtocolApps {
-  my ($self, $doc, $protocolIds, $protAppNodeIds, $contacts, $protocolSeriesChildren) = @_;
+  my ($self, $doc, $contacts, $protocolIds, $protAppNodeIds, $contacts, $protocolSeriesChildren) = @_;
  
   $self->logData("Submitting the Protocol Applications");
   foreach my $protocolAppNode ($doc->findnodes('/mage-tab/sdrf/protocol_app')) {
@@ -717,15 +712,20 @@ sub submitProtocolApps {
       my @contactInfo = split(/;/, $protocolAppNode->findvalue('./contacts'));
       for (my $i=0; $i<@contactInfo; $i++) {
 	my ($contactName, $role, $extDbRls) = split(/\:\:/, $contactInfo[$i]);
-	my $extDbRlsId = $self->getExtDbRlsId($extDbRls);
-	if (!$extDbRlsId || !defined($extDbRlsId)) {
-	  $self->userError("Must provide a valid external database release for Performer $contactName Role's $role");
-	}    
-	my $contactRole = $self->getOntologyTerm($role, $extDbRlsId);
-	
-	my $protocolAppContact = GUS::Model::Study::ProtocolAppContact->new({contact_id => $contacts->{$contactName}, order_num => $i+1});
-	$protocolAppContact->setParent($protocolApp);
-	$protocolAppContact->setParent($contactRole);
+	if (defined($contactName) && $contactName !~ /^\s*$/) {
+	  my $protocolAppContact = GUS::Model::Study::ProtocolAppContact->new({order_num => $i+1});
+	  
+	  $protocolAppContact->setParent($contacts->{$contactName});
+	  $protocolAppContact->setParent($protocolApp);
+	  if (defined($role) && $role !~ /^\s*$/) {
+	    my $extDbRlsId = $self->getExtDbRlsId($extDbRls);
+	    if (!$extDbRlsId || !defined($extDbRlsId)) {
+	      $self->userError("Must provide a valid external database release for Performer $contactName Role's $role");
+	    }    
+	    my $contactRole = $self->getOntologyTerm($role, $extDbRlsId);
+	    $protocolAppContact->setParent($contactRole);
+	  }
+	}
       }
     }
 
