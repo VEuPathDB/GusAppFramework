@@ -111,7 +111,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11729 $',
+		     cvsRevision => '$Revision: 11742 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -789,7 +789,7 @@ sub getTableId {
   my $dbId = $dbInfo->getId();
 
   my $tableInfo = GUS::Model::Core::TableInfo->new({database_id => $dbId, name => $table});
-  if (!$tableInfo->retrieveFromDb()) {
+  if (!$tableInfo->retrieveFromDB()) {
     $self->userError("There is no table named $table in database schema $db")
   }
   my$tableId = $tableInfo->getId();
