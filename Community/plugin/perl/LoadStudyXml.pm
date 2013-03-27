@@ -7,8 +7,6 @@
 package GUS::Community::Plugin::LoadStudyXml;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
-use Data::Dumper;
-use IO::File;
 use strict;
 use CBIL::Util::Disp;
 use GUS::PluginMgr::Plugin;
@@ -112,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11744 $',
+		     cvsRevision => '$Revision: 11754 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -149,7 +147,7 @@ sub run {
   for (my $i=0; $i<@protocolSeriesNames; $i++) {
     $protocolSeriesChildren = $self->submitProtocolSeries($protocolSeriesNames[$i], $protocolIds, $protocolSeriesChildren);
   }
-#  STDERR->print(Dumper($protocolSeriesChildren) . "\n"); exit;  
+
   $study->submit();
   my $studyId = $study->getId();
 
