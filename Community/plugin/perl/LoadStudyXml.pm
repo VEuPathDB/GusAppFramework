@@ -581,6 +581,7 @@ sub submitProtocols {
     my $protocolId = $protocol->getId();
     $protocolIds->{$name} = $protocolId;
     push(@{$protocolSeriesChildren->{$name}}, $protocolId);
+  STDERR->print(Dumper($protocolSeriesChildren) . "\n"); exit;
   }
   STDERR->print(Dumper($protocolSeriesChildren) . "\n"); exit;
   return($protocolIds);
