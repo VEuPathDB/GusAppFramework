@@ -111,7 +111,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11742 $',
+		     cvsRevision => '$Revision: 11743 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -152,10 +152,6 @@ sub run {
   
   $study->submit();
   my $studyId = $study->getId();
-#  my $studyFactorIds;
-#  foreach my $key (keys %{$studyFactors}) {
-#    $studyFactorIds->{$key} = $studyFactors->{$key}->getId();
-#  }
 
   my $protAppNodeIds = $self->submitProtocolAppNodes($doc, $studyId, $studyFactors);
   $self->submitProtocolApps($doc, $contacts, $protocolIds, $protAppNodeIds, $contacts, $protocolSeriesChildren);
@@ -735,8 +731,8 @@ sub submitProtocolApps {
       }
     }
 
-    if ($protocolAppNode->findvalue('./protocol_app_params') && defined($protocolAppNode->findvalue('./protocol_app_params'))) {
-      my @paramsByChildren = split(/!/, $protocolAppNode->findvalue('./protocol_app_params'));
+    if ($protocolAppNode->findvalue('./protocol_app_parameters') && defined($protocolAppNode->findvalue('./protocol_app_parameters'))) {
+      my @paramsByChildren = split(/!/, $protocolAppNode->findvalue('./protocol_app_parameters'));
       for (my $i=0; $i<@paramsByChildren; $i++) {
 	my @paramsInfo = split(/;/, $paramsByChildren[$i]);	
 	for (my $j=0; $j<@paramsInfo; $j++) {
@@ -799,7 +795,8 @@ sub getTableId {
 
 sub undoTables {
   my ($self) = @_;
-# add SRes.Contact
+# SRes.Contact won't be deleted
+
   return ('Study.StudyContact', 'Study.ProtocolAppContact', 'Study.StudyBibRef', 'SRes.BibliographicReference', 'Study.StudyDesign', 'Study.StudyFactorValue', 'Study.StudyFactor', 'Study.StudyLink', 'Study.Characteristic', 'Study.Input', 'Study.Output', 'Study.ProtocolAppNode', 'Study.ProtocolAppParam', 'Study.ProtocolApp', 'Study.ProtocolParam', 'Study.ProtocolSeriesLink', 'Study.Protocol', 'Study.Study');
 }
 
