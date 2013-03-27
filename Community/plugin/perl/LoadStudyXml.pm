@@ -111,7 +111,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11728 $',
+		     cvsRevision => '$Revision: 11729 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -152,12 +152,12 @@ sub run {
   
   $study->submit();
   my $studyId = $study->getId();
-  my $studyFactorIds;
-  foreach my $key (keys %{$studyFactors}) {
-    $studyFactorIds->{$key} = $studyFactors->{$key}->getId();
-  }
+#  my $studyFactorIds;
+#  foreach my $key (keys %{$studyFactors}) {
+#    $studyFactorIds->{$key} = $studyFactors->{$key}->getId();
+#  }
 
-  my $protAppNodeIds = $self->submitProtocolAppNodes($doc, $studyId, $studyFactorIds);
+  my $protAppNodeIds = $self->submitProtocolAppNodes($doc, $studyId, $studyFactors);
   $self->submitProtocolApps($doc, $contacts, $protocolIds, $protAppNodeIds, $contacts, $protocolSeriesChildren);
 }
 
@@ -608,7 +608,7 @@ sub submitProtocolSeries {
 }
 
 sub submitProtocolAppNodes {
-  my ($self, $doc, $studyId, $studyFactorIds) = @_;
+  my ($self, $doc, $studyId, $studyFactors) = @_;
   my $protocolAppNodeIds;
 
   $self->logData("Submitting the Protocol Application Nodes");
@@ -661,8 +661,9 @@ sub submitProtocolAppNodes {
     my @factorValues = split(/;/, $protocolAppNodeNode->findvalue('./factor_values'));
     for (my $i=0; $i<@factorValues; $i++) {
       my ($fvName, $fvValue, $fvTable, $fvRowId) = split(/\|/, $factorValues[$i]);
-      my $studyFactorValue = GUS::Model::Study::StudyFactorValue->new({study_factor_id => $studyFactorIds->{$fvName}});
+      my $studyFactorValue = GUS::Model::Study::StudyFactorValue->new();
       $studyFactorValue->setParent($protocolAppNode);
+      $studyFactorValue->setParent($studyFactors->{$fvName});
       if (defined($fvValue) && $fvValue !~ /^\s*$/) {    
 	$studyFactorValue->setValue($fvValue);
       }
