@@ -144,13 +144,12 @@ sub run {
   my $contacts = $self->getContacts($doc, $study);
 
   my @protocolSeriesNames;
-  my $protocolSeriesChildren;
-  my $protocolIds = $self->submitProtocols($doc, $contacts, \@protocolSeriesNames, $protocolSeriesChildren);
+  my ($protocolIds, $protocolSeriesChildren) = $self->submitProtocols($doc, $contacts, \@protocolSeriesNames);
 
   for (my $i=0; $i<@protocolSeriesNames; $i++) {
-    $self->submitProtocolSeries($protocolSeriesNames[$i], $protocolIds, $protocolSeriesChildren);
+    $protocolSeriesChildren = $self->submitProtocolSeries($protocolSeriesNames[$i], $protocolIds, $protocolSeriesChildren);
   }
-  
+#  STDERR->print(Dumper($protocolSeriesChildren) . "\n"); exit;  
   $study->submit();
   my $studyId = $study->getId();
 
@@ -468,8 +467,8 @@ sub getContacts {
 }
 
 sub submitProtocols {
-  my ($self, $doc, $contacts, $protocolSeriesNames, $protocolSeriesChildren) = @_;
-  my $protocolIds;
+  my ($self, $doc, $contacts, $protocolSeriesNames) = @_;
+  my ($protocolIds, $protocolSeriesChildren);
   
   foreach my $protocolNode ($doc->findnodes('/mage-tab/idf/protocol')) {
     my $childProtocols = $protocolNode->findvalue('./child_protocols');
@@ -581,11 +580,9 @@ sub submitProtocols {
     my $protocolId = $protocol->getId();
     $protocolIds->{$name} = $protocolId;
     push(@{$protocolSeriesChildren->{$name}}, $protocolId);
-  STDERR->print("$name, $protocolId\n");
-  STDERR->print(Dumper($protocolSeriesChildren) . "\n"); exit;
   }
 
-  return($protocolIds);
+  return($protocolIds, $protocolSeriesChildren);
 }
 
 sub submitProtocolSeries {
@@ -604,6 +601,7 @@ sub submitProtocolSeries {
     $protocolSeriesLink->submit();
     push(@{$protocolSeriesChildren->{$protocolSeriesName}}, $protocolIds->{$children[$i]});
   }
+  return($protocolSeriesChildren);
 }
 
 sub submitProtocolAppNodes {
