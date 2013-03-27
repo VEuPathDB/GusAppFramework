@@ -111,7 +111,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11743 $',
+		     cvsRevision => '$Revision: 11744 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -579,7 +579,7 @@ sub submitProtocols {
     $protocol->submit();
     my $protocolId = $protocol->getId();
     $protocolIds->{$name} = $protocolId;
-    push(@{$protocolSeriesChildren->{$protocolId}}, $protocolId);
+    push(@{$protocolSeriesChildren->{$name}}, $protocolId);
   }
 
   return($protocolIds);
@@ -599,7 +599,7 @@ sub submitProtocolSeries {
     $protocolSeriesLink->setProtocolSeriesId($protocolSeriesId);
     $protocolSeriesLink->setProtocolId($protocolIds->{$children[$i]});
     $protocolSeriesLink->submit();
-    push(@{$protocolSeriesChildren->{$protocolSeriesId}}, $protocolIds->{$children[$i]});
+    push(@{$protocolSeriesChildren->{$protocolSeriesName}}, $protocolIds->{$children[$i]});
   }
 }
 
@@ -732,7 +732,7 @@ sub submitProtocolApps {
     }
 
     if ($protocolAppNode->findvalue('./protocol_app_parameters') && defined($protocolAppNode->findvalue('./protocol_app_parameters'))) {
-      my @paramsByChildren = split(/!/, $protocolAppNode->findvalue('./protocol_app_parameters'));
+      my @paramsByChildren = split(/\!/, $protocolAppNode->findvalue('./protocol_app_parameters'));
       for (my $i=0; $i<@paramsByChildren; $i++) {
 	my @paramsInfo = split(/;/, $paramsByChildren[$i]);	
 	for (my $j=0; $j<@paramsInfo; $j++) {
