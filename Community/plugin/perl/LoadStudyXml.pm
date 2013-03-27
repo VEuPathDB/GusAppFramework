@@ -8,6 +8,7 @@ package GUS::Community::Plugin::LoadStudyXml;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 use Data::Dumper;
+use IO::File;
 use strict;
 use CBIL::Util::Disp;
 use GUS::PluginMgr::Plugin;
@@ -145,7 +146,7 @@ sub run {
   my @protocolSeriesNames;
   my $protocolSeriesChildren;
   my $protocolIds = $self->submitProtocols($doc, $contacts, \@protocolSeriesNames, $protocolSeriesChildren);
-
+  STDERR->print(Dumper($protocolSeriesChildren) . "\n"); exit;
   for (my $i=0; $i<@protocolSeriesNames; $i++) {
     $self->submitProtocolSeries($protocolSeriesNames[$i], $protocolIds, $protocolSeriesChildren);
   }
@@ -581,7 +582,7 @@ sub submitProtocols {
     $protocolIds->{$name} = $protocolId;
     push(@{$protocolSeriesChildren->{$name}}, $protocolId);
   }
-
+  STDERR->print(Dumper($protocolSeriesChildren) . "\n"); exit;
   return($protocolIds);
 }
 
@@ -601,6 +602,7 @@ sub submitProtocolSeries {
     $protocolSeriesLink->submit();
     push(@{$protocolSeriesChildren->{$protocolSeriesName}}, $protocolIds->{$children[$i]});
   }
+  STDERR->print(Dumper($protocolSeriesChildren) . "\n"); exit;
 }
 
 sub submitProtocolAppNodes {
@@ -701,7 +703,7 @@ sub submitProtocolAppNodes {
 
 sub submitProtocolApps {
   my ($self, $doc, $contacts, $protocolIds, $protAppNodeIds, $contacts, $protocolSeriesChildren) = @_;
- 
+   STDERR->print(Dumper($protocolSeriesChildren) . "\n"); exit;
   $self->logData("Submitting the Protocol Applications");
   foreach my $protocolAppNode ($doc->findnodes('/mage-tab/sdrf/protocol_app')) {
     my $protocol = $protocolAppNode->findvalue('./protocol');
@@ -739,6 +741,8 @@ sub submitProtocolApps {
 	  my ($name, $value, $table, $rowId) = split(/\|/, $paramsInfo[$j]);
 	  my $protocolAppParam = GUS::Model::Study::ProtocolAppParam->new();
 	  $protocolAppParam->setParent($protocolApp);
+	  $self->logData("$protocol, $name, $protocolSeriesChildren->{$protocol}->[$i]"); exit;
+
 	  my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name, protocol_id => $protocolSeriesChildren->{$protocol}->[$i]});
 	  $protocolParam->retrieveFromDB();
 	  $protocolAppParam->setParent($protocolParam);
