@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="DB2BiomatGraph" default="jar" basedir=".">
+
+  <description>This file is an ant build script for the DBtoGraph program.</description>
+
+  <property name="user.name" value="crisl"/>
+  <property name="src" location="src"/>
+  <property name="lib.home" value="lib"/>
+  <property name="build" location="build"/>
+  <property name="resources" location="resources"/>
+  <property name="package.name" value="edu.upenn.cbil.biomatgraph"/>
+  <property name="main.class" value="GraphBuild"/>
+	
+  <path id="classpath">
+  	<fileset dir="${lib.home}">
+  	  <include name="*.jar"/>
+  	</fileset>
+  </path>
+	
+  <fileset id="resources" dir="${resources}">
+    <include name="**/*.properties"/>
+  </fileset>
+
+  <pathconvert property="libs.project" pathsep=" ">  
+    <mapper>  
+      <chainedmapper>
+        <flattenmapper />
+        <globmapper from="*" to="lib/*" />  
+      </chainedmapper>  
+    </mapper>  
+    <path>
+      <fileset dir="${lib.home}">  
+        <include name="**/*.jar" />  
+      </fileset>  
+    </path>  
+  </pathconvert>
+	
+  <target name="clean" description="clean up" >
+    <delete dir="${build}"/>
+  </target>
+
+  <target name="init" depends="clean">
+	<mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile" depends="init" description="compile the source">
+    <javac srcdir="${src}" destdir="${build}" includeantruntime="false">
+      <classpath refid="classpath"/>
+  	</javac>
+  </target>
+
+  <target name="jar" depends="compile" description="generate the distribution">
+  	<jar jarfile="${ant.project.name}.jar" basedir="${build}" includes="**/*.class">
+  	  <manifest>
+	    <attribute name="Built-By" value="${user.name}" /> 
+  	    <attribute name="Main-Class" value="${package.name}.${main.class}"/>
+        <attribute name="Class-Path" value="${libs.project}"/>
+      </manifest>
+  	  <fileset refid="resources"/>
+    </jar>
+  </target>
+	
+</project>
