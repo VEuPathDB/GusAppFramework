@@ -15,6 +15,8 @@ public class ApplicationConfiguration {
   public static String databasePoolMinSize;
   public static String databasePoolMaxSize;
   public static String filePrefix;
+  public static String graphvizPath;
+  public static String graphvizDot;
 
 		
   public void applicationSetup() throws ApplicationException {
@@ -28,6 +30,8 @@ public class ApplicationConfiguration {
       databasePoolMinSize = (String)properties.get("database.poolMinSize");
       databasePoolMaxSize = (String)properties.get("database.poolMaxSize");
       filePrefix = (String)properties.get("file.prefix");
+      graphvizPath = (String)properties.get("graphviz.path");
+      graphvizDot = (String)properties.get("graphviz.dot");
       log4jSetup();
     }
     catch(IOException ioe) {
