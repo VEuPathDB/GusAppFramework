@@ -1,0 +1,622 @@
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 9:47:48 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 9:58:34 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 10:04:19 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 10:05:07 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 10:05:37 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 10:08:44 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Ending at Apr 9, 2013 10:08:45 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 10:10:28 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Ending at Apr 9, 2013 10:10:28 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 10:42:06 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Ending at Apr 9, 2013 10:42:07 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 11:08:47 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 11:12:05 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 11:14:20 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Ending at Apr 9, 2013 11:14:21 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 11:18:19 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Ending at Apr 9, 2013 11:18:20 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 11:32:44 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Ending at Apr 9, 2013 11:32:46 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Starting at Apr 9, 2013 11:40:21 AM
+INFO main edu.upenn.cbil.gustograph.GraphBuild - Ending at Apr 9, 2013 11:40:22 AM
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Starting at Apr 9, 2013 11:47:32 AM
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Ending at Apr 9, 2013 11:47:33 AM
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Starting at Apr 9, 2013 3:32:54 PM
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Starting at Apr 9, 2013 3:33:00 PM
+DEBUG main edu.upenn.cbil.biomatgraph.DatabaseManager - Oracle connection Url: jdbc:oracle:thin:@localhost:1521:gbcotest
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Starting at Apr 9, 2013 3:33:34 PM
+DEBUG main edu.upenn.cbil.biomatgraph.DatabaseManager - Oracle connection Url: jdbc:oracle:thin:@localhost:1521:gbcotest
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query nodes By Id: SELECT p.protocol_app_node_id AS id, p.name AS label, o.name AS node_type  FROM study.protocolappnode p, study.studylink sl, study.study s, sres.ontologyterm o  WHERE p.protocol_app_node_id=sl.protocol_app_node_id   AND sl.study_id = ?   AND p.type_id = o.ontology_term_id 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@61c8e59b[nodeId=1245,label=E8.0 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@172946d8[nodeId=1246,label=E8.0 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@16ea1ac9[nodeId=1247,label=COND 0 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@63848ddf[nodeId=1248,label=COND 0 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@137e5e84[nodeId=1249,label=COND 0 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4d6f361b[nodeId=1250,label=E8.0 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@40494e54[nodeId=1251,label=E8.0 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@cb58dc5[nodeId=1252,label=E8.0 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@636e8707[nodeId=1253,label=E8.0 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6d630f90[nodeId=1254,label=COND 0 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@292ef0b[nodeId=1255,label=COND 0 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7c8bbc7e[nodeId=1256,label=COND 0 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5461f8e3[nodeId=1257,label=E8.0 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6c1b2a5c[nodeId=1258,label=E8.0 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6b7a3576[nodeId=1259,label=E8.0 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@244c0d1a[nodeId=1260,label=E8.0 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7cf03893[nodeId=1261,label=COND 0 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7f127af9[nodeId=1262,label=COND 0 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1647b29c[nodeId=1263,label=COND 0 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3d1f2b31[nodeId=1264,label=E8.5 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@494cbd50[nodeId=1265,label=E8.5 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4d20f4c8[nodeId=1266,label=E8.5 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2ea69e07[nodeId=1267,label=E8.5 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3cd0f57e[nodeId=1268,label=COND 1 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3aa54263[nodeId=1269,label=COND 1 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@37a98fa9[nodeId=1270,label=COND 1 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5d16bccb[nodeId=1271,label=E8.5 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7fc4e32b[nodeId=1272,label=E8.5 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@571e5d95[nodeId=1273,label=E8.5 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@a920de2[nodeId=1274,label=E8.5 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7acd75d9[nodeId=1275,label=COND 1 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@46f4388b[nodeId=1276,label=COND 1 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4bac5211[nodeId=1277,label=COND 1 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1e4000e7[nodeId=1278,label=E8.5 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7bfb4d34[nodeId=1279,label=E8.5 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2f89d083[nodeId=1280,label=E8.5 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@d860d7[nodeId=1281,label=E8.5 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7dbdc3af[nodeId=1282,label=COND 1 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@357a56a7[nodeId=1283,label=COND 1 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@72cf095e[nodeId=1284,label=COND 1 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@76703534[nodeId=1243,label=E8.0 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@40b525ab[nodeId=1244,label=E8.0 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 42 nodes
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query edges By Id: SELECT i.protocol_app_node_id AS node1, p.name AS label, o.protocol_app_node_id AS node2  FROM study.input i, study.output o, study.studylink sl, study.protocol p, study.protocolapp pa  WHERE i.protocol_app_id = o.protocol_app_id   AND i.protocol_app_node_id = sl.protocol_app_node_id   AND i.protocol_app_id = pa.protocol_app_id   AND pa.protocol_id = p.protocol_id   AND sl.study_id = ? 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@1e1ebbf6[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1245,toNode=1246]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@551eef55[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1246,toNode=1247]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@61f2e11b[label=RUM pipeline: alignment and coverage,fromNode=1247,toNode=1248]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@1098e5da[label=RUM pipeline: feature quantification,fromNode=1248,toNode=1249]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@261a53b9[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1250,toNode=1251]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@a6eaa3a[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1251,toNode=1252]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6769cb2f[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1252,toNode=1253]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@529aafb3[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1253,toNode=1254]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@29853b23[label=RUM pipeline: alignment and coverage,fromNode=1254,toNode=1255]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@69ed8c20[label=RUM pipeline: feature quantification,fromNode=1255,toNode=1256]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6a8abf34[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1257,toNode=1258]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3b0f2591[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1258,toNode=1259]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5f6b70e1[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1259,toNode=1260]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6bff4b8[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1260,toNode=1261]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@245b5f7e[label=RUM pipeline: alignment and coverage,fromNode=1261,toNode=1262]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6ada5bd7[label=RUM pipeline: feature quantification,fromNode=1262,toNode=1263]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@25c3b70f[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1264,toNode=1265]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@54274d27[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1265,toNode=1266]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@603a669a[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1266,toNode=1267]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@1a2639d1[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1267,toNode=1268]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@439dd5c0[label=RUM pipeline: alignment and coverage,fromNode=1268,toNode=1269]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@2f3c52ee[label=RUM pipeline: feature quantification,fromNode=1269,toNode=1270]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@21689f7c[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1271,toNode=1272]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5bbe9706[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1272,toNode=1273]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3dad39f8[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1273,toNode=1274]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@37b8e86a[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1274,toNode=1275]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4ca2a3ba[label=RUM pipeline: alignment and coverage,fromNode=1275,toNode=1276]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@49ab2fa4[label=RUM pipeline: feature quantification,fromNode=1276,toNode=1277]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5c4ddc5[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1278,toNode=1279]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3fbbb378[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1279,toNode=1280]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3c03abf8[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1280,toNode=1281]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@150f4590[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1281,toNode=1282]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@1d9ffbbd[label=RUM pipeline: alignment and coverage,fromNode=1282,toNode=1283]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7248447c[label=RUM pipeline: feature quantification,fromNode=1283,toNode=1284]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@66886381[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1243,toNode=1244]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@43cdebe[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1244,toNode=1245]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 36 edges
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Ending at Apr 9, 2013 3:33:38 PM
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Starting at Apr 9, 2013 3:41:13 PM
+DEBUG main edu.upenn.cbil.biomatgraph.DatabaseManager - Oracle connection Url: jdbc:oracle:thin:@localhost:1521:gbcotest
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query nodes By Id: SELECT p.protocol_app_node_id AS id, p.name AS label, o.name AS node_type  FROM study.protocolappnode p, study.studylink sl, study.study s, sres.ontologyterm o  WHERE p.protocol_app_node_id=sl.protocol_app_node_id   AND sl.study_id = ?   AND p.type_id = o.ontology_term_id 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@63848ddf[nodeId=1245,label=E8.0 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@cb58dc5[nodeId=1246,label=E8.0 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@636e8707[nodeId=1247,label=COND 0 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6d630f90[nodeId=1248,label=COND 0 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@292ef0b[nodeId=1249,label=COND 0 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7c8bbc7e[nodeId=1250,label=E8.0 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3a043413[nodeId=1251,label=E8.0 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@69f6e926[nodeId=1252,label=E8.0 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5144f423[nodeId=1253,label=E8.0 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5f84f84[nodeId=1254,label=COND 0 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@712c662b[nodeId=1255,label=COND 0 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@19e7cb19[nodeId=1256,label=COND 0 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1647b29c[nodeId=1257,label=E8.0 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3d1f2b31[nodeId=1258,label=E8.0 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@494cbd50[nodeId=1259,label=E8.0 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4d20f4c8[nodeId=1260,label=E8.0 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2ea69e07[nodeId=1261,label=COND 0 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3cd0f57e[nodeId=1262,label=COND 0 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3aa54263[nodeId=1263,label=COND 0 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@37a98fa9[nodeId=1264,label=E8.5 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5d16bccb[nodeId=1265,label=E8.5 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7fc4e32b[nodeId=1266,label=E8.5 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@571e5d95[nodeId=1267,label=E8.5 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@a920de2[nodeId=1268,label=COND 1 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7acd75d9[nodeId=1269,label=COND 1 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@46f4388b[nodeId=1270,label=COND 1 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4bac5211[nodeId=1271,label=E8.5 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1e4000e7[nodeId=1272,label=E8.5 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7bfb4d34[nodeId=1273,label=E8.5 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2f89d083[nodeId=1274,label=E8.5 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@d860d7[nodeId=1275,label=COND 1 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7dbdc3af[nodeId=1276,label=COND 1 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@357a56a7[nodeId=1277,label=COND 1 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@72cf095e[nodeId=1278,label=E8.5 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@76703534[nodeId=1279,label=E8.5 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@40b525ab[nodeId=1280,label=E8.5 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@34bc1ebd[nodeId=1281,label=E8.5 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2a862557[nodeId=1282,label=COND 1 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4cfd8890[nodeId=1283,label=COND 1 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1910cd6d[nodeId=1284,label=COND 1 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1e1ebbf6[nodeId=1243,label=E8.0 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@73c622ec[nodeId=1244,label=E8.0 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 42 nodes
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query edges By Id: SELECT i.protocol_app_node_id AS node1, p.name AS label, o.protocol_app_node_id AS node2  FROM study.input i, study.output o, study.studylink sl, study.protocol p, study.protocolapp pa  WHERE i.protocol_app_id = o.protocol_app_id   AND i.protocol_app_node_id = sl.protocol_app_node_id   AND i.protocol_app_id = pa.protocol_app_id   AND pa.protocol_id = p.protocol_id   AND sl.study_id = ? 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@a6eaa3a[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1245,toNode=1246]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@529aafb3[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1246,toNode=1247]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@29853b23[label=RUM pipeline: alignment and coverage,fromNode=1247,toNode=1248]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@69ed8c20[label=RUM pipeline: feature quantification,fromNode=1248,toNode=1249]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6a8abf34[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1250,toNode=1251]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3b0f2591[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1251,toNode=1252]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5f6b70e1[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1252,toNode=1253]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6bff4b8[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1253,toNode=1254]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@245b5f7e[label=RUM pipeline: alignment and coverage,fromNode=1254,toNode=1255]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6ada5bd7[label=RUM pipeline: feature quantification,fromNode=1255,toNode=1256]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@25c3b70f[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1257,toNode=1258]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@54274d27[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1258,toNode=1259]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@603a669a[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1259,toNode=1260]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@1a2639d1[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1260,toNode=1261]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@439dd5c0[label=RUM pipeline: alignment and coverage,fromNode=1261,toNode=1262]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@2f3c52ee[label=RUM pipeline: feature quantification,fromNode=1262,toNode=1263]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@21689f7c[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1264,toNode=1265]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5bbe9706[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1265,toNode=1266]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3dad39f8[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1266,toNode=1267]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@37b8e86a[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1267,toNode=1268]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4ca2a3ba[label=RUM pipeline: alignment and coverage,fromNode=1268,toNode=1269]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@49ab2fa4[label=RUM pipeline: feature quantification,fromNode=1269,toNode=1270]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5c4ddc5[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1271,toNode=1272]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3fbbb378[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1272,toNode=1273]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3c03abf8[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1273,toNode=1274]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@150f4590[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1274,toNode=1275]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@1d9ffbbd[label=RUM pipeline: alignment and coverage,fromNode=1275,toNode=1276]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7248447c[label=RUM pipeline: feature quantification,fromNode=1276,toNode=1277]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@66886381[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1278,toNode=1279]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@43cdebe[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1279,toNode=1280]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@38438e1e[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1280,toNode=1281]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5b27706d[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1281,toNode=1282]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7a4632db[label=RUM pipeline: alignment and coverage,fromNode=1282,toNode=1283]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@16b50694[label=RUM pipeline: feature quantification,fromNode=1283,toNode=1284]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@46c2ea31[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1243,toNode=1244]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@269d5b42[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1244,toNode=1245]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 36 edges
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Ending at Apr 9, 2013 3:41:14 PM
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Starting at Apr 9, 2013 3:43:19 PM
+DEBUG main edu.upenn.cbil.biomatgraph.DatabaseManager - Oracle connection Url: jdbc:oracle:thin:@localhost:1521:gbcotest
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query nodes By Id: SELECT p.protocol_app_node_id AS id, p.name AS label, o.name AS node_type  FROM study.protocolappnode p, study.studylink sl, study.study s, sres.ontologyterm o  WHERE p.protocol_app_node_id=sl.protocol_app_node_id   AND sl.study_id = ?   AND p.type_id = o.ontology_term_id 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@137e5e84[nodeId=1245,label=E8.0 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@636e8707[nodeId=1246,label=E8.0 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6d630f90[nodeId=1247,label=COND 0 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@292ef0b[nodeId=1248,label=COND 0 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7c8bbc7e[nodeId=1249,label=COND 0 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3a043413[nodeId=1250,label=E8.0 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@69f6e926[nodeId=1251,label=E8.0 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5144f423[nodeId=1252,label=E8.0 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5f84f84[nodeId=1253,label=E8.0 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@712c662b[nodeId=1254,label=COND 0 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@19e7cb19[nodeId=1255,label=COND 0 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@40c6e398[nodeId=1256,label=COND 0 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3d1f2b31[nodeId=1257,label=E8.0 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@494cbd50[nodeId=1258,label=E8.0 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4d20f4c8[nodeId=1259,label=E8.0 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2ea69e07[nodeId=1260,label=E8.0 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3cd0f57e[nodeId=1261,label=COND 0 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3aa54263[nodeId=1262,label=COND 0 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@37a98fa9[nodeId=1263,label=COND 0 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5d16bccb[nodeId=1264,label=E8.5 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7fc4e32b[nodeId=1265,label=E8.5 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@571e5d95[nodeId=1266,label=E8.5 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@a920de2[nodeId=1267,label=E8.5 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7acd75d9[nodeId=1268,label=COND 1 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@46f4388b[nodeId=1269,label=COND 1 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4bac5211[nodeId=1270,label=COND 1 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1e4000e7[nodeId=1271,label=E8.5 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7bfb4d34[nodeId=1272,label=E8.5 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2f89d083[nodeId=1273,label=E8.5 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@d860d7[nodeId=1274,label=E8.5 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7dbdc3af[nodeId=1275,label=COND 1 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@357a56a7[nodeId=1276,label=COND 1 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@72cf095e[nodeId=1277,label=COND 1 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@76703534[nodeId=1278,label=E8.5 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@40b525ab[nodeId=1279,label=E8.5 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@34bc1ebd[nodeId=1280,label=E8.5 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2a862557[nodeId=1281,label=E8.5 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4cfd8890[nodeId=1282,label=COND 1 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1910cd6d[nodeId=1283,label=COND 1 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1e1ebbf6[nodeId=1284,label=COND 1 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@73c622ec[nodeId=1243,label=E8.0 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@551eef55[nodeId=1244,label=E8.0 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 42 nodes
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query edges By Id: SELECT i.protocol_app_node_id AS node1, p.name AS label, o.protocol_app_node_id AS node2  FROM study.input i, study.output o, study.studylink sl, study.protocol p, study.protocolapp pa  WHERE i.protocol_app_id = o.protocol_app_id   AND i.protocol_app_node_id = sl.protocol_app_node_id   AND i.protocol_app_id = pa.protocol_app_id   AND pa.protocol_id = p.protocol_id   AND sl.study_id = ? 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6769cb2f[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1245,toNode=1246]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@29853b23[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1246,toNode=1247]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@69ed8c20[label=RUM pipeline: alignment and coverage,fromNode=1247,toNode=1248]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6a8abf34[label=RUM pipeline: feature quantification,fromNode=1248,toNode=1249]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3b0f2591[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1250,toNode=1251]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5f6b70e1[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1251,toNode=1252]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6bff4b8[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1252,toNode=1253]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@245b5f7e[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1253,toNode=1254]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6ada5bd7[label=RUM pipeline: alignment and coverage,fromNode=1254,toNode=1255]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@25c3b70f[label=RUM pipeline: feature quantification,fromNode=1255,toNode=1256]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@54274d27[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1257,toNode=1258]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@603a669a[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1258,toNode=1259]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@1a2639d1[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1259,toNode=1260]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@439dd5c0[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1260,toNode=1261]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@2f3c52ee[label=RUM pipeline: alignment and coverage,fromNode=1261,toNode=1262]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@21689f7c[label=RUM pipeline: feature quantification,fromNode=1262,toNode=1263]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5bbe9706[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1264,toNode=1265]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3dad39f8[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1265,toNode=1266]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@37b8e86a[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1266,toNode=1267]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4ca2a3ba[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1267,toNode=1268]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@49ab2fa4[label=RUM pipeline: alignment and coverage,fromNode=1268,toNode=1269]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5c4ddc5[label=RUM pipeline: feature quantification,fromNode=1269,toNode=1270]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3fbbb378[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1271,toNode=1272]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3c03abf8[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1272,toNode=1273]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@150f4590[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1273,toNode=1274]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@1d9ffbbd[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1274,toNode=1275]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7248447c[label=RUM pipeline: alignment and coverage,fromNode=1275,toNode=1276]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@66886381[label=RUM pipeline: feature quantification,fromNode=1276,toNode=1277]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@43cdebe[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1278,toNode=1279]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@38438e1e[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1279,toNode=1280]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5b27706d[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1280,toNode=1281]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7a4632db[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1281,toNode=1282]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@16b50694[label=RUM pipeline: alignment and coverage,fromNode=1282,toNode=1283]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@46c2ea31[label=RUM pipeline: feature quantification,fromNode=1283,toNode=1284]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@269d5b42[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1243,toNode=1244]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@24d25ddc[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1244,toNode=1245]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 36 edges
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Ending at Apr 9, 2013 3:43:20 PM
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Starting at Apr 9, 2013 4:45:40 PM
+DEBUG main edu.upenn.cbil.biomatgraph.DatabaseManager - Oracle connection Url: jdbc:oracle:thin:@localhost:1521:gbcotest
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query nodes By Id: SELECT p.protocol_app_node_id AS id, p.name AS label, o.name AS node_type  FROM study.protocolappnode p, study.studylink sl, study.study s, sres.ontologyterm o  WHERE p.protocol_app_node_id=sl.protocol_app_node_id   AND sl.study_id = ?   AND p.type_id = o.ontology_term_id 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5461f8e3[nodeId=1245,label=E8.0 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7cf03893[nodeId=1246,label=E8.0 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7f127af9[nodeId=1247,label=COND 0 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1647b29c[nodeId=1248,label=COND 0 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3d1f2b31[nodeId=1249,label=COND 0 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@494cbd50[nodeId=1250,label=E8.0 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4d20f4c8[nodeId=1251,label=E8.0 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2ea69e07[nodeId=1252,label=E8.0 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3cd0f57e[nodeId=1253,label=E8.0 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3aa54263[nodeId=1254,label=COND 0 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@37a98fa9[nodeId=1255,label=COND 0 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5d16bccb[nodeId=1256,label=COND 0 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2f89d083[nodeId=1257,label=E8.0 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@d860d7[nodeId=1258,label=E8.0 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7dbdc3af[nodeId=1259,label=E8.0 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@357a56a7[nodeId=1260,label=E8.0 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@72cf095e[nodeId=1261,label=COND 0 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@76703534[nodeId=1262,label=COND 0 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@40b525ab[nodeId=1263,label=COND 0 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@34bc1ebd[nodeId=1264,label=E8.5 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2a862557[nodeId=1265,label=E8.5 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4cfd8890[nodeId=1266,label=E8.5 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1910cd6d[nodeId=1267,label=E8.5 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1e1ebbf6[nodeId=1268,label=COND 1 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@73c622ec[nodeId=1269,label=COND 1 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@551eef55[nodeId=1270,label=COND 1 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@61f2e11b[nodeId=1271,label=E8.5 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1098e5da[nodeId=1272,label=E8.5 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@261a53b9[nodeId=1273,label=E8.5 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@a6eaa3a[nodeId=1274,label=E8.5 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6769cb2f[nodeId=1275,label=COND 1 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@529aafb3[nodeId=1276,label=COND 1 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@29853b23[nodeId=1277,label=COND 1 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@69ed8c20[nodeId=1278,label=E8.5 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6a8abf34[nodeId=1279,label=E8.5 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3b0f2591[nodeId=1280,label=E8.5 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5f6b70e1[nodeId=1281,label=E8.5 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6bff4b8[nodeId=1282,label=COND 1 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@245b5f7e[nodeId=1283,label=COND 1 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6ada5bd7[nodeId=1284,label=COND 1 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@25c3b70f[nodeId=1243,label=E8.0 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@54274d27[nodeId=1244,label=E8.0 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 42 nodes
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query edges By Id: SELECT i.protocol_app_node_id AS node1, p.name AS label, o.protocol_app_node_id AS node2  FROM study.input i, study.output o, study.studylink sl, study.protocol p, study.protocolapp pa  WHERE i.protocol_app_id = o.protocol_app_id   AND i.protocol_app_node_id = sl.protocol_app_node_id   AND i.protocol_app_id = pa.protocol_app_id   AND pa.protocol_id = p.protocol_id   AND sl.study_id = ? 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@21689f7c[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1245,toNode=1246]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3dad39f8[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1246,toNode=1247]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@37b8e86a[label=RUM pipeline: alignment and coverage,fromNode=1247,toNode=1248]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4ca2a3ba[label=RUM pipeline: feature quantification,fromNode=1248,toNode=1249]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@49ab2fa4[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1250,toNode=1251]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5c4ddc5[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1251,toNode=1252]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3fbbb378[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1252,toNode=1253]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3c03abf8[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1253,toNode=1254]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@150f4590[label=RUM pipeline: alignment and coverage,fromNode=1254,toNode=1255]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@1d9ffbbd[label=RUM pipeline: feature quantification,fromNode=1255,toNode=1256]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7248447c[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1257,toNode=1258]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@66886381[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1258,toNode=1259]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@43cdebe[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1259,toNode=1260]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@38438e1e[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1260,toNode=1261]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5b27706d[label=RUM pipeline: alignment and coverage,fromNode=1261,toNode=1262]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7a4632db[label=RUM pipeline: feature quantification,fromNode=1262,toNode=1263]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@16b50694[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1264,toNode=1265]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@46c2ea31[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1265,toNode=1266]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@269d5b42[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1266,toNode=1267]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@24d25ddc[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1267,toNode=1268]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6f102966[label=RUM pipeline: alignment and coverage,fromNode=1268,toNode=1269]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@e0e2081[label=RUM pipeline: feature quantification,fromNode=1269,toNode=1270]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4177fc5c[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1271,toNode=1272]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@2c591d98[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1272,toNode=1273]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@ea5fce7[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1273,toNode=1274]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@337ea934[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1274,toNode=1275]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4096af55[label=RUM pipeline: alignment and coverage,fromNode=1275,toNode=1276]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@64d11693[label=RUM pipeline: feature quantification,fromNode=1276,toNode=1277]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5b21409a[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1278,toNode=1279]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@64186d33[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1279,toNode=1280]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7fa9629b[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1280,toNode=1281]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4988ef97[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1281,toNode=1282]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3d29c838[label=RUM pipeline: alignment and coverage,fromNode=1282,toNode=1283]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@217f3e7[label=RUM pipeline: feature quantification,fromNode=1283,toNode=1284]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@728dc3c3[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1243,toNode=1244]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@392f71f6[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1244,toNode=1245]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 36 edges
+DEBUG main freemarker.cache - Could not find template in cache, creating new one; id=["content.ftl"["en_US",UTF-8,parsed] ]
+DEBUG main freemarker.cache - Compiling FreeMarker template "content.ftl"["en_US",UTF-8,parsed]  from "/Users/crislawrence/Documents/workspace-eclipse/DB2BiomatGraph/templates/content.ftl"
+DEBUG main freemarker.cache - Could not find template in cache, creating new one; id=["header.ftl"["en_US",UTF-8,parsed] ]
+DEBUG main freemarker.cache - Compiling FreeMarker template "header.ftl"["en_US",UTF-8,parsed]  from "/Users/crislawrence/Documents/workspace-eclipse/DB2BiomatGraph/templates/header.ftl"
+ERROR main freemarker.runtime - Template processing error: "Expression message is undefined on line 2, column 41 in header.ftl."
+
+Expression message is undefined on line 2, column 41 in header.ftl.
+The problematic instruction:
+----------
+==> ${message} [on line 2, column 39 in header.ftl]
+ in include "./header.ftl" [on line 1, column 1 in content.ftl]
+----------
+
+Java backtrace for programmers:
+----------
+freemarker.core.InvalidReferenceException: Expression message is undefined on line 2, column 41 in header.ftl.
+	at freemarker.core.TemplateObject.assertNonNull(TemplateObject.java:125)
+	at freemarker.core.Expression.getStringValue(Expression.java:118)
+	at freemarker.core.Expression.getStringValue(Expression.java:93)
+	at freemarker.core.DollarVariable.accept(DollarVariable.java:76)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.MixedContent.accept(MixedContent.java:92)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.Environment.include(Environment.java:1508)
+	at freemarker.core.Include.accept(Include.java:169)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.MixedContent.accept(MixedContent.java:92)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.Environment.process(Environment.java:199)
+	at freemarker.template.Template.process(Template.java:259)
+	at edu.upenn.cbil.biomatgraph.GraphBuild.createHtmlFile(Unknown Source)
+	at edu.upenn.cbil.biomatgraph.GraphBuild.createImageFile(Unknown Source)
+	at edu.upenn.cbil.biomatgraph.GraphBuild.createDotFile(Unknown Source)
+	at edu.upenn.cbil.biomatgraph.GraphBuild.main(Unknown Source)
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Starting at Apr 9, 2013 4:46:50 PM
+DEBUG main edu.upenn.cbil.biomatgraph.DatabaseManager - Oracle connection Url: jdbc:oracle:thin:@localhost:1521:gbcotest
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query nodes By Id: SELECT p.protocol_app_node_id AS id, p.name AS label, o.name AS node_type  FROM study.protocolappnode p, study.studylink sl, study.study s, sres.ontologyterm o  WHERE p.protocol_app_node_id=sl.protocol_app_node_id   AND sl.study_id = ?   AND p.type_id = o.ontology_term_id 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6c1b2a5c[nodeId=1245,label=E8.0 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7f127af9[nodeId=1246,label=E8.0 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1647b29c[nodeId=1247,label=COND 0 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3d1f2b31[nodeId=1248,label=COND 0 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@494cbd50[nodeId=1249,label=COND 0 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4d20f4c8[nodeId=1250,label=E8.0 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2ea69e07[nodeId=1251,label=E8.0 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3cd0f57e[nodeId=1252,label=E8.0 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3aa54263[nodeId=1253,label=E8.0 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@37a98fa9[nodeId=1254,label=COND 0 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5d16bccb[nodeId=1255,label=COND 0 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7fc4e32b[nodeId=1256,label=COND 0 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@d860d7[nodeId=1257,label=E8.0 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7dbdc3af[nodeId=1258,label=E8.0 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@357a56a7[nodeId=1259,label=E8.0 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@72cf095e[nodeId=1260,label=E8.0 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@76703534[nodeId=1261,label=COND 0 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@40b525ab[nodeId=1262,label=COND 0 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@34bc1ebd[nodeId=1263,label=COND 0 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2a862557[nodeId=1264,label=E8.5 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4cfd8890[nodeId=1265,label=E8.5 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1910cd6d[nodeId=1266,label=E8.5 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1e1ebbf6[nodeId=1267,label=E8.5 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@73c622ec[nodeId=1268,label=COND 1 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@551eef55[nodeId=1269,label=COND 1 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@61f2e11b[nodeId=1270,label=COND 1 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1098e5da[nodeId=1271,label=E8.5 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@261a53b9[nodeId=1272,label=E8.5 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@a6eaa3a[nodeId=1273,label=E8.5 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6769cb2f[nodeId=1274,label=E8.5 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@529aafb3[nodeId=1275,label=COND 1 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@29853b23[nodeId=1276,label=COND 1 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@69ed8c20[nodeId=1277,label=COND 1 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6a8abf34[nodeId=1278,label=E8.5 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3b0f2591[nodeId=1279,label=E8.5 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5f6b70e1[nodeId=1280,label=E8.5 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6bff4b8[nodeId=1281,label=E8.5 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@245b5f7e[nodeId=1282,label=COND 1 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6ada5bd7[nodeId=1283,label=COND 1 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@25c3b70f[nodeId=1284,label=COND 1 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@54274d27[nodeId=1243,label=E8.0 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@603a669a[nodeId=1244,label=E8.0 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 42 nodes
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query edges By Id: SELECT i.protocol_app_node_id AS node1, p.name AS label, o.protocol_app_node_id AS node2  FROM study.input i, study.output o, study.studylink sl, study.protocol p, study.protocolapp pa  WHERE i.protocol_app_id = o.protocol_app_id   AND i.protocol_app_node_id = sl.protocol_app_node_id   AND i.protocol_app_id = pa.protocol_app_id   AND pa.protocol_id = p.protocol_id   AND sl.study_id = ? 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5bbe9706[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1245,toNode=1246]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@37b8e86a[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1246,toNode=1247]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4ca2a3ba[label=RUM pipeline: alignment and coverage,fromNode=1247,toNode=1248]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@49ab2fa4[label=RUM pipeline: feature quantification,fromNode=1248,toNode=1249]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5c4ddc5[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1250,toNode=1251]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3fbbb378[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1251,toNode=1252]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3c03abf8[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1252,toNode=1253]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@150f4590[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1253,toNode=1254]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@1d9ffbbd[label=RUM pipeline: alignment and coverage,fromNode=1254,toNode=1255]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7248447c[label=RUM pipeline: feature quantification,fromNode=1255,toNode=1256]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@66886381[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1257,toNode=1258]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@43cdebe[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1258,toNode=1259]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@38438e1e[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1259,toNode=1260]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5b27706d[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1260,toNode=1261]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7a4632db[label=RUM pipeline: alignment and coverage,fromNode=1261,toNode=1262]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@16b50694[label=RUM pipeline: feature quantification,fromNode=1262,toNode=1263]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@46c2ea31[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1264,toNode=1265]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@269d5b42[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1265,toNode=1266]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@24d25ddc[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1266,toNode=1267]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6f102966[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1267,toNode=1268]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@e0e2081[label=RUM pipeline: alignment and coverage,fromNode=1268,toNode=1269]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4177fc5c[label=RUM pipeline: feature quantification,fromNode=1269,toNode=1270]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@2c591d98[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1271,toNode=1272]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@ea5fce7[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1272,toNode=1273]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@337ea934[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1273,toNode=1274]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4096af55[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1274,toNode=1275]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@64d11693[label=RUM pipeline: alignment and coverage,fromNode=1275,toNode=1276]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5b21409a[label=RUM pipeline: feature quantification,fromNode=1276,toNode=1277]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@64186d33[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1278,toNode=1279]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7fa9629b[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1279,toNode=1280]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4988ef97[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1280,toNode=1281]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3d29c838[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1281,toNode=1282]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@217f3e7[label=RUM pipeline: alignment and coverage,fromNode=1282,toNode=1283]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@728dc3c3[label=RUM pipeline: feature quantification,fromNode=1283,toNode=1284]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@392f71f6[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1243,toNode=1244]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@59e2eace[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1244,toNode=1245]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 36 edges
+DEBUG main freemarker.cache - Could not find template in cache, creating new one; id=["content.ftl"["en_US",UTF-8,parsed] ]
+DEBUG main freemarker.cache - Compiling FreeMarker template "content.ftl"["en_US",UTF-8,parsed]  from "/Users/crislawrence/Documents/workspace-eclipse/DB2BiomatGraph/templates/content.ftl"
+DEBUG main freemarker.cache - Could not find template in cache, creating new one; id=["header.ftl"["en_US",UTF-8,parsed] ]
+DEBUG main freemarker.cache - Compiling FreeMarker template "header.ftl"["en_US",UTF-8,parsed]  from "/Users/crislawrence/Documents/workspace-eclipse/DB2BiomatGraph/templates/header.ftl"
+ERROR main freemarker.runtime - Template processing error: "Expression message is undefined on line 2, column 41 in header.ftl."
+
+Expression message is undefined on line 2, column 41 in header.ftl.
+The problematic instruction:
+----------
+==> ${message} [on line 2, column 39 in header.ftl]
+ in include "header.ftl" [on line 1, column 1 in content.ftl]
+----------
+
+Java backtrace for programmers:
+----------
+freemarker.core.InvalidReferenceException: Expression message is undefined on line 2, column 41 in header.ftl.
+	at freemarker.core.TemplateObject.assertNonNull(TemplateObject.java:125)
+	at freemarker.core.Expression.getStringValue(Expression.java:118)
+	at freemarker.core.Expression.getStringValue(Expression.java:93)
+	at freemarker.core.DollarVariable.accept(DollarVariable.java:76)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.MixedContent.accept(MixedContent.java:92)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.Environment.include(Environment.java:1508)
+	at freemarker.core.Include.accept(Include.java:169)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.MixedContent.accept(MixedContent.java:92)
+	at freemarker.core.Environment.visit(Environment.java:221)
+	at freemarker.core.Environment.process(Environment.java:199)
+	at freemarker.template.Template.process(Template.java:259)
+	at edu.upenn.cbil.biomatgraph.GraphBuild.createHtmlFile(Unknown Source)
+	at edu.upenn.cbil.biomatgraph.GraphBuild.createImageFile(Unknown Source)
+	at edu.upenn.cbil.biomatgraph.GraphBuild.createDotFile(Unknown Source)
+	at edu.upenn.cbil.biomatgraph.GraphBuild.main(Unknown Source)
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Starting at Apr 9, 2013 4:49:09 PM
+DEBUG main edu.upenn.cbil.biomatgraph.DatabaseManager - Oracle connection Url: jdbc:oracle:thin:@localhost:1521:gbcotest
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query nodes By Id: SELECT p.protocol_app_node_id AS id, p.name AS label, o.name AS node_type  FROM study.protocolappnode p, study.studylink sl, study.study s, sres.ontologyterm o  WHERE p.protocol_app_node_id=sl.protocol_app_node_id   AND sl.study_id = ?   AND p.type_id = o.ontology_term_id 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5461f8e3[nodeId=1245,label=E8.0 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7cf03893[nodeId=1246,label=E8.0 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7f127af9[nodeId=1247,label=COND 0 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1647b29c[nodeId=1248,label=COND 0 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3d1f2b31[nodeId=1249,label=COND 0 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@494cbd50[nodeId=1250,label=E8.0 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4d20f4c8[nodeId=1251,label=E8.0 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2ea69e07[nodeId=1252,label=E8.0 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3cd0f57e[nodeId=1253,label=E8.0 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3aa54263[nodeId=1254,label=COND 0 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@37a98fa9[nodeId=1255,label=COND 0 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5d16bccb[nodeId=1256,label=COND 0 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2f89d083[nodeId=1257,label=E8.0 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@d860d7[nodeId=1258,label=E8.0 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@7dbdc3af[nodeId=1259,label=E8.0 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@357a56a7[nodeId=1260,label=E8.0 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@72cf095e[nodeId=1261,label=COND 0 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@76703534[nodeId=1262,label=COND 0 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@40b525ab[nodeId=1263,label=COND 0 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@34bc1ebd[nodeId=1264,label=E8.5 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@2a862557[nodeId=1265,label=E8.5 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@4cfd8890[nodeId=1266,label=E8.5 Sox17^GFP/+ RNA-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1910cd6d[nodeId=1267,label=E8.5 Sox17^GFP/+ library-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1e1ebbf6[nodeId=1268,label=COND 1 -1,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@73c622ec[nodeId=1269,label=COND 1 -1 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@551eef55[nodeId=1270,label=COND 1 -1 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@61f2e11b[nodeId=1271,label=E8.5 Sox17^GFP/+ embryos 2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@1098e5da[nodeId=1272,label=E8.5 Sox17^GFP/+ cells-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@261a53b9[nodeId=1273,label=E8.5 Sox17^GFP/+ RNA-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@a6eaa3a[nodeId=1274,label=E8.5 Sox17^GFP/+ library-2,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6769cb2f[nodeId=1275,label=COND 1 -2,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@529aafb3[nodeId=1276,label=COND 1 -2 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@29853b23[nodeId=1277,label=COND 1 -2 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@69ed8c20[nodeId=1278,label=E8.5 Sox17^GFP/+ embryos 3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6a8abf34[nodeId=1279,label=E8.5 Sox17^GFP/+ cells-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@3b0f2591[nodeId=1280,label=E8.5 Sox17^GFP/+ RNA-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@5f6b70e1[nodeId=1281,label=E8.5 Sox17^GFP/+ library-3,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6bff4b8[nodeId=1282,label=COND 1 -3,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@245b5f7e[nodeId=1283,label=COND 1 -3 cov,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@6ada5bd7[nodeId=1284,label=COND 1 -3 quant,type=data item]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@25c3b70f[nodeId=1243,label=E8.0 Sox17^GFP/+ embryos 1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Node: edu.upenn.cbil.biomatgraph.Node@54274d27[nodeId=1244,label=E8.0 Sox17^GFP/+ cells-1,type=material entity]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 42 nodes
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Starting getNodes for study id: 102
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Query edges By Id: SELECT i.protocol_app_node_id AS node1, p.name AS label, o.protocol_app_node_id AS node2  FROM study.input i, study.output o, study.studylink sl, study.protocol p, study.protocolapp pa  WHERE i.protocol_app_id = o.protocol_app_id   AND i.protocol_app_node_id = sl.protocol_app_node_id   AND i.protocol_app_id = pa.protocol_app_id   AND pa.protocol_id = p.protocol_id   AND sl.study_id = ? 
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@21689f7c[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1245,toNode=1246]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3dad39f8[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1246,toNode=1247]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@37b8e86a[label=RUM pipeline: alignment and coverage,fromNode=1247,toNode=1248]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4ca2a3ba[label=RUM pipeline: feature quantification,fromNode=1248,toNode=1249]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@49ab2fa4[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1250,toNode=1251]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5c4ddc5[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1251,toNode=1252]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3fbbb378[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1252,toNode=1253]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3c03abf8[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1253,toNode=1254]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@150f4590[label=RUM pipeline: alignment and coverage,fromNode=1254,toNode=1255]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@1d9ffbbd[label=RUM pipeline: feature quantification,fromNode=1255,toNode=1256]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7248447c[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1257,toNode=1258]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@66886381[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1258,toNode=1259]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@43cdebe[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1259,toNode=1260]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@38438e1e[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1260,toNode=1261]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5b27706d[label=RUM pipeline: alignment and coverage,fromNode=1261,toNode=1262]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7a4632db[label=RUM pipeline: feature quantification,fromNode=1262,toNode=1263]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@16b50694[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1264,toNode=1265]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@46c2ea31[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1265,toNode=1266]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@269d5b42[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1266,toNode=1267]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@24d25ddc[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1267,toNode=1268]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@6f102966[label=RUM pipeline: alignment and coverage,fromNode=1268,toNode=1269]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@e0e2081[label=RUM pipeline: feature quantification,fromNode=1269,toNode=1270]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4177fc5c[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1271,toNode=1272]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@2c591d98[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1272,toNode=1273]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@ea5fce7[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1273,toNode=1274]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@337ea934[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1274,toNode=1275]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4096af55[label=RUM pipeline: alignment and coverage,fromNode=1275,toNode=1276]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@64d11693[label=RUM pipeline: feature quantification,fromNode=1276,toNode=1277]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@5b21409a[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1278,toNode=1279]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@64186d33[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1279,toNode=1280]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@7fa9629b[label=Nugen Ovation RNA-Seq System V1, #7100-08;RNA-Seq library preparation for Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1280,toNode=1281]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@4988ef97[label=Sequencing of Sox17-expressing cells from E8.0 and E8.5 embryos (Magnuson lab),fromNode=1281,toNode=1282]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@3d29c838[label=RUM pipeline: alignment and coverage,fromNode=1282,toNode=1283]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@217f3e7[label=RUM pipeline: feature quantification,fromNode=1283,toNode=1284]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@728dc3c3[label=Sox17 FACS isolation from E8.0 and 8.5 embryos (Magnuson lab),fromNode=1243,toNode=1244]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Edge: edu.upenn.cbil.biomatgraph.Edge@392f71f6[label=Leah Potter's RNA Extraction protocol using TriZolLS and Zymo DNA-free RNA Kit,fromNode=1244,toNode=1245]
+DEBUG main edu.upenn.cbil.biomatgraph.BiomaterialsGraphDAO - Returned 36 edges
+DEBUG main freemarker.cache - Could not find template in cache, creating new one; id=["content.ftl"["en_US",UTF-8,parsed] ]
+DEBUG main freemarker.cache - Compiling FreeMarker template "content.ftl"["en_US",UTF-8,parsed]  from "/Users/crislawrence/Documents/workspace-eclipse/DB2BiomatGraph/templates/content.ftl"
+DEBUG main freemarker.cache - Could not find template in cache, creating new one; id=["header.ftl"["en_US",UTF-8,parsed] ]
+DEBUG main freemarker.cache - Compiling FreeMarker template "header.ftl"["en_US",UTF-8,parsed]  from "/Users/crislawrence/Documents/workspace-eclipse/DB2BiomatGraph/templates/header.ftl"
+DEBUG main freemarker.cache - Could not find template in cache, creating new one; id=["footer.ftl"["en_US",UTF-8,parsed] ]
+DEBUG main freemarker.cache - Compiling FreeMarker template "footer.ftl"["en_US",UTF-8,parsed]  from "/Users/crislawrence/Documents/workspace-eclipse/DB2BiomatGraph/templates/footer.ftl"
+DEBUG main freemarker.cache - "header.ftl"["en_US",UTF-8,parsed]  cached copy not yet stale; using cached.
+DEBUG main freemarker.cache - "footer.ftl"["en_US",UTF-8,parsed]  cached copy not yet stale; using cached.
+INFO main edu.upenn.cbil.biomatgraph.GraphBuild - Ending at Apr 9, 2013 4:49:10 PM
