@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 
@@ -29,6 +30,13 @@ public class BiomaterialsGraphDAO {
 	  "  AND i.protocol_app_id = pa.protocol_app_id " +
 	  "  AND pa.protocol_id = p.protocol_id " +
 	  "  AND sl.study_id = ? ";
+	
+	public static final String QUERY_TAXON = "" +
+	  "SELECT t.name AS taxon " +
+	  " FROM sres.taxonname t, study.protocolappnode p " +
+	  " WHERE t.name_class = 'scientific name' " +
+	  "  AND t.taxon_id = p.taxon_id " +
+	  "  AND p.protocol_app_node_id = ? ";
 	
   public static void openConnection() {
 	BiomaterialsGraphDAO.connection = DatabaseManager.getConnection();
@@ -54,6 +62,7 @@ public class BiomaterialsGraphDAO {
 		  node.setNodeId(resultSet.getLong("id"));
 		  node.setLabel(resultSet.getString("label"));
 		  node.setType(resultSet.getString("node_type"));
+		  node.setTaxon(BiomaterialsGraphDAO.getTaxon(node.getNodeId()));
 		  logger.debug("Node: " + node);
 		  nodes.add(node);
 		}
@@ -67,6 +76,29 @@ public class BiomaterialsGraphDAO {
 	    DatabaseManager.closeAll(resultSet,statement,null);
   	  }
     }
+  
+  protected static String getTaxon(long id) {
+    logger.debug("Starting getTaxon for node id: " + id);
+	PreparedStatement statement = null;
+	ResultSet resultSet = null;
+	String taxon = null;
+	try {
+	  statement = connection.prepareStatement(QUERY_TAXON);
+	  logger.debug("Query taxon: " + QUERY_TAXON);
+	  statement.setLong(1, id);
+	  resultSet = statement.executeQuery();
+	  if (resultSet.next()) {
+		taxon = resultSet.getString("taxon");
+	  }
+	  return StringUtils.isEmpty(taxon) ? null : taxon;
+	}
+    catch(SQLException se) {
+      throw new ApplicationException(se.getMessage());
+	}
+    finally {
+      DatabaseManager.closeAll(resultSet,statement,null);
+    }
+  }
 			
   public static List<Edge> getEdges(long id) {
     logger.debug("Starting getNodes for study id: " + id);

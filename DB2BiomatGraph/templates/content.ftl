@@ -13,9 +13,15 @@
 </div>
 <div class="scroll2">
   <div id="biomaterials">
-    <img src="${gifFileName}">
+    <img src="${gifFileName}" usemap="#biomatGraph">
+    <#include "map.ftl">
+    <#list nodes as node>
+      <div id="textNode${node.getNodeId()?c}" class="popupData">
+        <#if node.taxon??>
+          Taxon: ${node.getTaxon()}
+        </#if>
+      </div>
+    </#list>
   </div>
 </div>
-<div class="additional_info"></div>
-
 <#include "footer.ftl"> 
