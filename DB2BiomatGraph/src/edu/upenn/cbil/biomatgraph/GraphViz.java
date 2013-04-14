@@ -145,6 +145,7 @@ public class GraphViz
          return null;
       } catch (java.io.IOException ioe) { return null; }
    }
+   
 
    /**
     * Writes the graph's image in a file.
@@ -156,6 +157,28 @@ public class GraphViz
    {
       File to = new File(file);
       return writeGraphToFile(img, to);
+   }
+   
+   
+   public void writeImageMap(File dot, String outputPrefix) {
+     try {
+        File img = new File(outputPrefix + ".gif");
+        File map = new File("templates/map.ftl");
+        Runtime rt = Runtime.getRuntime();
+        // patch by Mike Chenault
+        String[] args = {DOT, "-Tgif", dot.getAbsolutePath(), "-o", img.getAbsolutePath(), "-Tcmapx", "-o", map.getAbsolutePath()};
+        Process p = rt.exec(args);
+        p.waitFor();
+     }
+     catch (java.io.IOException ioe) {
+        System.err.println("Error:    in I/O processing of tempfile in dir " + GraphViz.TEMP_DIR+"\n");
+        System.err.println("       or in calling external command");
+        ioe.printStackTrace();
+     }
+     catch (java.lang.InterruptedException ie) {
+        System.err.println("Error: the execution of the external program was interrupted");
+        ie.printStackTrace();
+     }
    }
 
    /**

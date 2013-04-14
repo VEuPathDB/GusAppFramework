@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -41,14 +42,19 @@ public class GraphBuild {
 	
 	protected void createDotFile(long studyId) {
 	  StringBuffer output = new StringBuffer();
-	  output.append("digraph graphname {\n");
+	  output.append("digraph biomatGraph {\n");
 	  BiomaterialsGraphService service = new BiomaterialsGraphService();
+	  List<Node> nodes = new ArrayList<>();
+	  List<Edge> edges = new ArrayList<>();
 	  try {
 	    service.manageConnection(true);
-	    List<Node> nodes = service.getNodes(studyId);
-	    List<Edge> edges = service.getEdges(studyId);
+	    nodes = service.getNodes(studyId);
+	    edges = service.getEdges(studyId);
 	    for(Node node : nodes) {
-	      output.append(node.getNodeId() + " [color = " + node.getColor() + ", label=\"" + node.getLabel() + "\"]\n");
+	      String label = "label = \"" + node.getLabel() + "\""; 
+	      String color = "color = \"" + node.getColor() + "\"";
+	      String url = "URL = \"node.html?id=" + node.getNodeId() + "\""; 
+	      output.append(node.getNodeId() + " [" + color + ", " + label +", " + url + "]\n");
 	    }
 	    for(Edge edge : edges) {
 	      output.append(edge.getFromNode() + "->" + edge.getToNode() + "[label=\"" + edge.getLabel() + "\"]\n");
@@ -58,24 +64,24 @@ public class GraphBuild {
 	    service.manageConnection(false);
 	  }
 	  output.append("}");
-	  createImageFile(studyId, output.toString());
 	  String dotFileName = ApplicationConfiguration.filePrefix + "_" + studyId + ".dot";
+	  File dotFile = new File(dotFileName);
 	  try {
-	    Files.write(output.toString(), new File(dotFileName), Charsets.UTF_8);
+	    Files.write(output.toString(), dotFile, Charsets.UTF_8);
 	  }
 	  catch(IOException ioe) {
 	    throw new ApplicationException("Problem writing to file " + dotFileName);
 	  }
+	  createImageFile(studyId, dotFile);
+	  createHtmlFile(studyId, nodes);
     }
 	
-	protected void createImageFile(long studyId, String output) {
+	protected void createImageFile(long studyId, File dotFile) {
 	  GraphViz gv = new GraphViz();
-	  File gifFile = new File(ApplicationConfiguration.filePrefix + "_" + studyId + ".gif");
-	  gv.writeGraphToFile( gv.getGraph( output, "gif" ), gifFile );
-	  createHtmlFile(studyId);
+	  gv.writeImageMap(dotFile, ApplicationConfiguration.filePrefix + "_" + studyId);
 	}
 	
-	protected void createHtmlFile(long studyId) {
+	protected void createHtmlFile(long studyId, List<Node> nodes) {
 	  Writer file = null;
 	  Configuration cfg = new Configuration();
 
@@ -86,6 +92,8 @@ public class GraphBuild {
 	    Map<String, Object> input = new HashMap<String, Object>();
 	    input.put("studyId", studyId);
 	    input.put("gifFileName", ApplicationConfiguration.filePrefix + "_" + studyId + ".gif");
+	    input.put("mapFileName", ApplicationConfiguration.filePrefix + "_" + studyId + "_map.html");
+	    input.put("nodes", nodes);
 
 	    // File output
 	    file = new FileWriter(new File(ApplicationConfiguration.filePrefix + "_" + studyId + ".html"));
