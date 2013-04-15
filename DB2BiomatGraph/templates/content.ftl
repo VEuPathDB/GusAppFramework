@@ -17,6 +17,7 @@
     <#include "map.ftl">
     <#list nodes as node>
       <div id="text${node.getNodeId()?c}" class="popupData">
+        <span class="popupHeading">Characteristics</span>
         <ul>
           <#if node.taxon??>
             <li>Taxon: ${node.getTaxon()}</li>
@@ -34,8 +35,9 @@
     </#list>
     <#list edges as edge>
       <div id="text${edge.getFromNode()?c}_${edge.getToNode()?c}" class="popupData">
+        <span class="popupHeading">Parameters</span>
         <ul>
-          <#if edge.params??>
+          <#if edge.params??>   
             <#list edge.params?keys as key>
               <li>
                 ${key}: &nbsp;

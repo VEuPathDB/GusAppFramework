@@ -1,8 +1,8 @@
 package edu.upenn.cbil.biomatgraph;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.apache.commons.lang.WordUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 
 public class Node {
@@ -20,7 +20,7 @@ public class Node {
 	this.nodeId = nodeId;
   }
   public String getLabel() {
-	return label;
+	return WordUtils.wrap(label, 15, "\\n", true);
   }
   public void setLabel(String label) {
 	this.label = label;
@@ -53,10 +53,10 @@ public class Node {
   public String getColor() {
     String color = "black";
 	switch(type) {
-      case "data item":
+      case ApplicationConfiguration.DATA_ITEM:
         color = "red";
         break;
-      case "material entity":
+      case ApplicationConfiguration.MATERIAL_ENTITY:
     	color = "blue";
     	break;
       default:

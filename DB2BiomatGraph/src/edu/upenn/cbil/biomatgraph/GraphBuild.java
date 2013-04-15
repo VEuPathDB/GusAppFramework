@@ -43,6 +43,7 @@ public class GraphBuild {
 	protected void createDotFile(long studyId) {
 	  StringBuffer output = new StringBuffer();
 	  output.append("digraph biomatGraph {\n");
+	  output.append("graph [rankdir=LR, margin=0.001]\n");
 	  BiomaterialsGraphService service = new BiomaterialsGraphService();
 	  List<Node> nodes = new ArrayList<>();
 	  List<Edge> edges = new ArrayList<>();
@@ -54,12 +55,12 @@ public class GraphBuild {
 	      String label = "label = \"" + node.getLabel() + "\""; 
 	      String color = "color = \"" + node.getColor() + "\"";
 	      String url = "URL = \"node.html?id=" + node.getNodeId() + "\""; 
-	      output.append(node.getNodeId() + " [" + color + ", " + label + ", " + url + "]\n");
+	      output.append(node.getNodeId() + " [" + color + ", " + label + ", " + url + ", fontsize=12]\n");
 	    }
 	    for(Edge edge : edges) {
 	      String label = "label = \"" + edge.getLabel() + "\"";
 	      String url = "labelURL = \"edge.html?id=" + edge.getFromNode() + "_" + edge.getToNode() + "\"";
-	      output.append(edge.getFromNode() + "->" + edge.getToNode() + "[" + label + ", " + url + "]\n");
+	      output.append(edge.getFromNode() + "->" + edge.getToNode() + "[" + label + ", " + url + ", fontsize=10]\n");
 	    }
 	  }
 	  finally {
@@ -97,20 +98,14 @@ public class GraphBuild {
 	    input.put("mapFileName", ApplicationConfiguration.filePrefix + "_" + studyId + "_map.html");
 	    input.put("nodes", nodes);
 	    input.put("edges", edges);
-
-	    // File output
 	    file = new FileWriter(new File(ApplicationConfiguration.filePrefix + "_" + studyId + ".html"));
 	    template.process(input, file);
 	    file.flush();
-
-	    // Also write output to console
-	    Writer out = new OutputStreamWriter(System.out);
-	    template.process(input, out);
-	    out.flush();
-
-	  } catch (Exception e) {
+	  }
+	  catch (Exception e) {
 	    throw new ApplicationException("Unable to create html file.");
-	  } finally {
+	  }
+	  finally {
 	    if (file != null) {
 	      try {
 	        file.close();
