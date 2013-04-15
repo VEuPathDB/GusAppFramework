@@ -1,6 +1,7 @@
 package edu.upenn.cbil.biomatgraph;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 
@@ -9,7 +10,8 @@ public class Node {
   private String label;
   private String type;
   private String taxon;
-  private LinkedHashMap<String,String> characteristics;
+  private String uri;
+  private List<String> characteristics;
   
   public long getNodeId() {
 	return nodeId;
@@ -35,10 +37,16 @@ public class Node {
   public void setTaxon(String taxon) {
 	this.taxon = taxon;
   }
-  public LinkedHashMap<String, String> getCharacteristics() {
+  public String getUri() {
+	return uri;
+  }
+  public void setUri(String uri) {
+	this.uri = uri;
+  }
+  public List<String> getCharacteristics() {
 	return characteristics;
   }
-  public void setCharacteristics(LinkedHashMap<String, String> characteristics) {
+  public void setCharacteristics(List<String> characteristics) {
 	this.characteristics = characteristics;
   }
   
