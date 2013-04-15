@@ -34,13 +34,22 @@ biomatGraph.setupPopups = function() {
     	text: $("#text" + id)
     	
       },
+      position: {
+  		my: 'top left', 
+  		at: 'bottom center'
+  	  },
       show: {
   		event: 'click',
   		solo: true // Only show one tooltip at a time
       },
   	  hide: 'unfocus',
   	  style: {
-  		classes: '.ui-tooltip-rounded ui-tooltip-tipsy ui-tooltip-shadow'
+  		tip: {
+            corner: true,
+            width: 10,
+            height: 5
+        },
+  		classes: 'qtip-rounded qtip-shadow'
   	  }
 	});
   });
