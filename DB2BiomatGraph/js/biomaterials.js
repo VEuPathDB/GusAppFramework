@@ -1,9 +1,9 @@
 var biomatGraph = biomatGraph || {};
-/*
+
 biomatGraph.setupScrollBars = function(element) {
   jQuery(".wait").hide();
   var graph_width = jQuery("#biomaterials img").width();
-  //alert("image width: " + graph_width);
+  alert("image width: " + graph_width);
   jQuery("#biomaterials").width(graph_width);
   jQuery("#dummy").width(graph_width);
   $(function() {
@@ -15,7 +15,7 @@ biomatGraph.setupScrollBars = function(element) {
 	});
   });  
 };
-*/
+
 biomatGraph.setupPopups = function() {
   jQuery('#biomatGraph area').each(function () {
 	var url = jQuery(this).attr('href');
@@ -23,15 +23,16 @@ biomatGraph.setupPopups = function() {
 	jQuery(this).removeAttr('href');
 	var title = "?";
 	if(url.indexOf('node') >= 0) {
-	  title = "Biomaterial";
+	  title = "Characteristics";
 	}
 	else if(url.indexOf('edge') >= 0) {
-	  title = "Treatment";
+	  title = "Parameters";
 	}
 
     jQuery(this).qtip({
       content: {
     	text: $("#text" + id)
+    	
       },
       show: {
   		event: 'click',
@@ -39,7 +40,7 @@ biomatGraph.setupPopups = function() {
       },
   	  hide: 'unfocus',
   	  style: {
-  		classes: 'ui-tooltip-wiki ui-tooltip-light ui-tooltip-shadow'
+  		classes: '.ui-tooltip-rounded ui-tooltip-tipsy ui-tooltip-shadow'
   	  }
 	});
   });
@@ -49,7 +50,7 @@ biomatGraph.setupPopups = function() {
 
 jQuery(document).ready(function() {
   jQuery("#biomaterials").waitForImages(function() {
-    //biomatGraph.setupScrollBars();
+    biomatGraph.setupScrollBars();
     biomatGraph.setupPopups();
   });
 });

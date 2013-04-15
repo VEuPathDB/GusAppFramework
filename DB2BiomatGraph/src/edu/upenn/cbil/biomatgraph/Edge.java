@@ -3,6 +3,7 @@ package edu.upenn.cbil.biomatgraph;
 import java.util.Collection;
 import java.util.Map;
 
+import org.apache.commons.lang.WordUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 
 import com.google.common.collect.ListMultimap;
@@ -14,7 +15,7 @@ public class Edge {
   private ListMultimap<String, String> params;
   
   public String getLabel() {
-	return label;
+	return WordUtils.wrap(label, 30, "\\n", true);
   }
   public void setLabel(String label) {
 	this.label = label;
@@ -41,4 +42,5 @@ public class Edge {
   public String toString() {
     return ReflectionToStringBuilder.toString(this);
   }
+
 }

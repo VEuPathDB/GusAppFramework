@@ -17,6 +17,8 @@ public class ApplicationConfiguration {
   public static String filePrefix;
   public static String graphvizPath;
   public static String graphvizDot;
+  public static final String MATERIAL_ENTITY = "material entity";
+  public static final String DATA_ITEM = "data item";
 
 		
   public void applicationSetup() throws ApplicationException {

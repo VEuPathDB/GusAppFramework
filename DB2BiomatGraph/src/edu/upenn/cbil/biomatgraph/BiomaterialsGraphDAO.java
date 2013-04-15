@@ -86,10 +86,15 @@ public class BiomaterialsGraphDAO {
 	    Node node = new Node();
 	    node.setNodeId(resultSet.getLong("id"));
 	    node.setLabel(resultSet.getString("label"));
-	    node.setType(resultSet.getString("node_type"));
-	    node.setTaxon(BiomaterialsGraphDAO.getTaxon(node.getNodeId()));
-	    node.setUri(BiomaterialsGraphDAO.getUri(node.getNodeId()));
-	    node.setCharacteristics(BiomaterialsGraphDAO.getMaterialChars(node.getNodeId()));
+	    String type = resultSet.getString("node_type");
+	    node.setType(type);
+	    if(ApplicationConfiguration.MATERIAL_ENTITY.equalsIgnoreCase(type)) {
+	      node.setTaxon(BiomaterialsGraphDAO.getTaxon(node.getNodeId()));
+	      node.setCharacteristics(BiomaterialsGraphDAO.getMaterialChars(node.getNodeId()));
+	    }
+	    if(ApplicationConfiguration.DATA_ITEM.equalsIgnoreCase(type)) {
+	      node.setUri(BiomaterialsGraphDAO.getUri(node.getNodeId()));
+	    }
 	    logger.debug("Node: " + node);
 	    nodes.add(node);
 	  }
