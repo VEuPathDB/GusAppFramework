@@ -1,19 +1,22 @@
 var biomatGraph = biomatGraph || {};
 
 biomatGraph.setupScrollBars = function(element) {
-  jQuery(".wait").hide();
   var graph_width = jQuery("#biomaterials img").width();
-  alert("image width: " + graph_width);
+  //alert("image width: " + graph_width);
+  var viewport_width = jQuery(window).width();
+  alert("viewport width: " + viewport_width);
+  jQuery(".scroll1").css("width", viewport_width);
+  jQuery(".scroll2").css("width", viewport_width);
   jQuery("#biomaterials").width(graph_width);
   jQuery("#dummy").width(graph_width);
-  $(function() {
-	$(".scroll1").scroll(function() {
-	  $(".scroll2").scrollLeft($(".scroll1").scrollLeft());
+  jQuery(function() {
+	jQuery(".scroll1").scroll(function() {
+	  jQuery(".scroll2").scrollLeft(jQuery(".scroll1").scrollLeft());
 	});
-	$(".scroll2").scroll(function(){
-	  $(".scroll1").scrollLeft($(".scroll2").scrollLeft());
+	jQuery(".scroll2").scroll(function(){
+	  jQuery(".scroll1").scrollLeft(jQuery(".scroll2").scrollLeft());
 	});
-  });  
+  });
 };
 
 biomatGraph.setupPopups = function() {
@@ -53,7 +56,7 @@ biomatGraph.setupPopups = function() {
   	  }
 	});
   });
-  alert("setup complete");
+  //alert("setup complete");
 };
 
 
