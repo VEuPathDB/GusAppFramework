@@ -31,7 +31,7 @@ biomatGraph.setupPopups = function() {
 
     jQuery(this).qtip({
       content: {
-    	text: $("#textNode" + id)
+    	text: $("#text" + id)
       },
       show: {
   		event: 'click',

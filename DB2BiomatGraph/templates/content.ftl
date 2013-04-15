@@ -16,10 +16,36 @@
     <img src="${gifFileName}" usemap="#biomatGraph">
     <#include "map.ftl">
     <#list nodes as node>
-      <div id="textNode${node.getNodeId()?c}" class="popupData">
-        <#if node.taxon??>
-          Taxon: ${node.getTaxon()}
-        </#if>
+      <div id="text${node.getNodeId()?c}" class="popupData">
+        <ul>
+          <#if node.taxon??>
+            <li>Taxon: ${node.getTaxon()}</li>
+          </#if>
+          <#if node.uri??>
+            <li>Uri: ${node.getUri()}</li>
+          </#if>
+          <#if node.characteristics??>
+            <#list node.characteristics as characteristic>
+              <li>${characteristic}</li>
+            </#list>
+          </#if>
+        </ul>
+      </div>
+    </#list>
+    <#list edges as edge>
+      <div id="text${edge.getFromNode()?c}_${edge.getToNode()?c}" class="popupData">
+        <ul>
+          <#if edge.params??>
+            <#list edge.params?keys as key>
+              <li>
+                ${key}: &nbsp;
+                <#list edge.params[key] as value>
+                 ${value} &nbsp;
+                </#list>
+              </li>
+            </#list>
+          </#if>
+        </ul>
       </div>
     </#list>
   </div>

@@ -54,10 +54,12 @@ public class GraphBuild {
 	      String label = "label = \"" + node.getLabel() + "\""; 
 	      String color = "color = \"" + node.getColor() + "\"";
 	      String url = "URL = \"node.html?id=" + node.getNodeId() + "\""; 
-	      output.append(node.getNodeId() + " [" + color + ", " + label +", " + url + "]\n");
+	      output.append(node.getNodeId() + " [" + color + ", " + label + ", " + url + "]\n");
 	    }
 	    for(Edge edge : edges) {
-	      output.append(edge.getFromNode() + "->" + edge.getToNode() + "[label=\"" + edge.getLabel() + "\"]\n");
+	      String label = "label = \"" + edge.getLabel() + "\"";
+	      String url = "labelURL = \"edge.html?id=" + edge.getFromNode() + "_" + edge.getToNode() + "\"";
+	      output.append(edge.getFromNode() + "->" + edge.getToNode() + "[" + label + ", " + url + "]\n");
 	    }
 	  }
 	  finally {
@@ -73,7 +75,7 @@ public class GraphBuild {
 	    throw new ApplicationException("Problem writing to file " + dotFileName);
 	  }
 	  createImageFile(studyId, dotFile);
-	  createHtmlFile(studyId, nodes);
+	  createHtmlFile(studyId, nodes, edges);
     }
 	
 	protected void createImageFile(long studyId, File dotFile) {
@@ -81,7 +83,7 @@ public class GraphBuild {
 	  gv.writeImageMap(dotFile, ApplicationConfiguration.filePrefix + "_" + studyId);
 	}
 	
-	protected void createHtmlFile(long studyId, List<Node> nodes) {
+	protected void createHtmlFile(long studyId, List<Node> nodes, List<Edge> edges) {
 	  Writer file = null;
 	  Configuration cfg = new Configuration();
 
@@ -94,6 +96,7 @@ public class GraphBuild {
 	    input.put("gifFileName", ApplicationConfiguration.filePrefix + "_" + studyId + ".gif");
 	    input.put("mapFileName", ApplicationConfiguration.filePrefix + "_" + studyId + "_map.html");
 	    input.put("nodes", nodes);
+	    input.put("edges", edges);
 
 	    // File output
 	    file = new FileWriter(new File(ApplicationConfiguration.filePrefix + "_" + studyId + ".html"));
