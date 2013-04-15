@@ -1,3 +1,22 @@
+.scroll1,.scroll2 {
+  width: 1060px;
+  overflow-x: scroll;
+  overflow-y: hidden;
+}
+
+.scroll1 {
+  height: 30px;
+}
+
+#dummy {
+  height: 30px;
+}
+
+#biomaterials {
+  background: #FFFFFF;
+  overflow-y: hidden;
+}
+
 .popupData {
 	display: none;
 	font-size: 14px;
