@@ -4,9 +4,9 @@ biomatGraph.setupScrollBars = function(element) {
   var graph_width = jQuery("#biomaterials img").width();
   //alert("image width: " + graph_width);
   var viewport_width = jQuery(window).width();
-  alert("viewport width: " + viewport_width);
-  jQuery(".scroll1").css("width", viewport_width);
-  jQuery(".scroll2").css("width", viewport_width);
+  //alert("viewport width: " + viewport_width);
+  jQuery(".scroll1").css("width", viewport_width - 100);
+  jQuery(".scroll2").css("width", viewport_width - 100);
   jQuery("#biomaterials").width(graph_width);
   jQuery("#dummy").width(graph_width);
   jQuery(function() {
