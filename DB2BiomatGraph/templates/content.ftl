@@ -16,7 +16,9 @@
 <div class="scroll2">
   <div id="biomaterials">
     <img src="${gifFileName}" usemap="#biomatGraph">
-    <#include "map.ftl">
+    <#if map??>
+      ${map}
+    </#if>
     <#list nodes as node>
       <div id="text${node.getNodeId()?c}" class="popupData">
         <#if node.type == "data item">

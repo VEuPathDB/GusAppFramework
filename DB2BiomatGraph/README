@@ -1,0 +1,17 @@
+To use this tool doing the following under the project name:
+
+1.  Open resources/application.properties and fill in the database access info, the prefix to use
+    for the biomaterials graph html file and the location of the graphviz dot executable on this
+    system.
+2.  Run ant jar
+3.  Run java -jar DB2BiomatGraph.jar <studyId>
+4.  Three output files should appear.  Where StudyGraph has been selected as the prefix, the files
+    would be StudyGraph_<studyId>.dot, StudyGraph_<studyId>.gif, and StudyGraph_<studyId>.html
+5.  Open the StudyGraph_<studyId>.html file in any browser.
+
+Note:  If logging and console output is too extensive, modify the resources/log4j.properties file
+prior to step 2 above.
+
+Note:  The html file depends of scripting and styling located in the css and js directories of this
+project.  As such, the html file cannot be removed from this environment and still be expected to
+function properly.
