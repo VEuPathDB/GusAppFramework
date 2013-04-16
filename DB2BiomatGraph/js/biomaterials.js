@@ -1,19 +1,22 @@
 var biomatGraph = biomatGraph || {};
 
 biomatGraph.setupScrollBars = function(element) {
-  jQuery(".wait").hide();
   var graph_width = jQuery("#biomaterials img").width();
-  alert("image width: " + graph_width);
+  //alert("image width: " + graph_width);
+  var viewport_width = jQuery(window).width();
+  //alert("viewport width: " + viewport_width);
+  jQuery(".scroll1").css("width", viewport_width - 100);
+  jQuery(".scroll2").css("width", viewport_width - 100);
   jQuery("#biomaterials").width(graph_width);
   jQuery("#dummy").width(graph_width);
-  $(function() {
-	$(".scroll1").scroll(function() {
-	  $(".scroll2").scrollLeft($(".scroll1").scrollLeft());
+  jQuery(function() {
+	jQuery(".scroll1").scroll(function() {
+	  jQuery(".scroll2").scrollLeft(jQuery(".scroll1").scrollLeft());
 	});
-	$(".scroll2").scroll(function(){
-	  $(".scroll1").scrollLeft($(".scroll2").scrollLeft());
+	jQuery(".scroll2").scroll(function(){
+	  jQuery(".scroll1").scrollLeft(jQuery(".scroll2").scrollLeft());
 	});
-  });  
+  });
 };
 
 biomatGraph.setupPopups = function() {
@@ -34,17 +37,26 @@ biomatGraph.setupPopups = function() {
     	text: $("#text" + id)
     	
       },
+      position: {
+  		my: 'top left', 
+  		at: 'bottom center'
+  	  },
       show: {
   		event: 'click',
   		solo: true // Only show one tooltip at a time
       },
   	  hide: 'unfocus',
   	  style: {
-  		classes: '.ui-tooltip-rounded ui-tooltip-tipsy ui-tooltip-shadow'
+  		tip: {
+            corner: true,
+            width: 10,
+            height: 5
+        },
+  		classes: 'qtip-rounded qtip-shadow'
   	  }
 	});
   });
-  alert("setup complete");
+  //alert("setup complete");
 };
 
 
