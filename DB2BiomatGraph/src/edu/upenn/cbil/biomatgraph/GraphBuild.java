@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -75,29 +76,35 @@ public class GraphBuild {
 	  catch(IOException ioe) {
 	    throw new ApplicationException("Problem writing to file " + dotFileName);
 	  }
-	  createImageFile(studyId, dotFile);
-	  createHtmlFile(studyId, nodes, edges);
+	  String map = createImageFile(studyId, dotFile);
+	  createHtmlFile(studyId, nodes, edges, map);
     }
 	
-	protected void createImageFile(long studyId, File dotFile) {
+	protected String createImageFile(long studyId, File dotFile) {
 	  GraphViz gv = new GraphViz();
-	  gv.writeImageMap(dotFile, ApplicationConfiguration.filePrefix + "_" + studyId);
+	  File mapFile = gv.writeImageMap(dotFile, ApplicationConfiguration.filePrefix + "_" + studyId);
+      String map = null;
+	  try {
+        map = Files.toString(mapFile, Charset.defaultCharset());
+      }
+      catch (IOException ioe) {
+        throw new ApplicationException("Unable to open map html temp file for reading.");
+	 }
+     return map;
 	}
 	
-	protected void createHtmlFile(long studyId, List<Node> nodes, List<Edge> edges) {
+	protected void createHtmlFile(long studyId, List<Node> nodes, List<Edge> edges, String map) {
 	  Writer file = null;
 	  Configuration cfg = new Configuration();
-
 	  try {
-	    // Set Directory for templates
 	    cfg.setDirectoryForTemplateLoading(new File("templates"));
 	    Template template = cfg.getTemplate("content.ftl");
 	    Map<String, Object> input = new HashMap<String, Object>();
 	    input.put("studyId", studyId);
 	    input.put("gifFileName", ApplicationConfiguration.filePrefix + "_" + studyId + ".gif");
-	    input.put("mapFileName", ApplicationConfiguration.filePrefix + "_" + studyId + "_map.html");
 	    input.put("nodes", nodes);
 	    input.put("edges", edges);
+	    input.put("map", map);
 	    file = new FileWriter(new File(ApplicationConfiguration.filePrefix + "_" + studyId + ".html"));
 	    template.process(input, file);
 	    file.flush();
@@ -109,7 +116,7 @@ public class GraphBuild {
 	    if (file != null) {
 	      try {
 	        file.close();
-	      } catch (Exception e2) {
+	      } catch (Exception ex) {
          }
 	   }
 	}
