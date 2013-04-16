@@ -2,7 +2,7 @@
 
 <h1>Biomaterial Graph Derived from Database for Study ${studyId}</h1>
 <p class="note">
-  Click on each node or edge label in the graph below for detailed information (You may
+  Click on each node or edge label in the graph below for detailed information (you may
   need to disable your popup blocker).  The node tooltip provides characteristics or file
   information while the edge label tooltip offers parameter settings, if any.  Nodes
   representing material entities are outlined in <span class="material">blue</span> while
@@ -38,6 +38,9 @@
               <li>${characteristic}</li>
             </#list>
           </#if>
+          <#if !node.taxon?? && !node.uri?? && !node.characteristics??>
+            NA
+          </#if>
         </ul>
       </div>
     </#list>
@@ -54,6 +57,8 @@
                 </#list>
               </li>
             </#list>
+          <#else>
+            NA
           </#if>
         </ul>
       </div>
