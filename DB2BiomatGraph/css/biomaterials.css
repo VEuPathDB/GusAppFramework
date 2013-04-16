@@ -17,6 +17,16 @@
   overflow-y: hidden;
 }
 
+.material {
+  color: #00F;
+  font-weight: bold;
+}
+
+.data {
+  color: #F00;
+  font-weight: bold;
+}
+
 .popupData {
 	display: none;
 	font-size: 14px;
