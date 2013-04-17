@@ -1,6 +1,9 @@
 <#include "header.ftl"> 
 
 <h1>Biomaterial Graph Derived from Database for Study ${studyId}</h1>
+<#if studyName??>
+  <h3>${studyName}</h3>
+</#if>
 <p class="note">
   Click on each node or edge label in the graph below for detailed information (you may
   need to disable your popup blocker).  The node tooltip provides characteristics or file
@@ -28,10 +31,10 @@
         </#if>
         <ul>
           <#if node.taxon??>
-            <li>Taxon: ${node.getTaxon()}</li>
+            <li>${node.getTaxon()}</li>
           </#if>
           <#if node.uri??>
-            <li>Uri: ${node.getUri()}</li>
+            <li>${node.getUri()}</li>
           </#if>
           <#if node.characteristics??>
             <#list node.characteristics as characteristic>
