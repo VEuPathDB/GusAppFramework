@@ -16,14 +16,16 @@ public class BiomaterialsGraphService {
     }
   }
   
+  public String getStudyName(long studyId) {
+    return BiomaterialsGraphDAO.getStudyName(studyId);
+  }
+  
   public List<Node> getNodes(long studyId) {
-	List<Node> nodes = BiomaterialsGraphDAO.getNodes(studyId);
-	return nodes;
+	return BiomaterialsGraphDAO.getNodes(studyId);
   }
   
   public List<Edge> getEdges(long studyId) {
-	List<Edge> edges = BiomaterialsGraphDAO.getEdges(studyId);
-	return edges;
+	return BiomaterialsGraphDAO.getEdges(studyId);
   }
   
 }
