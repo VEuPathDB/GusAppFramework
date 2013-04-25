@@ -17,7 +17,10 @@ import com.google.common.collect.ListMultimap;
 public class BiomaterialsGraphDAO {
   private static Logger logger = Logger.getLogger(BiomaterialsGraphDAO.class);
   private static Connection connection = null;
-	
+  
+  public static final String QUERY_STUDY_NAME_BY_ID = "" +
+    "SELECT name FROM study.study WHERE study_id = ?";
+  
   public static final String QUERY_NODES_BY_ID = "" +
     "SELECT p.protocol_app_node_id AS id, p.name AS label, o.name AS node_type " +
     " FROM study.protocolappnode p, study.studylink sl, study.study s, sres.ontologyterm o " +
@@ -70,6 +73,29 @@ public class BiomaterialsGraphDAO {
   public static void closeConnection() {
     DatabaseManager.closeConnection(connection);
 	connection = null;
+  }
+  
+  public static String getStudyName(long id) {
+    logger.debug("START - getStudyName for study id: " + id);
+    PreparedStatement statement = null;
+    ResultSet resultSet = null;
+    String studyName = null;
+    try {
+      statement = connection.prepareStatement(QUERY_STUDY_NAME_BY_ID);
+      logger.debug("Query nodes By Id: " + QUERY_STUDY_NAME_BY_ID);
+      statement.setLong(1, id);
+      resultSet = statement.executeQuery();
+      if(resultSet.next()) {
+        studyName = resultSet.getString("name");
+      }
+      return studyName;
+    }
+    catch(SQLException se) {
+      throw new ApplicationException(se.getMessage());
+    }
+    finally {
+      DatabaseManager.closeAll(resultSet,statement,null);
+    }
   }
 		    
   public static List<Node> getNodes(long id) {
