@@ -208,9 +208,15 @@ sub getChangedAttributes {
 }
 
 
+#-----------------------------------------------------------
+# retrieveFromDB - populates all attributes for an object from the database
+#                  if all existing attributes in the object match a row in the database
+#                  NOTE: additional paramater added to update object with first row 
+#                        even if multiple rows returned 
+#-----------------------------------------------------------
 
 sub retrieveFromDB {
-  my ($self,$doNotRetAtts) = @_;
+  my ($self,$doNotRetAtts,$retrieveIfMoreThanOne) = @_;
   my $dbh = $self->getDbHandle();
   ##want to cache statements....
   ##create dbi statement with  bind  values..
@@ -274,16 +280,16 @@ sub retrieveFromDB {
     #		$sth->finish() if $exists > 1;
   }
   #	print STDERR "\nretrieveFromDB: $exists\n";
-  if ($exists == 1) {
+  if ($exists == 1 || $retrieveIfMoreThanOne) {
     $self->setAttributes($attributeHash);
     $self->synch();
   } elsif ($exists > 1) {
     #print STDERR "\nERROR ".$self->getTableName().": retrieveFromDB: $sql\t$exists rows returned!\n";
   }
 
-  $self->setNumberOfDatabaseRows($exists);
+  $self->setNumberOfDatabaseRows(($exists == 1 || $retrieveIfMoreThanOne) ? 1 : 0);
 
-  return $exists == 1 ? $exists : 0;
+  return ($exists == 1 || $retrieveIfMoreThanOne) ? $exists : 0;
 }
 
 
