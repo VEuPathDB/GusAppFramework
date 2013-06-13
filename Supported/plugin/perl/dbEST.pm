@@ -1315,7 +1315,6 @@ sub undoTables {
   return ('DoTS.EST',
 	  'DoTS.Clone',
 	  'DoTS.Library',
-	  'SRES.Contact',
 	  'DoTS.NASequenceImp',
 	  'SRes.ExternalDatabaseRelease',
 	 );
