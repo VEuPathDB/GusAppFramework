@@ -4,7 +4,7 @@
 ##
 #######################################################################
  
-package GUS::Community::Plugin::InsertMetaGenesFromUcscKnownGenes;
+package GUS::Community::Plugin::InsertMetagenesFromUcscKnownGenes;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 use strict;
@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision:  $',
+		     cvsRevision => '$Revision: 12396 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
