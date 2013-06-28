@@ -207,7 +207,7 @@ sub insertExons {
 sub insertGenes {
   my ($self, $extDbRlsGenes, $chrIds, $exons) = @_;
   my $file = $self->getArg('geneFile');
-  my ($geneFeatureCount, $rnaFeatureCount) = (0,0,0);
+  my ($geneFeatureCount, $rnaFeatureCount) = (0,0);
 
   open(my $fh ,'<', $file);
   my %pos;
