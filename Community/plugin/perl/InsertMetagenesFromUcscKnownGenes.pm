@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12396 $',
+		     cvsRevision => '$Revision: 12398 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -236,7 +236,7 @@ sub insertKnownGenes {
   return (\%rnaFeatures, $exonFeatureCount, $rnaFeatureCount);
 }
 
-sub insertMetaGenes {
+sub insertMetagenes {
   my ($self, $extDbRlsGenes, $extDbRlsSymbols, $chrIds, $rnaFeatures) = @_;
   my $file = $self->getArg('metageneFile');
   my $geneFeatureCount = 0;
