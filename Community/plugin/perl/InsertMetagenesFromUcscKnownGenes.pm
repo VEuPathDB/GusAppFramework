@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12398 $',
+		     cvsRevision => '$Revision: 12399 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -253,7 +253,7 @@ sub insertMetagenes {
     my $symbol = $symbols;
     my $extDbRls = $extDbRlsSymbols;
     if (!defined($symbol) || $symbol =~ /^\s*$/) {
-      $symbol = $geneId;
+      $symbol = $ucsc;
       $extDbRls = $extDbRlsGenes;     
     }
 
