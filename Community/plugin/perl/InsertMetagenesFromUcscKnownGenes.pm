@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12399 $',
+		     cvsRevision => '$Revision: 12430 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -249,23 +249,23 @@ sub insertMetagenes {
     my $geneId = $arr[7]; 
     $geneId  =~ /^([^\(]+) \((.+); (.+); /;
     my ($entrez, $symbols, $ucsc) = ($1, $2, $3);
-
+    
     my $symbol = $symbols;
     my $extDbRls = $extDbRlsSymbols;
     if (!defined($symbol) || $symbol =~ /^\s*$/) {
       $symbol = $ucsc;
       $extDbRls = $extDbRlsGenes;     
     }
-
+    
     my @rnaIds = split(/,/, $ucsc);
-
+    
     my $chrId = $chrIds->{$arr[0]};
-
+    
     $arr[5] =~ s/\,$//;
     my @geneStarts = split(/,/, $arr[5]);
     $arr[6] =~ s/\,$//;
     my @geneEnds = split(/,/, $arr[6]); 
-
+    
     my $isReversed;
     if ($arr[1] eq '+') {
       $isReversed = 0;
@@ -273,10 +273,10 @@ sub insertMetagenes {
     elsif ($arr[1] eq '-') {
       $isReversed = 1;
     }
-
+    
     my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, external_database_release_id => $extDbRls});
     $gene->retrieveFromDB();
-
+    
     my $geneFeature = GUS::Model::DoTS::GeneFeature->new({name => $geneId, na_sequence_id => $chrId, external_database_release_id => $extDbRlsGenes, source_id => $geneId});
     my $geneInstance = GUS::Model::DoTS::GeneInstance->new(); 
     $geneInstance->setParent($gene);
@@ -288,14 +288,16 @@ sub insertMetagenes {
     }
     for (my $i=0; $i<@rnaIds; $i++) {
       my $rnaFeature = $rnaFeatures->{$rnaIds[$i]};
-      $rnaFeature->setParent($geneFeature);
-      $geneFeature->addToSubmitList($rnaFeature);
+      if ($rnaFeature->retrieveFromDB();
+	  $rnaFeature->setParent($geneFeature);
+	  $geneFeature->addToSubmitList($rnaFeature);
+	}
     }
     
     $gene->submit();
     $geneFeatureCount++;
     $self->undefPointerCache();
-  } 
+  }
   close($fh);
   return($geneFeatureCount);
 }
