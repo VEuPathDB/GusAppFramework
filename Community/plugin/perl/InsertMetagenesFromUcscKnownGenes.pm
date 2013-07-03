@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12430 $',
+		     cvsRevision => '$Revision: 12436 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -288,10 +288,10 @@ sub insertMetagenes {
     }
     for (my $i=0; $i<@rnaIds; $i++) {
       my $rnaFeature = $rnaFeatures->{$rnaIds[$i]};
-      if ($rnaFeature->retrieveFromDB();
-	  $rnaFeature->setParent($geneFeature);
-	  $geneFeature->addToSubmitList($rnaFeature);
-	}
+      if ($rnaFeature->retrieveFromDB()) {
+	$rnaFeature->setParent($geneFeature);
+	$geneFeature->addToSubmitList($rnaFeature);
+      }
     }
     
     $gene->submit();
