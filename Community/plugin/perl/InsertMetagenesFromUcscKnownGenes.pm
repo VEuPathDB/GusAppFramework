@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12436 $',
+		     cvsRevision => '$Revision: 12438 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -199,9 +199,10 @@ sub insertKnownGenes {
     my $rnaEnd = $arr[$pos{$sa . '.knownGene.txEnd'}];
     my $rnaCdsStart = $arr[$pos{$sa . '.knownGene.cdsStart'}];
     my $rnaCdsEnd = $arr[$pos{$sa . '.knownGene.cdsEnd'}];
-    $rnaFeatures{$rnaId} = GUS::Model::DoTS::RNAFeature->new({name => $rnaId, na_sequence_id => $chrId, external_database_release_id => $extDbRlsGenes, source_id => $rnaId});
+    my $rnaFeature = GUS::Model::DoTS::RNAFeature->new({name => $rnaId, na_sequence_id => $chrId, external_database_release_id => $extDbRlsGenes, source_id => $rnaId});
+    $rnaFeatures{$rnaId} = $rnaFeature;
     my $rnaNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $rnaStart, start_max => $rnaStart, end_min => $rnaEnd, end_max => $rnaEnd, is_reversed => $isReversed}); 
-    $rnaNaLocation->setParent($rnaFeatures{$rnaId});
+    $rnaNaLocation->setParent($rnaFeature);
     
     $arr[$pos{$sa . '.knownGene.exonStarts'}] =~ s/\,$//;
     my @exonStarts = split(/,/, $arr[$pos{$sa . '.knownGene.exonStarts'}]);
@@ -227,9 +228,10 @@ sub insertKnownGenes {
       }
       my $orderNum = $i+1;
       $rnaFeatureExon = GUS::Model::DoTS::RNAFeatureExon->new({exon_feature_id => $exonIds{"$chrId|$exonStarts[$i]|$exonEnds[$i]|$cdsStart|$cdsEnd"}, order_number => $orderNum});
-      $rnaFeatureExon->setParent($rnaFeatures{$rnaId});
+      $rnaFeatureExon->setParent($rnaFeature);
     }
-    $rnaFeatures{$rnaId}->submit;
+
+    $rnaFeature->submit;
     $rnaFeatureCount++;
     $self->undefPointerCache();
   }
