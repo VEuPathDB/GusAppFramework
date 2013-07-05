@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12438 $',
+		     cvsRevision => '$Revision: 12441 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -200,7 +200,7 @@ sub insertKnownGenes {
     my $rnaCdsStart = $arr[$pos{$sa . '.knownGene.cdsStart'}];
     my $rnaCdsEnd = $arr[$pos{$sa . '.knownGene.cdsEnd'}];
     my $rnaFeature = GUS::Model::DoTS::RNAFeature->new({name => $rnaId, na_sequence_id => $chrId, external_database_release_id => $extDbRlsGenes, source_id => $rnaId});
-    $rnaFeatures{$rnaId} = $rnaFeature;
+
     my $rnaNaLocation = GUS::Model::DoTS::NALocation->new({start_min => $rnaStart, start_max => $rnaStart, end_min => $rnaEnd, end_max => $rnaEnd, is_reversed => $isReversed}); 
     $rnaNaLocation->setParent($rnaFeature);
     
@@ -232,6 +232,7 @@ sub insertKnownGenes {
     }
 
     $rnaFeature->submit;
+    $rnaFeatures{$rnaId} = $rnaFeature->getId();
     $rnaFeatureCount++;
     $self->undefPointerCache();
   }
@@ -289,8 +290,8 @@ sub insertMetagenes {
       $geneFeature->addToSubmitList($geneNaLocation);
     }
     for (my $i=0; $i<@rnaIds; $i++) {
-      my $rnaFeature = $rnaFeatures->{$rnaIds[$i]};
-      if ($rnaFeature->retrieveFromDB()) {
+      if (defined $rnaFeatures->{$rnaIds[$i]}) {
+	my $rnaFeature = GUS::Model::DoTS::RNAFeature->new({na_feature_id => $rnaFeatures->{$rnaIds[$i]}});
 	$rnaFeature->setParent($geneFeature);
 	$geneFeature->addToSubmitList($rnaFeature);
       }
