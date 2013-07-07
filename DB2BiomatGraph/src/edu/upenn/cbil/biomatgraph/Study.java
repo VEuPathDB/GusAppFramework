@@ -37,6 +37,7 @@ public class Study {
     this.edges = edges;
   }
   
+  @Override
   public String toString() {
     return ReflectionToStringBuilder.toString(this);
   }

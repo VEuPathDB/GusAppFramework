@@ -5,8 +5,10 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 public class BiomaterialsGraphService {
+
+  @SuppressWarnings("unused")
   private static Logger logger = Logger.getLogger(BiomaterialsGraphService.class);
-	  
+  
   public void manageConnection(boolean open) {
 	if(open) {
 	  BiomaterialsGraphDAO.openConnection();

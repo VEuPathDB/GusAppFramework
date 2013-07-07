@@ -39,6 +39,7 @@ public class Edge {
 	this.params = params;
   }
   
+  @Override
   public String toString() {
     return ReflectionToStringBuilder.toString(this);
   }
