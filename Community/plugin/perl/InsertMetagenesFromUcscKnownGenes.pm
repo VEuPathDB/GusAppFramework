@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12452 $',
+		     cvsRevision => '$Revision: 12462 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -254,10 +254,9 @@ sub insertMetagenes {
     my ($entrez, $symbols, $ucsc) = ($1, $2, $3);
     
     my $symbol = $symbols;
-    my $extDbRls = $extDbRlsSymbols;
+
     if (!defined($symbol) || $symbol =~ /^\s*$/) {
       $symbol = $ucsc;
-      $extDbRls = $extDbRlsGenes;     
     }
     
     my @rnaIds = split(/,/, $ucsc);
@@ -277,9 +276,18 @@ sub insertMetagenes {
       $isReversed = 1;
     }
     
-    my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, external_database_release_id => $extDbRls});
-    $gene->retrieveFromDB();
-    
+    my $gene1 = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, external_database_release_id => $extDbRlsSymbols});
+    my $gene2 = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, external_database_release_id => $extDbRlsGenes});
+    my $gene;
+    if ($gene1->retrieveFromDB()) {
+      $gene = $gene1;
+    }
+    elsif ($gene2->retrieveFromDB()) {
+      $gene = $gene2;
+    }
+    else {
+      $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, external_database_release_id => $extDbRlsGenes})
+    }
     my $geneFeature = GUS::Model::DoTS::GeneFeature->new({name => $geneId, na_sequence_id => $chrId, external_database_release_id => $extDbRlsGenes, source_id => $geneId});
     my $geneInstance = GUS::Model::DoTS::GeneInstance->new(); 
     $geneInstance->setParent($gene);
