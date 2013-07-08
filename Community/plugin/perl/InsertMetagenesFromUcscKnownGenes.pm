@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12441 $',
+		     cvsRevision => '$Revision: 12452 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -292,6 +292,7 @@ sub insertMetagenes {
     for (my $i=0; $i<@rnaIds; $i++) {
       if (defined $rnaFeatures->{$rnaIds[$i]}) {
 	my $rnaFeature = GUS::Model::DoTS::RNAFeature->new({na_feature_id => $rnaFeatures->{$rnaIds[$i]}});
+	$rnaFeature->retrieveFromDB();
 	$rnaFeature->setParent($geneFeature);
 	$geneFeature->addToSubmitList($rnaFeature);
       }
