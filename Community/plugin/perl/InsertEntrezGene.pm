@@ -362,9 +362,12 @@ SQL
       die "can't find Gene ID in attributes \"$attributes\"";
     }
 
+    my %attr;
+    map { my ($name, $value) = split("=", $_); $attr{$name} = $value;} split(";", $attributes);
     $gene = GUS::Model::DoTS::Gene->new( {
                          'source_id' => $geneId,
                          'description' => $attributes,
+                         'name' => $attr{Name},
                          'external_database_release_id' => $extDbRlsId,
 					 } );
     $gene->submit();

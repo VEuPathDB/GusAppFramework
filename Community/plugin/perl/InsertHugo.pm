@@ -114,6 +114,7 @@ sub run {
 	my $gene = GUS::Model::DoTS::Gene->new({
 	    source_id => $id,
             gene_symbol => $symbol,
+            name => $symbol,
             external_database_release_id => $extDbRlsId,
 	   });
 	$gene->submit();
