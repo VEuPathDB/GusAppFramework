@@ -116,7 +116,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12462 $',
+		     cvsRevision => '$Revision: 12465 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -134,7 +134,7 @@ sub run {
   my $extDbRlsGenome = $self->getExtDbRlsId($self->getArg('extDbRlsSpecGenome'));
   my $extDbRlsGenes = $self->getExtDbRlsId($self->getArg('extDbRlsSpecGenes'));
   my $extDbRlsSymbols = $self->getExtDbRlsId($self->getArg('extDbRlsSpecSymbols'));
-  $self->logDebug("Ext Db Rls Ids: extDbRlsGenome, $extDbRlsGenes,$extDbRlsSymbols");
+  $self->logDebug("Ext Db Rls Ids: $extDbRlsGenome, $extDbRlsGenes,$extDbRlsSymbols");
   my $chrIds = $self->getChromosomeIds($extDbRlsGenome);
 
   $self->logData('Inserting rnas and exons');
@@ -236,6 +236,7 @@ sub insertKnownGenes {
     $rnaFeatureCount++;
     $self->undefPointerCache();
   }
+  close($fh);
   return (\%rnaFeatures, $exonFeatureCount, $rnaFeatureCount);
 }
 
