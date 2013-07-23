@@ -102,7 +102,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12526 $',
+		     cvsRevision => '$Revision: 12549 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -171,7 +171,7 @@ sub insertResults {
   while (my $line=<$fh>) {
     chomp($line);
     my @arr = split(/\t/, $line);
-    my $naFeature =GUS::Model::DoTS::NAFeatulre->new({name=>$arr[$index->{'feature_name'}], external_database_release_id=>$extDbRls});
+    my $naFeature =GUS::Model::DoTS::NAFeature->new({name=>$arr[$index->{'feature_name'}], external_database_release_id=>$extDbRls});
     if ($naFeature->retrieveFromDB()) {
       my $naFeatureId = $naFeature->getId();
       my $naFeatureExpr = GUS::Model::Results::NAFeatureExpression->new({na_feature_id => $naFeatureId, protocol_app_node_id => $protAppNodeId});
