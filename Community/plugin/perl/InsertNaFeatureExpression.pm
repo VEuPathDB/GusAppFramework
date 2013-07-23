@@ -102,7 +102,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12549 $',
+		     cvsRevision => '$Revision: 12551 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -182,8 +182,8 @@ sub insertResults {
       }
       $naFeatureExpr->submit;
       $resultCount++;
-      $self->undefPointerCache();
     }
+    $self->undefPointerCache();
   }
   close($fh);
   return ($resultCount);
