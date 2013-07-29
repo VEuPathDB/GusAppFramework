@@ -69,7 +69,7 @@ sub getDocumentation {
 
   my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The release of the external database identifying these na_features'], ['Dots::NAFeature', 'The na_features the expression values refer to']];
 
-  my $howToRestart = "";
+  my $howToRestart = "Use the --skip option to start loading from where desired in --expressionFile.";
 
   my $failureCases = "";
 
