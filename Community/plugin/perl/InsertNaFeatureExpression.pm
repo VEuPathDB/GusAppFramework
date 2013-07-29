@@ -102,7 +102,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12552 $',
+		     cvsRevision => '$Revision: 12575 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -144,7 +144,7 @@ sub checkHeader {
   }
   else {
     foreach my $header (keys %index) {
-      if ($header ne 'feature_name' && $header ne 'value' && $header ne 'confidence' && $header ne 'standear_error' && $header ne 'categorical_value') {
+      if ($header ne 'feature_name' && $header ne 'value' && $header ne 'confidence' && $header ne 'standard_error' && $header ne 'categorical_value') {
 	$self->logData('column corresponding to header $header will not be loaded');
 	undef $index{$header};
       }
