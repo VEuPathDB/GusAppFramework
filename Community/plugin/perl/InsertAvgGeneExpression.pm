@@ -76,7 +76,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision:  $',
+		     cvsRevision => '$Revision: 12615  $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -113,6 +113,9 @@ sub insertResults {
     my $geneExpr = GUS::Model::Results::GeneExpression->new({gene_id => $geneId, protocol_app_node_id => $protAppNodeId, value => $avg, standard_error => $stdDev/$count});
     $geneExpr->submit();
     $resultCount++;
+    if ($resultCount % 1000) {
+      $self->logData("Inserted $resultCount values");
+    }
     $self->undefPointerCache();
   }
   $sth->finish();
