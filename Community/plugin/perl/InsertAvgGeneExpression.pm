@@ -76,7 +76,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12617  $',
+		     cvsRevision => '$Revision: 12619  $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -110,7 +110,7 @@ sub insertResults {
   my $dbh = $self->getQueryHandle();
   my $sth = $dbh->prepareAndExecute("select gi.gene_id, avg(e.value), stddev(e.value), count(e.value) from dots.geneinstance gi, results.nafeatureexpression e where gi.na_feature_id=e.na_feature_id and e.protocol_app_node_id=$protAppNodeId and gi.na_feature_id not in (select na_feature_id from dots.genefeature where name like 'UNIQUE%') group by gi.gene_id");
   while (my ($geneId, $avg, $stdDev, $count)=$sth->fetchrow_array()) {
-    my $geneExpr = GUS::Model::Results::GeneExpression->new({gene_id => $geneId, protocol_app_node_id => $protAppNodeId, value => $avg, standard_error => $stdDev/$count});
+    my $geneExpr = GUS::Model::Results::GeneExpression->new({gene_id => $geneId, protocol_app_node_id => $protAppNodeId, value => $avg, standard_error => $stdDev/sqrt($count}));
     $geneExpr->submit();
     $resultCount++;
     if ($resultCount % 1000 == 0) {
