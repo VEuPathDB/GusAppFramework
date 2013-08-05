@@ -17,6 +17,7 @@ use GUS::Model::DoTS::RNAFeature;
 use GUS::Model::DoTS::ExonFeature;
 use GUS::Model::DoTS::RNAFeatureExon;
 use GUS::Model::DoTS::NALocation;
+use GUS::Model::SRes::TaxonName;
 
 # ----------------------------------------------------------------------
 # Arguments
@@ -59,8 +60,8 @@ sub getArgumentsDeclaration {
 		 reqd           => 1,
 		 isList         => 0 
 	     }),
-     stringArg({ name  => 'extDbRlsSpecSymbols',
-		 descr => "The ExternalDBRelease specifier for the reference gene symbols. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+     stringArg({ name  => 'species',
+		 descr => 'The scientific name name of the species the genes refer to',
 		 constraintFunc => undef,
 		 reqd           => 1,
 		 isList         => 0 
@@ -81,7 +82,7 @@ sub getDocumentation {
 
   my $tablesAffected = [['DoTS::Gene', 'Enters a row for each (non-already existing) gene symbol in the file and for each metagene without a symbol'], ['DoTS::GeneFeature', 'Enters a row for each metagene in the gene file'], ['DoTS::GeneInstance', 'Enters rows linking each new GeneFeature to its Gene'], ['DoTS::RNAFeature', 'Enters a row for each known gene'], ['DoTS::ExonFeature', 'Enters a row for each distinct exon in the known genes'], ['DoTS::NALocation', 'Enters a row for each metaexon, a row for each transcript and a row for each exon location'], ['DoTS:RNAFeatureExon', 'Enters a row linking each exon to each transcript it belongs to']];
 
-  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The releases of the external database identifying the UCSC known genes and the metagenes being loaded']];
+  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The releases of the external database identifying the UCSC known genes and the metagenes being loaded'], ['SRes::TaxonName', 'The species the genes refer to']];
 
   my $howToRestart = "";
 
@@ -133,15 +134,15 @@ sub run {
 
   my $extDbRlsGenome = $self->getExtDbRlsId($self->getArg('extDbRlsSpecGenome'));
   my $extDbRlsGenes = $self->getExtDbRlsId($self->getArg('extDbRlsSpecGenes'));
-  my $extDbRlsSymbols = $self->getExtDbRlsId($self->getArg('extDbRlsSpecSymbols'));
-  $self->logDebug("Ext Db Rls Ids: $extDbRlsGenome, $extDbRlsGenes,$extDbRlsSymbols");
+
+  $self->logDebug("Ext Db Rls Ids: $extDbRlsGenome, $extDbRlsGenes");
   my $chrIds = $self->getChromosomeIds($extDbRlsGenome);
 
   $self->logData('Inserting rnas and exons');
   my ($rnaFeatures, $exonFeatureCount, $rnaFeatureCount) = $self->insertKnownGenes($extDbRlsGenes, $chrIds);
 
   $self->logData('Inserting metagenes');
-  my ($geneFeatureCount) = $self->insertMetagenes($extDbRlsGenes, $extDbRlsSymbols, $chrIds, $rnaFeatures);
+  my ($geneFeatureCount) = $self->insertMetagenes($extDbRlsGenes, $chrIds, $rnaFeatures);
 
   my $resultDescrip = "Inserted $geneFeatureCount gene features, $rnaFeatureCount rna features, $exonFeatureCount exon feature with their corresponding locations. Entries in DoTS.Gene, DoTS.GeneInstance, and DoTS.RnaFeatureExon were inserted as needed.";
   return $resultDescrip;
@@ -241,9 +242,16 @@ sub insertKnownGenes {
 }
 
 sub insertMetagenes {
-  my ($self, $extDbRlsGenes, $extDbRlsSymbols, $chrIds, $rnaFeatures) = @_;
+  my ($self, $extDbRlsGenes, $chrIds, $rnaFeatures) = @_;
   my $file = $self->getArg('metageneFile');
   my $geneFeatureCount = 0;
+
+  my $species = $self->getArg('species'); 
+  my $taxonName = GUS::Model::DoTS::Gene->new({name => $species});
+  if (!$taxonName->retrieveFromDB()) {
+    $self->userError("Your database instance must contain a '$species' entry in SRes.TaxonName");
+    }
+    my $taxonId = $taxonName->getTaxonId();
 
   open(my $fh ,'<', $file);
   
@@ -277,17 +285,9 @@ sub insertMetagenes {
       $isReversed = 1;
     }
     
-    my $gene1 = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, external_database_release_id => $extDbRlsSymbols});
-    my $gene2 = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, external_database_release_id => $extDbRlsGenes});
-    my $gene;
-    if ($gene1->retrieveFromDB()) {
-      $gene = $gene1;
-    }
-    elsif ($gene2->retrieveFromDB()) {
-      $gene = $gene2;
-    }
-    else {
-      $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, external_database_release_id => $extDbRlsGenes})
+    my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId});
+    if (!$gene->retrieveFromDB()) {
+      $gene->set('external_database_release_id', $extDbRlsGenes);
     }
     my $geneFeature = GUS::Model::DoTS::GeneFeature->new({name => $geneId, na_sequence_id => $chrId, external_database_release_id => $extDbRlsGenes, source_id => $geneId});
     my $geneInstance = GUS::Model::DoTS::GeneInstance->new(); 

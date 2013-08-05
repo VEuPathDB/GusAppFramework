@@ -17,6 +17,7 @@ use GUS::Model::DoTS::RNAFeature;
 use GUS::Model::DoTS::ExonFeature;
 use GUS::Model::DoTS::RNAFeatureExon;
 use GUS::Model::DoTS::NALocation;
+use GUS::Model::SRes::TaxonName;
 
 # ----------------------------------------------------------------------
 # Arguments
@@ -58,6 +59,12 @@ sub getArgumentsDeclaration {
 		 constraintFunc => undef,
 		 reqd           => 1,
 		 isList         => 0 
+	     }),
+     stringArg({ name  => 'species',
+		 descr => 'The scientific name name of the species the genes refer to',
+		 constraintFunc => undef,
+		 reqd           => 1,
+		 isList         => 0 
 	     })
     ];
   return $argumentDeclaration;
@@ -75,7 +82,7 @@ sub getDocumentation {
 
   my $tablesAffected = [['DoTS::Gene', 'Enters a row for each gene symbol in the file and for each Ensembl Gene without a symbol'], ['DoTS::GeneFeature', 'Enters a row for each Ensembl gene in the gene file'], ['DoTS::GeneInstance', 'Enters rows linking each new GeneFeature to its Gene'], ['DoTS::RNAFeature', 'Enters a row for each Ensembl transcript in the gene file'], ['DoTS::ExonFeature', 'Enters a row for each distinct exon in the exon file'], ['DoTS::NALocation', 'Enters a row for each gene, a row for each transcript and a row for each exon location'], ['DoTS:RNAFeatureExon', 'Enters a row linking each exon to each transcript it belongs to']];
 
-  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The releases of the external database identifying the Ensembl genome and the Ensembl genes being loaded']];
+  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The releases of the external database identifying the Ensembl genome and the Ensembl genes being loaded'], ['SRes::TaxonName', 'The species the genes refer to']];
 
   my $howToRestart = "";
 
@@ -209,6 +216,13 @@ sub insertGenes {
   my $file = $self->getArg('geneFile');
   my ($geneFeatureCount, $rnaFeatureCount) = (0,0);
 
+  my $species = $self->getArg('species'); 
+  my $taxonName = GUS::Model::DoTS::Gene->new({name => $species});
+  if (!$taxonName->retrieveFromDB()) {
+    $self->userError("Your database instance must contain a '$species' entry in SRes.TaxonName");
+    }
+    my $taxonId = $taxonName->getTaxonId();
+
   open(my $fh ,'<', $file);
   my %pos;
   my $symbolHeader = $self->getArg('symbolHeader');
@@ -239,8 +253,10 @@ sub insertGenes {
     }
     my $isReversed = $arr[$pos{'Strand'}]==1 ? 0 : 1;
 
-    my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, external_database_release_id => $extDbRlsGenes});
-    $gene->retrieveFromDB();
+    my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId});
+    if (!$gene->retrieveFromDB()) {
+      $gene->set('external_database_release_id', $extDbRlsGenes);
+    }
     my $geneFeature = GUS::Model::DoTS::GeneFeature->new({name => $geneId, na_sequence_id => $chrId, external_database_release_id => $extDbRlsGenes, source_id => $geneId});
     my $geneInstance = GUS::Model::DoTS::GeneInstance->new(); 
     $geneInstance->setParent($gene);
