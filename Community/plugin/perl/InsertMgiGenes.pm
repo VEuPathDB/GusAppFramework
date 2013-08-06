@@ -87,7 +87,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision:  $',
+		     cvsRevision => '$Revision: 12629 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -143,7 +143,7 @@ sub insertGenes {
     }
     my @synonyms = split(/\|/, $arr[$pos{'Marker Synonyms (pipe-separated)'}]);
 
-    my $taxonName = GUS::Model::DoTS::Gene->new({name => 'Mus musculus'});
+    my $taxonName = GUS::Model::SRes::TaxonName->new({name => 'Mus musculus'});
     if (!$taxonName->retrieveFromDB()) {
       $self->userError("Your database instance must contain a 'Mus musculus' entry in SRes.TaxonName");
     }
