@@ -87,7 +87,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12633 $',
+		     cvsRevision => '$Revision: 12634 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -116,6 +116,12 @@ sub insertGenes {
   my ($self) = @_;
   my $file = $self->getArg('geneFile');
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
+
+  my $taxonName = GUS::Model::SRes::TaxonName->new({name => 'Mus musculus'});
+  if (!$taxonName->retrieveFromDB()) {
+    $self->userError("Your database instance must contain a 'Mus musculus' entry in SRes.TaxonName");
+  }
+  my $taxonId = $taxonName->getTaxonId();  
 
   my ($geneCount, $geneSynonymCount, $geneInstanceCount, $geneFeatureCount) = (0, 0, 0, 0);
   my $lineCount = 0;
@@ -147,11 +153,6 @@ sub insertGenes {
     }
     my @synonyms = split(/\|/, $arr[$pos{'Marker Synonyms (pipe-separated)'}]);
 
-    my $taxonName = GUS::Model::SRes::TaxonName->new({name => 'Mus musculus'});
-    if (!$taxonName->retrieveFromDB()) {
-      $self->userError("Your database instance must contain a 'Mus musculus' entry in SRes.TaxonName");
-    }
-    my $taxonId = $taxonName->getTaxonId();
     my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId});
     if (!$gene->retrieveFromDB()) {
       $geneCount++;
