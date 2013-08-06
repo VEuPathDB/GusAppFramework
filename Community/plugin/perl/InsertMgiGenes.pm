@@ -87,7 +87,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12629 $',
+		     cvsRevision => '$Revision: 12633 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -118,7 +118,7 @@ sub insertGenes {
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
 
   my ($geneCount, $geneSynonymCount, $geneInstanceCount, $geneFeatureCount) = (0, 0, 0, 0);
-
+  my $lineCount = 0;
   open(my $fh ,'<', $file);
   my %pos;
   my $line = <$fh>;
@@ -129,6 +129,10 @@ sub insertGenes {
   }
   
   while (my $line=<$fh>) {
+    $lineCount++;
+    if ($lineCount % 1000 ==0) {
+      $self->logData("Read $lineCount lines from $file");
+    }
     chomp($line);
     my @arr = split(/\t/, $line);
     if ($arr[$pos{'Marker Type'}] ne 'Gene') {
