@@ -117,7 +117,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12396 $',
+		     cvsRevision => '$Revision: 12629 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -217,7 +217,7 @@ sub insertGenes {
   my ($geneFeatureCount, $rnaFeatureCount) = (0,0);
 
   my $species = $self->getArg('species'); 
-  my $taxonName = GUS::Model::DoTS::Gene->new({name => $species});
+  my $taxonName = GUS::Model::SRes::TaxonName->new({name => $species});
   if (!$taxonName->retrieveFromDB()) {
     $self->userError("Your database instance must contain a '$species' entry in SRes.TaxonName");
     }
