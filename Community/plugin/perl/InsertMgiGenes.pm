@@ -87,7 +87,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12638 $',
+		     cvsRevision => '$Revision: 12639 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -159,6 +159,9 @@ sub insertGenes {
     }
     $gene->set('external_database_release_id', $extDbRlsId);
     for (my $i=0; $i<@synonyms; $i++) {
+      if ($synonyms[$i] eq 'now' || $synonyms[$i] eq 'NOW') {
+	next;
+      }
       my $geneSynonym = GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
       $geneSynonym->setParent($gene);
       if (!$geneSynonym->retrieveFromDB()) {
