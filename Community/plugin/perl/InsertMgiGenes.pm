@@ -87,7 +87,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12634 $',
+		     cvsRevision => '$Revision: 12635 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -182,10 +182,11 @@ sub insertGenes {
 # ----------------------------------------------------------------------
 # Undo
 # ----------------------------------------------------------------------
+# Won't delete from DoTS.Gene
 
 sub undoTables {
   my ($self) = @_;
-  return ('DoTS.GeneInstance', 'DoTS.GeneFeature', 'DoTS.GeneSynonym', 'DoTS.Gene');
+  return ('DoTS.GeneInstance', 'DoTS.GeneFeature', 'DoTS.GeneSynonym'');
 }
 
 1;
