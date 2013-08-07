@@ -1,10 +1,10 @@
 #######################################################################
-##                 InsertMgiGenes.pm
-## $Id: InsertMgiGenes.pm  manduchi $
+##                 InsertEntrezGenes.pm
+## $Id: InsertEntrezGenes.pm  manduchi $
 ##
 #######################################################################
  
-package GUS::Community::Plugin::InsertMgiGenes;
+package GUS::Community::Plugin::InsertEntrezGenes;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 use strict;
@@ -23,7 +23,7 @@ sub getArgumentsDeclaration {
   my $argumentDeclaration =
     [
      fileArg({name => 'geneFile',
-	      descr => 'The full path to a marker list report file from MGI with the header containing the following fields: MGI Accession ID, Symbol, Marker Type, Marker Synonyms (pipe-separated). Order is irrelevant and extra header fields will be ignored.',
+	      descr => 'The full path to a gene_info file from NCBI.',
 	      constraintFunc=> undef,
 	      reqd  => 1,
 	      isList => 0,
@@ -31,7 +31,13 @@ sub getArgumentsDeclaration {
 	      format => ''
 	     }),
      stringArg({ name  => 'extDbRlsSpec',
-		 descr => "The ExternalDBRelease specifier for the MGI release to which --geneFile corresponds. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+		 descr => "The ExternalDBRelease specifier for the Entrez Gene release to which --geneFile corresponds. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+		 constraintFunc => undef,
+		 reqd           => 1,
+		 isList         => 0 
+	     }),
+     stringArg({ name  => 'species',
+		 descr => 'The scientific name name of the species the genes refer to',
 		 constraintFunc => undef,
 		 reqd           => 1,
 		 isList         => 0 
@@ -46,13 +52,13 @@ sub getArgumentsDeclaration {
 
 
 sub getDocumentation {
-  my $purposeBrief = 'Loads MGI genes into DoTS.';
+  my $purposeBrief = 'Loads Entrez genes into DoTS.';
 
-  my $purpose = "This plugin reads a marker list report file downloaded from MGI and populates the DoTS Gene, GeneSynonym, GeneInstance, and GeneFeature tables.";
+  my $purpose = "This plugin reads a gene_info file downloaded from NCBI and populates the DoTS Gene, GeneSynonym, GeneInstance, and GeneFeature tables.";
 
-  my $tablesAffected = [['DoTS::Gene', 'Enters a row for each MGI gene symbol, not already in the database for mouse'], ['DoTS::GeneFeature', 'Enters a row for each MGI gene in the file'], ['DoTS::GeneInstance', 'Enters rows linking each new GeneFeature to its Gene'], ['DoTS::GeneSynonym', 'Enters a row for each MGI gene synonym, not already in the database for mouse']];
+  my $tablesAffected = [['DoTS::Gene', 'Enters a row for each Entrez gene symbol, not already in the database for --species'], ['DoTS::GeneFeature', 'Enters a row for each Entrez gene in the file'], ['DoTS::GeneInstance', 'Enters rows linking each new GeneFeature to its Gene'], ['DoTS::GeneSynonym', 'Enters a row for each Entrez gene synonym, not already in the database for --species']];
 
-  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The releases of the external database identifying the MGI genes being loaded'], ['SRes::TaxonName', 'The Mus musculus entry']];
+  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The releases of the external database identifying the Entrez genes being loaded'], ['SRes::TaxonName', 'The species the genes refer to']];
 
   my $howToRestart = "";
 
@@ -87,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12640 $',
+		     cvsRevision => '$Revision:  $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -116,24 +122,19 @@ sub insertGenes {
   my ($self) = @_;
   my $file = $self->getArg('geneFile');
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
+  my $species = $self->getArg('species');
 
-  my $taxonName = GUS::Model::SRes::TaxonName->new({name => 'Mus musculus'});
+  my $taxonName = GUS::Model::SRes::TaxonName->new({name => $species});
   if (!$taxonName->retrieveFromDB()) {
-    $self->userError("Your database instance must contain a 'Mus musculus' entry in SRes.TaxonName");
+    $self->userError("Your database instance must contain a '$species' entry in SRes.TaxonName");
   }
   my $taxonId = $taxonName->getTaxonId();  
 
   my ($geneCount, $geneSynonymCount, $geneInstanceCount, $geneFeatureCount) = (0, 0, 0, 0);
   my $lineCount = 0;
+
   open(my $fh ,'<', $file);
-  my %pos;
-  my $line = <$fh>;
-  chomp($line);
-  my @arr = split(/\t/, $line);
-  for (my $i=0; $i<@arr; $i++) {
-    $pos{$arr[$i]} = $i;
-  }
-  
+  my $line = <$fh>;  
   while (my $line=<$fh>) {
     $lineCount++;
     if ($lineCount % 1000 ==0) {
@@ -141,23 +142,19 @@ sub insertGenes {
     }
     chomp($line);
     my @arr = split(/\t/, $line);
-    if ($arr[$pos{'Marker Type'}] ne 'Gene') {
-      next;
-    }
-
-    my $mgiId = $arr[$pos{'MGI Accession  ID'}]; 
-    my $symbol = $arr[$pos{'Marker Symbol'}];
-    my $name = $arr[$pos{'Marker Name'}];
+    
+    my $entrezId = $arr[1]; 
+    my $symbol = $arr[2];
     if (!defined($symbol) || $symbol =~ /^\s*$/) {
-      $symbol = $mgiId;
+      $symbol = 'Entrez Gene: $entrezId';
     }
-    my @synonyms = split(/\|/, $arr[$pos{'Marker Synonyms (pipe-separated)'}]);
+    my @synonyms = split(/\|/, $arr[4]);
 
     my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId});
     if (!$gene->retrieveFromDB()) {
       $geneCount++;
+      $gene->set('external_database_release_id', $extDbRlsId);
     }
-    $gene->set('external_database_release_id', $extDbRlsId);
     for (my $i=0; $i<@synonyms; $i++) {
       if ($synonyms[$i] eq 'now' || $synonyms[$i] eq 'NOW') {
 	next;
@@ -168,7 +165,7 @@ sub insertGenes {
 	$geneSynonymCount++;
       }
     }
-    my $geneFeature = GUS::Model::DoTS::GeneFeature->new({name => $name, external_database_release_id => $extDbRlsId, source_id => $mgiId});
+    my $geneFeature = GUS::Model::DoTS::GeneFeature->new({external_database_release_id => $extDbRlsId, source_id => $entrezId});
     my $geneInstance = GUS::Model::DoTS::GeneInstance->new(); 
     $geneInstance->setParent($gene);
     $geneInstance->setParent($geneFeature);
@@ -185,11 +182,9 @@ sub insertGenes {
 # ----------------------------------------------------------------------
 # Undo
 # ----------------------------------------------------------------------
-# Won't delete from DoTS.Gene
-
 sub undoTables {
   my ($self) = @_;
-  return ('DoTS.GeneInstance', 'DoTS.GeneFeature', 'DoTS.GeneSynonym');
+  return ('DoTS.GeneInstance', 'DoTS.GeneFeature', 'DoTS.GeneSynonym', 'DoTS.Gene');
 }
 
 1;
