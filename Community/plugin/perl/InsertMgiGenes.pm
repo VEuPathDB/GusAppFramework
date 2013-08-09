@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12651 $',
+		     cvsRevision => '$Revision: 12652 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -210,7 +210,7 @@ sub insertGenes {
   } 
   close($fh);
   
-  return($geneCount, $geneSynonymCount, $geneInstanceCount, $geneFeatureCount);
+  return($geneCount, $geneSynonymCount, $geneInstanceCount, $geneFeatureCount, $naLocationCount);
 }
 
 # ----------------------------------------------------------------------
