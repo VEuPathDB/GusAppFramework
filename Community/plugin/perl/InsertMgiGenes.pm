@@ -94,7 +94,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12648 $',
+		     cvsRevision => '$Revision: 12649 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -170,7 +170,7 @@ sub insertGenes {
     my $mgiId = $arr[$pos{'MGI Accession  ID'}]; 
     my $symbol = $arr[$pos{'Marker Symbol'}];
     my $name = $arr[$pos{'Marker Name'}];
-    my $chrId = $chrIds->{$arr[$pos{'Chr'}]};
+    my $chrId = $chrIds->{'chr'.$arr[$pos{'Chr'}]};
     my $start = $arr[$pos{'genome coordinate start'}];
     my $end = $arr[$pos{'genome coordinate end'}];
     my $isReversed = $arr[$pos{'strand'}] eq '+' ? 0 : 1;;
@@ -195,16 +195,18 @@ sub insertGenes {
       }
     }
     my $geneFeature = GUS::Model::DoTS::GeneFeature->new({name => $name,  na_sequence_id => $chrId, external_database_release_id => $extDbRlsId, source_id => $mgiId});
-    my $naLocation = GUS::Model::DoTS::NALocation->new({start_min => $start, start_max => $start, end_min => $end, end_max => $end, is_reversed => $isReversed}); 
-    $naLocation->setParent($geneFeature);
-    $geneFeature->addToSubmitList($naLocation);
+    if ($start ne '' && $end ne '') {
+      my $naLocation = GUS::Model::DoTS::NALocation->new({start_min => $start, start_max => $start, end_min => $end, end_max => $end, is_reversed => $isReversed}); 
+      $naLocation->setParent($geneFeature);
+      $geneFeature->addToSubmitList($naLocation);
+      $naLocationCount++;
+    }
     my $geneInstance = GUS::Model::DoTS::GeneInstance->new(); 
     $geneInstance->setParent($gene);
     $geneInstance->setParent($geneFeature);
     $gene->submit();
     $geneInstanceCount++;
     $geneFeatureCount++;
-    $naLocationCount++;
     $self->undefPointerCache();
   } 
   close($fh);
