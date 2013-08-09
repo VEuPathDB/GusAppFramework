@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12650 $',
+		     cvsRevision => '$Revision: 12651 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -162,7 +162,7 @@ sub insertGenes {
     }
     chomp($line);
     my @arr = split(/\t/, $line);
-    if ($arr[$pos{'Marker Type'}] ne 'Gene' && $arr[$pos{'Marker Type'}] ne 'Pseudogene' && $arr[$pos{'Marker Type'}] ne 'Complex/Cluster/Region') {
+    if ($arr[$pos{'Marker Type'}] ne 'Gene' && $arr[$pos{'Marker Type'}] ne 'Pseudogene' && $arr[$pos{'Marker Type'}] ne "Complex\/Cluster\/Region") {
       next;
     }
     
