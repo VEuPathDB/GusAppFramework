@@ -84,7 +84,6 @@ NOTES
 # ----------------------------------------------------------------------
 # create and initalize new plugin instance.
 # ----------------------------------------------------------------------
-
 sub new {
   my ($class) = @_;
   my $self = {};
@@ -94,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12649 $',
+		     cvsRevision => '$Revision: 12650 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
