@@ -10,6 +10,7 @@ package GUS::Community::Plugin::InsertMetagenesFromUcscKnownGenes;
 use strict;
 use GUS::PluginMgr::Plugin;
 use GUS::Model::DoTS::Gene;
+use GUS::Model::DoTS::GeneSynonym;
 use GUS::Model::DoTS::GeneInstance;
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::GeneFeature;
@@ -82,7 +83,7 @@ sub getDocumentation {
 
   my $tablesAffected = [['DoTS::Gene', 'Enters a row for each (non-already existing) gene symbol in the file and for each metagene without a symbol'], ['DoTS::GeneFeature', 'Enters a row for each metagene in the gene file'], ['DoTS::GeneInstance', 'Enters rows linking each new GeneFeature to its Gene'], ['DoTS::RNAFeature', 'Enters a row for each known gene'], ['DoTS::ExonFeature', 'Enters a row for each distinct exon in the known genes'], ['DoTS::NALocation', 'Enters a row for each metaexon, a row for each transcript and a row for each exon location'], ['DoTS:RNAFeatureExon', 'Enters a row linking each exon to each transcript it belongs to']];
 
-  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The releases of the external database identifying the UCSC known genes and the metagenes being loaded'], ['SRes::TaxonName', 'The species the genes refer to']];
+  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The releases of the external database identifying the UCSC known genes and the metagenes being loaded'], ['SRes::TaxonName', 'The species the genes refer to'], ['DoTS::GeneSynonym', 'To check for additional DB presence']];
 
   my $howToRestart = "";
 
@@ -286,9 +287,23 @@ sub insertMetagenes {
     }
     
     my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId});
-    if (!$gene->retrieveFromDB()) {
-      $gene->set('external_database_release_id', $extDbRlsGenes);
+    my $synonym = GUS::Model::DoTS::GeneSynonym->new({synonym_name => $symbol});
+    if (!$gene->retrieveFromDB() && !$synonym->retrieveFromDB()) {
+       $gene->set('external_database_release_id', $extDbRlsGenes);
     }
+    elsif ($synonym->retrieveFromDB()) {
+      my $newGene =  GUS::Model::DoTS::Gene->new({gene_id => $synonym->getGeneId()});
+      $newGene->retrieveFromDB();
+      if ($newGene->getTaxonId()==$taxonId) {
+	$gene = $newGene;
+      }
+      else {
+	$gene->set('external_database_release_id', $extDbRlsGenes);
+      }
+    }
+    else {
+    }
+
     my $geneFeature = GUS::Model::DoTS::GeneFeature->new({name => $geneId, na_sequence_id => $chrId, external_database_release_id => $extDbRlsGenes, source_id => $geneId});
     my $geneInstance = GUS::Model::DoTS::GeneInstance->new(); 
     $geneInstance->setParent($gene);

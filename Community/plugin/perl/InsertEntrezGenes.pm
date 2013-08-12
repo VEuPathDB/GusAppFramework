@@ -1,10 +1,10 @@
 #######################################################################
-##                 InsertEntrezGenes.pm
+##                 InsertMouseEntrezGenes.pm
 ## $Id: InsertEntrezGenes.pm  manduchi $
 ##
 #######################################################################
  
-package GUS::Community::Plugin::InsertEntrezGenes;
+package GUS::Community::Plugin::InsertMouseEntrezGenes;
 @ISA = qw( GUS::PluginMgr::Plugin );
 
 use strict;
@@ -36,8 +36,8 @@ sub getArgumentsDeclaration {
 		 reqd           => 1,
 		 isList         => 0 
 	     }),
-     stringArg({ name  => 'species',
-		 descr => 'The scientific name name of the species the genes refer to',
+     stringArg({ name  => 'extDbRlsMgi',
+		 descr => "The ExternalDBRelease specifier for the MGI release these entries should be linked to. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
 		 constraintFunc => undef,
 		 reqd           => 1,
 		 isList         => 0 
@@ -56,9 +56,9 @@ sub getDocumentation {
 
   my $purpose = "This plugin reads a gene_info file downloaded from NCBI and populates the DoTS Gene, GeneSynonym, GeneInstance, and GeneFeature tables.";
 
-  my $tablesAffected = [['DoTS::Gene', 'Enters a row for each Entrez gene symbol, not already in the database for --species'], ['DoTS::GeneFeature', 'Enters a row for each Entrez gene in the file'], ['DoTS::GeneInstance', 'Enters rows linking each new GeneFeature to its Gene'], ['DoTS::GeneSynonym', 'Enters a row for each Entrez gene synonym, not already in the database for --species']];
+  my $tablesAffected = [['DoTS::Gene', 'Enters a row for each Entrez gene symbol, not already in the database from MGI'], ['DoTS::GeneFeature', 'Enters a row for each Entrez gene in the file'], ['DoTS::GeneInstance', 'Enters rows linking each new GeneFeature to its Gene'], ['DoTS::GeneSynonym', 'Enters a row for each Entrez gene synonym, not already in the database from MGI']];
 
-  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The releases of the external database identifying the Entrez genes being loaded'], ['SRes::TaxonName', 'The species the genes refer to']];
+  my $tablesDependedOn = [['SRes::ExternalDatabaseRelease', 'The releases of the external database identifying the Entrez genes being loaded'], ['SRes::TaxonName', 'The species the genes refer to'], ['DoTS::GeneFeature', 'To check for additional DB presence']];
 
   my $howToRestart = "";
 
@@ -122,11 +122,11 @@ sub insertGenes {
   my ($self) = @_;
   my $file = $self->getArg('geneFile');
   my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
-  my $species = $self->getArg('species');
+  my $extDbRlsIdMgi = $self->getExtDbRlsId($self->getArg('extDbRlsMgiSpec'));
 
-  my $taxonName = GUS::Model::SRes::TaxonName->new({name => $species});
+  my $taxonName = GUS::Model::SRes::TaxonName->new({name => 'Mus musculus'});
   if (!$taxonName->retrieveFromDB()) {
-    $self->userError("Your database instance must contain a '$species' entry in SRes.TaxonName");
+    $self->userError("Your database instance must contain a Mus musculus entry in SRes.TaxonName");
   }
   my $taxonId = $taxonName->getTaxonId();  
 
@@ -149,12 +149,33 @@ sub insertGenes {
       $symbol = 'Entrez Gene: $entrezId';
     }
     my @synonyms = split(/\|/, $arr[4]);
-
+    my $mgiId = split(/\|/, $arr[5]);
+    $mgiId =~ /(MGI\:\d+)\|/;
+    $mgiId = $1;
+    my $mgiFeature;
     my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId});
-    if (!$gene->retrieveFromDB()) {
+    if (defined $mgiId && $mgiId !~ /^\s*$/) {
+      $mgiFeature = GUS::Model::DoTS::NAFeature->new({external_database_release_id => $extDbRlsIdMgi, source_id => $mgiId});
+    }
+    if (!$gene->retrieveFromDB() && !$mgiFeature->retrieveFromDB()) {
       $geneCount++;
       $gene->set('external_database_release_id', $extDbRlsId);
     }
+    elsif ($mgiFeature->retrieveFromDB()) {
+      my $oldGeneInstance = GUS::Model::DoTS::GeneInstance->new({na_feature_id => $mgiFeature->getId()});
+      $oldGeneInstance->retrieveFromDB();
+      my $mgiGene = GUS::Model::DoTS::Gene->new({gene_id => $oldGeneInstance->getGeneId()});     
+      if ($mgiGene->retrieveFromDB()) {
+	$gene = $mgiGene;
+      }
+      else {
+	$geneCount++;
+	$gene->set('external_database_release_id', $extDbRlsId);
+      }
+    }
+    else {
+    }
+      
     for (my $i=0; $i<@synonyms; $i++) {
       if ($synonyms[$i] eq 'now' || $synonyms[$i] eq 'NOW') {
 	next;
