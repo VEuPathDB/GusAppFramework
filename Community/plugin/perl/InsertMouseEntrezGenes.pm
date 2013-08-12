@@ -36,7 +36,7 @@ sub getArgumentsDeclaration {
 		 reqd           => 1,
 		 isList         => 0 
 	     }),
-     stringArg({ name  => 'extDbRlsMgi',
+     stringArg({ name  => 'extDbRlsMgiSpec',
 		 descr => "The ExternalDBRelease specifier for the MGI release these entries should be linked to. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
 		 constraintFunc => undef,
 		 reqd           => 1,
@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12659 $',
+		     cvsRevision => '$Revision: 12660 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
