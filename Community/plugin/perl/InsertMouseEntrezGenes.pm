@@ -157,6 +157,7 @@ sub insertGenes {
     if (defined $mgiId && $mgiId !~ /^\s*$/) {
       $mgiFeature = GUS::Model::DoTS::NAFeature->new({external_database_release_id => $extDbRlsIdMgi, source_id => $mgiId});
     }
+    my $geneId;
     if (!$gene->retrieveFromDB() && !$mgiFeature->retrieveFromDB()) {
       $geneCount++;
       $gene->set('external_database_release_id', $extDbRlsId);
@@ -174,14 +175,20 @@ sub insertGenes {
       }
     }
     else {
+      $geneId = $gene->getId();
     }
-      
+    
+    my %visited;
     for (my $i=0; $i<@synonyms; $i++) {
-      if ($synonyms[$i] eq 'now' || $synonyms[$i] eq 'NOW') {
+      if ($synonyms[$i] eq 'now' || $synonyms[$i] eq 'NOW' || $visited{$synonyms[$i]}) {
 	next;
       }
+      $visited{$synonyms[$i]} = 1;
       my $geneSynonym = GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
       $geneSynonym->setParent($gene);
+      if (defined $geneId) {
+	$geneSynonym->setGeneId($geneId);
+      }
       if (!$geneSynonym->retrieveFromDB()) {
 	$geneSynonymCount++;
       }
