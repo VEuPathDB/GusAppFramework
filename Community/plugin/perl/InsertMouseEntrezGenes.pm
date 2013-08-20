@@ -153,40 +153,24 @@ sub insertGenes {
     $mgiId =~ /(MGI\:\d+)\|/;
     $mgiId = $1;
     my $mgiFeature;
-    my $oldGene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId});
-    my $oldSynonym = GUS::Model::DoTS::GeneSynonym->new({synonym_name => $symbol});
-    my $gene;
+    my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId, external_database_release_id => $extDbRlsId});
     my $geneId;
     if (defined $mgiId && $mgiId !~ /^\s*$/) {
       $mgiFeature = GUS::Model::DoTS::NAFeature->new({external_database_release_id => $extDbRlsIdMgi, source_id => $mgiId});
     }
-    if ($oldGene->retrieveFromDB() && ($oldGene->getExternalDatabaseReleaseId() == $extDbRlsIdMgi || $oldGene->getExternalDatabaseReleaseId() == $extDbRlsId)) {
-      $gene = $oldGene;
+    if ($gene->retrieveFromDB()) {
       $geneId = $gene->getId();
     }
     elsif ($mgiFeature->retrieveFromDB()) {
-      my $oldGeneInstance = GUS::Model::DoTS::GeneInstance->new({na_feature_id => $mgiFeature->getId()});
-      $oldGeneInstance->retrieveFromDB();
-      my $mgiGene = GUS::Model::DoTS::Gene->new({gene_id => $oldGeneInstance->getGeneId()});     
+      my $mgiGeneInstance = GUS::Model::DoTS::GeneInstance->new({na_feature_id => $mgiFeature->getId()});
+      $mgiGeneInstance->retrieveFromDB();
+      my $mgiGene = GUS::Model::DoTS::Gene->new({gene_id => $mgiGeneInstance->getGeneId()});     
       $mgiGene->retrieveFromDB();
       $gene = $mgiGene;
       $geneId = $gene->getId();
     }      
-    elsif ($oldSynonym->retrieveFromDB()) {
-      my $synonymParent = GUS::Model::DoTS::Gene->new({gene_id => $oldSynonym->getGeneId()});     
-      $synonymParent->retrieveFromDB();
-      if ($synonymParent->getExternalDatabaseReleaseId == $extDbRlsIdMgi) {
-	$gene = $synonymParent;
-	$geneId = $gene->getId();
-      }
-      else {
-	$geneCount++;
-	$gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId, external_database_release_id => $extDbRlsId});
-      }
-    }
     else {
       $geneCount++;
-      $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId, external_database_release_id => $extDbRlsId});
     } 
     my %visited;
     for (my $i=0; $i<@synonyms; $i++) {
