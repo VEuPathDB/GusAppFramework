@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12672 $',
+		     cvsRevision => '$Revision: 12673 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -203,7 +203,7 @@ sub insertGenes {
 	}
       }
     }
-    my $geneFeature = GUS::Model::DoTS::GeneFeature->new({name => "Entrez Gene: $entrezId", external_database_release_id => $extDbRlsId, source_id => $entrezId});
+    my $geneFeature = GUS::Model::DoTS::GeneFeature->new({name => $symbol, external_database_release_id => $extDbRlsId, source_id => $entrezId});
     my $geneInstance = GUS::Model::DoTS::GeneInstance->new(); 
     $geneInstance->setParent($gene);
     $geneInstance->setParent($geneFeature);
