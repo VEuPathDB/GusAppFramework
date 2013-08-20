@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12661 $',
+		     cvsRevision => '$Revision: 12671 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -160,7 +160,7 @@ sub insertGenes {
     if (defined $mgiId && $mgiId !~ /^\s*$/) {
       $mgiFeature = GUS::Model::DoTS::NAFeature->new({external_database_release_id => $extDbRlsIdMgi, source_id => $mgiId});
     }
-    if ($oldGene->retrieveFromDb() && ($oldGene->getExternalDatabaseReleaseId() == $extDbRlsIdMgi || $oldGene->getExternalDatabaseReleaseId() == $extDbRlsId)) {
+    if ($oldGene->retrieveFromDB() && ($oldGene->getExternalDatabaseReleaseId() == $extDbRlsIdMgi || $oldGene->getExternalDatabaseReleaseId() == $extDbRlsId)) {
       $gene = $oldGene;
       $geneId = $gene->getId();
     }
