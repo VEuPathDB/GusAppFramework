@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12673 $',
+		     cvsRevision => '$Revision: 12675 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -178,11 +178,14 @@ sub insertGenes {
     }
     my @synonyms = split(/\|/, $arr[$pos{'Marker Synonyms (pipe-separated)'}]);
     
-    my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId});
+    my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId, external_database_release_id => $extDbRlsId});
+    my $geneId;
     if (!$gene->retrieveFromDB()) {
       $geneCount++;
     }
-    $gene->set('external_database_release_id', $extDbRlsId);
+    else {
+      $geneId = $gene->getId();
+    }
     my %visited;
     for (my $i=0; $i<@synonyms; $i++) {
       if ($synonyms[$i] eq 'now' || $synonyms[$i] eq 'NOW' || $visited{$synonyms[$i]}) {
@@ -192,7 +195,13 @@ sub insertGenes {
       
       my $geneSynonym = GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
       $geneSynonym->setParent($gene);
-      if (!$geneSynonym->retrieveFromDB()) {
+      if (defined $geneId) {
+	$geneSynonym->setGeneId($geneId);
+	if (!$geneSynonym->retrieveFromDB()) {
+	  $geneSynonymCount++;
+	}
+      }
+      else {
 	$geneSynonymCount++;
       }
     }
