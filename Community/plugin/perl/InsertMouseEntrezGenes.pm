@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12671 $',
+		     cvsRevision => '$Revision: 12672 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -195,12 +195,12 @@ sub insertGenes {
       }
       $visited{$synonyms[$i]} = 1;
       my $geneSynonym = GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
+      $geneSynonym->setParent($gene);
       if (defined $geneId) {
 	$geneSynonym->setGeneId($geneId);
-      }
-      if (!$geneSynonym->retrieveFromDB()) {
-	$geneSynonymCount++;
-	$geneSynonym->setParent($gene);
+	if (!$geneSynonym->retrieveFromDB()) {
+	  $geneSynonymCount++;
+	}
       }
     }
     my $geneFeature = GUS::Model::DoTS::GeneFeature->new({name => "Entrez Gene: $entrezId", external_database_release_id => $extDbRlsId, source_id => $entrezId});
