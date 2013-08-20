@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12660 $',
+		     cvsRevision => '$Revision: 12661 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -153,31 +153,41 @@ sub insertGenes {
     $mgiId =~ /(MGI\:\d+)\|/;
     $mgiId = $1;
     my $mgiFeature;
-    my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId});
+    my $oldGene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId});
+    my $oldSynonym = GUS::Model::DoTS::GeneSynonym->new({synonym_name => $symbol});
+    my $gene;
+    my $geneId;
     if (defined $mgiId && $mgiId !~ /^\s*$/) {
       $mgiFeature = GUS::Model::DoTS::NAFeature->new({external_database_release_id => $extDbRlsIdMgi, source_id => $mgiId});
     }
-    my $geneId;
-    if (!$gene->retrieveFromDB() && !$mgiFeature->retrieveFromDB()) {
-      $geneCount++;
-      $gene->set('external_database_release_id', $extDbRlsId);
+    if ($oldGene->retrieveFromDb() && ($oldGene->getExternalDatabaseReleaseId() == $extDbRlsIdMgi || $oldGene->getExternalDatabaseReleaseId() == $extDbRlsId)) {
+      $gene = $oldGene;
+      $geneId = $gene->getId();
     }
     elsif ($mgiFeature->retrieveFromDB()) {
       my $oldGeneInstance = GUS::Model::DoTS::GeneInstance->new({na_feature_id => $mgiFeature->getId()});
       $oldGeneInstance->retrieveFromDB();
       my $mgiGene = GUS::Model::DoTS::Gene->new({gene_id => $oldGeneInstance->getGeneId()});     
-      if ($mgiGene->retrieveFromDB()) {
-	$gene = $mgiGene;
+      $mgiGene->retrieveFromDB();
+      $gene = $mgiGene;
+      $geneId = $gene->getId();
+    }      
+    elsif ($oldSynonym->retrieveFromDB()) {
+      my $synonymParent = GUS::Model::DoTS::Gene->new({gene_id => $oldSynonym->getGeneId()});     
+      $synonymParent->retrieveFromDB();
+      if ($synonymParent->getExternalDatabaseReleaseId == $extDbRlsIdMgi) {
+	$gene = $synonymParent;
+	$geneId = $gene->getId();
       }
       else {
 	$geneCount++;
-	$gene->set('external_database_release_id', $extDbRlsId);
+	$gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId, external_database_release_id => $extDbRlsId});
       }
     }
     else {
-      $geneId = $gene->getId();
-    }
-    
+      $geneCount++;
+      $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId, external_database_release_id => $extDbRlsId});
+    } 
     my %visited;
     for (my $i=0; $i<@synonyms; $i++) {
       if ($synonyms[$i] eq 'now' || $synonyms[$i] eq 'NOW' || $visited{$synonyms[$i]}) {
@@ -185,12 +195,12 @@ sub insertGenes {
       }
       $visited{$synonyms[$i]} = 1;
       my $geneSynonym = GUS::Model::DoTS::GeneSynonym->new({synonym_name => $synonyms[$i]});
-      $geneSynonym->setParent($gene);
       if (defined $geneId) {
 	$geneSynonym->setGeneId($geneId);
       }
       if (!$geneSynonym->retrieveFromDB()) {
 	$geneSynonymCount++;
+	$geneSynonym->setParent($gene);
       }
     }
     my $geneFeature = GUS::Model::DoTS::GeneFeature->new({name => "Entrez Gene: $entrezId", external_database_release_id => $extDbRlsId, source_id => $entrezId});
