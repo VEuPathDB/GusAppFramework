@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12675 $',
+		     cvsRevision => '$Revision: 12676 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -153,12 +153,14 @@ sub insertGenes {
     $mgiId =~ /(MGI\:\d+)\|/;
     $mgiId = $1;
     my $mgiFeature;
-    my $gene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId, external_database_release_id => $extDbRlsId});
+    my $gene;
+    my $entrezGene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId, external_database_release_id => $extDbRlsId});
     my $geneId;
     if (defined $mgiId && $mgiId !~ /^\s*$/) {
       $mgiFeature = GUS::Model::DoTS::NAFeature->new({external_database_release_id => $extDbRlsIdMgi, source_id => $mgiId});
     }
-    if ($gene->retrieveFromDB()) {
+    if ($entrezGene->retrieveFromDB()) {
+      $gene = $entrezGene;
       $geneId = $gene->getId();
     }
     elsif ($mgiFeature->retrieveFromDB()) {
@@ -170,6 +172,7 @@ sub insertGenes {
       $geneId = $gene->getId();
     }      
     else {
+      $gene = $entrezGene;
       $geneCount++;
     } 
     my %visited;
