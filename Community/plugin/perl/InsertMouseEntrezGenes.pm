@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12699 $',
+		     cvsRevision => '$Revision: 12679 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -149,7 +149,7 @@ sub insertGenes {
       $symbol = 'Entrez Gene: $entrezId';
     }
     my @synonyms = split(/\|/, $arr[4]);
-    $arr[5] =~ /(MGI\:\d+)\|/;
+    $arr[5] =~ /(MGI\:\d+)\D/;
     my $mgiId = $1;
     my $mgiFeature;
     my $gene;
