@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12723 $',
+		     cvsRevision => '$Revision: 12726 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -149,15 +149,15 @@ sub insertGenes {
       $symbol = 'Entrez Gene: $entrezId';
     }
     my @synonyms = split(/\|/, $arr[4]);
-    $arr[5] =~ /(MGI\:\d+)\D*/;
-    my $mgiId = $1;
-    my $mgiFeature;
     my $gene;
+    my $mgiFeature;
     my $entrezGene = GUS::Model::DoTS::Gene->new({gene_symbol => $symbol, taxon_id => $taxonId, external_database_release_id => $extDbRlsId});
     my $geneId;
-    if (defined $mgiId && $mgiId !~ /^\s*$/) {
-      $mgiFeature = GUS::Model::DoTS::NAFeature->new({external_database_release_id => $extDbRlsIdMgi, source_id => $mgiId});
+    if ($arr[5] =~ /(MGI\:\d+)\D*/) {
+      my $mgiId = $1;
+      my $mgiFeature = GUS::Model::DoTS::NAFeature->new({external_database_release_id => $extDbRlsIdMgi, source_id => $mgiId});
     }
+    
     if ($entrezGene->retrieveFromDB()) {
       $gene = $entrezGene;
       $geneId = $gene->getId();
