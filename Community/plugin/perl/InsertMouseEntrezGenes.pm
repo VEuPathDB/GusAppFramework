@@ -93,7 +93,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12726 $',
+		     cvsRevision => '$Revision: 12730 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -155,7 +155,7 @@ sub insertGenes {
     my $geneId;
     if ($arr[5] =~ /(MGI\:\d+)\D*/) {
       my $mgiId = $1;
-      my $mgiFeature = GUS::Model::DoTS::NAFeature->new({external_database_release_id => $extDbRlsIdMgi, source_id => $mgiId});
+      $mgiFeature = GUS::Model::DoTS::NAFeature->new({external_database_release_id => $extDbRlsIdMgi, source_id => $mgiId});
     }
     
     if ($entrezGene->retrieveFromDB()) {
