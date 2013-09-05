@@ -4,7 +4,7 @@ Checkout and build:
 2.  cd Magetab2Xml/resources
 3.  vi/eamcs resources and alter the properties according to platform and personal taste.
 4.  cd ..
-5.  ant -jar
+5.  ant jar
 
 Run:
 
