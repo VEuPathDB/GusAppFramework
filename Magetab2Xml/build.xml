@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Magetab2Xml" default="setup" basedir=".">
+
+  <description>This file is an ant build script for the Magetab to XML application.</description>
+
+  <property name="src" location="src"/>
+  <property name="lib" value="lib"/>
+  <property name="extdir" value="../LimpopoExtensions" />
+  <property name="build" value="build"/>
+	<property name="resources" value="resources"/>
+	<property name="magetab" location="resources/magetab" />
+  <property name="package.name" value="edu.upenn.cbil.magetab"/>
+  <property name="main.class" value="Converter"/>
+ 
+  <path id="classpath">
+  	<fileset dir="${lib}">
+  	  <include name="*.jar"/>
+  	</fileset>
+  </path>
+  
+  <fileset id="resources" dir="${resources}">
+    <include name="**/*.properties"/>
+    <include name="**/*.xml"/>
+  </fileset>
+  
+  <pathconvert property="libs.project" pathsep=" ">  
+    <mapper>  
+      <chainedmapper>
+        <flattenmapper />
+        <globmapper from="*" to="lib/*" />  
+      </chainedmapper>  
+    </mapper>  
+    <path>
+      <fileset dir="${lib}">  
+        <include name="**/*.jar" />  
+      </fileset>
+    </path>
+  </pathconvert>
+  
+  <target name="clean" description="clean up" >
+    <delete dir="${build}"/>
+  </target>
+
+  <target name="init" depends="clean">
+	  <mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile" depends="init" description="compile the source">
+    <javac srcdir="${src}" destdir="${build}" includeantruntime="false" debug="true" >
+      <classpath refid="classpath"/>
+  	</javac>
+  </target>
+
+  <target name="setup" depends="compile" description="setup logging">
+  	<copy todir="${build}">
+  	  <fileset refid="resources" />
+  	</copy>
+  </target>
+  
+  <target name="zip" depends="setup" description="create a zip archive of the static html dependent files">
+    <zip destfile="htmlResources.zip">
+      <zipfileset dir="css" prefix="css"/>
+      <zipfileset dir="js" prefix="js"/>
+    </zip>
+  </target>  
+  
+  <target name="jar" depends="setup, zip" description="generate an executable jar">
+    <jar jarfile="${ant.project.name}.jar" basedir="${build}" includes="**/*.class">
+      <manifest>
+  	    <attribute name="Built-By" value="${user.name}" /> 
+    	  <attribute name="Main-Class" value="${package.name}.${main.class}"/>
+        <attribute name="Class-Path" value="${libs.project}"/>
+      </manifest>
+      <fileset refid="resources" />
+    </jar>
+  </target>
+	
+</project>
