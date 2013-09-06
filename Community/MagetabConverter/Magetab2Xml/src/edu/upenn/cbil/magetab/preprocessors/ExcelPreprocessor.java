@@ -15,6 +15,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -67,6 +68,7 @@ public class ExcelPreprocessor {
    * @throws ApplicationException
    */
   public String process(String type) {
+	DataFormatter formatter = new DataFormatter();
     String textFilename = directoryName + File.separator + type + "." + TEXT_EXT;
     BufferedWriter writer = null;
     try {
@@ -83,7 +85,7 @@ public class ExcelPreprocessor {
           int cols = sheet.getRow(i).getLastCellNum();
           for(int j = 0; j < cols; j++) {
             Cell cell = row.getCell(j);
-            String value = getCellValue(cell);
+            String value = getCellValue(cell, formatter);
             if(j != 0 ) line.append("\t");
             line.append(value);
           }
@@ -133,26 +135,10 @@ public class ExcelPreprocessor {
    * @param cell - cell object
    * @return - string value of cell object.  Empty if the cell type cannot be determined.
    */
-  protected String getCellValue(Cell cell) {
+  protected String getCellValue(Cell cell, DataFormatter formatter) {
     String value = "";
     if(cell != null) {
-      switch (cell.getCellType()) {
-        case Cell.CELL_TYPE_STRING:
-          value = cell.getStringCellValue();
-          break;
-        case Cell.CELL_TYPE_NUMERIC:
-          cell.setCellType(Cell.CELL_TYPE_STRING);
-          value = cell.getStringCellValue();
-          break;
-        case Cell.CELL_TYPE_BOOLEAN:
-          value = String.valueOf(cell.getBooleanCellValue());
-          break;
-        case Cell.CELL_TYPE_BLANK: 
-          break;
-        default:
-          logger.warn(UNHANDLED_TYPE + cell.getCellType());
-          break;
-      }
+      value = formatter.formatCellValue(cell);
       if(isAddition((XSSFCell)cell) && StringUtils.isNotEmpty(value)) {
         value = AppUtils.ADDED_CELL + value;
       }
