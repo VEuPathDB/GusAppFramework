@@ -133,7 +133,9 @@ public class Converter {
     }
     else {
       for (File file : directory.listFiles()) {
-        file.delete();
+        if(!file.delete()) {
+          System.err.println("WARNING: A prior file: " + file.getName() + " was not deleted.  Is it open?");
+        }
       }
     }
   }
