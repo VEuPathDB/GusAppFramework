@@ -87,7 +87,7 @@ public class ExcelPreprocessor {
             if(j != 0 ) line.append("\t");
             line.append(value);
           }
-          System.out.println("Line " + (i) + " : '" + line + "'");
+          //System.out.println("Line " + (i) + " : '" + line + "'");
           if(IDF.equalsIgnoreCase(type) && line.toString().trim().equals(SDRF_FILE_IDF_FIELD)) {
         	line = new StringBuffer(line.toString().trim());
             line.append("\t" + SDRF + "." + TEXT_EXT);
