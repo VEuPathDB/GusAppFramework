@@ -24,6 +24,7 @@ import edu.upenn.cbil.magetab.postprocessor.FactorValuePostprocessor;
 import edu.upenn.cbil.magetab.postprocessor.GraphmlPostprocessor;
 import edu.upenn.cbil.magetab.postprocessor.ModelPostprocessor;
 import edu.upenn.cbil.magetab.postprocessor.PackagingPostprocessor;
+import edu.upenn.cbil.magetab.utilities.ApplicationConfiguration;
 import edu.upenn.cbil.magetab.utilities.ApplicationException;
 import edu.upenn.cbil.magetab.utilities.ErrorListener;
 
@@ -44,8 +45,8 @@ public class Processor {
     this.directory = directory;
     idfFilename = directory + File.separator + "idf." + TEXT_EXT;
     sdrfFilename = directory + File.separator + "sdrf." + TEXT_EXT;
-    outputFilename = directory + File.separator + "output" + "." + XML_EXT;
-    graphmlFilename = directory + File.separator + "output" + "." + GRAPHML_EXT;
+    outputFilename = directory + File.separator + ApplicationConfiguration.filePrefix + "." + XML_EXT;
+    graphmlFilename = directory + File.separator + ApplicationConfiguration.filePrefix + "." + GRAPHML_EXT;
   }
 
   public void process() {
