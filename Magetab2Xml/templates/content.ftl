@@ -57,7 +57,7 @@
       </div>
     </#list>
     <#list edges as edge>
-      <div id="text${edge.getFromNode()}_${edge.getToNode()}" class="popupData">
+      <div id="text${edge.getFromNode()}${edge.getToNode()}" class="popupData">
         <#if edge.dbId??>
           <p>DB ID: ${edge.getDbId()}</p> 
         </#if>
