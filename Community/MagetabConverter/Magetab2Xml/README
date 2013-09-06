@@ -10,7 +10,7 @@ Run:
 
 1.  To run the Magetab2Xml converter use the following command line (using Java 7):
 
-    java -jar Magetab2Xml.jar <Excel MAGE-TAB file> -validate -graphml -html -prefix=<prefix> -dot=<dot_path> cp="."
+    java -jar Magetab2Xml.jar <Excel MAGE-TAB file> -validate -graphml -html -prefix <prefix> -dot <dot_path> cp="."
 
 2.  All output file will be in a new directory labeled <basename> where basename is the
     original file name without the xlsx extension.
