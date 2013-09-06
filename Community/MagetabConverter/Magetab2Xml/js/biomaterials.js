@@ -24,6 +24,10 @@ biomatGraph.setupPopups = function() {
 	var url = jQuery(this).attr('href');
 	var id = jQuery(this).attr('href').split("=")[1];
 	jQuery(this).removeAttr('href');
+	/* Fix for graphviz broken before v2.28 */
+	var coords = jQuery(this).attr('coords');
+	coords = coords.replace(/ /g,',');
+	jQuery(this).attr('coords', coords);
 	var title = "?";
 	if(url.indexOf('node') >= 0) {
 	  title = "Characteristics";
