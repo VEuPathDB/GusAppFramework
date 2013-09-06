@@ -51,11 +51,3 @@ Notes about creating Excel spreadsheets with MAGE-TAB additions:
 3.  The submitter is welcome to highlight other items in the spreadsheet in any color other than
     yellow.
     
-    
-Policies:
-
-CBIL MAGE-TABS do stray from the official specification in some respects.  In order not to confuse limpopo, some
-consideration must be given to placement of data:
-
-1.  If one or more labs are contacts, they must be at the end of the contact list.  Othewise surnames and given
-    names of the following contacts may be transposed.
