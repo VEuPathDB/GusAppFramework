@@ -9,9 +9,18 @@ public class ErrorListener implements ErrorItemListener  {
 
   public void errorOccurred(ErrorItem item) {
     errorCount++;
-    System.err.println(errorCount + ". " + item.getErrorType().toUpperCase() + " ERROR: Code - " + item.getErrorCode() + ", Message - " + item.getMesg());
-    System.err.println("Source: " + item.getCaller() + ", Comment: " + item.getComment());
-    System.err.println("");
+    if(item != null) {
+      String errorType = item.getErrorType() == null ? "NA" : item.getErrorType().toUpperCase();
+      String message = item.getMesg() == null ? "NA" : item.getMesg();
+      String caller = item.getCaller() == null ? "NA" : item.getCaller();
+      String comment = item.getComment() == null ? "NA" : item.getComment();
+      System.err.println(errorCount + ". " + errorType + " ERROR: Code - " + item.getErrorCode() + ", Message - " + message);
+      System.err.println("Source: " + caller + ", Comment: " + comment);
+      System.err.println("");
+    }
+    else {
+      System.err.println("Error thrown, but without information.");
+    }
   }
 
   public static int getErrorCount() {
