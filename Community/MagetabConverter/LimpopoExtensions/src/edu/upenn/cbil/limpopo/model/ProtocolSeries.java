@@ -52,7 +52,8 @@ public class ProtocolSeries {
   protected void setAddition() {
     addition = false;
     for(ProtocolApplication protocolApplication : protocolApplications) {
-      if(Protocol.getProtocolByName(protocolApplication.getName()).isAddition()) {
+      Protocol protocol = Protocol.getProtocolByName(protocolApplication.getName());
+      if(protocol != null && protocol.isAddition()) {
         addition = true;
         break;
       }
