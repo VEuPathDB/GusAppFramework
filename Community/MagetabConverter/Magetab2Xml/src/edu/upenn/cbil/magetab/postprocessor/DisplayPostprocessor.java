@@ -124,7 +124,7 @@ public class DisplayPostprocessor {
     }
     for(Edge edge : edges) {
       String label = "label = \"" + edge.getLabel() + "\"";
-      String url = "labelURL = \"edge.html?id=" + edge.getFromNode() + "_" + edge.getToNode() + "\"";
+      String url = "labelURL = \"edge.html?id=" + edge.getFromNode() + edge.getToNode() + "\"";
       if(edge.isAddition()) {
         String edgeColor = "color = \"yellow\"";
         output.append(edge.getFromNode() + "->" + edge.getToNode() + "[" + label + ", " + edgeColor + ", " + url + ", fontsize=10]\n");
