@@ -87,8 +87,9 @@ public class ExcelPreprocessor {
             if(j != 0 ) line.append("\t");
             line.append(value);
           }
-          //System.out.println("Line " + (i) + ":" + line);
-          if(IDF.equalsIgnoreCase(type) && line.toString().equals(SDRF_FILE_IDF_FIELD)) {
+          System.out.println("Line " + (i) + " : '" + line + "'");
+          if(IDF.equalsIgnoreCase(type) && line.toString().trim().equals(SDRF_FILE_IDF_FIELD)) {
+        	line = new StringBuffer(line.toString().trim());
             line.append("\t" + SDRF + "." + TEXT_EXT);
           }
           writer.write(line.toString().trim());
@@ -156,7 +157,7 @@ public class ExcelPreprocessor {
         value = AppUtils.ADDED_CELL + value;
       }
     }
-    return value;
+    return value.trim();
   }
   
   /**
