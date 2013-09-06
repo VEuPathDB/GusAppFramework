@@ -24,7 +24,7 @@ Run:
     The dot file:        <filename>.dot (only if the -html switch is set on the command line)
     The image file:      <filename>.gif (only if the -html switch is set on the command line)
     The html graph file: <filename>.html (only if the -html switch is set on the command line)
-    The html zip file:   <filename>.zip (only if the -html swithc is set on the command line)
+    The html zip file:   <filename>.zip (only if the -html switch is set on the command line)
     The <filename> is set in the application.properties file by default when not set on the command line.
 
 5.  The log file will be in limpopo.log or limpopo.log.<date stamp>
@@ -50,3 +50,12 @@ Notes about creating Excel spreadsheets with MAGE-TAB additions:
         into a token <<add>> which will make the rows appear completely distinct to limpopo.
 3.  The submitter is welcome to highlight other items in the spreadsheet in any color other than
     yellow.
+    
+    
+Policies:
+
+CBIL MAGE-TABS do stray from the official specification in some respects.  In order not to confuse limpopo, some
+consideration must be given to placement of data:
+
+1.  If one or more labs are contacts, they must be at the end of the contact list.  Othewise surnames and given
+    names of the following contacts may be transposed.
