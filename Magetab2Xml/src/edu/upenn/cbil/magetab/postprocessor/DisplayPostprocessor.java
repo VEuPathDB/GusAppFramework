@@ -40,6 +40,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -157,7 +158,7 @@ public class DisplayPostprocessor {
        mapFile = File.createTempFile("map", HTML_EXT);
        Runtime rt = Runtime.getRuntime();
        String[] args = {DOT, "-Tgif", dotFile.getAbsolutePath(), "-o", imageFile.getAbsolutePath(), "-Tcmapx", "-o", mapFile.getAbsolutePath()};
-       //System.err.println(Arrays.asList(args).toString());
+       System.out.println("Image/Map creation: " + Arrays.asList(args).toString());
        Process p = rt.exec(args);
        p.waitFor();
     }
