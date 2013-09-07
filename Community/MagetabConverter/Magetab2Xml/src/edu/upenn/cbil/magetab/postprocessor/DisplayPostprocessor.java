@@ -35,9 +35,11 @@ import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_IO_ERRO
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_READ_ERROR;
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_WRITE_ERROR;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -45,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Charsets;
@@ -153,6 +156,7 @@ public class DisplayPostprocessor {
   protected File createImageMapFile(File dotFile) {
     String DOT = ApplicationConfiguration.graphvizDotPath;
     File mapFile = null;
+    InputStreamReader errorReader = null;
     try {
        File imageFile = new File(imageFilename);
        mapFile = File.createTempFile("map", HTML_EXT);
@@ -161,12 +165,32 @@ public class DisplayPostprocessor {
        System.out.println("Image/Map creation: " + Arrays.asList(args).toString());
        Process p = rt.exec(args);
        p.waitFor();
+       errorReader = new InputStreamReader(p.getErrorStream());
+       int data;
+       String errorMessage = "";
+       while((data = errorReader.read()) != -1){
+           char c = (char) data;
+           errorMessage += c;
+       }
+       if(StringUtils.isNotEmpty(errorMessage)) {
+         throw new ApplicationException("DOT COMMAND ERROR: " + errorMessage);
+       }
     }
     catch (IOException ioe) {
       throw new ApplicationException(FILE_IO_ERROR + imageFilename + ", " + mapFile.getName(), ioe);
     }
     catch (InterruptedException ie) {
       throw new ApplicationException(DOT_INTERRUPTION_ERROR, ie);
+    }
+    finally {
+      if(errorReader != null) {
+    	try {
+          errorReader.close();
+    	}
+    	catch(IOException ioe) {
+    	  ;
+    	}
+      }
     }
     return mapFile;
   }
