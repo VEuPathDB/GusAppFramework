@@ -67,7 +67,7 @@ public class ProtocolApplication extends ProtocolObject {
   public void setName(String name) {
     this.name = AppUtils.removeTokens(name);
   }
-  
+
   public final boolean isAddition() {
     return addition;
   }
@@ -199,7 +199,7 @@ public class ProtocolApplication extends ProtocolObject {
     List<ProtocolApplicationParameter> parameters = new ArrayList<>();
     List<ParameterValueAttribute> params = ((ProtocolApplicationNode)node).parameterValues;
     for(ParameterValueAttribute param : params) {
-      ProtocolApplicationParameter parameter = new ProtocolApplicationParameter(param);
+      ProtocolApplicationParameter parameter = new ProtocolApplicationParameter(name, param);
       parameters.add(parameter);
     }
     group = new ProtocolApplicationParameterGroup(parameters);

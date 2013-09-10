@@ -5,6 +5,11 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 
+/**
+ * This class is intended to compose parameter strings in the format expected for the xml output.
+ * @author crisl
+ *
+ */
 public class ProtocolApplicationParameterGroup {
   private List<ProtocolApplicationParameter> parameters;
   private StringBuffer originalData;
@@ -21,10 +26,6 @@ public class ProtocolApplicationParameterGroup {
     allData = new StringBuffer();
   }
   
-  /**
-   * Public constructor loads a list of factor value for a row and identifies the row.
-   * @param factorValues - array list of factor values all one the same row.
-   */
   public ProtocolApplicationParameterGroup(List<ProtocolApplicationParameter> parameters) {
     this();
     if(parameters != null && parameters.size() > 0) {

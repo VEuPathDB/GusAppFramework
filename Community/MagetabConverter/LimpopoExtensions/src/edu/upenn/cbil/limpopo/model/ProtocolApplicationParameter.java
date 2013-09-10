@@ -1,8 +1,13 @@
 package edu.upenn.cbil.limpopo.model;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.mged.magetab.error.ErrorItem;
 import org.mged.magetab.error.ErrorItemFactory;
 
@@ -13,25 +18,37 @@ import edu.upenn.cbil.limpopo.utils.SDRFUtils;
 
 public class ProtocolApplicationParameter {
   private String name;
+  private String protocolName;
   private boolean addition;
   private String value;
   private Map<String,String> comments;
   private String table;
   private String row;
+  private static List<ProtocolApplicationParameter> parameters = new ArrayList<>();
   private static final String PARAMETER_TABLE = "PV Table";
   private static final String PARAMETER_ROW = "PV Row Id";
   
-  public ProtocolApplicationParameter() {
+  /**
+   * Constructor initializes fields to protect against NPEs.
+   */
+  private ProtocolApplicationParameter() {
     name = "";
+    protocolName = "";
+    value = "";
+    table = "";
+    row = "";
   }
   
   /**
    * Instantiates the parameter of a protocol application (edge).  Insures that addition
    * filter scrubs the limpopo data.
    * @param param - limpopo version of the protocol application parameter
-   * @throws ConversionException - thrown if table and row comments are not both empty or filled.
+   * @throws ConversionException - thrown if table and row comments are not both empty or filled (SOP 16) or if
+   * this parameter matches another in protocol, name, and value but mismatch in table and row data (SOP 21).
    */
-  public ProtocolApplicationParameter(ParameterValueAttribute param) throws ConversionException {
+  public ProtocolApplicationParameter(String protocolName, ParameterValueAttribute param) throws ConversionException {
+    this();
+    setProtocolName(protocolName);
     setName(SDRFUtils.parseHeader(param.getAttributeType()));
     // Must check value and not name because headers are not highlighted.
     setAddition(AppUtils.checkForAddition(param.getAttributeValue()));
@@ -46,10 +63,20 @@ public class ProtocolApplicationParameter {
              StringUtils.isNotEmpty(getComments().get(PARAMETER_ROW))) {
        ErrorItemFactory factory = ErrorItemFactory.getErrorItemFactory();
        String msg = "Problem Parameter = " + param.getAttributeType() + "|" + param.getAttributeValue();
+       msg += " from Protocol " + protocolName;
        ErrorItem error = factory.generateErrorItem(msg, 7001, this.getClass());
        throw new ConversionException(true, new Exception(msg), error);
      }
-    
+     for(ProtocolApplicationParameter parameter : parameters) {
+       if(disjoint(parameter)) {
+         ErrorItemFactory factory = ErrorItemFactory.getErrorItemFactory();
+         String msg = "Problem Parameter = " + param.getAttributeType() + "|" + param.getAttributeValue();
+         msg += " from Protocol " + protocolName;
+         ErrorItem error = factory.generateErrorItem(msg, 7002, this.getClass());
+         throw new ConversionException(true, new Exception(msg), error);
+       }
+     }
+     parameters.add(this);
   }
   
   /**
@@ -68,6 +95,14 @@ public class ProtocolApplicationParameter {
     this.name = AppUtils.removeTokens(name);
   }
   
+  public String getProtocolName() {
+    return protocolName;
+  }
+
+  public void setProtocolName(String protocolName) {
+    this.protocolName = protocolName;
+  }
+
   public final boolean isAddition() {
     return addition;
   }
@@ -122,6 +157,46 @@ public class ProtocolApplicationParameter {
    */
   public final String getRow() {
     return row;
+  }
+  
+  /**
+   * List of all parameters found in the SDRF protocol applications
+   * @return - list of protocol application parameter objects
+   */
+  public static List<ProtocolApplicationParameter> getParameters() {
+    return parameters;
+  }
+
+  public boolean disjoint(Object obj) {
+    boolean disjoint = false;
+    if(equals(obj)) {
+      ProtocolApplicationParameter that = (ProtocolApplicationParameter) obj;
+      disjoint = !that.getTable().equals(getTable()) || !that.getRow().equals(getRow());
+    }
+    return disjoint;
+  }
+  
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof ProtocolApplicationParameter) {
+      ProtocolApplicationParameter that = (ProtocolApplicationParameter) obj;
+      boolean nodesEqual = that.getProtocolName().equals(getProtocolName()) &&
+                           that.getName().equals(getName()) &&
+                           that.getValue().equals(getValue());
+      return nodesEqual;
+    }
+    else {
+      return false;
+    }
+  }
+  
+  @Override
+  public String toString() {
+    return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
+      protected boolean accept(Field field) {
+        return super.accept(field);
+      }
+    }).toString();
   }
  
 }
