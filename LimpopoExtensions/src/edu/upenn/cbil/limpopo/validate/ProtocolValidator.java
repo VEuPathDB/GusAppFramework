@@ -49,7 +49,8 @@ public class ProtocolValidator extends IDFValidateHandler {
    *         [Parameter DataTypeExtDbRls] must be non-empty.
    * SOP 13. If Comment [Parameter UnitType] is non-empty then Comment
    *         [Parameter UnitTypeExtDbRls] must be non-empty.
-   * SOP 14. Comment [Parameter Is User Specified] should have values 0 or 1. 
+   * SOP 14. Comment [Parameter Is User Specified] should have values 0 or 1 or
+   *         the cell should be empty. 
    */
   @Override
   protected void validateData(IDF data) throws ValidateException {
@@ -100,12 +101,15 @@ public class ProtocolValidator extends IDFValidateHandler {
                throw new AppException(5002);
             }
           }
-          if(userSpecifieds.size() != parameterNameList.size()) {
-            throw new AppException(5003);
-          }
-          for(int j = 0; j < parameterNameList.size(); j++) {
-            if(!userSpecifieds.get(j).matches("^0|1$")) {
-              throw new AppException("Problem Value = " + userSpecifieds.get(j), 5004);
+          if(userSpecifieds.size() > 0 && 
+             !(userSpecifieds.size() == 1 && StringUtils.isEmpty(userSpecifieds.get(0).trim()))) {
+            if(userSpecifieds.size() != parameterNameList.size()) {
+              throw new AppException(5003);
+            }
+            for(int j = 0; j < parameterNameList.size(); j++) {
+              if(!userSpecifieds.get(j).matches("^0|1$")) {
+                throw new AppException("Problem Value = " + userSpecifieds.get(j), 5004);
+              }
             }
           }
         }
