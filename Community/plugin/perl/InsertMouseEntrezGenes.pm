@@ -145,7 +145,7 @@ sub insertGenes {
     
     my $entrezId = $arr[1]; 
     my $symbol = $arr[2];
-    if (!defined($symbol) || $symbol =~ /^\s*$/) {
+    if (!defined($symbol) || $symbol =~ /^\s*$/ || $symbol =~ /^\s*\-\s*$/) {
       $symbol = 'Entrez Gene: $entrezId';
     }
     my @synonyms = split(/\|/, $arr[4]);
@@ -176,7 +176,7 @@ sub insertGenes {
     } 
     my %visited;
     for (my $i=0; $i<@synonyms; $i++) {
-      if ($synonyms[$i] eq 'now' || $synonyms[$i] eq 'NOW' || $visited{$synonyms[$i]}) {
+      if ($synonyms[$i] eq 'now' || $synonyms[$i] eq 'NOW' || $visited{$synonyms[$i]} || $synonyms[$i] =~ /^\s*\-\s*$/) {
 	next;
       }
       $visited{$synonyms[$i]} = 1;
