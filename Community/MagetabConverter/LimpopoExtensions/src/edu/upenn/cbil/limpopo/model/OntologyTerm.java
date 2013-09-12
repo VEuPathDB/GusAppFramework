@@ -51,7 +51,7 @@ public class OntologyTerm {
         String[] refs = ref.split(";");
         for(String reference : refs) {
           if(!ExternalDatabase.map.containsKey(reference)) {
-            throw new Exception("1102:Reference = " + reference);
+            throw new Exception("1102:Name = " + name + " Reference = " + reference);
           }
           releases.add(ExternalDatabase.map.get(reference).getRelease());
         } 
