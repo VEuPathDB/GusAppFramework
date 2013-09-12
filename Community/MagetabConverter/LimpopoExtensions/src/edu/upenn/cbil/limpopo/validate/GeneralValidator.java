@@ -201,7 +201,7 @@ public class GeneralValidator extends MAGETABValidateHandler {
         List<String> headers = filterHeaders(Arrays.asList(node.headers()));
         Set<String> uniqueHeaders = new LinkedHashSet<>(headers);
         if(headers.size() - uniqueHeaders.size() > 0) {
-          throw new AppException(6004);
+          throw new AppException("Offending node - " + node.getNodeName() ,6004);
         }
       }
     }
@@ -234,7 +234,7 @@ public class GeneralValidator extends MAGETABValidateHandler {
   protected List<String> filterHeaders(List<String> headers) {
     List<String> filteredHeaders = new ArrayList<>();
     for(String header : headers) {
-      if(!header.matches("^.*REF$")) {
+      if(!header.matches("^.*REF$") && !header.matches("Term Accession Number")) {
         filteredHeaders.add(header);
       }
     }
