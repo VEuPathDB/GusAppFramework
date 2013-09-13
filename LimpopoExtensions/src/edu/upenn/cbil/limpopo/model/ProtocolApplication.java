@@ -309,7 +309,7 @@ public class ProtocolApplication extends ProtocolObject {
     subordinateApps = new ArrayList<>();
     ProtocolApplication app = this;
     while(app.subordinate != null) {
-      app = subordinate;
+      app = app.subordinate;
       subordinateApps.add(app);
     }
   }
