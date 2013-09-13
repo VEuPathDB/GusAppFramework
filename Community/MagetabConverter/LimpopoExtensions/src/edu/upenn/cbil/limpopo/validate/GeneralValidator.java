@@ -3,6 +3,7 @@ package edu.upenn.cbil.limpopo.validate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -15,6 +16,11 @@ import org.mged.magetab.error.ErrorItem;
 import org.mged.magetab.error.ErrorItemFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset;
 
 import edu.upenn.cbil.limpopo.model.Contact;
 import edu.upenn.cbil.limpopo.model.Protocol;
@@ -195,13 +201,17 @@ public class GeneralValidator extends MAGETABValidateHandler {
    *        the Attributes corresponding to the same Name or File need to be identical. 
    */
   protected void validateNodeAttributes(SDRF sdrf) throws AppException {
-    Collection<? extends SDRFNode> nodes = sdrf.getAllNodes();
-    for(SDRFNode node : nodes) {
-      if(!ProtocolApplicationIONode.PROTOCOL_REF.equals(node.getNodeType())) {
-        List<String> headers = filterHeaders(Arrays.asList(node.headers()));
-        Set<String> uniqueHeaders = new LinkedHashSet<>(headers);
-        if(headers.size() - uniqueHeaders.size() > 0) {
-          throw new AppException("Offending node - " + node.getNodeName() ,6004);
+    Multimap<String,SDRFNode> map = sortNodes(sdrf.getAllNodes());
+    Multiset<String> keys = map.keys();
+    for(String key : keys) {
+      Collection<SDRFNode> nodes = map.get(key);
+      SDRFNode subject = Iterables.get(nodes, 0);
+      List<String> subjectHeaders = Arrays.asList(subject.headers());
+      for(int i = 1; i < nodes.size(); i++) {
+        SDRFNode object = Iterables.get(nodes, i);
+        List<String> objectHeaders = Arrays.asList(object.headers());
+        if(subjectHeaders.size() != objectHeaders.size() || !subjectHeaders.containsAll(objectHeaders)) {
+          throw new AppException("Offending node - " + subject.getNodeName(), 6004);
         }
       }
     }
@@ -226,19 +236,21 @@ public class GeneralValidator extends MAGETABValidateHandler {
     }
   }
   
+
   /**
-   * Helper method to remove references from the headers list
-   * @param headers - list of SDRF headers
-   * @return - filtered list of SDRF headers
+   * Helper method to return a map of SDRF nodes (excluding protocol refs) differentiated by type and name
+   * @param nodes - the list of sdrf nodes identified by limpopo
+   * @return - multimap in which the key is type_name and the values or SDRFNodes
    */
-  protected List<String> filterHeaders(List<String> headers) {
-    List<String> filteredHeaders = new ArrayList<>();
-    for(String header : headers) {
-      if(!header.matches("^.*REF$") && !header.matches("Term Accession Number")) {
-        filteredHeaders.add(header);
+  protected Multimap<String, SDRFNode> sortNodes(Collection<? extends SDRFNode> nodes) {
+    Multimap<String, SDRFNode> map = ArrayListMultimap.create();
+    for(SDRFNode node : nodes) {
+      if(ProtocolApplicationIONode.PROTOCOL_REF.equals(node.getNodeType())) {
+        String key = node.getNodeType() + "_" + node.getNodeName();
+        map.put(key, node);
       }
     }
-    return filteredHeaders;
+    return map;
   }
 
 }
