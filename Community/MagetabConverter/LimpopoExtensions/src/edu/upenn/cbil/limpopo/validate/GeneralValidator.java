@@ -105,7 +105,6 @@ public class GeneralValidator extends MAGETABValidateHandler {
       validateContactPerformerMatch(idf, sdrf);
       validateProtocolMatch(idf, sdrf);
       validateProtocolParameterMatch(idf, sdrf);
-      validateNodeAttributes(sdrf);
       validateAssayName(sdrf);
     }
     catch (AppException ae) {
@@ -194,33 +193,9 @@ public class GeneralValidator extends MAGETABValidateHandler {
   }
   
   /**
-   * Test to insure SRDF node attributes are identical for nodes of the same name
-   * @param sdrf - needed to collect node attributes
-   * @throws AppException - Code 6004
-   * SOP 2. Referring to table 2.3.1 in [3],for all but the last row (Protocol REF), the values for
-   *        the Attributes corresponding to the same Name or File need to be identical. 
-   */
-  protected void validateNodeAttributes(SDRF sdrf) throws AppException {
-    Multimap<String,SDRFNode> map = sortNodes(sdrf.getAllNodes());
-    Multiset<String> keys = map.keys();
-    for(String key : keys) {
-      Collection<SDRFNode> nodes = map.get(key);
-      SDRFNode subject = Iterables.get(nodes, 0);
-      List<String> subjectHeaders = Arrays.asList(subject.headers());
-      for(int i = 1; i < nodes.size(); i++) {
-        SDRFNode object = Iterables.get(nodes, i);
-        List<String> objectHeaders = Arrays.asList(object.headers());
-        if(subjectHeaders.size() != objectHeaders.size() || !subjectHeaders.containsAll(objectHeaders)) {
-          throw new AppException("Offending node - " + subject.getNodeName(), 6004);
-        }
-      }
-    }
-  }
-  
-  /**
-   * 
-   * @param sdrf
-   * @throws AppException
+   * Test to insure that the MAGE-TAB has an assay name node in the sdrf.
+   * @param sdrf - needed to collect nodes to test
+   * @throws AppException - Code 6005
    */
   protected void validateAssayName(SDRF sdrf) throws AppException {
     Collection<? extends SDRFNode> nodes = sdrf.getAllNodes();
@@ -234,23 +209,6 @@ public class GeneralValidator extends MAGETABValidateHandler {
     if(!foundAssayName) {
       throw new AppException(6005);
     }
-  }
-  
-
-  /**
-   * Helper method to return a map of SDRF nodes (excluding protocol refs) differentiated by type and name
-   * @param nodes - the list of sdrf nodes identified by limpopo
-   * @return - multimap in which the key is type_name and the values or SDRFNodes
-   */
-  protected Multimap<String, SDRFNode> sortNodes(Collection<? extends SDRFNode> nodes) {
-    Multimap<String, SDRFNode> map = ArrayListMultimap.create();
-    for(SDRFNode node : nodes) {
-      if(ProtocolApplicationIONode.PROTOCOL_REF.equals(node.getNodeType())) {
-        String key = node.getNodeType() + "_" + node.getNodeName();
-        map.put(key, node);
-      }
-    }
-    return map;
   }
 
 }
