@@ -477,7 +477,7 @@ sub submitProtocols {
     my $name = $protocolNode->findvalue('./name');
     my $protocol = GUS::Model::Study::Protocol->new({name => $name});
     if ($protocol->retrieveFromDB()) {
-      logData("A protocol named $name already exists in the database. This will not be altered.");
+      $self->logData("A protocol named $name already exists in the database. This will not be altered.");
       my $protocolId = $protocol->getId();
       $protocolIds->{$name} = $protocolId;
       next;
