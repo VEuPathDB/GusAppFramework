@@ -4,6 +4,8 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
@@ -27,7 +29,9 @@ public class FactorValue {
   private String value;
   private String table;
   private String rowId;
-  public static final String FACTOR_VALUE = "FactorValue";
+  public static final String FACTOR_VALUE = "factorvalue";
+  public static final String FACTOR_VALUE_PATTERN = "factor\\s*value\\s*\\[(.*)\\]";
+  public static final String COMMENT_PATTERN = "comment\\s*\\[(.*)\\]";
   public static final String FV_TABLE = "Comment [FV Table]";
   public static final String FV_ROW = "Comment [FV Row Id]";
  
@@ -142,9 +146,9 @@ public class FactorValue {
 	String[] headers = heading.split("\t");
 	String[] values = data.split("\t");
 	for(int i = 0; i < headers.length; i++) {
-      if(headers[i].startsWith(FACTOR_VALUE + " [")) {
+      if(FactorValue.isExpectedHeader(headers[i], FACTOR_VALUE_PATTERN)) {
     	FactorValue factorValue = new FactorValue();
-        factorValue.setKey(headers[i].replaceFirst(FACTOR_VALUE + "\\s*\\[(.*)\\]","$1"));
+        factorValue.setKey(FactorValue.getExpectedHeaderContent(headers[i], FACTOR_VALUE_PATTERN));
         if(i < values.length) {
           factorValue.setValue(values[i]);
         }
@@ -164,7 +168,7 @@ public class FactorValue {
         	}
         	i += 2;
           }
-          else if(!headers[i + 1].startsWith(FACTOR_VALUE + " [")) {
+          else if(!FactorValue.isExpectedHeader(headers[i + 1], FACTOR_VALUE_PATTERN)) {
             throw new ApplicationException("Bad factor value column or missing factor value table or row column: " + headers[i + 1]);
           }
         }
@@ -173,6 +177,22 @@ public class FactorValue {
 	}
 	Collections.sort(factorValues, new FactorValueComparator());
 	return factorValues;
+  }
+  
+  public static boolean isExpectedHeader(String header, String headerPattern) {
+	Pattern pattern = Pattern.compile(headerPattern, Pattern.CASE_INSENSITIVE);
+	Matcher matcher = pattern.matcher(header);
+	return matcher.find();
+  }
+  
+  public static String getExpectedHeaderContent(String header, String headerPattern) {
+	String content = "";
+    Pattern pattern = Pattern.compile(headerPattern, Pattern.CASE_INSENSITIVE);
+	Matcher matcher = pattern.matcher(header);
+	if(matcher.find()) {
+	  content = matcher.group(1);
+	}
+    return content;
   }
   
 }
