@@ -37,8 +37,7 @@ public class FactorValuePreprocessor {
       int startingIndex = -1;
       // Locating in the sdrf file at which column the factor values start to appear.
       for(int i = 0; i < fields.length; i++) {
-    	String field = fields[i].replaceAll("\\s*", "");    	
-        if(field.startsWith("FactorValue[")) {
+    	if(FactorValue.isExpectedHeader(fields[i], FactorValue.FACTOR_VALUE_PATTERN)) {
           startingIndex = i;
           break;
         }
