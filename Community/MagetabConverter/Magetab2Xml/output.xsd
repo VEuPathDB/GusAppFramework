@@ -134,7 +134,7 @@
                 Comment [Parameter DataTypeExtDbRls] must be non-empty.
         SOP 13. If Comment [Parameter UnitType] is non-empty then
                 Comment [Parameter UnitTypeExtDbRls] must be non-empty.
-        SOP 14. Comment [Parameter Is User Specified] should have values 0 or 1.
+        SOP 14. Comment [Parameter Is User Specified] should have values 0 or 1, if present.
       </xsd:documentation>
     </xsd:annotation>
     <xsd:sequence>
@@ -145,7 +145,7 @@
             <xsd:group ref="dataTypeGroup" minOccurs="0" maxOccurs="1" />
             <xsd:group ref="unitTypeGroup" minOccurs="0" maxOccurs="1" />
             <xsd:element name="default_value" minOccurs="0" maxOccurs="1" type="xsd:string" />
-            <xsd:element name="is_user_specified" minOccurs="1" maxOccurs="1" type="flagType" />
+            <xsd:element name="is_user_specified" minOccurs="0" maxOccurs="1" type="flagType" />
           </xsd:sequence>
           <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
         </xsd:complexType>
@@ -280,6 +280,7 @@
     <xsd:sequence>
       <xsd:element name="protocol" minOccurs="1" maxOccurs="1" type="xsd:string" />
       <xsd:element name="contacts" minOccurs="0" maxOccurs="1" type="xsd:string" />
+      <xsd:element name="protocol_app_date" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="protocol_app_parameters" minOccurs="0" maxOccurs="2" type="protocolApplicationParametersType" />
       <xsd:element name="inputs" minOccurs="1" maxOccurs="1" type="locationIdType" />
       <xsd:element name="outputs" minOccurs="1" maxOccurs="1" type="locationIdType" />
