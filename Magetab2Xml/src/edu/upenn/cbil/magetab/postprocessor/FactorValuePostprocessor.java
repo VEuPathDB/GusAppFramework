@@ -27,7 +27,6 @@ public class FactorValuePostprocessor {
 
   public Document process(Document document) {
     if(FactorValuePreprocessor.factorValueMap != null && !FactorValuePreprocessor.factorValueMap.isEmpty()) {
-      System.out.println("Got here");
       extractStudyFactors(document);
       verifyFactorValueNames();
       populateFactorValueDataStrings();
