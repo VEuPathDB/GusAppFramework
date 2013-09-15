@@ -169,7 +169,7 @@ public class FactorValue {
         	i += 2;
           }
           else if(!FactorValue.isExpectedHeader(headers[i + 1], FACTOR_VALUE_PATTERN)) {
-            throw new ApplicationException("Bad factor value column or missing factor value table or row column: " + headers[i + 1]);
+            System.err.println("Warning:  Bad factor value column or missing factor value table or row column: " + headers[i + 1]);
           }
         }
         factorValues.add(factorValue);
