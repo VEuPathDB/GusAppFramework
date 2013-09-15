@@ -202,11 +202,24 @@ public class ProtocolApplicationIONode extends ProtocolObject {
     String[] headers = node.headers();
 	String[] values = node.values();
 	for(int i = headers.length - 1; i >= 0; i--) {
-	  //System.out.println("Node Name: " + name + "\t" + headers[i] + " = " + values[i]);
+	  //System.out.println("Node Name: " + name + " " + i + ":\t" + headers[i] + " = " + values[i]);
 	  
 	  if(headers[i].startsWith("Term Source REF")) {
-        OntologyTerm term = new OntologyTerm(values[i-1], values[i]);
-        String category = SDRFUtils.parseHeader(CHARACTERISTICS, headers[i-1]);
+	    OntologyTerm term = null;
+	    String category = "";
+	    /* 
+	     * Accommodating Term Accession Number, which we don't use
+	     * Although the Term Accession Number is to the left of the Term Source REF in the sdrf, the positions in the header are reversed.
+	     * We need to skip over it.
+	     */
+	    if(headers[i-1].startsWith("Term Accession Number")) {
+	      term = new OntologyTerm(values[i-2], values[i]);
+	      category = SDRFUtils.parseHeader(CHARACTERISTICS, headers[i-2]);
+	    }
+	    else {
+          term = new OntologyTerm(values[i-1], values[i]);
+          category = SDRFUtils.parseHeader(CHARACTERISTICS, headers[i-1]);
+	    }
         terms.put(category, term);
       }
 	  if(headers[i].startsWith("Description")) {
