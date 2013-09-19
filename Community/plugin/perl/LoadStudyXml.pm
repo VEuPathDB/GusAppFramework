@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 11754 $',
+		     cvsRevision => '$Revision: 12804 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -678,7 +678,10 @@ sub submitProtocolAppNodes {
 	  my $tableId = $self->getTableId($table);
 	  $characteristic->setTableId($tableId);
 	}
-	
+	my $value = $charNode->findvalue('./value');
+	if (defined($value) && $value !~ /^\s*$/) {
+	  $characteristic->setValue($value);
+	}	
 	my $ontologyTermNode = $charNode->findvalue('./ontology_term');
 	if (defined($ontologyTermNode) && $ontologyTermNode !~ /^\s*$/) {    
 	  my $extDbRls = $charNode->findvalue('./external_database_release');
