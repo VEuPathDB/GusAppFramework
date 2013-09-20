@@ -310,7 +310,7 @@ sub getSequenceId {
 sub undoTables {
   my ($self) = @_;
 
-  return ('Study.Characteristic', 'Study.Input', 'Study.Output');
+  return ('DoTS.SnpFeature', 'DoTS.NALocation', 'Study.Characteristic', 'Study.Input', 'Study.Output');
 }
 
 1;
