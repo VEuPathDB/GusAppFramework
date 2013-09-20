@@ -14,6 +14,8 @@ use XML::LibXML;
 use XML::LibXML::XPathContext;
 use Data::Dumper;
 
+use GUS::Model::DoTS::SnpFeature;
+use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::Study::Protocol;
 use GUS::Model::Study::ProtocolApp;
@@ -143,6 +145,8 @@ sub run {
 sub processXmlFile {
     my ($self, $xmlFile) = @_;
 
+    my ($foundInXml, $alreadyInDb, $added); # record counts
+
     my $parser = XML::LibXML->new();
     my $doc = $parser->parse_file($xmlFile);
     my $xc = XML::LibXML::XPathContext->new($doc);
@@ -151,65 +155,80 @@ sub processXmlFile {
 
 #     <SnpInfo rsId= observed=>
     foreach my $snpInfo ($xc->findnodes('//GE:SnpInfo')) {
-
+	$foundInXml++;
 	my $rsId = $snpInfo->getAttribute("rsId");
-	my $observed = $snpInfo->getAttribute("observed");
-	print "rsId = \"$rsId\"\n";
-	print "observed = \"$observed\"\n";
+	my $snpFeature = GUS::Model::DoTS::SnpFeature
+	    ->new( {
+		"source_id" => "rs$rsId",
+		"name" => "SNP",
+		   } );
+	if ($snpFeature->retrieveFromDB()) {
+	    $alreadyInDb++;
+	    next;
+	}
+	$snpFeature->setDescription(optionalAttribute("observed". $snpInfo->getAttribute("observed")));
+	$snpFeature->submit();
 
+	my $naSequenceId;
 	my $snpInfoXc  = XML::LibXML::XPathContext->new($snpInfo);
 	$snpInfoXc->registerNs('GE', 'http://www.ncbi.nlm.nih.gov/SNP/geno');
 #         <SnpLoc genomicAssembly= geneId= geneSymbol= chrom= start= end= locType= rsOrientToChrom= contigAllele= contig=/>
 	foreach my $snpLoc ($snpInfoXc->findnodes('//GE:SnpLoc')) {
-	    my $genomicAssembly = $snpLoc->getAttribute("genomicAssembly");
-	    my $geneId = $snpLoc->getAttribute("geneId");
-	    my $geneSymbol = $snpLoc->getAttribute("geneSymbol");
-	    my $end = $snpLoc->getAttribute("end");
-	    my $chrom = $snpLoc->getAttribute("chrom");
-	    my $start = $snpLoc->getAttribute("start");
-	    my $locType = $snpLoc->getAttribute("locType");
-	    my $rsOrientToChrom = $snpLoc->getAttribute("rsOrientToChrom");
-	    my $contigAllele = $snpLoc->getAttribute("contigAllele");
-	    my $contig = $snpLoc->getAttribute("contig");
+	    $naSequenceId = getSequenceId($snpLoc->getAttribute("contig"));
+	    if ($naSequenceId) {
+		my $start = $snpLoc->getAttribute("start");
+		my $end = $snpLoc->getAttribute("end") || $start;
+		my $isReversed;
+		my $rsOrientToChrom = $snpLoc->getAttribute("rsOrientToChrom");
+		if ($rsOrientToChrom eq 'fwd' || !$rsOrientToChrom) {
+		    $isReversed = 0;
+		} elsif ($rsOrientToChrom eq 'rev') {
+		    $isReversed = 1;
+		} else {
+		    $self->log("WARNING: unfamiliar value \"$rsOrientToChrom\" for rsOrientToChrom attribute");
+		}
+		my $remark = optionalAttribute("genomicAssembly". $snpLoc->getAttribute("genomicAssembly"))
+		    .  optionalAttribute("geneId". $snpLoc->getAttribute("geneId"))
+		    .  optionalAttribute("geneSymbol". $snpLoc->getAttribute("geneSymbol"))
+		    .  optionalAttribute("chrom". $snpLoc->getAttribute("chrom"))
+		    .  optionalAttribute("start". $start)
+		    .  optionalAttribute("end". $end)
+		    .  optionalAttribute("locType". $snpLoc->getAttribute("locType"))
+		    .  optionalAttribute("rsOrientToChrom". $rsOrientToChrom)
+		    .  optionalAttribute("contigAllele". $snpLoc->getAttribute("contigAllele"))
+		    .  optionalAttribute("contig". $snpLoc->getAttribute("contig"));
 
-	    print "genomicAssembly = \"$genomicAssembly\"\n";
-	    print "chrom = \"$chrom\"\n";
-	    print "geneId = \"$geneId\"\n";
-	    print "geneSymbol = \"$geneSymbol\"\n";
-	    print "end = \"$end\"\n";
-	    print "start = \"$start\"\n";
-	    print "locType = \"$locType\"\n";
-	    print "rsOrientToChrom = \"$rsOrientToChrom\"\n";
-	    print "contigAllele = \"$contigAllele\"\n";
-	    print "contig = \"$contig\"\n";
-	    print "\n";
+		my $naLocation = GUS::Model::DoTS::NALocation
+		    ->new( {
+			"na_feature_id" => $snpFeature->getNaFeatureId(),
+			"start_min" => $start,
+			"end_max" => $end,
+			"is_reversed" => $isReversed,
+			"remark" => $remark,
+			   } );
+		$naLocation->submit();
+	    }
 	}
 
-	print "----(per-snp) genotype frequencies\n";
+	if (!$naSequenceId) {
+	    $self->log("WARNING: no location found for rs$rsId");
+	}
+
 #         <GTypeFreq gtype= freq=/>
 	foreach my $gTypeFreq ($snpInfoXc->findnodes('./GE:GTypeFreq')) {
 	    my $gtype = $gTypeFreq->getAttribute("gtype");
 	    my $freq = $gTypeFreq->getAttribute("freq");
-
-	    print "gtype = \"$gtype\"; ";
-	    print "freq = \"$freq\"\n";
 	}
 
-	print "\n---- submitted snps\n";
 #         <SsInfo ssId= locSnpId= ssOrientToRs=>
 	foreach my $ssInfo ($snpInfoXc->findnodes('./GE:SsInfo')) {
 	    my $ssId = $ssInfo->getAttribute("ssId");
 	    my $locSnpId = $ssInfo->getAttribute("locSnpId");
 	    my $ssOrientToRs = $ssInfo->getAttribute("ssOrientToRs");
 
-	    print "ssId = \"$ssId\"\n";
-	    print "locSnpId = \"$locSnpId\"\n";
-	    print "ssOrientToRs = \"$ssOrientToRs\"\n";
-	    print "\n";
-
 	    my $ssInfoXc  = XML::LibXML::XPathContext->new($ssInfo);
 	    $ssInfoXc->registerNs('GE', 'http://www.ncbi.nlm.nih.gov/SNP/geno');
-	    print "\n---- populations\n";
+
 #             <ByPop popId= probeId= hwProb= hwChi2= hwDf= sampleSize=>
 	    foreach my $byPop ($ssInfoXc->findnodes('./GE:ByPop')) {
 		my $popId = $byPop->getAttribute("popId");
@@ -219,69 +238,72 @@ sub processXmlFile {
 		my $hwDf = $byPop->getAttribute("hwDf");
 		my $sampleSize = $byPop->getAttribute("sampleSize");
 
-		print "popId = \"$popId\"\n";
-		print "probeId = \"$probeId\"\n";
-		print "hwProb = \"$hwProb\"\n";
-		print "hwChi2 = \"$hwChi2\"\n";
-		print "hwDf = \"$hwDf\"\n";
-		print "sampleSize = \"$sampleSize\"\n";
-		print "\n";
-
 		# look up population by popId
-		print "looking for population with popid \"$popId\"\n";
 		my ($pop) = $xc->findnodes("//GE:Population[\@popId='$popId']");
 		if ($pop) {
 #     <Population popId= handle= locPopId=>
 		    my $handle = $pop->getAttribute("handle");
 		    my $locPopId = $pop->getAttribute("locPopId");
-		    print "handle = \"$handle\"; ";
-		    print "locPopId = \"$locPopId\"\n";
 		    
 		    my $popXc  = XML::LibXML::XPathContext->new($pop);
 		    $popXc->registerNs('GE', 'http://www.ncbi.nlm.nih.gov/SNP/geno');
 #         <popClass self=/>
 		    foreach my $popClass ($popXc->findnodes('./GE:popClass')) {
 			my $self = $popClass->getAttribute("self");
-			print "self = \"$self\"\n";
 		    }
 		} else {
-		    print "WARNING: failed to find population with popId=\"$popId\"\n";
+		    $self->log("WARNING: failed to find population with popId=\"$popId\"");
 		}
 
 		my $byPopXc  = XML::LibXML::XPathContext->new($byPop);
 		$byPopXc->registerNs('GE', 'http://www.ncbi.nlm.nih.gov/SNP/geno');
-		print "---- allele frequencies\n";
 #                 <AlleleFreq allele= freq=/>
 		foreach my $alleleFreq ($byPopXc->findnodes('./GE:AlleleFreq')) {
 		    my $allele = $alleleFreq->getAttribute("allele");
 		    my $freq = $alleleFreq->getAttribute("freq");
-		    print "allele = \"$allele\"; ";
-		    print "freq = \"$freq\"\n";
 		}
 
-		print "---- genotype frequencies\n";
 #                 <GTypeFreq gtype= freq=/>
 		foreach my $gTypeFreq ($byPopXc->findnodes('./GE:GTypeFreq')) {
 		    my $gtype = $gTypeFreq->getAttribute("gtype");
 		    my $freq = $gTypeFreq->getAttribute("freq");
-		    print "gtype = \"$gtype\"; ";
-		    print "freq = \"$freq\"\n";
 		}
 
-		print "---- genotypes by individual\n";
 #                 <GTypeByInd gtype= indId= flag=/>
 		foreach my $gTypeByInd ($byPopXc->findnodes('./GE:GTypeByInd')) {
 		    my $gtype = $gTypeByInd->getAttribute("gtype");
 		    my $indId = $gTypeByInd->getAttribute("indId");
-		    print "gtype = \"$gtype\"; ";
-		    print "indId = \"$indId\"\n";
 		}
 
-		print "----- end of population (popId $popId) ----\n\n";
 	    } # </ByPop>
 	} # </SsInfo>
     } # </SnpInfo>
 
+}
+
+# optionalAttribute
+#
+# return "<attribute>="<value>"<space>" if value is not empty
+sub optionalAttribute {
+    my ($attribute, $value) = @_;
+
+    return "$attribute=\"$value\" "
+	if ($value);
+}
+
+# getSequenceId
+#
+# find the na_sequence_id for the given source ID
+sub getSequenceId {
+  my ($sourceId) = @_;
+
+  my $externalNASequence = GUS::Model::DoTS::ExternalNASequence
+      ->new( {
+	  "source_id" => $sourceId,
+	     } );
+
+  return ($externalNASequence->getNaSequenceId())
+      if $externalNASequence;
 }
 
 # ----------------------------------------------------------------------
