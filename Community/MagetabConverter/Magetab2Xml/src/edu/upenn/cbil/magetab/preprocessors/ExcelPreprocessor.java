@@ -211,9 +211,10 @@ public class ExcelPreprocessor {
    */
   protected boolean isEmptyRow(Row row) {
     boolean empty = true;
-    for (int c = row.getFirstCellNum(); c <= row.getLastCellNum(); c++) {
-      Cell cell = row.getCell(c);
-      if (cell != null && row.getCell(c).getCellType() != XSSFCell.CELL_TYPE_BLANK) {
+    int cols = row.getLastCellNum();
+    for(int j = 0; j < cols; j++) {
+      Cell cell = row.getCell(j); 
+      if (cell != null && row.getCell(j).getCellType() != XSSFCell.CELL_TYPE_BLANK) {
         empty = false;
         break;
       }
