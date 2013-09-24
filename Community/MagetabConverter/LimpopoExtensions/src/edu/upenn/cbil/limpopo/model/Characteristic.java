@@ -1,7 +1,6 @@
 package edu.upenn.cbil.limpopo.model;
 
 import java.lang.reflect.Field;
-import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
@@ -13,22 +12,43 @@ import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.limpopo.utils.SDRFUtils;
 
+/**
+ * Represents a slightly different definition of characteristic than the one applied in a 
+ * MAGE-TAB SDRF.  Characteristics here include typical MAGE-TAB characteristics with the
+ * exception of the organism and any material type.
+ * @author crisl
+ *
+ */
 public class Characteristic {
   private String category;
   private OntologyTerm term;
   private String termAccessionNumber;
-  private String taxon;
   private String value;
-  public final static String ORGANISM = "organism";
   
+  
+  /**
+   * Retrieves a string representing either the heading of a characteristic, the heading of
+   * a material type, or if the characteristic value is qualified by a unit type; the
+   * concatenation (with a pipe delimiter) of the characteristic heading and the unit type
+   * heading.
+   * @return - category string
+   */
   public String getCategory() {
     return category;
   }
-
+  
+  /**
+   * Sets the category described under getCategory()
+   * @param category - the string to be saved.
+   */
   public void setCategory(String category) {
     this.category = category;
   }
 
+  /**
+   * Present if a term source ref qualifies a characteristic or material type or a unit type
+   * @return - the ontology term representing the term source ref.
+   */
   public OntologyTerm getTerm() {
     return term;
   }
@@ -37,6 +57,10 @@ public class Characteristic {
     this.term = term;
   }
 
+  /**
+   * Term Accession Number is saved but not currently used.
+   * @return - term accession number related to the characteristic.
+   */
   public String getTermAccessionNumber() {
     return termAccessionNumber;
   }
@@ -53,32 +77,19 @@ public class Characteristic {
     this.value = AppUtils.removeTokens(value);
   }
 
-  public String getTaxon() {
-    return taxon;
-  }
-
-  public void setTaxon(String taxon) {
-    this.taxon = AppUtils.removeTokens(taxon);
-  }
-  
+  /**
+   * Empty constructor used to guarantee a stable base state.
+   */
   public Characteristic() {
-    taxon = "";
     value = "";
     category = "";
     termAccessionNumber = "";
   }
   
-  public boolean isEmpty() {
-    return StringUtils.isEmpty(value) && StringUtils.isEmpty(category);
-  }
-
   public Characteristic(CharacteristicsAttribute trait) throws ConversionException {
     this();
-    if(ORGANISM.equalsIgnoreCase(SDRFUtils.parseHeader(trait.getAttributeType()))) {
-      setTaxon(trait.getAttributeValue());
-    }
     // Letting any TermAccessionNumber for unit fall on the floor.
-    else if(trait.unit != null) {
+    if(trait.unit != null) {
       category = SDRFUtils.parseHeader(trait.getAttributeType()) + "|" + SDRFUtils.parseHeader(trait.unit.getAttributeType());
       term = new OntologyTerm(SDRFUtils.parseHeader(trait.unit.getAttributeValue()), trait.unit.termSourceREF);
       setValue(trait.getAttributeValue());
@@ -106,17 +117,6 @@ public class Characteristic {
         term = new OntologyTerm(material.getAttributeValue(), material.termSourceREF);
       }
     }
-  }
-  
-  public static String fetchTaxon(List<Characteristic> characteristics) {
-    String taxon = "";
-    for(Characteristic characteristic : characteristics) {
-      if(StringUtils.isNotEmpty(characteristic.getTaxon())) {
-        taxon = characteristic.getTaxon();
-        break;
-      }
-    }
-    return taxon;
   }
   
   @Override
