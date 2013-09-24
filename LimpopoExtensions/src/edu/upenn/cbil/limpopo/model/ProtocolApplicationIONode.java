@@ -45,8 +45,8 @@ public class ProtocolApplicationIONode extends ProtocolObject {
   private String sourceId;
   private String extDbRls;
   private String table;
-  private Map<String, OntologyTerm> terms;
   private static Set<ProtocolApplicationIONode> applicationIONodes = new LinkedHashSet<>();
+  public static final String ORGANISM = "organism";
   public static final String SCAN_NAME = "scanname";
   public static final String ASSAY_NAME = "assayname";
   public static final String CHARACTERISTICS = "Characteristics";
@@ -68,7 +68,6 @@ public class ProtocolApplicationIONode extends ProtocolObject {
     super(node);
     addition = false;
     dbId = "";
-    terms = new LinkedHashMap<>();
     populate();
     ProtocolApplicationIONode.applicationIONodes.add(this);
   }
@@ -175,13 +174,6 @@ public class ProtocolApplicationIONode extends ProtocolObject {
       default:
     }
     return color;
-  }
-  /**
-   * Linked Hash Map of ontology terms keyed by category.  This map is applicatble only for MATERIAL ENTITY nodes.
-   * @return - terms - an optional list of ontology terms mapped by category (may return an empty Map).
-   */
-  public Map<String, OntologyTerm> getTerms() {
-    return terms;
   }
 
   /**
@@ -290,6 +282,14 @@ public class ProtocolApplicationIONode extends ProtocolObject {
 	return found;
   }
   
+  /**
+   * Helper method to populate a list of characteristics as defined by the Characteristics
+   * class.  Elements of a characteristics class are found in only 4 SDRF nodes and are 
+   * based upon what MAGE-TAB refers to as characteristics and material types.  Note that
+   * taxon is a MAGE-TAB characteristic, but it is pulled out as the property of this class.
+   * @param node - SDRF node from which to cull characteristics
+   * @throws ConversionException - occurs when the creation of an ontology term fails.
+   */
   protected void populateCharacteristics(SDRFNode node) throws ConversionException {
     characteristics = new ArrayList<>();
     List<CharacteristicsAttribute> attributes = new ArrayList<>();
@@ -314,12 +314,16 @@ public class ProtocolApplicationIONode extends ProtocolObject {
         break;
     }
     for(CharacteristicsAttribute attribute : attributes) {
-      characteristics.add(new Characteristic(attribute));
+      if(ORGANISM.equalsIgnoreCase(SDRFUtils.parseHeader(attribute.getAttributeType()))) {
+        setTaxon(attribute.getAttributeValue());
+      }
+      else {
+        characteristics.add(new Characteristic(attribute));
+      }
     }
     if(material != null) {
       characteristics.add(new Characteristic(material));
     }
-    setTaxon(Characteristic.fetchTaxon(characteristics));
   }
   
 }

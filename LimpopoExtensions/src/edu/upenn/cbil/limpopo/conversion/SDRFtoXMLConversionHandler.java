@@ -107,7 +107,7 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
 	  if(!StringUtils.isEmpty(appNode.getUri())) {
 	    nodeElement.addContent(new Element(URI_TAG).setText(appNode.getUri()));
 	  }
-	  if(!appNode.getTerms().isEmpty() || StringUtils.isNotEmpty(appNode.getTable())) {
+	  if(!appNode.getCharacteristics().isEmpty() || StringUtils.isNotEmpty(appNode.getTable())) {
 	    nodeElement.addContent(setNodeCharacteristics(appNode));
 	  }
 	  sdrfElement.addContent(nodeElement);
@@ -206,28 +206,26 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
     Iterator<Characteristic> iterator = appNode.getCharacteristics().iterator();
     while(iterator.hasNext()) {
       Characteristic characteristic = iterator.next();
-      if(!characteristic.isEmpty()) {
-        String category = characteristic.getCategory();
-        String value = characteristic.getValue();
-        OntologyTerm term = characteristic.getTerm();
-        Element charElement = new Element(CHARACTERISTIC_TAG);
-        if(term != null) { 
-          Element termElement = new Element(ONTOLOGY_TERM_TAG);
-          termElement.setText(term.getName());
-          if(StringUtils.isEmpty(value)) {
-            termElement.setAttribute(CATEGORY_ATTR, category);
-          }
-          charElement.addContent(termElement);
-          charElement.addContent(new Element(EXTERNAL_DATABASE_RELEASE_TAG).setText(term.getExternalDatabaseRelease()));
-        }     
-        if(StringUtils.isNotEmpty(value)) {
-          Element valueElement = new Element(VALUE_TAG);
-          valueElement.addContent(value);
-          valueElement.setAttribute(CATEGORY_ATTR, category);
-          charElement.addContent(valueElement);
+      String category = characteristic.getCategory();
+      String value = characteristic.getValue();
+      OntologyTerm term = characteristic.getTerm();
+      Element charElement = new Element(CHARACTERISTIC_TAG);
+      if(term != null) { 
+        Element termElement = new Element(ONTOLOGY_TERM_TAG);
+        termElement.setText(term.getName());
+        if(StringUtils.isEmpty(value)) {
+          termElement.setAttribute(CATEGORY_ATTR, category);
         }
-        nodeCharElement.addContent(charElement);
+        charElement.addContent(termElement);
+        charElement.addContent(new Element(EXTERNAL_DATABASE_RELEASE_TAG).setText(term.getExternalDatabaseRelease()));
+      }     
+      if(StringUtils.isNotEmpty(value)) {
+        Element valueElement = new Element(VALUE_TAG);
+        valueElement.addContent(value);
+        valueElement.setAttribute(CATEGORY_ATTR, category);
+        charElement.addContent(valueElement);
       }
+      nodeCharElement.addContent(charElement);
     }
     if(!StringUtils.isEmpty(appNode.getTable())) {
       Element charElement = new Element(CHARACTERISTIC_TAG);
