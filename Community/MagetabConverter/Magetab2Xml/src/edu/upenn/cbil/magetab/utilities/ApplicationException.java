@@ -3,8 +3,11 @@ package edu.upenn.cbil.magetab.utilities;
 public class ApplicationException extends RuntimeException {
   private static final long serialVersionUID = 1529721598323901590L;
   public static final String MISSING_ARG_ERROR = "Must provide an Excel workbook name. ";
+  public static final String DIRECTORY_NAME_ERROR = "The directory name is derived from the given file name" +
+  		                                            " but the file may have multiple extensions.  File name: ";
   public static final String BAD_EXCEL_ERROR = "Excel workbook name must have an xslx extension. ";
   public static final String EXCEL_PARSE_ERROR = "Problems encountered parsing the Excel workbook. ";
+  public static final String SDRF_COLUMN_MISMATCH_ERROR = "SDRF Column mismatch (Previous|Current): ";
   public static final String CMD_PARSE_ERROR = "Command not successfully parsed. ";
   public static final String MAGETAB_ERROR = "One or more MAGE-TAB conversion errors occurred. ";
   public static final String FILE_NOT_FOUND_ERROR = "Unable to locate or create file: ";
@@ -16,6 +19,7 @@ public class ApplicationException extends RuntimeException {
   public static final String FILE_NON_EXISTANT_ERROR = "File does not exist: ";
   public static final String FILE_CREATION_ERROR = "Unable to create file: ";
   public static final String DOT_INTERRUPTION_ERROR = "DOT file processing was interrupted.";
+  public static final String LIST_SPLIT_ERROR = "Factor Values not cleanly split off from SDRF file";
   
   public ApplicationException() {
     super();
