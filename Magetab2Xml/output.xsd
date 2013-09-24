@@ -296,8 +296,8 @@
         <xsd:complexType>
           <xsd:annotation>
             <xsd:documentation xml:lang="en">
-              Policies 7.  A characteristic can either have an (ext_db_rls, ontology_term)
-                           or a table tab, NOT both.
+              Policies 7.  A characteristic can either have an term, term/value
+                           or a table.
             </xsd:documentation>
           </xsd:annotation>
           <xsd:choice>
@@ -309,6 +309,10 @@
               </xsd:simpleType>
             </xsd:element>
             <xsd:group ref="ontologyTypeGroup" />
+            <xsd:sequence>
+              <xsd:element name="value" minOccurs="1" maxOccurs="1" type="valueType"/>
+              <xsd:group ref="ontologyTypeGroup" minOccurs="0" maxOccurs="1" />
+            </xsd:sequence>
           </xsd:choice>
         </xsd:complexType>
       </xsd:element>
@@ -329,6 +333,14 @@
         <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
       </xsd:extension>
     </xsd:simpleContent>
+  </xsd:complexType>
+  
+  <xsd:complexType name="valueType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string" >
+        <xsd:attribute name="category" type="xsd:string" use="optional" />
+      </xsd:extension>
+    </xsd:simpleContent>    
   </xsd:complexType>
 
   <xsd:group name="ontologyTypeGroup">
