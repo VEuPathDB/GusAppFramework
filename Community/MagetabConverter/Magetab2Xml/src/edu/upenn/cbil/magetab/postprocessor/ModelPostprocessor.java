@@ -78,9 +78,27 @@ public class ModelPostprocessor {
         List<Element> charElements = nodeCharacteristicsElement.getChildren("characteristic");
         List<String> characteristics = new ArrayList<>();
         for(Element charElement : charElements) {
-          String term = charElement.getChildText("ontology_term");
-          if(StringUtils.isNotEmpty(term)) {
-            characteristics.add(term);
+          String value = charElement.getChildText("value");
+          // If a value is present, either the ontology term corresponds to a unit type
+          // or there is no ontology term.
+          if(StringUtils.isNotEmpty(value)) {
+        	// If a category contains a pipe, the value corresponds to a number having a 
+        	// unit and the ontology term, which should exist, corresponds to a the unit
+        	// type.  As such the two are concatenated.
+        	String category = charElement.getChild("value").getAttributeValue("category");
+        	if(StringUtils.isNotEmpty(category) && category.contains("|")) {
+        	  String term = charElement.getChildText("ontology_term");
+              if(StringUtils.isNotEmpty(term)) {
+                value += " " + term;
+              }
+        	}
+            characteristics.add(value);
+          }
+          else {
+            String term = charElement.getChildText("ontology_term");
+            if(StringUtils.isNotEmpty(term)) {
+              characteristics.add(term);
+            }
           }
         }
         characteristics = characteristics.isEmpty() ? null : characteristics; 
