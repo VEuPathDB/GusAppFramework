@@ -99,6 +99,7 @@ public class Converter {
         throw new ApplicationException(BAD_EXCEL_ERROR + cmd.getArgs()[0]);
       }
       directoryName = Files.getNameWithoutExtension(cmd.getArgs()[0]);
+      System.out.println("Results to be delivered to " + directoryName);
     }
     catch(org.apache.commons.cli.ParseException pe) {
       throw new ApplicationException(CMD_PARSE_ERROR, pe);
