@@ -1,9 +1,11 @@
 package edu.upenn.cbil.limpopo.model;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,7 +16,14 @@ import org.mged.magetab.error.ErrorItem;
 import org.mged.magetab.error.ErrorItemFactory;
 
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.graph.Node;
+import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.ExtractNode;
+import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.LabeledExtractNode;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.SDRFNode;
+import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.SampleNode;
+import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.SourceNode;
+import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.CharacteristicsAttribute;
+import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.MaterialTypeAttribute;
+import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.SDRFAttribute;
 import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.limpopo.utils.SDRFUtils;
@@ -30,6 +39,7 @@ public class ProtocolApplicationIONode extends ProtocolObject {
   private String name;
   private String type;
   private String description;
+  private List<Characteristic> characteristics;
   private String taxon;
   private String uri;
   private String sourceId;
@@ -46,6 +56,7 @@ public class ProtocolApplicationIONode extends ProtocolObject {
   public static final String DATA_ITEM = "data item";
   public static final String PROTOCOL_REF = "protocolref";
   public static final String URI = "uri";
+  public static final String[] NODES_WITH_CHARACTERISTICS = {"samplename", "sourcename", "extractname", "labeledextractname"};
   public static final String[] POSSIBLE_MATERIAL_ENTITIES = {"samplename", "sourcename", "extractname", "labeledextractname", "normalizationname", "assayname" }; 
   
   /**
@@ -130,6 +141,12 @@ public class ProtocolApplicationIONode extends ProtocolObject {
   public void setExtDbRls(String extDbRls) {
     this.extDbRls = extDbRls;
   }
+  public List<Characteristic> getCharacteristics() {
+    return characteristics;
+  }
+  public void setCharacteristics(List<Characteristic> characteristics) {
+    this.characteristics = characteristics;
+  }
 
   /**
    * Comment [Table] header.  Applied as a node characteristic and applicable only for 'file' nodes.
@@ -199,34 +216,13 @@ public class ProtocolApplicationIONode extends ProtocolObject {
     if(node.getNodeType().endsWith("file")) {
       setUri(node.getNodeName());
     }
+    populateCharacteristics(node);
     String[] headers = node.headers();
 	String[] values = node.values();
 	for(int i = headers.length - 1; i >= 0; i--) {
 	  //System.out.println("Node Name: " + name + " " + i + ":\t" + headers[i] + " = " + values[i]);
-	  
-	  if(headers[i].startsWith("Term Source REF")) {
-	    OntologyTerm term = null;
-	    String category = "";
-	    /* 
-	     * Accommodating Term Accession Number, which we don't use
-	     * Although the Term Accession Number is to the left of the Term Source REF in the sdrf, the positions in the header are reversed.
-	     * We need to skip over it.
-	     */
-	    if(headers[i-1].startsWith("Term Accession Number")) {
-	      term = new OntologyTerm(values[i-2], values[i]);
-	      category = SDRFUtils.parseHeader(CHARACTERISTICS, headers[i-2]);
-	    }
-	    else {
-          term = new OntologyTerm(values[i-1], values[i]);
-          category = SDRFUtils.parseHeader(CHARACTERISTICS, headers[i-1]);
-	    }
-        terms.put(category, term);
-      }
 	  if(headers[i].startsWith("Description")) {
 		setDescription(values[i]);
-	  }
-	  if("Organism".equals(SDRFUtils.parseHeader(CHARACTERISTICS, headers[i]))) {
-	    setTaxon(values[i]);
 	  }
 	  if("ProtAppNode Name".equals(SDRFUtils.parseHeader(COMMENT, headers[i]))) {
 	    setName(values[i]);
@@ -293,5 +289,37 @@ public class ProtocolApplicationIONode extends ProtocolObject {
 	}
 	return found;
   }
-
+  
+  protected void populateCharacteristics(SDRFNode node) throws ConversionException {
+    characteristics = new ArrayList<>();
+    List<CharacteristicsAttribute> attributes = new ArrayList<>();
+    MaterialTypeAttribute material = null;
+    SDRFNodeNames nodeNames = SDRFNodeNames.valueOf(node.getNodeType().toUpperCase());
+    switch(nodeNames) {
+      case SOURCENAME:
+        attributes = ((SourceNode) node).characteristics;
+        material = ((SourceNode)node).materialType;
+        break;
+      case SAMPLENAME:
+        attributes = ((SampleNode) node).characteristics;
+        material = ((SampleNode)node).materialType;
+        break;
+      case EXTRACTNAME:
+        attributes = ((ExtractNode) node).characteristics;
+        material = ((ExtractNode)node).materialType;
+        break;
+      case LABELEXTRACTNAME:
+        attributes = ((LabeledExtractNode) node).characteristics;
+        material = ((LabeledExtractNode)node).materialType;
+        break;
+    }
+    for(CharacteristicsAttribute attribute : attributes) {
+      characteristics.add(new Characteristic(attribute));
+    }
+    if(material != null) {
+      characteristics.add(new Characteristic(material));
+    }
+    setTaxon(Characteristic.fetchTaxon(characteristics));
+  }
+  
 }
