@@ -4,12 +4,16 @@ import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.IDF;
 import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.SDRF;
 import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.TEXT_EXT;
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.EXCEL_PARSE_ERROR;
+import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_IO_ERROR;
+import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_CLOSE_ERROR;
+import static edu.upenn.cbil.magetab.utilities.ApplicationException.SDRF_COLUMN_MISMATCH_ERROR;
 
 import java.awt.Color;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -24,6 +28,9 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.magetab.utilities.ApplicationConfiguration;
@@ -44,7 +51,6 @@ public class ExcelPreprocessor {
   public static Logger logger = LoggerFactory.getLogger(ExcelPreprocessor.class);
   public static final String SDRF_FILE_IDF_FIELD = "SDRF File";
   public static final String UNHANDLED_TYPE = "Unhandled cell type: ";
-  public static final String FILE_CLOSE_FAILURE = "Could not close the preprocess file. ";
   
   /**
    * ExcelPreprocessor constructor.  The baseFilename is used as a basis for
@@ -80,7 +86,7 @@ public class ExcelPreprocessor {
       int rows = sheet.getLastRowNum() + 1;
       for(int i = 0; i < rows; i++) {  
         Row row = sheet.getRow(i); 
-        if(row != null) {
+        if(row != null && !isEmptyRow(row)) {
           StringBuffer line = new StringBuffer();
           int cols = sheet.getRow(i).getLastCellNum();
           for(int j = 0; j < cols; j++) {
@@ -107,8 +113,11 @@ public class ExcelPreprocessor {
         if(writer != null) writer.close();
       }
       catch(IOException ioe) {
-        logger.error(FILE_CLOSE_FAILURE, ioe);
+        logger.error(FILE_CLOSE_ERROR + textFilename, ioe);
       }  
+    }
+    if(SDRF.equalsIgnoreCase(type)) {
+      verifySDRF(textFilename);
     }
     return textFilename;
   }
@@ -171,6 +180,45 @@ public class ExcelPreprocessor {
       }
     }
 	return addition;
+  }
+  
+  /**
+   * Helper method to verify that the SDRF portion of the Excel file did not have any
+   * dangling, empty rows
+   * @param filename
+   */
+  protected void verifySDRF(String filename) {
+    try {
+      int columnCount = 0;
+	  List<String> lines = Files.readLines(new File(filename), Charsets.UTF_8);
+	  String[] fields = lines.get(0).split("\\t");
+	  if(columnCount == 0) {
+		columnCount = fields.length;
+	  }
+	  if(columnCount != fields.length) {
+	    throw new ApplicationException(SDRF_COLUMN_MISMATCH_ERROR + columnCount + "|" + fields.length);
+	  }
+    }
+    catch (IOException ioe) {
+      throw new ApplicationException(FILE_IO_ERROR + filename);
+    }
+  }
+  
+  /**
+   * Helper method to determine if a row is truly empty
+   * @param row - row to be examined
+   * @return - true if empty, false otherwise
+   */
+  protected boolean isEmptyRow(Row row) {
+    boolean empty = true;
+    for (int c = row.getFirstCellNum(); c <= row.getLastCellNum(); c++) {
+      Cell cell = row.getCell(c);
+      if (cell != null && row.getCell(c).getCellType() != XSSFCell.CELL_TYPE_BLANK) {
+        empty = false;
+        break;
+      }
+    }
+    return empty;
   }
   
 }

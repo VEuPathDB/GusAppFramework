@@ -1,5 +1,8 @@
 package edu.upenn.cbil.magetab.preprocessors;
 
+import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_IO_ERROR;
+import static edu.upenn.cbil.magetab.utilities.ApplicationException.LIST_SPLIT_ERROR;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,6 +50,9 @@ public class FactorValuePreprocessor {
         for(String line : lines) {
           List<String> items = Arrays.asList(line.split("\\t"));
           List<List<String>> sublists = Lists.partition(items, startingIndex);
+          if(sublists.size() < 2) {
+            throw new ApplicationException(LIST_SPLIT_ERROR);
+          }
           processedSdrf.add(Joiner.on("\t").join(sublists.get(0)));
           factorValueData.add(Joiner.on("\t").join(sublists.get(1)));
         }
@@ -56,7 +62,7 @@ public class FactorValuePreprocessor {
       }
     }
     catch (IOException ioe) {
-      throw new ApplicationException("Problem with srdf file.");
+      throw new ApplicationException(FILE_IO_ERROR + filename);
     }
   }
   
