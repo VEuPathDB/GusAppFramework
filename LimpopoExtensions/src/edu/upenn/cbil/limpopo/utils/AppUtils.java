@@ -89,6 +89,7 @@ public class AppUtils {
   public static final String NODE_CHARACTERISTICS_TAG = "node_characteristics";
   public static final String CHARACTERISTIC_TAG = "characteristic";
   public static final String ONTOLOGY_TERM_TAG = "ontology_term";
+  public static final String VALUE_TAG = "value";
   public static final String CATEGORY_ATTR = "category";
   public static final String TABLE_TAG = "table";
   

@@ -13,6 +13,7 @@ import static edu.upenn.cbil.limpopo.utils.AppUtils.INPUTS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.NAME_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.NODE_CHARACTERISTICS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.ONTOLOGY_TERM_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.VALUE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.OUTPUTS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_DATE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_NODE_TAG;
@@ -42,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.SDRF;
 import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
 import uk.ac.ebi.arrayexpress2.magetab.handler.sdrf.SDRFConversionHandler;
+import edu.upenn.cbil.limpopo.model.Characteristic;
 import edu.upenn.cbil.limpopo.model.OntologyTerm;
 import edu.upenn.cbil.limpopo.model.Performer;
 import edu.upenn.cbil.limpopo.model.ProtocolApplication;
@@ -201,17 +203,31 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
    */
   protected Element setNodeCharacteristics(ProtocolApplicationIONode appNode) {
     Element nodeCharElement = new Element(NODE_CHARACTERISTICS_TAG);
-    Iterator<String> iterator = appNode.getTerms().keySet().iterator();
+    Iterator<Characteristic> iterator = appNode.getCharacteristics().iterator();
     while(iterator.hasNext()) {
-      String category = (String)iterator.next();
-      OntologyTerm term = appNode.getTerms().get(category);
-      Element charElement = new Element(CHARACTERISTIC_TAG);
-      Element termElement = new Element(ONTOLOGY_TERM_TAG);
-      termElement.setText(term.getName());
-      termElement.setAttribute(CATEGORY_ATTR, category);
-      charElement.addContent(termElement);
-      charElement.addContent(new Element(EXTERNAL_DATABASE_RELEASE_TAG).setText(term.getExternalDatabaseRelease()));   
-      nodeCharElement.addContent(charElement);
+      Characteristic characteristic = iterator.next();
+      if(!characteristic.isEmpty()) {
+        String category = characteristic.getCategory();
+        String value = characteristic.getValue();
+        OntologyTerm term = characteristic.getTerm();
+        Element charElement = new Element(CHARACTERISTIC_TAG);
+        if(term != null) { 
+          Element termElement = new Element(ONTOLOGY_TERM_TAG);
+          termElement.setText(term.getName());
+          if(StringUtils.isEmpty(value)) {
+            termElement.setAttribute(CATEGORY_ATTR, category);
+          }
+          charElement.addContent(termElement);
+          charElement.addContent(new Element(EXTERNAL_DATABASE_RELEASE_TAG).setText(term.getExternalDatabaseRelease()));
+        }     
+        if(StringUtils.isNotEmpty(value)) {
+          Element valueElement = new Element(VALUE_TAG);
+          valueElement.addContent(value);
+          valueElement.setAttribute(CATEGORY_ATTR, category);
+          charElement.addContent(valueElement);
+        }
+        nodeCharElement.addContent(charElement);
+      }
     }
     if(!StringUtils.isEmpty(appNode.getTable())) {
       Element charElement = new Element(CHARACTERISTIC_TAG);
