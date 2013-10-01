@@ -37,7 +37,7 @@ my $argsDeclaration =
 	     }),
 
    stringArg({ name           => 'extDbRlsVer',
-	       descr          => 'external database release version for the GO ontology. Must be equal to the cvs version of the GO ontology as stated in the oboFile',
+	       descr          => 'external database release version for the GO ontology. Must be equal to the data-version of the GO ontology as stated in the oboFile',
 	       reqd           => 1,
 	       constraintFunc => undef,
 	       isList         => 0,
@@ -114,13 +114,13 @@ sub run {
   my $oboFile = $self->getArg('oboFile');
   open(OBO, "<$oboFile") or $self->error("Couldn't open '$oboFile': $!\n");
 
-  my $cvsRevision = $self->_parseCvsRevision(\*OBO);
+  my $dataVersion = $self->_parseDataVersion(\*OBO);
 
   my $extDbRlsName = $self->getArg('extDbRlsName');
   my $extDbRlsVer = $self->getArg('extDbRlsVer');
 
-  $self->error("extDbRlsVer $extDbRlsVer does not match CVS version $cvsRevision of the obo file\n")
-    unless $cvsRevision eq $extDbRlsVer;
+  $self->error("extDbRlsVer $extDbRlsVer does not match data-version $dataVersion of the obo file\n")
+    unless $dataVersion eq $extDbRlsVer;
 
   my $extDbRlsId = $self->getExtDbRlsId($extDbRlsName, $extDbRlsVer);
 
@@ -491,23 +491,23 @@ SQL
 
 }
 
-sub _parseCvsRevision {
+sub _parseDataVersion {
 
   my ($self, $fh) = @_;
 
-  my $cvsRevision;
+  my $dataVersion;
   while (<$fh>) {
-    if (m/cvs version\: \$Revision: (\S+)/) {
-      $cvsRevision = $1;
+    if (m/data-version\: (\S+)$/) {
+      $dataVersion = $1;
       last;
     }
   }
 
-  unless (length $cvsRevision) {
-    $self->error("Couldn't parse out the CVS version!\n");
+  unless (length $dataVersion) {
+    $self->error("Couldn't parse out the data-version!\n");
   }
 
-  return $cvsRevision;
+  return $dataVersion;
 }
 
 sub undoTables {
