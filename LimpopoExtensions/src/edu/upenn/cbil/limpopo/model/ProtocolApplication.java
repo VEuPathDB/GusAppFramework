@@ -15,6 +15,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.mged.magetab.error.ErrorItem;
+import org.mged.magetab.error.ErrorItemFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +26,8 @@ import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.ProtocolApplicationNo
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.SDRFNode;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.ParameterValueAttribute;
 import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
+import uk.ac.ebi.arrayexpress2.magetab.exception.ValidateException;
+import edu.upenn.cbil.limpopo.utils.AppException;
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.limpopo.utils.ProtocolObjectComparator;
 
@@ -178,6 +182,11 @@ public class ProtocolApplication extends ProtocolObject {
   public void populate() throws ConversionException {
     ProtocolApplicationNode appNode = (ProtocolApplicationNode) node;
     String name = appNode.protocol;
+    if(StringUtils.isEmpty(name)) {
+      ErrorItemFactory factory = ErrorItemFactory.getErrorItemFactory();
+      ErrorItem error = factory.generateErrorItem("Check your SDRF", 8001, this.getClass());
+      throw new ConversionException(true, error);
+    }
 	setName(name);
 	setAddition(AppUtils.checkForAddition(name));
 	setDbId(AppUtils.filterIdToken(name));
