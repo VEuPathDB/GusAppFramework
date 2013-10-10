@@ -14,6 +14,7 @@ public class ApplicationConfiguration {
   public static String filePrefix;
   public static String filterPrefix;
   public static String graphvizDotPath;
+  public static String imageType;
   public static Map<String,Boolean> switches = new HashMap<>();
   public static final String CMD_INVOCATION = "java -jar Magetab2Xml.jar";
   public static final String USAGE_HEADER = "Convert an Excel workbook containing a MAGE-TAB document into an XML document\n" +
@@ -31,6 +32,8 @@ public class ApplicationConfiguration {
   public static final String DOT_DESC = "Absolute path to the dot executable (defaults to value in application.properties)";
   public static final String PREFIX = "prefix";
   public static final String PREFIX_DESC = "Apply given prefix to output files (defaults to value in application.properties)";
+  public static final String IMG_TYPE = "imageType";
+  public static final String IMG_TYPE_DESC="Indicate whether graphviz should produce a gif or png image (defaults to value in application.properties)";
   public static final String IDF = "idf";
   public static final String SDRF = "sdrf";
   public static final String EXCEL_EXT = "xlsx";
@@ -38,7 +41,6 @@ public class ApplicationConfiguration {
   public static final String XML_EXT = "xml";
   public static final String GRAPHML_EXT = "graphml";
   public static final String DOT_EXT = "dot";
-  public static final String IMG_EXT = "gif";
   public static final String HTML_EXT = "html";
   public static final String ZIP_EXT = "zip";
   public static final String XSL_EXT = "xsl";
@@ -57,6 +59,7 @@ public class ApplicationConfiguration {
       filePrefix = (String)properties.get("file.prefix");
       filterPrefix = (String)properties.get("filter.prefix");
       graphvizDotPath = (String)properties.get("graphviz.dot");
+      imageType = ((String)properties.get("image.type")).toLowerCase();
       logger.debug("END - " + this.getClass().getSimpleName());
     }
     catch(IOException ioe) {

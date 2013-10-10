@@ -27,7 +27,6 @@ package edu.upenn.cbil.magetab.postprocessor;
 
 import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.DOT_EXT;
 import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.HTML_EXT;
-import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.IMG_EXT;
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.DOT_INTERRUPTION_ERROR;
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_CLOSE_ERROR;
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_CREATION_ERROR;
@@ -85,7 +84,7 @@ public class DisplayPostprocessor {
    */
   public DisplayPostprocessor(String directoryName) {
     this.dotFilename = directoryName + File.separator + ApplicationConfiguration.filePrefix + "." + DOT_EXT;
-    this.imageFilename = directoryName + File.separator + ApplicationConfiguration.filePrefix + "." + IMG_EXT;
+    this.imageFilename = directoryName + File.separator + ApplicationConfiguration.filePrefix + "." + ApplicationConfiguration.imageType;
     this.htmlFilename = directoryName + File.separator + ApplicationConfiguration.filePrefix + "." + HTML_EXT;
   }
 
@@ -161,7 +160,7 @@ public class DisplayPostprocessor {
        File imageFile = new File(imageFilename);
        mapFile = File.createTempFile("map", HTML_EXT);
        Runtime rt = Runtime.getRuntime();
-       String[] args = {DOT, "-Tgif", dotFile.getAbsolutePath(), "-o", imageFile.getAbsolutePath(), "-Tcmapx", "-o", mapFile.getAbsolutePath()};
+       String[] args = {DOT, "-T" + ApplicationConfiguration.imageType, dotFile.getAbsolutePath(), "-o", imageFile.getAbsolutePath(), "-Tcmapx", "-o", mapFile.getAbsolutePath()};
        System.out.println("Image/Map creation: " + Arrays.asList(args).toString());
        Process p = rt.exec(args);
        p.waitFor();
