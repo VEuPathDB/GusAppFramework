@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.io.Files;
 
+import edu.upenn.cbil.magetab.model.ImageExtension;
 import edu.upenn.cbil.magetab.preprocessors.ExcelPreprocessor;
 import edu.upenn.cbil.magetab.preprocessors.FactorValuePreprocessor;
 import edu.upenn.cbil.magetab.utilities.ApplicationConfiguration;
@@ -65,6 +66,7 @@ public class Converter {
     options.addOption(HTML, false, HTML_DESC);
     options.addOption(VALIDATE, false, VALIDATE_DESC);
     options.addOption(PREFIX, true, PREFIX_DESC);
+    options.addOption(IMG_TYPE, true, IMG_TYPE_DESC);
     options.addOption(DOT, true, DOT_DESC);
     options.addOption(HELP, false, HELP_DESC);
     String header = USAGE_HEADER;
@@ -83,6 +85,11 @@ public class Converter {
       }
       if(cmd.hasOption(PREFIX)) {
         filePrefix = cmd.getOptionValue(PREFIX);
+      }
+      if(cmd.hasOption(IMG_TYPE)) {
+    	if(ImageExtension.has(cmd.getOptionValue(IMG_TYPE))) {
+          imageType = cmd.getOptionValue(IMG_TYPE);
+        }
       }
       if(cmd.hasOption(DOT)) {
         graphvizDotPath = cmd.getOptionValue(DOT);

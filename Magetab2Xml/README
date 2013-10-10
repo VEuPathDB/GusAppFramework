@@ -10,7 +10,7 @@ Run:
 
 1.  To run the Magetab2Xml converter use the following command line (using Java 7):
 
-    java -jar Magetab2Xml.jar <Excel MAGE-TAB file> -validate -graphml -html -prefix <prefix> -dot <dot_path> cp="."
+    java -jar Magetab2Xml.jar <Excel MAGE-TAB file> -validate -graphml -html -prefix <prefix> -imageType <gif or png> -dot <dot_path> cp="."
 
 2.  All output file will be in a new directory labeled <basename> where basename is the
     original file name without the xlsx extension.
@@ -22,7 +22,7 @@ Run:
     The xml output:      <filename>.xml
     The graphml file:    <filename>.graphml (only if the -graphml switch is set on the command line)
     The dot file:        <filename>.dot (only if the -html switch is set on the command line)
-    The image file:      <filename>.gif (only if the -html switch is set on the command line)
+    The image file:      <filename>.gif or .png (only if the -html switch is set on the command line)
     The html graph file: <filename>.html (only if the -html switch is set on the command line)
     The html zip file:   <filename>.zip (only if the -html switch is set on the command line)
     The <filename> is set in the application.properties file by default when not set on the command line.
