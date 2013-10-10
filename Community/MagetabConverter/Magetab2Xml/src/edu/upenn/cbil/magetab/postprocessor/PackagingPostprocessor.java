@@ -2,7 +2,6 @@ package edu.upenn.cbil.magetab.postprocessor;
 
 import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.HTML_EXT;
 import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.HTML_RESOURCES_ARCHIVE;
-import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.IMG_EXT;
 import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.XML_EXT;
 import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.ZIP_EXT;
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_CLOSE_ERROR;
@@ -36,7 +35,7 @@ public class PackagingPostprocessor {
   public static Logger logger = Logger.getLogger(PackagingPostprocessor.class);
   
   public PackagingPostprocessor(String directoryName) {
-    this.imageFilename = directoryName + File.separator + ApplicationConfiguration.filePrefix + "." + IMG_EXT;
+    this.imageFilename = directoryName + File.separator + ApplicationConfiguration.filePrefix + "." + ApplicationConfiguration.imageType;
     this.htmlFilename = directoryName + File.separator + ApplicationConfiguration.filePrefix + "." + HTML_EXT;
     this.xmlFilename = directoryName + File.separator + ApplicationConfiguration.filePrefix + "." + XML_EXT;
     this.filteredXmlFilename = directoryName + File.separator + FILTERED + "." + XML_EXT;
