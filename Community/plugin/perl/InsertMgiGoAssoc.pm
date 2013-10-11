@@ -93,6 +93,7 @@ my $argsDeclaration =
 
 my $goQuery;
 my $mgiQuery;
+my $ecoQuery;
 
 sub new {
   my ($class) = @_;
@@ -100,7 +101,7 @@ sub new {
   bless($self,$class);
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: $',
+		     cvsRevision => '$Revision: 12918 $',
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
 		     documentation     => $documentation
@@ -159,7 +160,7 @@ sub loadData{
   my $goExtDbRlsId = $self->getExtDbRlsId($self->getArg('goExtDbRlsSpec'));  
   my $ecoExtDbRlsId = $self->getExtDbRlsId($self->getArg('ecoExtDbRlsSpec'));
   
-  foreach my $goId (keys %$goHash){
+  foreach my $goId (keys %{$goHash}){
     $self->log("Loading entries for $goId into the database.");
     foreach my $mgiId (keys %{$goHash->{$goId}}){
       my $goAssoc = $self->makeGoAssoc($goId, $mgiId, $goExtDbRlsId, $mgiExtDbRlsId);
@@ -173,10 +174,8 @@ sub loadData{
       foreach my $evidence (@{$goHash->{$goId}->{$mgiId}}){
 	unless ($seen{$evidence}) {
 	  $seen{$evidence} = 1;
-	  my $evidCode = $self->getEvidCode($evidence, $ecoExtDbRlsId);
-	  my $goAssocInstEvidCode = GUS::Model::DoTS::GOAssocInsEvidCode->new();
-	  $goAssocInstEvidCode->setParent($evidCode);
-	  $self->undefPointerCache();
+	  my $evidCodeId = $self->getEvidCodeId($evidence, $ecoExtDbRlsId);
+	  my $goAssocInstEvidCode = GUS::Model::DoTS::GOAssocInstEvidCode->new({go_evidence_code_id => $evidCodeId});
 	  $goAssocInstEvidCode->setParent($goAssocInst);
 	}
       }
@@ -200,7 +199,7 @@ sub makeGoAssoc{
   my $tableId = $self->getTableId();
   
   unless ($goQuery) {  
-    my $goQuery = $self->getQueryHandle()->prepare("select ontology_term_id from sres.OntologyTerm where source_id = '?' and external_database_release_id = $goExtDbRlsId") or die DBI::errstr;
+    $goQuery = $self->getQueryHandle()->prepare("select ontology_term_id from sres.OntologyTerm where source_id=? and external_database_release_id = $goExtDbRlsId") or die DBI::errstr;
   }
   $goQuery->execute($goId) or die DBI::errstr;
   my ($goTermId) = $goQuery->fetchrow_array();
@@ -211,7 +210,7 @@ sub makeGoAssoc{
   }
 
   unless ($mgiQuery) {
-    my $mgiQuery = $self->getQueryHandle()->prepare("select g.gene_id from dots.GeneFeature gf, dots.GeneInstance gi, dots.Gene g where g.external_database_release_id=$mgiExtDbRlsId and g.gene_id = gi.gene_id and gi.na_feature_id = gf.na_feature_id and gf.source_id = '?' and gf.external_database_release_id=$mgiExtDbRlsId") or die DBI::errstr;
+    $mgiQuery = $self->getQueryHandle()->prepare("select g.gene_id from dots.GeneFeature gf, dots.GeneInstance gi, dots.Gene g where g.external_database_release_id=$mgiExtDbRlsId and g.gene_id = gi.gene_id and gi.na_feature_id = gf.na_feature_id and gf.source_id=? and gf.external_database_release_id=$mgiExtDbRlsId") or die DBI::errstr;
   }
   $mgiQuery->execute($mgiId) or die DBI::errstr;
   my ($geneId) = $mgiQuery->fetchrow_array();
@@ -254,17 +253,20 @@ sub getTableId{
     return $tableId;
 }
 
-sub getEvidCode{
-    my ($self, $evidence, $ecoExtDbRlsId) = @_;
-
-    my $evidCode = GUS::Model::SRes::OntologyTerm->new({'name'=> $evidence, 'external_database_release_id' => $ecoExtDbRlsId});
-    unless($evidCode->retrieveFromDB()) {
-      $self->userError("Evidence code $evidence is not in the database for the specified ECO release");
-    }
-    return ($evidCode);
+sub getEvidCodeId{
+  my ($self, $evidence, $ecoExtDbRlsId) = @_;
+  
+  unless ($ecoQuery) {  
+    $ecoQuery = $self->getQueryHandle()->prepare("select t.ontology_term_id from sres.ontologyterm t, sres.ontologysynonym s where s.ontology_synonym=? and s.ontology_term_id=t.ontology_term_id and t.external_database_release_id = $ecoExtDbRlsId") or die DBI::errstr;
+  }
+  $ecoQuery->execute($evidence) or die DBI::errstr;
+  my ($evidCodeId) = $ecoQuery->fetchrow_array();
+  $ecoQuery->finish() or die DBI::errstr;
+  unless($evidCodeId) {
+    $self->userError("Evidence code $evidence is not in the database for the specified ECO release");
+  }
+  return ($evidCodeId);
 }
-
-
 
 # --------------------------------------------------------------------
 # undoTables
