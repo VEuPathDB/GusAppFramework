@@ -1,11 +1,11 @@
 #############################################################################
-##                    InsertMgiGoAssoc.pm
+##                    InsertEntrezGoAssoc.pm
 ##
-## created October 7, 2013  by Elisabetta Manduchi, modifying an older
+## created October 10, 2013  by Elisabetta Manduchi, modifying an older
 ## plugin by Jennifer Dommer
 #############################################################################
 
-package GUS::Community::Plugin::InsertMgiGoAssoc;
+package GUS::Community::Plugin::InsertEntrezGoAssoc;
 @ISA = qw(GUS::PluginMgr::Plugin);
 
 
@@ -24,16 +24,16 @@ use GUS::Model::DoTS::GOAssocInstEvidCode;
 
 
 my $purposeBrief = <<PURPOSEBRIEF;
-Plug_in to insert the MGI GO associations.
+Plug_in to insert the Entrez GO associations.
 PURPOSEBRIEF
 
 my $purpose = <<PLUGIN_PURPOSE;
-plug_in to load the data from the gene_association.mgi file downloaded from MGI into the DoTS.GOAssociation, DoTS.GOAssociationInstance, and DoTS.GOAssocInstEvidCode tables.
+plug_in to load the data from the gene2go file downloaded from NCBI into the DoTS.GOAssociation, DoTS.GOAssociationInstance, and DoTS.GOAssocInstEvidCode tables.
 PLUGIN_PURPOSE
 
 my $tablesAffected = [['GUS::Model::DoTS::GOAssociation', 'This will be used to map entries in DoTS::Gene to GO Terms in SRes::OntologyTerm'],['GUS::Model::DoTS::GOAssociationInstance', 'The new GOAssociation entries will be mapped to a loe and the current external database release ID'],['GUS::Model::DoTS::GOAssocInstEvidCode', 'Mappings from GO evidence codes in the SRes::OntologyTerm table to the new entries in the DoTS::GOAssociationInstance table will be done here']];
 
-my $tablesDependedOn = [['GUS::Model::DoTS::Gene','We will link all entries for a given external database release id in Gene to GO terms using DoTS::GOAssociation'],['GUS::Model::SRes::ExternalDatabaseRelease', 'The external database releases for MGI genes, GO terms, MGI GO Annotations and Evidence Code Ontology'],['GUS::Model::SRes::OntologyTerm','GO terms and Evidence Codes in the gene_association.mgi file must be present in this table']];
+my $tablesDependedOn = [['GUS::Model::DoTS::Gene','We will link all entries for a given external database release id in Gene to GO terms using DoTS::GOAssociation'],['GUS::Model::SRes::ExternalDatabaseRelease', 'The external database releases for Entrez genes, GO terms, Entrez GO Annotations and Evidence Code Ontology'],['GUS::Model::SRes::OntologyTerm','GO terms and Evidence Codes in the gene2go file must be present in this table']];
 
 my $howToRestart = <<PLUGIN_RESTART;
 There is no restart method for this plugin.  All entries are checked before they are loaded into the database to prevent duplicate entries.
@@ -58,13 +58,13 @@ my $documentation = {purposeBrief => $purposeBrief,
 my $argsDeclaration =
 [
  stringArg({name => 'assocExtDbRlsSpec',
-            descr => "The ExternalDBRelease specifier for the MGI GO associations. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+            descr => "The ExternalDBRelease specifier for the Entrez GO associations. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
             constraintFunc => undef,
             reqd => 1,
             isList => 0
             }),
- stringArg({name => 'mgiExtDbRlsSpec',
-            descr => "The ExternalDbRelease specifier for the MGI genes. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+ stringArg({name => 'entrezExtDbRlsSpec',
+            descr => "The ExternalDbRelease specifier for the Entrez genes. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
             constraintFunc => undef,
             reqd => 1,
             isList => 0
@@ -81,8 +81,14 @@ my $argsDeclaration =
 	    reqd => 1,
 	    isList => 0
 	   }),
+ stringArg({name => 'species',
+	    descr => "Optional scientific name of the species to which the loading should be restricted",
+	    constraintFunc => undef,
+	    reqd => 0,
+	    isList => 0
+	   }),
  fileArg({name => 'file',
-	  descr => 'path to the gene_association.mgi file',
+	  descr => 'path to the gene2go file',
 	  constraintFunc => undef,
 	  reqd => 1,
 	  isList => 0,
@@ -92,7 +98,7 @@ my $argsDeclaration =
  ];
 
 my $goQuery;
-my $mgiQuery;
+my $entrezQuery;
 my $ecoQuery;
 
 sub new {
@@ -101,7 +107,7 @@ sub new {
   bless($self,$class);
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12919 $',
+		     cvsRevision => '$Revision:  $',
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
 		     documentation     => $documentation
@@ -127,25 +133,44 @@ sub makeGoHash{
   my ($self) = @_;
   my $goHash;
   my $file = $self->getArg('file');
-  
+  my $ncbiTaxonId;
+  if ($self->getArg('species')) {
+    $ncbiTaxonId = getTaxon($self->getArg('species'));
+  }
   open (GO, $file) || die "Can't open $file.  Reason: $!\n";
   
   while(<GO>){
     chomp;
-    if($_ =~ /^\!/){
+    if($_ =~ /^\#/){
       next;
     }
     my @goArray = split(/\t/, $_);
     
-    my $mgiId = $goArray[1];
-    my $goId = $goArray[4];
-    my $evidence = $goArray[6];
-    
-    push(@{$goHash->{$goId}->{$mgiId}}, $evidence);
+    my $taxId = $goArray[0];
+    my $entrezId = $goArray[1];
+    my $goId = $goArray[2];
+    my $evidence = $goArray[3];
+    if (defined $ncbiTaxonId && $taxId!=$ncbiTaxonId) {
+      next;
+    }
+    push(@{$goHash->{$goId}->{$entrezId}}, $evidence);
   }
   close(GO);
   
   return ($goHash); 
+}
+
+sub getTaxon {
+  my ($self, $species) = @_;
+  my $taxonQuery = $self->getQueryHandle()->prepare("select t.ncbi_taxon_id from sres.taxon t, sres.taxonname n where t.taxon_id=n.taxon_id and n.name=$species") or die DBI::errstr;
+
+  $taxonQuery->execute() or die DBI::errstr;
+  my ($ncbiTaxonId) = $taxonQuery->fetchrow_array();
+  $taxonQuery->finish() or die DBI::errstr;
+  unless($ncbiTaxonId) {
+    $self->userError("No species $species in the database");
+  }
+  return($ncbiTaxonId);
 }
 
 sub loadData{
@@ -156,14 +181,14 @@ sub loadData{
   my $skippedCount = 0;
 
   my $assocExtDbRlsId = $self->getExtDbRlsId($self->getArg('assocExtDbRlsSpec'));  
-  my $mgiExtDbRlsId = $self->getExtDbRlsId($self->getArg('mgiExtDbRlsSpec'));  
+  my $entrezExtDbRlsId = $self->getExtDbRlsId($self->getArg('entrezExtDbRlsSpec'));  
   my $goExtDbRlsId = $self->getExtDbRlsId($self->getArg('goExtDbRlsSpec'));  
   my $ecoExtDbRlsId = $self->getExtDbRlsId($self->getArg('ecoExtDbRlsSpec'));
   
   foreach my $goId (keys %{$goHash}){
     $self->log("Loading entries for $goId into the database.");
-    foreach my $mgiId (keys %{$goHash->{$goId}}){
-      my $goAssoc = $self->makeGoAssoc($goId, $mgiId, $goExtDbRlsId, $mgiExtDbRlsId);
+    foreach my $entrezId (keys %{$goHash->{$goId}}){
+      my $goAssoc = $self->makeGoAssoc($goId, $entrezId, $goExtDbRlsId, $entrezExtDbRlsId);
       unless($goAssoc){
 	$skippedCount++;
 	next;
@@ -171,7 +196,7 @@ sub loadData{
       
       my $goAssocInst = $self->makeGoAssocInst($loeId, $assocExtDbRlsId);
       my %seen;
-      foreach my $evidence (@{$goHash->{$goId}->{$mgiId}}){
+      foreach my $evidence (@{$goHash->{$goId}->{$entrezId}}){
 	unless ($seen{$evidence}) {
 	  $seen{$evidence} = 1;
 	  my $evidCodeId = $self->getEvidCodeId($evidence, $ecoExtDbRlsId);
@@ -195,7 +220,7 @@ sub loadData{
 }
 
 sub makeGoAssoc{
-  my ($self, $goId, $mgiId, $goExtDbRlsId, $mgiExtDbRlsId) = @_;
+  my ($self, $goId, $entrezId, $goExtDbRlsId, $entrezExtDbRlsId) = @_;
   my $tableId = $self->getTableId();
   
   unless ($goQuery) {  
@@ -209,14 +234,14 @@ sub makeGoAssoc{
     return 0 ;
   }
 
-  unless ($mgiQuery) {
-    $mgiQuery = $self->getQueryHandle()->prepare("select g.gene_id from dots.GeneFeature gf, dots.GeneInstance gi, dots.Gene g where g.external_database_release_id=$mgiExtDbRlsId and g.gene_id = gi.gene_id and gi.na_feature_id = gf.na_feature_id and gf.source_id=? and gf.external_database_release_id=$mgiExtDbRlsId") or die DBI::errstr;
+  unless ($entrezQuery) {
+    $entrezQuery = $self->getQueryHandle()->prepare("select g.gene_id from dots.GeneFeature gf, dots.GeneInstance gi, dots.Gene g where g.external_database_release_id=$entrezExtDbRlsId and g.gene_id = gi.gene_id and gi.na_feature_id = gf.na_feature_id and gf.source_id=? and gf.external_database_release_id=$entrezExtDbRlsId") or die DBI::errstr;
   }
-  $mgiQuery->execute($mgiId) or die DBI::errstr;
-  my ($geneId) = $mgiQuery->fetchrow_array();
-  $mgiQuery->finish() or die DBI::errstr;
+  $entrezQuery->execute($entrezId) or die DBI::errstr;
+  my ($geneId) = $entrezQuery->fetchrow_array();
+  $entrezQuery->finish() or die DBI::errstr;
   unless($geneId) {
-    $self->log("Skipping Gene ID \"$mgiId\" ... not in DB");
+    $self->log("Skipping Gene ID \"$entrezId\" ... not in DB");
     return 0 ;
   }
   
@@ -233,9 +258,9 @@ sub makeGoAssocInst{
 
 sub getLoeId{
   my ($self) = @_;
-  my $loe = GUS::Model::DoTS::GOAssociationInstanceLOE->new({'name' => 'MGI GO Association'});
+  my $loe = GUS::Model::DoTS::GOAssociationInstanceLOE->new({'name' => 'Entrez GO Association'});
   unless($loe->retrieveFromDB()){
-    $self->log("Entry for 'MGI GO Association' automatically created in DoTS::GOAssociationInstanceLOE");
+    $self->log("Entry for 'Entrez GO Association' automatically created in DoTS::GOAssociationInstanceLOE");
     $loe->submit();
   }
   my $loeId = $loe->getId();
