@@ -42,8 +42,12 @@ biomatGraph.setupPopups = function() {
     	
       },
       position: {
+    	viewport: $(window),
   		my: 'bottom left', 
-  		at: 'top center'
+  		at: 'top center',
+  		adjust: {
+  		  method: 'flipinvert'
+  		}
   	  },
       show: {
   		event: 'click',
