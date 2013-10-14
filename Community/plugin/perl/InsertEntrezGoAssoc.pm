@@ -107,7 +107,7 @@ sub new {
   bless($self,$class);
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12935 $',
+		     cvsRevision => '$Revision: 12937 $',
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
 		     documentation     => $documentation
@@ -191,6 +191,7 @@ sub loadData{
       my $goAssoc = $self->makeGoAssoc($goId, $entrezId, $goExtDbRlsId, $entrezExtDbRlsId);
       unless($goAssoc){
 	$skippedCount++;
+	$self->undefPointerCache();
 	next;
       }
       
