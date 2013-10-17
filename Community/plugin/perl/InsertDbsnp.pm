@@ -16,12 +16,13 @@ use Data::Dumper;
 
 use GUS::Model::DoTS::SnpFeature;
 use GUS::Model::DoTS::ExternalNASequence;
+use GUS::Model::DoTS::NALocation;
 use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::Study::Protocol;
 use GUS::Model::Study::ProtocolApp;
 use GUS::Model::Study::ProtocolAppNode;
 use GUS::Model::Study::Characteristic;
-
+use GUS::Model::Results::SeqVariation;
 # ----------------------------------------------------------------------
 # Arguments
 # ---------------------------------------------------------------------
@@ -160,13 +161,14 @@ sub processXmlFile {
 	my $snpFeature = GUS::Model::DoTS::SnpFeature
 	    ->new( {
 		"source_id" => "rs$rsId",
-		"name" => "SNP",
 		   } );
 	if ($snpFeature->retrieveFromDB()) {
 	    $alreadyInDb++;
 	    next;
 	}
+	print "DEBUG: got snp \"$rsId\"\n";
 	$snpFeature->setDescription(optionalAttribute("observed". $snpInfo->getAttribute("observed")));
+	$snpFeature->setName("SNP");
 	$snpFeature->submit();
 
 	my $naSequenceId;
@@ -174,6 +176,7 @@ sub processXmlFile {
 	$snpInfoXc->registerNs('GE', 'http://www.ncbi.nlm.nih.gov/SNP/geno');
 #         <SnpLoc genomicAssembly= geneId= geneSymbol= chrom= start= end= locType= rsOrientToChrom= contigAllele= contig=/>
 	foreach my $snpLoc ($snpInfoXc->findnodes('//GE:SnpLoc')) {
+	    print "DEBUG: got location on contig \"" . $snpLoc->getAttribute("contig") . "\"\n";
 	    $naSequenceId = getSequenceId($snpLoc->getAttribute("contig"));
 	    if ($naSequenceId) {
 		my $start = $snpLoc->getAttribute("start");
@@ -207,9 +210,10 @@ sub processXmlFile {
 			"remark" => $remark,
 			   } );
 		$naLocation->submit();
+		last;
 	    }
 	}
-
+	print "DEBUG: got naSequenceId \"$naSequenceId\"\n";
 	if (!$naSequenceId) {
 	    $self->log("WARNING: no location found for rs$rsId");
 	}
@@ -218,6 +222,16 @@ sub processXmlFile {
 	foreach my $gTypeFreq ($snpInfoXc->findnodes('./GE:GTypeFreq')) {
 	    my $gtype = $gTypeFreq->getAttribute("gtype");
 	    my $freq = $gTypeFreq->getAttribute("freq");
+	    print "DEBUG: got gtype \"$gtype\"\n";
+	    my $seqVariation = GUS::Model::Results::SeqVariation
+		    ->new( {
+			"snp_na_feature_id" => $snpFeature->getNaFeatureId(),
+			"protocol_app_node_id" => $self->getSnpGTypeFreqNodeId(),
+			"label" => "genotype frequency",
+			"product" => $gTypeFreq->getAttribute("gtype"),
+			"frequency" => $gTypeFreq->getAttribute("freq"),
+			   } );
+	    $seqVariation->submit();
 	}
 
 #         <SsInfo ssId= locSnpId= ssOrientToRs=>
@@ -296,14 +310,37 @@ sub optionalAttribute {
 # find the na_sequence_id for the given source ID
 sub getSequenceId {
   my ($sourceId) = @_;
-
   my $externalNASequence = GUS::Model::DoTS::ExternalNASequence
       ->new( {
 	  "source_id" => $sourceId,
 	     } );
 
-  return ($externalNASequence->getNaSequenceId())
-      if $externalNASequence;
+  my $rtnVal = $externalNASequence->retrieveFromDB();
+  return $externalNASequence->getId();
+}
+
+# getSnpGTypeFreqNodeId
+#
+# get the protocol_app_node_id for species-wide genotype frequencies
+sub getSnpGTypeFreqNodeId {
+  my ($self) = @_;
+
+  # check whether we looked this up already
+  if (!$self->{snpGTypeFreqNodeId}) {
+
+      # if not, get one from the database, adding it if necessary
+      my $protocolAppNode = GUS::Model::Study::ProtocolAppNode
+	  ->new( {
+	      "name" => "species-wide, per-SNP genotype frequency",
+		 } );
+
+      $protocolAppNode->submit()
+	  unless $protocolAppNode->retrieveFromDB();
+
+      $self->{snpGTypeFreqNodeId} = $protocolAppNode->getId();
+  }
+      
+  return $self->{snpGTypeFreqNodeId};
 }
 
 # ----------------------------------------------------------------------
