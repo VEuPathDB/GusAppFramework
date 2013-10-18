@@ -5,6 +5,8 @@ import static edu.upenn.cbil.limpopo.utils.AppUtils.CATEGORY_ATTR;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.CHARACTERISTIC_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.CHILD_PROTOCOLS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.CONTACTS_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.CONTACT_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.ROLE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.DESCRIPTION_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.EXTERNAL_DATABASE_RELEASE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.IDF_TAG;
@@ -17,15 +19,20 @@ import static edu.upenn.cbil.limpopo.utils.AppUtils.VALUE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.OUTPUTS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_DATE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_NODE_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_PARAMETERS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_PARAMETERS_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_PARAMETER_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.STEP_ATTR;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.SDRF_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.TABLE_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.ROW_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.TAXON_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.TRUE;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.TYPE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.URI_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.UNIT_TYPE_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.UNIT_TYPE_EXT_DB_RLS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.DBID_ATTR;
 
 import java.util.Iterator;
@@ -48,7 +55,7 @@ import edu.upenn.cbil.limpopo.model.OntologyTerm;
 import edu.upenn.cbil.limpopo.model.Performer;
 import edu.upenn.cbil.limpopo.model.ProtocolApplication;
 import edu.upenn.cbil.limpopo.model.ProtocolApplicationIONode;
-import edu.upenn.cbil.limpopo.model.ProtocolApplicationParameterGroup;
+import edu.upenn.cbil.limpopo.model.ProtocolApplicationParameter;
 import edu.upenn.cbil.limpopo.model.ProtocolSeries;
 import edu.upenn.cbil.limpopo.utils.SDRFUtils;
 
@@ -114,55 +121,7 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
 	}
 	for(ProtocolApplication app : ProtocolApplication.getApplications()) {
 	  if(app.isTopmost()) {
-		Element appElement = new Element(PROTOCOL_APP_TAG);
-		appElement.setAttribute(ID_ATTR, app.getId());
-		if(app.isAddition()) {
-          appElement.setAttribute(ADDITION_ATTR, TRUE);
-        }
-		if(StringUtils.isNotEmpty(app.getDbId())) {
-		  appElement.setAttribute(DBID_ATTR, app.getDbId());
-		}
-		appElement.addContent(new Element(PROTOCOL_TAG).setText(app.getName()));
-		/*
-		 * It is difficult to know a priori whether there are any performers for a protocol
-		 * series.  Empty performers and semicolons are needed to serve a placeholders.
-		 * But a protocol series devoid of performers will have an element text composed only of
-		 * semicolons.  If such an element appears, it will be discarded.
-		 */
-		if(!app.getPerformers().isEmpty()) {
-		  Element performersElement = setContacts(app);
-		  if(!performersElement.getText().matches("^;+$")) { 
-		    appElement.addContent(setContacts(app));
-		  }
-		}
-		if(StringUtils.isNotEmpty(app.getDate())) {
-		  appElement.addContent(new Element(PROTOCOL_APP_DATE_TAG).setText(app.getDate()));
-		}
-		ProtocolApplicationParameterGroup group = app.getGroup();
-		if(StringUtils.isNotEmpty(group.getAddedData()) && !app.isAddition()) {
-		  if(StringUtils.isNotEmpty(group.getOriginalData())) {
-		    appElement.addContent(new Element(PROTOCOL_APP_PARAMETERS_TAG).setText(group.getOriginalData()));
-		  }
-		  Element addedParamsElement = new Element(PROTOCOL_APP_PARAMETERS_TAG).setText(group.getAddedData());
-		  addedParamsElement.setAttribute(ADDITION_ATTR, TRUE);
-		  appElement.addContent(addedParamsElement);
-		}
-		else if(StringUtils.isNotEmpty(group.getAllData())) {
-		  appElement.addContent(new Element(PROTOCOL_APP_PARAMETERS_TAG).setText(group.getAllData()));
-		}
-		StringBuffer ids = new StringBuffer();
-		for(ProtocolApplicationIONode input : app.getInputs()) {
-		  if(ids.length() > 0) ids.append(";");
-		  ids.append(input.getId());
-		}
-		appElement.addContent(new Element(INPUTS_TAG).setText(ids.toString()));
-		ids = new StringBuffer();
-		for(ProtocolApplicationIONode output : app.getOutputs()) {
-	      if(ids.length() > 0) ids.append(";");
-		  ids.append(output.getId());
-		}
-		appElement.addContent(new Element(OUTPUTS_TAG).setText(ids.toString()));
-		sdrfElement.addContent(appElement);
+		sdrfElement.addContent(setProtocolApplication(app));
 	  }
 	}
 	amendIDF(document.getRootElement());
@@ -235,6 +194,104 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
     return nodeCharElement;
   }
   
+  protected Element setProtocolApplication(ProtocolApplication app) { 
+    int step = 0;
+    Element appElement = new Element(PROTOCOL_APP_TAG);
+    appElement.setAttribute(ID_ATTR, app.getId());
+    if(app.isAddition()) {
+      appElement.setAttribute(ADDITION_ATTR, TRUE);
+    }
+    if(StringUtils.isNotEmpty(app.getDbId())) {
+      appElement.setAttribute(DBID_ATTR, app.getDbId());
+    }
+    appElement.addContent(new Element(PROTOCOL_TAG).setText(app.getName()));
+    Element contactsElement = new Element(CONTACTS_TAG);
+    step = 1;
+    for(Performer performer : app.getPerformers()) {
+      contactsElement.addContent(setContact(performer, Integer.toString(step)));
+    }
+    if(app.hasSubordinate()) {
+      for(ProtocolApplication subordinate : app.getSubordinateApps()) {
+        step++;
+        for(Performer performer : subordinate.getPerformers()) {
+          contactsElement.addContent(setContact(performer, Integer.toString(step)));
+        }
+      }
+    }
+    if(contactsElement.getChildren() != null && !contactsElement.getChildren().isEmpty()) {
+      appElement.addContent(contactsElement);
+    }
+    if(StringUtils.isNotEmpty(app.getDate())) {
+      appElement.addContent(new Element(PROTOCOL_APP_DATE_TAG).setText(app.getDate()));
+    }
+    Element paramsElement = new Element(PROTOCOL_APP_PARAMETERS_TAG);
+    step = 1;
+    for(ProtocolApplicationParameter param : app.getParameters()) {
+      paramsElement.addContent(setProtocolApplicationParameter(param, Integer.toString(step)));
+    }
+    if(app.hasSubordinate()) {
+      for(ProtocolApplication subordinate : app.getSubordinateApps()) {
+        step++;
+        for(ProtocolApplicationParameter param : subordinate.getParameters()) {
+          paramsElement.addContent(setProtocolApplicationParameter(param, Integer.toString(step)));
+        }
+      }
+    }
+    if(paramsElement.getChildren() != null && !paramsElement.getChildren().isEmpty()) {
+      appElement.addContent(paramsElement);
+    }
+    StringBuffer ids = new StringBuffer();
+    for(ProtocolApplicationIONode input : app.getInputs()) {
+      if(ids.length() > 0) ids.append(";");
+      ids.append(input.getId());
+    }
+    appElement.addContent(new Element(INPUTS_TAG).setText(ids.toString()));
+    ids = new StringBuffer();
+    for(ProtocolApplicationIONode output : app.getOutputs()) {
+      if(ids.length() > 0) ids.append(";");
+      ids.append(output.getId());
+    }
+    appElement.addContent(new Element(OUTPUTS_TAG).setText(ids.toString()));
+    return appElement;
+  }
+  
+  protected Element setContact(Performer performer, String step) {
+    Element contactElement = new Element(CONTACT_TAG);
+    contactElement.setAttribute(STEP_ATTR, step);
+    //if(performer.isAddition()) {
+    //  contactElement.setAttribute(ADDITION_ATTR, TRUE);
+    //}
+    contactElement.addContent(new Element(NAME_TAG).setText(performer.getName()));
+    if(performer.hasRole()) {
+      contactElement.addContent(new Element(ROLE_TAG).setText(performer.getRole().getName()));
+      contactElement.addContent(new Element(EXTERNAL_DATABASE_RELEASE_TAG).setText(performer.getRole().getExternalDatabaseRelease()));
+    }
+    return contactElement;
+  }
+  
+  protected Element setProtocolApplicationParameter(ProtocolApplicationParameter param, String step) {
+    Element paramElement = new Element(PROTOCOL_APP_PARAMETER_TAG);
+    paramElement.setAttribute(STEP_ATTR, step);
+    if(param.isAddition()) {
+      paramElement.setAttribute(ADDITION_ATTR, TRUE);
+    }
+    paramElement.addContent(new Element(NAME_TAG).setText(param.getName()));
+    paramElement.addContent(new Element(VALUE_TAG).setText(param.getValue()));
+    if(param.hasTableRowPair()) {
+      paramElement.addContent(new Element(TABLE_TAG).setText(param.getTable()));
+      paramElement.addContent(new Element(ROW_TAG).setText(param.getRow()));
+    }
+    if(param.getUnitType() != null) {
+      Element unitTypeElement = new Element(UNIT_TYPE_TAG).setText(param.getUnitType().getName());
+      if(StringUtils.isNotEmpty(param.getUnitType().getCategory())) {
+        unitTypeElement.setAttribute(CATEGORY_ATTR, param.getUnitType().getCategory());
+      }
+      paramElement.addContent(unitTypeElement);
+      paramElement.addContent(new Element(UNIT_TYPE_EXT_DB_RLS_TAG).setText(param.getUnitType().getExternalDatabaseRelease()));
+    }
+    return paramElement;
+  }
+    
   /**
    * Additional protocols representing a series of protocols as found in the SDRF must be
    * added to the IDF portion of the xml document.

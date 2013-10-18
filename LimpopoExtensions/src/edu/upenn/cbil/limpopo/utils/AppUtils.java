@@ -67,8 +67,6 @@ public class AppUtils {
   public static final String PARAM_TAG = "param";
   public static final String DATA_TYPE_TAG = "data_type";
   public static final String DATA_TYPE_EXT_DB_RLS_TAG = "data_type_ext_db_rls";
-  public static final String UNIT_TYPE_TAG = "unit_type";
-  public static final String UNIT_TYPE_EXT_DB_RLS_TAG = "unit_type_ext_db_rls";
   public static final String DEFAULT_VALUE_TAG = "default_value";
   public static final String IS_USER_SPECIFIED_TAG = "is_user_specified";
   public static final String CHILD_PROTOCOLS_TAG = "child_protocols";
@@ -81,28 +79,34 @@ public class AppUtils {
   public static final String ID_ATTR = "id";
   public static final String TAXON_TAG = "taxon";
   public static final String CONTACTS_TAG = "contacts";
+  public static final String ROLE_TAG = "role";
   public static final String PROTOCOL_APP_TAG = "protocol_app";
   public static final String PROTOCOL_APP_DATE_TAG = "protocol_app_date";
   public static final String PROTOCOL_APP_PARAMETERS_TAG = "protocol_app_parameters";
+  public static final String PROTOCOL_APP_PARAMETER_TAG = "app_param";  
+  public static final String STEP_ATTR = "step";
   public static final String INPUTS_TAG = "inputs";
   public static final String OUTPUTS_TAG = "outputs";
   public static final String NODE_CHARACTERISTICS_TAG = "node_characteristics";
   public static final String CHARACTERISTIC_TAG = "characteristic";
   public static final String ONTOLOGY_TERM_TAG = "ontology_term";
-  public static final String VALUE_TAG = "value";
   public static final String CATEGORY_ATTR = "category";
   public static final String TABLE_TAG = "table";
+  public static final String ROW_TAG = "row_id";
   
   /**
    * Community Tags
    */
   public static final String NAME_TAG = "name";
   public static final String TYPE_TAG = "type";
+  public static final String VALUE_TAG = "value";
   public static final String DESCRIPTION_TAG = "description";
   public static final String URI_TAG = "uri";
   public static final String PROTOCOL_TAG = "protocol";
   public static final String CONTACT_TAG = "contact";
   public static final String EXTERNAL_DATABASE_RELEASE_TAG = "external_database_release";
+  public static final String UNIT_TYPE_TAG = "unit_type";
+  public static final String UNIT_TYPE_EXT_DB_RLS_TAG = "unit_type_ext_db_rls";
   public static final String ADDITION_ATTR = "addition";
   public static final String DBID_ATTR = "db_id";
   

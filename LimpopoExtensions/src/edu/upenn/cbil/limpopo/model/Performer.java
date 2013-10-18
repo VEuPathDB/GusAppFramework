@@ -68,6 +68,14 @@ public class Performer {
   }
   
   /**
+   * Helper method to identify whether this performer has been assigned a role ontology term
+   * @return - boolean, true if performer has a role, false otherwise
+   */
+  public boolean hasRole() {
+    return role != null && StringUtils.isNotEmpty(role.getName());
+  }
+  
+  /**
    * Gets filtered comments
    * @return - comments
    */
