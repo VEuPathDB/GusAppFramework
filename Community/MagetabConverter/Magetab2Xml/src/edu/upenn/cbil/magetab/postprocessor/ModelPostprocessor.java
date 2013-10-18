@@ -9,6 +9,8 @@ import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
 
+import edu.upenn.cbil.limpopo.utils.AppUtils;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
@@ -148,26 +150,21 @@ public class ModelPostprocessor {
    */
   protected void setSharedEdgeData(Element protocolApp, Edge edge) {
     edge.setLabel(protocolApp.getChildText("protocol"));
-    List<Element> elements = protocolApp.getChildren("protocol_app_parameters");
-    String parametersList = "";
-    for(Element element : elements) {
-      if(StringUtils.isNotEmpty(parametersList)) {
-        parametersList += ";";
-      }
-      parametersList += element.getText();
-    }
-    String[] parameters = {};
-    if(StringUtils.isNotEmpty(parametersList)) {
-      parameters = parametersList.split("[;!]");
-    }
+    Element paramsElement = protocolApp.getChild(AppUtils.PROTOCOL_APP_PARAMETERS_TAG);
     ListMultimap<String,String> map = ArrayListMultimap.create();
-    for(String parameter : parameters) {
-      if(parameter.contains("|")) {
-        String[] components = parameter.split("\\|");
-        String key = components[0];
-        String value = components[1];
-        map.put(key,value);
-        addUnits(map, edge, key);
+    if(paramsElement != null && !paramsElement.getChildren().isEmpty()) {
+      List<Element> paramElements = paramsElement.getChildren();
+      for(Element paramElement : paramElements) {
+        String key = paramElement.getChild(AppUtils.NAME_TAG).getText();
+        String value = paramElement.getChild(AppUtils.VALUE_TAG).getText();
+        map.put(key, value);
+        Element unitElement = paramElement.getChild(AppUtils.UNIT_TYPE_TAG);
+        if(unitElement != null) {
+          map.put(key, unitElement.getText());
+        }
+        else {
+          addUnits(map, edge, key);
+        }
       }
     }
     if(!map.isEmpty()) {
@@ -176,8 +173,9 @@ public class ModelPostprocessor {
   }
   
   /**
-   * Parameters involve a name, a value and possibly a unit.  Units are maintained in the IDF
-   * portion of the document.  This method collects the appropriate unit, if any, and adds
+   * Parameters involve a name, a value and possibly a unit.  Default units are maintained in
+   * the IDF portion of the document.  If no unit is found in the SDRF, the IDF is checked for
+   * a default.  This method collects the appropriate unit, if any, and adds
    * that to a parameter map kept in each edge object.  The map is a multimap, thus allowing
    * both value and unit to be associated with the parameter type (key).
    * @param map - multimap parameter map
@@ -185,15 +183,15 @@ public class ModelPostprocessor {
    * @param key - parameter type
    */
   protected void addUnits(Multimap<String,String> map, Edge edge, String key) {
-    List<Element> protocols = document.getRootElement().getChild("idf").getChildren("protocol");
+    List<Element> protocols = document.getRootElement().getChild(AppUtils.IDF_TAG).getChildren("protocol");
     for(Element protocol : protocols) {
       if(edge.getName().contains(protocol.getChildText("name"))) {
         if(protocol.getChild("protocol_parameters") != null) {
           List<Element> params = protocol.getChild("protocol_parameters").getChildren("param");
           for(Element param : params) {
-            if(param.getChildText("name").equals(key)) {
-              if(param.getChild("unit_type") != null && StringUtils.isNotEmpty(param.getChildText("unit_type"))) {
-                map.put(key, param.getChildText("unit_type"));
+            if(param.getChildText(AppUtils.NAME_TAG).equals(key)) {
+              if(param.getChild(AppUtils.UNIT_TYPE_TAG) != null && StringUtils.isNotEmpty(param.getChildText("unit_type"))) {
+                map.put(key, param.getChildText(AppUtils.UNIT_TYPE_TAG));
                 return;
               }
             }

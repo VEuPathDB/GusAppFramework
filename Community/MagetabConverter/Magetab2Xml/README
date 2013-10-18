@@ -38,7 +38,7 @@ Notes about creating Excel spreadsheets with MAGE-TAB additions:
 
 1.  The spreadsheet should still show a complete MAGE-TAB.
 2.  Additions to the existing MAGE-TAB should be shown in yellow highlight.
-    a.  Do not highlight MAGE-TAB headers (1st column of IDF, 1at row of SDRF).  Otherwise, an
+    a.  Do not highlight MAGE-TAB headers (1st column of IDF, 1st row of SDRF).  Otherwise, an
         exception will be thrown.
     b.  The study title must be appended with a database id (<id=n>).
     c.  New study factors, protocols, contacts can be highlighted in the IDF.
