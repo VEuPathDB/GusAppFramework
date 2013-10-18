@@ -12,6 +12,7 @@ import org.mged.magetab.error.ErrorItem;
 import org.mged.magetab.error.ErrorItemFactory;
 
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.ParameterValueAttribute;
+import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.UnitAttribute;
 import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.limpopo.utils.SDRFUtils;
@@ -24,6 +25,7 @@ public class ProtocolApplicationParameter {
   private Map<String,String> comments;
   private String table;
   private String row;
+  private OntologyTerm unitType;
   private static List<ProtocolApplicationParameter> parameters = new ArrayList<>();
   private static final String PARAMETER_TABLE = "PV Table";
   private static final String PARAMETER_ROW = "PV Row Id";
@@ -53,6 +55,10 @@ public class ProtocolApplicationParameter {
     // Must check value and not name because headers are not highlighted.
     setAddition(AppUtils.checkForAddition(param.getAttributeValue()));
     setValue(param.getAttributeValue());
+    UnitAttribute unitAttribute = param.unit;
+    if(unitAttribute != null) {
+      setUnitType(new OntologyTerm(SDRFUtils.parseHeader(unitAttribute.type), unitAttribute.getAttributeValue(), unitAttribute.termSourceREF));
+    }
     setComments(param.comments);
     if(StringUtils.isNotEmpty(getComments().get(PARAMETER_TABLE)) &&
        StringUtils.isNotEmpty(getComments().get(PARAMETER_ROW))) {
@@ -126,6 +132,14 @@ public class ProtocolApplicationParameter {
   public final void setValue(String value) {
     this.value = AppUtils.removeTokens(value);
   }
+  
+  public final OntologyTerm getUnitType() {
+    return unitType;
+  }
+
+  public final void setUnitType(OntologyTerm unitType) {
+    this.unitType = unitType;
+  }
 
   /**
    * Get filtered version of parameter comments
@@ -157,6 +171,10 @@ public class ProtocolApplicationParameter {
    */
   public final String getRow() {
     return row;
+  }
+  
+  public final boolean hasTableRowPair() {
+    return StringUtils.isNotEmpty(getTable()) && StringUtils.isNotEmpty(getRow());
   }
   
   /**

@@ -26,8 +26,6 @@ import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.ProtocolApplicationNo
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.SDRFNode;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.ParameterValueAttribute;
 import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
-import uk.ac.ebi.arrayexpress2.magetab.exception.ValidateException;
-import edu.upenn.cbil.limpopo.utils.AppException;
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.limpopo.utils.ProtocolObjectComparator;
 
@@ -37,8 +35,8 @@ public class ProtocolApplication extends ProtocolObject {
   private String dbId;
   private Set<ProtocolApplicationIONode> inputs;
   private Set<ProtocolApplicationIONode> outputs;
-  private ProtocolApplicationParameterGroup group;
   private List<Performer> performers;
+  private List<ProtocolApplicationParameter> parameters;
   private String date;
   private ProtocolApplication subordinate;
   private ProtocolApplication superior;
@@ -86,14 +84,6 @@ public class ProtocolApplication extends ProtocolObject {
     this.dbId = dbId;
   }
   
-  public final ProtocolApplicationParameterGroup getGroup() {
-    return group;
-  }
-
-  public final void setGroup(ProtocolApplicationParameterGroup group) {
-    this.group = group;
-  }
-
   public List<Performer> getPerformers() {
     return performers;
   }
@@ -101,6 +91,14 @@ public class ProtocolApplication extends ProtocolObject {
     return date;
   }
   
+  public final List<ProtocolApplicationParameter> getParameters() {
+    return parameters;
+  }
+
+  public final void setParameters(List<ProtocolApplicationParameter> parameters) {
+    this.parameters = parameters;
+  }
+
   /**
    * Set date of protocol application (edge) but also reomves any addition tokens.
    * @param date - raw date
@@ -119,6 +117,12 @@ public class ProtocolApplication extends ProtocolObject {
   }
   public void setSubordinate(ProtocolApplication subordinate) {
     this.subordinate = subordinate;
+  }
+  public final List<ProtocolApplication> getSubordinateApps() {
+    return subordinateApps;
+  }
+  public final void setSubordinateApps(List<ProtocolApplication> subordinateApps) {
+    this.subordinateApps = subordinateApps;
   }
   public ProtocolApplication getSuperior() {
     return superior;
@@ -205,13 +209,12 @@ public class ProtocolApplication extends ProtocolObject {
    * SOP 16. If Comment [PV Row Id] has a value Comment [PV Table]) must have a value and conversely.
    */
   public void assembleParameters() throws ConversionException {
-    List<ProtocolApplicationParameter> parameters = new ArrayList<>();
+    parameters = new ArrayList<>();
     List<ParameterValueAttribute> params = ((ProtocolApplicationNode)node).parameterValues;
     for(ParameterValueAttribute param : params) {
       ProtocolApplicationParameter parameter = new ProtocolApplicationParameter(name, param);
       parameters.add(parameter);
     }
-    group = new ProtocolApplicationParameterGroup(parameters);
   }
   
   public static void setContext() throws ConversionException {
@@ -337,33 +340,12 @@ public class ProtocolApplication extends ProtocolObject {
   
   /**
    * Called only when the calling protocol application is the topmost application
-   * of a protocol application series.  Appends the name, performers, and parameter
-   * data for subordinate protocol applications to this, the topmost protocol
-   * application.
+   * of a protocol application series.  Appends the name for subordinate protocol
+   * applications to this, the topmost protocol application.
    */
   public void constructSeriesData() {
-    if(performers.isEmpty()) {
-      /* Serves as a placeholder */
-      performers.add(new Performer());
-    }
     for(ProtocolApplication subordinateApp : subordinateApps) {
       name += ";" + subordinateApp.name;
-      if(!subordinateApp.performers.isEmpty()) {
-        performers.addAll(subordinateApp.getPerformers());
-      }
-      else {
-        /* Serves as a placeholder */
-        performers.add(new Performer());
-      }
-      if(StringUtils.isNotEmpty(group.getAllData()) && StringUtils.isNotEmpty(subordinateApp.getGroup().getAllData())) {
-      group.setAllData(new StringBuffer(group.getAllData() + "!" + subordinateApp.getGroup().getAllData()));
-      }
-      if(StringUtils.isNotEmpty(group.getOriginalData()) && StringUtils.isNotEmpty(subordinateApp.getGroup().getOriginalData())) {
-        group.setOriginalData(new StringBuffer(group.getOriginalData() + "!" + subordinateApp.getGroup().getOriginalData()));
-      }
-      if(StringUtils.isNotEmpty(group.getAddedData()) && StringUtils.isNotEmpty(subordinateApp.getGroup().getAddedData())) {
-        group.setAddedData(new StringBuffer(group.getAddedData() + "!" + subordinateApp.getGroup().getAddedData()));
-      }
     }
   }
   
