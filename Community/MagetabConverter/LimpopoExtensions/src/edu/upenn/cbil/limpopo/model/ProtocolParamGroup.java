@@ -4,7 +4,7 @@ import edu.upenn.cbil.limpopo.utils.AppUtils;
 
 /**
  * The collection of parameter associated with a protocol in the IDF.  A convenience
- * method to help distingush between the addition of an entire parameter group in a
+ * method to help distinguish between the addition of an entire parameter group in a
  * protocol (cell highlighted only) and the addition of only a subset of parameters
  * within the group (cell highlighted but added parameters embedded inside <<<param>>>.
  * Needed because additions are subatomic here (viewing an Excel cell as atomic).

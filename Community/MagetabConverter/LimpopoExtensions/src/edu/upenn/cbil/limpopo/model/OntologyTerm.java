@@ -26,6 +26,7 @@ import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
 public class OntologyTerm {
   public static Logger logger = LoggerFactory.getLogger(OntologyTerm.class);
   private String name;
+  private String category;
   private String externalDatabaseRelease;
  
   /**
@@ -38,6 +39,7 @@ public class OntologyTerm {
    * the conversion should have an error listener attached to the conversion.
    */
   public OntologyTerm(String name, String ref) throws ConversionException {
+    category = "";
     try {
 	  if(ExternalDatabase.map == null) {
 	    throw new Exception("1101");
@@ -67,6 +69,21 @@ public class OntologyTerm {
   }
   
   /**
+   * This constructor adds an optional category.  If the term name and term reference are both empty strings, a new ontology term is created with all fields set to empty strings.
+   * This is intended as a aid to avoiding NPEs.
+   * @param category - name associated with an SDRF characteristic or parameter attribute (e.g., TimeUnit) 
+   * @param name - The name of the ontology term
+   * @param ref - A handle to the external database
+   * @throws ConversionException - under two conditions.  Either the external database map needed to successfully compile the ontology term
+   * has not been populated or the reference for the term cannot be found in the current external database map.  The program running
+   * the conversion should have an error listener attached to the conversion.
+   */
+  public OntologyTerm(String category, String name, String ref) throws ConversionException {
+    this(name, ref);
+    this.category = category;
+  }
+  
+  /**
    * 
    * @return ontology term name
    */
@@ -74,14 +91,22 @@ public class OntologyTerm {
     return name;
   }
   
-  /**
-   * 
+  /** 
    * @return the ontology term database reference combined with the version of the external database from which the reference is drawn.
    */
   public String getExternalDatabaseRelease() {
     return externalDatabaseRelease;
   }
   
+  
+  public final String getCategory() {
+    return category;
+  }
+
+  public final void setCategory(String category) {
+    this.category = category;
+  }
+
   public boolean isEmpty() {
     return StringUtils.isEmpty(name);
   }
