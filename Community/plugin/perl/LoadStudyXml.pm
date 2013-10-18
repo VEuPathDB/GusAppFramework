@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12804 $',
+		     cvsRevision => '$Revision: 12826 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -712,16 +712,19 @@ sub submitProtocolApps {
     if (defined($protocolAppDate) && $protocolAppDate !~ /^\s*$/) {
       $protocolApp->setProtocolAppDate($protocolAppDate);
     }
-    if ($protocolAppNode->findvalue('./contacts') && defined($protocolAppNode->findvalue('./contacts'))) {
-      my @contactInfo = split(/;/, $protocolAppNode->findvalue('./contacts'));
-      for (my $i=0; $i<@contactInfo; $i++) {
-	my ($contactName, $role, $extDbRls) = split(/\:\:/, $contactInfo[$i]);
+    
+    my ($contactsNode) = $protocolAppNode->findnodes('./contacts');
+    if (defined($contactsNode) && $contactsNode !~ /^\s*$/) {
+      my $i = 0; 
+      foreach my $contactNode ($contactsNode->findnodes('./contact')) {
+	my $contactName = $contactNode->findvalue('./name');
 	if (defined($contactName) && $contactName !~ /^\s*$/) {
 	  my $protocolAppContact = GUS::Model::Study::ProtocolAppContact->new({order_num => $i+1});
-	  
 	  $protocolAppContact->setParent($contacts->{$contactName});
 	  $protocolAppContact->setParent($protocolApp);
+	  my $role = $contactNode->findvalue('./role'); 
 	  if (defined($role) && $role !~ /^\s*$/) {
+	    my $extDbRls = $contactNode->findvalue('./external_database_release');
 	    my $extDbRlsId = $self->getExtDbRlsId($extDbRls);
 	    if (!$extDbRlsId || !defined($extDbRlsId)) {
 	      $self->userError("Must provide a valid external database release for Performer $contactName Role's $role");
@@ -733,16 +736,18 @@ sub submitProtocolApps {
       }
     }
 
-    if ($protocolAppNode->findvalue('./protocol_app_parameters') && defined($protocolAppNode->findvalue('./protocol_app_parameters'))) {
-      my @paramsByChildren = split(/\!/, $protocolAppNode->findvalue('./protocol_app_parameters'));
-      for (my $i=0; $i<@paramsByChildren; $i++) {
-	my @paramsInfo = split(/;/, $paramsByChildren[$i]);	
-	for (my $j=0; $j<@paramsInfo; $j++) {
-	  my ($name, $value, $table, $rowId) = split(/\|/, $paramsInfo[$j]);
+    my ($protocolAppParamsNode) = $protocolAppNode->findnodes('./protocol_app_parameters');
+    if (defined($protocolAppParamsNode) && $protocolAppParamsNode !~ /^\s*$/) {
+      foreach my $protocolAppParamNode ($protocolAppParamsNode->findnodes('./app_param')) {
+	if (defined($protocolAppParamNode) && $protocolAppParamNode !~ /^\s*$/) {
+	  my $step = $protocolAppParamNode->getAttribute('step');
+	  my $name = $protocolAppParamNode->findvalue('./name');
+	  my $value = $protocolAppParamNode->findvalue('./value');
+	  my $table = $protocolAppParamNode->findvalue('./table');
+	  my $rowId = $protocolAppParamNode->findvalue('./row_id');
 	  my $protocolAppParam = GUS::Model::Study::ProtocolAppParam->new();
 	  $protocolAppParam->setParent($protocolApp);
-
-	  my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name, protocol_id => $protocolSeriesChildren->{$protocol}->[$i]});
+	  my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name, protocol_id => $protocolSeriesChildren->{$protocol}->[$step]});
 	  $protocolParam->retrieveFromDB();
 	  $protocolAppParam->setParent($protocolParam);
 	  if ($value && defined($value)) {
@@ -756,6 +761,7 @@ sub submitProtocolApps {
 	}
       } 
     }
+
     if ($protocolAppNode->findvalue('./inputs') && defined($protocolAppNode->findvalue('./inputs'))) {
       my @inputNodes = split(/;/, $protocolAppNode->findvalue('./inputs'));    
       for (my $i=0; $i<@inputNodes; $i++) {
