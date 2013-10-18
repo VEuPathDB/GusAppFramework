@@ -241,6 +241,12 @@
     </xsd:restriction>
   </xsd:simpleType>
   
+  <xsd:simpleType name="tableType">
+    <xsd:restriction base="xsd:string">
+      <xsd:pattern value=".+::.+"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  
   <xsd:complexType name="sdrfType">
     <xsd:sequence>
       <xsd:element name="protocol_app_node" minOccurs="2" maxOccurs="unbounded" type="protocolAppNodeType" />
@@ -279,9 +285,9 @@
   <xsd:complexType name="protocolAppType">
     <xsd:sequence>
       <xsd:element name="protocol" minOccurs="1" maxOccurs="1" type="xsd:string" />
-      <xsd:element name="contacts" minOccurs="0" maxOccurs="1" type="xsd:string" />
+      <xsd:element name="contacts" minOccurs="0" maxOccurs="1" type="performersType" />
       <xsd:element name="protocol_app_date" minOccurs="0" maxOccurs="1" type="xsd:string" />
-      <xsd:element name="protocol_app_parameters" minOccurs="0" maxOccurs="2" type="protocolApplicationParametersType" />
+      <xsd:element name="protocol_app_parameters" minOccurs="0" maxOccurs="1" type="protocolApplicationParametersType" />
       <xsd:element name="inputs" minOccurs="1" maxOccurs="1" type="locationIdType" />
       <xsd:element name="outputs" minOccurs="1" maxOccurs="1" type="locationIdType" />
     </xsd:sequence>
@@ -301,13 +307,7 @@
             </xsd:documentation>
           </xsd:annotation>
           <xsd:choice>
-            <xsd:element name="table" minOccurs="1" maxOccurs="1">
-              <xsd:simpleType>
-                <xsd:restriction base="xsd:string">
-                  <xsd:pattern value=".+::.+"/>
-                </xsd:restriction>
-              </xsd:simpleType>
-            </xsd:element>
+            <xsd:element name="table" minOccurs="1" maxOccurs="1" type="tableType" />
             <xsd:group ref="ontologyTypeGroup" />
             <xsd:sequence>
               <xsd:element name="value" minOccurs="1" maxOccurs="1" type="valueType"/>
@@ -318,13 +318,37 @@
       </xsd:element>
     </xsd:sequence>
   </xsd:complexType>
+  
+  <xsd:complexType name="performersType">
+   <xsd:sequence>
+      <xsd:element name="contact" minOccurs="1" maxOccurs="unbounded">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="name" minOccurs="1" maxOccurs="1" type="xsd:string"/>
+            <xsd:group ref="roleGroup" minOccurs="0" maxOccurs="1"/>
+          </xsd:sequence>
+          <xsd:attribute name="step" use="required" type="xsd:int" />
+          <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
 
   <xsd:complexType name="protocolApplicationParametersType">
-    <xsd:simpleContent>
-      <xsd:extension base="pipeSepType">
-        <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
-      </xsd:extension>
-    </xsd:simpleContent>
+    <xsd:sequence>
+      <xsd:element name="app_param" minOccurs="1" maxOccurs="unbounded">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="name" minOccurs="1" maxOccurs="1" />
+            <xsd:element name="value" minOccurs="1" maxOccurs="1" />
+            <xsd:group ref="dbCoordsGroup" minOccurs="0" maxOccurs="1" />
+            <xsd:group ref="unitTypeGroup" minOccurs="0" maxOccurs="1" />
+          </xsd:sequence>
+          <xsd:attribute name="step" use="required" type="xsd:int" />
+          <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:sequence>
   </xsd:complexType>
 
   <xsd:complexType name="factorValuesType">
@@ -361,6 +385,20 @@
         </xsd:complexType>
       </xsd:element>
       <xsd:element name="external_database_release" minOccurs="1" maxOccurs="1" type="ExternalDBReleaseType" />
+    </xsd:sequence>
+  </xsd:group>
+  
+  <xsd:group name="roleGroup">
+    <xsd:sequence>
+      <xsd:element name="role" minOccurs="1" maxOccurs="1" type="xsd:string" />
+      <xsd:element name="external_database_release" minOccurs="1" maxOccurs="1" type="ExternalDBReleasesType" />
+    </xsd:sequence>
+  </xsd:group>
+  
+  <xsd:group name="dbCoordsGroup">
+    <xsd:sequence>
+      <xsd:element name="table" minOccurs="1" maxOccurs="1" type="tableType" />
+      <xsd:element name="row_id" minOccurs="1" maxOccurs="1" type="xsd:int" />
     </xsd:sequence>
   </xsd:group>
 
