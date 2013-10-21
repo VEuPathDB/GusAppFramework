@@ -116,7 +116,7 @@ public class DisplayPostprocessor {
     for(Node node : nodes) {
       String label = "label = \"" + node.getLabel() + "\""; 
       String color = "color = \"" + node.getColor() + "\"";
-      String url = "URL = \"node.html?id=" + node.getId() + "\"";    
+      String url = "URL = \"node.html?id=" + node.getId() + "&type=" + node.getType() + "\"";    
       if(node.isAddition()) {
         String fillColor = "style = \"filled\", fillcolor = \"yellow\"";
         output.append(node.getId() + " [" + color + ", " + fillColor + ", " + label + ", " + url + ", fontsize=12]\n");
