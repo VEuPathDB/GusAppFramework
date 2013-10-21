@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12826 $',
+		     cvsRevision => '$Revision: 12954 $',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -722,6 +722,11 @@ sub submitProtocolApps {
 	  my $protocolAppContact = GUS::Model::Study::ProtocolAppContact->new({order_num => $i+1});
 	  $protocolAppContact->setParent($contacts->{$contactName});
 	  $protocolAppContact->setParent($protocolApp);
+
+	  my $step = $contactNode->getAttribute('step');
+	  if (defined($step) && $step !~ /^\s*$/) {
+	    $protocolAppContact->setOrderNum($step);
+	  }
 	  my $role = $contactNode->findvalue('./role'); 
 	  if (defined($role) && $role !~ /^\s*$/) {
 	    my $extDbRls = $contactNode->findvalue('./external_database_release');
