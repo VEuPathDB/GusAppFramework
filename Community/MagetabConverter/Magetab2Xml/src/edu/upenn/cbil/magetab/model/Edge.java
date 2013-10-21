@@ -1,7 +1,9 @@
 package edu.upenn.cbil.magetab.model;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.WordUtils;
@@ -18,10 +20,16 @@ import com.google.common.collect.ListMultimap;
 public class Edge {
   private String dbId;
   private String label;
+  private List<String> descriptions;
   private boolean addition;
   private String fromNode;
   private String toNode;
   private ListMultimap<String, String> params;
+  private Map<String, String> performers;
+  
+  public Edge() {
+    descriptions = new ArrayList<>();
+  }
   
   public final String getDbId() {
     return dbId;
@@ -38,7 +46,7 @@ public class Edge {
   public final void setAddition(boolean addition) {
     this.addition = addition;
   }
-  
+ 
   /**
    * Getter for edge label (wrapped to fit the tooltip box better)
    * @return - label string
@@ -53,6 +61,15 @@ public class Edge {
   public void setLabel(String label) {
 	this.label = label;
   }
+  
+  public final List<String> getDescriptions() {
+    return descriptions;
+  }
+
+  public final void setDescriptions(List<String> descriptions) {
+    this.descriptions = descriptions;
+  }
+
   /**
    * Getter for edge label (not word wrapped)
    * @return
@@ -104,6 +121,14 @@ public class Edge {
 	this.params = params;
   }
   
+  public final Map<String, String> getPerformers() {
+    return performers;
+  }
+
+  public final void setPerformers(Map<String, String> performers) {
+    this.performers = performers;
+  }
+
   /**
    * Convenient string representation for debugging purposes.
    */
