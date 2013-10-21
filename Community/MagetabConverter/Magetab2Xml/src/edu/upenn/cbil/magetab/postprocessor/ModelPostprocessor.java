@@ -1,7 +1,10 @@
 package edu.upenn.cbil.magetab.postprocessor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -11,12 +14,15 @@ import org.jdom2.Element;
 
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 
 import edu.upenn.cbil.magetab.model.Edge;
 import edu.upenn.cbil.magetab.model.Node;
+import edu.upenn.cbil.magetab.model.Protocol;
 import edu.upenn.cbil.magetab.model.Study;
 
 /**
@@ -44,9 +50,10 @@ public class ModelPostprocessor {
    */
   public Study process() {
     Study study = new Study();
-    Element studyElement = document.getRootElement().getChild("idf").getChild("study");
-    study.setStudyName(studyElement.getChildText("name"));
+    Element studyElement = document.getRootElement().getChild(AppUtils.IDF_TAG).getChild(AppUtils.STUDY_TAG);
+    study.setStudyName(studyElement.getChildText(AppUtils.NAME_TAG));
     study.setDbId(studyElement.getAttributeValue("db_id"));
+    Protocol.populateProtocolData(document);
     List<Element> protocolAppNodes = document.getRootElement().getChild("sdrf").getChildren("protocol_app_node");
     study.setNodes(populateNodeData(protocolAppNodes));
     List<Element> protocolApps = document.getRootElement().getChild("sdrf").getChildren("protocol_app");
@@ -149,7 +156,22 @@ public class ModelPostprocessor {
    * @param edge - the edge object being populated
    */
   protected void setSharedEdgeData(Element protocolApp, Edge edge) {
-    edge.setLabel(protocolApp.getChildText("protocol"));
+    edge.setLabel(protocolApp.getChildText(AppUtils.PROTOCOL_TAG));
+    assembleDescriptions(edge);
+    Map<String,String> performerMap = new HashMap<>();
+    Element contactsElement = protocolApp.getChild(AppUtils.CONTACTS_TAG);
+    if(contactsElement != null && !contactsElement.getChildren().isEmpty()) {
+      List<Element> contactElements = contactsElement.getChildren();
+      for(Element contactElement : contactElements) {
+        String key = contactElement.getChild(AppUtils.NAME_TAG).getText();
+        String value = "";
+        if(contactElement.getChild(AppUtils.ROLE_TAG) != null) {
+          value = contactElement.getChild(AppUtils.ROLE_TAG).getText();
+        }
+        performerMap.put(key, value);
+      }
+    }
+    edge.setPerformers(performerMap);
     Element paramsElement = protocolApp.getChild(AppUtils.PROTOCOL_APP_PARAMETERS_TAG);
     ListMultimap<String,String> map = ArrayListMultimap.create();
     if(paramsElement != null && !paramsElement.getChildren().isEmpty()) {
@@ -199,6 +221,18 @@ public class ModelPostprocessor {
         }
       }
     }
+  }
+  
+  protected void assembleDescriptions(Edge edge) {
+    List<String> names = Arrays.asList(edge.getName().split(";"));
+    List<String> descriptions = new ArrayList<>();
+    for(String name : names) {
+      Protocol protocol = Protocol.getProtocolByName(name);
+      if(protocol != null && protocol.getDescription() != null && protocol.getDescription().length() > 0) {
+        descriptions.add(protocol.getDescription());
+      }
+    }
+    edge.setDescriptions(descriptions);
   }
   
 }
