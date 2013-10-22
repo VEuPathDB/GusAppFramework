@@ -1,7 +1,9 @@
 package edu.upenn.cbil.magetab.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.WordUtils;
 import org.jdom2.Document;
@@ -12,6 +14,7 @@ import edu.upenn.cbil.limpopo.utils.AppUtils;
 public class Protocol {
   private String name;
   private String description;
+  private Map<String, String> parameters;
   private static List<Protocol> protocols;
   
   public Protocol() {
@@ -21,16 +24,23 @@ public class Protocol {
   public final String getName() {
     return name;
   }
+  
   public final void setName(String name) {
     this.name = name;
   }
+  
   public final String getDescription() {
-    //return WordUtils.wrap(description, 45, "<br />", true);
     return description;
   }
+  
   public final void setDescription(String description) {
     this.description = description;
   }
+
+  public final Map<String, String> getParameters() {
+    return parameters;
+  }
+
   public static final List<Protocol> getProtocols() {
     return protocols;
   }
@@ -45,9 +55,25 @@ public class Protocol {
       Protocol protocol = new Protocol();
       protocol.setName(protocolElement.getChildText(AppUtils.NAME_TAG));
       protocol.setDescription(protocolElement.getChildText(AppUtils.DESCRIPTION_TAG));
+      protocol.setParameters(protocolElement);
       protocols.add(protocol);
     }
     Protocol.setProtocols(protocols);
+  }
+  
+  protected void setParameters(Element protocolElement) {
+    parameters = new HashMap<>();
+    Element parametersElement = protocolElement.getChild(AppUtils.PROTOCOL_PARAMETERS_TAG);
+    if(parametersElement != null) {
+      List<Element> parameterElements = parametersElement.getChildren(AppUtils.PARAM_TAG);
+      for(Element parameterElement : parameterElements) {
+        if(parameterElement.getChild(AppUtils.UNIT_TYPE_TAG) != null) {
+          String key = parameterElement.getChildText(AppUtils.NAME_TAG);
+          String value = parameterElement.getChildText(AppUtils.UNIT_TYPE_TAG);
+          parameters.put(key, value);
+        }
+      }
+    }
   }
   
   public static Protocol getProtocolByName(String name) {

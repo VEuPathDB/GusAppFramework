@@ -53,51 +53,40 @@
     </#list>
     <#list edges as edge>
       <div id="text${edge.getFromNode()}${edge.getToNode()}" class="popupData">
-        <#if edge.dbId??>
-          <p>DB ID: ${edge.getDbId()}</p> 
-        </#if>
-        <div class="subheading">Description(s)</div>
-        <ul>
-          <#if edge.descriptions??>
-            <#list edge.descriptions as description>
-              <li>
-                ${description}
-              </li>
-            </#list>
-          <#else>
-            NA
+        <#assign i = 1>
+        <#list edge.applications as application>
+          <div class="subheading">${i}. ${application.protocol.name}</div>
+          <#if application.protocol.description??>
+            <p>${application.protocol.description}</p>
           </#if>
-        </ul>
-        <div class="subheading">Performer(s)</div>
-        <ul>
-          <#if edge.performers??>
-            <#list edge.performers?keys as key>
-              <li>
-                ${key} &nbsp;
-                <#if edge.performers[key] != "">
-                  Role: ${edge.performers[key]} &nbsp;
-               </#if>
-              </li>
-            </#list>
-          <#else>
-            NA
+          <#if application.dbId??>
+            <p>DB ID: ${application.dbId}</p> 
           </#if>
-        </ul>
-        <div class="subheading">Parameter Setting(s)</div>
-        <ul>
-          <#if edge.params??>   
-            <#list edge.params?keys as key>
-              <li>
-                ${key}: &nbsp;
-                <#list edge.params[key] as value>
-                 ${value} &nbsp;
-                </#list>
-              </li>
-            </#list>
-          <#else>
-            NA
+          <#if application.performers?? && application.performers?has_content>
+            <div class="subheading">Performer</div>
+            <ul>
+              <#list application.performers as performer>
+                <li>
+                  ${performer}
+                </li>
+              </#list>
+            </ul>    
           </#if>
-        </ul>
+          <#if application.parameters?? && application.parameters?has_content>  
+            <div class="subheading">Parameter Setting(s)</div>
+            <ul>
+              <#list application.parameters as parameter>
+                <li>
+                 ${parameter}
+                </li>
+              </#list>
+            </ul>
+          </#if>
+          <#assign i=i+1>
+          <#if i < edge.applications?size>
+            <hr class="separator" />
+          </#if>
+        </#list>
       </div>
     </#list>
   </div>      

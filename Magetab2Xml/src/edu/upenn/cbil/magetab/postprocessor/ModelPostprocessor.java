@@ -23,6 +23,7 @@ import com.google.common.collect.Multimap;
 import edu.upenn.cbil.magetab.model.Edge;
 import edu.upenn.cbil.magetab.model.Node;
 import edu.upenn.cbil.magetab.model.Protocol;
+import edu.upenn.cbil.magetab.model.ProtocolApplication;
 import edu.upenn.cbil.magetab.model.Study;
 
 /**
@@ -125,114 +126,24 @@ public class ModelPostprocessor {
    * document.
    * @return - List of edges
    */
-  protected List<Edge> populateEdgeData(List<Element> protocolApps) {
+  protected List<Edge> populateEdgeData(List<Element> protocolAppElements) {
     List<Edge> edges = new ArrayList<>();
-    for(Element protocolApp : protocolApps) {
-      String[] inputs = protocolApp.getChildText("inputs").split(";");
-      String[] outputs = protocolApp.getChildText("outputs").split(";");
+    for(Element protocolAppElement : protocolAppElements) {
+      List<ProtocolApplication> applications = ProtocolApplication.populate(protocolAppElement);
+      String[] inputs = protocolAppElement.getChildText("inputs").split(";");
+      String[] outputs = protocolAppElement.getChildText("outputs").split(";");
       for(String input : inputs) {
         for(String output : outputs) {
           Edge edge = new Edge();
-          Attribute addAttr = protocolApp.getAttribute("addition");
-          if(addAttr != null) {
-            edge.setAddition(Boolean.parseBoolean(addAttr.getValue()));
-          }
-          edge.setDbId(protocolApp.getAttributeValue("db_id"));
+          edge.setLabel(protocolAppElement.getChildText(AppUtils.PROTOCOL_TAG));
+          edge.setApplications(applications);
           edge.setFromNode(input);
           edge.setToNode(output);
-          setSharedEdgeData(protocolApp, edge);
           edges.add(edge);
         }
       }
     }
     return edges;
-  }
-  
-  /**
-   * One JDOM2 protocol application element may in fact give rise to multiple edges.
-   * Each those edges shares common information.  This method sets that information
-   * for each edge
-   * @param protocolApp - the JDOM2 element
-   * @param edge - the edge object being populated
-   */
-  protected void setSharedEdgeData(Element protocolApp, Edge edge) {
-    edge.setLabel(protocolApp.getChildText(AppUtils.PROTOCOL_TAG));
-    assembleDescriptions(edge);
-    Map<String,String> performerMap = new HashMap<>();
-    Element contactsElement = protocolApp.getChild(AppUtils.CONTACTS_TAG);
-    if(contactsElement != null && !contactsElement.getChildren().isEmpty()) {
-      List<Element> contactElements = contactsElement.getChildren();
-      for(Element contactElement : contactElements) {
-        String key = contactElement.getChild(AppUtils.NAME_TAG).getText();
-        String value = "";
-        if(contactElement.getChild(AppUtils.ROLE_TAG) != null) {
-          value = contactElement.getChild(AppUtils.ROLE_TAG).getText();
-        }
-        performerMap.put(key, value);
-      }
-    }
-    edge.setPerformers(performerMap);
-    Element paramsElement = protocolApp.getChild(AppUtils.PROTOCOL_APP_PARAMETERS_TAG);
-    ListMultimap<String,String> map = ArrayListMultimap.create();
-    if(paramsElement != null && !paramsElement.getChildren().isEmpty()) {
-      List<Element> paramElements = paramsElement.getChildren();
-      for(Element paramElement : paramElements) {
-        String key = paramElement.getChild(AppUtils.NAME_TAG).getText();
-        String value = paramElement.getChild(AppUtils.VALUE_TAG).getText();
-        map.put(key, value);
-        Element unitElement = paramElement.getChild(AppUtils.UNIT_TYPE_TAG);
-        if(unitElement != null) {
-          map.put(key, unitElement.getText());
-        }
-        else {
-          addUnits(map, edge, key);
-        }
-      }
-    }
-    if(!map.isEmpty()) {
-      edge.setParams(map);
-    }
-  }
-  
-  /**
-   * Parameters involve a name, a value and possibly a unit.  Default units are maintained in
-   * the IDF portion of the document.  If no unit is found in the SDRF, the IDF is checked for
-   * a default.  This method collects the appropriate unit, if any, and adds
-   * that to a parameter map kept in each edge object.  The map is a multimap, thus allowing
-   * both value and unit to be associated with the parameter type (key).
-   * @param map - multimap parameter map
-   * @param edge - edge to which the parameter map belongs
-   * @param key - parameter type
-   */
-  protected void addUnits(Multimap<String,String> map, Edge edge, String key) {
-    List<Element> protocols = document.getRootElement().getChild(AppUtils.IDF_TAG).getChildren("protocol");
-    for(Element protocol : protocols) {
-      if(edge.getName().contains(protocol.getChildText("name"))) {
-        if(protocol.getChild("protocol_parameters") != null) {
-          List<Element> params = protocol.getChild("protocol_parameters").getChildren("param");
-          for(Element param : params) {
-            if(param.getChildText(AppUtils.NAME_TAG).equals(key)) {
-              if(param.getChild(AppUtils.UNIT_TYPE_TAG) != null && StringUtils.isNotEmpty(param.getChildText("unit_type"))) {
-                map.put(key, param.getChildText(AppUtils.UNIT_TYPE_TAG));
-                return;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  protected void assembleDescriptions(Edge edge) {
-    List<String> names = Arrays.asList(edge.getName().split(";"));
-    List<String> descriptions = new ArrayList<>();
-    for(String name : names) {
-      Protocol protocol = Protocol.getProtocolByName(name);
-      if(protocol != null && protocol.getDescription() != null && protocol.getDescription().length() > 0) {
-        descriptions.add(protocol.getDescription());
-      }
-    }
-    edge.setDescriptions(descriptions);
   }
   
 }
