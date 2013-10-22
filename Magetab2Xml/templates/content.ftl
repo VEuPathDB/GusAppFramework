@@ -56,6 +56,34 @@
         <#if edge.dbId??>
           <p>DB ID: ${edge.getDbId()}</p> 
         </#if>
+        <div class="subheading">Description(s)</div>
+        <ul>
+          <#if edge.descriptions??>
+            <#list edge.descriptions as description>
+              <li>
+                ${description}
+              </li>
+            </#list>
+          <#else>
+            NA
+          </#if>
+        </ul>
+        <div class="subheading">Performer(s)</div>
+        <ul>
+          <#if edge.performers??>
+            <#list edge.performers?keys as key>
+              <li>
+                ${key} &nbsp;
+                <#if edge.performers[key] != "">
+                  Role: ${edge.performers[key]} &nbsp;
+               </#if>
+              </li>
+            </#list>
+          <#else>
+            NA
+          </#if>
+        </ul>
+        <div class="subheading">Parameter Setting(s)</div>
         <ul>
           <#if edge.params??>   
             <#list edge.params?keys as key>
@@ -71,56 +99,7 @@
           </#if>
         </ul>
       </div>
-      <div id="descriptions${edge.getFromNode()}${edge.getToNode()}" class="qtip qtip-default popupContext">
-        <div class="qtip-titlebar">
-          <div class="qtip-title">Description(s)</div>
-          <a class="qtip-close qtip-icon" title="Close tooltip" aria-label="Close tooltip" role="button">
-            <span class="ui-icon ui-icon-close">×</span>
-          </a>
-        </div>
-        <div class="qtip-content">
-          <div class="popupContextData">
-            <ul>
-              <#if edge.descriptions??>
-                <#list edge.descriptions as description>
-                  <li>
-                    ${description}
-                  </li>
-                </#list>
-              <#else>
-                NA
-              </#if>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div id="performers${edge.getFromNode()}${edge.getToNode()}" class="qtip qtip-default popupContext">
-        <div class="qtip-titlebar">
-          <div class="qtip-title">Performer(s)</div>
-          <a class="qtip-close qtip-icon" title="Close tooltip" aria-label="Close tooltip" role="button">
-            <span class="ui-icon ui-icon-close">×</span>
-          </a>
-        </div>
-        <div class="qtip-content">
-          <div class="popupContextData">
-            <ul>
-              <#if edge.performers??>
-                <#list edge.performers?keys as key>
-                  <li>
-                    ${key} &nbsp;
-                    <#if edge.performers[key] != "">
-                      Role: ${edge.performers[key]} &nbsp;
-                   </#if>
-                  </l i>
-                </#list>
-              <#else>
-                NA
-              </#if>
-            </ul>
-          </div>
-        </div>
-      </div>
     </#list>
-  </div>
+  </div>      
 </div>
 <#include "footer.ftl"> 

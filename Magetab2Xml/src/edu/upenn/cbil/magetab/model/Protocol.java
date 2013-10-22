@@ -25,7 +25,8 @@ public class Protocol {
     this.name = name;
   }
   public final String getDescription() {
-    return WordUtils.wrap(description, 30, "<br />", true);
+    //return WordUtils.wrap(description, 45, "<br />", true);
+    return description;
   }
   public final void setDescription(String description) {
     this.description = description;
