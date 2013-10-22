@@ -83,7 +83,7 @@
             </ul>
           </#if>
           <#assign i=i+1>
-          <#if i < edge.applications?size>
+          <#if i <= edge.applications?size>
             <hr class="separator" />
           </#if>
         </#list>
