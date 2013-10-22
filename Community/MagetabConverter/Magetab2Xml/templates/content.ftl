@@ -62,15 +62,9 @@
           <#if application.dbId??>
             <p>DB ID: ${application.dbId}</p> 
           </#if>
-          <#if application.performers?? && application.performers?has_content>
+          <#if application.performer?? && application.performer?has_content>
             <div class="subheading">Performer</div>
-            <ul>
-              <#list application.performers as performer>
-                <li>
-                  ${performer}
-                </li>
-              </#list>
-            </ul>    
+            <p>${application.performer}</p>  
           </#if>
           <#if application.parameters?? && application.parameters?has_content>  
             <div class="subheading">Parameter Setting(s)</div>
