@@ -34,7 +34,6 @@ import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_IO_ERRO
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_READ_ERROR;
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.FILE_WRITE_ERROR;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -54,6 +53,7 @@ import com.google.common.io.Files;
 
 import edu.upenn.cbil.magetab.model.Edge;
 import edu.upenn.cbil.magetab.model.Node;
+import edu.upenn.cbil.magetab.model.ProtocolApplication;
 import edu.upenn.cbil.magetab.model.Study;
 import edu.upenn.cbil.magetab.utilities.ApplicationConfiguration;
 import edu.upenn.cbil.magetab.utilities.ApplicationException;
@@ -126,9 +126,10 @@ public class DisplayPostprocessor {
       }
     }
     for(Edge edge : edges) {
+      List<ProtocolApplication> applications = edge.getApplications();
       String label = "label = \"" + edge.getLabel() + "\"";
       String url = "labelURL = \"edge.html?id=" + edge.getFromNode() + edge.getToNode() + "\"";
-      if(edge.isAddition()) {
+      if(applications.size() == 1 && applications.get(0).isAddition()) {
         String edgeColor = "color = \"yellow\"";
         output.append(edge.getFromNode() + "->" + edge.getToNode() + "[" + label + ", " + edgeColor + ", " + url + ", fontsize=10]\n");
       }
