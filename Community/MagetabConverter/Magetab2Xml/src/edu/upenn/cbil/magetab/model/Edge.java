@@ -18,33 +18,13 @@ import com.google.common.collect.ListMultimap;
  *
  */
 public class Edge {
-  private String dbId;
+  private List<ProtocolApplication> applications;
   private String label;
-  private List<String> descriptions;
-  private boolean addition;
   private String fromNode;
   private String toNode;
-  private ListMultimap<String, String> params;
-  private Map<String, String> performers;
-  
+
   public Edge() {
-    descriptions = new ArrayList<>();
-  }
-  
-  public final String getDbId() {
-    return dbId;
-  }
-
-  public final void setDbId(String dbId) {
-    this.dbId = dbId;
-  }
-
-  public final boolean isAddition() {
-    return addition;
-  }
-  
-  public final void setAddition(boolean addition) {
-    this.addition = addition;
+    applications = new ArrayList<>();
   }
  
   /**
@@ -62,14 +42,6 @@ public class Edge {
 	this.label = label;
   }
   
-  public final List<String> getDescriptions() {
-    return descriptions;
-  }
-
-  public final void setDescriptions(List<String> descriptions) {
-    this.descriptions = descriptions;
-  }
-
   /**
    * Getter for edge label (not word wrapped)
    * @return
@@ -105,28 +77,13 @@ public class Edge {
   public void setToNode(String toNode) {
 	this.toNode = toNode;
   }
-  /**
-   * Getter for the parameters map
-   * @return - parameters map (key is param label and values are parm value and unit)
-   */
-  public Map<String, Collection<String>> getParams() {
-	return  params == null ? null : params.asMap();
-  }
-  /**
-   * Setter for the parameters map - from JDOM2 protocol_app protocol_app_parameters element and the
-   * IDF (for units)
-   * @param params - parameters map
-   */
-  public void setParams(ListMultimap<String, String> params) {
-	this.params = params;
-  }
-  
-  public final Map<String, String> getPerformers() {
-    return performers;
+
+  public final List<ProtocolApplication> getApplications() {
+    return applications;
   }
 
-  public final void setPerformers(Map<String, String> performers) {
-    this.performers = performers;
+  public final void setApplications(List<ProtocolApplication> applications) {
+    this.applications = applications;
   }
 
   /**
