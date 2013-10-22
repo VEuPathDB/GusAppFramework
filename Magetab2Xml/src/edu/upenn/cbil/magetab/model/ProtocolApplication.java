@@ -15,7 +15,7 @@ import edu.upenn.cbil.limpopo.utils.AppUtils;
 
 public class ProtocolApplication {
   private Protocol protocol;
-  private List<String> performers;
+  private String performer;
   private List<String> parameters;
   private String dbId;
   private boolean addition;
@@ -26,8 +26,8 @@ public class ProtocolApplication {
   public final void setProtocol(Protocol protocol) {
     this.protocol = protocol;
   }
-  public final List<String> getPerformers() {
-    return performers;
+  public final String getPerformer() {
+    return performer;
   }
  
   public final List<String> getParameters() {
@@ -59,7 +59,7 @@ public class ProtocolApplication {
         application.setAddition(Boolean.parseBoolean(addAttr.getValue()));
       }
       application.setDbId(protocolAppElement.getAttributeValue("db_id"));
-      application.setPerformers(protocolAppElement, step);
+      application.setPerformer(protocolAppElement, step);
       application.setParameters(protocolAppElement, step);
       applications.add(application);
       step++;
@@ -67,18 +67,17 @@ public class ProtocolApplication {
     return applications;
   }
   
-  protected void setPerformers(Element protocolAppElement, int step) {
-    performers = new ArrayList<>();
+  protected void setPerformer(Element protocolAppElement, int step) {
+    performer = "";
     Element contactsElement = protocolAppElement.getChild(AppUtils.CONTACTS_TAG);
     if(contactsElement != null && !contactsElement.getChildren().isEmpty()) {
       List<Element> contactElements = contactsElement.getChildren();
       for(Element contactElement : contactElements) {
         if(Integer.toString(step).equals(contactElement.getAttributeValue(AppUtils.STEP_ATTR))) {
-          String performer = contactElement.getChild(AppUtils.NAME_TAG).getText();
+          performer = contactElement.getChild(AppUtils.NAME_TAG).getText();
           if(contactElement.getChild(AppUtils.ROLE_TAG) != null) {
             performer += " - " + contactElement.getChild(AppUtils.ROLE_TAG).getText();
           }
-          performers.add(performer);
         }
       }
     }
