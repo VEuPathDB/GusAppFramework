@@ -33,30 +33,26 @@
   font-weight: bold;
 }
 
-.popupContext {
-  border: solid 1px #F1D031;
-  position: absolute;
-  background-color: #FFFFA3;
-  z-index: 100;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  border-radius: 5px;
-  color: #555;
-  -webkit-box-shadow: 1px 1px 3px 1px rgba(0, 0, 0, 0.15);
-  -moz-box-shadow: 1px 1px 3px 1px rgba(0, 0, 0, 0.15);
-  box-shadow: 1px 1px 3px 1px rgba(0, 0, 0, 0.15);
+.qtip-title {
+  font-variant: small-caps;
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.subheading {
+  font-weight: bold;
+  font-size: 12px;
 }
 
 .popupData {
 	display: none;
+	max-height: 350px;
+	overflow-y: auto;
+	font-size: 12px;
+	line-height: 14px;
 }
 
-.popupData, .popupContextData {
-	font-size: 14px;
-	line-height: 16px;
-}
-
-.popupData ul, .popupContextData ul {
+.popupData ul {
 	padding-left: 12px;
 	margin-top: 5px;
 }
