@@ -1,35 +1,20 @@
 package edu.upenn.cbil.limpopo.validate;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import net.sourceforge.fluxion.spi.ServiceProvider;
 
 import org.apache.commons.lang.StringUtils;
 import org.mged.magetab.error.ErrorItem;
 import org.mged.magetab.error.ErrorItemFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multiset;
-
-import edu.upenn.cbil.limpopo.model.Contact;
-import edu.upenn.cbil.limpopo.model.Protocol;
-import edu.upenn.cbil.limpopo.model.ProtocolApplication;
-import edu.upenn.cbil.limpopo.model.ProtocolApplicationIONode;
-import edu.upenn.cbil.limpopo.model.ProtocolParam;
-import edu.upenn.cbil.limpopo.utils.AppException;
-import edu.upenn.cbil.limpopo.utils.AppUtils;
-import edu.upenn.cbil.limpopo.utils.ListUtils;
 
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.IDF;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.MAGETABInvestigation;
@@ -40,7 +25,14 @@ import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.ParameterVa
 import uk.ac.ebi.arrayexpress2.magetab.exception.ValidateException;
 import uk.ac.ebi.arrayexpress2.magetab.handler.MAGETABValidateHandler;
 import uk.ac.ebi.arrayexpress2.magetab.handler.listener.HandlerListener;
-import net.sourceforge.fluxion.spi.ServiceProvider;
+import edu.upenn.cbil.limpopo.model.Contact;
+import edu.upenn.cbil.limpopo.model.Protocol;
+import edu.upenn.cbil.limpopo.model.ProtocolApplication;
+import edu.upenn.cbil.limpopo.model.ProtocolApplicationIONode;
+import edu.upenn.cbil.limpopo.model.ProtocolParam;
+import edu.upenn.cbil.limpopo.utils.AppException;
+import edu.upenn.cbil.limpopo.utils.AppUtils;
+import edu.upenn.cbil.limpopo.utils.ListUtils;
 
 /**
  * Provides validation checks for a number of general items, including checks that require comparing
