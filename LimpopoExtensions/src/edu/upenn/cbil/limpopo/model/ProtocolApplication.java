@@ -202,7 +202,7 @@ public class ProtocolApplication extends ProtocolObject {
   }
   
   /**
-   * Assembles a parameter string for this protocol application (edge).  Parameter type, value, table (optional)
+   * Assembles parameters for this protocol application (edge or part of edge).  Parameter type, value, table (optional)
    * and row (optional) are separated by pipes (The optional PV table and PV row must appear together or not at
    * all and must be associated with a parameter).  Distinct parameters are separated by semi-colons.
    * @throws ConversionException - Code 7001
@@ -212,7 +212,7 @@ public class ProtocolApplication extends ProtocolObject {
     parameters = new ArrayList<>();
     List<ParameterValueAttribute> params = ((ProtocolApplicationNode)node).parameterValues;
     for(ParameterValueAttribute param : params) {
-      ProtocolApplicationParameter parameter = new ProtocolApplicationParameter(name, param);
+      ProtocolApplicationParameter parameter = new ProtocolApplicationParameter(name, param, addition);
       parameters.add(parameter);
     }
   }
