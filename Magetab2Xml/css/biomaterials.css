@@ -18,6 +18,10 @@
   margin-bottom: 20px 0 20px 0;
 }
 
+#biomatGraph area {
+  cursor: pointer;
+}
+
 .existing {
   color: #F00;
   font-weight: bold;
