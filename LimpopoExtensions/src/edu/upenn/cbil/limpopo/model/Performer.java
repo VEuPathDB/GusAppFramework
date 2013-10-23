@@ -27,7 +27,7 @@ public class Performer {
    * Constructs a protocol application performer, populating name and role where
    * provided.  Addition/id tokens are filtered out.
    * @param attribute - limpopo performer attribute
-   * @throws ConversionException
+   * @throws ConversionException - thrown if the role ontology term cannot be satisfactorily parsed.
    */
   public Performer(PerformerAttribute attribute) throws ConversionException {
     setName(attribute.getNodeName());

@@ -164,10 +164,10 @@ public class Contact {
   
   /**
    * Assembles a full contact name from IDF components.  Addition/id tokens are filtered out.
-   * @param first
-   * @param last
-   * @param lab
-   * @return
+   * @param first - first name (may be empty)
+   * @param last - last name (either this or laboratory name must be non-empty)
+   * @param lab - laboratory name (either this or last name must be non-empty)
+   * @return - the full contact name to be used
    */
   public static final String createName(final String first, final String  last, final String lab) {
     String name = last;

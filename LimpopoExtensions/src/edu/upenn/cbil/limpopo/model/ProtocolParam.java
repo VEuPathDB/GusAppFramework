@@ -88,13 +88,13 @@ public class ProtocolParam {
   
   /**
    * Convenience method to obtain a comment list based upon the comment name (key) and, assuming
-   * a comment exists at the index position, further subdivide the selected comment into a
-   * sublist using a semicolon as a delimiter.  If no comment exists at the index position, and
-   * empty list is returned. 
-   * @param name
-   * @param data
-   * @param index
-   * @return
+   * a comment exists at the designated field (index) position, further subdivide the selected
+   * comment into a sublist using a semicolon as a delimiter.  If no comment exists at the index
+   * position, an empty list is returned. 
+   * @param name - the name of the IDF comment
+   * @param data - the IDF data
+   * @param index - the location within the set of tab separated fields
+   * @return - the list of values for the given named IDF comment at the given field location
    */
   public static List<String> createSublistFromCommentByIndex(String name, IDF data, int index) {
 	List<String> sublist = new ArrayList<String>();

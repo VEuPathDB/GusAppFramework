@@ -45,7 +45,7 @@ public class ProtocolApplicationParameter {
   /**
    * Instantiates the parameter of a protocol application (edge or part of edge).  Insures that addition
    * filter scrubs the limpopo data.
-   * @param name - name of protocol to which the parameter belongs
+   * @param protocolName - name of protocol to which the parameter belongs
    * @param param - limpopo version of the protocol application parameter
    * @param protocolAddition - boolean to indicate whether the parent protocol application is itself an addition.
    * @throws ConversionException - thrown if table and row comments are not both empty or filled (SOP 16) or if
@@ -100,7 +100,7 @@ public class ProtocolApplicationParameter {
 
   /**
    * Sets parameter name, removing all id/addition tokens
-   * @param type - raw name
+   * @param name - raw name
    */
   public final void setName(String name) {
     this.name = AppUtils.removeTokens(name);
