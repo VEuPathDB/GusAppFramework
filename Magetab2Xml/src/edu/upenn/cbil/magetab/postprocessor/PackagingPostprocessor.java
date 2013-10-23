@@ -22,6 +22,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.log4j.Logger;
 
+import edu.upenn.cbil.magetab.Converter;
 import edu.upenn.cbil.magetab.utilities.ApplicationConfiguration;
 import edu.upenn.cbil.magetab.utilities.ApplicationException;
 
@@ -60,8 +61,11 @@ public class PackagingPostprocessor {
       while ((archiveEntry = zipInput.getNextEntry()) != null) {
         zipOutput.putArchiveEntry(archiveEntry);
         IOUtils.copy(zipInput, zipOutput, (int) archiveEntry.getSize());
-        zipOutput.closeArchiveEntry();
+        zipOutput.closeArchiveEntry();  
       }
+      zipOutput.putArchiveEntry(new ZipArchiveEntry(Converter.inputFile.getName()));
+      IOUtils.copy(new FileInputStream(Converter.inputFile), zipOutput);
+      zipOutput.closeArchiveEntry();
       if(new File(imageFilename).exists()) {
         zipOutput.putArchiveEntry(new ZipArchiveEntry(imageFilename));
         IOUtils.copy(new FileInputStream(new File(imageFilename)), zipOutput);
