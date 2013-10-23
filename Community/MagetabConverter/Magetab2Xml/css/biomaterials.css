@@ -22,6 +22,10 @@
   cursor: pointer;
 }
 
+.instruction {
+  font-weight: bold;
+}
+
 .existing {
   color: #F00;
   font-weight: bold;
