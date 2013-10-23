@@ -178,10 +178,10 @@ public class ProtocolApplication extends ProtocolObject {
   }
   
   /**
-   * Populate the protocol application reference (edge).  Determine if the protocol reference
+   * Populate the protocol application reference (edge or part of edge).  Determine if the protocol reference
    * is an addition.  Remove tokens from any subordinate components of the protocol application
    * ref.
-   * @throws ConversionException
+   * @throws ConversionException - thrown if a performer cannot be satisfactorily parsed.
    */
   public void populate() throws ConversionException {
     ProtocolApplicationNode appNode = (ProtocolApplicationNode) node;

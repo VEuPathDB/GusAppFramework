@@ -148,7 +148,7 @@ public class Study {
 
   /**
    * Comment [Study Approaches] header.  For use in populating the study object.
-   * @param goal - an optional string detailing study approaches.
+   * @param approaches - an optional string detailing study approaches.
    */
   public final void setApproaches(final String approaches) {
     this.approaches = AppUtils.removeTokens(approaches);

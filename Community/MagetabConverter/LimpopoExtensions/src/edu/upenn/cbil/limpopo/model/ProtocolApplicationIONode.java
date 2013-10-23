@@ -3,10 +3,8 @@ package edu.upenn.cbil.limpopo.model;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.WordUtils;
@@ -23,7 +21,6 @@ import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.SampleNode;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.SourceNode;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.CharacteristicsAttribute;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.MaterialTypeAttribute;
-import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.SDRFAttribute;
 import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.limpopo.utils.SDRFUtils;
@@ -311,6 +308,8 @@ public class ProtocolApplicationIONode extends ProtocolObject {
       case LABELEXTRACTNAME:
         attributes = ((LabeledExtractNode) node).characteristics;
         material = ((LabeledExtractNode)node).materialType;
+        break;
+      default:
         break;
     }
     for(CharacteristicsAttribute attribute : attributes) {
