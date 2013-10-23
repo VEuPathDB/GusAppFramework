@@ -9,9 +9,12 @@
     </#if>
   </h3>
 </#if>
-<p class="note">
+<p class="instruction">
   Click on each node or edge label in the graph below for detailed information (you may
-  need to disable your popup blocker).  The node tooltip provides characteristics or file
+  need to disable your popup blocker).
+</p>
+<p class="note">
+  The node tooltip provides characteristics or file
   information while the edge label tooltip offers parameter settings, if any.  Nodes
   representing material entities are outlined in <span class="material">blue</span> while
   nodes representing data items are outlined in <span class="data">red</span>.  Yellow fills
