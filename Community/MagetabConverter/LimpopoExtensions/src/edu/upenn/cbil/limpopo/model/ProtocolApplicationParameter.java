@@ -39,21 +39,26 @@ public class ProtocolApplicationParameter {
     value = "";
     table = "";
     row = "";
+    addition = false;
   }
   
   /**
-   * Instantiates the parameter of a protocol application (edge).  Insures that addition
+   * Instantiates the parameter of a protocol application (edge or part of edge).  Insures that addition
    * filter scrubs the limpopo data.
+   * @param name - name of protocol to which the parameter belongs
    * @param param - limpopo version of the protocol application parameter
+   * @param protocolAddition - boolean to indicate whether the parent protocol application is itself an addition.
    * @throws ConversionException - thrown if table and row comments are not both empty or filled (SOP 16) or if
    * this parameter matches another in protocol, name, and value but mismatch in table and row data (SOP 21).
    */
-  public ProtocolApplicationParameter(String protocolName, ParameterValueAttribute param) throws ConversionException {
+  public ProtocolApplicationParameter(String protocolName, ParameterValueAttribute param, boolean protocolAddition) throws ConversionException {
     this();
     setProtocolName(protocolName);
     setName(SDRFUtils.parseHeader(param.getAttributeType()));
     // Must check value and not name because headers are not highlighted.
-    setAddition(AppUtils.checkForAddition(param.getAttributeValue()));
+    if(!protocolAddition) {
+      setAddition(AppUtils.checkForAddition(param.getAttributeValue()));
+    }
     setValue(param.getAttributeValue());
     UnitAttribute unitAttribute = param.unit;
     if(unitAttribute != null) {
