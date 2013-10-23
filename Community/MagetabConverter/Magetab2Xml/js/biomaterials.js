@@ -36,7 +36,7 @@ biomatGraph.setupPopups = function() {
 	else if(url.indexOf('edge') >= 0) {
 	  title = "Protocol Information";
 	}
-	jQuery(this).removeAttr('href');
+	jQuery(this).attr('href', 'javascript:void(0);');
 	/* Fix for graphviz broken before v2.28 */
 	var coords = jQuery(this).attr('coords');
 	coords = coords.replace(/ /g,',');
@@ -79,6 +79,14 @@ jQuery(document).ready(function() {
   jQuery("#biomaterials").waitForImages(function() {
     biomatGraph.setupScrollBars();
     biomatGraph.setupPopups();
+    jQuery('#biomaterials img').maphilight(
+      {
+    	shadow: true,
+    	stroke:false
+      }
+    );
   });
 });
+
+
 
