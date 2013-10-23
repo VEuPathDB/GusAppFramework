@@ -51,6 +51,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
+import edu.upenn.cbil.magetab.Converter;
 import edu.upenn.cbil.magetab.model.Edge;
 import edu.upenn.cbil.magetab.model.Node;
 import edu.upenn.cbil.magetab.model.ProtocolApplication;
@@ -225,6 +226,7 @@ public class DisplayPostprocessor {
       Template template = cfg.getTemplate(CONTENT_TEMPLATE);
       Map<String, Object> input = new HashMap<String, Object>();
       input.put("gifFileName", imageFilename.substring(imageFilename.lastIndexOf(File.separator) + 1));
+      input.put("magetab", ".." + File.separator + Converter.inputFile.getName());
       input.put("studyName", study.getStudyName());
       input.put("studyId", study.getDbId());
       input.put("nodes", study.getNodes());
