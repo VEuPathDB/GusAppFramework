@@ -196,7 +196,7 @@ sub processVcfFile {
 		    "db_ref_id" => $dbRefId,
 		    "na_feature_id" => $snpFeature->getId(),
 		       } );
-	    $dbRefNaFeature->Submit;
+	    $dbRefNaFeature->submit();
 	    
 	    print "  info:\n" unless $keyCount++;
 	    print "    $infoKey";
