@@ -115,7 +115,7 @@ public class DisplayPostprocessor {
     List<Node> nodes = study.getNodes();
     List<Edge> edges = study.getEdges();
     for(Node node : nodes) {
-      String label = "label = \"" + node.getLabel() + "\""; 
+      String label = "label = <<font color=\"blue\">" + node.getLabel() + "</font>>";
       String color = "color = \"" + node.getColor() + "\"";
       String url = "URL = \"node.html?id=" + node.getId() + "&type=" + node.getType() + "\"";    
       if(node.isAddition()) {
@@ -128,7 +128,7 @@ public class DisplayPostprocessor {
     }
     for(Edge edge : edges) {
       List<ProtocolApplication> applications = edge.getApplications();
-      String label = "label = \"" + edge.getLabel() + "\"";
+      String label = "label = <<font color=\"blue\">" + edge.getLabel() + "</font>>";
       String url = "labelURL = \"edge.html?id=" + edge.getFromNode() + edge.getToNode() + "\"";
       if(applications.size() == 1 && applications.get(0).isAddition()) {
         String edgeColor = "color = \"yellow\"";

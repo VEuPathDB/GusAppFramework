@@ -67,7 +67,7 @@ public class Node {
    * @return - label string
    */
   public String getLabel() {
-	return WordUtils.wrap(label.replaceAll("_", " "), 15, "\\n", true);
+	return WordUtils.wrap(label.replaceAll("_", " "), 15, "<br />", true);
   }
   /**
    * Setting for node label - from JDOM2 protocol_app_node name element

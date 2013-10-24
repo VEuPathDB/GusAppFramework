@@ -32,7 +32,7 @@ public class Edge {
    * @return - label string
    */
   public String getLabel() {
-	return WordUtils.wrap(label, 30, "\\n", true);
+	return WordUtils.wrap(label, 30, "<br />", true);
   }
   /**
    * Setter for edge label - JDOM2 protocol_app protocol element
