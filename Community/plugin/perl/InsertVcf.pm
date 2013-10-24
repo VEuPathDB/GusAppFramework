@@ -198,7 +198,7 @@ sub processVcfFile {
 		       } );
 	    $dbRefNaFeature->submit();
 	    
-	    print "  info:\n" unless $keyCount > 1;
+	    print "  info:\n" unless $keyCount++;
 	    print "    $infoKey";
 	    print " = \"$infoVal\"" if defined($infoVal);
 	    print " (" . $headerHash{Description} . ")";
