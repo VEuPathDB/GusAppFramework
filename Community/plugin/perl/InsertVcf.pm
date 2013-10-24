@@ -159,7 +159,7 @@ sub processVcfFile {
 	$naLocation->submit();
 
 	$self->log("$rsId on chromosome " . $vcfHash->{CHROM} . " at location " . $vcfHash->{POS})
-	    if $self->getArg('verbose');
+	    if $self->getArg('veryVerbose');
 
 	# is "FILTER" used? We aren't handling that.
 	my $filterString = ${$vcfHash->{FILTER}}[0];
