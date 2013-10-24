@@ -48,6 +48,9 @@ Notes about creating Excel spreadsheets with MAGE-TAB additions:
         common across all split/merged rows.  If this policy is not observed, no exception will
         be thrown.  Instead multiple unmerged rows will appear because the highlighting translates
         into a token <<add>> which will make the rows appear completely distinct to limpopo.
+    g.  Whether factor values in the SDRF are additions will be determined by whether the corresponding
+        study factors are additions.  An added factor value will not be noted as such if it is part of
+        a larger addition (i.e., part of an added protocol application node).  
 3.  The submitter is welcome to highlight other items in the spreadsheet in any color other than
     yellow.
     
