@@ -1,17 +1,6 @@
 package edu.upenn.cbil.magetab.postprocessor;
 
-
-import static edu.upenn.cbil.limpopo.utils.AppUtils.ADDITION_ATTR;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.NAME_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.ROW_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.TABLE_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.TRUE;
-import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.NODE_SEPARATOR;
-
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,15 +14,12 @@ import edu.upenn.cbil.magetab.model.FactorValue;
 import edu.upenn.cbil.magetab.model.FactorValueRow;
 import edu.upenn.cbil.magetab.model.StudyFactor;
 import edu.upenn.cbil.magetab.preprocessors.FactorValuePreprocessor;
-import edu.upenn.cbil.magetab.utilities.ApplicationException;
 
 public class FactorValuePostprocessor {
-  private List<StudyFactor> studyFactors;
 
   public Document process(Document document) {
     if(FactorValuePreprocessor.factorValueMap != null && !FactorValuePreprocessor.factorValueMap.isEmpty()) {
-      extractStudyFactors(document);
-      verifyFactorValueNames();
+      StudyFactor.populate(document);
       List<Element> nodes = document.getRootElement().getChildren(AppUtils.SDRF_TAG).get(0).getChildren(AppUtils.PROTOCOL_APP_NODE_TAG);
       for(Element node : nodes) {
         String id = node.getAttribute("id").getValue();
@@ -42,26 +28,16 @@ public class FactorValuePostprocessor {
         boolean isNodeAddition = node.getAttribute(AppUtils.ADDITION_ATTR) != null;
         Element factorValuesElement = new Element(AppUtils.FACTOR_VALUES_TAG);
         for(FactorValue factorValue : factorValues) {
+          factorValue.setAddition();
           factorValuesElement.addContent(setFactorValue(factorValue, isNodeAddition));
-        }    
+        }
         node.addContent(factorValuesElement);
       }
     }
     return document;
   }
   
-  protected void extractStudyFactors(Document document) {
-	studyFactors = new ArrayList<>();
-    List<Element> studyFactorElements = document.getRootElement().getChildren("idf").get(0).getChildren("study_factor");
-    for(Element studyFactorElement : studyFactorElements) {
-      boolean addition = false;
-      if(studyFactorElement.getAttributeValue("addition") != null) {
-        addition = true;
-      }
-      StudyFactor studyFactor = new StudyFactor(studyFactorElement.getChildText("name"),addition);
-      studyFactors.add(studyFactor);
-    }
-  }
+  
 
   /**
    * Removes duplicate factor values before affixing factor values to a protocol application
@@ -90,26 +66,11 @@ public class FactorValuePostprocessor {
   
   protected List<Integer> getRows(String id) {
     List<Integer> rows = new ArrayList<>();
-	String[] locs = id.split(NODE_SEPARATOR);
+	String[] locs = id.split(AppUtils.NODE_SEPARATOR);
 	for(String loc : locs) {
 	  rows.add(Integer.parseInt(loc.replaceFirst("^R(.*)C.*$", "$1")));
 	}
 	return rows;
-  }
-  
-  protected void verifyFactorValueNames() {
-    if(!FactorValuePreprocessor.factorValueMap.isEmpty()) {
-      Iterator<Integer> iterator = FactorValuePreprocessor.factorValueMap.keySet().iterator();
-      while(iterator.hasNext()) {
-        FactorValueRow factorValueRow = FactorValuePreprocessor.factorValueMap.get(iterator.next());
-        List<FactorValue> factorValues = factorValueRow.getFactorValues();
-        for(FactorValue factorValue : factorValues) {
-          if(!StudyFactor.getNames().contains(factorValue.getName())) {
-            throw new ApplicationException("Factor Value " + factorValue.getName() + " has no corresponding entry in the IDF study factors.");
-          }
-        }
-      }
-    }
   }
   
   /**
@@ -125,13 +86,13 @@ public class FactorValuePostprocessor {
   protected Element setFactorValue(FactorValue factorValue, boolean nodeAddition) {
     Element factorValueElement = new Element(AppUtils.FACTOR_VALUE_TAG);
     if(!nodeAddition && factorValue.isAddition()) {
-      factorValueElement.setAttribute(ADDITION_ATTR, TRUE);
+      factorValueElement.setAttribute(AppUtils.ADDITION_ATTR, AppUtils.TRUE);
     }
     factorValueElement.addContent(new Element(AppUtils.NAME_TAG).setText(factorValue.getName()));
     factorValueElement.addContent(new Element(AppUtils.VALUE_TAG).setText(factorValue.getValue()));
     if(factorValue.hasTableRowPair()) {
-      factorValueElement.addContent(new Element(TABLE_TAG).setText(factorValue.getTable()));
-      factorValueElement.addContent(new Element(ROW_TAG).setText(factorValue.getRowId()));
+      factorValueElement.addContent(new Element(AppUtils.TABLE_TAG).setText(factorValue.getTable()));
+      factorValueElement.addContent(new Element(AppUtils.ROW_TAG).setText(factorValue.getRowId()));
     }
     return factorValueElement;
   }
