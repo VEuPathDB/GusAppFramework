@@ -257,6 +257,7 @@ sub getSequenceId {
 	  # couldn't find that either -- insert
 	  # $externalNASequence->setChromosome($chromosome); # use unabbreviated chromosome name
 	  $self->log("adding new sequence record for chromosome \"$chromosome\"");
+	  $externalNASequence->setSequenceVersion("1");
 	  $externalNASequence->submit();
       }
   }
