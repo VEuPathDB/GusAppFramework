@@ -196,6 +196,7 @@ sub processVcfFile {
 		    "db_ref_id" => $dbRefId,
 		    "na_feature_id" => $snpFeature->getId(),
 		       } );
+	    $dbRefNaFeature->Submit;
 	    
 	    print "  info:\n" unless $keyCount++;
 	    print "    $infoKey";
@@ -293,7 +294,7 @@ sub getDbRefId {
 sub undoTables {
   my ($self) = @_;
 
-  return ('DoTS.SnpFeature', 'DoTS.NALocation', 'DoTS.ExternalNASequence');
+  return ('DoTS.SnpFeature', 'DoTS.NALocation', 'DoTS.ExternalNASequence', 'SRes.DbRef', 'DoTS.DbRefNAFeature');
 }
 
 1;
