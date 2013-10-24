@@ -93,6 +93,9 @@ public class AppUtils {
   public static final String CATEGORY_ATTR = "category";
   public static final String TABLE_TAG = "table";
   public static final String ROW_TAG = "row_id";
+  public static final String FACTOR_VALUES_TAG = "factor_values";
+  public static final String FACTOR_VALUE_TAG = "factor_value";
+  
   
   /**
    * Community Tags
