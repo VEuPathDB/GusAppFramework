@@ -139,7 +139,7 @@ sub processVcfFile {
 	my $rsId = $vcfHash->{ID};
 	my $snpFeature = GUS::Model::DoTS::SnpFeature
 	    ->new( {
-		"source_id" => "rs$rsId",
+		"source_id" => "$rsId",
 		   } );
 	if ($snpFeature->retrieveFromDB()) {
 	    next;
@@ -186,7 +186,7 @@ sub processVcfFile {
 	foreach my  $infoKey (keys %info) {
 	    my $infoVal = $info{$infoKey};
 	    my %headerHash = %{$vcf->get_header_line(key=>'INFO', ID=>$infoKey)->[0]};
-	    $infoString .= ";" unless $keyCount;
+	    $infoString .= ";" if $infoString;
 	    $infoString .= $infoKey;
 	    $infoString .= "=\"$infoVal\"" if defined($infoVal);
 
@@ -198,7 +198,7 @@ sub processVcfFile {
 		       } );
 	    $dbRefNaFeature->submit();
 	    
-	    print "  info:\n" unless $keyCount++;
+	    print "  info:\n" unless $keyCount > 1;
 	    print "    $infoKey";
 	    print " = \"$infoVal\"" if defined($infoVal);
 	    print " (" . $headerHash{Description} . ")";
