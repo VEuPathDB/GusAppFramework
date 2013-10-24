@@ -1,6 +1,6 @@
 <#include "header.ftl"> 
 
-<h1>Biomaterial Graph Derived from <a href="${magetab}">Magetab</a></h1>
+<h1>Biomaterial Graph Derived from <a href="${magetab}">MAGE-TAB</a></h1>
 <#if studyName??>
   <h3>
     ${studyName}
