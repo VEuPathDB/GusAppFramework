@@ -121,8 +121,18 @@ public class FactorValue {
     return addition;
   }
 
-  public final void setAddition(boolean addition) {
-    this.addition = addition;
+  /**
+   * A factor value is an addition, regardless of how it is highlighted in the SDRF, if and only if the
+   * corresponding study factor is an addition.  If no study factor is found, a runtime exception is
+   * thrown.  Since the study factor data isn't available until post-processing of the xml output, this
+   * step must be delayed until the factor value post-process step.
+   */
+  public final void setAddition() {
+    StudyFactor studyFactor = StudyFactor.getStudyFactorByName(getName());
+    if(studyFactor == null) {
+      throw new ApplicationException("Factor Value " + getName() + " has no corresponding entry in the IDF study factors.");
+    }
+    addition = studyFactor.isAddition();
   }
   
   public final boolean hasTableRowPair() {
@@ -187,7 +197,6 @@ public class FactorValue {
     	factorValue.setName(FactorValue.getExpectedHeaderContent(headers[i], FACTOR_VALUE_PATTERN));
         if(i < values.length) {
           factorValue.setValue(values[i]);
-          factorValue.setAddition(AppUtils.checkForAddition(values[i]));
         }
         factorValue.row = row;
         factorValue.col = i;
