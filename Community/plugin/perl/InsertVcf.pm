@@ -152,6 +152,7 @@ sub processVcfFile {
 #	my $info = $vcfHash->{INFO};
 
 	my $naSequenceId = $self->getSequenceId($vcfHash->{CHROM});
+	$snpFeature->setNaSequenceId($naSequenceId);
 	$snpFeature->setName('variation');
 	$snpFeature->setMajorAllele($vcfHash->{REF});
 	$snpFeature->setMinorAllele(join(',', @{$vcfHash->{ALT}}));
@@ -231,7 +232,6 @@ sub processVcfFile {
 
 	last if ($recordCount++ >= 100);
     }
-
     print "parsed $recordCount records\n";
 }
 
@@ -240,7 +240,7 @@ sub processVcfFile {
 # find the na_sequence_id for the given chromosome name
 sub getSequenceId {
   my ($self, $chromosome) = @_;
-  
+
   my $externalNASequence = GUS::Model::DoTS::ExternalNASequence
       ->new( {
 	  "chromosome" => $chromosome,
@@ -260,7 +260,6 @@ sub getSequenceId {
 	  $externalNASequence->submit();
       }
   }
-
   return $externalNASequence->getId();
 }
 
