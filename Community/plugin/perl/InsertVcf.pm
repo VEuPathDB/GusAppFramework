@@ -109,6 +109,8 @@ sub run {
   $self->logAlgInvocationId();
   $self->logCommit();
   $self->logArgs();
+  $self->getAlgInvocation()->setMaximumNumberOfObjects(100000);
+
 
   $self->{extDbRlsId} = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
 
@@ -215,7 +217,7 @@ sub processVcfFile {
 	$snpFeature->setDescription($infoString);
 	$snpFeature->submit();
 
-	unless ( ($recordCount++) % 500) {
+	unless ( ($recordCount++) % 100) {
 	    $self->undefPointerCache();
 	    $self->log("$recordCount records loaded")
 		if $self->getArg('verbose');
