@@ -11,19 +11,14 @@ use strict;
 use GUS::PluginMgr::Plugin;
 use Data::Dumper;
 use Vcf;
-use Bio::EnsEMBL::Variation::Utils::dbSNP qw(decode_bitfield);
-use GUS::Community::Utils::dbSnpBits;
+# use Bio::EnsEMBL::Variation::Utils::dbSNP qw(decode_bitfield);
+# use GUS::Community::Utils::dbSnpBits;
 
 use GUS::Model::DoTS::SnpFeature;
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::NALocation;
 use GUS::Model::DoTS::DbRefNAFeature;
 use GUS::Model::SRes::DbRef;
-# use GUS::Model::SRes::OntologyTerm;
-# use GUS::Model::Study::Protocol;
-# use GUS::Model::Study::ProtocolApp;
-# use GUS::Model::Study::ProtocolAppNode;
-# use GUS::Model::Study::Characteristic;
 use GUS::Model::Results::SeqVariation;
 
 my %infoHash;
@@ -145,12 +140,6 @@ sub processVcfFile {
 	    next;
 	}
 
-#	my $ref = $vcfHash->{REF};
-#	my $alt = $vcfHash->{ALT};
-#	my $qual = $vcfHash->{QUAL};
-#	my $chrom = $vcfHash->{CHROM};
-#	my $info = $vcfHash->{INFO};
-
 	my $naSequenceId = $self->getSequenceId($vcfHash->{CHROM});
 	$snpFeature->setNaSequenceId($naSequenceId);
 	$snpFeature->setName('variation');
@@ -167,22 +156,16 @@ sub processVcfFile {
 		   } );
 	$naLocation->submit();
 
-	print "$rsId on chromosome " . $vcfHash->{CHROM} . " at location " . $vcfHash->{POS} . "\n";
-
-#	print "reference \"$ref\"; alternates: ";
-#	foreach my $a (@$alt) {
-#	    print "\"$a\" ";
-#	}
-#	print "\n";
+	$self->log("$rsId on chromosome " . $vcfHash->{CHROM} . " at location " . $vcfHash->{POS})
+	    if $self->getArg('verbose');
 
 	# is "FILTER" used? We aren't handling that.
 	my $filterString = ${$vcfHash->{FILTER}}[0];
 	if ($filterString ne '.') {
-	    print STDERR "warning: $rsId has the filter \"$filterString\"\n";
+	    $self->log("WARNING: $rsId has the filter \"$filterString\"");
 	}
 
 	my %info = %{$vcfHash->{INFO}};
-	my $keyCount = 0;
 	my $infoString;
 	foreach my  $infoKey (keys %info) {
 	    my $infoVal = $info{$infoKey};
@@ -199,11 +182,15 @@ sub processVcfFile {
 		       } );
 	    $dbRefNaFeature->submit();
 	    
-	    print "  info:\n" unless $keyCount++;
-	    print "    $infoKey";
-	    print " = \"$infoVal\"" if defined($infoVal);
-	    print " (" . $headerHash{Description} . ")";
-	    print "\n";
+	    if ($self->getArg('veryVerbose')) {
+		my $infoMsg;
+		$infoMsg .= "  info:\n" unless $infoString;
+		$infoMsg .= "    $infoKey";
+		$infoMsg .= " = \"$infoVal\"" if defined($infoVal);
+		$infoMsg .= " (" . $headerHash{Description} . ")";
+		$infoMsg .= "\n";
+		$self->log($infoMsg);
+	    }
 
 	    # if this is the "VC" field, use its value to set name
 	    if ($infoKey eq "VC" && defined($infoVal)) {
@@ -211,7 +198,8 @@ sub processVcfFile {
 	    }
 
 #	    # if this is the "VP" bitfield, decode it
-#	    if ($infoKey eq "VP" and 1 eq 0) { # or don't
+#             or don't; it turns out VP basically duplicates the other INFO tags
+#	    if ($infoKey eq "VP") {
 #		my $bitfieldHashref = decode_bitfield($infoVal);
 #		foreach my $bitfield (keys(%{$bitfieldHashref})) {
 #		    my $def = GUS::Community::Utils::dbSnpBits::define_bitfield($bitfield);
@@ -221,18 +209,19 @@ sub processVcfFile {
 #		    print " ($def)";
 #		    print " (BITFIELD)\n";
 #		}
-#		# print Dumper($bitfieldBitfieldHashref);
 #	    }
 
 	}
 	$snpFeature->setDescription($infoString);
-	print "$rsId has $keyCount info keys\n\n";
-	# print Dumper($snpFeature);
 	$snpFeature->submit();
 
-	last if ($recordCount++ >= 100);
+	if ( ($recordCount++) % 500) {
+	    $self->undefPointerCache();
+	    $self->log("$recordCount records loaded")
+		if $self->getArg('verbose');
+	}
     }
-    print "parsed $recordCount records\n";
+    $self->log("loaded $recordCount records");
 }
 
 # getSequenceId
@@ -256,7 +245,8 @@ sub getSequenceId {
       if (!$externalNASequence->retrieveFromDB()) {
 	  # couldn't find that either -- insert
 	  # $externalNASequence->setChromosome($chromosome); # use unabbreviated chromosome name
-	  $self->log("adding new sequence record for chromosome \"$chromosome\"");
+	  $self->log("adding new sequence record for chromosome \"$chromosome\"")
+	      if $self->getArg('verbose');
 	  $externalNASequence->setSequenceVersion("1");
 	  $externalNASequence->submit();
       }
