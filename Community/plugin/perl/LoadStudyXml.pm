@@ -110,7 +110,7 @@ sub new {
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 12954 $',
+		     cvsRevision => '$Revision$',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
@@ -653,20 +653,25 @@ sub submitProtocolAppNodes {
     my $studyLink = GUS::Model::Study::StudyLink->new({study_id => $studyId});
     $studyLink->setParent($protocolAppNode);
 
-    my @factorValues = split(/;/, $protocolAppNodeNode->findvalue('./factor_values'));
-    for (my $i=0; $i<@factorValues; $i++) {
-      my ($fvName, $fvValue, $fvTable, $fvRowId) = split(/\|/, $factorValues[$i]);
-      my $studyFactorValue = GUS::Model::Study::StudyFactorValue->new();
-      $studyFactorValue->setParent($protocolAppNode);
-      $studyFactorValue->setParent($studyFactors->{$fvName});
-      if (defined($fvValue) && $fvValue !~ /^\s*$/) {    
-	$studyFactorValue->setValue($fvValue);
+    my ($factorValues) = $protocolAppNodeNode->findnodes('./factor_values');
+    if (defined($factorValues) && $factorValues !~ /^\s*$/) {
+      foreach my $factorValue ($factorValues->findnodes('./factor_value')) {
+	my $studyFactorValue = GUS::Model::Study::StudyFactorValue->new();
+	my $fvName = $factorValue->findvalue('./name');
+	$studyFactorValue->setParent($studyFactors->{$fvName});
+	my $fvValue = $factorValue->findvalue('./value');
+	if (defined($fvValue) && $fvValue !~ /^\s*$/) {    
+	  $studyFactorValue->setValue($fvValue);
+	}
+	my $fvTable = $factorValue->findvalue('./table');
+	my $fvRowId = $factorValue->findvalue('./row_id');
+	if (defined($fvTable) && $fvTable !~ /^\s*$/ && defined($fvRowId) && $fvRowId !~ /^\s*$/ ) { 
+	  my $tableId = $self->getTableId($fvTable);
+	  $studyFactorValue->setTableId($tableId);
+	  $studyFactorValue->setRowId($fvRowId);
+	}
+	$studyFactorValue->setParent($protocolAppNode);
       }
-      if (defined($fvTable) && $fvTable !~ /^\s*$/ && defined($fvRowId) && $fvRowId !~ /^\s*$/ ) { 
-	my $tableId = $self->getTableId($fvTable);
-	$studyFactorValue->setTableId($tableId);
-	$studyFactorValue->setRowId($fvRowId);
-      }      
     }
     my ($characteristics) = $protocolAppNodeNode->findnodes('./node_characteristics');
     if (defined($characteristics) && $characteristics !~ /^\s*$/) {
