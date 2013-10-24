@@ -104,7 +104,17 @@
 
     <sdrf>
       <protocol_app_node id="1">
-        <factor_values>Name|Value(|Schema::Table|Row_Id);Name|Value(|Schema::Table|Row_Id)</factor_values>
+        <factor_values>
+	  <factor_value>
+	    <name></name>
+	    <value></value>
+	    <table>Schema::Table</table>
+	    <row_id></row_id>
+	  </factor_value>
+	  <factor_value>
+	  ...
+	  </factor_value>
+	</factor_values>
 	<type></type>
 	<subtype></subtype>
 	<name></name>
@@ -127,7 +137,17 @@
       </protocol_app_node>
  
       <protocol_app_node id="2">
-        <factor_values>Name|Value(|Schema::Table|Row_Id);Name|Value(|Schema::Table|Row_Id)</factor_values>
+        <factor_values>
+	  <factor_value>
+	    <name></name>
+	    <value></value>
+	    <table>Schema::Table</table>
+	    <row_id></row_id>
+	  </factor_value>
+	  <factor_value>
+	  ...
+	  </factor_value>
+	</factor_values>
 	<type></type>
 	<subtype></subtype>
 	<name></name>
@@ -149,7 +169,17 @@
       </protocol_app_node>
  
        <protocol_app_node id="3">
-        <factor_values>Name|Value(|Schema::Table|Row_Id);Name|Value(|Schema::Table|Row_Id)</factor_values>
+        <factor_values>
+	  <factor_value>
+	    <name></name>
+	    <value></value>
+	    <table>Schema::Table</table>
+	    <row_id></row_id>
+	  </factor_value>
+	  <factor_value>
+	  ...
+	  </factor_value>
+	</factor_values> 
 	<type></type>
 	<subtype></subtype>
 	<name></name>
@@ -174,12 +204,12 @@
 	<protocol></protocol>
 	<protocol_app_date></protocol_app_date>
 	<contacts>
-	  <contact>
+	  <contact step="">
 	    <name>First Last</name>
             <role></role>
 	    <external_database_release>Name|Version</external_database_release>
 	  </contact>
-	  <contact>
+	  <contact step="">
 	  ...
 	  </contact>
         </contacts>

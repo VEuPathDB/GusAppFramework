@@ -11,6 +11,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
+import edu.upenn.cbil.limpopo.model.ProtocolApplication;
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.magetab.utilities.ApplicationException;
 
@@ -25,10 +26,11 @@ import edu.upenn.cbil.magetab.utilities.ApplicationException;
 public class FactorValue {
   private Integer row;
   private Integer col;
-  private String key;
+  private String name;
   private String value;
   private String table;
   private String rowId;
+  private boolean addition;
   public static final String FACTOR_VALUE = "factorvalue";
   public static final String FACTOR_VALUE_PATTERN = "factor\\s*value\\s*\\[(.*)\\]";
   public static final String COMMENT_PATTERN = "comment\\s*\\[(.*)\\]";
@@ -52,19 +54,19 @@ public class FactorValue {
   }
   
   /**
-   * The key to which the factor value data refers.
+   * The name to which the factor value data refers.
    * @return - content originally within the Factor Value brackets.
    */
-  public String getKey() {
-	return key;
+  public String getName() {
+	return name;
   }
   
   /**
-   * Sets the factor value key and removes any addition tokens
-   * @param key - raw key
+   * Sets the factor value name and removes any addition tokens
+   * @param name - raw name
    */
-  public final void setKey(String key) {
-    this.key = AppUtils.removeTokens(key);
+  public final void setName(String name) {
+    this.name = AppUtils.removeTokens(name);
   }
 
   /**
@@ -114,6 +116,18 @@ public class FactorValue {
   public final void setRowId(String rowId) {
     this.rowId = AppUtils.removeTokens(rowId);
   }
+  
+  public final boolean isAddition() {
+    return addition;
+  }
+
+  public final void setAddition(boolean addition) {
+    this.addition = addition;
+  }
+  
+  public final boolean hasTableRowPair() {
+    return StringUtils.isNotEmpty(getTable()) && StringUtils.isNotEmpty(getRowId());
+  }
 
   /**
    * return a complete representation of the factor value using
@@ -127,7 +141,29 @@ public class FactorValue {
       }
    }).toString();
   }
-    
+  
+  @Override
+  public int hashCode() {
+    return name.hashCode() ^ value.hashCode();
+  }
+  
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof FactorValue) {
+      FactorValue that = (FactorValue) obj;
+      if(this.hasTableRowPair() || that.hasTableRowPair()) {
+        if(!this.getTable().equals(that.getTable()) ||
+           !this.getRowId().equals(that.getRowId())) {
+          return false;
+        }
+      }
+      return this.getName().equals(that.getName()) && this.getValue().equals(that.getValue());
+    }
+    else {
+      return false;
+    }
+  }
+  
   /**
    * A single line of factor value data is parsed using the heading information and the
    * row number in the input document containing the data.  More than one factor value
@@ -148,9 +184,10 @@ public class FactorValue {
 	for(int i = 0; i < headers.length; i++) {
       if(FactorValue.isExpectedHeader(headers[i], FACTOR_VALUE_PATTERN)) {
     	FactorValue factorValue = new FactorValue();
-        factorValue.setKey(FactorValue.getExpectedHeaderContent(headers[i], FACTOR_VALUE_PATTERN));
+    	factorValue.setName(FactorValue.getExpectedHeaderContent(headers[i], FACTOR_VALUE_PATTERN));
         if(i < values.length) {
           factorValue.setValue(values[i]);
+          factorValue.setAddition(AppUtils.checkForAddition(values[i]));
         }
         factorValue.row = row;
         factorValue.col = i;

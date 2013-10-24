@@ -14,9 +14,6 @@ import org.apache.commons.lang.StringUtils;
 public class FactorValueRow {
   private List<FactorValue> factorValues;
   private int row;
-  private StringBuffer originalData;
-  private StringBuffer addedData;
-  private StringBuffer allData;
   
   /**
    * Internal constructor intended to avoid nulls and insure defined state.
@@ -24,9 +21,6 @@ public class FactorValueRow {
   protected FactorValueRow() {
     factorValues = new ArrayList<>();
     row = -1;
-    originalData = new StringBuffer();
-    addedData = new StringBuffer();
-    allData = new StringBuffer();
   }
   
   /**
@@ -75,69 +69,5 @@ public class FactorValueRow {
     }
   }
   
-  /**
-   * Getter for the 'stringified' version of all the original factor values on the row.
-   * @return - original data
-   */
-  public String getOriginalData() {
-    return originalData != null ? originalData.toString() : "";
-  }
-  
-  /**
-   * Getter for the 'stringified' version of all the new factor values on the row.
-   * @return - added data
-   */
-  public String getAddedData() {
-    return addedData != null ? addedData.toString() : "";
-  }
-  
-  /**
-   * Getter for the 'stringified' version of all the factor values on the row, both new and old.
-   * @return - all data
-   */
-  public String getAllData() {
-    return allData != null ? allData.toString() : "";
-  }
-  
-  /**
-   * Helper method to condense the given factor value into a string since factor values are
-   * compressed into a delimited string in the factor value xml element.
-   * @param factorValue - the factor value to be 'stringified'
-   * @return - the 'stringified' version of the factor value
-   */
-  protected String createDataString(FactorValue factorValue) {
-    StringBuffer str = new StringBuffer();
-    if(str.length() > 0) str.append(";");
-    str.append(factorValue.getKey() + "|" + factorValue.getValue());
-    if(!StringUtils.isEmpty(factorValue.getTable())) {
-      str.append("|" + factorValue.getTable() + "|" + factorValue.getRowId());
-    }
-    return str.toString();
-  }
-  
-  /**
-   * Three distinct 'stringified' versions of a factor value row are created here.  This is
-   * done post processing since it is dependent on data obtained from the idf portion of the
-   * MAGE-TAB output xml.  One string represents a 'stringified' version of all the factor
-   * values on this row.  One string represents a 'stringfied' version of all the new factor
-   * values on this row (as determined by the new study factors, if any) and one string
-   * represents a 'stringified' version of the original factor values on this row.  Factor
-   * values are separated within each string via semicolons.
-   * @param addedNames - names of added study factors, if any.
-   */
-  public void setDataStrings(Set<String> addedNames) {
-    for(FactorValue factorValue : factorValues) {
-      if(allData.length() > 0) allData.append(";");
-      allData.append(createDataString(factorValue));
-      if(!addedNames.isEmpty() && addedNames.contains(factorValue.getKey())) {
-        if(addedData.length() > 0) addedData.append(";");
-        addedData.append(createDataString(factorValue));
-      }
-      else {
-        if(originalData.length() > 0) originalData.append(";");
-        originalData.append(createDataString(factorValue));
-      }
-    }
-  }
 
 }
