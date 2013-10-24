@@ -215,7 +215,7 @@ sub processVcfFile {
 	$snpFeature->setDescription($infoString);
 	$snpFeature->submit();
 
-	if ( ($recordCount++) % 500) {
+	unless ( ($recordCount++) % 500) {
 	    $self->undefPointerCache();
 	    $self->log("$recordCount records loaded")
 		if $self->getArg('verbose');
