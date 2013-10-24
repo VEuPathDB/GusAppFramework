@@ -59,7 +59,6 @@ public class StudyFactor {
   
   public static StudyFactor getStudyFactorByName(String name) {
     for(StudyFactor studyFactor : studyFactors) {
-      System.out.println(studyFactor.getName());
       if(name.equals(studyFactor.getName())) {
         return studyFactor;
       }
