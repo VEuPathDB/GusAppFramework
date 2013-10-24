@@ -17,11 +17,13 @@ use GUS::Community::Utils::dbSnpBits;
 use GUS::Model::DoTS::SnpFeature;
 use GUS::Model::DoTS::ExternalNASequence;
 use GUS::Model::DoTS::NALocation;
-use GUS::Model::SRes::OntologyTerm;
-use GUS::Model::Study::Protocol;
-use GUS::Model::Study::ProtocolApp;
-use GUS::Model::Study::ProtocolAppNode;
-use GUS::Model::Study::Characteristic;
+use GUS::Model::DoTS::DbRefNAFeature;
+use GUS::Model::SRes::DbRef;
+# use GUS::Model::SRes::OntologyTerm;
+# use GUS::Model::Study::Protocol;
+# use GUS::Model::Study::ProtocolApp;
+# use GUS::Model::Study::ProtocolAppNode;
+# use GUS::Model::Study::Characteristic;
 use GUS::Model::Results::SeqVariation;
 
 my %infoHash;
@@ -189,7 +191,7 @@ sub processVcfFile {
 	    $infoString .= "=\"$infoVal\"" if defined($infoVal);
 
 	    my $dbRefId = $self->getDbRefId($vcf, $infoKey);
-	    my $dbRefNaFeature = GUS::Model::DoTS::DbRefNaFeature
+	    my $dbRefNaFeature = GUS::Model::DoTS::DbRefNAFeature
 		->new( {
 		    "db_ref_id" => $dbRefId,
 		    "na_feature_id" => $snpFeature->getId(),
