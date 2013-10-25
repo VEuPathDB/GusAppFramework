@@ -131,6 +131,7 @@ sub processVcfFile {
     $vcf->parse_header();
 
     my $recordCount;
+    my $skipCount;
 
     while (my $vcfHash = $vcf->next_data_hash()) {
 
@@ -139,7 +140,11 @@ sub processVcfFile {
 	    ->new( {
 		"source_id" => "$rsId",
 		   } );
+
 	if ($snpFeature->retrieveFromDB()) {
+	    unless ( ($skipCount++) % 50000) {
+		$self->undefPointerCache();
+	    }
 	    next;
 	}
 
@@ -218,7 +223,7 @@ sub processVcfFile {
 	$snpFeature->setDescription($infoString);
 	$snpFeature->submit();
 
-	unless ( ($recordCount++) % 100) {
+	unless ( ($recordCount++) % 1000) {
 	    $self->undefPointerCache();
 	    $self->log("$recordCount records loaded")
 		if $self->getArg('verbose');
