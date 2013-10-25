@@ -22,6 +22,7 @@ use GUS::Model::SRes::DbRef;
 use GUS::Model::Results::SeqVariation;
 
 my %infoHash;
+my %seqHash;
 
 # ----------------------------------------------------------------------
 # Arguments
@@ -230,30 +231,34 @@ sub processVcfFile {
 #
 # find the na_sequence_id for the given chromosome name
 sub getSequenceId {
-  my ($self, $chromosome) = @_;
+    my ($self, $chromosome) = @_;
 
-  my $externalNASequence = GUS::Model::DoTS::ExternalNASequence
-      ->new( {
-	  "chromosome" => $chromosome,
-	     } );
+    unless ($seqHash{$chromosome}) {
 
-  if (!$externalNASequence->retrieveFromDB()) {
+	my $externalNASequence = GUS::Model::DoTS::ExternalNASequence
+	    ->new( {
+		"chromosome" => $chromosome,
+		   } );
 
-      # couldn't find it with that name -- remove the prefix "chr" if present
-      if ($chromosome =~ /^chr(.*)$/) {
-	  $externalNASequence->setChromosome($1);
-      }
+	if (!$externalNASequence->retrieveFromDB()) {
 
-      if (!$externalNASequence->retrieveFromDB()) {
-	  # couldn't find that either -- insert
-	  # $externalNASequence->setChromosome($chromosome); # use unabbreviated chromosome name
-	  $self->log("adding new sequence record for chromosome \"$chromosome\"")
-	      if $self->getArg('verbose');
-	  $externalNASequence->setSequenceVersion("1");
-	  $externalNASequence->submit();
-      }
-  }
-  return $externalNASequence->getId();
+	    # couldn't find it with that name -- remove the prefix "chr" if present
+	    if ($chromosome =~ /^chr(.*)$/) {
+		$externalNASequence->setChromosome($1);
+	    }
+
+	    if (!$externalNASequence->retrieveFromDB()) {
+		# couldn't find that either -- insert
+		# $externalNASequence->setChromosome($chromosome); # use unabbreviated chromosome name
+		$self->log("adding new sequence record for chromosome \"$chromosome\"")
+		    if $self->getArg('verbose');
+		$externalNASequence->setSequenceVersion("1");
+		$externalNASequence->submit();
+	    }
+	}
+	$seqHash{$chromosome} = $externalNASequence->getId();
+    }
+    return $seqHash{$chromosome}
 }
 
 # getDbRefId
