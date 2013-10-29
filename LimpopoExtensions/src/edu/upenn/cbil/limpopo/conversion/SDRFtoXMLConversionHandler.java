@@ -62,8 +62,8 @@ import edu.upenn.cbil.limpopo.utils.SDRFUtils;
 
 /**
  * Converts a MAGE-TAB SDRF into an XML document that can be used by CBIL to load a
- * GUS 4.0 DB.
- * @author crisl
+ * GUS 4.0 DB Schema.
+ * @author Cris Lawrence
  *
  */
 @ServiceProvider
@@ -194,6 +194,11 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
     return nodeCharElement;
   }
   
+  /**
+   * Builds a member of the protocol application portion of the XML.
+   * @param app - the protocol application (i.e., edge)
+   * @return - the completed protocol application xml element
+   */
   protected Element setProtocolApplication(ProtocolApplication app) { 
     int step = 0;
     Element appElement = new Element(PROTOCOL_APP_TAG);
@@ -255,6 +260,13 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
     return appElement;
   }
   
+  /**
+   * Builds the performer xml for a protocol application.
+   * @param performer - the performer object
+   * @param step - integer indicating which step in a protocol application series.  If
+   * the protocol application is not part of a series, step will be 1.
+   * @return - the completed performer xml element
+   */
   protected Element setContact(Performer performer, String step) {
     Element contactElement = new Element(CONTACT_TAG);
     contactElement.setAttribute(STEP_ATTR, step);
@@ -269,6 +281,22 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
     return contactElement;
   }
   
+  /**
+   * Builds the parameter xml for a protocol application
+   * @param param - the protocol application param to be converted into a xml element
+   * @param step - integer indicating the step in a protocol application series to which
+   * this parameter belongs.  If the protocol application is not part of a series, the
+   * step will be 1.
+   * @return - the completed parameter xml element.  Empty elements are discarded.
+   * <app_param step="#">
+   *   <name>parameter name</name>
+   *   <value>parameter value</value>
+   *   <table>Schema::Table</table>
+   *   <row_id>row id</row_id>
+   *   <unit_type category="parameter category">unit type</unit_type>
+   *   <unit_type_ext_db_rls>Name|Version</unit_type_ext_db_rls>
+   * </app_param> 
+   */
   protected Element setProtocolApplicationParameter(ProtocolApplicationParameter param, String step) {
     Element paramElement = new Element(PROTOCOL_APP_PARAMETER_TAG);
     paramElement.setAttribute(STEP_ATTR, step);

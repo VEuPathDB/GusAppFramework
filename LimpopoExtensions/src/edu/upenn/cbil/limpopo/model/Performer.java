@@ -12,6 +12,13 @@ import edu.upenn.cbil.limpopo.utils.AppUtils;
 import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.PerformerAttribute;
 import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
 
+/**
+ * Represents the information for a protocol application performer indicated in the SDRF.
+ * This class is intended as a convenience class to be used when converting a MAGE-TAB
+ * into another format.  It is expected that no more than one of these objects will be
+ * associated with a protocol application.
+ * @author Cris Lawrence
+ */
 public class Performer {
   private String name;
   private OntologyTerm role;
@@ -91,6 +98,10 @@ public class Performer {
     this.comments = AppUtils.removeTokens(comments);
   }
 
+  /**
+   * Helper method for diagnostic use.  Provides a more complete accounting of
+   * a performer's field values.
+   */
   @Override
   public String toString() {
     return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
