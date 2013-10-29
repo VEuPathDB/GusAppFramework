@@ -30,8 +30,8 @@ import static edu.upenn.cbil.limpopo.utils.AppUtils.*;
 
 /**
  * Converts a MAGE-TAB IDF into an XML document that can be used by CBIL to load a
- * GUS 4.0 DB.
- * @author crisl
+ * GUS 4.0 DB schema.
+ * @author Cris Lawrence
  *
  */
 @ServiceProvider
