@@ -288,6 +288,8 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
    * this parameter belongs.  If the protocol application is not part of a series, the
    * step will be 1.
    * @return - the completed parameter xml element.  Empty elements are discarded.
+   * <pre>
+   * {@code
    * <app_param step="#">
    *   <name>parameter name</name>
    *   <value>parameter value</value>
@@ -296,6 +298,8 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
    *   <unit_type category="parameter category">unit type</unit_type>
    *   <unit_type_ext_db_rls>Name|Version</unit_type_ext_db_rls>
    * </app_param> 
+   * }
+   * </pre>
    */
   protected Element setProtocolApplicationParameter(ProtocolApplicationParameter param, String step) {
     Element paramElement = new Element(PROTOCOL_APP_PARAMETER_TAG);
