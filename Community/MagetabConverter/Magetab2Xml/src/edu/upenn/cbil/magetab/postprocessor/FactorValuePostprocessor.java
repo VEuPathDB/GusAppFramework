@@ -15,8 +15,20 @@ import edu.upenn.cbil.magetab.model.FactorValueRow;
 import edu.upenn.cbil.magetab.model.StudyFactor;
 import edu.upenn.cbil.magetab.preprocessors.FactorValuePreprocessor;
 
+/**
+ * Processor that adds extracted factor values back into the xml output document.
+ * @author Cris Lawrence
+ *
+ */
 public class FactorValuePostprocessor {
 
+  /**
+   * Adds any factor value data removed from the Excel spreadsheet, back into the xml output document.
+   * Factor values are handled external to limpopo because CBIL doesn't adhere to the MAGE-TAB spec in
+   * this regard.
+   * @param document - the xml output document
+   * @return - the xml output document with the factor values incorporated.
+   */
   public Document process(Document document) {
     if(FactorValuePreprocessor.factorValueMap != null && !FactorValuePreprocessor.factorValueMap.isEmpty()) {
       StudyFactor.populate(document);
@@ -64,6 +76,13 @@ public class FactorValuePostprocessor {
     return factorValues;
   }
   
+  /**
+   * Identify the spreadsheet rows to which a particular node id is associated.  Since factor values
+   * were extracted directly from the Excel spreadsheet, they are identified by the spreadsheet on
+   * which they were found.  This method helps associate a node with the relevant factor values.
+   * @param id - node id
+   * @return - list of row numbers.
+   */
   protected List<Integer> getRows(String id) {
     List<Integer> rows = new ArrayList<>();
 	String[] locs = id.split(AppUtils.NODE_SEPARATOR);
