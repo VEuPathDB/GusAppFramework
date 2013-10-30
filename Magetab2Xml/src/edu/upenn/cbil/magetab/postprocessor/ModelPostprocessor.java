@@ -30,7 +30,7 @@ import edu.upenn.cbil.magetab.model.Study;
  * Postprocessor that accepts an XML document and converts it into an object graph composed of
  * a Study object and all related Node and Edge objects.  This object graph can be more easily
  * parsed to produce a biomaterials graph.
- * @author crisl
+ * @author Cris Lawrence
  *
  */
 public class ModelPostprocessor {
