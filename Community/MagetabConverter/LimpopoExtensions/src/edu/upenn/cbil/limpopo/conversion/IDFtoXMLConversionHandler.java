@@ -105,7 +105,24 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
    * Builds the study portion of the XML document from the data populating the internal Study
    * model.
    * @param study - the populated study object
-   * @return - top level element for the study portion of the XML
+   * @return - top level element for the study portion of the xml.  Empty elements are discarded.
+   * <pre>
+   * {@code
+   *   <study>
+   *     <name>title</name>
+   *     <description>description</description>
+   *     <pubmed_ids>may be semi-colon separated list or a single id</pubmed_ids>
+   *     <external_database_release>Name|Version</external_database_release>
+   *     <source_id>id</source_id>
+   *     <goal>goal</goal>
+   *     <approaches>approaches</approaches>
+   *     <results>results</results>
+   *     <conclusions>conclusions</conclusions>
+   *    <related_studies>semi-colon separated list of study names; part of FGSS--application specific</related_studies>
+   *    <child_studies>semi-colon separated list of study names; for investigations</child_studies>
+   *  </study>
+   * }
+   * </pre>
    */
   protected Element assembleStudyElement(Study study) {
     Element studyElement = new Element(STUDY_TAG);
@@ -151,7 +168,15 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
    * Builds the study design portion of the XML document from the data populating the internal Study
    * design model.
    * @param design - the populated study design object
-   * @return - the top level element of the study design portion of the xml
+   * @return - the top level element of the study design portion of the xml.  Empty elements are discarded.
+   * <pre>
+   * {@code
+   *   <study_design>
+   *    <type>type</type>
+   *    <type_ext_db_rls>Name|Version</type_ext_db_rls>
+   *  </study_design>   
+   * }
+   * </pre>
    */
   protected Element assembleStudyDesignElement(StudyDesign design) {
     Element element = new Element(AppUtils.STUDY_DESIGN_TAG);
@@ -166,7 +191,17 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
    * Builds the study factor portion of the XML document from the data populating the internal Study
    * factor model.
    * @param factor - the populated study factor object
-   * @return - the top level element of the study factor portion of the xml
+   * @return - the top level element of the study factor portion of the xml.  Empty elements are discarded.
+   * <pre>
+   * {@code
+   *   <study_factor addition="true">
+   *     <name>factor name</name>
+   *     <description>description</description>
+   *     <type>type</type>
+   *     <type_ext_db_rls>Name|Version</type_ext_db_rls>
+   *   </study_factor>   
+   * }
+   * </pre>
    */
   protected Element assembleStudyFactorElement(StudyFactor factor) {
     Element element = new Element(AppUtils.STUDY_FACTOR_TAG);
