@@ -45,6 +45,11 @@ sub getArgumentsDeclaration {
                  reqd           => 1,
                  isList         => 0 
              }),
+     booleanArg({name => 'checkExists',
+		 descr => "before loading each RS ID, check that it doesn't already exist in the database (silently skipping it if it does)",
+		 reqd => 0,
+		 default => 0
+            }),
     ];
   return $argumentDeclaration;
 }
@@ -132,20 +137,23 @@ sub processVcfFile {
 
     my $recordCount;
     my $skipCount;
-
+    my $checkExists = $self->getArg('checkExists')
     while (my $vcfHash = $vcf->next_data_hash()) {
 
 	my $rsId = $vcfHash->{ID};
+
 	my $snpFeature = GUS::Model::DoTS::SnpFeature
 	    ->new( {
 		"source_id" => "$rsId",
 		   } );
 
-	if ($snpFeature->retrieveFromDB()) {
-	    unless ( ($skipCount++) % 50000) {
-		$self->undefPointerCache();
+	if ($checkExists) {
+	    if ($snpFeature->retrieveFromDB()) {
+		unless ( ($skipCount++) % 50000) {
+		    $self->undefPointerCache();
+		}
+		next;
 	    }
-	    next;
 	}
 
 	my $naSequenceId = $self->getSequenceId($vcfHash->{CHROM});
