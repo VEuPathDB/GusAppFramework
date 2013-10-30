@@ -95,70 +95,87 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
 	ProtocolApplication.createAllProtocolApplications(data);
 	Set<ProtocolApplicationIONode> appNodes = ProtocolApplicationIONode.getApplicationIONodes();
 	for(ProtocolApplicationIONode appNode : appNodes) {
-	  Element nodeElement = new Element(PROTOCOL_APP_NODE_TAG);
-	  nodeElement.setAttribute(ID_ATTR,appNode.getId());
-	  if(appNode.isAddition()) {
-        nodeElement.setAttribute(ADDITION_ATTR, TRUE);
-      }
-	  if(StringUtils.isNotEmpty(appNode.getDbId())) {
-	    nodeElement.setAttribute(DBID_ATTR, appNode.getDbId());
-	  }
-	  nodeElement.addContent(new Element(TYPE_TAG).setText(appNode.getType()));
-	  nodeElement.addContent(new Element(NAME_TAG).setText(appNode.getName()));
-	  if(!StringUtils.isEmpty(appNode.getDescription())) {
-	    nodeElement.addContent(new Element(DESCRIPTION_TAG).setText(appNode.getDescription()));
-	  }
-	  if(!StringUtils.isEmpty(appNode.getTaxon())) {
-	    nodeElement.addContent(new Element(TAXON_TAG).setText(appNode.getTaxon()));
-	  }
-	  if(!StringUtils.isEmpty(appNode.getUri())) {
-	    nodeElement.addContent(new Element(URI_TAG).setText(appNode.getUri()));
-	  }
-	  if(!appNode.getCharacteristics().isEmpty() || StringUtils.isNotEmpty(appNode.getTable())) {
-	    nodeElement.addContent(setNodeCharacteristics(appNode));
-	  }
-	  sdrfElement.addContent(nodeElement);
+	  sdrfElement.addContent(assembleProtocolApplicationNodeElement(appNode));
 	}
 	for(ProtocolApplication app : ProtocolApplication.getApplications()) {
 	  if(app.isTopmost()) {
-		sdrfElement.addContent(setProtocolApplication(app));
+		sdrfElement.addContent(assembleProtocolApplicationElement(app));
 	  }
 	}
 	amendIDF(document.getRootElement());
 	document.getRootElement().addContent(sdrfElement);
     logger.debug("END - " + getClass().getSimpleName());
   }
-
+  
   /**
-   * Builds the contacts list of the protocol application portion of the XML document from the
-   * data populating the internal Protocol Application model
-   * @param app - the protocol application object (i.e., edge)
-   * @return - contacts xml element
+   * Builds a member of the protocol application node portion of the xml.
+   * @param appNode - the protocol application node (i.e., node)
+   * @return - the completed protocol application node xml element.  Empty elements are discarded.
+   * Addition attribute is present only if protocol application node is an addition.  A database id
+   * is present only if needed to clarify database relationships for additions.  Note that
+   * factor values are not handled here because CBIL violates the spec.
+   * <pre>
+   * {@code
+   *   <protocol_app_node id="loc" [addition="true"] [db_id="db id"]>
+   *     <type>material entity or data type</type>
+   *     <subtype>presently unused</subtype>
+   *     <name>name</name>
+   *     <description>description</description>
+   *     <external_database_release>Name|Version</external_database_release>
+   *     <source_id>id</source_id> 
+   *     <uri>uri</uri>
+   *     <taxon>taxon</taxon>
+   *     see setNodeCharacteristics  
+   *   </protocol_app_node>
+   * }
+   * </pre>
    */
-  protected Element setContacts(ProtocolApplication app) {
-    Element contactsElement = new Element(CONTACTS_TAG);
-    StringBuffer content = new StringBuffer();
-    List<Performer> performers = app.getPerformers();
-    Iterator<Performer> iterator = performers.iterator();
-    while(iterator.hasNext()) {
-      Performer performer = iterator.next();
-      content.append(performer.getName());
-      if(performer.getRole() != null) {
-        content.append("::" + performer.getRole().getName() + "::" + performer.getRole().getExternalDatabaseRelease());
-      }
-      if(iterator.hasNext()) {
-        content.append(";");
-      }
+  protected Element assembleProtocolApplicationNodeElement(ProtocolApplicationIONode appNode) {
+    Element nodeElement = new Element(PROTOCOL_APP_NODE_TAG);
+    nodeElement.setAttribute(ID_ATTR,appNode.getId());
+    if(appNode.isAddition()) {
+      nodeElement.setAttribute(ADDITION_ATTR, TRUE);
     }
-    contactsElement.setText(content.toString());
-    return contactsElement;
+    if(StringUtils.isNotEmpty(appNode.getDbId())) {
+      nodeElement.setAttribute(DBID_ATTR, appNode.getDbId());
+    }
+    nodeElement.addContent(new Element(TYPE_TAG).setText(appNode.getType()));
+    nodeElement.addContent(new Element(NAME_TAG).setText(appNode.getName()));
+    if(!StringUtils.isEmpty(appNode.getDescription())) {
+      nodeElement.addContent(new Element(DESCRIPTION_TAG).setText(appNode.getDescription()));
+    }
+    if(!StringUtils.isEmpty(appNode.getTaxon())) {
+      nodeElement.addContent(new Element(TAXON_TAG).setText(appNode.getTaxon()));
+    }
+    if(!StringUtils.isEmpty(appNode.getUri())) {
+      nodeElement.addContent(new Element(URI_TAG).setText(appNode.getUri()));
+    }
+    if(!appNode.getCharacteristics().isEmpty() || StringUtils.isNotEmpty(appNode.getTable())) {
+      nodeElement.addContent(setNodeCharacteristics(appNode));
+    }
+    return nodeElement;
   }
 	
   /**
    * Builds the node characteristics of the protocol application node portion of the XML
    * document from the data populating the internal Protocol Application IO Node model
    * @param appNode - the protocol application IO node (i.e., node)
-   * @return - the top level node characteristics element
+   * @return - the top level node characteristics element.  Empty elements are discarded.
+   * <pre>
+   * {@code
+   *   <node_characteristics>
+   *     <characteristic>
+   *       <external_database_release>Name|Version</external_database_release>
+   *       <ontology_term category="type">name</ontology_term> 
+   *       <value>value</value>
+   *     </characteristic>
+   *     <characteristic>
+   *       <table>Schema::Table</table>
+   *     </characteristic>
+   *     ...
+   *   </node_characteristics>
+   * }
+   * </pre>
    */
   protected Element setNodeCharacteristics(ProtocolApplicationIONode appNode) {
     Element nodeCharElement = new Element(NODE_CHARACTERISTICS_TAG);
@@ -195,11 +212,29 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
   }
   
   /**
-   * Builds a member of the protocol application portion of the XML.
+   * Builds a member of the protocol application portion of the xml.
    * @param app - the protocol application (i.e., edge)
-   * @return - the completed protocol application xml element
+   * @return - the completed protocol application xml element.  Empty elements are discarded.
+   * Addition attribute is present only if protocol application is an addition.  A database id
+   * is present only if needed to clarify database relationships for additions.
+   * <pre>
+   * {@code
+   *   <protocol_app id="loc" [addition="true"] [db_id="db id"]>
+   *     <protocol>name</protocol>
+   *     <protocol_app_date>date</protocol_app_date>
+   *     <contacts>
+   *       see setContact
+   *     </contacts>
+   *     <protocol_app_parameters>
+   *       see setProtocolApplicationParameter  
+   *     </protocol_app_parameters>
+   *     <inputs>semi-colon separated list of protocol_node ids</inputs>
+   *     <outputs>semi-colon separated list of protocol_node ids</outputs>
+   *   </protocol_app>
+   * }
+   * </pre>
    */
-  protected Element setProtocolApplication(ProtocolApplication app) { 
+  protected Element assembleProtocolApplicationElement(ProtocolApplication app) { 
     int step = 0;
     Element appElement = new Element(PROTOCOL_APP_TAG);
     appElement.setAttribute(ID_ATTR, app.getId());
@@ -232,13 +267,13 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
     Element paramsElement = new Element(PROTOCOL_APP_PARAMETERS_TAG);
     step = 1;
     for(ProtocolApplicationParameter param : app.getParameters()) {
-      paramsElement.addContent(setProtocolApplicationParameter(param, Integer.toString(step)));
+      paramsElement.addContent(assembleProtocolApplicationParameterElement(param, Integer.toString(step)));
     }
     if(app.hasSubordinate()) {
       for(ProtocolApplication subordinate : app.getSubordinateApps()) {
         step++;
         for(ProtocolApplicationParameter param : subordinate.getParameters()) {
-          paramsElement.addContent(setProtocolApplicationParameter(param, Integer.toString(step)));
+          paramsElement.addContent(assembleProtocolApplicationParameterElement(param, Integer.toString(step)));
         }
       }
     }
@@ -265,7 +300,16 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
    * @param performer - the performer object
    * @param step - integer indicating which step in a protocol application series.  If
    * the protocol application is not part of a series, step will be 1.
-   * @return - the completed performer xml element
+   * @return - the completed performer xml element.  Empty elements are discarded.
+   * * <pre>
+   * {@code
+   *   <contact step="#">
+   *     <name>First Last</name>
+   *     <role>Role</role>
+   *     <external_database_release>Name|Version</external_database_release>
+   *   </contact>
+   * }
+   * </pre>
    */
   protected Element setContact(Performer performer, String step) {
     Element contactElement = new Element(CONTACT_TAG);
@@ -287,10 +331,12 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
    * @param step - integer indicating the step in a protocol application series to which
    * this parameter belongs.  If the protocol application is not part of a series, the
    * step will be 1.
-   * @return - the completed parameter xml element.  Empty elements are discarded.
+   * @return - the completed parameter xml element.  Empty elements are discarded.  Addition
+   * attribute is present only if the parameter is added and the protocol application to
+   * which it belong is not added.
    * <pre>
    * {@code
-   * <app_param step="#">
+   * <app_param step="#" [addition="true"]>
    *   <name>parameter name</name>
    *   <value>parameter value</value>
    *   <table>Schema::Table</table>
@@ -301,7 +347,7 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
    * }
    * </pre>
    */
-  protected Element setProtocolApplicationParameter(ProtocolApplicationParameter param, String step) {
+  protected Element assembleProtocolApplicationParameterElement(ProtocolApplicationParameter param, String step) {
     Element paramElement = new Element(PROTOCOL_APP_PARAMETER_TAG);
     paramElement.setAttribute(STEP_ATTR, step);
     if(param.isAddition()) {
@@ -327,7 +373,7 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
   /**
    * Additional protocols representing a series of protocols as found in the SDRF must be
    * added to the IDF portion of the xml document.
-   * @param magetabElement - top level element of the xml document under construction
+   * @param magetabElement - top level element of the xml document under construction.
    */
   private void amendIDF(Element magetabElement) {
 	for(ProtocolSeries series : ProtocolApplication.getSeries()) {
