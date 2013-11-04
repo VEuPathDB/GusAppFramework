@@ -137,7 +137,7 @@ sub processVcfFile {
 
     my $recordCount;
     my $skipCount;
-    my $checkExists = $self->getArg('checkExists')
+    my $checkExists = $self->getArg('checkExists');
     while (my $vcfHash = $vcf->next_data_hash()) {
 
 	my $rsId = $vcfHash->{ID};
