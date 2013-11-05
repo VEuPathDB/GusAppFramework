@@ -5,6 +5,7 @@ Checkout and build:
 3.  vi/eamcs resources and alter the properties according to platform and personal taste.
 4.  cd ..
 5.  ant jar
+N.B.  Java 7 is required to build this codebase.
 
 Run:
 
@@ -33,6 +34,10 @@ Run:
 7.  The xsd file is output.xsd and is applied only if the -validate switch is set on the command line
 8.  Note that limpopo sometimes throws UnsupportedOperationExceptions that don't interfere with processing.
     Nevertheless, check output carefully when those occur.
+9.  Limpopo and consequently this software, can handle ISO-8859-1 characters.  MS Excel uses CP1252 by default.
+    Not all characters in CP1252 have representations in ISO-8859-1.  Any encoding problems that result from
+    a failure to find a CP1252 to ISO-8859-1 mapping should be apparent in the idf.txt or sdrf.txt files
+    as a question mark. 
 
 Notes about creating Excel spreadsheets with MAGE-TAB additions:
 

@@ -74,7 +74,7 @@ public class Processor {
       }
       document = new FactorValuePostprocessor().process(document);
       XMLOutputter xmlOutput = new XMLOutputter();
-      xmlOutput.setFormat(Format.getPrettyFormat().setExpandEmptyElements(true));
+      xmlOutput.setFormat(Format.getPrettyFormat().setExpandEmptyElements(true).setEncoding("ISO-8859-1"));
       xmlOutput.output(document, output);
       if(switches.get(VALIDATE)) {
         new XMLValidator().validate(outputFilename);

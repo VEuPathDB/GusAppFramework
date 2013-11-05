@@ -90,7 +90,7 @@ public class AdditionFilterPostprocessor {
    */
   protected String transform(Document document) {
     XMLOutputter xmlOutput = new XMLOutputter();
-    xmlOutput.setFormat(Format.getPrettyFormat().setExpandEmptyElements(true));
+    xmlOutput.setFormat(Format.getPrettyFormat().setExpandEmptyElements(true).setEncoding("ISO-8859-1"));
     String xmlString = xmlOutput.outputString(document);
     try {
       TransformerFactory factory = TransformerFactory.newInstance();
