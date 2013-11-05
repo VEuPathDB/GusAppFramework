@@ -202,17 +202,17 @@ sub getStudy {
     $study->setConclusions($conclusions);
   }
 
-  my $pubmedIdsString = $studyNode->findvalue('./pubmed_ids');
-  if (defined($pubmedIdsString) && $pubmedIdsString !~ /^\s*$/) {
-    my @pubmedIds = split(/;/, $pubmedIdsString);
-    for (my $i=0; $i<@pubmedIds; $i++) {
-      my $bibRef = $self->getBibRef($pubmedIds[$i]);
+  my ($pubmedIds) = $studyNode->findnodes('./pubmed_ids');
+  foreach my $pubmedIdNode ($pubmedIds->findnodes('./pubmed_id')) {
+    my $pubmedId = $pubmedIdNode->findvalue('.');
+    if (defined($pubmedId) && $pubmedId !~ /^\s*$/) {
+      my $bibRef = $self->getBibRef($pubmedId);
       my $studyBibRef = GUS::Model::Study::StudyBibRef->new();
       $studyBibRef->setParent($study);
       $studyBibRef->setParent($bibRef);
     }
   }
-
+  
   return($study);
 }
 
