@@ -76,9 +76,8 @@ public class ExcelPreprocessor {
   public String process(String type) {
 	DataFormatter formatter = new DataFormatter();
     String textFilename = directoryName + File.separator + type + "." + TEXT_EXT;
-    BufferedWriter writer = null;
+    String textData = "";
     try {
-      writer = new BufferedWriter(new FileWriter(new File(textFilename)));
       OPCPackage opcPackage = OPCPackage.open(workbookFile);
       XSSFWorkbook workbook = new XSSFWorkbook(opcPackage);
       int sheetIndex = findSheet(workbook, type);
@@ -100,21 +99,13 @@ public class ExcelPreprocessor {
         	line = new StringBuffer(line.toString().trim());
             line.append("\t" + SDRF + "." + TEXT_EXT);
           }
-          writer.write(line.toString().trim());
-          writer.newLine();
+          textData += line.toString().trim() + "\n";
         }
       }
+      Files.write(textData, new File(textFilename), Charsets.ISO_8859_1);
     }
     catch(InvalidFormatException | IOException ex) {
       throw new ApplicationException(EXCEL_PARSE_ERROR, ex);
-    }
-    finally {
-      try {
-        if(writer != null) writer.close();
-      }
-      catch(IOException ioe) {
-        logger.error(FILE_CLOSE_ERROR + textFilename, ioe);
-      }  
     }
     if(SDRF.equalsIgnoreCase(type)) {
       verifySDRF(textFilename);
