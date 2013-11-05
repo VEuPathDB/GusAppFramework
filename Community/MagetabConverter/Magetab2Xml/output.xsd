@@ -319,6 +319,21 @@
     </xsd:sequence>
   </xsd:complexType>
   
+  <xsd:complexType name="factorValuesType">
+    <xsd:sequence>
+      <xsd:element name="factor_value" minOccurs="1" maxOccurs="unbounded">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="name" minOccurs="1" maxOccurs="1" type="xsd:string"/>
+            <xsd:element name="value" minOccurs="1" maxOccurs="1"/>
+            <xsd:group ref="dbCoordsGroup" minOccurs="0" maxOccurs="1" />
+          </xsd:sequence>
+          <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  
   <xsd:complexType name="performersType">
    <xsd:sequence>
       <xsd:element name="contact" minOccurs="1" maxOccurs="unbounded">
@@ -351,14 +366,6 @@
     </xsd:sequence>
   </xsd:complexType>
 
-  <xsd:complexType name="factorValuesType">
-    <xsd:simpleContent>
-      <xsd:extension base="pipeSepType">
-        <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
-      </xsd:extension>
-    </xsd:simpleContent>
-  </xsd:complexType>
-  
   <xsd:complexType name="valueType">
     <xsd:simpleContent>
       <xsd:extension base="xsd:string" >
