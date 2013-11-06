@@ -245,40 +245,32 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
       appElement.setAttribute(DBID_ATTR, app.getDbId());
     }
     appElement.addContent(new Element(PROTOCOL_TAG).setText(app.getName()));
-    Element contactsElement = new Element(CONTACTS_TAG);
     step = 1;
     for(Performer performer : app.getPerformers()) {
-      contactsElement.addContent(setContact(performer, Integer.toString(step)));
+      appElement.addContent(setContact(performer, Integer.toString(step)));
     }
     if(app.hasSubordinate()) {
       for(ProtocolApplication subordinate : app.getSubordinateApps()) {
         step++;
         for(Performer performer : subordinate.getPerformers()) {
-          contactsElement.addContent(setContact(performer, Integer.toString(step)));
+          appElement.addContent(setContact(performer, Integer.toString(step)));
         }
       }
-    }
-    if(contactsElement.getChildren() != null && !contactsElement.getChildren().isEmpty()) {
-      appElement.addContent(contactsElement);
     }
     if(StringUtils.isNotEmpty(app.getDate())) {
       appElement.addContent(new Element(PROTOCOL_APP_DATE_TAG).setText(app.getDate()));
     }
-    Element paramsElement = new Element(PROTOCOL_APP_PARAMETERS_TAG);
     step = 1;
     for(ProtocolApplicationParameter param : app.getParameters()) {
-      paramsElement.addContent(assembleProtocolApplicationParameterElement(param, Integer.toString(step)));
+      appElement.addContent(assembleProtocolApplicationParameterElement(param, Integer.toString(step)));
     }
     if(app.hasSubordinate()) {
       for(ProtocolApplication subordinate : app.getSubordinateApps()) {
         step++;
         for(ProtocolApplicationParameter param : subordinate.getParameters()) {
-          paramsElement.addContent(assembleProtocolApplicationParameterElement(param, Integer.toString(step)));
+          appElement.addContent(assembleProtocolApplicationParameterElement(param, Integer.toString(step)));
         }
       }
-    }
-    if(paramsElement.getChildren() != null && !paramsElement.getChildren().isEmpty()) {
-      appElement.addContent(paramsElement);
     }
     StringBuffer ids = new StringBuffer();
     for(ProtocolApplicationIONode input : app.getInputs()) {
