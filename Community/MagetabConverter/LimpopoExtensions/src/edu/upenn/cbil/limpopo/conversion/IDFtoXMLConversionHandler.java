@@ -136,11 +136,9 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
     }
     List<Publication> publications = study.getPublications();
     if(publications.size() > 0) {
-      Element publicationsElement = new Element(PUBMED_IDS_TAG);
       for(Publication publication : publications) {
-        publicationsElement.addContent(assemblePubmedIdElement(publication));
+        studyElement.addContent(assemblePubmedIdElement(publication));
       }
-      studyElement.addContent(publicationsElement);
     }
     if(!StringUtils.isEmpty(study.getSourceId().getName())) {
       studyElement.addContent(new Element(EXTERNAL_DATABASE_RELEASE_TAG).setText(study.getSourceId().getExternalDatabaseRelease()));
@@ -345,14 +343,8 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
     if(!StringUtils.isEmpty(protocol.getContactId())) {
       protocolElement.addContent(new Element(CONTACT_TAG).setText(protocol.getContactId()));
     }
-    if(!protocol.getParameters().isEmpty()) {
-      Element parametersElement = new Element(PROTOCOL_PARAMETERS_TAG);
-      protocolElement.addContent(parametersElement);
-      Iterator<ProtocolParam> parameterIterator = protocol.getParameters().iterator();
-      while(parameterIterator.hasNext()) {
-        ProtocolParam parameter = parameterIterator.next();
-        parametersElement.addContent(assembleParameterElement(protocol, parameter));
-      }
+    for(ProtocolParam parameter : protocol.getParameters()) {
+      protocolElement.addContent(assembleParameterElement(protocol, parameter));
     }
     return protocolElement;
   }
