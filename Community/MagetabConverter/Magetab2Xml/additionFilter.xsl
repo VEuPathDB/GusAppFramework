@@ -10,15 +10,16 @@
     <xsl:text>&#x0A;</xsl:text>
   </xsl:template>
 
+  <!--
+    Immediate child nodes of idf or sdrf will either have db_id attribute, addition attribute, both
+    attributes or neither.  Only transform those nodes with addition attribute and/or db_id attribute. 
+   -->
   <xsl:template match="//idf | //sdrf">
     <xsl:text>&#x0A;</xsl:text>
     <xsl:copy>
       <xsl:for-each select="node()">
         <xsl:choose>
           <xsl:when test="@addition">
-              <xsl:message>
-                Addition Attribute:  <xsl:value-of select="name(.)"></xsl:value-of>
-              </xsl:message>
             <xsl:text>&#x0A;</xsl:text>
             <xsl:copy>
               <xsl:apply-templates select="node()|@*" />
@@ -26,9 +27,6 @@
             <xsl:text>&#x0A;</xsl:text>
           </xsl:when>
           <xsl:when test="@db_id">
-              <xsl:message>
-                DBID Attribute: <xsl:value-of select="name(.)"></xsl:value-of>
-              </xsl:message>
             <xsl:call-template name="dbIdAttr" />
           </xsl:when>
           <xsl:otherwise />
@@ -39,38 +37,25 @@
   </xsl:template>
   
   <!--
-    Additions may well exist within elements having dbId attributes.  Need to search for and
-    display them. Paths differ from idf and sdrf descendent elements since contacts is shared
-    between them.
+    Additions may well exist within elements having dbId attributes.  Need to copy the
+    db id element and search for incorporated additions.
    -->
   <xsl:template name="dbIdAttr">
     <xsl:text>&#x0A;</xsl:text>
-    <xsl:copy>   
+    <xsl:copy>
       <xsl:copy-of select="@*"/>
-      <xsl:apply-templates select="pubmed_id | param | factor_value | app_param | contact" />
+      <xsl:apply-templates select="*[@addition]" />
     </xsl:copy>
     <xsl:text>&#x0A;</xsl:text>
   </xsl:template>
   
   <!--
-    For factor values, protocol app parameters or contracts in the sdrf, print
-    every element that is an addition or every element where the parent is an addition.
+    Element has addition attribute.  Apply identity transform 
    -->
-  <xsl:template match="pubmed_id | param | factor_value | app_param | contact">
-     <xsl:choose>
-     <xsl:when test=" ../@addition">
-        <xsl:copy>
-          <xsl:apply-templates select="node()|@*"/>
-        </xsl:copy>
-      </xsl:when>
-      <xsl:when test="@addition">
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:copy>
-          <xsl:apply-templates select="node()|@*"/>
-        </xsl:copy>
-        <xsl:text>&#x0A;</xsl:text> 
-      </xsl:when>
-    </xsl:choose>
+  <xsl:template match="*[@addition]">
+    <xsl:text>&#x0A;</xsl:text>
+    <xsl:copy-of select="."/>
+    <xsl:text>&#x0A;</xsl:text>
   </xsl:template>
   
   <!--
