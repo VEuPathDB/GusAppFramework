@@ -150,8 +150,12 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
     if(!StringUtils.isEmpty(appNode.getUri())) {
       nodeElement.addContent(new Element(URI_TAG).setText(appNode.getUri()));
     }
-    if(!appNode.getCharacteristics().isEmpty() || StringUtils.isNotEmpty(appNode.getTable())) {
-      nodeElement.addContent(setNodeCharacteristics(appNode));
+    Element charElement = setNodeCharacteristic(appNode);
+    if(charElement != null) {
+      nodeElement.addContent(charElement);
+    }
+    for(Characteristic characteristic : appNode.getCharacteristics()) {
+      nodeElement.addContent(setNodeCharacteristic(characteristic));
     }
     return nodeElement;
   }
@@ -159,56 +163,61 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
   /**
    * Builds the node characteristics of the protocol application node portion of the XML
    * document from the data populating the internal Protocol Application IO Node model
-   * @param appNode - the protocol application IO node (i.e., node)
-   * @return - the top level node characteristics element.  Empty elements are discarded.
+   * @param appNode - the characteristic object
+   * @return - the top level node characteristic element.  Empty elements are discarded.
    * <pre>
    * {@code
-   *   <node_characteristics>
-   *     <characteristic>
-   *       <external_database_release>Name|Version</external_database_release>
-   *       <ontology_term category="type">name</ontology_term> 
-   *       <value>value</value>
-   *     </characteristic>
-   *     <characteristic>
-   *       <table>Schema::Table</table>
-   *     </characteristic>
-   *     ...
-   *   </node_characteristics>
+   *   <characteristic>
+   *     <external_database_release>Name|Version</external_database_release>
+   *     <ontology_term category="type">name</ontology_term> 
+   *     <value>value</value>
+   *   </characteristic>
    * }
    * </pre>
    */
-  protected Element setNodeCharacteristics(ProtocolApplicationIONode appNode) {
-    Element nodeCharElement = new Element(NODE_CHARACTERISTICS_TAG);
-    Iterator<Characteristic> iterator = appNode.getCharacteristics().iterator();
-    while(iterator.hasNext()) {
-      Characteristic characteristic = iterator.next();
-      String category = characteristic.getCategory();
-      String value = characteristic.getValue();
-      OntologyTerm term = characteristic.getTerm();
-      Element charElement = new Element(CHARACTERISTIC_TAG);
-      if(term != null) { 
-        Element termElement = new Element(ONTOLOGY_TERM_TAG);
-        termElement.setText(term.getName());
-        if(StringUtils.isEmpty(value)) {
-          termElement.setAttribute(CATEGORY_ATTR, category);
-        }
-        charElement.addContent(termElement);
-        charElement.addContent(new Element(EXTERNAL_DATABASE_RELEASE_TAG).setText(term.getExternalDatabaseRelease()));
-      }     
-      if(StringUtils.isNotEmpty(value)) {
-        Element valueElement = new Element(VALUE_TAG);
-        valueElement.addContent(value);
-        valueElement.setAttribute(CATEGORY_ATTR, category);
-        charElement.addContent(valueElement);
+  protected Element setNodeCharacteristic(Characteristic characteristic) {
+    String category = characteristic.getCategory();
+    String value = characteristic.getValue();
+    OntologyTerm term = characteristic.getTerm();
+    Element charElement = new Element(CHARACTERISTIC_TAG);
+    if(term != null) { 
+      Element termElement = new Element(ONTOLOGY_TERM_TAG);
+      termElement.setText(term.getName());
+      if(StringUtils.isEmpty(value)) {
+        termElement.setAttribute(CATEGORY_ATTR, category);
       }
-      nodeCharElement.addContent(charElement);
+      charElement.addContent(termElement);
+      charElement.addContent(new Element(EXTERNAL_DATABASE_RELEASE_TAG).setText(term.getExternalDatabaseRelease()));
+    }     
+    if(StringUtils.isNotEmpty(value)) {
+      Element valueElement = new Element(VALUE_TAG);
+      valueElement.addContent(value);
+      valueElement.setAttribute(CATEGORY_ATTR, category);
+      charElement.addContent(valueElement);
     }
+    return charElement;
+  }
+  
+  /**
+   * Builds the node characteristic of the protocol application node portion of the XML
+   * document from the data populating the internal Protocol Application IO Node model
+   * @param appNode - the protocol application IO node (i.e., node)
+   * @return - the top level node characteristic element.  Empty elements are discarded.
+   * <pre>
+   * {@code
+   *   <characteristic>
+   *     <table>Schema::Table</table>
+   *   </characteristic>
+   * }
+   * </pre>
+   */
+  protected Element setNodeCharacteristic(ProtocolApplicationIONode appNode) {
+    Element charElement = null;
     if(!StringUtils.isEmpty(appNode.getTable())) {
-      Element charElement = new Element(CHARACTERISTIC_TAG);
+      charElement = new Element(CHARACTERISTIC_TAG);
       charElement.addContent(new Element(TABLE_TAG).setText(appNode.getTable()));
-      nodeCharElement.addContent(charElement);
     }
-    return nodeCharElement;
+    return charElement;
   }
   
   /**
