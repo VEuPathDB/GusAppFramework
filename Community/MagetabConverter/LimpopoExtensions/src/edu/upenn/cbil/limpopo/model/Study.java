@@ -22,7 +22,8 @@ public class Study {
   private String name;
   private String dbId;
   private String description;
-  private List<String> pubmedIds;
+  //private List<String> pubmedIds;
+  private List<Publication> publications;
   private OntologyTerm sourceId;
   private String goal;
   private String approaches;
@@ -90,20 +91,12 @@ public class Study {
     this.description = AppUtils.removeTokens(description);
   }
 
-  /**
-   * PubMed ID header.  For use in performing conversions.
-   * @return - pubmedIds: an optional list of pubmed ids associated with this study (may return an empty list)
-   */
-  public final List<String> getPubmedIds() {
-    return pubmedIds;
+  public final List<Publication> getPublications() {
+    return publications;
   }
 
-  /**
-   * PubMed ID header.  For use in populating the study object.
-   * @param pubmedIds - optional list of pubmed ids associated with this study
-   */
-  public final void setPubmedIds(List<String> pubmedIds) {
-    this.pubmedIds = pubmedIds;
+  public final void setPublications(List<Publication> publications) {
+    this.publications = publications;
   }
 
   /**
@@ -229,7 +222,7 @@ public class Study {
     study.setDbId(AppUtils.filterIdToken(data.investigationTitle));
     study.setSourceId(new OntologyTerm(investigationAccessionName, investigationAccessionRef));
     study.setDescription(data.experimentDescription);
-    study.setPubmedIds(data.pubMedId);
+    study.setPublications(Publication.populate(data));
     study.setGoal(OrderedComment.retrieveComments(GOAL_COMMENT, data).get(0));
     study.setApproaches(OrderedComment.retrieveComments(APPROACHES_COMMENT, data).get(0));
     study.setResults(OrderedComment.retrieveComments(RESULTS_COMMENT, data).get(0));

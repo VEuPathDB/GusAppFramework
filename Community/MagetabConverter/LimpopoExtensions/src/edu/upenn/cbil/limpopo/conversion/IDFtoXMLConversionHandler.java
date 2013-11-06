@@ -20,12 +20,11 @@ import edu.upenn.cbil.limpopo.model.Contact;
 import edu.upenn.cbil.limpopo.model.ExternalDatabase;
 import edu.upenn.cbil.limpopo.model.Protocol;
 import edu.upenn.cbil.limpopo.model.ProtocolParam;
-import edu.upenn.cbil.limpopo.model.ProtocolParamGroup;
+import edu.upenn.cbil.limpopo.model.Publication;
 import edu.upenn.cbil.limpopo.model.Study;
 import edu.upenn.cbil.limpopo.model.StudyDesign;
 import edu.upenn.cbil.limpopo.model.StudyFactor;
 import edu.upenn.cbil.limpopo.utils.AppUtils;
-
 import static edu.upenn.cbil.limpopo.utils.AppUtils.*;
 
 /**
@@ -111,7 +110,9 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
    *   <study>
    *     <name>title</name>
    *     <description>description</description>
-   *     <pubmed_ids>may be semi-colon separated list or a single id</pubmed_ids>
+   *     <pubmedIds>
+   *       see assemblePubmedIdElement
+   *     </pubmedIds>
    *     <external_database_release>Name|Version</external_database_release>
    *     <source_id>id</source_id>
    *     <goal>goal</goal>
@@ -133,9 +134,13 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
     if(!StringUtils.isEmpty(study.getDescription())) {
       studyElement.addContent(new Element(DESCRIPTION_TAG).setText(study.getDescription()));
     }
-    String pubMedIds = StringUtils.join(study.getPubmedIds(),";");
-    if(!StringUtils.isEmpty(pubMedIds)) {
-      studyElement.addContent(new Element(PUBMED_IDS_TAG).setText(pubMedIds));
+    List<Publication> publications = study.getPublications();
+    if(publications.size() > 0) {
+      Element publicationsElement = new Element(PUBMED_IDS_TAG);
+      for(Publication publication : publications) {
+        publicationsElement.addContent(assemblePubmedIdElement(publication));
+      }
+      studyElement.addContent(publicationsElement);
     }
     if(!StringUtils.isEmpty(study.getSourceId().getName())) {
       studyElement.addContent(new Element(EXTERNAL_DATABASE_RELEASE_TAG).setText(study.getSourceId().getExternalDatabaseRelease()));
@@ -165,13 +170,35 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
   }
   
   /**
+   * Builds the pubmed id portion of the XML document from the data populating the internal
+   * Publication model
+   * @param publication - the populated publication object
+   * @return - the pubmedId element.  Empty elements are discarded.  Addition attribute is
+   * present only if pubmed id is an addition.  
+   * <pre>
+   * {@code
+   *   <pubmed_id addition="true">pubmed id</pubment_id>
+   * }
+   * </pre>
+   */
+  protected Element assemblePubmedIdElement(Publication publication) {
+    Element element = new Element(AppUtils.PUBMED_ID_TAG).setText(publication.getPubmedId());
+    if(publication.isAddition()) {
+      element.setAttribute(ADDITION_ATTR, TRUE);
+    }
+    return element;
+  }
+  
+  
+  /**
    * Builds the study design portion of the XML document from the data populating the internal Study
    * design model.
    * @param design - the populated study design object
    * @return - the top level element of the study design portion of the xml.  Empty elements are discarded.
+   * Addition attribute is present only if study design is an addition.  
    * <pre>
    * {@code
-   *   <study_design>
+   *   <study_design addition="true">
    *    <type>type</type>
    *    <type_ext_db_rls>Name|Version</type_ext_db_rls>
    *  </study_design>   
@@ -180,6 +207,9 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
    */
   protected Element assembleStudyDesignElement(StudyDesign design) {
     Element element = new Element(AppUtils.STUDY_DESIGN_TAG);
+    if(design.isAddition()) {
+      element.setAttribute(ADDITION_ATTR, TRUE);
+    }
     if(!StringUtils.isEmpty(design.getType().getName())) {
       element.addContent(new Element(TYPE_TAG).setText(design.getType().getName()));
       element.addContent(new Element(TYPE_EXT_DB_RLS_TAG).setText(design.getType().getExternalDatabaseRelease()));
@@ -192,6 +222,7 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
    * factor model.
    * @param factor - the populated study factor object
    * @return - the top level element of the study factor portion of the xml.  Empty elements are discarded.
+   * Addition attribute is present only if study factor is an addition.  
    * <pre>
    * {@code
    *   <study_factor addition="true">
@@ -317,12 +348,6 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
     if(!protocol.getParameters().isEmpty()) {
       Element parametersElement = new Element(PROTOCOL_PARAMETERS_TAG);
       protocolElement.addContent(parametersElement);
-      if(!protocol.getParameters().isEmpty()) {
-        ProtocolParamGroup group = protocol.getParameters().get(0).getGroup();
-        if(group.isAddition() && !protocol.isAddition()) {
-          parametersElement.setAttribute(ADDITION_ATTR, TRUE);
-        }
-      }
       Iterator<ProtocolParam> parameterIterator = protocol.getParameters().iterator();
       while(parameterIterator.hasNext()) {
         ProtocolParam parameter = parameterIterator.next();
@@ -340,7 +365,7 @@ public class IDFtoXMLConversionHandler extends IDFConversionHandler<Document> {
    */
   protected Element assembleParameterElement(Protocol protocol, ProtocolParam parameter) {
     Element parameterElement = new Element(PARAM_TAG);
-    if(parameter.isAddition() && !parameter.getGroup().isAddition() && !protocol.isAddition()) {
+    if(parameter.isAddition() && !protocol.isAddition()) {
       parameterElement.setAttribute(ADDITION_ATTR, TRUE);
     }
     parameterElement.addContent(new Element(NAME_TAG).setText(parameter.getName()));

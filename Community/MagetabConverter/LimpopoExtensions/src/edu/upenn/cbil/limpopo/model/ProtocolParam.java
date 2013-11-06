@@ -21,7 +21,6 @@ import edu.upenn.cbil.limpopo.utils.ListUtils;
 
 public class ProtocolParam {
   public static Logger logger = LoggerFactory.getLogger(ProtocolParam.class);
-  private ProtocolParamGroup group;
   private boolean addition;
   private String name;
   private OntologyTerm dataType;
@@ -39,12 +38,6 @@ public class ProtocolParam {
     this.addition = false;
   }
   
-  public final ProtocolParamGroup getGroup() {
-    return group;
-  }
-  public final void setGroup(ProtocolParamGroup group) {
-    this.group = group;
-  }
   public final boolean isAddition() {
     return addition;
   }
@@ -142,13 +135,11 @@ public class ProtocolParam {
 	List<ProtocolParam> parameters = new ArrayList<>();
 	if(!data.protocolParameters.isEmpty()
 	    && !StringUtils.isEmpty(ListUtils.get(data.protocolParameters, index))) {
-	  ProtocolParamGroup paramGroup = new ProtocolParamGroup(data.protocolParameters.get(index)); 
 	  List<String> parameterNameList = Arrays.asList(data.protocolParameters.get(index).split(";"));
 	  Iterator<String> iterator = parameterNameList.iterator();
 	  for(int i = 0; iterator.hasNext(); i++) {
 	    String name = iterator.next();
 	    ProtocolParam parameter = new ProtocolParam();
-	    parameter.setGroup(paramGroup);
 	    parameter.setAddition(AppUtils.checkForInternalAddition(name));
 	    parameter.setName(name);
 	    parameter.setDataType(new OntologyTerm(ListUtils.get(dataTypeNames, i), ListUtils.get(dataTypeRefs, i)));
