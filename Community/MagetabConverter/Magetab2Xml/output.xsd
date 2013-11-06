@@ -276,7 +276,7 @@
       <xsd:element name="description" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="taxon" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="uri" minOccurs="0" maxOccurs="1" type="xsd:string" />
-      <xsd:element name="node_characteristics" minOccurs="0" maxOccurs="unbounded" type="nodeCharacteristicsType" />
+      <xsd:element name="characteristic" minOccurs="0" maxOccurs="unbounded" type="nodeCharacteristicType" />
       <xsd:element name="factor_value" minOccurs="0" maxOccurs="unbounded" type="factorValueType" />
     </xsd:sequence>
     <xsd:attribute name="id" use="required" type="locationIdType" />
@@ -298,27 +298,20 @@
     <xsd:attribute name="db_id" use="optional" type="xsd:string" />
   </xsd:complexType>
   
-  <xsd:complexType name="nodeCharacteristicsType">
-    <xsd:sequence>
-      <xsd:element name="characteristic" minOccurs="1" maxOccurs="unbounded">
-        <xsd:complexType>
-          <xsd:annotation>
-            <xsd:documentation xml:lang="en">
-              Policies 7.  A characteristic can either have an term, term/value
-                           or a table.
-            </xsd:documentation>
-          </xsd:annotation>
-          <xsd:choice>
-            <xsd:element name="table" minOccurs="1" maxOccurs="1" type="tableType" />
-            <xsd:group ref="ontologyTypeGroup" />
-            <xsd:sequence>
-              <xsd:element name="value" minOccurs="1" maxOccurs="1" type="valueType"/>
-              <xsd:group ref="ontologyTypeGroup" minOccurs="0" maxOccurs="1" />
-            </xsd:sequence>
-          </xsd:choice>
-        </xsd:complexType>
-      </xsd:element>
-    </xsd:sequence>
+  <xsd:complexType name="nodeCharacteristicType">
+    <xsd:annotation>
+      <xsd:documentation xml:lang="en">
+        Policies 7.  A characteristic can either have an term, term/value or a table.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:choice>
+      <xsd:element name="table" minOccurs="1" maxOccurs="1" type="tableType" />
+      <xsd:group ref="ontologyTypeGroup" />
+      <xsd:sequence>
+        <xsd:element name="value" minOccurs="1" maxOccurs="1" type="valueType"/>
+        <xsd:group ref="ontologyTypeGroup" minOccurs="0" maxOccurs="1" />
+      </xsd:sequence>
+    </xsd:choice>
   </xsd:complexType>
   
   <xsd:complexType name="factorValueType">

@@ -33,12 +33,9 @@
       <study>
         <name></name>
 	<description></description>
-	<pubmed_ids>
-	  <pubmed_id></pubmed_id>
-	  <pubmed_id></pubmed_id>
-	  ...
-	</pubmed_ids>
-	<external_database_release>Name|Version</external_database_release>
+	<pubmed_id></pubmed_id>
+<!-- a study may have multiple pubmed ids; repeat above tag as needed -->
+   	<external_database_release>Name|Version</external_database_release>
 	<source_id></source_id>
 	<goal></goal>
 	<approaches></approaches>
@@ -52,14 +49,16 @@
         <type></type>
 	<type_ext_db_rls>Name|Version</type_ext_db_rls>
       </study_design>	
-    
+<!-- there may be multiple study designs; repeat above block as needed -->  
+
       <study_factor>
         <name></name>
 	<description></description>
 	<type></type>
 	<type_ext_db_rls>Name|Version</type_ext_db_rls>
       </study_factor>	
-    
+<!-- there may be multiple study factors; repeat above block as needed -->
+
       <contact>
         <name></name>
 	<first_name></first_name>
@@ -77,6 +76,7 @@
 	<roles>semi-colon separated list of roles</roles>
 	<roles_ext_db_rls>semi-colon separated list of Name|Version</roles_ext_db_rls>
       </contact>
+<!-- a study may have multiple contacts; repeat above block as needed -->
 
       <protocol>
         <name></name>
@@ -89,36 +89,31 @@
 	<uri></uri>
 	<contact>Name of contact</contact>
 	<other_read></other_read>
-	<protocol_parameters>
-	  <param>
-	    <name></name>
-	    <data_type></data_type>
-	    <data_type_ext_db_rls>Name|Version</data_type_ext_db_rls>
-	    <unit_type></unit_type>
-	    <unit_type_ext_db_rls>Name|Version</unit_type_ext_db_rls>
-	    <default_value></default_value>
-	    <is_user_specified></is_user_specified>
-	  </param>
-	<!-- a protocol may have multiple parameters; repeat above block as necessary	-->		 
-        </protocol_parameters>
+	<param>
+	  <name></name>
+	  <data_type></data_type>
+	  <data_type_ext_db_rls>Name|Version</data_type_ext_db_rls>
+	  <unit_type></unit_type>
+	  <unit_type_ext_db_rls>Name|Version</unit_type_ext_db_rls>
+	  <default_value></default_value>
+	  <is_user_specified></is_user_specified>
+	</param>
+<!-- a protocol may have multiple parameters; repeat above block as needed -->
         <child_protocols>semi-colon separated list of 2 or more unique protocol names; order the same as in protocol series</child_protocols>    
       </protocol>
+<!-- repeat above block as needed -->
 
     </idf>
 
     <sdrf>
       <protocol_app_node id="1">
-        <factor_values>
-	  <factor_value>
-	    <name></name>
-	    <value></value>
-	    <table>Schema::Table</table>
-	    <row_id></row_id>
-	  </factor_value>
-	  <factor_value>
-	  ...
-	  </factor_value>
-	</factor_values>
+	<factor_value>
+	  <name></name>
+	  <value></value>
+	  <table>Schema::Table</table>
+	  <row_id></row_id>
+	</factor_value>
+<!-- repeat above block as needed -->
 	<type></type>
 	<subtype></subtype>
 	<name></name>
@@ -128,30 +123,25 @@
 	<uri></uri>
 	<taxon></taxon>
 <!-- A characteristic cen either have ext_db_rls and ontology_term or table, NOT BOTH -->
-	<node_characteristics>
-	  <characteristic>
-	    <external_database_release>Name|Version</external_database_release>
-	    <ontology_term category=""></ontology_term>
-	    <value></value>	
-	  </characteristic>
-	  <characteristic>
-	    <table>Schema::Table</table>
-	  </characteristic>	
-	</node_characteristics>
+	<characteristic>
+	  <external_database_release>Name|Version</external_database_release>
+	  <ontology_term category=""></ontology_term>
+	  <value></value>	
+	</characteristic>
+	<characteristic>
+	  <table>Schema::Table</table>
+	</characteristic>	
+<!-- repeat either of the above two blocks as needed-->
       </protocol_app_node>
  
       <protocol_app_node id="2">
-        <factor_values>
-	  <factor_value>
-	    <name></name>
-	    <value></value>
-	    <table>Schema::Table</table>
-	    <row_id></row_id>
-	  </factor_value>
-	  <factor_value>
-	  ...
-	  </factor_value>
-	</factor_values>
+	<factor_value>
+	  <name></name>
+	  <value></value>
+	  <table>Schema::Table</table>
+	  <row_id></row_id>
+	</factor_value>
+<!-- repeat above block as needed -->
 	<type></type>
 	<subtype></subtype>
 	<name></name>
@@ -160,30 +150,26 @@
 	<source_id></source_id>	
 	<uri></uri>
 	<taxon></taxon>
-	<node_characteristics>
-	  <characteristic>
-	    <external_database_release>Name|Version</external_database_release>
-	    <ontology_term category=""></ontology_term>	
-	    <value></value>
-	  </characteristic>
-	  <characteristic>
-	    <table>Schema::Table</table>
-	  </characteristic>	
-	</node_characteristics>
+<!-- A characteristic cen either have ext_db_rls and ontology_term or table, NOT BOTH -->
+	<characteristic>
+	  <external_database_release>Name|Version</external_database_release>
+	  <ontology_term category=""></ontology_term>	
+	  <value></value>
+	</characteristic>
+	<characteristic>
+	  <table>Schema::Table</table>
+	</characteristic>	
+<!-- repeate either of the above two blocks as needed-->
       </protocol_app_node>
  
-       <protocol_app_node id="3">
-        <factor_values>
-	  <factor_value>
-	    <name></name>
-	    <value></value>
-	    <table>Schema::Table</table>
-	    <row_id></row_id>
-	  </factor_value>
-	  <factor_value>
-	  ...
-	  </factor_value>
-	</factor_values> 
+      <protocol_app_node id="3">
+        <factor_value>
+	  <name></name>
+	  <value></value>
+	  <table>Schema::Table</table>
+	  <row_id></row_id>
+	</factor_value>
+<!-- repeat above block as needed -->
 	<type></type>
 	<subtype></subtype>
 	<name></name>
@@ -192,48 +178,40 @@
 	<source_id></source_id>	
 	<uri></uri>
 	<taxon></taxon>
-	<node_characteristics>
-	  <characteristic>
-	    <external_database_release>Name|Version</external_database_release>
-	    <ontology_term category=""></ontology_term>	
-	    <value></value>
-	  </characteristic>
-	  <characteristic>
-	    <table>Schema::Table</table>
-	  </characteristic>	
-	</node_characteristics>
+<!-- A characteristic cen either have ext_db_rls and ontology_term or table, NOT BOTH -->
+	<characteristic>
+	  <external_database_release>Name|Version</external_database_release>
+	  <ontology_term category=""></ontology_term>	
+	  <value></value>
+	</characteristic>
+	<characteristic>
+	  <table>Schema::Table</table>
+	</characteristic>	
+<!-- repeat either of the above two blocks as needed-->
       </protocol_app_node>
    
       <protocol_app>
 	<protocol></protocol>
 	<protocol_app_date></protocol_app_date>
-	<contacts>
-	  <contact step="">
-	    <name>First Last</name>
-            <role></role>
-	    <external_database_release>Name|Version</external_database_release>
-	  </contact>
-	  <contact step="">
-	  ...
-	  </contact>
-        </contacts>
-	<protocol_app_parameters>
-	  <app_param step="for protocol series, the order number of the protocol this parameter refers to: 1, 2, etc">
-	    <name></name>
-	    <value></value>
-	    <table>Schema::Table</table>
-            <row_id></row_id>
-	    <unit_type category=""></unit_type>
-	    <unit_type_ext_db_rls>Name|Version</unit_type_ext_db_rls>
-	  </app_param> 
-	  <app_param step=""> 
-	     ...
-	  </app_param> 
-        </protocol_app_parameters>
+	<contact step="">
+	  <name>First Last</name>
+          <role></role>
+	  <external_database_release>Name|Version</external_database_release>
+	</contact>
+<!-- repeat above block as needed-->
+	<app_param step="for protocol series, the order number of the protocol this parameter refers to: 1, 2, etc">
+	  <name></name>
+	  <value></value>
+	  <table>Schema::Table</table>
+          <row_id></row_id>
+	  <unit_type category=""></unit_type>
+	  <unit_type_ext_db_rls>Name|Version</unit_type_ext_db_rls>
+	</app_param> 
+<!-- repeat above block as needed-->
 	<inputs>semi-colon separated list of protocol_node ids</inputs>
 	<outputs>semi-colon separated list of protocol_node ids</outputs>
       </protocol_app>
-
+<!-- repeat above block as needed-->     
     </sdrf>
 
   </mage-tab>
