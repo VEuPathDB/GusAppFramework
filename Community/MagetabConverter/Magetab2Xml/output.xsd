@@ -34,7 +34,7 @@
     <xsd:sequence>
       <xsd:element name="name" minOccurs="1" maxOccurs="1" type="xsd:string" />
       <xsd:element name="description" minOccurs="1" maxOccurs="1" type="xsd:string" />
-      <xsd:element name="pubmed_ids" minOccurs="0" maxOccurs="1" type="pubmedIdType" />
+      <xsd:element name="pubmed_id" minOccurs="0" maxOccurs="unbounded" type="pubmedIdType" />
       <xsd:element name="goal" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="approaches" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="results" minOccurs="0" maxOccurs="1" type="xsd:string" />
@@ -46,17 +46,11 @@
   </xsd:complexType>
   
   <xsd:complexType name="pubmedIdType">
-    <xsd:sequence>
-      <xsd:element name="pubmed_id" minOccurs="1" maxOccurs="unbounded">
-        <xsd:complexType>
-          <xsd:simpleContent>
-            <xsd:extension base="xsd:string" >
-              <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
-            </xsd:extension>
-          </xsd:simpleContent>
-        </xsd:complexType>
-      </xsd:element>
-    </xsd:sequence>
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string" >
+        <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
+      </xsd:extension>
+    </xsd:simpleContent>    
   </xsd:complexType>
   
   <xsd:complexType name="studyDesignType">
@@ -135,14 +129,14 @@
       <xsd:element name="other_read" minOccurs="0" maxOccurs="1" type="flagType" />
       <xsd:element name="uri" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="contact" minOccurs="0" maxOccurs="1" type="xsd:string" />
-      <xsd:element name="protocol_parameters" minOccurs="0" maxOccurs="1" type="protocolParametersType" />
+      <xsd:element name="param" minOccurs="0" maxOccurs="unbounded" type="protocolParameterType" />
       <xsd:element name="child_protocols" minOccurs="0" maxOccurs="1" type="semiSepType" />
     </xsd:sequence>
     <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
     <xsd:attribute name="db_id" use="optional" type="xsd:string" />
   </xsd:complexType>
   
-  <xsd:complexType name="protocolParametersType">
+  <xsd:complexType name="protocolParameterType">
     <xsd:annotation>
       <xsd:documentation>
         SOP 12. If Comment [Parameter DataType] is non-empty then
@@ -153,20 +147,13 @@
       </xsd:documentation>
     </xsd:annotation>
     <xsd:sequence>
-      <xsd:element name="param" minOccurs="1" maxOccurs="unbounded">
-        <xsd:complexType>
-          <xsd:sequence>
-            <xsd:element name="name" minOccurs="1" maxOccurs="1" />
-            <xsd:group ref="dataTypeGroup" minOccurs="0" maxOccurs="1" />
-            <xsd:group ref="unitTypeGroup" minOccurs="0" maxOccurs="1" />
-            <xsd:element name="default_value" minOccurs="0" maxOccurs="1" type="xsd:string" />
-            <xsd:element name="is_user_specified" minOccurs="0" maxOccurs="1" type="flagType" />
-          </xsd:sequence>
-          <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
-        </xsd:complexType>
-      </xsd:element>
+      <xsd:element name="name" minOccurs="1" maxOccurs="1" />
+      <xsd:group ref="dataTypeGroup" minOccurs="0" maxOccurs="1" />
+      <xsd:group ref="unitTypeGroup" minOccurs="0" maxOccurs="1" />
+      <xsd:element name="default_value" minOccurs="0" maxOccurs="1" type="xsd:string" />
+      <xsd:element name="is_user_specified" minOccurs="0" maxOccurs="1" type="flagType" />
     </xsd:sequence>
-    <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
+    <xsd:attribute name="addition" use="optional" type="xsd:boolean" />   
   </xsd:complexType>
   
   <xsd:group name="addressGroup">
@@ -290,7 +277,7 @@
       <xsd:element name="taxon" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="uri" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="node_characteristics" minOccurs="0" maxOccurs="unbounded" type="nodeCharacteristicsType" />
-      <xsd:element name="factor_values" minOccurs="0" maxOccurs="2" type="factorValuesType" />
+      <xsd:element name="factor_value" minOccurs="0" maxOccurs="unbounded" type="factorValueType" />
     </xsd:sequence>
     <xsd:attribute name="id" use="required" type="locationIdType" />
     <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
@@ -300,9 +287,9 @@
   <xsd:complexType name="protocolAppType">
     <xsd:sequence>
       <xsd:element name="protocol" minOccurs="1" maxOccurs="1" type="xsd:string" />
-      <xsd:element name="contacts" minOccurs="0" maxOccurs="1" type="performersType" />
+      <xsd:element name="contact" minOccurs="0" maxOccurs="unbounded" type="performerType" />
       <xsd:element name="protocol_app_date" minOccurs="0" maxOccurs="1" type="xsd:string" />
-      <xsd:element name="protocol_app_parameters" minOccurs="0" maxOccurs="1" type="protocolApplicationParametersType" />
+      <xsd:element name="app_param" minOccurs="0" maxOccurs="unbounded" type="protocolApplicationParameterType" />
       <xsd:element name="inputs" minOccurs="1" maxOccurs="1" type="locationIdType" />
       <xsd:element name="outputs" minOccurs="1" maxOccurs="1" type="locationIdType" />
     </xsd:sequence>
@@ -334,51 +321,33 @@
     </xsd:sequence>
   </xsd:complexType>
   
-  <xsd:complexType name="factorValuesType">
+  <xsd:complexType name="factorValueType">
     <xsd:sequence>
-      <xsd:element name="factor_value" minOccurs="1" maxOccurs="unbounded">
-        <xsd:complexType>
-          <xsd:sequence>
-            <xsd:element name="name" minOccurs="1" maxOccurs="1" type="xsd:string"/>
-            <xsd:element name="value" minOccurs="1" maxOccurs="1"/>
-            <xsd:group ref="dbCoordsGroup" minOccurs="0" maxOccurs="1" />
-          </xsd:sequence>
-          <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
-        </xsd:complexType>
-      </xsd:element>
+      <xsd:element name="name" minOccurs="1" maxOccurs="1" type="xsd:string"/>
+      <xsd:element name="value" minOccurs="1" maxOccurs="1"/>
+      <xsd:group ref="dbCoordsGroup" minOccurs="0" maxOccurs="1" />
     </xsd:sequence>
+    <xsd:attribute name="addition" use="optional" type="xsd:boolean" />    
   </xsd:complexType>
   
-  <xsd:complexType name="performersType">
-   <xsd:sequence>
-      <xsd:element name="contact" minOccurs="1" maxOccurs="unbounded">
-        <xsd:complexType>
-          <xsd:sequence>
-            <xsd:element name="name" minOccurs="1" maxOccurs="1" type="xsd:string"/>
-            <xsd:group ref="roleGroup" minOccurs="0" maxOccurs="1"/>
-          </xsd:sequence>
-          <xsd:attribute name="step" use="required" type="xsd:int" />
-          <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
-        </xsd:complexType>
-      </xsd:element>
+  <xsd:complexType name="performerType">
+    <xsd:sequence>
+      <xsd:element name="name" minOccurs="1" maxOccurs="1" type="xsd:string"/>
+      <xsd:group ref="roleGroup" minOccurs="0" maxOccurs="1"/>
     </xsd:sequence>
+    <xsd:attribute name="step" use="required" type="xsd:int" />
+    <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
   </xsd:complexType>
 
-  <xsd:complexType name="protocolApplicationParametersType">
+  <xsd:complexType name="protocolApplicationParameterType">
     <xsd:sequence>
-      <xsd:element name="app_param" minOccurs="1" maxOccurs="unbounded">
-        <xsd:complexType>
-          <xsd:sequence>
-            <xsd:element name="name" minOccurs="1" maxOccurs="1" />
-            <xsd:element name="value" minOccurs="1" maxOccurs="1" />
-            <xsd:group ref="dbCoordsGroup" minOccurs="0" maxOccurs="1" />
-            <xsd:group ref="unitTypeGroup" minOccurs="0" maxOccurs="1" />
-          </xsd:sequence>
-          <xsd:attribute name="step" use="required" type="xsd:int" />
-          <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
-        </xsd:complexType>
-      </xsd:element>
+      <xsd:element name="name" minOccurs="1" maxOccurs="1" />
+      <xsd:element name="value" minOccurs="1" maxOccurs="1" />
+      <xsd:group ref="dbCoordsGroup" minOccurs="0" maxOccurs="1" />
+      <xsd:group ref="unitTypeGroup" minOccurs="0" maxOccurs="1" />
     </xsd:sequence>
+    <xsd:attribute name="step" use="required" type="xsd:int" />
+    <xsd:attribute name="addition" use="optional" type="xsd:boolean" />    
   </xsd:complexType>
 
   <xsd:complexType name="valueType">
