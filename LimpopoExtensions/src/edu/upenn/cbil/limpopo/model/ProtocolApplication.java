@@ -196,7 +196,7 @@ public class ProtocolApplication extends ProtocolObject {
 	setDbId(AppUtils.filterIdToken(name));
 	assembleParameters();
 	if(appNode.performer != null) {
-	  performers.add(new Performer(appNode.performer));
+	  performers.add(new Performer(appNode.performer, addition));
 	}
 	setDate(appNode.date);
   }

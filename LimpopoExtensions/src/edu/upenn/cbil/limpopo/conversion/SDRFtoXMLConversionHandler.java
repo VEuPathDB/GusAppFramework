@@ -301,9 +301,10 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
    * @param step - integer indicating which step in a protocol application series.  If
    * the protocol application is not part of a series, step will be 1.
    * @return - the completed performer xml element.  Empty elements are discarded.
+   * Addition attribute is present only if performer is an addition.  
    * * <pre>
    * {@code
-   *   <contact step="#">
+   *   <contact step="#" addition=true">
    *     <name>First Last</name>
    *     <role>Role</role>
    *     <external_database_release>Name|Version</external_database_release>
@@ -314,9 +315,9 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
   protected Element setContact(Performer performer, String step) {
     Element contactElement = new Element(CONTACT_TAG);
     contactElement.setAttribute(STEP_ATTR, step);
-    //if(performer.isAddition()) {
-    //  contactElement.setAttribute(ADDITION_ATTR, TRUE);
-    //}
+    if(performer.isAddition()) {
+      contactElement.setAttribute(ADDITION_ATTR, TRUE);
+    }
     contactElement.addContent(new Element(NAME_TAG).setText(performer.getName()));
     if(performer.hasRole()) {
       contactElement.addContent(new Element(ROLE_TAG).setText(performer.getRole().getName()));

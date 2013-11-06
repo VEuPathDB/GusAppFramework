@@ -21,12 +21,14 @@ import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
  */
 public class Performer {
   private String name;
+  private boolean addition;
   private OntologyTerm role;
   private Map<String,String> comments;
   public static final String PERFORMER_ROLE = "Performer Role";
   public static final String PERFORMER_TERM = "Performer Term Source Ref";
   
   public Performer() {
+    addition = false;
     name = "";
   }
   
@@ -36,8 +38,11 @@ public class Performer {
    * @param attribute - limpopo performer attribute
    * @throws ConversionException - thrown if the role ontology term cannot be satisfactorily parsed.
    */
-  public Performer(PerformerAttribute attribute) throws ConversionException {
+  public Performer(PerformerAttribute attribute, boolean protocolAddition) throws ConversionException {
     setName(attribute.getNodeName());
+    if(!protocolAddition && !attribute.getNodeName().equalsIgnoreCase(getName())) {
+      addition = true;
+    }
     setComments(attribute.comments);
     if(!getComments().isEmpty() &&
         StringUtils.isNotEmpty(getComments().get(PERFORMER_ROLE)) &&
@@ -64,6 +69,11 @@ public class Performer {
    */
   public final void setName(String name) {
     this.name = AppUtils.removeTokens(name);
+  }
+  
+  
+  public final boolean isAddition() {
+    return addition;
   }
 
   /**
