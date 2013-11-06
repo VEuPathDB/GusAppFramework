@@ -38,12 +38,10 @@ public class FactorValuePostprocessor {
         List<Integer> rows = getRows(id);
         Set<FactorValue> factorValues = removeDuplicates(rows);
         boolean isNodeAddition = node.getAttribute(AppUtils.ADDITION_ATTR) != null;
-        Element factorValuesElement = new Element(AppUtils.FACTOR_VALUES_TAG);
         for(FactorValue factorValue : factorValues) {
           factorValue.setAddition();
-          factorValuesElement.addContent(setFactorValue(factorValue, isNodeAddition));
+          node.addContent(setFactorValue(factorValue, isNodeAddition));
         }
-        node.addContent(factorValuesElement);
       }
     }
     return document;

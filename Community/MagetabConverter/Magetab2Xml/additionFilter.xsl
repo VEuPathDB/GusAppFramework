@@ -44,70 +44,32 @@
     between them.
    -->
   <xsl:template name="dbIdAttr">
-    <xsl:variable name="idfTag" select="//idf[1]" />
-    <xsl:variable name="sdrfTag" select="//sdrf[1]" />
     <xsl:text>&#x0A;</xsl:text>
     <xsl:copy>   
       <xsl:copy-of select="@*"/>
-      <xsl:if test="ancestor::*[generate-id() = generate-id($idfTag)]">
-        <xsl:apply-templates select="protocol_parameters" />
-      </xsl:if>
-      <xsl:if test="ancestor::*[generate-id() = generate-id($sdrfTag)]">
-        <xsl:apply-templates select="factor_values | protocol_app_parameters" />
-      </xsl:if>
+      <xsl:apply-templates select="pubmed_id | param | factor_value | app_param | contact" />
     </xsl:copy>
     <xsl:text>&#x0A;</xsl:text>
   </xsl:template>
   
   <!--
     For factor values, protocol app parameters or contracts in the sdrf, print
-    every child element that is an addition or the current element along with every
-    child element where the grandparent is an addition.
+    every element that is an addition or every element where the parent is an addition.
    -->
-  <xsl:template match="factor_values | protocol_app_parameters | contacts">
-    <xsl:choose>
-      <xsl:when test="../@addition">
-        <xsl:copy>
-          <xsl:call-template name="add_nodes" />
-        </xsl:copy>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:text>&#x0A;</xsl:text>
-        <xsl:call-template name="add_nodes" />
-        <xsl:text>&#x0A;</xsl:text>
-      </xsl:otherwise>
-    </xsl:choose>
-  </xsl:template>
-  
-  <!--
-    Displays all elements that are either additions or have grandparents that are additions.
-   -->
-  <xsl:template name="add_nodes">
-    <xsl:for-each select="node()">
-      <xsl:if test="@addition | ../../@addition">
+  <xsl:template match="pubmed_id | param | factor_value | app_param | contact">
+     <xsl:choose>
+     <xsl:when test=" ../@addition">
         <xsl:copy>
           <xsl:apply-templates select="node()|@*"/>
         </xsl:copy>
-      </xsl:if>
-    </xsl:for-each>
-  </xsl:template>
-  
-  <!-- 
-    For protocol parameters the idf, print every child element that is an addition or
-    the current element along with every child element where the grandparent is an addition.
-   -->
-  <xsl:template match="protocol_parameters">
-   <xsl:choose>
-      <xsl:when test="../@addition">
-        <xsl:copy>
-          <xsl:call-template name="add_nodes" />
-        </xsl:copy>
       </xsl:when>
-      <xsl:otherwise>
+      <xsl:when test="@addition">
         <xsl:text>&#x0A;</xsl:text>
-        <xsl:call-template name="add_nodes" />
-        <xsl:text>&#x0A;</xsl:text>
-      </xsl:otherwise>
+        <xsl:copy>
+          <xsl:apply-templates select="node()|@*"/>
+        </xsl:copy>
+        <xsl:text>&#x0A;</xsl:text> 
+      </xsl:when>
     </xsl:choose>
   </xsl:template>
   
