@@ -34,7 +34,7 @@
     <xsd:sequence>
       <xsd:element name="name" minOccurs="1" maxOccurs="1" type="xsd:string" />
       <xsd:element name="description" minOccurs="1" maxOccurs="1" type="xsd:string" />
-      <xsd:element name="pubmed_ids" minOccurs="0" maxOccurs="1" type="xsd:string" />
+      <xsd:element name="pubmed_ids" minOccurs="0" maxOccurs="1" type="pubmedIdType" />
       <xsd:element name="goal" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="approaches" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="results" minOccurs="0" maxOccurs="1" type="xsd:string" />
@@ -43,6 +43,20 @@
       <xsd:element name="child_studies" minOccurs="0" maxOccurs="1" type="xsd:string" />
     </xsd:sequence>
     <xsd:attribute name="db_id" use="optional" type="xsd:string" />
+  </xsd:complexType>
+  
+  <xsd:complexType name="pubmedIdType">
+    <xsd:sequence>
+      <xsd:element name="pubmed_id" minOccurs="1" maxOccurs="unbounded">
+        <xsd:complexType>
+          <xsd:simpleContent>
+            <xsd:extension base="xsd:string" >
+              <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
+            </xsd:extension>
+          </xsd:simpleContent>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:sequence>
   </xsd:complexType>
   
   <xsd:complexType name="studyDesignType">
@@ -55,6 +69,7 @@
     <xsd:sequence>
       <xsd:group ref="typeGroup" minOccurs="1" maxOccurs="1" />   
     </xsd:sequence>
+    <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
   </xsd:complexType>
   
   <xsd:complexType name="studyFactorType">

@@ -25,7 +25,7 @@
 
   <!-- If no value is available for a sub-element (tag)
        ============================================================================
-       leave blank, e.g., <pubmed_id></pubmed_id>
+       leave blank, e.g., <description></description>
        or remove from xml
   -->
   <mage-tab>
@@ -33,7 +33,11 @@
       <study>
         <name></name>
 	<description></description>
-	<pubmed_ids>may be semi-colon separated list or a single id</pubmed_ids>
+	<pubmed_ids>
+	  <pubmed_id></pubmed_id>
+	  <pubmed_id></pubmed_id>
+	  ...
+	</pubmed_ids>
 	<external_database_release>Name|Version</external_database_release>
 	<source_id></source_id>
 	<goal></goal>
