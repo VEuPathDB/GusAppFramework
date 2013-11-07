@@ -1,25 +1,14 @@
 package edu.upenn.cbil.magetab.postprocessor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.jdom2.Attribute;
 import org.jdom2.Document;
 import org.jdom2.Element;
 
 import edu.upenn.cbil.limpopo.utils.AppUtils;
-
-import com.google.common.base.Predicate;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Multimap;
-
 import edu.upenn.cbil.magetab.model.Edge;
 import edu.upenn.cbil.magetab.model.Node;
 import edu.upenn.cbil.magetab.model.Protocol;
@@ -53,11 +42,11 @@ public class ModelPostprocessor {
     Study study = new Study();
     Element studyElement = document.getRootElement().getChild(AppUtils.IDF_TAG).getChild(AppUtils.STUDY_TAG);
     study.setStudyName(studyElement.getChildText(AppUtils.NAME_TAG));
-    study.setDbId(studyElement.getAttributeValue("db_id"));
+    study.setDbId(studyElement.getAttributeValue(AppUtils.DBID_ATTR));
     Protocol.populateProtocolData(document);
-    List<Element> protocolAppNodes = document.getRootElement().getChild("sdrf").getChildren("protocol_app_node");
+    List<Element> protocolAppNodes = document.getRootElement().getChild(AppUtils.SDRF_TAG).getChildren(AppUtils.PROTOCOL_APP_NODE_TAG);
     study.setNodes(populateNodeData(protocolAppNodes));
-    List<Element> protocolApps = document.getRootElement().getChild("sdrf").getChildren("protocol_app");
+    List<Element> protocolApps = document.getRootElement().getChild(AppUtils.SDRF_TAG).getChildren(AppUtils.PROTOCOL_APP_TAG);
     study.setEdges(populateEdgeData(protocolApps));
     return study;
   }
@@ -73,42 +62,39 @@ public class ModelPostprocessor {
     List<Node> nodes = new ArrayList<>();
     for(Element protocolAppNode : protocolAppNodes) {
       Node node = new Node();
-      node.setId(protocolAppNode.getAttributeValue("id"));
-      String add = protocolAppNode.getAttributeValue("addition");
+      node.setId(protocolAppNode.getAttributeValue(AppUtils.ID_ATTR));
+      String add = protocolAppNode.getAttributeValue(AppUtils.ADDITION_ATTR);
       if(add != null) {
         node.setAddition(Boolean.parseBoolean(add.trim()));
       }
-      node.setDbId(protocolAppNode.getAttributeValue("db_id"));
-      node.setLabel(protocolAppNode.getChildText("name"));
-      node.setType(protocolAppNode.getChildText("type"));
-      node.setTaxon(protocolAppNode.getChildText("taxon"));
-      node.setUri(protocolAppNode.getChildText("uri"));
-      Element nodeCharacteristicsElement = protocolAppNode.getChild("node_characteristics");
-      if(nodeCharacteristicsElement != null) {
-        List<Element> charElements = nodeCharacteristicsElement.getChildren("characteristic");
-        List<String> characteristics = new ArrayList<>();
-        for(Element charElement : charElements) {
-          String value = charElement.getChildText("value");
-          // If a value is present, either the ontology term corresponds to a unit type
-          // or there is no ontology term.
-          if(StringUtils.isNotEmpty(value)) {
-        	// If a category contains a pipe, the value corresponds to a number having a 
-        	// unit and the ontology term, which should exist, corresponds to a the unit
-        	// type.  As such the two are concatenated.
-        	String category = charElement.getChild("value").getAttributeValue("category");
-        	if(StringUtils.isNotEmpty(category) && category.contains("|")) {
-        	  String term = charElement.getChildText("ontology_term");
-              if(StringUtils.isNotEmpty(term)) {
-                value += " " + term;
-              }
-        	}
-            characteristics.add(value);
-          }
-          else {
-            String term = charElement.getChildText("ontology_term");
+      node.setDbId(protocolAppNode.getAttributeValue(AppUtils.DBID_ATTR));
+      node.setLabel(protocolAppNode.getChildText(AppUtils.NAME_TAG));
+      node.setType(protocolAppNode.getChildText(AppUtils.TYPE_TAG));
+      node.setTaxon(protocolAppNode.getChildText(AppUtils.TAXON_TAG));
+      node.setUri(protocolAppNode.getChildText(AppUtils.URI_TAG));
+      List<Element> charElements = protocolAppNode.getChildren(AppUtils.CHARACTERISTIC_TAG);
+      List<String> characteristics = new ArrayList<>();
+      for(Element charElement : charElements) {
+        String value = charElement.getChildText(AppUtils.VALUE_TAG);
+        // If a value is present, either the ontology term corresponds to a unit type
+        // or there is no ontology term.
+        if(StringUtils.isNotEmpty(value)) {
+      	  // If a category contains a pipe, the value corresponds to a number having a 
+          // unit and the ontology term, which should exist, corresponds to a the unit
+          // type.  As such the two are concatenated.
+          String category = charElement.getChild(AppUtils.VALUE_TAG).getAttributeValue(AppUtils.CATEGORY_ATTR);
+          if(StringUtils.isNotEmpty(category) && category.contains("|")) {
+        	String term = charElement.getChildText(AppUtils.ONTOLOGY_TERM_TAG);
             if(StringUtils.isNotEmpty(term)) {
-              characteristics.add(term);
+              value += " " + term;
             }
+          }
+          characteristics.add(value);
+        }
+        else {
+          String term = charElement.getChildText(AppUtils.ONTOLOGY_TERM_TAG);
+          if(StringUtils.isNotEmpty(term)) {
+            characteristics.add(term);
           }
         }
         characteristics = characteristics.isEmpty() ? null : characteristics; 
@@ -130,8 +116,8 @@ public class ModelPostprocessor {
     List<Edge> edges = new ArrayList<>();
     for(Element protocolAppElement : protocolAppElements) {
       List<ProtocolApplication> applications = ProtocolApplication.populate(protocolAppElement);
-      String[] inputs = protocolAppElement.getChildText("inputs").split(";");
-      String[] outputs = protocolAppElement.getChildText("outputs").split(";");
+      String[] inputs = protocolAppElement.getChildText(AppUtils.INPUTS_TAG).split(";");
+      String[] outputs = protocolAppElement.getChildText(AppUtils.OUTPUTS_TAG).split(";");
       for(String input : inputs) {
         for(String output : outputs) {
           Edge edge = new Edge();
