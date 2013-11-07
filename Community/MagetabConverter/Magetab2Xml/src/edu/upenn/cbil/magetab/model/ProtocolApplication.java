@@ -86,24 +86,21 @@ public class ProtocolApplication {
   protected void setParameters(Element protocolAppElement, int step) {
     Map<String,String> parameterDefaults = this.protocol.getParameters();
     parameters = new ArrayList<>();
-    Element paramsElement = protocolAppElement.getChild(AppUtils.PROTOCOL_APP_PARAMETERS_TAG);
-    if(paramsElement != null && !paramsElement.getChildren().isEmpty()) {
-      List<Element> paramElements = paramsElement.getChildren();
-      for(Element paramElement : paramElements) {
-        if(Integer.toString(step).equals(paramElement.getAttributeValue(AppUtils.STEP_ATTR))) {
-          String name = paramElement.getChild(AppUtils.NAME_TAG).getText();
-          String parameter = name + " : " + paramElement.getChild(AppUtils.VALUE_TAG).getText();
-          Element unitElement = paramElement.getChild(AppUtils.UNIT_TYPE_TAG);
-          if(unitElement != null) {
-            parameter += " " + unitElement.getText();
-          }
-          else {
-            if(parameterDefaults.containsKey(name)) {
-              parameter += " " + parameterDefaults.get(name);
-            }
-          }
-          parameters.add(parameter);
+    List<Element> paramElements = protocolAppElement.getChildren(AppUtils.PROTOCOL_APP_PARAMETER_TAG);
+    for(Element paramElement : paramElements) {
+      if(Integer.toString(step).equals(paramElement.getAttributeValue(AppUtils.STEP_ATTR))) {
+        String name = paramElement.getChild(AppUtils.NAME_TAG).getText();
+        String parameter = name + " : " + paramElement.getChild(AppUtils.VALUE_TAG).getText();
+        Element unitElement = paramElement.getChild(AppUtils.UNIT_TYPE_TAG);
+        if(unitElement != null) {
+          parameter += " " + unitElement.getText();
         }
+        else {
+          if(parameterDefaults.containsKey(name)) {
+            parameter += " " + parameterDefaults.get(name);
+          }
+        }
+        parameters.add(parameter);
       }
     }
   }
