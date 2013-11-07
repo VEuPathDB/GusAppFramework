@@ -69,15 +69,12 @@ public class ProtocolApplication {
   
   protected void setPerformer(Element protocolAppElement, int step) {
     performer = "";
-    Element contactsElement = protocolAppElement.getChild(AppUtils.CONTACTS_TAG);
-    if(contactsElement != null && !contactsElement.getChildren().isEmpty()) {
-      List<Element> contactElements = contactsElement.getChildren();
-      for(Element contactElement : contactElements) {
-        if(Integer.toString(step).equals(contactElement.getAttributeValue(AppUtils.STEP_ATTR))) {
-          performer = contactElement.getChild(AppUtils.NAME_TAG).getText();
-          if(contactElement.getChild(AppUtils.ROLE_TAG) != null) {
-            performer += " - " + contactElement.getChild(AppUtils.ROLE_TAG).getText();
-          }
+    List<Element> contactElements = protocolAppElement.getChildren(AppUtils.CONTACT_TAG);
+    for(Element contactElement : contactElements) {
+      if(Integer.toString(step).equals(contactElement.getAttributeValue(AppUtils.STEP_ATTR))) {
+        performer = contactElement.getChild(AppUtils.NAME_TAG).getText();
+        if(contactElement.getChild(AppUtils.ROLE_TAG) != null) {
+          performer += " - " + contactElement.getChild(AppUtils.ROLE_TAG).getText();
         }
       }
     }
