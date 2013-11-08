@@ -85,8 +85,8 @@ public class AppUtils {
   public static final String PROTOCOL_APP_PARAMETERS_TAG = "protocol_app_parameters";
   public static final String PROTOCOL_APP_PARAMETER_TAG = "app_param";  
   public static final String STEP_ATTR = "step";
-  public static final String INPUTS_TAG = "inputs";
-  public static final String OUTPUTS_TAG = "outputs";
+  public static final String INPUT_TAG = "input";
+  public static final String OUTPUT_TAG = "output";
   public static final String NODE_CHARACTERISTICS_TAG = "node_characteristics";
   public static final String CHARACTERISTIC_TAG = "characteristic";
   public static final String ONTOLOGY_TERM_TAG = "ontology_term";
