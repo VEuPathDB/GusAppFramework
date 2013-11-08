@@ -67,7 +67,7 @@ import freemarker.template.TemplateException;
  * graph using Graphviz to represent nodes and edges and JS tooltips to provide information
  * relevant to each node/edge.  Based upon Graphviz/Java binding code written by Laszlo
  * Szathmary.
- * @author crisl
+ * @author Cris Lawrence
  *
  */
 public class DisplayPostprocessor {
@@ -115,7 +115,12 @@ public class DisplayPostprocessor {
     List<Node> nodes = study.getNodes();
     List<Edge> edges = study.getEdges();
     for(Node node : nodes) {
-      String label = "label = <<font color=\"blue\">" + node.getLabel() + "</font>>";
+      String label = "label = <";
+      label += "<font color=\"blue\">" + node.getLabel() + "</font>";
+      if(node.isHint()) {
+        label += "<font color=\"red\" point-size=\"18\">*</font>";
+      }
+      label += ">";
       String color = "color = \"" + node.getColor() + "\"";
       String url = "URL = \"node.html?id=" + node.getId() + "&type=" + node.getType() + "\"";    
       if(node.isAddition()) {
@@ -128,7 +133,12 @@ public class DisplayPostprocessor {
     }
     for(Edge edge : edges) {
       List<ProtocolApplication> applications = edge.getApplications();
-      String label = "label = <<font color=\"blue\">" + edge.getLabel() + "</font>>";
+      String label = "label = <";
+      label += "<font color=\"blue\">" + edge.getLabel() + "</font>";
+      if(edge.isHint()) {
+        label += "<font color=\"red\" point-size=\"18\">*</font>";
+      }
+      label += ">";
       String url = "labelURL = \"edge.html?id=" + edge.getFromNode() + edge.getToNode() + "\"";
       if(applications.size() == 1 && applications.get(0).isAddition()) {
         String edgeColor = "color = \"yellow\"";

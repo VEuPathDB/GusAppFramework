@@ -68,6 +68,9 @@ public class ModelPostprocessor {
         node.setAddition(Boolean.parseBoolean(add.trim()));
       }
       node.setDbId(protocolAppNode.getAttributeValue(AppUtils.DBID_ATTR));
+      if(node.getDbId() != null) {
+        node.setHint(true);
+      }
       node.setLabel(protocolAppNode.getChildText(AppUtils.NAME_TAG));
       node.setType(protocolAppNode.getChildText(AppUtils.TYPE_TAG));
       node.setTaxon(protocolAppNode.getChildText(AppUtils.TAXON_TAG));
@@ -116,17 +119,17 @@ public class ModelPostprocessor {
     List<Edge> edges = new ArrayList<>();
     for(Element protocolAppElement : protocolAppElements) {
       List<ProtocolApplication> applications = ProtocolApplication.populate(protocolAppElement);
-      String[] inputs = protocolAppElement.getChildText(AppUtils.INPUTS_TAG).split(";");
-      String[] outputs = protocolAppElement.getChildText(AppUtils.OUTPUTS_TAG).split(";");
-      for(String input : inputs) {
-        for(String output : outputs) {
+      List<Element> inputElements = protocolAppElement.getChildren(AppUtils.INPUT_TAG);
+      List<Element> outputElements = protocolAppElement.getChildren(AppUtils.OUTPUT_TAG);
+      for(Element inputElement : inputElements) {
+        for(Element outputElement : outputElements) {
           Edge edge = new Edge();
           edge.setLabel(protocolAppElement.getChildText(AppUtils.PROTOCOL_TAG));
           edge.setApplications(applications);
-          edge.setFromNode(input);
-          edge.setToNode(output);
+          edge.setFromNode(inputElement.getText());
+          edge.setToNode(outputElement.getText());
           edges.add(edge);
-        }
+        }  
       }
     }
     return edges;

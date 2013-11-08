@@ -8,7 +8,6 @@ import java.util.Map;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.jdom2.Attribute;
 import org.jdom2.Element;
 
 import edu.upenn.cbil.limpopo.utils.AppUtils;
@@ -19,6 +18,12 @@ public class ProtocolApplication {
   private List<String> parameters;
   private String dbId;
   private boolean addition;
+  private boolean labelFlag;
+  
+  public ProtocolApplication() {
+    addition = false;
+    labelFlag = false;
+  }
   
   public final Protocol getProtocol() {
     return protocol;
@@ -29,24 +34,19 @@ public class ProtocolApplication {
   public final String getPerformer() {
     return performer;
   }
- 
   public final List<String> getParameters() {
     return parameters;
   }
-
   public final String getDbId() {
     return dbId;
-  }
-  public final void setDbId(String dbId) {
-    this.dbId = dbId;
   }
   public final boolean isAddition() {
     return addition;
   }
-  public final void setAddition(boolean addition) {
-    this.addition = addition;
+  public final boolean isLabelFlag() {
+    return labelFlag;
   }
-  
+ 
   public static List<ProtocolApplication> populate(Element protocolAppElement) {
     int step = 1;
     List<ProtocolApplication> applications = new ArrayList<>();
@@ -54,11 +54,13 @@ public class ProtocolApplication {
     for(String name : names) {
       ProtocolApplication application = new ProtocolApplication();
       application.setProtocol(Protocol.getProtocolByName(name));
-      Attribute addAttr = protocolAppElement.getAttribute("addition");
-      if(addAttr != null) {
-        application.setAddition(Boolean.parseBoolean(addAttr.getValue()));
+      if(protocolAppElement.getAttribute(AppUtils.ADDITION_ATTR) != null) {
+        application.addition = true;
       }
-      application.setDbId(protocolAppElement.getAttributeValue("db_id"));
+      application.dbId = protocolAppElement.getAttributeValue("db_id");
+      if(application.dbId != null) {
+        application.labelFlag = true;
+      }
       application.setPerformer(protocolAppElement, step);
       application.setParameters(protocolAppElement, step);
       applications.add(application);
@@ -67,6 +69,13 @@ public class ProtocolApplication {
     return applications;
   }
   
+  /**
+   * Assemble performer for display in this protocol application's tooltip, adding the role where
+   * it exists.  Surround the performer with an addition class if it is an addition.
+   * @param protocolAppElement - element containing the protocol application
+   * @param step - integer representing the step in a protocol application series.  A stand-alone
+   * protocol application will have a step of 1 only.
+   */
   protected void setPerformer(Element protocolAppElement, int step) {
     performer = "";
     List<Element> contactElements = protocolAppElement.getChildren(AppUtils.CONTACT_TAG);
@@ -76,10 +85,22 @@ public class ProtocolApplication {
         if(contactElement.getChild(AppUtils.ROLE_TAG) != null) {
           performer += " - " + contactElement.getChild(AppUtils.ROLE_TAG).getText();
         }
+        if(contactElement.getAttribute(AppUtils.ADDITION_ATTR) != null) {
+          performer = "<span class='addition'>" + performer + "</span>";
+          labelFlag = true;
+        }
       }
     }
   }
   
+  /**
+   * Assemble the parameter list for display in this protocol application's tooltip, using a
+   * name = value format and appending any unit type (or default type).  Surround the protocol
+   * with an addition class if it is an addition.
+   * @param protocolAppElement - element containing the protocol application
+   * @param step - integer representing the step in a protocol application series.  A stand-alone
+   * protocol application will have a step of 1 only.
+   */
   protected void setParameters(Element protocolAppElement, int step) {
     Map<String,String> parameterDefaults = this.protocol.getParameters();
     parameters = new ArrayList<>();
@@ -96,6 +117,10 @@ public class ProtocolApplication {
           if(parameterDefaults.containsKey(name)) {
             parameter += " " + parameterDefaults.get(name);
           }
+        }
+        if(paramElement.getAttribute(AppUtils.ADDITION_ATTR) != null) {
+          parameter = "<span class='addition'>" + parameter + "</span>";
+          labelFlag = true;
         }
         parameters.add(parameter);
       }
