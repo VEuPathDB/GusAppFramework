@@ -11,12 +11,12 @@ import static edu.upenn.cbil.limpopo.utils.AppUtils.DESCRIPTION_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.EXTERNAL_DATABASE_RELEASE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.IDF_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.ID_ATTR;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.INPUTS_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.INPUT_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.NAME_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.NODE_CHARACTERISTICS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.ONTOLOGY_TERM_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.VALUE_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.OUTPUTS_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.OUTPUT_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_DATE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_NODE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.PROTOCOL_APP_TAG;
@@ -125,7 +125,7 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
    *     <source_id>id</source_id> 
    *     <uri>uri</uri>
    *     <taxon>taxon</taxon>
-   *     see setNodeCharacteristics  
+   *     see setNodeCharacteristic  
    *   </protocol_app_node>
    * }
    * </pre>
@@ -281,18 +281,12 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
         }
       }
     }
-    StringBuffer ids = new StringBuffer();
     for(ProtocolApplicationIONode input : app.getInputs()) {
-      if(ids.length() > 0) ids.append(";");
-      ids.append(input.getId());
+      appElement.addContent(new Element(INPUT_TAG).setText(input.getId()));
     }
-    appElement.addContent(new Element(INPUTS_TAG).setText(ids.toString()));
-    ids = new StringBuffer();
     for(ProtocolApplicationIONode output : app.getOutputs()) {
-      if(ids.length() > 0) ids.append(";");
-      ids.append(output.getId());
+      appElement.addContent(new Element(OUTPUT_TAG).setText(output.getId()));
     }
-    appElement.addContent(new Element(OUTPUTS_TAG).setText(ids.toString()));
     return appElement;
   }
   
