@@ -16,7 +16,7 @@ import edu.upenn.cbil.limpopo.utils.SDRFUtils;
  * Represents a slightly different definition of characteristic than the one applied in a 
  * MAGE-TAB SDRF.  Characteristics here include typical MAGE-TAB characteristics with the
  * exception of the organism and any material type.
- * @author crisl
+ * @author Cris Lawrence
  *
  */
 public class Characteristic {
