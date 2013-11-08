@@ -18,9 +18,10 @@
   information while the edge label tooltip offers parameter settings, if any.  Nodes
   representing material entities are outlined in <span class="material">blue</span> while
   nodes representing data items are outlined in <span class="data">red</span>.  Yellow fills
-  for nodes and yellow edges indicated additions to an existing MAGE-TAB.  Some of
-  the graphs are rather large.  Horizontal scroll bars above and below the diagram can be
-  employed to scan across the image.
+  for nodes and yellow edges indicated additions to an existing MAGE-TAB.  Red fonts in the
+  tooltips indicate other additions and are hinted at with a <span class="addition">*</span> in
+  the label.  Some of the graphs are rather large.  Horizontal scroll bars above and below the
+  diagram can be employed to scan across the image.
 </p>
 <div class="scroll1">
   <div id="dummy"></div>
@@ -34,7 +35,7 @@
     <#list nodes as node>
       <div id="text${node.getId()}" class="popupData">
         <#if node.dbId??>
-          <p>DB ID: ${node.getDbId()}</p> 
+          <p><span class="addition">DB ID: ${node.getDbId()}</span></p> 
         </#if>
         <ul>
           <#if node.taxon??>
@@ -63,7 +64,7 @@
             <p>${application.protocol.description}</p>
           </#if>
           <#if application.dbId??>
-            <p>DB ID: ${application.dbId}</p> 
+            <p><span class="addition">DB ID: ${application.dbId}</scan></p> 
           </#if>
           <#if application.performer?? && application.performer?has_content>
             <div class="subheading">Performer</div>

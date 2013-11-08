@@ -16,6 +16,7 @@ public class Node {
   private String id;
   private String dbId;
   private String label;
+  private boolean hint;
   private String type;
   private String taxon;
   private String uri;
@@ -23,6 +24,11 @@ public class Node {
   private List<String> characteristics;
   public static final String MATERIAL_ENTITY = "material entity";
   public static final String DATA_ITEM = "data item";
+  
+  public Node() {
+    hint = false;
+    addition = false;
+  }
   
   /**
    * Indicates a node that is an addition to an original MAGE-TAB
@@ -76,6 +82,30 @@ public class Node {
   public void setLabel(String label) {
 	this.label = label;
   }
+  /**
+   * Hint that data related to an addition is hidden in the tooltip
+   * @return - true if addition data is in the tooltip and false otherwise.
+   */
+  public final boolean isHint() {
+    return hint;
+  }
+  /**
+   * Sets the hint that data related to an addition is hidden in the tooltip.  For a node presently,
+   * this would be a Database Id.
+   * @param hint - true if addition data is present and false otherwise
+   */
+  public final void setHint(boolean hint) {
+    this.hint = hint;
+  }
+
+  public static final String getMaterialEntity() {
+    return MATERIAL_ENTITY;
+  }
+
+  public static final String getDataItem() {
+    return DATA_ITEM;
+  }
+
   /**
    * Getter for node type
    * @return - type string

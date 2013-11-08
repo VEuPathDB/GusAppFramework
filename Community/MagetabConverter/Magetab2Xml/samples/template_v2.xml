@@ -208,8 +208,10 @@
 	  <unit_type_ext_db_rls>Name|Version</unit_type_ext_db_rls>
 	</app_param> 
 <!-- repeat above block as needed-->
-	<inputs>semi-colon separated list of protocol_node ids</inputs>
-	<outputs>semi-colon separated list of protocol_node ids</outputs>
+	<input>protocol_node id</input>
+<!-- repeat above block as needed-->
+	<output>protocol_node id</output>
+<!-- repeat above block as needed-->
       </protocol_app>
 <!-- repeat above block as needed-->     
     </sdrf>
