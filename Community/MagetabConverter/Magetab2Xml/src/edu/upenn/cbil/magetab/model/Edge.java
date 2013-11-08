@@ -2,28 +2,29 @@ package edu.upenn.cbil.magetab.model;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-import com.google.common.collect.ListMultimap;
-
 /**
 * POJO for holding Edge object used in creating the biomaterials graph.
- * @author crisl
+ * @author Cris Lawrence
  *
  */
 public class Edge {
   private List<ProtocolApplication> applications;
   private String label;
+  private boolean hint;
   private String fromNode;
   private String toNode;
 
+  /**
+   * Base constructor to insure proper initial state.
+   */
   public Edge() {
+    hint = false;
     applications = new ArrayList<>();
   }
  
@@ -44,11 +45,20 @@ public class Edge {
   
   /**
    * Getter for edge label (not word wrapped)
-   * @return
+   * @return - string representing the raw label
    */
   public String getName() {
     return label;
   }
+  
+  /**
+   * Hint that data related to an addition is hidden in the tooltip
+   * @return - true if addition data is in the tooltip and false otherwise.
+   */
+  public final boolean isHint() {
+    return hint;
+  }
+
   /**
    * Getter for the id of the source node
    * @return - source node id
@@ -84,6 +94,11 @@ public class Edge {
 
   public final void setApplications(List<ProtocolApplication> applications) {
     this.applications = applications;
+    for(ProtocolApplication application : applications) {
+      if(application.isLabelFlag()) {
+        hint = true;
+      }
+    }
   }
 
   /**

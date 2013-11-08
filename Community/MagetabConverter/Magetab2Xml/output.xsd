@@ -290,8 +290,8 @@
       <xsd:element name="contact" minOccurs="0" maxOccurs="unbounded" type="performerType" />
       <xsd:element name="protocol_app_date" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="app_param" minOccurs="0" maxOccurs="unbounded" type="protocolApplicationParameterType" />
-      <xsd:element name="inputs" minOccurs="1" maxOccurs="1" type="locationIdType" />
-      <xsd:element name="outputs" minOccurs="1" maxOccurs="1" type="locationIdType" />
+      <xsd:element name="input" minOccurs="1" maxOccurs="unbounded" type="locationIdType" />
+      <xsd:element name="output" minOccurs="1" maxOccurs="unbounded" type="locationIdType" />
     </xsd:sequence>
     <xsd:attribute name="id" use="optional" type="xsd:string" />
     <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
