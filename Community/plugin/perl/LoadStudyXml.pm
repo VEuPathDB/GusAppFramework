@@ -451,7 +451,7 @@ sub getContacts {
     for (my $j=0; $j<@roles; $j++) {
       my $extDbRlsId = $self->getExtDbRlsId($extDbRls[$j]);
       if (!$extDbRlsId || !defined($extDbRlsId)) {
-	$self->userError("Must provide a valid external database release for Contact Role $roles[$i]");
+	$self->userError("Must provide a valid external database release for Contact Role $roles[$j]");
       }    
       my $contactRole = $self->getOntologyTerm($roles[$j], $extDbRlsId);
     
