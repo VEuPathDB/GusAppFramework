@@ -472,11 +472,22 @@ sub submitProtocols {
   
   my @protocols = $doc->findnodes('/mage-tab/idf/protocol');
   for (my $i=0; $i<@protocols; $i++) {
-    my $childProtocols = $protocols[$i]->findvalue('./child_protocols');
-    if (defined($childProtocols) && $childProtocols !~ /^\s*$/) {
-      push(@{$protocolSeriesNames}, $childProtocols);
+    my @childProtocols = $protocols[$i]->findnodes('./child_protocol');
+    if (scalar(@childProtocols)<2) {
+      next;
+    }
+    else {
+      my @children;
+      for (my $j=0; $j<@childProtocols; $j++) {
+	$children[$j] = $childProtocols[$j]->findvalue('.');
+	if ($children[$j] =~ /^\s*$/) {
+	  $self->userError("Missing value for child_protocol");
+	}
+      }
+      push(@{$protocolSeriesNames}, join('|||', @children));
       next;
     }   
+  
     my $name = $protocols[$i]->findvalue('./name');
     my $protocol = GUS::Model::Study::Protocol->new({name => $name});
     if ($protocol->retrieveFromDB()) {
@@ -534,17 +545,17 @@ sub submitProtocols {
     for (my $j=0; $i<@protocolParams; $j++) {
       my $name = $protocolParams[$j]->findvalue('./name');
       if (defined($name) && $name !~ /^\s*$/) {
-	my $protocolParamObj = GUS::Model::Study::ProtocolParam->new({name => $name});
-	$protocolParamObj->setParent($protocol);
+	my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name});
+	$protocolParam->setParent($protocol);
 	  
 	my $defaultValue = $protocolParams[$j]->findvalue('./default_value');
 	if (defined($defaultValue) && $defaultValue  !~ /^\s*$/) {
-	  $protocolParamObj->setDefaultValue($defaultValue);
+	  $protocolParam->setDefaultValue($defaultValue);
 	}
 	
 	my $isUserSpecified = $protocolParams[$j]->findvalue('./is_user_specified');
 	if (defined($isUserSpecified) && $isUserSpecified  !~ /^\s*$/) {
-	  $protocolParamObj->setIsUserSpecified($isUserSpecified);
+	  $protocolParam->setIsUserSpecified($isUserSpecified);
 	}
 	
 	my $dataTypeTerm = $protocolParams[$j]->findvalue('./data_type'); 
@@ -557,7 +568,7 @@ sub submitProtocols {
 	  }
 	  my $dataType = $self->getOntologyTerm($dataTypeTerm, $dataTypeExtDbRlsId);
 	  my $dataTypeId = $dataType->getId();
-	  $protocolParamObj->setDataTypeId($dataTypeId);
+	  $protocolParam->setDataTypeId($dataTypeId);
 	} 
 	  
 	my $unitTypeTerm = $protocolParams[$j]->findvalue('./unit_type'); 
@@ -570,7 +581,7 @@ sub submitProtocols {
 	  }
 	  my $unitType = $self->getOntologyTerm($unitTypeTerm, $unitTypeExtDbRlsId);
 	  my $unitTypeId = $unitType->getId();
-	  $protocolParamObj->setUnitTypeId($unitTypeId);
+	  $protocolParam->setUnitTypeId($unitTypeId);
 	} 
       }
     }
@@ -590,7 +601,7 @@ sub submitProtocolSeries {
   $protocolSeries->submit();
   my $protocolSeriesId = $protocolSeries->getId();
   $protocolIds->{$protocolSeriesName} = $protocolSeriesId;
-  my @children = split(/;/, $protocolSeriesName);
+  my @children = split(/\|\|\|/, $protocolSeriesName);
   for (my $i=0; $i<@children; $i++) {
     my $orderNum = $i+1;
     my $protocolSeriesLink = GUS::Model::Study::ProtocolSeriesLink->new({order_num => $orderNum});
@@ -752,9 +763,9 @@ sub submitProtocolApps {
       my $rowId = $protocolAppParams[$j]->findvalue('./row_id');
       my $protocolAppParam = GUS::Model::Study::ProtocolAppParam->new();
       $protocolAppParam->setParent($protocolApp);
-      my $protocolParamObj = GUS::Model::Study::ProtocolParam->new({name => $name, protocol_id => $protocolSeriesChildren->{$protocol}->[$step]});
-      $protocolParamObj->retrieveFromDB();
-      $protocolAppParam->setParent($protocolParamObj);
+      my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name, protocol_id => $protocolSeriesChildren->{$protocol}->[$step]});
+      $protocolParam->retrieveFromDB();
+      $protocolAppParam->setParent($protocolParam);
       if ($value && defined($value)) {
 	$protocolAppParam->setValue($value);
       }
