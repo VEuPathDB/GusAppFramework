@@ -473,14 +473,12 @@ sub submitProtocols {
   my @protocols = $doc->findnodes('/mage-tab/idf/protocol');
   for (my $i=0; $i<@protocols; $i++) {
     my @childProtocols = $protocols[$i]->findnodes('./child_protocol');
-    if (scalar(@childProtocols)<2) {
-      next;
-    }
-    else {
+    if (scalar(@childProtocols)>1) {
       my @children;
       for (my $j=0; $j<@childProtocols; $j++) {
-	$children[$j] = $childProtocols[$j]->findvalue('.');
-	if ($children[$j] =~ /^\s*$/) {
+	my $step = $childProtocols[$j]->getAttribute('step');
+	$children[$step-1] = $childProtocols[$j]->findvalue('.');
+	if ($children[$step-1] =~ /^\s*$/) {
 	  $self->userError("Missing value for child_protocol");
 	}
       }
