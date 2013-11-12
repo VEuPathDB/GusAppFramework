@@ -99,7 +99,8 @@
 	  <is_user_specified></is_user_specified>
 	</param>
 <!-- a protocol may have multiple parameters; repeat above block as needed -->
-        <child_protocols>semi-colon separated list of 2 or more unique protocol names; order the same as in protocol series</child_protocols>    
+        <child_protocol step="1"></child_protocol> 
+<!-- repeat above block as needed, value is the protocol name for each step, step indicates the order in the protocol series -->   
       </protocol>
 <!-- repeat above block as needed -->
 
