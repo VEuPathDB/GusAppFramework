@@ -3,7 +3,7 @@ package edu.upenn.cbil.limpopo.conversion;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.ADDITION_ATTR;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.CATEGORY_ATTR;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.CHARACTERISTIC_TAG;
-import static edu.upenn.cbil.limpopo.utils.AppUtils.CHILD_PROTOCOLS_TAG;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.CHILD_PROTOCOL_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.CONTACTS_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.CONTACT_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.ROLE_TAG;
@@ -379,7 +379,12 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
         protocolElement.setAttribute(ADDITION_ATTR, TRUE);
       }
       protocolElement.addContent(new Element(NAME_TAG).setText(series.getName()));
-      protocolElement.addContent(new Element(CHILD_PROTOCOLS_TAG).setText(series.getName()));
+      int step = 1;
+      for(ProtocolApplication protocolApplication : series.getProtocolApplications()) {
+        Element childProtocolElement = new Element(CHILD_PROTOCOL_TAG).setText(protocolApplication.getName());
+        childProtocolElement.setAttribute(STEP_ATTR, Integer.toString(step++));
+        protocolElement.addContent(childProtocolElement);
+      }
       if(magetabElement.getChild(IDF_TAG) != null) {
         magetabElement.getChild(IDF_TAG).addContent(protocolElement);
       }

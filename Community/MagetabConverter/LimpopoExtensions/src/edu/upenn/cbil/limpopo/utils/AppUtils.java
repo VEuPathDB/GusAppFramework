@@ -21,6 +21,7 @@ public class AppUtils {
   public static final String ADDED_CELL = "<<add>>";
   public static final String ID_TOKEN = "<id=(.+)>";
   public static final String ADDED_WITHIN_CELL_TOKEN = "<<<(.+)>>>";
+  public static final String PROTOCOL_SEPARATOR = "|||";
   
   /**
    * Schema File - assumes it to be in the parent directory.
@@ -69,7 +70,7 @@ public class AppUtils {
   public static final String DATA_TYPE_EXT_DB_RLS_TAG = "data_type_ext_db_rls";
   public static final String DEFAULT_VALUE_TAG = "default_value";
   public static final String IS_USER_SPECIFIED_TAG = "is_user_specified";
-  public static final String CHILD_PROTOCOLS_TAG = "child_protocols";
+  public static final String CHILD_PROTOCOL_TAG = "child_protocol";
   
   /**
    * SRDF Tags

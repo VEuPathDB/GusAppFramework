@@ -124,10 +124,18 @@ public class ProtocolSeries {
     for(ProtocolApplication protocolApplication : protocolApplications) {
       names.add(protocolApplication.getName());
     }
-    Joiner joiner = Joiner.on(";").skipNulls();
+    Joiner joiner = Joiner.on("|||").skipNulls();
     this.name = joiner.join(names);
   }
   
+  public final List<ProtocolApplication> getProtocolApplications() {
+    return protocolApplications;
+  }
+
+  public static final List<ProtocolSeries> getProtocolSeriesList() {
+    return protocolSeriesList;
+  }
+
   /**
    * Removes hash code from consideration of object equality.
    */
