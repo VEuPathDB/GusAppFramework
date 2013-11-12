@@ -130,7 +130,7 @@
       <xsd:element name="uri" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="contact" minOccurs="0" maxOccurs="1" type="xsd:string" />
       <xsd:element name="param" minOccurs="0" maxOccurs="unbounded" type="protocolParameterType" />
-      <xsd:element name="child_protocols" minOccurs="0" maxOccurs="1" type="semiSepType" />
+      <xsd:element name="child_protocol" minOccurs="0" maxOccurs="unbounded" type="childProtocolType" />
     </xsd:sequence>
     <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
     <xsd:attribute name="db_id" use="optional" type="xsd:string" />
@@ -206,6 +206,14 @@
       <xsd:element name="unit_type_ext_db_rls" minOccurs="1" maxOccurs="1" type="ExternalDBReleaseType" />
     </xsd:sequence>
   </xsd:group>
+  
+  <xsd:complexType name="childProtocolType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute name="step" use="required" type="xsd:positiveInteger" />
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
   
   <xsd:simpleType name="ExternalDBReleaseType"> 
     <xsd:restriction base="xsd:string">
@@ -328,7 +336,7 @@
       <xsd:element name="name" minOccurs="1" maxOccurs="1" type="xsd:string"/>
       <xsd:group ref="roleGroup" minOccurs="0" maxOccurs="1"/>
     </xsd:sequence>
-    <xsd:attribute name="step" use="required" type="xsd:int" />
+    <xsd:attribute name="step" use="required" type="xsd:positiveInteger" />
     <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
   </xsd:complexType>
 
@@ -339,7 +347,7 @@
       <xsd:group ref="dbCoordsGroup" minOccurs="0" maxOccurs="1" />
       <xsd:group ref="unitTypeGroup" minOccurs="0" maxOccurs="1" />
     </xsd:sequence>
-    <xsd:attribute name="step" use="required" type="xsd:int" />
+    <xsd:attribute name="step" use="required" type="xsd:positiveInteger" />
     <xsd:attribute name="addition" use="optional" type="xsd:boolean" />    
   </xsd:complexType>
 
