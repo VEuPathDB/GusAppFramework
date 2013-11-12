@@ -345,7 +345,7 @@ public class ProtocolApplication extends ProtocolObject {
    */
   public void constructSeriesData() {
     for(ProtocolApplication subordinateApp : subordinateApps) {
-      name += ";" + subordinateApp.name;
+      name += AppUtils.PROTOCOL_SEPARATOR + subordinateApp.name;
     }
   }
   
