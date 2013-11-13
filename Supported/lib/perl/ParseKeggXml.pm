@@ -96,25 +96,34 @@ sub parseKGML {
     my @nodeIds = split(/ /,$enzymeNames);
 
     foreach my $id (@nodeIds) {
-      $pathway->{NODES}->{$id}->{TYPE} = $type;
-      $pathway->{NODES}->{$id}->{ENTRY_ID} = $entry->getAttribute('id');
-      $pathway->{NODES}->{$id}->{REACTION} = $entry->getAttribute('reaction');
-      $pathway->{NODES}->{$id}->{LINK} = $entry->getAttribute('link');
+      # Here $id needs to include X and Y positions (be unique)
 
       my @graphicsNode = $entry->getChildrenByTagName('graphics');
 
       foreach my $gn (@graphicsNode) {
        my $gnName = $gn->getAttribute('name');
-       $pathway->{NODES}->{$id}->{GRAPHICS}->{NAME} = $gn->getAttribute('name');
-       $pathway->{NODES}->{$id}->{GRAPHICS}->{FGCOLOR} = $gn->getAttribute('fgcolor');
-       $pathway->{NODES}->{$id}->{GRAPHICS}->{BGCOLOR} = $gn->getAttribute('bgcolor');
-       $pathway->{NODES}->{$id}->{GRAPHICS}->{TYPE} = $gn->getAttribute('type');
-       $pathway->{NODES}->{$id}->{GRAPHICS}->{X} = $gn->getAttribute('x');
-       $pathway->{NODES}->{$id}->{GRAPHICS}->{Y} = $gn->getAttribute('y');
-       $pathway->{NODES}->{$id}->{GRAPHICS}->{WIDTH} = $gn->getAttribute('width');
-       $pathway->{NODES}->{$id}->{GRAPHICS}->{HEIGHT} = $gn->getAttribute('height');
-       $pathway->{NODES}->{$id}->{GRAPHICS}->{LINECOORDS} = $gn->getAttribute('coords');
+       my ($xPosition, $yPosition) = ($gn->getAttribute('x'), $gn->getAttribute('y'));
+       my $uniqId = $id . "_X:" . $xPosition . "_Y:" . $yPosition;
+
+      $pathway->{NODES}->{$uniqId}->{SOURCE_ID} = $id;
+      $pathway->{NODES}->{$uniqId}->{UNIQ_ID} = $uniqId;
+      $pathway->{NODES}->{$uniqId}->{TYPE} = $type;
+      $pathway->{NODES}->{$uniqId}->{ENTRY_ID} = $entry->getAttribute('id');
+      $pathway->{NODES}->{$uniqId}->{REACTION} = $entry->getAttribute('reaction');
+      $pathway->{NODES}->{$uniqId}->{LINK} = $entry->getAttribute('link');
+
+       $pathway->{NODES}->{$uniqId}->{GRAPHICS}->{NAME} = $gn->getAttribute('name');
+       $pathway->{NODES}->{$uniqId}->{GRAPHICS}->{FGCOLOR} = $gn->getAttribute('fgcolor');
+       $pathway->{NODES}->{$uniqId}->{GRAPHICS}->{BGCOLOR} = $gn->getAttribute('bgcolor');
+       $pathway->{NODES}->{$uniqId}->{GRAPHICS}->{TYPE} = $gn->getAttribute('type');
+       $pathway->{NODES}->{$uniqId}->{GRAPHICS}->{X} = $gn->getAttribute('x');
+       $pathway->{NODES}->{$uniqId}->{GRAPHICS}->{Y} = $gn->getAttribute('y');
+       $pathway->{NODES}->{$uniqId}->{GRAPHICS}->{WIDTH} = $gn->getAttribute('width');
+       $pathway->{NODES}->{$uniqId}->{GRAPHICS}->{HEIGHT} = $gn->getAttribute('height');
+       $pathway->{NODES}->{$uniqId}->{GRAPHICS}->{LINECOORDS} = $gn->getAttribute('coords');
       }
+
+
     }  # end entries
   }
  
@@ -177,7 +186,7 @@ sub parseKGML {
       #which is a single reaction in KEGG but two separate network interactions
       my $reactionName = $reaction->getAttribute('id')."_".$reaction->getAttribute('name');
 
-      my @enzymes = split(/ /,$nodeEntryMapping->{$reaction->getAttribute('id')});
+      my @enzymes = split(/ /,$reaction->getAttribute('id'));
 
       my (@substrates, @products);
 
