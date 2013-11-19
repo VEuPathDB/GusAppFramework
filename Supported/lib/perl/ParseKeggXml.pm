@@ -76,6 +76,8 @@ sub parseKGML {
   my @nodes = $doc->findnodes('/pathway');
 
   $pathway->{SOURCE_ID} = $nodes[0]->getAttribute('name');
+  $pathway->{SOURCE_ID} =~ s/path://g;
+
   $pathway->{NAME} = $nodes[0]->getAttribute('title');
   $pathway->{URI} = $nodes[0]->getAttribute('link');
   $pathway->{IMAGE_FILE} = basename($nodes[0]->getAttribute('image'));
@@ -88,9 +90,8 @@ sub parseKGML {
   foreach my $entry (@nodes) {
     my $type = $entry->getAttribute('type');
  
-
     my $enzymeNames = $entry->getAttribute('name');
-    $enzymeNames =~ s/ec:|cpd:|dr://g;
+    $enzymeNames =~ s/ec:|cpd:|dr:|path://g;
     $nodeEntryMapping->{$entry->getAttribute('id')} = $enzymeNames;
 
     my @nodeIds = split(/ /,$enzymeNames);
@@ -185,6 +186,8 @@ sub parseKGML {
       #like substrateA <-> Enzyme1 <-> ProductA and SubstrateA <->EnzymeB <-> ProductA
       #which is a single reaction in KEGG but two separate network interactions
       my $reactionName = $reaction->getAttribute('id')."_".$reaction->getAttribute('name');
+      my $rnName = $reaction->getAttribute('name');
+      $rnName =~ s/rn://g;
 
       my @enzymes = split(/ /,$reaction->getAttribute('id'));
 
@@ -209,7 +212,7 @@ sub parseKGML {
       $pathway->{REACTIONS}->{$reactionName} = {PRODUCTS => [@products],
                                                 SUBSTRATES => [@substrates],
                                                 ENZYMES => [@enzymes],
-                                                NAME => $reaction->getAttribute('name'),
+                                                NAME => $rnName,
                                                 TYPE => $reaction->getAttribute('type')};
   }
 
