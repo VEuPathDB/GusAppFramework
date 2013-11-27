@@ -43,8 +43,14 @@ public class ExternalDatabase {
     this.version = version;
   }
   
+  /**
+   * Returns the external database release as a combination of name and version.  The filter filters out any (#) suffixes that may be added to names to
+   * keep names unique when not associated with their versions.
+   * @return - name|version
+   */
   public String getRelease() {
-    return this.name + "|" + this.version;
+    String filtered = this.name.replaceAll("\\s*\\(\\d+\\)\\s*", "");
+    return filtered + "|" + this.version;
   }
   
   public String toString() {
