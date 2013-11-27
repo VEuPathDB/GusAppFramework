@@ -42,7 +42,7 @@ sub getArgumentsDeclaration {
   my $argumentDeclaration  =
     [
      fileArg({name => 'xmlFile',
-	      descr => 'The full path of the xml file.',
+	      descr => 'The full path of the filtered xml file.',
 	      constraintFunc=> undef,
 	      reqd  => 1,
 	      isList => 0,
@@ -60,7 +60,7 @@ sub getArgumentsDeclaration {
 sub getDocumentation {
   my $purposeBrief = 'Adds to a study already present in the database';
 
-  my $purpose = 'This plugin reads an xml file, which can be obtained from appropriately parsing additions to a MAGE-TAB file, and inserts these additions into the database.';
+  my $purpose = 'This plugin reads a filtered xml file, which can be obtained from appropriately parsing additions to a MAGE-TAB file, and inserts these additions into the database.';
 
   my $tablesAffected = [['Study::StudyDesign', 'Adds applicable study designs for this study'], ['Study::StudyFactors', 'Adds applicable study factors for this study'], ['SRes::Contact', 'Adds missing applicable contacts'], ['Study::StudyContact', 'Inserts links between this study and the added contacts'], ['SRes::BibliographicReference', 'Adds missing applicable bibliographic references'], ['Study::StudyBibRef', 'Inserts links between this study and the added bibliographic references'], ['Study::Protocol', 'Adds missing applicable protocols'], ['Study::ProtocolParam', 'Adds missing applicable protocol parameters'], ['Study::ProtocolSeriesLinks', 'Adds missing applicable protocol series links'], ['Study::ProtocolApp', 'Adds applicable protocol applications'], ['Study::ProtocolAppParam', 'Adds applicable protocol application parameters'], ['Study::ProtocolAppContact', 'Inserts links between added protocols and contacts'], ['Study::ProtocolAppNode', 'Adds applicable protocol application nodes'], ['Study::Characteristic', 'Inserts characteristics for the added protocol app. nodes'], ['Study::StudyFactorValues', 'Inserts links between added study factors and protocol application nodes'], ['Study::StudyLink', 'Inserts links between this study and the added application nodes'], ['Study::Input', 'Inserts links between added protocol applications and their inputs'], ['Study::Output', 'Inserts links between added protocol applications and their outputs']];
 
@@ -501,7 +501,7 @@ sub addProtocols {
     }
     
     my @protocolParams = $protocols[$i]->findnodes('./param');
-    for (my $j=0; $i<@protocolParams; $j++) {
+    for (my $j=0; $j<@protocolParams; $j++) {
       my $name = $protocolParams[$j]->findvalue('./name');
       if (defined($name) && $name !~ /^\s*$/) {
 	my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name});
@@ -579,7 +579,7 @@ sub addProtocolParams {
       next;
     }
     my @protocolParams = $protocols[$i]->findnodes('./param');
-    for (my $j=0; $i<@protocolParams; $j++) {
+    for (my $j=0; $j<@protocolParams; $j++) {
       my $addition = $protocolParams[$j]->getAttribute('addition');
       if (!defined($addition) || $addition ne 'true') {
 	next;
@@ -690,7 +690,7 @@ sub addProtocolAppNodes {
     for (my $j=0; $j<@factorValues; $j++) {
       my $studyFactorValue = GUS::Model::Study::StudyFactorValue->new();
       my $fvName = $factorValues[$j]->findvalue('./name');
-      my $studyFactor = GUS::Model::Study::StudyLink->new({study_id => $studyId, name => $fvName});
+      my $studyFactor = GUS::Model::Study::StudyFactor->new({study_id => $studyId, name => $fvName});
       if (!$studyFactor->retrieveFromDB()) {
 	$self->userError("There is no study factor named $fvName for study $studyId in the database");
       }
@@ -752,7 +752,6 @@ sub addFactorValues {
     }
     my $id = $protocolAppNodes[$i]->getAttribute('id');
     $protAppNodeIds->{$id} = $protocolAppNodeId;
-    
     my @factorValues = $protocolAppNodes[$i]->findnodes('./factor_value');
     for (my $j=0; $j<@factorValues; $j++) {
       my $addition = $factorValues[$i]->getAttribute('addition');
@@ -780,8 +779,8 @@ sub addFactorValues {
       $studyFactorValue->submit();
       $self->undefPointerCache();
     }
-    return ($protAppNodeIds);
   }
+    return ($protAppNodeIds);
 }
 
 sub addProtocolApps {
@@ -846,7 +845,7 @@ sub addProtocolApps {
       my $protocolAppParam = GUS::Model::Study::ProtocolAppParam->new();
       $protocolAppParam->setParent($protocolApp);
       my $stepProtocol = GUS::Model::Study::Protocol->new({name => $seriesSteps[$step-1]});
-      if (!stepProtocol->retrieveFromDB()) {
+      if (!$stepProtocol->retrieveFromDB()) {
 	$self->userError("There is no protocol named '$seriesSteps[$step-1]' in teh database");
       }
       my $protocolId = $stepProtocol->getId();
