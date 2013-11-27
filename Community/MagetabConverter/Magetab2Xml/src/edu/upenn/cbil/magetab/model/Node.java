@@ -7,6 +7,8 @@ import org.apache.commons.lang.WordUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
+import edu.upenn.cbil.magetab.utilities.ApplicationConfiguration;
+
 /**
  * POJO for holding Node object used in creating the biomaterials graph.
  * @author crisl
@@ -73,7 +75,7 @@ public class Node {
    * @return - label string
    */
   public String getLabel() {
-	return WordUtils.wrap(label.replaceAll("_", " "), 15, "<br />", true);
+	return WordUtils.wrap(ApplicationConfiguration.escapeXml(label.replaceAll("_", " ")), 15, "<br />", true);
   }
   /**
    * Setting for node label - from JDOM2 protocol_app_node name element

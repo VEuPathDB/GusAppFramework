@@ -8,6 +8,8 @@ import org.apache.commons.lang.WordUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
+import edu.upenn.cbil.magetab.utilities.ApplicationConfiguration;
+
 /**
 * POJO for holding Edge object used in creating the biomaterials graph.
  * @author Cris Lawrence
@@ -33,7 +35,7 @@ public class Edge {
    * @return - label string
    */
   public String getLabel() {
-	return WordUtils.wrap(label, 30, "<br />", true);
+	return WordUtils.wrap(ApplicationConfiguration.escapeXml(label), 30, "<br />", true);
   }
   /**
    * Setter for edge label - JDOM2 protocol_app protocol element
