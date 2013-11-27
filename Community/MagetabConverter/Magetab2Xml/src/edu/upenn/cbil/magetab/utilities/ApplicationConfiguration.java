@@ -66,4 +66,8 @@ public class ApplicationConfiguration {
       throw new ApplicationException(ioe.getMessage());
     }
   }
+  
+  public static String escapeXml(String s) {
+    return s.replaceAll("&", "&amp;").replaceAll(">", "&gt;").replaceAll("<", "&lt;").replaceAll("\"", "&quot;").replaceAll("'", "&apos;");
+  }
 }
