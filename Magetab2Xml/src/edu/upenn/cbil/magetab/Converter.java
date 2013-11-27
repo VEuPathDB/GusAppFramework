@@ -62,7 +62,7 @@ public class Converter {
    */
   public void parseCommandLine(String[] args) {
     Options options = new Options(); 
-    options.addOption(GRAPHML, false, GRAPHML_DESC);
+    //options.addOption(GRAPHML, false, GRAPHML_DESC);
     options.addOption(HTML, false, HTML_DESC);
     options.addOption(VALIDATE, false, VALIDATE_DESC);
     options.addOption(PREFIX, true, PREFIX_DESC);
@@ -77,9 +77,9 @@ public class Converter {
       if(cmd.hasOption(VALIDATE)) {
          switches.put(VALIDATE, true);
       }
-      if(cmd.hasOption(GRAPHML)) {
-        switches.put(GRAPHML, true);
-      }
+      //if(cmd.hasOption(GRAPHML)) {
+        //switches.put(GRAPHML, true);
+      //}
       if(cmd.hasOption(HTML)) {
         switches.put(HTML, true);
       }
