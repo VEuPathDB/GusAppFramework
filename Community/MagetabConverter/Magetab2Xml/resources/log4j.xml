@@ -48,7 +48,7 @@
     
   <logger name="edu.upenn.cbil.limpopo" additivity="false">
     <level value="WARN" />
-    <appender-ref ref="limpopo-log" />
+    <appender-ref ref="console" />
   </logger>
 
   <root>
