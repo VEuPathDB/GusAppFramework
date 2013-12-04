@@ -170,6 +170,12 @@ public class GeneralValidator extends MAGETABValidateHandler {
     while(protocolIterator.hasNext()) {
       String key = protocolIterator.next();
       Set<String> parameterNames = idfMap.get(key);
+      // Cheat to avoid having to add this artificial parameter to the protocols for which it is
+      // used in the SDRF.
+      if(parameterNames == null) {
+        parameterNames = new HashSet<String>();
+      }
+      parameterNames.add("cbil_run");
       logger.trace("IDF parameter Names for protocol " + key + ": " + parameterNames);
       List<ProtocolApplicationNode> protocolNodes = sdrfMap.get(key);
       for(ProtocolApplicationNode node : protocolNodes) {
