@@ -2,6 +2,7 @@ package edu.upenn.cbil.magetab;
 
 import static edu.upenn.cbil.magetab.utilities.ApplicationConfiguration.*;
 import static edu.upenn.cbil.magetab.utilities.ApplicationException.*;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -24,6 +25,7 @@ import edu.upenn.cbil.magetab.postprocessor.FactorValuePostprocessor;
 import edu.upenn.cbil.magetab.postprocessor.GraphmlPostprocessor;
 import edu.upenn.cbil.magetab.postprocessor.ModelPostprocessor;
 import edu.upenn.cbil.magetab.postprocessor.PackagingPostprocessor;
+import edu.upenn.cbil.magetab.postprocessor.ProtocolAppConsolidationPostprocessor;
 import edu.upenn.cbil.magetab.utilities.ApplicationConfiguration;
 import edu.upenn.cbil.magetab.utilities.ApplicationException;
 import edu.upenn.cbil.magetab.utilities.ErrorListener;
@@ -73,6 +75,7 @@ public class Processor {
         throw new ApplicationException(MAGETAB_ERROR);
       }
       document = new FactorValuePostprocessor().process(document);
+      document = new ProtocolAppConsolidationPostprocessor(document).process();
       XMLOutputter xmlOutput = new XMLOutputter();
       xmlOutput.setFormat(Format.getPrettyFormat().setExpandEmptyElements(true).setEncoding("ISO-8859-1"));
       xmlOutput.output(document, output);

@@ -304,6 +304,7 @@
     <xsd:attribute name="id" use="optional" type="xsd:string" />
     <xsd:attribute name="addition" use="optional" type="xsd:boolean" />
     <xsd:attribute name="db_id" use="optional" type="xsd:string" />
+    <xsd:attribute name="run" use="optional" type="xsd:string" />
   </xsd:complexType>
   
   <xsd:complexType name="nodeCharacteristicType">
