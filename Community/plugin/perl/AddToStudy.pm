@@ -499,6 +499,12 @@ sub addProtocols {
       $contact->retrieveFromDB();
       $protocol->setParent($contact);
     }
+
+    my $pubmedId = $protocols[$i]->findvalue('./pubmed_id');
+    if (defined($pubmedId) && $pubmedId !~ /^\s*$/) {
+      my $bibRef = $self->getBibRef($pubmedId);
+      $protocol->setParent($bibRef);
+    }
     
     my @protocolParams = $protocols[$i]->findnodes('./param');
     for (my $j=0; $j<@protocolParams; $j++) {
@@ -910,7 +916,7 @@ sub undoTables {
   my ($self) = @_;
   # SRes.Contact won't be deleted
   
-  return ('Study.StudyContact', 'Study.ProtocolAppContact', 'Study.StudyBibRef', 'SRes.BibliographicReference', 'Study.StudyDesign', 'Study.StudyFactorValue', 'Study.StudyFactor', 'Study.StudyLink', 'Study.Characteristic', 'Study.Input', 'Study.Output', 'Study.ProtocolAppNode', 'Study.ProtocolAppParam', 'Study.ProtocolApp', 'Study.ProtocolParam', 'Study.ProtocolSeriesLink', 'Study.Protocol');
+  return ('Study.StudyContact', 'Study.ProtocolAppContact', 'Study.StudyBibRef', 'Study.StudyDesign', 'Study.StudyFactorValue', 'Study.StudyFactor', 'Study.StudyLink', 'Study.Characteristic', 'Study.Input', 'Study.Output', 'Study.ProtocolAppNode', 'Study.ProtocolAppParam', 'Study.ProtocolApp', 'Study.ProtocolParam', 'Study.ProtocolSeriesLink', 'Study.Protocol', 'SRes.BibliographicReference');
 }
 
 1;
