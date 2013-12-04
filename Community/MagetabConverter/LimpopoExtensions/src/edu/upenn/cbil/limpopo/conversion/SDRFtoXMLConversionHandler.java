@@ -11,6 +11,7 @@ import static edu.upenn.cbil.limpopo.utils.AppUtils.DESCRIPTION_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.EXTERNAL_DATABASE_RELEASE_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.IDF_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.ID_ATTR;
+import static edu.upenn.cbil.limpopo.utils.AppUtils.RUN_ATTR;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.INPUT_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.NAME_TAG;
 import static edu.upenn.cbil.limpopo.utils.AppUtils.NODE_CHARACTERISTICS_TAG;
@@ -252,6 +253,10 @@ public class SDRFtoXMLConversionHandler  extends SDRFConversionHandler<Document>
     }
     if(StringUtils.isNotEmpty(app.getDbId())) {
       appElement.setAttribute(DBID_ATTR, app.getDbId());
+    }
+    String runNumber = ProtocolApplication.findRunNumber(app);
+    if(StringUtils.isNotEmpty(runNumber)) {
+      appElement.setAttribute(RUN_ATTR, runNumber);
     }
     appElement.addContent(new Element(PROTOCOL_TAG).setText(app.getName()));
     step = 1;

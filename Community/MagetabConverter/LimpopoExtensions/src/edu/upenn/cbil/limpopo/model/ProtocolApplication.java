@@ -2,6 +2,7 @@ package edu.upenn.cbil.limpopo.model;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,11 +29,13 @@ import uk.ac.ebi.arrayexpress2.magetab.datamodel.sdrf.node.attribute.ParameterVa
 import uk.ac.ebi.arrayexpress2.magetab.exception.ConversionException;
 import edu.upenn.cbil.limpopo.utils.AppUtils;
 import edu.upenn.cbil.limpopo.utils.ProtocolObjectComparator;
+import edu.upenn.cbil.limpopo.utils.SDRFUtils;
 
 public class ProtocolApplication extends ProtocolObject {
   private String name;
   private boolean addition;
   private String dbId;
+  private String runNumber;
   private Set<ProtocolApplicationIONode> inputs;
   private Set<ProtocolApplicationIONode> outputs;
   private List<Performer> performers;
@@ -44,12 +47,14 @@ public class ProtocolApplication extends ProtocolObject {
   private List<ProtocolApplication> subordinateApps;
   private static Set<ProtocolSeries> series = new HashSet<>();
   public static Logger logger = LoggerFactory.getLogger(ProtocolApplication.class);
-  public static final String COMMENT = "Comment";
+  public static final String RUN_PARAM = "cbil_run";
+  
 
   public ProtocolApplication(SDRFNode node) throws ConversionException {
     super(node);
     addition = false;
     dbId = "";
+    runNumber = "";
     date = "";
     performers = new ArrayList<>();
 	inputs = new LinkedHashSet<>();
@@ -82,6 +87,14 @@ public class ProtocolApplication extends ProtocolObject {
 
   public final void setDbId(String dbId) {
     this.dbId = dbId;
+  }
+  
+  public final void setRunNumber(String runNumber) {
+    this.runNumber = AppUtils.removeTokens(runNumber);
+  }
+
+  public final String getRunNumber() {
+    return runNumber;
   }
   
   public List<Performer> getPerformers() {
@@ -212,8 +225,14 @@ public class ProtocolApplication extends ProtocolObject {
     parameters = new ArrayList<>();
     List<ParameterValueAttribute> params = ((ProtocolApplicationNode)node).parameterValues;
     for(ParameterValueAttribute param : params) {
-      ProtocolApplicationParameter parameter = new ProtocolApplicationParameter(name, param, addition);
-      parameters.add(parameter);
+      // Code to retrieve the run number, if any - an artificial parameter.
+      if(RUN_PARAM.equalsIgnoreCase(SDRFUtils.parseHeader(param.getAttributeType()))) {
+        setRunNumber(param.getAttributeValue());
+      }
+      else {
+        ProtocolApplicationParameter parameter = new ProtocolApplicationParameter(name, param, addition);
+        parameters.add(parameter);
+      }
     }
   }
   
@@ -388,6 +407,22 @@ public class ProtocolApplication extends ProtocolObject {
       map.put(protocolName, nodeList);
     }
     return map;
+  }
+  
+  public static String findRunNumber(ProtocolApplication application) {
+    String runNumber = application.getRunNumber();
+    if(StringUtils.isNotEmpty(runNumber)) {
+      return runNumber;
+    }
+    if(application.hasSubordinate()) {
+      for(ProtocolApplication subordinate : application.getSubordinateApps()) {
+        runNumber = subordinate.getRunNumber();
+        if(StringUtils.isNotEmpty(runNumber)) {
+          return runNumber;
+        }
+      }
+    }
+    return "";
   }
 
   public static void createAllProtocolApplications(SDRF data) throws ConversionException {

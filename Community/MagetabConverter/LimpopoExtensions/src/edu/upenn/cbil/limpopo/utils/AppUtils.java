@@ -84,7 +84,8 @@ public class AppUtils {
   public static final String PROTOCOL_APP_TAG = "protocol_app";
   public static final String PROTOCOL_APP_DATE_TAG = "protocol_app_date";
   public static final String PROTOCOL_APP_PARAMETERS_TAG = "protocol_app_parameters";
-  public static final String PROTOCOL_APP_PARAMETER_TAG = "app_param";  
+  public static final String PROTOCOL_APP_PARAMETER_TAG = "app_param";
+  public static final String RUN_ATTR = "run";
   public static final String STEP_ATTR = "step";
   public static final String INPUT_TAG = "input";
   public static final String OUTPUT_TAG = "output";
