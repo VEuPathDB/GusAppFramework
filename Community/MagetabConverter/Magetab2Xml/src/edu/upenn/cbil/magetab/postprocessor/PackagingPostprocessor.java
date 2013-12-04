@@ -26,6 +26,12 @@ import edu.upenn.cbil.magetab.Converter;
 import edu.upenn.cbil.magetab.utilities.ApplicationConfiguration;
 import edu.upenn.cbil.magetab.utilities.ApplicationException;
 
+/**
+ * This post-processor takes all the pertinent data from this conversion and conpacts it into a zip
+ * file for convenient delivery.
+ * @author Cris Lawrence
+ *
+ */
 public class PackagingPostprocessor {
   private String imageFilename;
   private String htmlFilename;
