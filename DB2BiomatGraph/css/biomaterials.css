@@ -29,6 +29,8 @@
 
 .popupData {
 	display: none;
+	max-height: 350px;
+	overflow-y: auto;
 	font-size: 14px;
 	line-height: 16px;
 }
