@@ -34,12 +34,19 @@ biomatGraph.setupPopups = function() {
 
     jQuery(this).qtip({
       content: {
-    	text: $("#text" + id)
-    	
+    	title: {
+    	  text: title,
+    	  button: true
+    	},
+    	text: $("#text" + id),
       },
       position: {
-  		my: 'top left', 
-  		at: 'bottom center'
+    	viewport: $(window),  
+  		my: 'bottom left', 
+  		at: 'top center',
+  		adjust: {
+  		  method: 'flipinvert'
+  		}
   	  },
       show: {
   		event: 'click',
@@ -64,5 +71,11 @@ jQuery(document).ready(function() {
   jQuery("#biomaterials").waitForImages(function() {
     biomatGraph.setupScrollBars();
     biomatGraph.setupPopups();
+    jQuery('#biomaterials img').maphilight(
+      {
+    	shadow: true,
+    	stroke: false
+      }
+    );
   });
 });

@@ -24,11 +24,6 @@
     </#if>
     <#list nodes as node>
       <div id="text${node.getNodeId()?c}" class="popupData">
-        <#if node.type == "data item">
-          <span class="popupHeading">File Location</span>
-        <#else>
-          <span class="popupHeading">Characteristics</span>
-        </#if>
         <ul>
           <#if node.taxon??>
             <li>${node.getTaxon()}</li>
@@ -49,7 +44,6 @@
     </#list>
     <#list edges as edge>
       <div id="text${edge.getFromNode()?c}_${edge.getToNode()?c}" class="popupData">
-        <span class="popupHeading">Parameter Settings</span>
         <ul>
           <#if edge.params??>   
             <#list edge.params?keys as key>
