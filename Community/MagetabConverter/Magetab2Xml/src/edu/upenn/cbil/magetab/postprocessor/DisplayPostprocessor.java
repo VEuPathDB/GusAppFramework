@@ -124,7 +124,7 @@ public class DisplayPostprocessor {
       String color = "color = \"" + node.getColor() + "\"";
       String url = "URL = \"node.html?id=" + node.getId() + "&type=" + node.getType() + "\"";    
       if(node.isAddition()) {
-        String fillColor = "style = \"filled\", fillcolor = \"yellow\"";
+        String fillColor = "style = \"filled\", fillcolor = \"orange\"";
         output.append(node.getId() + " [" + color + ", " + fillColor + ", " + label + ", " + url + ", fontsize=12]\n");
       }
       else {
@@ -141,7 +141,7 @@ public class DisplayPostprocessor {
       label += ">";
       String url = "labelURL = \"edge.html?id=" + edge.getFromNode() + edge.getToNode() + "\"";
       if(applications.size() == 1 && applications.get(0).isAddition()) {
-        String edgeColor = "color = \"yellow\"";
+        String edgeColor = "color = \"orange\"";
         output.append(edge.getFromNode() + "->" + edge.getToNode() + "[" + label + ", " + edgeColor + ", " + url + ", fontsize=10]\n");
       }
       else {

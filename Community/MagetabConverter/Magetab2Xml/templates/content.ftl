@@ -17,8 +17,8 @@
   The node tooltip provides characteristics or file
   information while the edge label tooltip offers parameter settings, if any.  Nodes
   representing material entities are outlined in <span class="material">blue</span> while
-  nodes representing data items are outlined in <span class="data">red</span>.  Yellow fills
-  for nodes and yellow edges indicated additions to an existing MAGE-TAB.  Red fonts in the
+  nodes representing data items are outlined in <span class="data">red</span>.  Orange fills
+  for nodes and orange edges indicated additions to an existing MAGE-TAB.  Red fonts in the
   tooltips indicate other additions and are hinted at with a <span class="addition">*</span> in
   the label.  Some of the graphs are rather large.  Horizontal scroll bars above and below the
   diagram can be employed to scan across the image.
