@@ -34,7 +34,7 @@ public class BiomaterialsGraphService {
     List<Edge> edges = BiomaterialsGraphDAO.getEdges(studyId);
     for(Edge edge : edges) {
       BiomaterialsGraphDAO.checkForProtocolSeries(edge);
-      long protocolAppId = edge.getProtocolAppId();
+      long edgeId = edge.getEdgeId();
       if(edge.getApplications().isEmpty()) {
         edge.getApplications().add(new ProtocolApplication(edge.getProtocolId()));
       }
@@ -43,8 +43,9 @@ public class BiomaterialsGraphService {
       }
       for(ProtocolApplication application : edge.getApplications()) {
         BiomaterialsGraphDAO.getProtocolDetails(application);
-        BiomaterialsGraphDAO.getProtocolParams(protocolAppId, application);
-        BiomaterialsGraphDAO.getPerformer(protocolAppId, application);
+        BiomaterialsGraphDAO.getProtocolParams(edgeId, application);
+        ProtocolApplication.sortParametersByName(application.getParameters());
+        BiomaterialsGraphDAO.getPerformer(edgeId, application);
       }
     }
     return edges;

@@ -2,6 +2,7 @@ package edu.upenn.cbil.biomatgraph;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
@@ -69,6 +70,10 @@ public class ProtocolApplication {
 
   public final void setPerformer(String performer) {
     this.performer = performer;
+  }
+  
+  public static final void sortParametersByName(List<String> parameters) {
+    Collections.sort(parameters);
   }
 
   /**

@@ -23,8 +23,8 @@
     </#if>
     <#list nodes as node>
       <div id="text${node.getNodeId()?c}" class="popupData">
-        <#if node.dbId??>
-          <p><span>DB ID: ${node.getDbId()}</span></p> 
+        <#if node.nodeId??>
+          <p><span>DB ID: ${node.getNodeId()?c}</span></p> 
         </#if>
         <ul>
           <#if node.taxon??>
@@ -46,6 +46,9 @@
     </#list>
     <#list edges as edge>
       <div id="text${edge.getFromNode()?c}_${edge.getToNode()?c}" class="popupData">
+        <#if edge.edgeId??>
+          <p><span>DB ID: ${edge.getEdgeId()?c}</span></p> 
+        </#if>
         <#assign i = 1>
         <#list edge.applications as application>
           <div class="subheading">${i}. ${application.name}</div>
