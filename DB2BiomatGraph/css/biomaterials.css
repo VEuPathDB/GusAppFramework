@@ -4,6 +4,10 @@
   overflow-y: hidden;
 }
 
+#biomatGraph area {
+  cursor: pointer;
+}
+
 .material {
   color: #00F;
   font-weight: bold;
