@@ -58,7 +58,9 @@ biomatGraph.setupPopups = function() {
   		event: 'click',
   		solo: true // Only show one tooltip at a time
       },
-  	  hide: 'click',
+  	  hide: {
+  		event: 'unfocus'
+  	  },
   	  style: {
   		tip: {
             corner: true,
@@ -72,11 +74,17 @@ biomatGraph.setupPopups = function() {
   //alert("setup complete");
 };
 
+biomatGraph.checkDragging = function() {
+  jQuery("#panzoom").mousedown( function() {
+	$('.qtip:visible').qtip("hide");
+  });
+}
 
 jQuery(document).ready(function() {
   jQuery("#biomaterials").waitForImages(function() {
     /*biomatGraph.setupScrollBars();*/
-    $("#panzoom").panzoom();
+    jQuery("#panzoom").panzoom();
+    biomatGraph.checkDragging();
     biomatGraph.setupPopups();
     jQuery('#biomaterials img').maphilight(
       {
