@@ -14,7 +14,7 @@ public class Edge {
   private List<ProtocolApplication> applications;
   private String label;
   private long protocolId;
-  private long protocolAppId;
+  private long edgeId;
   private long fromNode;
   private long toNode;
   
@@ -40,11 +40,11 @@ public class Edge {
   public final void setProtocolId(long protocolId) {
     this.protocolId = protocolId;
   }
-  public final long getProtocolAppId() {
-    return protocolAppId;
+  public final long getEdgeId() {
+    return edgeId;
   }
-  public final void setProtocolAppId(long protocolAppId) {
-    this.protocolAppId = protocolAppId;
+  public final void setEdgeId(long edgeId) {
+    this.edgeId = edgeId;
   }
   public long getFromNode() {
 	return fromNode;

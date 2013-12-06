@@ -136,7 +136,6 @@ public class BiomaterialsGraphDAO {
 	    nodes.add(node);
 	  }
 	  logger.debug("Returned " + nodes.size() + " nodes");
-	  System.out.println(nodes.size());
   	  return nodes;
     }
 	catch(SQLException se) {
@@ -233,7 +232,7 @@ public class BiomaterialsGraphDAO {
 	    Edge edge = new Edge();
 	    edge.setLabel(resultSet.getString("label"));
 	    edge.setProtocolId(resultSet.getLong("protocolId"));
-	    edge.setProtocolAppId(resultSet.getLong("protocolAppId"));
+	    edge.setEdgeId(resultSet.getLong("protocolAppId"));
 	    edge.setFromNode(resultSet.getLong("node1"));
 	    edge.setToNode(resultSet.getLong("node2"));
 	    logger.debug("Edge: " + edge);
@@ -278,7 +277,7 @@ public class BiomaterialsGraphDAO {
   
   public static void getProtocolDetails(ProtocolApplication application) {
     long protocolId = application.getProtocolApplicationId();
-    logger.debug("Starting getProtocolDetails for step: " + protocolId);
+    logger.debug("Starting getProtocolDetails for protocol: " + protocolId);
     PreparedStatement statement = null;
     ResultSet resultSet = null;
     try {
@@ -299,7 +298,7 @@ public class BiomaterialsGraphDAO {
     }
   }
   
-  public static void getProtocolParams(long protocolAppId, ProtocolApplication application) {
+  public static void getProtocolParams(long edgeId, ProtocolApplication application) {
     long protocolId = application.getProtocolApplicationId();
     logger.debug("Starting getProtocolParams for protocol application id: " + protocolId);
     PreparedStatement statement = null;
@@ -307,7 +306,7 @@ public class BiomaterialsGraphDAO {
 	try {
 	  statement = connection.prepareStatement(QUERY_PROTOCOL_PARAMS);
 	  logger.debug("Query protocol params: " + QUERY_PROTOCOL_PARAMS);
-      statement.setLong(1, protocolAppId);
+      statement.setLong(1, edgeId);
 	  statement.setLong(2, protocolId);
 	  resultSet = statement.executeQuery();
 	  while(resultSet.next()) {
@@ -331,7 +330,7 @@ public class BiomaterialsGraphDAO {
     }
   }
   
-  public static void getPerformer(long protocolAppId, ProtocolApplication application) {
+  public static void getPerformer(long edgeId, ProtocolApplication application) {
     int step = application.getStep();
     logger.debug("Starting getPerformer for step: " + step);
     PreparedStatement statement = null;
@@ -339,7 +338,7 @@ public class BiomaterialsGraphDAO {
     try {
       statement = connection.prepareStatement(QUERY_PERFORMER);
       logger.debug("Query performer: " + QUERY_PERFORMER);
-      statement.setLong(1, protocolAppId);
+      statement.setLong(1, edgeId);
       statement.setLong(2, step);
       resultSet = statement.executeQuery();
       if(resultSet.next()) {
