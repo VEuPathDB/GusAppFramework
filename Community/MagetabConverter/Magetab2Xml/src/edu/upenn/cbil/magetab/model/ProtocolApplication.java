@@ -50,7 +50,7 @@ public class ProtocolApplication {
   public static List<ProtocolApplication> populate(Element protocolAppElement) {
     int step = 1;
     List<ProtocolApplication> applications = new ArrayList<>();
-    List<String> names = Arrays.asList(protocolAppElement.getChildText(AppUtils.PROTOCOL_TAG).split(";"));
+    List<String> names = Arrays.asList(protocolAppElement.getChildText(AppUtils.PROTOCOL_TAG).split("\\|\\|\\|"));
     for(String name : names) {
       ProtocolApplication application = new ProtocolApplication();
       application.setProtocol(Protocol.getProtocolByName(name));
