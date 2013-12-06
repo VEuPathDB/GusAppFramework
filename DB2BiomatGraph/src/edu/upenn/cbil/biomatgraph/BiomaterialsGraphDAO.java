@@ -24,19 +24,26 @@ public class BiomaterialsGraphDAO {
   public static final String QUERY_NODES_BY_ID = "" +
     "SELECT p.protocol_app_node_id AS id, p.name AS label, o.name AS node_type " +
     " FROM study.protocolappnode p, study.studylink sl, study.study s, sres.ontologyterm o " +
-    " WHERE p.protocol_app_node_id=sl.protocol_app_node_id " +
+    " WHERE p.protocol_app_node_id = sl.protocol_app_node_id " +
     "  AND sl.study_id = ? " +
+    "  AND sl.study_id = s.study_id " +
     "  AND p.type_id = o.ontology_term_id ";
 	
   public static final String QUERY_EDGES_BY_ID = "" +
-    "SELECT i.protocol_app_node_id AS node1, p.name AS label, o.protocol_app_node_id AS node2 " +
+    "SELECT i.protocol_app_node_id AS node1, p.name AS label, o.protocol_app_node_id AS node2, " +
+    "  p.protocol_id AS protocolId, pa.protocol_app_id AS protocolAppId " +
     " FROM study.input i, study.output o, study.studylink sl, study.protocol p, study.protocolapp pa " +
     " WHERE i.protocol_app_id = o.protocol_app_id " +
     "  AND i.protocol_app_node_id = sl.protocol_app_node_id " +
     "  AND i.protocol_app_id = pa.protocol_app_id " +
     "  AND pa.protocol_id = p.protocol_id " +
     "  AND sl.study_id = ? ";
-	
+  
+  public static final String QUERY_PROTOCOL_SERIES = "" +
+    "SELECT order_num AS step, protocol_id AS protocolId " +
+    " FROM study.protocolserieslink " +
+    " WHERE protocol_series_id = ? "; 
+  
   public static final String QUERY_TAXON = "" +
     "SELECT t.name AS taxon " +
     " FROM sres.taxonname t, study.protocolappnode p " +
@@ -53,18 +60,22 @@ public class BiomaterialsGraphDAO {
   public static final String QUERY_DATA_URI = "" +
     "SELECT uri FROM study.protocolappnode " +
     "  WHERE protocol_app_node_id = ? ";
+  
+  public static final String QUERY_PROTOCOL_DETAILS = "" +
+    "SELECT name, description FROM study.protocol WHERE protocol_id = ? ";
 	
   public static final String QUERY_PROTOCOL_PARAMS = "" +
     "SELECT pp.name AS name, pap.value AS value, ot.name AS unit_type " +
-    " FROM study.protocolparam pp, study.protocolappparam pap, study.protocolapp pa, " +
-    "      study.input i, study.output o, sres.ontologyterm ot " +
+    " FROM study.protocolparam pp, study.protocolappparam pap, sres.ontologyterm ot " +
     " WHERE pp.protocol_param_id = pap.protocol_param_id " +
-    "  AND pap.protocol_app_id = pa.protocol_app_id " +
     "  AND pp.unit_type_id = ot.ontology_term_id(+) " +
-    "  AND pa.protocol_app_id = i.protocol_app_id " +
-    "  AND i.protocol_app_node_id = ? " +
-    "  AND pa.protocol_app_id = o.protocol_app_id " +
-    "  AND o.protocol_app_node_id = ? ";
+    "  AND pap.protocol_app_id = ? AND pp.protocol_id = ? ";
+  
+  public static final String QUERY_PERFORMER = "" +
+    "SELECT c.name AS name " +
+    " FROM sres.contact c, study.protocolappcontact pc " +
+    " WHERE c.contact_id = pc.contact_id " +
+    "  AND pc.protocol_app_id = ? AND pc.order_num = ? "; 
   
   public static void openConnection() {
 	BiomaterialsGraphDAO.connection = DatabaseManager.getConnection();
@@ -125,6 +136,7 @@ public class BiomaterialsGraphDAO {
 	    nodes.add(node);
 	  }
 	  logger.debug("Returned " + nodes.size() + " nodes");
+	  System.out.println(nodes.size());
   	  return nodes;
     }
 	catch(SQLException se) {
@@ -212,54 +224,104 @@ public class BiomaterialsGraphDAO {
 	PreparedStatement statement = null;
 	ResultSet resultSet = null;
 	List<Edge> edges = new ArrayList<Edge>();
-	  try {
-	    statement = connection.prepareStatement(QUERY_EDGES_BY_ID);
-		logger.debug("Query edges By Id: " + QUERY_EDGES_BY_ID);
-		statement.setLong(1, id);
-		resultSet = statement.executeQuery();
-		while (resultSet.next()) {
-		  Edge edge = new Edge();
-		  edge.setLabel(resultSet.getString("label"));
-		  edge.setFromNode(resultSet.getLong("node1"));
-		  edge.setToNode(resultSet.getLong("node2"));
-		  edge.setParams(getProtocolParams(edge.getFromNode(), edge.getToNode()));
-		  logger.debug("Edge: " + edge);
-		  edges.add(edge);
-		}
-	    logger.debug("Returned " + edges.size() + " edges");
-		return edges;
+	try {
+	  statement = connection.prepareStatement(QUERY_EDGES_BY_ID);
+	  logger.debug("Query edges By Id: " + QUERY_EDGES_BY_ID);
+	  statement.setLong(1, id);
+	  resultSet = statement.executeQuery();
+	  while (resultSet.next()) {
+	    Edge edge = new Edge();
+	    edge.setLabel(resultSet.getString("label"));
+	    edge.setProtocolId(resultSet.getLong("protocolId"));
+	    edge.setProtocolAppId(resultSet.getLong("protocolAppId"));
+	    edge.setFromNode(resultSet.getLong("node1"));
+	    edge.setToNode(resultSet.getLong("node2"));
+	    logger.debug("Edge: " + edge);
+	    edges.add(edge);
 	  }
-	  catch(SQLException se) {
-	    throw new ApplicationException(se.getMessage());
-	  }
-	  finally {
-	    DatabaseManager.closeAll(resultSet,statement,null);
-  	  }
-    }
+	  logger.debug("Returned " + edges.size() + " edges");
+	  return edges;
+	}
+	catch(SQLException se) {
+	  throw new ApplicationException(se.getMessage());
+	}
+	finally {
+	  DatabaseManager.closeAll(resultSet,statement,null);
+  	}
+  }
   
-  protected static ListMultimap<String,String> getProtocolParams(long fromId, long toId) {
-    logger.debug("Starting getProtocol for node ids: " + fromId + " -> " + toId);
+  public static void checkForProtocolSeries(Edge edge) {
+    long protocolId = edge.getProtocolId();
+    logger.debug("Starting checkForProtocolSeries for protocol id: " + protocolId);
+    List<ProtocolApplication> applications = edge.getApplications();
+    PreparedStatement statement = null;
+    ResultSet resultSet = null;
+    try {
+      statement = connection.prepareStatement(QUERY_PROTOCOL_SERIES);
+      logger.debug("Query for series: " + QUERY_PROTOCOL_SERIES);
+      statement.setLong(1, protocolId);
+      resultSet = statement.executeQuery();
+      while(resultSet.next()) {
+        ProtocolApplication application = new ProtocolApplication();
+        application.setProtocolApplicationId(resultSet.getLong("protocolId"));
+        application.setStep(resultSet.getInt("step"));
+        applications.add(application);
+      }
+    }
+    catch(SQLException se) {
+      throw new ApplicationException(se.getMessage());
+    }
+    finally {
+      DatabaseManager.closeAll(resultSet,statement,null);
+    }
+  }
+  
+  public static void getProtocolDetails(ProtocolApplication application) {
+    long protocolId = application.getProtocolApplicationId();
+    logger.debug("Starting getProtocolDetails for step: " + protocolId);
+    PreparedStatement statement = null;
+    ResultSet resultSet = null;
+    try {
+      statement = connection.prepareStatement(QUERY_PROTOCOL_DETAILS);
+      logger.debug("Query protocol detail: " + QUERY_PROTOCOL_DETAILS);
+      statement.setLong(1, protocolId);
+      resultSet = statement.executeQuery();
+      if(resultSet.next()) {
+        application.setName(resultSet.getString("name"));
+        application.setDescription(resultSet.getString("description"));
+      }
+    }
+    catch(SQLException se) {
+      throw new ApplicationException(se.getMessage());
+    }
+    finally {
+      DatabaseManager.closeAll(resultSet,statement,null);
+    }
+  }
+  
+  public static void getProtocolParams(long protocolAppId, ProtocolApplication application) {
+    long protocolId = application.getProtocolApplicationId();
+    logger.debug("Starting getProtocolParams for protocol application id: " + protocolId);
     PreparedStatement statement = null;
 	ResultSet resultSet = null;
-	ArrayListMultimap<String,String> map = ArrayListMultimap.create();
 	try {
 	  statement = connection.prepareStatement(QUERY_PROTOCOL_PARAMS);
-	  logger.debug("Query uri: " + QUERY_PROTOCOL_PARAMS);
-      statement.setLong(1, fromId);
-	  statement.setLong(2, toId);
+	  logger.debug("Query protocol params: " + QUERY_PROTOCOL_PARAMS);
+      statement.setLong(1, protocolAppId);
+	  statement.setLong(2, protocolId);
 	  resultSet = statement.executeQuery();
 	  while(resultSet.next()) {
-		String key = resultSet.getString("name");
+		String parameter = resultSet.getString("name");
 		String value = resultSet.getString("value");
 		String unit = resultSet.getString("unit_type");
 		if(StringUtils.isNotEmpty(value)) {
-		  map.put(key, value);
+		  parameter += " : " + value;
+		  if(StringUtils.isNotEmpty(unit)) {
+		    parameter += " " + unit;
+		  }
 		}
-		if(StringUtils.isNotEmpty(unit)) {
-		  map.put(key, unit);
-		}
+		application.getParameters().add(parameter);
 	  }
-	  return map.isEmpty() ? null : map;
 	}
 	catch(SQLException se) {
 	  throw new ApplicationException(se.getMessage());
@@ -268,5 +330,30 @@ public class BiomaterialsGraphDAO {
       DatabaseManager.closeAll(resultSet,statement,null);
     }
   }
+  
+  public static void getPerformer(long protocolAppId, ProtocolApplication application) {
+    int step = application.getStep();
+    logger.debug("Starting getPerformer for step: " + step);
+    PreparedStatement statement = null;
+    ResultSet resultSet = null;
+    try {
+      statement = connection.prepareStatement(QUERY_PERFORMER);
+      logger.debug("Query performer: " + QUERY_PERFORMER);
+      statement.setLong(1, protocolAppId);
+      statement.setLong(2, step);
+      resultSet = statement.executeQuery();
+      if(resultSet.next()) {
+        application.setPerformer(resultSet.getString("name"));
+      }
+    }
+    catch(SQLException se) {
+      throw new ApplicationException(se.getMessage());
+    }
+    finally {
+      DatabaseManager.closeAll(resultSet,statement,null);
+    }
+  }
+  
+  
   
 }

@@ -1,16 +1,3 @@
-.scroll1,.scroll2 {
-  width: 1060px;
-  overflow-x: scroll;
-  overflow-y: hidden;
-}
-
-.scroll1 {
-  height: 30px;
-}
-
-#dummy {
-  height: 30px;
-}
 
 #biomaterials {
   background: #FFFFFF;
@@ -40,7 +27,22 @@
 	font-weight: bold;
 }
 
+.qtip-title {
+  font-variant: small-caps;
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.subheading {
+  font-weight: bold;
+  font-size: 12px;
+}
+
 .popupData ul {
 	padding-left: 12px;
 	margin-top: 5px;
+}
+
+#panZoom {
+  cursor: move;
 }

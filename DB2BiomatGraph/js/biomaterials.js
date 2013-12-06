@@ -22,14 +22,20 @@ biomatGraph.setupScrollBars = function(element) {
 biomatGraph.setupPopups = function() {
   jQuery('#biomatGraph area').each(function () {
 	var url = jQuery(this).attr('href');
-	var id = jQuery(this).attr('href').split("=")[1];
+	var id = url.split("=")[1].split("&");
 	jQuery(this).removeAttr('href');
 	var title = "?";
 	if(url.indexOf('node') >= 0) {
-	  title = "Characteristics";
+	  var type = url.split("=")[2];
+	  if(type.indexOf('material') >= 0) {
+	    title = "Characteristics";
+	  }
+	  else {
+		title = "File Location";
+	  }
 	}
 	else if(url.indexOf('edge') >= 0) {
-	  title = "Parameters";
+	  title = "Protocol Information";
 	}
 
     jQuery(this).qtip({
@@ -52,7 +58,7 @@ biomatGraph.setupPopups = function() {
   		event: 'click',
   		solo: true // Only show one tooltip at a time
       },
-  	  hide: 'unfocus',
+  	  hide: 'click',
   	  style: {
   		tip: {
             corner: true,
@@ -69,7 +75,8 @@ biomatGraph.setupPopups = function() {
 
 jQuery(document).ready(function() {
   jQuery("#biomaterials").waitForImages(function() {
-    biomatGraph.setupScrollBars();
+    /*biomatGraph.setupScrollBars();*/
+    $("#panzoom").panzoom();
     biomatGraph.setupPopups();
     jQuery('#biomaterials img').maphilight(
       {

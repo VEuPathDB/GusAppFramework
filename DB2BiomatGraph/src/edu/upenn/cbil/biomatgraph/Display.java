@@ -37,7 +37,7 @@ public class Display {
     for(Node node : study.getNodes()) {
       String label = "label = \"" + node.getLabel() + "\""; 
       String color = "color = \"" + node.getColor() + "\"";
-      String url = "URL = \"node.html?id=" + node.getNodeId() + "\"";
+      String url = "URL = \"node.html?id=" + node.getNodeId()  + "&type=" + node.getType() + "\"";  
       String font = "fontsize = 12";
       output.append(node.getNodeId() + " [" + color + ", " + label + ", " + url + ", " + font + "]\n");
     }

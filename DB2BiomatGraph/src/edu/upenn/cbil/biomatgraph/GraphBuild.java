@@ -38,7 +38,7 @@ public class GraphBuild {
         study.setStudyId(studyId);
         study.setStudyName(service.getStudyName(studyId));
         study.setNodes(service.getNodes(studyId));
-        study.setEdges(service.getEdges(studyId));
+        study.setEdges(service.constructEdgeData(studyId));
         return study;
       }
       finally {
