@@ -13,17 +13,19 @@
   the graphs are rather large.  Horizontal scroll bars above and below the diagram can be
   employed to scan across the image.
 </p>
-<div class="scroll1">
-  <div id="dummy"></div>
-</div>
 <div class="scroll2">
   <div id="biomaterials">
-    <img src="${gifFileName}" usemap="#biomatGraph">
+    <div id="panzoom" style="transform: matrix(1, 0, 0, 1, 0, 0);">
+      <img src="${gifFileName}" usemap="#biomatGraph">
+    </div>
     <#if map??>
       ${map}
     </#if>
     <#list nodes as node>
       <div id="text${node.getNodeId()?c}" class="popupData">
+        <#if node.dbId??>
+          <p><span>DB ID: ${node.getDbId()}</span></p> 
+        </#if>
         <ul>
           <#if node.taxon??>
             <li>${node.getTaxon()}</li>
@@ -44,20 +46,31 @@
     </#list>
     <#list edges as edge>
       <div id="text${edge.getFromNode()?c}_${edge.getToNode()?c}" class="popupData">
-        <ul>
-          <#if edge.params??>   
-            <#list edge.params?keys as key>
-              <li>
-                ${key}: &nbsp;
-                <#list edge.params[key] as value>
-                 ${value} &nbsp;
-                </#list>
-              </li>
-            </#list>
-          <#else>
-            NA
+        <#assign i = 1>
+        <#list edge.applications as application>
+          <div class="subheading">${i}. ${application.name}</div>
+          <#if application.description??>
+            <p>${application.description}</p>
           </#if>
-        </ul>
+          <#if application.performer?? && application.performer?has_content>
+            <div class="subheading">Performer</div>
+            <p>${application.performer}</p>  
+          </#if>
+          <#if application.parameters?? && application.parameters?has_content>  
+            <div class="subheading">Parameter Setting(s)</div>
+            <ul>
+              <#list application.parameters as parameter>
+                <li>
+                 ${parameter}
+                </li>
+              </#list>
+            </ul>
+          </#if>
+          <#assign i=i+1>
+          <#if i <= edge.applications?size>
+            <hr class="separator" />
+          </#if>
+        </#list>
       </div>
     </#list>
   </div>
