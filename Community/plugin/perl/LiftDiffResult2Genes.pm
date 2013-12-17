@@ -99,19 +99,25 @@ sub run {
   my $dbh = $self->getQueryHandle();
   my $protAppNodeId = $self->getArg('protAppNodeId');
 
-  my $stm1 = "select na_feature_id, mean1, sd1, mean2, sd2, fdr, fold_change, test_statistic, p_value, adj_p_value, q_value, confidence_up, confidence_down from Results.NAFeatureResult where protocol_app_node_id=$protAppNodeId";
+  my $stm1 = "select na_feature_id, mean1, sd1, mean2, sd2, fdr, fold_change, test_statistic, p_value, adj_p_value, q_value, confidence_up, confidence_down from Results.NAFeatureDiffResult where protocol_app_node_id=$protAppNodeId";
   my $sth1 = $dbh->prepare($stm1);
 
-  my $sth2 = $dbh->prepare("select g.gene_id, gf.na_feature_id, gf.name from DoTS.GeneFeature gf, DoTS.GeneInstance gi1, DoTS.GeneInstance gi2 where gf.external_database_release_id=$extDbRls and gf.na_feature_id=gi1.na_feature_id and gi1.gene_id=gi2.gene_id and gi2.na_feature_id=?");
+  my $sth2 = $dbh->prepare("select gi1.gene_id, gf.na_feature_id, gf.name from DoTS.GeneFeature gf, DoTS.GeneInstance gi1, DoTS.GeneInstance gi2 where gf.external_database_release_id=$extDbRls and gf.na_feature_id=gi1.na_feature_id and gi1.gene_id=gi2.gene_id and gi2.na_feature_id=?");
  
 
+  $sth1->execute();
   while (my ($naFeatureId1, $mean1, $sd1, $mean2, $sd2, $fdr, $foldChange, $testStat, $pValue, $adjPValue, $qValue, $confUp, $confDown) = $sth1->fetchrow_array()) {
     my $geneId;
     $sth2->execute($naFeatureId1);
     my %names;
     while (my ($geneId2, $naFeatureId2, $name) = $sth2->fetchrow_array()) {
-      if (defined($geneId) && $geneId2!=$geneId) {
+      if (!defined($geneId)) {
+	$geneId = $geneId2;
+      }
+      elsif ($geneId2!=$geneId) {
 	$self->userError("Multiple genes for na_feature_id=$naFeatureId1");
+      }
+      else {
       }
       $names{$naFeatureId2} = $name;
     }
@@ -143,6 +149,10 @@ sub run {
       my $geneDiffRes = GUS::Model::Results::GeneDiffResult->new({gene_id => $geneId, protocol_app_node_id => $protAppNodeId, mean1 => $mean1, sd1 => $sd1, mean2 => $mean2, sd2 => $sd2, fdr => $fdr, fold_change => $foldChange, test_statistic => $testStat, p_value => $pValue, adj_p_value => $adjPValue, q_value => $qValue, confidence_up => $confUp, confidence_down => $confDown});
       $geneDiffRes->submit();
       $count++;
+    }
+    $self->undefPointerCache();
+    if ($count%1000==0) {
+      $self->logData("Inserted $count entries in Results.GeneDiffResult");
     }
   }
 
