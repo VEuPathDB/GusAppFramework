@@ -18,13 +18,11 @@ use GUS::Model::Results::GeneDiffResult;
 sub getArgumentsDeclaration {
   my $argumentDeclaration =
     [
-     fileArg({name => 'protAppNodeId',
+     intArg({name => 'protAppNodeId',
 	      descr => 'Identifies the protocol application node for which results should be lifted',
 	      constraintFunc=> undef,
 	      reqd  => 1,
-	      isList => 0,
-	      mustExist => 1
-	     }),
+	      isList => 0	     }),
      stringArg({ name  => 'extDbRlsSpec',
 		 descr => "The ExternalDBRelease specifier for these na_features. Must be in the format 'name|version', where the name must match a name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
 		 constraintFunc => undef,
