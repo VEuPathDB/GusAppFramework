@@ -18,7 +18,7 @@ use GUS::Model::Results::GeneDiffResult;
 sub getArgumentsDeclaration {
   my $argumentDeclaration =
     [
-     intArg({name => 'protAppNodeId',
+     integerArg({name => 'protAppNodeId',
 	      descr => 'Identifies the protocol application node for which results should be lifted',
 	      constraintFunc=> undef,
 	      reqd  => 1,
