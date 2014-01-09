@@ -283,6 +283,7 @@ sub getGeneFeatureId {
                          'product' => $attr{product},
                          'is_pseudo' => ($attr{pseudo} eq "true") ? 1 : '',
                          'external_database_release_id' => $extDbRlsId,
+                         'label' => $attributes,
 					 } );
   $geneFeature->submit();
 
