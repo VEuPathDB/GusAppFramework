@@ -72,6 +72,7 @@ public class ModelPostprocessor {
         node.setHint(true);
       }
       node.setLabel(protocolAppNode.getChildText(AppUtils.NAME_TAG));
+      node.setDescription(protocolAppNode.getChildText(AppUtils.DESCRIPTION_TAG));
       node.setType(protocolAppNode.getChildText(AppUtils.TYPE_TAG));
       node.setTaxon(protocolAppNode.getChildText(AppUtils.TAXON_TAG));
       node.setUri(protocolAppNode.getChildText(AppUtils.URI_TAG));

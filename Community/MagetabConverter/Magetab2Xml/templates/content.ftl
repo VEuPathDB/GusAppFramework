@@ -37,6 +37,13 @@
         <#if node.dbId??>
           <p><span class="addition">DB ID: ${node.getDbId()}</span></p> 
         </#if>
+        <#if node.description??>
+          <div class="subheading">Description</div>
+          <p>${node.getDescription()}</p>
+        </#if>
+        <#if node.taxon?? || node.characteristics??>
+          <div class="subheading">Characteristics</div>
+        </#if>
         <ul>
           <#if node.taxon??>
             <li>${node.getTaxon()}</li>
@@ -49,7 +56,7 @@
               <li>${characteristic}</li>
             </#list>
           </#if>
-          <#if !node.taxon?? && !node.uri?? && !node.characteristics??>
+          <#if !node.taxon?? && !node.uri?? && !node.characteristics?? && !node.description??>
             NA
           </#if>
         </ul>
