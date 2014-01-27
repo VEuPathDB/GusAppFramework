@@ -21,6 +21,7 @@ public class Node {
   private boolean hint;
   private String type;
   private String taxon;
+  private String description;
   private String uri;
   private boolean addition;
   private List<String> characteristics;
@@ -165,6 +166,14 @@ public class Node {
 	this.characteristics = characteristics;
   }
   
+  public final String getDescription() {
+    return description;
+  }
+
+  public final void setDescription(String description) {
+    this.description = description;
+  }
+
   /**
    * Differentiates the data and material nodes by color (red for data and blue for material,
    * black if neither).
