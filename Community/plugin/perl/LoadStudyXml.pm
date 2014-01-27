@@ -693,7 +693,7 @@ sub submitProtocolAppNodes {
       $studyFactorValue->setParent($protocolAppNode);
     }
 
-    my @characteristics = $protocolAppNodes[$i]->findnodes('./node_characteristic');
+    my @characteristics = $protocolAppNodes[$i]->findnodes('./characteristic');
     for (my $j=0; $j<@characteristics; $j++) {
       my $characteristic = GUS::Model::Study::Characteristic->new();
       $characteristic->setParent($protocolAppNode);
