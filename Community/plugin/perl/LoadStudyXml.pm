@@ -145,7 +145,6 @@ sub run {
   for (my $i=0; $i<@protocolSeriesNames; $i++) {
     $protocolSeriesChildren = $self->submitProtocolSeries($protocolSeriesNames[$i], $protocolIds, $protocolSeriesChildren);
   }
-
   $studyObj->submit();
   my $studyId = $studyObj->getId();
 
@@ -490,6 +489,7 @@ sub submitProtocols {
       $self->logData("A protocol named $name already exists in the database. This will not be altered.");
       my $protocolId = $protocol->getId();
       $protocolIds->{$name} = $protocolId;
+      push(@{$protocolSeriesChildren->{$name}}, $protocolId);
       next;
     }
     
@@ -600,16 +600,23 @@ sub submitProtocolSeries {
   my ($self, $protocolSeriesName, $protocolIds, $protocolSeriesChildren) = @_;
   
   my $protocolSeries = GUS::Model::Study::Protocol->new({name => $protocolSeriesName});
+  my $exists = 0;
+  if ($protocolSeries->retrieveFromDB()) {
+    $self->logData("A protocol series named $protocolSeriesName already exists in the database. This will not be altered.");
+    $exists = 1;
+  }
   $protocolSeries->submit();
   my $protocolSeriesId = $protocolSeries->getId();
   $protocolIds->{$protocolSeriesName} = $protocolSeriesId;
   my @children = split(/\|\|\|/, $protocolSeriesName);
   for (my $i=0; $i<@children; $i++) {
     my $orderNum = $i+1;
-    my $protocolSeriesLink = GUS::Model::Study::ProtocolSeriesLink->new({order_num => $orderNum});
-    $protocolSeriesLink->setProtocolSeriesId($protocolSeriesId);
-    $protocolSeriesLink->setProtocolId($protocolIds->{$children[$i]});
-    $protocolSeriesLink->submit();
+    if (!$exists) {
+      my $protocolSeriesLink = GUS::Model::Study::ProtocolSeriesLink->new({order_num => $orderNum});
+      $protocolSeriesLink->setProtocolSeriesId($protocolSeriesId);
+      $protocolSeriesLink->setProtocolId($protocolIds->{$children[$i]});
+      $protocolSeriesLink->submit();
+    }
     push(@{$protocolSeriesChildren->{$protocolSeriesName}}, $protocolIds->{$children[$i]});
   }
   return($protocolSeriesChildren);
@@ -765,7 +772,7 @@ sub submitProtocolApps {
       my $rowId = $protocolAppParams[$j]->findvalue('./row_id');
       my $protocolAppParam = GUS::Model::Study::ProtocolAppParam->new();
       $protocolAppParam->setParent($protocolApp);
-      my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name, protocol_id => $protocolSeriesChildren->{$protocol}->[$step]});
+      my $protocolParam = GUS::Model::Study::ProtocolParam->new({name => $name, protocol_id => $protocolSeriesChildren->{$protocol}->[$step-1]});
       $protocolParam->retrieveFromDB();
       $protocolAppParam->setParent($protocolParam);
       if ($value && defined($value)) {
