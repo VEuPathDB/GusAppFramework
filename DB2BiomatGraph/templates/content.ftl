@@ -26,19 +26,26 @@
         <#if node.nodeId??>
           <p><span>DB ID: ${node.getNodeId()?c}</span></p> 
         </#if>
+        <#if node.description??>
+          <div class="subheading">Description</div>
+          <p>${node.getDescription()}</p>
+        </#if>
+        <#if node.taxon?? || node.characteristics??>
+          <div class="subheading">Characteristics</div>
+        </#if>
         <ul>
           <#if node.taxon??>
             <li>${node.getTaxon()}</li>
           </#if>
           <#if node.uri??>
-            <li>${node.getUri()}</li>
+            <li>File Location = ${node.getUri()}</li>
           </#if>
           <#if node.characteristics??>
             <#list node.characteristics as characteristic>
               <li>${characteristic}</li>
             </#list>
           </#if>
-          <#if !node.taxon?? && !node.uri?? && !node.characteristics??>
+          <#if !node.taxon?? && !node.uri?? && !node.characteristics?? && !node.description??>
             NA
           </#if>
         </ul>
