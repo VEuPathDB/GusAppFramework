@@ -28,10 +28,10 @@ biomatGraph.setupPopups = function() {
 	if(url.indexOf('node') >= 0) {
 	  var type = url.split("=")[2];
 	  if(type.indexOf('material') >= 0) {
-	    title = "Characteristics";
+		title = "Biomaterial Information";
 	  }
 	  else {
-		title = "File Location";
+		title = "Dataset Information";
 	  }
 	}
 	else if(url.indexOf('edge') >= 0) {

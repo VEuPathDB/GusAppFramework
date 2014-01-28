@@ -22,7 +22,8 @@ public class BiomaterialsGraphDAO {
     "SELECT name FROM study.study WHERE study_id = ?";
   
   public static final String QUERY_NODES_BY_ID = "" +
-    "SELECT p.protocol_app_node_id AS id, p.name AS label, o.name AS node_type " +
+    "SELECT p.protocol_app_node_id AS id, p.name AS label, " +
+    "       p.description AS description, o.name AS node_type " +
     " FROM study.protocolappnode p, study.studylink sl, study.study s, sres.ontologyterm o " +
     " WHERE p.protocol_app_node_id = sl.protocol_app_node_id " +
     "  AND sl.study_id = ? " +
@@ -123,6 +124,7 @@ public class BiomaterialsGraphDAO {
 	    Node node = new Node();
 	    node.setNodeId(resultSet.getLong("id"));
 	    node.setLabel(resultSet.getString("label"));
+	    node.setDescription(resultSet.getString("description"));
 	    String type = resultSet.getString("node_type");
 	    node.setType(type);
 	    if(ApplicationConfiguration.MATERIAL_ENTITY.equalsIgnoreCase(type)) {

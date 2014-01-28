@@ -8,6 +8,7 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 public class Node {
   private long nodeId;
   private String label;
+  private String description;
   private String type;
   private String taxon;
   private String uri;
@@ -24,6 +25,12 @@ public class Node {
   }
   public void setLabel(String label) {
 	this.label = label;
+  }
+  public final String getDescription() {
+    return description;
+  }
+  public final void setDescription(String description) {
+    this.description = description;
   }
   public String getType() {
 	return type;
