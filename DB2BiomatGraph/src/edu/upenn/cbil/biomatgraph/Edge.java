@@ -30,6 +30,12 @@ public class Edge {
   public final List<ProtocolApplication> getApplications() {
     return applications;
   }
+  
+  /**
+   * Since an edge may represent a protocol series, an ordered list of protocol
+   * applications is a component of every edge.
+   * @param applications
+   */
   public final void setApplications(List<ProtocolApplication> applications) {
     this.applications = applications;
   }

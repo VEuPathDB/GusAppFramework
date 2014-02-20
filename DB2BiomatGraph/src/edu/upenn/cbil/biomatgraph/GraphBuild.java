@@ -14,6 +14,14 @@ import org.apache.log4j.Logger;
 public class GraphBuild {
 	public static Logger logger = Logger.getLogger(GraphBuild.class);
 
+	/**
+	 * Entry point for the application.  A study id is required.  When complete, the
+	 * dot, gif, and html files will be generated in the format <prefix>_<id>.<ext> where
+	 * prefix is defined in the application.properties file, id is the study id and ext is
+	 * the appropriate extension (dot, gif, html).  The html document must be opened in place,
+	 * since it depends on the css and js files at the top level of the project.
+	 * @param args - study id
+	 */
 	public static void main(String[] args) {
 	  logger.info("MAIN START - " + DateFormat.getDateTimeInstance().format(new Date()));
 	  GraphBuild build = new GraphBuild();
@@ -35,6 +43,12 @@ public class GraphBuild {
 	  logger.info("MAIN END - " + DateFormat.getDateTimeInstance().format(new Date()));
 	}
 	
+	/**
+	 * Assembles the study by retrieving the name, nodes, and edges from the database.  Once
+	 * complete, the database connection is terminated.
+	 * @param studyId - study id
+	 * @return - populated study object
+	 */
 	protected Study populateStudy(long studyId) {
       BiomaterialsGraphService service = new BiomaterialsGraphService();
       try {

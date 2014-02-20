@@ -246,9 +246,9 @@ public class BiomaterialsGraphDAO {
   }
 			
   /**
-   * 
-   * @param id
-   * @return
+   * Obtain the edges for a given study id
+   * @param id - study id
+   * @return - list of partially populated edges (protocol application data not fully in place)
    */
   public static List<Edge> getEdges(long id) {
     logger.debug("Starting getNodes for study id: " + id);
@@ -281,6 +281,13 @@ public class BiomaterialsGraphDAO {
   	}
   }
   
+  /**
+   * If an edge describes a protocol series, collect those protocol applications into
+   * the applications member of the edge.  The applications list contains a list of
+   * protocol applications which are sparsely populated with protocol id and step at this
+   * juncture.
+   * @param edge - the edge object under evaluation here.
+   */
   public static void checkForProtocolSeries(Edge edge) {
     long protocolId = edge.getProtocolId();
     logger.debug("Starting checkForProtocolSeries for protocol id: " + protocolId);
@@ -307,6 +314,10 @@ public class BiomaterialsGraphDAO {
     }
   }
   
+  /**
+   * Obtain the name and description of the protocol application
+   * @param application - the protocol application to which to add the details
+   */
   public static void getProtocolDetails(ProtocolApplication application) {
     long protocolId = application.getProtocolApplicationId();
     logger.debug("Starting getProtocolDetails for protocol: " + protocolId);
@@ -330,6 +341,12 @@ public class BiomaterialsGraphDAO {
     }
   }
   
+  /**
+   * Obtain the parameter data (formatted as a string: name = value unit) for the given
+   * application.
+   * @param edgeId - id of the edge holding the application
+   * @param application - the application into which the list of parameter data is to be added.
+   */
   public static void getProtocolParams(long edgeId, ProtocolApplication application) {
     long protocolId = application.getProtocolApplicationId();
     logger.debug("Starting getProtocolParams for protocol application id: " + protocolId);
@@ -362,6 +379,11 @@ public class BiomaterialsGraphDAO {
     }
   }
   
+  /**
+   * Obtain the performer from the database for the given application
+   * @param edgeId - id of the edge holding the application
+   * @param application - the application to which the performer is to be added.
+   */
   public static void getPerformer(long edgeId, ProtocolApplication application) {
     int step = application.getStep();
     logger.debug("Starting getPerformer for step: " + step);
