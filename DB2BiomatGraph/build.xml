@@ -59,5 +59,9 @@
   	  <fileset refid="resources"/>
     </jar>
   </target>
+  
+  <target name="doc" depends="init" description="generate java documentation">
+    <javadoc sourcepath="${src}" destdir="${doc}"/>
+  </target>
 	
 </project>

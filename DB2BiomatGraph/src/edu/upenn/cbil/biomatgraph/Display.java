@@ -73,7 +73,9 @@ public class Display {
   }
    
   /**
-   * Creates the gif image map from the given dot file
+   * Creates the gif image and a map file from the given dot file.  The map file is a temporary
+   * file and so goes into the directory designated as temporary for the platform on which the
+   * application is run.
    * @param dotFile - file handle to the dot file
    * @return - file handle to the gif image map (e.g., <prefix>_<id>.gif).
    */
@@ -97,6 +99,11 @@ public class Display {
      return mapFile;
    }
    
+   /**
+    * Pulls the string representing the image map out of the map file
+    * @param mapFile - a handle to the map file
+    * @return - the String representation of that image map
+    */
    public String retrieveMap(File mapFile) {
      String map = null;
      try {
@@ -108,6 +115,13 @@ public class Display {
     return map;
    }
    
+   /**
+    * The html file is essentially a freemarker template which is populated with this
+    * method.  A hash map is built containing all the items needed by the freemarker
+    * template to do the substitutions.  The file (e.g., <prefix>_<id>.html) is created and
+    * the hash map data is applied.
+    * @param map - string representation of the image map
+    */
    public void createHtmlFile(String map) {
      Writer file = null;
      Configuration cfg = new Configuration();
