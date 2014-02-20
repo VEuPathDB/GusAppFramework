@@ -10,6 +10,11 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 
 import com.google.common.collect.ListMultimap;
 
+/**
+ * A POJO class to hold all the member elements associated with an edge.
+ * @author crislawrence
+ *
+ */
 public class Edge {
   private List<ProtocolApplication> applications;
   private String label;
@@ -28,6 +33,12 @@ public class Edge {
   public final void setApplications(List<ProtocolApplication> applications) {
     this.applications = applications;
   }
+  
+  /**
+   * The edge's label is its name but wrapped so that a particularly long name does
+   * does not result in an excessively long line.
+   * @return - wrapped label
+   */
   public String getLabel() {
 	return WordUtils.wrap(label, 30, "\\n", true);
   }

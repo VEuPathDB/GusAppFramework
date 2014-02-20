@@ -6,6 +6,11 @@ import java.util.Date;
 
 import org.apache.log4j.Logger;
 
+/**
+ * This class provides the entry into this program.
+ * @author crislawrence
+ *
+ */
 public class GraphBuild {
 	public static Logger logger = Logger.getLogger(GraphBuild.class);
 

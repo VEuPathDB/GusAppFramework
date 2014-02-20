@@ -87,6 +87,11 @@ public class BiomaterialsGraphDAO {
 	connection = null;
   }
   
+  /**
+   * Obtain the name of the study given it's id
+   * @param id - study id
+   * @return - study name
+   */
   public static String getStudyName(long id) {
     logger.debug("START - getStudyName for study id: " + id);
     PreparedStatement statement = null;
@@ -110,6 +115,11 @@ public class BiomaterialsGraphDAO {
     }
   }
 		    
+  /**
+   * Obtains a list of Nodes for the provided study id
+   * @param id - study id
+   * @return - List of Nodes
+   */
   public static List<Node> getNodes(long id) {
     logger.debug("Starting getNodes for study id: " + id);
 	PreparedStatement statement = null;
@@ -148,6 +158,11 @@ public class BiomaterialsGraphDAO {
 	}
   }
   
+  /**
+   * Returns the taxon for a given node id
+   * @param id - node id
+   * @return - String representing the taxon
+   */
   protected static String getTaxon(long id) {
     logger.debug("Starting getTaxon for node id: " + id);
 	PreparedStatement statement = null;
@@ -171,6 +186,11 @@ public class BiomaterialsGraphDAO {
     }
   }
   
+  /**
+   * Obtains the url for a given node id
+   * @param id - node id
+   * @return - String representing the uri
+   */
   protected static String getUri(long id) {
     logger.debug("Starting getUri for node id: " + id);
 	PreparedStatement statement = null;
@@ -194,6 +214,11 @@ public class BiomaterialsGraphDAO {
     }
   }
   
+  /**
+   * Obtain the material characteristics associated with the given node
+   * @param id - node id
+   * @return - a List of String representations of material characteristcs
+   */
   protected static List<String> getMaterialChars(long id) {
     logger.debug("Starting getMaterialChars for node id: " + id);
 	PreparedStatement statement = null;
@@ -220,6 +245,11 @@ public class BiomaterialsGraphDAO {
     }
   }
 			
+  /**
+   * 
+   * @param id
+   * @return
+   */
   public static List<Edge> getEdges(long id) {
     logger.debug("Starting getNodes for study id: " + id);
 	PreparedStatement statement = null;

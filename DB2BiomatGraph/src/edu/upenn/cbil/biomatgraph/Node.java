@@ -5,6 +5,12 @@ import java.util.List;
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 
+/**
+ * A POJO class to hold all the member elements associated with a node, whether it is a data item
+ * or a material entity.
+ * @author crislawrence
+ *
+ */
 public class Node {
   private long nodeId;
   private String label;
@@ -20,6 +26,12 @@ public class Node {
   public void setNodeId(long nodeId) {
 	this.nodeId = nodeId;
   }
+  
+  /**
+   * The node's label is its name but wrapped so that a particularly long name does
+   * not result in a very long oval on the graph.
+   * @return
+   */
   public String getLabel() {
 	return WordUtils.wrap(label, 15, "\\n", true);
   }
@@ -57,6 +69,10 @@ public class Node {
 	this.characteristics = characteristics;
   }
   
+  /**
+   * Coloring is red for data item nodes and blue for material entity nodes.
+   * @return - String indicating color.
+   */
   public String getColor() {
     String color = "black";
 	switch(type) {

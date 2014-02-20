@@ -10,11 +10,19 @@ import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
 
-
+/**
+ * Handles the Oracle database connections.
+ * @author crislawrence
+ *
+ */
 public class DatabaseManager {
   public static Logger logger = Logger.getLogger(DatabaseManager.class);
   public static DataSource dataSource = null;
   
+  /**
+   * Obtains a connection to the Oracle database using thin client.
+   * @return
+   */
   public static Connection getConnection() {
 	  Connection connection = null;
       try {
@@ -37,6 +45,12 @@ public class DatabaseManager {
       return connection;
   }
   
+  /**
+   * Closes all open database artifacts (result set, statement, connection)
+   * @param resultSet
+   * @param statement
+   * @param connection
+   */
   public static void closeAll(ResultSet resultSet, Statement statement, Connection connection) {
 	closeResultSet(resultSet);
 	closeStatement(statement);
