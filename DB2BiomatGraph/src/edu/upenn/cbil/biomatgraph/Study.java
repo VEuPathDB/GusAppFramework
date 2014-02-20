@@ -5,6 +5,11 @@ import java.util.List;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.log4j.Logger;
 
+/**
+ * A POJO class to hold all the members of a study.  This is the top POJO class in the hierarchy.
+ * @author crislawrence
+ *
+ */
 public class Study {
   private long studyId;
   private String studyName;

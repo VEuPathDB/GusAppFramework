@@ -8,6 +8,11 @@ import java.util.List;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
+/**
+ * A POJO class to hold all the memebers of a protocol application
+ * @author crislawrence
+ *
+ */
 public class ProtocolApplication {
   private long protocolApplicationId;
   private int step;
@@ -72,6 +77,11 @@ public class ProtocolApplication {
     this.performer = performer;
   }
   
+  /**
+   * Provides an alphabetic sort of the parameter based upon the parameter string (name comes
+   * first)
+   * @param parameters - parameter list
+   */
   public static final void sortParametersByName(List<String> parameters) {
     Collections.sort(parameters);
   }

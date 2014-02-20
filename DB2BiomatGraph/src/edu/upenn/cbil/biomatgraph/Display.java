@@ -16,7 +16,11 @@ import com.google.common.io.Files;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 
-
+/**
+ * Creates the files needed to provide the biomaterials graph display.
+ * @author crislawrence
+ *
+ */
 public class Display {
   public Study study;
   public String fileName;
@@ -25,11 +29,20 @@ public class Display {
   public static final String HTML_EXT = ".html";
   public static Logger logger = Logger.getLogger(Display.class);
    
+  /**
+   * Constructor initialized with the study object and the filename to use (sans extension)
+   * @param study - study object
+   */
   public Display(Study study) {
     this.study = study;
     fileName = ApplicationConfiguration.filePrefix + "_" + study.getStudyId();
   }
   
+  /**
+   * Builds the dot file for the given study and writes it out to the file name created in the
+   * constructor with a dot extension (e.g., <prefix>_<id>.dot).
+   * @return - handle to the dot file
+   */
   public File createDotFile() {
     StringBuffer output = new StringBuffer();
     output.append("digraph biomatGraph {\n");
@@ -59,6 +72,11 @@ public class Display {
     }
   }
    
+  /**
+   * Creates the gif image map from the given dot file
+   * @param dotFile - file handle to the dot file
+   * @return - file handle to the gif image map (e.g., <prefix>_<id>.gif).
+   */
    public File createImageMapFile(File dotFile) {
      String DOT = ApplicationConfiguration.graphvizDotPath;
      File mapFile = null;

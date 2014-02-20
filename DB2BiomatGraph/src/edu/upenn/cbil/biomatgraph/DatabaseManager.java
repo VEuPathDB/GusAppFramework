@@ -47,9 +47,9 @@ public class DatabaseManager {
   
   /**
    * Closes all open database artifacts (result set, statement, connection)
-   * @param resultSet
-   * @param statement
-   * @param connection
+   * @param resultSet - result set
+   * @param statement - statement
+   * @param connection - connection
    */
   public static void closeAll(ResultSet resultSet, Statement statement, Connection connection) {
 	closeResultSet(resultSet);
