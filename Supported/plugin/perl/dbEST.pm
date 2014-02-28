@@ -924,7 +924,7 @@ Returns HASHREF{ new => newest entry,
 =cut
 
 sub getMostRecentEntry {
-  my ($self,$e,$R, $estDbh) = @_;
+  my ($self,$e,$estDbh,$R) = @_;
   $R->{new} = $e;
 
   my $sth = $estDbh->prepare("select * from dbest.est where id_est = $e->{replaced_by}");
@@ -944,7 +944,7 @@ sub getMostRecentEntry {
     $R->{new} = $re;
     push @{$R->{old}}, $e;
     if ($re->{replaced_by} ) {
-      $R = $self->getMostRecentEntry($re,$R);
+      $R = $self->getMostRecentEntry($re,$estDbh,$R);
     }
   }else {
     $self->{'log_fh'}->print($self->logAlert("ERR:BOGUS REPLACED BY","ID_EST", $e->{id_est}, "REPLACED_BY=$e->{replaced_by}","\n"));
