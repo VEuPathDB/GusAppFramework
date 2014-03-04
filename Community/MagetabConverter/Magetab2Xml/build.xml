@@ -7,6 +7,7 @@
   <property name="lib" value="lib"/>
   <property name="extdir" value="../LimpopoExtensions" />
   <property name="build" value="build"/>
+  <property name="doc" location="doc"/>
 	<property name="resources" value="resources"/>
 	<property name="magetab" location="resources/magetab" />
   <property name="package.name" value="edu.upenn.cbil.magetab"/>
@@ -73,6 +74,10 @@
       </manifest>
       <fileset refid="resources" />
     </jar>
+  </target>
+  
+  <target name="doc" depends="init" description="generate java documentation">
+      <javadoc sourcepath="${src}" destdir="${doc}"/>
   </target>
 	
 </project>
