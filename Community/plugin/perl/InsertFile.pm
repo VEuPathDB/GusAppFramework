@@ -16,6 +16,7 @@ use GUS::PluginMgr::Plugin;
 use lib "$ENV{GUS_HOME}/lib/perl";
 # use FileHandle;
 # use Carp;
+$| = 1;
 
 my $argsDeclaration =
   [
@@ -117,9 +118,10 @@ sub run {
 
       if (!$insertStmt) {
         # first trip: input record names columns; insert statement must be prepared
+        # turn field names into valid column names by changing spaces to underscores and removing other illegal characters
         my $sql = "insert into $table ("
                   . "filename, "
-                  . join(", ", map({my $s = $_; $s =~ s/\.//g; $s} @inputRecord)) # remove periods from field names
+                  . join(", ", map({my $s = $_; $s =~ s/[[\].\-\(\)%\/]//g; $s =~ s/ /_/g; $s =~ s/^([0-9])/_\1/; $s} @inputRecord))
                   . ") values ("
                   . "?, "  # placeholder for file column
                   . join(', ', (map {"?"} @inputRecord))
