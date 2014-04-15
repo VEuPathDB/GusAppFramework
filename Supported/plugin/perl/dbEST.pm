@@ -1243,7 +1243,7 @@ sub newContact {
 
   $sth->finish();
 
-  $C->{lab} = "$C->{lab}; $C->{institution}";
+  $C->{lab} = $C->{lab} ? "$C->{lab}; $C->{institution}":"$C->{institution}";
 
   my %atthash = ('id_conact' => 'source_id',
                  'name' => 'name',
