@@ -70,6 +70,7 @@ sub parseXGMML {
   my @nodes = $doc->findnodes('/graph');
   $pathway->{SOURCE_ID} = $nodes[0]->getAttribute('label');
   $pathway->{NAME} =  $nodes[0]->getAttribute('label');
+  $pathway->{ID} =  $nodes[0]->getAttribute('id');
 
   my $linkTag = ''; 
   my @attributeArray = $nodes[0]->getChildrenByTagName('att');
@@ -108,7 +109,7 @@ sub parseXGMML {
 	  $uniqId = $id . "_X:" . $xPosition . "_Y:" . $yPosition ;
 	 #print "CHECK: ($id, $uniqId, $xPosition, $yPosition, $type, $canonicalName )\n";
 
-	$pathway->{NODES}->{$uniqId}->{SOURCE_ID} = $label if ($uniqId);
+      $pathway->{NODES}->{$uniqId}->{SOURCE_ID} = $id;
 	$pathway->{NODES}->{$uniqId}->{UNIQ_ID} = $uniqId if ($uniqId);
 	$pathway->{NODES}->{$uniqId}->{TYPE} = $type;
 	$pathway->{NODES}->{$uniqId}->{ENTRY_ID} = $id if ($id);
@@ -122,10 +123,12 @@ sub parseXGMML {
 }  # end entries
 
 
-  # read in the relations (edges)
+  # read in the Edges
   # ===================================
   my @edgeArray = $doc->findnodes('/graph/edge');
   foreach my $entry (@edgeArray) {
+    my $id = $entry->getAttribute('id');
+    $id = $pathway->{ID} . "-" . $id; # make a uniq ID for cataloging edges for each pathway (akin to reactionId)
     my $label = $entry->getAttribute('label');
     my $source_id = $entry->getAttribute('source');
     my $target_id = $entry->getAttribute('target');
@@ -135,12 +138,10 @@ sub parseXGMML {
     # print "\n\nLABEL $label, SOURCE $source_id AND TARGET $target_id \n";
     # print "   SO source $source_id = $source AND target $target_id = $target\n";
 
-    my $rtype = "Pathway Relation"; # FIX
-    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ENTRY} = $source;
-    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ASSOCIATED_ENTRY} = $target;
-    #  $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{INTERACTION_TYPE} = $r;
-  } #end relations
+    $pathway->{EDGES}->{$id} ->{SOURCE_ID} = $source_id;
+    $pathway->{EDGES}->{$id} ->{TARGET_ID} = $target_id;
 
+  } #end edgeArray
 
   #print  Dumper $pathway;
   return $pathway;
