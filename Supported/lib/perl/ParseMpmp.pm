@@ -128,7 +128,6 @@ sub parseXGMML {
   my @edgeArray = $doc->findnodes('/graph/edge');
   foreach my $entry (@edgeArray) {
     my $id = $entry->getAttribute('id');
-    $id = $pathway->{ID} . "-" . $id; # make a uniq ID for cataloging edges for each pathway (akin to reactionId)
     my $label = $entry->getAttribute('label');
     my $source_id = $entry->getAttribute('source');
     my $target_id = $entry->getAttribute('target');
