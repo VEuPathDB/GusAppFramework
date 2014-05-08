@@ -106,7 +106,7 @@ sub parseXGMML {
     }
 
       if ($xPosition && $yPosition) {
-	  $uniqId = $id . "_X:" . $xPosition . "_Y:" . $yPosition ;
+	  $uniqId = $label . "_X:" . $xPosition . "_Y:" . $yPosition ;
 	 #print "CHECK: ($id, $uniqId, $xPosition, $yPosition, $type, $canonicalName )\n";
 
       $pathway->{NODES}->{$uniqId}->{SOURCE_ID} = $id;
