@@ -355,7 +355,7 @@ sub loadPathway {
       my $pathway;
       print "CHECk name= $pathwayName, source_id=" . $pathwayObj->{source_id} . " DONE\n";
       $pathway = GUS::Model::DoTS::Pathway->new({ name => $pathwayName,
-						   external_database_release_id => 0000,
+						#  external_database_release_id => 0000,
 						   source_id => $pathwayObj->{source_id},
 						   # url => $pathwayObj->{url}
 						});
