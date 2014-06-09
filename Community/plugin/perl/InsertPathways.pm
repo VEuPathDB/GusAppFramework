@@ -326,7 +326,7 @@ sub readXgmmlFiles {
 
 
 sub loadPathway {
-  my ($self, $format) = @_;
+  my ($self, $format, $extDbRlsId) = @_;
 
 
   my $network = GUS::Model::Model::Network->new({ name => "Metabolic Pathways - $format",
@@ -361,9 +361,9 @@ sub loadPathway {
       my $pathway;
       print "CHECk name= $pathwayName, source_id=" . $pathwayObj->{source_id} . " DONE\n";
       $pathway = GUS::Model::SRes::Pathway->new({ name => $pathwayName,
-						#  external_database_release_id => 0000,
-						   source_id => $pathwayObj->{source_id},
-						   url => $pathwayObj->{url}
+						  external_database_release_id => $extDbRlsId,
+						  source_id => $pathwayObj->{source_id},
+						  url => $pathwayObj->{url}
 						});
 
       if (! $pathway->retrieveFromDB()) {
