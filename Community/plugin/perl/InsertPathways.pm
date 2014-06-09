@@ -17,7 +17,7 @@ use GUS::Model::Model::NetworkRelationship;
 use GUS::Model::Model::NetworkRelationshipType;
 use GUS::Model::Model::NetworkRelContextLink;
 use GUS::Model::Model::NetworkRelContext;
-use GUS::Model::DoTS::Pathway; # lacks "URL" column, which is static except for source_id
+use GUS::Model::SRes::Pathway;
 use GUS::Model::SRes::PathwayNode;
 # use GUS::Model::Model::PathwayImage; # table missing; only needed for static images
 # use DBD::Oracle qw(:ora_types);
@@ -50,6 +50,12 @@ sub getArgsDeclaration {
                isList         => 0,
                enum           => 'KEGG, MPMP, Biopax, Other'
              }),
+
+     stringArg({ name  => 'extDbRlsSpec',
+                  descr => "The ExternalDBRelease specifier for the pathway database. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+                  constraintFunc => undef,
+                  reqd           => 1,
+                  isList         => 0 }),
     ];
 
   return $argsDeclaration;
@@ -125,7 +131,7 @@ sub run {
   $self->readKeggFiles(\@pathwayFiles) if $pathwayFormat eq 'KEGG';
   $self->readXgmmlFiles(\@pathwayFiles) if ($pathwayFormat eq 'MPMP');
 
-  $self->loadPathway($pathwayFormat);
+  $self->loadPathway($pathwayFormat, $self->getExtDbRlsId($self->getArg('extDbRlsSpec')));
 }
 
 
@@ -143,7 +149,7 @@ sub readKeggFiles {
     my $pathwayElements = $kgmlParser->parseKGML($kgml);
     my $pathwayObj = $pathwaysObj->getNewPathwayObj($pathwayElements->{NAME});
     $pathwayObj->{source_id} = $pathwayElements->{SOURCE_ID};
-    # $pathwayObj->{url} = $pathwayElements->{URI};    
+    $pathwayObj->{url} = $pathwayElements->{URI};    
     $pathwayObj->{image_file} = $pathwayElements->{IMAGE_FILE};    
 
     foreach my $node  (keys %{$pathwayElements->{NODES}}) {
@@ -266,7 +272,7 @@ sub readXgmmlFiles {
     my $pathwayElements = $xgmmlParser->parseXGMML($xgmml);
     my $pathwayObj = $pathwaysObj->getNewPathwayObj($pathwayElements->{NAME});
     $pathwayObj->{source_id} = $pathwayElements->{SOURCE_ID};
-    # $pathwayObj->{url} = $pathwayElements->{URI};
+    $pathwayObj->{url} = $pathwayElements->{URI};
 
     foreach my $node  (keys %{$pathwayElements->{NODES}}) {
       my $uniqId = $node;
@@ -354,10 +360,10 @@ sub loadPathway {
 
       my $pathway;
       print "CHECk name= $pathwayName, source_id=" . $pathwayObj->{source_id} . " DONE\n";
-      $pathway = GUS::Model::DoTS::Pathway->new({ name => $pathwayName,
+      $pathway = GUS::Model::SRes::Pathway->new({ name => $pathwayName,
 						#  external_database_release_id => 0000,
 						   source_id => $pathwayObj->{source_id},
-						   # url => $pathwayObj->{url}
+						   url => $pathwayObj->{url}
 						});
 
       if (! $pathway->retrieveFromDB()) {
@@ -546,7 +552,7 @@ sub undoTables {
 	  'Model.NetworkRelationshipType',
           'Model.ModelContext',
 	  'Model.NetworkRelContextLink',
-	  'DoTS.Pathway',
+	  'SRes.Pathway',
 	  'SRes.PathwayNode',
 	 );
 }
