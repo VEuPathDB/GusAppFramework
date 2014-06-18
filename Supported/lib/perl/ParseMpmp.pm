@@ -4,7 +4,7 @@
 # Package ParseXgmml
 # =================================================
 
-package GUS::Supported::ParseXgmml;
+package GUS::Supported::ParseMpmp;
 
 # =================================================
 # Documentation
@@ -12,7 +12,7 @@ package GUS::Supported::ParseXgmml;
 
 =pod
 =head1 Description
-Parses a Xgmml File and returns a hash that stores 
+Parses a Xgmml MPMP File and returns a hash that stores 
 the pathway relationships
 =cut
 
@@ -70,7 +70,15 @@ sub parseXGMML {
   my @nodes = $doc->findnodes('/graph');
   $pathway->{SOURCE_ID} = $nodes[0]->getAttribute('label');
   $pathway->{NAME} =  $nodes[0]->getAttribute('label');
-  $pathway->{URI} = "http://priweb.cc.huji.ac.il/malaria/maps/" . $pathway->{SOURCE_ID} . "path.html";
+  $pathway->{ID} =  $nodes[0]->getAttribute('id');
+
+  my $linkTag = ''; 
+  my @attributeArray = $nodes[0]->getChildrenByTagName('att');
+  foreach my $gn (@attributeArray) {
+      $linkTag  = $gn->getAttribute('value')  if  (($gn->getAttribute('name')) eq 'shared name') ;
+  }
+  $pathway->{URI} = "http://priweb.cc.huji.ac.il/malaria/maps/" . $linkTag . ".html";
+
 
   # get "entries"
   # ===================================
@@ -80,22 +88,28 @@ sub parseXGMML {
     my $label = $entry->getAttribute('label'); 
     my $id = $entry->getAttribute('id');
 
-    my @attributeArray = $entry->getChildrenByTagName('att');
     my ($uniqId, $xPosition, $yPosition, $type, $canonicalName);
+    my @attributeArray = $entry->getChildrenByTagName('att');
     foreach my $gn (@attributeArray) {
       $type = $gn->getAttribute('value') if ($gn->getAttribute('name')) eq 'Type';
-      $xPosition = $gn->getAttribute('value') if ($gn->getAttribute('name')) eq 'CenterX';
-      $yPosition = $gn->getAttribute('value') if ($gn->getAttribute('name')) eq 'CenterY';
-      $canonicalName  = $gn->getAttribute('value') if ($gn->getAttribute('name')) eq 'canonicalName';
+      $canonicalName  = $gn->getAttribute('value') if ($gn->getAttribute('name')) eq 'shared name';
+      $canonicalName  = $id if (!$canonicalName); # cpds dont seem to have this value 
+    }
+    if ($type eq 'pathway') {
+	$canonicalName = $label;
+    }
+
+    my @attributeArray = $entry->getChildrenByTagName('graphics');
+    foreach my $gn (@attributeArray) {
+	$xPosition = sprintf "%.4f", $gn->getAttribute('x');
+	$yPosition = sprintf "%.4f", $gn->getAttribute('y');
+    }
 
       if ($xPosition && $yPosition) {
-	  if ($type eq 'compound') {
-	      $uniqId = $canonicalName . "_X:" . $xPosition . "_Y:" . $yPosition ;
-	  } else {
-	      $uniqId = $label . "_X:" . $xPosition . "_Y:" . $yPosition ;
-	  }
+	  $uniqId = $label . "_X:" . $xPosition . "_Y:" . $yPosition ;
+	 #print "CHECK: ($id, $uniqId, $xPosition, $yPosition, $type, $canonicalName )\n";
 
-	$pathway->{NODES}->{$uniqId}->{SOURCE_ID} = $label if ($uniqId);
+      $pathway->{NODES}->{$uniqId}->{SOURCE_ID} = $id;
 	$pathway->{NODES}->{$uniqId}->{UNIQ_ID} = $uniqId if ($uniqId);
 	$pathway->{NODES}->{$uniqId}->{TYPE} = $type;
 	$pathway->{NODES}->{$uniqId}->{ENTRY_ID} = $id if ($id);
@@ -103,17 +117,17 @@ sub parseXGMML {
 	#$pathway->{NODES}->{$uniqId}->{GRAPHICS}->{NAME} = $gn->getAttribute('name');
 	#$pathway->{NODES}->{$uniqId}->{GRAPHICS}->{TYPE} = $gn->getAttribute('type');
 	$pathway->{NODES}->{$uniqId}->{GRAPHICS}->{X} = $xPosition;
-	$pathway->{NODES}->{$uniqId}->{GRAPHICS}->{Y} = $yPosition;
+	$pathway->{NODES}->{$uniqId}->{GRAPHICS}->{Y} = $yPosition;  
       }
-    }
     # print "OUT uniqID= $uniqId AND   X= $xPosition  Y= $yPosition\n";
 }  # end entries
 
 
-  # read in the relations (edges)
+  # read in the Edges
   # ===================================
   my @edgeArray = $doc->findnodes('/graph/edge');
   foreach my $entry (@edgeArray) {
+    my $id = $entry->getAttribute('id');
     my $label = $entry->getAttribute('label');
     my $source_id = $entry->getAttribute('source');
     my $target_id = $entry->getAttribute('target');
@@ -123,12 +137,10 @@ sub parseXGMML {
     # print "\n\nLABEL $label, SOURCE $source_id AND TARGET $target_id \n";
     # print "   SO source $source_id = $source AND target $target_id = $target\n";
 
-    my $rtype = "Pathway Relation"; # FIX
-    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ENTRY} = $source;
-    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ASSOCIATED_ENTRY} = $target;
-    #  $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{INTERACTION_TYPE} = $r;
-  } #end relations
+    $pathway->{EDGES}->{$id} ->{SOURCE_ID} = $source_id;
+    $pathway->{EDGES}->{$id} ->{TARGET_ID} = $target_id;
 
+  } #end edgeArray
 
   #print  Dumper $pathway;
   return $pathway;
