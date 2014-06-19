@@ -76,7 +76,7 @@ my $argsDeclaration =
 	      isList => 0,
 	     }), 
    stringArg({name => 'aaSeqLocusTagMappingSql',
-	      descr => 'sql which returns the aa_sequence_id for a given locus tag.  use LOCUS_TAG as a macro for where the locus tag should be interpolated into the sql string',
+              descr => 'sql which returns the aa_sequence_id for a given locus tag. Use a question mark as a macro for where the locus tag should be interpolated into the sql string',
 	      reqd => 1,
 	      constraintFunc => undef,
 	      isList => 0,
@@ -84,6 +84,7 @@ my $argsDeclaration =
 
   ];
 
+my $sth;  # prepared SQL statement handle
 
 sub new {
     my ($class) = @_;
@@ -125,6 +126,7 @@ sub getMapping {
   open (ECMAP, "$mappingFile") ||
                     die ("Can't open the file $mappingFile.  Reason: $!\n");
 
+  my $newRecordCount;
     while (<ECMAP>) {
 	chomp;
 
@@ -165,6 +167,7 @@ sub getMapping {
 	    $newAASeqEnzClass->submit();
 	  }
 	}
+        $self->undefPointerCache();
       }
 
   my $msg = "Finished processing EC Mapping file\n";
@@ -196,13 +199,20 @@ return $enzymeClass;
 sub getAASeqId {
   my ($self, $locusTag, $aaIdHash) = @_;
 
-  my $sql = $self->getArg('aaSeqLocusTagMappingSql');
-print "SQL: $sql\n";
+#  my $sql = $self->getArg('aaSeqLocusTagMappingSql');
+#print "SQL: $sql\n";
 
-  my $queryHandle = $self->getQueryHandle();
+#  my $queryHandle = $self->getQueryHandle();
 
-  my $sth = $queryHandle->prepare($sql);
-  $sth->execute($locusTag);
+  unless ($sth) {
+    my $sql = $self->getArg('aaSeqLocusTagMappingSql');
+    print "SQL: $sql\n";
+    my $queryHandle = $self->getQueryHandle();
+    $sth = $queryHandle->prepare($sql);
+  }
+
+#  my $sth = $queryHandle->prepare($sql);
+#  $sth->execute($locusTag);
 
   my $aaSequenceId = $sth->fetchrow_array();
   $sth->finish();

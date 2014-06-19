@@ -16,6 +16,7 @@ use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 
 use ApiCommonData::Load::Util;
+use GUS::Supported::Util;
 
 use FileHandle;
 
@@ -202,7 +203,7 @@ sub run {
     my $sourceId = (split(/\|/, $geneDoc))[3];
     print STDERR "sourceId:  $sourceId\n";
 
-    if(my $naFeatureId = ApiCommonData::Load::Util::getGeneFeatureId($self, $sourceId, 0, $self->getArg('organismAbbrev'))) {
+    if(my $naFeatureId = GUS::Supported::Util::getGeneFeatureId($self, $sourceId, 0, $self->getArg('organismAbbrev'))) {
       my $profileSetId = $phylogeneticProfileSet->getId();
       my $profile = GUS::Model::DoTS::PhylogeneticProfile->
         new({phylogenetic_profile_set_id => $profileSetId,
@@ -340,10 +341,10 @@ sub loadMutualInformationFile {
     }
 
     my $primaryNaFeatureId =
-      ApiCommonData::Load::Util::getGeneFeatureId($self, $primarySourceId, 0, $self->getArg('organismAbbrev'));
+    GUS::Supported::Util::getGeneFeatureId($self, $primarySourceId, 0, $self->getArg('organismAbbrev'));
 
     my $secondaryNaFeatureId = 
-      ApiCommonData::Load::Util::getGeneFeatureId($self, $secondarySourceId, 0, $self->getArg('organismAbbrev'));
+        GUS::Supported::Util::getGeneFeatureId($self, $secondarySourceId, 0, $self->getArg('organismAbbrev'));
     my $primaryProfileId = $profileIdHash{$primaryNaFeatureId};
 
     my $secondaryProfileId = $profileIdHash{$secondaryNaFeatureId};
