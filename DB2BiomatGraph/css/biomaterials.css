@@ -1,0 +1,52 @@
+
+#biomaterials {
+  background: #FFFFFF;
+  overflow-y: hidden;
+}
+
+#biomatGraph area {
+  cursor: pointer;
+}
+
+.material {
+  color: #00F;
+  font-weight: bold;
+}
+
+.data {
+  color: #F00;
+  font-weight: bold;
+}
+
+.popupData {
+	display: none;
+	max-height: 350px;
+	overflow-y: auto;
+	font-size: 14px;
+	line-height: 16px;
+}
+
+.popupHeading {
+	font-variant: small-caps;
+	font-weight: bold;
+}
+
+.qtip-title {
+  font-variant: small-caps;
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.subheading {
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.popupData ul {
+	padding-left: 12px;
+	margin-top: 5px;
+}
+
+#panZoom {
+  cursor: move;
+}

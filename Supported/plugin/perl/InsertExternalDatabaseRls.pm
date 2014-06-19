@@ -29,7 +29,7 @@ my $argsDeclaration =
 		}),
 
 	 stringArg ({name=> 'releaseDate',
-		     descr => 'release date; format must conform to DATE format in your database instance',
+                     descr => 'release date; format appropriate for the DBMS, oracle = yyyy-mm-dd',
 		     reqd => 0,
 		     constraintFunc => undef,
 		     isList =>0,
@@ -125,11 +125,11 @@ Only one row is created, so if the plugin fails, restart by running it again wit
 PLUGIN_RESTART
     
 my $failureCases = <<PLUGIN_FAILURE_CASES;
-If there is already an entry in SRes.ExternalDatabaseRelease that has the same version number as the entry to be created, then no new row is submitted.  This is not a failure case per se, but will result in no change to the database where one might have been expected.  Also, if including --releaseDate in the command line, the format of the date must be the same as that expected by the DATE datatype in your database instance.
+If there is already an entry in SRes.ExternalDatabaseRelease that has the same version number as the entry to be created, then no new row is submitted.  This is not a failure case per se, but will result in no change to the database where one might have been expected.  Also, if including --releaseDate in the command line, the format of the date must be the same as that expected by the DATE datatype in your database instance, oracle yyyy-mm-dd.
 PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
-Although currently SRes.ExternalDatabaseRelease contains attributes named blast_file and blast_file_md5, they are unpopulated in CBIL's instance and it is unclear what they are used for, so the ability to load data into them is not provided here.
+Although currently SRes.ExternalDatabaseRelease contains attributes named blast_file and blast_file_md5, they are unpopulated in CBILs instance and it is unclear what they are used for, so the ability to load data into them is not provided here.
 PLUGIN_NOTES
 
 my $documentation = { purpose=>$purpose,
@@ -223,6 +223,7 @@ sub makeNewReleaseId{
 	download_url => $self->getArg('downloadUrl'),
 	id_type => $self->getArg('idType'),
 	id_url => $self->getArg('idUrl'),
+        release_date => $self->getArg('releaseDate'),
 	id_is_alias => $self->getArg('idIsAlias'),
 	secondary_id_type => $self->getArg('secondaryIdType'),
 	secondary_id_url => $self->getArg('secondaryIdUrl'),

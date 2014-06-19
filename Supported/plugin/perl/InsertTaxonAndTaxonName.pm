@@ -31,6 +31,22 @@ sub getArgumentsDeclaration {
 		 isList => 0
 		}),
 
+
+     integerArg({name => 'geneticCodeId',
+         descr => 'Genetic Code of the organism to be inserted in the taxonomic hierarchy ',
+         constraintFunc => undef,
+         reqd => 0,
+         isList => 0
+        }),
+
+     integerArg({name => 'mitochondrialGeneticCodeId',
+         descr => 'Mitochondrial Genetic Code of the organism to be inserted in the taxonomic hierarchy ',
+         constraintFunc => undef,
+         reqd => 0,
+         isList => 0
+        }),
+
+
      stringArg({name => 'parentRank',
 		descr => 'reqd if parentNcbiTaxId-taxonomic level such as order,family,species - should conform to ranks used by the NCBI taxonomy db - \see PLUGIN_NOTES',
 		constraintFunc => undef,
@@ -210,6 +226,14 @@ sub getTaxon {
 
       $taxon->setParent($parentTaxon);
     }
+
+
+    my $geneticCodeId = $self->getArg('geneticCodeId');
+    $taxon->setGeneticCodeId($geneticCodeId) unless $taxon->getGeneticCodeId();
+
+    my $mitochondrialGeneticCodeId = $self->getArg('mitochondrialGeneticCodeId');
+    $taxon->setMitochondrialGeneticCodeId($mitochondrialGeneticCodeId) unless $taxon->getMitochondrialGeneticCodeId();
+
 
     return $taxon;
 }

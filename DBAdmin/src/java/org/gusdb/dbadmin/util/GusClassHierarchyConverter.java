@@ -505,7 +505,7 @@ private GusView buildSuperClassView( ) {
             String[] columnSpecs = columnSpec.split( ",", 4 );
             HousekeepingColumn column = new HousekeepingColumn( );
             column.setName( housekeepingCols[i] );
-            column.setType( Column.ColumnType.valueOf( columnSpecs[0] ) );
+            column.setType( Column.ColumnType.valueOf( columnSpecs[0].toUpperCase() ) );
             column.setLength( (new Integer( columnSpecs[1] )).intValue( ) );
             column.setPrecision( (new Integer( columnSpecs[2] )).intValue( ) );
             array.add( column );
