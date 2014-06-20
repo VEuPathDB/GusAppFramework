@@ -642,12 +642,17 @@ sub addProtocolAppNodes {
   
   $self->logData("Adding Protocol Application Nodes");
   my @protocolAppNodes = $doc->findnodes('/mage-tab/sdrf/protocol_app_node');
+  my $count;
   for (my $i=0; $i<$protocolAppNodes[$i]; $i++) {
+
+    my $id = $protocolAppNodes[$i]->getAttribute('id');
     my $addition = $protocolAppNodes[$i]->getAttribute('addition');
     if (!defined($addition) || $addition ne 'true') {
+      my $pan = $protocolAppNodes[$i];
+      my $pan_id = $self->handleExistingProtocolAppNode($pan);
+      $protocolAppNodeIds->{$id} = $pan_id if defined($pan_id);
       next;
     }
-    my $id = $protocolAppNodes[$i]->getAttribute('id');
     
     my $name = $protocolAppNodes[$i]->findvalue('./name');
     my $protocolAppNode = GUS::Model::Study::ProtocolAppNode->new({name => $name});
@@ -742,10 +747,15 @@ sub addProtocolAppNodes {
     }
     $protocolAppNode->submit();
     $protocolAppNodeIds->{$id} = $protocolAppNode->getId();
+	$count = scalar(keys(%$protocolAppNodeIds))%50;
+	$self->undefPointerCache() unless $count;
   }
   return ($protocolAppNodeIds);
 }
 
+sub handleExistingProtocolAppNode {
+  return undef;
+}
 sub addFactorValues {
   my ($self, $doc, $studyId, $protAppNodeIds) = @_;
   $self->logData("Adding Factor Values");
