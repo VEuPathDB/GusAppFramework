@@ -12,6 +12,7 @@ use CBIL::Util::Disp;
 use GUS::PluginMgr::Plugin;
 use LWP::Simple;
 use XML::LibXML;
+use Data::Dumper;
 
 use GUS::Model::SRes::Contact;
 use GUS::Model::Study::StudyContact;
@@ -211,7 +212,7 @@ sub getBibRef {
   }
   my $authorString = join(', ', @authors);
 
-  my $journal = $pubmedDoc->findvalue('/PubmedArticleSet/PubmedArticle/MedlineCitation/Article/Journal/Title');
+  my $journal = $pubmedDoc->findvalue('/PubmedArticleSet/PubmeArticle/MedlineCitation/Article/Journal/Title');
   $journal = $pubmedDoc->findvalue('/PubmedArticleSet/PubmedArticle/MedlineCitation/MedlineJournalInfo/MedlineTA') unless ($journal);
 
   my $year = $pubmedDoc->findvalue('/PubmedArticleSet/PubmedArticle/MedlineCitation/Article/Journal/JournalIssue/PubDate/Year');
@@ -659,7 +660,7 @@ sub addProtocolAppNodes {
     my $typeNode = $protocolAppNodes[$i]->findvalue('./type');
     if (defined($typeNode) && $typeNode !~ /^\s*$/) {
 	my $node = $protocolAppNodes[$i];
-      my $extDbRlsId = setExtDbSpec ($node);
+      my $extDbRlsId = $self->setExtDbSpec($node);
      
       
       my $type = $self->getOntologyTerm($typeNode, $extDbRlsId);
@@ -757,7 +758,7 @@ sub handleExistingProtocolAppNode {
   return undef;
 }
 sub setExtDbSpec () {
-my ($self, $node) = @_;
+my ($self,$node) = @_;
  my $extDbRlsId =  $self->getExtDbRlsId('OBI|http://purl.obolibrary.org/obo/obi/2012-07-01/obi.owl');
       if (!$extDbRlsId || !defined($extDbRlsId)) {
 	$self->userError("Database is missing an entry for http://purl.obolibrary.org/obo/obi/2012-07-01/obi.owl");
