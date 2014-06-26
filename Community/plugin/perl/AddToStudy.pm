@@ -748,7 +748,7 @@ sub addProtocolAppNodes {
     }
     $protocolAppNode->submit();
     $protocolAppNodeIds->{$id} = $protocolAppNode->getId();
-	$count = scalar(keys(%$protocolAppNodeIds))%50;
+	$count = scalar(keys(%$protocolAppNodeIds))%20;
 	$self->undefPointerCache() unless $count;
   }
   return ($protocolAppNodeIds);
