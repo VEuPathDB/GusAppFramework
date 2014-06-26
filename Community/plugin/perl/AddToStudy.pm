@@ -658,10 +658,9 @@ sub addProtocolAppNodes {
     my $protocolAppNode = GUS::Model::Study::ProtocolAppNode->new({name => $name});
     my $typeNode = $protocolAppNodes[$i]->findvalue('./type');
     if (defined($typeNode) && $typeNode !~ /^\s*$/) {
-      my $extDbRlsId =  $self->getExtDbRlsId('OBI|http://purl.obolibrary.org/obo/obi/2012-07-01/obi.owl');
-      if (!$extDbRlsId || !defined($extDbRlsId)) {
-	$self->userError("Database is missing an entry for http://purl.obolibrary.org/obo/obi/2012-07-01/obi.owl");
-      }
+      my $extDbRlsId = setExtDbSpec ($protocolAppNodes[$i]);
+     
+      
       my $type = $self->getOntologyTerm($typeNode, $extDbRlsId);
       my $typeId = $type->getId();
       $protocolAppNode->setTypeId($typeId);
@@ -756,7 +755,16 @@ sub addProtocolAppNodes {
 sub handleExistingProtocolAppNode {
   return undef;
 }
-sub addFactorValues {
+sub setExtDbSpec () {
+my ($self, $node) = @_;
+ my $extDbRlsId =  $self->getExtDbRlsId('OBI|http://purl.obolibrary.org/obo/obi/2012-07-01/obi.owl');
+      if (!$extDbRlsId || !defined($extDbRlsId)) {
+	$self->userError("Database is missing an entry for http://purl.obolibrary.org/obo/obi/2012-07-01/obi.owl");
+	}
+	return $extDbRlsId;
+
+}
+	sub addFactorValues {
   my ($self, $doc, $studyId, $protAppNodeIds) = @_;
   $self->logData("Adding Factor Values");
   
