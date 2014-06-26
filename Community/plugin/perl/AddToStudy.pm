@@ -658,7 +658,8 @@ sub addProtocolAppNodes {
     my $protocolAppNode = GUS::Model::Study::ProtocolAppNode->new({name => $name});
     my $typeNode = $protocolAppNodes[$i]->findvalue('./type');
     if (defined($typeNode) && $typeNode !~ /^\s*$/) {
-      my $extDbRlsId = setExtDbSpec ($protocolAppNodes[$i]);
+	my $node = $protocolAppNodes[$i];
+      my $extDbRlsId = setExtDbSpec ($node);
      
       
       my $type = $self->getOntologyTerm($typeNode, $extDbRlsId);
