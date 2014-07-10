@@ -59,7 +59,7 @@ sub new {
 
    my $self = bless {}, $Class;
 
-   $self->initialize({requiredDbVersion => '3.6',
+   $self->initialize({requiredDbVersion => '4.0',
                       cvsRevision       => '$Revision$',
                       name              => ref($self),
                       easyCspOptions    => {},
@@ -1289,6 +1289,7 @@ sub _check_database_version_requirements {
     my $plugin = shift;
 
     my $version = $plugin->getRequiredDbVersion();
+
     my $sql     = "select max(version) from Core.DatabaseVersion";
     my $sh      = $self->getQueryHandle->prepare($sql);
     
