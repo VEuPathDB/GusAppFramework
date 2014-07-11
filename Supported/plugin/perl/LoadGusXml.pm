@@ -75,7 +75,7 @@ sub new {
   bless($self, $class);
 
   $self->initialize({
-      requiredDbVersion => 3.6,
+      requiredDbVersion => 4.0,
       cvsRevision       => '$Revision$',            # Completed by CVS
       name              => ref($self),
       argsDeclaration   => $argsDeclaration,
