@@ -95,8 +95,14 @@ stringArg({   name           => 'ncbiTaxonName',
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
-  stringArg({  name           => 'SOExtDbRls',
+  stringArg({  name           => 'SOExtDbRlsSpec',
 	       descr          => 'The External Database Release spec for SOTermName, must be in the form Name|Version',
+	       reqd           => 0,
+	       constraintFunc => undef,
+	       isList         => 0 }),
+
+  stringArg({  name           => 'SOExtDbName',
+	       descr          => 'The External Database Name  for SOTermName, must be in the form Name (only used if full spec not available)',
 	       reqd           => 0,
 	       constraintFunc => undef,
 	       isList         => 0 }),
@@ -256,7 +262,7 @@ sub new() {
   bless($self,$class);
 
   $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision:  $', # cvs fills this in!
+		     cvsRevision => '$Revision$', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
 		     documentation     => $documentation
@@ -725,10 +731,29 @@ sub fetchSequenceOntologyId {
   my ($self, $name) = @_;
 
   my $name = $self->getArg('SOTermName');
-  if (!defined($self->getArg('SOExtDbRls'))) {
+  if (!defined($self->getArg('SOExtDbRlsSpec')) && !defined($self->getArg('SOExtDbName'))) {
     $self->userError('When SOTermName is provided, SOExtDbRls must be specified');
   }
-  my $extDbRlsId = $self->getExtDbRls($self->getArg('SOExtDbRls'));
+
+  my $extDbRlsId;
+  if(my $extDbRlsSpec = $self->getArg('SOExtDbRlsSpec')) {
+    $extDbRlsId = $self->getExtDbRls($extDbRlsSpec);
+  }
+  else {
+    my $extDbName = $self->getArg('SOExtDbName');
+
+    my $sql = "select r.version
+from SRES.externaldatabase d, sres.externaldatabaserelease r
+where d.name = '$extDbName'
+and d.external_database_id = r.external_database_id";
+
+    my @versions = $self->sqlAsArray( Sql => $sql ); 
+
+    die "Could not resolve ExternalDatabaseRelease for database $extDbName" unless(scalar @versions == 1);
+
+    $extDbRlsId = $self->getExtDbRls($extDbName, $versions[0]);
+  }
+
 
   eval ("require GUS::Model::SRes::OntologyTerm");
 
