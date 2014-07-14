@@ -102,7 +102,7 @@ sub run {
 
     my $soFile = $self->getArg('inputFile');
 
-    my $extDbRlsSpec = $self->getarg('extDbRlsSpec');
+    my $extDbRlsSpec = $self->getArg('extDbRlsSpec');
 
     my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
 
