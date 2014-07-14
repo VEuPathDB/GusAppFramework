@@ -84,7 +84,7 @@ sub new {
     bless($self, $class);
 
     $self->initialize({requiredDbVersion => 4.0,
-		       cvsRevision =>  '$Revision: 10075 $',
+		       cvsRevision =>  '$Revision$',
 		       name => ref($self),
 		       argsDeclaration   => $argsDeclaration,
 		       documentation     => $documentation
@@ -152,7 +152,7 @@ sub makeSequenceOntology {
    my $soTerm = GUS::Model::SRes::OntologyTerm->
      new({'source_id' => $obo->{'id'},
           'external_database_release_id' => $extDbRlsId,
-	  'term_name' => $obo->{'name'},
+	  'name' => $obo->{'name'},
 	  'definition' => $definition }
      );
  
