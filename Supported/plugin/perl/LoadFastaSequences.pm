@@ -737,7 +737,7 @@ sub fetchSequenceOntologyId {
 
   my $extDbRlsId;
   if(my $extDbRlsSpec = $self->getArg('SOExtDbRlsSpec')) {
-    $extDbRlsId = $self->getExtDbRls($extDbRlsSpec);
+    $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
   }
   else {
     my $extDbName = $self->getArg('SOExtDbName');
@@ -751,7 +751,7 @@ and d.external_database_id = r.external_database_id";
 
     die "Could not resolve ExternalDatabaseRelease for database $extDbName" unless(scalar @versions == 1);
 
-    $extDbRlsId = $self->getExtDbRls($extDbName, $versions[0]);
+    $extDbRlsId = $self->getExtDbRlsId($extDbName, $versions[0]);
   }
 
 
