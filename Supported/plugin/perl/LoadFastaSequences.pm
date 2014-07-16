@@ -101,12 +101,6 @@ stringArg({   name           => 'ncbiTaxonName',
 	       constraintFunc => undef,
 	       isList         => 0 }),
 
-  stringArg({  name           => 'SOExtDbName',
-	       descr          => 'The External Database Name  for SOTermName, must be in the form Name (only used if full spec not available)',
-	       reqd           => 0,
-	       constraintFunc => undef,
-	       isList         => 0 }),
-
   stringArg({  name           => 'SOTermName',
 	       descr          => 'The Sequence Ontology term for the sequence type',
 	       reqd           => 0,
@@ -731,29 +725,13 @@ sub fetchSequenceOntologyId {
   my ($self, $name) = @_;
 
   my $name = $self->getArg('SOTermName');
-  if (!defined($self->getArg('SOExtDbRlsSpec')) && !defined($self->getArg('SOExtDbName'))) {
+  my $extDbRlsSpec = $self->getArg('SOExtDbRlsSpec');
+
+  if (!defined($extDbRlsSpec)) {
     $self->userError('When SOTermName is provided, SOExtDbRls must be specified');
   }
 
-  my $extDbRlsId;
-  if(my $extDbRlsSpec = $self->getArg('SOExtDbRlsSpec')) {
-    $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
-  }
-  else {
-    my $extDbName = $self->getArg('SOExtDbName');
-
-    my $sql = "select r.version
-from SRES.externaldatabase d, sres.externaldatabaserelease r
-where d.name = '$extDbName'
-and d.external_database_id = r.external_database_id";
-
-    my @versions = $self->sqlAsArray( Sql => $sql ); 
-
-    die "Could not resolve ExternalDatabaseRelease for database $extDbName" unless(scalar @versions == 1);
-
-    $extDbRlsId = $self->getExtDbRlsId($extDbName, $versions[0]);
-  }
-
+  my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
 
   eval ("require GUS::Model::SRes::OntologyTerm");
 
