@@ -848,14 +848,19 @@ sub getExtDbRlsId {
     my $sql = "select ex.external_database_release_id
                from sres.externaldatabaserelease ex, sres.externaldatabase e
                where e.external_database_id = ex.external_database_id
-               and ex.version = '$dbVersion'
+               and ex.version like '$dbVersion'
                and lower(e.name) = '$lcName'";
 
     my $sth = $self->getQueryHandle()->prepareAndExecute($sql);
 
-    my ($releaseId) = $sth->fetchrow_array();
+    my ($releaseId, $count);
+    while(my $id = $sth->fetchrow_array()) {
+      $releaseId = $id;
+      $count++;
+    }
+    $sth->finish();
 
-    die "Couldn't find an external database release id for db '$dbName' version '$dbVersion'.  Use the plugins InsertExternalDatabase and InsertExternalDatabaseRls to insert this information into the database" unless $releaseId;
+    die "Couldn't find an external database release id for db '$dbName' version '$dbVersion'.  Use the plugins InsertExternalDatabase and InsertExternalDatabaseRls to insert this information into the database" unless($count == 1);
 
     return $releaseId;
 }
