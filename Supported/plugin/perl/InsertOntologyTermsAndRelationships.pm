@@ -32,39 +32,23 @@ my $argsDeclaration =
 
 
  stringArg({ descr => 'Name of the External Database',
-	     name  => 'extDbName',
+	     name  => 'extDbRlsSpec',
 	     isList    => 0,
 	     reqd  => 1,
 	     constraintFunc => undef,
 	   }),
 
- stringArg({ descr => 'Version of the External Database Release',
-	     name  => 'extDbVersion',
+ stringArg({ descr => '',
+	     name  => 'relTypeExtDbRlsSpec',
 	     isList    => 0,
 	     reqd  => 1,
 	     constraintFunc => undef,
 	   }),
-
- stringArg({ descr => 'uri for the OntlogyTerm',
-	     name  => 'uri',
-	     isList    => 0,
-	     reqd  => 1,
-	     constraintFunc => undef,
-	   }),
-
- enumArg({  name => 'parserType',
-	    descr => 'Which java parser should be used??...Currently only MGED Parser is Supported',
-	    constraintFunc => undef,
-	    reqd => 1,
-	    isList => 0,
-	    enum => "MgedRdfRow",
-	   }),
-
 
 ];
 
 my $purpose = <<PURPOSE;
-The purpose of this plugin is to parse a an rdf file (list of ontology statements) and load as Ontology Terms and Relationships.  
+The purpose of this plugin is to parse a an owl file (rdf; list of ontology statements) and load as Ontology Terms and Relationships.  
 PURPOSE
 
 my $purposeBrief = <<PURPOSE_BRIEF;
@@ -72,35 +56,7 @@ The purpose of this plugin is to load Ontology Terms and Relationships.
 PURPOSE_BRIEF
 
 my $notes = <<NOTES;
-This plugin calls a java parser which reads the input file using the java package Jena.  Jena is used to read the rdf file and convert
-each statemnt into strings (subject, predicate, object).  
-
-
-You must set your CLASSPATH variable to the following jar files:
-
- GUS-Supported.jar
- antlr-2.7.5.jar
- arq.jar
- commons-logging.jar
- concurrent.jar
- icu4j_3_4.jar
- iri.jar
- jena.jar
- jenatest.jar
- json.jar
- junit.jar
- log4j-1.2.12.jar
- stax-api-1.0.jar
- wstx-asl-2.8.jar
- xercesImpl.jar
- xml-apis.jar
-
-
-
-The strings are then manipulated and printed to a file.  This manipulation of the strings is project specific (currently MGED.owl is supported).  
-
-This plugin could be used for ANY file which can be read by Jena 
-You would need to create a java class which implements org.gusdb.gus.supported.GusRdfRow
+Only load subclassOf relations
 NOTES
 
 my $tablesAffected = <<TABLES_AFFECTED;
@@ -157,7 +113,7 @@ sub setExtDbRls {$_[0]->{ext_db_rls_id} = $_[1]}
 
 =item C<run>
 
-Reads in the Rdf File... Parses using the Java Ap depending on the parserType.
+Main method which Reads in the Owl File,
 Converts to SRes::OntologyTerm and SRes::OntologyRelationships
 
 B<Return type:> 
@@ -170,12 +126,8 @@ sub run {
   my ($self) = @_;
 
   my $file = $self->getArg('inFile');
-  my $parserType = $self->getArg('parserType');
-  my $uri = $self->getArg('uri');
 
-  my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbName'),
-                                        $self->getArg('extDbVersion'));
-
+  my $extDbRlsId = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
   $self->setExtDbRls($extDbRlsId);
 
   # build classpath
@@ -188,39 +140,32 @@ sub run {
   my $classpath = join(':', @jars);
 
   # This will create a file appending ".out" to the inFile 
-  my $systemResult = system("java -classpath $classpath org.gusdb.gus.supported.OwlParser $file $parserType");
-
+  my $systemResult = system("java -classpath $classpath org.gusdb.gus.supported.OntologyVisitor $file");
   unless($systemResult / 256 == 0) {
-    $self->error("Could not Parse RDF file $file");
+    $self->error("Could not Parse OWL file $file");
   }
 
-  my $gusInFile = $file . ".out";
+  my $systemResult = system("java -classpath $classpath org.gusdb.gus.supported.IsA_Axioms $file");
+  unless($systemResult / 256 == 0) {
+    $self->error("Could not Parse OWL file $file");
+  }
 
-  my $lines = $self->readFile($gusInFile);
+  my $termLines = $self->readFile($file . "_terms.txt");
+  my $relationshipLines = $self->readFile($file . "_isA.txt");
 
-  my $termTypes = $self->getOntologyTypes("select name, ontology_term_type_id from SRes.ONTOLOGYTERMTYPE");
-  my $relationshipTypes = $self->getOntologyTypes("select name, ontology_relationship_type_id from SRes.ONTOLOGYRELATIONSHIPTYPE");
+  my $relationshipTypes = $self->getRelationshipTypes();
 
-  my @terms = $self->makeStringThing($termTypes, $uri, $extDbRlsId);
+  my $terms = $self->doTerms($termLines);
+  $self->submitObjectList($terms);
+  $self->log("Inserted ", scalar(@$terms), " SRes::OntologyTerms");
 
-  my $standardTerms = $self->parseTerms($lines, $termTypes);
-  push(@terms, @$standardTerms);
-
-  my $linesForIrregularTerms = $self->parseNoDefTerms($lines, $termTypes, \@terms);
-  my $irregularTerms = $self->parseTerms($linesForIrregularTerms, $termTypes);
-  push(@terms, @$irregularTerms);
-
-  $self->submitObjectList(\@terms);
-  $self->log("Inserted ", scalar(@terms), " SRes::OntologyTerms");
-
-  my $relationships = $self->parseRelationships(\@terms, $lines, $relationshipTypes);
+  my $relationships = $self->doRelationships($terms, $relationshipLines, $relationshipTypes);
   $self->submitObjectList($relationships);
 
-  my $termCount = scalar(@terms);
+  my $termCount = scalar(@$terms);
   my $relationshipCount = scalar(@$relationships);
 
   return "Inserted $termCount SRes::OntologyTerms and $relationshipCount SRes::OntologyRelationships";
-
 }
 
 #--------------------------------------------------------------------------------
@@ -258,17 +203,10 @@ sub readFile {
 
 #--------------------------------------------------------------------------------
 
-=item C<parseTerms>
+=item C<doTerms>
 
-Loops through an array ref.  Each element of the array is split into 4 elements
-subject, predicate, object, type
-
-A a term has a type of "definition".  The subject will be the term name and the object will be the term Definition
-
-For each Term, the OntologyTermType is found by looping through the lines again.  This time the type will be 
-"instanceOf", the subject will be the same and the ontology_term_type_name will be the object.
-
-Terms which cannot be mapped to an ontologytermtype are assigned "Individual";
+Loops through an array ref.  Each element of the array is split into 6 elements
+ID      Name    Definition      Synonyms        URI     is obsolete
 
 B<Parameters:>
 
@@ -281,34 +219,29 @@ B<Return Type:>
 
 =cut
 
-sub parseTerms {
-  my ($self, $lines, $termTypes) = @_;
+sub doTerms {
+  my ($self, $lines) = @_;
 
+  my $extDbRlsId = $self->getExtDbRls();
   my @ontologyTerms;
 
-  my $uri = $self->getArg('uri');
-  my $extDbRlsId = $self->getExtDbRls();
+  foreach my $line (@$lines) {
+    my @a = split(/\t/, $line);
+    my $sourceId = $a[0];
+    my $name = $a[1];
+    my $definition = $a[2];
+    my $synonyms = $a[3];
+    my $uri = $a[4];
+    my $isObsolete = $a[5];
 
-  my $definitions = $self->getObjectStringFromType($lines, 'definition');
-  my $types = $self->getObjectStringFromType($lines, 'instanceOf');
-
-  foreach my $termName (keys %$definitions) {
-    my $source = "#$termName";
-    my $termUri =  $uri . $source;
-
-    my $def = $definitions->{$termName};
-    my $type = $types->{$termName};
-
-    my $typeId = $termTypes->{$type};
-    $typeId = $termTypes->{Individual} unless($typeId);
+    next if($isObsolete eq 'true');
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
-      new({name => $termName,
-           source_id => $source,
-           ontology_term_type_id => $typeId,
+      new({name => $name,
+           source_id => $sourceId,
            external_database_release_id => $extDbRlsId,
-           uri => $termUri,
-           definition => $def,
+           uri => $uri,
+           definition => $definition,
           });
 
     push(@ontologyTerms, $ontologyTerm);
@@ -317,130 +250,18 @@ sub parseTerms {
   return \@ontologyTerms;
 }
 
-#--------------------------------------------------------------------------------
 
-=item C<makeStringThing>
-
-String and Thing are created automatically.  Thing is the Root object
-
-B<Parameters:>
-
- $termTypes(HASHREF): hash linking the ontology term types to their ids
- $uri(scalar): uri from the Arg
- $extDbRlsId(scalar): ExternalDatabaseReleaseId which was retrieved
-
-B<Return Type:> 
-
- C<[GUS::Model::SRes::OntologyTerm]> SRes::OntologyTerms for string and Thing
-
-=cut
-
-sub makeStringThing {
-  my ($self, $termTypes, $uri, $extDbRlsId) = @_;
-
-  my $stringTypeId = $termTypes->{Datatype};
-  my $thingTypeId = $termTypes->{Root};
-
-  my $string = 'string';
-  my $thing = 'Thing';
-
-  my $stringSource = "#$string";
-  my $thingSource = "#$thing";
-
-  my $stringUri = $uri . $stringSource;
-  my $thingUri = $uri . $thingSource;
-
-  unless($stringTypeId && $thingTypeId) {
-    $self->error("OntologyTermTypeId required for string [$stringTypeId] and thing [$thingTypeId]");
-  }
-
-  my $string = GUS::Model::SRes::OntologyTerm->
-    new({ ontology_term_type_id => $stringTypeId,
-          external_database_release_id => $extDbRlsId,
-          source_id => $stringSource,
-          uri => $stringUri,
-          name => $string,
-        });
-
-  my $thing = GUS::Model::SRes::OntologyTerm->
-    new({ ontology_term_type_id => $thingTypeId,
-          external_database_release_id => $extDbRlsId,
-          source_id => $thingSource,
-          uri => $thingUri,
-          name => $thing,
-        });
-
-  return($string, $thing);
-
-}
 
 #--------------------------------------------------------------------------------
 
-=item C<parseNoDefTerms>
+=item C<doRelationships>
 
-In an Rdf file... the object isn't needed to have a definition.  To populuate
-SRes::OntologyRelationship, we need to create a SRes::OntologyTerm for these
-anyway.
-
-Loop through the relationships and find a distinct list of terms without declaired definitions.  
-Make an arrayRef of string which can be made into ontology terms
+Loop through all the file lines and create the relationships. 
 
 B<Parameters:>
 
- $lines(ARRAYREF): list of the file lines
- $termTypes(HASHREF): hash linking the ontology term types to their ids
  $terms([GUS::Model::SRes::OntologyTerm]) ArrayRef of Official Terms with definitions
-
-B<Return Type:> 
-
- C<ARRAYREF> List of Strings representing the new terms
-
-=cut
-
-sub parseNoDefTerms {
-  my ($self, $lines, $termTypes, $terms) = @_;
-
-  my %irregularTerms;
-  my @additionalLines;
-
-  foreach my $term (@$terms) {
-    my $name = $term->getName();
-    $irregularTerms{$name} = 0;
-  }
-
-  foreach my $line (@$lines) {
-    my ($subject, $predicate, $object, $type) = split(/\t/, $line);
-
-    next if(exists $irregularTerms{$object} || $type eq 'definition');
-    $irregularTerms{$object} = 1;
-  }
-
-  foreach my $irregular (keys %irregularTerms) {
-    next unless($irregularTerms{$irregular});
-    next if($termTypes->{$irregular});
-    next unless($irregular);
-
-    push(@additionalLines , "$irregular\t\t\tdefinition");
-    push(@additionalLines , "$irregular\t\t\tinstanceOf");
-  }
-
-  return \@additionalLines;
-}
-
-#--------------------------------------------------------------------------------
-
-=item C<parseRelationships>
-
-Loop through all the file lines and create the relationships.  Skip any row
-with a type of "definition".  Skip any row which doesn't have a SRes::OntologyTerm
-for both subject and object (these are required by the database schema)
-
-Log to a file any lines which are skipped
-
-B<Parameters:>
-
- $lines(ARRAYREF): list of the file lines
- $terms([GUS::Model::SRes::OntologyTerm]) ArrayRef of Official Terms with definitions
+ $lines(ARRAYREF): list of the relationship file lines
  $relationshipTypes(HASHREF): hash linking the ontology relationship types to their ids
 
 B<Return Type:> 
@@ -449,26 +270,16 @@ B<Return Type:>
 
 =cut
 
-sub parseRelationships {
+sub doRelationships {
   my ($self, $terms, $lines, $relationshipTypes) = @_;
 
-  my $file = $self->getArg('inFile');
-  my $log = $file . ".log";
-
-  open(LOG, "> $log") or $self->error("Could Not open file $log for reading: $!");
-
   my @relationships;
-  my $skipCount = 0;
-
   my $count = 0;
 
   foreach my $line (@$lines) {
-    my ($subject, $predicate, $object, $type) = split(/\t/, $line);
-
-    next if($type eq 'definition');
+    my ($subject, $type, $object) = split(/\t/, $line);
 
     my $subjectTermId = $self->getTermIdFromName($terms, $subject);
-    my $predicateTermId = $self->getTermIdFromName($terms, $predicate);
     my $objectTermId = $self->getTermIdFromName($terms, $object);
 
     my $relationshipTypeId = $relationshipTypes->{$type};
@@ -478,28 +289,17 @@ sub parseRelationships {
 
     my $relationship = GUS::Model::SRes::OntologyRelationship->
       new({subject_term_id => $subjectTermId,
-           predicate_term_id => $predicateTermId,
            object_term_id => $objectTermId,
            ontology_relationship_type_id => $relationshipTypeId,
           });
 
-    if($subjectTermId && $objectTermId && $relationshipTypeId) {
-      push(@relationships, $relationship);
+    push(@relationships, $relationship);
 
-      $count++;
-      if($count % 250 == 0) {
-        $self->log("Inserted $count SRes::OntologyRelationships");
-      }
-
-    }
-    else {
-      print LOG "SKIPPED: $subject|$predicate|$object|$type\n";
-      $skipCount++;
+    $count++;
+    if($count % 250 == 0) {
+      $self->log("Inserted $count SRes::OntologyRelationships");
     }
   }
-
-  close(LOG);
-  $self->log("WARN:  Skipped $skipCount Lines");
 
   return \@relationships;
 }
@@ -538,42 +338,10 @@ sub getTermIdFromName {
 }
 
 
-#--------------------------------------------------------------------------------
-
-=item C<getObjectStringFromType>
-
-Loop through the file lines... get the statment object based on the type
-
-B<Parameters:>
-
- $lines(ARRAYREF): list of the file lines
- $wantedType(scalar): Type of Term that you want
-
-B<Return Type:> 
-
- C<HASHREF>  key is the subject, value is the object
-
-=cut
-
-sub getObjectStringFromType {
-  my ($self, $lines, $wantType) = @_;
-
-  my %rv;
-
-  foreach my $line (@$lines) {
-    my ($subject, $predicate, $object, $type) = split(/\t/, $line);
-
-    if($type eq $wantType) {
-      $rv{$subject} = $object;
-    }
-  }
-  return \%rv;
-}
-
 
 #--------------------------------------------------------------------------------
 
-=item C<getOntologyTypes>
+=item C<getRelationshipTypes>
 
 Prepare and Execute an sql statment.  The key is the first value in the 
 result, the value is the second value in the result;
@@ -588,11 +356,14 @@ B<Return Type:>
 
 =cut
 
-sub getOntologyTypes {
+sub getRelationshipTypes {
   my ($self, $sql) = @_;
 
   my %rv;
 
+  my $extDbRlsId = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
+
+  my $sql = "select name, ontology_term_id from SRes.ONTOLOGYTERM where external_database_release_id = $extDbRlsId";
   my $sh = $self->getQueryHandle()->prepare($sql);
   $sh->execute();
 
