@@ -191,6 +191,8 @@ sub readFile {
 
   my @lines;
 
+  <FILE>; #remove the header
+
   while(<FILE>) {
     chomp;
 
@@ -235,6 +237,7 @@ sub doTerms {
     my $isObsolete = $a[5];
 
     next if($isObsolete eq 'true');
+    next unless($name);
 
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
       new({name => $name,
@@ -287,17 +290,22 @@ sub doRelationships {
       $self->error("OntologyRelationshipType is Required at line: $line");
     }
 
-    my $relationship = GUS::Model::SRes::OntologyRelationship->
-      new({subject_term_id => $subjectTermId,
-           object_term_id => $objectTermId,
-           ontology_relationship_type_id => $relationshipTypeId,
-          });
+    if($subjectTermId && $objectTermId) {
+      my $relationship = GUS::Model::SRes::OntologyRelationship->
+          new({subject_term_id => $subjectTermId,
+               object_term_id => $objectTermId,
+               ontology_relationship_type_id => $relationshipTypeId,
+              });
 
-    push(@relationships, $relationship);
+      push(@relationships, $relationship);
 
-    $count++;
-    if($count % 250 == 0) {
-      $self->log("Inserted $count SRes::OntologyRelationships");
+      $count++;
+      if($count % 250 == 0) {
+        $self->log("Inserted $count SRes::OntologyRelationships");
+      }
+    }
+    else {
+      $self->log("Skipped Relationship $line");
     }
   }
 
