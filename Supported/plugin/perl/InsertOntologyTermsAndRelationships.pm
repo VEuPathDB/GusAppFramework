@@ -282,8 +282,8 @@ sub doRelationships {
   foreach my $line (@$lines) {
     my ($subject, $type, $object) = split(/\t/, $line);
 
-    my $subjectTermId = $self->getTermIdFromName($terms, $subject);
-    my $objectTermId = $self->getTermIdFromName($terms, $object);
+    my $subjectTermId = $self->getTermIdFromSourceId($terms, $subject);
+    my $objectTermId = $self->getTermIdFromSourceId($terms, $object);
 
     my $relationshipTypeId = $relationshipTypes->{$type};
     unless($relationshipTypeId) {
@@ -314,7 +314,7 @@ sub doRelationships {
 
 #--------------------------------------------------------------------------------
 
-=item C<getTermIdFromName>
+=item C<getTermIdFromSourceId>
 
 Helper method which loops through an array of SRes::OntologyTerms and returns its id (undef if not found)
 
@@ -329,22 +329,19 @@ B<Return Type:>
 
 =cut
 
-sub getTermIdFromName {
-  my ($self, $terms, $wantedName) = @_;
 
-  my $termId;
+sub getTermIdFromSourceId {
+  my ($self, $terms, $wanted) = @_;
 
   foreach my $term (@$terms) {
-    my $termName = $term->getName();
+    my $sourceId = $term->getSourceId();
 
-    if($termName eq $wantedName) {
-      $termId = $term->getId();
+    if($sourceId eq $wanted) {
+      return $term->getId();
     }
   }
-
-  return $termId;
+  return undef;
 }
-
 
 
 #--------------------------------------------------------------------------------
