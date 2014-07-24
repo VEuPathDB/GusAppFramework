@@ -155,6 +155,7 @@ sub run {
 
   my $terms = $self->doTerms($termLines);
   $self->submitObjectList($terms);
+  $self->undefPointerCache();
   $self->log("Inserted ", scalar(@$terms), " SRes::OntologyTerms");
 
   my $relationshipTypes = $self->getRelationshipTypes();
@@ -388,6 +389,7 @@ sub submitObjectList {
   foreach my $gusObj (@$list) {
     $gusObj->submit();
   }
+
 }
 
 #--------------------------------------------------------------------------------
