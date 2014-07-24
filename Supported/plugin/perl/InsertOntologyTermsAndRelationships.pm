@@ -153,11 +153,11 @@ sub run {
   my $termLines = $self->readFile($file . "_terms.txt");
   my $relationshipLines = $self->readFile($file . "_isA.txt");
 
-  my $relationshipTypes = $self->getRelationshipTypes();
-
   my $terms = $self->doTerms($termLines);
   $self->submitObjectList($terms);
   $self->log("Inserted ", scalar(@$terms), " SRes::OntologyTerms");
+
+  my $relationshipTypes = $self->getRelationshipTypes();
 
   my $relationships = $self->doRelationships($terms, $relationshipLines, $relationshipTypes);
   $self->submitObjectList($relationships);
