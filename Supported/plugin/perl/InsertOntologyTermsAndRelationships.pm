@@ -240,6 +240,13 @@ sub doTerms {
     next if($isObsolete eq 'true');
     next unless($name);
 
+    my $length =length($definition);
+ 
+    if ($length > 4000) {
+      $definition = substr($definition,0,4000);
+      print STDERR "Definiton for term $name was $length chars, trucated to 4000\n";
+    }
+
     my $ontologyTerm = GUS::Model::SRes::OntologyTerm->
       new({name => $name,
            source_id => $sourceId,
@@ -249,6 +256,7 @@ sub doTerms {
           });
 
     push(@ontologyTerms, $ontologyTerm);
+    $self->undefPointerCache();
   }
 
   return \@ontologyTerms;
@@ -299,6 +307,7 @@ sub doRelationships {
               });
 
       push(@relationships, $relationship);
+      $self->undefPointerCache();
 
       $count++;
       if($count % 250 == 0) {
