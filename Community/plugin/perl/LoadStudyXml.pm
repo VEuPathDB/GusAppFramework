@@ -649,7 +649,7 @@ sub submitProtocolAppNodes {
       $protocolAppNode->setDescription($description);
     }
     
-    my $extDbRls = $protocolAppNodes[$i]->findvalue('./ext_db_rls');
+    my $extDbRls = $protocolAppNodes[$i]->findvalue('./external_database_release');
     my $sourceId = $protocolAppNodes[$i]->findvalue('./source_id');
     if (defined($extDbRls) && $extDbRls !~ /^\s*$/ && defined($sourceId) && $sourceId !~ /^\s*$/) {
       $self->setExtDbRlsSourceId($extDbRls, $sourceId, $protocolAppNode);     
