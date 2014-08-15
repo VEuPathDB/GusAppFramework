@@ -68,6 +68,17 @@ sub getFeatureLength {
   return $self->{'featurelength'};
 }
 
+sub getRnaFeatExons {
+  my $self = shift;
+  my @exons;
+  foreach my $r ($self->getChildren('DoTS::RNAFeatureExon',1)) {
+    print STDERR "Retrieving exon: na_feature_id '".$r->getExonFeatureId()."'\n" if $debug;
+    push(@exons,$r);
+  }
+  return @exons;
+}
+
+
 ##returns the start and stop of the cds
 sub getTranslationStartStop {
   my $self = shift;
@@ -75,12 +86,12 @@ sub getTranslationStartStop {
   my $stop = 0;
   my $length = 0;
 	
-  foreach my $e (sort { $a->getOrderNumber() <=> $b->getOrderNumber()} $self->getExons()) {
-    my $l = $e->getChild('DoTS::NaLocation',1);
+  foreach my $e (sort { $a->getOrderNumber() <=> $b->getOrderNumber()} $self->getRnaFeatExons()) {
+    my $l = $e->getParent('DoTS::ExonFeature')->getChild('DoTS::NaLocation',1);
     $start = $length + ($l->getIsReversed() ? $l->getEndMax() - $e->getCodingStart() + 1  : $e->getCodingStart() - $l->getStartMin() + 1) if ($e->getCodingStart() ne '' && $e->getCodingStart() ne 'null' && !$start); 
     $stop = $length + ($l->getIsReversed() ? $l->getEndMax() - $e->getCodingEnd() + 1  : $e->getCodingEnd() - $l->getStartMin() + 1) if ($e->getCodingEnd() ne '' && $e->getCodingEnd() ne 'null'); 
     #$stop += $e->getCodingEnd() if defined $e->getCodingEnd();
-    $length += $e->getFeatureLength();
+    $length += $e->getParent('DoTS::ExonFeature', 1)->getFeatureLength();
   }
   $start = $start ? $start : 1;
   $stop = $stop ? $stop : $length;
