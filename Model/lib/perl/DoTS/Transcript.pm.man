@@ -77,15 +77,15 @@ sub getTranslationStartStop {
 	
   foreach my $e (sort { $a->getOrderNumber() <=> $b->getOrderNumber()} $self->getExons()) {
     my $l = $e->getChild('DoTS::NaLocation',1);
-    $start = $length + ($l->getIsReversed() ? $l->getEndMax() - $e->getCodingStart() + 1  : $e->getCodingStart() - $l->getStartMin() + 1) if (defined $e->getCodingStart() && !$start); 
-    $stop = $length + ($l->getIsReversed() ? $l->getEndMax() - $e->getCodingEnd() + 1  : $e->getCodingEnd() - $l->getStartMin() + 1) if defined $e->getCodingEnd(); 
-    $stop += $e->getCodingEnd() if defined $e->getCodingEnd();
+    $start = $length + ($l->getIsReversed() ? $l->getEndMax() - $e->getCodingStart() + 1  : $e->getCodingStart() - $l->getStartMin() + 1) if ($e->getCodingStart() ne '' && $e->getCodingStart() ne 'null' && !$start); 
+    $stop = $length + ($l->getIsReversed() ? $l->getEndMax() - $e->getCodingEnd() + 1  : $e->getCodingEnd() - $l->getStartMin() + 1) if ($e->getCodingEnd() ne '' && $e->getCodingEnd() ne 'null'); 
+    #$stop += $e->getCodingEnd() if defined $e->getCodingEnd();
     $length += $e->getFeatureLength();
   }
   $start = $start ? $start : 1;
   $stop = $stop ? $stop : $length;
-  $self->setTranslationStart($start);
-  $self->setTranslationStop($stop);
+  #$self->setTranslationStart($start);
+  #$self->setTranslationStop($stop);
   return ($start,$stop);
 }
 
