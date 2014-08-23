@@ -224,8 +224,8 @@ sub new {
   my $documentation = &getDocumentation();
   my $argumentDeclaration    = &getArgumentsDeclaration();
 
-  $self->initialize({requiredDbVersion => 3.6,
-		     cvsRevision => '$Revision: 8979 $',
+  $self->initialize({requiredDbVersion => 3.5,
+		     cvsRevision => '$Revision$',
 		     name => ref($self),
 		     revisionNotes => '',
 		     argsDeclaration => $argumentDeclaration,
