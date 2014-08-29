@@ -84,8 +84,8 @@ sub getTranslationStartStop {
   }
   $start = $start ? $start : 1;
   $stop = $stop ? $stop : $length;
-  $self->setTranslationStart($start);
-  $self->setTranslationStop($stop);
+#  $self->setTranslationStart($start);
+#  $self->setTranslationStop($stop);
   return ($start,$stop);
 }
 
