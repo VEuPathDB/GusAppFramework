@@ -29,7 +29,7 @@ use GUS::Model::SRes::Taxon;
 
 #USED IN LOADING NASEQUENCE
 use GUS::Model::SRes::TaxonName;
-use GUS::Model::SRes::SequenceOntology;
+use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::DoTS::SequenceType;
 use GUS::Model::DoTS::NASequence;
 use GUS::Model::DoTS::ExternalNASequence;
@@ -104,7 +104,7 @@ NOTES
   my $tablesAffected =
   [
    ['SRes.Reference', ''],
-   ['SRes.SequenceOntology', ''],
+   ['SRes.OntologyTerm', ''],
    ['DoTS.SequenceType', ''],
    ['DoTS.NASequence', ''],
    ['DoTS.ExternalNASequence', ''],
@@ -132,7 +132,7 @@ NOTES
   my $tablesDependedOn = 
   [
    ['SRes.TaxonName', ''],
-   ['SRes.SequenceOntology', ''],
+   ['SRes.OntologyTerm', ''],
    ['SRes.ExternalDatabase', ''],
    ['SRes.ExternalDatabaseRelease', ''],
   ];
@@ -1373,18 +1373,16 @@ sub getSOPrimaryKey {
 
   if (!$self->{soPrimaryKeys}) {
 
-    my $soCvsVersion = $self->getArg('soCvsVersion');
-
-    unless ($soCvsVersion){ 
-	my $soExtDbRlsName = $self->getArg('soExtDbRlsName');
-	$soExtDbRlsName or $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbRlsName or --soCvsVersion on the command line");
-	$soCvsVersion = $self->getExtDbRlsVerFromExtDbRlsName($soExtDbRlsName);
+    my $soExtDbName = $self->getArg('soExtDbRlsName');
+    if (!$soExtDbName) {
+      $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbRlsName on the command line");
     }
+    my $soExtDbRlsId = $self->getExtDbRlsIdFromExtDbName($soExtDbName);
+
     my $dbh = $self->getQueryHandle();
     my $sql = "
-select term_name, sequence_ontology_id
-from sres.SequenceOntology
-where so_cvs_version = '$soCvsVersion'
+select name, ontology_term_id from SRES.ontologyterm
+ where external_database_release_id=$soExtDbRlsId
 ";
     my $stmt = $dbh->prepareAndExecute($sql);
     while (my ($term, $pk) = $stmt->fetchrow_array()){
@@ -1397,7 +1395,7 @@ where so_cvs_version = '$soCvsVersion'
     }
 
     my $mappingFile = $self->getArg('mapFile');
-    (scalar(@badSoTerms) == 0) or $self->userError("Mapping file '$mappingFile' or cmd line args are using the following SO terms that are not found in the database for SO CVS version '$soCvsVersion': " . join(", ", @badSoTerms));
+    (scalar(@badSoTerms) == 0) or $self->userError("Mapping file '$mappingFile' or cmd line args are using the following SO terms that are not found in the database '$soExtDbName': " . join(", ", @badSoTerms));
   }
   $self->error("Can't find primary key for SO term '$soTerm'")
     unless $self->{soPrimaryKeys}->{$soTerm};
@@ -1424,6 +1422,29 @@ sub getExtDbRlsVerFromExtDbRlsName {
   die "trying to find unique ext db version for '$extDbRlsName', but more than one found" if(scalar(@verArray) > 1);
 
   return @verArray[0];
+
+}
+
+sub getExtDbRlsIdFromExtDbName {
+  my ($self, $extDbRlsName) = @_;
+
+  my $dbh = $self->getQueryHandle();
+
+  my $sql = "select edr.external_database_release_id from sres.externaldatabaserelease edr, sres.externaldatabase ed
+             where ed.name = '$extDbRlsName'
+             and edr.external_database_id = ed.external_database_id";
+  my $stmt = $dbh->prepareAndExecute($sql);
+  my @rlsIdArray;
+
+  while ( my($extDbRlsId) = $stmt->fetchrow_array()) {
+      push @rlsIdArray, $extDbRlsId;
+  }
+
+  die "No extDbRlsId found for '$extDbRlsName'" unless(scalar(@rlsIdArray) > 0);
+
+  die "trying to find unique extDbRlsId for '$extDbRlsName', but more than one found" if(scalar(@rlsIdArray) > 1);
+
+  return @rlsIdArray[0];
 
 }
 
