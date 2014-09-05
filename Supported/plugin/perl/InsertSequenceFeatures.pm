@@ -1,4 +1,24 @@
 package GUS::Supported::Plugin::InsertSequenceFeatures;
+#vvvvvvvvvvvvvvvvvvvvvvvvv GUS4_STATUS vvvvvvvvvvvvvvvvvvvvvvvvv
+  # GUS4_STATUS | SRes.OntologyTerm              | auto   | absent
+  # GUS4_STATUS | SRes.SequenceOntology          | auto   | fixed
+  # GUS4_STATUS | Study.OntologyEntry            | auto   | absent
+  # GUS4_STATUS | SRes.GOTerm                    | auto   | absent
+  # GUS4_STATUS | Dots.RNAFeatureExon            | auto   | absent
+  # GUS4_STATUS | RAD.SageTag                    | auto   | absent
+  # GUS4_STATUS | RAD.Analysis                   | auto   | absent
+  # GUS4_STATUS | ApiDB.Profile                  | auto   | absent
+  # GUS4_STATUS | Study.Study                    | auto   | absent
+  # GUS4_STATUS | Dots.Isolate                   | auto   | absent
+  # GUS4_STATUS | DeprecatedTables               | auto   | broken
+  # GUS4_STATUS | Pathway                        | auto   | absent
+  # GUS4_STATUS | DoTS.SequenceVariation         | auto   | absent
+  # GUS4_STATUS | RNASeq Junctions               | auto   | absent
+  # GUS4_STATUS | Simple Rename                  | auto   | absent
+  # GUS4_STATUS | ApiDB Tuning Gene              | auto   | absent
+  # GUS4_STATUS | Rethink                        | auto   | absent
+  # GUS4_STATUS | dots.gene                      | manual | unreviewed
+#^^^^^^^^^^^^^^^^^^^^^^^^^ End GUS4_STATUS ^^^^^^^^^^^^^^^^^^^^
 
 # todo:
 #  - handle seqVersion more robustly
@@ -24,7 +44,7 @@ use GUS::Supported::SequenceIterator;
 #GENERAL USAGE TABLES
 use GUS::Model::SRes::ExternalDatabase;
 use GUS::Model::SRes::ExternalDatabaseRelease;
-use GUS::Model::SRes::Reference;
+#use GUS::Model::SRes::Reference;
 use GUS::Model::SRes::Taxon;
 
 #USED IN LOADING NASEQUENCE
@@ -861,22 +881,22 @@ sub addReferences {
 
   my @bioperlReferences = $bioperlAnnotation->get_Annotations('reference');
 
-  foreach my $bioperlReference (@bioperlReferences) {
-    my $reference = GUS::Model::SRes::Reference->new() ;
-    $reference->setAuthor($bioperlReference->authors());
-    $reference->setTitle($bioperlReference->title());
-    $reference->setJournalOrBookName($bioperlReference->location());
+#  foreach my $bioperlReference (@bioperlReferences) {
+#    my $reference = GUS::Model::SRes::Reference->new() ;
+#    $reference->setAuthor($bioperlReference->authors());
+#    $reference->setTitle($bioperlReference->title());
+#    $reference->setJournalOrBookName($bioperlReference->location());
 
-    unless ($reference->retrieveFromDB())  {
-      $reference->submit();
-    }
+#    unless ($reference->retrieveFromDB())  {
+#      $reference->submit();
+#    }
 
-    my $refId = $reference->getId();
-    my $naSequenceRef = 
-      GUS::Model::DoTS::NASequenceRef->new({'reference_id'=>$refId});
+#    my $refId = $reference->getId();
+#    my $naSequenceRef = 
+#      GUS::Model::DoTS::NASequenceRef->new({'reference_id'=>$refId});
 
-    $naSequence->addChild($naSequenceRef);
-  }
+#    $naSequence->addChild($naSequenceRef);
+#  }
 }
 
 sub addComments {
