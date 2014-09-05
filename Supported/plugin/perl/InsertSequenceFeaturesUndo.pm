@@ -35,8 +35,6 @@ NOTES
 
   my $tablesAffected =
   [
-   ['SRes.Reference', ''],
-   ['SRes.SequenceOntology', ''],
    ['DoTS.SequenceType', ''],
    ['DoTS.NASequence', ''],
    ['DoTS.ExternalNASequence', ''],
@@ -64,7 +62,6 @@ NOTES
   my $tablesDependedOn = 
   [
    ['SRes.TaxonName', ''],
-   ['SRes.SequenceOntology', ''],
    ['SRes.ExternalDatabase', ''],
    ['SRes.ExternalDatabaseRelease', ''],
   ];
