@@ -15,7 +15,6 @@ use GUS::Model::DoTS::MutualInformationScore;
 use GUS::Model::Core::DatabaseInfo;
 use GUS::Model::Core::TableInfo;
 
-use ApiCommonData::Load::Util;
 use GUS::Supported::Util;
 
 use FileHandle;
@@ -149,7 +148,7 @@ sub new {
   my $self    = {};
   bless($self,$class);
 
-  $self->initialize({requiredDbVersion => 3.6,
+  $self->initialize({requiredDbVersion => 4.0,
                      cvsRevision       => '$Revision$',
                      name              => ref($self),
                      argsDeclaration   => $argsDeclaration,
