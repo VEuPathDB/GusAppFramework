@@ -194,9 +194,9 @@ return $enzymeClass;
 ###### FETCH THE AA SEQUNCE ID FOR A GIVEN ALIAS ######
 
 sub getAASeqIds {
-  my ($self, $locusTag, $aaIdHash, $sth) = @_;
+  my ($self, $locusTag, $sth) = @_;
 
-  $sh->execute($locusTag);
+  $sth->execute($locusTag);
 
   while(my $aaSequenceId = $sth->fetchrow_array()) {
     push @{$self->{aa_sequence_ids}->{$locusTag}}, $aaSequenceId; 
