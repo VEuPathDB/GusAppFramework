@@ -235,11 +235,11 @@ sub getAASeqIdsFromGeneId {
     my $sql = "
 SELECT taf.aa_sequence_id
 FROM Dots.Transcript t, Dots.TranslatedAAFeature taf
-WHERE t.parent_id = '$geneFeatId'
+WHERE t.parent_id = ?
 AND taf.na_feature_id = t.na_feature_id
 ";
 
-    $sth = $prepare($sql);
+    $sth = $plugin->getQueryHandle()->prepare($sql);
     $plugin->{_aaSeqIdsFromGeneIdSth} = $sth;
   }
 
