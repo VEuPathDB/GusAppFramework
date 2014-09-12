@@ -153,7 +153,7 @@ sub run {
 
         next unless($enzymeClass);
 
-        foreach my $aaSeqId(@$aaseqIds) {
+        foreach my $aaSeqId(@$aaSeqIds) {
           my $newAASeqEnzClass =  GUS::Model::DoTS::AASequenceEnzymeClass->new({
             'aa_sequence_id' => $aaSeqId,
             'enzyme_class_id' => $enzymeClass,
