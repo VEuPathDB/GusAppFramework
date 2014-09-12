@@ -216,10 +216,8 @@ sub getAASeqIdFromFeatId {
 }
 
 
-# get an aa seq id from a source_id or source_id alias.
-# warning: this method issues a query each time it is called, ie, it is
-#          slow when used repeatedly.  should be rewritten to do a batch
-sub getAASeqIdFromGeneId {
+# get aa seq ids from a gene source_id or source_id alias.
+sub getAASeqIdsFromGeneId {
   my ($plugin, $geneSourceId, $geneExtDbRlsId, $optionalOrganismAbbrev) = @_;
   
   my $geneFeatId;
@@ -229,9 +227,10 @@ sub getAASeqIdFromGeneId {
        $geneFeatId = getGeneFeatureId($plugin, $geneSourceId, $geneExtDbRlsId);
   }
 
-
-
   return undef unless $geneFeatId;
+
+  my $sth = $plugin->{_aaSeqIdsFromGeneIdSth};
+  unless($sth) {
 
     my $sql = "
 SELECT taf.aa_sequence_id
@@ -239,11 +238,20 @@ FROM Dots.Transcript t, Dots.TranslatedAAFeature taf
 WHERE t.parent_id = '$geneFeatId'
 AND taf.na_feature_id = t.na_feature_id
 ";
-  my $stmt = $plugin->prepareAndExecute($sql);
-  my ($aaSeqId) = $stmt->fetchrow_array();
-  my ($tooMany) = $stmt->fetchrow_array();
-  $plugin->error("trying to map gene source id '$geneSourceId' to a single aa_sequence_id, but found more than one aa_sequence_id: ") if $tooMany;
-  return $aaSeqId;
+
+    $sth = $prepare($sql);
+    $plugin->{_aaSeqIdsFromGeneIdSth} = $sth;
+  }
+
+  $sth->execute($geneFeatId);
+
+  my @aaSeqIds;
+  while(my ($aaSeqId) = $sth->fetchrow_array()) {
+    push @aaSeqIds, $aaSeqId;
+  }
+  $sth->finish();
+
+  return \@aaSeqIds;
 }
 
 
