@@ -17,11 +17,10 @@ use GUS::Model::DoTS::EST;
 use GUS::Model::DoTS::Clone;
 use GUS::Model::DoTS::Library;
 use GUS::Model::DoTS::ExternalNASequence;
-use GUS::Model::SRes::SequenceOntology;
+use GUS::Model::SRes::OntologyTerm;
 use GUS::Model::DoTS::SequenceType;
 use GUS::Model::SRes::Taxon;
 use GUS::Model::SRes::TaxonName;
-use GUS::Model::SRes::Anatomy;
 use GUS::Model::SRes::Contact;
 use GUS::Model::SRes::ExternalDatabase;
 use GUS::Model::SRes::ExternalDatabaseRelease;
@@ -155,13 +154,13 @@ FAIL_CASES
 		constraintFunc => undef,
 		isList => 0
 	       }),
-     stringArg({name => 'soVer',
-		descr => 'version number used in sres.sequenceontology.so_version',
-		reqd => 0,
+     stringArg({name => 'SOExtDbRlsSpec',
+		descr => 'The extDbRlsName of the Sequence Ontology to use',
+		reqd => 1,
 		constraintFunc => undef,
 		isList => 0
 	       }),
-     stringArg({name => 'soExtDbRlsName',
+     stringArg({name => 'anatomyExtDbRlsSpec',
 		descr => 'The extDbRlsName of the Sequence Ontology to use',
 		reqd => 0,
 		constraintFunc => undef,
@@ -193,7 +192,7 @@ FAIL_CASES
 	       })
     ];
 
-  $self->initialize({requiredDbVersion => 3.6,
+  $self->initialize({requiredDbVersion => 4.0,
 		     cvsRevision => '$Revision$',	# cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
@@ -633,19 +632,13 @@ sub getSequenceOntologyId {
   my ($self) = @_;
 
   my $name = "EST";
+
+  my $extDbRlsSpec = $self->getArg('SOExtDbRlsSpec');
+  my $extDbRlsId = $self->getExtDbRlsId($extDbRlsSpec);
       
-  my $soVer = $self->getArg('soVer');
-  
-  unless ($soVer){
+  my $sequenceOntology = GUS::Model::SRes::OntologyTerm->new({"name" => $name, "EXTERNAL_DATABASE_RELEASE_ID" => $extDbRlsId});
 
-      my $soExtDbRlsName = $self->getArg('soExtDbRlsName');
-      $soExtDbRlsName or $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbRlsName or --soVer on the command line");
-      $soVer = $self->getExtDbRlsVerFromExtDbRlsName($soExtDbRlsName);
-  }
-
-  my $sequenceOntology = GUS::Model::SRes::SequenceOntology->new({"term_name" => $name, "so_version" => $soVer});
-
-  $sequenceOntology->retrieveFromDB() || $self->error ("Unable to obtain sequence_ontology_id from sres.sequenceontology with term_name = EST");
+  $sequenceOntology->retrieveFromDB() || $self->error ("Unable to obtain ontology_term_id from sres.ontologyterm with term_name = EST");
 
   my $sequence_ontology_id = $sequenceOntology->getId();
 
@@ -1198,7 +1191,14 @@ sub newLibrary {
   if ($self->{anat}->{$dbest_lib->{organ}}) {
     $l->setAnatomyId($self->{anat}->{$dbest_lib->{organ}});
   } else {
-    my $anat = GUS::Model::SRes::Anatomy->new({'name' => $dbest_lib->{organ}});
+
+    my $anat = GUS::Model::SRes::OntologyTerm->new({'name' => $dbest_lib->{organ}});
+    
+    if(my $anatomyExtDbRlsSpec = $self->getArg('anatomyExtDbRlsSpec')) {
+      my $anatomyExtDbRlsId = $self->getExtDbRlsId($anatomyExtDbRlsSpec); 
+      $anat->setExternalDatabaseReleaseId($anatomyExtDbRlsId);
+    }
+
     if ($anat->retrieveFromDB()){
       $self->{anat}->{$dbest_lib->{organ}} = $anat->getId();
       $l->setAnatomyId($anat->getId());
