@@ -763,15 +763,13 @@ sub populateEst {
     $est->setContactId($self->{contact}->{$e->{id_contact}});
   }else {
     # get from DB and cache
-    my $c = GUS::Model::SRes::Contact->new({
-      #       'source_id' => $e->{id_contact},
-     #        'external_database_release_id' => $self->{dbest_ext_db_rel_id} 
-                                           });
+    my $c = GUS::Model::SRes::Contact->new({ 'source_id' => $e->{id_contact},
+                                             'external_database_release_id' => $self->{dbest_ext_db_rel_id} });
     unless ($c->retrieveFromDB()) {
       $self->newContact($e,$c,$estDbh);
     }
     # Add to cache
-    $self->{contact}->{$c->getName()} = $c->getId();
+    $self->{contact}->{$c->getSourceId()} = $c->getId();
     # Set the parent-child relationship
     $est->setParent($c);
   }
@@ -1247,7 +1245,8 @@ sub newContact {
 
   $C->{lab} = $C->{lab} ? "$C->{lab}; $C->{institution}":"$C->{institution}";
 
-  my %atthash = ('name' => 'name',
+  my %atthash = ('id_contact' => 'source_id',
+                 'name' => 'last',
                  'lab' => 'address1',
                  'address' => 'address2',
                  'email' => 'email',
