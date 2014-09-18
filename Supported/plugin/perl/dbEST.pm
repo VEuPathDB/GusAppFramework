@@ -1045,9 +1045,9 @@ sub setTableCaches {
   }
   
   # Contact info, get entries only from dbEST
-  $q = qq[select contact_id, name
+  $q = qq[select contact_id, source_id
           from sres.contact
-          where name is not null
+          where source_id is not null
           ];
 
   $A = $self->sql_get_as_array_refs($q);
