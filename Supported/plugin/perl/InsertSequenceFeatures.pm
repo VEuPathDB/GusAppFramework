@@ -17,7 +17,7 @@ package GUS::Supported::Plugin::InsertSequenceFeatures;
   # GUS4_STATUS | Simple Rename                  | auto   | absent
   # GUS4_STATUS | ApiDB Tuning Gene              | auto   | absent
   # GUS4_STATUS | Rethink                        | auto   | absent
-  # GUS4_STATUS | dots.gene                      | manual | unreviewed
+  # GUS4_STATUS | dots.gene                      | manual | reviewed
 #^^^^^^^^^^^^^^^^^^^^^^^^^ End GUS4_STATUS ^^^^^^^^^^^^^^^^^^^^
 
 # todo:
@@ -232,8 +232,15 @@ my $argsDeclaration  =
 	      isList => 0,
 	     }),
 
-   stringArg({name => 'soExtDbRlsName',
-	      descr => 'The extDbRlsName of Sequence Ontology',
+   stringArg({name => 'soExtDbName',
+	      descr => 'The extDbName for Sequence Ontology',
+	      constraintFunc=> undef,
+	      reqd  => 0,
+	      isList => 0,
+	     }),
+
+   stringArg({name => 'soExtDbSpec',
+	      descr => 'The extDbSpec for Sequence Ontology (name|version format)',
 	      constraintFunc=> undef,
 	      reqd  => 0,
 	      isList => 0,
@@ -1386,9 +1393,11 @@ sub getSOPrimaryKey {
 
   if (!$self->{soPrimaryKeys}) {
 
-    my $soExtDbName = $self->getArg('soExtDbRlsName');
+    my $soExtDbName;
+    $soExtDbName = $self->getArg($self->getArg('soExtDbName')) if ($self->getArg('soExtDbName'));
+    ($soExtDbName) = split (/\|/, $self->getArg('soExtDbSpec') ) if ($self->getArg('soExtDbSpec'));
     if (!$soExtDbName) {
-      $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbRlsName on the command line");
+      $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbName or --soExtDbSpec (name|version) on the command line");
     }
     my $soExtDbRlsId = $self->getExtDbRlsIdFromExtDbName($soExtDbName);
 
