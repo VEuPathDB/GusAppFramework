@@ -264,6 +264,13 @@ sub getTaxonName {
 
 }
 
+sub undoTables {
+  my ($self) = @_;
+
+  return ('SRes.TaxonName','SRes.Taxon');
+}
+
+
 1;
 
 
