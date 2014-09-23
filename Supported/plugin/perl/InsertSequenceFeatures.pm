@@ -232,13 +232,6 @@ my $argsDeclaration  =
 	      isList => 0,
 	     }),
 
-   stringArg({name => 'soCvsVersion',
-	      descr => 'The CVS version of the Sequence Ontology to use',
-	      constraintFunc=> undef,
-	      reqd  => 0,
-	      isList => 0,
-	     }),
-
    stringArg({name => 'soExtDbRlsName',
 	      descr => 'The extDbRlsName of Sequence Ontology',
 	      constraintFunc=> undef,
