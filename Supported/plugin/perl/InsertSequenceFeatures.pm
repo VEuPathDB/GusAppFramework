@@ -1394,7 +1394,7 @@ sub getSOPrimaryKey {
   if (!$self->{soPrimaryKeys}) {
 
     my $soExtDbName;
-    $soExtDbName = $self->getArg($self->getArg('soExtDbName')) if ($self->getArg('soExtDbName'));
+    $soExtDbName = $self->getArg('soExtDbName') if ($self->getArg('soExtDbName'));
     ($soExtDbName) = split (/\|/, $self->getArg('soExtDbSpec') ) if ($self->getArg('soExtDbSpec'));
     if (!$soExtDbName) {
       $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbName or --soExtDbSpec (name|version) on the command line");
