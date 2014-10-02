@@ -239,6 +239,13 @@ my $argsDeclaration  =
 	      isList => 0,
 	     }),
 
+   stringArg({name => 'soExtDbVersion',
+	      descr => 'The extDbVersion for Sequence Ontology',
+	      constraintFunc=> undef,
+	      reqd  => 0,
+	      isList => 0,
+	     }),
+
    stringArg({name => 'soExtDbSpec',
 	      descr => 'The extDbSpec for Sequence Ontology (name|version format)',
 	      constraintFunc=> undef,
@@ -1393,13 +1400,23 @@ sub getSOPrimaryKey {
 
   if (!$self->{soPrimaryKeys}) {
 
-    my $soExtDbName;
-    $soExtDbName = $self->getArg('soExtDbName') if ($self->getArg('soExtDbName'));
-    ($soExtDbName) = split (/\|/, $self->getArg('soExtDbSpec') ) if ($self->getArg('soExtDbSpec'));
-    if (!$soExtDbName) {
-      $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbName or --soExtDbSpec (name|version) on the command line");
+    my ($soExtDbName, $soExtDbVersion);
+    if ($self->getArg('soExtDbSpec')) {
+      ($soExtDbName, $soExtDbVersion) = split (/\|/, $self->getArg('soExtDbSpec') );
+    } elsif ($self->getArg('soExtDbName') &&  $self->getArg('soExtDbVersion') ){
+      $soExtDbName = $self->getArg('soExtDbName');
+      $soExtDbVersion = $self->getArg('soExtDbVersion');
+    } else {
+      $self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbSpec (name|version) OR --soExtDbName (and --soExtDbVersion) on the command line");
     }
-    my $soExtDbRlsId = $self->getExtDbRlsIdFromExtDbName($soExtDbName);
+    my $soExtDbRlsId= $self->getExtDbRlsId($soExtDbName, $soExtDbVersion);
+
+    #$soExtDbName = $self->getArg('soExtDbName') if ($self->getArg('soExtDbName'));
+    #($soExtDbName) = split (/\|/, $self->getArg('soExtDbSpec') ) if ($self->getArg('soExtDbSpec'));
+    #if (!$soExtDbName) {
+      #$self->userError("You are using Sequence Ontology terms but have not provided a --soExtDbSpec (name|version) OR --soExtDbName (and --soExtDbVersion) on the command line");
+    #}
+    #my $soExtDbRlsId = $self->getExtDbRlsIdFromExtDbName($soExtDbName);
 
     my $dbh = $self->getQueryHandle();
     my $sql = "
