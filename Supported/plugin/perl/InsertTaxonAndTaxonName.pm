@@ -133,7 +133,7 @@ sub new {
   my $argsDeclaration = &getArgumentsDeclaration();
 
   $self->initialize({requiredDbVersion => 3.6,
-		     cvsRevision => '$Revision: 11272 $', # cvs fills this in!
+		     cvsRevision => '$Revision: 14716 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
 		     documentation     => $documentation
@@ -263,6 +263,13 @@ sub getTaxonName {
   return $taxonName;
 
 }
+
+sub undoTables {
+  my ($self) = @_;
+
+  return ('SRes.TaxonName','SRes.Taxon');
+}
+
 
 1;
 
