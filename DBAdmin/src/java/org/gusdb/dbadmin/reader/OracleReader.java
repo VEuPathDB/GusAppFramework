@@ -56,7 +56,6 @@ public class OracleReader extends SchemaReader {
 
     private Connection                    connection;
     private String                        CORE;
-    private ArrayList<HousekeepingColumn> housekeepingColumns = new ArrayList<HousekeepingColumn>( );
     private ArrayList<Index>              generatedIndexes    = new ArrayList<Index>( );
     private ArrayList<GusTable>           versionedTables     = new ArrayList<GusTable>( );
 
@@ -85,6 +84,7 @@ public class OracleReader extends SchemaReader {
      * @param db DOCUMENT ME!
      * @return DOCUMENT ME!
      */
+    @Override
     protected Database readDatabase( Database db ) {
         log.info( "Reading database: " + db.getName( ) );
         addSchemas( db );
@@ -94,8 +94,8 @@ public class OracleReader extends SchemaReader {
         populate( db );
         log.info( "Adding Versioning: " + db.getName( ) );
 
-        for ( Iterator i = versionedTables.iterator( ); i.hasNext( ); ) {
-            ((GusTable) i.next( )).setVersioned( true );
+        for ( Iterator<GusTable> i = versionedTables.iterator( ); i.hasNext( ); ) {
+            i.next( ).setVersioned( true );
         }
 
         return db;
@@ -124,7 +124,7 @@ public class OracleReader extends SchemaReader {
         }
 
         for ( GusSchema schema : db.getGusSchemas( ) ) {
-            addTables( (GusSchema) schema );
+            addTables( schema );
         }
     }
 
@@ -179,9 +179,9 @@ public class OracleReader extends SchemaReader {
 
         }
 
-        for ( Iterator i = schema.getTables( ).iterator( ); i.hasNext( ); ) {
+        for ( Iterator<GusTable> i = schema.getTables( ).iterator( ); i.hasNext( ); ) {
 
-            GusTable table = (GusTable) i.next( );
+            GusTable table = i.next( );
 
             if ( table.getClass( ) == GusTable.class ) {
                 addColumns( table );
@@ -246,8 +246,8 @@ public class OracleReader extends SchemaReader {
 
         if ( !table.getSubclasses( ).isEmpty( ) ) {
 
-            for ( Iterator i = table.getSubclasses( ).iterator( ); i.hasNext( ); ) {
-                addColumns( (GusTable) i.next( ), true );
+            for ( Iterator<GusTable> i = table.getSubclasses( ).iterator( ); i.hasNext( ); ) {
+                addColumns( i.next( ), true );
             }
         }
     }
@@ -286,7 +286,7 @@ public class OracleReader extends SchemaReader {
                     continue;
                 }
 
-                if ( isSubclass( table ) && isSuperclassColumn( rs.getString( "column_name" ), (GusTable) table ) )
+                if ( isSubclass( table ) && isSuperclassColumn( rs.getString( "column_name" ), table ) )
 
                 continue;
 
@@ -418,7 +418,7 @@ public class OracleReader extends SchemaReader {
             st = connection.createStatement( );
             String table_name = constraint.getConstrainedTable( ).getName( );
 
-            if ( isSuperclass( (GusTable) constraint.getConstrainedTable( ) ) ) {
+            if ( isSuperclass( constraint.getConstrainedTable( ) ) ) {
                 table_name += "IMP";
             }
 
@@ -473,7 +473,7 @@ public class OracleReader extends SchemaReader {
     private void addIndexes( Database db ) {
         log.debug( "adding indexes to database " + db.getName( ) );
         for ( GusSchema schema : db.getGusSchemas() ) {
-             addIndexes( (GusSchema) schema );
+             addIndexes( schema );
         }
     }
 
@@ -604,7 +604,7 @@ public class OracleReader extends SchemaReader {
     private void addRemoteConstraints( Database db ) {
         for ( GusSchema schema : db.getGusSchemas() ) {
             for ( GusTable table : schema.getTables() ) {
-                addRemoteConstraints( (GusTable) table );
+                addRemoteConstraints( table );
             }
         }
     }
@@ -659,7 +659,7 @@ public class OracleReader extends SchemaReader {
                         .getConstraint( rs.getString( "r_constraint_name" ) );
                 ArrayList<Column> r_columns = r_constraint.getConstrainedColumns( );
 
-                for ( Iterator i = r_columns.iterator( ); i.hasNext( ); ) {
+                for ( Iterator<Column> i = r_columns.iterator( ); i.hasNext( ); ) {
 
                     GusColumn col = (GusColumn) i.next( );
                     cons.addReferencedColumn( col );
@@ -694,7 +694,7 @@ public class OracleReader extends SchemaReader {
      */
     private void populate( Database db ) {
         for ( GusSchema schema : db.getGusSchemas() ) {
-            populate( (GusSchema) schema );
+            populate( schema );
         }
     }
 
@@ -741,8 +741,8 @@ public class OracleReader extends SchemaReader {
             catch ( SQLException ignored ) {}
         }
 
-        for ( Iterator i = schema.getTables( ).iterator( ); i.hasNext( ); ) {
-            populate( (GusTable) i.next( ) );
+        for ( Iterator<GusTable> i = schema.getTables( ).iterator( ); i.hasNext( ); ) {
+            populate( i.next( ) );
         }
     }
 
@@ -857,9 +857,9 @@ public class OracleReader extends SchemaReader {
      */
     private GusTable getTableFromSchemaConstraint( GusSchema schema, String consName ) {
 
-        for ( Iterator i = schema.getTables( ).iterator( ); i.hasNext( ); ) {
+        for ( Iterator<GusTable> i = schema.getTables( ).iterator( ); i.hasNext( ); ) {
 
-            GusTable table = (GusTable) i.next( );
+            GusTable table = i.next( );
 
             if ( table.getConstraint( consName ) != null ) {
 
@@ -1018,7 +1018,7 @@ public class OracleReader extends SchemaReader {
      * @return DOCUMENT ME!
      */
     private boolean isSuperclassColumn( String name, GusTable subclass ) {
-        GusTable superclass = (GusTable) subclass.getSuperclass( );
+        GusTable superclass = subclass.getSuperclass( );
         for ( Column col : superclass.getColumnsExcludeSuperclass(false)) {
             if ( col.getName( ).compareToIgnoreCase( name ) == 0 )
             return true;
@@ -1110,6 +1110,7 @@ public class OracleReader extends SchemaReader {
      * 
      * @throws RuntimeException DOCUMENT ME!
      */
+    @Override
     protected void setUp( ) {
 
         try {
@@ -1148,6 +1149,7 @@ public class OracleReader extends SchemaReader {
     /**
      * DOCUMENT ME!
      */
+    @Override
     protected void tearDown( ) {
 
         try {

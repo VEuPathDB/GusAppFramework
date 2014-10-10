@@ -1,10 +1,12 @@
 package org.gusdb.objrelj;
 
-import java.util.*;
-import java.lang.*;
-import java.io.*;
-import java.sql.*;
-import java.math.*;
+import java.math.BigDecimal;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.SQLException;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
 import java.util.logging.Logger;
 
 /**
@@ -27,6 +29,8 @@ import java.util.logging.Logger;
  * @version $Revision$ $Date$ $Author$ 
  */
 public abstract class GUSRow implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     // ------------------------------------------------------------------
     // Static variables
@@ -129,7 +133,7 @@ public abstract class GUSRow implements java.io.Serializable {
     /**
      * Constructor
      */
-    public GUSRow(){};
+    public GUSRow(){}
 
 
     public GUSRow(ServerI server, String sessionId) {
@@ -363,8 +367,7 @@ public abstract class GUSRow implements java.io.Serializable {
 	}
     }
     
-    protected GUSRow getParent(String parentAtt, boolean retrieveFromDb)
-	throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException{
+    protected GUSRow getParent(String parentAtt, boolean retrieveFromDb) {
 	GUSRow parent = null;
 	GUSRowAttribute parentGrAtt = (GUSRowAttribute)attributeValues.get(parentAtt);
 	
@@ -394,7 +397,7 @@ public abstract class GUSRow implements java.io.Serializable {
 	    if (parentPk != null){
 		GUSRowAttribute gusRowAttribute = (GUSRowAttribute)attributeValues.get(parentAtt);
 		if (gusRowAttribute == null){  //don't overwrite existing parent
-		    parent = (GUSRow)server.retrieveGUSRow(sessionId, parentTable, parentPk.longValue(), false);
+		    parent = server.retrieveGUSRow(sessionId, parentTable, parentPk.longValue(), false);
 		    parent.addChild(this, parentAtt);
 		}
 	    }
@@ -433,7 +436,7 @@ public abstract class GUSRow implements java.io.Serializable {
     protected void removeFromParents(){
 
 	Enumeration allAttributes = attributeValues.keys();
-	SubmitResult parentSubmits = null;
+	//SubmitResult parentSubmits = null;
 	while (allAttributes.hasMoreElements()){
 	    String nextAtt = (String)allAttributes.nextElement();
 	    GUSRowAttribute gra = (GUSRowAttribute)attributeValues.get(nextAtt);
@@ -488,7 +491,7 @@ public abstract class GUSRow implements java.io.Serializable {
     }
     
     protected Vector getChildren(String childAtt, GUSTable childTable, String childFkToMe, boolean localOnly)
-	throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException{
+	throws GUSNoConnectionException {
 	Vector theseChildren = null;
 	if (localOnly == true){
 	    theseChildren = (Vector)children.get(childAtt);
@@ -638,8 +641,7 @@ public abstract class GUSRow implements java.io.Serializable {
      * @param key   The name of the attribute to be changed.
      * @param val   The new value for the attribute named by <code>key</code>.
      */
-    protected void set_Attribute( String key, Object val )
-    	throws ClassNotFoundException, InstantiationException, IllegalAccessException, SQLException { 
+    protected void set_Attribute( String key, Object val ) { 
 	
 	if (! (val instanceof GUSRow)){
 	    //attTypeCheck(key, val);
@@ -773,7 +775,7 @@ public abstract class GUSRow implements java.io.Serializable {
         {
 	    int localStart = (int)(start - cacheStart);
 	    int localEnd = (int)(end - cacheStart);
-	    int requestLen = (int)(localEnd - localStart + 1);
+	    int requestLen = localEnd - localStart + 1;
 	    int ind = 0;
 
 	    char[] result = new char[requestLen];
@@ -814,7 +816,7 @@ public abstract class GUSRow implements java.io.Serializable {
         {
 	    int localStart = (int)(start - cacheStart);
 	    int localEnd = (int)(end - cacheStart);
-	    int requestLen = (int)(localEnd - localStart + 1);
+	    int requestLen = localEnd - localStart + 1;
 	    int ind = 0;
 
 	    byte[] result = new byte[requestLen];
@@ -1020,10 +1022,9 @@ public abstract class GUSRow implements java.io.Serializable {
      * @param att    The name of one of this row's attributes.
      * @param o      A value of the type appropriate for storing in the attribute <code>att</code>.
      */
-    protected void checkLength (String att, Object o) 
-	throws ClassNotFoundException, InstantiationException, IllegalAccessException, SQLException
-    {
-	GUSTable table = this.getTable();
+    protected void checkLength (String att, Object o) throws SQLException {
+
+    GUSTable table = this.getTable();
 	GUSTableAttribute attInfo = table.getAttributeInfo(att);
 
 	if (o instanceof String){
@@ -1141,6 +1142,7 @@ public abstract class GUSRow implements java.io.Serializable {
     // java.lang.Object
     // ------------------------------------------------------------------
 
+    @Override
     public String toString() {
 	GUSTable table = this.getTable();
 	long id = getPrimaryKeyValue();

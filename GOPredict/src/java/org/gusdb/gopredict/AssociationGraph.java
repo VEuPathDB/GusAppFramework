@@ -26,9 +26,9 @@
  */
 package org.gusdb.gopredict;
 
-import java.io.*;
-import java.util.*;
-import org.gusdb.gopredict.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
 
 
 public class AssociationGraph  {
@@ -48,14 +48,14 @@ public class AssociationGraph  {
      * The Hashtable that tracks all Associations; keyed on the GO Ids (i.e. GO:XXXXXX) 
      * of the Go Term of each Association
      */
-    private Hashtable associationHash;
+    private Hashtable<String, Association> associationHash;
     
     /**
      * Hashtable that tracks Associations that have been added in the graftAssociation
      * method to prevent a duplicate Association being added when there are multiple
      * paths to that Association from a descendant.
      */
-    private Hashtable alreadyAdded;
+    private Hashtable<Association, String> alreadyAdded;
      
     
     // ------------------------------------------------------------------
@@ -77,18 +77,18 @@ public class AssociationGraph  {
      * Constructor; given a list of Associations, return a complete AssociationGraph 
      * containing all Associations and all Associations on all paths to the root
      */
-    public AssociationGraph(Vector assocList, GoGraph goGraph){
+    public AssociationGraph(Vector<Association> assocList, GoGraph goGraph){
 	init();
 	if (assocList.size() > 0){
-	    Association firstAssoc = (Association)assocList.get(0);
+	    Association firstAssoc = assocList.get(0);
 	    
 	    //create initial AssociationGraph with the first association
 	    growBasicGraph(firstAssoc);
 	    setRoot(goGraph);  
 	    //one difference from perl version; perl uses other constructor which sets root implicitly
-	    Vector remainingAssociations = new Vector();
+	    Vector<Association> remainingAssociations = new Vector<>();
 	    for (int i = 1; i < assocList.size(); i++){
-		remainingAssociations.add((Association)assocList.get(i));
+		remainingAssociations.add(assocList.get(i));
 	    }
 	    //add the rest with addAssociations method
 	    addAssociations(remainingAssociations, goGraph);
@@ -102,10 +102,9 @@ public class AssociationGraph  {
     /**
      * Returns all Associations in this AssociationGraph as a Enumeration.
      */
-    public Enumeration getAsList(){
+    public Enumeration<Association> getAsList(){
 	
-	Enumeration assocEnum = associationHash.elements();
-	return assocEnum;
+	return associationHash.elements();
     }
 
     /**
@@ -113,9 +112,9 @@ public class AssociationGraph  {
      */
     public void deprecateAllPredictedInstances(){
 
-	Enumeration assocEnum = getAsList();
+	Enumeration<Association> assocEnum = getAsList();
 	while (assocEnum.hasMoreElements()){
-	    Association nextAssoc = (Association)assocEnum.nextElement();
+	    Association nextAssoc = assocEnum.nextElement();
 	    nextAssoc.deprecatePredictedInstances();
 	}
     }
@@ -126,9 +125,9 @@ public class AssociationGraph  {
      */
     public void deprecateAssociations(){
 
-	Enumeration assocEnum = getAsList();
+	Enumeration<Association> assocEnum = getAsList();
 	while (assocEnum.hasMoreElements()){
-	    Association nextAssoc = (Association)assocEnum.nextElement();
+	    Association nextAssoc = assocEnum.nextElement();
 	    nextAssoc.deprecateIfInstancesDeprecated();
 	}
     }
@@ -145,9 +144,9 @@ public class AssociationGraph  {
      */
     public void adjustIsNots(){
 	rootAssoc.initializeOnIsPath();
-	Enumeration assocEnum = getAsList();
+	Enumeration<Association> assocEnum = getAsList();
 	while (assocEnum.hasMoreElements()){
-	    Association nextAssoc = (Association)assocEnum.nextElement();
+	    Association nextAssoc = assocEnum.nextElement();
 	    nextAssoc.setIsNotFromIsPath();
 	}
     }
@@ -176,14 +175,14 @@ public class AssociationGraph  {
      */
     public void cachePrimaryInstances(){
 	
-	Enumeration assocEnum = getAsList();
+	Enumeration<Association> assocEnum = getAsList();
 	while (assocEnum.hasMoreElements()){
-	    Association nextAssoc = (Association)assocEnum.nextElement();
+	    Association nextAssoc = assocEnum.nextElement();
 	    if (nextAssoc.getIsPrimary()){ //ignoring obsolete for now
-		Vector instanceList = new Vector();
-		Vector assocInstances = nextAssoc.getInstances();
+		Vector<Instance> instanceList = new Vector<>();
+		Vector<Instance> assocInstances = nextAssoc.getInstances();
 		for (int i = 0; i < assocInstances.size(); i++){
-		    Instance nextInstance = (Instance)assocInstances.get(i);
+		    Instance nextInstance = assocInstances.get(i);
 		    //put instance on the list to cache if it is acceptable
 		    if (nextInstance.getIsPrimary() &&
 			nextInstance.getIsDeprecated() == false &&
@@ -196,18 +195,18 @@ public class AssociationGraph  {
 		    }
 		}
 		//initialize hashtable of instances to cache
-		Hashtable instanceInfoHash = new Hashtable();
+		Hashtable<String,Vector<Instance>> instanceInfoHash = new Hashtable<>();
 		instanceInfoHash.put(nextAssoc.getGoTerm().getRealId(), instanceList);
-		Vector parents = nextAssoc.getParents();
+		Vector<Association> parents = nextAssoc.getParents();
 		for (int j = 0; j < parents.size(); j++){
-		    Association parent = (Association)parents.get(j);
+		    Association parent = parents.get(j);
 		    parent.propogateInstances(instanceInfoHash);
 		}
 	    }
 	}
-	Enumeration assocEnumCache = getAsList();
+	Enumeration<Association> assocEnumCache = getAsList();
 	while (assocEnumCache.hasMoreElements()){
-	    Association nextAssoc = (Association)assocEnumCache.nextElement();
+	    Association nextAssoc = assocEnumCache.nextElement();
 	    //actually do the caching given the priming above
 	    nextAssoc.cacheDescendantInstances();
 	}
@@ -221,18 +220,19 @@ public class AssociationGraph  {
 	return rootAssoc;
     }
     
+    @Override
     public String toString(){
 	
 	return "AssociationGraph: " + rootAssoc.toString("\t");
     }
 
-    public void addGoTerms(Vector addedGoIds, GoGraph goGraph) throws IllegalHierarchyException{
+    public void addGoTerms(Vector<Integer> addedGoIds, GoGraph goGraph) throws IllegalHierarchyException{
 	
-	Vector newAssociations = new Vector();
+	Vector<Association> newAssociations = new Vector<>();
 	
 	for (int i = 0; i < addedGoIds.size(); i++){
 	    
-	    Integer goTermId = (Integer)addedGoIds.elementAt(i);
+	    Integer goTermId = addedGoIds.elementAt(i);
 
 	    GoTerm goTerm = goGraph.getGoTermFromGusGoId(goTermId.intValue());
 	    Association assoc = makeManuallyAddedAssoc(goTerm);
@@ -240,12 +240,12 @@ public class AssociationGraph  {
 	    newAssociations.add(assoc);
 	}
 	if (rootAssoc == null){  //AssociationGraph currently has no entries in it; create a new one
-	    growBasicGraph((Association)newAssociations.get(0));
+	    growBasicGraph(newAssociations.get(0));
 	    setRoot(goGraph);
 	    if (newAssociations.size() > 1){
-		Vector remainingAssociations = new Vector();
+		Vector<Association> remainingAssociations = new Vector<>();
 		for (int i = 1; i < newAssociations.size(); i++){
-		    remainingAssociations.add((Association)newAssociations.get(i));
+		    remainingAssociations.add(newAssociations.get(i));
 		}
 		//add the rest with addAssociations method
 		addAssociations(remainingAssociations, goGraph);
@@ -255,7 +255,7 @@ public class AssociationGraph  {
 	    addAssociations(newAssociations, goGraph);
 	}
 	for (int i = 0; i < newAssociations.size(); i++){
-	    Association nextNewAssociation = (Association)newAssociations.elementAt(i);
+	    Association nextNewAssociation = newAssociations.elementAt(i);
 	    nextNewAssociation.propogateVerifiedUp(nextNewAssociation.getGoTerm().getRealId());
 	}
     }
@@ -272,18 +272,18 @@ public class AssociationGraph  {
      * rule evidence from rejected descendant Associations that indicates the rule was good but 
      * too specific.
      */
-    public void verifyGoAssociations(Vector verifiedAssocEvidenceSets, GoGraph goGraph) throws IllegalHierarchyException{
+    public void verifyGoAssociations(Vector<AssocEvidenceSet> verifiedAssocEvidenceSets, GoGraph goGraph) throws IllegalHierarchyException{
 
 	for (int i = 0; i < verifiedAssocEvidenceSets.size(); i++){
 	    
-	    AssocEvidenceSet nextAssocEvidenceSet = (AssocEvidenceSet)verifiedAssocEvidenceSets.elementAt(i);
+	    AssocEvidenceSet nextAssocEvidenceSet = verifiedAssocEvidenceSets.elementAt(i);
 	    String realGoId = goGraph.getGoTermFromGusGoId(nextAssocEvidenceSet.getModifiedGoTermId()).getRealId();
 	    Association verifiedAssoc = find(realGoId);
 	    verifiedAssoc.setReviewStatusId(Association.REVIEWED_ID);
 	    verifiedAssoc.setIsNot(false);
-	    Vector evidenceSetInstances = nextAssocEvidenceSet.getInstances();
+	    Vector<Instance> evidenceSetInstances = nextAssocEvidenceSet.getInstances();
 	    for (int j = 0; j < evidenceSetInstances.size(); j++){
-		Instance nextInstance = (Instance)evidenceSetInstances.elementAt(j);
+		Instance nextInstance = evidenceSetInstances.elementAt(j);
 		verifiedAssoc.addInstance(nextInstance);
 	    }
 	}
@@ -302,17 +302,17 @@ public class AssociationGraph  {
      * If being run in conjunction with <code>verifyGoAssociations</code>, this method should
      * be run after the verification (see notes in that method for details.)
      */
-    public void rejectGoAssociations(Vector rejectedAssocEvidenceSets, GoGraph goGraph) throws IllegalHierarchyException{
+    public void rejectGoAssociations(Vector<AssocEvidenceSet> rejectedAssocEvidenceSets, GoGraph goGraph) throws IllegalHierarchyException{
 	
 	for (int i = 0; i < rejectedAssocEvidenceSets.size(); i++){
-	    AssocEvidenceSet nextAssocEvidenceSet = (AssocEvidenceSet)rejectedAssocEvidenceSets.elementAt(i);
+	    AssocEvidenceSet nextAssocEvidenceSet = rejectedAssocEvidenceSets.elementAt(i);
 	    String realGoId = goGraph.getGoTermFromGusGoId(nextAssocEvidenceSet.getModifiedGoTermId()).getRealId();
 	    Association rejectedAssoc = find(realGoId);
 	    rejectedAssoc.setReviewStatusId(Association.REVIEWED_ID);
 	    rejectedAssoc.setIsNot(true);
-	    Vector evidenceSetInstances = nextAssocEvidenceSet.getInstances();
+	    Vector<Instance> evidenceSetInstances = nextAssocEvidenceSet.getInstances();
 	    for (int j = 0; j < evidenceSetInstances.size(); j++){
-		Instance nextInstance = (Instance)evidenceSetInstances.elementAt(j);
+		Instance nextInstance = evidenceSetInstances.elementAt(j);
 		rejectedAssoc.addInstance(nextInstance);
 	    }
 	}
@@ -354,10 +354,10 @@ public class AssociationGraph  {
 	setAssocByRealGoId(assoc);
 	
 	GoTerm goTerm = assoc.getGoTerm();
-	Vector goParents = goTerm.getParents();
+	Vector<GoTerm> goParents = goTerm.getParents();
 	for (int i = 0; i < goParents.size(); i++){
 	    
-	    GoTerm currentGoParent = (GoTerm)goParents.get(i);
+	    GoTerm currentGoParent = goParents.get(i);
 	    //make sure this parent has not already been added to the AssociationGraph
 	    Association parent = find(currentGoParent.getRealId());
 	    if (parent == null){
@@ -408,7 +408,7 @@ public class AssociationGraph  {
      */
     private Association find(String realGoId){
 	
-	Association assoc = (Association)associationHash.get(realGoId);
+	Association assoc = associationHash.get(realGoId);
 	return assoc;
     }
 
@@ -416,20 +416,21 @@ public class AssociationGraph  {
      * Simple method to initialize instance objects.
      */
     private void init(){
-	alreadyAdded = new Hashtable();
-	associationHash = new Hashtable();
+	alreadyAdded = new Hashtable<>();
+	associationHash = new Hashtable<>();
     }
     
     /**
      * Given a list of Associations, add them to this AssociationGraph.
      */
-    private void addAssociations(Vector assocList, GoGraph goGraph){
+    private void addAssociations(Vector<Association> assocList, GoGraph goGraph){
 	
 	Association nextAssoc;
 	for(int i = 0; i < assocList.size(); i++){
-	    nextAssoc = (Association)assocList.get(i);
+	    nextAssoc = assocList.get(i);
 	    //create separate AssociationGraph with the next Association and graft it 
 	    //to this AssociationGraph.
+	    @SuppressWarnings("unused")
 	    AssociationGraph tempAssocGraph = new AssociationGraph(nextAssoc, goGraph);
 	    graftAssociation(nextAssoc, null);
 	    //not worrying about memory leaks with temporary Association Graphs, for now
@@ -442,11 +443,11 @@ public class AssociationGraph  {
      * the evidence used to verify the Association to its ancestors. Throws an 
      * Exception if a rejected Association is encountered on the path to the root.
      */
-    private void propogateVerifiedEvidenceUp(Vector verifiedAssocEvidenceSets, GoGraph goGraph) 
+    private void propogateVerifiedEvidenceUp(Vector<AssocEvidenceSet> verifiedAssocEvidenceSets, GoGraph goGraph) 
 	throws IllegalHierarchyException{
 
 	for (int i = 0; i < verifiedAssocEvidenceSets.size(); i++){
-	    AssocEvidenceSet nextAssocEvidenceSet = (AssocEvidenceSet)verifiedAssocEvidenceSets.elementAt(i);
+	    AssocEvidenceSet nextAssocEvidenceSet = verifiedAssocEvidenceSets.elementAt(i);
 	    String realGoId = goGraph.getGoTermFromGusGoId(nextAssocEvidenceSet.getModifiedGoTermId()).getRealId();
 	    Association verifiedAssoc = find(realGoId);
 
@@ -471,11 +472,11 @@ public class AssociationGraph  {
      *                                  that are verified.
      */
     //dtb--not sure if will ever be setting ignoreVerifiedDescendants, but keep it for now.
-    private void propogateRejectedEvidenceDown(Vector rejectedAssocEvidenceSets, 
+    private void propogateRejectedEvidenceDown(Vector<AssocEvidenceSet> rejectedAssocEvidenceSets, 
 					       boolean ignoreVerifiedDescendants,
 					       GoGraph goGraph) throws IllegalHierarchyException{
 	for (int i = 0; i < rejectedAssocEvidenceSets.size(); i++){
-	    AssocEvidenceSet nextAssocEvidenceSet = (AssocEvidenceSet)rejectedAssocEvidenceSets.elementAt(i);
+	    AssocEvidenceSet nextAssocEvidenceSet = rejectedAssocEvidenceSets.elementAt(i);
 	    String realGoId = goGraph.getGoTermFromGusGoId(nextAssocEvidenceSet.getModifiedGoTermId()).getRealId();
 	    Association rejectedAssoc = find(realGoId);
 	    rejectedAssoc.propogateIsNotDown(ignoreVerifiedDescendants, realGoId);
@@ -488,10 +489,10 @@ public class AssociationGraph  {
      * Given a list of rejected associations and their evidence, propogate the evidence up to the
      * first verified ancestor Association (or multiple Associations when the path splits.)
      */
-    private void propogateRejectedEvidenceUp(Vector rejectedAssocEvidenceSets, GoGraph goGraph){
+    private void propogateRejectedEvidenceUp(Vector<AssocEvidenceSet> rejectedAssocEvidenceSets, GoGraph goGraph){
 
 	for (int i = 0; i < rejectedAssocEvidenceSets.size(); i++){
-	    AssocEvidenceSet nextAssocEvidenceSet = (AssocEvidenceSet)rejectedAssocEvidenceSets.elementAt(i);
+	    AssocEvidenceSet nextAssocEvidenceSet = rejectedAssocEvidenceSets.elementAt(i);
 	    String realGoId = goGraph.getGoTermFromGusGoId(nextAssocEvidenceSet.getModifiedGoTermId()).getRealId();
 	    Association rejectedAssoc = find(realGoId);
 	    rejectedAssoc.propogateRejectedInstancesUp(nextAssocEvidenceSet);
@@ -501,9 +502,9 @@ public class AssociationGraph  {
 
     private void cacheAllPropogatedInstances(){
 
-	Enumeration assocList = getAsList();
+	Enumeration<Association> assocList = getAsList();
 	while (assocList.hasMoreElements()){
-	    Association nextAssoc = (Association)assocList.nextElement();
+	    Association nextAssoc = assocList.nextElement();
 	    nextAssoc.addPropogatedInstances();
 	}
     }
@@ -540,9 +541,9 @@ public class AssociationGraph  {
 	    //assoc is in there but with incorrect state; it exists only by virtue
 	    //of a descendant association
 	    
-	    Vector instances = assoc.getInstances();
+	    Vector<Instance> instances = assoc.getInstances();
 	    for (int i = 0; i < instances.size(); i++){
-		prevAssoc.addInstance((Instance)instances.get(i));
+		prevAssoc.addInstance(instances.get(i));
 	    }
 	    if (assoc.getObject() != null){
 		prevAssoc.absorbStateFromAssociation(assoc);
@@ -552,10 +553,10 @@ public class AssociationGraph  {
 	    setAssocByRealGoId(assoc);
 	    needsLink = assoc;
 	}
-	Vector parents = assoc.getParents();
+	Vector<Association> parents = assoc.getParents();
 	//do the same for all parents; pass current assoc if a relationship needs to be created
 	for (int i = 0; i < parents.size(); i ++){
-	    graftAssociation((Association)parents.get(i), needsLink);
+	    graftAssociation(parents.get(i), needsLink);
 	}
     }
 

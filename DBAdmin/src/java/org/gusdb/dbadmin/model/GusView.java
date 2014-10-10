@@ -48,6 +48,7 @@ public class GusView extends View {
         return this.versionView;
     }
 
+    @Override
     public GusTable getTable() {
         return (GusTable) super.getTable();
     }
@@ -80,6 +81,7 @@ public class GusView extends View {
         }
     }
 
+    @Override
     public ArrayList<GusView> getSubclasses() {
         return (ArrayList<GusView>) super.getSubclasses();
     }
@@ -91,6 +93,7 @@ public class GusView extends View {
         }
     }
 
+    @Override
     public void setName( String name ) {
         super.setName( name );
         if ( versionView != null ) {
@@ -98,6 +101,7 @@ public class GusView extends View {
         }
     }
 
+    @Override
     public boolean equals( DatabaseObject o ) {
         GusView other = (GusView) o;
         if ( versioned != other.isVersioned( ) ) return false;

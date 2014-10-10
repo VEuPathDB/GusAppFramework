@@ -1,8 +1,5 @@
 package org.gusdb.gopredict;
 
-import java.io.*;
-import java.util.*;
-import org.gusdb.gopredict.*;
 
 /**
  * AssocConverterI.java

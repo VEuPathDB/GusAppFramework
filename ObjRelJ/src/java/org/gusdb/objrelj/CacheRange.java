@@ -17,6 +17,8 @@ public class CacheRange implements java.io.Serializable {
     // Instance variables
     // ------------------------------------------------------------------
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Start coordinate of the interval to cache.
      */
@@ -58,6 +60,7 @@ public class CacheRange implements java.io.Serializable {
     public Long getStart() { return this.start; }
     public Long getEnd() { return this.end; }
 
+    @Override
     public String toString() {
 	return "[CacheRange:start=" + start + ",end=" + end + ",length=" + length + "]";
     }

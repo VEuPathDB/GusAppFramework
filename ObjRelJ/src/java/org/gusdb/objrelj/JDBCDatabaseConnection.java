@@ -1,15 +1,17 @@
 package org.gusdb.objrelj;
 
-import java.lang.reflect.*;
-import java.math.*;
-import java.io.*;
-import java.util.*;
-import java.rmi.*;
-import java.rmi.server.*;
-import java.sql.*;
-
-import oracle.jdbc.driver.*;
-import oracle.sql.*; 
+import java.math.BigDecimal;
+import java.rmi.RemoteException;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.Hashtable;
+import java.util.Vector;
 
 /**
  * JDBCDatabaseConnection.java
@@ -38,15 +40,6 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
      * JDBC connection
      */
     private Connection conn = null;  // JC: think about using connection pools to support multithreaded apps.
-
-    private String jdbcUrl;
-    private String jdbcUser;
-    private String jdbcPassword;
-
-    /**
-     * Username of current GUS user
-     */
-    private String gusUser;
 
     /**
      * Core.UserInfo.user_id that corresponds to <code>gusUse</code>
@@ -85,9 +78,6 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
      */
     public JDBCDatabaseConnection(SQLutilsI utils, String jdbcUrl, String jdbcUser, String jdbcPassword) {
 	this.sqlUtils = utils;
-	this.jdbcUrl = jdbcUrl;
-	this.jdbcUser = jdbcUser;
-	this.jdbcPassword = jdbcPassword;
 
         // Establish the connection that will be used thereafter.
         try {
@@ -103,8 +93,10 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     // Public methods
     // ------------------------------------------------------------------
 
+    @Override
     public SQLutilsI getSqlUtils() { return sqlUtils; }
 
+    @Override
     public long setCurrentUser(String user, String password) 
     {
 	long newUserId = -1;
@@ -135,20 +127,22 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
         return newUserId;
     }
 
+    @Override
     public long getCurrentUserId() { return this.gusUserId; }
 
+    @Override
     public void retrieveGUSRow(GUSRow gusRow, String clobAtt, Long start, Long end) 
 	throws GUSObjectNotUniqueException 
     {
 	int numReturned = 0;
-	Hashtable specialCases = null;
+	Hashtable<String,CacheRange> specialCases = null;
 
 	GUSTable table = gusRow.getTable();
 	String pkName = table.getPrimaryKeyName();
 	long pkValue = gusRow.getPrimaryKeyValue();
 
 	if (clobAtt != null) {
-	    specialCases = new Hashtable();
+	    specialCases = new Hashtable<>();
 	    specialCases.put(clobAtt, new CacheRange(start, end, null));
 	    System.err.println("retrieveGUSRow: adding " + clobAtt + " start=" + start + " end=" + end + " to specialCases");
 	}
@@ -185,6 +179,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	
     }
 
+    @Override
     public Long getParentPk(GUSRow child, GUSTable parentTable, String childAtt)
 	throws RemoteException, GUSNoSuchRelationException, GUSObjectNotUniqueException{
 	GUSTable childTable = child.getTable();
@@ -211,6 +206,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	return parentPk;
     }
 
+    @Override
     public Vector retrieveGUSRowsFromQuery(GUSTable table, String query)
     {
 	Vector objs = new Vector();
@@ -236,6 +232,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
         return objs;
     }
 
+    @Override
     public Vector runSqlQuery(String query) {
 	Vector objs = new Vector();
 	System.err.println("JDBCDatabaseConnection: runnning sql query " + query);
@@ -297,6 +294,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     // This transaction is committed immediately after being executed, or rolled
     // back if it fails.
 
+    @Override
     public SubmitResult submitGUSRow(GUSRow obj)
     {
 
@@ -322,7 +320,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	int nextId = -1;
 	    
 	// New primary key values for insertnbb
-	Vector pkeys = null;
+	Vector<Long> pkeys = null;
 
 	try {
 	    stmt = conn.createStatement();
@@ -446,7 +444,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	    
 	    if (isInsert) {
 		rowsInserted += rowsAffected;
-		pkeys = new Vector();
+		pkeys = new Vector<Long>();
 		pkeys.addElement(new Long(nextId));
 	    } else if (isUpdate) {
 		rowsUpdated += rowsAffected;
@@ -469,6 +467,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	return new SubmitResult(success, rowsInserted, rowsUpdated, rowsDeleted, pkeys);
     }
     
+    @Override
     public boolean commit(){
 	boolean result = false;
 	try {
@@ -484,6 +483,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
     }
 
 	//this is the old way of retrieving parent...will probably want to delete it soon
+    @Override
     public GUSRow retrieveParent(GUSRow child, String owner, String tname, String childAtt)
 	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
@@ -679,6 +679,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 
     // JC: For now, here's a simple (i.e., totally non-optimized) version of the method
 
+    @Override
     public GUSRow[] retrieveParentsForAllGUSRows(Vector children, String parentOwner, String parentTable, String childAtt) 
 	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
@@ -693,6 +694,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	return parents;
     }
 
+    @Override
     public GUSRow retrieveChild(GUSRow parent, String owner, String tname, String childAtt)
 	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
@@ -705,19 +707,14 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	return (GUSRow)(kids.elementAt(0));
     }
     
+    @Override
     public Vector retrieveChildren(GUSRow parent, String owner, String tname, String childAtt)
 	throws GUSNoSuchRelationException
     {
-	try {
-	    return retrieveChildren_aux(parent, owner, tname, childAtt);
-	} catch (GUSObjectNotUniqueException nue) {
-	    
-	    // This should *never* happen; retrieveChildren_aux should only throw
-	    // an exception if told to expect a unique
-	    return null;
-	}
+      return retrieveChildren_aux(parent, owner, tname, childAtt);
     }
 
+    @Override
     public void close() {
         try {
             conn.close();
@@ -726,6 +723,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	}
     }
 
+    @Override
     public String getSubmitDate(){
 	return sqlUtils.getSubmitDate();
     }
@@ -748,7 +746,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
      * Helper method for retrieveChild and retrieveChildren;
      */
     protected Vector retrieveChildren_aux(GUSRow parent, String owner, String tname, String childAtt)
-	throws GUSNoSuchRelationException, GUSObjectNotUniqueException
+	throws GUSNoSuchRelationException
     {
 	// First check that such a relationship does in fact exist
 
@@ -838,7 +836,7 @@ public class JDBCDatabaseConnection implements DatabaseConnectionI {
 	
 	try{
 	    Statement stmt = conn.createStatement();
-	    boolean commitResult = stmt.execute(sqlUtils.makeTransactionSQL(false, "rollback"));
+	    stmt.execute(sqlUtils.makeTransactionSQL(false, "rollback"));
 	}
 	catch (SQLException e){
 	    System.err.println(e.getMessage());

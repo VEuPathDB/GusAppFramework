@@ -10,7 +10,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.apache.commons.digester.Digester;
 import org.apache.commons.logging.Log;
@@ -35,8 +34,9 @@ public class CategoryReader {
      * @param categoryMapFile CSV map file: category, schema, table
      */
     public static void setCategories( Database db, String categoryMapFile ) {
+        LineNumberReader mapFile = null;
         try {
-            LineNumberReader mapFile = new LineNumberReader( new FileReader( new File( categoryMapFile ) ) );
+            mapFile = new LineNumberReader( new FileReader( new File( categoryMapFile ) ) );
             String nextLine = mapFile.readLine( );
             while ( nextLine != null ) {
                 String[] values = nextLine.split( "," );
@@ -58,7 +58,6 @@ public class CategoryReader {
                 table.setCategoryRef( values[0] );
                 nextLine = mapFile.readLine( );
             }
-            mapFile.close( );
             for ( GusTable table : db.getGusTables() ) {
                 table.resolveCategoryReference( );
             }
@@ -71,7 +70,11 @@ public class CategoryReader {
             log.error( "IO Exception reading and parsing map file", e );
             throw new RuntimeException( e );
         }
-
+        finally {
+          if (mapFile != null)
+            try { mapFile.close(); }
+            catch (IOException e) { log.error("Unable to close map file reader", e); }
+        }
     }
     
     public static ArrayList readCategories( String categoryXMLFile ) {

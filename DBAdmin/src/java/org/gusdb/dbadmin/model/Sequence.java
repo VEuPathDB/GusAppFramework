@@ -29,6 +29,7 @@ public class Sequence extends DatabaseObject {
         this.start = start;
     }
 
+    @Override
     public boolean equals( DatabaseObject o ) {
         Sequence other = (Sequence) o;
 

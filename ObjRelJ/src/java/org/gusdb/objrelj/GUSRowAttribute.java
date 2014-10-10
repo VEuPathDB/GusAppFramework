@@ -1,9 +1,5 @@
 package org.gusdb.objrelj;
 
-import java.util.*;
-import java.lang.*;
-import java.io.*;
-import java.sql.*;
 
 /**
  * GUSRowAttribute.java
@@ -21,6 +17,8 @@ public class GUSRowAttribute implements java.io.Serializable {
     // ------------------------------------------------------------------
     // Instance Variables
     // ------------------------------------------------------------------
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * The value of this attribute as it currently exists in the database.  Should be updated

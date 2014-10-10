@@ -39,18 +39,6 @@ public abstract class Table extends DatabaseObject {
     }
 
     /**
-     * Returns all columns in the table, including housekeeping, but not
-     * including columns from the superclass. Kept for compatability as a bean,
-     * but really you should use getColumnsExcludeSuperclass
-     * 
-     * @deprecated
-     * @see getColumnsExplainSuperclass
-     */
-    private ArrayList<? extends Column> getColumns( ) {
-        return getColumnsExcludeSuperclass( true );
-    }
-
-    /**
      * @param housekeeping true to include housekeeping columns
      * @return collection of columns specific to this table
      */
@@ -204,6 +192,7 @@ public abstract class Table extends DatabaseObject {
         return table;
     }
 
+    @Override
     public boolean equals( DatabaseObject o ) {
         Table other = (Table) o;
 

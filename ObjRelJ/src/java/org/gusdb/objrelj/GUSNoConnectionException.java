@@ -13,6 +13,7 @@ package org.gusdb.objrelj;
  * @version $Revision$ $Date$ $Author$ 
  */
 public class GUSNoConnectionException extends GUSException implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     public GUSNoConnectionException(String msg){ super(msg); }
 }
 

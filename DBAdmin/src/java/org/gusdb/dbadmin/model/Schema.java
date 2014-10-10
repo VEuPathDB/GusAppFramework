@@ -68,6 +68,7 @@ public abstract class Schema extends DatabaseObject implements Comparable {
         return null;
     }
 
+    @Override
     public int compareTo( Object o ) {
         Schema s = (Schema) o;
         if ( s == null ) return 1;

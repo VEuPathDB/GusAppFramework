@@ -14,6 +14,7 @@ public class HousekeepingColumn extends Column {
 
     public HousekeepingColumn( ) {}
 
+    @Override
     public void setTable( Table table ) {
         if ( getTable( ) != table ) {
             if ( getTable( ) != null ) getTable( ).removeHousekeepingColumn( this );
@@ -23,6 +24,7 @@ public class HousekeepingColumn extends Column {
         }
     }
 
+    @Override
     public Object clone( ) {
         HousekeepingColumn clone = new HousekeepingColumn( );
         clone.setLength( getLength( ) );

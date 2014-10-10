@@ -16,27 +16,23 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
-
 import org.gusdb.dbadmin.reader.OracleReader;
 import org.gusdb.dbadmin.reader.SchemaReader;
 import org.gusdb.dbadmin.reader.XMLReader;
-
-import org.gusdb.dbadmin.util.GusClassHierarchyConverter;
 import org.gusdb.dbadmin.util.CategoryReader;
 import org.gusdb.dbadmin.util.DatabaseUtilities;
-
+import org.gusdb.dbadmin.util.GusClassHierarchyConverter;
+import org.gusdb.dbadmin.writer.Hibernate3MapWriter;
+import org.gusdb.dbadmin.writer.HibernateMapWriter;
 import org.gusdb.dbadmin.writer.OracleWriter;
 import org.gusdb.dbadmin.writer.PostgresWriter;
 import org.gusdb.dbadmin.writer.SchemaWriter;
 import org.gusdb.dbadmin.writer.SimpleTextWriter;
 import org.gusdb.dbadmin.writer.XMLWriter;
-import org.gusdb.dbadmin.writer.HibernateMapWriter;
-import org.gusdb.dbadmin.writer.Hibernate3MapWriter;
 
 /**
  * A utility to dump a schema, either instatiated in a database or in an XML

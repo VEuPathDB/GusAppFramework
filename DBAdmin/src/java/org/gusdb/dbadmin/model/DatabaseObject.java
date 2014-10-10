@@ -1,8 +1,6 @@
 // $Id$
 package org.gusdb.dbadmin.model;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * @version $Revision$
@@ -10,7 +8,6 @@ import org.apache.commons.logging.LogFactory;
  */
 abstract public class DatabaseObject implements Comparable {
 
-    protected static final Log log = LogFactory.getLog( DatabaseObject.class );
     protected String           name;
 
     /**
@@ -31,6 +28,7 @@ abstract public class DatabaseObject implements Comparable {
         return getName( ).equalsIgnoreCase( o.getName( ) );
     }
 
+    @Override
     public int compareTo( Object o ) {
         DatabaseObject other = (DatabaseObject) o;
         return this.getName( ).compareToIgnoreCase( other.getName( ) );

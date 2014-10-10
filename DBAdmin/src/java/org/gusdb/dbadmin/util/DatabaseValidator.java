@@ -4,21 +4,21 @@
  */
 package org.gusdb.dbadmin.util;
 
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-
-import org.gusdb.dbadmin.model.Database;
-import org.gusdb.dbadmin.model.Schema;
-import org.gusdb.dbadmin.model.GusSchema;
-import org.gusdb.dbadmin.model.Table;
-import org.gusdb.dbadmin.model.GusTable;
-import org.gusdb.dbadmin.model.Constraint;
-import org.gusdb.dbadmin.model.GusColumn;
-import org.gusdb.dbadmin.model.Column;
-import org.gusdb.dbadmin.model.Index;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.gusdb.dbadmin.model.Column;
+import org.gusdb.dbadmin.model.Constraint;
+import org.gusdb.dbadmin.model.Database;
+import org.gusdb.dbadmin.model.GusColumn;
+import org.gusdb.dbadmin.model.GusSchema;
+import org.gusdb.dbadmin.model.GusTable;
+import org.gusdb.dbadmin.model.Index;
+import org.gusdb.dbadmin.model.Schema;
+import org.gusdb.dbadmin.model.Table;
 
 
 /**
@@ -87,10 +87,10 @@ public class DatabaseValidator {
 	}
 
     public static boolean checkStructure( Database db ) {
-        HashMap seen = new HashMap();
+        Set<Schema> seen = new HashSet<>();
         
         for ( Schema schema : db.getAllSchemas() ) {
-            if ( seen.containsKey(schema) ) { continue; }
+            if ( seen.contains(schema) ) { continue; }
             if ( schema.getName() == null ) { 
                 log.fatal("Schema name is null");
                 return false;
@@ -115,6 +115,8 @@ public class DatabaseValidator {
                     return false;
                 }
             }
+            // mark this schema as seen (and validated)
+            seen.add(schema);
         }
         return true;
         
@@ -136,12 +138,12 @@ public class DatabaseValidator {
 				}
 				
 				if ( table.getClass() == GusTable.class ) {
-					for ( Iterator k = ((GusTable)table).getConstraints().iterator(); k.hasNext(); ) {
-						Constraint con = (Constraint) k.next();
+					for ( Iterator<Constraint> k = table.getConstraints().iterator(); k.hasNext(); ) {
+						Constraint con = k.next();
 						valid = checkLength(con.getName(), length);
 					}
-					for ( Iterator k = ((GusTable)table).getIndexs().iterator(); k.hasNext(); ) {
-						Index index = (Index) k.next();
+					for ( Iterator<Index> k = table.getIndexs().iterator(); k.hasNext(); ) {
+						Index index = k.next();
 						valid = checkLength(index.getName(), length);
 					}
 				}

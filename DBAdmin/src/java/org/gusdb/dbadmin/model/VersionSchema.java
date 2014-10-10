@@ -19,13 +19,13 @@ public class VersionSchema extends Schema {
         setGusSchema( gusSchema );
         setName( gusSchema.getName( ) + verSuffix );
         setDatabase( gusSchema.getDatabase( ) );
-        for ( Iterator i = gusSchema.getTables( ).iterator( ); i.hasNext( ); ) {
-            GusTable table = (GusTable) i.next( );
+        for ( Iterator<GusTable> i = gusSchema.getTables( ).iterator( ); i.hasNext( ); ) {
+            GusTable table = i.next( );
             if ( table.getVersionTable( ) != null ) {
                 addTable( table.getVersionTable( ) );
             }
         }
-        for ( Iterator i = gusSchema.getViews( ).iterator( ); i.hasNext( ); ) {
+        for ( Iterator<View> i = gusSchema.getViews( ).iterator( ); i.hasNext( ); ) {
             GusView view = (GusView) i.next( );
             if ( view.getVersionView( ) != null ) {
                 addView( view.getVersionView( ) );
