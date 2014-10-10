@@ -58,6 +58,7 @@ public class InstallSchemaTask extends Task {
         this.skipRoles = skipRoles != null && skipRoles.equals("true");
     }
 
+    @Override
     public void execute( ) throws BuildException {
 	try {
 	    initialize( );

@@ -10,10 +10,12 @@ import java.util.TreeSet;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
+import org.gusdb.dbadmin.model.GusColumn;
 import org.gusdb.dbadmin.model.GusSchema;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.GusView;
 import org.gusdb.dbadmin.model.Index;
+import org.gusdb.dbadmin.model.View;
 
 /**
  *@author     msaffitz
@@ -30,7 +32,8 @@ public class XMLWriter extends SchemaWriter {
 	 *@see                     org.gusdb.dbadmin.writer.SchemaWriter#writeDatabase(java.io.OutputStreamWriter,
 	 *      org.gusdb.dbadmin.model.Database)
 	 */
-	protected void writeDatabase( Database db ) throws IOException {
+	@Override
+  protected void writeDatabase( Database db ) throws IOException {
 		log.debug( "Writing XML for database " + db.getName() );
 		indent();
 		oStream.write( "<?xml version=\"1.0\"?>\n" );
@@ -38,7 +41,7 @@ public class XMLWriter extends SchemaWriter {
 		oStream.write( "<database name=\"" + db.getName() + "\" version=\"" + db.getVersion() + 
                 "\" patchLevel=\"" + db.getPatchLevel() + "\">\n" );
 		indent++;
-		writeSchemas( (Database) db );
+		writeSchemas( db );
 		indent--;
 		indent();
 		oStream.write( "</database>\n" );
@@ -54,7 +57,7 @@ public class XMLWriter extends SchemaWriter {
 		oStream.write( "<schemas>\n" );
 
         for ( GusSchema schema : db.getGusSchemas() ) {
-			writeSchema( (GusSchema) schema );
+			writeSchema( schema );
 		}
 		indent();
 		oStream.write( "</schemas>\n" );
@@ -84,10 +87,10 @@ public class XMLWriter extends SchemaWriter {
 		indent();
 		oStream.write( "<tables>\n" );
 
-		TreeSet tables  = new TreeSet( schema.getTables() );
+		TreeSet<GusTable> tables  = new TreeSet<>( schema.getTables() );
 
-		for ( Iterator i = tables.iterator(); i.hasNext();  ) {
-			writeTable( (GusTable) i.next() );
+		for ( Iterator<GusTable> i = tables.iterator(); i.hasNext();  ) {
+			writeTable( i.next() );
 			oStream.flush();
 		}
 		indent();
@@ -131,9 +134,9 @@ public class XMLWriter extends SchemaWriter {
 		indent();
 		oStream.write( "<views>\n" );
 
-		TreeSet views  = new TreeSet( schema.getViews() );
+		TreeSet<View> views  = new TreeSet<>( schema.getViews() );
 
-		for ( Iterator i = views.iterator(); i.hasNext();  ) {
+		for ( Iterator<View> i = views.iterator(); i.hasNext();  ) {
 			writeView( (GusView) i.next() );
 			oStream.flush();
 		}
@@ -202,8 +205,8 @@ public class XMLWriter extends SchemaWriter {
 		}
 		indent();
 		oStream.write( "<columns>\n" );
-		for ( Iterator i = table.getColumnsExcludeSuperclass( false ).iterator(); i.hasNext();  ) {
-			writeColumn( (Column) i.next() );
+		for ( Iterator<Column> i = table.getColumnsExcludeSuperclass( false ).iterator(); i.hasNext();  ) {
+			writeColumn( i.next() );
 			oStream.flush();
 		}
 		indent();
@@ -239,9 +242,9 @@ public class XMLWriter extends SchemaWriter {
 	}
 
 
-	private void writeColumnRefs( Iterator columns ) throws IOException {
+	private void writeColumnRefs( Iterator<? extends Column> columns ) throws IOException {
 		while ( columns.hasNext() ) {
-		Column c    = (Column) columns.next();
+		Column c    = columns.next();
 		String ref  = c.getTable().getSchema().getName() + "/" + c.getTable().getName() + "/" + c.getName();
 
 			indent();
@@ -258,10 +261,10 @@ public class XMLWriter extends SchemaWriter {
 		indent();
 		oStream.write( "<indexes>\n" );
 
-	TreeSet indexes  = new TreeSet( table.getIndexs() );
+	TreeSet<Index> indexes  = new TreeSet<>( table.getIndexs() );
 
-		for ( Iterator i = indexes.iterator(); i.hasNext();  ) {
-			writeIndex( (Index) i.next() );
+		for ( Iterator<Index> i = indexes.iterator(); i.hasNext();  ) {
+			writeIndex( i.next() );
 			oStream.flush();
 		}
 		indent();
@@ -279,8 +282,8 @@ public class XMLWriter extends SchemaWriter {
 		indent();
 		oStream.write( "<columns>\n" );
 		indent++;
-		for ( Iterator i = index.getColumns().iterator(); i.hasNext();  ) {
-		Column c    = (Column) i.next();
+		for ( Iterator<GusColumn> i = index.getColumns().iterator(); i.hasNext();  ) {
+		Column c    = i.next();
 		String ref  = c.getTable().getSchema().getName() + "/" + c.getTable().getName() + "/" + c.getName();
 
 			indent();
@@ -304,10 +307,10 @@ public class XMLWriter extends SchemaWriter {
 		indent();
 		oStream.write( "<constraints>\n" );
 
-		TreeSet constraints  = new TreeSet( table.getConstraints() );
+		TreeSet<Constraint> constraints  = new TreeSet<>( table.getConstraints() );
 
-		for ( Iterator i = constraints.iterator(); i.hasNext();  ) {
-			writeConstraint( (Constraint) i.next() );
+		for ( Iterator<Constraint> i = constraints.iterator(); i.hasNext();  ) {
+			writeConstraint( i.next() );
 			oStream.flush();
 		}
 		indent();
@@ -347,6 +350,9 @@ public class XMLWriter extends SchemaWriter {
 	}
 
 
+	/**
+   * @throws IOException if unable to write documentation 
+   */
 	private void writeDocumentation( String documentation ) throws IOException {
 		if ( documentation == null ) {
 			return;
@@ -374,12 +380,14 @@ public class XMLWriter extends SchemaWriter {
 	/**
 	 *@see    org.gusdb.dbadmin.writer.SchemaWriter#setUp()
 	 */
-	protected void setUp() { }
+	@Override
+  protected void setUp() { }
 
 
 	/**
 	 *@see    org.gusdb.dbadmin.writer.SchemaWriter#tearDown()
 	 */
-	protected void tearDown() { }
+	@Override
+  protected void tearDown() { }
 }
 

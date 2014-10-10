@@ -8,9 +8,7 @@
  */
 package org.gusdb.gopredict;
 
-import java.io.*;
-import java.util.*;
-import org.gusdb.gopredict.*;
+import java.util.Vector;
 
 public class GoTerm  {
 
@@ -39,8 +37,8 @@ public class GoTerm  {
     /**
      * Vectors representing relationships with other GO Terms in the GO Hierarchy.
      */
-    Vector children;
-    Vector parents;
+    Vector<GoTerm> children;
+    Vector<GoTerm> parents;
 
 
 
@@ -53,8 +51,8 @@ public class GoTerm  {
 
 	setRealId(realId);
 	setGusId(gusId);
-	children = new Vector();
-	parents = new Vector();
+	children = new Vector<>();
+	parents = new Vector<>();
 
     }
 
@@ -88,11 +86,11 @@ public class GoTerm  {
 	this.realId = realId;
     }
 
-    public Vector getParents(){
+    public Vector<GoTerm> getParents(){
 	return parents;
     }
 
-    public Vector getChildren(){
+    public Vector<GoTerm> getChildren(){
 	return children;
     }
 

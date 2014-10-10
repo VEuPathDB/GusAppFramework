@@ -16,8 +16,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.reader.XMLReader;
-import org.gusdb.dbadmin.writer.XMLWriter;
 import org.gusdb.dbadmin.util.CategoryReader;
+import org.gusdb.dbadmin.writer.XMLWriter;
 
 /**
  * @version $Revision: 3094 $

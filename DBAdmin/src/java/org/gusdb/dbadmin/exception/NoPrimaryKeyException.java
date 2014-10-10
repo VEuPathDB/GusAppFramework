@@ -9,7 +9,7 @@ package org.gusdb.dbadmin.exception;
  */
 public class NoPrimaryKeyException extends Exception {
 
-
+    private static final long serialVersionUID = 1L;
 
     public NoPrimaryKeyException() {
         super();

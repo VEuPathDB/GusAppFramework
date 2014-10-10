@@ -16,15 +16,19 @@ import java.util.Enumeration;
  */
 public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     // ------------------------------------------------------------------
     // SQLutilsI
     // ------------------------------------------------------------------
 
+    @Override
     public String makeSelectAllRowsSQL(String owner, String table) 
     {
 	return "select * from " + owner + "." + table;
     }
 
+    @Override
     public String makeInsertSQL(String owner, String table, String pkatt, long pk, Hashtable atts)
     {
 	StringBuffer insertSQL = new StringBuffer("INSERT into " + owner + "." + table + "\n(" );
@@ -49,6 +53,7 @@ public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
 	return insertSQL.toString();
     }
 
+    @Override
     public String makeUpdateSQL(String owner, String table, String pkatt, 
 				long pk, Hashtable atts) 
     {	
@@ -76,6 +81,7 @@ public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
 	return updateSQL.toString();
     } 
 
+    @Override
     public String makeDeleteSQL(String owner, String table, String pkatt, long pk) {
 
 	// NOTE: WE REALLY WILL WANT TO VERSION HERE, THIS IS JUST FOR 
@@ -89,6 +95,7 @@ public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
 	deleteSQL.append("WHERE " + pkatt + " = " + pk);
 	return deleteSQL.toString();    }
 
+    @Override
     public String makeNewIdSQL(GUSTable table) {
 	String owner = table.getSchemaName();
 	String tname = table.getTableName();
@@ -111,11 +118,13 @@ public class OracleSQLutils implements SQLutilsI, java.io.Serializable {
 	}
     }
 
+    @Override
     public String getSubmitDate(){
 	return "SYSDATE";
     }
     
     //DTB:  is this database-specific?
+    @Override
     public String makeTransactionSQL(boolean noTran, String cmd) {
         String command = null;
         if (!noTran){

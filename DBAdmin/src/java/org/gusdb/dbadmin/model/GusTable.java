@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 /**
  * @author msaffitz
  * @created May 2, 2005
@@ -14,8 +11,6 @@ import org.apache.commons.logging.LogFactory;
  *          2005) $
  */
 public class GusTable extends Table {
-
-    protected final static Log  log                   = LogFactory.getLog( GusTable.class );
 
     private String              documentation;
     private Category            category;
@@ -81,8 +76,8 @@ public class GusTable extends Table {
     public String getPrimaryKeyName( ) {
         if ( getPrimaryKey( ) == null ) return null;
         if ( getPrimaryKey( ).getConstrainedColumns( ).isEmpty( ) ) return null;
-        ArrayList columns = (ArrayList) getPrimaryKey( ).getConstrainedColumns( );
-        return ((Column) columns.get( 0 )).getName( );
+        ArrayList<Column> columns = getPrimaryKey( ).getConstrainedColumns( );
+        return columns.get( 0 ).getName( );
     }
 
     public Constraint getPrimaryKey( ) {
@@ -200,10 +195,12 @@ public class GusTable extends Table {
         }
     }
 
+    @Override
     public GusTable getSuperclass() {
         return (GusTable) super.getSuperclass();
     }
     
+    @Override
     public TreeSet<GusTable> getSubclasses( ) {
         return (TreeSet<GusTable>) super.getSubclasses( );
     }
@@ -253,10 +250,11 @@ public class GusTable extends Table {
     public void setSequence( Sequence sequence ) {
         if ( this.sequence != sequence ) {
             this.sequence = sequence;
-            this.sequence.setTable( (GusTable) this );
+            this.sequence.setTable( this );
         }
     }
 
+    @Override
     public void setTablespace( String tablespace ) {
         super.setTablespace( tablespace );
         if ( this.versionTable != null ) {
@@ -264,6 +262,7 @@ public class GusTable extends Table {
         }
     }
 
+    @Override
     public void setName( String name ) {
         super.setName( name );
         if ( this.versionTable != null ) {
@@ -273,8 +272,8 @@ public class GusTable extends Table {
     }
 
     public Constraint getConstraint( String name ) {
-        for ( Iterator i = getConstraints( ).iterator( ); i.hasNext( ); ) {
-            Constraint constraint = (Constraint) i.next( );
+        for ( Iterator<Constraint> i = getConstraints( ).iterator( ); i.hasNext( ); ) {
+            Constraint constraint = i.next( );
 
             if ( constraint.getName( ).compareToIgnoreCase( name ) == 0 ) {
                 return constraint;
@@ -283,6 +282,7 @@ public class GusTable extends Table {
         return null;
     }
 
+    @Override
     public void setHousekeeping( boolean housekeeping ) {
         super.setHousekeeping( housekeeping );
         if ( this.versionTable != null ) {
@@ -314,6 +314,7 @@ public class GusTable extends Table {
         }
     }
 
+    @Override
     public void setUpdatable( boolean updatable ) {
         super.setUpdatable( updatable );
         if ( this.versionTable != null ) {
@@ -335,6 +336,7 @@ public class GusTable extends Table {
         }
     }
 
+    @Override
     public boolean equals( DatabaseObject o ) {
         GusTable other = (GusTable) o;
         if ( versioned != other.isVersioned( ) ) return false;

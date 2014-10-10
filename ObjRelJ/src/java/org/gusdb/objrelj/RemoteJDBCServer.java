@@ -1,9 +1,13 @@
 package org.gusdb.objrelj;
 
-import java.rmi.server.*;
-import java.rmi.*;
-import java.util.*;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.Properties;
 
 /**
  * RemoteJDBCServer.java
@@ -21,6 +25,8 @@ import java.io.*;
  */
 
 public class RemoteJDBCServer extends UnicastRemoteObject implements RemoteDatabaseServerI{
+
+    private static final long serialVersionUID = 1L;
 
     // -----------------------------------------------------------------
     // Instance variables
@@ -44,6 +50,7 @@ public class RemoteJDBCServer extends UnicastRemoteObject implements RemoteDatab
     } 
 
 
+    @Override
     public DatabaseConnectionI createRemoteConnection(String gusUser, String gusPassword) 
 	throws RemoteException{
 	

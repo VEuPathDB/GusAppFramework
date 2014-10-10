@@ -1,15 +1,15 @@
 package org.gusdb.gus.supported;
 
-import com.hp.hpl.jena.rdf.model.ModelFactory;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Writer;
+
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.util.FileManager;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.FileWriter;
-import java.io.Writer;
 
 /**
  *  Convert an owl/rdf file into a tab file which can be easily loaded into 
@@ -27,7 +27,7 @@ public class OwlParser {
 	
     private final static boolean debug = false;
 	
-    private String owlFile;
+    //private String owlFile;
     private String parserType;
 	
     private Writer writer;
@@ -37,7 +37,7 @@ public class OwlParser {
             System.out.println("Creating parser for owl file:  " + owlFile);
             System.out.println("Using Parser:  " + defaultParser);
         }
-        this.owlFile = owlFile;
+        //this.owlFile = owlFile;
         this.parserType = parserType;
 		
         String termsString = owlFile + ".out";
@@ -114,8 +114,10 @@ public class OwlParser {
             if (gusRdf.isValid()) {
                 writeTermOrRelationship(gusRdf);
             }
-            if(!gusRdf.isValid() && debug) {
+            if(!gusRdf.isValid()) {
+              if (debug) {
                 System.out.println("Skipping:  " + gusRdf.toString());
+              }
             }
         }
     }

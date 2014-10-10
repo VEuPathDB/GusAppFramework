@@ -1,6 +1,5 @@
 package org.gusdb.objrelj;
 
-import java.util.*;
 
 /**
  * GUSTableAttribute.java
@@ -13,6 +12,8 @@ import java.util.*;
  * @version $Revision$ $Date$ $Author$
  */
 public class GUSTableAttribute implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     // ------------------------------------------------------------------
     // Instance variables
@@ -108,6 +109,7 @@ public class GUSTableAttribute implements java.io.Serializable {
     // java.lang.Object
     // ------------------------------------------------------------------
    
+    @Override
     public String toString(){
 	return ( "[GUSTableAttribute: " 
 		 + "name=" + this.name 

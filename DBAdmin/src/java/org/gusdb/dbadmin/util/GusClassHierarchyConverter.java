@@ -143,7 +143,7 @@ public class GusClassHierarchyConverter {
                 log.debug( "Moving constraint: '" + ((Constraint) pKAndUniqueConstraints[i]).getName( )
                         + "' to impTable: '" + impTable.getName( ) + "'" );
                 ((Constraint) pKAndUniqueConstraints[i]).removeConstrainedColumn( (GusColumn) conColumns[j] );
-                ((Constraint) pKAndUniqueConstraints[i]).addConstrainedColumn( (GusColumn) impTable
+                ((Constraint) pKAndUniqueConstraints[i]).addConstrainedColumn( impTable
                         .getColumn( ((GusColumn) conColumns[j]).getName( ) ) );
             }
 
@@ -263,7 +263,7 @@ public class GusClassHierarchyConverter {
         }
 
         for ( Column.ColumnType type : columnCounts.keySet( ) ) {
-            for ( int j = 0; j < ((Integer) columnCounts.get( type )).intValue( ); j++ ) {
+            for ( int j = 0; j < columnCounts.get( type ); j++ ) {
 
                 GusColumn newColumn = new GusColumn( );
                 newColumn.setName( type.toString( ) + new Integer( j + 1 ) );
@@ -348,8 +348,8 @@ private GusView buildSuperClassView( ) {
         boolean first = true;
 
         // Superclass Columns
-        for (Iterator i = superClassColumns.iterator(); i.hasNext();) {
-            Column column = (Column) i.next();
+        for (Iterator<? extends Column> i = superClassColumns.iterator(); i.hasNext();) {
+            Column column = i.next();
             if (column.getClass() == GusColumn.class) {
                 if ( !first ) sql = sql.concat( ", " );
                 first = false;
@@ -364,7 +364,7 @@ private GusView buildSuperClassView( ) {
             verSql = sql.concat( " " );
 
 	    // We need to add the superclass columns to the version view. 
-	    superClassView.getVersionView( ).setColumns((ArrayList<ColumnPair>) superClassView.getColumns().clone());
+	    superClassView.getVersionView( ).setColumns( new ArrayList<ColumnPair>(superClassView.getColumns()) );
 
             for ( Column column : verHousekeepingColumns ) {
                 verSql = verSql.concat( ", " + column.getName( ) );
@@ -424,8 +424,8 @@ private GusView buildSuperClassView( ) {
         String verSql;
         boolean first = true;
 
-        for (Iterator i = superClassColumns.iterator(); i.hasNext();) {
-            Column column = (Column) i.next();
+        for (Iterator<? extends Column> i = superClassColumns.iterator(); i.hasNext();) {
+            Column column = i.next();
             if (column.getClass() == GusColumn.class) {
                 if ( !first ) sql = sql.concat( ", " );
                 first = false;
@@ -452,7 +452,7 @@ private GusView buildSuperClassView( ) {
             subClass.setVersioned( true );
             verSql = sql.concat( " " );
 	    // We need to add the subclass_view's columns 
-	    subClass.getVersionView( ).setColumns((ArrayList<ColumnPair>) subClass.getColumns().clone());
+	    subClass.getVersionView( ).setColumns( new ArrayList<ColumnPair>(subClass.getColumns()) );
             for ( Column column : verHousekeepingColumns ) {
                 verSql = verSql.concat( ", " + column.getName( ) );
                 subClass.getVersionView( ).addColumn( new ColumnPair( column.getName( ), column.getName( ) ) );

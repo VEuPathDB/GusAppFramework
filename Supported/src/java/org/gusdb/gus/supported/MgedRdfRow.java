@@ -31,6 +31,7 @@ public class MgedRdfRow implements GusRdfRow {
         this.statement = statement;
     }
 
+    @Override
     public void parse () {
 
         Resource  subjectObj   = statement.getSubject();
@@ -85,6 +86,7 @@ public class MgedRdfRow implements GusRdfRow {
      * @return
      *     true if it should be written
      */
+    @Override
     public boolean isValid () {
         if(subject == "" || subject == null) {
             return false;
@@ -107,6 +109,7 @@ public class MgedRdfRow implements GusRdfRow {
      * @return 
      *     Simple String Representation of the object
      */
+    @Override
     public String toString () {
         if(object != null) {
             object = object.replace("\n", "");
@@ -121,6 +124,7 @@ public class MgedRdfRow implements GusRdfRow {
      * @return
      *     string which can easily be read into GUS
      */
+    @Override
     public String getOutputString () {
         String out;
 		

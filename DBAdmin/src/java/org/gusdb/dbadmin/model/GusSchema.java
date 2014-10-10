@@ -21,6 +21,7 @@ public class GusSchema extends Schema {
         versionSchema = new VersionSchema( this );
     }
 
+    @Override
     public TreeSet<GusTable> getTables() {
         return (TreeSet<GusTable>) super.getTables();
     }
@@ -37,11 +38,13 @@ public class GusSchema extends Schema {
         this.documentation = documentation;
     }
 
+    @Override
     public void setName( String name ) {
         super.setName( name );
         versionSchema.setName( name + verSuffix );
     }
 
+    @Override
     public void setDatabase( Database database ) {
         super.setDatabase( database );
         versionSchema.setDatabase( database );

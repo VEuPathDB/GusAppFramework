@@ -1,9 +1,6 @@
 package org.gusdb.objrelj;
 
 import java.rmi.Remote;
-import java.rmi.RemoteException;
-
-import java.util.Vector;
 
 /**
  * RemoteDatabaseConnectionI.java

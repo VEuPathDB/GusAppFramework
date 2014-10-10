@@ -54,7 +54,7 @@ public class JDBCDriver implements DatabaseDriverI {
     {
 	try {
 	    System.out.println("JDBCDriver: creating new with driverclass: " + jdbcDriverClass);
-	    Class dclass = Class.forName(jdbcDriverClass);
+	    Class.forName(jdbcDriverClass);
 	} 
 	catch (ClassNotFoundException cnfe) {}
 
@@ -71,6 +71,7 @@ public class JDBCDriver implements DatabaseDriverI {
     //
     // This implementation ignores its arguments
     //
+    @Override
     public DatabaseConnectionI getConnection(String gusUser, String gusPassword) {
 	return new JDBCDatabaseConnection(utils, url, this.user, this.password);
     }

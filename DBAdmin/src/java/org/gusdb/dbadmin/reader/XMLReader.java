@@ -38,6 +38,7 @@ public class XMLReader extends SchemaReader {
         }
     }
 
+    @Override
     protected Database readDatabase( Database db ) {
         try {
             db = (Database) digester.parse( XMLFile );
@@ -58,6 +59,7 @@ public class XMLReader extends SchemaReader {
         }
     }
 
+    @Override
     protected void setUp( ) {
 
         String[] columnAttrs = new String[] { "ref", "name", "nullable", "length", "precision", "type" };
@@ -126,6 +128,7 @@ public class XMLReader extends SchemaReader {
 
     }
 
+    @Override
     protected void tearDown( ) {
         try {
             this.XMLFile.close( );

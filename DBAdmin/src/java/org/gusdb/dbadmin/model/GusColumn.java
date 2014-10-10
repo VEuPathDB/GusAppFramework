@@ -2,17 +2,12 @@ package org.gusdb.dbadmin.model;
 
 import java.util.TreeSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 /**
  * @author msaffitz
  * @version $Revision$ $Date: 2005-06-16 16:35:04 -0400 (Thu, 16 Jun
  *          2005) $
  */
 public class GusColumn extends Column {
-
-    protected static final Log  log                   = LogFactory.getLog( Column.class );
 
     private String              documentation;
     private TreeSet<Constraint> referentialConstraint = new TreeSet<Constraint>( );
@@ -80,36 +75,43 @@ public class GusColumn extends Column {
         if ( removed ) index.removeColumn( this );
     }
 
+    @Override
     public void setName( String name ) {
         super.setName( name );
         if ( getVersionColumn( ) != null ) getVersionColumn( ).setName( name );
     }
 
+    @Override
     public void setPrecision( int precision ) {
         super.setPrecision( precision );
         if ( getVersionColumn( ) != null ) getVersionColumn( ).setPrecision( precision );
     }
 
+    @Override
     public void setLength( int length ) {
         super.setLength( length );
         if ( getVersionColumn( ) != null ) getVersionColumn( ).setLength( length );
     }
 
+    @Override
     public void setNullable( boolean nullable ) {
         super.setNullable( nullable );
         if ( getVersionColumn( ) != null ) getVersionColumn( ).setNullable( nullable );
     }
 
+    @Override
     public void setType( String type ) {
         super.setType( type );
         if ( getVersionColumn( ) != null ) getVersionColumn( ).setType( type );
     }
 
+    @Override
     public void setType( ColumnType columnType ) {
         super.setType( columnType );
         if ( getVersionColumn( ) != null ) getVersionColumn( ).setType( columnType );
     }
 
+    @Override
     public Object clone( ) {
         GusColumn clone = new GusColumn( );
         clone.setLength( getLength( ) );

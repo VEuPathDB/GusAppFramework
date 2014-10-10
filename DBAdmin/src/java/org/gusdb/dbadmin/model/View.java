@@ -62,10 +62,6 @@ public abstract class View extends DatabaseObject implements Comparable {
         this.column.remove( columnPair );
     }
 
-    private ArrayList<View> getSubclasss( ) {
-        return subclass;
-    }
-
     public ArrayList<? extends View> getSubclasses( ) {
         return subclass;
     }
@@ -110,6 +106,7 @@ public abstract class View extends DatabaseObject implements Comparable {
         this.materialized = materialized;
     }
 
+    @Override
     public int compareTo( Object o ) {
         View v = (View) o;
         if ( v == null ) return 1;
@@ -120,6 +117,7 @@ public abstract class View extends DatabaseObject implements Comparable {
         return this.getName( ).compareTo( v.getName( ) );
     }
 
+    @Override
     public boolean equals( DatabaseObject o ) {
         View other = (View) o;
         if ( !sql.equals( other.getSql( ) ) ) return false;

@@ -12,6 +12,7 @@ package org.gusdb.gopredict;
  *
  */
 public class IllegalAssignmentException extends Exception {
+    private static final long serialVersionUID = 1L;
     public IllegalAssignmentException(String msg){ super(msg); }
 
 }
