@@ -271,7 +271,7 @@ sub submitObjectList {
   my ($self, $list) = @_;
 
   foreach my $gusObj (@$list) {
-    $gusObj->submit();
+    $gusObj->submit() if defined $gusObj;
   }
 
 }
