@@ -37,7 +37,7 @@ sub new {
                             # The name is the name of your GO database in sres.externaldatabase
                             # version is the version in sres.externaldatabaserelease
 
-   my $goEvidenceCodeRelease; = shift; # format name^version
+   my $goEvidenceCodeRelease = shift; # format name^version
 
    my $self = {};
    bless($self, $class);
@@ -163,7 +163,7 @@ return $instId;
 
 sub _initEvidenceCodes {
    my $self = shift;
-   my $rel = shift;
+   my $dbRlsId = shift;
 
    my ($dbName,$dbVersion) = split(/\^/,$dbRlsId);
 
