@@ -39,7 +39,7 @@ sub parseXML {
   my ($self, $filename) = @_;
 
   my (%pathway, %reaction, %node);
-  my @ecNums =('Unknown'); # initialize with 'Unknown', to be used when Reactions do not have an EC Number.
+  my @ecNums;
 
   if (!$filename) {
    die "Error: XML file not found!";
