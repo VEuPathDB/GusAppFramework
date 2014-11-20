@@ -181,25 +181,37 @@ sub insertRelationships {
   while ($line=<$fh>) {
     chomp($line);
     my ($subjectId, $predicateId, $objectId) = split(/\t/, $line);
+    my $gotTerms = 1;
     
-    my $subject = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $subjectId});
+    my $subject = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $subjectId});    
+    if(!$subject->retrieveFromDB()) {
+      $self->userError("Failure retrieving subject ontology term \"$subjectId\"");
+      $gotTerms = 0;
+    }
+
     my $predicate = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $predicateId});
+    if(!$predicate->retrieveFromDB()) {
+      $self->userError("Failure retrieving predicate ontology term \"$predicateId\"");
+      $gotTerms = 0;
+    }
+
     my $object = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $objectId});
-    
-    if($subject->retrieveFromDB() && $predicate->retrieveFromDB() && $object->retrieveFromDB()) {
+    if(!$object->retrieveFromDB()) {
+      $self->userError("Failure retrieving object ontology term \"$objectId\"");
+      $gotTerms = 0;
+    }
+
+    if ($gotTerms) {
       my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->new();   
       $ontologyRelationship->setSubjectTermId($subject->getId());
       $ontologyRelationship->setPredicateTermId($predicate->getId()); 
       $ontologyRelationship->setObjectTermId($object->getId());
-      
+
       if (!$ontologyRelationship->retrieveFromDB()) {
 	$countRels++;
       }
       $ontologyRelationship->submit();
       $self->undefPointerCache();
-    }
-    else {
-      $self->userError("One of $subjectId, $predicateId, $objectId is not among the terms entered");
     }
   }
   $fh->close();
