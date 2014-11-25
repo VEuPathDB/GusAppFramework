@@ -98,7 +98,7 @@ sub parseXML {
       foreach my $note (@{$a}) {
 	if ( $note =~/^SUBSYSTEM:/ ) {
 	  $note =~s/SUBSYSTEM\:\s+(.+)/$1/ ;
-	  @pathways = split(/, /, $note);  # these are all pathways that have this reaction
+	  @pathways = split(/; /, $note);  # these are all pathways that have this reaction
 	}
 	if ( $note =~/^EC NUMBER/ ) {
 	  $ecNum = $note;
