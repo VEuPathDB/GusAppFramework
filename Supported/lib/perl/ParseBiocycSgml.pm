@@ -143,7 +143,7 @@ sub parseXML {
 
     # populate hash of Pathways 
     foreach my $p (@pathways) {
-      $pathway{$p}->{SOURCE_ID} = $pathwayId{$p};
+      $pathway{$p}->{SOURCE_ID} = ($pathwayId{$p})? $pathwayId{$p} : $p;
       $pathway{$p}->{NAME} = $p;
       $pathway{$p}->{URI} = "http://biocyc.org/TRYPANO/NEW-IMAGE?type=PATHWAY&object=" . $pathway{$p}->{SOURCE_ID};
       $pathway{$p}->{REACTIONS}->{($reactionRef->{name})} = {
