@@ -68,7 +68,7 @@ sub parseXML {
       foreach my $p (@{$a}) {
 	if ( $p =~/KEGG.COMPOUND/ ) {
 	  $node{$f}->{source_id} = $p;
-	  $node{$f}->{source_id} =~s/KEGG.COMPOUND\:\s+(C\d+)/$1/ ;
+	  $node{$f}->{source_id} =~s/KEGG.COMPOUND\:\s+.*(C\d+).*/$1/ ;
 	}
       }
     }
