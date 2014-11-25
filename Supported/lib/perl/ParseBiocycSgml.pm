@@ -38,7 +38,7 @@ sub new {
 sub parseXML {
   my ($self, $filename) = @_;
 
-  my (%pathway, %reaction, %node);
+  my (%pathway, %pathwayId, %reaction, %node);
   my @ecNums;
 
   if (!$filename) {
@@ -47,7 +47,7 @@ sub parseXML {
 
   #initialize parser
   # ===================================
-  my $data = XMLin($filename, KeyAttr => { species => 'id' }, ForceArray => [ 'species', 'notes' ]);
+  my $data = XMLin($filename, KeyAttr => { species => 'id', pathway => 'name' }, ForceArray => [ 'species', 'notes' ]);
   # print Dumper($data);
 
   # parse Compounds
@@ -74,6 +74,12 @@ sub parseXML {
     }
   }
 
+  # get Pathway IDs
+  $hashRef = $data->{'model'}->{'listOfPathways'}->{'pathway'};
+  foreach my $f (keys(%{$hashRef})) {
+    $pathwayId{$f} = $hashRef->{$f}->{id};
+  }
+
   # parse Reactions
   my @reactionArr = @{$data->{model}->{listOfReactions}->{reaction}};
 
@@ -90,7 +96,7 @@ sub parseXML {
     my @arrNotes =$reactionRef->{notes}->[0]->{body}->{p};
     foreach my $a (@arrNotes) {
       foreach my $note (@{$a}) {
-	if ( $note =~/^SUBSYSTEM/ ) {
+	if ( $note =~/^SUBSYSTEM:/ ) {
 	  $note =~s/SUBSYSTEM\:\s+(.+)/$1/ ;
 	  @pathways = split(/, /, $note);  # these are all pathways that have this reaction
 	}
@@ -135,12 +141,11 @@ sub parseXML {
     }
     $reaction{$rn_id}->{products} = @products;
 
-
     # populate hash of Pathways 
     foreach my $p (@pathways) {
-      $pathway{$p}->{SOURCE_ID} = substr($p,0,50); ##BB FIX SCHEMA
+      $pathway{$p}->{SOURCE_ID} = $pathwayId{$p};
       $pathway{$p}->{NAME} = $p;
-      $pathway{$p}->{URI} = "http://biocyc.org/TRYPANO/substring-search?type=NIL&quickSearch=Quick+Search&object=" . $p;
+      $pathway{$p}->{URI} = "http://biocyc.org/TRYPANO/NEW-IMAGE?type=PATHWAY&object=" . $pathway{$p}->{SOURCE_ID};
       $pathway{$p}->{REACTIONS}->{($reactionRef->{name})} = {
 							     PRODUCTS => \@products,
 							     SUBSTRATES => \@reactants,
