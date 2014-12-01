@@ -39,7 +39,6 @@ sub parseXML {
   my ($self, $filename) = @_;
 
   my (%pathway, %pathwayId, %reaction, %node);
-  my @ecNums;
 
   if (!$filename) {
    die "Error: XML file not found!";
@@ -56,7 +55,7 @@ sub parseXML {
   my @fields = keys(%myHash);
 
   foreach my $f (@fields) {
-    my $name = $hashRef->{$f}->{name}; ##id};
+    my $name = $hashRef->{$f}->{name};
     $node{$f}->{name} = $f . ": " . $name; 
     $node{$f}->{source_id} = $f;
     $node{$f}->{type} = 'compound';
@@ -84,6 +83,7 @@ sub parseXML {
   my @reactionArr = @{$data->{model}->{listOfReactions}->{reaction}};
 
   foreach my $reactionRef (@reactionArr) {
+    my @ecNums;
     %myHash = %{$reactionRef};
     @fields = keys(%myHash);
     my (@reactants, @products);
@@ -107,13 +107,13 @@ sub parseXML {
 	  # add wildcard in ec number, if needed
 	  $ecNum = $ecNum . ".-" if ($ecNum=~/^\d+\.\d+\.\d+$/);
 	  $ecNum = $ecNum . ".-.-" if ($ecNum=~/^\d+\.\d+$/);
-
-	  # if no entry add 'Unknown'
-	  $ecNum = 'Unknown' if (!$ecNum); #  when Reactions do not have an EC Number.
-	  push (@ecNums,$ecNum); # collect ecNums'; later add them as nodes
 	}
       }
     }
+
+    # if no entry add 'Unknown'
+    $ecNum = 'Unknown' if (!$ecNum); #  when Reactions do not have an EC Number.
+    push (@ecNums,$ecNum); # collect ecNums'; later add them as nodes
 
     # get Reactants
     my @arrReactants = $reactionRef->{listOfReactants}->{speciesReference};
