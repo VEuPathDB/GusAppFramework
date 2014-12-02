@@ -110,6 +110,7 @@ sub run {
     }
 
     my $insertCount;
+    my $columnCount;
 
     while (<FILE>) {
       chomp;
@@ -118,6 +119,8 @@ sub run {
 
       if (!$insertStmt) {
         # first trip: input record names columns; insert statement must be prepared
+
+	$columnCount = scalar @inputRecord;
         # turn field names into valid column names by changing spaces to underscores and removing other illegal characters
         my $sql = "insert into $table ("
                   . "filename, "
@@ -136,8 +139,14 @@ sub run {
 	 # change "NA" to null string; change null string to undef
 	my @inputRecord =  map({my $s = $_; $s =~ s/^NA$//g; $s = undef if ($s eq ''); $s}
                                @inputRecord);
+
+	# check that we have the right number of values
+	if (scalar(@inputRecord) != ($columnCount + 1) ) { # add one for the prefixed filename
+	    shift @inputRecord; # lose filename to avoid confusion
+	    die "Column-count mismatch loading record " . ($insertCount + 2) . " of file \"$inputFile\". Expected $columnCount but got " . scalar(@inputRecord) . ". Values: " . join(", ", @inputRecord);
+	}
+
 	$insertStmt->execute(@inputRecord) or die DBI::errstr;
-	$insertStmt->finish();
 
         # at intervals, log and commit
         unless (++$insertCount % $commitInterval) {
