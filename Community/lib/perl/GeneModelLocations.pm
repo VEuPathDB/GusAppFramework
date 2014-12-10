@@ -210,6 +210,20 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     }
 
 
+
+    unless($seenExons{$a->[4]}) {
+      $geneModels->{$a->[0]}->{exons}->{$a->[4]} = {'source_id' => $a->[4],
+                                                    'na_feature_id' => $a->[5],
+                                                    'start' => $a->[6],
+                                                    'end' => $a->[7],
+                                                    'is_reversed' => $a->[8],
+                                                    'sequence_source_id' => $a->[14],
+      };
+
+      $seenExons{$a->[4]} = 1;
+    }
+
+
     unless($seenProteins{$a->[15]}) {
       $geneModels->{$a->[0]}->{transcripts}->{$a->[2]}->{proteins}->{$a->[15]} = {'source_id' => $a->[15],
                                                                                   'aa_feature_id' => $a->[16],
@@ -223,16 +237,11 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
       $seenProteins{$a->[15]} = 1;
     }
 
+    push @{$geneModels->{$a->[0]}->{transcripts}->{$a->[2]}->{exonSourceIds}}, $a->[4];
 
-    unless($seenExons{$a->[5]}) {
-      push @{$geneModels->{$a->[0]}->{transcripts}->{$a->[2]}->{exonSourceIds}}, $a->[4];
-    }
-
-
-
-    my $exon = {source_id => $a->[4],
+    my $cds = {source_id => $a->[4],
                 na_feature_id => $a->[5],
-                exon_start => $a->[6],
+                exon_start => $a->[6], 
                 exon_end => $a->[7],
                 is_reversed => $a->[8],
                 cds_start => $a->[18],
@@ -240,7 +249,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     };
 
 
-    push @{$geneModels->{$a->[0]}->{transcripts}->{$a->[2]}->{proteins}->{$a->[15]}->{exons}}, $exon;
+    push @{$geneModels->{$a->[0]}->{transcripts}->{$a->[2]}->{proteins}->{$a->[15]}->{exons}}, $cds;
   }
 
   $self->{_all_models_hash} = $geneModels;
