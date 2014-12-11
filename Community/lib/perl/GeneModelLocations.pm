@@ -3,15 +3,23 @@ package GUS::Community::GeneModelLocations;
 use strict;
 
 use Bio::Location::Simple;
+use Bio::Coordinate::Pair;
 #use Bio::Coordinate::GeneMapper;
 
 use Data::Dumper;
 
 
 sub new {
-  my ($class, $dbh, $geneExtDbRlsId) = @_;
+  my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel) = @_;
 
-  my $self = bless {'_database_handle' => $dbh, '_gene_external_database_release_id' => $geneExtDbRlsId}, $class;
+  my $self = bless {'_database_handle' => $dbh, '_gene_external_database_release_id' => $geneExtDbRlsId, '_want_top_level' => $wantTopLevel}, $class;
+
+  my $agpMap = {};
+  if($wantTopLevel) {
+    $agpMap = $self->queryForAgpMap();
+  }
+
+  $self->setAgpMap($agpMap);
 
   $self->_initAllModelsHash();
 
@@ -24,6 +32,19 @@ sub new {
 
 sub getDatabaseHandle { $_[0]->{_database_handle} }
 sub getGeneExternalDatabaseReleaseId { $_[0]->{_gene_external_database_release_id} }        
+sub getWantTopLevel { $_[0]->{_want_top_level} }
+
+sub getAgpMap { $_[0]->{_agp_map} }
+sub setAgpMap { $_[0]->{_agp_map} = $_->[1] }
+
+sub getAllGeneIds {
+  my ($self) = @_;
+
+  my @rv = keys %{$self->_getAllModelsHash()};
+
+  return \@rv;
+}
+
 
 sub getGeneModelHashFromGeneSourceId {
   my ($self, $geneSourceId) = @_;
@@ -95,7 +116,7 @@ sub getExonLocationsFromProteinId {
     $maxCds = $max if($max > $maxCds);
 
     #used for exon and cds
-    $strand = $exon->{is_reversed} ? -1 : 1;
+    $strand = $exon->{strand};
 
     my $exonLoc = Bio::Location::Simple->new( -seq_id => $naSequenceSourceId, -start => $exon->{exon_start}  , -end => $exon->{exon_end} , -strand => $strand);  
 
@@ -183,73 +204,115 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
   my %seenProteins;
   my %seenExons;
 
+  my $agpMap = $self->getAgpMap();
+
   while(my $a = $sh->fetchrow_arrayref()) {
 
-    unless($seenGenes{$a->[0]}) {
-      $geneModels->{$a->[0]} = { 'source_id' => $a->[0],
-                                 'na_feature_id' => $a->[1],
-                                 'sequence_source_id' => $a->[14],
-                                 'start' => $a->[11],
-                                 'end' => $a->[12],
-                                 'is_reversed' => $a->[13],
-      };
+    my $geneSourceId = $a->[0];
+    my $geneNaFeatureId = $a->[1];
+    my $transcriptSourceId = $a->[2];
+    my $transcriptNaFeatureId = $a->[3];
+    my $exonSourceId = $a->[4];
+    my $exonNaFeatureId = $a->[5];
+    my $exonStart = $a->[6];
+    my $exonEnd = $a->[7];
+    my $exonIsReversed = $a->[8];
+    my $translationStart = $a->[9];
+    my $translationStop = $a->[10];
+    my $geneStart = $a->[11];
+    my $geneEnd = $a->[12];
+    my $geneIsReversed = $a->[13];
+    my $sequenceSourceId = $a->[14];
+    my $proteinSourceId = $a->[15];
+    my $proteinAaFeatureId = $a->[16];
+    my $proteinAaSequenceId = $a->[17];
+    my $codingStart = $a->[18];
+    my $codingEnd = $a->[19];
+
+    my $strand = $geneIsReversed ? -1 : 1;
+
+
+    unless($seenGenes{$geneSourceId}) {
+      if(my $agp = $agpMap->{$sequenceSourceId}) {
+        my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand);
+      }
       
 
-      $seenGenes{$a->[0]} = 1;
-    }
-
-    unless($seenTranscripts{$a->[2]}) {
-      $geneModels->{$a->[0]}->{transcripts}->{$a->[2]} = {'source_id' => $a->[2],
-                                                          'na_feature_id' => $a->[3],
-                                                          'is_reversed' => $a->[8],
-                                                          'sequence_source_id' => $a->[14],
+      $geneModels->{$geneSourceId} = { 'source_id' => $geneSourceId,
+                                 'na_feature_id' => $geneNaFeatureId,
+                                 'sequence_source_id' => $geneLocation->seq_id,
+                                 'start' => $geneLocation->start,
+                                 'end' => $geneLocation->end,
+                                 'strand' => $geneLocation->strand,
       };
 
-      $transcriptToGeneMap->{$a->[2]} = $a->[0];
-      $seenTranscripts{$a->[2]} = 1;
+
+      $seenGenes{$geneSourceId} = 1;
     }
 
 
+    my $seenTranscript = $seenTranscripts{$transcriptSourceId};
+    my $seenExon = $seenExons{$exonSourceId};
 
-    unless($seenExons{$a->[4]}) {
-      $geneModels->{$a->[0]}->{exons}->{$a->[4]} = {'source_id' => $a->[4],
-                                                    'na_feature_id' => $a->[5],
-                                                    'start' => $a->[6],
-                                                    'end' => $a->[7],
-                                                    'is_reversed' => $a->[8],
-                                                    'sequence_source_id' => $a->[14],
+    unless($seenTranscript) {
+      $geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId} = {'source_id' => $transcriptSourceId,
+                                                          'na_feature_id' => $transcriptNaFeatureId,
+                                                          'sequence_source_id' => $sequenceSourceId,
       };
 
-      $seenExons{$a->[4]} = 1;
+      $transcriptToGeneMap->{$transcriptSourceId} = $geneSourceId;
+      $seenTranscripts{$transcriptSourceId} = 1;
     }
 
 
-    unless($seenProteins{$a->[15]}) {
-      $geneModels->{$a->[0]}->{transcripts}->{$a->[2]}->{proteins}->{$a->[15]} = {'source_id' => $a->[15],
-                                                                                  'aa_feature_id' => $a->[16],
-                                                                                  'aa_sequence_id' => $a->[17],
-                                                                                  'translation_start' => $a->[9],
-                                                                                  'translation_end' => $a->[10],
-                                                                                  'na_sequence_source_id' => $a->[14],
+
+    unless($seenExon) {
+      my $exonLocation = &mapLocation($agpMap, $sequenceSourceId, $exonStart, $exonEnd, $strand);
+
+      $geneModels->{$geneSourceId}->{exons}->{$exonSourceId} = {'source_id' => $exonSourceId,
+                                                    'na_feature_id' => $exonNaFeatureId,
+                                                    'start' => $exonLocation->start,
+                                                    'end' => $exonLocation->end,
+                                                    'strand' => $exonLocation->strand,
+                                                    'sequence_source_id' => $exonLocation->seq_id,
       };
 
-      $proteinToTranscriptMap->{$a->[15]} = $a->[2];
-      $seenProteins{$a->[15]} = 1;
+      $seenExons{$exonSourceId} = 1;
     }
 
-    push @{$geneModels->{$a->[0]}->{transcripts}->{$a->[2]}->{exonSourceIds}}, $a->[4];
+    unless($seenExon && $seenTranscript) {
+      push @{$geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{transcripts}}, $transcriptSourceId;
+    }
 
-    my $cds = {source_id => $a->[4],
-                na_feature_id => $a->[5],
-                exon_start => $a->[6], 
-                exon_end => $a->[7],
-                is_reversed => $a->[8],
-                cds_start => $a->[18],
-                cds_end => $a->[19],
+    unless($seenProteins{$proteinSourceId}) {
+      $geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{proteins}->{$proteinSourceId} = {'source_id' => $proteinSourceId,
+                                                                                                            'aa_feature_id' => $proteinAaFeatureId,
+                                                                                                            'aa_sequence_id' => $proteinAaSequenceId,
+                                                                                                            'translation_start' => $translationStart,
+                                                                                                            'translation_end' =>  $translationStop,
+                                                                                                            'na_sequence_source_id' => $geneModels->{$geneSourceId}->{sequence_source_id},
+      };
+
+      $proteinToTranscriptMap->{$proteinSourceId} = $transcriptSourceId;
+      $seenProteins{$proteinSourceId} = 1;
+    }
+
+    push @{$geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{exonSourceIds}}, $exonSourceId;
+
+    my @sortedCds = sort ($codingStart, $codingEnd);
+
+    my $cdsLocation = &mapLocation($agpMap, $sequenceSourceId, $sortedCds[0], $sortedCds[1], $strand);
+
+    my $cds = {source_id => $exonSourceId,
+               na_feature_id => $exonNaFeatureId,
+               strand => $cdsLocation->strand,
+               exon_start => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{start},
+               exon_end => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{end},
+               cds_start => $cdsLocation->strand == -1 ? $cdsLocation->end : $cdsLocation->start,
+               cds_end => $cdsLocation->strand == -1 ? $cdsLocation->start : $cdsLocation->end,
     };
 
-
-    push @{$geneModels->{$a->[0]}->{transcripts}->{$a->[2]}->{proteins}->{$a->[15]}->{exons}}, $cds;
+    push @{$geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{proteins}->{$proteinSourceId}->{exons}}, $cds;
   }
 
   $self->{_all_models_hash} = $geneModels;
@@ -257,6 +320,75 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
   $self->{_protein_to_transcript_map} = $proteinToTranscriptMap;
 }
 
+#--------------------------------------------------------------------------------
+# Static Methods Start
+#--------------------------------------------------------------------------------
 
+sub queryForAgpMap {
+  my ($dbh) = @_;
+
+  my %agpMap;
+
+  my $sql = "select sp.virtual_na_sequence_id
+                                , p.na_sequence_id as piece_na_sequence_id
+                               , decode(sp.strand_orientation, '+', '+1', '-', '-1', '+1') as piece_strand
+                               , p.length as piece_length
+                               , sp.distance_from_left + 1 as virtual_start_min
+                               , sp.distance_from_left + p.length as virtual_end_max
+                               , p.source_id as piece_source_id
+                               , vs.source_id as virtual_source_id
+                   from dots.sequencepiece sp
+                           , dots.nasequence p
+                           ,  dots.nasequence vs
+                   where  sp.piece_na_sequence_id = p.na_sequence_id
+                    and sp.virtual_na_sequence_id = vs.na_sequence_id";
+
+  my $sh = $dbh->prepare($sql);
+  $sh->execute();
+
+  while(my $hash = $sh->fetchrow_hashref()) {
+    my $ctg = Bio::Location::Simple->new( -seq_id => $hash->{PIECE_SOURCE_ID}, 
+                                          -start => 1, 
+                                          -end =>  $hash->{PIECE_LENGTH}, 
+                                          -strand => '+1' );
+
+    my $ctg_on_chr = Bio::Location::Simple->new( -seq_id =>  $hash->{VIRTUAL_SOURCE_ID}, 
+                                                 -start => $hash->{VIRTUAL_START_MIN},
+                                                 -end =>  $hash->{VIRTUAL_END_MAX} , 
+                                                 -strand => $hash->{PIECE_STRAND} );
+
+    my $agp = Bio::Coordinate::Pair->new( -in  => $ctg, -out => $ctg_on_chr );
+    my $pieceSourceId = $hash->{PIECE_SOURCE_ID};
+ 
+    if($agpMap{$pieceSourceId}) {
+      die "Piece $pieceSourceId can only map to one virtual sequence";
+    }
+
+    $agpMap{$pieceSourceId} = $agp;
+  }
+
+  $sh->finish();
+
+  return \%agpMap;
+}
+
+
+sub mapLocation {
+  my ($agpMap, $pieceSourceId, $start, $end, $strand) = @_;
+
+  my $agp = $agpMap->{$pieceSourceId};
+
+  my $match = Bio::Location::Simple->
+    new( -seq_id => $pieceSourceId, -start =>   $start, -end =>  $end, -strand => $strand );
+
+  my $result = $agp->map($match);
+
+  my $resultIsPiece = $agpMap->{$result->seq_id};
+
+  return $result if($match->seq_id eq $result->seq_id || !$resultIsPiece);
+
+  &mapLocation($agpMap, $result->seq_id, $result->start, $result->end, $result->strand);
+}
+ 
 
 1;
