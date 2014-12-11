@@ -4,7 +4,7 @@ use strict;
 
 use Bio::Location::Simple;
 use Bio::Coordinate::Pair;
-#use Bio::Coordinate::GeneMapper;
+use Bio::Coordinate::GeneMapper;
 
 use Data::Dumper;
 
@@ -93,8 +93,8 @@ sub getProteinHashFromProteinId {
 }
 
 
-# (handy) Makes objects needed for a Bio::Coordinate::GeneMapper
-sub getExonLocationsFromProteinId {
+
+sub getProteinToGenomicCoordMapper {
   my ($self, $proteinId) = @_;
 
   my $proteinHash = $self->getProteinHashFromProteinId($proteinId);
@@ -125,7 +125,15 @@ sub getExonLocationsFromProteinId {
 
     my $cdsRange = Bio::Location::Simple->new( -seq_id => $naSequenceSourceId, -start => $minCds  , -end => $maxCds , -strand => $strand);  
 
-  return \@exonLocs, $cdsRange
+
+  my $mapper = Bio::Coordinate::GeneMapper->new(
+    -in    => 'peptide',
+    -out   => 'chr',
+    -exons => \@exonLocations,
+    -cds => $cdsRange
+      );
+
+  return $mapper;
 }
 
 
@@ -174,7 +182,7 @@ from dots.genefeature gf
    , dots.rnafeatureexon rfe
    , dots.translatedaafeature taf
    , dots.aafeatureexon afe
-   , dots.translatedaasequence aas
+ppp   , dots.translatedaasequence aas
 where gf.na_feature_id = ef.parent_id
 and gf.na_feature_id = gfl.na_feature_id
 and gf.na_sequence_id = s.na_sequence_id
