@@ -6,13 +6,17 @@ use Bio::Location::Simple;
 use Bio::Coordinate::Pair;
 use Bio::Coordinate::GeneMapper;
 
+use Bio::SeqFeature::Generic;
+
 use Data::Dumper;
 
 
 sub new {
   my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel) = @_;
 
-  my $self = bless {'_database_handle' => $dbh, '_gene_external_database_release_id' => $geneExtDbRlsId, '_want_top_level' => $wantTopLevel}, $class;
+  my $self = bless {'_database_handle' => $dbh, 
+                    '_gene_external_database_release_id' => $geneExtDbRlsId, 
+                    '_want_top_level' => $wantTopLevel}, $class;
 
   my $agpMap = {};
   if($wantTopLevel) {
@@ -45,6 +49,104 @@ sub getAllGeneIds {
   return \@rv;
 }
 
+sub bioperlFeaturesFromGeneSourceId {
+  my ($self, $geneSourceId) = @_;
+
+  my @rv;
+
+  my $geneModelHash = $self->getGeneModelHashFromGeneSourceId($geneSourceId);
+
+  my $geneFeature = new Bio::SeqFeature::Generic ( -start => $geneModelHash->{start}, 
+                                                   -end => $geneModelHash->{end}, 
+                                                   -seq_id => $geneModelHash->{sequence_source_id},
+                                                   -strand => $geneModelHash->{strand}, 
+                                                   -primary => 'gene',
+                                                   -tag    => { ID => $geneSourceId,
+                                                                NA_FEATURE_ID => $geneModelHash->{na_feature_id}
+                                                   });
+
+  push @rv, $geneFeature;
+
+  my @cdsFeatures;
+
+  foreach my $transcriptSourceId (keys %{$geneModelHash->{transcripts}}) {
+    my $transcriptHash = $geneModelHash->{transcripts}->{$transcriptSourceId};
+
+    my $exonSourceIds = $transcriptHash->{exonSourceIds};
+
+    my $transcriptStart = $geneModelHash->{end};
+    my $transcriptEnd = $geneModelHash->{start};
+
+    foreach my $exonSourceId (@$exonSourceIds) {
+      my $exonStart = $geneModelHash->{exons}->{$exonSourceId}->{start};
+      my $exonEnd = $geneModelHash->{exons}->{$exonSourceId}->{end};
+      $transcriptStart =  $exonStart if($exonStart < $transcriptStart);
+      $transcriptEnd =  $exonEnd if($exonEnd > $transcriptEnd);
+    }
+
+    my $transcriptFeature = new Bio::SeqFeature::Generic ( -start => $transcriptStart,
+                                                   -end => $transcriptEnd, 
+                                                   -seq_id => $geneModelHash->{sequence_source_id},
+                                                   -strand => $geneModelHash->{strand}, 
+                                                   -primary => 'mRNA',
+                                                   -tag    => { ID => $transcriptSourceId,
+                                                                NA_FEATURE_ID => $transcriptHash->{na_feature_id},
+                                                                PARENT => $geneModelHash->{source_id}
+                                                   });
+
+    push @rv, $transcriptFeature;
+
+    foreach my $proteinSourceId (keys %{$transcriptHash->{proteins}}) {
+      my $proteinHash = $transcriptHash->{proteins}->{$proteinSourceId};
+
+      foreach my $pExon (@{$proteinHash->{exons}}) {
+
+        my $cdsFeature = new Bio::SeqFeature::Generic ( -start => $pExon->{cds_start},
+                                                        -end => $pExon->{cds_end}, 
+                                                        -seq_id => $geneModelHash->{sequence_source_id},
+                                                        -strand => $pExon->{strand},
+                                                        -primary => 'cds',
+                                                        -tag    => { ID => $proteinSourceId,
+                                                                     AA_FEATURE_ID => $proteinHash->{aa_feature_id},
+                                                                     AA_SEQUENCE_ID => $proteinHash->{aa_sequence_id},
+                                                                     PARENT => $transcriptSourceId,
+                                                        });
+
+        push @cdsFeatures, $cdsFeature;
+      }
+    }
+  }
+
+
+  my @exonFeatures;
+  foreach my $exonSourceId (keys %{$geneModelHash->{exons}}) {
+    my $exonHash = $geneModelHash->{exons}->{$exonSourceId};
+
+    my $parent = join(",", @{$exonHash->{transcripts}});
+
+
+    my $exonFeature = new Bio::SeqFeature::Generic ( -start => $exonHash->{start}, 
+                                                   -end => $exonHash->{end}, 
+                                                   -seq_id => $exonHash->{sequence_source_id},
+                                                   -strand => $exonHash->{strand}, 
+                                                     -primary => 'exon',
+                                                   -tag    => { ID => $exonSourceId,
+                                                                NA_FEATURE_ID => $exonHash->{na_feature_id},
+                                                                PARENT => $parent
+                                                   });
+
+    push @exonFeatures, $exonFeature
+  }
+
+  my @sortedExonFeatures = sort { $a->start <=> $b->start} @exonFeatures;
+  push @rv, @sortedExonFeatures;
+
+  my @sortedCdsFeatures = sort { $a->start <=> $b->start} @cdsFeatures;
+  push @rv, @sortedCdsFeatures;
+
+
+  return \@rv;
+}
 
 sub getGeneModelHashFromGeneSourceId {
   my ($self, $geneSourceId) = @_;
@@ -110,7 +212,7 @@ sub getProteinToGenomicCoordMapper {
     $minCds = $exon->{cds_start} unless($minCds);
     $maxCds = $exon->{cds_start} unless($maxCds);
 
-    my ($min, $max) = sort ($exon->{cds_start}, $exon->{cds_end});
+    my ($min, $max) = sort {$a <=> $b} ($exon->{cds_start}, $exon->{cds_end});
 
     $minCds = $min if($min < $minCds);
     $maxCds = $max if($max > $maxCds);
@@ -118,24 +220,29 @@ sub getProteinToGenomicCoordMapper {
     #used for exon and cds
     $strand = $exon->{strand};
 
-    my $exonLoc = Bio::Location::Simple->new( -seq_id => $naSequenceSourceId, -start => $exon->{exon_start}  , -end => $exon->{exon_end} , -strand => $strand);  
+    my $exonLoc = Bio::Location::Simple->new( -seq_id => $naSequenceSourceId, 
+                                              -start => $exon->{exon_start}, 
+                                              -end => $exon->{exon_end}, 
+                                              -strand => $strand);  
 
     push @exonLocs, $exonLoc;
   }
 
-    my $cdsRange = Bio::Location::Simple->new( -seq_id => $naSequenceSourceId, -start => $minCds  , -end => $maxCds , -strand => $strand);  
+    my $cdsRange = Bio::Location::Simple->new( -seq_id => $naSequenceSourceId, 
+                                               -start => $minCds, 
+                                               -end => $maxCds, 
+                                               -strand => $strand);  
 
 
   my $mapper = Bio::Coordinate::GeneMapper->new(
     -in    => 'peptide',
     -out   => 'chr',
-    -exons => \@exonLocations,
+    -exons => \@exonLocs,
     -cds => $cdsRange
       );
 
   return $mapper;
 }
-
 
 #--------------------------------------------------------------------------------
 # private methods
@@ -182,7 +289,7 @@ from dots.genefeature gf
    , dots.rnafeatureexon rfe
    , dots.translatedaafeature taf
    , dots.aafeatureexon afe
-ppp   , dots.translatedaasequence aas
+   , dots.translatedaasequence aas
 where gf.na_feature_id = ef.parent_id
 and gf.na_feature_id = gfl.na_feature_id
 and gf.na_sequence_id = s.na_sequence_id
@@ -214,37 +321,33 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 
   my $agpMap = $self->getAgpMap();
 
-  while(my $a = $sh->fetchrow_arrayref()) {
-
-    my $geneSourceId = $a->[0];
-    my $geneNaFeatureId = $a->[1];
-    my $transcriptSourceId = $a->[2];
-    my $transcriptNaFeatureId = $a->[3];
-    my $exonSourceId = $a->[4];
-    my $exonNaFeatureId = $a->[5];
-    my $exonStart = $a->[6];
-    my $exonEnd = $a->[7];
-    my $exonIsReversed = $a->[8];
-    my $translationStart = $a->[9];
-    my $translationStop = $a->[10];
-    my $geneStart = $a->[11];
-    my $geneEnd = $a->[12];
-    my $geneIsReversed = $a->[13];
-    my $sequenceSourceId = $a->[14];
-    my $proteinSourceId = $a->[15];
-    my $proteinAaFeatureId = $a->[16];
-    my $proteinAaSequenceId = $a->[17];
-    my $codingStart = $a->[18];
-    my $codingEnd = $a->[19];
+  while(my $arr = $sh->fetchrow_arrayref()) {
+    my $geneSourceId = $arr->[0];
+    my $geneNaFeatureId = $arr->[1];
+    my $transcriptSourceId = $arr->[2];
+    my $transcriptNaFeatureId = $arr->[3];
+    my $exonSourceId = $arr->[4];
+    my $exonNaFeatureId = $arr->[5];
+    my $exonStart = $arr->[6];
+    my $exonEnd = $arr->[7];
+    my $exonIsReversed = $arr->[8];
+    my $translationStart = $arr->[9];
+    my $translationStop = $arr->[10];
+    my $geneStart = $arr->[11];
+    my $geneEnd = $arr->[12];
+    my $geneIsReversed = $arr->[13];
+    my $sequenceSourceId = $arr->[14];
+    my $proteinSourceId = $arr->[15];
+    my $proteinAaFeatureId = $arr->[16];
+    my $proteinAaSequenceId = $arr->[17];
+    my $codingStart = $arr->[18];
+    my $codingEnd = $arr->[19];
 
     my $strand = $geneIsReversed ? -1 : 1;
 
 
     unless($seenGenes{$geneSourceId}) {
-      if(my $agp = $agpMap->{$sequenceSourceId}) {
-        my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand);
-      }
-      
+      my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand);
 
       $geneModels->{$geneSourceId} = { 'source_id' => $geneSourceId,
                                  'na_feature_id' => $geneNaFeatureId,
@@ -264,8 +367,8 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 
     unless($seenTranscript) {
       $geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId} = {'source_id' => $transcriptSourceId,
-                                                          'na_feature_id' => $transcriptNaFeatureId,
-                                                          'sequence_source_id' => $sequenceSourceId,
+                                                                            'na_feature_id' => $transcriptNaFeatureId,
+                                                                            'sequence_source_id' => $sequenceSourceId,
       };
 
       $transcriptToGeneMap->{$transcriptSourceId} = $geneSourceId;
@@ -307,7 +410,9 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 
     push @{$geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{exonSourceIds}}, $exonSourceId;
 
-    my @sortedCds = sort ($codingStart, $codingEnd);
+    my @sortedCds = sort {$a <=> $b} ($codingStart, $codingEnd);
+
+    die join(' ', @sortedCds) if ($sortedCds[0] > $sortedCds[1]);
 
     my $cdsLocation = &mapLocation($agpMap, $sequenceSourceId, $sortedCds[0], $sortedCds[1], $strand);
 
@@ -316,8 +421,8 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
                strand => $cdsLocation->strand,
                exon_start => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{start},
                exon_end => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{end},
-               cds_start => $cdsLocation->strand == -1 ? $cdsLocation->end : $cdsLocation->start,
-               cds_end => $cdsLocation->strand == -1 ? $cdsLocation->start : $cdsLocation->end,
+               cds_start => $cdsLocation->start,
+               cds_end => $cdsLocation->end,
     };
 
     push @{$geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{proteins}->{$proteinSourceId}->{exons}}, $cds;
@@ -384,10 +489,12 @@ sub queryForAgpMap {
 sub mapLocation {
   my ($agpMap, $pieceSourceId, $start, $end, $strand) = @_;
 
-  my $agp = $agpMap->{$pieceSourceId};
-
   my $match = Bio::Location::Simple->
     new( -seq_id => $pieceSourceId, -start =>   $start, -end =>  $end, -strand => $strand );
+
+  my $agp = $agpMap->{$pieceSourceId};
+
+  return $match unless($agp);
 
   my $result = $agp->map($match);
 
