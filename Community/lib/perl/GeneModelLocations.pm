@@ -105,7 +105,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                         -end => $pExon->{cds_end}, 
                                                         -seq_id => $geneModelHash->{sequence_source_id},
                                                         -strand => $pExon->{strand},
-                                                        -primary => 'cds',
+                                                        -primary => 'CDS',
                                                         -tag    => { ID => $proteinSourceId,
                                                                      AA_FEATURE_ID => $proteinHash->{aa_feature_id},
                                                                      AA_SEQUENCE_ID => $proteinHash->{aa_sequence_id},
