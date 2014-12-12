@@ -326,7 +326,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     my $geneNaFeatureId = $arr->[1];
     my $transcriptSourceId = $arr->[2];
     my $transcriptNaFeatureId = $arr->[3];
-    my $exonSourceId = $arr->[4];
+    my $exonSourceId = "exon_" . $arr->[4];
     my $exonNaFeatureId = $arr->[5];
     my $exonStart = $arr->[6];
     my $exonEnd = $arr->[7];
