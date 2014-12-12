@@ -100,6 +100,7 @@ sub bioperlFeaturesFromGeneSourceId {
       my $proteinHash = $transcriptHash->{proteins}->{$proteinSourceId};
 
       foreach my $pExon (@{$proteinHash->{exons}}) {
+        next if($pExon->{is_all_utr});
 
         my $cdsFeature = new Bio::SeqFeature::Generic ( -start => $pExon->{cds_start},
                                                         -end => $pExon->{cds_end}, 
@@ -416,6 +417,9 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 
     my $cdsLocation = &mapLocation($agpMap, $sequenceSourceId, $sortedCds[0], $sortedCds[1], $strand);
 
+    my $isAllUtr;
+    $isAllUtr = 1 unless($cdsLocation->start && $cdsLocation->end);
+
     my $cds = {source_id => $exonSourceId,
                na_feature_id => $exonNaFeatureId,
                strand => $cdsLocation->strand,
@@ -423,6 +427,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
                exon_end => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{end},
                cds_start => $cdsLocation->start,
                cds_end => $cdsLocation->end,
+               is_all_utr => $isAllUtr,
     };
 
     push @{$geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{proteins}->{$proteinSourceId}->{exons}}, $cds;
