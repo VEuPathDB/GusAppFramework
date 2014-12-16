@@ -255,6 +255,40 @@ AND taf.na_feature_id = t.na_feature_id
 }
 
 
+
+sub getTranscriptIdsFromGeneId {
+  my ($plugin, $geneSourceId, $geneExtDbRlsId) = @_;
+  
+  my $geneFeatId = getGeneFeatureId($plugin, $geneSourceId, $geneExtDbRlsId);
+
+  return undef unless $geneFeatId;
+
+  my $sth = $plugin->{_transcriptIdsFromGeneIdSth};
+  unless($sth) {
+
+    my $sql = "SELECT t.na_feature_id
+FROM Dots.Transcript t
+WHERE t.parent_id = ?
+";
+
+    $sth = $plugin->getQueryHandle()->prepare($sql);
+    $plugin->{_transcriptIdsFromGeneIdSth} = $sth;
+  }
+
+  $sth->execute($geneFeatId);
+
+  my @transcriptIds;
+  while(my ($transcriptId) = $sth->fetchrow_array()) {
+    push @transcriptIds, $transcriptId;
+  }
+  $sth->finish();
+
+  return \@transcriptIds;
+}
+
+
+
+
 # warning: this method issues a query each time it is called, ie, it is
 #          slow when used repeatedly.  should be rewritten to do a batch
 sub getTranslatedAAFeatureIdFromGeneSourceId {
@@ -317,6 +351,8 @@ sub getGeneFeatureIdFromSourceId {
 sub getCodingSequenceFromExons {
   my ($gusExons) = @_;
 
+  die "wrong way to cds";
+
   die "No Exons found" unless(scalar(@$gusExons) > 0);
 
   foreach (@$gusExons) {
@@ -354,6 +390,14 @@ sub getCodingSequenceFromExons {
   return($codingSequence);
 }
 
+
+
+
+
+
+
+
+
 sub getExtDbRlsVerFromExtDbRlsName {
   my ($plugin, $extDbRlsName) = @_;
 
@@ -378,30 +422,6 @@ sub getExtDbRlsVerFromExtDbRlsName {
 
 }
 
-sub addGffFeatures {
-  my ($allFeatureLocations, $gffFile, $gffVersion) = @_;
-
-  die "HASHREF expected but not found" unless(ref($allFeatureLocations) eq 'HASH');
-
-  my $gffIO = Bio::Tools::GFF->new(-gff_version => $gffVersion,
-                                   -file => $gffFile
-                                  );
-
-  while (my $feature = $gffIO->next_feature()) {
-    my $seqId = $feature->seq_id();
-    my ($gene) = $feature->get_tag_values('parent');
-
-    my $location = $feature->location();
-    my $start = $location->start();
-    my $end = $location->end();
-    my $strand = $location->strand();
-
-    push @{$allFeatureLocations->{$seqId}->{$gene}->{$strand}}, $start;
-    push @{$allFeatureLocations->{$seqId}->{$gene}->{$strand}}, $end;
-  }
-
-  $gffIO->close();
-}
 
 
 
