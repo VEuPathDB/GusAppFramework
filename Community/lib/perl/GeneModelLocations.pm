@@ -54,6 +54,8 @@ sub bioperlFeaturesFromGeneSourceId {
 
   my @rv;
 
+  my $sourceTag = 'GUS';
+
   my $geneModelHash = $self->getGeneModelHashFromGeneSourceId($geneSourceId);
 
   my $geneFeature = new Bio::SeqFeature::Generic ( -start => $geneModelHash->{start}, 
@@ -61,6 +63,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                    -seq_id => $geneModelHash->{sequence_source_id},
                                                    -strand => $geneModelHash->{strand}, 
                                                    -primary => 'gene',
+                                                   -source_tag => $sourceTag, 
                                                    -tag    => { ID => $geneSourceId,
                                                                 NA_FEATURE_ID => $geneModelHash->{na_feature_id}
                                                    });
@@ -89,6 +92,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                    -seq_id => $geneModelHash->{sequence_source_id},
                                                    -strand => $geneModelHash->{strand}, 
                                                    -primary => 'mRNA',
+                                                   -source_tag => $sourceTag, 
                                                    -tag    => { ID => $transcriptSourceId,
                                                                 NA_FEATURE_ID => $transcriptHash->{na_feature_id},
                                                                 PARENT => $geneModelHash->{source_id}
@@ -107,6 +111,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                         -seq_id => $geneModelHash->{sequence_source_id},
                                                         -strand => $pExon->{strand},
                                                         -primary => 'CDS',
+                                                        -source_tag => $sourceTag, 
                                                         -tag    => { ID => $proteinSourceId,
                                                                      AA_FEATURE_ID => $proteinHash->{aa_feature_id},
                                                                      AA_SEQUENCE_ID => $proteinHash->{aa_sequence_id},
@@ -131,6 +136,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                    -seq_id => $exonHash->{sequence_source_id},
                                                    -strand => $exonHash->{strand}, 
                                                      -primary => 'exon',
+                                                   -source_tag => $sourceTag, 
                                                    -tag    => { ID => $exonSourceId,
                                                                 NA_FEATURE_ID => $exonHash->{na_feature_id},
                                                                 PARENT => $parent
