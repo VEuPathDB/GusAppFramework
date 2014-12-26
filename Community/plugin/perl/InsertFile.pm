@@ -39,6 +39,11 @@ my $argsDeclaration =
               reqd => 0,
               isList => 0
             }),
+   stringArg({ name  => 'columnList',
+               descr => "a comma-separated list of column names. If this is not provided, the first record should contain a tab-delimited list of columns",
+               constraintFunc => undef,
+               reqd => 0,
+               isList => 0 }),
   ];
 
 
@@ -103,6 +108,10 @@ sub run {
     $inputFile = $self->getArg('file');
     $table = $self->getArg('table');
     my $commitInterval = $self->getArg('commitInterval') || 10000;
+    my $columnList = $self->getArg('columnList');
+    if ($columnList) {
+	$insertStmt = prepareInsert($self, split(/\t/, $columnList));
+    }
 
     open (FILE, $inputFile) || die "Can't open input file \"$inputFile\".";
     if ($inputFile =~ m!\/([^/]*)$! ) {
@@ -130,7 +139,7 @@ sub run {
                   . join(', ', (map {"?"} @inputRecord))
                   . ")";
 	print "\$sql = \"$sql\"\n";
-	$insertStmt = $self->getQueryHandle()->prepare($sql) or die DBI::errstr;
+	$insertStmt = prepareInsert($self, @inputRecord);
       } else {
         # subsequent trip: input record contains data to insert
 
@@ -164,6 +173,22 @@ sub run {
 
     my $msg = "$insertCount records inserted";
     return $msg;
+}
+
+sub prepareInsert {
+    my ($self, @columnList) = @_;
+
+    my $sql = "insert into $table ("
+	      . "filename, "
+              . join(", ", map({my $s = $_; $s =~ s/[[\].\-\(\)%\/]//g; $s =~ s/ /_/g; $s =~ s/^([0-9])/_\1/; $s} @columnList))
+              . ") values ("
+              . "?, "  # placeholder for file column
+              . join(', ', (map {"?"} @columnList))
+              . ")";
+    print "\$sql = \"$sql\"\n";
+    $insertStmt = $self->getQueryHandle()->prepare($sql) or die DBI::errstr;
+
+    return $insertStmt;
 }
 
 1;
