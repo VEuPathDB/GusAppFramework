@@ -44,6 +44,12 @@ my $argsDeclaration =
                constraintFunc => undef,
                reqd => 0,
                isList => 0 }),
+ integerArg({ name => 'skipHeaderLines',
+              descr => 'number of lines to ignore at the top of the file before parsing and loading data',
+              constraintFunc => undef,
+              reqd => 0,
+              isList => 0
+            }),
   ];
 
 
@@ -104,13 +110,17 @@ sub new {
 
 sub run {
     my ($self) = @_;
+    my $columnCount;
 
     $inputFile = $self->getArg('file');
     $table = $self->getArg('table');
     my $commitInterval = $self->getArg('commitInterval') || 10000;
     my $columnList = $self->getArg('columnList');
+
     if ($columnList) {
-	$insertStmt = prepareInsert($self, split(/\t/, $columnList));
+	my @columns = split /,/, $columnList;
+	$insertStmt = prepareInsert($self, @columns);
+	$columnCount = scalar @columns;
     }
 
     open (FILE, $inputFile) || die "Can't open input file \"$inputFile\".";
@@ -118,9 +128,14 @@ sub run {
       $inputFile = $1;
     }
 
-    my $insertCount;
-    my $columnCount;
+    my $skipLines = $self->getArg('skipHeaderLines');
+    while ($skipLines--) {
+	my $line = <FILE>;
+	print "skipping header record \"$line\"";
+    }
 
+
+    my $insertCount;
     while (<FILE>) {
       chomp;
 
