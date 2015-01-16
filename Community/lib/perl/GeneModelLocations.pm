@@ -325,6 +325,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
   my %seenTranscripts;
   my %seenProteins;
   my %seenExons;
+  my %seenTranscriptExons;
 
   my $agpMap = $self->getAgpMap();
 
@@ -398,9 +399,13 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
       $seenExons{$exonSourceId} = 1;
     }
 
-    unless($seenExon && $seenTranscript) {
+    my $transcriptExonSourceId = "$transcriptSourceId.$exonSourceId";
+    
+    unless($seenTranscriptExons{$transcriptExonSourceId}) {
       push @{$geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{transcripts}}, $transcriptSourceId;
     }
+
+    $seenTranscriptExons{$transcriptExonSourceId} = 1;
 
     unless($seenProteins{$proteinSourceId}) {
       $geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{proteins}->{$proteinSourceId} = {'source_id' => $proteinSourceId,
