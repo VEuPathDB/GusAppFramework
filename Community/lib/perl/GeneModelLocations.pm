@@ -287,6 +287,7 @@ sub _initAllModelsHash {
      , aas.aa_sequence_id as protein_aa_sequence_id
      , afe.coding_start
      , afe.coding_end
+    , gf.na_sequence_id 
 from dots.genefeature gf
    , dots.nalocation gfl
    , dots.nasequence s
@@ -350,19 +351,21 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     my $proteinAaSequenceId = $arr->[17];
     my $codingStart = $arr->[18];
     my $codingEnd = $arr->[19];
+    my $naSequenceId = $arr->[20];
 
     my $strand = $geneIsReversed ? -1 : 1;
-
 
     unless($seenGenes{$geneSourceId}) {
       my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand);
 
       $geneModels->{$geneSourceId} = { 'source_id' => $geneSourceId,
                                  'na_feature_id' => $geneNaFeatureId,
+                                 'na_sequence_id' => $naSequenceId,
                                  'sequence_source_id' => $geneLocation->seq_id,
                                  'start' => $geneLocation->start,
                                  'end' => $geneLocation->end,
                                  'strand' => $geneLocation->strand,
+                                       
       };
 
 
@@ -376,6 +379,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     unless($seenTranscript) {
       $geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId} = {'source_id' => $transcriptSourceId,
                                                                             'na_feature_id' => $transcriptNaFeatureId,
+                                                                            'na_sequence_id' => $naSequenceId,
                                                                             'sequence_source_id' => $sequenceSourceId,
       };
 
@@ -394,6 +398,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
                                                     'end' => $exonLocation->end,
                                                     'strand' => $exonLocation->strand,
                                                     'sequence_source_id' => $exonLocation->seq_id,
+                                                    'na_sequence_id' => $naSequenceId,
       };
 
       $seenExons{$exonSourceId} = 1;
@@ -414,6 +419,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
                                                                                                             'translation_start' => $translationStart,
                                                                                                             'translation_end' =>  $translationStop,
                                                                                                             'na_sequence_source_id' => $geneModels->{$geneSourceId}->{sequence_source_id},
+                                                                                                            'na_sequence_id' => $naSequenceId,
       };
 
       $proteinToTranscriptMap->{$proteinSourceId} = $transcriptSourceId;
