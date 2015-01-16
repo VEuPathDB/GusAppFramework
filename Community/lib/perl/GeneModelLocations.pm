@@ -65,7 +65,8 @@ sub bioperlFeaturesFromGeneSourceId {
                                                    -primary => 'gene',
                                                    -source_tag => $sourceTag, 
                                                    -tag    => { ID => $geneSourceId,
-                                                                NA_FEATURE_ID => $geneModelHash->{na_feature_id}
+                                                                NA_FEATURE_ID => $geneModelHash->{na_feature_id},
+                                                                NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
                                                    });
 
   push @rv, $geneFeature;
@@ -95,7 +96,8 @@ sub bioperlFeaturesFromGeneSourceId {
                                                    -source_tag => $sourceTag, 
                                                    -tag    => { ID => $transcriptSourceId,
                                                                 NA_FEATURE_ID => $transcriptHash->{na_feature_id},
-                                                                PARENT => $geneModelHash->{source_id}
+                                                                PARENT => $geneModelHash->{source_id},
+                                                                NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
                                                    });
 
     push @rv, $transcriptFeature;
@@ -116,6 +118,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                                      AA_FEATURE_ID => $proteinHash->{aa_feature_id},
                                                                      AA_SEQUENCE_ID => $proteinHash->{aa_sequence_id},
                                                                      PARENT => $transcriptSourceId,
+                                                                     NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
                                                         });
 
         push @cdsFeatures, $cdsFeature;
@@ -139,7 +142,8 @@ sub bioperlFeaturesFromGeneSourceId {
                                                    -source_tag => $sourceTag, 
                                                    -tag    => { ID => $exonSourceId,
                                                                 NA_FEATURE_ID => $exonHash->{na_feature_id},
-                                                                PARENT => $parent
+                                                                PARENT => $parent,
+                                                                NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
                                                    });
 
     push @exonFeatures, $exonFeature
