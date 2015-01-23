@@ -97,6 +97,7 @@ sub bioperlFeaturesFromGeneSourceId {
                                                    -tag    => { ID => $transcriptSourceId,
                                                                 NA_FEATURE_ID => $transcriptHash->{na_feature_id},
                                                                 PARENT => $geneModelHash->{source_id},
+                                                                PARENT_NA_FEATURE_ID => $geneModelHash->{na_feature_id},
                                                                 NA_SEQUENCE_ID => $geneModelHash->{na_sequence_id},
                                                    });
 
