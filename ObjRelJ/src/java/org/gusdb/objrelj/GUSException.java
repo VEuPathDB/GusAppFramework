@@ -11,6 +11,7 @@ package org.gusdb.objrelj;
  * @version $Revision$ $Date$ $Author$
  */
 public class GUSException extends Exception implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     public GUSException(String msg){ super(msg); }
 }
 

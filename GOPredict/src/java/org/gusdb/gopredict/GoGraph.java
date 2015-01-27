@@ -8,9 +8,7 @@
 
 package org.gusdb.gopredict;
 
-import java.io.*;
-import java.util.*;
-import org.gusdb.gopredict.*;
+import java.util.Hashtable;
 
 public class GoGraph {
 
@@ -27,13 +25,13 @@ public class GoGraph {
      * Hashtable tracking GoTerms; keys are Strings of real GO Ids (in 
      * GO:XXXXXX format) and values are GoTerms.
      */
-    Hashtable realIdHash;
+    Hashtable<String, GoTerm> realIdHash;
 
     /**
      * Hashtable tracking GoTerms; keys are Integers of GO Ids in GUS 
      * and values are GoTerms.
      */
-    Hashtable gusIdHash;
+    Hashtable<Integer, GoTerm> gusIdHash;
 
 
     /**
@@ -54,19 +52,19 @@ public class GoGraph {
     //dtb: port of newFromResultSet in perl version
     public GoGraph(GoResultSet grs, String functionRootGoId){
 
-	realIdHash = new Hashtable();
-	gusIdHash = new Hashtable();
+	realIdHash = new Hashtable<>();
+	gusIdHash = new Hashtable<>();
 
 	for (int i = 0; i < grs.size(); i ++){
 
-	    Vector nextGoTermInfo = (Vector)grs.get(i);
-	    String realGoId = (String)nextGoTermInfo.get(0);
-	    Integer gusId = (Integer)nextGoTermInfo.get(1);
-	    Integer childGusId = (Integer)nextGoTermInfo.get(2);
+	    GoTermInfo nextGoTermInfo = grs.get(i);
+	    String realGoId = nextGoTermInfo.realGoId;
+	    Integer gusId = nextGoTermInfo.gusId;
+	    Integer childGusId = nextGoTermInfo.childGusId;
 
 	    GoTerm goTerm = makeGoTerm(gusId, realGoId, functionRootGoId);
-	    GoTerm tempGoTerm = getGoTermFromGusGoId(gusId.intValue());
-	    //	    if (tempGoTerm == null){ System.out.println ("Go term for gusId " + gusId.intValue() + " is null");}
+	    //GoTerm tempGoTerm = getGoTermFromGusGoId(gusId.intValue());
+	    //if (tempGoTerm == null){ System.out.println ("Go term for gusId " + gusId.intValue() + " is null");}
 	    if (childGusId != null){
 		GoTerm childGoTerm = makeGoTerm(childGusId, null, functionRootGoId);
 		goTerm.addChild(childGoTerm);
@@ -115,13 +113,13 @@ public class GoGraph {
 
     public GoTerm getGoTermFromRealGoId(String realGoId){
 	GoTerm goTerm = null;
-	goTerm = (GoTerm)realIdHash.get(realGoId);
+	goTerm = realIdHash.get(realGoId);
 	return goTerm;
     }
 
     public GoTerm getGoTermFromGusGoId(int gusGoId){
 
-	GoTerm goTerm = (GoTerm)gusIdHash.get(new Integer(gusGoId));
+	GoTerm goTerm = gusIdHash.get(new Integer(gusGoId));
 	return goTerm;
     }
 
@@ -147,6 +145,7 @@ public class GoGraph {
     }
 
 
+    @Override
     public String toString(){
 	
 	return getRootTerm().toString("\t");
@@ -163,6 +162,7 @@ public class GoGraph {
 	realIdHash.put(realId, goTerm);
     }
 
+    @SuppressWarnings("unused")
     private void addGoTermToGusIdHash(GoTerm goTerm){
 	Integer gusId = new Integer(goTerm.getGusId());
 	gusIdHash.put(gusId, goTerm);

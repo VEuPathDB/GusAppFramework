@@ -1,14 +1,10 @@
 package edu.upenn.cbil.biomatgraph;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
-
-import com.google.common.collect.ListMultimap;
 
 /**
  * A POJO class to hold all the member elements associated with an edge.

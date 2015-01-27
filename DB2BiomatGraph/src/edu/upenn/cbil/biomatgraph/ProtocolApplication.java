@@ -20,7 +20,6 @@ public class ProtocolApplication {
   private String description;
   private String performer;
   private List<String> parameters;
-  private String dbId;
   
   public ProtocolApplication() {
     this.description = "";
@@ -92,6 +91,7 @@ public class ProtocolApplication {
   @Override
   public String toString() {
     return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
+      @Override
       protected boolean accept(Field field) {
         return super.accept(field);
       }

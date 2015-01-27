@@ -1,8 +1,8 @@
 package org.gusdb.objrelj;
 
-import java.util.*;
-import java.lang.*;
-import java.io.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
 
 /**
  * ObjectCache.java
@@ -18,6 +18,8 @@ import java.io.*;
  */
 public class ObjectCache implements java.io.Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     // ------------------------------------------------------------------
     // Static variables
     // ------------------------------------------------------------------
@@ -32,7 +34,7 @@ public class ObjectCache implements java.io.Serializable {
      * A Hashtable of <code>GUSRow</code> objects, keyed by Java 
      * class name + primary key value.
      */
-    private Hashtable objects;
+    private Hashtable<String, GUSRow> objects;
 
     /**
      * Maximum number of unique objects that can be stored in the object 
@@ -52,7 +54,7 @@ public class ObjectCache implements java.io.Serializable {
      * @param mo   Maximum number of objects that can be stored in the cache.
      */
     public ObjectCache(int mo) {
-	this.objects = new Hashtable();
+	this.objects = new Hashtable<>();
 	this.maxObjects = mo;
     } 
     
@@ -124,7 +126,7 @@ public class ObjectCache implements java.io.Serializable {
     public GUSRow get(String owner, String tname, long pk) {
 	String obj_key = getKey(owner, tname, pk);
 	System.err.println("attempting to retrieve object with key " + obj_key + " from cache");
-	return (GUSRow)objects.get(obj_key);
+	return objects.get(obj_key);
     }
     
     /**
@@ -136,19 +138,19 @@ public class ObjectCache implements java.io.Serializable {
     public GUSRow get(GUSRow obj) {
 	if (obj == null) return null;
 	String obj_key = getKey(obj);
-	return (GUSRow)objects.get(obj_key);
+	return objects.get(obj_key);
     }
     
     /**
      * @return A Vector containing all the GUSRow objects in the cache.
      */
-    public Vector getAll () {
-	Enumeration all = objects.elements();
+    public Vector<GUSRow> getAll () {
+	Enumeration<GUSRow> all = objects.elements();
 	int n = objects.size();
-	Vector v = new Vector(n);
+	Vector<GUSRow> v = new Vector<>(n);
 
 	while (all.hasMoreElements()) {
-	    GUSRow row = (GUSRow)(all.nextElement());
+	    GUSRow row = all.nextElement();
 	    v.addElement(row);
 	}
 	return v;
@@ -195,7 +197,7 @@ public class ObjectCache implements java.io.Serializable {
      */    
     public GUSRow remove(String owner, String tname, long pk) {
 	String obj_key = this.getKey(owner, tname, pk);
-	return (GUSRow)(this.objects.remove(obj_key));
+	return this.objects.remove(obj_key);
     }
     
     /**
@@ -205,7 +207,7 @@ public class ObjectCache implements java.io.Serializable {
      */
     public GUSRow remove(GUSRow obj){
 	String obj_key = this.getKey(obj);
-	return (GUSRow)(this.objects.remove(obj_key));
+	return this.objects.remove(obj_key);
     }
 
     // ------------------------------------------------------------------

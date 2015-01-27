@@ -1,18 +1,15 @@
 package org.gusdb.objrelj;
 
-import java.util.*;
-import java.util.logging.*;
-import java.lang.*;
-import java.rmi.*;
-import java.sql.*;
-import oracle.sql.*;
-
-import org.biojava.bio.*;
-import org.biojava.bio.seq.*;
-import org.biojava.bio.seq.io.*;
-import org.biojava.bio.symbol.*;
-
-import org.gusdb.objrelj.*;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 /**
  * GUSServer.java
@@ -241,6 +238,7 @@ public class GUSServer implements ServerI {
     // ServerI
     // ------------------------------------------------------------------
     
+    @Override
     public String openConnection(String user, String password) throws GUSInvalidLoginException
     {
 	String session = null;
@@ -263,6 +261,7 @@ public class GUSServer implements ServerI {
 	return session;
     }
     
+    @Override
     public void closeConnection(String session) 
 	throws GUSNoConnectionException 
     {
@@ -271,6 +270,7 @@ public class GUSServer implements ServerI {
 	s.destroy();
     }
 
+    @Override
     public List getSessionHistory(String session) 
 	throws GUSNoConnectionException
     {
@@ -278,12 +278,14 @@ public class GUSServer implements ServerI {
 	return new ArrayList(s.history);
     }
     
+    @Override
     public GUSRow retrieveGUSRow(String session, GUSTable table, long pkValue, boolean retrieveEager) 
 	throws GUSNoConnectionException, GUSObjectNotUniqueException
     {
 	return this.retrieveGUSRow(session, table, pkValue, retrieveEager, null,null,null);
     }
     
+    @Override
     public GUSRow retrieveGUSRow(String session, GUSTable table, long pkValue, boolean retrieveEager,
 				 String clobAtt, Long start, Long end) 
         throws GUSNoConnectionException, GUSObjectNotUniqueException
@@ -350,6 +352,7 @@ public class GUSServer implements ServerI {
 	return gusRow;
     }
 
+    @Override
     public Vector retrieveAllGUSRows(String session, GUSTable table) 
         throws GUSNoConnectionException
     {
@@ -363,6 +366,7 @@ public class GUSServer implements ServerI {
 	return null;
     }
     
+    @Override
     public Vector retrieveGUSRowsFromQuery(String session, GUSTable table, String query)
 	throws GUSNoConnectionException
     {
@@ -408,6 +412,7 @@ public class GUSServer implements ServerI {
         return gusRows;
     }
 
+    @Override
     public Vector runSqlQuery(String session, String sql) 
 	throws GUSNoConnectionException 
     {
@@ -421,6 +426,7 @@ public class GUSServer implements ServerI {
     }
 
 
+    @Override
     public SubmitResult submitGUSRow(String session, GUSRow obj, boolean deepSubmit, boolean startTransaction) 
         throws GUSNoConnectionException
     {
@@ -447,6 +453,7 @@ public class GUSServer implements ServerI {
 
     }
 
+    @Override
     public GUSRow createGUSRow(String session, GUSTable table) 
         throws GUSNoConnectionException 
     {
@@ -467,6 +474,7 @@ public class GUSServer implements ServerI {
         return newObj;
     }
 
+    @Override
     public GUSRow retrieveParent(String sessionId, GUSRow child, GUSTable parentTable, String childAtt)
     throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException{
 	Session s = getSession(sessionId);
@@ -492,6 +500,7 @@ public class GUSServer implements ServerI {
     // rewritten to y on retrieveGUSRow and retrieveGUSRowsFromQuery
     // (with some post-processing to make the setChild/setParent calls)
 	//dtb:  this is the way we used to do it...don't delete just yet
+    @Override
     public GUSRow retrieveParent(String session, GUSRow row, String owner, String tname, String childAtt)
 	throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
@@ -518,6 +527,7 @@ public class GUSServer implements ServerI {
         return parent;
     }
 
+    @Override
     public GUSRow[] retrieveParentsForAllGUSRows(String session, Vector children, String parentOwner, 
 						 String parentName, String childAtt)
 	throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException
@@ -546,11 +556,11 @@ public class GUSServer implements ServerI {
 		// Can't be sure that the correspondence is correct unless the correct
 		// number of parents were retrieved, namely one for each child
 		//
-		if (nc == np) {
-		    GUSRow child = (GUSRow)(children.elementAt(i));
+		//if (nc == np) {
+		    //GUSRow child = (GUSRow)(children.elementAt(i));
 		    //		    child.addParent(parents[i]);
 		    //		    parents[i].addChild(child);
-		}
+		//}
 	    }
 	}
 
@@ -559,7 +569,8 @@ public class GUSServer implements ServerI {
 	return parents;
     }
 
-     public GUSRow retrieveChild(String session,  GUSRow row, String owner, String tname, String childAtt)
+     @Override
+    public GUSRow retrieveChild(String session,  GUSRow row, String owner, String tname, String childAtt)
          throws GUSNoConnectionException, GUSNoSuchRelationException, GUSObjectNotUniqueException
     {
 	Session s = getSession(session);
@@ -584,6 +595,7 @@ public class GUSServer implements ServerI {
         return child;
     }
 
+    @Override
     public Vector retrieveChildren(String session, GUSRow row, String owner, String tname, String childAtt) 
 	throws GUSNoConnectionException, GUSNoSuchRelationException
     {
@@ -747,7 +759,7 @@ public class GUSServer implements ServerI {
 	SubmitResult sres = null;
 	if (gusRow.isDeleted()){
 	    
-	    boolean childSubmitSucceeded = submitGUSRowChildren(s, gusRow, sr);
+	    submitGUSRowChildren(s, gusRow, sr);
 	    gusRow.removeFromParents();
 	    try {
 		sres = s.conn.submitGUSRow(gusRow);
@@ -800,7 +812,7 @@ public class GUSServer implements ServerI {
 		s.factory.add(gusRow);
 	    }
 	    if (sr.submitSucceeded && deepSubmit) {
-		boolean submitChildrenSuccess = submitGUSRowChildren(s, gusRow, sr);
+		submitGUSRowChildren(s, gusRow, sr);
 	    }
 	}
 	return true;

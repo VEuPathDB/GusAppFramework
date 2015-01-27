@@ -12,6 +12,7 @@ package org.gusdb.gopredict;
  *
  */
 public class IllegalHierarchyException extends Exception {
+    private static final long serialVersionUID = 1L;
     public IllegalHierarchyException(String msg){ super(msg); }
 
 }

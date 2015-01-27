@@ -1,7 +1,5 @@
 package org.gusdb.dbadmin.model;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * @author msaffitz
@@ -11,7 +9,6 @@ import org.apache.commons.logging.LogFactory;
  */
 public class VersionTable extends Table {
 
-    protected final static Log log = LogFactory.getLog( VersionTable.class );
     private GusTable           gusTable;
 
     public VersionTable( GusTable gusTable ) {
@@ -26,7 +23,7 @@ public class VersionTable extends Table {
         setUpdatable( gusTable.isUpdatable( ) );
 
         if ( gusTable.getSuperclass( ) != null ) {
-            setSuperclass( ((GusTable) gusTable.getSuperclass( )).getVersionTable( ) );
+            setSuperclass( gusTable.getSuperclass( ).getVersionTable( ) );
         }
 
         for ( Column col : gusTable.getColumnsExcludeSuperclass( true ) ) {

@@ -75,6 +75,7 @@ public class EqualityReport {
 
     }
 
+    @SuppressWarnings("unused")
     private void writeUnchangedReport( Writer writer ) throws IOException {
         writer.write( " == Unchanged Tables == \n\n" );
 

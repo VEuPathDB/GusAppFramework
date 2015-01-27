@@ -1,8 +1,8 @@
 package org.gusdb.objrelj;
 
-import java.util.*;
-import java.lang.*;
-import java.io.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
 
 /**
  * GUSRowFactory.java
@@ -23,6 +23,8 @@ public class GUSRowFactory implements java.io.Serializable {
     // ------------------------------------------------------------------
     // Static variables
     // ------------------------------------------------------------------
+
+    private static final long serialVersionUID = 1L;
 
     static private int DEFAULT_MAX_OBJECTS = 10000;
 

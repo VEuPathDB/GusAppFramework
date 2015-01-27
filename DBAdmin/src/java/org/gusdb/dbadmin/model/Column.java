@@ -13,7 +13,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class Column extends DatabaseObject {
 
-    protected final static Log log = LogFactory.getLog( Column.class );
+    private final static Log log = LogFactory.getLog( Column.class );
 
     private int                length;
     private int                precision;
@@ -21,7 +21,7 @@ public abstract class Column extends DatabaseObject {
 
     public enum ColumnType {
         CHARACTER, CLOB, BLOB, DATE, FLOAT, STRING, NUMBER, UNDEFINED
-    };
+    }
 
     private ColumnType          type;
     private TreeSet<Constraint> constraint = new TreeSet<Constraint>( );
@@ -125,6 +125,7 @@ public abstract class Column extends DatabaseObject {
         }
     }
 
+    @Override
     public boolean equals( DatabaseObject o ) {
         Column other = (Column) o;
 

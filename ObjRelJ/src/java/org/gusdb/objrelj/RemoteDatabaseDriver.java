@@ -1,6 +1,7 @@
 package org.gusdb.objrelj;
 
-import java.rmi.*;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
 
 /**
  * RemoteDatabaseDriver.java
@@ -23,11 +24,6 @@ public class RemoteDatabaseDriver implements DatabaseDriverI {
     // -----------------------------------------------------------------
 
     /**
-     * Address of the RemoteDatabaseServerI for rmi connection
-     */
-    private String rmiUrl;
-
-    /**
      * RemoteDatabaseServerI-implementing object that will accepts connection requests 
      */
     private RemoteDatabaseServerI server;
@@ -41,8 +37,6 @@ public class RemoteDatabaseDriver implements DatabaseDriverI {
 	
 	//dtb: issue of whether we want connection to RemoteJDBCServer to be persistant connection 
 	//or just make when calling getConnection.  For now make persistant connection.
-
-	this.rmiUrl = rmiUrl;
 	
 	System.out.println("Connecting to remote jdbc server at " + rmiUrl);
 	
@@ -60,6 +54,7 @@ public class RemoteDatabaseDriver implements DatabaseDriverI {
 	}
     }
     
+    @Override
     public DatabaseConnectionI getConnection(String gusUser, String gusPassword)
 	throws GUSInvalidLoginException{
 	DatabaseConnectionI remoteConn = null;

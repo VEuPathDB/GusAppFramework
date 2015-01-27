@@ -90,6 +90,7 @@ public class Index extends DatabaseObject {
         }
     }
 
+    @Override
     public boolean equals( DatabaseObject o ) {
         Index other = (Index) o;
         if ( !tablespace.equals( other.getTablespace( ) ) ) return false;
