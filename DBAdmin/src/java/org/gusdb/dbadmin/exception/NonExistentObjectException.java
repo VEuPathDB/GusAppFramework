@@ -10,6 +10,8 @@ package org.gusdb.dbadmin.exception;
 public class NonExistentObjectException extends Exception {
 
 
+    private static final long serialVersionUID = 1L;
+
     public NonExistentObjectException() {
         super();
     }

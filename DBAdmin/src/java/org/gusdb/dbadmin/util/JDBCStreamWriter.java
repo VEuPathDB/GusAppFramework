@@ -28,7 +28,8 @@ public class JDBCStreamWriter extends Writer {
 	}
 
 
-	public void write( char[] cbuf, int off, int len ) throws IOException {
+	@Override
+  public void write( char[] cbuf, int off, int len ) throws IOException {
 		if ( currentBuf == null ) {
 			currentBuf = new String();
 		}
@@ -40,7 +41,8 @@ public class JDBCStreamWriter extends Writer {
 	 *@exception  IOException
 	 *@see                     java.io.Writer#flush()
 	 */
-	public void flush() throws IOException {
+	@Override
+  public void flush() throws IOException {
 		extractStatements();
 
 		for ( Iterator i = sts.iterator(); i.hasNext();  ) {
@@ -66,7 +68,8 @@ public class JDBCStreamWriter extends Writer {
 	 *@exception  IOException
 	 *@see                     java.io.Writer#close()
 	 */
-	public void close() throws IOException {
+	@Override
+  public void close() throws IOException {
 		flush();
 		try {
 			connection.close();

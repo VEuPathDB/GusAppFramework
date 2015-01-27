@@ -19,14 +19,6 @@ public class Database extends DatabaseObject {
     private TreeSet<Schema>          schema          = new TreeSet<Schema>( );
     private ArrayList<SuperCategory> superCategories = new ArrayList<SuperCategory>( );
 
-    /**
-     * @deprecated
-     * @return
-     */
-    private TreeSet<Schema> getSchemas( ) {
-        return schema;
-    }
-
     public TreeSet<Schema> getAllSchemas( ) {
         return schema;
     }
@@ -39,15 +31,6 @@ public class Database extends DatabaseObject {
             }
         }
         return gusSchemas;
-    }
-
-    /**
-     * @deprecated
-     * @return
-     */
-    private TreeSet getSchemas( boolean restrictVersion ) {
-        if ( !restrictVersion ) return getAllSchemas( );
-        else return getGusSchemas( );
     }
 
     public void addSchema( Schema schema ) {
@@ -131,16 +114,6 @@ public class Database extends DatabaseObject {
         if ( removed ) superCategory.setDatabase( (Database) null );
     }
 
-    /**
-     * @depcreated
-     * @param restrictVersion true to not include version tables
-     * @return All tables in the database
-     */
-    private ArrayList<? extends Table> getTables( boolean restrictVersion ) {
-        if ( restrictVersion ) return getGusTables( );
-        else return getAllTables();
-    }
-
     public ArrayList<Table> getAllTables( ) {
         ArrayList<Table> tables = new ArrayList<Table>( );
         for ( Schema s : getAllSchemas( ) ) {
@@ -161,10 +134,11 @@ public class Database extends DatabaseObject {
         log.info( "Resolving Database References" );
 
         for ( GusSchema schema : getGusSchemas( ) ) {
-            ((GusSchema) schema).resolveReferences( this );
+            schema.resolveReferences( this );
         }
     }
    
+    @Override
     public boolean equals( DatabaseObject o ) {
         Database other = (Database) o;
 

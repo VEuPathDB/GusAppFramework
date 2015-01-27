@@ -31,7 +31,6 @@ sub getArgumentsDeclaration {
 		 isList => 0
 		}),
 
-
      integerArg({name => 'geneticCodeId',
          descr => 'Genetic Code of the organism to be inserted in the taxonomic hierarchy ',
          constraintFunc => undef,
@@ -45,7 +44,6 @@ sub getArgumentsDeclaration {
          reqd => 0,
          isList => 0
         }),
-
 
      stringArg({name => 'parentRank',
 		descr => 'reqd if parentNcbiTaxId-taxonomic level such as order,family,species - should conform to ranks used by the NCBI taxonomy db - \see PLUGIN_NOTES',
@@ -134,8 +132,8 @@ sub new {
   my $documentation = &getDocumentation();
   my $argsDeclaration = &getArgumentsDeclaration();
 
-  $self->initialize({requiredDbVersion => 4.0,
-		     cvsRevision => '$Revision: 9470 $', # cvs fills this in!
+  $self->initialize({requiredDbVersion => 3.6,
+		     cvsRevision => '$Revision: 14716 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
 		     documentation     => $documentation
@@ -227,13 +225,11 @@ sub getTaxon {
       $taxon->setParent($parentTaxon);
     }
 
-
     my $geneticCodeId = $self->getArg('geneticCodeId');
     $taxon->setGeneticCodeId($geneticCodeId) unless $taxon->getGeneticCodeId();
 
     my $mitochondrialGeneticCodeId = $self->getArg('mitochondrialGeneticCodeId');
     $taxon->setMitochondrialGeneticCodeId($mitochondrialGeneticCodeId) unless $taxon->getMitochondrialGeneticCodeId();
-
 
     return $taxon;
 }
@@ -267,6 +263,13 @@ sub getTaxonName {
   return $taxonName;
 
 }
+
+sub undoTables {
+  my ($self) = @_;
+
+  return ('SRes.TaxonName','SRes.Taxon');
+}
+
 
 1;
 

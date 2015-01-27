@@ -3,13 +3,11 @@
 package org.gusdb.dbadmin.util;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
-import org.gusdb.dbadmin.model.Table;
+import org.gusdb.dbadmin.model.Database;
 import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Index;
-import org.gusdb.dbadmin.model.Database;
-import org.gusdb.dbadmin.model.Schema;
+import org.gusdb.dbadmin.model.Table;
 
 /**
  *@author     msaffitz

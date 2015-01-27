@@ -37,10 +37,8 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
      */
     protected void writeTables( Schema schema ) throws IOException {
 
-        for ( Iterator i = schema.getTables( ).iterator( ); i.hasNext( ); ) {
-
-            Table table = (Table) i.next( );
-            writeTable( table );
+        for ( Iterator<? extends Table> i = schema.getTables( ).iterator( ); i.hasNext( ); ) {
+            writeTable( i.next() );
         }
     }
 
@@ -171,8 +169,8 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
      */
     protected void writeIndexes( GusTable table ) throws IOException {
 
-        for ( Iterator i = table.getIndexs( ).iterator( ); i.hasNext( ); ) {
-            Index index = (Index) i.next( );
+        for ( Iterator<Index> i = table.getIndexs( ).iterator( ); i.hasNext( ); ) {
+            Index index = i.next( );
             // If this index is for a PK or Unique Constraint,
             // skip it-- it's implicitly created
             if ( table.getConstraint( index.getName( ) ) != null ) {
@@ -235,9 +233,9 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
      */
     protected void writeUQConstraints( GusTable table ) throws IOException {
 
-        for ( Iterator i = table.getConstraints( ).iterator( ); i.hasNext( ); ) {
+        for ( Iterator<Constraint> i = table.getConstraints( ).iterator( ); i.hasNext( ); ) {
 
-            Constraint constraint = (Constraint) i.next( );
+            Constraint constraint = i.next( );
 
             if ( constraint.getType( ) == Constraint.ConstraintType.UNIQUE ) {
                 writeUQConstraint( constraint );
@@ -269,9 +267,9 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
      */
     protected void writeFKConstraints( GusTable table ) throws IOException {
 
-        for ( Iterator i = table.getConstraints( ).iterator( ); i.hasNext( ); ) {
+        for ( Iterator<Constraint> i = table.getConstraints( ).iterator( ); i.hasNext( ); ) {
 
-            Constraint constraint = (Constraint) i.next( );
+            Constraint constraint = i.next( );
 
             if ( constraint.getType( ) == Constraint.ConstraintType.FOREIGN_KEY ) {
                 writeFKConstraint( constraint );
@@ -321,6 +319,7 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
     /**
      * @see org.gusdb.dbadmin.writer.SchemaWriter#setUp()
      */
+    @Override
     protected void setUp( ) {
         random = new Random( );
     }
@@ -328,5 +327,6 @@ public abstract class RelationalDatabaseWriter extends SchemaWriter {
     /**
      * @see org.gusdb.dbadmin.writer.SchemaWriter#tearDown()
      */
+    @Override
     protected void tearDown( ) {}
 }

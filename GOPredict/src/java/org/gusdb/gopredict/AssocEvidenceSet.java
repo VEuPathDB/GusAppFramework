@@ -1,8 +1,6 @@
 package org.gusdb.gopredict;
 
-import java.io.*;
-import java.util.*;
-import org.gusdb.gopredict.*;
+import java.util.Vector;
 
 /**
  * AssocEvidenceSet.java
@@ -39,7 +37,7 @@ public class AssocEvidenceSet  {
      */
     //Instance instance;
 
-    Vector instances;
+    Vector<Instance> instances;
     
 
     // ------------------------------------------------------------------
@@ -48,7 +46,7 @@ public class AssocEvidenceSet  {
       
     public AssocEvidenceSet(int id){
 	this.goTermId = id;
-	instances = new Vector();
+	instances = new Vector<>();
     }
  
     public void addInstance(Instance instance){
@@ -66,7 +64,7 @@ public class AssocEvidenceSet  {
 	return this.instance;
 	}*/
 
-    public Vector getInstances(){
+    public Vector<Instance> getInstances(){
 	return instances;
     }
 

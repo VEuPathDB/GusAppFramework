@@ -9,7 +9,8 @@ package org.gusdb.dbadmin.exception;
  */
 public class ColumnCountException extends Exception {
 
-    
+    private static final long serialVersionUID = 1L;
+
     public ColumnCountException() {
         super();
     }

@@ -11,5 +11,6 @@ package org.gusdb.objrelj;
  * @author Dave Barkan
  */
 public class GUSInvalidPrimaryKeyException extends GUSException implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     public GUSInvalidPrimaryKeyException(String msg){ super(msg); }
 }

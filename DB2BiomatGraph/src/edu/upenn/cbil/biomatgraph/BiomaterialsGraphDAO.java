@@ -10,9 +10,6 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ListMultimap;
-
 
 public class BiomaterialsGraphDAO {
   private static Logger logger = Logger.getLogger(BiomaterialsGraphDAO.class);

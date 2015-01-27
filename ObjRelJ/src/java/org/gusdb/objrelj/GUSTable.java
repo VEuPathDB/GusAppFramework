@@ -1,6 +1,7 @@
 package org.gusdb.objrelj;
 
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
 /**
  * GUSTable.java
@@ -19,6 +20,8 @@ public class GUSTable implements java.io.Serializable {
     // ------------------------------------------------------------------
     // Instance variables
     // ------------------------------------------------------------------
+
+    private static final long serialVersionUID = 1L;
 
     /** 
      * Schema/user that owns the table or view (eg. DoTS, SRes, Core, RAD, etc.)
@@ -284,7 +287,7 @@ public class GUSTable implements java.io.Serializable {
     protected void addRelation_aux(Hashtable h, GUSTableRelation gtr, String schema, String tname, String childAtt) {
 	String lcSchema = schema.toLowerCase();
 	String lcTable = tname.toLowerCase();
-	String lcAtt = childAtt.toLowerCase();
+	//String lcAtt = childAtt.toLowerCase();
 	String key1 = lcSchema + "." + lcTable;
 	Hashtable h1 = (Hashtable)(h.get(key1));
 	if (h1 == null) {
@@ -343,6 +346,7 @@ public class GUSTable implements java.io.Serializable {
     // java.lang.Object
     // ------------------------------------------------------------------
 
+    @Override
     public String toString() {
 	String schema = this.getSchemaName();
 	String tname = this.getTableName();

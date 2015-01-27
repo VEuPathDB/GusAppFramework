@@ -57,24 +57,24 @@ public class MetadataPopulator {
 		}
         for ( Schema schema : db.getAllSchemas() ) {
 			schemaIDs.put( new Integer( schemaIDs.size() + 1 ), schema );
-			for ( Iterator j = schema.getTables().iterator(); j.hasNext();  ) {
-				tableAndViewIDs.put( new Integer( tableAndViewIDs.size() + 1 ), (Table) j.next() );
+			for ( Iterator<? extends Table> j = schema.getTables().iterator(); j.hasNext();  ) {
+				tableAndViewIDs.put( new Integer( tableAndViewIDs.size() + 1 ), j.next() );
 			}
-			for ( Iterator j = schema.getViews().iterator(); j.hasNext();  ) {
-				tableAndViewIDs.put( new Integer( tableAndViewIDs.size() + 1 ), (View) j.next() );
+			for ( Iterator<View> j = schema.getViews().iterator(); j.hasNext();  ) {
+				tableAndViewIDs.put( new Integer( tableAndViewIDs.size() + 1 ), j.next() );
 			}
 		}
-		for ( Iterator i = db.getAllSchemas().iterator(); i.hasNext();  ) {
-			writeDatabaseInfo( (Schema) i.next() );
+		for ( Iterator<Schema> i = db.getAllSchemas().iterator(); i.hasNext();  ) {
+			writeDatabaseInfo( i.next() );
 		}
-		for ( Iterator i = db.getAllSchemas().iterator(); i.hasNext();  ) {
-			Schema schema  = (Schema) i.next();
+		for ( Iterator<Schema> i = db.getAllSchemas().iterator(); i.hasNext();  ) {
+			Schema schema  = i.next();
 
-			for ( Iterator j = schema.getTables().iterator(); j.hasNext();  ) {
-				writeTableInfo( (Table) j.next() );
+			for ( Iterator<? extends Table> j = schema.getTables().iterator(); j.hasNext();  ) {
+				writeTableInfo( j.next() );
 			}
-			for ( Iterator j = schema.getViews().iterator(); j.hasNext();  ) {
-				writeTableInfo( (View) j.next() );
+			for ( Iterator<View> j = schema.getViews().iterator(); j.hasNext();  ) {
+				writeTableInfo( j.next() );
 			}
 		}
 		fixSequence( "core.databaseinfo_sq", schemaIDs.size() + 1);
@@ -86,6 +86,9 @@ public class MetadataPopulator {
 	}
 
 
+	/**
+     * @throws IOException if unable to write documentation
+     */
 	public void writeDatabaseDocumentation() throws IOException {
 		// TODO implement me
 	}

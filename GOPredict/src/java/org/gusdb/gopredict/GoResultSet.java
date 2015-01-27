@@ -14,9 +14,7 @@
 
 package org.gusdb.gopredict;
 
-import java.io.*;
-import java.util.*;
-import org.gusdb.gopredict.*;
+import java.util.Vector;
 
 
 public class GoResultSet{
@@ -41,7 +39,7 @@ public class GoResultSet{
      * The vector that tracks all Go Terms; each entry in the vector is another
      * vector as described above.
      */
-    Vector allGoTerms;
+    Vector<GoTermInfo> allGoTerms;
 
     // ------------------------------------------------------------------
     // Constructor
@@ -51,7 +49,7 @@ public class GoResultSet{
      * Basic constructor; just initializes the object
      */
     public GoResultSet(){
-	allGoTerms = new Vector();
+	allGoTerms = new Vector<>();
     }
 
     // ------------------------------------------------------------------
@@ -71,17 +69,17 @@ public class GoResultSet{
 	if (childGusId != NULL_CHILD_ID){
 	     bigChildGusId = new Integer(childGusId);
 	}
-	Vector thisGoTerm = new Vector();
-	thisGoTerm.add(realGoId);
-	thisGoTerm.add(bigGusId);
-	thisGoTerm.add(bigChildGusId);
+	GoTermInfo thisGoTerm = new GoTermInfo();
+	thisGoTerm.realGoId = realGoId;
+	thisGoTerm.gusId = bigGusId;
+	thisGoTerm.childGusId = bigChildGusId;
 	allGoTerms.add(thisGoTerm);
     }
 
     /**
      * Returns the GO Info Vector at the specified position of this GoResultSet.
      */
-    public Object get(int i){
+    public GoTermInfo get(int i){
 	return allGoTerms.get(i);
     }
 

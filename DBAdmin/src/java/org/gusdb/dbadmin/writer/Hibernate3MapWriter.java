@@ -3,8 +3,8 @@
  */
 package org.gusdb.dbadmin.writer;
 
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -18,9 +18,9 @@ import java.util.TreeSet;
 import org.gusdb.dbadmin.model.Column;
 import org.gusdb.dbadmin.model.Constraint;
 import org.gusdb.dbadmin.model.Database;
+import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.Schema;
 import org.gusdb.dbadmin.model.Table;
-import org.gusdb.dbadmin.model.GusTable;
 import org.gusdb.dbadmin.model.VersionTable;
 
 /**
@@ -64,6 +64,7 @@ extends SchemaWriter
      * Write the hibernate mapping for the specified database.
      * @param db the database to write
      */
+    @Override
     protected void writeDatabase(Database db)
     throws IOException
     {
@@ -87,10 +88,10 @@ extends SchemaWriter
         // oStream.write(" <meta attribute=\"extends\">org.gusdb.model.GusRow</meta>\n");
 
         indent(oStream, 1);
-        for (Iterator i = db.getAllSchemas().iterator(); i.hasNext(); ) {
-            Schema schema = (Schema)i.next();
-            for (Iterator j = schema.getTables().iterator(); j.hasNext(); ) {
-                Table table = (Table)j.next();
+        for (Iterator<Schema> i = db.getAllSchemas().iterator(); i.hasNext(); ) {
+            Schema schema = i.next();
+            for (Iterator<? extends Table> j = schema.getTables().iterator(); j.hasNext(); ) {
+                Table table = j.next();
                 if (!(table instanceof VersionTable) && !isSubclass(table))
                     writeClass(oStream, table);
             }
@@ -141,8 +142,8 @@ extends SchemaWriter
     private void writeProperties(Writer writer, Table table, int level)
     throws IOException
     {
-        for (Iterator i = table.getColumnsExcludeSuperclass( true ).iterator(); i.hasNext(); ) {
-            Column column = (Column)i.next();
+        for (Iterator<Column> i = table.getColumnsExcludeSuperclass( true ).iterator(); i.hasNext(); ) {
+            Column column = i.next();
             if (isPrimaryKey(column) ||
                     isModificationDate(column) ||
                     isInternal(column) || isPermission(column)) {
@@ -196,6 +197,11 @@ extends SchemaWriter
 
     /**
      * Write collection mappings for all children of the specified table.
+     * 
+     * FIXME: RRD 10/14 This code is a mess.  Tried to fix raw types and ran
+     * into type conflict problems.  It almost certainly throws ClassCastException
+     * when run, but not sure what it's supposed to do so leaving it alone.
+     * 
      * @param writer the output writer
      * @param table the parent table
      * @see writeChild(Writer,String,Constraint)
@@ -207,8 +213,7 @@ extends SchemaWriter
         if (!(table instanceof GusTable))
             return;
 
-        Collection refs =
-            (Collection)((GusTable)table).getReferentialConstraints();
+        Collection refs = ((GusTable)table).getReferentialConstraints();
         Map chldrn = new TreeMap();
 
         /**
@@ -307,8 +312,8 @@ extends SchemaWriter
     private void writeSubclasses(Writer writer, Table table, int level)
     throws IOException
     {
-        for (Iterator it = table.getSubclasses().iterator(); it.hasNext(); ) {
-            Table sub = (Table)it.next();
+        for (Iterator<? extends Table> it = table.getSubclasses().iterator(); it.hasNext(); ) {
+            Table sub = it.next();
             Column column = getPrimaryKey(table);
             indent(writer, level);
             writer.write("<joined-subclass\n");
@@ -409,8 +414,8 @@ extends SchemaWriter
             writer.write("true</meta>\n");
 
         }
-        for (Iterator i = table.getColumnsExcludeSuperclass( true ).iterator(); i.hasNext(); ) {
-            Column column = (Column)i.next();
+        for (Iterator<Column> i = table.getColumnsExcludeSuperclass( true ).iterator(); i.hasNext(); ) {
+            Column column = i.next();
             if (isInternal(column) || isPermission(column))
                 writeProperty(writer, column, level + 1);
         }
@@ -509,8 +514,8 @@ extends SchemaWriter
      */
     private boolean isForeignKey(Column column)
     {
-        for (Iterator i = column.getConstraints().iterator(); i.hasNext(); )
-            if (((Constraint)i.next()).getType() == Constraint.ConstraintType.FOREIGN_KEY)
+        for (Iterator<Constraint> i = column.getConstraints().iterator(); i.hasNext(); )
+            if (i.next().getType().equals(Constraint.ConstraintType.FOREIGN_KEY))
                 return true;
         return false;
     }
@@ -522,8 +527,8 @@ extends SchemaWriter
      */
     private boolean isPrimaryKey(Column column)
     {
-        for (Iterator i = column.getConstraints().iterator(); i.hasNext(); )
-            if (((Constraint)i.next()).getType() == Constraint.ConstraintType.PRIMARY_KEY)
+        for (Iterator<Constraint> i = column.getConstraints().iterator(); i.hasNext(); )
+            if (i.next().getType().equals(Constraint.ConstraintType.PRIMARY_KEY))
                 return true;
         return false;
     }
@@ -578,8 +583,8 @@ extends SchemaWriter
         while (table.getSuperclass() != null)
             table = table.getSuperclass();
 
-        for (Iterator i = table.getColumnsExcludeSuperclass( true ).iterator(); i.hasNext(); ) {
-            Column column = (Column)i.next();
+        for (Iterator<Column> i = table.getColumnsExcludeSuperclass( true ).iterator(); i.hasNext(); ) {
+            Column column = i.next();
             if (isPrimaryKey(column))
                 return column;
         }
@@ -687,8 +692,7 @@ extends SchemaWriter
         String key = getPrimaryKey(c.getReferencedTable())
                                 .getName().toLowerCase();
         String index = "";
-        String column = ((Column)c.getConstrainedColumns()
-                                .iterator().next()).getName().toLowerCase();
+        String column = (c.getConstrainedColumns().iterator().next()).getName().toLowerCase();
 
         if (conflict > 1)
             sb.append(table.getSchema().getName());
@@ -742,7 +746,7 @@ extends SchemaWriter
      */
     private String getCollectionKey(Constraint c)
     {
-        Column column = (Column)c.getReferencedColumns().iterator().next();
+        Column column = c.getReferencedColumns().iterator().next();
         return column.getName();
     }
 
@@ -772,10 +776,10 @@ extends SchemaWriter
      */
     private boolean isUnique(Column column)
     {
-        for (Iterator i = column.getConstraints().iterator(); i.hasNext(); ) {
-            Constraint c = (Constraint)i.next();
-            if (c.getType() == Constraint.ConstraintType.PRIMARY_KEY ||
-                    (c.getType() == Constraint.ConstraintType.UNIQUE &&
+        for (Iterator<Constraint> i = column.getConstraints().iterator(); i.hasNext(); ) {
+            Constraint c = i.next();
+            if (c.getType().equals(Constraint.ConstraintType.PRIMARY_KEY) ||
+                    (c.getType().equals(Constraint.ConstraintType.UNIQUE) &&
                         c.getConstrainedColumns().size() == 1))
                 return true;
         }
@@ -816,11 +820,11 @@ extends SchemaWriter
          * just if the column is guaranteed unique (for example
          * by a primary key constraint
          */
-        for (Iterator i = table.getColumnsExcludeSuperclass(false).iterator(); i.hasNext(); ) {
-            Column c = (Column)i.next();
-            for (Iterator j = c.getConstraints().iterator(); j.hasNext(); ) {
-                Constraint cn = (Constraint)j.next();
-                if (cn.getType() == Constraint.ConstraintType.UNIQUE &&
+        for (Iterator<Column> i = table.getColumnsExcludeSuperclass(false).iterator(); i.hasNext(); ) {
+            Column c = i.next();
+            for (Iterator<Constraint> j = c.getConstraints().iterator(); j.hasNext(); ) {
+                Constraint cn = j.next();
+                if (cn.getType().equals(Constraint.ConstraintType.UNIQUE) &&
                             cn.getConstrainedColumns().size() == 1)
                     return true;
             }
@@ -847,9 +851,9 @@ extends SchemaWriter
             return BASE_PKG + ".Core.AlgorithmInvocation";
         }
 
-        for (Iterator i = column.getConstraints().iterator(); i.hasNext(); ) {
-            Constraint c = (Constraint)i.next();
-            if (c.getType() == Constraint.ConstraintType.FOREIGN_KEY) {
+        for (Iterator<Constraint> i = column.getConstraints().iterator(); i.hasNext(); ) {
+            Constraint c = i.next();
+            if (c.getType().equals(Constraint.ConstraintType.FOREIGN_KEY)) {
                 Table t = c.getReferencedTable();
                 return BASE_PKG + '.' +
                     t.getSchema().getName() + '.' + t.getName();
@@ -875,12 +879,14 @@ extends SchemaWriter
     /**
      * @see org.gusdb.dbadmin.writer.SchemaWriter#setUp()
      */
+    @Override
     protected void setUp()
     { }
 
     /**
      * @see org.gusdb.dbadmin.writer.SchemaWriter#tearDown()
      */
+    @Override
     protected void tearDown()
     { }
 }

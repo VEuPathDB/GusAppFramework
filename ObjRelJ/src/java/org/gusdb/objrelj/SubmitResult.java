@@ -15,6 +15,8 @@ import java.util.Vector;
  */
 public class SubmitResult implements java.io.Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     // ------------------------------------------------------------------
     // Instance variables
     // ------------------------------------------------------------------

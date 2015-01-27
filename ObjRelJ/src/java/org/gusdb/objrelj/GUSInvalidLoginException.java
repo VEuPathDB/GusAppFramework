@@ -15,6 +15,7 @@ package org.gusdb.objrelj;
  * @version $Revision$ $Date$ $Author$ 
  */
 public class GUSInvalidLoginException extends GUSException implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     public GUSInvalidLoginException(String msg){ super(msg); }
 }
 

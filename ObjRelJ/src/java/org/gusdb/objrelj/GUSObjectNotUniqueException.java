@@ -12,5 +12,6 @@ package org.gusdb.objrelj;
  * @version $Revision$ $Date$ $Author$
  */
 public class GUSObjectNotUniqueException extends GUSException implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
     public GUSObjectNotUniqueException(String msg){ super(msg); }
 }

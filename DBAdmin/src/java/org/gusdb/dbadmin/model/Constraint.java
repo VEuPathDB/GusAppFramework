@@ -86,7 +86,7 @@ public class Constraint extends DatabaseObject {
                     + "'" );
 
             if ( this.constrainedTable != null && this.type != ConstraintType.PRIMARY_KEY ) {
-                ((GusTable) this.constrainedTable).removeConstraint( this );
+                this.constrainedTable.removeConstraint( this );
             }
                     
 
@@ -97,7 +97,7 @@ public class Constraint extends DatabaseObject {
 
             this.constrainedTable = table;
 
-            if ( table != null && this.type != ConstraintType.PRIMARY_KEY ) ((GusTable) table).addConstraint( this );
+            if ( table != null && this.type != ConstraintType.PRIMARY_KEY ) table.addConstraint( this );
             if ( table != null && this.type == ConstraintType.PRIMARY_KEY ) table.setPrimaryKey( this );
         }
     }
@@ -182,6 +182,7 @@ public class Constraint extends DatabaseObject {
         }
     }
 
+    @Override
     public boolean equals( DatabaseObject o ) {
         Constraint other = (Constraint) o;
 

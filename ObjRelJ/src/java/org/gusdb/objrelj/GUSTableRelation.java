@@ -1,6 +1,5 @@
 package org.gusdb.objrelj;
 
-import java.util.*;
 
 /**
  * GUSTableRelation.java
@@ -13,6 +12,8 @@ import java.util.*;
  * @version $Revision$ $Date$ $Author$
  */
 public class GUSTableRelation implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     // JC: In GUS 3.0 don't we also need to store the parent and child table *owners*?  Yes.
 
@@ -99,6 +100,7 @@ public class GUSTableRelation implements java.io.Serializable {
     // java.lang.Object
     // ------------------------------------------------------------------
 
+    @Override
     public String toString(){
 	return ("[GUSTableRelation: " +
 		"parent=" + parentTableOwner + "." + parentTable + "." + parentAtt +

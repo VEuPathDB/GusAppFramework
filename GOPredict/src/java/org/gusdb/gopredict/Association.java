@@ -19,9 +19,9 @@
  */
 package org.gusdb.gopredict;
 
-import java.io.*;
-import java.util.*;
-import org.gusdb.gopredict.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
 
 public class Association  {
 
@@ -62,13 +62,13 @@ public class Association  {
      * Vectors containing respective relations to this Association, via the GO 
      * Hierarchy.
      */
-    private Vector parents;
-    private Vector children;
+    private Vector<Association> parents;
+    private Vector<Association> children;
     
     /**
      * The Instances for this Association.
      */
-    private Vector instances;
+    private Vector<Instance> instances;
 
     /**
      * Object for which this class is a container.
@@ -122,7 +122,7 @@ public class Association  {
      * descendant Associations and the values are vectors of Instances
      * from those descendants that will be cached.  
      */
-    private Hashtable cachedInstances;
+    private Hashtable<String,Vector<Instance>> cachedInstances;
 
     /**
      * Hashtable that tracks EvidenceSets that will eventually be cached
@@ -133,7 +133,7 @@ public class Association  {
      * Note: might eventually want to integrate this with cached instances
      * above but for now just use this.
      */
-    private Hashtable cachedEvidenceSets;
+    private Hashtable<Integer,Vector<Instance>> cachedEvidenceSets;
 
 
     // ------------------------------------------------------------------
@@ -214,15 +214,15 @@ public class Association  {
 	this.isDefining = isDefining;
     }
 
-    public Vector getParents(){
+    public Vector<Association> getParents(){
 	return parents;
     }
 
-    public Vector getChildren(){
+    public Vector<Association> getChildren(){
 	return children;
     }
 
-    public Vector getInstances(){
+    public Vector<Instance> getInstances(){
 	return instances;
     }
 
@@ -247,16 +247,16 @@ public class Association  {
      */
     public void replaceParent(Association newParent){
 	
-	Vector existingParents = (Vector)parents.clone();
+	Vector<Association> existingParents = new Vector<>(parents);
 	//remove all parents, which have been saved in a local vector
 	parents.clear();
 
 	//go through and re-add all parents except for the one to be replaced
 	for (int i = 0; i < existingParents.size(); i++){
-	    Association nextExistingParent = (Association)existingParents.get(i);
+	    Association nextExistingParent = existingParents.get(i);
 	    
 	    if (nextExistingParent.getGoTerm().getRealId().equals(newParent.getGoTerm().getRealId()) == false){
-		addParent((Association)existingParents.get(i));
+		addParent(existingParents.get(i));
 	    }
 	}
 	
@@ -279,16 +279,15 @@ public class Association  {
     }
 
     public String toString(String tab){
-	String assocId = "";
 	String myself = new String(tab + "ASSOCIATION GO ID " + goTerm.getRealId() + "\n");
 	String childInfo = tab + "Children: ";
 	for (int i = 0; i < children.size(); i++){
-	    Association nextChild = (Association)children.get(i);
+	    Association nextChild = children.get(i);
 	    childInfo = childInfo.concat(nextChild.getGoTerm().getRealId() + ", ");
 	}
 	childInfo = childInfo.concat("\n" + tab + "Parents: ");
 	for (int i = 0; i < parents.size(); i++){
-	    Association nextParent = (Association)parents.get(i);
+	    Association nextParent = parents.get(i);
 	    childInfo = childInfo.concat(nextParent.getGoTerm().getRealId() + ", ");
 	}
 	myself = myself.concat(childInfo + "\n");
@@ -296,11 +295,11 @@ public class Association  {
 	myself = myself.concat(tab + "isNot:        " + isNot + " assocId: " + associationId + "\n");
 	myself = myself.concat(tab + "reviewStatus: " + reviewStatusId + " defining:  " + isDefining + "\n");
 	for (int i = 0; i < instances.size(); i++){
-	    Instance nextInstance = (Instance)instances.get(i);
+	    Instance nextInstance = instances.get(i);
 	    myself = myself.concat(nextInstance.toString(tab));
 	}
 	for (int i = 0; i < children.size(); i++){
-	    Association nextChild = (Association)children.get(i);
+	    Association nextChild = children.get(i);
 	    myself = myself.concat(nextChild.toString(tab + "   "));
 	}
 	
@@ -321,10 +320,10 @@ public class Association  {
 	    isNot = false;
 	}
 	
-	Vector parents = getParents();
+	Vector<Association> parents = getParents();
 	
 	for (int i = 0; i < parents.size(); i++){
-	    Association nextParent = (Association)parents.elementAt(i);
+	    Association nextParent = parents.elementAt(i);
 	    if (nextParent.getReviewStatusId() != UNREVIEWED_ID && nextParent.getIsNot() == true){
 		System.err.println("Association: new hierarchy exception");
 		String badGoId = nextParent.getGoTerm().getRealId();
@@ -349,11 +348,11 @@ public class Association  {
     public void propogateVerifiedInstancesUp(AssocEvidenceSet assocEvidenceSet){
 		
 	for (int i = 0; i < parents.size(); i++){
-	    Association nextParent = (Association)parents.elementAt(i);
-	    Vector verifiedInstances = assocEvidenceSet.getInstances();
-	    Vector processedInstances = new Vector();
+	    Association nextParent = parents.elementAt(i);
+	    Vector<Instance> verifiedInstances = assocEvidenceSet.getInstances();
+	    Vector<Instance> processedInstances = new Vector<>();
 	    for (int j = 0; j < verifiedInstances.size(); j++){
-		Instance nextInstance = (Instance)verifiedInstances.elementAt(j);
+		Instance nextInstance = verifiedInstances.elementAt(j);
 		Instance copiedInstance = nextInstance.cloneInstance();
 		copiedInstance.setEvidenceObject(nextInstance.getEvidenceObject());
 		processedInstances.add(copiedInstance);
@@ -363,7 +362,7 @@ public class Association  {
 	}
     }
 
-    public void prepareInstancesToCache(int goTermId, Vector instances){
+    public void prepareInstancesToCache(int goTermId, Vector<Instance> instances){
 	cachedEvidenceSets.put(new Integer(goTermId), instances);
     }
     
@@ -379,11 +378,11 @@ public class Association  {
     public void propogateRejectedInstancesDown(AssocEvidenceSet assocEvidenceSet){
 	
 	for (int i = 0; i < children.size(); i++){
-	    Association nextChild = (Association)children.elementAt(i);
-	    Vector rejectedInstances = assocEvidenceSet.getInstances();
-	    Vector processedInstances = new Vector();
+	    Association nextChild = children.elementAt(i);
+	    Vector<Instance> rejectedInstances = assocEvidenceSet.getInstances();
+	    Vector<Instance> processedInstances = new Vector<>();
 	    for (int j = 0; j < rejectedInstances.size(); j++){
-		Instance nextInstance = (Instance)rejectedInstances.elementAt(j);
+		Instance nextInstance = rejectedInstances.elementAt(j);
 		Instance copiedInstance = nextInstance.cloneInstance();
 		copiedInstance.setEvidenceObject(nextInstance.getEvidenceObject());
 		processedInstances.add(copiedInstance);
@@ -417,9 +416,9 @@ public class Association  {
 	    isNot = true;
 	}
 
-	Vector children = getChildren();
+	Vector<Association> children = getChildren();
 	for (int i = 0; i < children.size(); i++){
-	    Association nextAssoc = (Association)children.elementAt(i);
+	    Association nextAssoc = children.elementAt(i);
 
 	    if (ignoreVerifiedDescendants == false &&
 		nextAssoc.getReviewStatusId() != UNREVIEWED_ID &&
@@ -446,13 +445,13 @@ public class Association  {
     public void propogateRejectedInstancesUp(AssocEvidenceSet assocEvidenceSet){
 	
 	for (int i = 0; i < parents.size(); i++){
-	    Association nextParent = (Association)parents.elementAt(i);
+	    Association nextParent = parents.elementAt(i);
 	    //primary?
 	    if (nextParent.getReviewStatusId() != UNREVIEWED_ID && nextParent.getIsNot() != true){
-		Vector rejectedInstances = assocEvidenceSet.getInstances();
-		Vector processedInstances = new Vector();
+		Vector<Instance> rejectedInstances = assocEvidenceSet.getInstances();
+		Vector<Instance> processedInstances = new Vector<>();
 		for (int j = 0; j < rejectedInstances.size(); j++){
-		    Instance instance = (Instance)rejectedInstances.elementAt(j);
+		    Instance instance = rejectedInstances.elementAt(j);
 		    Instance copiedInstance = instance.cloneInstance();
 		    copiedInstance.setEvidenceObject(instance.getEvidenceObject());
 		    copiedInstance.setIsFromRejectedChild();
@@ -468,16 +467,16 @@ public class Association  {
     }
     
     public void addPropogatedInstances(){
-	Enumeration goIds = cachedEvidenceSets.keys();
+	Enumeration<Integer> goIds = cachedEvidenceSets.keys();
 	while (goIds.hasMoreElements()){
-	    Integer goId = (Integer)goIds.nextElement();
-	    Vector nextInstanceList = (Vector)cachedEvidenceSets.get(goId);
+	    Integer goId = goIds.nextElement();
+	    Vector<Instance> nextInstanceList = cachedEvidenceSets.get(goId);
 	    for (int i = 0; i < nextInstanceList.size(); i++){
-		Instance instance = (Instance)nextInstanceList.elementAt(i);
+		Instance instance = nextInstanceList.elementAt(i);
 		instances.add(instance);
 	    }
 	}
-	cachedEvidenceSets = new Hashtable();
+	cachedEvidenceSets = new Hashtable<>();
     }
 
 
@@ -487,7 +486,7 @@ public class Association  {
     public boolean getIsPrimary(){
 
 	for (int i = 0; i < instances.size(); i++){
-	    Instance nextInstance = (Instance)instances.get(i);
+	    Instance nextInstance = instances.get(i);
 	    if (nextInstance.getIsPrimary() == true){
 		return true;
 	    }
@@ -503,7 +502,7 @@ public class Association  {
 
 	boolean deprecate = true;
 	for (int i = 0; i < instances.size(); i++){
-	    Instance nextInstance = (Instance)instances.get(i);
+	    Instance nextInstance = instances.get(i);
 	    if (nextInstance.getIsDeprecated() == false){
 		deprecate = false;
 	    }
@@ -521,7 +520,7 @@ public class Association  {
 	    setOnIsPath(true);
 	    
 	    for (int i = 0; i < children.size(); i++){
-		Association nextAssoc = (Association)children.get(i);
+		Association nextAssoc = children.get(i);
 		nextAssoc.initializeOnIsPath();
 	    }
 	}
@@ -568,14 +567,14 @@ public class Association  {
      *                          AssociationGraph uses cacheDescendantInstances()
      *                          to add them.
      */
-    public void propogateInstances(Hashtable instanceInfoHash){
+    public void propogateInstances(Hashtable<String,Vector<Instance>> instanceInfoHash){
 
 	if (getIsNot() == false){ //Do not propogate or add 'is not' instances
-	    Enumeration descendantGoIds = instanceInfoHash.keys();
+	    Enumeration<String> descendantGoIds = instanceInfoHash.keys();
 	    while (descendantGoIds.hasMoreElements()){
-		String nextGoId = (String)descendantGoIds.nextElement();
-		Vector descendantInstances = (Vector)instanceInfoHash.get(nextGoId);
-		Vector instancesToCache;
+		String nextGoId = descendantGoIds.nextElement();
+		Vector<Instance> descendantInstances = instanceInfoHash.get(nextGoId);
+		Vector<Instance> instancesToCache;
 		if (hasNoIsDescendants() == true){ 
 		    //cache 'is not' instances if have no other 'is' descendants.
 		    instancesToCache = descendantInstances;
@@ -587,7 +586,7 @@ public class Association  {
 		cachedInstances.put(nextGoId, instancesToCache);
 	    }
 	    for (int j = 0; j < parents.size(); j++){
-		Association nextParent = (Association)parents.get(j);
+		Association nextParent = parents.get(j);
 		nextParent.propogateInstances(instanceInfoHash);
 	    }
 	}
@@ -599,12 +598,12 @@ public class Association  {
      */
     public void cacheDescendantInstances(){
 
-	Enumeration descendantIds = cachedInstances.keys();
+	Enumeration<String> descendantIds = cachedInstances.keys();
 	while (descendantIds.hasMoreElements()){
-	    String nextDescendantId = (String)descendantIds.nextElement();
-	    Vector descendantInstances = (Vector)cachedInstances.get(nextDescendantId);
+	    String nextDescendantId = descendantIds.nextElement();
+	    Vector<Instance> descendantInstances = cachedInstances.get(nextDescendantId);
 	    for (int i = 0; i < descendantInstances.size(); i++){
-		Instance nextInstance = (Instance)descendantInstances.get(i);
+		Instance nextInstance = descendantInstances.get(i);
 		Instance newInstance = nextInstance.cloneNotPrimary();
 	        //newInstance.setObject(undef);
 		addInstance(newInstance);
@@ -621,7 +620,7 @@ public class Association  {
 
 	boolean haveDefiningChildren = false;
 	for (int i = 0; i < children.size(); i++){
-	    Association child = (Association)children.get(i);
+	    Association child = children.get(i);
 	    if (child.determineAndSetDefining() == true){
 		haveDefiningChildren = true;
 	    }
@@ -642,7 +641,7 @@ public class Association  {
     public void deprecatePredictedInstances(){
 
 	for (int i = 0; i < instances.size(); i++){
-	    Instance nextInstance = (Instance)instances.get(i);
+	    Instance nextInstance = instances.get(i);
 	    if (nextInstance.getLOEId() == CBIL_PREDICT_LOE){
 		nextInstance.setIsDeprecated(true); 
 	    }
@@ -676,11 +675,11 @@ public class Association  {
     
     private void init(){
 	
-	this.parents = new Vector();
-	this.children = new Vector();
-	this.instances = new Vector();
-	this.cachedInstances = new Hashtable();
-	this.cachedEvidenceSets = new Hashtable();
+	this.parents = new Vector<>();
+	this.children = new Vector<>();
+	this.instances = new Vector<>();
+	this.cachedInstances = new Hashtable<>();
+	this.cachedEvidenceSets = new Hashtable<>();
     }
 
     /**
@@ -696,7 +695,7 @@ public class Association  {
 	}//base case
 
 	for (int i = 0; i < children.size(); i++){
-	    Association nextChild = (Association)children.get(i);
+	    Association nextChild = children.get(i);
 	    if (nextChild.hasNoIsDescendants() == false){
 		return false;
 	    }
@@ -707,11 +706,11 @@ public class Association  {
     /**
      * Given an instance list, remove all of those that are 'is not'.
      */
-    private Vector stripIsNotInstances(Vector instancesToCheck){
+    private Vector<Instance> stripIsNotInstances(Vector<Instance> instancesToCheck){
 
-	Vector instancesToCache = new Vector();
+	Vector<Instance> instancesToCache = new Vector<>();
 	for (int i = 0; i < instancesToCheck.size(); i++){
-	    Instance instance = (Instance)instancesToCheck.get(i);
+	    Instance instance = instancesToCheck.get(i);
 	    if (instance.getIsNot() == false){
 		instancesToCache.add(instance);
 	    }
