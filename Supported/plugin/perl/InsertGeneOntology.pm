@@ -497,7 +497,8 @@ sub _parseDataVersion {
 
   my $dataVersion;
   while (<$fh>) {
-    if (m/^version\: (\S+)$/) {
+    #if (m/^version\: (\S+)$/) {
+    if (m/^version\: releases\/(\S+)$/) {
       $dataVersion = $1;
       last;
     }
