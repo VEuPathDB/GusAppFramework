@@ -491,7 +491,7 @@ sub run {
 	  #  print STDERR Dumper $bioperlSeq;
 	    $self->{mapperSet}->preprocessBioperlSeq($bioperlSeq, $self);
 
-	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted, $doNotSubmit, $self->getArg('postprocessDir'), $self->getArg('postprocessDirective'));
+	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted, $doNotSubmit, $self->getArg('postprocessingDir'), $self->getArg('postprocessingDirective'));
 
 	    $self->undefPointerCache();
 
@@ -1389,7 +1389,7 @@ sub postprocessFeatureTree {
 
   my $gusSkeletonMakerClassName = $self->{mapperSet}->getGusSkeletonMakerClassName();
 
-  die "ISF cannot be called with --postprocessDirective unless a GUS skeleton maker class is provided in the mapping file." unless $gusSkeletonMakerClassName;
+  die "ISF cannot be called with --postprocessingDirective unless a GUS skeleton maker class is provided in the mapping file." unless $gusSkeletonMakerClassName;
 
   eval {
     no strict "refs";
