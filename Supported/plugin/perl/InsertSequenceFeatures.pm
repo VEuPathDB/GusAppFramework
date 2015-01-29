@@ -374,6 +374,29 @@ my $argsDeclaration  =
 	    format=>'Text'
 	   }),
 
+  fileArg({name => 'postprocessingDir',
+	    descr => "If postprocessing is specified, the postprocessing will use this directory to read and/or write its files",
+	    constraintFunc=> undef,
+	    reqd  => 0,
+	    isList => 0,
+	    mustExist => 1,
+	    format=>'Text'
+	   }),
+
+   stringArg({name => 'postprocessingDirective',
+	    descr => 'An arbitrary string to pass as a directive to the feature tree postprocessing.  This postprocessing happens just before the feature tree is written to the database.  It calls the postprocessFeatureTree() method of the gus skeleton maker, and passes that method the postprocessingDir and the directive.  That method decides what kind of postprocessing to do based on the directive',
+	    constraintFunc=> undef,
+	    reqd  => 0,
+	    isList => 0,
+	   }),
+
+   booleanArg({name => 'doNotSubmit',
+	    descr => 'If provided, then do not write to the database. This is mostly intended to support doing feature postprocessing without writing to the database.  For example, if the postprocessing writes out a file that is needed without writing to the db.',
+	    constraintFunc=> undef,
+	    reqd  => 0,
+	    isList => 0,
+	   }),
+
   ];
 
 
@@ -439,7 +462,8 @@ sub run {
    if($self->getArg('seqSoTerm') eq 'chromosome'){
        $self->{chromMap} = $self->getChromosomeMapping();
   }
-  
+
+  my $doNotSubmit = $self->getArg('doNotSubmit');
 
   foreach my $inputFile (@inputFiles) {
     $self->{fileFeatureCount} = 0;
@@ -461,13 +485,13 @@ sub run {
 	}
 	if(!($seqType =~ /rna/i)){
 	    # use id instead of object because object is zapped by undefPointerCache
-	    my $naSequenceId = $self->processSequence($bioperlSeq, $seqExtDbRlsId);
+	    my $naSequenceId = $self->processSequence($bioperlSeq, $seqExtDbRlsId, $doNotSubmit);
 	    
 	    $seqCount++;
 	  #  print STDERR Dumper $bioperlSeq;
 	    $self->{mapperSet}->preprocessBioperlSeq($bioperlSeq, $self);
 
-	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted);
+	    $self->processFeatureTrees($bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted, $doNotSubmit, $self->getArg('postprocessDir'), $self->getArg('postprocessDirective'));
 
 	    $self->undefPointerCache();
 
@@ -738,14 +762,14 @@ sub makeAggregators {
 ###########################################################################
 
 sub processSequence {
-  my ($self, $bioperlSeq, $dbRlsId) = @_;
+  my ($self, $bioperlSeq, $dbRlsId, $doNotSubmit) = @_;
 
   my $naSequence;
   if ($self->getArg('naSequenceSubclass')) {
     $naSequence = $self->retrieveNASequence($bioperlSeq, $dbRlsId);
   } else {
-    $naSequence = $self->bioperl2NASequence($bioperlSeq, $dbRlsId);
-    $naSequence->submit();
+    $naSequence = $self->bioperl2NASequence($bioperlSeq, $dbRlsId, $doNotSubmit);
+    $naSequence->submit() unless $doNotSubmit;
   }
 
   return $naSequence->getNaSequenceId();
@@ -776,17 +800,17 @@ sub retrieveNASequence {
 
 # if the input does include sequence, make GUS NASequence from bioperlSeq
 sub bioperl2NASequence {
-  my ($self, $bioperlSeq, $dbRlsId) = @_;
+  my ($self, $bioperlSeq, $dbRlsId, $doNotSubmit) = @_;
 
   my $naSequence = $self->constructNASequence($bioperlSeq, $dbRlsId);
 
   $self->addSecondaryAccs($bioperlSeq, $dbRlsId);
 
-  $self->addReferences($bioperlSeq, $naSequence);
+  $self->addReferences($bioperlSeq, $naSequence, $doNotSubmit);
 
   $self->addComments($bioperlSeq, $naSequence);
 
-  $self->addKeywords($bioperlSeq, $naSequence);
+  $self->addKeywords($bioperlSeq, $naSequence, $doNotSubmit);
 
   #Annotations we haven't used yet
   #   SEGMENT      segment             SimpleValue e.g. "1 of 2"
@@ -882,7 +906,7 @@ sub addSecondaryAccs{
 }
 
 sub addReferences {
-  my ($self, $bioperlSeq, $naSequence,) = @_;
+  my ($self, $bioperlSeq, $naSequence, $doNotSubmit) = @_;
 
   my $bioperlAnnotation = $bioperlSeq->annotation();
 
@@ -895,7 +919,7 @@ sub addReferences {
 #    $reference->setJournalOrBookName($bioperlReference->location());
 
 #    unless ($reference->retrieveFromDB())  {
-#      $reference->submit();
+#      $reference->submit() unless $doNotSubmit;
 #    }
 
 #    my $refId = $reference->getId();
@@ -920,7 +944,7 @@ sub addComments {
 }
 
 sub addKeywords {
-  my ($self, $bioperlSeq, $naSequence) = @_;
+  my ($self, $bioperlSeq, $naSequence, $doNotSubmit) = @_;
 
   my $bioperlAnnotation = $bioperlSeq->annotation();
 
@@ -931,7 +955,7 @@ sub addKeywords {
 	GUS::Model::DoTS::Keyword->new({'keyword'=>$bioperlKeyword->value()});
 
       unless ($keyword->retrieveFromDB())  {
-	$keyword->submit();
+	$keyword->submit() unless $doNotSubmit;
       }
 
       my $keyId = $keyword->getId();
@@ -951,7 +975,7 @@ sub addKeywords {
 ###########################################################################
 
 sub processFeatureTrees {
-  my ($self, $bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted) = @_;
+  my ($self, $bioperlSeq, $naSequenceId, $dbRlsId, $btFh, $isPredicted, $doNotSubmit, $postprocessDir, $postprocessDirective) = @_;
   
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
     undef $self->{validationErrors};
@@ -970,7 +994,14 @@ sub processFeatureTrees {
     next if $ignoreFeature;
     
     if($self->validateFeatureTree($bioperlFeatureTree) == 1){
-       $NAFeature->submit();
+
+      # if configured to do post processing, do it here.  the postprocessingDataStore holds whatever the postprocessor
+      # needs, as provided by itself.  we need to hold on to it, on its behalf, because it is stateless.
+      $self->postprocessingDataStore =
+	$self->postProcessFeatureTree($NAFeature, $postprocessDirective, $postprocessDir, $self->postprocessingDataStore);
+
+      $NAFeature->submit() unless $doNotSubmit;
+
        $self->{fileFeatureTreeCount}++;
        $self->{totalFeatureTreeCount}++;
    }else{
@@ -1348,6 +1379,23 @@ sub defaultPrintFeatureTree {
 
   foreach my $bioperlChildFeature ($bioperlFeatureTree->get_SeqFeatures()) {
     $self->defaultPrintFeatureTree($btFh, $bioperlChildFeature, "  $indent");
+  }
+}
+
+sub postprocessFeatureTree {
+  my ($self, $gusFeatureTree, $postprocessDirective, $postprocessDir) = @_;
+
+  return unless $postprocessDirective;
+
+  my $gusSkeletonMakerClassName = $self->{mapperSet}->getGusSkeletonMakerClassName();
+
+  die "ISF cannot be called with --postprocessDirective unless a GUS skeleton maker class is provided in the mapping file." unless $gusSkeletonMakerClassName;
+
+  eval {
+    no strict "refs";
+    eval "require $gusSkeletonMakerClassName";
+    my $method = "${gusSkeletonMakerClassName}::postprocessFeatureTree";
+    $self->postprocessDataStore = &$method($gusFeatureTree, $postprocessDirective, $postprocessDir, $self->postprocessDataStore);
   }
 }
 
