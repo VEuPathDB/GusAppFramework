@@ -132,7 +132,7 @@ sub new {
   my $documentation = &getDocumentation();
   my $argsDeclaration = &getArgumentsDeclaration();
 
-  $self->initialize({requiredDbVersion => 3.6,
+  $self->initialize({requiredDbVersion => 4,
 		     cvsRevision => '$Revision: 15381 $', # cvs fills this in!
 		     name => ref($self),
 		     argsDeclaration   => $argsDeclaration,
