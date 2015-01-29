@@ -997,8 +997,8 @@ sub processFeatureTrees {
 
       # if configured to do post processing, do it here.  the postprocessingDataStore holds whatever the postprocessor
       # needs, as provided by itself.  we need to hold on to it, on its behalf, because it is stateless.
-      $self->postprocessingDataStore =
-	$self->postProcessFeatureTree($NAFeature, $postprocessDirective, $postprocessDir, $self->postprocessingDataStore);
+      $self->{postprocessingDataStore} =
+	$self->postProcessFeatureTree($NAFeature, $postprocessDirective, $postprocessDir, $self->{postprocessingDataStore});
 
       $NAFeature->submit() unless $doNotSubmit;
 
