@@ -1396,7 +1396,9 @@ sub postprocessFeatureTree {
     eval "require $gusSkeletonMakerClassName";
     my $method = "${gusSkeletonMakerClassName}::postprocessFeatureTree";
     $self->postprocessDataStore = &$method($gusFeatureTree, $postprocessDirective, $postprocessDir, $self->postprocessDataStore);
-  }
+  };
+  my $err = $@;
+  if ($err) { die "Can't run gus skeleton maker method '${gusSkeletonMakerClassName}::postprocessFeatureTree'.  Error:\n $err\n"; }
 }
 
 ##############################################################################
