@@ -20,7 +20,7 @@ sub new {
 
   my $agpMap = {};
   if($wantTopLevel) {
-    $agpMap = $self->queryForAgpMap($dbh);
+    $agpMap = &queryForAgpMap($dbh);
   }
 
   $self->setAgpMap($agpMap);
@@ -465,7 +465,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 #--------------------------------------------------------------------------------
 
 sub queryForAgpMap {
-  my ($self, $dbh) = @_;
+  my ($dbh) = @_;
 
   my %agpMap;
 
