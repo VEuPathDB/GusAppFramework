@@ -480,8 +480,11 @@ sub queryForAgpMap {
                    from dots.sequencepiece sp
                            , dots.nasequence p
                            ,  dots.nasequence vs
+                           ,  sres.ontologyterm o
                    where  sp.piece_na_sequence_id = p.na_sequence_id
-                    and sp.virtual_na_sequence_id = vs.na_sequence_id";
+                    and p.sequence_ontology_id = o.ontology_term_id
+                    and sp.virtual_na_sequence_id = vs.na_sequence_id
+                    and o.name not in ('gap')";
 
   my $sh = $dbh->prepare($sql);
   $sh->execute();
