@@ -12,13 +12,12 @@ use Data::Dumper;
 
 
 sub new {
-  my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel, $optionalSoTerm, $optionalTaxonId) = @_;
+  my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel, $optionalSoTerm) = @_;
 
   my $self = bless {'_database_handle' => $dbh, 
                     '_gene_external_database_release_id' => $geneExtDbRlsId, 
                     '_want_top_level' => $wantTopLevel,
-                    '_sequence_ontology_term' => $optionalSoTerm,
-                    '_taxon_id' => $optionalTaxonId }, $class;
+                    '_sequence_ontology_term' => $optionalSoTerm}, $class;
 
   my $agpMap = {};
   if($wantTopLevel) {
@@ -45,9 +44,6 @@ sub setAgpMap { $_[0]->{_agp_map} = $_->[1] }
 
 sub getSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} }
 sub setSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} = $_->[1] }
-
-sub getTaxonId { $_[0]->{_taxon_id} }
-sub setTaxonId { $_[0]->{_taxon_id} = $_->[1] }
 
 sub getAllGeneIds {
   my ($self) = @_;
@@ -356,7 +352,6 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
   my $agpMap = $self->getAgpMap();
 
   my $soTerm = $self->getSequenceOntologyTerm();
-  my $taxonId = $self->getTaxonId();
 
   while(my $arr = $sh->fetchrow_arrayref()) {
     my $geneSourceId = $arr->[0];
@@ -381,12 +376,11 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     my $codingEnd = $arr->[19];
     my $naSequenceId = $arr->[20];
     my $gfSoTerm = $arr->[21];
-    my $sTaxonId = $arr->[22];
+    my $taxonId = $arr->[22];
 
     my $strand = $geneIsReversed ? -1 : 1;
 
     unless($seenGenes{$geneSourceId}) {
-      next if($taxonId && $sTaxonId != $sTaxonId); # only Genes for this organism
       next if($soTerm && $gfSoTerm ne $soTerm); # only Genes for this so term
 
       my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand);
