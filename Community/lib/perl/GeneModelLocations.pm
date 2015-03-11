@@ -12,11 +12,13 @@ use Data::Dumper;
 
 
 sub new {
-  my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel) = @_;
+  my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel, $optionalSoTerm, $optionalTaxonId) = @_;
 
   my $self = bless {'_database_handle' => $dbh, 
                     '_gene_external_database_release_id' => $geneExtDbRlsId, 
-                    '_want_top_level' => $wantTopLevel}, $class;
+                    '_want_top_level' => $wantTopLevel,
+                    '_sequence_ontology_term' => $optionalSoTerm,
+                    '_taxon_id' => $optionalTaxonId }, $class;
 
   my $agpMap = {};
   if($wantTopLevel) {
@@ -40,6 +42,12 @@ sub getWantTopLevel { $_[0]->{_want_top_level} }
 
 sub getAgpMap { $_[0]->{_agp_map} }
 sub setAgpMap { $_[0]->{_agp_map} = $_->[1] }
+
+sub getSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} }
+sub setSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} = $_->[1] }
+
+sub getTaxonId { $_[0]->{_taxon_id} }
+sub setTaxonId { $_[0]->{_taxon_id} = $_->[1] }
 
 sub getAllGeneIds {
   my ($self) = @_;
@@ -281,18 +289,20 @@ sub _initAllModelsHash {
      , l.start_min as exon_start_min
      , l.end_max as exon_end_max
      , l.is_reversed as exon_is_reversed
-     , taf.translation_start
-     , taf.translation_stop
+     , p.translation_start
+     , p.translation_stop
      , gfl.start_min as gene_start_min
      , gfl.end_max as gene_end_max
      , gfl.is_reversed as gene_is_reversed
      , s.source_id as sequence_source_id
-     , aas.source_id as protein_source_id
-     , taf.aa_feature_id as protein_aa_feature_id
-     , aas.aa_sequence_id as protein_aa_sequence_id
-     , afe.coding_start
-     , afe.coding_end
-    , gf.na_sequence_id 
+     , p.protein_source_id
+     , p.protein_aa_feature_id
+     , p.protein_aa_sequence_id
+     , p.coding_start
+     , p.coding_end
+     , gf.na_sequence_id 
+     , so.name as so_term
+     , s.taxon_id
 from dots.genefeature gf
    , dots.nalocation gfl
    , dots.nasequence s
@@ -300,9 +310,22 @@ from dots.genefeature gf
    , dots.nalocation l
    , dots.transcript t
    , dots.rnafeatureexon rfe
-   , dots.translatedaafeature taf
-   , dots.aafeatureexon afe
-   , dots.translatedaasequence aas
+   , sres.ontologyterm so
+   , (select taf.na_feature_id 
+           , taf.translation_start
+           , taf.translation_stop
+           , aas.source_id as protein_source_id
+           , taf.aa_feature_id as protein_aa_feature_id
+           , aas.aa_sequence_id as protein_aa_sequence_id
+           , afe.coding_start
+           , afe.coding_end
+           , afe.exon_feature_id
+       from dots.translatedaafeature taf
+          , dots.aafeatureexon afe
+          , dots.translatedaasequence aas
+       where taf.aa_feature_id = afe.aa_feature_id
+       and taf.aa_sequence_id = aas.aa_sequence_id
+       ) p
 where gf.na_feature_id = ef.parent_id
 and gf.na_feature_id = gfl.na_feature_id
 and gf.na_sequence_id = s.na_sequence_id
@@ -310,14 +333,11 @@ and ef.na_feature_id = l.na_feature_id
 and t.na_feature_id = rfe.rna_feature_id
 and rfe.exon_feature_id = ef.na_feature_id
 and t.parent_id = gf.na_feature_id
-and t.na_feature_id = taf.na_feature_id
-and taf.aa_feature_id = afe.aa_feature_id
-and afe.exon_feature_id = ef.na_feature_id
-and taf.aa_sequence_id = aas.aa_sequence_id
+and ef.na_feature_id = p.exon_feature_id (+)
 and gf.external_database_release_id = ?
+and gf.sequence_ontology_id = so.ontology_term_id
 order by gf.na_feature_id, t.na_feature_id, l.start_min
 ";
-
 
   my $sh = $dbh->prepare($sql);
   $sh->execute($extDbRlsId);
@@ -334,6 +354,9 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
   my %seenTranscriptExons;
 
   my $agpMap = $self->getAgpMap();
+
+  my $soTerm = $self->getSequenceOntologyTerm();
+  my $taxonId = $self->getTaxonId();
 
   while(my $arr = $sh->fetchrow_arrayref()) {
     my $geneSourceId = $arr->[0];
@@ -357,10 +380,15 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     my $codingStart = $arr->[18];
     my $codingEnd = $arr->[19];
     my $naSequenceId = $arr->[20];
+    my $gfSoTerm = $arr->[21];
+    my $sTaxonId = $arr->[22];
 
     my $strand = $geneIsReversed ? -1 : 1;
 
     unless($seenGenes{$geneSourceId}) {
+      next if($taxonId && $sTaxonId != $sTaxonId); # only Genes for this organism
+      next if($soTerm && $gfSoTerm ne $soTerm); # only Genes for this so term
+
       my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand);
 
       $geneModels->{$geneSourceId} = { 'source_id' => $geneSourceId,
