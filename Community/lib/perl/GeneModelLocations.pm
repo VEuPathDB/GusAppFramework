@@ -40,10 +40,10 @@ sub getGeneExternalDatabaseReleaseId { $_[0]->{_gene_external_database_release_i
 sub getWantTopLevel { $_[0]->{_want_top_level} }
 
 sub getAgpMap { $_[0]->{_agp_map} }
-sub setAgpMap { $_[0]->{_agp_map} = $_->[1] }
+sub setAgpMap { $_[0]->{_agp_map} = $_[1] }
 
 sub getSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} }
-sub setSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} = $_->[1] }
+sub setSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} = $_[1] }
 
 sub getAllGeneIds {
   my ($self) = @_;
