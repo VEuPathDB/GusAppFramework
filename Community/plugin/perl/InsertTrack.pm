@@ -11,7 +11,6 @@ package GUS::Community::Plugin::InsertTrack;
 
 use strict 'vars';
 
-
 use GUS::PluginMgr::Plugin;
 use lib "$ENV{GUS_HOME}/lib/perl";
 use FileHandle;
@@ -20,6 +19,8 @@ use GUS::Model::Study::ProtocolAppNode;
 use GUS::Model::Study::Characteristic;
 use GUS::Model::Results::SegmentResult;
 use Data::Dumper;
+
+my %chromosomeSequenceId;
 
 my $argsDeclaration =
   [
@@ -126,27 +127,33 @@ sub run {
 					  });
     $pan->submit()
 	unless ($pan->retrieveFromDB());
+    my $panId = $pan->{'attributes'}->{'protocol_app_node_id'};
 
     # each ontology term is a Characteristic
     foreach my $ot (split(',', $self->getArg('terms'))){
+	my ($ontology, $term) = split("/", $ot);
 	my $c = GUS::Model::Study::Characteristic->new({
-	    protocol_app_node_id => $pan->getPrimaryKey(),
-	    ontology_term_id => $self->getOntologyTermId(split("/", $ot)),
-					   });
+	    protocol_app_node_id => $panId,
+	    ontology_term_id => $self->getOntologyTermId($ontology, $term),
+						       });
 	$c->submit()
 	    unless ($c->retrieveFromDB());
     }
 
     # put track-file records in Results::SegmentResult
-    open (TRACK, $self->getArg('trackFile')) || die "Can't open input file.";
+    open (TRACK, $self->getArg('file')) || die "Can't open input file.";
+    my $recordCount;
     while (<TRACK>) {
       chomp;
-      my ($chromosome, $startloc, $endloc, $score, $strand, $name, $thickstartloc,
+      $recordCount++;
+
+      my ($chromosome, $startloc, $endloc, $name, $score, $strand, $thickstartloc,
           $thickendloc, $itemrgb, $blockcount, $blocksizes, $blockstarts) = split /\t/;
 
       my $sequenceId = $self->getSequenceId($chromosome);
+
       my $segment = GUS::Model::Results::SegmentResult->new({
-	  protocol_app_node_id => $pan->getPrimaryKey(),
+	  protocol_app_node_id => $panId,
 	  na_sequence_id => $sequenceId,
 	  segment_start => $startloc,
 	  segment_end => $endloc,
@@ -155,14 +162,37 @@ sub run {
 							    });
       $segment->submit()
 	  unless ($segment->retrieveFromDB());
+
+      $self->log("Inserted $recordCount spans")
+	  unless $recordCount % 10000;
     }
 
-    my $msg = "Here is my status message.";
+    my $msg = "$recordCount spans inserted into SegmentResult";
     return $msg;
 }
 
 sub getSequenceId {
-  my ($self, $name) = @_;
+    my ($self, $chromosome) = @_;
+
+    if ($chromosome =~ /chr(.*)$/) {
+	$chromosome = $1;
+    }
+
+    unless ($chromosomeSequenceId{$chromosome}) {
+	my $sth = $self->getQueryHandle()->prepareAndExecute(<<"SQL");
+            select na_sequence_id
+	    from dots.ExternalNaSequence
+	    where chromosome = '$chromosome'
+SQL
+
+        my ($id) = $sth->fetchrow_array();
+	$sth->finish();
+	die "Couldn't find record for chromosome \"$chromosome\""
+	    unless $id;
+	$chromosomeSequenceId{$chromosome} = $id
+    }
+
+    return $chromosomeSequenceId{$chromosome};
 }
 
 sub undoTables {
