@@ -163,8 +163,10 @@ sub run {
       $segment->submit()
 	  unless ($segment->retrieveFromDB());
 
-      $self->log("Inserted $recordCount spans")
-	  unless $recordCount % 10000;
+      unless ($recordCount % 5000) {
+          $self->undefPointerCache();
+	  $self->log("Inserted $recordCount spans")
+      }
     }
 
     my $msg = "$recordCount spans inserted into SegmentResult";
