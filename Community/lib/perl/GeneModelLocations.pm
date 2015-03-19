@@ -24,6 +24,8 @@ sub new {
     $agpMap = &queryForAgpMap($dbh);
   }
 
+
+
   $self->setAgpMap($agpMap);
 
   $self->_initAllModelsHash();
@@ -439,7 +441,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 
     $seenTranscriptExons{$transcriptExonSourceId} = 1;
 
-    unless($seenProteins{$proteinSourceId}) {
+    if(defined($proteinSourceId) && !$seenProteins{$proteinSourceId}) {
       $geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{proteins}->{$proteinSourceId} = {'source_id' => $proteinSourceId,
                                                                                                             'aa_feature_id' => $proteinAaFeatureId,
                                                                                                             'aa_sequence_id' => $proteinAaSequenceId,
@@ -455,27 +457,31 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 
     push @{$geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{exonSourceIds}}, $exonSourceId;
 
-    my @sortedCds = sort {$a <=> $b} ($codingStart, $codingEnd);
-
-    die join(' ', @sortedCds) if ($sortedCds[0] > $sortedCds[1]);
-
-    my $cdsLocation = &mapLocation($agpMap, $sequenceSourceId, $sortedCds[0], $sortedCds[1], $strand);
-
     my $isAllUtr;
-    $isAllUtr = 1 unless($cdsLocation->start && $cdsLocation->end);
+    $isAllUtr = 1 unless($codingStart && $codingEnd);
 
-    my $cds = {source_id => $exonSourceId,
-               na_feature_id => $exonNaFeatureId,
-               strand => $cdsLocation->strand,
-               exon_start => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{start},
-               exon_end => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{end},
-               cds_start => $cdsLocation->start,
-               cds_end => $cdsLocation->end,
-               is_all_utr => $isAllUtr,
-    };
+    if(defined $proteinSourceId) {
+      my @sortedCds = sort {$a <=> $b} ($codingStart, $codingEnd);
 
-    push @{$geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{proteins}->{$proteinSourceId}->{exons}}, $cds;
+      die join(' ', @sortedCds) if ($sortedCds[0] > $sortedCds[1]);
+
+      my $cdsLocation = &mapLocation($agpMap, $sequenceSourceId, $sortedCds[0], $sortedCds[1], $strand);
+
+
+      my $cds = {source_id => $exonSourceId,
+                 na_feature_id => $exonNaFeatureId,
+                 strand => $cdsLocation->strand,
+                 exon_start => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{start},
+                 exon_end => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{end},
+                 cds_start => $cdsLocation->start,
+                 cds_end => $cdsLocation->end,
+                 is_all_utr => $isAllUtr,
+      };
+
+      push @{$geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{proteins}->{$proteinSourceId}->{exons}}, $cds;
+    }
   }
+
 
   $self->{_all_models_hash} = $geneModels;
   $self->{_transcript_to_gene_map} = $transcriptToGeneMap;
@@ -512,6 +518,7 @@ sub queryForAgpMap {
   $sh->execute();
 
   while(my $hash = $sh->fetchrow_hashref()) {
+
     my $ctg = Bio::Location::Simple->new( -seq_id => $hash->{PIECE_SOURCE_ID}, 
                                           -start => 1, 
                                           -end =>  $hash->{PIECE_LENGTH}, 
@@ -541,6 +548,8 @@ sub queryForAgpMap {
 sub mapLocation {
   my ($agpMap, $pieceSourceId, $start, $end, $strand) = @_;
 
+
+    
   my $match = Bio::Location::Simple->
     new( -seq_id => $pieceSourceId, -start =>   $start, -end =>  $end, -strand => $strand );
 
