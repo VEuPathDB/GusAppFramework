@@ -47,7 +47,14 @@ sub getArgumentsDeclaration {
 		  descr => "The ExternalDBRelease specifier for the relationship types. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
 		  constraintFunc => undef,
 		  reqd           => 0,
-		  isList         => 0 })
+		  isList         => 0 }),
+ booleanArg({name => 'hasHeader',
+             descr => 'do the input files have a header row?',
+             reqd => 0,
+             default => 1
+            }),
+
+
 
     ];
   return $argumentDeclaration;
@@ -152,7 +159,7 @@ sub insertTerms {
   my $countTerms = 0;
   my $countSyns = 0;
 
-  my $line = <$fh>;
+  my $line = <$fh> if($self->getArg('hasHeader');
   while ($line=<$fh>) {
     chomp($line);
     my ($id, $name, $def, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
@@ -184,7 +191,7 @@ sub insertRelationships {
   my $fh = IO::File->new("<$file");
   my $countRels = 0;
 
-  my $line = <$fh>;
+  my $line = <$fh>  if($self->getArg('hasHeader');;
   while ($line=<$fh>) {
     chomp($line);
     my ($subjectId, $predicateId, $objectId, $relationshipTypeId) = split(/\t/, $line);
