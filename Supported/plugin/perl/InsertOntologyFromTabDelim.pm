@@ -42,7 +42,13 @@ sub getArgumentsDeclaration {
 		  descr => "The ExternalDBRelease specifier for this Ontology. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
 		  constraintFunc => undef,
 		  reqd           => 1,
+		  isList         => 0 }),
+     stringArg({ name  => 'relTypeExtDbRlsSpec',
+		  descr => "The ExternalDBRelease specifier for the relationship types. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+		  constraintFunc => undef,
+		  reqd           => 0,
 		  isList         => 0 })
+
     ];
   return $argumentDeclaration;
 }
@@ -125,6 +131,7 @@ sub run {
   $self->logArgs();
 
   my $termFile = $self->getArg('termFile');
+
   my $extDbRls = $self->getExtDbRlsId($self->getArg('extDbRlsSpec'));
   my $relFile = $self->getArg('relFile');
 
@@ -202,12 +209,13 @@ sub insertRelationships {
 
     my $relationshipType;
     if($relationshipTypeId) {
-      $relationshipType = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $relationshipTypeId});
+
+      my $relTypeExtDbRls = $self->getExtDbRlsId($self->getArg('relTypeExtDbRlsSpec'));
+      $relationshipType = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $relTypeExtDbRls, source_id => $relationshipTypeId});
       if(!$relationshipType->retrieveFromDB()) {
         $self->userError("Failure retrieving relationshipType ontology term \"$relationshipTypeId\"");
       }
     }
-
 
     my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->new();   
     $ontologyRelationship->setSubjectTermId($subject->getId());
