@@ -50,8 +50,7 @@ sub getArgumentsDeclaration {
 		  isList         => 0 }),
  booleanArg({name => 'hasHeader',
              descr => 'do the input files have a header row?',
-             reqd => 0,
-             default => 1
+reqd => 0
             }),
 
 
@@ -159,7 +158,7 @@ sub insertTerms {
   my $countTerms = 0;
   my $countSyns = 0;
 
-  my $line = <$fh> if($self->getArg('hasHeader');
+  my $line = <$fh> if($self->getArg('hasHeader'));
   while ($line=<$fh>) {
     chomp($line);
     my ($id, $name, $def, $synonyms, $uri, $isObsolete) = split(/\t/, $line);
@@ -191,7 +190,7 @@ sub insertRelationships {
   my $fh = IO::File->new("<$file");
   my $countRels = 0;
 
-  my $line = <$fh>  if($self->getArg('hasHeader');;
+  my $line = <$fh>  if($self->getArg('hasHeader'));
   while ($line=<$fh>) {
     chomp($line);
     my ($subjectId, $predicateId, $objectId, $relationshipTypeId) = split(/\t/, $line);
