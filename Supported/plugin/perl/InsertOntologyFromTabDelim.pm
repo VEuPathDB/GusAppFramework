@@ -65,7 +65,7 @@ sub getDocumentation {
 
   my $failureCases = "";
 
-  my $notes = <<NOTES;
+  my $notes = "
 
 =head1 AUTHOR
 
@@ -84,7 +84,7 @@ Tab delimited text file with the following header (order matters): id, name, def
 A 3-column file with: subject_term_child, relationship_id, object_term_id 
 The ids should match those listed in the Ontology Term File.
 
-NOTES
+";
 
   my $documentation = {purpose=>$purpose, purposeBrief=>$purposeBrief, tablesAffected=>$tablesAffected, tablesDependedOn=>$tablesDependedOn, howToRestart=>$howToRestart, failureCases=>$failureCases, notes=>$notes};
 
@@ -180,39 +180,46 @@ sub insertRelationships {
   my $line = <$fh>;
   while ($line=<$fh>) {
     chomp($line);
-    my ($subjectId, $predicateId, $objectId) = split(/\t/, $line);
-    my $gotTerms = 1;
+    my ($subjectId, $predicateId, $objectId, $relationshipTypeId) = split(/\t/, $line);
     
     my $subject = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $subjectId});    
     if(!$subject->retrieveFromDB()) {
       $self->userError("Failure retrieving subject ontology term \"$subjectId\"");
-      $gotTerms = 0;
     }
 
-    my $predicate = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $predicateId});
-    if(!$predicate->retrieveFromDB()) {
-      $self->userError("Failure retrieving predicate ontology term \"$predicateId\"");
-      $gotTerms = 0;
+    my $predicate;
+    if($predicateId) {
+      $predicate = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $predicateId});
+      if(!$predicate->retrieveFromDB()) {
+        $self->userError("Failure retrieving predicate ontology term \"$predicateId\"");
+      }
     }
 
     my $object = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $objectId});
     if(!$object->retrieveFromDB()) {
       $self->userError("Failure retrieving object ontology term \"$objectId\"");
-      $gotTerms = 0;
     }
 
-    if ($gotTerms) {
-      my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->new();   
-      $ontologyRelationship->setSubjectTermId($subject->getId());
-      $ontologyRelationship->setPredicateTermId($predicate->getId()); 
-      $ontologyRelationship->setObjectTermId($object->getId());
-
-      if (!$ontologyRelationship->retrieveFromDB()) {
-	$countRels++;
+    my $relationshipType;
+    if($relationshipTypeId) {
+      $relationshipType = GUS::Model::SRes::OntologyTerm->new({external_database_release_id => $extDbRls, source_id => $relationshipTypeId});
+      if(!$relationshipType->retrieveFromDB()) {
+        $self->userError("Failure retrieving relationshipType ontology term \"$relationshipTypeId\"");
       }
-      $ontologyRelationship->submit();
-      $self->undefPointerCache();
     }
+
+
+    my $ontologyRelationship = GUS::Model::SRes::OntologyRelationship->new();   
+    $ontologyRelationship->setSubjectTermId($subject->getId());
+    $ontologyRelationship->setPredicateTermId($predicate->getId()) if($predicate); 
+    $ontologyRelationship->setObjectTermId($object->getId());
+    $ontologyRelationship->setOntologyRelationshipTypeId($relationshipType->getId());
+
+    if (!$ontologyRelationship->retrieveFromDB()) {
+      $countRels++;
+    }
+    $ontologyRelationship->submit();
+    $self->undefPointerCache();
   }
   $fh->close();
   my $resultDescr = ". Inserted $countRels rows in SRes.OntologyRelationship";
