@@ -131,6 +131,7 @@ sub makeOntologyRelType {
 
    my $term = GUS::Model::SRes::OntologyTerm->new({
        'name' => $term,
+       'source_id' => $term,
        'external_database_release_id' => $extDbRls });
    
    return $term;
