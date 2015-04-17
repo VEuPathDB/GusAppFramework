@@ -334,6 +334,7 @@ and t.parent_id = gf.na_feature_id
 and ef.na_feature_id = p.exon_feature_id (+)
 and gf.external_database_release_id = ?
 and gf.sequence_ontology_id = so.ontology_term_id
+and gf.source_id = 'PVX_107735'
 order by gf.na_feature_id, t.na_feature_id, l.start_min
 ";
 
@@ -465,20 +466,24 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
 
       die join(' ', @sortedCds) if ($sortedCds[0] > $sortedCds[1]);
 
-      my $cdsLocation = &mapLocation($agpMap, $sequenceSourceId, $sortedCds[0], $sortedCds[1], $strand);
+      my $cdsStart = $sortedCds[0];
+      my $cdsEnd = $sortedCds[1];
 
+      my $cdsLocation;
+      $cdsLocation= &mapLocation($agpMap, $sequenceSourceId, $cdsStart, $cdsEnd, $strand) unless($isAllUtr);
 
-      my $cds = {source_id => $exonSourceId,
+      my $exon = {source_id => $exonSourceId,
                  na_feature_id => $exonNaFeatureId,
-                 strand => $cdsLocation->strand,
+                 strand => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{strand},
                  exon_start => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{start},
                  exon_end => $geneModels->{$geneSourceId}->{exons}->{$exonSourceId}->{end},
-                 cds_start => $cdsLocation->start,
-                 cds_end => $cdsLocation->end,
+                 cds_start => defined($isAllUtr) ? undef : $cdsLocation->start,
+                 cds_end => defined($isAllUtr) ? undef : $cdsLocation->end,
                  is_all_utr => $isAllUtr,
       };
 
-      push @{$geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{proteins}->{$proteinSourceId}->{exons}}, $cds;
+
+      push @{$geneModels->{$geneSourceId}->{transcripts}->{$transcriptSourceId}->{proteins}->{$proteinSourceId}->{exons}}, $exon;
     }
   }
 
@@ -486,6 +491,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
   $self->{_all_models_hash} = $geneModels;
   $self->{_transcript_to_gene_map} = $transcriptToGeneMap;
   $self->{_protein_to_transcript_map} = $proteinToTranscriptMap;
+
 }
 
 #--------------------------------------------------------------------------------
@@ -548,8 +554,6 @@ sub queryForAgpMap {
 sub mapLocation {
   my ($agpMap, $pieceSourceId, $start, $end, $strand) = @_;
 
-
-    
   my $match = Bio::Location::Simple->
     new( -seq_id => $pieceSourceId, -start =>   $start, -end =>  $end, -strand => $strand );
 
