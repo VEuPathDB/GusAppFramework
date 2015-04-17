@@ -334,7 +334,6 @@ and t.parent_id = gf.na_feature_id
 and ef.na_feature_id = p.exon_feature_id (+)
 and gf.external_database_release_id = ?
 and gf.sequence_ontology_id = so.ontology_term_id
-and gf.source_id = 'PVX_107735'
 order by gf.na_feature_id, t.na_feature_id, l.start_min
 ";
 
