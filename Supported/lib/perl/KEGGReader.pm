@@ -1,64 +1,37 @@
-#!/usr/bin/perl
-
-# =================================================
-# Package ParseKeggXml
-# =================================================
-
-package GUS::Supported::ParseKeggXml;
-
-# =================================================
-# Documentation
-# =================================================
-
-=pod
-
-=head1 Description
-
-Parses a KeggXML File and returns a hash that stores 
-the pathway relationships
-
-=cut
-
-# =================================================
-# Pragmas
-# =================================================
+package GUS::Supported::KEGGReader;
+use base qw(GUS::Supported::MetabolicPathwayReader);
 
 use strict;
 
-# =================================================
-# Includes
-# =================================================
-
-use Data::Dumper;
-use FileHandle;
 use XML::LibXML;
 use File::Basename;
-# =================================================
-# Package Methods
-# =================================================
+
+
+sub setPathwayHash {
+  my ($self, $pathwayHash) = @_;
+
+  $self->{_pathway_hash} = $pathwayHash;
+}
+
+sub getPathwayHash {
+  my ($self) = @_;
+  return $self->{_pathway_hash};
+}
 
 # -------------------------------------------------
-# Subroutine: parseKGML
-# Description: parses a kegg xml file
-# Inputs: the filename
+# Subroutine: read
+# Description: @override parses a kegg xml file
+
 # Outputs: a hash data structure that stores
 #          the kegg entries, relations and reactions
 # -------------------------------------------------
 
-sub new {
-  my ($class) = @_;
-  my $parser = new XML::LibXML;
-  my $self = {parser => $parser};
-  bless($self, $class);
-  return $self;
-}
-
-
-
-sub parseKGML {
-  my ($self, $filename) = @_;
+sub read {
+  my ($self) = @_;
 
   my ($pathway, $nodeEntryMapping);
+
+  my $filename = $self->getFile();
 
   if (!$filename) {
    die "Error: KGML file not found!";
@@ -66,7 +39,7 @@ sub parseKGML {
 
   #initialize parser
   # ===================================
-  my $parser = $self->{parser};
+  my $parser = new XML::LibXML;
   my $doc = $parser->parse_file($filename);
   my $rid = 0;
 
@@ -89,6 +62,7 @@ sub parseKGML {
   @nodes = $doc->findnodes('/pathway/entry');
   foreach my $entry (@nodes) {
     my $type = $entry->getAttribute('type');
+    my $uniqId = $entry->getAttribute('id');
  
     my $enzymeNames = $entry->getAttribute('name');
     $enzymeNames =~ s/ec:|cpd:|dr:|path://g;
@@ -104,10 +78,11 @@ sub parseKGML {
       foreach my $gn (@graphicsNode) {
        my $gnName = $gn->getAttribute('name');
        my ($xPosition, $yPosition) = ($gn->getAttribute('x'), $gn->getAttribute('y'));
-       my $uniqId = $id . "_X:" . $xPosition . "_Y:" . $yPosition;
+       my $verboseName = $id . "_X:" . $xPosition . "_Y:" . $yPosition;
 
       $pathway->{NODES}->{$uniqId}->{SOURCE_ID} = $id;
       $pathway->{NODES}->{$uniqId}->{UNIQ_ID} = $uniqId;
+      $pathway->{NODES}->{$uniqId}->{VERBOSE_NAME} = $verboseName;
       $pathway->{NODES}->{$uniqId}->{TYPE} = $type;
       $pathway->{NODES}->{$uniqId}->{ENTRY_ID} = $entry->getAttribute('id');
       $pathway->{NODES}->{$uniqId}->{REACTION} = $entry->getAttribute('reaction');
@@ -154,18 +129,18 @@ sub parseKGML {
     foreach my $e (@entries) {
       foreach my $a (@associatedEntries) {
 	if (!defined $subtype[0]) {
-	  $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ENTRY} = $e;
-	  $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ASSOCIATED_ENTRY} = $a;
-	  $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{INTERACTION_TYPE} = $rtype;
+	  $pathway->{RELATIONS}->{$rtype}->{$rid}->{ENTRY} = $e;
+	  $pathway->{RELATIONS}->{$rtype}->{$rid}->{ASSOCIATED_ENTRY} = $a;
+	  $pathway->{RELATIONS}->{$rtype}->{$rid}->{INTERACTION_TYPE} = $rtype;
 	  $rid++;
 	}
 	else {
 	  foreach my $st (@subtype) {
-	    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ENTRY} = $e;
-	    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{ASSOCIATED_ENTRY} = $a;
-	    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{INTERACTION_TYPE} = $rtype;
-	    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{INTERACTION_ENTITY} = $st->getAttribute('name');
-	    $pathway->{RELATIONS}->{$rtype}->{"Relation".$rid}->{INTERACTION_ENTITY_ENTRY} = $st->getAttribute('value');
+	    $pathway->{RELATIONS}->{$rtype}->{$rid}->{ENTRY} = $e;
+	    $pathway->{RELATIONS}->{$rtype}->{$rid}->{ASSOCIATED_ENTRY} = $a;
+	    $pathway->{RELATIONS}->{$rtype}->{$rid}->{INTERACTION_TYPE} = $rtype;
+	    $pathway->{RELATIONS}->{$rtype}->{$rid}->{INTERACTION_ENTITY} = $st->getAttribute('name');
+	    $pathway->{RELATIONS}->{$rtype}->{$rid}->{INTERACTION_ENTITY_ENTRY} = $st->getAttribute('value');
 	    $rid++;
 	  }
 	}
@@ -185,7 +160,9 @@ sub parseKGML {
       #a complex reaction key to uniquely identify an 'Interaction'. To be noted that a single reaction can have multiple interactions
       #like substrateA <-> Enzyme1 <-> ProductA and SubstrateA <->EnzymeB <-> ProductA
       #which is a single reaction in KEGG but two separate network interactions
-      my $reactionName = $reaction->getAttribute('id')."_".$reaction->getAttribute('name');
+
+    my $reactionId = $reaction->getAttribute('id');
+      my $verboseName = $reactionId."_".$reaction->getAttribute('name');
       my $rnName = $reaction->getAttribute('name');
       $rnName =~ s/rn://g;
 
@@ -209,19 +186,16 @@ sub parseKGML {
         push (@products, ({ENTRY => $prdId, NAME => $name}));
       }
 
-      $pathway->{REACTIONS}->{$reactionName} = {PRODUCTS => [@products],
+      $pathway->{REACTIONS}->{$reactionId} = {PRODUCTS => [@products],
                                                 SUBSTRATES => [@substrates],
                                                 ENZYMES => [@enzymes],
-                                                NAME => $rnName,
+                                                SOURCE_ID => $rnName,
+                                                VERBOSE_NAME => $verboseName,
                                                 TYPE => $reaction->getAttribute('type')};
   }
 
-  #print  Dumper $pathway;
-  return $pathway;
-}  # end parseKeggXml
+  $self->setPathwayHash($pathway);
+}  
 
 
-# =================================================
-# End Module
-# =================================================
 1; 
