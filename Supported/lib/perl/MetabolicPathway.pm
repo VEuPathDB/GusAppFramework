@@ -1,93 +1,117 @@
-#!/usr/bin/perl
-
-# =================================================
-# Package MetabolicPathway 
-# =================================================
-
 package GUS::Supported::MetabolicPathway;
 
-# =================================================
-# Documentation
-# =================================================
+use strict;
 
 =pod
 
 =head1 Description
 
-A class for representing and processing Metabolic Pathways (KEGG, potentially others ex BioPax)
+Superclass for specific metabolic pathway map (KEGG, MPMP, BioCyc) as GUS Model Objects.  Subclasses must implement makeGusObjects and getReaderClass methods.  
+The makeGusObjecs method can be called by a plugin to load into SRes tables
 
 =cut
 
-# =================================================
-# Pragmas
-# =================================================
+#--------------------------------------------------------------------------------
+# Abstract Object Methods
+#--------------------------------------------------------------------------------
+sub makeGusObjects {}
+sub getReaderClass {}
 
-use strict;
-
-
-# =================================================
-# Package Methods
-# =================================================
-
-
+#--------------------------------------------------------------------------------
+# Object Methods
+#--------------------------------------------------------------------------------
 sub new {
-
-  my ($class,$pathwayName) = @_;
+  my ($class, $file) = @_;
   my $self = {};  
-  bless($self,$class);
+  bless($self, $class);
+
+  my $readerClass = $self->getReaderClass();
+
+  eval "require $readerClass";
+
+  my $reader = eval {
+    $readerClass->new($file);
+  };
+
+  $reader->read();
   
-  $self->{pathwayName} = $pathwayName;
+  $self->{_reader} = $reader;
   return $self;
 }
 
+sub getReader {
+  my $self = @_;
 
-sub setPathwayNode {
-  my ($self,$nodeName, $node) = @_;
-  $self->{nodes}->{$nodeName} = $node;
-  #every node has a Type(Enzyme) and Name (ec:1.1.1.1)
-}
-
-sub getPathwayNode {
-  my ($self, $nodeName) = @_;
-  return $self->{nodes}->{$nodeName};
-}
-
-sub setNodeGraphics {
-  my ($self,$nodeName, $graphics) = @_;
-  $self->{graphics}->{$nodeName} = $graphics;
-}
-
-sub getNodeGraphics {
-  my ($self, $nodeName) = @_;
-  return $self->{graphics}->{$nodeName};
+  return $self->{_reader};
 }
 
 
-sub getPathwayName {
+sub addNode {
+  my ($self, $gusNode, $uniqueNodeId) = @_;
+
+  my $expected = 'GUS::Model::SRes::PathwayNode';
+  my $className = ref($gusNode);
+  &checkClass($className, $expected);
+
+  $self->{_gus_nodes}->{$uniqueNodeId} = $gusNode;
+}
+
+sub getNodeByUniqueId {
+  my ($self, $uniqueId) = @_;
+  return $self->{_gus_nodes}->{$uniqueId};
+}
+
+sub getNodes {
   my ($self) = @_;
-  return $self->{pathwayName};
-  #string
+  my @rv = values %{$self->{_gus_nodes}};
+  return \@rv;
 }
 
-sub setPathwayNodeAssociation {
-  my ($self,$asscName,$association) = @_;
-  $self->{associations}->{$asscName} = $association;
+sub setPathway {
+  my ($self, $gusPathway) = @_;
+
+  my $expected = 'GUS::Model::SRes::Pathway';
+  my $className = ref($gusPathway);
+  &checkClass($className, $expected);
+
+  $self->{_gus_pathway} = $gusPathway;
 }
 
-
-sub getPathwayNodeAssociation {
-  my ($self,$asscName) = @_;
-  return $self->{associations}->{$asscName};
-}
-
-sub setPathwayInteractions {
-  my ($self,$interactions) = @_;
-  $self->{pathwayInteractions} = $interactions;
-}
-
-sub getPathwayNodeInteractions {
+sub getPathway {
   my ($self) = @_;
-  return $self->{pathwayInteractions};
+  return $self->{_gus_pathway};;
 }
+
+
+sub addRelationship {
+  my ($self, $gusRelationship) = @_;
+
+  my $expected = 'GUS::Model::SRes::PathwayRelationship';
+  my $className = ref($gusRelationship);
+  &checkClass($className, $expected);
+
+  push @{$self->{_gus_relationships}}, $gusRelationship;
+}
+
+sub getRelationships {
+  my ($self) = @_;
+  my @rv = @{$self->{_gus_relationships}};
+  return \@rv;
+}
+
+
+#--------------------------------------------------------------------------------
+#Static Util methods
+#--------------------------------------------------------------------------------
+
+sub checkClass {
+  my ($className, $expected) = @_;
+
+  unless($className eq $expected) {
+    die "ClassName $className did not match expected $expected;";
+  }
+  
+}
+
 
 1; 
