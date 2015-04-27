@@ -40,7 +40,7 @@ sub new {
 }
 
 sub getReader {
-  my $self = @_;
+  my ($self) = @_;
 
   return $self->{_reader};
 }
@@ -112,6 +112,7 @@ sub checkClass {
   }
   
 }
+
 
 
 1; 
