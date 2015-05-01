@@ -36,6 +36,10 @@ sub new {
   $reader->read();
   
   $self->{_reader} = $reader;
+
+  $self->{_gus_relationships} = [];
+  $self->{_gus_nodes} = {};
+
   return $self;
 }
 
@@ -97,6 +101,18 @@ sub getRelationships {
   my ($self) = @_;
   my @rv = @{$self->{_gus_relationships}};
   return \@rv;
+}
+
+sub getRelationshipFromGusNodes {
+  my ($self, $gusNode,  $gusAssociatedNode) = @_;
+
+  my $relationships = $self->getRelationships();
+  foreach my $relationship (@$relationships) {
+    if($relationship->getNodeId() == $gusNode->getId() && $relationship->getAssociatedNodeId == $gusAssociatedNode->getId()) {
+      print STDERR "Found Relationship!!!\n";
+      return $relationship;
+    }
+  }
 }
 
 
