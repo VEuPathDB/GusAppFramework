@@ -33,6 +33,8 @@ sub read {
 
   my $filename = $self->getFile();
 
+  print STDERR "Reading file $filename...\n";
+
   if (!$filename) {
    die "Error: KGML file not found!";
   }
@@ -65,7 +67,7 @@ sub read {
     my $uniqId = $entry->getAttribute('id');
  
     my $enzymeNames = $entry->getAttribute('name');
-    $enzymeNames =~ s/ec:|cpd:|dr:|path://g;
+    $enzymeNames =~ s/gl:|ec:|cpd:|dr:|path://g;
     $nodeEntryMapping->{$entry->getAttribute('id')} = $enzymeNames;
 
     my @nodeIds = split(/ /,$enzymeNames);
@@ -112,7 +114,7 @@ sub read {
     my $type = $relation->getAttribute('type');
  
     my $rtype = "Protein-Protein"; # if type = PPrel
-    $rtype = "Enzyme-Enyzme" if $type eq "ECrel";
+    $rtype = "Enzyme-Enzyme" if $type eq "ECrel";
     $rtype = "Gene Expression" if $type eq "GErel";
     $rtype = "Protein-Compound" if $type eq "PCrel";
     $rtype = "Maplink" if $type eq "maplink";
@@ -174,7 +176,7 @@ sub read {
       foreach my $sbstr (@substrate) {
         my $substrId = $sbstr->getAttribute('id');
         my $name = $sbstr->getAttribute('name');
-        $name =~ s/ec:|cpd:|dr://g;
+        $name =~ s/gl:|ec:|cpd:|dr://g;
         push (@substrates,({ENTRY => $substrId, NAME => $name}));
       } 
 
@@ -182,7 +184,7 @@ sub read {
       foreach my $prd (@product) {
         my $prdId = $prd->getAttribute('id');
         my $name = $prd->getAttribute('name');
-        $name =~ s/ec:|cpd:|dr://g;
+        $name =~ s/gl:|ec:|cpd:|dr://g;
         push (@products, ({ENTRY => $prdId, NAME => $name}));
       }
 
@@ -194,8 +196,66 @@ sub read {
                                                 TYPE => $reaction->getAttribute('type')};
   }
 
+
+
+  foreach my $relation (values %{$pathway->{RELATIONS}->{'Enzyme-Enzyme'}}) {
+
+    unless($relation->{INTERACTION_ENTITY} eq 'compound') {
+      print  "WARN:  Only know about Compound->Enzyme Relations Here. Found $relation->{INTERACTION_ENTITY}\n" ;
+      next;
+    }
+
+    my $c = $relation->{INTERACTION_ENTITY_ENTRY};
+    my $e1 = $relation->{ENTRY};
+    my $e2 = $relation->{ASSOCIATED_ENTRY};
+
+    push @{$pathway->{EDGES}->{$c}}, $e1 unless(&alreadyExistsInArray($e1, $pathway->{EDGES}->{$c}));
+    push @{$pathway->{EDGES}->{$c}}, $e2 unless(&alreadyExistsInArray($e2, $pathway->{EDGES}->{$c}));
+  }
+
+
+  foreach my $relation (values %{$pathway->{RELATIONS}->{Maplink}}) {
+    unless($relation->{INTERACTION_ENTITY} eq 'compound') {
+      print "WARN: Only know about Compound->Map Relations Here.  Found $relation->{INTERACTION_ENTITY}\n" ;
+      next;
+    }
+    my $c = $relation->{INTERACTION_ENTITY_ENTRY};
+    my $e1 = $relation->{ENTRY};
+    my $e2 = $relation->{ASSOCIATED_ENTRY};
+
+    push @{$pathway->{EDGES}->{$c}}, $e1 unless(&alreadyExistsInArray($e1, $pathway->{EDGES}->{$c}));
+    push @{$pathway->{EDGES}->{$c}}, $e2 unless(&alreadyExistsInArray($e2, $pathway->{EDGES}->{$c}));
+  }
+
+  foreach my $reaction (values %{$pathway->{REACTIONS}}) {
+    foreach my $enzymeId (@{$reaction->{ENZYMES}}) {
+
+      foreach my $substrateHash(@{$reaction->{SUBSTRATES}}) {
+        my $substrateId = $substrateHash->{ENTRY};
+        push @{$pathway->{EDGES}->{$substrateId}}, $enzymeId unless(&alreadyExistsInArray($enzymeId, $pathway->{EDGES}->{$substrateId}));
+      }
+
+      foreach my $productHash (@{$reaction->{PRODUCTS}}) {
+        my $productId = $productHash->{ENTRY};
+        push @{$pathway->{EDGES}->{$productId}}, $enzymeId unless(&alreadyExistsInArray($enzymeId, $pathway->{EDGES}->{$productId}));
+      }
+    }
+  }
+
   $self->setPathwayHash($pathway);
-}  
+}
+
+
+sub alreadyExistsInArray {
+  my ($e, $ar) = @_;
+
+  return 0 unless($ar);
+  foreach(@$ar) {
+    return 1 if($e == $_);
+  }
+
+  return 0;
+}
 
 
 1; 
