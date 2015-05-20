@@ -124,7 +124,7 @@ sub getNaFeatureIdsFromSourceId {
 
     my $stmt = $plugin->prepareAndExecute($sql);
     while ( my($source_id, $na_feature_id) = $stmt->fetchrow_array()) {
-      push @{$plugin->{_sourceIdNaFeatureIdMap}->{$source_id}}, $na_feature_id;
+      $plugin->{_sourceIdNaFeatureIdMap}->{$source_id}=$na_feature_id;
     }
     $stmt->finish();
   }
