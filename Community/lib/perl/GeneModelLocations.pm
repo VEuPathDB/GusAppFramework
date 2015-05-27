@@ -12,12 +12,14 @@ use Data::Dumper;
 
 
 sub new {
-  my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel, $optionalSoTerm) = @_;
+  my ($class, $dbh, $geneExtDbRlsId, $wantTopLevel, $optionalSoTerm, $soExclude) = @_;
 
   my $self = bless {'_database_handle' => $dbh, 
                     '_gene_external_database_release_id' => $geneExtDbRlsId, 
                     '_want_top_level' => $wantTopLevel,
-                    '_sequence_ontology_term' => $optionalSoTerm}, $class;
+                    '_sequence_ontology_term' => $optionalSoTerm,
+                    '_sequence_ontology_exclude' => $soExclude,
+  }, $class;
 
   my $agpMap = {};
   if($wantTopLevel) {
@@ -46,6 +48,10 @@ sub setAgpMap { $_[0]->{_agp_map} = $_[1] }
 
 sub getSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} }
 sub setSequenceOntologyTerm { $_[0]->{_sequence_ontology_term} = $_[1] }
+
+sub getSequenceOntologyExclude { $_[0]->{_sequence_ontology_exclude} }
+sub setSequenceOntologyExclude { $_[0]->{_sequence_ontology_exclude} = $_[1] }
+
 
 sub getAllGeneIds {
   my ($self) = @_;
@@ -354,6 +360,7 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
   my $agpMap = $self->getAgpMap();
 
   my $soTerm = $self->getSequenceOntologyTerm();
+  my $soExclude = $self->getSequenceOntologyExclude();
 
   while(my $arr = $sh->fetchrow_arrayref()) {
     my $geneSourceId = $arr->[0];
@@ -383,7 +390,9 @@ order by gf.na_feature_id, t.na_feature_id, l.start_min
     my $strand = $geneIsReversed ? -1 : 1;
 
     unless($seenGenes{$geneSourceId}) {
-      next if($soTerm && $gfSoTerm ne $soTerm); # only Genes for this so term
+
+      next if($soTerm && $gfSoTerm ne $soTerm && !$soExclude); # only rows for this so term
+      next if($soTerm && $gfSoTerm eq $soTerm && $soExclude); # only rows which are not this so term
 
       my $geneLocation = &mapLocation($agpMap, $sequenceSourceId, $geneStart, $geneEnd, $strand);
 
