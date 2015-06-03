@@ -57,6 +57,11 @@ my $argsDeclaration =
 		  constraintFunc => undef,
 		  reqd           => 1,
 		  isList         => 0 }),
+     booleanArg({name => 'is_zero_based',
+                 descr => 'The input genomic locations are zero-based, and must therefore be adjusted for consistent one-based storage',
+                 constraintFunc=> undef,
+                 reqd  => 0,
+                 isList => 0}),
   ];
 
 
@@ -140,6 +145,11 @@ sub run {
 	    unless ($c->retrieveFromDB());
     }
 
+    # set adjustment for zero-based input locations
+    my $zeroBaseOffset = 0;
+    $zeroBaseOffset = 1
+	if $self->getArg('is_zero_based';
+
     # put track-file records in Results::SegmentResult
     open (TRACK, $self->getArg('file')) || die "Can't open input file.";
     my $recordCount;
@@ -155,8 +165,8 @@ sub run {
       my $segment = GUS::Model::Results::SegmentResult->new({
 	  protocol_app_node_id => $panId,
 	  na_sequence_id => $sequenceId,
-	  segment_start => $startloc,
-	  segment_end => $endloc,
+	  segment_start => $startloc + $zeroBaseOffset,
+	  segment_end => $endloc + $zeroBaseOffset,
 	  on_reverse_strand => ($strand eq "-" ? 1 : 0),
 	  score1 => $score
 							    });
