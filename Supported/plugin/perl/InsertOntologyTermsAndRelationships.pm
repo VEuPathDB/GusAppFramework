@@ -228,6 +228,8 @@ sub doTerms {
   my $extDbRlsId = $self->getExtDbRls();
   my @ontologyTerms;
 
+  %seen;
+
   foreach my $line (@$lines) {
     my @a = split(/\t/, $line);
     my $sourceId = $a[0];
@@ -237,6 +239,8 @@ sub doTerms {
     my $uri = $a[4];
     my $isObsolete = $a[5];
 
+    next if($seen{$sourceId}); # in case there are dups
+    $seen{$sourceId} = 1;
     next if($isObsolete eq 'true');
     next unless($name);
 
