@@ -14,9 +14,10 @@ use GUS::Model::SRes::OntologySynonym;
 use Text::Balanced qw(extract_quotelike extract_delimited);
 
 my $ontologyTermTypeId;
+my $skipRelationships;
 
 my %idSet;
-my %transitiveClosure; # the smallest superset of the OBO file's relationship set that is a transitive
+my %transitiveClosure; # the smallest superset of the OBO file's relationship set that is transitive
 
 my $argsDeclaration =
   [
@@ -42,11 +43,28 @@ my $argsDeclaration =
 	       constraintFunc => undef,
 	       isList         => 0,
 	     }),
+
    booleanArg({ name          => 'calcTransitiveClosure',
 		descr         => 'If this argument is given, a transitive closure table is created and populated',
 		reqd         => 0,
 		default      => 0
-	    })
+	    }),
+
+   fileArg({ name           => 'relationshipFile',
+	     descr          => 'A tab-delimited file containing GO term relationships',
+	     reqd           => 0,
+	     mustExist      => 1,
+	     format         => 'tab-delimited',
+	     constraintFunc => undef,
+	     isList         => 0,
+	   }),
+
+   booleanArg({ name          => 'skipOboRelationships',
+	        descr         => 'If this flag is set then relationships are not loaded from the OBO file',
+		reqd          => 0,
+		default       => 0
+	    }),
+
   ];
 
 my $purpose = <<PURPOSE;
@@ -111,6 +129,8 @@ sub new {
 sub run {
   my ($self) = @_;
 
+  $skipRelationships = $self->getArg('skipOboRelationships');
+
   my $oboFile = $self->getArg('oboFile');
   open(OBO, "<$oboFile") or $self->error("Couldn't open '$oboFile': $!\n");
 
@@ -129,6 +149,10 @@ sub run {
 
   close(OBO);
   $self->_updateAncestors($extDbRlsId, $ancestors);
+
+  if ($self->getArg('relationshipFile')) {
+      $self->_loadRelationships($extDbRlsId);
+  }
 
   if ($self->getArg('calcTransitiveClosure')) {
     $self->_calcTransitiveClosure($extDbRlsId);
@@ -178,12 +202,45 @@ sub _processBlock {
   $ancestors->{$id} = $namespace;
   $idSet{$ontologyTerm->getOntologyTermId()} = 1;
 
-  for my $relationship (@$relationships) {
-    $self->_processRelationship($ontologyTerm, $relationship, $extDbRlsId);
+  unless ($skipRelationships) {
+      for my $relationship (@$relationships) {
+	  $self->_processRelationship($ontologyTerm, $relationship, $extDbRlsId);
+      }
   }
 
   warn "Processed $self->{_count} terms\n" unless $self->{_count} % 500;
   return($ancestors);
+}
+
+sub _loadRelationships {
+
+    my ($self, $extDbRlsId) = @_;
+
+    my $relCount;
+    my $relationshipFile = $self->getArg('relationshipFile');
+    open(RELATIONSHIPS, "<$relationshipFile") or $self->error("Couldn't open '$relationshipFile': $!\n");
+    while (<RELATIONSHIPS>) {
+	chomp;
+	my ($childName, $childId, $parentName, $parentId, $relation) = split /\t/;
+	my $parentTerm = $self->_retrieveOntologyTerm($parentId, undef, undef, undef,
+						      undef, undef, $extDbRlsId);
+	my $childTerm = $self->_retrieveOntologyTerm($childId, undef, undef, undef,
+						      undef, undef, $extDbRlsId);
+	my $predicate = $self->_retrieveRelationshipPredicate($relation, $extDbRlsId);
+
+	my $ontologyRelationship =
+	    GUS::Model::SRes::OntologyRelationship->new({
+		subject_term_id   => $childTerm->getOntologyTermId(),
+		predicate_term_id => $predicate->getOntologyTermId(),
+		object_term_id    => $parentTerm->getOntologyTermId(),
+							});
+
+	$ontologyRelationship->submit();
+	$relCount++;
+	unless ($relCount++ % 5000) {
+	    warn "Processed $relCount relationships\n";
+	    $self->undefPointerCache();
+    }
 }
 
 sub _processRelationship {
@@ -498,7 +555,7 @@ sub _parseDataVersion {
   my $dataVersion;
   while (<$fh>) {
     #if (m/^version\: (\S+)$/) {
-    if (m/^version\: releases\/(\S+)$/) {
+    if (m/version\: releases\/(\S+)$/) {
       $dataVersion = $1;
       last;
     }
