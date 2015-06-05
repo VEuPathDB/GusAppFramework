@@ -216,6 +216,7 @@ sub _loadRelationships {
 
     my ($self, $extDbRlsId) = @_;
 
+    warn "loading relationships";
     my $relCount;
     my $relationshipFile = $self->getArg('relationshipFile');
     open(RELATIONSHIPS, "<$relationshipFile") or $self->error("Couldn't open '$relationshipFile': $!\n");
@@ -236,7 +237,7 @@ sub _loadRelationships {
 							});
 
 	$ontologyRelationship->submit();
-	unless ($relCount++ % 5000) {
+	unless ($relCount++ % 500) {
 	    warn "Processed $relCount relationships\n";
 	    $self->undefPointerCache();
 	}
