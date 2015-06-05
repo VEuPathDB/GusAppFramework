@@ -240,6 +240,7 @@ sub _loadRelationships {
 	unless ($relCount++ % 5000) {
 	    warn "Processed $relCount relationships\n";
 	    $self->undefPointerCache();
+	}
     }
 }
 
