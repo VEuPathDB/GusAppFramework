@@ -236,7 +236,6 @@ sub _loadRelationships {
 							});
 
 	$ontologyRelationship->submit();
-	$relCount++;
 	unless ($relCount++ % 5000) {
 	    warn "Processed $relCount relationships\n";
 	    $self->undefPointerCache();
