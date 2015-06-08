@@ -228,7 +228,7 @@ sub doTerms {
   my $extDbRlsId = $self->getExtDbRls();
   my @ontologyTerms;
 
-  %seen;
+  my %seen;
 
   foreach my $line (@$lines) {
     my @a = split(/\t/, $line);
