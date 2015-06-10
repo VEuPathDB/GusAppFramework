@@ -33,7 +33,7 @@ sub getArgumentsDeclaration {
      fileArg({name => 'relFile',
 	      descr => 'The full path of the file containing the relationships. .',
 	      constraintFunc=> undef,
-	      reqd  => 1,
+	      reqd  => 0,
 	      isList => 0,
 	      mustExist => 1,
 	      format => 'See the NOTES for the format of this file'
@@ -142,7 +142,9 @@ sub run {
   my $relFile = $self->getArg('relFile');
 
   my $resultDescr = $self->insertTerms($termFile, $extDbRls);
-  $resultDescr .= $self->insertRelationships($relFile, $extDbRls);
+  if ($refFile) {
+    $resultDescr .= $self->insertRelationships($relFile, $extDbRls);
+  }
 
   $self->setResultDescr($resultDescr);
   $self->logData($resultDescr);
