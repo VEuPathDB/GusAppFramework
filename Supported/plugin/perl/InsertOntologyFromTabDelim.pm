@@ -142,7 +142,7 @@ sub run {
   my $relFile = $self->getArg('relFile');
 
   my $resultDescr = $self->insertTerms($termFile, $extDbRls);
-  if ($refFile) {
+  if ($relFile) {
     $resultDescr .= $self->insertRelationships($relFile, $extDbRls);
   }
 
