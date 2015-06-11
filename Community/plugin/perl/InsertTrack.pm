@@ -148,7 +148,7 @@ sub run {
     # set adjustment for zero-based input locations
     my $zeroBaseOffset = 0;
     $zeroBaseOffset = 1
-	if $self->getArg('is_zero_based';
+	if $self->getArg('is_zero_based');
 
     # put track-file records in Results::SegmentResult
     open (TRACK, $self->getArg('file')) || die "Can't open input file.";
