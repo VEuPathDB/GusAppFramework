@@ -132,7 +132,7 @@ sub new {
 sub run {
     my ($self) = @_;
 
-    # each track has one ProtocolAppNode
+    # each track has exactly one ProtocolAppNode
     my $pan = GUS::Model::Study::ProtocolAppNode->new({
 	external_database_release_id => $self->getExtDbRlsId($self->getArg('extDbRlsSpec')),
 	type_id => $self->getOntologyTermId(split("/", $self->getArg('type'))),
