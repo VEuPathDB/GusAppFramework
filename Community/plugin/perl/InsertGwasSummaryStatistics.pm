@@ -155,7 +155,7 @@ sub run {
 	    unless ($c->retrieveFromDB());
     }
 
-    # put gwas summary statistics records in Results::SeqVariation
+    # put gwas summary statistics records in Results::SeqVariation (snp features)
     open (FILE, $self->getArg('file')) || die "Can't open input file.";
     my $recordCount;
     my $fields = parseHeader(<FILE>);
