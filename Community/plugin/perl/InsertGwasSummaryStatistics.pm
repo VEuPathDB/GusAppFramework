@@ -75,9 +75,9 @@ Loads the genomic spans of a genome-browser track
 PLUGIN_PURPOSE
 
 my $tablesAffected = [
-                      ['Study::ProtocolAppNode', 'Each track is represented by one record.'],
-                      ['Study::Characteristic', 'Each record links a track to an ontology term.'],
-                      ['Results::SegmentResult', 'Each record stores one genomic span for the track.'],
+                      ['Study::ProtocolAppNode', 'Each dataset is represented by one record.'],
+                      ['Study::Characteristic', 'Each record links a dataset to an ontology term.'],
+                      ['Results::SeqVariation', 'Each record stores one pvalue/allele frequence for a snp.'],
                      ];
 
 my $tablesDependedOn = [];
@@ -116,7 +116,7 @@ sub new {
 
 
     $self->initialize({requiredDbVersion => 4.0,
-		       cvsRevision => '$Revision: 16139 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 16192 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -157,16 +157,25 @@ sub run {
 
     # put gwas summary statistics records in Results::SeqVariation (snp features)
     open (FILE, $self->getArg('file')) || die "Can't open input file.";
-    my $recordCount;
-    my $fields = parseHeader(<FILE>);
+    my $recordCount = -1;
+    my $fields = undef;
 
     while (<FILE>) {
       chomp;
+
+      if ($recordCount == -1) {
+	$fields = parseHeader($_);
+	$recordCount += 1;
+	next;
+      }
+
       $recordCount++;
 
       my @values = split /\t/;
 
-      my $snpNAFeatureId = getSnpNAFeatureId($values[0]);
+      my $snpNAFeatureId = $self->getSnpNAFeatureId($values[0]);
+
+      next if !defined $snpNAFeatureId; # TODO: handle merged SNPs
  
       my $fieldValues = {protocol_app_node_id => $panId,
 			 snp_na_feature_id => $snpNAFeatureId,
@@ -184,18 +193,18 @@ sub run {
 
       unless ($recordCount % 5000) {
           $self->undefPointerCache();
-	  $self->log("Inserted $recordCount spans")
+	  $self->log("Inserted $recordCount SNP results")
       }
     }
 
-    my $msg = "$recordCount spans inserted into SegmentResult";
+    my $msg = "$recordCount SNP results inserted into SeqVariation";
     return $msg;
 }
 
 sub getSnpNAFeatureId {
   my ($self, $snpId) = @_;
 
-  my $sth = $self->getQueryHandle()->pepareAndExecute(<<"SQL");
+  my $sth = $self->getQueryHandle()->prepareAndExecute(<<"SQL");
      select na_feature_id from
      dots.snpfeature
      where source_id = '$snpId'
@@ -203,7 +212,7 @@ SQL
 
   my ($na_feature_id) = $sth->fetchrow_array();
   $sth->finish();
-  die "Couldn't find SnpFeature record for snp \"$snpId\"" unless $na_feature_id;
+  print STDERR "WARNING: Couldn't find SnpFeature record for snp \"$snpId\"\n" unless $na_feature_id;
 
   return $na_feature_id;
 }
@@ -225,7 +234,7 @@ sub undoTables {
 
   return ('Study.ProtocolAppNode',
           'Study.Characteristic',
-          'Results.SegmentResult',
+          'Results.SeqVariation',
          );
 }
 
