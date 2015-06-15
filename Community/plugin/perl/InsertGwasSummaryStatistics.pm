@@ -135,8 +135,8 @@ sub run {
     # each track has exactly one ProtocolAppNode
     my $pan = GUS::Model::Study::ProtocolAppNode->new({
 	external_database_release_id => $self->getExtDbRlsId($self->getArg('extDbRlsSpec')),
-	type_id => $self->getOntologyTermId(split("/", $self->getArg('type'))),
-	name => $self->getArg('name'),
+	type_id => $self->getOntologyTermId(split("\\|", $self->getArg('type'))),
+	name => $self->getArg('label'),
 	source_id => $self->getArg('source_id'),
 	description => $self->getArg('description'),
 					  });
@@ -146,7 +146,7 @@ sub run {
 
     # each ontology term is a Characteristic
     foreach my $ot (split(',', $self->getArg('terms'))){
-	my ($ontology, $term) = split("/", $ot);
+	my ($ontology, $term) = split("\\|", $ot);
 	my $c = GUS::Model::Study::Characteristic->new({
 	    protocol_app_node_id => $panId,
 	    ontology_term_id => $self->getOntologyTermId($ontology, $term),
