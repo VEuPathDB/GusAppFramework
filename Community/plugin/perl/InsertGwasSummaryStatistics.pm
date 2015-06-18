@@ -91,12 +91,10 @@ PLUGIN_FAILURE_CASES
 
 my $notes = <<PLUGIN_NOTES;
 INPUT FILE must be tab-delimited with first column 
-containing official snp identifiers (e.g. dbSNP rs ids). 
-
-Column headers required.
-marker and p_value columns required.
-optional columns include: frequency, allele, odds_ratio, allele_percent
-
+containing internal na_feature_ids 
+At least two columns (na_feature_id, pvalue) must be provided.
+To load allele frequencies, provide two more columns (in listed order):
+allele, allele_percent (frequency) 
 
 PLUGIN_NOTES
 
@@ -116,7 +114,7 @@ sub new {
 
 
     $self->initialize({requiredDbVersion => 4.0,
-		       cvsRevision => '$Revision: r16193 $', # cvs fills this in!
+		       cvsRevision => '$Revision: 16194 $', # cvs fills this in!
 		       name => ref($self),
 		       argsDeclaration => $argsDeclaration,
 		       documentation => $documentation
@@ -156,40 +154,34 @@ sub run {
     }
 
     # put gwas summary statistics records in Results::SeqVariation (snp features)
-    open (FILE, $self->getArg('file')) || die "Can't open input file.";
-    my $recordCount = -1;
-    my $fields = undef;
 
+    my $recordCount = 0;
+
+    open (FILE, $self->getArg('file')) || die "Can't open input file.";
     while (<FILE>) {
       chomp;
-
-      if ($recordCount == -1) {
-	$fields = parseHeader($_);
-	$recordCount += 1;
-	next;
-      }
 
       $recordCount++;
 
       my @values = split /\t/;
 
-      my $snpNAFeatureId = $self->getSnpNAFeatureId($values[0]);
+      my $nValues = scalar @values;
+  
+      my $snpNAFeatureId = $values[0];
+      my $pvalue = $values[1];
 
-      next if !defined $snpNAFeatureId; # TODO: handle merged SNPs
- 
       my $fieldValues = {protocol_app_node_id => $panId,
 			 snp_na_feature_id => $snpNAFeatureId,
-			 p_value => $values[$fields->{p_value}] };
+			 p_value => $pvalue};
 
-      $fieldValues->{frequency} = $values[$fields->{frequency}] if (exists $fields->{frequency});
-      $fieldValues->{allele} = $values[$fields->{allele}] if (exists $fields->{allele});
-      $fieldValues->{odds_ratio} = $values[$fields->{odds_ratio}] if (exists $fields->{odds_ratio});
-      $fieldValues->{allele_percent} = $values[$fields->{allele_percent}] if (exists $fields->{allele_percent});
+      if ($nValues == 4) { # allele and allele frequency provided
+	  $fieldValues->{allele} = $values[2];
+   	  $fieldValues->{allele_percent} = $values[3];
+      }
 
       my $seqVariation = GUS::Model::Results::SeqVariation->new($fieldValues);
-
-      $seqVariation->submit()
-	  unless ($seqVariation->retrieveFromDB());
+      $seqVariation->submit(); 
+	  # unless ($seqVariation->retrieveFromDB()); # not checking for duplicates; too many record inserts
 
       unless ($recordCount % 5000) {
           $self->undefPointerCache();
@@ -215,18 +207,6 @@ SQL
   print STDERR "WARNING: Couldn't find SnpFeature record for snp \"$snpId\"\n" unless $na_feature_id;
 
   return $na_feature_id;
-}
-
-sub parseHeader {
-  my ($header) = @_;
-  chomp($header);
-  my @arr = split("\t", $header);
-  my %fields = map {$arr[$_] => $_ } 0..$#arr;
-
-  die "Error with input file: field containing p-value must be labeled 'p_value'.  See NOTES for more information." if (!exists $fields{p_value});
-
-  return \%fields;
-
 }
 
 sub undoTables {
