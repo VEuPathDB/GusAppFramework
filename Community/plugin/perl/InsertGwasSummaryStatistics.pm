@@ -33,36 +33,41 @@ my $argsDeclaration =
 	     constraintFunc => undef,
 	     isList         => 0,
 	   }),
-     stringArg({ name  => 'extDbRlsSpec',
-		  descr => "The ExternalDBRelease specifier. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
-		  constraintFunc => undef,
-		  reqd           => 1,
-		  isList         => 0 }),
-     stringArg({ name  => 'label',
-		  descr => "the display label for this dataset",
-		  constraintFunc => undef,
-		  reqd           => 1,
-		  isList         => 0 }),
-     stringArg({ name  => 'description',
-		  descr => "description for the dataset",
-		  constraintFunc => undef,
-		  reqd           => 1,
-		  isList         => 0 }),
+   stringArg({ name  => 'extDbRlsSpec',
+	       descr => "The ExternalDBRelease specifier. Must be in the format 'name|version', where the name must match an name in SRes::ExternalDatabase and the version must match an associated version in SRes::ExternalDatabaseRelease.",
+	       constraintFunc => undef,
+	       reqd           => 1,
+	       isList         => 0 }),
+   stringArg({ name  => 'label',
+	       descr => "the display label for this dataset",
+	       constraintFunc => undef,
+	       reqd           => 1,
+	       isList         => 0 }),
+   stringArg({ name  => 'description',
+	       descr => "description for the dataset",
+	       constraintFunc => undef,
+	       reqd           => 1,
+	       isList         => 0 }),
    stringArg({ name  => 'source_id',
-		  descr => "external database source_id; or internal unique dataset identifier",
-		  constraintFunc => undef,
-		  reqd           => 1,
-		  isList         => 0 }),
-     stringArg({ name  => 'type',
-		  descr => "An ontology/ontology-term pair describing the type of this track. The ontology name and term name are separated by a slash",
-		  constraintFunc => undef,
-		  reqd           => 1,
-		  isList         => 0 }),
-     stringArg({ name  => 'terms',
-		  descr => "A comma-separated list of ontology terms related to this track. Each item in the list consists of an ontology name and a term name, separated by a slash",
-		  constraintFunc => undef,
-		  reqd           => 1,
-		  isList         => 0 })
+	       descr => "external database source_id; or internal unique dataset identifier",
+	       constraintFunc => undef,
+	       reqd           => 1,
+	       isList         => 0 }),
+   stringArg({ name  => 'type',
+	       descr => "An ontology/ontology-term pair describing the type of this track. The ontology name and term name are separated by a pipe",
+	       constraintFunc => undef,
+	       reqd           => 1,
+	       isList         => 0 }),
+   stringArg({ name  => 'subType',
+	       descr => "An ontology/ontology-term pair describing the sub-type of this track. The ontology name and term name are separated by a pipe",
+	       constraintFunc => undef,
+	       reqd           => 1,
+	       isList         => 0 }),
+   stringArg({ name  => 'terms',
+	       descr => "A comma-separated list of ontology terms related to this track. Each item in the list consists of an ontology name and a term name, separated by a pipe",
+	       constraintFunc => undef,
+	       reqd           => 1,
+	       isList         => 0 })
   ];
 
 
@@ -108,19 +113,19 @@ my $documentation = { purpose=>$purpose,
 		    };
 
 sub new {
-    my ($class) = @_;
-    my $self = {};
-    bless($self,$class);
+  my ($class) = @_;
+  my $self = {};
+  bless($self,$class);
 
 
-    $self->initialize({requiredDbVersion => 4.0,
-		       cvsRevision => '$Revision: 16194 $', # cvs fills this in!
-		       name => ref($self),
-		       argsDeclaration => $argsDeclaration,
-		       documentation => $documentation
-		      });
+  $self->initialize({requiredDbVersion => 4.0,
+		     cvsRevision => '$Revision: 16201 $', # cvs fills this in!
+		     name => ref($self),
+		     argsDeclaration => $argsDeclaration,
+		     documentation => $documentation
+		    });
 
-    return $self;
+  return $self;
 }
 
 #######################################################################
@@ -128,69 +133,70 @@ sub new {
 #######################################################################
 
 sub run {
-    my ($self) = @_;
+  my ($self) = @_;
 
-    # each track has exactly one ProtocolAppNode
-    my $pan = GUS::Model::Study::ProtocolAppNode->new({
-	external_database_release_id => $self->getExtDbRlsId($self->getArg('extDbRlsSpec')),
-	type_id => $self->getOntologyTermId(split("\\|", $self->getArg('type'))),
-	name => $self->getArg('label'),
-	source_id => $self->getArg('source_id'),
-	description => $self->getArg('description'),
-					  });
-    $pan->submit()
-	unless ($pan->retrieveFromDB());
-    my $panId = $pan->{'attributes'}->{'protocol_app_node_id'};
+  # each track has exactly one ProtocolAppNode
+  my $pan = GUS::Model::Study::ProtocolAppNode->new({
+						     external_database_release_id => $self->getExtDbRlsId($self->getArg('extDbRlsSpec')),
+						     type_id => $self->getOntologyTermId(split("\\|", $self->getArg('type'))),
+						     subtype_id => $self->getOntologyTermId(split("\\|", $self->getArg('subType'))),
+						     name => $self->getArg('label'),
+						     source_id => $self->getArg('source_id'),
+						     description => $self->getArg('description'),
+						    });
+  $pan->submit()
+    unless ($pan->retrieveFromDB());
+  my $panId = $pan->{'attributes'}->{'protocol_app_node_id'};
 
-    # each ontology term is a Characteristic
-    foreach my $ot (split(',', $self->getArg('terms'))){
-	my ($ontology, $term) = split("\\|", $ot);
-	my $c = GUS::Model::Study::Characteristic->new({
-	    protocol_app_node_id => $panId,
-	    ontology_term_id => $self->getOntologyTermId($ontology, $term),
-						       });
-	$c->submit()
-	    unless ($c->retrieveFromDB());
-    }
+  # each ontology term is a Characteristic
+  foreach my $ot (split(',', $self->getArg('terms'))) {
+    my ($ontology, $term) = split("\\|", $ot);
+    my $c = GUS::Model::Study::Characteristic->new({
+						    protocol_app_node_id => $panId,
+						    ontology_term_id => $self->getOntologyTermId($ontology, $term),
+						   });
+    $c->submit()
+      unless ($c->retrieveFromDB());
+  }
 
-    # put gwas summary statistics records in Results::SeqVariation (snp features)
+  # put gwas summary statistics records in Results::SeqVariation (snp features)
 
-    my $recordCount = 0;
+  my $recordCount = 0;
 
-    open (FILE, $self->getArg('file')) || die "Can't open input file.";
-    while (<FILE>) {
-      chomp;
+  open (FILE, $self->getArg('file')) || die "Can't open input file.";
+  while (<FILE>) {
+    chomp;
 
-      $recordCount++;
+    $recordCount++;
 
-      my @values = split /\t/;
+    my @values = split /\t/;
 
-      my $nValues = scalar @values;
+    my $nValues = scalar @values;
   
-      my $snpNAFeatureId = $values[0];
-      my $pvalue = $values[1];
+    my $snpNAFeatureId = $values[0];
+    my $pvalue = $values[1];
 
-      my $fieldValues = {protocol_app_node_id => $panId,
-			 snp_na_feature_id => $snpNAFeatureId,
-			 p_value => $pvalue};
+    my $fieldValues = {protocol_app_node_id => $panId,
+		       snp_na_feature_id => $snpNAFeatureId,
+		       p_value => $pvalue};
 
-      if ($nValues == 4) { # allele and allele frequency provided
-	  $fieldValues->{allele} = $values[2];
-   	  $fieldValues->{allele_percent} = $values[3];
-      }
-
-      my $seqVariation = GUS::Model::Results::SeqVariation->new($fieldValues);
-      $seqVariation->submit(); 
-	  # unless ($seqVariation->retrieveFromDB()); # not checking for duplicates; too many record inserts
-
-      unless ($recordCount % 5000) {
-          $self->undefPointerCache();
-	  $self->log("Inserted $recordCount SNP results")
-      }
+    if ($nValues == 4) {	# allele and allele frequency provided
+      $fieldValues->{allele} = $values[2];
+      $fieldValues->{allele_percent} = $values[3];
     }
 
-    my $msg = "$recordCount SNP results inserted into SeqVariation";
-    return $msg;
+    my $seqVariation = GUS::Model::Results::SeqVariation->new($fieldValues);
+    $seqVariation->submit(); 
+    # unless ($seqVariation->retrieveFromDB()); # not checking for duplicates; too many record inserts
+
+    unless ($recordCount % 5000) {
+      $self->undefPointerCache();
+      $self->log("Inserted $recordCount SNP results")
+    }
+  }
+
+  my $msg = "$recordCount SNP results inserted into SeqVariation";
+  return $msg;
 }
 
 sub getSnpNAFeatureId {
