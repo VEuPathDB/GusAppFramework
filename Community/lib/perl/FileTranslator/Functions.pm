@@ -12,8 +12,42 @@ sub new {
   return $self;
 }
 
+
 #--------------------------------------------------------------------------------
 
+sub formatDate {
+  my $formatDate; $formatDate = sub {
+    my ($date) = shift;
+    my  ($junk1,$junk2,$junk3,$day,$month,$year) = strptime($date);
+    $month += 1;
+    die "invalid month $date, $year-$month-$day " unless (0< $month &&  $month<13);
+    die "invalid day for $date, $year-$month-$day " unless (0< $day &&  $day <32);
+    $month = "0".$month if $month <10;
+    $year = $year+1900;
+
+    return $year.$month.$day;
+  }
+return $formatDate;
+
+#--------------------------------------------------------------------------------
+
+sub swapMappedValues {
+  my ($self,$hash) = @_;
+  my $mapHash = $hash->{'map_hash'};
+  my $swappedMappedValues; $formatDate = sub {
+    if (defined ($mapHash->{$char})) {
+      if (defined ($mapHash->{$char}->{$value})) { 
+        $value = $mapHash->{$char}->{$value};
+      }
+      else {
+        print STDERR "Warning, mapping not defined for $char : $value \n";
+      }
+    }
+    return $value;
+  }
+    return $swapMappedValues;
+}
+#--------------------------------------------------------------------------------
 sub qPercentToConfidence {
 
   my $qPercent2Conf; $qPercent2Conf = sub {
