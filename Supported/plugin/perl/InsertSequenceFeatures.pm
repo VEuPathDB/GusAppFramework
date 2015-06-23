@@ -979,7 +979,6 @@ sub processFeatureTrees {
   
   foreach my $bioperlFeatureTree ($bioperlSeq->get_SeqFeatures()) {
     undef $self->{validationErrors};
-    $self->defaultPrintFeatureTree($btFh, $bioperlFeatureTree, "");
 
     # traverse bioperl tree to make gus skeleton (linked to bioperl objects)
     my $NAFeature =
@@ -1018,6 +1017,8 @@ sub processFeatureTrees {
 	$self->log("$self->{brokenFeatureTreeCount} feature trees could not be validated. Pleased check validation log for errors.\n");
 	last;
     }
+
+    $self->defaultPrintFeatureTree($btFh, $bioperlFeatureTree, "");
 
     last if $self->checkTestNum();
 
@@ -1358,6 +1359,11 @@ sub defaultPrintFeatureTree {
   $btFh->print("\n") unless $indent;
   my $type = $bioperlFeatureTree->primary_tag();
   $btFh->print("$indent< $type >\n");
+
+  if ($type =~ /coding_gene/ || $type =~ /RNA_gene/ || $type =~ /transcript/) {
+    my $cid = $bioperlFeatureTree->{gusFeature}->getSourceId();
+    $btFh->print("$indent$type gus source_id: $cid \n");
+  }
   my @locations = $bioperlFeatureTree->location()->each_Location();
   foreach my $location (@locations) {
     my $seqId =  $location->seq_id();
