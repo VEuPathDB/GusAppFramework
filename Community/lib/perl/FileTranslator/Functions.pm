@@ -4,6 +4,12 @@ package GUS::Community::FileTranslator::Functions;
 
 use strict;
 
+use lib "$ENV{GUS_HOME}/lib/perl";
+
+use Date::Parse;
+
+use Data::Dumper;
+
 sub new {
   my ($M) = @_;
   my $self = {};
@@ -16,36 +22,43 @@ sub new {
 #--------------------------------------------------------------------------------
 
 sub formatDate {
+  my ($self,$hash) = @_;
   my $formatDate; $formatDate = sub {
-    my ($date) = shift;
+    my $date = shift;
+    return undef unless $date;
     my  ($junk1,$junk2,$junk3,$day,$month,$year) = strptime($date);
     $month += 1;
     die "invalid month $date, $year-$month-$day " unless (0< $month &&  $month<13);
     die "invalid day for $date, $year-$month-$day " unless (0< $day &&  $day <32);
+    $day = "0".$day if $day <10;
     $month = "0".$month if $month <10;
     $year = $year+1900;
 
     return $year.$month.$day;
-  }
+  };
 return $formatDate;
+}
 
 #--------------------------------------------------------------------------------
 
 sub swapMappedValues {
   my ($self,$hash) = @_;
   my $mapHash = $hash->{'map_hash'};
-  my $swappedMappedValues; $formatDate = sub {
+  open (check, ">/home/jcade/tester1.out");
+  print check Dumper $hash;
+  my $swapMappedValues; $swapMappedValues = sub {
+    my $valuesString = shift;
+    my ($value,$char) = split("\t",$valuesString);
+    $char = lc($char);
+    my $lv = lc($value);
     if (defined ($mapHash->{$char})) {
-      if (defined ($mapHash->{$char}->{$value})) { 
-        $value = $mapHash->{$char}->{$value};
-      }
-      else {
-        print STDERR "Warning, mapping not defined for $char : $value \n";
+      if (defined ($mapHash->{$char}->{$lv})) {
+        $value = $mapHash->{$char}->{$lv};
       }
     }
     return $value;
-  }
-    return $swapMappedValues;
+  };
+  return $swapMappedValues;
 }
 #--------------------------------------------------------------------------------
 sub qPercentToConfidence {
