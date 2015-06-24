@@ -201,7 +201,13 @@ sub deleteFromTable{
 
       warn "\n$sql2\n" if $self->getArg('verbose');       
       $self->{dbh}->do($sql2) || die "Failed running sql:\n$sql2\n";
-      my $numDeleted = $rows>10000 ? 10000 : $rows;
+
+      my $numDeleted = $rows;
+
+      if ($limit) {
+	$numDeleted = $rows>10000 ? 10000 : $rows;
+      }
+
       $self->log("Deleted $numDeleted rows from $tableName");              
       
       $self->{dbh}->commit() || die "Committing deletions from $tableName failed: " . $self->{dbh}->errstr() . "\n";
