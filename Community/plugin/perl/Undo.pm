@@ -118,6 +118,13 @@ my $argsDeclaration  =
             isList => 0,
            }),
 
+ integerArg({name => 'limit',
+            descr => 'The maximum number of rows to delete in a single transaction; currently only available for Oracle',
+            constraintFunc=> undef,
+            reqd  => 0,
+            isList => 0,
+           }),
+
 ];
 
 
@@ -163,7 +170,7 @@ sub run{
 
    foreach my $table (@tables) {
 
-      $self->deleteFromTable($table,'row_alg_invocation_id');
+      $self->deleteFromTable($table,'row_alg_invocation_id', $self->getArg('limit'));
    }
 
    if ($workflowContext) {
@@ -177,7 +184,7 @@ sub run{
 }
 
 sub deleteFromTable{
-  my ($self, $tableName, $algInvIdColumnName) = @_;
+  my ($self, $tableName, $algInvIdColumnName, $limit) = @_;
   
   my $algoInvocIds = join(', ', @{$self->{algInvocationIds}});
   my $sql1 =
@@ -189,7 +196,9 @@ sub deleteFromTable{
     while ($rows) {
       my $sql2 = 
 	"DELETE FROM $tableName
-         WHERE $algInvIdColumnName IN ($algoInvocIds) and rownum<=10000";
+         WHERE $algInvIdColumnName IN ($algoInvocIds)";
+      $sql2 .= " AND rownum<=$limit" if ($limit);
+
       warn "\n$sql2\n" if $self->getArg('verbose');       
       $self->{dbh}->do($sql2) || die "Failed running sql:\n$sql2\n";
       my $numDeleted = $rows>10000 ? 10000 : $rows;
