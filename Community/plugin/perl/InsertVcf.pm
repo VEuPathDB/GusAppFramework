@@ -304,7 +304,7 @@ sub getDbRefId {
 sub undoTables {
   my ($self) = @_;
 
-  return ('DoTS.SnpFeature', 'DoTS.NALocation', 'DoTS.ExternalNASequence', 'SRes.DbRef', 'DoTS.DbRefNAFeature');
+  return ('DoTS.NALocation', 'DoTS.ExternalNASequence', 'DoTS.DbRefNAFeature', 'SRes.DbRef', 'DoTS.SnpFeature');
 }
 
 sub define_dbSnp_bitfield {
